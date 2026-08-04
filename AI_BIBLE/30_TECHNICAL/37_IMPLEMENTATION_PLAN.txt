@@ -1,0 +1,699 @@
+# 37. IMPLEMENTATION PLAN
+
+---
+
+# 1. Purpose
+
+This document defines the exact implementation order of the project.
+
+It answers one question:
+
+> **What should Claude implement next?**
+
+The objective is to:
+
+- Minimize refactoring
+- Avoid circular dependencies
+- Keep every build playable
+- Validate each system before adding the next one
+- Deliver a Vertical Slice as early as possible
+
+This document is the implementation roadmap for the entire codebase.
+
+---
+
+# 2. Core Principles
+
+The project follows these rules.
+
+---
+
+## 2.1 Vertical Slice First
+
+The goal is **not** to finish one entire system before another.
+
+Instead:
+
+```text
+Infrastructure
+
+↓
+
+Minimal Gameplay
+
+↓
+
+Playable Slice
+
+↓
+
+Expand
+```
+
+---
+
+## 2.2 Build on Stable Foundations
+
+Every phase depends only on previous validated phases.
+
+Never implement a feature whose dependencies are missing.
+
+---
+
+## 2.3 Always Playable
+
+After every milestone:
+
+- The project builds.
+- The game launches.
+- Existing features still work.
+
+---
+
+## 2.4 One Responsibility Per Phase
+
+Each phase has one objective.
+
+Example:
+
+```text
+Combat
+
+≠
+
+Inventory
+
+≠
+
+Crafting
+```
+
+Avoid mixing unrelated systems.
+
+---
+
+## 2.5 No Placeholder Gameplay
+
+Temporary assets are acceptable.
+
+Temporary gameplay logic is not.
+
+Claude must implement the real architecture immediately, even if some values are placeholders.
+
+---
+
+# 3. Global Development Roadmap
+
+The complete implementation order is:
+
+```text
+Phase 01 — Repository Bootstrap
+
+Phase 02 — Core Infrastructure
+
+Phase 03 — Content Pipeline
+
+Phase 04 — Authentication & Persistence
+
+Phase 05 — Rendering Foundation
+
+Phase 06 — Character & Stats
+
+Phase 07 — Combat Vertical Slice
+
+Phase 08 — Exploration
+
+Phase 09 — Inventory & Equipment
+
+Phase 10 — Loot
+
+Phase 11 — Progression
+
+Phase 12 — Gathering
+
+Phase 13 — Crafting
+
+Phase 14 — Refining
+
+Phase 15 — Workers
+
+Phase 16 — Player Island
+
+Phase 17 — Vendors
+
+Phase 18 — Notifications
+
+Phase 19 — Polish
+
+Phase 20 — Release Candidate
+```
+
+Every phase ends with validation.
+
+---
+
+# 4. Phase 01 — Repository Bootstrap
+
+Goal:
+
+Create the complete project skeleton.
+
+Deliverables:
+
+- pnpm workspace
+- Client project
+- Server project
+- Shared package
+- Lint
+- Formatter
+- TypeScript
+- CI pipeline
+- Empty test runner
+
+Validation:
+
+```text
+pnpm install
+
+↓
+
+pnpm build
+
+↓
+
+Success
+```
+
+---
+
+# 5. Phase 02 — Core Infrastructure
+
+Goal:
+
+Build technical foundations.
+
+Implement:
+
+- Logger
+- Clock
+- Random
+- Configuration
+- Dependency Injection
+- Event Dispatcher
+- Error System
+- Registry Base Classes
+
+No gameplay.
+
+Validation:
+
+Infrastructure tests all pass.
+
+---
+
+# 6. Phase 03 — Content Pipeline
+
+Goal:
+
+Load validated game content.
+
+Implement:
+
+- JSON loader
+- Validation
+- Registry builder
+- Localization
+- Asset Manifest loader
+
+Success criteria:
+
+The server loads every definition without errors.
+
+---
+
+# 7. Phase 04 — Authentication & Persistence
+
+Goal:
+
+Persistent player accounts.
+
+Implement:
+
+- Login
+- Registration
+- JWT
+- Refresh Token
+- Prisma
+- Save loading
+- Save creation
+- Repository layer
+
+Validation:
+
+A player can reconnect without losing progress.
+
+---
+
+# 8. Phase 05 — Rendering Foundation
+
+Goal:
+
+A visible world.
+
+Implement:
+
+- React shell
+- Phaser
+- Camera
+- Background
+- Segment rendering
+- Asset loading
+- Timeline player
+
+No combat yet.
+
+Validation:
+
+The player sprite appears and the camera follows correctly.
+
+---
+
+# 9. Phase 06 — Character & Stats
+
+Implement:
+
+- Character model
+- Stat aggregation
+- Equipment slots
+- Runtime combat entity
+
+Validation:
+
+Stat calculation matches the Bible.
+
+---
+
+# 10. Phase 07 — Combat Vertical Slice
+
+First playable milestone.
+
+Implement:
+
+- One biome
+- One Zone
+- One Segment
+- Five encounters
+- One boss
+- Automatic combat
+- Timeline replay
+- Loot reward
+
+Success:
+
+A player can defeat enemies and receive loot.
+
+---
+
+# 11. Phase 08 — Exploration
+
+Implement:
+
+- Infinite segments
+- Zone progression
+- Cycle progression
+- Resource Enemy spawning
+
+Validation:
+
+Exploration loops infinitely.
+
+---
+
+# 12. Phase 09 — Inventory & Equipment
+
+Implement:
+
+- Inventory
+- Item instances
+- Equipment
+- Tooltips
+- Equipment validation
+
+Validation:
+
+Items persist correctly.
+
+---
+
+# 13. Phase 10 — Loot
+
+Implement:
+
+- Loot tables
+- Reward pipeline
+- Quality
+- Enchantment
+- Currency rewards
+
+Validation:
+
+Loot matches balancing tables.
+
+---
+
+# 14. Phase 11 — Progression
+
+Implement:
+
+- XP
+- Masteries
+- Unlocks
+- Overflow XP
+
+Validation:
+
+Equipment unlocks correctly through mastery.
+
+---
+
+# 15. Phase 12 — Gathering
+
+Implement:
+
+- Resource Enemies
+- Automatic gathering
+- Yield calculation
+
+Validation:
+
+No standalone gathering nodes exist.
+
+---
+
+# 16. Phase 13 — Crafting
+
+Implement:
+
+- Recipes
+- Material consumption
+- Output creation
+- Crafting queues
+
+Validation:
+
+Crafted items match definitions.
+
+---
+
+# 17. Phase 14 — Refining
+
+Implement:
+
+- Resource refining
+- Processing queues
+- Output validation
+
+Validation:
+
+Refined resources persist correctly.
+
+---
+
+# 18. Phase 15 — Workers
+
+Implement:
+
+- Worker hiring
+- Assignments
+- Passive production
+- Claim flow
+
+Validation:
+
+Offline progression works.
+
+---
+
+# 19. Phase 16 — Player Island
+
+Implement:
+
+- Buildings
+- Construction
+- Upgrades
+- Worker interaction
+
+Validation:
+
+Buildings affect gameplay correctly.
+
+---
+
+# 20. Phase 17 — Vendors
+
+Implement:
+
+- Shops
+- Purchases
+- Sales
+- Dynamic inventories if enabled
+
+Validation:
+
+Transactions are atomic.
+
+---
+
+# 21. Phase 18 — Notifications
+
+Implement:
+
+- Notification center
+- Toasts
+- Persistent notifications
+
+Validation:
+
+Gameplay events create notifications.
+
+---
+
+# 22. Phase 19 — Polish
+
+Implement:
+
+- Audio
+- VFX
+- Accessibility
+- Performance optimization
+- UX improvements
+
+No gameplay changes unless fixing bugs.
+
+---
+
+# 23. Phase 20 — Release Candidate
+
+Tasks:
+
+- Bug fixing
+- Balancing
+- Profiling
+- Security review
+- Documentation
+- Final testing
+
+The project becomes release-ready.
+
+---
+
+# 24. Definition of Done
+
+A feature is complete only if:
+
+- Architecture matches the Bible.
+- Code compiles.
+- Tests pass.
+- Lint passes.
+- Typecheck passes.
+- Documentation updated.
+- No TODO blocks critical gameplay.
+- No placeholder gameplay logic remains.
+- Performance targets are respected.
+- No regression introduced.
+
+---
+
+# 25. Feature Checklist
+
+Before implementing any feature, Claude must verify:
+
+```text
+□ Dependencies implemented
+
+□ Data schema exists
+
+□ Runtime architecture exists
+
+□ Persistence defined
+
+□ DTOs defined
+
+□ Tests planned
+
+□ Assets available or placeholder registered
+
+□ Localization keys defined
+```
+
+---
+
+# 26. Code Review Checklist
+
+Every pull request should verify:
+
+- Naming consistency
+- Module boundaries
+- No duplicated logic
+- No forbidden imports
+- Proper validation
+- Transaction safety
+- Error handling
+- Test coverage
+- Documentation updated
+
+---
+
+# 27. Asset Readiness Checklist
+
+A gameplay feature using visuals is considered ready when:
+
+```text
+□ Asset ID defined
+
+□ Manifest entry exists
+
+□ Placeholder or final asset available
+
+□ Animation IDs registered
+
+□ Localization keys created
+
+□ Asset referenced by definition, never by path
+```
+
+---
+
+# 28. Data Readiness Checklist
+
+Before adding new content:
+
+```text
+□ Definition ID unique
+
+□ Schema valid
+
+□ References valid
+
+□ Localization complete
+
+□ Asset references valid
+
+□ Registry loads successfully
+```
+
+---
+
+# 29. Release Readiness Checklist
+
+Before a public release:
+
+```text
+□ All automated tests pass
+
+□ Content validation passes
+
+□ Asset validation passes
+
+□ Save migration tested
+
+□ Smoke tests pass
+
+□ Performance budgets respected
+
+□ Backup verified
+
+□ Monitoring active
+
+□ Version numbers updated
+
+□ Changelog written
+```
+
+---
+
+# 30. Acceptance Criteria
+
+The implementation plan is complete when:
+
+- Every phase has a clear objective.
+- Dependencies are respected.
+- Vertical Slice is delivered early.
+- Every milestone is playable.
+- No gameplay system is implemented before its foundation.
+- Checklists define objective completion.
+- Claude can determine the next implementation step without ambiguity.
+
+---
+
+# 31. Final Summary
+
+Development progresses through small, validated milestones.
+
+```text
+Infrastructure
+
+↓
+
+Content
+
+↓
+
+Persistence
+
+↓
+
+Rendering
+
+↓
+
+Combat
+
+↓
+
+Exploration
+
+↓
+
+Progression
+
+↓
+
+Professions
+
+↓
+
+Polish
+
+↓
+
+Release
+```
+
+At every stage, the project remains buildable, testable and playable.
+
+This document is the definitive roadmap for implementing the game from an empty repository to a production-ready release.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

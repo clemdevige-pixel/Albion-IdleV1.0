@@ -1,0 +1,381 @@
+# 38. AI DEVELOPMENT GUIDELINES
+
+---
+
+# 1. Purpose
+
+This document defines the mandatory rules that any AI coding assistant (Claude, ChatGPT, Codex or equivalent) must follow when contributing to this project.
+
+Its objectives are to:
+
+- Guarantee architectural consistency
+- Avoid regressions
+- Preserve deterministic gameplay
+- Prevent duplicated implementations
+- Standardize code generation
+- Ensure every generated feature complies with the AI Bible
+
+This document is **binding** for every AI-assisted development session.
+
+---
+
+# 2. Golden Rules
+
+Every AI implementation must respect the following priorities:
+
+```text
+Architecture
+
+↓
+
+Correctness
+
+↓
+
+Readability
+
+↓
+
+Performance
+
+↓
+
+Optimization
+```
+
+Never sacrifice architecture for short-term convenience.
+
+---
+
+# 3. Source of Truth
+
+The AI Bible is the only functional specification.
+
+If generated code contradicts the Bible:
+
+```text
+The Bible always wins.
+```
+
+The AI must never invent gameplay mechanics that are not explicitly defined.
+
+---
+
+# 4. Forbidden Behaviors
+
+The AI must never:
+
+- Invent undocumented mechanics
+- Modify balancing values without request
+- Introduce hidden dependencies
+- Duplicate existing systems
+- Bypass validation
+- Ignore deterministic requirements
+- Trust client-side calculations
+- Hardcode IDs or asset paths
+
+---
+
+# 5. Required Workflow
+
+Before writing code:
+
+```text
+Read Specification
+
+↓
+
+Identify Dependencies
+
+↓
+
+Implement
+
+↓
+
+Validate
+
+↓
+
+Test
+
+↓
+
+Document
+```
+
+Skipping a step is forbidden.
+
+---
+
+# 6. Respect Existing Architecture
+
+The AI must preserve:
+
+- Folder structure
+- Module boundaries
+- Dependency rules
+- Repository pattern
+- DTO separation
+- Registry system
+
+No architectural shortcuts are allowed.
+
+---
+
+# 7. Coding Standards
+
+Generated code must be:
+
+- Strictly typed
+- Readable
+- Self-explanatory
+- Deterministic
+- Modular
+- Testable
+
+Avoid clever but obscure implementations.
+
+---
+
+# 8. Naming Rules
+
+Names must be:
+
+- Explicit
+- Consistent
+- Singular for entities
+- Plural for collections
+
+Example:
+
+```text
+Player
+
+InventoryRepository
+
+ItemDefinition
+
+WorkerAssignment
+```
+
+Avoid abbreviations unless already standardized.
+
+---
+
+# 9. File Creation Rules
+
+Each file should have one clear responsibility.
+
+Avoid files exceeding a reasonable size.
+
+Split responsibilities instead of creating monolithic classes.
+
+---
+
+# 10. Data Rules
+
+Gameplay values belong in data files.
+
+Never hardcode:
+
+- Damage
+- Rewards
+- Recipes
+- Costs
+- Timers
+- Progression values
+
+---
+
+# 11. Error Handling
+
+Errors must be:
+
+- Explicit
+- Typed
+- Logged
+- Actionable
+
+Never swallow exceptions silently.
+
+---
+
+# 12. Testing Requirements
+
+Every gameplay feature must include:
+
+- Unit tests
+- Integration tests where appropriate
+- Regression tests for bug fixes
+
+No gameplay feature is complete without tests.
+
+---
+
+# 13. Documentation
+
+When introducing a new system:
+
+Update:
+
+- Interfaces
+- Data schema
+- Registry references
+- Relevant AI Bible section if requested
+
+---
+
+# 14. Refactoring Policy
+
+Refactoring is allowed only if it:
+
+- Improves clarity
+- Reduces duplication
+- Preserves behavior
+- Passes all tests
+
+Never refactor unrelated systems during feature implementation.
+
+---
+
+# 15. Performance Policy
+
+Optimize only after measurement.
+
+Do not introduce unnecessary complexity for hypothetical gains.
+
+---
+
+# 16. Determinism
+
+Every authoritative gameplay calculation must remain deterministic.
+
+Randomness must always originate from the injected Random service.
+
+Never use:
+
+```typescript
+Math.random()
+```
+
+inside gameplay systems.
+
+---
+
+# 17. Persistence Rules
+
+The AI must never:
+
+- Serialize gameplay directly from client state
+- Modify save format without migration
+- Store derived values unnecessarily
+
+Persistence must follow the repository contracts.
+
+---
+
+# 18. Client Rules
+
+The client may:
+
+- Display
+- Animate
+- Predict visually
+
+The client may never:
+
+- Decide rewards
+- Validate progression
+- Calculate authoritative combat
+
+---
+
+# 19. Server Rules
+
+The server always owns:
+
+- Saves
+- Progression
+- Loot
+- Combat
+- Currency
+- Crafting results
+
+---
+
+# 20. Review Checklist
+
+Before considering generated code complete:
+
+```text
+□ Compiles
+
+□ Type-safe
+
+□ Deterministic
+
+□ Tested
+
+□ Matches architecture
+
+□ No duplicated logic
+
+□ Uses existing services
+
+□ No forbidden dependencies
+
+□ No hardcoded gameplay values
+
+□ Readable
+```
+
+---
+
+# 21. Acceptance Criteria
+
+AI-generated code is acceptable only if:
+
+- It follows every architectural rule.
+- It introduces no undocumented behavior.
+- It is fully deterministic where required.
+- It passes automated validation.
+- It integrates naturally into the existing project.
+
+---
+
+# 22. Final Summary
+
+Every AI contribution must prioritize long-term maintainability over short-term speed.
+
+```text
+Specification
+
+↓
+
+Architecture
+
+↓
+
+Implementation
+
+↓
+
+Validation
+
+↓
+
+Testing
+
+↓
+
+Integration
+```
+
+The AI is an implementation assistant, not a game designer.
+
+Gameplay decisions come exclusively from the AI Bible.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

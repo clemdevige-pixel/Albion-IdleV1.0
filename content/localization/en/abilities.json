@@ -1,0 +1,24 @@
+{
+  "language": "en",
+  "namespace": "abilities",
+  "entries": {
+    "ability.sword_slash.name": "Sword Slash",
+    "ability.sword_slash.description": "A basic sword attack.",
+    "ability.sword_heroic_strike.name": "Heroic Strike",
+    "ability.sword_heroic_strike.description": "A powerful sword attack that causes bleeding.",
+    "ability.bow_aimed_shot.name": "Aimed Shot",
+    "ability.bow_aimed_shot.description": "A precise ranged attack.",
+    "ability.fire_fireball.name": "Fireball",
+    "ability.fire_fireball.description": "Launches a ball of fire at the target.",
+    "ability.heal_minor.name": "Minor Heal",
+    "ability.heal_minor.description": "Restores a moderate amount of health.",
+    "ability.passive_deep_cuts.name": "Deep Cuts",
+    "ability.passive_deep_cuts.description": "Sword attacks have a chance to cause bleeding.",
+    "ability.enemy_bite.name": "Bite",
+    "ability.enemy_bite.description": "A vicious bite attack.",
+    "ability.enemy_poison_spit.name": "Poison Spit",
+    "ability.enemy_poison_spit.description": "Spits a poisonous projectile.",
+    "ability.gloves_shockwave.name": "Impact Wave",
+    "ability.gloves_shockwave.description": "Strikes with both gauntlets and releases a neutral shockwave."
+  }
+}

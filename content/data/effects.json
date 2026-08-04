@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "category": "effects",
+  "definitions": [
+    {
+      "id": "effect_damage_physical",
+      "type": "damage",
+      "parameters": { "amount": 100, "damageType": "Physical" },
+      "scaling": null,
+      "target": "primary_target",
+      "delay": 0,
+      "flags": []
+    },
+    {
+      "id": "effect_damage_magical",
+      "type": "damage",
+      "parameters": { "amount": 80, "damageType": "Magical" },
+      "scaling": null,
+      "target": "primary_target",
+      "delay": 0,
+      "flags": []
+    },
+    {
+      "id": "effect_heal_small",
+      "type": "heal",
+      "parameters": { "amount": 50 },
+      "scaling": null,
+      "target": "self",
+      "delay": 0,
+      "flags": []
+    },
+    {
+      "id": "effect_heal_medium",
+      "type": "heal",
+      "parameters": { "amount": 120 },
+      "scaling": null,
+      "target": "self",
+      "delay": 0,
+      "flags": []
+    },
+    {
+      "id": "effect_apply_bleed",
+      "type": "apply_status",
+      "parameters": { "statusId": "status_bleeding", "duration": 3 },
+      "scaling": null,
+      "target": "primary_target",
+      "delay": 0,
+      "flags": []
+    },
+    {
+      "id": "effect_knockback_small",
+      "type": "knockback",
+      "parameters": { "distance": 2 },
+      "scaling": null,
+      "target": "primary_target",
+      "delay": 0,
+      "flags": []
+    },
+    {
+      "id": "effect_buff_attack_speed",
+      "type": "modify_stat",
+      "parameters": { "statId": "stat_attack_speed", "amount": 0.2, "duration": 5 },
+      "scaling": null,
+      "target": "self",
+      "delay": 0,
+      "flags": []
+    },
+    {
+      "id": "effect_regen_health",
+      "type": "heal",
+      "parameters": { "amount": 10, "tickInterval": 1 },
+      "scaling": null,
+      "target": "self",
+      "delay": 0,
+      "flags": []
+    }
+  ]
+}

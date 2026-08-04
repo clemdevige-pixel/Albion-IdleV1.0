@@ -1,0 +1,749 @@
+# ARMOR DATABASE
+
+Version: 1.0
+
+This document defines every wearable armor item available in Version 1.
+
+Each armor entry references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored in this document.
+
+Armor statistics, crafting costs and progression values are inherited from
+the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Armor ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the equipped armor sprite or model.
+
+Icon ID:
+Identifier of the inventory and interface icon.
+
+Scaling Profile:
+Defines health, armor, magic resistance and movement modifiers.
+
+Craft Profile:
+Defines required resources, crafting time and crafting cost.
+
+Ability Profile:
+Defines the active or passive ability granted by the armor item.
+
+All armor variants inherit the same base entry.
+
+Generated item identifiers follow this format:
+
+ARM-0001-T2
+ARM-0001-T3
+ARM-0001-T4
+ARM-0001-T5
+ARM-0001-T6
+ARM-0001-T7
+ARM-0001-T8
+
+Generated asset identifiers follow the same format.
+
+Example:
+
+Gameplay Item:
+ARM-0001-T6
+
+Equipped Asset:
+ARM-0001-T6
+
+Inventory Icon:
+ICO-ARM-0001-T6
+
+Display Name:
+Cloth Hood T6
+
+---
+
+# ============================================================================
+# CLOTH ARMOR
+# ============================================================================
+
+## ARM-0001
+
+Name:
+Cloth Hood
+
+Asset ID:
+ARM-0001
+
+Icon ID:
+ICO-ARM-0001
+
+Category:
+Armor
+
+Armor Type:
+Cloth
+
+Slot:
+Head
+
+Combat Role:
+Magic Offense
+
+Scaling Profile:
+ARM_CLOTH_HEAD
+
+Craft Profile:
+CRAFT_CLOTH_HEAD
+
+Ability Profile:
+ABILITY_CLOTH_HOOD
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## ARM-0002
+
+Name:
+Cloth Robe
+
+Asset ID:
+ARM-0002
+
+Icon ID:
+ICO-ARM-0002
+
+Category:
+Armor
+
+Armor Type:
+Cloth
+
+Slot:
+Chest
+
+Combat Role:
+Magic Offense
+
+Scaling Profile:
+ARM_CLOTH_CHEST
+
+Craft Profile:
+CRAFT_CLOTH_CHEST
+
+Ability Profile:
+ABILITY_CLOTH_ROBE
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## ARM-0003
+
+Name:
+Cloth Sandals
+
+Asset ID:
+ARM-0003
+
+Icon ID:
+ICO-ARM-0003
+
+Category:
+Armor
+
+Armor Type:
+Cloth
+
+Slot:
+Feet
+
+Combat Role:
+Magic Mobility
+
+Scaling Profile:
+ARM_CLOTH_FEET
+
+Craft Profile:
+CRAFT_CLOTH_FEET
+
+Ability Profile:
+ABILITY_CLOTH_SANDALS
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# LEATHER ARMOR
+# ============================================================================
+
+## ARM-0004
+
+Name:
+Leather Hood
+
+Asset ID:
+ARM-0004
+
+Icon ID:
+ICO-ARM-0004
+
+Category:
+Armor
+
+Armor Type:
+Leather
+
+Slot:
+Head
+
+Combat Role:
+Balanced Offense
+
+Scaling Profile:
+ARM_LEATHER_HEAD
+
+Craft Profile:
+CRAFT_LEATHER_HEAD
+
+Ability Profile:
+ABILITY_LEATHER_HOOD
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## ARM-0005
+
+Name:
+Leather Jacket
+
+Asset ID:
+ARM-0005
+
+Icon ID:
+ICO-ARM-0005
+
+Category:
+Armor
+
+Armor Type:
+Leather
+
+Slot:
+Chest
+
+Combat Role:
+Balanced Combat
+
+Scaling Profile:
+ARM_LEATHER_CHEST
+
+Craft Profile:
+CRAFT_LEATHER_CHEST
+
+Ability Profile:
+ABILITY_LEATHER_JACKET
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## ARM-0006
+
+Name:
+Leather Boots
+
+Asset ID:
+ARM-0006
+
+Icon ID:
+ICO-ARM-0006
+
+Category:
+Armor
+
+Armor Type:
+Leather
+
+Slot:
+Feet
+
+Combat Role:
+Combat Mobility
+
+Scaling Profile:
+ARM_LEATHER_FEET
+
+Craft Profile:
+CRAFT_LEATHER_FEET
+
+Ability Profile:
+ABILITY_LEATHER_BOOTS
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# PLATE ARMOR
+# ============================================================================
+
+## ARM-0007
+
+Name:
+Plate Helmet
+
+Asset ID:
+ARM-0007
+
+Icon ID:
+ICO-ARM-0007
+
+Category:
+Armor
+
+Armor Type:
+Plate
+
+Slot:
+Head
+
+Combat Role:
+Defense
+
+Scaling Profile:
+ARM_PLATE_HEAD
+
+Craft Profile:
+CRAFT_PLATE_HEAD
+
+Ability Profile:
+ABILITY_PLATE_HELMET
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## ARM-0008
+
+Name:
+Plate Armor
+
+Asset ID:
+ARM-0008
+
+Icon ID:
+ICO-ARM-0008
+
+Category:
+Armor
+
+Armor Type:
+Plate
+
+Slot:
+Chest
+
+Combat Role:
+Heavy Defense
+
+Scaling Profile:
+ARM_PLATE_CHEST
+
+Craft Profile:
+CRAFT_PLATE_CHEST
+
+Ability Profile:
+ABILITY_PLATE_ARMOR
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## ARM-0009
+
+Name:
+Plate Boots
+
+Asset ID:
+ARM-0009
+
+Icon ID:
+ICO-ARM-0009
+
+Category:
+Armor
+
+Armor Type:
+Plate
+
+Slot:
+Feet
+
+Combat Role:
+Defensive Mobility
+
+Scaling Profile:
+ARM_PLATE_FEET
+
+Craft Profile:
+CRAFT_PLATE_FEET
+
+Ability Profile:
+ABILITY_PLATE_BOOTS
+
+Tier Range:
+T2-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ARMOR TYPE RULES
+# ============================================================================
+
+## Cloth
+
+Primary Attribute:
+Magic Power
+
+Secondary Attribute:
+Energy Efficiency
+
+Defense Level:
+Low
+
+Mobility:
+High
+
+General Role:
+Damage
+Healing
+Support
+
+---
+
+## Leather
+
+Primary Attribute:
+Balanced Damage
+
+Secondary Attribute:
+Attack Speed
+
+Defense Level:
+Medium
+
+Mobility:
+Medium
+
+General Role:
+Damage
+Mobility
+Hybrid Combat
+
+---
+
+## Plate
+
+Primary Attribute:
+Defense
+
+Secondary Attribute:
+Health
+
+Defense Level:
+High
+
+Mobility:
+Low
+
+General Role:
+Tank
+Survival
+Control
+
+---
+
+# ============================================================================
+# SLOT RULES
+# ============================================================================
+
+## Head
+
+Primary Function:
+Utility or defensive ability.
+
+Stat Weight:
+Low
+
+Ability Type:
+Short cooldown active ability.
+
+---
+
+## Chest
+
+Primary Function:
+Defines the main armor playstyle.
+
+Stat Weight:
+High
+
+Ability Type:
+Powerful active or persistent ability.
+
+---
+
+## Feet
+
+Primary Function:
+Movement and positioning.
+
+Stat Weight:
+Medium
+
+Ability Type:
+Sprint, dash or defensive mobility.
+
+---
+
+# ============================================================================
+# SCALING PROFILE REFERENCES
+# ============================================================================
+
+The following scaling profiles are referenced by the armor database.
+
+Their numerical values are defined in **DB_PROGRESS_RULES.md**.
+
+- ARM_CLOTH_HEAD
+- ARM_CLOTH_CHEST
+- ARM_CLOTH_FEET
+- ARM_LEATHER_HEAD
+- ARM_LEATHER_CHEST
+- ARM_LEATHER_FEET
+- ARM_PLATE_HEAD
+- ARM_PLATE_CHEST
+- ARM_PLATE_FEET
+
+---
+
+# ============================================================================
+# CRAFT PROFILE REFERENCES
+# ============================================================================
+
+The following crafting profiles are referenced by the armor database.
+
+Their recipes and values are defined in **DB_CRAFTING.md**.
+
+- CRAFT_CLOTH_HEAD
+- CRAFT_CLOTH_CHEST
+- CRAFT_CLOTH_FEET
+- CRAFT_LEATHER_HEAD
+- CRAFT_LEATHER_CHEST
+- CRAFT_LEATHER_FEET
+- CRAFT_PLATE_HEAD
+- CRAFT_PLATE_CHEST
+- CRAFT_PLATE_FEET
+
+---
+
+# ============================================================================
+# ABILITY PROFILE REFERENCES
+# ============================================================================
+
+The following ability profiles are referenced by the armor database.
+
+Their behavior and numerical values are defined in **DB_SKILLS.md**.
+
+- ABILITY_CLOTH_HOOD
+- ABILITY_CLOTH_ROBE
+- ABILITY_CLOTH_SANDALS
+- ABILITY_LEATHER_HOOD
+- ABILITY_LEATHER_JACKET
+- ABILITY_LEATHER_BOOTS
+- ABILITY_PLATE_HELMET
+- ABILITY_PLATE_ARMOR
+- ABILITY_PLATE_BOOTS
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Every base armor item generates seven tier variants.
+
+Generated Tiers:
+- T2
+- T3
+- T4
+- T5
+- T6
+- T7
+- T8
+
+The base ID never changes.
+
+Example:
+
+Base Armor:
+ARM-0008
+
+Generated Variants:
+- ARM-0008-T2
+- ARM-0008-T3
+- ARM-0008-T4
+- ARM-0008-T5
+- ARM-0008-T6
+- ARM-0008-T7
+- ARM-0008-T8
+
+Each generated variant receives:
+
+- The same armor name
+- The same armor type
+- The same equipment slot
+- The same combat role
+- The same ability profile
+- The tier-specific visual asset
+- The tier-specific inventory icon
+- Statistics generated from its scaling profile
+- A recipe generated from its crafting profile
+- A value generated from the economy rules
+- A repair cost generated from the repair rules
+
+No generated system may modify:
+
+- Armor ID
+- Armor name
+- Armor type
+- Equipment slot
+- Asset reference
+- Icon reference
+- Ability profile
+- Crafting profile
+- Scaling profile
+
+DOCUMENT TERMINÉ

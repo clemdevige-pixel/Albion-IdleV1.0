@@ -1,0 +1,982 @@
+# 36. BUILD, DEPLOYMENT & OPERATIONS
+
+---
+
+# 1. Purpose
+
+This document defines how the project is built, validated, deployed, operated and maintained.
+
+It specifies:
+
+- Development environments
+- Build pipeline
+- Continuous Integration
+- Continuous Deployment
+- Release workflow
+- Environment configuration
+- Database migrations
+- Asset packaging
+- Rollback strategy
+- Secrets management
+- Backup strategy
+- Production operations
+
+This document is the source of truth for everything between writing code and running the game in production.
+
+---
+
+# 2. Locked Decisions
+
+---
+
+## 2.1 One Codebase
+
+Development, staging and production all use the same codebase.
+
+Only configuration changes.
+
+Code never changes per environment.
+
+---
+
+## 2.2 Build Once
+
+Every release is built exactly once.
+
+The generated artifact is promoted between environments.
+
+Never rebuild for staging or production.
+
+---
+
+## 2.3 Immutable Releases
+
+A deployed version is immutable.
+
+Never edit production files manually.
+
+Every change creates a new release.
+
+---
+
+## 2.4 Infrastructure as Code
+
+Every environment must be reproducible.
+
+Manual server configuration is forbidden.
+
+---
+
+## 2.5 Automated Deployment
+
+Production deployment is fully automated.
+
+Manual deployment steps should not exist.
+
+---
+
+# 3. Environments
+
+The project defines four environments.
+
+```text
+Development
+
+↓
+
+Testing
+
+↓
+
+Staging
+
+↓
+
+Production
+```
+
+---
+
+## 3.1 Development
+
+Purpose
+
+Local development.
+
+Characteristics
+
+- Hot Reload
+- Debug Tools
+- Development Assets
+- Verbose Logs
+- Mock Services Allowed
+
+---
+
+## 3.2 Testing
+
+Purpose
+
+Automated validation.
+
+Characteristics
+
+- Clean Database
+- Automated Tests
+- CI Pipeline
+- Deterministic Fixtures
+
+---
+
+## 3.3 Staging
+
+Purpose
+
+Production validation.
+
+Characteristics
+
+- Same configuration as Production
+- Production Build
+- Real Database Structure
+- Smaller Dataset
+- Internal Access
+
+---
+
+## 3.4 Production
+
+Purpose
+
+Public service.
+
+Characteristics
+
+- Optimized Build
+- Monitoring
+- Metrics
+- Automatic Backups
+- Debug Disabled
+
+---
+
+# 4. Build Pipeline
+
+Every build follows the same sequence.
+
+```text
+Install Dependencies
+
+↓
+
+Type Check
+
+↓
+
+Lint
+
+↓
+
+Validate Content
+
+↓
+
+Validate Assets
+
+↓
+
+Generate Types
+
+↓
+
+Run Tests
+
+↓
+
+Build Client
+
+↓
+
+Build Server
+
+↓
+
+Package Artifacts
+
+↓
+
+Create Release
+```
+
+Build fails immediately on the first critical error.
+
+---
+
+# 5. Repository Pipeline
+
+Canonical flow
+
+```text
+Developer
+
+↓
+
+Commit
+
+↓
+
+Pull Request
+
+↓
+
+CI
+
+↓
+
+Review
+
+↓
+
+Merge
+
+↓
+
+Release
+```
+
+Direct commits to the main branch are discouraged.
+
+---
+
+# 6. Continuous Integration
+
+CI runs automatically.
+
+Minimum pipeline
+
+```text
+Install
+
+↓
+
+Type Check
+
+↓
+
+Lint
+
+↓
+
+Unit Tests
+
+↓
+
+Integration Tests
+
+↓
+
+Content Validation
+
+↓
+
+Asset Validation
+
+↓
+
+Build
+```
+
+Every step must pass.
+
+---
+
+# 7. Continuous Deployment
+
+Deployment pipeline
+
+```text
+Build
+
+↓
+
+Testing
+
+↓
+
+Staging
+
+↓
+
+Smoke Tests
+
+↓
+
+Manual Approval
+
+↓
+
+Production
+```
+
+Production deployment always requires validation.
+
+---
+
+# 8. Environment Variables
+
+Environment variables are validated during startup.
+
+Examples
+
+```text
+DATABASE_URL
+
+AUTH_SECRET
+
+PORT
+
+NODE_ENV
+
+API_BASE_URL
+
+LOG_LEVEL
+```
+
+Missing variables stop startup.
+
+---
+
+# 9. Secrets
+
+Secrets include
+
+- JWT Secret
+- Database Password
+- API Keys
+- Storage Credentials
+
+Secrets are never committed.
+
+Secrets are never logged.
+
+Secrets are never exposed to clients.
+
+---
+
+# 10. Configuration
+
+Configuration categories
+
+```text
+Technical
+
+Environment
+
+Feature Flags
+
+Gameplay Data
+```
+
+Gameplay data never belongs in environment variables.
+
+---
+
+# 11. Feature Flags
+
+Feature flags enable gradual rollout.
+
+Examples
+
+```text
+Background Progression
+
+Player Island
+
+New Vendor
+
+Experimental UI
+```
+
+Feature flags are temporary.
+
+Permanent features remove their flag.
+
+---
+
+# 12. Build Artifacts
+
+Artifacts include
+
+```text
+Client Bundle
+
+Server Bundle
+
+Content Files
+
+Asset Manifest
+
+Version Metadata
+```
+
+Artifacts are immutable.
+
+---
+
+# 13. Versioning
+
+Project version
+
+```text
+Major.Minor.Patch
+```
+
+Example
+
+```text
+1.2.0
+```
+
+---
+
+## Content Version
+
+Separate from application version.
+
+Example
+
+```text
+2026.08.14
+```
+
+---
+
+## Save Version
+
+Stored in database.
+
+Used for migrations.
+
+---
+
+# 14. Release Metadata
+
+Every release records
+
+```text
+Application Version
+
+Content Version
+
+Commit Hash
+
+Build Date
+
+Migration Version
+```
+
+---
+
+# 15. Database Migrations
+
+Only Prisma migrations.
+
+Workflow
+
+```text
+Schema Change
+
+↓
+
+Migration
+
+↓
+
+Review
+
+↓
+
+CI
+
+↓
+
+Deploy
+```
+
+Never modify production schema manually.
+
+---
+
+# 16. Migration Rules
+
+Migrations must
+
+- Be repeatable
+- Be reversible when possible
+- Preserve player data
+- Be versioned
+
+---
+
+# 17. Save Migration
+
+Player saves migrate automatically.
+
+Flow
+
+```text
+Load Save
+
+↓
+
+Check Version
+
+↓
+
+Apply Required Migrations
+
+↓
+
+Validate
+
+↓
+
+Continue
+```
+
+Migration failure blocks loading.
+
+---
+
+# 18. Asset Packaging
+
+Pipeline
+
+```text
+Source Assets
+
+↓
+
+Optimization
+
+↓
+
+Atlas Generation
+
+↓
+
+Manifest Generation
+
+↓
+
+Compression
+
+↓
+
+Bundle
+```
+
+---
+
+# 19. Content Packaging
+
+Pipeline
+
+```text
+JSON
+
+↓
+
+Validation
+
+↓
+
+Reference Resolution
+
+↓
+
+Registry Generation
+
+↓
+
+Bundle
+```
+
+---
+
+# 20. Compression
+
+Compress
+
+- Images
+- Audio
+- Bundles
+
+Never compress runtime JSON manually.
+
+---
+
+# 21. Caching
+
+Cache
+
+- Assets
+- Client Bundle
+- Static Files
+
+Never cache mutable API responses indefinitely.
+
+---
+
+# 22. CDN
+
+Static assets should be CDN compatible.
+
+Assets use hashed filenames.
+
+---
+
+# 23. Startup Validation
+
+Server startup verifies
+
+- Database
+- Content
+- Assets
+- Environment
+- Versions
+
+Failure prevents startup.
+
+---
+
+# 24. Health Checks
+
+Endpoints
+
+```text
+/live
+
+/ready
+
+/health
+```
+
+Used by orchestration systems.
+
+---
+
+# 25. Logging
+
+Deployment logs include
+
+```text
+Version
+
+Commit
+
+Environment
+
+Migration
+
+Duration
+```
+
+---
+
+# 26. Monitoring
+
+Monitor
+
+```text
+Server
+
+Database
+
+API
+
+Assets
+
+Scheduler
+```
+
+---
+
+# 27. Alerts
+
+Trigger alerts on
+
+- Crash
+- High Latency
+- Database Failure
+- Memory Leak
+- High Error Rate
+
+---
+
+# 28. Backup Strategy
+
+Database
+
+Daily full backup.
+
+Incremental backups when available.
+
+Retention configurable.
+
+---
+
+# 29. Restore Procedure
+
+```text
+Restore Backup
+
+↓
+
+Verify Integrity
+
+↓
+
+Apply Migrations
+
+↓
+
+Smoke Tests
+
+↓
+
+Open Service
+```
+
+---
+
+# 30. Rollback Strategy
+
+Rollback only when
+
+- Critical Bug
+- Failed Migration
+- Corrupted Deployment
+
+Rollback process
+
+```text
+Stop Deployment
+
+↓
+
+Restore Previous Release
+
+↓
+
+Verify
+
+↓
+
+Resume
+```
+
+Database rollback requires dedicated migration strategy.
+
+---
+
+# 31. Maintenance Mode
+
+Maintenance blocks gameplay.
+
+Allows
+
+- Login restriction
+- Migration
+- Deployment
+- Database maintenance
+
+Players receive localized message.
+
+---
+
+# 32. Dependency Management
+
+Dependencies updated regularly.
+
+Before update
+
+- Compatibility
+- Security
+- Tests
+
+All verified.
+
+---
+
+# 33. Security Updates
+
+Critical vulnerabilities deployed immediately.
+
+Patch release preferred.
+
+---
+
+# 34. Release Checklist
+
+Before release
+
+- Tests Pass
+- Build Passes
+- Content Valid
+- Assets Valid
+- Migration Tested
+- Smoke Tests Pass
+- Monitoring Ready
+
+---
+
+# 35. Smoke Tests
+
+After deployment
+
+```text
+Login
+
+↓
+
+Load Character
+
+↓
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Save
+
+↓
+
+Logout
+```
+
+---
+
+# 36. Incident Response
+
+Incident flow
+
+```text
+Detect
+
+↓
+
+Assess
+
+↓
+
+Mitigate
+
+↓
+
+Communicate
+
+↓
+
+Fix
+
+↓
+
+Review
+```
+
+Every production incident produces a postmortem.
+
+---
+
+# 37. Release Frequency
+
+Preferred
+
+Small releases.
+
+Avoid very large deployments.
+
+---
+
+# 38. Documentation
+
+Every release updates
+
+- Changelog
+- Version
+- Migration Notes
+- Deployment Notes
+
+---
+
+# 39. Acceptance Criteria
+
+Deployment pipeline is complete when
+
+- Builds are reproducible.
+- CI validates every commit.
+- CD deploys immutable artifacts.
+- Environment variables are validated.
+- Secrets remain secure.
+- Database migrations are versioned.
+- Save migrations are automatic.
+- Static assets are optimized.
+- Monitoring detects failures.
+- Backups are automated.
+- Rollback is documented.
+- Production is reproducible.
+
+---
+
+# 40. Final Summary
+
+The deployment pipeline follows a fully automated workflow.
+
+```text
+Code
+
+↓
+
+CI
+
+↓
+
+Build
+
+↓
+
+Validation
+
+↓
+
+Package
+
+↓
+
+Staging
+
+↓
+
+Smoke Tests
+
+↓
+
+Production
+
+↓
+
+Monitoring
+```
+
+Every release is immutable, reproducible and versioned.
+
+The operational model prioritizes reliability, recoverability and automation over manual intervention.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

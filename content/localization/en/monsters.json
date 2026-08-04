@@ -1,0 +1,16 @@
+{
+  "language": "en",
+  "namespace": "monsters",
+  "entries": {
+    "monster.wolf_t4.name": "Dire Wolf",
+    "monster.wolf_t4.description": "A fierce predator roaming the forests.",
+    "monster.bandit_t4.name": "Bandit",
+    "monster.bandit_t4.description": "A dangerous outlaw.",
+    "monster.spider_t4.name": "Giant Spider",
+    "monster.spider_t4.description": "A venomous arachnid lurking in caves.",
+    "monster.ore_golem_t4.name": "Ore Golem",
+    "monster.ore_golem_t4.description": "A rocky creature guarding mineral deposits.",
+    "monster.forest_guardian_t4.name": "Forest Guardian",
+    "monster.forest_guardian_t4.description": "An ancient protector of the woodland."
+  }
+}

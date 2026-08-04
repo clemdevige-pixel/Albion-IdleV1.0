@@ -1,0 +1,818 @@
+# 42_SETTINGS_SYSTEM
+
+## Purpose
+
+The Settings System manages all player-configurable options.
+
+It provides a centralized, modular, and extensible framework for storing, applying, validating, and synchronizing game settings.
+
+The system supports:
+
+- Gameplay Settings
+- Graphics Settings
+- Audio Settings
+- Interface Settings
+- Controls
+- Language
+- User Profiles
+- Cloud Synchronization
+- Local Machine Settings
+
+The Settings System contains no gameplay logic.
+
+Its only responsibility is managing user preferences.
+
+---
+
+# Design Goals
+
+The Settings System must be:
+
+- Easy to understand
+- Fast
+- Modular
+- Safe
+- Extensible
+- Platform-independent
+- Account-aware
+- Hardware-aware
+
+Every setting must have predictable behavior.
+
+---
+
+# Core Philosophy
+
+The majority of settings should apply immediately.
+
+Only settings that may negatively affect the player experience require confirmation or restart.
+
+Players should never lose their preferences unexpectedly.
+
+---
+
+# Settings Architecture
+
+```text
+Settings System
+
+├── Gameplay
+├── Graphics
+├── Audio
+├── Controls
+├── Interface
+└── Language
+```
+
+The architecture is intentionally modular.
+
+Additional categories may be added in future versions without changing the existing system.
+
+Examples:
+
+- Accessibility
+- Notifications
+- Privacy
+- Account
+
+---
+
+# Settings Categories
+
+## Gameplay
+
+Contains gameplay preferences.
+
+Examples:
+
+- Confirmation Preferences
+- Combat Display Options
+- Future Auto Features
+
+---
+
+## Graphics
+
+Contains machine-specific rendering options.
+
+Examples:
+
+- Resolution
+- Fullscreen Mode
+- Refresh Rate
+- Graphics Quality
+- FPS Limit
+- VSync
+
+Future:
+
+- Rendering API
+- DLSS
+- FSR
+- Ray Tracing
+
+---
+
+## Audio
+
+Contains volume configuration.
+
+Examples:
+
+- Master Volume
+- Music
+- Effects
+- UI
+- Ambient
+
+---
+
+## Controls
+
+Contains every input configuration.
+
+Examples:
+
+- Keybindings
+- Mouse Sensitivity
+
+Future:
+
+- Controller Settings
+
+---
+
+## Interface
+
+Contains UI preferences.
+
+Examples:
+
+- UI Scale
+- Animation Profile
+- Feedback Level
+- Dashboard Preferences
+
+---
+
+## Language
+
+Contains localization preferences.
+
+Examples:
+
+- Display Language
+
+Future:
+
+- Voice Language
+
+---
+
+# Settings Structure
+
+Each setting exposes metadata.
+
+```text
+Setting
+
+ID
+
+Category
+
+Display Name
+
+Description
+
+Default Value
+
+Current Value
+
+Pending Value
+
+Apply Mode
+
+Validator
+
+Keywords
+```
+
+Every setting follows the same architecture.
+
+---
+
+# Apply Modes
+
+Three apply modes exist.
+
+## Immediate
+
+Changes are applied instantly.
+
+Examples:
+
+- Volume
+- UI Scale
+- Feedback Level
+- Animations
+- Keybindings
+- Language (when supported)
+
+---
+
+## Confirm
+
+Changes are applied temporarily.
+
+The player must confirm.
+
+If confirmation expires, previous values are restored.
+
+Examples:
+
+- Resolution
+- Fullscreen
+- Refresh Rate
+
+---
+
+## Restart Required
+
+Changes are saved immediately.
+
+They become active after restarting the game.
+
+Examples:
+
+- Future Rendering API
+- Future Graphics Backend
+- Future Engine Options
+
+---
+
+# Confirmation Flow
+
+For Confirm settings:
+
+Player changes Resolution
+
+↓
+
+Resolution changes
+
+↓
+
+15 second confirmation dialog
+
+↓
+
+Confirm
+
+↓
+
+Setting saved
+
+or
+
+Timeout
+
+↓
+
+Previous resolution restored
+
+---
+
+# Restart Flow
+
+For Restart Required settings:
+
+Player changes option
+
+↓
+
+Setting saved
+
+↓
+
+Message displayed
+
+"This setting will take effect after restarting the game."
+
+No restart is forced.
+
+---
+
+# Pending Changes Banner
+
+Whenever unapplied changes exist, a global banner is displayed.
+
+Example:
+
+```text
+You have unapplied changes.
+
+[Apply]
+
+[Discard]
+```
+
+The banner disappears automatically after:
+
+- Applying changes
+- Discarding changes
+
+Restart-required settings display:
+
+```text
+Some changes will take effect after restarting the game.
+```
+
+---
+
+# Settings Profiles
+
+The player may create multiple Settings Profiles.
+
+Examples:
+
+Default
+
+High Quality
+
+Low Power
+
+Streaming
+
+Laptop
+
+Custom 1
+
+Custom 2
+
+---
+
+Profiles may be:
+
+- Created
+- Renamed
+- Duplicated
+- Deleted
+- Set as Default
+
+The built-in Default profile cannot be deleted.
+
+---
+
+# Profile Contents
+
+Profiles may contain:
+
+Gameplay
+
+Audio
+
+Controls
+
+Interface
+
+Graphics (where compatible)
+
+Language
+
+Each category stores only its own settings.
+
+---
+
+# Settings Persistence
+
+Settings are divided into two groups.
+
+## Cloud Settings
+
+Synchronized between devices.
+
+Includes:
+
+Gameplay
+
+Controls
+
+Interface
+
+Dashboard Preferences
+
+Feedback Preferences
+
+Animation Profile
+
+Language
+
+Future Accessibility
+
+Future Notifications
+
+---
+
+## Local Settings
+
+Remain specific to each machine.
+
+Includes:
+
+Resolution
+
+Fullscreen
+
+Monitor Selection
+
+Refresh Rate
+
+Graphics Quality
+
+VSync
+
+FPS Limit
+
+Future Rendering Backend
+
+---
+
+# First Login
+
+When logging in on a new machine:
+
+Cloud Settings are downloaded.
+
+↓
+
+Local Settings are created using hardware defaults.
+
+↓
+
+Player immediately recovers personal preferences while maintaining hardware compatibility.
+
+---
+
+# Conflict Resolution
+
+Cloud Settings use:
+
+Last Write Wins
+
+Local Settings never synchronize.
+
+This guarantees deterministic behavior.
+
+---
+
+# Search System
+
+The Settings window includes an instant search bar.
+
+Search is performed on:
+
+Display Name
+
+Category
+
+Keywords
+
+Aliases
+
+Examples:
+
+Searching:
+
+volume
+
+Returns:
+
+Master Volume
+
+Music Volume
+
+UI Volume
+
+Effects Volume
+
+Searching:
+
+ui
+
+Returns:
+
+UI Scale
+
+UI Animation
+
+UI Feedback
+
+Dashboard
+
+---
+
+# Search Metadata
+
+Every setting provides searchable metadata.
+
+```text
+Setting
+
+Display Name
+
+Description
+
+Keywords
+
+Aliases
+
+Category
+```
+
+Adding a new setting automatically makes it searchable.
+
+---
+
+# Validation
+
+Each setting validates its value before being applied.
+
+Examples:
+
+Volume
+
+Minimum:
+
+0
+
+Maximum:
+
+100
+
+Resolution
+
+Must exist on current monitor.
+
+Keybindings
+
+Cannot violate reserved shortcuts.
+
+Invalid values are rejected.
+
+---
+
+# Default Values
+
+Every setting has a default value.
+
+These values are defined by the developers.
+
+Defaults may differ between Cloud and Local settings.
+
+---
+
+# Reset System
+
+The Settings System provides one global reset.
+
+Button:
+
+```text
+Restore Default Settings
+```
+
+Reset affects:
+
+Gameplay
+
+Graphics
+
+Audio
+
+Controls
+
+Interface
+
+Language
+
+Dashboard Preferences
+
+Profiles
+
+Keybindings
+
+Cloud Settings
+
+Local Settings
+
+A confirmation dialog is always required.
+
+---
+
+# No Experimental Menu
+
+The Settings System exposes no experimental options.
+
+Players never see:
+
+Developer Settings
+
+Experimental Features
+
+Debug Menu
+
+Prototype UI
+
+Internal testing features remain developer-only.
+
+---
+
+# User Experience
+
+The Settings window should:
+
+Open instantly
+
+Support keyboard navigation
+
+Support mouse navigation
+
+Provide clear descriptions
+
+Never require unnecessary confirmation
+
+Be readable on every supported resolution
+
+---
+
+# Navigation
+
+Settings are organized using category tabs.
+
+Selecting a category displays its options.
+
+The search bar remains available globally.
+
+---
+
+# Keyboard Support
+
+Every control is fully keyboard accessible.
+
+Navigation supports:
+
+Tab
+
+Shift + Tab
+
+Arrow Keys
+
+Enter
+
+Escape
+
+Mouse interaction remains fully supported.
+
+---
+
+# Keybinding Management
+
+Keybindings use the Input Action System.
+
+Players may:
+
+Rebind
+
+Restore Defaults
+
+Resolve Conflicts
+
+Changes apply immediately.
+
+---
+
+# Language Switching
+
+If supported by the Localization System:
+
+Language changes immediately.
+
+Otherwise:
+
+Language becomes active after restart.
+
+The Apply Mode defines the behavior.
+
+---
+
+# Graphics Safety
+
+Dangerous graphics changes always use confirmation.
+
+The player is never left with an unusable display configuration.
+
+Timeout restores the previous configuration automatically.
+
+---
+
+# Save Behavior
+
+Cloud Settings save automatically.
+
+Local Settings save automatically.
+
+No manual save button exists.
+
+---
+
+# Error Handling
+
+If saving fails:
+
+The player receives a non-intrusive notification.
+
+The previous values remain active.
+
+Settings are never partially corrupted.
+
+---
+
+# Performance Requirements
+
+Settings must load during authentication.
+
+Lookup must be O(1).
+
+Search must remain responsive regardless of the number of settings.
+
+Profiles should switch instantly.
+
+No gameplay frame should depend on Settings processing.
+
+---
+
+# Future Extensions
+
+The architecture supports future additions including:
+
+Accessibility
+
+Notifications
+
+Privacy
+
+Streamer Mode
+
+Cross-platform Profiles
+
+Controller Profiles
+
+Per-character Settings
+
+Advanced Graphics
+
+Without requiring architectural changes.
+
+---
+
+# Responsibilities
+
+The Settings System is responsible for:
+
+- Managing user preferences
+- Validating settings
+- Applying settings
+- Synchronizing Cloud preferences
+- Managing Local preferences
+- Managing profiles
+- Searching settings
+- Resetting preferences
+
+The Settings System is NOT responsible for:
+
+- Rendering
+- Audio playback
+- Input processing
+- UI rendering
+- Localization
+- Authentication
+
+Those responsibilities belong to their respective systems.
+
+---
+
+# Dependencies
+
+Depends on:
+
+- 37_SAVE_SYSTEM
+- 38_AUTHENTICATION_SYSTEM
+- 41_UI_SYSTEM
+
+Referenced by:
+
+- 43_LOCALIZATION_SYSTEM
+- 44_AUDIO_SYSTEM
+- 45_ACCESSIBILITY_SYSTEM
+
+DOCUMENT TERMINÉ

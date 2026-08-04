@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "category": "currencies",
+  "definitions": [
+    {
+      "id": "currency_silver",
+      "enabled": true,
+      "precision": 0,
+      "minValue": 0,
+      "maxValue": 2147483647,
+      "visible": true,
+      "tradable": true,
+      "acquisitionSources": ["Loot", "VendorSale"],
+      "spendingSources": ["Vendor", "Building", "Worker"],
+      "tags": ["currency", "core"]
+    },
+    {
+      "id": "currency_gold",
+      "enabled": false,
+      "precision": 0,
+      "minValue": 0,
+      "maxValue": null,
+      "visible": true,
+      "tradable": false,
+      "tags": ["premium"]
+    }
+  ]
+}

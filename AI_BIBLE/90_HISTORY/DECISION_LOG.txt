@@ -1,0 +1,1624 @@
+## ALBION IDLE — DESIGN DECISION LOG
+
+**Document type:** Design Decision Record
+**Version:** 1.0
+**Status:** ACTIVE
+**Authority level:** Historical reference
+**Primary reader:** Game Director, Claude and future development agents
+**Project owner:** Game Director
+**Last update:** July 2026
+
+---
+
+# 1. PURPOSE OF THIS DOCUMENT
+
+This document records the major structural decisions made during the design of Albion Idle.
+
+Its purpose is to preserve:
+
+* what was decided;
+* why it was decided;
+* which alternatives were rejected;
+* which consequences follow from the decision;
+* whether the decision is locked or still open.
+
+This document is not the primary specification of the game.
+
+The current state of the project is defined by:
+
+> `000_PROJECT_BIBLE.txt`
+
+When a decision recorded here is later modified, the original entry should remain visible and a new decision should supersede it.
+
+Historical decisions must not be silently deleted.
+
+---
+
+# 2. DECISION STATUS DEFINITIONS
+
+## LOCKED
+
+The decision has been validated by the Game Director.
+
+Claude must not modify or reinterpret it without explicit authorization.
+
+## CURRENT DIRECTION
+
+The general approach is validated, but implementation details remain open.
+
+## PROVISIONAL
+
+The decision may be used for prototyping but requires further validation.
+
+## OPEN
+
+No final decision has been made.
+
+## SUPERSEDED
+
+The decision is no longer active and has been replaced by a later decision.
+
+---
+
+# 3. DECISION RECORDS
+
+---
+
+## ADR-GD-001 — Single-player-first game
+
+**Status:** LOCKED
+**Category:** Project identity
+
+### Context
+
+The initial inspiration comes from Albion Online, a multiplayer MMORPG with a player-driven economy, guilds, PvP and trading.
+
+The project needs a clear scope that can be developed and played without reproducing an MMO infrastructure.
+
+### Decision
+
+Albion Idle will be designed as a completely playable single-player game.
+
+No core system may require:
+
+* other players;
+* guilds;
+* PvP;
+* trading;
+* a player marketplace;
+* social participation.
+
+### Rationale
+
+A single-player structure:
+
+* reduces technical scope;
+* enables deterministic progression;
+* supports offline simulation;
+* avoids dependency on an active player population;
+* keeps the hero at the center of the game;
+* makes the project feasible for an AI-assisted development workflow.
+
+### Rejected alternatives
+
+* Required multiplayer economy.
+* Mandatory PvP.
+* Guild-dependent progression.
+* Simulated MMO as the initial objective.
+
+### Consequences
+
+All economic and progression systems must function without external players.
+
+Optional social or multiplayer features may be considered later, but they cannot become a prerequisite for the core game.
+
+---
+
+## ADR-GD-002 — Idle RPG rather than economy simulator
+
+**Status:** LOCKED
+**Category:** Project identity
+
+### Context
+
+Early discussions placed significant emphasis on gathering, refining, crafting, workers and economic progression.
+
+This created a risk that the game would become primarily a production or economy simulator.
+
+### Decision
+
+The project is a:
+
+> Single-player idle RPG inspired by Albion Online.
+
+It is not primarily an economic simulation.
+
+### Rationale
+
+The player fantasy centers on a hero becoming strong enough to conquer increasingly dangerous regions.
+
+Production systems are important, but they exist to prepare and improve the hero.
+
+### Rejected alternatives
+
+* Economic empire simulator.
+* Worker-management game with an optional character.
+* Marketplace-centered idle game.
+
+### Consequences
+
+Every major economic system must ultimately support:
+
+* character power;
+* equipment;
+* consumables;
+* exploration;
+* combat progression.
+
+A system that does not contribute to the hero or the adventure loop should be challenged before implementation.
+
+---
+
+## ADR-GD-003 — One persistent character
+
+**Status:** LOCKED
+**Category:** Character
+
+### Context
+
+Some idle RPGs use multiple heroes, teams, alternate characters or class rosters.
+
+This would increase complexity and dilute the progression identity of the main character.
+
+### Decision
+
+The player controls one persistent character.
+
+There are:
+
+* no alternate characters;
+* no hero roster;
+* no multiple classes;
+* no party-management requirement.
+
+### Rationale
+
+A single character creates:
+
+* stronger attachment;
+* clearer long-term progression;
+* simpler save data;
+* easier mastery tracking;
+* more meaningful equipment decisions;
+* a direct relationship between player choices and character identity.
+
+### Rejected alternatives
+
+* Multiple character slots.
+* Party-based idle combat.
+* Character collection.
+* Traditional class selection.
+
+### Consequences
+
+Build diversity must come from:
+
+* weapons;
+* armor;
+* abilities;
+* passives;
+* equipment;
+* consumables;
+* masteries.
+
+It must not depend on creating another character.
+
+---
+
+## ADR-GD-004 — No global character level
+
+**Status:** LOCKED
+**Category:** Character progression
+
+### Context
+
+A traditional global level provides a simple numerical representation of progression but does not clearly represent what the character has learned.
+
+A level 100 character using an unfamiliar weapon would create unclear progression logic.
+
+### Decision
+
+The character will not have a traditional visible global level.
+
+Progression will be represented through specific masteries.
+
+### Rationale
+
+A mastery-based structure communicates character experience more accurately.
+
+Examples:
+
+* Sword Mastery;
+* Bow Mastery;
+* Mining Mastery;
+* Skinning Mastery;
+* Plate Armor Mastery;
+* Sword Crafting Mastery.
+
+The player improves through the activities they practice.
+
+### Rejected alternatives
+
+* Traditional character level.
+* Level plus mandatory attribute allocation.
+* Class level.
+* Prestige or rebirth level.
+
+### Consequences
+
+The interface must clearly communicate overall progression without relying on a global level.
+
+Any future aggregate score, such as a combat rating, must not function as a hidden traditional level unless explicitly validated.
+
+---
+
+## ADR-GD-005 — Use-based mastery progression
+
+**Status:** LOCKED
+**Category:** Character progression
+
+### Context
+
+Without classes or a global character level, the game requires another system for permanent progression.
+
+### Decision
+
+The character progresses in the activities, weapon families, armor families and professions they use.
+
+### Rationale
+
+This reflects the progression philosophy associated with Albion Online while supporting a flexible single-character RPG.
+
+The player’s history becomes visible through their masteries.
+
+### Rejected alternatives
+
+* Fixed class tree.
+* Universal experience applied to any skill.
+* Permanent class restrictions.
+* Attribute-point allocation as the main progression system.
+
+### Consequences
+
+The mastery system must be modular and data-driven.
+
+The exact list of masteries, their relationships and experience formulas remain to be defined.
+
+---
+
+## ADR-GD-006 — Hybrid character power
+
+**Status:** LOCKED
+**Category:** Character progression
+
+### Context
+
+A purely mastery-based system could make equipment insufficiently important.
+
+A purely equipment-based system could make long-term character progression feel temporary.
+
+### Decision
+
+Character power will use a hybrid model:
+
+* masteries provide permanent progression and unlocks;
+* equipment provides most immediate combat power.
+
+### Rationale
+
+This keeps both long-term progression and crafting relevant.
+
+A player must develop expertise while still producing and maintaining appropriate equipment.
+
+### Rejected alternatives
+
+* Equipment-only power.
+* Mastery-only power.
+* Traditional attribute inflation.
+* Permanent account bonuses that trivialize equipment tiers.
+
+### Consequences
+
+Balance must prevent either equipment or masteries from making the other irrelevant.
+
+A high mastery should improve efficiency and options without automatically invalidating tier progression.
+
+---
+
+## ADR-GD-007 — Hero-centered systems
+
+**Status:** LOCKED
+**Category:** Design philosophy
+
+### Context
+
+Gathering, refining, workers, buildings and island systems can easily become independent management games.
+
+### Decision
+
+All major systems exist to support the hero.
+
+### Rationale
+
+The core fantasy is adventure and character progression.
+
+The player should understand why each production activity matters to their character.
+
+### Rejected alternatives
+
+* Independent worker economy.
+* City builder as the primary game.
+* Production systems optimized only for currency accumulation.
+* Island management disconnected from combat progression.
+
+### Consequences
+
+Workers, buildings and island upgrades must provide clear value to the hero’s progression.
+
+Their complexity must remain subordinate to the central RPG loop.
+
+---
+
+## ADR-GD-008 — Equal importance of combat and economy
+
+**Status:** LOCKED
+**Category:** Core gameplay
+
+### Context
+
+The game combines adventure systems and production systems.
+
+A strong imbalance could cause one half of the design to become secondary or unnecessary.
+
+### Decision
+
+The target conceptual balance is approximately:
+
+* 50% combat and adventure;
+* 50% gathering, refining, crafting and preparation.
+
+### Rationale
+
+Combat and economy should constantly feed each other.
+
+Combat unlocks content and resources.
+
+Production prepares the player for stronger combat.
+
+### Rejected alternatives
+
+* Primarily economic idle game.
+* Primarily combat game with decorative crafting.
+* Crafting as an optional side activity.
+* Combat used only to generate generic currency.
+
+### Consequences
+
+The vertical slice must demonstrate both halves of the loop.
+
+Neither progression path should allow the player to ignore the other permanently.
+
+---
+
+## ADR-GD-009 — Central gameplay loop
+
+**Status:** LOCKED
+**Category:** Core gameplay
+
+### Decision
+
+The central loop is:
+
+Explore
+↓
+Gather
+↓
+Refine
+↓
+Craft
+↓
+Equip
+↓
+Fight
+↓
+Loot
+↓
+Unlock new stages and regions
+↓
+Repeat
+
+### Rationale
+
+This loop directly connects economic preparation with adventure progression.
+
+It ensures that collected resources have a purpose and that combat provides access to further production opportunities.
+
+### Consequences
+
+Features that do not support this loop require explicit justification.
+
+The implementation may allow several activities to occur in different orders, but the macro relationship must remain intact.
+
+---
+
+## ADR-GD-010 — Adventure is the objective
+
+**Status:** LOCKED
+**Category:** Core gameplay
+
+### Context
+
+A crafting-heavy idle game may encourage players to accumulate resources without a meaningful adventure objective.
+
+### Decision
+
+The economy is the means.
+
+Adventure and progression are the objectives.
+
+### Rationale
+
+Resources, crafting and production become more meaningful when they prepare the player for a visible challenge.
+
+### Consequences
+
+The game should regularly present:
+
+* new stages;
+* stronger monsters;
+* bosses;
+* new regions;
+* strategic challenges.
+
+Currency accumulation alone must not be treated as the ultimate goal.
+
+---
+
+## ADR-GD-011 — Semi-idle combat
+
+**Status:** LOCKED
+**Category:** Combat
+
+### Context
+
+Three broad combat models were considered:
+
+* fully automatic combat;
+* semi-idle combat;
+* active RPG combat.
+
+### Decision
+
+Combat will be semi-idle.
+
+Basic attacks and standard behavior occur automatically.
+
+The player may intervene with limited strategic actions.
+
+### Rationale
+
+This structure preserves idle accessibility while giving the player meaningful control.
+
+The player can optimize performance without being required to constantly interact.
+
+### Rejected alternatives
+
+* Completely passive combat without intervention.
+* Real-time action combat requiring continuous attention.
+* Large manually controlled ability rotations.
+
+### Consequences
+
+Manual actions should be useful but not mandatory for ordinary farming.
+
+Hard content may reward intervention, but it must remain compatible with the idle identity.
+
+---
+
+## ADR-GD-012 — Weapon-based abilities
+
+**Status:** LOCKED
+**Category:** Combat
+
+### Context
+
+The game requires combat abilities without introducing classes or a large universal spellbook.
+
+### Decision
+
+Combat abilities are primarily defined by the equipped weapon.
+
+### Rationale
+
+Weapons become strategic identities rather than simple stat containers.
+
+Changing weapon changes:
+
+* available abilities;
+* combat rhythm;
+* strengths;
+* weaknesses;
+* possible solutions to progression walls.
+
+### Rejected alternatives
+
+* Universal character spellbook.
+* Class-based skill trees.
+* Abilities permanently selected independently of equipment.
+
+### Consequences
+
+The ability system must be modular enough for each weapon family to define its own active and passive options.
+
+---
+
+## ADR-GD-013 — Two active abilities and one passive
+
+**Status:** LOCKED AS CURRENT TARGET
+**Category:** Combat
+
+### Context
+
+An early concept considered up to four active abilities.
+
+This was considered potentially excessive for an idle RPG.
+
+### Decision
+
+The current fully developed weapon loadout target is:
+
+* 2 active abilities;
+* 1 passive ability.
+
+### Rationale
+
+The objective is to maximize meaningful choices rather than the number of buttons.
+
+A smaller ability set is:
+
+* easier to understand;
+* easier to automate;
+* easier to balance;
+* compatible with mobile-like idle readability even if the target platform differs;
+* sufficient for build diversity when combined with equipment and consumables.
+
+### Rejected alternatives
+
+* Four or more active abilities as the default.
+* No active abilities.
+* Large MMO-style ability bars.
+
+### Consequences
+
+This value may be refined through combat prototyping, but Claude should use it as the current design target.
+
+---
+
+## ADR-GD-014 — Progressive ability unlocking
+
+**Status:** LOCKED
+**Category:** Combat progression
+
+### Context
+
+Providing every weapon ability immediately would weaken the feeling of specialization.
+
+Restricting abilities only by tier would make mastery less meaningful.
+
+### Decision
+
+Weapon abilities will unlock progressively through a combination of:
+
+* weapon tier;
+* weapon mastery.
+
+Higher-tier weapons may provide access to more usable ability slots.
+
+Mastery may unlock new ability choices or activate additional slots.
+
+### Rationale
+
+The system creates two complementary forms of growth:
+
+* acquiring better equipment;
+* becoming more experienced with a weapon family.
+
+### Rejected alternatives
+
+* Every ability available immediately.
+* Ability access based only on weapon tier.
+* Ability access based only on global character level.
+* Universal ability unlocks unrelated to weapon use.
+
+### Consequences
+
+The exact number of abilities, mastery thresholds and tier requirements remain open.
+
+The implementation must keep these requirements data-driven.
+
+---
+
+## ADR-GD-015 — Minimal base statistics
+
+**Status:** LOCKED
+**Category:** Combat and character systems
+
+### Context
+
+Traditional RPGs often rely on many attributes and derived statistics.
+
+This can increase complexity without necessarily creating better decisions.
+
+### Decision
+
+The game will use a limited number of understandable base statistics.
+
+Possible examples include:
+
+* Health;
+* Attack;
+* Defense;
+* Attack Speed.
+
+### Rationale
+
+Complexity should come from choices and synergies rather than opaque numerical systems.
+
+### Rejected alternatives
+
+* Large attribute sheets.
+* Mandatory Strength, Dexterity and Intelligence structure.
+* Numerous hidden derived statistics.
+
+### Consequences
+
+The final stat list remains open.
+
+Any proposed statistic must have:
+
+* a clear purpose;
+* visible player impact;
+* meaningful interaction with builds;
+* sufficient value to justify its complexity.
+
+---
+
+## ADR-GD-016 — Five danger-zone families
+
+**Status:** LOCKED
+**Category:** World
+
+### Decision
+
+The world is divided into five major danger levels:
+
+1. Blue Zone;
+2. Yellow Zone;
+3. Orange Zone;
+4. Red Zone;
+5. Black Zone.
+
+### Rationale
+
+The color structure provides:
+
+* immediate readability;
+* a clear long-term progression path;
+* escalating risk;
+* recognizable chapters;
+* an intuitive relationship between danger and reward.
+
+### Consequences
+
+Each zone must feel like a substantial chapter rather than a simple resource tier.
+
+The use of Albion-specific terminology will require an intellectual-property review before commercial release.
+
+---
+
+## ADR-GD-017 — Stage-based zone progression
+
+**Status:** LOCKED
+**Category:** World
+
+### Context
+
+An early concept proposed numerical subdivisions such as:
+
+* 1.1;
+* 1.2;
+* 1.3;
+* 5.1;
+* 5.2.
+
+### Decision
+
+Each zone will contain multiple named or numbered stages.
+
+Player-facing labels should use a format similar to:
+
+* Blue Zone — Stage 1;
+* Blue Zone — Stage 2;
+* Yellow Zone — Stage 1.
+
+Decimal stage notation will not be used.
+
+### Rationale
+
+A stage structure is:
+
+* easier to understand;
+* easier to expand;
+* compatible with bosses, events and variants;
+* less restrictive for future content additions.
+
+### Rejected alternatives
+
+* Decimal zone numbering.
+* One continuous farming area per zone.
+* Immediate access to all content in a color zone.
+
+### Consequences
+
+The exact stage count remains open.
+
+Each color zone must contain enough progression to sustain slow optimization and preparation.
+
+---
+
+## ADR-GD-018 — Each zone is a progression chapter
+
+**Status:** LOCKED
+**Category:** World progression
+
+### Context
+
+Moving directly from one resource tier to another would make regions feel temporary and shallow.
+
+### Decision
+
+Each color zone must contain a complete progression arc involving:
+
+* discovery;
+* gathering;
+* crafting;
+* mastery progression;
+* multiple stages;
+* optimization;
+* power checks;
+* a zone boss;
+* access to the next region.
+
+### Rationale
+
+The player should feel that a region has been conquered.
+
+The next zone should be a meaningful reward.
+
+### Consequences
+
+A player obtaining the first item of a new tier must not automatically be ready for the next zone.
+
+The zone should require build completion and optimization.
+
+---
+
+## ADR-GD-019 — General tier progression by zone
+
+**Status:** LOCKED AS GENERAL DIRECTION
+**Category:** World and equipment progression
+
+### Decision
+
+The early progression should broadly resemble:
+
+* Blue Zone: Tier 3 and Tier 4 progression;
+* late Blue Zone: Tier 4 optimization;
+* Yellow Zone: Tier 5 access and progression;
+* later zones: increasingly powerful tiers.
+
+### Rationale
+
+This creates a cycle in which each region introduces a tier and later demands optimization of that tier.
+
+### Consequences
+
+The final tier map remains open.
+
+Tier access and zone access must not be treated as identical milestones.
+
+---
+
+## ADR-GD-020 — Progression requires preparation
+
+**Status:** LOCKED
+**Category:** Progression philosophy
+
+### Decision
+
+A new zone must not become accessible solely because enough time has passed.
+
+The player must demonstrate adequate preparation.
+
+### Rationale
+
+Without this rule, the optimal strategy would often be to wait.
+
+The intended game rewards:
+
+* build optimization;
+* crafting;
+* mastery planning;
+* consumables;
+* strategic adaptation.
+
+### Consequences
+
+Major progression gates should evaluate player readiness through content rather than arbitrary timers.
+
+---
+
+## ADR-GD-021 — Soft walls
+
+**Status:** LOCKED
+**Category:** Progression
+
+### Decision
+
+The game will deliberately use soft progression walls.
+
+A soft wall slows progression without making it impossible.
+
+### Examples
+
+* slow kills;
+* inefficient gathering;
+* poor resource yield;
+* high repair costs;
+* low farming profitability.
+
+### Rationale
+
+Soft walls signal that the player should optimize without completely stopping their activity.
+
+### Consequences
+
+Soft walls should be understandable through performance data and feedback.
+
+---
+
+## ADR-GD-022 — Hard walls
+
+**Status:** LOCKED
+**Category:** Progression
+
+### Decision
+
+The game will deliberately use hard progression walls.
+
+A hard wall blocks meaningful progression until the player improves or changes strategy.
+
+### Examples
+
+* an unbeatable boss;
+* insufficient survivability;
+* insufficient damage;
+* failure to complete a required stage.
+
+### Rationale
+
+Hard walls create meaningful long-term goals and make zone completion satisfying.
+
+### Consequences
+
+Every hard wall must have identifiable and reasonable solutions.
+
+It must not exist only to extend playtime.
+
+---
+
+## ADR-GD-023 — Knowledge walls
+
+**Status:** LOCKED
+**Category:** Progression and combat
+
+### Decision
+
+Some challenges will function as knowledge walls.
+
+The player may possess sufficient total power but use an unsuitable strategy.
+
+### Examples
+
+* wrong weapon;
+* wrong ability;
+* wrong passive;
+* unsuitable armor;
+* wrong consumable;
+* misunderstanding an enemy mechanic.
+
+### Rationale
+
+The game should reward reflection more than blind grinding.
+
+### Consequences
+
+Combat feedback must help the player understand why they failed.
+
+Knowledge walls must not depend on hidden information that cannot reasonably be discovered.
+
+---
+
+## ADR-GD-024 — Power checks
+
+**Status:** LOCKED
+**Category:** Combat progression
+
+### Decision
+
+Important stages, mini-bosses and bosses may function as power checks.
+
+### Possible checks
+
+* damage;
+* survival;
+* sustain;
+* speed;
+* build composition;
+* mastery;
+* consumables;
+* strategy.
+
+### Rationale
+
+Combat should prove whether the player is ready for the next progression step.
+
+### Consequences
+
+Different checks should encourage different improvements.
+
+The answer should not always be more raw damage.
+
+---
+
+## ADR-GD-025 — Scaled death penalties
+
+**Status:** LOCKED
+**Category:** Death and risk
+
+### Decision
+
+Death consequences increase with zone danger.
+
+General direction:
+
+* Blue Zone: no meaningful penalty;
+* Yellow Zone: light penalty;
+* Orange Zone: moderate penalty;
+* Red Zone: severe penalty;
+* Black Zone: very severe penalty.
+
+### Rationale
+
+The risk model should evolve with the player.
+
+Early experimentation should be safe.
+
+Late-game farming should require informed risk management.
+
+### Consequences
+
+Exact penalty values remain open.
+
+Risk must be visible before the player begins an activity.
+
+---
+
+## ADR-GD-026 — Maximum durability loss instead of primary random trashing
+
+**Status:** LOCKED
+**Category:** Death and equipment
+
+### Context
+
+An early concept proposed a random chance for equipped items to be destroyed after death in dangerous zones.
+
+This could create severe frustration, especially during offline progression.
+
+### Decision
+
+Death primarily causes:
+
+* current durability loss;
+* gradual maximum durability loss.
+
+Repeated deaths may eventually cause permanent equipment breakage.
+
+### Rationale
+
+This preserves meaningful risk while allowing the player to see equipment degradation approaching.
+
+The player can choose to:
+
+* repair;
+* retreat;
+* replace equipment;
+* change farming location.
+
+### Rejected alternatives
+
+* Sudden random destruction as the primary death penalty.
+* No meaningful late-game death penalty.
+* Currency-only death penalties.
+
+### Consequences
+
+The permanent breakage threshold and repair rules remain open.
+
+---
+
+## ADR-GD-027 — Eight-hour base offline cap
+
+**Status:** LOCKED
+**Category:** Offline progression
+
+### Decision
+
+The base offline progression duration is capped at eight hours.
+
+### Rationale
+
+Eight hours:
+
+* rewards daily return;
+* accommodates sleep or work periods;
+* prevents unlimited passive accumulation;
+* provides a clear progression upgrade opportunity.
+
+### Consequences
+
+The simulation must stop or limit rewards beyond the configured cap.
+
+The exact calculation model remains to be defined.
+
+---
+
+## ADR-GD-028 — Expandable offline duration
+
+**Status:** LOCKED
+**Category:** Offline progression and island
+
+### Decision
+
+The offline cap may be increased through permanent progression.
+
+Possible sources include:
+
+* island improvements;
+* housing;
+* beds;
+* buildings;
+* trophies.
+
+### Rationale
+
+Offline capacity becomes a meaningful long-term reward.
+
+It also connects the island to the hero’s progression.
+
+### Consequences
+
+Possible future thresholds include 10, 12, 16 or 24 hours, but no values beyond the base eight hours are currently final.
+
+---
+
+## ADR-GD-029 — Offline progression executes prior preparation
+
+**Status:** LOCKED
+**Category:** Offline progression
+
+### Decision
+
+Offline progression should execute a strategy configured by the player before leaving.
+
+### Possible activities
+
+* combat farming;
+* gathering;
+* refining;
+* crafting;
+* worker tasks.
+
+### Rationale
+
+Automation should carry out player decisions rather than independently decide the optimal strategy.
+
+### Consequences
+
+The player must have a clear way to select or configure the offline activity.
+
+The exact activity list remains open.
+
+---
+
+## ADR-GD-030 — Frequent rewards, slow macro power
+
+**Status:** LOCKED
+**Category:** Reward cadence
+
+### Decision
+
+Long-term power progression may be slow, but rewards must occur frequently.
+
+### Rationale
+
+Idle games require regular feedback and anticipation.
+
+A long tier progression can remain satisfying when the player frequently obtains:
+
+* mastery progress;
+* loot;
+* recipes;
+* abilities;
+* stages;
+* enemies;
+* upgrades;
+* efficiency improvements.
+
+### Consequences
+
+Balancing must distinguish between:
+
+* reward frequency;
+* power growth speed.
+
+These two concepts must not be treated as the same value.
+
+---
+
+## ADR-GD-031 — Data-driven content
+
+**Status:** LOCKED
+**Category:** Technical architecture
+
+### Decision
+
+Gameplay content and balancing values should be stored as data whenever reasonable.
+
+### Included content
+
+* items;
+* resources;
+* recipes;
+* monsters;
+* bosses;
+* stages;
+* zones;
+* loot;
+* abilities;
+* masteries;
+* buildings;
+* workers;
+* events.
+
+### Rationale
+
+The project is expected to evolve through many balancing and content iterations.
+
+Data-driven systems allow content to change without rewriting core code.
+
+### Consequences
+
+Claude must separate:
+
+* system logic;
+* content definitions;
+* balancing values.
+
+Temporary prototype values must not become hidden constants scattered through the codebase.
+
+---
+
+## ADR-GD-032 — Modular architecture
+
+**Status:** LOCKED
+**Category:** Technical architecture
+
+### Decision
+
+Major game systems must remain modular and communicate through clear interfaces.
+
+### Rationale
+
+The project will be developed incrementally with AI assistance.
+
+Modularity reduces regressions and allows systems to be replaced or extended.
+
+### Consequences
+
+The initial architecture should separate at least:
+
+* character;
+* inventory;
+* items;
+* equipment;
+* masteries;
+* abilities;
+* monsters;
+* combat;
+* world;
+* stages;
+* loot;
+* gathering;
+* refining;
+* crafting;
+* save;
+* offline simulation.
+
+---
+
+## ADR-GD-033 — Vertical slice before full production
+
+**Status:** LOCKED
+**Category:** Production
+
+### Decision
+
+Development begins with a limited playable vertical slice focused primarily on the Blue Zone.
+
+### Rationale
+
+The project must first prove:
+
+* that the core loop is enjoyable;
+* that combat and production interact correctly;
+* that progression walls are satisfying;
+* that the architecture supports offline simulation;
+* that Claude can extend the system safely.
+
+### Rejected alternatives
+
+* Designing and implementing all five zones before testing.
+* Building complete workers and island systems before validating combat.
+* Producing final art before the gameplay loop is proven.
+
+### Consequences
+
+Prototype and vertical-slice requirements must be clearly distinguished from future production features.
+
+---
+
+## ADR-GD-034 — Documentation follows implementation needs
+
+**Status:** LOCKED
+**Category:** Documentation strategy
+
+### Context
+
+A traditional GDD is often organized by conceptual topic.
+
+Claude requires specifications that can be translated directly into implementation steps.
+
+### Decision
+
+The documentation will be written in an order that supports development.
+
+Each system document should distinguish:
+
+* prototype requirements;
+* vertical-slice requirements;
+* later production requirements;
+* future possibilities;
+* dependencies;
+* unresolved questions.
+
+### Rationale
+
+This reduces ambiguity and helps prevent Claude from overbuilding systems.
+
+### Consequences
+
+Documentation may not follow the order in which a player encounters systems.
+
+The documentation order may change after the technical stack is selected.
+
+---
+
+## ADR-GD-035 — Project Bible as highest authority
+
+**Status:** LOCKED
+**Category:** Documentation governance
+
+### Decision
+
+`000_PROJECT_BIBLE.txt` is the highest-level source of truth for the project.
+
+### Rationale
+
+The project requires one stable constitution that prevents contradictions between future documents.
+
+### Consequences
+
+When another document conflicts with the Project Bible:
+
+1. the conflict must be reported;
+2. the Project Bible takes priority;
+3. Claude must not silently choose an alternative;
+4. the Game Director decides whether the Bible should change.
+
+---
+
+## ADR-GD-036 — Intellectual-property caution
+
+**Status:** LOCKED
+**Category:** Production and legal risk
+
+### Context
+
+The project is explicitly inspired by Albion Online and currently uses Albion terminology during internal design.
+
+### Decision
+
+The project must avoid blindly copying protected assets, text, code, audio, visual designs or proprietary data.
+
+### Rationale
+
+A commercially released project must have an original identity and avoid avoidable intellectual-property risk.
+
+### Consequences
+
+Internal terminology and references are provisional from a commercial perspective.
+
+A dedicated intellectual-property review will be required before public release.
+
+---
+
+# 4. OPEN DECISIONS
+
+The following structural questions remain unresolved and require later design work.
+
+## Character and progression
+
+* Exact mastery categories.
+* Relationships between general and specialized masteries.
+* Mastery experience curves.
+* Maximum mastery levels.
+* Armor mastery rules.
+* Whether a visible aggregate combat rating exists.
+* Final character statistics.
+
+## Combat
+
+* Exact combat timeline.
+* Ability cooldown rules.
+* Manual and automatic ability activation.
+* Target-selection logic.
+* Potion activation rules.
+* Ability-slot unlock thresholds.
+* Passive-selection rules.
+* Enemy mechanics.
+* Status effects.
+* Damage formulas.
+* Healing and sustain systems.
+* Failure feedback.
+
+## Equipment
+
+* Equipment slots.
+* Weapon families.
+* Armor families.
+* Item quality.
+* Item rarity.
+* Enchantments or equivalent systems.
+* Repair rules.
+* Current durability formulas.
+* Maximum durability loss formulas.
+* Permanent breakage threshold.
+
+## World
+
+* Number of stages per zone.
+* Stage types.
+* Internal stage difficulty levels.
+* Tier distribution.
+* Resources by zone.
+* Bestiary by zone.
+* Bosses.
+* Cities and settlements.
+* Dungeons.
+* Random events.
+* Environmental mechanics.
+
+## Economy
+
+* Resource families.
+* Gathering professions.
+* Refining chains.
+* Crafting recipes.
+* Crafting times.
+* Production costs.
+* Currency.
+* Economic sinks.
+* Consumables.
+* Workers.
+* Island buildings.
+
+## Offline systems
+
+* Exact offline simulation method.
+* Supported offline activities.
+* Offline combat death behavior.
+* Repeated deaths.
+* Automatic retreat.
+* Durability safety thresholds.
+* Offline consumable usage.
+* Random-event simulation.
+* Calculation performance.
+
+## Technical and production
+
+* Game engine.
+* Programming language.
+* Target platform.
+* Data format.
+* Save format.
+* Repository structure.
+* Testing strategy.
+* UI framework.
+* Art pipeline.
+* Audio pipeline.
+* Versioning process.
+* Deployment process.
+
+---
+
+# 5. SUPERSEDED DIRECTIONS
+
+## SUP-GD-001 — Economy empire as the central fantasy
+
+**Status:** SUPERSEDED
+**Superseded by:** ADR-GD-002 and ADR-GD-007
+
+### Previous direction
+
+The player could have been primarily responsible for developing an economic empire.
+
+### Reason for change
+
+The Game Director clarified that the character must remain the center of the experience.
+
+The economy now exists to strengthen the hero.
+
+---
+
+## SUP-GD-002 — Traditional visible character level
+
+**Status:** SUPERSEDED
+**Superseded by:** ADR-GD-004 and ADR-GD-005
+
+### Previous direction
+
+The character could have used a standard global RPG level.
+
+### Reason for change
+
+A global level did not accurately represent the activities and equipment used by the character.
+
+Masteries provide a clearer identity.
+
+---
+
+## SUP-GD-003 — Decimal stage numbering
+
+**Status:** SUPERSEDED
+**Superseded by:** ADR-GD-017
+
+### Previous direction
+
+Stages could have been represented as:
+
+* 1.1;
+* 1.2;
+* 1.3;
+* 5.1;
+* 5.2.
+
+### Reason for change
+
+A direct stage structure is clearer and easier to expand.
+
+---
+
+## SUP-GD-004 — Primary random item destruction on death
+
+**Status:** SUPERSEDED
+**Superseded by:** ADR-GD-026
+
+### Previous direction
+
+Items could have had a direct random chance to be trashed after death, with increasingly severe probabilities in dangerous zones.
+
+### Reason for change
+
+Sudden destruction could create disproportionate frustration, especially during offline farming.
+
+Gradual maximum durability loss preserves risk while making failure more predictable.
+
+---
+
+## SUP-GD-005 — Four active weapon abilities
+
+**Status:** SUPERSEDED AS DEFAULT TARGET
+**Superseded by:** ADR-GD-013
+
+### Previous direction
+
+Higher-tier weapons could eventually support four active abilities.
+
+### Reason for change
+
+Four active abilities may create unnecessary complexity for a semi-idle RPG.
+
+The current target is two active abilities and one passive.
+
+---
+
+# 6. DOCUMENT GOVERNANCE
+
+New major decisions should be added using the following structure:
+
+```text
+ADR-GD-XXX — Decision title
+
+Status:
+Category:
+Date:
+
+Context:
+
+Decision:
+
+Rationale:
+
+Rejected alternatives:
+
+Consequences:
+
+Related documents:
+```
+
+When changing a locked decision:
+
+1. Do not erase the original record.
+2. Add a new ADR.
+3. Mark the previous ADR as `SUPERSEDED`.
+4. Reference the new ADR.
+5. Update the Project Bible.
+6. Update affected system documents.
+7. Add an entry to the project changelog.
+
+---
+
+# 7. CURRENT AUTHORITY STATE
+
+The following document is currently validated and locked:
+
+> `000_PROJECT_BIBLE.txt` — Version 1.0
+
+This Decision Log records the design history that produced that document.
+
+Future system documents must remain compatible with both the active Project Bible and all non-superseded locked decisions recorded here.
+
+---
+
+# END OF DOCUMENT

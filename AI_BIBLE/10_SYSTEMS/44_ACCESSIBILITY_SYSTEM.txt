@@ -1,0 +1,595 @@
+# 44. ACCESSIBILITY SYSTEM
+
+## Purpose
+
+The Accessibility System ensures that the game can be comfortably played by the widest possible audience, regardless of physical, visual, auditory, or cognitive limitations.
+
+Accessibility never modifies gameplay balance.
+
+Its purpose is to improve usability and comfort while preserving game integrity.
+
+---
+
+# Design Goals
+
+The Accessibility System is built around the following principles:
+
+- Player comfort first.
+- No gameplay advantages.
+- Fully optional.
+- Instant configuration.
+- Persistent across devices.
+- Modular and future-proof.
+- Compatible with all UI systems.
+- Compatible with future content.
+
+---
+
+# Accessibility Philosophy
+
+Accessibility is considered a core feature rather than an optional addition.
+
+Every accessibility option should:
+
+- improve comfort,
+- reduce fatigue,
+- reduce unnecessary frustration,
+- never trivialize gameplay,
+- remain optional.
+
+---
+
+# Accessibility Categories
+
+The system is divided into several categories.
+
+## Visual
+
+- UI Scale
+- Text Scale
+- High Contrast Mode
+- Color Blind Filters
+- Cursor Size
+- Flash Reduction
+- Motion Reduction
+
+---
+
+## Controls
+
+- Full Key Remapping
+- Toggle / Hold Options
+- Long Press Duration
+- Double Click Timing
+- Keyboard Navigation
+
+---
+
+## Audio
+
+- Master Volume
+- Music Volume
+- UI Volume
+- Combat Volume
+- Ambient Volume
+- Notification Volume
+- Mono Audio
+
+---
+
+## Gameplay Comfort
+
+- Tooltip Delay
+- Auto Pause Options
+- Input Buffer Options
+- Confirmation Dialog Behavior
+- Notification Density
+- Reduced Animation Profile
+
+---
+
+## Future
+
+Prepared for:
+
+- Subtitle System
+- Screen Reader
+- Voice Navigation
+- Adaptive Controllers
+- Regional Accessibility Standards
+
+---
+
+# Accessibility Profiles
+
+Players may save multiple Accessibility Profiles.
+
+Example:
+
+```
+Default
+
+High Visibility
+
+One-Handed
+
+Reduced Motion
+
+Streamer
+
+Custom
+```
+
+Profiles are stored independently from graphics settings.
+
+---
+
+# Visual Accessibility
+
+## UI Scale
+
+Players may scale the complete interface.
+
+Range:
+
+75%
+
+↓
+
+200%
+
+Scaling affects:
+
+- HUD
+- Inventory
+- Dashboard
+- Settings
+- Tooltips
+- Notifications
+- Windows
+
+Gameplay world rendering is unaffected.
+
+---
+
+# Text Scaling
+
+Players may independently increase text size.
+
+Example:
+
+Small
+
+Normal
+
+Large
+
+Extra Large
+
+Only text elements change.
+
+Icons remain unchanged.
+
+---
+
+# High Contrast Mode
+
+High Contrast Mode increases readability.
+
+Adjustments include:
+
+- darker backgrounds
+- brighter text
+- stronger borders
+- clearer icons
+- higher button visibility
+
+No gameplay information changes.
+
+---
+
+# Color Blind Support
+
+Supported modes:
+
+- Protanopia
+- Deuteranopia
+- Tritanopia
+
+The UI avoids relying exclusively on color.
+
+Important information also uses:
+
+- icons
+- shapes
+- labels
+- animations
+
+---
+
+# Cursor Size
+
+Players may increase cursor size.
+
+Options:
+
+- Small
+- Normal
+- Large
+- Extra Large
+
+Cursor visibility is never reduced.
+
+---
+
+# Flash Reduction
+
+Flash Reduction decreases:
+
+- white flashes
+- hit flashes
+- critical strike flashes
+- screen bloom bursts
+
+Designed for photosensitive players.
+
+---
+
+# Motion Reduction
+
+Motion Reduction decreases:
+
+- camera movement
+- UI animations
+- screen transitions
+- particle movement
+- shake intensity
+
+The game remains visually responsive.
+
+---
+
+# Screen Shake
+
+Players may configure:
+
+- 100%
+- 75%
+- 50%
+- 25%
+- Disabled
+
+Combat calculations remain identical.
+
+---
+
+# Animation Reduction
+
+The system integrates with Animation Profiles.
+
+Options:
+
+Standard
+
+Reduced
+
+Disabled
+
+Reduced mode keeps gameplay readable while minimizing unnecessary movement.
+
+---
+
+# Audio Accessibility
+
+Players control every major audio category independently.
+
+Separate sliders exist for:
+
+- Master
+- Music
+- UI
+- Combat
+- Ambient
+- Notifications
+
+---
+
+# Mono Audio
+
+Stereo output may be converted into mono.
+
+Useful for players using one speaker or experiencing unilateral hearing loss.
+
+---
+
+# Visual Notification Redundancy
+
+Important events are never communicated only through sound.
+
+Example:
+
+Worker completed
+
+↓
+
+Audio notification
+
++
+
+Notification Center
+
++
+
+Visual popup
+
++
+
+Dashboard badge
+
+Every important event has multiple feedback channels.
+
+---
+
+# Keyboard Accessibility
+
+Every action supports complete key remapping.
+
+No gameplay action requires a fixed key.
+
+Navigation supports:
+
+- keyboard
+- mouse
+- mixed input
+
+---
+
+# Hold vs Toggle
+
+Supported actions may switch between:
+
+Hold
+
+or
+
+Toggle
+
+Examples:
+
+- Continuous gathering
+- Window pinning
+- Future abilities
+
+---
+
+# Long Press Duration
+
+Players may customize long-press recognition.
+
+Example:
+
+100 ms
+
+250 ms
+
+500 ms
+
+750 ms
+
+1000 ms
+
+---
+
+# Double Click Timing
+
+Players may configure acceptable double-click intervals.
+
+This reduces input precision requirements.
+
+---
+
+# Keyboard Navigation
+
+Every menu supports navigation without using the mouse.
+
+Navigation includes:
+
+- Tab
+- Shift+Tab
+- Arrow Keys
+- Enter
+- Escape
+- Space
+
+Focus indicators remain clearly visible.
+
+---
+
+# Tooltip Delay
+
+Players choose when tooltips appear.
+
+Options:
+
+Instant
+
+250 ms
+
+500 ms
+
+1000 ms
+
+Disabled
+
+---
+
+# Confirmation Dialog Behavior
+
+Players may reduce confirmation dialogs for low-risk actions.
+
+Dangerous actions always require confirmation.
+
+Examples:
+
+- Item destruction
+- Permanent deletion
+- High-value purchases
+
+---
+
+# Input Buffer
+
+Input buffering duration may be adjusted.
+
+Purpose:
+
+Reduce missed inputs caused by hardware latency or accessibility needs.
+
+Gameplay timing remains unchanged.
+
+---
+
+# Notification Density
+
+Integrated with Notification System.
+
+Options:
+
+Verbose
+
+Standard
+
+Minimal
+
+Silent
+
+Players choose their preferred amount of information.
+
+---
+
+# Accessibility Profiles Storage
+
+Accessibility profiles include:
+
+- UI Scale
+- Text Scale
+- Motion
+- Audio
+- Cursor
+- Controls
+- Notification preferences
+
+Profiles synchronize through cloud settings.
+
+---
+
+# Future Subtitle System
+
+Prepared architecture supports:
+
+- Subtitle Size
+- Subtitle Background
+- Speaker Colors
+- Subtitle Position
+- Future Voice Localization
+
+The current game contains no voiced dialogue.
+
+---
+
+# Future Screen Reader Support
+
+Architecture reserves support for future screen readers.
+
+Potential support includes:
+
+- menu reading
+- button descriptions
+- inventory navigation
+- notification reading
+
+Implementation is postponed until required.
+
+---
+
+# Compatibility
+
+Accessibility options integrate with:
+
+- UI System
+- Settings System
+- Localization System
+- Notification System
+- Animation System
+- Audio System
+- Save System
+
+No duplicated configuration exists.
+
+---
+
+# Performance
+
+Accessibility settings are lightweight.
+
+Most options:
+
+- modify rendering parameters,
+- modify UI layout,
+- modify animation profiles,
+- modify audio routing.
+
+No measurable gameplay performance impact is expected.
+
+---
+
+# Save Synchronization
+
+Accessibility preferences are synchronized through the cloud.
+
+Players keep identical accessibility settings across devices.
+
+Hardware-specific graphics settings remain local.
+
+---
+
+# Developer Guidelines
+
+Every new feature added to the game should follow these rules:
+
+- Never communicate information only through color.
+- Never communicate information only through audio.
+- Support keyboard navigation whenever applicable.
+- Respect UI scaling.
+- Respect text scaling.
+- Respect animation profiles.
+- Respect reduced motion settings.
+- Respect localization expansion.
+
+Accessibility is considered during feature design, not after implementation.
+
+---
+
+# Future Expansion
+
+The system is prepared for:
+
+- Screen Reader Integration
+- Voice Commands
+- Controller Accessibility
+- Adaptive Controllers
+- Eye Tracking
+- Regional Accessibility Certifications
+- Accessibility Testing Suite
+
+No architectural redesign will be required.
+
+---
+
+# Summary
+
+The Accessibility System provides a comprehensive and scalable framework that improves comfort, readability, and usability without altering gameplay balance.
+
+It supports configurable visual, audio, input, and interface accessibility features, integrates seamlessly with all existing systems, synchronizes player preferences across devices, and is designed to evolve with future accessibility technologies while maintaining a consistent player experience.
+
+DOCUMENT TERMINÉ

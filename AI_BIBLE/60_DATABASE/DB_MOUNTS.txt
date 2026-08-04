@@ -1,0 +1,958 @@
+# MOUNT DATABASE
+
+Version: 1.0
+
+This document defines every usable mount available in Version 1.
+
+Each mount references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored directly in this document.
+
+Movement speed, carrying capacity, durability, recovery costs and progression
+values are inherited from the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Mount ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the mounted creature sprite.
+
+Icon ID:
+Identifier used in the inventory, collection and stable interfaces.
+
+Scaling Profile:
+Defines movement speed, carrying capacity, durability and resistance.
+
+Upgrade Profile:
+Defines the mount's possible progression and upgrade requirements.
+
+Acquisition Profile:
+Defines how the mount is obtained.
+
+Recovery Profile:
+Defines the cost and conditions required to recover the mount.
+
+Ability Profile:
+Defines any passive or active mount-specific effect.
+
+All mount variants inherit the same base entry.
+
+Generated identifiers follow this format:
+
+MNT-0001-T2
+MNT-0001-T3
+MNT-0001-T4
+MNT-0001-T5
+MNT-0001-T6
+MNT-0001-T7
+MNT-0001-T8
+
+Generated assets follow the same format.
+
+Example:
+
+Gameplay Item:
+MNT-0001-T6
+
+Mounted Asset:
+MNT-0001-T6
+
+Inventory Icon:
+ICO-MNT-0001-T6
+
+Display Name:
+Horse T6
+
+---
+
+# ============================================================================
+# HORSE
+# ============================================================================
+
+## MNT-0001
+
+Name:
+Horse
+
+Asset ID:
+MNT-0001
+
+Icon ID:
+ICO-MNT-0001
+
+Category:
+Mount
+
+Mount Family:
+Horse
+
+Mount Role:
+Standard Travel
+
+Scaling Profile:
+MOUNT_STANDARD_SPEED
+
+Upgrade Profile:
+UPGRADE_HORSE_STANDARD
+
+Acquisition Profile:
+ACQUIRE_HORSE_STANDARD
+
+Recovery Profile:
+RECOVERY_MOUNT_STANDARD
+
+Ability Profile:
+PASSIVE_MOUNT_TRAVEL
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Balanced movement speed and carrying capacity.
+
+Primary Strength:
+General-purpose travel.
+
+Primary Weakness:
+No specialized defensive or carrying bonus.
+
+Tradable:
+Yes
+
+Upgradeable:
+Yes
+
+Recoverable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ARMORED HORSE
+# ============================================================================
+
+## MNT-0002
+
+Name:
+Armored Horse
+
+Asset ID:
+MNT-0002
+
+Icon ID:
+ICO-MNT-0002
+
+Category:
+Mount
+
+Mount Family:
+Horse
+
+Mount Role:
+Defensive Travel
+
+Scaling Profile:
+MOUNT_ARMORED_SPEED
+
+Upgrade Profile:
+UPGRADE_ARMORED_HORSE
+
+Acquisition Profile:
+ACQUIRE_ARMORED_HORSE
+
+Recovery Profile:
+RECOVERY_MOUNT_ARMORED
+
+Ability Profile:
+PASSIVE_MOUNT_ARMOR
+
+Tier Range:
+T4-T8
+
+Base Behaviour:
+Moderate movement speed with increased durability.
+
+Primary Strength:
+Resistance to interruption and damage.
+
+Primary Weakness:
+Lower speed than standard travel mounts.
+
+Tradable:
+Yes
+
+Upgradeable:
+Yes
+
+Recoverable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# OX
+# ============================================================================
+
+## MNT-0003
+
+Name:
+Ox
+
+Asset ID:
+MNT-0003
+
+Icon ID:
+ICO-MNT-0003
+
+Category:
+Mount
+
+Mount Family:
+Ox
+
+Mount Role:
+Transport
+
+Scaling Profile:
+MOUNT_HEAVY_CARRY
+
+Upgrade Profile:
+UPGRADE_OX_STANDARD
+
+Acquisition Profile:
+ACQUIRE_OX_STANDARD
+
+Recovery Profile:
+RECOVERY_MOUNT_HEAVY
+
+Ability Profile:
+PASSIVE_MOUNT_CARRY
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Slow movement speed with very high carrying capacity.
+
+Primary Strength:
+Resource and item transportation.
+
+Primary Weakness:
+Low movement speed.
+
+Tradable:
+Yes
+
+Upgradeable:
+Yes
+
+Recoverable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# DIREWOLF
+# ============================================================================
+
+## MNT-0004
+
+Name:
+Direwolf
+
+Asset ID:
+MNT-0004
+
+Icon ID:
+ICO-MNT-0004
+
+Category:
+Mount
+
+Mount Family:
+Wolf
+
+Mount Role:
+Fast Travel
+
+Scaling Profile:
+MOUNT_FAST_SPEED
+
+Upgrade Profile:
+UPGRADE_DIREWOLF
+
+Acquisition Profile:
+ACQUIRE_DIREWOLF
+
+Recovery Profile:
+RECOVERY_MOUNT_RARE
+
+Ability Profile:
+PASSIVE_MOUNT_SPRINT
+
+Tier Range:
+T5-T8
+
+Base Behaviour:
+Very high movement speed with low carrying capacity.
+
+Primary Strength:
+Rapid travel and encounter progression.
+
+Primary Weakness:
+Low durability and transport capacity.
+
+Tradable:
+Yes
+
+Upgradeable:
+Yes
+
+Recoverable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# WAR BEAR
+# ============================================================================
+
+## MNT-0005
+
+Name:
+War Bear
+
+Asset ID:
+MNT-0005
+
+Icon ID:
+ICO-MNT-0005
+
+Category:
+Mount
+
+Mount Family:
+Bear
+
+Mount Role:
+Heavy Defensive Transport
+
+Scaling Profile:
+MOUNT_HEAVY_DEFENSE
+
+Upgrade Profile:
+UPGRADE_WAR_BEAR
+
+Acquisition Profile:
+ACQUIRE_WAR_BEAR
+
+Recovery Profile:
+RECOVERY_MOUNT_RARE_HEAVY
+
+Ability Profile:
+PASSIVE_MOUNT_FORTITUDE
+
+Tier Range:
+T6-T8
+
+Base Behaviour:
+High durability and carrying capacity with low movement speed.
+
+Primary Strength:
+Defensive transport and high-value resource hauling.
+
+Primary Weakness:
+Very slow movement.
+
+Tradable:
+Yes
+
+Upgradeable:
+Yes
+
+Recoverable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MOUNT ROLE RULES
+# ============================================================================
+
+## Standard Travel
+
+Purpose:
+General progression and world travel.
+
+Expected Strengths:
+Balanced speed
+Balanced durability
+Balanced carrying capacity
+
+Expected Weaknesses:
+No specialization
+
+Associated Mount:
+Horse
+
+---
+
+## Defensive Travel
+
+Purpose:
+Safer progression through dangerous locations.
+
+Expected Strengths:
+High durability
+Interruption resistance
+Damage resistance
+
+Expected Weaknesses:
+Reduced speed
+Reduced carrying capacity
+
+Associated Mount:
+Armored Horse
+
+---
+
+## Transport
+
+Purpose:
+Moving large quantities of resources and equipment.
+
+Expected Strengths:
+Very high carrying capacity
+Good durability
+
+Expected Weaknesses:
+Low speed
+Long recovery time
+
+Associated Mount:
+Ox
+
+---
+
+## Fast Travel
+
+Purpose:
+Reducing travel and encounter transition time.
+
+Expected Strengths:
+Very high speed
+Fast acceleration
+
+Expected Weaknesses:
+Low durability
+Low carrying capacity
+
+Associated Mount:
+Direwolf
+
+---
+
+## Heavy Defensive Transport
+
+Purpose:
+Transporting valuable resources through high-risk content.
+
+Expected Strengths:
+Very high durability
+High carrying capacity
+Strong resistance
+
+Expected Weaknesses:
+Very low speed
+High recovery cost
+
+Associated Mount:
+War Bear
+
+---
+
+# ============================================================================
+# EQUIPMENT RULES
+# ============================================================================
+
+A player may own multiple mounts.
+
+A player may equip only one active mount at a time.
+
+The active mount determines:
+
+- World travel speed
+- Encounter transition speed
+- Carrying capacity
+- Mount durability
+- Mount passive effect
+- Recovery cost
+
+A mount does not occupy a standard character equipment slot.
+
+Mounts are managed through:
+
+- Character equipment interface
+- Mount collection interface
+- Stable Master service
+
+A mount may not be changed during active combat.
+
+A mount may not grant direct weapon damage unless explicitly defined by a
+future combat mount system.
+
+Version 1 mounts are utility mounts.
+
+---
+
+# ============================================================================
+# COMBAT RULES
+# ============================================================================
+
+Mounts are not directly controlled during standard combat.
+
+Mounts do not perform basic attacks.
+
+Mounts do not use autonomous combat abilities.
+
+Mount bonuses may affect combat indirectly through:
+
+- Encounter start timing
+- Initial defensive shield
+- Retreat speed
+- Carrying capacity
+- Travel efficiency
+- Resource gathering efficiency
+
+Any combat-related mount effect must be defined by its Ability Profile.
+
+A mount cannot replace the player's armor, weapon or off-hand statistics.
+
+---
+
+# ============================================================================
+# DURABILITY RULES
+# ============================================================================
+
+Mount durability represents the mount's resistance to damage or defeat during
+dangerous activities.
+
+Durability may be reduced by:
+
+- Player defeat
+- Failed expedition
+- Dangerous biome travel
+- Special encounter mechanic
+- Mount-specific event
+
+Durability does not decrease during safe town interactions.
+
+At zero durability, the mount becomes unavailable.
+
+An unavailable mount must be recovered through the Stable Master.
+
+Durability values are defined in **DB_PROGRESS_RULES.md**.
+
+---
+
+# ============================================================================
+# RECOVERY RULES
+# ============================================================================
+
+Mount recovery requires one or more of the following:
+
+- Silver
+- Time
+- Recovery material
+- Stable service
+- Progression currency
+
+Recovery does not create a new mount.
+
+Recovery restores the existing canonical mount instance.
+
+Recovery costs depend on:
+
+- Mount tier
+- Mount role
+- Mount rarity
+- Mount durability
+- Recovery Profile
+
+Recovery values are defined in **DB_ECONOMY.md**.
+
+---
+
+# ============================================================================
+# CARRYING CAPACITY RULES
+# ============================================================================
+
+Mount carrying capacity increases the maximum inventory weight available to
+the player.
+
+The carrying bonus is active only while the mount is equipped.
+
+The bonus remains active during gathering and travel.
+
+The bonus may become inactive after mount defeat if defined by the gameplay
+systems.
+
+Carrying capacity does not increase:
+
+- Bank storage
+- Mail storage
+- Task reward storage
+- Account-wide storage
+
+Capacity values are generated through the mount's Scaling Profile.
+
+---
+
+# ============================================================================
+# MOVEMENT RULES
+# ============================================================================
+
+Mount movement speed affects:
+
+- World map travel duration
+- Expedition transition duration
+- Automated travel duration
+- Return-to-town duration
+
+Mount movement speed does not modify:
+
+- Character basic attack speed
+- Ability casting speed
+- Combat animation speed
+- Enemy movement speed
+
+Fast travel mounts must not completely invalidate standard mounts.
+
+Movement benefits must be balanced against:
+
+- Durability
+- Carrying capacity
+- Recovery cost
+- Acquisition difficulty
+
+---
+
+# ============================================================================
+# UPGRADE RULES
+# ============================================================================
+
+Mount upgrades may increase:
+
+- Tier
+- Movement speed
+- Carrying capacity
+- Durability
+- Resistance
+- Passive effect strength
+
+Mount upgrades may require:
+
+- Previous-tier mount
+- Silver
+- Leather
+- Cloth
+- Metal
+- Rare creature material
+- Boss material
+- Stable service
+
+An upgrade preserves the mount family.
+
+Example:
+
+Horse T4
+
+may become:
+
+Horse T5
+
+It may not become:
+
+Direwolf T5
+
+A mount's base identity cannot be modified by upgrading.
+
+---
+
+# ============================================================================
+# ACQUISITION RULES
+# ============================================================================
+
+Mounts may be acquired through:
+
+- Stable Master purchase
+- Crafting
+- Task reward
+- Boss reward
+- Monster material exchange
+- Progression milestone
+
+Every acquisition method references a canonical Mount ID.
+
+Procedural systems may select eligible mount rewards but may not generate new
+mount names or identities.
+
+---
+
+# ============================================================================
+# SCALING PROFILE REFERENCES
+# ============================================================================
+
+The following scaling profiles are referenced by the mount database.
+
+Their numerical values are defined in **DB_PROGRESS_RULES.md**.
+
+- MOUNT_STANDARD_SPEED
+- MOUNT_ARMORED_SPEED
+- MOUNT_HEAVY_CARRY
+- MOUNT_FAST_SPEED
+- MOUNT_HEAVY_DEFENSE
+
+---
+
+# ============================================================================
+# UPGRADE PROFILE REFERENCES
+# ============================================================================
+
+The following upgrade profiles are referenced by the mount database.
+
+Their requirements are defined in **DB_CRAFTING.md**.
+
+- UPGRADE_HORSE_STANDARD
+- UPGRADE_ARMORED_HORSE
+- UPGRADE_OX_STANDARD
+- UPGRADE_DIREWOLF
+- UPGRADE_WAR_BEAR
+
+---
+
+# ============================================================================
+# ACQUISITION PROFILE REFERENCES
+# ============================================================================
+
+The following acquisition profiles are referenced by the mount database.
+
+Their availability rules are defined in:
+
+- DB_CRAFTING.md
+- DB_LOOT_TABLES.md
+- DB_TASKS.md
+- DB_PROGRESS_RULES.md
+
+Profiles:
+
+- ACQUIRE_HORSE_STANDARD
+- ACQUIRE_ARMORED_HORSE
+- ACQUIRE_OX_STANDARD
+- ACQUIRE_DIREWOLF
+- ACQUIRE_WAR_BEAR
+
+---
+
+# ============================================================================
+# RECOVERY PROFILE REFERENCES
+# ============================================================================
+
+The following recovery profiles are referenced by the mount database.
+
+Their numerical values are defined in **DB_ECONOMY.md**.
+
+- RECOVERY_MOUNT_STANDARD
+- RECOVERY_MOUNT_ARMORED
+- RECOVERY_MOUNT_HEAVY
+- RECOVERY_MOUNT_RARE
+- RECOVERY_MOUNT_RARE_HEAVY
+
+---
+
+# ============================================================================
+# ABILITY PROFILE REFERENCES
+# ============================================================================
+
+The following mount passive profiles are referenced by the mount database.
+
+Their behaviour and values are defined in **DB_SKILLS.md**.
+
+- PASSIVE_MOUNT_TRAVEL
+- PASSIVE_MOUNT_ARMOR
+- PASSIVE_MOUNT_CARRY
+- PASSIVE_MOUNT_SPRINT
+- PASSIVE_MOUNT_FORTITUDE
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Each mount generates tier variants according to its Tier Range.
+
+Example:
+
+Base Mount:
+MNT-0001
+
+Generated Variants:
+- MNT-0001-T2
+- MNT-0001-T3
+- MNT-0001-T4
+- MNT-0001-T5
+- MNT-0001-T6
+- MNT-0001-T7
+- MNT-0001-T8
+
+Each generated variant receives:
+
+- The same mount name
+- The same mount family
+- The same mount role
+- The same upgrade profile
+- The same acquisition profile
+- The same recovery profile
+- The same ability profile
+- The tier-specific visual asset
+- The tier-specific inventory icon
+- Statistics generated from its scaling profile
+- Acquisition values generated from its acquisition profile
+- Recovery values generated from its recovery profile
+
+Only the following values may be generated procedurally:
+
+- Movement speed
+- Carrying capacity
+- Durability
+- Physical resistance
+- Magical resistance
+- Recovery cost
+- Recovery duration
+- Upgrade cost
+- Acquisition cost
+- Passive effect strength
+
+No generated system may modify:
+
+- Mount ID
+- Mount name
+- Mount family
+- Mount role
+- Asset ID
+- Icon ID
+- Scaling Profile
+- Upgrade Profile
+- Acquisition Profile
+- Recovery Profile
+- Ability Profile
+
+---
+
+# ============================================================================
+# DATABASE PROGRESS STATUS
+# ============================================================================
+
+## Completed Databases
+
+- DB_WEAPONS.md
+- DB_ARMORS.md
+- DB_OFFHANDS.md
+- DB_MONSTERS.md
+- DB_BOSSES.md
+- DB_NPCS.md
+- DB_MOUNTS.md
+
+Completed:
+7 databases
+
+---
+
+## Remaining Asset Catalog Databases
+
+- DB_RESOURCES.md
+- DB_CONSUMABLES.md
+
+These documents define the remaining canonical item identities directly linked
+to the Asset Manifest.
+
+---
+
+## Remaining System Databases
+
+- DB_SKILLS.md
+- DB_LOOT_TABLES.md
+- DB_CRAFTING.md
+- DB_PROGRESS_RULES.md
+- DB_ECONOMY.md
+- DB_AI.md
+- DB_WORLD.md
+- DB_ENCOUNTERS.md
+- DB_TASKS.md
+
+These documents define the shared rules and profiles referenced by the content
+databases.
+
+---
+
+## Recommended Production Order
+
+1. DB_RESOURCES.md
+2. DB_CONSUMABLES.md
+3. DB_SKILLS.md
+4. DB_PROGRESS_RULES.md
+5. DB_CRAFTING.md
+6. DB_LOOT_TABLES.md
+7. DB_ECONOMY.md
+8. DB_AI.md
+9. DB_WORLD.md
+10. DB_ENCOUNTERS.md
+11. DB_TASKS.md
+
+---
+
+## Current State
+
+The canonical databases for the following Asset Manifest categories are now
+complete:
+
+- Weapons
+- Armors
+- Off-Hands
+- Monsters
+- Bosses
+- NPCs
+- Mounts
+
+The remaining canonical gameplay assets to document are:
+
+- Resources
+- Consumables
+
+After these two databases are completed, the project can move from content
+catalog definition to shared gameplay profile definition.
+
+DOCUMENT TERMINÉ

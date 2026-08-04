@@ -1,0 +1,1135 @@
+# 37. SAVE SYSTEM
+
+## Purpose
+
+The Save System is responsible for persisting every piece of player progression.
+
+It guarantees that all permanent progress survives:
+
+- Game restart
+- Client crash
+- Network interruption
+- Device change
+- Server restart
+- Game updates
+
+The Save System is fully server-authoritative.
+
+---
+
+# Design Goals
+
+The Save System must:
+
+- Prevent data loss.
+- Prevent duplication exploits.
+- Prevent rollback exploits.
+- Support future multiplayer features.
+- Support future player economy.
+- Allow version migrations.
+- Be deterministic.
+- Be scalable.
+- Be independent from gameplay systems.
+- Restore the exact player state.
+
+---
+
+# Core Philosophy
+
+The server is the only source of truth.
+
+The client never owns progression.
+
+The client only displays cached information while the server validates every permanent modification.
+
+---
+
+# Architecture
+
+The Save System consists of two layers:
+
+## Local Cache
+
+Stored on the player's device.
+
+Purpose:
+
+- Faster loading
+- UI responsiveness
+- Temporary cache
+- Session recovery
+
+The local cache is never authoritative.
+
+---
+
+## Server Save
+
+Stored in the backend database.
+
+Contains the complete player state.
+
+Every permanent action modifies this save.
+
+If local and server data differ:
+
+The server always wins.
+
+---
+
+# Server Authority
+
+The server owns:
+
+- Character progression
+- Equipment
+- Inventory
+- Silver
+- Resources
+- Masteries
+- Workers
+- Island
+- Crafting
+- Refining
+- Loot
+- Combat results
+- Unlocks
+- Statistics
+
+The client cannot permanently modify any of these values.
+
+---
+
+# Online Requirement
+
+The game is Online Only.
+
+A connection is required for gameplay.
+
+Offline progression is not supported.
+
+Reasons:
+
+- Prevent cheating
+- Protect economy
+- Protect future player trading
+- Protect future market
+- Simplify synchronization
+- Simplify authoritative validation
+
+---
+
+# Save Lifecycle
+
+Player Login
+
+↓
+
+Load Save
+
+↓
+
+Restore Runtime State
+
+↓
+
+Gameplay
+
+↓
+
+Gameplay Events
+
+↓
+
+Server Save
+
+↓
+
+Autosave
+
+↓
+
+Logout
+
+↓
+
+Final Save
+
+---
+
+# Save Triggers
+
+The server saves after every important progression event.
+
+Examples include:
+
+- Combat completed
+- Loot received
+- Equipment changed
+- Craft completed
+- Refining completed
+- Gathering completed
+- Worker task completed
+- Vendor transaction
+- Silver modified
+- Mastery increased
+- Island upgraded
+- Unlock obtained
+- Settings changed (when persistent)
+
+---
+
+# Autosave
+
+In addition to event-driven saves:
+
+The server performs automatic saves periodically.
+
+Recommended interval:
+
+60 seconds
+
+Autosave acts as a safety layer.
+
+---
+
+# Final Save
+
+When the player disconnects:
+
+1. Active actions finish safely.
+2. Pending transactions complete.
+3. Final snapshot is created.
+4. Save is committed.
+5. Session closes.
+
+---
+
+# Snapshot Philosophy
+
+The Save System uses complete snapshots.
+
+Each save contains the full player state.
+
+No previous save is required to restore progression.
+
+Each snapshot is completely independent.
+
+---
+
+# Snapshot Advantages
+
+Complete snapshots provide:
+
+- Simple restoration
+- Robust recovery
+- Easier debugging
+- Easier migrations
+- Lower corruption risk
+- Predictable loading
+
+Storage cost is acceptable for an RPG.
+
+---
+
+# Snapshot Contents
+
+A snapshot may contain:
+
+- Save Version
+- Player ID
+- Character
+- Equipment
+- Inventory
+- Wallet
+- Masteries
+- Exploration
+- Island
+- Workers
+- Active Jobs
+- Statistics
+- Settings
+- Unlocks
+- Achievements
+- Tutorial Progress
+- Runtime Timers
+- Metadata
+
+---
+
+# Save Metadata
+
+Each snapshot stores metadata.
+
+Example fields:
+
+- SaveID
+- PlayerID
+- SaveVersion
+- Timestamp
+- ServerRegion
+- BuildVersion
+- SessionID
+- Platform
+- Checksum
+
+---
+
+# Character Data
+
+Character information includes:
+
+- Name
+- Appearance
+- Current Zone
+- Current Segment
+- Current Cycle
+- Current Health
+- Current Energy
+- Equipped Skills
+- Active Effects
+
+---
+
+# Inventory Data
+
+Inventory stores:
+
+- Item Instance IDs
+- Stack Quantities
+- Slot Positions
+- Locked Status
+- Container Assignments
+
+Every item remains unique.
+
+---
+
+# Equipment Data
+
+Equipment stores:
+
+- Equipped Slots
+- Item Instance IDs
+- Durability
+- Enchantment
+- Quality
+- Current Charges (future)
+
+---
+
+# Currency Data
+
+Wallet stores:
+
+- Silver
+
+Future currencies are supported through expansion.
+
+---
+
+# Mastery Data
+
+Stores every weapon mastery.
+
+Each mastery includes:
+
+- Current XP
+- Current Rank
+- Overflow XP
+- Unlock State
+
+---
+
+# Island Data
+
+Stores:
+
+- Island Level
+- Buildings
+- Upgrades
+- Decorations
+- Unlocks
+
+---
+
+# Worker Data
+
+Stores:
+
+- Worker IDs
+- Assigned Tasks
+- Progress
+- Efficiency
+- Completion Timers
+
+---
+
+# Statistics Data
+
+Examples:
+
+- Monsters Killed
+- Bosses Defeated
+- Resources Gathered
+- Crafts Completed
+- Silver Earned
+- Silver Spent
+- Death Count
+- Damage Dealt
+- Damage Taken
+
+---
+
+# Exploration Data
+
+Stores:
+
+- Unlocked Zones
+- Cleared Segments
+- Boss Progress
+- Cycle Progress
+
+---
+
+# Tutorial Progress
+
+Stores:
+
+- Finished Tutorials
+- Skipped Tutorials
+- Tutorial Flags
+
+---
+
+# Settings Data
+
+Stores persistent settings such as:
+
+- Audio
+- Graphics
+- Accessibility
+- Interface
+- Controls
+
+These are gameplay-independent.
+
+---
+
+# Runtime Data
+
+Some temporary runtime values must survive reconnects.
+
+Examples:
+
+- Current Segment
+- Remaining Boss HP
+- Active Cooldowns
+- Worker Timers
+- Craft Timers
+- Refining Timers
+
+---
+
+# Save Frequency
+
+Important actions trigger immediate saves.
+
+Minor runtime values may wait for autosave.
+
+This balances reliability and server load.
+
+---
+
+# Atomic Saves
+
+Every save operation is atomic.
+
+Either:
+
+Entire snapshot succeeds
+
+or
+
+Nothing changes.
+
+Partial saves are never accepted.
+
+---
+
+# Transaction Ordering
+
+All gameplay events execute before saving.
+
+Example:
+
+Loot
+
+↓
+
+Inventory Updated
+
+↓
+
+Silver Updated
+
+↓
+
+Save Snapshot
+
+Never:
+
+Save
+
+↓
+
+Loot
+
+This prevents inconsistent states.
+
+---
+
+# Save Queue
+
+Incoming save requests enter a queue.
+
+If multiple save requests occur rapidly:
+
+They are merged whenever possible.
+
+Only the newest valid state is written.
+
+---
+
+# Save Priority
+
+Priority order:
+
+Critical
+
+↓
+
+High
+
+↓
+
+Normal
+
+Critical saves include:
+
+- Purchases
+- Loot
+- Currency
+- Inventory
+- Equipment
+
+---
+
+# Save Lock
+
+While a save is executing:
+
+Player data is locked.
+
+No concurrent save may modify the same snapshot.
+
+This prevents race conditions.
+
+---
+
+# Duplicate Protection
+
+Every save request receives:
+
+SaveTransactionID
+
+Duplicate requests are ignored.
+
+---
+
+# Crash Recovery
+
+If the server crashes:
+
+The latest completed snapshot is restored.
+
+Incomplete saves are discarded.
+
+---
+
+# Integrity Verification
+
+Each snapshot includes:
+
+Checksum
+
+During loading:
+
+Checksum is verified.
+
+Invalid snapshots are rejected.
+
+---
+
+# Save Validation
+
+Before saving:
+
+The server validates:
+
+- Item ownership
+- Inventory consistency
+- Currency consistency
+- Equipment validity
+- Progression validity
+
+Invalid states are rejected.
+
+---
+
+# Login Flow
+
+Player Login
+
+↓
+
+Authenticate
+
+↓
+
+Load Latest Snapshot
+
+↓
+
+Validate Version
+
+↓
+
+Run Migration (if needed)
+
+↓
+
+Validate Integrity
+
+↓
+
+Restore Runtime
+
+↓
+
+Spawn Player
+
+---
+
+# Logout Flow
+
+Player Logout
+
+↓
+
+Finish Pending Actions
+
+↓
+
+Create Snapshot
+
+↓
+
+Commit Save
+
+↓
+
+Close Session
+
+---
+
+# Multiple Devices
+
+Only one active gameplay session is allowed.
+
+If another device logs in:
+
+The server decides according to authentication policy.
+
+Future support may include:
+
+- Session transfer
+- Forced logout
+- Reconnect
+
+---
+
+# Versioning
+
+Every save contains:
+
+SaveVersion
+
+Example:
+
+SaveVersion = 37
+
+This version is independent from the game build.
+
+---
+
+# Migration Philosophy
+
+Old saves are never discarded automatically.
+
+Instead:
+
+They are upgraded.
+
+---
+
+# Migration Flow
+
+Old Save
+
+↓
+
+Version Check
+
+↓
+
+Migration Step
+
+↓
+
+Migration Step
+
+↓
+
+Migration Step
+
+↓
+
+Current Version
+
+↓
+
+Load
+
+---
+
+# Migration Rules
+
+Each migration performs one specific transformation.
+
+Examples:
+
+Add new field
+
+Rename field
+
+Split structure
+
+Merge structure
+
+Replace enum
+
+Convert values
+
+---
+
+# Migration Safety
+
+Migration must be:
+
+- Deterministic
+- Idempotent
+- Logged
+- Tested
+
+A migration may never corrupt player progression.
+
+---
+
+# Failed Migration
+
+If migration fails:
+
+Loading stops.
+
+The snapshot remains unchanged.
+
+Support logs receive detailed diagnostics.
+
+---
+
+# Backward Compatibility
+
+The Save System supports loading previous save versions through migrations.
+
+Direct loading of outdated snapshots is not required.
+
+---
+
+# Forward Compatibility
+
+Old clients must never overwrite newer save versions.
+
+Server validation prevents downgrade corruption.
+
+---
+
+# Save Compression
+
+Snapshots may be compressed before storage.
+
+Compression must not modify data.
+
+---
+
+# Encryption
+
+Server saves may be encrypted at rest.
+
+Sensitive information should never be stored in plain text where avoidable.
+
+---
+
+# Local Cache
+
+The local cache contains:
+
+- Recently loaded snapshot
+- Cached UI data
+- Graphics preferences
+- Last known state
+
+Cache corruption never affects server data.
+
+---
+
+# Cache Recovery
+
+If cache is invalid:
+
+Delete cache
+
+↓
+
+Download latest server snapshot
+
+↓
+
+Rebuild cache
+
+---
+
+# Data Ownership
+
+Each gameplay system owns its own save data.
+
+Examples:
+
+Inventory System
+
+↓
+
+Inventory Save Block
+
+Worker System
+
+↓
+
+Worker Save Block
+
+Combat System
+
+↓
+
+Combat Save Block
+
+The Save System only orchestrates serialization.
+
+---
+
+# Modular Serialization
+
+Every system exposes:
+
+Serialize()
+
+Deserialize()
+
+Validate()
+
+This prevents coupling.
+
+---
+
+# Save Data Tables
+
+Persistent configuration should reference IDs instead of duplicating static data.
+
+Example:
+
+Store:
+
+WeaponDefinitionID
+
+Not:
+
+Entire weapon definition.
+
+---
+
+# Runtime Reconstruction
+
+Static definitions reload from Data Tables.
+
+Dynamic values restore from snapshot.
+
+---
+
+# Analytics
+
+The Save System may record:
+
+- Save Duration
+- Snapshot Size
+- Migration Count
+- Restore Time
+- Failed Saves
+- Failed Loads
+- Corrupted Snapshots
+
+---
+
+# Security
+
+The Save System prevents:
+
+- Rollback exploits
+- Item duplication
+- Currency duplication
+- Save editing
+- Client-side progression injection
+- Invalid snapshots
+
+---
+
+# Data Tables
+
+## SaveVersionTable
+
+Fields:
+
+- SaveVersion
+- MigrationID
+- BuildVersion
+- Enabled
+
+---
+
+## MigrationTable
+
+Fields:
+
+- MigrationID
+- SourceVersion
+- TargetVersion
+- MigrationClass
+- Enabled
+
+---
+
+## SaveSettingsTable
+
+Fields:
+
+- AutosaveInterval
+- CompressionEnabled
+- EncryptionEnabled
+- MaxSaveRetries
+- SaveTimeout
+
+---
+
+# Runtime Components
+
+## SaveManager
+
+Responsible for:
+
+- Save requests
+- Load requests
+- Snapshot creation
+- Restore
+- Autosave scheduling
+
+---
+
+## SnapshotBuilder
+
+Responsible for:
+
+- Collecting system data
+- Building complete snapshots
+- Serialization
+
+---
+
+## SnapshotLoader
+
+Responsible for:
+
+- Deserialization
+- Validation
+- Runtime reconstruction
+
+---
+
+## MigrationManager
+
+Responsible for:
+
+- Version checks
+- Executing migrations
+- Migration logging
+
+---
+
+## SaveValidator
+
+Responsible for:
+
+- Snapshot integrity
+- Data validation
+- Consistency checks
+
+---
+
+# Events
+
+The Save System publishes:
+
+- OnSaveStarted
+- OnSaveCompleted
+- OnSaveFailed
+- OnAutosave
+- OnLoadStarted
+- OnLoadCompleted
+- OnMigrationStarted
+- OnMigrationCompleted
+
+---
+
+# Edge Cases
+
+## Server Crash During Save
+
+Rollback to last completed snapshot.
+
+---
+
+## Duplicate Save Request
+
+Ignored using TransactionID.
+
+---
+
+## Corrupted Local Cache
+
+Cache deleted.
+
+Server snapshot restored.
+
+---
+
+## Corrupted Server Snapshot
+
+Loading fails.
+
+Recovery procedures are initiated.
+
+---
+
+## Version Mismatch
+
+Migration executes automatically.
+
+---
+
+## Interrupted Login
+
+No partial runtime state is created.
+
+---
+
+## Interrupted Logout
+
+Latest completed snapshot remains valid.
+
+---
+
+# Future Extensions
+
+The architecture supports:
+
+- Cloud backups
+- Multiple save slots (if ever needed)
+- Character transfers
+- Region migration
+- Cross-platform synchronization
+- Replay snapshots
+- Debug snapshots
+- Time-travel debugging
+- Automatic backup history
+
+---
+
+# Explicitly Excluded from V1
+
+V1 does not include:
+
+- Offline gameplay
+- Offline progression
+- Local-authoritative saves
+- Manual save slots
+- Delta snapshots
+- Save rollback by players
+- Save import/export
+- Modifiable save files
+
+---
+
+# System Relationships
+
+The Save System interacts with:
+
+- Character System
+- Inventory System
+- Equipment System
+- Currency System
+- Combat System
+- Loot System
+- Gathering System
+- Crafting System
+- Refining System
+- Worker System
+- Island System
+- Progression System
+- Vendor System
+- Statistics System
+- Settings System
+- Authentication System
+
+---
+
+# Summary
+
+The Save System is fully server-authoritative and uses complete snapshot persistence.
+
+Gameplay is online-only, with the server acting as the single source of truth. The client stores only a local cache for faster loading and improved responsiveness.
+
+Progress is saved immediately after every important gameplay event and reinforced by periodic autosaves. Every snapshot is self-contained, versioned, validated, and protected by checksums and atomic transactions.
+
+Automatic migration ensures long-term compatibility across game updates, while modular serialization keeps the system scalable and maintainable.
+
+This architecture provides a secure, reliable foundation for future multiplayer features, the player-driven economy, and long-term live service development.
+
+DOCUMENT TERMINÉ

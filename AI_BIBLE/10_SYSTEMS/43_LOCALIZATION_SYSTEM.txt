@@ -1,0 +1,691 @@
+# 43. LOCALIZATION SYSTEM
+
+## Purpose
+
+The Localization System provides a scalable, maintainable, and developer-friendly architecture for supporting multiple languages throughout the game.
+
+Its responsibilities are to:
+
+- Translate every player-facing text.
+- Support dynamic variables.
+- Handle pluralization correctly.
+- Provide automatic language fallback.
+- Allow translators to work independently from developers.
+- Support future language additions without requiring code changes.
+
+Localization must never influence gameplay logic.
+
+It only affects presentation.
+
+---
+
+# Design Goals
+
+The localization system is designed around the following principles:
+
+- English is the source language.
+- French is available at launch.
+- Unlimited languages can be added later.
+- Zero gameplay dependency.
+- Fully data-driven.
+- Translator-friendly workflow.
+- Automatic validation.
+- Safe fallback behavior.
+- No duplicated localization logic.
+
+---
+
+# Supported Languages
+
+## Launch Languages
+
+- English (Source Language)
+- French
+
+The system is not limited to these languages.
+
+Additional languages can be added without modifying game code.
+
+Examples:
+
+- German
+- Spanish
+- Italian
+- Portuguese
+- Polish
+- Russian
+- Japanese
+- Korean
+- Chinese
+
+---
+
+# Source Language
+
+English is always considered the canonical language.
+
+Every new content addition is first created in English.
+
+Example:
+
+- Items
+- Resources
+- Enemies
+- Buildings
+- Abilities
+- Notifications
+- Tutorials
+- UI
+- Errors
+- Achievements
+- Future Quests
+
+All translations originate from English.
+
+---
+
+# Localization Architecture
+
+The localization architecture is fully data-driven.
+
+```
+Localization
+
+├── en.json
+├── fr.json
+├── de.json
+├── es.json
+├── it.json
+└── ...
+```
+
+The engine simply loads every available language.
+
+No language-specific code exists.
+
+---
+
+# Translation Keys
+
+Every localized text is identified using a hierarchical key.
+
+Structure:
+
+```
+<Category>.<SubCategory>.<Identifier>.<Property>
+```
+
+Examples:
+
+```
+item.iron_sword.name
+
+item.iron_sword.description
+
+resource.iron_ore.name
+
+enemy.skeleton.name
+
+enemy.skeleton.description
+
+ability.fireball.name
+
+ability.fireball.description
+
+ui.inventory.title
+
+ui.inventory.search
+
+notification.worker.finished
+
+tutorial.step1.title
+
+error.connection.lost
+
+dashboard.widget.workers
+
+mastery.sword.name
+```
+
+---
+
+# Naming Rules
+
+Translation keys must:
+
+- use lowercase letters
+- use dots as separators
+- never contain spaces
+- never contain translated text
+- remain stable forever
+
+Good:
+
+```
+item.iron_sword.name
+```
+
+Bad:
+
+```
+IronSwordName
+```
+
+Bad:
+
+```
+TXT_000251
+```
+
+---
+
+# Translation Files
+
+Developers work exclusively with JSON.
+
+Example:
+
+```json
+{
+    "item.iron_sword.name": "Iron Sword",
+    "item.iron_sword.description": "A basic iron sword."
+}
+```
+
+The game never reads spreadsheet files directly.
+
+---
+
+# Translator Workflow
+
+Translators work inside Google Sheets (or compatible CSV files).
+
+Example:
+
+| Key | English | French |
+|------|----------|----------|
+| item.iron_sword.name | Iron Sword | Épée en fer |
+| item.iron_sword.description | A basic iron sword. | Une épée en fer basique. |
+
+This workflow allows translators to work without using Git or editing JSON.
+
+---
+
+# Localization Pipeline
+
+```
+Developers
+
+↓
+
+English JSON
+
+↓
+
+Export Tool
+
+↓
+
+Google Sheets
+
+↓
+
+Translators
+
+↓
+
+Import Tool
+
+↓
+
+Localized JSON
+
+↓
+
+Game
+```
+
+The engine only consumes JSON.
+
+---
+
+# Placeholder System
+
+Dynamic values use named placeholders.
+
+Syntax:
+
+```
+{VariableName}
+```
+
+Examples:
+
+```
+Welcome back, {PlayerName}.
+```
+
+```
+You received {Quantity}x {ItemName}.
+```
+
+```
+Your {MasteryName} reached level {Level}.
+```
+
+```
+You earned {Silver} Silver.
+```
+
+---
+
+# Placeholder Rules
+
+Placeholders:
+
+- are case-sensitive
+- use meaningful names
+- never contain spaces
+- must remain identical across all languages
+
+Correct:
+
+```
+{PlayerName}
+```
+
+Correct:
+
+```
+{ItemName}
+```
+
+Incorrect:
+
+```
+{player}
+```
+
+Incorrect:
+
+```
+{Object}
+```
+
+---
+
+# Placeholder Validation
+
+The import tool validates:
+
+- missing placeholders
+- additional placeholders
+- renamed placeholders
+- malformed syntax
+
+Example:
+
+English
+
+```
+You received {Quantity}x {ItemName}.
+```
+
+French
+
+```
+Vous avez reçu {Quantity}x {ItemName}.
+```
+
+Accepted.
+
+French
+
+```
+Vous avez reçu {Nombre}x {Objet}.
+```
+
+Rejected.
+
+---
+
+# ICU MessageFormat
+
+Pluralization uses ICU MessageFormat.
+
+Example:
+
+```
+{Quantity, plural,
+    one {You received # item.}
+    other {You received # items.}
+}
+```
+
+French example:
+
+```
+{Quantity, plural,
+    one {Vous avez reçu # objet.}
+    other {Vous avez reçu # objets.}
+}
+```
+
+ICU is used whenever linguistic rules depend on runtime values.
+
+---
+
+# Supported ICU Features
+
+The engine supports:
+
+- plural
+- select
+- nested placeholders
+- variable formatting
+- future gender support
+
+This architecture allows future support for complex grammatical languages.
+
+---
+
+# Language Selection
+
+Players may change language at any time.
+
+Changing language updates:
+
+- HUD
+- Menus
+- Tooltips
+- Notifications
+- Item names
+- Enemy names
+- Tutorials
+- Future dialogue
+
+No restart is required.
+
+---
+
+# Language Persistence
+
+The selected language is stored in player settings.
+
+It is synchronized through cloud settings.
+
+Players keep the same language across devices.
+
+---
+
+# Automatic Fallback
+
+English is the only fallback language.
+
+If a translation is missing:
+
+```
+Selected Language
+
+↓
+
+Translation Exists?
+
+↓
+
+Yes
+
+↓
+
+Display Translation
+
+↓
+
+No
+
+↓
+
+English
+
+↓
+
+Display English
+
+↓
+
+Missing?
+
+↓
+
+Developer Error Log
+```
+
+Players never see localization keys.
+
+Players never see "Missing Translation".
+
+---
+
+# Missing Translation Behavior
+
+Example:
+
+Player language:
+
+French
+
+Missing key:
+
+```
+item.iron_sword.name
+```
+
+Displayed text:
+
+```
+Iron Sword
+```
+
+The game continues normally.
+
+---
+
+# Translation Validation
+
+The import pipeline validates:
+
+- duplicate keys
+- missing keys
+- empty strings
+- placeholder mismatches
+- malformed ICU syntax
+- invalid characters
+- malformed JSON
+- invalid hierarchy
+
+Invalid localization packages cannot be imported.
+
+---
+
+# Translation Reports
+
+Every import generates statistics.
+
+Example:
+
+```
+English
+
+100%
+
+French
+
+97.8%
+
+German
+
+0%
+
+Spanish
+
+0%
+```
+
+Reports also include:
+
+- missing keys
+- obsolete keys
+- newly added keys
+- invalid placeholders
+- ICU errors
+
+---
+
+# Versioning
+
+Localization follows normal source control.
+
+Developers modify English.
+
+Translators modify spreadsheets.
+
+Generated JSON files are committed alongside game updates.
+
+---
+
+# Updating Content
+
+New gameplay content follows this workflow:
+
+```
+Developer creates feature
+
+↓
+
+English localization added
+
+↓
+
+Feature released
+
+↓
+
+French incomplete?
+
+↓
+
+Fallback to English
+
+↓
+
+Translator updates spreadsheet
+
+↓
+
+Import Tool
+
+↓
+
+French JSON updated
+
+↓
+
+Next patch
+```
+
+Game releases are never blocked by incomplete translations.
+
+---
+
+# Performance
+
+Localization files are loaded once during initialization.
+
+At runtime:
+
+- lookup is O(1)
+- no file parsing occurs
+- no spreadsheet access
+- minimal allocations
+- cached string references
+
+Language switching rebuilds localized UI only.
+
+Gameplay systems remain unaffected.
+
+---
+
+# Debug Tools
+
+Developer mode provides:
+
+- Missing Translation Viewer
+- Key Search
+- Placeholder Inspector
+- ICU Validator
+- Translation Coverage Viewer
+- Live Language Switch
+- Duplicate Key Scanner
+
+These tools are not available in release builds.
+
+---
+
+# Error Handling
+
+If a translation cannot be resolved:
+
+1. Try selected language.
+2. Try English.
+3. Log developer error.
+
+Gameplay never crashes because of localization failures.
+
+---
+
+# Future Expansion
+
+The architecture is prepared for:
+
+- Voice-over localization
+- Subtitle localization
+- Regional spelling variants
+- Font fallback
+- Right-to-left languages
+- DLC localization packs
+- Community translation tools
+- Mod localization
+- Cultural content overrides
+
+No architectural changes are required.
+
+---
+
+# Dependencies
+
+The Localization System interacts with:
+
+- UI System
+- Notification System
+- Tutorial System
+- Item System
+- Enemy System
+- Ability System
+- Vendor System
+- Dashboard System
+- Settings System
+- Save System
+
+It does not influence gameplay logic.
+
+---
+
+# Summary
+
+The Localization System provides a scalable, data-driven localization architecture centered around English as the source language.
+
+It uses hierarchical translation keys, JSON runtime files, Google Sheets translator workflows, named placeholders, ICU MessageFormat, automatic English fallback, comprehensive validation, and a non-blocking update pipeline.
+
+The system is designed to support an unlimited number of languages while ensuring that missing translations never interrupt gameplay or degrade the player's experience.
+
+DOCUMENT TERMINÉ

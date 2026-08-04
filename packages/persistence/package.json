@@ -1,0 +1,24 @@
+{
+  "name": "@game/persistence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Save/load persistence layer. Serialization, migration, and snapshot management. No gameplay code.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@game/core": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}

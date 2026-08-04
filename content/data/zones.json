@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "category": "zones",
+  "definitions": [
+    {
+      "id": "zone_greenwood_forest_t4",
+      "biomeId": "biome_forest",
+      "tier": 4,
+      "dangerLevel": 4,
+      "monsterIds": ["monster_wolf_t4", "monster_bandit_t4"],
+      "bossIds": ["monster_forest_guardian_t4"],
+      "resourceIds": ["resource_wood_t4", "resource_hide_t4"],
+      "segmentCount": 5,
+      "tags": ["forest", "tier4"]
+    },
+    {
+      "id": "zone_ironpeak_mountains_t4",
+      "biomeId": "biome_mountains",
+      "tier": 4,
+      "dangerLevel": 5,
+      "monsterIds": ["monster_spider_t4", "monster_ore_golem_t4"],
+      "bossIds": [],
+      "resourceIds": ["resource_ore_t4"],
+      "segmentCount": 4,
+      "tags": ["mountains", "tier4"]
+    }
+  ]
+}

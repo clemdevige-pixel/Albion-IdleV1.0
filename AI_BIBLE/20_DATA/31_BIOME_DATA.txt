@@ -1,0 +1,697 @@
+# 31. BIOME DATA
+
+---
+
+# Purpose
+
+The Biome Data document defines every biome available in the game world.
+
+A Biome represents a geographical environment sharing its own:
+
+- Visual identity
+- Enemy families
+- Resources
+- Ambient effects
+- Music
+- Difficulty modifiers
+- Encounter pools
+
+Biomes are responsible for determining **where** gameplay occurs.
+
+They do not define progression itself.
+
+---
+
+# Design Philosophy
+
+The Biome system follows seven principles.
+
+---
+
+## Environment Driven
+
+Every gameplay location belongs to one Biome.
+
+Biomes define the environmental context rather than the gameplay sequence.
+
+---
+
+## Modular
+
+Biomes reference existing systems instead of duplicating them.
+
+Examples:
+
+- Enemy Pools
+- Resource Pools
+- Ambient Audio
+- Visual Themes
+- Encounter Pools
+
+---
+
+## Reusable
+
+The same Enemy or Resource may appear in multiple Biomes.
+
+Biomes never own gameplay definitions.
+
+---
+
+## Data Driven
+
+Adding a new Biome should never require gameplay code.
+
+---
+
+## Deterministic
+
+A Biome always exposes the same configuration.
+
+Randomness only occurs when selecting encounters.
+
+---
+
+## Extensible
+
+Future expansions may introduce new Biomes without modifying existing ones.
+
+---
+
+## Immutable
+
+Biome definitions never change during gameplay.
+
+---
+
+# Responsibilities
+
+Biome Data defines:
+
+- Identity
+- Display Name
+- Theme
+- Difficulty Modifier
+- Available Enemy Families
+- Available Resources
+- Encounter Pool
+- Ambient Audio
+- Visual Theme
+- Weather Support
+- Tags
+
+Biome Data does NOT define:
+
+- Enemy Statistics
+- Loot
+- Encounter Layout
+- Zone Progression
+- Cycle Scaling
+
+---
+
+# Biome Definition
+
+Every Biome contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Theme
+
+↓
+
+Difficulty Modifier
+
+↓
+
+Enemy Families
+
+↓
+
+Resource Families
+
+↓
+
+Encounter Pool
+
+↓
+
+Ambient Audio
+
+↓
+
+Visual Theme
+
+↓
+
+Weather
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Biome owns one globally unique identifier.
+
+Examples:
+
+```
+biome_forest
+
+biome_swamp
+
+biome_highlands
+
+biome_mountains
+
+biome_desert
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Forest
+
+Swamp
+
+Highlands
+
+Mountains
+
+Desert
+```
+
+---
+
+# Theme
+
+Theme defines the overall artistic direction.
+
+Examples:
+
+```
+Nature
+
+Undead
+
+Demonic
+
+Frozen
+
+Royal
+
+Mystical
+```
+
+Theme primarily influences visuals and ambience.
+
+---
+
+# Difficulty Modifier
+
+Each Biome defines a base difficulty multiplier.
+
+Example:
+
+```
+1.00
+
+1.10
+
+1.25
+
+1.40
+```
+
+The final enemy strength is calculated by the Progress Scaling System.
+
+The Biome modifier never replaces Tier or Cycle scaling.
+
+---
+
+# Enemy Families
+
+Each Biome references one or more Enemy Families.
+
+Example:
+
+```
+Forest
+
+↓
+
+Animals
+
+Keepers
+
+Heretics
+```
+
+Example:
+
+```
+Swamp
+
+↓
+
+Undead
+
+Demons
+```
+
+Families are selected by Encounter generation.
+
+---
+
+# Resource Families
+
+Each Biome references available Resources.
+
+Example:
+
+```
+Forest
+
+↓
+
+Wood
+
+Hide
+
+Fiber
+```
+
+Example:
+
+```
+Mountain
+
+↓
+
+Ore
+
+Stone
+```
+
+Resources remain defined independently.
+
+---
+
+# Encounter Pool
+
+Every Biome references an Encounter Pool.
+
+Example:
+
+```
+encounter_pool_forest
+
+encounter_pool_swamp
+
+encounter_pool_desert
+```
+
+Encounter generation uses these pools.
+
+---
+
+# Visual Theme
+
+Each Biome references one Visual Theme.
+
+Examples:
+
+```
+visual_forest
+
+visual_swamp
+
+visual_mountain
+```
+
+Visual Themes define:
+
+- Backgrounds
+- Decorations
+- Ground Tiles
+- Lighting
+- Color Palette
+
+---
+
+# Ambient Audio
+
+Each Biome references one Ambient Audio profile.
+
+Examples:
+
+```
+audio_forest
+
+audio_swamp
+
+audio_desert
+```
+
+Ambient Audio includes:
+
+- Wind
+- Birds
+- Water
+- Ambient Loops
+
+---
+
+# Music Playlist
+
+Each Biome references one music playlist.
+
+Example:
+
+```
+music_forest
+
+music_swamp
+
+music_boss
+```
+
+Music playback is handled separately.
+
+---
+
+# Weather
+
+Version 1 supports optional weather.
+
+Examples:
+
+```
+None
+
+Rain
+
+Snow
+
+Fog
+
+Ash
+```
+
+Weather is cosmetic only in Version 1.
+
+Gameplay modifiers may be introduced later.
+
+---
+
+# Lighting Profile
+
+Every Biome references a lighting preset.
+
+Examples:
+
+```
+Day
+
+Night
+
+Sunset
+
+Foggy
+
+Dark
+```
+
+Lighting affects presentation only.
+
+---
+
+# Decoration Density
+
+Defines environmental richness.
+
+Examples:
+
+```
+Sparse
+
+Normal
+
+Dense
+```
+
+Used exclusively by the rendering system.
+
+---
+
+# Tags
+
+Examples:
+
+```
+forest
+
+nature
+
+tier4
+
+beginner
+
+undead
+
+cold
+```
+
+Tags improve searching and balancing.
+
+---
+
+# Runtime Representation
+
+```
+Biome Definition
+
+↓
+
+Zone Generation
+
+↓
+
+Encounter Selection
+
+↓
+
+Visual Loading
+
+↓
+
+Gameplay
+```
+
+Biome definitions remain immutable.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Enemy Families
+- Existing Resource Families
+- Existing Encounter Pool
+- Existing Audio Profile
+- Existing Visual Theme
+- Valid Difficulty Modifier
+- Valid Weather Type
+
+Invalid Biomes never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedural Biomes
+- Dynamic Weather Effects
+- Seasonal Biome Variants
+- Runtime-generated Biomes
+- Gameplay-changing Weather
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "biome_forest",
+    "name": "Forest",
+    "theme": "Nature",
+    "difficultyModifier": 1.00,
+    "enemyFamilies": [
+        "Animal",
+        "Keeper",
+        "Heretic"
+    ],
+    "resourceFamilies": [
+        "Wood",
+        "Hide",
+        "Fiber"
+    ],
+    "encounterPoolId": "encounter_pool_forest",
+    "visualThemeId": "visual_forest",
+    "ambientAudioId": "audio_forest",
+    "musicPlaylistId": "music_forest",
+    "weather": "Rain",
+    "lighting": "Day",
+    "decorationDensity": "Dense",
+    "tags": [
+        "nature",
+        "starter"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Biome
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Generate Zone
+
+↓
+
+Load Visual Theme
+
+↓
+
+Select Encounter
+
+↓
+
+Gameplay Begins
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Biome Data document is complete when:
+
+- Every Biome has a unique identifier.
+- Themes are defined.
+- Difficulty modifiers are configurable.
+- Enemy Families are referenced.
+- Resource Families are referenced.
+- Encounter Pools are referenced.
+- Visual Themes are referenced.
+- Ambient Audio is referenced.
+- Weather is configurable.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Biome is completely data-driven.
+
+Rule 02
+
+Biomes define environments, not gameplay logic.
+
+Rule 03
+
+Enemy Families are referenced by identifier.
+
+Rule 04
+
+Resource Families are referenced by identifier.
+
+Rule 05
+
+Encounter generation is delegated to Encounter Pools.
+
+Rule 06
+
+Difficulty modifiers are explicit.
+
+Rule 07
+
+Visual Themes are referenced independently.
+
+Rule 08
+
+Ambient Audio is referenced independently.
+
+Rule 09
+
+Weather is cosmetic in Version 1.
+
+Rule 10
+
+Lighting affects presentation only.
+
+Rule 11
+
+Definitions never contain runtime state.
+
+Rule 12
+
+Validation prevents invalid Biomes.
+
+Rule 13
+
+Biome definitions are immutable.
+
+Rule 14
+
+Every Biome may declare its content source.
+
+Rule 15
+
+Future Biomes must remain compatible with the shared data architecture.
+
+---
+
+# Summary
+
+The Biome Data document defines the environmental identity of the game world through a fully data-driven architecture. By separating visual presentation, encounter selection, resource distribution and ambience from gameplay systems, it creates a scalable framework capable of supporting a growing number of regions while maintaining consistent balancing, deterministic generation and long-term maintainability. Biomes provide the contextual layer that ties together enemies, resources and encounters without introducing gameplay logic or runtime state.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

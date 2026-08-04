@@ -1,0 +1,436 @@
+================================================================================
+AI BIBLE
+================================================================================
+
+Document ID
+04_VERTICAL_SLICE_SCOPE
+
+Version
+1.0
+
+Status
+APPROVED
+
+================================================================================
+PURPOSE
+================================================================================
+
+This document defines the exact scope of the first playable version of Albion
+Idle.
+
+The Vertical Slice is not a prototype.
+
+It is a small but complete version of the final game that demonstrates every
+core gameplay pillar using a limited amount of content.
+
+Every feature included in the Vertical Slice must be representative of the
+final product.
+
+================================================================================
+OBJECTIVES
+================================================================================
+
+The Vertical Slice must answer the following questions.
+
+• Is the gameplay loop fun?
+• Does progression feel rewarding?
+• Is combat satisfying?
+• Does production create meaningful decisions?
+• Does the Player Island improve long-term progression?
+• Is the game understandable without external explanations?
+
+The Vertical Slice validates gameplay, not content quantity.
+
+================================================================================
+DESIGN PHILOSOPHY
+================================================================================
+
+Every implemented feature should remain in the final game.
+
+Temporary systems should be avoided.
+
+Instead of creating incomplete versions of systems, implement complete systems
+with limited content.
+
+Example
+
+Good
+
+• Complete crafting system with 20 recipes.
+
+Bad
+
+• Temporary crafting interface that will later be rewritten.
+
+================================================================================
+PLAYER EXPERIENCE
+================================================================================
+
+The player should be able to experience the complete gameplay loop.
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Gathering
+
+↓
+
+Refining
+
+↓
+
+Crafting
+
+↓
+
+Equipment
+
+↓
+
+Player Island
+
+↓
+
+Workers
+
+↓
+
+Stronger Character
+
+↓
+
+Harder Combat
+
+Nothing outside this loop is required for the Vertical Slice.
+
+================================================================================
+CORE SYSTEMS
+================================================================================
+
+The following systems are mandatory.
+
+FOUNDATIONS
+
+• Save System
+• Settings
+• Basic UI
+• Data Loading
+
+CHARACTER
+
+• Character
+• Equipment
+• Stats
+• Masteries
+
+COMBAT
+
+• Combat
+• Enemy Generation
+• Loot Generation
+
+ITEMS
+
+• Inventory
+• Equipment
+• Consumables
+• Resources
+
+PRODUCTION
+
+• Gathering
+• Refining
+• Crafting
+
+PLAYER ISLAND
+
+• Buildings
+• Workers
+• Storage
+
+PROGRESSION
+
+• Offline Progression
+• Equipment Progression
+• Island Progression
+
+================================================================================
+CONTENT SCOPE
+================================================================================
+
+Only enough content to validate gameplay should be created.
+
+-------------------------------------------------------------------------------
+Enemies
+-------------------------------------------------------------------------------
+
+Approximately
+
+• 10–15 enemy types
+
+Across
+
+• 2 to 3 enemy families
+
+Example
+
+• Undead
+• Heretics
+• Morgana
+
+-------------------------------------------------------------------------------
+Equipment
+-------------------------------------------------------------------------------
+
+Approximately
+
+• Tier 1
+• Tier 2
+• Tier 3
+• Tier 4
+
+Equipment quality system enabled.
+
+Limited weapon selection.
+
+-------------------------------------------------------------------------------
+Resources
+-------------------------------------------------------------------------------
+
+Only the resources required by implemented crafting recipes.
+
+Example
+
+• Wood
+• Stone
+• Ore
+• Fiber
+• Hide
+
+-------------------------------------------------------------------------------
+Crafting
+-------------------------------------------------------------------------------
+
+Enough recipes to validate every production chain.
+
+No unnecessary content.
+
+-------------------------------------------------------------------------------
+Buildings
+-------------------------------------------------------------------------------
+
+Only essential buildings.
+
+• Storage
+• Refinery
+• Workshop
+• Worker House
+
+Additional buildings are postponed.
+
+================================================================================
+PLAYER ISLAND SCOPE
+================================================================================
+
+The Player Island must already demonstrate its complete gameplay philosophy.
+
+Required functionality
+
+• Place buildings
+• Upgrade buildings
+• Assign Workers
+• Produce resources
+• Store resources
+
+Decoration systems are excluded.
+
+================================================================================
+WORKER SCOPE
+================================================================================
+
+Workers must already function according to their final design.
+
+Included
+
+• Permanent profession
+• Assignment
+• Passive gathering
+• Productivity
+• Resource delivery
+
+Excluded
+
+• Advanced specializations
+• Prestige
+• Rare workers
+• Worker equipment
+
+================================================================================
+COMBAT SCOPE
+================================================================================
+
+Combat should already represent the final experience.
+
+Included
+
+• Automatic combat
+• Equipment scaling
+• Enemy scaling
+• Loot
+• Death handling
+• Rewards
+
+Excluded
+
+• Bosses
+• Raids
+• World Events
+• Elite encounters
+
+================================================================================
+PROGRESSION SCOPE
+================================================================================
+
+The player must experience long-term progression.
+
+Included
+
+• Equipment upgrades
+• Better resources
+• Better Workers
+• Better buildings
+• Mastery progression
+
+Excluded
+
+• Prestige
+• Seasonal progression
+• Endgame systems
+
+================================================================================
+ECONOMY SCOPE
+================================================================================
+
+Included
+
+• Silver
+• Selling items
+• Buying essential items
+
+Excluded
+
+• Dynamic market
+• Auctions
+• Trading
+• Contracts
+
+================================================================================
+UI SCOPE
+================================================================================
+
+The UI must be functional rather than visually complete.
+
+Required screens
+
+• Main HUD
+• Combat
+• Inventory
+• Equipment
+• Gathering
+• Crafting
+• Refining
+• Player Island
+• Worker Management
+• Settings
+
+Visual polish is not required.
+
+================================================================================
+TECHNICAL REQUIREMENTS
+================================================================================
+
+The Vertical Slice must support:
+
+• Save / Load
+• Offline progression
+• Stable performance
+• Data-driven content
+• Expandable architecture
+
+Hardcoded gameplay data should be avoided whenever possible.
+
+================================================================================
+OUT OF SCOPE
+================================================================================
+
+The following features are intentionally excluded.
+
+• Guilds
+• Multiplayer
+• PvP
+• Trading
+• Marketplace
+• Events
+• Seasons
+• Achievements
+• Prestige
+• Mounts
+• Farming
+• Fishing
+• Cooking
+• Housing Decoration
+• Leaderboards
+• Cloud Save
+• Modding
+
+These systems belong to later milestones.
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+The Vertical Slice is considered complete when:
+
+• Every gameplay pillar exists.
+• The complete gameplay loop is playable.
+• The player understands progression naturally.
+• Every implemented system is reusable.
+• No temporary gameplay systems remain.
+• The game can be played continuously for several hours.
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+Depends On
+
+• 000_PROJECT_BIBLE
+• 01_GAME_VISION
+• 02_CORE_GAME_LOOP
+• 03_DESIGN_CONSTRAINTS
+• 05_DEVELOPMENT_ROADMAP
+
+Referenced By
+
+• Every gameplay system document.
+
+================================================================================
+SUMMARY
+================================================================================
+
+The Vertical Slice is the first complete version of Albion Idle.
+
+Its objective is not to provide a large amount of content, but to validate the
+entire gameplay architecture using a representative subset of the final game.
+
+Every implemented system should remain in the project until release, making the
+Vertical Slice the true foundation of all future development.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

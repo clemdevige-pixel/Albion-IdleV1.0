@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "enemy_damage",
+  "kind": "floating_text",
+  "textStyle": {
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": 24,
+    "fontStyle": "bold",
+    "color": "#ffd45c",
+    "strokeColor": "#0d1018",
+    "strokeThickness": 5
+  },
+  "motion": {
+    "randomOffsetX": 55,
+    "riseDistance": 82,
+    "startScale": 0.7,
+    "endScale": 1.18,
+    "durationMs": 950,
+    "ease": "Cubic.Out"
+  },
+  "depth": 30
+}

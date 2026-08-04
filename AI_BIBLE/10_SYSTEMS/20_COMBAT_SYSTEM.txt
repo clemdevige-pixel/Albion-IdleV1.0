@@ -1,0 +1,1748 @@
+# 20. COMBAT SYSTEM
+
+---
+
+# Purpose
+
+The Combat System is the primary gameplay system of the project.
+
+Every other progression mechanic ultimately exists to improve combat performance.
+
+The player gathers resources in order to craft equipment.
+
+The player crafts equipment in order to become stronger.
+
+The player becomes stronger in order to defeat stronger enemies.
+
+Defeating stronger enemies unlocks new resources, new equipment, and new progression.
+
+Combat is therefore the central pillar around which the entire game is designed.
+
+Nothing should bypass this progression loop.
+
+---
+
+# Design Philosophy
+
+The Combat System follows several fundamental design principles.
+
+---
+
+## Combat is Automatic
+
+Combat is fully automated.
+
+The player never manually controls:
+
+- Movement
+- Basic Attacks
+- Target Selection
+- Skill Rotation
+
+Instead, the player prepares the character before entering combat.
+
+Success comes from preparation rather than execution.
+
+The gameplay focuses on strategic decisions instead of mechanical skill.
+
+Examples of meaningful decisions include:
+
+- Equipment
+- Weapon Family
+- Armor Combination
+- Consumables
+- Passive Skills
+- Automatic Skill Configuration
+- Destination
+- Activity Selection
+- Progression Pace
+
+---
+
+## Side-Scroller First
+
+Combat is designed around a **2D side-scrolling environment**.
+
+All gameplay occurs on a single horizontal axis.
+
+Characteristics:
+
+- Horizontal movement only
+- Fixed vertical gameplay plane
+- No free movement
+- No jumping
+- No dodging
+- No vertical positioning
+- No manual repositioning
+
+This greatly improves readability while simplifying AI, collision detection and balancing.
+
+---
+
+## Combat Must Remain Readable
+
+Readability has priority over visual spectacle.
+
+Players may observe thousands of combat encounters during long idle sessions.
+
+Visual overload creates fatigue.
+
+Therefore:
+
+Frequent events remain visually simple.
+
+Rare events receive stronger presentation.
+
+Examples:
+
+Basic Attack
+
+- Small animation
+- Small damage numbers
+- Minimal visual effects
+
+Critical Hit
+
+- Larger damage number
+- Small impact effect
+
+Boss Death
+
+- Large animation
+- Camera Shake
+- Unique sound
+- Enhanced loot presentation
+
+Legendary Loot
+
+- Dedicated notification
+- Unique animation
+- Distinct audio
+
+The player should instantly recognize important events.
+
+---
+
+## Combat Rewards Preparation
+
+The game never rewards fast reactions.
+
+A stronger build naturally produces:
+
+- Faster encounters
+- Better survivability
+- Higher farming efficiency
+- Better resource generation
+- Faster progression
+
+Preparation always outperforms mechanical execution.
+
+---
+
+## Idle First
+
+The game is fundamentally an Idle RPG.
+
+Combat continues naturally without constant interaction.
+
+Player interaction only exists through strategic decisions.
+
+---
+
+# Core Combat Loop
+
+Every combat follows the same sequence.
+
+```
+Walking
+
+↓
+
+Encounter Detected
+
+↓
+
+Movement Stops
+
+↓
+
+Automatic Combat
+
+↓
+
+Enemies Defeated
+
+↓
+
+Loot Generated
+
+↓
+
+Loot Collected
+
+↓
+
+Movement Resumes
+```
+
+This loop repeats continuously throughout exploration.
+
+---
+
+# Exploration Integration
+
+Outside combat, the Hero automatically walks toward the right side of the screen.
+
+Movement is fully automatic.
+
+The player never manually moves the Hero.
+
+Walking pauses only when:
+
+- Combat begins
+- Gathering begins
+- Exploration is manually paused
+- Hero dies
+
+Otherwise, exploration never stops.
+
+---
+
+# Open World Exploration
+
+Open World zones are infinite.
+
+The Hero continuously progresses through an endless sequence of Zone Segments.
+
+Enemy encounters are procedurally generated.
+
+The player decides when to stop farming.
+
+Open World has no completion state.
+
+---
+
+# Instanced Activities
+
+Instanced content has a beginning and an end.
+
+Examples:
+
+- Solo Dungeon
+- Group Dungeon
+- Hellgate
+- Expedition
+- Boss Arena
+- Future Raid
+
+Instanced activities may contain:
+
+- Checkpoints
+- Boss Rooms
+- Completion Rewards
+- Victory Screens
+
+The Combat System remains identical regardless of activity type.
+
+---
+
+# Encounter Generation
+
+Enemies are generated as predefined Encounter Groups.
+
+The system never spawns random isolated enemies directly.
+
+Instead, one Encounter is selected from the area's Encounter Table.
+
+Example:
+
+```
+Forest T4
+
+Encounter A
+
+2 Wolves
+
+Weight 25
+
+----------------
+
+Encounter B
+
+4 Wolves
+
+Weight 15
+
+----------------
+
+Encounter C
+
+1 Dire Bear
+
+Weight 8
+
+----------------
+
+Encounter D
+
+3 Wolves
+
+1 Alpha Wolf
+
+Weight 5
+```
+
+Each generated Encounter represents one complete combat.
+
+---
+
+# Active Encounter Rule
+
+Only one Encounter may be active simultaneously.
+
+While an Encounter remains alive:
+
+- No additional Encounter may begin.
+- Exploration remains paused.
+- New enemies cannot spawn.
+
+Future versions may support multi-pulls.
+
+Version 1 intentionally limits combat to one active Encounter.
+
+Benefits:
+
+- Simpler AI
+- Better readability
+- Easier balancing
+- Deterministic offline simulation
+
+---
+
+# Encounter Detection
+
+While exploring, the Hero constantly scans forward.
+
+Enemy detection occurs only in the direction of progression.
+
+Once an Encounter enters Detection Range:
+
+- Walking immediately stops.
+- Combat begins.
+- Exploration pauses.
+
+Enemies positioned behind the Hero cannot initiate combat.
+
+---
+
+# Hero Behaviour
+
+The Hero is completely autonomous.
+
+The Hero automatically:
+
+- Detects enemies
+- Selects targets
+- Moves into attack range if necessary
+- Performs Basic Attacks
+- Uses Automatic Skills
+- Switches targets
+- Continues until every enemy dies
+
+The player never directly controls combat.
+
+---
+
+# Combat Positioning
+
+Combat occurs on a single horizontal axis.
+
+Typical encounter:
+
+```
+Hero
+
+-------------------->
+
+Enemy Group
+```
+
+For melee combat:
+
+```
+Hero
+
+⚔
+
+Enemy
+```
+
+For ranged combat:
+
+```
+Hero
+
+-------- Projectile -------->
+
+Enemy
+```
+
+No vertical positioning exists.
+
+---
+
+# Target Selection
+
+Version 1 uses a deterministic targeting system.
+
+Priority:
+
+Nearest Living Enemy
+
+Once that enemy dies:
+
+Select the next nearest living enemy.
+
+Future weapon families may override this behavior.
+
+The architecture supports custom targeting rules.
+
+---
+
+# Weapon Range
+
+Each Weapon Family defines its own Attack Range.
+
+Examples:
+
+Sword
+
+Range 1
+
+Axe
+
+Range 1
+
+Hammer
+
+Range 1
+
+Spear
+
+Range 2
+
+Bow
+
+Range 6
+
+Fire Staff
+
+Range 6
+
+Nature Staff
+
+Range 5
+
+Attack Range is measured horizontally.
+
+---
+
+# Combat Initiation
+
+Combat begins as soon as an enemy enters Attack Range.
+
+Example:
+
+Bow
+
+Enemy located six units ahead.
+
+↓
+
+Bow immediately fires.
+
+↓
+
+Enemy advances toward the Hero.
+
+↓
+
+If still alive
+
+↓
+
+Melee engagement occurs.
+
+Range therefore creates a meaningful tactical advantage.
+
+---
+
+# Horizontal Movement During Combat
+
+Combat movement is minimal.
+
+Characters only move horizontally.
+
+Movement exists solely to reach valid attack range.
+
+Once inside range:
+
+Movement stops.
+
+Characters attack until:
+
+- Target dies
+- Target moves
+- New target is selected
+
+There is no free repositioning.
+
+---
+
+# Movement Speed
+
+Movement Speed controls exploration only.
+
+Higher Move Speed provides:
+
+- More encounters per hour
+- More farming efficiency
+- Faster progression
+
+Move Speed never affects:
+
+- Attack Speed
+- Animation Speed
+- Cooldowns
+
+Combat uses separate statistics.
+
+---
+
+# Attack Speed
+
+Attack Speed determines attack frequency.
+
+Each unit attacks independently.
+
+Hero and enemies maintain separate cooldown timers.
+
+Combat is fully asynchronous.
+
+No turn-based mechanics exist.
+
+---
+
+# Combat Distance
+
+Distance calculations occur exclusively along the X axis.
+
+Distance is used for:
+
+- Detection
+- Targeting
+- Attack Range
+- Skill Range
+- Projectile Travel
+- AI Decisions
+
+No Y-axis calculations are required.
+
+---
+
+# Projectile System
+
+Ranged attacks create gameplay projectiles.
+
+Each projectile owns:
+
+- Position
+- Direction
+- Speed
+- Target
+- Maximum Range
+- Collision State
+
+Projectiles only travel horizontally.
+
+Damage is applied only upon collision.
+
+The same system supports:
+
+- Arrows
+- Bolts
+- Fireballs
+- Frost Bolts
+- Spears
+- Future Boss Projectiles
+
+One unified projectile architecture serves every ranged attack.
+
+---
+
+# Projectile Travel
+
+Every projectile updates every simulation tick.
+
+A projectile continues moving until:
+
+- It collides with its target.
+- Maximum range is reached.
+- Lifetime expires.
+- Another gameplay mechanic destroys it.
+
+Projectiles never teleport unless explicitly defined by a Skill Definition.
+
+Examples:
+
+Arrow
+
+Normal horizontal travel.
+
+Fireball
+
+Horizontal travel followed by explosion.
+
+Holy Beam
+
+Extremely high speed while still using the projectile pipeline.
+
+---
+
+# Combat States
+
+Combat uses a deterministic finite state machine.
+
+Version 1 supports:
+
+Walking
+
+↓
+
+Combat
+
+↓
+
+Victory
+
+↓
+
+Walking
+
+or
+
+Walking
+
+↓
+
+Combat
+
+↓
+
+Defeat
+
+Walking, Combat, Victory and Defeat are the only gameplay combat states.
+
+
+---
+
+# Automatic Skills
+
+Combat skills belong to two categories.
+
+## Automatic Skills
+
+Automatic Skills are executed automatically.
+
+The player never manually activates them.
+
+Examples:
+
+- Heal below 50% HP
+- Defensive Shield at combat start
+- Area Attack when three or more enemies are nearby
+- Execute when target HP falls below a threshold
+
+Every Automatic Skill defines:
+
+- Activation Conditions
+- Cooldown
+- Priority
+- Target Rules
+- Range
+
+Different weapon families therefore naturally exhibit different combat behaviors.
+
+---
+
+## Manual Skills
+
+Some abilities may require player interaction.
+
+Examples:
+
+- Ultimate Abilities
+- Emergency Shields
+- Temporary Buffs
+- Special Consumables
+
+Manual Skills are optional.
+
+Players may ignore them during normal farming.
+
+More difficult encounters reward proper manual timing without compromising the Idle identity of the game.
+
+---
+
+# Skill Priority
+
+Whenever a skill becomes available:
+
+1. Verify cooldown.
+2. Verify activation conditions.
+3. Verify target availability.
+4. Verify target range.
+5. Execute the highest-priority valid skill.
+6. Resume normal combat.
+
+Only one action may be executed at any given moment.
+
+Skills never interrupt one another.
+
+---
+
+# Basic Attacks
+
+Whenever no valid skill can be executed:
+
+The Hero performs a Basic Attack.
+
+Every Weapon Family defines:
+
+- Attack Animation
+- Damage Formula
+- Attack Speed
+- Attack Range
+- Projectile Behavior (if applicable)
+
+Basic Attacks remain the primary source of damage during most encounters.
+
+---
+
+# Enemy Behaviour
+
+Enemies are fully autonomous.
+
+Every enemy owns:
+
+- Statistics
+- AI Profile
+- Skills
+- Attack Speed
+- Attack Range
+- Detection Range
+- Movement Speed
+
+Enemy behavior is completely data-driven.
+
+Adding new monsters never requires Combat code modifications.
+
+---
+
+# Enemy AI Overview
+
+Version 1 intentionally keeps AI simple.
+
+Standard behavior:
+
+Idle
+
+↓
+
+Detect Hero
+
+↓
+
+Move Toward Hero
+
+↓
+
+Reach Attack Range
+
+↓
+
+Attack
+
+↓
+
+Repeat
+
+↓
+
+Death
+
+Advanced AI profiles are documented inside the AI System.
+
+---
+
+# Simultaneous Combat
+
+Every enemy attacks independently.
+
+Example:
+
+Hero
+
+vs
+
+6 Wolves
+
+Each Wolf maintains:
+
+- Its own cooldown
+- Its own target validation
+- Its own attack timer
+
+Enemies never wait for one another.
+
+Large enemy groups therefore naturally increase combat difficulty.
+
+This design increases the value of:
+
+- Armor
+- Healing
+- Crowd Control
+- Area Damage
+- Sustain Builds
+
+---
+
+# Health Persistence
+
+Hero Health persists between encounters.
+
+Health is never automatically restored after combat.
+
+Example:
+
+Encounter One
+
+100%
+
+↓
+
+74%
+
+↓
+
+Encounter Two
+
+74%
+
+↓
+
+39%
+
+↓
+
+Encounter Three
+
+39%
+
+↓
+
+15%
+
+Survivability therefore becomes a fundamental progression mechanic.
+
+Important systems include:
+
+- Healing
+- Regeneration
+- Food
+- Potions
+- Defensive Equipment
+- Sustain Builds
+
+---
+
+# Victory
+
+Combat ends immediately after every enemy belonging to the current Encounter dies.
+
+Victory automatically triggers:
+
+- Loot Generation
+- Fame Rewards
+- Silver Rewards
+- Experience Calculations
+- Progression Updates
+
+After reward distribution:
+
+Walking resumes automatically.
+
+---
+
+# Loot Collection
+
+Loot collection is fully automatic.
+
+Flow:
+
+Combat
+
+↓
+
+Enemies Die
+
+↓
+
+Loot Appears Briefly
+
+↓
+
+Loot Flies Toward Hero
+
+↓
+
+Inventory Updated
+
+↓
+
+Walking Resumes
+
+Players never manually pick up loot.
+
+---
+
+# Loot Feed
+
+Every reward immediately produces visual feedback.
+
+Common rewards appear inside a compact Loot Feed.
+
+Examples:
+
++182 Silver
+
++84 Fame
+
++3 T4 Ore
+
++2 Rough Stone
+
+Higher rarity equipment receives dedicated notifications.
+
+Rare
+
+Small Highlight
+
+Epic
+
+Animated Card
+
+Legendary
+
+Large Notification
+
+Unique Sound
+
+Unique Animation
+
+Reward presentation always matches reward importance.
+
+---
+
+# Inventory Interaction
+
+Equipment is never equipped automatically.
+
+Every obtained item is placed into the Inventory.
+
+Players decide whether to:
+
+- Equip
+- Sell
+- Salvage
+- Store
+- Recycle
+
+This preserves build diversity.
+
+---
+
+# Combat Pause
+
+Combat cannot be interrupted.
+
+While combat is active the player cannot:
+
+- Change Equipment
+- Modify Skills
+- Leave Combat
+
+After Victory:
+
+Exploration may be paused before reaching the next Encounter.
+
+---
+
+# Walking State
+
+Outside combat the Hero remains in the Walking State.
+
+Characteristics:
+
+- Automatic forward movement
+- Enemy Detection active
+- No attacks
+- No combat skills
+
+Possible transitions:
+
+Walking
+
+↓
+
+Enemy Detected
+
+↓
+
+Combat
+
+or
+
+Walking
+
+↓
+
+Player Pause
+
+↓
+
+Paused
+
+---
+
+# Combat State
+
+Combat begins when an Encounter activates.
+
+Characteristics:
+
+- Walking stops
+- Attack Speed becomes active
+- Skills become available
+- Damage calculations occur
+- Projectiles are simulated
+
+Possible transitions:
+
+Combat
+
+↓
+
+Victory
+
+↓
+
+Walking
+
+or
+
+Combat
+
+↓
+
+Defeat
+
+---
+
+# Victory State
+
+After the final enemy dies:
+
+The Combat System processes:
+
+- Loot
+- Fame
+- Silver
+- Progression Rewards
+
+When complete:
+
+Walking resumes automatically.
+
+---
+
+# Defeat State
+
+Combat immediately ends when Hero Health reaches zero.
+
+Remaining enemies immediately stop attacking.
+
+Death penalties depend entirely on World Rules.
+
+Examples:
+
+Blue Zone
+
+Minimal penalty
+
+Yellow Zone
+
+Knockdown
+
+Red Zone
+
+World-defined penalty
+
+Black Zone
+
+World-defined penalty
+
+Combat simply reports Hero Death.
+
+Penalty processing belongs to World Systems.
+
+---
+
+# Paused State
+
+Outside combat the player may pause progression.
+
+While paused:
+
+- Walking stops
+- No new encounters generate
+- Inventory remains accessible
+- Equipment may be modified
+- Skills may be changed
+
+Resuming returns directly to Walking.
+
+---
+
+# Combat Event Pipeline
+
+Every combat action generates gameplay events.
+
+Examples:
+
+OnEncounterGenerated
+
+OnEncounterStarted
+
+OnEnemyDetected
+
+OnCombatStarted
+
+OnBasicAttack
+
+OnSkillCast
+
+OnProjectileCreated
+
+OnProjectileImpact
+
+OnCriticalHit
+
+OnDamageApplied
+
+OnEnemyKilled
+
+OnHeroKilled
+
+OnCombatWon
+
+OnCombatLost
+
+OnLootGenerated
+
+OnLootCollected
+
+OnExplorationResumed
+
+Other systems subscribe to these events rather than modifying Combat directly.
+
+This guarantees modular architecture.
+
+---
+
+# Combat Rules
+
+The following rules are immutable.
+
+Rule 01
+
+Combat is automatic.
+
+Rule 02
+
+Walking is automatic.
+
+Rule 03
+
+The Hero always progresses from left to right.
+
+Rule 04
+
+The Hero immediately stops upon Encounter detection.
+
+Rule 05
+
+Only one Encounter may be active.
+
+Rule 06
+
+Combat occurs only on the horizontal axis.
+
+Rule 07
+
+All enemies attack independently.
+
+Rule 08
+
+Hero Health persists between encounters.
+
+Rule 09
+
+Equipment cannot be changed during combat.
+
+Rule 10
+
+Loot is collected automatically.
+
+Rule 11
+
+Equipment is never automatically equipped.
+
+Rule 12
+
+Projectiles physically exist.
+
+Rule 13
+
+Every Weapon Family defines its own Attack Range.
+
+Rule 14
+
+Nearest Living Enemy is the default target.
+
+Rule 15
+
+Players may pause exploration only outside combat.
+
+These rules define every combat interaction in Version 1.
+
+---
+
+# Offline Combat
+
+Offline Combat uses the exact same deterministic simulation.
+
+No simplified formulas exist.
+
+Given identical inputs:
+
+↓
+
+The simulation always produces identical results.
+
+This guarantees consistency between Online and Offline progression.
+
+---
+
+# Statistics Consumed During Combat
+
+Combat consumes statistics defined elsewhere.
+
+Primary Combat Statistics include:
+
+- Maximum Health
+- Physical Damage
+- Magical Damage
+- Armor
+- Magic Resistance
+- Attack Speed
+- Movement Speed
+- Attack Range
+- Critical Chance
+- Critical Damage
+- Healing Power
+- Life Steal
+- Cooldown Reduction
+
+Combat never calculates these values.
+
+It only consumes them.
+
+---
+# Combat Readability
+
+Visual clarity is considered a gameplay feature.
+
+Players should always understand:
+
+- Who attacked.
+- Who received damage.
+- Which skill was used.
+- Why damage occurred.
+- Why an enemy died.
+
+Because the game is viewed from a fixed side-scrolling perspective, combat readability must remain excellent even during long idle sessions.
+
+The following principles are mandatory:
+
+- Characters must never overlap excessively.
+- Attack animations must clearly indicate their direction.
+- Damage numbers must never obscure the battlefield.
+- Visual effects must never hide enemies.
+- Important gameplay events must always take priority over cosmetic effects.
+
+Gameplay information always has priority over visual spectacle.
+
+---
+
+# Combat Feedback
+
+Every combat action should immediately communicate its result.
+
+Examples:
+
+Basic Attack
+
+- Small attack animation.
+- Small hit effect.
+- Standard damage number.
+
+Critical Hit
+
+- Larger damage number.
+- Stronger impact effect.
+- Distinct sound effect.
+
+Skill Cast
+
+- Unique animation.
+- Dedicated visual effect.
+- Skill-specific sound.
+
+Enemy Death
+
+- Death animation.
+- Small disappearance delay.
+- Loot generation effect.
+
+Boss Death
+
+- Extended death animation.
+- Camera shake.
+- Dedicated music cue.
+- Enhanced loot presentation.
+
+Legendary Drop
+
+- Dedicated notification.
+- Unique animation.
+- Unique sound.
+
+Feedback intensity must always scale with gameplay importance.
+
+---
+
+# Camera Behaviour During Combat
+
+The Combat System interacts with the Camera System without controlling it.
+
+During combat the camera remains:
+
+- Horizontally centered on the Hero.
+- Vertically fixed.
+- Smoothly interpolated.
+- Bounded inside the current Zone Segment.
+
+Camera shake is reserved for exceptional events.
+
+Examples:
+
+- Critical Hits
+- Boss Spawn
+- Boss Death
+- Major Skills
+- Legendary Drops
+
+Normal attacks never trigger camera shake.
+
+---
+
+# Animation Behaviour
+
+Combat animations prioritize responsiveness.
+
+Every combat animation must:
+
+- Start immediately.
+- Clearly communicate the performed action.
+- Finish quickly.
+- Never delay gameplay simulation.
+
+Version 1 uses intentionally simple animation sets.
+
+Typical examples:
+
+Hero
+
+- Idle
+- Walk
+- Attack
+- Cast
+- Hurt
+- Death
+
+Enemy
+
+- Idle
+- Walk
+- Attack
+- Hurt
+- Death
+
+Characters simply flip horizontally according to facing direction.
+
+Separate left/right animation sets are unnecessary.
+
+---
+
+# Collision Philosophy
+
+Combat uses simplified collision.
+
+Collision exists only for gameplay purposes.
+
+Examples:
+
+- Projectile collision
+- Attack range validation
+- Enemy contact
+- Target acquisition
+
+Visual sprites may overlap slightly without affecting gameplay.
+
+Collision should remain deterministic and inexpensive to simulate.
+
+---
+
+# Performance Considerations
+
+Combat must support extremely long play sessions.
+
+Design goals include:
+
+- Stable FPS
+- Deterministic simulation
+- Minimal garbage collection
+- Predictable CPU usage
+- Efficient collision checks
+- Efficient projectile updates
+
+Combat should comfortably simulate hundreds of thousands of encounters without requiring a restart.
+
+Performance always has priority over unnecessary visual complexity.
+
+---
+
+# Deterministic Simulation
+
+Combat simulation must always be deterministic.
+
+Given:
+
+- Identical character statistics
+- Identical enemy statistics
+- Identical encounter generation
+- Identical random seed
+
+The simulation must always produce identical results.
+
+Deterministic simulation guarantees:
+
+- Reliable offline progression
+- Easier debugging
+- Server validation
+- Replay consistency
+- Future multiplayer compatibility
+
+---
+
+# System Interactions
+
+The Combat System communicates with multiple gameplay systems.
+
+Combat consumes:
+
+- Character System
+- Stat System
+- Equipment System
+- Ability System
+- Damage System
+- AI System
+- Enemy System
+- Status Effect System
+
+Combat produces events for:
+
+- Loot System
+- Progression System
+- Mastery System
+- UI System
+- Audio System
+- VFX System
+- Notification System
+- Achievement System (Future)
+- Quest System (Future)
+
+Communication always occurs through well-defined interfaces.
+
+No external system should directly modify Combat logic.
+
+---
+
+# Future Compatibility
+
+The Combat System is intentionally designed to support future gameplay without architectural redesign.
+
+Examples include:
+
+- PvP
+- Guild Battles
+- Arena
+- World Bosses
+- Elite Monsters
+- Pets
+- Summons
+- Companion AI
+- Mount Combat Bonuses
+- Environmental Hazards
+- Dynamic Events
+- Seasonal Modifiers
+- Hardcore Modes
+
+Future systems extend Combat rather than replacing it.
+
+---
+
+# Example Combat Sequence
+
+The following example illustrates a complete encounter.
+
+Hero explores a Forest Zone Segment.
+
+↓
+
+Hero automatically walks toward the right.
+
+↓
+
+A Wolf Encounter enters Detection Range.
+
+↓
+
+Walking immediately stops.
+
+↓
+
+The Hero selects the nearest Wolf.
+
+↓
+
+The Bow fires its first Arrow.
+
+↓
+
+The Wolves begin advancing.
+
+↓
+
+The Arrow collides with the first Wolf.
+
+↓
+
+Damage is applied.
+
+↓
+
+The Hero automatically casts Multi Shot.
+
+↓
+
+Two Wolves are damaged.
+
+↓
+
+One Wolf dies.
+
+↓
+
+Target automatically switches.
+
+↓
+
+Combat continues.
+
+↓
+
+The final Wolf dies.
+
+↓
+
+Loot is generated.
+
+↓
+
+Silver, Fame and Resources briefly appear.
+
+↓
+
+Rewards automatically fly toward the Hero.
+
+↓
+
+Inventory updates.
+
+↓
+
+Loot Feed displays obtained rewards.
+
+↓
+
+The Hero automatically resumes exploration.
+
+This sequence represents the standard gameplay loop experienced throughout the game.
+
+---
+
+# Responsibilities
+
+The Combat System is responsible for:
+
+- Combat Flow
+- Hero Combat Behaviour
+- Encounter Lifecycle
+- Combat State Machine
+- Target Selection
+- Combat Positioning
+- Attack Execution
+- Projectile Simulation
+- Victory Detection
+- Defeat Detection
+- Combat Events
+- Exploration Transitions
+
+The Combat System is NOT responsible for:
+
+- Damage Formulas
+- Skill Definitions
+- Status Effect Logic
+- Enemy AI Logic
+- Loot Generation Algorithms
+- Item Statistics
+- Progression Calculations
+- Quest Logic
+- Achievement Logic
+- Death Penalties
+- Camera Behaviour
+- Animation Implementation
+
+Those systems interact through clearly defined interfaces.
+
+---
+
+# Immutable Design Rules
+
+The following principles define the Combat System and must never change without redesigning the project.
+
+Rule 01
+
+Combat is fully automatic.
+
+Rule 02
+
+Walking is fully automatic.
+
+Rule 03
+
+The Hero always progresses from left to right.
+
+Rule 04
+
+Combat occurs on a single horizontal axis.
+
+Rule 05
+
+Only one Encounter may be active simultaneously.
+
+Rule 06
+
+The Hero immediately stops when an Encounter is detected.
+
+Rule 07
+
+Nearest Living Enemy is the default target.
+
+Rule 08
+
+Hero Health persists between encounters.
+
+Rule 09
+
+Equipment cannot be modified during combat.
+
+Rule 10
+
+Loot is automatically collected.
+
+Rule 11
+
+Projectiles physically exist.
+
+Rule 12
+
+Every Weapon Family defines its own Attack Range.
+
+Rule 13
+
+Offline Combat uses the exact same deterministic simulation.
+
+Rule 14
+
+Readability always has priority over visual spectacle.
+
+Rule 15
+
+Preparation is always more important than mechanical execution.
+
+---
+
+# Summary
+
+The Combat System is the central gameplay pillar of the project.
+
+It has been designed around five fundamental principles:
+
+- Automation
+- Readability
+- Determinism
+- Preparation
+- Side-Scroller Simplicity
+
+The Hero continuously explores the world, automatically engages enemy encounters, defeats opponents through deterministic combat simulation, collects rewards, and resumes exploration without player micromanagement.
+
+Every surrounding gameplay system—including Equipment, Crafting, Refining, Gathering, Workers, Player Island, Progression and Masteries—ultimately exists to strengthen this core gameplay loop.
+
+The Combat System remains fully data-driven, modular and deterministic, allowing future gameplay systems to extend its capabilities without requiring architectural redesign.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

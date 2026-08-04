@@ -1,0 +1,2228 @@
+# CONSUMABLE DATABASE
+
+Version: 1.0
+
+This document defines every consumable item available in Version 1.
+
+Consumables are temporary-use items that apply immediate effects, timed buffs,
+healing, energy restoration or utility effects.
+
+Each consumable references the corresponding icon asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored directly in this document.
+
+Effect strength, duration, cooldown, crafting costs and progression requirements
+are inherited from the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Consumable ID:
+Permanent gameplay identifier.
+
+Icon ID:
+Identifier used in the inventory, merchant, crafting and combat interfaces.
+
+Consumable Type:
+Defines the item's main behaviour.
+
+Effect Profile:
+Defines the effect applied when the item is consumed.
+
+Scaling Profile:
+Defines effect strength and duration by tier.
+
+Craft Profile:
+Defines required materials, crafting time and crafting cost.
+
+Acquisition Profile:
+Defines alternative acquisition methods.
+
+Cooldown Group:
+Defines which consumables share a cooldown.
+
+Usage Context:
+Defines where the item may be used.
+
+All consumable variants inherit the same base entry.
+
+Generated identifiers follow this format:
+
+CON-0001-T2
+CON-0001-T3
+CON-0001-T4
+CON-0001-T5
+CON-0001-T6
+CON-0001-T7
+CON-0001-T8
+
+Generated icon identifiers follow the same format.
+
+Example:
+
+Gameplay Item:
+CON-0001-T5
+
+Inventory Icon:
+ICO-CON-0001-T5
+
+Display Name:
+Healing Potion T5
+
+---
+
+# ============================================================================
+# HEALTH POTIONS
+# ============================================================================
+
+## CON-0001
+
+Name:
+Healing Potion
+
+Icon ID:
+ICO-CON-0001
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Healing
+
+Effect Profile:
+EFFECT_POTION_HEALING
+
+Scaling Profile:
+CONSUMABLE_HEALING_STANDARD
+
+Craft Profile:
+CRAFT_POTION_HEALING
+
+Acquisition Profile:
+ACQUIRE_POTION_STANDARD
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+World
+Expedition
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Restores a portion of the user's missing health.
+
+Primary Effect:
+Immediate Health Restoration
+
+Secondary Effect:
+None
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+## CON-0002
+
+Name:
+Regeneration Potion
+
+Icon ID:
+ICO-CON-0002
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Healing
+
+Effect Profile:
+EFFECT_POTION_REGENERATION
+
+Scaling Profile:
+CONSUMABLE_REGENERATION_STANDARD
+
+Craft Profile:
+CRAFT_POTION_REGENERATION
+
+Acquisition Profile:
+ACQUIRE_POTION_STANDARD
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+World
+Expedition
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Restores health gradually over a limited duration.
+
+Primary Effect:
+Health Regeneration
+
+Secondary Effect:
+None
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ENERGY POTIONS
+# ============================================================================
+
+## CON-0003
+
+Name:
+Energy Potion
+
+Icon ID:
+ICO-CON-0003
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Energy
+
+Effect Profile:
+EFFECT_POTION_ENERGY
+
+Scaling Profile:
+CONSUMABLE_ENERGY_STANDARD
+
+Craft Profile:
+CRAFT_POTION_ENERGY
+
+Acquisition Profile:
+ACQUIRE_POTION_STANDARD
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+World
+Expedition
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Restores a portion of the user's energy.
+
+Primary Effect:
+Immediate Energy Restoration
+
+Secondary Effect:
+None
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+## CON-0004
+
+Name:
+Focus Potion
+
+Icon ID:
+ICO-CON-0004
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Energy
+
+Effect Profile:
+EFFECT_POTION_FOCUS
+
+Scaling Profile:
+CONSUMABLE_FOCUS_STANDARD
+
+Craft Profile:
+CRAFT_POTION_FOCUS
+
+Acquisition Profile:
+ACQUIRE_POTION_ADVANCED
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+World
+Expedition
+
+Tier Range:
+T4-T8
+
+Base Behaviour:
+Temporarily increases energy regeneration and casting efficiency.
+
+Primary Effect:
+Energy Regeneration
+
+Secondary Effect:
+Reduced Ability Energy Cost
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# OFFENSIVE POTIONS
+# ============================================================================
+
+## CON-0005
+
+Name:
+Power Potion
+
+Icon ID:
+ICO-CON-0005
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Offensive
+
+Effect Profile:
+EFFECT_POTION_POWER
+
+Scaling Profile:
+CONSUMABLE_POWER_STANDARD
+
+Craft Profile:
+CRAFT_POTION_POWER
+
+Acquisition Profile:
+ACQUIRE_POTION_ADVANCED
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+Expedition
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Temporarily increases all damage dealt.
+
+Primary Effect:
+Damage Increase
+
+Secondary Effect:
+None
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+## CON-0006
+
+Name:
+Attack Speed Potion
+
+Icon ID:
+ICO-CON-0006
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Offensive
+
+Effect Profile:
+EFFECT_POTION_ATTACK_SPEED
+
+Scaling Profile:
+CONSUMABLE_ATTACK_SPEED_STANDARD
+
+Craft Profile:
+CRAFT_POTION_ATTACK_SPEED
+
+Acquisition Profile:
+ACQUIRE_POTION_ADVANCED
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+Expedition
+
+Tier Range:
+T4-T8
+
+Base Behaviour:
+Temporarily increases basic attack speed.
+
+Primary Effect:
+Attack Speed Increase
+
+Secondary Effect:
+Basic Attack Efficiency
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+## CON-0007
+
+Name:
+Critical Potion
+
+Icon ID:
+ICO-CON-0007
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Offensive
+
+Effect Profile:
+EFFECT_POTION_CRITICAL
+
+Scaling Profile:
+CONSUMABLE_CRITICAL_STANDARD
+
+Craft Profile:
+CRAFT_POTION_CRITICAL
+
+Acquisition Profile:
+ACQUIRE_POTION_ADVANCED
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+Expedition
+
+Tier Range:
+T5-T8
+
+Base Behaviour:
+Temporarily improves critical strike performance.
+
+Primary Effect:
+Critical Chance Increase
+
+Secondary Effect:
+Critical Damage Increase
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# DEFENSIVE POTIONS
+# ============================================================================
+
+## CON-0008
+
+Name:
+Resistance Potion
+
+Icon ID:
+ICO-CON-0008
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Defensive
+
+Effect Profile:
+EFFECT_POTION_RESISTANCE
+
+Scaling Profile:
+CONSUMABLE_RESISTANCE_STANDARD
+
+Craft Profile:
+CRAFT_POTION_RESISTANCE
+
+Acquisition Profile:
+ACQUIRE_POTION_ADVANCED
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+Expedition
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Temporarily increases physical and magical resistance.
+
+Primary Effect:
+Physical Resistance Increase
+
+Secondary Effect:
+Magical Resistance Increase
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+## CON-0009
+
+Name:
+Fortification Potion
+
+Icon ID:
+ICO-CON-0009
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Defensive
+
+Effect Profile:
+EFFECT_POTION_FORTIFICATION
+
+Scaling Profile:
+CONSUMABLE_FORTIFICATION_STANDARD
+
+Craft Profile:
+CRAFT_POTION_FORTIFICATION
+
+Acquisition Profile:
+ACQUIRE_POTION_ADVANCED
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+Expedition
+
+Tier Range:
+T4-T8
+
+Base Behaviour:
+Grants a temporary protective shield.
+
+Primary Effect:
+Damage Absorption Shield
+
+Secondary Effect:
+Interruption Resistance
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+## CON-0010
+
+Name:
+Cleansing Potion
+
+Icon ID:
+ICO-CON-0010
+
+Category:
+Consumable
+
+Consumable Type:
+Potion
+
+Consumable Family:
+Defensive
+
+Effect Profile:
+EFFECT_POTION_CLEANSING
+
+Scaling Profile:
+CONSUMABLE_CLEANSING_STANDARD
+
+Craft Profile:
+CRAFT_POTION_CLEANSING
+
+Acquisition Profile:
+ACQUIRE_POTION_ADVANCED
+
+Cooldown Group:
+COOLDOWN_POTION
+
+Usage Context:
+Combat
+Expedition
+
+Tier Range:
+T4-T8
+
+Base Behaviour:
+Removes eligible negative status effects.
+
+Primary Effect:
+Debuff Removal
+
+Secondary Effect:
+Temporary Debuff Resistance
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# FOOD
+# ============================================================================
+
+## CON-0011
+
+Name:
+Traveler Stew
+
+Icon ID:
+ICO-CON-0011
+
+Category:
+Consumable
+
+Consumable Type:
+Food
+
+Consumable Family:
+Balanced Meal
+
+Effect Profile:
+EFFECT_FOOD_BALANCED
+
+Scaling Profile:
+CONSUMABLE_FOOD_BALANCED
+
+Craft Profile:
+CRAFT_FOOD_TRAVELER_STEW
+
+Acquisition Profile:
+ACQUIRE_FOOD_STANDARD
+
+Cooldown Group:
+COOLDOWN_FOOD
+
+Usage Context:
+World
+Expedition
+Town
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Provides a balanced increase to combat effectiveness.
+
+Primary Effect:
+Maximum Health Increase
+
+Secondary Effect:
+Damage Increase
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0012
+
+Name:
+Warrior Meal
+
+Icon ID:
+ICO-CON-0012
+
+Category:
+Consumable
+
+Consumable Type:
+Food
+
+Consumable Family:
+Offensive Meal
+
+Effect Profile:
+EFFECT_FOOD_WARRIOR
+
+Scaling Profile:
+CONSUMABLE_FOOD_OFFENSIVE
+
+Craft Profile:
+CRAFT_FOOD_WARRIOR_MEAL
+
+Acquisition Profile:
+ACQUIRE_FOOD_STANDARD
+
+Cooldown Group:
+COOLDOWN_FOOD
+
+Usage Context:
+World
+Expedition
+Town
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Provides a long-duration offensive combat bonus.
+
+Primary Effect:
+Physical Damage Increase
+
+Secondary Effect:
+Basic Attack Damage Increase
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0013
+
+Name:
+Mage Meal
+
+Icon ID:
+ICO-CON-0013
+
+Category:
+Consumable
+
+Consumable Type:
+Food
+
+Consumable Family:
+Magic Meal
+
+Effect Profile:
+EFFECT_FOOD_MAGE
+
+Scaling Profile:
+CONSUMABLE_FOOD_MAGIC
+
+Craft Profile:
+CRAFT_FOOD_MAGE_MEAL
+
+Acquisition Profile:
+ACQUIRE_FOOD_STANDARD
+
+Cooldown Group:
+COOLDOWN_FOOD
+
+Usage Context:
+World
+Expedition
+Town
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Provides a long-duration magical combat bonus.
+
+Primary Effect:
+Magic Damage Increase
+
+Secondary Effect:
+Energy Regeneration
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0014
+
+Name:
+Guardian Meal
+
+Icon ID:
+ICO-CON-0014
+
+Category:
+Consumable
+
+Consumable Type:
+Food
+
+Consumable Family:
+Defensive Meal
+
+Effect Profile:
+EFFECT_FOOD_GUARDIAN
+
+Scaling Profile:
+CONSUMABLE_FOOD_DEFENSIVE
+
+Craft Profile:
+CRAFT_FOOD_GUARDIAN_MEAL
+
+Acquisition Profile:
+ACQUIRE_FOOD_STANDARD
+
+Cooldown Group:
+COOLDOWN_FOOD
+
+Usage Context:
+World
+Expedition
+Town
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Provides a long-duration defensive bonus.
+
+Primary Effect:
+Maximum Health Increase
+
+Secondary Effect:
+Resistance Increase
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0015
+
+Name:
+Gatherer's Meal
+
+Icon ID:
+ICO-CON-0015
+
+Category:
+Consumable
+
+Consumable Type:
+Food
+
+Consumable Family:
+Gathering Meal
+
+Effect Profile:
+EFFECT_FOOD_GATHERER
+
+Scaling Profile:
+CONSUMABLE_FOOD_GATHERING
+
+Craft Profile:
+CRAFT_FOOD_GATHERER_MEAL
+
+Acquisition Profile:
+ACQUIRE_FOOD_STANDARD
+
+Cooldown Group:
+COOLDOWN_FOOD
+
+Usage Context:
+World
+Gathering
+Town
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Improves gathering and carrying performance.
+
+Primary Effect:
+Gathering Yield Increase
+
+Secondary Effect:
+Carrying Capacity Increase
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0016
+
+Name:
+Crafter's Meal
+
+Icon ID:
+ICO-CON-0016
+
+Category:
+Consumable
+
+Consumable Type:
+Food
+
+Consumable Family:
+Crafting Meal
+
+Effect Profile:
+EFFECT_FOOD_CRAFTER
+
+Scaling Profile:
+CONSUMABLE_FOOD_CRAFTING
+
+Craft Profile:
+CRAFT_FOOD_CRAFTER_MEAL
+
+Acquisition Profile:
+ACQUIRE_FOOD_STANDARD
+
+Cooldown Group:
+COOLDOWN_FOOD
+
+Usage Context:
+Crafting
+Refining
+Town
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Improves crafting and refining efficiency.
+
+Primary Effect:
+Crafting Efficiency Increase
+
+Secondary Effect:
+Resource Return Increase
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# BANDAGES
+# ============================================================================
+
+## CON-0017
+
+Name:
+Bandage
+
+Icon ID:
+ICO-CON-0017
+
+Category:
+Consumable
+
+Consumable Type:
+Bandage
+
+Consumable Family:
+Recovery
+
+Effect Profile:
+EFFECT_BANDAGE_HEALING
+
+Scaling Profile:
+CONSUMABLE_BANDAGE_STANDARD
+
+Craft Profile:
+CRAFT_BANDAGE_STANDARD
+
+Acquisition Profile:
+ACQUIRE_BANDAGE_STANDARD
+
+Cooldown Group:
+COOLDOWN_BANDAGE
+
+Usage Context:
+Combat
+World
+Expedition
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Restores health gradually while the user avoids taking damage.
+
+Primary Effect:
+Health Regeneration
+
+Secondary Effect:
+None
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# UTILITY CONSUMABLES
+# ============================================================================
+
+## CON-0018
+
+Name:
+Travel Ration
+
+Icon ID:
+ICO-CON-0018
+
+Category:
+Consumable
+
+Consumable Type:
+Utility
+
+Consumable Family:
+Travel
+
+Effect Profile:
+EFFECT_UTILITY_TRAVEL
+
+Scaling Profile:
+CONSUMABLE_TRAVEL_STANDARD
+
+Craft Profile:
+CRAFT_TRAVEL_RATION
+
+Acquisition Profile:
+ACQUIRE_UTILITY_STANDARD
+
+Cooldown Group:
+COOLDOWN_UTILITY_TRAVEL
+
+Usage Context:
+World
+Expedition
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Reduces automated travel and encounter transition duration.
+
+Primary Effect:
+Travel Duration Reduction
+
+Secondary Effect:
+Mount Recovery Efficiency
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0019
+
+Name:
+Gathering Tonic
+
+Icon ID:
+ICO-CON-0019
+
+Category:
+Consumable
+
+Consumable Type:
+Utility
+
+Consumable Family:
+Gathering
+
+Effect Profile:
+EFFECT_UTILITY_GATHERING
+
+Scaling Profile:
+CONSUMABLE_GATHERING_STANDARD
+
+Craft Profile:
+CRAFT_GATHERING_TONIC
+
+Acquisition Profile:
+ACQUIRE_UTILITY_ADVANCED
+
+Cooldown Group:
+COOLDOWN_UTILITY_GATHERING
+
+Usage Context:
+World
+Gathering
+
+Tier Range:
+T3-T8
+
+Base Behaviour:
+Temporarily increases gathering speed.
+
+Primary Effect:
+Gathering Speed Increase
+
+Secondary Effect:
+Tool Durability Efficiency
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Yes
+
+Craftable:
+Yes
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0020
+
+Name:
+Experience Scroll
+
+Icon ID:
+ICO-CON-0020
+
+Category:
+Consumable
+
+Consumable Type:
+Scroll
+
+Consumable Family:
+Progression
+
+Effect Profile:
+EFFECT_SCROLL_EXPERIENCE
+
+Scaling Profile:
+CONSUMABLE_EXPERIENCE_STANDARD
+
+Craft Profile:
+None
+
+Acquisition Profile:
+ACQUIRE_SCROLL_EXPERIENCE
+
+Cooldown Group:
+COOLDOWN_SCROLL
+
+Usage Context:
+World
+Town
+Progression
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Grants progression experience when consumed.
+
+Primary Effect:
+Immediate Experience Reward
+
+Secondary Effect:
+None
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Conditional
+
+Craftable:
+No
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0021
+
+Name:
+Silver Pouch
+
+Icon ID:
+ICO-CON-0021
+
+Category:
+Consumable
+
+Consumable Type:
+Container
+
+Consumable Family:
+Currency
+
+Effect Profile:
+EFFECT_CONTAINER_SILVER
+
+Scaling Profile:
+CONSUMABLE_SILVER_STANDARD
+
+Craft Profile:
+None
+
+Acquisition Profile:
+ACQUIRE_SILVER_POUCH
+
+Cooldown Group:
+None
+
+Usage Context:
+World
+Town
+Progression
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Grants a tier-scaled quantity of Silver when opened.
+
+Primary Effect:
+Immediate Silver Reward
+
+Secondary Effect:
+None
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Conditional
+
+Craftable:
+No
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+## CON-0022
+
+Name:
+Loot Chest
+
+Icon ID:
+ICO-CON-0022
+
+Category:
+Consumable
+
+Consumable Type:
+Container
+
+Consumable Family:
+Reward
+
+Effect Profile:
+EFFECT_CONTAINER_LOOT
+
+Scaling Profile:
+CONSUMABLE_LOOT_CHEST_STANDARD
+
+Craft Profile:
+None
+
+Acquisition Profile:
+ACQUIRE_LOOT_CHEST
+
+Cooldown Group:
+None
+
+Usage Context:
+World
+Town
+Progression
+
+Tier Range:
+T2-T8
+
+Base Behaviour:
+Generates rewards from an assigned loot profile.
+
+Primary Effect:
+Random Item Reward
+
+Secondary Effect:
+Currency Reward
+
+Target Type:
+Self
+
+Stackable:
+Yes
+
+Tradable:
+Conditional
+
+Craftable:
+No
+
+Usable During Combat:
+No
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# CONSUMABLE TYPE RULES
+# ============================================================================
+
+## Potions
+
+Potions provide immediate or short-duration effects.
+
+Potions may be used during combat.
+
+All standard potions share the same global potion cooldown.
+
+A player may carry multiple potion types but may equip only one active potion
+type in the combat quick slot unless otherwise defined.
+
+Potion effects are removed when their duration expires.
+
+---
+
+## Food
+
+Food provides long-duration effects.
+
+Food cannot be consumed during active combat.
+
+Only one food effect may be active at a time.
+
+Consuming a new food replaces the previous food effect.
+
+Food duration continues during:
+
+- Combat
+- Travel
+- Gathering
+- Crafting
+- Offline progression
+
+Food duration may pause while the player is logged out if the progression
+rules explicitly require it.
+
+---
+
+## Bandages
+
+Bandages restore health over time.
+
+Bandage healing is interrupted when the player receives direct damage.
+
+Damage-over-time effects may interrupt bandages if defined by the Effect
+Profile.
+
+Bandages use an independent cooldown group.
+
+Bandages do not share the potion cooldown.
+
+---
+
+## Utility Consumables
+
+Utility consumables affect non-combat activities.
+
+Possible affected systems include:
+
+- Gathering
+- Travel
+- Crafting
+- Refining
+- Progression
+- Mount recovery
+
+Utility effects may coexist with one food effect and one potion effect unless
+their Effect Profile explicitly prevents stacking.
+
+---
+
+## Scrolls
+
+Scrolls grant immediate progression effects.
+
+Scrolls cannot be consumed during combat.
+
+Scroll rewards are applied immediately.
+
+Scrolls do not create permanent item identities beyond their canonical
+Consumable ID.
+
+---
+
+## Containers
+
+Containers generate rewards when opened.
+
+Containers may reference:
+
+- Fixed rewards
+- Weighted loot tables
+- Guaranteed currencies
+- Tier-scaled rewards
+- Faction rewards
+- Boss rewards
+
+Opening a container permanently destroys the container item.
+
+---
+
+# ============================================================================
+# EQUIPMENT AND QUICK-SLOT RULES
+# ============================================================================
+
+The player has dedicated consumable quick slots.
+
+Recommended Version 1 quick slots:
+
+- One Potion Slot
+- One Bandage Slot
+- One Food Slot
+- One Utility Slot
+
+Food is activated outside combat and remains active for its duration.
+
+The Potion Slot controls which potion may be used automatically or manually
+during combat.
+
+The Bandage Slot controls which bandage may be used automatically or manually.
+
+The Utility Slot controls the active non-combat consumable.
+
+Consumables do not occupy weapon, armor, off-hand or mount slots.
+
+---
+
+# ============================================================================
+# AUTOMATIC USAGE RULES
+# ============================================================================
+
+The idle combat system may use eligible consumables automatically.
+
+Automatic potion usage may be triggered by:
+
+- Health below threshold
+- Energy below threshold
+- Boss phase
+- Defensive danger state
+- Offensive burst state
+- Debuff state
+
+Automatic bandage usage may be triggered by:
+
+- Combat ending
+- No recent incoming damage
+- Health below threshold
+- Encounter transition
+
+Automatic usage requires:
+
+- Consumable available in inventory
+- Consumable assigned to quick slot
+- Cooldown available
+- Valid usage context
+- Trigger condition satisfied
+
+Automatic usage thresholds are configured in the player's automation settings.
+
+---
+
+# ============================================================================
+# COOLDOWN RULES
+# ============================================================================
+
+Cooldown groups prevent repeated use of similar consumables.
+
+Standard cooldown groups:
+
+- COOLDOWN_POTION
+- COOLDOWN_BANDAGE
+- COOLDOWN_FOOD
+- COOLDOWN_UTILITY_TRAVEL
+- COOLDOWN_UTILITY_GATHERING
+- COOLDOWN_SCROLL
+
+Items within the same cooldown group share cooldown progression.
+
+Using one potion activates the cooldown of every consumable assigned to
+COOLDOWN_POTION.
+
+Food uses a replacement rule instead of a standard short cooldown.
+
+Containers do not use a cooldown unless their acquisition profile requires one.
+
+Cooldown values are defined in **DB_PROGRESS_RULES.md**.
+
+---
+
+# ============================================================================
+# EFFECT STACKING RULES
+# ============================================================================
+
+Effects from the same Consumable Family do not stack unless explicitly allowed.
+
+When a new effect replaces an existing effect, the new effect uses its full
+duration.
+
+Effects from different categories may coexist.
+
+Examples of valid combinations:
+
+- One Food effect
+- One Potion effect
+- One Bandage effect
+- One Utility effect
+
+Effects with the same Effect Profile never stack.
+
+Permanent progression rewards are not treated as temporary buffs.
+
+---
+
+# ============================================================================
+# EFFECT REMOVAL RULES
+# ============================================================================
+
+Temporary effects may end through:
+
+- Duration expiration
+- Character defeat
+- Effect replacement
+- Cleansing
+- Activity completion
+- Leaving an eligible context
+- Encounter-specific rule
+
+Food effects normally persist through character defeat.
+
+Potion effects normally end on character defeat.
+
+Utility effects follow their individual Effect Profile.
+
+---
+
+# ============================================================================
+# TIER RULES
+# ============================================================================
+
+Consumable tier determines:
+
+- Effect strength
+- Effect duration
+- Required crafting materials
+- Crafting cost
+- Item value
+- Progression requirement
+- Reward quantity
+
+A higher-tier consumable must provide a meaningful improvement.
+
+Higher tiers may improve:
+
+- Strength only
+- Duration only
+- Both strength and duration
+- Reward quantity
+- Usage efficiency
+
+A consumable's core behaviour cannot change between tiers.
+
+Example:
+
+Healing Potion T4 and Healing Potion T8 both restore health.
+
+The T8 variant may restore more health but does not become a different
+consumable family.
+
+---
+
+# ============================================================================
+# ENCHANTMENT RULES
+# ============================================================================
+
+Standard consumables are not enchantable.
+
+Effect variation is handled through:
+
+- Tier
+- Consumable family
+- Scaling Profile
+- Item rarity
+- Special reward variant
+
+Future exceptional consumables may use rarity variants without modifying their
+base identity.
+
+---
+
+# ============================================================================
+# STACKING RULES
+# ============================================================================
+
+Consumables are stackable.
+
+A stack may contain only items with the same:
+
+- Consumable ID
+- Tier
+- Binding state
+- Special variant
+- Expiration state
+
+Consumables with different tiers cannot share the same stack.
+
+Maximum stack size is defined in **DB_PROGRESS_RULES.md**.
+
+Consuming an item reduces its stack quantity by one.
+
+At zero quantity, the stack is removed.
+
+---
+
+# ============================================================================
+# CRAFTING RULES
+# ============================================================================
+
+Craftable consumables require a valid Craft Profile.
+
+Consumable crafting may require:
+
+- Fiber
+- Cloth
+- Hide
+- Leather
+- Wood
+- Creature materials
+- Herbs
+- Food ingredients
+- Silver
+- Crafting station
+- Crafting time
+
+Version 1 may treat herbs and food ingredients as secondary crafting
+components defined directly in **DB_CRAFTING.md**.
+
+They do not require separate world-resource families unless gathering gameplay
+is expanded.
+
+Crafted consumables preserve the recipe tier.
+
+---
+
+# ============================================================================
+# ACQUISITION RULES
+# ============================================================================
+
+Consumables may be acquired through:
+
+- Crafting
+- Merchant purchase
+- Monster loot
+- Boss loot
+- Task rewards
+- Progression milestones
+- Loot containers
+- Daily rewards
+- Expedition rewards
+
+Every acquisition source must reference a canonical Consumable ID.
+
+Procedural systems may generate:
+
+- Tier
+- Quantity
+- Binding state
+- Reward source
+
+Procedural systems may not generate new consumable identities.
+
+---
+
+# ============================================================================
+# BINDING RULES
+# ============================================================================
+
+Consumables may be:
+
+- Tradable
+- Account Bound
+- Character Bound
+- Conditional
+
+Crafted consumables are normally tradable.
+
+Task and progression consumables may be bound.
+
+A bound consumable cannot be sold or traded.
+
+Binding state does not modify the consumable's effect.
+
+---
+
+# ============================================================================
+# PROFILE REFERENCES
+# ============================================================================
+
+## Effect Profiles
+
+- EFFECT_POTION_HEALING
+- EFFECT_POTION_REGENERATION
+- EFFECT_POTION_ENERGY
+- EFFECT_POTION_FOCUS
+- EFFECT_POTION_POWER
+- EFFECT_POTION_ATTACK_SPEED
+- EFFECT_POTION_CRITICAL
+- EFFECT_POTION_RESISTANCE
+- EFFECT_POTION_FORTIFICATION
+- EFFECT_POTION_CLEANSING
+- EFFECT_FOOD_BALANCED
+- EFFECT_FOOD_WARRIOR
+- EFFECT_FOOD_MAGE
+- EFFECT_FOOD_GUARDIAN
+- EFFECT_FOOD_GATHERER
+- EFFECT_FOOD_CRAFTER
+- EFFECT_BANDAGE_HEALING
+- EFFECT_UTILITY_TRAVEL
+- EFFECT_UTILITY_GATHERING
+- EFFECT_SCROLL_EXPERIENCE
+- EFFECT_CONTAINER_SILVER
+- EFFECT_CONTAINER_LOOT
+
+Their detailed behaviour is defined in **DB_SKILLS.md**.
+
+---
+
+## Scaling Profiles
+
+- CONSUMABLE_HEALING_STANDARD
+- CONSUMABLE_REGENERATION_STANDARD
+- CONSUMABLE_ENERGY_STANDARD
+- CONSUMABLE_FOCUS_STANDARD
+- CONSUMABLE_POWER_STANDARD
+- CONSUMABLE_ATTACK_SPEED_STANDARD
+- CONSUMABLE_CRITICAL_STANDARD
+- CONSUMABLE_RESISTANCE_STANDARD
+- CONSUMABLE_FORTIFICATION_STANDARD
+- CONSUMABLE_CLEANSING_STANDARD
+- CONSUMABLE_FOOD_BALANCED
+- CONSUMABLE_FOOD_OFFENSIVE
+- CONSUMABLE_FOOD_MAGIC
+- CONSUMABLE_FOOD_DEFENSIVE
+- CONSUMABLE_FOOD_GATHERING
+- CONSUMABLE_FOOD_CRAFTING
+- CONSUMABLE_BANDAGE_STANDARD
+- CONSUMABLE_TRAVEL_STANDARD
+- CONSUMABLE_GATHERING_STANDARD
+- CONSUMABLE_EXPERIENCE_STANDARD
+- CONSUMABLE_SILVER_STANDARD
+- CONSUMABLE_LOOT_CHEST_STANDARD
+
+Their numerical values are defined in **DB_PROGRESS_RULES.md**.
+
+---
+
+## Craft Profiles
+
+- CRAFT_POTION_HEALING
+- CRAFT_POTION_REGENERATION
+- CRAFT_POTION_ENERGY
+- CRAFT_POTION_FOCUS
+- CRAFT_POTION_POWER
+- CRAFT_POTION_ATTACK_SPEED
+- CRAFT_POTION_CRITICAL
+- CRAFT_POTION_RESISTANCE
+- CRAFT_POTION_FORTIFICATION
+- CRAFT_POTION_CLEANSING
+- CRAFT_FOOD_TRAVELER_STEW
+- CRAFT_FOOD_WARRIOR_MEAL
+- CRAFT_FOOD_MAGE_MEAL
+- CRAFT_FOOD_GUARDIAN_MEAL
+- CRAFT_FOOD_GATHERER_MEAL
+- CRAFT_FOOD_CRAFTER_MEAL
+- CRAFT_BANDAGE_STANDARD
+- CRAFT_TRAVEL_RATION
+- CRAFT_GATHERING_TONIC
+
+Their recipes are defined in **DB_CRAFTING.md**.
+
+---
+
+## Acquisition Profiles
+
+- ACQUIRE_POTION_STANDARD
+- ACQUIRE_POTION_ADVANCED
+- ACQUIRE_FOOD_STANDARD
+- ACQUIRE_BANDAGE_STANDARD
+- ACQUIRE_UTILITY_STANDARD
+- ACQUIRE_UTILITY_ADVANCED
+- ACQUIRE_SCROLL_EXPERIENCE
+- ACQUIRE_SILVER_POUCH
+- ACQUIRE_LOOT_CHEST
+
+Their availability rules are defined in:
+
+- DB_LOOT_TABLES.md
+- DB_TASKS.md
+- DB_ECONOMY.md
+- DB_PROGRESS_RULES.md
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Each consumable generates tier variants according to its Tier Range.
+
+Example:
+
+Base Consumable:
+CON-0001
+
+Generated Variants:
+- CON-0001-T2
+- CON-0001-T3
+- CON-0001-T4
+- CON-0001-T5
+- CON-0001-T6
+- CON-0001-T7
+- CON-0001-T8
+
+Each generated variant receives:
+
+- The same consumable name
+- The same consumable type
+- The same consumable family
+- The same Effect Profile
+- The same Scaling Profile
+- The same Craft Profile
+- The same Acquisition Profile
+- The same Cooldown Group
+- The tier-specific inventory icon
+- Values generated from its profiles
+
+Only the following values may be generated procedurally:
+
+- Effect strength
+- Effect duration
+- Cooldown duration
+- Crafting quantity
+- Crafting duration
+- Crafting cost
+- Required material quantity
+- Purchase price
+- Sale price
+- Reward quantity
+- Stack quantity
+- Binding state
+
+No generated system may modify:
+
+- Consumable ID
+- Consumable name
+- Consumable type
+- Consumable family
+- Icon ID
+- Effect Profile
+- Scaling Profile
+- Craft Profile
+- Acquisition Profile
+- Cooldown Group
+- Usage Context
+- Target Type
+
+---
+
+# ============================================================================
+# DATABASE PROGRESS STATUS
+# ============================================================================
+
+## Completed Canonical Databases
+
+- DB_WEAPONS.md
+- DB_ARMORS.md
+- DB_OFFHANDS.md
+- DB_MONSTERS.md
+- DB_BOSSES.md
+- DB_NPCS.md
+- DB_MOUNTS.md
+- DB_RESOURCES.md
+- DB_CONSUMABLES.md
+
+The canonical content catalogue is now complete for Version 1.
+
+---
+
+## Next Production Phase
+
+The next phase defines the shared gameplay profiles referenced by all canonical
+databases.
+
+Recommended order:
+
+1. DB_SKILLS.md
+2. DB_PROGRESS_RULES.md
+3. DB_CRAFTING.md
+4. DB_LOOT_TABLES.md
+5. DB_ECONOMY.md
+6. DB_AI.md
+7. DB_WORLD.md
+8. DB_ENCOUNTERS.md
+9. DB_TASKS.md
+
+The next document should be:
+
+**DB_SKILLS.md**
+
+DOCUMENT TERMINÉ

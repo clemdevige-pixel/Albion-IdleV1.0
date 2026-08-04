@@ -1,0 +1,672 @@
+## ALBION IDLE — CRAFTING SYSTEM
+
+**Document type:** System Specification
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Core Gameplay System
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Dependencies:** `10_CHARACTER_SYSTEM.txt`, `12_INVENTORY_SYSTEM.txt`, `13_ITEM_SYSTEM.txt`, `14_LOOT_SYSTEM.txt`
+
+---
+
+# 1. PURPOSE
+
+The Crafting System manages the transformation of player-owned materials into equipment and other craftable items.
+
+It is responsible for:
+
+* validating crafting recipes;
+* consuming required materials;
+* creating crafted items;
+* managing specialized crafting professions;
+* awarding profession progression;
+* integrating boss-exclusive materials into recipes.
+
+Refining is mandatory before equipment crafting but is defined in a dedicated system specification.
+
+---
+
+# 2. DESIGN PRINCIPLES
+
+The Crafting System must be:
+
+* deterministic;
+* data-driven;
+* transactional;
+* compatible with offline progression;
+* independent from the user interface;
+* extensible without modifying existing recipes.
+
+A valid crafting operation must either:
+
+* complete fully;
+* fail without consuming any material.
+
+Partial crafting transactions are forbidden.
+
+---
+
+# 3. CRAFTING LOOP
+
+The intended crafting loop is:
+
+```text
+Raw Resources
+↓
+Refining
+↓
+Refined Materials
+↓
+Crafting Recipe
+↓
+Crafted Item
+```
+
+Raw resources cannot be used directly to craft equipment unless a future recipe explicitly permits it.
+
+For the Vertical Slice, equipment recipes require refined materials.
+
+---
+
+# 4. CRAFTABLE ITEMS
+
+The Crafting System may create:
+
+* weapons;
+* armor;
+* accessories;
+* bags;
+* boss-exclusive equipment.
+
+Currencies cannot be crafted.
+
+Raw resources cannot be created through crafting.
+
+Refined materials are created by the Refining System rather than the Crafting System.
+
+---
+
+# 5. CRAFTING PROFESSIONS
+
+Crafting uses specialized professions.
+
+All crafting professions are accessible to the same player.
+
+There are:
+
+* no exclusive profession choices;
+* no permanent profession locks;
+* no limit on the number of professions the player may progress.
+
+Each profession progresses independently.
+
+---
+
+# 6. PROFESSION STRUCTURE
+
+Each profession must contain at least:
+
+```text
+CraftingProfession
+- profession_id
+- display_name
+- profession_mastery_id
+- supported_recipe_categories
+```
+
+Recommended profession examples include:
+
+```text
+Weapon Smithing
+Armor Smithing
+Leatherworking
+Clothworking
+Accessory Crafting
+Bag Crafting
+```
+
+The definitive profession list belongs to balancing and content data.
+
+Profession identifiers must remain stable across save versions.
+
+---
+
+# 7. PROFESSION ACCESS
+
+All professions are available to the player.
+
+Availability does not necessarily mean every recipe is immediately usable.
+
+Recipe access may depend on:
+
+* required profession mastery;
+* required item tier;
+* recipe unlock conditions;
+* owned materials;
+* boss material requirements.
+
+No profession selection permanently prevents access to another profession.
+
+---
+
+# 8. PROFESSION MASTERY
+
+Each crafting profession has its own mastery progression.
+
+Crafting an item awards mastery progress to the profession associated with the recipe.
+
+Profession mastery may be used to:
+
+* unlock higher-tier recipes;
+* unlock new item families;
+* improve crafting efficiency in future versions;
+* unlock advanced recipes.
+
+For the Vertical Slice, mastery effects must remain deterministic and fixed.
+
+Exact mastery thresholds belong to balancing data.
+
+---
+
+# 9. CRAFTING RECIPES
+
+Every craftable item requires a recipe.
+
+Each recipe must contain at least:
+
+```text
+CraftingRecipe
+- recipe_id
+- profession_id
+- output_item_id
+- output_quantity
+- output_tier
+- output_quality
+- output_enchantment
+- required_materials
+- required_profession_mastery
+- crafting_duration
+```
+
+Each required material entry contains:
+
+```text
+MaterialRequirement
+- item_id
+- tier
+- quantity
+```
+
+Optional boss material requirements use the same structure.
+
+---
+
+# 10. RECIPE IDENTIFIERS
+
+Each recipe requires a unique and stable identifier.
+
+Recommended format:
+
+```text
+CRAFT_<OUTPUT_ITEM>_<TIER>_<ENCHANTMENT>
+```
+
+Example:
+
+```text
+CRAFT_SWORD_T4_0
+CRAFT_SWORD_T5_1
+CRAFT_BOSS_AXE_T6_0
+```
+
+Quality should not necessarily be embedded into the recipe identifier when quality is selected or calculated separately.
+
+The exact identifier convention must remain consistent across all recipe data.
+
+---
+
+# 11. RECIPE OUTPUT
+
+A recipe creates a valid Item System object.
+
+Equipment output is defined by:
+
+```text
+Base Item ID
+Tier
+Quality
+Enchantment
+Quantity
+```
+
+The resulting equipment variant must pass Item System validation.
+
+The Crafting System does not calculate final combat statistics.
+
+Item Power and equipment stats are resolved by the Item System.
+
+---
+
+# 12. TIER RULES
+
+Craftable equipment tiers are:
+
+```text
+T3
+T4
+T5
+T6
+T7
+T8
+```
+
+A recipe must explicitly define its output tier.
+
+Required material tiers are defined by recipe data.
+
+The Crafting System must not infer material tiers from the output tier unless a future rule explicitly defines that behavior.
+
+---
+
+# 13. QUALITY RULES
+
+Crafted equipment supports the following qualities:
+
+```text
+Normal
+Good
+Outstanding
+Excellent
+Masterpiece
+```
+
+Canonical identifiers:
+
+```text
+NORMAL
+GOOD
+OUTSTANDING
+EXCELLENT
+MASTERPIECE
+```
+
+The source of crafted quality must be explicitly defined by recipe or balancing data.
+
+The system architecture must support either:
+
+* a fixed recipe quality;
+* a selected quality;
+* a future quality roll.
+
+For the Vertical Slice, crafting quality must remain deterministic unless another locked specification defines a random roll.
+
+---
+
+# 14. ENCHANTMENT RULES
+
+Crafted equipment supports:
+
+```text
+0
+1
+2
+3
+4
+```
+
+Display forms:
+
+```text
+No enchantment
+.1
+.2
+.3
+.4
+```
+
+The recipe defines the output enchantment.
+
+Enchanting an already-crafted item is outside this document unless added by a dedicated upgrade system.
+
+---
+
+# 15. BOSS-EXCLUSIVE CRAFTING
+
+Boss-exclusive materials may be required by dedicated recipes.
+
+Boss-exclusive equipment may be obtained through:
+
+* direct boss drop;
+* crafting with boss-exclusive materials.
+
+Boss-exclusive recipes must reference materials produced by the Loot System.
+
+Boss-exclusive materials cannot be silently replaced by generic materials.
+
+Boss-exclusive equipment must remain unavailable through generic crafting recipes.
+
+---
+
+# 16. MATERIAL VALIDATION
+
+Before crafting, the system must validate:
+
+* the recipe exists;
+* the profession exists;
+* the recipe is unlocked;
+* the required profession mastery is met;
+* every required item exists;
+* every required tier matches;
+* every required quantity is available;
+* the output item definition is valid;
+* sufficient storage exists or Bank overflow is available.
+
+Validation must complete before any material is consumed.
+
+---
+
+# 17. MATERIAL CONSUMPTION
+
+For the Vertical Slice, every successful craft consumes 100% of the listed materials.
+
+There is:
+
+* no resource return;
+* no city bonus;
+* no station efficiency bonus;
+* no crafting refund;
+* no random material preservation.
+
+Material consumption is exact and deterministic.
+
+---
+
+# 18. FUTURE RESOURCE RETURN SUPPORT
+
+A future Resource Return Rate may refund a portion of consumed materials.
+
+This feature is not active during the Vertical Slice.
+
+The Crafting System must remain compatible with a future calculation such as:
+
+```text
+Consumed Materials
+- Returned Materials
+= Net Materials Consumed
+```
+
+Recipes must always define gross material requirements.
+
+Future resource returns must not modify recipe definitions.
+
+---
+
+# 19. CRAFTING TRANSACTION
+
+Recommended transaction order:
+
+```text
+Craft Request
+↓
+Validate Recipe
+↓
+Validate Profession
+↓
+Validate Mastery
+↓
+Validate Materials
+↓
+Reserve Materials
+↓
+Resolve Craft Duration
+↓
+Consume Materials
+↓
+Create Output Item
+↓
+Store Output
+↓
+Award Profession Progress
+↓
+Complete Transaction
+```
+
+If any required step fails before completion:
+
+* no materials are consumed;
+* no item is created;
+* no mastery progress is awarded.
+
+---
+
+# 20. CRAFTING DURATION
+
+Recipes may define a crafting duration.
+
+Crafting duration is external balancing data.
+
+The system must support:
+
+* immediate crafting;
+* timed crafting;
+* queued crafting;
+* offline completion.
+
+The exact queue behavior belongs to a future production or station specification if not already defined elsewhere.
+
+---
+
+# 21. BATCH CRAFTING
+
+The system must support crafting multiple identical items in one request.
+
+For a batch quantity:
+
+```text
+Total Required Material =
+Recipe Material Quantity
+× Batch Quantity
+```
+
+The full batch must be validated before execution.
+
+The system must not partially complete a batch unless a future specification explicitly allows automatic maximum crafting.
+
+---
+
+# 22. INVENTORY AND BANK INTEGRATION
+
+Crafting materials may be consumed from storage locations permitted by the final implementation.
+
+At minimum, the architecture must support access to:
+
+* Inventory;
+* Bank.
+
+The exact consumption priority must be defined consistently.
+
+Recommended default priority:
+
+```text
+Inventory first
+↓
+Bank second
+```
+
+Crafted items are added to Inventory.
+
+If Inventory is full, crafted items are transferred automatically to the Bank according to the Inventory System.
+
+Crafted items must never be destroyed because Inventory is full.
+
+---
+
+# 23. ITEM STACK INTEGRATION
+
+Crafted equipment may stack when it shares:
+
+```text
+Same Base Item ID
+Same Tier
+Same Quality
+Same Enchantment
+```
+
+Crafted resources or other stackable outputs follow their Item System stack rules.
+
+The Crafting System does not define stack limits.
+
+---
+
+# 24. OFFLINE CRAFTING
+
+The architecture must support crafting completion while the player is offline.
+
+Offline crafting must use the same:
+
+* recipe requirements;
+* durations;
+* outputs;
+* material costs;
+* mastery rewards;
+* storage rules.
+
+Offline crafting must not apply a special production multiplier unless defined by balancing data.
+
+---
+
+# 25. DATA-DRIVEN REQUIREMENTS
+
+The following must be externalized:
+
+* profession definitions;
+* recipe definitions;
+* material requirements;
+* output quantities;
+* recipe tiers;
+* recipe qualities;
+* recipe enchantments;
+* mastery requirements;
+* crafting durations;
+* profession mastery rewards;
+* boss-exclusive recipe requirements.
+
+Gameplay code must not hard-code individual recipes.
+
+---
+
+# 26. PERSISTENCE
+
+The system must persist:
+
+```text
+Profession Mastery Progress
+Unlocked Recipes
+Active Crafting Jobs
+Queued Crafting Jobs
+Craft Start Time
+Craft Completion Time
+Batch Quantity
+Reserved Material References
+```
+
+Completed outputs do not need to remain in Crafting System save data once transferred to Inventory or Bank.
+
+Recipe display information must be loaded from definitions rather than duplicated in save data.
+
+---
+
+# 27. VALIDATION RULES
+
+The following conditions must always remain true:
+
+* every recipe references a valid profession;
+* every output references a valid item definition;
+* every required material references a valid item definition;
+* material quantities are positive integers;
+* output quantities are positive integers;
+* tiers are valid;
+* qualities are valid;
+* enchantments are valid;
+* profession mastery requirements are non-negative;
+* crafting never consumes partial materials on failure;
+* crafting never creates output without consuming required materials;
+* mastery is only awarded after successful completion;
+* boss-exclusive recipes require their defined exclusive materials;
+* resource return is disabled during the Vertical Slice.
+
+---
+
+# 28. RECOMMENDED EVENTS
+
+```text
+craft_requested
+craft_validation_failed
+craft_started
+craft_completed
+craft_cancelled
+craft_materials_consumed
+craft_output_created
+craft_output_sent_to_bank
+crafting_mastery_awarded
+crafting_mastery_level_changed
+recipe_unlocked
+```
+
+Events must use stable identifiers rather than localized display names.
+
+---
+
+# 29. MINIMUM TESTS
+
+Required tests:
+
+* craft a valid equipment item;
+* reject crafting with insufficient materials;
+* reject crafting with incorrect material tiers;
+* reject crafting with insufficient profession mastery;
+* verify no material is consumed after failed validation;
+* consume exactly 100% of required materials;
+* craft each supported equipment tier;
+* craft each supported quality;
+* craft each supported enchantment;
+* craft multiple identical items as a batch;
+* reject a partially affordable batch;
+* award profession mastery after success;
+* prevent mastery rewards after failure;
+* craft boss-exclusive equipment with valid materials;
+* reject boss-exclusive crafting without exclusive materials;
+* transfer crafted output to Bank when Inventory is full;
+* complete a timed craft;
+* complete a craft after offline progression;
+* save and reload active crafting jobs;
+* verify Resource Return Rate is inactive.
+
+---
+
+# 30. OUT OF SCOPE
+
+This document intentionally excludes:
+
+* raw resource gathering;
+* refining recipes;
+* refining professions;
+* exact profession mastery thresholds;
+* exact crafting durations;
+* exact recipe costs;
+* crafting stations;
+* city bonuses;
+* resource return rates;
+* crafting fees;
+* repair;
+* salvaging;
+* rerolling quality;
+* enchanting existing equipment;
+* player trading;
+* marketplace systems.
+
+These elements belong to dedicated system or balancing documents.
+
+---
+
+# END OF DOCUMENT

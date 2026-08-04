@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "badon_arrow",
+  "kind": "projectile",
+  "shape": { "type": "rectangle", "width": 38, "height": 5 },
+  "fillColor": "#f3a83b",
+  "strokeWidth": 2,
+  "strokeColor": "#ffdf7a",
+  "blendMode": "normal",
+  "depth": 25,
+  "durationMs": 150,
+  "endScale": 1,
+  "trajectory": {
+    "type": "linear",
+    "sourceOffsetX": 58,
+    "targetOffsetX": -48,
+    "offsetY": -46
+  }
+}

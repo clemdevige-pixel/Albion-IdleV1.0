@@ -1,0 +1,358 @@
+## ALBION IDLE — LOOT SYSTEM
+
+**Document type:** System Specification
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Core Gameplay System
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Dependencies:** `12_INVENTORY_SYSTEM.txt`, `13_ITEM_SYSTEM.txt`
+
+---
+
+# 1. PURPOSE
+
+The Loot System is responsible for generating rewards after gameplay activities.
+
+It determines:
+
+* which rewards are generated;
+* their quantities;
+* their rarity;
+* equipment variants;
+* boss-exclusive rewards;
+* offline rewards.
+
+Storage is handled by the Inventory System and Wallet.
+
+---
+
+# 2. DESIGN PRINCIPLES
+
+The Loot System must be:
+
+* deterministic from a random seed;
+* fully data-driven;
+* independent from combat logic;
+* extensible.
+
+Loot generation must never depend on UI.
+
+---
+
+# 3. LOOT SOURCES
+
+The Vertical Slice supports:
+
+* Monster kill
+* Boss kill
+* Offline progression
+
+Future sources may include:
+
+* Chests
+* Events
+* Quests
+* Vendors
+* Achievements
+
+---
+
+# 4. HYBRID LOOT MODEL
+
+Every defeated monster performs two independent loot rolls.
+
+## Monster Loot Table
+
+Contains:
+
+* monster resources;
+* monster-specific equipment;
+* unique monster materials.
+
+## Global Loot Pool
+
+Contains:
+
+* generic resources;
+* generic equipment;
+* currencies.
+
+The final loot is the union of both rolls.
+
+---
+
+# 5. LOOT TABLE STRUCTURE
+
+Each loot entry contains:
+
+```text
+Item ID
+Weight
+Minimum Quantity
+Maximum Quantity
+Conditions
+```
+
+Weights determine probability.
+
+The Loot System never hardcodes loot.
+
+---
+
+# 6. NO GUARANTEED DROPS
+
+Every loot roll is independent.
+
+There is:
+
+* no pity system;
+* no guaranteed equipment;
+* no guaranteed rare material.
+
+The probability of previous drops never affects future drops.
+
+---
+
+# 7. BOSS LOOT TABLES
+
+Bosses own dedicated loot tables.
+
+Boss loot tables may contain:
+
+* exclusive equipment;
+* exclusive crafting materials;
+* currencies;
+* standard loot.
+
+Boss loot tables are resolved independently from normal monster tables.
+
+---
+
+# 8. EXCLUSIVE EQUIPMENT
+
+Exclusive equipment may only originate from boss loot tables.
+
+They cannot appear in:
+
+* global loot pool;
+* standard monster loot tables.
+
+Drop probability is balancing data.
+
+---
+
+# 9. EXCLUSIVE MATERIALS
+
+Bosses also drop exclusive crafting materials.
+
+These materials are:
+
+* more common than exclusive equipment;
+* used to craft boss equipment.
+
+Material quantities are balancing data.
+
+---
+
+# 10. EQUIPMENT GENERATION
+
+Whenever equipment is generated, the Loot System determines:
+
+```text
+Base Item
+Tier
+Quality
+Enchantment
+```
+
+These values define the final equipment variant.
+
+The Item System validates the generated variant.
+
+---
+
+# 11. ITEM POWER
+
+Loot generation never calculates combat stats.
+
+The Loot System only generates:
+
+* tier;
+* quality;
+* enchantment.
+
+Item Power is calculated afterwards by the Item System.
+
+---
+
+# 12. RESOURCE GENERATION
+
+Resources are generated using:
+
+```text
+Item ID
+Tier
+Quantity
+```
+
+Resources never receive:
+
+* quality;
+* enchantment;
+* Item Power.
+
+---
+
+# 13. CURRENCY GENERATION
+
+Currencies are generated as integer quantities.
+
+Currencies are transferred directly to the Wallet.
+
+They never occupy Inventory slots.
+
+---
+
+# 14. OFFLINE LOOT
+
+Offline progression uses the same Loot System.
+
+The only difference is:
+
+* multiple loot rolls are aggregated.
+
+Offline rewards obey exactly the same rules as live gameplay.
+
+No special offline-only items exist.
+
+---
+
+# 15. LOOT RESOLUTION PIPELINE
+
+Recommended order:
+
+```text
+Combat Finished
+↓
+Select Loot Source
+↓
+Resolve Monster Table
+↓
+Resolve Global Pool
+↓
+Generate Equipment Variants
+↓
+Generate Resource Quantities
+↓
+Generate Currency
+↓
+Merge Results
+↓
+Inventory / Wallet
+```
+
+---
+
+# 16. INVENTORY INTEGRATION
+
+Generated rewards are sent to:
+
+Inventory System
+
+or
+
+Wallet.
+
+If Inventory is full:
+
+* rewards are transferred automatically to the Bank.
+
+Loot generation never discards valid rewards.
+
+---
+
+# 17. DATA-DRIVEN REQUIREMENTS
+
+External balancing data defines:
+
+* loot tables;
+* weights;
+* quantity ranges;
+* boss rewards;
+* exclusive drops;
+* offline multipliers;
+* quality chances;
+* enchantment chances;
+* tier probabilities.
+
+Gameplay code must not contain loot values.
+
+---
+
+# 18. VALIDATION RULES
+
+The following conditions must always remain true:
+
+* every loot entry references a valid item;
+* every quantity is positive;
+* currencies are integers;
+* equipment variants are valid;
+* boss-exclusive items never appear outside boss tables;
+* generated rewards are transferred correctly;
+* overflow is handled by Inventory.
+
+---
+
+# 19. EVENTS
+
+Recommended events:
+
+```text
+loot_generated
+loot_added
+equipment_generated
+resource_generated
+currency_generated
+boss_loot_generated
+offline_rewards_generated
+loot_transferred_to_bank
+```
+
+---
+
+# 20. MINIMUM TESTS
+
+Required tests:
+
+* resolve a monster loot table;
+* resolve the global loot pool;
+* combine both results;
+* generate equipment variants;
+* generate resources;
+* generate currencies;
+* verify no guaranteed drops exist;
+* verify boss-exclusive items never drop from normal monsters;
+* verify boss materials drop correctly;
+* verify offline rewards use the same rules;
+* verify Inventory overflow transfers rewards to Bank;
+* save and reload generated rewards.
+
+---
+
+# 21. OUT OF SCOPE
+
+This document intentionally excludes:
+
+* crafting recipes;
+* gathering nodes;
+* economy balancing;
+* Item Power balancing;
+* vendor inventories;
+* market prices;
+* drop percentages.
+
+These elements belong to dedicated balancing or gameplay documents.
+
+---
+
+# END OF DOCUMENT

@@ -1,0 +1,593 @@
+# 45. AUDIO SYSTEM
+
+## Purpose
+
+The Audio System provides clear, lightweight, and reliable audio feedback throughout the game.
+
+Its responsibilities are to:
+
+- Play contextual background music.
+- Provide gameplay sound effects.
+- Deliver clear UI feedback.
+- Notify players of critical events.
+- Support accessibility settings.
+- Allow independent volume control.
+- Remain performant during long idle sessions.
+
+Audio enhances player comfort and readability but never affects gameplay mechanics.
+
+---
+
+# Design Goals
+
+The Audio System follows these core principles:
+
+- Minimalistic
+- Clear feedback
+- Low auditory fatigue
+- Lightweight implementation
+- Modular architecture
+- Fully configurable
+- Accessibility compatible
+- Future expandable
+- Gameplay independent
+
+---
+
+# Audio Philosophy
+
+The game intentionally adopts a minimalist audio philosophy.
+
+Sound exists to reinforce important player actions rather than constantly stimulating the player.
+
+Because Idle RPGs often remain open for many hours, repetitive sounds must be minimized.
+
+Audio should communicate:
+
+- Important actions
+- Successful interactions
+- Critical warnings
+- Major gameplay transitions
+
+Audio should avoid:
+
+- Excessive repetition
+- Constant menu clicks
+- Continuous notification spam
+- Overly cinematic presentation
+
+---
+
+# Launch Scope
+
+Version 1 includes:
+
+- Background Music
+- Combat Sound Effects
+- Gathering Sounds
+- Crafting Sounds
+- Refining Sounds
+- Loot Sounds
+- Worker Sounds
+- UI Sounds
+- Critical Notification Sounds
+- Independent Volume Controls
+- Mono Audio Support
+
+---
+
+# Out of Scope
+
+The following features are intentionally excluded from Version 1:
+
+- Adaptive Music
+- Procedural Audio
+- Music Layers
+- Voice Acting
+- 3D Spatial Audio
+- Audio Occlusion
+- Reverb Zones
+- Dynamic Mixing
+- Automatic Ducking
+- Biome Music
+- Random Sound Variations
+
+The architecture remains compatible with these features in future versions.
+
+---
+
+# Audio Categories
+
+The Audio Mixer is divided into independent categories.
+
+## Master
+
+Controls every sound played by the game.
+
+---
+
+## Music
+
+Controls all background music.
+
+---
+
+## Combat
+
+Controls:
+
+- Weapon attacks
+- Enemy attacks
+- Abilities
+- Healing
+- Damage
+- Boss attacks
+
+---
+
+## UI
+
+Controls:
+
+- Window open
+- Window close
+- Confirm
+- Purchase
+- Sale
+- Success
+- Error
+
+---
+
+## Notifications
+
+Controls critical notification sounds.
+
+---
+
+## Ambient
+
+Reserved for simple environmental loops and future expansion.
+
+---
+
+## System
+
+Controls technical notifications.
+
+Examples:
+
+- Connection lost
+- Server error
+- Critical warning
+
+---
+
+# Mixer Architecture
+
+```
+Master
+
+├── Music
+├── Combat
+├── UI
+├── Notifications
+├── Ambient
+└── System
+```
+
+Each category can be configured independently.
+
+---
+
+# Volume Controls
+
+Players may independently configure:
+
+- Master Volume
+- Music Volume
+- Combat Volume
+- UI Volume
+- Notification Volume
+- Ambient Volume
+
+Each slider ranges from:
+
+```
+0%
+
+↓
+
+100%
+```
+
+Changes apply immediately.
+
+---
+
+# Mute Behavior
+
+Every channel may be muted independently.
+
+Muting:
+
+- does not pause gameplay
+- does not stop internal timers
+- does not disable notifications
+- only affects audio playback
+
+---
+
+# Music System
+
+## Philosophy
+
+Music uses one loop per major gameplay context.
+
+There is no adaptive soundtrack.
+
+Music changes only when the active game context changes.
+
+---
+
+# Music Contexts
+
+The launch version includes five music contexts.
+
+## Main Menu
+
+Played while the player remains on the title screen.
+
+---
+
+## Exploration
+
+Default gameplay music.
+
+Used during normal combat and exploration.
+
+---
+
+## Player Island
+
+Relaxed music played while managing buildings and workers.
+
+---
+
+## Boss Fight
+
+Dedicated boss music.
+
+Starts when a boss encounter begins.
+
+---
+
+## Victory
+
+Short victory theme played after defeating major bosses.
+
+Automatically returns to Exploration afterwards.
+
+---
+
+# Music Transition
+
+Transitions use simple cross-fades.
+
+```
+Current Track
+
+↓
+
+Fade Out
+
+↓
+
+Next Track
+
+↓
+
+Fade In
+```
+
+No adaptive layering exists.
+
+---
+
+# Combat Sound Effects
+
+Each combat action owns exactly one sound.
+
+Examples:
+
+- Sword Attack
+- Axe Attack
+- Spear Attack
+- Bow Shot
+- Fireball
+- Heal
+- Shield Block
+
+The same sound plays every time.
+
+No random variations are used.
+
+---
+
+# Combat Audio Principles
+
+Combat sounds should be:
+
+- Short
+- Distinct
+- Easily recognizable
+- Non-intrusive
+
+Long combat sessions should remain comfortable.
+
+---
+
+# Gathering Audio
+
+Each gathering action owns one sound.
+
+Examples:
+
+- Mining
+- Woodcutting
+- Skinning
+- Fiber Harvesting
+- Fishing
+
+Resources of the same category reuse the same sound.
+
+---
+
+# Crafting Audio
+
+Crafting plays:
+
+- Craft Started
+- Craft Completed
+
+Crafting queues do not repeatedly spam sounds.
+
+Only meaningful events trigger playback.
+
+---
+
+# Refining Audio
+
+Refining uses:
+
+- Refining Started
+- Refining Completed
+
+Background refinement remains silent.
+
+---
+
+# Loot Audio
+
+Loot uses one generic pickup sound.
+
+The sound plays only when meaningful loot enters the inventory.
+
+Large loot batches generate a single sound.
+
+---
+
+# Worker Audio
+
+Workers remain mostly silent.
+
+Only important worker events generate sounds.
+
+Examples:
+
+- Worker blocked
+- Worker unavailable
+
+Routine task completion remains silent.
+
+---
+
+# User Interface Audio
+
+The interface follows a minimalist philosophy.
+
+Only meaningful interactions generate sound.
+
+---
+
+# Supported UI Sounds
+
+The following actions play audio:
+
+- Window Open
+- Window Close
+- Confirmation
+- Purchase
+- Sale
+- Success
+- Error
+- Important Notification
+
+---
+
+# Silent UI Actions
+
+The following actions intentionally produce no sound:
+
+- Button Hover
+- Standard Click
+- List Navigation
+- Scroll
+- Tooltip Appearance
+- Drag and Drop
+- Dashboard Navigation
+
+This significantly reduces auditory fatigue.
+
+---
+
+# Notification Audio
+
+Only critical notifications generate sounds.
+
+Routine gameplay notifications remain silent.
+
+---
+
+# Critical Notifications
+
+Sound is played for:
+
+- Inventory Full
+- Worker Blocked
+- Server Error
+- Connection Lost
+- Critical Failure
+- Boss Encounter (only if player action is required)
+
+---
+
+# Silent Notifications
+
+No sound is played for:
+
+- Loot Obtained
+- Craft Finished
+- Refining Finished
+- Worker Completed
+- Gathering Completed
+- Mastery Level Up
+- Informational Messages
+
+These remain visible in the Notification Center.
+
+---
+
+# Accessibility Integration
+
+The Audio System integrates directly with the Accessibility System.
+
+Supported features include:
+
+- Independent Volume Sliders
+- Mono Audio
+- Complete Muting
+- Reduced Notification Audio
+
+Future support includes:
+
+- Subtitle Integration
+- Voice Accessibility
+- Audio Description
+
+---
+
+# Mono Audio
+
+Players may enable Mono Audio.
+
+Stereo output is automatically mixed into a single channel.
+
+Useful for:
+
+- Single-speaker setups
+- Hearing impairments
+- Accessibility preferences
+
+---
+
+# Settings Integration
+
+The Audio System integrates with the Settings System.
+
+All settings apply instantly.
+
+No restart is required.
+
+Profiles automatically store:
+
+- Volume Levels
+- Mute States
+- Mono Audio
+
+These settings synchronize through cloud settings.
+
+---
+
+# Performance
+
+Audio assets are loaded on demand.
+
+Music loops remain streamed when possible.
+
+Sound effects are cached.
+
+The system minimizes:
+
+- Memory usage
+- CPU usage
+- Audio latency
+
+---
+
+# Error Handling
+
+If an audio asset cannot be played:
+
+- Gameplay continues normally.
+- Missing sounds are ignored.
+- A developer log entry is generated.
+
+Audio failures never interrupt gameplay.
+
+---
+
+# Future Expansion
+
+The architecture supports future additions including:
+
+- Adaptive Music
+- Biome Music
+- Seasonal Music
+- Dynamic Combat Layers
+- Randomized Sound Variations
+- Voice Acting
+- Spatial Audio
+- Audio Ducking
+- Environmental Effects
+- Audio Mod Support
+
+No architectural redesign will be required.
+
+---
+
+# Dependencies
+
+The Audio System interacts with:
+
+- Combat System
+- Gathering System
+- Crafting System
+- Refining System
+- Worker System
+- Notification System
+- UI System
+- Accessibility System
+- Settings System
+
+Audio never influences gameplay logic.
+
+---
+
+# Summary
+
+The Audio System provides a lightweight, minimalist, and highly configurable audio framework tailored for long idle gameplay sessions.
+
+It delivers contextual music, essential gameplay feedback, discreet UI sounds, and critical notifications while avoiding unnecessary repetition. Fully integrated with the Accessibility and Settings Systems, it ensures a comfortable player experience and provides a scalable foundation for future audio enhancements without impacting gameplay performance.
+
+DOCUMENT TERMINÉ

@@ -1,0 +1,652 @@
+# 30. PROGRESS SCALING SYSTEM
+
+## Purpose
+
+The Progress Scaling System defines how game difficulty, rewards, and long-term progression evolve after completing the initial world.
+
+The objective is to create an infinitely replayable progression loop without introducing permanent power creep or invalidating previously acquired equipment.
+
+This system is entirely data-driven.
+
+---
+
+# Design Goals
+
+The system must:
+
+- Support infinite progression.
+- Preserve equipment value.
+- Avoid vertical gear inflation.
+- Maintain a healthy long-term economy.
+- Keep every biome relevant.
+- Allow continuous balancing through Data Tables only.
+
+---
+
+# Core Philosophy
+
+Progression does NOT come from stronger equipment tiers.
+
+Progression comes from:
+
+- Weapon Masteries
+- Equipment optimization
+- Enchantments
+- Economy
+- Better resource acquisition
+- More efficient farming
+
+New Cycles improve the value of existing content instead of replacing it.
+
+---
+
+# Cycle Definition
+
+A Cycle represents one complete playthrough of every biome.
+
+Example:
+
+Cycle 1
+
+Forest
+
+↓
+
+Mountain
+
+↓
+
+Swamp
+
+↓
+
+Highlands
+
+↓
+
+Avalon
+
+↓
+
+Hell
+
+↓
+
+Cycle Complete
+
+↓
+
+Cycle 2
+
+Forest
+
+↓
+
+Mountain
+
+↓
+
+...
+
+Every new Cycle restarts from the first biome.
+
+---
+
+# Cycle Structure
+
+Each Cycle contains:
+
+- Every unlocked biome
+- Every Zone Segment
+- Every Encounter
+- Every Biome Boss
+
+No content is skipped.
+
+---
+
+# Cycle Unlocking
+
+A Cycle is unlocked after defeating the final boss of the final biome.
+
+Example:
+
+Hell Boss Defeated
+
+↓
+
+Cycle 2 Available
+
+The next Cycle never starts automatically.
+
+The player chooses when to activate it.
+
+---
+
+# Player Choice
+
+After unlocking a new Cycle, the player may continue farming the previous one indefinitely.
+
+Reasons include:
+
+- Farming Silver
+- Completing Masteries
+- Crafting equipment
+- Gathering resources
+- Preparing enchantments
+- Building economy
+
+The player starts the next Cycle manually.
+
+---
+
+# Infinite Progression
+
+There is no maximum Cycle.
+
+Examples:
+
+Cycle 1
+
+Cycle 5
+
+Cycle 20
+
+Cycle 100
+
+Cycle 500
+
+All progression formulas are designed to support unlimited values.
+
+---
+
+# Difficulty Layers
+
+Enemy difficulty is calculated through multiple independent layers.
+
+Final Enemy Stat
+
+=
+
+Base Stat
+
+×
+
+Cycle Scaling
+
+×
+
+Family Modifier
+
+×
+
+Category Modifier
+
+Each layer is fully data-driven.
+
+---
+
+# Layer 1 — Base Stats
+
+Each enemy defines:
+
+- Health
+- Damage
+- Armor
+- Magic Resistance
+- Attack Speed
+- Movement Speed
+- Experience Value
+- Silver Value
+
+These values never change directly.
+
+---
+
+# Layer 2 — Cycle Scaling
+
+Every Cycle applies scaling to enemy statistics.
+
+Each stat owns its own progression curve.
+
+Example:
+
+Health Curve
+
+Damage Curve
+
+Armor Curve
+
+Magic Resistance Curve
+
+Attack Speed Curve
+
+Movement Speed Curve
+
+Scaling is completely independent.
+
+Example:
+
+Cycle 2
+
+Health +12%
+
+Damage +8%
+
+Armor +5%
+
+Cycle 15
+
+Health +250%
+
+Damage +180%
+
+Armor +120%
+
+Numbers are defined only inside Data Tables.
+
+---
+
+# Layer 3 — Enemy Family Modifiers
+
+Each family has a permanent identity.
+
+Examples:
+
+Undead
+
+- High Health
+- Moderate Damage
+
+Keepers
+
+- High Armor
+- Moderate Damage
+
+Morgana
+
+- High Damage
+- Lower Defense
+
+Heretics
+
+- Balanced
+
+Animals
+
+- High Speed
+
+Elementals
+
+- Higher Magic Resistance
+
+Demons
+
+- Offensive specialists
+
+Family modifiers remain identical across all Cycles.
+
+---
+
+# Layer 4 — Enemy Category Modifiers
+
+Enemy categories further modify stats.
+
+Categories include:
+
+- Normal
+- Veteran
+- Elite
+- Boss
+- Biome Boss
+
+Each category applies independent multipliers.
+
+Example:
+
+Elite
+
+Higher Health
+
+Higher Damage
+
+Higher Rewards
+
+Boss
+
+Very High Health
+
+Special Mechanics
+
+Highest Rewards
+
+---
+
+# Reward Scaling Philosophy
+
+Rewards are not tied directly to difficulty.
+
+Instead, rewards use their own scaling system.
+
+This allows independent balancing.
+
+---
+
+# Reward Layers
+
+Final Reward
+
+=
+
+Cycle Reward Scaling
+
+×
+
+Reward Type Scaling
+
+×
+
+Biome Reward Modifier
+
+---
+
+# Layer 1 — Cycle Reward Scaling
+
+Every Cycle increases global rewards.
+
+Example:
+
+Mastery XP
+
+Silver
+
+Loot Quantity
+
+Loot Quality
+
+Gathering Yield
+
+Each reward uses its own curve.
+
+---
+
+# Layer 2 — Reward Type Scaling
+
+Every reward category evolves independently.
+
+Examples:
+
+Mastery XP
+
+Silver
+
+Item Drop Rate
+
+Rare Drop Rate
+
+Gathering Yield
+
+Crafting Materials
+
+This allows economy balancing without affecting progression speed.
+
+---
+
+# Layer 3 — Biome Reward Modifier
+
+Each biome owns its own economic identity.
+
+Example
+
+Forest
+
+- Wood
+- Leather
+- Nature Components
+
+Mountain
+
+- Ore
+- Stone
+- Crystal
+
+Swamp
+
+- Fiber
+- Herbs
+- Mushrooms
+
+Avalon
+
+- Magical Components
+
+Hell
+
+- Rare Materials
+- Infernal Components
+
+Each biome remains valuable throughout the entire game.
+
+---
+
+# Resource Philosophy
+
+Cycles never introduce new resources.
+
+Resources are fixed.
+
+Cycles only improve:
+
+- Quantity
+- Drop Rates
+- Rare Resource Chance
+- Resource Quality
+- Silver
+- Mastery XP
+
+New resources only appear through:
+
+- New Biomes
+- New Expansions
+- New Gameplay Systems
+
+---
+
+# Economy Stability
+
+Because resources never become obsolete:
+
+Old Biomes remain useful.
+
+Players continue gathering early resources even in high Cycles.
+
+This naturally supports:
+
+- Crafting
+- Trading
+- Marketplace balance
+
+---
+
+# Equipment Philosophy
+
+Equipment never scales with Cycles.
+
+A Tier 8 weapon always has the same base statistics.
+
+Cycle progression never creates:
+
+Tier 9
+
+Tier 10
+
+Tier 11
+
+or equivalent gear inflation.
+
+---
+
+# Long-Term Vertical Progression
+
+Endgame progression comes from optimization instead of replacing equipment.
+
+Main progression sources include:
+
+- Weapon Masteries
+- Item Quality
+- Enchantments
+- Build Optimization
+- Economy
+
+---
+
+# Late Game Enchantments
+
+Very Late Game progression focuses primarily on enchantments.
+
+Example:
+
+T8
+
+↓
+
+T8.1
+
+↓
+
+T8.2
+
+↓
+
+T8.3
+
+↓
+
+T8.4
+
+Enchantments become the main source of vertical power progression after obtaining endgame equipment.
+
+The architecture must support future enchantments on:
+
+- Weapons
+- Armor
+- Helmets
+- Boots
+- Off-Hand equipment
+
+Activation is entirely data-driven.
+
+---
+
+# Content Philosophy
+
+Cycles do not create new content.
+
+They increase the value of existing content.
+
+New content comes only from:
+
+- New Biomes
+- New Weapons
+- New Enemy Families
+- New Mechanics
+- Expansions
+
+This guarantees long-term maintainability.
+
+---
+
+# Data Tables
+
+The system should at minimum contain:
+
+CycleScalingTable
+
+- CycleID
+- HealthCurve
+- DamageCurve
+- ArmorCurve
+- MagicResistCurve
+- AttackSpeedCurve
+- MoveSpeedCurve
+
+EnemyFamilyScalingTable
+
+- Family
+- HealthModifier
+- DamageModifier
+- ArmorModifier
+- MagicResistModifier
+
+EnemyCategoryScalingTable
+
+- Category
+- HealthModifier
+- DamageModifier
+- RewardModifier
+
+RewardScalingTable
+
+- Cycle
+- MasteryXP
+- Silver
+- LootQuantity
+- LootQuality
+- GatheringYield
+
+RewardTypeScalingTable
+
+- RewardType
+- ScalingCurve
+
+BiomeRewardModifierTable
+
+- Biome
+- ResourceModifier
+- RareDropModifier
+- SilverModifier
+- MasteryXPModifier
+
+CycleUnlockTable
+
+- CycleID
+- UnlockBoss
+- UnlockRequirements
+
+---
+
+# Future Extensions
+
+The architecture supports future additions without redesign:
+
+- New Enemy Families
+- New Biomes
+- New Reward Types
+- Seasonal Events
+- Hardcore Cycles
+- Endless Challenge Modes
+- Mythic Bosses
+- World Bosses
+- Prestige Systems
+- New Enchantment Levels
+- Additional Equipment Categories
+
+---
+
+# Summary
+
+The Progress Scaling System is built around infinite replayability without equipment inflation.
+
+Difficulty increases through independent scaling layers.
+
+Rewards evolve independently from combat difficulty.
+
+Every biome remains economically relevant thanks to exclusive resources.
+
+Equipment never becomes obsolete through new Cycles.
+
+Long-term player power comes from mastery, optimization, and enchantments rather than endlessly stronger gear.
+
+The entire system is fully data-driven, deterministic, modular, and designed for years of future expansion.
+
+DOCUMENT TERMINÉ

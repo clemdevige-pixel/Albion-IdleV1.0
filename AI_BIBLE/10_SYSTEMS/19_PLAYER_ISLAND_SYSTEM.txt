@@ -1,0 +1,1136 @@
+# 19. PLAYER ISLAND SYSTEM
+
+---
+
+# Purpose
+
+The Player Island is the player's permanent economic hub.
+
+It centralizes every long-term production activity outside combat while supporting the core gameplay loop.
+
+The island is not intended to become a city-building game.
+
+Instead, it provides a structured production environment where the player develops infrastructure, manages workers, refines resources, crafts equipment and prepares for increasingly difficult combat.
+
+Every island mechanic ultimately exists to strengthen the Hero.
+
+The Player Island is responsible for:
+
+- Building management
+- Plot management
+- Building upgrades
+- Worker assignment
+- Production management
+- Shared Storage access
+- Island progression
+
+The Player Island is NOT responsible for:
+
+- Combat
+- Gathering mechanics
+- Refining rules
+- Crafting recipes
+- Inventory management
+- Character progression
+
+These responsibilities belong to their respective systems.
+
+---
+
+# Design Philosophy
+
+The Player Island follows eight fundamental principles.
+
+---
+
+## Combat First
+
+Combat remains the primary gameplay loop.
+
+Every building, production chain and upgrade ultimately exists to improve combat progression.
+
+The island supports combat rather than replacing it.
+
+---
+
+## Low Micromanagement
+
+Players should make strategic decisions instead of repetitive actions.
+
+Good decisions include:
+
+- Constructing buildings
+- Choosing production recipes
+- Assigning Workers
+- Upgrading infrastructure
+
+The system should eliminate unnecessary repetitive interactions.
+
+---
+
+## Permanent Progression
+
+Every island investment is permanent.
+
+Examples include:
+
+- New buildings
+- Building upgrades
+- Island expansion
+- Worker capacity
+- Production efficiency
+
+Progress is never lost.
+
+---
+
+## Modular Architecture
+
+Every island subsystem operates independently.
+
+```
+Building System
+
+↓
+
+Worker System
+
+↓
+
+Production System
+
+↓
+
+Storage System
+
+↓
+
+Crafting System
+```
+
+Each module communicates through shared game data.
+
+---
+
+## Data Driven
+
+Every configurable value exists in game data.
+
+Examples include:
+
+- Building Costs
+- Upgrade Costs
+- Production Durations
+- Plot Limits
+- Worker Capacity
+- Storage Capacity
+
+Game balance never requires code modifications.
+
+---
+
+## Automatic Logistics
+
+Resources automatically flow between island systems.
+
+Players never manually transport materials.
+
+Automation reduces repetitive gameplay while preserving meaningful choices.
+
+---
+
+## Idle Friendly
+
+Every island activity continues while the player is offline.
+
+Offline progression follows exactly the same simulation rules as online progression.
+
+---
+
+## Extensible
+
+The architecture supports future additions such as:
+
+- Farming
+- Animal Breeding
+- Marketplace
+- Guild Islands
+- Automation
+- Research
+- Trade Routes
+
+Version 1 intentionally focuses on core production systems.
+
+---
+
+# Responsibilities
+
+The Player Island manages:
+
+- Construction Plots
+- Buildings
+- Building Upgrades
+- Worker Assignment
+- Shared Storage
+- Production Flow
+- Island Expansion
+
+The Player Island does NOT manage:
+
+- Combat
+- Exploration
+- Loot
+- Gathering calculations
+- Crafting formulas
+- Refining formulas
+
+---
+
+# Player Island Overview
+
+Every player owns exactly one permanent island.
+
+The island:
+
+- Cannot be destroyed
+- Cannot be replaced
+- Cannot be transferred
+- Persists permanently
+
+Future versions may introduce additional locations.
+
+The primary Player Island always remains unique.
+
+---
+
+# Gameplay Loop
+
+The complete island loop is:
+
+```
+Gather Resources
+
+↓
+
+Workers Produce
+
+↓
+
+Shared Storage
+
+↓
+
+Start Production
+
+↓
+
+Production Timer
+
+↓
+
+Finished Items
+
+↓
+
+Combat
+
+↓
+
+Repeat
+```
+
+Every production cycle ultimately feeds combat progression.
+
+---
+
+# Island Expansion
+
+The island begins with a limited number of construction plots.
+
+As progression continues:
+
+Additional plots become available.
+
+Expansion may require:
+
+- Island Progression
+- Resources
+- Achievements
+- Quests
+
+Expansion permanently increases production capacity.
+
+---
+
+# Construction Plots
+
+Buildings may only be placed on available Construction Plots.
+
+Plots define construction capacity only.
+
+Plots contain no gameplay behavior.
+
+Changing the visual layout never affects gameplay systems.
+
+---
+
+# Building Categories
+
+Version 1 supports three building categories.
+
+## Gathering Buildings
+
+Responsible for producing raw resources.
+
+Examples:
+
+- Mine
+- Lumber Camp
+- Quarry
+- Fiber Plantation
+- Hunting Camp
+
+Gathering Buildings require Workers.
+
+Without Workers they remain inactive.
+
+---
+
+## Production Buildings
+
+Responsible for transforming resources.
+
+Examples:
+
+- Smelter
+- Tanner
+- Weaver
+- Weapon Forge
+- Armor Forge
+- Tool Workshop
+
+Production Buildings never gather resources.
+
+---
+
+## Utility Buildings
+
+Responsible for passive infrastructure.
+
+Examples:
+
+- Storage
+- Worker House
+- Research Center
+- Marketplace
+
+Utility Buildings improve island efficiency without directly producing items.
+
+---
+
+# Building Definitions
+
+Every Building defines:
+
+- Category
+- Construction Cost
+- Maximum Level
+- Upgrade Costs
+- Worker Capacity
+- Available Recipes
+- Production Speed
+- Storage Capacity (if applicable)
+
+All values are data driven.
+
+---
+
+# Building Construction
+
+Constructing a Building requires:
+
+- Available Plot
+- Required Resources
+
+Pipeline:
+
+```
+Select Building
+
+↓
+
+Validate Requirements
+
+↓
+
+Consume Resources
+
+↓
+
+Create Building
+
+↓
+
+Operational
+```
+
+Construction is instantaneous.
+
+Version 1 contains no construction timers.
+
+---
+
+# Building Movement
+
+Buildings may be moved freely.
+
+Moving a building:
+
+- Costs nothing
+- Preserves Upgrades
+- Preserves Assigned Workers
+- Preserves Production Progress
+
+Movement is purely organizational.
+
+---
+# Building Types
+
+Buildings are separated into two gameplay families.
+
+---
+
+## Unique Buildings
+
+Unique Buildings represent specialized production facilities.
+
+Only one instance may exist on the island.
+
+Examples:
+
+- Forge
+- Smelter
+- Tanner
+- Weaver
+- Storage
+
+Unique Buildings generally unlock new production capabilities rather than increasing capacity.
+
+---
+
+## Capacity Buildings
+
+Capacity Buildings increase the overall potential of the island.
+
+Multiple instances may exist.
+
+Examples:
+
+- Worker House
+- Future Warehouse
+- Future Barn
+- Future Resource Depot
+
+These buildings expand the island without introducing new production chains.
+
+---
+
+# Building Upgrades
+
+Every building may be upgraded.
+
+Upgrades permanently improve its capabilities.
+
+Typical improvements include:
+
+- Faster Production
+- Increased Storage
+- Higher Worker Capacity
+- New Recipes
+- Better Efficiency
+
+Upgrade values are entirely data driven.
+
+---
+
+# Upgrade Pipeline
+
+Every upgrade follows the same process.
+
+```
+Select Building
+
+↓
+
+Validate Upgrade Requirements
+
+↓
+
+Consume Resources
+
+↓
+
+Increase Building Level
+
+↓
+
+Apply New Statistics
+
+↓
+
+Finished
+```
+
+All upgrades are permanent.
+
+---
+
+# Upgrade Validation
+
+Before upgrading, the Player Island validates:
+
+- Building Exists
+- Building Below Maximum Level
+- Required Resources Available
+- Upgrade Requirements Met
+
+If validation fails:
+
+The upgrade is cancelled.
+
+No resources are consumed.
+
+---
+
+# Worker Assignment
+
+Workers may only be assigned to Gathering Buildings.
+
+Each Worker may be assigned to one building at a time.
+
+Pipeline:
+
+```
+Select Worker
+
+↓
+
+Select Gathering Building
+
+↓
+
+Assign Worker
+
+↓
+
+Production Begins
+```
+
+Workers immediately begin gathering after assignment.
+
+---
+
+# Worker Capacity
+
+Each Gathering Building defines a maximum Worker Capacity.
+
+Example:
+
+```
+Mine
+
+Worker Capacity
+
+3
+```
+
+Additional Workers cannot be assigned until capacity increases.
+
+Capacity may improve through upgrades.
+
+---
+
+# Worker Reassignment
+
+Workers may be reassigned at any time.
+
+Reassignment:
+
+- Costs nothing
+- Is instantaneous
+- Preserves Worker progression
+
+Production immediately switches to the newly assigned building.
+
+---
+
+# Shared Storage
+
+Every building accesses the same Shared Storage.
+
+Resources automatically flow between systems.
+
+Players never move resources manually.
+
+Shared Storage receives:
+
+- Gathered Resources
+- Refined Materials
+- Crafted Equipment
+- Consumables
+
+This significantly reduces unnecessary micromanagement.
+
+---
+
+# Resource Flow
+
+The complete production chain follows a deterministic flow.
+
+```
+Workers
+
+↓
+
+Raw Resources
+
+↓
+
+Shared Storage
+
+↓
+
+Production Building
+
+↓
+
+Finished Items
+
+↓
+
+Shared Storage
+```
+
+Resources never move directly between buildings.
+
+All transfers occur through Shared Storage.
+
+---
+
+# Production Buildings
+
+Production Buildings transform existing resources into new items.
+
+Unlike Gathering Buildings:
+
+They never operate automatically.
+
+The player manually starts every production order.
+
+---
+
+# Starting Production
+
+Every production follows the same pipeline.
+
+```
+Open Building
+
+↓
+
+Select Recipe
+
+↓
+
+Select Quantity
+
+↓
+
+Validate Resources
+
+↓
+
+Consume Resources
+
+↓
+
+Start Production Timer
+```
+
+Once started, production proceeds automatically.
+
+---
+
+# Production Validation
+
+Before production begins, the system validates:
+
+- Building Exists
+- Recipe Exists
+- Building Available
+- Resources Available
+- Storage Capacity Valid
+
+If validation succeeds:
+
+Production begins immediately.
+
+---
+
+# Production Queue
+
+Every Production Building owns an independent queue.
+
+Version 1 supports:
+
+One active production.
+
+Future upgrades may increase queue capacity.
+
+Buildings never share production queues.
+
+---
+
+# Recipe Selection
+
+Recipes are selected manually.
+
+This allows strategic allocation of resources.
+
+Example:
+
+Ore may become:
+
+- Metal Bars
+- Metal Plates
+- Weapon Components
+
+The player determines how resources are invested.
+
+---
+
+# Production Timer
+
+Each recipe defines a Production Duration.
+
+Pipeline:
+
+```
+Production Started
+
+↓
+
+Timer Running
+
+↓
+
+Timer Complete
+
+↓
+
+Finished Product Created
+```
+
+Production continues even while offline.
+
+---
+
+# Production Completion
+
+When production finishes:
+
+- Finished items are automatically transferred to Shared Storage.
+- The Production Building becomes available.
+- Completion events are emitted.
+
+Players never manually collect completed productions.
+
+---
+
+# Automatic Logistics
+
+Version 1 automates every internal resource transfer.
+
+Examples:
+
+```
+Workers
+
+↓
+
+Storage
+
+↓
+
+Production
+
+↓
+
+Storage
+```
+
+No manual transportation exists between buildings.
+
+This keeps production management simple and scalable.
+
+---
+# Offline Progression
+
+All island activities continue while the player is offline.
+
+Supported offline systems include:
+
+- Worker Production
+- Active Production Timers
+- Building Timers
+
+When the player reconnects:
+
+- Workers have already produced resources.
+- Finished productions already exist in Shared Storage.
+- Idle buildings are immediately available.
+
+Offline simulation follows the exact same rules as online simulation.
+
+---
+
+# Building Availability
+
+Every Production Building exists in one of two states.
+
+## Available
+
+The building can immediately begin a new production.
+
+## Busy
+
+The building is currently executing a production order.
+
+Only one production may run simultaneously in Version 1.
+
+---
+
+# Production States
+
+Every production follows the same lifecycle.
+
+```
+Idle
+
+↓
+
+Production Started
+
+↓
+
+Running
+
+↓
+
+Completed
+
+↓
+
+Items Delivered
+
+↓
+
+Idle
+```
+
+Every production returns to the Idle state once finished.
+
+---
+
+# Shared Storage Integration
+
+Shared Storage acts as the central hub of the island.
+
+Every island system exchanges resources exclusively through Shared Storage.
+
+Examples:
+
+```
+Workers
+
+↓
+
+Shared Storage
+
+↓
+
+Smelter
+
+↓
+
+Shared Storage
+
+↓
+
+Forge
+
+↓
+
+Shared Storage
+```
+
+No building exchanges resources directly with another building.
+
+---
+
+# Automatic Item Delivery
+
+Completed productions are automatically delivered.
+
+Pipeline:
+
+```
+Production Complete
+
+↓
+
+Create Finished Items
+
+↓
+
+Transfer to Shared Storage
+
+↓
+
+Emit Completion Events
+```
+
+Players never manually retrieve finished products.
+
+---
+
+# Building Events
+
+The Player Island emits gameplay events whenever important actions occur.
+
+Version 1 supports:
+
+- OnBuildingConstructed
+- OnBuildingUpgraded
+- OnWorkerAssigned
+- OnProductionStarted
+- OnProductionCompleted
+- OnIslandExpanded
+
+Events never contain gameplay logic.
+
+---
+
+# Event Subscribers
+
+Typical subscribers include:
+
+- UI System
+- Notification System
+- Statistics System
+- Achievement System
+- Quest System
+- Audio System
+- Analytics
+
+Communication always occurs through events.
+
+---
+
+# Runtime Validation
+
+Every island action performs runtime validation.
+
+Validation includes:
+
+- Valid Building
+- Valid Plot
+- Available Resources
+- Valid Worker
+- Building Capacity
+- Building Availability
+
+Invalid requests are safely discarded.
+
+---
+
+# Invalid Construction
+
+Construction fails if:
+
+- No Plot is available.
+- Required Resources are missing.
+- Building Limit has been reached.
+- Requirements are not satisfied.
+
+No resources are consumed.
+
+---
+
+# Invalid Production
+
+Production fails if:
+
+- Recipe does not exist.
+- Building is already busy.
+- Resources are insufficient.
+- Building has been removed.
+- Queue is full.
+
+The building state remains unchanged.
+
+---
+
+# Runtime Performance
+
+The Player Island should avoid:
+
+- Runtime allocations
+- Dynamic building searches
+- Expensive resource lookups
+- Reflection
+
+Recommended implementation:
+
+- Cached Building Definitions
+- Cached Recipe Data
+- Fixed Production Objects
+- Constant-time validation
+
+The system should scale efficiently regardless of island size.
+
+---
+
+# Relationship with Other Systems
+
+The Player Island receives information from:
+
+- Worker System
+- Gathering System
+- Inventory System
+- Character System
+
+It interacts with:
+
+- Crafting System
+- Refining System
+- Storage System
+- Notification System
+
+Each system remains responsible for its own gameplay logic.
+
+---
+
+# Future Compatibility
+
+The architecture intentionally supports future features.
+
+Examples include:
+
+- Farming
+- Animal Breeding
+- Fishing Docks
+- Guild Islands
+- Trade Routes
+- Marketplace
+- Automation
+- Research Trees
+- Building Specializations
+- Prestige Systems
+
+Future mechanics extend the existing architecture rather than replacing it.
+
+---
+
+# Acceptance Criteria
+
+The Player Island is considered complete for Version 1 when:
+
+- Every player owns one permanent island.
+- Buildings occupy Construction Plots.
+- Construction consumes resources immediately.
+- Building upgrades permanently improve performance.
+- Workers only operate Gathering Buildings.
+- Production Buildings require manual production orders.
+- Shared Storage centralizes every resource.
+- Internal logistics are fully automated.
+- Production continues while offline.
+- Finished items are automatically transferred to Shared Storage.
+- Island systems communicate through gameplay events.
+- Every configurable value is data driven.
+
+---
+
+# Immutable Design Rules
+
+The following rules define the Player Island System and must never change without redesigning the project.
+
+Rule 01
+
+Every player owns exactly one permanent Player Island.
+
+Rule 02
+
+Combat remains the primary gameplay activity.
+
+Rule 03
+
+The Player Island exists exclusively to support long-term progression.
+
+Rule 04
+
+Every building occupies one Construction Plot.
+
+Rule 05
+
+Construction is instantaneous.
+
+Rule 06
+
+Every building upgrade is permanent.
+
+Rule 07
+
+Workers only gather raw resources.
+
+Rule 08
+
+Production Buildings never gather resources.
+
+Rule 09
+
+Shared Storage is the only resource exchange point.
+
+Rule 10
+
+Players never manually transport resources between buildings.
+
+Rule 11
+
+Production Buildings require manual production orders.
+
+Rule 12
+
+Finished productions are delivered automatically.
+
+Rule 13
+
+Offline progression follows the same simulation rules as online progression.
+
+Rule 14
+
+Every configurable value is data driven.
+
+Rule 15
+
+Future island mechanics extend the existing architecture rather than replacing it.
+
+---
+
+# Summary
+
+The Player Island System provides a permanent, modular and deterministic production hub that supports the Hero's long-term progression. It manages buildings, construction plots, worker assignments, production orders, upgrades and shared storage while remaining independent from combat, gathering calculations and crafting rules. By automating logistics, minimizing micromanagement and allowing all production activities to continue offline, the island delivers meaningful strategic decisions without disrupting the idle gameplay loop. Every mechanic ultimately exists to strengthen the player's combat capabilities through a scalable and extensible production ecosystem.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

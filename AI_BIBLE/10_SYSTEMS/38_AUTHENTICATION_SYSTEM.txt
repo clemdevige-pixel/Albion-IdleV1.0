@@ -1,0 +1,989 @@
+# 38. AUTHENTICATION SYSTEM
+
+## Purpose
+
+The Authentication System is responsible for identifying players, securing accounts, managing login sessions, and linking authentication providers to a single Player Account.
+
+It ensures secure access to all server-authoritative systems while supporting future cross-platform play.
+
+---
+
+# Design Goals
+
+The Authentication System must:
+
+- Secure player identities.
+- Support guest onboarding.
+- Support account linking.
+- Support multiple authentication providers.
+- Allow seamless cross-platform login.
+- Protect player progression.
+- Prevent account duplication.
+- Prevent account hijacking.
+- Integrate with the Save System.
+- Remain provider-agnostic.
+
+---
+
+# Core Philosophy
+
+Authentication identifies the player.
+
+Authorization determines what the player may access.
+
+Gameplay progression is never stored inside authentication providers.
+
+Authentication only grants access to a Player Account.
+
+---
+
+# Architecture Overview
+
+The Authentication System is composed of:
+
+- Guest Authentication
+- Email Authentication
+- Google Authentication
+- Apple Authentication
+- Steam Authentication
+- Account Linking
+- Session Management
+- Token Management
+- Device Management
+- Authentication Security
+
+---
+
+# Account Model
+
+The game follows the model:
+
+One Player Account
+
+↓
+
+One Character
+
+↓
+
+One Persistent Progression
+
+A Player Account owns exactly one character.
+
+Every authentication provider points toward this single account.
+
+---
+
+# Player Account
+
+A Player Account represents the permanent identity of a player.
+
+It contains:
+
+- AccountID
+- CharacterID
+- Authentication Providers
+- Security Settings
+- Account Metadata
+- Save Reference
+- Account Status
+
+The Player Account never changes when providers are added or removed.
+
+---
+
+# Character Relationship
+
+One Player Account
+
+↓
+
+One Character
+
+The Character contains:
+
+- Inventory
+- Equipment
+- Silver
+- Masteries
+- Island
+- Workers
+- Progression
+- Statistics
+
+The Authentication System never stores gameplay progression.
+
+---
+
+# Guest Account
+
+A new player begins with a Guest Account.
+
+Guest creation is automatic.
+
+No registration is required.
+
+Guest Accounts receive:
+
+- AccountID
+- Character
+- Save
+- Session
+- Local Cache
+
+The player can begin immediately.
+
+---
+
+# Guest Account Limitations
+
+Guest Accounts are fully playable.
+
+However, some future features require account linking.
+
+Examples include:
+
+- Cross-device synchronization
+- Account recovery
+- Social systems
+- Rankings
+- Player Market
+- Player Trading
+- Real-money purchases
+
+---
+
+# Permanent Accounts
+
+Permanent accounts may authenticate using:
+
+- Email + Password
+- Google
+- Apple
+- Steam
+
+Additional providers may be added in future updates.
+
+---
+
+# Multiple Providers
+
+One Player Account may be linked to multiple authentication providers.
+
+Example:
+
+Player Account
+
+↓
+
+Email
+
+↓
+
+Google
+
+↓
+
+Apple
+
+↓
+
+Steam
+
+Every provider authenticates the same Player Account.
+
+---
+
+# Provider Independence
+
+Authentication providers are independent.
+
+Removing one provider does not affect the others.
+
+At least one valid authentication provider must always remain attached.
+
+---
+
+# Email Authentication
+
+Email authentication requires:
+
+- Email Address
+- Password
+
+Optional future additions:
+
+- Email Verification
+- Two-Factor Authentication
+- Password Reset
+- Recovery Codes
+
+---
+
+# Password Requirements
+
+Passwords should satisfy configurable rules.
+
+Recommended defaults:
+
+- Minimum length
+- Maximum length
+- Mixed character support
+- Secure hashing
+- No plaintext storage
+
+Passwords are never stored in plain text.
+
+---
+
+# Password Storage
+
+Passwords are stored using secure password hashing algorithms.
+
+Only password hashes are stored.
+
+The original password is never recoverable.
+
+---
+
+# Google Authentication
+
+Google Authentication delegates identity verification to Google.
+
+The Authentication System stores:
+
+- Google Provider ID
+- Player Account Link
+
+Google credentials are never stored.
+
+---
+
+# Apple Authentication
+
+Apple Authentication functions identically.
+
+Only Apple's identity token is validated.
+
+The Authentication System stores only the provider identifier.
+
+---
+
+# Steam Authentication
+
+Steam Authentication is available on Steam builds.
+
+The Authentication System validates the Steam identity.
+
+Only the Steam Account ID is associated with the Player Account.
+
+---
+
+# Provider Linking
+
+A Guest Account may become permanent through account linking.
+
+Example:
+
+Guest
+
+↓
+
+Google
+
+↓
+
+Same Player Account
+
+No gameplay data changes.
+
+Only authentication methods are added.
+
+---
+
+# Linking Rules
+
+A provider may only be linked when:
+
+- The provider is valid.
+- Authentication succeeds.
+- The provider is not already attached elsewhere.
+- Security validation succeeds.
+
+---
+
+# Existing Account Rule
+
+A Guest Account may only link to a permanent account that contains **no existing progression**.
+
+If the target account already owns a character or save:
+
+The linking operation is rejected.
+
+---
+
+# No Save Merge
+
+Progression merging is not supported.
+
+The Authentication System never merges:
+
+- Characters
+- Inventories
+- Silver
+- Masteries
+- Islands
+- Workers
+
+This prevents duplication and maintains deterministic behavior.
+
+---
+
+# Account Creation Flow
+
+Player Launches Game
+
+↓
+
+Guest Account Created
+
+↓
+
+Character Created
+
+↓
+
+Session Started
+
+↓
+
+Gameplay Begins
+
+---
+
+# Account Linking Flow
+
+Guest Account
+
+↓
+
+Player Selects Provider
+
+↓
+
+Provider Authentication
+
+↓
+
+Validation
+
+↓
+
+Provider Linked
+
+↓
+
+Guest Becomes Permanent Account
+
+---
+
+# Login Flow
+
+Player Opens Game
+
+↓
+
+Authentication Provider Selected
+
+↓
+
+Provider Verification
+
+↓
+
+Player Account Loaded
+
+↓
+
+Session Created
+
+↓
+
+Save Loaded
+
+↓
+
+Gameplay Begins
+
+---
+
+# Logout Flow
+
+Player Requests Logout
+
+↓
+
+Gameplay Ends
+
+↓
+
+Save Completed
+
+↓
+
+Session Closed
+
+↓
+
+Authentication Tokens Invalidated
+
+---
+
+# Authentication Tokens
+
+After successful authentication:
+
+The server issues:
+
+- Access Token
+- Refresh Token
+
+These identify the authenticated session.
+
+---
+
+# Session Management
+
+Every login creates a unique session.
+
+Session properties include:
+
+- SessionID
+- AccountID
+- DeviceID
+- Login Timestamp
+- Expiration Timestamp
+- Authentication Provider
+
+---
+
+# Session Lifetime
+
+Sessions remain valid until:
+
+- Logout
+- Expiration
+- Revocation
+- Security Event
+
+Expired sessions require reauthentication.
+
+---
+
+# Device Management
+
+The Authentication System records trusted devices.
+
+Example information:
+
+- DeviceID
+- Platform
+- Operating System
+- Client Version
+- Last Login
+- Country (optional)
+
+---
+
+# Device Validation
+
+Unknown devices may trigger:
+
+- Additional verification
+- Email confirmation
+- Future two-factor authentication
+
+---
+
+# Session Revocation
+
+Sessions may be revoked when:
+
+- Password changes
+- Account recovery
+- Security incident
+- Manual logout
+- Administrator action
+
+---
+
+# Automatic Login
+
+The client may automatically reuse valid refresh tokens.
+
+If validation succeeds:
+
+The player enters the game without manual login.
+
+---
+
+# Account Recovery
+
+Supported recovery methods include:
+
+- Email password reset
+- Google login
+- Apple login
+- Steam login
+
+Guest Accounts cannot be recovered unless previously linked.
+
+---
+
+# Email Verification
+
+Email verification is recommended.
+
+Verification confirms ownership of the email address.
+
+Unverified accounts may have limited functionality if configured.
+
+---
+
+# Password Reset
+
+Password reset requires:
+
+- Verified email ownership
+- Secure reset token
+- Expiration timeout
+
+Passwords are never reset without identity verification.
+
+---
+
+# Two-Factor Authentication
+
+Future support may include:
+
+- Authenticator Apps
+- Email Codes
+- Backup Codes
+
+Not required for V1.
+
+---
+
+# Authentication Failure
+
+Authentication fails when:
+
+- Invalid credentials
+- Invalid provider token
+- Disabled account
+- Banned account
+- Expired authentication request
+
+No gameplay data is loaded.
+
+---
+
+# Account Status
+
+Accounts may be:
+
+- Active
+- Suspended
+- Banned
+- Deleted
+- Pending Verification
+
+Gameplay availability depends on status.
+
+---
+
+# Suspended Accounts
+
+Suspended accounts cannot authenticate until suspension expires or is removed.
+
+Progression remains preserved.
+
+---
+
+# Banned Accounts
+
+Banned accounts cannot access gameplay.
+
+Progression remains stored unless permanently deleted.
+
+---
+
+# Deleted Accounts
+
+Deleted accounts enter a configurable recovery period.
+
+After expiration:
+
+- Authentication removed
+- Save removed
+- Character removed
+- Personal data handled according to applicable regulations
+
+---
+
+# Security Principles
+
+Authentication must prevent:
+
+- Credential theft
+- Session hijacking
+- Token replay
+- Account duplication
+- Unauthorized linking
+- Brute-force attacks
+
+---
+
+# Rate Limiting
+
+Login attempts should be rate limited.
+
+Repeated failures may temporarily block authentication requests.
+
+---
+
+# Provider Validation
+
+Every external provider is validated directly with its official authentication service.
+
+Client-side assertions are never trusted.
+
+---
+
+# Secure Communication
+
+All authentication traffic uses encrypted transport.
+
+Credentials and tokens are never transmitted unencrypted.
+
+---
+
+# Token Validation
+
+Every request requiring authentication validates:
+
+- Token integrity
+- Expiration
+- Signature
+- Revocation status
+
+Invalid tokens are rejected.
+
+---
+
+# Authorization
+
+Authentication identifies the player.
+
+Authorization verifies access rights.
+
+Examples:
+
+- Account Status
+- Character Ownership
+- Session Validity
+- Administrative Permissions
+
+---
+
+# Administrative Accounts
+
+Future administrator permissions may include:
+
+- Player lookup
+- Account suspension
+- Account restoration
+- Session revocation
+- Audit logs
+
+Gameplay progression cannot be modified directly without dedicated tools.
+
+---
+
+# Save System Integration
+
+After successful authentication:
+
+Authentication
+
+↓
+
+Player Account
+
+↓
+
+Save System
+
+↓
+
+Load Snapshot
+
+↓
+
+Gameplay
+
+Authentication never loads gameplay directly.
+
+---
+
+# Analytics
+
+Recommended metrics:
+
+- New Guest Accounts
+- Account Conversions
+- Linked Providers
+- Login Success Rate
+- Login Failure Rate
+- Provider Usage
+- Session Duration
+- Active Devices
+- Password Reset Requests
+
+---
+
+# Data Tables
+
+## AuthenticationProviderTable
+
+Fields:
+
+- ProviderID
+- ProviderType
+- Enabled
+- DisplayName
+- ConfigurationID
+
+---
+
+## AccountStatusTable
+
+Fields:
+
+- StatusID
+- StatusName
+- LoginAllowed
+- GameplayAllowed
+
+---
+
+## SecurityPolicyTable
+
+Fields:
+
+- MinimumPasswordLength
+- MaximumPasswordLength
+- SessionTimeout
+- RefreshTokenLifetime
+- RateLimitThreshold
+- LockoutDuration
+
+---
+
+## AuthenticationFeatureTable
+
+Fields:
+
+- EmailVerificationEnabled
+- GuestAccountsEnabled
+- GoogleEnabled
+- AppleEnabled
+- SteamEnabled
+- TwoFactorEnabled
+
+---
+
+# Runtime Components
+
+## AuthenticationManager
+
+Responsible for:
+
+- Login
+- Logout
+- Provider Authentication
+- Session Creation
+- Session Validation
+
+---
+
+## GuestAccountService
+
+Responsible for:
+
+- Guest Creation
+- Guest Login
+- Guest Conversion
+
+---
+
+## AccountLinkingService
+
+Responsible for:
+
+- Linking Providers
+- Validation
+- Duplicate Detection
+- Existing Account Checks
+
+---
+
+## SessionManager
+
+Responsible for:
+
+- Session Creation
+- Session Renewal
+- Session Revocation
+- Session Expiration
+
+---
+
+## SecurityManager
+
+Responsible for:
+
+- Credential Validation
+- Password Hashing
+- Rate Limiting
+- Security Policies
+
+---
+
+# Events
+
+The Authentication System publishes:
+
+- OnGuestCreated
+- OnLoginSucceeded
+- OnLoginFailed
+- OnLogout
+- OnAccountLinked
+- OnProviderAdded
+- OnProviderRemoved
+- OnSessionCreated
+- OnSessionExpired
+- OnPasswordReset
+
+---
+
+# Edge Cases
+
+## Guest Links to Empty Account
+
+Link succeeds.
+
+The Player Account becomes permanent.
+
+---
+
+## Guest Links to Existing Progression
+
+Link is rejected.
+
+No gameplay data changes.
+
+---
+
+## Duplicate Provider
+
+The provider cannot be linked to two Player Accounts simultaneously.
+
+---
+
+## Expired Session
+
+The player must authenticate again.
+
+---
+
+## Invalid Refresh Token
+
+The session is terminated.
+
+---
+
+## Lost Guest Device Before Linking
+
+The Guest Account cannot be recovered.
+
+---
+
+## Provider Removed
+
+At least one authentication method must remain attached to the account.
+
+---
+
+# Future Extensions
+
+The architecture supports:
+
+- Discord Login
+- Epic Games Login
+- PlayStation Network
+- Xbox Live
+- Nintendo Account
+- Multi-Factor Authentication
+- Trusted Devices
+- Family Accounts
+- SSO Providers
+- Enterprise Authentication
+
+---
+
+# Explicitly Excluded from V1
+
+V1 does not include:
+
+- Multiple Characters per Account
+- Progression Merging
+- Offline Authentication
+- Local-Only Accounts
+- Anonymous Multiplayer
+- Shared Accounts
+- Account Transfer Between Players
+- Two-Factor Authentication
+- Biometric Authentication
+
+---
+
+# System Relationships
+
+The Authentication System interacts with:
+
+- Save System
+- Character System
+- Inventory System
+- Equipment System
+- Currency System
+- Progression System
+- Worker System
+- Island System
+- Settings System
+- Analytics System
+- Security System
+
+---
+
+# Summary
+
+The Authentication System provides secure, provider-agnostic player identification through Guest Accounts and permanent authentication providers.
+
+Every Player Account owns exactly one character and one persistent progression. Players begin instantly with a Guest Account and may later link Email, Google, Apple, and Steam authentication methods to the same account.
+
+Guest accounts may only be linked to permanent accounts that do not already contain progression, eliminating the need for save merging and preventing duplication exploits.
+
+The system is fully integrated with the server-authoritative Save System, supports secure session management, multiple authentication providers, future cross-platform play, and provides a scalable foundation for all online services.
+
+DOCUMENT TERMINÉ

@@ -1,0 +1,1182 @@
+# 34. CLIENT RENDERING & UI
+
+---
+
+# 1. Purpose
+
+This document defines the complete client architecture.
+
+It specifies:
+
+- Client responsibilities
+- Rendering pipeline
+- React architecture
+- Phaser architecture
+- Scene management
+- UI framework
+- HUD
+- Input system
+- Camera
+- Animation
+- Audio
+- VFX
+- Asset usage
+- Client state
+- Network synchronization
+
+The client is responsible for presentation only.
+
+The server remains authoritative for gameplay.
+
+---
+
+# 2. Locked Decisions
+
+---
+
+## 2.1 Client Responsibilities
+
+The client is responsible for:
+
+- Rendering
+- Animations
+- Camera
+- UI
+- Input
+- Audio
+- Visual Effects
+- Presentation Timeline
+- Local Feedback
+
+The client is NOT responsible for:
+
+- Loot
+- Damage calculation
+- XP calculation
+- Currency
+- Crafting results
+- Save validation
+- Background progression
+- Combat resolution
+
+---
+
+## 2.2 Framework Split
+
+React owns the application.
+
+Phaser owns the game world.
+
+```text
+React
+
+↓
+
+Application
+
+↓
+
+HUD
+
+↓
+
+Menus
+
+↓
+
+Inventory
+
+↓
+
+Equipment
+
+↓
+
+Settings
+
+↓
+
+Notifications
+```
+
+```text
+Phaser
+
+↓
+
+World
+
+↓
+
+Characters
+
+↓
+
+Enemies
+
+↓
+
+Projectiles
+
+↓
+
+Particles
+
+↓
+
+Backgrounds
+
+↓
+
+Camera
+```
+
+Neither framework replaces the other.
+
+---
+
+## 2.3 Rendering Style
+
+The game is:
+
+```text
+2D
+
+Side Scroller
+
+Pixel Art
+
+Horizontal
+```
+
+---
+
+## 2.4 Fixed Resolution Philosophy
+
+The game targets one virtual resolution.
+
+Recommended
+
+```text
+1920 × 1080
+```
+
+Everything scales from that resolution.
+
+---
+
+## 2.5 Pixel Perfect
+
+Rendering must preserve pixel art.
+
+Required
+
+- Integer scaling
+- No texture filtering
+- Pixel snapping
+- Nearest Neighbor filtering
+
+Forbidden
+
+- Blur
+- Bilinear filtering
+- Fractional scaling
+
+---
+
+# 3. Client Architecture
+
+```text
+React
+
+↓
+
+App Shell
+
+↓
+
+Game Layout
+
+↓
+
+HUD
+
+↓
+
+Phaser Canvas
+
+↓
+
+Renderer
+```
+
+---
+
+# 4. React Responsibilities
+
+React manages
+
+- Authentication
+- Navigation
+- Menus
+- Inventory
+- Equipment
+- Vendors
+- Workers
+- Crafting
+- Refining
+- Island
+- Settings
+- Localization
+- Notifications
+- Modal Windows
+
+React never renders gameplay entities.
+
+---
+
+# 5. Phaser Responsibilities
+
+Phaser manages
+
+- Player
+- Enemies
+- Bosses
+- Camera
+- Animations
+- Particles
+- Backgrounds
+- Combat
+- Damage Numbers
+- Ground
+- Weather
+
+---
+
+# 6. Scene Architecture
+
+Scenes
+
+```text
+Boot
+
+↓
+
+Preload
+
+↓
+
+Loading
+
+↓
+
+Main Menu
+
+↓
+
+Game Scene
+
+↓
+
+UI Overlay
+```
+
+Only one gameplay scene exists in Version 1.
+
+---
+
+# 7. Game Scene
+
+Contains
+
+```text
+Background
+
+Ground
+
+Player
+
+Enemies
+
+Projectiles
+
+Particles
+
+Camera
+
+Combat Layer
+```
+
+---
+
+# 8. Layer Order
+
+Rendering order
+
+```text
+Sky
+
+↓
+
+Background
+
+↓
+
+Far Objects
+
+↓
+
+Mid Objects
+
+↓
+
+Ground
+
+↓
+
+Characters
+
+↓
+
+Projectiles
+
+↓
+
+Particles
+
+↓
+
+Floating Text
+
+↓
+
+Foreground
+
+↓
+
+Lighting
+
+↓
+
+Screen Effects
+```
+
+HUD is rendered separately by React.
+
+---
+
+# 9. Camera
+
+Horizontal only.
+
+Fixed Y.
+
+Player stays around
+
+```text
+35–40%
+```
+
+of screen width.
+
+---
+
+## Camera Features
+
+- Smooth Follow
+- Small Look Ahead
+- Boss Centering
+- Camera Shake
+- Bounds
+
+---
+
+## Camera Shake
+
+Allowed only for
+
+- Critical Hit
+- Boss Spawn
+- Boss Death
+- Heavy Impact
+
+Never constant.
+
+---
+
+# 10. World Structure
+
+```text
+Biome
+
+↓
+
+Zone
+
+↓
+
+Infinite Segments
+```
+
+Only nearby assets are loaded.
+
+---
+
+# 11. Segment Streaming
+
+Pipeline
+
+```text
+Current Segment
+
+↓
+
+Next Segment
+
+↓
+
+Unload Previous
+```
+
+Invisible segments are destroyed.
+
+---
+
+# 12. Background
+
+Every biome contains
+
+```text
+Sky
+
+Far Background
+
+Mid Background
+
+Foreground
+
+Ground
+```
+
+Supports parallax.
+
+---
+
+# 13. Parallax
+
+Each layer owns
+
+```text
+Speed
+
+Depth
+```
+
+Example
+
+```text
+Sky
+
+0.05
+```
+
+```text
+Mountains
+
+0.2
+```
+
+```text
+Trees
+
+0.6
+```
+
+```text
+Ground
+
+1.0
+```
+
+---
+
+# 14. Player Object
+
+Contains
+
+```text
+Sprite
+
+Animation
+
+Equipment
+
+Health Bar
+
+Effects
+```
+
+Logic comes from server.
+
+---
+
+# 15. Enemy Object
+
+Contains
+
+```text
+Sprite
+
+Animation
+
+Effects
+
+Health Bar
+```
+
+---
+
+# 16. Boss Object
+
+Additional
+
+```text
+Boss Intro
+
+Boss Aura
+
+Special FX
+```
+
+---
+
+# 17. Sprite Rules
+
+Every sprite uses
+
+```text
+Origin
+
+Scale
+
+Animation Controller
+
+Sprite Sheet
+```
+
+No gameplay information stored inside sprite.
+
+---
+
+# 18. Animation Controller
+
+Animations referenced by ID.
+
+Never by frame numbers.
+
+---
+
+# 19. Animation Types
+
+Player
+
+```text
+Idle
+
+Walk
+
+Attack
+
+Cast
+
+Hit
+
+Death
+```
+
+Enemy
+
+```text
+Idle
+
+Walk
+
+Attack
+
+Hit
+
+Death
+```
+
+---
+
+# 20. Animation Rules
+
+One animation active.
+
+Transitions handled automatically.
+
+Loop
+
+```text
+Idle
+
+Walk
+```
+
+One Shot
+
+```text
+Attack
+
+Hit
+
+Death
+```
+
+---
+
+# 21. Combat Timeline
+
+Client receives
+
+```text
+Timeline Events
+```
+
+Then plays them.
+
+Example
+
+```text
+Attack
+
+↓
+
+Damage
+
+↓
+
+Hit
+
+↓
+
+Death
+```
+
+Server never streams every frame.
+
+---
+
+# 22. Damage Numbers
+
+Spawned from timeline.
+
+Contain
+
+```text
+Amount
+
+Critical
+
+Heal
+
+Color Category
+```
+
+Destroyed automatically.
+
+---
+
+# 23. Particles
+
+Categories
+
+```text
+Hit
+
+Blood
+
+Dust
+
+Magic
+
+Heal
+
+Poison
+
+Fire
+
+Lightning
+```
+
+Short lifetime.
+
+---
+
+# 24. Projectiles
+
+Contain
+
+```text
+Sprite
+
+Speed
+
+Target
+
+Impact Effect
+```
+
+Visual only.
+
+---
+
+# 25. Lighting
+
+Version 1
+
+Simple additive effects.
+
+No dynamic lighting engine.
+
+---
+
+# 26. Weather
+
+Biome dependent.
+
+Examples
+
+```text
+Rain
+
+Fog
+
+Ash
+
+Snow
+```
+
+Presentation only.
+
+---
+
+# 27. Audio
+
+Categories
+
+```text
+Music
+
+Ambience
+
+Combat
+
+UI
+
+Notifications
+```
+
+---
+
+# 28. Music
+
+One music track per biome.
+
+Crossfade on transition.
+
+---
+
+# 29. Sound Effects
+
+Triggered by timeline.
+
+Examples
+
+```text
+Attack
+
+Hit
+
+Death
+
+Loot
+
+Button
+
+Craft
+
+Worker Complete
+```
+
+---
+
+# 30. UI Architecture
+
+React components.
+
+Hierarchy
+
+```text
+App
+
+↓
+
+Layout
+
+↓
+
+HUD
+
+↓
+
+Panels
+
+↓
+
+Widgets
+```
+
+---
+
+# 31. HUD
+
+Displays
+
+```text
+Player
+
+HP
+
+Mana
+
+Wave
+
+Objectives
+
+Abilities
+
+Notifications
+```
+
+---
+
+# 32. Inventory UI
+
+Grid.
+
+Scrollable.
+
+Filters.
+
+Sorting.
+
+Tooltip.
+
+---
+
+# 33. Equipment UI
+
+Slots
+
+```text
+Head
+
+Chest
+
+Boots
+
+Weapon
+
+Off Hand
+
+Cape
+```
+
+---
+
+# 34. Tooltip
+
+Contains
+
+```text
+Name
+
+Quality
+
+Enchant
+
+Stats
+
+Description
+```
+
+Loaded from definitions.
+
+---
+
+# 35. Notifications
+
+Toast system.
+
+Queue.
+
+Auto disappear.
+
+---
+
+# 36. Modal Windows
+
+Used for
+
+```text
+Vendor
+
+Craft
+
+Refine
+
+Settings
+
+Confirmations
+```
+
+---
+
+# 37. Input
+
+Version 1
+
+```text
+Mouse
+
+Keyboard
+```
+
+Gamepad later.
+
+---
+
+# 38. Input Mapping
+
+Actions
+
+```text
+Inventory
+
+Equipment
+
+Escape
+
+Accept
+
+Cancel
+
+Settings
+```
+
+Gameplay requires very little input because combat is automatic.
+
+---
+
+# 39. Cursor
+
+Supports
+
+```text
+Default
+
+Hover
+
+Clickable
+
+Loading
+```
+
+---
+
+# 40. Localization
+
+Every UI string uses localization keys.
+
+Never hardcoded text.
+
+---
+
+# 41. Accessibility
+
+Supports
+
+- UI Scaling
+- Font Scaling
+- Volume Controls
+- Color Blind Friendly Icons
+- Reduced Screen Shake
+- Reduced Flash Effects
+
+---
+
+# 42. Client State
+
+Categories
+
+```text
+Server State
+
+UI State
+
+Presentation State
+```
+
+No duplication.
+
+---
+
+# 43. Network Sync
+
+Flow
+
+```text
+Player Action
+
+↓
+
+Request
+
+↓
+
+Server
+
+↓
+
+DTO
+
+↓
+
+Update UI
+
+↓
+
+Play Timeline
+```
+
+---
+
+# 44. Loading Screens
+
+Displayed during
+
+- Login
+- Initial Load
+- Biome Load
+
+Never during combat.
+
+---
+
+# 45. Error Screens
+
+Categories
+
+```text
+Network
+
+Maintenance
+
+Version Mismatch
+
+Unexpected Error
+```
+
+---
+
+# 46. Performance
+
+Target
+
+```text
+60 FPS
+```
+
+Minimum
+
+```text
+30 FPS
+```
+
+---
+
+# 47. Optimization
+
+Use
+
+- Object Pooling
+- Sprite Atlases
+- Lazy Loading
+- Culling
+
+Avoid
+
+- Dynamic allocations every frame
+- Rebuilding UI every frame
+
+---
+
+# 48. Acceptance Criteria
+
+Client implementation is complete when
+
+- React owns the UI.
+- Phaser owns rendering.
+- Camera follows smoothly.
+- Pixel art remains crisp.
+- HUD updates from DTOs.
+- Timeline drives animations.
+- Combat remains presentation only.
+- Tooltips use definitions.
+- Inventory is data-driven.
+- Assets are loaded through manifests.
+- Weather is presentation only.
+- Audio categories work independently.
+- UI is localized.
+- Accessibility settings apply immediately.
+- Rendering reaches target performance.
+
+---
+
+# 49. Final Summary
+
+The client is a presentation layer built on React and Phaser.
+
+```text
+Server DTO
+
+↓
+
+Client State
+
+↓
+
+Timeline
+
+↓
+
+Animation
+
+↓
+
+Rendering
+
+↓
+
+Player
+```
+
+The client never owns gameplay truth.
+
+It renders the authoritative world received from the backend while providing smooth visuals, responsive UI and a polished player experience.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

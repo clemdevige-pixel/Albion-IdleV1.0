@@ -1,0 +1,1051 @@
+# 41_UI_SYSTEM
+
+## Purpose
+
+The UI System provides a scalable, modular, and highly responsive user interface architecture for the entire game.
+
+It defines:
+
+- HUD architecture
+- Window management
+- Navigation
+- User interactions
+- Dashboard
+- Notifications integration
+- Command Palette
+- Favorites
+- Loading states
+- UI feedback
+- Input routing
+- UI communication
+
+The UI System never contains gameplay logic.
+
+It only visualizes game state and dispatches user intentions.
+
+---
+
+# Design Goals
+
+The UI must be:
+
+- Fast
+- Clean
+- Readable
+- Non intrusive
+- PC-first
+- Keyboard friendly
+- Mouse friendly
+- Future-proof
+- Highly modular
+
+The interface should support thousands of hours of gameplay without becoming difficult to navigate.
+
+---
+
+# Core Philosophy
+
+Gameplay should never be interrupted by UI.
+
+The player should always be able to:
+
+- monitor progression
+- open management windows
+- inspect equipment
+- manage workers
+- craft
+- refine
+- check notifications
+
+while combat continues automatically.
+
+Only critical dialogs are allowed to pause interaction.
+
+---
+
+# UI Architecture
+
+The interface is divided into independent modules.
+
+```text
+UI Root
+
+├── HUD
+├── Window Manager
+├── Dashboard
+├── Notification Center
+├── Command Palette
+├── Tooltip Manager
+├── Context Menu Manager
+├── Modal Manager
+├── Loading Manager
+├── Feedback Manager
+├── Input Manager
+└── Event Bus
+```
+
+Each module is isolated.
+
+No module directly depends on another whenever event-driven communication is possible.
+
+---
+
+# HUD Layout
+
+The HUD is persistent.
+
+## Top Bar
+
+Contains:
+
+- Player Profile
+- Silver
+- Notification Button
+- Settings
+- Premium (future)
+
+---
+
+## Left Panel
+
+Contains:
+
+- Tutorial
+- Quests (future)
+- Events (future)
+
+---
+
+## Center
+
+Contains:
+
+- Exploration
+- Combat
+- Encounter Area
+
+This is the primary gameplay viewport.
+
+---
+
+## Right Panel
+
+Contains:
+
+- Zone Progress
+- Boss Progress
+- Minimap (future)
+- Context Information
+
+---
+
+## Bottom Quick Bar
+
+Contains permanent shortcuts.
+
+Default shortcuts:
+
+- Inventory
+- Equipment
+- Character
+- Masteries
+- Crafting
+- Refining
+- Workers
+- Island
+
+Future additions:
+
+- Market
+- Guild
+- Mail
+
+---
+
+# Window System
+
+The game uses a single main window policy.
+
+Only one major management window may be opened simultaneously.
+
+Examples:
+
+Inventory
+
+↓
+
+Equipment
+
+↓
+
+Crafting
+
+The previous window closes automatically.
+
+---
+
+# Secondary Windows
+
+Small contextual windows may coexist.
+
+Examples:
+
+- Tooltip
+- Confirmation Dialog
+- Item Details
+- Context Menu
+
+---
+
+# Window Behavior
+
+Windows are:
+
+- Fixed position
+- Fixed size
+- Non draggable
+- Non resizable
+
+Internal scrolling is used when necessary.
+
+No window position is remembered between sessions.
+
+---
+
+# Combat Compatibility
+
+The following windows remain usable during combat:
+
+- Inventory
+- Equipment
+- Character
+- Masteries
+- Crafting
+- Refining
+- Workers
+- Island
+- Notifications
+- Dashboard
+
+Automatic combat continues uninterrupted.
+
+---
+
+# Blocking Windows
+
+Only critical interfaces block gameplay.
+
+Examples:
+
+- Authentication
+- Settings
+- Tutorial
+- Critical Confirmation
+- Future Dialogues
+- Future Cutscenes
+
+---
+
+# Navigation
+
+Navigation combines three methods.
+
+## Quick Bar
+
+Permanent access.
+
+---
+
+## Keyboard Shortcuts
+
+Fully configurable.
+
+Uses the Input Action System.
+
+No hardcoded key mappings.
+
+---
+
+## Command Palette
+
+Accessible by default through:
+
+Ctrl + K
+
+The shortcut is configurable.
+
+---
+
+# Command Palette
+
+The Command Palette is a universal command launcher.
+
+It provides:
+
+- Navigation
+- Search
+- Dashboard Profile Switching
+- Favorites
+- Future developer commands
+
+Examples:
+
+Open Inventory
+
+Open Workers
+
+Open Crafting
+
+Search Iron Sword
+
+Open Favorite Recipes
+
+Switch Dashboard Profile
+
+Open Notifications
+
+The Command Palette uses fuzzy search.
+
+Frequently used commands receive higher priority.
+
+---
+
+# Input System
+
+Every action uses Input Actions.
+
+Example:
+
+OpenInventory
+
+↓
+
+Bound to I
+
+↓
+
+Player changes to TAB
+
+↓
+
+No code changes required.
+
+---
+
+# Tooltip System
+
+Hovering an element displays a lightweight tooltip.
+
+Tooltips contain:
+
+- Name
+- Icon
+- Quality
+- Short Description
+
+They disappear automatically.
+
+---
+
+# Detailed Item Window
+
+Clicking an item opens the Item Details window.
+
+Contains:
+
+- Full description
+- Stats
+- Quality
+- Enchantment
+- Durability
+- Source
+- Usage
+- Possible Actions
+
+---
+
+# Context Menus
+
+Context menus are generated dynamically.
+
+Possible actions include:
+
+Equip
+
+Repair
+
+Favorite
+
+Inspect
+
+Craft
+
+Refine
+
+Sell (future)
+
+---
+
+# Confirmation System
+
+The UI uses intelligent confirmations.
+
+Routine actions never require confirmation.
+
+Examples:
+
+Open Inventory
+
+Assign Worker
+
+Collect Reward
+
+Do not confirm.
+
+---
+
+Dangerous actions require confirmation.
+
+Examples:
+
+Destroy Item
+
+Spend Premium Currency
+
+Delete Save Slot
+
+Reset Configuration
+
+Leave Guild
+
+Future irreversible actions
+
+---
+
+# Favorites System
+
+The UI supports global favorites.
+
+Supported entities:
+
+- Items
+- Recipes
+- Resources
+- Workers
+- Buildings
+- Equipment Sets
+- Masteries
+
+Future:
+
+- Quests
+- Achievements
+- Players
+- Guilds
+- Market Searches
+
+---
+
+Every favorite uses the same architecture.
+
+```text
+Favorite
+
+Entity Type
+
+Entity ID
+
+Player ID
+
+Created At
+```
+
+---
+
+Each supported interface exposes a Favorite action.
+
+---
+
+# Global Search
+
+The architecture supports Global Search.
+
+The visible feature is postponed until a later milestone.
+
+Current systems expose searchable metadata.
+
+Future searchable entities:
+
+- Items
+- Recipes
+- Buildings
+- Workers
+- Masteries
+- Notifications
+- Achievements
+- Quests
+
+---
+
+# Dashboard
+
+The Dashboard is modular.
+
+It displays information only.
+
+No gameplay logic exists inside widgets.
+
+---
+
+## Widget Categories
+
+Character
+
+Combat
+
+Inventory
+
+Crafting
+
+Refining
+
+Workers
+
+Island
+
+Economy
+
+Notifications
+
+Favorites
+
+Future systems
+
+---
+
+# Dashboard Profiles
+
+The player may save multiple dashboard layouts.
+
+Examples:
+
+Combat
+
+Crafting
+
+Economy
+
+Island
+
+Custom 1
+
+Custom 2
+
+Profiles switch instantly.
+
+---
+
+The dashboard layout remains fixed.
+
+Only widget selection changes.
+
+---
+
+# Widget Architecture
+
+Each widget defines:
+
+Widget ID
+
+Category
+
+Icon
+
+Refresh Policy
+
+Priority
+
+Data Provider
+
+Size
+
+No widget communicates directly with another.
+
+---
+
+# Notification Integration
+
+The UI consumes notifications produced by the Notification System.
+
+Notifications may appear as:
+
+Toast
+
+Notification Center Entry
+
+Dashboard Widget
+
+Badge Counter
+
+All share the same source event.
+
+---
+
+# Adaptive Feedback System
+
+Feedback is configurable.
+
+Available modes:
+
+Verbose
+
+Standard
+
+Minimal
+
+Silent
+
+Default:
+
+Standard
+
+---
+
+# Toast Messages
+
+Examples:
+
+Craft Started
+
+Worker Assigned
+
+Building Upgraded
+
+Mastery Unlocked
+
+Boss Defeated
+
+Cycle Completed
+
+Repeated events are grouped.
+
+Example:
+
+Iron Ore ×5 collected
+
+instead of
+
+Iron Ore +1
+
+five times.
+
+---
+
+# Loading System
+
+Hybrid loading architecture.
+
+---
+
+## Local Loading
+
+Preferred.
+
+Examples:
+
+Inventory
+
+Workers
+
+Dashboard
+
+Notifications
+
+Recipes
+
+Crafting
+
+Only the affected component displays loading.
+
+The rest of the UI remains interactive.
+
+---
+
+## Global Loading
+
+Reserved for critical operations.
+
+Examples:
+
+Authentication
+
+Initial Save Loading
+
+Reconnect
+
+Character Change
+
+Future Data Migration
+
+The entire interface is temporarily locked.
+
+---
+
+# Reconnection Flow
+
+When connection is lost:
+
+A non intrusive banner appears.
+
+Example:
+
+Connection Lost
+
+Reconnecting...
+
+The UI remains open.
+
+The client retries automatically.
+
+If reconnection succeeds:
+
+Connection Restored
+
+is displayed.
+
+If reconnection ultimately fails:
+
+The player is redirected to authentication.
+
+---
+
+# UI Scaling
+
+Global UI Scale Factor.
+
+Supported values:
+
+80%
+
+90%
+
+100%
+
+110%
+
+125%
+
+150%
+
+The scale applies uniformly to:
+
+HUD
+
+Windows
+
+Buttons
+
+Icons
+
+Dashboard
+
+Notifications
+
+Tooltips
+
+Command Palette
+
+Menus
+
+---
+
+# Supported Resolutions
+
+Minimum target:
+
+1920×1080
+
+Official support:
+
+2560×1440
+
+3840×2160
+
+Ultrawide
+
+Windowed Mode
+
+The layout must remain readable across all supported formats.
+
+---
+
+# Animation System
+
+Animations are intentionally lightweight.
+
+Default duration:
+
+100–200 ms
+
+Examples:
+
+Fade
+
+Slide
+
+Hover Highlight
+
+Button Feedback
+
+Tooltip Fade
+
+Window Open
+
+---
+
+Animation Profiles
+
+Three profiles exist.
+
+Standard
+
+Reduced
+
+Disabled
+
+The player chooses the preferred profile.
+
+All UI components use centralized animation profiles.
+
+---
+
+# Error Handling
+
+Each component owns its own error state.
+
+Example:
+
+Workers
+
+↓
+
+Unable to retrieve workers.
+
+↓
+
+Retry
+
+No global failure is triggered.
+
+---
+
+# UI State Persistence
+
+The following settings persist:
+
+Dashboard Profiles
+
+Favorites
+
+Keybindings
+
+UI Scale
+
+Feedback Level
+
+Animation Profile
+
+Window positions are never saved.
+
+---
+
+# Accessibility Hooks
+
+The UI exposes configurable hooks for the Accessibility System.
+
+Examples:
+
+UI Scale
+
+Animation Profile
+
+Feedback Level
+
+Keybindings
+
+Additional accessibility options will be defined in Document 45.
+
+---
+
+# Event Bus Integration
+
+The UI communicates exclusively through the Central Event Bus whenever possible.
+
+Example events:
+
+InventoryChanged
+
+ItemAdded
+
+ItemRemoved
+
+WorkerAssigned
+
+WorkerFinished
+
+CraftCompleted
+
+BuildingConstructed
+
+BuildingUpgraded
+
+MasteryUnlocked
+
+BossKilled
+
+CycleCompleted
+
+CurrencyChanged
+
+NotificationCreated
+
+SettingsChanged
+
+---
+
+# Event Flow Example
+
+```text
+CraftCompleted
+
+↓
+
+Event Bus
+
+↓
+
+Inventory
+
+↓
+
+Notification Center
+
+↓
+
+Dashboard
+
+↓
+
+Toast
+
+↓
+
+Statistics
+
+↓
+
+Achievements
+
+↓
+
+Analytics
+```
+
+The UI never directly invokes these systems.
+
+---
+
+# Performance Requirements
+
+UI updates must be event-driven.
+
+Avoid polling whenever possible.
+
+Lists should support virtualization for large datasets.
+
+Expensive UI refreshes must be incremental.
+
+Widgets refresh only when their data changes.
+
+Animations must never block gameplay.
+
+---
+
+# Future Extensions
+
+Planned future additions include:
+
+- Market UI
+- Guild UI
+- Mail UI
+- Friends UI
+- Trading UI
+- Leaderboards
+- Achievements
+- Seasonal Events
+- Mod Support (optional)
+- Developer Console
+- Advanced Global Search
+
+The current architecture supports these additions without requiring major refactoring.
+
+---
+
+# Responsibilities
+
+The UI System is responsible for:
+
+- Presenting game information
+- Receiving player input
+- Managing windows
+- Managing navigation
+- Managing dashboard widgets
+- Displaying notifications
+- Showing feedback
+- Managing loading states
+- Routing UI events
+
+The UI System is NOT responsible for:
+
+- Gameplay rules
+- Combat logic
+- Saving
+- Progression calculations
+- Inventory calculations
+- Crafting calculations
+- AI decisions
+- Economy logic
+
+Those responsibilities belong to their respective systems.
+
+---
+
+# Dependencies
+
+Depends on:
+
+- 10_CHARACTER_SYSTEM
+- 13_ITEM_SYSTEM
+- 15_CRAFTING_SYSTEM
+- 16_REFINING_SYSTEM
+- 18_WORKER_SYSTEM
+- 19_PLAYER_ISLAND_SYSTEM
+- 20_COMBAT_SYSTEM
+- 27_PROGRESSION_SYSTEM
+- 35_CURRENCY_SYSTEM
+- 37_SAVE_SYSTEM
+- 38_AUTHENTICATION_SYSTEM
+- 39_BACKGROUND_PROGRESSION_SYSTEM
+- 40_NOTIFICATION_SYSTEM
+
+Referenced by:
+
+- 42_SETTINGS_SYSTEM
+- 43_LOCALIZATION_SYSTEM
+- 44_AUDIO_SYSTEM
+- 45_ACCESSIBILITY_SYSTEM
+- Future Market System
+- Future Guild System
+- Future Mail System
+
+DOCUMENT TERMINÉ

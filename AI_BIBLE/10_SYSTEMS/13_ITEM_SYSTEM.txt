@@ -1,0 +1,689 @@
+## ALBION IDLE — ITEM SYSTEM
+
+**Document type:** System Specification
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Core Gameplay System
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Dependencies:** `06_GLOSSARY.txt`, `10_CHARACTER_SYSTEM.txt`, `11_STAT_SYSTEM.txt`, `12_INVENTORY_SYSTEM.txt`
+
+---
+
+# 1. PURPOSE
+
+The Item System defines the shared data model used by every item in the game.
+
+It is responsible for:
+
+* item identifiers;
+* item categories;
+* equipment variants;
+* tiers;
+* qualities;
+* enchantments;
+* Item Power;
+* stack compatibility;
+* item metadata.
+
+It does not define:
+
+* loot probabilities;
+* crafting recipes;
+* gathering rewards;
+* market prices;
+* equipment drop locations;
+* exact Item Power balancing values.
+
+---
+
+# 2. ITEM CATEGORIES
+
+The Vertical Slice contains three item categories:
+
+```text
+Equipment
+Resource
+Currency
+```
+
+No other item category is implemented during the Vertical Slice.
+
+The following categories are explicitly postponed:
+
+* Consumable;
+* Quest Item;
+* Food;
+* Potion;
+* Temporary Buff Item.
+
+Future categories must extend the Item System without modifying existing item identities.
+
+---
+
+# 3. SHARED ITEM DEFINITION
+
+Every item definition must contain at least:
+
+```text
+ItemDefinition
+- item_id
+- display_name
+- category
+- icon_reference
+- description
+- stackable
+- max_stack_size
+```
+
+`item_id` must be:
+
+* unique;
+* stable;
+* independent from translated text;
+* safe to store in save files;
+* safe to reference from balancing data.
+
+Display names must never be used as persistent identifiers.
+
+---
+
+# 4. ITEM IDENTIFIERS
+
+Recommended identifier format:
+
+```text
+CATEGORY_ITEM_NAME
+```
+
+Examples:
+
+```text
+RESOURCE_WOOD
+RESOURCE_ORE
+CURRENCY_SILVER
+EQUIPMENT_SWORD
+EQUIPMENT_PLATE_HELMET
+```
+
+Equipment variant properties such as tier, quality and enchantment must be stored separately from the base item identifier.
+
+Example:
+
+```text
+item_id: EQUIPMENT_SWORD
+tier: 5
+quality: EXCELLENT
+enchantment: 2
+```
+
+The display name may be generated from these properties.
+
+---
+
+# 5. EQUIPMENT TYPES
+
+Equipment is divided into three high-level types:
+
+```text
+Weapon
+Armor
+Accessory
+```
+
+For the Vertical Slice, equipment maps to the character slots defined by the Character System.
+
+```text
+Weapon:
+- Weapon Slot
+
+Armor:
+- Head Slot
+- Chest Slot
+- Boots Slot
+
+Accessory:
+- Cape Slot
+```
+
+Bags are managed by the dedicated Inventory Bag Slot.
+
+A bag is not character equipment and must not provide combat statistics.
+
+---
+
+# 6. EQUIPMENT MODEL
+
+Equipment items are definition-based.
+
+They are not unique runtime instances.
+
+Two equipment items with the same identifying properties are considered identical.
+
+Equipment does not currently store individual values such as:
+
+* durability;
+* random stat rolls;
+* ownership history;
+* crafted-by identity;
+* unique serial number;
+* individual enchantment progress;
+* individual repair state.
+
+This allows identical equipment items to be stacked.
+
+---
+
+# 7. EQUIPMENT IDENTITY
+
+An equipment variant is identified by the combination of:
+
+```text
+Base Item ID
++ Tier
++ Quality
++ Enchantment
+```
+
+Two equipment items may share the same stack only when all four values are identical.
+
+Example:
+
+```text
+EQUIPMENT_SWORD
+Tier 5
+Excellent
+Enchantment .2
+```
+
+is different from:
+
+```text
+EQUIPMENT_SWORD
+Tier 5
+Excellent
+Enchantment .3
+```
+
+It is also different from:
+
+```text
+EQUIPMENT_SWORD
+Tier 5
+Masterpiece
+Enchantment .2
+```
+
+---
+
+# 8. EQUIPMENT STACKING
+
+Equipment items are stackable.
+
+Equipment stack compatibility requires:
+
+```text
+Same Base Item ID
+AND Same Tier
+AND Same Quality
+AND Same Enchantment
+```
+
+The maximum equipment stack size is balancing data.
+
+Equipped items are removed from their inventory stack and assigned to the corresponding equipment slot.
+
+When unequipped, the item returns to Inventory or Bank according to Inventory capacity rules.
+
+---
+
+# 9. TIERS
+
+Available item tiers are:
+
+```text
+T3
+T4
+T5
+T6
+T7
+T8
+```
+
+Tier values are stored numerically:
+
+```text
+3
+4
+5
+6
+7
+8
+```
+
+Tier increases equipment Item Power.
+
+The exact Item Power provided by each tier is balancing data.
+
+No T1 or T2 item is available during the Vertical Slice.
+
+---
+
+# 10. QUALITY LEVELS
+
+Equipment quality levels are ordered as follows:
+
+```text
+Normal
+Good
+Outstanding
+Excellent
+Masterpiece
+```
+
+Canonical internal identifiers:
+
+```text
+NORMAL
+GOOD
+OUTSTANDING
+EXCELLENT
+MASTERPIECE
+```
+
+French display labels:
+
+```text
+Normal
+Bon
+Remarquable
+Excellent
+Chef-d’œuvre
+```
+
+Quality increases equipment Item Power.
+
+Quality does not directly modify final combat statistics.
+
+The exact Item Power bonus associated with each quality level is balancing data.
+
+---
+
+# 11. ENCHANTMENT LEVELS
+
+Equipment enchantment levels are:
+
+```text
+No Enchantment
+.1
+.2
+.3
+.4
+```
+
+Canonical stored values:
+
+```text
+0
+1
+2
+3
+4
+```
+
+Display formatting:
+
+```text
+0 → no suffix
+1 → .1
+2 → .2
+3 → .3
+4 → .4
+```
+
+Enchantments increase equipment Item Power.
+
+The exact Item Power bonus associated with each enchantment level is balancing data.
+
+---
+
+# 12. ITEM POWER
+
+Item Power is the primary power value of an equipment item.
+
+It is calculated from:
+
+```text
+Base Equipment Item Power
++ Tier Item Power
++ Quality Item Power
++ Enchantment Item Power
+```
+
+The exact scaling formula is not defined in this document.
+
+All Item Power values must come from external balancing data.
+
+The architecture must support changing Item Power values without changing gameplay code or save data.
+
+---
+
+# 13. ITEM POWER AND STATS
+
+Item Power increases the combat statistics provided by equipment.
+
+The Equipment Stat calculation process is:
+
+```text
+Equipment Definition
+→ Equipment Variant
+→ Item Power
+→ Equipment Stats
+```
+
+Possible equipment stats are limited to the stats defined by the Stat System:
+
+```text
+HP
+Damage
+Defense
+```
+
+An equipment item may provide one or more of these stats.
+
+Item Power must not introduce a new combat stat.
+
+---
+
+# 14. STAT SCALING
+
+The exact relationship between Item Power and equipment stats belongs to balancing data.
+
+The system must support a deterministic conversion.
+
+Conceptual model:
+
+```text
+Final Equipment Stat =
+Base Equipment Stat
+scaled by Item Power
+```
+
+The final result must be represented as a fixed numerical bonus compatible with the Stat System.
+
+The Character Stat System still calculates:
+
+```text
+Final Character Stat =
+Base Character Stat
++ Equipment Bonuses
++ Mastery Bonuses
+```
+
+Item Power does not replace the Character Stat formula.
+
+It determines the fixed equipment bonuses inserted into that formula.
+
+---
+
+# 15. RESOURCE ITEMS
+
+Resources are stackable items used by gathering, refining and crafting systems.
+
+Every Resource definition must contain:
+
+```text
+ResourceDefinition
+- item_id
+- display_name
+- resource_type
+- tier
+- icon_reference
+- max_stack_size
+```
+
+Resource tier uses the same tier value format as equipment where applicable.
+
+Resources do not have:
+
+* quality;
+* enchantment;
+* Item Power;
+* combat statistics.
+
+Different resource tiers form different stacks.
+
+---
+
+# 16. CURRENCY ITEMS
+
+Currencies represent economic values owned by the player.
+
+Every Currency definition must contain:
+
+```text
+CurrencyDefinition
+- item_id
+- display_name
+- icon_reference
+- maximum_value
+```
+
+Currencies do not have:
+
+* tier;
+* quality;
+* enchantment;
+* Item Power;
+* combat statistics.
+
+Currencies must use integer values.
+
+Fractional currency values are not supported.
+
+---
+
+# 17. CURRENCY STORAGE
+
+Currencies belong to the Item System category model but do not need to occupy standard Inventory slots.
+
+Currency quantities may be stored in a dedicated wallet structure.
+
+Recommended structure:
+
+```text
+Wallet
+- currency_id
+- quantity
+```
+
+This prevents currencies from consuming Inventory or Bank capacity.
+
+A currency must still use a stable Item System identifier so that rewards, costs and save data reference the same definition.
+
+---
+
+# 18. ITEM ACQUISITION
+
+Items may be acquired from systems such as:
+
+* combat loot;
+* boss rewards;
+* gathering;
+* crafting;
+* offline rewards;
+* vendors;
+* progression rewards.
+
+The source system requests the creation or addition of an item quantity.
+
+The Item System validates the definition and variant.
+
+The Inventory System handles physical storage and overflow.
+
+The Wallet handles currency storage.
+
+---
+
+# 19. ITEM REMOVAL
+
+Items may be removed by systems such as:
+
+* crafting;
+* refining;
+* equipment changes;
+* vendor transactions;
+* upgrades;
+* bank expansions.
+
+Removal must validate that the requested quantity exists before modifying storage.
+
+Partial invalid transactions must not occur.
+
+A transaction must either:
+
+* complete fully;
+* fail without modifying stored quantities.
+
+---
+
+# 20. DATA-DRIVEN REQUIREMENTS
+
+The following values must remain externalized:
+
+* item definitions;
+* display names;
+* descriptions;
+* icons;
+* stack limits;
+* equipment base Item Power;
+* tier Item Power bonuses;
+* quality Item Power bonuses;
+* enchantment Item Power bonuses;
+* Item Power stat scaling;
+* equipment base statistics.
+
+Gameplay code must not hard-code individual item values.
+
+---
+
+# 21. PERSISTENCE
+
+Save data must store item references using stable identifiers.
+
+Equipment stack data must store:
+
+```text
+item_id
+tier
+quality
+enchantment
+quantity
+```
+
+Resource stack data must store:
+
+```text
+item_id
+tier
+quantity
+```
+
+Currency data must store:
+
+```text
+currency_id
+quantity
+```
+
+Display names, icons and descriptions should be reloaded from item definitions rather than duplicated in save data.
+
+---
+
+# 22. VALIDATION RULES
+
+The following conditions must always remain true:
+
+* every stored item references a valid item definition;
+* every item belongs to a valid category;
+* every equipment tier is between T3 and T8;
+* every equipment quality is valid;
+* every equipment enchantment is between 0 and 4;
+* equipment stacks contain identical variants only;
+* resource stacks contain identical resource definitions and tiers only;
+* currencies never use fractional quantities;
+* Item Power is deterministic;
+* Item Power balancing values are externalized;
+* individual equipment instance data does not exist.
+
+---
+
+# 23. RECOMMENDED EVENTS
+
+```text
+item_created
+item_added
+item_removed
+item_stack_changed
+equipment_variant_resolved
+item_power_calculated
+currency_added
+currency_removed
+currency_changed
+```
+
+Events must communicate stable item identifiers rather than localized display names.
+
+---
+
+# 24. MINIMUM TESTS
+
+Required Item System tests:
+
+* create a valid equipment variant;
+* reject an invalid equipment tier;
+* reject an invalid quality;
+* reject an invalid enchantment;
+* calculate Item Power deterministically;
+* verify that tier increases Item Power;
+* verify that quality increases Item Power;
+* verify that enchantment increases Item Power;
+* stack identical equipment variants;
+* prevent different tiers from stacking;
+* prevent different qualities from stacking;
+* prevent different enchantments from stacking;
+* create a resource stack;
+* prevent different resource tiers from stacking;
+* add and remove currency;
+* reject fractional currency;
+* save and reload all item categories;
+* change balancing data without invalidating saved item identities.
+
+---
+
+# 25. OUT OF SCOPE
+
+This document intentionally excludes:
+
+* exact Item Power values;
+* exact stat scaling curves;
+* item drop rates;
+* loot tables;
+* crafting recipes;
+* refining recipes;
+* gathering times;
+* economy prices;
+* vendor logic;
+* item durability;
+* random equipment rolls;
+* repair systems;
+* salvaging;
+* quest items;
+* consumables;
+* food;
+* potions.
+
+These systems must be specified in their dedicated documents.
+
+---
+
+# END OF DOCUMENT

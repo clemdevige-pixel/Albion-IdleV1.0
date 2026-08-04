@@ -1,0 +1,183 @@
+import Phaser from "phaser";
+import type { GameBridge } from "../../GameBridge";
+import { createActorSprite } from "../PhaserActorRenderer";
+import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
+import { ActorSystem } from "../systems/ActorSystem";
+import { CombatPresentationSystem } from "../systems/CombatPresentationSystem";
+import { DamageNumberSystem } from "../systems/DamageNumberSystem";
+import { EnemyPresentationSystem } from "../systems/EnemyPresentationSystem";
+import { HeroPresentationSystem } from "../systems/HeroPresentationSystem";
+import { ProjectileSystem } from "../systems/ProjectileSystem";
+import { VfxSystem } from "../systems/VfxSystem";
+import { WorldHudSystem } from "../systems/WorldHudSystem";
+import { PresentationDirector } from "./PresentationDirector";
+import { selectWeaponPresentation } from "./GamePresentationState";
+
+/** Coordinates actors, combat events and in-world combat HUD. */
+export class CombatPresentationController {
+  public readonly playerBody: Phaser.GameObjects.Container;
+  public readonly enemyBody: Phaser.GameObjects.Container;
+  public readonly playerHomeX: number;
+  public readonly enemyHomeX: number;
+  public readonly entityY: number;
+
+  private readonly actorSystem: ActorSystem;
+  private readonly heroSystem: HeroPresentationSystem;
+  private readonly enemySystem: EnemyPresentationSystem;
+  private readonly hudSystem: WorldHudSystem;
+  private readonly damageNumberSystem: DamageNumberSystem;
+  private readonly projectileSystem: ProjectileSystem;
+  private readonly vfxSystem: VfxSystem;
+  private readonly combatSystem: CombatPresentationSystem;
+  private readonly director: PresentationDirector;
+  private readonly defaultHeroManifestId: string;
+  private lastDamageEventId = 0;
+
+  public constructor(
+    scene: Phaser.Scene,
+    private readonly getBridge: () => GameBridge | undefined,
+  ) {
+    const { width, height } = scene.scale;
+    this.entityY = height * 0.61;
+    this.playerHomeX = width * 0.32;
+    this.enemyHomeX = width * 0.68;
+
+    const heroManifest = renderManifestRegistry.requireDefaultActor();
+    const enemyManifest = renderManifestRegistry.requireDefaultStaticActor();
+    this.defaultHeroManifestId = heroManifest.id;
+    const playerSprite = createActorSprite(scene, heroManifest);
+    this.playerBody = scene.add
+      .container(this.playerHomeX, this.entityY, [playerSprite])
+      .setDepth(5);
+    this.enemySystem = new EnemyPresentationSystem(
+      scene,
+      this.enemyHomeX,
+      this.entityY,
+      enemyManifest,
+    );
+    this.enemyBody = this.enemySystem.body;
+
+    this.heroSystem = new HeroPresentationSystem(playerSprite, heroManifest.id);
+    this.actorSystem = new ActorSystem(scene);
+    this.actorSystem.register(
+      this.playerBody,
+      this.playerHomeX,
+      heroManifest.ambientMotion,
+    );
+    this.actorSystem.register(
+      this.enemyBody,
+      this.enemyHomeX,
+      enemyManifest.ambientMotion,
+    );
+
+    this.damageNumberSystem = new DamageNumberSystem(
+      scene,
+      (target) => ({
+        x: target === "player" ? this.playerHomeX : this.enemyHomeX,
+        y: scene.scale.height * 0.45,
+      }),
+      (target) => renderManifestRegistry.requireDefaultFloatingText(target).id,
+    );
+    this.vfxSystem = new VfxSystem(scene);
+    this.projectileSystem = new ProjectileSystem(
+      scene,
+      (manifest) => ({
+        startX: this.playerHomeX + manifest.trajectory.sourceOffsetX,
+        endX: this.enemyHomeX + manifest.trajectory.targetOffsetX,
+        y: this.playerBody.y + manifest.trajectory.offsetY,
+      }),
+      this.vfxSystem,
+    );
+    this.combatSystem = new CombatPresentationSystem(
+      scene,
+      { player: this.playerBody, enemy: this.enemyBody },
+      this.actorSystem,
+      this.heroSystem,
+      this.projectileSystem,
+      this.damageNumberSystem,
+      () => selectWeaponPresentation(this.getBridge()),
+    );
+    this.director = new PresentationDirector({
+      presentCombatEvent: (event) => this.combatSystem.present(event),
+    });
+
+    this.hudSystem = new WorldHudSystem(
+      scene,
+      renderManifestRegistry.requireDefaultWorldHud(),
+    );
+    this.hudSystem.createPlayer(this.playerHomeX, this.entityY);
+    this.hudSystem.createEnemy(this.enemyHomeX, this.entityY);
+  }
+
+  public update(bridge: GameBridge): void {
+    this.updatePlayer(bridge);
+    this.updateEnemy(bridge);
+    this.updateDamageEvents(bridge);
+    this.director.update();
+  }
+
+  public setEnemyVisible(visible: boolean): void {
+    this.enemySystem.setVisible(visible);
+    this.hudSystem.setEnemyVisible(visible);
+  }
+
+  public clear(): void {
+    this.director.clear();
+    this.damageNumberSystem.clear();
+    this.projectileSystem.clear();
+    this.vfxSystem.clear();
+    this.actorSystem.clear();
+    this.heroSystem.clear();
+    this.hudSystem.clear();
+    this.enemySystem.clear();
+    this.playerBody.destroy(true);
+  }
+
+  private updatePlayer(bridge: GameBridge): void {
+    this.hudSystem.updatePlayer(bridge.playerHealth, bridge.playerMaxHealth);
+    const weapon = selectWeaponPresentation(bridge);
+    this.heroSystem.update({
+      visualManifestId: weapon.visualManifestId,
+      combatState: bridge.combatState,
+      zoneIndex: bridge.world.zoneIndex,
+      segmentIndex: bridge.world.segmentIndex,
+    });
+    this.actorSystem.setAmbientMotion(
+      this.playerBody,
+      renderManifestRegistry.requireActor(
+        weapon.visualManifestId ?? this.defaultHeroManifestId,
+      ).ambientMotion,
+    );
+  }
+
+  private updateEnemy(bridge: GameBridge): void {
+    this.enemySystem.update({
+      visualManifestId: bridge.enemyVisualManifestId,
+      isBoss: bridge.world.encounterType === "boss",
+    });
+    this.actorSystem.setAmbientMotion(
+      this.enemyBody,
+      renderManifestRegistry.requireStaticActor(
+        bridge.enemyVisualManifestId,
+      ).ambientMotion,
+    );
+    this.hudSystem.layoutEnemy(
+      this.enemyHomeX,
+      this.enemyBody.y,
+      this.enemySystem.hudLayout,
+    );
+    this.hudSystem.updateEnemy(
+      bridge.enemyHealth,
+      bridge.enemyMaxHealth,
+      bridge.enemyName,
+    );
+  }
+
+  private updateDamageEvents(bridge: GameBridge): void {
+    for (const event of bridge.damageNumbers) {
+      if (event.id <= this.lastDamageEventId) continue;
+      this.director.enqueueCombatEvent(event);
+      this.lastDamageEventId = Math.max(this.lastDamageEventId, event.id);
+    }
+  }
+}

@@ -1,0 +1,486 @@
+================================================================================
+AI BIBLE
+================================================================================
+
+Document ID
+05_DEVELOPMENT_ROADMAP
+
+Version
+1.0
+
+Status
+APPROVED
+
+================================================================================
+PURPOSE
+================================================================================
+
+This document defines the complete development strategy of Albion Idle.
+
+Its objective is to organize development into logical milestones where every
+new system expands the previous one without requiring major refactoring.
+
+The roadmap prioritizes delivering a playable game as early as possible while
+maintaining a scalable architecture.
+
+This document is a production roadmap.
+
+It does not describe implementation details.
+
+================================================================================
+CORE DEVELOPMENT PHILOSOPHY
+================================================================================
+
+Development follows five fundamental principles.
+
+1.
+Every milestone must produce a playable game.
+
+2.
+No system should be implemented before its dependencies exist.
+
+3.
+Every new feature must increase replayability.
+
+4.
+Temporary placeholder implementations are acceptable if they do not require
+future rewrites.
+
+5.
+The architecture must always remain extensible.
+
+The project should never become dependent on temporary code.
+
+================================================================================
+HIGH LEVEL ROADMAP
+================================================================================
+
+Development is divided into six major milestones.
+
+M1 — Core Gameplay Prototype
+
+↓
+
+M2 — Vertical Slice
+
+↓
+
+M3 — Core Content Expansion
+
+↓
+
+M4 — Economy & Progression
+
+↓
+
+M5 — Live Game Features
+
+↓
+
+M6 — Release Candidate
+
+Each milestone must end with a fully playable version.
+
+================================================================================
+MILESTONE 1
+CORE GAMEPLAY PROTOTYPE
+================================================================================
+
+Objective
+
+Create the smallest possible playable version of the game.
+
+The player must already understand the complete gameplay loop.
+
+Required systems
+
+• Character
+• Basic Combat
+• Enemy Generation
+• Inventory
+• Equipment
+• Loot
+• Basic UI
+• Save System
+
+Gameplay Loop
+
+Fight
+
+↓
+
+Loot
+
+↓
+
+Equip
+
+↓
+
+Fight Stronger Enemies
+
+Completion Criteria
+
+The player can play continuously for at least one hour without requiring
+additional systems.
+
+================================================================================
+MILESTONE 2
+VERTICAL SLICE
+================================================================================
+
+Objective
+
+Build the first complete version representing the final game experience.
+
+Required systems
+
+• Gathering
+• Refining
+• Crafting
+• Player Island
+• Workers
+• Equipment Progression
+• Masteries
+• Offline Progression
+
+Gameplay Loop
+
+Combat
+
+↓
+
+Resources
+
+↓
+
+Production
+
+↓
+
+Equipment
+
+↓
+
+Combat
+
+Completion Criteria
+
+Every core gameplay pillar is present.
+
+The game represents the intended final experience on a smaller scale.
+
+================================================================================
+MILESTONE 3
+CONTENT EXPANSION
+================================================================================
+
+Objective
+
+Increase gameplay variety.
+
+Required additions
+
+• More enemies
+• More biomes
+• More equipment tiers
+• Additional resources
+• Additional crafting recipes
+• More worker specializations
+• More island upgrades
+
+Focus
+
+Content quantity.
+
+No major gameplay redesign.
+
+================================================================================
+MILESTONE 4
+ECONOMY & LONG-TERM PROGRESSION
+================================================================================
+
+Objective
+
+Increase long-term player retention.
+
+New systems
+
+• Economy balancing
+• Advanced crafting
+• Resource sinks
+• Advanced progression
+• Achievement system
+• Statistics
+• Additional optimization mechanics
+
+Focus
+
+Long-term progression.
+
+================================================================================
+MILESTONE 5
+LIVE GAME FEATURES
+================================================================================
+
+Objective
+
+Prepare the game for long-term operation.
+
+Potential systems
+
+• Events
+• Seasons
+• Daily objectives
+• Weekly objectives
+• Leaderboards
+• Prestige
+• Future multiplayer interactions
+• Cloud Save
+
+Focus
+
+Retention and replayability.
+
+================================================================================
+MILESTONE 6
+RELEASE CANDIDATE
+================================================================================
+
+Objective
+
+Finalize the game.
+
+Tasks
+
+• Bug fixing
+• Optimization
+• Balancing
+• Accessibility improvements
+• UX improvements
+• Audio polishing
+• Visual polishing
+• Final testing
+
+The objective is stability rather than new content.
+
+================================================================================
+SYSTEM IMPLEMENTATION ORDER
+================================================================================
+
+The following order minimizes dependencies.
+
+FOUNDATIONS
+
+↓
+
+Character
+
+↓
+
+Stats
+
+↓
+
+Combat
+
+↓
+
+Enemies
+
+↓
+
+Loot
+
+↓
+
+Inventory
+
+↓
+
+Equipment
+
+↓
+
+Save System
+
+↓
+
+Gathering
+
+↓
+
+Refining
+
+↓
+
+Crafting
+
+↓
+
+Player Island
+
+↓
+
+Workers
+
+↓
+
+Offline Progression
+
+↓
+
+Economy
+
+↓
+
+Advanced Progression
+
+↓
+
+Additional Content
+
+No system should be implemented before all of its required dependencies exist.
+
+================================================================================
+CONTENT IMPLEMENTATION ORDER
+================================================================================
+
+Content follows system completion.
+
+1.
+Enemy Families
+
+2.
+Equipment Tiers
+
+3.
+Resources
+
+4.
+Crafting Recipes
+
+5.
+Worker Types
+
+6.
+Island Buildings
+
+7.
+Achievements
+
+8.
+Additional Activities
+
+Content should always reuse existing systems whenever possible.
+
+================================================================================
+DESIGN VALIDATION
+================================================================================
+
+Each milestone must answer the following questions.
+
+Is the game still fun?
+
+Can a new player understand the progression?
+
+Does every gameplay system still reinforce combat?
+
+Does every resource have a purpose?
+
+Does every progression system feel rewarding?
+
+If any answer is "No", development returns to iteration before moving to the
+next milestone.
+
+================================================================================
+FEATURE ACCEPTANCE RULES
+================================================================================
+
+A new feature can only be added if it satisfies at least one of these goals.
+
+• Improves combat.
+• Improves progression.
+• Improves production.
+• Improves decision making.
+• Improves replayability.
+• Improves player retention.
+
+Features that satisfy none of these goals should not be implemented.
+
+================================================================================
+RISK MANAGEMENT
+================================================================================
+
+The biggest development risks are:
+
+• Feature creep
+• Overengineering
+• Excessive automation
+• Progression inflation
+• Content without gameplay value
+• Systems disconnected from the core loop
+
+Every milestone review must verify that these risks remain under control.
+
+================================================================================
+SUCCESS METRICS
+================================================================================
+
+Milestone 1
+
+Playable prototype.
+
+Milestone 2
+
+Complete gameplay loop.
+
+Milestone 3
+
+Sufficient gameplay variety.
+
+Milestone 4
+
+Strong long-term progression.
+
+Milestone 5
+
+High player retention.
+
+Milestone 6
+
+Release-ready product.
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+Depends On
+
+• 000_PROJECT_BIBLE
+• 01_GAME_VISION
+• 02_CORE_GAME_LOOP
+• 03_DESIGN_CONSTRAINTS
+
+Referenced By
+
+All gameplay system documents.
+
+================================================================================
+SUMMARY
+================================================================================
+
+Development always prioritizes gameplay over content.
+
+A small polished feature is more valuable than multiple unfinished systems.
+
+Every milestone produces a complete playable version.
+
+Every new gameplay system strengthens the existing gameplay loop.
+
+The roadmap exists to ensure that Albion Idle grows progressively without
+requiring major redesigns while remaining fun at every stage of development.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

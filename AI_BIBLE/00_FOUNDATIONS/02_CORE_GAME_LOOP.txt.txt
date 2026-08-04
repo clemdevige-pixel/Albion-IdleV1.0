@@ -1,0 +1,860 @@
+================================================================================
+AI BIBLE
+================================================================================
+
+Document ID
+02_CORE_GAME_LOOP
+
+Version
+3.0
+
+Status
+APPROVED
+
+================================================================================
+PURPOSE
+================================================================================
+
+This document defines the global gameplay architecture of the game.
+
+It describes how every major gameplay system interacts to create the complete
+player progression loop.
+
+This document intentionally focuses on system relationships and gameplay flow.
+
+It does not define formulas, balancing values, drop rates or implementation
+details. Those belong to their dedicated documents.
+
+This document is considered one of the highest authority documents of the
+project.
+
+Every gameplay system must remain compatible with the rules defined here.
+
+================================================================================
+SCOPE
+================================================================================
+
+This document defines:
+
+• The global gameplay loop
+• The player progression loop
+• Resource circulation
+• Equipment progression
+• Combat as the central gameplay activity
+• The relationship between combat, gathering, crafting and the island
+• The role of automation
+• Gameplay priorities
+• Responsibilities of each major gameplay system
+
+This document does NOT define:
+
+• Combat calculations
+• Character statistics
+• Item statistics
+• Loot tables
+• Enemy behaviour
+• Crafting recipes
+• UI
+• Technical implementation
+
+Those subjects are covered inside their dedicated system documents.
+
+================================================================================
+DESIGN PHILOSOPHY
+================================================================================
+
+Everything in the game exists to make the player stronger.
+
+No feature exists for its own sake.
+
+Every gameplay system must reinforce at least one of the following objectives:
+
+• Increase combat efficiency.
+• Improve long-term progression.
+• Improve production efficiency.
+• Increase strategic decision making.
+• Create meaningful resource sinks.
+• Strengthen the gameplay loop.
+
+If a feature does not contribute to one of these goals, it should not exist.
+
+================================================================================
+CORE GAMEPLAY PHILOSOPHY
+================================================================================
+
+Combat is the heart of the game.
+
+Everything else exists to support combat.
+
+The player does not gather resources because gathering is fun by itself.
+
+The player gathers because resources improve equipment.
+
+The player does not refine resources because refining is the objective.
+
+The player refines because refined materials produce better equipment.
+
+The player does not build the island because housing is the goal.
+
+The island exists because it improves long-term progression.
+
+Every secondary gameplay loop eventually feeds back into combat.
+
+Combat generates progression.
+
+Progression unlocks stronger combat.
+
+This creates an infinite positive gameplay cycle.
+
+================================================================================
+GAMEPLAY PILLARS
+================================================================================
+
+The game is built around four major pillars.
+
+-------------------------------------------------------------------------------
+1. COMBAT
+-------------------------------------------------------------------------------
+
+Combat is the primary gameplay activity.
+
+Combat generates:
+
+• Silver
+• Equipment
+• Monster materials
+• Fame
+• Progression
+• Resources
+
+Every player spends most of their active time fighting.
+
+Every other gameplay system ultimately exists to improve combat performance.
+
+-------------------------------------------------------------------------------
+2. PRODUCTION
+-------------------------------------------------------------------------------
+
+Production transforms resources into power.
+
+Production includes:
+
+• Refining
+• Crafting
+• Resource processing
+
+Production never exists independently.
+
+Its sole purpose is creating stronger equipment and improving progression.
+
+-------------------------------------------------------------------------------
+3. PLAYER ISLAND
+-------------------------------------------------------------------------------
+
+The Player Island is the production hub.
+
+It centralizes:
+
+• Workers
+• Refining
+• Crafting
+• Storage
+• Future production buildings
+
+The island transforms active gameplay into long-term passive progression.
+
+-------------------------------------------------------------------------------
+4. OPTIMIZATION
+-------------------------------------------------------------------------------
+
+Optimization rewards intelligent decisions.
+
+Examples include:
+
+• Better equipment
+• Better masteries
+• Better workers
+• Better island layouts
+• Better resource allocation
+• Better crafting choices
+
+Optimization should accelerate progression.
+
+It must never replace gameplay.
+
+================================================================================
+PRIMARY GAMEPLAY LOOP
+================================================================================
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Equipment
+
+↓
+
+Higher Character Power
+
+↓
+
+Harder Combat
+
+↓
+
+Better Loot
+
+↓
+
+Better Equipment
+
+↓
+
+Repeat Forever
+
+This loop defines the identity of the game.
+
+Breaking this loop would fundamentally change the experience.
+
+================================================================================
+SECONDARY PRODUCTION LOOP
+================================================================================
+
+Combat
+
+↓
+
+Resources
+
+↓
+
+Refining
+
+↓
+
+Crafting
+
+↓
+
+Equipment
+
+↓
+
+Combat
+
+Resources generated through gameplay become equipment.
+
+Equipment enables stronger gameplay.
+
+The production loop always reconnects to combat.
+
+================================================================================
+AUTOMATION LOOP
+================================================================================
+
+Combat
+
+↓
+
+Player Island
+
+↓
+
+Workers
+
+↓
+
+Passive Resources
+
+↓
+
+Refining
+
+↓
+
+Crafting
+
+↓
+
+Equipment
+
+↓
+
+Combat
+
+Automation never replaces active gameplay.
+
+Automation reduces repetitive work while maintaining player progression.
+
+================================================================================
+GLOBAL GAMEPLAY FLOW
+================================================================================
+
+                     COMBAT
+                        │
+                        ▼
+               Loot & Resources
+                        │
+        ┌───────────────┴───────────────┐
+        ▼                               ▼
+ Equipment Progression            Player Island
+        │                               │
+        ▼                               ▼
+ Stronger Hero              Workers / Crafting / Refining
+        │                               │
+        └───────────────┬───────────────┘
+                        ▼
+                 Better Equipment
+                        │
+                        ▼
+                     COMBAT
+
+Every gameplay activity eventually reconnects to the combat loop.
+
+There are no isolated gameplay systems.
+
+================================================================================
+RESOURCE FLOW
+================================================================================
+
+Resources circulate continuously through the economy.
+
+Enemies produce:
+
+• Equipment
+• Silver
+• Monster materials
+• Rare resources
+
+Gathering produces:
+
+• Large quantities of raw materials.
+
+Workers produce:
+
+• Passive raw materials.
+
+Raw materials become refined materials.
+
+Refined materials become crafted equipment.
+
+Crafted equipment improves combat.
+
+Combat generates additional resources.
+
+The resource loop never stops.
+
+Every resource entering the economy must eventually leave the economy through
+equipment crafting, upgrades or future resource sinks.
+
+No resource should exist without a gameplay purpose.
+================================================================================
+PLAYER PROGRESSION
+================================================================================
+
+Player progression is built around four complementary progression axes.
+
+Improving one axis should naturally reinforce at least one other axis.
+
+-------------------------------------------------------------------------------
+1. CHARACTER POWER
+-------------------------------------------------------------------------------
+
+Character progression is the primary progression axis.
+
+It is increased through:
+
+• Better equipment
+• Higher equipment tiers
+• Better item quality
+• Mastery progression
+• Improved combat efficiency
+
+Character Power directly determines the difficulty of enemies the player can
+efficiently defeat.
+
+-------------------------------------------------------------------------------
+2. PRODUCTION POWER
+-------------------------------------------------------------------------------
+
+Production progression increases the player's ability to transform resources
+into usable equipment.
+
+Production Power includes:
+
+• Better refining efficiency
+• Better crafting efficiency
+• Reduced production costs
+• Increased production speed
+• Better resource utilization
+
+Production does not exist independently.
+
+Its only purpose is increasing Character Power or Economic Power.
+
+-------------------------------------------------------------------------------
+3. ECONOMIC POWER
+-------------------------------------------------------------------------------
+
+Economic progression measures the player's ability to generate and manage
+wealth.
+
+Economic Power grows through:
+
+• Higher silver generation
+• Better loot efficiency
+• Better resource management
+• Intelligent crafting decisions
+• Market optimization (future)
+• Reduced waste
+
+Economic Power allows faster progression but should never replace gameplay.
+
+-------------------------------------------------------------------------------
+4. ISLAND POWER
+-------------------------------------------------------------------------------
+
+The Player Island represents permanent account progression.
+
+Island progression includes:
+
+• New buildings
+• Building upgrades
+• Additional worker slots
+• Increased storage
+• Better production capacity
+• Future automation systems
+
+Island progression improves every other progression axis over time.
+
+================================================================================
+PLAYER DECISION LOOP
+================================================================================
+
+The game continuously asks the player to make meaningful decisions.
+
+Good decisions accelerate progression.
+
+Poor decisions slow progression but never permanently punish the player.
+
+Typical decisions include:
+
+Combat or Gathering?
+
+Fight stronger enemies for better rewards, or gather resources for production.
+
+Sell or Refine?
+
+Convert resources into silver immediately or invest them into long-term
+progression.
+
+Craft or Buy?
+
+Use gathered materials to craft equipment or purchase equipment directly.
+
+Upgrade Equipment or Upgrade the Island?
+
+Invest into immediate combat power or long-term production capacity.
+
+Recruit Workers or Save Silver?
+
+Increase passive production or preserve capital for future investments.
+
+Every meaningful choice should have advantages and disadvantages.
+
+There should rarely be a single universally correct answer.
+
+================================================================================
+GAMEPLAY STATES
+================================================================================
+
+The Hero can only perform one primary activity at a time.
+
+The main gameplay states are:
+
+• Idle
+• Fighting
+• Gathering
+• Refining
+• Crafting
+• Managing the Player Island
+• Inventory Management
+
+Typical gameplay flow:
+
+Combat
+
+↓
+
+Inventory
+
+↓
+
+Crafting
+
+↓
+
+Equipment Upgrade
+
+↓
+
+Island Management
+
+↓
+
+Combat
+
+The player naturally alternates between active gameplay and management phases.
+
+================================================================================
+ACTIVE VS PASSIVE GAMEPLAY
+================================================================================
+
+The game intentionally separates active progression from passive progression.
+
+-------------------------------------------------------------------------------
+ACTIVE GAMEPLAY
+-------------------------------------------------------------------------------
+
+Performed directly by the player.
+
+Includes:
+
+• Combat
+• Gathering
+• Equipment decisions
+• Inventory management
+• Crafting decisions
+• Island management
+
+Active gameplay is always the fastest source of progression.
+
+-------------------------------------------------------------------------------
+PASSIVE GAMEPLAY
+-------------------------------------------------------------------------------
+
+Occurs while the player is online or offline.
+
+Includes:
+
+• Worker gathering
+• Long-term production
+• Future production systems
+
+Passive gameplay supplements active gameplay.
+
+It never replaces it.
+
+The player should always progress faster by actively playing.
+
+================================================================================
+OFFLINE GAMEPLAY
+================================================================================
+
+Offline gameplay follows the same gameplay rules as online gameplay.
+
+Nothing special happens while the player is absent.
+
+Combat:
+
+• Continues automatically.
+• Generates normal rewards.
+• Stops once the offline duration limit is reached.
+
+Workers:
+
+• Continue producing resources.
+• Continue assigned jobs.
+• Automatically store generated resources.
+
+Crafting:
+
+Crafting queues (future implementation) may continue while offline.
+
+Refining:
+
+Refining queues (future implementation) may continue while offline.
+
+Offline progression should never generate rewards impossible to obtain while
+actively playing.
+
+Offline gameplay exists to reduce frustration, not replace gameplay.
+
+================================================================================
+GAMEPLAY PRIORITIES
+================================================================================
+
+Whenever two gameplay systems compete for design decisions, the following
+priority order always applies.
+
+Priority 1
+Combat
+
+Priority 2
+Character Progression
+
+Priority 3
+Equipment Progression
+
+Priority 4
+Production
+
+Priority 5
+Economy
+
+Priority 6
+Automation
+
+Priority 7
+Convenience
+
+No feature should ever weaken a higher priority system in order to strengthen
+a lower priority one.
+
+================================================================================
+GOLDEN RULES
+================================================================================
+
+The following rules must never be violated.
+
+1.
+Combat is always the primary gameplay activity.
+
+2.
+Everything ultimately improves combat.
+
+3.
+The Player Island is the production hub.
+
+4.
+Gathering is optional optimization.
+
+5.
+Workers never outperform an actively played Hero.
+
+6.
+Every resource has a gameplay purpose.
+
+7.
+Every gameplay system connects to another system.
+
+8.
+No gameplay loop exists in isolation.
+
+9.
+Progression should always feel continuous.
+
+10.
+Player decisions should create optimization, not punishment.
+
+================================================================================
+SYSTEM RESPONSIBILITIES
+================================================================================
+
+The Core Gameplay Loop coordinates every gameplay system.
+
+-------------------------------------------------------------------------------
+Combat System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Fighting enemies
+• Generating silver
+• Generating loot
+• Generating monster resources
+• Generating progression
+
+-------------------------------------------------------------------------------
+Character System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Character progression
+• Equipment usage
+• Masteries
+• Combat capabilities
+
+-------------------------------------------------------------------------------
+Inventory System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Item storage
+• Equipment management
+• Resource storage
+• Item transfers
+
+-------------------------------------------------------------------------------
+Gathering System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Active resource gathering
+• Gathering progression
+• Resource acquisition outside combat
+
+-------------------------------------------------------------------------------
+Worker System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Passive gathering
+• Long-term resource production
+• Automation
+
+-------------------------------------------------------------------------------
+Player Island System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Worker management
+• Production buildings
+• Refining
+• Crafting
+• Future production expansion
+
+-------------------------------------------------------------------------------
+Refining System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Converting raw resources into refined materials.
+
+-------------------------------------------------------------------------------
+Crafting System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Creating equipment
+• Consuming refined materials
+• Supporting combat progression
+
+-------------------------------------------------------------------------------
+Economy System
+-------------------------------------------------------------------------------
+
+Responsible for:
+
+• Buying
+• Selling
+• Resource valuation
+• Long-term economic balancing
+
+================================================================================
+SYSTEM INTERACTIONS
+================================================================================
+
+The Core Gameplay Loop defines the relationship between every major gameplay
+system.
+
+Combat feeds the Inventory.
+
+Inventory feeds Crafting and Refining.
+
+Gathering feeds Refining.
+
+Workers feed Resource Storage.
+
+Refining feeds Crafting.
+
+Crafting feeds Equipment.
+
+Equipment feeds Combat.
+
+The Player Island strengthens Workers, Crafting and Refining.
+
+Every interaction ultimately returns to Combat.
+
+================================================================================
+FUTURE COMPATIBILITY
+================================================================================
+
+Future gameplay systems must integrate into the existing gameplay loop.
+
+Potential future systems include:
+
+• Farming
+• Fishing
+• Cooking
+• Housing
+• Guild Islands
+• Expeditions
+• Contracts
+• Trading
+• Mount Breeding
+• Alchemy
+
+Each future system must answer one question:
+
+"How does this improve or reinforce the existing gameplay loop?"
+
+If no answer exists, the feature should not be implemented.
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+Depends On
+
+• 000_PROJECT_BIBLE
+• 01_GAME_VISION
+• 03_DESIGN_CONSTRAINTS
+
+Referenced By
+
+• 10_CHARACTER_SYSTEM
+• 11_STAT_SYSTEM
+• 12_INVENTORY_SYSTEM
+• 13_ITEM_SYSTEM
+• 14_LOOT_SYSTEM
+• 15_CRAFTING_SYSTEM
+• 16_REFINING_SYSTEM
+• 17_GATHERING_SYSTEM
+• 18_WORKER_SYSTEM
+• 19_PLAYER_ISLAND_SYSTEM
+• Future Combat System
+• Future Economy System
+
+================================================================================
+SUMMARY
+================================================================================
+
+The game is built around a single principle:
+
+Everything exists to make the player stronger.
+
+Combat is the center of the experience.
+
+Resources obtained through combat and gathering are transformed into equipment.
+
+The Player Island converts active gameplay into long-term progression through
+production and automation.
+
+Workers reduce repetitive tasks but never outperform active gameplay.
+
+Every gameplay system reinforces at least one other gameplay system.
+
+Nothing exists in isolation.
+
+The entire game forms a continuous progression cycle where combat creates
+resources, resources create equipment, equipment increases power, and increased
+power unlocks more challenging combat.
+
+This loop defines the identity of the game and must remain the foundation of
+every future feature added to the project.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

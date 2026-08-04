@@ -1,0 +1,461 @@
+# 48. CAMERA SYSTEM
+
+## Purpose
+
+The Camera System is responsible for presenting gameplay with maximum clarity while remaining unobtrusive.
+
+Its responsibilities are to:
+
+- Follow player progression.
+- Maximize forward visibility.
+- Improve combat readability.
+- Support long idle sessions.
+- Enhance important gameplay moments.
+- Maintain stable performance.
+
+The camera never becomes a gameplay mechanic.
+
+It exists only to improve player readability and comfort.
+
+---
+
+# Design Goals
+
+The Camera System follows these principles:
+
+- Readability first.
+- Minimal movement.
+- Stable framing.
+- Predictable behavior.
+- High performance.
+- Pixel-art friendly.
+- Accessibility compatible.
+- Easy future expansion.
+
+---
+
+# Camera Philosophy
+
+The camera should almost disappear from the player's perception.
+
+During normal gameplay the player should never think about the camera.
+
+It quietly follows progression while always presenting the most useful information.
+
+---
+
+# Camera Type
+
+The game uses a dedicated 2D side-scroller camera.
+
+Characteristics:
+
+- Horizontal follow
+- Fixed vertical position
+- Single gameplay camera
+- No free camera
+- No player camera control
+
+---
+
+# Horizontal Follow
+
+The camera follows the player only on the X axis.
+
+The Y position remains fixed throughout gameplay.
+
+This guarantees:
+
+- Stable visuals
+- Consistent UI
+- Predictable gameplay
+- Easy level design
+
+---
+
+# Vertical Position
+
+Vertical camera movement is disabled.
+
+The camera never reacts to:
+
+- Jumping
+- Attacks
+- Knockback
+- Gathering
+- Crafting
+- Boss fights
+
+The vertical framing remains constant.
+
+---
+
+# Player Screen Position
+
+The player is intentionally not centered.
+
+Default position:
+
+Approximately **35–40%** of the screen width.
+
+Example:
+
+```
+|------Player------------------------------Visible World----------------|
+```
+
+This provides additional visibility in the direction of progression.
+
+---
+
+# Advantages
+
+Keeping the player slightly left provides:
+
+- Better enemy anticipation
+- Earlier boss visibility
+- More readable encounters
+- Improved exploration flow
+
+Unused space behind the player is minimized.
+
+---
+
+# Camera Target
+
+The camera follows a target position rather than the player directly.
+
+Target Position:
+
+Player Position
+
++
+
+Fixed Horizontal Offset
+
+This offset remains constant during normal gameplay.
+
+---
+
+# Horizontal Smoothing
+
+Camera movement uses light horizontal smoothing.
+
+The camera gradually reaches its target position.
+
+Characteristics:
+
+- Very responsive
+- Minimal delay
+- No floating sensation
+- No overshoot
+- No oscillation
+
+The player should never perceive noticeable latency.
+
+---
+
+# Look Ahead
+
+The camera includes a small forward anticipation.
+
+While the player is moving, the camera shifts a few pixels further in the direction of travel.
+
+Behavior:
+
+Idle
+
+↓
+
+Normal Offset
+
+Walking
+
+↓
+
+Normal Offset
+
++
+
+Small Forward Offset
+
+The effect is intentionally subtle.
+
+---
+
+# Look Ahead Rules
+
+Look Ahead:
+
+- Only affects the X axis
+- Activates while moving
+- Returns smoothly when movement stops
+- Never produces sudden jumps
+
+The adjustment remains almost invisible.
+
+---
+
+# Camera Bounds
+
+The camera is always constrained by the currently loaded Zone Segment.
+
+It can never display:
+
+- Empty space
+- Unloaded content
+- World limits
+- Streaming transitions
+
+---
+
+# Segment Transition
+
+Each Zone Segment defines its own camera boundaries.
+
+When a new segment loads:
+
+1. New bounds are calculated.
+2. Camera limits are updated.
+3. Horizontal follow continues seamlessly.
+
+The transition is invisible to the player.
+
+---
+
+# Camera Effects
+
+The Camera System uses extremely limited effects.
+
+Version 1 supports only Camera Shake.
+
+No cinematic camera effects exist.
+
+---
+
+# Camera Shake
+
+Camera Shake is triggered only by major gameplay events.
+
+Supported events:
+
+- Critical Hit
+- Boss Spawn
+- Boss Death
+
+No other event may trigger camera movement.
+
+---
+
+# Camera Shake Characteristics
+
+Camera Shake is:
+
+- Very short
+- Low amplitude
+- Non-intrusive
+- Fully deterministic
+
+It enhances impact without reducing readability.
+
+---
+
+# Excluded Effects
+
+Version 1 intentionally excludes:
+
+- Dynamic Zoom
+- Rotation
+- Tilt
+- Motion Blur
+- Screen Distortion
+- Chromatic Aberration
+- Cinematic Bars
+- Slow Motion Camera
+- Dynamic FOV
+- Screen Flash
+
+The architecture remains compatible with future additions.
+
+---
+
+# Zoom
+
+Gameplay zoom is fixed.
+
+Players cannot:
+
+- Zoom in
+- Zoom out
+- Change FOV
+
+The selected zoom level is defined by the game designers.
+
+This guarantees consistent gameplay presentation.
+
+---
+
+# Camera Rotation
+
+Camera rotation is permanently disabled.
+
+The camera always maintains a horizontal orientation.
+
+---
+
+# Camera Layers
+
+The camera renders:
+
+- Background
+- Environment
+- Player
+- Enemies
+- Loot
+- VFX
+- UI (separate layer)
+
+The UI is never affected by camera movement.
+
+---
+
+# Pixel Perfect Rendering
+
+The Camera System supports pixel-perfect rendering.
+
+Objectives:
+
+- Crisp sprites
+- Stable pixels
+- No shimmering
+- No sub-pixel distortion
+
+Camera movement is compatible with pixel snapping.
+
+---
+
+# Performance
+
+The Camera System is intentionally lightweight.
+
+Per-frame responsibilities:
+
+- Update target
+- Apply smoothing
+- Clamp inside bounds
+- Apply optional shake
+- Render
+
+No expensive calculations occur every frame.
+
+---
+
+# Accessibility
+
+The Camera System integrates with the Accessibility System.
+
+Supported options:
+
+- Reduced Motion
+- Animation Disabled
+- UI Scaling compatibility
+
+---
+
+# Reduced Motion
+
+When Reduced Motion is enabled:
+
+- Camera Shake intensity is reduced.
+- Look Ahead movement is reduced.
+- Camera remains fully functional.
+
+Gameplay is unchanged.
+
+---
+
+# Animation Disabled
+
+When animations are disabled:
+
+- Camera Shake is disabled.
+- Camera follow remains active.
+
+The game stays fully playable.
+
+---
+
+# Error Handling
+
+If camera calculations fail:
+
+Fallback behavior:
+
+- Disable smoothing.
+- Center on the player.
+- Disable shake.
+- Continue gameplay.
+
+Camera failures must never interrupt gameplay.
+
+---
+
+# Debug Features
+
+Developer builds may display:
+
+- Camera Position
+- Target Position
+- Follow Offset
+- Look Ahead Offset
+- Current Bounds
+- Shake Intensity
+- Active Camera State
+
+These tools are unavailable in release builds.
+
+---
+
+# Future Expansion
+
+The architecture supports future additions including:
+
+- Cinematic Cameras
+- Dialogue Cameras
+- Dynamic Zoom
+- Event Cameras
+- Replay Cameras
+- Spectator Cameras
+- Boss Intro Cameras
+- Environmental Camera Effects
+
+These features can be added without redesigning the core system.
+
+---
+
+# Dependencies
+
+The Camera System integrates with:
+
+- Exploration System
+- Combat System
+- Animation System
+- VFX System
+- Accessibility System
+- UI System
+- Zone Streaming System
+- Asset Management System
+
+The Camera System never modifies gameplay logic.
+
+---
+
+# Summary
+
+The Camera System provides a stable, lightweight, and highly readable presentation tailored for a 2D side-scrolling idle RPG.
+
+It follows the player only on the horizontal axis, keeps the player positioned at approximately 35–40% of the screen width, uses light smoothing with subtle look-ahead, respects zone boundaries, and applies only minimal camera shake for critical gameplay events.
+
+Its minimalist architecture maximizes readability, minimizes player fatigue, and remains fully compatible with future camera features.
+
+DOCUMENT TERMINÉ

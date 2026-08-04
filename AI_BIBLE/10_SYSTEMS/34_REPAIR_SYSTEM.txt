@@ -1,0 +1,655 @@
+# 34. REPAIR SYSTEM
+
+## Purpose
+
+The Repair System restores the durability of damaged equipment.
+
+Its purpose is to:
+
+- Extend the lifespan of valuable equipment.
+- Create a permanent Silver sink.
+- Encourage players to return to cities or their personal island.
+- Introduce maintenance costs based on gameplay activity.
+- Preserve the long-term health of the player-driven economy.
+
+The Repair System does not create new equipment.
+
+It only restores existing equipment.
+
+---
+
+# Design Goals
+
+The Repair System must:
+
+- Be simple to understand.
+- Require strategic planning before dangerous expeditions.
+- Support the durability economy.
+- Never invalidate crafting.
+- Remove Silver from the economy.
+- Be fully data-driven.
+- Integrate with every equipment category.
+
+---
+
+# Core Philosophy
+
+Equipment is not permanent by default.
+
+Players are expected to maintain their gear throughout its lifetime.
+
+Repairing equipment is significantly cheaper than replacing it, making maintenance the preferred option.
+
+However, players who ignore durability entirely eventually lose their equipment forever.
+
+---
+
+# Repair Locations
+
+Equipment may only be repaired in approved locations.
+
+V1 supports two repair locations:
+
+- Cities
+- Player Island
+
+Repairs cannot be performed:
+
+- Inside combat
+- Inside exploration zones
+- During encounters
+- From the inventory
+- Through consumable repair kits
+
+---
+
+# Repair Buildings
+
+Repairs are performed through a dedicated building.
+
+Examples include:
+
+- Repair Station
+- Blacksmith
+- Forge
+- Workshop
+
+The visual identity is left to the Art Direction.
+
+The gameplay remains identical.
+
+---
+
+# Repair Flow
+
+The standard repair process is:
+
+Player arrives at repair location
+
+↓
+
+Interact with Repair Building
+
+↓
+
+Open Repair Interface
+
+↓
+
+Select damaged equipment
+
+↓
+
+Preview repair cost
+
+↓
+
+Confirm repair
+
+↓
+
+Silver is consumed
+
+↓
+
+Durability is fully restored
+
+---
+
+# Full Restoration
+
+Repairs always restore equipment to maximum durability.
+
+Example:
+
+Current Durability:
+
+38 / 100
+
+↓
+
+Repair
+
+↓
+
+100 / 100
+
+Partial repairs are not supported in V1.
+
+---
+
+# Unlimited Repairs
+
+Equipment may be repaired an unlimited number of times.
+
+There is:
+
+- No repair limit.
+- No permanent wear.
+- No reduction of maximum durability.
+- No degradation of repair efficiency.
+
+The item remains identical after every repair.
+
+---
+
+# Permanent Maximum Durability
+
+Maximum durability never decreases.
+
+Example:
+
+New Sword
+
+100 / 100
+
+↓
+
+Many repairs later
+
+100 / 100
+
+↓
+
+Many months later
+
+100 / 100
+
+Only the current durability changes.
+
+---
+
+# Repair Cost
+
+Every repair consumes Silver.
+
+Repair costs may depend on:
+
+- Equipment Tier
+- Equipment Category
+- Current Durability
+- Maximum Durability
+- Future balancing modifiers
+
+Exact formulas remain data-driven.
+
+---
+
+# Repair Cost Philosophy
+
+Repairing equipment should always be cheaper than replacing it.
+
+This encourages players to:
+
+- Maintain valuable equipment.
+- Preserve high-quality items.
+- Invest in long-term progression.
+
+Replacing an item should only become necessary when it has been destroyed.
+
+---
+
+# Repair Validation
+
+Before a repair begins, the system validates:
+
+- The item exists.
+- The item is repairable.
+- The item is damaged.
+- The player owns enough Silver.
+- The player is interacting with a valid repair station.
+- The item is not locked.
+- The player is not in combat.
+
+If validation fails, no Silver is consumed.
+
+---
+
+# Repair Result
+
+After a successful repair:
+
+- Current durability becomes maximum durability.
+- Equipment statistics remain unchanged.
+- Tier remains unchanged.
+- Quality remains unchanged.
+- Enchantment remains unchanged.
+- Mastery requirements remain unchanged.
+
+Repairs only affect durability.
+
+---
+
+# Item Identity
+
+Repairing equipment never changes the item's identity.
+
+The following properties remain identical:
+
+- ItemInstanceID
+- Item Definition
+- Tier
+- Quality
+- Enchantment
+- Affixes (future)
+- Ownership
+
+Only Current Durability changes.
+
+---
+
+# Durability and Destruction
+
+Equipment reaching zero durability is permanently destroyed.
+
+Destroyed equipment cannot be repaired.
+
+Once destroyed:
+
+- The item is removed.
+- The ItemInstanceID is deleted.
+- No repair option exists.
+
+The player must obtain a replacement.
+
+---
+
+# Economic Role
+
+Repairs create a continuous Silver sink while delaying equipment destruction.
+
+This creates three possible outcomes:
+
+## Good Maintenance
+
+Repair frequently.
+
+↓
+
+Equipment survives.
+
+↓
+
+Silver leaves the economy.
+
+---
+
+## Risky Maintenance
+
+Delay repairs.
+
+↓
+
+Lower maintenance costs.
+
+↓
+
+Higher risk.
+
+---
+
+## No Maintenance
+
+Ignore durability.
+
+↓
+
+Equipment reaches 0 durability.
+
+↓
+
+Permanent destruction.
+
+↓
+
+New equipment must be crafted or purchased.
+
+---
+
+# Relationship with Crafting
+
+Repairs never replace crafting.
+
+Eventually, neglected equipment disappears from the economy.
+
+This ensures continuous demand for:
+
+- Gathering
+- Refining
+- Crafting
+- Marketplace trading
+
+---
+
+# Relationship with Enchantments
+
+Repairs preserve enchantments.
+
+Example:
+
+T8.4 Sword
+
+↓
+
+Repair
+
+↓
+
+Still T8.4 Sword
+
+Enchantments are never removed or downgraded by repairing.
+
+---
+
+# Relationship with Quality
+
+Repairs preserve Quality.
+
+Example:
+
+Masterpiece Armor
+
+↓
+
+Repair
+
+↓
+
+Masterpiece Armor
+
+Quality never changes.
+
+---
+
+# Relationship with Tier
+
+Repairs never modify Tier.
+
+Example:
+
+T6 Armor
+
+↓
+
+Repair
+
+↓
+
+T6 Armor
+
+---
+
+# Relationship with Stats
+
+Repairs never modify:
+
+- Damage
+- Armor
+- Health
+- Resistances
+- Ability Scaling
+- Passive Effects
+
+Repairs restore durability only.
+
+---
+
+# Relationship with Market
+
+Equipment can be repaired before being sold.
+
+Players may choose between:
+
+- Selling damaged equipment for less.
+- Paying repair costs first.
+- Selling fully repaired equipment.
+
+Market pricing is determined by players.
+
+---
+
+# Interface
+
+The Repair Interface should display:
+
+- Selected item
+- Current durability
+- Maximum durability
+- Repair cost
+- Player Silver
+- Confirmation button
+
+---
+
+# Bulk Repair
+
+The interface should support:
+
+Repair Selected Item
+
+and
+
+Repair All Damaged Equipment
+
+Both operations use the same validation rules.
+
+---
+
+# Confirmation Flow
+
+1. Player selects equipment.
+2. System calculates repair cost.
+3. Cost is displayed.
+4. Player confirms.
+5. Server validates.
+6. Silver is consumed.
+7. Durability is restored.
+8. Inventory refreshes.
+9. Save transaction completes.
+
+---
+
+# Atomic Transactions
+
+Repairs are atomic.
+
+Either:
+
+- Silver is consumed.
+- Durability is restored.
+
+or
+
+Nothing happens.
+
+Partial operations are forbidden.
+
+---
+
+# Server Authority
+
+Repair calculations are server authoritative.
+
+The client may only:
+
+- Display preview.
+- Send repair request.
+
+The client cannot:
+
+- Set durability.
+- Modify costs.
+- Complete repairs.
+
+---
+
+# Save Data
+
+Each repair transaction may store:
+
+- TransactionID
+- ItemInstanceID
+- PreviousDurability
+- NewDurability
+- SilverCost
+- Timestamp
+
+---
+
+# Data Tables
+
+---
+
+## RepairCostTable
+
+Fields:
+
+- EquipmentCategory
+- ItemTier
+- BaseRepairCost
+- CostMultiplier
+- Enabled
+
+---
+
+## RepairStationTable
+
+Fields:
+
+- StationID
+- StationName
+- LocationType
+- RepairModifier
+- Enabled
+
+---
+
+# Runtime Components
+
+## RepairService
+
+Responsibilities:
+
+- Validate repairs
+- Calculate costs
+- Consume Silver
+- Restore durability
+- Save transaction
+
+---
+
+## RepairCostResolver
+
+Responsibilities:
+
+- Resolve repair price
+- Apply balancing modifiers
+- Return final Silver cost
+
+---
+
+## RepairTransaction
+
+Responsibilities:
+
+- Lock item
+- Validate
+- Consume Silver
+- Restore durability
+- Save state
+- Prevent duplicate requests
+
+---
+
+# Validation Rules
+
+Repair fails when:
+
+- Item does not exist.
+- Item is destroyed.
+- Item is already at full durability.
+- Player lacks Silver.
+- Player is outside a repair location.
+- Item is locked.
+- Player is in combat.
+
+---
+
+# Future Extensions
+
+The architecture supports future additions such as:
+
+- Guild repair stations
+- Reduced repair costs
+- City-specific repair bonuses
+- Repair professions
+- Repair achievements
+- Temporary repair events
+- Alternative currencies
+
+Repair Kits are intentionally excluded from V1.
+
+---
+
+# Explicitly Excluded from V1
+
+V1 does not include:
+
+- Repair anywhere
+- Repair Kits
+- Partial repairs
+- Durability restoration consumables
+- Maximum durability loss
+- Limited repair count
+- Repair materials
+- Instant field repairs
+- Automatic repairs
+
+---
+
+# System Relationships
+
+The Repair System interacts with:
+
+- Inventory System
+- Equipment System
+- Durability System
+- Currency System
+- Economy System
+- Marketplace System
+- Save System
+- UI System
+
+---
+
+# Summary
+
+The Repair System allows players to fully restore damaged equipment by paying Silver at dedicated repair stations located in cities or on their personal island.
+
+Equipment may be repaired an unlimited number of times without reducing its maximum durability or altering its Tier, Quality, or Enchantment.
+
+Repairing equipment is always preferable to replacing it, but neglecting durability entirely results in permanent item destruction once durability reaches zero.
+
+The system provides a long-term Silver sink while supporting the player-driven economy and preserving the value of crafted equipment.
+
+DOCUMENT TERMINÉ

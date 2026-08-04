@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "assets": [
+    { "id": "sprite_sword_t4", "type": "sprite", "path": "sprites/weapons/sword_t4.png", "category": "items" },
+    { "id": "sprite_bow_t4", "type": "sprite", "path": "sprites/weapons/bow_t4.png", "category": "items" },
+    { "id": "sprite_fire_staff_t4", "type": "sprite", "path": "sprites/weapons/fire_staff_t4.png", "category": "items" },
+    { "id": "sprite_plate_armor_t4", "type": "sprite", "path": "sprites/armor/plate_t4.png", "category": "items" },
+    { "id": "sprite_leather_armor_t4", "type": "sprite", "path": "sprites/armor/leather_t4.png", "category": "items" },
+    { "id": "icon_sword_t4", "type": "icon", "path": "icons/weapons/sword_t4.png", "category": "items" },
+    { "id": "icon_bow_t4", "type": "icon", "path": "icons/weapons/bow_t4.png", "category": "items" },
+    { "id": "icon_fire_staff_t4", "type": "icon", "path": "icons/weapons/fire_staff_t4.png", "category": "items" },
+    { "id": "icon_ore_t4", "type": "icon", "path": "icons/resources/ore_t4.png", "category": "items" },
+    { "id": "icon_wood_t4", "type": "icon", "path": "icons/resources/wood_t4.png", "category": "items" },
+    { "id": "icon_hide_t4", "type": "icon", "path": "icons/resources/hide_t4.png", "category": "items" },
+    { "id": "icon_metal_bar_t4", "type": "icon", "path": "icons/resources/metal_bar_t4.png", "category": "items" },
+    { "id": "icon_stew_beef", "type": "icon", "path": "icons/consumables/stew_beef.png", "category": "items" },
+    { "id": "icon_potion_healing", "type": "icon", "path": "icons/consumables/potion_healing.png", "category": "items" },
+    { "id": "sprite_wolf_t4", "type": "sprite", "path": "sprites/monsters/wolf_t4.png", "category": "monsters" },
+    { "id": "sprite_bandit_t4", "type": "sprite", "path": "sprites/monsters/bandit_t4.png", "category": "monsters" },
+    { "id": "sprite_spider_t4", "type": "sprite", "path": "sprites/monsters/spider_t4.png", "category": "monsters" },
+    { "id": "sprite_ore_golem_t4", "type": "sprite", "path": "sprites/monsters/ore_golem_t4.png", "category": "monsters" },
+    { "id": "sprite_forest_guardian_t4", "type": "sprite", "path": "sprites/monsters/forest_guardian_t4.png", "category": "monsters" },
+    { "id": "icon_silver", "type": "icon", "path": "icons/currencies/silver.png", "category": "ui" },
+    { "id": "icon_gold", "type": "icon", "path": "icons/currencies/gold.png", "category": "ui" },
+    { "id": "sprite_forge_t4", "type": "sprite", "path": "sprites/buildings/forge_t4.png", "category": "buildings" },
+    { "id": "sprite_smelter_t4", "type": "sprite", "path": "sprites/buildings/smelter_t4.png", "category": "buildings" }
+  ]
+}

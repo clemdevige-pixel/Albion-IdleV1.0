@@ -1,0 +1,1055 @@
+## ALBION IDLE — GAME VISION
+
+**Document type:** Foundational Game Design Document
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Foundational
+**Primary readers:** Game Director, designers, developers and AI development agents
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Related documents:** `00_CLAUDE_MASTER_CONTEXT.txt`, `DECISION_LOG.txt`
+**Last update:** July 2026
+
+---
+
+# 1. PURPOSE OF THIS DOCUMENT
+
+This document defines the intended player experience of Albion Idle.
+
+It translates the rules of the Project Bible into a clear creative direction.
+
+It explains:
+
+* what kind of game is being created;
+* what fantasy the player experiences;
+* what the player repeatedly does;
+* why the player progresses;
+* why the player returns;
+* what makes the game strategically interesting;
+* what the game must never become.
+
+This document does not define:
+
+* final balancing values;
+* exact combat formulas;
+* final mastery trees;
+* final zone content;
+* final resource lists;
+* final monster lists;
+* technical architecture;
+* detailed implementation rules.
+
+Those subjects belong in dedicated system, data and technical documents.
+
+If this document contradicts the Project Bible, the Project Bible takes priority.
+
+---
+
+# 2. HIGH-CONCEPT STATEMENT
+
+Albion Idle is a single-player idle RPG in which one persistent hero gathers resources, crafts equipment, develops specialized masteries and prepares different builds to conquer increasingly dangerous regions.
+
+The game combines:
+
+* long-term idle progression;
+* character-driven RPG progression;
+* equipment crafting;
+* automatic combat;
+* strategic preparation;
+* build optimization;
+* increasingly demanding power checks.
+
+The game continues progressing while the player is absent, but the player’s decisions determine how effectively that time is used.
+
+---
+
+# 3. ONE-SENTENCE PLAYER PROMISE
+
+> Build your hero through what you practice, forge the equipment you need and adapt your strategy to conquer every region.
+
+---
+
+# 4. CORE PLAYER FANTASY
+
+The player begins as an inexperienced adventurer with limited equipment, limited knowledge and access only to relatively safe territory.
+
+Through repeated action, the player becomes:
+
+* a more experienced fighter;
+* a more efficient gatherer;
+* a more capable crafter;
+* a better-prepared explorer;
+* a more knowledgeable strategist.
+
+The fantasy is not merely becoming numerically stronger.
+
+The fantasy is becoming increasingly competent in the world.
+
+The player should feel:
+
+> I can now overcome this challenge because I prepared better, understood the problem and improved the right parts of my character.
+
+---
+
+# 5. PLAYER ROLE
+
+The player controls one persistent hero.
+
+The player is simultaneously:
+
+* an adventurer;
+* a fighter;
+* a gatherer;
+* a crafter;
+* an optimizer;
+* a planner.
+
+The player is not:
+
+* a distant ruler controlling disposable units;
+* the manager of a hero collection;
+* the owner of a multiplayer economic empire;
+* a passive observer with no strategic responsibility.
+
+The character performs many actions automatically.
+
+The player decides:
+
+* what the character should do;
+* where the character should go;
+* what equipment should be used;
+* which masteries should be developed;
+* which resources are currently important;
+* which challenge should be attempted;
+* when preparation is sufficient;
+* when a strategy should change.
+
+---
+
+# 6. TARGET EXPERIENCE
+
+The game should create a recurring mixture of five feelings.
+
+## 6.1 Progress
+
+The player should regularly see meaningful improvement.
+
+Examples include:
+
+* gaining mastery experience;
+* collecting a needed resource;
+* completing an equipment piece;
+* improving combat efficiency;
+* unlocking a recipe;
+* unlocking an ability;
+* reaching a new stage;
+* defeating a previously impossible enemy.
+
+Progress should remain visible even when access to the next major region is still far away.
+
+---
+
+## 6.2 Anticipation
+
+The player should regularly know what they are working toward.
+
+Examples:
+
+* the next equipment tier;
+* the final material needed for a weapon;
+* a mastery unlock;
+* a new active ability;
+* a difficult mini-boss;
+* the zone boss;
+* the next danger zone.
+
+Long-term objectives should be supported by short-term milestones.
+
+---
+
+## 6.3 Preparation
+
+The player should feel responsible for the result of important encounters.
+
+Before a difficult challenge, the player may need to:
+
+* improve equipment;
+* complete a build;
+* change weapon;
+* change active abilities;
+* select another passive;
+* craft food or potions;
+* improve a relevant mastery;
+* repair or replace damaged gear;
+* choose a more efficient farming location.
+
+Preparation should be visible in the outcome.
+
+---
+
+## 6.4 Discovery
+
+New stages and regions should introduce more than higher numbers.
+
+The player should discover:
+
+* new resources;
+* new enemies;
+* new encounter patterns;
+* new recipes;
+* new strategic problems;
+* new environmental identities;
+* new progression possibilities.
+
+The exact content will be defined later.
+
+The design requirement is that progression must regularly reveal something new.
+
+---
+
+## 6.5 Mastery
+
+The player should gradually understand how the game’s systems interact.
+
+Early progression may be solved through obvious equipment upgrades.
+
+Later progression should increasingly reward:
+
+* build understanding;
+* resource planning;
+* weapon knowledge;
+* ability selection;
+* risk management;
+* efficient use of offline time;
+* adaptation to enemy mechanics.
+
+The player should feel more knowledgeable, not only more powerful.
+
+---
+
+# 7. EXPERIENCE PILLARS
+
+## 7.1 One hero, many possible identities
+
+The player does not select a permanent class.
+
+The character’s identity emerges from what the player uses and practices.
+
+A character may become experienced with:
+
+* swords;
+* bows;
+* axes;
+* defensive equipment;
+* offensive equipment;
+* mining;
+* skinning;
+* refining;
+* crafting.
+
+Changing direction should remain possible.
+
+Specialization should provide value without permanently imprisoning the player in an early choice.
+
+---
+
+## 7.2 Adventure supported by production
+
+Gathering, refining and crafting are not detached side systems.
+
+They directly prepare the player for adventure.
+
+The intended relationship is:
+
+```text
+Adventure reveals a need
+↓
+The player identifies the required improvement
+↓
+Production creates that improvement
+↓
+The hero returns stronger or better prepared
+↓
+The challenge is overcome
+```
+
+Example:
+
+```text
+A boss defeats the player
+↓
+The player identifies insufficient survivability
+↓
+The player gathers and refines defensive materials
+↓
+The player crafts or improves armor
+↓
+The player changes food or abilities
+↓
+The player defeats the boss
+```
+
+Production must have a visible purpose.
+
+---
+
+## 7.3 Automatic execution, meaningful direction
+
+The hero can automatically:
+
+* attack;
+* repeat combat;
+* gather;
+* refine;
+* craft;
+* continue a configured activity.
+
+Automation executes the player’s plan.
+
+Automation must not replace the player’s plan.
+
+The interesting decision occurs before or between activities:
+
+* selecting an objective;
+* configuring a build;
+* choosing a location;
+* deciding what to produce;
+* setting acceptable risk;
+* changing strategy after failure.
+
+---
+
+## 7.4 Slow conquest, frequent satisfaction
+
+Conquering a complete zone should require meaningful investment.
+
+The player should not complete a major chapter immediately.
+
+However, long-term progression must contain frequent rewards.
+
+The player should not need to wait several hours before seeing any result.
+
+The game should alternate between:
+
+* small gains;
+* useful unlocks;
+* equipment improvements;
+* new challenges;
+* major victories.
+
+Macro progression is slow.
+
+Feedback and rewards are frequent.
+
+---
+
+## 7.5 Understandable depth
+
+The game should be deep without being unnecessarily obscure.
+
+The player should be able to understand:
+
+* what their equipment does;
+* why their damage changed;
+* why they survived or died;
+* what a mastery unlocked;
+* what a consumable contributed;
+* why a farming location is efficient or inefficient.
+
+Depth should emerge from combinations and decisions rather than from a very large number of unexplained statistics.
+
+---
+
+# 8. CORE EXPERIENCE LOOP
+
+The central player experience is:
+
+```text
+Discover a new objective
+↓
+Attempt the content
+↓
+Observe performance or failure
+↓
+Identify what should improve
+↓
+Gather the required resources
+↓
+Refine and craft
+↓
+Improve equipment and masteries
+↓
+Configure the character
+↓
+Attempt the content again
+↓
+Overcome the challenge
+↓
+Unlock a new objective
+```
+
+This loop can occur on several scales.
+
+## Short scale
+
+* defeat enemies;
+* collect loot;
+* gain resources;
+* improve mastery;
+* complete a production task.
+
+## Session scale
+
+* craft an item;
+* improve a build;
+* unlock a stage;
+* defeat a mini-boss;
+* solve an efficiency problem.
+
+## Chapter scale
+
+* optimize a tier;
+* complete a zone;
+* defeat the final boss;
+* enter the next danger level.
+
+---
+
+# 9. THE ROLE OF FAILURE
+
+Failure is not only a punishment.
+
+Failure is information.
+
+A failed attempt should help the player answer questions such as:
+
+* Did I lack damage?
+* Did I lack survivability?
+* Was my weapon unsuitable?
+* Did I use the wrong ability?
+* Did I need a consumable?
+* Was my mastery too low?
+* Did I attempt the content too early?
+* Was the risk greater than the expected reward?
+
+The game should make the cause of failure understandable enough to support a new plan.
+
+Failure must not feel like an unexplained numerical rejection.
+
+---
+
+# 10. PROGRESSION PHILOSOPHY
+
+## 10.1 Progress through practice
+
+The character becomes experienced in what the character does.
+
+The player does not receive a universal pool of experience that completely ignores the activity performed.
+
+A player who repeatedly uses a weapon should become more capable with that weapon.
+
+A player who repeatedly practices a profession should become more efficient in that profession.
+
+---
+
+## 10.2 Equipment as immediate power
+
+Equipment provides a major part of the hero’s immediate capability.
+
+Crafting or acquiring a better item should create a visible improvement.
+
+Equipment must remain valuable throughout the game.
+
+Permanent mastery progression must not make equipment irrelevant.
+
+---
+
+## 10.3 Mastery as permanent growth
+
+Masteries represent long-term character development.
+
+They may provide:
+
+* efficiency;
+* unlocks;
+* additional choices;
+* specialization;
+* improved use of equipment;
+* new abilities;
+* access to advanced production.
+
+The exact effects will be defined in system documents.
+
+---
+
+## 10.4 Zones as chapters
+
+Each color zone represents a major chapter.
+
+A chapter should have:
+
+* an introduction;
+* new opportunities;
+* growing resistance;
+* optimization requirements;
+* one or more important checks;
+* a final confrontation;
+* a meaningful conclusion.
+
+The player should feel that a zone was understood and conquered before leaving it.
+
+---
+
+# 11. POWER-CHECK PHILOSOPHY
+
+Power checks are central to the game’s identity.
+
+They determine whether the player is ready for the next step.
+
+## 11.1 Soft power checks
+
+A soft check allows the player to continue, but with poor performance.
+
+Examples:
+
+* slow combat;
+* inefficient gathering;
+* low resource yield;
+* excessive repair costs;
+* poor offline results.
+
+The player is encouraged to optimize.
+
+---
+
+## 11.2 Hard power checks
+
+A hard check blocks progression.
+
+Examples:
+
+* a mandatory boss cannot be defeated;
+* the hero dies before completing an encounter;
+* damage is insufficient to overcome an enemy mechanic;
+* a required stage cannot be completed.
+
+The player must improve or adapt before continuing.
+
+---
+
+## 11.3 Strategic checks
+
+A strategic or knowledge check evaluates the suitability of the player’s choices.
+
+The player may already possess enough total power but use it incorrectly.
+
+Possible solutions include:
+
+* changing weapon;
+* changing active abilities;
+* changing passive;
+* changing armor;
+* using a different consumable;
+* changing the balance between offense and defense.
+
+Strategic checks should not become arbitrary puzzle locks.
+
+The player must have enough information to reason toward a solution.
+
+---
+
+# 12. COMBAT EXPERIENCE
+
+Combat is automatic at its foundation.
+
+The hero attacks and follows normal combat behavior without requiring constant input.
+
+The player’s involvement comes through:
+
+* equipment selection;
+* active ability selection;
+* passive selection;
+* consumable preparation;
+* strategic activation of limited actions;
+* deciding when to retreat or change plans.
+
+The current target loadout is:
+
+* two active weapon abilities;
+* one passive weapon ability.
+
+Combat must remain readable.
+
+The player should be able to understand:
+
+* who is dealing damage;
+* how quickly health changes;
+* when an ability activates;
+* why an important effect occurred;
+* why an encounter was won or lost.
+
+Combat should not become visually or numerically incomprehensible when automated.
+
+---
+
+# 13. IDLE EXPERIENCE
+
+## 13.1 The game continues while the player is absent
+
+The hero may continue a configured activity while the player is offline.
+
+The base offline progression cap is eight hours.
+
+Long-term progression may increase this duration.
+
+---
+
+## 13.2 Offline progression rewards planning
+
+Before leaving, the player should make decisions such as:
+
+* which activity to perform;
+* which zone or stage to farm;
+* which build to use;
+* which resources to target;
+* which consumables may be used;
+* how much risk is acceptable.
+
+The offline result reflects these decisions.
+
+---
+
+## 13.3 Returning to the game
+
+When the player returns, the game should clearly communicate:
+
+* elapsed offline duration;
+* activity performed;
+* resources gained;
+* enemies defeated;
+* mastery gained;
+* consumables used;
+* durability lost;
+* interruptions or failures;
+* new unlocks.
+
+The return screen should transform elapsed time into understandable progression information.
+
+The exact interface will be defined later.
+
+---
+
+## 13.4 Idle must not trivialize challenges
+
+The player should not be able to bypass every hard wall simply by remaining offline for longer.
+
+Offline progression may provide the resources needed to improve.
+
+It must not automatically invalidate preparation, build choices or boss mechanics.
+
+---
+
+# 14. WORLD EXPERIENCE
+
+The world contains five major danger families:
+
+1. Blue;
+2. Yellow;
+3. Orange;
+4. Red;
+5. Black.
+
+Each zone color should create an increasing sense of:
+
+* danger;
+* consequence;
+* opportunity;
+* preparation requirements;
+* strategic complexity.
+
+The player should understand that entering a more dangerous region is a meaningful commitment.
+
+The final world content remains open, including:
+
+* exact resources;
+* exact monster families;
+* cities;
+* settlements;
+* dungeons;
+* events;
+* special encounters;
+* stage identities.
+
+These elements must later support the chapter identity of each zone.
+
+---
+
+# 15. RISK EXPERIENCE
+
+Risk should escalate gradually.
+
+## Blue Zone
+
+The player learns and experiments safely.
+
+Failure should have little or no meaningful long-term consequence.
+
+## Yellow Zone
+
+The player begins to experience equipment wear and mild consequences.
+
+Risk becomes visible but remains forgiving.
+
+## Orange Zone
+
+Preparation and repeated failure begin to carry noticeable costs.
+
+## Red Zone
+
+The player must seriously consider:
+
+* equipment value;
+* durability;
+* efficiency;
+* risk tolerance;
+* retreat decisions.
+
+## Black Zone
+
+The player enters highly dangerous progression where repeated failure can eventually contribute to permanent equipment loss.
+
+The exact numerical rules will be defined later.
+
+The emotional objective is:
+
+> Higher danger should make success more valuable, not make failure feel arbitrary.
+
+---
+
+# 16. REASONS TO RETURN
+
+The player should return to the game because they want to:
+
+* collect the result of an offline plan;
+* complete an item;
+* unlock an ability;
+* reach a mastery threshold;
+* test a new build;
+* retry a boss;
+* enter a new stage;
+* improve a production chain;
+* respond to a newly discovered progression need.
+
+The game should avoid depending only on:
+
+* daily login rewards;
+* artificial appointment mechanics;
+* fear of missing out;
+* arbitrary streak systems.
+
+Return motivation should primarily come from player-owned progression goals.
+
+---
+
+# 17. PLAYER DECISION TYPES
+
+The game should regularly present decisions in five categories.
+
+## 17.1 Objective decisions
+
+What should I work toward next?
+
+Examples:
+
+* equipment;
+* mastery;
+* recipe;
+* stage;
+* boss;
+* offline capacity.
+
+## 17.2 Production decisions
+
+What should I gather, refine or craft?
+
+## 17.3 Build decisions
+
+What equipment, weapon, abilities and consumables should I use?
+
+## 17.4 Risk decisions
+
+Where can I farm safely and efficiently?
+
+## 17.5 Time decisions
+
+Which activity provides the best use of my active or offline time?
+
+A healthy experience should not reduce every decision to a single obvious efficiency calculation.
+
+Different goals may justify different choices.
+
+---
+
+# 18. DESIRED PLAYER STORIES
+
+The final game should be capable of producing player experiences such as:
+
+> I could not defeat the boss, so I changed from an offensive setup to a more defensive build and survived long enough to win.
+
+> I spent my offline period gathering the materials needed for a new weapon, crafted it when I returned and immediately felt the improvement.
+
+> I had enough equipment power, but I was using the wrong ability for the enemy mechanic.
+
+> I entered a dangerous zone too early, damaged my equipment and decided to return to safer content until my build was ready.
+
+> I specialized in a weapon because I enjoyed its playstyle, but I later developed another weapon to solve a specific challenge.
+
+> I finally completed the zone after several cycles of gathering, crafting, mastery progression and build improvement.
+
+These stories are more important than isolated numerical growth.
+
+---
+
+# 19. DIFFERENTIATION
+
+Albion Idle should distinguish itself through the combination of:
+
+* one persistent classless hero;
+* use-based masteries;
+* equipment-driven immediate power;
+* integrated gathering and crafting;
+* automatic but strategically directed combat;
+* meaningful offline planning;
+* readable power checks;
+* zone-based chapter progression;
+* escalating durability risk;
+* frequent micro rewards within slow macro progression.
+
+No single element is necessarily unique by itself.
+
+The intended identity comes from how these elements reinforce each other.
+
+---
+
+# 20. PLAYER EXPERIENCE BOUNDARIES
+
+The game must not become:
+
+## 20.1 A passive waiting simulator
+
+The player must regularly make meaningful decisions.
+
+Time alone must not solve every problem.
+
+## 20.2 A spreadsheet without adventure
+
+Efficiency calculations may exist, but they must support visible character and world progression.
+
+## 20.3 A crafting system with decorative combat
+
+Combat must determine access to important progression.
+
+## 20.4 A combat game with decorative crafting
+
+Production must materially affect the hero’s capability.
+
+## 20.5 A hidden-information puzzle
+
+Strategic adaptation should be rewarded, but the player must receive enough feedback to reason about failure.
+
+## 20.6 A permanent-class trap
+
+The player must remain able to change direction and develop other equipment identities.
+
+## 20.7 A multiplayer game without players
+
+The project must not attempt to imitate player-driven systems through unnecessary artificial complexity.
+
+## 20.8 An uncontrolled content clone
+
+The project must develop an original identity rather than reproducing Albion Online content without transformation.
+
+---
+
+# 21. TARGET AUDIENCE
+
+The primary target audience includes players who enjoy:
+
+* idle progression;
+* RPG character growth;
+* crafting and resource loops;
+* equipment optimization;
+* build experimentation;
+* long-term account progression;
+* visible efficiency improvements;
+* overcoming progression walls;
+* returning to accumulated results.
+
+The game should be approachable for players who do not want:
+
+* continuous action-game input;
+* mandatory multiplayer;
+* competitive PvP;
+* large raid schedules;
+* complex MMO social obligations.
+
+The game may still appeal to experienced RPG and MMO players through its optimization depth.
+
+---
+
+# 22. ACCESSIBILITY OF UNDERSTANDING
+
+The game should communicate important information clearly.
+
+The player should not require an external wiki to understand basic progression.
+
+The interface should eventually explain:
+
+* item effects;
+* mastery progress;
+* ability behavior;
+* resource origins;
+* crafting requirements;
+* enemy threats;
+* durability consequences;
+* offline results;
+* reasons for failure.
+
+Advanced optimization may reward experimentation and community knowledge.
+
+Fundamental rules should remain understandable inside the game.
+
+---
+
+# 23. TONAL DIRECTION
+
+The intended tone is:
+
+* adventurous;
+* grounded;
+* readable;
+* progressively dangerous;
+* satisfying rather than frantic;
+* strategic without being academic.
+
+The hero’s progression should feel earned.
+
+The world should feel dangerous enough to make preparation meaningful.
+
+The game should avoid becoming excessively comedic unless a later art-direction decision validates that tone.
+
+The final narrative tone, visual identity and world lore remain open.
+
+---
+
+# 24. VERTICAL-SLICE EXPERIENCE GOAL
+
+The first vertical slice must prove the following player experience:
+
+> I encounter a challenge, identify an improvement, gather and craft that improvement, equip it and overcome the challenge.
+
+The vertical slice does not need to prove:
+
+* the complete five-zone progression;
+* the final mastery tree;
+* the full equipment catalogue;
+* the final island system;
+* the full worker system;
+* final long-term balancing;
+* final endgame;
+* final art quality.
+
+It must prove that the central relationship between adventure, production and preparation is enjoyable.
+
+---
+
+# 25. VISION SUCCESS CRITERIA
+
+The game vision is being achieved when players can truthfully say:
+
+* My equipment choices matter.
+* My masteries reflect what I practice.
+* Gathering and crafting help me solve real progression problems.
+* I understand why I failed.
+* Changing strategy can be more valuable than simply waiting.
+* Offline time advances the plan I selected.
+* I regularly unlock or improve something.
+* Reaching a new zone feels earned.
+* My hero remains the center of every system.
+* I want to prepare for the next challenge.
+
+---
+
+# 26. VISION FAILURE SIGNALS
+
+The game is drifting away from its vision if testing shows that:
+
+* waiting is almost always the optimal solution;
+* one build defeats every encounter;
+* crafting can be ignored;
+* combat can be ignored;
+* masteries feel disconnected from player actions;
+* equipment upgrades are not noticeable;
+* players cannot explain their defeats;
+* offline progression produces confusing results;
+* zones differ only through larger numbers;
+* workers or buildings overshadow the hero;
+* the economy becomes the final objective;
+* content must be hardcoded to function;
+* the player has no meaningful reason to change strategy.
+
+These signals should trigger design review.
+
+---
+
+# 27. OPEN VISION QUESTIONS
+
+The following subjects remain intentionally unresolved:
+
+* final commercial name;
+* final lore;
+* final visual identity;
+* narrative structure;
+* exact target platform;
+* exact session-length targets;
+* exact zone duration;
+* exact content volume;
+* exact bestiary;
+* exact weapon catalogue;
+* exact city structure;
+* random-event structure;
+* dungeon structure;
+* endgame fantasy;
+* monetization;
+* release model.
+
+These questions must be answered in later documents.
+
+Claude must not infer final answers from this Game Vision.
+
+---
+
+# 28. GAME VISION SUMMARY
+
+Albion Idle is a single-player idle RPG about preparing one persistent hero to conquer increasingly dangerous regions.
+
+The hero improves through practiced masteries and crafted equipment.
+
+The player gathers, refines and crafts because adventure creates concrete needs.
+
+Combat is automatic at its foundation but strongly influenced by preparation, build choices and limited intervention.
+
+Major challenges function as understandable power checks.
+
+Failure teaches the player what should improve.
+
+Offline progression executes a plan selected by the player.
+
+The game rewards frequent small achievements while preserving slow, meaningful long-term progression.
+
+The player should not feel that they won because enough time passed.
+
+The player should feel that they won because they became ready.
+
+---
+
+# END OF DOCUMENT

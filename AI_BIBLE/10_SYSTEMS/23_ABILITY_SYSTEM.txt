@@ -1,0 +1,1389 @@
+# 23. ABILITY SYSTEM
+
+---
+
+# Purpose
+
+The Ability System manages every Ability available to entities during combat.
+
+It is responsible for validating, selecting and executing Abilities while delegating gameplay effects to the appropriate systems.
+
+The Ability System acts as the execution layer between the AI decision-making process and the gameplay systems responsible for Damage, Status Effects and Projectiles.
+
+It is responsible for:
+
+- Ability validation
+- Ability activation
+- Cooldown management
+- Target acquisition
+- Ability execution
+- Effect generation
+- Passive Ability management
+
+The Ability System is NOT responsible for:
+
+- Combat decisions
+- Ability prioritization
+- Damage calculations
+- Healing calculations
+- Status Effect management
+- Projectile simulation
+- Loot
+- Death
+- Animation playback
+
+These responsibilities belong to their dedicated systems.
+
+---
+
+# Design Philosophy
+
+The Ability System follows eight fundamental principles.
+
+---
+
+## AI Driven
+
+The Ability System never decides which Ability should be used.
+
+That responsibility belongs entirely to the AI System.
+
+The AI produces an Ability Intent.
+
+The Ability System validates and executes it.
+
+---
+
+## Deterministic
+
+Given identical:
+
+- Simulation Tick
+- Entity Statistics
+- Equipped Weapon
+- Cooldowns
+- Active Status Effects
+- Target
+- Ability Definition
+
+the Ability System always produces identical results.
+
+Random Ability execution is forbidden.
+
+Random targeting is forbidden.
+
+---
+
+## Data Driven
+
+Every Ability is defined entirely through configuration.
+
+The engine contains no weapon-specific gameplay code.
+
+New weapons are created by adding data only.
+
+---
+
+## Modular
+
+The Ability System communicates with other gameplay systems exclusively through requests.
+
+Examples:
+
+Ability
+
+↓
+
+Damage Request
+
+↓
+
+Damage System
+
+or
+
+Ability
+
+↓
+
+Status Effect Request
+
+↓
+
+Status Effect System
+
+or
+
+Ability
+
+↓
+
+Projectile Request
+
+↓
+
+Projectile System
+
+The Ability System never bypasses these systems.
+
+---
+
+## One Execution Pipeline
+
+Every Ability uses the exact same execution pipeline.
+
+There are no custom execution paths.
+
+Regardless of the weapon, every Ability follows identical validation and execution rules.
+
+---
+
+## Instant Gameplay
+
+Version 1 contains only instant Abilities.
+
+There are:
+
+- No Cast Times
+- No Channeling
+- No Charge Mechanics
+- No Interruptible Casting
+
+Once an Ability has been successfully validated, it executes immediately.
+
+---
+
+## Configuration over Code
+
+Gameplay behavior is created through reusable data definitions.
+
+Examples:
+
+- Cooldowns
+- Conditions
+- Target Rules
+- Effects
+- Projectile Definitions
+
+The engine never contains hardcoded weapon logic.
+
+---
+
+## Extensible
+
+The architecture is designed to support future mechanics without redesign.
+
+Examples:
+
+- Cast Times
+- Channeling
+- Combo Abilities
+- Ultimate Abilities
+- Summons
+- Healing Abilities
+
+Version 1 intentionally implements only the core architecture.
+
+---
+
+# Responsibilities
+
+The Ability System is responsible for:
+
+- Ability Validation
+- Unlock Validation
+- Cooldown Validation
+- Condition Validation
+- Target Validation
+- Ability Execution
+- Effect Generation
+- Passive Management
+
+The Ability System is NOT responsible for:
+
+- AI Decisions
+- Combat Flow
+- Damage Calculation
+- Status Duration
+- Crowd Control Logic
+- Death
+- Loot
+
+---
+
+# Ability Categories
+
+Version 1 supports three Ability categories.
+
+- Basic Attack
+- Active Ability
+- Passive Ability
+
+All weapons follow this structure.
+
+---
+
+# Basic Attack
+
+Every weapon provides one Basic Attack.
+
+The Basic Attack is the fallback Ability.
+
+It is automatically executed whenever no Active Ability is valid.
+
+The Basic Attack requires:
+
+- Valid Target
+- Target in Range
+- Cooldown Ready
+
+It contains no additional activation conditions.
+
+---
+
+# Active Abilities
+
+Active Abilities perform gameplay actions.
+
+Examples:
+
+- Deal Damage
+- Apply Buff
+- Apply Debuff
+- Apply Crowd Control
+- Create Projectile
+
+Every Active Ability has:
+
+- Cooldown
+- Conditions
+- Target Rules
+- Effects
+
+Activation is fully automatic.
+
+---
+
+# Passive Abilities
+
+Passive Abilities permanently modify gameplay while active.
+
+Examples:
+
+- Increased Damage
+- Increased Armor
+- Increased Attack Speed
+- Reduced Cooldowns
+- Increased Movement Speed
+
+Passive Abilities:
+
+- Never activate manually
+- Never enter Cooldown
+- Never require Conditions
+
+They remain active while their weapon is equipped and unlocked.
+
+---
+
+# Weapon Ability Structure
+
+Every weapon follows the same structure.
+
+Maximum Version 1 layout:
+
+- 1 Basic Attack
+- 2 Active Abilities
+- 1 Passive Ability
+
+This architecture is shared by every weapon family.
+
+---
+
+# Ability Unlock Progression
+
+Abilities unlock through Weapon Tier.
+
+Tier 3
+
+- Basic Attack
+- Active Ability 1
+
+Tier 4–5
+
+- Passive Ability
+
+Tier 6–7
+
+- Active Ability 2
+
+Tier 8
+
+Complete Ability Set
+
+Only Tier 8 weapons provide every available Ability.
+
+---
+
+# Ability Runtime
+
+Each equipped Ability maintains runtime information.
+
+Recommended fields:
+
+- Ability ID
+- Cooldown Remaining
+- Cooldown Ready
+- Unlock State
+- Enabled
+- Runtime Flags
+
+Runtime data never modifies gameplay rules.
+
+It only stores temporary simulation state.
+
+---
+
+# Passive Runtime
+
+Passive Abilities maintain a simplified runtime.
+
+Recommended fields:
+
+- Passive Enabled
+- Passive Active
+- Unlock State
+
+No Cooldown data is required.
+
+---
+
+# Ability Definition
+
+Every Ability is defined entirely through data.
+
+Typical configuration includes:
+
+- Ability ID
+- Category
+- Cooldown
+- Range
+- Conditions
+- Target Rule
+- Effects
+- Projectile Definition
+- Animation Reference
+- Audio Reference
+
+Definitions contain no executable gameplay logic.
+
+---
+
+# Ability Effects
+
+Abilities are built from reusable Effects.
+
+Examples:
+
+- Damage
+- Heal
+- Buff
+- Debuff
+- Stun
+- Root
+- Slow
+- Silence
+- Projectile Spawn
+
+Multiple Effects may exist within the same Ability.
+
+The execution order is deterministic.
+
+---
+
+# Ability Pipeline Overview
+
+Every Ability follows the exact same lifecycle.
+
+```
+Ability Intent
+
+↓
+
+Validation
+
+↓
+
+Target Acquisition
+
+↓
+
+Execution
+
+↓
+
+Effect Generation
+
+↓
+
+Cooldown Start
+
+↓
+
+Finished
+```
+
+No Ability is allowed to bypass this pipeline.
+
+---
+# Ability Activation
+
+The Ability System never initiates combat.
+
+Activation always begins with an Ability Intent received from the AI System.
+
+Example:
+
+```
+AI System
+
+↓
+
+Ability Intent
+
+↓
+
+Ability System
+
+↓
+
+Validation
+
+↓
+
+Execution
+```
+
+If the Ability Intent is invalid, execution immediately stops.
+
+---
+
+# Ability Intent
+
+An Ability Intent contains every piece of information required to evaluate an Ability.
+
+Recommended fields:
+
+- Entity
+- Ability ID
+- Primary Target
+- Simulation Tick
+- Ability Priority
+
+The Ability System performs its own validation.
+
+The AI decision alone never guarantees execution.
+
+---
+
+# Validation Pipeline
+
+Every Ability follows the exact same validation sequence.
+
+```
+Receive Ability Intent
+
+↓
+
+Validate Entity
+
+↓
+
+Validate Ability
+
+↓
+
+Validate Unlock
+
+↓
+
+Validate Cooldown
+
+↓
+
+Validate Status Restrictions
+
+↓
+
+Validate Conditions
+
+↓
+
+Acquire Target(s)
+
+↓
+
+Validate Targets
+
+↓
+
+Execute Ability
+```
+
+If any step fails, execution immediately stops.
+
+---
+
+# Entity Validation
+
+Before evaluating the Ability, the entity itself is validated.
+
+Required conditions:
+
+- Entity Exists
+- Entity Alive
+- Entity Active
+- AI Enabled
+- Ability System Enabled
+
+If any validation fails:
+
+The Ability is cancelled.
+
+---
+
+# Ability Validation
+
+The requested Ability must exist.
+
+Validation includes:
+
+- Ability Definition Exists
+- Ability Enabled
+- Ability Category Valid
+
+Unknown Ability IDs are rejected immediately.
+
+---
+
+# Unlock Validation
+
+The Ability must be unlocked.
+
+Unlock depends on:
+
+- Equipped Weapon
+- Weapon Tier
+- Weapon Mastery
+
+Locked Abilities cannot execute.
+
+---
+
+# Cooldown Validation
+
+Every Active Ability maintains its own Cooldown.
+
+Execution requires:
+
+Cooldown Remaining
+
+=
+
+0
+
+If Cooldown is still active:
+
+The Ability fails.
+
+No Effects occur.
+
+---
+
+# Status Restrictions
+
+Certain Status Effects prevent Ability activation.
+
+Version 1 supports:
+
+- Stun
+- Silence
+
+Stun
+
+Prevents every Ability.
+
+Silence
+
+Prevents Active Abilities only.
+
+Basic Attacks remain available while Silenced.
+
+---
+
+# Ability Conditions
+
+Every Active Ability defines one or more Conditions.
+
+All Conditions must evaluate to TRUE.
+
+If one Condition fails:
+
+The Ability is cancelled.
+
+Version 1 never supports OR Conditions.
+
+Conditions always use AND logic.
+
+---
+
+# Standard Condition Library
+
+Version 1 includes reusable Conditions.
+
+Self
+
+- HP ≤ X%
+- HP ≥ X%
+- Buff Active
+- Buff Missing
+- Status Active
+- Status Missing
+
+Target
+
+- HP ≤ X%
+- HP ≥ X%
+- Status Active
+- Status Missing
+
+Combat
+
+- Target Exists
+- Target Alive
+- Cooldown Ready
+- Ability Enabled
+
+Battlefield
+
+- Enemy Count ≥ X
+- Enemy Count ≤ X
+- Distance ≤ X
+- Distance ≥ X
+
+Target Type
+
+- Normal Enemy
+- Elite
+- Boss
+
+New Conditions may be added without modifying the engine.
+
+---
+
+# Target Acquisition
+
+After validation, the Ability acquires its targets.
+
+Target Rules are defined entirely through data.
+
+Examples:
+
+- Current Target
+- Self
+- Nearest Enemy
+- All Enemies
+- Area Around Target
+
+The Ability System never performs target prioritization.
+
+That decision already belongs to the AI.
+
+---
+
+# Target Validation
+
+Every acquired target must satisfy:
+
+- Exists
+- Alive
+- Targetable
+- Valid for Ability
+- Inside Ability Range
+
+Invalid targets are discarded.
+
+---
+
+# Primary Target
+
+Every Ability possesses one Primary Target.
+
+Even Area Abilities begin from a Primary Target.
+
+Examples:
+
+```
+Primary Target
+
+↓
+
+Area Definition
+
+↓
+
+Secondary Targets
+```
+
+This guarantees deterministic targeting.
+
+---
+
+# Area Targeting
+
+Area Abilities affect every valid entity inside their defined Area.
+
+Version 1 has:
+
+- No Target Cap
+- No Maximum Hit Count
+
+Every valid entity is affected.
+
+---
+
+# Projectile Targeting
+
+Projectile Abilities also begin with a validated Primary Target.
+
+The Ability System creates a Projectile Request.
+
+The Projectile System manages:
+
+- Travel
+- Collision
+- Visual Presentation
+
+Projectiles never miss valid targets in Version 1.
+
+---
+
+# Ability Execution
+
+Once validation succeeds:
+
+Execution begins immediately.
+
+Version 1 supports only instant execution.
+
+Execution performs:
+
+- Generate Effects
+- Generate Requests
+- Start Cooldown
+- Emit Events
+
+The Ability System never performs gameplay calculations itself.
+
+---
+
+# Effect Generation
+
+Each Ability contains one or more reusable Effects.
+
+Examples:
+
+- Damage
+- Heal
+- Buff
+- Debuff
+- Stun
+- Root
+- Slow
+- Silence
+- Projectile Spawn
+
+Effects execute sequentially.
+
+Execution order is defined in the Ability Definition.
+
+---
+
+# Damage Requests
+
+When an Ability deals Damage:
+
+```
+Ability
+
+↓
+
+Damage Request
+
+↓
+
+Damage System
+```
+
+The Ability System never calculates:
+
+- Damage
+- Critical Hits
+- Armor Reduction
+- Resistances
+
+Those responsibilities belong entirely to the Damage System.
+
+---
+
+# Status Effect Requests
+
+When an Ability applies Crowd Control or Buffs:
+
+```
+Ability
+
+↓
+
+Status Request
+
+↓
+
+Status Effect System
+```
+
+The Ability System never manages:
+
+- Duration
+- Refresh
+- Expiration
+- Removal
+
+---
+
+# Projectile Requests
+
+Projectile-based Abilities generate Projectile Requests.
+
+```
+Ability
+
+↓
+
+Projectile Request
+
+↓
+
+Projectile System
+```
+
+Projectile simulation remains completely independent from Ability execution.
+
+---
+
+# Cooldown Start
+
+Cooldown begins only after successful execution.
+
+Execution
+
+↓
+
+Cooldown Starts
+
+↓
+
+Ability Finished
+
+Cancelled Abilities never begin Cooldown.
+
+---
+
+# Ability Failure
+
+Execution may fail before completion.
+
+Examples:
+
+- Invalid Entity
+- Invalid Target
+- Locked Ability
+- Cooldown Active
+- Condition Failed
+- Silenced
+- Stunned
+
+Failure immediately terminates execution.
+
+No Effects occur.
+
+No Cooldown begins.
+
+---
+
+# Execution Completion
+
+An Ability is considered completed after:
+
+- All Effects Generated
+- Cooldown Started
+- Events Emitted
+
+At this point, control returns to the Combat System for the next Simulation Tick.
+
+---
+# Cooldown System
+
+Every Active Ability owns an independent Cooldown.
+
+Cooldowns are managed entirely by the Ability System.
+
+The AI never modifies Cooldowns directly.
+
+Passive Abilities never use Cooldowns.
+
+---
+
+# Cooldown Lifecycle
+
+Every Cooldown follows the same lifecycle.
+
+```
+Ability Executed
+
+↓
+
+Cooldown Starts
+
+↓
+
+Cooldown Decreases
+
+↓
+
+Cooldown Reaches Zero
+
+↓
+
+Ability Ready
+```
+
+Cooldowns are updated every Simulation Tick.
+
+---
+
+# Cooldown Runtime
+
+Each Active Ability stores:
+
+- Cooldown Duration
+- Remaining Cooldown
+- Ready State
+
+Remaining Cooldown is always clamped between:
+
+0
+
+and
+
+Cooldown Duration.
+
+---
+
+# Cooldown Processing
+
+At every Simulation Tick:
+
+```
+Remaining Cooldown
+
+↓
+
+Subtract Tick Duration
+
+↓
+
+Clamp to Zero
+
+↓
+
+Update Ready State
+```
+
+Cooldown processing is deterministic.
+
+---
+
+# Passive Ability Management
+
+Passive Abilities activate automatically when:
+
+- The weapon is equipped.
+- The Passive Ability is unlocked.
+
+Passive Abilities remain active until:
+
+- Weapon changes.
+- Weapon becomes unequipped.
+- Passive Ability becomes locked.
+
+They never require activation or evaluation.
+
+---
+
+# Runtime Events
+
+The Ability System emits deterministic events.
+
+Version 1 supports:
+
+- OnAbilityStarted
+- OnAbilityExecuted
+- OnAbilityFinished
+- OnCooldownStarted
+- OnCooldownFinished
+- OnPassiveActivated
+- OnPassiveRemoved
+
+Events never modify gameplay.
+
+They only notify subscribed systems.
+
+---
+
+# Event Subscribers
+
+Typical subscribers include:
+
+- Animation System
+- Audio System
+- VFX System
+- UI System
+- Analytics
+- Statistics
+- Achievements
+- Tutorials
+
+The Ability System never directly communicates with these systems.
+
+---
+
+# System Integration
+
+The Ability System coordinates several gameplay systems.
+
+```
+AI System
+
+↓
+
+Ability Intent
+
+↓
+
+Ability System
+
+↓
+
+Damage System
+
+↓
+
+Status Effect System
+
+↓
+
+Projectile System
+
+↓
+
+Animation System
+
+↓
+
+Audio System
+
+↓
+
+VFX System
+```
+
+Each system remains completely independent.
+
+---
+
+# Damage System Integration
+
+Whenever an Ability deals damage:
+
+```
+Ability
+
+↓
+
+Damage Request
+
+↓
+
+Damage System
+```
+
+The Ability System never performs:
+
+- Damage Calculation
+- Critical Hit Calculation
+- Armor Calculation
+- Resistance Calculation
+
+---
+
+# Status Effect System Integration
+
+Whenever an Ability applies a Status Effect:
+
+```
+Ability
+
+↓
+
+Status Request
+
+↓
+
+Status Effect System
+```
+
+The Ability System never manages:
+
+- Duration
+- Stacking
+- Refresh
+- Expiration
+- Removal
+
+---
+
+# Projectile System Integration
+
+Projectile Abilities generate Projectile Requests.
+
+The Projectile System is responsible for:
+
+- Projectile Creation
+- Projectile Movement
+- Collision Detection
+- Visual Representation
+
+Version 1 Projectiles always hit valid targets.
+
+---
+
+# Animation Integration
+
+After successful execution:
+
+The Ability System emits an event.
+
+The Animation System selects the appropriate animation.
+
+Gameplay simulation never waits for animation completion.
+
+---
+
+# Audio & VFX Integration
+
+Successful execution also emits events for:
+
+- Sound Effects
+- Visual Effects
+
+Presentation systems never influence gameplay simulation.
+
+---
+
+# Error Handling
+
+Invalid Ability Definitions must never crash the simulation.
+
+Examples:
+
+- Unknown Ability
+- Missing Effect
+- Invalid Condition
+- Invalid Target Rule
+- Missing Cooldown
+
+Development builds should report errors.
+
+Release builds safely ignore invalid data.
+
+---
+
+# Runtime Validation
+
+The Ability System continuously validates runtime data.
+
+Validation includes:
+
+- Ability Definition
+- Runtime State
+- Cooldown Values
+- Unlock State
+- Effect References
+
+Invalid runtime data is safely rejected.
+
+---
+
+# Data Validation
+
+All Ability Definitions are validated during loading.
+
+Validation includes:
+
+- Ability ID
+- Category
+- Effects
+- Conditions
+- Cooldown
+- Target Rules
+- Projectile Definitions
+
+Invalid definitions are rejected before gameplay begins.
+
+---
+
+# Performance Goals
+
+The Ability System must remain lightweight.
+
+Recommended practices:
+
+- Cached Ability Definitions
+- Fixed Runtime Arrays
+- No Runtime Allocations
+- No Reflection
+- No Dynamic Lookup Chains
+
+Ability execution should require only constant-time operations.
+
+---
+
+# Future Compatibility
+
+The architecture intentionally supports future mechanics.
+
+Examples:
+
+- Cast Times
+- Channeling
+- Charge Abilities
+- Combo Chains
+- Healing Abilities
+- Damage over Time
+- Heal over Time
+- Ultimate Abilities
+- Additional Passive Slots
+- Weapon Skill Trees
+
+These mechanics extend the existing execution pipeline rather than replacing it.
+
+---
+
+# Design Rules
+
+The following rules define the Ability System and must never change without redesigning the project.
+
+Rule 01
+
+The AI System decides which Ability to use.
+
+Rule 02
+
+The Ability System only validates and executes Ability Intents.
+
+Rule 03
+
+Every weapon provides exactly one Basic Attack.
+
+Rule 04
+
+Every weapon may provide up to two Active Abilities.
+
+Rule 05
+
+Every weapon may provide one Passive Ability.
+
+Rule 06
+
+Only Tier 8 weapons provide the complete Ability Set.
+
+Rule 07
+
+All Active Abilities are instant in Version 1.
+
+Rule 08
+
+Version 1 contains no Cast Times.
+
+Rule 09
+
+Version 1 contains no Channeling.
+
+Rule 10
+
+Every Ability follows the same validation pipeline.
+
+Rule 11
+
+Every Ability follows the same execution pipeline.
+
+Rule 12
+
+Abilities are entirely data-driven.
+
+Rule 13
+
+Ability Conditions use standardized reusable definitions.
+
+Rule 14
+
+The Ability System never calculates Damage.
+
+Rule 15
+
+The Ability System never manages Status Effects.
+
+Rule 16
+
+The Ability System never simulates Projectiles.
+
+Rule 17
+
+Cooldowns begin only after successful execution.
+
+Rule 18
+
+Cancelled Abilities never start their Cooldown.
+
+Rule 19
+
+Presentation systems never influence gameplay execution.
+
+Rule 20
+
+The Ability System remains deterministic under identical simulation conditions.
+
+---
+
+# Summary
+
+The Ability System provides a deterministic, data-driven execution framework shared by every combat Ability in the game.
+
+Rather than embedding gameplay logic inside individual skills, each Ability is defined through reusable data describing its validation rules, targets, cooldowns and effects. The AI System determines *which* Ability to use, while the Ability System is solely responsible for validating, executing and delegating gameplay requests to the Damage, Status Effect and Projectile Systems.
+
+This architecture guarantees predictable combat behavior, minimal engine complexity, excellent scalability and seamless integration with every other gameplay system while remaining fully extensible for future mechanics such as Cast Times, Channeling, Combo Abilities and Ultimate Skills.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

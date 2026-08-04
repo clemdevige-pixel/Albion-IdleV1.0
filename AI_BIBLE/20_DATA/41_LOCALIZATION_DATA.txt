@@ -1,0 +1,532 @@
+# 41. LOCALIZATION DATA
+
+---
+
+# Purpose
+
+The Localization Data document defines how every player-visible text is managed throughout the game.
+
+Localization is fully separated from gameplay systems.
+
+No gameplay definition contains display text directly.
+
+Instead, every visible string references a Localization Key.
+
+This architecture supports:
+
+- Multiple Languages
+- Future Language Packs
+- External Translation Tools
+- Community Localization
+- Live Text Updates
+
+Localization is treated as a standalone data system.
+
+---
+
+# Design Philosophy
+
+The Localization system follows seven principles.
+
+---
+
+## Text Separation
+
+Gameplay data never contains display text.
+
+Every visible string references a Localization Key.
+
+---
+
+## Fully Data Driven
+
+All localized text exists outside gameplay definitions.
+
+Changing translations never requires modifying gameplay data.
+
+---
+
+## Language Independent
+
+Every gameplay identifier is language-neutral.
+
+Only Localization Data changes between languages.
+
+---
+
+## Reusable
+
+The same Localization Key may be used by multiple systems.
+
+Example:
+
+- Items
+- Abilities
+- Buildings
+- NPCs
+- UI
+- Notifications
+
+---
+
+## Extensible
+
+Adding a new language never requires modifying existing game data.
+
+---
+
+## Tool Friendly
+
+Localization files are designed for external translation software.
+
+Examples:
+
+- CSV
+- JSON
+- Google Sheets
+- Translation platforms
+
+---
+
+## Immutable
+
+Localization Definitions remain constant while the game is running.
+
+Language changes reload localized resources.
+
+---
+
+# Responsibilities
+
+Localization Data defines:
+
+- Localization Keys
+- Supported Languages
+- Translation Values
+- Fallback Language
+- Formatting Rules
+- Pluralization Support
+- Variable Placeholders
+- Tags
+
+Localization Data does NOT define:
+
+- Gameplay
+- Item Statistics
+- NPC Logic
+- UI Layout
+- Fonts
+
+---
+
+# Localization Definition
+
+Every Localization Entry contains:
+
+```text
+Localization Key
+
+↓
+
+Language
+
+↓
+
+Translated Value
+
+↓
+
+Optional Metadata
+
+↓
+
+Tags
+```
+
+---
+
+# Localization Key
+
+Every visible string owns one globally unique key.
+
+Examples:
+
+```
+item.weapon.broadsword.name
+
+item.weapon.broadsword.description
+
+npc.blacksmith.name
+
+building.forge.name
+
+ui.inventory.title
+
+combat.damage.critical
+```
+
+Keys never change after release.
+
+---
+
+# Supported Languages
+
+Version 1 supports:
+
+- English
+- French
+
+Architecture supports unlimited additional languages.
+
+Examples:
+
+- German
+- Spanish
+- Italian
+- Portuguese
+- Japanese
+- Korean
+- Chinese
+
+---
+
+# Default Language
+
+Version 1 default language:
+
+```
+English
+```
+
+If a translation is missing, the game falls back to English.
+
+---
+
+# Translation Value
+
+Every Localization Key contains one translated value per language.
+
+Example:
+
+English
+
+```
+Broadsword
+```
+
+French
+
+```
+Épée Large
+```
+
+---
+
+# Description Entries
+
+Names and descriptions use separate keys.
+
+Example:
+
+```
+item.weapon.broadsword.name
+
+item.weapon.broadsword.description
+```
+
+This allows independent translation.
+
+---
+
+# Placeholder Variables
+
+Localization supports runtime variables.
+
+Examples:
+
+```
+{value}
+
+{player}
+
+{enemy}
+
+{item}
+
+{count}
+```
+
+Example:
+
+```
+You received {count} Silver.
+```
+
+Runtime systems replace variables.
+
+---
+
+# Pluralization
+
+Pluralization is supported through dedicated entries.
+
+Example:
+
+```
+item.apple.one
+
+↓
+
+Apple
+
+item.apple.many
+
+↓
+
+Apples
+```
+
+Version 1 avoids complex grammar rules.
+
+---
+
+# Rich Text
+
+Localization supports lightweight formatting.
+
+Examples:
+
+```
+<color>
+
+<b>
+
+<i>
+
+<br>
+```
+
+Rendering systems interpret formatting.
+
+---
+
+# Line Breaks
+
+Explicit line breaks are supported.
+
+Example:
+
+```
+Welcome!
+
+Prepare for battle.
+```
+
+---
+
+# Special Characters
+
+Localization files use UTF-8 encoding.
+
+Supported:
+
+- Accented characters
+- Unicode symbols
+- Non-Latin alphabets
+
+---
+
+# Runtime Representation
+
+```
+Localization File
+
+↓
+
+Language Loaded
+
+↓
+
+Lookup Key
+
+↓
+
+Replace Variables
+
+↓
+
+Display Text
+```
+
+Definitions remain immutable.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique Localization Keys
+- Existing Languages
+- Duplicate Entries
+- Missing Default Language
+- Invalid Placeholder Names
+- Invalid UTF-8 Encoding
+
+Invalid entries never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Runtime Machine Translation
+- Voice Localization
+- Grammar Rules
+- Gender Rules
+- Locale-specific Assets
+- Procedural Localization
+
+---
+
+# Example Definition
+
+```json
+{
+    "key": "building.forge.name",
+    "translations": {
+        "en": "Forge",
+        "fr": "Forge"
+    },
+    "tags": [
+        "building",
+        "crafting"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Localization Files
+
+↓
+
+Validate
+
+↓
+
+Select Language
+
+↓
+
+Load Dictionary
+
+↓
+
+Gameplay Requests Text
+
+↓
+
+Lookup Key
+
+↓
+
+Display Translation
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Localization Data document is complete when:
+
+- Every visible text uses a Localization Key.
+- Gameplay data contains no display text.
+- Multiple languages are supported.
+- English acts as the fallback language.
+- Placeholder variables are supported.
+- UTF-8 encoding is required.
+- Validation detects duplicate or invalid keys.
+- Runtime language loading remains independent.
+- Definitions remain immutable.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every visible string uses a Localization Key.
+
+Rule 02
+
+Gameplay Definitions never contain display text.
+
+Rule 03
+
+English is the default fallback language.
+
+Rule 04
+
+Localization Keys never change after release.
+
+Rule 05
+
+Translation values are language-specific only.
+
+Rule 06
+
+Runtime variables use placeholder syntax.
+
+Rule 07
+
+Pluralization uses dedicated Localization Keys.
+
+Rule 08
+
+UTF-8 encoding is mandatory.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Localization remains independent from gameplay systems.
+
+Rule 11
+
+Validation prevents invalid Localization entries.
+
+Rule 12
+
+Localization Definitions remain immutable.
+
+Rule 13
+
+Every Localization file may declare its content source.
+
+Rule 14
+
+Future languages must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Localization exclusively through Localization Keys.
+
+---
+
+# Summary
+
+The Localization Data document defines the complete text architecture of the game through a modular, language-independent and fully data-driven system. By separating every player-visible string from gameplay definitions, it enables scalable multilingual support, simplified translation workflows and future language expansion while maintaining deterministic behavior, clean data structures and long-term maintainability.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

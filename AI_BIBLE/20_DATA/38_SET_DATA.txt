@@ -1,0 +1,581 @@
+# 38. SET DATA
+
+---
+
+# Purpose
+
+The Set Data document defines every Equipment Set available in the game.
+
+An Equipment Set is a collection of equipment pieces that grants passive bonuses when multiple pieces are equipped simultaneously.
+
+Version 1 supports:
+
+- 2-piece bonuses
+- 3-piece bonuses
+
+Equipment Sets encourage build diversity without forcing players into complete armor sets.
+
+---
+
+# Design Philosophy
+
+The Set system follows seven principles.
+
+---
+
+## Bonus Based
+
+Equipment Sets never modify item statistics directly.
+
+Instead, they grant passive bonuses when activation requirements are met.
+
+---
+
+## Data Driven
+
+Every Equipment Set is defined entirely through data.
+
+Adding a new Set never requires gameplay code.
+
+---
+
+## Modular
+
+Equipment Sets reference existing systems.
+
+Examples:
+
+- Items
+- Effects
+- Status Effects
+- Passive Abilities
+
+No gameplay logic is duplicated.
+
+---
+
+## Flexible
+
+A Set may contain any combination of equipment.
+
+Examples:
+
+- Plate + Leather
+- Cloth + Plate
+- Weapon + Cape
+- Helmet + Boots
+
+Sets are not restricted by armor type.
+
+---
+
+## Deterministic
+
+Set activation is deterministic.
+
+If activation conditions are satisfied, bonuses are always granted.
+
+---
+
+## Independent
+
+Equipment pieces remain fully functional outside of their Set.
+
+A Set never owns an Item.
+
+---
+
+## Extensible
+
+Future versions may introduce additional activation thresholds.
+
+---
+
+# Responsibilities
+
+Set Data defines:
+
+- Identity
+- Set Name
+- Set Members
+- Activation Requirements
+- Granted Effects
+- Visual Theme
+- Tags
+
+Set Data does NOT define:
+
+- Equipment Statistics
+- Passive Effect Logic
+- Runtime Equipment
+- Inventory
+- Character Progression
+
+---
+
+# Set Definition
+
+Every Set contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Set Members
+
+↓
+
+Activation Bonuses
+
+↓
+
+Visual Theme
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Set owns one globally unique identifier.
+
+Examples:
+
+```
+set_guardian
+
+set_assassin
+
+set_scholar
+
+set_mercenary
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Guardian
+
+Scholar
+
+Mercenary
+
+Assassin
+```
+
+---
+
+# Set Members
+
+Each Set references Equipment Definitions.
+
+Example:
+
+```
+Helmet
+
+↓
+
+Chest
+
+↓
+
+Boots
+```
+
+Equipment is referenced by Item IDs.
+
+Example:
+
+```
+item_head_guardian_t5
+
+item_chest_guardian_t5
+
+item_boots_guardian_t5
+```
+
+---
+
+# Activation Requirements
+
+Version 1 supports:
+
+```
+2 Pieces
+
+↓
+
+3 Pieces
+```
+
+Future versions may support:
+
+- 4 Pieces
+- 5 Pieces
+- Full Equipment
+
+---
+
+# Activation Bonus
+
+Each threshold references one or more Effect Definitions.
+
+Example:
+
+```
+2 Pieces
+
+↓
+
+effect_bonus_health
+
+3 Pieces
+
+↓
+
+effect_bonus_defense
+```
+
+The Effect System handles execution.
+
+---
+
+# Multiple Bonuses
+
+Each activation threshold may contain multiple Effects.
+
+Example:
+
+```
+3 Pieces
+
+↓
+
++ Health
+
++ Armor
+
++ Crowd Control Resistance
+```
+
+All referenced Effects become active simultaneously.
+
+---
+
+# Passive Only
+
+Version 1 Equipment Sets grant passive bonuses only.
+
+Active abilities are not supported.
+
+---
+
+# Stack Rules
+
+A Set cannot activate the same threshold multiple times.
+
+Example:
+
+```
+4 Guardian Pieces
+
+↓
+
+3-piece bonus
+
+NOT
+
+3-piece bonus ×2
+```
+
+Bonuses are applied once.
+
+---
+
+# Cross Set Equipment
+
+Players may combine equipment from different Sets.
+
+Example:
+
+```
+2 Guardian
+
++
+
+2 Scholar
+```
+
+Each Set activates independently.
+
+---
+
+# Visual Theme
+
+Optional reference for UI.
+
+Example:
+
+```
+theme_guardian
+
+theme_assassin
+```
+
+Used for:
+
+- Icons
+- Backgrounds
+- Tooltips
+
+---
+
+# Tags
+
+Examples:
+
+```
+tank
+
+magic
+
+support
+
+melee
+
+guardian
+```
+
+Tags simplify balancing.
+
+---
+
+# Runtime Representation
+
+```
+Set Definition
+
+↓
+
+Equipment Check
+
+↓
+
+Activation Threshold
+
+↓
+
+Grant Effects
+
+↓
+
+Remove Effects
+```
+
+Definitions never contain runtime state.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Equipment Items
+- Existing Effect Definitions
+- Valid Activation Thresholds
+- No Duplicate Members
+- Existing Theme Reference
+
+Invalid Sets never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Dynamic Set Bonuses
+- Random Set Effects
+- Scaling Thresholds
+- Conditional Activations
+- Runtime-generated Sets
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "set_guardian",
+    "name": "Guardian",
+    "members": [
+        "item_head_guardian_t5",
+        "item_chest_guardian_t5",
+        "item_boots_guardian_t5"
+    ],
+    "bonuses": [
+        {
+            "requiredPieces": 2,
+            "effects": [
+                "effect_bonus_max_health"
+            ]
+        },
+        {
+            "requiredPieces": 3,
+            "effects": [
+                "effect_bonus_armor",
+                "effect_bonus_cc_resistance"
+            ]
+        }
+    ],
+    "visualTheme": "theme_guardian",
+    "tags": [
+        "tank",
+        "guardian"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Set
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Equipment Changes
+
+↓
+
+Evaluate Thresholds
+
+↓
+
+Grant Effects
+
+↓
+
+Remove Effects
+
+↓
+
+Continue Gameplay
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Set Data document is complete when:
+
+- Every Set has a unique identifier.
+- Set Members reference Equipment Items.
+- Activation thresholds are configurable.
+- Multiple bonuses are supported.
+- Effect Definitions are referenced.
+- Cross Set activation is supported.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Equipment Set is completely data-driven.
+
+Rule 02
+
+Equipment Sets reference Equipment Items only.
+
+Rule 03
+
+Bonuses are granted through Effect Definitions.
+
+Rule 04
+
+Version 1 supports 2-piece and 3-piece bonuses.
+
+Rule 05
+
+Each activation threshold activates only once.
+
+Rule 06
+
+Different Sets activate independently.
+
+Rule 07
+
+Equipment remains functional outside its Set.
+
+Rule 08
+
+Visual Themes are optional.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Validation prevents invalid Set definitions.
+
+Rule 11
+
+Equipment Sets remain immutable.
+
+Rule 12
+
+Localization is handled externally.
+
+Rule 13
+
+Every Set may declare its content source.
+
+Rule 14
+
+Future activation thresholds must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Equipment Sets exclusively through identifiers.
+
+---
+
+# Summary
+
+The Set Data document defines every Equipment Set through a deterministic, modular and fully data-driven architecture. By separating set membership, activation thresholds and passive bonuses from equipment definitions, the system encourages build diversity while remaining scalable, reusable and compatible with future gameplay extensions. Equipment Sets become lightweight composition layers that enhance character customization without increasing system complexity.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

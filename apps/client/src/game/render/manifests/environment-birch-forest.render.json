@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "birch_forest",
+  "kind": "environment",
+  "textureKey": "birch-forest-background",
+  "assetPath": "/assets/birch-forest-combat-background-pixel-v1.png",
+  "pixelArt": true,
+  "defaultPalette": {
+    "sky": "#0a0e16",
+    "ground": "#12161f",
+    "groundLine": "#2a3040"
+  },
+  "biomePalettes": {
+    "Nature": {
+      "sky": "#1a2a1a",
+      "ground": "#0f1f0f",
+      "groundLine": "#2a4a2a"
+    },
+    "Undead": {
+      "sky": "#1a0e1a",
+      "ground": "#120a16",
+      "groundLine": "#3a2a40"
+    },
+    "Demonic": {
+      "sky": "#1a0a0a",
+      "ground": "#160a0a",
+      "groundLine": "#402a2a"
+    },
+    "Frozen": {
+      "sky": "#0a1a2a",
+      "ground": "#0a1620",
+      "groundLine": "#2a3a50"
+    },
+    "Royal": {
+      "sky": "#1a1a0a",
+      "ground": "#16160a",
+      "groundLine": "#40402a"
+    }
+  },
+  "layout": {
+    "skyHeightRatio": 0.6,
+    "skyYRatio": 0.3,
+    "groundHeightRatio": 0.52,
+    "groundYRatio": 0.76,
+    "groundLineYRatio": 0.72,
+    "actorShadowWidth": 190,
+    "actorShadowHeight": 30,
+    "actorShadowYRatio": 0.7
+  }
+}

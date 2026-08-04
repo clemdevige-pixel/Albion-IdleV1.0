@@ -1,0 +1,524 @@
+# 32. ITEM QUALITY SYSTEM
+
+## Purpose
+
+The Item Quality System defines the manufacturing and finishing quality of every equipment item in the game.
+
+Quality is completely independent from:
+
+- Tier
+- Enchantments
+- Weapon Mastery
+- Future Affixes
+
+It represents how well an item was crafted or generated.
+
+---
+
+# Design Goals
+
+The system must:
+
+- Increase long-term item value.
+- Reward excellent crafting.
+- Support a player-driven economy.
+- Keep high-quality items rare.
+- Remain completely data-driven.
+- Never replace Tier progression.
+
+---
+
+# Core Philosophy
+
+Quality is a permanent property of an item.
+
+It represents craftsmanship rather than progression.
+
+A higher-quality item is a better version of the same item, not a different item.
+
+Example:
+
+T8 Sword
+
+↓
+
+Normal
+
+Good
+
+Outstanding
+
+Excellent
+
+Masterpiece
+
+All five are still the same Tier 8 Sword.
+
+---
+
+# Quality Levels
+
+The game contains five quality levels.
+
+| Quality | Order |
+|----------|------:|
+| Normal | 1 |
+| Good | 2 |
+| Outstanding | 3 |
+| Excellent | 4 |
+| Masterpiece | 5 |
+
+Additional quality levels are not planned.
+
+---
+
+# Independence
+
+Quality is calculated independently from every other progression system.
+
+Final Item Power is composed of multiple independent layers.
+
+Example:
+
+Base Tier
+
++
+
+Quality Modifier
+
++
+
+Enchantment Modifier
+
++
+
+Future Modifiers
+
+Each layer is calculated separately.
+
+---
+
+# Permanent Property
+
+Quality is immutable.
+
+Once an item has been generated, its quality never changes.
+
+Quality cannot be:
+
+- Upgraded
+- Downgraded
+- Re-rolled
+- Transferred
+- Recrafted onto an existing item
+
+Example:
+
+T8.4 Good
+
+will always remain
+
+T8.4 Good.
+
+---
+
+# Item Identity
+
+The complete identity of an equipment item is determined by:
+
+- Item Type
+- Tier
+- Quality
+- Enchantment
+
+Example:
+
+T8.4 Masterpiece Sword
+
+is a completely different market item than
+
+T8.4 Good Sword.
+
+---
+
+# What Quality Affects
+
+Quality influences the entire lifecycle of an item.
+
+---
+
+## Combat
+
+Quality increases combat effectiveness.
+
+Possible examples:
+
+- Item Power
+- Base Statistics
+- Offensive Stats
+- Defensive Stats
+
+The exact formulas are defined elsewhere.
+
+---
+
+## Economy
+
+Quality also affects economic value.
+
+Examples include:
+
+- Craft Value
+- Market Value
+- Vendor Value
+- Repair Cost
+- Future Recycling Value
+
+Higher quality naturally becomes more valuable.
+
+---
+
+## Progression
+
+Future systems may reference quality.
+
+Examples:
+
+- Advanced Crafting
+- Legendary Recipes
+- Special Quests
+- Future Upgrade Systems
+
+The architecture already supports this.
+
+---
+
+# Quality Generation
+
+Every generated equipment item receives exactly one quality.
+
+Generation occurs only once.
+
+Possible generation sources include:
+
+- Loot
+- Crafting
+- Event Rewards
+- Future Systems
+
+After generation, quality becomes permanent.
+
+---
+
+# Separate Generation Tables
+
+Loot and Crafting do not use identical probability tables.
+
+Each system owns its own balancing.
+
+---
+
+# Loot Quality Philosophy
+
+Loot prioritizes accessibility.
+
+Players frequently obtain usable equipment.
+
+Very high qualities remain rare.
+
+The purpose of loot is to:
+
+- Reward combat
+- Create excitement
+- Feed the economy
+
+---
+
+# Craft Quality Philosophy
+
+Crafting prioritizes excellence.
+
+Specialized crafters naturally produce higher-quality equipment more consistently.
+
+Crafting is intended to become the primary source of:
+
+- Excellent equipment
+- Masterpiece equipment
+
+This gives crafting a unique identity within the economy.
+
+---
+
+# Base Quality Chances
+
+Every generation starts from a base probability table.
+
+Example:
+
+Normal
+
+↓
+
+Good
+
+↓
+
+Outstanding
+
+↓
+
+Excellent
+
+↓
+
+Masterpiece
+
+Actual percentages are defined entirely inside Data Tables.
+
+---
+
+# Quality Modifiers
+
+Base probabilities may be modified before the final quality roll.
+
+The system supports multiple independent modifier layers.
+
+---
+
+## Loot Modifiers
+
+Examples include:
+
+- Enemy Category
+- Enemy Family
+- Biome
+- Cycle
+- Difficulty
+- Special Events
+
+---
+
+## Craft Modifiers
+
+Examples include:
+
+- Craft Mastery
+- Material Quality
+- Crafting Station Tier
+- Temporary Buffs
+- Future Consumables
+
+---
+
+## Player Modifiers
+
+Examples include:
+
+- Passive Skills
+- Cape Effects
+- Equipment Bonuses
+- Future Talents
+
+---
+
+## World Modifiers
+
+Examples include:
+
+- Seasonal Events
+- Server Bonuses
+- Weekend Bonuses
+- Future League Modifiers
+
+---
+
+# Quality Calculation
+
+The quality calculation follows independent layers.
+
+Base Quality Chances
+
+↓
+
+Loot or Craft Table
+
+↓
+
+Generation Modifiers
+
+↓
+
+Final Quality Roll
+
+The final roll produces exactly one quality level.
+
+---
+
+# Market Value
+
+Higher-quality items naturally become more valuable.
+
+Example:
+
+Normal
+
+↓
+
+Lower Price
+
+Good
+
+↓
+
+Higher Price
+
+Outstanding
+
+↓
+
+Higher Price
+
+Excellent
+
+↓
+
+Premium Price
+
+Masterpiece
+
+↓
+
+Luxury Market
+
+The economy determines final prices.
+
+The game does not enforce fixed market values.
+
+---
+
+# Repair Costs
+
+Repair costs scale with quality.
+
+Higher-quality equipment requires greater investment to maintain.
+
+Actual scaling values are defined in Data Tables.
+
+---
+
+# Relationship with Enchantments
+
+Quality and Enchantments are completely independent.
+
+Example:
+
+T8 Normal
+
+T8 Masterpiece
+
+T8.4 Good
+
+T8.4 Masterpiece
+
+All combinations are valid.
+
+---
+
+# Relationship with Tier
+
+Quality never changes an item's Tier.
+
+Examples:
+
+T5 Masterpiece
+
+is still
+
+Tier 5.
+
+T8 Normal
+
+is still
+
+Tier 8.
+
+Tier progression and Quality progression remain independent.
+
+---
+
+# Relationship with Mastery
+
+Weapon Mastery does not influence an item's existing quality.
+
+However, Craft Mastery may improve the probability of creating higher-quality equipment.
+
+---
+
+# Data Tables
+
+Minimum required tables include:
+
+QualityTable
+
+- QualityID
+- DisplayName
+- DisplayOrder
+
+QualityStatModifierTable
+
+- Quality
+- StatMultiplier
+
+QualityEconomyModifierTable
+
+- Quality
+- VendorValueMultiplier
+- RepairCostMultiplier
+- MarketValueModifier
+
+LootQualityChanceTable
+
+- Quality
+- BaseChance
+
+CraftQualityChanceTable
+
+- Quality
+- BaseChance
+
+QualityModifierTable
+
+- ModifierID
+- ModifierType
+- ModifierValue
+
+---
+
+# Future Extensions
+
+The architecture supports:
+
+- New crafting bonuses
+- Seasonal quality bonuses
+- Special crafting stations
+- World modifiers
+- Event modifiers
+- Future professions
+- Guild crafting bonuses
+- Prestige crafting systems
+
+No redesign is required.
+
+---
+
+# Summary
+
+The Item Quality System represents craftsmanship rather than progression.
+
+Quality is permanent, immutable, and completely independent from Tier and Enchantments.
+
+Loot and Crafting use separate quality generation tables, allowing crafting to become the primary source of exceptional equipment.
+
+Quality influences combat performance, economic value, repair costs, and future gameplay systems while remaining entirely data-driven and fully extensible.
+
+DOCUMENT TERMINÉ

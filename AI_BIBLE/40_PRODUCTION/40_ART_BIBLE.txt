@@ -1,0 +1,454 @@
+# 40_ART_BIBLE
+
+# Version
+1.0
+
+# Status
+APPROVED
+
+# Purpose
+
+This document defines the complete artistic direction of the project.
+
+Its purpose is to ensure visual consistency throughout production and serve as the single source of truth for artists, animators, developers, and future AI models generating game assets.
+
+This document does **not** define gameplay systems or mechanics. It only establishes the artistic rules that must be respected.
+
+---
+
+# 1. Artistic Philosophy
+
+The project is an **Idle RPG** heavily inspired by the visual identity of Albion Online while building its own original universe.
+
+Players should instantly recognize the visual strengths that made Albion successful:
+
+- Exceptional readability
+- Strong silhouettes
+- Clear visual progression
+- Instantly recognizable equipment
+
+However, **no asset should ever be copied**.
+
+The goal is to create a modern evolution of this artistic direction.
+
+The entire philosophy can be summarized in one principle:
+
+> **Gameplay First, Spectacle Second.**
+
+Every visual element must improve gameplay readability.
+
+The environment should never overshadow the action.
+
+---
+
+# 2. Inspiration Level
+
+The project follows approximately:
+
+**80% Albion-inspired**
+**20% Original Identity**
+
+This ratio only applies to the artistic philosophy.
+
+All sprites, textures, animations, and illustrations are entirely original creations.
+
+---
+
+# 3. Art Style
+
+The game uses HD Pixel Art.
+
+Primary objectives:
+
+- Immediate readability
+- Strong silhouettes
+- Fluid animations
+- Production compatible with AI-assisted asset generation
+
+The visual detail level is intentionally higher than Albion.
+
+Approximately:
+
+**20–30% more detail**
+
+while preserving excellent readability.
+
+---
+
+# 4. Visual Gameplay Philosophy
+
+Every visible element must serve a purpose.
+
+Avoid:
+
+- Visual clutter
+- Unnecessary effects
+- Screen noise
+
+Prioritize:
+
+- Fast readability
+- Instant understanding
+- Consistency
+
+---
+
+# 5. Characters
+
+Character proportions remain very close to Albion.
+
+Characteristics:
+
+- Small head
+- Stocky body
+- Broad shoulders
+- Equipment defines the silhouette
+
+Players should instantly recognize a character's build and specialization without zooming in.
+
+---
+
+# 6. Equipment
+
+Equipment is the player's primary visual identity.
+
+Every equipment upgrade must be immediately noticeable.
+
+All iconic Albion-inspired weapon families remain:
+
+- Swords
+- Daggers
+- Axes
+- Hammers
+- Spears
+- Bows
+- Staves
+- etc.
+
+However:
+
+Every asset is completely redesigned.
+
+No equipment should ever be reproduced.
+
+---
+
+# 7. Weapon Philosophy
+
+Every weapon has:
+
+- A unique silhouette
+- Unique animations
+- An instantly recognizable identity
+
+Iconic weapon archetypes remain familiar while being entirely original.
+
+---
+
+# 8. Armor
+
+Armor follows the same philosophy.
+
+Players should instantly recognize:
+
+- Progression level
+- Armor type
+- Specialization
+
+using only the sprite.
+
+---
+
+# 9. Animation
+
+Animations are a major improvement over Albion.
+
+Goals:
+
+- 30–50% smoother animations
+- More natural transitions
+- More satisfying impacts
+- Better sense of weight
+
+---
+
+# 10. Visual Effects (VFX)
+
+Visual effects should reinforce gameplay.
+
+Never obscure it.
+
+Four visual intensity levels are defined.
+
+## Level 1
+
+Basic attacks.
+
+Very subtle.
+
+## Level 2
+
+Abilities.
+
+Clearly visible effects.
+
+## Level 3
+
+Elite enemies and critical hits.
+
+More impactful effects.
+
+## Level 4
+
+Boss abilities and major skills.
+
+Spectacular while remaining fully readable.
+
+---
+
+# 11. Colors
+
+The color palette preserves Albion's visual identity.
+
+It is modernized through:
+
+- Higher saturation
+- Stronger contrast
+- Better biome differentiation
+
+---
+
+# 12. Biomes
+
+The major biome archetypes remain familiar:
+
+- Forest
+- Desert
+- Swamp
+- Mountains
+- Snow
+- etc.
+
+However,
+
+Every biome is completely reinterpreted.
+
+The project develops its own visual identity.
+
+---
+
+# 13. Monsters
+
+Three categories exist.
+
+## Albion-Inspired Monsters
+
+Approximately 60%.
+
+They preserve their visual DNA while being fully redesigned.
+
+---
+
+## New Monsters Within Existing Factions
+
+Approximately 25%.
+
+These creatures expand familiar factions.
+
+---
+
+## Completely Original Creatures
+
+Approximately 15%.
+
+Designed to establish the project's own identity.
+
+---
+
+# 14. Bosses
+
+Bosses follow the same philosophy.
+
+Approximate distribution:
+
+- 50% Inspired
+- 30% New bosses within existing factions
+- 20% Completely original bosses
+
+Every boss must be recognizable by silhouette alone.
+
+---
+
+# 15. Boss Scale
+
+Bosses are intentionally larger than those in Albion.
+
+Target size:
+
+Approximately **2 to 3 times** the player's height.
+
+They should feel imposing without reducing combat readability.
+
+---
+
+# 16. NPC Philosophy
+
+NPC roles remain familiar:
+
+- Blacksmith
+- Merchant
+- Banker
+- Enchanter
+- etc.
+
+However,
+
+Every NPC is original.
+
+Each one has:
+
+- A unique name
+- A unique design
+- A unique personality
+- A unique backstory
+
+---
+
+# 17. Mounts
+
+Mounts follow Albion's philosophy.
+
+They are entirely redesigned.
+
+Mounts are only visible during exploration.
+
+They automatically disappear during combat to maximize battlefield readability.
+
+---
+
+# 18. Pets
+
+No pet system.
+
+No combat companions.
+
+No cosmetic pets.
+
+The player character always remains the primary focus of the screen.
+
+---
+
+# 19. Weather
+
+No weather system.
+
+Art production resources are focused on:
+
+- Monsters
+- Bosses
+- Equipment
+- Animations
+- Visual effects
+
+---
+
+# 20. Character Portraits
+
+No character portraits.
+
+The player's identity is represented exclusively through:
+
+- Equipment
+- Animation
+- Visual effects
+
+---
+
+# 21. Cosmetics
+
+No cosmetic system in Version 1.
+
+No:
+
+- Skins
+- Costumes
+- Transmogrification
+
+Cosmetics may be introduced in future expansions once the game's core content is complete.
+
+---
+
+# 22. Rarity Effects
+
+High-rarity equipment features subtle visual enhancements.
+
+Examples:
+
+- Soft glow
+- Small particles
+- Faint runes
+- Light aura
+
+The equipment's design always takes priority over visual effects.
+
+---
+
+# 23. Environment Design
+
+Environments follow a minimalist philosophy.
+
+The scenery exists to support gameplay.
+
+It should never distract players from combat.
+
+Decorative elements remain intentionally restrained.
+
+---
+
+# 24. Readability
+
+Readability is the project's highest artistic priority.
+
+At every moment, players must immediately identify:
+
+- Their character
+- Enemies
+- Bosses
+- Attacks
+- Abilities
+- Rewards
+
+without effort.
+
+---
+
+# 25. Core Rule
+
+Before creating any new asset, one question must always be asked:
+
+> Does this asset genuinely improve the player experience?
+
+If the answer is no,
+
+the asset should be simplified or removed.
+
+---
+
+# 26. Artistic Vision
+
+The project does not aim to impress through excessive visual effects.
+
+Instead, it seeks excellence through:
+
+- Consistency
+- Readability
+- High-quality animations
+- Rich equipment progression
+- Memorable monsters
+- Clear gameplay presentation
+
+Every artistic decision must respect this philosophy.
+
+---
+
+DOCUMENT COMPLETED

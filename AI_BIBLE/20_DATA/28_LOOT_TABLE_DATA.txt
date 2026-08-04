@@ -1,0 +1,708 @@
+# 28. LOOT TABLE DATA
+
+---
+
+# Purpose
+
+The Loot Table Data document defines how rewards are generated when an entity, encounter or activity is completed.
+
+Loot Tables do **not** contain the items themselves.
+
+Instead, they define the rules that determine:
+
+- What can drop
+- When it can drop
+- How much can drop
+- Drop probability
+- Quantity ranges
+- Conditional rewards
+- Guaranteed rewards
+
+Loot Tables are reusable and may be referenced by multiple gameplay systems.
+
+---
+
+# Design Philosophy
+
+The Loot Table system follows seven principles.
+
+---
+
+## Fully Data Driven
+
+Loot generation is entirely defined by data.
+
+Adding or modifying loot should never require gameplay code changes.
+
+---
+
+## Reusable
+
+A single Loot Table may be referenced by:
+
+- Enemies
+- Bosses
+- Resource Enemies
+- Chests
+- Events
+- Vendors
+- Future Systems
+
+---
+
+## Layered
+
+Loot generation is performed in multiple independent stages.
+
+Example:
+
+```
+Loot Table
+
+↓
+
+Entries
+
+↓
+
+Rolls
+
+↓
+
+Conditions
+
+↓
+
+Rewards
+```
+
+---
+
+## Deterministic Rules
+
+The rules themselves are deterministic.
+
+Only the random rolls introduce variation.
+
+Given the same random seed, the same Loot Table always produces identical results.
+
+---
+
+## Independent
+
+Loot Tables never contain combat information.
+
+They only describe rewards.
+
+---
+
+## Modular
+
+Each Loot Entry is independent.
+
+Adding a new entry never changes existing entries.
+
+---
+
+## Extensible
+
+Future reward types can be introduced without redesigning the architecture.
+
+---
+
+# Responsibilities
+
+Loot Table Data defines:
+
+- Loot Table identity
+- Loot Entries
+- Drop Chances
+- Quantity
+- Guaranteed Rewards
+- Roll Count
+- Conditions
+- Weighting
+- References
+
+Loot Table Data does NOT define:
+
+- Inventory
+- Item Definitions
+- Economy
+- Crafting
+- Equipment
+
+---
+
+# Loot Table Definition
+
+Every Loot Table contains:
+
+```text
+ID
+
+↓
+
+Category
+
+↓
+
+Roll Count
+
+↓
+
+Loot Entries
+
+↓
+
+Conditions
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Loot Table owns one globally unique identifier.
+
+Examples:
+
+```
+loot_table_undead_t4
+
+loot_table_morgana_t6
+
+loot_table_resource_ore_t5
+
+loot_table_boss_keeper_t8
+```
+
+---
+
+# Categories
+
+Version 1 supports:
+
+- Enemy
+- Boss
+- Resource
+- Chest
+- Event
+
+Categories exist only for organization.
+
+Gameplay behavior is identical.
+
+---
+
+# Roll Count
+
+Defines how many independent loot rolls are executed.
+
+Examples:
+
+```
+1
+
+2
+
+3
+
+5
+```
+
+Each roll evaluates every eligible Loot Entry independently unless configured otherwise.
+
+---
+
+# Loot Entry
+
+Each Loot Table contains one or more Loot Entries.
+
+Every Loot Entry defines:
+
+```text
+Reward
+
+↓
+
+Drop Chance
+
+↓
+
+Minimum Quantity
+
+↓
+
+Maximum Quantity
+
+↓
+
+Weight
+
+↓
+
+Conditions
+```
+
+---
+
+# Reward Types
+
+Version 1 supports:
+
+---
+
+## Item
+
+References an Item Definition.
+
+Example:
+
+```
+item_resource_ore_t4
+```
+
+---
+
+## Currency
+
+References a Currency Definition.
+
+Example:
+
+```
+currency_silver
+```
+
+---
+
+## Experience
+
+References a progression reward.
+
+Example:
+
+```
+weapon_mastery_xp
+```
+
+---
+
+Future versions may introduce:
+
+- Cosmetics
+- Titles
+- Achievements
+
+---
+
+# Drop Chance
+
+Probability that a Loot Entry succeeds.
+
+Stored internally as decimal values.
+
+Example:
+
+```
+1.00
+
+100%
+
+0.50
+
+50%
+
+0.02
+
+2%
+```
+
+Values must remain between:
+
+```
+0
+
+↓
+
+1
+```
+
+---
+
+# Guaranteed Rewards
+
+Guaranteed rewards simply use:
+
+```
+Drop Chance = 1.00
+```
+
+No special system exists for guaranteed drops.
+
+---
+
+# Quantity
+
+Every Loot Entry defines:
+
+Minimum Quantity
+
+Maximum Quantity
+
+Example:
+
+```
+Minimum
+
+2
+
+Maximum
+
+5
+```
+
+Generated quantities are uniformly distributed.
+
+---
+
+# Weight
+
+Weight is only used inside weighted groups.
+
+Example:
+
+```
+Sword
+
+50
+
+Axe
+
+30
+
+Bow
+
+20
+```
+
+Total:
+
+100
+
+Probability:
+
+- Sword = 50%
+- Axe = 30%
+- Bow = 20%
+
+---
+
+# Weighted Groups
+
+Loot Entries may belong to the same weighted group.
+
+Example:
+
+```
+Weapon Group
+
+↓
+
+Sword
+
+↓
+
+Axe
+
+↓
+
+Bow
+```
+
+Only one reward from the group is selected.
+
+Entries outside the group remain independent.
+
+---
+
+# Conditions
+
+Loot Entries may define optional conditions.
+
+Examples:
+
+- Minimum Cycle
+- Maximum Cycle
+- Enemy Tier
+- Encounter Type
+- Biome
+- Difficulty
+
+Conditions are evaluated before rolling.
+
+---
+
+# Duplicate Rewards
+
+If multiple entries generate the same Item:
+
+Stackable Items
+
+↓
+
+Merged
+
+Non-stackable Items
+
+↓
+
+Separate Instances
+
+---
+
+# Empty Tables
+
+Loot Tables may legally produce no rewards.
+
+Example:
+
+```
+Roll
+
+↓
+
+No Successful Entry
+
+↓
+
+Empty Loot
+```
+
+---
+
+# Runtime Generation
+
+```
+Loot Table
+
+↓
+
+Evaluate Conditions
+
+↓
+
+Execute Rolls
+
+↓
+
+Resolve Weighted Groups
+
+↓
+
+Generate Rewards
+
+↓
+
+Merge Stacks
+
+↓
+
+Inventory Rewards
+```
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Reward References
+- Valid Drop Chances
+- Valid Quantity Ranges
+- Valid Roll Count
+- Valid Weight Values
+- Valid Conditions
+- Existing Categories
+
+Invalid Loot Tables never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Nested Loot Tables
+- Recursive Loot Tables
+- Formula-based Chances
+- Scripted Conditions
+- Dynamic Weights
+- Player-specific Loot Rules
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "loot_table_undead_t4",
+    "category": "Enemy",
+    "rollCount": 1,
+    "entries": [
+        {
+            "rewardType": "Item",
+            "rewardId": "item_resource_silver_bag_small",
+            "dropChance": 0.85,
+            "minQuantity": 1,
+            "maxQuantity": 2,
+            "weight": null,
+            "group": null
+        },
+        {
+            "rewardType": "Item",
+            "rewardId": "item_resource_ore_t4",
+            "dropChance": 0.15,
+            "minQuantity": 1,
+            "maxQuantity": 3,
+            "weight": null,
+            "group": null
+        }
+    ],
+    "tags": [
+        "undead",
+        "tier4"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Loot Table
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Enemy Dies
+
+↓
+
+Execute Loot Generation
+
+↓
+
+Produce Rewards
+
+↓
+
+Destroy Runtime Context
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Loot Table Data document is complete when:
+
+- Every Loot Table has a unique identifier.
+- Loot Entries are independent.
+- Reward references are validated.
+- Drop chances are configurable.
+- Quantity ranges are configurable.
+- Weighted groups are supported.
+- Conditions are supported.
+- Runtime generation remains deterministic.
+- Definitions remain immutable.
+- Validation guarantees data integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Loot Table is completely data-driven.
+
+Rule 02
+
+Loot Tables contain Loot Entries only.
+
+Rule 03
+
+Rewards are referenced by identifier.
+
+Rule 04
+
+Drop chances use decimal values.
+
+Rule 05
+
+Guaranteed rewards use a drop chance of 1.00.
+
+Rule 06
+
+Quantity ranges are explicit.
+
+Rule 07
+
+Weighted groups are optional.
+
+Rule 08
+
+Conditions are evaluated before rolling.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Validation prevents invalid Loot Tables.
+
+Rule 11
+
+Loot generation is deterministic for a given random seed.
+
+Rule 12
+
+Duplicate stackable rewards are merged.
+
+Rule 13
+
+Non-stackable rewards remain separate instances.
+
+Rule 14
+
+Every Loot Table may declare its content source.
+
+Rule 15
+
+Future reward types must remain compatible with the shared data architecture.
+
+---
+
+# Summary
+
+The Loot Table Data document defines the complete reward generation architecture for the game through a modular, reusable and deterministic system. By separating reward generation from enemies, encounters and gameplay logic, it enables scalable balancing, simplified content creation and consistent loot behavior across every source of rewards. Its layered structure supports future expansion while remaining fully compatible with the project's data-driven architecture.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

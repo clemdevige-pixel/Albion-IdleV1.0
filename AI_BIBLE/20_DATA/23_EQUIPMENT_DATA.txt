@@ -1,0 +1,634 @@
+# 23. EQUIPMENT DATA
+
+---
+
+# Purpose
+
+The Equipment Data document defines every equippable item available in the game.
+
+While every piece of equipment is an Item, not every Item is Equipment.
+
+Equipment definitions describe gameplay properties that only apply when an item is equipped.
+
+This includes:
+
+- Equipment Slot
+- Weapon Type
+- Armor Type
+- Equipment Statistics
+- Passive Abilities
+- Active Abilities
+- Durability
+- Repair Cost
+- Set Membership
+
+Equipment definitions never contain inventory information.
+
+---
+
+# Design Philosophy
+
+The Equipment Data system follows six principles.
+
+---
+
+## Item First
+
+Every Equipment definition references exactly one Item definition.
+
+```
+Item
+
+↓
+
+Equipment
+```
+
+Equipment never exists without an Item.
+
+---
+
+## Modular
+
+Item identity and gameplay behavior remain separated.
+
+Changing combat statistics must never require editing the Item definition.
+
+---
+
+## Data Driven
+
+Every gameplay property is defined through data.
+
+No weapon or armor type is hardcoded.
+
+---
+
+## Immutable
+
+Equipment definitions never change during gameplay.
+
+Only runtime durability and ownership change.
+
+---
+
+## Shared References
+
+Combat, Loot, Vendors, Crafting and UI all reference Equipment using identifiers.
+
+---
+
+## Extensible
+
+New equipment can be added without modifying existing definitions.
+
+---
+
+# Responsibilities
+
+Equipment Data defines:
+
+- Equipment Slot
+- Weapon Family
+- Armor Family
+- Equipment Type
+- Equipment Statistics
+- Passive Ability
+- Active Ability
+- Durability
+- Repair Modifier
+- Set Membership
+
+Equipment Data does NOT define:
+
+- Inventory
+- Item Name
+- Item Value
+- Crafting Recipe
+- Loot Chance
+
+---
+
+# Equipment Definition
+
+Every Equipment definition contains:
+
+```text
+ID
+
+↓
+
+Item Reference
+
+↓
+
+Equipment Slot
+
+↓
+
+Equipment Family
+
+↓
+
+Equipment Type
+
+↓
+
+Base Statistics
+
+↓
+
+Passive Ability
+
+↓
+
+Active Ability
+
+↓
+
+Durability
+
+↓
+
+Repair Modifier
+
+↓
+
+Set ID
+```
+
+---
+
+# Identifier
+
+Each Equipment definition owns one globally unique identifier.
+
+Example:
+
+```
+equipment_weapon_sword_t4_broadsword
+
+equipment_armor_plate_t5_soldier
+
+equipment_offhand_shield_t6_tower
+
+equipment_cape_bridgewatch_t8
+```
+
+---
+
+# Item Reference
+
+Every Equipment references exactly one Item.
+
+Example:
+
+```
+item_weapon_sword_t4_broadsword
+```
+
+Validation guarantees that the referenced Item exists.
+
+---
+
+# Equipment Slot
+
+Supported slots:
+
+```
+Head
+
+Chest
+
+Boots
+
+Weapon
+
+OffHand
+
+Cape
+```
+
+Each equipment belongs to one slot only.
+
+---
+
+# Weapon Families
+
+Version 1 supports:
+
+- Sword
+- Axe
+- Mace
+- Hammer
+- Spear
+- Dagger
+- Bow
+- Crossbow
+- Fire Staff
+- Frost Staff
+- Holy Staff
+- Nature Staff
+- Arcane Staff
+
+Non-weapons use:
+
+```
+None
+```
+
+---
+
+# Armor Families
+
+Supported armor families:
+
+```
+Plate
+
+Leather
+
+Cloth
+
+None
+```
+
+Weapons use:
+
+```
+None
+```
+
+---
+
+# Equipment Type
+
+Defines the exact subtype.
+
+Examples:
+
+```
+Broadsword
+
+Claymore
+
+Greataxe
+
+Longbow
+
+Hunter Hood
+
+Guardian Armor
+```
+
+The Equipment Type identifies the gameplay archetype.
+
+---
+
+# Weapon Handling
+
+Equipment defines whether the weapon is:
+
+```
+One-Handed
+```
+
+or
+
+```
+Two-Handed
+```
+
+One-Handed weapons may equip an Off-Hand.
+
+Two-Handed weapons block the Off-Hand slot.
+
+---
+
+# Equipment Statistics
+
+Equipment contains its base statistics.
+
+Example:
+
+```json
+{
+    "stats": {
+        "stat_physical_damage": 128,
+        "stat_attack_speed": 1.10
+    }
+}
+```
+
+Statistics reference Stat IDs.
+
+---
+
+# Passive Ability
+
+Equipment may define one passive ability.
+
+Example:
+
+```
+ability_passive_sword_deep_cuts
+```
+
+Passive abilities are optional.
+
+---
+
+# Active Ability
+
+Equipment may define one active ability.
+
+Example:
+
+```
+ability_sword_heroic_strike
+```
+
+Some equipment contains no active ability.
+
+---
+
+# Durability
+
+Every equipment defines its maximum durability.
+
+Example:
+
+```
+100
+
+250
+
+500
+```
+
+Runtime durability changes during gameplay.
+
+Definitions never change.
+
+---
+
+# Repair Modifier
+
+Defines the repair cost multiplier.
+
+Example:
+
+```
+1.00
+
+1.15
+
+0.80
+```
+
+Final repair costs are calculated by the Repair System.
+
+---
+
+# Equipment Sets
+
+Equipment may belong to a set.
+
+Example:
+
+```
+set_soldier
+
+set_guardian
+
+set_assassin
+```
+
+Equipment without a set stores:
+
+```
+null
+```
+
+Set bonuses are handled separately.
+
+---
+
+# Quality Compatibility
+
+Equipment supports Quality.
+
+Quality is not stored here.
+
+The Quality System applies modifiers dynamically.
+
+---
+
+# Enchantment Compatibility
+
+Equipment supports Enchantments.
+
+Equipment definitions never duplicate enchantment values.
+
+Enchantments are calculated by the Enchantment System.
+
+---
+
+# Runtime Representation
+
+```
+Equipment Definition
+
+↓
+
+Equipment Instance
+
+↓
+
+Equipped Character
+```
+
+Instances store:
+
+- Current Durability
+- Quality
+- Enchantment
+- Owner
+
+Definitions store none of these.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Valid Item Reference
+- Valid Slot
+- Valid Weapon Family
+- Valid Armor Family
+- Valid Statistics
+- Existing Ability References
+- Existing Set Reference
+- Durability
+- Repair Modifier
+
+Invalid definitions never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Random Equipment Affixes
+- Procedural Statistics
+- Random Passive Abilities
+- Rune Slots
+- Gem Slots
+- Equipment Evolution
+- Dynamic Equipment Types
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "equipment_weapon_sword_t4_broadsword",
+    "itemId": "item_weapon_sword_t4_broadsword",
+    "slot": "Weapon",
+    "weaponFamily": "Sword",
+    "armorFamily": "None",
+    "equipmentType": "Broadsword",
+    "handling": "OneHanded",
+    "stats": {
+        "stat_physical_damage": 128,
+        "stat_attack_speed": 1.10
+    },
+    "passiveAbilityId": "ability_passive_sword_deep_cuts",
+    "activeAbilityId": "ability_sword_heroic_strike",
+    "maxDurability": 100,
+    "repairModifier": 1.00,
+    "setId": null
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Equipment
+
+↓
+
+Validate
+
+↓
+
+Resolve References
+
+↓
+
+Register Equipment
+
+↓
+
+Gameplay Ready
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Equipment Data document is complete when:
+
+- Every Equipment references one Item.
+- Every Equipment has one slot.
+- Weapon families are defined.
+- Armor families are defined.
+- Equipment statistics use Stat IDs.
+- Passive abilities are optional.
+- Active abilities are optional.
+- Durability is defined.
+- Repair modifiers are defined.
+- Set membership is optional.
+- Runtime instances remain separate.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Equipment references one Item.
+
+Rule 02
+
+Equipment belongs to exactly one slot.
+
+Rule 03
+
+Equipment statistics reference Stat IDs.
+
+Rule 04
+
+Weapon families are data-driven.
+
+Rule 05
+
+Armor families are data-driven.
+
+Rule 06
+
+One-Handed weapons allow Off-Hand equipment.
+
+Rule 07
+
+Two-Handed weapons disable the Off-Hand slot.
+
+Rule 08
+
+Passive abilities are optional.
+
+Rule 09
+
+Active abilities are optional.
+
+Rule 10
+
+Durability is defined per Equipment.
+
+Rule 11
+
+Repair modifiers are data-driven.
+
+Rule 12
+
+Set membership is optional.
+
+Rule 13
+
+Quality is handled by the Quality System.
+
+Rule 14
+
+Enchantments are handled by the Enchantment System.
+
+Rule 15
+
+Definitions remain immutable throughout gameplay.
+
+---
+
+# Summary
+
+The Equipment Data document defines every equippable object in the game independently from inventory data and item identity. By separating gameplay behavior from Item definitions, it provides a scalable and modular architecture where combat statistics, abilities, durability and equipment sets remain entirely data-driven. This separation allows hundreds of weapons and armor pieces to share consistent systems while remaining easy to balance, validate and extend.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

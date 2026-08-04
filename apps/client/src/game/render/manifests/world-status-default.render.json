@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "id": "world_status_default",
+  "kind": "world_status",
+  "zoneText": {
+    "xRatio": 0.5,
+    "y": 14,
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": 12,
+    "fontStyle": "normal",
+    "color": "#8f9caf",
+    "align": "center",
+    "strokeColor": "#8f9caf",
+    "strokeThickness": 0,
+    "depth": 0
+  },
+  "segmentText": {
+    "xRatio": 0.5,
+    "y": 31,
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": 10,
+    "fontStyle": "normal",
+    "color": "#667085",
+    "align": "center",
+    "strokeColor": "#667085",
+    "strokeThickness": 0,
+    "depth": 0
+  },
+  "stateText": {
+    "xRatio": 0.5,
+    "y": 52,
+    "fontFamily": "Georgia, serif",
+    "fontSize": 20,
+    "fontStyle": "bold",
+    "color": "#d8b34f",
+    "align": "center",
+    "strokeColor": "#16101b",
+    "strokeThickness": 3,
+    "depth": 0
+  }
+}

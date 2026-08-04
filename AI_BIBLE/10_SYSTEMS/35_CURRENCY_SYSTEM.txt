@@ -1,0 +1,767 @@
+# 35. CURRENCY SYSTEM
+
+## Purpose
+
+The Currency System defines how monetary value is created, stored, spent, and removed from the game economy.
+
+In V1, the game uses a single universal currency:
+
+**Silver**
+
+Silver is the foundation of every economic system and is used by nearly all gameplay features requiring a monetary cost.
+
+The Currency System is intentionally simple and designed to support future expansion.
+
+---
+
+# Design Goals
+
+The Currency System must:
+
+- Be easy to understand.
+- Support every gameplay system requiring payments.
+- Provide long-term economic stability.
+- Create effective currency sinks.
+- Be fully data-driven.
+- Remain scalable for future currencies.
+- Never interfere with inventory management.
+
+---
+
+# Core Philosophy
+
+Silver is the universal medium of exchange.
+
+Resources are not currencies.
+
+Equipment is not currency.
+
+Only Silver represents monetary value.
+
+Players earn Silver through gameplay and spend it through game systems.
+
+---
+
+# Supported Currency
+
+V1 contains a single currency.
+
+| Currency | Status |
+|----------|--------|
+| Silver | Active |
+
+No additional gameplay currencies exist in V1.
+
+---
+
+# Future Currency Support
+
+The architecture must support future currencies without modifying existing systems.
+
+Possible future currencies include:
+
+- Premium Currency
+- Event Tokens
+- Dungeon Tokens
+- Guild Currency
+- PvP Currency
+- Faction Currency
+- Seasonal Currency
+
+These currencies are intentionally excluded from V1.
+
+---
+
+# Silver
+
+Silver is the primary economic resource.
+
+It is used to:
+
+- Repair equipment
+- Enchant equipment
+- Craft equipment
+- Refine resources
+- Purchase items from NPC Vendors
+- Upgrade the Player Island
+- Pay future Marketplace taxes
+- Pay future service fees
+
+Silver acts as the common payment method across the game.
+
+---
+
+# Wallet System
+
+Silver is stored inside a global player wallet.
+
+Silver is **not** an inventory item.
+
+Characteristics:
+
+- Unlimited storage (within technical limits)
+- No inventory slots
+- No stack size
+- No weight
+- No manual transfer inside inventory
+
+The player always owns a single wallet.
+
+---
+
+# Wallet Ownership
+
+Each player owns exactly one wallet.
+
+The wallet persists independently from:
+
+- Inventory
+- Equipment
+- Bank
+- Island
+- Character location
+
+The Silver balance always belongs to the player's account progression.
+
+---
+
+# Global Accessibility
+
+Authorized systems may directly access the player's wallet.
+
+Examples:
+
+- Repair Station
+- Enchantment Station
+- Crafting Station
+- Refining Station
+- NPC Vendors
+
+Future systems:
+
+- Marketplace
+- Guild Services
+- Fast Travel
+- Housing
+
+No manual withdrawal is required.
+
+---
+
+# Inventory Separation
+
+Resources remain inventory objects.
+
+Examples:
+
+- Ore
+- Wood
+- Fiber
+- Stone
+- Hide
+- Food
+- Potions
+- Equipment
+
+Silver is never stored alongside these items.
+
+This creates a clear separation between:
+
+Economy
+
+and
+
+Inventory Management.
+
+---
+
+# Visibility
+
+The player's current Silver balance is always visible.
+
+The balance should appear:
+
+- Main HUD
+- Inventory
+- NPC Vendor Interface
+- Crafting Interface
+- Refining Interface
+- Repair Interface
+- Enchantment Interface
+
+Every interface displaying a Silver cost must also display the current wallet balance.
+
+---
+
+# HUD Display
+
+Recommended HUD elements:
+
+Silver Icon
+
+Current Balance
+
+Example:
+
+Silver
+
+254,380
+
+The visual style is determined by the UI System.
+
+---
+
+# Spending Silver
+
+Silver is consumed directly from the wallet.
+
+No confirmation step is required for routine transactions unless specified by the interacting system.
+
+Example:
+
+Repair Equipment
+
+↓
+
+Silver deducted
+
+↓
+
+Repair completed
+
+---
+
+# Receiving Silver
+
+Silver enters the wallet immediately.
+
+No collection process is required.
+
+Examples:
+
+Enemy defeated
+
+↓
+
+Silver reward
+
+↓
+
+Wallet updated
+
+or
+
+Quest completed
+
+↓
+
+Wallet updated
+
+---
+
+# Currency Sources
+
+Silver may be earned from:
+
+- Combat
+- Bosses
+- Quests
+- NPC Rewards
+- Salvaging (future)
+- Marketplace (future)
+- Events (future)
+- Guild Activities (future)
+
+The Currency System only records balance changes.
+
+Other systems determine reward amounts.
+
+---
+
+# Currency Sinks
+
+Silver permanently leaves the economy through:
+
+- Equipment Repair
+- Crafting Costs
+- Refining Costs
+- Enchantment Costs
+- NPC Vendors
+- Island Upgrades
+
+Future sinks include:
+
+- Marketplace Taxes
+- Guild Services
+- Cosmetic Purchases
+- Housing Services
+
+Silver sinks are essential for long-term economic stability.
+
+---
+
+# Economic Philosophy
+
+Silver must continuously circulate.
+
+Players:
+
+Earn Silver
+
+↓
+
+Spend Silver
+
+↓
+
+Earn More Silver
+
+↓
+
+Spend Again
+
+The Currency System discourages excessive hoarding by providing valuable long-term expenditures.
+
+---
+
+# Death Interaction
+
+Player death never removes Silver.
+
+The wallet remains unchanged.
+
+Players may lose:
+
+- Equipment (through durability reaching zero)
+- Time
+- Resources (future systems)
+
+They never lose currency.
+
+---
+
+# Combat Interaction
+
+Combat does not directly interact with the wallet.
+
+Combat systems may award Silver upon completion.
+
+The Currency System simply applies the resulting transaction.
+
+---
+
+# Offline Progression
+
+Offline rewards may grant Silver.
+
+When offline progression is calculated:
+
+Offline Rewards
+
+↓
+
+Silver Earned
+
+↓
+
+Wallet Updated
+
+No additional collection mechanics are required unless another system defines them.
+
+---
+
+# Transaction Validation
+
+Every payment validates:
+
+- Player exists
+- Wallet exists
+- Balance is sufficient
+- Transaction is authorized
+- Requested amount is positive
+
+If validation fails:
+
+No Silver is deducted.
+
+---
+
+# Atomic Transactions
+
+Every transaction is atomic.
+
+Either:
+
+Silver is deducted
+
+and
+
+Action succeeds
+
+or
+
+Nothing changes.
+
+Partial transactions are forbidden.
+
+---
+
+# Server Authority
+
+All currency operations are server authoritative.
+
+The client may:
+
+- Display balance
+- Display costs
+- Request payments
+
+The client may never:
+
+- Modify wallet balance
+- Generate Silver
+- Remove Silver
+- Authorize transactions
+
+---
+
+# Wallet Structure
+
+Each wallet stores:
+
+- Current Balance
+- Lifetime Earned (optional)
+- Lifetime Spent (optional)
+
+Future analytics may extend this structure.
+
+---
+
+# Currency Precision
+
+Silver uses integer values.
+
+Examples:
+
+125
+
+10,500
+
+980,000
+
+Fractional Silver does not exist.
+
+---
+
+# Maximum Balance
+
+The maximum wallet value is determined by technical implementation.
+
+Gameplay should never artificially limit player wealth.
+
+The architecture must support extremely large balances safely.
+
+---
+
+# Save Data
+
+The player's wallet stores:
+
+- WalletID
+- PlayerID
+- SilverBalance
+
+Optional analytics:
+
+- LifetimeEarned
+- LifetimeSpent
+- LargestTransaction
+- TotalTransactions
+
+---
+
+# Data Tables
+
+---
+
+## CurrencyDefinitionTable
+
+Fields:
+
+- CurrencyID
+- DisplayName
+- Icon
+- DisplayColor
+- Enabled
+
+V1 contains only:
+
+Silver
+
+---
+
+## CurrencySourceTable
+
+Fields:
+
+- SourceID
+- SourceType
+- Enabled
+
+Examples:
+
+Enemy
+
+Quest
+
+NPC
+
+Future Market
+
+---
+
+## CurrencySinkTable
+
+Fields:
+
+- SinkID
+- SinkType
+- Enabled
+
+Examples:
+
+Repair
+
+Crafting
+
+Enchanting
+
+Vendor
+
+---
+
+# Runtime Components
+
+---
+
+## CurrencyService
+
+Responsibilities:
+
+- Add Silver
+- Remove Silver
+- Validate payments
+- Save transactions
+- Notify dependent systems
+
+---
+
+## WalletService
+
+Responsibilities:
+
+- Load wallet
+- Save wallet
+- Return current balance
+- Validate ownership
+
+---
+
+## CurrencyTransaction
+
+Responsibilities:
+
+- Validate request
+- Lock wallet
+- Apply balance change
+- Save state
+- Prevent duplicate execution
+
+---
+
+# Transaction Types
+
+Supported transaction categories include:
+
+Income
+
+Expense
+
+Refund
+
+Administrative
+
+Future systems may extend this list.
+
+---
+
+# Refund Support
+
+Some systems may return Silver.
+
+Examples:
+
+Cancelled crafting (future)
+
+Marketplace order expiration (future)
+
+Administrative compensation
+
+Refunds increase wallet balance through the same transaction pipeline.
+
+---
+
+# Duplicate Protection
+
+Every transaction receives a unique TransactionID.
+
+Repeated requests using the same identifier are ignored.
+
+This prevents:
+
+- Double-click payments
+- Network retries
+- Duplicate rewards
+- Synchronization errors
+
+---
+
+# Logging
+
+Every transaction should record:
+
+- TransactionID
+- Timestamp
+- PlayerID
+- Source System
+- Transaction Type
+- Amount
+- Previous Balance
+- New Balance
+
+This supports debugging and analytics.
+
+---
+
+# Analytics
+
+Recommended analytics include:
+
+- Silver generated per hour
+- Silver spent per hour
+- Largest expenses
+- Largest rewards
+- Average wallet balance
+- Repair spending
+- Crafting spending
+- Enchantment spending
+
+These metrics support long-term economic balancing.
+
+---
+
+# Error Handling
+
+Payment fails when:
+
+- Wallet does not exist
+- Balance is insufficient
+- Amount is invalid
+- Transaction already processed
+- Player session is invalid
+
+The player receives a clear error message.
+
+---
+
+# Security
+
+The Currency System is one of the highest-security systems.
+
+Every balance modification must:
+
+- Be server authoritative
+- Be logged
+- Be atomic
+- Be deterministic
+- Be replay-safe
+
+Clients must never calculate or authorize wallet changes.
+
+---
+
+# Future Extensions
+
+The architecture supports future additions including:
+
+- Multiple currencies
+- Premium currency
+- Exchange systems
+- Guild treasury
+- Shared wallets
+- Seasonal currencies
+- Marketplace integration
+- Tax systems
+- Banking systems
+
+These extensions do not require redesigning the Silver wallet.
+
+---
+
+# Explicitly Excluded from V1
+
+V1 does not include:
+
+- Premium Currency
+- Multiple gameplay currencies
+- Currency exchange
+- Shared wallets
+- Guild treasury
+- Banking
+- Wallet limits
+- Currency weight
+- Inventory currency
+- Death penalties on Silver
+- Interest systems
+
+---
+
+# System Relationships
+
+The Currency System interacts with:
+
+- Combat System
+- Loot System
+- Quest System
+- Repair System
+- Crafting System
+- Refining System
+- Enchantment System
+- Vendor System
+- Player Island System
+- Save System
+- UI System
+
+Future interactions include:
+
+- Marketplace
+- Guilds
+- Housing
+- Mail
+- Trading
+
+---
+
+# Summary
+
+The Currency System defines the monetary foundation of the game.
+
+V1 uses a single universal currency: **Silver**.
+
+Silver is stored in a global wallet, never occupies inventory space, is always visible to the player, and is never lost on death.
+
+It is earned through gameplay and spent across core systems such as Repair, Crafting, Refining, Enchanting, NPC Vendors, and Island progression.
+
+The system is deterministic, secure, server-authoritative, and designed to support future currencies without requiring structural changes.
+
+DOCUMENT TERMINÉ

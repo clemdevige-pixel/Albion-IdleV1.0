@@ -1,0 +1,786 @@
+# 24. ABILITY DATA
+
+---
+
+# Purpose
+
+The Ability Data document defines every active and passive ability available in the game.
+
+Abilities are completely data-driven and describe every gameplay action that can be executed by a player, enemy or future entity.
+
+This document defines:
+
+- Ability identity
+- Ability category
+- Ability owner
+- Targeting
+- Cooldowns
+- Costs
+- Effects
+- Scaling
+- Animation references
+- VFX references
+- Audio references
+
+This document does **not** define:
+
+- Combat formulas
+- Damage formulas
+- Status Effect behavior
+- Character statistics
+
+Those belong to their respective systems.
+
+---
+
+# Design Philosophy
+
+The Ability Data system follows six principles.
+
+---
+
+## Data Driven
+
+Every gameplay ability is entirely defined by data.
+
+Adding a new ability should never require creating new gameplay code unless introducing a completely new mechanic.
+
+---
+
+## Reusable
+
+The same ability may be referenced by:
+
+- Weapons
+- Enemies
+- Bosses
+- Future NPCs
+- Events
+
+Abilities never belong exclusively to one entity.
+
+---
+
+## Modular
+
+Abilities are assembled from reusable effects instead of containing hardcoded logic.
+
+Example:
+
+```
+Ability
+
+↓
+
+Damage Effect
+
+↓
+
+Bleed Effect
+
+↓
+
+Knockback Effect
+```
+
+---
+
+## Deterministic
+
+Abilities always execute identically under identical conditions.
+
+No hidden randomness exists inside an ability definition.
+
+---
+
+## Extensible
+
+Future abilities may introduce additional effect types without modifying existing abilities.
+
+---
+
+## Runtime Independent
+
+Ability definitions never store runtime information.
+
+Cooldowns, active states and temporary values exist only during gameplay.
+
+---
+
+# Responsibilities
+
+Ability Data defines:
+
+- Identity
+- Category
+- Ability Type
+- Owner Restrictions
+- Targeting
+- Cooldown
+- Resource Cost
+- Cast Time
+- Range
+- Effects
+- Animation
+- VFX
+- SFX
+- Tags
+
+Ability Data does NOT define:
+
+- Damage formulas
+- Character stats
+- Status Effect implementation
+- AI behavior
+
+---
+
+# Ability Definition
+
+Every ability contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Description
+
+↓
+
+Category
+
+↓
+
+Ability Type
+
+↓
+
+Owner Restrictions
+
+↓
+
+Cooldown
+
+↓
+
+Cost
+
+↓
+
+Cast Time
+
+↓
+
+Range
+
+↓
+
+Target Rules
+
+↓
+
+Effects
+
+↓
+
+Animation
+
+↓
+
+Visual Effects
+
+↓
+
+Audio
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every ability owns one globally unique identifier.
+
+Examples:
+
+```
+ability_sword_heroic_strike
+
+ability_bow_multishot
+
+ability_fire_fireball
+
+ability_enemy_poison_spit
+
+ability_passive_deep_cuts
+```
+
+---
+
+# Categories
+
+Version 1 supports three categories.
+
+---
+
+## Active
+
+Abilities manually activated during combat.
+
+Examples:
+
+- Heroic Strike
+- Fireball
+- Dash
+
+---
+
+## Passive
+
+Abilities permanently active while equipped.
+
+Examples:
+
+- Increased Attack Speed
+- Bleeding Attacks
+- Bonus Armor
+
+---
+
+## Triggered
+
+Abilities activated automatically.
+
+Examples:
+
+- On Hit
+- On Critical Hit
+- On Death
+- On Dodge
+
+---
+
+# Ability Type
+
+Supported types:
+
+- Damage
+- Heal
+- Buff
+- Debuff
+- Movement
+- Utility
+- Summon
+
+An ability may contain multiple effect types.
+
+---
+
+# Owner Restrictions
+
+Abilities may restrict which entities can use them.
+
+Examples:
+
+```
+Player
+
+Enemy
+
+Boss
+
+Any
+```
+
+---
+
+# Weapon Family Restriction
+
+Abilities may optionally require a weapon family.
+
+Example:
+
+```
+Sword
+
+Bow
+
+FireStaff
+
+None
+```
+
+This prevents invalid equipment combinations.
+
+---
+
+# Cooldown
+
+Every active ability defines a cooldown.
+
+Example:
+
+```
+6 Seconds
+
+15 Seconds
+
+30 Seconds
+```
+
+Passive abilities use:
+
+```
+0
+```
+
+---
+
+# Resource Cost
+
+Abilities may consume resources.
+
+Version 1 supports:
+
+- Energy
+- Health
+
+Passive abilities cost nothing.
+
+---
+
+# Cast Time
+
+Defines how long the ability requires before execution.
+
+Examples:
+
+```
+0
+
+0.5
+
+1.2
+
+3.0
+```
+
+Instant abilities use zero.
+
+---
+
+# Range
+
+Defines maximum activation distance.
+
+Examples:
+
+```
+0
+
+2
+
+6
+
+15
+```
+
+Range uses gameplay units.
+
+---
+
+# Target Rules
+
+Supported targeting:
+
+- Self
+- Enemy
+- Ally
+- Area
+- Direction
+- None
+
+Each ability defines exactly one targeting rule.
+
+---
+
+# Effects
+
+Effects are executed sequentially.
+
+Example:
+
+```
+Damage
+
+↓
+
+Apply Bleed
+
+↓
+
+Play Animation
+
+↓
+
+Spawn VFX
+```
+
+Each effect references a reusable Effect definition.
+
+---
+
+# Effect References
+
+Example:
+
+```json
+{
+    "effects": [
+        "effect_damage_physical",
+        "effect_apply_bleed",
+        "effect_knockback_small"
+    ]
+}
+```
+
+Abilities never duplicate effect logic.
+
+---
+
+# Animation Reference
+
+Every visible ability references an animation.
+
+Example:
+
+```
+anim_sword_slash
+
+anim_staff_cast
+
+anim_enemy_bite
+```
+
+Passive abilities may omit animations.
+
+---
+
+# Visual Effects
+
+Abilities reference reusable VFX.
+
+Example:
+
+```
+vfx_fireball
+
+vfx_bleed
+
+vfx_heal_small
+```
+
+Multiple VFX references are supported.
+
+---
+
+# Audio
+
+Abilities reference reusable sound effects.
+
+Example:
+
+```
+sfx_sword_hit
+
+sfx_fire_cast
+
+sfx_heal
+```
+
+Audio remains completely data-driven.
+
+---
+
+# Interruptibility
+
+Abilities define whether casting may be interrupted.
+
+```
+true
+
+false
+```
+
+Instant abilities are typically non-interruptible.
+
+---
+
+# Global Cooldown
+
+Abilities declare whether they trigger the Global Cooldown.
+
+```
+true
+
+false
+```
+
+Version 1 uses a shared Global Cooldown for most player abilities.
+
+---
+
+# Tags
+
+Abilities may define gameplay tags.
+
+Examples:
+
+```
+melee
+
+magic
+
+fire
+
+holy
+
+movement
+
+channel
+
+projectile
+
+aoe
+
+bleed
+```
+
+Tags simplify filtering and balancing.
+
+---
+
+# Runtime Representation
+
+```
+Ability Definition
+
+↓
+
+Ability Instance
+
+↓
+
+Cooldown State
+
+↓
+
+Execution
+```
+
+Definitions remain immutable.
+
+Runtime instances contain temporary state only.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Valid Category
+- Valid Ability Type
+- Existing Effect References
+- Existing Animation
+- Existing VFX
+- Existing Audio
+- Valid Cooldown
+- Valid Costs
+- Valid Target Rules
+
+Invalid abilities never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedural Abilities
+- Runtime Ability Generation
+- Scripted Ability Logic
+- Combo Trees
+- Ability Evolution
+- Random Ability Effects
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "ability_sword_heroic_strike",
+    "name": "Heroic Strike",
+    "description": "A powerful sword attack.",
+    "category": "Active",
+    "abilityType": "Damage",
+    "owner": "Player",
+    "weaponFamily": "Sword",
+    "cooldown": 8,
+    "resourceCost": {
+        "energy": 12
+    },
+    "castTime": 0,
+    "range": 2,
+    "targetRule": "Enemy",
+    "interruptible": false,
+    "globalCooldown": true,
+    "effects": [
+        "effect_damage_physical",
+        "effect_apply_heroic_charge"
+    ],
+    "animationId": "anim_sword_slash",
+    "vfxIds": [
+        "vfx_sword_slash"
+    ],
+    "sfxIds": [
+        "sfx_sword_hit"
+    ],
+    "tags": [
+        "melee",
+        "physical",
+        "single_target"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Ability
+
+↓
+
+Validate
+
+↓
+
+Resolve References
+
+↓
+
+Register Ability
+
+↓
+
+Runtime Database
+
+↓
+
+Gameplay Ready
+```
+
+Ability definitions never change after loading.
+
+---
+
+# Acceptance Criteria
+
+The Ability Data document is complete when:
+
+- Every ability has a unique identifier.
+- Active, Passive and Triggered categories exist.
+- Abilities reference reusable Effects.
+- Cooldowns are data-driven.
+- Costs are configurable.
+- Targeting rules are explicit.
+- Animation, VFX and Audio references are data-driven.
+- Runtime cooldowns remain separate from definitions.
+- Validation guarantees integrity.
+- Ability definitions remain immutable.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every ability is completely data-driven.
+
+Rule 02
+
+Every ability has a globally unique identifier.
+
+Rule 03
+
+Abilities belong to predefined categories.
+
+Rule 04
+
+Abilities reference reusable Effects instead of embedding gameplay logic.
+
+Rule 05
+
+Cooldowns are defined in data.
+
+Rule 06
+
+Costs are defined in data.
+
+Rule 07
+
+Targeting rules are explicit.
+
+Rule 08
+
+Animations, VFX and Audio are referenced by identifier.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Ability execution is deterministic.
+
+Rule 11
+
+Validation prevents invalid abilities from loading.
+
+Rule 12
+
+Ability definitions are immutable.
+
+Rule 13
+
+Gameplay systems reference abilities only by identifier.
+
+Rule 14
+
+Every ability may declare its content source.
+
+Rule 15
+
+Future abilities must remain compatible with the existing data architecture.
+
+---
+
+# Summary
+
+The Ability Data document defines every gameplay ability through a modular, reusable and fully data-driven architecture. By separating effects, targeting, audiovisual references and execution parameters from gameplay code, it enables scalable content creation while guaranteeing deterministic behavior, strong validation and long-term maintainability. This architecture allows hundreds of player, enemy and boss abilities to coexist within a single unified framework and provides a solid foundation for future expansions, seasonal content and mod support.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

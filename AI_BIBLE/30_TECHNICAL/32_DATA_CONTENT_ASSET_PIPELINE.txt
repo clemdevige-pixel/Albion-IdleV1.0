@@ -1,0 +1,1236 @@
+# 32. DATA CONTENT & ASSET PIPELINE
+
+---
+
+# 1. Purpose
+
+This document defines the complete lifecycle of every non-code resource used by the game.
+
+It covers:
+
+- Content definitions
+- Asset management
+- Data loading
+- Validation
+- Registry construction
+- Localization
+- Hot Reload
+- Data generation
+- Import / Export
+- Versioning
+- Build pipeline
+
+Everything that is **not code** passes through this pipeline.
+
+This document is the single source of truth for how content reaches the runtime.
+
+---
+
+# 2. Locked Decisions
+
+The following decisions are immutable.
+
+---
+
+## 2.1 Data Driven Game
+
+The entire gameplay is data-driven.
+
+Gameplay code contains algorithms.
+
+Gameplay data contains values.
+
+Example:
+
+```text
+Code
+
+↓
+
+Damage Formula
+```
+
+```text
+Data
+
+↓
+
+Sword Damage = 34
+```
+
+Never:
+
+```ts
+if (item == "Sword")
+    damage = 34;
+```
+
+Always:
+
+```ts
+damage = itemDefinition.damage;
+```
+
+---
+
+## 2.2 Runtime Formats
+
+Runtime formats are limited to:
+
+```text
+JSON
+```
+
+CSV exists only for authoring.
+
+Spreadsheet software never becomes a runtime dependency.
+
+---
+
+## 2.3 Single Source of Truth
+
+Every piece of content exists once.
+
+Example:
+
+```text
+Broadsword
+
+↓
+
+items/weapons/swords.json
+```
+
+Never duplicate values in:
+
+- UI
+- Combat
+- Loot
+- Vendors
+- Crafting
+
+Everyone references the same definition.
+
+---
+
+## 2.4 Immutable Definitions
+
+Definitions become immutable after loading.
+
+No runtime system modifies them.
+
+Instead:
+
+```text
+Definition
+
+↓
+
+Runtime State
+```
+
+Example:
+
+```text
+Item Definition
+
+↓
+
+Item Instance
+```
+
+---
+
+## 2.5 Human Readable IDs
+
+Every content entry owns one stable textual ID.
+
+Example:
+
+```text
+enemy_skeleton_archer
+
+item_broadsword_t5
+
+ability_fireball
+
+resource_ore_t6
+```
+
+IDs never change after release.
+
+---
+
+## 2.6 One Family = One Registry
+
+Each family owns exactly one registry.
+
+Examples:
+
+```text
+Item Registry
+
+Enemy Registry
+
+Zone Registry
+
+Recipe Registry
+
+Effect Registry
+```
+
+---
+
+## 2.7 Registry Read Only
+
+Registries expose read operations only.
+
+No runtime insertion.
+
+No runtime deletion.
+
+No runtime modification.
+
+---
+
+## 2.8 Content Never References Runtime Objects
+
+Definitions reference only IDs.
+
+Forbidden:
+
+```ts
+enemy.target = player
+```
+
+Allowed:
+
+```json
+{
+    "abilityId": "ability_fireball"
+}
+```
+
+---
+
+## 2.9 Validation Before Loading
+
+Invalid content never reaches runtime.
+
+Validation is mandatory.
+
+---
+
+# 3. Global Pipeline
+
+Every content family follows exactly the same pipeline.
+
+```text
+Authoring
+
+↓
+
+Validation
+
+↓
+
+Reference Resolution
+
+↓
+
+Registry Build
+
+↓
+
+Freeze
+
+↓
+
+Runtime Access
+```
+
+---
+
+# 4. Authoring
+
+Content may be created by:
+
+- Designers
+- Developers
+- AI
+- CSV Import
+- Content Generators
+
+Every author produces the same JSON format.
+
+---
+
+# 5. Folder Structure
+
+Canonical structure:
+
+```text
+content/
+
+    items/
+
+    enemies/
+
+    abilities/
+
+    effects/
+
+    statuses/
+
+    recipes/
+
+    resources/
+
+    biomes/
+
+    zones/
+
+    encounters/
+
+    buildings/
+
+    workers/
+
+    vendors/
+
+    npcs/
+
+    currencies/
+
+    masteries/
+
+    balancing/
+
+    localization/
+
+    schemas/
+```
+
+Each family owns its folder.
+
+---
+
+# 6. File Naming
+
+Files use kebab-case.
+
+Examples
+
+```text
+swords.json
+
+plate-armor.json
+
+forest-zones.json
+
+undead.json
+```
+
+---
+
+# 7. JSON File Structure
+
+Every file starts with metadata.
+
+Example:
+
+```json
+{
+    "version": 1,
+    "source": "core",
+    "definitions": [
+    ]
+}
+```
+
+---
+
+## Required Fields
+
+```text
+version
+
+definitions
+```
+
+Optional
+
+```text
+source
+
+comment
+```
+
+No additional root properties.
+
+---
+
+# 8. Definition Structure
+
+Every definition contains
+
+```text
+id
+
+nameKey
+
+descriptionKey
+```
+
+Additional properties depend on family.
+
+---
+
+# 9. Registry Construction
+
+Loading order:
+
+```text
+Raw JSON
+
+↓
+
+Schema Validation
+
+↓
+
+Reference Validation
+
+↓
+
+Duplicate Check
+
+↓
+
+Registry Build
+
+↓
+
+Freeze Registry
+```
+
+No registry exists before validation succeeds.
+
+---
+
+# 10. Registry Interface
+
+Example
+
+```ts
+interface Registry<T>
+{
+    get(id)
+
+    has(id)
+
+    all()
+
+    ids()
+}
+```
+
+No mutation methods.
+
+---
+
+# 11. Loading Order
+
+The order is fixed.
+
+```text
+Localization
+
+↓
+
+Stats
+
+↓
+
+Effects
+
+↓
+
+Status Effects
+
+↓
+
+Items
+
+↓
+
+Equipment
+
+↓
+
+Abilities
+
+↓
+
+Enemies
+
+↓
+
+Resources
+
+↓
+
+Recipes
+
+↓
+
+Buildings
+
+↓
+
+Workers
+
+↓
+
+Biomes
+
+↓
+
+Zones
+
+↓
+
+Encounters
+
+↓
+
+Vendors
+
+↓
+
+NPCs
+
+↓
+
+Masteries
+
+↓
+
+Balancing Tables
+```
+
+A registry may only reference previously loaded families.
+
+Circular loading is forbidden.
+
+---
+
+# 12. Validation Layers
+
+Every file passes four validations.
+
+---
+
+## Layer 1
+
+JSON syntax.
+
+---
+
+## Layer 2
+
+Schema validation.
+
+---
+
+## Layer 3
+
+Reference validation.
+
+---
+
+## Layer 4
+
+Semantic validation.
+
+Example
+
+```text
+Weapon Damage
+
+>
+
+0
+```
+
+---
+
+# 13. Duplicate Detection
+
+The following must be unique.
+
+```text
+ID
+
+Localization Key
+
+Asset Path
+```
+
+Duplicates stop loading.
+
+---
+
+# 14. Missing References
+
+Missing references are fatal.
+
+Example
+
+```text
+Unknown Ability
+
+↓
+
+Error
+
+↓
+
+Loading Stops
+```
+
+Never ignore missing IDs.
+
+---
+
+# 15. Circular References
+
+Forbidden.
+
+Example
+
+```text
+A
+
+↓
+
+B
+
+↓
+
+C
+
+↓
+
+A
+```
+
+Validation fails.
+
+---
+
+# 16. Localization Pipeline
+
+Definitions never contain visible text.
+
+Only keys.
+
+Example
+
+```json
+"nameKey": "item.broadsword.name"
+```
+
+Localization files contain translations.
+
+---
+
+# 17. Localization Loading
+
+```text
+Language
+
+↓
+
+Localization File
+
+↓
+
+Dictionary
+
+↓
+
+Frozen Dictionary
+```
+
+---
+
+# 18. Missing Localization
+
+Development
+
+```text
+Warning
+```
+
+Production
+
+```text
+Fallback Language
+```
+
+Never crash because of missing translation.
+
+---
+
+# 19. Asset Philosophy
+
+Assets are referenced.
+
+Never embedded.
+
+Example
+
+```json
+"sprite": "items/broadsword"
+```
+
+Not
+
+```json
+"sprite": "base64..."
+```
+
+---
+
+# 20. Asset Types
+
+Supported assets
+
+```text
+Sprites
+
+Sprite Sheets
+
+Tilemaps
+
+Icons
+
+Portraits
+
+Animations
+
+Particles
+
+Audio
+
+Music
+
+Fonts
+```
+
+---
+
+# 21. Asset Folder
+
+```text
+assets/
+
+    sprites/
+
+    icons/
+
+    animations/
+
+    particles/
+
+    audio/
+
+    music/
+
+    fonts/
+```
+
+---
+
+# 22. Asset Manifest
+
+Every asset exists inside a manifest.
+
+Example
+
+```json
+{
+    "id":"enemy_skeleton",
+
+    "path":"sprites/enemies/skeleton.png"
+}
+```
+
+---
+
+# 23. Asset IDs
+
+Assets own textual IDs.
+
+Gameplay references IDs.
+
+Never file paths.
+
+---
+
+# 24. Asset Loading
+
+```text
+Manifest
+
+↓
+
+Lookup
+
+↓
+
+Load
+
+↓
+
+Cache
+
+↓
+
+Ready
+```
+
+---
+
+# 25. Asset Cache
+
+Assets are loaded once.
+
+Shared between scenes.
+
+Unused assets may be released.
+
+---
+
+# 26. Lazy Loading
+
+Large assets load only when required.
+
+Examples
+
+```text
+Biome Backgrounds
+
+Boss Sprites
+
+Large Music Tracks
+```
+
+---
+
+# 27. Preloaded Assets
+
+Small assets load during startup.
+
+Examples
+
+```text
+HUD
+
+Fonts
+
+UI
+
+Buttons
+
+Item Icons
+```
+
+---
+
+# 28. Sprite Atlases
+
+Small sprites are grouped.
+
+Reasons
+
+- fewer requests
+- faster rendering
+- batching
+
+---
+
+# 29. Audio Pipeline
+
+Audio categories
+
+```text
+Music
+
+Ambience
+
+UI
+
+Combat
+
+Gathering
+
+Crafting
+
+Notifications
+```
+
+---
+
+# 30. Animation Pipeline
+
+Animations are definitions.
+
+Example
+
+```json
+{
+    "id":"player_idle",
+
+    "frames":[]
+}
+```
+
+Gameplay never references frame numbers.
+
+Only animation IDs.
+
+---
+
+# 31. Data Generation
+
+Generation is allowed for
+
+```text
+Localization Types
+
+Registry Types
+
+Asset Manifests
+
+Content Indexes
+```
+
+Never manually edit generated files.
+
+---
+
+# 32. CSV Pipeline
+
+```text
+CSV
+
+↓
+
+Import
+
+↓
+
+Validation
+
+↓
+
+JSON
+
+↓
+
+Validation
+
+↓
+
+Registry
+```
+
+CSV never bypasses validation.
+
+---
+
+# 33. Export Pipeline
+
+JSON may export to
+
+```text
+CSV
+
+Documentation
+
+Balancing Sheets
+```
+
+Runtime never exports gameplay state as content.
+
+---
+
+# 34. Hot Reload
+
+Development only.
+
+Pipeline
+
+```text
+Detect Change
+
+↓
+
+Validate
+
+↓
+
+Build Registry
+
+↓
+
+Swap Registry
+```
+
+If validation fails
+
+```text
+Keep Previous Registry
+```
+
+---
+
+# 35. Versioning
+
+Every family owns a version.
+
+Example
+
+```json
+{
+    "version":4
+}
+```
+
+---
+
+# 36. Content Version
+
+The project owns a global content version.
+
+Example
+
+```text
+2026.08.14
+```
+
+This version is sent to clients.
+
+---
+
+# 37. Build Pipeline
+
+Content build
+
+```text
+JSON
+
+↓
+
+Validation
+
+↓
+
+Registry Tests
+
+↓
+
+Asset Tests
+
+↓
+
+Bundle
+```
+
+Build stops on first fatal error.
+
+---
+
+# 38. Registry Access Rules
+
+Never search manually.
+
+Forbidden
+
+```ts
+definitions.find(...)
+```
+
+Always
+
+```ts
+registry.get(id)
+```
+
+---
+
+# 39. Content Search
+
+Registries expose indexed lookup.
+
+Target complexity
+
+```text
+O(1)
+```
+
+---
+
+# 40. Asset Search
+
+Manifest lookup.
+
+Never scan folders at runtime.
+
+---
+
+# 41. Designer Workflow
+
+Designer
+
+↓
+
+Modify CSV
+
+↓
+
+Import
+
+↓
+
+Validation
+
+↓
+
+JSON
+
+↓
+
+Commit
+
+---
+
+# 42. Developer Workflow
+
+Developer
+
+↓
+
+Modify Schema
+
+↓
+
+Validation
+
+↓
+
+Tests
+
+↓
+
+Commit
+
+---
+
+# 43. AI Workflow
+
+AI may create
+
+- definitions
+- balancing
+- localization
+- assets manifests
+
+AI must never invent IDs already existing.
+
+---
+
+# 44. Error Reporting
+
+Validation reports
+
+```text
+File
+
+Definition
+
+Field
+
+Reason
+
+Suggested Fix
+```
+
+Errors must be actionable.
+
+---
+
+# 45. Acceptance Criteria
+
+The pipeline is complete when
+
+- Every family loads through the same system.
+- All registries are immutable.
+- Every reference is validated.
+- Duplicate IDs are impossible.
+- Assets are manifest-driven.
+- Localization is key-based.
+- CSV always passes through JSON.
+- Runtime never parses spreadsheets.
+- Runtime never scans folders.
+- Registry lookup is O(1).
+- Invalid content never reaches gameplay.
+- Hot Reload is atomic.
+- Generated files are reproducible.
+- One definition has exactly one source of truth.
+
+---
+
+# 46. Final Summary
+
+The game uses a fully data-driven architecture.
+
+Every resource follows the same lifecycle.
+
+```text
+Author
+
+↓
+
+Validation
+
+↓
+
+Registry
+
+↓
+
+Runtime
+
+↓
+
+Read Only Access
+```
+
+Gameplay code consumes validated definitions.
+
+It never embeds gameplay values.
+
+Assets are manifest-driven.
+
+Localization is key-driven.
+
+Registries are immutable.
+
+This guarantees deterministic gameplay, simple tooling, safe Hot Reload and scalable content production.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

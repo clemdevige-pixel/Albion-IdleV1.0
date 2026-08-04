@@ -1,0 +1,643 @@
+# 47. ANIMATION SYSTEM
+
+## Purpose
+
+The Animation System is responsible for presenting all character, enemy, boss, and gameplay animations.
+
+Its objectives are to:
+
+- Improve gameplay readability.
+- Provide immediate visual feedback.
+- Synchronize gameplay with animations.
+- Remain lightweight and performant.
+- Support long idle sessions.
+- Maintain a consistent pixel-art presentation.
+
+Animations never modify gameplay logic.
+
+Gameplay remains entirely server-authoritative.
+
+---
+
+# Design Goals
+
+The Animation System follows these principles:
+
+- Readability first.
+- Pixel-art friendly.
+- Minimal production cost.
+- High performance.
+- Deterministic behavior.
+- Modular architecture.
+- Easy future expansion.
+
+---
+
+# Animation Philosophy
+
+Animations are functional rather than cinematic.
+
+Their purpose is to communicate gameplay information quickly and clearly.
+
+Every animation exists because it provides useful gameplay feedback.
+
+No animation exists purely for decoration.
+
+---
+
+# Launch Scope
+
+Version 1 includes animations for:
+
+Player
+
+- Idle
+- Walk
+- Attack
+- Cast
+- Hit
+- Death
+- Gather
+- Craft
+- Refine
+
+Enemies
+
+- Idle
+- Walk
+- Attack
+- Hit
+- Death
+
+Bosses
+
+- Idle
+- Walk
+- Attack
+- Special Attack
+- Hit
+- Death
+
+---
+
+# Out of Scope
+
+The following are intentionally excluded:
+
+- Breathing animations
+- Inspection animations
+- Fatigue animations
+- Procedural animation
+- Blend Trees
+- Context-sensitive animations
+- Cinematic transitions
+- Animation layering
+- IK systems
+- Facial animation
+
+The architecture remains compatible with future additions.
+
+---
+
+# Side-Scroller Orientation
+
+The game is a 2D side-scroller.
+
+All animated entities support only two directions:
+
+- Left
+- Right
+
+Characters simply flip horizontally when changing direction.
+
+No additional directional animations exist.
+
+---
+
+# Advantages
+
+Using only two directions provides:
+
+- Reduced production time
+- Smaller sprite sheets
+- Lower memory usage
+- Easier maintenance
+- Faster content creation
+
+---
+
+# Animation Frame Standard
+
+To ensure consistency, every animation follows a common frame budget.
+
+| Animation | Frames |
+|-----------|-------:|
+| Idle | 4 |
+| Walk | 6 |
+| Attack | 5 |
+| Cast | 5 |
+| Hit | 4 |
+| Death | 6 |
+| Gather | 5 |
+| Craft | 5 |
+| Refine | 5 |
+| Boss Attack | 6 |
+| Boss Special | 6 |
+
+Small variations are permitted when necessary.
+
+---
+
+# Animation Timing
+
+Animations are intentionally short.
+
+Their role is to reinforce gameplay rather than delay it.
+
+Typical durations:
+
+- Idle loops continuously.
+- Walk loops continuously.
+- Attack finishes quickly.
+- Cast remains short.
+- Hit is instantaneous.
+- Death plays once.
+
+---
+
+# Game Speed Integration
+
+Animations automatically follow the global game speed.
+
+Final animation speed is calculated using:
+
+```
+Final Animation Speed
+
+=
+
+Base Animation Speed
+
+×
+
+Game Speed Multiplier
+```
+
+Examples:
+
+| Game Speed | Animation Speed |
+|------------|----------------:|
+| x1 | 100% |
+| x1.5 | 150% |
+| x2 | 200% |
+| x3 | 300% |
+| x5 | 500% |
+
+No manual adjustment is required.
+
+---
+
+# Frame Independence
+
+Animations never depend on FPS.
+
+The system uses elapsed time instead of rendered frames.
+
+Benefits:
+
+- Stable playback
+- Smooth acceleration
+- Consistent behavior
+- Cross-platform reliability
+
+---
+
+# Animation State Machine
+
+Every animated entity owns one Animation State Machine (ASM).
+
+The ASM is the only system allowed to change animations.
+
+Gameplay systems never directly play animations.
+
+---
+
+# Standard States
+
+Player
+
+- Idle
+- Walk
+- Attack
+- Cast
+- Gather
+- Craft
+- Refine
+- Hit
+- Death
+
+Enemy
+
+- Idle
+- Walk
+- Attack
+- Hit
+- Death
+
+Boss
+
+- Idle
+- Walk
+- Attack
+- Special Attack
+- Hit
+- Death
+
+---
+
+# State Flow
+
+Typical flow:
+
+```
+Idle
+
+↓
+
+Walk
+
+↓
+
+Attack
+
+↓
+
+Hit
+
+↓
+
+Death
+```
+
+Not every transition is valid.
+
+The ASM validates every state change.
+
+---
+
+# Animation Priorities
+
+Some animations interrupt others.
+
+Priority (highest first):
+
+| Priority | Animation |
+|----------|-----------|
+| 1 | Death |
+| 2 | Hit |
+| 3 | Ability Cast |
+| 4 | Attack |
+| 5 | Gather |
+| 6 | Craft / Refine |
+| 7 | Walk |
+| 8 | Idle |
+
+Higher-priority animations immediately replace lower-priority ones.
+
+---
+
+# Death Rules
+
+Death always has absolute priority.
+
+Once Death starts:
+
+- No interruption
+- No restart
+- No transition
+- Animation plays until completion
+
+---
+
+# No Crossfade
+
+The Animation System performs instant transitions.
+
+Example:
+
+```
+Idle
+
+↓
+
+Attack
+
+↓
+
+Idle
+```
+
+No blending occurs between animations.
+
+This preserves crisp pixel-art visuals.
+
+---
+
+# Animation Events
+
+Animations may emit events at specific frames.
+
+These events synchronize gameplay feedback.
+
+Animation Events never contain gameplay logic.
+
+They only notify external systems.
+
+---
+
+# Combat Events
+
+Examples:
+
+- AttackImpact
+- AbilityImpact
+- AttackFinished
+
+---
+
+# Audio Events
+
+Examples:
+
+- PlayFootstep
+- PlayWeaponSwing
+- PlayGatherSound
+- PlayCraftSound
+- PlayRefineSound
+
+---
+
+# Visual Effect Events
+
+Examples:
+
+- SpawnHitVFX
+- SpawnHealVFX
+- SpawnGatherVFX
+- SpawnCraftVFX
+- SpawnRefineVFX
+
+---
+
+# Gameplay Events
+
+Examples:
+
+- GatherComplete
+- CraftComplete
+- RefineComplete
+- DeathFinished
+
+---
+
+# Example Timeline
+
+```
+Attack Animation
+
+Frame 1
+
+↓
+
+Frame 2
+
+↓
+
+Frame 3
+
+AttackImpact
+
+PlayWeaponSwing
+
+SpawnHitVFX
+
+↓
+
+Frame 4
+
+↓
+
+Frame 5
+
+AttackFinished
+```
+
+Every subsystem receives the same synchronized event.
+
+---
+
+# Playback States
+
+Each Animation State Machine supports three playback states.
+
+Playing
+
+Animation updates normally.
+
+Paused
+
+Animation remains on its current frame.
+
+Stopped
+
+Animation is reset and no longer updates.
+
+---
+
+# Individual Pause
+
+Animations may be paused independently.
+
+Examples:
+
+Freeze
+
+Only the frozen enemy pauses.
+
+Pause Menu
+
+Every Animation State Machine pauses.
+
+Victory Screen
+
+Only selected entities continue animating.
+
+---
+
+# Looping Rules
+
+Looping animations:
+
+- Idle
+- Walk
+
+One-shot animations:
+
+- Attack
+- Cast
+- Hit
+- Gather
+- Craft
+- Refine
+- Death
+- Boss Special
+
+One-shot animations automatically return to their default state when complete.
+
+---
+
+# Sprite Anchoring
+
+Every animation of the same entity uses the same pivot point.
+
+Benefits:
+
+- No sprite jumping
+- Stable collisions
+- Stable hitboxes
+- Consistent rendering
+
+---
+
+# Sprite Sheets
+
+Animations are stored as sprite sheets.
+
+Each animation is independent.
+
+Example:
+
+```
+Player
+
+Idle.png
+
+Walk.png
+
+Attack.png
+
+Cast.png
+
+Hit.png
+
+Death.png
+```
+
+This organization simplifies asset management.
+
+---
+
+# Memory Management
+
+Animations are loaded only when needed.
+
+Unused sprite sheets may be unloaded according to the Asset Management System.
+
+No runtime sprite generation exists.
+
+---
+
+# Performance
+
+The Animation System is lightweight.
+
+Optimizations include:
+
+- Sprite caching
+- Shared sprite sheets
+- Frame-independent playback
+- Minimal animation count
+- No blending
+- No procedural animation
+
+Animation updates remain inexpensive even with many entities.
+
+---
+
+# Error Handling
+
+If an animation is missing:
+
+Fallback order:
+
+1. Idle
+2. Placeholder animation
+3. Developer warning
+
+Gameplay never stops because of a missing animation.
+
+---
+
+# Debug Features
+
+Developer builds may display:
+
+- Current State
+- Previous State
+- Playback Speed
+- Frame Index
+- Current Direction
+- Animation Priority
+- Event Timeline
+
+These tools are unavailable in release builds.
+
+---
+
+# Future Expansion
+
+The architecture supports future additions including:
+
+- Cosmetic animation packs
+- Seasonal animations
+- Weapon-specific attack animations
+- Mount animations
+- Companion animations
+- Animation overrides
+- Blend Trees
+- Procedural animation
+
+These additions require no redesign of the core system.
+
+---
+
+# Dependencies
+
+The Animation System integrates with:
+
+- Combat System
+- Ability System
+- Enemy System
+- Boss System
+- Gathering System
+- Crafting System
+- Refining System
+- Audio System
+- VFX System
+- Status Effect System
+- Camera System
+- Asset Management System
+
+The Animation System never modifies gameplay logic.
+
+---
+
+# Summary
+
+The Animation System provides lightweight, deterministic, and highly readable animations tailored for a 2D side-scrolling pixel-art idle RPG.
+
+It is built around a simple Animation State Machine, two-direction sprites, standardized frame counts, animation priorities, synchronized Animation Events, instant transitions, and independent playback control.
+
+Its minimalist architecture minimizes production costs while ensuring excellent performance, maintainability, and future scalability.
+
+DOCUMENT TERMINÉ

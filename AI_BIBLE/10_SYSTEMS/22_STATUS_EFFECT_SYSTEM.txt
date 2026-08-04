@@ -1,0 +1,1142 @@
+# 22. STATUS EFFECT SYSTEM
+
+---
+
+# Purpose
+
+The Status Effect System manages every temporary gameplay modifier applied to an entity.
+
+Status Effects temporarily alter an entity's behavior, capabilities or statistics without permanently modifying its progression.
+
+Examples include:
+
+- Increased Damage
+- Reduced Armor
+- Stun
+- Root
+- Slow
+- Silence
+
+The Status Effect System exists independently from Combat, Damage and Ability execution.
+
+Its only responsibility is managing temporary gameplay effects.
+
+The Status Effect System is responsible for:
+
+- Applying Status Effects
+- Refreshing existing effects
+- Tracking durations
+- Expiring effects
+- Removing effects
+- Providing temporary modifiers
+- Emitting gameplay events
+
+The Status Effect System is NOT responsible for:
+
+- Dealing Damage
+- Healing
+- Executing Abilities
+- AI Decisions
+- Loot
+- Death
+- Combat Flow
+
+These responsibilities belong to their dedicated systems.
+
+---
+
+# Design Philosophy
+
+The Status Effect System follows eight fundamental principles.
+
+---
+
+## Temporary Effects Only
+
+Every Status Effect is temporary.
+
+No Status Effect permanently changes an entity.
+
+Permanent progression belongs to Character, Equipment and Mastery systems.
+
+---
+
+## Deterministic
+
+Status Effects always behave identically.
+
+Given identical:
+
+- Duration
+- Strength
+- Source
+- Target
+
+the result is always identical.
+
+Version 1 contains no random effect behavior.
+
+---
+
+## Modular
+
+Each Status Effect operates independently.
+
+One Status Effect never directly controls another.
+
+Every effect maintains:
+
+- Its own duration
+- Its own strength
+- Its own lifecycle
+
+---
+
+## Data Driven
+
+Every Status Effect is entirely defined through configuration.
+
+Examples include:
+
+- Effect Type
+- Duration
+- Strength
+- Refresh Rules
+- Gameplay Modifiers
+
+No effect-specific logic is hardcoded.
+
+---
+
+## Predictable
+
+Players should always understand:
+
+- What the effect does
+- How long it lasts
+- When it expires
+
+No hidden mechanics exist.
+
+---
+
+## Lightweight
+
+Status Effects should be inexpensive to process.
+
+Each simulation update performs only simple deterministic calculations.
+
+---
+
+## Extensible
+
+The architecture supports future additions such as:
+
+- Damage over Time
+- Heal over Time
+- Fear
+- Knockback
+- Cleanse
+- Purge
+
+Version 1 intentionally supports only the core effects.
+
+---
+
+## Presentation Independent
+
+The gameplay simulation never depends on:
+
+- Icons
+- Particles
+- Animations
+- Audio
+
+Presentation systems react to Status Effect events.
+
+---
+
+# Responsibilities
+
+The Status Effect System manages:
+
+- Effect Application
+- Duration Tracking
+- Effect Refresh
+- Effect Expiration
+- Temporary Modifiers
+- Active Effect Lists
+- Gameplay Events
+
+The Status Effect System does NOT manage:
+
+- Damage Calculation
+- Healing
+- AI Behavior
+- Movement
+- Ability Execution
+
+It only exposes temporary gameplay modifiers.
+
+---
+
+# Supported Status Effects
+
+Version 1 supports the following effects.
+
+Positive Effects
+
+- Buff
+
+Negative Effects
+
+- Debuff
+- Stun
+- Root
+- Slow
+- Silence
+
+No additional Status Effects exist.
+
+---
+
+# Unsupported Status Effects
+
+Version 1 intentionally excludes:
+
+- Damage over Time
+- Heal over Time
+- Fear
+- Sleep
+- Charm
+- Taunt
+- Knockback
+- Pull
+- Blind
+- Confusion
+- Invisibility
+- Reflect
+- Absorption Shields
+- Cleanse
+- Purge
+
+These mechanics are reserved for future versions.
+
+---
+
+# Status Effect Structure
+
+Every Status Effect instance contains:
+
+- Effect Type
+- Source
+- Target
+- Duration
+- Remaining Duration
+- Strength
+- Refresh Rule
+
+Each Status Effect is independent.
+
+---
+
+# Status Effect Lifecycle
+
+Every Status Effect follows the same lifecycle.
+
+```
+Created
+
+↓
+
+Applied
+
+↓
+
+Active
+
+↓
+
+Duration Decreases
+
+↓
+
+Expired
+
+↓
+
+Removed
+```
+
+Every Status Effect uses this lifecycle.
+
+---
+
+# Applying Status Effects
+
+Status Effects are applied immediately after an Ability successfully resolves.
+
+Pipeline:
+
+```
+Ability Hits
+
+↓
+
+Damage Processed
+
+↓
+
+Apply Status Effects
+
+↓
+
+Status Effect Active
+
+↓
+
+Future Gameplay Uses Modifier
+```
+
+Application is always immediate.
+
+---
+
+# Status Effect Source
+
+Every Status Effect records the entity that applied it.
+
+Typical sources include:
+
+- Player
+- Enemy
+- Boss
+- Future Environmental Effects
+
+The source remains associated with the Status Effect until removal.
+
+---
+
+# Active Status List
+
+Every entity owns an independent Active Status List.
+
+Example:
+
+Player
+
+- Damage Buff
+- Slow
+
+Enemy
+
+- Silence
+
+Boss
+
+- Armor Buff
+- Root
+
+Each entity manages its own effects independently.
+
+---
+
+# Buff
+
+A Buff temporarily improves gameplay statistics.
+
+Examples include:
+
+- Damage Increase
+- Armor Increase
+- Attack Speed Increase
+- Movement Speed Increase
+
+Buffs never permanently improve an entity.
+
+---
+
+# Debuff
+
+A Debuff temporarily reduces gameplay statistics.
+
+Examples include:
+
+- Damage Reduction
+- Armor Reduction
+- Attack Speed Reduction
+- Movement Speed Reduction
+
+Debuffs expire automatically.
+
+---
+
+# Stun
+
+Stun completely prevents an entity from acting.
+
+While Stunned:
+
+- Movement Disabled
+- Basic Attacks Disabled
+- Abilities Disabled
+- AI Decisions Suspended
+
+Normal behavior resumes immediately after expiration.
+
+---
+
+# Root
+
+Root prevents movement.
+
+While Rooted:
+
+- Movement Disabled
+- Basic Attacks Allowed
+- Abilities Allowed
+
+Only movement is affected.
+
+---
+
+# Slow
+
+Slow reduces Movement Speed.
+
+Example:
+
+```
+Movement Speed
+
+100%
+
+↓
+
+Slow
+
+25%
+
+↓
+
+Movement Speed
+
+75%
+```
+
+Movement Speed can never become negative.
+
+---
+
+# Silence
+
+Silence prevents Ability usage.
+
+While Silenced:
+
+- Abilities Disabled
+- Basic Attacks Allowed
+- Movement Allowed
+
+Silence never affects passive systems.
+
+---
+# Effect Duration
+
+Every Status Effect has a fixed duration.
+
+Version 1 measures duration using simulation time.
+
+Example:
+
+```
+Slow
+
+5 Seconds
+
+↓
+
+Remaining Duration
+
+4 Seconds
+
+↓
+
+3 Seconds
+
+↓
+
+2 Seconds
+
+↓
+
+1 Second
+
+↓
+
+Expired
+```
+
+Every active effect continuously decreases its Remaining Duration.
+
+---
+
+# Duration Processing
+
+During each simulation update:
+
+```
+Active Status Effect
+
+↓
+
+Decrease Remaining Duration
+
+↓
+
+Remaining Duration > 0
+
+↓
+
+Keep Active
+```
+
+or
+
+```
+Remaining Duration ≤ 0
+
+↓
+
+Expire
+
+↓
+
+Remove Effect
+```
+
+Every Status Effect follows this process.
+
+---
+
+# Multiple Status Effects
+
+A single Ability may apply multiple Status Effects.
+
+Example:
+
+```
+Heavy Smash
+
+↓
+
+Damage
+
+↓
+
+Stun
+
+↓
+
+Armor Debuff
+```
+
+Each Status Effect becomes an independent instance.
+
+Each maintains:
+
+- Individual Duration
+- Individual Strength
+- Individual Source
+
+---
+
+# Independent Processing
+
+Each Status Effect is processed independently.
+
+Example:
+
+```
+Damage Buff
+
+8 Seconds
+```
+
+and
+
+```
+Slow
+
+4 Seconds
+```
+
+Each expires according to its own Remaining Duration.
+
+One Status Effect never pauses or extends another.
+
+---
+
+# Stacking Rules
+
+Version 1 does not support stacking.
+
+Applying the same Status Effect again:
+
+- Refreshes Duration
+- Replaces Remaining Duration
+- Keeps the highest configured Strength
+
+Example:
+
+```
+Slow
+
+20%
+
+↓
+
+Apply Slow Again
+
+20%
+
+↓
+
+Duration Reset
+
+↓
+
+Still 20%
+```
+
+The effect never becomes:
+
+40%
+
+---
+
+# Refresh Rules
+
+Reapplying an identical Status Effect performs:
+
+```
+Existing Effect
+
+↓
+
+Reset Remaining Duration
+
+↓
+
+Continue Active
+```
+
+The Active Status List never contains duplicate instances of the same Status Effect from the same source.
+
+---
+
+# Different Effects
+
+Different Status Effects may coexist.
+
+Example:
+
+```
+Damage Buff
+
++
+
+Slow
+
++
+
+Silence
+```
+
+Each modifies different gameplay values.
+
+No interaction occurs between unrelated effects.
+
+---
+
+# Buff and Debuff Interaction
+
+Buffs and Debuffs never automatically cancel each other.
+
+Example:
+
+```
+Damage Buff
+
++20%
+
++
+
+Damage Debuff
+
+-15%
+
+↓
+
+Final Modifier
+
++5%
+```
+
+All active modifiers participate in the final calculation.
+
+---
+
+# Status Effect Removal
+
+A Status Effect is removed when:
+
+- Remaining Duration reaches zero.
+- The affected entity dies.
+- A future mechanic explicitly removes it.
+
+Once removed:
+
+- Gameplay modifiers immediately disappear.
+- The effect is deleted from the Active Status List.
+- Expiration events are emitted.
+
+---
+
+# Status Effect Expiration
+
+Every expiration follows the same pipeline.
+
+```
+Remaining Duration
+
+↓
+
+0
+
+↓
+
+Remove Effect
+
+↓
+
+Restore Gameplay Values
+
+↓
+
+Emit Events
+
+↓
+
+Finished
+```
+
+Expired effects never remain active.
+
+---
+
+# Active Modifier Calculation
+
+Whenever another gameplay system requests temporary modifiers:
+
+```
+Read Active Status List
+
+↓
+
+Collect Active Modifiers
+
+↓
+
+Calculate Final Values
+
+↓
+
+Return Results
+```
+
+The Status Effect System never performs gameplay calculations itself.
+
+It only exposes active modifiers.
+
+---
+
+# Modifier Categories
+
+Version 1 supports temporary modifiers affecting:
+
+- Damage
+- Armor
+- Magic Resistance
+- Movement Speed
+- Attack Speed
+
+Future versions may introduce additional modifier categories.
+
+---
+
+# Gameplay Integration
+
+Other systems query the Status Effect System whenever temporary modifiers are required.
+
+Examples:
+
+Damage System
+
+↓
+
+Damage Buffs
+
+Ability System
+
+↓
+
+Silence
+
+Movement System
+
+↓
+
+Root
+
+↓
+
+Slow
+
+AI System
+
+↓
+
+Stun
+
+The Status Effect System never executes gameplay logic.
+
+---
+
+# Active Status Queries
+
+Every entity exposes its current Active Status List.
+
+Typical queries include:
+
+- Is Stunned?
+- Is Rooted?
+- Is Silenced?
+- Current Movement Modifier?
+- Current Damage Modifier?
+
+These queries are deterministic and constant-time.
+
+---
+
+# Status Effect Events
+
+Every important lifecycle change emits gameplay events.
+
+Supported events include:
+
+- OnStatusApplied
+- OnStatusRefreshed
+- OnStatusExpired
+- OnStatusRemoved
+
+Events never modify gameplay.
+
+---
+
+# Event Subscribers
+
+Typical subscribers include:
+
+- UI System
+- Buff Icons
+- Debuff Icons
+- Audio System
+- VFX System
+- Statistics System
+- Achievement System
+- Analytics
+
+The Status Effect System never directly communicates with these systems.
+
+---
+# Runtime Processing
+
+Every simulation update processes all active Status Effects.
+
+Pipeline:
+
+```
+For Each Active Status Effect
+
+↓
+
+Decrease Remaining Duration
+
+↓
+
+Check Expiration
+
+↓
+
+Remove if Necessary
+
+↓
+
+Continue
+```
+
+Processing order is deterministic.
+
+---
+
+# Processing Order
+
+Status Effects are processed in a predictable order.
+
+Version 1 recommends:
+
+```
+Oldest Applied
+
+↓
+
+Newest Applied
+```
+
+Any deterministic ordering is acceptable as long as it remains consistent across every simulation.
+
+---
+
+# Entity Death
+
+When an entity dies:
+
+Every active Status Effect is immediately removed.
+
+Pipeline:
+
+```
+Entity Dies
+
+↓
+
+Remove All Status Effects
+
+↓
+
+Clear Active Status List
+
+↓
+
+Emit Removal Events
+```
+
+No Status Effect survives death.
+
+---
+
+# Persistence
+
+Status Effects are temporary runtime objects.
+
+They are never saved as permanent progression.
+
+Saving the game records only persistent character data.
+
+Temporary Status Effects are recreated only through gameplay.
+
+---
+
+# Runtime Validation
+
+Every Status Effect is validated before becoming active.
+
+Validation includes:
+
+- Valid Effect Type
+- Valid Source
+- Valid Target
+- Positive Duration
+- Valid Strength
+
+Invalid effects are safely discarded.
+
+---
+
+# Invalid Effects
+
+The following effects are rejected:
+
+- Unknown Effect Types
+- Negative Durations
+- Missing Source
+- Missing Target
+- Invalid Modifier Values
+
+Development builds should report errors.
+
+Release builds silently discard invalid effects.
+
+---
+
+# Runtime Performance
+
+The Status Effect System should avoid:
+
+- Runtime allocations
+- Reflection
+- Dynamic modifier lookups
+- Expensive searches
+
+Recommended implementation:
+
+- Cached Effect Definitions
+- Fixed Runtime Structures
+- Constant-time Active Status Lists
+
+The system should efficiently support hundreds of simultaneous effects.
+
+---
+
+# Relationship with Other Systems
+
+The Status Effect System receives requests from:
+
+- Ability System
+- Combat System
+- Future Environmental Systems
+
+It provides temporary modifiers to:
+
+- Damage System
+- Ability System
+- Movement System
+- AI System
+- Animation System
+
+Each system remains responsible for its own gameplay logic.
+
+---
+
+# Future Compatibility
+
+The architecture intentionally supports future Status Effects.
+
+Examples include:
+
+- Damage over Time
+- Heal over Time
+- Fear
+- Sleep
+- Knockback
+- Pull
+- Charm
+- Taunt
+- Blind
+- Confusion
+- Cleanse
+- Purge
+- Reflect
+- Absorption Shields
+- Invisibility
+
+Each new effect should integrate into the existing lifecycle without redesigning the system.
+
+---
+
+# Acceptance Criteria
+
+The Status Effect System is considered complete for Version 1 when:
+
+- Every Status Effect follows the shared lifecycle.
+- Effects are applied immediately after Ability resolution.
+- Every effect has an independent duration.
+- Remaining Duration decreases deterministically.
+- Identical effects refresh instead of stacking.
+- Different effects may coexist.
+- Buffs and Debuffs are calculated together.
+- Stun prevents movement, attacks and abilities.
+- Root prevents movement only.
+- Slow only modifies Movement Speed.
+- Silence only prevents Ability usage.
+- Expired effects are removed immediately.
+- All effects are removed when an entity dies.
+- Gameplay systems read temporary modifiers from the Status Effect System.
+- Every lifecycle change emits gameplay events.
+
+---
+
+# Immutable Design Rules
+
+The following rules define the Status Effect System and must never change without redesigning the project.
+
+Rule 01
+
+Version 1 supports only Buff, Debuff, Stun, Root, Slow and Silence.
+
+Rule 02
+
+Every Status Effect is temporary.
+
+Rule 03
+
+Every Status Effect follows the shared lifecycle.
+
+Rule 04
+
+Status Effects are applied immediately after Ability resolution.
+
+Rule 05
+
+Every Status Effect has its own independent duration.
+
+Rule 06
+
+Identical Status Effects never stack.
+
+Rule 07
+
+Reapplying an identical Status Effect refreshes its duration.
+
+Rule 08
+
+Different Status Effects may coexist.
+
+Rule 09
+
+Buffs and Debuffs never automatically cancel each other.
+
+Rule 10
+
+Expired Status Effects are removed immediately.
+
+Rule 11
+
+All Status Effects are removed when an entity dies.
+
+Rule 12
+
+The Status Effect System never executes gameplay logic.
+
+Rule 13
+
+The Status Effect System only exposes temporary gameplay modifiers.
+
+Rule 14
+
+Gameplay simulation is completely independent from presentation.
+
+Rule 15
+
+Future Status Effects extend the existing architecture rather than replacing it.
+
+---
+
+# Summary
+
+The Status Effect System provides a deterministic, modular and data-driven framework for managing all temporary gameplay effects applied to entities. It applies, refreshes, tracks and removes Status Effects while exposing temporary modifiers to the rest of the simulation through a lightweight and predictable architecture. By limiting Version 1 to Buff, Debuff, Stun, Root, Slow and Silence, the system remains easy to balance while providing a scalable foundation for future mechanics such as Damage over Time, Fear, Knockback and Cleanse without requiring structural changes.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

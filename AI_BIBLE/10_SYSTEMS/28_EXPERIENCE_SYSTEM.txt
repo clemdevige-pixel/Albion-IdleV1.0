@@ -1,0 +1,312 @@
+# 28_EXPERIENCE_SYSTEM
+
+## Purpose
+
+The Experience System manages how experience (XP) is earned and distributed throughout the game.
+
+Unlike traditional RPGs, experience is never used to increase a global character level.
+
+Experience exists exclusively to progress Weapon Masteries.
+
+The Experience System is responsible only for generating, distributing, and applying experience.
+
+It never manages progression rewards or Mastery logic.
+
+---
+
+# Design Goals
+
+The Experience System must:
+
+- Remove traditional character leveling.
+- Reward active gameplay.
+- Encourage weapon specialization.
+- Encourage experimentation with multiple weapons.
+- Remain deterministic.
+- Be fully data-driven.
+- Support future content without architectural changes.
+
+---
+
+# No Character Experience
+
+The game does not contain Character XP.
+
+The following systems do not exist:
+
+- Character Level XP
+- Account Level XP
+- Global Experience Pool
+
+All experience earned in the game is Weapon Mastery Experience.
+
+---
+
+# Weapon Experience
+
+Every weapon owns its own experience pool.
+
+Example:
+
+- Broadsword XP
+- Claymore XP
+- Dual Sword XP
+- Bow XP
+- Fire Staff XP
+
+Each pool progresses independently.
+
+Experience earned for one weapon never increases another weapon's progression.
+
+---
+
+# Experience Receiver
+
+Only the currently equipped weapon receives experience.
+
+Example:
+
+Player equips a Claymore.
+
+↓
+
+Combat begins.
+
+↓
+
+All earned XP is added to Claymore Mastery.
+
+Broadsword Mastery remains unchanged.
+
+---
+
+# Experience Sources
+
+Experience may be awarded from multiple gameplay activities.
+
+Examples:
+
+- Enemy Kills
+- Elite Kills
+- Boss Kills
+- Gathering Encounters
+- Dungeon Completion
+- Exploration Milestones
+- Future Activities
+
+Additional experience sources may be introduced without modifying the system.
+
+---
+
+# Experience Distribution
+
+Whenever an activity grants experience:
+
+1. Determine XP Reward.
+2. Identify equipped weapon.
+3. Retrieve corresponding Weapon Mastery.
+4. Add XP.
+5. Notify Mastery System.
+
+The Experience System performs no additional calculations.
+
+---
+
+# Experience Ownership
+
+Experience always belongs to a single Weapon Mastery.
+
+Experience is never:
+
+- Shared
+- Split
+- Converted
+- Stored globally
+
+Every earned experience point has exactly one destination.
+
+---
+
+# Experience Overflow
+
+If accumulated XP exceeds the amount required for the current Mastery Level:
+
+Remaining XP carries over automatically.
+
+Example:
+
+Required XP:
+
+100
+
+Current XP:
+
+95
+
+Reward:
+
+20
+
+Result:
+
+Level Up
+
+Remaining XP:
+
+15
+
+No experience is lost.
+
+---
+
+# Multiple Level Ups
+
+If sufficient experience is earned:
+
+Several Mastery Levels may be gained simultaneously.
+
+Example:
+
+Current Level:
+
+15
+
+Reward:
+
+Large Boss XP
+
+↓
+
+Level 16
+
+↓
+
+Level 17
+
+↓
+
+Level 18
+
+↓
+
+Stop when remaining XP is below the next requirement.
+
+---
+
+# Maximum Level
+
+Version 1 Masteries are capped at Level 100.
+
+Future versions may increase this limit to Level 120.
+
+If a Mastery reaches its current maximum level:
+
+- Additional XP is ignored.
+- No overflow storage is required.
+- Future cap increases remain compatible with existing save data.
+
+---
+
+# Experience Calculation
+
+The Experience System does not define balancing values.
+
+It only applies values received from data tables.
+
+Examples of configurable values:
+
+- Enemy XP
+- Boss XP
+- Elite XP
+- Gathering XP
+- Exploration XP
+- Activity Multipliers
+
+All numerical values are external.
+
+---
+
+# Experience Notifications
+
+Whenever experience is earned:
+
+The system generates events for:
+
+- UI Updates
+- Progress Bars
+- Level Up Effects
+- Audio Feedback
+- Achievement Tracking
+
+The Experience System never controls presentation logic.
+
+---
+
+# Save Data
+
+Each Weapon Mastery stores:
+
+- Current Level
+- Current XP
+- Total Lifetime XP (optional)
+
+The Experience System never stores global player experience.
+
+---
+
+# Future Scalability
+
+The Experience System supports future additions including:
+
+- New Weapons
+- New Activities
+- New Experience Sources
+- Experience Events
+- Seasonal Bonuses
+- Temporary Multipliers
+
+No architectural changes should be required.
+
+---
+
+# System Interactions
+
+The Experience System interacts with:
+
+- Combat System
+- Exploration System
+- Gathering System
+- Loot System
+- Mastery System
+- Progression System
+- Save System
+- UI System
+
+The Experience System distributes XP but never manages rewards.
+
+---
+
+# Data Driven Design
+
+The Experience System contains no hardcoded experience values.
+
+All experience rewards, level requirements, and progression values are defined through data.
+
+The game logic only distributes and validates experience.
+
+---
+
+# Data Tables
+
+The Experience System uses data tables including, but not limited to:
+
+- ExperienceRewardTable
+- MasteryExperienceTable
+- ActivityExperienceTable
+- ExperienceModifierTable
+
+All balancing values are defined by data.
+
+The system logic must never rely on hardcoded numerical values.
+
+DOCUMENT TERMINÉ

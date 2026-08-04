@@ -1,0 +1,1348 @@
+# 36. VENDOR SYSTEM
+
+## Purpose
+
+The Vendor System defines how players purchase basic goods from NPC merchants and sell specific low-value item categories for Silver.
+
+NPC Vendors provide accessibility, convenience, and economic fallback services.
+
+They are not intended to replace:
+
+- Gathering
+- Refining
+- Crafting
+- Loot
+- The future player-driven Market System
+
+The Vendor System must support the early game without becoming the primary source of valuable equipment or resources.
+
+---
+
+# Design Goals
+
+The Vendor System must:
+
+- Prevent players from becoming permanently blocked.
+- Provide access to essential starter goods.
+- Create predictable Silver sinks.
+- Convert selected low-value items into Silver.
+- Avoid competing with crafting.
+- Avoid competing with the future player market.
+- Use fixed, data-driven prices.
+- Support multiple vendor identities and inventories.
+- Remain simple to understand.
+
+---
+
+# Core Philosophy
+
+NPC Vendors are utility services.
+
+They exist to:
+
+- Help new players begin progressing.
+- Replace essential low-level tools.
+- Supply basic consumables.
+- Purchase selected low-value goods.
+- Provide stable and predictable transactions.
+
+They must never become the optimal source of high-value progression.
+
+---
+
+# Vendor Roles
+
+NPC Vendors may perform one or both of the following roles:
+
+- Sell approved items to the player.
+- Buy approved items from the player.
+
+A vendor may be configured as:
+
+- Buy Only
+- Sell Only
+- Buy and Sell
+- Service Only
+
+---
+
+# Vendor Types
+
+The architecture supports multiple vendor types.
+
+Possible examples include:
+
+- General Merchant
+- Tool Merchant
+- Food Merchant
+- Potion Merchant
+- Equipment Merchant
+- Junk Collector
+- Trophy Buyer
+- Island Merchant
+
+V1 may use a small number of generalized merchants.
+
+---
+
+# Vendor Inventory Philosophy
+
+Vendors sell only basic goods.
+
+Their inventory should focus on:
+
+- Accessibility
+- Starter recovery
+- Convenience
+- Common consumables
+
+Vendor inventory must not include high-value progression items.
+
+---
+
+# Items Vendors May Sell
+
+Approved categories may include:
+
+- Tier 1 Gathering Tools
+- Tier 2 Gathering Tools
+- Basic Food
+- Common Potions
+- Standard Consumables
+- Low-Tier Emergency Equipment
+- Universal Basic Components
+- Tutorial Items
+- Starter Supplies
+
+Exact inventories are defined through Data Tables.
+
+---
+
+# Items Vendors Must Not Sell
+
+NPC Vendors do not sell:
+
+- High-Tier Equipment
+- High-Quality Equipment
+- Enchanted Equipment
+- Rare Resources
+- Refined Rare Materials
+- Boss Loot
+- Enchantment Materials
+- Exclusive Equipment
+- Optimized Builds
+- Endgame Consumables
+- Player-Crafted Premium Goods
+
+---
+
+# Crafting Protection
+
+Vendor goods must never invalidate crafting.
+
+To protect crafting:
+
+- Vendor equipment remains low Tier.
+- Vendor equipment uses basic Quality.
+- Vendor equipment is never enchanted.
+- Vendor prices are not lower than intended crafting progression costs.
+- Advanced goods remain unavailable from NPCs.
+
+The best progression items must come from gameplay systems.
+
+---
+
+# Vendor Equipment Rules
+
+When NPC Vendors sell equipment, the following default rules apply:
+
+- Low Tier only
+- Normal Quality
+- Enchantment level .0
+- No random affixes
+- No special passive variants
+- Fixed item definitions
+
+Vendor equipment is intended for recovery and early progression.
+
+---
+
+# Vendor Purchase Transactions
+
+A player may purchase an item when:
+
+- The vendor sells the item.
+- The requested quantity is valid.
+- The player has enough Silver.
+- The player has enough inventory capacity.
+- The item is currently enabled.
+- The transaction is authorized.
+
+---
+
+# Purchase Flow
+
+1. Player interacts with a vendor.
+2. Vendor interface opens.
+3. Player selects an item.
+4. Player chooses a quantity.
+5. Total Silver cost is calculated.
+6. Inventory capacity is validated.
+7. Player confirms.
+8. Silver is removed.
+9. Item is added to inventory.
+10. Transaction is saved.
+11. Interface refreshes.
+
+---
+
+# Purchase Cost
+
+Conceptual formula:
+
+Total Purchase Cost
+
+=
+
+Unit Buy Price
+
+×
+
+Quantity
+
+Vendor prices are fixed.
+
+No dynamic pricing is used in V1.
+
+---
+
+# Vendor Buyback Role
+
+NPC Vendors may purchase selected item categories from players.
+
+This provides:
+
+- Inventory cleanup
+- A stable Silver source
+- Value for junk items
+- Value for designated trophies
+- A fallback for low-value goods
+
+NPC buyback must not become the best way to earn Silver.
+
+---
+
+# Items Vendors May Buy
+
+Approved buyback categories may include:
+
+- Common Equipment
+- Basic Tools
+- Basic Food
+- Common Potions
+- Standard Consumables
+- Junk Items
+- Vendor Trophies
+- Items explicitly marked as VendorSellable
+
+Each item must be individually or categorically approved.
+
+---
+
+# Items Vendors Must Not Buy
+
+NPC Vendors do not purchase:
+
+- Gathering Resources
+- Refined Materials
+- Rare Resources
+- Rare Components
+- Enchanted Equipment
+- Boss Items
+- Boss Materials
+- Enchantment Materials
+- Exclusive Items
+- Strategic Economy Goods
+- Future Market-Focused Goods
+
+---
+
+# Junk Items
+
+Junk Items are objects primarily intended to be sold to NPC Vendors.
+
+Examples may include:
+
+- Broken Weapons
+- Damaged Relics
+- Monster Teeth
+- Cracked Idols
+- Old Coins
+- Worthless Artifacts
+- Ruined Equipment Parts
+
+Names are illustrative only.
+
+Junk Items may:
+
+- Drop from enemies.
+- Drop from bosses.
+- Be granted by exploration.
+- Have no other gameplay function.
+- Possess a fixed vendor value.
+
+---
+
+# Trophy Items
+
+Trophy Items may be valuable enemy drops intended for sale.
+
+They differ from Junk Items by representing:
+
+- Rare enemy trophies
+- Elite trophies
+- Boss trophies
+- Biome-specific trophies
+
+Trophies may have higher fixed vendor prices.
+
+A Trophy Item must not also be required for progression unless explicitly configured.
+
+---
+
+# Common Equipment Buyback
+
+Vendors may purchase common equipment only when configured.
+
+Recommended default:
+
+- Normal Quality accepted
+- Low-Tier equipment accepted
+- Enchanted equipment rejected
+- Rare or special equipment rejected
+
+This allows players to clear basic drops without creating an artificial market floor for valuable items.
+
+---
+
+# Sell Transaction
+
+A player may sell an item when:
+
+- The item exists.
+- The vendor accepts its category.
+- The item is not locked.
+- The item is not equipped.
+- The item is not reserved by another system.
+- The quantity is valid.
+- The item has a defined Vendor Sell Price.
+
+---
+
+# Sell Flow
+
+1. Player selects an item.
+2. Vendor validates eligibility.
+3. Vendor displays the unit sell price.
+4. Player selects a quantity.
+5. Total Silver return is calculated.
+6. Player confirms.
+7. Item quantity is removed.
+8. Silver is added to the wallet.
+9. Transaction is saved.
+10. Interface refreshes.
+
+---
+
+# Sell Value
+
+Conceptual formula:
+
+Total Sell Value
+
+=
+
+Unit Vendor Sell Price
+
+×
+
+Quantity
+
+Prices remain fixed.
+
+---
+
+# Buy Price and Sell Price
+
+Each sellable vendor item may define:
+
+- Vendor Buy Price
+- Vendor Sell Price
+
+Definitions:
+
+Vendor Buy Price:
+
+The amount of Silver the player pays to purchase the item from an NPC.
+
+Vendor Sell Price:
+
+The amount of Silver the player receives when selling the item to an NPC.
+
+---
+
+# Price Difference
+
+Vendor Sell Price should normally be lower than Vendor Buy Price.
+
+Example:
+
+Vendor Buy Price:
+
+100 Silver
+
+Vendor Sell Price:
+
+20 Silver
+
+This prevents infinite resale loops.
+
+---
+
+# Anti-Arbitrage Rule
+
+The system must never allow:
+
+Purchase From Vendor
+
+↓
+
+Sell To Vendor
+
+↓
+
+Earn More Silver
+
+For every item:
+
+Vendor Sell Price
+
+<
+
+Vendor Buy Price
+
+When both prices exist.
+
+---
+
+# Fixed Pricing
+
+All NPC Vendor prices are fixed.
+
+Prices do not change based on:
+
+- City
+- Biome
+- Player population
+- Supply
+- Demand
+- Time
+- Stock
+- Events
+- Player reputation
+
+Any future exception requires explicit configuration.
+
+---
+
+# No Dynamic Economy
+
+NPC Vendors do not simulate an economy.
+
+They do not:
+
+- Raise prices when demand increases.
+- Lower prices when supply increases.
+- Run out of standard goods.
+- Compete with other vendors.
+- React to player purchases.
+
+Dynamic pricing belongs to the future Market System.
+
+---
+
+# Vendor Stock
+
+Recommended V1 rule:
+
+Standard vendor inventory has unlimited stock.
+
+This applies to:
+
+- Starter tools
+- Basic food
+- Common consumables
+- Emergency low-level equipment
+
+Limited-stock vendors may be added later.
+
+---
+
+# Unlimited Stock Philosophy
+
+Unlimited stock prevents essential progression items from becoming unavailable.
+
+Because NPCs sell only basic goods, unlimited supply does not threaten advanced crafting.
+
+---
+
+# Vendor Refresh
+
+Standard V1 vendors do not require stock refresh timers.
+
+Their inventory is loaded from Data Tables.
+
+Future limited-stock vendors may support:
+
+- Daily refresh
+- Timed refresh
+- Account-specific stock
+- Global stock
+
+These features are excluded from V1.
+
+---
+
+# Vendor Location
+
+Vendors may be located in:
+
+- Cities
+- Tutorial Areas
+- Player Island
+- Safe Hubs
+- Future Settlements
+
+Vendor access may be restricted by area or progression.
+
+---
+
+# City Vendors
+
+Cities may contain several specialized vendors.
+
+Example structure:
+
+General Merchant:
+
+- Starter equipment
+- Basic tools
+
+Consumable Merchant:
+
+- Food
+- Potions
+
+Collector:
+
+- Junk items
+- Trophies
+
+Specialization is optional and primarily affects presentation.
+
+---
+
+# Player Island Vendors
+
+The Player Island may support vendors after specific upgrades.
+
+Island vendors may offer:
+
+- Basic supplies
+- Convenience purchasing
+- Junk item buyback
+
+They use the same fixed-price rules.
+
+Island vendor access may require:
+
+- Building construction
+- Building upgrade
+- Worker assignment
+- Progression unlock
+
+Exact requirements belong to the Player Island System.
+
+---
+
+# Vendor Access Rules
+
+A vendor may define:
+
+- Required Player Progression
+- Required Island Level
+- Required Quest
+- Required Biome Unlock
+- Required Building
+- Required Feature Flag
+
+These rules remain data-driven.
+
+---
+
+# Currency Integration
+
+All vendor transactions use Silver.
+
+V1 does not support:
+
+- Barter
+- Tokens
+- Premium Currency
+- Faction Currency
+- Mixed Payments
+
+The Currency System is authoritative for all payments.
+
+---
+
+# Inventory Integration
+
+Purchased goods are added to the player inventory.
+
+The Vendor System must validate:
+
+- Available slots
+- Stack capacity
+- Item stack rules
+- Unique item constraints
+
+If the purchase cannot fit:
+
+- The transaction fails.
+- No Silver is consumed.
+
+---
+
+# Equipment Integration
+
+Equipment sold by NPCs uses the standard Item System.
+
+Vendor equipment is not a special item class.
+
+It still possesses:
+
+- ItemInstanceID
+- ItemDefinitionID
+- Tier
+- Quality
+- Enchantment
+- Durability
+
+---
+
+# Durability of Vendor Equipment
+
+Recommended rule:
+
+New equipment purchased from a vendor starts at full durability.
+
+Example:
+
+Current Durability
+
+=
+
+Maximum Durability
+
+Used equipment is not sold by vendors in V1.
+
+---
+
+# Quality of Vendor Equipment
+
+Vendor equipment uses a fixed Quality.
+
+Recommended V1 default:
+
+Normal Quality
+
+Vendors do not roll random Quality.
+
+---
+
+# Enchantment of Vendor Equipment
+
+All vendor equipment is sold at enchantment level `.0`.
+
+NPC Vendors do not sell enchanted items.
+
+---
+
+# Item Binding
+
+Vendor items are not bound.
+
+They follow the same ownership and trade rules as equivalent gameplay items.
+
+Future market restrictions may be defined separately.
+
+---
+
+# Selling Damaged Equipment
+
+Vendors may accept damaged equipment if the item category is eligible.
+
+The sell price may optionally depend on durability.
+
+Recommended V1 rule:
+
+Sell value scales with current durability percentage.
+
+Conceptual formula:
+
+Adjusted Sell Value
+
+=
+
+Base Vendor Sell Price
+
+×
+
+Current Durability Percentage
+
+---
+
+# Zero Durability Equipment
+
+Equipment reaching zero durability is destroyed.
+
+It cannot be sold to a vendor.
+
+No transaction is possible because the item no longer exists.
+
+---
+
+# Quality Sell Modifier
+
+If multiple Quality levels are accepted by a vendor, the sell value may use a Quality modifier.
+
+Recommended V1 simplification:
+
+Only configured basic Quality equipment is accepted.
+
+This avoids creating a vendor price floor for valuable Quality items.
+
+---
+
+# Enchantment Sell Restriction
+
+Enchanted equipment is not accepted by NPC Vendors in V1.
+
+This prevents players from converting valuable progression investments into fixed-price Silver.
+
+Enchanted items should be:
+
+- Used
+- Stored
+- Salvaged in a future system
+- Sold through the future player market
+
+---
+
+# Bulk Selling
+
+The Vendor Interface should support:
+
+- Sell Selected
+- Sell Stack
+- Sell All Junk
+
+Sell All Junk automatically selects items marked as Junk.
+
+It must not select other categories.
+
+---
+
+# Sell All Junk Safety
+
+The system must never infer junk status from item value.
+
+Only items explicitly configured with:
+
+ItemTag = Junk
+
+may be included.
+
+This prevents accidental sale of valuable goods.
+
+---
+
+# Vendor Interface
+
+The Vendor Interface should display:
+
+- Vendor Name
+- Vendor Type
+- Available Inventory
+- Item Icon
+- Item Name
+- Tier
+- Quantity Selector
+- Unit Price
+- Total Price
+- Player Silver
+- Inventory Capacity
+- Buy Tab
+- Sell Tab
+
+---
+
+# Purchase Preview
+
+Before confirmation, the interface displays:
+
+- Item
+- Quantity
+- Unit Price
+- Total Price
+- Current Silver
+- Remaining Silver
+- Inventory result
+
+The player must know the exact result.
+
+---
+
+# Sale Preview
+
+Before confirmation, the interface displays:
+
+- Selected item
+- Quantity
+- Unit sell value
+- Total Silver received
+- Durability modifier, if applicable
+- Confirmation action
+
+---
+
+# Item Tooltips
+
+Vendor tooltips use standard Item System tooltips.
+
+They may additionally display:
+
+- Vendor Buy Price
+- Vendor Sell Price
+- Vendor Eligibility
+- Purchase Restriction
+
+---
+
+# Transaction Safety
+
+Vendor transactions must be atomic.
+
+For purchases:
+
+Either:
+
+- Silver is consumed.
+- Item is granted.
+
+or:
+
+Nothing changes.
+
+For sales:
+
+Either:
+
+- Item is removed.
+- Silver is granted.
+
+or:
+
+Nothing changes.
+
+---
+
+# Idempotency
+
+Every vendor transaction receives a unique TransactionID.
+
+Repeated requests using the same identifier must not be processed twice.
+
+This prevents:
+
+- Duplicate purchases
+- Duplicate sales
+- Double-click exploits
+- Network retry exploits
+
+---
+
+# Server Authority
+
+All vendor logic is authoritative.
+
+The client may:
+
+- Display inventory
+- Display prices
+- Request purchases
+- Request sales
+
+The client may not:
+
+- Define prices
+- Generate items
+- Generate Silver
+- Change accepted categories
+- Complete transactions directly
+
+---
+
+# Vendor Inventory Data
+
+Vendor inventories are defined through Data Tables.
+
+They are not manually embedded in NPC scripts.
+
+This allows:
+
+- Balance changes
+- Vendor variants
+- Event configuration
+- Localization
+- Content expansion
+
+---
+
+# Data Tables
+
+The Vendor System requires at minimum the following data structures.
+
+---
+
+## VendorDefinitionTable
+
+Fields:
+
+- VendorID
+- DisplayName
+- VendorType
+- LocationID
+- CanSellToPlayer
+- CanBuyFromPlayer
+- InventoryTableID
+- BuybackProfileID
+- RequiredUnlockID
+- Enabled
+
+---
+
+## VendorInventoryTable
+
+Fields:
+
+- InventoryTableID
+- ItemDefinitionID
+- VendorBuyPrice
+- DefaultQuantity
+- UnlimitedStock
+- StockLimit
+- RefreshRuleID
+- DisplayOrder
+- Enabled
+
+---
+
+## VendorBuybackProfileTable
+
+Fields:
+
+- BuybackProfileID
+- AcceptedItemCategory
+- AcceptedItemTag
+- MinimumTier
+- MaximumTier
+- AcceptedQualityList
+- AcceptEnchantedItems
+- DurabilityPriceModifierEnabled
+- Enabled
+
+---
+
+## VendorSellPriceTable
+
+Fields:
+
+- ItemDefinitionID
+- BaseVendorSellPrice
+- QualityModifierProfileID
+- DurabilityModifierEnabled
+- Enabled
+
+---
+
+## VendorAccessRequirementTable
+
+Fields:
+
+- RequiredUnlockID
+- RequirementType
+- RequirementValue
+- Enabled
+
+---
+
+## VendorStockRefreshTable
+
+Future fields:
+
+- RefreshRuleID
+- RefreshInterval
+- RefreshAmount
+- SharedStock
+- PlayerSpecificStock
+- Enabled
+
+Not required for standard V1 vendors.
+
+---
+
+# Runtime Components
+
+## VendorService
+
+Responsibilities:
+
+- Load vendor definitions
+- Validate access
+- Resolve vendor inventory
+- Process purchase requests
+- Process sale requests
+- Publish transaction events
+
+---
+
+## VendorPriceResolver
+
+Responsibilities:
+
+- Resolve fixed purchase price
+- Resolve fixed sell price
+- Apply durability modifier
+- Apply allowed configuration modifiers
+- Reject invalid prices
+
+---
+
+## VendorTransactionService
+
+Responsibilities:
+
+- Lock wallet
+- Lock inventory
+- Validate request
+- Remove or grant items
+- Remove or grant Silver
+- Save state
+- Prevent duplicate execution
+
+---
+
+## VendorInventoryProvider
+
+Responsibilities:
+
+- Load inventory entries
+- Apply unlock rules
+- Apply feature flags
+- Return visible vendor goods
+
+---
+
+# Events
+
+The system should publish events such as:
+
+- OnVendorOpened
+- OnVendorPurchaseCompleted
+- OnVendorSaleCompleted
+- OnVendorTransactionRejected
+- OnJunkSold
+- OnVendorUnlocked
+
+Other systems may subscribe without direct coupling.
+
+---
+
+# Save Data
+
+Standard unlimited-stock vendors require minimal persistent state.
+
+Player save data may store:
+
+- UnlockedVendorIDs
+- VendorTutorialState
+- LifetimeVendorPurchases
+- LifetimeVendorSales
+
+Transaction records should store:
+
+- TransactionID
+- VendorID
+- PlayerID
+- TransactionType
+- ItemDefinitionID
+- Quantity
+- SilverAmount
+- Timestamp
+- Result
+
+---
+
+# Validation Rules
+
+A purchase fails when:
+
+- Vendor does not exist.
+- Vendor is disabled.
+- Player lacks access.
+- Item is not sold by the vendor.
+- Quantity is invalid.
+- Silver is insufficient.
+- Inventory capacity is insufficient.
+- Transaction has already been processed.
+
+A sale fails when:
+
+- Vendor does not buy items.
+- Item is not accepted.
+- Item does not exist.
+- Item is equipped.
+- Item is locked.
+- Quantity is invalid.
+- Item is enchanted and enchanted items are rejected.
+- Item belongs to an excluded category.
+- Transaction has already been processed.
+
+---
+
+# Edge Cases
+
+## Inventory Full During Purchase
+
+The transaction fails.
+
+No Silver is consumed.
+
+---
+
+## Item Removed Before Sale Confirmation
+
+Final validation fails.
+
+No Silver is granted.
+
+---
+
+## Price Data Changes While Interface Is Open
+
+The authoritative price is recalculated at confirmation.
+
+The interface refreshes if the price changed.
+
+---
+
+## Double Purchase Request
+
+Only the first transaction is processed.
+
+---
+
+## Selling a Partial Stack
+
+Only the selected quantity is removed.
+
+Remaining items stay in the inventory.
+
+---
+
+## Vendor Disabled Through Configuration
+
+The vendor becomes unavailable.
+
+Existing items purchased from that vendor remain valid.
+
+---
+
+## Item Removed From Vendor Inventory
+
+New purchases are blocked.
+
+Previously purchased items remain unaffected.
+
+---
+
+# Balancing Principles
+
+Vendor balancing should focus on:
+
+- Avoiding progression bypasses
+- Protecting crafting value
+- Maintaining meaningful Silver sinks
+- Preventing profitable resale loops
+- Keeping starter recovery affordable
+- Limiting vendor-generated Silver
+
+---
+
+# Purchase Price Philosophy
+
+Vendor purchase prices should be:
+
+- Affordable enough for recovery
+- Expensive enough to preserve crafting
+- Predictable
+- Stable
+- Independent of player demand
+
+---
+
+# Buyback Price Philosophy
+
+Vendor sell values should be conservative.
+
+They should:
+
+- Give junk a purpose
+- Help inventory cleanup
+- Provide small Silver income
+- Never outperform primary progression activities
+- Never define the value of strategic goods
+
+---
+
+# Analytics
+
+Recommended analytics include:
+
+- Vendor purchases per item
+- Vendor sales per item
+- Silver spent at vendors
+- Silver generated by buyback
+- Most purchased starter goods
+- Most sold junk items
+- Average purchase quantity
+- Average sale quantity
+- Player progression at transaction time
+
+These metrics support economy balancing.
+
+---
+
+# Security Considerations
+
+The Vendor System must prevent:
+
+- Price manipulation
+- Negative-price transactions
+- Duplicate transactions
+- Item duplication
+- Silver duplication
+- Unauthorized vendor access
+- Selling locked equipment
+- Selling the same item twice
+- Buy-and-resell profit loops
+
+---
+
+# Future Extensions
+
+The architecture supports future additions such as:
+
+- Limited-stock merchants
+- Traveling merchants
+- Rotating inventories
+- Reputation vendors
+- Event vendors
+- Faction vendors
+- Guild vendors
+- Daily deals
+- City-specific inventories
+- Vendor discounts
+- Multiple currencies
+- Buyback modifiers
+- Vendor quests
+
+These extensions are not required for V1.
+
+---
+
+# Explicitly Excluded from V1
+
+V1 does not include:
+
+- Dynamic NPC prices
+- Supply and demand simulation
+- City price differences
+- Vendor auctions
+- Player-to-player trading
+- Player Market
+- Rare equipment vendors
+- Enchanted equipment vendors
+- Random Quality vendor items
+- Limited global stock
+- Vendor bargaining
+- Vendor reputation
+- Premium currency purchases
+
+---
+
+# System Relationships
+
+The Vendor System interacts with:
+
+- Currency System
+- Inventory System
+- Item System
+- Equipment System
+- Durability System
+- Player Island System
+- Progression System
+- Save System
+- UI System
+
+Future interactions include:
+
+- Quest System
+- Reputation System
+- Event System
+- Market System
+- Faction System
+
+---
+
+# Summary
+
+The Vendor System provides predictable NPC-based buying and selling services.
+
+NPC Vendors sell only basic items such as starter tools, common consumables, and low-level emergency equipment.
+
+They do not sell rare, enchanted, high-quality, or endgame goods.
+
+Vendors may purchase only approved categories such as junk items, trophies, common consumables, tools, and selected basic equipment.
+
+They do not buy strategic resources, rare materials, enchanted equipment, boss items, or future market-focused goods.
+
+All prices are fixed and defined through Data Tables.
+
+Vendor transactions use Silver, are server-authoritative, atomic, deterministic, and protected against duplication and arbitrage.
+
+The system supports early-game accessibility and inventory cleanup while preserving the importance of gathering, crafting, loot, and the future player-driven economy.
+
+DOCUMENT TERMINÉ

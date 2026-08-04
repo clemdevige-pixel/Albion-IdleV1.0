@@ -1,0 +1,255 @@
+## ALBION IDLE — INVENTORY SYSTEM
+
+**Document type:** System Specification
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Core Gameplay System
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Dependencies:** `10_CHARACTER_SYSTEM.txt`, `11_STAT_SYSTEM.txt`, `06_GLOSSARY.txt`
+
+---
+
+# 1. PURPOSE
+
+The Inventory System manages all items owned by the player during gameplay.
+
+It is responsible for:
+
+* storing items;
+* validating inventory capacity;
+* managing item stacks;
+* managing the active bag;
+* transferring overflow items to the Bank.
+
+It does not define item properties, crafting recipes, loot generation or equipment bonuses.
+
+---
+
+# 2. DESIGN PRINCIPLES
+
+The Inventory System must be:
+
+* deterministic;
+* persistent;
+* category-driven;
+* independent from Combat;
+* independent from Crafting.
+
+The inventory is the player's active storage.
+
+The Bank is the player's long-term storage.
+
+---
+
+# 3. INVENTORY STRUCTURE
+
+The inventory contains:
+
+* inventory slots;
+* one dedicated Bag Slot;
+* item stacks.
+
+The Bag Slot is **not** an equipment slot.
+
+It belongs exclusively to the Inventory System.
+
+---
+
+# 4. INVENTORY CAPACITY
+
+Inventory capacity is limited by the number of available slots.
+
+Capacity is extensible.
+
+The initial capacity is defined by balancing data.
+
+The current capacity equals:
+
+```text
+Base Inventory Capacity
++ Active Bag Bonus
+```
+
+No other source modifies inventory capacity during the Vertical Slice.
+
+---
+
+# 5. ACTIVE BAG
+
+Only one bag may be active at a time.
+
+The active bag occupies the dedicated Bag Slot.
+
+A bag provides only one gameplay effect:
+
+* increasing inventory capacity.
+
+Bags may be:
+
+* crafted;
+* obtained as loot.
+
+Bag statistics and progression are defined by the Item System.
+
+---
+
+# 6. ITEM STACKS
+
+Identical stackable items are grouped into stacks.
+
+Each stack has a maximum size.
+
+Maximum stack size is determined by the item's category.
+
+The Inventory System reads this limit from the Item System.
+
+---
+
+# 7. STACK RULES
+
+When receiving stackable items:
+
+1. fill existing compatible stacks;
+2. create new stacks if slots are available;
+3. transfer remaining items to the Bank if inventory is full.
+
+Stacks must never exceed their category limit.
+
+---
+
+# 8. NON-STACKABLE ITEMS
+
+Items marked as non-stackable occupy one inventory slot each.
+
+Their stacking limit is effectively one.
+
+---
+
+# 9. ITEM MOVEMENT
+
+The Inventory System supports:
+
+* adding items;
+* removing items;
+* splitting stacks;
+* merging stacks;
+* moving items between slots;
+* moving items between Inventory and Bank.
+
+The Item System defines whether an item is stackable.
+
+---
+
+# 10. INVENTORY OVERFLOW
+
+When no inventory slot is available:
+
+* newly obtained items are **not** discarded;
+* they are automatically transferred to the Bank.
+
+This rule applies to every acquisition source, including:
+
+* loot;
+* gathering;
+* crafting;
+* offline rewards;
+* quest rewards;
+* boss rewards.
+
+Gameplay systems do not need custom overflow logic.
+
+---
+
+# 11. BANK
+
+The Bank is a persistent secondary storage.
+
+Its responsibilities are:
+
+* receiving overflow items;
+* storing player items long-term.
+
+The Bank has its own capacity.
+
+Bank capacity is extensible.
+
+The detailed Bank implementation belongs to its dedicated specification.
+
+---
+
+# 12. PERSISTENCE
+
+The Inventory System stores:
+
+* slot contents;
+* stack quantities;
+* active bag;
+* inventory capacity reference.
+
+Derived values must be rebuilt when loading a save if required.
+
+---
+
+# 13. VALIDATION RULES
+
+The following conditions must always remain true:
+
+* only one active bag exists;
+* every item occupies a valid location;
+* stack quantities never exceed their category limit;
+* inventory capacity is never exceeded;
+* overflow items are transferred to the Bank;
+* no item is silently destroyed because the inventory is full.
+
+---
+
+# 14. EVENTS
+
+Recommended events:
+
+* inventory_item_added;
+* inventory_item_removed;
+* inventory_stack_updated;
+* inventory_capacity_changed;
+* active_bag_changed;
+* inventory_overflow_to_bank.
+
+---
+
+# 15. MINIMUM TESTS
+
+Required tests:
+
+* add a stackable item;
+* merge compatible stacks;
+* split a stack;
+* refuse stack overflow;
+* equip a bag;
+* increase inventory capacity;
+* replace the active bag;
+* fill the inventory completely;
+* transfer overflow items to the Bank;
+* verify no item is lost during overflow;
+* save and reload the inventory correctly.
+
+---
+
+# 16. OUT OF SCOPE
+
+This document intentionally excludes:
+
+* item definitions;
+* item categories;
+* item quality;
+* item rarity;
+* equipment rules;
+* crafting;
+* loot generation;
+* bank upgrade costs;
+* bank interface.
+
+These topics are defined in their respective specifications.
+
+---
+
+# END OF DOCUMENT

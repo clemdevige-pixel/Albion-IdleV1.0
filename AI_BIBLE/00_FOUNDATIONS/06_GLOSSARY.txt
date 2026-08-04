@@ -1,0 +1,470 @@
+================================================================================
+AI BIBLE
+================================================================================
+
+Document ID
+06_GLOSSARY
+
+Version
+1.0
+
+Status
+APPROVED
+
+================================================================================
+PURPOSE
+================================================================================
+
+This glossary defines every important gameplay and technical term used inside
+the AI Bible.
+
+Every document must use the terminology defined here.
+
+A concept should only have one official name.
+
+Avoid synonyms whenever possible.
+
+Consistent terminology improves communication between documentation,
+development and AI-assisted coding.
+
+================================================================================
+GENERAL RULES
+================================================================================
+
+• One concept = One official term.
+• Always use the official terminology.
+• Avoid abbreviations unless explicitly defined.
+• New terminology must be added here before being used elsewhere.
+• Gameplay terms take precedence over implementation names.
+
+================================================================================
+CORE GAMEPLAY TERMS
+================================================================================
+
+Combat
+
+The primary gameplay activity where the Hero fights enemies to obtain rewards.
+
+Hero
+
+The playable character controlled by the player.
+
+Enemy
+
+Any hostile entity that can participate in combat.
+
+Encounter
+
+A single combat instance against one or more enemies.
+
+Loot
+
+Any reward generated after defeating an enemy.
+
+Progression
+
+Permanent improvement of the player's overall power.
+
+Gameplay Loop
+
+A repeatable sequence of actions that continuously drives progression.
+
+Core Gameplay Loop
+
+The primary loop of:
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Equipment
+
+↓
+
+Stronger Hero
+
+↓
+
+Harder Combat
+
+================================================================================
+CHARACTER TERMS
+================================================================================
+
+Character
+
+The complete representation of the Hero including statistics, equipment,
+masteries and progression.
+
+Equipment
+
+Items worn by the Hero.
+
+Equipment Slot
+
+A location where one equipment item can be equipped.
+
+Equipment Tier
+
+Overall power level of equipment.
+
+Equipment Quality
+
+Quality modifier applied to an item of a given tier.
+
+Mastery
+
+Permanent specialization increasing efficiency within a gameplay domain.
+
+Experience
+
+Progression resource used to increase mastery levels.
+
+================================================================================
+COMBAT TERMS
+================================================================================
+
+Attack
+
+A combat action dealing damage.
+
+Damage
+
+Reduction applied to an enemy's Health.
+
+Health
+
+Amount of damage an entity can receive before being defeated.
+
+Defense
+
+Statistics reducing incoming damage.
+
+Critical Hit
+
+Attack dealing increased damage.
+
+Attack Speed
+
+Frequency at which attacks are performed.
+
+Combat Efficiency
+
+Overall effectiveness of the Hero during combat.
+
+================================================================================
+ITEM TERMS
+================================================================================
+
+Item
+
+Any object stored inside the inventory.
+
+Stack
+
+Multiple identical items occupying a single inventory slot.
+
+Consumable
+
+Item consumed after use.
+
+Material
+
+Resource used during crafting or refining.
+
+Monster Material
+
+Material obtained exclusively from defeated enemies.
+
+Resource
+
+Generic crafting ingredient.
+
+================================================================================
+RESOURCE TERMS
+================================================================================
+
+Raw Resource
+
+Unprocessed resource gathered by the Hero or Workers.
+
+Refined Resource
+
+Processed material created through refining.
+
+Production Resource
+
+Any resource used by production systems.
+
+Rare Resource
+
+Resource with limited acquisition methods.
+
+================================================================================
+PRODUCTION TERMS
+================================================================================
+
+Crafting
+
+Creating equipment from refined materials.
+
+Recipe
+
+Definition describing required ingredients and resulting item.
+
+Refining
+
+Conversion of raw materials into refined materials.
+
+Production
+
+Generic term covering crafting and refining.
+
+Production Chain
+
+Complete sequence transforming raw resources into finished equipment.
+
+================================================================================
+GATHERING TERMS
+================================================================================
+
+Gathering
+
+Active collection of raw resources by the Hero.
+
+Gathering Node
+
+World object containing gatherable resources.
+
+Gathering Tool
+
+Equipment improving gathering efficiency.
+
+Gathering Efficiency
+
+Measurement of gathering performance.
+
+================================================================================
+WORKER TERMS
+================================================================================
+
+Worker
+
+NPC permanently assigned to one gathering profession.
+
+Profession
+
+Permanent specialization of a Worker.
+
+Assignment
+
+Current task performed by a Worker.
+
+Productivity
+
+Amount of resources generated over time.
+
+Automation
+
+Passive production generated by Workers.
+
+================================================================================
+PLAYER ISLAND TERMS
+================================================================================
+
+Player Island
+
+Permanent production hub owned by the player.
+
+Building
+
+Constructible structure placed on the island.
+
+Production Building
+
+Building dedicated to crafting or refining.
+
+Storage
+
+Location used to store resources and items.
+
+Island Progression
+
+Permanent improvements made to the Player Island.
+
+================================================================================
+ECONOMY TERMS
+================================================================================
+
+Silver
+
+Primary in-game currency.
+
+Purchase
+
+Buying items or resources.
+
+Sale
+
+Selling items or resources.
+
+Market
+
+Future system allowing item trading.
+
+Resource Sink
+
+Mechanic permanently removing resources from the economy.
+
+================================================================================
+PROGRESSION TERMS
+================================================================================
+
+Progression Axis
+
+Major category of permanent player progression.
+
+Character Power
+
+Overall combat strength.
+
+Production Power
+
+Efficiency of crafting and refining.
+
+Economic Power
+
+Ability to generate and manage Silver.
+
+Island Power
+
+Overall production capability of the Player Island.
+
+================================================================================
+SYSTEM TERMS
+================================================================================
+
+Gameplay System
+
+Independent module responsible for one gameplay domain.
+
+Dependency
+
+Relationship where one system requires another.
+
+Authority Document
+
+Highest-level document governing a gameplay subject.
+
+Single Source of Truth
+
+The unique document responsible for defining a specific gameplay rule.
+
+================================================================================
+DEVELOPMENT TERMS
+================================================================================
+
+Prototype
+
+Minimal implementation validating gameplay.
+
+Vertical Slice
+
+Small but representative version of the final game.
+
+Milestone
+
+Major development objective.
+
+Placeholder
+
+Temporary implementation intended for replacement.
+
+Production Ready
+
+Feature considered complete and maintainable.
+
+================================================================================
+ABBREVIATIONS
+================================================================================
+
+AI
+Artificial Intelligence
+
+UI
+User Interface
+
+UX
+User Experience
+
+NPC
+Non-Player Character
+
+RNG
+Random Number Generator
+
+DPS
+Damage Per Second
+
+AoE
+Area of Effect
+
+================================================================================
+NAMING CONVENTIONS
+================================================================================
+
+Gameplay systems use Pascal Case.
+
+Examples
+
+Player Island
+
+Worker System
+
+Crafting System
+
+Character System
+
+Internal document names use uppercase with underscores.
+
+Examples
+
+CHARACTER_SYSTEM
+
+ITEM_SYSTEM
+
+WORKER_SYSTEM
+
+PLAYER_ISLAND_SYSTEM
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+Depends On
+
+• 000_PROJECT_BIBLE
+
+Referenced By
+
+Every document contained inside the AI_BIBLE.
+
+================================================================================
+SUMMARY
+================================================================================
+
+This glossary establishes the official terminology of Albion Idle.
+
+Every gameplay concept should have exactly one definition.
+
+Maintaining consistent vocabulary across the AI Bible reduces ambiguity,
+improves communication and allows both developers and AI assistants to work
+from a single shared language.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

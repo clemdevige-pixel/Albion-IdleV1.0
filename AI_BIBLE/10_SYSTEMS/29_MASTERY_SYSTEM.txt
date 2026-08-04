@@ -1,0 +1,524 @@
+# 29_MASTERY_SYSTEM
+
+## Purpose
+
+The Mastery System is the primary long-term progression system of the game.
+
+It replaces traditional character levels by allowing players to permanently improve each equipment mastery independently through combat experience.
+
+Masteries reward long-term specialization while preserving complete freedom to switch builds at any time.
+
+The system is entirely data-driven and designed to support future expansion without requiring code modifications.
+
+---
+
+# Design Goals
+
+- Replace character levels.
+- Reward long-term specialization.
+- Preserve permanent progression.
+- Encourage experimenting with multiple weapons.
+- Support infinite endgame progression.
+- Never waste earned experience.
+- Remain entirely data-driven.
+- Be easily expandable to armor and future equipment types.
+
+---
+
+# Core Principles
+
+- There is no Character Level.
+- Every Mastery progresses independently.
+- Every Mastery has its own experience pool.
+- Masteries never lose progress.
+- Masteries are account permanent.
+- Equipment progression remains the primary source of player power.
+- Masteries provide long-term progression.
+
+---
+
+# Mastery Categories
+
+## Version 1
+
+Only weapons possess Masteries.
+
+Examples:
+
+- Broadsword Mastery
+- Claymore Mastery
+- Bow Mastery
+- Fire Staff Mastery
+
+---
+
+## Future Expansion
+
+The architecture must support additional Mastery categories without modifying the system.
+
+Examples:
+
+- Helmet Mastery
+- Armor Mastery
+- Boots Mastery
+- Off-Hand Mastery
+- Mount Mastery
+- Tool Mastery
+
+The Mastery System is therefore based on generic Mastery Definitions rather than weapon-specific logic.
+
+---
+
+# Mastery Discovery
+
+All Masteries are visible inside the Mastery Interface from the beginning of the game.
+
+Undiscovered Masteries appear as locked.
+
+A Mastery becomes permanently unlocked the first time the player obtains the corresponding equipment through any acquisition method.
+
+Examples:
+
+- Loot
+- Crafting
+- Purchase
+- Quest Reward
+- Event Reward
+
+Once unlocked:
+
+- it can never become locked again.
+- its progression is permanently saved.
+- it remains visible forever.
+
+---
+
+# Mastery Progression
+
+Each Mastery has its own:
+
+- Level
+- Experience
+- Reward Table
+
+Progression earned on one Mastery never affects another.
+
+Example:
+
+Broadsword Mastery Level 82
+
+does not increase
+
+Claymore Mastery Level 15
+
+---
+
+# Mastery Levels
+
+Masteries start at:
+
+Level 0
+
+Maximum Level (V1):
+
+Level 100
+
+Future expansions may increase the level cap.
+
+Example:
+
+100
+
+↓
+
+120
+
+↓
+
+150
+
+No code modification should be required.
+
+---
+
+# Experience
+
+Only the currently equipped weapon receives Weapon Experience.
+
+Experience sources are defined inside the Experience System.
+
+Experience is added to the corresponding Mastery.
+
+Level-ups are processed immediately.
+
+Multiple level-ups may occur simultaneously.
+
+---
+
+# Mastery Rewards
+
+Rewards are milestone-based.
+
+Masteries never grant automatic stat increases every level.
+
+Each reward is explicitly defined inside a Reward Table.
+
+Possible rewards include:
+
+- Flat Attack
+- Flat Defense
+- Flat Health
+- Flat Energy
+- Ability Unlock
+- Ability Upgrade
+- Passive Unlock
+- Passive Upgrade
+- Equipment Tier Unlock
+
+Future reward types can be added without code modifications.
+
+---
+
+# Equipment Tier Unlocks
+
+Default progression:
+
+Level 1
+
+↓
+
+Tier 3
+
+Level 20
+
+↓
+
+Tier 4
+
+Level 40
+
+↓
+
+Tier 5
+
+Level 60
+
+↓
+
+Tier 6
+
+Level 80
+
+↓
+
+Tier 7
+
+Level 100
+
+↓
+
+Tier 8
+
+These values are balancing defaults only.
+
+Actual unlocks are entirely data-driven.
+
+---
+
+# Independent Weapon Progression
+
+Each weapon possesses its own Mastery.
+
+Example:
+
+Broadsword Mastery
+
+Level 100
+
+Claymore Mastery
+
+Level 41
+
+Bow Mastery
+
+Level 8
+
+Changing weapons immediately switches to the corresponding Mastery.
+
+No progression is shared between weapons.
+
+---
+
+# Permanent Progression
+
+Masteries never lose progress.
+
+Selling, destroying or salvaging equipment never affects Mastery progression.
+
+If the player later acquires the equipment again, progression resumes immediately.
+
+---
+
+# Maximum Level
+
+Upon reaching maximum level:
+
+- further level progression stops.
+- the Mastery remains usable.
+- normal gameplay continues.
+
+Experience earned after reaching the maximum level is converted into Overflow Experience.
+
+---
+
+# Overflow Experience
+
+When a Mastery reaches maximum level, earned experience is no longer lost.
+
+Instead, part of the earned experience is converted into Overflow Experience.
+
+Example:
+
+10,000 Mastery XP earned
+
+↓
+
+Overflow Conversion Rate
+
+↓
+
+2,000 Overflow XP
+
+The conversion rate is fully data-driven.
+
+---
+
+# Global Overflow Pool
+
+Overflow Experience is stored inside a single account-wide pool.
+
+Every maxed Mastery contributes to this shared reserve.
+
+Example:
+
+Claymore Lv100
+
+↓
+
++ Overflow XP
+
+Bow Lv100
+
+↓
+
++ Overflow XP
+
+Fire Staff Lv100
+
+↓
+
++ Overflow XP
+
+↓
+
+Global Overflow Pool
+
+This pool is permanent.
+
+---
+
+# Overflow Usage
+
+Overflow Experience may be spent to accelerate other Masteries.
+
+Requirements:
+
+- Target Mastery must already be unlocked.
+- Silver payment is required.
+- Overflow Transfer Rate applies.
+- Overflow cannot raise a Mastery beyond the configured Overflow Cap.
+
+Overflow transfers are processed instantly in Version 1.
+
+The system architecture must support future progressive training modes.
+
+---
+
+# Overflow Restrictions
+
+Overflow Experience cannot be invested into:
+
+- locked Masteries
+- undiscovered equipment
+- Masteries above the configured Overflow Cap
+
+This ensures players must still actively play an equipment type before completely mastering it.
+
+---
+
+# Overflow Economy
+
+Overflow transfers consume:
+
+- Overflow Experience
+- Silver
+
+Transfer costs increase progressively based on the target Mastery progression.
+
+The transfer efficiency is intentionally below 100%.
+
+All values are defined through data tables.
+
+No balance values are hardcoded.
+
+---
+
+# Save Data
+
+Each Mastery stores:
+
+- Mastery ID
+- Current Level
+- Current Experience
+- IsUnlocked
+
+The account additionally stores:
+
+- Global Overflow Experience
+
+---
+
+# Future Expansion
+
+The system supports:
+
+- Additional Mastery Categories
+- Higher Level Caps
+- New Reward Types
+- Overflow Economy Extensions
+- Overflow Passive Training
+- Prestige Systems
+- Seasonal Progression
+- Alternate Progression Paths
+
+No architectural changes should be required.
+
+---
+
+# System Interactions
+
+Uses:
+
+- Experience System
+- Equipment System
+- Ability System
+- Progression System
+- Save System
+
+Provides data to:
+
+- Combat System
+- UI System
+- Equipment System
+- Progression System
+- Overflow System
+
+---
+
+# Data Driven Design
+
+No progression values are hardcoded.
+
+Every progression rule is configurable through data tables.
+
+---
+
+# Data Tables
+
+## MasteryTable
+
+Defines every available Mastery.
+
+Fields include:
+
+- Mastery ID
+- Equipment ID
+- Category
+- Max Level
+- Experience Curve
+- Reward Table ID
+
+---
+
+## MasteryRewardTable
+
+Defines milestone rewards.
+
+Fields include:
+
+- Mastery Level
+- Reward Type
+- Reward Value
+
+---
+
+## MasteryExperienceTable
+
+Defines experience required per level.
+
+Fields include:
+
+- Level
+- Required Experience
+
+---
+
+## EquipmentTierUnlockTable
+
+Defines equipment tier unlock requirements.
+
+Fields include:
+
+- Equipment Tier
+- Required Mastery Level
+
+---
+
+## OverflowSettingsTable
+
+Defines Overflow generation.
+
+Fields include:
+
+- Overflow Conversion Rate
+- Overflow Enabled
+- Overflow Maximum Storage (optional)
+
+---
+
+## OverflowTransferTable
+
+Defines Overflow redistribution.
+
+Fields include:
+
+- Transfer Rate
+- Overflow Cap
+- Silver Cost Formula
+- Cost Scaling Curve
+
+---
+
+## OverflowTransferCostTable
+
+Defines Silver costs.
+
+Fields include:
+
+- Target Mastery Level
+- Silver Cost
+- Additional Cost Modifiers
+
+---
+
+DOCUMENT TERMINÉ

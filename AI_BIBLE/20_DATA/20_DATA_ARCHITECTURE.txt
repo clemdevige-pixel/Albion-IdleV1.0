@@ -1,0 +1,824 @@
+# 20. DATA ARCHITECTURE
+
+---
+
+# Purpose
+
+The Data Architecture defines how every static gameplay definition is created, organized, validated, loaded and referenced.
+
+It provides the common rules used by every document inside the `20_DATA` folder.
+
+The architecture exists to ensure that gameplay content remains:
+
+- Readable
+- Consistent
+- Deterministic
+- Maintainable
+- Searchable
+- Versioned
+- Safe to modify
+- Compatible with automated tools and AI
+
+Every gameplay definition must follow this architecture.
+
+---
+
+# Technology Context
+
+Version 1 is developed as a web application using TypeScript.
+
+The data architecture must remain compatible with:
+
+- TypeScript
+- Node.js
+- Browser Runtime
+- Automated Build Pipelines
+- AI-assisted Development Tools
+
+Gameplay data must remain completely independent from rendering technologies.
+
+Changing the frontend framework must never require rewriting gameplay data.
+
+---
+
+# Design Philosophy
+
+The Data Architecture follows ten fundamental principles.
+
+---
+
+## Data Driven
+
+Gameplay logic reads configuration from external data.
+
+Examples include:
+
+- Items
+- Enemies
+- Abilities
+- Status Effects
+- Loot Tables
+- Recipes
+- Buildings
+- Workers
+- Biomes
+
+Changing balance should rarely require changing code.
+
+---
+
+## Human Readable
+
+Every file should be understandable by:
+
+- Developers
+- Game Designers
+- Technical Artists
+- AI Systems
+
+Files must prioritize readability over compactness.
+
+---
+
+## Machine Validated
+
+Every definition is validated before entering the game.
+
+Validation detects:
+
+- Missing fields
+- Invalid values
+- Broken references
+- Duplicate IDs
+- Invalid inheritance
+- Unsupported schema versions
+
+Invalid data never reaches runtime.
+
+---
+
+## Deterministic
+
+Loading the same data always produces the same runtime objects.
+
+Loading must never depend on:
+
+- File order
+- Randomness
+- Platform
+- Locale
+- Rendering
+
+---
+
+## Explicit References
+
+Definitions reference one another only through textual identifiers.
+
+Entire definitions are never duplicated.
+
+---
+
+## Minimal Duplication
+
+Only base values are stored.
+
+Derived values are calculated by gameplay systems.
+
+This minimizes balancing errors.
+
+---
+
+## Controlled Inheritance
+
+Definitions may inherit from one parent.
+
+Multiple inheritance is forbidden.
+
+Inheritance chains should remain shallow.
+
+---
+
+## Versioned
+
+Every data file explicitly declares its schema version.
+
+This allows:
+
+- Safe migrations
+- Validation
+- Future compatibility
+
+---
+
+## Tool Friendly
+
+Every file follows predictable structures.
+
+This improves:
+
+- Editing
+- Validation
+- Automation
+- AI generation
+
+---
+
+## Runtime Independent
+
+Gameplay definitions never contain runtime state.
+
+Runtime information belongs exclusively to Save Data.
+
+---
+
+# Responsibilities
+
+The Data Architecture defines:
+
+- Data Formats
+- Folder Structure
+- Naming Rules
+- Identifier Rules
+- Validation
+- References
+- Inheritance
+- Loading
+- Versioning
+- Property Ordering
+
+The Data Architecture does NOT define:
+
+- Item Balance
+- Enemy Statistics
+- Recipes
+- Loot Chances
+- Combat Rules
+
+These belong to dedicated data documents.
+
+---
+
+# Supported Formats
+
+Version 1 supports two data formats.
+
+- JSON
+- CSV
+
+Each serves a different purpose.
+
+---
+
+# JSON
+
+JSON stores structured gameplay definitions.
+
+Examples:
+
+- Items
+- Enemies
+- Abilities
+- Buildings
+- Recipes
+- Loot Tables
+- Status Effects
+
+JSON should be used whenever data contains:
+
+- Nested objects
+- References
+- Optional fields
+- Lists
+
+---
+
+# CSV
+
+CSV stores balancing tables.
+
+Examples:
+
+- XP Curves
+- Scaling Tables
+- Tier Multipliers
+- Reward Curves
+- Economy Tables
+
+CSV should only contain tabular data.
+
+---
+
+# Format Selection
+
+Structured Definitions
+
+↓
+
+JSON
+
+Balance Tables
+
+↓
+
+CSV
+
+---
+
+# Unsupported Formats
+
+Version 1 does not use:
+
+- XML
+- YAML
+- JSON5
+- SQLite
+- Binary Files
+
+All gameplay definitions must ultimately become JSON or CSV.
+
+---
+
+# Folder Structure
+
+The Data folder follows a category-first organization.
+
+```
+20_DATA/
+
+abilities/
+
+biomes/
+
+buildings/
+
+effects/
+
+enemies/
+
+equipment/
+
+items/
+
+loot/
+
+recipes/
+
+resources/
+
+workers/
+
+tables/
+```
+
+Each folder contains one or more family files.
+
+---
+
+# File Organization
+
+One file stores one family of definitions.
+
+Examples:
+
+```
+items/
+
+swords.json
+
+axes.json
+
+bows.json
+```
+
+```
+enemies/
+
+undead.json
+
+morgana.json
+
+guardians.json
+```
+
+This avoids extremely large files while preventing thousands of tiny files.
+
+---
+
+# Identifier Format
+
+Every definition owns one unique textual identifier.
+
+Version 1 uses underscore notation.
+
+Examples:
+
+```
+item_weapon_sword_t4_broadsword
+
+enemy_undead_t5_knight
+
+ability_sword_heroic_strike
+
+recipe_refining_ore_t5
+
+loot_table_undead_t4
+```
+
+Identifiers never change once released.
+
+---
+
+# Identifier Rules
+
+Identifiers:
+
+- are lowercase
+- use underscores
+- contain no spaces
+- contain no accents
+- contain no special characters
+
+Allowed:
+
+```
+item_weapon_bow_t6_longbow
+```
+
+Forbidden:
+
+```
+Long Bow
+
+Long-Bow
+
+LongBow
+
+épée
+```
+
+---
+
+# Identifier Uniqueness
+
+Every identifier must be globally unique.
+
+Duplicate identifiers prevent data loading.
+
+Example:
+
+```
+item_weapon_sword_t4_broadsword
+```
+
+may exist only once.
+
+---
+
+# Definition References
+
+Definitions reference one another using identifiers.
+
+Example:
+
+```json
+{
+    "abilityIds": [
+        "ability_sword_heroic_strike"
+    ]
+}
+```
+
+Definitions never embed complete copies of referenced objects.
+
+---
+
+# Property Ordering
+
+Every definition follows a fixed property order.
+
+Recommended order:
+
+```
+id
+
+name
+
+description
+
+category
+
+tier
+
+tags
+
+references
+
+statistics
+
+modifiers
+
+metadata
+```
+
+The same order must be respected everywhere.
+
+---
+
+# Required Fields
+
+Every definition specifies mandatory fields.
+
+Missing mandatory fields invalidate the definition.
+
+The file fails validation.
+
+Version 1 never creates default values automatically.
+
+---
+
+# Optional Fields
+
+Optional fields may be omitted.
+
+If omitted:
+
+Gameplay systems use documented default behavior.
+
+Optional values must never introduce ambiguity.
+
+---
+
+# Unknown Fields
+
+Unknown properties generate development warnings.
+
+Example:
+
+```json
+{
+    "damage":100,
+    "banana":"yes"
+}
+```
+
+Development:
+
+Warning
+
+Release:
+
+Ignored
+
+---
+
+# Schema Version
+
+Every JSON file begins with:
+
+```json
+{
+    "version":1
+}
+```
+
+Future schema updates increase this version.
+
+---
+
+# Data Validation
+
+Validation occurs before loading.
+
+Validation includes:
+
+- Schema Version
+- Required Fields
+- Property Types
+- Enum Values
+- Numeric Ranges
+- Duplicate IDs
+- Broken References
+- Inheritance
+- Circular References
+
+Only valid data reaches runtime.
+
+---
+
+# Inheritance
+
+Definitions may inherit from one parent.
+
+Example:
+
+```
+Sword
+
+↓
+
+Broadsword
+
+↓
+
+T4 Broadsword
+```
+
+Only one parent is allowed.
+
+---
+
+# Inheritance Rules
+
+Children override selected properties.
+
+Unspecified values inherit automatically.
+
+Inheritance depth should remain small.
+
+Recommended maximum:
+
+3 Levels
+
+---
+
+# Runtime Loading
+
+Game startup performs:
+
+```
+Read Files
+
+↓
+
+Validate
+
+↓
+
+Resolve References
+
+↓
+
+Resolve Inheritance
+
+↓
+
+Build Runtime Objects
+
+↓
+
+Gameplay Ready
+```
+
+Loading order never affects final results.
+
+---
+
+# Development Hot Reload
+
+Development builds support Hot Reload.
+
+Pipeline:
+
+```
+Modify File
+
+↓
+
+Validate
+
+↓
+
+Reload Definition
+
+↓
+
+Refresh Runtime Data
+```
+
+The game does not require recompilation.
+
+Version 1 enables Hot Reload only in development builds.
+
+---
+
+# Runtime Objects
+
+Loaded definitions become immutable runtime objects.
+
+Gameplay systems may read them.
+
+Gameplay systems never modify them.
+
+---
+
+# Static vs Runtime Data
+
+Static Data
+
+Examples:
+
+- Items
+- Recipes
+- Enemies
+- Buildings
+
+Runtime Data
+
+Examples:
+
+- Current HP
+- Cooldowns
+- Inventory
+- Worker Assignments
+- Active Effects
+
+Static definitions are never saved.
+
+---
+
+# Error Handling
+
+If validation fails:
+
+```
+Reject Definition
+
+↓
+
+Report Error
+
+↓
+
+Prevent Loading
+```
+
+Invalid gameplay data must never silently load.
+
+---
+
+# Runtime Performance
+
+The Data System should avoid:
+
+- Reflection
+- Dynamic Parsing
+- Runtime Validation
+- Repeated File Access
+
+Definitions should be loaded once during initialization.
+
+Gameplay uses cached runtime objects.
+
+---
+
+# Future Compatibility
+
+The architecture intentionally supports future additions.
+
+Examples:
+
+- DLC
+- Expansions
+- Seasonal Content
+- Mod Support
+- Localization Packs
+- Live Balance Updates
+
+Future content must follow the same architecture.
+
+---
+
+# Acceptance Criteria
+
+The Data Architecture is considered complete for Version 1 when:
+
+- JSON stores structured gameplay definitions.
+- CSV stores balancing tables.
+- Definitions use unique textual identifiers.
+- Files are organized by families.
+- References use identifiers only.
+- Every file contains a schema version.
+- Required fields are validated.
+- Unknown fields generate development warnings.
+- Single inheritance is supported.
+- Runtime objects are immutable.
+- Development builds support Hot Reload.
+- Static and runtime data remain separated.
+
+---
+
+# Immutable Design Rules
+
+The following rules define the Data Architecture and must never change without redesigning the project.
+
+Rule 01
+
+Gameplay data is completely data driven.
+
+Rule 02
+
+JSON stores structured definitions.
+
+Rule 03
+
+CSV stores balancing tables.
+
+Rule 04
+
+Definitions use unique textual identifiers.
+
+Rule 05
+
+Identifiers use underscore notation.
+
+Rule 06
+
+Definitions reference each other only by identifier.
+
+Rule 07
+
+Every file declares a schema version.
+
+Rule 08
+
+Invalid data never reaches runtime.
+
+Rule 09
+
+Only single inheritance is supported.
+
+Rule 10
+
+Runtime objects are immutable.
+
+Rule 11
+
+Static definitions never contain runtime state.
+
+Rule 12
+
+Development builds support Hot Reload.
+
+Rule 13
+
+Every definition follows a fixed property order.
+
+Rule 14
+
+Future data must remain backward compatible whenever possible.
+
+Rule 15
+
+All gameplay systems rely on the same shared data architecture.
+
+---
+
+# Summary
+
+The Data Architecture provides the deterministic, modular and scalable foundation for every gameplay definition used by the game. It standardizes formats, identifiers, validation, inheritance, references and loading rules while remaining independent from gameplay logic and rendering technologies. By separating static definitions from runtime state and enforcing consistent structures across all data categories, the architecture enables reliable balancing, efficient tooling, AI-assisted content generation and long-term maintainability throughout the entire project.
+
+=========================
+DOCUMENT TERMINÉ
+=========================
+```

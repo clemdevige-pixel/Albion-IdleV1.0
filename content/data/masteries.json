@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "category": "masteries",
+  "definitions": [
+    {
+      "id": "mastery_sword",
+      "category": "combat",
+      "maxLevel": 100,
+      "experiencePerLevel": [100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700],
+      "tags": ["combat", "sword"]
+    },
+    {
+      "id": "mastery_bow",
+      "category": "combat",
+      "maxLevel": 100,
+      "experiencePerLevel": [100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700],
+      "tags": ["combat", "bow"]
+    },
+    {
+      "id": "mastery_badon",
+      "category": "weapon_specialization",
+      "maxLevel": 100,
+      "experiencePerLevel": [100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700],
+      "tags": ["combat", "bow", "badon"]
+    },
+    {
+      "id": "mastery_gloves",
+      "category": "combat",
+      "maxLevel": 100,
+      "experiencePerLevel": [100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700],
+      "tags": ["combat", "gloves"]
+    },
+    {
+      "id": "mastery_spiked_gauntlets",
+      "category": "weapon_specialization",
+      "maxLevel": 100,
+      "experiencePerLevel": [100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700],
+      "tags": ["combat", "gloves", "spiked_gauntlets"]
+    },
+    {
+      "id": "mastery_mining",
+      "category": "gathering",
+      "maxLevel": 100,
+      "experiencePerLevel": [80, 160, 260, 380, 520, 700, 920, 1180, 1500, 1900],
+      "tags": ["gathering", "mining"]
+    },
+    {
+      "id": "mastery_blacksmithing",
+      "category": "crafting",
+      "maxLevel": 100,
+      "experiencePerLevel": [120, 240, 380, 540, 740, 980, 1260, 1600, 2000, 2500],
+      "tags": ["crafting", "blacksmithing"]
+    }
+  ]
+}

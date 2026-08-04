@@ -1,0 +1,3137 @@
+# 30. TECHNICAL ARCHITECTURE
+
+---
+
+# 1. Purpose
+
+This document defines the global technical architecture of the project.
+
+It is the primary technical entry point for implementation.
+
+Every developer or coding AI must read this document before creating or modifying code.
+
+This document defines:
+
+- The approved technology stack
+- The global client-server architecture
+- The application layers
+- Module ownership
+- Dependency rules
+- Repository structure
+- TypeScript conventions
+- Configuration management
+- Server-authoritative rules
+- Shared contracts
+- Error-handling principles
+- Determinism requirements
+- Security boundaries
+- Technical source-of-truth rules
+
+Detailed implementation behavior is delegated to the following documents:
+
+```text
+31_RUNTIME_ARCHITECTURE.md
+
+32_DATA_CONTENT_ASSET_PIPELINE.md
+
+33_BACKEND_API_PERSISTENCE.md
+
+34_CLIENT_RENDERING_UI.md
+
+35_QUALITY_PERFORMANCE_OBSERVABILITY.md
+
+36_BUILD_DEPLOYMENT_OPERATIONS.md
+
+37_IMPLEMENTATION_PLAN.md
+```
+
+---
+
+# 2. Locked Decisions
+
+The following decisions are mandatory.
+
+They must not be changed during implementation unless the project architecture is explicitly revised.
+
+---
+
+## 2.1 Application Type
+
+The game is a TypeScript web application.
+
+It contains:
+
+- A browser client
+- A server application
+- Shared TypeScript contracts
+- Shared validation schemas
+- Data-driven content files
+- Automated tooling
+- Automated tests
+
+---
+
+## 2.2 Repository Model
+
+The project uses a single monorepo.
+
+The monorepo contains all first-party code required to build and run the game.
+
+```text
+Client
+
+Server
+
+Shared Contracts
+
+Game Data
+
+Tooling
+
+Tests
+
+Documentation
+```
+
+A monorepo is mandatory because:
+
+- Client and server share contracts
+- Data schemas are consumed by several applications
+- Type changes must remain synchronized
+- Validation must run from one root command
+- Atomic cross-package changes must be possible
+
+---
+
+## 2.3 Package Manager
+
+The project uses:
+
+```text
+pnpm
+```
+
+The monorepo uses pnpm workspaces.
+
+The package manager version is pinned at repository level.
+
+Developers must not mix package managers.
+
+The following files are forbidden:
+
+```text
+package-lock.json
+
+yarn.lock
+```
+
+The authoritative lockfile is:
+
+```text
+pnpm-lock.yaml
+```
+
+---
+
+## 2.4 Runtime Versions
+
+The project uses:
+
+```text
+Node.js LTS
+
+TypeScript strict mode
+```
+
+The exact Node.js version is pinned in the repository.
+
+Recommended pinning mechanisms:
+
+```text
+.nvmrc
+
+.node-version
+
+package.json engines
+```
+
+Production, CI and local development must use compatible runtime versions.
+
+---
+
+## 2.5 Client Stack
+
+The browser client uses:
+
+```text
+React
+
+Vite
+
+Phaser
+
+TypeScript
+```
+
+Responsibilities:
+
+```text
+React
+
+↓
+
+Application Shell
+
+Menus
+
+HUD
+
+Inventory
+
+Equipment
+
+Masteries
+
+Settings
+
+Notifications
+
+Modal Interfaces
+```
+
+```text
+Phaser
+
+↓
+
+World Rendering
+
+Combat Rendering
+
+Character Rendering
+
+Enemy Rendering
+
+Camera
+
+Animation Playback
+
+VFX
+
+Scene Lifecycle
+```
+
+React must not control frame-by-frame world simulation.
+
+Phaser must not own persistent player data.
+
+---
+
+## 2.6 Server Stack
+
+The server uses:
+
+```text
+Node.js
+
+Fastify
+
+TypeScript
+```
+
+Fastify owns:
+
+- HTTP lifecycle
+- Routing
+- Request validation integration
+- Authentication hooks
+- Error serialization
+- Rate limiting integration
+- API observability integration
+
+Gameplay code must remain independent from Fastify whenever possible.
+
+Fastify handlers are transport adapters.
+
+They must not contain domain logic.
+
+---
+
+## 2.7 Database
+
+The primary database is:
+
+```text
+PostgreSQL
+```
+
+The project uses:
+
+```text
+Prisma
+```
+
+for:
+
+- Schema definition
+- Type-safe database access
+- Migrations
+- Transaction boundaries
+- Development tooling
+
+Raw SQL is allowed only when:
+
+- Prisma cannot express the required operation
+- Performance requires it
+- The query is tested
+- The reason is documented
+
+---
+
+## 2.8 Validation
+
+Runtime schema validation uses:
+
+```text
+Zod
+```
+
+Zod is used for:
+
+- API request validation
+- API response validation when needed
+- Environment validation
+- Data-file validation
+- Configuration validation
+- Shared DTO definitions
+- Tooling inputs
+
+TypeScript types alone are never considered runtime validation.
+
+---
+
+## 2.9 Authentication
+
+Authentication is server-controlled.
+
+The client never decides whether an identity or session is valid.
+
+Authentication details are defined in:
+
+```text
+33_BACKEND_API_PERSISTENCE.md
+```
+
+---
+
+## 2.10 Server Authority
+
+The server is authoritative for all persistent or reward-relevant gameplay state.
+
+The server owns:
+
+- Player identity
+- Save state
+- Inventory
+- Equipment
+- Currency
+- Mastery progress
+- Loot resolution
+- Reward attribution
+- Crafting results
+- Refining results
+- Worker results
+- Building state
+- Player Island state
+- Background progression
+- Cycle unlocks
+- Vendor transactions
+
+The client may predict or animate outcomes.
+
+The client may never persist authoritative outcomes directly.
+
+---
+
+## 2.11 Data Architecture
+
+Gameplay content uses:
+
+```text
+JSON
+
+CSV
+```
+
+JSON is the runtime source format for content definitions.
+
+CSV is used for bulk authoring and balancing workflows.
+
+CSV files must be converted or validated before runtime use.
+
+The runtime must never depend on ad hoc spreadsheet parsing.
+
+---
+
+## 2.12 Identifier Policy
+
+All persistent and cross-module references use human-readable string identifiers.
+
+Examples:
+
+```text
+item_broadsword_t4
+
+enemy_undead_skeleton_soldier
+
+ability_sword_heroic_strike
+
+zone_forest_t4
+
+mastery_sword
+
+currency_silver
+```
+
+Identifiers use lowercase snake_case.
+
+Identifiers are stable after release.
+
+Database-generated IDs may exist internally, but gameplay references use textual domain IDs where applicable.
+
+---
+
+## 2.13 Numeric Precision
+
+Gameplay calculations use JavaScript numbers unless a domain requires integer-safe arithmetic.
+
+Currency is stored as integers.
+
+Persistent quantities must be validated as integers where decimals are not allowed.
+
+Floating-point values must not be used for:
+
+- Silver balances
+- Item stack quantities
+- Experience totals
+- Durability points when defined as integer units
+- Transaction identifiers
+
+Floating-point values may be used for:
+
+- Multipliers
+- Animation timing
+- Visual interpolation
+- Percentage modifiers
+- Non-persistent rendering calculations
+
+---
+
+## 2.14 Time Policy
+
+Server timestamps are stored and transmitted in UTC.
+
+Database timestamps use timezone-aware types.
+
+API timestamps use ISO 8601.
+
+The client converts timestamps for display only.
+
+The client clock is never trusted for reward calculation.
+
+---
+
+## 2.15 No Full ECS Requirement
+
+The project does not require a full Entity Component System.
+
+The runtime uses modular domain objects, systems and lightweight runtime entities.
+
+An ECS may not be introduced merely for architectural fashion.
+
+Any future ECS adoption requires proof that it simplifies the existing runtime.
+
+---
+
+## 2.16 No Microservices in Version 1
+
+Version 1 uses a modular monolith.
+
+The server is one deployable application with internal modules.
+
+Modules must maintain explicit boundaries so they may be extracted later if necessary.
+
+Premature microservice decomposition is forbidden.
+
+---
+
+## 2.17 No Direct Client Database Access
+
+The browser client never connects directly to PostgreSQL.
+
+All persistent operations pass through the server API.
+
+---
+
+## 2.18 No Hidden Global Mutable State
+
+Mutable global state is forbidden unless it belongs to an explicitly defined singleton infrastructure service.
+
+Allowed examples:
+
+- Application configuration
+- Logger instance
+- Data registry after immutable initialization
+- Metrics registry
+- Dependency container
+
+Forbidden examples:
+
+- Current player
+- Current combat
+- Inventory
+- Wallet balance
+- Temporary rewards
+- Current enemy
+
+---
+
+# 3. Architecture Overview
+
+The project uses a layered modular architecture.
+
+```text
+Browser
+
+↓
+
+Client Application
+
+↓
+
+HTTP API
+
+↓
+
+Server Transport Layer
+
+↓
+
+Application Layer
+
+↓
+
+Domain Layer
+
+↓
+
+Persistence and Infrastructure
+
+↓
+
+PostgreSQL
+```
+
+Shared contracts and schemas sit beside both applications.
+
+```text
+                    ┌───────────────────────┐
+                    │     Shared Types      │
+                    │  DTOs / Schemas / IDs │
+                    └───────────┬───────────┘
+                                │
+              ┌─────────────────┴─────────────────┐
+              │                                   │
+    ┌─────────▼─────────┐               ┌─────────▼─────────┐
+    │      Client       │               │      Server       │
+    │ React + Phaser    │◄──── HTTP ───►│ Fastify           │
+    └─────────┬─────────┘               └─────────┬─────────┘
+              │                                   │
+    ┌─────────▼─────────┐               ┌─────────▼─────────┐
+    │ Client State and  │               │ Application and   │
+    │ Presentation      │               │ Domain Modules    │
+    └───────────────────┘               └─────────┬─────────┘
+                                                  │
+                                        ┌─────────▼─────────┐
+                                        │ Persistence       │
+                                        │ Prisma            │
+                                        └─────────┬─────────┘
+                                                  │
+                                        ┌─────────▼─────────┐
+                                        │ PostgreSQL        │
+                                        └───────────────────┘
+```
+
+---
+
+# 4. Architectural Layers
+
+---
+
+## 4.1 Domain Layer
+
+The Domain Layer contains pure gameplay rules.
+
+Examples:
+
+- Damage calculation
+- Stat aggregation
+- Loot resolution
+- Mastery progression
+- Equipment validation
+- Inventory rules
+- Crafting rules
+- Refining rules
+- Worker production rules
+- Reward scaling
+- Cycle scaling
+
+The Domain Layer:
+
+- Does not import Fastify
+- Does not import React
+- Does not import Phaser
+- Does not import Prisma
+- Does not read environment variables directly
+- Does not perform network calls
+- Does not write logs as business behavior
+- Does not access the system clock directly
+- Does not generate uncontrolled randomness
+
+External concerns are passed through interfaces.
+
+Example:
+
+```ts
+export interface RandomSource {
+  nextFloat(): number;
+  nextInt(minInclusive: number, maxInclusive: number): number;
+}
+```
+
+Example:
+
+```ts
+export interface Clock {
+  now(): Date;
+}
+```
+
+---
+
+## 4.2 Application Layer
+
+The Application Layer coordinates use cases.
+
+Examples:
+
+- Start combat
+- Resolve encounter
+- Claim rewards
+- Equip item
+- Craft item
+- Recruit worker
+- Collect worker output
+- Purchase vendor item
+- Save player state
+- Process background progression
+
+The Application Layer:
+
+- Calls domain services
+- Loads required state through repositories
+- Opens transaction boundaries
+- Applies authorization rules
+- Produces use-case results
+- Emits domain or application events
+
+The Application Layer does not contain transport-specific behavior.
+
+---
+
+## 4.3 Transport Layer
+
+The Transport Layer exposes application use cases.
+
+Version 1 transport:
+
+```text
+HTTP JSON API
+```
+
+Responsibilities:
+
+- Parse request
+- Validate request
+- Authenticate session
+- Call application service
+- Serialize response
+- Convert errors to API responses
+- Attach correlation IDs
+- Apply transport-level rate limits
+
+Transport handlers must remain thin.
+
+Example:
+
+```ts
+async function equipItemHandler(
+  request: FastifyRequest,
+  reply: FastifyReply
+): Promise<void> {
+  const input = EquipItemRequestSchema.parse(request.body);
+
+  const result = await equipItemUseCase.execute({
+    playerId: request.auth.playerId,
+    itemInstanceId: input.itemInstanceId,
+    slot: input.slot
+  });
+
+  await reply.send(EquipItemResponseSchema.parse(result));
+}
+```
+
+---
+
+## 4.4 Persistence Layer
+
+The Persistence Layer implements repository interfaces.
+
+Responsibilities:
+
+- Database reads
+- Database writes
+- Transactions
+- Mapping database records to domain models
+- Optimistic concurrency checks
+- Persistent event records where required
+
+Persistence code must not define gameplay rules.
+
+---
+
+## 4.5 Infrastructure Layer
+
+Infrastructure contains technical integrations.
+
+Examples:
+
+- Logger
+- Metrics
+- Clock
+- Random source
+- Database client
+- Authentication token service
+- Password hashing
+- Asset storage
+- Email provider if added later
+- Cache provider if added later
+
+Infrastructure implements interfaces defined closer to the domain or application layer.
+
+---
+
+## 4.6 Presentation Layer
+
+The Presentation Layer exists in the client.
+
+It includes:
+
+- React components
+- Phaser scenes
+- View models
+- UI stores
+- Client-side controllers
+- Input adapters
+- Audio and visual feedback
+
+Presentation code must not implement persistent gameplay rules.
+
+---
+
+# 5. Module Architecture
+
+The codebase is organized by domain module rather than by generic technical type alone.
+
+Preferred:
+
+```text
+modules/
+    inventory/
+        domain/
+        application/
+        infrastructure/
+        transport/
+```
+
+Avoid:
+
+```text
+controllers/
+services/
+models/
+repositories/
+```
+
+with all unrelated domains mixed together.
+
+---
+
+## 5.1 Core Modules
+
+Version 1 server modules include:
+
+```text
+auth
+
+player
+
+character
+
+stats
+
+inventory
+
+items
+
+equipment
+
+combat
+
+abilities
+
+effects
+
+status_effects
+
+enemies
+
+encounters
+
+exploration
+
+loot
+
+progression
+
+experience
+
+mastery
+
+gathering
+
+refining
+
+crafting
+
+workers
+
+island
+
+buildings
+
+vendors
+
+currency
+
+repair
+
+background_progression
+
+notifications
+
+save
+```
+
+Some modules may share a package when their coupling is intentionally high.
+
+The internal boundaries must still remain explicit.
+
+---
+
+## 5.2 Cross-Cutting Modules
+
+Cross-cutting modules include:
+
+```text
+config
+
+logging
+
+errors
+
+validation
+
+database
+
+events
+
+security
+
+observability
+
+testing
+
+data_registry
+```
+
+Cross-cutting modules must not become containers for unrelated business logic.
+
+---
+
+## 5.3 Client Modules
+
+Version 1 client modules include:
+
+```text
+app
+
+api
+
+auth
+
+session
+
+game
+
+combat
+
+exploration
+
+inventory
+
+equipment
+
+mastery
+
+crafting
+
+refining
+
+workers
+
+island
+
+vendors
+
+notifications
+
+settings
+
+localization
+
+audio
+
+assets
+
+ui
+```
+
+---
+
+# 6. Dependency Rules
+
+Dependencies flow inward toward domain rules.
+
+```text
+Transport
+
+↓
+
+Application
+
+↓
+
+Domain
+```
+
+```text
+Infrastructure
+
+↓
+
+Application or Domain Interfaces
+```
+
+The Domain Layer never depends on outer layers.
+
+---
+
+## 6.1 Allowed Dependencies
+
+```text
+Transport → Application
+
+Application → Domain
+
+Infrastructure → Domain Interfaces
+
+Infrastructure → Application Interfaces
+
+Client UI → Client Controllers
+
+Client Controllers → API Client
+
+Phaser Presentation → Client Runtime State
+
+Shared DTO Consumers → Shared Package
+```
+
+---
+
+## 6.2 Forbidden Dependencies
+
+```text
+Domain → Fastify
+
+Domain → Prisma
+
+Domain → React
+
+Domain → Phaser
+
+Domain → process.env
+
+Domain → Browser APIs
+
+Domain → Database
+
+Server → Client Package
+
+Client → Server Internal Package
+
+Shared Contracts → Client Implementation
+
+Shared Contracts → Server Implementation
+
+Data Definitions → Runtime State
+```
+
+---
+
+## 6.3 Circular Dependencies
+
+Circular package dependencies are forbidden.
+
+Circular module imports within a package are strongly discouraged and must fail automated checks where possible.
+
+Shared concepts must be extracted into:
+
+- A shared contract
+- A shared domain primitive
+- An application interface
+- A neutral utility package
+
+They must not be resolved through runtime import hacks.
+
+---
+
+# 7. Monorepo Structure
+
+The canonical repository structure is:
+
+```text
+root/
+├── apps/
+│   ├── client/
+│   ├── server/
+│   └── admin/
+│
+├── packages/
+│   ├── shared/
+│   ├── domain/
+│   ├── data/
+│   ├── config/
+│   ├── validation/
+│   ├── testing/
+│   └── tooling/
+│
+├── content/
+│   ├── json/
+│   ├── csv/
+│   ├── localization/
+│   └── schemas/
+│
+├── assets/
+│   ├── source/
+│   ├── processed/
+│   └── manifests/
+│
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed/
+│
+├── scripts/
+│   ├── build/
+│   ├── data/
+│   ├── assets/
+│   ├── database/
+│   └── maintenance/
+│
+├── tests/
+│   ├── integration/
+│   ├── end_to_end/
+│   ├── performance/
+│   └── fixtures/
+│
+├── docs/
+│   ├── 00_FOUNDATIONS/
+│   ├── 10_SYSTEMS/
+│   ├── 20_DATA/
+│   ├── 30_TECHNICAL/
+│   ├── 40_PRODUCTION/
+│   └── 90_HISTORY/
+│
+├── .github/
+│   └── workflows/
+│
+├── package.json
+├── pnpm-workspace.yaml
+├── pnpm-lock.yaml
+├── tsconfig.base.json
+├── eslint.config.js
+├── prettier.config.js
+├── vitest.workspace.ts
+└── README.md
+```
+
+---
+
+# 8. Application Responsibilities
+
+---
+
+## 8.1 Client Application
+
+The client is responsible for:
+
+- Rendering
+- Input capture
+- UI navigation
+- Local presentation state
+- API requests
+- Response caching where safe
+- Loading states
+- Error presentation
+- Animation
+- Audio
+- VFX
+- Client-side prediction where explicitly allowed
+
+The client is not responsible for:
+
+- Authoritative reward calculation
+- Persistent inventory mutation
+- Currency mutation
+- Save validation
+- Mastery validation
+- Offline progression validation
+- Anti-cheat decisions
+
+---
+
+## 8.2 Server Application
+
+The server is responsible for:
+
+- Authentication
+- Authorization
+- Persistent state
+- Domain validation
+- Reward resolution
+- Save orchestration
+- Transaction integrity
+- Background progression
+- Data-version compatibility
+- Audit logging
+- Abuse prevention
+- API contracts
+
+---
+
+## 8.3 Admin Application
+
+An optional internal admin application may be included in the monorepo.
+
+It may provide:
+
+- Player lookup
+- Save inspection
+- Data-version inspection
+- Currency adjustment with audit
+- Item granting with audit
+- Error inspection
+- Content validation
+- Deployment diagnostics
+
+The admin application must use authenticated server endpoints.
+
+It must not connect directly to the production database from the browser.
+
+---
+
+# 9. Shared Package Responsibilities
+
+The shared package contains only code safe for both client and server.
+
+Allowed content:
+
+- DTO schemas
+- DTO types
+- Enumerations
+- Identifier types
+- Shared constants
+- API error codes
+- Serialization contracts
+- Pure utilities
+- Localization key types if generated
+- Data reference types
+
+Forbidden content:
+
+- Secrets
+- Database models
+- Prisma client
+- Server-only business rules
+- Authentication internals
+- Node-only APIs unless isolated
+- Browser-only APIs unless isolated
+- Mutable singleton state
+
+---
+
+# 10. Domain Primitives
+
+The project uses explicit domain primitives for critical values.
+
+Examples:
+
+```ts
+export type PlayerId = string & {
+  readonly __brand: "PlayerId";
+};
+
+export type ItemInstanceId = string & {
+  readonly __brand: "ItemInstanceId";
+};
+
+export type ItemDefinitionId = string & {
+  readonly __brand: "ItemDefinitionId";
+};
+
+export type MasteryId = string & {
+  readonly __brand: "MasteryId";
+};
+```
+
+Branded types are recommended for IDs that would otherwise be confused.
+
+Do not overuse branded types for every string.
+
+Use them where mixing values could create persistent corruption.
+
+---
+
+## 10.1 Money
+
+Silver must use an integer-safe representation.
+
+For Version 1, a validated safe integer is acceptable.
+
+```ts
+export type SilverAmount = number & {
+  readonly __brand: "SilverAmount";
+};
+```
+
+Every Silver operation must validate:
+
+```text
+Integer
+
+Non-negative where required
+
+Within Number.MAX_SAFE_INTEGER
+
+Within configured game maximum
+```
+
+A centralized money utility must be used.
+
+---
+
+## 10.2 Quantities
+
+Stack quantities use integers.
+
+```ts
+export type ItemQuantity = number & {
+  readonly __brand: "ItemQuantity";
+};
+```
+
+Fractional item quantities are forbidden.
+
+---
+
+## 10.3 Percentages
+
+Percentages must declare their representation.
+
+Allowed conventions:
+
+```text
+Ratio
+
+0.15 = 15%
+```
+
+or:
+
+```text
+Percentage Points
+
+15 = 15%
+```
+
+The project uses ratios internally unless a data document explicitly states otherwise.
+
+Names must make the representation clear.
+
+Preferred:
+
+```ts
+criticalChanceRatio
+damageMultiplier
+cooldownReductionRatio
+```
+
+Avoid:
+
+```ts
+criticalChance
+bonus
+modifier
+```
+
+when the unit is ambiguous.
+
+---
+
+# 11. Public Module Contract
+
+Every server module must expose an explicit public entry point.
+
+Example:
+
+```text
+modules/inventory/index.ts
+```
+
+The public entry point exports only intended contracts.
+
+Internal files must not be imported across modules.
+
+Forbidden:
+
+```ts
+import { InventoryAggregate } from
+  "../../inventory/domain/internal/inventory-aggregate";
+```
+
+Required:
+
+```ts
+import {
+  InventoryService,
+  InventoryRepository
+} from "@game/server/modules/inventory";
+```
+
+Package export maps should enforce boundaries where possible.
+
+---
+
+# 12. Module Template
+
+Each domain module should follow this structure when applicable:
+
+```text
+module_name/
+├── domain/
+│   ├── entities/
+│   ├── value_objects/
+│   ├── services/
+│   ├── events/
+│   ├── errors/
+│   └── ports/
+│
+├── application/
+│   ├── use_cases/
+│   ├── commands/
+│   ├── queries/
+│   └── dto/
+│
+├── infrastructure/
+│   ├── persistence/
+│   ├── adapters/
+│   └── mappers/
+│
+├── transport/
+│   ├── routes/
+│   ├── handlers/
+│   └── schemas/
+│
+├── tests/
+│
+└── index.ts
+```
+
+Small modules may use a reduced structure.
+
+Empty architectural folders must not be created preemptively.
+
+Structure follows actual complexity.
+
+---
+
+# 13. Commands and Queries
+
+Application operations should distinguish state-changing commands from read-only queries.
+
+Examples:
+
+```text
+EquipItemCommand
+
+PurchaseVendorItemCommand
+
+ClaimWorkerOutputCommand
+
+GetInventoryQuery
+
+GetMasteryProgressQuery
+```
+
+Commands may mutate authoritative state.
+
+Queries must not mutate authoritative state.
+
+A full CQRS framework is not required.
+
+The distinction is conceptual and structural.
+
+---
+
+# 14. Repository Contracts
+
+Repositories are defined as interfaces close to the application or domain layer.
+
+Example:
+
+```ts
+export interface PlayerRepository {
+  findById(playerId: PlayerId): Promise<PlayerState | null>;
+
+  save(
+    player: PlayerState,
+    expectedVersion: number
+  ): Promise<void>;
+}
+```
+
+Repository implementations belong to infrastructure.
+
+Repositories must expose domain-relevant operations.
+
+They must not leak Prisma-generated types outside infrastructure.
+
+---
+
+# 15. Transaction Boundaries
+
+Every use case that modifies multiple persistent records must define a transaction boundary.
+
+Examples:
+
+- Purchase vendor item
+- Craft item
+- Refine resources
+- Repair equipment
+- Claim worker production
+- Grant loot
+- Apply background progression
+- Equip and unequip item
+- Consume currency and create an item
+
+The transaction must include all required writes.
+
+Partial success is forbidden.
+
+Example:
+
+```text
+Validate Purchase
+
+↓
+
+Deduct Silver
+
+↓
+
+Create Item Instance
+
+↓
+
+Update Vendor State
+
+↓
+
+Commit
+```
+
+If any step fails:
+
+```text
+Rollback Entire Transaction
+```
+
+---
+
+# 16. Concurrency Model
+
+Persistent aggregates use optimistic concurrency control where concurrent modification is possible.
+
+Each mutable root record should include a version.
+
+Example:
+
+```text
+version: integer
+```
+
+Update pattern:
+
+```text
+Load Version N
+
+↓
+
+Apply Command
+
+↓
+
+Update WHERE version = N
+
+↓
+
+Set version = N + 1
+```
+
+If no row is updated:
+
+```text
+Concurrency Conflict
+```
+
+The server may retry only when the operation is proven safe and idempotent.
+
+---
+
+# 17. API Contract Rules
+
+All API contracts are explicitly versioned.
+
+Initial prefix:
+
+```text
+/api/v1
+```
+
+Requests and responses use JSON.
+
+Each endpoint defines:
+
+- Authentication requirement
+- Authorization requirement
+- Request schema
+- Response schema
+- Error codes
+- Idempotency behavior
+- Rate-limit category
+- Transaction behavior
+
+API response shapes must remain consistent.
+
+Success example:
+
+```json
+{
+  "data": {
+    "playerId": "player_example"
+  },
+  "meta": {
+    "requestId": "req_example"
+  }
+}
+```
+
+Error example:
+
+```json
+{
+  "error": {
+    "code": "INVENTORY_FULL",
+    "messageKey": "error.inventory.full",
+    "details": {}
+  },
+  "meta": {
+    "requestId": "req_example"
+  }
+}
+```
+
+Player-facing API messages use localization keys where practical.
+
+---
+
+# 18. Error Architecture
+
+Errors are categorized.
+
+```text
+Domain Error
+
+Application Error
+
+Validation Error
+
+Authentication Error
+
+Authorization Error
+
+Concurrency Error
+
+Infrastructure Error
+
+Unexpected Error
+```
+
+---
+
+## 18.1 Domain Errors
+
+Examples:
+
+```text
+InventoryFullError
+
+InsufficientCurrencyError
+
+MasteryRequirementNotMetError
+
+InvalidEquipmentSlotError
+
+RecipeRequirementNotMetError
+```
+
+Domain errors are expected failures.
+
+They must not be logged as server crashes.
+
+---
+
+## 18.2 Infrastructure Errors
+
+Examples:
+
+```text
+DatabaseUnavailableError
+
+ExternalServiceTimeoutError
+
+AssetManifestUnavailableError
+```
+
+Infrastructure errors may be retried only according to explicit policy.
+
+---
+
+## 18.3 Unexpected Errors
+
+Unexpected errors:
+
+- Return a generic public message
+- Preserve a request ID
+- Log full technical context server-side
+- Must not expose stack traces to the client
+- Must not expose secrets
+- Must not expose SQL
+- Must not expose internal file paths
+
+---
+
+## 18.4 Error Codes
+
+Public error codes are stable strings.
+
+Examples:
+
+```text
+AUTHENTICATION_REQUIRED
+
+ACCESS_DENIED
+
+VALIDATION_FAILED
+
+INVENTORY_FULL
+
+INSUFFICIENT_SILVER
+
+ITEM_NOT_FOUND
+
+CONCURRENCY_CONFLICT
+
+INTERNAL_ERROR
+```
+
+Error-code definitions belong to a shared contract.
+
+---
+
+# 19. Event Architecture
+
+The project distinguishes:
+
+```text
+Domain Events
+
+Application Events
+
+Integration Events
+```
+
+---
+
+## 19.1 Domain Events
+
+Domain Events describe meaningful completed domain facts.
+
+Examples:
+
+```text
+EnemyDefeated
+
+ItemEquipped
+
+MasteryLevelIncreased
+
+WorkerOutputCompleted
+
+CycleUnlocked
+```
+
+Domain Events are produced by domain logic.
+
+---
+
+## 19.2 Application Events
+
+Application Events coordinate internal application behavior.
+
+Examples:
+
+```text
+PlayerSaveRequested
+
+NotificationRequested
+
+AuditEntryRequested
+```
+
+---
+
+## 19.3 Integration Events
+
+Integration Events are intended for external systems or future service extraction.
+
+Version 1 does not require an external message broker.
+
+Integration events may initially be handled in-process or persisted transactionally when reliability is required.
+
+---
+
+## 19.4 Event Rules
+
+Events must:
+
+- Use past tense
+- Represent completed facts
+- Be immutable
+- Include an event ID
+- Include an occurrence timestamp
+- Include relevant entity IDs
+- Avoid containing large mutable object graphs
+
+Events must not replace direct function calls when no decoupling is needed.
+
+---
+
+# 20. Dependency Injection
+
+The server uses explicit constructor injection.
+
+Preferred:
+
+```ts
+export class EquipItemUseCase {
+  public constructor(
+    private readonly playerRepository: PlayerRepository,
+    private readonly itemRegistry: ItemRegistry,
+    private readonly clock: Clock
+  ) {}
+
+  public async execute(
+    input: EquipItemInput
+  ): Promise<EquipItemResult> {
+    // ...
+  }
+}
+```
+
+Avoid:
+
+```ts
+const repository = globalContainer.resolve("playerRepository");
+```
+
+inside domain or application code.
+
+A composition root may construct the dependency graph.
+
+The composition root belongs to application bootstrap.
+
+---
+
+# 21. Configuration Architecture
+
+Configuration is divided into:
+
+```text
+Static Code Configuration
+
+Environment Configuration
+
+Gameplay Data
+
+Runtime Feature Flags
+```
+
+These categories must not be mixed.
+
+---
+
+## 21.1 Static Code Configuration
+
+Examples:
+
+- Default timeout constants
+- Internal batch sizes
+- Retry limits
+- Technical buffer sizes
+
+These values belong to typed code constants when they are not expected to be tuned by designers.
+
+---
+
+## 21.2 Environment Configuration
+
+Examples:
+
+- Database URL
+- Server port
+- Token secrets
+- Log level
+- Allowed origins
+- Deployment environment
+- Metrics endpoint settings
+
+Environment variables are parsed exactly once during bootstrap.
+
+Example:
+
+```ts
+export const EnvironmentSchema = z.object({
+  NODE_ENV: z.enum([
+    "development",
+    "test",
+    "staging",
+    "production"
+  ]),
+  PORT: z.coerce.number().int().positive(),
+  DATABASE_URL: z.string().min(1),
+  AUTH_SECRET: z.string().min(32)
+});
+```
+
+Feature modules must receive typed configuration.
+
+They must not call `process.env` directly.
+
+---
+
+## 21.3 Gameplay Data
+
+Gameplay data belongs to the content pipeline.
+
+Examples:
+
+- Damage values
+- Item stats
+- XP curves
+- Loot weights
+- Crafting costs
+- Scaling multipliers
+
+Gameplay values must not be stored in environment variables.
+
+---
+
+## 21.4 Feature Flags
+
+Feature flags control deployment exposure.
+
+Examples:
+
+```text
+worker_system_enabled
+
+player_island_enabled
+
+background_progression_enabled
+```
+
+Feature flags must not permanently replace proper configuration or content definitions.
+
+---
+
+# 22. Determinism
+
+Reward-relevant calculations must be reproducible.
+
+This includes:
+
+- Combat result simulation where performed server-side
+- Loot selection
+- Quality selection
+- Crafting output
+- Background progression
+- Worker production
+- Reward scaling
+
+Randomness must be injected.
+
+Forbidden:
+
+```ts
+Math.random()
+```
+
+inside domain logic.
+
+Required:
+
+```ts
+randomSource.nextFloat()
+```
+
+Random operations should support a seed when reproducibility is needed.
+
+A calculation should be reproducible from:
+
+```text
+Input State
+
+Content Version
+
+Algorithm Version
+
+Random Seed
+```
+
+---
+
+# 23. Content Versioning
+
+Every server-authoritative calculation must know the relevant content version.
+
+Persistent state must store enough information to remain valid when content changes.
+
+Depending on the domain, this may include:
+
+- Definition ID
+- Definition version
+- Snapshot of immutable rolled values
+- Algorithm version
+- Save schema version
+
+Item instances store immutable generated properties that must not silently change when definitions are rebalanced.
+
+Examples:
+
+- Quality
+- Enchantment
+- Rolled affixes if added later
+- Current durability
+- Maximum durability snapshot if required
+
+---
+
+# 24. Serialization Rules
+
+All serialized data must use explicit schemas.
+
+Rules:
+
+- No class instances are serialized directly
+- Dates are serialized as ISO 8601 strings
+- Maps are converted to objects or arrays explicitly
+- Sets are converted to arrays explicitly
+- Undefined values are not part of public JSON contracts
+- BigInt is not sent directly as JSON
+- Internal fields are excluded explicitly
+- Private server metadata is never sent to the client
+
+DTO mapping must be deliberate.
+
+---
+
+# 25. TypeScript Rules
+
+The project uses strict TypeScript.
+
+Required compiler settings include:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "useUnknownInCatchVariables": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
+```
+
+---
+
+## 25.1 Unknown Instead of Any
+
+Use:
+
+```ts
+unknown
+```
+
+instead of:
+
+```ts
+any
+```
+
+at untrusted boundaries.
+
+`any` requires explicit justification.
+
+---
+
+## 25.2 Explicit Return Types
+
+Exported functions and public methods must declare return types.
+
+Example:
+
+```ts
+export function calculateDamage(
+  input: DamageCalculationInput
+): DamageCalculationResult {
+  // ...
+}
+```
+
+---
+
+## 25.3 Null and Undefined
+
+Use:
+
+```text
+undefined
+```
+
+for omitted optional values inside TypeScript.
+
+Use:
+
+```text
+null
+```
+
+only when the domain or external contract explicitly represents an intentional empty value.
+
+Do not mix them without a documented reason.
+
+---
+
+## 25.4 Discriminated Unions
+
+Use discriminated unions for explicit variants.
+
+Example:
+
+```ts
+export type Reward =
+  | {
+      type: "currency";
+      currencyId: CurrencyId;
+      amount: number;
+    }
+  | {
+      type: "item";
+      itemDefinitionId: ItemDefinitionId;
+      quantity: number;
+    }
+  | {
+      type: "mastery_experience";
+      masteryId: MasteryId;
+      amount: number;
+    };
+```
+
+---
+
+## 25.5 Exhaustive Switches
+
+Variant switches must be exhaustive.
+
+Example:
+
+```ts
+export function assertNever(value: never): never {
+  throw new Error(`Unexpected value: ${String(value)}`);
+}
+```
+
+---
+
+## 25.6 Immutability
+
+Use immutable inputs and outputs by default.
+
+Preferred:
+
+```ts
+ReadonlyArray<ItemInstance>
+```
+
+Use mutation internally only when:
+
+- It improves clarity
+- It remains locally contained
+- It does not leak shared mutable state
+
+---
+
+# 26. Naming Conventions
+
+---
+
+## 26.1 Files
+
+Use kebab-case for TypeScript files.
+
+Examples:
+
+```text
+equip-item.use-case.ts
+
+inventory.repository.ts
+
+damage-calculator.ts
+
+player-state.mapper.ts
+```
+
+---
+
+## 26.2 Classes and Types
+
+Use PascalCase.
+
+Examples:
+
+```text
+EquipItemUseCase
+
+InventoryRepository
+
+DamageCalculationInput
+
+PlayerState
+```
+
+---
+
+## 26.3 Functions and Variables
+
+Use camelCase.
+
+Examples:
+
+```text
+calculateDamage
+
+playerId
+
+maximumDurability
+
+rewardMultiplier
+```
+
+---
+
+## 26.4 Constants
+
+Use UPPER_SNAKE_CASE only for genuine module-level constants.
+
+Examples:
+
+```text
+MAX_RETRY_COUNT
+
+DEFAULT_REQUEST_TIMEOUT_MS
+```
+
+Do not use uppercase naming for ordinary immutable variables.
+
+---
+
+## 26.5 Boolean Names
+
+Boolean values use positive or capability-oriented prefixes.
+
+Examples:
+
+```text
+isAlive
+
+hasEnoughCurrency
+
+canEquip
+
+shouldPersist
+
+supportsHotReload
+```
+
+Avoid ambiguous names:
+
+```text
+alive
+
+valid
+
+enabledFlag
+```
+
+---
+
+## 26.6 Units in Names
+
+Time and measurement units must appear in names when ambiguity exists.
+
+Examples:
+
+```text
+durationMs
+
+cooldownSeconds
+
+distancePixels
+
+healthRatio
+
+silverAmount
+```
+
+---
+
+# 27. Import Rules
+
+Use workspace aliases.
+
+Examples:
+
+```ts
+import { ItemDefinitionId } from "@game/shared";
+import { calculateDamage } from "@game/domain";
+```
+
+Avoid deep relative imports across module boundaries.
+
+Forbidden:
+
+```ts
+import { calculateDamage } from "../../../../packages/domain/src/combat";
+```
+
+Within one small module, short relative imports are acceptable.
+
+---
+
+# 28. Utility Code Policy
+
+Generic utility packages must remain small and stable.
+
+A utility must not be created simply because code is used twice.
+
+Before adding a shared utility, verify:
+
+- It has one clear responsibility
+- Its name is domain-neutral
+- Its behavior is stable
+- It reduces duplication without hiding intent
+- It does not create a dependency inversion violation
+
+Domain behavior belongs in domain services, not generic utilities.
+
+---
+
+# 29. Logging Boundary
+
+Business logic does not use console output.
+
+Forbidden in committed application code:
+
+```ts
+console.log()
+console.error()
+console.warn()
+```
+
+Use the structured logger.
+
+Logs must include context through fields.
+
+Example:
+
+```ts
+logger.info(
+  {
+    playerId,
+    itemInstanceId,
+    requestId
+  },
+  "Item equipped"
+);
+```
+
+Detailed logging rules are defined in:
+
+```text
+35_QUALITY_PERFORMANCE_OBSERVABILITY.md
+```
+
+---
+
+# 30. Security Boundaries
+
+All external input is untrusted.
+
+This includes:
+
+- HTTP requests
+- Headers
+- Cookies
+- Query parameters
+- Uploaded files
+- Imported CSV files
+- JSON content files
+- Admin commands
+- Client timestamps
+- Client-calculated rewards
+- Client-provided prices
+- Client-provided stat totals
+
+Validation must occur at the first trusted boundary.
+
+The server recalculates all authoritative outcomes.
+
+---
+
+## 30.1 Client Request Rule
+
+The client sends intent, not authoritative results.
+
+Correct:
+
+```json
+{
+  "recipeId": "recipe_broadsword_t4",
+  "quantity": 1
+}
+```
+
+Incorrect:
+
+```json
+{
+  "recipeId": "recipe_broadsword_t4",
+  "quantity": 1,
+  "silverCost": 120,
+  "craftingDuration": 30,
+  "itemQuality": "Excellent"
+}
+```
+
+The server derives cost, duration and result.
+
+---
+
+## 30.2 Ownership Checks
+
+Every player-owned resource mutation must verify ownership.
+
+Examples:
+
+- Item instance
+- Worker
+- Building
+- Island plot
+- Reward claim
+- Save slot
+
+Knowing an ID is never proof of ownership.
+
+---
+
+## 30.3 Replay Protection
+
+Sensitive mutations must support idempotency or replay protection where duplicate requests could create duplicated rewards.
+
+Examples:
+
+- Claim worker output
+- Claim encounter rewards
+- Purchase item
+- Craft item
+- Process payment-like currency operations
+- Apply offline progression
+
+---
+
+# 31. Client-State Categories
+
+Client state is divided into:
+
+```text
+Server State
+
+Session State
+
+UI State
+
+Runtime Presentation State
+```
+
+---
+
+## 31.1 Server State
+
+Examples:
+
+- Inventory
+- Equipment
+- Currency
+- Mastery progress
+- Workers
+- Buildings
+
+Server state is cached locally but owned by the server.
+
+---
+
+## 31.2 Session State
+
+Examples:
+
+- Authentication status
+- Current player profile
+- Connection status
+- Active content version
+
+---
+
+## 31.3 UI State
+
+Examples:
+
+- Open modal
+- Selected inventory filter
+- Active settings tab
+- Tooltip visibility
+
+UI state is client-owned.
+
+---
+
+## 31.4 Runtime Presentation State
+
+Examples:
+
+- Current animation frame
+- Camera offset
+- Particle lifetime
+- Floating text position
+- Temporary visual interpolation
+
+Presentation state is never persisted as gameplay truth.
+
+---
+
+# 32. Code Generation
+
+Code generation is allowed for stable repetitive contracts.
+
+Recommended generated outputs:
+
+- TypeScript types from validated schemas
+- Localization key unions
+- Content ID unions for development tooling
+- Asset manifest types
+- API client bindings
+- Database client
+- Test fixture indexes
+
+Generated files must:
+
+- Include a generated-file header
+- Never be manually edited
+- Be reproducible
+- Be regenerated in CI
+- Fail CI when stale if committed
+
+---
+
+# 33. Source-of-Truth Matrix
+
+Each concern has exactly one primary source of truth.
+
+| Concern | Source of Truth |
+|---|---|
+| Game vision | `00_FOUNDATIONS` |
+| Gameplay behavior | `10_SYSTEMS` |
+| Content schema | `20_DATA` |
+| Global code architecture | `30_TECHNICAL_ARCHITECTURE` |
+| Runtime order | `31_RUNTIME_ARCHITECTURE` |
+| Content and asset loading | `32_DATA_CONTENT_ASSET_PIPELINE` |
+| API and persistence | `33_BACKEND_API_PERSISTENCE` |
+| Rendering and UI | `34_CLIENT_RENDERING_UI` |
+| Testing and performance | `35_QUALITY_PERFORMANCE_OBSERVABILITY` |
+| Deployment | `36_BUILD_DEPLOYMENT_OPERATIONS` |
+| Development order | `37_IMPLEMENTATION_PLAN` |
+| Runtime player save | Server database |
+| Runtime content definitions | Validated content registry |
+| Public API contract | Shared validated DTO schemas |
+| Database schema | Prisma schema and migrations |
+
+Duplicated explanations must reference the primary source instead of redefining the rule.
+
+---
+
+# 34. Documentation Rules for Code
+
+Public modules must include concise technical documentation.
+
+Documentation must explain:
+
+- Purpose
+- Inputs
+- Outputs
+- Side effects
+- Failure modes
+- Important invariants
+
+Do not document obvious syntax.
+
+Preferred:
+
+```ts
+/**
+ * Resolves a complete reward transaction and persists it atomically.
+ *
+ * Fails when the inventory cannot accept mandatory item rewards.
+ * Currency and item grants are committed in the same transaction.
+ */
+```
+
+Avoid:
+
+```ts
+/**
+ * Grants rewards.
+ */
+```
+
+---
+
+# 35. Testing Boundary
+
+Every module must be testable without booting the complete application.
+
+Domain tests must not require:
+
+- PostgreSQL
+- HTTP server
+- Browser
+- Phaser
+- Real clock
+- Uncontrolled randomness
+
+Infrastructure tests may use real dependencies through controlled test environments.
+
+Detailed requirements are defined in:
+
+```text
+35_QUALITY_PERFORMANCE_OBSERVABILITY.md
+```
+
+---
+
+# 36. Bootstrap Sequence
+
+The global bootstrap order is:
+
+```text
+Load Environment
+
+↓
+
+Validate Environment
+
+↓
+
+Initialize Logger
+
+↓
+
+Initialize Observability
+
+↓
+
+Connect Database
+
+↓
+
+Load and Validate Content
+
+↓
+
+Build Registries
+
+↓
+
+Construct Infrastructure Adapters
+
+↓
+
+Construct Application Services
+
+↓
+
+Register API Routes
+
+↓
+
+Start Server
+```
+
+Client bootstrap order:
+
+```text
+Load Technical Configuration
+
+↓
+
+Initialize Error Handling
+
+↓
+
+Load Minimum Asset Manifest
+
+↓
+
+Initialize API Client
+
+↓
+
+Restore Session
+
+↓
+
+Fetch Bootstrap State
+
+↓
+
+Load Localization
+
+↓
+
+Initialize React Application
+
+↓
+
+Initialize Phaser Runtime
+
+↓
+
+Enter Main Application
+```
+
+Detailed runtime sequencing belongs to:
+
+```text
+31_RUNTIME_ARCHITECTURE.md
+```
+
+---
+
+# 37. Graceful Shutdown
+
+The server must support graceful shutdown.
+
+Shutdown order:
+
+```text
+Receive Shutdown Signal
+
+↓
+
+Stop Accepting New Requests
+
+↓
+
+Complete or Cancel In-Flight Work
+
+↓
+
+Flush Logs and Metrics
+
+↓
+
+Close Database Connections
+
+↓
+
+Exit Process
+```
+
+A forced timeout must prevent indefinite shutdown.
+
+---
+
+# 38. Development Environment
+
+Local development must be reproducible through documented commands.
+
+Expected root commands:
+
+```text
+pnpm install
+
+pnpm dev
+
+pnpm build
+
+pnpm test
+
+pnpm lint
+
+pnpm typecheck
+
+pnpm validate:data
+
+pnpm validate:assets
+
+pnpm db:migrate
+
+pnpm db:seed
+```
+
+A new developer should not need to run undocumented manual setup steps.
+
+---
+
+# 39. Technical Decision Records
+
+Major architecture changes require a Technical Decision Record.
+
+Location:
+
+```text
+docs/90_HISTORY/decisions/
+```
+
+Minimum structure:
+
+```text
+Title
+
+Status
+
+Context
+
+Decision
+
+Consequences
+
+Alternatives Considered
+
+Date
+```
+
+Technical Decision Records must not replace current documentation.
+
+When a decision is accepted:
+
+- The main technical document is updated
+- The decision record preserves history
+
+---
+
+# 40. Prohibited Patterns
+
+The following patterns are forbidden unless explicitly approved.
+
+```text
+God objects
+
+Massive shared service classes
+
+Database access from route handlers
+
+Domain rules in React components
+
+Domain rules in Phaser scenes
+
+Direct process.env access outside configuration bootstrap
+
+Math.random in authoritative logic
+
+Client-authoritative rewards
+
+Unvalidated JSON parsing
+
+Silent data fallback in production
+
+Circular module imports
+
+Cross-module deep imports
+
+Mutable global player state
+
+Unbounded retries
+
+Swallowed exceptions
+
+Generic catch blocks without classification
+
+Hardcoded gameplay balancing values
+
+Persisting entire client state blobs
+
+Using local time for server rewards
+
+Direct database access from browser code
+
+Premature microservices
+
+Premature full ECS adoption
+```
+
+---
+
+# 41. Implementation Checklist for Every Module
+
+Before a module is considered implementable, Claude must identify:
+
+```text
+1. Module Purpose
+
+2. Owned State
+
+3. External Inputs
+
+4. Public Outputs
+
+5. Dependencies
+
+6. Public Interfaces
+
+7. Persistence Requirements
+
+8. Domain Invariants
+
+9. Expected Errors
+
+10. Events Produced
+
+11. Tests Required
+
+12. Security Checks
+
+13. Performance Risks
+
+14. Observability Requirements
+```
+
+If one of these elements is unknown, Claude must consult the relevant Bible document before inventing behavior.
+
+---
+
+# 42. AI Coding Rules
+
+When Claude implements code, it must follow these rules.
+
+---
+
+## Rule 01
+
+Read the relevant Foundation, System, Data and Technical documents before coding a feature.
+
+---
+
+## Rule 02
+
+Do not introduce new gameplay behavior not defined by the Bible.
+
+---
+
+## Rule 03
+
+Do not silently resolve contradictory documentation.
+
+Contradictions must be reported.
+
+---
+
+## Rule 04
+
+Prefer the smallest architecture that satisfies the defined requirements.
+
+---
+
+## Rule 05
+
+Do not create abstraction layers without a concrete current purpose.
+
+---
+
+## Rule 06
+
+Do not duplicate domain logic between client and server.
+
+Shared pure calculations may be placed in the domain package when safe.
+
+The server remains authoritative.
+
+---
+
+## Rule 07
+
+Every external input must be validated.
+
+---
+
+## Rule 08
+
+Every persistent multi-step mutation must be atomic.
+
+---
+
+## Rule 09
+
+Every reward-relevant random operation must use an injected random source.
+
+---
+
+## Rule 10
+
+Every public contract must use explicit TypeScript types and runtime schemas where it crosses a trust boundary.
+
+---
+
+## Rule 11
+
+Every new module must expose a controlled public entry point.
+
+---
+
+## Rule 12
+
+Every implementation step must include tests appropriate to its risk.
+
+---
+
+## Rule 13
+
+Do not use placeholder values in production paths.
+
+Temporary stubs must be clearly marked and restricted to unfinished implementation phases.
+
+---
+
+## Rule 14
+
+Do not optimize before measuring, except for architecture-level constraints explicitly defined in the Bible.
+
+---
+
+## Rule 15
+
+When documentation leaves multiple valid implementation options, choose the option with:
+
+```text
+Lowest Complexity
+
+Strongest Type Safety
+
+Best Testability
+
+Least Coupling
+
+Clear Failure Behavior
+```
+
+---
+
+# 43. Acceptance Criteria
+
+This technical architecture is correctly implemented when:
+
+- The project runs as a pnpm TypeScript monorepo.
+- Client, server and shared packages have explicit boundaries.
+- React owns application UI.
+- Phaser owns world rendering.
+- Fastify exposes thin HTTP adapters.
+- PostgreSQL stores authoritative persistent state.
+- Prisma access remains inside infrastructure.
+- Zod validates untrusted runtime data.
+- Domain code remains independent from frameworks.
+- Persistent gameplay remains server-authoritative.
+- Content is loaded through validated registries.
+- Modules expose explicit public contracts.
+- Circular dependencies are prevented.
+- Environment configuration is validated once.
+- Reward-relevant randomness is injectable.
+- Persistent multi-step operations are transactional.
+- UTC is used for server timestamps.
+- Public errors use stable error codes.
+- The browser never accesses the database directly.
+- Tests can execute domain rules without infrastructure.
+- The repository includes reproducible root commands.
+- Claude can determine where every new implementation belongs.
+
+---
+
+# 44. Final Architecture Summary
+
+The project uses a TypeScript monorepo built around a modular client-server architecture.
+
+```text
+React
+
+↓
+
+Application UI
+```
+
+```text
+Phaser
+
+↓
+
+2D World Presentation
+```
+
+```text
+Fastify
+
+↓
+
+HTTP Transport
+```
+
+```text
+Application Services
+
+↓
+
+Use-Case Orchestration
+```
+
+```text
+Domain Modules
+
+↓
+
+Gameplay Rules
+```
+
+```text
+Prisma
+
+↓
+
+Persistence Adapters
+```
+
+```text
+PostgreSQL
+
+↓
+
+Authoritative Player State
+```
+
+Shared Zod schemas and TypeScript contracts keep the client and server synchronized without coupling their implementations.
+
+The server remains authoritative for every persistent or reward-relevant operation.
+
+The architecture deliberately favors:
+
+```text
+Modular Monolith
+
+Explicit Contracts
+
+Strict Validation
+
+Deterministic Domain Logic
+
+Atomic Persistence
+
+Minimal Abstraction
+
+High Testability
+```
+
+This document is the technical source of truth for the global codebase structure.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

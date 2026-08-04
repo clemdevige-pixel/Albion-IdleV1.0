@@ -1,0 +1,3452 @@
+# 31. RUNTIME ARCHITECTURE
+
+---
+
+# 1. Purpose
+
+This document defines how the game executes at runtime.
+
+It specifies:
+
+- Application bootstrap
+- Server runtime lifecycle
+- Client runtime lifecycle
+- Game-loop responsibilities
+- Time management
+- Scheduling
+- State transitions
+- Runtime entities
+- Combat orchestration
+- Exploration orchestration
+- Background progression
+- Event dispatch
+- Command execution
+- Runtime ownership
+- Failure recovery
+- Shutdown behavior
+
+This document is the source of truth for runtime order and execution flow.
+
+It does not redefine:
+
+- Gameplay rules from `10_SYSTEMS`
+- Data schemas from `20_DATA`
+- Persistence architecture from `33_BACKEND_API_PERSISTENCE`
+- Rendering details from `34_CLIENT_RENDERING_UI`
+- Testing strategy from `35_QUALITY_PERFORMANCE_OBSERVABILITY`
+
+---
+
+# 2. Locked Decisions
+
+The following decisions are mandatory.
+
+---
+
+## 2.1 Runtime Model
+
+The project uses two distinct runtimes:
+
+```text
+Authoritative Server Runtime
+
+Presentation Client Runtime
+```
+
+The server owns persistent gameplay truth.
+
+The client owns visual presentation and local interaction.
+
+---
+
+## 2.2 Server Runtime Type
+
+The server uses a request-driven modular runtime.
+
+It does not run the entire world continuously.
+
+Most player gameplay is resolved through explicit commands.
+
+Examples:
+
+```text
+Start Encounter
+
+Resolve Combat Step
+
+Claim Encounter Reward
+
+Equip Item
+
+Craft Item
+
+Collect Worker Output
+```
+
+This avoids maintaining one permanent real-time process per player.
+
+---
+
+## 2.3 Client Runtime Type
+
+The client uses a continuous render loop.
+
+Phaser runs frame-based visual updates.
+
+React runs event-driven UI updates.
+
+The client render loop does not define authoritative game outcomes.
+
+---
+
+## 2.4 Combat Resolution
+
+Combat is automatic.
+
+Combat logic is deterministic when supplied with:
+
+- Initial state
+- Content version
+- Algorithm version
+- Random seed
+- Time-step sequence
+
+The server validates all reward-relevant combat outcomes.
+
+---
+
+## 2.5 Simulation Strategy
+
+Version 1 uses discrete combat simulation steps.
+
+The authoritative simulation does not depend on browser framerate.
+
+Recommended simulation interval:
+
+```text
+100 milliseconds
+```
+
+The exact interval is configurable as a technical constant.
+
+The client may render at any supported framerate.
+
+---
+
+## 2.6 Exploration Structure
+
+Exploration progresses through:
+
+```text
+Biome
+
+↓
+
+Zone
+
+↓
+
+Cycle
+
+↓
+
+Zone Segment
+
+↓
+
+Encounter Slot
+```
+
+Each Zone Segment contains five encounter slots.
+
+The fifth slot is a boss encounter.
+
+---
+
+## 2.7 Infinite Progression
+
+The world supports infinite Cycles.
+
+Cycles are generated from deterministic progression rules and content references.
+
+New Cycles do not generate new resource types.
+
+---
+
+## 2.8 Background Progression
+
+Background progression applies only to passive systems.
+
+It does not simulate active exploration or active combat while the player is absent.
+
+Background progression is calculated by the server.
+
+---
+
+## 2.9 No Client Clock Authority
+
+The server clock is authoritative.
+
+The client clock may only be used for visual countdown interpolation.
+
+---
+
+## 2.10 No Unbounded Runtime Process
+
+No player-owned timer may require an indefinitely running in-memory process.
+
+Persistent timers are represented by timestamps.
+
+Examples:
+
+```text
+startedAt
+
+completesAt
+
+lastProcessedAt
+
+lastClaimedAt
+```
+
+---
+
+## 2.11 No Runtime Mutation of Definitions
+
+Loaded content definitions are immutable.
+
+Runtime systems create state from definitions.
+
+They never modify definitions.
+
+---
+
+## 2.12 Explicit Update Order
+
+Simulation systems execute in an explicit order.
+
+Order must never depend on import order, object iteration order or event-listener registration accidents.
+
+---
+
+## 2.13 Recoverable Runtime State
+
+Any authoritative runtime state required after process restart must be persisted.
+
+Transient server memory must never be the only source of truth for:
+
+- Rewards
+- Currency
+- Inventory
+- Mastery progress
+- Encounter completion
+- Worker output
+- Crafting completion
+- Island state
+- Cycle unlocks
+
+---
+
+# 3. Runtime Overview
+
+The runtime is divided into four execution categories.
+
+```text
+Synchronous Domain Calculation
+
+Asynchronous Application Command
+
+Persistent Scheduled Process
+
+Client Presentation Loop
+```
+
+---
+
+## 3.1 Synchronous Domain Calculation
+
+Pure calculations execute immediately.
+
+Examples:
+
+- Damage calculation
+- Stat aggregation
+- Requirement validation
+- Loot-weight resolution
+- XP requirement lookup
+- Reward scaling
+- Durability calculation
+
+These calculations must not perform I/O.
+
+---
+
+## 3.2 Asynchronous Application Command
+
+Application commands coordinate domain logic and persistence.
+
+Examples:
+
+- Equip item
+- Purchase item
+- Resolve encounter
+- Claim worker output
+- Start crafting
+- Unlock Cycle
+
+These may use database transactions.
+
+---
+
+## 3.3 Persistent Scheduled Process
+
+Long-running activities are represented by persistent timestamps.
+
+Examples:
+
+- Crafting
+- Refining
+- Worker production
+- Building construction
+- Repair if time-based in future
+
+The server calculates elapsed progress when:
+
+- The player reconnects
+- The relevant screen is opened
+- The output is claimed
+- A scheduled maintenance process checks completion
+
+---
+
+## 3.4 Client Presentation Loop
+
+The browser continuously updates:
+
+- Rendering
+- Animation
+- Camera
+- VFX
+- Audio transitions
+- Input
+- Local interpolation
+- UI feedback
+
+It does not mutate authoritative persistent state.
+
+---
+
+# 4. Runtime Components
+
+The runtime is composed of the following components.
+
+```text
+Bootstrap
+
+Dependency Container
+
+Content Registries
+
+Application Services
+
+Domain Services
+
+Repositories
+
+Transaction Manager
+
+Clock
+
+Random Source
+
+Scheduler
+
+Event Dispatcher
+
+Command Handlers
+
+Query Handlers
+
+Client State Stores
+
+Phaser Runtime
+
+React Runtime
+```
+
+---
+
+# 5. Server Bootstrap
+
+The server bootstrap is the composition root.
+
+It is the only place allowed to assemble the full dependency graph.
+
+Canonical sequence:
+
+```text
+1. Read Environment
+
+2. Validate Environment
+
+3. Initialize Logger
+
+4. Initialize Metrics
+
+5. Initialize Database Client
+
+6. Verify Database Connectivity
+
+7. Apply Startup Compatibility Checks
+
+8. Load Content Files
+
+9. Validate Content Files
+
+10. Resolve Content References
+
+11. Freeze Content Registries
+
+12. Initialize Infrastructure Services
+
+13. Initialize Repositories
+
+14. Initialize Domain Services
+
+15. Initialize Application Services
+
+16. Initialize Command and Query Handlers
+
+17. Register API Routes
+
+18. Register Error Handlers
+
+19. Register Shutdown Hooks
+
+20. Start Listening
+```
+
+The server must not accept requests before required content and infrastructure are ready.
+
+---
+
+## 5.1 Startup Failure
+
+Startup fails immediately when:
+
+- Environment validation fails
+- Database connectivity fails
+- Required migration compatibility fails
+- Content validation fails
+- Required content references are missing
+- Duplicate identifiers exist
+- Required secrets are missing
+- Dependency construction fails
+
+The server must not start in a partially valid state.
+
+---
+
+## 5.2 Optional Dependency Failure
+
+Optional services may degrade gracefully only when explicitly classified as optional.
+
+Examples:
+
+- Development telemetry
+- Non-critical analytics
+- Optional admin diagnostics
+
+Gameplay-critical services may not silently degrade.
+
+---
+
+# 6. Client Bootstrap
+
+Canonical client sequence:
+
+```text
+1. Load Client Build Configuration
+
+2. Initialize Global Error Boundary
+
+3. Initialize Structured Client Logger
+
+4. Load Minimum Asset Manifest
+
+5. Initialize Localization Core
+
+6. Initialize API Client
+
+7. Restore Authentication Session
+
+8. Fetch Server Bootstrap Payload
+
+9. Verify Client-Server Compatibility
+
+10. Load Required Localization Bundle
+
+11. Initialize Client Stores
+
+12. Mount React Application
+
+13. Initialize Phaser Game
+
+14. Load Initial Scene Assets
+
+15. Enter Main Application State
+```
+
+---
+
+## 6.1 Client Bootstrap Payload
+
+The server bootstrap response should include:
+
+```text
+Player Identity
+
+Session Information
+
+Save Version
+
+Content Version
+
+Server Time
+
+Feature Flags
+
+Player Summary
+
+Wallet Summary
+
+Equipment Summary
+
+Current Progression Position
+
+Pending Notifications
+
+Background Progression Summary
+```
+
+Large secondary datasets should load lazily.
+
+Examples:
+
+- Complete inventory
+- Complete mastery history
+- Full recipe catalog
+- All vendor inventories
+- Detailed worker history
+
+---
+
+## 6.2 Compatibility Check
+
+The client verifies:
+
+```text
+API Version
+
+Minimum Client Version
+
+Content Version Compatibility
+
+Save Schema Compatibility
+```
+
+When incompatible:
+
+- The client blocks gameplay
+- Displays a localized update or maintenance message
+- Does not attempt unsafe state mutation
+
+---
+
+# 7. Server Request Lifecycle
+
+Every authenticated gameplay request follows this sequence.
+
+```text
+Receive Request
+
+↓
+
+Assign Request ID
+
+↓
+
+Parse Transport Data
+
+↓
+
+Validate Request Schema
+
+↓
+
+Authenticate Session
+
+↓
+
+Authorize Resource Access
+
+↓
+
+Apply Rate Limit
+
+↓
+
+Resolve Application Handler
+
+↓
+
+Open Transaction When Required
+
+↓
+
+Load Persistent State
+
+↓
+
+Validate Expected Version
+
+↓
+
+Execute Domain Logic
+
+↓
+
+Persist Changes
+
+↓
+
+Record Audit Data When Required
+
+↓
+
+Commit Transaction
+
+↓
+
+Dispatch Post-Commit Events
+
+↓
+
+Serialize Response
+
+↓
+
+Return Response
+```
+
+---
+
+## 7.1 Pre-Commit Events
+
+Events required to maintain transaction consistency may execute before commit.
+
+They must remain inside the same transaction.
+
+Example:
+
+```text
+Craft Item
+
+↓
+
+Consume Materials
+
+↓
+
+Create Item Instance
+
+↓
+
+Update Mastery Progress
+
+↓
+
+Commit
+```
+
+---
+
+## 7.2 Post-Commit Events
+
+Non-critical side effects execute after commit.
+
+Examples:
+
+- Send notification
+- Update metrics
+- Write analytics
+- Refresh client cache
+- Produce non-critical audit enrichment
+
+A post-commit failure must not roll back an already committed gameplay transaction.
+
+---
+
+# 8. Command Runtime
+
+Commands represent requested state changes.
+
+Canonical command contract:
+
+```ts
+export interface Command<TResult> {
+  readonly type: string;
+}
+```
+
+Command handlers implement:
+
+```ts
+export interface CommandHandler<
+  TCommand,
+  TResult
+> {
+  execute(command: TCommand): Promise<TResult>;
+}
+```
+
+A framework-specific command bus is optional.
+
+Direct dependency injection is acceptable.
+
+---
+
+## 8.1 Command Properties
+
+Commands must be:
+
+- Explicit
+- Validated
+- Immutable
+- Small
+- Intent-focused
+- Independent from transport objects
+
+Preferred:
+
+```ts
+export interface EquipItemCommand {
+  readonly playerId: PlayerId;
+  readonly itemInstanceId: ItemInstanceId;
+  readonly targetSlot: EquipmentSlot;
+  readonly expectedPlayerVersion: number;
+}
+```
+
+Avoid passing:
+
+```text
+HTTP Request
+
+Database Record
+
+React State
+
+Entire Client Save
+```
+
+---
+
+## 8.2 Command Result
+
+A command result should contain only information required by the caller.
+
+Example:
+
+```ts
+export interface EquipItemResult {
+  readonly equippedItem: EquipmentItemDto;
+  readonly unequippedItem?: InventoryItemDto;
+  readonly updatedStats: CharacterStatsDto;
+  readonly playerVersion: number;
+}
+```
+
+---
+
+## 8.3 Idempotent Commands
+
+Commands with duplicate-reward risk must accept an idempotency key.
+
+Examples:
+
+- Claim encounter reward
+- Claim worker output
+- Complete purchase
+- Apply background progression
+- Claim notification reward
+- Resolve delayed production
+
+Idempotency keys are stored with the result where necessary.
+
+Repeated execution returns the original result or a stable duplicate-request response.
+
+---
+
+# 9. Query Runtime
+
+Queries are read-only.
+
+They must not:
+
+- Mutate persistent state
+- Generate rewards
+- Consume currency
+- Advance progression
+- Update timestamps except technical access metadata where explicitly approved
+
+Example:
+
+```ts
+export interface GetInventoryQuery {
+  readonly playerId: PlayerId;
+  readonly cursor?: string;
+  readonly limit: number;
+}
+```
+
+Query handlers may use optimized read models.
+
+They are not required to reconstruct full domain aggregates when unnecessary.
+
+---
+
+# 10. Runtime State Categories
+
+Runtime state is divided into four categories.
+
+```text
+Immutable Definition State
+
+Authoritative Persistent State
+
+Authoritative Transient State
+
+Presentation State
+```
+
+---
+
+## 10.1 Immutable Definition State
+
+Examples:
+
+- Item definitions
+- Enemy definitions
+- Zone definitions
+- Ability definitions
+- Balancing tables
+- Localization entries
+- Asset manifests
+
+Loaded once and frozen.
+
+---
+
+## 10.2 Authoritative Persistent State
+
+Examples:
+
+- Player wallet
+- Inventory
+- Equipment
+- Mastery progress
+- Current Cycle
+- Completed encounters
+- Worker assignments
+- Island buildings
+- Crafting jobs
+- Notifications
+
+Stored in PostgreSQL.
+
+---
+
+## 10.3 Authoritative Transient State
+
+Examples:
+
+- In-progress command context
+- Current transaction
+- Temporary combat calculation state
+- Request-local random generator
+- Request correlation metadata
+
+This state may exist in memory because it is either:
+
+- Reconstructible
+- Request-scoped
+- Persisted before acknowledgement
+
+---
+
+## 10.4 Presentation State
+
+Examples:
+
+- Camera position
+- Animation frame
+- Floating damage text
+- Active tooltip
+- Selected inventory filter
+- Particle lifetime
+
+Client-owned and non-authoritative.
+
+---
+
+# 11. Time Architecture
+
+The project distinguishes:
+
+```text
+Wall-Clock Time
+
+Simulation Time
+
+Presentation Time
+
+Elapsed Offline Time
+```
+
+---
+
+## 11.1 Wall-Clock Time
+
+Wall-clock time is server UTC time.
+
+Used for:
+
+- Persistence timestamps
+- Session expiry
+- Worker completion
+- Crafting completion
+- Background progression
+- Daily reset if introduced
+- Audit records
+
+Accessed through an injected `Clock`.
+
+---
+
+## 11.2 Simulation Time
+
+Simulation time advances in fixed steps.
+
+Recommended:
+
+```text
+100 ms per authoritative combat step
+```
+
+Simulation time is independent from:
+
+- Server load variation
+- Browser framerate
+- Monitor refresh rate
+- Network latency
+
+---
+
+## 11.3 Presentation Time
+
+Presentation time uses client frame delta.
+
+Used for:
+
+- Sprite interpolation
+- Animation playback
+- Camera smoothing
+- VFX
+- Audio fades
+- UI transitions
+
+Presentation time must never determine reward quantities.
+
+---
+
+## 11.4 Elapsed Offline Time
+
+Offline elapsed time is calculated as:
+
+```text
+authoritativeNow - lastProcessedAt
+```
+
+The value is clamped according to system-specific limits.
+
+Client-provided elapsed time is ignored.
+
+---
+
+# 12. Clock Interface
+
+Authoritative logic receives a clock dependency.
+
+```ts
+export interface Clock {
+  now(): Date;
+}
+```
+
+Production implementation:
+
+```text
+SystemClock
+```
+
+Test implementation:
+
+```text
+FixedClock
+
+ControllableClock
+```
+
+Direct calls to `Date.now()` are forbidden inside domain logic.
+
+---
+
+# 13. Scheduler Architecture
+
+The scheduler coordinates deferred technical work.
+
+It does not own gameplay truth.
+
+Persistent scheduled activities remain timestamp-based in the database.
+
+---
+
+## 13.1 Scheduler Responsibilities
+
+The scheduler may:
+
+- Scan completed jobs
+- Process maintenance batches
+- Expire sessions
+- Clean idempotency records
+- Dispatch queued notifications
+- Recalculate stale projections
+- Trigger backup-related tasks
+- Process retryable outbox events
+
+---
+
+## 13.2 Scheduler Non-Responsibilities
+
+The scheduler must not be the only record of:
+
+- Crafting completion
+- Worker completion
+- Building completion
+- Reward eligibility
+- Player progression
+
+If the scheduler is unavailable, players must still be able to recover completed results through timestamp evaluation.
+
+---
+
+## 13.3 Scheduler Execution
+
+Scheduled tasks must support:
+
+- Distributed locking or single-run guarantees
+- Bounded batch sizes
+- Maximum execution time
+- Structured logging
+- Retry limits
+- Idempotency
+- Metrics
+- Graceful shutdown
+
+---
+
+# 14. Event Dispatcher
+
+The runtime may use an in-process event dispatcher.
+
+Canonical interface:
+
+```ts
+export interface EventDispatcher {
+  dispatch<TEvent extends DomainEvent>(
+    event: TEvent
+  ): Promise<void>;
+
+  dispatchMany(
+    events: ReadonlyArray<DomainEvent>
+  ): Promise<void>;
+}
+```
+
+---
+
+## 14.1 Dispatch Policy
+
+Critical transaction-bound behavior uses direct calls or transactional event handlers.
+
+Non-critical post-commit behavior may use events.
+
+Events must not create invisible core gameplay chains.
+
+Important state changes should remain traceable from the initiating command.
+
+---
+
+## 14.2 Event Handler Failure
+
+Failure policy depends on handler category.
+
+```text
+Transactional Handler Failure
+
+↓
+
+Rollback
+```
+
+```text
+Post-Commit Critical Handler Failure
+
+↓
+
+Persist Retryable Work
+```
+
+```text
+Post-Commit Non-Critical Handler Failure
+
+↓
+
+Log and Continue
+```
+
+---
+
+# 15. Randomness Architecture
+
+All authoritative randomness uses an injected source.
+
+```ts
+export interface RandomSource {
+  nextFloat(): number;
+
+  nextInt(
+    minInclusive: number,
+    maxInclusive: number
+  ): number;
+}
+```
+
+---
+
+## 15.1 Seeded Randomness
+
+Combat and reward operations should support seeded randomness.
+
+A seed may derive from:
+
+```text
+Operation ID
+
+Encounter ID
+
+Player ID
+
+Server Secret Salt
+
+Algorithm Version
+```
+
+Seeds must not be predictable when predictability would enable exploitation.
+
+---
+
+## 15.2 Random Stream Separation
+
+Independent random concerns should use separate streams or derived seeds.
+
+Examples:
+
+```text
+Combat Hit Stream
+
+Critical Hit Stream
+
+Loot Selection Stream
+
+Quality Selection Stream
+
+Resource Yield Stream
+```
+
+This prevents unrelated changes from shifting every later random result.
+
+---
+
+## 15.3 Random Audit Context
+
+Reward-relevant operations should record enough context to reproduce results during debugging.
+
+Recommended:
+
+```text
+Operation ID
+
+Algorithm Version
+
+Content Version
+
+Seed Reference
+
+Input Snapshot Hash
+
+Result Summary
+```
+
+The raw secret derivation material must not be exposed to clients.
+
+---
+
+# 16. Runtime Entity Model
+
+The project uses lightweight runtime entities.
+
+A runtime entity represents temporary active state during a simulation.
+
+Examples:
+
+- Player combatant
+- Enemy combatant
+- Projectile
+- Temporary effect instance
+- Resource node after Resource Enemy defeat
+- Encounter runtime state
+
+---
+
+## 16.1 Runtime Entity Identity
+
+Runtime entities use unique runtime IDs.
+
+Example:
+
+```ts
+export type RuntimeEntityId = string & {
+  readonly __brand: "RuntimeEntityId";
+};
+```
+
+Runtime IDs are not required to persist after simulation completion.
+
+---
+
+## 16.2 Runtime Entity State
+
+A combatant may contain:
+
+```text
+Runtime Entity ID
+
+Definition ID
+
+Current Health
+
+Maximum Health
+
+Current Resources
+
+Position
+
+Facing Direction
+
+Active Effects
+
+Active Status Effects
+
+Ability Cooldowns
+
+Action State
+
+Target ID
+
+Alive State
+```
+
+Persistent player state must not be directly mutated during simulation.
+
+A runtime snapshot is created from authoritative persistent state.
+
+Results are applied after validation.
+
+---
+
+## 16.3 Runtime Entity Lifecycle
+
+```text
+Create From Definition and State
+
+↓
+
+Register in Runtime Context
+
+↓
+
+Initialize Effects
+
+↓
+
+Enter Simulation
+
+↓
+
+Receive Updates
+
+↓
+
+Become Defeated or Complete
+
+↓
+
+Produce Result
+
+↓
+
+Dispose
+```
+
+Disposed runtime entities must not remain referenced by active systems.
+
+---
+
+# 17. Runtime Context
+
+Each combat or encounter simulation owns one isolated runtime context.
+
+Example:
+
+```ts
+export interface CombatRuntimeContext {
+  readonly combatId: string;
+  readonly contentVersion: string;
+  readonly algorithmVersion: string;
+  readonly random: RandomSource;
+  readonly clock: SimulationClock;
+  readonly entities: RuntimeEntityRegistry;
+  readonly events: CombatEventCollector;
+}
+```
+
+Runtime contexts must not share mutable combat state.
+
+This allows:
+
+- Parallel simulations
+- Reliable tests
+- Replay
+- Deterministic debugging
+- Safe server scaling
+
+---
+
+# 18. Simulation Clock
+
+Combat uses a simulation clock.
+
+```ts
+export interface SimulationClock {
+  readonly currentStep: number;
+  readonly elapsedMs: number;
+  advance(): void;
+}
+```
+
+The step duration is fixed.
+
+Example:
+
+```text
+Step 0 = 0 ms
+
+Step 1 = 100 ms
+
+Step 2 = 200 ms
+```
+
+The simulation must not use real elapsed server processing time.
+
+---
+
+# 19. Combat State Machine
+
+A combat encounter follows this state machine.
+
+```text
+Created
+
+↓
+
+Initializing
+
+↓
+
+Running
+
+↓
+
+Victory
+or
+Defeat
+or
+Aborted
+
+↓
+
+Resolving
+
+↓
+
+Completed
+```
+
+---
+
+## 19.1 Created
+
+The encounter request exists but no runtime entities are created.
+
+---
+
+## 19.2 Initializing
+
+The server:
+
+- Loads player state
+- Loads enemy definitions
+- Builds stat snapshots
+- Creates runtime combatants
+- Applies initial passives
+- Initializes cooldowns
+- Initializes seeded randomness
+
+---
+
+## 19.3 Running
+
+The simulation advances through fixed steps.
+
+Each step executes the ordered combat pipeline.
+
+---
+
+## 19.4 Victory
+
+Victory occurs when all required enemy combatants are defeated.
+
+---
+
+## 19.5 Defeat
+
+Defeat occurs when the player combatant can no longer continue.
+
+---
+
+## 19.6 Aborted
+
+A combat may abort because of:
+
+- Invalid content
+- Internal invariant violation
+- Algorithm safety limit
+- Explicit administrative cancellation
+- Irrecoverable runtime error
+
+Aborted combat grants no reward unless an explicit recovery policy says otherwise.
+
+---
+
+## 19.7 Resolving
+
+The server determines:
+
+- Encounter completion
+- Loot eligibility
+- Mastery XP
+- Durability loss
+- Progression advancement
+- Notifications
+- Next encounter availability
+
+---
+
+## 19.8 Completed
+
+The result has been persisted atomically.
+
+The response may safely be returned.
+
+---
+
+# 20. Combat Step Order
+
+Every authoritative combat step executes in this order.
+
+```text
+1. Advance Simulation Clock
+
+2. Remove Expired Effects
+
+3. Remove Expired Status Effects
+
+4. Resolve Periodic Effects Due This Step
+
+5. Update Cooldowns
+
+6. Validate Current Targets
+
+7. Select New Targets
+
+8. Evaluate Action Availability
+
+9. Select Actions
+
+10. Start New Actions
+
+11. Resolve Movement Intent
+
+12. Resolve Ability Cast Completion
+
+13. Resolve Basic Attacks
+
+14. Resolve Projectiles Due This Step
+
+15. Resolve Damage
+
+16. Resolve Healing
+
+17. Apply New Effects
+
+18. Apply New Status Effects
+
+19. Resolve Deaths
+
+20. Emit Combat Events
+
+21. Evaluate Victory or Defeat
+
+22. Validate Runtime Invariants
+```
+
+The exact logic of each operation is defined by relevant System documents.
+
+The order itself is locked.
+
+---
+
+# 21. Simultaneous Results
+
+Actions completing during the same simulation step are treated as simultaneous within their resolution phase.
+
+Example:
+
+```text
+Player and Enemy both complete attacks on Step 20.
+```
+
+Both actions are collected before death cleanup where the relevant phase requires simultaneity.
+
+This prevents iteration order from determining unfair outcomes.
+
+A deterministic tie-breaker must exist where exact ordering is necessary.
+
+Recommended tie-break hierarchy:
+
+```text
+Resolution Phase
+
+↓
+
+Action Priority
+
+↓
+
+Action Start Step
+
+↓
+
+Runtime Entity ID
+```
+
+---
+
+# 22. Combat Safety Limits
+
+Every simulation defines hard safety limits.
+
+Examples:
+
+```text
+Maximum Simulation Steps
+
+Maximum Combat Duration
+
+Maximum Active Entities
+
+Maximum Active Effects
+
+Maximum Event Count
+
+Maximum Recursive Trigger Depth
+```
+
+When a limit is exceeded:
+
+```text
+Abort Combat
+
+↓
+
+Record Diagnostic Context
+
+↓
+
+Grant No Unvalidated Rewards
+```
+
+Safety limits prevent infinite loops and content-driven runtime explosions.
+
+---
+
+# 23. Combat Output
+
+A completed combat produces an immutable result.
+
+Example:
+
+```ts
+export interface CombatResult {
+  readonly combatId: string;
+  readonly outcome: "victory" | "defeat";
+  readonly durationMs: number;
+  readonly completedSteps: number;
+  readonly playerResult: PlayerCombatResult;
+  readonly defeatedEnemies: ReadonlyArray<DefeatedEnemyResult>;
+  readonly events: ReadonlyArray<CombatSummaryEvent>;
+  readonly contentVersion: string;
+  readonly algorithmVersion: string;
+}
+```
+
+The raw full step log is not required in ordinary responses.
+
+A compact summary is sufficient for presentation.
+
+Detailed traces may be retained in development or diagnostic mode.
+
+---
+
+# 24. Client Combat Presentation
+
+The client does not need to receive every server simulation step in real time.
+
+Version 1 may use one of two supported strategies.
+
+---
+
+## 24.1 Pre-Resolved Presentation
+
+The server resolves the encounter first.
+
+It returns:
+
+- Combat result
+- Compact event timeline
+- Seed-independent presentation data
+- Rewards
+- Updated progression state
+
+The client replays the visual timeline.
+
+Advantages:
+
+- Simple server authority
+- Deterministic rewards
+- Easy reconnect behavior
+- No permanent combat socket required
+
+This is the preferred Version 1 strategy.
+
+---
+
+## 24.2 Incremental Presentation
+
+The client requests or receives combat chunks.
+
+The server remains authoritative.
+
+This strategy may be introduced later if pre-resolved presentation feels insufficient.
+
+It is not required for the initial implementation.
+
+---
+
+# 25. Combat Timeline Format
+
+The server may return compact timeline events.
+
+Examples:
+
+```text
+CombatStarted
+
+EntitySpawned
+
+ActionStarted
+
+AttackResolved
+
+DamageApplied
+
+CriticalHit
+
+StatusApplied
+
+EntityDefeated
+
+BossSpawned
+
+CombatCompleted
+```
+
+Each event contains:
+
+```text
+Relative Time
+
+Event Type
+
+Source Runtime ID
+
+Optional Target Runtime ID
+
+Minimal Event Payload
+```
+
+Example:
+
+```json
+{
+  "timeMs": 1200,
+  "type": "damage_applied",
+  "sourceId": "runtime_player",
+  "targetId": "runtime_enemy_1",
+  "amount": 42,
+  "critical": false
+}
+```
+
+The client may interpolate between events.
+
+It must not alter the authoritative result.
+
+---
+
+# 26. Exploration State Machine
+
+Exploration follows this state machine.
+
+```text
+NotStarted
+
+↓
+
+PreparingSegment
+
+↓
+
+EncounterReady
+
+↓
+
+CombatActive
+
+↓
+
+PostCombat
+
+↓
+
+EncounterCompleted
+
+↓
+
+NextEncounterReady
+or
+SegmentCompleted
+
+↓
+
+NextSegmentReady
+or
+CycleCompletionReady
+```
+
+---
+
+## 26.1 Preparing Segment
+
+The runtime:
+
+- Validates Zone
+- Validates Cycle
+- Loads Segment definition
+- Resolves encounter slots
+- Confirms player eligibility
+- Creates persistent progress record if needed
+
+---
+
+## 26.2 Encounter Ready
+
+The next encounter is known and available.
+
+The player may begin combat.
+
+---
+
+## 26.3 Combat Active
+
+The encounter is being resolved or visually presented.
+
+Only one active encounter per player progression path is allowed unless future design explicitly supports multiple active expeditions.
+
+---
+
+## 26.4 Post Combat
+
+The result is validated.
+
+The server applies:
+
+- Encounter completion
+- Rewards
+- Mastery experience
+- Durability changes
+- Resource Enemy node result
+- Progress advancement
+
+---
+
+## 26.5 Segment Completed
+
+The fifth encounter boss is defeated.
+
+The Segment is marked complete.
+
+The next Segment becomes available.
+
+---
+
+## 26.6 Cycle Completion Ready
+
+All required Zone progression for the Cycle is complete.
+
+The next Cycle is not unlocked automatically.
+
+Manual Cycle unlock is required.
+
+---
+
+# 27. Encounter Slot Runtime
+
+A Zone Segment contains exactly five encounter slots.
+
+```text
+Slot 1
+
+Slot 2
+
+Slot 3
+
+Slot 4
+
+Slot 5 — Boss
+```
+
+Each slot has a persistent status.
+
+```text
+Locked
+
+Available
+
+InProgress
+
+Completed
+```
+
+Only one slot in a sequential Segment may be `Available` at a time.
+
+---
+
+## 27.1 Slot Transition Rules
+
+```text
+Locked → Available
+
+Available → InProgress
+
+InProgress → Completed
+```
+
+Failed combat:
+
+```text
+InProgress → Available
+```
+
+Aborted combat:
+
+```text
+InProgress → Available
+```
+
+A completed slot never returns to `Available` unless an explicit reset system exists.
+
+---
+
+# 28. Resource Enemy Runtime
+
+Gathering opportunities originate from Resource Enemies.
+
+Runtime flow:
+
+```text
+Resource Enemy Encounter
+
+↓
+
+Resource Enemy Defeated
+
+↓
+
+Resource Node Spawn Event
+
+↓
+
+Automatic Gathering Resolution
+
+↓
+
+Resource Reward Granted
+```
+
+There is no independent free-standing gathering interaction during exploration.
+
+---
+
+## 28.1 Automatic Gathering
+
+Automatic gathering uses:
+
+- Resource Enemy definition
+- Resource definition
+- Player gathering statistics
+- Mastery requirements
+- Yield rules
+- Reward scaling rules
+- Content version
+- Random source where applicable
+
+The result is resolved as part of the encounter transaction.
+
+The client presents the Resource Node visually after combat.
+
+The visual node does not own the reward.
+
+---
+
+# 29. Cycle Runtime
+
+Cycle progression is infinite.
+
+Each Cycle contains:
+
+```text
+Cycle Index
+
+Cycle Scaling Multipliers
+
+Reward Scaling Multipliers
+
+Unlocked State
+
+Completion State
+
+Unlock Cost or Requirement
+```
+
+---
+
+## 29.1 Cycle Generation
+
+A Cycle runtime descriptor is derived from:
+
+```text
+Cycle Index
+
+Balancing Tables
+
+Biome
+
+Zone
+
+Family Scaling
+
+Category Scaling
+```
+
+The server stores only what is necessary for persistence and audit.
+
+Derived values should not be duplicated unless required for historical consistency.
+
+---
+
+## 29.2 Manual Unlock
+
+After completion requirements are met:
+
+```text
+Current Cycle Completed
+
+↓
+
+Unlock Action Available
+
+↓
+
+Player Confirms Unlock
+
+↓
+
+Server Validates Requirements
+
+↓
+
+Next Cycle Unlocked
+```
+
+The server does not unlock the next Cycle merely because the previous one was completed.
+
+---
+
+# 30. Background Progression Runtime
+
+Background progression processes passive systems only.
+
+Supported categories include:
+
+- Worker production
+- Crafting jobs
+- Refining jobs
+- Building construction
+- Other explicitly passive timers
+
+Unsupported categories include:
+
+- Exploration
+- Combat
+- Active gathering
+- Active vendor interaction
+- Active equipment decisions
+
+---
+
+## 30.1 Background Progression Trigger
+
+Background progression may run when:
+
+- Session starts
+- Player profile loads
+- Relevant subsystem opens
+- Player claims passive output
+- Scheduled maintenance processes stale jobs
+
+---
+
+## 30.2 Processing Flow
+
+```text
+Load Last Processed Timestamp
+
+↓
+
+Read Server Current Time
+
+↓
+
+Calculate Elapsed Duration
+
+↓
+
+Clamp Duration
+
+↓
+
+Load Relevant Passive Jobs
+
+↓
+
+Calculate Completed Work
+
+↓
+
+Apply Capacity Limits
+
+↓
+
+Generate Pending Results
+
+↓
+
+Persist Updated Timestamps and State
+
+↓
+
+Return Summary
+```
+
+---
+
+## 30.3 Processing Boundary
+
+Background progression must record a new processing boundary atomically.
+
+Example:
+
+```text
+Previous lastProcessedAt = T1
+
+Current server time = T2
+
+Process [T1, T2]
+
+Persist lastProcessedAt = T2
+```
+
+Repeated processing of the same interval is forbidden.
+
+---
+
+## 30.4 Maximum Offline Duration
+
+Each passive system may define a maximum effective offline duration.
+
+Example categories:
+
+```text
+Worker Storage Capacity
+
+Crafting Queue Capacity
+
+Refining Queue Capacity
+```
+
+The clamp must come from system rules or balancing data.
+
+The server must not grant unlimited production merely because a player was absent for an extreme duration.
+
+---
+
+## 30.5 Background Summary
+
+The client receives a summary.
+
+Example:
+
+```json
+{
+  "from": "2026-07-20T18:00:00.000Z",
+  "to": "2026-07-21T18:00:00.000Z",
+  "workerOutputsCompleted": 3,
+  "craftingJobsCompleted": 1,
+  "refiningJobsCompleted": 2,
+  "notificationsCreated": 4
+}
+```
+
+The summary is informational.
+
+Persistent results already exist server-side.
+
+---
+
+# 31. Passive Job State Machine
+
+Generic passive jobs use:
+
+```text
+Queued
+
+↓
+
+Running
+
+↓
+
+Completed
+
+↓
+
+Claimed
+```
+
+Optional failure state:
+
+```text
+Failed
+```
+
+---
+
+## 31.1 Queued
+
+The job is valid but not yet started.
+
+Examples:
+
+- Waiting for queue position
+- Waiting for required worker slot
+- Waiting for building availability
+
+---
+
+## 31.2 Running
+
+The job has:
+
+```text
+startedAt
+
+completesAt
+```
+
+---
+
+## 31.3 Completed
+
+The server time is equal to or greater than `completesAt`.
+
+The output exists as a pending authoritative result.
+
+---
+
+## 31.4 Claimed
+
+The output has been transferred to the player.
+
+Claiming must be idempotent.
+
+---
+
+## 31.5 Failed
+
+A job enters `Failed` only when it cannot be safely completed.
+
+Examples:
+
+- Definition removed without migration
+- Invalid persistent state
+- Internal data corruption
+
+Failure requires diagnostic context.
+
+Resources must not be silently lost.
+
+---
+
+# 32. State Machine Rules
+
+All important runtime state machines must define:
+
+- States
+- Initial state
+- Terminal states
+- Allowed transitions
+- Transition guards
+- Transition side effects
+- Persistence boundary
+- Recovery behavior
+
+Transitions must be explicit.
+
+Forbidden:
+
+```ts
+job.status = arbitraryInput;
+```
+
+Preferred:
+
+```ts
+job.complete(clock.now());
+```
+
+---
+
+# 33. Runtime Registries
+
+Registries provide immutable definition lookup.
+
+Examples:
+
+```ts
+export interface ItemRegistry {
+  get(id: ItemDefinitionId): ItemDefinition;
+  has(id: ItemDefinitionId): boolean;
+}
+```
+
+---
+
+## 33.1 Registry Properties
+
+Registries must:
+
+- Be initialized during bootstrap
+- Validate duplicate IDs
+- Resolve references before use
+- Be immutable after construction
+- Throw explicit missing-definition errors
+- Expose read-only access
+- Include content-version metadata
+
+---
+
+## 33.2 Registry Access
+
+Domain services receive only the registries they need.
+
+Avoid passing one universal registry object containing every content family.
+
+Preferred:
+
+```text
+Damage Service
+
+↓
+
+Stat Registry
+
+Ability Registry
+
+Effect Registry
+```
+
+Avoid:
+
+```text
+Damage Service
+
+↓
+
+Global Content Service
+```
+
+unless the global service exposes constrained typed access.
+
+---
+
+# 34. Runtime Services
+
+Runtime services are divided into:
+
+```text
+Pure Domain Services
+
+Stateful Runtime Coordinators
+
+Infrastructure Services
+```
+
+---
+
+## 34.1 Pure Domain Services
+
+Examples:
+
+- Damage calculator
+- Loot resolver
+- Stat aggregator
+- Reward scaler
+- Mastery progression calculator
+
+They are stateless.
+
+---
+
+## 34.2 Stateful Runtime Coordinators
+
+Examples:
+
+- Combat runtime
+- Exploration coordinator
+- Background progression processor
+- Passive job processor
+
+Their state must be request-scoped or explicitly lifecycle-managed.
+
+---
+
+## 34.3 Infrastructure Services
+
+Examples:
+
+- Database transaction manager
+- Logger
+- Metrics
+- Clock
+- Random generator factory
+- Scheduler
+- Token service
+
+---
+
+# 35. Update Pipelines
+
+Each runtime pipeline must be composed of explicit stages.
+
+Example reward pipeline:
+
+```text
+Validate Eligibility
+
+↓
+
+Resolve Base Rewards
+
+↓
+
+Apply Cycle Scaling
+
+↓
+
+Apply Reward-Type Scaling
+
+↓
+
+Apply Biome Scaling
+
+↓
+
+Apply Player Modifiers
+
+↓
+
+Apply Capacity Rules
+
+↓
+
+Create Persistent Reward Records
+
+↓
+
+Commit
+```
+
+Pipeline stages should be testable independently where practical.
+
+---
+
+# 36. Runtime Invariants
+
+The following invariants must always hold.
+
+---
+
+## Player Invariants
+
+```text
+Silver balance is never negative.
+
+Inventory quantities are positive integers.
+
+An item instance exists in only one location.
+
+An equipped item is owned by the player.
+
+An equipment slot contains at most one item.
+
+Two-handed weapons cannot coexist with an active Off-Hand.
+
+Mastery XP is never negative.
+
+Mastery level matches the configured XP table.
+
+Unlocked Cycle index cannot exceed validated progression.
+```
+
+---
+
+## Combat Invariants
+
+```text
+Current health never exceeds maximum health unless explicitly allowed.
+
+Defeated entities cannot start new actions.
+
+Expired effects cannot trigger again.
+
+Cooldown values never become negative.
+
+Every runtime entity ID is unique.
+
+Rewards are not granted before validated completion.
+
+One combat result is persisted at most once.
+```
+
+---
+
+## Passive Job Invariants
+
+```text
+completesAt is not earlier than startedAt.
+
+Claimed jobs cannot be claimed again.
+
+Elapsed intervals are never processed twice.
+
+Stored output respects capacity limits.
+
+Job definition references remain resolvable or migratable.
+```
+
+---
+
+# 37. Failure Recovery
+
+The runtime must define recovery for every persistent operation.
+
+---
+
+## 37.1 Request Failure Before Commit
+
+Result:
+
+```text
+No Persistent Mutation
+```
+
+The client may retry according to endpoint policy.
+
+---
+
+## 37.2 Failure During Transaction
+
+Result:
+
+```text
+Rollback
+```
+
+The operation may be retried if safe.
+
+---
+
+## 37.3 Failure After Commit Before Response
+
+The client may not know whether the operation succeeded.
+
+Sensitive endpoints require idempotency.
+
+Retry with the same idempotency key returns the committed result.
+
+---
+
+## 37.4 Server Restart
+
+After restart:
+
+- Content reloads
+- Registries rebuild
+- Persistent jobs remain recoverable
+- Sessions follow authentication policy
+- No reward depends only on lost memory
+- In-progress request-scoped simulations may be restarted or safely reissued
+- Already committed results remain final
+
+---
+
+## 37.5 Client Disconnect
+
+A client disconnect does not roll back committed server operations.
+
+For pre-resolved combat:
+
+- Combat may already be complete
+- Reconnection fetches authoritative progress
+- The client may skip or replay presentation
+
+---
+
+# 38. Retry Policy
+
+Retries must be explicit.
+
+Allowed retry categories:
+
+- Transient database connection failure
+- Serialization conflict
+- Retryable outbox delivery
+- Temporary infrastructure timeout
+
+Forbidden automatic retries:
+
+- Validation failure
+- Authentication failure
+- Authorization failure
+- Insufficient currency
+- Inventory full
+- Mastery requirement failure
+- Non-idempotent command without protection
+
+Retries use:
+
+```text
+Maximum Attempt Count
+
+Backoff
+
+Jitter
+
+Structured Logs
+
+Metrics
+```
+
+---
+
+# 39. Runtime Cancellation
+
+Long-running technical operations should support cancellation.
+
+Examples:
+
+- Server shutdown
+- Content build
+- Large admin export
+- Long maintenance batch
+- Client asset loading
+
+Authoritative gameplay transactions should either:
+
+- Complete atomically
+- Roll back
+
+They must not remain partially applied.
+
+---
+
+# 40. Memory Ownership
+
+Every runtime object must have a clear owner.
+
+Examples:
+
+```text
+Fastify Request
+
+↓
+
+Owns Request Context
+```
+
+```text
+Combat Use Case
+
+↓
+
+Owns Combat Runtime Context
+```
+
+```text
+Phaser Scene
+
+↓
+
+Owns Render Entities
+```
+
+```text
+React Component Tree
+
+↓
+
+Owns Local UI State
+```
+
+When the owner is disposed, owned transient objects must become collectible.
+
+---
+
+# 41. Object Pooling
+
+Object pooling is permitted only for frequently created presentation objects or measured server hotspots.
+
+Recommended client candidates:
+
+- Projectiles
+- Damage numbers
+- Particle emitters
+- Temporary VFX sprites
+
+Avoid pooling:
+
+- Persistent domain entities
+- Database records
+- Small immutable DTOs
+- Objects without measured allocation pressure
+
+Pooling must not leak stale state.
+
+Every pooled object requires a complete reset method.
+
+---
+
+# 42. Client Main Loop
+
+Phaser controls the visual frame loop.
+
+Canonical phases:
+
+```text
+1. Read Input State
+
+2. Update Local Presentation Controllers
+
+3. Consume Pending Timeline Events
+
+4. Interpolate Runtime Visual State
+
+5. Update Animations
+
+6. Update Camera
+
+7. Update VFX
+
+8. Update Audio Cues
+
+9. Render
+```
+
+React UI updates remain event-driven.
+
+React must not rerender every Phaser frame.
+
+---
+
+# 43. Client-Server Synchronization
+
+The client treats server responses as authoritative snapshots or patches.
+
+The synchronization process is:
+
+```text
+Send Intent
+
+↓
+
+Apply Optional Temporary UI State
+
+↓
+
+Receive Authoritative Response
+
+↓
+
+Validate Response Schema
+
+↓
+
+Update Server-State Cache
+
+↓
+
+Reconcile Presentation
+
+↓
+
+Display Success or Error
+```
+
+---
+
+## 43.1 Optimistic Updates
+
+Optimistic UI updates are allowed only for low-risk presentation.
+
+Examples:
+
+- Button loading state
+- Temporary selected tab
+- Local animation start
+- Non-authoritative drag preview
+
+Do not optimistically commit:
+
+- Currency changes
+- Item creation
+- Reward grants
+- Mastery levels
+- Worker claims
+- Crafting completion
+
+---
+
+## 43.2 Stale Response Protection
+
+Requests that may complete out of order must include:
+
+- Request identity
+- Entity version
+- Query key
+- Sequence number where needed
+
+The client must not overwrite newer authoritative state with an older response.
+
+---
+
+# 44. Client Runtime Modes
+
+The client may occupy these global modes.
+
+```text
+Booting
+
+Authenticating
+
+LoadingProfile
+
+MainMenu
+
+Exploration
+
+CombatPresentation
+
+Island
+
+Vendor
+
+Settings
+
+Disconnected
+
+Maintenance
+
+FatalError
+```
+
+Global mode transitions are explicit.
+
+A full generic state-machine framework is optional.
+
+---
+
+# 45. Scene Lifecycle
+
+Phaser scenes follow:
+
+```text
+Created
+
+↓
+
+Preloading
+
+↓
+
+Ready
+
+↓
+
+Active
+
+↓
+
+Paused
+or
+Sleeping
+
+↓
+
+Shutdown
+
+↓
+
+Destroyed
+```
+
+Scene shutdown must remove:
+
+- Event listeners
+- Timers
+- Input handlers
+- Temporary textures
+- Runtime entity references
+- Audio handles
+- Network subscriptions if any
+
+---
+
+# 46. Navigation Runtime
+
+React owns application-level navigation.
+
+Phaser scene transitions are coordinated through a client game controller.
+
+Example:
+
+```text
+React Route: Exploration
+
+↓
+
+Game Controller
+
+↓
+
+Load Exploration Scene
+```
+
+The UI must not manipulate Phaser internals directly from arbitrary components.
+
+---
+
+# 47. Notification Runtime
+
+Notifications are server-authored when they represent gameplay facts.
+
+Examples:
+
+- Worker completed
+- Mastery level increased
+- Cycle available
+- Building completed
+- Inventory warning
+- Background progression summary
+
+Client-only notifications may represent presentation feedback.
+
+Examples:
+
+- Settings saved locally
+- Connection restored
+- Asset download retrying
+
+---
+
+# 48. Save Runtime
+
+The server does not persist one opaque client save blob.
+
+Persistence occurs through domain-specific records and transactions.
+
+Save orchestration may expose a unified profile-loading flow.
+
+Authoritative mutations should persist immediately or at explicit transaction boundaries.
+
+Client autosave is not authoritative.
+
+Detailed persistence rules belong to:
+
+```text
+33_BACKEND_API_PERSISTENCE.md
+```
+
+---
+
+# 49. Runtime Versioning
+
+The runtime tracks:
+
+```text
+Client Version
+
+Server Version
+
+API Version
+
+Content Version
+
+Save Schema Version
+
+Combat Algorithm Version
+
+Background Progression Algorithm Version
+```
+
+These versions serve different purposes and must not be merged into one generic version.
+
+---
+
+## 49.1 Algorithm Version
+
+Algorithm versions protect historical reproducibility.
+
+Examples:
+
+```text
+combat_v1
+
+loot_v1
+
+background_progression_v1
+```
+
+An algorithm change that alters authoritative outcomes must update the relevant version.
+
+---
+
+# 50. Hot Reload Runtime
+
+Hot reload is development-only.
+
+Supported reload targets may include:
+
+- Content definitions
+- Localization
+- Asset manifests
+- Client modules
+
+Server content hot reload must:
+
+```text
+Pause New Relevant Operations
+
+↓
+
+Load Candidate Content
+
+↓
+
+Validate Fully
+
+↓
+
+Build New Registries
+
+↓
+
+Atomically Swap Registry Set
+
+↓
+
+Resume Operations
+```
+
+Existing request contexts continue using the content version with which they started.
+
+Production content changes require controlled deployment.
+
+---
+
+# 51. Runtime Observability
+
+Every major runtime operation should expose:
+
+```text
+Operation Name
+
+Request ID
+
+Player ID when applicable
+
+Duration
+
+Outcome
+
+Error Category
+
+Content Version
+
+Algorithm Version when relevant
+```
+
+Examples of measured operations:
+
+- Server bootstrap
+- Content loading
+- Combat resolution
+- Reward transaction
+- Background progression
+- Worker claim
+- Crafting completion
+- Inventory load
+- Database transaction
+
+Detailed observability standards belong to:
+
+```text
+35_QUALITY_PERFORMANCE_OBSERVABILITY.md
+```
+
+---
+
+# 52. Runtime Performance Budgets
+
+Initial targets:
+
+```text
+Typical API command:
+under 250 ms server processing time
+
+Typical read query:
+under 150 ms server processing time
+
+Standard combat simulation:
+under 100 ms server processing time
+
+Background progression:
+under 250 ms for normal player state
+
+Client rendering:
+60 FPS target on supported desktop hardware
+
+Minimum acceptable client rendering:
+30 FPS under degraded conditions
+```
+
+These are engineering targets, not guaranteed public service levels.
+
+They must be measured and revised using profiling data.
+
+---
+
+# 53. Combat Simulation Optimization
+
+Combat simulation should prioritize correctness before optimization.
+
+Preferred optimization order:
+
+```text
+1. Remove unnecessary allocations
+
+2. Pre-resolve definition references
+
+3. Use compact runtime state
+
+4. Avoid repeated stat aggregation
+
+5. Batch periodic-effect checks
+
+6. Reduce event payload size
+
+7. Profile hot loops
+
+8. Optimize measured bottlenecks
+```
+
+Do not introduce unsafe mutation or obscure bit-level representations without evidence.
+
+---
+
+# 54. Runtime Security Rules
+
+The runtime must reject:
+
+- Client-provided rewards
+- Client-provided elapsed offline duration
+- Client-provided current server time
+- Client-provided item stats
+- Client-provided vendor prices
+- Client-provided combat victory
+- Client-provided mastery level
+- Client-provided crafting result
+- Client-provided random seed when exploit-relevant
+
+The client sends intent and presentation acknowledgement only.
+
+---
+
+# 55. Runtime Testing Requirements
+
+Each runtime coordinator requires:
+
+- Happy-path test
+- Invalid-transition test
+- Duplicate-command test
+- Concurrency test
+- Recovery test
+- Deterministic-randomness test where applicable
+- Time-boundary test where applicable
+- Maximum-limit test
+- Persistence rollback test
+- Content-version compatibility test
+
+---
+
+## 55.1 Combat Tests
+
+Combat tests must verify:
+
+- Fixed-step independence from host timing
+- Deterministic replay
+- Explicit update order
+- Simultaneous-action behavior
+- Death cleanup
+- Status expiration
+- Periodic effects
+- Safety-limit abort
+- Victory resolution
+- Defeat resolution
+- Reward exclusion on abort
+
+---
+
+## 55.2 Background Progression Tests
+
+Tests must verify:
+
+- Correct elapsed interval
+- Server-clock authority
+- Maximum offline clamp
+- Capacity limits
+- Repeated processing protection
+- Idempotent claiming
+- Multiple passive systems
+- Boundary timestamps
+- Process restart recovery
+
+---
+
+# 56. Prohibited Runtime Patterns
+
+The following are forbidden.
+
+```text
+Authoritative simulation based on browser delta time
+
+Permanent in-memory timer per passive job
+
+Gameplay reward determined by animation completion
+
+Direct mutation of loaded definitions
+
+Math.random in domain logic
+
+Date.now in domain logic
+
+Event listener order determining game outcome
+
+Unbounded combat loop
+
+Unbounded scheduler batch
+
+Duplicate reward grant without idempotency
+
+Client-provided offline duration
+
+Client-provided combat result
+
+Persistent state stored only in process memory
+
+Scene objects directly mutating server-state cache
+
+React rerender on every Phaser frame
+
+Silent recovery from invalid state
+
+Automatic Cycle unlock without player action
+```
+
+---
+
+# 57. Runtime Module Contracts
+
+Every runtime module must document:
+
+```text
+Purpose
+
+Owned Runtime State
+
+Input Commands
+
+Output Results
+
+Dependencies
+
+Update Order
+
+State Machine
+
+Persistence Boundary
+
+Events Produced
+
+Failure Modes
+
+Recovery Rules
+
+Safety Limits
+
+Tests
+```
+
+---
+
+# 58. Implementation Order
+
+Runtime architecture should be implemented in this order.
+
+```text
+1. Clock and Random Interfaces
+
+2. Content Registries
+
+3. Command and Query Contracts
+
+4. Transaction Manager
+
+5. Domain Event Collector
+
+6. Runtime State-Machine Utilities
+
+7. Combat Runtime Context
+
+8. Fixed-Step Simulation Clock
+
+9. Combat Step Pipeline
+
+10. Combat Result Model
+
+11. Exploration Coordinator
+
+12. Encounter Slot State Machine
+
+13. Passive Job State Machine
+
+14. Background Progression Processor
+
+15. Client Server-State Cache
+
+16. Phaser Presentation Runtime
+
+17. Combat Timeline Replay
+
+18. Global Client Modes
+
+19. Scheduler
+
+20. Runtime Diagnostics
+```
+
+Detailed development phases belong to:
+
+```text
+37_IMPLEMENTATION_PLAN.md
+```
+
+---
+
+# 59. Acceptance Criteria
+
+The Runtime Architecture is correctly implemented when:
+
+- Server and client runtime responsibilities are separated.
+- The server is authoritative for persistent outcomes.
+- Server gameplay commands are request-driven.
+- Combat uses fixed simulation steps.
+- Combat is independent from browser framerate.
+- Reward-relevant randomness is injected.
+- Runtime definitions remain immutable.
+- Combat update order is explicit.
+- Combat supports deterministic replay.
+- Combat has hard safety limits.
+- Exploration uses five-slot Zone Segments.
+- Slot five is always the boss encounter.
+- Resource gathering follows Resource Enemy defeat.
+- Cycles support infinite deterministic progression.
+- Cycle unlock remains manual.
+- Passive progression uses timestamps rather than permanent timers.
+- Offline time is calculated from the server clock.
+- Passive progress cannot process the same interval twice.
+- Commands and queries remain distinct.
+- Sensitive commands support idempotency.
+- Runtime state machines define valid transitions.
+- Server restart does not lose authoritative gameplay state.
+- Client disconnect does not invalidate committed results.
+- The client can replay pre-resolved combat timelines.
+- React does not own frame-by-frame world simulation.
+- Phaser does not own persistent player state.
+- Every runtime module exposes clear ownership and failure behavior.
+
+---
+
+# 60. Final Runtime Summary
+
+The project uses a server-authoritative, request-driven gameplay runtime and a continuous client presentation runtime.
+
+```text
+Client Sends Intent
+
+↓
+
+Server Loads Authoritative State
+
+↓
+
+Server Executes Deterministic Domain Logic
+
+↓
+
+Server Persists Atomically
+
+↓
+
+Server Returns Result and Timeline
+
+↓
+
+Client Presents the Outcome
+```
+
+Combat runs through fixed simulation steps and explicit system ordering.
+
+Exploration progresses through sequential five-encounter Zone Segments, with a boss in the fifth slot.
+
+Resource acquisition during exploration occurs only after defeating Resource Enemies.
+
+Infinite Cycles are generated through deterministic scaling rules and require manual unlock.
+
+Passive systems use persistent timestamps and server-calculated elapsed time rather than permanent in-memory timers.
+
+The architecture prioritizes:
+
+```text
+Determinism
+
+Recoverability
+
+Explicit State Transitions
+
+Server Authority
+
+Atomic Persistence
+
+Runtime Isolation
+
+Minimal Hidden Behavior
+```
+
+This document is the source of truth for runtime execution order and lifecycle management.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

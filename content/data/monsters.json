@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "category": "monsters",
+  "definitions": [
+    {
+      "id": "monster_wolf_t4",
+      "family": "wolf",
+      "category": "normal",
+      "tier": 4,
+      "stats": { "stat_max_health": 250, "stat_physical_damage": 40, "stat_armor": 20 },
+      "abilities": ["ability_enemy_bite"],
+      "lootTableId": "loot_table_wolf_t4",
+      "experienceReward": 80,
+      "spawnWeight": 10,
+      "tags": ["beast"]
+    },
+    {
+      "id": "monster_bandit_t4",
+      "family": "humanoid",
+      "category": "normal",
+      "tier": 4,
+      "stats": { "stat_max_health": 300, "stat_physical_damage": 50, "stat_armor": 40 },
+      "abilities": ["ability_enemy_bite"],
+      "lootTableId": "loot_table_bandit_t4",
+      "experienceReward": 100,
+      "spawnWeight": 8,
+      "tags": ["humanoid"]
+    },
+    {
+      "id": "monster_spider_t4",
+      "family": "arachnid",
+      "category": "normal",
+      "tier": 4,
+      "stats": { "stat_max_health": 200, "stat_magical_damage": 35, "stat_armor": 15 },
+      "abilities": ["ability_enemy_poison_spit"],
+      "lootTableId": "loot_table_spider_t4",
+      "experienceReward": 90,
+      "spawnWeight": 8,
+      "tags": ["arachnid"]
+    },
+    {
+      "id": "monster_ore_golem_t4",
+      "family": "elemental",
+      "category": "resource_enemy",
+      "tier": 4,
+      "stats": { "stat_max_health": 400, "stat_physical_damage": 30, "stat_armor": 80 },
+      "abilities": ["ability_enemy_bite"],
+      "lootTableId": "loot_table_resource_ore_t4",
+      "experienceReward": 120,
+      "spawnWeight": 5,
+      "tags": ["elemental", "resource_guard"]
+    },
+    {
+      "id": "monster_forest_guardian_t4",
+      "family": "nature",
+      "category": "elite",
+      "tier": 4,
+      "stats": { "stat_max_health": 800, "stat_physical_damage": 65, "stat_armor": 60, "stat_magic_resistance": 40 },
+      "abilities": ["ability_enemy_bite", "ability_enemy_poison_spit"],
+      "lootTableId": "loot_table_bandit_t4",
+      "experienceReward": 300,
+      "spawnWeight": 2,
+      "tags": ["nature", "elite"]
+    }
+  ]
+}

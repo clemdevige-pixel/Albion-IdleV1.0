@@ -1,0 +1,872 @@
+# 26. STATUS EFFECT DATA
+
+---
+
+# Purpose
+
+The Status Effect Data document defines every persistent gameplay effect that can temporarily modify an entity.
+
+Unlike Effects, which execute instantly, Status Effects persist for a duration and continuously influence gameplay.
+
+Examples include:
+
+- Bleeding
+- Poison
+- Burning
+- Stun
+- Root
+- Slow
+- Haste
+- Regeneration
+- Shield
+- Damage Amplification
+
+Status Effects are entirely data-driven.
+
+---
+
+# Design Philosophy
+
+The Status Effect system follows six core principles.
+
+---
+
+## Persistent
+
+A Status Effect exists over time.
+
+Unlike an Effect, it is updated every simulation tick until it expires or is removed.
+
+---
+
+## Modular
+
+Status Effects never contain gameplay logic directly.
+
+Instead, they are composed of reusable Effect definitions.
+
+Example:
+
+```
+Bleeding
+
+↓
+
+Tick Damage Effect
+
+↓
+
+Visual Effect
+
+↓
+
+Expiration
+```
+
+---
+
+## Reusable
+
+One Status Effect may be applied by many different Abilities.
+
+Example:
+
+```
+Bleeding
+
+↓
+
+Sword
+
+↓
+
+Axe
+
+↓
+
+Boss Attack
+
+↓
+
+Trap
+```
+
+---
+
+## Deterministic
+
+Status Effects always produce identical results given identical conditions.
+
+No hidden randomness exists.
+
+---
+
+## Runtime Independent
+
+Definitions remain immutable.
+
+Runtime instances store:
+
+- Remaining Duration
+- Remaining Stacks
+- Owner
+- Source
+
+---
+
+## Extensible
+
+Future Status Effects can be created without adding gameplay code.
+
+---
+
+# Responsibilities
+
+Status Effect Data defines:
+
+- Identity
+- Category
+- Duration
+- Stack Rules
+- Refresh Rules
+- Tick Frequency
+- Applied Effects
+- Removal Rules
+- Immunities
+- Visual References
+
+Status Effect Data does NOT define:
+
+- Ability Cooldowns
+- Damage Formulas
+- Character Statistics
+
+---
+
+# Status Effect Definition
+
+Every Status Effect contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Description
+
+↓
+
+Category
+
+↓
+
+Duration
+
+↓
+
+Tick Rate
+
+↓
+
+Stack Rules
+
+↓
+
+Refresh Rules
+
+↓
+
+Applied Effects
+
+↓
+
+Removal Rules
+
+↓
+
+Visual References
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Status Effect owns one globally unique identifier.
+
+Examples:
+
+```
+status_bleeding
+
+status_poison
+
+status_burning
+
+status_stunned
+
+status_rooted
+
+status_regeneration
+```
+
+---
+
+# Categories
+
+Version 1 supports the following categories.
+
+---
+
+## Damage Over Time
+
+Examples:
+
+- Bleeding
+- Poison
+- Burning
+
+---
+
+## Heal Over Time
+
+Examples:
+
+- Regeneration
+- Rejuvenation
+
+---
+
+## Crowd Control
+
+Examples:
+
+- Stun
+- Root
+- Silence
+- Fear
+
+---
+
+## Buff
+
+Positive temporary bonuses.
+
+Examples:
+
+- Increased Damage
+- Increased Armor
+- Increased Speed
+
+---
+
+## Debuff
+
+Negative temporary penalties.
+
+Examples:
+
+- Reduced Armor
+- Reduced Healing
+- Reduced Damage
+
+---
+
+## Shield
+
+Temporary protective effects.
+
+---
+
+## Utility
+
+Miscellaneous effects.
+
+---
+
+# Duration
+
+Every Status Effect defines its duration.
+
+Example:
+
+```
+2 Seconds
+
+5 Seconds
+
+10 Seconds
+
+Infinite
+```
+
+Infinite effects require explicit removal.
+
+---
+
+# Tick Rate
+
+Continuous Status Effects define a tick interval.
+
+Examples:
+
+```
+0.5 Seconds
+
+1 Second
+
+2 Seconds
+```
+
+Non-periodic effects use:
+
+```
+0
+```
+
+---
+
+# Tick Effect
+
+Periodic Status Effects reference one Effect executed every tick.
+
+Example:
+
+```
+effect_damage_bleed_tick
+```
+
+The Effect Data document defines the actual behavior.
+
+---
+
+# Apply Effect
+
+Status Effects may execute an Effect immediately upon application.
+
+Example:
+
+```
+Gain Shield
+
+↓
+
+Apply Shield Effect
+```
+
+Optional.
+
+---
+
+# Expire Effect
+
+Status Effects may execute an Effect when removed.
+
+Example:
+
+```
+Explosion
+
+↓
+
+Remove Shield
+
+↓
+
+Spawn Particles
+```
+
+Optional.
+
+---
+
+# Maximum Stacks
+
+Every Status Effect defines its stack limit.
+
+Examples:
+
+```
+1
+
+3
+
+5
+
+10
+```
+
+---
+
+# Stack Behavior
+
+Supported stacking rules:
+
+---
+
+## Replace
+
+Newest replaces oldest.
+
+---
+
+## Refresh Duration
+
+Duration resets.
+
+Stack count remains unchanged.
+
+---
+
+## Add Stack
+
+Stack count increases.
+
+---
+
+## Independent
+
+Each application creates an independent instance.
+
+---
+
+## Ignore
+
+Additional applications are ignored.
+
+---
+
+# Refresh Rules
+
+When reapplied:
+
+Supported options:
+
+```
+Refresh Duration
+
+Refresh Effects
+
+Increase Stacks
+
+Ignore
+
+Replace
+```
+
+---
+
+# Expiration Rules
+
+Status Effects expire when:
+
+- Duration reaches zero
+- Explicitly removed
+- Owner dies
+- Cleansed
+- Purged
+
+Infinite effects require explicit removal.
+
+---
+
+# Cleansable
+
+Each Status Effect defines:
+
+```
+true
+
+false
+```
+
+Example:
+
+```
+Bleeding
+
+true
+```
+
+```
+Boss Enrage
+
+false
+```
+
+---
+
+# Purgeable
+
+Positive effects define whether they may be purged.
+
+Example:
+
+```
+Damage Buff
+
+true
+```
+
+---
+
+# Dispellable
+
+Future compatibility.
+
+Version 1 supports:
+
+```
+true
+
+false
+```
+
+---
+
+# Immunity Tags
+
+Status Effects may declare immunity tags.
+
+Examples:
+
+```
+Bleed
+
+Poison
+
+Burn
+
+CrowdControl
+```
+
+Entities immune to matching tags ignore the effect.
+
+---
+
+# Exclusive Groups
+
+Certain Status Effects cannot coexist.
+
+Example:
+
+```
+MovementSpeed
+
+↓
+
+Haste
+
+or
+
+Slow
+```
+
+Only one survives.
+
+---
+
+# Applied Effects
+
+Status Effects reference reusable Effects.
+
+Examples:
+
+```
+effect_bleed_tick
+
+effect_reduce_speed
+
+effect_bonus_damage
+```
+
+Multiple Effects are supported.
+
+---
+
+# Animation
+
+Optional animation reference.
+
+Example:
+
+```
+anim_stunned
+```
+
+---
+
+# Visual Effects
+
+Reusable VFX references.
+
+Examples:
+
+```
+vfx_bleeding
+
+vfx_poison
+
+vfx_fire
+```
+
+---
+
+# Audio
+
+Optional looping sound.
+
+Example:
+
+```
+sfx_burning_loop
+```
+
+---
+
+# Tags
+
+Examples:
+
+```
+bleed
+
+fire
+
+holy
+
+crowd_control
+
+movement
+
+magic
+```
+
+---
+
+# Runtime Representation
+
+```
+Definition
+
+↓
+
+Runtime Instance
+
+↓
+
+Remaining Duration
+
+↓
+
+Tick Execution
+
+↓
+
+Expiration
+```
+
+Definitions never change.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Valid Category
+- Valid Duration
+- Valid Tick Rate
+- Existing Effect References
+- Existing VFX
+- Existing Audio
+- Valid Stack Rules
+- Valid Refresh Rules
+- Valid Maximum Stacks
+
+Invalid definitions never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Scripted Status Effects
+- Runtime-generated Status Effects
+- Dynamic Categories
+- Conditional Stack Rules
+- Formula-based Durations
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "status_bleeding",
+    "name": "Bleeding",
+    "description": "Lose Health over time.",
+    "category": "DamageOverTime",
+    "duration": 5,
+    "tickRate": 1,
+    "tickEffectId": "effect_damage_bleed_tick",
+    "applyEffectId": null,
+    "expireEffectId": null,
+    "maxStacks": 5,
+    "stackBehavior": "AddStack",
+    "refreshRule": "RefreshDuration",
+    "cleansable": true,
+    "purgeable": false,
+    "dispellable": true,
+    "immunityTags": [
+        "Bleed"
+    ],
+    "exclusiveGroup": null,
+    "animationId": null,
+    "vfxIds": [
+        "vfx_bleeding"
+    ],
+    "sfxIds": [],
+    "tags": [
+        "bleed",
+        "physical"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Definition
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Applied By Ability
+
+↓
+
+Runtime Instance
+
+↓
+
+Tick Update
+
+↓
+
+Expire
+
+↓
+
+Destroy Instance
+```
+
+---
+
+# Acceptance Criteria
+
+The Status Effect Data document is complete when:
+
+- Every Status Effect has a unique identifier.
+- Categories are predefined.
+- Durations are configurable.
+- Tick rates are configurable.
+- Stack behavior is configurable.
+- Refresh rules are configurable.
+- Effects are referenced by ID.
+- Immunities are supported.
+- Runtime instances remain separate from definitions.
+- Validation guarantees data integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Status Effect is completely data-driven.
+
+Rule 02
+
+Every Status Effect has a globally unique identifier.
+
+Rule 03
+
+Status Effects persist independently from Abilities.
+
+Rule 04
+
+Gameplay logic is delegated to reusable Effects.
+
+Rule 05
+
+Stack behavior is explicit.
+
+Rule 06
+
+Refresh behavior is explicit.
+
+Rule 07
+
+Tick execution is deterministic.
+
+Rule 08
+
+Definitions never contain runtime state.
+
+Rule 09
+
+Validation prevents invalid definitions.
+
+Rule 10
+
+Status Effects may define immunity tags.
+
+Rule 11
+
+Exclusive groups prevent incompatible effects from coexisting.
+
+Rule 12
+
+Visual and audio references are data-driven.
+
+Rule 13
+
+Runtime instances are immutable definitions plus temporary state.
+
+Rule 14
+
+Every Status Effect may declare its content source.
+
+Rule 15
+
+Future Status Effects must remain compatible with the shared data architecture.
+
+---
+
+# Summary
+
+The Status Effect Data document defines every persistent gameplay modifier through a modular, reusable and fully data-driven architecture. By separating long-lived effects from instant Effects and Abilities, it enables deterministic combat, flexible stacking rules, reusable gameplay behaviors and scalable content creation. This architecture supports hundreds of buffs, debuffs and crowd control effects while remaining easy to balance, validate and extend.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

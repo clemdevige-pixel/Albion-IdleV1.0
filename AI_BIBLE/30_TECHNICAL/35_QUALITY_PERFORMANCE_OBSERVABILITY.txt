@@ -1,0 +1,971 @@
+# 35. QUALITY, PERFORMANCE & OBSERVABILITY
+
+---
+
+# 1. Purpose
+
+This document defines every engineering practice used to guarantee that the game remains:
+
+- Correct
+- Stable
+- Deterministic
+- Performant
+- Observable
+- Easy to debug
+- Safe to deploy
+
+It covers:
+
+- Testing
+- Validation
+- Logging
+- Profiling
+- Metrics
+- Monitoring
+- Performance budgets
+- Debug tools
+- QA requirements
+
+This document does **not** define gameplay.
+
+It defines how implementation quality is maintained.
+
+---
+
+# 2. Locked Decisions
+
+---
+
+## 2.1 Test First Philosophy
+
+Every gameplay system must be testable.
+
+No feature is considered complete without automated tests.
+
+---
+
+## 2.2 Deterministic Core
+
+Every authoritative gameplay calculation must be reproducible.
+
+Given:
+
+- Same input
+- Same content version
+- Same algorithm version
+- Same random seed
+
+The result must always be identical.
+
+---
+
+## 2.3 No Silent Failure
+
+Errors must never disappear silently.
+
+Every unexpected failure must be:
+
+- Logged
+- Categorized
+- Traceable
+
+---
+
+## 2.4 Observability Before Optimization
+
+Measure first.
+
+Optimize second.
+
+Never optimize based on intuition alone.
+
+---
+
+## 2.5 Debug Build ≠ Production Build
+
+Development builds expose:
+
+- Debug UI
+- Metrics
+- Logs
+- Cheat Commands
+
+Production builds expose none of them.
+
+---
+
+# 3. Testing Strategy
+
+Testing is divided into six levels.
+
+```text
+Unit
+
+↓
+
+Integration
+
+↓
+
+Data Validation
+
+↓
+
+Simulation
+
+↓
+
+End-to-End
+
+↓
+
+Performance
+```
+
+---
+
+# 4. Unit Tests
+
+Unit tests verify pure logic.
+
+Examples:
+
+- Damage calculation
+- Loot calculation
+- XP curves
+- Stat aggregation
+- Requirement validation
+- Reward scaling
+- Durability calculation
+
+Unit tests:
+
+- No database
+- No HTTP
+- No Phaser
+- No React
+
+---
+
+# 5. Integration Tests
+
+Integration tests verify multiple systems together.
+
+Examples:
+
+```text
+Combat
+
+↓
+
+Loot
+
+↓
+
+Inventory
+
+↓
+
+Save
+```
+
+or
+
+```text
+Craft
+
+↓
+
+Materials
+
+↓
+
+Inventory
+
+↓
+
+Mastery XP
+```
+
+---
+
+# 6. Data Validation Tests
+
+Every content file is tested.
+
+Validation verifies:
+
+- Schema
+- References
+- Duplicate IDs
+- Circular references
+- Invalid values
+- Missing assets
+
+No gameplay starts if validation fails.
+
+---
+
+# 7. Simulation Tests
+
+Simulation tests verify deterministic gameplay.
+
+Examples:
+
+- 10,000 combat simulations
+- Reward generation
+- Boss fights
+- Status effects
+- Infinite scaling
+
+Expected result:
+
+Same seed = same result.
+
+---
+
+# 8. End-to-End Tests
+
+Complete player scenarios.
+
+Example:
+
+```text
+Login
+
+↓
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Equip
+
+↓
+
+Craft
+
+↓
+
+Save
+
+↓
+
+Reconnect
+```
+
+Everything must succeed.
+
+---
+
+# 9. Performance Tests
+
+Measure:
+
+- Server latency
+- Combat duration
+- Loading speed
+- FPS
+- Database queries
+- Memory usage
+
+---
+
+# 10. Test Folder
+
+```text
+tests/
+
+    unit/
+
+    integration/
+
+    simulation/
+
+    e2e/
+
+    performance/
+
+    fixtures/
+```
+
+---
+
+# 11. Test Naming
+
+```text
+damage.test.ts
+
+combat.test.ts
+
+loot.test.ts
+```
+
+Readable.
+
+One responsibility.
+
+---
+
+# 12. Fixtures
+
+Reusable test data.
+
+Examples
+
+```text
+Player
+
+Inventory
+
+Boss
+
+Recipe
+
+Worker
+
+Zone
+```
+
+Avoid duplicated setup.
+
+---
+
+# 13. Mocking
+
+Allowed only for
+
+- Clock
+- Random
+- Database
+- External Services
+
+Never mock gameplay logic.
+
+---
+
+# 14. Random Testing
+
+Random uses deterministic seeds.
+
+Example
+
+```text
+Seed 123
+
+↓
+
+Always same combat
+```
+
+---
+
+# 15. Regression Tests
+
+Every bug fixed receives a regression test.
+
+Bug must never return.
+
+---
+
+# 16. Code Coverage
+
+Targets
+
+```text
+Domain
+
+95%
+```
+
+Application
+
+```text
+85%
+```
+
+Infrastructure
+
+```text
+70%
+```
+
+UI
+
+```text
+60%
+```
+
+Coverage alone is not sufficient.
+
+Quality matters.
+
+---
+
+# 17. Logging
+
+Structured logs only.
+
+No console.log.
+
+---
+
+# 18. Log Levels
+
+```text
+TRACE
+
+DEBUG
+
+INFO
+
+WARN
+
+ERROR
+
+FATAL
+```
+
+---
+
+# 19. Log Format
+
+Every log contains
+
+```text
+Timestamp
+
+Request ID
+
+Player ID
+
+Module
+
+Level
+
+Message
+```
+
+Optional
+
+```text
+Duration
+
+Metadata
+```
+
+---
+
+# 20. Error Logging
+
+Unexpected errors log
+
+- stack
+- request
+- context
+- version
+
+Never expose stack to players.
+
+---
+
+# 21. Metrics
+
+Measure
+
+```text
+Requests
+
+Combat
+
+Database
+
+Cache
+
+Scheduler
+
+Workers
+
+Memory
+
+CPU
+
+FPS
+```
+
+---
+
+# 22. Combat Metrics
+
+Track
+
+```text
+Average Duration
+
+Maximum Duration
+
+Simulation Steps
+
+Boss Duration
+
+Abort Count
+```
+
+---
+
+# 23. Database Metrics
+
+Track
+
+```text
+Queries
+
+Latency
+
+Slow Queries
+
+Deadlocks
+
+Transactions
+```
+
+---
+
+# 24. Runtime Metrics
+
+Track
+
+```text
+Memory
+
+CPU
+
+Heap
+
+GC
+
+Event Loop
+```
+
+---
+
+# 25. Client Metrics
+
+Track
+
+```text
+FPS
+
+Frame Time
+
+Dropped Frames
+
+Loading Time
+
+Asset Load
+```
+
+---
+
+# 26. Monitoring Dashboard
+
+Dashboard shows
+
+```text
+Players Online
+
+Errors
+
+Latency
+
+CPU
+
+Memory
+
+Database
+
+Scheduler
+```
+
+---
+
+# 27. Alerts
+
+Alerts for
+
+```text
+Database Down
+
+High Error Rate
+
+Memory Leak
+
+High Latency
+
+Crash Loop
+```
+
+---
+
+# 28. Profiling
+
+Profiling tools
+
+Client
+
+↓
+
+FPS
+
+Server
+
+↓
+
+CPU
+
+Database
+
+↓
+
+Queries
+
+---
+
+# 29. Performance Budget
+
+Server API
+
+```text
+<250 ms
+```
+
+Combat
+
+```text
+<100 ms
+```
+
+Inventory
+
+```text
+<50 ms
+```
+
+Loading
+
+```text
+<3 seconds
+```
+
+---
+
+# 30. Rendering Budget
+
+Target
+
+```text
+60 FPS
+```
+
+Frame
+
+```text
+16.67 ms
+```
+
+---
+
+# 31. Memory Budget
+
+Avoid unnecessary allocations.
+
+Reuse objects where measured.
+
+No uncontrolled growth.
+
+---
+
+# 32. Database Budget
+
+Avoid
+
+```text
+N+1 Queries
+```
+
+Prefer batching.
+
+---
+
+# 33. Debug Overlay
+
+Development only.
+
+Displays
+
+```text
+FPS
+
+Ping
+
+Entities
+
+Camera
+
+Memory
+
+Version
+```
+
+---
+
+# 34. Debug Commands
+
+Development only.
+
+Examples
+
+```text
+Grant Silver
+
+Spawn Enemy
+
+Unlock Cycle
+
+Kill Player
+
+Complete Worker
+
+Add XP
+```
+
+Never available in production.
+
+---
+
+# 35. Debug Panels
+
+Panels
+
+```text
+Combat
+
+Inventory
+
+Mastery
+
+Workers
+
+Timeline
+
+Camera
+
+Audio
+```
+
+---
+
+# 36. Replay Support
+
+Support deterministic replay.
+
+Replay contains
+
+```text
+Seed
+
+Events
+
+Timeline
+
+Version
+```
+
+Useful for debugging.
+
+---
+
+# 37. Crash Reports
+
+Every unexpected crash stores
+
+```text
+Stack
+
+Player
+
+Request
+
+Version
+
+Module
+```
+
+---
+
+# 38. Content Validation
+
+Every build validates
+
+- JSON
+- Assets
+- Localization
+- References
+
+Failure stops build.
+
+---
+
+# 39. Build Validation
+
+Pipeline
+
+```text
+Lint
+
+↓
+
+Typecheck
+
+↓
+
+Unit Tests
+
+↓
+
+Data Validation
+
+↓
+
+Integration
+
+↓
+
+Build
+```
+
+---
+
+# 40. Static Analysis
+
+Required
+
+- ESLint
+- TypeScript Strict
+- Formatting
+
+---
+
+# 41. QA Checklist
+
+Before release
+
+- Gameplay
+- Saves
+- Combat
+- Loot
+- Vendors
+- Workers
+- Crafting
+- UI
+- Localization
+
+All verified.
+
+---
+
+# 42. Smoke Tests
+
+Minimal test after deployment.
+
+Example
+
+```text
+Login
+
+↓
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Logout
+```
+
+---
+
+# 43. Stress Tests
+
+Simulate
+
+- Many combats
+- Many requests
+- Many players
+- Database load
+
+Measure degradation.
+
+---
+
+# 44. Acceptance Criteria
+
+Quality system is complete when
+
+- Unit tests validate gameplay.
+- Integration tests cover system interactions.
+- Content validation blocks invalid data.
+- Combat is deterministic.
+- Structured logging is implemented.
+- Metrics are collected.
+- Monitoring dashboard exists.
+- Alerts detect failures.
+- Debug tools are development-only.
+- Performance budgets are measurable.
+- Replay supports deterministic debugging.
+- Every fixed bug adds a regression test.
+
+---
+
+# 45. Final Summary
+
+The project prioritizes reliability over premature optimization.
+
+```text
+Code
+
+↓
+
+Tests
+
+↓
+
+Validation
+
+↓
+
+Metrics
+
+↓
+
+Monitoring
+
+↓
+
+Optimization
+```
+
+Every gameplay system is measurable, reproducible and observable.
+
+Deterministic simulations, structured logs and automated validation ensure that the game remains stable throughout development and future content expansions.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

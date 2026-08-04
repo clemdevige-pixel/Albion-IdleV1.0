@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "monster_morgana_witch",
+  "kind": "static_actor",
+  "textureKey": "morgana-witch",
+  "assetPath": "/assets/monsters/morgana-witch-test-v1.png",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 210, "height": 210 },
+  "hud": { "healthBarWidth": 150, "healthBarOffsetY": 170 },
+  "ambientMotion": { "distance": 4, "durationMs": 900, "delayMs": 350 }
+}

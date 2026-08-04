@@ -1,0 +1,26 @@
+{
+  "name": "@game/gameplay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gameplay systems built on the ECS core. Character runtime, activities, and simulation logic.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@game/core": "workspace:*",
+    "@game/persistence": "workspace:*",
+    "@game/data": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}

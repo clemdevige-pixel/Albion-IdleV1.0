@@ -1,0 +1,617 @@
+# 37. NPC DATA
+
+---
+
+# Purpose
+
+The NPC Data document defines every non-playable character (NPC) that exists in the game world.
+
+An NPC represents an interactive entity capable of providing services, dialogue or gameplay interactions.
+
+NPCs are the visible representation of game characters.
+
+Their actual functionality is delegated to specialized systems.
+
+Examples:
+
+- Vendors
+- Quest Givers (Future)
+- Trainers (Future)
+- Tutorial NPCs
+- Story Characters (Future)
+
+NPC Data defines the NPC itself, not the services it provides.
+
+---
+
+# Design Philosophy
+
+The NPC system follows seven principles.
+
+---
+
+## Representation Only
+
+NPCs represent characters.
+
+Gameplay functionality is delegated to other systems.
+
+Examples:
+
+- Vendor System
+- Dialogue System
+- Quest System
+- Tutorial System
+
+---
+
+## Data Driven
+
+Every NPC is completely defined through data.
+
+Adding a new NPC never requires gameplay code.
+
+---
+
+## Modular
+
+NPCs reference external systems.
+
+They never duplicate functionality.
+
+---
+
+## Reusable
+
+The same NPC Definition may be instantiated multiple times if needed.
+
+Definitions remain immutable.
+
+---
+
+## Service Independent
+
+Being a Vendor, Trainer or Quest Giver is a property.
+
+It is not a unique NPC type.
+
+One NPC may expose multiple services.
+
+---
+
+## Localization Friendly
+
+Every visible text is localized.
+
+NPC Definitions never contain display strings.
+
+---
+
+## Extensible
+
+Future interaction systems may be added without redesigning NPC Data.
+
+---
+
+# Responsibilities
+
+NPC Data defines:
+
+- Identity
+- Appearance
+- NPC Type
+- Available Services
+- Dialogue Profile
+- Spawn Locations
+- Interaction Radius
+- Animation Profile
+- Voice Profile
+- Tags
+
+NPC Data does NOT define:
+
+- Vendor Inventory
+- Quests
+- Prices
+- Dialogue Text
+- Runtime State
+
+---
+
+# NPC Definition
+
+Every NPC contains:
+
+```text
+ID
+
+↓
+
+Display Name
+
+↓
+
+Appearance
+
+↓
+
+Services
+
+↓
+
+Dialogue Profile
+
+↓
+
+Spawn Locations
+
+↓
+
+Interaction Radius
+
+↓
+
+Animation Profile
+
+↓
+
+Voice Profile
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every NPC owns one globally unique identifier.
+
+Examples:
+
+```
+npc_blacksmith
+
+npc_builder
+
+npc_worker_recruiter
+
+npc_tutorial_guide
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Blacksmith
+
+Builder
+
+Recruiter
+
+Guide
+```
+
+---
+
+# Appearance
+
+Each NPC references an Appearance Definition.
+
+Example:
+
+```
+appearance_blacksmith
+
+appearance_builder
+```
+
+Appearance includes:
+
+- Sprite
+- Portrait
+- Color Palette
+- Equipment Set
+
+Appearance remains independent.
+
+---
+
+# NPC Services
+
+Each NPC references one or more services.
+
+Supported services:
+
+- Vendor
+- Dialogue
+- Tutorial
+
+Future services:
+
+- Quest
+- Reputation
+- Crafting Orders
+- Banking
+
+Example:
+
+```
+Vendor
+
+↓
+
+Dialogue
+```
+
+---
+
+# Vendor Reference
+
+If an NPC provides trading, it references a Vendor Definition.
+
+Example:
+
+```
+vendor_blacksmith
+```
+
+The Vendor System handles transactions.
+
+---
+
+# Dialogue Profile
+
+NPCs reference Dialogue Definitions.
+
+Example:
+
+```
+dialogue_blacksmith
+
+dialogue_builder
+```
+
+Dialogue remains external.
+
+---
+
+# Spawn Locations
+
+NPCs define one or more spawn locations.
+
+Examples:
+
+```
+Starter Town
+
+Player Island
+
+Capital City
+```
+
+Spawn management is handled separately.
+
+---
+
+# Interaction Radius
+
+Defines the interaction distance.
+
+Example:
+
+```
+2.0
+
+3.5
+
+5.0
+```
+
+Measured in world units.
+
+---
+
+# Animation Profile
+
+NPCs reference Animation Profiles.
+
+Examples:
+
+```
+animation_blacksmith
+
+animation_idle
+
+animation_vendor
+```
+
+Animations remain defined elsewhere.
+
+---
+
+# Voice Profile
+
+Optional voice references.
+
+Examples:
+
+```
+voice_male_01
+
+voice_female_02
+
+voice_none
+```
+
+Version 1 primarily uses text dialogue.
+
+---
+
+# Portrait
+
+NPCs may reference portrait assets.
+
+Example:
+
+```
+portrait_blacksmith
+```
+
+Portraits are optional.
+
+---
+
+# Interaction Priority
+
+Defines which NPC receives interaction first.
+
+Example:
+
+```
+10
+
+25
+
+100
+```
+
+Higher priority overrides lower values.
+
+---
+
+# Tags
+
+Examples:
+
+```
+vendor
+
+starter
+
+town
+
+guide
+
+crafting
+```
+
+Tags simplify filtering.
+
+---
+
+# Runtime Representation
+
+```
+NPC Definition
+
+↓
+
+NPC Instance
+
+↓
+
+Player Interaction
+
+↓
+
+Service Execution
+
+↓
+
+Return Control
+```
+
+Definitions never contain runtime state.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Appearance
+- Existing Vendor Reference
+- Existing Dialogue Profile
+- Existing Animation Profile
+- Existing Voice Profile
+- Valid Interaction Radius
+- Valid Services
+
+Invalid NPCs never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedural NPC Generation
+- NPC Scheduling
+- NPC Relationships
+- Dynamic Personalities
+- AI Conversations
+- Runtime-generated NPCs
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "npc_blacksmith",
+    "displayName": "Blacksmith",
+    "appearanceId": "appearance_blacksmith",
+    "services": [
+        "Vendor",
+        "Dialogue"
+    ],
+    "vendorId": "vendor_blacksmith",
+    "dialogueProfileId": "dialogue_blacksmith",
+    "spawnLocations": [
+        "starter_town"
+    ],
+    "interactionRadius": 3.0,
+    "animationProfileId": "animation_blacksmith",
+    "voiceProfileId": "voice_none",
+    "portraitId": "portrait_blacksmith",
+    "interactionPriority": 50,
+    "tags": [
+        "vendor",
+        "starter"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load NPC Definition
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Spawn NPC
+
+↓
+
+Player Interaction
+
+↓
+
+Execute Services
+
+↓
+
+Return To Idle
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The NPC Data document is complete when:
+
+- Every NPC has a unique identifier.
+- Appearance is referenced externally.
+- Services are configurable.
+- Vendor Definitions are referenced when applicable.
+- Dialogue Profiles are referenced.
+- Spawn Locations are configurable.
+- Interaction Radius is configurable.
+- Animation Profiles are referenced.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every NPC is completely data-driven.
+
+Rule 02
+
+NPCs represent interactive characters only.
+
+Rule 03
+
+Gameplay services are delegated to specialized systems.
+
+Rule 04
+
+Appearances are referenced externally.
+
+Rule 05
+
+Dialogue is referenced externally.
+
+Rule 06
+
+Vendor functionality is delegated to Vendor Definitions.
+
+Rule 07
+
+Spawn Locations are configurable.
+
+Rule 08
+
+Interaction Radius is explicit.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Localization is handled outside NPC Definitions.
+
+Rule 11
+
+Validation prevents invalid NPC definitions.
+
+Rule 12
+
+NPC definitions remain immutable.
+
+Rule 13
+
+Every NPC may declare its content source.
+
+Rule 14
+
+Future NPC services must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with NPCs exclusively through identifiers.
+
+---
+
+# Summary
+
+The NPC Data document defines every interactive character through a modular, service-oriented and fully data-driven architecture. By separating visual representation from gameplay functionality, dialogue and commercial systems, NPCs become reusable interaction points capable of supporting vendors, tutorials and future gameplay features while maintaining scalability, deterministic behavior and long-term maintainability.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

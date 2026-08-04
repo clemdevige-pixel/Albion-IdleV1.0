@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "category": "biomes",
+  "definitions": [
+    {
+      "id": "biome_forest",
+      "enemyFamilies": ["wolf", "humanoid"],
+      "resourceFamilies": ["wood", "hide"],
+      "dangerModifier": 1.0,
+      "tags": ["forest"]
+    },
+    {
+      "id": "biome_mountains",
+      "enemyFamilies": ["elemental", "arachnid"],
+      "resourceFamilies": ["ore", "stone"],
+      "dangerModifier": 1.2,
+      "tags": ["mountains"]
+    }
+  ]
+}

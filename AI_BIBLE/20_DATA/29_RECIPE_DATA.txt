@@ -1,0 +1,617 @@
+# 29. RECIPE DATA
+
+---
+
+# Purpose
+
+The Recipe Data document defines every crafting, refining and production recipe available in the game.
+
+Recipes describe how one or more input items are transformed into one or more output items.
+
+Recipes never execute gameplay logic themselves.
+
+Instead, they provide structured data consumed by the Crafting, Refining and Building systems.
+
+This document defines:
+
+- Recipe identity
+- Recipe category
+- Input items
+- Output items
+- Production time
+- Required station
+- Tier
+- Unlock requirements
+- Optional conditions
+
+It does **not** define:
+
+- Crafting UI
+- Worker behavior
+- Resource gathering
+- Production queues
+- Item definitions
+
+---
+
+# Design Philosophy
+
+The Recipe system follows seven core principles.
+
+---
+
+## Fully Data Driven
+
+Every recipe exists entirely in data.
+
+Adding a new craftable item should never require modifying gameplay code.
+
+---
+
+## Reusable
+
+A recipe may be used by:
+
+- Players
+- Workers
+- Buildings
+- Future automation systems
+
+The same recipe is never duplicated.
+
+---
+
+## Deterministic
+
+Given identical inputs, a recipe always produces identical outputs.
+
+Recipes never contain randomness.
+
+Random rewards belong to Loot Tables.
+
+---
+
+## Modular
+
+Recipes only describe transformations.
+
+They never describe inventories, queues or crafting interfaces.
+
+---
+
+## Explicit
+
+Every required ingredient is listed explicitly.
+
+No hidden requirements exist.
+
+---
+
+## Extensible
+
+Future recipe types can be introduced without redesigning the architecture.
+
+---
+
+## Runtime Independent
+
+Recipe definitions never contain production state.
+
+Runtime systems manage progress separately.
+
+---
+
+# Responsibilities
+
+Recipe Data defines:
+
+- Recipe identity
+- Category
+- Required inputs
+- Produced outputs
+- Required building
+- Production duration
+- Unlock requirement
+- Tier
+- Tags
+
+Recipe Data does NOT define:
+
+- Inventory
+- Current Progress
+- Queue Management
+- Worker Assignments
+- Building Ownership
+
+---
+
+# Recipe Definition
+
+Every Recipe contains:
+
+```text
+ID
+
+↓
+
+Category
+
+↓
+
+Tier
+
+↓
+
+Required Building
+
+↓
+
+Inputs
+
+↓
+
+Outputs
+
+↓
+
+Production Time
+
+↓
+
+Unlock Requirement
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Recipe owns one globally unique identifier.
+
+Examples:
+
+```
+recipe_weapon_broadsword_t4
+
+recipe_refining_ore_t5
+
+recipe_food_beef_stew
+
+recipe_cloth_t6
+```
+
+---
+
+# Categories
+
+Version 1 supports:
+
+- Crafting
+- Refining
+- Cooking
+
+Future versions may introduce:
+
+- Alchemy
+- Transmutation
+- Enchanting
+
+---
+
+# Tier
+
+Every recipe belongs to one tier.
+
+Supported tiers:
+
+```
+T1
+
+T2
+
+T3
+
+T4
+
+T5
+
+T6
+
+T7
+
+T8
+```
+
+---
+
+# Required Building
+
+Each recipe references exactly one Building.
+
+Examples:
+
+```
+building_smelter
+
+building_lumbermill
+
+building_forge
+
+building_kitchen
+```
+
+Recipes cannot execute without their required building.
+
+---
+
+# Inputs
+
+Recipes define one or more required ingredients.
+
+Each ingredient contains:
+
+- Item ID
+- Quantity
+
+Example:
+
+```json
+{
+    "itemId": "item_resource_ore_t4",
+    "quantity": 2
+}
+```
+
+---
+
+# Outputs
+
+Recipes define one or more produced items.
+
+Each output contains:
+
+- Item ID
+- Quantity
+
+Example:
+
+```json
+{
+    "itemId": "item_refined_bar_t4",
+    "quantity": 1
+}
+```
+
+Outputs are deterministic.
+
+---
+
+# Production Time
+
+Defines the base production duration.
+
+Example:
+
+```
+2 Seconds
+
+8 Seconds
+
+30 Seconds
+
+120 Seconds
+```
+
+Runtime modifiers may reduce production time.
+
+The base definition never changes.
+
+---
+
+# Unlock Requirement
+
+Recipes may define unlock conditions.
+
+Examples:
+
+- None
+- Weapon Mastery
+- Building Level
+
+Version 1 primarily uses Weapon Mastery where appropriate.
+
+---
+
+# Multiple Outputs
+
+Recipes may produce multiple outputs.
+
+Example:
+
+```
+Wood
+
+↓
+
+Planks
+
++
+
+Sawdust
+```
+
+Every output is guaranteed.
+
+---
+
+# Byproducts
+
+Recipes may define optional byproducts.
+
+Unlike outputs, byproducts are not guaranteed.
+
+They reference an internal Loot Table.
+
+Example:
+
+```
+Rare Refining Catalyst
+
+5%
+```
+
+This keeps deterministic outputs separate from random rewards.
+
+---
+
+# Tags
+
+Examples:
+
+```
+crafting
+
+weapon
+
+plate
+
+food
+
+resource
+
+refining
+```
+
+Tags simplify filtering and balancing.
+
+---
+
+# Runtime Representation
+
+```
+Recipe Definition
+
+↓
+
+Production Queue
+
+↓
+
+Consume Inputs
+
+↓
+
+Wait Production Time
+
+↓
+
+Generate Outputs
+
+↓
+
+Complete
+```
+
+Definitions never contain runtime state.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Building
+- Existing Input Items
+- Existing Output Items
+- Valid Quantities
+- Valid Tier
+- Valid Category
+- Existing Unlock References
+
+Invalid Recipes never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Recursive Recipes
+- Formula-based Quantities
+- Scripted Recipes
+- Conditional Outputs
+- Runtime-generated Recipes
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "recipe_weapon_broadsword_t4",
+    "category": "Crafting",
+    "tier": 4,
+    "buildingId": "building_forge",
+    "inputs": [
+        {
+            "itemId": "item_refined_bar_t4",
+            "quantity": 16
+        },
+        {
+            "itemId": "item_refined_plank_t4",
+            "quantity": 8
+        }
+    ],
+    "outputs": [
+        {
+            "itemId": "item_weapon_sword_t4_broadsword",
+            "quantity": 1
+        }
+    ],
+    "productionTime": 12,
+    "unlockRequirement": {
+        "type": "WeaponMastery",
+        "id": "mastery_sword",
+        "level": 20
+    },
+    "tags": [
+        "crafting",
+        "weapon",
+        "sword"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Recipe
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Building Starts Production
+
+↓
+
+Consume Inputs
+
+↓
+
+Wait
+
+↓
+
+Generate Outputs
+
+↓
+
+Production Complete
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Recipe Data document is complete when:
+
+- Every Recipe has a unique identifier.
+- Categories are predefined.
+- Inputs reference Item IDs.
+- Outputs reference Item IDs.
+- Required Buildings are explicit.
+- Production time is configurable.
+- Unlock requirements are supported.
+- Multiple outputs are supported.
+- Runtime production remains separate from definitions.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Recipe is completely data-driven.
+
+Rule 02
+
+Recipes transform Items into Items.
+
+Rule 03
+
+Inputs reference Item IDs.
+
+Rule 04
+
+Outputs reference Item IDs.
+
+Rule 05
+
+Recipes require one Building.
+
+Rule 06
+
+Production time is explicit.
+
+Rule 07
+
+Outputs are deterministic.
+
+Rule 08
+
+Random byproducts use Loot Tables.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Validation prevents invalid Recipes.
+
+Rule 11
+
+Runtime queues remain independent.
+
+Rule 12
+
+Recipes are immutable after loading.
+
+Rule 13
+
+Every Recipe may declare its content source.
+
+Rule 14
+
+Future recipe categories must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Recipes only through identifiers.
+
+---
+
+# Summary
+
+The Recipe Data document defines every production process through a deterministic, reusable and fully data-driven architecture. By separating production logic from inventories, buildings and runtime queues, it creates a scalable framework capable of supporting crafting, refining, cooking and future production systems while maintaining strong validation, modularity and long-term maintainability.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

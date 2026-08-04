@@ -1,0 +1,1287 @@
+## ALBION IDLE — DESIGN CONSTRAINTS
+
+**Document type:** Foundational Design Governance Document
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Foundational
+**Primary readers:** Game Director, designers, developers and AI development agents
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Related documents:** `00_CLAUDE_MASTER_CONTEXT.txt`, `01_GAME_VISION.txt`, `02_CORE_GAME_LOOP.txt`, `DECISION_LOG.txt`
+**Last update:** July 2026
+
+---
+
+# 1. PURPOSE OF THIS DOCUMENT
+
+This document defines the creative, systemic and production constraints of Albion Idle.
+
+Its purpose is to prevent the project from drifting away from its validated identity.
+
+It establishes:
+
+* what the game must preserve;
+* what the game must avoid;
+* what complexity is acceptable;
+* what scope is permitted;
+* what future possibilities must remain deferred;
+* how new features should be evaluated;
+* how Claude must identify design drift.
+
+This document does not define detailed system behavior.
+
+Detailed mechanics belong in dedicated system documents.
+
+If this document conflicts with the Project Bible, the Project Bible takes priority.
+
+---
+
+# 2. CONSTRAINT PHILOSOPHY
+
+Constraints exist to protect the project.
+
+They are not temporary inconveniences.
+
+They preserve:
+
+* clarity;
+* feasibility;
+* coherence;
+* development speed;
+* maintainability;
+* player understanding;
+* the central hero fantasy.
+
+A feature is not automatically valuable because it adds content, realism or complexity.
+
+Every feature must justify:
+
+* why it exists;
+* which player need it serves;
+* which core loop it supports;
+* which cost it introduces;
+* why a simpler solution is insufficient.
+
+---
+
+# 3. PROJECT IDENTITY CONSTRAINTS
+
+## 3.1 Single-player constraint
+
+**LOCKED**
+
+The game must be fully playable as a single-player experience.
+
+No core progression may depend on:
+
+* another player;
+* player trading;
+* guild participation;
+* PvP;
+* cooperative combat;
+* social attendance;
+* a live player economy.
+
+The game must not simulate multiplayer complexity unless that simulation directly improves the single-player RPG experience.
+
+---
+
+## 3.2 Hero-centered constraint
+
+**LOCKED**
+
+The player’s persistent hero must remain the central subject of progression.
+
+Every major system must answer:
+
+> How does this improve, prepare, challenge or express the hero?
+
+Systems may not become the true center of the game through excessive complexity.
+
+This applies especially to:
+
+* workers;
+* island management;
+* buildings;
+* crafting chains;
+* economy;
+* resource automation.
+
+---
+
+## 3.3 RPG-first idle constraint
+
+**LOCKED**
+
+The game is an idle RPG.
+
+It is not an idle game with decorative RPG elements.
+
+Idle progression must support:
+
+* character growth;
+* preparation;
+* build decisions;
+* equipment;
+* mastery;
+* adventure.
+
+The player must still make meaningful decisions.
+
+Automation performs actions.
+
+The player defines direction.
+
+---
+
+## 3.4 Economy-support constraint
+
+**LOCKED**
+
+The economy exists to support adventure and character progression.
+
+Resource accumulation is not the final objective.
+
+Economic systems must not be optimized only around:
+
+* currency growth;
+* market dominance;
+* worker output;
+* production volume;
+* passive wealth accumulation.
+
+Currency may exist, but it must not replace the central equipment and adventure loop.
+
+---
+
+# 4. CHARACTER CONSTRAINTS
+
+## 4.1 One-character constraint
+
+**LOCKED**
+
+The game contains one persistent playable character.
+
+The project must not introduce:
+
+* alternate characters;
+* character slots;
+* collectible heroes;
+* party composition;
+* disposable units;
+* character resets as a progression requirement.
+
+Any future companion system would require a dedicated design decision and must not replace the hero.
+
+---
+
+## 4.2 No-class constraint
+
+**LOCKED**
+
+The player does not select a permanent traditional class.
+
+The character identity is determined by:
+
+* equipment;
+* weapons;
+* abilities;
+* passives;
+* masteries;
+* practiced activities.
+
+The player must remain able to change direction.
+
+Specialization may have a cost, but it must not permanently invalidate other paths.
+
+---
+
+## 4.3 No-global-level constraint
+
+**LOCKED**
+
+The character has no traditional visible global level.
+
+Claude must not introduce a global level as a convenient shortcut.
+
+A possible aggregate rating may later exist for communication or comparison, but it must not secretly become the main progression system.
+
+---
+
+## 4.4 Use-based-progression constraint
+
+**LOCKED**
+
+Progression should remain connected to relevant activity.
+
+Examples:
+
+* weapon use improves weapon progression;
+* gathering improves gathering progression;
+* crafting improves crafting progression.
+
+The game must avoid turning all progression into one generic experience currency unless explicitly validated.
+
+---
+
+## 4.5 Hybrid-power constraint
+
+**LOCKED**
+
+Permanent progression and equipment must both matter.
+
+The design must avoid:
+
+* masteries making equipment tiers irrelevant;
+* equipment making masteries irrelevant;
+* permanent account bonuses trivializing all earlier content;
+* raw statistics replacing strategic build choices.
+
+---
+
+# 5. COMBAT CONSTRAINTS
+
+## 5.1 Semi-idle constraint
+
+**LOCKED**
+
+Combat must remain compatible with idle play.
+
+The player must not be required to:
+
+* continuously move the character;
+* manually target every enemy;
+* execute long action rotations;
+* react every second;
+* maintain constant attention during farming.
+
+Active interaction may improve performance.
+
+It must not become mandatory for ordinary repetitive combat.
+
+---
+
+## 5.2 Readability constraint
+
+**LOCKED**
+
+The player must be able to understand combat outcomes.
+
+The game must avoid:
+
+* excessive simultaneous effects;
+* unreadable damage spam;
+* too many overlapping status effects;
+* hidden damage formulas;
+* unexplained deaths;
+* abilities with unclear impact.
+
+The player should be able to identify:
+
+* what dealt damage;
+* what reduced damage;
+* when an ability activated;
+* why health changed;
+* why the encounter ended.
+
+---
+
+## 5.3 Limited-ability constraint
+
+**LOCKED AS CURRENT TARGET**
+
+The current target is:
+
+* two active weapon abilities;
+* one passive weapon ability.
+
+Additional ability systems must not be introduced without proving that the existing structure lacks sufficient strategic depth.
+
+The game must avoid a large MMO-style hotbar.
+
+---
+
+## 5.4 Weapon-identity constraint
+
+**LOCKED**
+
+Weapons must define meaningful combat identity.
+
+A weapon must not be only a visual skin over the same behavior.
+
+Different weapon families should eventually create different strategic uses.
+
+However, the prototype must not attempt to implement every possible weapon identity.
+
+---
+
+## 5.5 Strategic-variety constraint
+
+**LOCKED AS DESIGN GOAL**
+
+The game should avoid one universal build solving all content.
+
+This does not require every encounter to force a build change.
+
+Build adaptation should be meaningful when it appears.
+
+The design must avoid artificial restrictions such as:
+
+* arbitrary weapon bans;
+* unexplained immunity;
+* mandatory one-solution puzzles;
+* hidden hard counters.
+
+---
+
+## 5.6 Minimal-stat constraint
+
+**LOCKED**
+
+Base statistics must remain limited and understandable.
+
+New statistics must not be introduced only to create complexity.
+
+Each proposed statistic must have:
+
+* a clear definition;
+* visible impact;
+* unique gameplay purpose;
+* understandable interaction with equipment and abilities.
+
+Statistics that duplicate another system should be rejected.
+
+---
+
+# 6. PROGRESSION CONSTRAINTS
+
+## 6.1 Preparation-over-waiting constraint
+
+**LOCKED**
+
+Waiting alone must not solve every major challenge.
+
+The player should progress by combining:
+
+* time;
+* preparation;
+* mastery;
+* equipment;
+* strategy;
+* resource planning.
+
+A long wait may provide resources.
+
+It must not automatically complete all progression checks.
+
+---
+
+## 6.2 Frequent-feedback constraint
+
+**LOCKED**
+
+Long-term progression may be slow.
+
+Feedback must remain frequent.
+
+The game must avoid long periods with:
+
+* no visible progress;
+* no reward;
+* no unlock;
+* no useful information;
+* no change in efficiency.
+
+This does not mean every action must provide a major reward.
+
+---
+
+## 6.3 Understandable-wall constraint
+
+**LOCKED**
+
+Soft, hard and knowledge walls must be understandable.
+
+The game must avoid walls that are:
+
+* invisible;
+* arbitrary;
+* dependent on undisclosed formulas;
+* solvable only through excessive waiting;
+* based on one undocumented counter.
+
+The player should be able to identify reasonable improvement paths.
+
+---
+
+## 6.4 No-rebirth constraint
+
+**LOCKED**
+
+The game must not use mandatory prestige, rebirth or account-reset systems.
+
+Long-term progression should accumulate through:
+
+* masteries;
+* equipment access;
+* world progression;
+* permanent unlocks;
+* support systems.
+
+A future optional reset mechanic would require explicit validation.
+
+---
+
+## 6.5 No-fake-progression constraint
+
+The game should avoid progression that only changes presentation without meaningful effect.
+
+Examples of fake progression include:
+
+* a level increase with no gameplay impact;
+* a new item that is numerically identical to the previous item;
+* a new zone containing only recolored enemies with larger health values;
+* an unlock that adds no new decision or efficiency.
+
+Not every reward needs to be transformative.
+
+It should still contribute to a visible objective.
+
+---
+
+# 7. WORLD CONSTRAINTS
+
+## 7.1 Five-zone constraint
+
+**LOCKED**
+
+The long-term progression uses five danger families:
+
+* Blue;
+* Yellow;
+* Orange;
+* Red;
+* Black.
+
+The vertical slice must not attempt to implement all five zones.
+
+The initial implementation should prove one small section of the Blue Zone experience.
+
+---
+
+## 7.2 Chapter-identity constraint
+
+**LOCKED**
+
+Each zone must eventually function as a progression chapter.
+
+A zone should not be defined only by:
+
+* a different background;
+* higher enemy health;
+* higher resource numbers;
+* a new color.
+
+Each chapter should introduce a meaningful combination of:
+
+* resources;
+* threats;
+* progression goals;
+* strategic requirements;
+* risk;
+* major checks.
+
+---
+
+## 7.3 Progressive-complexity constraint
+
+The game should introduce systems gradually.
+
+The first stages must not expose every advanced mechanic.
+
+Complexity should be layered through progression.
+
+Examples:
+
+* early zones teach basic gathering and equipment;
+* later zones increase durability pressure;
+* later encounters require stronger build adaptation;
+* advanced production appears only when justified.
+
+---
+
+## 7.4 No-content-volume-as-design constraint
+
+A large amount of content does not automatically create depth.
+
+The project must not prioritize:
+
+* dozens of weapons before one weapon is enjoyable;
+* hundreds of items before the item system is stable;
+* many monsters before combat behavior is readable;
+* many zones before the Blue Zone loop is validated.
+
+Systems must be proven with limited content first.
+
+---
+
+# 8. ECONOMY AND PRODUCTION CONSTRAINTS
+
+## 8.1 Purpose-linked-production constraint
+
+Every resource and recipe should eventually have a reason to exist.
+
+The project should avoid:
+
+* resources used only once without justification;
+* redundant materials;
+* recipes that differ only through arbitrary numbers;
+* long production chains with no strategic value.
+
+Production complexity must create goals or choices.
+
+---
+
+## 8.2 No-market-dependency constraint
+
+**LOCKED**
+
+The economy cannot rely on a player market.
+
+The game must provide internal ways to:
+
+* obtain needed resources;
+* consume excess resources;
+* create equipment;
+* manage currency;
+* replace degraded items.
+
+No system may assume that another player will supply missing content.
+
+---
+
+## 8.3 Worker-support constraint
+
+**LOCKED**
+
+Workers must support the hero.
+
+Workers must not:
+
+* become the main source of all progression;
+* replace gathering entirely;
+* remove the need for player planning;
+* create a separate economy game;
+* require complex workforce optimization during the prototype.
+
+The worker system is not part of the first minimal vertical slice unless later validated.
+
+---
+
+## 8.4 Island-support constraint
+
+**LOCKED**
+
+The island is a support system.
+
+It must not become:
+
+* a mandatory city builder;
+* the primary progression screen;
+* a large construction game;
+* a substitute for adventure.
+
+The island is deferred until the central hero loop is proven.
+
+---
+
+# 9. OFFLINE CONSTRAINTS
+
+## 9.1 Eight-hour-base constraint
+
+**LOCKED**
+
+The default offline progression cap is eight hours.
+
+Future upgrades may extend this value.
+
+The prototype may use a shorter test duration internally, but the player-facing design target remains eight hours.
+
+---
+
+## 9.2 Configured-activity constraint
+
+**LOCKED**
+
+Offline progression executes a player-configured activity.
+
+The game must not automatically decide the player’s long-term objective.
+
+The system may stop when configured conditions are no longer satisfied.
+
+---
+
+## 9.3 Shared-rules constraint
+
+Active and offline progression should use shared domain rules whenever practical.
+
+The project must avoid creating:
+
+* one set of combat rules for active play;
+* another unrelated set for offline calculation;
+* different resource costs online and offline without design justification.
+
+The visual simulation may differ.
+
+The underlying rules should remain coherent.
+
+---
+
+## 9.4 Bounded-simulation constraint
+
+Offline simulation must remain computationally bounded.
+
+The technical design must avoid:
+
+* simulating every visual frame;
+* unbounded loops;
+* uncontrolled repeated deaths;
+* excessive event generation;
+* performance proportional to every elapsed millisecond.
+
+The final method will be defined in technical documentation.
+
+---
+
+## 9.5 Offline-safety constraint
+
+Until validated, Claude must not decide:
+
+* whether first-time bosses can be defeated offline;
+* whether the character can die repeatedly offline;
+* whether equipment can permanently break offline;
+* whether consumables are used automatically;
+* whether the character retreats automatically.
+
+These are structural design decisions.
+
+---
+
+# 10. DEATH AND DURABILITY CONSTRAINTS
+
+## 10.1 Predictable-risk constraint
+
+**LOCKED**
+
+Death risk must be understandable before the player commits.
+
+The game should display relevant information such as:
+
+* zone danger;
+* expected durability consequence;
+* equipment condition;
+* possible stop conditions.
+
+The player should not discover major permanent consequences only after failure.
+
+---
+
+## 10.2 Gradual-degradation constraint
+
+**LOCKED**
+
+The primary equipment consequence is gradual degradation through:
+
+* current durability loss;
+* maximum durability loss.
+
+The game must not use sudden random destruction as the normal primary death penalty.
+
+---
+
+## 10.3 No-early-punishment constraint
+
+Early progression should allow experimentation.
+
+The Blue Zone must not create severe long-term equipment punishment.
+
+Risk should escalate with player understanding and access to replacement systems.
+
+---
+
+## 10.4 Replacement-loop constraint
+
+If equipment can permanently break, the game must support a reasonable replacement loop.
+
+Permanent loss must not trap the player in an unrecoverable state.
+
+Replacement may involve:
+
+* safer fallback equipment;
+* accessible resources;
+* stored materials;
+* repair or salvage systems;
+* lower-risk farming options.
+
+Exact rules remain open.
+
+---
+
+# 11. USER-EXPERIENCE CONSTRAINTS
+
+## 11.1 Information-clarity constraint
+
+The game must explain important state changes.
+
+The player should be able to understand:
+
+* why an activity stopped;
+* why an item cannot be crafted;
+* why a stage is locked;
+* why a character died;
+* why an offline result was limited;
+* why a statistic changed;
+* why an item degraded.
+
+---
+
+## 11.2 No-external-wiki-dependency constraint
+
+Core rules must be understandable inside the game.
+
+Advanced optimization may benefit from external discussion.
+
+Basic functioning must not require a wiki.
+
+---
+
+## 11.3 Decision-density constraint
+
+The game should provide meaningful decisions without demanding constant decisions.
+
+Too few decisions create passivity.
+
+Too many decisions create fatigue and undermine idle play.
+
+The player should make decisions at natural transition points:
+
+* before an activity;
+* after a result;
+* after a failure;
+* after an unlock;
+* before leaving offline;
+* before a boss attempt.
+
+---
+
+## 11.4 Interface-scope constraint
+
+The prototype interface should prioritize function over polish.
+
+It must clearly support:
+
+* current objective;
+* character state;
+* inventory;
+* equipment;
+* activity selection;
+* progression result;
+* failure information.
+
+The prototype must not spend excessive effort on final animations, effects or decorative screens before the core loop is validated.
+
+---
+
+# 12. CONTENT CONSTRAINTS
+
+## 12.1 Original-content constraint
+
+The project is inspired by Albion Online.
+
+It must not blindly copy:
+
+* names;
+* visual assets;
+* interface layouts;
+* written descriptions;
+* audio;
+* proprietary data;
+* exact monster designs;
+* exact world structure.
+
+Temporary internal references must remain clearly provisional.
+
+---
+
+## 12.2 Placeholder-content constraint
+
+Prototype placeholders are permitted.
+
+Placeholders must be:
+
+* clearly identified;
+* easy to replace;
+* legally safe;
+* excluded from final commercial assumptions;
+* separated from final art direction.
+
+---
+
+## 12.3 Data-driven-content constraint
+
+**LOCKED**
+
+Content must be represented as data when reasonable.
+
+The game must avoid hardcoding large lists of:
+
+* items;
+* enemies;
+* stages;
+* recipes;
+* abilities;
+* loot;
+* mastery requirements.
+
+Temporary values must be centralized.
+
+---
+
+## 12.4 Stable-identifier constraint
+
+Content must use stable internal identifiers.
+
+Display names must not serve as the only identity of persistent content.
+
+Identifiers should remain valid across:
+
+* localization;
+* renaming;
+* balancing;
+* save migration;
+* visual replacement.
+
+---
+
+# 13. TECHNICAL-SCOPE CONSTRAINTS
+
+## 13.1 Vertical-slice-first constraint
+
+**LOCKED**
+
+The first production objective is a vertical slice.
+
+Claude must not build the entire game before the vertical slice is validated.
+
+The vertical slice should prove:
+
+* the central loop;
+* system interaction;
+* data flow;
+* save foundations;
+* offline foundations;
+* player understanding.
+
+---
+
+## 13.2 No-premature-scalability constraint
+
+The architecture must support additional data and content.
+
+It does not need to support hypothetical massive-scale requirements.
+
+The project must not prematurely build for:
+
+* millions of concurrent users;
+* multiplayer servers;
+* live economies;
+* cross-region networking;
+* mod marketplaces;
+* large cloud infrastructure.
+
+---
+
+## 13.3 No-speculative-system constraint
+
+Claude must not implement a system because it may be useful later.
+
+A system should be implemented when:
+
+* it is required by the current vertical slice;
+* it is required by a validated dependency;
+* it reduces immediate technical risk;
+* it is explicitly requested.
+
+---
+
+## 13.4 Testable-domain constraint
+
+Core gameplay rules must be testable independently from presentation.
+
+The project should separate:
+
+* domain logic;
+* rendering;
+* interface;
+* persistence;
+* content data.
+
+A visual scene must not be the only way to test combat, inventory or crafting behavior.
+
+---
+
+## 13.5 Reversible-prototype constraint
+
+Prototype choices should be easy to change.
+
+Claude should avoid embedding temporary assumptions into:
+
+* save formats;
+* permanent identifiers;
+* cross-system dependencies;
+* large inheritance structures;
+* global managers.
+
+---
+
+# 14. SCOPE EXCLUSIONS FOR THE FIRST VERTICAL SLICE
+
+Unless explicitly validated later, the first vertical slice must exclude:
+
+* multiplayer;
+* PvP;
+* guilds;
+* player trading;
+* player market;
+* multiple characters;
+* companions;
+* full island system;
+* full worker system;
+* all five zones;
+* full weapon catalogue;
+* full armor catalogue;
+* complete mastery trees;
+* final endgame;
+* final monetization;
+* final commercial art;
+* final narrative campaign;
+* procedural world generation;
+* complex random events;
+* large dungeon systems;
+* live-service infrastructure;
+* cross-platform account systems;
+* social features;
+* competitive leaderboards.
+
+These exclusions protect the prototype.
+
+They are not permanent rejections unless already locked elsewhere.
+
+---
+
+# 15. FEATURE EVALUATION FRAMEWORK
+
+Before adding a feature, the Game Director and Claude should evaluate it through the following questions.
+
+## 15.1 Identity
+
+Does the feature support the single-player idle RPG identity?
+
+## 15.2 Hero
+
+Does the feature improve, challenge or express the hero?
+
+## 15.3 Core loop
+
+Which part of the core loop does it support?
+
+## 15.4 Decision
+
+What meaningful player decision does it create?
+
+## 15.5 Feedback
+
+How does the player understand its effect?
+
+## 15.6 Complexity
+
+What new rules, interface and data does it require?
+
+## 15.7 Dependency
+
+Which other systems must exist first?
+
+## 15.8 Scope
+
+Is it required for the current milestone?
+
+## 15.9 Alternative
+
+Can a simpler feature achieve the same purpose?
+
+## 15.10 Validation
+
+How will the feature be tested?
+
+A feature that cannot answer these questions should not automatically be approved.
+
+---
+
+# 16. DESIGN-DRIFT WARNING SIGNS
+
+The project may be drifting if:
+
+* economic screens receive more attention than the hero;
+* waiting becomes the answer to every wall;
+* systems are implemented before their purpose is defined;
+* content quantity grows faster than system quality;
+* new attributes appear without clear need;
+* combat becomes impossible to read;
+* active play becomes mandatory for farming;
+* automation makes all decisions;
+* one build becomes universally optimal;
+* workers replace player activities;
+* the island becomes the main game;
+* multiplayer preparation appears in the architecture;
+* final systems are built before prototype validation;
+* documentation and code describe different rules;
+* Claude introduces mechanics to complete missing specifications;
+* the repository contains many unused abstractions;
+* balancing values are scattered through code;
+* save compatibility is ignored;
+* offline simulation behaves differently from active simulation.
+
+Any warning sign should trigger a review before additional scope is added.
+
+---
+
+# 17. ACCEPTABLE COMPLEXITY RULE
+
+Complexity is acceptable when it creates at least one of the following:
+
+* a meaningful decision;
+* a new strategic option;
+* a clearer progression objective;
+* a readable risk;
+* a useful specialization;
+* a necessary technical guarantee;
+* better maintainability;
+* better testability.
+
+Complexity is not justified only because it:
+
+* appears realistic;
+* resembles a full MMO;
+* may be useful someday;
+* increases the number of systems;
+* produces more code;
+* creates more statistics;
+* creates more content entries.
+
+---
+
+# 18. PROTOTYPE SIMPLIFICATION RULES
+
+During prototyping, systems may be simplified.
+
+Examples:
+
+* one resource family instead of all resource families;
+* one weapon family instead of the final catalogue;
+* one armor type instead of all armor combinations;
+* one linear stage path;
+* one boss mechanic;
+* one offline-compatible activity;
+* one basic mastery;
+* one deterministic loot table.
+
+A simplified prototype must preserve the intended system relationship.
+
+It must not prove a false loop.
+
+Example:
+
+A crafting prototype must still require resources and produce an actual equipment improvement.
+
+It should not simply grant an item through a button while claiming to validate crafting.
+
+---
+
+# 19. VALIDATION GATES
+
+The project should pass through validation gates.
+
+## Gate 1 — Vision validation
+
+Confirm:
+
+* player fantasy;
+* core loop;
+* constraints;
+* vertical-slice experience.
+
+## Gate 2 — Technical-foundation validation
+
+Confirm:
+
+* selected stack;
+* repository structure;
+* deterministic domain logic;
+* testing;
+* data loading;
+* basic save foundation.
+
+## Gate 3 — First-system validation
+
+Confirm:
+
+* item definitions;
+* inventory;
+* equipment;
+* character state.
+
+## Gate 4 — First-combat validation
+
+Confirm:
+
+* automatic combat;
+* readable result;
+* deterministic tests;
+* one failure case.
+
+## Gate 5 — First-economic-loop validation
+
+Confirm:
+
+* gathering;
+* refining;
+* crafting;
+* equipment improvement.
+
+## Gate 6 — Vertical-slice-loop validation
+
+Confirm:
+
+* encounter wall;
+* identify need;
+* gather;
+* refine;
+* craft;
+* equip;
+* retry;
+* overcome challenge;
+* unlock progression.
+
+The project must not rush to later gates while earlier foundations remain unstable.
+
+---
+
+# 20. CLAUDE-SPECIFIC CONSTRAINTS
+
+Claude must not:
+
+* invent missing structural rules;
+* create final values from examples;
+* treat open questions as resolved;
+* broaden a ticket without authorization;
+* add future systems because they seem logical;
+* implement multiple major systems in one uncontrolled change;
+* hide assumptions inside code;
+* duplicate domain rules between active and offline modes;
+* create a monolithic game manager;
+* hardcode content in user-interface scripts;
+* use display names as persistent identifiers;
+* claim compliance without checking relevant documents.
+
+Claude must report when a requested task cannot be completed safely because a blocking design decision is missing.
+
+---
+
+# 21. CONSTRAINT OVERRIDE PROCESS
+
+A locked constraint may only be changed through an explicit design decision.
+
+The process is:
+
+1. Identify the constraint.
+2. Explain why it blocks or harms the project.
+3. Propose the alternative.
+4. Describe consequences.
+5. Validate the change with the Game Director.
+6. Add a new ADR to `DECISION_LOG.txt`.
+7. Mark the previous decision as superseded if necessary.
+8. Update the Project Bible.
+9. Update affected foundational and system documents.
+10. Update implementation only after documentation is aligned.
+
+Claude must not bypass this process through code.
+
+---
+
+# 22. OPEN CONSTRAINT QUESTIONS
+
+The following boundaries remain to be defined later:
+
+* exact target platform;
+* exact supported input devices;
+* target minimum hardware;
+* maximum acceptable active-session complexity;
+* exact number of simultaneous production queues;
+* inventory capacity philosophy;
+* storage constraints;
+* exact randomization limits;
+* exact amount of build diversity required in the vertical slice;
+* degree of automation customization;
+* whether bosses require active play;
+* whether first clears can occur offline;
+* whether the game supports pausing active simulation;
+* final accessibility requirements;
+* final localization requirements;
+* final content-modification tools;
+* final performance budget.
+
+These open questions must not prevent the next foundational document.
+
+---
+
+# 23. DESIGN CONSTRAINT SUMMARY
+
+Albion Idle must remain a focused, single-player idle RPG centered on one persistent hero.
+
+The game must not drift into:
+
+* a simulated MMO;
+* a player-market economy;
+* a worker-management game;
+* a city builder;
+* a passive waiting simulator;
+* a high-input action RPG;
+* a spreadsheet with decorative adventure;
+* an overengineered technical project.
+
+The project must preserve:
+
+* meaningful preparation;
+* understandable combat;
+* use-based masteries;
+* equipment-driven power;
+* connected production and adventure;
+* data-driven content;
+* gradual risk;
+* offline planning;
+* limited scope;
+* incremental validation.
+
+The vertical slice must prove the smallest complete version of the real game loop.
+
+It must not imitate completion through disconnected prototypes.
+
+The project should grow only when the previous layer is:
+
+* understandable;
+* testable;
+* coherent;
+* validated.
+
+---
+
+# END OF DOCUMENT

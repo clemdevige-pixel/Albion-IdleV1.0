@@ -1,0 +1,899 @@
+# 39. BACKGROUND PROGRESSION SYSTEM
+
+## Purpose
+
+The Background Progression System is responsible for resolving passive gameplay while the player is disconnected.
+
+Unlike traditional Offline Progression systems, gameplay never runs locally on the client.
+
+All progression is simulated exclusively by the server using elapsed time.
+
+This system only orchestrates passive progression and delegates business logic to the systems that own it.
+
+---
+
+# Design Goals
+
+The Background Progression System must:
+
+- Continue passive activities while the player is offline.
+- Never simulate active gameplay.
+- Be fully server-authoritative.
+- Resolve elapsed time deterministically.
+- Scale to millions of players.
+- Avoid periodic server simulations.
+- Preserve system ownership.
+- Prevent progression exploits.
+- Minimize server load.
+
+---
+
+# Core Philosophy
+
+Background Progression is **not** Offline Gameplay.
+
+The player is disconnected.
+
+The game does not continue running.
+
+Instead, when the player reconnects:
+
+The server computes the elapsed time.
+
+Each passive system receives that elapsed time and resolves its own progression.
+
+---
+
+# Online-Only Architecture
+
+The game is Online Only.
+
+Therefore:
+
+- No client-side simulation.
+- No local timers.
+- No offline save manipulation.
+- No background gameplay executed on the device.
+
+Everything is calculated by the server.
+
+---
+
+# Supported Systems
+
+Only naturally passive systems participate.
+
+Supported systems include:
+
+- Worker System
+- Crafting System
+- Refining System
+- Player Island Construction
+- Future Passive Island Production
+- Server Timers
+
+---
+
+# Unsupported Systems
+
+The following systems never progress while disconnected:
+
+- Combat
+- Enemy AI
+- Exploration
+- Loot
+- Experience
+- Weapon Masteries
+- Status Effects
+- Active Abilities
+- Movement
+- Combat Statistics
+
+Active progression always requires an active gameplay session.
+
+---
+
+# High-Level Flow
+
+Player Disconnects
+
+↓
+
+Server Stores Logout Timestamp
+
+↓
+
+Player Remains Offline
+
+↓
+
+Player Reconnects
+
+↓
+
+Elapsed Time Calculated
+
+↓
+
+Passive Systems Resolve Progress
+
+↓
+
+Save Snapshot Updated
+
+↓
+
+Gameplay Continues
+
+---
+
+# Elapsed Time Calculation
+
+The server calculates:
+
+Elapsed Time
+
+=
+
+Current Server Time
+
+−
+
+Last Disconnect Timestamp
+
+Only trusted server timestamps are used.
+
+Client timestamps are ignored.
+
+---
+
+# Timestamp Authority
+
+All timestamps originate from the server.
+
+The client cannot provide:
+
+- Logout time
+- Login time
+- Completion time
+- Timer values
+
+This prevents clock manipulation exploits.
+
+---
+
+# Resolution Model
+
+Background progression is resolved instantly.
+
+The server does not simulate:
+
+- Every second
+- Every minute
+- Every tick
+
+Instead:
+
+Elapsed Time
+
+↓
+
+Resolve Once
+
+↓
+
+Return Updated State
+
+This provides deterministic results with minimal server cost.
+
+---
+
+# Delegation Model
+
+The Background Progression System owns no gameplay rules.
+
+Instead, it delegates elapsed time to the systems that own progression.
+
+Example:
+
+Worker System
+
+↓
+
+ResolveWorkerProgress(elapsedTime)
+
+Crafting System
+
+↓
+
+ResolveCraftQueue(elapsedTime)
+
+Refining System
+
+↓
+
+ResolveRefiningQueue(elapsedTime)
+
+---
+
+# Queue Resolution
+
+Passive queues resolve sequentially.
+
+If enough time has elapsed:
+
+Task A
+
+↓
+
+Task B
+
+↓
+
+Task C
+
+↓
+
+Task D
+
+All completed tasks are processed.
+
+The queue continues until:
+
+- Remaining elapsed time is exhausted.
+- The queue becomes empty.
+- The owning system decides to stop.
+
+---
+
+# Cascading Resolution
+
+Queue chaining is fully supported.
+
+Example:
+
+Craft A
+
+10 minutes
+
+↓
+
+Craft B
+
+15 minutes
+
+↓
+
+Craft C
+
+20 minutes
+
+↓
+
+Craft D
+
+30 minutes
+
+If the player reconnects after 3 hours:
+
+All four crafts complete.
+
+The queue is resolved entirely.
+
+---
+
+# Remaining Time
+
+If elapsed time is insufficient:
+
+The active task continues.
+
+Example:
+
+Craft Duration
+
+60 minutes
+
+Elapsed Time
+
+25 minutes
+
+Result:
+
+Remaining Time
+
+35 minutes
+
+---
+
+# System Ownership
+
+Each gameplay system remains responsible for:
+
+- Validation
+- Completion logic
+- Rewards
+- Storage
+- Inventory interaction
+- Notifications
+
+Background Progression only provides elapsed time.
+
+---
+
+# Worker Integration
+
+The Worker System determines:
+
+- Finished jobs
+- Produced resources
+- Worker availability
+- Queue continuation
+
+Background Progression never generates resources directly.
+
+---
+
+# Crafting Integration
+
+The Crafting System determines:
+
+- Completed recipes
+- Queue advancement
+- Material consumption
+- Crafted items
+
+Background Progression does not craft items itself.
+
+---
+
+# Refining Integration
+
+The Refining System determines:
+
+- Finished refinements
+- Queue progression
+- Material conversion
+
+---
+
+# Island Integration
+
+The Player Island System determines:
+
+- Completed constructions
+- Building upgrades
+- Passive production
+- Unlocks
+
+---
+
+# Inventory Full Handling
+
+The Background Progression System never stores rewards.
+
+If an owning system cannot deliver results because of inventory limitations:
+
+The completed results remain inside that system.
+
+Examples:
+
+Crafting:
+
+Completed items remain inside the crafting station.
+
+Refining:
+
+Completed resources remain inside the refinery.
+
+Workers:
+
+Rewards remain ready for collection.
+
+Island Production:
+
+Produced items remain stored in the building.
+
+Nothing is lost.
+
+---
+
+# No Global Overflow Storage
+
+The game does not use a universal overflow inventory.
+
+Each gameplay system manages its own completed outputs.
+
+This avoids unnecessary coupling.
+
+---
+
+# Reward Collection
+
+When the player reconnects:
+
+The Background Progression System resolves progression.
+
+Actual reward collection remains the responsibility of the owning system.
+
+Example:
+
+Worker finishes task.
+
+↓
+
+Worker stores reward.
+
+↓
+
+Player opens Worker Interface.
+
+↓
+
+Player claims reward.
+
+---
+
+# Save System Integration
+
+Reconnect
+
+↓
+
+Load Save
+
+↓
+
+Calculate Elapsed Time
+
+↓
+
+Resolve Passive Systems
+
+↓
+
+Update Save Snapshot
+
+↓
+
+Gameplay Starts
+
+---
+
+# Authentication Integration
+
+Background Progression begins only after:
+
+- Authentication succeeds.
+- Save is loaded.
+- Session is established.
+
+---
+
+# Server Performance
+
+No continuous simulation occurs while the player is offline.
+
+The server stores only:
+
+- Disconnect timestamp
+- Persistent system state
+
+Actual calculations occur once at login.
+
+---
+
+# Determinism
+
+Given:
+
+- Same Save
+- Same Timestamp
+- Same Configuration
+
+The result must always be identical.
+
+---
+
+# Time Source
+
+The authoritative time source is:
+
+Server UTC Time
+
+Client time is ignored.
+
+---
+
+# Anti-Cheat
+
+The system prevents:
+
+- Device clock modification
+- Time rollback
+- Time acceleration
+- Offline save editing
+- Local simulation
+- Reward duplication
+
+---
+
+# Interrupted Sessions
+
+Unexpected disconnections behave identically to normal logout.
+
+Only the disconnect timestamp differs.
+
+---
+
+# Reconnection Flow
+
+Authentication
+
+↓
+
+Load Save
+
+↓
+
+Calculate Elapsed Time
+
+↓
+
+Resolve Workers
+
+↓
+
+Resolve Crafting
+
+↓
+
+Resolve Refining
+
+↓
+
+Resolve Island
+
+↓
+
+Create Updated Snapshot
+
+↓
+
+Enter Gameplay
+
+---
+
+# Error Recovery
+
+If one passive system fails:
+
+Other systems continue resolving independently.
+
+Example:
+
+Worker resolution succeeds.
+
+Crafting fails.
+
+Island succeeds.
+
+The failing system reports an error.
+
+The others remain valid.
+
+---
+
+# Partial Resolution
+
+Every passive system resolves independently.
+
+Failure in one system never blocks all background progression.
+
+---
+
+# Save Timing
+
+Background progression finishes before the first gameplay frame.
+
+The player always enters an updated world state.
+
+---
+
+# Notifications
+
+After resolution:
+
+Systems may generate notifications.
+
+Examples:
+
+- Worker completed
+- Craft completed
+- Refinement completed
+- Building finished
+
+Notification presentation belongs to the Notification System.
+
+---
+
+# UI Responsibilities
+
+The UI displays:
+
+- Completed tasks
+- Remaining timers
+- Claimable rewards
+- Updated queues
+
+The Background Progression System provides no UI.
+
+---
+
+# Background Resolution API
+
+Conceptually:
+
+ResolveBackgroundProgress()
+
+↓
+
+CalculateElapsedTime()
+
+↓
+
+ResolveWorkers()
+
+↓
+
+ResolveCrafting()
+
+↓
+
+ResolveRefining()
+
+↓
+
+ResolveIsland()
+
+↓
+
+Save()
+
+---
+
+# Runtime Components
+
+## BackgroundProgressManager
+
+Responsibilities:
+
+- Calculate elapsed time.
+- Coordinate passive systems.
+- Manage execution order.
+- Trigger save.
+
+---
+
+## ElapsedTimeCalculator
+
+Responsibilities:
+
+- Read disconnect timestamp.
+- Read server time.
+- Compute elapsed duration.
+
+---
+
+## BackgroundResolutionCoordinator
+
+Responsibilities:
+
+- Invoke passive systems.
+- Collect results.
+- Handle failures.
+- Produce execution summary.
+
+---
+
+# Events
+
+The system publishes:
+
+- OnBackgroundResolutionStarted
+- OnBackgroundResolutionCompleted
+- OnBackgroundResolutionFailed
+- OnPassiveTaskCompleted
+- OnBackgroundRewardsReady
+
+---
+
+# Data Tables
+
+No dedicated gameplay Data Tables are required.
+
+The system relies on configuration owned by:
+
+- Worker System
+- Crafting System
+- Refining System
+- Player Island System
+
+Optional configuration table:
+
+---
+
+## BackgroundProgressionSettingsTable
+
+Fields:
+
+- Enabled
+- ResolutionOrder
+- MaxResolutionTimePerSystem
+- ErrorRetryCount
+- LoggingEnabled
+
+---
+
+# Logging
+
+Recommended logs:
+
+- Login Timestamp
+- Logout Timestamp
+- Elapsed Time
+- Systems Resolved
+- Completed Tasks
+- Failed Systems
+- Resolution Duration
+
+---
+
+# Validation Rules
+
+Before resolving:
+
+- Player must be authenticated.
+- Save must be loaded.
+- Snapshot must be valid.
+
+Each passive system validates its own data before execution.
+
+---
+
+# Edge Cases
+
+## Zero Elapsed Time
+
+No progression occurs.
+
+---
+
+## Empty Queues
+
+The system skips resolution.
+
+---
+
+## Queue Completed Early
+
+Unused elapsed time is discarded unless additional queued tasks exist.
+
+---
+
+## Inventory Full
+
+Completed outputs remain inside the originating system.
+
+---
+
+## Server Restart
+
+No impact.
+
+Elapsed time is recalculated normally at next login.
+
+---
+
+## Long Absence
+
+Elapsed time is calculated normally.
+
+Each passive system applies its own progression rules and limitations.
+
+The Background Progression System does not impose a global cap.
+
+---
+
+## Failed Passive System
+
+Only that system reports failure.
+
+Other systems continue.
+
+---
+
+# Analytics
+
+Recommended metrics:
+
+- Average Offline Duration
+- Average Completed Crafts
+- Average Completed Refinements
+- Average Completed Worker Jobs
+- Background Resolution Time
+- Queue Completion Rate
+- Reward Claim Delay
+
+---
+
+# Security
+
+The Background Progression System prevents:
+
+- Local timer manipulation
+- Timestamp spoofing
+- Duplicate completion
+- Double reward generation
+- Client-side progression
+- Fake offline duration
+
+---
+
+# Future Extensions
+
+The architecture supports:
+
+- Passive Farming
+- Passive Animal Breeding
+- Passive Resource Generators
+- Passive Research
+- Passive Expeditions
+- Passive Guild Projects
+
+Each future system owns its own progression logic.
+
+---
+
+# Explicitly Excluded from V1
+
+V1 does not include:
+
+- Offline Combat
+- Offline Exploration
+- Offline Loot
+- Offline Experience
+- Offline Weapon Masteries
+- Offline AI Simulation
+- Local Background Progression
+- Client Time Simulation
+- Universal Reward Storage
+
+---
+
+# System Relationships
+
+The Background Progression System interacts with:
+
+- Authentication System
+- Save System
+- Worker System
+- Crafting System
+- Refining System
+- Player Island System
+- Notification System
+- Analytics System
+
+---
+
+# Summary
+
+The Background Progression System resolves passive activities while the player is disconnected using a fully server-authoritative, elapsed-time model.
+
+Only passive systems such as Workers, Crafting, Refining, Island Construction, and future passive productions continue progressing. Combat, exploration, loot, experience, and Weapon Masteries always require an active session.
+
+When the player reconnects, the server calculates the elapsed time once, delegates resolution to each passive system, updates the save, and allows each system to retain ownership of its rewards and queues. Completed outputs remain within their originating systems if they cannot immediately be collected.
+
+This architecture is deterministic, scalable, secure, and perfectly aligned with the game's online-only philosophy.
+
+DOCUMENT TERMINÉ

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "world_hud_default",
+  "kind": "world_hud",
+  "healthBar": {
+    "defaultWidth": 132,
+    "height": 11,
+    "offsetY": 132,
+    "backgroundColor": "#171c28",
+    "borderColor": "#30384a",
+    "borderWidth": 2,
+    "backgroundDepth": 10,
+    "fillDepth": 11,
+    "lowerGradient": ["#c43e3e", "#c8a84e"],
+    "upperGradient": ["#c88a00", "#4e8a4e"]
+  },
+  "valueText": {
+    "offsetY": 16,
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": 12,
+    "fontStyle": "bold",
+    "color": "#f2f4f8",
+    "strokeColor": "#10131c",
+    "strokeThickness": 3,
+    "depth": 12
+  },
+  "actorLabel": {
+    "offsetY": 78,
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": 13,
+    "fontStyle": "bold",
+    "playerColor": "#b7c5d6",
+    "enemyColor": "#e0a5aa",
+    "letterSpacing": 1,
+    "depth": 10
+  }
+}

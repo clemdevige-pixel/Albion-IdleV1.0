@@ -1,0 +1,272 @@
+## ALBION IDLE — CHARACTER SYSTEM
+
+**Document type:** System Specification
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Core Gameplay System
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Dependencies:** `06_GLOSSARY.txt`, `03_DESIGN_CONSTRAINTS.txt`, `04_VERTICAL_SLICE_SCOPE.txt`
+
+---
+
+# 1. PURPOSE
+
+The Character System defines the persistent player-controlled Hero.
+
+Its responsibility is limited to:
+
+* representing the Hero's persistent state;
+* exposing the data required by other gameplay systems;
+* remaining independent from combat, crafting, inventory and progression logic.
+
+It does **not** define how combat works or how masteries are calculated.
+
+---
+
+# 2. RESPONSIBILITIES
+
+The Character System owns:
+
+* Hero identity;
+* persistent state;
+* equipped loadout reference;
+* current statistics;
+* unlocked progression references;
+* current activity reference.
+
+It does **not** own:
+
+* combat rules;
+* inventory rules;
+* mastery calculations;
+* crafting;
+* gathering;
+* loot;
+* save serialization.
+
+---
+
+# 3. DESIGN PRINCIPLES
+
+The Hero is:
+
+* unique;
+* persistent;
+* classless;
+* never recreated;
+* never replaced.
+
+The player always controls the same Hero throughout the save.
+
+---
+
+# 4. CHARACTER PROGRESSION
+
+## Global Level
+
+There is **no global character level**.
+
+The Hero never gains:
+
+* Character XP;
+* Level 2;
+* Level 20;
+* Attribute points from leveling.
+
+---
+
+## Permanent Progression
+
+Permanent progression comes **only** from Masteries.
+
+Masteries are defined in the Mastery System.
+
+The Character System only references the Hero's mastery state.
+
+---
+
+## Combat Growth
+
+Combat effectiveness is obtained through:
+
+* equipped items;
+* mastery progression;
+* player preparation.
+
+The Character itself does not accumulate permanent power independently.
+
+---
+
+# 5. CHARACTER STATE
+
+The Character owns references to:
+
+* equipped loadout;
+* mastery state;
+* inventory;
+* current activity;
+* progression state.
+
+It also stores runtime values such as:
+
+* current health;
+* current activity status.
+
+The detailed persistence format is defined by the Save System.
+
+---
+
+# 6. EQUIPMENT SLOTS
+
+The Hero has the following equipment slots:
+
+* Weapon
+* Head
+* Chest
+* Boots
+* Cape
+
+Only compatible equipment may occupy a slot.
+
+Slot validation belongs to the Equipment System.
+
+---
+
+# 7. CHARACTER STATISTICS
+
+For the Vertical Slice, the Character exposes only the following core statistics:
+
+* Health Points (HP)
+* Damage
+* Defense
+
+Additional statistics may be introduced later through dedicated specifications.
+
+The Character System does not define how these values are calculated.
+
+---
+
+# 8. HEALTH
+
+Health is the only mutable core combat statistic owned directly by the Character during gameplay.
+
+The Character stores:
+
+* current health;
+* maximum health (derived value).
+
+Combat determines how health changes.
+
+---
+
+# 9. CHARACTER IDENTITY
+
+Every save contains exactly one Hero.
+
+The Hero has:
+
+* one persistent identity;
+* one persistent progression;
+* one persistent equipment configuration.
+
+The project does not support:
+
+* multiple heroes;
+* alternate characters;
+* party members.
+
+---
+
+# 10. CURRENT ACTIVITY
+
+The Character references the currently configured Activity.
+
+Examples include:
+
+* combat farming;
+* gathering;
+* refining;
+* crafting.
+
+Only one primary activity may be active at a time during the Vertical Slice.
+
+Activity execution belongs to the Activity and Offline systems.
+
+---
+
+# 11. SYSTEM INTERACTIONS
+
+The Character System exchanges information with:
+
+* Inventory System
+* Equipment System
+* Combat System
+* Mastery System
+* Activity System
+* Save System
+
+It does not become responsible for their internal rules.
+
+---
+
+# 12. EVENTS
+
+The Character System must be capable of reacting to events such as:
+
+* equipment changed;
+* mastery updated;
+* activity changed;
+* health changed;
+* death;
+* save loaded.
+
+The handling of these events belongs to the consuming systems.
+
+---
+
+# 13. VALIDATION RULES
+
+The following conditions must always remain true:
+
+* exactly one Hero exists per save;
+* the Hero has no class;
+* the Hero has no global level;
+* progression is exclusively provided by Masteries;
+* only defined equipment slots may contain equipment;
+* statistics cannot exist without the Character.
+
+---
+
+# 14. TESTS
+
+Minimum required tests:
+
+* create new Hero;
+* default state is valid;
+* Hero owns the expected equipment slots;
+* no global level exists;
+* mastery references can be attached;
+* current health is initialized correctly;
+* only one active activity is allowed;
+* equipment changes do not recreate the Hero.
+
+---
+
+# 15. OUT OF SCOPE
+
+This document intentionally excludes:
+
+* statistic formulas;
+* mastery calculations;
+* equipment bonuses;
+* combat resolution;
+* inventory implementation;
+* save format;
+* offline simulation;
+* ability management.
+
+These are specified in their respective system documents.
+
+---
+
+# END OF DOCUMENT

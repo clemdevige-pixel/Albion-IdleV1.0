@@ -1,0 +1,578 @@
+# 40. MASTERY DATA
+
+---
+
+# Purpose
+
+The Mastery Data document defines every Mastery progression available in the game.
+
+Masteries represent the player's long-term progression.
+
+Unlike traditional RPGs, the game has **no Character Level**.
+
+Instead, progression is driven entirely by individual Masteries.
+
+Each Mastery defines:
+
+- Progression track
+- Experience requirements
+- Maximum Level
+- Unlocks
+- Passive bonuses
+- Equipment requirements
+
+This document defines the structure of Masteries.
+
+It does **not** define:
+
+- Experience rewards
+- Combat statistics
+- Equipment
+- Runtime progression
+- UI presentation
+
+---
+
+# Design Philosophy
+
+The Mastery system follows seven principles.
+
+---
+
+## Horizontal Progression
+
+Each Mastery progresses independently.
+
+Increasing one Mastery never increases another.
+
+---
+
+## No Character Level
+
+Version 1 contains no global player level.
+
+Masteries are the only permanent progression system.
+
+---
+
+## Data Driven
+
+Every Mastery is entirely defined through data.
+
+Adding a new Mastery never requires gameplay code.
+
+---
+
+## Deterministic
+
+Experience requirements are predefined.
+
+Progression never relies on randomness.
+
+---
+
+## Modular
+
+Masteries reference existing systems.
+
+Examples:
+
+- Weapons
+- Recipes
+- Buildings
+- Gathering Professions
+
+---
+
+## Independent
+
+Every Mastery is completely independent.
+
+There is no inheritance between Masteries.
+
+---
+
+## Extensible
+
+Future Mastery categories may be added without modifying existing definitions.
+
+---
+
+# Responsibilities
+
+Mastery Data defines:
+
+- Identity
+- Category
+- Maximum Level
+- Experience Table
+- Unlocks
+- Passive Bonuses
+- Equipment Requirements
+- Tags
+
+Mastery Data does NOT define:
+
+- Current Player XP
+- Current Level
+- Runtime Bonuses
+- Combat Statistics
+- UI
+
+---
+
+# Mastery Definition
+
+Every Mastery contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Category
+
+↓
+
+Maximum Level
+
+↓
+
+Experience Table
+
+↓
+
+Unlocks
+
+↓
+
+Passive Bonuses
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Mastery owns one globally unique identifier.
+
+Examples:
+
+```
+mastery_sword
+
+mastery_axe
+
+mastery_bow
+
+mastery_mining
+
+mastery_smelting
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Sword Mastery
+
+Bow Mastery
+
+Mining Mastery
+
+Cooking Mastery
+```
+
+---
+
+# Categories
+
+Version 1 supports:
+
+- Weapon
+- Gathering
+- Refining
+- Crafting
+
+Future versions may introduce:
+
+- Mounts
+- Fishing
+- Alchemy
+
+---
+
+# Maximum Level
+
+Each Mastery defines its maximum level.
+
+Version 1:
+
+```
+100
+```
+
+The limit is configurable.
+
+---
+
+# Experience Table
+
+Every Mastery references one Experience Table.
+
+Example:
+
+```
+xp_table_mastery_standard
+```
+
+Experience Tables are shared between multiple Masteries.
+
+---
+
+# Passive Bonuses
+
+Each Mastery may grant passive bonuses.
+
+Examples:
+
+- Damage
+- Defense
+- Gathering Speed
+- Crafting Speed
+- Refining Efficiency
+
+Bonuses reference Effect Definitions.
+
+---
+
+# Unlocks
+
+Masteries may unlock:
+
+- Equipment
+- Recipes
+- Buildings
+- Worker Tiers
+
+Example:
+
+```
+Level 20
+
+↓
+
+Unlock
+
+↓
+
+T4 Sword Equipment
+```
+
+---
+
+# Equipment Requirements
+
+Equipment references Mastery requirements.
+
+Example:
+
+```
+T6 Claymore
+
+↓
+
+Requires
+
+↓
+
+Sword Mastery 60
+```
+
+Mastery Definitions never reference specific Items directly.
+
+Unlock relationships remain modular.
+
+---
+
+# Overflow Experience
+
+When a Mastery reaches its maximum level:
+
+- Additional Experience is accepted.
+- Overflow Experience is stored.
+- Overflow does not increase the level.
+- Future content may consume Overflow Experience.
+
+Overflow behavior is defined by the Progression System.
+
+---
+
+# Experience Sources
+
+Experience is awarded externally.
+
+Examples:
+
+- Combat
+- Gathering
+- Crafting
+- Refining
+
+Mastery Definitions never specify Experience rewards.
+
+---
+
+# Runtime Representation
+
+```
+Mastery Definition
+
+↓
+
+Player Progress
+
+↓
+
+Experience Gained
+
+↓
+
+Level Increased
+
+↓
+
+Unlock Granted
+```
+
+Definitions remain immutable.
+
+---
+
+# Tags
+
+Examples:
+
+```
+weapon
+
+combat
+
+crafting
+
+progression
+
+mastery
+```
+
+Tags simplify balancing and debugging.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Experience Table
+- Existing Effect Definitions
+- Existing Unlock References
+- Valid Maximum Level
+- Existing Category
+
+Invalid Masteries never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Prestige Levels
+- Random Bonuses
+- Branching Trees
+- Talent Trees
+- Skill Points
+- Procedural Masteries
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "mastery_sword",
+    "displayName": "Sword Mastery",
+    "category": "Weapon",
+    "maximumLevel": 100,
+    "experienceTableId": "xp_table_mastery_standard",
+    "passiveBonuses": [
+        {
+            "level": 20,
+            "effectId": "effect_bonus_sword_damage"
+        },
+        {
+            "level": 60,
+            "effectId": "effect_bonus_attack_speed"
+        }
+    ],
+    "unlocks": [
+        {
+            "level": 20,
+            "type": "EquipmentTier",
+            "value": "T4"
+        },
+        {
+            "level": 40,
+            "type": "EquipmentTier",
+            "value": "T5"
+        }
+    ],
+    "tags": [
+        "weapon",
+        "combat",
+        "sword"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Mastery Definition
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Player Gains Experience
+
+↓
+
+Update Progress
+
+↓
+
+Check Unlocks
+
+↓
+
+Grant Passive Bonuses
+
+↓
+
+Save Player Data
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Mastery Data document is complete when:
+
+- Every Mastery has a unique identifier.
+- Categories are predefined.
+- Maximum Levels are configurable.
+- Experience Tables are referenced.
+- Passive Bonuses are configurable.
+- Unlocks are configurable.
+- Overflow Experience is supported.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Mastery is completely data-driven.
+
+Rule 02
+
+The game contains no Character Level.
+
+Rule 03
+
+Every Mastery progresses independently.
+
+Rule 04
+
+Experience Tables are referenced externally.
+
+Rule 05
+
+Passive Bonuses are granted through Effect Definitions.
+
+Rule 06
+
+Unlocks are explicit.
+
+Rule 07
+
+Equipment requirements reference Masteries.
+
+Rule 08
+
+Overflow Experience is supported.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Experience rewards are defined by gameplay systems.
+
+Rule 11
+
+Validation prevents invalid Mastery definitions.
+
+Rule 12
+
+Mastery Definitions remain immutable.
+
+Rule 13
+
+Every Mastery may declare its content source.
+
+Rule 14
+
+Future Mastery categories must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Masteries exclusively through identifiers.
+
+---
+
+# Summary
+
+The Mastery Data document defines the complete long-term progression architecture of the game. By replacing traditional character levels with independent Masteries, it enables deep horizontal progression while remaining fully deterministic and data-driven. Through explicit unlocks, shared experience tables and passive bonuses, the system provides a scalable foundation for equipment progression, professions and future gameplay systems without increasing architectural complexity.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

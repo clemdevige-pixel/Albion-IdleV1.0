@@ -1,0 +1,2976 @@
+# 25. AI SYSTEM
+
+---
+
+# Purpose
+
+The AI System controls every autonomous entity in the game.
+
+It is responsible for deciding **what an entity should do**, **when it should do it**, and **how it transitions between behaviors**.
+
+The AI System never performs gameplay actions directly.
+
+Instead, it generates deterministic gameplay intents that are executed by the appropriate systems.
+
+The AI System is responsible for:
+
+- Exploration behavior
+- Target acquisition
+- Movement decisions
+- Combat decisions
+- Ability selection
+- Loot collection
+- Gathering initiation
+- Exploration continuation
+- State transitions
+
+The AI System is NOT responsible for:
+
+- Damage calculations
+- Ability execution
+- Projectile simulation
+- Loot generation
+- Animation playback
+- Visual presentation
+- Audio playback
+
+These responsibilities belong to their dedicated systems.
+
+---
+
+# Design Philosophy
+
+The AI System follows eight fundamental principles.
+
+---
+
+## Shared Architecture
+
+Every autonomous entity uses the exact same AI framework.
+
+Version 1 uses one common AI architecture for:
+
+- Player
+- Animals
+- Elementals
+- Heretics
+- Keepers
+- Morgana
+- Undead
+- Demons
+- Veterans
+- Elites
+- Bosses
+
+Entities differ only through configuration.
+
+The engine never maintains separate Player AI and Enemy AI implementations.
+
+---
+
+## Deterministic
+
+Given identical:
+
+- Simulation Tick
+- Statistics
+- Positions
+- Targets
+- Ability Cooldowns
+- Status Effects
+- AI Profile
+- Encounter
+
+The AI must always produce identical decisions.
+
+Random action selection is forbidden.
+
+Random target selection is forbidden.
+
+All ties are resolved using deterministic priority rules.
+
+---
+
+## Side-Scroller First
+
+The AI is designed specifically for a horizontal side-scrolling game.
+
+Characteristics:
+
+- Horizontal movement only
+- No vertical positioning
+- No jumping
+- No obstacle avoidance
+- No navigation mesh
+- No pathfinding
+
+Movement consists only of advancing or stopping.
+
+This dramatically simplifies AI while improving readability.
+
+---
+
+## One Gameplay Action Per Tick
+
+Each entity may execute **at most one gameplay action** during a Simulation Tick.
+
+Examples:
+
+- Acquire Target
+- Move
+- Basic Attack
+- Cast Ability
+- Gather Resource
+- Collect Loot
+- Continue Exploration
+
+State transitions themselves are not gameplay actions.
+
+---
+
+## State Driven
+
+Behavior is entirely controlled by a Finite State Machine.
+
+Every AI entity always occupies exactly one State.
+
+Behavior changes only through explicit State Transitions.
+
+---
+
+## Data Driven
+
+Behavior is configured through AI Profiles.
+
+Profiles define:
+
+- Allowed States
+- Target Rules
+- Ability Priorities
+- Search Rules
+- Movement Rules
+- Transition Rules
+
+No family-specific behavior is hardcoded.
+
+---
+
+## Modular
+
+The AI communicates with other systems only through requests.
+
+Examples:
+
+AI
+
+↓
+
+Movement Intent
+
+↓
+
+Movement System
+
+or
+
+AI
+
+↓
+
+Ability Intent
+
+↓
+
+Ability System
+
+or
+
+AI
+
+↓
+
+Loot Request
+
+↓
+
+Loot System
+
+The AI never bypasses gameplay systems.
+
+---
+
+## Readability
+
+The player should always understand why an entity is behaving as it is.
+
+Enemy behavior must appear:
+
+- Predictable
+- Logical
+- Consistent
+
+Readable AI is preferred over complex AI.
+
+---
+
+# Responsibilities
+
+The AI System is responsible for:
+
+- Behavior Evaluation
+- State Machine
+- Target Selection
+- Movement Decisions
+- Ability Selection
+- Exploration Decisions
+- Gathering Decisions
+- Loot Collection Decisions
+
+The AI System is NOT responsible for:
+
+- Combat Resolution
+- Damage
+- Status Effects
+- Projectile Logic
+- Animation
+- Camera
+- Sound
+- UI
+
+---
+
+# Simulation Tick
+
+The AI operates using the shared Simulation Tick.
+
+Recommended Version 1 value:
+
+50 milliseconds
+
+Equivalent frequency:
+
+20 updates per second.
+
+The tick duration remains configurable.
+
+Every active entity is evaluated every Simulation Tick.
+
+Different entity types never use different update frequencies.
+
+---
+
+# Evaluation Order
+
+AI evaluation must always occur in deterministic order.
+
+Recommended order:
+
+1. Player
+2. Active Enemies
+3. Other autonomous entities
+
+Enemy order should use:
+
+- Stable Entity ID
+
+Never:
+
+- Rendering order
+- Camera order
+- Memory address
+- Object hierarchy
+
+Evaluation order must remain identical between simulations.
+
+---
+
+# AI Evaluation Pipeline
+
+Every Simulation Tick follows the same pipeline.
+
+```
+Validate Entity
+
+↓
+
+Read Current State
+
+↓
+
+Validate Current Target
+
+↓
+
+Evaluate State Transition
+
+↓
+
+Transition?
+
+↓
+
+Yes
+
+↓
+
+Change State
+
+↓
+
+End Evaluation
+
+or
+
+↓
+
+No
+
+↓
+
+Evaluate Gameplay Actions
+
+↓
+
+Select Highest Priority Action
+
+↓
+
+Execute One Gameplay Action
+
+↓
+
+End Evaluation
+```
+
+Only one gameplay action may occur.
+
+---
+
+# Global Simulation Order
+
+The AI participates in the shared gameplay simulation.
+
+Recommended order:
+
+1. Entity Creation
+2. Entity Removal
+3. AI Evaluation
+4. Movement
+5. Ability Resolution
+6. Projectile Simulation
+7. Damage Resolution
+8. Healing
+9. Status Effects
+10. Death Resolution
+11. Loot Generation
+12. Cooldowns
+13. Durations
+14. End Tick
+
+The AI never skips this order.
+
+---
+
+# Finite State Machine
+
+Version 1 supports eight states.
+
+- Spawn
+- Idle
+- Searching
+- Moving
+- Combat
+- Gathering
+- Looting
+- Continue Exploring
+- Dead
+
+Every autonomous entity uses this framework.
+
+Not every entity necessarily uses every state.
+
+---
+
+# Player State Flow
+
+The Player normally follows this loop.
+
+```
+Spawn
+
+↓
+
+Idle
+
+↓
+
+Searching
+
+↓
+
+Moving
+
+↓
+
+Combat
+
+↓
+
+Looting
+
+↓
+
+Searching
+
+↓
+
+Gathering (optional)
+
+↓
+
+Continue Exploring
+
+↓
+
+Searching
+```
+
+This loop repeats continuously.
+
+---
+
+# Enemy State Flow
+
+Enemies use a simplified loop.
+
+```
+Spawn
+
+↓
+
+Idle
+
+↓
+
+Searching
+
+↓
+
+Moving
+
+↓
+
+Combat
+
+↓
+
+Dead
+```
+
+Enemies never:
+
+- Gather
+- Collect Loot
+- Continue Exploration
+
+---
+
+# Spawn State
+
+Spawn initializes a newly created entity.
+
+Responsibilities:
+
+- Validate Definition
+- Validate Statistics
+- Validate AI Profile
+- Initialize Runtime Data
+- Initialize Targets
+- Initialize State Data
+
+Spawn performs no gameplay action.
+
+When initialization succeeds:
+
+```
+Spawn
+
+↓
+
+Idle
+```
+
+Invalid entities are safely removed.
+
+---
+
+# Idle State
+
+Idle represents an inactive but ready entity.
+
+Idle performs no gameplay action.
+
+It only evaluates whether the entity may begin autonomous behavior.
+
+Player:
+
+```
+Idle
+
+↓
+
+Searching
+```
+
+Enemy:
+
+```
+Idle
+
+↓
+
+Searching
+```
+
+Idle may later support:
+
+- Dialogues
+- Cutscenes
+- Boss introductions
+
+Version 1 uses it only as a synchronization state.
+
+---
+
+# Searching State
+
+Searching identifies a valid combat target.
+
+Searching performs exactly one gameplay action:
+
+Acquire Target.
+
+Player target rules:
+
+- Hostile
+- Alive
+- Active
+- Same Encounter
+- Targetable
+
+Priority:
+
+Nearest Living Enemy.
+
+Tie-breaker:
+
+1. Lowest Distance
+2. Lowest Encounter Slot
+3. Lowest Stable Entity ID
+
+Enemy rules:
+
+Always target the Player.
+
+No threat system exists.
+
+No aggro exists.
+
+No ally targeting exists.
+
+---
+
+# Searching Results
+
+Target Found
+
+```
+Searching
+
+↓
+
+Moving
+```
+
+No Target
+
+Player:
+
+```
+Searching
+
+↓
+
+Continue Exploring
+```
+
+Enemy:
+
+```
+Searching
+
+↓
+
+Idle
+```
+
+Searching never:
+
+- Moves
+- Attacks
+- Casts Abilities
+- Collects Loot
+
+---
+
+# Moving State
+
+Moving exists solely to reach combat range.
+
+Movement occurs only on the horizontal axis.
+
+There is no pathfinding.
+
+The AI generates a Movement Intent.
+
+The Movement System resolves movement.
+
+Movement stops immediately when:
+
+- A valid Ability becomes available.
+- Basic Attack becomes available.
+
+Then:
+
+```
+Moving
+
+↓
+
+Combat
+```
+
+Movement also ends if:
+
+- Target dies.
+- Encounter ends.
+- Entity dies.
+
+---
+
+# Combat Engagement Range
+
+Entities move until at least one offensive action becomes valid.
+
+Priority:
+
+Highest Priority Ability
+
+↓
+
+Basic Attack
+
+Combat Engagement Range is therefore dynamic.
+
+If no Ability is available:
+
+Combat Engagement Range equals Basic Attack Range.
+
+---
+# Combat State
+
+Combat evaluates every offensive action available to the entity.
+
+Combat itself never applies damage.
+
+Instead it generates an Ability Intent.
+
+The Ability System performs the execution.
+
+---
+
+# Combat Responsibilities
+
+Combat is responsible for:
+
+- Validate Target
+- Validate Status Restrictions
+- Evaluate Ability Priorities
+- Evaluate Ability Conditions
+- Evaluate Cooldowns
+- Select One Ability
+- Generate Ability Intent
+
+Combat never:
+
+- Deals Damage
+- Creates Projectiles
+- Applies Status Effects
+- Reduces Health
+
+---
+
+# Ability Evaluation
+
+Abilities are evaluated using deterministic priority.
+
+Example:
+
+Priority 1
+
+Ultimate Ability
+
+↓
+
+Priority 2
+
+Weapon Ability
+
+↓
+
+Priority 3
+
+Basic Attack
+
+The first valid Ability is always selected.
+
+Random Ability selection is forbidden.
+
+---
+
+# Ability Conditions
+
+An Ability is considered valid only if every condition succeeds.
+
+Examples:
+
+- Target in Range
+- Cooldown Ready
+- Entity Alive
+- Target Alive
+- Ability Unlocked
+- Entity not Stunned
+- Entity not Silenced
+- Target Targetable
+
+If one condition fails:
+
+The AI evaluates the next Ability.
+
+---
+
+# Basic Attack
+
+Basic Attack is always the fallback action.
+
+Priority:
+
+All Active Abilities
+
+↓
+
+Basic Attack
+
+If Basic Attack is unavailable because the target is too far:
+
+```
+Combat
+
+↓
+
+Moving
+```
+
+---
+
+# Ability Intent
+
+Combat produces an Ability Intent.
+
+Example:
+
+```
+Entity
+
+↓
+
+Ability ID
+
+↓
+
+Target
+
+↓
+
+Simulation Tick
+
+↓
+
+Priority
+
+↓
+
+Ability Intent
+```
+
+The Ability System validates the request.
+
+Only then is the Ability executed.
+
+---
+
+# Combat Restrictions
+
+Combat executes exactly one gameplay action.
+
+Examples:
+
+Allowed
+
+- Cast Ability
+
+Allowed
+
+- Basic Attack
+
+Forbidden
+
+- Ability
+- Basic Attack
+
+during the same Simulation Tick.
+
+---
+
+# Combat Exit Conditions
+
+Combat ends when:
+
+- Target Dies
+- Entity Dies
+- Target becomes Invalid
+- Target leaves the Encounter
+
+Target Dead:
+
+Player
+
+```
+Combat
+
+↓
+
+Looting
+```
+
+Enemy
+
+```
+Combat
+
+↓
+
+Idle
+```
+
+---
+
+# Looting State
+
+Looting automatically collects rewards.
+
+Only the Player enters this state.
+
+Enemies never collect Loot.
+
+---
+
+# Loot Collection
+
+Looting performs exactly one gameplay action.
+
+Collect Loot Package.
+
+Each defeated Enemy produces one Loot Package.
+
+A package may contain:
+
+- Silver
+- Equipment
+- Resources
+- Materials
+
+Collection is atomic.
+
+---
+
+# Loot Feed
+
+After collection:
+
+- Inventory Updated
+- Silver Updated
+- Resource Storage Updated
+- Loot Feed Updated
+
+The AI only requests collection.
+
+The Loot System performs storage.
+
+---
+
+# Multiple Loot Packages
+
+If multiple enemies died:
+
+Loot Packages are collected one by one.
+
+Priority:
+
+Lowest Encounter Slot
+
+↓
+
+Lowest Entity ID
+
+↓
+
+Creation Order
+
+This guarantees deterministic results.
+
+---
+
+# Loot Completion
+
+If Loot remains:
+
+Remain in Looting.
+
+If Loot is finished:
+
+```
+Looting
+
+↓
+
+Searching
+```
+
+If no Enemy remains:
+
+```
+Searching
+
+↓
+
+Gathering
+
+(optional)
+
+or
+
+↓
+
+Continue Exploring
+```
+
+---
+
+# Gathering State
+
+Version 1 introduces a dedicated Gathering State.
+
+Gathering only occurs after defeating Resource Enemies.
+
+Examples:
+
+- Animals
+- Elementals
+
+Combat Enemies never trigger Gathering.
+
+---
+
+# Gathering Responsibilities
+
+Gathering requests resource harvesting.
+
+The Gathering System performs:
+
+- Resource Generation
+- Tool Validation
+- Resource Yield
+- Mastery XP
+
+The AI never creates resources.
+
+---
+
+# Gathering Flow
+
+```
+Enemy Dies
+
+↓
+
+Gathering Node Appears
+
+↓
+
+Gathering
+
+↓
+
+Resources Collected
+
+↓
+
+Node Removed
+
+↓
+
+Continue Exploring
+```
+
+---
+
+# Gathering Restrictions
+
+During Gathering the Player cannot:
+
+- Move
+- Attack
+- Cast Abilities
+- Continue Exploration
+
+Gathering always completes before progression resumes.
+
+---
+
+# Continue Exploring State
+
+Continue Exploring advances the Hero to the next Encounter.
+
+Only the Player enters this state.
+
+Enemies never explore.
+
+---
+
+# Exploration Request
+
+Continue Exploring performs exactly one gameplay action.
+
+Generate Exploration Request.
+
+The Exploration System handles:
+
+- Segment Generation
+- Encounter Generation
+- Enemy Placement
+- Resource Encounter Placement
+- Zone Progression
+
+The AI never generates the world directly.
+
+---
+
+# Zone Segment Flow
+
+Each Zone Segment contains:
+
+Encounter 1
+
+↓
+
+Encounter 2
+
+↓
+
+Encounter 3
+
+↓
+
+Encounter 4
+
+↓
+
+Boss Encounter
+
+↓
+
+Next Zone Segment
+
+The Player automatically advances after all required actions are complete.
+
+---
+
+# Manual Exploration Stop
+
+The Player may disable Auto Exploration.
+
+If disabled:
+
+```
+Continue Exploring
+
+↓
+
+Idle
+```
+
+Combat is always completed before stopping.
+
+Pending Loot and Gathering also finish before stopping.
+
+---
+
+# New Encounter
+
+When a new Encounter has been generated:
+
+```
+Continue Exploring
+
+↓
+
+Searching
+```
+
+Target acquisition begins during the next Simulation Tick.
+
+---
+
+# Dead State
+
+Dead is the terminal state.
+
+Dead has the highest transition priority.
+
+No entity may leave Dead during Version 1.
+
+---
+
+# Dead Responsibilities
+
+Entering Dead:
+
+- Clear Target
+- Cancel Movement Intent
+- Cancel Ability Intent
+- Emit Death Event
+- Trigger Loot Generation
+- Queue Entity Removal
+
+Dead entities perform no AI actions.
+
+---
+
+# Player Death
+
+When the Player dies:
+
+- Combat Stops
+- Exploration Stops
+- Gathering Stops
+- Looting Stops
+
+The defeat flow begins.
+
+Recovery belongs to the Progression System.
+
+---
+
+# Enemy Death
+
+When an Enemy dies:
+
+- Combat Ends
+- Loot is Generated
+- Resource Node may Appear
+- Entity becomes Untargetable
+- Entity waits for safe removal
+
+---
+
+# State Priority
+
+Transitions always follow fixed priority.
+
+1. Self Dead
+2. Invalid Entity
+3. Invalid Target
+4. Encounter End
+5. Status Restrictions
+6. State Completion
+7. Target Found
+8. Target In Range
+9. No Target
+10. Stay in Current State
+
+Death always overrides every other transition.
+
+---
+
+# One Transition Rule
+
+Only one transition may occur during one AI evaluation.
+
+Forbidden:
+
+```
+Combat
+
+↓
+
+Looting
+
+↓
+
+Searching
+
+↓
+
+Continue Exploring
+```
+
+during the same Simulation Tick.
+
+Every transition occurs independently.
+
+---
+# Target System
+
+Every AI entity may store exactly one Current Target.
+
+Target acquisition is deterministic.
+
+The AI never targets randomly.
+
+Version 1 does not include:
+
+- Threat Tables
+- Aggro
+- Taunt
+- Threat Decay
+- Healing Aggro
+- Group Targeting
+
+---
+
+# Target Data
+
+Each AI Runtime stores:
+
+- Current Target
+- Target Acquisition Tick
+- Target Distance
+- Target Validity
+- Last Target
+- Last Target Loss Reason
+
+This information is used only for decision making.
+
+---
+
+# Target Validation
+
+Before every gameplay action, the Current Target is validated.
+
+A target becomes invalid when:
+
+- Dead
+- Removed
+- Untargetable
+- Different Encounter
+- Different Zone Segment
+- Combat Finished
+
+Invalid targets are immediately cleared.
+
+---
+
+# Player Target Selection
+
+The Player always targets the nearest hostile enemy.
+
+Priority:
+
+Nearest Enemy
+
+↓
+
+Lowest Encounter Slot
+
+↓
+
+Lowest Stable Entity ID
+
+The Player never voluntarily switches target.
+
+A new target is selected only when the current one becomes invalid.
+
+---
+
+# Enemy Target Selection
+
+Enemies always target the Player.
+
+Version 1 contains only one Player.
+
+Enemies therefore never need:
+
+- Threat Evaluation
+- Priority Lists
+- Ally Protection
+- Target Competition
+
+Future multiplayer support may extend these rules.
+
+---
+
+# Target Lock
+
+Once a valid target has been acquired, it remains locked.
+
+The AI does not continuously search for a closer target.
+
+Benefits:
+
+- Stable combat
+- Predictable behavior
+- Lower CPU usage
+- Better visual readability
+
+---
+
+# Area Abilities
+
+Area Abilities still require a primary target.
+
+Example:
+
+Current Target
+
+↓
+
+Area Center
+
+↓
+
+Ability System
+
+↓
+
+Secondary Targets
+
+The AI selects only the primary target.
+
+The Ability System determines every affected entity.
+
+---
+
+# Ability System Integration
+
+The AI never executes Abilities directly.
+
+Instead it requests an Ability Activation.
+
+The Ability System validates:
+
+- Cooldown
+- Conditions
+- Resources
+- Target
+- Range
+
+Only then is the Ability executed.
+
+---
+
+# Ability Priority
+
+Each Ability possesses an AI Priority.
+
+Example:
+
+Priority 1
+
+Execute
+
+↓
+
+Priority 2
+
+Heavy Strike
+
+↓
+
+Priority 3
+
+Basic Attack
+
+The first valid Ability is always selected.
+
+---
+
+# Passive Abilities
+
+Passive Abilities never require AI decisions.
+
+They activate automatically through the Ability System.
+
+The AI simply reacts to their effects.
+
+---
+
+# Ability Failure
+
+An Ability may fail after the AI has selected it.
+
+Examples:
+
+- Target died
+- Target moved
+- Cooldown changed
+- Entity became Stunned
+
+When this occurs:
+
+No replacement Ability is selected.
+
+The AI waits until the next Simulation Tick.
+
+This preserves determinism.
+
+---
+
+# Status Effect Integration
+
+The AI reads Status Effects.
+
+It never applies them.
+
+Status resolution belongs entirely to the Status Effect System.
+
+---
+
+# Stun
+
+Stun prevents every gameplay action.
+
+While Stunned an entity:
+
+- Cannot Move
+- Cannot Attack
+- Cannot Gather
+- Cannot Loot
+- Cannot Continue Exploring
+
+The AI still evaluates transitions.
+
+---
+
+# Root
+
+Root prevents movement only.
+
+A Rooted entity may:
+
+- Attack
+- Cast Abilities
+- Continue Combat
+
+If no Ability is currently in range:
+
+The entity simply waits.
+
+---
+
+# Silence
+
+Silence prevents Active Abilities.
+
+Basic Attacks remain available.
+
+If every Active Ability is blocked:
+
+The AI immediately falls back to Basic Attack.
+
+---
+
+# Slow
+
+Slow reduces Movement Speed.
+
+The AI continues requesting movement normally.
+
+The Movement System applies the modified speed.
+
+---
+
+# Buffs & Debuffs
+
+Buffs and Debuffs modify statistics.
+
+Examples:
+
+- Damage
+- Armor
+- Attack Speed
+- Cooldown Reduction
+
+The AI always reads the resolved statistics.
+
+It never calculates modifiers itself.
+
+---
+
+# Movement Intent
+
+The AI never changes Position.
+
+Instead it generates a Movement Intent.
+
+Movement Intent contains:
+
+- Entity
+- Direction
+- Destination
+- Stop Range
+- Tick
+
+The Movement System performs the movement.
+
+---
+
+# Ability Intent
+
+Ability Intent contains:
+
+- Entity
+- Ability
+- Target
+- Tick
+- Reason
+
+The Ability System validates the request before execution.
+
+---
+
+# AI Profiles
+
+Behavior is configured through reusable AI Profiles.
+
+Examples:
+
+- Player Auto Combat
+- Standard Melee Enemy
+- Standard Ranged Enemy
+- Stationary Enemy
+- Boss
+
+Profiles allow hundreds of enemies to share the same AI.
+
+Only configuration changes.
+
+---
+
+# AI Profile Data
+
+Typical profile fields:
+
+- Allowed States
+- Initial State
+- Search Range
+- Target Rules
+- Can Move
+- Can Attack
+- Can Gather
+- Can Loot
+- Ability Priorities
+- Transition Rules
+
+Profiles contain no gameplay code.
+
+---
+
+# Player AI Profile
+
+The Player Profile supports:
+
+- Automatic Combat
+- Automatic Loot
+- Automatic Gathering
+- Automatic Exploration
+
+The Player never:
+
+- Auto Equip Items
+- Auto Salvage
+- Auto Sell
+- Auto Change Build
+
+Equipment decisions always remain manual.
+
+---
+
+# Enemy AI Profiles
+
+Enemies use specialized configurations.
+
+Examples:
+
+Standard Melee
+
+- Close Range
+- High Movement
+
+Standard Ranged
+
+- Long Range
+- Stops Earlier
+
+Stationary
+
+- No Movement
+- Long Range Abilities
+
+Boss
+
+- Larger Ability Set
+- Higher Priorities
+- Additional Cooldowns
+
+All use the same FSM.
+
+---
+
+# Family Configuration
+
+Enemy Families modify AI only through configuration.
+
+Examples:
+
+Animals
+
+- Fast Movement
+- Leap Ability
+
+Keepers
+
+- Defensive Abilities
+
+Morgana
+
+- Magic
+- Debuffs
+
+Undead
+
+- Durable
+- Attrition
+
+Demons
+
+- High Damage
+
+No family receives unique AI code.
+
+---
+
+# Runtime Data
+
+Each AI entity stores runtime information.
+
+Examples:
+
+- Current State
+- Previous State
+- Current Target
+- Last Action
+- Last Transition
+- AI Enabled
+- Pending Exploration Stop
+- Pending Loot
+- Pending Gathering
+
+Runtime data never modifies AI rules.
+
+It only stores current state.
+
+---
+# AI Events
+
+The AI System emits deterministic events whenever important decisions occur.
+
+Events allow other systems to react without creating direct dependencies.
+
+Typical subscribers include:
+
+- Combat System
+- UI System
+- Audio System
+- VFX System
+- Analytics
+- Statistics
+- Achievements
+- Quest System
+
+The AI System never directly calls these systems.
+
+---
+
+# AI Events List
+
+Version 1 supports the following events:
+
+- OnStateChanged
+- OnTargetAcquired
+- OnTargetLost
+- OnMovementRequested
+- OnAbilityRequested
+- OnLootRequested
+- OnGatheringRequested
+- OnExplorationRequested
+- OnEntityDisabled
+
+Every event contains the Simulation Tick that generated it.
+
+---
+
+# State Change Event
+
+Whenever an entity changes State, an event is emitted.
+
+Example payload:
+
+- Entity ID
+- Previous State
+- Current State
+- Transition Reason
+- Simulation Tick
+
+This event is primarily used for:
+
+- Debugging
+- UI
+- Analytics
+
+---
+
+# Target Events
+
+When an entity acquires a target:
+
+```
+Searching
+
+↓
+
+Target Acquired
+
+↓
+
+OnTargetAcquired
+```
+
+When the target becomes invalid:
+
+```
+Target Lost
+
+↓
+
+OnTargetLost
+```
+
+These events never modify gameplay.
+
+---
+
+# Ability Request Event
+
+Whenever the AI requests an Ability:
+
+```
+Combat
+
+↓
+
+Ability Intent
+
+↓
+
+OnAbilityRequested
+```
+
+The Ability may still fail later during validation.
+
+The event only records the AI decision.
+
+---
+
+# Loot Request Event
+
+Whenever Looting begins:
+
+```
+Looting
+
+↓
+
+Loot Request
+
+↓
+
+OnLootRequested
+```
+
+The Loot System validates and executes the request.
+
+---
+
+# Gathering Request Event
+
+When the Player reaches a defeated Resource Enemy:
+
+```
+Gathering
+
+↓
+
+Gather Request
+
+↓
+
+OnGatheringRequested
+```
+
+The Gathering System performs harvesting.
+
+---
+
+# Exploration Request Event
+
+After completing an Encounter:
+
+```
+Continue Exploring
+
+↓
+
+Exploration Request
+
+↓
+
+OnExplorationRequested
+```
+
+The Exploration System generates the next Encounter.
+
+---
+
+# Runtime Validation
+
+The AI continuously validates its runtime data.
+
+Validation includes:
+
+- Current Target
+- Current State
+- AI Profile
+- Entity Status
+- Ability References
+
+Invalid runtime data never crashes gameplay.
+
+---
+
+# Missing AI Profile
+
+If an entity has no valid AI Profile:
+
+Actions:
+
+- Disable AI
+- Log Error
+- Prevent Gameplay Actions
+- Queue Safe Removal if necessary
+
+The simulation continues safely.
+
+---
+
+# Invalid State
+
+If Current State is invalid:
+
+Alive Entity
+
+↓
+
+Idle
+
+Dead Entity
+
+↓
+
+Dead
+
+Development builds report the error.
+
+Release builds recover automatically.
+
+---
+
+# Invalid Target
+
+If the Current Target cannot be resolved:
+
+Actions:
+
+- Clear Target
+- Return to Searching
+- Log Validation Error
+
+Target corruption never blocks gameplay.
+
+---
+
+# Invalid Ability
+
+If an Ability reference is invalid:
+
+- Skip Ability
+- Report Error
+- Continue evaluating remaining Abilities
+
+The AI never stops because one Ability is invalid.
+
+---
+
+# No Valid Action
+
+Sometimes no gameplay action is available.
+
+Examples:
+
+- Stunned
+- Rooted without ranged attacks
+- Waiting for cooldowns
+
+In this case:
+
+The entity simply performs no gameplay action.
+
+It remains in its current State.
+
+This is considered normal behavior.
+
+---
+
+# Data Validation
+
+Every AI Profile is validated during loading.
+
+Validation includes:
+
+- Valid Initial State
+- Allowed States
+- Ability References
+- Target Rules
+- Priority Values
+- Search Configuration
+
+Invalid Profiles are rejected before gameplay begins.
+
+---
+
+# Stationary Validation
+
+Entities that cannot move must always possess a valid offensive Ability.
+
+Otherwise they could become impossible to defeat.
+
+Example:
+
+Movement Speed
+
+0
+
+↓
+
+Basic Attack Range
+
+2m
+
+↓
+
+Player Spawn Distance
+
+8m
+
+↓
+
+Invalid Encounter
+
+Such configurations are rejected during validation.
+
+---
+
+# Forbidden State Transitions
+
+Some transitions are permanently forbidden.
+
+Examples:
+
+Dead
+
+↓
+
+Combat
+
+Looting
+
+↓
+
+Combat
+
+Continue Exploring
+
+↓
+
+Combat
+
+without Searching
+
+Spawn
+
+↓
+
+Combat
+
+These transitions are rejected automatically.
+
+---
+
+# Performance Goals
+
+The AI must remain extremely lightweight.
+
+Version 1 targets:
+
+- One Player
+- One active Encounter
+- Small Enemy Groups
+
+Future versions may increase entity counts.
+
+---
+
+# Runtime Performance
+
+The AI should avoid:
+
+- Memory Allocations
+- String Comparisons
+- Dynamic Collections
+- Expensive Searches
+
+Recommended:
+
+- Stable Arrays
+- Cached Runtime Data
+- Fixed Entity Lists
+
+The goal is deterministic and predictable execution.
+
+---
+
+# Target Search Performance
+
+Version 1 uses simple linear searches.
+
+This is acceptable because:
+
+Only the current Encounter is active.
+
+Typical Encounter sizes remain small.
+
+Future versions may introduce:
+
+- Spatial Partitioning
+- Cached Target Lists
+
+Deterministic ordering must always be preserved.
+
+---
+
+# Inactive Entities
+
+The following entities are excluded from AI evaluation:
+
+- Dead
+- Removed
+- Disabled
+- Outside Active Encounter
+
+Inactive entities consume no AI processing time.
+
+---
+
+# Presentation Independence
+
+AI behavior never depends on:
+
+- FPS
+- Camera Position
+- Screen Visibility
+- Animation State
+- UI
+
+Gameplay simulation remains identical whether the game is rendered or simulated offline.
+
+---
+
+# Debugging Tools
+
+Development builds should expose an AI Inspector.
+
+Typical information:
+
+- Entity ID
+- AI Profile
+- Current State
+- Previous State
+- Current Target
+- Last Action
+- Last Transition
+- Current Cooldowns
+- Active Status Effects
+
+This greatly simplifies balancing.
+
+---
+
+# Tick Inspector
+
+Developers should be able to inspect every Simulation Tick.
+
+Example:
+
+```
+Tick 4120
+
+Entity
+
+Player
+
+State
+
+Combat
+
+Action
+
+Weapon Ability
+
+Reason
+
+Highest Priority Ability Available
+```
+
+This allows deterministic debugging.
+
+---
+
+# State Overlay
+
+Development builds may display the current State above entities.
+
+Examples:
+
+SEARCHING
+
+MOVING
+
+COMBAT
+
+LOOTING
+
+GATHERING
+
+This overlay never appears in release builds.
+
+---
+
+# Decision Logging
+
+The AI supports configurable logging.
+
+Recommended levels:
+
+- Disabled
+- Errors
+- State Changes
+- Actions
+- Full Trace
+
+Full Trace is intended only for debugging.
+
+---
+# Replay & Determinism
+
+One of the primary goals of the AI System is complete determinism.
+
+Given identical inputs, the AI must always produce identical outputs.
+
+Required deterministic inputs include:
+
+- Zone Seed
+- Encounter Generation
+- Entity Statistics
+- AI Profiles
+- Equipment
+- Masteries
+- Active Status Effects
+- Simulation Tick
+
+No uncontrolled randomness is permitted.
+
+---
+
+# Replay Compatibility
+
+Because the AI is deterministic, a complete gameplay replay can be reconstructed from:
+
+- Initial Save State
+- Simulation Tick History
+- Player Inputs
+- World Generation Seed
+
+The engine does not need to record every AI decision.
+
+The AI simply recalculates them.
+
+This dramatically reduces replay storage requirements.
+
+---
+
+# Offline Progression
+
+Offline Progression does **not** execute the complete AI simulation.
+
+Instead, it uses aggregate combat calculations provided by the Background Progression System.
+
+Advantages:
+
+- Extremely fast simulation
+- Low CPU usage
+- Predictable results
+- Minimal battery consumption
+
+The AI System itself is not evaluated tick-by-tick while offline.
+
+---
+
+# Save System Integration
+
+Whenever a save occurs, the AI Runtime stores only the minimum required information.
+
+Recommended fields:
+
+- Current State
+- AI Profile
+- Current Target (if valid)
+- Pending Loot Packages
+- Pending Gathering
+- Pending Exploration Stop
+
+Transient calculations are never saved.
+
+---
+
+# Loading Validation
+
+After loading:
+
+The AI validates:
+
+- Entity exists
+- Current Encounter exists
+- Target still exists
+- AI Profile exists
+- Current State is valid
+
+If validation fails:
+
+Safe fallback rules are applied.
+
+---
+
+# Invalid Restored Target
+
+If the saved target no longer exists:
+
+Actions:
+
+- Clear Target
+- Transition to Searching
+
+The Player immediately resumes autonomous behavior.
+
+---
+
+# Invalid Restored State
+
+If the restored State is invalid:
+
+Alive Entity
+
+↓
+
+Idle
+
+Dead Entity
+
+↓
+
+Dead
+
+This guarantees a recoverable simulation.
+
+---
+
+# AI Runtime Component
+
+Every autonomous entity owns an AI Runtime Component.
+
+Recommended runtime fields:
+
+- AI Profile
+- Current State
+- Previous State
+- Current Target
+- State Enter Tick
+- Last Action
+- Last Transition
+- AI Enabled
+- Pending Loot
+- Pending Gathering
+- Pending Exploration
+
+The runtime contains only temporary simulation data.
+
+---
+
+# State Enter Tick
+
+Each State records the Simulation Tick at which it was entered.
+
+Useful for:
+
+- Debugging
+- Replay Inspection
+- Future Timed Mechanics
+- Analytics
+
+Version 1 does not rely on state timers for gameplay.
+
+---
+
+# Previous State
+
+The previous State is always stored.
+
+Used for:
+
+- Debugging
+- Transition Validation
+- Future Boss Mechanics
+
+The AI never automatically returns to the previous State.
+
+---
+
+# Gameplay Action Categories
+
+Version 1 supports the following gameplay actions:
+
+- Acquire Target
+- Clear Target
+- Move
+- Basic Attack
+- Cast Ability
+- Collect Loot
+- Gather Resource
+- Continue Exploration
+
+Every gameplay action consumes the entity's action for the current Simulation Tick.
+
+---
+
+# Internal Operations
+
+The following are **not** gameplay actions:
+
+- Validate State
+- Validate Target
+- Evaluate Conditions
+- Evaluate Priorities
+- Read Statistics
+- Read Cooldowns
+- Read Status Effects
+- Change State
+
+These operations may all occur during the same evaluation.
+
+---
+
+# One Action Enforcement
+
+Every entity maintains:
+
+```
+HasExecutedGameplayActionThisTick
+```
+
+Beginning of Tick:
+
+False
+
+After Action:
+
+True
+
+Any second gameplay action is automatically rejected.
+
+Development builds should log a warning.
+
+Release builds silently ignore it.
+
+---
+
+# Deterministic Decision Priority
+
+Whenever multiple actions are valid, the AI always evaluates them using the same order.
+
+Searching:
+
+1. Validate Current Target
+2. Acquire Target
+3. Continue Exploring
+
+Moving:
+
+1. Validate Death
+2. Validate Target
+3. Check Combat Range
+4. Request Movement
+
+Combat:
+
+1. Validate Death
+2. Validate Target
+3. Evaluate Status Effects
+4. Evaluate Active Abilities
+5. Evaluate Basic Attack
+6. Return to Moving
+
+Looting:
+
+1. Validate Death
+2. Collect Loot
+3. Finish Looting
+
+Gathering:
+
+1. Validate Resource
+2. Gather
+3. Finish Gathering
+
+Continue Exploring:
+
+1. Validate Auto Exploration
+2. Request Next Encounter
+
+This priority order never changes.
+
+---
+
+# AI Configuration
+
+All behavior is defined through data.
+
+Every AI Profile contains:
+
+- Initial State
+- Allowed States
+- Search Rules
+- Target Rules
+- Ability Priorities
+- Transition Rules
+- Debug Category
+
+Profiles never contain executable gameplay logic.
+
+---
+
+# Base AI Profiles
+
+Version 1 recommends the following reusable profiles:
+
+PlayerAutoCombat
+
+StandardMeleeEnemy
+
+StandardRangedEnemy
+
+StationaryEnemy
+
+BossEnemy
+
+Future profiles may be added without modifying the AI engine.
+
+---
+
+# Boss Compatibility
+
+Bosses use the same AI framework.
+
+Version 1 Bosses differ only through:
+
+- Higher Statistics
+- Larger Ability Set
+- Different Ability Priorities
+
+Bosses do **not** require a separate AI engine.
+
+---
+
+# Future Boss Extensions
+
+The architecture supports future Boss-specific States.
+
+Examples:
+
+- Intro
+- Phase Transition
+- Summoning
+- Invulnerable
+- Enraged
+
+These extend the FSM without replacing it.
+
+---
+
+# Future Multiplayer Compatibility
+
+The architecture intentionally allows future expansion.
+
+Possible additions include:
+
+- Multiple Players
+- Threat System
+- Aggro
+- Healer Targeting
+- Companion AI
+- Pets
+- Summons
+- PvP Bots
+
+These systems should extend the existing architecture.
+
+They must never replace it.
+
+---
+
+# Future AI Features
+
+The following features are intentionally excluded from Version 1 but supported by the architecture:
+
+- Behavior Trees
+- Utility AI
+- Goal-Oriented Planning
+- Patrols
+- Wandering
+- Fleeing
+- Group Tactics
+- Flanking
+- Cover
+- Ally Healing
+- Dynamic Difficulty
+- Adaptive AI
+- Machine Learning
+- Resource Harvesting AI
+- Civilian NPCs
+
+Version 1 remains intentionally simple.
+
+---
+# Version 1 Exclusions
+
+The following features are intentionally excluded from Version 1.
+
+Their omission keeps the AI simple, deterministic and easy to balance.
+
+Excluded features:
+
+- Behavior Trees
+- Utility AI
+- Goal-Oriented Action Planning (GOAP)
+- Machine Learning
+- Adaptive AI
+- Dynamic Difficulty
+- Threat Tables
+- Aggro
+- Taunt
+- Ally Targeting
+- Companion AI
+- Pet AI
+- Formation Movement
+- Patrol Routes
+- Wandering
+- Fleeing
+- Cover System
+- Obstacle Avoidance
+- Navigation Meshes
+- Random Ability Selection
+- Random Target Selection
+- Manual Target Selection
+- PvP AI
+- Civilian NPC AI
+- Dialogue AI
+- Revive Behavior
+- Surrender Behavior
+
+These systems may be introduced in future versions without modifying the core FSM.
+
+---
+
+# Example Player Flow
+
+Typical encounter progression:
+
+```
+Spawn
+
+↓
+
+Idle
+
+↓
+
+Searching
+
+↓
+
+Acquire Target
+
+↓
+
+Moving
+
+↓
+
+Combat
+
+↓
+
+Enemy Defeated
+
+↓
+
+Looting
+
+↓
+
+(Optional)
+
+Gathering
+
+↓
+
+Continue Exploring
+
+↓
+
+Next Encounter
+
+↓
+
+Searching
+```
+
+This loop repeats continuously throughout exploration.
+
+---
+
+# Example Enemy Flow
+
+Enemy behavior is significantly simpler.
+
+```
+Spawn
+
+↓
+
+Idle
+
+↓
+
+Searching
+
+↓
+
+Acquire Player
+
+↓
+
+Moving
+
+↓
+
+Combat
+
+↓
+
+Dead
+```
+
+Enemies never:
+
+- Loot
+- Gather
+- Explore
+- Leave their Encounter
+
+---
+
+# Example Resource Encounter
+
+```
+Player
+
+↓
+
+Ore Elemental
+
+↓
+
+Combat
+
+↓
+
+Ore Elemental Dies
+
+↓
+
+Ore Deposit Appears
+
+↓
+
+Gathering
+
+↓
+
+Ore Collected
+
+↓
+
+Continue Exploring
+```
+
+This creates a seamless transition between combat and gathering.
+
+---
+
+# Example Boss Encounter
+
+```
+Encounter 5
+
+↓
+
+Boss Spawn
+
+↓
+
+Searching
+
+↓
+
+Moving
+
+↓
+
+Combat
+
+↓
+
+Boss Defeated
+
+↓
+
+Looting
+
+↓
+
+Continue Exploring
+
+↓
+
+New Zone Segment
+```
+
+Bosses use the exact same AI framework as every other enemy.
+
+Only their configuration differs.
+
+---
+
+# Acceptance Criteria
+
+The AI System is considered complete for Version 1 when:
+
+- Every autonomous entity uses the shared FSM.
+- All entities begin in the Spawn State.
+- Every active entity is evaluated every Simulation Tick.
+- The Simulation Tick remains configurable.
+- No entity performs more than one gameplay action per tick.
+- State transitions never chain gameplay actions.
+- The Player automatically targets the nearest valid enemy.
+- Target selection is deterministic.
+- Movement is fully automatic.
+- Combat is fully automatic.
+- Ability selection is deterministic.
+- Basic Attack acts as the universal fallback.
+- Loot collection is automatic.
+- Resource gathering is automatic after defeating Resource Enemies.
+- Exploration automatically progresses through Zone Segments.
+- Exploration may be manually paused outside combat.
+- Enemies always target the Player.
+- Enemies use the shared Ability System.
+- Bosses use the same AI architecture.
+- Dead entities never execute AI.
+- Stun, Root, Slow and Silence correctly influence decisions.
+- AI evaluation never depends on rendering.
+- Runtime validation safely handles invalid data.
+- The architecture supports future Boss mechanics and multiplayer extensions.
+
+---
+
+# Immutable Design Rules
+
+The following rules define the AI System and must never change without redesigning the project.
+
+Rule 01
+
+The AI System is entirely deterministic.
+
+Rule 02
+
+Every autonomous entity uses the same Finite State Machine.
+
+Rule 03
+
+Behavior differences come from AI Profiles only.
+
+Rule 04
+
+Every entity may execute at most one gameplay action per Simulation Tick.
+
+Rule 05
+
+State transitions are internal operations.
+
+Rule 06
+
+Combat occurs exclusively on a horizontal axis.
+
+Rule 07
+
+Version 1 uses no pathfinding.
+
+Rule 08
+
+Movement generates Movement Intents only.
+
+Rule 09
+
+Combat generates Ability Intents only.
+
+Rule 10
+
+The AI never directly modifies gameplay systems.
+
+Rule 11
+
+The Player automatically explores the world.
+
+Rule 12
+
+The Player automatically loots defeated enemies.
+
+Rule 13
+
+The Player automatically gathers Resource Enemies.
+
+Rule 14
+
+Enemies never gather resources.
+
+Rule 15
+
+Enemies never collect loot.
+
+Rule 16
+
+Enemies never continue exploration.
+
+Rule 17
+
+Every target selection is deterministic.
+
+Rule 18
+
+Every ability selection is deterministic.
+
+Rule 19
+
+Version 1 contains no random AI decisions.
+
+Rule 20
+
+Version 1 contains no threat system.
+
+Rule 21
+
+Version 1 contains no aggro system.
+
+Rule 22
+
+Version 1 contains no behavior trees.
+
+Rule 23
+
+Version 1 contains no utility AI.
+
+Rule 24
+
+Bosses extend the shared AI instead of replacing it.
+
+---
+
+# Summary
+
+The AI System provides a deterministic, data-driven Finite State Machine shared by every autonomous entity in the game.
+
+Designed specifically for a side-scrolling idle RPG, it controls target acquisition, movement, combat, looting, gathering and exploration while delegating execution to the appropriate gameplay systems through intents. This architecture guarantees predictable behavior, low implementation complexity, efficient offline simulation and excellent scalability.
+
+Version 1 intentionally favors readability, determinism and modularity over complex decision-making, while remaining fully extensible for future additions such as multiplayer, companion AI, advanced Boss mechanics, threat systems and richer behavioral states.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

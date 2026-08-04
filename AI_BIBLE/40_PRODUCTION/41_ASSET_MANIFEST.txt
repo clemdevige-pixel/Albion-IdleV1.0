@@ -1,0 +1,4014 @@
+## CHR-0001
+
+Name:
+Male Adventurer
+
+Category:
+Player Character
+
+Priority:
+P0
+
+Version:
+V1
+
+Description:
+Default male playable character.
+Neutral medieval fantasy appearance.
+Designed to visually support every armor set and weapon family.
+Compact silhouette following the Art Bible.
+
+Animations:
+- Idle
+- Walk
+- Run
+- Attack
+- Cast
+- Gather
+- Hit
+- Death
+- Victory
+
+Status:
+Planned
+
+---
+
+## CHR-0002
+
+Name:
+Female Adventurer
+
+Category:
+Player Character
+
+Priority:
+P0
+
+Version:
+V1
+
+Description:
+Default female playable character.
+Neutral medieval fantasy appearance.
+Designed to visually support every armor set and weapon family.
+Compact silhouette following the Art Bible.
+
+Animations:
+- Idle
+- Walk
+- Run
+- Attack
+- Cast
+- Gather
+- Hit
+- Death
+- Victory
+
+Status:
+Planned
+# ============================================================================
+# WEAPONS
+# ============================================================================
+
+The following weapons define every weapon available in Version 1.
+
+Each weapon exists from Tier 4 to Tier 8.
+
+The visual identity evolves with each tier while preserving the same silhouette.
+
+All weapons follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+# ============================================================================
+# SWORD FAMILY
+# ============================================================================
+
+## WPN-0001
+
+Name:
+Broadsword
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Role:
+Balanced Melee Fighter
+
+Handed:
+One-Handed
+
+Description:
+A classic medieval knight sword with a straight double-edged blade.
+Simple crossguard and leather-wrapped grip.
+Designed as the standard reference sword for the game.
+
+Status:
+Planned
+
+---
+
+## WPN-0002
+
+Name:
+Claymore
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Role:
+Heavy Melee Fighter
+
+Handed:
+Two-Handed
+
+Description:
+A massive two-handed sword with a long blade and oversized crossguard.
+Built for powerful strikes.
+Large silhouette with visible weight.
+
+Status:
+Planned
+
+---
+
+## WPN-0003
+
+Name:
+Carving Sword
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Role:
+Mobile Duelist
+
+Handed:
+One-Handed
+
+Description:
+Elegant curved longsword optimized for speed.
+Light guard.
+Thin blade.
+Fast and agile appearance.
+
+Status:
+Planned
+
+---
+
+## WPN-0004
+
+Name:
+Dual Swords
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Role:
+Fast DPS
+
+Handed:
+Dual-Wield
+
+Description:
+Two matching short swords.
+Slim blades with identical guards.
+Balanced and highly aggressive silhouette.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# AXE FAMILY
+# ============================================================================
+
+## WPN-0005
+
+Name:
+Battle Axe
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Role:
+Bruiser
+
+Handed:
+One-Handed
+
+Description:
+Single-headed battle axe with heavy steel blade.
+Thick wooden handle.
+Compact but brutal appearance.
+
+Status:
+Planned
+
+---
+
+## WPN-0006
+
+Name:
+Greataxe
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Role:
+Area Damage
+
+Handed:
+Two-Handed
+
+Description:
+Huge double-bladed axe.
+Wide cutting edges.
+Long reinforced handle.
+Intimidating silhouette.
+
+Status:
+Planned
+
+---
+
+## WPN-0007
+
+Name:
+Halberd Axe
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Role:
+Reach Fighter
+
+Handed:
+Two-Handed
+
+Description:
+Hybrid between axe and polearm.
+Long shaft with heavy axe head and rear spike.
+
+Status:
+Planned
+
+---
+
+## WPN-0008
+
+Name:
+Bear Paws
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Role:
+Berserker
+
+Handed:
+Dual-Wield
+
+Description:
+Twin claw weapons mounted on armored gauntlets.
+Large curved blades resembling bear claws.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# SPEAR FAMILY
+# ============================================================================
+
+## WPN-0009
+
+Name:
+Spear
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Role:
+Balanced Fighter
+
+Handed:
+Two-Handed
+
+Description:
+Traditional long spear with steel tip.
+Simple and reliable battlefield weapon.
+
+Status:
+Planned
+
+---
+
+## WPN-0010
+
+Name:
+Pike
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Role:
+Long Range Melee
+
+Handed:
+Two-Handed
+
+Description:
+Extremely long spear specialized for distance combat.
+Thin silhouette emphasizing reach.
+
+Status:
+Planned
+
+---
+
+## WPN-0011
+
+Name:
+Glaive
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Role:
+Control Fighter
+
+Handed:
+Two-Handed
+
+Description:
+Decorative polearm with a broad curved blade.
+Elegant military appearance.
+
+Status:
+Planned
+
+---
+
+## WPN-0012
+
+Name:
+Trinity Spear
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Role:
+Elite Fighter
+
+Handed:
+Two-Handed
+
+Description:
+Three-pronged spear with ornate metallic finish.
+Distinctive iconic silhouette.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# BOW FAMILY
+# ============================================================================
+
+## WPN-0013
+
+Name:
+Longbow
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Role:
+Long Range Archer
+
+Handed:
+Two-Handed
+
+Description:
+Tall wooden longbow with simple leather grip.
+Classic medieval archer weapon.
+
+Status:
+Planned
+
+---
+
+## WPN-0014
+
+Name:
+War Bow
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Role:
+Precision Archer
+
+Handed:
+Two-Handed
+
+Description:
+Reinforced combat bow with thicker limbs.
+Military design.
+
+Status:
+Planned
+
+---
+
+## WPN-0015
+
+Name:
+Whispering Bow
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Role:
+Rapid Archer
+
+Handed:
+Two-Handed
+
+Description:
+Elegant enchanted bow decorated with glowing runes.
+Lightweight appearance.
+
+Status:
+Planned
+
+---
+
+## WPN-0016
+
+Name:
+Composite Bow
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Role:
+Versatile Archer
+
+Handed:
+Two-Handed
+
+Description:
+Composite wooden bow reinforced with horn and leather.
+Curved profile.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# CROSSBOW FAMILY
+# ============================================================================
+
+## WPN-0017
+
+Name:
+Light Crossbow
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Role:
+Mobile Ranged
+
+Handed:
+Two-Handed
+
+Description:
+Compact crossbow with wooden frame.
+Fast-loading appearance.
+
+Status:
+Planned
+
+---
+
+## WPN-0018
+
+Name:
+Heavy Crossbow
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Role:
+High Damage
+
+Handed:
+Two-Handed
+
+Description:
+Large reinforced steel crossbow.
+Massive limbs and heavy stock.
+
+Status:
+Planned
+
+---
+
+## WPN-0019
+
+Name:
+Repeating Crossbow
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Role:
+Rapid Fire
+
+Handed:
+Two-Handed
+
+Description:
+Mechanical crossbow equipped with an integrated bolt magazine.
+Complex engineering details.
+
+Status:
+Planned
+
+---
+
+## WPN-0020
+
+Name:
+Siege Crossbow
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Role:
+Armor Breaker
+
+Handed:
+Two-Handed
+
+Description:
+Oversized crossbow designed to launch massive bolts.
+Extremely heavy appearance.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# FIRE STAFF FAMILY
+# ============================================================================
+
+## WPN-0021
+
+Name:
+Fire Staff
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Role:
+Fire Mage
+
+Handed:
+Two-Handed
+
+Description:
+Wooden staff topped with a glowing fire crystal.
+Warm red and orange magical energy.
+
+Status:
+Planned
+
+---
+
+## WPN-0022
+
+Name:
+Infernal Staff
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Role:
+Burst Mage
+
+Handed:
+Two-Handed
+
+Description:
+Dark volcanic staff containing molten crystal.
+Aggressive infernal design.
+
+Status:
+Planned
+
+---
+
+## WPN-0023
+
+Name:
+Wildfire Staff
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Role:
+Area Mage
+
+Handed:
+Two-Handed
+
+Description:
+Natural wooden staff engulfed by magical flames.
+Organic appearance.
+
+Status:
+Planned
+
+---
+
+## WPN-0024
+
+Name:
+Pyromancer Staff
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Role:
+Master Fire Mage
+
+Handed:
+Two-Handed
+
+Description:
+Elegant ceremonial fire staff decorated with golden ornaments and burning crystal.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# FROST STAFF FAMILY
+# ============================================================================
+
+## WPN-0025
+
+Name:
+Frost Staff
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Role:
+Ice Mage
+
+Handed:
+Two-Handed
+
+Description:
+Wooden staff crowned by a large blue crystal surrounded by frost.
+
+Status:
+Planned
+
+---
+
+## WPN-0026
+
+Name:
+Glacial Staff
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Role:
+Control Mage
+
+Handed:
+Two-Handed
+
+Description:
+Heavy frozen staff carved from enchanted ice.
+
+Status:
+Planned
+
+---
+
+## WPN-0027
+
+Name:
+Icicle Staff
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Role:
+Rapid Caster
+
+Handed:
+Two-Handed
+
+Description:
+Thin magical staff featuring multiple floating ice shards.
+
+Status:
+Planned
+
+---
+
+## WPN-0028
+
+Name:
+Frozen Scepter
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Role:
+Elite Frost Mage
+
+Handed:
+Two-Handed
+
+Description:
+Royal magical scepter crafted from crystal ice.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# NATURE STAFF FAMILY
+# ============================================================================
+
+## WPN-0029
+
+Name:
+Nature Staff
+
+Description:
+Living wooden staff with vines and leaves wrapped around its trunk.
+
+Status:
+Planned
+
+---
+
+## WPN-0030
+
+Name:
+Druid Staff
+
+Description:
+Ancient tree branch transformed into a magical staff.
+Covered with moss and flowers.
+
+Status:
+Planned
+
+---
+
+## WPN-0031
+
+Name:
+Bloom Staff
+
+Description:
+Elegant staff supporting a giant magical flower.
+Natural and peaceful appearance.
+
+Status:
+Planned
+
+---
+
+## WPN-0032
+
+Name:
+Root Staff
+
+Description:
+Twisted roots forming an organic magical weapon.
+Heavy forest identity.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# HOLY STAFF FAMILY
+# ============================================================================
+
+## WPN-0033
+
+Name:
+Holy Staff
+
+Description:
+Golden staff topped with radiant crystal.
+Pure white magical energy.
+
+Status:
+Planned
+
+---
+
+## WPN-0034
+
+Name:
+Divine Staff
+
+Description:
+Ceremonial staff decorated with angelic wings and luminous gemstones.
+
+Status:
+Planned
+
+---
+
+## WPN-0035
+
+Name:
+Sacred Scepter
+
+Description:
+Royal healing staff carried by high priests.
+
+Status:
+Planned
+
+---
+
+## WPN-0036
+
+Name:
+Celestial Staff
+
+Description:
+Tall elegant staff radiating holy celestial light.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ARCANE STAFF FAMILY
+# ============================================================================
+
+## WPN-0037
+
+Name:
+Arcane Staff
+
+Description:
+Simple magical staff powered by floating purple crystal.
+
+Status:
+Planned
+
+---
+
+## WPN-0038
+
+Name:
+Runic Staff
+
+Description:
+Ancient magical staff covered in glowing runes.
+
+Status:
+Planned
+
+---
+
+## WPN-0039
+
+Name:
+Astral Staff
+
+Description:
+Elegant cosmic staff inspired by stars and constellations.
+
+Status:
+Planned
+
+---
+
+## WPN-0040
+
+Name:
+Void Staff
+
+Description:
+Dark arcane staff surrounded by mysterious floating fragments and purple energy.
+
+Status:
+Planned
+
+---
+# ============================================================================
+# ARMORS
+# ============================================================================
+
+The following armor sets define every wearable armor available in Version 1.
+
+Three armor archetypes exist:
+
+- Cloth
+- Leather
+- Plate
+
+Each archetype contains:
+
+- Helmet
+- Chest Armor
+- Boots
+
+Each armor piece exists from Tier 2 to Tier 8.
+
+Visual quality, ornaments and materials improve with each tier while keeping the same visual identity.
+
+All armors follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+# ============================================================================
+# CLOTH ARMOR
+# ============================================================================
+
+## ARM-0001
+
+Name:
+Cloth Hood
+
+Category:
+Helmet
+
+Armor Type:
+Cloth
+
+Tier:
+T2-T8
+
+Description:
+Light fabric hood worn by mages.
+Simple linen at lower tiers, increasingly decorated with embroidery and magical patterns at higher tiers.
+
+Status:
+Planned
+
+---
+
+## ARM-0002
+
+Name:
+Cloth Robe
+
+Category:
+Chest Armor
+
+Armor Type:
+Cloth
+
+Tier:
+T2-T8
+
+Description:
+Long mage robe with wide sleeves.
+Designed for spellcasters.
+Visual progression adds belts, shoulder ornaments and magical embroidery.
+
+Status:
+Planned
+
+---
+
+## ARM-0003
+
+Name:
+Cloth Sandals
+
+Category:
+Boots
+
+Armor Type:
+Cloth
+
+Tier:
+T2-T8
+
+Description:
+Simple leather sandals evolving into elegant enchanted footwear.
+Lightweight appearance.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# LEATHER ARMOR
+# ============================================================================
+
+## ARM-0004
+
+Name:
+Leather Hood
+
+Category:
+Helmet
+
+Armor Type:
+Leather
+
+Tier:
+T2-T8
+
+Description:
+Light hood made from cured leather.
+Favored by archers, hunters and rogues.
+Later tiers include reinforced stitching and decorative trims.
+
+Status:
+Planned
+
+---
+
+## ARM-0005
+
+Name:
+Leather Jacket
+
+Category:
+Chest Armor
+
+Armor Type:
+Leather
+
+Tier:
+T2-T8
+
+Description:
+Flexible leather armor reinforced with belts and shoulder guards.
+Designed for mobility while providing moderate protection.
+
+Status:
+Planned
+
+---
+
+## ARM-0006
+
+Name:
+Leather Boots
+
+Category:
+Boots
+
+Armor Type:
+Leather
+
+Tier:
+T2-T8
+
+Description:
+Durable adventurer boots with reinforced soles.
+Visual upgrades add buckles, fur and metallic details.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# PLATE ARMOR
+# ============================================================================
+
+## ARM-0007
+
+Name:
+Plate Helmet
+
+Category:
+Helmet
+
+Armor Type:
+Plate
+
+Tier:
+T2-T8
+
+Description:
+Fully enclosed steel helmet.
+Simple bucket helmet at low tiers evolving into ornate knight helmets.
+
+Status:
+Planned
+
+---
+
+## ARM-0008
+
+Name:
+Plate Armor
+
+Category:
+Chest Armor
+
+Armor Type:
+Plate
+
+Tier:
+T2-T8
+
+Description:
+Heavy knight armor composed of steel plates.
+Progressively gains engraved details, capes and decorative elements.
+
+Status:
+Planned
+
+---
+
+## ARM-0009
+
+Name:
+Plate Boots
+
+Category:
+Boots
+
+Armor Type:
+Plate
+
+Tier:
+T2-T8
+
+Description:
+Heavy armored boots with reinforced greaves.
+Massive silhouette emphasizing durability.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ARMOR TIER EVOLUTION
+# ============================================================================
+
+The following visual rules apply to every armor piece.
+
+---
+
+## Tier 2
+
+Description:
+Basic handcrafted equipment.
+Very simple construction.
+Almost no decorative elements.
+
+Materials:
+Leather
+Linen
+Raw Iron
+
+---
+
+## Tier 3
+
+Description:
+Improved craftsmanship.
+Cleaner proportions.
+Better stitching and fittings.
+
+Materials:
+Iron
+Boiled Leather
+Better Cloth
+
+---
+
+## Tier 4
+
+Description:
+Professional equipment.
+Beginning of the recognizable class fantasy.
+
+Materials:
+Steel
+Dyed Fabric
+Refined Leather
+
+---
+
+## Tier 5
+
+Description:
+Military grade equipment.
+Additional shoulder pieces, belts and metallic reinforcements.
+
+Materials:
+Steel
+Bronze
+Quality Leather
+
+---
+
+## Tier 6
+
+Description:
+Elite adventurer equipment.
+Visible engravings and premium craftsmanship.
+
+Materials:
+Tempered Steel
+Silver Details
+Fine Cloth
+
+---
+
+## Tier 7
+
+Description:
+Master-crafted equipment.
+Rich ornaments while preserving gameplay readability.
+
+Materials:
+Enchanted Steel
+Gold Accents
+Rare Fabrics
+
+---
+
+## Tier 8
+
+Description:
+Legendary equipment.
+Highest craftsmanship available.
+Elegant glowing runes and subtle magical effects.
+Never excessive.
+Gameplay readability always takes priority.
+
+Materials:
+Mythic Alloys
+Runic Metals
+Ancient Fabrics
+
+---
+
+# ============================================================================
+# VISUAL RULES
+# ============================================================================
+
+Cloth Armor
+
+Visual Identity:
+Elegant
+Flowing
+Magical
+Lightweight
+
+Primary Colors:
+White
+Blue
+Purple
+Gold
+
+---
+
+Leather Armor
+
+Visual Identity:
+Mobile
+Practical
+Hunter-inspired
+
+Primary Colors:
+Brown
+Dark Green
+Grey
+Black
+
+---
+
+Plate Armor
+
+Visual Identity:
+Heavy
+Knight
+Powerful
+Protective
+
+Primary Colors:
+Steel Grey
+Silver
+Dark Iron
+Gold
+
+---
+# ============================================================================
+# OFF-HAND ITEMS
+# ============================================================================
+
+The following off-hand items are available in Version 1.
+
+Off-hand items provide visual diversity and gameplay specialization.
+They are only compatible with one-handed weapons.
+
+Each off-hand exists from Tier 4 to Tier 8.
+
+Visual complexity increases with each tier while preserving the same silhouette.
+
+All off-hand items follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+# ============================================================================
+# SHIELD
+# ============================================================================
+
+## OFF-0001
+
+Name:
+Knight Shield
+
+Category:
+Off-Hand
+
+Tier:
+T4-T8
+
+Role:
+Defense
+
+Description:
+Classic medieval kite shield.
+Constructed from reinforced wood with a steel frame.
+Higher tiers gain engraved metal, heraldic motifs and subtle magical runes.
+Designed to immediately communicate protection and resilience.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# TORCH
+# ============================================================================
+
+## OFF-0002
+
+Name:
+Adventurer Torch
+
+Category:
+Off-Hand
+
+Tier:
+T4-T8
+
+Role:
+Attack Speed / Exploration
+
+Description:
+Simple wooden torch wrapped with cloth and burning with a bright flame.
+Higher tiers feature enchanted flames, reinforced handles and decorative metalwork.
+Flame color may evolve slightly while remaining readable.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# SPELLBOOK
+# ============================================================================
+
+## OFF-0003
+
+Name:
+Arcane Tome
+
+Category:
+Off-Hand
+
+Tier:
+T4-T8
+
+Role:
+Magic Support
+
+Description:
+Floating magical book surrounded by subtle arcane energy.
+Leather cover at lower tiers.
+Higher tiers feature metal corners, glowing runes and enchanted pages.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ORB
+# ============================================================================
+
+## OFF-0004
+
+Name:
+Mystic Orb
+
+Category:
+Off-Hand
+
+Tier:
+T4-T8
+
+Role:
+Spell Power
+
+Description:
+Floating magical sphere emitting a faint aura.
+Lower tiers use polished crystal.
+Higher tiers introduce animated magical cores and engraved metallic holders.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# WAR HORN
+# ============================================================================
+
+## OFF-0005
+
+Name:
+War Horn
+
+Category:
+Off-Hand
+
+Tier:
+T4-T8
+
+Role:
+Support
+
+Description:
+Large carved horn reinforced with leather straps and metallic rings.
+Inspired by battlefield commanders.
+Higher tiers include engraved ornaments and magical decorations.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# OFF-HAND TIER EVOLUTION
+# ============================================================================
+
+## Tier 4
+
+Description:
+Standard professional equipment.
+Clean craftsmanship.
+Recognizable silhouette.
+
+---
+
+## Tier 5
+
+Description:
+Improved construction.
+Additional metallic reinforcements.
+Better materials.
+
+---
+
+## Tier 6
+
+Description:
+Elite quality.
+Decorative engravings.
+Premium materials.
+
+---
+
+## Tier 7
+
+Description:
+Master-crafted equipment.
+Gold details.
+Runic decorations.
+Visible magical influence.
+
+---
+
+## Tier 8
+
+Description:
+Legendary quality.
+Subtle magical glow.
+Ancient craftsmanship.
+Prestigious appearance while preserving gameplay readability.
+
+---
+
+# ============================================================================
+# VISUAL RULES
+# ============================================================================
+
+Shield
+
+Visual Identity:
+Heavy
+Reliable
+Knight-inspired
+
+Primary Colors:
+Steel Grey
+Dark Brown
+Silver
+
+---
+
+Torch
+
+Visual Identity:
+Primitive
+Adventurer
+Explorer
+
+Primary Colors:
+Brown
+Orange
+Yellow
+
+---
+
+Spellbook
+
+Visual Identity:
+Ancient
+Magical
+Scholarly
+
+Primary Colors:
+Dark Brown
+Purple
+Blue
+Gold
+
+---
+
+Orb
+
+Visual Identity:
+Mystical
+Floating
+Arcane
+
+Primary Colors:
+Blue
+Purple
+White
+
+---
+
+War Horn
+
+Visual Identity:
+Military
+Command
+Noble
+
+Primary Colors:
+Ivory
+Brown
+Gold
+Steel
+
+---
+# ============================================================================
+# MONSTERS
+# ============================================================================
+
+The following monsters define the complete enemy roster for Version 1.
+
+Each monster has a unique silhouette and belongs to a specific faction.
+
+Every monster exists as a standard enemy only.
+Elite and Boss variants are defined separately.
+
+All monsters follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+# ============================================================================
+# UNDEAD FACTION
+# ============================================================================
+
+## MON-0001
+
+Name:
+Skeleton Warrior
+
+Faction:
+Undead
+
+Role:
+Frontline Melee
+
+Description:
+Animated skeleton wearing mismatched rusty armor.
+Carries a worn iron sword and a cracked wooden shield.
+Slow but relentless.
+Represents the standard undead soldier.
+
+Status:
+Planned
+
+---
+
+## MON-0002
+
+Name:
+Skeleton Archer
+
+Faction:
+Undead
+
+Role:
+Ranged Damage
+
+Description:
+Skeleton equipped with an old wooden bow.
+Light armor.
+Carries a quiver of broken arrows.
+Maintains distance while attacking.
+
+Status:
+Planned
+
+---
+
+## MON-0003
+
+Name:
+Skeleton Mage
+
+Faction:
+Undead
+
+Role:
+Magic Damage
+
+Description:
+Ancient skeletal spellcaster wearing a torn robe.
+Carries a magical staff infused with cursed energy.
+Glowing blue eyes.
+
+Status:
+Planned
+
+---
+
+## MON-0004
+
+Name:
+Skeleton Priest
+
+Faction:
+Undead
+
+Role:
+Support
+
+Description:
+Undead cleric wrapped in ceremonial robes.
+Uses corrupted holy magic to strengthen nearby undead.
+Carries an ancient sacred tome.
+
+Status:
+Planned
+
+---
+
+## MON-0005
+
+Name:
+Skeleton Knight
+
+Faction:
+Undead
+
+Role:
+Elite Defender
+
+Description:
+Massive armored skeleton.
+Heavy shield.
+Large sword.
+Acts as the frontline protector of undead groups.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MORGANA FACTION
+# ============================================================================
+
+## MON-0006
+
+Name:
+Morgana Fighter
+
+Faction:
+Morgana
+
+Role:
+Balanced Melee
+
+Description:
+Dark cult soldier wearing black armor and crimson cloth.
+Uses a longsword.
+Disciplined and aggressive.
+
+Status:
+Planned
+
+---
+
+## MON-0007
+
+Name:
+Morgana Archer
+
+Faction:
+Morgana
+
+Role:
+Ranged Damage
+
+Description:
+Elite archer equipped with a reinforced bow.
+Dark leather armor with crimson cape.
+
+Status:
+Planned
+
+---
+
+## MON-0008
+
+Name:
+Morgana Witch
+
+Faction:
+Morgana
+
+Role:
+Magic Damage
+
+Description:
+Female spellcaster channeling dark magic.
+Long black robes decorated with glowing purple symbols.
+
+Status:
+Planned
+
+---
+
+## MON-0009
+
+Name:
+Morgana Knight
+
+Faction:
+Morgana
+
+Role:
+Heavy Melee
+
+Description:
+Elite heavily armored warrior.
+Massive shield.
+Decorated black plate armor.
+
+Status:
+Planned
+
+---
+
+## MON-0010
+
+Name:
+Morgana High Priest
+
+Faction:
+Morgana
+
+Role:
+Support
+
+Description:
+Religious leader of the Morgana army.
+Elegant ceremonial robes.
+Channels powerful dark rituals.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# KEEPER FACTION
+# ============================================================================
+
+## MON-0011
+
+Name:
+Keeper Guardian
+
+Faction:
+Keepers
+
+Role:
+Balanced Melee
+
+Description:
+Ancient tribal guardian wearing wood and stone armor.
+Carries a heavy club.
+
+Status:
+Planned
+
+---
+
+## MON-0012
+
+Name:
+Keeper Druid
+
+Faction:
+Keepers
+
+Role:
+Nature Magic
+
+Description:
+Forest shaman manipulating roots, plants and wildlife.
+Decorated with leaves and wooden ornaments.
+
+Status:
+Planned
+
+---
+
+## MON-0013
+
+Name:
+Stone Giant
+
+Faction:
+Keepers
+
+Role:
+Heavy Tank
+
+Description:
+Living stone creature covered in moss.
+Huge silhouette.
+Slow but extremely durable.
+
+Status:
+Planned
+
+---
+
+## MON-0014
+
+Name:
+Keeper Hunter
+
+Faction:
+Keepers
+
+Role:
+Ranged
+
+Description:
+Experienced tribal hunter using a longbow.
+Wears leather and animal pelts.
+
+Status:
+Planned
+
+---
+
+## MON-0015
+
+Name:
+Forest Beast
+
+Faction:
+Keepers
+
+Role:
+Fast Melee
+
+Description:
+Large enchanted wolf protecting sacred forests.
+Powerful claws and glowing green eyes.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# HERETIC FACTION
+# ============================================================================
+
+## MON-0016
+
+Name:
+Heretic Fighter
+
+Faction:
+Heretics
+
+Role:
+Balanced Melee
+
+Description:
+Bandit wearing scavenged armor.
+Uses a crude sword.
+Dirty and poorly equipped.
+
+Status:
+Planned
+
+---
+
+## MON-0017
+
+Name:
+Heretic Crossbowman
+
+Faction:
+Heretics
+
+Role:
+Ranged Damage
+
+Description:
+Mercenary equipped with a military crossbow.
+Leather armor reinforced with metal scraps.
+
+Status:
+Planned
+
+---
+
+## MON-0018
+
+Name:
+Heretic Shaman
+
+Faction:
+Heretics
+
+Role:
+Magic Damage
+
+Description:
+Primitive spellcaster using bones, skulls and tribal magic.
+
+Status:
+Planned
+
+---
+
+## MON-0019
+
+Name:
+Heretic Brute
+
+Faction:
+Heretics
+
+Role:
+Heavy Melee
+
+Description:
+Massive muscular outlaw wielding a gigantic hammer.
+Minimal armor.
+Very intimidating silhouette.
+
+Status:
+Planned
+
+---
+
+## MON-0020
+
+Name:
+Heretic Assassin
+
+Faction:
+Heretics
+
+Role:
+Fast Melee
+
+Description:
+Lightly armored rogue using dual daggers.
+Fast, agile and deadly.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# WILDLIFE FACTION
+# ============================================================================
+
+## MON-0021
+
+Name:
+Wolf
+
+Faction:
+Wildlife
+
+Role:
+Fast Melee
+
+Description:
+Grey wolf hunting in packs.
+Quick attacks and agile movement.
+
+Status:
+Planned
+
+---
+
+## MON-0022
+
+Name:
+Dire Wolf
+
+Faction:
+Wildlife
+
+Role:
+Elite Beast
+
+Description:
+Larger and more aggressive wolf.
+Dark fur and glowing eyes.
+
+Status:
+Planned
+
+---
+
+## MON-0023
+
+Name:
+Brown Bear
+
+Faction:
+Wildlife
+
+Role:
+Heavy Melee
+
+Description:
+Massive wild bear.
+Powerful claws.
+Slow but devastating attacks.
+
+Status:
+Planned
+
+---
+
+## MON-0024
+
+Name:
+Boar
+
+Faction:
+Wildlife
+
+Role:
+Charge
+
+Description:
+Wild boar with reinforced tusks.
+Frequently charges enemies.
+
+Status:
+Planned
+
+---
+
+## MON-0025
+
+Name:
+Giant Spider
+
+Faction:
+Wildlife
+
+Role:
+Poison
+
+Description:
+Large forest spider with venomous fangs.
+Dark body with glowing green abdomen.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# DEMON FACTION
+# ============================================================================
+
+## MON-0026
+
+Name:
+Lesser Demon
+
+Faction:
+Demons
+
+Role:
+Balanced Melee
+
+Description:
+Humanoid demon with red skin, horns and burning eyes.
+Carries a jagged blade.
+
+Status:
+Planned
+
+---
+
+## MON-0027
+
+Name:
+Hell Archer
+
+Faction:
+Demons
+
+Role:
+Ranged
+
+Description:
+Infernal archer firing flaming arrows.
+Black armor infused with lava cracks.
+
+Status:
+Planned
+
+---
+
+## MON-0028
+
+Name:
+Infernal Warlock
+
+Faction:
+Demons
+
+Role:
+Magic Damage
+
+Description:
+Powerful demon mage manipulating hellfire.
+Floating cloak and burning staff.
+
+Status:
+Planned
+
+---
+
+## MON-0029
+
+Name:
+Hell Brute
+
+Faction:
+Demons
+
+Role:
+Heavy Melee
+
+Description:
+Towering demon wielding an enormous infernal axe.
+Massive muscular silhouette.
+
+Status:
+Planned
+
+---
+
+## MON-0030
+
+Name:
+Imp
+
+Faction:
+Demons
+
+Role:
+Fast Harasser
+
+Description:
+Small agile demon.
+Hyperactive.
+Uses claws and small fireballs.
+Acts as the weakest demon enemy.
+
+Status:
+Planned
+
+---
+# ============================================================================
+# BOSSES
+# ============================================================================
+
+The following bosses represent the major encounters of Version 1.
+
+Each boss is unique.
+
+Bosses are approximately 2 to 3 times larger than player characters.
+
+Each boss possesses a unique silhouette immediately recognizable by the player.
+
+All bosses follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+# ============================================================================
+# UNDEAD
+# ============================================================================
+
+## BOS-0001
+
+Name:
+Undead Commander
+
+Faction:
+Undead
+
+Role:
+Tank Boss
+
+Description:
+Ancient skeletal general wearing massive corroded plate armor.
+Carries a gigantic runic greatsword.
+Blue cursed flames burn inside the empty eye sockets.
+Commands nearby skeletons during combat.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MORGANA
+# ============================================================================
+
+## BOS-0002
+
+Name:
+Morgana High Inquisitor
+
+Faction:
+Morgana
+
+Role:
+Dark Magic Boss
+
+Description:
+Leader of the Morgana cult.
+Elegant black ceremonial armor mixed with luxurious robes.
+Floating magical crystals orbit around him.
+Uses powerful dark rituals and summoned magic.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# KEEPERS
+# ============================================================================
+
+## BOS-0003
+
+Name:
+Ancient Treant
+
+Faction:
+Keepers
+
+Role:
+Nature Boss
+
+Description:
+Gigantic living tree awakened by ancient magic.
+Body composed of roots, bark and stone.
+Branches act as enormous arms.
+Glowing emerald core visible inside the trunk.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# HERETICS
+# ============================================================================
+
+## BOS-0004
+
+Name:
+Heretic Warlord
+
+Faction:
+Heretics
+
+Role:
+Bruiser Boss
+
+Description:
+Massive outlaw leader wearing scavenged armor collected from fallen knights.
+Carries an oversized warhammer.
+Scarred body.
+Long beard.
+Extremely intimidating silhouette.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# WILDLIFE
+# ============================================================================
+
+## BOS-0005
+
+Name:
+Alpha Direwolf
+
+Faction:
+Wildlife
+
+Role:
+Fast Beast Boss
+
+Description:
+Enormous black wolf.
+Almost twice the size of a horse.
+Covered with battle scars.
+Bright golden eyes.
+Moves with exceptional speed.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# DEMONS
+# ============================================================================
+
+## BOS-0006
+
+Name:
+Infernal Overlord
+
+Faction:
+Demons
+
+Role:
+Endgame Boss
+
+Description:
+Towering horned demon surrounded by flames.
+Black volcanic armor fused into his body.
+Carries an enormous infernal sword.
+Glowing lava cracks across his skin.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# WORLD BOSSES
+# ============================================================================
+
+## BOS-0007
+
+Name:
+Crystal Golem
+
+Faction:
+Ancient
+
+Role:
+World Boss
+
+Description:
+Colossal stone construct infused with blue magical crystals.
+Every attack causes crystal fragments to explode.
+Ancient guardian protecting forgotten ruins.
+
+Status:
+Planned
+
+---
+
+## BOS-0008
+
+Name:
+The Forgotten Dragon
+
+Faction:
+Ancient
+
+Role:
+Legendary Boss
+
+Description:
+Ancient dragon sleeping beneath the world.
+Dark emerald scales.
+Huge wings.
+Golden horns.
+Massive size.
+Represents the ultimate challenge of Version 1.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# NPCs
+# ============================================================================
+
+The following NPCs provide every essential service required for Version 1.
+
+NPCs must be immediately recognizable through their clothing, tools and workstation.
+
+Every NPC has a unique silhouette.
+
+All NPCs follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+## NPC-0001
+
+Name:
+Blacksmith
+
+Role:
+Equipment Crafting
+
+Description:
+Experienced blacksmith wearing a heavy leather apron.
+Muscular build.
+Covered with soot.
+Carries a large forging hammer.
+Usually found working beside an anvil and forge.
+
+Status:
+Planned
+
+---
+
+## NPC-0002
+
+Name:
+Merchant
+
+Role:
+General Store
+
+Description:
+Friendly travelling merchant.
+Well-dressed with colorful medieval clothing.
+Large backpack full of goods.
+Carries coin pouches and trade supplies.
+
+Status:
+Planned
+
+---
+
+## NPC-0003
+
+Name:
+Banker
+
+Role:
+Storage
+
+Description:
+Professional banker wearing elegant noble clothing.
+Well organized.
+Surrounded by ledgers, keys and secured chests.
+
+Status:
+Planned
+
+---
+
+## NPC-0004
+
+Name:
+Enchanter
+
+Role:
+Item Enhancement
+
+Description:
+Old wizard specialized in magical enchantments.
+Long robe.
+Floating magical crystals.
+Runic workstation.
+
+Status:
+Planned
+
+---
+
+## NPC-0005
+
+Name:
+Stable Master
+
+Role:
+Mount Management
+
+Description:
+Experienced horse trainer.
+Leather clothing.
+Carries ropes and grooming equipment.
+Often accompanied by horses.
+
+Status:
+Planned
+
+---
+
+## NPC-0006
+
+Name:
+Task Master
+
+Role:
+Quest & Progression
+
+Description:
+Veteran adventurer coordinating expeditions.
+Large world map beside him.
+Carries scrolls and mission boards.
+Represents player progression.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MOUNTS
+# ============================================================================
+
+Mounts are only visible during exploration.
+
+They automatically disappear when combat begins.
+
+All mounts follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+## MNT-0001
+
+Name:
+Horse
+
+Role:
+Starter Mount
+
+Description:
+Standard brown riding horse.
+Simple leather saddle.
+Reliable and balanced.
+Default travel mount.
+
+Status:
+Planned
+
+---
+
+## MNT-0002
+
+Name:
+Armored Horse
+
+Role:
+Heavy Mount
+
+Description:
+War horse equipped with reinforced steel armor.
+Heavy saddle.
+Knight-inspired appearance.
+
+Status:
+Planned
+
+---
+
+## MNT-0003
+
+Name:
+Ox
+
+Role:
+Transport Mount
+
+Description:
+Massive ox carrying large cargo packs.
+Slow but sturdy.
+Designed for transporting heavy resources.
+
+Status:
+Planned
+
+---
+
+## MNT-0004
+
+Name:
+Direwolf
+
+Role:
+Fast Mount
+
+Description:
+Large trained wolf.
+Dark grey fur.
+Light leather saddle.
+Aggressive appearance.
+
+Status:
+Planned
+
+---
+
+## MNT-0005
+
+Name:
+War Bear
+
+Role:
+Elite Mount
+
+Description:
+Huge armored brown bear.
+Heavy combat saddle.
+Prestigious late-game mount.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# RESOURCES
+# ============================================================================
+
+Resources represent every gathering profession available in Version 1.
+
+Each resource exists from Tier 2 to Tier 8.
+
+Higher tiers increase visual richness while preserving readability.
+
+---
+
+## RES-0001
+
+Name:
+Wood
+
+Profession:
+Lumberjack
+
+Description:
+Trees ranging from young oaks to giant ancient trees.
+Higher tiers become larger and more majestic.
+
+Status:
+Planned
+
+---
+
+## RES-0002
+
+Name:
+Stone
+
+Profession:
+Quarry
+
+Description:
+Rock formations and mineral deposits.
+Simple boulders at low tiers.
+Crystal-infused formations at high tiers.
+
+Status:
+Planned
+
+---
+
+## RES-0003
+
+Name:
+Ore
+
+Profession:
+Mining
+
+Description:
+Metal ore veins embedded in rocky terrain.
+Iron at lower tiers.
+Rare glowing metals at higher tiers.
+
+Status:
+Planned
+
+---
+
+## RES-0004
+
+Name:
+Fiber
+
+Profession:
+Harvesting
+
+Description:
+Wild magical plants.
+Simple cotton at low tiers.
+Rare enchanted flora at higher tiers.
+
+Status:
+Planned
+
+---
+
+## RES-0005
+
+Name:
+Hide
+
+Profession:
+Skinning
+
+Description:
+Obtained from wildlife.
+Represented by huntable creatures rather than gathering nodes.
+
+Status:
+Planned
+
+---
+# ============================================================================
+# ENVIRONMENTS
+# ============================================================================
+
+The following environments define every playable biome available in Version 1.
+
+Each biome must immediately communicate its identity through terrain, vegetation, rocks, lighting and architecture.
+
+All environments follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+---
+
+## ENV-0001
+
+Name:
+Royal Forest
+
+Category:
+Biome
+
+Description:
+Lush temperate forest composed of grasslands, oak trees, dirt roads and abandoned ruins.
+This is the player's starting region.
+Bright atmosphere with peaceful medieval fantasy aesthetics.
+
+Primary Colors:
+Green
+Brown
+Light Grey
+
+Contains:
+- Trees
+- Bushes
+- Flowers
+- Wooden fences
+- Small bridges
+- Ruins
+- Stone paths
+
+Status:
+Planned
+
+---
+
+## ENV-0002
+
+Name:
+Haunted Swamp
+
+Category:
+Biome
+
+Description:
+Dark marshland filled with dead trees, shallow water and thick fog.
+Dominated by Undead enemies.
+
+Primary Colors:
+Dark Green
+Grey
+Brown
+
+Contains:
+- Dead Trees
+- Mud
+- Marsh Water
+- Bones
+- Broken Carts
+- Small Graveyards
+
+Status:
+Planned
+
+---
+
+## ENV-0003
+
+Name:
+Highlands
+
+Category:
+Biome
+
+Description:
+Rocky elevated landscape.
+Large cliffs, pine forests and abandoned watchtowers.
+Home of Keepers and Wildlife.
+
+Primary Colors:
+Grey
+Dark Green
+Brown
+
+Contains:
+- Cliffs
+- Pine Trees
+- Rocks
+- Ruined Towers
+- Wooden Camps
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ENVIRONMENT PROPS
+# ============================================================================
+
+## PROP-0001
+
+Name:
+Oak Tree
+
+Description:
+Standard forest tree.
+Several size variations.
+
+Status:
+Planned
+
+---
+
+## PROP-0002
+
+Name:
+Pine Tree
+
+Description:
+Tall evergreen tree used in Highlands.
+
+Status:
+Planned
+
+---
+
+## PROP-0003
+
+Name:
+Dead Tree
+
+Description:
+Leafless tree with twisted branches.
+
+Status:
+Planned
+
+---
+
+## PROP-0004
+
+Name:
+Bush
+
+Description:
+Low vegetation used to decorate every biome.
+
+Status:
+Planned
+
+---
+
+## PROP-0005
+
+Name:
+Flowers
+
+Description:
+Small colorful flowers adding life to the environment.
+
+Status:
+Planned
+
+---
+
+## PROP-0006
+
+Name:
+Large Rock
+
+Description:
+Natural rock formation.
+Multiple variations.
+
+Status:
+Planned
+
+---
+
+## PROP-0007
+
+Name:
+Small Rock
+
+Description:
+Decorative scattered stones.
+
+Status:
+Planned
+
+---
+
+## PROP-0008
+
+Name:
+Wooden Fence
+
+Description:
+Simple medieval fence.
+
+Status:
+Planned
+
+---
+
+## PROP-0009
+
+Name:
+Wooden Bridge
+
+Description:
+Small bridge crossing rivers and swamps.
+
+Status:
+Planned
+
+---
+
+## PROP-0010
+
+Name:
+Campfire
+
+Description:
+Lit campfire surrounded by stones.
+
+Status:
+Planned
+
+---
+
+## PROP-0011
+
+Name:
+Wooden Cart
+
+Description:
+Abandoned merchant cart.
+
+Status:
+Planned
+
+---
+
+## PROP-0012
+
+Name:
+Treasure Chest
+
+Description:
+Closed wooden chest reinforced with iron.
+
+Status:
+Planned
+
+---
+
+## PROP-0013
+
+Name:
+Barrel
+
+Description:
+Wooden storage barrel.
+
+Status:
+Planned
+
+---
+
+## PROP-0014
+
+Name:
+Crate
+
+Description:
+Wooden transport crate.
+
+Status:
+Planned
+
+---
+
+## PROP-0015
+
+Name:
+Tent
+
+Description:
+Simple adventurer tent.
+
+Status:
+Planned
+
+---
+
+## PROP-0016
+
+Name:
+Stone Pillar
+
+Description:
+Ancient weathered stone column.
+
+Status:
+Planned
+
+---
+
+## PROP-0017
+
+Name:
+Broken Statue
+
+Description:
+Ruined medieval statue.
+
+Status:
+Planned
+
+---
+
+## PROP-0018
+
+Name:
+Ruined Wall
+
+Description:
+Stone ruins from an ancient civilization.
+
+Status:
+Planned
+
+---
+
+## PROP-0019
+
+Name:
+Gravestone
+
+Description:
+Old cemetery gravestone.
+
+Status:
+Planned
+
+---
+
+## PROP-0020
+
+Name:
+Skull Pile
+
+Description:
+Decorative pile of bones and skulls.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# UI
+# ============================================================================
+
+The UI follows a clean medieval fantasy style.
+Readable at every resolution.
+Minimalistic and gameplay-first.
+
+---
+
+## UI-0001
+
+Name:
+Main HUD
+
+Description:
+Displays player health, mana, experience and currencies.
+
+Status:
+Planned
+
+---
+
+## UI-0002
+
+Name:
+Inventory
+
+Description:
+Grid-based inventory.
+
+Status:
+Planned
+
+---
+
+## UI-0003
+
+Name:
+Equipment
+
+Description:
+Character equipment panel.
+
+Status:
+Planned
+
+---
+
+## UI-0004
+
+Name:
+Crafting
+
+Description:
+Crafting interface for every profession.
+
+Status:
+Planned
+
+---
+
+## UI-0005
+
+Name:
+Merchant Window
+
+Description:
+Buy and sell interface.
+
+Status:
+Planned
+
+---
+
+## UI-0006
+
+Name:
+Bank
+
+Description:
+Storage interface.
+
+Status:
+Planned
+
+---
+
+## UI-0007
+
+Name:
+Map
+
+Description:
+World and regional maps.
+
+Status:
+Planned
+
+---
+
+## UI-0008
+
+Name:
+Settings
+
+Description:
+Game options.
+
+Status:
+Planned
+
+---
+
+## UI-0009
+
+Name:
+Quest Log
+
+Description:
+Displays current objectives and completed tasks.
+
+Status:
+Planned
+
+---
+
+## UI-0010
+
+Name:
+Character Progression
+
+Description:
+Displays player level, masteries and statistics.
+
+Status:
+Planned
+
+---
+# ============================================================================
+# ICONS
+# ============================================================================
+
+The following icon categories define every icon required for Version 1.
+
+All icons follow the artistic direction defined in **40_ART_BIBLE.md**.
+
+Icons are designed to remain perfectly readable at small sizes.
+
+---
+
+# ============================================================================
+# EQUIPMENT ICONS
+# ============================================================================
+
+## ICO-0001
+
+Name:
+Weapon Icons
+
+Description:
+One icon for every weapon available in Version 1.
+
+Status:
+Planned
+
+---
+
+## ICO-0002
+
+Name:
+Armor Icons
+
+Description:
+One icon for every helmet, chest armor and boots.
+
+Status:
+Planned
+
+---
+
+## ICO-0003
+
+Name:
+Off-Hand Icons
+
+Description:
+Icons for shields, tomes, orbs, torches and war horns.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# RESOURCE ICONS
+# ============================================================================
+
+## ICO-0004
+
+Name:
+Wood
+
+Description:
+Logs and timber.
+
+Status:
+Planned
+
+---
+
+## ICO-0005
+
+Name:
+Stone
+
+Description:
+Stone blocks.
+
+Status:
+Planned
+
+---
+
+## ICO-0006
+
+Name:
+Ore
+
+Description:
+Metal ore.
+
+Status:
+Planned
+
+---
+
+## ICO-0007
+
+Name:
+Fiber
+
+Description:
+Plant fibers.
+
+Status:
+Planned
+
+---
+
+## ICO-0008
+
+Name:
+Hide
+
+Description:
+Animal hide.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# CURRENCY
+# ============================================================================
+
+## ICO-0009
+
+Name:
+Silver
+
+Description:
+Main in-game currency.
+
+Status:
+Planned
+
+---
+
+## ICO-0010
+
+Name:
+Gold
+
+Description:
+Premium currency.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# CONSUMABLES
+# ============================================================================
+
+## ICO-0011
+
+Name:
+Food
+
+Description:
+Meals providing temporary bonuses.
+
+Status:
+Planned
+
+---
+
+## ICO-0012
+
+Name:
+Potion
+
+Description:
+Healing and utility potions.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ABILITIES
+# ============================================================================
+
+## ICO-0013
+
+Name:
+Ability Icons
+
+Description:
+Unique icons representing every player ability.
+
+Status:
+Planned
+
+---
+
+## ICO-0014
+
+Name:
+Passive Icons
+
+Description:
+Icons representing passive bonuses.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# STATUS EFFECTS
+# ============================================================================
+
+## ICO-0015
+
+Name:
+Buff Icons
+
+Description:
+Positive temporary effects.
+
+Status:
+Planned
+
+---
+
+## ICO-0016
+
+Name:
+Debuff Icons
+
+Description:
+Negative temporary effects.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# UI ICONS
+# ============================================================================
+
+## ICO-0017
+
+Name:
+Inventory
+
+Description:
+Inventory button.
+
+Status:
+Planned
+
+---
+
+## ICO-0018
+
+Name:
+Equipment
+
+Description:
+Equipment menu button.
+
+Status:
+Planned
+
+---
+
+## ICO-0019
+
+Name:
+Crafting
+
+Description:
+Crafting menu button.
+
+Status:
+Planned
+
+---
+
+## ICO-0020
+
+Name:
+Map
+
+Description:
+World map button.
+
+Status:
+Planned
+
+---
+
+## ICO-0021
+
+Name:
+Settings
+
+Description:
+Settings menu button.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# VFX
+# ============================================================================
+
+The following visual effects define every effect used throughout Version 1.
+
+Effects remain readable and lightweight.
+Gameplay clarity always has priority.
+
+---
+
+# ============================================================================
+# COMBAT EFFECTS
+# ============================================================================
+
+## VFX-0001
+
+Name:
+Sword Slash
+
+Description:
+Quick white slash following melee attacks.
+
+Status:
+Planned
+
+---
+
+## VFX-0002
+
+Name:
+Critical Hit
+
+Description:
+Bright impact burst emphasizing critical strikes.
+
+Status:
+Planned
+
+---
+
+## VFX-0003
+
+Name:
+Hit Impact
+
+Description:
+Small impact effect displayed when attacks connect.
+
+Status:
+Planned
+
+---
+
+## VFX-0004
+
+Name:
+Block
+
+Description:
+Metallic spark produced when blocking attacks.
+
+Status:
+Planned
+
+---
+
+## VFX-0005
+
+Name:
+Projectile Trail
+
+Description:
+Trail effect used by arrows, bolts and magical projectiles.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MAGIC EFFECTS
+# ============================================================================
+
+## VFX-0006
+
+Name:
+Fire
+
+Description:
+Flames, explosions and burning embers.
+
+Status:
+Planned
+
+---
+
+## VFX-0007
+
+Name:
+Ice
+
+Description:
+Frost particles and ice shards.
+
+Status:
+Planned
+
+---
+
+## VFX-0008
+
+Name:
+Nature
+
+Description:
+Leaves, roots and green magical energy.
+
+Status:
+Planned
+
+---
+
+## VFX-0009
+
+Name:
+Holy
+
+Description:
+Golden light and divine particles.
+
+Status:
+Planned
+
+---
+
+## VFX-0010
+
+Name:
+Arcane
+
+Description:
+Blue and purple magical runes.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ENVIRONMENT EFFECTS
+# ============================================================================
+
+## VFX-0011
+
+Name:
+Campfire Smoke
+
+Description:
+Light smoke emitted from campfires.
+
+Status:
+Planned
+
+---
+
+## VFX-0012
+
+Name:
+Torch Flame
+
+Description:
+Animated torch fire.
+
+Status:
+Planned
+
+---
+
+## VFX-0013
+
+Name:
+Water Splash
+
+Description:
+Splash created when moving through shallow water.
+
+Status:
+Planned
+
+---
+
+## VFX-0014
+
+Name:
+Dust
+
+Description:
+Dust generated while running on dry terrain.
+
+Status:
+Planned
+
+---
+
+## VFX-0015
+
+Name:
+Leaves
+
+Description:
+Falling leaves animated by the wind.
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# LOOT EFFECTS
+# ============================================================================
+
+## VFX-0016
+
+Name:
+Loot Beam
+
+Description:
+Vertical light beam highlighting dropped loot.
+
+Status:
+Planned
+
+---
+
+## VFX-0017
+
+Name:
+Item Pickup
+
+Description:
+Small sparkle displayed when collecting items.
+
+Status:
+Planned
+
+---
+
+## VFX-0018
+
+Name:
+Level Up
+
+Description:
+Golden circular burst surrounding the player.
+
+Status:
+Planned
+
+---
+
+## VFX-0019
+
+Name:
+Quest Complete
+
+Description:
+Celebratory magical burst displayed upon objective completion.
+
+Status:
+Planned
+
+---
+
+## VFX-0020
+
+Name:
+Teleport
+
+Description:
+Circular magical portal used during teleportation.
+
+Status:
+Planned
+
+---

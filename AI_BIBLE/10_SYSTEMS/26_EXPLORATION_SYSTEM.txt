@@ -1,0 +1,652 @@
+# 26. EXPLORATION SYSTEM
+
+---
+
+# Purpose
+
+The Exploration System is responsible for generating the infinite world, controlling player progression through Biomes and Zone Segments, spawning Encounters, and coordinating exploration with the Combat, AI, Loot, Gathering, Camera, and Progression systems.
+
+Exploration is fully automatic.
+
+The player never manually controls movement.
+
+The player continuously advances through an infinite **2D side-scrolling world** until manually stopped.
+
+---
+
+# Design Goals
+
+The Exploration System must:
+
+- provide endless progression
+- create the feeling of travelling through Albion-inspired regions
+- integrate naturally with automatic combat
+- support procedural generation
+- support future biome expansions
+- support infinite progression through Cycles
+- remain deterministic and easy to balance
+- maximize gameplay readability
+- require no manual navigation
+
+---
+
+# Exploration Philosophy
+
+Exploration is not about discovering hidden paths or choosing directions.
+
+Instead, it is about continuously pushing deeper into increasingly dangerous territories while automatically interacting with everything encountered along the journey.
+
+The player's objective is always obvious:
+
+Move Forward
+
+↓
+
+Fight
+
+↓
+
+Loot
+
+↓
+
+Gather
+
+↓
+
+Repeat Forever
+
+The game should constantly reward forward progression without requiring navigation decisions.
+
+---
+
+# Core Exploration Loop
+
+The exploration loop follows a hierarchical structure.
+
+```
+World
+
+↓
+
+Cycle
+
+↓
+
+Biome
+
+↓
+
+Zone Segment
+
+↓
+
+Encounter
+
+↓
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Next Encounter
+
+↓
+
+Next Zone Segment
+
+↓
+
+Biome Boss
+
+↓
+
+Next Biome
+
+↓
+
+Next Cycle
+
+↓
+
+Repeat Forever
+```
+
+Every gameplay system ultimately plugs into this loop.
+
+---
+
+# World Structure
+
+The world is infinite.
+
+It is never fully generated.
+
+Instead, new content is generated ahead of the player while completed content is discarded behind them.
+
+Players never backtrack.
+
+The world always progresses from left to right.
+
+---
+
+# Side-Scrolling Architecture
+
+The game uses a dedicated **2D side-scrolling exploration model**.
+
+Characteristics:
+
+- horizontal progression only
+- fixed gameplay height
+- no vertical exploration
+- no branching paths
+- no free navigation
+- no world map movement
+
+This architecture prioritizes readability, performance, and idle gameplay.
+
+---
+
+# Exploration Hierarchy
+
+The world consists of:
+
+```
+World
+
+└── Cycle
+      └── Biomes
+              └── Zone Segments
+                      └── Encounters
+```
+
+Each level has a different responsibility.
+
+---
+
+# Cycle
+
+A Cycle is the highest gameplay progression layer.
+
+A Cycle contains a predefined sequence of Biomes.
+
+Example:
+
+```
+Cycle I
+
+Forest
+Mountain
+Swamp
+Highlands
+Desert
+Volcano
+```
+
+After the final Biome:
+
+```
+Cycle II
+
+Forest
+Mountain
+Swamp
+Highlands
+Desert
+Volcano
+```
+
+The Cycle system enables infinite progression without requiring infinite handcrafted content.
+
+---
+
+# Cycle Scaling
+
+Starting a new Cycle increases overall difficulty.
+
+Cycle scaling affects:
+
+- Enemy Health
+- Enemy Damage
+- Enemy Armor
+- Enemy Magic Resistance
+- Loot Values
+- Currency Rewards
+- Experience Rewards
+- Future Crafting Rewards
+
+Scaling values are defined by the Progress Scaling System.
+
+---
+
+# Biome
+
+A Biome is a large thematic region.
+
+Each Biome defines:
+
+- visual environment
+- background art
+- ambient audio
+- enemy families
+- gathering creatures
+- encounter probabilities
+- loot tables
+- biome boss
+- available resources
+
+Examples:
+
+- Forest
+- Mountain
+- Swamp
+- Highlands
+- Desert
+- Volcano
+
+Additional Biomes can be added without modifying the Exploration System.
+
+---
+
+# Zone Segment
+
+A Biome consists of multiple Zone Segments.
+
+Version 1 uses:
+
+Fixed-size Zone Segments.
+
+Each Zone Segment always contains:
+
+```
+Encounter 1
+
+↓
+
+Encounter 2
+
+↓
+
+Encounter 3
+
+↓
+
+Encounter 4
+
+↓
+
+Encounter 5 (Boss)
+```
+
+The player automatically enters the next Zone Segment after completing the Boss Encounter.
+
+No loading screens occur.
+
+---
+
+# Zone Segment Layout
+
+Every Zone Segment is constructed horizontally.
+
+```
+---------------------------------------------------------
+
+Spawn
+
+→ Encounter 1
+
+→ Encounter 2
+
+→ Encounter 3
+
+→ Encounter 4
+
+→ Boss
+
+---------------------------------------------------------
+```
+
+Players always move from left to right.
+
+---
+
+# Final Zone Segment
+
+The final Zone Segment inside every Biome differs slightly.
+
+Encounter 5 becomes:
+
+```
+Biome Boss
+```
+
+instead of
+
+```
+Regular Boss
+```
+
+Defeating the Biome Boss immediately starts the next Biome.
+
+---
+
+# Encounter
+
+An Encounter is the smallest gameplay unit.
+
+Each Encounter contains one primary objective.
+
+Examples:
+
+- Combat
+- Gathering
+- Elite
+- Boss
+
+Completing an Encounter immediately resumes exploration.
+
+---
+
+# Encounter Types
+
+## Combat Encounter
+
+Contains one or more standard enemies.
+
+Examples:
+
+- Heretics
+- Morgana
+- Keepers
+- Undead
+- Demons
+
+Purpose:
+
+Standard combat progression.
+
+---
+
+## Gathering Encounter
+
+Contains gathering-oriented creatures.
+
+Examples:
+
+- Animals
+- Wood Elementals
+- Ore Elementals
+- Fiber Elementals
+- Stone Elementals
+
+Resources are obtained by defeating these enemies.
+
+No manual harvesting exists.
+
+---
+
+## Elite Encounter
+
+Contains a stronger enemy.
+
+Characteristics:
+
+- increased stats
+- improved rewards
+- improved loot
+- unique appearance
+
+Elite enemies use the standard AI System.
+
+---
+
+## Boss Encounter
+
+Encounter 5 always contains a Boss.
+
+Bosses provide:
+
+- progression pacing
+- increased rewards
+- difficulty spikes
+
+---
+
+# Encounter Generation
+
+Encounter generation is procedural.
+
+Each Biome defines generation weights.
+
+Example:
+
+```
+Combat
+
+55%
+
+Gathering
+
+30%
+
+Elite
+
+15%
+```
+
+Bosses are excluded from probability generation.
+
+Encounter Slot 5 is always reserved.
+
+---
+
+# Biome Boss
+
+Each Biome ends with one unique Biome Boss.
+
+Biome Bosses are significantly stronger than regular Bosses.
+
+They represent major progression milestones.
+
+---
+
+# Automatic Movement
+
+Outside combat and interactions, the player automatically walks forward.
+
+Movement always occurs toward the right side of the screen.
+
+Manual movement does not exist.
+
+Walking automatically pauses when:
+
+- entering combat
+- gathering resources
+- the player manually pauses exploration
+- future scripted events
+
+Walking automatically resumes afterwards.
+
+---
+
+# Encounter Flow
+
+```
+Walking
+
+↓
+
+Enemy Detected
+
+↓
+
+Movement Stops
+
+↓
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Movement Resumes
+```
+
+This loop continues indefinitely.
+
+---
+
+# Resource Placement
+
+Resources are positioned directly along the player's progression path.
+
+Players never need to leave the main route.
+
+Gathering always integrates naturally into exploration.
+
+---
+
+# Player Controls
+
+Players may manually pause exploration.
+
+Pausing:
+
+- stops automatic walking
+- does not interrupt ongoing combat
+- keeps enemies alive
+- preserves exploration state
+
+Resuming continues normal exploration.
+
+---
+
+# Camera Integration
+
+The Camera System follows exploration.
+
+Characteristics:
+
+- horizontal follow
+- fixed vertical position
+- player positioned approximately 35–40% from the left side of the screen
+- slight smoothing
+- subtle look-ahead
+- camera constrained to the active Zone Segment
+
+The player never sees unloaded content.
+
+---
+
+# World Streaming
+
+Only nearby Zone Segments remain loaded.
+
+Recommended implementation:
+
+```
+Previous Segment
+
+↓
+
+Current Segment
+
+↓
+
+Next Segment
+```
+
+Older segments are automatically unloaded.
+
+Streaming remains invisible to the player.
+
+---
+
+# Save Data
+
+The Exploration System stores:
+
+- Current Cycle
+- Current Biome
+- Current Zone Segment
+- Current Encounter
+- Current Exploration State
+- Current Progress
+- Current RNG Seed
+
+This allows deterministic restoration after loading.
+
+---
+
+# Future Extensions
+
+The architecture supports future additions without redesign.
+
+Possible additions:
+
+- Event Encounters
+- Merchant Encounters
+- Treasure Rooms
+- Rare Monsters
+- World Events
+- Shrines
+- Secret Bosses
+- Dynamic Weather
+- Environmental Hazards
+- Branching Routes
+- Challenge Segments
+
+These integrate naturally as additional Encounter Types or Biome generation rules.
+
+---
+
+# System Responsibilities
+
+The Exploration System is responsible for:
+
+- generating Zone Segments
+- generating Encounters
+- controlling automatic movement
+- transitioning between Encounters
+- transitioning between Zone Segments
+- transitioning between Biomes
+- transitioning between Cycles
+- coordinating with Combat
+- coordinating with AI
+- coordinating with Loot
+- coordinating with Gathering
+- coordinating with Camera
+- maintaining exploration progression
+- saving exploration state
+
+The Exploration System is not responsible for:
+
+- combat calculations
+- damage
+- abilities
+- loot generation
+- inventory management
+- crafting
+- enemy AI
+- camera rendering
+
+These responsibilities belong to their dedicated systems.
+
+---
+
+# Summary
+
+The Exploration System manages an infinite **2D side-scrolling world** built from procedurally generated Zone Segments connected into Biomes and Cycles.
+
+Players automatically progress from left to right, seamlessly transitioning between encounters, bosses, resources, and biomes without manual navigation or loading screens. Exploration emphasizes clarity, continuous progression, deterministic generation, and perfect integration with the Combat, AI, Camera, Loot, and Gathering systems while remaining lightweight, scalable, and ideally suited to an idle RPG.
+
+---
+
+DOCUMENT TERMINÉ

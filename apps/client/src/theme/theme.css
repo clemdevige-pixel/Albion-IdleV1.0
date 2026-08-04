@@ -1,0 +1,71 @@
+/* ============================================================
+ * Albion Idle — UI Theme Foundation
+ * Dark medieval fantasy palette, CSS custom properties only.
+ * ============================================================ */
+
+:root {
+  /* ---- Backgrounds ---- */
+  --bg-base: #10131a;
+  --bg-surface: #161b26;
+  --bg-elevated: #1a1f2e;
+  --bg-overlay: #232838;
+
+  /* ---- Borders ---- */
+  --border-default: #2a3040;
+  --border-subtle: #1e2333;
+  --border-accent: #3a4258;
+
+  /* ---- Text ---- */
+  --text-primary: #e6e8ee;
+  --text-secondary: #a0a8b8;
+  --text-muted: #6b7280;
+
+  /* ---- Accents ---- */
+  --accent-gold: #c8a84e;
+  --accent-gold-dim: #9a7d3a;
+  --accent-red: #c43e3e;
+  --accent-green: #4e8a4e;
+  --accent-blue: #4e6e8a;
+
+  /* ---- Typography ---- */
+  --font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-xs: 11px;
+  --font-sm: 13px;
+  --font-base: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+  --font-2xl: 24px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 600;
+
+  /* ---- Spacing (4px base) ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* ---- Border radius ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  /* ---- Transitions ---- */
+  --transition-fast: 150ms ease;
+
+  /* ---- Z-index layers ---- */
+  --z-hud: 100;
+  --z-panels: 200;
+  --z-tooltips: 300;
+  --z-modals: 400;
+
+  /* ---- Layout ---- */
+  --topbar-height: clamp(44px, 6vh, 52px);
+  --bottomnav-height: clamp(54px, 8vh, 68px);
+  --sidebar-width: clamp(250px, 23vw, 292px);
+  --content-gutter: clamp(8px, 1.5vw, 22px);
+  --panel-padding: clamp(12px, 2vw, 28px);
+  --responsive-card-min: 220px;
+}

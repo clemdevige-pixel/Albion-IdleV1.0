@@ -1,0 +1,896 @@
+# MONSTER DATABASE
+
+Version: 1.0
+
+This document defines every hostile creature available in Version 1.
+
+Each monster references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored in this document.
+
+Monster statistics, loot, AI and progression values are inherited from the
+profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Monster ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the monster sprite.
+
+Portrait ID:
+Reserved for future use.
+
+Scaling Profile:
+Defines HP, Damage, Armor, Resistances and Experience.
+
+Loot Profile:
+Defines every possible loot drop.
+
+AI Profile:
+Defines behaviour.
+
+Spawn Profile:
+Defines where the monster may appear.
+
+Faction:
+Defines relationship with other monsters.
+
+Generated identifiers follow this format:
+
+MON-0001-T2
+MON-0001-T3
+MON-0001-T4
+MON-0001-T5
+MON-0001-T6
+MON-0001-T7
+MON-0001-T8
+
+---
+
+# ============================================================================
+# UNDEAD
+# ============================================================================
+
+## MON-0001
+
+Name:
+Skeleton Warrior
+
+Asset ID:
+MON-0001
+
+Faction:
+Undead
+
+Role:
+Melee Fighter
+
+Scaling Profile:
+MON_STANDARD_MELEE
+
+Loot Profile:
+LOOT_UNDEAD_COMMON
+
+AI Profile:
+AI_MELEE_STANDARD
+
+Spawn Profile:
+SPAWN_UNDEAD_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0002
+
+Name:
+Skeleton Archer
+
+Asset ID:
+MON-0002
+
+Faction:
+Undead
+
+Role:
+Ranged
+
+Scaling Profile:
+MON_STANDARD_RANGED
+
+Loot Profile:
+LOOT_UNDEAD_COMMON
+
+AI Profile:
+AI_RANGED_STANDARD
+
+Spawn Profile:
+SPAWN_UNDEAD_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0003
+
+Name:
+Skeleton Mage
+
+Asset ID:
+MON-0003
+
+Faction:
+Undead
+
+Role:
+Caster
+
+Scaling Profile:
+MON_STANDARD_CASTER
+
+Loot Profile:
+LOOT_UNDEAD_MAGIC
+
+AI Profile:
+AI_CASTER_STANDARD
+
+Spawn Profile:
+SPAWN_UNDEAD_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0004
+
+Name:
+Skeleton Priest
+
+Asset ID:
+MON-0004
+
+Faction:
+Undead
+
+Role:
+Support
+
+Scaling Profile:
+MON_SUPPORT
+
+Loot Profile:
+LOOT_UNDEAD_MAGIC
+
+AI Profile:
+AI_SUPPORT
+
+Spawn Profile:
+SPAWN_UNDEAD_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0005
+
+Name:
+Skeleton Knight
+
+Asset ID:
+MON-0005
+
+Faction:
+Undead
+
+Role:
+Elite Tank
+
+Scaling Profile:
+MON_ELITE_TANK
+
+Loot Profile:
+LOOT_UNDEAD_ELITE
+
+AI Profile:
+AI_TANK
+
+Spawn Profile:
+SPAWN_UNDEAD_FOREST
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MORGANA
+# ============================================================================
+
+## MON-0006
+
+Name:
+Morgana Fighter
+
+Asset ID:
+MON-0006
+
+Faction:
+Morgana
+
+Role:
+Melee Fighter
+
+Scaling Profile:
+MON_STANDARD_MELEE
+
+Loot Profile:
+LOOT_MORGANA_COMMON
+
+AI Profile:
+AI_MELEE_STANDARD
+
+Spawn Profile:
+SPAWN_MORGANA_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0007
+
+Name:
+Morgana Archer
+
+Asset ID:
+MON-0007
+
+Faction:
+Morgana
+
+Role:
+Ranged
+
+Scaling Profile:
+MON_STANDARD_RANGED
+
+Loot Profile:
+LOOT_MORGANA_COMMON
+
+AI Profile:
+AI_RANGED_STANDARD
+
+Spawn Profile:
+SPAWN_MORGANA_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0008
+
+Name:
+Morgana Witch
+
+Asset ID:
+MON-0008
+
+Faction:
+Morgana
+
+Role:
+Caster
+
+Scaling Profile:
+MON_STANDARD_CASTER
+
+Loot Profile:
+LOOT_MORGANA_MAGIC
+
+AI Profile:
+AI_CASTER_STANDARD
+
+Spawn Profile:
+SPAWN_MORGANA_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0009
+
+Name:
+Morgana Knight
+
+Asset ID:
+MON-0009
+
+Faction:
+Morgana
+
+Role:
+Elite Fighter
+
+Scaling Profile:
+MON_ELITE_MELEE
+
+Loot Profile:
+LOOT_MORGANA_ELITE
+
+AI Profile:
+AI_MELEE_AGGRESSIVE
+
+Spawn Profile:
+SPAWN_MORGANA_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0010
+
+Name:
+Morgana High Priest
+
+Asset ID:
+MON-0010
+
+Faction:
+Morgana
+
+Role:
+Support Elite
+
+Scaling Profile:
+MON_ELITE_SUPPORT
+
+Loot Profile:
+LOOT_MORGANA_ELITE
+
+AI Profile:
+AI_SUPPORT
+
+Spawn Profile:
+SPAWN_MORGANA_CAMP
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# KEEPERS
+# ============================================================================
+
+## MON-0011
+
+Name:
+Keeper Guardian
+
+Asset ID:
+MON-0011
+
+Faction:
+Keepers
+
+Role:
+Tank
+
+Scaling Profile:
+MON_ELITE_TANK
+
+Loot Profile:
+LOOT_KEEPER_COMMON
+
+AI Profile:
+AI_GUARDIAN
+
+Spawn Profile:
+SPAWN_KEEPER_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0012
+
+Name:
+Keeper Druid
+
+Asset ID:
+MON-0012
+
+Faction:
+Keepers
+
+Role:
+Support
+
+Scaling Profile:
+MON_SUPPORT
+
+Loot Profile:
+LOOT_KEEPER_MAGIC
+
+AI Profile:
+AI_SUPPORT
+
+Spawn Profile:
+SPAWN_KEEPER_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0013
+
+Name:
+Stone Giant
+
+Asset ID:
+MON-0013
+
+Faction:
+Keepers
+
+Role:
+Heavy Tank
+
+Scaling Profile:
+MON_BOSS_MINI
+
+Loot Profile:
+LOOT_KEEPER_ELITE
+
+AI Profile:
+AI_GIANT
+
+Spawn Profile:
+SPAWN_KEEPER_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0014
+
+Name:
+Keeper Hunter
+
+Asset ID:
+MON-0014
+
+Faction:
+Keepers
+
+Role:
+Ranged
+
+Scaling Profile:
+MON_STANDARD_RANGED
+
+Loot Profile:
+LOOT_KEEPER_COMMON
+
+AI Profile:
+AI_RANGED_STANDARD
+
+Spawn Profile:
+SPAWN_KEEPER_FOREST
+
+Status:
+Planned
+
+---
+
+## MON-0015
+
+Name:
+Forest Beast
+
+Asset ID:
+MON-0015
+
+Faction:
+Keepers
+
+Role:
+Bruiser
+
+Scaling Profile:
+MON_ELITE_MELEE
+
+Loot Profile:
+LOOT_KEEPER_COMMON
+
+AI Profile:
+AI_AGGRESSIVE
+
+Spawn Profile:
+SPAWN_KEEPER_FOREST
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# HERETICS
+# ============================================================================
+
+## MON-0016
+
+Name:
+Heretic Fighter
+
+Asset ID:
+MON-0016
+
+Faction:
+Heretics
+
+Role:
+Melee
+
+Scaling Profile:
+MON_STANDARD_MELEE
+
+Loot Profile:
+LOOT_HERETIC_COMMON
+
+AI Profile:
+AI_MELEE_STANDARD
+
+Spawn Profile:
+SPAWN_HERETIC_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0017
+
+Name:
+Heretic Crossbowman
+
+Asset ID:
+MON-0017
+
+Faction:
+Heretics
+
+Role:
+Ranged
+
+Scaling Profile:
+MON_STANDARD_RANGED
+
+Loot Profile:
+LOOT_HERETIC_COMMON
+
+AI Profile:
+AI_RANGED_STANDARD
+
+Spawn Profile:
+SPAWN_HERETIC_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0018
+
+Name:
+Heretic Shaman
+
+Asset ID:
+MON-0018
+
+Faction:
+Heretics
+
+Role:
+Caster
+
+Scaling Profile:
+MON_STANDARD_CASTER
+
+Loot Profile:
+LOOT_HERETIC_MAGIC
+
+AI Profile:
+AI_CASTER_STANDARD
+
+Spawn Profile:
+SPAWN_HERETIC_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0019
+
+Name:
+Heretic Brute
+
+Asset ID:
+MON-0019
+
+Faction:
+Heretics
+
+Role:
+Heavy Melee
+
+Scaling Profile:
+MON_ELITE_MELEE
+
+Loot Profile:
+LOOT_HERETIC_ELITE
+
+AI Profile:
+AI_BRUTE
+
+Spawn Profile:
+SPAWN_HERETIC_CAMP
+
+Status:
+Planned
+
+---
+
+## MON-0020
+
+Name:
+Heretic Assassin
+
+Asset ID:
+MON-0020
+
+Faction:
+Heretics
+
+Role:
+Fast Melee
+
+Scaling Profile:
+MON_FAST_MELEE
+
+Loot Profile:
+LOOT_HERETIC_ELITE
+
+AI Profile:
+AI_ASSASSIN
+
+Spawn Profile:
+SPAWN_HERETIC_CAMP
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# WILDLIFE
+# ============================================================================
+
+## MON-0021
+Wolf
+Asset ID: MON-0021
+Faction: Wildlife
+Role: Beast
+Scaling Profile: MON_BEAST
+Loot Profile: LOOT_ANIMAL
+AI Profile: AI_WOLF
+Spawn Profile: SPAWN_FOREST
+
+---
+
+## MON-0022
+Dire Wolf
+Asset ID: MON-0022
+Faction: Wildlife
+Role: Elite Beast
+Scaling Profile: MON_ELITE_BEAST
+Loot Profile: LOOT_ANIMAL_ELITE
+AI Profile: AI_PACK_HUNTER
+Spawn Profile: SPAWN_FOREST
+
+---
+
+## MON-0023
+Brown Bear
+Asset ID: MON-0023
+Faction: Wildlife
+Role: Tank Beast
+Scaling Profile: MON_TANK_BEAST
+Loot Profile: LOOT_ANIMAL
+AI Profile: AI_BEAR
+Spawn Profile: SPAWN_FOREST
+
+---
+
+## MON-0024
+Boar
+Asset ID: MON-0024
+Faction: Wildlife
+Role: Bruiser
+Scaling Profile: MON_BEAST
+Loot Profile: LOOT_ANIMAL
+AI Profile: AI_BOAR
+Spawn Profile: SPAWN_FOREST
+
+---
+
+## MON-0025
+Giant Spider
+Asset ID: MON-0025
+Faction: Wildlife
+Role: Poison Beast
+Scaling Profile: MON_POISON
+Loot Profile: LOOT_ANIMAL
+AI Profile: AI_SPIDER
+Spawn Profile: SPAWN_FOREST
+
+---
+
+# ============================================================================
+# DEMONS
+# ============================================================================
+
+## MON-0026
+Lesser Demon
+Asset ID: MON-0026
+Faction: Demons
+Role: Melee
+Scaling Profile: MON_DEMON
+Loot Profile: LOOT_DEMON
+AI Profile: AI_DEMON
+Spawn Profile: SPAWN_HELL
+
+---
+
+## MON-0027
+Hell Archer
+Asset ID: MON-0027
+Faction: Demons
+Role: Ranged
+Scaling Profile: MON_DEMON_RANGED
+Loot Profile: LOOT_DEMON
+AI Profile: AI_RANGED_STANDARD
+Spawn Profile: SPAWN_HELL
+
+---
+
+## MON-0028
+Infernal Warlock
+Asset ID: MON-0028
+Faction: Demons
+Role: Caster
+Scaling Profile: MON_DEMON_CASTER
+Loot Profile: LOOT_DEMON_MAGIC
+AI Profile: AI_CASTER_STANDARD
+Spawn Profile: SPAWN_HELL
+
+---
+
+## MON-0029
+Hell Brute
+Asset ID: MON-0029
+Faction: Demons
+Role: Tank
+Scaling Profile: MON_DEMON_TANK
+Loot Profile: LOOT_DEMON_ELITE
+AI Profile: AI_BRUTE
+Spawn Profile: SPAWN_HELL
+
+---
+
+## MON-0030
+Imp
+
+Asset ID:
+MON-0030
+
+Faction:
+Demons
+
+Role:
+Fast Caster
+
+Scaling Profile:
+MON_FAST_CASTER
+
+Loot Profile:
+LOOT_DEMON
+
+AI Profile:
+AI_IMP
+
+Spawn Profile:
+SPAWN_HELL
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# PROFILE REFERENCES
+# ============================================================================
+
+Monster statistics are inherited from:
+
+- Scaling Profiles
+- AI Profiles
+- Loot Profiles
+- Spawn Profiles
+
+These profiles are defined in:
+
+- DB_PROGRESS_RULES.md
+- DB_LOOT_TABLES.md
+- DB_AI.md *(à créer)*
+- DB_WORLD.md *(à créer)*
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Every monster automatically generates Tier variants according to its Spawn
+Profile.
+
+Each generated monster inherits:
+
+- Name
+- Asset
+- AI
+- Loot Profile
+- Behaviour
+- Animations
+- Faction
+
+Only the following values are generated procedurally:
+
+- HP
+- Damage
+- Armor
+- Magic Resistance
+- Silver Reward
+- Fame / Experience
+- Loot Quantity
+- Loot Quality
+
+No generated system may modify:
+
+- Monster ID
+- Name
+- Asset ID
+- Faction
+- AI Profile
+- Loot Profile
+- Spawn Profile
+
+DOCUMENT TERMINÉ

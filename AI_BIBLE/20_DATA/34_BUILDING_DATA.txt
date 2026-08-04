@@ -1,0 +1,668 @@
+# 34. BUILDING DATA
+
+---
+
+# Purpose
+
+The Building Data document defines every constructible building available in the game.
+
+Buildings are persistent structures primarily located on the Player Island.
+
+They provide services such as:
+
+- Crafting
+- Refining
+- Cooking
+- Worker Management
+- Storage
+- Future Gameplay Systems
+
+Buildings are permanent gameplay entities that host production systems.
+
+---
+
+# Design Philosophy
+
+The Building system follows seven principles.
+
+---
+
+## Service Oriented
+
+Buildings provide gameplay services.
+
+They do not contain gameplay logic themselves.
+
+Instead, they expose functionality consumed by specialized systems.
+
+---
+
+## Data Driven
+
+Every Building is defined entirely through data.
+
+Adding a new Building never requires gameplay code.
+
+---
+
+## Modular
+
+Buildings reference other systems instead of duplicating functionality.
+
+Examples:
+
+- Recipes
+- Workers
+- Crafting
+- Refining
+- Storage
+
+---
+
+## Persistent
+
+Buildings belong to the Player Island and remain permanently available once constructed.
+
+Their runtime state is saved separately.
+
+---
+
+## Upgradeable
+
+Buildings support multiple upgrade levels.
+
+Each level increases capabilities without changing the Building's identity.
+
+---
+
+## Reusable
+
+The same Building definition may be instantiated multiple times.
+
+Definitions remain immutable.
+
+---
+
+## Extensible
+
+Future production systems may introduce additional Building categories without redesigning the architecture.
+
+---
+
+# Responsibilities
+
+Building Data defines:
+
+- Identity
+- Category
+- Building Levels
+- Construction Requirements
+- Upgrade Requirements
+- Supported Recipes
+- Worker Capacity
+- Production Slots
+- Building Footprint
+- Tags
+
+Building Data does NOT define:
+
+- Runtime Progress
+- Construction State
+- Player Ownership
+- Production Queues
+- Worker Assignments
+- Inventory
+
+---
+
+# Building Definition
+
+Every Building contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Category
+
+↓
+
+Maximum Level
+
+↓
+
+Construction Cost
+
+↓
+
+Upgrade Data
+
+↓
+
+Supported Recipes
+
+↓
+
+Worker Capacity
+
+↓
+
+Production Slots
+
+↓
+
+Footprint
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Building owns one globally unique identifier.
+
+Examples:
+
+```
+building_forge
+
+building_smelter
+
+building_lumbermill
+
+building_kitchen
+
+building_house
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Forge
+
+Smelter
+
+House
+
+Kitchen
+
+Lumbermill
+```
+
+---
+
+# Categories
+
+Version 1 supports:
+
+- Crafting
+- Refining
+- Cooking
+- Housing
+- Utility
+
+Future versions may introduce:
+
+- Alchemy
+- Enchanting
+- Marketplace
+- Decorations
+
+---
+
+# Maximum Level
+
+Each Building defines its maximum upgrade level.
+
+Example:
+
+```
+Level 1
+
+↓
+
+Level 2
+
+↓
+
+Level 3
+
+↓
+
+Level 4
+
+↓
+
+Level 5
+```
+
+The number of levels is configurable.
+
+---
+
+# Construction Cost
+
+Defines the resources required to build the first level.
+
+Example:
+
+```json
+[
+    {
+        "itemId": "item_refined_plank_t4",
+        "quantity": 40
+    },
+    {
+        "itemId": "item_refined_bar_t4",
+        "quantity": 20
+    }
+]
+```
+
+Construction costs are deterministic.
+
+---
+
+# Upgrade Requirements
+
+Each Building Level defines:
+
+- Required Resources
+- Construction Time
+- Optional Mastery Requirement
+
+Example:
+
+```
+Forge
+
+↓
+
+Level 2
+
+↓
+
+60 Bars
+
+40 Planks
+
+30 Seconds
+```
+
+---
+
+# Supported Recipes
+
+Buildings reference Recipe Definitions.
+
+Example:
+
+```
+building_forge
+
+↓
+
+recipe_weapon_broadsword_t4
+
+recipe_weapon_claymore_t4
+
+recipe_weapon_dualswords_t4
+```
+
+Buildings never define recipes directly.
+
+---
+
+# Worker Capacity
+
+Defines the maximum number of Workers assigned simultaneously.
+
+Example:
+
+```
+House
+
+↓
+
+4 Workers
+```
+
+Some Buildings may not support Workers.
+
+Capacity:
+
+```
+0
+```
+
+---
+
+# Production Slots
+
+Defines simultaneous production capacity.
+
+Example:
+
+```
+Forge
+
+↓
+
+2 Slots
+```
+
+Version 1 supports configurable slot counts.
+
+---
+
+# Building Footprint
+
+Defines island space occupied.
+
+Example:
+
+```
+2x2
+
+3x3
+
+4x4
+```
+
+Placement rules are handled separately.
+
+---
+
+# Construction Time
+
+Defines the base construction duration.
+
+Example:
+
+```
+10 Seconds
+
+30 Seconds
+
+60 Seconds
+```
+
+Construction acceleration is handled elsewhere.
+
+---
+
+# Durability
+
+Version 1 Buildings do not possess durability.
+
+Buildings cannot be destroyed.
+
+---
+
+# Storage Capacity
+
+Utility Buildings may expose storage.
+
+Example:
+
+```
+Warehouse
+
+↓
+
+200 Slots
+```
+
+Most production Buildings have no storage.
+
+---
+
+# Tags
+
+Examples:
+
+```
+crafting
+
+production
+
+housing
+
+forge
+
+tier4
+```
+
+Tags simplify filtering.
+
+---
+
+# Runtime Representation
+
+```
+Building Definition
+
+↓
+
+Construction
+
+↓
+
+Completed Building
+
+↓
+
+Production
+
+↓
+
+Saved State
+```
+
+Definitions remain immutable.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Recipe References
+- Existing Resource References
+- Valid Category
+- Valid Maximum Level
+- Valid Slot Count
+- Valid Worker Capacity
+- Valid Footprint
+
+Invalid Buildings never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Building Damage
+- Building Destruction
+- Building Relocation Costs
+- Procedural Buildings
+- Runtime-generated Buildings
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "building_forge",
+    "name": "Forge",
+    "category": "Crafting",
+    "maxLevel": 5,
+    "constructionCost": [
+        {
+            "itemId": "item_refined_bar_t4",
+            "quantity": 30
+        },
+        {
+            "itemId": "item_refined_plank_t4",
+            "quantity": 20
+        }
+    ],
+    "workerCapacity": 0,
+    "productionSlots": 2,
+    "footprint": {
+        "width": 3,
+        "height": 3
+    },
+    "supportedRecipes": [
+        "recipe_weapon_broadsword_t4",
+        "recipe_weapon_claymore_t4"
+    ],
+    "tags": [
+        "crafting",
+        "forge"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Building
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Player Constructs Building
+
+↓
+
+Building Becomes Available
+
+↓
+
+Production Begins
+
+↓
+
+Save Runtime State
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Building Data document is complete when:
+
+- Every Building has a unique identifier.
+- Categories are predefined.
+- Construction costs are configurable.
+- Upgrade levels are configurable.
+- Supported Recipes are referenced.
+- Worker Capacity is configurable.
+- Production Slots are configurable.
+- Footprints are configurable.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Building is completely data-driven.
+
+Rule 02
+
+Buildings provide services rather than gameplay logic.
+
+Rule 03
+
+Buildings reference Recipes by identifier.
+
+Rule 04
+
+Construction costs are deterministic.
+
+Rule 05
+
+Upgrade progression is explicit.
+
+Rule 06
+
+Production Slots are configurable.
+
+Rule 07
+
+Worker Capacity is configurable.
+
+Rule 08
+
+Buildings define their island footprint.
+
+Rule 09
+
+Buildings never contain runtime state.
+
+Rule 10
+
+Buildings cannot be destroyed in Version 1.
+
+Rule 11
+
+Validation prevents invalid Building definitions.
+
+Rule 12
+
+Building definitions remain immutable.
+
+Rule 13
+
+Every Building may declare its content source.
+
+Rule 14
+
+Future Building categories must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Buildings exclusively through identifiers.
+
+---
+
+# Summary
+
+The Building Data document defines every constructible structure through a modular, persistent and fully data-driven architecture. By separating static building definitions from runtime production, ownership and progression, Buildings become reusable service providers capable of supporting crafting, refining, housing and future gameplay systems while remaining scalable, deterministic and easy to extend throughout the lifetime of the project.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

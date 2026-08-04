@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "category": "loot_tables",
+  "definitions": [
+    {
+      "id": "loot_table_wolf_t4",
+      "entries": [
+        { "itemId": "item_resource_hide_t4", "weight": 80, "minQuantity": 1, "maxQuantity": 3, "conditions": [] },
+        { "itemId": "item_resource_ore_t4", "weight": 20, "minQuantity": 1, "maxQuantity": 1, "conditions": [] }
+      ],
+      "guaranteedDrops": [],
+      "maxRolls": 2
+    },
+    {
+      "id": "loot_table_bandit_t4",
+      "entries": [
+        { "itemId": "item_resource_hide_t4", "weight": 50, "minQuantity": 1, "maxQuantity": 2, "conditions": [] },
+        { "itemId": "item_potion_healing_minor", "weight": 15, "minQuantity": 1, "maxQuantity": 1, "conditions": [] }
+      ],
+      "guaranteedDrops": [],
+      "maxRolls": 3
+    },
+    {
+      "id": "loot_table_spider_t4",
+      "entries": [
+        { "itemId": "item_resource_hide_t4", "weight": 70, "minQuantity": 1, "maxQuantity": 2, "conditions": [] }
+      ],
+      "guaranteedDrops": [],
+      "maxRolls": 2
+    },
+    {
+      "id": "loot_table_resource_ore_t4",
+      "entries": [
+        { "itemId": "item_resource_ore_t4", "weight": 100, "minQuantity": 2, "maxQuantity": 5, "conditions": [] }
+      ],
+      "guaranteedDrops": ["item_resource_ore_t4"],
+      "maxRolls": 1
+    }
+  ]
+}

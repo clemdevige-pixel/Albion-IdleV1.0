@@ -1,0 +1,1436 @@
+# 24. ENEMY SYSTEM
+
+---
+
+# Purpose
+
+The Enemy System defines every hostile entity encountered throughout the game.
+
+Enemies represent the primary obstacle to player progression.
+
+Every combat encounter, regardless of activity, is built from Enemy Definitions.
+
+The Enemy System is responsible for:
+
+- Enemy Definitions
+- Enemy Families
+- Enemy Categories
+- Enemy Statistics
+- Enemy Scaling
+- Enemy Abilities
+- Enemy Rewards
+- Enemy Visual Identity
+- Enemy Audio Identity
+- Enemy Generation Data
+
+The Enemy System never executes gameplay logic.
+
+Combat execution belongs to the Combat System.
+
+Decision making belongs to the AI System.
+
+Damage belongs to the Damage System.
+
+Abilities belong to the Ability System.
+
+---
+
+# Design Philosophy
+
+The Enemy System is built around seven core principles.
+
+## Data Driven
+
+Every enemy is entirely defined through data.
+
+Creating a new monster should never require programming.
+
+Designers should be able to add enemies by creating new data entries.
+
+---
+
+## Deterministic
+
+Given identical inputs:
+
+- Enemy
+- Statistics
+- Encounter
+- Random Seed
+
+The enemy always behaves identically.
+
+This guarantees deterministic offline progression.
+
+---
+
+## Side-Scroller First
+
+Enemies exist inside a 2D horizontal world.
+
+Characteristics:
+
+- Horizontal movement only
+- Fixed vertical plane
+- No jumping
+- No vertical positioning
+- No free navigation
+- Simple collision
+
+Every enemy is designed around this gameplay space.
+
+---
+
+## Family Identity
+
+Every family possesses a unique gameplay identity.
+
+Players should immediately recognize a family through:
+
+- Appearance
+- Animations
+- Sound
+- Combat Style
+- Rewards
+
+Enemy identity is more important than raw statistics.
+
+---
+
+## Modular Design
+
+Enemies reuse existing gameplay systems.
+
+Every enemy shares:
+
+- Character System
+- Combat System
+- Ability System
+- Damage System
+- Status Effect System
+
+No dedicated combat engine exists for enemies.
+
+---
+
+## Infinite Exploration
+
+Enemies continuously appear during exploration.
+
+Version 1 never relies on:
+
+- Respawn Timers
+- Spawn Points
+- Persistent World Populations
+
+Exploration continuously generates new encounters.
+
+---
+
+## Readability
+
+Enemy readability has priority over realism.
+
+Players should instantly understand:
+
+- Enemy Family
+- Enemy Category
+- Current Action
+- Current Target
+- Dangerous Abilities
+
+Visual clarity always comes first.
+
+---
+
+# Responsibilities
+
+The Enemy System is responsible for:
+
+- Enemy Templates
+- Statistics
+- Categories
+- Families
+- Reward Data
+- Ability Lists
+- Animation References
+- Audio References
+- Encounter Participation
+
+The Enemy System is NOT responsible for:
+
+- Combat Execution
+- AI Decisions
+- Damage Calculation
+- Projectile Simulation
+- Loot Generation
+- Exploration Flow
+- Zone Generation
+
+---
+
+# Enemy Definition
+
+Every enemy is represented by a single Enemy Definition.
+
+Each definition contains:
+
+- Identifier
+- Display Name
+- Family
+- Category
+- Zone Tier
+- Statistics
+- Ability List
+- Loot Table Reference
+- Fame Reward
+- Sprite Set
+- Animation Set
+- Audio Set
+
+Every hostile entity follows this exact structure.
+
+---
+
+# Enemy Categories
+
+Version 1 supports four categories.
+
+- Normal
+- Veteran
+- Elite
+- Boss
+
+Categories represent combat difficulty rather than enemy type.
+
+The same family may exist in every category.
+
+Example:
+
+Normal Wolf
+
+Veteran Wolf
+
+Elite Wolf
+
+Boss Wolf
+
+All belong to the Animal Family.
+
+---
+
+# Normal Enemies
+
+Normal enemies represent the majority of encounters.
+
+Characteristics:
+
+- Standard Statistics
+- Simple Ability Kit
+- Frequent Generation
+- Standard Rewards
+- Small Health Pools
+
+Examples:
+
+- Wolf
+- Skeleton
+- Heretic Scout
+- Ore Elemental
+
+---
+
+# Veteran Enemies
+
+Veterans are stronger versions of Normal enemies.
+
+Characteristics:
+
+- Higher Health
+- Higher Damage
+- Improved Rewards
+- Additional Ability
+
+Veterans introduce moderate combat challenges.
+
+---
+
+# Elite Enemies
+
+Elite enemies represent dangerous encounters.
+
+Characteristics:
+
+- High Statistics
+- Multiple Abilities
+- Improved Survivability
+- High Fame
+- Better Loot
+
+Elite encounters should feel immediately recognizable.
+
+---
+
+# Boss Enemies
+
+Bosses represent the strongest encounters in Version 1.
+
+Characteristics:
+
+- Highest Statistics
+- Complete Ability Kit
+- Large Health Pool
+- Unique Presentation
+- Best Rewards
+
+Bosses occupy the fifth Encounter of every Zone Segment.
+
+Each Zone Segment therefore ends with a Boss Encounter.
+
+Future versions may introduce:
+
+- Multiple Phases
+- Arena Mechanics
+- Summons
+- Enrage Mechanics
+
+Version 1 Bosses remain compatible with the standard combat pipeline.
+
+---
+
+# Enemy Families
+
+Version 1 supports seven enemy families.
+
+Resource Families
+
+- Animals
+- Elementals
+
+Combat Families
+
+- Heretics
+- Keepers
+- Morgana
+- Undead
+- Demons
+
+Each family possesses its own combat identity.
+
+---
+
+# Resource Families
+
+Resource Families are directly connected to Gathering.
+
+After defeating them, players gather resources.
+
+They replace traditional gathering nodes in dangerous areas.
+
+---
+
+# Animals
+
+Animals represent living creatures.
+
+Examples:
+
+- Wolf
+- Bear
+- Cougar
+- Boar
+- Direwolf
+- Mammoth
+
+Primary Rewards:
+
+- Hide
+- Meat
+
+Profession:
+
+Skinning
+
+Combat Identity:
+
+- Fast
+- Aggressive
+- Close Combat
+
+---
+
+# Elementals
+
+Elementals embody natural resources.
+
+Examples:
+
+- Ore Elemental
+- Stone Elemental
+- Tree Elemental
+- Fiber Elemental
+
+Primary Rewards:
+
+- Ore
+- Stone
+- Wood
+- Fiber
+
+Profession depends on resource type.
+
+Combat Identity:
+
+- Slow
+- Durable
+- Heavy Attacks
+
+Elementals must always be defeated before gathering begins.
+
+---
+
+# Combat Families
+
+Combat Families exist primarily to support PvE progression.
+
+Unlike Resource Families, their rewards focus on combat progression.
+
+---
+
+# Heretics
+
+Human outlaws.
+
+Combat Identity:
+
+- Fast
+- Physical
+- Aggressive
+- High Mobility
+
+---
+
+# Keepers
+
+Ancient guardians.
+
+Combat Identity:
+
+- Defensive
+- Durable
+- Crowd Control
+
+---
+
+# Morgana
+
+Dark cultists.
+
+Combat Identity:
+
+- Magic
+- Buffs
+- Debuffs
+- Area Damage
+
+---
+
+# Undead
+
+Animated corpses.
+
+Combat Identity:
+
+- Attrition
+- Debuffs
+- High Survivability
+
+---
+
+# Demons
+
+Powerful corrupted entities.
+
+Combat Identity:
+
+- Burst Damage
+- Aggression
+- Endgame Threats
+
+---
+
+# Family Identity
+
+Each family defines:
+
+- Visual Theme
+- Animation Style
+- Audio Style
+- Ability Pool
+- Loot Pool
+- Combat Identity
+
+Families remain completely independent from Categories.
+
+This allows scalable enemy creation without multiplying systems.
+
+---
+
+# Zone Tier
+
+Enemies never possess numerical levels.
+
+Power depends exclusively on:
+
+- Zone Tier
+- Enemy Category
+
+Example:
+
+T3 Normal Wolf
+
+T4 Veteran Skeleton
+
+T5 Elite Keeper
+
+T6 Ore Elemental
+
+T7 Elite Morgana
+
+T8 Boss Demon
+
+No additional level system exists.
+
+---
+# Enemy Statistics
+
+Every enemy owns the standard Character Statistics.
+
+Examples include:
+
+- Maximum Health
+- Physical Damage
+- Magical Damage
+- Armor
+- Magic Resistance
+- Attack Speed
+- Movement Speed
+- Attack Range
+- Critical Chance
+- Critical Damage
+
+Enemy statistics are stored directly inside the Enemy Definition.
+
+Enemies never calculate their statistics from equipment.
+
+Scaling modifiers are applied by the Progress Scaling System before combat begins.
+
+---
+
+# Enemy Equipment
+
+Enemies do not own gameplay equipment.
+
+Instead they contain:
+
+- Base Statistics
+- Ability Set
+- Visual Equipment
+- Loot Table
+
+Visual Equipment exists only for presentation.
+
+Examples:
+
+A Heretic Knight may visually carry:
+
+- Sword
+- Shield
+- Helmet
+
+Internally these visuals never modify statistics.
+
+Only the Enemy Definition determines gameplay values.
+
+---
+
+# Enemy Abilities
+
+Version 1 enemies use the exact same Ability System as the player.
+
+Every enemy may possess:
+
+- One Basic Attack
+- Up to two Active Abilities
+- One Passive Ability
+
+Abilities use:
+
+- Shared Cooldown System
+- Shared Target Validation
+- Shared Damage Pipeline
+- Shared Status Effect System
+- Shared Projectile System
+- Shared Animation Pipeline
+
+Only the ability data differs.
+
+---
+
+# Example Ability Sets
+
+## Wolf
+
+Basic Attack
+
+- Bite
+
+Active Ability
+
+- Leap
+
+Passive
+
+- Predator Instinct
+
+Combat Identity:
+
+Fast melee attacker.
+
+---
+
+## Skeleton
+
+Basic Attack
+
+- Rusty Slash
+
+Active Abilities
+
+- Bone Throw
+- Bone Shield
+
+Passive
+
+- Undead Fortitude
+
+Combat Identity:
+
+Balanced melee fighter with defensive tools.
+
+---
+
+## Ore Elemental
+
+Basic Attack
+
+- Stone Punch
+
+Active Ability
+
+- Ground Slam
+
+Passive
+
+- Hardened Body
+
+Combat Identity:
+
+Slow but durable defender.
+
+---
+
+## Morgana Mage
+
+Basic Attack
+
+- Dark Bolt
+
+Active Abilities
+
+- Shadow Explosion
+- Curse
+
+Passive
+
+- Dark Ritual
+
+Combat Identity:
+
+Long-range spellcaster applying debuffs.
+
+---
+
+# Enemy Positioning
+
+Version 1 combat occurs exclusively on a horizontal axis.
+
+Enemy positioning follows simple rules.
+
+Enemies always spawn:
+
+- In front of the Hero
+- Inside the current Encounter
+- Facing the Hero
+
+Typical encounter:
+
+```
+Hero
+
+------------------>
+
+Wolf   Wolf   Alpha Wolf
+```
+
+Enemies never appear behind the player during a standard encounter.
+
+---
+
+# Enemy Facing Direction
+
+Enemies always face their current target.
+
+Because combat is horizontal:
+
+Only two facing directions exist.
+
+- Left
+- Right
+
+Sprite flipping replaces dedicated left/right animation sets.
+
+---
+
+# Enemy Movement
+
+Enemies move automatically.
+
+Movement only exists to reach valid attack range.
+
+Enemy movement stops immediately when:
+
+- Target enters attack range.
+- Target dies.
+- Enemy dies.
+- Combat ends.
+
+Enemies never wander during combat.
+
+There is no free repositioning.
+
+---
+
+# Enemy Detection
+
+Each enemy owns a Detection Range.
+
+When the Hero enters Detection Range:
+
+The enemy becomes active.
+
+Typical sequence:
+
+Idle
+
+↓
+
+Hero Detected
+
+↓
+
+Advance
+
+↓
+
+Reach Attack Range
+
+↓
+
+Attack
+
+Detection occurs entirely on the horizontal axis.
+
+---
+
+# Enemy Lifecycle
+
+Every enemy follows the same lifecycle.
+
+```
+Generated
+
+↓
+
+Spawned Inside Encounter
+
+↓
+
+Idle
+
+↓
+
+Hero Detected
+
+↓
+
+Combat
+
+↓
+
+Defeated
+
+↓
+
+Loot Generated
+
+↓
+
+Destroyed
+```
+
+Enemies never remain in the world after defeat.
+
+---
+
+# Continuous Generation
+
+The World System continuously generates new encounters.
+
+Enemy generation depends on:
+
+- Zone Tier
+- Biome
+- Zone Segment
+- Encounter Table
+- Family Distribution
+
+Version 1 does not use:
+
+- Spawn Points
+- Respawn Timers
+- Persistent Populations
+
+Every generated encounter is temporary.
+
+---
+
+# Zone Segment Integration
+
+Exploration is divided into Zone Segments.
+
+Each Zone Segment contains exactly five encounters.
+
+Typical structure:
+
+Encounter 1
+
+↓
+
+Encounter 2
+
+↓
+
+Encounter 3
+
+↓
+
+Encounter 4
+
+↓
+
+Boss Encounter
+
+After the Boss dies:
+
+The player may continue into the next Zone Segment.
+
+Enemy generation immediately begins again.
+
+---
+
+# Encounter Membership
+
+Enemies never exist independently.
+
+Every generated enemy belongs to exactly one Encounter.
+
+Examples:
+
+Encounter A
+
+- 3 Wolves
+
+Encounter B
+
+- 1 Bear
+
+Encounter C
+
+- 2 Skeletons
+- 1 Necromancer
+
+Combat always begins against one complete Encounter.
+
+---
+
+# Encounter Scaling
+
+Enemy strength increases through two independent systems.
+
+## Zone Tier
+
+Determines baseline power.
+
+Example:
+
+T3 Wolf
+
+↓
+
+T5 Wolf
+
+↓
+
+T8 Wolf
+
+Statistics increase.
+
+Identity remains identical.
+
+---
+
+## Enemy Category
+
+Determines encounter difficulty.
+
+Normal
+
+↓
+
+Veteran
+
+↓
+
+Elite
+
+↓
+
+Boss
+
+Categories improve:
+
+- Statistics
+- Rewards
+- Ability Count
+
+Without changing family identity.
+
+---
+
+# Enemy Rewards
+
+Every enemy owns:
+
+- Loot Table
+- Fame Reward
+- Silver Reward
+
+Rewards depend on:
+
+- Zone Tier
+- Enemy Category
+- Reward Multipliers
+
+Reward generation itself belongs to the Loot System.
+
+The Enemy System only provides reward references.
+
+---
+
+# Fame Rewards
+
+Every defeated enemy grants Fame.
+
+Fame progression always follows:
+
+Normal
+
+↓
+
+Veteran
+
+↓
+
+Elite
+
+↓
+
+Boss
+
+Higher Tier also increases Fame.
+
+The Fame System handles all calculations.
+
+---
+
+# Enemy Death
+
+Enemy death occurs immediately when Health reaches zero.
+
+Death sequence:
+
+Health reaches zero
+
+↓
+
+Death animation
+
+↓
+
+Combat event emitted
+
+↓
+
+Loot generated
+
+↓
+
+Reward collection
+
+↓
+
+Enemy removed
+
+Enemy corpses are temporary visual elements only.
+
+---
+
+# Resource Enemies
+
+Animals and Elementals possess an additional post-combat interaction.
+
+Sequence:
+
+Combat
+
+↓
+
+Enemy dies
+
+↓
+
+Gathering Node appears
+
+↓
+
+Player gathers automatically
+
+↓
+
+Resources collected
+
+↓
+
+Exploration resumes
+
+This links Combat and Gathering into a single gameplay loop.
+
+---
+
+# Enemy Variants
+
+Version 1 intentionally excludes random enemy variants.
+
+Every identical enemy shares:
+
+- Statistics
+- Abilities
+- Rewards
+- Appearance
+- Behavior
+
+Example:
+
+Every T6 Normal Wolf behaves identically.
+
+This guarantees deterministic balancing.
+
+---
+# Future Compatibility
+
+The Enemy System has been intentionally designed to support future gameplay systems without requiring architectural redesign.
+
+Future extensions may include:
+
+- Enemy Affixes
+- Champion Enemies
+- Seasonal Variants
+- World Bosses
+- Raid Bosses
+- Dynamic Events
+- Environmental Modifiers
+- Elite Patrols
+- Rare Spawn Variants
+- Summoned Creatures
+- Companion Enemies
+- PvP NPCs
+
+These features extend existing Enemy Definitions rather than replacing them.
+
+---
+
+# Enemy Affixes (Future)
+
+Version 1 does not support Affixes.
+
+Future versions may introduce modifiers applied on top of existing Enemy Definitions.
+
+Examples:
+
+Frenzied
+
+- Increased Attack Speed
+- Reduced Defense
+
+Armored
+
+- Increased Armor
+- Reduced Movement Speed
+
+Swift
+
+- Increased Movement Speed
+- Faster Ability Cooldowns
+
+Giant
+
+- Increased Size
+- Increased Health
+- Increased Damage
+
+Vampiric
+
+- Life Steal
+
+Berserker
+
+- Increased Damage at low Health
+
+Affixes modify existing enemies without creating entirely new Enemy Definitions.
+
+---
+
+# Family Expansion
+
+The architecture supports unlimited future Enemy Families.
+
+Possible additions include:
+
+- Pirates
+- Fey
+- Dragons
+- Ancient Machines
+- Crystal Creatures
+- Corrupted Beasts
+- Spirits
+- Constructs
+
+Each new family simply defines:
+
+- Visual Theme
+- Animation Set
+- Audio Set
+- Ability Pool
+- Loot Pool
+- Combat Identity
+
+No Combat System modifications are required.
+
+---
+
+# Boss Expansion
+
+Future Bosses may extend the standard rules while remaining compatible with the Combat pipeline.
+
+Examples:
+
+- Multiple Combat Phases
+- Arena-wide Abilities
+- Environmental Hazards
+- Temporary Invulnerability
+- Summoned Minions
+- Enrage Timers
+
+These mechanics remain additional layers built upon the existing systems.
+
+---
+
+# Enemy Events
+
+The Enemy System emits gameplay events.
+
+Examples:
+
+OnEnemyGenerated
+
+OnEnemySpawned
+
+OnEnemyDetected
+
+OnEnemyDamaged
+
+OnEnemyAbilityUsed
+
+OnEnemyKilled
+
+OnEnemyLootGenerated
+
+OnEnemyDestroyed
+
+The Enemy System never directly communicates with other systems.
+
+Instead, external systems subscribe to these events.
+
+Examples:
+
+- Combat UI
+- Audio System
+- VFX System
+- Loot System
+- Progression System
+- Statistics System
+- Achievement System
+- Quest System
+- Analytics
+
+This guarantees a modular architecture.
+
+---
+
+# Error Handling
+
+Invalid Enemy Definitions must never crash the game.
+
+Examples:
+
+- Missing Statistics
+- Missing Ability
+- Unknown Family
+- Invalid Loot Table
+- Invalid Animation Reference
+- Missing Audio Reference
+
+Development builds should report detailed validation errors.
+
+Release builds should safely ignore invalid enemy definitions while logging diagnostics.
+
+---
+
+# Performance Considerations
+
+Enemy simulation must support extremely long idle sessions.
+
+Design goals include:
+
+- Minimal CPU usage
+- Stable memory consumption
+- Deterministic simulation
+- Data-oriented storage
+- Fast encounter creation
+- Efficient destruction
+- Minimal runtime allocations
+
+Enemy Definitions should be loaded once and reused throughout the entire session.
+
+Generated enemies should contain only runtime state.
+
+---
+
+# Responsibilities
+
+The Enemy System is responsible for:
+
+- Enemy Definitions
+- Enemy Categories
+- Enemy Families
+- Statistics
+- Ability References
+- Reward References
+- Visual Identity
+- Audio Identity
+- Encounter Membership
+- Runtime Enemy Instances
+
+The Enemy System is NOT responsible for:
+
+- Combat Execution
+- Damage Calculations
+- AI Decision Making
+- Ability Execution
+- Projectile Simulation
+- Loot Generation Algorithms
+- Gathering Logic
+- Exploration Flow
+- World Generation
+- Progression Calculations
+
+These responsibilities belong to their dedicated systems.
+
+---
+
+# Immutable Design Rules
+
+The following principles define the Enemy System and must never change without redesigning the project.
+
+Rule 01
+
+Enemies are entirely data-driven.
+
+Rule 02
+
+Enemies never possess numerical levels.
+
+Rule 03
+
+Enemy power depends exclusively on Zone Tier and Enemy Category.
+
+Rule 04
+
+Version 1 supports four Enemy Categories.
+
+Rule 05
+
+Version 1 supports seven Enemy Families.
+
+Rule 06
+
+Animals and Elementals belong to the Resource Families.
+
+Rule 07
+
+Heretics, Keepers, Morgana, Undead and Demons belong to the Combat Families.
+
+Rule 08
+
+Enemies never own gameplay Equipment.
+
+Rule 09
+
+Visual Equipment has no gameplay impact.
+
+Rule 10
+
+Enemies use the exact same Ability System as the player.
+
+Rule 11
+
+Enemies exist only within Encounters.
+
+Rule 12
+
+Every Encounter belongs to a Zone Segment.
+
+Rule 13
+
+Each Zone Segment contains five Encounters.
+
+Rule 14
+
+The fifth Encounter is always a Boss.
+
+Rule 15
+
+Enemies never respawn.
+
+Rule 16
+
+The world continuously generates new Encounters.
+
+Rule 17
+
+Version 1 contains no Enemy Variants.
+
+Rule 18
+
+Combat occurs exclusively on a horizontal axis.
+
+Rule 19
+
+Enemy movement is automatic.
+
+Rule 20
+
+Enemy behavior remains deterministic under identical conditions.
+
+---
+
+# Example Enemy Progression
+
+The following example illustrates the progression of a single family.
+
+```
+Animal Family
+
+↓
+
+T3 Normal Wolf
+
+↓
+
+T4 Veteran Wolf
+
+↓
+
+T5 Elite Wolf
+
+↓
+
+T6 Boss Wolf
+
+↓
+
+Next Zone Segment
+
+↓
+
+T6 Normal Wolf
+
+↓
+
+T6 Veteran Wolf
+
+↓
+
+T6 Elite Wolf
+
+↓
+
+T6 Boss Wolf
+
+↓
+
+Next Zone Segment
+
+...
+```
+
+The family's gameplay identity never changes.
+
+Only statistics, rewards and encounter difficulty increase.
+
+---
+
+# Summary
+
+The Enemy System provides a fully data-driven framework for every hostile entity encountered throughout the game.
+
+Enemies are organized through **Families**, **Categories** and **Zone Tiers**, allowing scalable progression without introducing traditional character levels.
+
+Designed specifically for the game's side-scrolling architecture, every enemy operates on a single horizontal axis, uses the shared Character, Combat, Ability, Damage and Status Effect Systems, and participates in deterministic Encounter-based gameplay.
+
+Version 1 intentionally focuses on simple, readable and highly reusable enemy definitions while leaving room for future expansion through Affixes, advanced Boss mechanics and entirely new enemy families.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

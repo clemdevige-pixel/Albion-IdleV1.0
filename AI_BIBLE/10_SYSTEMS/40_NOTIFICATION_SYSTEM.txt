@@ -1,0 +1,1521 @@
+# 40. NOTIFICATION SYSTEM
+
+## Purpose
+
+The Notification System communicates important gameplay events to the player.
+
+It supports:
+
+- Temporary in-game messages
+- Persistent notifications
+- Notifications generated while the player is disconnected
+- Grouped login summaries
+- Actionable navigation toward the relevant game system
+
+The system does not send mobile, desktop, email, or external push notifications in V1.
+
+---
+
+# Design Goals
+
+The Notification System must:
+
+- Inform players without interrupting gameplay excessively.
+- Preserve important information.
+- Avoid notification spam.
+- Support background progression results.
+- Group accumulated notifications at login.
+- Provide direct access to relevant interfaces.
+- Remain generic and system-independent.
+- Support future gameplay systems.
+- Be fully server-authoritative for persistent notifications.
+
+---
+
+# Core Philosophy
+
+Notifications should communicate meaningful changes.
+
+They should not become a constant stream of low-value messages.
+
+The system distinguishes between:
+
+- Temporary feedback
+- Persistent information
+- Grouped login summaries
+
+Each notification type must use the least intrusive presentation appropriate to its importance.
+
+---
+
+# Supported Channels
+
+V1 supports only in-game notification channels.
+
+Supported channels include:
+
+- Toast Notifications
+- Notification Center
+- Login Summary
+- Interface Badges
+- Contextual Highlights
+
+---
+
+# Excluded Channels
+
+V1 does not support:
+
+- Mobile Push Notifications
+- Desktop Push Notifications
+- Email Notifications
+- SMS Notifications
+- Browser Notifications
+- External Messaging Services
+
+---
+
+# Notification Categories
+
+Notifications are divided into two main persistence categories:
+
+- Temporary Notifications
+- Persistent Notifications
+
+---
+
+# Temporary Notifications
+
+Temporary Notifications provide immediate feedback.
+
+They appear briefly and disappear automatically.
+
+They are not stored in the Notification Center.
+
+Examples include:
+
+- Silver received
+- Item collected
+- Craft started
+- Refining started
+- Worker assigned
+- Equipment changed
+- Resource gathered
+- Purchase completed
+- Sale completed
+
+---
+
+# Temporary Notification Philosophy
+
+Temporary notifications should:
+
+- Confirm immediate player actions.
+- Remain concise.
+- Avoid blocking input.
+- Avoid accumulating.
+- Avoid requiring manual dismissal.
+
+They should not be used for information the player may need later.
+
+---
+
+# Toast Notifications
+
+Temporary notifications are generally displayed as toasts.
+
+A toast may contain:
+
+- Icon
+- Short title
+- Short message
+- Quantity
+- Duration
+- Optional visual emphasis
+
+---
+
+# Toast Duration
+
+Toast duration is data-driven.
+
+Recommended default ranges:
+
+- Minor feedback: 2 seconds
+- Standard feedback: 3 seconds
+- Important temporary feedback: 5 seconds
+
+Critical information should normally use a persistent notification instead.
+
+---
+
+# Toast Queue
+
+Multiple toasts may enter a display queue.
+
+The system should avoid covering large portions of the interface.
+
+Recommended behavior:
+
+- Display a limited number simultaneously.
+- Queue additional messages.
+- Merge compatible messages.
+- Discard redundant low-value messages when necessary.
+
+---
+
+# Toast Aggregation
+
+Repeated temporary notifications may be grouped.
+
+Example:
+
+Instead of displaying:
+
+- 1 Wood collected
+- 1 Wood collected
+- 1 Wood collected
+- 1 Wood collected
+
+The system may display:
+
+- 4 Wood collected
+
+Aggregation rules are configured by notification type.
+
+---
+
+# Persistent Notifications
+
+Persistent Notifications contain information that remains relevant after the initial event.
+
+They are stored in the Notification Center.
+
+Examples include:
+
+- Craft completed
+- Refining completed
+- Worker task completed
+- Building construction completed
+- Island upgrade completed
+- New Tier unlocked
+- New recipe unlocked
+- New Weapon Mastery unlocked
+- Important system warning
+
+---
+
+# Persistent Notification States
+
+A persistent notification may have the following states:
+
+- Unread
+- Read
+- Archived
+- Expired
+- Deleted
+
+---
+
+# Unread State
+
+A notification is Unread when:
+
+- It has not been opened.
+- It has not been included in an acknowledged summary.
+- Its related action has not been triggered through another interface, unless configured otherwise.
+
+Unread notifications contribute to Notification Center badges.
+
+---
+
+# Read State
+
+A notification becomes Read when:
+
+- The player opens it.
+- The player clicks its action.
+- The player explicitly marks it as read.
+- The login summary is acknowledged, if configured to mark included notifications as read.
+
+---
+
+# Archived State
+
+Archived notifications remain stored but are removed from the default active list.
+
+The player may view archived notifications through a dedicated filter.
+
+Archiving does not execute the notification action.
+
+---
+
+# Expired State
+
+Some notifications may automatically expire.
+
+Examples:
+
+- Temporary event announcement
+- Limited-time warning
+- Outdated system information
+
+Expiration behavior is defined per notification type.
+
+---
+
+# Deleted State
+
+Deleted notifications are removed from the player's visible history.
+
+System-required audit data may remain stored separately.
+
+---
+
+# Notification Center
+
+The Notification Center stores persistent notifications.
+
+It acts as the central interface for important gameplay information.
+
+---
+
+# Notification Center Interface
+
+The interface should display:
+
+- Notification icon
+- Notification title
+- Short message
+- Category
+- Timestamp
+- Read state
+- Priority
+- Optional action indicator
+- Optional expiration time
+
+---
+
+# Notification Center Filters
+
+Recommended filters include:
+
+- All
+- Unread
+- Crafting
+- Refining
+- Workers
+- Island
+- Progression
+- System
+
+Future categories may be added without changing the core architecture.
+
+---
+
+# Notification Center Sorting
+
+Recommended default order:
+
+Newest First
+
+Optional sorting modes may include:
+
+- Oldest First
+- Priority
+- Category
+- Unread First
+
+---
+
+# Notification Center Badge
+
+The main notification icon displays the number of unread persistent notifications.
+
+The badge may be capped visually.
+
+Example:
+
+- 1
+- 8
+- 24
+- 99+
+
+The actual unread count remains available internally.
+
+---
+
+# Login Notifications
+
+Events that occur while the player is disconnected are stored by the server.
+
+At the next login, they are presented through a grouped summary.
+
+---
+
+# Login Summary
+
+The Login Summary groups accumulated notifications by category.
+
+Example:
+
+Welcome back!
+
+During your absence:
+
+- 8 Crafts completed
+- 5 Refining jobs completed
+- 3 Workers finished their tasks
+- 2 Buildings completed
+- 1 Island upgrade became available
+
+---
+
+# Login Summary Philosophy
+
+The Login Summary must:
+
+- Avoid displaying one notification per completed event.
+- Present the most important information first.
+- Remain easy to dismiss.
+- Provide direct navigation.
+- Preserve detailed notifications in the Notification Center.
+
+---
+
+# Login Summary Generation
+
+At login:
+
+1. Background Progression is resolved.
+2. Participating systems generate notifications.
+3. Persistent notifications are stored.
+4. Notifications are grouped by summary category.
+5. The Login Summary is displayed.
+6. The updated notification state is saved.
+
+---
+
+# Summary Grouping
+
+Notifications may be grouped using:
+
+- Notification Type
+- Source System
+- Source Entity
+- Completion Category
+- Priority
+
+Example grouping key:
+
+CraftCompleted
+
+All compatible CraftCompleted notifications may become:
+
+12 Crafts completed
+
+---
+
+# Summary Detail
+
+Each summary line may provide:
+
+- Total event count
+- Total item count
+- Category icon
+- Most important event
+- Direct action
+
+Detailed individual notifications remain available in the Notification Center.
+
+---
+
+# Summary Interaction
+
+The player may:
+
+- Open a grouped category
+- Open the Notification Center
+- Dismiss the summary
+- Mark included notifications as read
+- Leave included notifications unread
+
+Exact read behavior is configurable.
+
+---
+
+# Actionable Notifications
+
+Persistent notifications may contain an optional action.
+
+The action allows the player to navigate directly to the related system.
+
+---
+
+# Action Examples
+
+Craft Completed:
+
+- Open Crafting Interface
+- Select Crafting Station
+- Highlight Completed Output
+
+Worker Task Completed:
+
+- Open Worker Interface
+- Select Worker
+- Highlight Reward
+
+Building Completed:
+
+- Open Player Island
+- Select Building
+- Highlight Completed Construction
+
+Recipe Unlocked:
+
+- Open Crafting Interface
+- Select Recipe
+- Highlight New Entry
+
+Mastery Unlocked:
+
+- Open Mastery Interface
+- Select Weapon Family
+- Highlight New Rank
+
+---
+
+# Action Structure
+
+A notification action may contain:
+
+- ActionType
+- ActionTargetID
+- ActionSubTargetID
+- ActionParameters
+- FallbackActionType
+
+---
+
+# Action Types
+
+Supported generic action types may include:
+
+- OpenInterface
+- OpenInterfaceTab
+- SelectEntity
+- HighlightEntity
+- OpenItem
+- OpenRecipe
+- OpenBuilding
+- OpenWorker
+- OpenMastery
+- OpenZone
+- NoAction
+
+---
+
+# Action Independence
+
+The Notification System does not implement destination logic.
+
+It only publishes a navigation request.
+
+The relevant UI or gameplay system handles the action.
+
+---
+
+# Invalid Actions
+
+An action may become invalid.
+
+Examples:
+
+- Building was removed.
+- Worker no longer exists.
+- Item was already collected.
+- Recipe was disabled.
+- Destination interface is unavailable.
+
+When an action is invalid:
+
+- The notification remains readable.
+- The system attempts its fallback action.
+- If no fallback exists, no navigation occurs.
+- No error is shown unless useful to the player.
+
+---
+
+# Action Fallback
+
+Example:
+
+Primary Action:
+
+Open specific Crafting Station and select output.
+
+Fallback Action:
+
+Open Crafting Interface.
+
+This ensures notifications remain useful even when their exact target is unavailable.
+
+---
+
+# Notification Priority
+
+Notifications may use priorities such as:
+
+- Low
+- Normal
+- High
+- Critical
+
+---
+
+# Low Priority
+
+Examples:
+
+- Minor informational update
+- Non-essential unlock reminder
+
+Low-priority notifications may be silently added to the Notification Center.
+
+---
+
+# Normal Priority
+
+Examples:
+
+- Craft completed
+- Worker completed
+- Refining completed
+
+These appear in standard summaries and persistent lists.
+
+---
+
+# High Priority
+
+Examples:
+
+- Important unlock
+- Building completed
+- Progression milestone
+- Account warning
+
+High-priority notifications may receive stronger visual emphasis.
+
+---
+
+# Critical Priority
+
+Examples:
+
+- Account security issue
+- Save recovery warning
+- Required maintenance notice
+
+Critical notifications may require explicit acknowledgement.
+
+Gameplay events should rarely use Critical priority.
+
+---
+
+# Notification Sources
+
+Notifications may be created by:
+
+- Crafting System
+- Refining System
+- Worker System
+- Player Island System
+- Progression System
+- Equipment System
+- Vendor System
+- Save System
+- Authentication System
+- Future Market System
+- Future Guild System
+- Future Event System
+
+---
+
+# Source Ownership
+
+The originating system defines:
+
+- Why the notification exists
+- Notification type
+- Source entity
+- Message parameters
+- Suggested action
+- Persistence
+- Priority
+
+The Notification System handles:
+
+- Storage
+- Grouping
+- Delivery
+- State
+- Presentation requests
+
+---
+
+# Notification Creation Flow
+
+Gameplay Event
+
+↓
+
+Source System Builds Notification Request
+
+↓
+
+Notification Service Validates Request
+
+↓
+
+Notification Created
+
+↓
+
+Stored if Persistent
+
+↓
+
+Delivered if Player Online
+
+↓
+
+Queued for Login Summary if Player Offline
+
+---
+
+# Online Delivery
+
+When the player is online:
+
+Temporary Notification:
+
+↓
+
+Display immediately as toast.
+
+Persistent Notification:
+
+↓
+
+Store in Notification Center.
+
+↓
+
+Optionally display toast or banner.
+
+---
+
+# Offline Delivery
+
+When the player is offline:
+
+Temporary notifications are normally discarded.
+
+Persistent notifications are stored.
+
+At the next login, eligible notifications are included in the Login Summary.
+
+---
+
+# Offline Event Rule
+
+Only events classified as meaningful and persistent should generate offline notifications.
+
+The system should not reconstruct every minor background event.
+
+Example:
+
+A queue containing 100 completed craft units may create:
+
+- One persistent completion notification
+- One grouped summary entry
+
+It should not create 100 separate notifications unless explicitly required.
+
+---
+
+# Deduplication
+
+The system prevents duplicate notifications.
+
+Each notification request may include a unique EventID.
+
+If the same EventID is processed twice:
+
+Only one notification is created.
+
+---
+
+# Notification Identity
+
+Every persistent notification has a unique NotificationID.
+
+The NotificationID is used for:
+
+- State changes
+- Actions
+- Archiving
+- Deletion
+- Deduplication
+- Audit logs
+
+---
+
+# Aggregation Key
+
+Notifications may define an AggregationKey.
+
+Compatible notifications with the same key may be merged.
+
+Example:
+
+AggregationKey:
+
+CraftCompleted:StationID
+
+This may group all completed crafts from one station.
+
+---
+
+# Aggregation Rules
+
+Aggregation may combine:
+
+- Event Count
+- Item Quantity
+- Source Count
+- Earliest Timestamp
+- Latest Timestamp
+- Related Entity IDs
+
+The original event references may remain stored if detailed history is required.
+
+---
+
+# Persistent Storage
+
+Persistent notifications are stored server-side.
+
+The client may cache notification data but is not authoritative.
+
+---
+
+# Save System Integration
+
+Persistent notifications are linked to the player's account and save state.
+
+Recommended architecture:
+
+- Notification records stored in a dedicated server collection.
+- Notification metadata referenced by the player account.
+- Read and archive states persisted server-side.
+
+Notifications do not need to be embedded directly inside the full gameplay snapshot if a dedicated notification store is used.
+
+---
+
+# Authentication Integration
+
+Notifications belong to the Player Account.
+
+They are accessible only after authentication.
+
+A Guest Account receives notifications normally.
+
+When the Guest Account is linked:
+
+Its notifications remain attached to the same Player Account.
+
+---
+
+# Background Progression Integration
+
+The Background Progression System does not generate notification text directly.
+
+Instead:
+
+1. It resolves passive systems.
+2. Each passive system reports completed events.
+3. Each source system creates notifications.
+4. The Notification System groups them.
+5. The Login Summary displays them.
+
+---
+
+# Localization
+
+Notification content must be localizable.
+
+Stored notifications should avoid saving fully rendered text when possible.
+
+Recommended stored format:
+
+- LocalizationKey
+- LocalizationParameters
+
+Example:
+
+LocalizationKey:
+
+Notification.Crafting.Completed
+
+Parameters:
+
+- ItemName
+- Quantity
+- StationName
+
+---
+
+# Historical Localization
+
+If the player changes language:
+
+Previously stored notifications should display in the new language when possible.
+
+This requires storing localization keys and parameters instead of final text.
+
+---
+
+# Notification Templates
+
+Notification templates are defined through Data Tables.
+
+Templates determine:
+
+- Title key
+- Message key
+- Icon
+- Priority
+- Persistence
+- Aggregation rules
+- Default action
+- Expiration rule
+- Presentation style
+
+---
+
+# Data Tables
+
+## NotificationTypeTable
+
+Fields:
+
+- NotificationTypeID
+- CategoryID
+- TitleLocalizationKey
+- MessageLocalizationKey
+- IconID
+- DefaultPriority
+- IsPersistent
+- CanAggregate
+- AggregationProfileID
+- ExpirationProfileID
+- DefaultActionType
+- Enabled
+
+---
+
+## NotificationCategoryTable
+
+Fields:
+
+- CategoryID
+- DisplayNameLocalizationKey
+- IconID
+- DisplayOrder
+- LoginSummaryEnabled
+- NotificationCenterEnabled
+- Enabled
+
+---
+
+## NotificationAggregationProfileTable
+
+Fields:
+
+- AggregationProfileID
+- AggregationKeyRule
+- MaximumAggregationWindow
+- AggregateEventCount
+- AggregateQuantity
+- PreserveIndividualEntries
+- Enabled
+
+---
+
+## NotificationExpirationProfileTable
+
+Fields:
+
+- ExpirationProfileID
+- ExpirationDuration
+- ExpireAfterRead
+- ExpireAfterAction
+- AutoArchive
+- Enabled
+
+---
+
+## NotificationPresentationTable
+
+Fields:
+
+- PresentationProfileID
+- PresentationType
+- ToastDuration
+- MaxSimultaneousToasts
+- RequiresAcknowledgement
+- ShowInLoginSummary
+- Enabled
+
+---
+
+## NotificationActionTable
+
+Fields:
+
+- ActionDefinitionID
+- ActionType
+- TargetSystem
+- DefaultInterfaceID
+- FallbackActionType
+- Enabled
+
+---
+
+# Runtime Notification Data
+
+A persistent notification instance may contain:
+
+- NotificationID
+- PlayerAccountID
+- NotificationTypeID
+- CategoryID
+- SourceSystemID
+- SourceEntityID
+- EventID
+- LocalizationParameters
+- Priority
+- CreatedTimestamp
+- IsRead
+- ReadTimestamp
+- IsArchived
+- ArchivedTimestamp
+- ExpirationTimestamp
+- ActionType
+- ActionTargetID
+- ActionSubTargetID
+- ActionParameters
+- AggregationKey
+- AggregatedEventCount
+
+---
+
+# Runtime Components
+
+## NotificationService
+
+Responsibilities:
+
+- Validate notification requests
+- Create notifications
+- Deduplicate events
+- Store persistent notifications
+- Deliver online notifications
+- Queue offline notifications
+
+---
+
+## NotificationRepository
+
+Responsibilities:
+
+- Store persistent notifications
+- Retrieve notification pages
+- Update notification state
+- Delete expired notifications
+- Maintain unread counts
+
+---
+
+## NotificationAggregationService
+
+Responsibilities:
+
+- Group compatible notifications
+- Build login summary entries
+- Merge repeated temporary feedback
+- Preserve required details
+
+---
+
+## NotificationActionRouter
+
+Responsibilities:
+
+- Validate actions
+- Route navigation requests
+- Resolve fallback actions
+- Report unavailable targets
+
+---
+
+## NotificationPresentationManager
+
+Responsibilities:
+
+- Display toasts
+- Display banners
+- Display login summary
+- Update badges
+- Open Notification Center
+
+---
+
+## NotificationExpirationService
+
+Responsibilities:
+
+- Detect expired notifications
+- Archive or delete expired entries
+- Update unread counts
+
+---
+
+# Notification Events
+
+The system may publish:
+
+- OnNotificationCreated
+- OnNotificationDelivered
+- OnNotificationDisplayed
+- OnNotificationRead
+- OnNotificationArchived
+- OnNotificationExpired
+- OnNotificationActionTriggered
+- OnLoginSummaryCreated
+- OnUnreadCountChanged
+
+---
+
+# Notification Center Actions
+
+The player may:
+
+- Open Notification
+- Execute Notification Action
+- Mark as Read
+- Mark as Unread
+- Archive
+- Delete
+- Mark All as Read
+- Archive All Read Notifications
+
+---
+
+# Bulk Actions
+
+Recommended bulk actions include:
+
+- Mark All as Read
+- Archive All Read
+- Clear Expired
+- Filter by Category
+
+Deleting all notifications should require confirmation.
+
+---
+
+# Read Synchronization
+
+Read state is stored server-side.
+
+If the player uses another device:
+
+The same read and archive states are restored.
+
+---
+
+# Pagination
+
+The Notification Center should use pagination or incremental loading.
+
+The system should not load the entire notification history at once.
+
+Recommended default:
+
+- 20 to 50 notifications per page
+
+---
+
+# Retention
+
+Persistent notifications do not remain indefinitely unless required.
+
+Retention is defined per notification type.
+
+Recommended examples:
+
+- Standard gameplay completion: 30 days
+- Important progression unlock: 90 days
+- Critical account message: until acknowledged or manually resolved
+
+Exact durations are balance and infrastructure settings.
+
+---
+
+# History Limits
+
+The system may impose a maximum stored notification count per player.
+
+When the limit is reached:
+
+1. Expired notifications are removed first.
+2. Archived notifications are removed second.
+3. Oldest read notifications are removed third.
+4. Unread high-priority notifications are preserved.
+
+---
+
+# Notification Spam Prevention
+
+The system must prevent excessive notifications.
+
+Strategies include:
+
+- Aggregation
+- Rate limiting
+- Category cooldowns
+- Duplicate suppression
+- Priority filtering
+- Toast queue limits
+
+---
+
+# Category Rate Limiting
+
+A category may limit temporary notifications.
+
+Example:
+
+Maximum one resource toast every 0.5 seconds.
+
+Additional events are aggregated.
+
+Persistent gameplay events should not be silently lost.
+
+---
+
+# Notification Settings
+
+V1 may provide simple in-game notification preferences.
+
+Possible configurable options:
+
+- Enable or disable temporary loot toasts
+- Enable or disable Silver toasts
+- Enable or disable minor progression toasts
+- Control sound effects
+- Control Notification Center badges
+
+Important persistent notifications cannot be fully disabled if they are required for gameplay clarity.
+
+Detailed settings belong to the Settings System.
+
+---
+
+# Audio Feedback
+
+Notifications may trigger optional sound cues.
+
+Sound selection is defined by presentation profile.
+
+Examples:
+
+- Standard completion sound
+- Important unlock sound
+- Warning sound
+
+Audio respects global and notification-specific settings.
+
+---
+
+# Visual Accessibility
+
+Notifications must not rely only on color.
+
+They should also use:
+
+- Icons
+- Labels
+- Shapes
+- Priority indicators
+- Text
+
+Animations should respect reduced-motion settings when available.
+
+---
+
+# Transaction Safety
+
+Persistent notification creation should be atomic with the related gameplay event when necessary.
+
+Example:
+
+Craft completes
+
+↓
+
+Craft output stored
+
+↓
+
+Persistent notification created
+
+↓
+
+Save committed
+
+If notification creation fails, the gameplay reward must remain valid.
+
+The notification may be reconstructed from event logs if required.
+
+---
+
+# Reliability Priority
+
+Gameplay state is always more important than notification state.
+
+A missing notification must never cause:
+
+- Missing rewards
+- Lost progression
+- Repeated rewards
+- Failed crafting completion
+
+Notifications communicate state; they do not own it.
+
+---
+
+# Idempotency
+
+Notification creation requests use EventID or another idempotency key.
+
+Repeated processing must not create duplicate persistent notifications.
+
+---
+
+# Security
+
+The server validates all persistent notifications.
+
+The client cannot:
+
+- Create notifications
+- Change notification rewards
+- Mark another player's notifications
+- Modify action targets
+- Change stored timestamps
+- Increase notification priority
+
+---
+
+# Analytics
+
+Recommended analytics include:
+
+- Notifications created by type
+- Notifications opened
+- Action click rate
+- Login summary engagement
+- Time before reading
+- Archive rate
+- Expiration rate
+- Toast aggregation rate
+- Unread notification count
+- Notification Center visits
+
+---
+
+# Validation Rules
+
+A notification request fails when:
+
+- Notification type does not exist.
+- Notification type is disabled.
+- Player account does not exist.
+- Required localization parameters are missing.
+- Action data is invalid.
+- EventID has already been processed.
+- Source system is unauthorized.
+
+---
+
+# Edge Cases
+
+## Player Reconnects Multiple Times
+
+Previously processed background events do not generate duplicate notifications.
+
+---
+
+## Notification Action Target Removed
+
+The fallback action is used.
+
+---
+
+## Notification Expires While Interface Is Open
+
+The interface refreshes and removes or archives it according to configuration.
+
+---
+
+## Player Changes Language
+
+Stored localization keys are rendered using the current language.
+
+---
+
+## Extremely Long Absence
+
+Notifications are grouped.
+
+The Login Summary shows category totals rather than every individual event.
+
+Retention and history rules still apply.
+
+---
+
+## Empty Login Summary
+
+No summary is shown.
+
+The player enters the game normally.
+
+---
+
+## Notification Center Unavailable
+
+Persistent notification data remains stored.
+
+The player may access it later.
+
+---
+
+## Client Disconnects Before Reading Summary
+
+Notifications remain unread and may appear again at the next login according to summary rules.
+
+---
+
+# Future Extensions
+
+The architecture supports future notifications for:
+
+- Market Orders
+- Player Trading
+- Guild Events
+- Friend Requests
+- Party Invitations
+- Seasonal Events
+- Achievements
+- Leaderboards
+- Maintenance
+- Compensation
+- Mail
+- Real-money Purchases
+
+External push delivery may later subscribe to the same notification events without changing source systems.
+
+---
+
+# Mail System Separation
+
+The Notification System is not a mailbox.
+
+It does not store:
+
+- Item attachments
+- Silver attachments
+- Player-written messages
+- Claimable compensation
+- Gifts
+
+These features belong to a future Mail System.
+
+---
+
+# Explicitly Excluded from V1
+
+V1 does not include:
+
+- Push Notifications
+- Email Notifications
+- SMS Notifications
+- Browser Notifications
+- Player-to-player Messages
+- Item Attachments
+- Silver Attachments
+- Reward Mail
+- External Notification Providers
+- Notification Scheduling by Players
+
+---
+
+# System Relationships
+
+The Notification System interacts with:
+
+- Background Progression System
+- Save System
+- Authentication System
+- Crafting System
+- Refining System
+- Worker System
+- Player Island System
+- Progression System
+- Mastery System
+- Vendor System
+- UI System
+- Localization System
+- Settings System
+- Analytics System
+
+Future relationships include:
+
+- Market System
+- Trading System
+- Guild System
+- Social System
+- Event System
+- Mail System
+
+---
+
+# Summary
+
+The Notification System provides clear, non-intrusive communication for gameplay events.
+
+V1 uses only in-game notifications. Minor feedback appears as temporary toasts, while important events are stored as persistent notifications in the Notification Center.
+
+Events completed while the player is disconnected are saved by the server and grouped into a concise Login Summary at the next connection. Individual details remain available in the Notification Center.
+
+Notifications may contain generic actions that open the relevant interface, select a target, or highlight a specific item, worker, recipe, building, or progression entry.
+
+The system is server-authoritative, localized, data-driven, deduplicated, actionable, extensible, and designed to avoid spam while preserving important information.
+
+DOCUMENT TERMINÉ

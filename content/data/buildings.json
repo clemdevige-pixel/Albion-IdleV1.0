@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "category": "buildings",
+  "definitions": [
+    {
+      "id": "building_forge_t4",
+      "category": "crafting",
+      "tier": 4,
+      "maxWorkers": 1,
+      "supportedRecipeIds": ["recipe_craft_sword_t4"],
+      "upgradeCost": [
+        { "itemId": "item_refined_metal_bar_t4", "quantity": 10 }
+      ],
+      "tags": ["crafting"]
+    },
+    {
+      "id": "building_smelter_t4",
+      "category": "refining",
+      "tier": 4,
+      "maxWorkers": 1,
+      "supportedRecipeIds": ["recipe_refine_metal_bar_t4"],
+      "upgradeCost": [
+        { "itemId": "item_resource_ore_t4", "quantity": 20 }
+      ],
+      "tags": ["refining"]
+    }
+  ]
+}

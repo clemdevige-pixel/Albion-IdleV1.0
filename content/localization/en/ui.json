@@ -1,0 +1,15 @@
+{
+  "language": "en",
+  "namespace": "ui",
+  "entries": {
+    "ui.inventory.title": "Inventory",
+    "ui.equipment.title": "Equipment",
+    "ui.crafting.title": "Crafting",
+    "ui.combat.title": "Combat",
+    "ui.island.title": "Player Island",
+    "ui.map.title": "World Map",
+    "ui.settings.title": "Settings",
+    "ui.save.title": "Save Game",
+    "ui.load.title": "Load Game"
+  }
+}

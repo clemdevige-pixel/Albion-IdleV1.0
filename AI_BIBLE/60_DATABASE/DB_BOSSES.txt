@@ -1,0 +1,920 @@
+# BOSS DATABASE
+
+Version: 1.0
+
+This document defines every boss available in Version 1.
+
+Each boss references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored directly in this document.
+
+Boss statistics, abilities, loot, encounter behaviour and progression values
+are inherited from the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Boss ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the boss sprite.
+
+Icon ID:
+Identifier used in the interface, bestiary and encounter selection.
+
+Scaling Profile:
+Defines HP, damage, armor, resistances, speed and experience rewards.
+
+Ability Profile:
+Defines every active and passive boss ability.
+
+AI Profile:
+Defines combat phases, targeting rules and movement behaviour.
+
+Loot Profile:
+Defines every possible reward.
+
+Spawn Profile:
+Defines where and under which conditions the boss may appear.
+
+Encounter Profile:
+Defines arena rules, phase transitions, adds and special mechanics.
+
+Generated boss identifiers follow this format:
+
+BOS-0001-T4
+BOS-0001-T5
+BOS-0001-T6
+BOS-0001-T7
+BOS-0001-T8
+
+Generated boss assets follow the same format.
+
+Example:
+
+Gameplay Entity:
+BOS-0001-T6
+
+Boss Asset:
+BOS-0001-T6
+
+Interface Icon:
+ICO-BOS-0001-T6
+
+Display Name:
+Undead Commander T6
+
+---
+
+# ============================================================================
+# UNDEAD BOSS
+# ============================================================================
+
+## BOS-0001
+
+Name:
+Undead Commander
+
+Asset ID:
+BOS-0001
+
+Icon ID:
+ICO-BOS-0001
+
+Category:
+Boss
+
+Faction:
+Undead
+
+Role:
+Armored Melee Commander
+
+Boss Rank:
+Major Boss
+
+Scaling Profile:
+BOSS_HEAVY_MELEE
+
+Ability Profile:
+BOSS_ABILITY_UNDEAD_COMMANDER
+
+AI Profile:
+BOSS_AI_COMMANDER
+
+Loot Profile:
+LOOT_BOSS_UNDEAD_COMMANDER
+
+Spawn Profile:
+SPAWN_BOSS_UNDEAD
+
+Encounter Profile:
+ENCOUNTER_UNDEAD_COMMANDER
+
+Tier Range:
+T4-T8
+
+Summoned Units:
+Skeleton Warrior
+Skeleton Archer
+
+Primary Damage Type:
+Physical
+
+Secondary Damage Type:
+Shadow
+
+Crowd Control Resistance:
+High
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MORGANA BOSS
+# ============================================================================
+
+## BOS-0002
+
+Name:
+Morgana High Inquisitor
+
+Asset ID:
+BOS-0002
+
+Icon ID:
+ICO-BOS-0002
+
+Category:
+Boss
+
+Faction:
+Morgana
+
+Role:
+Dark Magic Commander
+
+Boss Rank:
+Major Boss
+
+Scaling Profile:
+BOSS_MAGIC_CASTER
+
+Ability Profile:
+BOSS_ABILITY_MORGANA_INQUISITOR
+
+AI Profile:
+BOSS_AI_CASTER_PHASED
+
+Loot Profile:
+LOOT_BOSS_MORGANA_INQUISITOR
+
+Spawn Profile:
+SPAWN_BOSS_MORGANA
+
+Encounter Profile:
+ENCOUNTER_MORGANA_INQUISITOR
+
+Tier Range:
+T4-T8
+
+Summoned Units:
+Morgana Fighter
+Morgana Witch
+
+Primary Damage Type:
+Magic
+
+Secondary Damage Type:
+Shadow
+
+Crowd Control Resistance:
+High
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# KEEPER BOSS
+# ============================================================================
+
+## BOS-0003
+
+Name:
+Ancient Treant
+
+Asset ID:
+BOS-0003
+
+Icon ID:
+ICO-BOS-0003
+
+Category:
+Boss
+
+Faction:
+Keepers
+
+Role:
+Nature Tank
+
+Boss Rank:
+Major Boss
+
+Scaling Profile:
+BOSS_NATURE_TANK
+
+Ability Profile:
+BOSS_ABILITY_ANCIENT_TREANT
+
+AI Profile:
+BOSS_AI_STATIONARY_CONTROL
+
+Loot Profile:
+LOOT_BOSS_ANCIENT_TREANT
+
+Spawn Profile:
+SPAWN_BOSS_KEEPER
+
+Encounter Profile:
+ENCOUNTER_ANCIENT_TREANT
+
+Tier Range:
+T4-T8
+
+Summoned Units:
+Keeper Druid
+Forest Beast
+
+Primary Damage Type:
+Nature
+
+Secondary Damage Type:
+Physical
+
+Crowd Control Resistance:
+Very High
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# HERETIC BOSS
+# ============================================================================
+
+## BOS-0004
+
+Name:
+Heretic Warlord
+
+Asset ID:
+BOS-0004
+
+Icon ID:
+ICO-BOS-0004
+
+Category:
+Boss
+
+Faction:
+Heretics
+
+Role:
+Aggressive Melee Leader
+
+Boss Rank:
+Major Boss
+
+Scaling Profile:
+BOSS_AGGRESSIVE_MELEE
+
+Ability Profile:
+BOSS_ABILITY_HERETIC_WARLORD
+
+AI Profile:
+BOSS_AI_AGGRESSIVE_PHASED
+
+Loot Profile:
+LOOT_BOSS_HERETIC_WARLORD
+
+Spawn Profile:
+SPAWN_BOSS_HERETIC
+
+Encounter Profile:
+ENCOUNTER_HERETIC_WARLORD
+
+Tier Range:
+T4-T8
+
+Summoned Units:
+Heretic Fighter
+Heretic Crossbowman
+Heretic Shaman
+
+Primary Damage Type:
+Physical
+
+Secondary Damage Type:
+Fire
+
+Crowd Control Resistance:
+High
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# WILDLIFE BOSS
+# ============================================================================
+
+## BOS-0005
+
+Name:
+Alpha Direwolf
+
+Asset ID:
+BOS-0005
+
+Icon ID:
+ICO-BOS-0005
+
+Category:
+Boss
+
+Faction:
+Wildlife
+
+Role:
+Fast Pack Leader
+
+Boss Rank:
+Major Boss
+
+Scaling Profile:
+BOSS_FAST_BEAST
+
+Ability Profile:
+BOSS_ABILITY_ALPHA_DIREWOLF
+
+AI Profile:
+BOSS_AI_PACK_LEADER
+
+Loot Profile:
+LOOT_BOSS_ALPHA_DIREWOLF
+
+Spawn Profile:
+SPAWN_BOSS_WILDLIFE
+
+Encounter Profile:
+ENCOUNTER_ALPHA_DIREWOLF
+
+Tier Range:
+T4-T8
+
+Summoned Units:
+Wolf
+Dire Wolf
+
+Primary Damage Type:
+Physical
+
+Secondary Damage Type:
+Bleed
+
+Crowd Control Resistance:
+Medium
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# DEMON BOSS
+# ============================================================================
+
+## BOS-0006
+
+Name:
+Infernal Overlord
+
+Asset ID:
+BOS-0006
+
+Icon ID:
+ICO-BOS-0006
+
+Category:
+Boss
+
+Faction:
+Demons
+
+Role:
+Infernal Heavy Caster
+
+Boss Rank:
+Major Boss
+
+Scaling Profile:
+BOSS_INFERNAL_CASTER
+
+Ability Profile:
+BOSS_ABILITY_INFERNAL_OVERLORD
+
+AI Profile:
+BOSS_AI_INFERNAL_PHASED
+
+Loot Profile:
+LOOT_BOSS_INFERNAL_OVERLORD
+
+Spawn Profile:
+SPAWN_BOSS_DEMON
+
+Encounter Profile:
+ENCOUNTER_INFERNAL_OVERLORD
+
+Tier Range:
+T4-T8
+
+Summoned Units:
+Lesser Demon
+Hell Brute
+Imp
+
+Primary Damage Type:
+Fire
+
+Secondary Damage Type:
+Magic
+
+Crowd Control Resistance:
+Very High
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# CRYSTAL BOSS
+# ============================================================================
+
+## BOS-0007
+
+Name:
+Crystal Golem
+
+Asset ID:
+BOS-0007
+
+Icon ID:
+ICO-BOS-0007
+
+Category:
+Boss
+
+Faction:
+Ancient Construct
+
+Role:
+Defensive Construct
+
+Boss Rank:
+Major Boss
+
+Scaling Profile:
+BOSS_CRYSTAL_TANK
+
+Ability Profile:
+BOSS_ABILITY_CRYSTAL_GOLEM
+
+AI Profile:
+BOSS_AI_CONSTRUCT
+
+Loot Profile:
+LOOT_BOSS_CRYSTAL_GOLEM
+
+Spawn Profile:
+SPAWN_BOSS_CRYSTAL
+
+Encounter Profile:
+ENCOUNTER_CRYSTAL_GOLEM
+
+Tier Range:
+T4-T8
+
+Summoned Units:
+Crystal Fragment
+Crystal Sentinel
+
+Primary Damage Type:
+Magic
+
+Secondary Damage Type:
+Physical
+
+Crowd Control Resistance:
+Very High
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# DRAGON BOSS
+# ============================================================================
+
+## BOS-0008
+
+Name:
+Forgotten Dragon
+
+Asset ID:
+BOS-0008
+
+Icon ID:
+ICO-BOS-0008
+
+Category:
+Boss
+
+Faction:
+Ancient Beast
+
+Role:
+Legendary Flying Boss
+
+Boss Rank:
+Final Boss
+
+Scaling Profile:
+BOSS_LEGENDARY_DRAGON
+
+Ability Profile:
+BOSS_ABILITY_FORGOTTEN_DRAGON
+
+AI Profile:
+BOSS_AI_DRAGON_PHASED
+
+Loot Profile:
+LOOT_BOSS_FORGOTTEN_DRAGON
+
+Spawn Profile:
+SPAWN_BOSS_DRAGON
+
+Encounter Profile:
+ENCOUNTER_FORGOTTEN_DRAGON
+
+Tier Range:
+T6-T8
+
+Summoned Units:
+None
+
+Primary Damage Type:
+Fire
+
+Secondary Damage Type:
+Physical
+
+Crowd Control Resistance:
+Immune
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# BOSS RANK RULES
+# ============================================================================
+
+## Major Boss
+
+Purpose:
+Main objective of a faction encounter or dungeon.
+
+Expected Encounter Length:
+Medium.
+
+Phase Count:
+Two to three phases.
+
+Summoned Units:
+Optional.
+
+Loot Quality:
+High.
+
+Respawn Frequency:
+Limited.
+
+---
+
+## Final Boss
+
+Purpose:
+Highest difficulty encounter of a progression cycle.
+
+Expected Encounter Length:
+Long.
+
+Phase Count:
+Three or more phases.
+
+Summoned Units:
+Optional.
+
+Loot Quality:
+Very High.
+
+Respawn Frequency:
+Rare.
+
+---
+
+# ============================================================================
+# ENCOUNTER RULES
+# ============================================================================
+
+Every boss encounter must contain at least one mechanic that prevents the
+player from relying only on automatic basic attacks.
+
+Possible mechanics include:
+
+- Area attacks
+- Charge attacks
+- Summoned monsters
+- Temporary invulnerability
+- Interruptible casting
+- Defensive shields
+- Enrage phases
+- Ground hazards
+- Target marking
+- Forced movement
+- Healing phases
+- Weak-point phases
+
+Each encounter must remain readable in the horizontal combat presentation.
+
+No boss may use more than three simultaneous high-priority visual mechanics.
+
+Area attacks must use clear telegraphs before dealing damage.
+
+Summoned units must use monster IDs already defined in
+**DB_MONSTERS.md**.
+
+Encounter mechanics must not require direct character movement input if the
+core idle combat system does not support free movement.
+
+In that case, mechanics are resolved through:
+
+- Equipment power
+- Ability timing
+- Defensive cooldowns
+- Interrupt abilities
+- Resistance checks
+- Damage checks
+- Healing checks
+- Automatic positioning states
+
+---
+
+# ============================================================================
+# PHASE RULES
+# ============================================================================
+
+Boss phases are triggered by one or more of the following conditions:
+
+- Remaining HP percentage
+- Elapsed combat time
+- Summoned unit defeat
+- Shield destruction
+- Interrupted ability
+- Player damage threshold
+- Encounter-specific event
+
+Standard phase thresholds:
+
+Phase 1:
+100% to 70% HP
+
+Phase 2:
+Below 70% HP
+
+Phase 3:
+Below 35% HP
+
+These thresholds may be overridden by the Encounter Profile.
+
+Phase transitions must not reset boss HP.
+
+Phase transitions may modify:
+
+- Ability rotation
+- Attack speed
+- Damage profile
+- Summoning behaviour
+- Defensive values
+- Visual effects
+- Animation state
+- Arena hazards
+
+---
+
+# ============================================================================
+# SCALING PROFILE REFERENCES
+# ============================================================================
+
+The following scaling profiles are referenced by the boss database.
+
+Their numerical values are defined in **DB_PROGRESS_RULES.md**.
+
+- BOSS_HEAVY_MELEE
+- BOSS_MAGIC_CASTER
+- BOSS_NATURE_TANK
+- BOSS_AGGRESSIVE_MELEE
+- BOSS_FAST_BEAST
+- BOSS_INFERNAL_CASTER
+- BOSS_CRYSTAL_TANK
+- BOSS_LEGENDARY_DRAGON
+
+---
+
+# ============================================================================
+# ABILITY PROFILE REFERENCES
+# ============================================================================
+
+The following ability profiles are referenced by the boss database.
+
+Their behaviour and numerical values are defined in **DB_SKILLS.md**.
+
+- BOSS_ABILITY_UNDEAD_COMMANDER
+- BOSS_ABILITY_MORGANA_INQUISITOR
+- BOSS_ABILITY_ANCIENT_TREANT
+- BOSS_ABILITY_HERETIC_WARLORD
+- BOSS_ABILITY_ALPHA_DIREWOLF
+- BOSS_ABILITY_INFERNAL_OVERLORD
+- BOSS_ABILITY_CRYSTAL_GOLEM
+- BOSS_ABILITY_FORGOTTEN_DRAGON
+
+---
+
+# ============================================================================
+# AI PROFILE REFERENCES
+# ============================================================================
+
+The following AI profiles are referenced by the boss database.
+
+Their detailed behaviour is defined in **DB_AI.md**.
+
+- BOSS_AI_COMMANDER
+- BOSS_AI_CASTER_PHASED
+- BOSS_AI_STATIONARY_CONTROL
+- BOSS_AI_AGGRESSIVE_PHASED
+- BOSS_AI_PACK_LEADER
+- BOSS_AI_INFERNAL_PHASED
+- BOSS_AI_CONSTRUCT
+- BOSS_AI_DRAGON_PHASED
+
+---
+
+# ============================================================================
+# LOOT PROFILE REFERENCES
+# ============================================================================
+
+The following loot profiles are referenced by the boss database.
+
+Their rewards and probabilities are defined in **DB_LOOT_TABLES.md**.
+
+- LOOT_BOSS_UNDEAD_COMMANDER
+- LOOT_BOSS_MORGANA_INQUISITOR
+- LOOT_BOSS_ANCIENT_TREANT
+- LOOT_BOSS_HERETIC_WARLORD
+- LOOT_BOSS_ALPHA_DIREWOLF
+- LOOT_BOSS_INFERNAL_OVERLORD
+- LOOT_BOSS_CRYSTAL_GOLEM
+- LOOT_BOSS_FORGOTTEN_DRAGON
+
+---
+
+# ============================================================================
+# SPAWN PROFILE REFERENCES
+# ============================================================================
+
+The following spawn profiles are referenced by the boss database.
+
+Their location and availability rules are defined in **DB_WORLD.md**.
+
+- SPAWN_BOSS_UNDEAD
+- SPAWN_BOSS_MORGANA
+- SPAWN_BOSS_KEEPER
+- SPAWN_BOSS_HERETIC
+- SPAWN_BOSS_WILDLIFE
+- SPAWN_BOSS_DEMON
+- SPAWN_BOSS_CRYSTAL
+- SPAWN_BOSS_DRAGON
+
+---
+
+# ============================================================================
+# ENCOUNTER PROFILE REFERENCES
+# ============================================================================
+
+The following encounter profiles are referenced by the boss database.
+
+Their mechanics are defined in **DB_ENCOUNTERS.md**.
+
+- ENCOUNTER_UNDEAD_COMMANDER
+- ENCOUNTER_MORGANA_INQUISITOR
+- ENCOUNTER_ANCIENT_TREANT
+- ENCOUNTER_HERETIC_WARLORD
+- ENCOUNTER_ALPHA_DIREWOLF
+- ENCOUNTER_INFERNAL_OVERLORD
+- ENCOUNTER_CRYSTAL_GOLEM
+- ENCOUNTER_FORGOTTEN_DRAGON
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Every boss generates tier variants according to its Tier Range.
+
+Example:
+
+Base Boss:
+BOS-0001
+
+Generated Variants:
+- BOS-0001-T4
+- BOS-0001-T5
+- BOS-0001-T6
+- BOS-0001-T7
+- BOS-0001-T8
+
+Each generated variant receives:
+
+- The same boss name
+- The same faction
+- The same role
+- The same boss rank
+- The same ability profile
+- The same AI profile
+- The same loot profile
+- The same spawn profile
+- The same encounter profile
+- The tier-specific visual asset
+- The tier-specific interface icon
+- Statistics generated from its scaling profile
+- Rewards generated from its loot profile
+- Encounter values generated from its encounter profile
+
+Only the following values may be generated procedurally:
+
+- HP
+- Damage
+- Armor
+- Magic Resistance
+- Attack Speed
+- Ability Power
+- Summoned Unit Tier
+- Experience Reward
+- Silver Reward
+- Loot Quantity
+- Loot Quality
+- Enrage Timer
+- Phase Threshold Modifiers
+
+No generated system may modify:
+
+- Boss ID
+- Boss name
+- Asset ID
+- Icon ID
+- Faction
+- Role
+- Boss Rank
+- Ability Profile
+- AI Profile
+- Loot Profile
+- Spawn Profile
+- Encounter Profile
+
+DOCUMENT TERMINÉ

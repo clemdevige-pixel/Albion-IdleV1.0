@@ -1,0 +1,1176 @@
+# 33. BACKEND API & PERSISTENCE
+
+---
+
+# 1. Purpose
+
+This document defines the complete backend architecture.
+
+It specifies:
+
+- Server responsibilities
+- API architecture
+- Authentication
+- Authorization
+- Persistence
+- Database design
+- Transactions
+- Save system
+- Repository contracts
+- Security
+- Versioning
+- Audit
+- Anti-cheat
+- Scalability
+
+The backend is the authoritative source of truth for all persistent gameplay.
+
+---
+
+# 2. Locked Decisions
+
+---
+
+## 2.1 Server Authority
+
+The server owns every persistent gameplay state.
+
+The client never validates gameplay.
+
+The client never computes rewards.
+
+The client never decides progression.
+
+The client only sends player intent.
+
+---
+
+## 2.2 Stateless API
+
+HTTP requests are stateless.
+
+Every request contains enough information to authenticate and execute independently.
+
+No gameplay state is stored inside HTTP sessions.
+
+---
+
+## 2.3 Database
+
+Only one database exists.
+
+```text
+PostgreSQL
+```
+
+Every persistent system stores its data there.
+
+No gameplay state is stored in JSON files.
+
+---
+
+## 2.4 ORM
+
+Prisma is the only ORM.
+
+Repositories never expose Prisma models.
+
+---
+
+## 2.5 Transactions
+
+Every multi-step mutation is atomic.
+
+Either:
+
+```text
+Everything succeeds
+```
+
+or
+
+```text
+Everything rolls back
+```
+
+---
+
+## 2.6 No Trust In Client
+
+The backend never trusts:
+
+- timestamps
+- damage
+- rewards
+- item quality
+- currency
+- mastery
+- loot
+- combat result
+
+Everything is recalculated.
+
+---
+
+## 2.7 Save Ownership
+
+Only the backend writes saves.
+
+Clients never upload complete save files.
+
+---
+
+# 3. Backend Architecture
+
+```text
+HTTP Request
+
+↓
+
+Validation
+
+↓
+
+Authentication
+
+↓
+
+Authorization
+
+↓
+
+Use Case
+
+↓
+
+Repositories
+
+↓
+
+Transaction
+
+↓
+
+Database
+
+↓
+
+DTO
+
+↓
+
+HTTP Response
+```
+
+---
+
+# 4. Layers
+
+## Transport
+
+Fastify
+
+Responsibilities
+
+- Routing
+- Validation
+- Serialization
+- Authentication middleware
+
+No gameplay logic.
+
+---
+
+## Application
+
+Coordinates use cases.
+
+Examples
+
+```text
+Equip Item
+
+Craft Item
+
+Resolve Encounter
+
+Claim Worker Output
+```
+
+---
+
+## Domain
+
+Contains gameplay rules.
+
+Pure TypeScript.
+
+No database.
+
+No HTTP.
+
+No Prisma.
+
+---
+
+## Infrastructure
+
+Contains
+
+- Prisma
+- Logger
+- Clock
+- Random
+- Cache
+- Scheduler
+
+---
+
+# 5. API Principles
+
+REST API.
+
+Versioned.
+
+```text
+/api/v1/
+```
+
+JSON only.
+
+UTF-8.
+
+---
+
+# 6. Endpoint Convention
+
+```text
+GET
+
+Read
+```
+
+```text
+POST
+
+Mutation
+```
+
+```text
+PUT
+
+Replacement
+```
+
+```text
+PATCH
+
+Partial Update
+```
+
+```text
+DELETE
+
+Deletion
+```
+
+Gameplay mutations generally use POST.
+
+---
+
+# 7. API Structure
+
+```text
+/auth
+
+/player
+
+/inventory
+
+/equipment
+
+/combat
+
+/exploration
+
+/masteries
+
+/crafting
+
+/refining
+
+/workers
+
+/island
+
+/vendors
+
+/settings
+
+/notifications
+```
+
+---
+
+# 8. Authentication
+
+JWT Access Token.
+
+Refresh Token.
+
+Short-lived access token.
+
+Long-lived refresh token.
+
+Access tokens never contain gameplay state.
+
+---
+
+# 9. Authorization
+
+Every mutation verifies ownership.
+
+Example
+
+```text
+Player
+
+↓
+
+Item Instance
+
+↓
+
+Owner
+
+↓
+
+Authorized
+```
+
+Never rely only on IDs.
+
+---
+
+# 10. Request Validation
+
+Every request passes Zod validation.
+
+Failure returns
+
+```text
+400
+```
+
+No invalid request reaches domain logic.
+
+---
+
+# 11. Response Validation
+
+DTOs are validated before leaving the server when appropriate.
+
+No Prisma object is serialized directly.
+
+---
+
+# 12. Standard Response
+
+Success
+
+```json
+{
+  "data": {},
+  "meta": {}
+}
+```
+
+Failure
+
+```json
+{
+  "error": {},
+  "meta": {}
+}
+```
+
+---
+
+# 13. Request Lifecycle
+
+```text
+Receive
+
+↓
+
+Validate
+
+↓
+
+Authenticate
+
+↓
+
+Authorize
+
+↓
+
+Load Data
+
+↓
+
+Execute Use Case
+
+↓
+
+Persist
+
+↓
+
+Commit
+
+↓
+
+Return DTO
+```
+
+---
+
+# 14. Persistence Philosophy
+
+Database stores only authoritative state.
+
+Derived values are calculated.
+
+Avoid storing duplicated information.
+
+---
+
+# 15. Repository Pattern
+
+Every aggregate owns one repository.
+
+Examples
+
+```text
+PlayerRepository
+
+InventoryRepository
+
+WorkerRepository
+
+VendorRepository
+```
+
+Repositories hide Prisma.
+
+---
+
+# 16. Aggregate Roots
+
+Main aggregates
+
+```text
+Player
+
+Inventory
+
+Equipment
+
+Worker
+
+Building
+
+Island
+
+Vendor
+
+Notification
+```
+
+Each aggregate owns its consistency.
+
+---
+
+# 17. Database Principles
+
+Normalize when possible.
+
+Denormalize only after profiling.
+
+Use foreign keys.
+
+Use indexes.
+
+Never duplicate gameplay state.
+
+---
+
+# 18. Save Strategy
+
+No giant save blob.
+
+Persistent state is distributed across tables.
+
+Advantages
+
+- migrations
+- queries
+- analytics
+- debugging
+- partial updates
+
+---
+
+# 19. Save Loading
+
+```text
+Player
+
+↓
+
+Load Profile
+
+↓
+
+Load Wallet
+
+↓
+
+Load Equipment
+
+↓
+
+Load Inventory
+
+↓
+
+Load Masteries
+
+↓
+
+Load Workers
+
+↓
+
+Load Buildings
+
+↓
+
+Assemble DTO
+```
+
+---
+
+# 20. Autosave
+
+No periodic autosave.
+
+Every mutation persists immediately.
+
+The database is always authoritative.
+
+---
+
+# 21. Optimistic Concurrency
+
+Mutable entities own
+
+```text
+version
+```
+
+Updates use
+
+```text
+WHERE version = X
+```
+
+Conflict
+
+↓
+
+Retry or fail.
+
+---
+
+# 22. Transactions
+
+Example
+
+Craft Item
+
+```text
+Verify Recipe
+
+↓
+
+Verify Materials
+
+↓
+
+Remove Materials
+
+↓
+
+Create Item
+
+↓
+
+Grant XP
+
+↓
+
+Commit
+```
+
+Failure
+
+↓
+
+Rollback.
+
+---
+
+# 23. Currency
+
+Currency stored as integer.
+
+Never float.
+
+Example
+
+```text
+Silver
+
+↓
+
+1250
+```
+
+Not
+
+```text
+12.50
+```
+
+---
+
+# 24. Item Instances
+
+Every item instance owns
+
+```text
+Instance ID
+
+Definition ID
+
+Quality
+
+Enchant
+
+Durability
+
+Owner
+```
+
+Definition never changes.
+
+Instance changes.
+
+---
+
+# 25. Inventory
+
+Inventory stores only instance references.
+
+No duplicated definitions.
+
+---
+
+# 26. Equipment
+
+Equipment stores instance IDs.
+
+Not copied objects.
+
+---
+
+# 27. Worker Persistence
+
+Workers store
+
+```text
+Assignment
+
+Started At
+
+Complete At
+
+Current State
+```
+
+Completion calculated from timestamps.
+
+---
+
+# 28. Building Persistence
+
+Buildings store
+
+```text
+Level
+
+Construction
+
+Upgrade
+
+Owner
+
+Location
+```
+
+---
+
+# 29. Background Progression
+
+Uses
+
+```text
+lastProcessedAt
+```
+
+Server computes elapsed time.
+
+Never client.
+
+---
+
+# 30. Notification Persistence
+
+Notifications are persistent.
+
+Fields
+
+```text
+Read
+
+Created
+
+Type
+
+Payload
+```
+
+---
+
+# 31. Logging
+
+Every mutation logs
+
+```text
+Request ID
+
+Player ID
+
+Use Case
+
+Duration
+
+Outcome
+```
+
+---
+
+# 32. Audit
+
+Sensitive operations create audit records.
+
+Examples
+
+```text
+Currency Grant
+
+Admin Action
+
+Item Grant
+
+Rollback
+
+Manual Fix
+```
+
+---
+
+# 33. Error Categories
+
+```text
+Validation
+
+Authentication
+
+Authorization
+
+Domain
+
+Infrastructure
+
+Unexpected
+```
+
+---
+
+# 34. HTTP Status
+
+```text
+200
+
+OK
+```
+
+```text
+201
+
+Created
+```
+
+```text
+204
+
+No Content
+```
+
+```text
+400
+
+Validation
+```
+
+```text
+401
+
+Authentication
+```
+
+```text
+403
+
+Forbidden
+```
+
+```text
+404
+
+Not Found
+```
+
+```text
+409
+
+Conflict
+```
+
+```text
+500
+
+Unexpected
+```
+
+---
+
+# 35. Security
+
+Passwords
+
+↓
+
+Argon2.
+
+HTTPS only.
+
+Secrets never committed.
+
+Environment variables validated.
+
+---
+
+# 36. Anti-Cheat
+
+Server validates
+
+- rewards
+- combat
+- loot
+- timers
+- currency
+- crafting
+- gathering
+- XP
+
+Client predictions ignored.
+
+---
+
+# 37. Rate Limiting
+
+Per endpoint.
+
+Examples
+
+```text
+Login
+
+Inventory
+
+Craft
+
+Claim Reward
+```
+
+Sensitive endpoints have stricter limits.
+
+---
+
+# 38. Idempotency
+
+Required for
+
+```text
+Claim Reward
+
+Purchase
+
+Worker Claim
+
+Craft Completion
+```
+
+Duplicate requests produce one result.
+
+---
+
+# 39. Caching
+
+Allowed
+
+```text
+Definitions
+
+Localization
+
+Registries
+```
+
+Not allowed
+
+```text
+Player Save
+```
+
+Without explicit invalidation.
+
+---
+
+# 40. Database Indexes
+
+Indexes on
+
+```text
+Player ID
+
+Owner ID
+
+Item Instance ID
+
+Worker ID
+
+Building ID
+
+Notification ID
+
+Mastery ID
+```
+
+---
+
+# 41. Migrations
+
+Every schema change uses Prisma migrations.
+
+No manual production SQL.
+
+---
+
+# 42. Save Version
+
+Player profile contains
+
+```text
+Save Version
+```
+
+Migration occurs before loading gameplay.
+
+---
+
+# 43. Backup Strategy
+
+Automatic database backups.
+
+Daily.
+
+Retention policy configurable.
+
+Point-in-time recovery recommended.
+
+---
+
+# 44. Restore Strategy
+
+Restore
+
+↓
+
+Migration Check
+
+↓
+
+Integrity Validation
+
+↓
+
+Resume Service
+
+---
+
+# 45. Monitoring
+
+Metrics
+
+```text
+Requests
+
+Latency
+
+Errors
+
+Transactions
+
+Database
+
+Memory
+
+CPU
+```
+
+---
+
+# 46. Health Checks
+
+Endpoints
+
+```text
+/health
+
+/ready
+
+/live
+```
+
+---
+
+# 47. Scalability
+
+Version 1
+
+```text
+Single Backend
+
+Single Database
+```
+
+Architecture remains modular.
+
+Future horizontal scaling possible.
+
+---
+
+# 48. Acceptance Criteria
+
+Backend is complete when
+
+- Every mutation is transactional.
+- Client cannot forge rewards.
+- Save is authoritative.
+- JWT authentication works.
+- Requests are validated.
+- DTOs isolate persistence.
+- Repositories hide Prisma.
+- Database uses indexes.
+- Idempotent endpoints are safe.
+- Optimistic concurrency prevents overwrites.
+- Audit exists for sensitive operations.
+- Background progression uses timestamps.
+- Save migrations are supported.
+- Health checks are available.
+- Monitoring exposes runtime health.
+
+---
+
+# 49. Final Summary
+
+The backend follows a strict server-authoritative architecture.
+
+```text
+Intent
+
+↓
+
+Validation
+
+↓
+
+Authentication
+
+↓
+
+Authorization
+
+↓
+
+Use Case
+
+↓
+
+Domain
+
+↓
+
+Transaction
+
+↓
+
+Persistence
+
+↓
+
+DTO
+
+↓
+
+Client
+```
+
+Persistent state is normalized.
+
+Every mutation is atomic.
+
+The client is never trusted.
+
+The server owns all gameplay progression, rewards and saves.
+
+This architecture guarantees consistency, security and scalability while remaining simple enough for Version 1.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

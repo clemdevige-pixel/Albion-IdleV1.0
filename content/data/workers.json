@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "category": "workers",
+  "definitions": [
+    {
+      "id": "worker_blacksmith_t4",
+      "profession": "blacksmith",
+      "tier": 4,
+      "efficiency": 1.0,
+      "assignableBuildingCategories": ["crafting"],
+      "tags": ["blacksmith"]
+    },
+    {
+      "id": "worker_smelter_t4",
+      "profession": "stonemason",
+      "tier": 4,
+      "efficiency": 1.0,
+      "assignableBuildingCategories": ["refining"],
+      "tags": ["smelter"]
+    }
+  ]
+}

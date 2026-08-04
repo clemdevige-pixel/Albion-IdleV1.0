@@ -1,0 +1,60 @@
+// Legacy exports (backwards compatible)
+export { DataValidationError } from "./errors.js";
+export {
+  ContentManifestSchema,
+  ContentCollectionSchema,
+  type ContentManifest,
+  type ContentCollection,
+} from "./schemas/content-manifest.js";
+export {
+  AssetManifestSchema,
+  AssetEntrySchema,
+  AssetTypeSchema,
+  type AssetManifest,
+  type AssetEntry,
+  type AssetType,
+} from "./schemas/asset-manifest.js";
+export { loadJsonFile, loadContentManifest, loadAssetManifest } from "./loader.js";
+
+// Data Runtime exports
+export type { Brand } from "./brand.js";
+export { type DataId, validateDataId, asDataId } from "./data-id.js";
+export {
+  type Severity,
+  type IssueCode,
+  type ValidationIssue,
+  type ValidationResult,
+  ok,
+  fail,
+} from "./diagnostics.js";
+export {
+  type DataCategory,
+  type DataReference,
+  type DataCategoryOptions,
+  defineDataCategory,
+} from "./category.js";
+export { DataRegistry } from "./registry.js";
+export {
+  type DataSource,
+  createJsonFileSource,
+  createInMemorySource,
+} from "./source.js";
+export {
+  type SemanticValidator,
+  type SemanticValidationContext,
+} from "./validation.js";
+export {
+  type DataLoaderConfig,
+  type LoadedRegistries,
+  loadData,
+} from "./loader/data-loader.js";
+export { DataFileSchema, type DataFile } from "./schemas/data-file.js";
+
+// Content schemas
+export * from "./schemas/content/index.js";
+
+// Localization
+export * from "./localization/index.js";
+
+// Asset Manifest Runtime
+export * from "./assets/index.js";

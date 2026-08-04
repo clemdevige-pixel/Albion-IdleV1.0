@@ -1,0 +1,17 @@
+export { StatDefinitionSchema, type StatDefinition, statCategory } from "./stats.js";
+export { ItemDefinitionSchema, type ItemDefinition, itemCategory } from "./items.js";
+export { EquipmentDefinitionSchema, type EquipmentDefinition, equipmentCategory } from "./equipment.js";
+export { ConsumableDefinitionSchema, type ConsumableDefinition, consumableCategory } from "./consumables.js";
+export { ResourceDefinitionSchema, type ResourceDefinition, resourceCategory } from "./resources.js";
+export { MonsterDefinitionSchema, type MonsterDefinition, monsterCategory } from "./monsters.js";
+export { LootTableDefinitionSchema, type LootTableDefinition, type LootEntry, lootTableCategory } from "./loot-tables.js";
+export { AbilityDefinitionSchema, type AbilityDefinition, abilityCategory } from "./abilities.js";
+export { EffectDefinitionSchema, type EffectDefinition, effectCategory } from "./effects.js";
+export { RecipeDefinitionSchema, type RecipeDefinition, type RecipeIngredient, type RecipeOutput, recipeCategory } from "./recipes.js";
+export { BiomeDefinitionSchema, type BiomeDefinition, biomeCategory } from "./biomes.js";
+export { ZoneDefinitionSchema, type ZoneDefinition, zoneCategory } from "./zones.js";
+export { BuildingDefinitionSchema, type BuildingDefinition, buildingCategory } from "./buildings.js";
+export { WorkerDefinitionSchema, type WorkerDefinition, workerCategory } from "./workers.js";
+export { CurrencyDefinitionSchema, type CurrencyDefinition, currencyCategory } from "./currencies.js";
+export { MasteryDefinitionSchema, type MasteryDefinition, masteryCategory } from "./masteries.js";
+export { VendorDefinitionSchema, type VendorDefinition, type VendorOffer, vendorCategory } from "./vendors.js";

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "fireball",
+  "kind": "projectile",
+  "shape": { "type": "circle", "radius": 10 },
+  "fillColor": "#ff7a24",
+  "strokeWidth": 3,
+  "strokeColor": "#ffc247",
+  "blendMode": "add",
+  "depth": 25,
+  "durationMs": 260,
+  "endScale": 1.3,
+  "trajectory": {
+    "type": "linear",
+    "sourceOffsetX": 58,
+    "targetOffsetX": -48,
+    "offsetY": -46
+  },
+  "impactEffect": {
+    "shape": "circle",
+    "radius": 18,
+    "fillColor": "#ff8a2a",
+    "fillAlpha": 0.78,
+    "strokeWidth": 3,
+    "strokeColor": "#ffd15c",
+    "depth": 26,
+    "durationMs": 180,
+    "endScale": 2
+  }
+}

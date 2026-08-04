@@ -1,0 +1,2180 @@
+# WEAPON DATABASE
+
+Version: 1.0
+
+This document defines every playable weapon available in Version 1.
+
+Each weapon references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored in this document.
+
+Weapon statistics, crafting costs and progression values are inherited from
+the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Weapon ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the equipped weapon sprite or model.
+
+Icon ID:
+Identifier of the inventory and interface icon.
+
+Scaling Profile:
+Defines damage, attack speed, range and other numerical statistics.
+
+Craft Profile:
+Defines required resources, crafting time and crafting cost.
+
+Ability Profile:
+Defines the abilities available while the weapon is equipped.
+
+All Tier 4 to Tier 8 variants inherit the same base weapon entry.
+
+Generated item identifiers follow this format:
+
+WPN-0001-T4
+WPN-0001-T5
+WPN-0001-T6
+WPN-0001-T7
+WPN-0001-T8
+
+Generated asset identifiers follow the same format.
+
+Example:
+
+Gameplay Item:
+WPN-0001-T6
+
+Equipped Asset:
+WPN-0001-T6
+
+Inventory Icon:
+ICO-WPN-0001-T6
+
+Display Name:
+Broadsword T6
+
+---
+
+# ============================================================================
+# SWORD FAMILY
+# ============================================================================
+
+## WPN-0001
+
+Name:
+Broadsword
+
+Asset ID:
+WPN-0001
+
+Icon ID:
+ICO-WPN-0001
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Handed:
+One-Handed
+
+Combat Role:
+Balanced Melee
+
+Scaling Profile:
+WPN_STANDARD_ONE_HANDED_MELEE
+
+Craft Profile:
+CRAFT_SWORD_ONE_HANDED
+
+Ability Profile:
+ABILITY_BROADSWORD
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0002
+
+Name:
+Claymore
+
+Asset ID:
+WPN-0002
+
+Icon ID:
+ICO-WPN-0002
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Handed:
+Two-Handed
+
+Combat Role:
+Heavy Melee
+
+Scaling Profile:
+WPN_HEAVY_TWO_HANDED_MELEE
+
+Craft Profile:
+CRAFT_SWORD_TWO_HANDED
+
+Ability Profile:
+ABILITY_CLAYMORE
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0003
+
+Name:
+Carving Sword
+
+Asset ID:
+WPN-0003
+
+Icon ID:
+ICO-WPN-0003
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Handed:
+Two-Handed
+
+Combat Role:
+Armor Reduction Melee
+
+Scaling Profile:
+WPN_MOBILE_TWO_HANDED_MELEE
+
+Craft Profile:
+CRAFT_SWORD_TWO_HANDED
+
+Ability Profile:
+ABILITY_CARVING_SWORD
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0004
+
+Name:
+Dual Swords
+
+Asset ID:
+WPN-0004
+
+Icon ID:
+ICO-WPN-0004
+
+Category:
+Weapon
+
+Family:
+Sword
+
+Handed:
+Dual-Wield
+
+Combat Role:
+Fast Melee
+
+Scaling Profile:
+WPN_FAST_DUAL_MELEE
+
+Craft Profile:
+CRAFT_SWORD_DUAL
+
+Ability Profile:
+ABILITY_DUAL_SWORDS
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# AXE FAMILY
+# ============================================================================
+
+## WPN-0005
+
+Name:
+Battle Axe
+
+Asset ID:
+WPN-0005
+
+Icon ID:
+ICO-WPN-0005
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Handed:
+One-Handed
+
+Combat Role:
+Sustain Melee
+
+Scaling Profile:
+WPN_STANDARD_ONE_HANDED_MELEE
+
+Craft Profile:
+CRAFT_AXE_ONE_HANDED
+
+Ability Profile:
+ABILITY_BATTLE_AXE
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0006
+
+Name:
+Greataxe
+
+Asset ID:
+WPN-0006
+
+Icon ID:
+ICO-WPN-0006
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Melee
+
+Scaling Profile:
+WPN_HEAVY_TWO_HANDED_MELEE
+
+Craft Profile:
+CRAFT_AXE_TWO_HANDED
+
+Ability Profile:
+ABILITY_GREATAXE
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0007
+
+Name:
+Halberd Axe
+
+Asset ID:
+WPN-0007
+
+Icon ID:
+ICO-WPN-0007
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Handed:
+Two-Handed
+
+Combat Role:
+Extended Range Melee
+
+Scaling Profile:
+WPN_POLEARM_HEAVY_MELEE
+
+Craft Profile:
+CRAFT_AXE_TWO_HANDED
+
+Ability Profile:
+ABILITY_HALBERD_AXE
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0008
+
+Name:
+Bear Paws
+
+Asset ID:
+WPN-0008
+
+Icon ID:
+ICO-WPN-0008
+
+Category:
+Weapon
+
+Family:
+Axe
+
+Handed:
+Dual-Wield
+
+Combat Role:
+Mobile Burst Melee
+
+Scaling Profile:
+WPN_FAST_DUAL_MELEE
+
+Craft Profile:
+CRAFT_AXE_DUAL
+
+Ability Profile:
+ABILITY_BEAR_PAWS
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# SPEAR FAMILY
+# ============================================================================
+
+## WPN-0009
+
+Name:
+Spear
+
+Asset ID:
+WPN-0009
+
+Icon ID:
+ICO-WPN-0009
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Handed:
+One-Handed
+
+Combat Role:
+Mobile Melee
+
+Scaling Profile:
+WPN_STANDARD_POLEARM
+
+Craft Profile:
+CRAFT_SPEAR_ONE_HANDED
+
+Ability Profile:
+ABILITY_SPEAR
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0010
+
+Name:
+Pike
+
+Asset ID:
+WPN-0010
+
+Icon ID:
+ICO-WPN-0010
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Handed:
+Two-Handed
+
+Combat Role:
+Long Range Melee
+
+Scaling Profile:
+WPN_HEAVY_POLEARM
+
+Craft Profile:
+CRAFT_SPEAR_TWO_HANDED
+
+Ability Profile:
+ABILITY_PIKE
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0011
+
+Name:
+Glaive
+
+Asset ID:
+WPN-0011
+
+Icon ID:
+ICO-WPN-0011
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Handed:
+Two-Handed
+
+Combat Role:
+Control Melee
+
+Scaling Profile:
+WPN_HEAVY_POLEARM
+
+Craft Profile:
+CRAFT_SPEAR_TWO_HANDED
+
+Ability Profile:
+ABILITY_GLAIVE
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0012
+
+Name:
+Trinity Spear
+
+Asset ID:
+WPN-0012
+
+Icon ID:
+ICO-WPN-0012
+
+Category:
+Weapon
+
+Family:
+Spear
+
+Handed:
+Two-Handed
+
+Combat Role:
+Hybrid Melee
+
+Scaling Profile:
+WPN_MOBILE_POLEARM
+
+Craft Profile:
+CRAFT_SPEAR_TWO_HANDED
+
+Ability Profile:
+ABILITY_TRINITY_SPEAR
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# BOW FAMILY
+# ============================================================================
+
+## WPN-0013
+
+Name:
+Longbow
+
+Asset ID:
+WPN-0013
+
+Icon ID:
+ICO-WPN-0013
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Ranged Damage
+
+Scaling Profile:
+WPN_STANDARD_BOW
+
+Craft Profile:
+CRAFT_BOW_TWO_HANDED
+
+Ability Profile:
+ABILITY_LONGBOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0014
+
+Name:
+War Bow
+
+Asset ID:
+WPN-0014
+
+Icon ID:
+ICO-WPN-0014
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Handed:
+Two-Handed
+
+Combat Role:
+Mobile Ranged Damage
+
+Scaling Profile:
+WPN_MOBILE_BOW
+
+Craft Profile:
+CRAFT_BOW_TWO_HANDED
+
+Ability Profile:
+ABILITY_WAR_BOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0015
+
+Name:
+Whispering Bow
+
+Asset ID:
+WPN-0015
+
+Icon ID:
+ICO-WPN-0015
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Handed:
+Two-Handed
+
+Combat Role:
+Rapid Ranged Damage
+
+Scaling Profile:
+WPN_FAST_BOW
+
+Craft Profile:
+CRAFT_BOW_TWO_HANDED
+
+Ability Profile:
+ABILITY_WHISPERING_BOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0016
+
+Name:
+Composite Bow
+
+Asset ID:
+WPN-0016
+
+Icon ID:
+ICO-WPN-0016
+
+Category:
+Weapon
+
+Family:
+Bow
+
+Handed:
+Two-Handed
+
+Combat Role:
+Balanced Ranged Damage
+
+Scaling Profile:
+WPN_STANDARD_BOW
+
+Craft Profile:
+CRAFT_BOW_TWO_HANDED
+
+Ability Profile:
+ABILITY_COMPOSITE_BOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# CROSSBOW FAMILY
+# ============================================================================
+
+## WPN-0017
+
+Name:
+Light Crossbow
+
+Asset ID:
+WPN-0017
+
+Icon ID:
+ICO-WPN-0017
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Handed:
+One-Handed
+
+Combat Role:
+Ranged Burst
+
+Scaling Profile:
+WPN_LIGHT_CROSSBOW
+
+Craft Profile:
+CRAFT_CROSSBOW_ONE_HANDED
+
+Ability Profile:
+ABILITY_LIGHT_CROSSBOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0018
+
+Name:
+Heavy Crossbow
+
+Asset ID:
+WPN-0018
+
+Icon ID:
+ICO-WPN-0018
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Handed:
+Two-Handed
+
+Combat Role:
+Heavy Ranged Damage
+
+Scaling Profile:
+WPN_HEAVY_CROSSBOW
+
+Craft Profile:
+CRAFT_CROSSBOW_TWO_HANDED
+
+Ability Profile:
+ABILITY_HEAVY_CROSSBOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0019
+
+Name:
+Repeating Crossbow
+
+Asset ID:
+WPN-0019
+
+Icon ID:
+ICO-WPN-0019
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Handed:
+Two-Handed
+
+Combat Role:
+Rapid Ranged Damage
+
+Scaling Profile:
+WPN_REPEATING_CROSSBOW
+
+Craft Profile:
+CRAFT_CROSSBOW_TWO_HANDED
+
+Ability Profile:
+ABILITY_REPEATING_CROSSBOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0020
+
+Name:
+Siege Crossbow
+
+Asset ID:
+WPN-0020
+
+Icon ID:
+ICO-WPN-0020
+
+Category:
+Weapon
+
+Family:
+Crossbow
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Ranged Damage
+
+Scaling Profile:
+WPN_SIEGE_CROSSBOW
+
+Craft Profile:
+CRAFT_CROSSBOW_TWO_HANDED
+
+Ability Profile:
+ABILITY_SIEGE_CROSSBOW
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# FIRE STAFF FAMILY
+# ============================================================================
+
+## WPN-0021
+
+Name:
+Fire Staff
+
+Asset ID:
+WPN-0021
+
+Icon ID:
+ICO-WPN-0021
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Magic Damage
+
+Scaling Profile:
+WPN_STANDARD_ONE_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_FIRE_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0022
+
+Name:
+Infernal Staff
+
+Asset ID:
+WPN-0022
+
+Icon ID:
+ICO-WPN-0022
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Magic Damage
+
+Scaling Profile:
+WPN_HEAVY_TWO_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_INFERNAL_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0023
+
+Name:
+Wildfire Staff
+
+Asset ID:
+WPN-0023
+
+Icon ID:
+ICO-WPN-0023
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Burst Magic Damage
+
+Scaling Profile:
+WPN_BURST_ONE_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_WILDFIRE_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0024
+
+Name:
+Pyromancer Staff
+
+Asset ID:
+WPN-0024
+
+Icon ID:
+ICO-WPN-0024
+
+Category:
+Weapon
+
+Family:
+Fire Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Sustained Magic Damage
+
+Scaling Profile:
+WPN_HEAVY_TWO_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_PYROMANCER_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# FROST STAFF FAMILY
+# ============================================================================
+
+## WPN-0025
+
+Name:
+Frost Staff
+
+Asset ID:
+WPN-0025
+
+Icon ID:
+ICO-WPN-0025
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Control Magic
+
+Scaling Profile:
+WPN_STANDARD_ONE_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_FROST_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0026
+
+Name:
+Glacial Staff
+
+Asset ID:
+WPN-0026
+
+Icon ID:
+ICO-WPN-0026
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Control Magic
+
+Scaling Profile:
+WPN_CONTROL_TWO_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_GLACIAL_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0027
+
+Name:
+Icicle Staff
+
+Asset ID:
+WPN-0027
+
+Icon ID:
+ICO-WPN-0027
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Burst Control Magic
+
+Scaling Profile:
+WPN_BURST_ONE_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_ICICLE_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0028
+
+Name:
+Frozen Scepter
+
+Asset ID:
+WPN-0028
+
+Icon ID:
+ICO-WPN-0028
+
+Category:
+Weapon
+
+Family:
+Frost Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Defensive Control Magic
+
+Scaling Profile:
+WPN_SUPPORT_ONE_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_FROZEN_SCEPTER
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# NATURE STAFF FAMILY
+# ============================================================================
+
+## WPN-0029
+
+Name:
+Nature Staff
+
+Asset ID:
+WPN-0029
+
+Icon ID:
+ICO-WPN-0029
+
+Category:
+Weapon
+
+Family:
+Nature Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Healing
+
+Scaling Profile:
+WPN_STANDARD_ONE_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_NATURE_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0030
+
+Name:
+Druid Staff
+
+Asset ID:
+WPN-0030
+
+Icon ID:
+ICO-WPN-0030
+
+Category:
+Weapon
+
+Family:
+Nature Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Sustained Healing
+
+Scaling Profile:
+WPN_TWO_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_DRUID_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0031
+
+Name:
+Bloom Staff
+
+Asset ID:
+WPN-0031
+
+Icon ID:
+ICO-WPN-0031
+
+Category:
+Weapon
+
+Family:
+Nature Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Healing
+
+Scaling Profile:
+WPN_AREA_TWO_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_BLOOM_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0032
+
+Name:
+Root Staff
+
+Asset ID:
+WPN-0032
+
+Icon ID:
+ICO-WPN-0032
+
+Category:
+Weapon
+
+Family:
+Nature Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Healing and Control
+
+Scaling Profile:
+WPN_CONTROL_TWO_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_ROOT_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# HOLY STAFF FAMILY
+# ============================================================================
+
+## WPN-0033
+
+Name:
+Holy Staff
+
+Asset ID:
+WPN-0033
+
+Icon ID:
+ICO-WPN-0033
+
+Category:
+Weapon
+
+Family:
+Holy Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Direct Healing
+
+Scaling Profile:
+WPN_STANDARD_ONE_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_HOLY_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0034
+
+Name:
+Divine Staff
+
+Asset ID:
+WPN-0034
+
+Icon ID:
+ICO-WPN-0034
+
+Category:
+Weapon
+
+Family:
+Holy Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Protective Healing
+
+Scaling Profile:
+WPN_TWO_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_DIVINE_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0035
+
+Name:
+Sacred Scepter
+
+Asset ID:
+WPN-0035
+
+Icon ID:
+ICO-WPN-0035
+
+Category:
+Weapon
+
+Family:
+Holy Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Support Healing
+
+Scaling Profile:
+WPN_SUPPORT_ONE_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_SACRED_SCEPTER
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0036
+
+Name:
+Celestial Staff
+
+Asset ID:
+WPN-0036
+
+Icon ID:
+ICO-WPN-0036
+
+Category:
+Weapon
+
+Family:
+Holy Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Healing
+
+Scaling Profile:
+WPN_AREA_TWO_HANDED_HEALING
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_CELESTIAL_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ARCANE STAFF FAMILY
+# ============================================================================
+
+## WPN-0037
+
+Name:
+Arcane Staff
+
+Asset ID:
+WPN-0037
+
+Icon ID:
+ICO-WPN-0037
+
+Category:
+Weapon
+
+Family:
+Arcane Staff
+
+Handed:
+One-Handed
+
+Combat Role:
+Magic Support
+
+Scaling Profile:
+WPN_SUPPORT_ONE_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_ONE_HANDED
+
+Ability Profile:
+ABILITY_ARCANE_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0038
+
+Name:
+Runic Staff
+
+Asset ID:
+WPN-0038
+
+Icon ID:
+ICO-WPN-0038
+
+Category:
+Weapon
+
+Family:
+Arcane Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Area Support
+
+Scaling Profile:
+WPN_SUPPORT_TWO_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_RUNIC_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0039
+
+Name:
+Astral Staff
+
+Asset ID:
+WPN-0039
+
+Icon ID:
+ICO-WPN-0039
+
+Category:
+Weapon
+
+Family:
+Arcane Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Magic Amplification
+
+Scaling Profile:
+WPN_SUPPORT_TWO_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_ASTRAL_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## WPN-0040
+
+Name:
+Void Staff
+
+Asset ID:
+WPN-0040
+
+Icon ID:
+ICO-WPN-0040
+
+Category:
+Weapon
+
+Family:
+Arcane Staff
+
+Handed:
+Two-Handed
+
+Combat Role:
+Offensive Support
+
+Scaling Profile:
+WPN_CONTROL_TWO_HANDED_MAGIC
+
+Craft Profile:
+CRAFT_MAGIC_STAFF_TWO_HANDED
+
+Ability Profile:
+ABILITY_VOID_STAFF
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# SCALING PROFILE REFERENCES
+# ============================================================================
+
+The following scaling profiles are referenced by the weapon database.
+
+Their numerical values are defined in **DB_PROGRESS_RULES.md**.
+
+- WPN_STANDARD_ONE_HANDED_MELEE
+- WPN_HEAVY_TWO_HANDED_MELEE
+- WPN_MOBILE_TWO_HANDED_MELEE
+- WPN_FAST_DUAL_MELEE
+- WPN_POLEARM_HEAVY_MELEE
+- WPN_STANDARD_POLEARM
+- WPN_HEAVY_POLEARM
+- WPN_MOBILE_POLEARM
+- WPN_STANDARD_BOW
+- WPN_MOBILE_BOW
+- WPN_FAST_BOW
+- WPN_LIGHT_CROSSBOW
+- WPN_HEAVY_CROSSBOW
+- WPN_REPEATING_CROSSBOW
+- WPN_SIEGE_CROSSBOW
+- WPN_STANDARD_ONE_HANDED_MAGIC
+- WPN_BURST_ONE_HANDED_MAGIC
+- WPN_SUPPORT_ONE_HANDED_MAGIC
+- WPN_HEAVY_TWO_HANDED_MAGIC
+- WPN_CONTROL_TWO_HANDED_MAGIC
+- WPN_SUPPORT_TWO_HANDED_MAGIC
+- WPN_STANDARD_ONE_HANDED_HEALING
+- WPN_SUPPORT_ONE_HANDED_HEALING
+- WPN_TWO_HANDED_HEALING
+- WPN_AREA_TWO_HANDED_HEALING
+- WPN_CONTROL_TWO_HANDED_HEALING
+
+---
+
+# ============================================================================
+# CRAFT PROFILE REFERENCES
+# ============================================================================
+
+The following crafting profiles are referenced by the weapon database.
+
+Their recipes and values are defined in **DB_CRAFTING.md**.
+
+- CRAFT_SWORD_ONE_HANDED
+- CRAFT_SWORD_TWO_HANDED
+- CRAFT_SWORD_DUAL
+- CRAFT_AXE_ONE_HANDED
+- CRAFT_AXE_TWO_HANDED
+- CRAFT_AXE_DUAL
+- CRAFT_SPEAR_ONE_HANDED
+- CRAFT_SPEAR_TWO_HANDED
+- CRAFT_BOW_TWO_HANDED
+- CRAFT_CROSSBOW_ONE_HANDED
+- CRAFT_CROSSBOW_TWO_HANDED
+- CRAFT_MAGIC_STAFF_ONE_HANDED
+- CRAFT_MAGIC_STAFF_TWO_HANDED
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Every base weapon generates five tier variants.
+
+Generated Tiers:
+- T4
+- T5
+- T6
+- T7
+- T8
+
+The base ID never changes.
+
+Example:
+
+Base Weapon:
+WPN-0001
+
+Generated Variants:
+- WPN-0001-T4
+- WPN-0001-T5
+- WPN-0001-T6
+- WPN-0001-T7
+- WPN-0001-T8
+
+Each generated variant receives:
+
+- The same weapon name
+- The same weapon family
+- The same handed type
+- The same combat role
+- The same ability profile
+- The tier-specific visual asset
+- The tier-specific inventory icon
+- Statistics generated from its scaling profile
+- A recipe generated from its crafting profile
+- A value generated from the economy rules
+- A repair cost generated from the repair rules
+
+No generated system may modify:
+
+- Weapon ID
+- Weapon name
+- Weapon family
+- Asset reference
+- Icon reference
+- Ability profile
+- Crafting profile
+- Scaling profile
+
+DOCUMENT TERMINÉ

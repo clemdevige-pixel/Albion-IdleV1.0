@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "resource_hide",
+  "kind": "resource_node",
+  "textureKey": "gathering-hide-node",
+  "assetPath": "/assets/resources/resource-hide.png",
+  "origin": { "x": 0.5, "y": 0.5 },
+  "offset": { "x": 0, "y": -18 },
+  "display": { "width": 150, "height": 150 }
+}

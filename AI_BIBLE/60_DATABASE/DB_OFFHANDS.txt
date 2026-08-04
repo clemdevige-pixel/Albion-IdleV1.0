@@ -1,0 +1,556 @@
+# OFF-HAND DATABASE
+
+Version: 1.0
+
+This document defines every equippable off-hand item available in Version 1.
+
+Each off-hand entry references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored in this document.
+
+Off-hand statistics, crafting costs and progression values are inherited from
+the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Off-Hand ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the equipped off-hand sprite or model.
+
+Icon ID:
+Identifier of the inventory and interface icon.
+
+Scaling Profile:
+Defines the numerical bonuses granted by the off-hand.
+
+Craft Profile:
+Defines required resources, crafting time and crafting cost.
+
+Passive Profile:
+Defines the permanent passive effect granted while equipped.
+
+All off-hand variants inherit the same base entry.
+
+Generated item identifiers follow this format:
+
+OFF-0001-T4
+OFF-0001-T5
+OFF-0001-T6
+OFF-0001-T7
+OFF-0001-T8
+
+Generated asset identifiers follow the same format.
+
+Example:
+
+Gameplay Item:
+OFF-0001-T6
+
+Equipped Asset:
+OFF-0001-T6
+
+Inventory Icon:
+ICO-OFF-0001-T6
+
+Display Name:
+Knight Shield T6
+
+---
+
+# ============================================================================
+# OFF-HAND ITEMS
+# ============================================================================
+
+## OFF-0001
+
+Name:
+Knight Shield
+
+Asset ID:
+OFF-0001
+
+Icon ID:
+ICO-OFF-0001
+
+Category:
+Off-Hand
+
+Off-Hand Type:
+Shield
+
+Equipment Slot:
+Off-Hand
+
+Combat Role:
+Defense
+
+Compatible Weapon Type:
+One-Handed
+
+Scaling Profile:
+OFF_DEFENSIVE_SHIELD
+
+Craft Profile:
+CRAFT_SHIELD_STANDARD
+
+Passive Profile:
+PASSIVE_KNIGHT_SHIELD
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## OFF-0002
+
+Name:
+Torch
+
+Asset ID:
+OFF-0002
+
+Icon ID:
+ICO-OFF-0002
+
+Category:
+Off-Hand
+
+Off-Hand Type:
+Torch
+
+Equipment Slot:
+Off-Hand
+
+Combat Role:
+Attack Speed
+
+Compatible Weapon Type:
+One-Handed
+
+Scaling Profile:
+OFF_ATTACK_SPEED
+
+Craft Profile:
+CRAFT_TORCH_STANDARD
+
+Passive Profile:
+PASSIVE_TORCH
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## OFF-0003
+
+Name:
+Arcane Tome
+
+Asset ID:
+OFF-0003
+
+Icon ID:
+ICO-OFF-0003
+
+Category:
+Off-Hand
+
+Off-Hand Type:
+Tome
+
+Equipment Slot:
+Off-Hand
+
+Combat Role:
+Energy and Casting
+
+Compatible Weapon Type:
+One-Handed
+
+Scaling Profile:
+OFF_MAGIC_TOME
+
+Craft Profile:
+CRAFT_TOME_STANDARD
+
+Passive Profile:
+PASSIVE_ARCANE_TOME
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## OFF-0004
+
+Name:
+Mystic Orb
+
+Asset ID:
+OFF-0004
+
+Icon ID:
+ICO-OFF-0004
+
+Category:
+Off-Hand
+
+Off-Hand Type:
+Orb
+
+Equipment Slot:
+Off-Hand
+
+Combat Role:
+Magic Power
+
+Compatible Weapon Type:
+One-Handed
+
+Scaling Profile:
+OFF_MAGIC_ORB
+
+Craft Profile:
+CRAFT_ORB_STANDARD
+
+Passive Profile:
+PASSIVE_MYSTIC_ORB
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+## OFF-0005
+
+Name:
+War Horn
+
+Asset ID:
+OFF-0005
+
+Icon ID:
+ICO-OFF-0005
+
+Category:
+Off-Hand
+
+Off-Hand Type:
+Horn
+
+Equipment Slot:
+Off-Hand
+
+Combat Role:
+Cooldown Support
+
+Compatible Weapon Type:
+One-Handed
+
+Scaling Profile:
+OFF_COOLDOWN_SUPPORT
+
+Craft Profile:
+CRAFT_HORN_STANDARD
+
+Passive Profile:
+PASSIVE_WAR_HORN
+
+Tier Range:
+T4-T8
+
+Enchantable:
+Yes
+
+Tradable:
+Yes
+
+Repairable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# OFF-HAND ROLE RULES
+# ============================================================================
+
+## Knight Shield
+
+Primary Attribute:
+Defense
+
+Secondary Attribute:
+Maximum Health
+
+Preferred Users:
+Tanks
+Defensive Fighters
+Survival Builds
+
+General Function:
+Increases resistance to incoming physical and magical damage.
+
+---
+
+## Torch
+
+Primary Attribute:
+Attack Speed
+
+Secondary Attribute:
+Basic Attack Efficiency
+
+Preferred Users:
+Melee Damage Dealers
+Ranged Damage Dealers
+Basic Attack Builds
+
+General Function:
+Increases the frequency and efficiency of basic attacks.
+
+---
+
+## Arcane Tome
+
+Primary Attribute:
+Maximum Energy
+
+Secondary Attribute:
+Energy Regeneration
+
+Preferred Users:
+Mages
+Healers
+Support Builds
+
+General Function:
+Improves resource capacity and sustained ability usage.
+
+---
+
+## Mystic Orb
+
+Primary Attribute:
+Magic Power
+
+Secondary Attribute:
+Ability Damage
+
+Preferred Users:
+Damage Mages
+Burst Casters
+Hybrid Magic Builds
+
+General Function:
+Improves offensive magical abilities.
+
+---
+
+## War Horn
+
+Primary Attribute:
+Cooldown Reduction
+
+Secondary Attribute:
+Ability Frequency
+
+Preferred Users:
+Support Builds
+Control Builds
+Ability-Focused Fighters
+
+General Function:
+Reduces the time required before abilities can be used again.
+
+---
+
+# ============================================================================
+# EQUIPMENT COMPATIBILITY RULES
+# ============================================================================
+
+Off-hand items may only be equipped with one-handed weapons.
+
+Compatible Weapon Handed Types:
+
+- One-Handed
+
+Incompatible Weapon Handed Types:
+
+- Two-Handed
+- Dual-Wield
+
+When a two-handed or dual-wield weapon is equipped, the off-hand slot is
+automatically disabled.
+
+When a one-handed weapon is equipped, the player may equip one valid off-hand
+item.
+
+An off-hand item cannot be equipped without a main-hand weapon.
+
+The equipment system must validate compatibility before applying any off-hand
+statistics or passive effects.
+
+---
+
+# ============================================================================
+# SCALING PROFILE REFERENCES
+# ============================================================================
+
+The following scaling profiles are referenced by the off-hand database.
+
+Their numerical values are defined in **DB_PROGRESS_RULES.md**.
+
+- OFF_DEFENSIVE_SHIELD
+- OFF_ATTACK_SPEED
+- OFF_MAGIC_TOME
+- OFF_MAGIC_ORB
+- OFF_COOLDOWN_SUPPORT
+
+---
+
+# ============================================================================
+# CRAFT PROFILE REFERENCES
+# ============================================================================
+
+The following crafting profiles are referenced by the off-hand database.
+
+Their recipes and values are defined in **DB_CRAFTING.md**.
+
+- CRAFT_SHIELD_STANDARD
+- CRAFT_TORCH_STANDARD
+- CRAFT_TOME_STANDARD
+- CRAFT_ORB_STANDARD
+- CRAFT_HORN_STANDARD
+
+---
+
+# ============================================================================
+# PASSIVE PROFILE REFERENCES
+# ============================================================================
+
+The following passive profiles are referenced by the off-hand database.
+
+Their behavior and numerical values are defined in **DB_SKILLS.md**.
+
+- PASSIVE_KNIGHT_SHIELD
+- PASSIVE_TORCH
+- PASSIVE_ARCANE_TOME
+- PASSIVE_MYSTIC_ORB
+- PASSIVE_WAR_HORN
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Every base off-hand item generates five tier variants.
+
+Generated Tiers:
+- T4
+- T5
+- T6
+- T7
+- T8
+
+The base ID never changes.
+
+Example:
+
+Base Off-Hand:
+OFF-0001
+
+Generated Variants:
+- OFF-0001-T4
+- OFF-0001-T5
+- OFF-0001-T6
+- OFF-0001-T7
+- OFF-0001-T8
+
+Each generated variant receives:
+
+- The same off-hand name
+- The same off-hand type
+- The same equipment slot
+- The same combat role
+- The same compatibility rules
+- The same passive profile
+- The tier-specific visual asset
+- The tier-specific inventory icon
+- Statistics generated from its scaling profile
+- A recipe generated from its crafting profile
+- A value generated from the economy rules
+- A repair cost generated from the repair rules
+
+No generated system may modify:
+
+- Off-hand ID
+- Off-hand name
+- Off-hand type
+- Equipment slot
+- Asset reference
+- Icon reference
+- Passive profile
+- Crafting profile
+- Scaling profile
+- Weapon compatibility
+
+DOCUMENT TERMINÉ

@@ -1,0 +1,649 @@
+# 32. ZONE DATA
+
+---
+
+# Purpose
+
+The Zone Data document defines every playable Zone available in the game.
+
+A Zone is the player's current gameplay environment.
+
+Unlike Biomes, which define environmental identity, a Zone defines the actual gameplay progression.
+
+A Zone determines:
+
+- Biome
+- Tier
+- Danger Level
+- Encounter Pool
+- Segment Structure
+- Boss Selection
+- Resource Distribution
+- Completion Rewards
+
+Zones are the bridge between world generation and gameplay.
+
+---
+
+# Design Philosophy
+
+The Zone system follows seven principles.
+
+---
+
+## Gameplay Driven
+
+A Zone defines gameplay progression.
+
+It is the structure through which the player advances.
+
+---
+
+## Biome Independent
+
+A Zone references one Biome.
+
+Multiple Zones may use the same Biome.
+
+Example:
+
+```
+Forest
+
+↓
+
+T4 Forest
+
+↓
+
+T5 Forest
+
+↓
+
+T6 Forest
+```
+
+---
+
+## Segment Based
+
+Every Zone is divided into Segments.
+
+Version 1 uses a fixed structure.
+
+```
+Segment 1
+
+↓
+
+Segment 2
+
+↓
+
+Segment 3
+
+↓
+
+Segment 4
+
+↓
+
+Boss Segment
+```
+
+This structure is immutable in Version 1.
+
+---
+
+## Infinite Scaling
+
+Zones never create new gameplay systems.
+
+Difficulty is calculated by:
+
+- Tier
+- Cycle
+- Progress Scaling
+
+---
+
+## Data Driven
+
+Adding a new Zone requires only data.
+
+---
+
+## Deterministic
+
+Zones always expose the same configuration.
+
+Randomness occurs only during Encounter generation.
+
+---
+
+## Immutable
+
+Zone definitions never change during gameplay.
+
+---
+
+# Responsibilities
+
+Zone Data defines:
+
+- Identity
+- Biome
+- Tier
+- Danger Level
+- Segment Count
+- Encounter Pool
+- Boss Pool
+- Completion Reward
+- Environment Overrides
+- Tags
+
+Zone Data does NOT define:
+
+- Enemy Statistics
+- Loot Tables
+- AI
+- Resource Values
+- Encounter Composition
+
+---
+
+# Zone Definition
+
+Every Zone contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Biome
+
+↓
+
+Tier
+
+↓
+
+Danger Level
+
+↓
+
+Segments
+
+↓
+
+Encounter Pool
+
+↓
+
+Boss Pool
+
+↓
+
+Completion Rewards
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Zone owns one globally unique identifier.
+
+Examples:
+
+```
+zone_forest_t4
+
+zone_swamp_t5
+
+zone_mountain_t7
+
+zone_desert_t8
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Forest
+
+Swamp
+
+Mountain Pass
+
+Ancient Desert
+```
+
+---
+
+# Biome Reference
+
+Every Zone references exactly one Biome.
+
+Example:
+
+```
+biome_forest
+```
+
+The Biome defines visuals and ambience.
+
+---
+
+# Tier
+
+Supported tiers:
+
+```
+T1
+
+↓
+
+T8
+```
+
+Tier contributes to:
+
+- Enemy Scaling
+- Resource Tier
+- Rewards
+- Progression
+
+---
+
+# Danger Level
+
+Danger Level defines the overall risk.
+
+Supported values:
+
+```
+Safe
+
+Normal
+
+Dangerous
+
+Deadly
+```
+
+Danger influences:
+
+- Durability Loss
+- Enemy Density
+- Reward Multipliers
+
+Exact calculations are handled elsewhere.
+
+---
+
+# Segment Count
+
+Version 1 uses a fixed number of Segments.
+
+```
+5
+```
+
+Structure:
+
+```
+Segment 1
+
+↓
+
+Segment 2
+
+↓
+
+Segment 3
+
+↓
+
+Segment 4
+
+↓
+
+Boss
+```
+
+Future versions may introduce variable structures.
+
+---
+
+# Encounter Pool
+
+Every Zone references one Encounter Pool.
+
+Example:
+
+```
+encounter_pool_forest_t4
+```
+
+The Encounter Pool generates gameplay.
+
+---
+
+# Boss Pool
+
+Every Zone references one Boss Pool.
+
+Example:
+
+```
+boss_pool_forest_t4
+```
+
+One Boss is selected for the final Segment.
+
+---
+
+# Resource Distribution
+
+Zones reference Resource Families.
+
+Example:
+
+```
+Wood
+
+Hide
+
+Fiber
+```
+
+Actual spawning is handled by Encounter generation.
+
+---
+
+# Completion Rewards
+
+Zones may define guaranteed completion rewards.
+
+Examples:
+
+- Silver
+- Mastery XP
+- Achievement Progress
+- Future Unlock Tokens
+
+Rewards remain deterministic.
+
+---
+
+# Environment Overrides
+
+Zones may override Biome defaults.
+
+Examples:
+
+- Permanent Night
+- Increased Fog
+- Special Lighting
+- Event Decorations
+
+Overrides remain optional.
+
+---
+
+# Tags
+
+Examples:
+
+```
+forest
+
+starter
+
+tier4
+
+nature
+
+easy
+```
+
+Tags simplify filtering.
+
+---
+
+# Runtime Representation
+
+```
+Zone Definition
+
+↓
+
+Generate Segments
+
+↓
+
+Generate Encounters
+
+↓
+
+Gameplay
+
+↓
+
+Boss
+
+↓
+
+Completion
+
+↓
+
+Unload Zone
+```
+
+Definitions remain immutable.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Biome
+- Existing Encounter Pool
+- Existing Boss Pool
+- Valid Tier
+- Valid Danger Level
+- Valid Segment Count
+
+Invalid Zones never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedural Zone Layouts
+- Branching Paths
+- Multiple Bosses
+- Dynamic Segment Counts
+- Random Biomes
+- Dynamic Difficulty Curves
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "zone_forest_t4",
+    "name": "Forest",
+    "biomeId": "biome_forest",
+    "tier": 4,
+    "dangerLevel": "Normal",
+    "segmentCount": 5,
+    "encounterPoolId": "encounter_pool_forest_t4",
+    "bossPoolId": "boss_pool_forest_t4",
+    "resourceFamilies": [
+        "Wood",
+        "Hide",
+        "Fiber"
+    ],
+    "completionRewards": [
+        {
+            "rewardType": "Experience",
+            "rewardId": "weapon_mastery_xp",
+            "amount": 150
+        }
+    ],
+    "environmentOverrides": [],
+    "tags": [
+        "forest",
+        "tier4"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Zone
+
+↓
+
+Validate
+
+↓
+
+Load Biome
+
+↓
+
+Generate Segments
+
+↓
+
+Generate Encounters
+
+↓
+
+Spawn Boss
+
+↓
+
+Completion
+
+↓
+
+Unload
+```
+
+---
+
+# Acceptance Criteria
+
+The Zone Data document is complete when:
+
+- Every Zone has a unique identifier.
+- Every Zone references one Biome.
+- Every Zone defines one Tier.
+- Every Zone defines one Danger Level.
+- Segment Count is explicit.
+- Encounter Pools are referenced.
+- Boss Pools are referenced.
+- Completion Rewards are configurable.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Zone is completely data-driven.
+
+Rule 02
+
+Every Zone references exactly one Biome.
+
+Rule 03
+
+Every Zone defines one Tier.
+
+Rule 04
+
+Every Zone contains five Segments in Version 1.
+
+Rule 05
+
+The fifth Segment is always a Boss encounter.
+
+Rule 06
+
+Encounter generation is delegated to Encounter Pools.
+
+Rule 07
+
+Boss generation is delegated to Boss Pools.
+
+Rule 08
+
+Danger Level is explicit.
+
+Rule 09
+
+Completion Rewards are deterministic.
+
+Rule 10
+
+Environment Overrides are optional.
+
+Rule 11
+
+Definitions never contain runtime state.
+
+Rule 12
+
+Validation prevents invalid Zones.
+
+Rule 13
+
+Zone definitions remain immutable.
+
+Rule 14
+
+Every Zone may declare its content source.
+
+Rule 15
+
+Future Zones must remain compatible with the shared data architecture.
+
+---
+
+# Summary
+
+The Zone Data document defines the playable structure of the game world by combining environmental context, progression and encounter generation into a single reusable definition. By separating Zones from Biomes while delegating encounters, bosses and rewards to specialized systems, the architecture provides a scalable foundation for infinite progression, deterministic gameplay generation and future world expansion without increasing system complexity.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

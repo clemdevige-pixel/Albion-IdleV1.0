@@ -1,0 +1,739 @@
+# 31. EQUIPMENT SYSTEM
+
+## Purpose
+
+The Equipment System defines how players equip gear, how equipment contributes to combat, and how every equipment category interacts with progression, Masteries, abilities, enchantments, and the economy.
+
+The system is entirely data-driven and designed to support future expansion without requiring architectural changes.
+
+---
+
+# Design Goals
+
+The Equipment System must:
+
+- Be simple to understand.
+- Allow deep build customization.
+- Support hybrid builds.
+- Avoid unnecessary restrictions.
+- Preserve long-term equipment value.
+- Integrate naturally with Masteries.
+- Support future equipment categories.
+
+---
+
+# Equipment Philosophy
+
+Equipment is one of the three primary progression pillars.
+
+Player power comes from:
+
+- Equipment
+- Weapon Masteries
+- Economy
+
+Equipment never becomes obsolete because of new Cycles.
+
+Instead, players optimize existing equipment through:
+
+- Better quality
+- Better enchantments
+- Better build combinations
+- Higher Masteries
+
+---
+
+# Equipment Slots (V1)
+
+The player has six equipment slots.
+
+| Slot | Description |
+|--------|-------------|
+| Head | Helmet |
+| Chest | Armor |
+| Boots | Boots |
+| Weapon | Main weapon |
+| Off-Hand | Shield, Torch, Book, Orb, etc. |
+| Cape | Passive equipment |
+
+---
+
+# Future Slots
+
+The architecture already supports additional slots.
+
+These are disabled during V1.
+
+Future slots include:
+
+- Mount
+- Bag
+- Food
+- Potion
+
+These can be enabled through configuration without redesigning the Equipment System.
+
+---
+
+# Equipment Categories
+
+Equipment belongs to one of the following categories.
+
+- Weapon
+- Off-Hand
+- Helmet
+- Chest Armor
+- Boots
+- Cape
+
+Every equipment item belongs to exactly one category.
+
+---
+
+# Equipment Families
+
+Armor pieces belong to one of three families.
+
+- Plate
+- Leather
+- Cloth
+
+Weapons, Off-Hands, and Capes do not belong to armor families.
+
+---
+
+# Armor Family Identity
+
+Armor families define the defensive profile of equipment.
+
+They do not define abilities.
+
+---
+
+## Plate
+
+Identity:
+
+- Highest Armor
+- Highest Magic Resistance
+- Highest Survivability
+- Lowest Offensive Potential
+
+Primary role:
+
+Tank
+
+---
+
+## Leather
+
+Identity:
+
+- Balanced Defense
+- Balanced Damage
+- Higher Mobility
+
+Primary role:
+
+Hybrid
+
+---
+
+## Cloth
+
+Identity:
+
+- Lowest Defense
+- Highest Offensive Potential
+
+Primary role:
+
+Damage Dealer
+
+---
+
+# Equipment Abilities
+
+Equipment abilities are NOT determined by armor family.
+
+Instead, every equipment item defines its own abilities.
+
+Example:
+
+Plate Helmet A
+
+Ability:
+
+Emergency Barrier
+
+Plate Helmet B
+
+Ability:
+
+Counter Strike
+
+Although both belong to Plate, they provide completely different gameplay.
+
+This greatly increases build diversity.
+
+---
+
+# Hybrid Builds
+
+Players may freely combine armor families.
+
+Examples:
+
+Plate Head
+
+Leather Chest
+
+Cloth Boots
+
+or
+
+Cloth Head
+
+Plate Chest
+
+Leather Boots
+
+All combinations are valid.
+
+No restrictions exist.
+
+---
+
+# Armor Set Bonuses
+
+Although hybrid builds are allowed, specialization is rewarded.
+
+Equipping multiple pieces from the same family grants passive bonuses.
+
+Possible thresholds:
+
+- Two Pieces
+- Three Pieces
+
+The exact bonuses are fully data-driven.
+
+---
+
+# Example Set Bonus Philosophy
+
+Plate
+
+2 Pieces
+
+Additional Armor
+
+3 Pieces
+
+Additional Armor
+
+Additional Maximum Health
+
+---
+
+Leather
+
+2 Pieces
+
+Attack Speed
+
+3 Pieces
+
+Damage
+
+Movement Speed
+
+---
+
+Cloth
+
+2 Pieces
+
+Ability Power
+
+3 Pieces
+
+Ability Power
+
+Cooldown Reduction (if enabled)
+
+These values are examples only.
+
+Balancing belongs entirely to Data Tables.
+
+---
+
+# Armor Set Calculation
+
+The Equipment System automatically counts equipped armor families.
+
+Example:
+
+Plate Head
+
+Plate Chest
+
+Leather Boots
+
+Result:
+
+Plate Set
+
+2 Pieces
+
+Leather Set
+
+1 Piece
+
+Only valid thresholds activate bonuses.
+
+---
+
+# Weapon Independence
+
+Weapons never restrict armor selection.
+
+Every weapon may be combined with every armor family.
+
+Examples:
+
+Sword + Cloth
+
+Sword + Plate
+
+Bow + Leather
+
+Staff + Plate
+
+Crossbow + Cloth
+
+All builds are valid.
+
+---
+
+# Build Philosophy
+
+Each equipment category defines one part of the build.
+
+Weapon
+
+Combat Style
+
+Helmet
+
+Utility Ability
+
+Chest
+
+Major Ability
+
+Boots
+
+Mobility Ability
+
+Armor Family
+
+Stat Profile
+
+Off-Hand
+
+Build Enhancement
+
+Cape
+
+Passive Effect
+
+Every slot contributes independently.
+
+---
+
+# Weapon Types
+
+Weapons belong to one of two categories.
+
+- One-Handed
+- Two-Handed
+
+---
+
+# One-Handed Weapons
+
+Occupy only the Weapon slot.
+
+The Off-Hand slot remains available.
+
+Examples:
+
+Sword
+
+Axe
+
+Dagger
+
+Spear
+
+Mace
+
+One-Hand Staff
+
+---
+
+# Two-Handed Weapons
+
+Occupy both:
+
+Weapon
+
++
+
+Off-Hand
+
+The player cannot equip an Off-Hand while using a Two-Handed weapon.
+
+Examples:
+
+Great Axe
+
+Great Hammer
+
+Bow
+
+Crossbow
+
+Halberd
+
+Great Staff
+
+---
+
+# Build Trade-Off
+
+One-Handed Builds
+
+Advantages
+
+- Off-Hand available
+- More customization
+- More build combinations
+
+Disadvantages
+
+Weapon power is balanced assuming an Off-Hand.
+
+---
+
+Two-Handed Builds
+
+Advantages
+
+- Strong standalone identity
+- Simpler equipment setup
+
+Disadvantages
+
+No Off-Hand customization.
+
+Neither category is intended to be universally stronger.
+
+---
+
+# Off-Hand Equipment
+
+Off-Hand items enhance existing builds.
+
+Examples include:
+
+- Shield
+- Torch
+- Spell Book
+- Orb
+- Totem
+- Future equipment
+
+Every Off-Hand provides:
+
+- Statistics
+- Optional passive effects
+
+No active abilities are provided by Off-Hand items in V1.
+
+---
+
+# Cape Philosophy
+
+Capes are gameplay items rather than stat sticks.
+
+Their primary value comes from a unique passive effect.
+
+Statistics remain secondary.
+
+---
+
+# Cape Components
+
+Each cape contains:
+
+- Base Statistics
+- PassiveEffectID
+
+The PassiveEffectID defines its gameplay behavior.
+
+---
+
+# Example Passive Categories
+
+Defensive
+
+- Automatic Shield
+- Damage Reduction
+- Health Recovery
+
+---
+
+Offensive
+
+- Damage Bonus
+- Explosion Effects
+- Elite Damage Bonus
+
+---
+
+Utility
+
+- Movement Speed
+- Gathering Bonus
+- Loot Bonus
+
+---
+
+Economy
+
+- Silver Bonus
+- Mastery XP Bonus
+- Resource Yield Bonus
+
+These are examples only.
+
+Actual passives are defined elsewhere.
+
+---
+
+# Passive Architecture
+
+Cape
+
+↓
+
+PassiveEffectID
+
+↓
+
+PassiveEffectTable
+
+↓
+
+Behavior
+
+New capes can therefore be added entirely through Data Tables.
+
+---
+
+# Equipment Statistics
+
+Equipment may contribute any combination of stats.
+
+Examples:
+
+- Maximum Health
+- Armor
+- Magic Resistance
+- Physical Damage
+- Magical Damage
+- Attack Speed
+- Ability Power
+- Movement Speed
+- Cooldown Reduction
+- Gathering Speed
+- Resource Yield
+
+The Equipment System never hardcodes supported statistics.
+
+---
+
+# Equipment Quality
+
+Equipment quality is handled by the Item Quality System.
+
+The Equipment System simply reads the item's quality modifier.
+
+---
+
+# Enchantments
+
+Equipment enchantments are handled by the Enchantment System.
+
+The Equipment System only applies their resulting stat modifiers.
+
+---
+
+# Mastery Requirements
+
+Weapon Mastery determines which weapon tiers can be equipped.
+
+Examples:
+
+Mastery Level 1
+
+Unlocks Tier 3
+
+Mastery Level 20
+
+Unlocks Tier 4
+
+...
+
+Armor Masteries are not included in V1.
+
+The architecture supports them in future versions.
+
+---
+
+# Equipment Persistence
+
+Equipment remains equipped until:
+
+- Replaced
+- Removed
+- Sold
+- Destroyed (future mechanics only)
+
+No automatic equipment swapping exists.
+
+---
+
+# Trading
+
+No equipment is account-bound.
+
+Every equipment item can always be:
+
+- Bought
+- Sold
+- Traded
+- Stored
+- Reused
+
+There are no:
+
+- Bind on Pickup
+- Bind on Equip
+- Soulbound
+- Account Bound
+
+This supports a fully player-driven economy.
+
+---
+
+# Durability
+
+Equipment durability is managed by the Durability System.
+
+Durability loss depends on the danger level of the current zone rather than being globally fixed.
+
+Examples:
+
+- Safe Zones: no or minimal durability loss.
+- Yellow Zones: low durability loss.
+- Red Zones: moderate durability loss.
+- Black Zones: high durability loss.
+
+The Equipment System only tracks current durability values and delegates durability calculations to the dedicated Durability System.
+
+---
+
+# Data Tables
+
+Minimum required tables include:
+
+EquipmentTable
+
+- EquipmentID
+- Category
+- Family
+- Tier
+- BaseStats
+- PassiveEffectID
+- AbilityIDs
+
+ArmorFamilyTable
+
+- Family
+- DefaultStatProfile
+
+ArmorSetBonusTable
+
+- Family
+- RequiredPieces
+- BonusEffects
+
+WeaponTypeTable
+
+- WeaponID
+- OneHanded / TwoHanded
+
+EquipmentSlotTable
+
+- Slot
+- AllowedCategories
+
+CapePassiveTable
+
+- PassiveEffectID
+- Behavior
+
+EquipmentStatTable
+
+- EquipmentID
+- StatModifiers
+
+---
+
+# Future Extensions
+
+The architecture supports:
+
+- Additional equipment slots
+- Armor Masteries
+- Legendary equipment
+- Set equipment
+- Mythic equipment
+- Additional cape mechanics
+- New Off-Hand categories
+- Cosmetic equipment
+- Equipment Skins
+- Equipment Augments
+- Socket Systems
+
+No redesign is required.
+
+---
+
+# Summary
+
+The Equipment System provides a modular foundation for all player builds.
+
+Players freely combine weapons, armor families, Off-Hand items, and capes to create unique playstyles.
+
+Armor families define defensive identities while equipment items define abilities.
+
+One-Handed and Two-Handed weapons offer different strategic choices without restricting build diversity.
+
+Equipment remains permanently valuable because progression comes from optimization, Masteries, quality, and enchantments rather than ever-increasing gear tiers.
+
+The entire system is fully data-driven, future-proof, and designed to support years of content expansion.
+
+DOCUMENT TERMINÉ

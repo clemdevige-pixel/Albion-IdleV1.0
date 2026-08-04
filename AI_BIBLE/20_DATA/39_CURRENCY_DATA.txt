@@ -1,0 +1,572 @@
+# 39. CURRENCY DATA
+
+---
+
+# Purpose
+
+The Currency Data document defines every currency available in the game.
+
+A Currency is a persistent numerical resource used by gameplay systems.
+
+Version 1 intentionally supports a single economy based on Silver.
+
+The architecture, however, is designed to support multiple currencies in future expansions without requiring structural changes.
+
+This document defines:
+
+- Currency identity
+- Display properties
+- Storage rules
+- Precision
+- Visibility
+- Acquisition sources
+- Spending permissions
+
+It does **not** define:
+
+- Economy balancing
+- Vendor prices
+- Drop rates
+- Rewards
+- Inflation
+
+---
+
+# Design Philosophy
+
+The Currency system follows seven principles.
+
+---
+
+## Simple
+
+Currencies represent abstract values.
+
+They are not Items.
+
+They do not occupy Inventory slots.
+
+---
+
+## Fully Data Driven
+
+Every Currency exists entirely in data.
+
+Adding a new Currency never requires gameplay code.
+
+---
+
+## Persistent
+
+Currencies belong permanently to the player's account.
+
+Their values are stored independently from inventories.
+
+---
+
+## Centralized
+
+Every gameplay system references Currency Definitions.
+
+Examples:
+
+- Vendors
+- Workers
+- Buildings
+- Rewards
+- Future Trading Systems
+
+---
+
+## Deterministic
+
+Currency definitions never contain randomness.
+
+Only acquisition systems determine quantities.
+
+---
+
+## Lightweight
+
+Currencies only describe identity and behavior.
+
+Economic calculations belong elsewhere.
+
+---
+
+## Extensible
+
+Future currencies can be introduced without modifying existing definitions.
+
+---
+
+# Responsibilities
+
+Currency Data defines:
+
+- Identity
+- Display Name
+- Icon
+- Precision
+- Maximum Value
+- Visibility
+- Tradability
+- Acquisition Permissions
+- Spending Permissions
+- Tags
+
+Currency Data does NOT define:
+
+- Current Player Balance
+- Vendor Prices
+- Loot Tables
+- Economy Rules
+- Inflation
+
+---
+
+# Currency Definition
+
+Every Currency contains:
+
+```text
+ID
+
+↓
+
+Display Name
+
+↓
+
+Icon
+
+↓
+
+Precision
+
+↓
+
+Maximum Value
+
+↓
+
+Tradable
+
+↓
+
+Visible
+
+↓
+
+Acquisition Sources
+
+↓
+
+Spending Sources
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Currency owns one globally unique identifier.
+
+Examples:
+
+```
+currency_silver
+
+currency_gold
+
+currency_event_token
+
+currency_reputation
+```
+
+Only Silver exists in Version 1.
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Silver
+
+Gold
+
+Event Token
+```
+
+---
+
+# Icon
+
+Every Currency references an Icon Definition.
+
+Examples:
+
+```
+icon_currency_silver
+
+icon_currency_gold
+```
+
+Icons remain independent assets.
+
+---
+
+# Precision
+
+Defines the number of decimal places.
+
+Version 1:
+
+```
+0
+```
+
+Silver is always stored as an integer.
+
+Future currencies may support decimal precision.
+
+---
+
+# Maximum Value
+
+Defines the highest allowed stored value.
+
+Example:
+
+```
+2,147,483,647
+```
+
+This protects against overflow.
+
+---
+
+# Tradable
+
+Defines whether players may exchange this Currency.
+
+Version 1:
+
+```
+Silver
+
+↓
+
+Tradable
+
+True
+```
+
+Future premium currencies may not be tradable.
+
+---
+
+# Visible
+
+Defines whether the Currency is shown in the main HUD.
+
+Examples:
+
+```
+Silver
+
+↓
+
+Visible
+
+True
+```
+
+Hidden currencies remain accessible through gameplay systems.
+
+---
+
+# Acquisition Sources
+
+Defines allowed acquisition methods.
+
+Examples:
+
+- Loot
+- Vendor Sale
+- Quest
+- Achievement
+- Event
+- Admin
+
+Version 1 primarily uses:
+
+- Loot
+- Vendor Sale
+
+---
+
+# Spending Sources
+
+Defines where the Currency may be consumed.
+
+Examples:
+
+- Vendors
+- Building Construction
+- Worker Recruitment
+- Future Marketplace
+
+---
+
+# Negative Balance
+
+Currencies may never become negative.
+
+Every transaction is validated before execution.
+
+---
+
+# Inventory Interaction
+
+Currencies are **not** Items.
+
+They never occupy inventory slots.
+
+They are stored separately in the Player Profile.
+
+---
+
+# Runtime Representation
+
+```
+Currency Definition
+
+↓
+
+Player Wallet
+
+↓
+
+Transaction
+
+↓
+
+Balance Updated
+```
+
+Definitions remain immutable.
+
+---
+
+# Tags
+
+Examples:
+
+```
+currency
+
+economy
+
+core
+
+trade
+
+starter
+```
+
+Tags simplify filtering and debugging.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Icon
+- Valid Precision
+- Valid Maximum Value
+- Valid Acquisition Sources
+- Valid Spending Sources
+- Valid Visibility
+
+Invalid Currency Definitions never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Currency Conversion
+- Exchange Rates
+- Inflation Rules
+- Premium Currency
+- Dynamic Precision
+- Runtime-generated Currencies
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "currency_silver",
+    "displayName": "Silver",
+    "iconId": "icon_currency_silver",
+    "precision": 0,
+    "maximumValue": 2147483647,
+    "tradable": true,
+    "visible": true,
+    "acquisitionSources": [
+        "Loot",
+        "VendorSale"
+    ],
+    "spendingSources": [
+        "Vendor",
+        "Building",
+        "Worker"
+    ],
+    "tags": [
+        "currency",
+        "core"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Currency Definition
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Player Earns Currency
+
+↓
+
+Wallet Updated
+
+↓
+
+Player Spends Currency
+
+↓
+
+Wallet Updated
+
+↓
+
+Save Player Data
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Currency Data document is complete when:
+
+- Every Currency has a unique identifier.
+- Display properties are configurable.
+- Precision is configurable.
+- Maximum values are configurable.
+- Acquisition sources are configurable.
+- Spending sources are configurable.
+- Tradability is configurable.
+- Runtime balances remain separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Currency is completely data-driven.
+
+Rule 02
+
+Currencies are not Items.
+
+Rule 03
+
+Currencies never occupy Inventory slots.
+
+Rule 04
+
+Balances are stored separately from Inventory.
+
+Rule 05
+
+Precision is explicitly defined.
+
+Rule 06
+
+Maximum values are configurable.
+
+Rule 07
+
+Negative balances are impossible.
+
+Rule 08
+
+Tradability is explicit.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Economy calculations belong to dedicated systems.
+
+Rule 11
+
+Validation prevents invalid Currency Definitions.
+
+Rule 12
+
+Currency Definitions remain immutable.
+
+Rule 13
+
+Every Currency may declare its content source.
+
+Rule 14
+
+Future currencies must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Currencies exclusively through identifiers.
+
+---
+
+# Summary
+
+The Currency Data document defines every monetary resource through a lightweight, deterministic and fully data-driven architecture. By separating immutable Currency Definitions from player balances, transactions and economy calculations, the system provides a scalable foundation for the game's financial systems while remaining compatible with future premium currencies, event tokens and alternative economic models.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

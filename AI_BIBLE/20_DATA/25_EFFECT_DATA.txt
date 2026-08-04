@@ -1,0 +1,717 @@
+# 25. EFFECT DATA
+
+---
+
+# Purpose
+
+The Effect Data document defines every reusable gameplay effect available in the game.
+
+Effects are the smallest executable gameplay units.
+
+Abilities never implement gameplay logic directly.
+
+Instead, an Ability executes one or more Effects.
+
+This architecture prevents duplicated logic while making balancing significantly easier.
+
+Examples:
+
+```
+Heroic Strike
+
+↓
+
+Physical Damage
+
+↓
+
+Apply Bleed
+
+↓
+
+Generate Threat
+```
+
+Multiple abilities may reference the exact same Effect.
+
+---
+
+# Design Philosophy
+
+The Effect System follows six principles.
+
+---
+
+## Atomic
+
+Every Effect performs exactly one gameplay action.
+
+An Effect should never perform multiple unrelated operations.
+
+Good Examples:
+
+- Deal Damage
+- Heal Target
+- Apply Buff
+- Knockback
+- Spawn Projectile
+
+Bad Example:
+
+```
+Deal Damage
+
++
+
+Heal Caster
+
++
+
+Spawn Fire
+
++
+
+Play Sound
+```
+
+Those should be separate Effects.
+
+---
+
+## Reusable
+
+Effects are shared.
+
+The same Damage Effect may be referenced by:
+
+- Weapons
+- Enemies
+- Bosses
+- Consumables
+- Future Events
+
+---
+
+## Deterministic
+
+Executing the same Effect under identical conditions always produces identical results.
+
+Randomness is handled explicitly through parameters.
+
+---
+
+## Modular
+
+Complex gameplay is built by combining simple Effects.
+
+Example:
+
+```
+Ability
+
+↓
+
+Effect
+
+↓
+
+Effect
+
+↓
+
+Effect
+
+↓
+
+Effect
+```
+
+instead of creating unique code for every ability.
+
+---
+
+## Extensible
+
+New Effect types can be introduced without changing existing definitions.
+
+---
+
+## Runtime Independent
+
+Effect definitions never store execution state.
+
+---
+
+# Responsibilities
+
+Effect Data defines:
+
+- Identity
+- Effect Type
+- Execution Parameters
+- Scaling Rules
+- Target Selection
+- Execution Timing
+- Runtime Flags
+
+It does NOT define:
+
+- Ability Cooldowns
+- Animations
+- Visual Effects
+- Audio
+
+Those belong to Ability Data.
+
+---
+
+# Effect Definition
+
+Every Effect contains:
+
+```text
+ID
+
+↓
+
+Type
+
+↓
+
+Parameters
+
+↓
+
+Scaling
+
+↓
+
+Target
+
+↓
+
+Execution Delay
+
+↓
+
+Flags
+```
+
+---
+
+# Identifier
+
+Every Effect owns one globally unique identifier.
+
+Examples:
+
+```
+effect_damage_physical
+
+effect_heal_small
+
+effect_apply_bleed
+
+effect_remove_buff
+
+effect_knockback_large
+
+effect_spawn_projectile
+```
+
+---
+
+# Effect Types
+
+Version 1 supports the following Effect Types.
+
+---
+
+## Damage
+
+Deals damage.
+
+Examples:
+
+- Physical Damage
+- Magical Damage
+- True Damage
+
+---
+
+## Heal
+
+Restores Health.
+
+---
+
+## Resource
+
+Modifies:
+
+- Energy
+- Health Cost
+- Future Resources
+
+---
+
+## Apply Status Effect
+
+Applies an existing Status Effect.
+
+Example:
+
+```
+status_bleeding
+```
+
+---
+
+## Remove Status Effect
+
+Removes one or more Status Effects.
+
+---
+
+## Knockback
+
+Moves the target away.
+
+---
+
+## Pull
+
+Moves the target toward the caster.
+
+---
+
+## Teleport
+
+Moves the caster instantly.
+
+---
+
+## Dash
+
+Moves while preserving gameplay rules.
+
+---
+
+## Spawn Projectile
+
+Creates a projectile entity.
+
+---
+
+## Spawn Entity
+
+Creates another gameplay entity.
+
+Future support includes:
+
+- Totems
+- Turrets
+- Minions
+
+---
+
+## Modify Statistic
+
+Temporarily changes a statistic.
+
+Examples:
+
+- Armor
+- Attack Speed
+- Move Speed
+
+---
+
+## Cleanse
+
+Removes negative effects.
+
+---
+
+## Purge
+
+Removes positive effects.
+
+---
+
+## Trigger Ability
+
+Executes another Ability.
+
+Used carefully.
+
+Recursive execution is forbidden.
+
+---
+
+# Parameters
+
+Every Effect owns parameters.
+
+Examples:
+
+Damage:
+
+```json
+{
+    "amount": 125,
+    "damageType": "Physical"
+}
+```
+
+Heal:
+
+```json
+{
+    "amount": 80
+}
+```
+
+Knockback:
+
+```json
+{
+    "distance": 3
+}
+```
+
+Each Effect Type defines its own parameter schema.
+
+---
+
+# Scaling
+
+Effects define how values scale.
+
+Supported scaling:
+
+```
+Flat
+```
+
+```
+Percentage
+```
+
+```
+Stat Based
+```
+
+Example:
+
+```
+150%
+
+Weapon Damage
+```
+
+or
+
+```
+80%
+
+Healing Power
+```
+
+---
+
+# Target Selection
+
+Supported targets:
+
+- Self
+- Primary Target
+- Allies
+- Enemies
+- Area
+- Random Enemy
+- Random Ally
+
+Targeting is independent of Ability targeting.
+
+---
+
+# Delay
+
+Effects may execute after a delay.
+
+Example:
+
+```
+0
+
+0.25
+
+1.50
+```
+
+Useful for:
+
+- Delayed explosions
+- Multi-hit attacks
+- Boss mechanics
+
+---
+
+# Execution Order
+
+Effects execute in list order.
+
+Example:
+
+```
+Damage
+
+↓
+
+Bleed
+
+↓
+
+Knockback
+```
+
+Order is deterministic.
+
+---
+
+# Conditional Execution
+
+Effects may define execution conditions.
+
+Examples:
+
+```
+Target Alive
+```
+
+```
+Critical Hit Only
+```
+
+```
+Health Below 30%
+```
+
+Version 1 intentionally limits supported conditions.
+
+---
+
+# Runtime Flags
+
+Supported flags include:
+
+```
+Can Crit
+
+Can Miss
+
+Ignore Armor
+
+Ignore Shields
+
+Triggers Aggro
+
+Triggers Combat
+```
+
+Flags are optional.
+
+---
+
+# Runtime Representation
+
+```
+Effect Definition
+
+↓
+
+Runtime Execution
+
+↓
+
+Destroyed
+```
+
+Effects are never persistent objects.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Valid Effect Type
+- Parameter Schema
+- Valid Scaling
+- Existing References
+- Supported Flags
+- Supported Targets
+
+Invalid Effects never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Scripted Effects
+- Embedded Expressions
+- Lua
+- JavaScript
+- Runtime Generated Effects
+- Self-modifying Effects
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "effect_damage_physical",
+    "type": "Damage",
+    "parameters": {
+        "amount": 120,
+        "damageType": "Physical"
+    },
+    "scaling": {
+        "type": "WeaponDamage",
+        "multiplier": 1.50
+    },
+    "target": "PrimaryTarget",
+    "delay": 0,
+    "flags": [
+        "CanCrit",
+        "TriggersCombat"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Effect
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Ability Executes
+
+↓
+
+Runtime Instance
+
+↓
+
+Destroy
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Effect Data document is complete when:
+
+- Every Effect has a unique identifier.
+- Every Effect performs exactly one gameplay action.
+- Effect Types are predefined.
+- Parameters are schema validated.
+- Scaling rules are configurable.
+- Target selection is explicit.
+- Execution order is deterministic.
+- Runtime flags are configurable.
+- Validation guarantees integrity.
+- Runtime execution remains independent from definitions.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Effect performs exactly one gameplay action.
+
+Rule 02
+
+Effects are reusable.
+
+Rule 03
+
+Effects are referenced by Abilities.
+
+Rule 04
+
+Effects never contain runtime state.
+
+Rule 05
+
+Execution order is deterministic.
+
+Rule 06
+
+Scaling is data-driven.
+
+Rule 07
+
+Target selection is explicit.
+
+Rule 08
+
+Validation prevents invalid Effects.
+
+Rule 09
+
+Definitions remain immutable.
+
+Rule 10
+
+Effects never execute scripts.
+
+Rule 11
+
+Recursive execution is forbidden.
+
+Rule 12
+
+Parameters are validated by Effect Type.
+
+Rule 13
+
+Runtime instances are temporary.
+
+Rule 14
+
+Every Effect may declare its content source.
+
+Rule 15
+
+Future Effect Types must remain compatible with the existing architecture.
+
+---
+
+# Summary
+
+The Effect Data document defines the atomic building blocks of gameplay execution. By decomposing every ability into reusable, deterministic Effects, the system eliminates duplicated logic, simplifies balancing and creates a highly modular architecture capable of supporting hundreds of abilities through a small library of reusable gameplay actions. This approach ensures scalability, maintainability and long-term extensibility while keeping runtime execution predictable and fully data-driven.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

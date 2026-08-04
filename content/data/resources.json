@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "category": "resources",
+  "definitions": [
+    {
+      "id": "resource_ore_t4",
+      "family": "ore",
+      "tier": 4,
+      "gatheringProfession": "mining",
+      "gatheringDifficulty": 40,
+      "baseYield": 3,
+      "gatheringDuration": 8,
+      "refinementTargetId": "item_refined_metal_bar_t4"
+    },
+    {
+      "id": "resource_wood_t4",
+      "family": "wood",
+      "tier": 4,
+      "gatheringProfession": "lumberjack",
+      "gatheringDifficulty": 35,
+      "baseYield": 3,
+      "gatheringDuration": 7,
+      "refinementTargetId": "item_refined_planks_t4"
+    },
+    {
+      "id": "resource_hide_t4",
+      "family": "hide",
+      "tier": 4,
+      "gatheringProfession": "skinner",
+      "gatheringDifficulty": 30,
+      "baseYield": 2,
+      "gatheringDuration": 5,
+      "refinementTargetId": null
+    }
+  ]
+}

@@ -1,0 +1,1352 @@
+================================================================================
+AI BIBLE
+================================================================================
+
+Document ID
+18_WORKER_SYSTEM
+
+Version
+1.0
+
+Status
+APPROVED
+
+================================================================================
+PURPOSE
+================================================================================
+
+This document defines the complete Worker System.
+
+Workers are permanent non-player production units assigned to the Player Island.
+
+Their purpose is to generate passive resources, reduce repetitive gathering and
+support long-term production without replacing active gameplay.
+
+Workers are not combat units.
+
+Workers do not accompany the Hero.
+
+Workers exist exclusively to support the production economy of the Player
+Island.
+
+================================================================================
+AUTHORITY
+================================================================================
+
+This document is the Single Source of Truth for:
+
+• Worker ownership
+• Worker professions
+• Worker assignments
+• Worker productivity
+• Worker mastery
+• Worker resource generation
+• Worker availability
+• Worker limitations
+• Worker offline production
+• Worker interaction with the Player Island
+
+Detailed island capacity, building placement and housing rules belong to:
+
+• 19_PLAYER_ISLAND_SYSTEM
+
+Detailed gathering resource definitions belong to:
+
+• 17_GATHERING_SYSTEM
+
+Detailed storage behavior belongs to:
+
+• 12_INVENTORY_SYSTEM
+
+================================================================================
+DESIGN PHILOSOPHY
+================================================================================
+
+Workers follow six fundamental principles.
+
+1.
+Workers provide passive support.
+
+They reduce repetitive gathering but never replace active play.
+
+2.
+The Hero is always the best gatherer.
+
+An actively gathering Hero must always outperform an equivalent Worker.
+
+3.
+Workers are permanent investments.
+
+Recruiting, assigning and improving Workers should contribute to long-term
+account progression.
+
+4.
+Worker professions are permanent.
+
+A Worker cannot change profession after recruitment.
+
+5.
+Workers do not have levels.
+
+Worker progression is represented exclusively through profession-specific
+Mastery and external productivity bonuses.
+
+6.
+Workers must remain predictable.
+
+Their production should be understandable, calculable and consistent.
+
+================================================================================
+CORE WORKER LOOP
+================================================================================
+
+Recruit Worker
+
+↓
+
+Assign Permanent Profession
+
+↓
+
+Provide Island Capacity
+
+↓
+
+Assign Production Task
+
+↓
+
+Worker Produces Resources
+
+↓
+
+Resources Enter Island Storage
+
+↓
+
+Refining
+
+↓
+
+Crafting
+
+↓
+
+Equipment
+
+↓
+
+Combat
+
+Worker production always feeds the wider production loop.
+
+================================================================================
+WORKER DEFINITION
+================================================================================
+
+A Worker is a permanent production unit owned by the player.
+
+Each Worker contains:
+
+• Unique Worker Identifier
+• Display Name
+• Permanent Profession
+• Mastery Value
+• Current Assignment
+• Assignment State
+• Productivity Modifiers
+• Production Progress
+• Assigned Building
+• Ownership State
+
+A Worker does not contain:
+
+• Character Level
+• Combat Statistics
+• Equipment
+• Inventory
+• Health
+• Combat Abilities
+• Temporary Profession
+
+================================================================================
+WORKER OWNERSHIP
+================================================================================
+
+Workers are owned permanently once recruited.
+
+Owned Workers remain available unless a future system explicitly introduces
+dismissal.
+
+Workers cannot be lost through:
+
+• Combat
+• Failed production
+• Offline progression
+• Building upgrades
+• Island reorganization
+
+A Worker may become inactive when no valid assignment or capacity is available,
+but remains owned by the player.
+
+================================================================================
+WORKER RECRUITMENT
+================================================================================
+
+Workers are obtained through recruitment.
+
+Recruitment may require:
+
+• Silver
+• Island progression
+• Available Worker Capacity
+• Profession unlock
+• Specific building requirements
+
+The exact recruitment cost is defined by balancing data.
+
+Recruitment creates a permanent Worker.
+
+The player must choose the Worker profession before confirming recruitment.
+
+The profession selection must clearly communicate that it is permanent.
+
+================================================================================
+WORKER PROFESSION
+================================================================================
+
+Every Worker belongs to exactly one profession.
+
+A Worker profession determines:
+
+• Which resource family the Worker can produce
+• Which assignments are valid
+• Which Mastery the Worker gains
+• Which profession bonuses apply
+• Which buildings can support the Worker
+
+Initial Worker professions:
+
+• Woodcutter
+• Stonecutter
+• Miner
+• Fiber Harvester
+• Skinner
+
+Profession mapping:
+
+Woodcutter
+→ Wood
+
+Stonecutter
+→ Stone
+
+Miner
+→ Ore
+
+Fiber Harvester
+→ Fiber
+
+Skinner
+→ Hide
+
+Future professions may include:
+
+• Fisher
+• Farmer
+• Herbalist
+• Alchemist
+• Animal Breeder
+
+Future professions must follow the same permanent-profession rule unless the
+AI Bible is explicitly revised.
+
+================================================================================
+PERMANENT PROFESSION RULE
+================================================================================
+
+A Worker profession cannot be changed after recruitment.
+
+This rule exists to:
+
+• Preserve strategic recruitment decisions
+• Create long-term specialization
+• Prevent one Worker from replacing an entire roster
+• Give Worker ownership meaningful identity
+• Support profession-specific Mastery progression
+
+The interface must display a confirmation before final recruitment.
+
+Example warning:
+
+"This Worker will permanently become a Miner. This profession cannot be
+changed later."
+
+Temporary reassignment within the same profession is allowed.
+
+Changing profession is not allowed.
+
+================================================================================
+WORKER MASTERY
+================================================================================
+
+Workers do not gain levels.
+
+Each Worker has one profession-specific Mastery value.
+
+Worker Mastery represents experience and efficiency within the Worker's
+permanent profession.
+
+Examples:
+
+A Miner gains Mining Mastery.
+
+A Woodcutter gains Woodcutting Mastery.
+
+A Skinner gains Skinning Mastery.
+
+Worker Mastery increases only while the Worker successfully produces resources.
+
+================================================================================
+MASTERY EFFECTS
+================================================================================
+
+Worker Mastery may improve:
+
+• Production speed
+• Resource yield
+• Bonus resource chance
+• Higher-tier production efficiency
+• Assignment efficiency
+
+Mastery must not change the Worker's profession.
+
+Mastery benefits must remain understandable and data-driven.
+
+Exact Mastery formulas belong to the future balancing specification.
+
+================================================================================
+MASTERY GAIN
+================================================================================
+
+Mastery is gained when a production cycle successfully completes.
+
+Mastery gain may depend on:
+
+• Resource tier
+• Assignment duration
+• Base production value
+• Profession difficulty
+• Successful output
+
+Workers do not gain Mastery while:
+
+• Unassigned
+• Inactive
+• Blocked by invalid conditions
+• Waiting for required capacity
+• Producing no output
+
+Offline production grants normal Mastery.
+
+================================================================================
+NO WORKER LEVELS
+================================================================================
+
+Workers never use a traditional character level.
+
+The following concepts are forbidden unless this document is revised:
+
+• Worker Level
+• Worker Experience Level
+• Worker Stat Points
+• Worker Level-Up Choices
+• Worker Class Evolution
+
+All Worker progression must come from:
+
+• Profession Mastery
+• Island bonuses
+• Building bonuses
+• Global production modifiers
+• Future profession-specific systems
+
+================================================================================
+WORKER ASSIGNMENTS
+================================================================================
+
+A Worker can have one active assignment at a time.
+
+An assignment defines:
+
+• Resource Family
+• Resource Tier
+• Production Duration
+• Base Yield
+• Required Profession
+• Required Building
+• Required Island Capacity
+• Output Destination
+• Current Progress
+
+A Worker may only receive assignments compatible with its permanent profession.
+
+Example:
+
+A Miner may gather Ore.
+
+A Miner may not gather Wood, Fiber, Stone or Hide.
+
+================================================================================
+ASSIGNMENT STATES
+================================================================================
+
+A Worker assignment may be in one of the following states:
+
+Unassigned
+
+The Worker has no active task.
+
+Ready
+
+The Worker has a valid assignment and can begin production.
+
+Producing
+
+The Worker is actively progressing through a production cycle.
+
+Completed
+
+The current production cycle has finished and output is ready for delivery.
+
+Blocked
+
+The assignment cannot continue because one or more requirements are missing.
+
+Paused
+
+The assignment is intentionally paused by the player or system.
+
+Inactive
+
+The Worker has no valid workplace or Worker Capacity.
+
+================================================================================
+VALID ASSIGNMENT REQUIREMENTS
+================================================================================
+
+An assignment is valid only when all required conditions are satisfied.
+
+Possible requirements include:
+
+• Correct Worker profession
+• Valid assigned building
+• Available Worker slot
+• Unlocked resource tier
+• Valid output storage
+• Active island building
+• No conflicting assignment
+
+The system must never silently delete production progress because an assignment
+becomes temporarily invalid.
+
+================================================================================
+PRODUCTION CYCLE
+================================================================================
+
+A production cycle follows this sequence:
+
+Validate Assignment
+
+↓
+
+Start Production Timer
+
+↓
+
+Apply Productivity Modifiers
+
+↓
+
+Complete Production
+
+↓
+
+Generate Resource Output
+
+↓
+
+Grant Worker Mastery
+
+↓
+
+Transfer Output to Storage
+
+↓
+
+Begin Next Cycle
+
+Assignments are continuous by default.
+
+A Worker repeats the same assignment until:
+
+• The player changes it
+• The Worker becomes blocked
+• The assigned building becomes unavailable
+• The assignment is manually paused
+• A system rule prevents continuation
+
+================================================================================
+WORKER PRODUCTIVITY
+================================================================================
+
+Productivity represents the Worker's production performance.
+
+Productivity may affect:
+
+• Production duration
+• Resource yield
+• Bonus resource probability
+
+Productivity is influenced by:
+
+• Worker Mastery
+• Assigned building
+• Building tier
+• Island upgrades
+• Global modifiers
+• Future temporary bonuses
+
+Productivity must not be confused with Worker Mastery.
+
+Worker Mastery is permanent Worker progression.
+
+Productivity is the final result of all applicable production modifiers.
+
+================================================================================
+BASE PRODUCTION
+================================================================================
+
+Every assignment defines a base production output.
+
+The final output is derived from:
+
+• Assignment Base Yield
+• Worker Mastery
+• Building Productivity
+• Island Modifiers
+• Global Modifiers
+• Bonus Yield Rules
+
+Exact values must remain data-driven.
+
+Worker production must never depend on frame rate.
+
+Worker production must use elapsed time and deterministic production rules.
+
+================================================================================
+RESOURCE TIER ACCESS
+================================================================================
+
+A Worker may only produce resource tiers unlocked for that profession.
+
+Tier access may depend on:
+
+• Worker Mastery threshold
+• Building tier
+• Island progression
+• Assignment unlock
+• Global progression requirements
+
+Unlocking a higher tier does not remove access to lower tiers.
+
+Workers may continue producing lower-tier resources after unlocking higher
+tiers.
+
+================================================================================
+WORKER CAPACITY
+================================================================================
+
+The total number of active Workers is limited by the Player Island.
+
+Worker Capacity may be provided by:
+
+• Worker Houses
+• Island upgrades
+• Specific buildings
+• Future account progression
+
+Owning a Worker does not guarantee that the Worker can be active.
+
+If active Worker Capacity is exceeded:
+
+• Existing Workers remain owned
+• Excess Workers become inactive
+• No Worker is deleted
+• The player chooses which Workers remain active
+
+Detailed capacity rules belong to:
+
+• 19_PLAYER_ISLAND_SYSTEM
+
+================================================================================
+WORKER BUILDINGS
+================================================================================
+
+Workers require valid island infrastructure.
+
+A Worker may require:
+
+• Housing
+• Profession-compatible workplace
+• Storage access
+• Active building slot
+
+The Worker System validates these requirements.
+
+The Player Island System defines:
+
+• Building placement
+• Building capacity
+• Building upgrades
+• Building availability
+• Worker slot allocation
+
+================================================================================
+OUTPUT STORAGE
+================================================================================
+
+Worker-generated resources are transferred automatically to island storage.
+
+Workers do not maintain personal inventories.
+
+Output handling follows this priority:
+
+1.
+Assigned production storage
+
+2.
+Primary island storage
+
+3.
+Overflow storage, if supported
+
+4.
+Blocked delivery state
+
+If no valid storage destination exists, production output must not disappear.
+
+The system must preserve completed output until storage becomes available.
+
+A Worker may stop starting new cycles while completed output is blocked.
+
+================================================================================
+STORAGE BLOCKING
+================================================================================
+
+When output cannot be delivered:
+
+• The completed resources remain pending
+• The Worker enters a Blocked state
+• No resources are lost
+• Production resumes after storage becomes available
+
+The interface must clearly explain why the Worker is blocked.
+
+Example:
+
+"Production paused: Island Storage is full."
+
+================================================================================
+HERO VS WORKER BALANCE
+================================================================================
+
+The Hero and Workers fulfill different roles.
+
+Hero gathering is:
+
+• Active
+• Faster
+• More efficient
+• More flexible
+• Capable of better bonus rewards
+• Controlled directly by the player
+
+Worker gathering is:
+
+• Passive
+• Slower
+• Predictable
+• Specialized
+• Limited by island capacity
+• Suitable for long-term production
+
+An actively gathering Hero must always generate more value per unit of time than
+an equivalent Worker under normal conditions.
+
+Workers may exceed the Hero in total long-term output only because multiple
+Workers can operate passively over extended periods.
+
+A single Worker must never outperform an actively gathering Hero of comparable
+progression.
+
+================================================================================
+WORKER EFFICIENCY LIMIT
+================================================================================
+
+Worker efficiency must remain below active Hero efficiency.
+
+This comparison should consider equivalent:
+
+• Resource tier
+• Progression stage
+• Profession specialization
+• Time period
+• Available bonuses
+
+Temporary events may improve Worker production, but must not permanently reverse
+the intended hierarchy.
+
+Hero Gathering Efficiency
+>
+Single Worker Gathering Efficiency
+
+This is a permanent balancing rule.
+
+================================================================================
+ACTIVE AND PASSIVE PROGRESSION
+================================================================================
+
+Workers continue producing while the player performs other activities.
+
+Examples:
+
+• Combat
+• Gathering
+• Crafting
+• Refining
+• Island management
+• Offline progression
+
+Workers do not require the Hero to remain on the Player Island.
+
+Once a valid assignment is active, production continues independently.
+
+================================================================================
+OFFLINE PRODUCTION
+================================================================================
+
+Workers continue production while the player is offline.
+
+Offline Worker production follows the same rules as online Worker production.
+
+The system calculates:
+
+• Time elapsed
+• Valid production cycles completed
+• Partial cycle progress
+• Generated resources
+• Mastery gained
+• Storage limitations
+• Blocking conditions
+
+Offline production must not use special reward multipliers unless explicitly
+defined by another authority document.
+
+================================================================================
+OFFLINE TIME LIMIT
+================================================================================
+
+Worker production may be restricted by a global offline duration limit.
+
+The limit must be defined by the Offline Progression System.
+
+When the offline limit is reached:
+
+• Worker production stops advancing
+• Existing progress is preserved
+• No additional rewards are generated
+
+Workers resume normally when the player returns.
+
+================================================================================
+OFFLINE CALCULATION RULES
+================================================================================
+
+Offline production must be calculated from elapsed time.
+
+The system must not simulate every second individually.
+
+The calculation should determine:
+
+• Number of complete cycles
+• Remaining partial-cycle progress
+• Total output
+• Total Mastery gain
+• First blocking event, when relevant
+
+Offline calculations must produce results equivalent to online production under
+the same conditions.
+
+================================================================================
+ASSIGNMENT CHANGES
+================================================================================
+
+The player may change a Worker's assignment within the same profession.
+
+Example:
+
+A Miner may switch from Tier 2 Ore to Tier 3 Ore.
+
+A Worker may not switch to another resource family outside its profession.
+
+When changing assignments, the system must define how current progress is
+handled.
+
+Default rule:
+
+• Current incomplete production progress is cancelled
+• No partial resources are generated
+• Completed pending output is preserved
+• The new assignment begins from zero progress
+
+The interface must warn the player before cancelling meaningful progress.
+
+================================================================================
+PAUSING AND RESUMING
+================================================================================
+
+The player may pause a Worker assignment.
+
+While paused:
+
+• No production progress is gained
+• No Mastery is gained
+• Existing progress is preserved
+• Completed pending output remains available
+
+Resuming continues from the preserved production progress.
+
+================================================================================
+WORKER REMOVAL FROM BUILDINGS
+================================================================================
+
+Removing a Worker from an assigned building makes the Worker inactive or
+unassigned.
+
+Default behavior:
+
+• Incomplete production progress is preserved
+• Completed output remains pending
+• The Worker stops producing
+• The Worker remains owned
+• The Worker can be assigned again later
+
+Building removal must never delete the Worker.
+
+================================================================================
+WORKER DISMISSAL
+================================================================================
+
+Worker dismissal is not part of the initial system.
+
+Workers are permanent owned units.
+
+A future dismissal feature may be added only if it includes:
+
+• Explicit player confirmation
+• Clear explanation of permanent loss
+• Safe handling of current assignments
+• Safe handling of pending output
+• Appropriate economic consequences
+
+Until such a system is formally approved, Workers cannot be dismissed.
+
+================================================================================
+WORKER NAMES
+================================================================================
+
+Workers may receive generated or player-selected display names.
+
+Worker names are cosmetic.
+
+Names do not affect:
+
+• Profession
+• Mastery
+• Productivity
+• Assignment validity
+• Resource output
+
+Renaming may be supported as a convenience feature.
+
+================================================================================
+WORKER UNIQUENESS
+================================================================================
+
+Two Workers may share the same profession and Mastery value.
+
+Workers are still separate owned entities.
+
+Each Worker maintains independent:
+
+• Mastery
+• Assignment
+• Progress
+• Building allocation
+• Productivity modifiers
+• State
+
+Workers must never share production progress.
+
+================================================================================
+WORKER USER INTERFACE
+================================================================================
+
+The Worker interface must display:
+
+• Worker Name
+• Profession
+• Mastery
+• Current Assignment
+• Assigned Building
+• Production Progress
+• Estimated Cycle Duration
+• Expected Output
+• Productivity
+• Current State
+• Blocking Reason
+
+The interface must clearly distinguish:
+
+• Worker Mastery
+• Worker Productivity
+• Assignment Progress
+• Resource Output
+
+================================================================================
+WORKER MANAGEMENT ACTIONS
+================================================================================
+
+The player must be able to:
+
+• Recruit a Worker
+• Select a permanent profession
+• View owned Workers
+• Assign a Worker to a building
+• Select a valid production assignment
+• Pause production
+• Resume production
+• Change assignment
+• Remove a Worker from a building
+• Review production output
+• Review Mastery progression
+
+Unavailable actions must explain their requirements.
+
+================================================================================
+NOTIFICATIONS
+================================================================================
+
+The Worker System may notify the player when:
+
+• A Worker is recruited
+• A profession is permanently confirmed
+• A new resource tier is unlocked
+• Production becomes blocked
+• Storage becomes full
+• Worker Capacity is exceeded
+• A significant Mastery threshold is reached
+• Offline production is collected
+
+Notifications should communicate meaningful changes without creating excessive
+interruptions.
+
+================================================================================
+ERROR HANDLING
+================================================================================
+
+The Worker System must never silently fail.
+
+Invalid conditions must produce clear results.
+
+Examples:
+
+Wrong profession
+
+"This assignment requires a Miner."
+
+No Worker Capacity
+
+"No active Worker slot is available."
+
+Invalid building
+
+"This Worker requires a compatible production building."
+
+Storage full
+
+"Production paused because no storage space is available."
+
+Locked resource tier
+
+"This resource tier has not been unlocked for this Worker."
+
+================================================================================
+SYSTEM RESPONSIBILITIES
+================================================================================
+
+The Worker System is responsible for:
+
+• Creating Worker entities
+• Storing permanent professions
+• Tracking Worker Mastery
+• Validating assignments
+• Tracking production progress
+• Generating Worker output
+• Granting Worker Mastery
+• Managing Worker states
+• Calculating offline production
+• Reporting blocking conditions
+
+The Worker System is not responsible for:
+
+• Building placement
+• Island expansion
+• Inventory capacity definitions
+• Resource definitions
+• Refining recipes
+• Crafting recipes
+• Hero gathering
+• Combat
+• Economy pricing
+
+================================================================================
+SYSTEM INTERACTIONS
+================================================================================
+
+Player Island System
+
+Provides Worker Capacity, buildings and storage infrastructure.
+
+Gathering System
+
+Defines gatherable resource families and resource tiers.
+
+Inventory System
+
+Stores generated resources and handles storage capacity.
+
+Item System
+
+Defines resource items produced by Workers.
+
+Refining System
+
+Consumes raw resources generated by Workers.
+
+Crafting System
+
+Consumes materials derived from Worker production.
+
+Offline Progression System
+
+Provides offline duration and elapsed-time rules.
+
+Economy System
+
+Defines Worker recruitment costs and resource value.
+
+================================================================================
+DATA REQUIREMENTS
+================================================================================
+
+Worker definitions must be data-driven.
+
+Worker profession data should include:
+
+• Profession Identifier
+• Display Name
+• Resource Family
+• Valid Assignments
+• Mastery Curve
+• Tier Unlock Requirements
+• Base Productivity Rules
+• Compatible Building Types
+
+Assignment data should include:
+
+• Assignment Identifier
+• Required Profession
+• Resource Item
+• Resource Tier
+• Base Duration
+• Base Yield
+• Mastery Reward
+• Required Building
+• Unlock Conditions
+
+No profession or assignment should require hardcoded gameplay logic unless
+strictly necessary.
+
+================================================================================
+SAVE DATA
+================================================================================
+
+Worker save data must include:
+
+• Worker Identifier
+• Display Name
+• Permanent Profession
+• Mastery Value
+• Current Assignment
+• Assignment State
+• Production Progress
+• Assigned Building Identifier
+• Pending Output
+• Productivity Modifiers
+• Last Production Timestamp
+• Ownership State
+
+Save data must preserve partial production progress.
+
+Save data must preserve blocked output.
+
+Loading a save must never reroll already completed Worker production.
+
+================================================================================
+DETERMINISM
+================================================================================
+
+Worker production should be deterministic where possible.
+
+Given identical:
+
+• Worker data
+• Assignment data
+• Modifiers
+• Elapsed time
+• Storage conditions
+
+The system should generate identical base production results.
+
+Random bonus output may use controlled RNG.
+
+Random calculations must not be repeated after loading a save if the production
+cycle was already resolved.
+
+================================================================================
+BALANCING RULES
+================================================================================
+
+Worker balancing must satisfy the following rules.
+
+• Workers provide meaningful value.
+• Workers do not make gathering obsolete.
+• Workers do not make combat obsolete.
+• Worker output remains predictable.
+• Worker specialization matters.
+• Recruiting additional Workers creates strategic value.
+• Worker Capacity prevents uncontrolled passive scaling.
+• Higher Mastery improves efficiency without creating infinite growth.
+• Higher-tier resources require meaningful progression.
+• Passive production supports crafting without flooding the economy.
+
+================================================================================
+ECONOMIC SAFEGUARDS
+================================================================================
+
+The Worker System must include economic constraints.
+
+Possible constraints include:
+
+• Recruitment cost
+• Worker Capacity
+• Building requirements
+• Tier unlock requirements
+• Production duration
+• Storage capacity
+• Diminishing productivity scaling
+• Island upgrade costs
+
+The system should prevent unlimited passive resource generation without
+corresponding investment.
+
+================================================================================
+EXPLOIT PREVENTION
+================================================================================
+
+The following behaviors must be prevented:
+
+• Reassigning professions
+• Duplicating Worker output through save reloads
+• Repeating offline reward collection
+• Producing without valid Worker Capacity
+• Producing without a valid assignment
+• Producing while blocked
+• Duplicating Workers through building removal
+• Resetting production to reroll rewards
+• Bypassing resource tier requirements
+
+Worker production must be validated by authoritative game state.
+
+================================================================================
+VERTICAL SLICE SCOPE
+================================================================================
+
+The Vertical Slice includes:
+
+• Worker recruitment
+• Permanent profession selection
+• Five gathering professions
+• One assignment per supported resource tier
+• Worker Mastery
+• Passive production
+• Offline production
+• Worker Capacity
+• Building assignment
+• Automatic storage delivery
+• Blocking when storage is full
+• Basic Worker management interface
+
+The Vertical Slice excludes:
+
+• Worker equipment
+• Rare Worker variants
+• Worker prestige
+• Worker combat
+• Worker personality systems
+• Worker relationships
+• Worker injuries
+• Temporary professions
+• Worker trading
+• Worker dismissal
+• Complex production priorities
+
+================================================================================
+FUTURE EXTENSIONS
+================================================================================
+
+Possible future additions include:
+
+• Rare Workers
+• Profession traits
+• Worker equipment
+• Worker production priorities
+• Advanced scheduling
+• Multiple simultaneous task queues
+• Worker contracts
+• Worker morale
+• Worker specialization branches
+• Prestige Mastery
+• Guild Workers
+• Worker expeditions
+
+Future extensions must preserve:
+
+• Permanent professions
+• No traditional Worker levels
+• Hero superiority during active gathering
+• Predictable passive production
+• Player Island dependency
+
+Any extension that violates these principles requires an explicit revision of
+this document.
+
+================================================================================
+GOLDEN RULES
+================================================================================
+
+1.
+A Worker has exactly one permanent profession.
+
+2.
+A Worker never has a traditional level.
+
+3.
+Worker progression uses profession-specific Mastery.
+
+4.
+A Worker can perform only one assignment at a time.
+
+5.
+Workers produce resources passively.
+
+6.
+Workers continue valid production while offline.
+
+7.
+Worker output is delivered automatically to island storage.
+
+8.
+No Worker output may be silently lost.
+
+9.
+A single Worker never outperforms an actively gathering Hero of comparable
+progression.
+
+10.
+Worker Capacity limits active passive production.
+
+11.
+Workers remain permanently owned after recruitment.
+
+12.
+Workers do not participate in combat.
+
+================================================================================
+DEPENDENCIES
+================================================================================
+
+Depends On
+
+• 02_CORE_GAME_LOOP
+• 03_DESIGN_CONSTRAINTS
+• 04_VERTICAL_SLICE_SCOPE
+• 06_GLOSSARY
+• 12_INVENTORY_SYSTEM
+• 13_ITEM_SYSTEM
+• 17_GATHERING_SYSTEM
+
+Referenced By
+
+• 15_CRAFTING_SYSTEM
+• 16_REFINING_SYSTEM
+• 19_PLAYER_ISLAND_SYSTEM
+• Future Offline Progression System
+• Future Economy System
+• Future Save System
+
+================================================================================
+SUMMARY
+================================================================================
+
+Workers are permanent passive production units managed through the Player
+Island.
+
+Each Worker has exactly one permanent gathering profession.
+
+Workers do not have traditional levels.
+
+Their permanent progression is represented exclusively through profession-
+specific Mastery.
+
+Workers perform one compatible assignment at a time and automatically deliver
+their output to island storage.
+
+They continue producing while the player is active or offline, provided all
+assignment, building, capacity and storage conditions remain valid.
+
+Workers support production and reduce repetitive gathering, but they never
+replace active gameplay.
+
+An actively gathering Hero must always outperform a single Worker of comparable
+progression.
+
+The Worker System exists to create long-term production strategy, permanent
+specialization and meaningful passive progression while preserving combat and
+active gathering as the most valuable player activities.
+
+================================================================================
+END OF DOCUMENT
+================================================================================

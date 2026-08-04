@@ -1,0 +1,734 @@
+# 22. ITEM DATA
+
+---
+
+# Purpose
+
+The Item Data document defines every item that exists in the game.
+
+An item is any object that can exist inside an inventory.
+
+Items are entirely data-driven.
+
+This document defines:
+
+- Item identity
+- Categories
+- Tier
+- Quality compatibility
+- Enchantment compatibility
+- Stack behavior
+- Weight
+- Value
+- Tags
+- References
+
+This document does **not** define:
+
+- Equipment statistics
+- Combat behavior
+- Crafting recipes
+- Loot probabilities
+
+These are defined by dedicated data documents.
+
+---
+
+# Design Philosophy
+
+The Item Data system follows six core principles.
+
+---
+
+## Everything Is An Item
+
+Every object stored by the player is an Item.
+
+Examples:
+
+- Weapons
+- Armor
+- Resources
+- Refined Materials
+- Consumables
+- Quest Items
+- Currency Tokens
+- Furniture
+- Building Materials
+
+---
+
+## Lightweight Definitions
+
+Item definitions contain only identity and metadata.
+
+Gameplay behavior belongs to specialized systems.
+
+---
+
+## Immutable Definitions
+
+Item definitions never change during gameplay.
+
+Only runtime instances change.
+
+---
+
+## Shared References
+
+Other systems reference items exclusively through Item IDs.
+
+Examples:
+
+- Recipes
+- Loot Tables
+- Vendors
+- Buildings
+- Rewards
+
+---
+
+## Modular
+
+Adding a new item never requires modifying existing items.
+
+New definitions simply extend the database.
+
+---
+
+## Searchable
+
+Every property exists to simplify searching, filtering and balancing.
+
+---
+
+# Responsibilities
+
+The Item Data document defines:
+
+- Identity
+- Display Information
+- Categories
+- Tier
+- Stackability
+- Maximum Stack Size
+- Weight
+- Base Value
+- Tags
+- Equipment Link
+- Resource Link
+
+It does NOT define:
+
+- Damage
+- Armor
+- Abilities
+- Durability
+- Crafting Cost
+- Loot Chances
+
+---
+
+# Item Definition
+
+Every item contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Description
+
+↓
+
+Category
+
+↓
+
+Tier
+
+↓
+
+Stackability
+
+↓
+
+Stack Size
+
+↓
+
+Weight
+
+↓
+
+Base Value
+
+↓
+
+Tags
+
+↓
+
+References
+```
+
+---
+
+# Identifier
+
+Each item owns one globally unique identifier.
+
+Example:
+
+```
+item_weapon_sword_t4_broadsword
+
+item_resource_ore_t5
+
+item_food_stew_beef
+
+item_mount_horse_t3
+```
+
+Identifiers follow the global Data Architecture.
+
+---
+
+# Display Name
+
+Each item has one display name.
+
+Example:
+
+```
+Broadsword
+
+Iron Ore
+
+Beef Stew
+```
+
+Localization is handled separately.
+
+---
+
+# Description
+
+Short gameplay description.
+
+Example:
+
+```
+A balanced sword favored by experienced fighters.
+```
+
+Descriptions never contain gameplay calculations.
+
+---
+
+# Categories
+
+Version 1 supports the following categories.
+
+---
+
+## Equipment
+
+Items that can be equipped.
+
+Examples:
+
+- Weapons
+- Armor
+- Off Hands
+- Capes
+
+---
+
+## Resource
+
+Raw gathering materials.
+
+Examples:
+
+- Ore
+- Wood
+- Fiber
+- Stone
+- Hide
+
+---
+
+## Refined Resource
+
+Processed materials.
+
+Examples:
+
+- Metal Bars
+- Planks
+- Cloth
+- Leather
+- Stone Blocks
+
+---
+
+## Consumable
+
+Single-use items.
+
+Examples:
+
+- Food
+- Potions
+
+---
+
+## Material
+
+Generic crafting components.
+
+---
+
+## Quest
+
+Special progression items.
+
+Version 1 contains very few quest items.
+
+---
+
+## Building
+
+Construction items.
+
+---
+
+## Furniture
+
+Island decoration items.
+
+---
+
+## Miscellaneous
+
+Everything that belongs to no other category.
+
+---
+
+# Tier
+
+Every item belongs to one tier.
+
+Supported tiers:
+
+```
+T1
+
+T2
+
+T3
+
+T4
+
+T5
+
+T6
+
+T7
+
+T8
+```
+
+Tier determines progression.
+
+Tier never changes.
+
+---
+
+# Quality Support
+
+Items declare whether quality exists.
+
+Examples:
+
+```
+Sword
+
+Supports Quality
+
+Yes
+```
+
+```
+Stone Block
+
+Supports Quality
+
+No
+```
+
+Quality is handled by the Quality System.
+
+---
+
+# Enchantment Support
+
+Items declare whether enchantments exist.
+
+Examples:
+
+```
+Broadsword
+
+Supports Enchantments
+
+Yes
+```
+
+```
+Wood Log
+
+Supports Enchantments
+
+No
+```
+
+Enchantments are handled separately.
+
+---
+
+# Stackability
+
+Items define whether they stack.
+
+```
+true
+```
+
+or
+
+```
+false
+```
+
+Examples:
+
+```
+Ore
+
+true
+```
+
+```
+Sword
+
+false
+```
+
+---
+
+# Maximum Stack Size
+
+Stackable items define a maximum stack.
+
+Examples:
+
+```
+999
+
+100
+
+20
+
+1
+```
+
+Non-stackable items always have:
+
+```
+1
+```
+
+---
+
+# Weight
+
+Every item defines its weight.
+
+Weight is measured in arbitrary gameplay units.
+
+Weight affects:
+
+- Inventory
+- Transport
+- Future systems
+
+Version 1 may not fully use weight.
+
+---
+
+# Base Value
+
+Every item defines a base silver value.
+
+This value is used as a balancing reference.
+
+Actual market prices are not derived from this value.
+
+---
+
+# Tags
+
+Items may define tags.
+
+Examples:
+
+```
+weapon
+
+melee
+
+sword
+
+craftable
+
+tradable
+
+resource
+
+food
+
+rare
+```
+
+Tags simplify searching and filtering.
+
+---
+
+# References
+
+Items may reference specialized definitions.
+
+Examples:
+
+Equipment Item
+
+↓
+
+Equipment Definition
+
+Resource
+
+↓
+
+Resource Definition
+
+Consumable
+
+↓
+
+Consumable Definition
+
+Furniture
+
+↓
+
+Furniture Definition
+
+---
+
+# Runtime Instance
+
+Static Definition
+
+↓
+
+Runtime Item Instance
+
+↓
+
+Inventory Slot
+
+Each inventory item references exactly one Item Definition.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Valid Category
+- Valid Tier
+- Stack Rules
+- Stack Size
+- Weight
+- Base Value
+- Reference Integrity
+- Supported Tags
+
+Invalid definitions never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedurally Generated Items
+- Random Names
+- Dynamic Categories
+- Runtime Item Definitions
+- Nested Items
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "item_weapon_sword_t4_broadsword",
+    "name": "Broadsword",
+    "description": "A balanced one-handed sword.",
+    "category": "Equipment",
+    "tier": 4,
+    "supportsQuality": true,
+    "supportsEnchantments": true,
+    "stackable": false,
+    "maxStack": 1,
+    "weight": 6.5,
+    "baseValue": 1200,
+    "tags": [
+        "weapon",
+        "sword",
+        "craftable",
+        "tradable"
+    ],
+    "referenceId": "equipment_weapon_sword_t4_broadsword"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Definition
+
+↓
+
+Validate
+
+↓
+
+Register Item
+
+↓
+
+Runtime Database
+
+↓
+
+Referenced By Gameplay Systems
+```
+
+Definitions remain immutable.
+
+Only item instances change during gameplay.
+
+---
+
+# Acceptance Criteria
+
+The Item Data document is complete when:
+
+- Every item has a unique ID.
+- Every item belongs to one category.
+- Every item belongs to one tier.
+- Quality support is explicit.
+- Enchantment support is explicit.
+- Stack behavior is defined.
+- Weight is defined.
+- Base value is defined.
+- References are validated.
+- Runtime instances remain separate from definitions.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every inventory object is an Item.
+
+Rule 02
+
+Every item has a globally unique identifier.
+
+Rule 03
+
+Items belong to predefined categories.
+
+Rule 04
+
+Items define their tier.
+
+Rule 05
+
+Quality support is explicit.
+
+Rule 06
+
+Enchantment support is explicit.
+
+Rule 07
+
+Stackability is explicit.
+
+Rule 08
+
+Maximum stack size is defined.
+
+Rule 09
+
+Weight is always defined.
+
+Rule 10
+
+Base silver value is always defined.
+
+Rule 11
+
+Gameplay systems reference items only through IDs.
+
+Rule 12
+
+Definitions remain immutable.
+
+Rule 13
+
+Runtime instances remain separate from definitions.
+
+Rule 14
+
+Validation prevents invalid items from loading.
+
+Rule 15
+
+Items contain identity and metadata only; gameplay behavior belongs to specialized data documents.
+
+---
+
+# Summary
+
+The Item Data document defines the universal identity of every item in the game. It standardizes categories, tiers, stacking, quality compatibility, enchantment compatibility, references and metadata while intentionally separating gameplay behavior into dedicated systems. This modular architecture keeps the database scalable, maintainable and easy to extend as hundreds or thousands of new items are introduced.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

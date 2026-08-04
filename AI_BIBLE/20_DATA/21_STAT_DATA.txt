@@ -1,0 +1,755 @@
+# 21. STAT DATA
+
+---
+
+# Purpose
+
+The Stat Data document defines every statistic available in the game.
+
+Statistics are the foundation of all gameplay systems.
+
+They are referenced by:
+
+- Characters
+- Equipment
+- Abilities
+- Status Effects
+- Buffs
+- Debuffs
+- Consumables
+- Buildings
+- Workers
+- Progression Systems
+
+A statistic represents a measurable gameplay value.
+
+The Stat Data document defines what a statistic is.
+
+It does **not** define how a statistic is modified during gameplay.
+
+---
+
+# Design Philosophy
+
+The Stat System follows five fundamental principles.
+
+---
+
+## Universal
+
+Every gameplay modifier targets a statistic.
+
+No gameplay system should introduce custom numeric values outside the Stat System.
+
+---
+
+## Explicit
+
+Every statistic must be declared.
+
+Statistics never exist implicitly.
+
+If a gameplay system references a statistic that does not exist, validation fails.
+
+---
+
+## Immutable Definitions
+
+Statistic definitions never change during gameplay.
+
+Only runtime values may change.
+
+---
+
+## Shared Language
+
+Every gameplay system uses the same identifiers.
+
+Example:
+
+```
+stat_max_health
+```
+
+must always refer to exactly the same statistic.
+
+---
+
+## Extensible
+
+New statistics may be added without modifying existing gameplay systems.
+
+Systems consume statistics through identifiers rather than hardcoded variables whenever possible.
+
+---
+
+# Responsibilities
+
+The Stat Data document defines:
+
+- Statistic identifiers
+- Categories
+- Value types
+- Default values
+- Minimum values
+- Maximum values
+- Visibility
+- Stackability
+- Precision
+- Display formatting
+
+The document does NOT define:
+
+- Current player values
+- Equipment bonuses
+- Ability modifiers
+- Buff values
+- Debuff values
+
+Those belong to runtime systems.
+
+---
+
+# Definition Structure
+
+Each statistic contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Category
+
+↓
+
+Value Type
+
+↓
+
+Default Value
+
+↓
+
+Minimum Value
+
+↓
+
+Maximum Value
+
+↓
+
+Precision
+
+↓
+
+Visible
+
+↓
+
+Stackable
+```
+
+---
+
+# Identifier
+
+Every statistic owns a globally unique identifier.
+
+Example:
+
+```
+stat_max_health
+
+stat_attack_speed
+
+stat_physical_damage
+
+stat_move_speed
+```
+
+Identifiers follow the global Data Architecture rules.
+
+---
+
+# Categories
+
+Version 1 supports six statistic categories.
+
+---
+
+## Primary
+
+Core character values.
+
+Examples:
+
+- Max Health
+- Max Energy
+
+---
+
+## Offensive
+
+Damage output.
+
+Examples:
+
+- Physical Damage
+- Magical Damage
+- Critical Chance
+- Critical Damage
+- Attack Speed
+- Cast Speed
+
+---
+
+## Defensive
+
+Damage mitigation.
+
+Examples:
+
+- Armor
+- Magic Resistance
+- Dodge Chance
+- Block Chance
+
+---
+
+## Utility
+
+General gameplay values.
+
+Examples:
+
+- Move Speed
+- Cooldown Reduction
+- Healing Power
+- Crowd Control Duration
+
+---
+
+## Gathering
+
+Resource collection.
+
+Examples:
+
+- Gathering Speed
+- Gathering Yield
+- Rare Resource Chance
+
+---
+
+## Hidden
+
+Internal engine statistics.
+
+Examples:
+
+- Aggro Score
+- Threat Generation
+- Spawn Weight
+- AI Detection Radius
+
+Hidden statistics are never shown to players.
+
+---
+
+# Value Types
+
+Version 1 supports four value types.
+
+---
+
+## Integer
+
+Whole numbers.
+
+Examples:
+
+```
+100
+
+250
+
+1500
+```
+
+Used for:
+
+- Health
+- Energy
+- Damage
+
+---
+
+## Float
+
+Decimal values.
+
+Examples:
+
+```
+0.75
+
+2.35
+
+18.5
+```
+
+Used for:
+
+- Multipliers
+- Distances
+- Speeds
+
+---
+
+## Percentage
+
+Stored internally as decimal values.
+
+Example:
+
+```
+0.25
+
+=
+
+25%
+```
+
+Gameplay calculations always use decimal form.
+
+User Interface converts values into percentages.
+
+---
+
+## Boolean
+
+True or False.
+
+Examples:
+
+```
+true
+
+false
+```
+
+Used for gameplay flags.
+
+---
+
+# Default Value
+
+Every statistic defines a default value.
+
+Example:
+
+```
+Armor
+
+0
+
+Critical Chance
+
+0
+
+Movement Speed
+
+100%
+
+Magic Resistance
+
+0
+```
+
+Default values exist even if no equipment or modifiers are applied.
+
+---
+
+# Minimum Value
+
+Every statistic defines a minimum allowed value.
+
+Examples:
+
+```
+Max Health
+
+Minimum
+
+1
+```
+
+```
+Critical Chance
+
+Minimum
+
+0%
+```
+
+The runtime may never reduce a value below its minimum.
+
+---
+
+# Maximum Value
+
+Statistics may optionally define a maximum value.
+
+Examples:
+
+```
+Critical Chance
+
+100%
+```
+
+```
+Attack Speed
+
+500%
+```
+
+If no maximum is defined, the statistic is considered uncapped.
+
+---
+
+# Precision
+
+Every statistic defines its runtime precision.
+
+Examples:
+
+```
+Health
+
+Integer
+```
+
+```
+Attack Speed
+
+2 Decimals
+```
+
+```
+Movement Speed
+
+1 Decimal
+```
+
+Precision affects:
+
+- Runtime calculations
+- Save serialization
+- User Interface display
+
+---
+
+# Stackable
+
+Every statistic declares whether modifiers may stack.
+
+```
+true
+```
+
+or
+
+```
+false
+```
+
+Example:
+
+```
+Quest Progress
+
+false
+```
+
+```
+Health
+
+true
+```
+
+Non-stackable statistics ignore additional modifiers according to their gameplay rules.
+
+---
+
+# Visibility
+
+Every statistic declares whether it is visible.
+
+```
+Visible
+
+true
+```
+
+or
+
+```
+Visible
+
+false
+```
+
+Visible statistics may appear in:
+
+- Character Sheet
+- Tooltips
+- Equipment Comparison
+- Combat UI
+
+Hidden statistics remain internal.
+
+---
+
+# Display Formatting
+
+Each statistic defines how it is presented.
+
+Supported formats:
+
+- Integer
+- Decimal
+- Percentage
+- Boolean
+
+Examples:
+
+```
+125
+```
+
+```
+18.5
+```
+
+```
+42%
+```
+
+```
+True
+```
+
+Display formatting never changes the stored runtime value.
+
+---
+
+# Runtime Representation
+
+Statistics become immutable runtime definitions.
+
+Gameplay systems reference the definition.
+
+Runtime values are stored separately.
+
+Example:
+
+```
+Definition
+
+↓
+
+stat_max_health
+```
+
+```
+Runtime
+
+↓
+
+Current Value
+
+1450
+```
+
+---
+
+# Validation Rules
+
+Each statistic is validated.
+
+Validation checks:
+
+- Unique identifier
+- Valid category
+- Supported value type
+- Default value matches type
+- Minimum value matches type
+- Maximum value matches type
+- Minimum ≤ Default
+- Default ≤ Maximum (if defined)
+- Valid precision
+- Visibility flag
+- Stackable flag
+
+Invalid definitions prevent loading.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Formula-based statistics
+- Derived statistics
+- Statistic aliases
+- Dynamic categories
+- Statistic inheritance
+- Localized identifiers
+
+These may be introduced in future versions if necessary.
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "stat_max_health",
+    "name": "Maximum Health",
+    "category": "Primary",
+    "type": "Integer",
+    "defaultValue": 100,
+    "minimumValue": 1,
+    "maximumValue": null,
+    "precision": 0,
+    "visible": true,
+    "stackable": true,
+    "displayFormat": "Integer"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Read Definition
+
+↓
+
+Validate
+
+↓
+
+Register Statistic
+
+↓
+
+Expose Runtime Definition
+
+↓
+
+Gameplay Uses Identifier
+```
+
+Statistics are loaded once during initialization.
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Stat Data document is considered complete when:
+
+- Every statistic has a unique identifier.
+- Every statistic belongs to one category.
+- Four value types are supported.
+- Every statistic defines a default value.
+- Every statistic defines a minimum value.
+- Maximum values are optional.
+- Precision is explicitly defined.
+- Visibility is configurable.
+- Stackability is configurable.
+- Validation prevents invalid definitions.
+- Runtime definitions are immutable.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every gameplay statistic is explicitly declared.
+
+Rule 02
+
+Statistics use globally unique identifiers.
+
+Rule 03
+
+Statistics belong to predefined categories.
+
+Rule 04
+
+Only Integer, Float, Percentage and Boolean are supported.
+
+Rule 05
+
+Every statistic defines a default value.
+
+Rule 06
+
+Every statistic defines a minimum value.
+
+Rule 07
+
+Maximum values are optional.
+
+Rule 08
+
+Every statistic defines its precision.
+
+Rule 09
+
+Every statistic declares its visibility.
+
+Rule 10
+
+Every statistic declares whether it is stackable.
+
+Rule 11
+
+Definitions are immutable at runtime.
+
+Rule 12
+
+Invalid statistics never load.
+
+Rule 13
+
+Gameplay systems reference statistics only by identifier.
+
+Rule 14
+
+Statistics never use inheritance.
+
+Rule 15
+
+Runtime values are completely separated from statistic definitions.
+
+---
+
+# Summary
+
+The Stat Data document establishes a single, authoritative definition for every gameplay statistic used throughout the project. By enforcing explicit identifiers, standardized categories, strong validation and immutable runtime definitions, it guarantees that every gameplay system—from combat and equipment to gathering and progression—speaks the same statistical language. This consistency simplifies balancing, improves maintainability, enables AI-assisted content generation and provides a scalable foundation for future content additions.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

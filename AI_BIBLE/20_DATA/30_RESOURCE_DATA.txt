@@ -1,0 +1,649 @@
+# 30. RESOURCE DATA
+
+---
+
+# Purpose
+
+The Resource Data document defines every gatherable resource available in the game.
+
+A Resource represents the natural material obtained by defeating a Resource Enemy.
+
+Unlike traditional MMORPGs, Version 1 does **not** use interactive gathering nodes.
+
+Instead:
+
+```
+Resource Enemy
+
+↓
+
+Defeat
+
+↓
+
+Resource Node Appears
+
+↓
+
+Automatic Gathering
+
+↓
+
+Resources Granted
+```
+
+This document defines:
+
+- Resource identity
+- Resource family
+- Tier
+- Gathering profession
+- Gathering difficulty
+- Yield modifiers
+- Gathering duration
+- Required tool
+- Refinement target
+
+It does **not** define:
+
+- Resource Enemies
+- Loot Tables
+- Refining Recipes
+- Inventory
+
+---
+
+# Design Philosophy
+
+The Resource system follows seven principles.
+
+---
+
+## Enemy Driven
+
+Resources are obtained exclusively from defeated Resource Enemies.
+
+Static gathering nodes do not exist in Version 1.
+
+---
+
+## Deterministic
+
+The Resource definition never contains randomness.
+
+Randomness belongs to Loot Tables.
+
+---
+
+## Independent
+
+Resources are gameplay objects.
+
+They are not Enemies.
+
+They are not Items.
+
+They are not Recipes.
+
+Each system references Resources independently.
+
+---
+
+## Data Driven
+
+Adding a new resource never requires gameplay code.
+
+---
+
+## Progression Based
+
+Resources follow Tier progression.
+
+Higher tiers require higher gathering mastery.
+
+---
+
+## Shared
+
+Resources are referenced by:
+
+- Items
+- Recipes
+- Buildings
+- Workers
+- Vendors
+
+---
+
+## Immutable
+
+Resource definitions never change during gameplay.
+
+---
+
+# Responsibilities
+
+Resource Data defines:
+
+- Identity
+- Family
+- Tier
+- Profession
+- Gathering Duration
+- Gathering Difficulty
+- Required Tool Tier
+- Yield Modifiers
+- Refined Resource
+- Tags
+
+It does NOT define:
+
+- Loot
+- Enemy Spawns
+- Inventory
+- Gathering AI
+- Crafting
+
+---
+
+# Resource Definition
+
+Every Resource contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Family
+
+↓
+
+Tier
+
+↓
+
+Profession
+
+↓
+
+Gather Time
+
+↓
+
+Required Tool Tier
+
+↓
+
+Difficulty
+
+↓
+
+Yield Modifier
+
+↓
+
+Refined Resource
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Resource owns one globally unique identifier.
+
+Examples:
+
+```
+resource_ore_t4
+
+resource_wood_t5
+
+resource_hide_t6
+
+resource_fiber_t7
+
+resource_stone_t8
+```
+
+---
+
+# Families
+
+Version 1 supports five resource families.
+
+- Ore
+- Wood
+- Fiber
+- Hide
+- Stone
+
+These correspond directly to Albion's gathering professions.
+
+---
+
+# Tier
+
+Resources exist from:
+
+```
+T1
+
+↓
+
+T8
+```
+
+Tier determines:
+
+- Gathering progression
+- Recipes
+- Refinement
+- Economy
+
+---
+
+# Gathering Profession
+
+Each Resource belongs to exactly one profession.
+
+Examples:
+
+```
+Mining
+
+Woodcutting
+
+Skinning
+
+Harvesting
+
+Quarrying
+```
+
+Profession determines mastery progression.
+
+---
+
+# Required Tool Tier
+
+Each Resource defines the minimum usable tool.
+
+Example:
+
+```
+T4 Ore
+
+↓
+
+Requires
+
+↓
+
+T4 Pickaxe
+```
+
+Lower tools cannot gather higher tier resources.
+
+---
+
+# Gathering Duration
+
+Defines the base gathering duration.
+
+Example:
+
+```
+2 Seconds
+
+4 Seconds
+
+8 Seconds
+```
+
+Worker and mastery bonuses modify runtime duration.
+
+---
+
+# Gathering Difficulty
+
+Defines the base difficulty.
+
+Examples:
+
+```
+Easy
+
+Normal
+
+Hard
+
+VeryHard
+```
+
+Difficulty influences future balancing.
+
+---
+
+# Yield Modifier
+
+Defines the base amount multiplier.
+
+Example:
+
+```
+1.00
+
+1.25
+
+0.80
+```
+
+Final quantity is calculated elsewhere.
+
+---
+
+# Refined Resource
+
+Every Resource references its refined equivalent.
+
+Example:
+
+```
+resource_ore_t5
+
+↓
+
+item_refined_bar_t5
+```
+
+This simplifies recipe validation.
+
+---
+
+# Resource Quality
+
+Version 1 resources do not possess Quality.
+
+Quality exists only for equipment.
+
+---
+
+# Enchantments
+
+Resources are never enchanted.
+
+Enchanted resources are represented as separate Resources.
+
+Example:
+
+```
+resource_ore_t6_1
+
+resource_ore_t6_2
+
+resource_ore_t6_3
+
+resource_ore_t6_4
+```
+
+Each remains an independent definition.
+
+---
+
+# Resource Variants
+
+Variants inherit gameplay behavior while remaining separate Resources.
+
+Examples:
+
+Normal Ore
+
+Rare Ore
+
+Exceptional Ore
+
+Future seasonal resources
+
+---
+
+# Tags
+
+Examples:
+
+```
+ore
+
+mining
+
+metal
+
+tier4
+
+crafting
+
+resource
+```
+
+Tags improve filtering and balancing.
+
+---
+
+# Runtime Representation
+
+```
+Resource Definition
+
+↓
+
+Resource Node
+
+↓
+
+Gather Progress
+
+↓
+
+Loot Generation
+
+↓
+
+Destroy Node
+```
+
+Definitions never contain runtime values.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Family
+- Valid Tier
+- Existing Profession
+- Existing Refined Item
+- Valid Tool Tier
+- Valid Duration
+- Valid Yield Modifier
+
+Invalid Resources never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedural Resources
+- Random Resource Statistics
+- Dynamic Resource Families
+- Runtime-generated Resources
+- Resource Quality
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "resource_ore_t5",
+    "name": "Titanium Ore",
+    "family": "Ore",
+    "tier": 5,
+    "profession": "Mining",
+    "requiredToolTier": 5,
+    "gatherTime": 5,
+    "difficulty": "Normal",
+    "yieldModifier": 1.00,
+    "refinedItemId": "item_refined_bar_t5",
+    "tags": [
+        "ore",
+        "mining",
+        "tier5"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Resource
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Spawn Resource Enemy
+
+↓
+
+Enemy Defeated
+
+↓
+
+Resource Node Created
+
+↓
+
+Automatic Gathering
+
+↓
+
+Loot Generated
+
+↓
+
+Node Removed
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Resource Data document is complete when:
+
+- Every Resource has a unique identifier.
+- Resources belong to predefined families.
+- Resources define a Tier.
+- Gathering professions are explicit.
+- Required Tool Tier is defined.
+- Gathering duration is configurable.
+- Yield modifiers are configurable.
+- Refined resources are referenced.
+- Runtime gathering remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Resource is completely data-driven.
+
+Rule 02
+
+Resources are obtained exclusively from Resource Enemies.
+
+Rule 03
+
+Resources belong to predefined families.
+
+Rule 04
+
+Resources define a Tier.
+
+Rule 05
+
+Gathering professions are explicit.
+
+Rule 06
+
+Required Tool Tier is explicit.
+
+Rule 07
+
+Gathering duration is configurable.
+
+Rule 08
+
+Yield modifiers are configurable.
+
+Rule 09
+
+Resources reference their refined equivalent.
+
+Rule 10
+
+Resources never possess Quality.
+
+Rule 11
+
+Enchanted resources are independent Resource definitions.
+
+Rule 12
+
+Definitions never contain runtime state.
+
+Rule 13
+
+Validation prevents invalid Resources.
+
+Rule 14
+
+Every Resource may declare its content source.
+
+Rule 15
+
+Future resource families must remain compatible with the shared data architecture.
+
+---
+
+# Summary
+
+The Resource Data document defines every gatherable material through a deterministic and fully data-driven architecture adapted to the game's combat-driven gathering system. By separating resource identity from enemies, loot generation and refinement while maintaining explicit progression, profession and tool requirements, the system provides a scalable foundation capable of supporting future resource variants, enchanted materials and biome-specific content without increasing architectural complexity.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

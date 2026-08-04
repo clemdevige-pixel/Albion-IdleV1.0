@@ -1,0 +1,405 @@
+## ALBION IDLE — REFINING SYSTEM
+
+**Document type:** System Specification
+**Version:** 1.0
+**Status:** LOCKED
+**Authority level:** Core Gameplay System
+**Parent authority:** `000_PROJECT_BIBLE.txt`
+**Dependencies:** `13_ITEM_SYSTEM.txt`, `15_CRAFTING_SYSTEM.txt`
+
+---
+
+# 1. PURPOSE
+
+The Refining System transforms raw resources gathered by the player into refined materials used by the Crafting System.
+
+It is responsible for:
+
+* validating refining recipes;
+* consuming raw resources;
+* consuming previous-tier refined materials;
+* producing refined materials;
+* managing refining professions;
+* awarding refining mastery progression.
+
+---
+
+# 2. DESIGN PRINCIPLES
+
+The Refining System must be:
+
+* deterministic;
+* transactional;
+* data-driven;
+* compatible with offline progression;
+* independent from UI.
+
+Every refining operation must either:
+
+* complete successfully;
+* fail without consuming resources.
+
+---
+
+# 3. REFINING LOOP
+
+The intended production loop is:
+
+```text
+Gathering
+↓
+Raw Resources
+↓
+Refining
+↓
+Refined Materials
+↓
+Crafting
+↓
+Equipment
+```
+
+Equipment crafting uses refined materials rather than raw resources.
+
+---
+
+# 4. RAW RESOURCES
+
+Raw resources are obtained from the Gathering System.
+
+Examples include:
+
+* Wood
+* Ore
+* Fiber
+* Hide
+* Stone
+
+Raw resources are never directly transformed into equipment.
+
+---
+
+# 5. REFINED MATERIALS
+
+Each raw resource has a refined equivalent.
+
+Examples:
+
+```text
+Wood → Planks
+Ore → Metal Bars
+Fiber → Cloth
+Hide → Leather
+Stone → Stone Blocks
+```
+
+Refined materials are stored as standard Item System resources.
+
+---
+
+# 6. REFINING PROFESSIONS
+
+Each material family has its own refining profession.
+
+Examples:
+
+```text
+Lumber Milling
+Smelting
+Weaving
+Tanning
+Stone Cutting
+```
+
+All professions are permanently accessible.
+
+No exclusive profession choice exists.
+
+---
+
+# 7. REFINING MASTERY
+
+Each refining profession owns an independent mastery progression.
+
+Successful refining awards mastery experience.
+
+Mastery may later unlock:
+
+* higher tiers;
+* improved refining speed;
+* future bonuses.
+
+Exact progression values are balancing data.
+
+---
+
+# 8. REFINING RECIPES
+
+Each recipe contains:
+
+```text
+recipe_id
+profession_id
+input_resources
+output_item
+output_quantity
+required_mastery
+refining_duration
+```
+
+Recipes are external balancing data.
+
+---
+
+# 9. CHAIN REFINING
+
+Refining follows Albion's chained progression.
+
+Example:
+
+```text
+T3 Raw
+↓
+T3 Refined
+
+T4 Raw
++ T3 Refined
+↓
+T4 Refined
+
+T5 Raw
++ T4 Refined
+↓
+T5 Refined
+```
+
+Every tier above T3 requires:
+
+* current tier raw resources;
+* previous tier refined materials.
+
+---
+
+# 10. TIER SUPPORT
+
+Supported tiers:
+
+```text
+T3
+T4
+T5
+T6
+T7
+T8
+```
+
+No T1 or T2 refining exists.
+
+---
+
+# 11. RECIPE VALIDATION
+
+Before refining, the system validates:
+
+* recipe exists;
+* profession exists;
+* mastery requirement;
+* required materials;
+* required quantities;
+* output definition.
+
+Only after validation are materials reserved.
+
+---
+
+# 12. MATERIAL CONSUMPTION
+
+Successful refining consumes:
+
+* current tier raw resources;
+* previous tier refined materials.
+
+Material consumption is deterministic.
+
+No random loss exists.
+
+---
+
+# 13. RESOURCE RETURN
+
+During the Vertical Slice:
+
+* Resource Return Rate is disabled.
+
+Every successful refinement consumes 100% of listed materials.
+
+The architecture must support future Resource Return bonuses without changing recipes.
+
+---
+
+# 14. OUTPUT GENERATION
+
+Successful refining creates:
+
+```text
+Refined Material
+Tier
+Quantity
+```
+
+Refined materials:
+
+* have no Item Power;
+* have no Quality;
+* have no Enchantment.
+
+---
+
+# 15. TRANSACTION ORDER
+
+Recommended pipeline:
+
+```text
+Refine Request
+↓
+Validate Recipe
+↓
+Validate Mastery
+↓
+Validate Materials
+↓
+Reserve Materials
+↓
+Consume Materials
+↓
+Create Refined Materials
+↓
+Store Output
+↓
+Award Mastery
+```
+
+Transactions are atomic.
+
+---
+
+# 16. OFFLINE REFINING
+
+The system supports offline completion.
+
+Offline refining uses:
+
+* identical recipes;
+* identical durations;
+* identical outputs;
+* identical mastery rewards.
+
+No offline bonus is applied unless defined elsewhere.
+
+---
+
+# 17. INVENTORY INTEGRATION
+
+Input materials may be consumed from:
+
+* Inventory;
+* Bank.
+
+Recommended priority:
+
+```text
+Inventory
+↓
+Bank
+```
+
+Outputs are stored in Inventory.
+
+If Inventory is full:
+
+* outputs are transferred automatically to the Bank.
+
+---
+
+# 18. DATA-DRIVEN REQUIREMENTS
+
+External balancing data defines:
+
+* recipes;
+* durations;
+* mastery requirements;
+* quantities;
+* profession definitions;
+* future resource return values.
+
+Gameplay code must never hard-code recipes.
+
+---
+
+# 19. VALIDATION RULES
+
+The following conditions must always remain true:
+
+* recipe references valid items;
+* tiers are valid;
+* quantities are positive integers;
+* required previous-tier materials exist;
+* transactions are atomic;
+* mastery is only awarded after success;
+* outputs are never created without consuming inputs.
+
+---
+
+# 20. EVENTS
+
+Recommended events:
+
+```text
+refining_requested
+refining_started
+refining_completed
+refining_failed
+materials_consumed
+refined_material_created
+refining_mastery_awarded
+refining_output_sent_to_bank
+```
+
+---
+
+# 21. MINIMUM TESTS
+
+Required tests:
+
+* refine each supported resource type;
+* refine every tier from T3 to T8;
+* verify chained refining requirements;
+* reject missing previous-tier materials;
+* reject insufficient mastery;
+* consume correct quantities;
+* award mastery after success;
+* transfer overflow to Bank;
+* complete offline refining;
+* save and reload refining jobs.
+
+---
+
+# 22. OUT OF SCOPE
+
+This document intentionally excludes:
+
+* gathering mechanics;
+* crafting recipes;
+* city refining bonuses;
+* Resource Return Rate;
+* refining stations;
+* refining taxes;
+* economy balancing;
+* exact recipe values;
+* mastery balancing.
+
+These systems belong to dedicated specifications.
+
+---
+
+# END OF DOCUMENT

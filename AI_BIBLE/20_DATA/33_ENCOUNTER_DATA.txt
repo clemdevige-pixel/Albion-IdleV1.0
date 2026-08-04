@@ -1,0 +1,620 @@
+# 33. ENCOUNTER DATA
+
+---
+
+# Purpose
+
+The Encounter Data document defines every Encounter that can appear inside a Zone Segment.
+
+An Encounter represents the actual gameplay challenge faced by the player.
+
+It determines:
+
+- Which enemies appear
+- How many enemies spawn
+- Spawn behavior
+- Resource Enemy inclusion
+- Elite variants
+- Encounter difficulty
+- Reward modifiers
+
+An Encounter is the smallest reusable gameplay unit of exploration.
+
+---
+
+# Design Philosophy
+
+The Encounter system follows seven principles.
+
+---
+
+## Modular
+
+Encounters reference existing systems rather than defining them.
+
+They reuse:
+
+- Enemy Definitions
+- Loot Tables
+- AI Profiles
+- Progress Scaling
+
+---
+
+## Data Driven
+
+New Encounters can be created entirely through data.
+
+No gameplay code is required.
+
+---
+
+## Deterministic Structure
+
+The Encounter definition itself never contains randomness.
+
+Randomness occurs only during Encounter selection and optional weighted enemy selection.
+
+---
+
+## Scalable
+
+The same Encounter may be used in:
+
+- Different Zones
+- Different Cycles
+- Different Events
+
+Enemy scaling is calculated separately.
+
+---
+
+## Independent
+
+Encounters never define:
+
+- Enemy statistics
+- Loot
+- AI
+- Rewards
+
+They simply assemble gameplay.
+
+---
+
+## Reusable
+
+One Encounter may appear in dozens of Zones.
+
+---
+
+## Immutable
+
+Encounter definitions never change at runtime.
+
+---
+
+# Responsibilities
+
+Encounter Data defines:
+
+- Identity
+- Category
+- Enemy Groups
+- Spawn Formation
+- Resource Enemy support
+- Elite support
+- Boss Flag
+- Difficulty Rating
+- Tags
+
+Encounter Data does NOT define:
+
+- Enemy Statistics
+- Loot
+- AI
+- Progress Scaling
+- Zone Generation
+
+---
+
+# Encounter Definition
+
+Every Encounter contains:
+
+```text
+ID
+
+↓
+
+Category
+
+↓
+
+Difficulty
+
+↓
+
+Enemy Groups
+
+↓
+
+Spawn Formation
+
+↓
+
+Boss Flag
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Encounter owns one globally unique identifier.
+
+Examples:
+
+```
+encounter_forest_wolves
+
+encounter_undead_patrol
+
+encounter_keeper_guardians
+
+encounter_morgana_camp
+```
+
+---
+
+# Categories
+
+Version 1 supports:
+
+- Standard
+- Elite
+- Boss
+- Resource
+
+Category simplifies filtering.
+
+Gameplay behavior remains data-driven.
+
+---
+
+# Difficulty Rating
+
+Defines the relative challenge.
+
+Supported values:
+
+```
+Easy
+
+Normal
+
+Hard
+
+VeryHard
+```
+
+This value is informational.
+
+Actual combat difficulty comes from enemy scaling.
+
+---
+
+# Enemy Groups
+
+An Encounter contains one or more Enemy Groups.
+
+Each group contains:
+
+- Enemy Definition
+- Quantity
+- Spawn Delay
+
+Example:
+
+```
+Wolf ×3
+
+↓
+
+Dire Wolf ×1
+```
+
+---
+
+# Enemy Reference
+
+Each Enemy references an Enemy Definition.
+
+Example:
+
+```
+enemy_wolf_t4
+```
+
+Enemy statistics remain external.
+
+---
+
+# Quantity
+
+Defines how many copies of an Enemy appear.
+
+Example:
+
+```
+Skeleton
+
+↓
+
+5
+```
+
+---
+
+# Spawn Delay
+
+Defines the delay before the group appears.
+
+Example:
+
+```
+0 s
+
+2 s
+
+5 s
+```
+
+Allows wave-based encounters.
+
+---
+
+# Spawn Formation
+
+Determines initial positioning.
+
+Supported formations:
+
+```
+Line
+
+Cluster
+
+Spread
+
+Circle
+```
+
+Rendering and AI interpret these layouts.
+
+---
+
+# Resource Encounters
+
+Resource Encounters contain Resource Enemies.
+
+Example:
+
+```
+Ore Elemental
+
+↓
+
+Resource Node
+
+↓
+
+Automatic Gathering
+```
+
+This follows the Gathering System.
+
+---
+
+# Elite Support
+
+Encounters may contain Elite Enemies.
+
+Elite status is determined by Enemy Definitions.
+
+No additional logic exists here.
+
+---
+
+# Boss Flag
+
+Boss Encounters define:
+
+```
+isBoss = true
+```
+
+Boss behavior remains defined elsewhere.
+
+---
+
+# Reward Modifier
+
+Optional reward multiplier.
+
+Example:
+
+```
+1.00
+
+1.20
+
+1.50
+```
+
+Applied after Loot generation.
+
+---
+
+# Encounter Weight
+
+Used by Encounter Pools.
+
+Example:
+
+```
+Forest Wolves
+
+40
+
+Bear Ambush
+
+15
+
+Bandit Patrol
+
+45
+```
+
+Weights are evaluated by the Encounter Pool.
+
+---
+
+# Tags
+
+Examples:
+
+```
+forest
+
+animal
+
+starter
+
+elite
+
+resource
+
+undead
+```
+
+Tags improve balancing and filtering.
+
+---
+
+# Runtime Representation
+
+```
+Encounter Definition
+
+↓
+
+Spawn Enemy Groups
+
+↓
+
+Combat
+
+↓
+
+Victory
+
+↓
+
+Cleanup
+```
+
+Definitions never contain runtime state.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Enemy Definitions
+- Valid Quantities
+- Valid Spawn Delays
+- Existing Category
+- Valid Formation
+- Valid Difficulty
+- Valid Reward Modifier
+
+Invalid Encounters never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedural Encounter Generation
+- Scripted Events
+- Conditional Enemy Waves
+- Dynamic Enemy Counts
+- Runtime-generated Encounters
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "encounter_forest_wolves",
+    "category": "Standard",
+    "difficulty": "Easy",
+    "enemyGroups": [
+        {
+            "enemyId": "enemy_wolf_t4",
+            "quantity": 3,
+            "spawnDelay": 0
+        },
+        {
+            "enemyId": "enemy_alpha_wolf_t4",
+            "quantity": 1,
+            "spawnDelay": 2
+        }
+    ],
+    "spawnFormation": "Spread",
+    "isBoss": false,
+    "rewardModifier": 1.00,
+    "tags": [
+        "forest",
+        "animals"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Encounter
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Selected by Encounter Pool
+
+↓
+
+Spawn Enemies
+
+↓
+
+Combat
+
+↓
+
+Victory
+
+↓
+
+Cleanup
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Encounter Data document is complete when:
+
+- Every Encounter has a unique identifier.
+- Categories are predefined.
+- Enemy Groups reference Enemy Definitions.
+- Spawn quantities are configurable.
+- Spawn delays are configurable.
+- Spawn formations are configurable.
+- Boss support is available.
+- Reward modifiers are configurable.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Encounter is completely data-driven.
+
+Rule 02
+
+Encounters reference Enemy Definitions only.
+
+Rule 03
+
+Enemy statistics remain external.
+
+Rule 04
+
+Spawn quantities are explicit.
+
+Rule 05
+
+Spawn formations are predefined.
+
+Rule 06
+
+Resource Encounters use Resource Enemies.
+
+Rule 07
+
+Boss encounters are identified by a boolean flag.
+
+Rule 08
+
+Reward modifiers are optional.
+
+Rule 09
+
+Encounter selection is delegated to Encounter Pools.
+
+Rule 10
+
+Definitions never contain runtime state.
+
+Rule 11
+
+Validation prevents invalid Encounters.
+
+Rule 12
+
+Encounter definitions remain immutable.
+
+Rule 13
+
+Every Encounter may declare its content source.
+
+Rule 14
+
+Future Encounter types must remain compatible with the shared data architecture.
+
+Rule 15
+
+All gameplay behavior is delegated to specialized systems.
+
+---
+
+# Summary
+
+The Encounter Data document defines every combat situation encountered by the player through a modular, deterministic and fully data-driven architecture. By assembling enemies into reusable gameplay scenarios while delegating combat, AI, rewards and scaling to specialized systems, Encounters become the central building block of exploration and progression. This architecture enables infinite content expansion without increasing gameplay complexity.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

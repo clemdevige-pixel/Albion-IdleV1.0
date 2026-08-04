@@ -1,0 +1,602 @@
+# 35. WORKER DATA
+
+---
+
+# Purpose
+
+The Worker Data document defines every Worker available in the game.
+
+Workers are autonomous NPCs permanently assigned to Buildings on the Player Island.
+
+They perform passive activities while the player is online or offline.
+
+Workers provide automation for production systems without replacing player progression.
+
+This document defines:
+
+- Worker identity
+- Profession
+- Tier
+- Assigned Building Types
+- Production Efficiency
+- Upgrade Progression
+- Capacity
+- Passive Bonuses
+
+It does **not** define:
+
+- Runtime Assignments
+- Production Queues
+- Building Ownership
+- Offline Progress
+- AI Behavior
+
+---
+
+# Design Philosophy
+
+The Worker system follows seven principles.
+
+---
+
+## Passive Automation
+
+Workers automate repetitive production tasks.
+
+They never replace active gameplay such as exploration or combat.
+
+---
+
+## Data Driven
+
+Every Worker is defined entirely through data.
+
+Adding a new Worker never requires gameplay code.
+
+---
+
+## Profession Based
+
+Each Worker specializes in exactly one profession.
+
+Examples:
+
+- Blacksmith
+- Smelter
+- Lumberjack
+- Cook
+
+Workers never perform unrelated tasks.
+
+---
+
+## Building Dependent
+
+Workers require compatible Buildings.
+
+Without an appropriate Building, a Worker cannot operate.
+
+---
+
+## Progression Friendly
+
+Workers improve through upgrades and higher tiers.
+
+Progression increases efficiency rather than unlocking new gameplay systems.
+
+---
+
+## Reusable
+
+Worker definitions are immutable and reusable.
+
+Runtime instances reference Worker definitions.
+
+---
+
+## Extensible
+
+Future Worker professions can be added without redesigning the architecture.
+
+---
+
+# Responsibilities
+
+Worker Data defines:
+
+- Identity
+- Profession
+- Tier
+- Compatible Buildings
+- Production Speed Modifier
+- Resource Consumption Modifier
+- Maximum Simultaneous Jobs
+- Passive Bonuses
+- Upgrade Costs
+- Tags
+
+Worker Data does NOT define:
+
+- Current Building
+- Current Job
+- Inventory
+- Offline Progress
+- Runtime State
+
+---
+
+# Worker Definition
+
+Every Worker contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Profession
+
+↓
+
+Tier
+
+↓
+
+Compatible Buildings
+
+↓
+
+Production Modifier
+
+↓
+
+Capacity
+
+↓
+
+Bonuses
+
+↓
+
+Upgrade Data
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Worker owns one globally unique identifier.
+
+Examples:
+
+```
+worker_blacksmith_t4
+
+worker_smelter_t5
+
+worker_cook_t6
+
+worker_lumberjack_t7
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Blacksmith
+
+Smelter
+
+Cook
+
+Stone Mason
+```
+
+---
+
+# Profession
+
+Each Worker belongs to exactly one profession.
+
+Version 1 supports:
+
+- Blacksmith
+- Smelter
+- Lumberjack
+- Weaver
+- Tanner
+- Stone Mason
+- Cook
+
+Future professions may be added independently.
+
+---
+
+# Tier
+
+Workers exist from:
+
+```
+T1
+
+↓
+
+T8
+```
+
+Higher-tier Workers provide better efficiency.
+
+---
+
+# Compatible Buildings
+
+Workers reference one or more Building Definitions.
+
+Example:
+
+```
+worker_blacksmith_t4
+
+↓
+
+building_forge
+```
+
+Workers cannot operate incompatible Buildings.
+
+---
+
+# Production Speed Modifier
+
+Defines the multiplier applied to production time.
+
+Example:
+
+```
+1.00
+
+1.10
+
+1.20
+
+1.35
+```
+
+Higher values represent faster production.
+
+---
+
+# Resource Efficiency
+
+Defines how efficiently resources are consumed.
+
+Example:
+
+```
+1.00
+
+0.98
+
+0.95
+
+0.90
+```
+
+Values below 1.00 reduce material consumption.
+
+---
+
+# Maximum Simultaneous Jobs
+
+Defines how many production tasks the Worker may manage simultaneously.
+
+Version 1 default:
+
+```
+1
+```
+
+Future versions may support larger capacities.
+
+---
+
+# Passive Bonuses
+
+Workers may provide passive bonuses.
+
+Examples:
+
+- Faster Crafting
+- Faster Refining
+- Reduced Material Cost
+- Faster Cooking
+
+Bonuses remain deterministic.
+
+---
+
+# Upgrade Progression
+
+Workers support upgrades.
+
+Each upgrade may improve:
+
+- Production Speed
+- Resource Efficiency
+- Passive Bonuses
+
+Upgrade costs remain data-driven.
+
+---
+
+# Hiring Cost
+
+Workers define their initial recruitment cost.
+
+Example:
+
+```json
+{
+    "currencyId": "currency_silver",
+    "amount": 5000
+}
+```
+
+Recruitment is deterministic.
+
+---
+
+# Dismissal
+
+Version 1 allows Workers to be dismissed.
+
+Dismissal never destroys Worker Definitions.
+
+Only runtime instances are removed.
+
+---
+
+# Tags
+
+Examples:
+
+```
+worker
+
+forge
+
+crafting
+
+production
+
+tier4
+```
+
+Tags improve searching and balancing.
+
+---
+
+# Runtime Representation
+
+```
+Worker Definition
+
+↓
+
+Worker Instance
+
+↓
+
+Assigned Building
+
+↓
+
+Production
+
+↓
+
+Save Runtime State
+```
+
+Definitions remain immutable.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Building References
+- Existing Profession
+- Valid Tier
+- Valid Production Modifier
+- Valid Resource Efficiency
+- Valid Hiring Cost
+
+Invalid Workers never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Worker Experience
+- Worker Equipment
+- Worker Happiness
+- Worker Needs
+- Worker AI Personalities
+- Procedural Workers
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "worker_blacksmith_t4",
+    "name": "Blacksmith",
+    "profession": "Blacksmith",
+    "tier": 4,
+    "compatibleBuildings": [
+        "building_forge"
+    ],
+    "productionSpeedModifier": 1.15,
+    "resourceEfficiency": 0.98,
+    "maxJobs": 1,
+    "passiveBonuses": [
+        {
+            "type": "CraftSpeed",
+            "value": 0.15
+        }
+    ],
+    "hiringCost": {
+        "currencyId": "currency_silver",
+        "amount": 5000
+    },
+    "tags": [
+        "worker",
+        "crafting",
+        "forge"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Worker Definition
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Player Recruits Worker
+
+↓
+
+Assign Building
+
+↓
+
+Passive Production
+
+↓
+
+Save Runtime State
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Worker Data document is complete when:
+
+- Every Worker has a unique identifier.
+- Every Worker belongs to one profession.
+- Compatible Buildings are referenced.
+- Production modifiers are configurable.
+- Resource efficiency is configurable.
+- Hiring costs are configurable.
+- Upgrade progression is supported.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Worker is completely data-driven.
+
+Rule 02
+
+Workers belong to exactly one profession.
+
+Rule 03
+
+Workers reference compatible Buildings by identifier.
+
+Rule 04
+
+Workers automate production only.
+
+Rule 05
+
+Production modifiers are configurable.
+
+Rule 06
+
+Resource efficiency is configurable.
+
+Rule 07
+
+Hiring costs are deterministic.
+
+Rule 08
+
+Passive bonuses are explicit.
+
+Rule 09
+
+Workers never contain runtime state.
+
+Rule 10
+
+Worker progression is handled through upgrades.
+
+Rule 11
+
+Validation prevents invalid Worker definitions.
+
+Rule 12
+
+Worker definitions remain immutable.
+
+Rule 13
+
+Every Worker may declare its content source.
+
+Rule 14
+
+Future Worker professions must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Workers exclusively through identifiers.
+
+---
+
+# Summary
+
+The Worker Data document defines every autonomous production worker through a deterministic, profession-based and fully data-driven architecture. By separating immutable Worker definitions from runtime assignments, buildings and production queues, the system provides a scalable foundation for passive automation while preserving the importance of active gameplay. Workers become reusable production specialists capable of supporting future professions, upgrades and automation features without increasing architectural complexity.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

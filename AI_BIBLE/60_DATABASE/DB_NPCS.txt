@@ -1,0 +1,809 @@
+# NPC DATABASE
+
+Version: 1.0
+
+This document defines every non-hostile service character available in
+Version 1.
+
+Each NPC references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored directly in this document.
+
+Service costs, inventories, unlock requirements and progression values are
+inherited from the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+NPC ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the NPC sprite.
+
+Icon ID:
+Identifier used in menus, maps and service interfaces.
+
+Service Profile:
+Defines the primary functionality offered by the NPC.
+
+Inventory Profile:
+Defines items sold or handled by the NPC.
+
+Economy Profile:
+Defines prices, fees, commissions and value modifiers.
+
+Unlock Profile:
+Defines when and how the NPC becomes available.
+
+Dialogue Profile:
+Defines contextual messages and interaction text.
+
+Location Profile:
+Defines where the NPC appears.
+
+NPC identifiers follow this format:
+
+NPC-0001
+
+Unlike equipment and monsters, standard NPCs do not generate tier-specific
+visual variants.
+
+Service values may scale according to the player's progression, location or
+item tier.
+
+---
+
+# ============================================================================
+# BLACKSMITH
+# ============================================================================
+
+## NPC-0001
+
+Name:
+Blacksmith
+
+Asset ID:
+NPC-0001
+
+Icon ID:
+ICO-NPC-0001
+
+Category:
+Service NPC
+
+Role:
+Equipment Crafter and Repairer
+
+Service Profile:
+SERVICE_BLACKSMITH
+
+Inventory Profile:
+INV_BLACKSMITH_STANDARD
+
+Economy Profile:
+ECON_BLACKSMITH_STANDARD
+
+Unlock Profile:
+UNLOCK_BLACKSMITH_DEFAULT
+
+Dialogue Profile:
+DIALOGUE_BLACKSMITH
+
+Location Profile:
+LOCATION_TOWN_CRAFTING_DISTRICT
+
+Primary Services:
+Weapon Crafting
+Plate Armor Crafting
+Off-Hand Crafting
+Equipment Repair
+Equipment Salvage
+
+Handled Item Categories:
+Weapons
+Plate Armor
+Off-Hands
+Metal Components
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# MERCHANT
+# ============================================================================
+
+## NPC-0002
+
+Name:
+Merchant
+
+Asset ID:
+NPC-0002
+
+Icon ID:
+ICO-NPC-0002
+
+Category:
+Service NPC
+
+Role:
+General Trader
+
+Service Profile:
+SERVICE_MERCHANT
+
+Inventory Profile:
+INV_MERCHANT_STANDARD
+
+Economy Profile:
+ECON_MERCHANT_STANDARD
+
+Unlock Profile:
+UNLOCK_MERCHANT_DEFAULT
+
+Dialogue Profile:
+DIALOGUE_MERCHANT
+
+Location Profile:
+LOCATION_TOWN_MARKET
+
+Primary Services:
+Buy Items
+Sell Items
+Purchase Consumables
+Purchase Basic Resources
+
+Handled Item Categories:
+Consumables
+Resources
+Equipment
+Miscellaneous Items
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# BANKER
+# ============================================================================
+
+## NPC-0003
+
+Name:
+Banker
+
+Asset ID:
+NPC-0003
+
+Icon ID:
+ICO-NPC-0003
+
+Category:
+Service NPC
+
+Role:
+Storage Manager
+
+Service Profile:
+SERVICE_BANKER
+
+Inventory Profile:
+INV_BANKER_STORAGE
+
+Economy Profile:
+ECON_BANKER_STANDARD
+
+Unlock Profile:
+UNLOCK_BANKER_DEFAULT
+
+Dialogue Profile:
+DIALOGUE_BANKER
+
+Location Profile:
+LOCATION_TOWN_BANK
+
+Primary Services:
+Open Personal Storage
+Deposit Items
+Withdraw Items
+Expand Storage Capacity
+Manage Saved Loadouts
+
+Handled Item Categories:
+All Tradable Items
+Currencies
+Resources
+Equipment
+Consumables
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ENCHANTER
+# ============================================================================
+
+## NPC-0004
+
+Name:
+Enchanter
+
+Asset ID:
+NPC-0004
+
+Icon ID:
+ICO-NPC-0004
+
+Category:
+Service NPC
+
+Role:
+Equipment Enhancer
+
+Service Profile:
+SERVICE_ENCHANTER
+
+Inventory Profile:
+INV_ENCHANTER_STANDARD
+
+Economy Profile:
+ECON_ENCHANTER_STANDARD
+
+Unlock Profile:
+UNLOCK_ENCHANTER_PROGRESSION
+
+Dialogue Profile:
+DIALOGUE_ENCHANTER
+
+Location Profile:
+LOCATION_TOWN_ARCANE_DISTRICT
+
+Primary Services:
+Enchant Equipment
+Upgrade Equipment Quality
+Reroll Eligible Modifiers
+Extract Enchantment Materials
+
+Handled Item Categories:
+Weapons
+Armor
+Off-Hands
+Enchanting Materials
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# STABLE MASTER
+# ============================================================================
+
+## NPC-0005
+
+Name:
+Stable Master
+
+Asset ID:
+NPC-0005
+
+Icon ID:
+ICO-NPC-0005
+
+Category:
+Service NPC
+
+Role:
+Mount Manager
+
+Service Profile:
+SERVICE_STABLE_MASTER
+
+Inventory Profile:
+INV_STABLE_MASTER_STANDARD
+
+Economy Profile:
+ECON_STABLE_MASTER_STANDARD
+
+Unlock Profile:
+UNLOCK_STABLE_MASTER_DEFAULT
+
+Dialogue Profile:
+DIALOGUE_STABLE_MASTER
+
+Location Profile:
+LOCATION_TOWN_STABLES
+
+Primary Services:
+Purchase Mounts
+Equip Mounts
+Upgrade Mounts
+Manage Mount Collection
+Recover Defeated Mounts
+
+Handled Item Categories:
+Mounts
+Mount Upgrade Materials
+Mount Equipment
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# TASK MASTER
+# ============================================================================
+
+## NPC-0006
+
+Name:
+Task Master
+
+Asset ID:
+NPC-0006
+
+Icon ID:
+ICO-NPC-0006
+
+Category:
+Service NPC
+
+Role:
+Objective and Reward Manager
+
+Service Profile:
+SERVICE_TASK_MASTER
+
+Inventory Profile:
+INV_TASK_MASTER_REWARDS
+
+Economy Profile:
+ECON_TASK_MASTER_REWARDS
+
+Unlock Profile:
+UNLOCK_TASK_MASTER_DEFAULT
+
+Dialogue Profile:
+DIALOGUE_TASK_MASTER
+
+Location Profile:
+LOCATION_TOWN_CENTRAL_SQUARE
+
+Primary Services:
+Daily Tasks
+Weekly Tasks
+Progression Objectives
+Reward Claims
+Tutorial Objectives
+
+Handled Item Categories:
+Task Rewards
+Currencies
+Consumables
+Resource Bundles
+Equipment Chests
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# SERVICE PROFILE RULES
+# ============================================================================
+
+A Service Profile defines:
+
+- Available interaction buttons
+- Required input items
+- Generated output items
+- Service duration
+- Service restrictions
+- Confirmation requirements
+- Failure conditions
+- Interface layout
+- Associated database references
+
+An NPC may offer multiple services through one Service Profile.
+
+A service must not duplicate an existing core menu unless the NPC interaction
+is intentionally required by the progression design.
+
+---
+
+# ============================================================================
+# SERVICE_BLACKSMITH
+# ============================================================================
+
+Available Services:
+
+- Craft Weapon
+- Craft Plate Armor
+- Craft Off-Hand
+- Repair Equipment
+- Salvage Equipment
+
+Database References:
+
+- DB_WEAPONS.md
+- DB_ARMORS.md
+- DB_OFFHANDS.md
+- DB_CRAFTING.md
+- DB_PROGRESS_RULES.md
+
+Restrictions:
+
+- Only unlocked recipes may be crafted.
+- Required resources must exist in the player's inventory or storage.
+- Broken equipment must be repaired before it can be equipped.
+- Salvaged equipment is permanently destroyed.
+
+---
+
+# ============================================================================
+# SERVICE_MERCHANT
+# ============================================================================
+
+Available Services:
+
+- Buy
+- Sell
+- Buyback
+- View Rotating Stock
+
+Database References:
+
+- DB_CONSUMABLES.md
+- DB_RESOURCES.md
+- DB_ECONOMY.md
+- DB_LOOT_TABLES.md
+
+Restrictions:
+
+- Quest items cannot be sold.
+- Bound items cannot be sold.
+- Buyback history is limited.
+- Rotating stock refreshes according to its inventory profile.
+
+---
+
+# ============================================================================
+# SERVICE_BANKER
+# ============================================================================
+
+Available Services:
+
+- Deposit
+- Withdraw
+- Sort Storage
+- Expand Storage
+- Save Loadout
+- Load Equipment Preset
+
+Database References:
+
+- DB_ECONOMY.md
+- DB_PROGRESS_RULES.md
+
+Restrictions:
+
+- Storage capacity is limited.
+- Expansion fees increase with each upgrade.
+- Bound items may be stored.
+- Active combat prevents bank interaction.
+
+---
+
+# ============================================================================
+# SERVICE_ENCHANTER
+# ============================================================================
+
+Available Services:
+
+- Increase Enchantment Level
+- Increase Item Quality
+- Reroll Modifier
+- Extract Enchantment Material
+
+Database References:
+
+- DB_WEAPONS.md
+- DB_ARMORS.md
+- DB_OFFHANDS.md
+- DB_CRAFTING.md
+- DB_PROGRESS_RULES.md
+- DB_ECONOMY.md
+
+Restrictions:
+
+- Only enchantable items are eligible.
+- Required materials depend on item tier.
+- Extraction destroys the source item unless explicitly overridden.
+- Rerolling cannot change an item's base identity.
+
+---
+
+# ============================================================================
+# SERVICE_STABLE_MASTER
+# ============================================================================
+
+Available Services:
+
+- Buy Mount
+- Equip Mount
+- Upgrade Mount
+- View Collection
+- Recover Mount
+
+Database References:
+
+- DB_MOUNTS.md
+- DB_CRAFTING.md
+- DB_ECONOMY.md
+- DB_PROGRESS_RULES.md
+
+Restrictions:
+
+- Only unlocked mounts may be purchased or equipped.
+- A player may have only one active mount.
+- Mount upgrades cannot exceed the mount's maximum tier.
+- Recovery costs depend on mount tier and rarity.
+
+---
+
+# ============================================================================
+# SERVICE_TASK_MASTER
+# ============================================================================
+
+Available Services:
+
+- View Daily Tasks
+- View Weekly Tasks
+- View Progression Tasks
+- Claim Rewards
+- Reroll Eligible Task
+
+Database References:
+
+- DB_TASKS.md
+- DB_LOOT_TABLES.md
+- DB_PROGRESS_RULES.md
+- DB_ECONOMY.md
+
+Restrictions:
+
+- Completed rewards must be claimed before task expiration unless automatic
+  claiming is enabled.
+- A task cannot be claimed more than once.
+- Reroll availability is defined by the task profile.
+- Tutorial tasks cannot be rerolled.
+
+---
+
+# ============================================================================
+# INVENTORY PROFILE RULES
+# ============================================================================
+
+An Inventory Profile defines:
+
+- Permanent stock
+- Rotating stock
+- Stock quantity
+- Refresh interval
+- Unlock conditions
+- Purchase limits
+- Item rarity limits
+- Tier limits
+- Price modifiers
+
+Inventory Profiles must reference canonical IDs from the corresponding content
+databases.
+
+NPC inventories must never create an item with a non-canonical item ID.
+
+---
+
+# ============================================================================
+# ECONOMY PROFILE RULES
+# ============================================================================
+
+An Economy Profile defines:
+
+- Purchase price multiplier
+- Sale price multiplier
+- Service fee multiplier
+- Repair cost multiplier
+- Upgrade cost multiplier
+- Buyback multiplier
+- Storage expansion costs
+- Reward valuation
+
+All monetary values are calculated through **DB_ECONOMY.md**.
+
+NPC databases must not contain manually duplicated prices.
+
+---
+
+# ============================================================================
+# UNLOCK PROFILE RULES
+# ============================================================================
+
+An Unlock Profile may use:
+
+- Player level
+- Account progression
+- Completed task
+- Defeated boss
+- Reached biome
+- Crafted item
+- Collected resource
+- Currency threshold
+- Tutorial completion
+
+Default town NPCs may be available immediately.
+
+Advanced services may remain locked until their associated system is
+introduced.
+
+---
+
+# ============================================================================
+# DIALOGUE PROFILE RULES
+# ============================================================================
+
+Dialogue Profiles define short contextual messages.
+
+Supported contexts:
+
+- First interaction
+- Standard greeting
+- Service unavailable
+- Insufficient resources
+- Successful service
+- Failed service
+- New service unlocked
+- Special progression event
+
+NPC dialogue must remain concise.
+
+NPC dialogue must not block repeated service usage.
+
+Dialogue text may be localized without changing the NPC ID or Service Profile.
+
+---
+
+# ============================================================================
+# LOCATION PROFILE RULES
+# ============================================================================
+
+Location Profiles define:
+
+- Settlement
+- District
+- World position
+- Interaction range
+- Availability state
+- Map icon
+- Interface shortcut eligibility
+
+NPC locations are defined in **DB_WORLD.md**.
+
+A service NPC may also be accessible through a direct interface shortcut after
+the player has interacted with that NPC at least once.
+
+---
+
+# ============================================================================
+# PROFILE REFERENCES
+# ============================================================================
+
+## Service Profiles
+
+- SERVICE_BLACKSMITH
+- SERVICE_MERCHANT
+- SERVICE_BANKER
+- SERVICE_ENCHANTER
+- SERVICE_STABLE_MASTER
+- SERVICE_TASK_MASTER
+
+## Inventory Profiles
+
+- INV_BLACKSMITH_STANDARD
+- INV_MERCHANT_STANDARD
+- INV_BANKER_STORAGE
+- INV_ENCHANTER_STANDARD
+- INV_STABLE_MASTER_STANDARD
+- INV_TASK_MASTER_REWARDS
+
+## Economy Profiles
+
+- ECON_BLACKSMITH_STANDARD
+- ECON_MERCHANT_STANDARD
+- ECON_BANKER_STANDARD
+- ECON_ENCHANTER_STANDARD
+- ECON_STABLE_MASTER_STANDARD
+- ECON_TASK_MASTER_REWARDS
+
+## Unlock Profiles
+
+- UNLOCK_BLACKSMITH_DEFAULT
+- UNLOCK_MERCHANT_DEFAULT
+- UNLOCK_BANKER_DEFAULT
+- UNLOCK_ENCHANTER_PROGRESSION
+- UNLOCK_STABLE_MASTER_DEFAULT
+- UNLOCK_TASK_MASTER_DEFAULT
+
+## Dialogue Profiles
+
+- DIALOGUE_BLACKSMITH
+- DIALOGUE_MERCHANT
+- DIALOGUE_BANKER
+- DIALOGUE_ENCHANTER
+- DIALOGUE_STABLE_MASTER
+- DIALOGUE_TASK_MASTER
+
+## Location Profiles
+
+- LOCATION_TOWN_CRAFTING_DISTRICT
+- LOCATION_TOWN_MARKET
+- LOCATION_TOWN_BANK
+- LOCATION_TOWN_ARCANE_DISTRICT
+- LOCATION_TOWN_STABLES
+- LOCATION_TOWN_CENTRAL_SQUARE
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+NPC identities are never generated procedurally.
+
+The following information is always manually defined:
+
+- NPC ID
+- NPC name
+- Asset ID
+- Icon ID
+- Role
+- Service Profile
+- Inventory Profile
+- Economy Profile
+- Unlock Profile
+- Dialogue Profile
+- Location Profile
+
+The following values may be generated dynamically:
+
+- Available inventory
+- Item tier range
+- Service prices
+- Repair prices
+- Upgrade prices
+- Storage expansion prices
+- Task reward values
+- Dialogue context
+- Service availability
+- Map visibility
+- Interface shortcuts
+
+Dynamic generation must never modify:
+
+- NPC identity
+- NPC asset
+- NPC role
+- Core service type
+- Canonical database references
+
+DOCUMENT TERMINÉ

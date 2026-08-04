@@ -1,0 +1,333 @@
+# 27_PROGRESSION_SYSTEM
+
+## Purpose
+
+The Progression System defines how the player becomes stronger throughout the game.
+
+Unlike traditional RPGs, character power is not driven by a global character level.
+
+Instead, progression is distributed across multiple independent systems that continuously reinforce each other.
+
+The Progression System acts as the central hub connecting combat, exploration, economy, crafting, equipment, and masteries.
+
+Its objective is to provide long-term progression while encouraging experimentation with different weapons and gameplay styles.
+
+---
+
+# Design Goals
+
+The Progression System must:
+
+- Eliminate traditional character levels.
+- Encourage long-term progression.
+- Reward active gameplay.
+- Support horizontal and vertical progression.
+- Promote equipment specialization.
+- Encourage weapon diversity.
+- Remain fully data-driven.
+- Scale indefinitely through future content.
+
+---
+
+# Core Progression Pillars
+
+Player power is generated from multiple progression pillars.
+
+No single system should represent the entirety of player progression.
+
+## Pillar 1 — Equipment
+
+Equipment is the primary source of combat power.
+
+Equipment determines:
+
+- Attack
+- Defense
+- Health
+- Energy
+- Ability Set
+- Weapon Type
+- Armor Type
+
+Equipment upgrades provide the largest increases in player strength.
+
+---
+
+## Pillar 2 — Weapon Mastery
+
+Every weapon owns an independent Mastery progression.
+
+Using a weapon grants experience only to that weapon.
+
+Each Mastery unlocks:
+
+- Equipment Tier progression
+- Passive upgrades
+- Active ability upgrades
+- Flat stat bonuses
+- Additional progression rewards
+
+Masteries never share progress.
+
+Example:
+
+- Broadsword Mastery
+- Claymore Mastery
+- Dual Sword Mastery
+
+are completely independent.
+
+---
+
+## Pillar 3 — Economy
+
+The player's economy continuously improves progression.
+
+Examples:
+
+- Better crafting
+- Better refining
+- Better gathering
+- Better islands
+- Better workers
+- Better equipment production
+
+Economic progression indirectly increases combat efficiency.
+
+---
+
+# No Character Level
+
+The game does not contain a global player level.
+
+The following systems do not exist:
+
+- Character XP Level
+- Global Skill Points
+- Character Level Scaling
+
+Player strength is determined exclusively by progression systems.
+
+---
+
+# Progression Flow
+
+The standard progression loop is:
+
+Combat
+
+↓
+
+Loot
+
+↓
+
+Crafting / Economy
+
+↓
+
+Better Equipment
+
+↓
+
+Weapon Mastery
+
+↓
+
+Access to Higher Equipment Tiers
+
+↓
+
+Harder Biomes
+
+↓
+
+Better Rewards
+
+↓
+
+Repeat
+
+This loop continuously repeats throughout the game.
+
+---
+
+# Progression Categories
+
+Progression can be divided into two categories.
+
+## Vertical Progression
+
+Vertical Progression increases player power.
+
+Examples:
+
+- Better weapon tier
+- Better armor tier
+- Mastery rewards
+- Improved abilities
+
+---
+
+## Horizontal Progression
+
+Horizontal Progression expands player possibilities.
+
+Examples:
+
+- New weapon types
+- New armor builds
+- New crafting options
+- New gathering professions
+- New island upgrades
+- New workers
+
+Horizontal Progression increases strategic possibilities without directly increasing combat power.
+
+---
+
+# Weapon Progression
+
+Weapons are never locked behind an unlock system.
+
+If a player owns a weapon, the weapon may immediately be equipped.
+
+Each newly equipped weapon starts using its corresponding Mastery.
+
+Example:
+
+Player crafts a Claymore.
+
+↓
+
+Player equips Claymore immediately.
+
+↓
+
+Claymore Mastery begins progressing.
+
+No additional unlock is required.
+
+---
+
+# Equipment Tier Progression
+
+Equipment Tier access is controlled by Weapon Mastery.
+
+Default Version 1 progression:
+
+| Mastery Level | Equipment Tier |
+|--------------|----------------|
+| 1 | T3 |
+| 20 | T4 |
+| 40 | T5 |
+| 60 | T6 |
+| 80 | T7 |
+| 100 | T8 |
+
+These thresholds are balancing values only.
+
+They must remain fully configurable through data.
+
+---
+
+# Progression Sources
+
+Player progression may originate from:
+
+- Combat
+- Exploration
+- Loot
+- Bosses
+- Crafting
+- Refining
+- Gathering
+- Workers
+- Island Development
+- Equipment
+- Weapon Masteries
+
+Future systems may introduce additional progression sources without modifying the architecture.
+
+---
+
+# Progression Persistence
+
+All progression is permanent.
+
+The player never loses:
+
+- Mastery Levels
+- Equipment Unlocks
+- Crafting Progress
+- Refining Progress
+- Gathering Progress
+- Worker Progress
+- Island Progress
+
+Temporary combat failure never removes progression.
+
+---
+
+# Future Scalability
+
+The Progression System must support future expansion.
+
+Examples:
+
+- New Weapons
+- New Armor Types
+- New Masteries
+- New Biomes
+- New Equipment Tiers
+- New Cycles
+- New Progression Systems
+
+Future content must integrate without modifying the core architecture.
+
+---
+
+# System Interactions
+
+The Progression System interacts with:
+
+- Experience System
+- Mastery System
+- Equipment System
+- Combat System
+- Loot System
+- Crafting System
+- Refining System
+- Gathering System
+- Worker System
+- Player Island System
+- Exploration System
+
+The Progression System coordinates progression but never directly manages the internal logic of these systems.
+
+---
+
+# Data Driven Design
+
+The Progression System contains no hardcoded balancing values.
+
+All progression thresholds, unlocks, rewards, and requirements are defined through data tables.
+
+The game logic only evaluates progression rules and applies the configured results.
+
+---
+
+# Data Tables
+
+The Progression System uses data tables including, but not limited to:
+
+- ProgressionSettingsTable
+- EquipmentTierUnlockTable
+- ProgressionRequirementTable
+- ProgressionRewardTable
+
+All balancing values are defined by data.
+
+The system logic must never rely on hardcoded numerical values.
+
+DOCUMENT TERMINÉ

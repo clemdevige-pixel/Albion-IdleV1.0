@@ -1,0 +1,578 @@
+# 36. VENDOR DATA
+
+---
+
+# Purpose
+
+The Vendor Data document defines every Vendor available in the game.
+
+A Vendor is an NPC that provides one or more commercial services to the player.
+
+Version 1 Vendors support:
+
+- Buying Items
+- Selling Items
+- Recruiting Workers
+- Purchasing Buildings
+- Future Specialized Services
+
+Vendors provide controlled access to the game's economy.
+
+---
+
+# Design Philosophy
+
+The Vendor system follows seven principles.
+
+---
+
+## Service Based
+
+A Vendor provides services.
+
+It does not own gameplay logic.
+
+Buying, selling and pricing are handled by dedicated systems.
+
+---
+
+## Data Driven
+
+Every Vendor is fully defined through data.
+
+Adding a new Vendor never requires gameplay code.
+
+---
+
+## Modular
+
+Vendors reference existing systems.
+
+Examples:
+
+- Items
+- Workers
+- Buildings
+- Currency
+- Localization
+
+No information is duplicated.
+
+---
+
+## Specialized
+
+Every Vendor has a specific purpose.
+
+Examples:
+
+- Weapon Merchant
+- Resource Merchant
+- Worker Recruiter
+- Builder
+
+A Vendor should never become a universal shop.
+
+---
+
+## Reusable
+
+A Vendor Definition may be instantiated in multiple locations.
+
+Definitions remain immutable.
+
+---
+
+## Economy Safe
+
+Vendors never define item values.
+
+Prices are calculated by the Economy System.
+
+---
+
+## Extensible
+
+Future Vendor services can be introduced without modifying existing Vendors.
+
+---
+
+# Responsibilities
+
+Vendor Data defines:
+
+- Identity
+- Vendor Type
+- Available Services
+- Inventory Pool
+- Worker Pool
+- Building Pool
+- Currency Support
+- Unlock Requirements
+- Tags
+
+Vendor Data does NOT define:
+
+- Prices
+- Stock Quantities
+- Runtime Inventory
+- Transactions
+- Economy Rules
+
+---
+
+# Vendor Definition
+
+Every Vendor contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Vendor Type
+
+↓
+
+Services
+
+↓
+
+Inventory Pool
+
+↓
+
+Worker Pool
+
+↓
+
+Building Pool
+
+↓
+
+Accepted Currency
+
+↓
+
+Unlock Requirements
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Vendor owns one globally unique identifier.
+
+Examples:
+
+```
+vendor_blacksmith
+
+vendor_resource_merchant
+
+vendor_worker_recruiter
+
+vendor_builder
+```
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Blacksmith
+
+Builder
+
+Quartermaster
+
+Worker Recruiter
+```
+
+---
+
+# Vendor Type
+
+Version 1 supports:
+
+- Equipment
+- Resources
+- Buildings
+- Workers
+- General Goods
+
+Future versions may add:
+
+- Cosmetics
+- Events
+- Seasonal
+- Reputation
+
+---
+
+# Services
+
+A Vendor may provide one or more services.
+
+Supported services:
+
+- Buy
+- Sell
+- RecruitWorker
+- PurchaseBuilding
+
+Example:
+
+```
+Buy
+
+↓
+
+Sell
+
+↓
+
+Recruit Worker
+```
+
+---
+
+# Inventory Pool
+
+Defines which Items may appear.
+
+Example:
+
+```
+vendor_blacksmith
+
+↓
+
+vendor_inventory_blacksmith
+```
+
+The Inventory Pool references Item IDs.
+
+---
+
+# Worker Pool
+
+Worker Recruiters reference a Worker Pool.
+
+Example:
+
+```
+worker_pool_starter
+```
+
+Worker Definitions remain independent.
+
+---
+
+# Building Pool
+
+Builders reference available Building Definitions.
+
+Example:
+
+```
+building_pool_starter
+```
+
+Buildings remain defined elsewhere.
+
+---
+
+# Accepted Currency
+
+Version 1 supports:
+
+```
+currency_silver
+```
+
+Future versions may support:
+
+- Gold
+- Tokens
+- Event Currency
+
+---
+
+# Unlock Requirements
+
+Vendors may define optional unlock conditions.
+
+Examples:
+
+- None
+- Cycle
+- Mastery
+- Quest
+- Achievement
+
+Version 1 primarily uses no restrictions.
+
+---
+
+# Infinite Stock
+
+Version 1 Vendors have unlimited stock.
+
+Stock management is intentionally excluded.
+
+Future versions may support limited inventories.
+
+---
+
+# Restocking
+
+Because stock is unlimited, Vendors never restock.
+
+---
+
+# Trading Restrictions
+
+Optional restrictions may include:
+
+- Minimum Tier
+- Mastery Requirement
+- Building Ownership
+
+Restrictions remain data-driven.
+
+---
+
+# Tags
+
+Examples:
+
+```
+merchant
+
+equipment
+
+starter
+
+economy
+
+workers
+```
+
+Tags simplify filtering.
+
+---
+
+# Runtime Representation
+
+```
+Vendor Definition
+
+↓
+
+Vendor Instance
+
+↓
+
+Player Interaction
+
+↓
+
+Transaction
+
+↓
+
+Inventory Updated
+```
+
+Definitions never contain runtime state.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Inventory Pool
+- Existing Worker Pool
+- Existing Building Pool
+- Existing Currency
+- Valid Services
+- Valid Unlock Requirements
+
+Invalid Vendors never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Dynamic Pricing
+- Limited Stock
+- Reputation Discounts
+- Vendor Levels
+- Procedural Vendors
+- Random Inventories
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "vendor_blacksmith",
+    "name": "Blacksmith",
+    "vendorType": "Equipment",
+    "services": [
+        "Buy",
+        "Sell"
+    ],
+    "inventoryPoolId": "vendor_inventory_blacksmith",
+    "acceptedCurrency": "currency_silver",
+    "unlockRequirement": null,
+    "tags": [
+        "equipment",
+        "merchant"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Vendor
+
+↓
+
+Validate
+
+↓
+
+Register
+
+↓
+
+Spawn Vendor
+
+↓
+
+Player Interaction
+
+↓
+
+Transaction
+
+↓
+
+Save Runtime State
+```
+
+Definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Vendor Data document is complete when:
+
+- Every Vendor has a unique identifier.
+- Vendor Types are predefined.
+- Services are configurable.
+- Inventory Pools are referenced.
+- Worker Pools are referenced when applicable.
+- Building Pools are referenced when applicable.
+- Accepted Currency is configurable.
+- Unlock Requirements are supported.
+- Runtime state remains separate.
+- Validation guarantees integrity.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Vendor is completely data-driven.
+
+Rule 02
+
+Vendors provide services only.
+
+Rule 03
+
+Prices are calculated by the Economy System.
+
+Rule 04
+
+Inventory is referenced through Inventory Pools.
+
+Rule 05
+
+Workers are referenced through Worker Pools.
+
+Rule 06
+
+Buildings are referenced through Building Pools.
+
+Rule 07
+
+Version 1 Vendors have unlimited stock.
+
+Rule 08
+
+Accepted Currency is explicit.
+
+Rule 09
+
+Definitions never contain runtime state.
+
+Rule 10
+
+Trading restrictions are optional.
+
+Rule 11
+
+Validation prevents invalid Vendor definitions.
+
+Rule 12
+
+Vendor definitions remain immutable.
+
+Rule 13
+
+Every Vendor may declare its content source.
+
+Rule 14
+
+Future Vendor types must remain compatible with the shared data architecture.
+
+Rule 15
+
+Gameplay systems interact with Vendors exclusively through identifiers.
+
+---
+
+# Summary
+
+The Vendor Data document defines every commercial NPC through a modular, service-oriented and fully data-driven architecture. By separating immutable Vendor definitions from pricing, inventories and runtime transactions, Vendors become reusable interfaces to the game's economy, supporting equipment, buildings, workers and future commercial systems while maintaining scalability, consistency and long-term maintainability.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

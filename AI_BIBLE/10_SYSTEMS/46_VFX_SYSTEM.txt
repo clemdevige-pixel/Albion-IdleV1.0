@@ -1,0 +1,631 @@
+# 46. VISUAL EFFECTS SYSTEM
+
+## Purpose
+
+The Visual Effects (VFX) System provides immediate and readable visual feedback for gameplay events while preserving the clarity of the pixel art aesthetic.
+
+Its responsibilities are to:
+
+- Reinforce gameplay actions.
+- Improve combat readability.
+- Highlight important events.
+- Support player feedback.
+- Maintain stable performance.
+- Respect accessibility settings.
+
+Visual effects never replace gameplay information.
+
+They enhance it.
+
+---
+
+# Design Goals
+
+The Visual Effects System follows these principles:
+
+- Readability first.
+- Pixel-art friendly.
+- Lightweight rendering.
+- Minimal screen clutter.
+- Consistent visual language.
+- Performance stability.
+- Accessibility compatibility.
+- Modular architecture.
+
+---
+
+# VFX Philosophy
+
+The game adopts a minimalist VFX philosophy.
+
+Visual effects exist to communicate gameplay information quickly and clearly.
+
+Effects should never dominate the screen or hide characters.
+
+Players spend long periods farming and managing progression.
+
+Visual comfort is therefore prioritized over spectacle.
+
+---
+
+# Launch Scope
+
+Version 1 includes visual effects for:
+
+- Basic Attacks
+- Critical Hits
+- Healing
+- Damage
+- Death
+- Loot Pickup
+- Gathering
+- Crafting Complete
+- Refining Complete
+- Ability Cast
+- Buff Application
+- Debuff Application
+- Boss Spawn
+- Boss Death
+- Character Level Up (future)
+- Mastery Level Up
+
+---
+
+# Out of Scope
+
+The following effects are intentionally excluded from Version 1:
+
+- Bloom
+- Motion Blur
+- Lens Flares
+- Volumetric Lighting
+- Dynamic Lighting
+- Screen Distortion
+- Heavy Particle Systems
+- Procedural Effects
+- Large Explosions
+- GPU Simulation
+
+The architecture remains compatible with future expansion.
+
+---
+
+# Visual Style
+
+Effects are designed to complement pixel art.
+
+Characteristics:
+
+- Small
+- Fast
+- Crisp
+- High contrast
+- Easily recognizable
+
+Effects never obscure sprites for extended periods.
+
+---
+
+# VFX Categories
+
+## Combat
+
+- Hit Impact
+- Critical Hit
+- Ability Cast
+- Heal
+- Buff
+- Debuff
+- Death
+
+---
+
+## Gathering
+
+- Mining
+- Woodcutting
+- Fiber Harvesting
+- Skinning
+- Fishing
+
+---
+
+## Crafting
+
+- Craft Complete
+
+---
+
+## Refining
+
+- Refine Complete
+
+---
+
+## Loot
+
+- Loot Pickup
+
+---
+
+## Progression
+
+- Mastery Level Up
+- Future Character Level Up
+
+---
+
+## Boss
+
+- Boss Spawn
+- Boss Death
+
+---
+
+# Color Palette
+
+Each gameplay category owns a dedicated color.
+
+| Category | Color |
+|----------|--------|
+| Damage | Red |
+| Critical Hit | Yellow |
+| Heal | Green |
+| Buff | Blue |
+| Debuff | Purple |
+| Loot | Gold |
+| Craft / Refine | White |
+| Boss | Dark Red |
+
+These colors remain constant across the game.
+
+Biome, equipment and enchantment never modify VFX colors.
+
+---
+
+# Color Blind Compatibility
+
+Important information is never communicated using color alone.
+
+Effects also differ by:
+
+- Shape
+- Animation
+- Iconography
+- Timing
+- Position
+
+This guarantees compatibility with Color Blind Modes defined by the Accessibility System.
+
+---
+
+# Lifetime Philosophy
+
+Visual effects are intentionally very short.
+
+Their purpose is to communicate information instantly before disappearing.
+
+Effects never remain on screen longer than necessary.
+
+---
+
+# Reference Lifetimes
+
+| Effect | Duration |
+|----------|----------|
+| Hit Impact | 0.10–0.20 s |
+| Critical Hit | ~0.30 s |
+| Heal | ~0.30 s |
+| Buff | ~0.40 s |
+| Debuff | ~0.40 s |
+| Gathering | ~0.20 s |
+| Loot Pickup | ~0.40 s |
+| Craft Complete | ~0.50 s |
+| Refine Complete | ~0.50 s |
+| Boss Spawn | ~1.00 s |
+| Boss Death | ~1.00 s |
+| Level Up | ~0.80 s |
+| Mastery Level Up | ~0.80 s |
+
+These values are development references.
+
+Minor balancing adjustments are permitted.
+
+---
+
+# Active Effect Budget
+
+To maintain stable performance, the engine limits the number of simultaneously active effects.
+
+Example:
+
+Maximum Active VFX:
+
+```
+30
+```
+
+The exact value is configurable by developers.
+
+---
+
+# Priority System
+
+When the VFX budget is exceeded, effects are processed according to priority.
+
+Highest Priority:
+
+1. Boss Spawn
+2. Boss Death
+3. Critical Hit
+4. Player Ability
+5. Heal
+6. Buff
+7. Debuff
+8. Enemy Hit
+9. Gathering
+10. Loot Pickup
+
+Low-priority effects are discarded first.
+
+Existing effects are never interrupted.
+
+---
+
+# Effect Pooling
+
+Visual effects are pooled.
+
+No effect is instantiated during gameplay.
+
+Lifecycle:
+
+```
+Pool
+
+↓
+
+Activate
+
+↓
+
+Play
+
+↓
+
+Finish
+
+↓
+
+Return to Pool
+```
+
+Pooling minimizes:
+
+- Memory allocations
+- Garbage Collection
+- Frame spikes
+
+---
+
+# Combat Effects
+
+Combat effects include:
+
+- Weapon Hit
+- Ability Cast
+- Critical Strike
+- Heal
+- Death
+
+Effects appear immediately after combat calculations.
+
+No gameplay delay is introduced.
+
+---
+
+# Gathering Effects
+
+Gathering produces small impact effects.
+
+Examples:
+
+- Rock chips
+- Wood splinters
+- Fiber particles
+- Skinning particles
+- Water splash
+
+Only one lightweight effect is generated per successful gathering action.
+
+---
+
+# Crafting Effects
+
+Craft completion generates:
+
+- Small burst
+- White sparkle
+- Short fade
+
+Crafting queues do not continuously generate effects.
+
+Only completion triggers VFX.
+
+---
+
+# Refining Effects
+
+Refining uses the same philosophy.
+
+Only refinement completion generates a visual effect.
+
+Background refinement remains visually silent.
+
+---
+
+# Loot Effects
+
+Loot Pickup displays a brief golden sparkle.
+
+Large loot batches generate a single combined effect.
+
+The system avoids visual spam.
+
+---
+
+# Boss Effects
+
+Boss encounters receive enhanced visual emphasis.
+
+Boss Spawn:
+
+- Dark Red burst
+- Ground pulse
+- Short fade
+
+Boss Death:
+
+- Larger burst
+- Victory emphasis
+- Quick fade
+
+Boss effects remain within the minimalist visual philosophy.
+
+---
+
+# Buff Effects
+
+Buff application displays:
+
+- Blue pulse
+- Small upward particles
+
+The effect immediately disappears.
+
+---
+
+# Debuff Effects
+
+Debuff application displays:
+
+- Purple pulse
+- Small fading particles
+
+Long-lasting particle systems are intentionally avoided.
+
+---
+
+# Healing Effects
+
+Healing displays:
+
+- Green pulse
+- Small upward glow
+
+No persistent healing aura exists.
+
+---
+
+# Floating Combat Text
+
+Floating Combat Text is fully configurable.
+
+Options:
+
+- Full
+- Critical Only
+- Disabled
+
+Configured through:
+
+Settings → Interface → Combat Text
+
+---
+
+# Full Mode
+
+Displays:
+
+- Damage
+- Critical Hits
+- Healing
+- Damage Over Time
+- Experience
+- Mastery Experience
+
+---
+
+# Critical Only
+
+Displays only critical hits.
+
+Normal damage remains hidden.
+
+---
+
+# Disabled
+
+No floating combat text is rendered.
+
+Gameplay remains fully functional.
+
+Visual effects continue to operate normally.
+
+---
+
+# Floating Text Appearance
+
+Floating text follows consistent animation rules.
+
+Behavior:
+
+- Instant appearance
+- Small upward movement
+- Quick fade out
+- Lifetime around 0.5 seconds
+
+Text never obstructs important gameplay elements.
+
+---
+
+# Floating Text Colors
+
+Floating Combat Text follows the same color palette.
+
+- Damage → Red
+- Critical → Yellow
+- Heal → Green
+- Buff → Blue
+- Debuff → Purple
+
+This creates a unified visual language.
+
+---
+
+# Floating Text Budget
+
+Floating texts use a dedicated rendering budget.
+
+When exceeded:
+
+- Low-priority texts are ignored.
+- Critical Hits remain visible.
+- Existing texts are not interrupted.
+
+---
+
+# Accessibility Integration
+
+The VFX System respects:
+
+- Reduced Motion
+- Flash Reduction
+- High Contrast Mode
+- Color Blind Modes
+- UI Scaling
+
+Accessibility options may simplify or reduce effects without affecting gameplay.
+
+---
+
+# Reduced Motion
+
+Reduced Motion decreases:
+
+- Particle count
+- Movement distance
+- Effect intensity
+- Camera interaction
+
+Gameplay information remains unchanged.
+
+---
+
+# Flash Reduction
+
+Flash Reduction decreases:
+
+- White flashes
+- Hit flashes
+- Critical flashes
+
+Designed for photosensitive players.
+
+---
+
+# Performance
+
+The VFX System is designed for stable performance.
+
+Optimizations include:
+
+- Object Pooling
+- Fixed Lifetime
+- Active Budget
+- Minimal Particle Count
+- Lightweight Sprites
+- Batched Rendering
+
+Effects are never generated recursively.
+
+---
+
+# Error Handling
+
+If an effect cannot be displayed:
+
+- Gameplay continues.
+- Combat calculations remain unaffected.
+- Missing effects are logged in developer builds.
+
+Visual effects are never required for gameplay.
+
+---
+
+# Future Expansion
+
+The architecture supports future additions including:
+
+- Dynamic Lighting
+- Seasonal Effects
+- Weather Effects
+- Enchantment Visuals
+- Procedural Effects
+- GPU Particles
+- Shader-Based Effects
+- Cosmetic VFX Packs
+
+These features can be added without redesigning the system.
+
+---
+
+# Dependencies
+
+The Visual Effects System integrates with:
+
+- Combat System
+- Ability System
+- Damage System
+- Status Effect System
+- Loot System
+- Gathering System
+- Crafting System
+- Refining System
+- Notification System
+- Accessibility System
+- UI System
+
+The system never modifies gameplay logic.
+
+---
+
+# Summary
+
+The Visual Effects System delivers lightweight, readable, and performance-friendly visual feedback designed specifically for a pixel art idle RPG.
+
+It emphasizes gameplay clarity through short-lived effects, fixed visual categories, strict performance budgeting, configurable floating combat text, and seamless integration with the Accessibility and UI Systems.
+
+Its modular architecture allows future graphical enhancements while preserving the minimalist visual identity established for the game.
+
+DOCUMENT TERMINÉ

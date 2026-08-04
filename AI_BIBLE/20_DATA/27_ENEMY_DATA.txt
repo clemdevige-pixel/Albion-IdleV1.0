@@ -1,0 +1,750 @@
+# 27. ENEMY DATA
+
+---
+
+# Purpose
+
+The Enemy Data document defines every enemy that can appear throughout the game.
+
+Enemies are entirely data-driven and are built by composing reusable gameplay systems.
+
+An Enemy definition describes **what an enemy is**, not how combat is simulated.
+
+Enemy Data defines:
+
+- Identity
+- Family
+- Tier
+- Category
+- Statistics
+- Abilities
+- AI Profile
+- Loot Table
+- Experience Reward
+- Spawn Weight
+- Visual References
+- Audio References
+
+Enemy Data does **not** define:
+
+- AI Logic
+- Combat Formulas
+- Loot Generation
+- Damage Calculations
+- Status Effect Behavior
+
+These belong to their dedicated systems.
+
+---
+
+# Design Philosophy
+
+The Enemy Data system follows seven principles.
+
+---
+
+## Data Driven
+
+Every enemy is fully described by data.
+
+Adding a new enemy should never require new gameplay code unless introducing an entirely new mechanic.
+
+---
+
+## Modular
+
+Enemy definitions reference existing systems.
+
+Examples:
+
+- Stat Data
+- Ability Data
+- AI Data
+- Loot Table Data
+- Animation Data
+- Audio Data
+
+Enemy definitions never duplicate gameplay logic.
+
+---
+
+## Family Based
+
+Enemies belong to logical families.
+
+Examples:
+
+- Undead
+- Morgana
+- Heretic
+- Keeper
+- Demon
+- Animal
+
+Families simplify balancing, spawning and content creation.
+
+---
+
+## Tier Driven
+
+Enemy power scales primarily through Tier.
+
+Enemy definitions do not manually duplicate higher-tier versions unless gameplay differs.
+
+---
+
+## Deterministic
+
+Two identical enemies spawned under identical conditions always possess identical base values.
+
+---
+
+## Immutable
+
+Enemy definitions never change during gameplay.
+
+Runtime entities contain temporary values only.
+
+---
+
+## Extensible
+
+Future families, bosses and seasonal enemies must integrate without modifying existing definitions.
+
+---
+
+# Responsibilities
+
+Enemy Data defines:
+
+- Identity
+- Family
+- Category
+- Tier
+- Base Statistics
+- Ability References
+- AI Profile
+- Loot Table
+- XP Reward
+- Spawn Weight
+- Visual Assets
+- Audio Assets
+
+Enemy Data does NOT define:
+
+- Current Health
+- Current Cooldowns
+- Current Position
+- Current Target
+- Current Aggro
+
+Those belong to runtime entities.
+
+---
+
+# Enemy Definition
+
+Every Enemy contains:
+
+```text
+ID
+
+↓
+
+Name
+
+↓
+
+Family
+
+↓
+
+Category
+
+↓
+
+Tier
+
+↓
+
+Statistics
+
+↓
+
+Abilities
+
+↓
+
+AI Profile
+
+↓
+
+Loot Table
+
+↓
+
+Experience
+
+↓
+
+Spawn Weight
+
+↓
+
+Animation
+
+↓
+
+Visual Effects
+
+↓
+
+Audio
+
+↓
+
+Tags
+```
+
+---
+
+# Identifier
+
+Every Enemy owns one globally unique identifier.
+
+Examples:
+
+```
+enemy_undead_skeleton
+
+enemy_undead_archer
+
+enemy_morgana_knight
+
+enemy_keeper_guardian
+
+enemy_animal_wolf
+```
+
+Identifiers never include quality or enchantment.
+
+---
+
+# Display Name
+
+Localized display name.
+
+Examples:
+
+```
+Skeleton
+
+Skeleton Archer
+
+Morgana Knight
+
+Dire Wolf
+```
+
+Localization is handled separately.
+
+---
+
+# Families
+
+Version 1 supports:
+
+- Undead
+- Morgana
+- Heretic
+- Keeper
+- Demon
+- Animal
+
+Additional families may be added later.
+
+---
+
+# Categories
+
+Enemies belong to one category.
+
+Supported categories:
+
+- Normal
+- Elite
+- Boss
+- Resource Enemy
+
+Resource Enemies replace traditional gathering nodes.
+
+---
+
+# Tier
+
+Supported tiers:
+
+```
+T1
+
+T2
+
+T3
+
+T4
+
+T5
+
+T6
+
+T7
+
+T8
+```
+
+Tier determines progression scaling.
+
+---
+
+# Statistics
+
+Enemy statistics reference Stat IDs.
+
+Example:
+
+```json
+{
+    "stats": {
+        "stat_max_health": 450,
+        "stat_physical_damage": 82,
+        "stat_attack_speed": 1.20
+    }
+}
+```
+
+Only base values are stored.
+
+Scaling is calculated at runtime.
+
+---
+
+# Ability References
+
+Enemies reference reusable Abilities.
+
+Example:
+
+```json
+{
+    "abilityIds": [
+        "ability_enemy_slash",
+        "ability_enemy_roar"
+    ]
+}
+```
+
+Abilities remain reusable.
+
+---
+
+# AI Profile
+
+Every enemy references one AI Profile.
+
+Example:
+
+```
+ai_melee_basic
+
+ai_ranged_basic
+
+ai_boss_guardian
+
+ai_resource_enemy
+```
+
+AI behavior is defined elsewhere.
+
+---
+
+# Loot Table
+
+Each enemy references exactly one Loot Table.
+
+Example:
+
+```
+loot_table_undead_t4
+```
+
+Loot generation remains independent.
+
+---
+
+# Experience Reward
+
+Enemies define a base Weapon Mastery reward.
+
+Example:
+
+```
+120 XP
+
+450 XP
+
+1800 XP
+```
+
+Cycle scaling is applied separately.
+
+---
+
+# Spawn Weight
+
+Defines relative spawn probability.
+
+Examples:
+
+```
+100
+
+50
+
+15
+
+5
+```
+
+Higher values spawn more frequently.
+
+Spawn Weight is interpreted within Encounter definitions.
+
+---
+
+# Resource Type
+
+Only Resource Enemies define a resource type.
+
+Examples:
+
+```
+Ore
+
+Wood
+
+Fiber
+
+Hide
+
+Stone
+```
+
+Other enemies use:
+
+```
+None
+```
+
+---
+
+# Animation Set
+
+Every enemy references one animation set.
+
+Examples:
+
+```
+animset_skeleton
+
+animset_wolf
+
+animset_morgana_knight
+```
+
+Animation logic remains independent.
+
+---
+
+# Visual Effects
+
+Optional VFX references.
+
+Examples:
+
+```
+vfx_undead_spawn
+
+vfx_fire_aura
+
+vfx_boss_death
+```
+
+---
+
+# Audio
+
+Enemy audio references.
+
+Examples:
+
+```
+sfx_skeleton_attack
+
+sfx_wolf_howl
+
+sfx_boss_roar
+```
+
+---
+
+# Tags
+
+Examples:
+
+```
+undead
+
+melee
+
+fire
+
+resource
+
+elite
+
+boss
+
+humanoid
+
+animal
+```
+
+Tags simplify filtering and balancing.
+
+---
+
+# Runtime Representation
+
+```
+Enemy Definition
+
+↓
+
+Runtime Enemy
+
+↓
+
+Current HP
+
+↓
+
+Current Effects
+
+↓
+
+Death
+
+↓
+
+Destroyed
+```
+
+Definitions never contain runtime state.
+
+---
+
+# Validation
+
+Validation checks:
+
+- Unique ID
+- Existing Family
+- Existing Category
+- Valid Tier
+- Existing Stat IDs
+- Existing Ability IDs
+- Existing AI Profile
+- Existing Loot Table
+- Existing Animation Set
+- Valid Spawn Weight
+
+Invalid definitions never load.
+
+---
+
+# Unsupported Features
+
+Version 1 does not support:
+
+- Procedural Enemy Generation
+- Random Stat Rolls
+- Dynamic AI Assignment
+- Runtime Enemy Definitions
+- Evolution During Combat
+
+---
+
+# Example Definition
+
+```json
+{
+    "id": "enemy_undead_skeleton",
+    "name": "Skeleton",
+    "family": "Undead",
+    "category": "Normal",
+    "tier": 4,
+    "stats": {
+        "stat_max_health": 450,
+        "stat_physical_damage": 82,
+        "stat_attack_speed": 1.20
+    },
+    "abilityIds": [
+        "ability_enemy_slash"
+    ],
+    "aiProfileId": "ai_melee_basic",
+    "lootTableId": "loot_table_undead_t4",
+    "experienceReward": 120,
+    "spawnWeight": 100,
+    "resourceType": null,
+    "animationSetId": "animset_skeleton",
+    "vfxIds": [],
+    "sfxIds": [
+        "sfx_skeleton_attack"
+    ],
+    "tags": [
+        "undead",
+        "melee"
+    ],
+    "source": "core"
+}
+```
+
+---
+
+# Runtime Lifecycle
+
+```
+Load Enemy
+
+↓
+
+Validate
+
+↓
+
+Resolve References
+
+↓
+
+Register Enemy
+
+↓
+
+Encounter Spawn
+
+↓
+
+Runtime Entity
+
+↓
+
+Death
+
+↓
+
+Destroy Runtime Entity
+```
+
+Enemy definitions remain immutable.
+
+---
+
+# Acceptance Criteria
+
+The Enemy Data document is complete when:
+
+- Every Enemy has a unique identifier.
+- Every Enemy belongs to one family.
+- Every Enemy belongs to one category.
+- Every Enemy defines a Tier.
+- Statistics reference Stat IDs.
+- Abilities reference Ability IDs.
+- AI references an AI Profile.
+- Loot references a Loot Table.
+- Experience rewards are configurable.
+- Spawn Weight is configurable.
+- Runtime entities remain independent from definitions.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every Enemy is completely data-driven.
+
+Rule 02
+
+Every Enemy has a globally unique identifier.
+
+Rule 03
+
+Enemies belong to predefined families.
+
+Rule 04
+
+Enemies belong to predefined categories.
+
+Rule 05
+
+Statistics reference Stat IDs.
+
+Rule 06
+
+Abilities reference Ability IDs.
+
+Rule 07
+
+Every Enemy references one AI Profile.
+
+Rule 08
+
+Every Enemy references one Loot Table.
+
+Rule 09
+
+Only Resource Enemies define a Resource Type.
+
+Rule 10
+
+Spawn Weight is data-driven.
+
+Rule 11
+
+Definitions never contain runtime state.
+
+Rule 12
+
+Validation prevents invalid definitions.
+
+Rule 13
+
+Enemy definitions are immutable.
+
+Rule 14
+
+Every Enemy may declare its content source.
+
+Rule 15
+
+Future enemy families must remain compatible with the shared data architecture.
+
+---
+
+# Summary
+
+The Enemy Data document defines every enemy through a modular and fully data-driven architecture. By separating identity, statistics, abilities, AI, loot and audiovisual references into independent systems, it enables scalable content creation while maintaining deterministic behavior and strong validation. This architecture supports the expansion of the bestiary with minimal maintenance cost and provides a robust foundation for future biomes, factions, bosses and seasonal content.
+
+=========================
+DOCUMENT TERMINÉ
+=========================

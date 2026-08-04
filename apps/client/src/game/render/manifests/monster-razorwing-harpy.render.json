@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "monster_razorwing_harpy",
+  "kind": "static_actor",
+  "textureKey": "razorwing-harpy",
+  "assetPath": "/assets/monsters/razorwing-harpy.png",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 210, "height": 210 },
+  "hud": { "healthBarWidth": 170, "healthBarOffsetY": 170 },
+  "ambientMotion": { "distance": 4, "durationMs": 900, "delayMs": 350 }
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "boss_ancient_rune_golem",
+  "kind": "static_actor",
+  "textureKey": "ancient-mountain-golem",
+  "assetPath": "/assets/monsters/ancient-mountain-golem.png",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 275, "height": 275 },
+  "hud": { "healthBarWidth": 200, "healthBarOffsetY": 235 },
+  "ambientMotion": { "distance": 4, "durationMs": 900, "delayMs": 350 }
+}

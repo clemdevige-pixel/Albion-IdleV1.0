@@ -1,0 +1,103 @@
+import type { SaveRepository } from "./save-repository.js";
+import type { SaveFormat, SaveMetadata } from "./save-format.js";
+import { SnapshotBuilder } from "./snapshot-builder.js";
+import { SnapshotLoader } from "./snapshot-loader.js";
+import { SaveValidator } from "./save-validator.js";
+import type { VersionManager } from "./version-manager.js";
+import type { MigrationPipeline } from "./migration.js";
+import { serialize, computeChecksum } from "./serializer.js";
+import { deserialize } from "./deserializer.js";
+import type { SaveProvider } from "./save-provider.js";
+
+export interface SaveManagerOptions {
+  readonly repository: SaveRepository;
+  readonly versionManager: VersionManager;
+  readonly migrationPipeline: MigrationPipeline;
+  readonly buildVersion: string;
+  readonly seed: number;
+}
+
+export class SaveManager {
+  private readonly repository: SaveRepository;
+  private readonly versionManager: VersionManager;
+  private readonly migrationPipeline: MigrationPipeline;
+  private readonly validator: SaveValidator;
+  private readonly builder: SnapshotBuilder;
+  private readonly loader: SnapshotLoader;
+  private readonly buildVersion: string;
+  private readonly seed: number;
+
+  constructor(options: SaveManagerOptions) {
+    this.repository = options.repository;
+    this.versionManager = options.versionManager;
+    this.migrationPipeline = options.migrationPipeline;
+    this.validator = new SaveValidator(options.versionManager.currentVersion);
+    this.builder = new SnapshotBuilder();
+    this.loader = new SnapshotLoader();
+    this.buildVersion = options.buildVersion;
+    this.seed = options.seed;
+  }
+
+  registerProvider(provider: SaveProvider): void {
+    this.builder.register(provider);
+    this.loader.register(provider);
+  }
+
+  save(id: string, tick: number): void {
+    const payload = this.builder.build();
+    const checksum = computeChecksum(payload);
+    const now = tick;
+
+    const existing = this.repository.has(id)
+      ? this.repository.get(id)
+      : undefined;
+
+    const metadata: SaveMetadata = {
+      version: this.versionManager.currentVersion,
+      createdAt: existing?.metadata.createdAt ?? now,
+      updatedAt: now,
+      buildVersion: this.buildVersion,
+      seed: this.seed,
+    };
+
+    const saveData: SaveFormat = {
+      version: this.versionManager.currentVersion,
+      metadata,
+      payload,
+      checksum,
+    };
+
+    const raw = serialize(saveData);
+    const deserialized = deserialize(raw);
+    this.repository.save(id, deserialized);
+  }
+
+  load(id: string): void {
+    const raw = this.repository.get(id);
+    this.validator.validateFormat(raw);
+    this.validator.validateChecksum(raw);
+
+    let save = raw;
+    if (this.versionManager.isOld(save.version)) {
+      save = this.migrationPipeline.migrate(
+        save,
+        this.versionManager.currentVersion,
+      );
+    }
+
+    this.validator.validateVersion(save);
+    this.loader.load(save.payload);
+  }
+
+  list(): string[] {
+    return this.repository.list();
+  }
+
+  delete(id: string): void {
+    this.repository.delete(id);
+  }
+
+  has(id: string): boolean {
+    return this.repository.has(id);
+  }
+}

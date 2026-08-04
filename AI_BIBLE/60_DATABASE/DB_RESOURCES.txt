@@ -1,0 +1,1137 @@
+# RESOURCE DATABASE
+
+Version: 1.0
+
+This document defines every harvestable and craftable base resource available
+in Version 1.
+
+Each resource references the corresponding visual asset defined in
+**41_ASSET_MANIFEST.md**.
+
+Numerical values are not stored directly in this document.
+
+Gathering time, refining output, weight, value and progression requirements are
+inherited from the profiles referenced by each entry.
+
+---
+
+# ============================================================================
+# DATABASE RULES
+# ============================================================================
+
+Resource ID:
+Permanent gameplay identifier.
+
+Asset ID:
+Identifier of the world resource sprite.
+
+Icon ID:
+Identifier used in the inventory, crafting and loot interfaces.
+
+Resource Family:
+Defines the resource's primary crafting category.
+
+Gathering Profile:
+Defines gathering duration, tool requirements and gathering rewards.
+
+Refining Profile:
+Defines how raw resources are transformed into refined materials.
+
+Scaling Profile:
+Defines weight, value, quantity and progression scaling.
+
+Spawn Profile:
+Defines biome availability, abundance and node behaviour.
+
+Loot Profile:
+Defines alternative acquisition sources.
+
+All resource variants inherit the same base entry.
+
+Generated identifiers follow this format:
+
+RES-0001-T2
+RES-0001-T3
+RES-0001-T4
+RES-0001-T5
+RES-0001-T6
+RES-0001-T7
+RES-0001-T8
+
+Refined resource identifiers follow this format:
+
+MAT-0001-T2
+MAT-0001-T3
+MAT-0001-T4
+MAT-0001-T5
+MAT-0001-T6
+MAT-0001-T7
+MAT-0001-T8
+
+Example:
+
+Raw Resource:
+RES-0001-T5
+
+Refined Material:
+MAT-0001-T5
+
+World Asset:
+RES-0001-T5
+
+Inventory Icon:
+ICO-RES-0001-T5
+
+Display Name:
+Wood T5
+
+---
+
+# ============================================================================
+# WOOD
+# ============================================================================
+
+## RES-0001
+
+Name:
+Wood
+
+Asset ID:
+RES-0001
+
+Icon ID:
+ICO-RES-0001
+
+Refined Material ID:
+MAT-0001
+
+Refined Material Name:
+Planks
+
+Refined Icon ID:
+ICO-MAT-0001
+
+Category:
+Resource
+
+Resource Family:
+Wood
+
+Gathering Profile:
+GATHER_WOOD_STANDARD
+
+Refining Profile:
+REFINE_WOOD_STANDARD
+
+Scaling Profile:
+RESOURCE_WOOD_STANDARD
+
+Spawn Profile:
+SPAWN_RESOURCE_FOREST_WOOD
+
+Loot Profile:
+LOOT_RESOURCE_WOOD
+
+Tier Range:
+T2-T8
+
+Required Tool:
+Axe
+
+Primary Biome:
+Forest
+
+Secondary Biomes:
+Highlands
+Swamp
+
+Primary Crafting Uses:
+Weapons
+Off-Hands
+Mount Components
+Crafting Components
+
+Tradable:
+Yes
+
+Refinable:
+Yes
+
+Stackable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# STONE
+# ============================================================================
+
+## RES-0002
+
+Name:
+Stone
+
+Asset ID:
+RES-0002
+
+Icon ID:
+ICO-RES-0002
+
+Refined Material ID:
+MAT-0002
+
+Refined Material Name:
+Stone Blocks
+
+Refined Icon ID:
+ICO-MAT-0002
+
+Category:
+Resource
+
+Resource Family:
+Stone
+
+Gathering Profile:
+GATHER_STONE_STANDARD
+
+Refining Profile:
+REFINE_STONE_STANDARD
+
+Scaling Profile:
+RESOURCE_STONE_STANDARD
+
+Spawn Profile:
+SPAWN_RESOURCE_HIGHLANDS_STONE
+
+Loot Profile:
+LOOT_RESOURCE_STONE
+
+Tier Range:
+T2-T8
+
+Required Tool:
+Stone Hammer
+
+Primary Biome:
+Highlands
+
+Secondary Biomes:
+Forest
+Mountain
+
+Primary Crafting Uses:
+Buildings
+Stations
+Upgrades
+Heavy Components
+
+Tradable:
+Yes
+
+Refinable:
+Yes
+
+Stackable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# ORE
+# ============================================================================
+
+## RES-0003
+
+Name:
+Ore
+
+Asset ID:
+RES-0003
+
+Icon ID:
+ICO-RES-0003
+
+Refined Material ID:
+MAT-0003
+
+Refined Material Name:
+Metal Bars
+
+Refined Icon ID:
+ICO-MAT-0003
+
+Category:
+Resource
+
+Resource Family:
+Ore
+
+Gathering Profile:
+GATHER_ORE_STANDARD
+
+Refining Profile:
+REFINE_ORE_STANDARD
+
+Scaling Profile:
+RESOURCE_ORE_STANDARD
+
+Spawn Profile:
+SPAWN_RESOURCE_HIGHLANDS_ORE
+
+Loot Profile:
+LOOT_RESOURCE_ORE
+
+Tier Range:
+T2-T8
+
+Required Tool:
+Pickaxe
+
+Primary Biome:
+Highlands
+
+Secondary Biomes:
+Mountain
+Forest
+
+Primary Crafting Uses:
+Weapons
+Plate Armor
+Off-Hands
+Mount Components
+
+Tradable:
+Yes
+
+Refinable:
+Yes
+
+Stackable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# FIBER
+# ============================================================================
+
+## RES-0004
+
+Name:
+Fiber
+
+Asset ID:
+RES-0004
+
+Icon ID:
+ICO-RES-0004
+
+Refined Material ID:
+MAT-0004
+
+Refined Material Name:
+Cloth
+
+Refined Icon ID:
+ICO-MAT-0004
+
+Category:
+Resource
+
+Resource Family:
+Fiber
+
+Gathering Profile:
+GATHER_FIBER_STANDARD
+
+Refining Profile:
+REFINE_FIBER_STANDARD
+
+Scaling Profile:
+RESOURCE_FIBER_STANDARD
+
+Spawn Profile:
+SPAWN_RESOURCE_SWAMP_FIBER
+
+Loot Profile:
+LOOT_RESOURCE_FIBER
+
+Tier Range:
+T2-T8
+
+Required Tool:
+Sickle
+
+Primary Biome:
+Swamp
+
+Secondary Biomes:
+Forest
+Plains
+
+Primary Crafting Uses:
+Cloth Armor
+Magic Equipment
+Consumable Components
+Mount Equipment
+
+Tradable:
+Yes
+
+Refinable:
+Yes
+
+Stackable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# HIDE
+# ============================================================================
+
+## RES-0005
+
+Name:
+Hide
+
+Asset ID:
+RES-0005
+
+Icon ID:
+ICO-RES-0005
+
+Refined Material ID:
+MAT-0005
+
+Refined Material Name:
+Leather
+
+Refined Icon ID:
+ICO-MAT-0005
+
+Category:
+Resource
+
+Resource Family:
+Hide
+
+Gathering Profile:
+GATHER_HIDE_STANDARD
+
+Refining Profile:
+REFINE_HIDE_STANDARD
+
+Scaling Profile:
+RESOURCE_HIDE_STANDARD
+
+Spawn Profile:
+SPAWN_RESOURCE_WILDLIFE_HIDE
+
+Loot Profile:
+LOOT_RESOURCE_HIDE
+
+Tier Range:
+T2-T8
+
+Required Tool:
+Skinning Knife
+
+Primary Biome:
+Forest
+
+Secondary Biomes:
+Highlands
+Swamp
+
+Primary Crafting Uses:
+Leather Armor
+Mounts
+Weapon Components
+Utility Equipment
+
+Tradable:
+Yes
+
+Refinable:
+Yes
+
+Stackable:
+Yes
+
+Status:
+Planned
+
+---
+
+# ============================================================================
+# RAW RESOURCE RULES
+# ============================================================================
+
+Raw resources are acquired through:
+
+- Gathering nodes
+- Monster drops
+- Boss drops
+- Task rewards
+- Merchant inventories
+- Resource chests
+- Idle gathering activities
+- Expedition rewards
+
+Raw resources cannot be used directly in standard equipment recipes unless the
+recipe explicitly accepts raw materials.
+
+Most equipment recipes require refined materials.
+
+Raw resources are stored as stackable inventory items.
+
+Each resource tier uses a canonical item ID.
+
+Procedural systems may generate quantities but may not generate new resource
+families.
+
+---
+
+# ============================================================================
+# REFINED MATERIAL RULES
+# ============================================================================
+
+Each raw resource family has one primary refined material.
+
+Mappings:
+
+Wood:
+Planks
+
+Stone:
+Stone Blocks
+
+Ore:
+Metal Bars
+
+Fiber:
+Cloth
+
+Hide:
+Leather
+
+Refining preserves the resource tier.
+
+Example:
+
+Wood T4
+
+becomes:
+
+Planks T4
+
+A lower-tier resource cannot directly create a higher-tier refined material.
+
+A higher-tier resource cannot be downgraded unless a dedicated conversion
+system is defined.
+
+Refined materials are tradable and stackable.
+
+---
+
+# ============================================================================
+# RESOURCE FAMILY RULES
+# ============================================================================
+
+## Wood
+
+Primary Uses:
+Weapon handles
+Bows
+Staves
+Torches
+Crafting components
+
+Primary Availability:
+Forest biomes
+
+Expected Abundance:
+High
+
+Expected Weight:
+Medium
+
+---
+
+## Stone
+
+Primary Uses:
+Buildings
+Crafting stations
+Settlement upgrades
+Structural components
+
+Primary Availability:
+Highlands and mountain biomes
+
+Expected Abundance:
+Medium
+
+Expected Weight:
+High
+
+---
+
+## Ore
+
+Primary Uses:
+Metal weapons
+Plate armor
+Shields
+Heavy mount components
+
+Primary Availability:
+Highlands and mountain biomes
+
+Expected Abundance:
+Medium
+
+Expected Weight:
+High
+
+---
+
+## Fiber
+
+Primary Uses:
+Cloth armor
+Magic equipment
+Bandages
+Light crafting components
+
+Primary Availability:
+Swamp and plains biomes
+
+Expected Abundance:
+Medium
+
+Expected Weight:
+Low
+
+---
+
+## Hide
+
+Primary Uses:
+Leather armor
+Mount equipment
+Flexible weapon components
+Utility equipment
+
+Primary Availability:
+Wildlife encounters
+
+Expected Abundance:
+Variable
+
+Expected Weight:
+Medium
+
+---
+
+# ============================================================================
+# GATHERING RULES
+# ============================================================================
+
+Gathering requires:
+
+- An eligible resource node or creature
+- The appropriate gathering tool
+- Sufficient tool tier
+- Available inventory capacity
+- Completed unlock requirements
+
+The player may not gather a resource above the maximum tier supported by the
+equipped tool.
+
+The resource tier determines:
+
+- Required tool tier
+- Gathering duration
+- Base resource quantity
+- Gathering experience
+- Node durability
+- Resource value
+- Tool durability loss
+
+Gathering may continue automatically in designated idle activities.
+
+Idle gathering must use the same canonical resource IDs as active gathering.
+
+---
+
+# ============================================================================
+# GATHERING TOOL RULES
+# ============================================================================
+
+Resource-to-tool mappings:
+
+Wood:
+Axe
+
+Stone:
+Stone Hammer
+
+Ore:
+Pickaxe
+
+Fiber:
+Sickle
+
+Hide:
+Skinning Knife
+
+Gathering tools are utility items.
+
+Gathering tools do not replace the equipped combat weapon.
+
+Tool statistics and progression may be defined in a future dedicated database.
+
+Until then, gathering tool effectiveness is generated through
+**DB_PROGRESS_RULES.md**.
+
+---
+
+# ============================================================================
+# RESOURCE NODE RULES
+# ============================================================================
+
+A resource node defines:
+
+- Resource family
+- Resource tier
+- Remaining charges
+- Respawn time
+- Gathering duration
+- Visual state
+- Biome
+- Spawn weight
+
+Node states:
+
+- Full
+- Partially Gathered
+- Depleted
+- Respawning
+
+A depleted node cannot be gathered.
+
+A partially gathered node preserves its remaining charges.
+
+Node resources regenerate according to the assigned Spawn Profile.
+
+Node regeneration may occur while the player is offline.
+
+---
+
+# ============================================================================
+# HIDE ACQUISITION RULES
+# ============================================================================
+
+Hide differs from other resources.
+
+Hide is primarily obtained from defeated wildlife creatures.
+
+Eligible creatures must reference a hide-compatible loot profile.
+
+The tier of Hide is determined by:
+
+- Creature tier
+- Creature category
+- Loot Profile
+- Gathering tool tier
+- Gathering bonuses
+
+A defeated creature may require a skinning action before Hide is awarded.
+
+Hide may also be granted directly by idle hunting activities.
+
+---
+
+# ============================================================================
+# REFINING RULES
+# ============================================================================
+
+Refining converts raw resources into refined materials.
+
+Refining may require:
+
+- Raw resource
+- Silver
+- Refining station
+- Refining time
+- Fuel or processing component
+- Progression unlock
+
+Standard refining output:
+
+Raw Resource
+
+becomes:
+
+Corresponding Refined Material
+
+Refining output quantity is generated through the Refining Profile.
+
+Refining bonuses may reduce:
+
+- Resource cost
+- Silver cost
+- Refining time
+
+Refining bonuses may increase:
+
+- Output quantity
+- Return rate
+- Refining experience
+
+---
+
+# ============================================================================
+# RESOURCE RETURN RULES
+# ============================================================================
+
+Crafting and refining may return a portion of the resources used.
+
+Resource return may be affected by:
+
+- Crafting station
+- Biome bonus
+- NPC service
+- Progression bonus
+- Temporary consumable
+- Premium modifier
+- Task reward
+
+Returned resources preserve their original tier.
+
+Returned resources are added directly to the player's inventory or storage.
+
+Return calculations are defined in **DB_CRAFTING.md** and
+**DB_PROGRESS_RULES.md**.
+
+---
+
+# ============================================================================
+# ENCHANTED RESOURCE RULES
+# ============================================================================
+
+Version 1 may support enchanted resource variants.
+
+Optional enchantment levels:
+
+- .1
+- .2
+- .3
+
+Example identifiers:
+
+RES-0001-T4-E1
+RES-0001-T4-E2
+RES-0001-T4-E3
+
+Corresponding refined materials:
+
+MAT-0001-T4-E1
+MAT-0001-T4-E2
+MAT-0001-T4-E3
+
+Enchantment preserves:
+
+- Resource family
+- Resource tier
+- Crafting compatibility
+
+Enchantment modifies:
+
+- Resource rarity
+- Crafted item power
+- Resource value
+- Gathering difficulty
+- Spawn rarity
+
+Enchanted variants are generated only if the enchantment system is enabled.
+
+---
+
+# ============================================================================
+# QUALITY RULES
+# ============================================================================
+
+Resources do not use equipment quality levels.
+
+Resource value is determined by:
+
+- Tier
+- Enchantment
+- Quantity
+- Market conditions
+- Economy modifiers
+
+Refined materials inherit the tier and enchantment of their raw resource.
+
+---
+
+# ============================================================================
+# STACKING RULES
+# ============================================================================
+
+Resources are stackable.
+
+A stack may contain only items with the same:
+
+- Resource ID
+- Tier
+- Enchantment level
+- Binding state
+
+Raw and refined resources cannot share the same stack.
+
+Stack limits are defined in **DB_PROGRESS_RULES.md**.
+
+Excess resources must be transferred to another valid inventory stack or
+storage location.
+
+---
+
+# ============================================================================
+# WEIGHT RULES
+# ============================================================================
+
+Every resource has a weight value.
+
+Weight is generated from:
+
+- Resource family
+- Tier
+- Quantity
+- Scaling Profile
+
+Expected weight hierarchy:
+
+Fiber:
+Low
+
+Wood:
+Medium
+
+Hide:
+Medium
+
+Ore:
+High
+
+Stone:
+High
+
+Mount carrying capacity increases the maximum supported inventory weight.
+
+Resource weight values are defined in **DB_PROGRESS_RULES.md**.
+
+---
+
+# ============================================================================
+# BIOME DISTRIBUTION RULES
+# ============================================================================
+
+Each resource has one primary biome.
+
+Primary biome distribution:
+
+Forest:
+Wood
+Hide
+
+Highlands:
+Ore
+Stone
+
+Swamp:
+Fiber
+
+Secondary biomes may contain reduced quantities of non-primary resources.
+
+A biome must not provide optimal access to every resource family.
+
+Biome specialization encourages travel and trade.
+
+Resource availability is defined in **DB_WORLD.md**.
+
+---
+
+# ============================================================================
+# SCALING PROFILE REFERENCES
+# ============================================================================
+
+The following scaling profiles are referenced by the resource database.
+
+Their numerical values are defined in **DB_PROGRESS_RULES.md**.
+
+- RESOURCE_WOOD_STANDARD
+- RESOURCE_STONE_STANDARD
+- RESOURCE_ORE_STANDARD
+- RESOURCE_FIBER_STANDARD
+- RESOURCE_HIDE_STANDARD
+
+---
+
+# ============================================================================
+# GATHERING PROFILE REFERENCES
+# ============================================================================
+
+The following gathering profiles are referenced by the resource database.
+
+Their rules and values are defined in **DB_PROGRESS_RULES.md**.
+
+- GATHER_WOOD_STANDARD
+- GATHER_STONE_STANDARD
+- GATHER_ORE_STANDARD
+- GATHER_FIBER_STANDARD
+- GATHER_HIDE_STANDARD
+
+---
+
+# ============================================================================
+# REFINING PROFILE REFERENCES
+# ============================================================================
+
+The following refining profiles are referenced by the resource database.
+
+Their recipes and values are defined in **DB_CRAFTING.md**.
+
+- REFINE_WOOD_STANDARD
+- REFINE_STONE_STANDARD
+- REFINE_ORE_STANDARD
+- REFINE_FIBER_STANDARD
+- REFINE_HIDE_STANDARD
+
+---
+
+# ============================================================================
+# SPAWN PROFILE REFERENCES
+# ============================================================================
+
+The following spawn profiles are referenced by the resource database.
+
+Their biome and availability rules are defined in **DB_WORLD.md**.
+
+- SPAWN_RESOURCE_FOREST_WOOD
+- SPAWN_RESOURCE_HIGHLANDS_STONE
+- SPAWN_RESOURCE_HIGHLANDS_ORE
+- SPAWN_RESOURCE_SWAMP_FIBER
+- SPAWN_RESOURCE_WILDLIFE_HIDE
+
+---
+
+# ============================================================================
+# LOOT PROFILE REFERENCES
+# ============================================================================
+
+The following loot profiles are referenced by the resource database.
+
+Their drop sources and quantities are defined in **DB_LOOT_TABLES.md**.
+
+- LOOT_RESOURCE_WOOD
+- LOOT_RESOURCE_STONE
+- LOOT_RESOURCE_ORE
+- LOOT_RESOURCE_FIBER
+- LOOT_RESOURCE_HIDE
+
+---
+
+# ============================================================================
+# GENERATION RULES
+# ============================================================================
+
+Each resource generates tier variants according to its Tier Range.
+
+Example:
+
+Base Resource:
+RES-0001
+
+Generated Variants:
+- RES-0001-T2
+- RES-0001-T3
+- RES-0001-T4
+- RES-0001-T5
+- RES-0001-T6
+- RES-0001-T7
+- RES-0001-T8
+
+Each raw resource variant generates one corresponding refined material.
+
+Example:
+
+Raw:
+RES-0001-T4
+
+Refined:
+MAT-0001-T4
+
+Each generated variant receives:
+
+- The same resource name
+- The same resource family
+- The same required tool
+- The same gathering profile
+- The same refining profile
+- The same scaling profile
+- The same spawn profile
+- The same loot profile
+- The tier-specific visual asset
+- The tier-specific inventory icon
+- Values generated from its profiles
+
+Only the following values may be generated procedurally:
+
+- Resource quantity
+- Gathering duration
+- Node charges
+- Respawn duration
+- Gathering experience
+- Resource weight
+- Resource value
+- Refining cost
+- Refining duration
+- Refining output
+- Resource return rate
+- Tool durability loss
+- Spawn probability
+- Enchantment probability
+
+No generated system may modify:
+
+- Resource ID
+- Resource name
+- Resource family
+- Raw-to-refined material mapping
+- Asset ID
+- Icon ID
+- Required tool
+- Gathering Profile
+- Refining Profile
+- Scaling Profile
+- Spawn Profile
+- Loot Profile
+
+DOCUMENT TERMINÉ

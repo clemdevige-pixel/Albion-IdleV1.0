@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "arrow",
+  "kind": "projectile",
+  "shape": { "type": "rectangle", "width": 28, "height": 3 },
+  "fillColor": "#d8c28b",
+  "strokeWidth": 1,
+  "strokeColor": "#5b4424",
+  "blendMode": "normal",
+  "depth": 25,
+  "durationMs": 190,
+  "endScale": 1,
+  "trajectory": {
+    "type": "linear",
+    "sourceOffsetX": 58,
+    "targetOffsetX": -48,
+    "offsetY": -46
+  }
+}

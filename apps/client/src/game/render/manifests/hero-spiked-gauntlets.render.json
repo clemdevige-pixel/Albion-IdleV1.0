@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "hero_spiked_gauntlets",
+  "kind": "actor",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "animations": {
+    "idle": {
+      "textureKey": "hero-spiked-gauntlets-idle-sheet",
+      "assetPath": "/assets/characters/hero-spiked-gauntlets-idle-sheet-v1.png",
+      "frameWidth": 420,
+      "frameHeight": 330,
+      "startFrame": 0,
+      "endFrame": 6,
+      "frameRate": 6,
+      "repeat": -1,
+      "display": { "width": 220, "height": 200 }
+    },
+    "walk": {
+      "textureKey": "hero-spiked-gauntlets-walk-sheet",
+      "assetPath": "/assets/characters/hero-spiked-gauntlets-walk-sheet-v1.png",
+      "frameWidth": 420,
+      "frameHeight": 330,
+      "startFrame": 0,
+      "endFrame": 7,
+      "frameRate": 10,
+      "repeat": 0,
+      "display": { "width": 220, "height": 200 }
+    },
+    "attack": {
+      "textureKey": "hero-spiked-gauntlets-attack-sheet",
+      "assetPath": "/assets/characters/hero-spiked-gauntlets-attack-sheet-v1.png",
+      "frameWidth": 420,
+      "frameHeight": 330,
+      "startFrame": 0,
+      "endFrame": 7,
+      "frameRate": 16,
+      "repeat": 0,
+      "display": { "width": 220, "height": 200 }
+    }
+  },
+  "poses": {
+    "death": {
+      "textureKey": "hero-spiked-gauntlets-death",
+      "assetPath": "/assets/characters/hero-spiked-gauntlets-death-v1.png",
+      "display": { "width": 220, "height": 200 }
+    }
+  },
+  "visualProfile": "melee",
+  "visualParameters": {
+    "approachDistance": 48,
+    "motionDurationMs": 150,
+    "impactDelayMs": 235
+  },
+  "ambientMotion": { "distance": 4, "durationMs": 850, "delayMs": 0 }
+}

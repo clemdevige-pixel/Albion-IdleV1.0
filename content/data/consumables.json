@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "category": "consumables",
+  "definitions": [
+    {
+      "id": "consumable_food_stew_beef",
+      "itemId": "item_food_stew_beef",
+      "consumableType": "food",
+      "duration": 60,
+      "cooldown": 30,
+      "effects": ["effect_buff_attack_speed"],
+      "tags": ["food"]
+    },
+    {
+      "id": "consumable_potion_healing_minor",
+      "itemId": "item_potion_healing_minor",
+      "consumableType": "potion",
+      "duration": 0,
+      "cooldown": 15,
+      "effects": ["effect_heal_medium"],
+      "tags": ["potion", "healing"]
+    }
+  ]
+}

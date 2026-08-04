@@ -1,0 +1,23 @@
+{
+  "name": "@game/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fastify backend. Phase 01: technical health endpoint only, no gameplay.",
+  "main": "./dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@game/shared": "workspace:*",
+    "fastify": "^5.2.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

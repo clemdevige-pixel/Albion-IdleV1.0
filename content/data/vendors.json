@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "category": "vendors",
+  "definitions": [
+    {
+      "id": "vendor_general_merchant",
+      "enabled": true,
+      "vendorType": "general_goods",
+      "role": "buy_and_sell",
+      "acceptedCurrency": "currency_silver",
+      "offers": [
+        {
+          "itemId": "item_potion_healing_minor",
+          "buyPrice": 45,
+          "sellPrice": 9,
+          "maxPerTransaction": null,
+          "enabled": true
+        },
+        {
+          "itemId": "item_food_stew_beef",
+          "buyPrice": 70,
+          "sellPrice": 14,
+          "maxPerTransaction": null,
+          "enabled": true
+        }
+      ],
+      "tags": ["merchant", "starter", "economy"]
+    },
+    {
+      "id": "vendor_collector",
+      "enabled": true,
+      "vendorType": "general_goods",
+      "role": "buy_only",
+      "acceptedCurrency": "currency_silver",
+      "offers": [
+        {
+          "itemId": "item_weapon_sword_t4_broadsword",
+          "buyPrice": null,
+          "sellPrice": 100,
+          "maxPerTransaction": null,
+          "enabled": true
+        },
+        {
+          "itemId": "item_armor_leather_t4_hunter",
+          "buyPrice": null,
+          "sellPrice": 110,
+          "maxPerTransaction": null,
+          "enabled": true
+        }
+      ],
+      "tags": ["collector", "economy"]
+    }
+  ]
+}

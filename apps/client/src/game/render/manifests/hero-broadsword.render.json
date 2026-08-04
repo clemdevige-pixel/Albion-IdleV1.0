@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "hero_broadsword",
+  "kind": "actor",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "animations": {
+    "idle": {
+      "textureKey": "hero-broadsword-idle-sheet",
+      "assetPath": "/assets/characters/hero-broadsword-idle-sheet-v1.png",
+      "frameWidth": 420,
+      "frameHeight": 330,
+      "startFrame": 0,
+      "endFrame": 6,
+      "frameRate": 6,
+      "repeat": -1,
+      "display": { "width": 220, "height": 200 }
+    },
+    "walk": {
+      "textureKey": "hero-broadsword-walk-sheet",
+      "assetPath": "/assets/characters/hero-broadsword-walk-sheet-v1.png",
+      "frameWidth": 420,
+      "frameHeight": 330,
+      "startFrame": 0,
+      "endFrame": 6,
+      "frameRate": 10,
+      "repeat": 0,
+      "display": { "width": 220, "height": 200 }
+    },
+    "attack": {
+      "textureKey": "hero-broadsword-attack-sheet",
+      "assetPath": "/assets/characters/hero-broadsword-attack-sheet-v1.png",
+      "frameWidth": 420,
+      "frameHeight": 330,
+      "startFrame": 0,
+      "endFrame": 6,
+      "frameRate": 16,
+      "repeat": 0,
+      "display": { "width": 282.8571428571, "height": 257.1428571429 }
+    }
+  },
+  "poses": {
+    "death": {
+      "textureKey": "hero-broadsword-death",
+      "assetPath": "/assets/characters/hero-broadsword-death-v2.png",
+      "display": { "width": 220, "height": 200 }
+    }
+  },
+  "visualProfile": "melee",
+  "visualParameters": {
+    "approachDistance": 48,
+    "motionDurationMs": 180,
+    "impactDelayMs": 220
+  },
+  "ambientMotion": { "distance": 4, "durationMs": 900, "delayMs": 0 }
+}
