@@ -11,6 +11,7 @@ export default defineConfig({
       "@game/shared": fileURLToPath(new URL("../../packages/shared/src/index.ts", import.meta.url)),
       "@game/core": fileURLToPath(new URL("../../packages/core/src/index.ts", import.meta.url)),
       "@game/gameplay": fileURLToPath(new URL("../../packages/gameplay/src/index.ts", import.meta.url)),
+      "@game/persistence": fileURLToPath(new URL("../../packages/persistence/src/index.ts", import.meta.url)),
     },
   },
   server: {
