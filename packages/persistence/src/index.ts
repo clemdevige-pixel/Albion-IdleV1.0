@@ -21,6 +21,7 @@ export { SnapshotLoader } from "./snapshot-loader.js";
 
 export type { SaveRepository } from "./save-repository.js";
 export { InMemorySaveRepository } from "./save-repository.js";
+export { LocalStorageSaveRepository } from "./local-storage-repository.js";
 
 export { VersionManager } from "./version-manager.js";
 
