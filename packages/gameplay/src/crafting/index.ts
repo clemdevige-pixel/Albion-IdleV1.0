@@ -27,3 +27,6 @@ export {
   CraftingManager,
   _resetCraftingSessionCounter,
 } from "./crafting-manager.js";
+
+export { canCraftRecipe } from "./crafting-validator.js";
+export type { CraftingRequirementLike } from "./crafting-validator.js";

@@ -78,6 +78,7 @@ import {
   WorkerExecutor,
   WorkerScheduler,
   WorldSaveProvider,
+  canCraftRecipe,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
 import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, MasteryId, WorkerTaskDefinitionId, WorkerDefinitionId, WorldLocationSaveState, SavedZoneMemory } from "@game/gameplay";
@@ -98,6 +99,9 @@ import {
   syncVendorToBridge,
   syncProgressionToBridge,
   syncRepairToBridge,
+  syncWorkersToBridge,
+  WORKER_PROFESSION_LABELS,
+  getWorkerResourceLabel,
   syncAllToBridge,
 } from "./bridgeSync";
 import {
@@ -3222,9 +3226,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
             barItemId: barRequirement?.itemId ?? "",
             requirements,
             craftedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
-            canCraft:
-              requirements.every((entry) => entry.available >= entry.quantity)
-              && !inventoryManager.isFull(heroId),
+            canCraft: canCraftRecipe(inventoryManager, heroId, recipe.requirements),
           };
         }),
       });
@@ -3233,11 +3235,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const craftEquipment = (outputItemId: string): boolean => {
       const recipe = EQUIPMENT_CRAFT_RECIPES.find((entry) => entry.outputItemId === outputItemId);
       if (recipe === undefined) return false;
-      if (
-        !recipe.requirements.every((requirement) =>
-          inventoryManager.getTotalQuantity(heroId, requirement.itemId) >= requirement.quantity)
-        || inventoryManager.isFull(heroId)
-      ) return false;
+      if (!canCraftRecipe(inventoryManager, heroId, recipe.requirements)) return false;
 
       const paid: { itemId: string; quantity: number }[] = [];
       for (const requirement of recipe.requirements) {
@@ -3314,22 +3312,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       skinner: SKINNER_DEFINITION_ID,
       fiber_harvester: FIBER_HARVESTER_DEFINITION_ID,
     } as const;
-    const workerProfessionName: Record<WorkerProfessionVM, string> = {
-      woodcutter: "Bûcheron",
-      miner: "Mineur",
-      stonecutter: "Tailleur de pierre",
-      skinner: "Dépeceur",
-      fiber_harvester: "Herboriste",
-    };
-    const workerResourceName = (profession: WorkerProfessionVM, tier: 3 | 4): string => {
-      switch (profession) {
-        case "woodcutter": return tier === 4 ? "Bois de pin" : "Bois de bouleau";
-        case "miner": return tier === 4 ? "Minerai de fer" : "Minerai de cuivre";
-        case "stonecutter": return "Pierre";
-        case "skinner": return tier === 4 ? "Peau épaisse" : "Peau robuste";
-        case "fiber_harvester": return tier === 4 ? "Fibre fine" : "Fibre de lin";
-      }
-    };
     const workerRawItemId = (profession: WorkerProfessionVM, tier: 3 | 4): string => {
       switch (profession) {
         case "woodcutter": return tier === 4 ? PINE_PLANK_RECIPE.rawItemId : BIRCH_PLANK_RECIPE.rawItemId;
@@ -3368,42 +3350,24 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const syncWorkers = (): void => {
-      bridge.updateWorkers({
-        capacity: WORKER_CAPACITY,
-        recruitmentCost: WORKER_RECRUITMENT_COST,
-        workers: workerManager.getAllWorkers()
-          .filter((worker) => isSupportedWorkerProfession(worker.profession))
-          .map((worker) => {
-            const profession = worker.profession;
-            const session = workerScheduler.getSession(worker.id);
-            const assignedTier = workerProductionTier.get(worker.id) ?? productionTier;
-            const masteryLevel = getWorkerMasteryLevel(worker.mastery);
-            const currentThreshold = getWorkerMasteryThreshold(masteryLevel);
-            const nextThreshold = getWorkerMasteryThreshold(masteryLevel + 1);
-            return {
-              id: worker.id,
-              displayName: worker.displayName,
-              profession,
-              professionName: workerProfessionName[profession],
-              productionTier: assignedTier,
-              resourceName: workerResourceName(profession, assignedTier),
-              state: session?.state === "executing"
-                ? "working"
-                : session?.state === "paused"
-                  ? "paused"
-                  : "idle",
-              mastery: masteryLevel,
-              masteryXp: worker.mastery - currentThreshold,
-              masteryXpToNext: nextThreshold - currentThreshold,
-              progress: Math.round((session?.getProgress() ?? 0) * 100),
-              durationSeconds: (
-                session?.totalTicks
-                ?? Math.ceil(60 / getWorkerSpeedModifier(worker.mastery, assignedTier))
-              ) * 0.5,
-              yieldPerCycle: 1,
-            };
-          }),
-      });
+      syncWorkersToBridge(
+        bridge,
+        workerManager.getAllWorkers(),
+        isSupportedWorkerProfession,
+        (wId) => workerScheduler.getSession(wId),
+        (wId) => workerProductionTier.get(wId) ?? productionTier,
+        (xp, tier) => {
+          const masteryLevel = getWorkerMasteryLevel(xp);
+          return {
+            masteryLevel,
+            currentThreshold: getWorkerMasteryThreshold(masteryLevel),
+            nextThreshold: getWorkerMasteryThreshold(masteryLevel + 1),
+            speedModifier: getWorkerSpeedModifier(xp, tier),
+          };
+        },
+        WORKER_CAPACITY,
+        WORKER_RECRUITMENT_COST,
+      );
     };
 
     const startWorkerCycle = (
@@ -3492,7 +3456,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       bridge.addEconomyNotification({
         id: `notif_worker_recruit_${String(Date.now())}`,
         type: "success",
-        message: `${created.worker.displayName}, ${workerProfessionName[profession]}, a rejoint l’île`,
+        message: `${created.worker.displayName}, ${WORKER_PROFESSION_LABELS[profession]}, a rejoint l’île`,
         timestamp: Date.now(),
       });
       return true;
@@ -3649,7 +3613,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
           bridge.addEconomyNotification({
             id: `notif_worker_storage_${String(worker.id)}_${String(Date.now())}`,
             type: "error",
-            message: `Stockage plein : production de ${workerResourceName(profession, assignedTier)} non stockée`,
+            message: `Stockage plein : production de ${getWorkerResourceLabel(profession, assignedTier)} non stockée`,
             timestamp: Date.now(),
           });
           continue;
