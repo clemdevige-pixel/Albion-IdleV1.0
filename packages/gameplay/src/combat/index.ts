@@ -33,3 +33,6 @@ export type {
   CombatOrchestratorState,
   OrchestratedTickResult,
 } from "./combat-orchestrator.js";
+
+export { getEnemyCombatProfile, getEncounterRewards } from "./combat-profile.js";
+export type { EnemyCombatProfile, EncounterRewards } from "./combat-profile.js";

@@ -79,6 +79,8 @@ import {
   WorkerScheduler,
   WorldSaveProvider,
   canCraftRecipe,
+  getEnemyCombatProfile,
+  getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
 import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, MasteryId, WorkerTaskDefinitionId, WorkerDefinitionId, WorldLocationSaveState, SavedZoneMemory } from "@game/gameplay";
@@ -88,6 +90,7 @@ import {
   MigrationPipeline,
   LocalStorageSaveRepository,
 } from "@game/persistence";
+import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
@@ -1142,17 +1145,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     // Zone definitions ordered for progression
     const ZONE_ORDER: readonly ZoneDefinitionId[] = WORLD_ZONE_ORDER;
-    const SEGMENTS_PER_ZONE = 10;
-    const ENCOUNTERS_PER_SEGMENT = 5;
-    const ENCOUNTER_DIFFICULTY_GROWTH = 0.025;
-    const REWARD_RANKS_PER_ZONE = 5;
-    const WORLD_ONE_COMBAT_CURVE = [
-      { healthStart: 1, healthEnd: 1.9, damageStart: 1.3, damageEnd: 2.4, defenseStart: 1, defenseEnd: 1.15 },
-      { healthStart: 1.9, healthEnd: 2.25, damageStart: 2.35, damageEnd: 2.65, defenseStart: 1.15, defenseEnd: 1.3 },
-      { healthStart: 2.25, healthEnd: 2.7, damageStart: 2.6, damageEnd: 3.05, defenseStart: 1.3, defenseEnd: 1.5 },
-      { healthStart: 2.7, healthEnd: 3.4, damageStart: 3, damageEnd: 3.8, defenseStart: 1.5, defenseEnd: 1.75 },
-      { healthStart: 3.4, healthEnd: 4.3, damageStart: 3.75, damageEnd: 4.8, defenseStart: 1.75, defenseEnd: 2.1 },
-    ] as const;
 
     // Mutable world tick state
     const worldTick = {
@@ -1282,46 +1274,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         isFirstVisit: !explorationManager.isDiscovered(zone.defId),
       };
       bridge.updateWorld(vm);
-    }
-
-    function getEnemyCombatProfile(
-      zoneIndex: number,
-      segmentIndex: number,
-      encounterIndex: number,
-    ): {
-      readonly hp: number;
-      readonly damage: number;
-      readonly armor: number;
-      readonly magicResistance: number;
-    } {
-      const _zoneDefId = ZONE_ORDER[zoneIndex] ?? FOREST_ZONE_DEF_ID;
-      void _zoneDefId;
-      const isBoss = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-      const curve =
-        WORLD_ONE_COMBAT_CURVE[zoneIndex]
-        ?? WORLD_ONE_COMBAT_CURVE[WORLD_ONE_COMBAT_CURVE.length - 1]!;
-      const segmentProgress =
-        Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex))
-        / (SEGMENTS_PER_ZONE - 1);
-      const encounterScale =
-        1 + encounterIndex * ENCOUNTER_DIFFICULTY_GROWTH;
-      const interpolate = (start: number, end: number): number =>
-        start + (end - start) * segmentProgress;
-      const healthScale =
-        interpolate(curve.healthStart, curve.healthEnd) * encounterScale;
-      const damageScale =
-        interpolate(curve.damageStart, curve.damageEnd) * encounterScale;
-      const defenseScale =
-        interpolate(curve.defenseStart, curve.defenseEnd);
-      const baseHp = isBoss ? 520 : 300;
-      const baseDmg = isBoss ? 26 : 15;
-      const baseArmor = isBoss ? 12 : 5;
-      return {
-        hp: Math.floor(baseHp * healthScale),
-        damage: Math.floor(baseDmg * damageScale),
-        armor: Math.floor(baseArmor * defenseScale),
-        magicResistance: Math.floor(3 * defenseScale),
-      };
     }
 
     function spawnEnemyForCurrentSegment(): {
@@ -1847,31 +1799,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     // --- Track income rate -------------------------------------------------------
     let lastSilver = 1000;
     let incomeRate = 0;
-
-    const getEncounterRewards = (
-      zoneIndex: number,
-      segmentIndex: number,
-      encounterIndex: number,
-    ): {
-      readonly silver: number;
-      readonly fame: number;
-    } => {
-      // Preserve the established start/end economy while spreading its growth
-      // smoothly across ten segments instead of inflating rewards twofold.
-      const progressionRank =
-        zoneIndex * REWARD_RANKS_PER_ZONE +
-        segmentIndex *
-          ((REWARD_RANKS_PER_ZONE - 1) / (SEGMENTS_PER_ZONE - 1));
-      const isBoss =
-        encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-      const encounterMultiplier = isBoss ? 2 : 1;
-      return {
-        silver:
-          Math.round(10 + progressionRank * 3) * encounterMultiplier,
-        fame:
-          Math.round(15 + progressionRank * 4) * encounterMultiplier,
-      };
-    };
 
     // --- Helper: full bridge resync after any mutation ---------------------------
     const resyncAll = (): void => {

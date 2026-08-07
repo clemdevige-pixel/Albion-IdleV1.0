@@ -58,3 +58,6 @@ export * from "./localization/index.js";
 
 // Asset Manifest Runtime
 export * from "./assets/index.js";
+
+// Combat progression config
+export * from "./config/combat-progression.js";

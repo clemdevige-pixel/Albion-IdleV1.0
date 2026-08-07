@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@game/core": "workspace:*",
+    "@game/data": "workspace:*",
     "@game/gameplay": "workspace:*",
     "@game/persistence": "workspace:*",
     "@game/shared": "workspace:*",
