@@ -143,12 +143,15 @@ export class CurrencyService {
         return currencyFail("max_cap_exceeded");
       }
     }
-    const created = this.createWallet(walletId, playerId);
-    if (!created.ok) {
-      return created;
+    if (!this.wallets.has(walletId)) {
+      const created = this.createWallet(walletId, playerId);
+      if (!created.ok) {
+        return created;
+      }
     }
     const wallet = this.wallets.get(walletId);
     if (wallet !== undefined) {
+      wallet.balances.clear();
       for (const [currencyId, balance] of balances) {
         wallet.balances.set(currencyId, balance);
       }

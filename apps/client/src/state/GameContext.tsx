@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { EventBus, World, createRuntimeServices } from "@game/core";
 import {
   CombatService,
@@ -77,14 +77,15 @@ import {
   WorkerAssignmentManager,
   WorkerExecutor,
   WorkerScheduler,
+  WorldSaveProvider,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
-import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily } from "@game/gameplay";
+import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, MasteryId, WorkerTaskDefinitionId, WorkerDefinitionId, WorldLocationSaveState, SavedZoneMemory } from "@game/gameplay";
 import {
   SaveManager,
   VersionManager,
   MigrationPipeline,
-  InMemorySaveRepository,
+  LocalStorageSaveRepository,
 } from "@game/persistence";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
@@ -429,7 +430,7 @@ function resolveEquipmentInfo(itemId: string): EquipmentInfoLike | undefined {
 
   // Attack speed belongs exclusively to the weapon profile. Any attack-speed
   // bonus accidentally added to equipment data is ignored by this boundary.
-  const { stat_attack_speed: _ignoredAttackSpeed, ...stats } = definition.stats;
+  const { stat_attack_speed: _ignoredAttackSpeed, ...stats } = definition.stats ?? {};
   const intrinsicAttackSpeed = getWeaponAttackSpeed(itemId);
   if (definition.slot !== "weapon" || intrinsicAttackSpeed === undefined) {
     return { ...definition, stats };
@@ -1037,8 +1038,8 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       const bonusIp = getMasteryItemPowerBonus(equippedWeapon.itemId, masteries);
       if (bonusIp <= 0) return;
 
-      const physicalDamage = weaponDefinition.stats.stat_physical_damage ?? 0;
-      const magicalDamage = weaponDefinition.stats.stat_magical_damage ?? 0;
+      const physicalDamage = weaponDefinition.stats?.stat_physical_damage ?? 0;
+      const magicalDamage = weaponDefinition.stats?.stat_magical_damage ?? 0;
       if (physicalDamage > 0) {
         statsManager.addModifier(entityId, {
           id: MASTERY_PHYSICAL_DAMAGE_MODIFIER,
@@ -1096,10 +1097,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const zoneManager = new ZoneManager();
 
     const FOREST_ZONE_DEF_ID = WORLD_ZONE_IDS.forest;
-    const SWAMP_ZONE_DEF_ID = WORLD_ZONE_IDS.swamp;
-    const HIGHLAND_ZONE_DEF_ID = WORLD_ZONE_IDS.highland;
-    const STEPPE_ZONE_DEF_ID = WORLD_ZONE_IDS.steppe;
-    const MOUNTAIN_ZONE_DEF_ID = WORLD_ZONE_IDS.mountain;
+    const _SWAMP_ZONE_DEF_ID = WORLD_ZONE_IDS.swamp;
+    const _HIGHLAND_ZONE_DEF_ID = WORLD_ZONE_IDS.highland;
+    const _STEPPE_ZONE_DEF_ID = WORLD_ZONE_IDS.steppe;
+    const _MOUNTAIN_ZONE_DEF_ID = WORLD_ZONE_IDS.mountain;
+    void _SWAMP_ZONE_DEF_ID;
+    void _HIGHLAND_ZONE_DEF_ID;
+    void _STEPPE_ZONE_DEF_ID;
+    void _MOUNTAIN_ZONE_DEF_ID;
 
     for (const definition of ZONE_DEFINITIONS) {
       zoneManager.registerDefinition(definition);
@@ -1282,7 +1287,8 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       readonly armor: number;
       readonly magicResistance: number;
     } {
-      const zoneDefId = ZONE_ORDER[zoneIndex] ?? FOREST_ZONE_DEF_ID;
+      const _zoneDefId = ZONE_ORDER[zoneIndex] ?? FOREST_ZONE_DEF_ID;
+      void _zoneDefId;
       const isBoss = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
       const curve =
         WORLD_ONE_COMBAT_CURVE[zoneIndex]
@@ -2005,7 +2011,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     });
 
     // --- Persistence setup -------------------------------------------------------
-    const saveRepository = new InMemorySaveRepository();
+    const saveRepository = new LocalStorageSaveRepository();
     const versionManager = new VersionManager(1);
     const migrationPipeline = new MigrationPipeline();
     const saveManager = new SaveManager({
@@ -3300,7 +3306,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     } as const;
     const isSupportedWorkerProfession = (
       profession: string,
-    ): profession is WorkerProfessionVM =>
+    ): profession is keyof typeof workerTaskByProfession =>
       Object.prototype.hasOwnProperty.call(workerTaskByProfession, profession);
     const workerDefinitionByProfession = {
       woodcutter: WOODCUTTER_DEFINITION_ID,
@@ -3311,31 +3317,43 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const workerProfessionName: Record<WorkerProfessionVM, string> = {
       woodcutter: "Bûcheron",
       miner: "Mineur",
+      stonecutter: "Tailleur de pierre",
       skinner: "Dépeceur",
       fiber_harvester: "Herboriste",
     };
-    const workerResourceName = (profession: WorkerProfessionVM, tier: 3 | 4): string => ({
-      woodcutter: tier === 4 ? "Bois de pin" : "Bois de bouleau",
-      miner: tier === 4 ? "Minerai de fer" : "Minerai de cuivre",
-      skinner: tier === 4 ? "Peau épaisse" : "Peau robuste",
-      fiber_harvester: tier === 4 ? "Fibre fine" : "Fibre de lin",
-    })[profession];
-    const workerRawItemId = (profession: WorkerProfessionVM, tier: 3 | 4): string => ({
-      woodcutter: tier === 4 ? PINE_PLANK_RECIPE.rawItemId : BIRCH_PLANK_RECIPE.rawItemId,
-      miner: tier === 4 ? IRON_BAR_RECIPE.rawItemId : COPPER_BAR_RECIPE.rawItemId,
-      skinner: tier === 4 ? THICK_LEATHER_RECIPE.rawItemId : STURDY_LEATHER_RECIPE.rawItemId,
-      fiber_harvester: tier === 4 ? FINE_CLOTH_RECIPE.rawItemId : LINEN_CLOTH_RECIPE.rawItemId,
-    })[profession];
-    const workerMasteryId = (profession: WorkerProfessionVM) => ({
-      woodcutter: WOOD_GATHERING_MASTERY_ID,
-      miner: ORE_GATHERING_MASTERY_ID,
-      skinner: HIDE_GATHERING_MASTERY_ID,
-      fiber_harvester: FIBER_GATHERING_MASTERY_ID,
-    })[profession];
-    const workerTaskForProfession = (profession: WorkerProfessionVM) =>
-      workerTaskByProfession[profession];
-    const workerDefinitionForProfession = (profession: WorkerProfessionVM) =>
-      workerDefinitionByProfession[profession];
+    const workerResourceName = (profession: WorkerProfessionVM, tier: 3 | 4): string => {
+      switch (profession) {
+        case "woodcutter": return tier === 4 ? "Bois de pin" : "Bois de bouleau";
+        case "miner": return tier === 4 ? "Minerai de fer" : "Minerai de cuivre";
+        case "stonecutter": return "Pierre";
+        case "skinner": return tier === 4 ? "Peau épaisse" : "Peau robuste";
+        case "fiber_harvester": return tier === 4 ? "Fibre fine" : "Fibre de lin";
+      }
+    };
+    const workerRawItemId = (profession: WorkerProfessionVM, tier: 3 | 4): string => {
+      switch (profession) {
+        case "woodcutter": return tier === 4 ? PINE_PLANK_RECIPE.rawItemId : BIRCH_PLANK_RECIPE.rawItemId;
+        case "miner": return tier === 4 ? IRON_BAR_RECIPE.rawItemId : COPPER_BAR_RECIPE.rawItemId;
+        case "stonecutter": return "item_resource_stone_t3";
+        case "skinner": return tier === 4 ? THICK_LEATHER_RECIPE.rawItemId : STURDY_LEATHER_RECIPE.rawItemId;
+        case "fiber_harvester": return tier === 4 ? FINE_CLOTH_RECIPE.rawItemId : LINEN_CLOTH_RECIPE.rawItemId;
+      }
+    };
+    const workerMasteryId = (profession: WorkerProfessionVM): MasteryId => {
+      switch (profession) {
+        case "woodcutter": return WOOD_GATHERING_MASTERY_ID;
+        case "miner": return ORE_GATHERING_MASTERY_ID;
+        case "stonecutter": return ORE_GATHERING_MASTERY_ID;
+        case "skinner": return HIDE_GATHERING_MASTERY_ID;
+        case "fiber_harvester": return FIBER_GATHERING_MASTERY_ID;
+      }
+    };
+    const workerTaskForProfession = (
+      profession: keyof typeof workerTaskByProfession,
+    ): WorkerTaskDefinitionId => workerTaskByProfession[profession];
+    const workerDefinitionForProfession = (
+      profession: keyof typeof workerDefinitionByProfession,
+    ): WorkerDefinitionId => workerDefinitionByProfession[profession];
 
     const getWorkerMasteryLevel = (masteryXp: number): number =>
       Math.min(100, Math.floor(Math.sqrt(Math.max(0, masteryXp) / 100)));
@@ -3415,7 +3433,8 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     const recruitWorker = (profession: WorkerProfessionVM): boolean => {
       if (
-        workerByProfession.has(profession)
+        !isSupportedWorkerProfession(profession)
+        || workerByProfession.has(profession)
         || workerManager.getAllWorkers().length >= WORKER_CAPACITY
       ) {
         return false;
@@ -3820,6 +3839,115 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       return true;
     };
 
+    const getWorldLocationSaveState = (): WorldLocationSaveState => {
+      saveCurrentZoneProgress();
+      const memories: SavedZoneMemory[] = ZONE_ORDER.map((zoneDefId, index) => {
+        const memory = zoneMemories[index]!;
+        const isActive = index === worldTick.currentZoneIndex;
+        const currentSeg = isActive ? worldTick.currentSegment : memory.currentSegment;
+        const highestSeg = isActive ? worldTick.highestUnlockedSegment : memory.highestUnlockedSegment;
+        const completedSegs = isActive ? [...worldTick.completedSegments] : [...memory.completedSegments];
+        return {
+          zoneDefId,
+          currentSegment: currentSeg,
+          highestUnlockedSegment: highestSeg,
+          completedSegments: completedSegs.sort((a, b) => a - b),
+        };
+      });
+
+      const activeZoneDefId = ZONE_ORDER[worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
+      return {
+        activeZoneDefId,
+        activeSegment: worldTick.currentSegment,
+        farmMode: worldTick.farmMode,
+        zoneMemories: memories,
+      };
+    };
+
+    const setWorldLocationSaveState = (
+      savedLocation: WorldLocationSaveState | undefined,
+    ): void => {
+      interruptEncounterForTravel();
+
+      if (savedLocation !== undefined) {
+        const memoryByZoneDefId = new Map<ZoneDefinitionId, SavedZoneMemory>();
+        for (const mem of savedLocation.zoneMemories) {
+          if (mem && typeof mem.zoneDefId === "string") {
+            memoryByZoneDefId.set(mem.zoneDefId as ZoneDefinitionId, mem);
+          }
+        }
+
+        for (let i = 0; i < ZONE_ORDER.length; i += 1) {
+          const zoneDefId = ZONE_ORDER[i]!;
+          const savedMem = memoryByZoneDefId.get(zoneDefId);
+          if (savedMem !== undefined) {
+            const highestUnlockedSegment = Math.max(
+              0,
+              Math.min(SEGMENTS_PER_ZONE - 1, Math.floor(savedMem.highestUnlockedSegment ?? 0)),
+            );
+            const validCompletedSegments = Array.isArray(savedMem.completedSegments)
+              ? [...new Set(savedMem.completedSegments)]
+                  .filter((s) => Number.isInteger(s) && s >= 0 && s < SEGMENTS_PER_ZONE && s <= highestUnlockedSegment)
+                  .sort((a, b) => a - b)
+              : [];
+            const currentSegment = Math.max(
+              0,
+              Math.min(highestUnlockedSegment, Math.floor(savedMem.currentSegment ?? 0)),
+            );
+
+            zoneMemories[i] = {
+              currentSegment,
+              currentEncounter: 0,
+              highestUnlockedSegment,
+              completedSegments: new Set(validCompletedSegments),
+            };
+          }
+        }
+
+        const targetZoneDefId = savedLocation.activeZoneDefId as ZoneDefinitionId;
+        const targetIndex = ZONE_ORDER.indexOf(targetZoneDefId);
+        const resolvedIndex = (targetIndex >= 0 && progressionManager.isUnlocked(targetZoneDefId))
+          ? targetIndex
+          : 0;
+
+        worldTick.currentZoneIndex = resolvedIndex;
+        const memory = zoneMemories[resolvedIndex]!;
+        const highestUnlocked = memory.highestUnlockedSegment;
+        const resolvedSegment = Math.max(
+          0,
+          Math.min(highestUnlocked, Math.floor(savedLocation.activeSegment ?? memory.currentSegment)),
+        );
+
+        worldTick.currentSegment = resolvedSegment;
+        worldTick.currentEncounter = 0;
+        worldTick.highestUnlockedSegment = memory.highestUnlockedSegment;
+        worldTick.completedSegments = new Set(memory.completedSegments);
+        worldTick.farmMode = Boolean(savedLocation.farmMode);
+      } else {
+        // Backward compatibility: default Forest / segment 0 state
+        worldTick.currentZoneIndex = 0;
+        worldTick.currentSegment = 0;
+        worldTick.currentEncounter = 0;
+        worldTick.highestUnlockedSegment = 0;
+        worldTick.completedSegments.clear();
+        worldTick.farmMode = false;
+      }
+
+      const activeZoneDefId = ZONE_ORDER[worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
+      zoneManager.changeZone(activeZoneDefId);
+
+      restoreHeroHealth();
+      updateWorldBridge();
+      bridge.setCombatState("walking");
+    };
+
+    const worldSaveProvider = new WorldSaveProvider(
+      worldCoordinator,
+      getWorldLocationSaveState,
+      setWorldLocationSaveState,
+    );
+    saveManager.registerProvider(worldSaveProvider);
+
     const encounterResult = combatService.startEncounter(
       {
         id: asEncounterId(`encounter_${String(encounterCounter)}`),
@@ -4185,12 +4313,80 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
   }, []);
 
-  // Start the tick loop in useEffect so it survives React StrictMode double-mount
+  const initialLoadAttemptedRef = useRef(false);
+  const loadFailedRef = useRef(false);
+
+  // Start tick loop and setup auto-load / auto-save persistence listeners
   useEffect(() => {
     const b = services.bridge as unknown as CleanupRef;
     const intervalId = window.setInterval(b._tickFn!, b._tickInterval);
+
+    // Auto-load existing save once on startup after runtime services and providers are ready
+    if (!initialLoadAttemptedRef.current) {
+      initialLoadAttemptedRef.current = true;
+      try {
+        if (services.hasSave()) {
+          const success = services.loadGame();
+          if (!success) {
+            loadFailedRef.current = true;
+            console.error("[Persistence] Auto-load failed: save slot existed but load returned false");
+          }
+        }
+      } catch (err) {
+        loadFailedRef.current = true;
+        console.error("[Persistence] Failed during initial save check or load:", err);
+      }
+    }
+
+    let autoSaveIntervalId: number | undefined;
+    let handleVisibilityChange: (() => void) | undefined;
+    let handlePageHide: (() => void) | undefined;
+
+    // Only enable auto-save if checking/loading an existing save did not encounter an error
+    if (!loadFailedRef.current) {
+      // Auto-save periodically every 30 seconds
+      autoSaveIntervalId = window.setInterval(() => {
+        try {
+          services.saveGame();
+        } catch (err) {
+          console.error("[Persistence] Periodic auto-save failed:", err);
+        }
+      }, 30000);
+
+      // Auto-save when the page/tab becomes hidden
+      handleVisibilityChange = (): void => {
+        if (document.visibilityState === "hidden") {
+          try {
+            services.saveGame();
+          } catch (err) {
+            console.error("[Persistence] Visibility change auto-save failed:", err);
+          }
+        }
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      // Auto-save when page unloads or refreshes (e.g. F5, tab close)
+      handlePageHide = (): void => {
+        try {
+          services.saveGame();
+        } catch (err) {
+          console.error("[Persistence] Page hide auto-save failed:", err);
+        }
+      };
+      window.addEventListener("pagehide", handlePageHide);
+    }
+
     return () => {
       clearInterval(intervalId);
+      if (autoSaveIntervalId !== undefined) {
+        clearInterval(autoSaveIntervalId);
+      }
+      if (handleVisibilityChange !== undefined) {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+      if (handlePageHide !== undefined) {
+        window.removeEventListener("pagehide", handlePageHide);
+      }
       const dispose = b._disposeServices as (() => void) | undefined;
       if (dispose !== undefined) {
         dispose();

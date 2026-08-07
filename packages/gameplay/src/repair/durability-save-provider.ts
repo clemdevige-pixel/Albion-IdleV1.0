@@ -32,6 +32,7 @@ export class DurabilitySaveProvider implements SaveProvider {
 
   load(data: unknown): void {
     const payload = data as DurabilitySavePayload;
+    this.store._clear();
     for (const saved of payload.durabilities) {
       if (saved.instanceId.length === 0) {
         throw new Error("Invalid durability save data: empty instanceId");

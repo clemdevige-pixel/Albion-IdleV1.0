@@ -196,7 +196,7 @@ export class EquipmentManager {
 
   /** Restores loaded equipment; reserved for the save provider. */
   _restore(entityId: EntityId, data: EquipmentData): void {
-    this.#world.addComponent(entityId, EquipmentComponent, data);
+    this.#world.setComponent(entityId, EquipmentComponent, data);
     this.#equipped.add(entityId);
     this.syncStats(entityId);
   }

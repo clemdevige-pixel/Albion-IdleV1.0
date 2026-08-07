@@ -90,9 +90,20 @@ export class DurabilityStore {
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   }
 
+  /** Clears all tracked durability records and destroyed instances before loading a save. */
+  _clear(): void {
+    this.records.clear();
+    this.destroyed.clear();
+  }
+
   /** Exact restore, reserved for the save provider (37_SAVE_SYSTEM). */
   _restore(instanceId: ItemInstanceId, current: number, max: number): RepairResult<DurabilityState> {
-    return this.attach(instanceId, max, current);
+    if (!isValidDurabilityPair(current, max)) {
+      return repairFail("invalid_durability");
+    }
+    this.records.set(instanceId, { current, max });
+    this.destroyed.delete(instanceId);
+    return repairOk({ current, max });
   }
 }
 

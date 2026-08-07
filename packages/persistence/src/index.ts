@@ -19,9 +19,14 @@ export type { SaveProvider } from "./save-provider.js";
 export { SnapshotBuilder } from "./snapshot-builder.js";
 export { SnapshotLoader } from "./snapshot-loader.js";
 
+<<<<<<< HEAD
 export type { SaveRepository } from "./save-repository.js";
 export { InMemorySaveRepository } from "./save-repository.js";
 export { LocalStorageSaveRepository } from "./local-storage-repository.js";
+=======
+export type { SaveRepository, LocalStorageSaveRepositoryOptions } from "./save-repository.js";
+export { InMemorySaveRepository, LocalStorageSaveRepository } from "./save-repository.js";
+>>>>>>> ed4c4eb (feat(persistence): add persistent local save and world progression restore)
 
 export { VersionManager } from "./version-manager.js";
 

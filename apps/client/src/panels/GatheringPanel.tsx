@@ -546,6 +546,7 @@ function getWorkerProfessionLabel(profession: WorkerProfessionVM): string {
   return {
     woodcutter: "Bûcheron",
     miner: "Mineur",
+    stonecutter: "Tailleur de pierre",
     skinner: "Dépeceur",
     fiber_harvester: "Herboriste",
   }[profession];

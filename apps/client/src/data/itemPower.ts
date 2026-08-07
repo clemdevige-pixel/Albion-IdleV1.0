@@ -155,7 +155,8 @@ export function getSegmentRecommendedItemPower(
   const zoneBase = getZoneRecommendedItemPower(zoneIndex);
   const zoneEnd =
     ZONE_END_RECOMMENDED_ITEM_POWER[zoneIndex - 1]
-    ?? ZONE_END_RECOMMENDED_ITEM_POWER[ZONE_END_RECOMMENDED_ITEM_POWER.length - 1];
+    ?? ZONE_END_RECOMMENDED_ITEM_POWER[ZONE_END_RECOMMENDED_ITEM_POWER.length - 1]
+    ?? zoneBase;
   const progress = Math.max(0, Math.min(9, segmentIndex - 1)) / 9;
   return Math.round(zoneBase + (zoneEnd - zoneBase) * progress);
 }

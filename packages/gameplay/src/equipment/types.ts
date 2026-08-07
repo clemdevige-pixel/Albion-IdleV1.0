@@ -29,7 +29,7 @@ export interface EquipmentInfoLike {
   readonly slot: EquipmentSlot;
   readonly handling: WeaponHandling;
   /** Fixed additive stat bonuses keyed by StatId (11_STAT §6: equipment bonuses are additive). */
-  readonly stats?: Readonly<Record<string, number>>;
+  readonly stats?: Readonly<Record<string, number>> | undefined;
 }
 
 /** Items without equipment info are not equippable (23_EQUIPMENT "Item First"). */

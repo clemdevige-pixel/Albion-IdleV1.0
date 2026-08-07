@@ -272,7 +272,7 @@ export interface RefiningRequirementVM {
 }
 
 export interface CraftingRecipeVM {
-  readonly family: "offhand" | "bow" | "sword" | "fire_staff" | "armor";
+  readonly family: "offhand" | "bow" | "sword" | "fire_staff" | "armor" | "gloves";
   readonly recipeName: string;
   readonly outputItemId: string;
   readonly tier: number;
@@ -303,8 +303,13 @@ export interface CraftingVM {
   readonly recipes: readonly CraftingRecipeVM[];
 }
 
-export type WorkerProfessionVM = "woodcutter" | "miner" | "skinner" | "fiber_harvester";
-
+export type WorkerProfessionVM =
+  | "woodcutter"
+  | "miner"
+  | "stonecutter"
+  | "skinner"
+  | "fiber_harvester";
+  
 export interface WorkerVM {
   readonly id: string;
   readonly displayName: string;

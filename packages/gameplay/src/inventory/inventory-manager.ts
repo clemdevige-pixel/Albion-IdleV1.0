@@ -709,7 +709,7 @@ export class InventoryManager {
 
   /** Restores a loaded inventory; reserved for the save provider. */
   _restore(entityId: EntityId, data: InventoryData): void {
-    this.#world.addComponent(entityId, InventoryComponent, data);
+    this.#world.setComponent(entityId, InventoryComponent, data);
     this.#inventories.add(entityId);
   }
 
