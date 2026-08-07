@@ -101,6 +101,8 @@ import {
   syncRepairToBridge,
   syncWorkersToBridge,
   syncCraftingToBridge,
+  syncGatheringToBridge,
+  syncRefiningToBridge,
   WORKER_PROFESSION_LABELS,
   getWorkerResourceLabel,
   syncAllToBridge,
@@ -2277,122 +2279,74 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     const syncGathering = (): void => {
       const recipe = getWoodRecipe();
-      const session = gatheringCoordinator.getActiveSession();
-      const masteryLevel = getHeroGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID);
-      const requiredMasteryLevel = getRequiredGatheringMasteryForTier(productionTier);
-      const requiredTicks = session?.getRequiredTicks()
-        ?? getHeroGatheringDurationTicks(WOOD_GATHERING_MASTERY_ID);
-      const elapsedTicks = session?.getElapsedTicks(tickCounter) ?? 0;
-      bridge.updateGathering({
-        status: session === undefined ? "idle" : "gathering",
-        resourceName: productionTier === 4 ? "Bois de pin" : "Bois de bouleau",
-        resourceFamily: "Wood",
-        visualManifestId: "resource_wood",
-        resourceTier: productionTier,
-        masteryLevel,
-        requiredMasteryLevel,
-        isMasteryUnlocked: masteryLevel >= requiredMasteryLevel,
-        progress: session === undefined
-          ? 0
-          : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100)),
-        durationSeconds: requiredTicks * 0.5,
-        storedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeMiniGame: session === undefined
-          ? undefined
-          : {
-              cycleId: String(session.id),
-              strikesUsed: activeGatheringMiniGames["Wood"]?.strikesUsed ?? 0,
-            },
-      });
+      syncGatheringToBridge(
+        (vm) => { bridge.updateGathering(vm); },
+        gatheringCoordinator.getActiveSession(),
+        tickCounter,
+        getHeroGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID),
+        getRequiredGatheringMasteryForTier(productionTier),
+        getHeroGatheringDurationTicks(WOOD_GATHERING_MASTERY_ID),
+        productionTier === 4 ? "Bois de pin" : "Bois de bouleau",
+        "Wood",
+        "resource_wood",
+        productionTier,
+        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        activeGatheringMiniGames["Wood"]?.strikesUsed ?? 0,
+      );
     };
 
     const syncOreGathering = (): void => {
       const recipe = getMetalRecipe();
-      const session = oreGatheringCoordinator.getActiveSession();
-      const masteryLevel = getHeroGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID);
-      const requiredMasteryLevel = getRequiredGatheringMasteryForTier(productionTier);
-      const requiredTicks = session?.getRequiredTicks()
-        ?? getHeroGatheringDurationTicks(ORE_GATHERING_MASTERY_ID);
-      const elapsedTicks = session?.getElapsedTicks(tickCounter) ?? 0;
-      bridge.updateOreGathering({
-        status: session === undefined ? "idle" : "gathering",
-        resourceName: productionTier === 4 ? "Minerai de fer" : "Minerai de cuivre",
-        resourceFamily: "Ore",
-        visualManifestId: "resource_ore",
-        resourceTier: productionTier,
-        masteryLevel,
-        requiredMasteryLevel,
-        isMasteryUnlocked: masteryLevel >= requiredMasteryLevel,
-        progress: session === undefined
-          ? 0
-          : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100)),
-        durationSeconds: requiredTicks * 0.5,
-        storedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeMiniGame: session === undefined
-          ? undefined
-          : {
-              cycleId: String(session.id),
-              strikesUsed: activeGatheringMiniGames["Ore"]?.strikesUsed ?? 0,
-            },
-      });
+      syncGatheringToBridge(
+        (vm) => { bridge.updateOreGathering(vm); },
+        oreGatheringCoordinator.getActiveSession(),
+        tickCounter,
+        getHeroGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID),
+        getRequiredGatheringMasteryForTier(productionTier),
+        getHeroGatheringDurationTicks(ORE_GATHERING_MASTERY_ID),
+        productionTier === 4 ? "Minerai de fer" : "Minerai de cuivre",
+        "Ore",
+        "resource_ore",
+        productionTier,
+        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        activeGatheringMiniGames["Ore"]?.strikesUsed ?? 0,
+      );
     };
 
     const syncHideGathering = (): void => {
       const recipe = getLeatherRecipe();
-      const session = hideGatheringCoordinator.getActiveSession();
-      const masteryLevel = getHeroGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID);
-      const requiredMasteryLevel = getRequiredGatheringMasteryForTier(productionTier);
-      const requiredTicks = session?.getRequiredTicks()
-        ?? getHeroGatheringDurationTicks(HIDE_GATHERING_MASTERY_ID);
-      const elapsedTicks = session?.getElapsedTicks(tickCounter) ?? 0;
-      bridge.updateHideGathering({
-        status: session === undefined ? "idle" : "gathering",
-        resourceName: productionTier === 4 ? "Peau épaisse" : "Peau robuste",
-        resourceFamily: "Hide",
-        visualManifestId: "resource_hide",
-        resourceTier: productionTier,
-        masteryLevel,
-        requiredMasteryLevel,
-        isMasteryUnlocked: masteryLevel >= requiredMasteryLevel,
-        progress: session === undefined ? 0 : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100)),
-        durationSeconds: requiredTicks * 0.5,
-        storedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeMiniGame: session === undefined
-          ? undefined
-          : {
-              cycleId: String(session.id),
-              strikesUsed: activeGatheringMiniGames["Hide"]?.strikesUsed ?? 0,
-            },
-      });
+      syncGatheringToBridge(
+        (vm) => { bridge.updateHideGathering(vm); },
+        hideGatheringCoordinator.getActiveSession(),
+        tickCounter,
+        getHeroGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID),
+        getRequiredGatheringMasteryForTier(productionTier),
+        getHeroGatheringDurationTicks(HIDE_GATHERING_MASTERY_ID),
+        productionTier === 4 ? "Peau épaisse" : "Peau robuste",
+        "Hide",
+        "resource_hide",
+        productionTier,
+        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        activeGatheringMiniGames["Hide"]?.strikesUsed ?? 0,
+      );
     };
 
     const syncFiberGathering = (): void => {
       const recipe = getClothRecipe();
-      const session = fiberGatheringCoordinator.getActiveSession();
-      const masteryLevel = getHeroGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID);
-      const requiredMasteryLevel = getRequiredGatheringMasteryForTier(productionTier);
-      const requiredTicks = session?.getRequiredTicks()
-        ?? getHeroGatheringDurationTicks(FIBER_GATHERING_MASTERY_ID);
-      const elapsedTicks = session?.getElapsedTicks(tickCounter) ?? 0;
-      bridge.updateFiberGathering({
-        status: session === undefined ? "idle" : "gathering",
-        resourceName: productionTier === 4 ? "Fibre fine" : "Fibre de lin",
-        resourceFamily: "Fiber",
-        visualManifestId: "resource_fiber",
-        resourceTier: productionTier,
-        masteryLevel,
-        requiredMasteryLevel,
-        isMasteryUnlocked: masteryLevel >= requiredMasteryLevel,
-        progress: session === undefined ? 0 : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100)),
-        durationSeconds: requiredTicks * 0.5,
-        storedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeMiniGame: session === undefined
-          ? undefined
-          : {
-              cycleId: String(session.id),
-              strikesUsed: activeGatheringMiniGames["Fiber"]?.strikesUsed ?? 0,
-            },
-      });
+      syncGatheringToBridge(
+        (vm) => { bridge.updateFiberGathering(vm); },
+        fiberGatheringCoordinator.getActiveSession(),
+        tickCounter,
+        getHeroGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID),
+        getRequiredGatheringMasteryForTier(productionTier),
+        getHeroGatheringDurationTicks(FIBER_GATHERING_MASTERY_ID),
+        productionTier === 4 ? "Fibre fine" : "Fibre de lin",
+        "Fiber",
+        "resource_fiber",
+        productionTier,
+        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        activeGatheringMiniGames["Fiber"]?.strikesUsed ?? 0,
+      );
     };
 
     // Listen to the manager's completion event directly. This event is the
@@ -2834,34 +2788,15 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     let activeWoodRefiningRecipe: ReturnType<typeof getWoodRecipe> | undefined;
 
     const syncRefining = (): void => {
-      const recipe = getWoodRecipe();
-      const session = refiningManager.getActiveSession();
-      const requiredTicks = session?.getRequiredTicks() ?? recipe.durationTicks;
-      bridge.updateRefining({
-        status: session === undefined ? "idle" : "refining",
-        recipeName: recipe.name,
-        progress: session === undefined
-          ? 0
-          : Math.min(100, Math.round(session.getProgress(tickCounter) * 100)),
-        durationSeconds: requiredTicks * 0.5,
-        inputQuantity: recipe.requirements[0].quantity,
-        outputQuantity: recipe.outputQuantity,
-        rawStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        refinedStoredQuantity: inventoryManager.getTotalQuantity(
-          heroId,
-          recipe.outputItemId,
-        ),
-        reservedInputQuantity: session === undefined
-          ? 0
-          : reservedRefiningInputs.reduce((total, entry) => total + entry.quantity, 0),
-        requirements: recipe.requirements.map((requirement) => ({
-          itemId: requirement.itemId,
-          quantity: requirement.quantity,
-          available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
-          reserved: reservedRefiningInputs
-            .find((entry) => entry.itemId === requirement.itemId)?.quantity ?? 0,
-        })),
-      });
+      syncRefiningToBridge(
+        (vm) => { bridge.updateRefining(vm); },
+        refiningManager.getActiveSession(),
+        tickCounter,
+        getWoodRecipe(),
+        reservedRefiningInputs,
+        inventoryManager,
+        heroId,
+      );
     };
 
     const startRefiningCycle = (
@@ -2946,34 +2881,15 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     let activeMetalRefiningRecipe: ReturnType<typeof getMetalRecipe> | undefined;
 
     const syncMetalRefining = (): void => {
-      const recipe = getMetalRecipe();
-      const session = metalRefiningManager.getActiveSession();
-      const requiredTicks = session?.getRequiredTicks() ?? recipe.durationTicks;
-      bridge.updateMetalRefining({
-        status: session === undefined ? "idle" : "refining",
-        recipeName: recipe.name,
-        progress: session === undefined
-          ? 0
-          : Math.min(100, Math.round(session.getProgress(tickCounter) * 100)),
-        durationSeconds: requiredTicks * 0.5,
-        inputQuantity: recipe.requirements[0].quantity,
-        outputQuantity: recipe.outputQuantity,
-        rawStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        refinedStoredQuantity: inventoryManager.getTotalQuantity(
-          heroId,
-          recipe.outputItemId,
-        ),
-        reservedInputQuantity: session === undefined
-          ? 0
-          : reservedMetalInputs.reduce((total, entry) => total + entry.quantity, 0),
-        requirements: recipe.requirements.map((requirement) => ({
-          itemId: requirement.itemId,
-          quantity: requirement.quantity,
-          available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
-          reserved: reservedMetalInputs
-            .find((entry) => entry.itemId === requirement.itemId)?.quantity ?? 0,
-        })),
-      });
+      syncRefiningToBridge(
+        (vm) => { bridge.updateMetalRefining(vm); },
+        metalRefiningManager.getActiveSession(),
+        tickCounter,
+        getMetalRecipe(),
+        reservedMetalInputs,
+        inventoryManager,
+        heroId,
+      );
     };
 
     const startMetalRefiningCycle = (
@@ -3065,26 +2981,15 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       let reservedInputs: readonly ReservedRefiningRequirement[] = [];
       let activeRecipe: TRecipe | undefined;
       const sync = (): void => {
-        const recipe = getRecipe();
-        const session = manager.getActiveSession();
-        const requiredTicks = session?.getRequiredTicks() ?? recipe.durationTicks;
-        updateBridge({
-          status: session === undefined ? "idle" : "refining",
-          recipeName: recipe.name,
-          progress: session === undefined ? 0 : Math.min(100, Math.round(session.getProgress(tickCounter) * 100)),
-          durationSeconds: requiredTicks * 0.5,
-          inputQuantity: recipe.requirements[0].quantity,
-          outputQuantity: recipe.outputQuantity,
-          rawStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-          refinedStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
-          reservedInputQuantity: session === undefined ? 0 : reservedInputs.reduce((sum, entry) => sum + entry.quantity, 0),
-          requirements: recipe.requirements.map((requirement) => ({
-            itemId: requirement.itemId,
-            quantity: requirement.quantity,
-            available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
-            reserved: reservedInputs.find((entry) => entry.itemId === requirement.itemId)?.quantity ?? 0,
-          })),
-        });
+        syncRefiningToBridge(
+          updateBridge,
+          manager.getActiveSession(),
+          tickCounter,
+          getRecipe(),
+          reservedInputs,
+          inventoryManager,
+          heroId,
+        );
       };
       const start = (
         recipe: TRecipe = getRecipe(),

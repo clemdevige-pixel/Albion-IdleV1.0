@@ -1,7 +1,7 @@
 import type { EntityId } from "@game/core";
 import type { InventoryManager, EquipmentManager, StatsManager, StatId, EquipmentSlot, CurrencyService, WalletId, VendorRegistry, WorkerId } from "@game/gameplay";
 import { EQUIPMENT_SLOTS, getEnchantmentLevel, canCraftRecipe } from "@game/gameplay";
-import type { GameBridge, InventoryVM, InventorySlotVM, EquipmentSlotVM, StatEntryVM, VendorOfferVM, WorldVM, MasteryVM, WorkerVM, WorkerProfessionVM, CraftingRecipeVM } from "../game/GameBridge";
+import type { GameBridge, InventoryVM, InventorySlotVM, EquipmentSlotVM, StatEntryVM, VendorOfferVM, WorldVM, MasteryVM, WorkerVM, WorkerProfessionVM, CraftingRecipeVM, GatheringVM, RefiningVM } from "../game/GameBridge";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 
 const STAT_IDS: readonly StatId[] = [
@@ -344,5 +344,86 @@ export function syncCraftingToBridge(
     leatherQuantity,
     clothQuantity,
     recipes,
+  });
+}
+
+export function syncGatheringToBridge(
+  updateBridge: (vm: GatheringVM) => void,
+  session: { id: string | number; getRequiredTicks: () => number; getElapsedTicks: (tick: number) => number } | undefined,
+  currentTick: number,
+  masteryLevel: number,
+  requiredMasteryLevel: number,
+  defaultDurationTicks: number,
+  resourceName: string,
+  resourceFamily: GatheringVM["resourceFamily"],
+  visualManifestId: string,
+  resourceTier: 3 | 4,
+  storedQuantity: number,
+  strikesUsed: number,
+): void {
+  const requiredTicks = session?.getRequiredTicks() ?? defaultDurationTicks;
+  const elapsedTicks = session?.getElapsedTicks(currentTick) ?? 0;
+
+  updateBridge({
+    status: session === undefined ? "idle" : "gathering",
+    resourceName,
+    resourceFamily,
+    visualManifestId,
+    resourceTier,
+    masteryLevel,
+    requiredMasteryLevel,
+    isMasteryUnlocked: masteryLevel >= requiredMasteryLevel,
+    progress: session === undefined
+      ? 0
+      : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100)),
+    durationSeconds: requiredTicks * 0.5,
+    storedQuantity,
+    activeMiniGame: session === undefined
+      ? undefined
+      : {
+          cycleId: String(session.id),
+          strikesUsed,
+        },
+  });
+}
+
+export function syncRefiningToBridge(
+  updateBridge: (vm: RefiningVM) => void,
+  session: { getRequiredTicks: () => number; getProgress: (tick: number) => number } | undefined,
+  currentTick: number,
+  recipe: {
+    name: string;
+    durationTicks: number;
+    requirements: readonly { itemId: string; quantity: number }[];
+    outputQuantity: number;
+    rawItemId: string;
+    outputItemId: string;
+  },
+  reservedInputs: readonly { itemId: string; quantity: number }[],
+  inventoryManager: InventoryManager,
+  heroId: EntityId,
+): void {
+  const requiredTicks = session?.getRequiredTicks() ?? recipe.durationTicks;
+
+  updateBridge({
+    status: session === undefined ? "idle" : "refining",
+    recipeName: recipe.name,
+    progress: session === undefined
+      ? 0
+      : Math.min(100, Math.round(session.getProgress(currentTick) * 100)),
+    durationSeconds: requiredTicks * 0.5,
+    inputQuantity: recipe.requirements[0]?.quantity ?? 0,
+    outputQuantity: recipe.outputQuantity,
+    rawStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+    refinedStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
+    reservedInputQuantity: session === undefined
+      ? 0
+      : reservedInputs.reduce((total, entry) => total + entry.quantity, 0),
+    requirements: recipe.requirements.map((requirement) => ({
+      itemId: requirement.itemId,
+      quantity: requirement.quantity,
+      available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
+      reserved: reservedInputs.find((entry) => entry.itemId === requirement.itemId)?.quantity ?? 0,
+    })),
   });
 }
