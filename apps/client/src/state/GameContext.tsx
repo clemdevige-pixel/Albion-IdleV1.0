@@ -100,6 +100,7 @@ import {
   syncProgressionToBridge,
   syncRepairToBridge,
   syncWorkersToBridge,
+  syncCraftingToBridge,
   WORKER_PROFESSION_LABELS,
   getWorkerResourceLabel,
   syncAllToBridge,
@@ -3184,52 +3185,20 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     syncClothRefining();
 
     const syncCrafting = (): void => {
-      const woodRecipe = getWoodRecipe();
-      const metalRecipe = getMetalRecipe();
-      const plankQuantity = inventoryManager.getTotalQuantity(
+      syncCraftingToBridge(
+        bridge,
+        inventoryManager,
         heroId,
-        woodRecipe.outputItemId,
-      );
-      const barQuantity = inventoryManager.getTotalQuantity(
-        heroId,
-        metalRecipe.outputItemId,
-      );
-      const leatherRecipe = getLeatherRecipe();
-      const clothRecipe = getClothRecipe();
-      const leatherQuantity = inventoryManager.getTotalQuantity(heroId, leatherRecipe.outputItemId);
-      const clothQuantity = inventoryManager.getTotalQuantity(heroId, clothRecipe.outputItemId);
-      bridge.updateCrafting({
         productionTier,
-        plankQuantity,
-        barQuantity,
-        leatherQuantity,
-        clothQuantity,
-        recipes: EQUIPMENT_CRAFT_RECIPES.map((recipe) => {
-          const requirements = recipe.requirements.map((requirement) => ({
-            itemId: requirement.itemId,
-            quantity: requirement.quantity,
-            available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
-          }));
-          const plankRequirement = requirements.find((entry) => entry.itemId.includes("planks"));
-          const barRequirement = requirements.find((entry) => entry.itemId.includes("bar"));
-          return {
-            family: recipe.family,
-            recipeName: recipe.name,
-            outputItemId: recipe.outputItemId,
-            tier: recipe.tier,
-            itemPower: getItemPower(recipe.outputItemId) ?? 0,
-            plankRequired: plankRequirement?.quantity ?? 0,
-            barRequired: barRequirement?.quantity ?? 0,
-            plankAvailable: plankRequirement?.available ?? 0,
-            barAvailable: barRequirement?.available ?? 0,
-            plankItemId: plankRequirement?.itemId ?? "",
-            barItemId: barRequirement?.itemId ?? "",
-            requirements,
-            craftedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
-            canCraft: canCraftRecipe(inventoryManager, heroId, recipe.requirements),
-          };
-        }),
-      });
+        {
+          woodItemId: getWoodRecipe().outputItemId,
+          metalItemId: getMetalRecipe().outputItemId,
+          leatherItemId: getLeatherRecipe().outputItemId,
+          clothItemId: getClothRecipe().outputItemId,
+        },
+        getItemPower,
+        EQUIPMENT_CRAFT_RECIPES,
+      );
     };
 
     const craftEquipment = (outputItemId: string): boolean => {

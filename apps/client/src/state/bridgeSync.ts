@@ -1,7 +1,7 @@
 import type { EntityId } from "@game/core";
 import type { InventoryManager, EquipmentManager, StatsManager, StatId, EquipmentSlot, CurrencyService, WalletId, VendorRegistry, WorkerId } from "@game/gameplay";
-import { EQUIPMENT_SLOTS, getEnchantmentLevel } from "@game/gameplay";
-import type { GameBridge, InventoryVM, InventorySlotVM, EquipmentSlotVM, StatEntryVM, VendorOfferVM, WorldVM, MasteryVM, WorkerVM, WorkerProfessionVM } from "../game/GameBridge";
+import { EQUIPMENT_SLOTS, getEnchantmentLevel, canCraftRecipe } from "@game/gameplay";
+import type { GameBridge, InventoryVM, InventorySlotVM, EquipmentSlotVM, StatEntryVM, VendorOfferVM, WorldVM, MasteryVM, WorkerVM, WorkerProfessionVM, CraftingRecipeVM } from "../game/GameBridge";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 
 const STAT_IDS: readonly StatId[] = [
@@ -282,5 +282,67 @@ export function syncWorkersToBridge(
     capacity,
     recruitmentCost,
     workers: workerVMs,
+  });
+}
+
+export function syncCraftingToBridge(
+  bridge: GameBridge,
+  inventoryManager: InventoryManager,
+  heroId: EntityId,
+  productionTier: 3 | 4,
+  resourceOutputItemIds: {
+    woodItemId: string;
+    metalItemId: string;
+    leatherItemId: string;
+    clothItemId: string;
+  },
+  getItemPowerFn: (itemId: string) => number | undefined,
+  craftRecipes: readonly {
+    family: CraftingRecipeVM["family"];
+    name: string;
+    outputItemId: string;
+    tier: number;
+    requirements: readonly { itemId: string; quantity: number }[];
+  }[],
+): void {
+  const plankQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.woodItemId);
+  const barQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.metalItemId);
+  const leatherQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.leatherItemId);
+  const clothQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.clothItemId);
+
+  const recipes: CraftingRecipeVM[] = craftRecipes.map((recipe) => {
+    const requirements = recipe.requirements.map((requirement) => ({
+      itemId: requirement.itemId,
+      quantity: requirement.quantity,
+      available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
+    }));
+    const plankRequirement = requirements.find((entry) => entry.itemId.includes("planks"));
+    const barRequirement = requirements.find((entry) => entry.itemId.includes("bar"));
+
+    return {
+      family: recipe.family,
+      recipeName: recipe.name,
+      outputItemId: recipe.outputItemId,
+      tier: recipe.tier,
+      itemPower: getItemPowerFn(recipe.outputItemId) ?? 0,
+      plankRequired: plankRequirement?.quantity ?? 0,
+      barRequired: barRequirement?.quantity ?? 0,
+      plankAvailable: plankRequirement?.available ?? 0,
+      barAvailable: barRequirement?.available ?? 0,
+      plankItemId: plankRequirement?.itemId ?? "",
+      barItemId: barRequirement?.itemId ?? "",
+      requirements,
+      craftedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
+      canCraft: canCraftRecipe(inventoryManager, heroId, recipe.requirements),
+    };
+  });
+
+  bridge.updateCrafting({
+    productionTier,
+    plankQuantity,
+    barQuantity,
+    leatherQuantity,
+    clothQuantity,
+    recipes,
   });
 }
