@@ -1,5 +1,6 @@
 import type { SaveFormat } from "./save-format.js";
 import { SaveNotFoundError } from "./errors.js";
+import type { SaveRepository } from "./save-repository.js";
 
 /**
  * SaveRepository implementation using browser localStorage.
