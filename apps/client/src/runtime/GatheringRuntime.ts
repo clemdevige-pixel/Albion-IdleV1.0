@@ -144,6 +144,7 @@ export class GatheringRuntime {
   private automaticOreGathering = false;
   private automaticHideGathering = false;
   private automaticFiberGathering = false;
+  private currentTickCounter = 0;
 
   private readonly completionListeners = new Set<(evt: GatheringCompletionEvent) => void>();
 
@@ -199,6 +200,7 @@ export class GatheringRuntime {
   }
 
   public tick(tickCounter: number): void {
+    this.currentTickCounter = tickCounter;
     this.gatheringCoordinator.tick(tickCounter);
     this.oreGatheringCoordinator.tick(tickCounter);
     this.hideGatheringCoordinator.tick(tickCounter);
@@ -359,7 +361,7 @@ export class GatheringRuntime {
       if (added.ok) {
         this.awardGatheringMastery(WOOD_GATHERING_MASTERY_ID, completedTier);
       }
-      if (this.automaticGathering && !this.startGatheringCycle(completedTier)) {
+      if (this.automaticGathering && !this.startGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticGathering = false;
       }
       const itemLabel = completedTier === 4 ? "Bois de pin" : "Bois de bouleau";
@@ -385,7 +387,7 @@ export class GatheringRuntime {
       if (added.ok) {
         this.awardGatheringMastery(ORE_GATHERING_MASTERY_ID, completedTier);
       }
-      if (this.automaticOreGathering && !this.startOreGatheringCycle(completedTier)) {
+      if (this.automaticOreGathering && !this.startOreGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticOreGathering = false;
       }
       const itemLabel = completedTier === 4 ? "Minerai de fer" : "Minerai de cuivre";
@@ -411,7 +413,7 @@ export class GatheringRuntime {
       if (added.ok) {
         this.awardGatheringMastery(HIDE_GATHERING_MASTERY_ID, completedTier);
       }
-      if (this.automaticHideGathering && !this.startHideGatheringCycle(completedTier)) {
+      if (this.automaticHideGathering && !this.startHideGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticHideGathering = false;
       }
       const itemLabel = completedTier === 4 ? "Peau épaisse" : "Peau robuste";
@@ -437,7 +439,7 @@ export class GatheringRuntime {
       if (added.ok) {
         this.awardGatheringMastery(FIBER_GATHERING_MASTERY_ID, completedTier);
       }
-      if (this.automaticFiberGathering && !this.startFiberGatheringCycle(completedTier)) {
+      if (this.automaticFiberGathering && !this.startFiberGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticFiberGathering = false;
       }
       const itemLabel = completedTier === 4 ? "Fibre fine" : "Fibre de lin";

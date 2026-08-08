@@ -64,8 +64,6 @@ import {
   asResourceId,
   asGatheringToolId,
   RefiningManager,
-  asRecipeId,
-  asCraftStationId,
   WorkerRegistry,
   WorkerManager,
   WorkerTaskRegistry,
@@ -83,6 +81,7 @@ import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentI
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { GatheringRuntime } from "../runtime/GatheringRuntime";
+import { RefiningRuntime } from "../runtime/RefiningRuntime";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -1674,6 +1673,16 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const leatherRefiningManager = new RefiningManager();
     const clothRefiningManager = new RefiningManager();
 
+    const refiningRuntime = new RefiningRuntime({
+      refiningManager,
+      metalRefiningManager,
+      leatherRefiningManager,
+      clothRefiningManager,
+      inventoryManager,
+      heroId,
+      getProductionTier: () => productionTier,
+    });
+
     // The starter sword unlocks its mastery and becomes the active Fame target.
     const starterSwordPosition = 0;
     const starterSword = inventoryManager.addEntry(
@@ -2356,55 +2365,23 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     syncFiberGathering();
 
 
-    interface ReservedRefiningRequirement {
-      readonly itemId: string;
-      readonly quantity: number;
-    }
-
-    const reserveRefiningRequirements = (
-      requirements: readonly ReservedRefiningRequirement[],
-    ): readonly ReservedRefiningRequirement[] | undefined => {
-      const canPay = requirements.every((requirement) =>
-        inventoryManager.getTotalQuantity(heroId, requirement.itemId) >= requirement.quantity);
-      if (!canPay) return undefined;
-
-      const reserved: ReservedRefiningRequirement[] = [];
-      for (const requirement of requirements) {
-        const removed = inventoryManager.removeQuantity(
-          heroId,
-          requirement.itemId,
-          requirement.quantity,
-        );
-        if (!removed.ok) {
-          for (const entry of reserved) {
-            inventoryManager.addQuantity(heroId, entry.itemId, entry.quantity, {
-              itemId: entry.itemId,
-              stackable: true,
-              maxStack: 999,
-            });
-          }
-          return undefined;
-        }
-        reserved.push(requirement);
+    refiningRuntime.subscribeRefineCompleted((evt) => {
+      syncInventoryToBridge(bridge, inventoryManager, heroId);
+      if (evt.family === "Wood") {
+        syncGathering();
+        syncRefining();
+      } else if (evt.family === "Ore") {
+        syncOreGathering();
+        syncMetalRefining();
+      } else if (evt.family === "Hide") {
+        syncHideGathering();
+        syncLeatherRefining();
+      } else if (evt.family === "Fiber") {
+        syncFiberGathering();
+        syncClothRefining();
       }
-      return reserved;
-    };
-
-    const refundRefiningRequirements = (
-      requirements: readonly ReservedRefiningRequirement[],
-    ): void => {
-      for (const requirement of requirements) {
-        inventoryManager.addQuantity(heroId, requirement.itemId, requirement.quantity, {
-          itemId: requirement.itemId,
-          stackable: true,
-          maxStack: 999,
-        });
-      }
-    };
-
-    let automaticRefining = false;
-    let reservedRefiningInputs: readonly ReservedRefiningRequirement[] = [];
-    let activeWoodRefiningRecipe: ReturnType<typeof getWoodRecipe> | undefined;
+      syncCrafting();
+    });
 
     const syncRefining = (): void => {
       syncRefiningToBridge(
@@ -2412,92 +2389,11 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         refiningManager.getActiveSession(),
         tickCounter,
         getWoodRecipe(),
-        reservedRefiningInputs,
+        refiningRuntime.getReservedInputs("Wood"),
         inventoryManager,
         heroId,
       );
     };
-
-    const startRefiningCycle = (
-      recipe = getWoodRecipe(),
-    ): boolean => {
-      const reserved = reserveRefiningRequirements(recipe.requirements);
-      if (reserved === undefined) return false;
-      reservedRefiningInputs = reserved;
-      activeWoodRefiningRecipe = recipe;
-      const started = refiningManager.startRefining(
-        {
-          recipeId: asRecipeId(recipe.id),
-          stationId: asCraftStationId(recipe.stationId),
-          quantity: recipe.outputQuantity,
-        },
-        { baseRefineTicks: recipe.durationTicks, speedModifier: 1 },
-        tickCounter,
-      );
-      if (!started.ok) {
-        refundRefiningRequirements(reservedRefiningInputs);
-        reservedRefiningInputs = [];
-        activeWoodRefiningRecipe = undefined;
-        return false;
-      }
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      return true;
-    };
-
-    refiningManager.events.subscribe("refine:completed", () => {
-      const recipe = activeWoodRefiningRecipe ?? getWoodRecipe();
-      const added = inventoryManager.addQuantity(
-        heroId,
-        recipe.outputItemId,
-        recipe.outputQuantity,
-        { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
-      );
-      if (!added.ok) refundRefiningRequirements(reservedRefiningInputs);
-      reservedRefiningInputs = [];
-      refiningManager.clear();
-      if (automaticRefining && !startRefiningCycle(recipe)) {
-        automaticRefining = false;
-        activeWoodRefiningRecipe = undefined;
-      } else if (!automaticRefining) {
-        activeWoodRefiningRecipe = undefined;
-      }
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncGathering();
-      syncRefining();
-      syncCrafting();
-    });
-
-    const toggleRefining = (): boolean => {
-      if (automaticRefining) {
-        automaticRefining = false;
-        const session = refiningManager.getActiveSession();
-        if (session !== undefined) {
-          refiningManager.cancelSession(session.id);
-          refundRefiningRequirements(reservedRefiningInputs);
-          reservedRefiningInputs = [];
-          activeWoodRefiningRecipe = undefined;
-          refiningManager.clear();
-        }
-        syncInventoryToBridge(bridge, inventoryManager, heroId);
-        syncGathering();
-        syncRefining();
-        return true;
-      }
-
-      automaticRefining = true;
-      if (!startRefiningCycle()) {
-        automaticRefining = false;
-        syncRefining();
-        return false;
-      }
-      syncRefining();
-      return true;
-    };
-    syncRefining();
-
-    let automaticMetalRefining = false;
-    let reservedMetalInputs: readonly ReservedRefiningRequirement[] = [];
-    let activeMetalRefiningRecipe: ReturnType<typeof getMetalRecipe> | undefined;
 
     const syncMetalRefining = (): void => {
       syncRefiningToBridge(
@@ -2505,206 +2401,74 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         metalRefiningManager.getActiveSession(),
         tickCounter,
         getMetalRecipe(),
-        reservedMetalInputs,
+        refiningRuntime.getReservedInputs("Ore"),
         inventoryManager,
         heroId,
       );
     };
 
-    const startMetalRefiningCycle = (
-      recipe = getMetalRecipe(),
-    ): boolean => {
-      const reserved = reserveRefiningRequirements(recipe.requirements);
-      if (reserved === undefined) return false;
-      reservedMetalInputs = reserved;
-      activeMetalRefiningRecipe = recipe;
-      const started = metalRefiningManager.startRefining(
-        {
-          recipeId: asRecipeId(recipe.id),
-          stationId: asCraftStationId(recipe.stationId),
-          quantity: recipe.outputQuantity,
-        },
-        { baseRefineTicks: recipe.durationTicks, speedModifier: 1 },
+    const syncLeatherRefining = (): void => {
+      syncRefiningToBridge(
+        (vm) => { bridge.updateLeatherRefining(vm); },
+        leatherRefiningManager.getActiveSession(),
         tickCounter,
+        getLeatherRecipe(),
+        refiningRuntime.getReservedInputs("Hide"),
+        inventoryManager,
+        heroId,
       );
-      if (!started.ok) {
-        refundRefiningRequirements(reservedMetalInputs);
-        reservedMetalInputs = [];
-        activeMetalRefiningRecipe = undefined;
-        return false;
-      }
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      return true;
     };
 
-    metalRefiningManager.events.subscribe("refine:completed", () => {
-      const recipe = activeMetalRefiningRecipe ?? getMetalRecipe();
-      const added = inventoryManager.addQuantity(
+    const syncClothRefining = (): void => {
+      syncRefiningToBridge(
+        (vm) => { bridge.updateClothRefining(vm); },
+        clothRefiningManager.getActiveSession(),
+        tickCounter,
+        getClothRecipe(),
+        refiningRuntime.getReservedInputs("Fiber"),
+        inventoryManager,
         heroId,
-        recipe.outputItemId,
-        recipe.outputQuantity,
-        { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
       );
-      if (!added.ok) refundRefiningRequirements(reservedMetalInputs);
-      reservedMetalInputs = [];
-      metalRefiningManager.clear();
-      if (automaticMetalRefining && !startMetalRefiningCycle(recipe)) {
-        automaticMetalRefining = false;
-        activeMetalRefiningRecipe = undefined;
-      } else if (!automaticMetalRefining) {
-        activeMetalRefiningRecipe = undefined;
-      }
+    };
+
+    const toggleRefining = (): boolean => {
+      const res = refiningRuntime.toggleRefining(tickCounter);
+      syncInventoryToBridge(bridge, inventoryManager, heroId);
+      syncGathering();
+      syncRefining();
+      return res.action === "started" || res.action === "stopped";
+    };
+
+    const toggleMetalRefining = (): boolean => {
+      const res = refiningRuntime.toggleMetalRefining(tickCounter);
       syncInventoryToBridge(bridge, inventoryManager, heroId);
       syncOreGathering();
       syncMetalRefining();
-      syncCrafting();
-    });
-
-    const toggleMetalRefining = (): boolean => {
-      if (automaticMetalRefining) {
-        automaticMetalRefining = false;
-        const session = metalRefiningManager.getActiveSession();
-        if (session !== undefined) {
-          metalRefiningManager.cancelSession(session.id);
-          refundRefiningRequirements(reservedMetalInputs);
-          reservedMetalInputs = [];
-          activeMetalRefiningRecipe = undefined;
-          metalRefiningManager.clear();
-        }
-        syncInventoryToBridge(bridge, inventoryManager, heroId);
-        syncOreGathering();
-        syncMetalRefining();
-        return true;
-      }
-      automaticMetalRefining = true;
-      if (!startMetalRefiningCycle()) {
-        automaticMetalRefining = false;
-        syncMetalRefining();
-        return false;
-      }
-      syncMetalRefining();
-      return true;
+      return res.action === "started" || res.action === "stopped";
     };
 
-    type AdditionalRefiningRecipe =
-      | ReturnType<typeof getLeatherRecipe>
-      | ReturnType<typeof getClothRecipe>;
-
-    const createAdditionalRefiningController = <TRecipe extends AdditionalRefiningRecipe>(
-      manager: RefiningManager,
-      getRecipe: () => TRecipe,
-      updateBridge: (vm: Parameters<GameBridge["updateLeatherRefining"]>[0]) => void,
-      syncGather: () => void,
-    ) => {
-      let automatic = false;
-      let reservedInputs: readonly ReservedRefiningRequirement[] = [];
-      let activeRecipe: TRecipe | undefined;
-      const sync = (): void => {
-        syncRefiningToBridge(
-          updateBridge,
-          manager.getActiveSession(),
-          tickCounter,
-          getRecipe(),
-          reservedInputs,
-          inventoryManager,
-          heroId,
-        );
-      };
-      const start = (
-        recipe: TRecipe = getRecipe(),
-      ): boolean => {
-        const reserved = reserveRefiningRequirements(recipe.requirements);
-        if (reserved === undefined) return false;
-        reservedInputs = reserved;
-        activeRecipe = recipe;
-        const started = manager.startRefining(
-          { recipeId: asRecipeId(recipe.id), stationId: asCraftStationId(recipe.stationId), quantity: recipe.outputQuantity },
-          { baseRefineTicks: recipe.durationTicks, speedModifier: 1 },
-          tickCounter,
-        );
-        if (!started.ok) {
-          refundRefiningRequirements(reservedInputs);
-          reservedInputs = [];
-          activeRecipe = undefined;
-          return false;
-        }
-        syncInventoryToBridge(bridge, inventoryManager, heroId);
-        return true;
-      };
-      manager.events.subscribe("refine:completed", () => {
-        const recipe = activeRecipe ?? getRecipe();
-        const added = inventoryManager.addQuantity(heroId, recipe.outputItemId, recipe.outputQuantity, {
-          itemId: recipe.outputItemId, stackable: true, maxStack: 999,
-        });
-        if (!added.ok) refundRefiningRequirements(reservedInputs);
-        reservedInputs = [];
-        manager.clear();
-        if (automatic && !start(recipe)) {
-          automatic = false;
-          activeRecipe = undefined;
-        } else if (!automatic) {
-          activeRecipe = undefined;
-        }
-        syncInventoryToBridge(bridge, inventoryManager, heroId);
-        syncGather();
-        sync();
-        syncCrafting();
-      });
-      const toggle = (): boolean => {
-        if (automatic) {
-          automatic = false;
-          const session = manager.getActiveSession();
-          if (session !== undefined) {
-            manager.cancelSession(session.id);
-            refundRefiningRequirements(reservedInputs);
-            reservedInputs = [];
-            activeRecipe = undefined;
-            manager.clear();
-          }
-          syncInventoryToBridge(bridge, inventoryManager, heroId);
-          syncGather();
-          sync();
-          return true;
-        }
-        automatic = true;
-        if (!start()) { automatic = false; sync(); return false; }
-        sync();
-        return true;
-      };
-      return { sync, toggle };
+    const toggleLeatherRefining = (): boolean => {
+      const res = refiningRuntime.toggleLeatherRefining(tickCounter);
+      syncInventoryToBridge(bridge, inventoryManager, heroId);
+      syncHideGathering();
+      syncLeatherRefining();
+      return res.action === "started" || res.action === "stopped";
     };
 
-    const leatherController = createAdditionalRefiningController(
-      leatherRefiningManager,
-      getLeatherRecipe,
-      (vm) => { bridge.updateLeatherRefining(vm); },
-      syncHideGathering,
-    );
-    const clothController = createAdditionalRefiningController(
-      clothRefiningManager,
-      getClothRecipe,
-      (vm) => { bridge.updateClothRefining(vm); },
-      syncFiberGathering,
-    );
-    const syncLeatherRefining = leatherController.sync;
-    const toggleLeatherRefining = leatherController.toggle;
-    const syncClothRefining = clothController.sync;
-    const toggleClothRefining = clothController.toggle;
+    const toggleClothRefining = (): boolean => {
+      const res = refiningRuntime.toggleClothRefining(tickCounter);
+      syncInventoryToBridge(bridge, inventoryManager, heroId);
+      syncFiberGathering();
+      syncClothRefining();
+      return res.action === "started" || res.action === "stopped";
+    };
 
     const refineAllAvailable = (): boolean => {
-      const refiningLines = [
-        { manager: refiningManager, toggle: toggleRefining },
-        { manager: metalRefiningManager, toggle: toggleMetalRefining },
-        { manager: leatherRefiningManager, toggle: toggleLeatherRefining },
-        { manager: clothRefiningManager, toggle: toggleClothRefining },
-      ] as const;
-      let startedAtLeastOne = false;
-      for (const line of refiningLines) {
-        if (line.manager.getActiveSession() !== undefined) continue;
-        if (line.toggle()) startedAtLeastOne = true;
-      }
-      return startedAtLeastOne;
+      return refiningRuntime.refineAllAvailable(tickCounter).startedAtLeastOne;
     };
+
+    syncRefining();
+    syncMetalRefining();
     syncLeatherRefining();
     syncClothRefining();
 
@@ -3326,10 +3090,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         syncConsumables();
       }
       gatheringRuntime.tick(tickCounter);
-      refiningManager.tick(tickCounter);
-      metalRefiningManager.tick(tickCounter);
-      leatherRefiningManager.tick(tickCounter);
-      clothRefiningManager.tick(tickCounter);
+      refiningRuntime.tick(tickCounter);
       workerScheduler.tickAll();
       processCompletedWorkerCycles();
       if (gatheringCoordinator.getActiveSession() !== undefined) {
