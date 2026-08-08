@@ -59,20 +59,43 @@ describe("canCraftRecipe", () => {
     expect(canCraftRecipe(inventoryManager, entityId, requirements)).toBe(false);
   });
 
-  it("returns false when the entity inventory is full", () => {
+  it("returns true when inventory is full but consuming a requirement will completely empty a slot", () => {
     const { inventoryManager, entityId } = setupTestWorld();
     inventoryManager.createInventory(entityId, 2);
 
-    inventoryManager.addEntry(entityId, "item_wood_t3");
-    inventoryManager.addEntry(entityId, "item_ore_t3");
+    // Slot 0: 100 wood bars (stacked)
+    inventoryManager.addQuantity(entityId, "item_wood_t3", 100, woodStack);
+    // Slot 1: 1 T3 Broadsword (quantity 1)
+    inventoryManager.addQuantity(entityId, "item_sword_t3", 1, { itemId: "item_sword_t3", stackable: false, maxStack: 1 });
 
     expect(inventoryManager.isFull(entityId)).toBe(true);
 
     const requirements = [
-      { itemId: "item_wood_t3", quantity: 1 },
-      { itemId: "item_ore_t3", quantity: 1 },
+      { itemId: "item_wood_t3", quantity: 6 },
+      { itemId: "item_sword_t3", quantity: 1 },
     ];
 
+    // Removing 1 item_sword_t3 will completely delete slot 1, freeing space for output
+    expect(canCraftRecipe(inventoryManager, entityId, requirements)).toBe(true);
+  });
+
+  it("returns false when inventory is full and requirement consumption leaves all stacks partially occupied", () => {
+    const { inventoryManager, entityId } = setupTestWorld();
+    inventoryManager.createInventory(entityId, 2);
+
+    // Slot 0: 100 wood
+    inventoryManager.addQuantity(entityId, "item_wood_t3", 100, woodStack);
+    // Slot 1: 100 ore
+    inventoryManager.addQuantity(entityId, "item_ore_t3", 100, oreStack);
+
+    expect(inventoryManager.isFull(entityId)).toBe(true);
+
+    const requirements = [
+      { itemId: "item_wood_t3", quantity: 6 },
+      { itemId: "item_ore_t3", quantity: 2 },
+    ];
+
+    // Consuming 6 wood and 2 ore leaves 94 wood and 98 ore, so 0 slots are freed
     expect(canCraftRecipe(inventoryManager, entityId, requirements)).toBe(false);
   });
 });

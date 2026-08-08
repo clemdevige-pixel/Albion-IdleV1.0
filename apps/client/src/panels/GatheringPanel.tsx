@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useGameBridge, useGameServices } from "../state/GameContext";
 import type { WorkerProfessionVM, WorkerVM } from "../game/GameBridge";
-import { ItemVisual } from "./ItemVisual";
+import { ItemVisual, getItemDefinition, getItemDisplayName } from "./ItemVisual";
 import { ItemHoverTooltip } from "./ItemHoverTooltip";
 import { PanelContainer } from "./PanelContainer";
 import { usePanelManager } from "./usePanelManager";
@@ -300,7 +300,7 @@ export function GatheringPanel(): JSX.Element | null {
                   const visual = getCraftMaterialVisual(requirement.itemId);
                   return <Requirement
                     key={requirement.itemId}
-                    icon={visual.icon}
+                    iconPath={visual.iconPath}
                     label={visual.label}
                     have={requirement.available}
                     required={requirement.quantity}
@@ -552,12 +552,19 @@ function getWorkerProfessionLabel(profession: WorkerProfessionVM): string {
   }[profession];
 }
 
-function getCraftMaterialVisual(itemId: string): { icon: string; label: string } {
-  if (itemId.includes("planks")) return { icon: "resource-birch-planks.png", label: "Planches" };
-  if (itemId.includes("bar")) return { icon: "resource-copper-ingot.png", label: "Lingots" };
-  if (itemId.includes("leather")) return { icon: "resource-leather.png", label: "Cuir" };
-  if (itemId.includes("cloth")) return { icon: "resource-cloth.png", label: "Tissu" };
-  return { icon: "resource-birch-log.png", label: "Matériau" };
+function getCraftMaterialVisual(itemId: string): { iconPath: string; label: string } {
+  const itemDef = getItemDefinition(itemId);
+  if (itemDef !== undefined) {
+    return {
+      iconPath: `/assets/items/${itemDef.icon}`,
+      label: itemDef.name,
+    };
+  }
+  if (itemId.includes("planks")) return { iconPath: "/assets/resources/resource-birch-planks.png", label: "Planches" };
+  if (itemId.includes("bar")) return { iconPath: "/assets/resources/resource-copper-ingot.png", label: "Lingots" };
+  if (itemId.includes("leather")) return { iconPath: "/assets/resources/resource-leather.png", label: "Cuir" };
+  if (itemId.includes("cloth")) return { iconPath: "/assets/resources/resource-cloth.png", label: "Tissu" };
+  return { iconPath: "/assets/resources/resource-birch-log.png", label: getItemDisplayName(itemId) };
 }
 
 function Progress({ value }: { readonly value: number }): JSX.Element {
@@ -569,7 +576,7 @@ function Progress({ value }: { readonly value: number }): JSX.Element {
 }
 
 function Requirement(props: {
-  readonly icon: string;
+  readonly iconPath: string;
   readonly label: string;
   readonly have: number;
   readonly required: number;
@@ -577,7 +584,7 @@ function Requirement(props: {
   const met = props.have >= props.required;
   return (
     <div className={`production-requirement${met ? " production-requirement--met" : ""}`}>
-      <span><img src={`/assets/resources/${props.icon}`} alt="" /> {props.label}</span>
+      <span><img src={props.iconPath} alt="" /> {props.label}</span>
       <strong>{props.have} / {props.required} {met ? "✓" : "✕"}</strong>
     </div>
   );

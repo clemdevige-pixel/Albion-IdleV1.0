@@ -137,6 +137,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
       { itemId: PINE_PLANK_RECIPE.outputItemId, quantity: 4 },
       { itemId: IRON_BAR_RECIPE.outputItemId, quantity: 4 },
       { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 2 },
+      { itemId: "item_shield_t3_reinforced", quantity: 1 },
     ],
   },
   {
@@ -235,6 +236,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
     requirements: [
       { itemId: IRON_BAR_RECIPE.outputItemId, quantity: 6 },
       { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 2 },
+      { itemId: "item_weapon_sword_t3_broadsword", quantity: 1 },
     ],
   },
   {
@@ -248,6 +250,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
       { itemId: PINE_PLANK_RECIPE.outputItemId, quantity: 6 },
       { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 2 },
       { itemId: FINE_CLOTH_RECIPE.outputItemId, quantity: 2 },
+      { itemId: "item_weapon_bow_t3_longbow", quantity: 1 },
     ],
   },
   {
@@ -274,6 +277,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
       { itemId: PINE_PLANK_RECIPE.outputItemId, quantity: 4 },
       { itemId: IRON_BAR_RECIPE.outputItemId, quantity: 4 },
       { itemId: FINE_CLOTH_RECIPE.outputItemId, quantity: 2 },
+      { itemId: "item_weapon_staff_t3_fire", quantity: 1 },
     ],
   },
   {
@@ -286,6 +290,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
     requirements: [
       { itemId: IRON_BAR_RECIPE.outputItemId, quantity: 5 },
       { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 3 },
+      { itemId: "item_weapon_gloves_t3_spiked_gauntlets", quantity: 1 },
     ],
   },
   {
@@ -298,6 +303,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
     requirements: [
       { itemId: IRON_BAR_RECIPE.outputItemId, quantity: 6 },
       { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 2 },
+      { itemId: "item_iron_helmet", quantity: 1 },
     ],
   },
   {
@@ -310,6 +316,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
     requirements: [
       { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 6 },
       { itemId: FINE_CLOTH_RECIPE.outputItemId, quantity: 3 },
+      { itemId: "item_leather_armor", quantity: 1 },
     ],
   },
   {
@@ -322,6 +329,7 @@ export const EQUIPMENT_CRAFT_RECIPES = [
     requirements: [
       { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 4 },
       { itemId: FINE_CLOTH_RECIPE.outputItemId, quantity: 2 },
+      { itemId: "item_leather_boots", quantity: 1 },
     ],
   },
 ] as const;
