@@ -40,7 +40,6 @@ import {
   RepairStationRegistry,
   RepairCostResolver,
   RepairService,
-  asMasteryId,
   ZoneManager,
   BiomeRegistry,
   BiomeResolver,
@@ -966,9 +965,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateGathering(vm); },
         gatheringCoordinator.getActiveSession(),
         tickCounter,
-        getHeroGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID),
         getRequiredGatheringMasteryForTier(productionTier),
-        getHeroGatheringDurationTicks(WOOD_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringDurationTicks(WOOD_GATHERING_MASTERY_ID),
         productionTier === 4 ? "Bois de pin" : "Bois de bouleau",
         "Wood",
         "resource_wood",
@@ -984,9 +983,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateOreGathering(vm); },
         oreGatheringCoordinator.getActiveSession(),
         tickCounter,
-        getHeroGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID),
         getRequiredGatheringMasteryForTier(productionTier),
-        getHeroGatheringDurationTicks(ORE_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringDurationTicks(ORE_GATHERING_MASTERY_ID),
         productionTier === 4 ? "Minerai de fer" : "Minerai de cuivre",
         "Ore",
         "resource_ore",
@@ -1002,9 +1001,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateHideGathering(vm); },
         hideGatheringCoordinator.getActiveSession(),
         tickCounter,
-        getHeroGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID),
         getRequiredGatheringMasteryForTier(productionTier),
-        getHeroGatheringDurationTicks(HIDE_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringDurationTicks(HIDE_GATHERING_MASTERY_ID),
         productionTier === 4 ? "Peau épaisse" : "Peau robuste",
         "Hide",
         "resource_hide",
@@ -1020,39 +1019,15 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateFiberGathering(vm); },
         fiberGatheringCoordinator.getActiveSession(),
         tickCounter,
-        getHeroGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID),
         getRequiredGatheringMasteryForTier(productionTier),
-        getHeroGatheringDurationTicks(FIBER_GATHERING_MASTERY_ID),
+        gatheringRuntime.getGatheringDurationTicks(FIBER_GATHERING_MASTERY_ID),
         productionTier === 4 ? "Fibre fine" : "Fibre de lin",
         "Fiber",
         "resource_fiber",
         productionTier,
         inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
         gatheringRuntime.getActiveMiniGameState("Fiber").strikesUsed,
-      );
-    };
-
-    const getHeroGatheringMasteryLevel = (
-      masteryId: ReturnType<typeof asMasteryId>,
-    ): number =>
-      masteryService.getMasteryState(masteryId)?.level ?? 0;
-
-    const getHeroGatheringMasteryModifier = (
-      masteryId: ReturnType<typeof asMasteryId>,
-    ): number =>
-      Math.max(
-        0.5,
-        1 - Math.min(100, getHeroGatheringMasteryLevel(masteryId)) * 0.005,
-      );
-
-    const getHeroGatheringDurationTicks = (
-      masteryId: ReturnType<typeof asMasteryId>,
-    ): number => {
-      const baseTicks = productionTier === 4 ? 36 : 24;
-      const toolModifier = productionTier === 4 ? 0.85 : 1;
-      return Math.max(
-        1,
-        Math.ceil(baseTicks * toolModifier * getHeroGatheringMasteryModifier(masteryId)),
       );
     };
 

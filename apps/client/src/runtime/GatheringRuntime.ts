@@ -10,6 +10,7 @@ import type {
   ProgressionOrchestrator,
   ResourceFamily,
   ResourceNodeId,
+  MasteryId,
 } from "@game/gameplay";
 import {
   asMasteryId,
@@ -31,8 +32,8 @@ const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");
 const HIDE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_hide");
 const FIBER_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_fiber");
 
-const ACTIVE_GATHERING_PERFECT_BONUS_RATIO = 0.2;
-const ACTIVE_GATHERING_CORRECT_BONUS_RATIO = 0.1;
+const ACTIVE_GATHERING_PERFECT_BONUS_RATIO = 0.04;
+const ACTIVE_GATHERING_CORRECT_BONUS_RATIO = 0.02;
 
 export function getHeroGatheringXpForTier(tier: number): number {
   return Math.max(1, Math.round(5 * (1.6 ** Math.max(0, tier - 3))));
@@ -210,18 +211,24 @@ export class GatheringRuntime {
     this.activeGatheringMiniGames[resourceFamily] = { sessionId: null, strikesUsed: 0, tier: null };
   }
 
-  private getHeroGatheringMasteryLevel(
-    masteryId: ReturnType<typeof asMasteryId>,
-  ): number {
+  public getGatheringMasteryLevel(masteryId: MasteryId): number {
     return this.masteryService.getMasteryState(masteryId)?.level ?? 0;
   }
 
-  private getHeroGatheringMasteryModifier(
-    masteryId: ReturnType<typeof asMasteryId>,
-  ): number {
+  public getHeroGatheringMasteryModifier(masteryId: MasteryId): number {
     return Math.max(
       0.5,
-      1 - Math.min(100, this.getHeroGatheringMasteryLevel(masteryId)) * 0.005,
+      1 - Math.min(100, this.getGatheringMasteryLevel(masteryId)) * 0.005,
+    );
+  }
+
+  public getGatheringDurationTicks(masteryId: MasteryId): number {
+    const tier = this.getProductionTier();
+    const baseTicks = tier === 4 ? 36 : 24;
+    const toolModifier = tier === 4 ? 0.85 : 1;
+    return Math.max(
+      1,
+      Math.ceil(baseTicks * toolModifier * this.getHeroGatheringMasteryModifier(masteryId)),
     );
   }
 
@@ -254,7 +261,7 @@ export class GatheringRuntime {
 
   private startGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
     if (
-      this.getHeroGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID)
+      this.getGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID)
       < getRequiredGatheringMasteryForTier(cycleTier)
     ) {
       return false;
@@ -277,7 +284,7 @@ export class GatheringRuntime {
 
   private startOreGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
     if (
-      this.getHeroGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID)
+      this.getGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID)
       < getRequiredGatheringMasteryForTier(cycleTier)
     ) {
       return false;
@@ -298,7 +305,7 @@ export class GatheringRuntime {
 
   private startHideGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
     if (
-      this.getHeroGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID)
+      this.getGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID)
       < getRequiredGatheringMasteryForTier(cycleTier)
     ) {
       return false;
@@ -319,7 +326,7 @@ export class GatheringRuntime {
 
   private startFiberGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
     if (
-      this.getHeroGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID)
+      this.getGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID)
       < getRequiredGatheringMasteryForTier(cycleTier)
     ) {
       return false;
