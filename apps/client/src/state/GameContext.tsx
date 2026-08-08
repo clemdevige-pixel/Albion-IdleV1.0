@@ -71,6 +71,7 @@ import { GatheringRuntime } from "../runtime/GatheringRuntime";
 import { RefiningRuntime } from "../runtime/RefiningRuntime";
 import { CraftingRuntime } from "../runtime/CraftingRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
+import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -115,8 +116,6 @@ import {
   ENCHANTMENT_MATERIAL_NAMES,
   GENERAL_VENDOR_FIXED_OFFERS,
   REPAIR_COST_DEFINITIONS,
-  rollEnchantmentMaterial,
-  rollGenericCombatLoot,
 } from "../data/economyContentCatalog";
 import {
   ITEM_DEFINITIONS,
@@ -910,119 +909,84 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       bridge.addDamageNumber(evt.finalDamage, target);
     });
 
+    const combatRewardRuntime = new CombatRewardRuntime({
+      currencyService,
+      walletId,
+      equipmentManager,
+      inventoryManager,
+      durabilityStore,
+      progressionOrchestrator,
+      experienceService,
+      heroId,
+    });
+
     combatService.events.subscribe("enemyKilled", () => {
       bridge.incrementEnemiesKilled();
 
-      // --- Award silver on enemy kill ---
       const encounterRewards = getEncounterRewards(
         worldRuntime.currentZoneIndex,
         worldRuntime.currentSegment,
         worldRuntime.currentEncounter,
       );
-      const lootAmount = encounterRewards.silver;
-      currencyService.credit(walletId, "currency_silver", lootAmount, "Loot");
-      const balRes = currencyService.getBalance(walletId, "currency_silver");
-      const newBal = balRes.ok ? balRes.value : 0;
-      const diff = newBal - lastSilver;
-      incomeRate = diff;
-      lastSilver = newBal;
+
+      const rewardResult = combatRewardRuntime.processEnemyKilledReward(
+        encounterRewards.silver,
+        encounterRewards.fame,
+      );
+
+      incomeRate = rewardResult.newBalance - lastSilver;
+      lastSilver = rewardResult.newBalance;
 
       bridge.addTransaction({
         id: `loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
         type: "credit",
-        description: `Loot: +${String(lootAmount)} Silver`,
-        amount: lootAmount,
+        description: `Loot: +${String(rewardResult.silverEarned)} Silver`,
+        amount: rewardResult.silverEarned,
         timestamp: Date.now(),
       });
       bridge.addEconomyNotification({
         id: `notif_silver_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
         type: "success",
-        message: `+${String(lootAmount)} Silver from loot`,
+        message: `+${String(rewardResult.silverEarned)} Silver from loot`,
         timestamp: Date.now(),
       });
 
-      // --- Award fame/XP on enemy kill ---
-      const fameAmount = encounterRewards.fame;
-      const equippedWeapon = equipmentManager.getEquippedItem(heroId, "weapon");
-      const activeWeaponRoute = equippedWeapon === undefined
-        ? undefined
-        : resolveWeaponMastery(equippedWeapon.itemId);
-
-      if (activeWeaponRoute !== undefined) {
-        if (!masteryService.isMasteryUnlocked(activeWeaponRoute.familyId)) {
-          progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.familyId);
-        }
-        if (!masteryService.isMasteryUnlocked(activeWeaponRoute.weaponId)) {
-          progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.weaponId);
-        }
-
-        // Count Fame globally once on the weapon specialization.
-        progressionOrchestrator.onFameEarned(activeWeaponRoute.weaponId, fameAmount, "combat");
-        // Mirror the same amount into the parent family without duplicating Fame totals.
-        experienceService.addExperience(activeWeaponRoute.familyId, fameAmount, "combat");
-        // A level gained on either branch immediately updates the equipped
-        // weapon's mastery-IP damage contribution.
+      if (rewardResult.fameEarned !== undefined) {
         syncWeaponMasteryStats?.(heroId);
         syncStatsToBridge(bridge, statsManager, heroId);
 
-        const masteryName = getMasteryDisplayName(activeWeaponRoute.weaponId);
+        const masteryName = getMasteryDisplayName(rewardResult.fameEarned.weaponId);
         bridge.addEconomyNotification({
           id: `notif_fame_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
           type: "success",
-          message: `+${String(fameAmount)} Fame · ${masteryName}`,
+          message: `+${String(rewardResult.fameEarned.amount)} Fame · ${masteryName}`,
           timestamp: Date.now(),
         });
       }
 
-      // --- Roll loot item drop ---
-      const droppedItemId = rollGenericCombatLoot();
-      if (droppedItemId !== undefined) {
-        const addResult = inventoryManager.addQuantity(heroId, droppedItemId, 1);
-        if (addResult.ok) {
-          // A stack owns one runtime instance in the current item model.
-          // New equipment stacks receive full durability; adding to an
-          // existing identical stack keeps the durability already attached.
-          const eqInfo = resolveEquipmentInfo(droppedItemId);
-          if (eqInfo !== undefined) {
-            const position = addResult.value.affectedPositions[0];
-            if (position !== undefined) {
-              const slot = inventoryManager.getSlot(heroId, position);
-              if (slot.ok && slot.value.entry !== undefined) {
-                const existingDurability = durabilityStore.get(slot.value.entry.instanceId);
-                if (existingDurability === undefined) {
-                  durabilityStore.attach(slot.value.entry.instanceId, 100);
-                }
-              }
-            }
-          }
-
-          bridge.addEconomyNotification({
-            id: `notif_loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-            type: "success",
-            message: `Loot: ${droppedItemId.replace("item_", "").replace(/_/g, " ")}`,
-            timestamp: Date.now(),
-          });
-        }
+      if (rewardResult.equipmentDropped !== undefined) {
+        const formattedName = rewardResult.equipmentDropped.itemId
+          .replace("item_", "")
+          .replace(/_/g, " ");
+        bridge.addEconomyNotification({
+          id: `notif_loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
+          type: "success",
+          message: `Loot: ${formattedName}`,
+          timestamp: Date.now(),
+        });
       }
 
-      const enchantmentMaterialId = rollEnchantmentMaterial();
-      if (enchantmentMaterialId !== undefined) {
-        const materialResult = inventoryManager.addQuantity(
-          heroId,
-          enchantmentMaterialId,
-          1,
-        );
-        if (materialResult.ok) {
-          bridge.addEconomyNotification({
-            id: `notif_enchantment_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-            type: "success",
-            message: `Rare : ${ENCHANTMENT_MATERIAL_NAMES[enchantmentMaterialId] ?? enchantmentMaterialId}`,
-            timestamp: Date.now(),
-          });
-        }
+      if (rewardResult.enchantmentMaterialDropped !== undefined) {
+        const matId = rewardResult.enchantmentMaterialDropped.itemId;
+        const matName = ENCHANTMENT_MATERIAL_NAMES[matId] ?? matId;
+        bridge.addEconomyNotification({
+          id: `notif_enchantment_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
+          type: "success",
+          message: `Rare : ${matName}`,
+          timestamp: Date.now(),
+        });
       }
 
-      // --- Resync all panels ---
       resyncAll();
     });
 
