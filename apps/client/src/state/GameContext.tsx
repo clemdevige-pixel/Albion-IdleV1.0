@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { RuntimeLifecycle } from "../runtime/RuntimeLifecycle.js";
 import { EventBus, World, createRuntimeServices } from "@game/core";
 import {
   CombatService,
@@ -4084,7 +4085,8 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
   // Start tick loop and setup auto-load / auto-save persistence listeners
   useEffect(() => {
     const b = services.bridge as unknown as CleanupRef;
-    const intervalId = window.setInterval(b._tickFn!, b._tickInterval);
+    const lifecycle = new RuntimeLifecycle();
+    lifecycle.start(b._tickFn!, b._tickInterval);
 
     // Auto-load existing save once on startup after runtime services and providers are ready
     if (!initialLoadAttemptedRef.current) {
@@ -4142,7 +4144,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     }
 
     return () => {
-      clearInterval(intervalId);
+      lifecycle.stop();
       if (autoSaveIntervalId !== undefined) {
         clearInterval(autoSaveIntervalId);
       }
