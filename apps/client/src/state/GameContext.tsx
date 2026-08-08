@@ -70,6 +70,7 @@ import { GameBridge, type GameBridgeState, type WorldVM, type WorkerProfessionVM
 import { GatheringRuntime } from "../runtime/GatheringRuntime";
 import { RefiningRuntime } from "../runtime/RefiningRuntime";
 import { CraftingRuntime } from "../runtime/CraftingRuntime";
+import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -116,8 +117,6 @@ import {
   REPAIR_COST_DEFINITIONS,
   rollEnchantmentMaterial,
   rollGenericCombatLoot,
-  HEALTH_POTION_HEAL_RATIO,
-  HEALTH_POTION_COOLDOWN_SECONDS,
 } from "../data/economyContentCatalog";
 import {
   ITEM_DEFINITIONS,
@@ -1882,28 +1881,26 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       bridge.setCombatState("combat");
     }
 
+    const consumableRuntime = new ConsumableRuntime({
+      inventoryManager,
+      damageManager,
+      abilityManager,
+      heroId,
+    });
+
     // --- Combat tick function (started in useEffect to survive StrictMode) ----
     const TICK_INTERVAL = 500;
     const DT = 0.5;
     const tickState = { accumulator: 0 };
-    let healthPotionCooldownRemaining = 0;
 
     const syncConsumables = (): void => {
-      bridge.updateConsumables({
-        healthPotionCooldown: HEALTH_POTION_COOLDOWN_SECONDS,
-        healthPotionCooldownRemaining,
-        healthPotionHealPercent: HEALTH_POTION_HEAL_RATIO * 100,
-      });
+      bridge.updateConsumables(consumableRuntime.getState());
     };
     syncConsumables();
 
     const tickFn = (): void => {
       tickCounter += 1;
-      if (healthPotionCooldownRemaining > 0) {
-        healthPotionCooldownRemaining = Math.max(
-          0,
-          healthPotionCooldownRemaining - DT,
-        );
+      if (consumableRuntime.tick(DT)) {
         syncConsumables();
       }
       gatheringRuntime.tick(tickCounter);
@@ -2050,57 +2047,35 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const useConsumable = (itemId: string): boolean => {
-      let availableRestore = 0;
-      if (itemId === "item_health_potion") {
-        if (healthPotionCooldownRemaining > 0) {
+      const result = consumableRuntime.useConsumable(itemId);
+      if (!result.ok) {
+        if (result.reason === "cooldown") {
           bridge.addEconomyNotification({
             id: `notif_consumable_cooldown_${String(Date.now())}`,
             type: "error",
-            message: `Potion indisponible : ${String(Math.ceil(healthPotionCooldownRemaining))} s`,
+            message: `Potion indisponible : ${String(Math.ceil(result.remainingSeconds))} s`,
             timestamp: Date.now(),
           });
-          return false;
+        } else if (result.reason === "resource_full") {
+          bridge.addEconomyNotification({
+            id: `notif_consumable_full_${String(Date.now())}`,
+            type: "error",
+            message: "Impossible à utiliser : ressource déjà pleine",
+            timestamp: Date.now(),
+          });
         }
-        const health = damageManager.getHealth(heroId);
-        availableRestore = Math.min(
-          Math.ceil(health.maxHealth * HEALTH_POTION_HEAL_RATIO),
-          health.maxHealth - health.currentHealth,
-        );
-      } else if (itemId === "item_energy_potion") {
-        const energy = abilityManager.getEnergy(heroId);
-        availableRestore = Math.min(50, energy.maxEnergy - energy.currentEnergy);
-      } else {
         return false;
       }
 
-      if (availableRestore <= 0) {
-        bridge.addEconomyNotification({
-          id: `notif_consumable_full_${String(Date.now())}`,
-          type: "error",
-          message: "Impossible à utiliser : ressource déjà pleine",
-          timestamp: Date.now(),
-        });
-        return false;
-      }
-
-      const removed = inventoryManager.removeQuantity(heroId, itemId, 1);
-      if (!removed.ok) {
-        return false;
-      }
-
-      const restored = itemId === "item_health_potion"
-        ? damageManager.healDamage(heroId, availableRestore)
-        : abilityManager.restoreEnergy(heroId, 50);
-      const message = itemId === "item_health_potion"
-        ? `Potion de soin : +${String(restored)} PV`
-        : `Potion d'énergie : +${String(restored)} énergie`;
-
-      if (itemId === "item_health_potion") {
-        healthPotionCooldownRemaining = HEALTH_POTION_COOLDOWN_SECONDS;
+      if (result.itemId === "item_health_potion") {
         syncConsumables();
-        const health = damageManager.getHealth(heroId);
-        bridge.updatePlayerHealth(health.currentHealth, health.maxHealth);
+        if (result.currentHealth !== undefined && result.maxHealth !== undefined) {
+          bridge.updatePlayerHealth(result.currentHealth, result.maxHealth);
+        }
       }
+      const message = result.itemId === "item_health_potion"
+        ? `Potion de soin : +${String(result.restored)} PV`
+        : `Potion d'énergie : +${String(result.restored)} énergie`;
       syncInventoryToBridge(bridge, inventoryManager, heroId);
       bridge.addEconomyNotification({
         id: `notif_consumable_${String(Date.now())}`,
