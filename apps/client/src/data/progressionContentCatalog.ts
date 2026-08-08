@@ -1,4 +1,4 @@
-import { asMasteryId, asDestinyNodeId } from "@game/gameplay";
+import { asMasteryId, asDestinyNodeId, WEAPON_MASTERY_XP, GATHERING_MASTERY_XP } from "@game/gameplay";
 import { WEAPON_MASTERY_DEFINITIONS, getWeaponMasteryDisplayName } from "./weaponContentCatalog.js";
 
 export const SWORD_MASTERY_ID = asMasteryId("mastery_sword");
@@ -15,13 +15,8 @@ export const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");
 export const HIDE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_hide");
 export const FIBER_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_fiber");
 
-export const WEAPON_MASTERY_XP = [
-  100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700,
-];
+export { WEAPON_MASTERY_XP, GATHERING_MASTERY_XP };
 
-export const GATHERING_MASTERY_XP = [
-  50, 100, 175, 275, 400, 550, 750, 1000, 1300, 1700,
-];
 
 export const GATHERING_MASTERY_DEFINITIONS = [
   { id: "mastery_gathering_wood", category: "gathering", maxLevel: 100, experiencePerLevel: GATHERING_MASTERY_XP },

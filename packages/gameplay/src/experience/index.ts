@@ -18,3 +18,13 @@ export {
   ExperienceSaveProvider,
   type ExperienceTableResolver,
 } from "./experience-save-provider.js";
+export {
+  generateMasteryExperienceCurve,
+  roundXpRequirement,
+  getRoundingIncrement,
+  WEAPON_MASTERY_BASE_XP,
+  GATHERING_MASTERY_BASE_XP,
+  WEAPON_MASTERY_XP,
+  GATHERING_MASTERY_XP,
+} from "./experience-curve.js";
+

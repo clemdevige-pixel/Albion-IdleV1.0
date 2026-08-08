@@ -1,5 +1,6 @@
 import {
   asMasteryId,
+  WEAPON_MASTERY_XP,
   type AbilityDefinitionLike,
   type DamageType,
   type EquipmentInfoLike,
@@ -29,9 +30,7 @@ interface WeaponSpecializationContent {
   readonly items: readonly WeaponItemContent[];
 }
 
-const WEAPON_MASTERY_XP = [
-  100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700,
-];
+
 
 /**
  * Single authoring boundary for weapon gameplay content.
