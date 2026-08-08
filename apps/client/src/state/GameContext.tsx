@@ -1495,6 +1495,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       inventoryManager,
       damageManager,
       abilityManager,
+      deathManager,
       heroId,
     });
 
@@ -1597,7 +1598,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const useConsumable = (itemId: string): boolean => {
       const result = consumableRuntime.useConsumable(itemId);
       if (!result.ok) {
-        if (result.reason === "cooldown") {
+        if (result.reason === "hero_dead") {
+          bridge.addEconomyNotification({
+            id: `notif_consumable_dead_${String(Date.now())}`,
+            type: "error",
+            message: "Action impossible : le héros est vaincu.",
+            timestamp: Date.now(),
+          });
+        } else if (result.reason === "cooldown") {
           bridge.addEconomyNotification({
             id: `notif_consumable_cooldown_${String(Date.now())}`,
             type: "error",

@@ -1,5 +1,5 @@
 import type { EntityId } from "@game/core";
-import type { AbilityManager, DamageManager, InventoryManager } from "@game/gameplay";
+import type { AbilityManager, DamageManager, DeathManager, InventoryManager } from "@game/gameplay";
 import {
   HEALTH_POTION_COOLDOWN_SECONDS,
   HEALTH_POTION_HEAL_RATIO,
@@ -12,6 +12,10 @@ export type UseConsumableResult =
       readonly restored: number;
       readonly currentHealth?: number;
       readonly maxHealth?: number;
+    }
+  | {
+      readonly ok: false;
+      readonly reason: "hero_dead";
     }
   | {
       readonly ok: false;
@@ -41,6 +45,7 @@ export interface ConsumableRuntimeDependencies {
   readonly inventoryManager: InventoryManager;
   readonly damageManager: DamageManager;
   readonly abilityManager: AbilityManager;
+  readonly deathManager: DeathManager;
   readonly heroId: EntityId;
 }
 
@@ -48,6 +53,7 @@ export class ConsumableRuntime {
   private readonly inventoryManager: InventoryManager;
   private readonly damageManager: DamageManager;
   private readonly abilityManager: AbilityManager;
+  private readonly deathManager: DeathManager;
   private readonly heroId: EntityId;
 
   private healthPotionCooldownRemaining = 0;
@@ -56,6 +62,7 @@ export class ConsumableRuntime {
     this.inventoryManager = deps.inventoryManager;
     this.damageManager = deps.damageManager;
     this.abilityManager = deps.abilityManager;
+    this.deathManager = deps.deathManager;
     this.heroId = deps.heroId;
   }
 
@@ -79,6 +86,10 @@ export class ConsumableRuntime {
   }
 
   public useConsumable(itemId: string): UseConsumableResult {
+    if (this.deathManager.isDead(this.heroId)) {
+      return { ok: false, reason: "hero_dead" };
+    }
+
     let availableRestore = 0;
     if (itemId === "item_health_potion") {
       if (this.healthPotionCooldownRemaining > 0) {
