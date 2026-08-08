@@ -55,7 +55,6 @@ import {
   GatheringCoordinator,
   RefiningManager,
   WorldSaveProvider,
-  getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
 import type { StatId, DamageEventMap, WalletId, PlayerId, ZoneDefinitionId, WorldIntegrationEventMap, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
@@ -68,6 +67,7 @@ import { RefiningRuntime } from "../runtime/RefiningRuntime";
 import { CraftingRuntime } from "../runtime/CraftingRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
+import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
 import { calculateProjectedSegmentRates } from "../runtime/projectedRateCalculator.js";
 import { recalculateWeaponMasteryStats } from "../runtime/weaponMasteryStatSync.js";
@@ -106,7 +106,6 @@ import {
   WEAPON_VENDOR_OFFERS,
 } from "../data/weaponContentCatalog";
 import {
-  ENCHANTMENT_MATERIAL_NAMES,
   GENERAL_VENDOR_FIXED_OFFERS,
   REPAIR_COST_DEFINITIONS,
 } from "../data/economyContentCatalog";
@@ -124,7 +123,6 @@ import {
   HIDE_GATHERING_MASTERY_ID,
   FIBER_GATHERING_MASTERY_ID,
   MASTERY_DEFINITIONS,
-  getMasteryDisplayName,
   DESTINY_NODES,
   getRequiredGatheringMasteryForTier,
 } from "../data/progressionContentCatalog";
@@ -761,17 +759,35 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     );
     syncRepairToBridge(bridge, collectRepairPreviewData(equipmentManager, inventoryManager, durabilityStore, repairCostResolver, heroId, 1.0));
 
-    // --- Track income rate -------------------------------------------------------
-    let lastSilver = 1000;
-    let incomeRate = 0;
+    const combatRewardRuntime = new CombatRewardRuntime({
+      currencyService,
+      walletId,
+      equipmentManager,
+      inventoryManager,
+      durabilityStore,
+      progressionOrchestrator,
+      experienceService,
+      heroId,
+    });
+
+    const combatRewardAdapter = setupCombatRewardAdapter({
+      combatService,
+      combatRewardRuntime,
+      worldRuntime,
+      bridge,
+      statsManager,
+      heroId,
+      recalculateWeaponMasteryStats: () => recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId),
+      resyncAll: () => resyncAll(),
+    });
 
     // --- Helper: full bridge resync after any mutation ---------------------------
     const resyncAll = (): void => {
-      syncWeaponMasteryStats?.(heroId);
+      recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
       const pState = progressionOrchestrator.getFullProgressionState();
       syncAllToBridge(
         bridge, inventoryManager, equipmentManager, statsManager,
-        currencyService, walletId, incomeRate, vendorRegistry, "vendor_general",
+        currencyService, walletId, combatRewardAdapter.getIncomeRate(), vendorRegistry, "vendor_general",
         heroId, pState.totalFame, pState.overflowPool,
         buildMasteryViewModels(pState),
       );
@@ -791,87 +807,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     damageEventBus.subscribe("DamageDealt", (evt) => {
       const target = evt.target === heroId ? "player" as const : "enemy" as const;
       bridge.addDamageNumber(evt.finalDamage, target);
-    });
-
-    const combatRewardRuntime = new CombatRewardRuntime({
-      currencyService,
-      walletId,
-      equipmentManager,
-      inventoryManager,
-      durabilityStore,
-      progressionOrchestrator,
-      experienceService,
-      heroId,
-    });
-
-    combatService.events.subscribe("enemyKilled", () => {
-      bridge.incrementEnemiesKilled();
-
-      const encounterRewards = getEncounterRewards(
-        worldRuntime.currentZoneIndex,
-        worldRuntime.currentSegment,
-        worldRuntime.currentEncounter,
-      );
-
-      const rewardResult = combatRewardRuntime.processEnemyKilledReward(
-        encounterRewards.silver,
-        encounterRewards.fame,
-      );
-
-      incomeRate = rewardResult.newBalance - lastSilver;
-      lastSilver = rewardResult.newBalance;
-
-      bridge.addTransaction({
-        id: `loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-        type: "credit",
-        description: `Loot: +${String(rewardResult.silverEarned)} Silver`,
-        amount: rewardResult.silverEarned,
-        timestamp: Date.now(),
-      });
-      bridge.addEconomyNotification({
-        id: `notif_silver_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-        type: "success",
-        message: `+${String(rewardResult.silverEarned)} Silver from loot`,
-        timestamp: Date.now(),
-      });
-
-      if (rewardResult.fameEarned !== undefined) {
-        syncWeaponMasteryStats?.(heroId);
-        syncStatsToBridge(bridge, statsManager, heroId);
-
-        const masteryName = getMasteryDisplayName(rewardResult.fameEarned.weaponId);
-        bridge.addEconomyNotification({
-          id: `notif_fame_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-          type: "success",
-          message: `+${String(rewardResult.fameEarned.amount)} Fame · ${masteryName}`,
-          timestamp: Date.now(),
-        });
-      }
-
-      if (rewardResult.equipmentDropped !== undefined) {
-        const formattedName = rewardResult.equipmentDropped.itemId
-          .replace("item_", "")
-          .replace(/_/g, " ");
-        bridge.addEconomyNotification({
-          id: `notif_loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-          type: "success",
-          message: `Loot: ${formattedName}`,
-          timestamp: Date.now(),
-        });
-      }
-
-      if (rewardResult.enchantmentMaterialDropped !== undefined) {
-        const matId = rewardResult.enchantmentMaterialDropped.itemId;
-        const matName = ENCHANTMENT_MATERIAL_NAMES[matId] ?? matId;
-        bridge.addEconomyNotification({
-          id: `notif_enchantment_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-          type: "success",
-          message: `Rare : ${matName}`,
-          timestamp: Date.now(),
-        });
-      }
-
-      resyncAll();
     });
 
     // --- Persistence setup -------------------------------------------------------
@@ -1406,8 +1341,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
       // After load, re-read wallet balance
       const balResult = currencyService.getBalance(walletId, "currency_silver");
-      lastSilver = balResult.ok ? balResult.value : 0;
-      incomeRate = 0;
+      combatRewardAdapter.resetSilverBalance(balResult.ok ? balResult.value : 0);
 
       // Re-sync health after load (stats may have changed)
       const hHealth = damageManager.getHealth(heroId);
