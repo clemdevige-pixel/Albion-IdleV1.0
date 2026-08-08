@@ -27,10 +27,10 @@ import {
   spawnEnemyForSegment,
   type SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
+import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
-const ENCOUNTERS_PER_SEGMENT = 10;
 
 export interface CombatLocationState {
   readonly zoneIndex: number;
@@ -377,14 +377,6 @@ export class CombatRuntime {
       };
     }
 
-    this.finalizeActiveEnemyDeath(tickCounter);
-
-    if (session.state === "victory" || session.state === "defeat") {
-      this.completedEncounterResult = session.state;
-      this.combatService.endEncounter();
-      return { combatState: session.state };
-    }
-
     this.abilityManager.tickAbilities(this.heroId, dt);
     this.abilityManager.restoreEnergy(this.heroId, 1.5);
     if (this.primaryAbilityAutoCast) {
@@ -392,14 +384,23 @@ export class CombatRuntime {
     }
 
     const tickResult = this.orchestrator.tick(dt);
-    const orchState = this.orchestrator.getState();
+
+    this.finalizeActiveEnemyDeath(tickCounter);
+
+    const activeSession = this.combatService.getActiveSession();
+    if (activeSession?.state === "victory" || activeSession?.state === "defeat") {
+      this.completedEncounterResult = activeSession.state;
+      this.combatService.endEncounter();
+      return { combatState: activeSession.state };
+    }
+
     const activeEffects: Array<{
       id: string;
       definitionId: string;
       effectType: StatusEffectType;
       remainingDuration: number;
     }> = [];
-    for (const [, effects] of orchState.activeEffects) {
+    for (const [, effects] of this.orchestrator.getState().activeEffects) {
       for (const eff of effects) {
         activeEffects.push({
           id: eff.id,
