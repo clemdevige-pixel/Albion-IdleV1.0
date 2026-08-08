@@ -82,6 +82,7 @@ import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentI
 
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
+import { GatheringRuntime } from "../runtime/GatheringRuntime";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -534,9 +535,6 @@ const GATHERING_MASTERY_XP = [50, 100, 175, 275, 400, 550, 750, 1000, 1300, 1700
 const HEALTH_POTION_HEAL_RATIO = 0.3;
 const HEALTH_POTION_COOLDOWN_SECONDS = 20;
 
-function getHeroGatheringXpForTier(tier: number): number {
-  return Math.max(1, Math.round(5 * (1.6 ** Math.max(0, tier - 3))));
-}
 
 function getWorkerGatheringXpForTier(tier: number): number {
   return Math.max(1, Math.round(4 * (1.5 ** Math.max(0, tier - 3))));
@@ -872,8 +870,6 @@ const GATHER_WOOD_TASK_ID = WORKER_TASK_IDS.wood;
 const GATHER_COPPER_TASK_ID = WORKER_TASK_IDS.ore;
 const GATHER_HIDE_TASK_ID = WORKER_TASK_IDS.hide;
 const GATHER_FIBER_TASK_ID = WORKER_TASK_IDS.fiber;
-const ACTIVE_GATHERING_CORRECT_BONUS_RATIO = 0.06;
-const ACTIVE_GATHERING_PERFECT_BONUS_RATIO = 0.1;
 
 export function GameProvider({ children }: { readonly children: ReactNode }): JSX.Element {
   const services = useMemo<GameServices>(() => {
@@ -1638,6 +1634,41 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       fiberGatheringManager,
       gatheringToolRegistry,
     );
+
+    const gatheringRuntime = new GatheringRuntime({
+      gatheringCoordinator,
+      gatheringManager,
+      oreGatheringCoordinator,
+      oreGatheringManager,
+      hideGatheringCoordinator,
+      hideGatheringManager,
+      fiberGatheringCoordinator,
+      fiberGatheringManager,
+      inventoryManager,
+      masteryService,
+      experienceService,
+      progressionOrchestrator,
+      heroId,
+      nodesAndTools: {
+        birchNodeId: birchNode.id,
+        pineNodeId: pineNode.id,
+        copperNodeId: copperNode.id,
+        ironNodeId: ironNode.id,
+        sturdyHideNodeId: sturdyHideNode.id,
+        thickHideNodeId: thickHideNode.id,
+        linenFiberNodeId: linenFiberNode.id,
+        fineFiberNodeId: fineFiberNode.id,
+        starterAxe,
+        tier4Axe,
+        starterPickaxe,
+        tier4Pickaxe,
+        starterSkinningKnife,
+        tier4SkinningKnife,
+        starterSickle,
+        tier4Sickle,
+      },
+      getProductionTier: () => productionTier,
+    });
     const refiningManager = new RefiningManager();
     const metalRefiningManager = new RefiningManager();
     const leatherRefiningManager = new RefiningManager();
@@ -2093,30 +2124,31 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     syncAbilities();
 
-    interface ActiveGatheringMiniGameState {
-      sessionId: string | null;
-      strikesUsed: number;
-      tier: 3 | 4 | null;
-    }
-
-    const activeGatheringMiniGames: Record<string, ActiveGatheringMiniGameState> = {
-      Wood: { sessionId: null, strikesUsed: 0, tier: null },
-      Ore: { sessionId: null, strikesUsed: 0, tier: null },
-      Hide: { sessionId: null, strikesUsed: 0, tier: null },
-      Fiber: { sessionId: null, strikesUsed: 0, tier: null },
-    };
-
-    const beginActiveGatheringMiniGame = (
-      resourceFamily: string,
-      sessionId: string,
-      tier: 3 | 4,
-    ): void => {
-      activeGatheringMiniGames[resourceFamily] = { sessionId, strikesUsed: 0, tier };
-    };
-
-    const endActiveGatheringMiniGame = (resourceFamily: string): void => {
-      activeGatheringMiniGames[resourceFamily] = { sessionId: null, strikesUsed: 0, tier: null };
-    };
+    gatheringRuntime.subscribeGatherCompleted((evt) => {
+      syncInventoryToBridge(bridge, inventoryManager, heroId);
+      if (evt.family === "Wood") {
+        syncGathering();
+        syncRefining();
+      } else if (evt.family === "Ore") {
+        syncOreGathering();
+        syncMetalRefining();
+      } else if (evt.family === "Hide") {
+        syncHideGathering();
+        syncLeatherRefining();
+      } else if (evt.family === "Fiber") {
+        syncFiberGathering();
+        syncClothRefining();
+      }
+      syncCrafting();
+      bridge.addEconomyNotification({
+        id: `notif_gather_${String(Date.now())}`,
+        type: evt.added ? "success" : "error",
+        message: evt.added
+          ? `+${String(evt.quantityAdded)} ${evt.itemLabel}`
+          : "Inventaire plein : récolte non stockée",
+        timestamp: Date.now(),
+      });
+    });
 
     const syncGathering = (): void => {
       const recipe = getWoodRecipe();
@@ -2132,7 +2164,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "resource_wood",
         productionTier,
         inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeGatheringMiniGames["Wood"]?.strikesUsed ?? 0,
+        gatheringRuntime.getActiveMiniGameState("Wood").strikesUsed,
       );
     };
 
@@ -2150,7 +2182,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "resource_ore",
         productionTier,
         inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeGatheringMiniGames["Ore"]?.strikesUsed ?? 0,
+        gatheringRuntime.getActiveMiniGameState("Ore").strikesUsed,
       );
     };
 
@@ -2168,7 +2200,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "resource_hide",
         productionTier,
         inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeGatheringMiniGames["Hide"]?.strikesUsed ?? 0,
+        gatheringRuntime.getActiveMiniGameState("Hide").strikesUsed,
       );
     };
 
@@ -2186,15 +2218,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "resource_fiber",
         productionTier,
         inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-        activeGatheringMiniGames["Fiber"]?.strikesUsed ?? 0,
+        gatheringRuntime.getActiveMiniGameState("Fiber").strikesUsed,
       );
     };
-
-    // Listen to the manager's completion event directly. This event is the
-    // authoritative end of a gathering session; the higher-level coordinator
-    // may legitimately discard its derived event when session metadata is no
-    // longer available.
-    let automaticGathering = false;
 
     const getHeroGatheringMasteryLevel = (
       masteryId: ReturnType<typeof asMasteryId>,
@@ -2230,353 +2256,105 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       );
     };
 
-    const awardGatheringMastery = (
-      masteryId: ReturnType<typeof asMasteryId>,
-      gatheredTier: 3 | 4 = productionTier,
-    ): void => {
-      experienceService.addExperience(
-        masteryId,
-        getHeroGatheringXpForTier(gatheredTier),
-        "gathering",
-      );
-      syncMasteryProgression();
-    };
-
-    const startGatheringCycle = (cycleTier: 3 | 4 = productionTier): boolean => {
-      if (
-        getHeroGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID)
-        < getRequiredGatheringMasteryForTier(cycleTier)
-      ) {
-        return false;
-      }
-      const baseTool = cycleTier === 4 ? tier4Axe : starterAxe;
-      const result = gatheringCoordinator.startGathering(
-        cycleTier === 4 ? pineNode.id : birchNode.id,
-        [{
-          ...baseTool,
-          speedModifier:
-            baseTool.speedModifier * getHeroGatheringMasteryModifier(WOOD_GATHERING_MASTERY_ID),
-        }],
-        tickCounter,
-      );
-      if (result.ok) {
-        beginActiveGatheringMiniGame("Wood", result.sessionId, cycleTier);
-      }
-      return result.ok;
-    };
-
-    gatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = activeGatheringMiniGames["Wood"]?.tier ?? productionTier;
-      endActiveGatheringMiniGame("Wood");
-      const recipe = getWoodRecipe(completedTier);
-      const added = inventoryManager.addQuantity(
-        heroId,
-        recipe.rawItemId,
-        result.quantityGathered,
-        {
-          itemId: recipe.rawItemId,
-          stackable: true,
-          maxStack: 999,
-        },
-      );
-      if (added.ok) {
-        awardGatheringMastery(WOOD_GATHERING_MASTERY_ID, completedTier);
-      }
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      if (automaticGathering && !startGatheringCycle(completedTier)) {
-        automaticGathering = false;
-      }
-      syncGathering();
-      syncRefining();
-      syncCrafting();
-      bridge.addEconomyNotification({
-        id: `notif_gather_${String(Date.now())}`,
-        type: added.ok ? "success" : "error",
-        message: added.ok
-          ? `+${String(added.value.added)} ${completedTier === 4 ? "Bois de pin" : "Bois de bouleau"}`
-          : "Inventaire plein : récolte non stockée",
-        timestamp: Date.now(),
-      });
-    });
-
     const toggleGathering = (): boolean => {
-      if (automaticGathering) {
-        automaticGathering = false;
-        const session = gatheringCoordinator.getActiveSession();
-        if (session !== undefined) {
-          gatheringManager.interruptSession(session.id);
-        }
-        endActiveGatheringMiniGame("Wood");
+      const res = gatheringRuntime.toggleGathering(tickCounter);
+      if (res.action === "stopped") {
         syncGathering();
         bridge.setCombatState("walking");
         return true;
       }
+      if (res.action === "started") {
+        prepareCombatResumeAfterGathering();
+        bridge.setCombatState("idle");
+        syncGathering();
+        return true;
+      }
+      return false;
+    };
 
-      automaticOreGathering = false;
-      automaticHideGathering = false;
-      automaticFiberGathering = false;
-      const oreSession = oreGatheringCoordinator.getActiveSession();
-      if (oreSession !== undefined) {
-        oreGatheringManager.interruptSession(oreSession.id);
+    const returnToCombat = (): boolean => {
+      if (gatheringRuntime.isHeroGathering()) {
+        toggleGathering();
+        toggleOreGathering();
+        toggleHideGathering();
+        toggleFiberGathering();
+        return true;
+      }
+      return false;
+    };
+
+    const toggleOreGathering = (): boolean => {
+      const res = gatheringRuntime.toggleOreGathering(tickCounter);
+      if (res.action === "stopped") {
         syncOreGathering();
+        bridge.setCombatState("walking");
+        return true;
       }
-      const hideSession = hideGatheringCoordinator.getActiveSession();
-      if (hideSession !== undefined) hideGatheringManager.interruptSession(hideSession.id);
-      const fiberSession = fiberGatheringCoordinator.getActiveSession();
-      if (fiberSession !== undefined) fiberGatheringManager.interruptSession(fiberSession.id);
-      automaticGathering = true;
-      if (!startGatheringCycle()) {
-        automaticGathering = false;
-        return false;
+      if (res.action === "started") {
+        prepareCombatResumeAfterGathering();
+        bridge.setCombatState("idle");
+        syncOreGathering();
+        return true;
       }
-      prepareCombatResumeAfterGathering();
-      bridge.setCombatState("idle");
-      syncGathering();
-      return true;
+      return false;
+    };
+
+    const toggleHideGathering = (): boolean => {
+      const res = gatheringRuntime.toggleHideGathering(tickCounter);
+      if (res.action === "stopped") {
+        syncHideGathering();
+        bridge.setCombatState("walking");
+        return true;
+      }
+      if (res.action === "started") {
+        prepareCombatResumeAfterGathering();
+        bridge.setCombatState("idle");
+        syncHideGathering();
+        return true;
+      }
+      return false;
+    };
+
+    const toggleFiberGathering = (): boolean => {
+      const res = gatheringRuntime.toggleFiberGathering(tickCounter);
+      if (res.action === "stopped") {
+        syncFiberGathering();
+        bridge.setCombatState("walking");
+        return true;
+      }
+      if (res.action === "started") {
+        prepareCombatResumeAfterGathering();
+        bridge.setCombatState("idle");
+        syncFiberGathering();
+        return true;
+      }
+      return false;
     };
 
     const performGatheringStrike = (
       resourceFamily: string,
       quality: "miss" | "correct" | "perfect",
     ): boolean => {
-      const coordinator = resourceFamily === "Wood"
-        ? gatheringCoordinator
-        : resourceFamily === "Ore"
-          ? oreGatheringCoordinator
-          : resourceFamily === "Hide"
-            ? hideGatheringCoordinator
-            : resourceFamily === "Fiber"
-              ? fiberGatheringCoordinator
-              : undefined;
-      const isAutomatic = resourceFamily === "Wood"
-        ? automaticGathering
-        : resourceFamily === "Ore"
-          ? automaticOreGathering
-          : resourceFamily === "Hide"
-            ? automaticHideGathering
-            : resourceFamily === "Fiber"
-              ? automaticFiberGathering
-              : false;
-      const miniGame = activeGatheringMiniGames[resourceFamily];
-      const session = coordinator?.getActiveSession();
-      if (
-        !isAutomatic
-        || coordinator === undefined
-        || miniGame === undefined
-        || session === undefined
-        || String(session.id) !== miniGame.sessionId
-      ) {
-        return false;
-      }
-
-      miniGame.strikesUsed += 1;
-      if (quality !== "miss") {
-        const ratio = quality === "perfect"
-          ? ACTIVE_GATHERING_PERFECT_BONUS_RATIO
-          : ACTIVE_GATHERING_CORRECT_BONUS_RATIO;
-        const bonusTicks = session.getRequiredTicks() * ratio;
-        coordinator.advanceActiveSession(bonusTicks, tickCounter);
-      }
-      if (resourceFamily === "Wood") syncGathering();
-      else if (resourceFamily === "Ore") syncOreGathering();
-      else if (resourceFamily === "Hide") syncHideGathering();
-      else syncFiberGathering();
-      return true;
-    };
-    syncGathering();
-
-    let automaticOreGathering = false;
-    const startOreGatheringCycle = (cycleTier: 3 | 4 = productionTier): boolean => {
-      if (
-        getHeroGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID)
-        < getRequiredGatheringMasteryForTier(cycleTier)
-      ) {
-        return false;
-      }
-      const baseTool = cycleTier === 4 ? tier4Pickaxe : starterPickaxe;
-      const result = oreGatheringCoordinator.startGathering(
-        cycleTier === 4 ? ironNode.id : copperNode.id,
-        [{
-          ...baseTool,
-          speedModifier:
-            baseTool.speedModifier * getHeroGatheringMasteryModifier(ORE_GATHERING_MASTERY_ID),
-        }],
+      const res = gatheringRuntime.performGatheringStrike(
+        resourceFamily as ResourceFamily,
+        quality,
         tickCounter,
       );
-      if (result.ok) beginActiveGatheringMiniGame("Ore", result.sessionId, cycleTier);
-      return result.ok;
-    };
-
-    oreGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = activeGatheringMiniGames["Ore"]?.tier ?? productionTier;
-      endActiveGatheringMiniGame("Ore");
-      const recipe = getMetalRecipe(completedTier);
-      const added = inventoryManager.addQuantity(
-        heroId,
-        recipe.rawItemId,
-        result.quantityGathered,
-        { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
-      );
-      if (added.ok) {
-        awardGatheringMastery(ORE_GATHERING_MASTERY_ID, completedTier);
-      }
-      if (automaticOreGathering && !startOreGatheringCycle(completedTier)) {
-        automaticOreGathering = false;
-      }
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncOreGathering();
-      syncMetalRefining();
-      syncCrafting();
-    });
-
-    const toggleOreGathering = (): boolean => {
-      if (automaticOreGathering) {
-        automaticOreGathering = false;
-        const session = oreGatheringCoordinator.getActiveSession();
-        if (session !== undefined) oreGatheringManager.interruptSession(session.id);
-        syncOreGathering();
-        bridge.setCombatState("walking");
+      if (res.ok) {
+        if (resourceFamily === "Wood") syncGathering();
+        else if (resourceFamily === "Ore") syncOreGathering();
+        else if (resourceFamily === "Hide") syncHideGathering();
+        else syncFiberGathering();
         return true;
       }
-      automaticGathering = false;
-      automaticHideGathering = false;
-      automaticFiberGathering = false;
-      const woodSession = gatheringCoordinator.getActiveSession();
-      if (woodSession !== undefined) {
-        gatheringManager.interruptSession(woodSession.id);
-        syncGathering();
-      }
-      const hideSession = hideGatheringCoordinator.getActiveSession();
-      if (hideSession !== undefined) hideGatheringManager.interruptSession(hideSession.id);
-      const fiberSession = fiberGatheringCoordinator.getActiveSession();
-      if (fiberSession !== undefined) fiberGatheringManager.interruptSession(fiberSession.id);
-      automaticOreGathering = true;
-      if (!startOreGatheringCycle()) {
-        automaticOreGathering = false;
-        return false;
-      }
-      prepareCombatResumeAfterGathering();
-      bridge.setCombatState("idle");
-      syncOreGathering();
-      return true;
-    };
-    syncOreGathering();
-
-    let automaticHideGathering = false;
-    const startHideGatheringCycle = (cycleTier: 3 | 4 = productionTier): boolean => {
-      if (getHeroGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID)
-        < getRequiredGatheringMasteryForTier(cycleTier)) return false;
-      const baseTool = cycleTier === 4 ? tier4SkinningKnife : starterSkinningKnife;
-      const result = hideGatheringCoordinator.startGathering(
-        cycleTier === 4 ? thickHideNode.id : sturdyHideNode.id,
-        [{ ...baseTool, speedModifier: baseTool.speedModifier * getHeroGatheringMasteryModifier(HIDE_GATHERING_MASTERY_ID) }],
-        tickCounter,
-      );
-      if (result.ok) beginActiveGatheringMiniGame("Hide", result.sessionId, cycleTier);
-      return result.ok;
-    };
-    hideGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = activeGatheringMiniGames["Hide"]?.tier ?? productionTier;
-      endActiveGatheringMiniGame("Hide");
-      const recipe = getLeatherRecipe(completedTier);
-      const added = inventoryManager.addQuantity(heroId, recipe.rawItemId, result.quantityGathered, {
-        itemId: recipe.rawItemId, stackable: true, maxStack: 999,
-      });
-      if (added.ok) awardGatheringMastery(HIDE_GATHERING_MASTERY_ID, completedTier);
-      if (automaticHideGathering && !startHideGatheringCycle(completedTier)) automaticHideGathering = false;
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncHideGathering();
-      syncLeatherRefining();
-      syncCrafting();
-    });
-    const toggleHideGathering = (): boolean => {
-      if (automaticHideGathering) {
-        automaticHideGathering = false;
-        const session = hideGatheringCoordinator.getActiveSession();
-        if (session !== undefined) hideGatheringManager.interruptSession(session.id);
-        syncHideGathering();
-        bridge.setCombatState("walking");
-        return true;
-      }
-      automaticGathering = false;
-      automaticOreGathering = false;
-      automaticFiberGathering = false;
-      const wood = gatheringCoordinator.getActiveSession();
-      if (wood !== undefined) gatheringManager.interruptSession(wood.id);
-      const ore = oreGatheringCoordinator.getActiveSession();
-      if (ore !== undefined) oreGatheringManager.interruptSession(ore.id);
-      const fiber = fiberGatheringCoordinator.getActiveSession();
-      if (fiber !== undefined) fiberGatheringManager.interruptSession(fiber.id);
-      automaticHideGathering = true;
-      if (!startHideGatheringCycle()) { automaticHideGathering = false; return false; }
-      prepareCombatResumeAfterGathering();
-      bridge.setCombatState("idle");
-      syncHideGathering();
-      return true;
-    };
-    syncHideGathering();
-
-    let automaticFiberGathering = false;
-    const startFiberGatheringCycle = (cycleTier: 3 | 4 = productionTier): boolean => {
-      if (getHeroGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID)
-        < getRequiredGatheringMasteryForTier(cycleTier)) return false;
-      const baseTool = cycleTier === 4 ? tier4Sickle : starterSickle;
-      const result = fiberGatheringCoordinator.startGathering(
-        cycleTier === 4 ? fineFiberNode.id : linenFiberNode.id,
-        [{ ...baseTool, speedModifier: baseTool.speedModifier * getHeroGatheringMasteryModifier(FIBER_GATHERING_MASTERY_ID) }],
-        tickCounter,
-      );
-      if (result.ok) beginActiveGatheringMiniGame("Fiber", result.sessionId, cycleTier);
-      return result.ok;
-    };
-    fiberGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = activeGatheringMiniGames["Fiber"]?.tier ?? productionTier;
-      endActiveGatheringMiniGame("Fiber");
-      const recipe = getClothRecipe(completedTier);
-      const added = inventoryManager.addQuantity(heroId, recipe.rawItemId, result.quantityGathered, {
-        itemId: recipe.rawItemId, stackable: true, maxStack: 999,
-      });
-      if (added.ok) awardGatheringMastery(FIBER_GATHERING_MASTERY_ID, completedTier);
-      if (automaticFiberGathering && !startFiberGatheringCycle(completedTier)) automaticFiberGathering = false;
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncFiberGathering();
-      syncClothRefining();
-      syncCrafting();
-    });
-    const toggleFiberGathering = (): boolean => {
-      if (automaticFiberGathering) {
-        automaticFiberGathering = false;
-        const session = fiberGatheringCoordinator.getActiveSession();
-        if (session !== undefined) fiberGatheringManager.interruptSession(session.id);
-        syncFiberGathering();
-        bridge.setCombatState("walking");
-        return true;
-      }
-      automaticGathering = false;
-      automaticOreGathering = false;
-      automaticHideGathering = false;
-      const wood = gatheringCoordinator.getActiveSession();
-      if (wood !== undefined) gatheringManager.interruptSession(wood.id);
-      const ore = oreGatheringCoordinator.getActiveSession();
-      if (ore !== undefined) oreGatheringManager.interruptSession(ore.id);
-      const hide = hideGatheringCoordinator.getActiveSession();
-      if (hide !== undefined) hideGatheringManager.interruptSession(hide.id);
-      automaticFiberGathering = true;
-      if (!startFiberGatheringCycle()) { automaticFiberGathering = false; return false; }
-      prepareCombatResumeAfterGathering();
-      bridge.setCombatState("idle");
-      syncFiberGathering();
-      return true;
-    };
-    syncFiberGathering();
-
-    const returnToCombat = (): boolean => {
-      if (automaticGathering) return toggleGathering();
-      if (automaticOreGathering) return toggleOreGathering();
-      if (automaticHideGathering) return toggleHideGathering();
-      if (automaticFiberGathering) return toggleFiberGathering();
       return false;
     };
+
+    syncGathering();
+    syncOreGathering();
+    syncHideGathering();
+    syncFiberGathering();
+
 
     interface ReservedRefiningRequirement {
       readonly itemId: string;
@@ -3547,10 +3325,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         );
         syncConsumables();
       }
-      gatheringCoordinator.tick(tickCounter);
-      oreGatheringCoordinator.tick(tickCounter);
-      hideGatheringCoordinator.tick(tickCounter);
-      fiberGatheringCoordinator.tick(tickCounter);
+      gatheringRuntime.tick(tickCounter);
       refiningManager.tick(tickCounter);
       metalRefiningManager.tick(tickCounter);
       leatherRefiningManager.tick(tickCounter);
@@ -3574,11 +3349,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       if (leatherRefiningManager.getActiveSession() !== undefined) syncLeatherRefining();
       if (clothRefiningManager.getActiveSession() !== undefined) syncClothRefining();
 
-      const heroIsGathering =
-        gatheringCoordinator.getActiveSession() !== undefined
-        || oreGatheringCoordinator.getActiveSession() !== undefined
-        || hideGatheringCoordinator.getActiveSession() !== undefined
-        || fiberGatheringCoordinator.getActiveSession() !== undefined;
+      const heroIsGathering = gatheringRuntime.isHeroGathering();
       if (heroIsGathering) {
         bridge.setCombatState("idle");
         return;
