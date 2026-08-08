@@ -59,7 +59,7 @@ import {
   getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
-import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, ZoneDefinitionId, WorldIntegrationEventMap, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
+import type { StatId, DamageEventMap, WalletId, PlayerId, ZoneDefinitionId, WorldIntegrationEventMap, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
 import { WorkerRuntime } from "../runtime/WorkerRuntime.js";
 
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
@@ -71,6 +71,7 @@ import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
 import { calculateProjectedSegmentRates } from "../runtime/projectedRateCalculator.js";
+import { recalculateWeaponMasteryStats } from "../runtime/weaponMasteryStatSync.js";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -92,19 +93,14 @@ import {
   buildMasteryViewModels,
 } from "./bridgeSync";
 import {
-  BIRCH_PLANK_RECIPE,
-  COPPER_BAR_RECIPE,
-  PINE_PLANK_RECIPE,
-  IRON_BAR_RECIPE,
-  STURDY_LEATHER_RECIPE,
-  LINEN_CLOTH_RECIPE,
-  THICK_LEATHER_RECIPE,
-  FINE_CLOTH_RECIPE,
   EQUIPMENT_CRAFT_RECIPES,
+  getWoodRecipe,
+  getMetalRecipe,
+  getLeatherRecipe,
+  getClothRecipe,
 } from "../data/refiningRecipes";
 import {
   getItemPower,
-  getMasteryItemPowerBonus,
 } from "../data/itemPower";
 import {
   WEAPON_VENDOR_OFFERS,
@@ -115,7 +111,6 @@ import {
   REPAIR_COST_DEFINITIONS,
 } from "../data/economyContentCatalog";
 import {
-  ITEM_DEFINITIONS,
   resolveEquipmentInfo,
   resolveEnchantmentItemInfo,
   resolveItemStackInfo,
@@ -207,8 +202,6 @@ const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_ATTACK_SPEED = "stat_attack_speed" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
 export const HERO_BASE_ATTACK_SPEED = 1.2;
-const MASTERY_PHYSICAL_DAMAGE_MODIFIER = "mastery_weapon_physical_damage" as ModifierId;
-const MASTERY_MAGICAL_DAMAGE_MODIFIER = "mastery_weapon_magical_damage" as ModifierId;
 
 /** Internal refs for cleanup — not exposed to consumers. */
 interface CleanupRef {
@@ -389,44 +382,12 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
      * Hero base damage, attack speed and defensive stats are never scaled.
      */
     syncWeaponMasteryStats = (entityId: EntityId): void => {
-      statsManager.removeModifier(entityId, MASTERY_PHYSICAL_DAMAGE_MODIFIER);
-      statsManager.removeModifier(entityId, MASTERY_MAGICAL_DAMAGE_MODIFIER);
-
-      const equippedWeapon = equipmentManager.getEquippedItem(entityId, "weapon");
-      if (equippedWeapon === undefined) return;
-
-      const weaponDefinition = ITEM_DEFINITIONS[equippedWeapon.itemId];
-      if (weaponDefinition === undefined) return;
-
-      const masteries = [...masteryService.getAllMasteries().values()].map((mastery) => ({
-        id: mastery.masteryId as string,
-        level: mastery.level,
-      }));
-      const bonusIp = getMasteryItemPowerBonus(equippedWeapon.itemId, masteries);
-      if (bonusIp <= 0) return;
-
-      const physicalDamage = weaponDefinition.stats?.stat_physical_damage ?? 0;
-      const magicalDamage = weaponDefinition.stats?.stat_magical_damage ?? 0;
-      if (physicalDamage > 0) {
-        statsManager.addModifier(entityId, {
-          id: MASTERY_PHYSICAL_DAMAGE_MODIFIER,
-          statId: STAT_PHYSICAL_DAMAGE,
-          type: "flat",
-          value: physicalDamage * bonusIp / 500,
-          priority: 10,
-          source: "mastery:weapon_ip",
-        });
-      }
-      if (magicalDamage > 0) {
-        statsManager.addModifier(entityId, {
-          id: MASTERY_MAGICAL_DAMAGE_MODIFIER,
-          statId: STAT_MAGICAL_DAMAGE,
-          type: "flat",
-          value: magicalDamage * bonusIp / 500,
-          priority: 10,
-          source: "mastery:weapon_ip",
-        });
-      }
+      recalculateWeaponMasteryStats(
+        statsManager,
+        equipmentManager,
+        masteryService,
+        entityId,
+      );
     };
 
     // --- Durability & Repair systems -------------------------------------------
@@ -982,15 +943,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     let tickCounter = 0;
     let productionTier: 3 | 4 = 3;
 
-    const getWoodRecipe = (tier: 3 | 4 = productionTier) =>
-      tier === 4 ? PINE_PLANK_RECIPE : BIRCH_PLANK_RECIPE;
-    const getMetalRecipe = (tier: 3 | 4 = productionTier) =>
-      tier === 4 ? IRON_BAR_RECIPE : COPPER_BAR_RECIPE;
-    const getLeatherRecipe = (tier: 3 | 4 = productionTier) =>
-      tier === 4 ? THICK_LEATHER_RECIPE : STURDY_LEATHER_RECIPE;
-    const getClothRecipe = (tier: 3 | 4 = productionTier) =>
-      tier === 4 ? FINE_CLOTH_RECIPE : LINEN_CLOTH_RECIPE;
-
     const getEquippedWeaponId = (): string | undefined =>
       bridge.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId ?? undefined;
 
@@ -1058,7 +1010,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     });
 
     const syncGathering = (): void => {
-      const recipe = getWoodRecipe();
+      const recipe = getWoodRecipe(productionTier);
       syncGatheringToBridge(
         (vm) => { bridge.updateGathering(vm); },
         gatheringCoordinator.getActiveSession(),
@@ -1076,7 +1028,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const syncOreGathering = (): void => {
-      const recipe = getMetalRecipe();
+      const recipe = getMetalRecipe(productionTier);
       syncGatheringToBridge(
         (vm) => { bridge.updateOreGathering(vm); },
         oreGatheringCoordinator.getActiveSession(),
@@ -1094,7 +1046,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const syncHideGathering = (): void => {
-      const recipe = getLeatherRecipe();
+      const recipe = getLeatherRecipe(productionTier);
       syncGatheringToBridge(
         (vm) => { bridge.updateHideGathering(vm); },
         hideGatheringCoordinator.getActiveSession(),
@@ -1112,7 +1064,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const syncFiberGathering = (): void => {
-      const recipe = getClothRecipe();
+      const recipe = getClothRecipe(productionTier);
       syncGatheringToBridge(
         (vm) => { bridge.updateFiberGathering(vm); },
         fiberGatheringCoordinator.getActiveSession(),
@@ -1292,7 +1244,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateRefining(vm); },
         refiningManager.getActiveSession(),
         tickCounter,
-        getWoodRecipe(),
+        getWoodRecipe(productionTier),
         refiningRuntime.getReservedInputs("Wood"),
         inventoryManager,
         heroId,
@@ -1304,7 +1256,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateMetalRefining(vm); },
         metalRefiningManager.getActiveSession(),
         tickCounter,
-        getMetalRecipe(),
+        getMetalRecipe(productionTier),
         refiningRuntime.getReservedInputs("Ore"),
         inventoryManager,
         heroId,
@@ -1316,7 +1268,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateLeatherRefining(vm); },
         leatherRefiningManager.getActiveSession(),
         tickCounter,
-        getLeatherRecipe(),
+        getLeatherRecipe(productionTier),
         refiningRuntime.getReservedInputs("Hide"),
         inventoryManager,
         heroId,
@@ -1328,7 +1280,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         (vm) => { bridge.updateClothRefining(vm); },
         clothRefiningManager.getActiveSession(),
         tickCounter,
-        getClothRecipe(),
+        getClothRecipe(productionTier),
         refiningRuntime.getReservedInputs("Fiber"),
         inventoryManager,
         heroId,
@@ -1383,10 +1335,10 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         heroId,
         productionTier,
         {
-          woodItemId: getWoodRecipe().outputItemId,
-          metalItemId: getMetalRecipe().outputItemId,
-          leatherItemId: getLeatherRecipe().outputItemId,
-          clothItemId: getClothRecipe().outputItemId,
+          woodItemId: getWoodRecipe(productionTier).outputItemId,
+          metalItemId: getMetalRecipe(productionTier).outputItemId,
+          leatherItemId: getLeatherRecipe(productionTier).outputItemId,
+          clothItemId: getClothRecipe(productionTier).outputItemId,
         },
         getItemPower,
         EQUIPMENT_CRAFT_RECIPES,

@@ -325,3 +325,20 @@ export const EQUIPMENT_CRAFT_RECIPES = [
     ],
   },
 ] as const;
+
+export function getWoodRecipe(tier: 3 | 4) {
+  return tier === 4 ? PINE_PLANK_RECIPE : BIRCH_PLANK_RECIPE;
+}
+
+export function getMetalRecipe(tier: 3 | 4) {
+  return tier === 4 ? IRON_BAR_RECIPE : COPPER_BAR_RECIPE;
+}
+
+export function getLeatherRecipe(tier: 3 | 4) {
+  return tier === 4 ? THICK_LEATHER_RECIPE : STURDY_LEATHER_RECIPE;
+}
+
+export function getClothRecipe(tier: 3 | 4) {
+  return tier === 4 ? FINE_CLOTH_RECIPE : LINEN_CLOTH_RECIPE;
+}
+
