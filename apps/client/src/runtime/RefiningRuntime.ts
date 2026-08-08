@@ -302,14 +302,21 @@ export class RefiningRuntime {
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
       );
-      if (!added.ok) this.refundRefiningRequirements(this.reservedRefiningInputs);
-      this.reservedRefiningInputs = [];
-      this.refiningManager.clear();
-      if (this.automaticRefining && !this.startRefiningCycle(recipe, this.currentTickCounter)) {
+      if (!added.ok) {
+        this.refundRefiningRequirements(this.reservedRefiningInputs);
         this.automaticRefining = false;
         this.activeWoodRefiningRecipe = undefined;
-      } else if (!this.automaticRefining) {
-        this.activeWoodRefiningRecipe = undefined;
+        this.reservedRefiningInputs = [];
+        this.refiningManager.clear();
+      } else {
+        this.reservedRefiningInputs = [];
+        this.refiningManager.clear();
+        if (this.automaticRefining && !this.startRefiningCycle(recipe, this.currentTickCounter)) {
+          this.automaticRefining = false;
+          this.activeWoodRefiningRecipe = undefined;
+        } else if (!this.automaticRefining) {
+          this.activeWoodRefiningRecipe = undefined;
+        }
       }
       this.notifyRefineCompleted({
         family: "Wood",
@@ -327,14 +334,21 @@ export class RefiningRuntime {
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
       );
-      if (!added.ok) this.refundRefiningRequirements(this.reservedMetalInputs);
-      this.reservedMetalInputs = [];
-      this.metalRefiningManager.clear();
-      if (this.automaticMetalRefining && !this.startMetalRefiningCycle(recipe, this.currentTickCounter)) {
+      if (!added.ok) {
+        this.refundRefiningRequirements(this.reservedMetalInputs);
         this.automaticMetalRefining = false;
         this.activeMetalRefiningRecipe = undefined;
-      } else if (!this.automaticMetalRefining) {
-        this.activeMetalRefiningRecipe = undefined;
+        this.reservedMetalInputs = [];
+        this.metalRefiningManager.clear();
+      } else {
+        this.reservedMetalInputs = [];
+        this.metalRefiningManager.clear();
+        if (this.automaticMetalRefining && !this.startMetalRefiningCycle(recipe, this.currentTickCounter)) {
+          this.automaticMetalRefining = false;
+          this.activeMetalRefiningRecipe = undefined;
+        } else if (!this.automaticMetalRefining) {
+          this.activeMetalRefiningRecipe = undefined;
+        }
       }
       this.notifyRefineCompleted({
         family: "Ore",
@@ -352,14 +366,21 @@ export class RefiningRuntime {
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
       );
-      if (!added.ok) this.refundRefiningRequirements(this.reservedLeatherInputs);
-      this.reservedLeatherInputs = [];
-      this.leatherRefiningManager.clear();
-      if (this.automaticLeatherRefining && !this.startLeatherRefiningCycle(recipe, this.currentTickCounter)) {
+      if (!added.ok) {
+        this.refundRefiningRequirements(this.reservedLeatherInputs);
         this.automaticLeatherRefining = false;
         this.activeLeatherRefiningRecipe = undefined;
-      } else if (!this.automaticLeatherRefining) {
-        this.activeLeatherRefiningRecipe = undefined;
+        this.reservedLeatherInputs = [];
+        this.leatherRefiningManager.clear();
+      } else {
+        this.reservedLeatherInputs = [];
+        this.leatherRefiningManager.clear();
+        if (this.automaticLeatherRefining && !this.startLeatherRefiningCycle(recipe, this.currentTickCounter)) {
+          this.automaticLeatherRefining = false;
+          this.activeLeatherRefiningRecipe = undefined;
+        } else if (!this.automaticLeatherRefining) {
+          this.activeLeatherRefiningRecipe = undefined;
+        }
       }
       this.notifyRefineCompleted({
         family: "Hide",
@@ -377,14 +398,21 @@ export class RefiningRuntime {
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
       );
-      if (!added.ok) this.refundRefiningRequirements(this.reservedClothInputs);
-      this.reservedClothInputs = [];
-      this.clothRefiningManager.clear();
-      if (this.automaticClothRefining && !this.startClothRefiningCycle(recipe, this.currentTickCounter)) {
+      if (!added.ok) {
+        this.refundRefiningRequirements(this.reservedClothInputs);
         this.automaticClothRefining = false;
         this.activeClothRefiningRecipe = undefined;
-      } else if (!this.automaticClothRefining) {
-        this.activeClothRefiningRecipe = undefined;
+        this.reservedClothInputs = [];
+        this.clothRefiningManager.clear();
+      } else {
+        this.reservedClothInputs = [];
+        this.clothRefiningManager.clear();
+        if (this.automaticClothRefining && !this.startClothRefiningCycle(recipe, this.currentTickCounter)) {
+          this.automaticClothRefining = false;
+          this.activeClothRefiningRecipe = undefined;
+        } else if (!this.automaticClothRefining) {
+          this.activeClothRefiningRecipe = undefined;
+        }
       }
       this.notifyRefineCompleted({
         family: "Fiber",
