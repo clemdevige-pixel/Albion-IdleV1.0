@@ -43,6 +43,9 @@ import { setupCombatRewardAdapter } from "./combatRewardAdapter.js";
 import { WorldRuntime } from "./WorldRuntime.js";
 import { setupCombatEntity } from "./combatEntityFactory.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
+import { CLIENT_ABILITIES } from "../data/weaponContentCatalog.js";
+import { getWeaponAttackSpeed } from "../data/itemPower.js";
+import { getItemDefinition } from "../panels/ItemVisual.js";
 import {
   MASTERY_DEFINITIONS,
   DESTINY_NODES,
@@ -350,5 +353,85 @@ describe("combatRuntimeAndAdapter regression suite", () => {
     // Reward for zone 0 / segment 0 is 10 silver
     expect(adapter.getIncomeRate()).toBe(10);
     expect(adapter.getLastSilver()).toBe(1510);
+  });
+
+  it("Weapon rebalance pass 1: verifies theoretical sustained DPS and cooldowns for T4 weapons", () => {
+    // 1. Broadsword T4
+    const broadswordStats = resolveEquipmentInfo("item_weapon_sword_t4_broadsword")!.stats!;
+    const broadswordSpeed = getWeaponAttackSpeed("item_weapon_sword_t4_broadsword")!;
+    const broadswordAutoDps = broadswordStats.stat_physical_damage! * broadswordSpeed;
+    const broadswordAbility = CLIENT_ABILITIES["ability_sword_heroic_strike"]!;
+    expect(broadswordAbility.cooldown).toBe(8);
+    const broadswordAbilityDps = (broadswordStats.stat_physical_damage! * (1 + broadswordAbility.bonusDamageRatio)) / broadswordAbility.cooldown;
+    const broadswordTotalDps = broadswordAutoDps + broadswordAbilityDps;
+    expect(broadswordTotalDps).toBeCloseTo(106.41, 1);
+
+    // 2. Longbow T4
+    const longbowStats = resolveEquipmentInfo("item_weapon_bow_t4_longbow")!.stats!;
+    const longbowSpeed = getWeaponAttackSpeed("item_weapon_bow_t4_longbow")!;
+    const longbowAutoDps = longbowStats.stat_physical_damage! * longbowSpeed;
+    const longbowAbility = CLIENT_ABILITIES["ability_bow_aimed_shot"]!;
+    expect(longbowAbility.cooldown).toBe(5);
+    const longbowAbilityDps = (longbowStats.stat_physical_damage! * (1 + longbowAbility.bonusDamageRatio)) / longbowAbility.cooldown;
+    const longbowTotalDps = longbowAutoDps + longbowAbilityDps;
+    expect(longbowTotalDps).toBeCloseTo(112.20, 1);
+
+    // 3. Badon T4
+    const badonStats = resolveEquipmentInfo("item_weapon_bow_t4_badon")!.stats!;
+    const badonSpeed = getWeaponAttackSpeed("item_weapon_bow_t4_badon")!;
+    const badonAutoDps = badonStats.stat_physical_damage! * badonSpeed;
+    const badonAbility = CLIENT_ABILITIES["ability_bow_aimed_shot"]!;
+    expect(badonAbility.cooldown).toBe(5);
+    const badonAbilityDps = (badonStats.stat_physical_damage! * (1 + badonAbility.bonusDamageRatio)) / badonAbility.cooldown;
+    const badonTotalDps = badonAutoDps + badonAbilityDps;
+    expect(badonTotalDps).toBeCloseTo(114.84, 1);
+
+    // 4. Spiked Gauntlets T4
+    const gauntletsStats = resolveEquipmentInfo("item_weapon_gloves_t4_spiked_gauntlets")!.stats!;
+    const gauntletsSpeed = getWeaponAttackSpeed("item_weapon_gloves_t4_spiked_gauntlets")!;
+    const gauntletsAutoDps = gauntletsStats.stat_physical_damage! * gauntletsSpeed;
+    const gauntletsAbility = CLIENT_ABILITIES["ability_gloves_shockwave"]!;
+    expect(gauntletsAbility.cooldown).toBe(6);
+    const gauntletsAbilityDps = (gauntletsStats.stat_physical_damage! * (1 + gauntletsAbility.bonusDamageRatio)) / gauntletsAbility.cooldown;
+    const gauntletsTotalDps = gauntletsAutoDps + gauntletsAbilityDps;
+    expect(gauntletsTotalDps).toBeCloseTo(112.20, 1);
+
+    // 5. Fire Staff T4
+    const fireStaffStats = resolveEquipmentInfo("item_weapon_staff_t4_fire")!.stats!;
+    const fireStaffSpeed = getWeaponAttackSpeed("item_weapon_staff_t4_fire")!;
+    const fireStaffAutoDps = fireStaffStats.stat_magical_damage! * fireStaffSpeed;
+    const fireStaffAbility = CLIENT_ABILITIES["ability_fire_fireball"]!;
+    expect(fireStaffAbility.cooldown).toBe(5);
+    const fireStaffAbilityDps = (fireStaffStats.stat_magical_damage! * (1 + fireStaffAbility.bonusDamageRatio)) / fireStaffAbility.cooldown;
+    const fireStaffTotalDps = fireStaffAutoDps + fireStaffAbilityDps;
+    expect(fireStaffTotalDps).toBeCloseTo(111.60, 1);
+  });
+
+  it("Weapon rebalance data consistency check: resolveEquipmentInfo and getItemDefinition stats match", () => {
+    const weaponIds = [
+      "item_weapon_sword_t3_broadsword",
+      "item_weapon_sword_t4_broadsword",
+      "item_weapon_bow_t3_longbow",
+      "item_weapon_bow_t4_longbow",
+      "item_weapon_bow_t4_badon",
+      "item_weapon_staff_t3_fire",
+      "item_weapon_staff_t4_fire",
+      "item_weapon_gloves_t3_spiked_gauntlets",
+      "item_weapon_gloves_t4_spiked_gauntlets",
+    ];
+
+    for (const itemId of weaponIds) {
+      const eqInfo = resolveEquipmentInfo(itemId);
+      const itemDef = getItemDefinition(itemId);
+      expect(eqInfo).toBeDefined();
+      expect(itemDef).toBeDefined();
+
+      if (eqInfo?.stats?.stat_physical_damage !== undefined) {
+        expect(itemDef?.stats?.stat_physical_damage).toBe(eqInfo.stats.stat_physical_damage);
+      }
+      if (eqInfo?.stats?.stat_magical_damage !== undefined) {
+        expect(itemDef?.stats?.stat_magical_damage).toBe(eqInfo.stats.stat_magical_damage);
+      }
+    }
   });
 });

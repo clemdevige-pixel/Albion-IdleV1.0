@@ -74,7 +74,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       description: "Un tir précis infligeant 160 % des dégâts physiques.",
       icon: "🏹",
       category: "active",
-      cooldown: 6,
+      cooldown: 5,
       castTime: 0,
       resourceCost: { energy: 8 },
       interruptible: true,
@@ -83,8 +83,8 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.6,
     },
     items: [
-      { itemId: "item_weapon_bow_t3_longbow", handling: "two_handed", stats: { stat_physical_damage: 40 }, sellPrice: 70 },
-      { itemId: "item_weapon_bow_t4_longbow", handling: "two_handed", stats: { stat_physical_damage: 68 }, sellPrice: 200 },
+      { itemId: "item_weapon_bow_t3_longbow", handling: "two_handed", stats: { stat_physical_damage: 50 }, sellPrice: 70 },
+      { itemId: "item_weapon_bow_t4_longbow", handling: "two_handed", stats: { stat_physical_damage: 85 }, sellPrice: 200 },
     ],
   },
   {
@@ -98,7 +98,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       description: "Un tir précis infligeant 160 % des dégâts physiques.",
       icon: "🏹",
       category: "active",
-      cooldown: 6,
+      cooldown: 5,
       castTime: 0,
       resourceCost: { energy: 8 },
       interruptible: true,
@@ -107,7 +107,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.6,
     },
     items: [
-      { itemId: "item_weapon_bow_t4_badon", handling: "two_handed", stats: { stat_physical_damage: 72 }, sellPrice: 260 },
+      { itemId: "item_weapon_bow_t4_badon", handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 },
     ],
   },
   {
@@ -130,8 +130,8 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.7,
     },
     items: [
-      { itemId: "item_weapon_staff_t3_fire", handling: "two_handed", stats: { stat_magical_damage: 45 }, sellPrice: 80 },
-      { itemId: "item_weapon_staff_t4_fire", handling: "two_handed", stats: { stat_magical_damage: 85 }, sellPrice: 220 },
+      { itemId: "item_weapon_staff_t3_fire", handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 },
+      { itemId: "item_weapon_staff_t4_fire", handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 },
     ],
   },
   {
@@ -145,7 +145,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.",
       icon: "🥊",
       category: "active",
-      cooldown: 7,
+      cooldown: 6,
       castTime: 0,
       resourceCost: { energy: 10 },
       interruptible: false,
@@ -154,8 +154,8 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.8,
     },
     items: [
-      { itemId: "item_weapon_gloves_t3_spiked_gauntlets", handling: "two_handed", stats: { stat_physical_damage: 34 }, sellPrice: 75 },
-      { itemId: "item_weapon_gloves_t4_spiked_gauntlets", handling: "two_handed", stats: { stat_physical_damage: 58 }, sellPrice: 210 },
+      { itemId: "item_weapon_gloves_t3_spiked_gauntlets", handling: "two_handed", stats: { stat_physical_damage: 38 }, sellPrice: 75 },
+      { itemId: "item_weapon_gloves_t4_spiked_gauntlets", handling: "two_handed", stats: { stat_physical_damage: 66 }, sellPrice: 210 },
     ],
   },
 ];
@@ -185,7 +185,7 @@ export const CLIENT_ABILITIES: Record<string, ClientAbilityDefinition> = {
     description: "Un tir précis infligeant 160 % des dégâts physiques.",
     icon: "🏹",
     category: "active",
-    cooldown: 6,
+    cooldown: 5,
     castTime: 0,
     resourceCost: { energy: 8 },
     interruptible: true,
@@ -213,7 +213,7 @@ export const CLIENT_ABILITIES: Record<string, ClientAbilityDefinition> = {
     description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.",
     icon: "🥊",
     category: "active",
-    cooldown: 7,
+    cooldown: 6,
     castTime: 0,
     resourceCost: { energy: 10 },
     interruptible: false,
