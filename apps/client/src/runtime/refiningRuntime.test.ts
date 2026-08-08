@@ -4,7 +4,7 @@ import {
   InventoryManager,
   RefiningManager,
 } from "@game/gameplay";
-import { RefiningRuntime } from "./RefiningRuntime.js";
+import { RefiningRuntime, RefiningSaveProvider } from "./RefiningRuntime.js";
 
 function setupTestEnvironment(inventoryCapacity = 10) {
   const world = new World(createRuntimeServices());
@@ -194,5 +194,182 @@ describe("RefiningRuntime regression suite", () => {
     // Fails to start because T3 refined plank requirement is missing
     expect(startRes.action).toBe("failed");
     expect(env.runtime.isRefiningActive("Wood")).toBe(false);
+  });
+
+  describe("RefiningSaveProvider persistence recovery", () => {
+    it("A. Save mid-cycle, continue playing: live refining is not interrupted, completes normally", () => {
+      const env = setupTestEnvironment(10);
+      const provider = new RefiningSaveProvider(
+        env.runtime,
+        env.inventoryManager,
+        () => env.heroId,
+      );
+
+      // Add 4 T3 Wood logs
+      env.inventoryManager.addQuantity(env.heroId, "item_resource_wood_t3", 4, {
+        itemId: "item_resource_wood_t3",
+        stackable: true,
+        maxStack: 999,
+      });
+
+      // Start refining
+      env.runtime.toggleRefining(0);
+      expect(env.runtime.isRefiningActive("Wood")).toBe(true);
+
+      // Mid-cycle autosave occurs
+      const saveData = provider.save() as { reservedInputs: readonly { itemId: string; quantity: number }[] };
+      expect(saveData.reservedInputs).toEqual([
+        { itemId: "item_resource_wood_t3", quantity: 4 },
+      ]);
+
+      // LIVE GAME CONTINUES UNINTERRUPTED
+      expect(env.runtime.isRefiningActive("Wood")).toBe(true);
+
+      // Tick to completion
+      for (let tick = 1; tick <= 6; tick++) {
+        env.runtime.tick(tick);
+      }
+
+      // Output added, session cleared
+      expect(
+        env.inventoryManager.getTotalQuantity(
+          env.heroId,
+          "item_refined_planks_t3",
+        ),
+      ).toBe(1);
+      expect(env.runtime.isRefiningActive("Wood")).toBe(false);
+
+      // Subsequent save after completion contains no reserved inputs
+      const postCompletionSave = provider.save() as { reservedInputs: readonly { itemId: string; quantity: number }[] };
+      expect(postCompletionSave.reservedInputs).toEqual([]);
+    });
+
+    it("B. Save mid-cycle, simulate reload: restored inventory receives reserved inputs, runtime is idle", () => {
+      const env = setupTestEnvironment(10);
+      const provider = new RefiningSaveProvider(
+        env.runtime,
+        env.inventoryManager,
+        () => env.heroId,
+      );
+
+      // Add 4 T3 Wood logs
+      env.inventoryManager.addQuantity(env.heroId, "item_resource_wood_t3", 4, {
+        itemId: "item_resource_wood_t3",
+        stackable: true,
+        maxStack: 999,
+      });
+
+      // Start refining
+      env.runtime.toggleRefining(0);
+
+      // Mid-cycle save
+      const saveData = provider.save();
+
+      // SIMULATE RELOAD: Fresh environment where inventory was saved without 4 logs
+      const reloadEnv = setupTestEnvironment(10);
+      const reloadProvider = new RefiningSaveProvider(
+        reloadEnv.runtime,
+        reloadEnv.inventoryManager,
+        () => reloadEnv.heroId,
+      );
+
+      // Restore save data
+      reloadProvider.load(saveData);
+
+      // 1. Reserved inputs restored into inventory exactly once
+      expect(
+        reloadEnv.inventoryManager.getTotalQuantity(
+          reloadEnv.heroId,
+          "item_resource_wood_t3",
+        ),
+      ).toBe(4);
+
+      // 2. RefiningRuntime is idle
+      expect(reloadEnv.runtime.isRefiningActive("Wood")).toBe(false);
+
+      // 3. No refining output granted
+      expect(
+        reloadEnv.inventoryManager.getTotalQuantity(
+          reloadEnv.heroId,
+          "item_refined_planks_t3",
+        ),
+      ).toBe(0);
+    });
+
+    it("C. Legacy save: missing refining payload loads without error or inventory changes", () => {
+      const env = setupTestEnvironment(10);
+      const provider = new RefiningSaveProvider(
+        env.runtime,
+        env.inventoryManager,
+        () => env.heroId,
+      );
+
+      expect(() => provider.load({})).not.toThrow();
+      expect(() => provider.load(undefined)).not.toThrow();
+
+      expect(
+        env.inventoryManager.getTotalQuantity(
+          env.heroId,
+          "item_resource_wood_t3",
+        ),
+      ).toBe(0);
+    });
+
+    it("D. Multiple refining families: restores combined reserved inputs without cross-family corruption", () => {
+      const env = setupTestEnvironment(10);
+      const provider = new RefiningSaveProvider(
+        env.runtime,
+        env.inventoryManager,
+        () => env.heroId,
+      );
+
+      // Add Wood logs & Ore
+      env.inventoryManager.addQuantity(env.heroId, "item_resource_wood_t3", 4, {
+        itemId: "item_resource_wood_t3",
+        stackable: true,
+        maxStack: 999,
+      });
+      env.inventoryManager.addQuantity(env.heroId, "item_resource_copper_ore_t3", 4, {
+        itemId: "item_resource_copper_ore_t3",
+        stackable: true,
+        maxStack: 999,
+      });
+
+      // Start Wood refining and Metal refining
+      env.runtime.toggleRefining(0);
+      env.runtime.toggleMetalRefining(0);
+
+      // Mid-cycle save
+      const saveData = provider.save() as { reservedInputs: readonly { itemId: string; quantity: number }[] };
+      expect(saveData.reservedInputs).toHaveLength(2);
+
+      // Simulate reload
+      const reloadEnv = setupTestEnvironment(10);
+      const reloadProvider = new RefiningSaveProvider(
+        reloadEnv.runtime,
+        reloadEnv.inventoryManager,
+        () => reloadEnv.heroId,
+      );
+
+      reloadProvider.load(saveData);
+
+      // Both inputs restored cleanly
+      expect(
+        reloadEnv.inventoryManager.getTotalQuantity(
+          reloadEnv.heroId,
+          "item_resource_wood_t3",
+        ),
+      ).toBe(4);
+      expect(
+        reloadEnv.inventoryManager.getTotalQuantity(
+          reloadEnv.heroId,
+          "item_resource_copper_ore_t3",
+        ),
+      ).toBe(4);
+
+      // Both runtimes idle
+      expect(reloadEnv.runtime.isRefiningActive("Wood")).toBe(false);
+      expect(reloadEnv.runtime.isRefiningActive("Ore")).toBe(false);
+    });
   });
 });

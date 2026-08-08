@@ -63,7 +63,7 @@ import { WorkerRuntime } from "../runtime/WorkerRuntime.js";
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { GatheringRuntime } from "../runtime/GatheringRuntime";
-import { RefiningRuntime } from "../runtime/RefiningRuntime";
+import { RefiningRuntime, RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { CraftingRuntime } from "../runtime/CraftingRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
@@ -1322,6 +1322,13 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
     persistence.registerProvider(workerSaveProvider);
     syncWorkers();
+
+    const refiningSaveProvider = new RefiningSaveProvider(
+      refiningRuntime,
+      inventoryManager,
+      () => heroId,
+    );
+    persistence.registerProvider(refiningSaveProvider);
 
     const saveGame = (): void => {
       persistence.save(tickCounter);

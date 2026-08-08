@@ -1,4 +1,5 @@
 import type { EntityId } from "@game/core";
+import type { SaveProvider } from "@game/persistence";
 import type {
   InventoryManager,
   RefiningManager,
@@ -122,6 +123,15 @@ export class RefiningRuntime {
     if (family === "Hide") return this.reservedLeatherInputs;
     if (family === "Fiber") return this.reservedClothInputs;
     return [];
+  }
+
+  public getAllReservedInputs(): readonly ReservedRefiningRequirement[] {
+    return [
+      ...this.reservedRefiningInputs,
+      ...this.reservedMetalInputs,
+      ...this.reservedLeatherInputs,
+      ...this.reservedClothInputs,
+    ];
   }
 
   public isRefiningActive(family: ResourceFamily): boolean {
@@ -524,5 +534,40 @@ export class RefiningRuntime {
       if (line.toggle().action === "started") startedAtLeastOne = true;
     }
     return { startedAtLeastOne };
+  }
+}
+
+export interface SavedRefiningRecoveryPayload {
+  readonly reservedInputs: readonly ReservedRefiningRequirement[];
+}
+
+export class RefiningSaveProvider implements SaveProvider {
+  readonly providerId = "refining";
+
+  constructor(
+    private readonly refiningRuntime: RefiningRuntime,
+    private readonly inventoryManager: InventoryManager,
+    private readonly getHeroId: () => EntityId,
+  ) {}
+
+  save(): unknown {
+    const reservedInputs = this.refiningRuntime.getAllReservedInputs();
+    return { reservedInputs } satisfies SavedRefiningRecoveryPayload;
+  }
+
+  load(data: unknown): void {
+    const payload = data as SavedRefiningRecoveryPayload | undefined;
+    if (!payload || !Array.isArray(payload.reservedInputs) || payload.reservedInputs.length === 0) {
+      return;
+    }
+
+    const heroId = this.getHeroId();
+    for (const input of payload.reservedInputs) {
+      this.inventoryManager.addQuantity(heroId, input.itemId, input.quantity, {
+        itemId: input.itemId,
+        stackable: true,
+        maxStack: 999,
+      });
+    }
   }
 }
