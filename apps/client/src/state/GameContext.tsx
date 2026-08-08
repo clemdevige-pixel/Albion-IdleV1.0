@@ -60,7 +60,7 @@ import {
   getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
-import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, ZoneDefinitionId, WorldIntegrationEventMap, AbilityId, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
+import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, ZoneDefinitionId, WorldIntegrationEventMap, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
 import { WorkerRuntime } from "../runtime/WorkerRuntime.js";
 
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
@@ -85,6 +85,7 @@ import {
   syncCraftingToBridge,
   syncGatheringToBridge,
   syncRefiningToBridge,
+  syncAbilitiesToBridge,
   WORKER_PROFESSION_LABELS,
   getWorkerResourceLabel,
   syncAllToBridge,
@@ -1078,34 +1079,13 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const syncAbilities = (): void => {
-      const abilityId = resolvePrimaryAbilityId(getEquippedWeaponId());
-      const definition = abilityId === undefined ? undefined : CLIENT_ABILITIES[abilityId];
-      const entry = abilityId === undefined
-        ? undefined
-        : abilityManager.getAbility(heroId, abilityId as AbilityId);
-      const energy = abilityManager.getEnergy(heroId);
-
-      bridge.updateAbilities({
-        primary: definition === undefined || entry === undefined
-          ? null
-          : {
-              id: definition.id,
-              name: definition.name,
-              description: definition.description,
-              icon: definition.icon,
-              shortcut: "Q",
-              cooldown: definition.cooldown,
-              cooldownRemaining: Math.max(0, entry.cooldownRemaining),
-              energyCost: definition.resourceCost.energy ?? 0,
-              isReady:
-                entry.state === "ready"
-                && energy.currentEnergy >= (definition.resourceCost.energy ?? 0)
-                && bridge.combatState === "combat",
-              autoCast: combatRuntime.isAutoCastEnabled(),
-            },
-        currentEnergy: energy.currentEnergy,
-        maxEnergy: energy.maxEnergy,
-      });
+      syncAbilitiesToBridge(
+        bridge,
+        abilityManager,
+        heroId,
+        getEquippedWeaponId(),
+        combatRuntime.isAutoCastEnabled(),
+      );
     };
 
     const usePrimaryAbility = (): boolean => {
@@ -1119,8 +1099,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       combatRuntime.setPrimaryAbilityAutoCast(enabled);
       syncAbilities();
     };
-
-    syncAbilities();
 
     gatheringRuntime.subscribeGatherCompleted((evt) => {
       syncInventoryToBridge(bridge, inventoryManager, heroId);
@@ -1762,6 +1740,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       bridge.updateEnemyHealth(initialCombat.activeEnemy.currentHealth, initialCombat.activeEnemy.maxHealth);
     }
     bridge.setCombatState(initialCombat.combatState);
+    syncAbilities();
 
     const consumableRuntime = new ConsumableRuntime({
       inventoryManager,

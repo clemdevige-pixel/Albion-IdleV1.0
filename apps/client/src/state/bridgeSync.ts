@@ -1,8 +1,9 @@
 import type { EntityId } from "@game/core";
-import type { InventoryManager, EquipmentManager, StatsManager, StatId, EquipmentSlot, CurrencyService, WalletId, VendorRegistry, WorkerId } from "@game/gameplay";
+import type { InventoryManager, EquipmentManager, StatsManager, StatId, EquipmentSlot, CurrencyService, WalletId, VendorRegistry, WorkerId, AbilityManager, AbilityId } from "@game/gameplay";
 import { EQUIPMENT_SLOTS, getEnchantmentLevel, canCraftRecipe } from "@game/gameplay";
 import type { GameBridge, InventoryVM, InventorySlotVM, EquipmentSlotVM, StatEntryVM, VendorOfferVM, WorldVM, MasteryVM, WorkerVM, WorkerProfessionVM, CraftingRecipeVM, GatheringVM, RefiningVM } from "../game/GameBridge";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
+import { CLIENT_ABILITIES, resolvePrimaryAbilityId } from "../data/weaponContentCatalog";
 
 const STAT_IDS: readonly StatId[] = [
   "stat_max_health" as StatId,
@@ -452,5 +453,42 @@ export function syncRefiningToBridge(
       available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
       reserved: reservedInputs.find((entry) => entry.itemId === requirement.itemId)?.quantity ?? 0,
     })),
+  });
+}
+
+export function syncAbilitiesToBridge(
+  bridge: GameBridge,
+  abilityManager: AbilityManager,
+  heroId: EntityId,
+  equippedWeaponId: string | undefined,
+  isAutoCastEnabled: boolean,
+): void {
+  const abilityId = resolvePrimaryAbilityId(equippedWeaponId);
+  const definition = abilityId === undefined ? undefined : CLIENT_ABILITIES[abilityId];
+  const entry = abilityId === undefined
+    ? undefined
+    : abilityManager.getAbility(heroId, abilityId as AbilityId);
+  const energy = abilityManager.getEnergy(heroId);
+
+  bridge.updateAbilities({
+    primary: definition === undefined || entry === undefined
+      ? null
+      : {
+          id: definition.id,
+          name: definition.name,
+          description: definition.description,
+          icon: definition.icon,
+          shortcut: "Q",
+          cooldown: definition.cooldown,
+          cooldownRemaining: Math.max(0, entry.cooldownRemaining),
+          energyCost: definition.resourceCost.energy ?? 0,
+          isReady:
+            entry.state === "ready"
+            && energy.currentEnergy >= (definition.resourceCost.energy ?? 0)
+            && bridge.combatState === "combat",
+          autoCast: isAutoCastEnabled,
+        },
+    currentEnergy: energy.currentEnergy,
+    maxEnergy: energy.maxEnergy,
   });
 }
