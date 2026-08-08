@@ -57,10 +57,6 @@ import {
   GatheringManager,
   GatheringToolRegistry,
   GatheringCoordinator,
-  asResourceDefinitionId,
-  asResourceNodeDefinitionId,
-  asResourceId,
-  asGatheringToolId,
   RefiningManager,
   WorldSaveProvider,
   getEnemyCombatProfile,
@@ -151,6 +147,7 @@ import {
   ZONE_DEFINITIONS,
   ZONE_UNLOCK_DEFINITIONS,
 } from "../data/worldContentCatalog";
+import { setupResourceContentCatalog } from "../data/resourceContentCatalog";
 
 /** Event map for the UI-layer event bus. Starts empty; later phases add entries. */
 export type UIEventMap = Record<string, unknown>;
@@ -751,269 +748,31 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const fiberGatheringManager = new GatheringManager(resourceRegistry);
     const gatheringToolRegistry = new GatheringToolRegistry();
 
-    const birchDefinitionId = asResourceDefinitionId("resource_birch_wood_t3");
-    const birchResourceId = asResourceId("resource_birch_wood_runtime");
-    const birchNodeDefinitionId = asResourceNodeDefinitionId("node_birch_tree_t3");
-
-    resourceRegistry.register({
-      id: birchDefinitionId,
-      name: "Bois de bouleau",
-      family: "Wood",
-      tier: 3,
-      maxCharges: 999,
-      respawnDurationTicks: 240,
-      baseYield: 1,
-      tags: ["wood", "birch", "starter"],
+    const {
+      birchNode,
+      copperNode,
+      pineNode,
+      ironNode,
+      sturdyHideNode,
+      thickHideNode,
+      linenFiberNode,
+      fineFiberNode,
+      starterAxe,
+      tier4Axe,
+      starterPickaxe,
+      tier4Pickaxe,
+      starterSkinningKnife,
+      tier4SkinningKnife,
+      starterSickle,
+      tier4Sickle,
+    } = setupResourceContentCatalog({
+      resourceRegistry,
+      resourceRuntime,
+      resourceNodeRegistry,
+      resourceNodeManager,
+      gatheringToolRegistry,
+      forestZoneDefId: FOREST_ZONE_DEF_ID,
     });
-    resourceRuntime.add({
-      id: birchResourceId,
-      definitionId: birchDefinitionId,
-      state: "available",
-      currentCharges: 999,
-      maxCharges: 999,
-      tier: 3,
-      family: "Wood",
-    });
-    resourceNodeRegistry.register({
-      id: birchNodeDefinitionId,
-      name: "Bouleau",
-      resourceDefinitionId: birchDefinitionId,
-      requiredToolTier: 3,
-      tags: ["forest", "starter"],
-    });
-    const birchNode = resourceNodeManager.createNode(
-      birchNodeDefinitionId,
-      FOREST_ZONE_DEF_ID,
-      birchResourceId,
-    );
-    const starterAxe = {
-      id: asGatheringToolId("tool_axe_t3"),
-      name: "Hache de compagnon",
-      toolType: "axe" as const,
-      tier: 3,
-      speedModifier: 1,
-      yieldModifier: 1,
-      tags: ["starter"],
-    };
-    gatheringToolRegistry.register(starterAxe);
-    const copperDefinitionId = asResourceDefinitionId("resource_copper_ore_t3");
-    const copperResourceId = asResourceId("resource_copper_ore_runtime");
-    const copperNodeDefinitionId = asResourceNodeDefinitionId("node_copper_vein_t3");
-    resourceRegistry.register({
-      id: copperDefinitionId,
-      name: "Minerai de cuivre",
-      family: "Ore",
-      tier: 3,
-      maxCharges: 999,
-      respawnDurationTicks: 240,
-      baseYield: 1,
-      tags: ["ore", "copper", "starter"],
-    });
-    resourceRuntime.add({
-      id: copperResourceId,
-      definitionId: copperDefinitionId,
-      state: "available",
-      currentCharges: 999,
-      maxCharges: 999,
-      tier: 3,
-      family: "Ore",
-    });
-    resourceNodeRegistry.register({
-      id: copperNodeDefinitionId,
-      name: "Veine de cuivre",
-      resourceDefinitionId: copperDefinitionId,
-      requiredToolTier: 3,
-      tags: ["forest", "starter"],
-    });
-    const copperNode = resourceNodeManager.createNode(
-      copperNodeDefinitionId,
-      FOREST_ZONE_DEF_ID,
-      copperResourceId,
-    );
-    const starterPickaxe = {
-      id: asGatheringToolId("tool_pickaxe_t3"),
-      name: "Pioche de compagnon",
-      toolType: "pickaxe" as const,
-      tier: 3,
-      speedModifier: 1,
-      yieldModifier: 1,
-      tags: ["starter"],
-    };
-    gatheringToolRegistry.register(starterPickaxe);
-
-    const pineDefinitionId = asResourceDefinitionId("resource_wood_t4");
-    const pineResourceId = asResourceId("resource_pine_wood_runtime");
-    const pineNodeDefinitionId = asResourceNodeDefinitionId("node_pine_tree_t4");
-    resourceRegistry.register({
-      id: pineDefinitionId,
-      name: "Bois de pin",
-      family: "Wood",
-      tier: 4,
-      maxCharges: 999,
-      respawnDurationTicks: 360,
-      baseYield: 1,
-      tags: ["wood", "pine", "tier4"],
-    });
-    resourceRuntime.add({
-      id: pineResourceId,
-      definitionId: pineDefinitionId,
-      state: "available",
-      currentCharges: 999,
-      maxCharges: 999,
-      tier: 4,
-      family: "Wood",
-    });
-    resourceNodeRegistry.register({
-      id: pineNodeDefinitionId,
-      name: "Pin ancien",
-      resourceDefinitionId: pineDefinitionId,
-      requiredToolTier: 4,
-      tags: ["forest", "tier4"],
-    });
-    const pineNode = resourceNodeManager.createNode(
-      pineNodeDefinitionId,
-      FOREST_ZONE_DEF_ID,
-      pineResourceId,
-    );
-
-    const ironDefinitionId = asResourceDefinitionId("resource_ore_t4");
-    const ironResourceId = asResourceId("resource_iron_ore_runtime");
-    const ironNodeDefinitionId = asResourceNodeDefinitionId("node_iron_vein_t4");
-    resourceRegistry.register({
-      id: ironDefinitionId,
-      name: "Minerai de fer",
-      family: "Ore",
-      tier: 4,
-      maxCharges: 999,
-      respawnDurationTicks: 360,
-      baseYield: 1,
-      tags: ["ore", "iron", "tier4"],
-    });
-    resourceRuntime.add({
-      id: ironResourceId,
-      definitionId: ironDefinitionId,
-      state: "available",
-      currentCharges: 999,
-      maxCharges: 999,
-      tier: 4,
-      family: "Ore",
-    });
-    resourceNodeRegistry.register({
-      id: ironNodeDefinitionId,
-      name: "Veine de fer",
-      resourceDefinitionId: ironDefinitionId,
-      requiredToolTier: 4,
-      tags: ["mountain", "tier4"],
-    });
-    const ironNode = resourceNodeManager.createNode(
-      ironNodeDefinitionId,
-      FOREST_ZONE_DEF_ID,
-      ironResourceId,
-    );
-    const tier4Axe = {
-      id: asGatheringToolId("tool_axe_t4"),
-      name: "Hache d'expert",
-      toolType: "axe" as const,
-      tier: 4,
-      speedModifier: 0.85,
-      yieldModifier: 1,
-      tags: ["tier4"],
-    };
-    const tier4Pickaxe = {
-      id: asGatheringToolId("tool_pickaxe_t4"),
-      name: "Pioche d'expert",
-      toolType: "pickaxe" as const,
-      tier: 4,
-      speedModifier: 0.85,
-      yieldModifier: 1,
-      tags: ["tier4"],
-    };
-    const starterSkinningKnife = {
-      id: asGatheringToolId("tool_skinning_knife_t3"),
-      name: "Couteau de dépeçage",
-      toolType: "skinning_knife" as const,
-      tier: 3,
-      speedModifier: 1,
-      yieldModifier: 1,
-      tags: ["starter", "hide"],
-    };
-    const tier4SkinningKnife = {
-      ...starterSkinningKnife,
-      id: asGatheringToolId("tool_skinning_knife_t4"),
-      name: "Couteau de dépeçage d'expert",
-      tier: 4,
-      speedModifier: 0.85,
-      tags: ["tier4", "hide"],
-    };
-    const starterSickle = {
-      id: asGatheringToolId("tool_sickle_t3"),
-      name: "Faucille de compagnon",
-      toolType: "sickle" as const,
-      tier: 3,
-      speedModifier: 1,
-      yieldModifier: 1,
-      tags: ["starter", "fiber"],
-    };
-    const tier4Sickle = {
-      ...starterSickle,
-      id: asGatheringToolId("tool_sickle_t4"),
-      name: "Faucille d'expert",
-      tier: 4,
-      speedModifier: 0.85,
-      tags: ["tier4", "fiber"],
-    };
-    gatheringToolRegistry.register(tier4Axe);
-    gatheringToolRegistry.register(tier4Pickaxe);
-    gatheringToolRegistry.register(starterSkinningKnife);
-    gatheringToolRegistry.register(tier4SkinningKnife);
-    gatheringToolRegistry.register(starterSickle);
-    gatheringToolRegistry.register(tier4Sickle);
-
-    const createProductionResource = (
-      key: string,
-      name: string,
-      family: ResourceFamily,
-      tier: 3 | 4,
-    ) => {
-      const definitionId = asResourceDefinitionId(`resource_${key}_t${String(tier)}`);
-      const resourceId = asResourceId(`resource_${key}_t${String(tier)}_runtime`);
-      const nodeDefinitionId = asResourceNodeDefinitionId(`node_${key}_t${String(tier)}`);
-      resourceRegistry.register({
-        id: definitionId,
-        name,
-        family,
-        tier,
-        maxCharges: 999,
-        respawnDurationTicks: tier === 4 ? 360 : 240,
-        baseYield: 1,
-        tags: [key, family.toLowerCase(), `tier${String(tier)}`],
-      });
-      resourceRuntime.add({
-        id: resourceId,
-        definitionId,
-        state: "available",
-        currentCharges: 999,
-        maxCharges: 999,
-        tier,
-        family,
-      });
-      resourceNodeRegistry.register({
-        id: nodeDefinitionId,
-        name,
-        resourceDefinitionId: definitionId,
-        requiredToolTier: tier,
-        tags: [family.toLowerCase(), `tier${String(tier)}`],
-      });
-      return resourceNodeManager.createNode(
-        nodeDefinitionId,
-        FOREST_ZONE_DEF_ID,
-        resourceId,
-      );
-    };
-    const sturdyHideNode = createProductionResource("hide", "Peau robuste", "Hide", 3);
-    const thickHideNode = createProductionResource("hide", "Peau épaisse", "Hide", 4);
-    const linenFiberNode = createProductionResource("fiber", "Fibre de lin", "Fiber", 3);
-    const fineFiberNode = createProductionResource("fiber", "Fibre fine", "Fiber", 4);
 
     // Production nodes model renewable reserves. Without this lifecycle hook,
     // their finite runtime charge pool eventually reaches zero during a long
