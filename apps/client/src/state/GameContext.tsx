@@ -91,6 +91,7 @@ import {
   getWorkerResourceLabel,
   syncAllToBridge,
   buildMasteryViewModels,
+  collectRepairPreviewData,
 } from "./bridgeSync";
 import {
   EQUIPMENT_CRAFT_RECIPES,
@@ -211,57 +212,7 @@ interface CleanupRef {
   _persistence?: RuntimePersistence;
 }
 
-// -- Helper: collect repair preview data ------------------------------------
-
-function collectRepairPreviewData(
-  equipmentManager: EquipmentManager,
-  inventoryManager: InventoryManager,
-  durabilityStore: DurabilityStore,
-  repairCostResolver: RepairCostResolver,
-  heroId: EntityId,
-  stationModifier: number,
-): { instanceId: string; itemId: string; currentDurability: number; maxDurability: number; repairCost: number }[] {
-  const items: { instanceId: string; itemId: string; currentDurability: number; maxDurability: number; repairCost: number }[] = [];
-
-  const addIfDamaged = (instanceId: string, itemId: string): void => {
-    const durability = durabilityStore.get(instanceId as Parameters<typeof durabilityStore.get>[0]);
-    if (durability === undefined || durability.current >= durability.max) {
-      return;
-    }
-    const info = resolveRepairableInfo(itemId);
-    if (info === undefined) {
-      return;
-    }
-    const cost = repairCostResolver.resolveCost(
-      info.equipmentCategory,
-      info.itemTier,
-      durability.current,
-      durability.max,
-      stationModifier,
-    );
-    items.push({
-      instanceId,
-      itemId,
-      currentDurability: durability.current,
-      maxDurability: durability.max,
-      repairCost: cost.ok ? cost.value : 0,
-    });
-  };
-
-  // Check equipped items
-  for (const entry of equipmentManager.getEquipped(heroId).values()) {
-    addIfDamaged(entry.instanceId, entry.itemId);
-  }
-
-  // Check inventory items
-  for (const slot of inventoryManager.listSlots(heroId)) {
-    if (slot.entry !== undefined) {
-      addIfDamaged(slot.entry.instanceId, slot.entry.itemId);
-    }
-  }
-
-  return items;
-}
+// -- Constants -------------------------------------------------------------
 
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;

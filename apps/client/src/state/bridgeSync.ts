@@ -1,9 +1,10 @@
 import type { EntityId } from "@game/core";
-import type { InventoryManager, EquipmentManager, StatsManager, StatId, EquipmentSlot, CurrencyService, WalletId, VendorRegistry, WorkerId, AbilityManager, AbilityId } from "@game/gameplay";
+import type { InventoryManager, EquipmentManager, StatsManager, StatId, EquipmentSlot, CurrencyService, WalletId, VendorRegistry, WorkerId, AbilityManager, AbilityId, DurabilityStore, RepairCostResolver, ItemInstanceId } from "@game/gameplay";
 import { EQUIPMENT_SLOTS, getEnchantmentLevel, canCraftRecipe } from "@game/gameplay";
 import type { GameBridge, InventoryVM, InventorySlotVM, EquipmentSlotVM, StatEntryVM, VendorOfferVM, WorldVM, MasteryVM, WorkerVM, WorkerProfessionVM, CraftingRecipeVM, GatheringVM, RefiningVM } from "../game/GameBridge";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 import { CLIENT_ABILITIES, resolvePrimaryAbilityId } from "../data/weaponContentCatalog";
+import { resolveRepairableInfo } from "../data/itemContentCatalog";
 
 const STAT_IDS: readonly StatId[] = [
   "stat_max_health" as StatId,
@@ -186,6 +187,54 @@ export function syncProgressionToBridge(
   masteries: readonly MasteryVM[],
 ): void {
   bridge.updateProgression({ totalFame, overflowPool, masteries });
+}
+
+export function collectRepairPreviewData(
+  equipmentManager: EquipmentManager,
+  inventoryManager: InventoryManager,
+  durabilityStore: DurabilityStore,
+  repairCostResolver: RepairCostResolver,
+  heroId: EntityId,
+  stationModifier: number = 1.0,
+): { instanceId: string; itemId: string; currentDurability: number; maxDurability: number; repairCost: number }[] {
+  const items: { instanceId: string; itemId: string; currentDurability: number; maxDurability: number; repairCost: number }[] = [];
+
+  const addIfDamaged = (instanceId: ItemInstanceId, itemId: string): void => {
+    const durability = durabilityStore.get(instanceId);
+    if (durability === undefined || durability.current >= durability.max) {
+      return;
+    }
+    const info = resolveRepairableInfo(itemId);
+    if (info === undefined) {
+      return;
+    }
+    const cost = repairCostResolver.resolveCost(
+      info.equipmentCategory,
+      info.itemTier,
+      durability.current,
+      durability.max,
+      stationModifier,
+    );
+    items.push({
+      instanceId,
+      itemId,
+      currentDurability: durability.current,
+      maxDurability: durability.max,
+      repairCost: cost.ok ? cost.value : 0,
+    });
+  };
+
+  for (const entry of equipmentManager.getEquipped(heroId).values()) {
+    addIfDamaged(entry.instanceId, entry.itemId);
+  }
+
+  for (const slot of inventoryManager.listSlots(heroId)) {
+    if (slot.entry !== undefined) {
+      addIfDamaged(slot.entry.instanceId, slot.entry.itemId);
+    }
+  }
+
+  return items;
 }
 
 export function syncRepairToBridge(
