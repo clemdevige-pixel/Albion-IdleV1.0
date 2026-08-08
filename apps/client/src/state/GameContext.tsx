@@ -10,7 +10,6 @@ import {
   HealthComponent,
   EnergyComponent,
   DeathManager,
-  DeathComponent,
   TargetManager,
   AutoAttackManager,
   EffectManager,
@@ -18,7 +17,6 @@ import {
   createDefaultStatRegistry,
   StatsManager,
   TargetValidator,
-  asEncounterId,
   InventoryManager,
   EquipmentManager,
   EquipmentStatSync,
@@ -72,6 +70,7 @@ import { RefiningRuntime } from "../runtime/RefiningRuntime";
 import { CraftingRuntime } from "../runtime/CraftingRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
+import { CombatRuntime } from "../runtime/CombatRuntime.js";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -145,7 +144,7 @@ import {
   ZONE_UNLOCK_DEFINITIONS,
 } from "../data/worldContentCatalog";
 import { setupResourceContentCatalog } from "../data/resourceContentCatalog";
-import { setupCombatEntity, spawnEnemyForSegment, type SpawnedEnemyResult } from "../runtime/combatEntityFactory.js";
+import { setupCombatEntity } from "../runtime/combatEntityFactory.js";
 
 /** Event map for the UI-layer event bus. Starts empty; later phases add entries. */
 export type UIEventMap = Record<string, unknown>;
@@ -595,30 +594,12 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       abilityManager,
     };
 
-    function spawnEnemyForCurrentSegment(): SpawnedEnemyResult {
-      const zone = getActiveZoneDef();
-      return spawnEnemyForSegment(combatEntityFactoryDeps, biomeResolver, {
-        zoneIndex: worldRuntime.currentZoneIndex,
-        segmentIndex: worldRuntime.currentSegment,
-        encounterIndex: worldRuntime.currentEncounter,
-        zoneDefId: zone.defId,
-        zoneName: zone.name,
-      });
-    }
-
-    // --- Create hero & enemy --------------------------------------------------
+    // --- Create hero ----------------------------------------------------------
     const heroId = setupCombatEntity(
       combatEntityFactoryDeps,
       { maxHealth: 500, physDamage: 0, attackSpeed: 1.2, armor: 10, magicRes: 5 },
       { x: 0, y: 0 },
     );
-
-    const firstEnemy = spawnEnemyForCurrentSegment();
-    let activeEnemyId = firstEnemy.id;
-
-    for (const definition of Object.values(CLIENT_ABILITIES)) {
-      abilityManager.learnAbility(heroId, definition);
-    }
 
     // --- Attach inventory & equipment to hero -----------------------------------
     inventoryManager.createInventory(heroId, 24);
@@ -851,13 +832,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     // --- Initialize bridge with starting values --------------------------------
     const heroHealth = damageManager.getHealth(heroId);
-    const firstEnemyHealth = damageManager.getHealth(firstEnemy.id);
     bridge.updatePlayerHealth(heroHealth.currentHealth, heroHealth.maxHealth);
-    bridge.updateEnemyHealth(firstEnemyHealth.currentHealth, firstEnemyHealth.maxHealth);
-    bridge.setEnemyPresentation(
-      firstEnemy.name,
-      firstEnemy.visualManifestId,
-    );
     updateWorldBridge();
 
     // --- Sync all panels to bridge ----------------------------------------------
@@ -1126,77 +1101,22 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
                 entry.state === "ready"
                 && energy.currentEnergy >= (definition.resourceCost.energy ?? 0)
                 && bridge.combatState === "combat",
-              autoCast: primaryAbilityAutoCast,
+              autoCast: combatRuntime.isAutoCastEnabled(),
             },
         currentEnergy: energy.currentEnergy,
         maxEnergy: energy.maxEnergy,
       });
     };
 
-    const finalizeActiveEnemyDeath = (): boolean => {
-      if (damageManager.isAlive(activeEnemyId)) return false;
-
-      const death = deathManager.checkDeath(activeEnemyId, heroId, tickCounter);
-      if (death === null) return true;
-
-      const session = combatService.getActiveSession();
-      if (session !== undefined) {
-        combatService.events.publish("enemyKilled", {
-          sessionId: session.sessionId,
-          entityId: activeEnemyId,
-        });
-      }
-      return true;
-    };
-
     const usePrimaryAbility = (): boolean => {
-      const abilityId = resolvePrimaryAbilityId(getEquippedWeaponId());
-      const definition = abilityId === undefined ? undefined : CLIENT_ABILITIES[abilityId];
-      if (
-        definition === undefined
-        || bridge.combatState !== "combat"
-        || !damageManager.isAlive(activeEnemyId)
-      ) {
-        return false;
-      }
-
-      const execution = abilityManager.executeIntent({
-        entityId: heroId,
-        abilityId: abilityId as AbilityId,
-        primaryTarget: activeEnemyId,
-        tick: tickCounter,
-      });
-      if (!execution.ok) {
-        syncAbilities();
-        return false;
-      }
-
-      // An ability is a complete offensive action. Restart the auto-attack
-      // cycle so an ability and a normal attack cannot resolve during the
-      // same simulation tick and leave a delayed visual on a dead target.
-      autoAttackManager.stopAutoAttack(heroId);
-      autoAttackManager.startAutoAttack(heroId);
-
-      const sourceStat = definition.damageType === "magical"
-        ? STAT_MAGICAL_DAMAGE
-        : STAT_PHYSICAL_DAMAGE;
-      const sourceDamage = statsManager.getStat(heroId, sourceStat).computed;
-      const result = damageManager.processDamage({
-        source: heroId,
-        target: activeEnemyId,
-        baseDamage: sourceDamage * definition.bonusDamageRatio,
-        damageType: definition.damageType,
-        source_type: "ability",
-      });
-      if (result?.targetDied === true) {
-        finalizeActiveEnemyDeath();
-      }
+      if (bridge.combatState !== "combat") return false;
+      const ok = combatRuntime.usePrimaryAbility();
       syncAbilities();
-      return result !== null;
+      return ok;
     };
 
     const setPrimaryAbilityAutoCast = (enabled: boolean): void => {
-      primaryAbilityAutoCast = enabled;
+      combatRuntime.setPrimaryAbilityAutoCast(enabled);
       syncAbilities();
     };
 
@@ -1720,46 +1640,52 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     const hasSave = (): boolean => persistence.hasSave();
 
-    // --- Start the encounter ---------------------------------------------------
-    let encounterCounter = 0;
-    let completedEncounterResult: "victory" | "defeat" | null = null;
-    let awaitingResumeAfterDefeat = false;
+    // --- Start combat runtime --------------------------------------------------
+    const combatRuntime = new CombatRuntime({
+      world,
+      heroId,
+      combatService,
+      orchestrator,
+      damageManager,
+      deathManager,
+      targetManager,
+      autoAttackManager,
+      abilityManager,
+      effectManager,
+      statsManager,
+      equipmentManager,
+      biomeResolver,
+      ports: {
+        onVictory: () => {
+          const res = worldRuntime.advanceVictory();
+          updateWorldBridge();
+          return res;
+        },
+        onDefeat: () => {
+          worldRuntime.advanceDefeat();
+          updateWorldBridge();
+          bridge.setCombatState("defeat");
+        },
+        getLocationState: () => {
+          const zone = getActiveZoneDef();
+          return {
+            zoneIndex: worldRuntime.currentZoneIndex,
+            segmentIndex: worldRuntime.currentSegment,
+            encounterIndex: worldRuntime.currentEncounter,
+            zoneDefId: zone.defId,
+            zoneName: zone.name,
+            highestUnlockedSegment: worldRuntime.highestUnlockedSegment,
+            farmMode: worldRuntime.farmMode,
+          };
+        },
+        isCombatSuspended: () => gatheringRuntime.isHeroGathering(),
+      },
+    });
 
-    const restoreHeroHealth = (): void => {
-      const health = damageManager.getHealth(heroId);
-      damageManager.healDamage(
-        heroId,
-        health.maxHealth - health.currentHealth,
-      );
-    };
-
-    const reviveHero = (): void => {
-      const heroDeathData = world.tryGetComponent(heroId, DeathComponent);
-      if (heroDeathData !== undefined) {
-        heroDeathData.isDead = false;
-        heroDeathData.processed = false;
-      }
-
-      restoreHeroHealth();
-    };
-
+    const restoreHeroHealth = (): void => combatRuntime.restoreHeroHealth();
 
     const interruptEncounterForTravel = (): void => {
-      const session = combatService.getActiveSession();
-      if (session !== undefined) {
-        combatService.cancelEncounter();
-        effectManager.removeAllEffects(heroId);
-        for (const enemyId of session.participants.enemies) {
-          effectManager.removeAllEffects(enemyId);
-          if (world.hasEntity(enemyId)) {
-            world.destroyEntity(enemyId);
-          }
-        }
-      }
-
-      completedEncounterResult = null;
-      awaitingResumeAfterDefeat = false;
-      reviveHero();
+      combatRuntime.interruptEncounter();
       bridge.setCombatState("walking");
     };
 
@@ -1802,14 +1728,11 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const resumeExploration = (): boolean => {
-      if (!awaitingResumeAfterDefeat) {
-        return false;
+      const ok = combatRuntime.resumeExploration();
+      if (ok) {
+        bridge.setCombatState("walking");
       }
-
-      awaitingResumeAfterDefeat = false;
-      reviveHero();
-      bridge.setCombatState("walking");
-      return true;
+      return ok;
     };
 
     const getWorldLocationSaveState = (): WorldLocationSaveState => {
@@ -1833,17 +1756,12 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     );
     persistence.registerProvider(worldSaveProvider);
 
-    const encounterResult = combatService.startEncounter(
-      {
-        id: asEncounterId(`encounter_${String(encounterCounter)}`),
-        enemies: [{ entityId: firstEnemy.id }],
-      },
-      heroId,
-    );
-
-    if (encounterResult.ok) {
-      bridge.setCombatState("combat");
+    const initialCombat = combatRuntime.initialize();
+    if (initialCombat.activeEnemy) {
+      bridge.setEnemyPresentation(initialCombat.activeEnemy.name, initialCombat.activeEnemy.visualManifestId);
+      bridge.updateEnemyHealth(initialCombat.activeEnemy.currentHealth, initialCombat.activeEnemy.maxHealth);
     }
+    bridge.setCombatState(initialCombat.combatState);
 
     const consumableRuntime = new ConsumableRuntime({
       inventoryManager,
@@ -1901,99 +1819,37 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       tickState.accumulator += TICK_INTERVAL;
       bridge.updateZoneElapsed(tickState.accumulator / 1000);
 
-      const session = combatService.getActiveSession();
-      if (session === undefined) {
-        let enteredNewSegment = false;
+      const combatResult = combatRuntime.tick(DT, tickCounter);
 
-        if (awaitingResumeAfterDefeat) {
-          return;
-        }
-
-        if (completedEncounterResult === "defeat") {
-          completedEncounterResult = null;
-          awaitingResumeAfterDefeat = true;
-          worldRuntime.advanceDefeat();
-          updateWorldBridge();
-          bridge.setCombatState("defeat");
-          return;
-        }
-
-        if (completedEncounterResult === "victory") {
-          const res = worldRuntime.advanceVictory();
-          enteredNewSegment = res.enteredNewSegment;
-        }
-        completedEncounterResult = null;
-
-        const enteringBoss =
-          worldRuntime.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1;
-
-        encounterCounter += 1;
-        const enemy = spawnEnemyForCurrentSegment();
-        activeEnemyId = enemy.id;
-
-        const newEnemyHealth = damageManager.getHealth(enemy.id);
+      if (combatResult.spawnedEnemy !== undefined) {
+        const newEnemyHealth = damageManager.getHealth(combatResult.spawnedEnemy.id);
         bridge.updateEnemyHealth(newEnemyHealth.currentHealth, newEnemyHealth.maxHealth);
-        bridge.setEnemyPresentation(enemy.name, enemy.visualManifestId);
+        bridge.setEnemyPresentation(combatResult.spawnedEnemy.name, combatResult.spawnedEnemy.visualManifestId);
         updateWorldBridge();
+      } else if (combatResult.activeEnemy !== undefined && combatResult.activeEnemy.id !== 0) {
+        bridge.updateEnemyHealth(combatResult.activeEnemy.currentHealth, combatResult.activeEnemy.maxHealth);
+      }
 
-        if (enteredNewSegment || enteringBoss) {
-          restoreHeroHealth();
-        }
+      if (combatResult.playerHealth !== undefined) {
+        bridge.updatePlayerHealth(combatResult.playerHealth.currentHealth, combatResult.playerHealth.maxHealth);
+      }
 
-        const result = combatService.startEncounter(
-          {
-            id: asEncounterId(`encounter_${String(encounterCounter)}`),
-            enemies: [{ entityId: enemy.id }],
-          },
-          heroId,
+      if (combatResult.combatState !== undefined) {
+        bridge.setCombatState(combatResult.combatState);
+      }
+
+      if (combatResult.activeEffects !== undefined) {
+        bridge.setActiveEffects(
+          combatResult.activeEffects.map((eff) => ({
+            id: eff.id,
+            name: eff.definitionId,
+            type: eff.effectType,
+            remainingDuration: eff.remainingDuration,
+          })),
         );
-        if (result.ok) {
-          bridge.setCombatState("combat");
-        }
-        return;
       }
 
-      // Any damage source that bypasses CombatService (abilities, effects,
-      // future consumables) must still finalize death before an enemy can act.
-      finalizeActiveEnemyDeath();
-
-      if (session.state === "victory" || session.state === "defeat") {
-        completedEncounterResult = session.state;
-        bridge.setCombatState(session.state);
-        combatService.endEncounter();
-        return;
-      }
-
-      abilityManager.tickAbilities(heroId, DT);
-      abilityManager.restoreEnergy(heroId, 1.5);
-      if (primaryAbilityAutoCast) {
-        usePrimaryAbility();
-      }
       syncAbilities();
-
-      const tickResult = orchestrator.tick(DT);
-      if (tickResult.ok) {
-        bridge.setCombatState(tickResult.value.state);
-
-        const orchState = orchestrator.getState();
-        const allEffects: Array<{
-          id: string;
-          name: string;
-          type: "buff" | "debuff" | "stun" | "root" | "slow" | "silence";
-          remainingDuration: number;
-        }> = [];
-        for (const [, effects] of orchState.activeEffects) {
-          for (const eff of effects) {
-            allEffects.push({
-              id: eff.id,
-              name: eff.definition.id,
-              type: eff.effectType,
-              remainingDuration: eff.remainingDuration,
-            });
-          }
-        }
-        bridge.setActiveEffects(allEffects);
-      }
     };
 
     // Store tick function, persistence, and disposal for useEffect
