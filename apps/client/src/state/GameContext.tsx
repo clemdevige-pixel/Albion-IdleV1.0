@@ -56,7 +56,6 @@ import {
   GatheringCoordinator,
   RefiningManager,
   WorldSaveProvider,
-  getEnemyCombatProfile,
   getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
@@ -71,6 +70,7 @@ import { CraftingRuntime } from "../runtime/CraftingRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
+import { calculateProjectedSegmentRates } from "../runtime/projectedRateCalculator.js";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -107,10 +107,7 @@ import {
   getMasteryItemPowerBonus,
 } from "../data/itemPower";
 import {
-  CLIENT_ABILITIES,
   WEAPON_VENDOR_OFFERS,
-  resolvePrimaryAbilityId,
-  resolveWeaponMastery,
 } from "../data/weaponContentCatalog";
 import {
   ENCHANTMENT_MATERIAL_NAMES,
@@ -983,7 +980,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     // --- Save/Load functions ---------------------------------------------------
     let tickCounter = 0;
-    let primaryAbilityAutoCast = true;
     let productionTier: 3 | 4 = 3;
 
     const getWoodRecipe = (tier: 3 | 4 = productionTier) =>
@@ -999,83 +995,17 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       bridge.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId ?? undefined;
 
     const syncProjectedSegmentRates = (): void => {
-      const physicalDamage =
-        statsManager.getStat(heroId, STAT_PHYSICAL_DAMAGE).computed;
-      const magicalDamage =
-        statsManager.getStat(heroId, STAT_MAGICAL_DAMAGE).computed;
-      const attackSpeed = Math.max(
-        0.001,
-        statsManager.getStat(heroId, STAT_ATTACK_SPEED).computed,
-      );
-      const autoAttackIsMagical = magicalDamage > physicalDamage;
-      const autoAttackPower = autoAttackIsMagical
-        ? magicalDamage
-        : physicalDamage;
-      const abilityId = resolvePrimaryAbilityId(getEquippedWeaponId());
-      const ability = abilityId === undefined
-        ? undefined
-        : CLIENT_ABILITIES[abilityId];
-      const canEarnFame =
-        resolveWeaponMastery(getEquippedWeaponId() ?? "") !== undefined;
+      const rates = calculateProjectedSegmentRates({
+        physicalDamage: statsManager.getStat(heroId, STAT_PHYSICAL_DAMAGE).computed,
+        magicalDamage: statsManager.getStat(heroId, STAT_MAGICAL_DAMAGE).computed,
+        attackSpeed: statsManager.getStat(heroId, STAT_ATTACK_SPEED).computed,
+        equippedWeaponId: getEquippedWeaponId(),
+        primaryAbilityAutoCast: combatRuntime.isAutoCastEnabled(),
+        currentZoneIndex: worldRuntime.currentZoneIndex,
+        currentSegment: worldRuntime.currentSegment,
+      });
 
-      let projectedSeconds = 0;
-      let projectedSilver = 0;
-      let projectedFame = 0;
-
-      for (
-        let encounterIndex = 0;
-        encounterIndex < ENCOUNTERS_PER_SEGMENT;
-        encounterIndex += 1
-      ) {
-        const enemy = getEnemyCombatProfile(
-          worldRuntime.currentZoneIndex,
-          worldRuntime.currentSegment,
-          encounterIndex,
-        );
-        const autoResistance = autoAttackIsMagical
-          ? enemy.magicResistance
-          : enemy.armor;
-        const autoDamage = Math.max(
-          1,
-          autoAttackPower
-            * (1 - Math.min(80, Math.max(0, autoResistance)) / 100),
-        );
-        let projectedDps = autoDamage * attackSpeed;
-
-        if (primaryAbilityAutoCast && ability !== undefined) {
-          const abilityPower = ability.damageType === "magical"
-            ? magicalDamage
-            : physicalDamage;
-          const abilityResistance = ability.damageType === "magical"
-            ? enemy.magicResistance
-            : enemy.armor;
-          const abilityDamage = Math.max(
-            1,
-            abilityPower
-              * (1 + ability.bonusDamageRatio)
-              * (1 - Math.min(80, Math.max(0, abilityResistance)) / 100),
-          );
-          projectedDps += abilityDamage / Math.max(0.5, ability.cooldown);
-        }
-
-        projectedSeconds += enemy.hp / Math.max(1, projectedDps);
-        // Fixed transition/respawn time between two encounters.
-        projectedSeconds += 1;
-
-        const rewards = getEncounterRewards(
-          worldRuntime.currentZoneIndex,
-          worldRuntime.currentSegment,
-          encounterIndex,
-        );
-        projectedSilver += rewards.silver;
-        if (canEarnFame) projectedFame += rewards.fame;
-      }
-
-      const cyclesPerHour = 3600 / Math.max(1, projectedSeconds);
-      bridge.updateSegmentRates(
-        projectedSilver * cyclesPerHour,
-        projectedFame * cyclesPerHour,
-      );
+      bridge.updateSegmentRates(rates.silverPerHour, rates.famePerHour);
     };
 
     const syncAbilities = (): void => {
