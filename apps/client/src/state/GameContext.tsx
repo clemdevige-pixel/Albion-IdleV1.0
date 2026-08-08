@@ -15,7 +15,6 @@ import {
   AutoAttackManager,
   EffectManager,
   AbilityManager,
-  PositionComponent,
   createDefaultStatRegistry,
   StatsManager,
   TargetValidator,
@@ -148,6 +147,7 @@ import {
   ZONE_UNLOCK_DEFINITIONS,
 } from "../data/worldContentCatalog";
 import { setupResourceContentCatalog } from "../data/resourceContentCatalog";
+import { setupCombatEntity, spawnEnemyForSegment, type SpawnedEnemyResult } from "../runtime/combatEntityFactory.js";
 
 /** Event map for the UI-layer event bus. Starts empty; later phases add entries. */
 export type UIEventMap = Record<string, unknown>;
@@ -210,48 +210,10 @@ const GameServiceContext = createContext<GameServices | null>(null);
 const STAT_MAX_HEALTH = "stat_max_health" as StatId;
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_ATTACK_SPEED = "stat_attack_speed" as StatId;
-const STAT_ARMOR = "stat_armor" as StatId;
-const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
 export const HERO_BASE_ATTACK_SPEED = 1.2;
 const MASTERY_PHYSICAL_DAMAGE_MODIFIER = "mastery_weapon_physical_damage" as ModifierId;
 const MASTERY_MAGICAL_DAMAGE_MODIFIER = "mastery_weapon_magical_damage" as ModifierId;
-
-
-// -- Helper: create an entity with all combat components --------------------
-
-function setupCombatEntity(
-  world: World,
-  statsManager: StatsManager,
-  damageManager: DamageManager,
-  deathManager: DeathManager,
-  targetManager: TargetManager,
-  autoAttackManager: AutoAttackManager,
-  abilityManager: AbilityManager,
-  baseStats: { maxHealth: number; physDamage: number; attackSpeed: number; armor: number; magicRes: number },
-  position: { x: number; y: number },
-): EntityId {
-  const id = world.createEntity();
-  const container = statsManager.attachStats(id);
-
-  container.setBase(STAT_MAX_HEALTH, baseStats.maxHealth);
-  container.setBase(STAT_PHYSICAL_DAMAGE, baseStats.physDamage);
-  container.setBase(STAT_ATTACK_SPEED, baseStats.attackSpeed);
-  container.setBase(STAT_ARMOR, baseStats.armor);
-  container.setBase(STAT_MAGIC_RESISTANCE, baseStats.magicRes);
-  container.setBase(STAT_MAGICAL_DAMAGE, 0);
-  container.recalculate();
-
-  damageManager.attachHealth(id);
-  deathManager.attachDeath(id);
-  targetManager.attachTargeting(id);
-  autoAttackManager.attachAutoAttack(id);
-  abilityManager.attachAbilities(id);
-
-  world.addComponent(id, PositionComponent, position);
-
-  return id;
-}
 
 /** Internal refs for cleanup — not exposed to consumers. */
 interface CleanupRef {
@@ -625,83 +587,30 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       bridge.updateWorld(vm);
     }
 
-    function spawnEnemyForCurrentSegment(): {
-      id: EntityId;
-      maxHealth: number;
-      name: string;
-      visualManifestId: string;
-    } {
+    const combatEntityFactoryDeps = {
+      world,
+      statsManager,
+      damageManager,
+      deathManager,
+      targetManager,
+      autoAttackManager,
+      abilityManager,
+    };
+
+    function spawnEnemyForCurrentSegment(): SpawnedEnemyResult {
       const zone = getActiveZoneDef();
-      const biome = biomeResolver.resolve(zone.defId);
-      const isBoss =
-        worldRuntime.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1;
-      const isBiomeBoss =
-        isBoss && worldRuntime.currentSegment === SEGMENTS_PER_ZONE - 1;
-      const profile = getEnemyCombatProfile(
-        worldRuntime.currentZoneIndex,
-        worldRuntime.currentSegment,
-        worldRuntime.currentEncounter,
-      );
-      const enemyId = setupCombatEntity(
-        world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager,
-        {
-          maxHealth: profile.hp,
-          physDamage: profile.damage,
-          attackSpeed: 0.8,
-          armor: profile.armor,
-          magicRes: profile.magicResistance,
-        },
-        { x: 100, y: 0 },
-      );
-
-      const families = biome?.enemyFamilies ?? ["Beast"];
-      const family = families[worldRuntime.currentSegment % families.length] ?? "Beast";
-      const prefix = isBiomeBoss
-        ? "[BIOME BOSS] "
-        : isBoss
-          ? "[BOSS] "
-          : "";
-      const roamingCreatures = [
-        {
-          name: "Stonefang Wolf",
-          visualManifestId: "monster_stonefang_wolf",
-        },
-        {
-          name: "Razorwing Harpy",
-          visualManifestId: "monster_razorwing_harpy",
-        },
-        {
-          name: "Morgana Witch",
-          visualManifestId: "monster_morgana_witch",
-        },
-      ] as const;
-      const randomCreature =
-        roamingCreatures[Math.floor(Math.random() * roamingCreatures.length)]
-        ?? roamingCreatures[0];
-      const creature = isBiomeBoss
-        ? {
-            name: "Ancient Rune Golem",
-            visualManifestId: "boss_ancient_rune_golem",
-          }
-        : !isBoss
-          ? randomCreature
-          : {
-              name: family,
-              visualManifestId: "monster_undead_warrior",
-            };
-      const name = `${prefix}${creature.name} - ${zone.name}`;
-
-      return {
-        id: enemyId,
-        maxHealth: profile.hp,
-        name,
-        visualManifestId: creature.visualManifestId,
-      };
+      return spawnEnemyForSegment(combatEntityFactoryDeps, biomeResolver, {
+        zoneIndex: worldRuntime.currentZoneIndex,
+        segmentIndex: worldRuntime.currentSegment,
+        encounterIndex: worldRuntime.currentEncounter,
+        zoneDefId: zone.defId,
+        zoneName: zone.name,
+      });
     }
 
     // --- Create hero & enemy --------------------------------------------------
     const heroId = setupCombatEntity(
-      world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager,
+      combatEntityFactoryDeps,
       { maxHealth: 500, physDamage: 0, attackSpeed: 1.2, armor: 10, magicRes: 5 },
       { x: 0, y: 0 },
     );
