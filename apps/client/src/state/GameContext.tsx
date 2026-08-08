@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { RuntimeLifecycle } from "../runtime/RuntimeLifecycle.js";
+import { RuntimePersistence } from "../runtime/RuntimePersistence.js";
 import { EventBus, World, createRuntimeServices } from "@game/core";
 import {
   CombatService,
@@ -42,14 +43,6 @@ import {
   RepairStationRegistry,
   RepairCostResolver,
   RepairService,
-  InventorySaveProvider,
-  EquipmentSaveProvider,
-  WalletSaveProvider,
-  ExperienceSaveProvider,
-  FameSaveProvider,
-  MasterySaveProvider,
-  DestinyBoardSaveProvider,
-  DurabilitySaveProvider,
   asMasteryId,
   asDestinyNodeId,
   ZoneManager,
@@ -85,12 +78,7 @@ import {
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
 import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, MasteryId, WorkerTaskDefinitionId, WorkerDefinitionId, WorldLocationSaveState, SavedZoneMemory } from "@game/gameplay";
-import {
-  SaveManager,
-  VersionManager,
-  MigrationPipeline,
-  LocalStorageSaveRepository,
-} from "@game/persistence";
+
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
@@ -818,6 +806,7 @@ interface CleanupRef {
   _tickFn?: () => void;
   _tickInterval?: number;
   _disposeServices?: () => void;
+  _persistence?: RuntimePersistence;
 }
 
 // -- Helper: collect repair preview data ------------------------------------
@@ -872,9 +861,6 @@ function collectRepairPreviewData(
   return items;
 }
 
-// -- Save slot id -----------------------------------------------------------
-
-const SAVE_SLOT_ID = "vertical_slice_save";
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;
 const WOODCUTTER_DEFINITION_ID = WORKER_DEFINITION_IDS.woodcutter;
@@ -1946,42 +1932,19 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     });
 
     // --- Persistence setup -------------------------------------------------------
-    const saveRepository = new LocalStorageSaveRepository();
-    const versionManager = new VersionManager(1);
-    const migrationPipeline = new MigrationPipeline();
-    const saveManager = new SaveManager({
-      repository: saveRepository,
-      versionManager,
-      migrationPipeline,
-      buildVersion: "0.10.5",
-      seed: 42,
-    });
-
-    // Register all save providers
-    const inventorySaveProvider = new InventorySaveProvider(
+    const persistence = new RuntimePersistence({
       inventoryManager,
       world,
-      (index) => index === 0 ? heroId : bankId,
-    );
-    const equipmentSaveProvider = new EquipmentSaveProvider(equipmentManager, world, () => heroId);
-    const walletSaveProvider = new WalletSaveProvider(currencyService);
-    const experienceSaveProvider = new ExperienceSaveProvider(
+      heroId,
+      bankId,
+      equipmentManager,
+      currencyService,
       experienceService,
-      (masteryId) => masteryService._getTable(masteryId),
-    );
-    const fameSaveProvider = new FameSaveProvider(fameService);
-    const masterySaveProvider = new MasterySaveProvider(masteryService);
-    const destinyBoardSaveProvider = new DestinyBoardSaveProvider(destinyBoardService);
-    const durabilitySaveProvider = new DurabilitySaveProvider(durabilityStore);
-
-    saveManager.registerProvider(inventorySaveProvider);
-    saveManager.registerProvider(equipmentSaveProvider);
-    saveManager.registerProvider(walletSaveProvider);
-    saveManager.registerProvider(experienceSaveProvider);
-    saveManager.registerProvider(fameSaveProvider);
-    saveManager.registerProvider(masterySaveProvider);
-    saveManager.registerProvider(destinyBoardSaveProvider);
-    saveManager.registerProvider(durabilitySaveProvider);
+      masteryService,
+      fameService,
+      destinyBoardService,
+      durabilityStore,
+    });
 
     // --- Save/Load functions ---------------------------------------------------
     let tickCounter = 0;
@@ -3384,7 +3347,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         syncWorkers();
       },
     };
-    saveManager.registerProvider(workerSaveProvider);
+    persistence.registerProvider(workerSaveProvider);
     syncWorkers();
 
     const processCompletedWorkerCycles = (): void => {
@@ -3448,7 +3411,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const saveGame = (): void => {
-      saveManager.save(SAVE_SLOT_ID, tickCounter);
+      persistence.save(tickCounter);
       bridge.addEconomyNotification({
         id: `notif_save_${String(Date.now())}`,
         type: "success",
@@ -3458,10 +3421,10 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const loadGame = (): boolean => {
-      if (!saveManager.has(SAVE_SLOT_ID)) {
+      if (!persistence.hasSave()) {
         return false;
       }
-      saveManager.load(SAVE_SLOT_ID);
+      persistence.load();
 
       // After load, re-read wallet balance
       const balResult = currencyService.getBalance(walletId, "currency_silver");
@@ -3483,7 +3446,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       return true;
     };
 
-    const hasSave = (): boolean => saveManager.has(SAVE_SLOT_ID);
+    const hasSave = (): boolean => persistence.hasSave();
 
     // --- Start the encounter ---------------------------------------------------
     let encounterCounter = 0;
@@ -3712,7 +3675,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       getWorldLocationSaveState,
       setWorldLocationSaveState,
     );
-    saveManager.registerProvider(worldSaveProvider);
+    persistence.registerProvider(worldSaveProvider);
 
     const encounterResult = combatService.startEncounter(
       {
@@ -3943,9 +3906,10 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       }
     };
 
-    // Store tick function and disposal for useEffect
+    // Store tick function, persistence, and disposal for useEffect
     (bridge as unknown as CleanupRef)._tickFn = tickFn;
     (bridge as unknown as CleanupRef)._tickInterval = TICK_INTERVAL;
+    (bridge as unknown as CleanupRef)._persistence = persistence;
     (bridge as unknown as CleanupRef)._disposeServices = () => {
       orchestrator.dispose();
       progressionOrchestrator.dispose();
@@ -4080,12 +4044,12 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
   }, []);
 
   const initialLoadAttemptedRef = useRef(false);
-  const loadFailedRef = useRef(false);
 
   // Start tick loop and setup auto-load / auto-save persistence listeners
   useEffect(() => {
     const b = services.bridge as unknown as CleanupRef;
     const lifecycle = new RuntimeLifecycle();
+    const persistence = b._persistence!;
     lifecycle.start(b._tickFn!, b._tickInterval);
 
     // Auto-load existing save once on startup after runtime services and providers are ready
@@ -4095,65 +4059,21 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         if (services.hasSave()) {
           const success = services.loadGame();
           if (!success) {
-            loadFailedRef.current = true;
+            persistence.setLoadFailed(true);
             console.error("[Persistence] Auto-load failed: save slot existed but load returned false");
           }
         }
       } catch (err) {
-        loadFailedRef.current = true;
+        persistence.setLoadFailed(true);
         console.error("[Persistence] Failed during initial save check or load:", err);
       }
     }
 
-    let autoSaveIntervalId: number | undefined;
-    let handleVisibilityChange: (() => void) | undefined;
-    let handlePageHide: (() => void) | undefined;
-
-    // Only enable auto-save if checking/loading an existing save did not encounter an error
-    if (!loadFailedRef.current) {
-      // Auto-save periodically every 30 seconds
-      autoSaveIntervalId = window.setInterval(() => {
-        try {
-          services.saveGame();
-        } catch (err) {
-          console.error("[Persistence] Periodic auto-save failed:", err);
-        }
-      }, 30000);
-
-      // Auto-save when the page/tab becomes hidden
-      handleVisibilityChange = (): void => {
-        if (document.visibilityState === "hidden") {
-          try {
-            services.saveGame();
-          } catch (err) {
-            console.error("[Persistence] Visibility change auto-save failed:", err);
-          }
-        }
-      };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-
-      // Auto-save when page unloads or refreshes (e.g. F5, tab close)
-      handlePageHide = (): void => {
-        try {
-          services.saveGame();
-        } catch (err) {
-          console.error("[Persistence] Page hide auto-save failed:", err);
-        }
-      };
-      window.addEventListener("pagehide", handlePageHide);
-    }
+    const stopAutosave = persistence.startAutosave(() => services.saveGame());
 
     return () => {
       lifecycle.stop();
-      if (autoSaveIntervalId !== undefined) {
-        clearInterval(autoSaveIntervalId);
-      }
-      if (handleVisibilityChange !== undefined) {
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
-      }
-      if (handlePageHide !== undefined) {
-        window.removeEventListener("pagehide", handlePageHide);
-      }
+      stopAutosave();
       const dispose = b._disposeServices as (() => void) | undefined;
       if (dispose !== undefined) {
         dispose();
