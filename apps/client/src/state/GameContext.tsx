@@ -24,7 +24,6 @@ import {
   EquipmentManager,
   EquipmentStatSync,
   EnchantmentService,
-  ENCHANTMENT_MINIMUM_ITEM_TIER,
   CurrencyRegistry,
   CurrencyService,
   VendorRegistry,
@@ -45,7 +44,6 @@ import {
   RepairCostResolver,
   RepairService,
   asMasteryId,
-  asDestinyNodeId,
   ZoneManager,
   BiomeRegistry,
   BiomeResolver,
@@ -69,11 +67,11 @@ import {
   getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
-import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
+import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, ZoneDefinitionId, WorldIntegrationEventMap, AbilityId, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
 import { WorkerRuntime } from "../runtime/WorkerRuntime.js";
 
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
-import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
+import { GameBridge, type GameBridgeState, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { GatheringRuntime } from "../runtime/GatheringRuntime";
 import { RefiningRuntime } from "../runtime/RefiningRuntime";
 import { CraftingRuntime } from "../runtime/CraftingRuntime";
@@ -94,6 +92,7 @@ import {
   WORKER_PROFESSION_LABELS,
   getWorkerResourceLabel,
   syncAllToBridge,
+  buildMasteryViewModels,
 } from "./bridgeSync";
 import {
   BIRCH_PLANK_RECIPE,
@@ -108,18 +107,13 @@ import {
 } from "../data/refiningRecipes";
 import {
   getItemPower,
-  getItemTier,
   getMasteryItemPowerBonus,
-  getWeaponAttackSpeed,
 } from "../data/itemPower";
 import {
-  CLIENT_ABILITIES as CATALOG_CLIENT_ABILITIES,
-  WEAPON_ITEM_DEFINITIONS,
-  WEAPON_MASTERY_DEFINITIONS,
+  CLIENT_ABILITIES,
   WEAPON_VENDOR_OFFERS,
-  getWeaponMasteryDisplayName,
-  resolvePrimaryAbilityId as resolveCatalogPrimaryAbilityId,
-  resolveWeaponMastery as resolveCatalogWeaponMastery,
+  resolvePrimaryAbilityId,
+  resolveWeaponMastery,
 } from "../data/weaponContentCatalog";
 import {
   ENCHANTMENT_MATERIAL_NAMES,
@@ -127,14 +121,27 @@ import {
   REPAIR_COST_DEFINITIONS,
   rollEnchantmentMaterial,
   rollGenericCombatLoot,
+  HEALTH_POTION_HEAL_RATIO,
+  HEALTH_POTION_COOLDOWN_SECONDS,
 } from "../data/economyContentCatalog";
 import {
-  NON_WEAPON_ITEM_DEFINITIONS,
-  resolveCatalogStackInfo,
+  ITEM_DEFINITIONS,
+  resolveEquipmentInfo,
+  resolveEnchantmentItemInfo,
+  resolveItemStackInfo,
+  resolveRepairableInfo,
 } from "../data/itemContentCatalog";
 import {
-  GATHERING_MASTERY_DEFINITIONS,
-  getGatheringMasteryDisplayName,
+  SWORD_MASTERY_ID,
+  BROADSWORD_MASTERY_ID,
+  WOOD_GATHERING_MASTERY_ID,
+  ORE_GATHERING_MASTERY_ID,
+  HIDE_GATHERING_MASTERY_ID,
+  FIBER_GATHERING_MASTERY_ID,
+  MASTERY_DEFINITIONS,
+  getMasteryDisplayName,
+  DESTINY_NODES,
+  getRequiredGatheringMasteryForTier,
 } from "../data/progressionContentCatalog";
 import {
   BIOME_BY_ZONE,
@@ -209,540 +216,10 @@ const STAT_ATTACK_SPEED = "stat_attack_speed" as StatId;
 const STAT_ARMOR = "stat_armor" as StatId;
 const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
-const HERO_BASE_ATTACK_SPEED = 1.2;
+export const HERO_BASE_ATTACK_SPEED = 1.2;
 const MASTERY_PHYSICAL_DAMAGE_MODIFIER = "mastery_weapon_physical_damage" as ModifierId;
 const MASTERY_MAGICAL_DAMAGE_MODIFIER = "mastery_weapon_magical_damage" as ModifierId;
 
-interface ClientAbilityDefinition extends AbilityDefinitionLike {
-  readonly name: string;
-  readonly description: string;
-  readonly icon: string;
-  readonly damageType: DamageType;
-  readonly bonusDamageRatio: number;
-}
-
-const CLIENT_ABILITIES: Record<string, ClientAbilityDefinition> = {
-  ...CATALOG_CLIENT_ABILITIES,
-  ability_sword_heroic_strike: {
-    id: "ability_sword_heroic_strike",
-    name: "Frappe héroïque",
-    description: "Une frappe lourde infligeant 175 % des dégâts physiques.",
-    icon: "⚔️",
-    category: "active",
-    cooldown: 8,
-    castTime: 0,
-    resourceCost: { energy: 12 },
-    interruptible: false,
-    targetRule: "current_target",
-    damageType: "physical",
-    bonusDamageRatio: 0.75,
-  },
-  ability_bow_aimed_shot: {
-    id: "ability_bow_aimed_shot",
-    name: "Tir ajusté",
-    description: "Un tir précis infligeant 160 % des dégâts physiques.",
-    icon: "🏹",
-    category: "active",
-    cooldown: 6,
-    castTime: 0,
-    resourceCost: { energy: 8 },
-    interruptible: true,
-    targetRule: "current_target",
-    damageType: "physical",
-    bonusDamageRatio: 0.6,
-  },
-  ability_fire_fireball: {
-    id: "ability_fire_fireball",
-    name: "Boule de feu",
-    description: "Un projectile ardent infligeant 170 % des dégâts magiques.",
-    icon: "🔥",
-    category: "active",
-    cooldown: 5,
-    castTime: 0,
-    resourceCost: { energy: 15 },
-    interruptible: true,
-    targetRule: "current_target",
-    damageType: "magical",
-    bonusDamageRatio: 0.7,
-  },
-  ability_gloves_shockwave: {
-    id: "ability_gloves_shockwave",
-    name: "Onde percutante",
-    description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.",
-    icon: "🥊",
-    category: "active",
-    cooldown: 7,
-    castTime: 0,
-    resourceCost: { energy: 10 },
-    interruptible: false,
-    targetRule: "current_target",
-    damageType: "physical",
-    bonusDamageRatio: 0.8,
-  },
-};
-
-function resolvePrimaryAbilityId(itemId: string | null | undefined): string | undefined {
-  const catalogAbilityId = resolveCatalogPrimaryAbilityId(itemId);
-  if (catalogAbilityId !== undefined) return catalogAbilityId;
-  if (itemId?.includes("_sword_") === true) return "ability_sword_heroic_strike";
-  if (itemId?.includes("_bow_") === true) return "ability_bow_aimed_shot";
-  if (itemId?.includes("_staff_") === true) return "ability_fire_fireball";
-  if (itemId?.includes("_gloves_") === true) return "ability_gloves_shockwave";
-  return undefined;
-}
-
-// -- Item definitions (static data for vertical slice) ----------------------
-
-const ITEM_DEFINITIONS: Record<string, EquipmentInfoLike> = {
-  ...WEAPON_ITEM_DEFINITIONS,
-  ...NON_WEAPON_ITEM_DEFINITIONS,
-  item_weapon_sword_t3_broadsword: {
-    itemId: "item_weapon_sword_t3_broadsword",
-    slot: "weapon",
-    handling: "one_handed",
-    stats: { stat_physical_damage: 45 },
-  },
-  item_weapon_bow_t3_longbow: {
-    itemId: "item_weapon_bow_t3_longbow",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 40 },
-  },
-  item_weapon_staff_t3_fire: {
-    itemId: "item_weapon_staff_t3_fire",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_magical_damage: 45 },
-  },
-  item_weapon_gloves_t3_spiked_gauntlets: {
-    itemId: "item_weapon_gloves_t3_spiked_gauntlets",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 34 },
-  },
-  item_weapon_sword_t4_broadsword: {
-    itemId: "item_weapon_sword_t4_broadsword",
-    slot: "weapon",
-    handling: "one_handed",
-    stats: { stat_physical_damage: 75 },
-  },
-  item_weapon_bow_t4_longbow: {
-    itemId: "item_weapon_bow_t4_longbow",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 68 },
-  },
-  item_weapon_bow_t4_badon: {
-    itemId: "item_weapon_bow_t4_badon",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 72 },
-  },
-  item_weapon_staff_t4_fire: {
-    itemId: "item_weapon_staff_t4_fire",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_magical_damage: 85 },
-  },
-  item_weapon_gloves_t4_spiked_gauntlets: {
-    itemId: "item_weapon_gloves_t4_spiked_gauntlets",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 58 },
-  },
-  item_leather_armor: {
-    itemId: "item_leather_armor",
-    slot: "chest",
-    handling: "one_handed",
-    stats: { stat_armor: 8, stat_max_health: 50 },
-  },
-  item_wooden_shield: {
-    itemId: "item_wooden_shield",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 5, stat_magic_resistance: 3 },
-  },
-  item_shield_t3_reinforced: {
-    itemId: "item_shield_t3_reinforced",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 9, stat_magic_resistance: 5 },
-  },
-  item_shield_t4_reinforced: {
-    itemId: "item_shield_t4_reinforced",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 15, stat_magic_resistance: 9 },
-  },
-  item_iron_helmet: {
-    itemId: "item_iron_helmet",
-    slot: "head",
-    handling: "one_handed",
-    stats: { stat_armor: 4, stat_max_health: 30 },
-  },
-  item_leather_boots: {
-    itemId: "item_leather_boots",
-    slot: "boots",
-    handling: "one_handed",
-    stats: { stat_armor: 3 },
-  },
-  item_traveler_cape: {
-    itemId: "item_traveler_cape",
-    slot: "cape",
-    handling: "one_handed",
-    stats: { stat_magic_resistance: 4 },
-  },
-  item_helmet_t4_reinforced: {
-    itemId: "item_helmet_t4_reinforced",
-    slot: "head",
-    handling: "one_handed",
-    stats: { stat_armor: 8, stat_max_health: 55 },
-  },
-  item_armor_t4_leather: {
-    itemId: "item_armor_t4_leather",
-    slot: "chest",
-    handling: "one_handed",
-    stats: { stat_armor: 14, stat_max_health: 90 },
-  },
-  item_boots_t4_leather: {
-    itemId: "item_boots_t4_leather",
-    slot: "boots",
-    handling: "one_handed",
-    stats: { stat_armor: 6 },
-  },
-};
-
-/** Resolve equipment info from static definitions. */
-function resolveEquipmentInfo(itemId: string): EquipmentInfoLike | undefined {
-  const definition = ITEM_DEFINITIONS[itemId];
-  if (definition === undefined) return undefined;
-
-  // Attack speed belongs exclusively to the weapon profile. Any attack-speed
-  // bonus accidentally added to equipment data is ignored by this boundary.
-  const { stat_attack_speed: _ignoredAttackSpeed, ...stats } = definition.stats ?? {};
-  const intrinsicAttackSpeed = getWeaponAttackSpeed(itemId);
-  if (definition.slot !== "weapon" || intrinsicAttackSpeed === undefined) {
-    return { ...definition, stats };
-  }
-
-  return {
-    ...definition,
-    stats: {
-      ...stats,
-      stat_attack_speed: intrinsicAttackSpeed - HERO_BASE_ATTACK_SPEED,
-    },
-  };
-}
-
-function resolveEnchantmentItemInfo(itemId: string) {
-  const definition = ITEM_DEFINITIONS[itemId];
-  if (definition === undefined) return undefined;
-  const explicitTier = getItemTier(itemId);
-  const parsedTier = Number(itemId.match(/_t(\d+)(?:_|$)/)?.[1] ?? 0);
-  const itemTier = explicitTier ?? (parsedTier >= 3 ? parsedTier : 3);
-  const costCategory =
-    definition.slot === "weapon"
-      ? definition.handling === "two_handed"
-        ? "two_handed_weapon" as const
-        : "one_handed_weapon" as const
-      : definition.slot === "off_hand"
-        ? "off_hand" as const
-        : definition.slot === "cape"
-          ? "cape" as const
-          : "armor" as const;
-  const craftRecipe = EQUIPMENT_CRAFT_RECIPES.find(
-    (recipe) => recipe.outputItemId === itemId,
-  );
-  return {
-    enchantable:
-      itemTier >= ENCHANTMENT_MINIMUM_ITEM_TIER
-      && craftRecipe !== undefined,
-    maximumLevel: 3 as const,
-    itemTier,
-    costCategory,
-    craftMaterials:
-      craftRecipe?.requirements
-        .filter((requirement) => requirement.itemId.startsWith("item_refined_"))
-        .map((requirement) => ({
-          itemId: requirement.itemId,
-          quantity: requirement.quantity,
-        })) ?? [],
-  };
-}
-
-/**
- * 13_ITEM_SYSTEM: two items with the same definition, tier, quality and
- * enchantment share one inventory stack. The current vertical slice only
- * exposes one variant per itemId, so itemId is the complete stack identity.
- */
-function resolveItemStackInfo(itemId: string) {
-  const catalogStackInfo = resolveCatalogStackInfo(itemId);
-  if (catalogStackInfo !== undefined) return catalogStackInfo;
-  if (ITEM_DEFINITIONS[itemId] !== undefined) {
-    return { itemId, stackable: true, maxStack: 20 };
-  }
-  if (itemId === "item_health_potion" || itemId === "item_energy_potion") {
-    return { itemId, stackable: true, maxStack: 99 };
-  }
-  if (itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_")) {
-    return { itemId, stackable: true, maxStack: 999 };
-  }
-  if (
-    itemId === BIRCH_PLANK_RECIPE.rawItemId ||
-    itemId === BIRCH_PLANK_RECIPE.outputItemId ||
-    itemId === COPPER_BAR_RECIPE.rawItemId ||
-    itemId === COPPER_BAR_RECIPE.outputItemId ||
-    itemId === PINE_PLANK_RECIPE.rawItemId ||
-    itemId === PINE_PLANK_RECIPE.outputItemId ||
-    itemId === IRON_BAR_RECIPE.rawItemId ||
-    itemId === IRON_BAR_RECIPE.outputItemId
-  ) {
-    return { itemId, stackable: true, maxStack: 999 };
-  }
-  return undefined;
-}
-
-// -- Mastery / Destiny Board definitions (vertical-slice minimal) -----------
-
-const SWORD_MASTERY_ID = asMasteryId("mastery_sword");
-const BOW_MASTERY_ID = asMasteryId("mastery_bow");
-const FIRE_STAFF_MASTERY_ID = asMasteryId("mastery_fire_staff");
-const GLOVES_MASTERY_ID = asMasteryId("mastery_gloves");
-const BROADSWORD_MASTERY_ID = asMasteryId("mastery_broadsword");
-const LONGBOW_MASTERY_ID = asMasteryId("mastery_longbow");
-const BADON_MASTERY_ID = asMasteryId("mastery_badon");
-const T4_FIRE_STAFF_MASTERY_ID = asMasteryId("mastery_t4_fire_staff");
-const SPIKED_GAUNTLETS_MASTERY_ID = asMasteryId("mastery_spiked_gauntlets");
-const WOOD_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_wood");
-const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");
-const HIDE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_hide");
-const FIBER_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_fiber");
-
-const WEAPON_MASTERY_XP = [100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700];
-const GATHERING_MASTERY_XP = [50, 100, 175, 275, 400, 550, 750, 1000, 1300, 1700];
-const HEALTH_POTION_HEAL_RATIO = 0.3;
-const HEALTH_POTION_COOLDOWN_SECONDS = 20;
-
-function getRequiredGatheringMasteryForTier(tier: number): number {
-  // Local QA escape hatch: enables production-pipeline testing without
-  // changing progression balance or affecting deployed builds.
-  if (
-    import.meta.env.DEV
-    && typeof window !== "undefined"
-    && new URLSearchParams(window.location.search).get("productionTest") === "1"
-  ) {
-    return 0;
-  }
-  return Math.max(0, tier - 3) * 3;
-}
-
-const MASTERY_DEFINITIONS = [
-  ...WEAPON_MASTERY_DEFINITIONS,
-  ...GATHERING_MASTERY_DEFINITIONS,
-  {
-    id: "mastery_sword",
-    category: "weapon",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_bow",
-    category: "weapon",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_fire_staff",
-    category: "weapon",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_gloves",
-    category: "weapon",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_broadsword",
-    category: "weapon_specialization",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_longbow",
-    category: "weapon_specialization",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_badon",
-    category: "weapon_specialization",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_t4_fire_staff",
-    category: "weapon_specialization",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_spiked_gauntlets",
-    category: "weapon_specialization",
-    maxLevel: 100,
-    experiencePerLevel: WEAPON_MASTERY_XP,
-  },
-  {
-    id: "mastery_gathering_wood",
-    category: "gathering",
-    maxLevel: 100,
-    experiencePerLevel: GATHERING_MASTERY_XP,
-  },
-  {
-    id: "mastery_gathering_ore",
-    category: "gathering",
-    maxLevel: 100,
-    experiencePerLevel: GATHERING_MASTERY_XP,
-  },
-  {
-    id: "mastery_gathering_hide",
-    category: "gathering",
-    maxLevel: 100,
-    experiencePerLevel: GATHERING_MASTERY_XP,
-  },
-  {
-    id: "mastery_gathering_fiber",
-    category: "gathering",
-    maxLevel: 100,
-    experiencePerLevel: GATHERING_MASTERY_XP,
-  },
-];
-
-interface WeaponMasteryRoute {
-  readonly familyId: ReturnType<typeof asMasteryId>;
-  readonly weaponId: ReturnType<typeof asMasteryId>;
-}
-
-function resolveWeaponMastery(itemId: string): WeaponMasteryRoute | undefined {
-  const catalogRoute = resolveCatalogWeaponMastery(itemId);
-  if (catalogRoute !== undefined) return catalogRoute;
-  switch (itemId) {
-    case "item_weapon_sword_t3_broadsword":
-    case "item_weapon_sword_t4_broadsword":
-      return { familyId: SWORD_MASTERY_ID, weaponId: BROADSWORD_MASTERY_ID };
-    case "item_weapon_bow_t3_longbow":
-    case "item_weapon_bow_t4_longbow":
-      return { familyId: BOW_MASTERY_ID, weaponId: LONGBOW_MASTERY_ID };
-    case "item_weapon_bow_t4_badon":
-      return { familyId: BOW_MASTERY_ID, weaponId: BADON_MASTERY_ID };
-    case "item_weapon_staff_t3_fire":
-    case "item_weapon_staff_t4_fire":
-      return { familyId: FIRE_STAFF_MASTERY_ID, weaponId: T4_FIRE_STAFF_MASTERY_ID };
-    case "item_weapon_gloves_t3_spiked_gauntlets":
-    case "item_weapon_gloves_t4_spiked_gauntlets":
-      return { familyId: GLOVES_MASTERY_ID, weaponId: SPIKED_GAUNTLETS_MASTERY_ID };
-    default:
-      return undefined;
-  }
-}
-
-function getMasteryDisplayName(masteryId: string): string {
-  const catalogName = getWeaponMasteryDisplayName(masteryId);
-  if (catalogName !== undefined) return catalogName;
-  const gatheringCatalogName = getGatheringMasteryDisplayName(masteryId);
-  if (gatheringCatalogName !== undefined) return gatheringCatalogName;
-  switch (masteryId) {
-    case "mastery_sword":
-      return "Épées";
-    case "mastery_bow":
-      return "Arcs";
-    case "mastery_fire_staff":
-      return "Bâtons de feu";
-    case "mastery_gloves":
-      return "Gants";
-    case "mastery_broadsword":
-      return "Épée large";
-    case "mastery_longbow":
-      return "Arc long";
-    case "mastery_badon":
-      return "Badon";
-    case "mastery_t4_fire_staff":
-      return "Bâton de feu T4";
-    case "mastery_spiked_gauntlets":
-      return "Gantelets à pointes";
-    case "mastery_gathering_wood":
-      return "Récolte du bois";
-    case "mastery_gathering_ore":
-      return "Extraction du minerai";
-    case "mastery_gathering_hide":
-      return "Dépeçage";
-    case "mastery_gathering_fiber":
-      return "Récolte des fibres";
-    default:
-      return masteryId;
-  }
-}
-
-function buildMasteryViewModels(
-  state: ReturnType<ProgressionOrchestrator["getFullProgressionState"]>,
-): MasteryVM[] {
-  return [...state.masteries.values()].map((mastery) => {
-    const definition = MASTERY_DEFINITIONS.find((entry) => entry.id === mastery.masteryId);
-    const requirements = definition?.experiencePerLevel ?? [];
-    const fallbackRequirement = requirements[requirements.length - 1] ?? 0;
-
-    return {
-      id: mastery.masteryId,
-      displayName: getMasteryDisplayName(mastery.masteryId),
-      category: definition?.category ?? "unknown",
-      isUnlocked: mastery.isUnlocked,
-      level: mastery.level,
-      currentXp: mastery.currentXp,
-      xpToNextLevel: mastery.level >= (definition?.maxLevel ?? 0)
-        ? 0
-        : (requirements[mastery.level] ?? fallbackRequirement),
-      totalLifetimeXp: mastery.totalLifetimeXp,
-      maxLevel: definition?.maxLevel ?? 0,
-    };
-  });
-}
-
-const DESTINY_NODES = [
-  {
-    id: asDestinyNodeId("node_sword_1"),
-    displayName: "Initié à l'épée",
-    category: "weapon",
-    prerequisites: [] as ReturnType<typeof asDestinyNodeId>[],
-    requirements: [{ type: "mastery_level" as const, masteryId: SWORD_MASTERY_ID, level: 1 }],
-    rewards: [{ type: "equipment_tier_unlock" as const, tier: 2 }],
-  },
-  {
-    id: asDestinyNodeId("node_sword_2"),
-    displayName: "Adepte de l'épée",
-    category: "weapon",
-    prerequisites: [asDestinyNodeId("node_sword_1")],
-    requirements: [{ type: "mastery_level" as const, masteryId: SWORD_MASTERY_ID, level: 3 }],
-    rewards: [{ type: "equipment_tier_unlock" as const, tier: 3 }],
-  },
-];
-
-// -- Item category mapping for repair cost resolution -----------------------
-
-function resolveRepairableInfo(itemId: string): { itemId: string; equipmentCategory: string; itemTier: number } | undefined {
-  const info = ITEM_DEFINITIONS[itemId];
-  const itemTier = getItemTier(itemId);
-  if (info === undefined || itemTier === undefined) {
-    return undefined;
-  }
-  if (info.slot === "weapon") {
-    return { itemId, equipmentCategory: "weapon", itemTier };
-  }
-  if (info.slot === "cape" || info.slot === "off_hand") {
-    return { itemId, equipmentCategory: "accessory", itemTier };
-  }
-  return { itemId, equipmentCategory: "armor", itemTier };
-}
 
 // -- Helper: create an entity with all combat components --------------------
 
@@ -2227,17 +1704,24 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       );
     };
 
+    const syncAllGathering = (): void => {
+      syncGathering();
+      syncOreGathering();
+      syncHideGathering();
+      syncFiberGathering();
+    };
+
     const toggleGathering = (): boolean => {
       const res = gatheringRuntime.toggleGathering(tickCounter);
       if (res.action === "stopped") {
-        syncGathering();
+        syncAllGathering();
         bridge.setCombatState("walking");
         return true;
       }
       if (res.action === "started") {
         prepareCombatResumeAfterGathering();
         bridge.setCombatState("idle");
-        syncGathering();
+        syncAllGathering();
         return true;
       }
       return false;
@@ -2245,10 +1729,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     const returnToCombat = (): boolean => {
       if (gatheringRuntime.isHeroGathering()) {
-        toggleGathering();
-        toggleOreGathering();
-        toggleHideGathering();
-        toggleFiberGathering();
+        gatheringRuntime.stopAllGathering();
+        syncAllGathering();
+        bridge.setCombatState("walking");
         return true;
       }
       return false;
@@ -2257,14 +1740,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const toggleOreGathering = (): boolean => {
       const res = gatheringRuntime.toggleOreGathering(tickCounter);
       if (res.action === "stopped") {
-        syncOreGathering();
+        syncAllGathering();
         bridge.setCombatState("walking");
         return true;
       }
       if (res.action === "started") {
         prepareCombatResumeAfterGathering();
         bridge.setCombatState("idle");
-        syncOreGathering();
+        syncAllGathering();
         return true;
       }
       return false;
@@ -2273,14 +1756,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const toggleHideGathering = (): boolean => {
       const res = gatheringRuntime.toggleHideGathering(tickCounter);
       if (res.action === "stopped") {
-        syncHideGathering();
+        syncAllGathering();
         bridge.setCombatState("walking");
         return true;
       }
       if (res.action === "started") {
         prepareCombatResumeAfterGathering();
         bridge.setCombatState("idle");
-        syncHideGathering();
+        syncAllGathering();
         return true;
       }
       return false;
@@ -2289,14 +1772,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const toggleFiberGathering = (): boolean => {
       const res = gatheringRuntime.toggleFiberGathering(tickCounter);
       if (res.action === "stopped") {
-        syncFiberGathering();
+        syncAllGathering();
         bridge.setCombatState("walking");
         return true;
       }
       if (res.action === "started") {
         prepareCombatResumeAfterGathering();
         bridge.setCombatState("idle");
-        syncFiberGathering();
+        syncAllGathering();
         return true;
       }
       return false;

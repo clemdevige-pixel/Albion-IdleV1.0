@@ -8,6 +8,9 @@ export const GENERIC_COMBAT_LOOT: readonly LootDropDefinition[] = [
   { itemId: "item_energy_potion", weight: 15 },
 ];
 
+export const HEALTH_POTION_HEAL_RATIO = 0.3;
+export const HEALTH_POTION_COOLDOWN_SECONDS = 20;
+
 export const ENCHANTMENT_MATERIAL_NAMES: Readonly<Record<string, string>> = {
   item_resource_enchantment_essence: "Essence d’enchantement",
   item_resource_arcane_crystal: "Cristal arcanique",

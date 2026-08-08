@@ -190,15 +190,6 @@ export class GatheringRuntime {
     };
   }
 
-  public isHeroGathering(): boolean {
-    return (
-      this.gatheringCoordinator.getActiveSession() !== undefined
-      || this.oreGatheringCoordinator.getActiveSession() !== undefined
-      || this.hideGatheringCoordinator.getActiveSession() !== undefined
-      || this.fiberGatheringCoordinator.getActiveSession() !== undefined
-    );
-  }
-
   public tick(tickCounter: number): void {
     this.currentTickCounter = tickCounter;
     this.gatheringCoordinator.tick(tickCounter);
@@ -453,6 +444,71 @@ export class GatheringRuntime {
     });
   }
 
+  public isHeroGathering(): boolean {
+    return (
+      this.automaticGathering
+      || this.automaticOreGathering
+      || this.automaticHideGathering
+      || this.automaticFiberGathering
+      || this.gatheringCoordinator.getActiveSession() !== undefined
+      || this.oreGatheringCoordinator.getActiveSession() !== undefined
+      || this.hideGatheringCoordinator.getActiveSession() !== undefined
+      || this.fiberGatheringCoordinator.getActiveSession() !== undefined
+    );
+  }
+
+  public stopAllGathering(): boolean {
+    const wasGathering = this.isHeroGathering();
+
+    this.automaticGathering = false;
+    this.automaticOreGathering = false;
+    this.automaticHideGathering = false;
+    this.automaticFiberGathering = false;
+
+    const woodSession = this.gatheringCoordinator.getActiveSession();
+    if (woodSession !== undefined) this.gatheringManager.interruptSession(woodSession.id);
+    const oreSession = this.oreGatheringCoordinator.getActiveSession();
+    if (oreSession !== undefined) this.oreGatheringManager.interruptSession(oreSession.id);
+    const hideSession = this.hideGatheringCoordinator.getActiveSession();
+    if (hideSession !== undefined) this.hideGatheringManager.interruptSession(hideSession.id);
+    const fiberSession = this.fiberGatheringCoordinator.getActiveSession();
+    if (fiberSession !== undefined) this.fiberGatheringManager.interruptSession(fiberSession.id);
+
+    this.endActiveGatheringMiniGame("Wood");
+    this.endActiveGatheringMiniGame("Ore");
+    this.endActiveGatheringMiniGame("Hide");
+    this.endActiveGatheringMiniGame("Fiber");
+
+    return wasGathering;
+  }
+
+  private stopOtherGathering(exceptFamily?: ResourceFamily): void {
+    if (exceptFamily !== "Wood") {
+      this.automaticGathering = false;
+      const session = this.gatheringCoordinator.getActiveSession();
+      if (session !== undefined) this.gatheringManager.interruptSession(session.id);
+      this.endActiveGatheringMiniGame("Wood");
+    }
+    if (exceptFamily !== "Ore") {
+      this.automaticOreGathering = false;
+      const session = this.oreGatheringCoordinator.getActiveSession();
+      if (session !== undefined) this.oreGatheringManager.interruptSession(session.id);
+      this.endActiveGatheringMiniGame("Ore");
+    }
+    if (exceptFamily !== "Hide") {
+      this.automaticHideGathering = false;
+      const session = this.hideGatheringCoordinator.getActiveSession();
+      if (session !== undefined) this.hideGatheringManager.interruptSession(session.id);
+      this.endActiveGatheringMiniGame("Hide");
+    }
+    if (exceptFamily !== "Fiber") {
+      this.automaticFiberGathering = false;
+      const session = this.fiberGatheringCoordinator.getActiveSession();
+      if (session !== undefined) this.fiberGatheringManager.interruptSession(session.id);
+      this.endActiveGatheringMiniGame("Fiber");
+    }
+  }
+
   public toggleGathering(tickCounter: number = 0): ToggleGatheringResult {
     if (this.automaticGathering) {
       this.automaticGathering = false;
@@ -464,15 +520,7 @@ export class GatheringRuntime {
       return { action: "stopped", family: "Wood" };
     }
 
-    this.automaticOreGathering = false;
-    this.automaticHideGathering = false;
-    this.automaticFiberGathering = false;
-    const oreSession = this.oreGatheringCoordinator.getActiveSession();
-    if (oreSession !== undefined) this.oreGatheringManager.interruptSession(oreSession.id);
-    const hideSession = this.hideGatheringCoordinator.getActiveSession();
-    if (hideSession !== undefined) this.hideGatheringManager.interruptSession(hideSession.id);
-    const fiberSession = this.fiberGatheringCoordinator.getActiveSession();
-    if (fiberSession !== undefined) this.fiberGatheringManager.interruptSession(fiberSession.id);
+    this.stopOtherGathering("Wood");
 
     this.automaticGathering = true;
     if (!this.startGatheringCycle(this.getProductionTier(), tickCounter)) {
@@ -491,15 +539,7 @@ export class GatheringRuntime {
       return { action: "stopped", family: "Ore" };
     }
 
-    this.automaticGathering = false;
-    this.automaticHideGathering = false;
-    this.automaticFiberGathering = false;
-    const woodSession = this.gatheringCoordinator.getActiveSession();
-    if (woodSession !== undefined) this.gatheringManager.interruptSession(woodSession.id);
-    const hideSession = this.hideGatheringCoordinator.getActiveSession();
-    if (hideSession !== undefined) this.hideGatheringManager.interruptSession(hideSession.id);
-    const fiberSession = this.fiberGatheringCoordinator.getActiveSession();
-    if (fiberSession !== undefined) this.fiberGatheringManager.interruptSession(fiberSession.id);
+    this.stopOtherGathering("Ore");
 
     this.automaticOreGathering = true;
     if (!this.startOreGatheringCycle(this.getProductionTier(), tickCounter)) {
@@ -518,15 +558,7 @@ export class GatheringRuntime {
       return { action: "stopped", family: "Hide" };
     }
 
-    this.automaticGathering = false;
-    this.automaticOreGathering = false;
-    this.automaticFiberGathering = false;
-    const woodSession = this.gatheringCoordinator.getActiveSession();
-    if (woodSession !== undefined) this.gatheringManager.interruptSession(woodSession.id);
-    const oreSession = this.oreGatheringCoordinator.getActiveSession();
-    if (oreSession !== undefined) this.oreGatheringManager.interruptSession(oreSession.id);
-    const fiberSession = this.fiberGatheringCoordinator.getActiveSession();
-    if (fiberSession !== undefined) this.fiberGatheringManager.interruptSession(fiberSession.id);
+    this.stopOtherGathering("Hide");
 
     this.automaticHideGathering = true;
     if (!this.startHideGatheringCycle(this.getProductionTier(), tickCounter)) {
@@ -545,15 +577,7 @@ export class GatheringRuntime {
       return { action: "stopped", family: "Fiber" };
     }
 
-    this.automaticGathering = false;
-    this.automaticOreGathering = false;
-    this.automaticHideGathering = false;
-    const woodSession = this.gatheringCoordinator.getActiveSession();
-    if (woodSession !== undefined) this.gatheringManager.interruptSession(woodSession.id);
-    const oreSession = this.oreGatheringCoordinator.getActiveSession();
-    if (oreSession !== undefined) this.oreGatheringManager.interruptSession(oreSession.id);
-    const hideSession = this.hideGatheringCoordinator.getActiveSession();
-    if (hideSession !== undefined) this.hideGatheringManager.interruptSession(hideSession.id);
+    this.stopOtherGathering("Fiber");
 
     this.automaticFiberGathering = true;
     if (!this.startFiberGatheringCycle(this.getProductionTier(), tickCounter)) {

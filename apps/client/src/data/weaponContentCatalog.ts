@@ -160,8 +160,68 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
   },
 ];
 
-export const CLIENT_ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> =
+const BASE_CLIENT_ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> =
   Object.fromEntries(WEAPON_CONTENT.map((entry) => [entry.ability.id, entry.ability]));
+
+export const CLIENT_ABILITIES: Record<string, ClientAbilityDefinition> = {
+  ...BASE_CLIENT_ABILITIES,
+  ability_sword_heroic_strike: {
+    id: "ability_sword_heroic_strike",
+    name: "Frappe héroïque",
+    description: "Une frappe lourde infligeant 175 % des dégâts physiques.",
+    icon: "⚔️",
+    category: "active",
+    cooldown: 8,
+    castTime: 0,
+    resourceCost: { energy: 12 },
+    interruptible: false,
+    targetRule: "current_target",
+    damageType: "physical",
+    bonusDamageRatio: 0.75,
+  },
+  ability_bow_aimed_shot: {
+    id: "ability_bow_aimed_shot",
+    name: "Tir ajusté",
+    description: "Un tir précis infligeant 160 % des dégâts physiques.",
+    icon: "🏹",
+    category: "active",
+    cooldown: 6,
+    castTime: 0,
+    resourceCost: { energy: 8 },
+    interruptible: true,
+    targetRule: "current_target",
+    damageType: "physical",
+    bonusDamageRatio: 0.6,
+  },
+  ability_fire_fireball: {
+    id: "ability_fire_fireball",
+    name: "Boule de feu",
+    description: "Un projectile ardent infligeant 170 % des dégâts magiques.",
+    icon: "🔥",
+    category: "active",
+    cooldown: 5,
+    castTime: 0,
+    resourceCost: { energy: 15 },
+    interruptible: true,
+    targetRule: "current_target",
+    damageType: "magical",
+    bonusDamageRatio: 0.7,
+  },
+  ability_gloves_shockwave: {
+    id: "ability_gloves_shockwave",
+    name: "Onde percutante",
+    description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.",
+    icon: "🥊",
+    category: "active",
+    cooldown: 7,
+    castTime: 0,
+    resourceCost: { energy: 10 },
+    interruptible: false,
+    targetRule: "current_target",
+    damageType: "physical",
+    bonusDamageRatio: 0.8,
+  },
+};
 
 export const WEAPON_ITEM_DEFINITIONS: Readonly<Record<string, EquipmentInfoLike>> =
   Object.fromEntries(
@@ -175,9 +235,19 @@ const CONTENT_BY_ITEM_ID = new Map(
   WEAPON_CONTENT.flatMap((entry) => entry.items.map((item) => [item.itemId, entry] as const)),
 );
 
-export function resolvePrimaryAbilityId(itemId: string | null | undefined): string | undefined {
+export function resolveCatalogPrimaryAbilityId(itemId: string | null | undefined): string | undefined {
   if (itemId == null) return undefined;
   return CONTENT_BY_ITEM_ID.get(itemId)?.ability.id;
+}
+
+export function resolvePrimaryAbilityId(itemId: string | null | undefined): string | undefined {
+  const catalogAbilityId = resolveCatalogPrimaryAbilityId(itemId);
+  if (catalogAbilityId !== undefined) return catalogAbilityId;
+  if (itemId?.includes("_sword_") === true) return "ability_sword_heroic_strike";
+  if (itemId?.includes("_bow_") === true) return "ability_bow_aimed_shot";
+  if (itemId?.includes("_staff_") === true) return "ability_fire_fireball";
+  if (itemId?.includes("_gloves_") === true) return "ability_gloves_shockwave";
+  return undefined;
 }
 
 export interface WeaponMasteryRoute {
@@ -185,13 +255,36 @@ export interface WeaponMasteryRoute {
   readonly weaponId: ReturnType<typeof asMasteryId>;
 }
 
-export function resolveWeaponMastery(itemId: string): WeaponMasteryRoute | undefined {
+export function resolveCatalogWeaponMastery(itemId: string): WeaponMasteryRoute | undefined {
   const entry = CONTENT_BY_ITEM_ID.get(itemId);
   if (entry === undefined) return undefined;
   return {
     familyId: asMasteryId(entry.familyMasteryId),
     weaponId: asMasteryId(entry.specializationMasteryId),
   };
+}
+
+export function resolveWeaponMastery(itemId: string): WeaponMasteryRoute | undefined {
+  const catalogRoute = resolveCatalogWeaponMastery(itemId);
+  if (catalogRoute !== undefined) return catalogRoute;
+  switch (itemId) {
+    case "item_weapon_sword_t3_broadsword":
+    case "item_weapon_sword_t4_broadsword":
+      return { familyId: asMasteryId("mastery_sword"), weaponId: asMasteryId("mastery_broadsword") };
+    case "item_weapon_bow_t3_longbow":
+    case "item_weapon_bow_t4_longbow":
+      return { familyId: asMasteryId("mastery_bow"), weaponId: asMasteryId("mastery_longbow") };
+    case "item_weapon_bow_t4_badon":
+      return { familyId: asMasteryId("mastery_bow"), weaponId: asMasteryId("mastery_badon") };
+    case "item_weapon_staff_t3_fire":
+    case "item_weapon_staff_t4_fire":
+      return { familyId: asMasteryId("mastery_fire_staff"), weaponId: asMasteryId("mastery_t4_fire_staff") };
+    case "item_weapon_gloves_t3_spiked_gauntlets":
+    case "item_weapon_gloves_t4_spiked_gauntlets":
+      return { familyId: asMasteryId("mastery_gloves"), weaponId: asMasteryId("mastery_spiked_gauntlets") };
+    default:
+      return undefined;
+  }
 }
 
 const masteryNames = new Map<string, string>();
@@ -226,3 +319,4 @@ export const WEAPON_VENDOR_OFFERS = WEAPON_CONTENT.flatMap((entry) =>
     enabled: true,
   })),
 );
+
