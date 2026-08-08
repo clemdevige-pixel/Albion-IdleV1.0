@@ -64,18 +64,13 @@ import {
   asResourceId,
   asGatheringToolId,
   RefiningManager,
-  WorkerRegistry,
-  WorkerManager,
-  WorkerTaskRegistry,
-  WorkerAssignmentManager,
-  WorkerExecutor,
-  WorkerScheduler,
   WorldSaveProvider,
   getEnemyCombatProfile,
   getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
-import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, MasteryId, WorkerTaskDefinitionId, WorkerDefinitionId, WorldLocationSaveState } from "@game/gameplay";
+import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
+import { WorkerRuntime } from "../runtime/WorkerRuntime.js";
 
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
@@ -141,12 +136,6 @@ import {
   GATHERING_MASTERY_DEFINITIONS,
   getGatheringMasteryDisplayName,
 } from "../data/progressionContentCatalog";
-import {
-  WORKER_DEFINITIONS,
-  WORKER_DEFINITION_IDS,
-  WORKER_TASK_DEFINITIONS,
-  WORKER_TASK_IDS,
-} from "../data/workerContentCatalog";
 import {
   BIOME_BY_ZONE,
   BIOME_DEFINITIONS,
@@ -534,15 +523,6 @@ const GATHERING_MASTERY_XP = [50, 100, 175, 275, 400, 550, 750, 1000, 1300, 1700
 const HEALTH_POTION_HEAL_RATIO = 0.3;
 const HEALTH_POTION_COOLDOWN_SECONDS = 20;
 
-
-function getWorkerGatheringXpForTier(tier: number): number {
-  return Math.max(1, Math.round(4 * (1.5 ** Math.max(0, tier - 3))));
-}
-
-function getHeroGatheringXpFromWorkerForTier(tier: number): number {
-  return Math.max(1, Math.round(2 * (1.5 ** Math.max(0, tier - 3))));
-}
-
 function getRequiredGatheringMasteryForTier(tier: number): number {
   // Local QA escape hatch: enables production-pipeline testing without
   // changing progression balance or affecting deployed builds.
@@ -861,14 +841,6 @@ function collectRepairPreviewData(
 
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;
-const WOODCUTTER_DEFINITION_ID = WORKER_DEFINITION_IDS.woodcutter;
-const MINER_DEFINITION_ID = WORKER_DEFINITION_IDS.miner;
-const SKINNER_DEFINITION_ID = WORKER_DEFINITION_IDS.skinner;
-const FIBER_HARVESTER_DEFINITION_ID = WORKER_DEFINITION_IDS.fiberHarvester;
-const GATHER_WOOD_TASK_ID = WORKER_TASK_IDS.wood;
-const GATHER_COPPER_TASK_ID = WORKER_TASK_IDS.ore;
-const GATHER_HIDE_TASK_ID = WORKER_TASK_IDS.hide;
-const GATHER_FIBER_TASK_ID = WORKER_TASK_IDS.fiber;
 
 export function GameProvider({ children }: { readonly children: ReactNode }): JSX.Element {
   const services = useMemo<GameServices>(() => {
@@ -957,35 +929,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     currencyService.createWallet(walletId, playerId);
     // Start with 1000 silver
     currencyService.credit(walletId, "currency_silver", 1000, "Loot");
-
-    // --- Worker systems -------------------------------------------------------
-    // Workers support gathering but remain deliberately slower than the active
-    // Hero: one resource every six seconds versus two every two seconds.
-    const workerRegistry = new WorkerRegistry();
-    for (const definition of WORKER_DEFINITIONS) {
-      workerRegistry.register(definition);
-    }
-
-    const workerManager = new WorkerManager(workerRegistry);
-    const workerTaskRegistry = new WorkerTaskRegistry();
-    for (const definition of WORKER_TASK_DEFINITIONS) {
-      workerTaskRegistry.register(definition);
-    }
-
-    const workerAssignmentManager = new WorkerAssignmentManager(
-      workerManager,
-      workerTaskRegistry,
-    );
-    const workerExecutionEvents = new EventBus<WorkerExecutionEventMap>();
-    const workerExecutor = new WorkerExecutor(
-      workerManager,
-      workerAssignmentManager,
-      workerTaskRegistry,
-      workerExecutionEvents,
-    );
-    const workerScheduler = new WorkerScheduler(workerExecutionEvents);
-    const workerByProfession = new Map<WorkerProfessionVM, WorkerId>();
-    const workerProductionTier = new Map<WorkerId, 3 | 4>();
 
     // --- Progression systems ---------------------------------------------------
     const experienceService = new ExperienceService();
@@ -1689,6 +1632,16 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       durabilityStore,
       recipes: EQUIPMENT_CRAFT_RECIPES,
       getItemPower,
+    });
+
+    const workerRuntime = new WorkerRuntime({
+      inventoryManager,
+      heroId,
+      currencyService,
+      walletId,
+      experienceService,
+      getProductionTier: () => productionTier,
+      getRequiredGatheringMasteryForTier,
     });
 
     // The starter sword unlocks its mastery and becomes the active Fame target.
@@ -2533,342 +2486,21 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     syncMetalRefining();
     syncCrafting();
 
-    const workerTaskByProfession = {
-      woodcutter: GATHER_WOOD_TASK_ID,
-      miner: GATHER_COPPER_TASK_ID,
-      skinner: GATHER_HIDE_TASK_ID,
-      fiber_harvester: GATHER_FIBER_TASK_ID,
-    } as const;
-    const isSupportedWorkerProfession = (
-      profession: string,
-    ): profession is keyof typeof workerTaskByProfession =>
-      Object.prototype.hasOwnProperty.call(workerTaskByProfession, profession);
-    const workerDefinitionByProfession = {
-      woodcutter: WOODCUTTER_DEFINITION_ID,
-      miner: MINER_DEFINITION_ID,
-      skinner: SKINNER_DEFINITION_ID,
-      fiber_harvester: FIBER_HARVESTER_DEFINITION_ID,
-    } as const;
-    const workerRawItemId = (profession: WorkerProfessionVM, tier: 3 | 4): string => {
-      switch (profession) {
-        case "woodcutter": return tier === 4 ? PINE_PLANK_RECIPE.rawItemId : BIRCH_PLANK_RECIPE.rawItemId;
-        case "miner": return tier === 4 ? IRON_BAR_RECIPE.rawItemId : COPPER_BAR_RECIPE.rawItemId;
-        case "stonecutter": return "item_resource_stone_t3";
-        case "skinner": return tier === 4 ? THICK_LEATHER_RECIPE.rawItemId : STURDY_LEATHER_RECIPE.rawItemId;
-        case "fiber_harvester": return tier === 4 ? FINE_CLOTH_RECIPE.rawItemId : LINEN_CLOTH_RECIPE.rawItemId;
-      }
-    };
-    const workerMasteryId = (profession: WorkerProfessionVM): MasteryId => {
-      switch (profession) {
-        case "woodcutter": return WOOD_GATHERING_MASTERY_ID;
-        case "miner": return ORE_GATHERING_MASTERY_ID;
-        case "stonecutter": return ORE_GATHERING_MASTERY_ID;
-        case "skinner": return HIDE_GATHERING_MASTERY_ID;
-        case "fiber_harvester": return FIBER_GATHERING_MASTERY_ID;
-      }
-    };
-    const workerTaskForProfession = (
-      profession: keyof typeof workerTaskByProfession,
-    ): WorkerTaskDefinitionId => workerTaskByProfession[profession];
-    const workerDefinitionForProfession = (
-      profession: keyof typeof workerDefinitionByProfession,
-    ): WorkerDefinitionId => workerDefinitionByProfession[profession];
-
-    const getWorkerMasteryLevel = (masteryXp: number): number =>
-      Math.min(100, Math.floor(Math.sqrt(Math.max(0, masteryXp) / 100)));
-
-    const getWorkerMasteryThreshold = (level: number): number =>
-      Math.max(0, level) ** 2 * 100;
-
-    const getWorkerSpeedModifier = (masteryXp: number, tier: 3 | 4): number => {
-      const level = getWorkerMasteryLevel(masteryXp);
-      const tierModifier = tier === 4 ? 0.75 : 1;
-      return tierModifier * (1 + level * 0.005);
-    };
-
     const syncWorkers = (): void => {
       syncWorkersToBridge(
         bridge,
-        workerManager.getAllWorkers(),
-        isSupportedWorkerProfession,
-        (wId) => workerScheduler.getSession(wId),
-        (wId) => workerProductionTier.get(wId) ?? productionTier,
-        (xp, tier) => {
-          const masteryLevel = getWorkerMasteryLevel(xp);
-          return {
-            masteryLevel,
-            currentThreshold: getWorkerMasteryThreshold(masteryLevel),
-            nextThreshold: getWorkerMasteryThreshold(masteryLevel + 1),
-            speedModifier: getWorkerSpeedModifier(xp, tier),
-          };
-        },
+        workerRuntime.getAllWorkers(),
+        (profession) => workerRuntime.isSupportedWorkerProfession(profession),
+        (wId) => workerRuntime.getWorkerSession(wId),
+        (wId) => workerRuntime.getAssignedTier(wId),
+        (xp, tier) => workerRuntime.getWorkerMasteryDetails(xp, tier),
         WORKER_CAPACITY,
         WORKER_RECRUITMENT_COST,
       );
     };
 
-    const startWorkerCycle = (
-      workerId: WorkerId,
-      assignedTier: 3 | 4 = productionTier,
-    ): boolean => {
-      const worker = workerManager.getWorker(workerId);
-      if (
-        worker === undefined
-        || !isSupportedWorkerProfession(worker.profession)
-        || getWorkerMasteryLevel(worker.mastery)
-          < getRequiredGatheringMasteryForTier(assignedTier)
-      ) {
-        return false;
-      }
-      const result = workerExecutor.startExecution(
-        workerId,
-        workerTaskForProfession(worker.profession),
-        getWorkerSpeedModifier(worker.mastery, assignedTier),
-      );
-      if (!result.ok) return false;
-      workerProductionTier.set(workerId, assignedTier);
-      workerScheduler.addSession(result.session);
-      workerManager.updateState(workerId, "working");
-      return true;
-    };
-
-    const recruitWorker = (profession: WorkerProfessionVM): boolean => {
-      if (
-        !isSupportedWorkerProfession(profession)
-        || workerByProfession.has(profession)
-        || workerManager.getAllWorkers().length >= WORKER_CAPACITY
-      ) {
-        return false;
-      }
-
-      const payment = currencyService.debit(
-        walletId,
-        "currency_silver",
-        WORKER_RECRUITMENT_COST,
-        "Worker",
-      );
-      if (!payment.ok) {
-        bridge.addEconomyNotification({
-          id: `notif_worker_cost_${String(Date.now())}`,
-          type: "error",
-          message: "Argent insuffisant pour recruter ce worker",
-          timestamp: Date.now(),
-        });
-        return false;
-      }
-
-      const created = workerManager.createWorker(
-        workerDefinitionForProfession(profession),
-      );
-      if (!created.ok) {
-        currencyService.credit(
-          walletId,
-          "currency_silver",
-          WORKER_RECRUITMENT_COST,
-        );
-        return false;
-      }
-
-      const taskId = workerTaskForProfession(profession);
-      const assigned = workerAssignmentManager.assign(created.worker.id, taskId);
-      if (!assigned.ok) {
-        workerManager.removeWorker(created.worker.id);
-        currencyService.credit(
-          walletId,
-          "currency_silver",
-          WORKER_RECRUITMENT_COST,
-        );
-        return false;
-      }
-
-      workerByProfession.set(profession, created.worker.id);
-      workerManager.updateState(created.worker.id, "assigned");
-      syncWalletToBridge(
-        bridge,
-        currencyService,
-        walletId,
-        bridge.wallet.incomeRate,
-      );
-      syncWorkers();
-      bridge.addEconomyNotification({
-        id: `notif_worker_recruit_${String(Date.now())}`,
-        type: "success",
-        message: `${created.worker.displayName}, ${WORKER_PROFESSION_LABELS[profession]}, a rejoint l’île`,
-        timestamp: Date.now(),
-      });
-      return true;
-    };
-
-    const toggleWorker = (profession: WorkerProfessionVM): boolean => {
-      const workerId = workerByProfession.get(profession);
-      if (workerId === undefined) return false;
-      const session = workerScheduler.getSession(workerId);
-
-      if (session?.state === "executing") {
-        const assignedTier = workerProductionTier.get(workerId) ?? productionTier;
-        if (assignedTier !== productionTier) {
-          workerScheduler.removeSession(workerId);
-          workerManager.updateState(workerId, "assigned");
-          const restarted = startWorkerCycle(workerId, productionTier);
-          syncWorkers();
-          return restarted;
-        }
-        session.pause();
-        workerManager.updateState(workerId, "assigned");
-        syncWorkers();
-        return true;
-      }
-      if (session?.state === "paused") {
-        const assignedTier = workerProductionTier.get(workerId) ?? productionTier;
-        if (assignedTier !== productionTier) {
-          workerScheduler.removeSession(workerId);
-          workerManager.updateState(workerId, "assigned");
-          const restarted = startWorkerCycle(workerId, productionTier);
-          syncWorkers();
-          return restarted;
-        }
-        session.resume();
-        workerManager.updateState(workerId, "working");
-        syncWorkers();
-        return true;
-      }
-
-      const started = startWorkerCycle(workerId);
-      syncWorkers();
-      return started;
-    };
-
-    interface WorkerClientSaveData {
-      readonly profession: WorkerProfessionVM;
-      readonly displayName: string;
-      readonly mastery: number;
-      readonly productionTier: 3 | 4;
-      readonly state: "idle" | "working" | "paused";
-      readonly elapsedTicks: number;
-    }
-
-    const workerSaveProvider = {
-      providerId: "workers",
-      save: (): readonly WorkerClientSaveData[] => workerManager.getAllWorkers()
-        .filter((worker) => isSupportedWorkerProfession(worker.profession))
-        .map((worker) => {
-          const profession = worker.profession as WorkerProfessionVM;
-          const session = workerScheduler.getSession(worker.id);
-          return {
-            profession,
-            displayName: worker.displayName,
-            mastery: worker.mastery,
-            productionTier: workerProductionTier.get(worker.id) ?? productionTier,
-            state: session?.state === "executing"
-              ? "working"
-              : session?.state === "paused"
-                ? "paused"
-                : "idle",
-            elapsedTicks: session?.elapsedTicks ?? 0,
-          };
-        }),
-      load: (data: unknown): void => {
-        for (const worker of workerManager.getAllWorkers()) {
-          workerScheduler.removeSession(worker.id);
-          if (workerAssignmentManager.getAssignment(worker.id) !== undefined) {
-            workerAssignmentManager.unassign(worker.id);
-          }
-          workerManager.removeWorker(worker.id);
-        }
-        workerByProfession.clear();
-        workerProductionTier.clear();
-
-        if (!Array.isArray(data)) {
-          syncWorkers();
-          return;
-        }
-
-        for (const raw of data as WorkerClientSaveData[]) {
-          if (!isSupportedWorkerProfession(raw.profession)) continue;
-          const created = workerManager.createWorker(
-            workerDefinitionForProfession(raw.profession),
-            raw.displayName,
-          );
-          if (!created.ok) continue;
-          workerManager.addMastery(created.worker.id, Math.max(0, raw.mastery));
-          const assigned = workerAssignmentManager.assign(
-            created.worker.id,
-            workerTaskForProfession(raw.profession),
-          );
-          if (!assigned.ok) continue;
-          workerByProfession.set(raw.profession, created.worker.id);
-          const savedTier = raw.productionTier === 4 ? 4 : 3;
-          workerProductionTier.set(created.worker.id, savedTier);
-          workerManager.updateState(created.worker.id, "assigned");
-
-          if (raw.state !== "idle" && startWorkerCycle(created.worker.id, savedTier)) {
-            const session = workerScheduler.getSession(created.worker.id);
-            const elapsed = Math.min(
-              Math.max(0, raw.elapsedTicks),
-              Math.max(0, (session?.totalTicks ?? 1) - 1),
-            );
-            for (let index = 0; index < elapsed; index += 1) {
-              session?.tick();
-            }
-            if (raw.state === "paused") {
-              session?.pause();
-              workerManager.updateState(created.worker.id, "assigned");
-            }
-          }
-        }
-        syncWorkers();
-      },
-    };
-    persistence.registerProvider(workerSaveProvider);
-    syncWorkers();
-
-    const processCompletedWorkerCycles = (): void => {
-      for (const session of workerScheduler.getAllSessions()) {
-        if (!session.isComplete()) continue;
-        const result = session.produceResult();
-        const worker = workerManager.getWorker(session.workerId);
-        workerScheduler.removeSession(session.workerId);
-        if (!result.ok || worker === undefined) continue;
-
-        const assignedTier = workerProductionTier.get(worker.id) ?? 3;
-        if (!isSupportedWorkerProfession(worker.profession)) {
-          workerManager.updateState(worker.id, "assigned");
-          continue;
-        }
-        const profession = worker.profession;
-        const itemId = workerRawItemId(profession, assignedTier);
-        const added = inventoryManager.addQuantity(
-          heroId,
-          itemId,
-          result.yield,
-          { itemId, stackable: true, maxStack: 999 },
-        );
-        if (!added.ok) {
-          // A full character inventory must not silently disable an assigned
-          // worker forever. Keep the assignment alive and surface the issue.
-          startWorkerCycle(worker.id, assignedTier);
-          bridge.addEconomyNotification({
-            id: `notif_worker_storage_${String(worker.id)}_${String(Date.now())}`,
-            type: "error",
-            message: `Stockage plein : production de ${getWorkerResourceLabel(profession, assignedTier)} non stockée`,
-            timestamp: Date.now(),
-          });
-          continue;
-        }
-
-        workerManager.addMastery(
-          worker.id,
-          result.masteryGained * getWorkerGatheringXpForTier(assignedTier),
-        );
-        experienceService.addExperience(
-          workerMasteryId(profession),
-          result.masteryGained
-            * getHeroGatheringXpFromWorkerForTier(assignedTier),
-          "gathering",
-        );
-        syncMasteryProgression();
-        startWorkerCycle(worker.id, assignedTier);
-      }
+    workerRuntime.subscribeCycleCompleted(() => {
+      syncMasteryProgression();
       syncInventoryToBridge(bridge, inventoryManager, heroId);
       syncGathering();
       syncOreGathering();
@@ -2880,7 +2512,61 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       syncClothRefining();
       syncCrafting();
       syncWorkers();
+    });
+
+    workerRuntime.subscribeDomainEvent((evt) => {
+      if (evt.type === "recruit_success") {
+        syncWalletToBridge(
+          bridge,
+          currencyService,
+          walletId,
+          bridge.wallet.incomeRate,
+        );
+        syncWorkers();
+        bridge.addEconomyNotification({
+          id: `notif_worker_recruit_${String(Date.now())}`,
+          type: "success",
+          message: `${evt.displayName}, ${WORKER_PROFESSION_LABELS[evt.profession]}, a rejoint l’île`,
+          timestamp: Date.now(),
+        });
+      } else if (evt.type === "recruit_insufficient_funds") {
+        bridge.addEconomyNotification({
+          id: `notif_worker_cost_${String(Date.now())}`,
+          type: "error",
+          message: "Argent insuffisant pour recruter ce worker",
+          timestamp: Date.now(),
+        });
+      } else if (evt.type === "storage_full") {
+        bridge.addEconomyNotification({
+          id: `notif_worker_storage_${String(evt.workerId)}_${String(Date.now())}`,
+          type: "error",
+          message: `Stockage plein : production de ${getWorkerResourceLabel(evt.profession, evt.assignedTier)} non stockée`,
+          timestamp: Date.now(),
+        });
+      }
+    });
+
+    const recruitWorker = (profession: WorkerProfessionVM): boolean => {
+      const result = workerRuntime.recruitWorker(profession);
+      return result.ok;
     };
+
+    const toggleWorker = (profession: WorkerProfessionVM): boolean => {
+      const result = workerRuntime.toggleWorker(profession);
+      syncWorkers();
+      return result.ok;
+    };
+
+    const workerSaveProvider = {
+      providerId: "workers",
+      save: () => workerRuntime.getSaveState(),
+      load: (data: unknown): void => {
+        workerRuntime.restoreSaveState(data);
+        syncWorkers();
+      },
+    };
+    persistence.registerProvider(workerSaveProvider);
+    syncWorkers();
 
     const saveGame = (): void => {
       persistence.save(tickCounter);
@@ -3071,8 +2757,10 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       }
       gatheringRuntime.tick(tickCounter);
       refiningRuntime.tick(tickCounter);
-      workerScheduler.tickAll();
-      processCompletedWorkerCycles();
+      workerRuntime.tick(tickCounter);
+      if (workerRuntime.hasActiveWorkerSession()) {
+        syncWorkers();
+      }
       if (gatheringCoordinator.getActiveSession() !== undefined) {
         syncGathering();
       }
