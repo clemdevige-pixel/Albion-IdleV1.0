@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { RuntimeLifecycle } from "../runtime/RuntimeLifecycle.js";
 import { RuntimePersistence } from "../runtime/RuntimePersistence.js";
+import { WorldRuntime } from "../runtime/WorldRuntime.js";
 import { EventBus, World, createRuntimeServices } from "@game/core";
 import {
   CombatService,
@@ -77,7 +78,7 @@ import {
   getEncounterRewards,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
-import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, MasteryId, WorkerTaskDefinitionId, WorkerDefinitionId, WorldLocationSaveState, SavedZoneMemory } from "@game/gameplay";
+import type { StatId, ModifierId, DamageEventMap, WalletId, PlayerId, EquipmentInfoLike, ZoneDefinitionId, WorldIntegrationEventMap, WorkerId, WorkerExecutionEventMap, AbilityDefinitionLike, AbilityId, DamageType, ItemInstanceId, ResourceFamily, MasteryId, WorkerTaskDefinitionId, WorkerDefinitionId, WorldLocationSaveState } from "@game/gameplay";
 
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
@@ -1130,88 +1131,37 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     worldCoordinator.initialize();
     worldCoordinator.changeZone(FOREST_ZONE_DEF_ID, 0);
 
+    const worldRuntime = new WorldRuntime({
+      zoneManager,
+      progressionManager,
+      worldCoordinator,
+    });
+
     // Zone definitions ordered for progression
     const ZONE_ORDER: readonly ZoneDefinitionId[] = WORLD_ZONE_ORDER;
 
-    // Mutable world tick state
-    const worldTick = {
-      currentZoneIndex: 0,
-      currentSegment: 0,
-      currentEncounter: 0,
-      highestUnlockedSegment: 0,
-      completedSegments: new Set<number>(),
-      pendingSegment: null as number | null,
-      farmMode: false,
-      pendingZone: null as number | null,
-      pendingZoneSegment: null as number | null,
-    };
-
-    const zoneMemories = ZONE_ORDER.map(() => ({
-      currentSegment: 0,
-      currentEncounter: 0,
-      highestUnlockedSegment: 0,
-      completedSegments: new Set<number>(),
-    }));
-
-    function saveCurrentZoneProgress(): void {
-      const memory = zoneMemories[worldTick.currentZoneIndex]!;
-      memory.currentSegment = worldTick.currentSegment;
-      memory.currentEncounter = worldTick.currentEncounter;
-      memory.highestUnlockedSegment = worldTick.highestUnlockedSegment;
-      memory.completedSegments = new Set(worldTick.completedSegments);
-    }
-
-    function changeActiveZone(nextIndex: number, targetSegment?: number): void {
-      saveCurrentZoneProgress();
-      worldTick.currentZoneIndex = nextIndex;
-      const memory = zoneMemories[nextIndex]!;
-      worldTick.currentSegment = memory.currentSegment;
-      worldTick.currentEncounter = memory.currentEncounter;
-      worldTick.highestUnlockedSegment = memory.highestUnlockedSegment;
-      worldTick.completedSegments = new Set(memory.completedSegments);
-      if (targetSegment !== undefined) {
-        worldTick.currentSegment = targetSegment;
-        worldTick.currentEncounter = 0;
-      }
-      worldTick.pendingSegment = null;
-      worldTick.pendingZone = null;
-      worldTick.pendingZoneSegment = null;
-      const nextDefId = ZONE_ORDER[nextIndex]!;
-      worldCoordinator.changeZone(nextDefId, tickCounter);
-    }
-
     function getActiveZoneDef(): { defId: ZoneDefinitionId; tier: number; name: string } {
-      const defId = ZONE_ORDER[worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
-      const def = zoneManager.registry.get(defId);
-      return { defId, tier: def?.tier ?? 3, name: def?.name ?? "Unknown" };
+      return worldRuntime.getActiveZoneDef();
     }
 
     function updateWorldBridge(): void {
-      const zone = getActiveZoneDef();
+      const zone = worldRuntime.getActiveZoneDef();
       const biome = biomeResolver.resolve(zone.defId);
+      const saveState = worldRuntime.getWorldLocationSaveState();
       const vm: WorldVM = {
-        zoneIndex: worldTick.currentZoneIndex + 1,
+        zoneIndex: worldRuntime.currentZoneIndex + 1,
         zoneCount: ZONE_ORDER.length,
-        canGoPreviousZone: worldTick.currentZoneIndex > 0,
+        canGoPreviousZone: worldRuntime.currentZoneIndex > 0,
         canGoNextZone:
-          worldTick.currentZoneIndex + 1 < ZONE_ORDER.length
-          && progressionManager.isUnlocked(ZONE_ORDER[worldTick.currentZoneIndex + 1]!),
+          worldRuntime.currentZoneIndex + 1 < ZONE_ORDER.length
+          && progressionManager.isUnlocked(ZONE_ORDER[worldRuntime.currentZoneIndex + 1]!),
         pendingZoneIndex:
-          worldTick.pendingZone === null ? null : worldTick.pendingZone + 1,
+          worldRuntime.pendingZone === null ? null : worldRuntime.pendingZone + 1,
         zones: ZONE_ORDER.map((zoneDefId, index) => {
           const definition = zoneManager.registry.get(zoneDefId);
           const zoneBiome = biomeResolver.resolve(zoneDefId);
-          const memory = zoneMemories[index]!;
-          const isActive = index === worldTick.currentZoneIndex;
-          const currentSegment = isActive
-            ? worldTick.currentSegment
-            : memory.currentSegment;
-          const highestUnlockedSegment = isActive
-            ? worldTick.highestUnlockedSegment
-            : memory.highestUnlockedSegment;
-          const completedSegments = isActive
-            ? worldTick.completedSegments
-            : memory.completedSegments;
+          const memory = saveState.zoneMemories[index]!;
+          const isActive = index === worldRuntime.currentZoneIndex;
 
           return {
             zoneIndex: index + 1,
@@ -1219,9 +1169,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
             biomeName: zoneBiome?.name ?? "Unknown",
             isUnlocked: progressionManager.isUnlocked(zoneDefId),
             isActive,
-            segmentIndex: currentSegment + 1,
-            unlockedSegmentCount: highestUnlockedSegment + 1,
-            completedSegments: [...completedSegments].map(
+            segmentIndex: memory.currentSegment + 1,
+            unlockedSegmentCount: memory.highestUnlockedSegment + 1,
+            completedSegments: [...memory.completedSegments].map(
               (segment) => segment + 1,
             ),
           };
@@ -1233,28 +1183,28 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         environmentVisualManifestId: resolveEnvironmentPresentation(
           zone.defId,
         ),
-        segmentIndex: worldTick.currentSegment + 1,
+        segmentIndex: worldRuntime.currentSegment + 1,
         segmentCount: SEGMENTS_PER_ZONE,
-        encounterIndex: worldTick.currentEncounter + 1,
+        encounterIndex: worldRuntime.currentEncounter + 1,
         encounterCount: ENCOUNTERS_PER_SEGMENT,
-        unlockedSegmentCount: worldTick.highestUnlockedSegment + 1,
-        completedSegments: [...worldTick.completedSegments].map(
+        unlockedSegmentCount: worldRuntime.highestUnlockedSegment + 1,
+        completedSegments: [...worldRuntime.completedSegments].map(
           (segment) => segment + 1,
         ),
         pendingSegmentIndex:
-          worldTick.pendingZone !== null
-            ? (worldTick.pendingZoneSegment ?? 0) + 1
-            : worldTick.pendingSegment === null
+          worldRuntime.pendingZone !== null
+            ? (worldRuntime.pendingZoneSegment ?? 0) + 1
+            : worldRuntime.pendingSegment === null
               ? null
-              : worldTick.pendingSegment + 1,
-        farmMode: worldTick.farmMode,
+              : worldRuntime.pendingSegment + 1,
+        farmMode: worldRuntime.farmMode,
         encounterType:
-          worldTick.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1
+          worldRuntime.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1
             ? "boss"
             : "normal",
         zoneProgress: Math.floor(
-          ((worldTick.currentSegment * ENCOUNTERS_PER_SEGMENT +
-            worldTick.currentEncounter) /
+          ((worldRuntime.currentSegment * ENCOUNTERS_PER_SEGMENT +
+            worldRuntime.currentEncounter) /
             (SEGMENTS_PER_ZONE * ENCOUNTERS_PER_SEGMENT)) *
             100,
         ),
@@ -1272,13 +1222,13 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       const zone = getActiveZoneDef();
       const biome = biomeResolver.resolve(zone.defId);
       const isBoss =
-        worldTick.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1;
+        worldRuntime.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1;
       const isBiomeBoss =
-        isBoss && worldTick.currentSegment === SEGMENTS_PER_ZONE - 1;
+        isBoss && worldRuntime.currentSegment === SEGMENTS_PER_ZONE - 1;
       const profile = getEnemyCombatProfile(
-        worldTick.currentZoneIndex,
-        worldTick.currentSegment,
-        worldTick.currentEncounter,
+        worldRuntime.currentZoneIndex,
+        worldRuntime.currentSegment,
+        worldRuntime.currentEncounter,
       );
       const enemyId = setupCombatEntity(
         world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager,
@@ -1293,7 +1243,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       );
 
       const families = biome?.enemyFamilies ?? ["Beast"];
-      const family = families[worldTick.currentSegment % families.length] ?? "Beast";
+      const family = families[worldRuntime.currentSegment % families.length] ?? "Beast";
       const prefix = isBiomeBoss
         ? "[BIOME BOSS] "
         : isBoss
@@ -1820,9 +1770,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
       // --- Award silver on enemy kill ---
       const encounterRewards = getEncounterRewards(
-        worldTick.currentZoneIndex,
-        worldTick.currentSegment,
-        worldTick.currentEncounter,
+        worldRuntime.currentZoneIndex,
+        worldRuntime.currentSegment,
+        worldRuntime.currentEncounter,
       );
       const lootAmount = encounterRewards.silver;
       currencyService.credit(walletId, "currency_silver", lootAmount, "Loot");
@@ -1993,8 +1943,8 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         encounterIndex += 1
       ) {
         const enemy = getEnemyCombatProfile(
-          worldTick.currentZoneIndex,
-          worldTick.currentSegment,
+          worldRuntime.currentZoneIndex,
+          worldRuntime.currentSegment,
           encounterIndex,
         );
         const autoResistance = autoAttackIsMagical
@@ -2028,8 +1978,8 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         projectedSeconds += 1;
 
         const rewards = getEncounterRewards(
-          worldTick.currentZoneIndex,
-          worldTick.currentSegment,
+          worldRuntime.currentZoneIndex,
+          worldRuntime.currentSegment,
           encounterIndex,
         );
         projectedSilver += rewards.silver;
@@ -3471,13 +3421,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       restoreHeroHealth();
     };
 
-    const applySegmentSelection = (segment: number): void => {
-      worldTick.currentSegment = segment;
-      worldTick.currentEncounter = 0;
-      worldTick.pendingSegment = null;
-      restoreHeroHealth();
-      updateWorldBridge();
-    };
 
     const interruptEncounterForTravel = (): void => {
       const session = combatService.getActiveSession();
@@ -3499,59 +3442,38 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const prepareCombatResumeAfterGathering = (): void => {
-      const resumeSegment = worldTick.farmMode
-        ? worldTick.currentSegment
-        : worldTick.highestUnlockedSegment;
+      const resumeSegment = worldRuntime.farmMode
+        ? worldRuntime.currentSegment
+        : worldRuntime.highestUnlockedSegment;
 
       interruptEncounterForTravel();
-      applySegmentSelection(resumeSegment);
+      worldRuntime.selectSegment(resumeSegment + 1);
+      restoreHeroHealth();
+      updateWorldBridge();
     };
 
     const selectSegment = (segmentNumber: number): boolean => {
-      const segment = segmentNumber - 1;
-      if (
-        segment < 0 ||
-        segment >= SEGMENTS_PER_ZONE ||
-        segment > worldTick.highestUnlockedSegment
-      ) {
+      if (!worldRuntime.selectSegment(segmentNumber)) {
         return false;
       }
 
       interruptEncounterForTravel();
-      applySegmentSelection(segment);
+      restoreHeroHealth();
+      updateWorldBridge();
       return true;
     };
 
     const setSegmentFarmMode = (enabled: boolean): void => {
-      worldTick.farmMode = enabled;
+      worldRuntime.setSegmentFarmMode(enabled);
       updateWorldBridge();
     };
 
     const selectZone = (zoneNumber: number, segmentNumber?: number): boolean => {
-      const nextIndex = zoneNumber - 1;
-      const nextDefId = ZONE_ORDER[nextIndex];
-      const targetSegment = (segmentNumber ?? 1) - 1;
-      const memory = zoneMemories[nextIndex];
-      const highestUnlockedSegment =
-        nextIndex === worldTick.currentZoneIndex
-          ? worldTick.highestUnlockedSegment
-          : memory?.highestUnlockedSegment ?? -1;
-      if (
-        nextDefId === undefined
-        || !progressionManager.isUnlocked(nextDefId)
-        || targetSegment < 0
-        || targetSegment >= SEGMENTS_PER_ZONE
-        || targetSegment > highestUnlockedSegment
-      ) {
+      if (!worldRuntime.selectZone(zoneNumber, segmentNumber)) {
         return false;
       }
 
-      if (nextIndex === worldTick.currentZoneIndex) {
-        return selectSegment(targetSegment + 1);
-      }
-
       interruptEncounterForTravel();
-      changeActiveZone(nextIndex, targetSegment);
       restoreHeroHealth();
       updateWorldBridge();
       return true;
@@ -3569,102 +3491,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const getWorldLocationSaveState = (): WorldLocationSaveState => {
-      saveCurrentZoneProgress();
-      const memories: SavedZoneMemory[] = ZONE_ORDER.map((zoneDefId, index) => {
-        const memory = zoneMemories[index]!;
-        const isActive = index === worldTick.currentZoneIndex;
-        const currentSeg = isActive ? worldTick.currentSegment : memory.currentSegment;
-        const highestSeg = isActive ? worldTick.highestUnlockedSegment : memory.highestUnlockedSegment;
-        const completedSegs = isActive ? [...worldTick.completedSegments] : [...memory.completedSegments];
-        return {
-          zoneDefId,
-          currentSegment: currentSeg,
-          highestUnlockedSegment: highestSeg,
-          completedSegments: completedSegs.sort((a, b) => a - b),
-        };
-      });
-
-      const activeZoneDefId = ZONE_ORDER[worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
-      return {
-        activeZoneDefId,
-        activeSegment: worldTick.currentSegment,
-        farmMode: worldTick.farmMode,
-        zoneMemories: memories,
-      };
+      return worldRuntime.getWorldLocationSaveState();
     };
 
     const setWorldLocationSaveState = (
       savedLocation: WorldLocationSaveState | undefined,
     ): void => {
       interruptEncounterForTravel();
-
-      if (savedLocation !== undefined) {
-        const memoryByZoneDefId = new Map<ZoneDefinitionId, SavedZoneMemory>();
-        for (const mem of savedLocation.zoneMemories) {
-          if (mem && typeof mem.zoneDefId === "string") {
-            memoryByZoneDefId.set(mem.zoneDefId as ZoneDefinitionId, mem);
-          }
-        }
-
-        for (let i = 0; i < ZONE_ORDER.length; i += 1) {
-          const zoneDefId = ZONE_ORDER[i]!;
-          const savedMem = memoryByZoneDefId.get(zoneDefId);
-          if (savedMem !== undefined) {
-            const highestUnlockedSegment = Math.max(
-              0,
-              Math.min(SEGMENTS_PER_ZONE - 1, Math.floor(savedMem.highestUnlockedSegment ?? 0)),
-            );
-            const validCompletedSegments = Array.isArray(savedMem.completedSegments)
-              ? [...new Set(savedMem.completedSegments)]
-                  .filter((s) => Number.isInteger(s) && s >= 0 && s < SEGMENTS_PER_ZONE && s <= highestUnlockedSegment)
-                  .sort((a, b) => a - b)
-              : [];
-            const currentSegment = Math.max(
-              0,
-              Math.min(highestUnlockedSegment, Math.floor(savedMem.currentSegment ?? 0)),
-            );
-
-            zoneMemories[i] = {
-              currentSegment,
-              currentEncounter: 0,
-              highestUnlockedSegment,
-              completedSegments: new Set(validCompletedSegments),
-            };
-          }
-        }
-
-        const targetZoneDefId = savedLocation.activeZoneDefId as ZoneDefinitionId;
-        const targetIndex = ZONE_ORDER.indexOf(targetZoneDefId);
-        const resolvedIndex = (targetIndex >= 0 && progressionManager.isUnlocked(targetZoneDefId))
-          ? targetIndex
-          : 0;
-
-        worldTick.currentZoneIndex = resolvedIndex;
-        const memory = zoneMemories[resolvedIndex]!;
-        const highestUnlocked = memory.highestUnlockedSegment;
-        const resolvedSegment = Math.max(
-          0,
-          Math.min(highestUnlocked, Math.floor(savedLocation.activeSegment ?? memory.currentSegment)),
-        );
-
-        worldTick.currentSegment = resolvedSegment;
-        worldTick.currentEncounter = 0;
-        worldTick.highestUnlockedSegment = memory.highestUnlockedSegment;
-        worldTick.completedSegments = new Set(memory.completedSegments);
-        worldTick.farmMode = Boolean(savedLocation.farmMode);
-      } else {
-        // Backward compatibility: default Forest / segment 0 state
-        worldTick.currentZoneIndex = 0;
-        worldTick.currentSegment = 0;
-        worldTick.currentEncounter = 0;
-        worldTick.highestUnlockedSegment = 0;
-        worldTick.completedSegments.clear();
-        worldTick.farmMode = false;
-      }
-
-      const activeZoneDefId = ZONE_ORDER[worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
-      zoneManager.changeZone(activeZoneDefId);
-
+      worldRuntime.setWorldLocationSaveState(savedLocation);
       restoreHeroHealth();
       updateWorldBridge();
       bridge.setCombatState("walking");
@@ -3766,76 +3600,20 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         if (completedEncounterResult === "defeat") {
           completedEncounterResult = null;
           awaitingResumeAfterDefeat = true;
-          worldTick.currentEncounter = 0;
-          if (worldTick.pendingZone !== null) {
-            changeActiveZone(
-              worldTick.pendingZone,
-              worldTick.pendingZoneSegment ?? 0,
-            );
-          } else if (worldTick.pendingSegment !== null) {
-            worldTick.currentSegment = worldTick.pendingSegment;
-            worldTick.pendingSegment = null;
-          }
+          worldRuntime.advanceDefeat();
           updateWorldBridge();
           bridge.setCombatState("defeat");
           return;
         }
 
         if (completedEncounterResult === "victory") {
-          worldTick.currentEncounter += 1;
-
-          if (worldTick.currentEncounter >= ENCOUNTERS_PER_SEGMENT) {
-            worldTick.currentEncounter = 0;
-            worldTick.completedSegments.add(worldTick.currentSegment);
-            enteredNewSegment = true;
-
-            if (
-              worldTick.currentSegment < SEGMENTS_PER_ZONE - 1
-              && worldTick.currentSegment === worldTick.highestUnlockedSegment
-            ) {
-              worldTick.highestUnlockedSegment += 1;
-            } else if (worldTick.currentSegment === SEGMENTS_PER_ZONE - 1) {
-              const currentDefId = ZONE_ORDER[worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
-              progressionManager.markCompleted(currentDefId);
-            }
-
-            if (worldTick.pendingSegment !== null) {
-              worldTick.currentSegment = worldTick.pendingSegment;
-              worldTick.pendingSegment = null;
-            } else if (!worldTick.farmMode && worldTick.pendingZone === null) {
-              if (worldTick.currentSegment < SEGMENTS_PER_ZONE - 1) {
-                worldTick.currentSegment += 1;
-              } else {
-                const nextIndex = worldTick.currentZoneIndex + 1;
-                const nextDefId = ZONE_ORDER[nextIndex];
-                if (
-                  nextDefId !== undefined
-                  && progressionManager.isUnlocked(nextDefId)
-                ) {
-                  changeActiveZone(nextIndex);
-                  worldTick.farmMode = false;
-                }
-              }
-            }
-          } else if (worldTick.pendingSegment !== null) {
-            worldTick.currentSegment = worldTick.pendingSegment;
-            worldTick.currentEncounter = 0;
-            worldTick.pendingSegment = null;
-            enteredNewSegment = true;
-          }
-
-          if (worldTick.pendingZone !== null) {
-            changeActiveZone(
-              worldTick.pendingZone,
-              worldTick.pendingZoneSegment ?? 0,
-            );
-            enteredNewSegment = true;
-          }
+          const res = worldRuntime.advanceVictory();
+          enteredNewSegment = res.enteredNewSegment;
         }
         completedEncounterResult = null;
 
         const enteringBoss =
-          worldTick.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1;
+          worldRuntime.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1;
 
         encounterCounter += 1;
         const enemy = spawnEnemyForCurrentSegment();
