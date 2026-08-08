@@ -71,7 +71,6 @@ import {
   WorkerExecutor,
   WorkerScheduler,
   WorldSaveProvider,
-  canCraftRecipe,
   getEnemyCombatProfile,
   getEncounterRewards,
 } from "@game/gameplay";
@@ -82,6 +81,7 @@ import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { GameBridge, type GameBridgeState, type MasteryVM, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { GatheringRuntime } from "../runtime/GatheringRuntime";
 import { RefiningRuntime } from "../runtime/RefiningRuntime";
+import { CraftingRuntime } from "../runtime/CraftingRuntime";
 import { resolveEnvironmentPresentation } from "../data/environmentPresentation";
 import {
   syncInventoryToBridge,
@@ -1683,6 +1683,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       getProductionTier: () => productionTier,
     });
 
+    const craftingRuntime = new CraftingRuntime({
+      inventoryManager,
+      heroId,
+      durabilityStore,
+      recipes: EQUIPMENT_CRAFT_RECIPES,
+      getItemPower,
+    });
+
     // The starter sword unlocks its mastery and becomes the active Fame target.
     const starterSwordPosition = 0;
     const starterSword = inventoryManager.addEntry(
@@ -2149,6 +2157,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         syncClothRefining();
       }
       syncCrafting();
+      syncMasteryProgression();
       bridge.addEconomyNotification({
         id: `notif_gather_${String(Date.now())}`,
         type: evt.added ? "success" : "error",
@@ -2490,38 +2499,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     const craftEquipment = (outputItemId: string): boolean => {
-      const recipe = EQUIPMENT_CRAFT_RECIPES.find((entry) => entry.outputItemId === outputItemId);
-      if (recipe === undefined) return false;
-      if (!canCraftRecipe(inventoryManager, heroId, recipe.requirements)) return false;
+      const res = craftingRuntime.craftEquipment(outputItemId);
+      if (!res.ok) return false;
 
-      const paid: { itemId: string; quantity: number }[] = [];
-      for (const requirement of recipe.requirements) {
-        const removed = inventoryManager.removeQuantity(
-          heroId,
-          requirement.itemId,
-          requirement.quantity,
-        );
-        if (!removed.ok) {
-          for (const entry of paid) {
-            inventoryManager.addQuantity(heroId, entry.itemId, entry.quantity, {
-              itemId: entry.itemId, stackable: true, maxStack: 999,
-            });
-          }
-          return false;
-        }
-        paid.push(requirement);
-      }
-
-      const output = inventoryManager.addEntry(heroId, recipe.outputItemId);
-      if (!output.ok) {
-        for (const entry of paid) {
-          inventoryManager.addQuantity(heroId, entry.itemId, entry.quantity, {
-            itemId: entry.itemId, stackable: true, maxStack: 999,
-          });
-        }
-        return false;
-      }
-      durabilityStore.attach(output.value.instanceId, 100);
       syncInventoryToBridge(bridge, inventoryManager, heroId);
       syncRefining();
       syncMetalRefining();
@@ -2531,7 +2511,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       bridge.addEconomyNotification({
         id: `notif_craft_${String(Date.now())}`,
         type: "success",
-        message: `Fabriqué : ${recipe.name} · ${String(getItemPower(recipe.outputItemId) ?? 0)} IP`,
+        message: `Fabriqué : ${res.recipeName} · ${String(res.itemPower)} IP`,
         timestamp: Date.now(),
       });
       return true;
