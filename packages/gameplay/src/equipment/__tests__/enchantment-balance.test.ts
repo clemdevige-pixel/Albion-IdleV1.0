@@ -5,6 +5,7 @@ import {
   getEnchantmentItemPowerBonus,
   getEnchantmentStatMultiplier,
 } from "../enchantment-balance.js";
+import { ENCHANTMENT_MINIMUM_ITEM_TIER } from "../enchantment-recipes.js";
 
 describe("enchantment balance", () => {
   it("uses the adjustable 100 IP per level curve", () => {
@@ -23,5 +24,9 @@ describe("enchantment balance", () => {
     expect(getEnchantmentStatMultiplier(1)).toBe(1.2);
     expect(getEnchantmentStatMultiplier(4)).toBe(1.8);
     expect(getBonusItemPowerStatMultiplier(50)).toBe(1.1);
+  });
+
+  it("starts V1 equipment enchantment at T4", () => {
+    expect(ENCHANTMENT_MINIMUM_ITEM_TIER).toBe(4);
   });
 });
