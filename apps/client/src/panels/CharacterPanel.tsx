@@ -1,4 +1,5 @@
 import { useCallback, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import type { EquipmentSlot } from "@game/gameplay";
 import { PanelContainer } from "./PanelContainer";
 import { useGameBridge, useGameServices } from "../state/GameContext";
@@ -182,7 +183,7 @@ export function CharacterPanel(): JSX.Element | null {
         }`}
         disabled={lockedByWeapon}
         onClick={(event) => {
-          if (lockedByWeapon) return;
+          if (lockedByWeapon || event.detail !== 1) return;
           setPickerSlot((current) =>
             current?.slot === slot
               ? null
@@ -309,73 +310,6 @@ export function CharacterPanel(): JSX.Element | null {
               {RIGHT_SLOTS.map(renderSlot)}
             </div>
           </div>
-
-          {pickerSlot !== null && (
-            <div
-              className="character-equipment-picker"
-              role="dialog"
-              style={{
-                position: "fixed",
-                left: `${String(Math.min(pickerSlot.x, window.innerWidth - 360))}px`,
-                right: "auto",
-                top: `${String(Math.min(pickerSlot.y, window.innerHeight - 420))}px`,
-                width: "min(420px, calc(100vw - 24px))",
-                maxHeight: "min(420px, calc(100vh - 24px))",
-              }}
-            >
-              <div className="character-equipment-picker__heading">
-                <div>
-                  <small>Équipement compatible</small>
-                  <strong>{SLOT_LABELS[pickerSlot.slot]}</strong>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setPickerSlot(null); }}
-                  aria-label="Fermer la sélection"
-                >
-                  ×
-                </button>
-              </div>
-
-              {compatibleInventoryItems.length > 0 ? (
-                <div className="character-equipment-picker__grid">
-                  {compatibleInventoryItems.map((inventorySlot) => {
-                    const itemId = inventorySlot.itemId;
-                    if (itemId == null) return null;
-                    return (
-                      <ItemHoverTooltip
-                        key={inventorySlot.position}
-                        itemId={itemId}
-                        quantity={inventorySlot.quantity}
-                        instanceId={inventorySlot.instanceId}
-                      >
-                        <button
-                          type="button"
-                          className={`character-equipment-picker__item${
-                            getEnchantmentFrameClass(inventorySlot.enchantment)
-                          }`}
-                          onClick={() => { handleEquip(inventorySlot.position); }}
-                          title={`Équiper ${getItemDisplayName(itemId)}`}
-                        >
-                          <span className="character-equipment-picker__icon">
-                            <ItemVisual itemId={itemId} />
-                            {inventorySlot.quantity > 1 && (
-                              <small>{String(inventorySlot.quantity)}</small>
-                            )}
-                          </span>
-                          <span>{getItemDisplayName(itemId)}</span>
-                        </button>
-                      </ItemHoverTooltip>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="character-equipment-picker__empty">
-                  Aucun équipement compatible dans l’inventaire.
-                </p>
-              )}
-            </div>
-          )}
         </section>
 
         <aside className="character-inventory">
@@ -450,6 +384,74 @@ export function CharacterPanel(): JSX.Element | null {
               )?.itemId ?? ""
             }
           />
+        )}
+
+        {pickerSlot !== null && createPortal(
+          <div
+            className="character-equipment-picker"
+            role="dialog"
+            style={{
+              position: "fixed",
+              left: `${String(Math.max(12, Math.min(pickerSlot.x + 12, window.innerWidth - 432)))}px`,
+              right: "auto",
+              top: `${String(Math.max(12, Math.min(pickerSlot.y + 12, window.innerHeight - 432)))}px`,
+              width: "min(420px, calc(100vw - 24px))",
+              maxHeight: "min(420px, calc(100vh - 24px))",
+            }}
+          >
+            <div className="character-equipment-picker__heading">
+              <div>
+                <small>Équipement compatible</small>
+                <strong>{SLOT_LABELS[pickerSlot.slot]}</strong>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setPickerSlot(null); }}
+                aria-label="Fermer la sélection"
+              >
+                ×
+              </button>
+            </div>
+
+            {compatibleInventoryItems.length > 0 ? (
+              <div className="character-equipment-picker__grid">
+                {compatibleInventoryItems.map((inventorySlot) => {
+                  const itemId = inventorySlot.itemId;
+                  if (itemId == null) return null;
+                  return (
+                    <ItemHoverTooltip
+                      key={inventorySlot.position}
+                      itemId={itemId}
+                      quantity={inventorySlot.quantity}
+                      instanceId={inventorySlot.instanceId}
+                    >
+                      <button
+                        type="button"
+                        className={`character-equipment-picker__item${
+                          getEnchantmentFrameClass(inventorySlot.enchantment)
+                        }`}
+                        onClick={() => { handleEquip(inventorySlot.position); }}
+                        title={`Équiper ${getItemDisplayName(itemId)}`}
+                      >
+                        <span className="character-equipment-picker__icon">
+                          <ItemVisual itemId={itemId} />
+                          {inventorySlot.quantity > 1 && (
+                            <small>{String(inventorySlot.quantity)}</small>
+                          )}
+                        </span>
+                        <span>{getItemDisplayName(itemId)}</span>
+                      </button>
+                    </ItemHoverTooltip>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="character-equipment-picker__empty">
+                Aucun équipement compatible dans l’inventaire.
+              </p>
+            )}
+          </div>,
+          document.body,
         )}
       </div>
     </PanelContainer>
