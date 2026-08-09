@@ -8,10 +8,10 @@ export interface EnchantmentMaterialCost {
 }
 
 /**
- * Temporary test setting. Set this value to 4 when T3 enchantment leaves the
- * test phase; every caller uses this single rule.
+ * V1 rule: equipment can only be enchanted from T4 onward.
+ * Every caller uses this single authoritative threshold.
  */
-export const ENCHANTMENT_MINIMUM_ITEM_TIER = 3;
+export const ENCHANTMENT_MINIMUM_ITEM_TIER = 4;
 
 export const ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS:
 Readonly<Record<ActiveEnchantmentLevel, number>> = {
