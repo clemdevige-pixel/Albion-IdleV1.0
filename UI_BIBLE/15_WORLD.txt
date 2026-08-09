@@ -1,0 +1,487 @@
+# UI_BIBLE/15_WORLD.md
+
+# Albion Idle — World Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The World Panel provides access to zone progression.
+
+It allows the player to understand:
+
+- Available zones
+- Current progression
+- Zone difficulty
+- Tier
+- Segment progression
+- Boss progression
+- Access restrictions
+
+The World Panel uses a vertical zone structure optimized for the Right Panel.
+
+---
+
+# Core Principle
+
+The world is represented as a progression through zones.
+
+```text
+Blue
+  ↓
+Yellow
+  ↓
+Orange
+  ↓
+Red
+  ↓
+Black
+```
+
+Each zone contains its own progression.
+
+The interface must communicate both:
+
+- Global world progression
+- Progression inside each zone
+
+---
+
+# Structure
+
+```text
++--------------------------------+
+| WORLD                          |
++--------------------------------+
+| BLUE ZONE                      |
+| T4                             |
+|                                |
+| 18 / 20 Segments               |
+| █████████████████░░      90%   |
+| CURRENT                        |
++--------------------------------+
+| YELLOW ZONE                    |
+| T5                             |
+|                                |
+| 7 / 25 Segments                |
+| ██████░░░░░░░░░░░░      28%   |
++--------------------------------+
+| ORANGE ZONE                    |
+| T6                             |
+|                                |
+| LOCKED                         |
+| View requirements →            |
++--------------------------------+
+| RED ZONE                       |
+| T7                             |
+| LOCKED                         |
++--------------------------------+
+| BLACK ZONE                     |
+| T8                             |
+| LOCKED                         |
++--------------------------------+
+```
+
+Exact segment counts and progression values are defined by gameplay data.
+
+---
+
+# Zone List
+
+Zones are displayed vertically.
+
+Each Zone Card displays relevant information such as:
+
+- Zone name
+- Zone color
+- Tier
+- Progress
+- Current segment
+- Lock state
+- Current activity
+
+The zone color must reinforce identification without becoming the only way to distinguish zones.
+
+---
+
+# Zone Order
+
+Primary progression follows:
+
+```text
+Blue
+Yellow
+Orange
+Red
+Black
+```
+
+The UI must reflect the actual progression rules defined by gameplay.
+
+---
+
+# Current Zone
+
+The active zone must be immediately identifiable.
+
+Example:
+
+```text
+BLUE ZONE
+
+CURRENT
+```
+
+The active state should remain visually clear without excessive animation.
+
+---
+
+# Zone Selection
+
+Selecting a Zone Card opens its details inside the same Right Panel.
+
+The Game World remains visible.
+
+Example:
+
+```text
+WORLD
+   ↓
+BLUE ZONE
+   ↓
+Zone Details
+```
+
+---
+
+# Zone Details
+
+A selected zone may display:
+
+- Tier
+- Difficulty
+- Current segment
+- Total segments
+- Progress
+- Boss
+- Access requirements
+- Equipment restrictions
+- Relevant rewards
+
+Only information supported by gameplay data should be displayed.
+
+---
+
+# Segment Progression
+
+Each zone contains progression through segments.
+
+Example:
+
+```text
+BLUE ZONE
+
+SEGMENT 18 / 20
+
+█████████████████░░
+
+18
+ ↓
+19
+ ↓
+20
+ ↓
+BOSS
+```
+
+The player must immediately understand how far they are from the next meaningful milestone.
+
+---
+
+# Segment Timeline
+
+When useful, the shared Segment Timeline may represent zone progression.
+
+Example:
+
+```text
+●──●──●──●──●──○──○──★
+                  BOSS
+```
+
+The timeline must remain compact enough for the Right Panel.
+
+Detailed combat progression remains visible in the Game World HUD.
+
+---
+
+# Boss
+
+Boss encounters are displayed as meaningful zone milestones.
+
+Example:
+
+```text
+ZONE BOSS
+
+Avalonian Bedivere
+
+Segment 20
+
+LOCKED
+Reach Segment 20
+```
+
+When available:
+
+```text
+ZONE BOSS
+
+READY
+```
+
+Boss information should be visually distinct from normal segment progression.
+
+---
+
+# Locked Zones
+
+Locked zones remain visible.
+
+The player should understand what lies ahead.
+
+Example:
+
+```text
+ORANGE ZONE
+T6
+
+LOCKED
+
+Requirement:
+Complete Yellow Zone
+```
+
+The UI must always explain why access is unavailable.
+
+---
+
+# Zone Restrictions
+
+Zones may impose gameplay restrictions.
+
+When applicable, these restrictions must be displayed before entering the zone.
+
+Examples:
+
+- Equipment Tier cap
+- Item Power rules
+- Access requirements
+- Other zone-specific constraints
+
+Example:
+
+```text
+BLUE ZONE
+
+EQUIPMENT CAP
+T4
+
+Equipment above the permitted
+tier does not provide an advantage.
+```
+
+The exact restriction behavior is defined by gameplay systems.
+
+---
+
+# Difficulty
+
+Zone difficulty must be understandable immediately.
+
+Color provides the primary visual identity:
+
+```text
+Blue
+Yellow
+Orange
+Red
+Black
+```
+
+Text labels and icons must support color so that meaning does not depend exclusively on color perception.
+
+---
+
+# Zone Rewards
+
+Zone details may provide a concise overview of relevant rewards.
+
+Examples:
+
+- Resource tiers
+- Equipment tiers
+- Enemy drops
+- Boss rewards
+- Special materials
+
+The World Panel should not reproduce complete loot tables.
+
+Detailed loot information belongs in contextual Tooltips or dedicated systems when necessary.
+
+---
+
+# Enter Zone
+
+When zone selection is available, the primary action is clear.
+
+Example:
+
+```text
+[ ENTER ZONE ]
+```
+
+Before entering, the player must understand any important restriction or consequence.
+
+---
+
+# Active Zone
+
+The currently active zone cannot create ambiguity with the selected zone.
+
+Example:
+
+```text
+CURRENT ZONE
+Blue
+
+VIEWING
+Orange
+```
+
+Viewing another zone does not automatically move the Hero there.
+
+---
+
+# Progress Preservation
+
+Previously completed progression remains visible.
+
+Example:
+
+```text
+BLUE ZONE
+
+20 / 20
+COMPLETE
+```
+
+Completed zones remain accessible according to gameplay rules.
+
+---
+
+# Dashboard Integration
+
+The Dashboard may display:
+
+- Current zone
+- Current segment
+- Progress toward next milestone
+- Upcoming boss
+
+Detailed World information remains inside the World Panel.
+
+---
+
+# Header Integration
+
+The Header displays compact current-location information.
+
+The World Panel provides the detailed progression view.
+
+Information should not be unnecessarily duplicated.
+
+---
+
+# Notifications
+
+Relevant World notifications may include:
+
+- New zone unlocked
+- Boss available
+- Major progression milestone reached
+
+Routine segment progression should not generate excessive notifications.
+
+---
+
+# Scrolling
+
+The World Panel uses vertical scrolling.
+
+Horizontal scrolling is prohibited.
+
+The zone list must remain easy to scan.
+
+---
+
+# Visual Hierarchy
+
+```text
+Zone List
+   ↓
+Current Zone
+   ↓
+Zone Progress
+   ↓
+Segments
+   ↓
+Boss
+   ↓
+Restrictions / Rewards
+```
+
+---
+
+# Scalability
+
+The World Panel must support future zones and world systems without requiring a new global interface.
+
+Additional zones may be added to the vertical structure.
+
+More complex future systems may use contextual sub-sections while remaining inside the Right Panel.
+
+---
+
+# Rules
+
+MUST
+
+- Represent zones vertically.
+- Show current zone progression.
+- Show segment progression.
+- Clearly identify locked zones.
+- Explain access requirements.
+- Display relevant zone restrictions.
+- Keep the Game World visible.
+- Use gameplay data as the source of truth.
+
+MUST NOT
+
+- Require a full-screen world map.
+- Hide locked zones without reason.
+- Depend exclusively on color.
+- Automatically change zones when merely inspecting one.
+- Duplicate complete loot tables.
+- Invent progression or restriction rules in the UI.
+
+SHOULD
+
+- Make global progression understandable immediately.
+- Highlight upcoming bosses.
+- Show meaningful future progression.
+- Keep completed zones readable.
+- Remain scalable as new zones are introduced.

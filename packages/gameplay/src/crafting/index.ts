@@ -29,4 +29,4 @@ export {
 } from "./crafting-manager.js";
 
 export { canCraftRecipe } from "./crafting-validator.js";
-export type { CraftingRequirementLike } from "./crafting-validator.js";
+export type { CraftingRequirementLike, CraftingOutputLike } from "./crafting-validator.js";

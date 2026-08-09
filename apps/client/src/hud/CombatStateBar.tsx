@@ -1,21 +1,14 @@
-import { useGameBridge, useGameServices } from "../state/GameContext";
+import { useCombatHudActions, useCombatStateUiModel } from "../ui/combat-hud/combatHudSelectors";
 
 /**
  * Displays the combat state and exposes the explicit recovery action after a
  * defeat. A defeat never restarts exploration by itself.
  */
 export function CombatStateBar(): JSX.Element | null {
-  const state = useGameBridge();
-  const { combatState } = state;
-  const { resumeExploration } = useGameServices();
+  const { combatState, isGathering } = useCombatStateUiModel();
+  const actions = useCombatHudActions();
 
   const isDefeated = combatState === "defeat";
-  const isGathering = [
-    state.gathering,
-    state.oreGathering,
-    state.hideGathering,
-    state.fiberGathering,
-  ].some((activity) => activity.status === "gathering");
 
   // Phaser already renders the gathering state and its resource metadata.
   // Hiding the generic React state badge prevents a duplicate "Repos" label.
@@ -32,7 +25,7 @@ export function CombatStateBar(): JSX.Element | null {
         <button
           type="button"
           onClick={() => {
-            resumeExploration();
+            actions.resumeExploration();
           }}
         >
           Reprendre l’exploration

@@ -136,6 +136,10 @@ import {
 } from "../data/worldContentCatalog";
 import { setupResourceContentCatalog } from "../data/resourceContentCatalog";
 import { setupCombatEntity } from "../runtime/combatEntityFactory.js";
+import {
+  isProductionMaterial,
+  migrateLegacyProductionMaterials,
+} from "../runtime/ProductionStorage.js";
 
 /** Event map for the UI-layer event bus. Starts empty; later phases add entries. */
 export type UIEventMap = Record<string, unknown>;
@@ -149,6 +153,7 @@ export interface GameServices {
   readonly orchestrator: CombatOrchestrator;
   readonly heroId: EntityId;
   readonly bankId: EntityId;
+  readonly productionStorageId: EntityId;
   readonly inventoryManager: InventoryManager;
   readonly equipmentManager: EquipmentManager;
   readonly enchantmentService: EnchantmentService;
@@ -512,12 +517,16 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     inventoryManager.createInventory(heroId, 24);
     const bankId = world.createEntity();
     inventoryManager.createInventory(bankId, 64);
+    const productionStorageId = world.createEntity();
+    inventoryManager.createInventory(productionStorageId, 256);
     equipmentManager.attachEquipment(heroId);
     const enchantmentService = new EnchantmentService({
       inventoryManager,
       currencyService,
       walletId,
       inventoryOwnerId: heroId,
+      resolveMaterialOwnerId: (itemId) =>
+        isProductionMaterial(itemId) ? productionStorageId : heroId,
       resolveItemInfo: resolveEnchantmentItemInfo,
       findEquippedEntry: (instanceId: ItemInstanceId) =>
         [...equipmentManager.getEquipped(heroId).values()]
@@ -621,7 +630,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       masteryService,
       experienceService,
       progressionOrchestrator,
-      heroId,
+      productionStorageId,
       nodesAndTools: {
         birchNodeId: birchNode.id,
         pineNodeId: pineNode.id,
@@ -653,13 +662,14 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       leatherRefiningManager,
       clothRefiningManager,
       inventoryManager,
-      heroId,
+      productionStorageId,
       getProductionTier: () => productionTier,
     });
 
     const craftingRuntime = new CraftingRuntime({
       inventoryManager,
       heroId,
+      productionStorageId,
       durabilityStore,
       recipes: EQUIPMENT_CRAFT_RECIPES,
       getItemPower,
@@ -667,7 +677,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
 
     const workerRuntime = new WorkerRuntime({
       inventoryManager,
-      heroId,
+      productionStorageId,
       currencyService,
       walletId,
       experienceService,
@@ -815,6 +825,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       world,
       heroId,
       bankId,
+      productionStorageId,
       equipmentManager,
       currencyService,
       experienceService,
@@ -907,7 +918,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "Wood",
         "resource_wood",
         productionTier,
-        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
         gatheringRuntime.getActiveMiniGameState("Wood").strikesUsed,
       );
     };
@@ -925,7 +936,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "Ore",
         "resource_ore",
         productionTier,
-        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
         gatheringRuntime.getActiveMiniGameState("Ore").strikesUsed,
       );
     };
@@ -943,7 +954,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "Hide",
         "resource_hide",
         productionTier,
-        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
         gatheringRuntime.getActiveMiniGameState("Hide").strikesUsed,
       );
     };
@@ -961,7 +972,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         "Fiber",
         "resource_fiber",
         productionTier,
-        inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
+        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
         gatheringRuntime.getActiveMiniGameState("Fiber").strikesUsed,
       );
     };
@@ -1108,7 +1119,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         getWoodRecipe(productionTier),
         refiningRuntime.getReservedInputs("Wood"),
         inventoryManager,
-        heroId,
+        productionStorageId,
       );
     };
 
@@ -1120,7 +1131,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         getMetalRecipe(productionTier),
         refiningRuntime.getReservedInputs("Ore"),
         inventoryManager,
-        heroId,
+        productionStorageId,
       );
     };
 
@@ -1132,7 +1143,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         getLeatherRecipe(productionTier),
         refiningRuntime.getReservedInputs("Hide"),
         inventoryManager,
-        heroId,
+        productionStorageId,
       );
     };
 
@@ -1144,7 +1155,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         getClothRecipe(productionTier),
         refiningRuntime.getReservedInputs("Fiber"),
         inventoryManager,
-        heroId,
+        productionStorageId,
       );
     };
 
@@ -1194,6 +1205,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         bridge,
         inventoryManager,
         heroId,
+        productionStorageId,
         productionTier,
         {
           woodItemId: getWoodRecipe(productionTier).outputItemId,
@@ -1326,7 +1338,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const refiningSaveProvider = new RefiningSaveProvider(
       refiningRuntime,
       inventoryManager,
-      () => heroId,
+      () => productionStorageId,
     );
     persistence.registerProvider(refiningSaveProvider);
 
@@ -1345,6 +1357,11 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         return false;
       }
       persistence.load();
+      migrateLegacyProductionMaterials(
+        inventoryManager,
+        heroId,
+        productionStorageId,
+      );
 
       // After load, re-read wallet balance
       const balResult = currencyService.getBalance(walletId, "currency_silver");
@@ -1688,7 +1705,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
 
     return {
-      eventBus, bridge, orchestrator, heroId, bankId, inventoryManager, equipmentManager,
+      eventBus, bridge, orchestrator, heroId, bankId, productionStorageId, inventoryManager, equipmentManager,
       enchantmentService,
       statsManager, currencyService, economyTransactionService, vendorRegistry,
       walletId, playerId, worldCoordinator, useConsumable, usePrimaryAbility,

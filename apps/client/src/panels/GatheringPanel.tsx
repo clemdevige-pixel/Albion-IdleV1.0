@@ -5,6 +5,7 @@ import { ItemVisual, getItemDefinition, getItemDisplayName } from "./ItemVisual"
 import { ItemHoverTooltip } from "./ItemHoverTooltip";
 import { PanelContainer } from "./PanelContainer";
 import { usePanelManager } from "./usePanelManager";
+import { UI_MODULE_IDS } from "../ui/navigation";
 
 const CRAFT_FAMILIES = [
   { id: "offhand", label: "Offhand", symbol: "◉" },
@@ -56,7 +57,7 @@ export function GatheringPanel(): JSX.Element | null {
   const selectedRecipe = visibleRecipes.find((recipe) => recipe.outputItemId === selectedRecipeId)
     ?? visibleRecipes[0];
   const tier = crafting.productionTier;
-  if (activePanel !== "gathering") return null;
+  if (activePanel !== UI_MODULE_IDS.production) return null;
 
   return (
     <PanelContainer title="Production" onClose={closePanel}>

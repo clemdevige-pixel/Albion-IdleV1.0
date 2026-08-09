@@ -373,3 +373,39 @@ describe("RefiningRuntime regression suite", () => {
     });
   });
 });
+
+describe("RefiningRuntime production storage boundary", () => {
+  it("consumes and produces resources outside the visible hero inventory", () => {
+    const world = new World(createRuntimeServices());
+    const heroId = world.createEntity();
+    const productionStorageId = world.createEntity();
+    const inventoryManager = new InventoryManager(world, () => undefined);
+    inventoryManager.createInventory(heroId, 1);
+    inventoryManager.createInventory(productionStorageId, 16);
+
+    const runtime = new RefiningRuntime({
+      refiningManager: new RefiningManager(),
+      metalRefiningManager: new RefiningManager(),
+      leatherRefiningManager: new RefiningManager(),
+      clothRefiningManager: new RefiningManager(),
+      inventoryManager,
+      productionStorageId,
+      getProductionTier: () => 3,
+    });
+
+    inventoryManager.addQuantity(productionStorageId, "item_resource_wood_t3", 4, {
+      itemId: "item_resource_wood_t3",
+      stackable: true,
+      maxStack: 999,
+    });
+
+    expect(runtime.toggleRefining(0).action).toBe("started");
+    for (let tick = 1; tick <= 6; tick += 1) runtime.tick(tick);
+
+    expect(inventoryManager.getOccupiedCount(heroId)).toBe(0);
+    expect(inventoryManager.getTotalQuantity(heroId, "item_resource_wood_t3")).toBe(0);
+    expect(inventoryManager.getTotalQuantity(heroId, "item_refined_planks_t3")).toBe(0);
+    expect(inventoryManager.getTotalQuantity(productionStorageId, "item_resource_wood_t3")).toBe(0);
+    expect(inventoryManager.getTotalQuantity(productionStorageId, "item_refined_planks_t3")).toBe(1);
+  });
+});

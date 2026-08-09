@@ -121,7 +121,9 @@ export type WorkerDomainEvent =
 
 export interface WorkerRuntimeDependencies {
   readonly inventoryManager: InventoryManager;
-  readonly heroId: EntityId;
+  /** @deprecated Production resources should use productionStorageId. */
+  readonly heroId?: EntityId;
+  readonly productionStorageId?: EntityId;
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly experienceService: ExperienceService;
@@ -131,7 +133,7 @@ export interface WorkerRuntimeDependencies {
 
 export class WorkerRuntime {
   private readonly inventoryManager: InventoryManager;
-  private readonly heroId: EntityId;
+  private readonly productionStorageId: EntityId;
   private readonly currencyService: CurrencyService;
   private readonly walletId: WalletId;
   private readonly experienceService: ExperienceService;
@@ -168,7 +170,9 @@ export class WorkerRuntime {
 
   public constructor(deps: WorkerRuntimeDependencies) {
     this.inventoryManager = deps.inventoryManager;
-    this.heroId = deps.heroId;
+    const storageId = deps.productionStorageId ?? deps.heroId;
+    if (storageId === undefined) throw new Error("WorkerRuntime requires production storage");
+    this.productionStorageId = storageId;
     this.currencyService = deps.currencyService;
     this.walletId = deps.walletId;
     this.experienceService = deps.experienceService;
@@ -529,7 +533,7 @@ export class WorkerRuntime {
       const profession = worker.profession;
       const itemId = this.workerRawItemId(profession, assignedTier);
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         itemId,
         result.yield,
         { itemId, stackable: true, maxStack: 999 },

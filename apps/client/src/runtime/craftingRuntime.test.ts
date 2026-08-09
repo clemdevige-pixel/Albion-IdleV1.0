@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import {
+  canCraftRecipe,
   DurabilityStore,
   InventoryManager,
 } from "@game/gameplay";
@@ -13,12 +14,14 @@ import {
   THICK_LEATHER_RECIPE,
 } from "../data/refiningRecipes.js";
 import { getItemPower } from "../data/itemPower.js";
+import { resolveItemStackInfo } from "../data/itemContentCatalog.js";
 import { getItemDefinition, getItemDisplayName } from "../panels/ItemVisual.js";
+import { isProductionMaterial } from "./ProductionStorage.js";
 
 function setupTestEnvironment(inventoryCapacity = 10) {
   const world = new World(createRuntimeServices());
   const heroId = world.createEntity();
-  const inventoryManager = new InventoryManager(world, () => undefined);
+  const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
   inventoryManager.createInventory(heroId, inventoryCapacity);
   const durabilityStore = new DurabilityStore();
 
@@ -68,6 +71,91 @@ describe("CraftingRuntime Tn progression test suite", () => {
 
     // T3 Broadsword granted
     expect(env.inventoryManager.getTotalQuantity(env.heroId, "item_weapon_sword_t3_broadsword")).toBe(1);
+  });
+
+  it("T3 repeated craft: remains craftable and stacks identical equipment", () => {
+    const env = setupTestEnvironment();
+    const recipe = EQUIPMENT_CRAFT_RECIPES.find(
+      (entry) => entry.outputItemId === "item_shield_t3_reinforced",
+    );
+    expect(recipe).toBeDefined();
+    if (recipe === undefined) return;
+
+    for (const requirement of recipe.requirements) {
+      env.inventoryManager.addQuantity(
+        env.heroId,
+        requirement.itemId,
+        requirement.quantity * 2,
+        { itemId: requirement.itemId, stackable: true, maxStack: 999 },
+      );
+    }
+
+    const output = { itemId: recipe.outputItemId, quantity: 1 } as const;
+    expect(canCraftRecipe(env.inventoryManager, env.heroId, recipe.requirements, output)).toBe(true);
+    expect(env.runtime.craftEquipment(recipe.outputItemId).ok).toBe(true);
+    expect(canCraftRecipe(env.inventoryManager, env.heroId, recipe.requirements, output)).toBe(true);
+    expect(env.runtime.craftEquipment(recipe.outputItemId).ok).toBe(true);
+
+    const crafted = env.inventoryManager.findEntriesByItemId(env.heroId, recipe.outputItemId);
+    const craftedEntries = crafted.flatMap((slot) => slot.entry === undefined ? [] : [slot.entry]);
+    expect(craftedEntries).toHaveLength(1);
+    expect(craftedEntries[0]?.quantity).toBe(2);
+    expect(env.inventoryManager.getOccupiedCount(env.heroId)).toBe(1);
+
+    for (const requirement of recipe.requirements) {
+      expect(env.inventoryManager.getTotalQuantity(env.heroId, requirement.itemId)).toBe(0);
+    }
+  });
+
+  it("full inventory remains craftable when the result fits an existing compatible stack", () => {
+    const env = setupTestEnvironment(4);
+    const recipe = EQUIPMENT_CRAFT_RECIPES.find(
+      (entry) => entry.outputItemId === "item_shield_t3_reinforced",
+    );
+    expect(recipe).toBeDefined();
+    if (recipe === undefined) return;
+
+    for (const requirement of recipe.requirements) {
+      env.inventoryManager.addQuantity(
+        env.heroId,
+        requirement.itemId,
+        requirement.quantity * 2,
+        { itemId: requirement.itemId, stackable: true, maxStack: 999 },
+      );
+    }
+    env.inventoryManager.addQuantity(env.heroId, recipe.outputItemId, 1);
+
+    expect(env.inventoryManager.isFull(env.heroId)).toBe(true);
+    for (const requirement of recipe.requirements) {
+      expect(env.inventoryManager.getTotalQuantity(env.heroId, requirement.itemId)).toBe(
+        requirement.quantity * 2,
+      );
+    }
+    expect(env.inventoryManager.canAcceptQuantity(
+      env.heroId,
+      recipe.outputItemId,
+      1,
+    )).toBe(true);
+    expect(canCraftRecipe(env.inventoryManager, env.heroId, recipe.requirements, {
+      itemId: recipe.outputItemId,
+      quantity: 1,
+    })).toBe(true);
+    expect(env.runtime.craftEquipment(recipe.outputItemId).ok).toBe(true);
+    expect(env.inventoryManager.getTotalQuantity(env.heroId, recipe.outputItemId)).toBe(2);
+    expect(env.inventoryManager.getOccupiedCount(env.heroId)).toBe(4);
+  });
+
+  it("keeps incompatible crafted variants in separate stacks", () => {
+    const env = setupTestEnvironment();
+    const itemId = "item_shield_t3_reinforced";
+
+    expect(env.inventoryManager.addQuantity(env.heroId, itemId, 2, undefined, 0).ok).toBe(true);
+    expect(env.inventoryManager.addQuantity(env.heroId, itemId, 1, undefined, 1).ok).toBe(true);
+
+    const stacks = env.inventoryManager.findEntriesByItemId(env.heroId, itemId);
+    expect(stacks).toHaveLength(2);
+    expect(stacks.map((slot) => slot.entry?.enchantment)).toEqual([0, 1]);
+    expect(stacks.map((slot) => slot.entry?.quantity)).toEqual([2, 1]);
   });
 
   it("T4 progression craft: consumes T3 predecessor + T4 resources to grant T4 equipment", () => {
@@ -210,9 +298,14 @@ describe("CraftingRuntime Tn progression test suite", () => {
       maxStack: 1,
     });
 
-    // Mock addEntry to simulate output insertion failure
-    const originalAddEntry = env.inventoryManager.addEntry.bind(env.inventoryManager);
-    env.inventoryManager.addEntry = () => ({ ok: false, reason: "inventory_full" });
+    // Mock output addQuantity only, while keeping requirement rollback available.
+    const originalAddQuantity = env.inventoryManager.addQuantity.bind(env.inventoryManager);
+    env.inventoryManager.addQuantity = ((entityId, itemId, quantity, stackInfo, enchantment) => {
+      if (itemId === "item_weapon_sword_t4_broadsword") {
+        return { ok: false, reason: "inventory_full" } as const;
+      }
+      return originalAddQuantity(entityId, itemId, quantity, stackInfo, enchantment);
+    }) as typeof env.inventoryManager.addQuantity;
 
     const res = env.runtime.craftEquipment("item_weapon_sword_t4_broadsword");
     expect(res.ok).toBe(false);
@@ -222,8 +315,8 @@ describe("CraftingRuntime Tn progression test suite", () => {
     expect(env.inventoryManager.getTotalQuantity(env.heroId, IRON_BAR_RECIPE.outputItemId)).toBe(6);
     expect(env.inventoryManager.getTotalQuantity(env.heroId, THICK_LEATHER_RECIPE.outputItemId)).toBe(2);
 
-    // Restore original addEntry
-    env.inventoryManager.addEntry = originalAddEntry;
+    // Restore original addQuantity
+    env.inventoryManager.addQuantity = originalAddQuantity;
   });
 
   it("UI presentation check: all predecessor requirements in T4 equipment recipes resolve to valid item definitions", () => {
@@ -239,5 +332,91 @@ describe("CraftingRuntime Tn progression test suite", () => {
         expect(getItemDisplayName(req.itemId)).toBe(itemDef?.name);
       }
     }
+  });
+});
+
+describe("CraftingRuntime with dedicated production storage", () => {
+  it("crafts repeated identical items into one hero slot while materials consume no hero slots", () => {
+    const world = new World(createRuntimeServices());
+    const heroId = world.createEntity();
+    const productionStorageId = world.createEntity();
+    const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
+    inventoryManager.createInventory(heroId, 2);
+    inventoryManager.createInventory(productionStorageId, 32);
+    const runtime = new CraftingRuntime({
+      inventoryManager,
+      heroId,
+      productionStorageId,
+      durabilityStore: new DurabilityStore(),
+      recipes: EQUIPMENT_CRAFT_RECIPES,
+      getItemPower,
+    });
+    const shieldRecipe = EQUIPMENT_CRAFT_RECIPES.find(
+      (recipe) => recipe.outputItemId === "item_shield_t3_reinforced",
+    );
+    expect(shieldRecipe).toBeDefined();
+    if (shieldRecipe === undefined) return;
+
+    for (const requirement of shieldRecipe.requirements) {
+      const ownerId = isProductionMaterial(requirement.itemId)
+        ? productionStorageId
+        : heroId;
+      inventoryManager.addQuantity(
+        ownerId,
+        requirement.itemId,
+        requirement.quantity * 4,
+      );
+    }
+    expect(inventoryManager.getOccupiedCount(heroId)).toBe(0);
+
+    expect(runtime.craftEquipment(shieldRecipe.outputItemId).ok).toBe(true);
+    expect(runtime.craftEquipment(shieldRecipe.outputItemId).ok).toBe(true);
+    expect(runtime.craftEquipment(shieldRecipe.outputItemId).ok).toBe(true);
+    const shieldEntries = inventoryManager.findEntriesByItemId(heroId, shieldRecipe.outputItemId);
+    expect(shieldEntries).toHaveLength(1);
+    expect(shieldEntries[0]?.entry?.quantity).toBe(3);
+    expect(inventoryManager.getOccupiedCount(heroId)).toBe(1);
+
+    inventoryManager.addQuantity(heroId, "item_health_potion", 1);
+    expect(inventoryManager.isFull(heroId)).toBe(true);
+    expect(runtime.craftEquipment(shieldRecipe.outputItemId).ok).toBe(true);
+    expect(
+      inventoryManager.findEntriesByItemId(heroId, shieldRecipe.outputItemId)[0]?.entry?.quantity,
+    ).toBe(4);
+  });
+
+  it("reports full only when a new output cannot stack and no hero slot is available", () => {
+    const world = new World(createRuntimeServices());
+    const heroId = world.createEntity();
+    const productionStorageId = world.createEntity();
+    const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
+    inventoryManager.createInventory(heroId, 1);
+    inventoryManager.createInventory(productionStorageId, 32);
+    const runtime = new CraftingRuntime({
+      inventoryManager,
+      heroId,
+      productionStorageId,
+      durabilityStore: new DurabilityStore(),
+      recipes: EQUIPMENT_CRAFT_RECIPES,
+      getItemPower,
+    });
+    const swordRecipe = EQUIPMENT_CRAFT_RECIPES.find(
+      (recipe) => recipe.outputItemId === "item_weapon_sword_t3_broadsword",
+    );
+    expect(swordRecipe).toBeDefined();
+    if (swordRecipe === undefined) return;
+
+    for (const requirement of swordRecipe.requirements) {
+      inventoryManager.addQuantity(
+        isProductionMaterial(requirement.itemId) ? productionStorageId : heroId,
+        requirement.itemId,
+        requirement.quantity,
+      );
+    }
+    inventoryManager.addQuantity(heroId, "item_health_potion", 1);
+    expect(runtime.craftEquipment(swordRecipe.outputItemId).ok).toBe(false);
+
+    inventoryManager.removeQuantity(heroId, "item_health_potion", 1);
+    expect(runtime.craftEquipment(swordRecipe.outputItemId).ok).toBe(true);
   });
 });

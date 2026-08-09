@@ -1,0 +1,642 @@
+# UI_BIBLE/20_UI_STATES_FEEDBACK.md
+
+# Albion Idle — UI States & Feedback
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+This document defines how UI components communicate their current state.
+
+Every interaction must provide immediate and understandable feedback.
+
+The player should never need to guess:
+
+- whether an action worked
+- whether an element is interactive
+- why an action is unavailable
+- whether content is loading
+- whether something requires attention
+
+---
+
+# Core Principle
+
+Every interactive component has a clearly identifiable state.
+
+```text
+Action
+  ↓
+Immediate Feedback
+  ↓
+Result
+```
+
+Feedback must remain consistent across the entire game.
+
+---
+
+# Standard States
+
+Shared components may support:
+
+- Default
+- Hover
+- Selected
+- Active
+- Disabled
+- Locked
+- Loading
+- Success
+- Warning
+- Error
+- Empty
+- New
+- Complete
+
+Not every component requires every state.
+
+---
+
+# Default
+
+The normal resting state.
+
+The element must remain readable without attracting unnecessary attention.
+
+---
+
+# Hover
+
+Indicates that an element is interactive.
+
+Possible feedback:
+
+- Border emphasis
+- Background highlight
+- Tooltip
+- Subtle elevation
+
+Hover must remain subtle.
+
+It must not move surrounding elements.
+
+---
+
+# Selected
+
+Indicates the element currently selected by the player.
+
+Examples:
+
+- Inventory item
+- Craft recipe
+- World zone
+- Mastery
+- Production resource
+
+Example:
+
+```text
+[ ITEM ]
+SELECTED
+```
+
+Selection remains visible until another element is selected or the selection is cleared.
+
+---
+
+# Active
+
+Represents a currently active system or activity.
+
+Examples:
+
+```text
+CURRENT ZONE
+
+ACTIVE CRAFT
+
+ACTIVE WORKER
+
+ACTIVE NAVIGATION MODULE
+```
+
+Active and Selected are different concepts.
+
+Selected:
+
+The player is inspecting something.
+
+Active:
+
+The game is currently using or executing it.
+
+---
+
+# Disabled
+
+A Disabled control cannot currently be used.
+
+Example:
+
+```text
+[ CRAFT ]
+DISABLED
+```
+
+Disabled elements must remain recognizable but visually subdued.
+
+When useful, hovering explains why the action is unavailable.
+
+Example:
+
+```text
+Missing:
+4 Refined Materials
+```
+
+---
+
+# Locked
+
+Locked content exists but has not yet been unlocked.
+
+Examples:
+
+- Zone
+- Recipe
+- Mastery feature
+- Equipment tier
+
+Example:
+
+```text
+ORANGE ZONE
+
+LOCKED
+
+Requirement:
+Complete Yellow Zone
+```
+
+Locked content should remain visible when seeing future progression is useful.
+
+---
+
+# Loading
+
+Loading states indicate that information is temporarily unavailable.
+
+The existing layout should remain stable whenever possible.
+
+Preferred:
+
+```text
+CARD
+────────────
+
+Loading...
+```
+
+or lightweight placeholder content.
+
+Avoid replacing the entire interface with a loading screen.
+
+---
+
+# Success
+
+Success confirms a completed player action.
+
+Examples:
+
+- Item equipped
+- Craft started
+- Transfer completed
+- Setting changed
+
+Feedback should be short and proportional to the importance of the action.
+
+Routine success states do not require Toast notifications.
+
+---
+
+# Warning
+
+Warnings indicate a potential problem or required attention.
+
+Examples:
+
+- Inventory nearly full
+- Production blocked
+- Worker idle
+- Missing requirement
+
+Warnings explain the situation clearly.
+
+They should not automatically prevent interaction unless gameplay rules require it.
+
+---
+
+# Error
+
+Errors indicate that an action failed.
+
+The interface must communicate:
+
+```text
+WHAT happened
+
+WHY it happened
+
+WHAT the player can do
+```
+
+Example:
+
+```text
+TRANSFER FAILED
+
+Inventory is full.
+
+Free an inventory slot
+before withdrawing this item.
+```
+
+Generic messages such as:
+
+```text
+ERROR
+```
+
+without explanation are prohibited.
+
+---
+
+# Empty
+
+Empty states communicate that a system currently contains no content.
+
+Example:
+
+```text
+NO ACTIVE CRAFT
+
+Browse recipes →
+```
+
+Empty states should provide a useful next action when appropriate.
+
+An empty state must never look like broken or missing UI.
+
+---
+
+# New
+
+New content may receive a temporary indicator.
+
+Examples:
+
+- New item
+- New mastery milestone
+- New unlocked zone
+- Newly available recipe
+
+Example:
+
+```text
+NEW
+```
+
+The indicator disappears after acknowledgement according to the relevant system.
+
+---
+
+# Complete
+
+Complete communicates that a progression or activity has reached its target.
+
+Examples:
+
+```text
+CRAFT
+COMPLETE
+
+ZONE
+COMPLETE
+
+MASTERY
+MAX
+```
+
+Completion must be visually distinct from ordinary active progress.
+
+---
+
+# Progress
+
+Progress states use the shared Progress Bar component.
+
+Examples:
+
+```text
+████████████░░░  78%
+```
+
+Where useful, progress may also display:
+
+- Current value
+- Maximum value
+- Remaining time
+- Current level
+
+Progress values must always reflect the real game state.
+
+---
+
+# Blocked Progress
+
+When progression cannot continue:
+
+```text
+PRODUCTION BLOCKED
+
+Missing:
+8 Iron Ore
+```
+
+The UI must distinguish blocked progression from normal waiting.
+
+---
+
+# Buttons
+
+Buttons support at minimum:
+
+```text
+DEFAULT
+HOVER
+PRESSED
+DISABLED
+```
+
+Where relevant:
+
+```text
+LOADING
+SUCCESS
+```
+
+Button state changes must never alter surrounding layout dimensions.
+
+---
+
+# Item Slots
+
+Item Slots may support:
+
+```text
+EMPTY
+DEFAULT
+HOVER
+SELECTED
+EQUIPPED
+NEW
+LOCKED
+```
+
+These states must use the same visual language across:
+
+- Inventory
+- Bank
+- Character
+- Craft
+- Loot
+
+---
+
+# Navigation
+
+Navigation entries support:
+
+```text
+DEFAULT
+HOVER
+ACTIVE
+ATTENTION
+```
+
+Only one primary Right Panel module may be Active at a time.
+
+Attention does not automatically make a module Active.
+
+---
+
+# Cards
+
+Cards may support:
+
+```text
+DEFAULT
+HOVER
+SELECTED
+ACTIVE
+WARNING
+COMPLETE
+```
+
+State indicators must not radically alter Card dimensions or structure.
+
+---
+
+# Progress Bars
+
+Progress Bars may support:
+
+```text
+NORMAL
+ACTIVE
+BLOCKED
+COMPLETE
+```
+
+Semantic meaning must remain consistent across systems.
+
+---
+
+# State Priority
+
+When multiple states apply simultaneously, the most important state takes visual priority.
+
+General hierarchy:
+
+```text
+ERROR
+  ↓
+WARNING
+  ↓
+LOCKED / DISABLED
+  ↓
+COMPLETE
+  ↓
+ACTIVE
+  ↓
+SELECTED
+  ↓
+NEW
+  ↓
+DEFAULT
+```
+
+Context may modify this hierarchy when required for usability.
+
+---
+
+# Color
+
+Semantic colors follow the Design System.
+
+Typical usage:
+
+```text
+Green
+Success / Positive Progress
+
+Orange
+Warning / Attention
+
+Red
+Error / Critical Problem
+
+Gold
+Important / Valuable / Selected
+
+Neutral
+Default / Disabled
+```
+
+Color must never be the only state indicator.
+
+Use supporting:
+
+- Icons
+- Labels
+- Borders
+- Typography
+
+when necessary.
+
+---
+
+# Animation
+
+State transitions follow:
+
+`18_ANIMATIONS_TRANSITIONS.md`
+
+Standard state changes use subtle feedback.
+
+Persistent states must not continuously animate.
+
+---
+
+# Immediate Feedback
+
+Player actions must produce immediate feedback.
+
+Example:
+
+```text
+Click Equip
+     ↓
+Item Slot updates
+     ↓
+Character updates
+     ↓
+Stats update
+```
+
+The player should not need a Toast to know the action succeeded.
+
+---
+
+# Optimistic Feedback
+
+The UI must not visually confirm a gameplay action before the authoritative game state confirms it when doing so could create inconsistency.
+
+Visual responsiveness must never misrepresent actual state.
+
+---
+
+# Game World Continuity
+
+UI state changes never pause or interrupt the Game World unless gameplay explicitly requires it.
+
+Examples:
+
+```text
+Inventory Error
+→ Combat continues
+
+Craft Complete
+→ Combat continues
+
+Zone Inspection
+→ Combat continues
+```
+
+---
+
+# Consistency
+
+The same state must communicate the same meaning everywhere.
+
+Example:
+
+```text
+LOCKED
+```
+
+must not mean:
+
+- unavailable in Craft
+- selected in Inventory
+- completed in World
+
+State semantics are global.
+
+---
+
+# Rules
+
+MUST
+
+- Provide immediate feedback for interactions.
+- Clearly distinguish Active and Selected.
+- Explain Disabled and Locked states when necessary.
+- Explain errors.
+- Provide meaningful Empty States.
+- Maintain consistent state semantics.
+- Preserve layout stability.
+- Reflect actual game state.
+
+MUST NOT
+
+- Use unexplained errors.
+- Make disabled controls appear interactive.
+- Use color as the only state indicator.
+- Continuously animate persistent states.
+- Visually confirm actions that did not occur.
+- Make empty content appear broken.
+- Interrupt the Game World for routine feedback.
+
+SHOULD
+
+- Provide useful recovery actions.
+- Keep feedback proportional to importance.
+- Keep state changes visually subtle.
+- Make actionable problems easy to identify.

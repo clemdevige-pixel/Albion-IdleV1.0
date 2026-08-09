@@ -1,0 +1,276 @@
+# UI_BIBLE/09_CHARACTER.md
+
+# Albion Idle — Character Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Character Panel provides a clear overview of the hero, equipped items and essential combat statistics.
+
+The panel prioritizes equipment readability over detailed statistics.
+
+---
+
+# Core Principle
+
+The player must immediately understand:
+
+1. What is equipped?
+2. How powerful is the character?
+3. What are the character's essential stats?
+4. What bonuses are currently active?
+
+The panel must not become a traditional oversized MMORPG character sheet.
+
+---
+
+# Structure
+
+```text
++--------------------------------+
+| CHARACTER                      |
++--------------------------------+
+|                                |
+|             [HEAD]             |
+|                                |
+| [WEAPON]     HERO      [CAPE]  |
+|                                |
+|            [TORSO]             |
+|            [BOOTS]             |
+|                                |
++--------------------------------+
+| ITEM POWER                     |
+|                         1,245  |
++--------------------------------+
+| CORE STATS                     |
+|                                |
+| HP                       2,840 |
+| Damage                     184 |
+| Defense                    126 |
++--------------------------------+
+| ACTIVE BONUSES                 |
+|                                |
+| Bonus                          |
+| Bonus                          |
++--------------------------------+
+```
+
+Exact positioning and proportions are finalized during the mockup phase.
+
+---
+
+# Character Presentation
+
+The hero occupies the visual center of the equipment section.
+
+The character representation should reflect currently equipped gear whenever technically and visually appropriate.
+
+The hero must remain readable despite the limited width of the Right Panel.
+
+---
+
+# Equipment Slots
+
+Primary equipment slots:
+
+- Weapon
+- Head
+- Torso
+- Boots
+- Cape
+
+Equipment slots use the shared Item Slot component.
+
+Each slot displays:
+
+- Item icon
+- Tier
+- Enchantment when applicable
+- Quality when applicable
+- Empty state
+
+Detailed item information appears through the shared Tooltip system.
+
+---
+
+# Equipment Interaction
+
+Selecting an equipped item displays its relevant information and available actions.
+
+Possible actions:
+
+- Inspect
+- Unequip
+- Replace
+
+Equipment management must remain fast and require minimal navigation.
+
+---
+
+# Item Power
+
+Item Power is displayed prominently.
+
+It acts as the primary summary of overall equipment strength.
+
+The value must be immediately visible without scrolling.
+
+Detailed Item Power calculations do not belong in the main Character view.
+
+---
+
+# Core Statistics
+
+The primary Character view displays only essential combat statistics:
+
+- HP
+- Damage
+- Defense
+
+These values must remain visible without scrolling whenever possible.
+
+The interface must not introduce unnecessary statistics simply to make the Character Panel appear more complex.
+
+---
+
+# Secondary Information
+
+Additional information may exist when required by gameplay.
+
+It must remain secondary to equipment and core statistics.
+
+Secondary information may use:
+
+- Compact sections
+- Tooltips
+- Expandable sections
+
+It must not overwhelm the default Character view.
+
+---
+
+# Active Bonuses
+
+The Character Panel may display meaningful active bonuses affecting the hero.
+
+Examples:
+
+- Equipment bonuses
+- Mastery bonuses
+- Temporary buffs
+- Relevant passive effects
+
+Only bonuses useful for understanding current character performance should appear.
+
+Detailed sources may be exposed through Tooltips.
+
+---
+
+# Equipment Changes
+
+When equipment changes:
+
+- Character visuals update when supported.
+- Item Power updates immediately.
+- Core statistics update immediately.
+- Relevant bonuses update immediately.
+
+Changes should be understandable without requiring the player to refresh or reopen the panel.
+
+---
+
+# Comparison
+
+When inspecting a compatible inventory item, the interface may compare it against the currently equipped item.
+
+Comparison should clearly communicate meaningful differences.
+
+Example:
+
+```text
+CURRENT                 NEW
+
+Damage  120             134  +14
+Defense  42              38   -4
+IP      720             755  +35
+```
+
+Positive and negative changes must be immediately distinguishable.
+
+---
+
+# Empty Slots
+
+Empty equipment slots remain visible.
+
+Example:
+
+```text
+[ EMPTY CAPE ]
+```
+
+The player must immediately understand that equipment is missing.
+
+When appropriate, selecting an empty slot may lead to compatible inventory items.
+
+---
+
+# Visual Hierarchy
+
+Priority order:
+
+```text
+Character + Equipment
+        ↓
+Item Power
+        ↓
+Core Statistics
+        ↓
+Active Bonuses
+        ↓
+Secondary Information
+```
+
+Equipment remains the visual focus.
+
+---
+
+# Scrolling
+
+The primary character overview should fit within the visible panel whenever practical.
+
+Secondary information may require vertical scrolling.
+
+The equipment section and core statistics should not be pushed below large amounts of secondary information.
+
+---
+
+# Rules
+
+MUST
+
+- Show equipped items clearly.
+- Prioritize the hero and equipment visually.
+- Display Item Power prominently.
+- Display HP, Damage and Defense.
+- Update immediately after equipment changes.
+- Use shared Item Slot components.
+
+MUST NOT
+
+- Become an oversized character sheet.
+- Introduce unnecessary statistics.
+- Hide essential stats behind secondary navigation.
+- Replace the Game World.
+- Create a separate equipment screen.
+
+SHOULD
+
+- Keep the primary overview visible without scrolling.
+- Make equipment changes fast.
+- Provide useful item comparisons.
+- Keep advanced information secondary.

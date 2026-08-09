@@ -1,0 +1,409 @@
+# UI_BIBLE/26_INDEX.md
+
+# Albion Idle — UI Bible Index
+
+Version: 1.0  
+Status: VALIDATED
+
+---
+
+# Purpose
+
+This document is the entry point for the Albion Idle UI Bible.
+
+The UI Bible defines the visual, interaction and architectural rules for the game interface.
+
+It must be consulted before implementing or modifying UI.
+
+---
+
+# Reading Order
+
+## Foundations
+
+1. `00_PRINCIPLES.md`
+2. `01_VISION.md`
+3. `02_LAYOUT.md`
+4. `03_DESIGN_SYSTEM.md`
+5. `04_COMPONENT_LIBRARY.md`
+
+These documents define the fundamental UI philosophy and must be respected by every implementation.
+
+---
+
+## Global Interface
+
+6. `05_HEADER.md`
+7. `06_BOTTOM_BAR.md`
+8. `07_RIGHT_PANEL.md`
+9. `08_DASHBOARD.md`
+
+These documents define the permanent Single Screen structure.
+
+---
+
+## Game Modules
+
+10. `09_CHARACTER.md`
+11. `10_INVENTORY.md`
+12. `11_MASTERIES.md`
+13. `12_PRODUCTION.md`
+14. `13_CRAFT.md`
+15. `14_BANK.md`
+16. `15_WORLD.md`
+
+Each module exists inside the Right Panel.
+
+Modules must not create independent full-screen interfaces.
+
+---
+
+## Interaction System
+
+17. `16_NOTIFICATIONS.md`
+18. `17_TOOLTIPS.md`
+19. `18_ANIMATIONS_TRANSITIONS.md`
+20. `19_RESPONSIVE_RESOLUTIONS.md`
+21. `20_UI_STATES_FEEDBACK.md`
+22. `21_NAVIGATION_SHORTCUTS.md`
+23. `22_ACCESSIBILITY.md`
+
+These documents define shared interaction behavior across the entire interface.
+
+---
+
+## Combat
+
+24. `23_COMBAT_HUD.md`
+
+Defines the interface surrounding active combat and its relationship with the Game World.
+
+---
+
+## Implementation Rules
+
+25. `24_SPACING_SIZING.md`
+26. `25_UI_ARCHITECTURE.md`
+
+These documents define implementation constraints, sizing principles and architectural boundaries.
+
+`25_UI_ARCHITECTURE.md` is mandatory reading before implementation.
+
+Its compartmentalization rules must be respected from the beginning.
+
+---
+
+# Core UI Structure
+
+```text
+ALBION IDLE
+
+┌─────────────────────────────────────────────┐
+│ HEADER                                      │
+├───────────────────────────────┬─────────────┤
+│                               │             │
+│                               │ RIGHT       │
+│          GAME WORLD           │ PANEL       │
+│                               │             │
+│                               │             │
+├───────────────────────────────┴─────────────┤
+│ CHAT       NAVIGATION       ABILITIES       │
+└─────────────────────────────────────────────┘
+```
+
+The Game World remains visible during normal UI interaction.
+
+---
+
+# Right Panel Modules
+
+Current documented modules:
+
+```text
+Dashboard
+Character
+Inventory
+Masteries
+Production
+├── Gathering
+└── Refining
+Craft
+Bank
+World
+```
+
+Future systems may be added without changing the global layout.
+
+Future support does not mean those systems are currently implemented.
+
+---
+
+# Design Direction
+
+```text
+GAME WORLD
+→ Pixel Art
+
+INTERFACE
+→ High Definition
+→ Modern MMORPG
+→ Dark
+→ Black / Dark Brown / Gold
+→ Compact
+→ Readable
+→ Premium
+```
+
+The interface should contain useful information without becoming visually overloaded.
+
+---
+
+# Navigation Principle
+
+Albion Idle does not use traditional full-screen menu navigation.
+
+```text
+Game World
+    +
+Persistent UI
+    +
+Contextual Right Panel
+```
+
+Opening a module changes the Right Panel content.
+
+It does not replace the Game World.
+
+---
+
+# Component Principle
+
+UI must be constructed from shared components.
+
+```text
+Design Tokens
+      ↓
+Shared Components
+      ↓
+Domain Modules
+      ↓
+Global Interface
+```
+
+New components should only be created when existing components cannot correctly satisfy the requirement.
+
+---
+
+# Architecture Principle
+
+UI must be compartmentalized from the first implementation.
+
+```text
+UI
+├── shell
+├── dashboard
+├── character
+├── inventory
+├── masteries
+├── production
+├── craft
+├── bank
+├── world
+├── combat-hud
+└── shared
+```
+
+Domains own their own logic.
+
+Large central components, contexts or stores accumulating unrelated responsibilities are prohibited.
+
+The architecture must remain maintainable while features are added.
+
+Refactoring must not be systematically postponed until files become monolithic.
+
+---
+
+# Source of Truth
+
+Gameplay systems remain authoritative.
+
+```text
+GAMEPLAY
+    ↓
+UI STATE / ADAPTERS
+    ↓
+UI
+```
+
+The UI displays and interacts with gameplay state.
+
+It does not independently define gameplay rules.
+
+---
+
+# Conflict Priority
+
+When UI documents conflict, use this priority:
+
+```text
+00_PRINCIPLES
+      ↓
+Gameplay Source of Truth
+      ↓
+UI Architecture
+      ↓
+Global Layout
+      ↓
+Design System
+      ↓
+Module Specification
+```
+
+Gameplay behavior must never be changed merely to satisfy an outdated UI document.
+
+If a conflict is discovered, the relevant UI documentation must be corrected.
+
+---
+
+# Implementation Sequence
+
+The UI redesign should be implemented progressively.
+
+Recommended sequence:
+
+```text
+1. Global Shell
+
+2. Design Tokens
+
+3. Shared Component Library
+
+4. Header
+
+5. Bottom Bar
+
+6. Right Panel
+
+7. Dashboard
+
+8. Character
+
+9. Inventory
+
+10. Masteries
+
+11. Production
+
+12. Craft
+
+13. Bank
+
+14. World
+
+15. Combat HUD Integration
+
+16. Notifications / Tooltips / States
+
+17. Responsive Pass
+
+18. Accessibility Pass
+
+19. Final Visual Consistency Pass
+```
+
+Each step must respect the compartmentalization requirements defined in `25_UI_ARCHITECTURE.md`.
+
+---
+
+# Before Implementation
+
+The UI Bible does not mean implementation should begin immediately.
+
+The visual direction must first be validated through mockups.
+
+Workflow:
+
+```text
+UI BIBLE
+   ↓
+GLOBAL 1920×1080 MOCKUP
+   ↓
+VISUAL ITERATIONS
+   ↓
+RIGHT PANEL MODULE MOCKUPS
+   ↓
+DESIGN TOKENS FINALIZATION
+   ↓
+IMPLEMENTATION PLAN
+   ↓
+PROGRESSIVE MIGRATION
+```
+
+Exact dimensions and visual tokens are finalized during the mockup phase.
+
+---
+
+# Reference Mockup
+
+Primary reference resolution:
+
+```text
+1920 × 1080
+```
+
+The first mockup must validate:
+
+- Header
+- Game World proportions
+- Right Panel proportions
+- Bottom Bar
+- Combat HUD
+- Navigation
+- Overall visual hierarchy
+- Information density
+
+The global structure must be validated before producing every individual module mockup.
+
+---
+
+# Implementation Rule
+
+Before implementing a UI feature:
+
+1. Identify the relevant UI Bible documents.
+2. Verify the gameplay source of truth.
+3. Identify the owning UI domain.
+4. Reuse existing shared components where possible.
+5. Verify that the implementation does not introduce cross-domain coupling.
+6. Implement the smallest coherent scope.
+7. Validate visual consistency.
+
+Do not implement first and reorganize later.
+
+---
+
+# Documentation Rule
+
+When a future UI decision modifies an established rule, the UI Bible must be updated.
+
+The documentation should describe the interface that actually exists.
+
+Outdated specifications must not silently remain authoritative.
+
+---
+
+# Final Principle
+
+The objective of the UI Bible is not only to make Albion Idle visually better.
+
+It exists to ensure that the interface remains:
+
+```text
+COHERENT
+READABLE
+MODULAR
+EXTENSIBLE
+MAINTAINABLE
+```
+
+from the beginning of the redesign to the long-term evolution of the game.

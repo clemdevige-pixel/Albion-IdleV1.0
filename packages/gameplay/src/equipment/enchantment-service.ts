@@ -68,6 +68,7 @@ export interface EnchantmentServiceOptions {
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly inventoryOwnerId: EntityId;
+  readonly resolveMaterialOwnerId?: (itemId: string) => EntityId;
   readonly resolveItemInfo: EnchantmentItemInfoResolver;
   readonly findEquippedEntry: (instanceId: ItemInstanceId) => {
     readonly itemId: string;
@@ -91,6 +92,7 @@ export class EnchantmentService {
   readonly #currency: CurrencyService;
   readonly #walletId: WalletId;
   readonly #ownerId: EntityId;
+  readonly #resolveMaterialOwnerId: (itemId: string) => EntityId;
   readonly #resolveItemInfo: EnchantmentItemInfoResolver;
   readonly #findEquippedEntry: EnchantmentServiceOptions["findEquippedEntry"];
   readonly #changeEquippedEnchantment:
@@ -102,6 +104,7 @@ export class EnchantmentService {
     this.#currency = options.currencyService;
     this.#walletId = options.walletId;
     this.#ownerId = options.inventoryOwnerId;
+    this.#resolveMaterialOwnerId = options.resolveMaterialOwnerId ?? (() => this.#ownerId);
     this.#resolveItemInfo = options.resolveItemInfo;
     this.#findEquippedEntry = options.findEquippedEntry;
     this.#changeEquippedEnchantment = options.changeEquippedEnchantment;
@@ -127,7 +130,10 @@ export class EnchantmentService {
     const silver = this.#currency.getBalance(this.#walletId, "currency_silver");
     const silverBalance = silver.ok ? silver.value : 0;
     const materials = (recipe?.materials ?? []).map((material) => {
-      const owned = this.#inventory.getTotalQuantity(this.#ownerId, material.itemId);
+      const owned = this.#inventory.getTotalQuantity(
+        this.#resolveMaterialOwnerId(material.itemId),
+        material.itemId,
+      );
       return {
         ...material,
         owned,
@@ -192,7 +198,10 @@ export class EnchantmentService {
     );
     if (!silverCheck.ok) return { ok: false, reason: "insufficient_silver" };
     for (const material of recipe.materials) {
-      if (this.#inventory.getTotalQuantity(this.#ownerId, material.itemId) < material.quantity) {
+      if (this.#inventory.getTotalQuantity(
+        this.#resolveMaterialOwnerId(material.itemId),
+        material.itemId,
+      ) < material.quantity) {
         return { ok: false, reason: "insufficient_materials" };
       }
     }
@@ -200,7 +209,11 @@ export class EnchantmentService {
     // No async boundary exists below this point. Every operation was
     // prevalidated, so the synchronous commit cannot partially fail.
     for (const material of recipe.materials) {
-      this.#inventory.removeQuantity(this.#ownerId, material.itemId, material.quantity);
+      this.#inventory.removeQuantity(
+        this.#resolveMaterialOwnerId(material.itemId),
+        material.itemId,
+        material.quantity,
+      );
     }
     this.#currency.debit(
       this.#walletId,

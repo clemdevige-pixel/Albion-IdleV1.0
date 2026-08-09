@@ -1,35 +1,19 @@
-import { createContext, useCallback, useMemo, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { NavigationProvider } from "../ui/navigation";
+import type { UiModuleId } from "../ui/navigation/moduleIds";
 
 export interface PanelManagerState {
-  /** Currently active panel id, or null if none open. */
-  readonly activePanel: string | null;
-  readonly openPanel: (id: string) => void;
+  /** Legacy panel API backed by the typed UI navigation state. */
+  readonly activePanel: UiModuleId;
+  readonly openPanel: (id: UiModuleId) => void;
   readonly closePanel: () => void;
-  readonly togglePanel: (id: string) => void;
+  readonly togglePanel: (id: UiModuleId) => void;
 }
 
-export const PanelManagerContext = createContext<PanelManagerState | null>(null);
-
 /**
- * Provider enforcing the single-panel policy — only one management panel
- * can be open at a time.
+ * Compatibility provider for legacy panels. New UI code should use the
+ * navigation API from ui/navigation directly.
  */
 export function PanelManagerProvider({ children }: { readonly children: ReactNode }): JSX.Element {
-  const [activePanel, setActivePanel] = useState<string | null>(null);
-
-  const openPanel = useCallback((id: string) => { setActivePanel(id); }, []);
-  const closePanel = useCallback(() => { setActivePanel(null); }, []);
-  const togglePanel = useCallback(
-    (id: string) => { setActivePanel((prev) => (prev === id ? null : id)); },
-    [],
-  );
-
-  const value = useMemo<PanelManagerState>(
-    () => ({ activePanel, openPanel, closePanel, togglePanel }),
-    [activePanel, openPanel, closePanel, togglePanel],
-  );
-
-  return (
-    <PanelManagerContext.Provider value={value}>{children}</PanelManagerContext.Provider>
-  );
+  return <NavigationProvider>{children}</NavigationProvider>;
 }

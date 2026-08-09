@@ -1,0 +1,162 @@
+# UI_BIBLE/05_HEADER.md
+
+# Albion Idle — Header
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Header provides permanent access to the player's global information.
+
+It must always remain visible.
+
+The Header should summarize the current game state without distracting from gameplay.
+
+---
+
+# Layout
+
++------------------------------------------------------------------------------------+
+| Logo | Zone | Segment Progress | Resources | Currency | Notifications | Profile |
++------------------------------------------------------------------------------------+
+
+The Header occupies the full width of the screen.
+
+Its height remains constant throughout the game.
+
+---
+
+# Left Section
+
+## Logo
+
+Displays the Albion Idle logo.
+
+Clicking the logo returns the Right Panel to the Dashboard.
+
+---
+
+## Current Zone
+
+Displays:
+
+- Zone Name
+- Difficulty
+- Tier
+- Current Segment
+
+The player must always know where they are.
+
+---
+
+## Segment Progress
+
+Displays progression inside the current zone.
+
+Example:
+
+Segment 12 / 20
+
+A segmented progress bar visualizes advancement.
+
+---
+
+# Center Section
+
+## Resources
+
+Displays the main tracked resources.
+
+Examples:
+
+- Silver
+- Gold
+- Learning Points
+- Premium Currency (future)
+
+Values update in real time.
+
+---
+
+# Right Section
+
+## Notifications
+
+Displays:
+
+- Loot available
+- Craft completed
+- Worker finished
+- Mastery unlocked
+- Important game events
+
+Notifications never block gameplay.
+
+---
+
+## Player Profile
+
+Displays:
+
+- Character Portrait
+- Character Name
+- Average Item Power
+- Online Status
+
+Clicking opens the Character panel.
+
+---
+
+# Header Behavior
+
+The Header is always visible.
+
+It never scrolls.
+
+It never changes height.
+
+Only its values update.
+
+---
+
+# Design Rules
+
+The Header must remain compact.
+
+Information should be readable in less than two seconds.
+
+Icons have priority over long text.
+
+Animations remain subtle.
+
+---
+
+# Interaction Rules
+
+Clickable elements:
+
+- Logo
+- Zone
+- Notifications
+- Profile
+
+Hovering provides additional information through Tooltips.
+
+---
+
+# Future Compatibility
+
+The Header must support future systems without structural changes.
+
+Examples:
+
+- Active Events
+- Seasonal Progress
+- Guild
+- Premium Status
+- Connection Status
+- Mail
+- Friends

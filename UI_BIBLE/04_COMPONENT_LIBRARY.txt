@@ -1,0 +1,304 @@
+# UI_BIBLE/04_COMPONENT_LIBRARY.md
+
+# Albion Idle — Component Library
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Component Library defines every reusable UI element.
+
+Every screen in Albion Idle must be built using these components.
+
+Creating new components should remain exceptional.
+
+---
+
+# Philosophy
+
+Build once.
+
+Reuse everywhere.
+
+Consistency has priority over uniqueness.
+
+---
+
+# Core Components
+
+## Panel
+
+Primary container.
+
+Used for:
+
+- Right Panel
+- Dashboard
+- Settings
+- Character
+- Inventory
+- Craft
+- World
+- Island
+
+---
+
+## Card
+
+Primary information container.
+
+Cards group related information.
+
+Every panel is composed of Cards.
+
+Cards share:
+
+- spacing
+- borders
+- typography
+- shadows
+
+---
+
+## Button
+
+Shared button component.
+
+States:
+
+- Default
+- Hover
+- Active
+- Disabled
+
+Buttons always follow the Design System.
+
+---
+
+## Progress Bar
+
+Shared component.
+
+Used for:
+
+- HP
+- Masteries
+- Crafting
+- Refining
+- Gathering
+- Workers
+- Zone Progression
+
+Progress Bars always share the same visual language.
+
+---
+
+## Item Slot
+
+Reusable slot component.
+
+Supports:
+
+- equipment
+- inventory
+- bank
+- crafting
+- rewards
+
+---
+
+## Badge
+
+Small visual indicator.
+
+Examples:
+
+- NEW
+- RARE
+- T8
+- +3
+- COMPLETE
+
+---
+
+## Tooltip
+
+Provides detailed information.
+
+Appears on hover.
+
+Never required to understand the interface.
+
+---
+
+## Tabs
+
+Used to switch between sections inside the same panel.
+
+Tabs never replace the Game World.
+
+---
+
+## Search Bar
+
+Shared search component.
+
+Supports:
+
+- Inventory
+- Bank
+- Craft
+- Marketplace
+
+---
+
+## Dropdown
+
+Shared filtering component.
+
+Supports:
+
+- sorting
+- categories
+- rarity
+- tiers
+
+---
+
+## Toggle
+
+Shared ON/OFF component.
+
+Used for:
+
+- filters
+- settings
+- automation
+
+---
+
+## Timer
+
+Displays remaining duration.
+
+Examples:
+
+- Craft
+- Workers
+- Island
+- Buffs
+
+---
+
+## List
+
+Shared vertical list.
+
+Supports:
+
+- objectives
+- quests
+- recipes
+- workers
+- notifications
+
+---
+
+## Grid
+
+Shared grid layout.
+
+Used for:
+
+- inventory
+- bank
+- crafting recipes
+- collections
+
+---
+
+## Modal
+
+Exceptional component.
+
+Reserved for:
+
+- confirmations
+- warnings
+- purchases
+- destructive actions
+
+Modals should never replace normal navigation.
+
+---
+
+# Scroll Behavior
+
+Vertical scrolling is preferred.
+
+Horizontal scrolling should be avoided.
+
+Pagination should only be used when absolutely necessary.
+
+---
+
+# Empty States
+
+Every component must define an Empty State.
+
+Example:
+
+"No active craft."
+
+instead of
+
+Empty panel.
+
+---
+
+# Loading States
+
+Every component supports:
+
+- Loading
+- Success
+- Error
+- Empty
+
+---
+
+# Error States
+
+Errors should explain:
+
+- what happened
+- why
+- how to resolve it
+
+---
+
+# Reusability Rules
+
+MUST
+
+- Reuse existing components.
+- Maintain identical spacing.
+- Maintain identical typography.
+- Maintain identical interaction patterns.
+
+MUST NOT
+
+- Create duplicate components.
+- Introduce isolated visual styles.
+- Duplicate existing functionality.
+
+---
+
+# Future Compatibility
+
+Every new feature introduced in Albion Idle must first determine whether an existing component can be reused.
+
+New components should only be created when no existing component can satisfy the requirement.

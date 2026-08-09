@@ -1,14 +1,18 @@
-import { useContext } from "react";
-import { PanelManagerContext, type PanelManagerState } from "./PanelManager";
+import { useMemo } from "react";
+import { useNavigation } from "../ui/navigation";
+import type { PanelManagerState } from "./PanelManager";
 
-/**
- * Hook to access the panel manager — tracks which panel is open and provides
- * open/close/toggle operations.
- */
+/** Compatibility hook for legacy panels. */
 export function usePanelManager(): PanelManagerState {
-  const ctx = useContext(PanelManagerContext);
-  if (ctx === null) {
-    throw new Error("usePanelManager must be used within a PanelManagerProvider");
-  }
-  return ctx;
+  const navigation = useNavigation();
+
+  return useMemo(
+    () => ({
+      activePanel: navigation.activeModule,
+      openPanel: navigation.openModule,
+      closePanel: navigation.returnToDashboard,
+      togglePanel: navigation.toggleModule,
+    }),
+    [navigation],
+  );
 }

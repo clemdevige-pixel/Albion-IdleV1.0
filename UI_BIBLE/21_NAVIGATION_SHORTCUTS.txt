@@ -1,0 +1,383 @@
+# UI_BIBLE/21_NAVIGATION_SHORTCUTS.md
+
+# Albion Idle — Navigation & Shortcuts
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+This document defines navigation behavior and keyboard shortcuts.
+
+Albion Idle must remain fully usable with the mouse.
+
+Keyboard shortcuts provide faster access for players who want them.
+
+---
+
+# Core Principle
+
+Navigation must be:
+
+- Predictable
+- Fast
+- Consistent
+- Optional through keyboard shortcuts
+
+The player should always understand where an action will lead.
+
+---
+
+# Primary Navigation
+
+Primary modules are accessed through the Bottom Bar.
+
+Examples:
+
+- Character
+- Inventory
+- Masteries
+- Production
+- Craft
+- Bank
+- World
+
+Selecting a module changes only the Right Panel.
+
+```text
+Bottom Bar
+    ↓
+Selected Module
+    ↓
+Right Panel Content
+```
+
+The Game World remains active.
+
+---
+
+# Dashboard
+
+The Dashboard is the home state of the Right Panel.
+
+Selecting the currently active primary module again returns to the Dashboard.
+
+Example:
+
+```text
+Inventory
+    ↓
+Click Inventory again
+    ↓
+Dashboard
+```
+
+---
+
+# Internal Navigation
+
+Modules may contain internal navigation.
+
+Examples:
+
+```text
+Production
+├── Gathering
+└── Refining
+
+Craft
+├── Weapons
+└── Armor
+```
+
+Internal navigation remains inside the Right Panel.
+
+---
+
+# Navigation Depth
+
+Navigation should remain shallow.
+
+Preferred maximum:
+
+```text
+Primary Module
+     ↓
+Category
+     ↓
+Selected Content
+```
+
+The interface should avoid long chains of nested menus.
+
+---
+
+# Contextual Navigation
+
+UI elements may provide shortcuts to related modules.
+
+Examples:
+
+```text
+Missing refined resource
+→ Production / Refining
+
+Recent Loot
+→ Inventory
+
+Boss available
+→ World
+
+Mastery progress
+→ Masteries
+```
+
+Contextual navigation should open the relevant destination directly whenever possible.
+
+---
+
+# Back Behavior
+
+Internal navigation should provide predictable return behavior.
+
+Example:
+
+```text
+Craft
+  ↓
+Frost Staffs
+  ↓
+Permafrost Prism
+
+Back
+  ↓
+Frost Staffs
+```
+
+Back actions affect only the Right Panel.
+
+They never leave the main game interface.
+
+---
+
+# Keyboard Shortcuts
+
+Keyboard shortcuts may provide direct access to frequently used modules.
+
+Recommended default mappings:
+
+```text
+C → Character
+I → Inventory
+M → Masteries
+P → Production
+K → Craft
+B → Bank
+W → World
+```
+
+Exact mappings are finalized during implementation.
+
+---
+
+# Shortcut Rules
+
+Keyboard shortcuts must:
+
+- Be optional
+- Have a mouse equivalent
+- Never be required for normal gameplay
+- Avoid conflicts with text input
+- Remain consistent
+
+When the player is typing in:
+
+- Chat
+- Search
+- Numeric input
+- Other text fields
+
+navigation shortcuts must not trigger.
+
+---
+
+# Escape
+
+`ESC` provides contextual closing/back behavior.
+
+Priority:
+
+```text
+Modal open
+→ Close Modal when allowed
+
+Tooltip / contextual overlay
+→ Close overlay
+
+Nested Right Panel content
+→ Return one level
+
+Primary module
+→ Dashboard
+```
+
+`ESC` must not accidentally trigger gameplay actions.
+
+---
+
+# Enter
+
+`ENTER` may confirm focused actions where appropriate.
+
+Examples:
+
+- Search
+- Quantity validation
+- Confirmation dialog
+
+It must not trigger ambiguous actions.
+
+---
+
+# Number Keys
+
+Number keys may be reserved for combat abilities.
+
+Example:
+
+```text
+1 → Ability 1
+2 → Ability 2
+3 → Ability 3
+```
+
+UI navigation must not conflict with combat shortcuts.
+
+---
+
+# Tooltips
+
+When shortcuts exist, relevant Tooltips may display them.
+
+Example:
+
+```text
+Inventory
+
+Shortcut: I
+```
+
+The shortcut remains secondary to the action name.
+
+---
+
+# Active State
+
+The Bottom Bar always indicates the currently active module.
+
+Example:
+
+```text
+[Character] [INVENTORY] [Masteries]
+               ACTIVE
+```
+
+Keyboard navigation updates the same Active state as mouse navigation.
+
+---
+
+# Navigation Memory
+
+When reasonable, modules may preserve their local state when temporarily closed.
+
+Examples:
+
+- Inventory filter
+- Selected Craft family
+- Expanded Mastery families
+- Production tab
+
+This prevents unnecessary repetitive navigation.
+
+Temporary state should reset when preserving it would create confusion.
+
+---
+
+# Game World Continuity
+
+Navigation never pauses the Game World unless gameplay explicitly requires it.
+
+Example:
+
+```text
+Combat
+  +
+Inventory navigation
+  +
+Craft inspection
+
+→ Combat continues
+```
+
+---
+
+# Accessibility
+
+Navigation must never depend exclusively on:
+
+- Hover
+- Color
+- Keyboard shortcuts
+
+Important actions require clear visible controls.
+
+---
+
+# Future Modules
+
+Future modules must follow the same navigation rules.
+
+They integrate through:
+
+```text
+Bottom Bar
+or
+Grouped Navigation
+        ↓
+Right Panel
+```
+
+They must not create an independent navigation paradigm.
+
+---
+
+# Rules
+
+MUST
+
+- Keep mouse navigation fully functional.
+- Keep navigation inside the Single Screen structure.
+- Maintain shallow navigation depth.
+- Provide predictable Back behavior.
+- Prevent shortcuts while typing.
+- Avoid combat shortcut conflicts.
+- Keep the Game World active.
+- Maintain consistent Active states.
+
+MUST NOT
+
+- Require keyboard shortcuts.
+- Create deep nested menu structures.
+- Introduce module-specific navigation paradigms.
+- Trigger shortcuts while entering text.
+- Use ambiguous keyboard actions.
+- Replace the Game World during navigation.
+
+SHOULD
+
+- Preserve useful local navigation state.
+- Provide contextual shortcuts between related systems.
+- Display shortcuts in Tooltips.
+- Keep common destinations one or two interactions away.

@@ -1,0 +1,337 @@
+# UI_BIBLE/08_DASHBOARD.md
+
+# Albion Idle — Dashboard
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Dashboard is the default content of the Right Panel.
+
+It provides an immediate overview of the player's current activity and progression without requiring navigation through multiple modules.
+
+The Dashboard prioritizes actionable information over detailed statistics.
+
+---
+
+# Core Principle
+
+The Dashboard answers four questions immediately:
+
+1. What am I doing?
+2. What is progressing?
+3. What just happened?
+4. What requires my attention?
+
+The player should understand the current game state within a few seconds.
+
+---
+
+# Information Balance
+
+Target information distribution:
+
+- ~80% Operational information
+- ~20% Statistics
+
+The Dashboard is not a detailed analytics screen.
+
+Detailed information belongs inside the corresponding modules.
+
+---
+
+# Structure
+
+```text
++--------------------------------+
+| DASHBOARD                      |
++--------------------------------+
+| CURRENT PROGRESS               |
+|                                |
+| Zone / Segment                 |
+| ███████████░░░        12 / 20  |
++--------------------------------+
+| OBJECTIVES                     |
+|                                |
+| Current objective              |
+| Next milestone                 |
++--------------------------------+
+| ACTIVE PRODUCTION              |
+|                                |
+| Craft       00:24              |
+| Refining    01:42              |
+| Worker      Active             |
++--------------------------------+
+| MASTERY                        |
+|                                |
+| Broadsword              Lv. 72 |
+| ███████████░░░          74%    |
++--------------------------------+
+| RECENT LOOT                    |
+|                                |
+| [Item] [Item] [Item]           |
++--------------------------------+
+| SESSION                        |
+|                                |
+| Kills       124                |
+| Resources   342                |
+| DPS         86                 |
++--------------------------------+
+```
+
+The exact card order may be adjusted during mockup testing.
+
+---
+
+# Current Progress
+
+Displays the player's immediate world progression.
+
+Includes:
+
+- Current Zone
+- Current Segment
+- Segment progression
+- Current encounter or objective when relevant
+
+This information must remain compact because global zone information is also available in the Header.
+
+The Dashboard provides contextual progression, not duplicate information.
+
+---
+
+# Objectives
+
+Displays only currently relevant objectives.
+
+Examples:
+
+- Reach Segment 20
+- Defeat the Zone Boss
+- Gather required materials
+- Complete an active progression milestone
+
+Only a small number of objectives should appear simultaneously.
+
+Completed objectives should disappear or transition into the next relevant objective.
+
+---
+
+# Active Production
+
+Provides a consolidated view of ongoing background activities.
+
+Possible entries:
+
+- Crafting
+- Refining
+- Gathering
+- Workers
+- Island production
+
+Each entry displays only essential information.
+
+Example:
+
+```text
+Birch Planks
+18 / 30
+00:24
+```
+
+Selecting an entry opens its corresponding Right Panel module.
+
+---
+
+# Mastery Progress
+
+Displays the currently relevant mastery progression.
+
+Includes:
+
+- Mastery name
+- Current level
+- Progress toward next level
+- Next meaningful milestone when relevant
+
+Detailed mastery information belongs inside the Masteries module.
+
+---
+
+# Recent Loot
+
+Displays the latest rewards obtained while the player continues playing.
+
+Target:
+
+3–5 recent drops.
+
+Each entry may display:
+
+- Item icon
+- Quantity
+- Tier
+- Quality or rarity when relevant
+
+Important drops may receive a temporary highlight.
+
+The Recent Loot section must remain compact.
+
+Selecting an item may open its Tooltip or relevant Inventory information.
+
+---
+
+# Session Statistics
+
+Statistics occupy a secondary position.
+
+The Dashboard may display a small selection of useful live statistics.
+
+Examples:
+
+- Enemies defeated
+- Resources obtained
+- Current DPS
+- Session duration
+- Loot value when available
+
+Only immediately understandable statistics belong here.
+
+Detailed analytics must not be added to the Dashboard.
+
+---
+
+# Priority System
+
+Dashboard information follows this hierarchy:
+
+```text
+Requires Attention
+        ↓
+Current Progress
+        ↓
+Active Activities
+        ↓
+Recent Rewards
+        ↓
+Statistics
+```
+
+Important information may temporarily move upward in priority.
+
+---
+
+# Attention States
+
+The Dashboard may highlight situations requiring player action.
+
+Examples:
+
+- Craft completed
+- Worker idle
+- Inventory full
+- Boss available
+- Mastery milestone reached
+- Production blocked
+
+Attention states must be meaningful.
+
+Routine information must not generate alerts.
+
+---
+
+# Interaction
+
+Dashboard Cards may act as shortcuts.
+
+Examples:
+
+```text
+Mastery Card
+→ Masteries
+
+Craft Card
+→ Craft
+
+Worker Card
+→ Workers
+
+Recent Loot
+→ Inventory
+```
+
+The Dashboard therefore provides both information and navigation.
+
+---
+
+# Scrolling
+
+The most important information should appear without scrolling whenever possible.
+
+Secondary information may appear below the fold.
+
+The Dashboard uses vertical scrolling when required.
+
+---
+
+# Empty States
+
+Inactive systems remain understandable without creating dead space.
+
+Examples:
+
+```text
+NO ACTIVE CRAFT
+Browse recipes →
+
+WORKER AVAILABLE
+Assign worker →
+
+NO CURRENT OBJECTIVE
+Continue zone progression →
+```
+
+Empty states should provide a useful next action when appropriate.
+
+---
+
+# Visual Rules
+
+The Dashboard must remain visually calmer than specialized modules.
+
+It should feel like an overview, not a collection of competing widgets.
+
+Cards use the shared Design System.
+
+Strong colors, glow and animations are reserved for information that genuinely requires attention.
+
+---
+
+# Rules
+
+MUST
+
+- Prioritize operational information.
+- Show current progression.
+- Show relevant active activities.
+- Display recent loot.
+- Provide useful shortcuts to corresponding modules.
+- Keep statistics secondary.
+
+MUST NOT
+
+- Become a detailed analytics screen.
+- Duplicate large amounts of information already visible elsewhere.
+- Display every available statistic.
+- Generate unnecessary alerts.
+- Overload the player with simultaneous objectives.
+
+SHOULD
+
+- Answer the current game state within seconds.
+- Keep critical information above the fold.
+- Surface blocked or completed activities.
+- Remain useful regardless of the player's current activity.

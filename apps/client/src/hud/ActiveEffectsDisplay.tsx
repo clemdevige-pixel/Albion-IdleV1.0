@@ -1,4 +1,4 @@
-import { useGameBridge } from "../state/GameContext";
+import { useActiveEffectsUiModel } from "../ui/combat-hud/combatHudSelectors";
 
 const EFFECT_SYMBOLS: Record<string, string> = {
   buff: "+",
@@ -13,7 +13,7 @@ const EFFECT_SYMBOLS: Record<string, string> = {
  * Small status effect icons for active buffs/debuffs.
  */
 export function ActiveEffectsDisplay(): JSX.Element {
-  const { activeEffects } = useGameBridge();
+  const activeEffects = useActiveEffectsUiModel();
 
   if (activeEffects.length === 0) {
     return <div className="active-effects" />;

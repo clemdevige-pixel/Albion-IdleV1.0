@@ -1,0 +1,408 @@
+# UI_BIBLE/22_ACCESSIBILITY.md
+
+# Albion Idle — Accessibility
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+Accessibility rules ensure that Albion Idle remains readable and usable across different players, displays and play conditions.
+
+Accessibility must be integrated into the UI architecture rather than added afterward.
+
+---
+
+# Core Principle
+
+Important information must never depend on a single visual signal.
+
+```text
+Color
++
+Icon
++
+Text / Shape
+=
+Clear Information
+```
+
+Accessibility must preserve the visual identity of Albion Idle.
+
+---
+
+# Readability
+
+Text must remain clearly readable against its background.
+
+The interface uses strong enough contrast between:
+
+- Text
+- Backgrounds
+- Cards
+- Buttons
+- Interactive elements
+- Disabled elements
+
+Decorative backgrounds must never reduce text readability.
+
+---
+
+# Typography
+
+Typography follows the shared Design System.
+
+Text must not become excessively small to fit additional information.
+
+Priority when space is limited:
+
+```text
+Remove redundancy
+      ↓
+Shorten content
+      ↓
+Reorganize layout
+      ↓
+Adjust spacing
+```
+
+Reducing readability is the last resort.
+
+---
+
+# Color
+
+Color reinforces meaning but never carries meaning alone.
+
+Bad:
+
+```text
+Green = available
+Red   = unavailable
+```
+
+Better:
+
+```text
+✓ AVAILABLE
+
+🔒 LOCKED
+```
+
+with supporting semantic colors.
+
+---
+
+# Zone Colors
+
+World zones use:
+
+- Blue
+- Yellow
+- Orange
+- Red
+- Black
+
+Each zone must also display its name and relevant status.
+
+The player must never need to identify a zone exclusively from its color.
+
+---
+
+# Item States
+
+Item information such as:
+
+- Tier
+- Enchantment
+- Quality
+- Selected state
+- Equipped state
+
+must use additional indicators beyond color when necessary.
+
+Examples:
+
+```text
+T6.2
+
+EXCELLENT
+
+EQUIPPED
+```
+
+---
+
+# Interactive Elements
+
+Buttons and other interactive components must clearly communicate that they can be used.
+
+Interactive state may use:
+
+- Border
+- Background
+- Icon
+- Cursor
+- Hover feedback
+- Text
+
+Hover must not be the only way to discover essential actions.
+
+---
+
+# Disabled Elements
+
+Disabled elements remain readable.
+
+They must clearly appear unavailable.
+
+When useful, the player can understand why the action is disabled through contextual information.
+
+Example:
+
+```text
+CRAFT
+
+LOCKED
+
+Missing:
+4 Refined Materials
+```
+
+---
+
+# Focus
+
+Keyboard-accessible controls should provide a visible focus state.
+
+Focus must remain distinguishable from:
+
+- Hover
+- Selected
+- Active
+
+Keyboard navigation should never leave the player unsure which element is currently focused.
+
+---
+
+# Tooltips
+
+Tooltips improve understanding but do not contain information required for basic operation.
+
+Essential information must remain visible without hovering.
+
+---
+
+# Icons
+
+Icons should be recognizable and consistent.
+
+Unfamiliar or important icons should be supported by:
+
+- Labels
+- Tooltips
+- Context
+
+The interface must not require memorizing unexplained symbols.
+
+---
+
+# Progress Bars
+
+Progress Bars should provide numeric information when precision matters.
+
+Example:
+
+```text
+████████████░░░
+
+78%
+```
+
+Progress should not be communicated exclusively through bar length.
+
+---
+
+# Timers
+
+Timers use readable numerical values.
+
+Example:
+
+```text
+01:42
+```
+
+Progress animation may supplement the timer but cannot replace it.
+
+---
+
+# Animation
+
+Accessibility behavior follows:
+
+`18_ANIMATIONS_TRANSITIONS.md`
+
+Non-essential animation should be reducible.
+
+The interface must remain understandable when animations are disabled or reduced.
+
+---
+
+# Flashing Effects
+
+Rapid or repeated flashing is prohibited.
+
+Important states should use:
+
+- Static indicators
+- Short transitions
+- Controlled highlights
+
+rather than continuous flashing.
+
+---
+
+# Notifications
+
+Notifications use:
+
+- Icon
+- Text
+- Semantic styling
+
+Sound must never be the only notification mechanism.
+
+Important persistent information remains accessible through the relevant module or Dashboard.
+
+---
+
+# Combat Information
+
+Important combat information must remain readable despite:
+
+- Character animations
+- VFX
+- Damage numbers
+- Enemy movement
+- Environment art
+
+Visual effects must not consistently obscure essential combat information.
+
+---
+
+# Input
+
+All core UI interactions must remain possible with a mouse.
+
+Keyboard shortcuts are optional enhancements.
+
+Small interaction targets should be avoided.
+
+---
+
+# Text Inputs
+
+Search, Chat and numerical inputs must clearly indicate focus.
+
+Keyboard shortcuts are suspended while the player is typing.
+
+---
+
+# Scaling
+
+Accessibility must remain compatible with UI scaling.
+
+Increasing UI scale should preserve:
+
+- Layout hierarchy
+- Interaction targets
+- Right Panel usability
+- Text readability
+
+The architecture should not assume one fixed physical UI size.
+
+---
+
+# Audio
+
+Important UI states must not depend exclusively on audio.
+
+Audio feedback may reinforce:
+
+- Notifications
+- Completion
+- Warnings
+- Important milestones
+
+but equivalent visual feedback must exist.
+
+---
+
+# Error Messages
+
+Errors must use clear language.
+
+Bad:
+
+```text
+ERROR 1042
+```
+
+Preferred:
+
+```text
+INVENTORY FULL
+
+Free an inventory slot
+before collecting this item.
+```
+
+Technical information may be available separately when useful for debugging.
+
+---
+
+# Accessibility Settings
+
+The architecture should allow future settings such as:
+
+- UI scale
+- Reduced motion
+- Notification volume
+- Interface sound volume
+
+Additional accessibility settings may be introduced when actual player needs are identified.
+
+---
+
+# Rules
+
+MUST
+
+- Maintain readable contrast.
+- Keep essential information outside Tooltips.
+- Support color with text, icons or shapes.
+- Keep disabled states understandable.
+- Provide visual feedback for audio events.
+- Avoid rapid flashing.
+- Keep interaction targets usable.
+- Preserve readability during gameplay.
+
+MUST NOT
+
+- Depend exclusively on color.
+- Depend exclusively on sound.
+- Require hover to understand basic actions.
+- Reduce text excessively to fit content.
+- Hide critical information behind animations.
+- Use continuous flashing for attention.
+
+SHOULD
+
+- Support UI scaling.
+- Support reduced motion.
+- Use numerical values alongside important progress indicators.
+- Keep icons supported by contextual information.
+- Maintain accessibility as new modules are introduced.

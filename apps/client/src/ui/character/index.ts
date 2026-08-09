@@ -1,0 +1,1 @@
+export { CharacterModule } from "./CharacterModule";

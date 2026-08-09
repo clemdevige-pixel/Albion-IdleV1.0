@@ -1,0 +1,202 @@
+# UI_BIBLE/06_BOTTOM_BAR.md
+
+# Albion Idle — Bottom Bar
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Bottom Bar provides permanent access to:
+
+- Main navigation
+- Combat abilities
+- Chat
+
+It must allow the player to access all major game systems without leaving the Game World.
+
+---
+
+# Global Structure
+
+```text
++--------------------------------------------------------------------------------+
+| CHAT | NAVIGATION                  | ABILITIES |                 NAVIGATION     |
++--------------------------------------------------------------------------------+
+```
+
+The exact visual distribution will be finalized during the mockup phase.
+
+The Bottom Bar remains permanently visible.
+
+---
+
+# Main Navigation
+
+For V1, major game systems are directly accessible from the Bottom Bar.
+
+Primary entries:
+
+- Character
+- Inventory
+- Masteries
+- Gathering
+- Craft
+- Island
+- Bank
+- World
+
+Each entry uses:
+
+- Icon
+- Short label
+- Active state
+- Hover state
+- Tooltip when necessary
+
+---
+
+# Navigation Behavior
+
+Selecting an entry changes only the content of the Right Panel.
+
+Example:
+
+```text
+Inventory selected
+        ↓
+Right Panel → Inventory
+
+Game World → unchanged
+Header     → unchanged
+Bottom Bar → unchanged
+```
+
+Selecting the currently active entry returns the Right Panel to the Dashboard.
+
+Only one primary module can be active at a time.
+
+---
+
+# Navigation Scalability
+
+Direct access is preferred while the number of primary modules remains manageable.
+
+The Bottom Bar MUST NOT become overcrowded.
+
+If future systems make direct navigation too dense, navigation may evolve toward grouped categories.
+
+Example future structure:
+
+```text
+Character
+Progression
+Production
+Island
+World
+```
+
+Secondary modules would then appear as contextual sub-navigation inside the Right Panel.
+
+This evolution must not modify the Single Screen philosophy.
+
+---
+
+# Ability Bar
+
+The Ability Bar is integrated into the central area of the Bottom Bar.
+
+It remains permanently visible during gameplay.
+
+It displays:
+
+- Weapon abilities
+- Passive information when relevant
+- Cooldowns
+- Disabled states
+- Active effects
+
+Abilities must remain readable without opening another panel.
+
+---
+
+# Ability States
+
+Each ability supports:
+
+- Ready
+- Cooldown
+- Active
+- Disabled
+- Locked
+
+Cooldown information must be readable immediately.
+
+---
+
+# Chat
+
+Chat occupies a compact area on the left side of the Bottom Bar.
+
+Default state:
+
+Compact.
+
+The player may expand it when needed.
+
+Chat must never dominate the interface or obstruct the Game World.
+
+---
+
+# Notifications
+
+Navigation entries may display contextual badges.
+
+Examples:
+
+```text
+Inventory     NEW
+Masteries      1
+Craft          ✓
+Island         !
+```
+
+Badges must only appear when player attention is useful.
+
+---
+
+# Visual Hierarchy
+
+The Ability Bar is the visual center of the Bottom Bar.
+
+Navigation remains clearly accessible without competing visually with combat information.
+
+The active navigation entry must be immediately identifiable.
+
+---
+
+# Interaction Rules
+
+MUST
+
+- Keep the Bottom Bar permanently visible.
+- Provide direct V1 access to major systems.
+- Keep abilities permanently accessible.
+- Open modules inside the Right Panel.
+- Clearly indicate the active module.
+
+MUST NOT
+
+- Replace the Game World.
+- Open full-screen pages.
+- Overcrowd the navigation.
+- Use notifications without actionable information.
+
+SHOULD
+
+- Keep primary actions one click away.
+- Use icons and short labels.
+- Maintain stable element positions.
+- Support future navigation grouping without redesigning the global layout.

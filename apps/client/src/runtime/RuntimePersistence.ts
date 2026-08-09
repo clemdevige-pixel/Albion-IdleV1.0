@@ -32,6 +32,7 @@ export interface RuntimePersistenceDependencies {
   readonly world: World;
   readonly heroId: EntityId;
   readonly bankId: EntityId;
+  readonly productionStorageId: EntityId;
   readonly equipmentManager: EquipmentManager;
   readonly currencyService: CurrencyService;
   readonly experienceService: ExperienceService;
@@ -68,7 +69,11 @@ export class RuntimePersistence {
     const inventorySaveProvider = new InventorySaveProvider(
       deps.inventoryManager,
       deps.world,
-      (index) => (index === 0 ? deps.heroId : deps.bankId),
+      (index) => index === 0
+        ? deps.heroId
+        : index === 1
+          ? deps.bankId
+          : deps.productionStorageId,
     );
     const equipmentSaveProvider = new EquipmentSaveProvider(
       deps.equipmentManager,

@@ -98,4 +98,41 @@ describe("canCraftRecipe", () => {
     // Consuming 6 wood and 2 ore leaves 94 wood and 98 ore, so 0 slots are freed
     expect(canCraftRecipe(inventoryManager, entityId, requirements)).toBe(false);
   });
+
+  it("accepts a craft in a full inventory when its output can merge", () => {
+    const services = createRuntimeServices();
+    const world = new World(services);
+    const stackInfo = (itemId: string) => ({ itemId, stackable: true, maxStack: 20 });
+    const inventoryManager = new InventoryManager(world, stackInfo);
+    const entityId = world.createEntity();
+    inventoryManager.createInventory(entityId, 2);
+    inventoryManager.addQuantity(entityId, "material", 10);
+    inventoryManager.addQuantity(entityId, "crafted_shield", 1);
+
+    expect(inventoryManager.isFull(entityId)).toBe(true);
+    expect(canCraftRecipe(
+      inventoryManager,
+      entityId,
+      [{ itemId: "material", quantity: 1 }],
+      { itemId: "crafted_shield", quantity: 1 },
+    )).toBe(true);
+  });
+
+  it("rejects a craft in a genuinely full inventory with no compatible output stack", () => {
+    const services = createRuntimeServices();
+    const world = new World(services);
+    const stackInfo = (itemId: string) => ({ itemId, stackable: true, maxStack: 20 });
+    const inventoryManager = new InventoryManager(world, stackInfo);
+    const entityId = world.createEntity();
+    inventoryManager.createInventory(entityId, 2);
+    inventoryManager.addQuantity(entityId, "material", 10);
+    inventoryManager.addQuantity(entityId, "filler", 1);
+
+    expect(canCraftRecipe(
+      inventoryManager,
+      entityId,
+      [{ itemId: "material", quantity: 1 }],
+      { itemId: "crafted_shield", quantity: 1 },
+    )).toBe(false);
+  });
 });

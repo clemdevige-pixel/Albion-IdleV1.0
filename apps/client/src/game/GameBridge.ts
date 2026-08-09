@@ -286,6 +286,7 @@ export interface CraftingRecipeVM {
   readonly requirements: readonly CraftingRequirementVM[];
   readonly craftedQuantity: number;
   readonly canCraft: boolean;
+  readonly blockedReason?: "missing_materials" | "missing_predecessor" | "inventory_full";
 }
 
 export interface CraftingRequirementVM {

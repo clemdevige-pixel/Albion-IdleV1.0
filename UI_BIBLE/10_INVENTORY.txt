@@ -1,0 +1,352 @@
+# UI_BIBLE/10_INVENTORY.md
+
+# Albion Idle — Inventory Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Inventory Panel provides fast access to every item currently carried by the player.
+
+It must support equipment, resources and other item types without interrupting the Game World.
+
+The interface prioritizes visual recognition and compactness.
+
+---
+
+# Core Principle
+
+The Inventory uses a compact item grid.
+
+All carried items belong to the same inventory.
+
+Filters allow the player to isolate specific item categories without creating separate inventories.
+
+---
+
+# Structure
+
+```text
++--------------------------------+
+| INVENTORY                34/60 |
++--------------------------------+
+| Search...     [Tier] [Type]    |
++--------------------------------+
+| All | Equipment | Resources    |
++--------------------------------+
+| [ ][ ][ ][ ][ ]                |
+| [ ][ ][ ][ ][ ]                |
+| [ ][ ][ ][ ][ ]                |
+| [ ][ ][ ][ ][ ]                |
+|                                |
++--------------------------------+
+| SELECTED ITEM                  |
+|                                |
+| [ICON] Permafrost Prism        |
+|        T6.2 • Excellent        |
+|        IP 1,124                |
+|                                |
+|        [EQUIP]                 |
++--------------------------------+
+```
+
+Exact dimensions and grid density are determined during the mockup phase.
+
+---
+
+# Inventory Capacity
+
+The current capacity is always visible.
+
+Example:
+
+```text
+34 / 60
+```
+
+Capacity represents occupied inventory slots versus available slots.
+
+Inventory expansion systems may increase the available capacity.
+
+---
+
+# Item Grid
+
+Items are displayed using the shared Item Slot component.
+
+The grid is the primary inventory representation.
+
+Each slot may communicate:
+
+- Item icon
+- Quantity
+- Tier
+- Enchantment
+- Quality
+- Relevant status
+
+The slot must remain readable without displaying excessive text.
+
+---
+
+# Item Stacking
+
+Identical stackable items occupy a single slot.
+
+Stack identity follows the gameplay rules defined by the project.
+
+Quantity appears directly on the Item Slot.
+
+Example:
+
+```text
+[Birch Logs]
+     142
+```
+
+---
+
+# Categories
+
+All items exist inside the same inventory.
+
+Primary filters:
+
+- All
+- Equipment
+- Resources
+- Other
+
+Additional filters may be introduced when justified by actual inventory complexity.
+
+Filters do not create separate inventories.
+
+---
+
+# Search
+
+The player can search inventory contents by item name.
+
+Search results update the visible grid without changing the underlying inventory.
+
+Search and category filters may be combined.
+
+---
+
+# Filters
+
+Useful filters may include:
+
+- Category
+- Tier
+- Quality
+- Enchantment
+
+Only filters that provide meaningful inventory navigation should be displayed.
+
+Advanced filters should remain secondary.
+
+---
+
+# Sorting
+
+The inventory supports consistent sorting.
+
+Possible criteria:
+
+- Type
+- Tier
+- Quality
+- Quantity
+
+A default sorting behavior should provide a predictable item order.
+
+---
+
+# Selected Item
+
+Selecting an Item Slot opens its details inside the Inventory Panel.
+
+The Game World remains visible.
+
+The selected item section may display:
+
+- Name
+- Icon
+- Quantity
+- Tier
+- Enchantment
+- Quality
+- Item Power when relevant
+- Essential properties
+- Available actions
+
+---
+
+# Item Actions
+
+Actions depend on item type.
+
+Examples:
+
+Equipment:
+
+- Equip
+- Compare
+
+Resources:
+
+- Relevant crafting information
+- Relevant production information
+
+Other items:
+
+- Use
+- Inspect
+
+Only valid actions should be displayed.
+
+---
+
+# Equipment Comparison
+
+Compatible equipment may be compared with the currently equipped item.
+
+The comparison highlights meaningful differences.
+
+Example:
+
+```text
+CURRENT             SELECTED
+
+IP       720        755   +35
+Damage   120        134   +14
+Defense   42         38    -4
+```
+
+Comparison remains concise.
+
+---
+
+# Tooltips
+
+Hovering an item displays its shared Item Tooltip.
+
+The Tooltip provides quick information without requiring selection.
+
+Selecting the item provides access to additional details and actions.
+
+---
+
+# Full Inventory
+
+When inventory capacity is reached, the player receives a clear warning.
+
+Example:
+
+```text
+INVENTORY FULL
+60 / 60
+```
+
+The warning must be visible without unnecessarily interrupting gameplay.
+
+---
+
+# Recent Items
+
+Newly obtained items may receive a temporary visual indicator.
+
+Example:
+
+```text
+NEW
+```
+
+The indicator disappears after the item has been acknowledged according to the final interaction rules.
+
+---
+
+# Empty Inventory
+
+An empty inventory still displays the grid structure.
+
+Example:
+
+```text
+Inventory empty.
+
+Items and resources obtained during
+your adventure will appear here.
+```
+
+---
+
+# Scrolling
+
+The item grid supports vertical scrolling when required.
+
+Horizontal scrolling is prohibited.
+
+The search and primary filtering controls should remain easily accessible.
+
+---
+
+# Visual Hierarchy
+
+Priority order:
+
+```text
+Capacity
+   ↓
+Search / Filters
+   ↓
+Item Grid
+   ↓
+Selected Item
+   ↓
+Actions
+```
+
+The Item Grid remains the visual focus.
+
+---
+
+# Performance
+
+Inventory rendering must remain responsive with large numbers of items.
+
+Filtering, searching and sorting should not interrupt the active Game World.
+
+---
+
+# Rules
+
+MUST
+
+- Use a compact Item Grid.
+- Keep all carried items within one inventory system.
+- Support category filtering.
+- Display inventory capacity.
+- Support stacked items.
+- Provide quick item inspection.
+- Keep the Game World visible.
+
+MUST NOT
+
+- Create separate inventory pages for resources and equipment.
+- Replace the Game World.
+- Require horizontal scrolling.
+- Display unnecessary information directly inside Item Slots.
+- Create different visual rules for different item categories.
+
+SHOULD
+
+- Make common actions accessible quickly.
+- Support search and useful sorting.
+- Highlight newly acquired items temporarily.
+- Provide equipment comparison when relevant.
+- Remain usable as inventory capacity grows.

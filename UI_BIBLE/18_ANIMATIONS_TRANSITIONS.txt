@@ -1,0 +1,427 @@
+# UI_BIBLE/18_ANIMATIONS_TRANSITIONS.md
+
+# Albion Idle — Animations & Transitions
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+Animations provide visual feedback and make the interface feel responsive and alive.
+
+They must improve understanding without distracting from the Game World.
+
+---
+
+# Core Principle
+
+Animation communicates state.
+
+It is never decoration without purpose.
+
+```text
+Player Action
+     ↓
+Visual Feedback
+     ↓
+State Change
+```
+
+Albion Idle must feel responsive, not excessively animated.
+
+---
+
+# Global Timing
+
+Standard UI transitions:
+
+```text
+150–250 ms
+```
+
+Recommended behavior:
+
+- Hover → fast
+- Button press → immediate
+- Panel content change → short
+- Notification → short
+- Progress update → smooth
+- Important unlock → slightly stronger
+
+Exact timings are finalized during implementation testing.
+
+---
+
+# Right Panel Transitions
+
+Switching modules changes only the internal content of the Right Panel.
+
+Example:
+
+```text
+Inventory
+    ↓
+  Fade
+    ↓
+Masteries
+```
+
+The Right Panel container itself does not move.
+
+The Game World does not resize or shift.
+
+---
+
+# Tab Transitions
+
+Internal tabs use subtle transitions.
+
+Example:
+
+```text
+Gathering
+    ↓
+Refining
+```
+
+Allowed effects:
+
+- Short fade
+- Minimal horizontal movement
+
+Large sliding animations are prohibited.
+
+---
+
+# Cards
+
+Cards remain visually stable.
+
+Hover may provide:
+
+- Slight highlight
+- Border emphasis
+- Subtle elevation
+
+Cards must not noticeably resize on hover.
+
+---
+
+# Buttons
+
+Buttons provide immediate interaction feedback.
+
+States:
+
+```text
+Default
+   ↓
+Hover
+   ↓
+Pressed
+   ↓
+Result
+```
+
+Possible feedback:
+
+- Border change
+- Background change
+- Very subtle scale response
+
+Button animation must never delay the action.
+
+---
+
+# Item Slots
+
+Item Slots may react to:
+
+- Hover
+- Selection
+- New item
+- Equipment change
+- Important rarity
+
+Hover feedback remains subtle.
+
+Selected items must be clearly identifiable.
+
+---
+
+# Progress Bars
+
+Progress Bars update smoothly.
+
+Used for:
+
+- HP
+- Zone progression
+- Masteries
+- Gathering
+- Refining
+- Craft
+- Workers
+
+Normal progress changes should animate rather than visually jump between values.
+
+Animation must never falsify the actual game state.
+
+---
+
+# Cooldowns
+
+Ability cooldowns use continuous visual progression.
+
+The player must immediately understand:
+
+- Ability ready
+- Ability cooling down
+- Remaining cooldown
+
+When an ability becomes ready, a short visual feedback may occur.
+
+Repeated flashing is prohibited.
+
+---
+
+# Loot Feedback
+
+Normal loot uses lightweight feedback.
+
+Important loot may use stronger feedback based on:
+
+- Quality
+- Rarity
+- Progression importance
+
+Effects may include:
+
+- Short glow
+- Highlight
+- Brief scale emphasis
+
+Routine drops must not continuously animate the interface.
+
+---
+
+# Equipment Changes
+
+Equipping an item may trigger a short confirmation effect.
+
+Relevant changes update immediately:
+
+- Character appearance
+- Item Power
+- Stats
+- Equipment Slot
+
+The animation must not delay the actual state change.
+
+---
+
+# Mastery Progression
+
+Normal mastery progression uses smooth Progress Bar updates.
+
+Meaningful milestones may trigger stronger feedback.
+
+Examples:
+
+```text
+Level Up
+25
+50
+75
+100
+```
+
+Standard XP gain does not trigger repeated effects.
+
+---
+
+# Craft & Production
+
+Production progress updates smoothly.
+
+Meaningful states may animate:
+
+```text
+STARTED
+   ↓
+PROGRESS
+   ↓
+COMPLETE
+```
+
+Completion may briefly highlight the relevant Card.
+
+Continuous production does not create repetitive animations.
+
+---
+
+# World Progression
+
+Segment progression may animate when a new segment is reached.
+
+Boss availability and zone unlocks may receive stronger feedback.
+
+Routine combat progression remains visually controlled.
+
+---
+
+# Notifications
+
+Toast notifications use:
+
+- Short fade
+- Short slide
+- Controlled disappearance
+
+Recommended transition:
+
+```text
+150–250 ms
+```
+
+Notifications must not aggressively enter the screen.
+
+---
+
+# Attention States
+
+Persistent attention indicators remain mostly static.
+
+A short animation may occur when the state first appears.
+
+Example:
+
+```text
+Worker becomes idle
+
+Production icon
+→ brief highlight
+→ static badge
+```
+
+Persistent pulsing should be avoided.
+
+---
+
+# Modals
+
+When required, Modals use a short fade transition.
+
+The background may receive a subtle overlay.
+
+Modal animations must remain faster than the interaction they protect.
+
+---
+
+# Scroll
+
+Scrolling should feel immediate and predictable.
+
+The UI must not use excessive inertia or decorative scroll animations.
+
+Programmatic movement to important content may use short smooth scrolling when useful.
+
+---
+
+# Game World Independence
+
+UI animation must never:
+
+- pause combat
+- modify simulation timing
+- affect gameplay calculations
+- delay gameplay state updates
+
+Visual feedback follows gameplay state.
+
+Gameplay state never waits for visual feedback.
+
+---
+
+# Performance
+
+Animations must remain lightweight.
+
+The interface may contain simultaneous:
+
+- combat animation
+- VFX
+- damage numbers
+- progress updates
+- cooldowns
+- UI feedback
+
+UI animations must not meaningfully reduce Game World performance.
+
+Expensive decorative effects should be avoided.
+
+---
+
+# Reduced Motion
+
+The architecture should allow non-essential UI movement to be reduced or disabled.
+
+Essential state feedback must remain understandable without animation.
+
+---
+
+# Visual Priority
+
+Animation intensity follows importance:
+
+```text
+Routine State
+    ↓
+Subtle
+
+Useful Event
+    ↓
+Visible
+
+Important Milestone
+    ↓
+Strong
+
+Exceptional Event
+    ↓
+Rare / Distinct
+```
+
+Strong animation is valuable because it is uncommon.
+
+---
+
+# Rules
+
+MUST
+
+- Use animation to communicate state.
+- Keep standard transitions short.
+- Preserve layout stability.
+- Update gameplay state immediately.
+- Keep animations performant.
+- Maintain readability without animation.
+
+MUST NOT
+
+- Animate elements without purpose.
+- Continuously pulse routine UI elements.
+- Delay player actions for animation.
+- Resize the global layout during panel transitions.
+- Interrupt the Game World.
+- Use excessive movement.
+
+SHOULD
+
+- Use 150–250 ms for standard transitions.
+- Smooth Progress Bar updates.
+- Reserve stronger feedback for meaningful events.
+- Keep hover feedback subtle.
+- Maintain consistent animation behavior across modules.

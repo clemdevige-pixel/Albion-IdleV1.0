@@ -1,0 +1,445 @@
+# UI_BIBLE/16_NOTIFICATIONS.md
+
+# Albion Idle — Notifications & Attention States
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Notification System informs the player about meaningful events without interrupting gameplay.
+
+Albion Idle continuously generates events.
+
+The UI must distinguish between:
+
+- information
+- useful attention
+- important warnings
+- required actions
+
+The player must never be overwhelmed by routine activity.
+
+---
+
+# Core Principle
+
+Notifications exist only when information is useful to the player.
+
+Routine game activity does not require notification.
+
+```text
+EVENT
+  ↓
+Does the player need to know?
+  ↓
+NO  → No notification
+YES → Appropriate attention state
+```
+
+---
+
+# Notification Levels
+
+## Information
+
+Low-priority feedback.
+
+Examples:
+
+- Significant loot obtained
+- Progress milestone
+- Production started
+
+Uses subtle visual feedback.
+
+---
+
+## Attention
+
+Something useful is available or completed.
+
+Examples:
+
+- Craft completed
+- Worker idle
+- Mastery milestone reached
+- Boss available
+- New zone unlocked
+
+The player should notice it but gameplay must continue uninterrupted.
+
+---
+
+## Warning
+
+Something prevents or negatively affects progression.
+
+Examples:
+
+- Inventory full
+- Bank full
+- Production blocked
+- Missing requirement
+
+Warnings must explain the problem.
+
+---
+
+## Critical
+
+Reserved for situations requiring immediate understanding.
+
+Critical notifications must remain extremely rare.
+
+They must never be used simply to make an event feel more important.
+
+---
+
+# Toast Notifications
+
+Temporary notifications appear in the upper-right area.
+
+Example:
+
+```text
+┌────────────────────────────┐
+│ ✓ CRAFT COMPLETE           │
+│                            │
+│ Permafrost Prism           │
+│                            │
+│ View Craft →               │
+└────────────────────────────┘
+```
+
+Toasts disappear automatically unless player action is required.
+
+---
+
+# Toast Content
+
+A notification should contain only:
+
+- Event type
+- Essential information
+- Optional contextual action
+
+Notifications must remain concise.
+
+---
+
+# Contextual Actions
+
+When useful, a notification may link directly to the relevant Right Panel module.
+
+Examples:
+
+```text
+Craft complete
+→ Craft
+
+Worker idle
+→ Production
+
+Inventory full
+→ Inventory
+
+Boss available
+→ World
+```
+
+Opening the relevant module does not interrupt the Game World.
+
+---
+
+# Navigation Badges
+
+Bottom Bar entries may display persistent attention indicators.
+
+Examples:
+
+```text
+Inventory   !
+Masteries   1
+Craft       ✓
+Production  !
+```
+
+Badges remain until the relevant information has been acknowledged or resolved.
+
+---
+
+# Badge Meaning
+
+Badges should communicate simple states.
+
+Examples:
+
+```text
+●  New information
+!  Attention required
+✓  Completed
+1  Available action / update
+```
+
+The exact iconography is finalized during visual mockups.
+
+---
+
+# Dashboard Integration
+
+The Dashboard acts as the persistent overview of relevant attention states.
+
+Examples:
+
+```text
+CRAFT
+Complete
+
+WORKER
+Idle
+
+WORLD
+Boss available
+```
+
+Temporary Toasts therefore do not need to remain permanently visible.
+
+---
+
+# World Feedback
+
+Events occurring directly in the Game World should use world-space feedback when appropriate.
+
+Examples:
+
+- Damage numbers
+- Loot drops
+- Combat effects
+- Enemy defeat
+- Boss appearance
+
+These events should not automatically create UI notifications.
+
+---
+
+# Loot
+
+Normal loot does not generate Toast notifications.
+
+Loot is communicated through:
+
+- Game World feedback
+- Recent Loot
+- Inventory updates
+
+Exceptional or progression-relevant loot may receive stronger feedback.
+
+This prevents constant notification spam during idle combat.
+
+---
+
+# Production
+
+Routine production progress does not generate notifications.
+
+Relevant events include:
+
+- Production completed
+- Production blocked
+- Worker idle
+
+Continuous production ticks remain silent.
+
+---
+
+# Masteries
+
+Normal mastery experience gain remains silent.
+
+Meaningful events may generate feedback.
+
+Examples:
+
+- Important milestone
+- Level 100 reached
+- New actionable progression
+
+---
+
+# World Progression
+
+Normal segment progression remains silent.
+
+Meaningful events may generate notifications.
+
+Examples:
+
+- Boss unlocked
+- Zone completed
+- New zone unlocked
+
+---
+
+# Duplicate Prevention
+
+The same event must not create multiple competing alerts.
+
+Example:
+
+```text
+Craft Complete
+
+Toast
++
+Craft Badge
++
+Dashboard State
+
+= Allowed when each serves a different duration.
+
+Multiple simultaneous Toasts
+for the same event
+
+= Not allowed.
+```
+
+---
+
+# Notification Queue
+
+When several Toasts occur simultaneously, they are queued or stacked within a strict visual limit.
+
+The notification area must never cover a significant portion of the Game World.
+
+Low-priority notifications may be merged or suppressed when necessary.
+
+---
+
+# Timing
+
+Notifications remain visible long enough to be understood.
+
+Routine Toasts disappear automatically.
+
+Warnings requiring player action may persist through:
+
+- Navigation Badge
+- Dashboard state
+- Contextual warning
+
+rather than permanently occupying the screen.
+
+---
+
+# Animation
+
+Notification animations are subtle.
+
+Recommended transition duration follows the Design System:
+
+```text
+150–250 ms
+```
+
+Animations may include:
+
+- Fade
+- Short slide
+- Subtle highlight
+
+Aggressive movement is prohibited.
+
+---
+
+# Sound
+
+Notifications may use audio feedback when appropriate.
+
+Sound priority must follow notification priority.
+
+Routine events should not continuously produce UI sounds.
+
+Audio settings must allow notification sounds to be reduced or disabled.
+
+---
+
+# Color
+
+Notification colors follow the shared Design System.
+
+Typical semantic usage:
+
+- Neutral → Information
+- Green → Success / Completion
+- Orange → Warning / Attention
+- Red → Critical problem
+
+Color must never be the only indicator of meaning.
+
+Icons and text must reinforce the state.
+
+---
+
+# Acknowledgement
+
+A notification is considered acknowledged when the player has meaningfully seen or interacted with the relevant information.
+
+Opening unrelated panels must not automatically clear important attention states.
+
+---
+
+# Notification History
+
+A permanent exhaustive notification history is not required for the primary UI.
+
+Important persistent information should instead remain visible through its relevant system.
+
+Examples:
+
+```text
+Worker idle
+→ Production
+
+Inventory full
+→ Inventory
+
+Boss available
+→ World
+```
+
+The interface should communicate game state rather than accumulate messages.
+
+---
+
+# Rules
+
+MUST
+
+- Notify only meaningful events.
+- Keep gameplay uninterrupted.
+- Explain warnings clearly.
+- Provide contextual navigation when useful.
+- Use persistent badges for unresolved attention states.
+- Keep notification volume controlled.
+- Preserve the Game World.
+
+MUST NOT
+
+- Notify every routine event.
+- Generate Toasts for every loot drop.
+- Generate Toasts for normal progression ticks.
+- Cover important Game World information.
+- Use permanent flashing effects.
+- Depend exclusively on color.
+- Create duplicate notifications for the same event.
+
+SHOULD
+
+- Prefer contextual information over interruption.
+- Group simultaneous low-priority events.
+- Use the Dashboard for persistent status.
+- Reserve strong effects for genuinely important events.
+- Keep Toasts short and actionable.

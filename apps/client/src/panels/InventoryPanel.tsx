@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PanelContainer } from "./PanelContainer";
 import { useGameBridge } from "../state/GameContext";
 import { usePanelManager } from "./usePanelManager";
+import { UI_MODULE_IDS } from "../ui/navigation";
 import { ItemTooltip } from "./ItemTooltip";
 import { getEnchantmentFrameClass, ItemVisual } from "./ItemVisual";
 
@@ -16,7 +17,7 @@ export function InventoryPanel(): JSX.Element | null {
   const state = useGameBridge();
   const [tooltipSlot, setTooltipSlot] = useState<number | null>(null);
 
-  if (activePanel !== "inventory") {
+  if (activePanel !== UI_MODULE_IDS.bank) {
     return null;
   }
 

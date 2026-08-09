@@ -5,6 +5,7 @@ import type { GameBridge, InventoryVM, InventorySlotVM, EquipmentSlotVM, StatEnt
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 import { CLIENT_ABILITIES, resolvePrimaryAbilityId } from "../data/weaponContentCatalog";
 import { resolveRepairableInfo } from "../data/itemContentCatalog";
+import { isProductionMaterial } from "../runtime/ProductionStorage.js";
 
 const STAT_IDS: readonly StatId[] = [
   "stat_max_health" as StatId,
@@ -17,59 +18,19 @@ const STAT_IDS: readonly StatId[] = [
   "stat_move_speed" as StatId,
 ];
 
-/**
- * Production materials are stored by the inventory system for persistence and
- * crafting, but are displayed exclusively in the Production panel.
- *
- * This convention is tier-agnostic: future T5/T6 raw and refined materials
- * inherit the same behaviour without being added to a manual allow-list.
- */
-function isProductionStorageItem(itemId: string): boolean {
-  if (
-    itemId === "item_resource_enchantment_essence"
-    || itemId === "item_resource_arcane_crystal"
-    || itemId === "item_resource_enchantment_catalyst"
-  ) {
-    return false;
-  }
-  return itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_");
-}
-
 export function syncInventoryToBridge(bridge: GameBridge, inventoryManager: InventoryManager, entityId: EntityId): void {
   const slots = inventoryManager.listSlots(entityId);
-  const visibleSlots: InventorySlotVM[] = [];
-  const emptySlots: InventorySlotVM[] = [];
-
-  for (const s of slots) {
-    const isVisibleItem =
-      s.entry !== undefined && !isProductionStorageItem(s.entry.itemId);
-    if (isVisibleItem) {
-      visibleSlots.push({
-        position: s.position,
-        itemId: s.entry?.itemId,
-        instanceId: s.entry?.instanceId,
-        quantity: s.entry?.quantity ?? 0,
-        enchantment: getEnchantmentLevel(s.entry),
-      });
-      continue;
-    }
-    emptySlots.push({
-      position: s.position,
-      itemId: undefined,
-      instanceId: undefined,
-      quantity: 0,
-      enchantment: 0,
-    });
-  }
-
-  // Production resources live in dedicated counters. Keep their physical
-  // inventory positions for gameplay, but render all visible items first so
-  // hidden materials never create blank holes in the grid.
-  const slotVMs = [...visibleSlots, ...emptySlots];
+  const slotVMs: InventorySlotVM[] = slots.map((s) => ({
+    position: s.position,
+    itemId: s.entry?.itemId,
+    instanceId: s.entry?.instanceId,
+    quantity: s.entry?.quantity ?? 0,
+    enchantment: s.entry === undefined ? 0 : getEnchantmentLevel(s.entry),
+  }));
   const vm: InventoryVM = {
     slots: slotVMs,
     capacity: inventoryManager.getCapacity(entityId),
-    occupied: visibleSlots.length,
+    occupied: inventoryManager.getOccupiedCount(entityId),
   };
   bridge.updateInventory(vm);
 }
@@ -366,6 +327,7 @@ export function syncCraftingToBridge(
   bridge: GameBridge,
   inventoryManager: InventoryManager,
   heroId: EntityId,
+  productionStorageId: EntityId,
   productionTier: 3 | 4,
   resourceOutputItemIds: {
     woodItemId: string;
@@ -382,19 +344,36 @@ export function syncCraftingToBridge(
     requirements: readonly { itemId: string; quantity: number }[];
   }[],
 ): void {
-  const plankQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.woodItemId);
-  const barQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.metalItemId);
-  const leatherQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.leatherItemId);
-  const clothQuantity = inventoryManager.getTotalQuantity(heroId, resourceOutputItemIds.clothItemId);
+  const plankQuantity = inventoryManager.getTotalQuantity(productionStorageId, resourceOutputItemIds.woodItemId);
+  const barQuantity = inventoryManager.getTotalQuantity(productionStorageId, resourceOutputItemIds.metalItemId);
+  const leatherQuantity = inventoryManager.getTotalQuantity(productionStorageId, resourceOutputItemIds.leatherItemId);
+  const clothQuantity = inventoryManager.getTotalQuantity(productionStorageId, resourceOutputItemIds.clothItemId);
 
   const recipes: CraftingRecipeVM[] = craftRecipes.map((recipe) => {
     const requirements = recipe.requirements.map((requirement) => ({
       itemId: requirement.itemId,
       quantity: requirement.quantity,
-      available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
+      available: inventoryManager.getTotalQuantity(
+        isProductionMaterial(requirement.itemId) ? productionStorageId : heroId,
+        requirement.itemId,
+      ),
     }));
     const plankRequirement = requirements.find((entry) => entry.itemId.includes("planks"));
     const barRequirement = requirements.find((entry) => entry.itemId.includes("bar"));
+
+    const canCraft = canCraftRecipe(inventoryManager, heroId, recipe.requirements, {
+      itemId: recipe.outputItemId,
+      quantity: 1,
+    }, (itemId) => isProductionMaterial(itemId) ? productionStorageId : heroId);
+    const missingRequirement = requirements.find(
+      (requirement) => requirement.available < requirement.quantity,
+    );
+    const missingIsPredecessor = missingRequirement !== undefined
+      && craftRecipes.some(
+        (candidate) =>
+          candidate.outputItemId === missingRequirement.itemId
+          && candidate.tier === recipe.tier - 1,
+      );
 
     return {
       family: recipe.family,
@@ -410,7 +389,16 @@ export function syncCraftingToBridge(
       barItemId: barRequirement?.itemId ?? "",
       requirements,
       craftedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
-      canCraft: canCraftRecipe(inventoryManager, heroId, recipe.requirements),
+      canCraft,
+      ...(canCraft
+        ? {}
+        : {
+            blockedReason: missingRequirement === undefined
+              ? "inventory_full" as const
+              : missingIsPredecessor
+                ? "missing_predecessor" as const
+                : "missing_materials" as const,
+          }),
     };
   });
 
@@ -478,7 +466,7 @@ export function syncRefiningToBridge(
   },
   reservedInputs: readonly { itemId: string; quantity: number }[],
   inventoryManager: InventoryManager,
-  heroId: EntityId,
+  productionStorageId: EntityId,
 ): void {
   const requiredTicks = session?.getRequiredTicks() ?? recipe.durationTicks;
 
@@ -491,15 +479,15 @@ export function syncRefiningToBridge(
     durationSeconds: requiredTicks * 0.5,
     inputQuantity: recipe.requirements[0]?.quantity ?? 0,
     outputQuantity: recipe.outputQuantity,
-    rawStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.rawItemId),
-    refinedStoredQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
+    rawStoredQuantity: inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
+    refinedStoredQuantity: inventoryManager.getTotalQuantity(productionStorageId, recipe.outputItemId),
     reservedInputQuantity: session === undefined
       ? 0
       : reservedInputs.reduce((total, entry) => total + entry.quantity, 0),
     requirements: recipe.requirements.map((requirement) => ({
       itemId: requirement.itemId,
       quantity: requirement.quantity,
-      available: inventoryManager.getTotalQuantity(heroId, requirement.itemId),
+      available: inventoryManager.getTotalQuantity(productionStorageId, requirement.itemId),
       reserved: reservedInputs.find((entry) => entry.itemId === requirement.itemId)?.quantity ?? 0,
     })),
   });

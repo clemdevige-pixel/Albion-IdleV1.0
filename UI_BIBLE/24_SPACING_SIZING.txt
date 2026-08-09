@@ -1,0 +1,688 @@
+# UI_BIBLE/24_SPACING_SIZING.md
+
+# Albion Idle — Spacing & Sizing
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+This document defines the sizing and spacing principles used throughout the Albion Idle interface.
+
+The goal is to create a compact, readable and consistent PC interface without prematurely locking the design to exact pixel dimensions.
+
+Final numerical values are validated during the mockup phase.
+
+---
+
+# Core Principle
+
+Spacing creates hierarchy.
+
+Size communicates importance.
+
+```text
+Important
+   ↓
+More visual presence
+
+Secondary
+   ↓
+More compact
+```
+
+The UI must feel dense but never cramped.
+
+---
+
+# Reference
+
+Primary design resolution:
+
+```text
+1920 × 1080
+```
+
+All initial sizing decisions and mockups are evaluated at this resolution.
+
+Responsive behavior follows:
+
+`19_RESPONSIVE_RESOLUTIONS.md`
+
+---
+
+# Global Layout
+
+The interface contains four permanent regions:
+
+```text
++----------------------------------------------------------+
+| HEADER                                                   |
++--------------------------------------+-------------------+
+|                                      |                   |
+| GAME WORLD                           | RIGHT PANEL       |
+|                                      |                   |
++--------------------------------------+-------------------+
+| BOTTOM BAR                                               |
++----------------------------------------------------------+
+```
+
+Their proportions must remain visually stable.
+
+---
+
+# Game World
+
+The Game World remains the dominant region.
+
+Target width:
+
+```text
+65% → 75%
+```
+
+This is a design range, not a fixed value.
+
+The final proportion is determined through visual mockups.
+
+---
+
+# Right Panel
+
+Target width:
+
+```text
+25% → 35%
+```
+
+The panel must remain large enough to comfortably display:
+
+- Cards
+- Inventory Grids
+- Craft recipes
+- Masteries
+- Production
+- Character equipment
+- World progression
+
+The panel must not unnecessarily reduce the Game World.
+
+---
+
+# Header
+
+The Header remains compact.
+
+Its height must be sufficient for:
+
+- Zone information
+- Progression
+- Resources
+- Notifications
+- Profile
+
+but must not consume significant vertical Game World space.
+
+The Header height remains identical across modules.
+
+---
+
+# Bottom Bar
+
+The Bottom Bar must provide enough height for:
+
+- Chat
+- Navigation
+- Ability Bar
+
+The Ability Bar determines much of the minimum useful height.
+
+The Bottom Bar must remain compact enough to preserve Game World height.
+
+---
+
+# Spacing Scale
+
+The interface uses a limited spacing scale.
+
+Conceptual levels:
+
+```text
+XS
+S
+M
+L
+XL
+```
+
+Usage example:
+
+```text
+XS
+Icon ↔ Label
+
+S
+Elements inside a compact row
+
+M
+Standard Card padding
+
+L
+Between major sections
+
+XL
+Exceptional structural separation
+```
+
+Exact pixel values are defined after mockup validation.
+
+---
+
+# Consistency
+
+Identical spacing relationships must use identical spacing values.
+
+Bad:
+
+```text
+Card A padding = arbitrary
+
+Card B padding = different arbitrary value
+
+Card C padding = another value
+```
+
+Preferred:
+
+```text
+Card A
+Card B
+Card C
+
+→ Shared spacing tokens
+```
+
+---
+
+# Panel Padding
+
+All Right Panel modules use the same primary horizontal padding.
+
+Individual modules must not independently define their outer margins.
+
+This creates visual stability when switching modules.
+
+---
+
+# Cards
+
+Cards use shared internal padding.
+
+Card size depends on content.
+
+```text
+Compact Card
+→ Small status information
+
+Standard Card
+→ Normal module content
+
+Large Card
+→ Important contextual content
+```
+
+Different Card sizes use the same visual language.
+
+---
+
+# Card Separation
+
+Cards must be visually separated without excessive empty space.
+
+The Right Panel should feel compact and information-rich.
+
+Large decorative gaps are prohibited.
+
+---
+
+# Section Spacing
+
+Major sections receive more separation than elements belonging to the same section.
+
+Example:
+
+```text
+SECTION TITLE
+
+Card
+Card
+
+        ← larger separation
+
+NEXT SECTION
+
+Card
+```
+
+Hierarchy should remain understandable even without borders around every element.
+
+---
+
+# Item Slots
+
+Item Slots use consistent dimensions across:
+
+- Inventory
+- Bank
+- Character
+- Craft
+- Loot
+
+Minor contextual variations may exist, but the same item should feel visually consistent everywhere.
+
+Item Slots must remain large enough for:
+
+- Icon recognition
+- Quantity
+- Tier / enchantment indicators
+- Selection state
+
+---
+
+# Inventory Grid
+
+Grid spacing must remain compact.
+
+Example:
+
+```text
+[ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ]
+```
+
+Excessive gaps between slots waste valuable Right Panel space.
+
+Slots must never touch each other visually.
+
+---
+
+# Icons
+
+Icons use a limited set of standard sizes.
+
+Conceptual hierarchy:
+
+```text
+Small
+→ Inline information
+
+Medium
+→ Navigation / Controls
+
+Large
+→ Items / Important Cards
+
+Hero
+→ Exceptional focal presentation
+```
+
+Arbitrary icon sizes should be avoided.
+
+---
+
+# Buttons
+
+Buttons use standardized heights.
+
+Primary and secondary buttons may differ visually but should maintain compatible sizing.
+
+Buttons must provide comfortable mouse targets.
+
+---
+
+# Primary Actions
+
+Important actions may occupy additional horizontal space.
+
+Example:
+
+```text
+[          CRAFT          ]
+```
+
+Primary actions should be immediately recognizable.
+
+They must not become unnecessarily oversized.
+
+---
+
+# Compact Actions
+
+Secondary actions may use compact buttons.
+
+Example:
+
+```text
+[Equip]
+
+[Stop]
+
+[Max]
+```
+
+Their interaction target must remain comfortable.
+
+---
+
+# Typography Sizing
+
+Typography uses a limited hierarchy.
+
+```text
+Panel Title
+
+Section Title
+
+Primary Value
+
+Body
+
+Secondary Information
+
+Micro Information
+```
+
+Exact sizes are defined through Design System tokens after mockup validation.
+
+---
+
+# Numeric Information
+
+Important numbers may receive greater visual weight.
+
+Examples:
+
+```text
+1,245
+ITEM POWER
+
+72
+MASTERY
+
+18 / 20
+SEGMENTS
+```
+
+Numbers should not become oversized simply because they are statistics.
+
+---
+
+# Progress Bars
+
+Progress Bars use standardized height families.
+
+Examples:
+
+```text
+Major
+→ Hero / Boss HP
+
+Standard
+→ Masteries / Production
+
+Compact
+→ Cards / Secondary progress
+```
+
+The same semantic importance should use the same Progress Bar size.
+
+---
+
+# Lists
+
+List rows maintain consistent heights according to their content type.
+
+Compact lists are preferred for:
+
+- Masteries
+- Workers
+- Recipes
+- Objectives
+
+Rows should not become large Cards when a simple row communicates the information effectively.
+
+---
+
+# Search & Filters
+
+Search bars, dropdowns and filters share compatible heights.
+
+Example:
+
+```text
+[ Search................ ] [Tier ▼] [Type ▼]
+```
+
+Controls should visually align when placed on the same row.
+
+---
+
+# Tabs
+
+Tabs remain compact.
+
+They must clearly communicate:
+
+- Available sections
+- Current section
+
+Tabs must not consume large amounts of vertical space.
+
+---
+
+# Tooltips
+
+Tooltip width adapts to content within reasonable limits.
+
+Very wide Tooltips are prohibited.
+
+Long content should wrap naturally.
+
+Tooltips must remain visually smaller than the module they explain.
+
+---
+
+# Modals
+
+Modals use only the space necessary for their task.
+
+Confirmation dialogs remain compact.
+
+A Modal must not become a disguised full-screen interface.
+
+---
+
+# Click Targets
+
+Interactive elements must remain comfortable to select with a mouse.
+
+Visual compactness must not create excessively small interaction targets.
+
+This applies especially to:
+
+- Item Slots
+- Navigation
+- Tabs
+- Buttons
+- Filters
+- Expand controls
+
+---
+
+# Density
+
+Albion Idle targets a density between:
+
+```text
+Minimal UI
+     ↕
+ALBION IDLE
+     ↕
+Dense MMO UI
+```
+
+The objective is:
+
+```text
+High useful information density
++
+Strong hierarchy
++
+Low visual clutter
+```
+
+---
+
+# Empty Space
+
+Empty space is used intentionally for hierarchy and readability.
+
+It must not exist simply because a component was given an unnecessarily large fixed height.
+
+Cards should generally adapt to their content.
+
+---
+
+# Alignment
+
+Shared alignment lines should be maintained.
+
+Example:
+
+```text
+| PANEL TITLE
+|
+| SECTION
+| Card
+| Card
+|
+| SECTION
+| Card
+```
+
+Misaligned elements make a compact interface appear significantly more chaotic.
+
+---
+
+# Stable Dimensions
+
+Persistent regions maintain stable dimensions during normal navigation.
+
+Switching:
+
+```text
+Inventory
+→ Craft
+→ Masteries
+```
+
+must not cause:
+
+- Header resizing
+- Bottom Bar resizing
+- Right Panel width changes
+- Game World jumps
+
+---
+
+# Responsive Adaptation
+
+When available space decreases:
+
+```text
+1. Remove redundant information
+2. Shorten labels
+3. Reflow content
+4. Reduce spacing moderately
+5. Adjust Grid columns
+```
+
+Do not immediately reduce every element proportionally.
+
+---
+
+# Mockup Phase
+
+Exact numerical tokens are intentionally not frozen in this document.
+
+During the visual mockup phase, the following will be defined:
+
+```text
+Header height
+Bottom Bar height
+Right Panel width
+Panel padding
+Card padding
+Section gaps
+Item Slot size
+Icon sizes
+Button heights
+Progress Bar heights
+Typography sizes
+Border radius
+```
+
+Once validated, these values become shared Design System tokens.
+
+---
+
+# Implementation
+
+Sizing and spacing values must be centralized.
+
+Conceptually:
+
+```text
+UI Tokens
+   ↓
+Components
+   ↓
+Modules
+```
+
+Individual modules should not contain arbitrary spacing values when an existing token is available.
+
+---
+
+# Rules
+
+MUST
+
+- Use shared spacing values.
+- Use standardized component dimensions.
+- Keep persistent layout regions stable.
+- Maintain comfortable interaction targets.
+- Keep the Right Panel compact.
+- Preserve Game World dominance.
+- Centralize final sizing values.
+
+MUST NOT
+
+- Introduce arbitrary spacing per module.
+- Use large decorative empty areas.
+- Shrink controls until interaction becomes difficult.
+- Resize global regions when switching modules.
+- Hardcode unnecessary one-off dimensions.
+- Freeze exact pixel values before visual validation.
+
+SHOULD
+
+- Favor compact layouts.
+- Use spacing to communicate hierarchy.
+- Keep related information visually close.
+- Maintain strong alignment.
+- Use a limited number of sizing tokens.
+- Finalize numerical values through the mockup phase.

@@ -1,0 +1,361 @@
+# UI_BIBLE/11_MASTERIES.md
+
+# Albion Idle — Masteries Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Masteries Panel provides a compact overview of long-term equipment progression.
+
+It must allow the player to understand mastery levels, progression and available improvements without leaving the Game World.
+
+---
+
+# Core Principle
+
+Masteries use a compact hierarchical list rather than a traditional full-screen skill tree.
+
+The interface prioritizes:
+
+- readability
+- progression visibility
+- comparison between mastery branches
+- efficient use of the Right Panel
+
+---
+
+# Structure
+
+```text
++--------------------------------+
+| MASTERIES                      |
++--------------------------------+
+| WEAPONS                        |
+|                                |
+| ⚔ Swords                  72   |
+|   ├ Broadsword       81        |
+|   │ █████████████░░      82%   |
+|   ├ Claymore         46        |
+|   └ Dual Swords      23        |
+|                                |
+| 🏹 Bows                   64   |
+|   ├ Bow              71        |
+|   ├ Warbow           52        |
+|   └ ...                        |
++--------------------------------+
+| ARMOR                          |
+|                                |
+| Head                           |
+| Torso                          |
+| Boots                          |
++--------------------------------+
+```
+
+Exact categories depend on the mastery structure defined by gameplay data.
+
+---
+
+# Mastery Families
+
+Masteries are grouped into logical equipment families.
+
+Examples:
+
+- Weapons
+- Head
+- Torso
+- Boots
+
+Weapon families may contain individual weapon masteries.
+
+Example:
+
+```text
+SWORDS
+│
+├── Broadsword
+├── Claymore
+├── Dual Swords
+└── ...
+```
+
+The UI must reflect the actual gameplay hierarchy rather than inventing a separate progression structure.
+
+---
+
+# Family Rows
+
+Each mastery family displays:
+
+- Family icon
+- Family name
+- Relevant progression level
+- Expand / Collapse control
+
+Example:
+
+```text
+⚔ Swords                         72
+```
+
+Selecting or expanding the family reveals its individual masteries.
+
+---
+
+# Mastery Rows
+
+Each individual mastery displays:
+
+- Equipment icon
+- Name
+- Current level
+- Progress toward next level
+- Available progression indicator when relevant
+
+Example:
+
+```text
+Broadsword                   81
+█████████████░░              82%
+```
+
+---
+
+# Progression
+
+Mastery progression must be visually immediate.
+
+The shared Progress Bar component is used.
+
+The player must be able to distinguish:
+
+- Current level
+- Current progress
+- Maximum level
+- Available progression
+
+without opening another screen.
+
+---
+
+# Mastery Details
+
+Selecting a mastery reveals contextual details inside the same Right Panel.
+
+Possible information:
+
+- Current level
+- Current bonuses
+- Next bonus
+- Progress required
+- Maximum level
+- Overflow information when relevant
+
+Detailed information must not permanently occupy space when no mastery is selected.
+
+---
+
+# Bonuses
+
+Mastery bonuses must clearly communicate their gameplay effect.
+
+Example:
+
+```text
+CURRENT BONUS
+
+Damage
++12
+
+NEXT LEVEL
+
+Damage
++13
+```
+
+Only gameplay-relevant values should be displayed.
+
+---
+
+# Level 100
+
+Maximum standard mastery level:
+
+```text
+100
+```
+
+Reaching the maximum must be visually recognizable without excessive effects.
+
+Example:
+
+```text
+Broadsword                  100
+MAX
+```
+
+---
+
+# Overflow
+
+Progress earned beyond level 100 may be stored according to the mastery gameplay rules.
+
+When applicable, the UI displays:
+
+- Stored overflow
+- Conversion efficiency
+- Available redistribution
+
+Overflow information remains secondary until it becomes actionable.
+
+---
+
+# Redistribution
+
+When stored mastery progression can be redistributed, the relevant action is available from the selected mastery details.
+
+The interface must clearly communicate:
+
+- Amount available
+- Cost
+- Result
+- Target mastery
+
+Any irreversible or costly redistribution requires confirmation.
+
+---
+
+# Collapsible Families
+
+Mastery families may be collapsed.
+
+Example:
+
+```text
+▼ Swords
+    Broadsword
+    Claymore
+    Dual Swords
+
+▶ Bows
+
+▶ Fire Staffs
+```
+
+This allows large mastery systems to remain manageable inside the Right Panel.
+
+---
+
+# Search
+
+A search control may be used when the number of masteries becomes large.
+
+Search matches:
+
+- Equipment family
+- Individual mastery
+
+Search must filter the existing hierarchy rather than creating a separate view.
+
+---
+
+# Filters
+
+Useful filters may include:
+
+- All
+- Weapons
+- Armor
+- In Progress
+- Maxed
+
+Filters remain compact.
+
+---
+
+# Active Progression
+
+Masteries currently gaining progression should be immediately identifiable.
+
+The effect must remain subtle.
+
+The interface should communicate activity without creating constant visual noise.
+
+---
+
+# Milestones
+
+Meaningful mastery milestones may receive a temporary indicator.
+
+Examples:
+
+```text
+LEVEL 25
+LEVEL 50
+LEVEL 75
+LEVEL 100
+```
+
+Milestones must correspond to actual gameplay significance.
+
+---
+
+# Visual Hierarchy
+
+Priority order:
+
+```text
+Mastery Families
+       ↓
+Individual Masteries
+       ↓
+Current Progress
+       ↓
+Selected Mastery Details
+       ↓
+Overflow / Redistribution
+```
+
+---
+
+# Scrolling
+
+The mastery hierarchy uses vertical scrolling.
+
+Horizontal scrolling is prohibited.
+
+Collapsed families reduce unnecessary scrolling.
+
+---
+
+# Rules
+
+MUST
+
+- Use a hierarchical list.
+- Group masteries logically.
+- Display mastery levels clearly.
+- Display current progression.
+- Support expandable and collapsible families.
+- Keep the Game World visible.
+- Reflect the actual gameplay mastery structure.
+
+MUST NOT
+
+- Use a full-screen skill tree.
+- Require zooming or panning.
+- Invent progression relationships for visual purposes.
+- Overload every mastery row with detailed statistics.
+- Replace the Game World.
+
+SHOULD
+
+- Make active progression easy to identify.
+- Keep detailed bonuses contextual.
+- Support search when mastery volume requires it.
+- Make maximum-level masteries immediately recognizable.
+- Keep overflow and redistribution secondary until relevant.

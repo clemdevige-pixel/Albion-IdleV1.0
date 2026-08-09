@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { CurrencyDisplay } from "../panels/CurrencyDisplay";
-import { useGameBridge } from "../state/GameContext";
+import { useHeaderUiModel } from "../ui/state";
 import {
   updateNotificationPreferences,
   useNotificationPreferences,
 } from "../state/notificationPreferences";
 
 export function TopBar(): JSX.Element {
-  const state = useGameBridge();
+  const header = useHeaderUiModel();
+  const wallet = { silver: header.silver, incomeRate: header.incomeRate };
+  const world = { biomeName: header.biomeName, zoneProgress: header.zoneProgress };
   const preferences = useNotificationPreferences();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -27,12 +29,12 @@ export function TopBar(): JSX.Element {
         <div className="topbar__player-info">
           <span className="topbar__player-name">Adventurer</span>
           <span className="topbar__player-level">
-            {state.world.biomeName !== "" ? state.world.biomeName : "—"}
+            {world.biomeName !== "" ? world.biomeName : "—"}
           </span>
           <div className="topbar__xp-bar">
             <div
               className="topbar__xp-fill"
-              style={{ width: `${String(state.world.zoneProgress)}%` }}
+              style={{ width: `${String(world.zoneProgress)}%` }}
             />
           </div>
         </div>
@@ -40,8 +42,8 @@ export function TopBar(): JSX.Element {
 
       <div className="topbar__currency">
         <CurrencyDisplay
-          amount={state.wallet.silver}
-          incomeRate={state.wallet.incomeRate}
+          amount={wallet.silver}
+          incomeRate={wallet.incomeRate}
         />
       </div>
 

@@ -1,0 +1,227 @@
+# UI_BIBLE/03_DESIGN_SYSTEM.md
+
+# Albion Idle — Design System
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Design System defines the visual identity of Albion Idle.
+
+Every interface element must follow these rules.
+
+Consistency has priority over originality.
+
+---
+
+# Visual Direction
+
+Albion Idle uses a modern MMORPG-inspired interface.
+
+The interface is high-definition.
+
+The game world remains pixel art.
+
+The UI must feel premium, clean and timeless.
+
+---
+
+# Design Philosophy
+
+- Readability first.
+- Consistency first.
+- Information before decoration.
+- Visual hierarchy over visual complexity.
+
+---
+
+# Information Density
+
+The interface should display a large amount of useful information.
+
+However, information must always remain easy to read.
+
+Every element must have a clear purpose.
+
+No visual clutter.
+
+---
+
+# Color Palette
+
+Primary
+
+- Black
+- Dark Brown
+- Gold
+
+Secondary
+
+- Blue (Magic)
+- Green (Positive / Progress)
+- Red (Danger / Errors)
+- Orange (Warnings)
+
+Neutral
+
+- Dark Gray
+- Light Gray
+
+---
+
+# Typography
+
+The interface uses a single font family.
+
+Three hierarchy levels only:
+
+- Title
+- Subtitle
+- Body
+
+Typography must remain clean and highly readable.
+
+---
+
+# Panels
+
+Panels use:
+
+- dark background
+- thin borders
+- subtle shadows
+
+Panels should never dominate the Game World.
+
+---
+
+# Cards
+
+Cards are the primary information container.
+
+Every panel is composed of reusable cards.
+
+Cards share identical spacing, borders and typography.
+
+---
+
+# Buttons
+
+Buttons use the shared visual language.
+
+States:
+
+- Default
+- Hover
+- Active
+- Disabled
+
+Animations remain subtle.
+
+---
+
+# Icons
+
+Icons are detailed.
+
+Icons follow a MMORPG visual language.
+
+Icons should remain immediately recognizable.
+
+---
+
+# Progress Bars
+
+Progress bars are used consistently throughout the game.
+
+Examples:
+
+- Health
+- Experience
+- Crafting
+- Gathering
+- Refining
+- Workers
+- Masteries
+
+All progress bars share the same style.
+
+---
+
+# Animations
+
+Animations should remain subtle.
+
+Recommended duration:
+
+150–250 ms
+
+Animations exist to improve clarity.
+
+Never to distract the player.
+
+---
+
+# Shadows
+
+Use subtle shadows.
+
+Never excessive.
+
+---
+
+# Glow
+
+Glow is reserved for important events.
+
+Examples:
+
+- Loot
+- Legendary items
+- Available rewards
+- Important notifications
+
+Glow should never become permanent decoration.
+
+---
+
+# Visual Consistency
+
+Every screen must appear to belong to the same game.
+
+No screen may introduce a different visual language.
+
+---
+
+# Quality Target
+
+The interface targets premium MMORPG quality.
+
+Every design decision should move toward this objective.
+
+---
+
+# Rules
+
+MUST
+
+- Use the shared Design System.
+- Prioritize readability.
+- Reuse existing components.
+- Keep visual consistency.
+
+MUST NOT
+
+- Create isolated visual styles.
+- Overuse effects.
+- Sacrifice readability for decoration.
+
+SHOULD
+
+- Use subtle animations.
+- Use consistent spacing.
+- Use consistent iconography.
+- Keep information organized.

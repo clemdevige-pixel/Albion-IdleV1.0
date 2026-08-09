@@ -1,0 +1,305 @@
+# UI_BIBLE/02_LAYOUT.md
+
+# Albion Idle — Global Layout
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The layout defines the permanent structure of Albion Idle.
+
+It must remain stable throughout the entire game.
+
+Every future feature must integrate into this layout instead of creating a new screen.
+
+---
+
+# Core Principle
+
+Albion Idle is built around a single persistent screen.
+
+The player never leaves the game world.
+
+Every interface element exists around the world rather than replacing it.
+
+---
+
+# Global Structure
+
++---------------------------------------------------------------+
+| HEADER                                                        |
++---------------------------------------------------------------+
+|                                                               |
+|                                                               |
+|                       GAME WORLD                              |
+|                                                               |
+|                                                               |
+|                                      RIGHT PANEL              |
+|                                      (Contextual UI)          |
+|                                                               |
+|                                                               |
++---------------------------------------------------------------+
+| CHAT | SKILLS | NAVIGATION                                    |
++---------------------------------------------------------------+
+
+---
+
+# Screen Regions
+
+## Header
+
+Permanent.
+
+Contains global information.
+
+Examples:
+
+- Player
+- Zone
+- Segment progression
+- Resources
+- Currency
+- Notifications
+- Connection status
+
+The header must never disappear.
+
+---
+
+## Game World
+
+The Game World is the visual center of Albion Idle.
+
+It contains:
+
+- combat
+- enemies
+- player
+- environment
+- projectiles
+- VFX
+- floating texts
+- events
+- bosses
+- animations
+
+The Game World MUST remain visible at all times.
+
+Target width:
+
+65% → 75%
+
+The exact value will be determined during the mockup phase.
+
+---
+
+## Right Panel
+
+Permanent.
+
+Never removed.
+
+Never replaced by a popup.
+
+Purpose:
+
+Display contextual information.
+
+When no module is selected:
+
+Display the Dashboard.
+
+When a module is selected:
+
+Replace only the panel content.
+
+Examples:
+
+Dashboard
+
+↓
+
+Character
+
+↓
+
+Inventory
+
+↓
+
+Craft
+
+↓
+
+Island
+
+↓
+
+Workers
+
+↓
+
+Masteries
+
+↓
+
+World
+
+↓
+
+Bank
+
+The world remains visible while switching modules.
+
+---
+
+## Bottom Area
+
+Permanent.
+
+Contains:
+
+- Chat
+- Skill Bar
+- Main Navigation
+
+---
+
+# Dashboard
+
+The Dashboard is the default state.
+
+It is displayed whenever no module is selected.
+
+The panel should never appear empty.
+
+Possible sections:
+
+- Current objectives
+- Production
+- Workers
+- Craft queue
+- Refining
+- Masteries
+- Recent loot
+- Session statistics
+
+---
+
+# Navigation Philosophy
+
+The player never navigates between pages.
+
+The player only changes the content displayed inside the Right Panel.
+
+Navigation flow:
+
+Dashboard
+
+↓
+
+Character
+
+↓
+
+Inventory
+
+↓
+
+Craft
+
+↓
+
+Island
+
+↓
+
+Dashboard
+
+The Game World never changes.
+
+---
+
+# Chat
+
+Location:
+
+Bottom-left.
+
+Behavior:
+
+Compact by default.
+
+Expandable.
+
+Never obstructs the Game World.
+
+---
+
+# Skill Bar
+
+Permanent.
+
+Centered.
+
+Always visible.
+
+Never moved into another panel.
+
+---
+
+# Notifications
+
+Displayed in the upper-right area.
+
+Short duration.
+
+Never interrupt gameplay.
+
+---
+
+# Layout Rules
+
+MUST
+
+- Keep the Game World visible.
+- Keep the Header visible.
+- Keep the Bottom Bar visible.
+- Keep the Right Panel visible.
+
+MUST NOT
+
+- Open full-screen interfaces.
+- Hide the Game World.
+- Replace the entire screen.
+
+SHOULD
+
+- Maintain visual stability.
+- Avoid layout shifts.
+- Prioritize readability.
+- Keep interaction within one or two clicks.
+
+---
+
+# Future Compatibility
+
+This layout must support future systems without structural modifications.
+
+Examples:
+
+- Guild
+- Marketplace
+- Dungeons
+- Expeditions
+- Housing
+- Events
+- Achievements
+- Collections
+
+New systems must integrate into the existing Right Panel.
+
+The global layout must never change.

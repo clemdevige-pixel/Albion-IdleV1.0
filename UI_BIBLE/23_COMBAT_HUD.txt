@@ -1,0 +1,638 @@
+# UI_BIBLE/23_COMBAT_HUD.md
+
+# Albion Idle — Combat HUD
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Combat HUD communicates everything required to understand the active fight without opening another module.
+
+Combat remains the visual centerpiece of Albion Idle.
+
+The HUD must support the Game World without covering or competing with it.
+
+---
+
+# Core Principle
+
+The player must understand the combat state at a glance:
+
+1. Who am I fighting?
+2. How healthy are we?
+3. What abilities are available?
+4. Where am I in the current zone progression?
+5. What important combat event just happened?
+
+---
+
+# Global Structure
+
+```text
++------------------------------------------------------+
+|                  SEGMENT PROGRESS                    |
+|              ●──●──●──●──○──○──★                   |
+|                                                      |
+|                                                      |
+| HERO                              ENEMY              |
+|                                                      |
+|  842                              -126               |
+|                                                      |
+|                                                      |
+| [ HERO HP ]                     [ ENEMY HP ]          |
+|                                                      |
++------------------------------------------------------+
+|               COMBAT STATE / ABILITIES               |
++------------------------------------------------------+
+```
+
+Exact positioning is finalized during the mockup phase.
+
+---
+
+# Visual Priority
+
+Priority order:
+
+```text
+Game World
+    ↓
+Characters / Enemies
+    ↓
+Health & Combat State
+    ↓
+Important Combat Feedback
+    ↓
+Segment Progression
+    ↓
+Secondary Information
+```
+
+The HUD must never visually dominate the characters or environment.
+
+---
+
+# Hero
+
+The Hero remains clearly identifiable at all times.
+
+The HUD may display near the Hero:
+
+- Health
+- Relevant status effects
+- Important temporary combat states
+
+Permanent character statistics do not belong inside the Game World.
+
+---
+
+# Hero Health
+
+Hero health uses the shared Progress Bar component.
+
+Example:
+
+```text
+HP
+
+██████████████░░░
+
+2,480 / 2,840
+```
+
+The exact amount of numeric information displayed directly in the world is determined during mockup testing.
+
+Health loss must remain immediately understandable.
+
+---
+
+# Enemy
+
+The current enemy must be identifiable without opening another interface.
+
+Relevant information may include:
+
+- Name
+- Tier
+- Health
+- Important status effects
+
+Example:
+
+```text
+AVALONIAN KNIGHT
+T6
+
+██████████░░░░░
+
+1,420 / 2,100
+```
+
+Routine enemies should remain compact.
+
+---
+
+# Boss
+
+Boss encounters receive stronger visual hierarchy.
+
+Example:
+
+```text
+AVALONIAN BEDIVERE
+
+BOSS
+
+████████████████████
+
+12,840 / 18,000
+```
+
+Boss information may occupy more horizontal space than normal enemy information.
+
+The interface must make the transition from normal combat to a boss encounter immediately recognizable.
+
+---
+
+# Ability Bar
+
+The Ability Bar is integrated into the Bottom Bar as defined in:
+
+`06_BOTTOM_BAR.md`
+
+It remains visible during combat.
+
+It communicates:
+
+- Ability icon
+- Availability
+- Cooldown
+- Locked state
+- Active state
+- Keyboard shortcut when relevant
+
+---
+
+# Ability Structure
+
+The combat system follows the gameplay weapon configuration.
+
+The HUD must reflect the abilities actually provided by the equipped weapon.
+
+It must not hardcode individual weapon behavior.
+
+Example:
+
+```text
+[1] BASIC ATTACK
+
+[2] ACTIVE
+
+[3] ACTIVE
+
+PASSIVE
+```
+
+Exact slot organization follows actual gameplay data.
+
+---
+
+# Cooldowns
+
+Cooldowns must be immediately readable.
+
+Example:
+
+```text
+[ABILITY]
+
+  3.2
+```
+
+A visual cooldown overlay may supplement the numeric value.
+
+When ready:
+
+```text
+READY
+```
+
+or the normal ability state returns.
+
+Repeated flashing is prohibited.
+
+---
+
+# Passive Ability
+
+Passive effects do not require the same interaction prominence as active abilities.
+
+The passive may be represented through:
+
+- Smaller icon
+- Tooltip
+- Active-state indicator when relevant
+
+The HUD must not visually suggest that a passive ability is clickable when it is not.
+
+---
+
+# Combat State
+
+The HUD may communicate the current combat state.
+
+Examples:
+
+```text
+FIGHTING
+
+MOVING
+
+VICTORY
+
+DEFEATED
+
+BOSS
+```
+
+State information should remain compact.
+
+Routine combat must not require large text banners.
+
+---
+
+# Damage Numbers
+
+Damage appears directly inside the Game World.
+
+Example:
+
+```text
+-126
+```
+
+Damage numbers must:
+
+- remain readable
+- disappear quickly
+- avoid excessive overlap
+- avoid obscuring characters
+
+Albion Idle does not use critical hits, so the HUD must not introduce critical-hit presentation.
+
+---
+
+# Healing & Recovery
+
+If healing or recovery values are displayed, they must be visually distinguishable from damage.
+
+Example:
+
+```text
++84
+```
+
+The visual language follows the semantic Design System.
+
+---
+
+# Status Effects
+
+Relevant combat effects may appear near the affected entity or health information.
+
+Examples:
+
+- Stun
+- Silence
+- Buff
+- Debuff
+
+Only gameplay-relevant active effects should be visible.
+
+Detailed descriptions belong inside Tooltips.
+
+---
+
+# Interrupts
+
+Important combat interruptions must provide clear feedback.
+
+Examples:
+
+```text
+STUNNED
+
+SILENCED
+```
+
+Feedback should be visible without producing large persistent overlays.
+
+---
+
+# Projectiles & VFX
+
+Projectiles and combat VFX belong to the Game World rather than the UI layer.
+
+The HUD must leave sufficient visual space for:
+
+- Arrows
+- Magic projectiles
+- Weapon attacks
+- Impact effects
+- Future spell VFX
+
+UI elements must not unnecessarily cover the combat path between Hero and Enemy.
+
+---
+
+# Segment Timeline
+
+The Segment Timeline communicates current progression through the active zone.
+
+Example:
+
+```text
+●──●──●──●──●──○──○──★
+                     BOSS
+```
+
+It may communicate:
+
+- Completed segments
+- Current segment
+- Upcoming segments
+- Boss milestone
+
+The timeline remains visible without dominating the scene.
+
+---
+
+# Current Segment
+
+The current segment must be immediately identifiable.
+
+Example:
+
+```text
+SEGMENT 12 / 20
+```
+
+The HUD may combine numerical progression with the Segment Timeline.
+
+---
+
+# Boss Milestone
+
+Boss segments receive a distinct marker.
+
+Example:
+
+```text
+★
+BOSS
+```
+
+Boss availability may receive a short animation when first unlocked.
+
+Persistent flashing is prohibited.
+
+---
+
+# Combat Progression
+
+When an enemy is defeated:
+
+```text
+Enemy Defeated
+      ↓
+Loot / Progress
+      ↓
+Segment Update
+      ↓
+Next Encounter
+```
+
+Transitions must remain readable without unnecessarily interrupting the idle flow.
+
+---
+
+# Loot Feedback
+
+Normal loot appears through lightweight Game World feedback.
+
+Example:
+
+```text
+[Wood] ×3
+
+[Ore] ×1
+```
+
+Recent loot is also available through the Dashboard.
+
+Routine loot must not generate intrusive Toast notifications.
+
+---
+
+# Important Loot
+
+Rare or progression-relevant loot may receive stronger temporary feedback.
+
+Possible effects:
+
+- Short glow
+- Item name
+- Quality indicator
+- Distinct pickup feedback
+
+The effect remains proportional to the importance of the reward.
+
+---
+
+# Death
+
+Hero death must be immediately understandable.
+
+The HUD may display:
+
+```text
+DEFEATED
+```
+
+followed by the actual gameplay consequence for the current zone.
+
+The UI must not invent or calculate death penalties.
+
+Penalty information comes from gameplay data.
+
+---
+
+# Zone Context
+
+Combat HUD presentation may adapt subtly to the current zone.
+
+However, its structure remains identical.
+
+Blue, Yellow, Orange, Red and Black zones must not use completely different HUD layouts.
+
+Consistency has priority.
+
+---
+
+# Equipment Caps
+
+When a zone applies an equipment restriction, the Combat HUD may expose a compact persistent indicator.
+
+Example:
+
+```text
+T4 CAP
+```
+
+Detailed restriction information belongs in the World Panel or Tooltip.
+
+The HUD should not repeatedly explain the full rule during combat.
+
+---
+
+# Idle Combat
+
+Because combat can continue while the player interacts with the Right Panel, the Combat HUD must remain useful even when attention is divided.
+
+Essential combat information must therefore remain visible while:
+
+- Inventory is open
+- Craft is open
+- Masteries are open
+- Production is open
+- Bank is open
+- World is being inspected
+
+---
+
+# Right Panel Independence
+
+Opening or switching Right Panel modules must not:
+
+- pause combat
+- hide essential combat information
+- reposition combat entities significantly
+- reset combat animations
+- reset progression
+- resize the Game World unnecessarily
+
+---
+
+# Visual Noise
+
+Combat may simultaneously contain:
+
+- Characters
+- Enemies
+- Environment
+- Projectiles
+- VFX
+- Damage numbers
+- Health
+- Status effects
+- Loot
+- Segment progression
+
+The HUD must aggressively control visual noise.
+
+Not every gameplay event deserves persistent UI.
+
+---
+
+# Information Distribution
+
+Information belongs in the smallest appropriate layer.
+
+```text
+Immediate Combat Event
+→ Game World
+
+Combat Status
+→ Combat HUD
+
+Ability Details
+→ Tooltip
+
+Character Statistics
+→ Character Panel
+
+Zone Details
+→ World Panel
+
+Recent Rewards
+→ Dashboard / Inventory
+```
+
+This prevents duplicate information.
+
+---
+
+# Animation
+
+Combat HUD animations follow:
+
+`18_ANIMATIONS_TRANSITIONS.md`
+
+Combat feedback may be faster than normal menu transitions where responsiveness requires it.
+
+Animation must never delay gameplay state.
+
+---
+
+# Performance
+
+The Combat HUD must remain lightweight.
+
+Combat rendering has priority over decorative UI effects.
+
+Large numbers of:
+
+- damage events
+- loot events
+- cooldown updates
+- progress updates
+
+must not cause unnecessary UI rendering overhead.
+
+---
+
+# Rules
+
+MUST
+
+- Keep combat as the visual focus.
+- Show Hero and Enemy health clearly.
+- Keep abilities permanently accessible.
+- Communicate cooldown states.
+- Display segment progression.
+- Distinguish bosses from normal enemies.
+- Keep important status effects readable.
+- Preserve combat while using the Right Panel.
+- Use actual gameplay data as the source of truth.
+
+MUST NOT
+
+- Cover large portions of the Game World.
+- Pause combat when opening normal UI modules.
+- Introduce critical-hit feedback.
+- Duplicate detailed information already available elsewhere.
+- Generate intrusive notifications for routine combat.
+- Hardcode weapon-specific HUD layouts.
+- Let VFX or HUD elements consistently obscure combat readability.
+
+SHOULD
+
+- Keep routine combat visually calm.
+- Give bosses stronger visual hierarchy.
+- Make important loot satisfying without excessive effects.
+- Keep the Segment Timeline compact.
+- Preserve clear space around Hero, Enemy and attack trajectories.
+- Make combat understandable even while the player interacts with the Right Panel.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useGameBridge, useGameServices } from "../state/GameContext";
+import { useCombatHudActions, useNotificationFeed } from "../ui/combat-hud/combatHudSelectors";
 import {
   classifyNotification,
   useNotificationPreferences,
@@ -13,15 +13,15 @@ const NOTIFICATION_DURATION_MS = 1800;
  * ActivityJournal and never depends on these entries remaining visible.
  */
 export function EconomyNotifications(): JSX.Element | null {
-  const state = useGameBridge();
-  const { bridge } = useGameServices();
+  const notifications = useNotificationFeed();
+  const actions = useCombatHudActions();
   const preferences = useNotificationPreferences();
 
   const dismissTimers = useRef(new Map<string, number>());
 
   const dismiss = useCallback(
     (id: string) => {
-      bridge.dismissEconomyNotification(id);
+      actions.dismissNotification(id);
 
       const timer = dismissTimers.current.get(id);
 
@@ -30,16 +30,16 @@ export function EconomyNotifications(): JSX.Element | null {
         dismissTimers.current.delete(id);
       }
     },
-    [bridge],
+    [actions],
   );
 
   useEffect(() => {
     const currentTimers = dismissTimers.current;
     const activeIds = new Set(
-      state.economyNotifications.map((notification) => notification.id),
+      notifications.map((notification) => notification.id),
     );
 
-    for (const notification of state.economyNotifications) {
+    for (const notification of notifications) {
       if (currentTimers.has(notification.id)) {
         continue;
       }
@@ -59,7 +59,7 @@ export function EconomyNotifications(): JSX.Element | null {
       clearTimeout(timer);
       currentTimers.delete(id);
     }
-  }, [state.economyNotifications, dismiss]);
+  }, [notifications, dismiss]);
 
   useEffect(() => {
     const currentTimers = dismissTimers.current;
@@ -73,11 +73,11 @@ export function EconomyNotifications(): JSX.Element | null {
     };
   }, []);
 
-  if (state.economyNotifications.length === 0) {
+  if (notifications.length === 0) {
     return null;
   }
 
-  const visibleNotifications = state.economyNotifications
+  const visibleNotifications = notifications
     .filter((notification) => {
       if (!preferences.enabled) {
         return false;

@@ -1,0 +1,442 @@
+# UI_BIBLE/12_PRODUCTION.md
+
+# Albion Idle — Production Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Production Panel manages resource gathering and refining.
+
+These systems share a single Right Panel module because they belong to the same economic production loop.
+
+```text
+Gathering
+    ↓
+Raw Resources
+    ↓
+Refining
+    ↓
+Refined Resources
+    ↓
+Crafting
+```
+
+Crafting remains a separate module.
+
+---
+
+# Core Principle
+
+Production is divided into two internal sections:
+
+- Gathering
+- Refining
+
+They are accessed through tabs inside the same Right Panel.
+
+```text
++--------------------------------+
+| PRODUCTION                     |
++--------------------------------+
+| [ GATHERING ] [ REFINING ]     |
++--------------------------------+
+|                                |
+| Contextual content             |
+|                                |
++--------------------------------+
+```
+
+Switching between Gathering and Refining never affects the active Game World.
+
+---
+
+# Gathering
+
+## Purpose
+
+Gathering allows resources to be collected through the Hero or Workers according to the gameplay systems available.
+
+The panel must immediately communicate:
+
+1. What is being gathered?
+2. Who is gathering it?
+3. How fast is production?
+4. What progression is being earned?
+
+---
+
+# Gathering Structure
+
+```text
++--------------------------------+
+| GATHERING                      |
++--------------------------------+
+| HERO                           |
+|                                |
+| [Resource] Birch Wood          |
+| ███████████░░░          72%    |
+| +12 / min                      |
++--------------------------------+
+| WORKERS                        |
+|                                |
+| Lumberjack                     |
+| Birch Wood                     |
+| ████████░░░░            58%    |
+| +8 / min                       |
+|                                |
+| Miner                          |
+| Iron Ore                       |
+| ██████████░░            76%    |
+| +6 / min                       |
++--------------------------------+
+```
+
+Exact values and production formulas are defined by gameplay systems, not by the UI.
+
+---
+
+# Hero Gathering
+
+When the Hero is gathering, the panel displays:
+
+- Resource
+- Resource tier
+- Current activity
+- Progress
+- Production rate
+- Relevant mastery progression
+
+The Hero remains visually distinct from Workers.
+
+---
+
+# Workers
+
+Workers are displayed as compact production Cards.
+
+Each active Worker may display:
+
+- Worker type
+- Specialization
+- Current resource
+- Current progression
+- Production rate
+- Status
+
+Possible states:
+
+- Active
+- Idle
+- Blocked
+- Completed
+
+---
+
+# Worker Actions
+
+Contextual actions may include:
+
+- Assign
+- Change resource
+- Stop
+- Collect
+
+Only actions supported by the actual gameplay system are displayed.
+
+Idle Workers must be easy to identify.
+
+---
+
+# Resource Selection
+
+Available resources are presented using compact Cards, Lists or Grid elements depending on final content volume.
+
+Each resource may communicate:
+
+- Icon
+- Name
+- Tier
+- Availability
+- Production rate
+- Required conditions
+
+Unavailable resources remain understandable.
+
+---
+
+# Gathering Progression
+
+Gathering mastery progression uses the shared Progress Bar component.
+
+Detailed mastery information belongs inside the Masteries Panel.
+
+The Production Panel only displays progression relevant to the current activity.
+
+---
+
+# Refining
+
+## Purpose
+
+Refining converts raw resources into materials used by Crafting.
+
+The player must immediately understand:
+
+1. What will be consumed?
+2. What will be produced?
+3. How many can be produced?
+4. How long will production take?
+
+---
+
+# Refining Structure
+
+```text
++--------------------------------+
+| REFINING                       |
++--------------------------------+
+| [Wood] [Stone] [Ore] [...]     |
++--------------------------------+
+| BIRCH PLANKS                   |
+|                                |
+| [Logs]  →  [Planks]            |
+|   2           1                |
+|                                |
+| Available: 142 Logs            |
+|                                |
+| Quantity                       |
+| [-]       20       [+]         |
+|                                |
+| Time: 00:40                    |
+|                                |
+| [ REFINE ]                     |
++--------------------------------+
+| ACTIVE QUEUE                   |
+|                                |
+| Birch Planks        12 / 20    |
+| ███████████░░       00:16      |
++--------------------------------+
+```
+
+---
+
+# Refining Categories
+
+Resources are grouped by their actual gameplay families.
+
+Examples may include:
+
+- Wood
+- Stone
+- Ore
+- Fiber
+- Other supported resource families
+
+The UI must follow game data rather than hardcoding unnecessary categories.
+
+---
+
+# Refining Recipe
+
+A refining recipe displays:
+
+- Input resource
+- Input quantity
+- Output resource
+- Output quantity
+- Selected production quantity
+- Available materials
+- Production time
+
+The relationship between input and output must be visually obvious.
+
+---
+
+# Quantity Selection
+
+The player can select how many units to refine.
+
+Controls may include:
+
+- Minus
+- Plus
+- Numeric input
+- Maximum available
+
+The interface must prevent invalid quantities.
+
+---
+
+# Production Queue
+
+Active refining operations are displayed in a compact queue.
+
+Each queue entry displays:
+
+- Output
+- Quantity
+- Progress
+- Remaining time
+- Status
+
+The queue remains visible while browsing other refining recipes whenever practical.
+
+---
+
+# Completed Production
+
+Completed production receives a clear but non-intrusive state.
+
+Example:
+
+```text
+Birch Planks
+
+COMPLETE
+
+[ COLLECT ]
+```
+
+If collection is automatic according to gameplay rules, the UI must reflect that behavior instead of presenting an unnecessary action.
+
+---
+
+# Blocked Production
+
+When refining cannot start, the interface explains why.
+
+Examples:
+
+```text
+INSUFFICIENT MATERIALS
+
+Requires:
+20 Birch Logs
+
+Available:
+14 Birch Logs
+```
+
+The player should never need to guess why an action is unavailable.
+
+---
+
+# Cross-System Navigation
+
+Production may provide contextual shortcuts.
+
+Examples:
+
+```text
+Missing raw resource
+→ Gathering
+
+Required refined resource
+→ Refining
+
+Material ready
+→ Craft
+```
+
+These shortcuts change only the Right Panel content.
+
+---
+
+# Dashboard Integration
+
+The Dashboard may summarize Production activity.
+
+Examples:
+
+- Active gathering
+- Worker status
+- Active refining
+- Completed production
+
+Selecting a Dashboard Production Card opens this panel at the relevant tab.
+
+---
+
+# Notifications
+
+Production may generate notifications for meaningful events.
+
+Examples:
+
+- Worker becomes idle
+- Refining completed
+- Production blocked
+
+Routine production ticks must not generate notifications.
+
+---
+
+# Scrolling
+
+Gathering and Refining use vertical scrolling when required.
+
+Horizontal scrolling is prohibited.
+
+Primary controls should remain accessible without excessive scrolling.
+
+---
+
+# Visual Hierarchy
+
+Gathering:
+
+```text
+Current Activity
+      ↓
+Hero
+      ↓
+Workers
+      ↓
+Available Resources
+```
+
+Refining:
+
+```text
+Resource Category
+      ↓
+Selected Recipe
+      ↓
+Quantity / Action
+      ↓
+Active Queue
+```
+
+---
+
+# Rules
+
+MUST
+
+- Combine Gathering and Refining inside the Production Panel.
+- Use internal tabs to switch between both systems.
+- Show current production clearly.
+- Display meaningful progress and rates.
+- Explain blocked actions.
+- Keep the Game World visible.
+- Use actual gameplay data and rules.
+
+MUST NOT
+
+- Create separate full-screen Gathering or Refining interfaces.
+- Mix Crafting into the Production Panel.
+- Invent production formulas in the UI layer.
+- Hide why an action is unavailable.
+- Generate notifications for routine production.
+
+SHOULD
+
+- Make active production understandable at a glance.
+- Highlight idle or blocked Workers.
+- Provide useful cross-system shortcuts.
+- Keep production queues compact.
+- Surface relevant Production information in the Dashboard.

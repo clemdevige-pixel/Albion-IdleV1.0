@@ -1,0 +1,390 @@
+# UI_BIBLE/19_RESPONSIVE_RESOLUTIONS.md
+
+# Albion Idle — Responsive & Resolutions
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+This document defines how the Albion Idle interface adapts to different PC resolutions and aspect ratios.
+
+The interface must remain readable and functional without breaking the Single Screen philosophy.
+
+---
+
+# Core Principle
+
+Albion Idle is designed PC-first.
+
+Primary target:
+
+16:9 desktop displays.
+
+The interface scales around the same structural layout rather than creating different interfaces for each resolution.
+
+---
+
+# Reference Resolution
+
+Primary design reference:
+
+1920 × 1080
+
+Mockups should primarily be produced at this resolution.
+
+This resolution defines the reference proportions for:
+
+- Header
+- Game World
+- Right Panel
+- Bottom Bar
+- Navigation
+- Ability Bar
+
+---
+
+# Supported Desktop Resolutions
+
+The interface should support common PC resolutions including:
+
+```text
+1920 × 1080
+2560 × 1440
+3840 × 2160
+```
+
+Lower desktop resolutions may be supported when readability remains acceptable.
+
+Exact minimum supported resolution is determined during implementation testing.
+
+---
+
+# Global Layout
+
+The structural hierarchy never changes:
+
+```text
++----------------------------------------------------------+
+| HEADER                                                   |
++--------------------------------------+-------------------+
+|                                      |                   |
+|                                      |                   |
+| GAME WORLD                           | RIGHT PANEL       |
+|                                      |                   |
+|                                      |                   |
++--------------------------------------+-------------------+
+| BOTTOM BAR                                               |
++----------------------------------------------------------+
+```
+
+Resolution changes must not fundamentally reorganize this structure.
+
+---
+
+# Game World
+
+The Game World remains the dominant visual area.
+
+Target width remains approximately:
+
+65% → 75%
+
+depending on final mockup validation and available resolution.
+
+The Game World must not become unusably narrow to preserve other UI elements.
+
+---
+
+# Right Panel
+
+Target width:
+
+25% → 35%
+
+The panel should adapt within this range when required.
+
+Its internal content uses responsive Cards, Lists and Grids.
+
+The panel must maintain sufficient width for:
+
+- readable text
+- Item Slots
+- controls
+- progress information
+- contextual actions
+
+---
+
+# Header
+
+The Header remains one horizontal region.
+
+At reduced widths:
+
+1. Long labels may shorten.
+2. Secondary information may become icon-based.
+3. Tooltips provide additional details.
+
+Essential information remains visible.
+
+---
+
+# Bottom Bar
+
+The Bottom Bar remains permanently visible.
+
+Priority:
+
+```text
+Abilities
+    ↓
+Primary Navigation
+    ↓
+Secondary Navigation
+    ↓
+Chat
+```
+
+The Ability Bar must remain usable at all supported resolutions.
+
+---
+
+# Navigation Scaling
+
+V1 uses direct navigation entries.
+
+When available width becomes insufficient:
+
+- labels may shorten
+- icon-only presentation may be used when unambiguous
+- spacing may decrease within defined limits
+
+Navigation must never become unreadable simply to preserve every direct entry.
+
+---
+
+# Future Navigation Growth
+
+If future modules exceed the available Bottom Bar space, navigation may evolve toward grouped categories as defined in:
+
+`06_BOTTOM_BAR.md`
+
+The interface must not continuously shrink navigation buttons to accommodate unlimited modules.
+
+---
+
+# Inventory Grid
+
+Grid column count may adapt to available Right Panel width.
+
+Example:
+
+```text
+Wide Panel
+
+[ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ]
+
+
+Narrow Panel
+
+[ ][ ][ ][ ]
+[ ][ ][ ][ ]
+```
+
+Item Slots retain usable dimensions.
+
+Slots must not become excessively small simply to preserve a fixed column count.
+
+---
+
+# Cards
+
+Cards adapt primarily through width.
+
+Vertical stacking is preferred when horizontal space becomes limited.
+
+Example:
+
+```text
+Wide
+
+[ CARD A ] [ CARD B ]
+
+
+Narrow
+
+[ CARD A ]
+
+[ CARD B ]
+```
+
+---
+
+# Text
+
+Text must remain readable.
+
+The UI must not solve limited space by continuously reducing font size.
+
+Priority when space is limited:
+
+```text
+Remove redundant information
+        ↓
+Shorten labels
+        ↓
+Reflow layout
+        ↓
+Reduce spacing moderately
+```
+
+Reducing text readability is the last resort.
+
+---
+
+# Tooltips
+
+Tooltips automatically reposition according to available screen space.
+
+They must never extend beyond the visible viewport.
+
+---
+
+# Modals
+
+Modals remain centered within the available viewport.
+
+Their maximum dimensions must preserve sufficient surrounding context.
+
+---
+
+# Ultrawide Displays
+
+Ultrawide resolutions must not stretch the UI indiscriminately.
+
+Additional horizontal space should primarily benefit the Game World.
+
+The Right Panel should retain a comfortable maximum visual width.
+
+Example:
+
+```text
+21:9
+
++---------------------------------------------------------------+
+|                       HEADER                                  |
++----------------------------------------------+----------------+
+|                                              |                |
+|             EXPANDED GAME WORLD              | RIGHT PANEL    |
+|                                              |                |
++----------------------------------------------+----------------+
+|                      BOTTOM BAR                               |
++---------------------------------------------------------------+
+```
+
+The Right Panel must not become unnecessarily large simply because additional width exists.
+
+---
+
+# High Resolution Displays
+
+At high resolutions, UI elements scale to preserve physical readability.
+
+4K displays must not produce tiny interface elements.
+
+Scaling should preserve:
+
+- readable typography
+- usable buttons
+- recognizable icons
+- comfortable Item Slots
+
+---
+
+# Window Resizing
+
+When the game window is resized:
+
+- layout updates smoothly
+- Game World adapts
+- Right Panel adapts
+- Cards reflow when required
+- Grid columns may change
+
+Gameplay continues uninterrupted.
+
+---
+
+# Aspect Ratio Changes
+
+16:9 is the primary target.
+
+Wider aspect ratios allocate additional space primarily to the Game World.
+
+Narrower supported aspect ratios prioritize:
+
+1. Usability
+2. Right Panel readability
+3. Ability accessibility
+4. Game World visibility
+
+---
+
+# Mobile
+
+Mobile is not a V1 target.
+
+The desktop interface must not be compromised to accommodate mobile layouts.
+
+If mobile support is introduced in the future, it may require a dedicated interface specification.
+
+---
+
+# Mockup Validation
+
+Primary mockups are created at:
+
+```text
+1920 × 1080
+```
+
+Before implementation is considered visually validated, the layout should also be checked at:
+
+```text
+2560 × 1440
+```
+
+and at least one narrower supported desktop viewport.
+
+---
+
+# Rules
+
+MUST
+
+- Design PC-first.
+- Use 1920 × 1080 as the primary mockup reference.
+- Preserve the global layout.
+- Keep the Game World visible.
+- Keep the Right Panel usable.
+- Maintain readable text and controls.
+- Adapt Grid layouts when necessary.
+
+MUST NOT
+
+- Design around mobile constraints for V1.
+- Shrink text until it becomes difficult to read.
+- Stretch the Right Panel unnecessarily on ultrawide displays.
+- Break the Single Screen philosophy at different resolutions.
+- Force fixed Grid column counts when space is insufficient.
+
+SHOULD
+
+- Give additional ultrawide space primarily to the Game World.
+- Reflow Cards before reducing readability.
+- Keep UI proportions visually stable.
+- Test multiple desktop resolutions before final validation.

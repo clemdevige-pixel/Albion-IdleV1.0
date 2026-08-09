@@ -1,0 +1,493 @@
+# UI_BIBLE/13_CRAFT.md
+
+# Albion Idle — Craft Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Craft Panel allows the player to browse, understand and produce equipment.
+
+Crafting uses a hierarchical navigation system designed to remain usable as the number of recipes grows.
+
+---
+
+# Core Principle
+
+Craft navigation follows:
+
+```text
+Category
+   ↓
+Equipment Family
+   ↓
+Recipe
+   ↓
+Configuration
+   ↓
+Craft
+```
+
+The player should never need to browse a massive unstructured recipe grid.
+
+---
+
+# Structure
+
+```text
++--------------------------------+
+| CRAFT                          |
++--------------------------------+
+| [ WEAPONS ] [ ARMOR ]          |
++--------------------------------+
+| Search...                      |
++--------------------------------+
+| WEAPON FAMILIES                |
+|                                |
+| ⚔ Swords                       |
+| 🏹 Bows                        |
+| ❄ Frost Staffs                 |
+| 🔥 Fire Staffs                 |
+| ...                            |
++--------------------------------+
+```
+
+Selecting a family reveals its available recipes.
+
+---
+
+# Recipe Navigation
+
+Example:
+
+```text
+WEAPONS
+   ↓
+Frost Staffs
+   ↓
+Permafrost Prism
+   ↓
+Tier / Enchantment
+   ↓
+Craft
+```
+
+Navigation remains inside the Right Panel.
+
+---
+
+# Search
+
+The Craft Panel provides recipe search.
+
+Search may match:
+
+- Item name
+- Equipment family
+- Item type
+
+Selecting a search result opens the corresponding recipe directly.
+
+---
+
+# Recipe List
+
+Recipes inside a selected family are displayed using compact Cards or Lists.
+
+Example:
+
+```text
+FROST STAFFS
+
+[Icon] Frost Staff
+       Available
+
+[Icon] Great Frost Staff
+       Available
+
+[Icon] Permafrost Prism
+       Artifact Required
+```
+
+Recipes clearly communicate their current availability.
+
+---
+
+# Selected Recipe
+
+Selecting a recipe displays its crafting configuration.
+
+```text
++--------------------------------+
+| PERMAFROST PRISM               |
+| Frost Staff                    |
++--------------------------------+
+| [ITEM PREVIEW]                 |
+|                                |
+| Tier          T6               |
+| Enchantment   .2               |
+| Quality       Excellent        |
++--------------------------------+
+| MATERIALS                      |
+|                                |
+| [ ] Refined Material     12/16 |
+| [ ] Previous Tier Item     1/1 |
+| [ ] Artifact               1/1 |
++--------------------------------+
+| Quantity                  1    |
+|                                |
+| [ CRAFT ]                      |
++--------------------------------+
+```
+
+Exact recipe requirements are defined by gameplay data.
+
+The UI must never invent crafting requirements.
+
+---
+
+# Tier Selection
+
+Available tiers follow the actual progression rules.
+
+Supported item tiers:
+
+```text
+T3 → T8
+```
+
+Unavailable tiers remain visually understandable.
+
+The interface must explain why a tier cannot currently be crafted.
+
+---
+
+# Enchantment Selection
+
+When supported by the selected item:
+
+```text
+Normal
+.1
+.2
+.3
+.4
+```
+
+The interface updates required materials and resulting item information immediately.
+
+---
+
+# Quality
+
+Item quality follows the gameplay system.
+
+Possible qualities:
+
+- Normal
+- Good
+- Outstanding
+- Excellent
+- Masterpiece
+
+The Craft Panel displays the quality mechanics defined by gameplay.
+
+The UI must not independently determine crafting outcomes.
+
+---
+
+# Materials
+
+Required materials are displayed before crafting.
+
+Each material displays:
+
+- Icon
+- Name
+- Required quantity
+- Available quantity
+
+Example:
+
+```text
+Refined Material
+
+12 / 16
+
+MISSING: 4
+```
+
+Missing materials must be immediately identifiable.
+
+---
+
+# Special Requirements
+
+Some recipes may require additional components.
+
+Examples:
+
+- Previous-tier equipment
+- Artifacts
+- Faction materials
+- Special resources
+
+These requirements use the same material presentation as standard resources.
+
+The Craft UI remains data-driven and does not create special layouts for individual weapons.
+
+---
+
+# Locked Recipes
+
+Locked recipes remain visible when useful for progression understanding.
+
+Example:
+
+```text
+PERMAFROST PRISM — T7
+
+LOCKED
+
+Missing:
+T7 Artifact
+```
+
+The reason for the lock must always be communicated.
+
+---
+
+# Craft Action
+
+The primary Craft action is displayed close to recipe requirements.
+
+Before crafting, the player must understand:
+
+- What will be consumed
+- What will be created
+- Quantity
+- Relevant production time
+- Relevant cost
+
+The Craft button is disabled when requirements are not met.
+
+---
+
+# Quantity
+
+When multiple items may be crafted, the player can select quantity.
+
+Controls may include:
+
+```text
+[-]    1    [+]
+
+[MAX]
+```
+
+The maximum quantity must respect available materials and gameplay restrictions.
+
+---
+
+# Craft Queue
+
+Active crafts are displayed in a compact queue.
+
+Example:
+
+```text
+ACTIVE CRAFTS
+
+Permafrost Prism
+████████████░░
+00:18
+
+Broadsword
+QUEUED
+```
+
+Each entry displays:
+
+- Item
+- Quantity
+- Progress
+- Remaining time
+- Status
+
+---
+
+# Craft Completion
+
+Completed crafts receive a clear but non-intrusive state.
+
+Example:
+
+```text
+PERMAFROST PRISM
+
+COMPLETE
+```
+
+Collection behavior follows the actual gameplay rules.
+
+The UI must not introduce manual collection if crafting is automatically delivered to inventory.
+
+---
+
+# Item Preview
+
+Before crafting, the resulting item may be inspected.
+
+Relevant information may include:
+
+- Item icon
+- Tier
+- Enchantment
+- Quality
+- Item Power
+- Core stats
+
+Detailed information uses the shared Tooltip or contextual detail components.
+
+---
+
+# Cross-System Navigation
+
+Missing requirements may provide contextual shortcuts.
+
+Examples:
+
+```text
+Missing refined materials
+→ Production / Refining
+
+Missing raw resources
+→ Production / Gathering
+
+Required previous item
+→ Relevant Craft recipe
+
+Required artifact
+→ Relevant source information
+```
+
+Navigation remains inside the Right Panel.
+
+---
+
+# Inventory Integration
+
+Crafting uses materials from the player's available inventory according to gameplay rules.
+
+After successful crafting:
+
+- Materials update immediately.
+- Inventory updates immediately.
+- Relevant recipe availability updates immediately.
+
+---
+
+# Dashboard Integration
+
+The Dashboard may display:
+
+- Active craft
+- Queue progress
+- Completed craft
+- Blocked craft when player action is required
+
+Selecting the Dashboard Craft Card opens the Craft Panel.
+
+---
+
+# Notifications
+
+Meaningful Craft notifications include:
+
+- Craft completed
+- Queue blocked
+- Required player action
+
+Routine crafting progress does not generate notifications.
+
+---
+
+# Visual Hierarchy
+
+```text
+Category
+   ↓
+Family
+   ↓
+Recipe
+   ↓
+Item Configuration
+   ↓
+Requirements
+   ↓
+Craft Action
+   ↓
+Queue
+```
+
+The current crafting decision must remain visually dominant.
+
+---
+
+# Scrolling
+
+Craft uses vertical scrolling when necessary.
+
+Horizontal scrolling is prohibited.
+
+The player should not need to navigate through multiple pages to reach a recipe.
+
+---
+
+# Scalability
+
+The Craft Panel must remain usable as the equipment catalogue grows.
+
+New:
+
+- weapons
+- armor
+- tiers
+- enchantments
+- artifacts
+- recipe families
+
+must integrate through game data without requiring a redesign of the Craft Panel.
+
+---
+
+# Rules
+
+MUST
+
+- Use Category → Family → Recipe navigation.
+- Support recipe search.
+- Display all crafting requirements clearly.
+- Explain locked or unavailable recipes.
+- Use gameplay data as the source of truth.
+- Support tiers and enchantments.
+- Keep the Game World visible.
+- Update inventory and requirements immediately after crafting.
+
+MUST NOT
+
+- Display every recipe in one massive grid.
+- Hardcode individual weapon layouts.
+- Invent recipe requirements.
+- Hide missing materials.
+- Create full-screen crafting interfaces.
+
+SHOULD
+
+- Provide contextual shortcuts to missing resources.
+- Keep the active craft queue visible when practical.
+- Make recipe comparison and inspection fast.
+- Remain scalable as the item catalogue grows.

@@ -1,0 +1,106 @@
+# UI_BIBLE/01_VISION.md
+
+# Albion Idle — UI Vision
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Vision
+
+Albion Idle est un MMORPG Idle construit autour d'un écran unique.
+
+Le joueur ne change jamais de page.
+
+Le monde reste constamment visible et continue d'évoluer, quelles que soient les interactions réalisées par le joueur.
+
+Le combat constitue l'activité principale de ce monde, mais il n'en est pas le seul élément vivant.
+
+Toutes les fonctionnalités du jeu (personnage, inventaire, craft, maîtrises, île, banque, workers...) s'intègrent sous forme de panneaux contextuels sans interrompre l'action.
+
+L'objectif est de procurer la sensation de jouer à un MMORPG complet condensé sur un seul écran.
+
+---
+
+# Design Philosophy
+
+## 1. World First
+
+Le monde est permanent.
+
+Le combat représente l'activité principale mais ne remplace jamais le monde.
+
+Toutes les évolutions futures (boss, événements, météo, animations, PNJ...) devront respecter ce principe.
+
+---
+
+## 2. Single Screen Experience
+
+Le joueur ne quitte jamais l'écran principal.
+
+Aucune fonctionnalité ne doit nécessiter un changement de scène ou une nouvelle interface plein écran.
+
+---
+
+## 3. Living World
+
+Le monde continue de vivre en permanence.
+
+Pendant que le joueur :
+
+- équipe un objet,
+- craft,
+- raffine,
+- consulte son inventaire,
+- gère son île,
+
+le jeu continue :
+
+- combats,
+- timers,
+- productions,
+- maîtrises,
+- workers,
+- notifications.
+
+---
+
+## 4. MMORPG Feeling
+
+L'objectif n'est pas de créer un simple Idle.
+
+L'objectif est de reproduire les sensations d'un MMORPG moderne dans une interface condensée.
+
+---
+
+## 5. Readability First
+
+La priorité absolue de l'interface est :
+
+- la lisibilité,
+- la cohérence,
+- la compréhension immédiate.
+
+Une information inutile ou redondante doit toujours être supprimée.
+
+---
+
+# UI Principles
+
+Chaque décision de design devra respecter les règles suivantes :
+
+- Le monde reste visible.
+- Le joueur ne change jamais de page.
+- Le combat reste visible.
+- Les panneaux complètent le jeu, ils ne le remplacent jamais.
+- Une nouvelle fonctionnalité doit s'intégrer au layout existant.
+- L'interface doit rester compréhensible en quelques secondes.
+
+---
+
+# Mission Statement
+
+Albion Idle est un MMORPG vivant où le joueur ne quitte jamais le monde.
+
+Toute la progression s'effectue autour d'une scène unique qui reste constamment active.

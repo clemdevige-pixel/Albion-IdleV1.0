@@ -5,9 +5,9 @@ import { AppLayout } from "./layout/AppLayout";
 /**
  * Application shell.
  *
- * React owns the UI chrome; the world is delegated to Phaser via the
- * GameViewport inside AppLayout. GameProvider exposes runtime services;
- * PanelManagerProvider enforces the single-panel policy.
+ * React owns the permanent shell while Phaser remains mounted in its world
+ * region. GameProvider exposes runtime services; PanelManagerProvider keeps
+ * legacy panels on the typed single-module navigation contract.
  */
 export function App(): JSX.Element {
   return (

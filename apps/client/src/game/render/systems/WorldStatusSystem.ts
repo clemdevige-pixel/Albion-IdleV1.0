@@ -48,16 +48,17 @@ export class WorldStatusSystem {
   }
 
   public presentCombat(status: CombatWorldStatus): void {
-    this.stateText.setText(status.combatState.toUpperCase());
-    if (status.zoneName === "") return;
-
-    const encounterLabel = status.encounterType === "boss" ? " [BOSS]" : "";
-    this.zoneText.setText(
-      `${status.biomeName} — ${status.zoneName}${encounterLabel}`,
-    );
-    this.segmentText.setText(
-      `Segment ${String(status.segmentIndex)}/${String(status.segmentCount)}`
-      + ` · ${String(status.zoneProgress)}%`,
+    // Zone and segment progression now live in the permanent Header and
+    // Dashboard. Keep only decisive feedback in the world so combat remains
+    // readable without duplicating permanent information.
+    this.zoneText.setText("");
+    this.segmentText.setText("");
+    this.stateText.setText(
+      status.combatState === "victory"
+        ? "VICTOIRE"
+        : status.combatState === "defeat"
+          ? "DÉFAITE"
+          : "",
     );
   }
 

@@ -3,6 +3,8 @@ import { ActiveGatheringGame } from "../hud/ActiveGatheringGame";
 import { PanelContainer } from "../panels/PanelContainer";
 import { useGameBridge, useGameServices } from "../state/GameContext";
 import type { MasteryVM } from "../game/GameBridge";
+import { formatCompactNumber, formatDuration } from "../ui/shared";
+import { selectActiveGathering } from "../ui/state/gatheringUiSelectors";
 
 const GATHERING_MASTERY_BY_FAMILY: Readonly<Record<string, string>> = {
   Wood: "mastery_gathering_wood",
@@ -47,35 +49,10 @@ function MasterySidebarEntry({ mastery }: { readonly mastery: MasteryVM }): JSX.
   );
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-function formatHourlyRate(value: number): string {
-  if (value <= 0) return "—";
-  if (value >= 1_000_000) {
-    return `${String(Math.round(value / 100_000) / 10).replace(".", ",")}M`;
-  }
-  if (value >= 1_000) {
-    return `${String(Math.round(value / 1_000))}K`;
-  }
-  return String(Math.round(value));
-}
-
 export function RightSidebar(): JSX.Element {
   const state = useGameBridge();
   const { performGatheringStrike, returnToCombat } = useGameServices();
-  const activeGathering = state.gathering.status === "gathering"
-    ? state.gathering
-    : state.oreGathering.status === "gathering"
-      ? state.oreGathering
-      : state.hideGathering.status === "gathering"
-        ? state.hideGathering
-        : state.fiberGathering.status === "gathering"
-          ? state.fiberGathering
-          : undefined;
+  const activeGathering = selectActiveGathering(state);
   const masteriesById = new Map(
     state.progression.masteries.map((mastery) => [mastery.id, mastery]),
   );
@@ -180,7 +157,7 @@ export function RightSidebar(): JSX.Element {
             <div className="sidebar__stats">
               <div className="sidebar__stat">
                 <span className="sidebar__stat-label">Temps de zone</span>
-                <span className="sidebar__stat-value">{formatTime(state.zoneElapsed)}</span>
+                <span className="sidebar__stat-value">{formatDuration(state.zoneElapsed)}</span>
               </div>
               <div className="sidebar__stat">
                 <span className="sidebar__stat-label">Ennemis tués</span>
@@ -189,13 +166,13 @@ export function RightSidebar(): JSX.Element {
               <div className="sidebar__stat">
                 <span className="sidebar__stat-label">Silver / heure</span>
                 <span className="sidebar__stat-value">
-                  {formatHourlyRate(state.segmentSilverPerHour)}
+                  {formatCompactNumber(state.segmentSilverPerHour)}
                 </span>
               </div>
               <div className="sidebar__stat">
                 <span className="sidebar__stat-label">Fame / heure</span>
                 <span className="sidebar__stat-value">
-                  {formatHourlyRate(state.segmentFamePerHour)}
+                  {formatCompactNumber(state.segmentFamePerHour)}
                 </span>
               </div>
             </div>

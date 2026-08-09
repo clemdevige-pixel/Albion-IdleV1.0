@@ -1,0 +1,426 @@
+# UI_BIBLE/17_TOOLTIPS.md
+
+# Albion Idle — Tooltips & Contextual Information
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+Tooltips provide additional information without permanently increasing UI density.
+
+They allow Albion Idle to maintain a compact interface while still exposing detailed gameplay information when requested.
+
+---
+
+# Core Principle
+
+The default interface shows what the player needs.
+
+The Tooltip shows what the player wants to know.
+
+```text
+VISIBLE UI
+Essential information
+      ↓
+    Hover
+      ↓
+TOOLTIP
+Detailed information
+```
+
+Tooltips must never contain information required to understand a basic action.
+
+---
+
+# Trigger
+
+On PC, Tooltips primarily appear on hover.
+
+They may be used on:
+
+- Items
+- Equipment
+- Resources
+- Abilities
+- Masteries
+- Stats
+- Status effects
+- Progression elements
+- Requirements
+- Icons
+- Disabled actions
+
+The Tooltip disappears when the pointer leaves the relevant interaction area.
+
+---
+
+# Positioning
+
+Tooltips appear close to the hovered element.
+
+They must not:
+
+- cover the hovered element
+- leave the visible screen
+- obscure important information when another valid position exists
+
+Placement adapts automatically to available space.
+
+---
+
+# Basic Structure
+
+```text
++--------------------------------+
+| ITEM NAME                      |
+| T6.2 • Excellent               |
++--------------------------------+
+| Item Power              1,124  |
+| Damage                    142  |
+| Defense                    36  |
++--------------------------------+
+| Additional information         |
++--------------------------------+
+```
+
+The exact content depends on the element type.
+
+---
+
+# Information Hierarchy
+
+Tooltip information follows this order:
+
+```text
+Identity
+   ↓
+Primary Values
+   ↓
+Gameplay Effect
+   ↓
+Requirements
+   ↓
+Secondary Information
+```
+
+Important information appears first.
+
+---
+
+# Item Tooltip
+
+Item Tooltips may display:
+
+- Name
+- Item type
+- Tier
+- Enchantment
+- Quality
+- Item Power
+- Core stats
+- Relevant effects
+- Requirements
+
+Example:
+
+```text
+PERMAFROST PRISM
+
+Frost Staff
+T6.2 • Excellent
+
+Item Power
+1,124
+
+Damage
+142
+
+Required Mastery
+Frost Staff
+```
+
+Only information supported by gameplay data is displayed.
+
+---
+
+# Resource Tooltip
+
+Resource Tooltips may display:
+
+- Resource name
+- Tier
+- Quantity
+- Resource family
+- Relevant usage
+
+Example:
+
+```text
+BIRCH LOGS
+
+T4 Wood
+
+Owned
+142
+
+Used for:
+Refining → Birch Planks
+```
+
+---
+
+# Ability Tooltip
+
+Ability Tooltips may display:
+
+- Ability name
+- Description
+- Damage or effect
+- Cooldown
+- Area of effect when relevant
+- Status effect
+- Tier requirement
+
+Example:
+
+```text
+FROST BOLT
+
+Basic Attack
+
+Damage
+84
+
+Applies:
+Frost
+
+Cooldown
+1.2s
+```
+
+The Tooltip must reflect actual combat data.
+
+---
+
+# Mastery Tooltip
+
+Mastery Tooltips may display:
+
+- Mastery name
+- Current level
+- Current bonus
+- Next bonus
+- Progress requirement
+
+Example:
+
+```text
+BROADSWORD MASTERY
+
+Level 81
+
+Current Bonus
++12 Damage
+
+Next Level
++13 Damage
+```
+
+---
+
+# Stat Tooltip
+
+Stats may expose short explanations.
+
+Example:
+
+```text
+ITEM POWER
+
+Represents the overall power
+provided by equipped items.
+```
+
+Stat Tooltips should explain meaning rather than duplicate the visible number.
+
+---
+
+# Status Effect Tooltip
+
+Buffs and debuffs may display:
+
+- Name
+- Effect
+- Remaining duration
+- Source when relevant
+
+Example:
+
+```text
+FROZEN
+
+Movement impaired.
+
+Remaining
+2.4s
+```
+
+---
+
+# Disabled Action Tooltip
+
+Disabled controls must explain why they are unavailable.
+
+Example:
+
+```text
+CRAFT
+
+Cannot craft.
+
+Missing:
+4 Refined Materials
+```
+
+The player should never have to guess why an action is disabled.
+
+---
+
+# Comparison Tooltip
+
+Equipment comparison may display the selected item against currently equipped gear.
+
+Example:
+
+```text
+CURRENT        SELECTED
+
+IP
+720           755  +35
+
+Damage
+120           134  +14
+
+Defense
+42             38   -4
+```
+
+Only meaningful differences should be emphasized.
+
+---
+
+# Tier & Quality
+
+Tier, enchantment and quality presentation must remain consistent across all Tooltips.
+
+The same item state must never be represented differently between:
+
+- Inventory
+- Bank
+- Craft
+- Character
+- Loot
+
+---
+
+# Long Content
+
+Tooltips should remain concise.
+
+Large descriptions, complete progression trees or extensive tables do not belong inside Tooltips.
+
+When information becomes too complex, the Tooltip should expose only the useful summary.
+
+Detailed information belongs inside the corresponding Right Panel module.
+
+---
+
+# Delay
+
+Tooltips should appear quickly enough to feel responsive.
+
+They should not appear so aggressively that normal pointer movement creates constant visual noise.
+
+Exact hover delay is finalized during implementation testing.
+
+---
+
+# Persistence
+
+Standard Tooltips are temporary.
+
+They disappear when the player stops hovering the relevant element.
+
+Information requiring persistent interaction belongs inside the Right Panel rather than inside a pinned Tooltip.
+
+---
+
+# Visual Design
+
+Tooltips use:
+
+- Dark background
+- Thin border
+- Subtle shadow
+- Shared typography
+- Shared semantic colors
+
+Tooltips must remain visually connected to the global Design System.
+
+---
+
+# Layer Priority
+
+Tooltips render above standard interface content.
+
+They remain below critical modal interactions when a Modal is active.
+
+---
+
+# Consistency
+
+Identical concepts must use identical Tooltip structures.
+
+Example:
+
+Every equipment Tooltip uses the same hierarchy.
+
+Every resource Tooltip uses the same hierarchy.
+
+Every ability Tooltip uses the same hierarchy.
+
+Individual screens must not create their own Tooltip systems.
+
+---
+
+# Rules
+
+MUST
+
+- Use shared Tooltip components.
+- Provide contextual information on hover.
+- Keep essential information outside Tooltips.
+- Explain disabled actions.
+- Use actual gameplay data.
+- Maintain consistent information hierarchy.
+- Stay within screen boundaries.
+
+MUST NOT
+
+- Hide required information exclusively inside Tooltips.
+- Create screen-specific Tooltip styles.
+- Display unnecessary walls of text.
+- Cover the hovered element when avoidable.
+- Invent gameplay information.
+- Require Tooltips for basic navigation.
+
+SHOULD
+
+- Keep content concise.
+- Prioritize meaningful values.
+- Provide comparisons where useful.
+- Explain unfamiliar stats and mechanics.
+- Reduce permanent UI density.

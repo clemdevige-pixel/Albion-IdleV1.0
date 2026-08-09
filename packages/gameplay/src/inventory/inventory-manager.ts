@@ -324,6 +324,48 @@ export class InventoryManager {
     return matches;
   }
 
+  /**
+   * Authoritative capacity preview for the same stack rules used by addQuantity.
+   * `releasedPositions` represents occupied slots that a transaction will
+   * release before inserting the item (for example consumed craft inputs).
+   */
+  canAcceptQuantity(
+    entityId: EntityId,
+    itemId: string,
+    quantity: number,
+    enchantment: EnchantmentLevel = 0,
+    releasedPositions: readonly number[] = [],
+  ): boolean {
+    if (
+      !Number.isInteger(quantity)
+      || quantity <= 0
+    ) {
+      return false;
+    }
+
+    const data = this.#getData(entityId);
+    const released = new Set(
+      releasedPositions.filter(
+        (position) => this.#isValidPosition(data, position) && data.slots.has(position),
+      ),
+    );
+    const maxStack = effectiveMaxStack(this.#stackInfoFor(itemId));
+    let availableCapacity = (
+      this.#capacityOf(data) - data.slots.size + released.size
+    ) * maxStack;
+
+    if (maxStack > 1) {
+      for (const [position, entry] of data.slots) {
+        if (released.has(position)) continue;
+        if (areEntriesStackCompatible(entry, { itemId, enchantment })) {
+          availableCapacity += Math.max(0, maxStack - entry.quantity);
+        }
+      }
+    }
+
+    return availableCapacity >= quantity;
+  }
+
   addQuantity(
     entityId: EntityId,
     itemId: string,

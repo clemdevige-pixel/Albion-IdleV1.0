@@ -1,0 +1,882 @@
+# UI_BIBLE/25_UI_ARCHITECTURE.md
+
+# Albion Idle — UI Architecture
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+This document defines the implementation principles of the Albion Idle UI.
+
+The objective is to ensure that the visual system defined by the UI Bible is implemented as a:
+
+- Modular
+- Reusable
+- Data-driven
+- Maintainable
+- Extensible
+
+interface.
+
+This document defines architecture principles, not the exact project file structure.
+
+---
+
+# Core Principle
+
+The UI renders game state.
+
+It does not own gameplay rules.
+
+```text
+GAME STATE
+    ↓
+UI DATA
+    ↓
+SHARED COMPONENTS
+    ↓
+MODULES
+    ↓
+PLAYER
+```
+
+Gameplay systems remain the source of truth.
+
+---
+
+# Separation of Responsibilities
+
+The interface is separated into three conceptual layers.
+
+```text
+GAMEPLAY
+    ↓
+UI STATE / ADAPTERS
+    ↓
+PRESENTATION
+```
+
+## Gameplay
+
+Responsible for:
+
+- Combat rules
+- Inventory rules
+- Crafting rules
+- Progression
+- Masteries
+- Production
+- World state
+- Item data
+- Timers
+- Rewards
+
+## UI State / Adapters
+
+Responsible for transforming gameplay state into information usable by the interface.
+
+Examples:
+
+- Current inventory contents
+- Available recipes
+- Craft progress
+- Current mastery progress
+- Current zone
+- Notification states
+
+## Presentation
+
+Responsible only for displaying and interacting with this information.
+
+---
+
+# Global UI Shell
+
+Albion Idle uses one persistent UI shell.
+
+```text
+App
+│
+├── Header
+│
+├── Game World
+│
+├── Right Panel
+│
+└── Bottom Bar
+```
+
+These regions remain mounted during normal gameplay.
+
+Navigation changes content, not the global structure.
+
+---
+
+# Right Panel Architecture
+
+The Right Panel acts as a module container.
+
+Conceptually:
+
+```text
+RightPanel
+│
+├── Dashboard
+├── Character
+├── Inventory
+├── Masteries
+├── Production
+├── Craft
+├── Bank
+└── World
+```
+
+Only the active module is displayed.
+
+Future modules integrate into the same architecture.
+
+---
+
+# Module Independence
+
+Each module owns its presentation logic.
+
+Example:
+
+```text
+InventoryModule
+
+CraftModule
+
+MasteriesModule
+```
+
+A module must not need to understand the internal UI implementation of another module.
+
+Cross-system navigation uses shared navigation mechanisms.
+
+---
+
+# Shared Components
+
+Modules are constructed from the Component Library defined in:
+
+`04_COMPONENT_LIBRARY.md`
+
+Examples:
+
+```text
+Panel
+Card
+Button
+ProgressBar
+ItemSlot
+Tooltip
+Badge
+Tabs
+Search
+Dropdown
+Toggle
+Timer
+List
+Grid
+Modal
+```
+
+Modules should compose shared components rather than recreate them.
+
+---
+
+# Design Tokens
+
+Visual constants must be centralized.
+
+Examples:
+
+```text
+Colors
+Typography
+Spacing
+Sizing
+Borders
+Radius
+Shadows
+Animation timing
+```
+
+Conceptually:
+
+```text
+Design Tokens
+      ↓
+Shared Components
+      ↓
+Modules
+```
+
+Individual modules must not independently redefine the Design System.
+
+---
+
+# Data-Driven UI
+
+Content must come from game data whenever possible.
+
+Example:
+
+Bad:
+
+```text
+if weaponName === "Permafrost Prism"
+    renderSpecialCraftLayout()
+```
+
+Preferred:
+
+```text
+Recipe Data
+    ↓
+Generic Craft Components
+    ↓
+Rendered Recipe
+```
+
+Adding new content should normally require adding data rather than rewriting the UI.
+
+---
+
+# Item Rendering
+
+Items use one shared presentation model across:
+
+- Inventory
+- Bank
+- Character
+- Craft
+- Loot
+- Tooltips
+
+The same item data must produce consistent:
+
+- Icon
+- Tier
+- Enchantment
+- Quality
+- Quantity
+- Item Power
+
+presentation.
+
+---
+
+# State Rendering
+
+Shared UI states follow:
+
+`20_UI_STATES_FEEDBACK.md`
+
+Examples:
+
+```text
+Loading
+Locked
+Disabled
+Selected
+Active
+Warning
+Error
+Complete
+```
+
+Modules must not invent different meanings for shared states.
+
+---
+
+# Navigation State
+
+One shared navigation state determines the active Right Panel module.
+
+Conceptually:
+
+```text
+activeModule = dashboard
+activeModule = inventory
+activeModule = craft
+```
+
+Modules must not independently manipulate the global layout.
+
+---
+
+# Local Module State
+
+Modules may own temporary presentation state.
+
+Examples:
+
+Inventory:
+
+```text
+Search query
+Selected item
+Filters
+Sorting
+```
+
+Craft:
+
+```text
+Selected category
+Selected family
+Selected recipe
+```
+
+Masteries:
+
+```text
+Expanded families
+Selected mastery
+```
+
+This state must remain separate from gameplay state when it has no gameplay consequence.
+
+---
+
+# Persistent Gameplay State
+
+Gameplay information must not exist only inside UI components.
+
+Examples:
+
+Bad:
+
+```text
+Craft timer stored only in CraftPanel
+```
+
+Correct:
+
+```text
+Gameplay Craft State
+        ↓
+Craft Panel
+```
+
+Closing or switching panels must never reset gameplay.
+
+---
+
+# Game World Independence
+
+The Game World continues regardless of the active Right Panel module.
+
+```text
+Combat
+   +
+Inventory
+   +
+Production
+   +
+Craft inspection
+```
+
+UI navigation must not restart, pause or recreate combat unless explicitly required by gameplay.
+
+---
+
+# Rendering Boundaries
+
+Frequent gameplay updates should not unnecessarily rerender the entire interface.
+
+Example:
+
+```text
+Damage event
+→ Combat HUD update
+
+NOT
+
+Damage event
+→ Entire application UI rerender
+```
+
+UI state should remain scoped to the components that require it.
+
+---
+
+# High-Frequency Data
+
+Frequently changing information includes:
+
+- HP
+- Damage numbers
+- Cooldowns
+- Timers
+- Combat progression
+- Production progress
+
+These updates should remain isolated from unrelated modules.
+
+---
+
+# Phaser / UI Boundary
+
+The Game World renderer and application UI have separate responsibilities.
+
+Phaser handles visual world rendering such as:
+
+- Characters
+- Enemies
+- Environment
+- Projectiles
+- Combat animations
+- World VFX
+
+The application UI handles:
+
+- Header
+- Right Panel
+- Bottom Bar
+- Menus
+- Cards
+- Tooltips
+- Navigation
+- Management interfaces
+
+Gameplay state connects both layers.
+
+Neither visual layer should become the source of truth for gameplay.
+
+---
+
+# Combat HUD
+
+Combat HUD elements must use the appropriate rendering layer according to their function.
+
+World-space feedback may belong to Phaser.
+
+Examples:
+
+```text
+Damage numbers
+Impact effects
+Loot appearing in the world
+```
+
+Persistent interface elements belong to the UI layer.
+
+Examples:
+
+```text
+Ability Bar
+Segment Timeline
+Navigation
+Persistent status information
+```
+
+The boundary must remain intentional.
+
+---
+
+# Actions
+
+UI actions request gameplay actions.
+
+Conceptually:
+
+```text
+Player clicks CRAFT
+        ↓
+UI requests Craft action
+        ↓
+Gameplay validates
+        ↓
+Gameplay state changes
+        ↓
+UI updates
+```
+
+The UI must not independently decide that the craft succeeded.
+
+---
+
+# Validation
+
+Gameplay systems validate actions.
+
+Examples:
+
+- Can equip?
+- Can craft?
+- Can refine?
+- Can enter zone?
+- Is Inventory full?
+- Is requirement satisfied?
+
+The UI may preview validity for usability, but gameplay remains authoritative.
+
+---
+
+# Errors
+
+Gameplay errors are translated into understandable UI feedback.
+
+Example:
+
+```text
+Gameplay:
+INVENTORY_CAPACITY_REACHED
+
+UI:
+Inventory full.
+Free a slot before collecting this item.
+```
+
+Technical implementation details should not normally be shown to the player.
+
+---
+
+# Tooltips
+
+Tooltips use shared data presentation.
+
+A module should not create custom item descriptions if the shared Item Tooltip already represents that information.
+
+---
+
+# Notifications
+
+Notifications consume meaningful game events.
+
+Conceptually:
+
+```text
+Game Event
+    ↓
+Notification Rules
+    ↓
+Toast / Badge / Dashboard State
+```
+
+Routine events are filtered according to:
+
+`16_NOTIFICATIONS.md`
+
+---
+
+# Responsive Architecture
+
+Responsive behavior belongs primarily to:
+
+- Global layout
+- Shared components
+- Design tokens
+
+Modules should not each invent independent breakpoint systems.
+
+Rules follow:
+
+`19_RESPONSIVE_RESOLUTIONS.md`
+
+---
+
+# Performance
+
+The UI architecture must support simultaneous:
+
+- Combat
+- Animation
+- Timers
+- Production
+- Notifications
+- Right Panel interaction
+
+without unnecessary global updates.
+
+Performance should be considered when designing component boundaries and state subscriptions.
+
+---
+
+# Extensibility
+
+Adding a future system should follow:
+
+```text
+Game Data / State
+       ↓
+Module
+       ↓
+Existing Components
+       ↓
+Right Panel
+       ↓
+Navigation Entry
+```
+
+The global interface should not require redesign.
+
+Potential future systems include:
+
+- Island
+- Marketplace
+- Guild
+- Dungeons
+- Expeditions
+- Collections
+- Achievements
+- Events
+
+These systems are not considered implemented simply because the architecture supports them.
+
+---
+
+# No Premature Features
+
+UI architecture may anticipate future extension points.
+
+It must not implement unsupported gameplay systems purely because they may exist later.
+
+```text
+Extensible
+≠
+Pre-built unused features
+```
+
+---
+
+# Source of Truth
+
+The UI Bible defines presentation and interaction expectations.
+
+The actual gameplay implementation remains governed by the project's gameplay architecture and validated game data.
+
+If UI documentation conflicts with authoritative gameplay rules, gameplay rules determine behavior and the UI documentation must be corrected.
+
+---
+
+# Implementation Migration
+
+The existing interface should be migrated progressively.
+
+Preferred approach:
+
+```text
+1. Global Shell
+2. Design Tokens
+3. Shared Components
+4. Header
+5. Bottom Bar
+6. Right Panel
+7. Dashboard
+8. Individual Modules
+9. Combat HUD integration
+10. Final consistency pass
+```
+
+The game should remain functional during migration whenever practical.
+
+---
+
+# Mandatory Compartmentalization
+
+UI compartmentalization is a mandatory architectural requirement from the first implementation.
+
+The project must never allow a central UI file, Context, Store, Provider, Hook or Component to progressively accumulate unrelated responsibilities.
+
+The objective is to prevent large monolithic files that require expensive refactoring later.
+
+---
+
+# Domain Ownership
+
+Each UI domain owns its own:
+
+- Components
+- Hooks
+- Selectors
+- Adapters
+- Types
+- Local state
+- Presentation logic
+
+Example:
+
+UI
+├── shell
+│   ├── Header
+│   ├── BottomBar
+│   └── RightPanel
+│
+├── dashboard
+├── character
+├── inventory
+├── masteries
+├── production
+├── craft
+├── bank
+├── world
+│
+├── combat-hud
+│
+└── shared
+    ├── components
+    ├── hooks
+    ├── tokens
+    └── types
+
+A domain must not become a dumping ground for another domain's logic.
+
+---
+
+# No God Components
+
+Large central components are prohibited.
+
+A component must not simultaneously manage:
+
+- Navigation
+- Inventory
+- Combat
+- Craft
+- Masteries
+- Production
+- World
+- Notifications
+- Persistence
+
+If responsibilities begin to accumulate, they must be extracted immediately rather than postponed to a future refactor.
+
+---
+
+# No God Context
+
+A global Context must not expose the complete game state and every game action to the entire UI.
+
+Prefer narrowly scoped access:
+
+Gameplay State
+      ↓
+Domain Selectors / Adapters
+      ↓
+Relevant UI Module
+
+Components should subscribe only to the state they actually require.
+
+---
+
+# File Responsibility
+
+Each file should have one clear architectural responsibility.
+
+File growth is treated as an architectural warning signal.
+
+When a file begins accumulating unrelated:
+
+- State
+- Effects
+- Event handlers
+- Data transformations
+- Rendering logic
+
+it must be split before additional features are added.
+
+Do not knowingly create technical debt with the intention of "refactoring later."
+
+---
+
+# Feature Isolation
+
+Adding or modifying one UI module should normally affect only:
+
+1. The module itself
+2. Shared components when genuinely reusable
+3. Navigation registration when required
+
+Example:
+
+Adding a Craft feature should not require modifying Character, Inventory, Masteries or World implementation files.
+
+---
+
+# Shared Does Not Mean Global
+
+Code belongs in `shared` only when it is genuinely reused by multiple domains.
+
+Domain-specific logic must remain inside its domain.
+
+The shared layer must not become another monolith.
+
+---
+
+# Architecture Before Expansion
+
+Before adding significant functionality to an existing file, implementation must first verify that the new responsibility belongs there.
+
+If not, create the appropriate module or abstraction first.
+
+Architecture must be maintained continuously.
+
+Refactoring must not be systematically postponed until files become unmanageable.
+
+---
+
+# Hard Rules
+
+MUST
+
+- Compartmentalize UI by domain from the first implementation.
+- Maintain clear ownership boundaries.
+- Extract unrelated responsibilities immediately.
+- Keep state subscriptions scoped.
+- Keep domain-specific logic inside its domain.
+- Treat excessive file growth as an architectural warning.
+
+MUST NOT
+
+- Create God Components.
+- Create God Contexts.
+- Centralize unrelated UI logic for convenience.
+- Use `shared` as a dumping ground.
+- Accumulate technical debt with a planned future refactor.
+- Add new responsibilities to an already overloaded file.
+
+The architecture must remain maintainable while the game grows, not become maintainable only after future refactoring.
+
+# Rules
+
+MUST
+
+- Keep gameplay as the source of truth.
+- Separate gameplay state from presentation state.
+- Use shared components.
+- Centralize Design Tokens.
+- Keep modules independent.
+- Keep the Right Panel modular.
+- Preserve Game World continuity.
+- Keep content data-driven.
+- Isolate high-frequency updates.
+- Maintain a clear Phaser/UI boundary.
+- Support future modules without redesigning the global layout.
+
+MUST NOT
+
+- Store authoritative gameplay state only inside UI components.
+- Hardcode individual content layouts unnecessarily.
+- Duplicate shared components between modules.
+- Allow modules to redefine global Design System rules.
+- Reset gameplay when navigating.
+- Couple unrelated modules together.
+- Make the renderer responsible for gameplay rules.
+- Implement future features solely because extension points exist.
+
+SHOULD
+
+- Prefer composition over specialized components.
+- Keep state subscriptions scoped.
+- Reuse shared item presentation.
+- Translate technical errors into useful player feedback.
+- Keep migration incremental.
+- Maintain clear boundaries between gameplay, UI state and presentation.

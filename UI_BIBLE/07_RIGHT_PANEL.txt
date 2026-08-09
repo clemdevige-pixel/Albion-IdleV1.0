@@ -1,0 +1,336 @@
+# UI_BIBLE/07_RIGHT_PANEL.md
+
+# Albion Idle — Right Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Right Panel is the primary interaction area of Albion Idle.
+
+All major game systems are accessed through this panel while the Game World remains visible and active.
+
+The Right Panel replaces traditional full-screen menus.
+
+---
+
+# Core Principle
+
+The Right Panel is permanent.
+
+Its container never disappears.
+
+Only its internal content changes.
+
+```text
++------------------------------+
+| PANEL HEADER                 |
++------------------------------+
+|                              |
+| CONTEXTUAL CONTENT           |
+|                              |
+| Cards                        |
+| Lists                        |
+| Grids                        |
+| Progress                     |
+| Actions                      |
+|                              |
++------------------------------+
+```
+
+---
+
+# Default State
+
+When no module is selected, the Right Panel displays the Dashboard.
+
+The panel is never empty.
+
+```text
+No active module
+       ↓
+   Dashboard
+```
+
+---
+
+# Module States
+
+The Right Panel can display:
+
+- Dashboard
+- Character
+- Inventory
+- Masteries
+- Gathering
+- Craft
+- Island
+- Bank
+- World
+
+Future systems must use the same container.
+
+---
+
+# Panel Header
+
+Every module uses a consistent header.
+
+The header contains:
+
+- Module icon
+- Module title
+- Contextual information when useful
+- Contextual actions when required
+
+The header remains compact.
+
+---
+
+# Internal Navigation
+
+Modules may contain:
+
+- Tabs
+- Filters
+- Search
+- Categories
+
+These controls exist inside the Right Panel.
+
+They never create another full-screen interface.
+
+Example:
+
+```text
+CRAFT
+────────────────────
+
+[ Weapons ] [ Armor ] [ Refining ]
+
+Search...
+
+Recipe Card
+Recipe Card
+Recipe Card
+```
+
+---
+
+# Content Structure
+
+Information is organized vertically.
+
+Preferred hierarchy:
+
+```text
+Panel Header
+
+Primary information
+
+Primary action
+
+Secondary information
+
+Detailed information
+```
+
+The most important information must appear without scrolling whenever possible.
+
+---
+
+# Scrolling
+
+The panel supports vertical scrolling.
+
+The Panel Header and essential navigation should remain accessible when practical.
+
+Horizontal scrolling is prohibited for normal content.
+
+---
+
+# Cards
+
+Cards are the primary content containers.
+
+Example:
+
+```text
++----------------------------+
+| CURRENT MASTERY            |
+|                            |
+| Broadsword          Lv. 72 |
+| ███████████░░░░      74%   |
++----------------------------+
+
++----------------------------+
+| NEXT BONUS                 |
+| +2 Damage                  |
++----------------------------+
+```
+
+Cards may vary in height depending on their content.
+
+---
+
+# Dense Content
+
+Some modules require higher information density.
+
+Examples:
+
+- Inventory
+- Bank
+- Masteries
+- Craft
+
+These modules may use grids, compact rows or nested sections while maintaining the shared Design System.
+
+The panel must not become artificially simplified at the cost of usability.
+
+---
+
+# Contextual Actions
+
+Actions should appear close to the information they affect.
+
+Examples:
+
+```text
+Item
+→ Equip
+
+Recipe
+→ Craft
+
+Worker
+→ Assign
+
+Mastery
+→ Invest
+```
+
+The player should not need to search elsewhere for the primary action.
+
+---
+
+# Panel Switching
+
+Switching modules changes only the Right Panel content.
+
+```text
+WORLD                RIGHT PANEL
+
+Combat               Inventory
+   ↓                      ↓
+Combat               Craft
+   ↓                      ↓
+Combat               Masteries
+```
+
+The Game World continues uninterrupted.
+
+---
+
+# Dashboard Return
+
+Selecting the currently active Bottom Bar module again returns to the Dashboard.
+
+The Dashboard therefore acts as the home state of the Right Panel.
+
+---
+
+# Width
+
+The Right Panel occupies the minority portion of the main content area.
+
+Its exact width is not permanently fixed.
+
+Target range:
+
+25% → 35%
+
+Final proportions are determined during the mockup phase alongside the Game World.
+
+The panel must remain wide enough for complex modules without compromising the visual dominance of the Game World.
+
+---
+
+# Visual Stability
+
+Switching modules must not:
+
+- move the global layout
+- resize the Header
+- resize the Bottom Bar
+- cause major Game World shifts
+
+Internal panel content may change freely.
+
+---
+
+# Empty States
+
+No module may display a visually empty panel.
+
+Examples:
+
+```text
+No active craft
+→ Browse recipes
+
+No workers assigned
+→ Assign a worker
+
+Empty inventory filter
+→ Clear filters
+```
+
+---
+
+# Interaction Rules
+
+MUST
+
+- Remain permanently available.
+- Display the Dashboard by default.
+- Use shared UI components.
+- Support vertical scrolling.
+- Keep primary actions easy to reach.
+- Preserve the Game World while navigating.
+
+MUST NOT
+
+- Replace the Game World.
+- Create independent full-screen pages.
+- Require horizontal scrolling for normal usage.
+- Change the global layout between modules.
+- Become empty.
+
+SHOULD
+
+- Show essential information before scrolling.
+- Keep navigation controls stable.
+- Favor compact information presentation.
+- Maintain consistent interaction patterns between modules.
+
+---
+
+# Future Compatibility
+
+New systems must integrate into the Right Panel whenever possible.
+
+The Right Panel architecture must support future modules without requiring changes to the global layout.
+
+Examples:
+
+- Marketplace
+- Guild
+- Dungeons
+- Expeditions
+- Achievements
+- Collections
+- Events

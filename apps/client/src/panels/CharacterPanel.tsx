@@ -11,9 +11,9 @@ import {
   getItemDisplayName,
   ItemVisual,
 } from "./ItemVisual";
-import { getEffectiveItemPower } from "../data/itemPower";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 import { renderManifestRegistry } from "../game/render/defaultRenderManifestRegistry";
+import { calculateAverageEquippedItemPower } from "../ui/state/equipmentUiSelectors";
 import {
   syncEquipmentToBridge,
   syncInventoryToBridge,
@@ -152,23 +152,10 @@ export function CharacterPanel(): JSX.Element | null {
   const hasTwoHandedWeapon =
     equippedWeapon?.itemId != null &&
     getItemDefinition(equippedWeapon.itemId)?.handling === "two_handed";
-  const equippedItemPowers = state.equipment.slots
-    .map((entry) =>
-      entry.itemId == null
-        ? undefined
-        : getEffectiveItemPower(
-          entry.itemId,
-          state.progression.masteries,
-          entry.enchantment,
-        ),
-    )
-    .filter((value): value is number => value !== undefined);
-  const averageItemPower = equippedItemPowers.length === 0
-    ? 0
-    : Math.round(
-      (equippedItemPowers.reduce((sum, value) => sum + value, 0)
-        / equippedItemPowers.length) * 10,
-    ) / 10;
+  const averageItemPower = calculateAverageEquippedItemPower(
+    state.equipment,
+    state.progression.masteries,
+  );
   const compatibleInventoryItems = pickerSlot === null
     ? []
     : state.inventory.slots.filter((inventorySlot) => {

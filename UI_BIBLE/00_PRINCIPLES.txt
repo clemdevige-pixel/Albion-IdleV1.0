@@ -1,0 +1,68 @@
+# UI_BIBLE/00_PRINCIPLES.md
+
+# UI Bible Principles
+
+These principles have priority over every other document.
+
+If another document conflicts with these rules,
+these principles always win.
+
+---
+
+## 1. Single Screen Experience
+
+The player never leaves the main screen.
+
+---
+
+## 2. World First
+
+The Game World remains visible at all times.
+
+---
+
+## 3. Contextual Panels
+
+Every feature integrates into the Right Panel.
+
+---
+
+## 4. Design Consistency
+
+Every interface must use the shared Design System.
+
+---
+
+## 5. Readability First
+
+Readability always has priority over decoration.
+
+---
+
+## 6. No Dead Space
+
+Every area of the interface should provide useful information.
+
+---
+
+## 7. Persistent World
+
+The world continues to evolve regardless of the opened panel.
+
+---
+
+## 8. Progressive Disclosure
+
+Only display advanced information when needed.
+
+---
+
+## 9. Reusable Components
+
+Never create a unique component if an existing one can be reused.
+
+---
+
+## 10. Future Compatibility
+
+Every new feature must integrate into the existing layout.

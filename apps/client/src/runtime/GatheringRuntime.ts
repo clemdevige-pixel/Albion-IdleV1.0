@@ -106,7 +106,9 @@ export interface GatheringRuntimeDependencies {
   readonly masteryService: MasteryService;
   readonly experienceService: ExperienceService;
   readonly progressionOrchestrator: ProgressionOrchestrator;
-  readonly heroId: EntityId;
+  /** @deprecated Production resources should use productionStorageId. */
+  readonly heroId?: EntityId;
+  readonly productionStorageId?: EntityId;
 
   readonly nodesAndTools: GatheringNodesAndTools;
   readonly getProductionTier: () => 3 | 4;
@@ -125,7 +127,7 @@ export class GatheringRuntime {
   private readonly inventoryManager: InventoryManager;
   private readonly masteryService: MasteryService;
   private readonly experienceService: ExperienceService;
-  private readonly heroId: EntityId;
+  private readonly productionStorageId: EntityId;
   private readonly nodesAndTools: GatheringNodesAndTools;
   private readonly getProductionTier: () => 3 | 4;
 
@@ -162,7 +164,9 @@ export class GatheringRuntime {
     this.inventoryManager = deps.inventoryManager;
     this.masteryService = deps.masteryService;
     this.experienceService = deps.experienceService;
-    this.heroId = deps.heroId;
+    const storageId = deps.productionStorageId ?? deps.heroId;
+    if (storageId === undefined) throw new Error("GatheringRuntime requires production storage");
+    this.productionStorageId = storageId;
     this.nodesAndTools = deps.nodesAndTools;
     this.getProductionTier = deps.getProductionTier;
 
@@ -351,7 +355,7 @@ export class GatheringRuntime {
       this.endActiveGatheringMiniGame("Wood");
       const recipe = this.getWoodRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.rawItemId,
         result.quantityGathered,
         { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
@@ -377,7 +381,7 @@ export class GatheringRuntime {
       this.endActiveGatheringMiniGame("Ore");
       const recipe = this.getMetalRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.rawItemId,
         result.quantityGathered,
         { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
@@ -403,7 +407,7 @@ export class GatheringRuntime {
       this.endActiveGatheringMiniGame("Hide");
       const recipe = this.getLeatherRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.rawItemId,
         result.quantityGathered,
         { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
@@ -429,7 +433,7 @@ export class GatheringRuntime {
       this.endActiveGatheringMiniGame("Fiber");
       const recipe = this.getClothRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.rawItemId,
         result.quantityGathered,
         { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },

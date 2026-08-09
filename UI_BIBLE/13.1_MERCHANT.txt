@@ -1,0 +1,704 @@
+# UI_BIBLE/13.1_MERCHANT.md
+
+# Albion Idle — Merchant
+
+Version: 1.0  
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Merchant provides a simple interface for buying and selling goods without interrupting the active Game World.
+
+It is an economic utility module, not a player marketplace.
+
+---
+
+# Core Principle
+
+The Merchant must be:
+
+- Fast
+- Compact
+- Easy to understand
+- Integrated into the Right Panel
+- Consistent with Inventory, Bank and Craft
+
+```text
+MERCHANT
+├── BUY
+└── SELL
+```
+
+The Game World remains visible and active while using the Merchant.
+
+---
+
+# Right Panel Structure
+
+```text
+MERCHANT
+
+[ BUY ] [ SELL ]
+
+TIER
+[T3] [T4] [T5] [T6] [T7] [T8]
+
+ENCHANTMENT
+[.0] [.1] [.2] [.3] [.4]
+
+CATEGORY
+[ All ] [ Equipment ] [ Materials ] [ Consumables ]
+
+────────────────────────
+
+ITEM LIST
+
+[ Item ]
+Name                     T4.0
+Price
+Stock
+
+[ Item ]
+Name                     T4.2
+Price
+Stock
+
+────────────────────────
+
+SELECTED ITEM
+
+[ Icon ] BROADSWORD
+         T4.3
+         Excellent
+
+Item Power        ...
+Damage            ...
+
+Price          8,450 Silver
+Stock                    2
+
+Quantity
+[-]        1        [+] [MAX]
+
+[            BUY            ]
+```
+
+Exact categories and information displayed must come from actual game content.
+
+Do not create categories only for visual completeness.
+
+---
+
+# Tier
+
+The Merchant must support the complete Albion Idle tier structure:
+
+```text
+T3
+T4
+T5
+T6
+T7
+T8
+```
+
+Tier must remain clearly visible whenever relevant.
+
+Tier filtering may use the same interaction pattern as other Right Panel modules.
+
+---
+
+# Enchantment
+
+The Merchant must support the complete Albion Idle enchantment structure:
+
+```text
+.0
+.1
+.2
+.3
+.4
+```
+
+Tier and Enchantment combine to identify the relevant item variant.
+
+Examples:
+
+```text
+T4.0 Broadsword
+T4.1 Broadsword
+T4.2 Broadsword
+T4.3 Broadsword
+T4.4 Broadsword
+```
+
+Enchantment must never be hidden when it affects:
+
+- Item identity
+- Statistics
+- Item Power
+- Price
+- Sell value
+- Availability
+- Stock
+- Gameplay properties
+
+The Merchant UI must use actual item data for each variant.
+
+---
+
+# Tier & Enchantment Selection
+
+When appropriate, Tier and Enchantment may be selected independently.
+
+Example:
+
+```text
+TIER
+[T3] [T4] [T5] [T6] [T7] [T8]
+      ▲
+
+ENCHANTMENT
+[.0] [.1] [.2] [.3] [.4]
+               ▲
+```
+
+Result:
+
+```text
+T4.3
+```
+
+Changing Tier or Enchantment updates the catalogue according to actual available Merchant data.
+
+The UI must not generate item variants that do not exist.
+
+---
+
+# Item Identity
+
+Different enchantments are different item variants.
+
+```text
+T4.0 Broadsword
+        ≠
+T4.3 Broadsword
+```
+
+The Merchant must never collapse enchanted variants into a generic:
+
+```text
+Broadsword T4
+```
+
+when the distinction matters.
+
+---
+
+# Quality
+
+Equipment may also have Quality when supported by gameplay data.
+
+Examples:
+
+```text
+Normal
+Good
+Outstanding
+Excellent
+Masterpiece
+```
+
+Tier, Enchantment and Quality are separate dimensions.
+
+Example:
+
+```text
+BROADSWORD
+
+T4.3
+EXCELLENT
+```
+
+The Merchant must display the actual Quality of the item rather than infer or generate one.
+
+---
+
+# Buy
+
+The Buy tab displays items currently sold by the Merchant.
+
+Each entry may display:
+
+- Item icon
+- Name
+- Tier
+- Enchantment
+- Quality when relevant
+- Price
+- Available stock when limited
+
+Example:
+
+```text
+[⚔] BROADSWORD
+    T4.3 • Excellent
+
+    8,450 Silver
+    Stock: 2
+```
+
+Selecting an item opens its purchase controls.
+
+---
+
+# Purchase Quantity
+
+Stackable items may support quantity selection.
+
+```text
+[-]     10     [+]     [MAX]
+```
+
+The total price updates immediately.
+
+Example:
+
+```text
+10 × Healing Potion
+
+TOTAL
+2,500 Silver
+```
+
+Non-stackable equipment defaults to one item per purchase unless gameplay rules specify otherwise.
+
+---
+
+# Affordability
+
+The player must immediately understand whether a purchase is affordable.
+
+Example:
+
+```text
+PRICE
+8,450 Silver
+
+YOU HAVE
+6,240 Silver
+
+[ BUY ]
+DISABLED
+```
+
+The reason must remain understandable.
+
+The UI must not calculate alternative prices or invent discounts.
+
+Gameplay data remains authoritative.
+
+---
+
+# Stock
+
+If Merchant inventory uses limited stock, remaining quantity is displayed.
+
+```text
+STOCK
+2
+```
+
+If an item has unlimited stock, the UI should not display an artificial quantity.
+
+Stock behavior comes exclusively from gameplay data.
+
+---
+
+# Sell
+
+The Sell tab displays eligible items from the player's Inventory.
+
+```text
+SELL
+
+[ Inventory Item ]
+[ Inventory Item ]
+[ Inventory Item ]
+```
+
+Item identity must remain intact when selling.
+
+Example:
+
+```text
+T4.0 Broadsword
+T4.3 Broadsword
+```
+
+must appear as distinct items when they are distinct inventory entities.
+
+Items that cannot be sold must either:
+
+- not appear
+- or appear disabled with an explanation
+
+depending on gameplay rules.
+
+---
+
+# Sell Value
+
+Selecting an item displays its actual sell value.
+
+Example:
+
+```text
+BROADSWORD
+
+T4.3
+EXCELLENT
+
+Sell Price
+4,220 Silver
+
+Quantity
+1
+
+[            SELL            ]
+```
+
+Sell value may differ according to Tier, Enchantment, Quality or other gameplay properties.
+
+The Merchant UI must never calculate those differences independently.
+
+---
+
+# Equipment Presentation
+
+Equipment uses the shared Item presentation used by:
+
+- Inventory
+- Character
+- Craft
+- Bank
+- Merchant
+
+Relevant information may include:
+
+```text
+Item
+Tier
+Enchantment
+Quality
+Item Power
+Relevant statistics
+```
+
+Example:
+
+```text
+┌──────────────────────────┐
+│        BROADSWORD        │
+│                          │
+│           T5.2           │
+│        MASTERPIECE       │
+│                          │
+│ Item Power        ...    │
+│ Damage            ...    │
+└──────────────────────────┘
+```
+
+The Merchant must not create a separate item visual language.
+
+---
+
+# Materials
+
+Stackable materials use compact presentation.
+
+Tier and Enchantment remain visible when relevant.
+
+Example:
+
+```text
+🪵 PLANKS
+
+T5.2
+
+Available: 248
+
+Sell
+[-]      50      [+] [MAX]
+
+VALUE
+1,250 Silver
+```
+
+The UI must not merge resources of different enchantments into the same stack unless the gameplay Inventory system explicitly does so.
+
+---
+
+# Consumables
+
+Consumables follow the same shared Item presentation principles.
+
+Only information relevant to the consumable should be displayed.
+
+The interface must not force Tier, Enchantment or Quality indicators onto item types that do not use them.
+
+---
+
+# Filtering
+
+Merchant filtering must remain proportional to catalogue size.
+
+Possible filters include:
+
+```text
+Tier
+Enchantment
+Category
+Search
+```
+
+Example:
+
+```text
+T5  |  .2  |  Equipment
+```
+
+The resulting catalogue contains only matching items actually available from the Merchant.
+
+Do not introduce complex filtering when the catalogue does not require it.
+
+---
+
+# Confirmation
+
+Routine low-value transactions should remain fast.
+
+Confirmation dialogs should only be used when justified by actual transaction risk.
+
+The interface must not require unnecessary confirmation for every purchase or sale.
+
+---
+
+# Transaction Feedback
+
+Successful purchase:
+
+```text
+BUY
+ ↓
+Silver updates
+ ↓
+Inventory updates
+ ↓
+Merchant stock updates if applicable
+```
+
+Successful sale:
+
+```text
+SELL
+ ↓
+Inventory updates
+ ↓
+Silver updates
+```
+
+Routine transactions do not require intrusive Toast notifications.
+
+---
+
+# Inventory Capacity
+
+Purchases must respect actual Inventory capacity rules.
+
+If the transaction cannot occur:
+
+```text
+INVENTORY FULL
+
+Free an inventory slot
+before purchasing this item.
+```
+
+The Merchant must not bypass Inventory rules.
+
+---
+
+# Insufficient Silver
+
+When the player cannot afford an item:
+
+```text
+INSUFFICIENT SILVER
+
+Required: 8,450
+Available: 6,240
+```
+
+The disabled action must clearly communicate why the transaction is unavailable.
+
+---
+
+# Unavailable Variants
+
+A Tier / Enchantment combination may exist in the global item system without being sold by the current Merchant.
+
+In that case, the UI must not fabricate stock.
+
+Example:
+
+```text
+T6.4
+
+NOT AVAILABLE
+```
+
+or the unavailable variant may simply be excluded from the catalogue.
+
+The behavior should remain consistent across Merchant content.
+
+---
+
+# Navigation
+
+Merchant follows the standard Right Panel architecture.
+
+Opening Merchant:
+
+- does not replace the Game World
+- does not pause combat
+- does not resize the global layout
+- does not create a full-screen shop
+
+---
+
+# Architecture
+
+Merchant presentation must remain separate from Merchant gameplay and economic rules.
+
+```text
+MERCHANT DATA
+      ↓
+UI ADAPTER
+      ↓
+MERCHANT PANEL
+```
+
+The UI displays:
+
+- Items
+- Tier
+- Enchantment
+- Quality
+- Prices
+- Stock
+- Eligibility
+- Transaction results
+
+It does not define them.
+
+---
+
+# Shared Components
+
+Merchant should reuse existing shared components wherever possible:
+
+```text
+ItemSlot
+ItemTooltip
+Button
+Tabs
+QuantitySelector
+Search
+Filter
+Badge
+CurrencyDisplay
+EmptyState
+TierSelector
+EnchantmentSelector
+```
+
+Do not duplicate Inventory, Bank or Craft components solely for Merchant.
+
+---
+
+# Empty States
+
+If no items match the current Tier / Enchantment / filters:
+
+```text
+NO ITEMS AVAILABLE
+```
+
+If no Inventory items can be sold:
+
+```text
+NOTHING TO SELL
+```
+
+Empty states must clearly communicate that the interface is functioning normally.
+
+---
+
+# Future Extension
+
+The Merchant architecture may support future additions such as:
+
+- Different NPC merchants
+- Rotating stock
+- Limited offers
+- Specialized merchants
+
+These features must not be implemented unless supported by actual gameplay.
+
+The Merchant must not evolve into a player marketplace through UI assumptions.
+
+---
+
+# Rules
+
+MUST
+
+- Remain inside the Right Panel.
+- Keep the Game World visible.
+- Separate Buy and Sell clearly.
+- Support T3–T8.
+- Support `.0–.4` enchantments.
+- Preserve exact item variants.
+- Display Quality when relevant.
+- Use actual gameplay prices.
+- Respect Inventory capacity.
+- Reuse shared Item presentation.
+- Provide clear quantity controls for stackable items.
+- Explain unavailable transactions.
+- Keep Merchant logic outside presentation components.
+
+MUST NOT
+
+- Become a full-screen interface.
+- Invent prices.
+- Invent discounts.
+- Invent Merchant stock rules.
+- Invent Tier / Enchantment variants.
+- Merge distinct enchanted variants incorrectly.
+- Hide Enchantment when it affects the item.
+- Bypass Inventory rules.
+- Duplicate Item presentation unnecessarily.
+- Become a player marketplace.
+- Pause normal gameplay.
+
+SHOULD
+
+- Keep routine transactions fast.
+- Minimize unnecessary confirmations.
+- Use compact item rows.
+- Display total transaction value immediately.
+- Make Tier and Enchantment immediately readable.
+- Remain visually consistent with Inventory, Bank and Craft.

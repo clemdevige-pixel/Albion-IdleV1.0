@@ -44,7 +44,9 @@ export interface RefiningRuntimeDependencies {
   readonly clothRefiningManager: RefiningManager;
 
   readonly inventoryManager: InventoryManager;
-  readonly heroId: EntityId;
+  /** @deprecated Production resources should use productionStorageId. */
+  readonly heroId?: EntityId;
+  readonly productionStorageId?: EntityId;
 
   readonly getProductionTier: () => 3 | 4;
 }
@@ -61,7 +63,7 @@ export class RefiningRuntime {
   private readonly clothRefiningManager: RefiningManager;
 
   private readonly inventoryManager: InventoryManager;
-  private readonly heroId: EntityId;
+  private readonly productionStorageId: EntityId;
   private readonly getProductionTier: () => 3 | 4;
 
   private automaticRefining = false;
@@ -90,7 +92,9 @@ export class RefiningRuntime {
     this.clothRefiningManager = deps.clothRefiningManager;
 
     this.inventoryManager = deps.inventoryManager;
-    this.heroId = deps.heroId;
+    const storageId = deps.productionStorageId ?? deps.heroId;
+    if (storageId === undefined) throw new Error("RefiningRuntime requires production storage");
+    this.productionStorageId = storageId;
     this.getProductionTier = deps.getProductionTier;
 
     this.setupCompletedSubscriptions();
@@ -162,19 +166,19 @@ export class RefiningRuntime {
     requirements: readonly ReservedRefiningRequirement[],
   ): readonly ReservedRefiningRequirement[] | undefined {
     const canPay = requirements.every((requirement) =>
-      this.inventoryManager.getTotalQuantity(this.heroId, requirement.itemId) >= requirement.quantity);
+      this.inventoryManager.getTotalQuantity(this.productionStorageId, requirement.itemId) >= requirement.quantity);
     if (!canPay) return undefined;
 
     const reserved: ReservedRefiningRequirement[] = [];
     for (const requirement of requirements) {
       const removed = this.inventoryManager.removeQuantity(
-        this.heroId,
+        this.productionStorageId,
         requirement.itemId,
         requirement.quantity,
       );
       if (!removed.ok) {
         for (const entry of reserved) {
-          this.inventoryManager.addQuantity(this.heroId, entry.itemId, entry.quantity, {
+          this.inventoryManager.addQuantity(this.productionStorageId, entry.itemId, entry.quantity, {
             itemId: entry.itemId,
             stackable: true,
             maxStack: 999,
@@ -191,7 +195,7 @@ export class RefiningRuntime {
     requirements: readonly ReservedRefiningRequirement[],
   ): void {
     for (const requirement of requirements) {
-      this.inventoryManager.addQuantity(this.heroId, requirement.itemId, requirement.quantity, {
+      this.inventoryManager.addQuantity(this.productionStorageId, requirement.itemId, requirement.quantity, {
         itemId: requirement.itemId,
         stackable: true,
         maxStack: 999,
@@ -307,7 +311,7 @@ export class RefiningRuntime {
     this.refiningManager.events.subscribe("refine:completed", () => {
       const recipe = this.activeWoodRefiningRecipe ?? this.getWoodRecipe();
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.outputItemId,
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
@@ -339,7 +343,7 @@ export class RefiningRuntime {
     this.metalRefiningManager.events.subscribe("refine:completed", () => {
       const recipe = this.activeMetalRefiningRecipe ?? this.getMetalRecipe();
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.outputItemId,
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
@@ -371,7 +375,7 @@ export class RefiningRuntime {
     this.leatherRefiningManager.events.subscribe("refine:completed", () => {
       const recipe = this.activeLeatherRefiningRecipe ?? this.getLeatherRecipe();
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.outputItemId,
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
@@ -403,7 +407,7 @@ export class RefiningRuntime {
     this.clothRefiningManager.events.subscribe("refine:completed", () => {
       const recipe = this.activeClothRefiningRecipe ?? this.getClothRecipe();
       const added = this.inventoryManager.addQuantity(
-        this.heroId,
+        this.productionStorageId,
         recipe.outputItemId,
         recipe.outputQuantity,
         { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
@@ -547,7 +551,7 @@ export class RefiningSaveProvider implements SaveProvider {
   constructor(
     private readonly refiningRuntime: RefiningRuntime,
     private readonly inventoryManager: InventoryManager,
-    private readonly getHeroId: () => EntityId,
+    private readonly getProductionStorageId: () => EntityId,
   ) {}
 
   save(): unknown {
@@ -561,9 +565,9 @@ export class RefiningSaveProvider implements SaveProvider {
       return;
     }
 
-    const heroId = this.getHeroId();
+    const productionStorageId = this.getProductionStorageId();
     for (const input of payload.reservedInputs) {
-      this.inventoryManager.addQuantity(heroId, input.itemId, input.quantity, {
+      this.inventoryManager.addQuantity(productionStorageId, input.itemId, input.quantity, {
         itemId: input.itemId,
         stackable: true,
         maxStack: 999,

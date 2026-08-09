@@ -1,0 +1,397 @@
+# UI_BIBLE/14_BANK.md
+
+# Albion Idle — Bank Panel
+
+Version: 1.0
+Status: VALIDATED
+
+---
+
+# Purpose
+
+The Bank provides long-term storage for items and resources.
+
+It complements the Inventory without introducing a different interaction model.
+
+The player should immediately understand how to move items between Inventory and Bank.
+
+---
+
+# Core Principle
+
+Inventory and Bank share the same visual language.
+
+```text
+Inventory
+    ↕
+   Bank
+```
+
+The Bank uses the shared:
+
+- Item Slot
+- Grid
+- Search
+- Filter
+- Tooltip
+- Item Detail
+
+components.
+
+---
+
+# Structure
+
+```text
++--------------------------------+
+| BANK                    86/120 |
++--------------------------------+
+| Search...     [Tier] [Type]    |
++--------------------------------+
+| All | Equipment | Resources    |
++--------------------------------+
+| [ ][ ][ ][ ][ ]                |
+| [ ][ ][ ][ ][ ]                |
+| [ ][ ][ ][ ][ ]                |
+| [ ][ ][ ][ ][ ]                |
+| ...                            |
++--------------------------------+
+| SELECTED ITEM                  |
+|                                |
+| [ICON] Birch Logs              |
+|        T4                      |
+|        Quantity: 142           |
+|                                |
+| [ WITHDRAW ]                   |
++--------------------------------+
+```
+
+Exact grid dimensions are determined during the mockup phase.
+
+---
+
+# Capacity
+
+Bank capacity is always visible.
+
+Example:
+
+```text
+86 / 120
+```
+
+The value represents:
+
+```text
+Occupied Slots / Available Slots
+```
+
+Bank capacity may be increased according to the gameplay progression system.
+
+---
+
+# Item Grid
+
+Stored items are displayed through the shared Item Grid.
+
+Each slot may display:
+
+- Item icon
+- Quantity
+- Tier
+- Enchantment
+- Quality
+- Relevant status
+
+The Bank must remain visually consistent with Inventory.
+
+---
+
+# Item Stacking
+
+Stackable items follow the same stacking rules as Inventory.
+
+Identical stackable items occupy a single slot whenever gameplay rules allow it.
+
+---
+
+# Categories
+
+Primary filters:
+
+- All
+- Equipment
+- Resources
+- Other
+
+Additional filters may be introduced when justified by actual item volume.
+
+---
+
+# Search
+
+The player can search stored items by name.
+
+Search updates the visible Bank Grid immediately.
+
+Search may be combined with filters.
+
+---
+
+# Sorting
+
+Supported sorting may include:
+
+- Type
+- Tier
+- Quality
+- Quantity
+
+Sorting behavior should remain consistent with Inventory.
+
+---
+
+# Selected Item
+
+Selecting an item displays contextual information inside the Bank Panel.
+
+Possible information:
+
+- Name
+- Icon
+- Quantity
+- Tier
+- Enchantment
+- Quality
+- Item Power when relevant
+- Essential properties
+
+Detailed information uses the shared Tooltip system.
+
+---
+
+# Deposit
+
+Items may be transferred from Inventory to Bank.
+
+The interaction must clearly communicate:
+
+- Selected item
+- Available quantity
+- Quantity being transferred
+- Remaining Inventory quantity
+
+Common transfers should require minimal interaction.
+
+---
+
+# Withdraw
+
+Items may be transferred from Bank to Inventory.
+
+The interaction must clearly communicate:
+
+- Selected item
+- Stored quantity
+- Quantity being withdrawn
+- Available Inventory capacity
+
+The action must not allow invalid transfers.
+
+---
+
+# Quantity Selection
+
+For stacked items, quantity controls may include:
+
+```text
+[-]     20     [+]
+
+[MAX]
+```
+
+The interface must prevent quantities above the available amount or destination capacity.
+
+---
+
+# Quick Transfer
+
+Where appropriate, the interface may support fast transfers between Inventory and Bank.
+
+The interaction must remain explicit enough to prevent accidental item movement.
+
+---
+
+# Full Bank
+
+When Bank capacity is reached:
+
+```text
+BANK FULL
+
+120 / 120
+```
+
+The player receives a clear warning.
+
+The UI must explain why additional items cannot be deposited.
+
+---
+
+# Full Inventory
+
+When withdrawing items without sufficient Inventory capacity, the action is blocked.
+
+Example:
+
+```text
+INVENTORY FULL
+
+Not enough available slots.
+```
+
+---
+
+# Empty Bank
+
+An empty Bank still displays its grid.
+
+Example:
+
+```text
+BANK EMPTY
+
+Store items here for long-term storage.
+```
+
+---
+
+# Equipment
+
+Stored equipment uses the same Item Slot rules as Inventory.
+
+Selecting equipment may provide comparison with currently equipped gear when useful.
+
+Equipment cannot bypass normal Inventory or equipment rules simply because it is stored in the Bank.
+
+---
+
+# Resources
+
+Large resource stacks must remain easy to identify and manage.
+
+Quantity has high visual priority for stored resources.
+
+---
+
+# Inventory Relationship
+
+Bank and Inventory must behave as two parts of the same item-management system.
+
+They must not use different:
+
+- Item visuals
+- Filters
+- Tooltips
+- Sorting logic
+- Interaction terminology
+
+Consistency between both modules is mandatory.
+
+---
+
+# Dashboard Integration
+
+The Dashboard does not need to permanently display Bank information.
+
+Bank alerts should only appear when actionable.
+
+Example:
+
+```text
+Bank capacity almost full.
+```
+
+Routine Bank contents do not belong on the Dashboard.
+
+---
+
+# Notifications
+
+Bank notifications should remain rare.
+
+Relevant cases may include:
+
+- Bank full
+- Capacity upgrade available
+- Transfer failure
+
+Normal deposits and withdrawals do not generate notifications.
+
+---
+
+# Scrolling
+
+The Bank Grid supports vertical scrolling.
+
+Horizontal scrolling is prohibited.
+
+Search and primary filters should remain easily accessible.
+
+---
+
+# Visual Hierarchy
+
+```text
+Capacity
+   ↓
+Search / Filters
+   ↓
+Bank Grid
+   ↓
+Selected Item
+   ↓
+Transfer Actions
+```
+
+The Bank Grid remains the primary visual element.
+
+---
+
+# Scalability
+
+The Bank must remain usable as storage capacity increases.
+
+Large Bank capacities must not require redesigning the module.
+
+Search, filters and sorting provide scalability.
+
+---
+
+# Rules
+
+MUST
+
+- Share the Inventory visual language.
+- Display Bank capacity.
+- Use a compact Item Grid.
+- Support search and filtering.
+- Support item stacking.
+- Make deposits and withdrawals clear.
+- Prevent invalid transfers.
+- Keep the Game World visible.
+
+MUST NOT
+
+- Create a separate full-screen Bank interface.
+- Introduce different item interaction rules from Inventory.
+- Require horizontal scrolling.
+- Hide capacity limitations.
+- Generate unnecessary notifications.
+
+SHOULD
+
+- Make transfers fast.
+- Support quantity selection for stacks.
+- Provide useful sorting.
+- Remain usable with large storage capacities.

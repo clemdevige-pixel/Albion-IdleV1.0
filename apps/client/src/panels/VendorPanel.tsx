@@ -19,6 +19,7 @@ import {
   syncWalletToBridge,
 } from "../state/bridgeSync";
 import { usePanelManager } from "./usePanelManager";
+import { UI_MODULE_IDS } from "../ui/navigation";
 
 type MerchantView = "buy" | "sell" | "repair" | "enchant";
 
@@ -169,7 +170,7 @@ export function VendorPanel(): JSX.Element | null {
     setPending(null);
   }, [pending, services, state.wallet.incomeRate]);
 
-  if (activePanel !== "vendor") {
+  if (activePanel !== UI_MODULE_IDS.merchant) {
     return null;
   }
 
