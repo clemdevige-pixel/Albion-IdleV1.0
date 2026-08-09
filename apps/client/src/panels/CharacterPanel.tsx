@@ -79,7 +79,11 @@ export function CharacterPanel(): JSX.Element | null {
   const { activePanel, closePanel } = usePanelManager();
   const state = useGameBridge();
   const services = useGameServices();
-  const [pickerSlot, setPickerSlot] = useState<EquipmentSlot | null>(null);
+  const [pickerSlot, setPickerSlot] = useState<{
+    slot: EquipmentSlot;
+    x: number;
+    y: number;
+  } | null>(null);
   const [inventoryContextMenu, setInventoryContextMenu] = useState<{
     position: number;
     x: number;
@@ -160,7 +164,7 @@ export function CharacterPanel(): JSX.Element | null {
     ? []
     : state.inventory.slots.filter((inventorySlot) => {
       if (inventorySlot.itemId == null) return false;
-      return getItemDefinition(inventorySlot.itemId)?.slot === pickerSlot;
+      return getItemDefinition(inventorySlot.itemId)?.slot === pickerSlot.slot;
     });
 
   const renderSlot = (slot: EquipmentSlot): JSX.Element => {
@@ -177,15 +181,25 @@ export function CharacterPanel(): JSX.Element | null {
           getEnchantmentFrameClass(entry?.enchantment)
         }`}
         disabled={lockedByWeapon}
-        onClick={() => {
+        onClick={(event) => {
           if (lockedByWeapon) return;
-          setPickerSlot((current) => current === slot ? null : slot);
+          setPickerSlot((current) =>
+            current?.slot === slot
+              ? null
+              : { slot, x: event.clientX, y: event.clientY },
+          );
+        }}
+        onDoubleClick={() => {
+          if (!lockedByWeapon && filled) {
+            handleUnequip(slot);
+            setPickerSlot(null);
+          }
         }}
         title={
           lockedByWeapon
             ? "Indisponible : arme à deux mains équipée"
             : filled
-              ? `${SLOT_LABELS[slot]} — cliquer pour changer`
+              ? `${SLOT_LABELS[slot]} — cliquer pour changer, double-cliquer pour retirer`
               : `${SLOT_LABELS[slot]} — cliquer pour choisir`
         }
       >
@@ -268,7 +282,7 @@ export function CharacterPanel(): JSX.Element | null {
         <section className="character-loadout">
           <div className="character-loadout__heading">
             <span>Équipement actuel</span>
-            <small>Cliquez sur un emplacement pour gérer son équipement</small>
+            <small>Cliquez pour changer · double-cliquez pour retirer</small>
           </div>
 
           <div className="character-loadout__board">
@@ -297,11 +311,22 @@ export function CharacterPanel(): JSX.Element | null {
           </div>
 
           {pickerSlot !== null && (
-            <div className="character-equipment-picker" role="dialog">
+            <div
+              className="character-equipment-picker"
+              role="dialog"
+              style={{
+                position: "fixed",
+                left: `${String(Math.min(pickerSlot.x, window.innerWidth - 360))}px`,
+                right: "auto",
+                top: `${String(Math.min(pickerSlot.y, window.innerHeight - 420))}px`,
+                width: "min(420px, calc(100vw - 24px))",
+                maxHeight: "min(420px, calc(100vh - 24px))",
+              }}
+            >
               <div className="character-equipment-picker__heading">
                 <div>
                   <small>Équipement compatible</small>
-                  <strong>{SLOT_LABELS[pickerSlot]}</strong>
+                  <strong>{SLOT_LABELS[pickerSlot.slot]}</strong>
                 </div>
                 <button
                   type="button"
@@ -311,24 +336,6 @@ export function CharacterPanel(): JSX.Element | null {
                   ×
                 </button>
               </div>
-
-              {equipmentBySlot.get(pickerSlot)?.itemId != null && (
-                <div className="character-equipment-picker__current">
-                  <span>Actuellement équipé</span>
-                  <strong>
-                    {getItemDisplayName(equipmentBySlot.get(pickerSlot)?.itemId ?? "")}
-                  </strong>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleUnequip(pickerSlot);
-                      setPickerSlot(null);
-                    }}
-                  >
-                    Retirer
-                  </button>
-                </div>
-              )}
 
               {compatibleInventoryItems.length > 0 ? (
                 <div className="character-equipment-picker__grid">
