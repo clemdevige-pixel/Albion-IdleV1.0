@@ -14,6 +14,7 @@ import {
 } from "@game/gameplay";
 import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
 import { resolveMonsterForEncounter } from "../data/monsterContentCatalog";
+import { buildMonsterRuntimeAbilities } from "../data/monsterAbilityContentCatalog";
 import { setActiveMonsterIdentity } from "./activeMonsterIdentity";
 
 const STAT_MAX_HEALTH = "stat_max_health" as StatId;
@@ -128,6 +129,10 @@ export function spawnEnemyForSegment(
     { x: 100, y: 0 },
   );
   setActiveMonsterIdentity(enemyId, monster.id);
+
+  for (const ability of buildMonsterRuntimeAbilities(monster.category, monster.abilityIds)) {
+    deps.abilityManager.learnAbility(enemyId, ability);
+  }
 
   const prefix = isBiomeBoss
     ? "[BIOME BOSS] "
