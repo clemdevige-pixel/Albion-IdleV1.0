@@ -55,6 +55,7 @@ export function setupCombatEntity(
   baseStats: {
     maxHealth: number;
     physDamage: number;
+    magDamage?: number;
     attackSpeed: number;
     armor: number;
     magicRes: number;
@@ -79,7 +80,7 @@ export function setupCombatEntity(
   container.setBase(STAT_ATTACK_SPEED, baseStats.attackSpeed);
   container.setBase(STAT_ARMOR, baseStats.armor);
   container.setBase(STAT_MAGIC_RESISTANCE, baseStats.magicRes);
-  container.setBase(STAT_MAGICAL_DAMAGE, 0);
+  container.setBase(STAT_MAGICAL_DAMAGE, baseStats.magDamage ?? 0);
   container.recalculate();
 
   damageManager.attachHealth(id);
@@ -116,12 +117,15 @@ export function spawnEnemyForSegment(
   const magicResistance = Math.floor(
     profile.magicResistance * monster.combat.magicResistance,
   );
+  const physicalDamage = monster.combat.damageType === "physical" ? damage : 0;
+  const magicalDamage = monster.combat.damageType === "magical" ? damage : 0;
 
   const enemyId = setupCombatEntity(
     deps,
     {
       maxHealth,
-      physDamage: damage,
+      physDamage: physicalDamage,
+      magDamage: magicalDamage,
       attackSpeed: monster.combat.attackSpeed,
       armor,
       magicRes: magicResistance,
