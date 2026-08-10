@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "monster_undead_skeleton_archer",
+  "kind": "static_actor",
+  "textureKey": "undead-skeleton-archer",
+  "assetPath": "/assets/monsters/undead-skeleton-archer.webp",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 270, "height": 180 },
+  "hud": { "healthBarWidth": 145, "healthBarOffsetY": 155 },
+  "ambientMotion": { "distance": 3, "durationMs": 860, "delayMs": 220 }
+}
