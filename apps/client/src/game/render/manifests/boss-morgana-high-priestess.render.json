@@ -6,7 +6,7 @@
   "assetPath": "/assets/monsters/morgana-high-priestess.webp",
   "origin": { "x": 0.5, "y": 1 },
   "offset": { "x": 0, "y": 58 },
-  "display": { "width": 265, "height": 265 },
+  "display": { "width": 393, "height": 265 },
   "hud": { "healthBarWidth": 185, "healthBarOffsetY": 215 },
   "ambientMotion": { "distance": 5, "durationMs": 800, "delayMs": 320 }
 }
