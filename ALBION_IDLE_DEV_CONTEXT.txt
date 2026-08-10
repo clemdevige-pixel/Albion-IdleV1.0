@@ -154,11 +154,56 @@ Contract validation:
 - Progression base rewards remain unchanged with x1 current monsters.
 - Multipliers are applied on top of progression, not instead of progression.
 
+23) MONSTER PIPELINE — BLOCK 3 COMBAT BEHAVIOR + ABILITIES
+Date/session: 2026-08-10
+Status: implementation committed; Vercel build validated; manual combat feel validation pending.
+
+Objective:
+Allow monsters to own active combat abilities and category-driven behavior without monster-name conditions in CombatRuntime or Phaser.
+
+Architecture:
+- monsterContentCatalog remains the monster authority and now owns ordered abilityIds.
+- Added monsterAbilityContentCatalog as the authority for reusable monster ability definitions and category behavior profiles.
+- Category profiles define max active ability slots and cooldown cadence for normal/veteran/elite/boss.
+- Higher categories can support more abilities and faster authored cooldown cadence without special-case runtime code.
+- combatEntityFactory learns the resolved runtime abilities when a monster entity spawns.
+- Added MonsterAbilityRuntime: each combat tick it ticks monster cooldowns, respects stun/silence/death, selects the first ready authored active ability, executes it through AbilityManager and applies damage through DamageManager.
+- CombatRuntime calls the generic MonsterAbilityRuntime for the active enemy; it contains no monster-name conditions.
+
+Current authored behavior:
+- Stonefang Wolf / Razorwing Harpy / Morgana Witch: auto-attack only for now.
+- Undead Warrior boss: Heavy Slash, physical 1.35x source damage, authored 10s cooldown; boss category cadence applies 0.75 cooldown multiplier.
+- Ancient Rune Golem biome boss: Crushing Blow, physical 1.60x source damage, authored 12s cooldown; boss category cadence applies 0.75 cooldown multiplier.
+- Veteran and Elite category profiles are implemented and ready for future bestiary definitions even though no current live monster uses those categories yet.
+
+Files added:
+- apps/client/src/data/monsterAbilityContentCatalog.ts
+- apps/client/src/runtime/MonsterAbilityRuntime.ts
+- apps/client/src/runtime/MonsterAbilityRuntime.test.ts
+
+Files modified:
+- apps/client/src/data/monsterContentCatalog.ts
+- apps/client/src/data/monsterContentCatalog.test.ts
+- apps/client/src/runtime/combatEntityFactory.ts
+- apps/client/src/runtime/CombatRuntime.ts
+- ALBION_IDLE_DEV_CONTEXT.txt
+
+Contract validation:
+- Every authored monster ability ID must resolve.
+- Ability count cannot exceed category capacity.
+- Category cooldown cadence is deterministic.
+- Runtime executes only learned ready active abilities.
+- Runtime does not execute abilities while dead, stunned or silenced.
+- Ability damage uses normal damage processing.
+- Vercel build for latest Block 3 code passed.
+
 NEXT MONSTER PIPELINE WORK
 --------------------------
-1. Block 3: monster-specific combat behavior / abilities and category profiles (normal/veteran/elite/boss) without name conditions.
-2. Define real faction-specific loot tables when the new bestiary content is authored.
-3. Decide later whether the existing package MonsterRuntime lifecycle should replace the current CombatRuntime factory lifecycle; do not migrate it only for architectural symmetry.
+1. Block 4: final end-to-end pipeline audit and cleanup; ensure catalog -> spawn -> combat -> death -> progression rewards -> monster loot -> renderer has no stale parallel authority.
+2. Decide/remove obsolete MonsterRuntime/MonsterIntegration paths only where they are confirmed unused or misleading; keep reusable lower-level systems when still valuable.
+3. Add final monster pipeline contract test covering a complete authored monster definition.
+4. Document the standard minimal steps/files required to add a new monster.
+5. Define real faction-specific loot tables when the new bestiary content is authored.
 
 NEXT DAGGER PAIR VISUAL WORK
 ----------------------------
