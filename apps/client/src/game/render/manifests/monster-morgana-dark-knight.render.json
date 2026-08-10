@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "monster_morgana_dark_knight",
+  "kind": "static_actor",
+  "textureKey": "morgana-dark-knight",
+  "assetPath": "/assets/monsters/morgana-dark-knight.webp",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 235, "height": 235 },
+  "hud": { "healthBarWidth": 165, "healthBarOffsetY": 190 },
+  "ambientMotion": { "distance": 4, "durationMs": 850, "delayMs": 300 }
+}
