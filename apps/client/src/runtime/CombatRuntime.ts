@@ -27,6 +27,7 @@ import {
   spawnEnemyForSegment,
   type SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
+import { tickMonsterAbilities } from "./MonsterAbilityRuntime.js";
 import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
@@ -382,6 +383,19 @@ export class CombatRuntime {
     if (this.primaryAbilityAutoCast) {
       this.usePrimaryAbility();
     }
+
+    tickMonsterAbilities(
+      {
+        abilityManager: this.abilityManager,
+        damageManager: this.damageManager,
+        effectManager: this.effectManager,
+        statsManager: this.statsManager,
+      },
+      this.activeEnemyId,
+      this.heroId,
+      dt,
+      tickCounter,
+    );
 
     const tickResult = this.orchestrator.tick(dt);
 
