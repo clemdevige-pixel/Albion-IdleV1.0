@@ -233,6 +233,34 @@ Files modified:
 - apps/client/src/data/worldContentCatalog.ts
 - ALBION_IDLE_DEV_CONTEXT.txt
 
+25) BUGFIX — HERO DEATH FROM MONSTER ABILITIES
+Date/session: 2026-08-10
+Status: implementation committed; Vercel/test validation pending.
+
+Symptom:
+Hero could reach 0 HP after a monster active ability but remain alive/in combat.
+
+Root cause:
+- Auto-attack lethal damage is processed inside CombatService, which calls DeathManager.checkDeath when DamageManager reports targetDied.
+- MonsterAbilityRuntime was added in Block 3 and dealt ability damage directly through DamageManager.
+- It did not call DeathManager.checkDeath on a lethal result, so HP could be 0 while DeathComponent.isDead remained false.
+- CombatService therefore did not transition the encounter to defeat.
+
+Fix:
+- MonsterAbilityRuntime now receives DeathManager.
+- After lethal monster ability damage, it immediately calls checkDeath(hero, monster, tick).
+- CombatRuntime passes its authoritative DeathManager into MonsterAbilityRuntime.
+- Existing CombatService tick then observes hero isDead and transitions to defeat normally.
+
+Regression coverage:
+- Added lethal monster ability test: hero forced to 1 HP, Crushing Blow lands, HP becomes 0, DeathManager.isDead(hero) becomes true, killer entity and death tick are preserved.
+
+Files modified:
+- apps/client/src/runtime/MonsterAbilityRuntime.ts
+- apps/client/src/runtime/CombatRuntime.ts
+- apps/client/src/runtime/MonsterAbilityRuntime.test.ts
+- ALBION_IDLE_DEV_CONTEXT.txt
+
 MONSTER PIPELINE STATUS
 -----------------------
 Blocks 1-4 complete.
