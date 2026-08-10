@@ -109,7 +109,7 @@ Do not wire the old MonsterRuntime/MonsterIntegrationCoordinator into the live c
 
 22) MONSTER PIPELINE — BLOCK 2 REWARDS + LOOT
 Date/session: 2026-08-10
-Status: implementation committed; Vercel/test validation pending.
+Status: implementation committed; build validated; live reward flow retained.
 
 Objective:
 Make monster identity participate in rewards and loot WITHOUT replacing zone/segment progression scaling.
@@ -125,7 +125,7 @@ Migration safety:
 - Boss encounter multiplier already present in getEncounterRewards remains intact.
 
 Implementation:
-- MonsterContentDefinition now owns rewards: silverMultiplier, fameMultiplier, lootTableId.
+- MonsterContentDefinition owns rewards: silverMultiplier, fameMultiplier, lootTableId.
 - applyMonsterRewardModifiers centralizes multiplicative reward scaling.
 - Added explicit MONSTER_LOOT_TABLES in economyContentCatalog.
 - Existing current monster loot tables intentionally reuse current generic drops to avoid hidden rebalance; IDs are now independent and can diverge per monster/faction later.
@@ -156,7 +156,7 @@ Contract validation:
 
 23) MONSTER PIPELINE — BLOCK 3 COMBAT BEHAVIOR + ABILITIES
 Date/session: 2026-08-10
-Status: implementation committed; Vercel build validated; manual combat feel validation pending.
+Status: implementation committed; Vercel build validated; manually confirmed live through Undead Warrior difficulty spike.
 
 Objective:
 Allow monsters to own active combat abilities and category-driven behavior without monster-name conditions in CombatRuntime or Phaser.
@@ -197,13 +197,52 @@ Contract validation:
 - Ability damage uses normal damage processing.
 - Vercel build for latest Block 3 code passed.
 
-NEXT MONSTER PIPELINE WORK
---------------------------
-1. Block 4: final end-to-end pipeline audit and cleanup; ensure catalog -> spawn -> combat -> death -> progression rewards -> monster loot -> renderer has no stale parallel authority.
-2. Decide/remove obsolete MonsterRuntime/MonsterIntegration paths only where they are confirmed unused or misleading; keep reusable lower-level systems when still valuable.
-3. Add final monster pipeline contract test covering a complete authored monster definition.
-4. Document the standard minimal steps/files required to add a new monster.
-5. Define real faction-specific loot tables when the new bestiary content is authored.
+24) MONSTER PIPELINE — BLOCK 4 FINAL AUDIT + CONTRACT
+Date/session: 2026-08-10
+Status: implementation complete; Vercel build validated.
+
+Objective:
+Close the monster-pipeline refactor with a single live source of authority, remove misleading client-side parallel bestiary metadata, add a global contract test and document the standard authoring workflow.
+
+Audit findings / decisions:
+- Live playable lifecycle is CombatRuntime + combatEntityFactory + MonsterAbilityRuntime + combatRewardAdapter.
+- monsterContentCatalog is the live content authority for monster identity, category, combat modifiers, rewards, abilities and encounter pools.
+- worldContentCatalog still contained stale mob_wolf / mob_undead / mob_keeper / mob_heretic / mob_mountain_keeper IDs. These were not driving live combat but represented misleading parallel authority.
+- worldContentCatalog normal monster spawn metadata now derives from ZONE_ENCOUNTER_POOLS, eliminating that divergence.
+- packages/gameplay monster-runtime / monster-spawn / monster-ai / monster-integration are confirmed engine foundations, not the current playable-client lifecycle. They are kept rather than deleted because they remain reusable for future multi-enemy / richer-AI / persistent-spawn needs.
+- No migration to the old package lifecycle is performed only for architectural symmetry.
+
+Global contract:
+- Added apps/client/src/data/monsterPipelineContract.test.ts.
+- Every monster definition must resolve its loot table, renderer manifest and authored abilities.
+- Ability count must respect category capacity.
+- ZoneDefinition normal monster metadata must match the authoritative encounter pool.
+- Zone/segment progression must remain the reward base before monster modifiers.
+- A real authored boss is spawned through combatEntityFactory and verified for monster identity, learned abilities, render manifest and reward/loot resolution.
+
+Documentation:
+- Added docs/MONSTER_PIPELINE.md.
+- Standard new monster flow: definition -> zone pool -> optional abilities -> loot table -> render manifest/assets -> global contract/build.
+- Runtime code must never branch on monster name/ID for monster-specific behavior.
+
+Files added:
+- apps/client/src/data/monsterPipelineContract.test.ts
+- docs/MONSTER_PIPELINE.md
+
+Files modified:
+- apps/client/src/data/worldContentCatalog.ts
+- ALBION_IDLE_DEV_CONTEXT.txt
+
+MONSTER PIPELINE STATUS
+-----------------------
+Blocks 1-4 complete.
+The pipeline is ready for content production.
+Remaining work is bestiary CONTENT, not pipeline architecture:
+1. Author real faction-specific normal/veteran/elite/boss monsters.
+2. Author faction-specific loot tables and rare drops.
+3. Add corresponding render manifests/assets.
+4. Balance category/monster modifiers against progression curves.
+5. Consider migrating to the package MonsterRuntime lifecycle only if future gameplay needs multi-enemy encounters, richer AI state or persistent spawn lifecycle.
 
 NEXT DAGGER PAIR VISUAL WORK
 ----------------------------
