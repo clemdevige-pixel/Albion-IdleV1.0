@@ -11,7 +11,7 @@ import type {
 } from "@game/gameplay";
 import {
   rollEnchantmentMaterial,
-  rollGenericCombatLoot,
+  rollLootTable,
 } from "../data/economyContentCatalog";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog";
@@ -67,13 +67,12 @@ export class CombatRewardRuntime {
   public processEnemyKilledReward(
     silverReward: number,
     fameReward: number,
+    lootTableId: string = "loot_monster_generic",
   ): EnemyKilledRewardResult {
-    // 1. Award Silver
     this.currencyService.credit(this.walletId, "currency_silver", silverReward, "Loot");
     const balRes = this.currencyService.getBalance(this.walletId, "currency_silver");
     const newBalance = balRes.ok ? balRes.value : 0;
 
-    // 2. Award Fame / XP
     let fameEarned: EnemyKilledRewardResult["fameEarned"];
     const equippedWeapon = this.equipmentManager.getEquippedItem(this.heroId, "weapon");
     const activeWeaponRoute = equippedWeapon === undefined
@@ -94,9 +93,8 @@ export class CombatRewardRuntime {
       };
     }
 
-    // 3. Roll generic combat equipment drop
     let equipmentDropped: EnemyKilledRewardResult["equipmentDropped"];
-    const droppedItemId = rollGenericCombatLoot();
+    const droppedItemId = rollLootTable(lootTableId);
     if (droppedItemId !== undefined) {
       const addResult = this.inventoryManager.addQuantity(this.heroId, droppedItemId, 1);
       if (addResult.ok) {
@@ -119,7 +117,6 @@ export class CombatRewardRuntime {
       }
     }
 
-    // 4. Roll enchantment material drop
     let enchantmentMaterialDropped: EnemyKilledRewardResult["enchantmentMaterialDropped"];
     const enchantmentMaterialId = rollEnchantmentMaterial();
     if (enchantmentMaterialId !== undefined) {
