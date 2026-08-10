@@ -27,11 +27,17 @@ import {
   spawnEnemyForSegment,
   type SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
-import { tickMonsterAbilities } from "./MonsterAbilityRuntime.js";
 import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
+
+/**
+ * Temporary live-combat rule: monster active abilities remain authored/learned in the
+ * content pipeline but are not executed. Current bestiary balance is auto-attack only
+ * until the shared monster action cadence/scheduler is redesigned and rebalanced.
+ */
+export const MONSTER_ACTIVE_ABILITIES_ENABLED = false;
 
 export interface CombatLocationState {
   readonly zoneIndex: number;
@@ -383,20 +389,6 @@ export class CombatRuntime {
     if (this.primaryAbilityAutoCast) {
       this.usePrimaryAbility();
     }
-
-    tickMonsterAbilities(
-      {
-        abilityManager: this.abilityManager,
-        damageManager: this.damageManager,
-        deathManager: this.deathManager,
-        effectManager: this.effectManager,
-        statsManager: this.statsManager,
-      },
-      this.activeEnemyId,
-      this.heroId,
-      dt,
-      tickCounter,
-    );
 
     const tickResult = this.orchestrator.tick(dt);
 
