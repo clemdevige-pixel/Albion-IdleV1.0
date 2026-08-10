@@ -165,6 +165,16 @@ export function getMonsterDefinition(id: string): MonsterContentDefinition {
   return definition;
 }
 
+export function applyMonsterRewardModifiers(
+  baseRewards: { readonly silver: number; readonly fame: number },
+  monster: MonsterContentDefinition,
+): { readonly silver: number; readonly fame: number } {
+  return {
+    silver: Math.max(0, Math.round(baseRewards.silver * monster.rewards.silverMultiplier)),
+    fame: Math.max(0, Math.round(baseRewards.fame * monster.rewards.fameMultiplier)),
+  };
+}
+
 export function getZoneEncounterPool(zoneDefId: ZoneDefinitionId): ZoneEncounterPool {
   const pool = ZONE_ENCOUNTER_POOLS[String(zoneDefId)];
   if (pool === undefined) {
