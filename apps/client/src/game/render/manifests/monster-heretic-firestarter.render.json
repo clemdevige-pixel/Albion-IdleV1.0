@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "monster_heretic_firestarter",
+  "kind": "static_actor",
+  "textureKey": "heretic-firestarter",
+  "assetPath": "/assets/monsters/heretic_firestarter.webp",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 284, "height": 190 },
+  "hud": { "healthBarWidth": 145, "healthBarOffsetY": 155 },
+  "ambientMotion": { "distance": 3, "durationMs": 900, "delayMs": 280 }
+}
