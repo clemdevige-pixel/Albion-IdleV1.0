@@ -7,6 +7,11 @@ import {
   getMonsterDefinition,
   resolveMonsterForEncounter,
 } from "./monsterContentCatalog";
+import {
+  MONSTER_CATEGORY_BEHAVIORS,
+  buildMonsterRuntimeAbilities,
+  getMonsterAbilityDefinition,
+} from "./monsterAbilityContentCatalog";
 
 describe("monsterContentCatalog", () => {
   it("keeps every encounter-pool reference resolvable", () => {
@@ -23,6 +28,31 @@ describe("monsterContentCatalog", () => {
       expect(definition.visualManifestId.length).toBeGreaterThan(0);
       expect(definition.combat.attackSpeed).toBeGreaterThan(0);
     }
+  });
+
+  it("keeps every authored monster ability resolvable and within category capacity", () => {
+    for (const definition of Object.values(MONSTER_DEFINITIONS)) {
+      expect(definition.abilityIds.length).toBeLessThanOrEqual(
+        MONSTER_CATEGORY_BEHAVIORS[definition.category].maxActiveAbilities,
+      );
+      for (const abilityId of definition.abilityIds) {
+        expect(getMonsterAbilityDefinition(abilityId).id).toBe(abilityId);
+      }
+      expect(() => buildMonsterRuntimeAbilities(definition.category, definition.abilityIds)).not.toThrow();
+    }
+  });
+
+  it("applies faster authored cooldown cadence to higher monster categories", () => {
+    const abilityId = Object.values(MONSTER_DEFINITIONS)
+      .flatMap((definition) => definition.abilityIds)[0];
+    expect(abilityId).toBeDefined();
+    if (abilityId === undefined) return;
+    const authored = getMonsterAbilityDefinition(abilityId);
+    const bossRuntime = buildMonsterRuntimeAbilities("boss", [abilityId])[0];
+    expect(bossRuntime?.cooldown).toBe(authored.cooldown * MONSTER_CATEGORY_BEHAVIORS.boss.cooldownMultiplier);
+    expect(MONSTER_CATEGORY_BEHAVIORS.boss.cooldownMultiplier).toBeLessThan(
+      MONSTER_CATEGORY_BEHAVIORS.normal.cooldownMultiplier,
+    );
   });
 
   it("selects normal encounters from the zone pool deterministically", () => {
