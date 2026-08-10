@@ -1,5 +1,6 @@
 import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
 import type { ZoneDefinitionId } from "@game/gameplay";
+import { MONSTER_ABILITY_IDS } from "./monsterAbilityContentCatalog";
 
 export type MonsterCategory = "normal" | "veteran" | "elite" | "boss";
 
@@ -28,6 +29,8 @@ export interface MonsterContentDefinition {
   readonly visualManifestId: string;
   readonly combat: MonsterCombatModifiers;
   readonly rewards: MonsterRewardDefinition;
+  /** Ordered priority list. Runtime uses the first ready active ability. */
+  readonly abilityIds: readonly string[];
   readonly tags: readonly string[];
 }
 
@@ -69,6 +72,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     visualManifestId: "monster_stonefang_wolf",
     combat: DEFAULT_COMBAT,
     rewards: DEFAULT_REWARDS,
+    abilityIds: [],
     tags: ["beast", "roaming"],
   },
   [MONSTER_IDS.razorwingHarpy]: {
@@ -80,6 +84,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     visualManifestId: "monster_razorwing_harpy",
     combat: DEFAULT_COMBAT,
     rewards: DEFAULT_REWARDS,
+    abilityIds: [],
     tags: ["harpy", "roaming"],
   },
   [MONSTER_IDS.morganaWitch]: {
@@ -91,6 +96,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     visualManifestId: "monster_morgana_witch",
     combat: DEFAULT_COMBAT,
     rewards: DEFAULT_REWARDS,
+    abilityIds: [],
     tags: ["caster", "roaming"],
   },
   [MONSTER_IDS.undeadWarrior]: {
@@ -105,6 +111,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
       ...DEFAULT_REWARDS,
       lootTableId: "loot_monster_undead_boss",
     },
+    abilityIds: [MONSTER_ABILITY_IDS.undeadHeavySlash],
     tags: ["undead", "segment_boss"],
   },
   [MONSTER_IDS.ancientRuneGolem]: {
@@ -119,6 +126,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
       ...DEFAULT_REWARDS,
       lootTableId: "loot_monster_keeper_boss",
     },
+    abilityIds: [MONSTER_ABILITY_IDS.runeGolemCrushingBlow],
     tags: ["golem", "biome_boss"],
   },
 };
