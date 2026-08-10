@@ -56,75 +56,89 @@ Weapon mastery definitions/names derive from weaponContentCatalog. Duplicate pro
 
 5) WEAPON PIPELINE STEP 3 — ITEM VISUAL GAMEPLAY METADATA
 Validated.
-ItemVisual no longer authors weapon tier/slot/handling/stats. It derives gameplay metadata from weaponContentCatalog and retains presentation-only icon mapping. Weapon UI tests added.
+ItemVisual no longer authors weapon tier/slot/handling/stats. It derives gameplay metadata from weaponContentCatalog. Weapon UI tests added.
 
 6) WEAPON PIPELINE STEP 3B — ITEM CATALOG CLEANUP
-Implementation pushed before craft step.
+Validated through subsequent user smoke tests.
 ITEM_DEFINITIONS now composes WEAPON_ITEM_DEFINITIONS + NON_WEAPON_ITEM_DEFINITIONS only. Manual duplicate weapon and non-weapon entries removed. Inventory/equipment/enchantment/repair recognition now follows authoritative catalogs.
 
 7) WEAPON PIPELINE STEP 4 — STANDARD CRAFT PROGRESSION
+Validated manually by user.
+
+Rules now encoded:
+- T3 standard weapon = refined T3 resources only.
+- T4+ standard weapon = refined resources of current tier + same-specialization weapon T(n-1).
+- predecessor lookup is catalog-driven and generation fails loudly if missing.
+- Broadsword, Longbow, Fire Staff and Spiked Gauntlets use generated recipes.
+- Badon is marked artifact_pending and excluded from standard generation.
+- Badon keeps a temporary explicit material-only recipe until artifact crafting is actually implemented.
+- current material quantities remain unchanged.
+
+8) WEAPON PIPELINE STEP 5 — PRESENTATION AUTHORITY BY SPECIALIZATION
 Date/session: 2026-08-10
 Status: implementation pushed; Vercel/manual validation pending.
 
 Objective:
-Make normal weapon crafting derive from the weapon catalog and enforce the validated tier progression rule without per-tier weapon recipe duplication.
+Reduce presentation duplication so every weapon specialization owns one explicit presentation definition reused by all tiers, without making actor/projectile assets implicit.
+
+Audit findings before modification:
+- equipmentPresentation.ts duplicated the same actorManifestId/combatProfileId for each T3/T4 item of a specialization.
+- ItemVisual.tsx separately maintained a second specialization map solely for item icons.
+- active consumers already go through resolveEquipmentPresentation for bridge synchronization and CharacterModule hero idle preview.
+- ranged combat profiles/projectile IDs belong to the renderer profile layer and should remain separate from weapon identity; they are not duplicated item metadata.
 
 Files modified:
-- apps/client/src/data/weaponContentCatalog.ts
-- apps/client/src/data/refiningRecipes.ts
+- apps/client/src/data/equipmentPresentation.ts
+- apps/client/src/panels/ItemVisual.tsx
+- apps/client/src/data/equipmentPresentation.test.ts (new)
 - ALBION_IDLE_DEV_CONTEXT.txt
 
-Authoring model added to weaponContentCatalog:
-- each specialization now declares a craft rule.
-- standard rule contains craft UI family + material profile/quantities.
-- Badon declares artifact_pending explicitly.
+New presentation model:
+- one explicit presentation definition per specialization mastery ID.
+- each definition contains:
+  - itemIcon
+  - actorManifestId
+  - combatProfileId
+- resolveEquipmentPresentation(itemId) first resolves the weapon specialization through weaponContentCatalog, then returns that specialization's presentation.
+- no per-tier presentation item map remains.
 
-Validated design rule encoded:
-- T3 standard weapon recipe = refined T3 resources only.
-- T4+ standard weapon recipe = refined resources of that tier + exactly one same-specialization weapon from T(n-1).
-- predecessor lookup is catalog-driven; no item-name parsing/fallback.
-- if a standard T4+ weapon has no previous-tier catalog item, recipe generation throws rather than silently producing an invalid recipe.
+Current specialization presentation choices preserved exactly:
+- Broadsword -> item-broadsword-pixel-v1.png / hero_broadsword / melee
+- Longbow -> item-longbow-pixel-v1.png / hero_bow / bow
+- Badon -> item-badon-pixel-v1.png / hero_bow / badon
+- Fire Staff -> item-fire-staff-pixel-v1.png / hero_fire_staff / fire_staff
+- Spiked Gauntlets -> item-spiked-gauntlets-pixel-v1.png / hero_spiked_gauntlets / melee
 
-Current standard material profiles preserve existing recipe quantities:
-- Broadsword: 6 metal + 2 leather.
-- Longbow: 6 wood + 2 leather + 2 cloth.
-- Fire Staff: 4 wood + 4 metal + 2 cloth.
-- Spiked Gauntlets: 5 metal + 3 leather.
-The material IDs automatically resolve to T3 or T4 refined resources through the existing refining recipe boundaries.
+ItemVisual cleanup:
+- removed WEAPON_ICON_BY_SPECIALIZATION.
+- weapon icon now comes from resolveEquipmentPresentation(itemId).itemIcon.
+- tier/handling/stats/name still derive from weaponContentCatalog as before.
+- therefore a specialization now has one presentation authoring location for item icon + equipped actor + combat presentation profile.
 
-refiningRecipes changes:
-- removed manual T3/T4 recipe literals for Broadsword, Longbow, Fire Staff and Spiked Gauntlets.
-- STANDARD_WEAPON_CRAFT_RECIPES now generates those recipes from weaponContentCatalog.
-- T3 generated recipes do not contain predecessor equipment.
-- T4 generated recipes automatically contain the corresponding T3 weapon.
-- armor/off-hand recipes remain explicit and unchanged.
+Tests added:
+- T3/T4 of the same specialization resolve to identical presentation definitions.
+- Broadsword and Badon explicit presentation values are locked.
+- unknown weapon IDs do not receive inferred presentation.
 
-Badon handling:
-- Badon is marked artifact_pending in weaponContentCatalog.
-- Badon is excluded from STANDARD_WEAPON_CRAFT_RECIPES.
-- existing Badon T4 material-only recipe is temporarily preserved explicitly as BADON_TEMPORARY_RECIPE so current V1 behavior is not silently removed before artifact content exists.
-- this temporary recipe is documented as temporary; it is NOT the target artifact implementation.
-- when artifacts are implemented, BADON_TEMPORARY_RECIPE must be replaced by the real artifact recipe path rather than entering the standard predecessor generator.
+Important boundary retained:
+- combatPresentationProfiles.ts remains authoritative for ranged profile -> projectile/release timing.
+- render manifests remain authoritative for actual animation asset paths/frame data.
+- adding a new unique ranged weapon may still require a new combat presentation profile + projectile manifest/assets; that is genuine presentation content, not duplicated weapon metadata.
 
-No intended balance change:
-Existing standard T3/T4 resource quantities and T4 predecessor requirements are preserved.
-
-Validation required before next step:
+Validation requested:
 - Vercel build green.
-- crafting screen lists Broadsword/Longbow/Fire Staff/Spiked T3 and T4 once each.
-- T3 recipes show only resources.
-- T4 recipes show correct resources + matching T3 weapon.
-- Badon remains visible/craftable with its current temporary requirements and does NOT request Longbow T3.
-- craft execution consumes predecessor for standard T4 and produces output normally.
-- enchantment still finds refined craft materials through EQUIPMENT_CRAFT_RECIPES.
+- inventory icons unchanged.
+- CharacterModule hero preview unchanged for each current weapon.
+- combat actor/animation unchanged.
+- Longbow/Badon/Fire Staff projectiles unchanged.
 
 NEXT PLANNED WORK
 -----------------
-1. Validate Step 4 build + crafting behavior.
-2. Add/strengthen automated tests specifically for generated T3/T4 predecessor invariants and Badon exclusion.
-3. Consolidate equipment presentation authoring while keeping actor/projectile asset choices explicit.
+1. Validate Step 5 build + presentation smoke test.
+2. Strengthen craft-generation invariant tests if not already covered by existing runtime tests.
+3. Remove remaining starter mastery compatibility aliases from GameContext by consuming resolveWeaponMastery directly.
 4. Reconcile/retire stale content/data weapon JSON sources.
-5. Final broad pipeline/non-regression validation before adding future weapons.
+5. Run final broad pipeline/non-regression validation before adding future weapons.
 
 VALIDATION TARGET FOR COMPLETE REFACTOR
 ---------------------------------------
@@ -143,3 +157,4 @@ METHODOLOGY LESSONS
 - Audit aggregate registries for hidden re-declarations after spreads.
 - A standard T4+ weapon without its T(n-1) specialization item is invalid content and should fail generation loudly.
 - Do not simulate future artifact mechanics with fake generic rules; keep artifact weapons explicitly outside the standard pipeline until their system exists.
+- Presentation should be authored by specialization, not copied once per tier; actual renderer profiles/manifests remain explicit because those differences are real content.
