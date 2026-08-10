@@ -5,6 +5,11 @@ import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
 import { ENCHANTMENT_MATERIAL_NAMES } from "../data/economyContentCatalog.js";
+import { getMonsterDefinition } from "../data/monsterContentCatalog.js";
+import {
+  clearActiveMonsterIdentity,
+  getMonsterDefinitionIdForEntity,
+} from "./activeMonsterIdentity.js";
 import { syncStatsToBridge } from "../state/bridgeSync.js";
 
 export interface CombatRewardAdapterOptions {
@@ -31,19 +36,35 @@ export function setupCombatRewardAdapter(
   let lastSilver = 1000;
   let incomeRate = 0;
 
-  const unsubscribe = options.combatService.events.subscribe("enemyKilled", () => {
+  const unsubscribe = options.combatService.events.subscribe("enemyKilled", (event) => {
     options.bridge.incrementEnemiesKilled();
 
-    const encounterRewards = getEncounterRewards(
+    const progressionRewards = getEncounterRewards(
       options.worldRuntime.currentZoneIndex,
       options.worldRuntime.currentSegment,
       options.worldRuntime.currentEncounter,
     );
+    const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
+    const monster = monsterDefinitionId === undefined
+      ? undefined
+      : getMonsterDefinition(monsterDefinitionId);
+
+    const silverReward = Math.max(
+      0,
+      Math.round(progressionRewards.silver * (monster?.rewards.silverMultiplier ?? 1)),
+    );
+    const fameReward = Math.max(
+      0,
+      Math.round(progressionRewards.fame * (monster?.rewards.fameMultiplier ?? 1)),
+    );
+    const lootTableId = monster?.rewards.lootTableId ?? "loot_monster_generic";
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(
-      encounterRewards.silver,
-      encounterRewards.fame,
+      silverReward,
+      fameReward,
+      lootTableId,
     );
+    clearActiveMonsterIdentity(event.entityId);
 
     incomeRate = rewardResult.newBalance - lastSilver;
     lastSilver = rewardResult.newBalance;
