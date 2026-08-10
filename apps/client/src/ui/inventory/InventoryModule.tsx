@@ -25,8 +25,15 @@ export function InventoryModule(): JSX.Element {
     ? 0
     : Math.min(100, (inventory.occupied / inventory.capacity) * 100);
 
-  const handleDoubleClick = useCallback((slot: InventorySlotVM) => {
+  const handleDoubleClick = useCallback((
+    event: MouseEvent<HTMLButtonElement>,
+    slot: InventorySlotVM,
+  ) => {
     if (slot.itemId === undefined) return;
+    if (event.shiftKey) {
+      actions.transfer("inventory", slot.position, "bank");
+      return;
+    }
     if (getItemDefinition(slot.itemId) !== undefined) actions.equip(slot.position);
     else actions.useConsumable(slot.itemId);
   }, [actions]);
@@ -63,7 +70,13 @@ export function InventoryModule(): JSX.Element {
       </div>
 
       {activeTab === "bank" ? (
-        <BankModule />
+        <BankModule
+          onMove={(from, to) => { actions.move("bank", from, to); }}
+          onTransferToInventory={(position) => {
+            actions.transfer("bank", position, "inventory");
+          }}
+          onSort={() => { actions.sort("bank"); }}
+        />
       ) : (
         <>
           <section className="storage-module__summary" aria-label="Capacité de l’inventaire">
@@ -76,18 +89,25 @@ export function InventoryModule(): JSX.Element {
             </div>
           </section>
 
+          <div className="storage-module__toolbar">
+            <button type="button" onClick={() => { actions.sort("inventory"); }}>Trier</button>
+            <span>Maj + double-clic : vers la banque</span>
+          </div>
+
           <section className="storage-module__surface">
             <ItemGrid
               slots={inventory.slots}
               label="Objets dans l’inventaire"
               interactive
+              draggable
+              onItemDrop={(from, to) => { actions.move("inventory", from, to); }}
               onItemDoubleClick={handleDoubleClick}
               onItemContextMenu={handleContextMenu}
             />
           </section>
 
           <p className="storage-module__hint">
-            Double-cliquez pour équiper un objet ou utiliser un consommable.
+            Glissez-déposez pour choisir l’emplacement. Double-cliquez pour équiper ou utiliser.
           </p>
 
           {contextMenu !== null && (

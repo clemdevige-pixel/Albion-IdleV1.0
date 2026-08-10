@@ -1,31 +1,33 @@
-import type { MouseEvent } from "react";
+import type { DragEvent, MouseEvent } from "react";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemHoverTooltip } from "../../panels/ItemHoverTooltip";
-import {
-  getEnchantmentFrameClass,
-  getItemDefinition,
-  ItemVisual,
-} from "../../panels/ItemVisual";
+import { getEnchantmentFrameClass, getItemDefinition, ItemVisual } from "../../panels/ItemVisual";
 import "./itemGrid.css";
 
 interface ItemGridProps {
   readonly slots: readonly InventorySlotVM[];
   readonly label: string;
   readonly interactive?: boolean;
-  readonly onItemDoubleClick?: (slot: InventorySlotVM) => void;
-  readonly onItemContextMenu?: (
-    event: MouseEvent<HTMLButtonElement>,
-    slot: InventorySlotVM,
-  ) => void;
+  readonly draggable?: boolean;
+  readonly onItemDoubleClick?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
+  readonly onItemContextMenu?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
+  readonly onItemDrop?: (from: number, to: number) => void;
 }
 
 export function ItemGrid({
   slots,
   label,
   interactive = false,
+  draggable = false,
   onItemDoubleClick,
   onItemContextMenu,
+  onItemDrop,
 }: ItemGridProps): JSX.Element {
+  const readSource = (event: DragEvent<HTMLButtonElement>): number | undefined => {
+    const parsed = Number(event.dataTransfer.getData("text/plain"));
+    return Number.isInteger(parsed) ? parsed : undefined;
+  };
+
   return (
     <div className="ui-item-grid" role="grid" aria-label={label}>
       {slots.map((slot) => {
@@ -36,12 +38,27 @@ export function ItemGrid({
             key={slot.position}
             type="button"
             role="gridcell"
-            className={`ui-item-grid__slot${
-              itemId !== undefined ? " ui-item-grid__slot--filled" : ""
-            }${getEnchantmentFrameClass(slot.enchantment)}`}
-            disabled={itemId === undefined}
-            onDoubleClick={() => {
-              if (itemId !== undefined) onItemDoubleClick?.(slot);
+            className={`ui-item-grid__slot${itemId !== undefined ? " ui-item-grid__slot--filled" : ""}${getEnchantmentFrameClass(slot.enchantment)}`}
+            disabled={itemId === undefined && !draggable}
+            draggable={draggable && itemId !== undefined}
+            onDragStart={(event) => {
+              if (!draggable || itemId === undefined) return;
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", String(slot.position));
+            }}
+            onDragOver={(event) => {
+              if (!draggable) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(event) => {
+              if (!draggable) return;
+              event.preventDefault();
+              const from = readSource(event);
+              if (from !== undefined) onItemDrop?.(from, slot.position);
+            }}
+            onDoubleClick={(event) => {
+              if (itemId !== undefined) onItemDoubleClick?.(event, slot);
             }}
             onContextMenu={(event) => {
               if (itemId !== undefined) onItemContextMenu?.(event, slot);
@@ -75,7 +92,7 @@ export function ItemGrid({
           </ItemHoverTooltip>
         );
       })}
-      {interactive && <span className="sr-only">Double-cliquez pour utiliser ou équiper.</span>}
+      {interactive && <span className="sr-only">Double-cliquez pour utiliser ou équiper. Glissez-déposez pour déplacer.</span>}
     </div>
   );
 }

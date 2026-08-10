@@ -134,6 +134,53 @@ Manual validation target:
 5. Returning to Inventaire restores normal inventory interactions.
 6. No regression in other bottom modules.
 
+20) INVENTORY + BANK INTERACTIONS
+Date/session: 2026-08-10
+Status: implementation committed; Vercel/manual validation pending.
+
+Objective:
+Turn the merged Inventory/Bank module into a functional storage workflow: explicit slot placement, drag-and-drop reordering, bidirectional transfers and sorting, while preserving the existing InventoryManager and persistence model.
+
+Architecture/audit:
+- Inventory and Bank are already separate entities owned by the same InventoryManager.
+- InventoryManager already provides explicit-position move/insert, stack merging and persistence-safe entry identity.
+- RuntimePersistence already saves hero inventory, bank and production storage in deterministic order.
+- Added StorageRuntime as a focused transaction adapter for storage-to-storage mutations; no duplicate inventory state was introduced.
+
+Behavior:
+- Drag-and-drop inside Inventory and Bank moves an item to the chosen slot.
+- Dropping on an occupied incompatible slot swaps the two entries.
+- Dropping a compatible stack attempts to merge according to InventoryManager stack rules.
+- Shift + double-click from Inventory transfers the item to Bank.
+- Double-click from Bank transfers the item back to Inventory.
+- Transfers preserve the InventoryEntry identity and roll back if the destination cannot accept the item.
+- Sort buttons compact and order each storage deterministically by itemId, enchantment and quantity.
+- All successful mutations immediately resync both Inventory and Bank bridges.
+- Existing equip/use behavior remains on normal Inventory double-click.
+
+Files added:
+- apps/client/src/runtime/StorageRuntime.ts
+- apps/client/src/runtime/StorageRuntime.test.ts
+
+Files modified:
+- apps/client/src/ui/inventory/useInventoryActions.ts
+- apps/client/src/ui/inventory/InventoryModule.tsx
+- apps/client/src/ui/bank/BankModule.tsx
+- apps/client/src/ui/shared/ItemGrid.tsx
+- apps/client/src/ui/shared/storageModule.css
+- ALBION_IDLE_DEV_CONTEXT.txt
+
+Validation target:
+1. Move an Inventory item to an arbitrary empty slot.
+2. Swap two Inventory items.
+3. Repeat both operations in Bank.
+4. Shift + double-click Inventory item -> Bank.
+5. Double-click Bank item -> Inventory.
+6. Verify full destination refuses transfer without item loss.
+7. Verify Sort compacts/reorders both storages.
+8. Save/reload and confirm slot layout and transferred items persist.
+9. Run client tests, typecheck and build.
+
 NEXT DAGGER PAIR VISUAL WORK
 ----------------------------
 1. Produce dedicated Walk spritesheet.

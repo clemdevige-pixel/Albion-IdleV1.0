@@ -14,7 +14,8 @@
   background: #090d13;
 }
 
-.storage-module__tabs button {
+.storage-module__tabs button,
+.storage-module__toolbar button {
   min-height: 2.5rem;
   padding: var(--ui-space-2);
   border: var(--ui-border-width) solid var(--ui-color-border-subtle);
@@ -24,16 +25,38 @@
   font: inherit;
   font-size: var(--ui-text-xs);
   font-weight: var(--ui-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   cursor: pointer;
   transition: border-color var(--ui-duration-fast), color var(--ui-duration-fast), background var(--ui-duration-fast);
 }
 
-.storage-module__tabs button.is-active {
+.storage-module__tabs button {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.storage-module__tabs button.is-active,
+.storage-module__toolbar button:hover,
+.storage-module__toolbar button:focus-visible {
   border-color: var(--ui-color-accent);
   color: var(--ui-color-accent-hover);
   background: #241d10;
+}
+
+.storage-module__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+}
+
+.storage-module__toolbar button {
+  min-height: 2rem;
+  padding: var(--ui-space-1) var(--ui-space-3);
+}
+
+.storage-module__toolbar span {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
 }
 
 .storage-module__summary,

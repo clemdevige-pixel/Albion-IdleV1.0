@@ -2,7 +2,13 @@ import { ItemGrid } from "../shared";
 import { useBankData } from "./useBankData";
 import "../shared/storageModule.css";
 
-export function BankModule(): JSX.Element {
+interface BankModuleProps {
+  readonly onMove?: (from: number, to: number) => void;
+  readonly onTransferToInventory?: (position: number) => void;
+  readonly onSort?: () => void;
+}
+
+export function BankModule({ onMove, onTransferToInventory, onSort }: BankModuleProps): JSX.Element {
   const bank = useBankData();
   const capacityRatio = bank.capacity === 0
     ? 0
@@ -20,14 +26,23 @@ export function BankModule(): JSX.Element {
         </div>
       </section>
 
-      <section className="storage-module__surface">
-        <ItemGrid slots={bank.slots} label="Objets dans la banque" />
-      </section>
+      <div className="storage-module__toolbar">
+        <button type="button" onClick={onSort}>Trier</button>
+        <span>Double-clic : vers l’inventaire</span>
+      </div>
 
-      <p className="storage-module__notice">
-        La banque est actuellement en lecture seule. Les transferts seront ajoutés
-        avec leur système de gameplay dédié.
-      </p>
+      <section className="storage-module__surface">
+        <ItemGrid
+          slots={bank.slots}
+          label="Objets dans la banque"
+          interactive
+          draggable
+          onItemDrop={onMove}
+          onItemDoubleClick={(_event, slot) => {
+            if (slot.itemId !== undefined) onTransferToInventory?.(slot.position);
+          }}
+        />
+      </section>
     </div>
   );
 }
