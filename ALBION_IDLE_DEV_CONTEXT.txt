@@ -3,285 +3,135 @@ ALBION IDLE — DEVELOPMENT CONTEXT LOG
 
 PURPOSE
 -------
-Persistent context + development journal for branch: agent/albion-idle-development
+Persistent development context for branch: agent/albion-idle-development.
+Current branch code is authoritative for implementation state. AI_BIBLE remains the design reference; UI_BIBLE remains the UI reference.
 
-MANDATORY RULE
---------------
-Update this file whenever code/content changes on this branch. A step is not complete until objective, audit, files, behavior, validation and remaining work are recorded.
-
-SOURCE OF TRUTH RULES
----------------------
-1. Current branch code is authoritative for implementation state.
-2. AI_BIBLE remains the design/architecture reference; UI_BIBLE remains the UI reference.
-3. Audit before modifying; do not guess.
-4. main remains untouched until development branch validation.
-5. Prefer removing/modifying duplicated logic over adding parallel registries or special cases.
-6. New weapons must not introduce weapon-name conditions into GameScene/CombatRuntime.
-7. One functional step = one Git commit whenever technically possible; tests and this log belong in that same commit.
+RULES
+-----
+1. main remains untouched until explicit validation/merge decision.
+2. Audit before modifying; do not guess.
+3. Prefer modifying/removing duplicated logic over creating parallel systems.
+4. New weapons/monsters must not introduce name-based conditions into GameScene/CombatRuntime.
+5. Keep generated files/prompts concise; tests/audit at the end of a functional step.
+6. One functional step = one commit whenever technically possible.
 
 BRANCH / PREVIEW
 ----------------
 Development: agent/albion-idle-development
-Production: main
-Stable preview: https://albion-idle-v1-0-client-git-agent-albio-d47286-deviges-projects.vercel.app
+Production: main (do not push directly)
+Preview: https://albion-idle-v1-0-client-git-agent-albio-d47286-deviges-projects.vercel.app
 
-WEAPON PIPELINE TARGET
-----------------------
-Authoring model: gameplay definition + craft rule + presentation definition + assets + tests.
-Standard craft: T3 = tier resources only; T4+ = tier resources + same-specialization T(n-1).
-Artifact weapons remain outside standard generation. Badon is artifact_pending until artifacts exist.
+WEAPON PIPELINE — STATUS
+------------------------
+- weaponContentCatalog is the gameplay authority for weapons.
+- Family/specialization/mastery/craft/presentation derive from centralized content.
+- Standard craft: T3 resources only; T4+ requires same-specialization T(n-1) + tier resources.
+- Badon remains artifact_pending.
+- Dagger Pair added end-to-end: family/spec/craft/equip/combat/masteries/icon/idle integrated.
+- Dagger Pair Walk/Attack dedicated assets still pending; placeholder reuse remains.
+- Global weapon pipeline contract exists.
 
-IMPLEMENTED / VALIDATED HISTORY
--------------------------------
-1. Enchantment V1 minimum tier changed to T4. Validated.
-2. Character equipment picker moved to cursor popup; double-click equipped item unequips; visual polish. Validated.
-3. Weapon core authority centralized in weaponContentCatalog: tier, profile/speed, mastery, ability, stats, vendor resale. Validated.
-4. Weapon mastery definitions/names derive from catalog; progression duplicates removed. Validated.
-5. ItemVisual weapon gameplay metadata derives from catalog. Validated.
-6. ITEM_DEFINITIONS composes authoritative weapon/non-weapon catalogs; duplicate weapon item definitions removed. Validated.
-7. Standard weapon recipes generated from catalog; T3 resources only, T4+ predecessor rule; Badon excluded as artifact_pending. Validated.
-8. Weapon presentation authored once per specialization; ItemVisual reuses it. Renderer manifests/profiles remain explicit. Validated.
-9. Stale weapon records removed from content/data items/equipment/recipes; generic @game/data infrastructure retained. Validated.
-10. Craft invariant tests added for T3/T4 predecessor rules, Badon exclusion and duplicate prevention. Validated.
-11. Weapon families normalized into WEAPON_FAMILIES; specializations reference familyId. Validated.
-12. Craft bridge/UI made generic for family IDs; labels/symbols resolve from presentation layer. Validated.
-13. Starter Broadsword mastery compatibility aliases removed; GameContext resolves starter mastery route directly from weaponContentCatalog. Validated.
-14. Dagger Pair added as first end-to-end new family/specialization. Craft, equip and combat manually validated; dedicated assets pending.
-15. Masteries UI topology now derives from weaponContentCatalog instead of a closed family list. Dagues / Paire de dagues manually validated.
-16. Global Weapon Pipeline Contract Test added, deriving its coverage from authoritative weapon catalogs. Validation pending/expected through Vercel.
+STORAGE — STATUS
+----------------
+Validated:
+- Bottom navigation: Personnage -> Inventaire -> Maîtrises -> Production -> Marchand.
+- Bank merged under Inventory as internal tab.
+- Inventory/Bank remain distinct authoritative storages.
+- Drag/drop within each storage, explicit slot placement, swap/stack merge, bidirectional transfers and sort implemented.
+- Existing persistence preserved.
 
-17) DAGGER PAIR VISUAL INTEGRATION — ICON + IDLE
-Date/session: 2026-08-10
-Status: implementation committed; Vercel/manual visual validation pending.
+MONSTER PIPELINE — ARCHITECTURE COMPLETE
+----------------------------------------
+Live lifecycle:
+monsterContentCatalog -> zone encounter pool -> combatEntityFactory -> CombatRuntime / MonsterAbilityRuntime -> combatRewardAdapter -> loot/rewards -> render manifest.
 
-Objective:
-Replace the temporary Broadsword visual fallback for Dagger Pair with the first dedicated Dagger Pair assets while preserving the generic presentation pipeline.
-
-Assets added:
-- apps/client/public/assets/items/item-dagger-pair-pixel-v1.png
-- apps/client/public/assets/characters/hero-dagger-pair-idle-sheet-v1.png
-- apps/client/src/game/render/manifests/hero-dagger-pair.render.json
-
-Presentation/runtime changes:
-- mastery_dagger_pair resolves dedicated icon and hero_dagger_pair manifest.
-- idle uses the dedicated Dagger Pair sheet.
-- walk/attack temporarily reuse idle.
-- death temporarily reuses Broadsword death.
-
-18) PREVIEW RECOVERY CHECKPOINT
-Date/session: 2026-08-10
-Status: recovery commit created to force a fresh Vercel deployment from restored stable state.
-
-19) INVENTORY + BANK UI MERGE
-Date/session: 2026-08-10
-Status: validated.
-
-Objective:
-Merge Inventory and Bank into one primary bottom module with two internal tabs.
-Navigation: Personnage -> Inventaire -> Maîtrises -> Production -> Marchand.
-
-20) INVENTORY + BANK INTERACTIONS
-Date/session: 2026-08-10
-Status: validated.
-
-Objective:
-Functional storage workflow with explicit slots, drag-and-drop, bidirectional transfer and sorting while keeping InventoryManager/persistence authoritative.
-
-21) MONSTER PIPELINE — BLOCK 1 CONTENT AUTHORITY
-Date/session: 2026-08-10
-Status: implementation committed; Vercel build validated.
-
-Objective:
-Remove the hardcoded active bestiary from combatEntityFactory and establish one active monster content authority without migrating the entire older MonsterRuntime lifecycle.
-
-Implementation:
-- Added apps/client/src/data/monsterContentCatalog.ts.
-- Monster definitions own identity, faction, category, tier, visualManifestId, combat modifiers and tags.
-- Zone encounter pools explicitly own normal pool, segment boss and biome boss.
-- resolveMonsterForEncounter selects the active monster.
-- combatEntityFactory consumes the catalog and only handles ECS combat entity creation.
-- SpawnedEnemyResult now carries monsterDefinitionId.
-- Existing combat balance/encounter behavior intentionally preserved.
-- Added monsterContentCatalog contract tests.
-
-Architecture decision:
-Do not wire the old MonsterRuntime/MonsterIntegrationCoordinator into the live client yet. The current CombatRuntime lifecycle remains authoritative until a later migration provides a concrete gameplay benefit.
-
-22) MONSTER PIPELINE — BLOCK 2 REWARDS + LOOT
-Date/session: 2026-08-10
-Status: implementation committed; build validated; live reward flow retained.
-
-Objective:
-Make monster identity participate in rewards and loot WITHOUT replacing zone/segment progression scaling.
+Authority rules:
+- Faction = monster family (single concept).
+- monsterContentCatalog owns identity, faction, category, tier, combat modifiers, reward modifiers, lootTableId, abilityIds and visualManifestId.
+- monsterAbilityContentCatalog owns reusable monster abilities and category cadence.
+- economyContentCatalog owns monster loot tables.
+- worldContentCatalog normal spawn metadata derives from authoritative zone encounter pools.
+- Renderer resolves monsters only through visualManifestId/manifests.
+- Runtime must not branch on monster name/ID for monster-specific behavior.
 
 Reward rule:
-final reward = progression reward(zone + segment + encounter/boss) × monster reward modifier.
-The progression curve remains authoritative. Monster modifiers are layered on top.
+final reward = progression reward(zone + segment + encounter/boss) × monster modifier.
+Zone/segment progression remains the base authority.
 
-Migration safety:
-- All current monster silverMultiplier = 1.0.
-- All current monster fameMultiplier = 1.0.
-- Therefore current Silver/Fame balance remains unchanged by this migration.
-- Boss encounter multiplier already present in getEncounterRewards remains intact.
+Category support:
+normal / veteran / elite / boss.
+Category defines max active ability slots and cooldown cadence.
 
-Implementation:
-- MonsterContentDefinition owns rewards: silverMultiplier, fameMultiplier, lootTableId.
-- applyMonsterRewardModifiers centralizes multiplicative reward scaling.
-- Added explicit MONSTER_LOOT_TABLES in economyContentCatalog.
-- Existing current monster loot tables intentionally reuse current generic drops to avoid hidden rebalance; IDs are now independent and can diverge per monster/faction later.
-- Combat enemy spawn registers active EntityId -> monsterDefinitionId identity in activeMonsterIdentity.
-- combatRewardAdapter resolves the killed monster from enemyKilled entityId.
-- progression rewards are calculated first with getEncounterRewards, then monster modifiers are applied.
-- CombatRewardRuntime receives the selected lootTableId instead of always rolling generic combat loot.
-- Active monster identity is cleared after kill processing.
-- Fallback for non-catalog/test enemies remains multiplier 1 + generic loot table.
+Global validation:
+- Monster pipeline contract verifies definitions, abilities, loot tables, renderer manifests, zone pool alignment and reward progression.
+- Lethal monster abilities call DeathManager; 0 HP correctly transitions hero to defeat.
 
-Files added:
-- apps/client/src/runtime/activeMonsterIdentity.ts
-- apps/client/src/data/monsterRewardContract.test.ts
+BESTIARY CONTENT — UNDEAD
+-------------------------
+Status: integrated, visually/functionally validated in Dark Swamp pilot.
 
-Files modified:
-- apps/client/src/data/monsterContentCatalog.ts
-- apps/client/src/data/economyContentCatalog.ts
-- apps/client/src/runtime/combatEntityFactory.ts
-- apps/client/src/runtime/combatRewardAdapter.ts
-- apps/client/src/runtime/CombatRewardRuntime.ts
-- ALBION_IDLE_DEV_CONTEXT.txt
+Family/Faction: Undead
+- Squelette épéiste — Normal — physical melee.
+- Squelette archer — Normal — physical ranged, Flèche perforante.
+- Chevalier spectral — Elite — reinforced HP/armor, Entaille spectrale + Frappe fantôme.
+- Liche — Boss — magical caster, Trait d’âme + Vague de mort.
 
-Contract validation:
-- Every monster reward multiplier must be > 0.
-- Every monster lootTableId must resolve.
-- Progression base rewards remain unchanged with x1 current monsters.
-- Multipliers are applied on top of progression, not instead of progression.
+Pilot pool:
+Dark Swamp normal = Squelette épéiste / Squelette archer.
+Segment boss slot = Chevalier spectral (temporary use of boss slot despite elite category).
+Biome boss = Liche.
 
-23) MONSTER PIPELINE — BLOCK 3 COMBAT BEHAVIOR + ABILITIES
-Date/session: 2026-08-10
-Status: implementation committed; Vercel build validated; manually confirmed live through Undead Warrior difficulty spike.
+Undead reward tiers:
+normal x1.0, elite x1.4, boss x1.8 on top of progression reward.
+Dedicated Undead normal/elite/boss loot tables exist.
 
-Objective:
-Allow monsters to own active combat abilities and category-driven behavior without monster-name conditions in CombatRuntime or Phaser.
+Visual note:
+Ground-line offsets are acceptable for now; harmonize all monster foot baselines in one later polish pass after the 16 monsters are integrated.
 
-Architecture:
-- monsterContentCatalog remains the monster authority and now owns ordered abilityIds.
-- Added monsterAbilityContentCatalog as the authority for reusable monster ability definitions and category behavior profiles.
-- Category profiles define max active ability slots and cooldown cadence for normal/veteran/elite/boss.
-- Higher categories can support more abilities and faster authored cooldown cadence without special-case runtime code.
-- combatEntityFactory learns the resolved runtime abilities when a monster entity spawns.
-- Added MonsterAbilityRuntime: each combat tick it ticks monster cooldowns, respects stun/silence/death, selects the first ready authored active ability, executes it through AbilityManager and applies damage through DamageManager.
-- CombatRuntime calls the generic MonsterAbilityRuntime for the active enemy; it contains no monster-name conditions.
+BESTIARY CONTENT — MORGANA
+--------------------------
+Date: 2026-08-10
+Status: code/assets integrated; Vercel build green; manual in-game validation pending.
 
-Current authored behavior:
-- Stonefang Wolf / Razorwing Harpy / Morgana Witch: auto-attack only for now.
-- Undead Warrior boss: Heavy Slash, physical 1.35x source damage, authored 10s cooldown; boss category cadence applies 0.75 cooldown multiplier.
-- Ancient Rune Golem biome boss: Crushing Blow, physical 1.60x source damage, authored 12s cooldown; boss category cadence applies 0.75 cooldown multiplier.
-- Veteran and Elite category profiles are implemented and ready for future bestiary definitions even though no current live monster uses those categories yet.
+Family/Faction: Morgana
+- Morgana Witch — Normal — existing asset retained; changed from generic physical profile to magical caster; Trait d’ombre.
+- Morgana Suppressor — Normal — physical ranged crossbow; Carreau suppressif.
+- Morgana Dark Knight — Elite — physical armored melee; Entaille du Néant + Avancée écrasante.
+- Morgana High Priestess — Boss — magical caster; Orbe sombre + Déflagration rituelle.
 
-Files added:
-- apps/client/src/data/monsterAbilityContentCatalog.ts
-- apps/client/src/runtime/MonsterAbilityRuntime.ts
-- apps/client/src/runtime/MonsterAbilityRuntime.test.ts
+Combat/reward tuning:
+- Witch: 0.90 HP, 1.05 damage, 0.75 armor, 1.15 MR, magical.
+- Suppressor: 0.90 HP, 1.08 damage, 0.85 armor, 0.95 MR, physical.
+- Dark Knight: 1.80 HP, 1.30 damage, 1.50 armor, 1.25 MR, physical.
+- High Priestess: 2.20 HP, 1.40 damage, 0.80 armor, 1.50 MR, magical.
+- Rewards: normal x1.0, elite x1.4, boss x1.8 on top of progression scaling.
+- Dedicated Morgana normal/elite/boss loot tables created.
 
-Files modified:
-- apps/client/src/data/monsterContentCatalog.ts
-- apps/client/src/data/monsterContentCatalog.test.ts
-- apps/client/src/runtime/combatEntityFactory.ts
-- apps/client/src/runtime/CombatRuntime.ts
-- ALBION_IDLE_DEV_CONTEXT.txt
+Visuals:
+- Existing Morgana Witch manifest retained.
+- Added manifests for Morgana Suppressor, Dark Knight and High Priestess.
+- New WebP assets are under apps/client/public/assets/monsters/.
 
-Contract validation:
-- Every authored monster ability ID must resolve.
-- Ability count cannot exceed category capacity.
-- Category cooldown cadence is deterministic.
-- Runtime executes only learned ready active abilities.
-- Runtime does not execute abilities while dead, stunned or silenced.
-- Ability damage uses normal damage processing.
-- Vercel build for latest Block 3 code passed.
+Pilot pool for manual validation:
+Stone Highlands normal = Morgana Witch / Morgana Suppressor.
+Segment boss slot = Morgana Dark Knight (temporary use of boss slot despite elite category).
+Biome boss = Morgana High Priestess.
 
-24) MONSTER PIPELINE — BLOCK 4 FINAL AUDIT + CONTRACT
-Date/session: 2026-08-10
-Status: implementation complete; Vercel build validated.
+Validation:
+- Added morganaFamilyContract.test.ts.
+- Verifies one Morgana faction authority, category layout Normal/Normal/Elite/Boss, abilities, loot tables, manifests and Stone Highlands pilot pool.
+- Latest Vercel build for Morgana contract passed.
 
-Objective:
-Close the monster-pipeline refactor with a single live source of authority, remove misleading client-side parallel bestiary metadata, add a global contract test and document the standard authoring workflow.
-
-Audit findings / decisions:
-- Live playable lifecycle is CombatRuntime + combatEntityFactory + MonsterAbilityRuntime + combatRewardAdapter.
-- monsterContentCatalog is the live content authority for monster identity, category, combat modifiers, rewards, abilities and encounter pools.
-- worldContentCatalog still contained stale mob_wolf / mob_undead / mob_keeper / mob_heretic / mob_mountain_keeper IDs. These were not driving live combat but represented misleading parallel authority.
-- worldContentCatalog normal monster spawn metadata now derives from ZONE_ENCOUNTER_POOLS, eliminating that divergence.
-- packages/gameplay monster-runtime / monster-spawn / monster-ai / monster-integration are confirmed engine foundations, not the current playable-client lifecycle. They are kept rather than deleted because they remain reusable for future multi-enemy / richer-AI / persistent-spawn needs.
-- No migration to the old package lifecycle is performed only for architectural symmetry.
-
-Global contract:
-- Added apps/client/src/data/monsterPipelineContract.test.ts.
-- Every monster definition must resolve its loot table, renderer manifest and authored abilities.
-- Ability count must respect category capacity.
-- ZoneDefinition normal monster metadata must match the authoritative encounter pool.
-- Zone/segment progression must remain the reward base before monster modifiers.
-- A real authored boss is spawned through combatEntityFactory and verified for monster identity, learned abilities, render manifest and reward/loot resolution.
-
-Documentation:
-- Added docs/MONSTER_PIPELINE.md.
-- Standard new monster flow: definition -> zone pool -> optional abilities -> loot table -> render manifest/assets -> global contract/build.
-- Runtime code must never branch on monster name/ID for monster-specific behavior.
-
-Files added:
-- apps/client/src/data/monsterPipelineContract.test.ts
-- docs/MONSTER_PIPELINE.md
-
-Files modified:
-- apps/client/src/data/worldContentCatalog.ts
-- ALBION_IDLE_DEV_CONTEXT.txt
-
-25) BUGFIX — HERO DEATH FROM MONSTER ABILITIES
-Date/session: 2026-08-10
-Status: implementation committed; Vercel/test validation pending.
-
-Symptom:
-Hero could reach 0 HP after a monster active ability but remain alive/in combat.
-
-Root cause:
-- Auto-attack lethal damage is processed inside CombatService, which calls DeathManager.checkDeath when DamageManager reports targetDied.
-- MonsterAbilityRuntime was added in Block 3 and dealt ability damage directly through DamageManager.
-- It did not call DeathManager.checkDeath on a lethal result, so HP could be 0 while DeathComponent.isDead remained false.
-- CombatService therefore did not transition the encounter to defeat.
-
-Fix:
-- MonsterAbilityRuntime now receives DeathManager.
-- After lethal monster ability damage, it immediately calls checkDeath(hero, monster, tick).
-- CombatRuntime passes its authoritative DeathManager into MonsterAbilityRuntime.
-- Existing CombatService tick then observes hero isDead and transitions to defeat normally.
-
-Regression coverage:
-- Added lethal monster ability test: hero forced to 1 HP, Crushing Blow lands, HP becomes 0, DeathManager.isDead(hero) becomes true, killer entity and death tick are preserved.
-
-Files modified:
-- apps/client/src/runtime/MonsterAbilityRuntime.ts
-- apps/client/src/runtime/CombatRuntime.ts
-- apps/client/src/runtime/MonsterAbilityRuntime.test.ts
-- ALBION_IDLE_DEV_CONTEXT.txt
-
-MONSTER PIPELINE STATUS
+BESTIARY CONTENT — NEXT
 -----------------------
-Blocks 1-4 complete.
-The pipeline is ready for content production.
-Remaining work is bestiary CONTENT, not pipeline architecture:
-1. Author real faction-specific normal/veteran/elite/boss monsters.
-2. Author faction-specific loot tables and rare drops.
-3. Add corresponding render manifests/assets.
-4. Balance category/monster modifiers against progression curves.
-5. Consider migrating to the package MonsterRuntime lifecycle only if future gameplay needs multi-enemy encounters, richer AI state or persistent spawn lifecycle.
+1. Manually validate all four Morgana monsters in Stone Highlands (scale, transparency, placement, damage behavior, elite/boss difficulty).
+2. Integrate the remaining two prepared monster families using the same content pipeline.
+3. After all 16 monsters are validated, replace temporary pilot pools with the definitive spawn system by zone/faction/segment/category.
+4. Do one global visual baseline/scale polish pass for all monsters.
 
-NEXT DAGGER PAIR VISUAL WORK
-----------------------------
-1. Produce dedicated Walk spritesheet.
-2. Produce dedicated Attack spritesheet for the fast dagger profile.
-3. Replace placeholder walk/attack entries in hero-dagger-pair.render.json.
-4. Decide later whether a dedicated death pose is necessary or whether death remains shared.
-
-FINAL AUDIT ITEMS STILL OPEN
-----------------------------
-1. Add ability-ID uniqueness/coherence validation to prevent conflicting duplicate IDs from silently overwriting in CLIENT_ABILITIES.
-2. Decide when to generalize tier model from current T3|T4 to T3-T8.
-3. Replace Badon temporary material-only recipe when artifact crafting exists.
-4. Complete Dagger Pair Walk/Attack visual assets and replace temporary manifest reuse.
+OPEN ITEMS
+----------
+- Dagger Pair Walk/Attack dedicated assets.
+- Ability-ID uniqueness/coherence validation for weapon CLIENT_ABILITIES.
+- Generalize current tier model beyond T3/T4 when content requires T5-T8.
+- Replace Badon temporary recipe when artifact crafting is implemented.
