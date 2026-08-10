@@ -1,0 +1,261 @@
+ALBION IDLE — DEVELOPMENT CONTEXT LOG
+=====================================
+
+PURPOSE
+-------
+This file is the persistent context + development journal for branch:
+agent/albion-idle-development
+
+It must be updated whenever code/content is modified on this branch.
+The goal is to allow a new AI/dev session to understand:
+- what has already been changed;
+- why it was changed;
+- which files were touched;
+- what is currently validated or still pending;
+- the next active technical objective;
+- important implementation rules discovered during audits.
+
+SOURCE OF TRUTH RULES
+---------------------
+1. Current branch code is authoritative for implementation state.
+2. AI_BIBLE remains the design/architecture reference.
+3. UI_BIBLE remains the visual/UI reference.
+4. Do not add local hacks when an existing source of authority can be modified instead.
+5. Before changing UI code, trace the real mounted path from App -> shell -> host -> active module -> subcomponents -> actions/styles.
+6. Audit as much code as necessary before modifying implementation. Do not guess.
+7. main must remain untouched until the development branch is validated.
+8. Prefer modifying/removing existing duplicated logic rather than adding parallel registries or special cases.
+
+BRANCH / PREVIEW
+----------------
+Development branch:
+agent/albion-idle-development
+
+Production branch:
+main
+
+Stable Vercel branch preview:
+https://albion-idle-v1-0-client-git-agent-albio-d47286-deviges-projects.vercel.app
+
+Workflow:
+push/commit to development branch -> Vercel rebuild -> refresh stable branch URL.
+
+CURRENT ACTIVE OBJECTIVE
+------------------------
+Refactor the weapon content pipeline before adding many new weapons.
+
+Target end state for adding a weapon:
+- 1 authoritative gameplay definition
+- craft definition/rules
+- presentation definition
+- assets
+- tests
+
+Everything else should derive automatically wherever possible:
+- inventory recognition
+- character/equipment compatibility
+- equipment stats
+- one-handed/two-handed behavior
+- Item Power
+- weapon family mastery
+- weapon specialization mastery
+- combat Fame routing
+- primary ability
+- auto-attack profile/speed
+- merchant resale
+- enchantment eligibility
+- repair/durability
+- crafting UI
+- React <-> Phaser bridge presentation
+
+For normal tier progression, target craft rule:
+Tn = tier-n refined resources + weapon T(n-1)
+Special/artifact weapons may override this rule explicitly.
+
+AUDIT — WEAPON CONTENT PIPELINE
+-------------------------------
+Audit completed before refactor. No code changes made during audit.
+
+Current strong central boundary:
+apps/client/src/data/weaponContentCatalog.ts
+
+It already defines/generates much of:
+- item equipment definitions
+- primary abilities
+- mastery family + specialization routing
+- mastery display names
+- mastery definitions
+- vendor sell offers
+
+Remaining duplicated/manual weapon data identified in:
+- apps/client/src/data/itemPower.ts
+  - ITEM_TIERS
+  - WEAPON_MASTERY_BY_ITEM
+  - WEAPON_PROFILE_BY_ITEM
+- apps/client/src/panels/ItemVisual.tsx
+  - name/icon/tier/slot/handling/stats duplicated per item
+- apps/client/src/data/refiningRecipes.ts
+  - craft recipes are manually authored
+- apps/client/src/data/equipmentPresentation.ts
+  - item -> actor manifest / combat presentation mapping
+- apps/client/src/data/progressionContentCatalog.ts
+  - individual mastery constants/definitions/display switch duplicate generated weapon masteries
+- apps/client/src/game/GameBridge.ts
+  - crafting family union is hardcoded
+- apps/client/src/ui/production/crafting/craftingModels.ts
+  - crafting family presentation is hardcoded
+- content/data/items.json
+- content/data/equipment.json
+- content/data/recipes.json
+  - these currently contain weapon data that diverges from the live runtime and must not be treated as authoritative without reconciliation
+
+Important audit finding:
+content/data/equipment.json currently contains weapon values that differ from live runtime values. Example: Broadsword T4 values do not match weaponContentCatalog.ts. These JSON files are therefore currently parallel/stale content sources, not safe authoring boundaries.
+
+Another audit finding:
+WEAPON_MASTERY_DEFINITIONS currently detects specialization masteries via a hardcoded list of mastery IDs. This must be derived from familyMasteryId vs specializationMasteryId instead before scaling weapon content.
+
+Combat architecture findings:
+- AutoAttackManager is generic and uses stat_attack_speed.
+- CombatService chooses physical vs magical basic attack based on computed offensive stats.
+- CombatRuntime resolves the equipped weapon primary ability generically.
+- CombatRewardRuntime resolves family + specialization mastery generically for Fame.
+- EquipmentManager does not require weapon-specific code.
+- CraftingRuntime is generic and should not require weapon-specific code.
+- EnchantmentService is generic and should not require weapon-specific code.
+- Repair/durability is generic by equipment category/tier.
+- Persistence is item/instance based and should not need weapon-specific modifications.
+- GameScene must never gain weapon-specific conditions again.
+
+Presentation architecture findings:
+- equipmentPresentation.ts maps item -> actorManifestId + combatProfileId.
+- Render manifests define idle/walk/attack/death and visual profile parameters.
+- Ranged weapons additionally use a combat presentation profile + projectile manifest.
+- CombatPresentationSystem is generic and should remain weapon-name agnostic.
+- defaultRenderManifestRegistry registers actor/projectile manifests.
+
+CURRENT IMPLEMENTED CHANGES ON THIS BRANCH
+-------------------------------------------
+
+1) V1 ENCHANTMENT MINIMUM TIER
+Status: functionally validated for T3 filtering.
+
+Change:
+- Equipment enchantment minimum tier changed from T3 to T4.
+- Rule changed at the authoritative ENCHANTMENT_MINIMUM_ITEM_TIER boundary rather than adding merchant/UI special cases.
+- Test added to protect V1 rule.
+
+Expected behavior:
+- T3 equipment does not appear as enchantable.
+- T4+ equipment is eligible subject to normal enchantment rules.
+
+2) CHARACTER EQUIPMENT PICKER UX
+Status: functional behavior validated; visual polish adjusted afterward.
+
+Requested behavior:
+- Clicking an equipment slot opens "Équipement compatible" near the mouse cursor instead of at the bottom of the character module.
+- Remove the explicit "Retirer" button.
+- Double-click an equipped item to unequip it into inventory.
+
+Important implementation discovery:
+Initial changes were mistakenly made in legacy apps/client/src/panels/CharacterPanel.tsx.
+That component is not the active character UI.
+The real mounted path is:
+App.tsx
+-> AppLayout
+-> AppShell
+-> RightPanelHost
+-> ui/character/CharacterModule
+
+The active implementation was then corrected in:
+- apps/client/src/ui/character/CharacterModule.tsx
+- apps/client/src/ui/character/components/CharacterEquipmentPicker.tsx
+- apps/client/src/ui/shared/ItemSlot.tsx
+
+Behavior implemented:
+- picker coordinates originate from the equipment slot mouse click;
+- picker renders through createPortal(..., document.body);
+- ItemSlot supports optional double-click handling without breaking other shared usages;
+- double-click calls the already-existing useCharacterActions().unequip(slot);
+- no new equipment gameplay logic was created;
+- existing EquipmentManager.unequipToInventory remains authoritative.
+
+3) CHARACTER PICKER VISUAL POLISH
+Status: implemented; awaiting/under visual validation as changes continue.
+
+Problem observed:
+- floating picker inherited styles intended for an in-panel surface;
+- background was too transparent, so the hero showed through;
+- 3 candidate weapons rendered as an awkward 2+1 grid.
+
+Change:
+- modified existing .character-picker CSS only;
+- opaque floating surface;
+- clearer border/shadow;
+- obsolete current-equipped picker styles removed;
+- candidate grid adjusted to 3 columns for the current compact popup use case.
+
+METHODOLOGY LESSONS FROM CURRENT BRANCH
+----------------------------------------
+- Never assume a legacy component is still mounted because its name matches the feature.
+- Follow the real render path before editing UI.
+- Prefer existing gameplay actions/managers over recreating logic in React.
+- Prefer portal-based floating UI when the active shell has nested overflow/layout contexts.
+- If a rule already has a central constant/catalog, change that authority rather than adding conditionals to callers.
+- New weapon support must not reintroduce special cases into GameScene or CombatRuntime unless the mechanic itself is genuinely new.
+
+NEXT PLANNED WORK
+-----------------
+Weapon Content Pipeline refactor.
+
+Proposed implementation sequence:
+1. Make weaponContentCatalog the true authoritative weapon gameplay source.
+2. Remove/derive duplicated tier, mastery-route and combat-profile mappings from itemPower.ts.
+3. Remove duplicated ability definitions and hardcoded specialization detection.
+4. Make progression mastery definitions/display names derive from weapon catalog data.
+5. Consolidate item UI metadata so tier/handling/stats are not manually re-authored in ItemVisual.tsx.
+6. Formalize craft progression data so normal weapon tiers derive Tn predecessor requirements automatically.
+7. Keep presentation definitions explicit because actor/projectile assets are genuinely weapon-specific.
+8. Reconcile or retire stale content/data weapon JSON sources so they cannot silently disagree with runtime content.
+9. Add pipeline/non-regression tests covering all existing weapons before using the new structure for future weapons.
+
+VALIDATION TARGET FOR THE REFACTOR
+----------------------------------
+All existing weapons must behave identically after the refactor:
+- Broadsword T3/T4
+- Longbow T3/T4
+- Badon T4
+- Fire Staff T3/T4
+- Spiked Gauntlets T3/T4
+
+Validation must cover at least:
+- inventory
+- equip/unequip
+- 1H/2H/off-hand rules
+- physical/magical damage
+- attack speed
+- primary ability
+- Item Power
+- enchantment
+- repair/durability
+- craft + predecessor requirements
+- merchant sale
+- family mastery
+- specialization mastery
+- combat Fame
+- character UI
+- Phaser presentation
+- save/reload inventory item
+- save/reload equipped item
+- save/reload enchantment level
+
+END OF CURRENT CONTEXT
+----------------------
+Whenever implementation changes are made after this point, append/update this file in the same commit sequence with:
+- date/session step;
+- objective;
+- audit/findings that drove the change;
+- files modified;
+- exact behavior changed;
+- tests/validation result;
+- known remaining work or regressions.
