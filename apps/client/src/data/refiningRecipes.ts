@@ -3,6 +3,7 @@ import {
   getWeaponSpecializationName,
   resolvePreviousWeaponTierItemId,
   resolveWeaponCraftRule,
+  resolveWeaponFamilyId,
   resolveWeaponTier,
   type WeaponCraftMaterial,
 } from "./weaponContentCatalog.js";
@@ -35,8 +36,9 @@ function materialRequirement(material: WeaponCraftMaterial, tier: 3 | 4) {
 function createStandardWeaponRecipe(itemId: string) {
   const tier = resolveWeaponTier(itemId);
   const craft = resolveWeaponCraftRule(itemId);
+  const family = resolveWeaponFamilyId(itemId);
   const name = getWeaponSpecializationName(itemId);
-  if (tier === undefined || craft?.kind !== "standard" || name === undefined) return undefined;
+  if (tier === undefined || craft?.kind !== "standard" || family === undefined || name === undefined) return undefined;
   const requirements = craft.materials.map((material) => materialRequirement(material, tier));
   const previousItemId = resolvePreviousWeaponTierItemId(itemId);
   if (tier >= 4) {
@@ -45,7 +47,7 @@ function createStandardWeaponRecipe(itemId: string) {
   }
   return {
     id: `CRAFT_${itemId.replace("item_weapon_", "").toUpperCase()}_0`,
-    family: craft.family,
+    family,
     name: `${name} T${String(tier)}`,
     tier,
     outputItemId: itemId,

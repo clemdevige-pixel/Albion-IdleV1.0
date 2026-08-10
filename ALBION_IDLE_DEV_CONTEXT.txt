@@ -43,37 +43,57 @@ IMPLEMENTED / VALIDATED
 7. Weapon Step 4: standard weapon recipes generated from catalog. T3 resources only; T4+ resources + predecessor. Badon artifact_pending with temporary explicit recipe. Validated.
 8. Weapon Step 5: presentation authored once per specialization; ItemVisual reuses it; renderer profiles/manifests remain explicit. Validated.
 9. Weapon Step 6: stale weapon records removed from content/data items/equipment/recipes while generic @game/data infrastructure remains. Validated; user reported no regression.
+10. Weapon Step 7: craft invariant tests lock T3 resource-only, T4 predecessor, Badon exclusion and duplicate-output rules. Vercel validated.
 
-10) WEAPON PIPELINE STEP 7 — CRAFT INVARIANT TESTS
+11) WEAPON PIPELINE STEP 8 — FAMILY AUTHORITY
 Date/session: 2026-08-10
-Status: implementation committed; Vercel/test validation pending.
+Status: implementation committed; Vercel/manual validation pending.
 
 Objective:
-Lock the standard weapon crafting contract so future weapon additions cannot silently violate tier progression or route artifact weapons through the standard generator.
+Make weapon family identity a first-class catalog entity instead of repeating family mastery/name/craft family in every specialization.
 
 Audit findings:
-- standard generation already implements the intended behavior but had no dedicated invariant suite.
-- runtime crafting tests exercise crafting behavior but do not comprehensively assert catalog-level T3/T4 generation rules for every current standard specialization.
+- Longbow and Badon independently repeated the same bow family metadata.
+- every specialization repeated familyMasteryId + familyName even though those are family-level data.
+- WeaponCraftRule also repeated a family field that can be resolved from the weapon specialization itself.
+- this duplication would scale badly when multiple specializations are added under the same family.
+- a separate remaining blocker was identified: CraftingRecipeVM and craftingModels still hardcode the current craft-family union/presentation. That will be handled next; it is more relevant to adding entirely new weapon families than the cosmetic starter-mastery compatibility aliases.
 
 Files modified:
-- apps/client/src/data/weaponCraftPipeline.test.ts (new)
+- apps/client/src/data/weaponContentCatalog.ts
+- apps/client/src/data/refiningRecipes.ts
+- apps/client/src/data/weaponContentCatalog.test.ts
 - ALBION_IDLE_DEV_CONTEXT.txt
 
-Tests added:
-- every current standard T3 recipe contains refined resources only and no predecessor equipment.
-- every current standard T4 recipe requires exactly one corresponding T3 weapon from the same specialization.
-- resolvePreviousWeaponTierItemId agrees with generated recipes.
-- Badon is artifact_pending, has no standard predecessor, never appears in STANDARD_WEAPON_CRAFT_RECIPES, and its temporary recipe contains no weapon predecessor.
-- generated standard weapon outputs contain no duplicates.
+Changes:
+- added WEAPON_FAMILIES as the single definition of each current weapon family.
+- family definition owns family mastery ID + display name once.
+- specializations now reference familyId only.
+- WeaponCraftRule no longer repeats a family field.
+- added resolveWeaponFamilyId(itemId).
+- added getWeaponFamilyDisplayName(familyId).
+- resolveWeaponMastery now derives family mastery through WEAPON_FAMILIES.
+- family mastery definitions/names are generated once from WEAPON_FAMILIES; specialization mastery definitions remain generated from specialization content.
+- standard crafting recipe generation resolves its family from resolveWeaponFamilyId instead of reading duplicated craft metadata.
+- no stats, recipe quantities, abilities, mastery IDs, attack speeds or item IDs intentionally changed.
 
-No gameplay change.
+Tests:
+- every current weapon resolves the expected family ID in addition to tier/profile/mastery/ability.
+- current family definitions and family display names are locked.
+- unknown item IDs do not infer a family from naming conventions.
+
+Audit decision on GameContext starter aliases:
+- they are not a parallel mastery source anymore; they derive from weaponContentCatalog.
+- removal remains desirable cleanup, but it is not a blocker for adding weapons.
+- priority moved to eliminating the actual new-family blocker in CraftingRecipeVM/craftingModels before doing cosmetic bootstrap cleanup.
 
 NEXT PLANNED WORK
 -----------------
-1. Validate Step 7 build/tests.
-2. Remove starter mastery compatibility aliases by making GameContext consume resolveWeaponMastery directly.
-3. Run final broad weapon-pipeline audit/non-regression validation.
-4. Only after validation, use the finalized pipeline for future weapons.
+1. Validate Step 8 build/tests and smoke test current crafting/masteries.
+2. Remove hardcoded weapon-family union/presentation from CraftingRecipeVM + craftingModels so a newly declared family can flow into craft UI without editing bridge unions.
+3. Revisit starter mastery compatibility aliases only if still justified after the functional pipeline is complete.
+4. Run final broad weapon-pipeline audit/non-regression validation.
+5. Only after validation, use the finalized pipeline for future weapons.
 
 FINAL VALIDATION TARGET
 -----------------------
@@ -87,3 +107,4 @@ METHODOLOGY LESSONS
 - Do not fake future artifact mechanics.
 - Presentation is authored by specialization; renderer profiles/manifests remain explicit when differences are real.
 - Protect content-pipeline rules with invariant tests, not only runtime smoke tests.
+- Prioritize blockers that affect future content authoring over cosmetic cleanup that is already derived from the authoritative source.
