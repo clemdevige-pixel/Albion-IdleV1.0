@@ -201,54 +201,55 @@ User confirmed preview test OK before proceeding to Step 2.
 
 5) WEAPON CONTENT PIPELINE REFACTOR — STEP 2
 Date/session: 2026-08-10
-Status: code implemented; Vercel build pending at time of log update.
+Status: implementation corrected after build regression; Vercel validation pending.
 
 Objective:
 Remove duplicated weapon mastery definitions/names/constants from progressionContentCatalog so weaponContentCatalog is the sole authoring source for weapon progression definitions.
 
 Audit before modification:
-- searched all usages of exported weapon mastery constants from progressionContentCatalog.
-- no external usages found for SWORD_MASTERY_ID, BOW_MASTERY_ID, FIRE_STAFF_MASTERY_ID, GLOVES_MASTERY_ID, BROADSWORD_MASTERY_ID, LONGBOW_MASTERY_ID, BADON_MASTERY_ID, T4_FIRE_STAFF_MASTERY_ID or SPIKED_GAUNTLETS_MASTERY_ID.
-- SWORD_MASTERY_ID was used only by two local Destiny nodes.
-- MASTERY_DEFINITIONS already spread WEAPON_MASTERY_DEFINITIONS and then manually re-added all same weapon family/specialization definitions.
+- MASTERY_DEFINITIONS already spread WEAPON_MASTERY_DEFINITIONS and then manually re-added the same weapon family/specialization definitions.
 - getMasteryDisplayName already consulted getWeaponMasteryDisplayName before a duplicate weapon-name switch.
+- gathering definitions were also duplicated after already being spread.
 
 Files modified:
 - apps/client/src/data/progressionContentCatalog.ts
-- apps/client/src/data/progressionContentCatalog.test.ts (new)
+- apps/client/src/data/progressionContentCatalog.test.ts
 
-progressionContentCatalog changes:
-- removed all exported per-weapon mastery constants.
-- retained gathering mastery constants because they belong to the gathering domain.
-- MASTERY_DEFINITIONS is now only the composition of WEAPON_MASTERY_DEFINITIONS + GATHERING_MASTERY_DEFINITIONS.
-- removed manually duplicated weapon mastery definitions.
-- removed manually duplicated gathering definitions that were also already spread from GATHERING_MASTERY_DEFINITIONS.
-- getMasteryDisplayName now resolves weapon names through weaponContentCatalog, gathering names through the gathering catalog, then falls back to masteryId.
-- Destiny sword nodes keep their explicit content dependency through asMasteryId("mastery_sword") rather than an exported duplicate constant.
-- no intended XP/category/name/gameplay changes.
+Changes:
+- MASTERY_DEFINITIONS now composes WEAPON_MASTERY_DEFINITIONS + GATHERING_MASTERY_DEFINITIONS exactly once.
+- duplicate weapon mastery definitions removed.
+- duplicate gathering definitions removed.
+- weapon mastery display names resolve from weaponContentCatalog.
+- gathering display names remain owned by gathering progression content.
+- new tests verify uniqueness, categories and display names.
 
-Tests added:
-progressionContentCatalog.test.ts verifies:
-- every mastery ID appears exactly once in MASTERY_DEFINITIONS;
-- weapon family masteries remain category "weapon";
-- weapon specialization masteries remain category "weapon_specialization";
-- all current weapon mastery display names still resolve from weaponContentCatalog.
+BUILD REGRESSION FOUND AFTER STEP 2:
+Vercel error:
+"src/state/GameContext.tsx: SWORD_MASTERY_ID is not exported by src/data/progressionContentCatalog.ts"
 
-Expected behavior after Step 2:
-- same masteries visible to UI/progression runtime;
-- same family/specialization IDs;
-- same XP tables;
-- same display names;
-- no duplicate registration source for weapon masteries.
+Root cause:
+- the initial Step 2 audit incorrectly concluded the removed weapon mastery constants had no external consumers.
+- GameContext still imports SWORD_MASTERY_ID and BROADSWORD_MASTERY_ID for starter Broadsword mastery discovery.
+- the first failing commit caused all subsequent Step 2 commits to fail as descendants.
+
+Correction applied:
+- SWORD_MASTERY_ID and BROADSWORD_MASTERY_ID are restored only as compatibility exports for current GameContext bootstrap.
+- their values are NOT re-authored/hardcoded in progressionContentCatalog.
+- both are derived from resolveWeaponMastery("item_weapon_sword_t3_broadsword") in weaponContentCatalog.
+- module throws immediately if the starter weapon route is missing, preventing silent drift.
+- no duplicate mastery mapping/source of truth was reintroduced.
+
+Remaining architectural cleanup:
+- later in the weapon pipeline refactor, GameContext starter bootstrap should consume the weapon catalog route directly so these compatibility aliases can be removed entirely.
 
 Validation state:
-- source audit complete.
-- automated Vercel build pending at time of this context update.
-- manual smoke test still required after successful deployment.
+- exact Vercel compile error identified and corrected.
+- Vercel rebuild pending after fix.
+- manual mastery/Fame smoke test required after successful deployment.
 
 NEXT PLANNED WORK
 -----------------
-1. Validate Step 2 build and smoke-test masteries/progression in preview.
+1. Validate corrected Step 2 build and smoke-test masteries/progression in preview.
 2. Consolidate weapon UI metadata so tier/handling/stats/name are not manually re-authored in ItemVisual.tsx.
 3. Formalize craft progression data so normal weapon tiers derive Tn predecessor requirements automatically.
 4. Keep presentation definitions explicit because actor/projectile assets are genuinely weapon-specific.
@@ -292,4 +293,4 @@ METHODOLOGY LESSONS
 - Prefer existing gameplay actions/managers over recreating logic in React.
 - If a rule already has a central constant/catalog, change that authority rather than adding conditionals to callers.
 - New weapon support must not reintroduce special cases into GameScene or CombatRuntime unless the mechanic itself is genuinely new.
-- Before deleting duplicate content, search all usages first and distinguish true content references (e.g. Destiny requirement) from duplicate authoring sources.
+- Before deleting an exported symbol, search not only the defining module but all consumers on the active branch and verify the actual build dependency path.
