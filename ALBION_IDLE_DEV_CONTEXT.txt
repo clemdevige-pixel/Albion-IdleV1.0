@@ -17,6 +17,7 @@ SOURCE OF TRUTH RULES
 4. main remains untouched until development branch validation.
 5. Prefer removing/modifying duplicated logic over adding parallel registries or special cases.
 6. New weapons must not introduce weapon-name conditions into GameScene/CombatRuntime.
+7. Development workflow rule: one functional step = one Git commit whenever technically possible; tests and this log belong in that same commit.
 
 BRANCH / PREVIEW
 ----------------
@@ -36,66 +37,43 @@ IMPLEMENTED / VALIDATED
 1. Enchantment V1 minimum tier: T4. Validated.
 2. Character equipment picker: cursor popup + double-click unequip + visual polish. Validated.
 3. Weapon Step 1: weaponContentCatalog owns tier, profile/speed, mastery route, ability, stats, vendor resale. Duplicate itemPower maps/fallbacks removed. Validated.
-4. Weapon Step 2: weapon mastery definitions/names derive from catalog. Progression duplicates removed. Compatibility aliases for starter Broadsword still remain in progressionContentCatalog but derive from catalog. Validated.
-5. Weapon Step 3: ItemVisual weapon gameplay metadata derives from catalog; visual layer no longer authors tier/handling/stats. Validated.
-6. Weapon Step 3B: ITEM_DEFINITIONS composes authoritative weapon/non-weapon catalogs; manual duplicate definitions removed. Validated.
+4. Weapon Step 2: weapon mastery definitions/names derive from catalog. Progression duplicates removed. Starter compatibility aliases still remain temporarily. Validated.
+5. Weapon Step 3: ItemVisual weapon gameplay metadata derives from catalog. Validated.
+6. Weapon Step 3B: ITEM_DEFINITIONS composes authoritative catalogs; manual duplicates removed. Validated.
 7. Weapon Step 4: standard weapon recipes generated from catalog. T3 resources only; T4+ resources + predecessor. Badon artifact_pending with temporary explicit recipe. Validated.
-8. Weapon Step 5: presentation authored once per specialization (itemIcon + actorManifestId + combatProfileId); ItemVisual reuses it; renderer profiles/manifests remain explicit. Validated by user.
+8. Weapon Step 5: presentation authored once per specialization; ItemVisual reuses it; renderer profiles/manifests remain explicit. Validated.
+9. Weapon Step 6: stale weapon records removed from content/data items/equipment/recipes while generic @game/data infrastructure remains. Validated; user reported no regression.
 
-9) WEAPON PIPELINE STEP 6 — RETIRE STALE content/data WEAPON RECORDS
+10) WEAPON PIPELINE STEP 7 — CRAFT INVARIANT TESTS
 Date/session: 2026-08-10
-Status: implementation pushed; Vercel/data-validation check pending.
+Status: implementation committed; Vercel/test validation pending.
+
+Objective:
+Lock the standard weapon crafting contract so future weapon additions cannot silently violate tier progression or route artifact weapons through the standard generator.
 
 Audit findings:
-- content/data/*.json are not loaded by the active client weapon runtime.
-- repository search found content/data consumption in the generic @game/data/tooling validation architecture, not in active weapon gameplay.
-- packages/tooling/src/validate-data.ts scans every JSON in content/data and validates envelope/schema only.
-- weapon records in items.json/equipment.json/recipes.json were stale parallel authoring sources and contradicted live runtime values/rules.
-Examples found before removal:
-  - equipment.json Broadsword T4 = 128 physical / 1.1 attack speed, unlike live catalog.
-  - items.json Spiked T3 supported enchantments, contradicting current V1 T4 minimum.
-  - recipes.json T4 standard weapon recipes did not encode the live T(n-1) predecessor rule.
-
-Decision:
-Do NOT delete content/data or @game/data architecture: it remains a generic data-runtime/tooling foundation and contains non-weapon content.
-Instead remove only stale weapon records so there is no second weapon authoring source.
+- standard generation already implements the intended behavior but had no dedicated invariant suite.
+- runtime crafting tests exercise crafting behavior but do not comprehensively assert catalog-level T3/T4 generation rules for every current standard specialization.
 
 Files modified:
-- content/data/items.json
-- content/data/equipment.json
-- content/data/recipes.json
+- apps/client/src/data/weaponCraftPipeline.test.ts (new)
 - ALBION_IDLE_DEV_CONTEXT.txt
 
-Changes:
-- removed all weapon item records from items.json.
-- removed all weapon equipment records from equipment.json.
-- removed all weapon crafting recipes from recipes.json.
-- retained unrelated armor/resource/consumable/refining/cooking records unchanged.
-- no active runtime weapon behavior is intentionally changed.
+Tests added:
+- every current standard T3 recipe contains refined resources only and no predecessor equipment.
+- every current standard T4 recipe requires exactly one corresponding T3 weapon from the same specialization.
+- resolvePreviousWeaponTierItemId agrees with generated recipes.
+- Badon is artifact_pending, has no standard predecessor, never appears in STANDARD_WEAPON_CRAFT_RECIPES, and its temporary recipe contains no weapon predecessor.
+- generated standard weapon outputs contain no duplicates.
 
-Resulting authority:
-- weapon gameplay identity/stats/masteries/abilities/craft rules: weaponContentCatalog.ts.
-- generated live equipment recognition: itemContentCatalog.ts.
-- generated live standard recipes: refiningRecipes.ts.
-- specialization presentation: equipmentPresentation.ts.
-- actual renderer/projectile manifests remain explicit presentation content.
-- content/data no longer claims to be a second source for weapon content.
-
-Validation required:
-- Vercel build green.
-- repository data validation still accepts remaining content/data JSON.
-- no inventory/craft/combat behavior change in preview.
-
-Note on commits:
-GitHub connector file writes use the Contents API and therefore create one commit per file write. This step required three existing JSON files plus this mandatory context log update, so it appears as multiple technical commits despite being one functional step. Do not interpret those commits as separate refactor stages.
+No gameplay change.
 
 NEXT PLANNED WORK
 -----------------
-1. Validate Step 6.
-2. Add/strengthen craft generation invariant tests.
-3. Remove starter mastery compatibility aliases by making GameContext consume resolveWeaponMastery directly.
-4. Final broad pipeline/non-regression audit and validation.
-5. Only after that, use the pipeline to add future weapons.
+1. Validate Step 7 build/tests.
+2. Remove starter mastery compatibility aliases by making GameContext consume resolveWeaponMastery directly.
+3. Run final broad weapon-pipeline audit/non-regression validation.
+4. Only after validation, use the finalized pipeline for future weapons.
 
 FINAL VALIDATION TARGET
 -----------------------
@@ -104,7 +82,8 @@ Broadsword T3/T4, Longbow T3/T4, Badon T4, Fire Staff T3/T4, Spiked Gauntlets T3
 METHODOLOGY LESSONS
 -------------------
 - Follow actual consumers before editing legacy-looking data.
-- Keep generic data infrastructure if still architectural; retire only stale domain records when another runtime authority has superseded them.
-- A standard T4+ weapon without T(n-1) is invalid content and should fail generation loudly.
+- Keep generic infrastructure when architectural; retire stale parallel domain records.
+- A standard T4+ weapon without T(n-1) is invalid content and should fail loudly.
 - Do not fake future artifact mechanics.
 - Presentation is authored by specialization; renderer profiles/manifests remain explicit when differences are real.
+- Protect content-pipeline rules with invariant tests, not only runtime smoke tests.
