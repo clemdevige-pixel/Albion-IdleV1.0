@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "monster_keeper_shaman",
+  "kind": "static_actor",
+  "textureKey": "keeper-shaman",
+  "assetPath": "/assets/monsters/keeper-shaman.webp",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 284, "height": 190 },
+  "hud": { "healthBarWidth": 145, "healthBarOffsetY": 155 },
+  "ambientMotion": { "distance": 3, "durationMs": 900, "delayMs": 280 }
+}
