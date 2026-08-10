@@ -83,11 +83,21 @@ final reward = zone/segment/encounter reward x monster multiplier
 
 ### 5. Add the visual
 
-Add the monster PNG under `apps/client/public/assets/monsters/` and create a `static_actor` render manifest under:
+Add the monster asset under `apps/client/public/assets/monsters/` and create a `static_actor` render manifest under:
 
 `apps/client/src/game/render/manifests/`
 
 Register that manifest in `defaultRenderManifestRegistry.ts` and use the manifest ID as `visualManifestId` in the monster definition.
+
+For every `static_actor`, **the authored display height is authoritative**. `PhaserStaticActorRenderer` derives display width automatically from the native texture dimensions through `resolveAspectPreservingDisplaySize`. This prevents sprites from ever being stretched or squashed by a bad manifest width.
+
+Authoring rule:
+
+```text
+native asset ratio -> choose target height -> renderer derives width automatically
+```
+
+Do not compensate for proportions by editing the source image. Use manifest height for scale and manifest offset/origin for placement.
 
 Phaser must not receive monster-name conditions.
 
@@ -102,6 +112,8 @@ Phaser must not receive monster-name conditions.
 - world zone metadata matches live encounter pools;
 - progression scaling remains the reward base;
 - a real authored boss can spawn with identity + abilities + rewards + renderer resolution.
+
+`aspectRatio.test.ts` additionally locks the static-actor sizing rule so future renderer changes cannot silently reintroduce sprite deformation.
 
 Run client tests, typecheck and build before validating the monster.
 
