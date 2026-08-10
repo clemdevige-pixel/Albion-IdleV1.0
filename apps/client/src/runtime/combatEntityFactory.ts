@@ -13,6 +13,7 @@ import {
   type ZoneDefinitionId,
 } from "@game/gameplay";
 import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
+import { resolveMonsterForEncounter } from "../data/monsterContentCatalog";
 
 const STAT_MAX_HEALTH = "stat_max_health" as StatId;
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
@@ -44,6 +45,7 @@ export interface SpawnedEnemyResult {
   readonly maxHealth: number;
   readonly name: string;
   readonly visualManifestId: string;
+  readonly monsterDefinitionId: string;
 }
 
 export function setupCombatEntity(
@@ -91,71 +93,51 @@ export function setupCombatEntity(
 
 export function spawnEnemyForSegment(
   deps: CombatEntityFactoryDependencies,
-  biomeResolver: BiomeResolver,
+  _biomeResolver: BiomeResolver,
   ctx: EnemySpawnContext,
 ): SpawnedEnemyResult {
-  const biome = biomeResolver.resolve(ctx.zoneDefId);
   const isBoss = ctx.encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
   const isBiomeBoss = isBoss && ctx.segmentIndex === SEGMENTS_PER_ZONE - 1;
+  const monster = resolveMonsterForEncounter(
+    ctx.zoneDefId,
+    ctx.segmentIndex,
+    ctx.encounterIndex,
+  );
   const profile = getEnemyCombatProfile(
     ctx.zoneIndex,
     ctx.segmentIndex,
     ctx.encounterIndex,
   );
+  const maxHealth = Math.floor(profile.hp * monster.combat.health);
+  const damage = Math.floor(profile.damage * monster.combat.damage);
+  const armor = Math.floor(profile.armor * monster.combat.armor);
+  const magicResistance = Math.floor(
+    profile.magicResistance * monster.combat.magicResistance,
+  );
 
   const enemyId = setupCombatEntity(
     deps,
     {
-      maxHealth: profile.hp,
-      physDamage: profile.damage,
-      attackSpeed: 0.8,
-      armor: profile.armor,
-      magicRes: profile.magicResistance,
+      maxHealth,
+      physDamage: damage,
+      attackSpeed: monster.combat.attackSpeed,
+      armor,
+      magicRes: magicResistance,
     },
     { x: 100, y: 0 },
   );
 
-  const families = biome?.enemyFamilies ?? ["Beast"];
-  const family = families[ctx.segmentIndex % families.length] ?? "Beast";
   const prefix = isBiomeBoss
     ? "[BIOME BOSS] "
     : isBoss
       ? "[BOSS] "
       : "";
-  const roamingCreatures = [
-    {
-      name: "Stonefang Wolf",
-      visualManifestId: "monster_stonefang_wolf",
-    },
-    {
-      name: "Razorwing Harpy",
-      visualManifestId: "monster_razorwing_harpy",
-    },
-    {
-      name: "Morgana Witch",
-      visualManifestId: "monster_morgana_witch",
-    },
-  ] as const;
-  const randomCreature =
-    roamingCreatures[Math.floor(Math.random() * roamingCreatures.length)]
-    ?? roamingCreatures[0];
-  const creature = isBiomeBoss
-    ? {
-        name: "Ancient Rune Golem",
-        visualManifestId: "boss_ancient_rune_golem",
-      }
-    : !isBoss
-      ? randomCreature
-      : {
-          name: family,
-          visualManifestId: "monster_undead_warrior",
-        };
-  const name = `${prefix}${creature.name} - ${ctx.zoneName}`;
 
   return {
     id: enemyId,
-    maxHealth: profile.hp,
-    name,
-    visualManifestId: creature.visualManifestId,
+    maxHealth,
+    name: `${prefix}${monster.name} - ${ctx.zoneName}`,
+    visualManifestId: monster.visualManifestId,
+    monsterDefinitionId: monster.id,
   };
 }
