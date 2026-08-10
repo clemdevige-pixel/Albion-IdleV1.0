@@ -3,6 +3,7 @@ import {
   type AbilityId,
   type AbilityManager,
   type DamageManager,
+  type DeathManager,
   type EffectManager,
   type StatId,
   type StatsManager,
@@ -14,6 +15,7 @@ const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
 export interface MonsterAbilityRuntimeDependencies {
   readonly abilityManager: AbilityManager;
   readonly damageManager: DamageManager;
+  readonly deathManager: DeathManager;
   readonly effectManager: EffectManager;
   readonly statsManager: StatsManager;
 }
@@ -76,6 +78,10 @@ export function tickMonsterAbilities(
     damageType,
     source_type: "ability",
   });
+
+  if (result?.targetDied === true) {
+    deps.deathManager.checkDeath(heroEntityId, monsterEntityId, tick);
+  }
 
   return result !== null;
 }
