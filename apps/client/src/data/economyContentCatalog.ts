@@ -13,6 +13,10 @@ export const GENERIC_COMBAT_LOOT: readonly LootDropDefinition[] = [
   { itemId: "item_energy_potion", weight: 15 },
 ];
 
+const UNDEAD_COMBAT_LOOT: readonly LootDropDefinition[] = [
+  { itemId: "item_health_potion", weight: 20 },
+];
+
 export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> = {
   loot_monster_generic: {
     dropChance: 0.2,
@@ -25,6 +29,18 @@ export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> 
   loot_monster_keeper_boss: {
     dropChance: 0.2,
     drops: GENERIC_COMBAT_LOOT,
+  },
+  loot_undead_normal: {
+    dropChance: 0.2,
+    drops: UNDEAD_COMBAT_LOOT,
+  },
+  loot_undead_elite: {
+    dropChance: 0.3,
+    drops: UNDEAD_COMBAT_LOOT,
+  },
+  loot_undead_boss: {
+    dropChance: 0.45,
+    drops: UNDEAD_COMBAT_LOOT,
   },
 };
 
