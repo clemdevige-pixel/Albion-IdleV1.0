@@ -3,10 +3,30 @@ export interface LootDropDefinition {
   readonly weight: number;
 }
 
+export interface LootTableDefinition {
+  readonly dropChance: number;
+  readonly drops: readonly LootDropDefinition[];
+}
+
 export const GENERIC_COMBAT_LOOT: readonly LootDropDefinition[] = [
   { itemId: "item_health_potion", weight: 20 },
   { itemId: "item_energy_potion", weight: 15 },
 ];
+
+export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> = {
+  loot_monster_generic: {
+    dropChance: 0.2,
+    drops: GENERIC_COMBAT_LOOT,
+  },
+  loot_monster_undead_boss: {
+    dropChance: 0.2,
+    drops: GENERIC_COMBAT_LOOT,
+  },
+  loot_monster_keeper_boss: {
+    dropChance: 0.2,
+    drops: GENERIC_COMBAT_LOOT,
+  },
+};
 
 export const HEALTH_POTION_HEAL_RATIO = 0.3;
 export const HEALTH_POTION_COOLDOWN_SECONDS = 20;
@@ -25,18 +45,26 @@ export function rollEnchantmentMaterial(): string | undefined {
   return undefined;
 }
 
-export function rollGenericCombatLoot(): string | undefined {
-  if (Math.random() > 0.2) return undefined;
-  const totalWeight = GENERIC_COMBAT_LOOT.reduce(
+export function rollLootTable(lootTableId: string): string | undefined {
+  const table = MONSTER_LOOT_TABLES[lootTableId];
+  if (table === undefined) {
+    throw new Error(`Unknown monster loot table: ${lootTableId}`);
+  }
+  if (Math.random() > table.dropChance) return undefined;
+  const totalWeight = table.drops.reduce(
     (sum, definition) => sum + definition.weight,
     0,
   );
   let roll = Math.random() * totalWeight;
-  for (const definition of GENERIC_COMBAT_LOOT) {
+  for (const definition of table.drops) {
     roll -= definition.weight;
     if (roll <= 0) return definition.itemId;
   }
   return undefined;
+}
+
+export function rollGenericCombatLoot(): string | undefined {
+  return rollLootTable("loot_monster_generic");
 }
 
 export const REPAIR_COST_DEFINITIONS = [
