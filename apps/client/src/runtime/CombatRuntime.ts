@@ -388,6 +388,7 @@ export class CombatRuntime {
       {
         abilityManager: this.abilityManager,
         damageManager: this.damageManager,
+        deathManager: this.deathManager,
         effectManager: this.effectManager,
         statsManager: this.statsManager,
       },
