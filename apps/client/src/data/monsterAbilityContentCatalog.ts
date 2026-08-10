@@ -15,8 +15,8 @@ export interface MonsterCategoryBehavior {
 export const MONSTER_CATEGORY_BEHAVIORS: Readonly<Record<MonsterCategory, MonsterCategoryBehavior>> = {
   normal: { maxActiveAbilities: 1, cooldownMultiplier: 1 },
   veteran: { maxActiveAbilities: 1, cooldownMultiplier: 0.9 },
-  elite: { maxActiveAbilities: 2, cooldownMultiplier: 0.8 },
-  boss: { maxActiveAbilities: 3, cooldownMultiplier: 0.75 },
+  elite: { maxActiveAbilities: 2, cooldownMultiplier: 1 },
+  boss: { maxActiveAbilities: 3, cooldownMultiplier: 0.9 },
 };
 
 export const MONSTER_ABILITY_IDS = {
