@@ -92,6 +92,15 @@ Manual validation target:
 4. Walking/attacking keeps the same Dagger Pair visual placeholder instead of reverting to Broadsword.
 5. Existing weapon presentations remain unchanged.
 
+18) PREVIEW RECOVERY CHECKPOINT
+Date/session: 2026-08-10
+Status: recovery commit created to force a fresh Vercel deployment from the restored d26bb61 state.
+
+Reason:
+- Commit 6cda0ae caused Phaser startup failure after a PNG transparency rewrite.
+- Branch content was restored to d26bb61, but moving the Git ref backward did not trigger a new Vercel deployment.
+- This documentation-only commit intentionally creates a new branch SHA while preserving the d26bb61 application state, so Vercel receives a fresh deployment event.
+
 NEXT DAGGER PAIR VISUAL WORK
 ----------------------------
 1. Produce dedicated Walk spritesheet.
