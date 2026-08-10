@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "boss_heretic_madmen",
+  "kind": "static_actor",
+  "textureKey": "heretic-madmen",
+  "assetPath": "/assets/monsters/heretic_madmen.webp",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 398, "height": 265 },
+  "hud": { "healthBarWidth": 185, "healthBarOffsetY": 215 },
+  "ambientMotion": { "distance": 5, "durationMs": 800, "delayMs": 320 }
+}
