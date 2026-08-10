@@ -11,6 +11,14 @@ export interface MonsterCombatModifiers {
   readonly attackSpeed: number;
 }
 
+export interface MonsterRewardDefinition {
+  /** Applied on top of the progression reward calculated from zone/segment/encounter. */
+  readonly silverMultiplier: number;
+  /** Applied on top of the progression reward calculated from zone/segment/encounter. */
+  readonly fameMultiplier: number;
+  readonly lootTableId: string;
+}
+
 export interface MonsterContentDefinition {
   readonly id: string;
   readonly name: string;
@@ -19,6 +27,7 @@ export interface MonsterContentDefinition {
   readonly tier: 3 | 4;
   readonly visualManifestId: string;
   readonly combat: MonsterCombatModifiers;
+  readonly rewards: MonsterRewardDefinition;
   readonly tags: readonly string[];
 }
 
@@ -34,6 +43,12 @@ const DEFAULT_COMBAT: MonsterCombatModifiers = {
   armor: 1,
   magicResistance: 1,
   attackSpeed: 0.8,
+};
+
+const DEFAULT_REWARDS: MonsterRewardDefinition = {
+  silverMultiplier: 1,
+  fameMultiplier: 1,
+  lootTableId: "loot_monster_generic",
 };
 
 export const MONSTER_IDS = {
@@ -53,6 +68,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     tier: 3,
     visualManifestId: "monster_stonefang_wolf",
     combat: DEFAULT_COMBAT,
+    rewards: DEFAULT_REWARDS,
     tags: ["beast", "roaming"],
   },
   [MONSTER_IDS.razorwingHarpy]: {
@@ -63,6 +79,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     tier: 3,
     visualManifestId: "monster_razorwing_harpy",
     combat: DEFAULT_COMBAT,
+    rewards: DEFAULT_REWARDS,
     tags: ["harpy", "roaming"],
   },
   [MONSTER_IDS.morganaWitch]: {
@@ -73,6 +90,7 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     tier: 3,
     visualManifestId: "monster_morgana_witch",
     combat: DEFAULT_COMBAT,
+    rewards: DEFAULT_REWARDS,
     tags: ["caster", "roaming"],
   },
   [MONSTER_IDS.undeadWarrior]: {
@@ -83,6 +101,10 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     tier: 3,
     visualManifestId: "monster_undead_warrior",
     combat: DEFAULT_COMBAT,
+    rewards: {
+      ...DEFAULT_REWARDS,
+      lootTableId: "loot_monster_undead_boss",
+    },
     tags: ["undead", "segment_boss"],
   },
   [MONSTER_IDS.ancientRuneGolem]: {
@@ -93,6 +115,10 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
     tier: 4,
     visualManifestId: "boss_ancient_rune_golem",
     combat: DEFAULT_COMBAT,
+    rewards: {
+      ...DEFAULT_REWARDS,
+      lootTableId: "loot_monster_keeper_boss",
+    },
     tags: ["golem", "biome_boss"],
   },
 };
