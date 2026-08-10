@@ -5,8 +5,10 @@ import {
   asZoneDefinitionId,
   type BiomeDefinition,
   type ZoneDefinition,
+  type ZoneDefinitionId,
   type ZoneUnlockDefinition,
 } from "@game/gameplay";
+import { getZoneEncounterPool } from "./monsterContentCatalog";
 
 export const WORLD_ZONE_IDS = {
   forest: asZoneDefinitionId("zone_forest_t3"),
@@ -24,12 +26,25 @@ export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
   { id: asBiomeId("biome_mountain"), name: "Mountain", theme: "Frozen", difficultyModifier: 1.42, enemyFamilies: ["Keeper", "Demon"], resourceFamilies: ["Ore", "Stone"], encounterPoolId: "encounter_pool_mountain", visualThemeId: "visual_mountain", ambientAudioId: "audio_mountain", musicPlaylistId: "music_mountain", weather: "Snow", lighting: "Cold", decorationDensity: "Normal", tags: ["mountain", "tier4", "final"] },
 ];
 
+function buildNormalMonsterSpawns(
+  zoneDefId: ZoneDefinitionId,
+  groupPrefix: string,
+  respawnDelayTicks: number,
+): ZoneDefinition["monsterSpawns"] {
+  return getZoneEncounterPool(zoneDefId).normal.map((monsterId, index) => ({
+    definitionId: asMonsterDefinitionId(monsterId),
+    spawnGroupId: asSpawnGroupId(`${groupPrefix}_${String(index + 1)}`),
+    count: 1,
+    respawnDelayTicks,
+  }));
+}
+
 export const ZONE_DEFINITIONS: readonly ZoneDefinition[] = [
-  { id: WORLD_ZONE_IDS.forest, name: "Birch Forest", tier: 3, monsterSpawns: [{ definitionId: asMonsterDefinitionId("mob_wolf"), spawnGroupId: asSpawnGroupId("grp_wolves"), count: 3, respawnDelayTicks: 30 }], tags: ["forest", "starter"] },
-  { id: WORLD_ZONE_IDS.swamp, name: "Dark Swamp", tier: 3, monsterSpawns: [{ definitionId: asMonsterDefinitionId("mob_undead"), spawnGroupId: asSpawnGroupId("grp_undead"), count: 2, respawnDelayTicks: 40 }], tags: ["swamp"] },
-  { id: WORLD_ZONE_IDS.highland, name: "Stone Highlands", tier: 3, monsterSpawns: [{ definitionId: asMonsterDefinitionId("mob_keeper"), spawnGroupId: asSpawnGroupId("grp_highland"), count: 3, respawnDelayTicks: 45 }], tags: ["highland", "tier3"] },
-  { id: WORLD_ZONE_IDS.steppe, name: "Golden Steppe", tier: 4, monsterSpawns: [{ definitionId: asMonsterDefinitionId("mob_heretic"), spawnGroupId: asSpawnGroupId("grp_steppe"), count: 3, respawnDelayTicks: 50 }], tags: ["steppe", "tier4"] },
-  { id: WORLD_ZONE_IDS.mountain, name: "Frostpeak Mountain", tier: 4, monsterSpawns: [{ definitionId: asMonsterDefinitionId("mob_mountain_keeper"), spawnGroupId: asSpawnGroupId("grp_mountain"), count: 2, respawnDelayTicks: 60 }], tags: ["mountain", "tier4", "final"] },
+  { id: WORLD_ZONE_IDS.forest, name: "Birch Forest", tier: 3, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.forest, "grp_forest", 30), tags: ["forest", "starter"] },
+  { id: WORLD_ZONE_IDS.swamp, name: "Dark Swamp", tier: 3, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.swamp, "grp_swamp", 40), tags: ["swamp"] },
+  { id: WORLD_ZONE_IDS.highland, name: "Stone Highlands", tier: 3, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.highland, "grp_highland", 45), tags: ["highland", "tier3"] },
+  { id: WORLD_ZONE_IDS.steppe, name: "Golden Steppe", tier: 4, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.steppe, "grp_steppe", 50), tags: ["steppe", "tier4"] },
+  { id: WORLD_ZONE_IDS.mountain, name: "Frostpeak Mountain", tier: 4, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.mountain, "grp_mountain", 60), tags: ["mountain", "tier4", "final"] },
 ];
 
 export const BIOME_BY_ZONE = new Map([
