@@ -47,39 +47,54 @@ IMPLEMENTED / VALIDATED HISTORY
 12. Craft bridge/UI made generic for family IDs; labels/symbols resolve from presentation layer. Validated.
 13. Starter Broadsword mastery compatibility aliases removed; GameContext resolves starter mastery route directly from weaponContentCatalog. Validated.
 14. Dagger Pair added as first end-to-end new family/specialization. Craft, equip and combat manually validated; dedicated assets pending.
+15. Masteries UI topology now derives from weaponContentCatalog instead of a closed family list. Dagues / Paire de dagues manually validated.
 
-15) FIX — MASTERIES UI DERIVED FROM WEAPON CATALOG
+16) WEAPON PIPELINE GLOBAL CONTRACT TEST
 Date/session: 2026-08-10
-Status: implementation committed; Vercel/manual validation pending.
+Status: implementation committed; Vercel/test validation pending.
 
 Trigger:
-Manual Dagger Pair validation showed craft, equipment and combat working, but Dagues / Paire de dagues did not appear in the Masteries panel.
+The first Dagger Pair end-to-end implementation exposed a remaining hidden UI dependency: gameplay/mastery content was correct, but the Masteries panel had a stale closed family list. This proved a cross-system contract test is now valuable before scaling weapon content production.
 
-Audit finding:
-- Gameplay progression was already generic: CombatRewardRuntime resolves the equipped weapon through resolveWeaponMastery and discovers/awards both family and specialization on enemy kill.
-- The actual defect was presentation-model duplication: ui/masteries/masteryModels.ts still owned a closed COMBAT_FAMILIES list containing only sword, bow, fire_staff and gloves.
-- Therefore every new weapon family required an undocumented UI edit despite the refactored weapon pipeline.
+Objective:
+Add one global automated contract that derives its subject list from WEAPON_ITEM_DEFINITIONS and fails whenever any declared weapon is only partially integrated into the generic pipeline.
 
-Fix:
-- weaponContentCatalog now exposes getWeaponMasteryFamilyDefinitions(), derived from WEAPON_FAMILIES + WEAPON_CONTENT.
-- masteryModels removed the closed COMBAT_FAMILIES registry entirely.
-- Combat mastery families/specializations are now built from the authoritative weapon catalog.
-- Family icon/symbol is resolved from existing equipmentPresentation family presentation; no second icon registry added.
-- Added regression test proving mastery_dagger / mastery_dagger_pair render through buildMasteriesModel.
+File added:
+- apps/client/src/data/weaponPipeline.contract.test.ts
 
-Files modified:
-- apps/client/src/data/weaponContentCatalog.ts
-- apps/client/src/ui/masteries/masteryModels.ts
-- apps/client/src/ui/masteries/masteryModels.test.ts
-- ALBION_IDLE_DEV_CONTEXT.txt
+Contract coverage for every declared weapon item:
+- tier resolver exists.
+- Item Power exists.
+- equipment definition exists and resolves to weapon slot.
+- family route exists and points to a declared WEAPON_FAMILIES entry.
+- family mastery and specialization mastery definitions exist.
+- combat profile and positive intrinsic attack speed exist.
+- primary ability route and CLIENT_ABILITIES definition exist.
+- exactly one vendor offer exists.
+- exactly one equipment craft recipe exists.
+- presentation exists with non-empty item icon, actor manifest and combat presentation profile.
+- repair recognizes the item as a weapon at the correct tier.
+- enchantment recognizes the correct tier; T3 remains non-enchantable and T4 remains enchantable in the current V1 slice.
+- standard craft items must belong to STANDARD_WEAPON_CRAFT_RECIPES.
+- standard T3 recipes must contain no weapon predecessor.
+- standard T4 recipes must contain exactly the catalog-resolved T3 predecessor x1.
+- artifact_pending weapons must remain outside the standard generator.
 
-Expected result:
-After killing an enemy with Dagger Pair, Dagues appears in Combat masteries and Paire de dagues appears as its specialization. Future weapon families declared in the catalog no longer require masteryModels edits.
+Masteries UI contract coverage:
+- builds the actual buildMasteriesModel using synthetic state generated from WEAPON_MASTERY_DEFINITIONS.
+- every catalog family must appear in Combat masteries.
+- family display name must match WEAPON_FAMILIES.
+- family presentation/icon must resolve.
+- every catalog specialization must appear under exactly its catalog family topology.
+
+Important design rule:
+The contract test contains no hand-authored list of weapon item IDs or weapon family IDs. Adding a new weapon/family automatically expands the test surface through the authoritative catalogs. This is specifically intended to catch future omissions like the Dagger Pair Masteries UI issue before deployment/manual smoke testing.
+
+No runtime/gameplay/balance change.
 
 FINAL AUDIT ITEMS STILL OPEN
 ----------------------------
-1. Optional global Weapon Pipeline Contract Test for completeness of every declared weapon.
-2. Add ability-ID uniqueness/coherence validation to prevent conflicting duplicate IDs from silently overwriting in CLIENT_ABILITIES.
-3. Decide when to generalize tier model from current T3|T4 to T3-T8.
-4. Replace Badon temporary material-only recipe when artifact crafting exists.
-5. Replace Dagger Pair temporary Broadsword visual with dedicated asset/manifests.
+1. Add ability-ID uniqueness/coherence validation to prevent conflicting duplicate IDs from silently overwriting in CLIENT_ABILITIES.
+2. Decide when to generalize tier model from current T3|T4 to T3-T8.
+3. Replace Badon temporary material-only recipe when artifact crafting exists.
+4. Replace Dagger Pair temporary Broadsword visual with dedicated asset/manifests.
