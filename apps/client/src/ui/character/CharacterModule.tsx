@@ -29,7 +29,11 @@ function formatValue(value: number): string {
 export function CharacterModule(): JSX.Element {
   const character = useCharacterData();
   const actions = useCharacterActions();
-  const [pickerSlot, setPickerSlot] = useState<EquipmentSlot | null>(null);
+  const [pickerSlot, setPickerSlot] = useState<{
+    slot: EquipmentSlot;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const equipmentBySlot = useMemo(
     () => new Map(character.equipment.map((entry) => [entry.slot, entry])),
@@ -42,7 +46,7 @@ export function CharacterModule(): JSX.Element {
   const candidates = pickerSlot === null
     ? []
     : character.inventory.filter((entry) => entry.itemId !== undefined
-      && getItemDefinition(entry.itemId)?.slot === pickerSlot);
+      && getItemDefinition(entry.itemId)?.slot === pickerSlot.slot);
 
   const renderSlot = (slot: EquipmentSlot): JSX.Element => {
     const entry = equipmentBySlot.get(slot);
@@ -54,11 +58,17 @@ export function CharacterModule(): JSX.Element {
         itemId={entry?.itemId}
         instanceId={entry?.instanceId}
         enchantment={entry?.enchantment ?? 0}
-        selected={pickerSlot === slot}
+        selected={pickerSlot?.slot === slot}
         disabled={isLocked}
         disabledContent={<><strong>×</strong><small>2 mains</small></>}
-        onClick={() => {
-          setPickerSlot((current) => current === slot ? null : slot);
+        onClick={(event) => {
+          if (event.detail > 1) return;
+          setPickerSlot((current) => current?.slot === slot
+            ? null
+            : { slot, x: event.clientX, y: event.clientY });
+        }}
+        onDoubleClick={entry?.itemId === undefined ? undefined : () => {
+          if (actions.unequip(slot)) setPickerSlot(null);
         }}
       />
     );
@@ -69,7 +79,7 @@ export function CharacterModule(): JSX.Element {
       <section className="character-module__equipment" aria-label="Équipement actuel">
         <div className="character-module__equipment-heading">
           <span>Équipement</span>
-          <small>Cliquez sur un emplacement pour le remplacer</small>
+          <small>Cliquez pour remplacer · double-cliquez pour retirer</small>
         </div>
 
         <div className="character-module__loadout">
@@ -117,15 +127,13 @@ export function CharacterModule(): JSX.Element {
 
       {pickerSlot !== null && (
         <CharacterEquipmentPicker
-          label={SLOT_LABELS[pickerSlot]}
-          equipped={equipmentBySlot.get(pickerSlot)}
+          label={SLOT_LABELS[pickerSlot.slot]}
           candidates={candidates}
+          x={pickerSlot.x}
+          y={pickerSlot.y}
           onClose={() => { setPickerSlot(null); }}
           onEquip={(position) => {
             if (actions.equip(position)) setPickerSlot(null);
-          }}
-          onUnequip={() => {
-            if (actions.unequip(pickerSlot)) setPickerSlot(null);
           }}
         />
       )}
