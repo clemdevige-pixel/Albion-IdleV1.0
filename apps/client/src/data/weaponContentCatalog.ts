@@ -40,6 +40,7 @@ export const WEAPON_FAMILIES = {
   bow: { masteryId: "mastery_bow", name: "Arcs" },
   fire_staff: { masteryId: "mastery_fire_staff", name: "Bâtons de feu" },
   gloves: { masteryId: "mastery_gloves", name: "Gants" },
+  dagger: { masteryId: "mastery_dagger", name: "Dagues" },
 } as const;
 
 export type WeaponFamilyId = keyof typeof WEAPON_FAMILIES;
@@ -83,7 +84,6 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
   },
   {
     familyId: "bow", specializationMasteryId: "mastery_badon", specializationName: "Badon", combatProfile: "bow",
-    // Artifact crafting is intentionally not simulated until artifact content exists.
     craft: { kind: "artifact_pending" },
     ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: { energy: 8 }, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
     items: [{ itemId: "item_weapon_bow_t4_badon", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 }],
@@ -104,6 +104,15 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     items: [
       { itemId: "item_weapon_gloves_t3_spiked_gauntlets", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 38 }, sellPrice: 75 },
       { itemId: "item_weapon_gloves_t4_spiked_gauntlets", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 66 }, sellPrice: 210 },
+    ],
+  },
+  {
+    familyId: "dagger", specializationMasteryId: "mastery_dagger_pair", specializationName: "Paire de dagues", combatProfile: "dagger",
+    craft: { kind: "standard", materials: [{ kind: "metal", quantity: 6 }, { kind: "leather", quantity: 2 }] },
+    ability: { id: "ability_dagger_double_slash", name: "Double entaille", description: "Deux lames frappent en succession rapide pour infliger 150 % des dégâts physiques.", icon: "🗡️", category: "active", cooldown: 4, castTime: 0, resourceCost: { energy: 8 }, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.5 },
+    items: [
+      { itemId: "item_weapon_dagger_t3_pair", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 34 }, sellPrice: 75 },
+      { itemId: "item_weapon_dagger_t4_pair", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 58 }, sellPrice: 210 },
     ],
   },
 ];

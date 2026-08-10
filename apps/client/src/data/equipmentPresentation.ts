@@ -48,6 +48,13 @@ const PRESENTATION_BY_SPECIALIZATION: Readonly<
     actorManifestId: "hero_spiked_gauntlets",
     combatProfileId: "melee",
   },
+  // Temporary visual fallback until the dedicated Dagger Pair asset/manifests exist.
+  // Gameplay already uses the dagger combat profile; only the sprite/icon is borrowed.
+  mastery_dagger_pair: {
+    itemIcon: "item-broadsword-pixel-v1.png",
+    actorManifestId: "hero_broadsword",
+    combatProfileId: "melee",
+  },
 };
 
 /**
@@ -62,6 +69,7 @@ const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
   bow: { label: WEAPON_FAMILIES.bow.name, symbol: "➶" },
   fire_staff: { label: WEAPON_FAMILIES.fire_staff.name, symbol: "◆" },
   gloves: { label: WEAPON_FAMILIES.gloves.name, symbol: "✦" },
+  dagger: { label: WEAPON_FAMILIES.dagger.name, symbol: "††" },
 };
 
 /** Presentation metadata boundary for equipped weapons and item visuals. */
