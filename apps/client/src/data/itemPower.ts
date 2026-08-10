@@ -1,3 +1,16 @@
+import {
+  getBonusItemPowerStatMultiplier,
+  getEnchantmentItemPowerBonus,
+  type EnchantmentLevel,
+} from "@game/gameplay";
+import {
+  resolveWeaponAttackSpeed,
+  resolveWeaponCombatProfile,
+  resolveWeaponMastery,
+  resolveWeaponTier,
+  type WeaponCombatProfile,
+} from "./weaponContentCatalog.js";
+
 /**
  * External Item Power balancing data for the T3→T4 vertical slice.
  * IP is not a combat stat: equipment definitions already contain the fixed
@@ -8,11 +21,8 @@ export const ITEM_POWER_BY_TIER = {
   4: 400,
 } as const;
 
-const ITEM_TIERS: Readonly<Record<string, 3 | 4>> = {
-  item_weapon_sword_t3_broadsword: 3,
-  item_weapon_bow_t3_longbow: 3,
-  item_weapon_staff_t3_fire: 3,
-  item_weapon_gloves_t3_spiked_gauntlets: 3,
+/** Non-weapon tiers remain here until the equipment pipeline is centralized. */
+const NON_WEAPON_ITEM_TIERS: Readonly<Record<string, 3 | 4>> = {
   item_leather_armor: 3,
   item_wooden_shield: 3,
   item_shield_t3_reinforced: 3,
@@ -20,11 +30,6 @@ const ITEM_TIERS: Readonly<Record<string, 3 | 4>> = {
   item_iron_helmet: 3,
   item_leather_boots: 3,
   item_traveler_cape: 3,
-  item_weapon_sword_t4_broadsword: 4,
-  item_weapon_bow_t4_longbow: 4,
-  item_weapon_bow_t4_badon: 4,
-  item_weapon_staff_t4_fire: 4,
-  item_weapon_gloves_t4_spiked_gauntlets: 4,
   item_helmet_t4_reinforced: 4,
   item_armor_t4_leather: 4,
   item_boots_t4_leather: 4,
@@ -40,45 +45,6 @@ export interface WeaponMasteryIds {
   readonly specializationId: string;
 }
 
-const WEAPON_MASTERY_BY_ITEM: Readonly<Record<string, WeaponMasteryIds>> = {
-  item_weapon_sword_t3_broadsword: { familyId: "mastery_sword", specializationId: "mastery_broadsword" },
-  item_weapon_sword_t4_broadsword: { familyId: "mastery_sword", specializationId: "mastery_broadsword" },
-  item_weapon_bow_t3_longbow: { familyId: "mastery_bow", specializationId: "mastery_longbow" },
-  item_weapon_bow_t4_longbow: { familyId: "mastery_bow", specializationId: "mastery_longbow" },
-  item_weapon_bow_t4_badon: { familyId: "mastery_bow", specializationId: "mastery_badon" },
-  item_weapon_staff_t3_fire: { familyId: "mastery_fire_staff", specializationId: "mastery_t4_fire_staff" },
-  item_weapon_staff_t4_fire: { familyId: "mastery_fire_staff", specializationId: "mastery_t4_fire_staff" },
-  item_weapon_gloves_t3_spiked_gauntlets: { familyId: "mastery_gloves", specializationId: "mastery_spiked_gauntlets" },
-  item_weapon_gloves_t4_spiked_gauntlets: { familyId: "mastery_gloves", specializationId: "mastery_spiked_gauntlets" },
-};
-
-export type WeaponCombatProfile = "dagger" | "sword" | "bow" | "staff" | "hammer" | "gloves";
-
-/**
- * Attacks per second are an identity property of the weapon profile.
- * Tier, Item Power and masteries must never alter these values.
- */
-export const WEAPON_ATTACK_SPEED_BY_PROFILE: Readonly<Record<WeaponCombatProfile, number>> = {
-  dagger: 1.6,
-  sword: 1.2,
-  bow: 1,
-  staff: 0.9,
-  hammer: 0.75,
-  gloves: 1.4,
-};
-
-const WEAPON_PROFILE_BY_ITEM: Readonly<Record<string, WeaponCombatProfile>> = {
-  item_weapon_sword_t3_broadsword: "sword",
-  item_weapon_sword_t4_broadsword: "sword",
-  item_weapon_bow_t3_longbow: "bow",
-  item_weapon_bow_t4_longbow: "bow",
-  item_weapon_bow_t4_badon: "bow",
-  item_weapon_staff_t3_fire: "staff",
-  item_weapon_staff_t4_fire: "staff",
-  item_weapon_gloves_t3_spiked_gauntlets: "gloves",
-  item_weapon_gloves_t4_spiked_gauntlets: "gloves",
-};
-
 /**
  * Recommended IP is a comfort target, not a hard gate. Active abilities,
  * consumables and player decisions allow progression below these values.
@@ -88,7 +54,7 @@ export const ZONE_RECOMMENDED_ITEM_POWER = [220, 300, 360, 430, 510] as const;
 const ZONE_END_RECOMMENDED_ITEM_POWER = [300, 360, 430, 510, 600] as const;
 
 export function getItemTier(itemId: string): 3 | 4 | undefined {
-  return ITEM_TIERS[itemId];
+  return resolveWeaponTier(itemId) ?? NON_WEAPON_ITEM_TIERS[itemId];
 }
 
 export function getItemPower(itemId: string): number | undefined {
@@ -97,16 +63,21 @@ export function getItemPower(itemId: string): number | undefined {
 }
 
 export function getWeaponMasteryIds(itemId: string): WeaponMasteryIds | undefined {
-  return WEAPON_MASTERY_BY_ITEM[itemId];
+  const route = resolveWeaponMastery(itemId);
+  return route === undefined
+    ? undefined
+    : {
+        familyId: route.familyId,
+        specializationId: route.weaponId,
+      };
 }
 
 export function getWeaponCombatProfile(itemId: string): WeaponCombatProfile | undefined {
-  return WEAPON_PROFILE_BY_ITEM[itemId];
+  return resolveWeaponCombatProfile(itemId);
 }
 
 export function getWeaponAttackSpeed(itemId: string): number | undefined {
-  const profile = getWeaponCombatProfile(itemId);
-  return profile === undefined ? undefined : WEAPON_ATTACK_SPEED_BY_PROFILE[profile];
+  return resolveWeaponAttackSpeed(itemId);
 }
 
 export function getMasteryItemPowerBonus(
@@ -160,8 +131,3 @@ export function getSegmentRecommendedItemPower(
   const progress = Math.max(0, Math.min(9, segmentIndex - 1)) / 9;
   return Math.round(zoneBase + (zoneEnd - zoneBase) * progress);
 }
-import {
-  getBonusItemPowerStatMultiplier,
-  getEnchantmentItemPowerBonus,
-  type EnchantmentLevel,
-} from "@game/gameplay";
