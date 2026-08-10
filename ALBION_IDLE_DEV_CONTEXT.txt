@@ -59,127 +59,106 @@ Replace the temporary Broadsword visual fallback for Dagger Pair with the first 
 
 Assets added:
 - apps/client/public/assets/items/item-dagger-pair-pixel-v1.png
-  - 128x128 RGBA PNG.
-  - dedicated crossed-daggers item icon.
-- apps/client/public/assets/characters/hero-dagger-pair-idle-sheet-v1.png
-  - normalized transparent spritesheet.
-  - 7 frames, 210x165 each, 1470x165 total.
-  - generated source was normalized to the runtime sheet contract; frame 7 repeats frame 1 to close the idle loop.
-
-Presentation/runtime changes:
-- mastery_dagger_pair now resolves item-dagger-pair-pixel-v1.png instead of the Broadsword icon.
-- mastery_dagger_pair now resolves actorManifestId hero_dagger_pair instead of hero_broadsword.
-- new hero-dagger-pair.render.json actor manifest registered in defaultRenderManifestRegistry.
-- idle uses the dedicated Dagger Pair sheet.
-- walk and attack temporarily reuse the same Dagger Pair idle sheet so the character does not visually swap back to Broadsword before dedicated Walk/Attack assets exist.
-- death temporarily reuses the Broadsword death pose until a dedicated Dagger Pair death treatment is produced.
-- no gameplay, balance, mastery, craft, enchantment, vendor or persistence change.
-
-Files added:
-- apps/client/public/assets/items/item-dagger-pair-pixel-v1.png
 - apps/client/public/assets/characters/hero-dagger-pair-idle-sheet-v1.png
 - apps/client/src/game/render/manifests/hero-dagger-pair.render.json
 
-Files modified:
-- apps/client/src/data/equipmentPresentation.ts
-- apps/client/src/game/render/defaultRenderManifestRegistry.ts
-- ALBION_IDLE_DEV_CONTEXT.txt
-
-Manual validation target:
-1. Dagger Pair icon appears in inventory, crafting, character/equipment and merchant contexts.
-2. Equipping Dagger Pair switches the Phaser hero to the dedicated rogue + dual-dagger Idle asset.
-3. Idle animates without frame jitter or baseline jump.
-4. Walking/attacking keeps the same Dagger Pair visual placeholder instead of reverting to Broadsword.
-5. Existing weapon presentations remain unchanged.
+Presentation/runtime changes:
+- mastery_dagger_pair resolves dedicated icon and hero_dagger_pair manifest.
+- idle uses the dedicated Dagger Pair sheet.
+- walk/attack temporarily reuse idle.
+- death temporarily reuses Broadsword death.
 
 18) PREVIEW RECOVERY CHECKPOINT
 Date/session: 2026-08-10
-Status: recovery commit created to force a fresh Vercel deployment from the restored d26bb61 state.
-
-Reason:
-- Commit 6cda0ae caused Phaser startup failure after a PNG transparency rewrite.
-- Branch content was restored to d26bb61, but moving the Git ref backward did not trigger a new Vercel deployment.
-- This documentation-only commit intentionally creates a new branch SHA while preserving the d26bb61 application state, so Vercel receives a fresh deployment event.
+Status: recovery commit created to force a fresh Vercel deployment from restored stable state.
 
 19) INVENTORY + BANK UI MERGE
 Date/session: 2026-08-10
-Status: implementation committed; Vercel/manual validation pending.
+Status: validated.
 
 Objective:
-Merge Inventory and Bank into one primary bottom module with two internal tabs, without merging or changing the underlying storage gameplay systems.
-
-Navigation target:
-Personnage -> Inventaire -> Maîtrises -> Production -> Marchand.
-
-Implementation:
-- Removed Bank from PRIMARY_UI_MODULES only; bank module ID and BankModule remain available internally/backward-compatible.
-- Reordered PRIMARY_UI_MODULES to the validated order.
-- InventoryModule now owns a local Inventory/Bank tab selector.
-- Inventory tab preserves existing equip/consumable/context-menu behavior.
-- Bank tab reuses the existing BankModule and its existing read-only bank data behavior.
-- Added storage-module tab styling using the existing UI tokens and production-style segmented tab treatment.
-- No inventory manager, bank data, persistence, transfer, equipment or gameplay rule changed.
-
-Files modified:
-- apps/client/src/ui/navigation/moduleCatalog.ts
-- apps/client/src/ui/inventory/InventoryModule.tsx
-- apps/client/src/ui/shared/storageModule.css
-- ALBION_IDLE_DEV_CONTEXT.txt
-
-Manual validation target:
-1. Bottom order is Personnage / Inventaire / Maîtrises / Production / Marchand.
-2. Banque no longer appears as a primary bottom button.
-3. Inventaire opens on the Inventaire tab.
-4. Banque tab displays the existing bank contents/capacity.
-5. Returning to Inventaire restores normal inventory interactions.
-6. No regression in other bottom modules.
+Merge Inventory and Bank into one primary bottom module with two internal tabs.
+Navigation: Personnage -> Inventaire -> Maîtrises -> Production -> Marchand.
 
 20) INVENTORY + BANK INTERACTIONS
 Date/session: 2026-08-10
-Status: implementation committed; Vercel/manual validation pending.
+Status: validated.
 
 Objective:
-Turn the merged Inventory/Bank module into a functional storage workflow: explicit slot placement, drag-and-drop reordering, bidirectional transfers and sorting, while preserving the existing InventoryManager and persistence model.
+Functional storage workflow with explicit slots, drag-and-drop, bidirectional transfer and sorting while keeping InventoryManager/persistence authoritative.
 
-Architecture/audit:
-- Inventory and Bank are already separate entities owned by the same InventoryManager.
-- InventoryManager already provides explicit-position move/insert, stack merging and persistence-safe entry identity.
-- RuntimePersistence already saves hero inventory, bank and production storage in deterministic order.
-- Added StorageRuntime as a focused transaction adapter for storage-to-storage mutations; no duplicate inventory state was introduced.
+21) MONSTER PIPELINE — BLOCK 1 CONTENT AUTHORITY
+Date/session: 2026-08-10
+Status: implementation committed; Vercel build validated.
 
-Behavior:
-- Drag-and-drop inside Inventory and Bank moves an item to the chosen slot.
-- Dropping on an occupied incompatible slot swaps the two entries.
-- Dropping a compatible stack attempts to merge according to InventoryManager stack rules.
-- Shift + double-click from Inventory transfers the item to Bank.
-- Double-click from Bank transfers the item back to Inventory.
-- Transfers preserve the InventoryEntry identity and roll back if the destination cannot accept the item.
-- Sort buttons compact and order each storage deterministically by itemId, enchantment and quantity.
-- All successful mutations immediately resync both Inventory and Bank bridges.
-- Existing equip/use behavior remains on normal Inventory double-click.
+Objective:
+Remove the hardcoded active bestiary from combatEntityFactory and establish one active monster content authority without migrating the entire older MonsterRuntime lifecycle.
+
+Implementation:
+- Added apps/client/src/data/monsterContentCatalog.ts.
+- Monster definitions own identity, faction, category, tier, visualManifestId, combat modifiers and tags.
+- Zone encounter pools explicitly own normal pool, segment boss and biome boss.
+- resolveMonsterForEncounter selects the active monster.
+- combatEntityFactory consumes the catalog and only handles ECS combat entity creation.
+- SpawnedEnemyResult now carries monsterDefinitionId.
+- Existing combat balance/encounter behavior intentionally preserved.
+- Added monsterContentCatalog contract tests.
+
+Architecture decision:
+Do not wire the old MonsterRuntime/MonsterIntegrationCoordinator into the live client yet. The current CombatRuntime lifecycle remains authoritative until a later migration provides a concrete gameplay benefit.
+
+22) MONSTER PIPELINE — BLOCK 2 REWARDS + LOOT
+Date/session: 2026-08-10
+Status: implementation committed; Vercel/test validation pending.
+
+Objective:
+Make monster identity participate in rewards and loot WITHOUT replacing zone/segment progression scaling.
+
+Reward rule:
+final reward = progression reward(zone + segment + encounter/boss) × monster reward modifier.
+The progression curve remains authoritative. Monster modifiers are layered on top.
+
+Migration safety:
+- All current monster silverMultiplier = 1.0.
+- All current monster fameMultiplier = 1.0.
+- Therefore current Silver/Fame balance remains unchanged by this migration.
+- Boss encounter multiplier already present in getEncounterRewards remains intact.
+
+Implementation:
+- MonsterContentDefinition now owns rewards: silverMultiplier, fameMultiplier, lootTableId.
+- applyMonsterRewardModifiers centralizes multiplicative reward scaling.
+- Added explicit MONSTER_LOOT_TABLES in economyContentCatalog.
+- Existing current monster loot tables intentionally reuse current generic drops to avoid hidden rebalance; IDs are now independent and can diverge per monster/faction later.
+- Combat enemy spawn registers active EntityId -> monsterDefinitionId identity in activeMonsterIdentity.
+- combatRewardAdapter resolves the killed monster from enemyKilled entityId.
+- progression rewards are calculated first with getEncounterRewards, then monster modifiers are applied.
+- CombatRewardRuntime receives the selected lootTableId instead of always rolling generic combat loot.
+- Active monster identity is cleared after kill processing.
+- Fallback for non-catalog/test enemies remains multiplier 1 + generic loot table.
 
 Files added:
-- apps/client/src/runtime/StorageRuntime.ts
-- apps/client/src/runtime/StorageRuntime.test.ts
+- apps/client/src/runtime/activeMonsterIdentity.ts
+- apps/client/src/data/monsterRewardContract.test.ts
 
 Files modified:
-- apps/client/src/ui/inventory/useInventoryActions.ts
-- apps/client/src/ui/inventory/InventoryModule.tsx
-- apps/client/src/ui/bank/BankModule.tsx
-- apps/client/src/ui/shared/ItemGrid.tsx
-- apps/client/src/ui/shared/storageModule.css
+- apps/client/src/data/monsterContentCatalog.ts
+- apps/client/src/data/economyContentCatalog.ts
+- apps/client/src/runtime/combatEntityFactory.ts
+- apps/client/src/runtime/combatRewardAdapter.ts
+- apps/client/src/runtime/CombatRewardRuntime.ts
 - ALBION_IDLE_DEV_CONTEXT.txt
 
-Validation target:
-1. Move an Inventory item to an arbitrary empty slot.
-2. Swap two Inventory items.
-3. Repeat both operations in Bank.
-4. Shift + double-click Inventory item -> Bank.
-5. Double-click Bank item -> Inventory.
-6. Verify full destination refuses transfer without item loss.
-7. Verify Sort compacts/reorders both storages.
-8. Save/reload and confirm slot layout and transferred items persist.
-9. Run client tests, typecheck and build.
+Contract validation:
+- Every monster reward multiplier must be > 0.
+- Every monster lootTableId must resolve.
+- Progression base rewards remain unchanged with x1 current monsters.
+- Multipliers are applied on top of progression, not instead of progression.
+
+NEXT MONSTER PIPELINE WORK
+--------------------------
+1. Block 3: monster-specific combat behavior / abilities and category profiles (normal/veteran/elite/boss) without name conditions.
+2. Define real faction-specific loot tables when the new bestiary content is authored.
+3. Decide later whether the existing package MonsterRuntime lifecycle should replace the current CombatRuntime factory lifecycle; do not migrate it only for architectural symmetry.
 
 NEXT DAGGER PAIR VISUAL WORK
 ----------------------------
