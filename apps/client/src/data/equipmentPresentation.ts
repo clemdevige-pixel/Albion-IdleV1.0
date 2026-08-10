@@ -1,46 +1,52 @@
+import { resolveWeaponMastery } from "./weaponContentCatalog.js";
+
 export interface EquipmentPresentationDefinition {
+  readonly itemIcon: string;
   readonly actorManifestId: string;
   readonly combatProfileId: string;
 }
 
-const SWORD_PRESENTATION: EquipmentPresentationDefinition = {
-    actorManifestId: "hero_broadsword",
-    combatProfileId: "melee",
-};
-const BOW_PRESENTATION: EquipmentPresentationDefinition = {
-    actorManifestId: "hero_bow",
-    combatProfileId: "bow",
-};
-const FIRE_STAFF_PRESENTATION: EquipmentPresentationDefinition = {
-    actorManifestId: "hero_fire_staff",
-    combatProfileId: "fire_staff",
-};
-const SPIKED_GAUNTLETS_PRESENTATION: EquipmentPresentationDefinition = {
-    actorManifestId: "hero_spiked_gauntlets",
-    combatProfileId: "melee",
-};
-
-const PRESENTATION_BY_ITEM_ID: Readonly<
+/**
+ * Presentation is authored once per weapon specialization, not once per tier.
+ * Gameplay identity stays in weaponContentCatalog; this catalog owns only
+ * explicit visual/runtime presentation choices.
+ */
+const PRESENTATION_BY_SPECIALIZATION: Readonly<
   Record<string, EquipmentPresentationDefinition>
 > = {
-  item_weapon_sword_t3_broadsword: SWORD_PRESENTATION,
-  item_weapon_sword_t4_broadsword: SWORD_PRESENTATION,
-  item_weapon_bow_t3_longbow: BOW_PRESENTATION,
-  item_weapon_bow_t4_longbow: BOW_PRESENTATION,
-  item_weapon_bow_t4_badon: {
+  mastery_broadsword: {
+    itemIcon: "item-broadsword-pixel-v1.png",
+    actorManifestId: "hero_broadsword",
+    combatProfileId: "melee",
+  },
+  mastery_longbow: {
+    itemIcon: "item-longbow-pixel-v1.png",
+    actorManifestId: "hero_bow",
+    combatProfileId: "bow",
+  },
+  mastery_badon: {
+    itemIcon: "item-badon-pixel-v1.png",
     actorManifestId: "hero_bow",
     combatProfileId: "badon",
   },
-  item_weapon_staff_t3_fire: FIRE_STAFF_PRESENTATION,
-  item_weapon_staff_t4_fire: FIRE_STAFF_PRESENTATION,
-  item_weapon_gloves_t3_spiked_gauntlets: SPIKED_GAUNTLETS_PRESENTATION,
-  item_weapon_gloves_t4_spiked_gauntlets: SPIKED_GAUNTLETS_PRESENTATION,
+  mastery_t4_fire_staff: {
+    itemIcon: "item-fire-staff-pixel-v1.png",
+    actorManifestId: "hero_fire_staff",
+    combatProfileId: "fire_staff",
+  },
+  mastery_spiked_gauntlets: {
+    itemIcon: "item-spiked-gauntlets-pixel-v1.png",
+    actorManifestId: "hero_spiked_gauntlets",
+    combatProfileId: "melee",
+  },
 };
 
-/** Presentation metadata boundary for equipped weapons. */
+/** Presentation metadata boundary for equipped weapons and item visuals. */
 export function resolveEquipmentPresentation(
   itemId: string | undefined,
 ): EquipmentPresentationDefinition | undefined {
   if (itemId === undefined) return undefined;
-  return PRESENTATION_BY_ITEM_ID[itemId];
+  const mastery = resolveWeaponMastery(itemId);
+  if (mastery === undefined) return undefined;
+  return PRESENTATION_BY_SPECIALIZATION[mastery.weaponId];
 }
