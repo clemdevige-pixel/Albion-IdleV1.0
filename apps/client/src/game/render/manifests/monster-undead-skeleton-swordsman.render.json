@@ -3,10 +3,10 @@
   "id": "monster_undead_skeleton_swordsman",
   "kind": "static_actor",
   "textureKey": "undead-skeleton-swordsman",
-  "assetPath": "/assets/monsters/undead-skeleton-swordsman.png",
+  "assetPath": "/assets/monsters/undead-skeleton-swordsman.webp",
   "origin": { "x": 0.5, "y": 1 },
   "offset": { "x": 0, "y": 58 },
-  "display": { "width": 190, "height": 190 },
+  "display": { "width": 270, "height": 180 },
   "hud": { "healthBarWidth": 145, "healthBarOffsetY": 155 },
   "ambientMotion": { "distance": 3, "durationMs": 900, "delayMs": 250 }
 }
