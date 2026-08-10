@@ -14,6 +14,7 @@ import {
 } from "@game/gameplay";
 import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
 import { resolveMonsterForEncounter } from "../data/monsterContentCatalog";
+import { setActiveMonsterIdentity } from "./activeMonsterIdentity";
 
 const STAT_MAX_HEALTH = "stat_max_health" as StatId;
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
@@ -126,6 +127,7 @@ export function spawnEnemyForSegment(
     },
     { x: 100, y: 0 },
   );
+  setActiveMonsterIdentity(enemyId, monster.id);
 
   const prefix = isBiomeBoss
     ? "[BIOME BOSS] "
