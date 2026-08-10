@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { ItemHoverTooltip } from "../../panels/ItemHoverTooltip";
 import {
   getEnchantmentFrameClass,
@@ -14,7 +14,8 @@ interface ItemSlotProps {
   readonly selected?: boolean;
   readonly disabled?: boolean;
   readonly disabledContent?: ReactNode;
-  readonly onClick: () => void;
+  readonly onClick: (event: MouseEvent<HTMLButtonElement>) => void;
+  readonly onDoubleClick?: () => void;
 }
 
 export function ItemSlot({
@@ -26,6 +27,7 @@ export function ItemSlot({
   disabled = false,
   disabledContent,
   onClick,
+  onDoubleClick,
 }: ItemSlotProps): JSX.Element {
   const definition = itemId === undefined ? undefined : getItemDefinition(itemId);
   const content = (
@@ -38,6 +40,7 @@ export function ItemSlot({
       }`}
       disabled={disabled}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       aria-label={`${label}${itemId === undefined ? " vide" : " équipé"}`}
     >
       <span className="ui-item-slot__label">{label}</span>
