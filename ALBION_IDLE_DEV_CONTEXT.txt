@@ -1,155 +1,79 @@
 ALBION IDLE — DEVELOPMENT CONTEXT LOG
 =====================================
 
-PURPOSE
--------
-Persistent development context for branch: agent/albion-idle-development.
-Current branch code is authoritative for implementation state. AI_BIBLE remains the design reference; UI_BIBLE remains the UI reference.
-
-RULES
------
-1. main remains untouched until explicit validation/merge decision.
-2. Audit before modifying; do not guess.
-3. Prefer modifying/removing duplicated logic over creating parallel systems.
-4. New weapons/monsters must not introduce name-based conditions into GameScene/CombatRuntime.
-5. Keep generated files/prompts concise; tests/audit at the end of a functional step.
-6. One functional step = one commit whenever technically possible.
-
-BRANCH / PREVIEW
-----------------
+BRANCH RULES
+------------
 Development: agent/albion-idle-development
-Production: main (do not push directly)
-Preview: https://albion-idle-v1-0-client-git-agent-albio-d47286-deviges-projects.vercel.app
+Production: main — NEVER push directly; merge only after explicit validation.
+Current branch code is authoritative. AI_BIBLE/UI_BIBLE remain design references.
+Faction = monster family (single concept).
+No monster/weapon name-based special cases in GameScene/CombatRuntime.
 
-WEAPON PIPELINE — STATUS
-------------------------
-- weaponContentCatalog is the gameplay authority for weapons.
-- Family/specialization/mastery/craft/presentation derive from centralized content.
-- Standard craft: T3 resources only; T4+ requires same-specialization T(n-1) + tier resources.
-- Badon remains artifact_pending.
-- Dagger Pair added end-to-end: family/spec/craft/equip/combat/masteries/icon/idle integrated.
-- Dagger Pair Walk/Attack dedicated assets still pending; placeholder reuse remains.
-- Global weapon pipeline contract exists.
+CURRENT CORE STATUS
+-------------------
+Weapon pipeline centralized in weaponContentCatalog; Dagger Pair integrated, dedicated walk/attack still pending.
+Inventory + Bank merged under one module with tabs, drag/drop, explicit slots, transfers and sort.
+Monster pipeline architecture complete and content-driven:
+monsterContentCatalog -> zone pool -> combatEntityFactory -> CombatRuntime/MonsterAbilityRuntime -> rewards/loot -> render manifest.
+Zone/segment reward progression remains authoritative; monster multipliers apply on top.
 
-STORAGE — STATUS
-----------------
-Validated:
-- Bottom navigation: Personnage -> Inventaire -> Maîtrises -> Production -> Marchand.
-- Bank merged under Inventory as internal tab.
-- Inventory/Bank remain distinct authoritative storages.
-- Drag/drop within each storage, explicit slot placement, swap/stack merge, bidirectional transfers and sort implemented.
-- Existing persistence preserved.
-
-MONSTER PIPELINE — ARCHITECTURE COMPLETE
-----------------------------------------
-Live lifecycle:
-monsterContentCatalog -> zone encounter pool -> combatEntityFactory -> CombatRuntime / MonsterAbilityRuntime -> combatRewardAdapter -> loot/rewards -> render manifest.
-
-Authority rules:
-- Faction = monster family (single concept).
-- monsterContentCatalog owns identity, faction, category, tier, combat modifiers, reward modifiers, lootTableId, abilityIds and visualManifestId.
-- monsterAbilityContentCatalog owns reusable monster abilities and category cadence.
-- economyContentCatalog owns monster loot tables.
-- worldContentCatalog normal spawn metadata derives from authoritative zone encounter pools.
-- Renderer resolves monsters only through visualManifestId/manifests.
-- Runtime must not branch on monster name/ID for monster-specific behavior.
-
-Reward rule:
-final reward = progression reward(zone + segment + encounter/boss) × monster modifier.
-Zone/segment progression remains the base authority.
-
-Category support:
-normal / veteran / elite / boss.
-Category defines max active ability slots and cooldown cadence.
-
-Global validation:
-- Monster pipeline contract verifies definitions, abilities, loot tables, renderer manifests, zone pool alignment and reward progression.
-- Lethal monster abilities call DeathManager; 0 HP correctly transitions hero to defeat.
-
-STATIC ACTOR ASSET RATIO RULE
------------------------------
-Status: renderer-level guarantee implemented.
-
-Problem solved:
-Static monster assets could previously be distorted when manifests authored width/height values that did not match the native texture ratio (observed on Morgana assets).
-
-Rule:
-- For every static_actor, manifest display.height is the authoritative gameplay/presentation scale.
-- PhaserStaticActorRenderer reads the loaded texture native width/height and derives display width automatically.
-- Authored manifest width can no longer stretch/squash a static actor in live rendering.
-- Placement still uses manifest origin/offset; source images must not be edited to compensate for scale/proportion.
-
-Implementation:
-- Added apps/client/src/game/render/aspectRatio.ts with resolveAspectPreservingDisplaySize().
-- PhaserStaticActorRenderer now always uses native texture ratio + target manifest height.
-- Added aspectRatio.test.ts covering wide/tall assets and invalid dimensions.
-- docs/MONSTER_PIPELINE.md now codifies: native ratio -> choose target height -> renderer derives width.
-
-BESTIARY CONTENT — UNDEAD
+STATIC MONSTER ASSET RULE
 -------------------------
-Status: integrated, visually/functionally validated in Dark Swamp pilot.
+Renderer-level guarantee implemented:
+- static_actor manifest display.height = target visual scale;
+- Phaser derives width from native texture ratio;
+- authored width cannot stretch/squash sprites;
+- source asset rule: HD transparent WebP lossless, full character, natural ratio, no forced square canvas;
+- PNG legacy sources may be normalized to WebP lossless before repo upload.
 
-Family/Faction: Undead
-- Squelette épéiste — Normal — physical melee.
-- Squelette archer — Normal — physical ranged, Flèche perforante.
-- Chevalier spectral — Elite — reinforced HP/armor, Entaille spectrale + Frappe fantôme.
-- Liche — Boss — magical caster, Trait d’âme + Vague de mort.
+BESTIARY — UNDEAD
+-----------------
+Validated in Dark Swamp pilot.
+- Squelette épéiste — Normal, physical melee.
+- Squelette archer — Normal, physical ranged, Flèche perforante.
+- Chevalier spectral — Elite, 2 abilities.
+- Liche — Boss, magical caster, 2 abilities.
+Rewards x1.0/x1.4/x1.8; dedicated normal/elite/boss loot tables.
 
-Pilot pool:
-Dark Swamp normal = Squelette épéiste / Squelette archer.
-Segment boss slot = Chevalier spectral (temporary use of boss slot despite elite category).
-Biome boss = Liche.
+BESTIARY — MORGANA
+------------------
+Validated in Stone Highlands pilot.
+- Morgana Witch — Normal magical caster.
+- Morgana Suppressor — Normal physical ranged.
+- Morgana Dark Knight — Elite physical melee.
+- Morgana High Priestess — Boss magical caster.
+Rewards x1.0/x1.4/x1.8; dedicated loot tables.
+Aspect-ratio issue fixed generically at renderer level.
 
-Undead reward tiers:
-normal x1.0, elite x1.4, boss x1.8 on top of progression reward.
-Dedicated Undead normal/elite/boss loot tables exist.
-
-Visual note:
-Ground-line offsets are acceptable for now; harmonize all monster foot baselines in one later polish pass after the 16 monsters are integrated.
-
-BESTIARY CONTENT — MORGANA
---------------------------
+BESTIARY — KEEPER
+-----------------
 Date: 2026-08-10
-Status: integrated and manually validated in game.
+Status: code/assets integrated; Vercel/manual validation pending.
+Family/Faction: Keeper.
+- Guerrier Keeper — Normal T4, physical melee.
+- Chaman Keeper — Normal T4, magical caster, Trait spirituel.
+- Champion Keeper — Elite T4, physical melee, Brise-terre + Frappe tellurique.
+- Ancien Keeper — Boss T4, magical/primal boss, Déchaînement spirituel + Écrasement primordial.
+Rewards: normal x1.0, elite x1.4, boss x1.8 on top of progression.
+Dedicated Keeper normal/elite/boss loot tables.
+Render manifests use normalized HD WebP assets and the automatic native-ratio renderer.
+Temporary pilot pool: Mountain T4 normal = Guerrier/Chaman; segment boss slot = Champion; biome boss = Ancien.
+keeperFamilyContract.test.ts verifies faction, categories, dependencies and pilot pool.
 
-Family/Faction: Morgana
-- Morgana Witch — Normal — magical caster; Trait d’ombre.
-- Morgana Suppressor — Normal — physical ranged crossbow; Carreau suppressif.
-- Morgana Dark Knight — Elite — physical armored melee; Entaille du Néant + Avancée écrasante.
-- Morgana High Priestess — Boss — magical caster; Orbe sombre + Déflagration rituelle.
-
-Combat/reward tuning:
-- Witch: 0.90 HP, 1.05 damage, 0.75 armor, 1.15 MR, magical.
-- Suppressor: 0.90 HP, 1.08 damage, 0.85 armor, 0.95 MR, physical.
-- Dark Knight: 1.80 HP, 1.30 damage, 1.50 armor, 1.25 MR, physical.
-- High Priestess: 2.20 HP, 1.40 damage, 0.80 armor, 1.50 MR, magical.
-- Rewards: normal x1.0, elite x1.4, boss x1.8 on top of progression scaling.
-- Dedicated Morgana normal/elite/boss loot tables created.
-
-Visuals:
-- Existing Morgana Witch manifest retained.
-- Added manifests/assets for Morgana Suppressor, Dark Knight and High Priestess.
-- Initial square display sizing caused visible horizontal compression; corrected manually, then fixed generically at renderer level via the static actor aspect-ratio rule above.
-
-Pilot pool:
-Stone Highlands normal = Morgana Witch / Morgana Suppressor.
-Segment boss slot = Morgana Dark Knight (temporary use of boss slot despite elite category).
-Biome boss = Morgana High Priestess.
-
-Validation:
-- morganaFamilyContract.test.ts verifies one Morgana faction authority, category layout Normal/Normal/Elite/Boss, abilities, loot tables, manifests and Stone Highlands pilot pool.
-- Manual gameplay/visual validation completed.
-
-BESTIARY CONTENT — NEXT
+LEGACY/PLACEHOLDER NOTE
 -----------------------
-1. Integrate the remaining two prepared monster families using the same content pipeline.
-2. Every new static monster asset automatically preserves its native aspect ratio; only target height/offset require authoring.
-3. After all 16 monsters are validated, replace temporary pilot pools with the definitive spawn system by zone/faction/segment/category.
-4. Do one global ground-line/scale polish pass for all monsters.
+Razorwing Harpy and Ancient Rune Golem still carry historical Keeper faction metadata but are not used by the new Keeper Mountain pilot. Clean family allocation will be handled when definitive spawn/faction rules replace temporary pilot pools.
+
+NEXT
+----
+1. Validate Keeper family visually/functionally in Mountain T4.
+2. Integrate final prepared monster family with the same pipeline.
+3. Then build definitive spawn rules by zone/faction/segment/category.
+4. Finish with one global ground-line/scale polish pass.
 
 OPEN ITEMS
 ----------
-- Dagger Pair Walk/Attack dedicated assets.
+- Dagger Pair dedicated Walk/Attack assets.
 - Ability-ID uniqueness/coherence validation for weapon CLIENT_ABILITIES.
-- Generalize current tier model beyond T3/T4 when content requires T5-T8.
+- Generalize tier model beyond T3/T4 when content needs T5-T8.
 - Replace Badon temporary recipe when artifact crafting is implemented.
