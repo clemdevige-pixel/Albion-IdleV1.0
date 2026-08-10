@@ -1,8 +1,9 @@
 import type { CraftingRecipeVM, GameBridgeState } from "../../../game/GameBridge";
 import { resolveEquipmentInfo } from "../../../data/itemContentCatalog";
+import { resolveWeaponFamilyCraftPresentation } from "../../../data/equipmentPresentation";
 
 export type CraftingArmorFamilyId = "armor_head" | "armor_chest" | "armor_boots";
-export type CraftingFamilyId = CraftingRecipeVM["family"] | CraftingArmorFamilyId;
+export type CraftingFamilyId = string;
 export type CraftingCategoryId = "weapons" | "armors";
 
 export interface CraftingFamilyModel {
@@ -23,13 +24,8 @@ export interface CraftingModel {
   readonly categories: readonly CraftingCategoryModel[];
 }
 
-const FAMILY_PRESENTATION: Readonly<Record<CraftingRecipeVM["family"], { readonly label: string; readonly symbol: string }>> = {
+const NON_WEAPON_FAMILY_PRESENTATION: Readonly<Record<string, { readonly label: string; readonly symbol: string }>> = {
   offhand: { label: "Mains gauches", symbol: "◉" },
-  bow: { label: "Arcs", symbol: "➶" },
-  sword: { label: "Épées", symbol: "⚔" },
-  fire_staff: { label: "Bâtons de feu", symbol: "◆" },
-  armor: { label: "Armures", symbol: "♜" },
-  gloves: { label: "Gants", symbol: "✦" },
 };
 
 const ARMOR_FAMILY_PRESENTATION: Readonly<Record<CraftingArmorFamilyId, { readonly label: string; readonly symbol: string }>> = {
@@ -45,6 +41,12 @@ function resolveArmorFamilyId(recipe: CraftingRecipeVM): CraftingArmorFamilyId |
     case "boots": return "armor_boots";
     default: return undefined;
   }
+}
+
+function resolveCraftingFamilyPresentation(familyId: string) {
+  return NON_WEAPON_FAMILY_PRESENTATION[familyId]
+    ?? resolveWeaponFamilyCraftPresentation(familyId)
+    ?? { label: familyId, symbol: "◆" };
 }
 
 interface CraftingSource {
@@ -83,7 +85,7 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
               id,
               ...(isArmorFamily
                 ? ARMOR_FAMILY_PRESENTATION[id as CraftingArmorFamilyId]
-                : FAMILY_PRESENTATION[id as CraftingRecipeVM["family"]]),
+                : resolveCraftingFamilyPresentation(id)),
               recipes: categoryRecipes.filter((recipe) =>
                 isArmorFamily
                   ? resolveArmorFamilyId(recipe) === id

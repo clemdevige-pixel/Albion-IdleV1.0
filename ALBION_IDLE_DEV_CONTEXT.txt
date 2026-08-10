@@ -43,57 +43,50 @@ IMPLEMENTED / VALIDATED
 7. Weapon Step 4: standard weapon recipes generated from catalog. T3 resources only; T4+ resources + predecessor. Badon artifact_pending with temporary explicit recipe. Validated.
 8. Weapon Step 5: presentation authored once per specialization; ItemVisual reuses it; renderer profiles/manifests remain explicit. Validated.
 9. Weapon Step 6: stale weapon records removed from content/data items/equipment/recipes while generic @game/data infrastructure remains. Validated; user reported no regression.
-10. Weapon Step 7: craft invariant tests lock T3 resource-only, T4 predecessor, Badon exclusion and duplicate-output rules. Vercel validated.
+10. Weapon Step 7: craft invariant tests lock T3/T4 predecessor rules, Badon exclusion and duplicate prevention. Validated by Vercel.
+11. Weapon Step 8: weapon families normalized into WEAPON_FAMILIES; specializations reference familyId instead of duplicating family mastery/name/craft family. Validated by user.
 
-11) WEAPON PIPELINE STEP 8 — FAMILY AUTHORITY
+12) WEAPON PIPELINE STEP 9 — GENERIC CRAFT FAMILY BRIDGE/UI
 Date/session: 2026-08-10
 Status: implementation committed; Vercel/manual validation pending.
 
 Objective:
-Make weapon family identity a first-class catalog entity instead of repeating family mastery/name/craft family in every specialization.
+Remove the remaining closed list of weapon families from the React bridge/crafting model so adding a new family such as hammer, dagger or frost_staff does not require editing GameBridge.ts or craftingModels.ts.
 
 Audit findings:
-- Longbow and Badon independently repeated the same bow family metadata.
-- every specialization repeated familyMasteryId + familyName even though those are family-level data.
-- WeaponCraftRule also repeated a family field that can be resolved from the weapon specialization itself.
-- this duplication would scale badly when multiple specializations are added under the same family.
-- a separate remaining blocker was identified: CraftingRecipeVM and craftingModels still hardcode the current craft-family union/presentation. That will be handled next; it is more relevant to adding entirely new weapon families than the cosmetic starter-mastery compatibility aliases.
+- GameBridge.CraftingRecipeVM.family was a closed union: offhand | bow | sword | fire_staff | armor | gloves.
+- craftingModels.ts duplicated weapon family labels/symbols in a closed FAMILY_PRESENTATION record.
+- bridgeSync already transports recipe.family generically through CraftingRecipeVM["family"], so widening the bridge type removes the compile-time family lock without changing runtime behavior.
+- weapon family gameplay identity already lives in WEAPON_FAMILIES after Step 8.
 
 Files modified:
-- apps/client/src/data/weaponContentCatalog.ts
-- apps/client/src/data/refiningRecipes.ts
-- apps/client/src/data/weaponContentCatalog.test.ts
+- apps/client/src/game/GameBridge.ts
+- apps/client/src/data/equipmentPresentation.ts
+- apps/client/src/ui/production/crafting/craftingModels.ts
+- apps/client/src/ui/production/crafting/craftingModels.test.ts
 - ALBION_IDLE_DEV_CONTEXT.txt
 
 Changes:
-- added WEAPON_FAMILIES as the single definition of each current weapon family.
-- family definition owns family mastery ID + display name once.
-- specializations now reference familyId only.
-- WeaponCraftRule no longer repeats a family field.
-- added resolveWeaponFamilyId(itemId).
-- added getWeaponFamilyDisplayName(familyId).
-- resolveWeaponMastery now derives family mastery through WEAPON_FAMILIES.
-- family mastery definitions/names are generated once from WEAPON_FAMILIES; specialization mastery definitions remain generated from specialization content.
-- standard crafting recipe generation resolves its family from resolveWeaponFamilyId instead of reading duplicated craft metadata.
-- no stats, recipe quantities, abilities, mastery IDs, attack speeds or item IDs intentionally changed.
+- CraftingRecipeVM.family is now string instead of a closed union.
+- craftingModels no longer owns a hardcoded list of weapon families.
+- equipmentPresentation now owns explicit craft-family presentation keyed by WeaponFamilyId.
+- Record<WeaponFamilyId, ...> forces every declared gameplay family to have presentation content at compile time.
+- offhand/armor presentation remains local to the non-weapon crafting UI because those are not weapon families.
+- unknown family IDs still render with a neutral fallback label/symbol instead of breaking the UI.
 
 Tests:
-- every current weapon resolves the expected family ID in addition to tier/profile/mastery/ability.
-- current family definitions and family display names are locked.
-- unknown item IDs do not infer a family from naming conventions.
+- existing armor hierarchy remains unchanged.
+- current sword/bow family labels resolve through weapon presentation.
+- a synthetic hammer family can pass through CraftingRecipeVM/buildCraftingModel without adding a bridge/UI union member.
 
-Audit decision on GameContext starter aliases:
-- they are not a parallel mastery source anymore; they derive from weaponContentCatalog.
-- removal remains desirable cleanup, but it is not a blocker for adding weapons.
-- priority moved to eliminating the actual new-family blocker in CraftingRecipeVM/craftingModels before doing cosmetic bootstrap cleanup.
+No intended gameplay or balance change.
 
 NEXT PLANNED WORK
 -----------------
-1. Validate Step 8 build/tests and smoke test current crafting/masteries.
-2. Remove hardcoded weapon-family union/presentation from CraftingRecipeVM + craftingModels so a newly declared family can flow into craft UI without editing bridge unions.
-3. Revisit starter mastery compatibility aliases only if still justified after the functional pipeline is complete.
-4. Run final broad weapon-pipeline audit/non-regression validation.
-5. Only after validation, use the finalized pipeline for future weapons.
+1. Validate Step 9 build + crafting UI smoke test.
+2. Remove starter mastery compatibility aliases by making GameContext consume resolveWeaponMastery directly.
+3. Run final broad weapon-pipeline audit/non-regression validation.
+4. Only after validation, use finalized pipeline for future weapons.
 
 FINAL VALIDATION TARGET
 -----------------------
@@ -105,6 +98,6 @@ METHODOLOGY LESSONS
 - Keep generic infrastructure when architectural; retire stale parallel domain records.
 - A standard T4+ weapon without T(n-1) is invalid content and should fail loudly.
 - Do not fake future artifact mechanics.
-- Presentation is authored by specialization; renderer profiles/manifests remain explicit when differences are real.
+- Presentation is authored by specialization/family where appropriate; renderer profiles/manifests remain explicit when differences are real.
 - Protect content-pipeline rules with invariant tests, not only runtime smoke tests.
-- Prioritize blockers that affect future content authoring over cosmetic cleanup that is already derived from the authoritative source.
+- Bridge/UI transport types must not become closed enumerations of content IDs when the catalog is intended to be extensible.

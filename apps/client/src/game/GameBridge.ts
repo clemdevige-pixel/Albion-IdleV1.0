@@ -272,7 +272,7 @@ export interface RefiningRequirementVM {
 }
 
 export interface CraftingRecipeVM {
-  readonly family: "offhand" | "bow" | "sword" | "fire_staff" | "armor" | "gloves";
+  readonly family: string;
   readonly recipeName: string;
   readonly outputItemId: string;
   readonly tier: number;

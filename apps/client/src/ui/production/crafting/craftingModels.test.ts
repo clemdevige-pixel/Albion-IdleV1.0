@@ -5,9 +5,10 @@ import { buildCraftingModel } from "./craftingModels";
 function recipe(
   outputItemId: string,
   tier: 3 | 4,
+  family = "armor",
 ): CraftingRecipeVM {
   return {
-    family: "armor",
+    family,
     recipeName: outputItemId,
     outputItemId,
     tier,
@@ -24,7 +25,7 @@ function recipe(
   };
 }
 
-describe("buildCraftingModel armor hierarchy", () => {
+describe("buildCraftingModel", () => {
   it("groups armor recipes into Tête, Torse and Pied", () => {
     const model = buildCraftingModel({
       tier: 3,
@@ -42,5 +43,36 @@ describe("buildCraftingModel armor hierarchy", () => {
       "Pied",
     ]);
     expect(armors?.families.map((family) => family.recipes.length)).toEqual([1, 1, 1]);
+  });
+
+  it("resolves existing weapon-family presentation without UI-owned family lists", () => {
+    const model = buildCraftingModel({
+      tier: 3,
+      recipes: [
+        recipe("item_weapon_sword_t3_broadsword", 3, "sword"),
+        recipe("item_weapon_bow_t3_longbow", 3, "bow"),
+      ],
+    });
+
+    const weapons = model.categories.find((category) => category.id === "weapons");
+    expect(weapons?.families.map((family) => [family.id, family.label])).toEqual([
+      ["sword", "Épées"],
+      ["bow", "Arcs"],
+    ]);
+  });
+
+  it("accepts a new family ID without changing GameBridge or craftingModels unions", () => {
+    const model = buildCraftingModel({
+      tier: 3,
+      recipes: [recipe("item_weapon_hammer_t3_test", 3, "hammer")],
+    });
+
+    const weapons = model.categories.find((category) => category.id === "weapons");
+    expect(weapons?.families).toHaveLength(1);
+    expect(weapons?.families[0]).toMatchObject({
+      id: "hammer",
+      label: "hammer",
+      symbol: "◆",
+    });
   });
 });

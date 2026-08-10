@@ -1,9 +1,18 @@
-import { resolveWeaponMastery } from "./weaponContentCatalog.js";
+import {
+  WEAPON_FAMILIES,
+  resolveWeaponMastery,
+  type WeaponFamilyId,
+} from "./weaponContentCatalog.js";
 
 export interface EquipmentPresentationDefinition {
   readonly itemIcon: string;
   readonly actorManifestId: string;
   readonly combatProfileId: string;
+}
+
+export interface WeaponFamilyCraftPresentation {
+  readonly label: string;
+  readonly symbol: string;
 }
 
 /**
@@ -41,6 +50,20 @@ const PRESENTATION_BY_SPECIALIZATION: Readonly<
   },
 };
 
+/**
+ * Craft-family presentation is explicit presentation content, but it is keyed
+ * by the authoritative family IDs. Adding a gameplay family therefore forces
+ * its presentation to be declared here instead of editing the crafting UI.
+ */
+const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
+  Record<WeaponFamilyId, WeaponFamilyCraftPresentation>
+> = {
+  sword: { label: WEAPON_FAMILIES.sword.name, symbol: "⚔" },
+  bow: { label: WEAPON_FAMILIES.bow.name, symbol: "➶" },
+  fire_staff: { label: WEAPON_FAMILIES.fire_staff.name, symbol: "◆" },
+  gloves: { label: WEAPON_FAMILIES.gloves.name, symbol: "✦" },
+};
+
 /** Presentation metadata boundary for equipped weapons and item visuals. */
 export function resolveEquipmentPresentation(
   itemId: string | undefined,
@@ -49,4 +72,10 @@ export function resolveEquipmentPresentation(
   const mastery = resolveWeaponMastery(itemId);
   if (mastery === undefined) return undefined;
   return PRESENTATION_BY_SPECIALIZATION[mastery.weaponId];
+}
+
+export function resolveWeaponFamilyCraftPresentation(
+  familyId: string,
+): WeaponFamilyCraftPresentation | undefined {
+  return CRAFT_PRESENTATION_BY_WEAPON_FAMILY[familyId as WeaponFamilyId];
 }
