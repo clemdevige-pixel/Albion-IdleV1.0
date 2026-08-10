@@ -7,22 +7,7 @@ import {
 import {
   WEAPON_MASTERY_DEFINITIONS,
   getWeaponMasteryDisplayName,
-  resolveWeaponMastery,
 } from "./weaponContentCatalog.js";
-
-const STARTER_SWORD_MASTERY_ROUTE = resolveWeaponMastery(
-  "item_weapon_sword_t3_broadsword",
-);
-if (STARTER_SWORD_MASTERY_ROUTE === undefined) {
-  throw new Error("Starter Broadsword mastery route is missing from weapon content catalog");
-}
-
-/**
- * Compatibility exports for the current GameContext starter bootstrap.
- * Values are derived from the authoritative weapon catalog, not re-authored here.
- */
-export const SWORD_MASTERY_ID = STARTER_SWORD_MASTERY_ROUTE.familyId;
-export const BROADSWORD_MASTERY_ID = STARTER_SWORD_MASTERY_ROUTE.weaponId;
 
 export const WOOD_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_wood");
 export const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");

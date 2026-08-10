@@ -27,7 +27,7 @@ Stable preview: https://albion-idle-v1-0-client-git-agent-albio-d47286-deviges-p
 
 CURRENT ACTIVE OBJECTIVE
 ------------------------
-Refactor weapon content pipeline before adding many weapons.
+Finalize the weapon content pipeline before adding many weapons.
 Target authoring: gameplay definition + craft rule + presentation definition + assets + tests.
 Craft rule: T3 = tier resources only; T4+ = tier resources + same-specialization T(n-1).
 Artifact weapons stay outside standard generation. Badon is artifact_pending until artifacts exist.
@@ -37,7 +37,7 @@ IMPLEMENTED / VALIDATED
 1. Enchantment V1 minimum tier: T4. Validated.
 2. Character equipment picker: cursor popup + double-click unequip + visual polish. Validated.
 3. Weapon Step 1: weaponContentCatalog owns tier, profile/speed, mastery route, ability, stats, vendor resale. Duplicate itemPower maps/fallbacks removed. Validated.
-4. Weapon Step 2: weapon mastery definitions/names derive from catalog. Progression duplicates removed. Starter compatibility aliases still remain temporarily. Validated.
+4. Weapon Step 2: weapon mastery definitions/names derive from catalog. Progression duplicates removed. Validated.
 5. Weapon Step 3: ItemVisual weapon gameplay metadata derives from catalog. Validated.
 6. Weapon Step 3B: ITEM_DEFINITIONS composes authoritative catalogs; manual duplicates removed. Validated.
 7. Weapon Step 4: standard weapon recipes generated from catalog. T3 resources only; T4+ resources + predecessor. Badon artifact_pending with temporary explicit recipe. Validated.
@@ -45,48 +45,40 @@ IMPLEMENTED / VALIDATED
 9. Weapon Step 6: stale weapon records removed from content/data items/equipment/recipes while generic @game/data infrastructure remains. Validated; user reported no regression.
 10. Weapon Step 7: craft invariant tests lock T3/T4 predecessor rules, Badon exclusion and duplicate prevention. Validated by Vercel.
 11. Weapon Step 8: weapon families normalized into WEAPON_FAMILIES; specializations reference familyId instead of duplicating family mastery/name/craft family. Validated by user.
+12. Weapon Step 9: crafting bridge/UI accepts generic family IDs; weapon family labels/symbols come from presentation layer; synthetic hammer family test proves bridge/UI extensibility. Validated by user.
 
-12) WEAPON PIPELINE STEP 9 — GENERIC CRAFT FAMILY BRIDGE/UI
+13) WEAPON PIPELINE STEP 10A — REMOVE STARTER MASTERY COMPATIBILITY ALIASES
 Date/session: 2026-08-10
 Status: implementation committed; Vercel/manual validation pending.
 
 Objective:
-Remove the remaining closed list of weapon families from the React bridge/crafting model so adding a new family such as hammer, dagger or frost_staff does not require editing GameBridge.ts or craftingModels.ts.
+Remove the final starter Broadsword compatibility exports from progressionContentCatalog and make GameContext consume the authoritative weapon mastery route directly.
 
 Audit findings:
-- GameBridge.CraftingRecipeVM.family was a closed union: offhand | bow | sword | fire_staff | armor | gloves.
-- craftingModels.ts duplicated weapon family labels/symbols in a closed FAMILY_PRESENTATION record.
-- bridgeSync already transports recipe.family generically through CraftingRecipeVM["family"], so widening the bridge type removes the compile-time family lock without changing runtime behavior.
-- weapon family gameplay identity already lives in WEAPON_FAMILIES after Step 8.
+- SWORD_MASTERY_ID and BROADSWORD_MASTERY_ID existed only for the GameContext starter bootstrap.
+- their values were already derived from resolveWeaponMastery, so they were not an active divergent source, but they remained an unnecessary compatibility layer.
+- current combat Fame already resolves equipped mastery routes directly from weaponContentCatalog.
 
 Files modified:
-- apps/client/src/game/GameBridge.ts
-- apps/client/src/data/equipmentPresentation.ts
-- apps/client/src/ui/production/crafting/craftingModels.ts
-- apps/client/src/ui/production/crafting/craftingModels.test.ts
+- apps/client/src/state/GameContext.tsx
+- apps/client/src/data/progressionContentCatalog.ts
 - ALBION_IDLE_DEV_CONTEXT.txt
 
 Changes:
-- CraftingRecipeVM.family is now string instead of a closed union.
-- craftingModels no longer owns a hardcoded list of weapon families.
-- equipmentPresentation now owns explicit craft-family presentation keyed by WeaponFamilyId.
-- Record<WeaponFamilyId, ...> forces every declared gameplay family to have presentation content at compile time.
-- offhand/armor presentation remains local to the non-weapon crafting UI because those are not weapon families.
-- unknown family IDs still render with a neutral fallback label/symbol instead of breaking the UI.
+- GameContext imports resolveWeaponMastery directly from weaponContentCatalog.
+- starter Broadsword itemId is resolved once to its family/spec mastery route before bootstrap.
+- missing starter mastery content fails loudly with an explicit error.
+- starter mastery discovery uses route.familyId + route.weaponId.
+- SWORD_MASTERY_ID and BROADSWORD_MASTERY_ID compatibility exports removed.
+- progressionContentCatalog no longer imports resolveWeaponMastery solely for starter compatibility.
+- no gameplay/balance change intended.
 
-Tests:
-- existing armor hierarchy remains unchanged.
-- current sword/bow family labels resolve through weapon presentation.
-- a synthetic hammer family can pass through CraftingRecipeVM/buildCraftingModel without adding a bridge/UI union member.
-
-No intended gameplay or balance change.
-
-NEXT PLANNED WORK
------------------
-1. Validate Step 9 build + crafting UI smoke test.
-2. Remove starter mastery compatibility aliases by making GameContext consume resolveWeaponMastery directly.
-3. Run final broad weapon-pipeline audit/non-regression validation.
-4. Only after validation, use finalized pipeline for future weapons.
+FINAL AUDIT FINDINGS TO ADDRESS AFTER 10A
+-----------------------------------------
+1. Add a global Weapon Pipeline Contract Test covering completeness of every declared weapon across equipment, tier/IP, mastery, ability, vendor, craft and presentation.
+2. Add ability-ID uniqueness/coherence validation so duplicate IDs cannot silently overwrite conflicting definitions in CLIENT_ABILITIES.
+3. Decide whether to generalize the content/production tier model from current T3|T4 support to T3-T8 now or defer until higher-tier content is implemented.
+4. Badon temporary material-only recipe remains intentional until artifact crafting exists.
 
 FINAL VALIDATION TARGET
 -----------------------
@@ -101,3 +93,4 @@ METHODOLOGY LESSONS
 - Presentation is authored by specialization/family where appropriate; renderer profiles/manifests remain explicit when differences are real.
 - Protect content-pipeline rules with invariant tests, not only runtime smoke tests.
 - Bridge/UI transport types must not become closed enumerations of content IDs when the catalog is intended to be extensible.
+- Runtime bootstraps should resolve content routes from the authoritative catalog instead of relying on compatibility aliases.

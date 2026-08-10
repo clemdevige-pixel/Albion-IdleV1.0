@@ -104,6 +104,7 @@ import {
 } from "../data/itemPower";
 import {
   WEAPON_VENDOR_OFFERS,
+  resolveWeaponMastery,
 } from "../data/weaponContentCatalog";
 import {
   GENERAL_VENDOR_FIXED_OFFERS,
@@ -116,8 +117,6 @@ import {
   resolveRepairableInfo,
 } from "../data/itemContentCatalog";
 import {
-  SWORD_MASTERY_ID,
-  BROADSWORD_MASTERY_ID,
   WOOD_GATHERING_MASTERY_ID,
   ORE_GATHERING_MASTERY_ID,
   HIDE_GATHERING_MASTERY_ID,
@@ -686,17 +685,22 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     });
 
     // The starter sword unlocks its mastery and becomes the active Fame target.
+    const starterSwordItemId = "item_weapon_sword_t3_broadsword";
+    const starterSwordMasteryRoute = resolveWeaponMastery(starterSwordItemId);
+    if (starterSwordMasteryRoute === undefined) {
+      throw new Error("Starter Broadsword mastery route is missing from weapon content catalog");
+    }
     const starterSwordPosition = 0;
     const starterSword = inventoryManager.addEntry(
       heroId,
-      "item_weapon_sword_t3_broadsword",
+      starterSwordItemId,
       starterSwordPosition,
     );
     if (starterSword.ok) {
       durabilityStore.attach(starterSword.value.instanceId, 100);
       equipmentManager.equipFromInventory(heroId, starterSwordPosition);
-      masteryService.discoverMastery(SWORD_MASTERY_ID);
-      masteryService.discoverMastery(BROADSWORD_MASTERY_ID);
+      masteryService.discoverMastery(starterSwordMasteryRoute.familyId);
+      masteryService.discoverMastery(starterSwordMasteryRoute.weaponId);
     }
 
     // Alternative starter weapons remain unequipped in the hero inventory.
