@@ -47,7 +47,7 @@ function setup() {
     armor: 0,
     magicRes: 0,
   }, { x: 1, y: 0 });
-  return { heroId, monsterId, abilityManager, damageManager, effectManager, statsManager };
+  return { heroId, monsterId, abilityManager, damageManager, deathManager, effectManager, statsManager };
 }
 
 describe("MonsterAbilityRuntime", () => {
@@ -69,5 +69,18 @@ describe("MonsterAbilityRuntime", () => {
 
     expect(tickMonsterAbilities(env, env.monsterId, env.heroId, 0.1, 1)).toBe(true);
     expect(tickMonsterAbilities(env, env.monsterId, env.heroId, 0.1, 2)).toBe(false);
+  });
+
+  it("marks the hero dead when a monster ability deals lethal damage", () => {
+    const env = setup();
+    const ability = MONSTER_ABILITIES[MONSTER_ABILITY_IDS.runeGolemCrushingBlow]!;
+    env.abilityManager.learnAbility(env.monsterId, ability);
+    env.damageManager.getHealth(env.heroId).currentHealth = 1;
+
+    expect(tickMonsterAbilities(env, env.monsterId, env.heroId, 0.1, 77)).toBe(true);
+    expect(env.damageManager.getHealth(env.heroId).currentHealth).toBe(0);
+    expect(env.deathManager.isDead(env.heroId)).toBe(true);
+    expect(env.deathManager.getDeathEvent(env.heroId)?.killerEntityId).toBe(env.monsterId);
+    expect(env.deathManager.getDeathEvent(env.heroId)?.timestamp).toBe(77);
   });
 });
