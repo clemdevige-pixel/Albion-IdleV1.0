@@ -66,6 +66,25 @@ Global validation:
 - Monster pipeline contract verifies definitions, abilities, loot tables, renderer manifests, zone pool alignment and reward progression.
 - Lethal monster abilities call DeathManager; 0 HP correctly transitions hero to defeat.
 
+STATIC ACTOR ASSET RATIO RULE
+-----------------------------
+Status: renderer-level guarantee implemented.
+
+Problem solved:
+Static monster assets could previously be distorted when manifests authored width/height values that did not match the native texture ratio (observed on Morgana assets).
+
+Rule:
+- For every static_actor, manifest display.height is the authoritative gameplay/presentation scale.
+- PhaserStaticActorRenderer reads the loaded texture native width/height and derives display width automatically.
+- Authored manifest width can no longer stretch/squash a static actor in live rendering.
+- Placement still uses manifest origin/offset; source images must not be edited to compensate for scale/proportion.
+
+Implementation:
+- Added apps/client/src/game/render/aspectRatio.ts with resolveAspectPreservingDisplaySize().
+- PhaserStaticActorRenderer now always uses native texture ratio + target manifest height.
+- Added aspectRatio.test.ts covering wide/tall assets and invalid dimensions.
+- docs/MONSTER_PIPELINE.md now codifies: native ratio -> choose target height -> renderer derives width.
+
 BESTIARY CONTENT — UNDEAD
 -------------------------
 Status: integrated, visually/functionally validated in Dark Swamp pilot.
@@ -91,10 +110,10 @@ Ground-line offsets are acceptable for now; harmonize all monster foot baselines
 BESTIARY CONTENT — MORGANA
 --------------------------
 Date: 2026-08-10
-Status: code/assets integrated; Vercel build green; manual in-game validation pending.
+Status: integrated and manually validated in game.
 
 Family/Faction: Morgana
-- Morgana Witch — Normal — existing asset retained; changed from generic physical profile to magical caster; Trait d’ombre.
+- Morgana Witch — Normal — magical caster; Trait d’ombre.
 - Morgana Suppressor — Normal — physical ranged crossbow; Carreau suppressif.
 - Morgana Dark Knight — Elite — physical armored melee; Entaille du Néant + Avancée écrasante.
 - Morgana High Priestess — Boss — magical caster; Orbe sombre + Déflagration rituelle.
@@ -109,25 +128,24 @@ Combat/reward tuning:
 
 Visuals:
 - Existing Morgana Witch manifest retained.
-- Added manifests for Morgana Suppressor, Dark Knight and High Priestess.
-- New WebP assets are under apps/client/public/assets/monsters/.
+- Added manifests/assets for Morgana Suppressor, Dark Knight and High Priestess.
+- Initial square display sizing caused visible horizontal compression; corrected manually, then fixed generically at renderer level via the static actor aspect-ratio rule above.
 
-Pilot pool for manual validation:
+Pilot pool:
 Stone Highlands normal = Morgana Witch / Morgana Suppressor.
 Segment boss slot = Morgana Dark Knight (temporary use of boss slot despite elite category).
 Biome boss = Morgana High Priestess.
 
 Validation:
-- Added morganaFamilyContract.test.ts.
-- Verifies one Morgana faction authority, category layout Normal/Normal/Elite/Boss, abilities, loot tables, manifests and Stone Highlands pilot pool.
-- Latest Vercel build for Morgana contract passed.
+- morganaFamilyContract.test.ts verifies one Morgana faction authority, category layout Normal/Normal/Elite/Boss, abilities, loot tables, manifests and Stone Highlands pilot pool.
+- Manual gameplay/visual validation completed.
 
 BESTIARY CONTENT — NEXT
 -----------------------
-1. Manually validate all four Morgana monsters in Stone Highlands (scale, transparency, placement, damage behavior, elite/boss difficulty).
-2. Integrate the remaining two prepared monster families using the same content pipeline.
+1. Integrate the remaining two prepared monster families using the same content pipeline.
+2. Every new static monster asset automatically preserves its native aspect ratio; only target height/offset require authoring.
 3. After all 16 monsters are validated, replace temporary pilot pools with the definitive spawn system by zone/faction/segment/category.
-4. Do one global visual baseline/scale polish pass for all monsters.
+4. Do one global ground-line/scale polish pass for all monsters.
 
 OPEN ITEMS
 ----------
