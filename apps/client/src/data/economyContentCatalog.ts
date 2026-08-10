@@ -21,43 +21,23 @@ const MORGANA_COMBAT_LOOT: readonly LootDropDefinition[] = [
   { itemId: "item_health_potion", weight: 20 },
 ];
 
+const KEEPER_COMBAT_LOOT: readonly LootDropDefinition[] = [
+  { itemId: "item_health_potion", weight: 20 },
+];
+
 export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> = {
-  loot_monster_generic: {
-    dropChance: 0.2,
-    drops: GENERIC_COMBAT_LOOT,
-  },
-  loot_monster_undead_boss: {
-    dropChance: 0.2,
-    drops: GENERIC_COMBAT_LOOT,
-  },
-  loot_monster_keeper_boss: {
-    dropChance: 0.2,
-    drops: GENERIC_COMBAT_LOOT,
-  },
-  loot_undead_normal: {
-    dropChance: 0.2,
-    drops: UNDEAD_COMBAT_LOOT,
-  },
-  loot_undead_elite: {
-    dropChance: 0.3,
-    drops: UNDEAD_COMBAT_LOOT,
-  },
-  loot_undead_boss: {
-    dropChance: 0.45,
-    drops: UNDEAD_COMBAT_LOOT,
-  },
-  loot_morgana_normal: {
-    dropChance: 0.2,
-    drops: MORGANA_COMBAT_LOOT,
-  },
-  loot_morgana_elite: {
-    dropChance: 0.3,
-    drops: MORGANA_COMBAT_LOOT,
-  },
-  loot_morgana_boss: {
-    dropChance: 0.45,
-    drops: MORGANA_COMBAT_LOOT,
-  },
+  loot_monster_generic: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
+  loot_monster_undead_boss: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
+  loot_monster_keeper_boss: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
+  loot_undead_normal: { dropChance: 0.2, drops: UNDEAD_COMBAT_LOOT },
+  loot_undead_elite: { dropChance: 0.3, drops: UNDEAD_COMBAT_LOOT },
+  loot_undead_boss: { dropChance: 0.45, drops: UNDEAD_COMBAT_LOOT },
+  loot_morgana_normal: { dropChance: 0.2, drops: MORGANA_COMBAT_LOOT },
+  loot_morgana_elite: { dropChance: 0.3, drops: MORGANA_COMBAT_LOOT },
+  loot_morgana_boss: { dropChance: 0.45, drops: MORGANA_COMBAT_LOOT },
+  loot_keeper_normal: { dropChance: 0.2, drops: KEEPER_COMBAT_LOOT },
+  loot_keeper_elite: { dropChance: 0.3, drops: KEEPER_COMBAT_LOOT },
+  loot_keeper_boss: { dropChance: 0.45, drops: KEEPER_COMBAT_LOOT },
 };
 
 export const HEALTH_POTION_HEAL_RATIO = 0.3;
@@ -79,14 +59,9 @@ export function rollEnchantmentMaterial(): string | undefined {
 
 export function rollLootTable(lootTableId: string): string | undefined {
   const table = MONSTER_LOOT_TABLES[lootTableId];
-  if (table === undefined) {
-    throw new Error(`Unknown monster loot table: ${lootTableId}`);
-  }
+  if (table === undefined) throw new Error(`Unknown monster loot table: ${lootTableId}`);
   if (Math.random() > table.dropChance) return undefined;
-  const totalWeight = table.drops.reduce(
-    (sum, definition) => sum + definition.weight,
-    0,
-  );
+  const totalWeight = table.drops.reduce((sum, definition) => sum + definition.weight, 0);
   let roll = Math.random() * totalWeight;
   for (const definition of table.drops) {
     roll -= definition.weight;
