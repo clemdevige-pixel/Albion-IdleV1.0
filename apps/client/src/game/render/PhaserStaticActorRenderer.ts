@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { StaticActorRenderManifest } from "./RenderManifest";
+import { resolveAspectPreservingDisplaySize } from "./aspectRatio";
 
 export function preloadStaticActorManifest(
   scene: Phaser.Scene,
@@ -15,8 +16,16 @@ export function applyStaticActorManifest(
   image
     .setTexture(manifest.textureKey)
     .setOrigin(manifest.origin.x, manifest.origin.y)
-    .setPosition(manifest.offset.x, manifest.offset.y)
-    .setDisplaySize(manifest.display.width, manifest.display.height)
+    .setPosition(manifest.offset.x, manifest.offset.y);
+
+  const display = resolveAspectPreservingDisplaySize(
+    image.width,
+    image.height,
+    manifest.display.height,
+  );
+
+  image
+    .setDisplaySize(display.width, display.height)
     .setVisible(true);
 }
 
