@@ -186,34 +186,17 @@ Changes:
 - no intentional balance/gameplay change.
 
 Tests:
-weaponContentCatalog.test.ts locks current weapons for:
-- tier;
-- combat profile;
-- attack speed;
-- family mastery;
-- specialization mastery;
-- primary ability;
-- mastery category;
-- unknown weapon ID behavior.
+weaponContentCatalog.test.ts locks current weapons for tier, combat profile, attack speed, family mastery, specialization mastery, primary ability, mastery category and unknown weapon ID behavior.
 
 Manual validation:
 User confirmed preview test OK before proceeding to Step 2.
 
 5) WEAPON CONTENT PIPELINE REFACTOR — STEP 2
 Date/session: 2026-08-10
-Status: implementation corrected after build regression; Vercel validation pending.
+Status: validated after build correction; user reported everything appears OK.
 
 Objective:
 Remove duplicated weapon mastery definitions/names/constants from progressionContentCatalog so weaponContentCatalog is the sole authoring source for weapon progression definitions.
-
-Audit before modification:
-- MASTERY_DEFINITIONS already spread WEAPON_MASTERY_DEFINITIONS and then manually re-added the same weapon family/specialization definitions.
-- getMasteryDisplayName already consulted getWeaponMasteryDisplayName before a duplicate weapon-name switch.
-- gathering definitions were also duplicated after already being spread.
-
-Files modified:
-- apps/client/src/data/progressionContentCatalog.ts
-- apps/client/src/data/progressionContentCatalog.test.ts
 
 Changes:
 - MASTERY_DEFINITIONS now composes WEAPON_MASTERY_DEFINITIONS + GATHERING_MASTERY_DEFINITIONS exactly once.
@@ -221,40 +204,70 @@ Changes:
 - duplicate gathering definitions removed.
 - weapon mastery display names resolve from weaponContentCatalog.
 - gathering display names remain owned by gathering progression content.
-- new tests verify uniqueness, categories and display names.
+- tests verify uniqueness, categories and display names.
 
-BUILD REGRESSION FOUND AFTER STEP 2:
-Vercel error:
-"src/state/GameContext.tsx: SWORD_MASTERY_ID is not exported by src/data/progressionContentCatalog.ts"
-
-Root cause:
-- the initial Step 2 audit incorrectly concluded the removed weapon mastery constants had no external consumers.
-- GameContext still imports SWORD_MASTERY_ID and BROADSWORD_MASTERY_ID for starter Broadsword mastery discovery.
-- the first failing commit caused all subsequent Step 2 commits to fail as descendants.
-
-Correction applied:
-- SWORD_MASTERY_ID and BROADSWORD_MASTERY_ID are restored only as compatibility exports for current GameContext bootstrap.
-- their values are NOT re-authored/hardcoded in progressionContentCatalog.
-- both are derived from resolveWeaponMastery("item_weapon_sword_t3_broadsword") in weaponContentCatalog.
-- module throws immediately if the starter weapon route is missing, preventing silent drift.
+Build regression discovered and corrected:
+- GameContext still imported SWORD_MASTERY_ID and BROADSWORD_MASTERY_ID for starter Broadsword mastery discovery.
+- compatibility exports were restored but are derived from resolveWeaponMastery("item_weapon_sword_t3_broadsword") instead of re-authoring mappings.
 - no duplicate mastery mapping/source of truth was reintroduced.
 
-Remaining architectural cleanup:
-- later in the weapon pipeline refactor, GameContext starter bootstrap should consume the weapon catalog route directly so these compatibility aliases can be removed entirely.
+Remaining cleanup:
+- later, GameContext starter bootstrap should consume the weapon catalog route directly so these compatibility aliases can disappear entirely.
 
-Validation state:
-- exact Vercel compile error identified and corrected.
-- Vercel rebuild pending after fix.
-- manual mastery/Fame smoke test required after successful deployment.
+6) WEAPON CONTENT PIPELINE REFACTOR — STEP 3
+Date/session: 2026-08-10
+Status: implemented; automated Vercel validation pending.
+
+Objective:
+Remove duplicated weapon gameplay metadata from ItemVisual.tsx while keeping visual presentation explicit.
+
+Audit before modification:
+- active CharacterModule uses getItemDefinition(...).handling to enforce off-hand locking for two-handed weapons.
+- active CharacterModule uses getItemDefinition(...).slot to filter compatible inventory candidates.
+- ItemSlot uses getItemDefinition(...).tier for slot metadata.
+- ItemTooltip consumes tier, slot, handling and stats from getItemDefinition(...).
+- these four fields are gameplay metadata already owned by weaponContentCatalog.
+- the only truly presentation-specific weapon data in ItemVisual is the icon; displayed weapon names can derive from specialization display name + tier.
+
+Files modified:
+- apps/client/src/panels/ItemVisual.tsx
+- apps/client/src/panels/ItemVisual.weapon.test.ts (new)
+
+ItemVisual changes:
+- removed all per-weapon duplicated ItemVisualDefinition literals containing tier/slot/handling/stats.
+- non-weapon equipment visuals remain unchanged in NON_WEAPON_ITEM_VISUALS for this step.
+- added WEAPON_ICON_BY_SPECIALIZATION, which contains presentation-only icon choices keyed by specialization mastery ID.
+- getWeaponItemDefinition(itemId) now derives:
+  - equipment slot/handling/stats from WEAPON_ITEM_DEFINITIONS;
+  - tier from resolveWeaponTier(itemId);
+  - specialization route from resolveWeaponMastery(itemId);
+  - display name from getWeaponMasteryDisplayName(specialization) + tier;
+  - icon from the presentation-only specialization icon map.
+- getItemDefinition(itemId) resolves weapon definitions through the weapon catalog first, then falls back to non-weapon visual definitions.
+- ItemVisual rendering now calls getItemDefinition rather than reading a combined manual ITEM_VISUALS registry.
+- no intentional UI text/stat/tier/handling changes for existing weapons.
+
+Tests added:
+ItemVisual.weapon.test.ts verifies every current weapon:
+- resolves as an item definition;
+- slot is weapon;
+- tier matches weaponContentCatalog;
+- handling matches WEAPON_ITEM_DEFINITIONS;
+- stats match WEAPON_ITEM_DEFINITIONS;
+- name retains the tier suffix;
+- icon exists;
+- fake weapon IDs are not inferred from naming patterns.
+
+Why this step matters:
+Adding a future weapon tier no longer requires manually copying its tier, slot, handling or stats into ItemVisual.tsx. UI inventory/character/tooltips now consume the same gameplay metadata as combat/equipment. Presentation remains explicit only where it should: icon choice.
 
 NEXT PLANNED WORK
 -----------------
-1. Validate corrected Step 2 build and smoke-test masteries/progression in preview.
-2. Consolidate weapon UI metadata so tier/handling/stats/name are not manually re-authored in ItemVisual.tsx.
-3. Formalize craft progression data so normal weapon tiers derive Tn predecessor requirements automatically.
-4. Keep presentation definitions explicit because actor/projectile assets are genuinely weapon-specific.
-5. Reconcile or retire stale content/data weapon JSON sources.
-6. Add broader pipeline/non-regression tests before adding future weapons.
+1. Validate Step 3 build and smoke-test inventory/character/tooltips in preview.
+2. Formalize craft progression data so normal weapon tiers derive Tn predecessor requirements automatically.
+3. Keep combat presentation definitions explicit because actor/projectile assets are genuinely weapon-specific.
+4. Reconcile or retire stale content/data weapon JSON sources.
+5. Add broader pipeline/non-regression tests before adding future weapons.
 
 VALIDATION TARGET FOR COMPLETE REFACTOR
 ---------------------------------------
@@ -293,4 +306,5 @@ METHODOLOGY LESSONS
 - Prefer existing gameplay actions/managers over recreating logic in React.
 - If a rule already has a central constant/catalog, change that authority rather than adding conditionals to callers.
 - New weapon support must not reintroduce special cases into GameScene or CombatRuntime unless the mechanic itself is genuinely new.
-- Before deleting an exported symbol, search not only the defining module but all consumers on the active branch and verify the actual build dependency path.
+- Before deleting an exported symbol, search all consumers on the active branch and verify the actual build dependency path.
+- UI metadata must be separated into gameplay-owned fields (tier/slot/handling/stats) versus genuinely visual fields (icon/assets/layout).
