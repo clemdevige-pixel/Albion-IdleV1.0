@@ -1,3 +1,10 @@
+import {
+  WEAPON_ITEM_DEFINITIONS,
+  getWeaponMasteryDisplayName,
+  resolveWeaponMastery,
+  resolveWeaponTier,
+} from "../data/weaponContentCatalog";
+
 export interface ItemVisualDefinition {
   readonly name: string;
   readonly icon: string;
@@ -12,16 +19,19 @@ interface ConsumableVisualDefinition {
   readonly icon: string;
 }
 
-const ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = {
-  item_weapon_sword_t3_broadsword: { name: "Épée large T3", icon: "item-broadsword-pixel-v1.png", tier: 3, slot: "weapon", handling: "one_handed", stats: { stat_physical_damage: 45 } },
-  item_weapon_bow_t3_longbow: { name: "Arc long T3", icon: "item-longbow-pixel-v1.png", tier: 3, slot: "weapon", handling: "two_handed", stats: { stat_physical_damage: 50 } },
-  item_weapon_staff_t3_fire: { name: "Bâton de feu T3", icon: "item-fire-staff-pixel-v1.png", tier: 3, slot: "weapon", handling: "two_handed", stats: { stat_magical_damage: 48 } },
-  item_weapon_gloves_t3_spiked_gauntlets: { name: "Gantelets à pointes T3", icon: "item-spiked-gauntlets-pixel-v1.png", tier: 3, slot: "weapon", handling: "two_handed", stats: { stat_physical_damage: 38 } },
-  item_weapon_sword_t4_broadsword: { name: "Épée large T4", icon: "item-broadsword-pixel-v1.png", tier: 4, slot: "weapon", handling: "one_handed", stats: { stat_physical_damage: 75 } },
-  item_weapon_bow_t4_longbow: { name: "Arc long T4", icon: "item-longbow-pixel-v1.png", tier: 4, slot: "weapon", handling: "two_handed", stats: { stat_physical_damage: 85 } },
-  item_weapon_bow_t4_badon: { name: "Badon T4", icon: "item-badon-pixel-v1.png", tier: 4, slot: "weapon", handling: "two_handed", stats: { stat_physical_damage: 87 } },
-  item_weapon_staff_t4_fire: { name: "Bâton de feu T4", icon: "item-fire-staff-pixel-v1.png", tier: 4, slot: "weapon", handling: "two_handed", stats: { stat_magical_damage: 90 } },
-  item_weapon_gloves_t4_spiked_gauntlets: { name: "Gantelets à pointes T4", icon: "item-spiked-gauntlets-pixel-v1.png", tier: 4, slot: "weapon", handling: "two_handed", stats: { stat_physical_damage: 66 } },
+/**
+ * Weapon gameplay metadata (tier/slot/handling/stats/name identity) is owned by
+ * weaponContentCatalog. This table contains presentation-only icon choices.
+ */
+const WEAPON_ICON_BY_SPECIALIZATION: Readonly<Record<string, string>> = {
+  mastery_broadsword: "item-broadsword-pixel-v1.png",
+  mastery_longbow: "item-longbow-pixel-v1.png",
+  mastery_badon: "item-badon-pixel-v1.png",
+  mastery_t4_fire_staff: "item-fire-staff-pixel-v1.png",
+  mastery_spiked_gauntlets: "item-spiked-gauntlets-pixel-v1.png",
+};
+
+const NON_WEAPON_ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = {
   item_leather_armor: { name: "Armure de cuir", icon: "item-leather-armor-pixel-v1.png", tier: 3, slot: "chest", stats: { stat_armor: 8, stat_max_health: 50 } },
   item_wooden_shield: { name: "Bouclier en bois", icon: "item-wooden-shield-pixel-v1.png", tier: 3, slot: "off_hand", stats: { stat_armor: 5, stat_magic_resistance: 3 } },
   item_shield_t3_reinforced: { name: "Bouclier renforcé T3", icon: "item-wooden-shield-pixel-v1.png", tier: 3, slot: "off_hand", stats: { stat_armor: 9, stat_magic_resistance: 5 } },
@@ -63,12 +73,32 @@ Record<string, { readonly name: string; readonly symbol: string }>
   },
 };
 
+function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefined {
+  const equipment = WEAPON_ITEM_DEFINITIONS[itemId];
+  const tier = resolveWeaponTier(itemId);
+  const mastery = resolveWeaponMastery(itemId);
+  if (equipment === undefined || tier === undefined || mastery === undefined) return undefined;
+
+  const specializationName = getWeaponMasteryDisplayName(mastery.weaponId);
+  const icon = WEAPON_ICON_BY_SPECIALIZATION[mastery.weaponId];
+  if (specializationName === undefined || icon === undefined) return undefined;
+
+  return {
+    name: `${specializationName} T${String(tier)}`,
+    icon,
+    tier,
+    slot: "weapon",
+    handling: equipment.handling,
+    stats: equipment.stats,
+  };
+}
+
 export function getItemDefinition(itemId: string): ItemVisualDefinition | undefined {
-  return ITEM_VISUALS[itemId];
+  return getWeaponItemDefinition(itemId) ?? NON_WEAPON_ITEM_VISUALS[itemId];
 }
 
 export function getItemDisplayName(itemId: string): string {
-  return ITEM_VISUALS[itemId]?.name
+  return getItemDefinition(itemId)?.name
     ?? CONSUMABLE_VISUALS[itemId]?.name
     ?? RESOURCE_VISUALS[itemId]?.name
     ?? ENCHANTMENT_RESOURCE_VISUALS[itemId]?.name
@@ -83,7 +113,7 @@ export function getEnchantmentFrameClass(enchantment: number | undefined): strin
 }
 
 export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element {
-  const visual = ITEM_VISUALS[itemId] ?? CONSUMABLE_VISUALS[itemId];
+  const visual = getItemDefinition(itemId) ?? CONSUMABLE_VISUALS[itemId];
   const resource = RESOURCE_VISUALS[itemId];
   const enchantmentResource = ENCHANTMENT_RESOURCE_VISUALS[itemId];
   if (enchantmentResource !== undefined) {
