@@ -99,123 +99,13 @@ export function resolveCatalogStackInfo(itemId: string) {
   return undefined;
 }
 
+/**
+ * Equipment definitions are composed from their authoritative catalogs.
+ * Weapon entries must never be manually re-authored here.
+ */
 export const ITEM_DEFINITIONS: Record<string, EquipmentInfoLike> = {
   ...WEAPON_ITEM_DEFINITIONS,
   ...NON_WEAPON_ITEM_DEFINITIONS,
-  item_weapon_sword_t3_broadsword: {
-    itemId: "item_weapon_sword_t3_broadsword",
-    slot: "weapon",
-    handling: "one_handed",
-    stats: { stat_physical_damage: 45 },
-  },
-  item_weapon_bow_t3_longbow: {
-    itemId: "item_weapon_bow_t3_longbow",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 50 },
-  },
-  item_weapon_staff_t3_fire: {
-    itemId: "item_weapon_staff_t3_fire",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_magical_damage: 48 },
-  },
-  item_weapon_gloves_t3_spiked_gauntlets: {
-    itemId: "item_weapon_gloves_t3_spiked_gauntlets",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 38 },
-  },
-  item_weapon_sword_t4_broadsword: {
-    itemId: "item_weapon_sword_t4_broadsword",
-    slot: "weapon",
-    handling: "one_handed",
-    stats: { stat_physical_damage: 75 },
-  },
-  item_weapon_bow_t4_longbow: {
-    itemId: "item_weapon_bow_t4_longbow",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 85 },
-  },
-  item_weapon_bow_t4_badon: {
-    itemId: "item_weapon_bow_t4_badon",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 87 },
-  },
-  item_weapon_staff_t4_fire: {
-    itemId: "item_weapon_staff_t4_fire",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_magical_damage: 90 },
-  },
-  item_weapon_gloves_t4_spiked_gauntlets: {
-    itemId: "item_weapon_gloves_t4_spiked_gauntlets",
-    slot: "weapon",
-    handling: "two_handed",
-    stats: { stat_physical_damage: 66 },
-  },
-  item_leather_armor: {
-    itemId: "item_leather_armor",
-    slot: "chest",
-    handling: "one_handed",
-    stats: { stat_armor: 8, stat_max_health: 50 },
-  },
-  item_wooden_shield: {
-    itemId: "item_wooden_shield",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 5, stat_magic_resistance: 3 },
-  },
-  item_shield_t3_reinforced: {
-    itemId: "item_shield_t3_reinforced",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 9, stat_magic_resistance: 5 },
-  },
-  item_shield_t4_reinforced: {
-    itemId: "item_shield_t4_reinforced",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 15, stat_magic_resistance: 9 },
-  },
-  item_iron_helmet: {
-    itemId: "item_iron_helmet",
-    slot: "head",
-    handling: "one_handed",
-    stats: { stat_armor: 4, stat_max_health: 30 },
-  },
-  item_leather_boots: {
-    itemId: "item_leather_boots",
-    slot: "boots",
-    handling: "one_handed",
-    stats: { stat_armor: 3 },
-  },
-  item_traveler_cape: {
-    itemId: "item_traveler_cape",
-    slot: "cape",
-    handling: "one_handed",
-    stats: { stat_magic_resistance: 4 },
-  },
-  item_helmet_t4_reinforced: {
-    itemId: "item_helmet_t4_reinforced",
-    slot: "head",
-    handling: "one_handed",
-    stats: { stat_armor: 8, stat_max_health: 55 },
-  },
-  item_armor_t4_leather: {
-    itemId: "item_armor_t4_leather",
-    slot: "chest",
-    handling: "one_handed",
-    stats: { stat_armor: 14, stat_max_health: 90 },
-  },
-  item_boots_t4_leather: {
-    itemId: "item_boots_t4_leather",
-    slot: "boots",
-    handling: "one_handed",
-    stats: { stat_armor: 6 },
-  },
 };
 
 /** Resolve equipment info from static definitions. */
@@ -322,4 +212,3 @@ export function resolveRepairableInfo(itemId: string): { itemId: string; equipme
   }
   return { itemId, equipmentCategory: "armor", itemTier };
 }
-
