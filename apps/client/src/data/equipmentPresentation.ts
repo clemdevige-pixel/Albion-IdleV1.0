@@ -48,11 +48,9 @@ const PRESENTATION_BY_SPECIALIZATION: Readonly<
     actorManifestId: "hero_spiked_gauntlets",
     combatProfileId: "melee",
   },
-  // Temporary visual fallback until the dedicated Dagger Pair asset/manifests exist.
-  // Gameplay already uses the dagger combat profile; only the sprite/icon is borrowed.
   mastery_dagger_pair: {
-    itemIcon: "item-broadsword-pixel-v1.png",
-    actorManifestId: "hero_broadsword",
+    itemIcon: "item-dagger-pair-pixel-v1.png",
+    actorManifestId: "hero_dagger_pair",
     combatProfileId: "melee",
   },
 };

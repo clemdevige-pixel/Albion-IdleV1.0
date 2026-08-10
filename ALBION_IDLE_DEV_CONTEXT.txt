@@ -48,53 +48,60 @@ IMPLEMENTED / VALIDATED HISTORY
 13. Starter Broadsword mastery compatibility aliases removed; GameContext resolves starter mastery route directly from weaponContentCatalog. Validated.
 14. Dagger Pair added as first end-to-end new family/specialization. Craft, equip and combat manually validated; dedicated assets pending.
 15. Masteries UI topology now derives from weaponContentCatalog instead of a closed family list. Dagues / Paire de dagues manually validated.
+16. Global Weapon Pipeline Contract Test added, deriving its coverage from authoritative weapon catalogs. Validation pending/expected through Vercel.
 
-16) WEAPON PIPELINE GLOBAL CONTRACT TEST
+17) DAGGER PAIR VISUAL INTEGRATION — ICON + IDLE
 Date/session: 2026-08-10
-Status: implementation committed; Vercel/test validation pending.
-
-Trigger:
-The first Dagger Pair end-to-end implementation exposed a remaining hidden UI dependency: gameplay/mastery content was correct, but the Masteries panel had a stale closed family list. This proved a cross-system contract test is now valuable before scaling weapon content production.
+Status: implementation committed; Vercel/manual visual validation pending.
 
 Objective:
-Add one global automated contract that derives its subject list from WEAPON_ITEM_DEFINITIONS and fails whenever any declared weapon is only partially integrated into the generic pipeline.
+Replace the temporary Broadsword visual fallback for Dagger Pair with the first dedicated Dagger Pair assets while preserving the generic presentation pipeline.
 
-File added:
-- apps/client/src/data/weaponPipeline.contract.test.ts
+Assets added:
+- apps/client/public/assets/items/item-dagger-pair-pixel-v1.png
+  - 128x128 RGBA PNG.
+  - dedicated crossed-daggers item icon.
+- apps/client/public/assets/characters/hero-dagger-pair-idle-sheet-v1.png
+  - normalized transparent spritesheet.
+  - 7 frames, 210x165 each, 1470x165 total.
+  - generated source was normalized to the runtime sheet contract; frame 7 repeats frame 1 to close the idle loop.
 
-Contract coverage for every declared weapon item:
-- tier resolver exists.
-- Item Power exists.
-- equipment definition exists and resolves to weapon slot.
-- family route exists and points to a declared WEAPON_FAMILIES entry.
-- family mastery and specialization mastery definitions exist.
-- combat profile and positive intrinsic attack speed exist.
-- primary ability route and CLIENT_ABILITIES definition exist.
-- exactly one vendor offer exists.
-- exactly one equipment craft recipe exists.
-- presentation exists with non-empty item icon, actor manifest and combat presentation profile.
-- repair recognizes the item as a weapon at the correct tier.
-- enchantment recognizes the correct tier; T3 remains non-enchantable and T4 remains enchantable in the current V1 slice.
-- standard craft items must belong to STANDARD_WEAPON_CRAFT_RECIPES.
-- standard T3 recipes must contain no weapon predecessor.
-- standard T4 recipes must contain exactly the catalog-resolved T3 predecessor x1.
-- artifact_pending weapons must remain outside the standard generator.
+Presentation/runtime changes:
+- mastery_dagger_pair now resolves item-dagger-pair-pixel-v1.png instead of the Broadsword icon.
+- mastery_dagger_pair now resolves actorManifestId hero_dagger_pair instead of hero_broadsword.
+- new hero-dagger-pair.render.json actor manifest registered in defaultRenderManifestRegistry.
+- idle uses the dedicated Dagger Pair sheet.
+- walk and attack temporarily reuse the same Dagger Pair idle sheet so the character does not visually swap back to Broadsword before dedicated Walk/Attack assets exist.
+- death temporarily reuses the Broadsword death pose until a dedicated Dagger Pair death treatment is produced.
+- no gameplay, balance, mastery, craft, enchantment, vendor or persistence change.
 
-Masteries UI contract coverage:
-- builds the actual buildMasteriesModel using synthetic state generated from WEAPON_MASTERY_DEFINITIONS.
-- every catalog family must appear in Combat masteries.
-- family display name must match WEAPON_FAMILIES.
-- family presentation/icon must resolve.
-- every catalog specialization must appear under exactly its catalog family topology.
+Files added:
+- apps/client/public/assets/items/item-dagger-pair-pixel-v1.png
+- apps/client/public/assets/characters/hero-dagger-pair-idle-sheet-v1.png
+- apps/client/src/game/render/manifests/hero-dagger-pair.render.json
 
-Important design rule:
-The contract test contains no hand-authored list of weapon item IDs or weapon family IDs. Adding a new weapon/family automatically expands the test surface through the authoritative catalogs. This is specifically intended to catch future omissions like the Dagger Pair Masteries UI issue before deployment/manual smoke testing.
+Files modified:
+- apps/client/src/data/equipmentPresentation.ts
+- apps/client/src/game/render/defaultRenderManifestRegistry.ts
+- ALBION_IDLE_DEV_CONTEXT.txt
 
-No runtime/gameplay/balance change.
+Manual validation target:
+1. Dagger Pair icon appears in inventory, crafting, character/equipment and merchant contexts.
+2. Equipping Dagger Pair switches the Phaser hero to the dedicated rogue + dual-dagger Idle asset.
+3. Idle animates without frame jitter or baseline jump.
+4. Walking/attacking keeps the same Dagger Pair visual placeholder instead of reverting to Broadsword.
+5. Existing weapon presentations remain unchanged.
+
+NEXT DAGGER PAIR VISUAL WORK
+----------------------------
+1. Produce dedicated Walk spritesheet.
+2. Produce dedicated Attack spritesheet for the fast dagger profile.
+3. Replace placeholder walk/attack entries in hero-dagger-pair.render.json.
+4. Decide later whether a dedicated death pose is necessary or whether death remains shared.
 
 FINAL AUDIT ITEMS STILL OPEN
 ----------------------------
 1. Add ability-ID uniqueness/coherence validation to prevent conflicting duplicate IDs from silently overwriting in CLIENT_ABILITIES.
 2. Decide when to generalize tier model from current T3|T4 to T3-T8.
 3. Replace Badon temporary material-only recipe when artifact crafting exists.
-4. Replace Dagger Pair temporary Broadsword visual with dedicated asset/manifests.
+4. Complete Dagger Pair Walk/Attack visual assets and replace temporary manifest reuse.
