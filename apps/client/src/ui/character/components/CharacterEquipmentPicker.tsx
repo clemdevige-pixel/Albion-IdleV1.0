@@ -1,4 +1,5 @@
-import type { EquipmentSlotVM, InventorySlotVM } from "../../../game/GameBridge";
+import { createPortal } from "react-dom";
+import type { InventorySlotVM } from "../../../game/GameBridge";
 import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import {
   getEnchantmentFrameClass,
@@ -8,23 +9,35 @@ import {
 
 interface CharacterEquipmentPickerProps {
   readonly label: string;
-  readonly equipped: EquipmentSlotVM | undefined;
   readonly candidates: readonly InventorySlotVM[];
+  readonly x: number;
+  readonly y: number;
   readonly onClose: () => void;
   readonly onEquip: (position: number) => void;
-  readonly onUnequip: () => void;
 }
 
 export function CharacterEquipmentPicker({
   label,
-  equipped,
   candidates,
+  x,
+  y,
   onClose,
   onEquip,
-  onUnequip,
 }: CharacterEquipmentPickerProps): JSX.Element {
-  return (
-    <section className="character-picker" aria-label={`Sélection ${label}`}>
+  return createPortal(
+    <section
+      className="character-picker"
+      aria-label={`Sélection ${label}`}
+      style={{
+        position: "fixed",
+        left: `${String(Math.max(8, Math.min(x + 12, window.innerWidth - 330)))}px`,
+        top: `${String(Math.max(8, Math.min(y + 12, window.innerHeight - 390)))}px`,
+        width: "min(320px, calc(100vw - 16px))",
+        maxHeight: "min(380px, calc(100vh - 16px))",
+        overflowY: "auto",
+        zIndex: 1000,
+      }}
+    >
       <header className="character-picker__header">
         <div>
           <small>Équipement compatible</small>
@@ -32,14 +45,6 @@ export function CharacterEquipmentPicker({
         </div>
         <button type="button" onClick={onClose} aria-label="Fermer la sélection">×</button>
       </header>
-
-      {equipped?.itemId !== undefined && (
-        <div className="character-picker__current">
-          <span>Équipé</span>
-          <strong>{getItemDisplayName(equipped.itemId)}</strong>
-          <button type="button" onClick={onUnequip}>Retirer</button>
-        </div>
-      )}
 
       {candidates.length === 0 ? (
         <p className="character-picker__empty">Aucun objet compatible dans l’inventaire.</p>
@@ -72,6 +77,7 @@ export function CharacterEquipmentPicker({
           })}
         </div>
       )}
-    </section>
+    </section>,
+    document.body,
   );
 }
