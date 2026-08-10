@@ -4,6 +4,38 @@
   min-width: 0;
 }
 
+.storage-module__tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-1);
+  border: var(--ui-border-width) solid var(--ui-color-border-strong);
+  border-radius: var(--ui-radius-sm);
+  background: #090d13;
+}
+
+.storage-module__tabs button {
+  min-height: 2.5rem;
+  padding: var(--ui-space-2);
+  border: var(--ui-border-width) solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-sm);
+  color: var(--ui-color-text-secondary);
+  background: #121923;
+  font: inherit;
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color var(--ui-duration-fast), color var(--ui-duration-fast), background var(--ui-duration-fast);
+}
+
+.storage-module__tabs button.is-active {
+  border-color: var(--ui-color-accent);
+  color: var(--ui-color-accent-hover);
+  background: #241d10;
+}
+
 .storage-module__summary,
 .storage-module__surface {
   min-width: 0;

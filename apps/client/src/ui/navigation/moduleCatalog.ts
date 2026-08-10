@@ -19,10 +19,9 @@ export const UI_MODULE_LABELS: Readonly<Record<UiModuleId, string>> = {
 };
 
 export const PRIMARY_UI_MODULES: readonly UiModuleDefinition[] = [
-  { id: UI_MODULE_IDS.inventory, label: "Inventaire", icon: "nav-inventory.png" },
-  { id: UI_MODULE_IDS.bank, label: "Banque", icon: "nav-inventory.png" },
   { id: UI_MODULE_IDS.character, label: "Personnage", icon: "nav-character.png" },
+  { id: UI_MODULE_IDS.inventory, label: "Inventaire", icon: "nav-inventory.png" },
   { id: UI_MODULE_IDS.masteries, label: "Maîtrises", icon: "nav-masteries.png" },
-  { id: UI_MODULE_IDS.merchant, label: "Marchand", icon: "nav-vendor.png" },
   { id: UI_MODULE_IDS.production, label: "Production", icon: "nav-production.png" },
+  { id: UI_MODULE_IDS.merchant, label: "Marchand", icon: "nav-vendor.png" },
 ] as const;

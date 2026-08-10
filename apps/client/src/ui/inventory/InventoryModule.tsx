@@ -2,6 +2,7 @@ import { useCallback, useState, type MouseEvent } from "react";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDefinition } from "../../panels/ItemVisual";
+import { BankModule } from "../bank";
 import { ItemGrid } from "../shared";
 import { useInventoryActions } from "./useInventoryActions";
 import { useInventoryData } from "./useInventoryData";
@@ -13,9 +14,12 @@ interface ContextMenuState {
   readonly y: number;
 }
 
+type StorageTab = "inventory" | "bank";
+
 export function InventoryModule(): JSX.Element {
   const inventory = useInventoryData();
   const actions = useInventoryActions();
+  const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const capacityRatio = inventory.capacity === 0
     ? 0
@@ -37,42 +41,69 @@ export function InventoryModule(): JSX.Element {
 
   return (
     <div className="storage-module">
-      <section className="storage-module__summary" aria-label="Capacité de l’inventaire">
-        <div className="storage-module__summary-row">
-          <span>Sac du héros</span>
-          <strong>{String(inventory.occupied)} / {String(inventory.capacity)}</strong>
-        </div>
-        <div className="storage-module__capacity-track" aria-hidden="true">
-          <span className="storage-module__capacity-fill" style={{ width: `${String(capacityRatio)}%` }} />
-        </div>
-      </section>
+      <div className="storage-module__tabs" role="tablist" aria-label="Stockage">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "inventory"}
+          className={activeTab === "inventory" ? "is-active" : ""}
+          onClick={() => { setActiveTab("inventory"); }}
+        >
+          Inventaire
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "bank"}
+          className={activeTab === "bank" ? "is-active" : ""}
+          onClick={() => { setActiveTab("bank"); }}
+        >
+          Banque
+        </button>
+      </div>
 
-      <section className="storage-module__surface">
-        <ItemGrid
-          slots={inventory.slots}
-          label="Objets dans l’inventaire"
-          interactive
-          onItemDoubleClick={handleDoubleClick}
-          onItemContextMenu={handleContextMenu}
-        />
-      </section>
+      {activeTab === "bank" ? (
+        <BankModule />
+      ) : (
+        <>
+          <section className="storage-module__summary" aria-label="Capacité de l’inventaire">
+            <div className="storage-module__summary-row">
+              <span>Sac du héros</span>
+              <strong>{String(inventory.occupied)} / {String(inventory.capacity)}</strong>
+            </div>
+            <div className="storage-module__capacity-track" aria-hidden="true">
+              <span className="storage-module__capacity-fill" style={{ width: `${String(capacityRatio)}%` }} />
+            </div>
+          </section>
 
-      <p className="storage-module__hint">
-        Double-cliquez pour équiper un objet ou utiliser un consommable.
-      </p>
+          <section className="storage-module__surface">
+            <ItemGrid
+              slots={inventory.slots}
+              label="Objets dans l’inventaire"
+              interactive
+              onItemDoubleClick={handleDoubleClick}
+              onItemContextMenu={handleContextMenu}
+            />
+          </section>
 
-      {contextMenu !== null && (
-        <ItemContextMenu
-          position={contextMenu.position}
-          x={contextMenu.x}
-          y={contextMenu.y}
-          itemId={inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId ?? ""}
-          onClose={() => { setContextMenu(null); }}
-          onEquip={(position) => {
-            actions.equip(position);
-            setContextMenu(null);
-          }}
-        />
+          <p className="storage-module__hint">
+            Double-cliquez pour équiper un objet ou utiliser un consommable.
+          </p>
+
+          {contextMenu !== null && (
+            <ItemContextMenu
+              position={contextMenu.position}
+              x={contextMenu.x}
+              y={contextMenu.y}
+              itemId={inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId ?? ""}
+              onClose={() => { setContextMenu(null); }}
+              onEquip={(position) => {
+                actions.equip(position);
+                setContextMenu(null);
+              }}
+            />
+          )}
+        </>
       )}
     </div>
   );

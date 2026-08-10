@@ -101,6 +101,39 @@ Reason:
 - Branch content was restored to d26bb61, but moving the Git ref backward did not trigger a new Vercel deployment.
 - This documentation-only commit intentionally creates a new branch SHA while preserving the d26bb61 application state, so Vercel receives a fresh deployment event.
 
+19) INVENTORY + BANK UI MERGE
+Date/session: 2026-08-10
+Status: implementation committed; Vercel/manual validation pending.
+
+Objective:
+Merge Inventory and Bank into one primary bottom module with two internal tabs, without merging or changing the underlying storage gameplay systems.
+
+Navigation target:
+Personnage -> Inventaire -> Maîtrises -> Production -> Marchand.
+
+Implementation:
+- Removed Bank from PRIMARY_UI_MODULES only; bank module ID and BankModule remain available internally/backward-compatible.
+- Reordered PRIMARY_UI_MODULES to the validated order.
+- InventoryModule now owns a local Inventory/Bank tab selector.
+- Inventory tab preserves existing equip/consumable/context-menu behavior.
+- Bank tab reuses the existing BankModule and its existing read-only bank data behavior.
+- Added storage-module tab styling using the existing UI tokens and production-style segmented tab treatment.
+- No inventory manager, bank data, persistence, transfer, equipment or gameplay rule changed.
+
+Files modified:
+- apps/client/src/ui/navigation/moduleCatalog.ts
+- apps/client/src/ui/inventory/InventoryModule.tsx
+- apps/client/src/ui/shared/storageModule.css
+- ALBION_IDLE_DEV_CONTEXT.txt
+
+Manual validation target:
+1. Bottom order is Personnage / Inventaire / Maîtrises / Production / Marchand.
+2. Banque no longer appears as a primary bottom button.
+3. Inventaire opens on the Inventaire tab.
+4. Banque tab displays the existing bank contents/capacity.
+5. Returning to Inventaire restores normal inventory interactions.
+6. No regression in other bottom modules.
+
 NEXT DAGGER PAIR VISUAL WORK
 ----------------------------
 1. Produce dedicated Walk spritesheet.
