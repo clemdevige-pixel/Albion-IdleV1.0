@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "boss_undead_lich",
+  "kind": "static_actor",
+  "textureKey": "undead-lich",
+  "assetPath": "/assets/monsters/undead-lich.webp",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 255, "height": 255 },
+  "hud": { "healthBarWidth": 185, "healthBarOffsetY": 225 },
+  "ambientMotion": { "distance": 6, "durationMs": 760, "delayMs": 140 }
+}
