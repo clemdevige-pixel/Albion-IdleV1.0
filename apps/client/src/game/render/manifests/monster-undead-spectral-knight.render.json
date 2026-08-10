@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "monster_undead_spectral_knight",
+  "kind": "static_actor",
+  "textureKey": "undead-spectral-knight",
+  "assetPath": "/assets/monsters/undead-spectral-knight.webp",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "display": { "width": 315, "height": 210 },
+  "hud": { "healthBarWidth": 165, "healthBarOffsetY": 185 },
+  "ambientMotion": { "distance": 4, "durationMs": 820, "delayMs": 180 }
+}
