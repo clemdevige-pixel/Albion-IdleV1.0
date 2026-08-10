@@ -6,6 +6,25 @@ import {
   type EquipmentInfoLike,
 } from "@game/gameplay";
 
+export type WeaponCombatProfile =
+  | "dagger"
+  | "sword"
+  | "bow"
+  | "staff"
+  | "hammer"
+  | "gloves";
+
+export const WEAPON_ATTACK_SPEED_BY_PROFILE: Readonly<
+  Record<WeaponCombatProfile, number>
+> = {
+  dagger: 1.6,
+  sword: 1.2,
+  bow: 1,
+  staff: 0.9,
+  hammer: 0.75,
+  gloves: 1.4,
+};
+
 export interface ClientAbilityDefinition extends AbilityDefinitionLike {
   readonly name: string;
   readonly description: string;
@@ -16,6 +35,7 @@ export interface ClientAbilityDefinition extends AbilityDefinitionLike {
 
 interface WeaponItemContent {
   readonly itemId: string;
+  readonly tier: 3 | 4;
   readonly handling: EquipmentInfoLike["handling"];
   readonly stats: EquipmentInfoLike["stats"];
   readonly sellPrice: number;
@@ -26,16 +46,15 @@ interface WeaponSpecializationContent {
   readonly familyName: string;
   readonly specializationMasteryId: string;
   readonly specializationName: string;
+  readonly combatProfile: WeaponCombatProfile;
   readonly ability: ClientAbilityDefinition;
   readonly items: readonly WeaponItemContent[];
 }
 
-
-
 /**
  * Single authoring boundary for weapon gameplay content.
- * Adding a weapon here automatically wires equipment, ability, mastery XP,
- * item-to-mastery routing, display names and vendor resale offers.
+ * Adding a weapon here wires equipment, tier, attack profile/speed, ability,
+ * mastery XP/routing, display names and vendor resale offers.
  */
 const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
   {
@@ -43,6 +62,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     familyName: "Épées",
     specializationMasteryId: "mastery_broadsword",
     specializationName: "Épée large",
+    combatProfile: "sword",
     ability: {
       id: "ability_sword_heroic_strike",
       name: "Frappe héroïque",
@@ -58,8 +78,8 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.75,
     },
     items: [
-      { itemId: "item_weapon_sword_t3_broadsword", handling: "one_handed", stats: { stat_physical_damage: 45 }, sellPrice: 70 },
-      { itemId: "item_weapon_sword_t4_broadsword", handling: "one_handed", stats: { stat_physical_damage: 75 }, sellPrice: 200 },
+      { itemId: "item_weapon_sword_t3_broadsword", tier: 3, handling: "one_handed", stats: { stat_physical_damage: 45 }, sellPrice: 70 },
+      { itemId: "item_weapon_sword_t4_broadsword", tier: 4, handling: "one_handed", stats: { stat_physical_damage: 75 }, sellPrice: 200 },
     ],
   },
   {
@@ -67,6 +87,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     familyName: "Arcs",
     specializationMasteryId: "mastery_longbow",
     specializationName: "Arc long",
+    combatProfile: "bow",
     ability: {
       id: "ability_bow_aimed_shot",
       name: "Tir ajusté",
@@ -82,8 +103,8 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.6,
     },
     items: [
-      { itemId: "item_weapon_bow_t3_longbow", handling: "two_handed", stats: { stat_physical_damage: 50 }, sellPrice: 70 },
-      { itemId: "item_weapon_bow_t4_longbow", handling: "two_handed", stats: { stat_physical_damage: 85 }, sellPrice: 200 },
+      { itemId: "item_weapon_bow_t3_longbow", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 50 }, sellPrice: 70 },
+      { itemId: "item_weapon_bow_t4_longbow", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 85 }, sellPrice: 200 },
     ],
   },
   {
@@ -91,6 +112,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     familyName: "Arcs",
     specializationMasteryId: "mastery_badon",
     specializationName: "Badon",
+    combatProfile: "bow",
     ability: {
       id: "ability_bow_aimed_shot",
       name: "Tir ajusté",
@@ -106,7 +128,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.6,
     },
     items: [
-      { itemId: "item_weapon_bow_t4_badon", handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 },
+      { itemId: "item_weapon_bow_t4_badon", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 },
     ],
   },
   {
@@ -114,6 +136,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     familyName: "Bâtons de feu",
     specializationMasteryId: "mastery_t4_fire_staff",
     specializationName: "Bâton de feu",
+    combatProfile: "staff",
     ability: {
       id: "ability_fire_fireball",
       name: "Boule de feu",
@@ -129,8 +152,8 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.7,
     },
     items: [
-      { itemId: "item_weapon_staff_t3_fire", handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 },
-      { itemId: "item_weapon_staff_t4_fire", handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 },
+      { itemId: "item_weapon_staff_t3_fire", tier: 3, handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 },
+      { itemId: "item_weapon_staff_t4_fire", tier: 4, handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 },
     ],
   },
   {
@@ -138,6 +161,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     familyName: "Gants",
     specializationMasteryId: "mastery_spiked_gauntlets",
     specializationName: "Gantelets à pointes",
+    combatProfile: "gloves",
     ability: {
       id: "ability_gloves_shockwave",
       name: "Onde percutante",
@@ -153,74 +177,14 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
       bonusDamageRatio: 0.8,
     },
     items: [
-      { itemId: "item_weapon_gloves_t3_spiked_gauntlets", handling: "two_handed", stats: { stat_physical_damage: 38 }, sellPrice: 75 },
-      { itemId: "item_weapon_gloves_t4_spiked_gauntlets", handling: "two_handed", stats: { stat_physical_damage: 66 }, sellPrice: 210 },
+      { itemId: "item_weapon_gloves_t3_spiked_gauntlets", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 38 }, sellPrice: 75 },
+      { itemId: "item_weapon_gloves_t4_spiked_gauntlets", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 66 }, sellPrice: 210 },
     ],
   },
 ];
 
-const BASE_CLIENT_ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> =
+export const CLIENT_ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> =
   Object.fromEntries(WEAPON_CONTENT.map((entry) => [entry.ability.id, entry.ability]));
-
-export const CLIENT_ABILITIES: Record<string, ClientAbilityDefinition> = {
-  ...BASE_CLIENT_ABILITIES,
-  ability_sword_heroic_strike: {
-    id: "ability_sword_heroic_strike",
-    name: "Frappe héroïque",
-    description: "Une frappe lourde infligeant 175 % des dégâts physiques.",
-    icon: "⚔️",
-    category: "active",
-    cooldown: 8,
-    castTime: 0,
-    resourceCost: { energy: 12 },
-    interruptible: false,
-    targetRule: "current_target",
-    damageType: "physical",
-    bonusDamageRatio: 0.75,
-  },
-  ability_bow_aimed_shot: {
-    id: "ability_bow_aimed_shot",
-    name: "Tir ajusté",
-    description: "Un tir précis infligeant 160 % des dégâts physiques.",
-    icon: "🏹",
-    category: "active",
-    cooldown: 5,
-    castTime: 0,
-    resourceCost: { energy: 8 },
-    interruptible: true,
-    targetRule: "current_target",
-    damageType: "physical",
-    bonusDamageRatio: 0.6,
-  },
-  ability_fire_fireball: {
-    id: "ability_fire_fireball",
-    name: "Boule de feu",
-    description: "Un projectile ardent infligeant 170 % des dégâts magiques.",
-    icon: "🔥",
-    category: "active",
-    cooldown: 5,
-    castTime: 0,
-    resourceCost: { energy: 15 },
-    interruptible: true,
-    targetRule: "current_target",
-    damageType: "magical",
-    bonusDamageRatio: 0.7,
-  },
-  ability_gloves_shockwave: {
-    id: "ability_gloves_shockwave",
-    name: "Onde percutante",
-    description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.",
-    icon: "🥊",
-    category: "active",
-    cooldown: 6,
-    castTime: 0,
-    resourceCost: { energy: 10 },
-    interruptible: false,
-    targetRule: "current_target",
-    damageType: "physical",
-    bonusDamageRatio: 0.8,
-  },
-};
 
 export const WEAPON_ITEM_DEFINITIONS: Readonly<Record<string, EquipmentInfoLike>> =
   Object.fromEntries(
@@ -230,23 +194,23 @@ export const WEAPON_ITEM_DEFINITIONS: Readonly<Record<string, EquipmentInfoLike>
     ]),
   );
 
-const CONTENT_BY_ITEM_ID = new Map(
-  WEAPON_CONTENT.flatMap((entry) => entry.items.map((item) => [item.itemId, entry] as const)),
-);
-
-export function resolveCatalogPrimaryAbilityId(itemId: string | null | undefined): string | undefined {
-  if (itemId == null) return undefined;
-  return CONTENT_BY_ITEM_ID.get(itemId)?.ability.id;
+interface WeaponItemRoute {
+  readonly specialization: WeaponSpecializationContent;
+  readonly item: WeaponItemContent;
 }
 
-export function resolvePrimaryAbilityId(itemId: string | null | undefined): string | undefined {
-  const catalogAbilityId = resolveCatalogPrimaryAbilityId(itemId);
-  if (catalogAbilityId !== undefined) return catalogAbilityId;
-  if (itemId?.includes("_sword_") === true) return "ability_sword_heroic_strike";
-  if (itemId?.includes("_bow_") === true) return "ability_bow_aimed_shot";
-  if (itemId?.includes("_staff_") === true) return "ability_fire_fireball";
-  if (itemId?.includes("_gloves_") === true) return "ability_gloves_shockwave";
-  return undefined;
+const CONTENT_BY_ITEM_ID = new Map<string, WeaponItemRoute>(
+  WEAPON_CONTENT.flatMap((specialization) => specialization.items.map((item) => [
+    item.itemId,
+    { specialization, item },
+  ] as const)),
+);
+
+export function resolvePrimaryAbilityId(
+  itemId: string | null | undefined,
+): string | undefined {
+  if (itemId == null) return undefined;
+  return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.ability.id;
 }
 
 export interface WeaponMasteryRoute {
@@ -254,8 +218,8 @@ export interface WeaponMasteryRoute {
   readonly weaponId: ReturnType<typeof asMasteryId>;
 }
 
-export function resolveCatalogWeaponMastery(itemId: string): WeaponMasteryRoute | undefined {
-  const entry = CONTENT_BY_ITEM_ID.get(itemId);
+export function resolveWeaponMastery(itemId: string): WeaponMasteryRoute | undefined {
+  const entry = CONTENT_BY_ITEM_ID.get(itemId)?.specialization;
   if (entry === undefined) return undefined;
   return {
     familyId: asMasteryId(entry.familyMasteryId),
@@ -263,46 +227,41 @@ export function resolveCatalogWeaponMastery(itemId: string): WeaponMasteryRoute 
   };
 }
 
-export function resolveWeaponMastery(itemId: string): WeaponMasteryRoute | undefined {
-  const catalogRoute = resolveCatalogWeaponMastery(itemId);
-  if (catalogRoute !== undefined) return catalogRoute;
-  switch (itemId) {
-    case "item_weapon_sword_t3_broadsword":
-    case "item_weapon_sword_t4_broadsword":
-      return { familyId: asMasteryId("mastery_sword"), weaponId: asMasteryId("mastery_broadsword") };
-    case "item_weapon_bow_t3_longbow":
-    case "item_weapon_bow_t4_longbow":
-      return { familyId: asMasteryId("mastery_bow"), weaponId: asMasteryId("mastery_longbow") };
-    case "item_weapon_bow_t4_badon":
-      return { familyId: asMasteryId("mastery_bow"), weaponId: asMasteryId("mastery_badon") };
-    case "item_weapon_staff_t3_fire":
-    case "item_weapon_staff_t4_fire":
-      return { familyId: asMasteryId("mastery_fire_staff"), weaponId: asMasteryId("mastery_t4_fire_staff") };
-    case "item_weapon_gloves_t3_spiked_gauntlets":
-    case "item_weapon_gloves_t4_spiked_gauntlets":
-      return { familyId: asMasteryId("mastery_gloves"), weaponId: asMasteryId("mastery_spiked_gauntlets") };
-    default:
-      return undefined;
-  }
+export function resolveWeaponTier(itemId: string): 3 | 4 | undefined {
+  return CONTENT_BY_ITEM_ID.get(itemId)?.item.tier;
+}
+
+export function resolveWeaponCombatProfile(
+  itemId: string,
+): WeaponCombatProfile | undefined {
+  return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.combatProfile;
+}
+
+export function resolveWeaponAttackSpeed(itemId: string): number | undefined {
+  const profile = resolveWeaponCombatProfile(itemId);
+  return profile === undefined ? undefined : WEAPON_ATTACK_SPEED_BY_PROFILE[profile];
 }
 
 const masteryNames = new Map<string, string>();
+const familyMasteryIds = new Set<string>();
+const specializationMasteryIds = new Set<string>();
 for (const entry of WEAPON_CONTENT) {
   masteryNames.set(entry.familyMasteryId, entry.familyName);
   masteryNames.set(entry.specializationMasteryId, entry.specializationName);
+  familyMasteryIds.add(entry.familyMasteryId);
+  specializationMasteryIds.add(entry.specializationMasteryId);
 }
 
 export function getWeaponMasteryDisplayName(masteryId: string): string | undefined {
   return masteryNames.get(masteryId);
 }
 
-export const WEAPON_MASTERY_DEFINITIONS = [...masteryNames.keys()].map((id) => ({
+export const WEAPON_MASTERY_DEFINITIONS = [
+  ...familyMasteryIds,
+  ...specializationMasteryIds,
+].map((id) => ({
   id,
-  category: id.includes("mastery_broadsword")
-    || id.includes("mastery_longbow")
-    || id.includes("mastery_badon")
-    || id.includes("mastery_t4_fire_staff")
-    || id.includes("mastery_spiked_gauntlets")
+  category: specializationMasteryIds.has(id)
     ? "weapon_specialization"
     : "weapon",
   maxLevel: 100,
@@ -318,4 +277,3 @@ export const WEAPON_VENDOR_OFFERS = WEAPON_CONTENT.flatMap((entry) =>
     enabled: true,
   })),
 );
-
