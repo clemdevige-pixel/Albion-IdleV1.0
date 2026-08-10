@@ -45,103 +45,36 @@ IMPLEMENTED / VALIDATED HISTORY
 10. Craft invariant tests added for T3/T4 predecessor rules, Badon exclusion and duplicate prevention. Validated.
 11. Weapon families normalized into WEAPON_FAMILIES; specializations reference familyId. Validated.
 12. Craft bridge/UI made generic for family IDs; labels/symbols resolve from presentation layer. Validated.
-13. Starter Broadsword mastery compatibility aliases removed; GameContext resolves starter mastery route directly from weaponContentCatalog. Validation pending/expected via Vercel.
+13. Starter Broadsword mastery compatibility aliases removed; GameContext resolves starter mastery route directly from weaponContentCatalog. Validated.
+14. Dagger Pair added as first end-to-end new family/specialization. Craft, equip and combat manually validated; dedicated assets pending.
 
-14) FIRST END-TO-END PIPELINE CONTENT TEST — DAGGER PAIR
+15) FIX — MASTERIES UI DERIVED FROM WEAPON CATALOG
 Date/session: 2026-08-10
 Status: implementation committed; Vercel/manual validation pending.
 
-Objective:
-Add a completely new weapon family and specialization through the refactored pipeline without modifying generic inventory, equipment, combat, crafting runtime, bridge, enchantment, repair, vendor, Fame or persistence systems.
+Trigger:
+Manual Dagger Pair validation showed craft, equipment and combat working, but Dagues / Paire de dagues did not appear in the Masteries panel.
 
-New content:
-- Family: dagger / display name Dagues / mastery mastery_dagger.
-- Specialization: Paire de dagues / mastery_dagger_pair.
-- Combat profile: dagger (existing intrinsic attack speed 1.6/s).
-- Handling: two_handed (pair occupies weapon handling and prevents off-hand use).
-- T3 item: item_weapon_dagger_t3_pair.
-- T4 item: item_weapon_dagger_t4_pair.
+Audit finding:
+- Gameplay progression was already generic: CombatRewardRuntime resolves the equipped weapon through resolveWeaponMastery and discovers/awards both family and specialization on enemy kill.
+- The actual defect was presentation-model duplication: ui/masteries/masteryModels.ts still owned a closed COMBAT_FAMILIES list containing only sword, bow, fire_staff and gloves.
+- Therefore every new weapon family required an undocumented UI edit despite the refactored weapon pipeline.
 
-Balance chosen against current branch weapons:
-- T3 damage: 34 physical at 1.6/s = 54.4 base DPS.
-- T4 damage: 58 physical at 1.6/s = 92.8 base DPS.
-- Ability: ability_dagger_double_slash / Double entaille.
-- Ability description target: 150% physical damage.
-- cooldown: 4s.
-- bonusDamageRatio: 0.5, following current ability convention where displayed 150% corresponds to +50% ability bonus layer.
-- energy cost: 8 (existing runtime still carries energy metadata; no energy-system refactor performed here).
-- sell prices: T3 75, T4 210.
-
-Craft:
-- standard recipe profile: 6 metal + 2 leather.
-- T3 generator automatically produces refined T3 materials only.
-- T4 generator automatically produces refined T4 materials + item_weapon_dagger_t3_pair x1.
-- no manual Dagger Pair recipe added.
-
-Presentation:
-- dagger family craft label/symbol added to equipmentPresentation.
-- dedicated Dagger Pair assets do not exist yet.
-- temporary, explicitly documented visual fallback uses existing Broadsword icon/actor manifest and melee presentation profile.
-- gameplay attack speed/profile remains dagger; placeholder affects visual presentation only.
-- placeholder must be replaced when Dagger Pair asset/manifests are produced.
+Fix:
+- weaponContentCatalog now exposes getWeaponMasteryFamilyDefinitions(), derived from WEAPON_FAMILIES + WEAPON_CONTENT.
+- masteryModels removed the closed COMBAT_FAMILIES registry entirely.
+- Combat mastery families/specializations are now built from the authoritative weapon catalog.
+- Family icon/symbol is resolved from existing equipmentPresentation family presentation; no second icon registry added.
+- Added regression test proving mastery_dagger / mastery_dagger_pair render through buildMasteriesModel.
 
 Files modified:
 - apps/client/src/data/weaponContentCatalog.ts
-- apps/client/src/data/equipmentPresentation.ts
-- apps/client/src/data/weaponContentCatalog.test.ts
+- apps/client/src/ui/masteries/masteryModels.ts
+- apps/client/src/ui/masteries/masteryModels.test.ts
 - ALBION_IDLE_DEV_CONTEXT.txt
 
-Systems intentionally NOT modified:
-- refiningRecipes generator
-- itemContentCatalog
-- itemPower
-- GameBridge
-- bridgeSync
-- CraftingRuntime
-- CombatRuntime
-- CombatRewardRuntime
-- GameContext
-- inventory/equipment managers
-- enchantment/repair systems
-- persistence
-
-Why this matters:
-This is the first real proof that a new family + specialization can propagate through the refactored weapon pipeline by authoring content/presentation instead of adding special-case code to every consuming system.
-
-Expected automatic integration:
-- inventory recognition
-- character equip compatibility and 2H off-hand lock
-- T3/T4 Item Power through tier resolver
-- dagger attack speed 1.6
-- mastery family + specialization definitions
-- combat Fame routing
-- primary ability routing
-- vendor resale offers
-- standard T3/T4 craft recipes + predecessor
-- T4 enchantment eligibility through generated craft recipe
-- repair/durability recognition
-- craft UI family Dagues
-- save/load inventory/equipped item through generic persistence
-
-Tests updated:
-- Dagger Pair T3/T4 expected catalog routes added.
-- dagger family definition/display name checked.
-- dagger family/spec mastery categories checked.
-- Double entaille cooldown/damage ratio locked.
-
-MANUAL VALIDATION FOR DAGGER PAIR
----------------------------------
-1. Vercel build green.
-2. Craft T3 screen: Dagues / Paire de dagues T3 visible, 6 T3 metal + 2 T3 leather, no predecessor.
-3. Craft T4: 6 T4 metal + 2 T4 leather + Paire de dagues T3 x1.
-4. Equip Dagger Pair: off-hand locked as a two-handed weapon.
-5. Stats show 34 T3 / 58 T4 physical damage and dagger attack speed behavior.
-6. Combat ability displays Double entaille, 4s cooldown.
-7. Killing an enemy with it discovers/feeds Dagues + Paire de dagues mastery/Fame.
-8. T3 absent from enchantment merchant; T4 eligible.
-9. Repair and vendor resale work.
-10. Save/reload with Dagger Pair in inventory/equipped works.
-11. Visual currently looks like Broadsword by design until dedicated assets are added.
+Expected result:
+After killing an enemy with Dagger Pair, Dagues appears in Combat masteries and Paire de dagues appears as its specialization. Future weapon families declared in the catalog no longer require masteryModels edits.
 
 FINAL AUDIT ITEMS STILL OPEN
 ----------------------------
@@ -150,15 +83,3 @@ FINAL AUDIT ITEMS STILL OPEN
 3. Decide when to generalize tier model from current T3|T4 to T3-T8.
 4. Replace Badon temporary material-only recipe when artifact crafting exists.
 5. Replace Dagger Pair temporary Broadsword visual with dedicated asset/manifests.
-
-METHODOLOGY LESSONS
--------------------
-- Follow actual consumers before editing legacy-looking data.
-- Keep generic infrastructure when architectural; retire stale parallel domain records.
-- A standard T4+ weapon without T(n-1) is invalid content and should fail loudly.
-- Do not fake future artifact mechanics.
-- Presentation is explicit where visual differences are real.
-- Protect pipeline rules with invariant tests.
-- Bridge/UI transport types should not close over content IDs.
-- Runtime bootstraps should resolve routes from authoritative catalogs.
-- A successful new-family implementation should primarily touch content + presentation, not generic systems.

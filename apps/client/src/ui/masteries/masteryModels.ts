@@ -1,4 +1,6 @@
 import type { GameBridgeState, MasteryVM, WorkerVM } from "../../game/GameBridge";
+import { getWeaponMasteryFamilyDefinitions } from "../../data/weaponContentCatalog";
+import { resolveWeaponFamilyCraftPresentation } from "../../data/equipmentPresentation";
 import { masteryProgressPercent } from "../shared/masteryProgress";
 
 export type MasteryCategoryId = "combat" | "gathering";
@@ -31,24 +33,11 @@ export interface MasteriesSource {
   readonly workers: GameBridgeState["workers"];
 }
 
-interface CombatFamilyDefinition {
-  readonly familyId: string;
-  readonly specializationIds: readonly string[];
-  readonly icon: string;
-}
-
 interface GatheringFamilyDefinition {
   readonly masteryId: string;
   readonly profession: WorkerVM["profession"];
   readonly icon: string;
 }
-
-const COMBAT_FAMILIES: readonly CombatFamilyDefinition[] = [
-  { familyId: "mastery_sword", specializationIds: ["mastery_broadsword"], icon: "⚔" },
-  { familyId: "mastery_bow", specializationIds: ["mastery_longbow", "mastery_badon"], icon: "🏹" },
-  { familyId: "mastery_fire_staff", specializationIds: ["mastery_t4_fire_staff"], icon: "🔥" },
-  { familyId: "mastery_gloves", specializationIds: ["mastery_spiked_gauntlets"], icon: "🥊" },
-] as const;
 
 const GATHERING_FAMILIES: readonly GatheringFamilyDefinition[] = [
   { masteryId: "mastery_gathering_wood", profession: "woodcutter", icon: "🌲" },
@@ -99,14 +88,15 @@ function workerProgress(worker: WorkerVM): MasteryProgressModel {
 export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
   const masteryById = new Map(source.progression.masteries.map((mastery) => [mastery.id, mastery]));
 
-  const combat = COMBAT_FAMILIES.flatMap((definition): readonly MasteryFamilyModel[] => {
-    const family = masteryById.get(definition.familyId);
+  const combat = getWeaponMasteryFamilyDefinitions().flatMap((definition): readonly MasteryFamilyModel[] => {
+    const family = masteryById.get(definition.masteryId);
     if (family === undefined) return [];
-    const specializations = definition.specializationIds.flatMap((id): readonly MasteryProgressModel[] => {
+    const specializations = definition.specializationMasteryIds.flatMap((id): readonly MasteryProgressModel[] => {
       const mastery = masteryById.get(id);
       return mastery === undefined ? [] : [combatProgress(mastery, false)];
     });
-    return [{ ...combatProgress(family, true), icon: definition.icon, specializations }];
+    const presentation = resolveWeaponFamilyCraftPresentation(definition.familyId);
+    return [{ ...combatProgress(family, true), icon: presentation?.symbol ?? "◆", specializations }];
   });
 
   const gathering = GATHERING_FAMILIES.flatMap((definition): readonly MasteryFamilyModel[] => {
