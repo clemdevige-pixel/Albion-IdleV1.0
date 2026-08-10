@@ -17,6 +17,10 @@ const UNDEAD_COMBAT_LOOT: readonly LootDropDefinition[] = [
   { itemId: "item_health_potion", weight: 20 },
 ];
 
+const MORGANA_COMBAT_LOOT: readonly LootDropDefinition[] = [
+  { itemId: "item_health_potion", weight: 20 },
+];
+
 export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> = {
   loot_monster_generic: {
     dropChance: 0.2,
@@ -41,6 +45,18 @@ export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> 
   loot_undead_boss: {
     dropChance: 0.45,
     drops: UNDEAD_COMBAT_LOOT,
+  },
+  loot_morgana_normal: {
+    dropChance: 0.2,
+    drops: MORGANA_COMBAT_LOOT,
+  },
+  loot_morgana_elite: {
+    dropChance: 0.3,
+    drops: MORGANA_COMBAT_LOOT,
+  },
+  loot_morgana_boss: {
+    dropChance: 0.45,
+    drops: MORGANA_COMBAT_LOOT,
   },
 };
 
