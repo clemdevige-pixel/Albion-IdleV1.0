@@ -4,6 +4,7 @@ import {
   resolveWeaponMastery,
   resolveWeaponTier,
 } from "../data/weaponContentCatalog";
+import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 
 export interface ItemVisualDefinition {
   readonly name: string;
@@ -18,18 +19,6 @@ interface ConsumableVisualDefinition {
   readonly name: string;
   readonly icon: string;
 }
-
-/**
- * Weapon gameplay metadata (tier/slot/handling/stats/name identity) is owned by
- * weaponContentCatalog. This table contains presentation-only icon choices.
- */
-const WEAPON_ICON_BY_SPECIALIZATION: Readonly<Record<string, string>> = {
-  mastery_broadsword: "item-broadsword-pixel-v1.png",
-  mastery_longbow: "item-longbow-pixel-v1.png",
-  mastery_badon: "item-badon-pixel-v1.png",
-  mastery_t4_fire_staff: "item-fire-staff-pixel-v1.png",
-  mastery_spiked_gauntlets: "item-spiked-gauntlets-pixel-v1.png",
-};
 
 const NON_WEAPON_ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = {
   item_leather_armor: { name: "Armure de cuir", icon: "item-leather-armor-pixel-v1.png", tier: 3, slot: "chest", stats: { stat_armor: 8, stat_max_health: 50 } },
@@ -56,36 +45,25 @@ const RESOURCE_VISUALS: Readonly<Record<string, { readonly name: string; readonl
   item_refined_copper_bar_t3: { name: "Lingot de cuivre", icon: "resource-copper-ingot.png" },
 };
 
-const ENCHANTMENT_RESOURCE_VISUALS: Readonly<
-Record<string, { readonly name: string; readonly symbol: string }>
-> = {
-  item_resource_enchantment_essence: {
-    name: "Essence d’enchantement",
-    symbol: "✦",
-  },
-  item_resource_arcane_crystal: {
-    name: "Cristal arcanique",
-    symbol: "◆",
-  },
-  item_resource_enchantment_catalyst: {
-    name: "Catalyseur d’enchantement",
-    symbol: "⬢",
-  },
+const ENCHANTMENT_RESOURCE_VISUALS: Readonly<Record<string, { readonly name: string; readonly symbol: string }>> = {
+  item_resource_enchantment_essence: { name: "Essence d’enchantement", symbol: "✦" },
+  item_resource_arcane_crystal: { name: "Cristal arcanique", symbol: "◆" },
+  item_resource_enchantment_catalyst: { name: "Catalyseur d’enchantement", symbol: "⬢" },
 };
 
 function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefined {
   const equipment = WEAPON_ITEM_DEFINITIONS[itemId];
   const tier = resolveWeaponTier(itemId);
   const mastery = resolveWeaponMastery(itemId);
-  if (equipment === undefined || tier === undefined || mastery === undefined) return undefined;
+  const presentation = resolveEquipmentPresentation(itemId);
+  if (equipment === undefined || tier === undefined || mastery === undefined || presentation === undefined) return undefined;
 
   const specializationName = getWeaponMasteryDisplayName(mastery.weaponId);
-  const icon = WEAPON_ICON_BY_SPECIALIZATION[mastery.weaponId];
-  if (specializationName === undefined || icon === undefined) return undefined;
+  if (specializationName === undefined) return undefined;
 
   return {
     name: `${specializationName} T${String(tier)}`,
-    icon,
+    icon: presentation.itemIcon,
     tier,
     slot: "weapon",
     handling: equipment.handling,
@@ -117,14 +95,7 @@ export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element
   const resource = RESOURCE_VISUALS[itemId];
   const enchantmentResource = ENCHANTMENT_RESOURCE_VISUALS[itemId];
   if (enchantmentResource !== undefined) {
-    return (
-      <span
-        className="item-visual__fallback item-visual__fallback--enchantment"
-        aria-label={enchantmentResource.name}
-      >
-        {enchantmentResource.symbol}
-      </span>
-    );
+    return <span className="item-visual__fallback item-visual__fallback--enchantment" aria-label={enchantmentResource.name}>{enchantmentResource.symbol}</span>;
   }
   if (resource !== undefined) {
     return <img className="item-visual__image item-visual__image--resource" src={`/assets/resources/${resource.icon}`} alt={resource.name} draggable={false} />;
