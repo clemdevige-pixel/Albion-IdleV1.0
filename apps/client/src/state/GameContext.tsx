@@ -1,5 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore, type ReactNode } from "react";
-import { RuntimeLifecycle } from "../runtime/RuntimeLifecycle.js";
+import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence } from "../runtime/RuntimePersistence.js";
 import { WorldRuntime } from "../runtime/WorldRuntime.js";
 import { EventBus, World, createRuntimeServices } from "@game/core";
@@ -56,11 +55,11 @@ import {
   WorldSaveProvider,
 } from "@game/gameplay";
 import type { EntityId } from "@game/core";
-import type { StatId, DamageEventMap, WalletId, PlayerId, ZoneDefinitionId, WorldIntegrationEventMap, ItemInstanceId, ResourceFamily, WorldLocationSaveState } from "@game/gameplay";
+import type { StatId, DamageEventMap, ZoneDefinitionId, WorldIntegrationEventMap, ItemInstanceId, WorldLocationSaveState } from "@game/gameplay";
 import { WorkerRuntime } from "../runtime/WorkerRuntime.js";
 
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
-import { GameBridge, type GameBridgeState, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
+import { GameBridge, type WorldVM, type WorkerProfessionVM } from "../game/GameBridge";
 import { GatheringRuntime } from "../runtime/GatheringRuntime";
 import { RefiningRuntime, RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { CraftingRuntime } from "../runtime/CraftingRuntime";
@@ -81,9 +80,6 @@ import {
   syncProgressionToBridge,
   syncRepairToBridge,
   syncWorkersToBridge,
-  syncCraftingToBridge,
-  syncGatheringToBridge,
-  syncRefiningToBridge,
   syncAbilitiesToBridge,
   WORKER_PROFESSION_LABELS,
   getWorkerResourceLabel,
@@ -93,10 +89,6 @@ import {
 } from "./bridgeSync";
 import {
   EQUIPMENT_CRAFT_RECIPES,
-  getWoodRecipe,
-  getMetalRecipe,
-  getLeatherRecipe,
-  getClothRecipe,
 } from "../data/refiningRecipes";
 import {
   getItemPower,
@@ -134,67 +126,19 @@ import {
 } from "../data/worldContentCatalog";
 import { setupResourceContentCatalog } from "../data/resourceContentCatalog";
 import { setupCombatEntity } from "../runtime/combatEntityFactory.js";
+import { isProductionMaterial } from "../runtime/ProductionStorage.js";
+import type { GameServices, UIEventMap } from "./GameServices.js";
+import { GameServicesContextProvider } from "./GameServicesContext.js";
+import { ProductionBridgeAdapter } from "./production/ProductionBridgeAdapter.js";
+import { ProductionActions } from "./production/ProductionActions.js";
 import {
-  isProductionMaterial,
-  migrateLegacyProductionMaterials,
-} from "../runtime/ProductionStorage.js";
+  registerGameRuntimeLifecycle,
+  useGameRuntimeLifecycle,
+} from "./GameRuntimeLifecycle.js";
+import { SaveGameActions } from "./SaveGameActions.js";
 
-/** Event map for the UI-layer event bus. Starts empty; later phases add entries. */
-export type UIEventMap = Record<string, unknown>;
-
-/**
- * Minimal game services exposed to the React UI layer.
- */
-export interface GameServices {
-  readonly eventBus: EventBus<UIEventMap>;
-  readonly bridge: GameBridge;
-  readonly orchestrator: CombatOrchestrator;
-  readonly heroId: EntityId;
-  readonly bankId: EntityId;
-  readonly productionStorageId: EntityId;
-  readonly inventoryManager: InventoryManager;
-  readonly equipmentManager: EquipmentManager;
-  readonly enchantmentService: EnchantmentService;
-  readonly statsManager: StatsManager;
-  readonly currencyService: CurrencyService;
-  readonly economyTransactionService: EconomyTransactionService;
-  readonly vendorRegistry: VendorRegistry;
-  readonly walletId: WalletId;
-  readonly playerId: PlayerId;
-  readonly worldCoordinator: WorldCoordinator;
-  readonly useConsumable: (itemId: string) => boolean;
-  readonly usePrimaryAbility: () => boolean;
-  readonly setPrimaryAbilityAutoCast: (enabled: boolean) => void;
-  readonly resumeExploration: () => boolean;
-  readonly selectSegment: (segmentNumber: number) => boolean;
-  readonly setSegmentFarmMode: (enabled: boolean) => void;
-  readonly selectZone: (zoneNumber: number, segmentNumber?: number) => boolean;
-  readonly returnToCombat: () => boolean;
-  readonly toggleGathering: () => boolean;
-  readonly performGatheringStrike: (
-    resourceFamily: string,
-    quality: "miss" | "correct" | "perfect",
-  ) => boolean;
-  readonly toggleOreGathering: () => boolean;
-  readonly toggleHideGathering: () => boolean;
-  readonly toggleFiberGathering: () => boolean;
-  readonly toggleRefining: () => boolean;
-  readonly toggleMetalRefining: () => boolean;
-  readonly toggleLeatherRefining: () => boolean;
-  readonly toggleClothRefining: () => boolean;
-  readonly refineAllAvailable: () => boolean;
-  readonly setProductionTier: (tier: 3 | 4) => boolean;
-  readonly craftEquipment: (outputItemId: string) => boolean;
-  readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
-  readonly toggleWorker: (profession: WorkerProfessionVM) => boolean;
-  readonly repairAll: () => boolean;
-  readonly saveGame: () => void;
-  readonly loadGame: () => boolean;
-  readonly hasSave: () => boolean;
-}
-
-
-const GameServiceContext = createContext<GameServices | null>(null);
+export type { GameServices, UIEventMap } from "./GameServices.js";
+export { useGameBridge, useGameServices } from "./GameServicesContext.js";
 
 // -- Stat ids ---------------------------------------------------------------
 
@@ -203,14 +147,6 @@ const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_ATTACK_SPEED = "stat_attack_speed" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
 export const HERO_BASE_ATTACK_SPEED = 1.2;
-
-/** Internal refs for cleanup — not exposed to consumers. */
-interface CleanupRef {
-  _tickFn?: () => void;
-  _tickInterval?: number;
-  _disposeServices?: () => void;
-  _persistence?: RuntimePersistence;
-}
 
 // -- Constants -------------------------------------------------------------
 
@@ -895,77 +831,44 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       });
     });
 
-    const syncGathering = (): void => {
-      const recipe = getWoodRecipe(productionTier);
-      syncGatheringToBridge(
-        (vm) => { bridge.updateGathering(vm); },
-        gatheringCoordinator.getActiveSession(),
-        tickCounter,
-        gatheringRuntime.getGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID),
-        getRequiredGatheringMasteryForTier(productionTier),
-        gatheringRuntime.getGatheringDurationTicks(WOOD_GATHERING_MASTERY_ID),
-        productionTier === 4 ? "Bois de pin" : "Bois de bouleau",
-        "Wood",
-        "resource_wood",
-        productionTier,
-        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
-        gatheringRuntime.getActiveMiniGameState("Wood").strikesUsed,
-      );
-    };
+    const productionBridge = new ProductionBridgeAdapter({
+      bridge,
+      inventoryManager,
+      heroId,
+      productionStorageId,
+      gatheringRuntime,
+      refiningRuntime,
+      gatheringCoordinators: {
+        Wood: gatheringCoordinator,
+        Ore: oreGatheringCoordinator,
+        Hide: hideGatheringCoordinator,
+        Fiber: fiberGatheringCoordinator,
+      },
+      refiningManagers: {
+        Wood: refiningManager,
+        Ore: metalRefiningManager,
+        Hide: leatherRefiningManager,
+        Fiber: clothRefiningManager,
+      },
+      getCurrentTick: () => tickCounter,
+      getProductionTier: () => productionTier,
+    });
 
-    const syncOreGathering = (): void => {
-      const recipe = getMetalRecipe(productionTier);
-      syncGatheringToBridge(
-        (vm) => { bridge.updateOreGathering(vm); },
-        oreGatheringCoordinator.getActiveSession(),
-        tickCounter,
-        gatheringRuntime.getGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID),
-        getRequiredGatheringMasteryForTier(productionTier),
-        gatheringRuntime.getGatheringDurationTicks(ORE_GATHERING_MASTERY_ID),
-        productionTier === 4 ? "Minerai de fer" : "Minerai de cuivre",
-        "Ore",
-        "resource_ore",
-        productionTier,
-        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
-        gatheringRuntime.getActiveMiniGameState("Ore").strikesUsed,
-      );
-    };
-
-    const syncHideGathering = (): void => {
-      const recipe = getLeatherRecipe(productionTier);
-      syncGatheringToBridge(
-        (vm) => { bridge.updateHideGathering(vm); },
-        hideGatheringCoordinator.getActiveSession(),
-        tickCounter,
-        gatheringRuntime.getGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID),
-        getRequiredGatheringMasteryForTier(productionTier),
-        gatheringRuntime.getGatheringDurationTicks(HIDE_GATHERING_MASTERY_ID),
-        productionTier === 4 ? "Peau épaisse" : "Peau robuste",
-        "Hide",
-        "resource_hide",
-        productionTier,
-        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
-        gatheringRuntime.getActiveMiniGameState("Hide").strikesUsed,
-      );
-    };
-
-    const syncFiberGathering = (): void => {
-      const recipe = getClothRecipe(productionTier);
-      syncGatheringToBridge(
-        (vm) => { bridge.updateFiberGathering(vm); },
-        fiberGatheringCoordinator.getActiveSession(),
-        tickCounter,
-        gatheringRuntime.getGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID),
-        getRequiredGatheringMasteryForTier(productionTier),
-        gatheringRuntime.getGatheringDurationTicks(FIBER_GATHERING_MASTERY_ID),
-        productionTier === 4 ? "Fibre fine" : "Fibre de lin",
-        "Fiber",
-        "resource_fiber",
-        productionTier,
-        inventoryManager.getTotalQuantity(productionStorageId, recipe.rawItemId),
-        gatheringRuntime.getActiveMiniGameState("Fiber").strikesUsed,
-      );
-    };
+    const syncGathering = (): void => { productionBridge.syncGathering("Wood"); };
+    const syncOreGathering = (): void => { productionBridge.syncGathering("Ore"); };
+    const syncHideGathering = (): void => { productionBridge.syncGathering("Hide"); };
+    const syncFiberGathering = (): void => { productionBridge.syncGathering("Fiber"); };
+    const productionActions = new ProductionActions({
+      bridge,
+      heroId,
+      inventoryManager,
+      gatheringRuntime,
+      refiningRuntime,
+      craftingRuntime,
+      productionBridge,
+      getCurrentTick: () => tickCounter,
+      prepareCombatResumeAfterGathering: () => { prepareCombatResumeAfterGathering(); },
+    });
 
     const syncMasteryProgression = (): void => {
       const state = progressionOrchestrator.getFullProgressionState();
@@ -977,104 +880,17 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       );
     };
 
-    const syncAllGathering = (): void => {
-      syncGathering();
-      syncOreGathering();
-      syncHideGathering();
-      syncFiberGathering();
-    };
-
-    const toggleGathering = (): boolean => {
-      const res = gatheringRuntime.toggleGathering(tickCounter);
-      if (res.action === "stopped") {
-        syncAllGathering();
-        bridge.setCombatState("walking");
-        return true;
-      }
-      if (res.action === "started") {
-        prepareCombatResumeAfterGathering();
-        bridge.setCombatState("idle");
-        syncAllGathering();
-        return true;
-      }
-      return false;
-    };
-
-    const returnToCombat = (): boolean => {
-      if (gatheringRuntime.isHeroGathering()) {
-        gatheringRuntime.stopAllGathering();
-        syncAllGathering();
-        bridge.setCombatState("walking");
-        return true;
-      }
-      return false;
-    };
-
-    const toggleOreGathering = (): boolean => {
-      const res = gatheringRuntime.toggleOreGathering(tickCounter);
-      if (res.action === "stopped") {
-        syncAllGathering();
-        bridge.setCombatState("walking");
-        return true;
-      }
-      if (res.action === "started") {
-        prepareCombatResumeAfterGathering();
-        bridge.setCombatState("idle");
-        syncAllGathering();
-        return true;
-      }
-      return false;
-    };
-
-    const toggleHideGathering = (): boolean => {
-      const res = gatheringRuntime.toggleHideGathering(tickCounter);
-      if (res.action === "stopped") {
-        syncAllGathering();
-        bridge.setCombatState("walking");
-        return true;
-      }
-      if (res.action === "started") {
-        prepareCombatResumeAfterGathering();
-        bridge.setCombatState("idle");
-        syncAllGathering();
-        return true;
-      }
-      return false;
-    };
-
-    const toggleFiberGathering = (): boolean => {
-      const res = gatheringRuntime.toggleFiberGathering(tickCounter);
-      if (res.action === "stopped") {
-        syncAllGathering();
-        bridge.setCombatState("walking");
-        return true;
-      }
-      if (res.action === "started") {
-        prepareCombatResumeAfterGathering();
-        bridge.setCombatState("idle");
-        syncAllGathering();
-        return true;
-      }
-      return false;
-    };
+    const toggleGathering = (): boolean => productionActions.toggleGathering("Wood");
+    const returnToCombat = (): boolean => productionActions.returnToCombat();
+    const toggleOreGathering = (): boolean => productionActions.toggleGathering("Ore");
+    const toggleHideGathering = (): boolean => productionActions.toggleGathering("Hide");
+    const toggleFiberGathering = (): boolean => productionActions.toggleGathering("Fiber");
 
     const performGatheringStrike = (
       resourceFamily: string,
       quality: "miss" | "correct" | "perfect",
     ): boolean => {
-      const res = gatheringRuntime.performGatheringStrike(
-        resourceFamily as ResourceFamily,
-        quality,
-        tickCounter,
-      );
-      if (res.ok) {
-        if (resourceFamily === "Wood") syncGathering();
-        else if (resourceFamily === "Ore") syncOreGathering();
-        else if (resourceFamily === "Hide") syncHideGathering();
-        else syncFiberGathering();
-        return true;
-      }
-      return false;
+      return productionActions.performGatheringStrike(resourceFamily, quality);
     };
 
     syncGathering();
@@ -1101,131 +917,26 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       syncCrafting();
     });
 
-    const syncRefining = (): void => {
-      syncRefiningToBridge(
-        (vm) => { bridge.updateRefining(vm); },
-        refiningManager.getActiveSession(),
-        tickCounter,
-        getWoodRecipe(productionTier),
-        refiningRuntime.getReservedInputs("Wood"),
-        inventoryManager,
-        productionStorageId,
-      );
-    };
+    const syncRefining = (): void => { productionBridge.syncRefining("Wood"); };
+    const syncMetalRefining = (): void => { productionBridge.syncRefining("Ore"); };
+    const syncLeatherRefining = (): void => { productionBridge.syncRefining("Hide"); };
+    const syncClothRefining = (): void => { productionBridge.syncRefining("Fiber"); };
 
-    const syncMetalRefining = (): void => {
-      syncRefiningToBridge(
-        (vm) => { bridge.updateMetalRefining(vm); },
-        metalRefiningManager.getActiveSession(),
-        tickCounter,
-        getMetalRecipe(productionTier),
-        refiningRuntime.getReservedInputs("Ore"),
-        inventoryManager,
-        productionStorageId,
-      );
-    };
-
-    const syncLeatherRefining = (): void => {
-      syncRefiningToBridge(
-        (vm) => { bridge.updateLeatherRefining(vm); },
-        leatherRefiningManager.getActiveSession(),
-        tickCounter,
-        getLeatherRecipe(productionTier),
-        refiningRuntime.getReservedInputs("Hide"),
-        inventoryManager,
-        productionStorageId,
-      );
-    };
-
-    const syncClothRefining = (): void => {
-      syncRefiningToBridge(
-        (vm) => { bridge.updateClothRefining(vm); },
-        clothRefiningManager.getActiveSession(),
-        tickCounter,
-        getClothRecipe(productionTier),
-        refiningRuntime.getReservedInputs("Fiber"),
-        inventoryManager,
-        productionStorageId,
-      );
-    };
-
-    const toggleRefining = (): boolean => {
-      const res = refiningRuntime.toggleRefining(tickCounter);
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncGathering();
-      syncRefining();
-      return res.action === "started" || res.action === "stopped";
-    };
-
-    const toggleMetalRefining = (): boolean => {
-      const res = refiningRuntime.toggleMetalRefining(tickCounter);
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncOreGathering();
-      syncMetalRefining();
-      return res.action === "started" || res.action === "stopped";
-    };
-
-    const toggleLeatherRefining = (): boolean => {
-      const res = refiningRuntime.toggleLeatherRefining(tickCounter);
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncHideGathering();
-      syncLeatherRefining();
-      return res.action === "started" || res.action === "stopped";
-    };
-
-    const toggleClothRefining = (): boolean => {
-      const res = refiningRuntime.toggleClothRefining(tickCounter);
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncFiberGathering();
-      syncClothRefining();
-      return res.action === "started" || res.action === "stopped";
-    };
-
-    const refineAllAvailable = (): boolean => {
-      return refiningRuntime.refineAllAvailable(tickCounter).startedAtLeastOne;
-    };
+    const toggleRefining = (): boolean => productionActions.toggleRefining("Wood");
+    const toggleMetalRefining = (): boolean => productionActions.toggleRefining("Ore");
+    const toggleLeatherRefining = (): boolean => productionActions.toggleRefining("Hide");
+    const toggleClothRefining = (): boolean => productionActions.toggleRefining("Fiber");
+    const refineAllAvailable = (): boolean => productionActions.refineAllAvailable();
 
     syncRefining();
     syncMetalRefining();
     syncLeatherRefining();
     syncClothRefining();
 
-    const syncCrafting = (): void => {
-      syncCraftingToBridge(
-        bridge,
-        inventoryManager,
-        heroId,
-        productionStorageId,
-        productionTier,
-        {
-          woodItemId: getWoodRecipe(productionTier).outputItemId,
-          metalItemId: getMetalRecipe(productionTier).outputItemId,
-          leatherItemId: getLeatherRecipe(productionTier).outputItemId,
-          clothItemId: getClothRecipe(productionTier).outputItemId,
-        },
-        getItemPower,
-        EQUIPMENT_CRAFT_RECIPES,
-      );
-    };
+    const syncCrafting = (): void => { productionBridge.syncCrafting(); };
 
-    const craftEquipment = (outputItemId: string): boolean => {
-      const res = craftingRuntime.craftEquipment(outputItemId);
-      if (!res.ok) return false;
-
-      syncInventoryToBridge(bridge, inventoryManager, heroId);
-      syncRefining();
-      syncMetalRefining();
-      syncLeatherRefining();
-      syncClothRefining();
-      syncCrafting();
-      bridge.addEconomyNotification({
-        id: `notif_craft_${String(Date.now())}`,
-        type: "success",
-        message: `Fabriqué : ${res.recipeName} · ${String(res.itemPower)} IP`,
-        timestamp: Date.now(),
-      });
-      return true;
-    };
+    const craftEquipment = (outputItemId: string): boolean =>
+      productionActions.craftEquipment(outputItemId);
 
     const setProductionTier = (tier: 3 | 4): boolean => {
       productionTier = tier;
@@ -1332,69 +1043,27 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     );
     persistence.registerProvider(refiningSaveProvider);
 
-    const saveGame = (): void => {
-      persistence.save(tickCounter);
-      bridge.addEconomyNotification({
-        id: `notif_save_${String(Date.now())}`,
-        type: "success",
-        message: "Game saved",
-        timestamp: Date.now(),
-      });
-    };
+    const saveGameActions = new SaveGameActions({
+      bridge,
+      persistence,
+      inventoryManager,
+      currencyService,
+      walletId,
+      heroId,
+      bankId,
+      productionStorageId,
+      getCurrentTick: () => tickCounter,
+      resetSilverBalance: (balance) => { combatRewardAdapter.resetSilverBalance(balance); },
+      syncPlayerHealth: () => {
+        const health = damageManager.getHealth(heroId);
+        bridge.updatePlayerHealth(health.currentHealth, health.maxHealth);
+      },
+      resyncAll,
+    });
 
-    const loadGame = (): boolean => {
-      if (!persistence.hasSave()) {
-        return false;
-      }
-      persistence.load();
-      migrateLegacyProductionMaterials(
-        inventoryManager,
-        heroId,
-        productionStorageId,
-      );
-      // Save compatibility: convert the removed energy consumable instead of
-      // leaving an orphaned item in the player inventory or bank.
-      for (const inventoryId of [heroId, bankId]) {
-        const legacyQuantity = inventoryManager.getTotalQuantity(
-          inventoryId,
-          "item_energy_potion",
-        );
-        if (legacyQuantity <= 0) continue;
-
-        const removed = inventoryManager.removeQuantity(
-          inventoryId,
-          "item_energy_potion",
-          legacyQuantity,
-        );
-        if (removed.ok) {
-          inventoryManager.addQuantity(
-            inventoryId,
-            "item_health_potion",
-            legacyQuantity,
-          );
-        }
-      }
-
-      // After load, re-read wallet balance
-      const balResult = currencyService.getBalance(walletId, "currency_silver");
-      combatRewardAdapter.resetSilverBalance(balResult.ok ? balResult.value : 0);
-
-      // Re-sync health after load (stats may have changed)
-      const hHealth = damageManager.getHealth(heroId);
-      bridge.updatePlayerHealth(hHealth.currentHealth, hHealth.maxHealth);
-
-      resyncAll();
-
-      bridge.addEconomyNotification({
-        id: `notif_load_${String(Date.now())}`,
-        type: "success",
-        message: "Game loaded",
-        timestamp: Date.now(),
-      });
-      return true;
-    };
-
-    const hasSave = (): boolean => persistence.hasSave();
+    const saveGame = (): void => { saveGameActions.save(); };
+    const loadGame = (): boolean => saveGameActions.load();
+    const hasSave = (): boolean => saveGameActions.hasSave();
 
     // --- Start combat runtime --------------------------------------------------
     const combatRuntime = new CombatRuntime({
@@ -1609,19 +1278,20 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       syncAbilities();
     };
 
-    // Store tick function, persistence, and disposal for useEffect
-    (bridge as unknown as CleanupRef)._tickFn = tickFn;
-    (bridge as unknown as CleanupRef)._tickInterval = TICK_INTERVAL;
-    (bridge as unknown as CleanupRef)._persistence = persistence;
-    (bridge as unknown as CleanupRef)._disposeServices = () => {
-      orchestrator.dispose();
-      progressionOrchestrator.dispose();
-      worldCoordinator.dispose();
-      gatheringCoordinator.dispose();
-      oreGatheringCoordinator.dispose();
-      hideGatheringCoordinator.dispose();
-      fiberGatheringCoordinator.dispose();
-    };
+    registerGameRuntimeLifecycle(bridge, {
+      tick: tickFn,
+      tickIntervalMs: TICK_INTERVAL,
+      persistence,
+      dispose: () => {
+        orchestrator.dispose();
+        progressionOrchestrator.dispose();
+        worldCoordinator.dispose();
+        gatheringCoordinator.dispose();
+        oreGatheringCoordinator.dispose();
+        hideGatheringCoordinator.dispose();
+        fiberGatheringCoordinator.dispose();
+      },
+    });
 
     const useConsumable = (itemId: string): boolean => {
       const result = consumableRuntime.useConsumable(itemId);
@@ -1726,64 +1396,11 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     };
   }, []);
 
-  const initialLoadAttemptedRef = useRef(false);
-
-  // Start tick loop and setup auto-load / auto-save persistence listeners
-  useEffect(() => {
-    const b = services.bridge as unknown as CleanupRef;
-    const lifecycle = new RuntimeLifecycle();
-    const persistence = b._persistence!;
-    lifecycle.start(b._tickFn!, b._tickInterval);
-
-    // Auto-load existing save once on startup after runtime services and providers are ready
-    if (!initialLoadAttemptedRef.current) {
-      initialLoadAttemptedRef.current = true;
-      try {
-        if (services.hasSave()) {
-          const success = services.loadGame();
-          if (!success) {
-            persistence.setLoadFailed(true);
-            console.error("[Persistence] Auto-load failed: save slot existed but load returned false");
-          }
-        }
-      } catch (err) {
-        persistence.setLoadFailed(true);
-        console.error("[Persistence] Failed during initial save check or load:", err);
-      }
-    }
-
-    const stopAutosave = persistence.startAutosave(() => services.saveGame());
-
-    return () => {
-      lifecycle.stop();
-      stopAutosave();
-      const dispose = b._disposeServices as (() => void) | undefined;
-      if (dispose !== undefined) {
-        dispose();
-      }
-    };
-  }, [services]);
+  useGameRuntimeLifecycle(services);
 
   return (
-    <GameServiceContext.Provider value={services}>{children}</GameServiceContext.Provider>
+    <GameServicesContextProvider services={services}>
+      {children}
+    </GameServicesContextProvider>
   );
-}
-
-/**
- * Hook to access game services from any React component.
- */
-export function useGameServices(): GameServices {
-  const ctx = useContext(GameServiceContext);
-  if (ctx === null) {
-    throw new Error("useGameServices must be used within a GameProvider");
-  }
-  return ctx;
-}
-
-/**
- * Hook to subscribe to GameBridge state updates.
- */
-export function useGameBridge(): GameBridgeState {
-  const { bridge } = useGameServices();
-  return useSyncExternalStore(bridge.subscribe, bridge.getSnapshot);
 }
