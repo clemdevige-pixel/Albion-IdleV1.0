@@ -5,6 +5,15 @@ import {
   type ActorRenderManifest,
 } from "./RenderManifest";
 
+function hasAnimatedDeath(manifest: ActorRenderManifest): boolean {
+  const death = manifest.poses.death;
+  return death.frameWidth !== undefined
+    && death.frameHeight !== undefined
+    && death.startFrame !== undefined
+    && death.endFrame !== undefined
+    && death.frameRate !== undefined;
+}
+
 export function preloadActorManifest(
   scene: Phaser.Scene,
   manifest: ActorRenderManifest,
@@ -16,7 +25,15 @@ export function preloadActorManifest(
       frameHeight: animation.frameHeight,
     });
   }
-  scene.load.image(manifest.poses.death.textureKey, manifest.poses.death.assetPath);
+  const death = manifest.poses.death;
+  if (hasAnimatedDeath(manifest)) {
+    scene.load.spritesheet(death.textureKey, death.assetPath, {
+      frameWidth: death.frameWidth,
+      frameHeight: death.frameHeight,
+    });
+  } else {
+    scene.load.image(death.textureKey, death.assetPath);
+  }
 }
 
 export function registerActorAnimations(
@@ -36,6 +53,22 @@ export function registerActorAnimations(
       frameRate: animation.frameRate,
       repeat: animation.repeat,
     });
+  }
+
+  if (hasAnimatedDeath(manifest)) {
+    const death = manifest.poses.death;
+    const animationKey = getActorDeathAnimationKey(manifest);
+    if (!scene.anims.exists(animationKey)) {
+      scene.anims.create({
+        key: animationKey,
+        frames: scene.anims.generateFrameNumbers(death.textureKey, {
+          start: death.startFrame,
+          end: death.endFrame,
+        }),
+        frameRate: death.frameRate,
+        repeat: death.repeat ?? 0,
+      });
+    }
   }
 }
 
@@ -76,6 +109,10 @@ export function getActorAnimationKey(
   return `${manifest.id}:${state}`;
 }
 
+export function getActorDeathAnimationKey(manifest: ActorRenderManifest): string {
+  return `${manifest.id}:death`;
+}
+
 export function applyActorAnimation(
   sprite: Phaser.GameObjects.Sprite,
   manifest: ActorRenderManifest,
@@ -99,9 +136,13 @@ export function applyActorDeathPose(
   const death = manifest.poses.death;
   sprite
     .stop()
-    .setTexture(death.textureKey)
+    .setTexture(death.textureKey, 0)
     .setOrigin(manifest.origin.x, manifest.origin.y)
     .setPosition(manifest.offset.x, manifest.offset.y)
     .setDisplaySize(death.display.width, death.display.height)
     .setVisible(true);
+
+  if (hasAnimatedDeath(manifest)) {
+    sprite.play(getActorDeathAnimationKey(manifest));
+  }
 }
