@@ -6,19 +6,36 @@ import type {
   ResourceFamily,
 } from "@game/gameplay";
 import {
-  asRecipeId,
   asCraftStationId,
+  asRecipeId,
 } from "@game/gameplay";
 import {
-  BIRCH_PLANK_RECIPE,
-  COPPER_BAR_RECIPE,
-  PINE_PLANK_RECIPE,
-  IRON_BAR_RECIPE,
-  STURDY_LEATHER_RECIPE,
-  LINEN_CLOTH_RECIPE,
-  THICK_LEATHER_RECIPE,
-  FINE_CLOTH_RECIPE,
+  getProductionRefiningRecipe,
+  type ProductionRefiningRecipe,
 } from "../data/refiningRecipes.js";
+import type {
+  ProductionFamilyId,
+  ProductionTier,
+} from "../data/productionFamilyCatalog.js";
+
+type SupportedRefiningFamily = Extract<
+  ResourceFamily,
+  "Wood" | "Ore" | "Hide" | "Fiber"
+>;
+
+const SUPPORTED_REFINING_FAMILIES: readonly SupportedRefiningFamily[] = [
+  "Wood",
+  "Ore",
+  "Hide",
+  "Fiber",
+];
+
+const PRODUCTION_FAMILY_BY_REFINING_FAMILY = {
+  Wood: "wood",
+  Ore: "ore",
+  Hide: "hide",
+  Fiber: "fiber",
+} as const satisfies Record<SupportedRefiningFamily, ProductionFamilyId>;
 
 export interface ReservedRefiningRequirement {
   readonly itemId: string;
@@ -44,64 +61,111 @@ export interface RefiningRuntimeDependencies {
   readonly clothRefiningManager: RefiningManager;
 
   readonly inventoryManager: InventoryManager;
+
   /** @deprecated Production resources should use productionStorageId. */
   readonly heroId?: EntityId;
   readonly productionStorageId?: EntityId;
 
-  readonly getProductionTier: () => 3 | 4;
+  readonly getProductionTier: () => ProductionTier;
 }
 
-type WoodRecipe = typeof BIRCH_PLANK_RECIPE | typeof PINE_PLANK_RECIPE;
-type MetalRecipe = typeof COPPER_BAR_RECIPE | typeof IRON_BAR_RECIPE;
-type LeatherRecipe = typeof STURDY_LEATHER_RECIPE | typeof THICK_LEATHER_RECIPE;
-type ClothRecipe = typeof LINEN_CLOTH_RECIPE | typeof FINE_CLOTH_RECIPE;
+interface RefiningFamilyRuntimeDefinition {
+  readonly manager: RefiningManager;
+  readonly productionFamilyId: ProductionFamilyId;
+}
+
+interface RefiningFamilyState {
+  automatic: boolean;
+  reservedInputs: readonly ReservedRefiningRequirement[];
+  activeRecipe: ProductionRefiningRecipe | undefined;
+}
+
+function isSupportedRefiningFamily(
+  family: ResourceFamily,
+): family is SupportedRefiningFamily {
+  return SUPPORTED_REFINING_FAMILIES.includes(
+    family as SupportedRefiningFamily,
+  );
+}
 
 export class RefiningRuntime {
-  private readonly refiningManager: RefiningManager;
-  private readonly metalRefiningManager: RefiningManager;
-  private readonly leatherRefiningManager: RefiningManager;
-  private readonly clothRefiningManager: RefiningManager;
-
   private readonly inventoryManager: InventoryManager;
   private readonly productionStorageId: EntityId;
-  private readonly getProductionTier: () => 3 | 4;
+  private readonly getProductionTier: () => ProductionTier;
 
-  private automaticRefining = false;
-  private reservedRefiningInputs: readonly ReservedRefiningRequirement[] = [];
-  private activeWoodRefiningRecipe: WoodRecipe | undefined;
+  private readonly families: Readonly<
+    Record<SupportedRefiningFamily, RefiningFamilyRuntimeDefinition>
+  >;
 
-  private automaticMetalRefining = false;
-  private reservedMetalInputs: readonly ReservedRefiningRequirement[] = [];
-  private activeMetalRefiningRecipe: MetalRecipe | undefined;
+  private readonly states: Record<
+    SupportedRefiningFamily,
+    RefiningFamilyState
+  > = {
+    Wood: {
+      automatic: false,
+      reservedInputs: [],
+      activeRecipe: undefined,
+    },
+    Ore: {
+      automatic: false,
+      reservedInputs: [],
+      activeRecipe: undefined,
+    },
+    Hide: {
+      automatic: false,
+      reservedInputs: [],
+      activeRecipe: undefined,
+    },
+    Fiber: {
+      automatic: false,
+      reservedInputs: [],
+      activeRecipe: undefined,
+    },
+  };
 
-  private automaticLeatherRefining = false;
-  private reservedLeatherInputs: readonly ReservedRefiningRequirement[] = [];
-  private activeLeatherRefiningRecipe: LeatherRecipe | undefined;
-
-  private automaticClothRefining = false;
-  private reservedClothInputs: readonly ReservedRefiningRequirement[] = [];
-  private activeClothRefiningRecipe: ClothRecipe | undefined;
   private currentTickCounter = 0;
 
-  private readonly completionListeners = new Set<(evt: RefiningCompletionEvent) => void>();
+  private readonly completionListeners = new Set<
+    (evt: RefiningCompletionEvent) => void
+  >();
 
   public constructor(deps: RefiningRuntimeDependencies) {
-    this.refiningManager = deps.refiningManager;
-    this.metalRefiningManager = deps.metalRefiningManager;
-    this.leatherRefiningManager = deps.leatherRefiningManager;
-    this.clothRefiningManager = deps.clothRefiningManager;
-
     this.inventoryManager = deps.inventoryManager;
-    const storageId = deps.productionStorageId ?? deps.heroId;
-    if (storageId === undefined) throw new Error("RefiningRuntime requires production storage");
-    this.productionStorageId = storageId;
     this.getProductionTier = deps.getProductionTier;
+
+    const storageId = deps.productionStorageId ?? deps.heroId;
+    if (storageId === undefined) {
+      throw new Error("RefiningRuntime requires production storage");
+    }
+    this.productionStorageId = storageId;
+
+    this.families = {
+      Wood: {
+        manager: deps.refiningManager,
+        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Wood,
+      },
+      Ore: {
+        manager: deps.metalRefiningManager,
+        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Ore,
+      },
+      Hide: {
+        manager: deps.leatherRefiningManager,
+        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Hide,
+      },
+      Fiber: {
+        manager: deps.clothRefiningManager,
+        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Fiber,
+      },
+    };
 
     this.setupCompletedSubscriptions();
   }
 
-  public subscribeRefineCompleted(listener: (evt: RefiningCompletionEvent) => void): () => void {
+  public subscribeRefineCompleted(
+    listener: (evt: RefiningCompletionEvent) => void,
+  ): () => void {
     this.completionListeners.add(listener);
+
     return () => {
       this.completionListeners.delete(listener);
     };
@@ -115,79 +179,73 @@ export class RefiningRuntime {
 
   public tick(tickCounter: number): void {
     this.currentTickCounter = tickCounter;
-    this.refiningManager.tick(tickCounter);
-    this.metalRefiningManager.tick(tickCounter);
-    this.leatherRefiningManager.tick(tickCounter);
-    this.clothRefiningManager.tick(tickCounter);
+
+    for (const family of SUPPORTED_REFINING_FAMILIES) {
+      this.families[family].manager.tick(tickCounter);
+    }
   }
 
-  public getReservedInputs(family: ResourceFamily): readonly ReservedRefiningRequirement[] {
-    if (family === "Wood") return this.reservedRefiningInputs;
-    if (family === "Ore") return this.reservedMetalInputs;
-    if (family === "Hide") return this.reservedLeatherInputs;
-    if (family === "Fiber") return this.reservedClothInputs;
-    return [];
+  public getReservedInputs(
+    family: ResourceFamily,
+  ): readonly ReservedRefiningRequirement[] {
+    if (!isSupportedRefiningFamily(family)) return [];
+    return this.states[family].reservedInputs;
   }
 
   public getAllReservedInputs(): readonly ReservedRefiningRequirement[] {
-    return [
-      ...this.reservedRefiningInputs,
-      ...this.reservedMetalInputs,
-      ...this.reservedLeatherInputs,
-      ...this.reservedClothInputs,
-    ];
+    return SUPPORTED_REFINING_FAMILIES.flatMap(
+      (family) => this.states[family].reservedInputs,
+    );
   }
 
   public isRefiningActive(family: ResourceFamily): boolean {
-    if (family === "Wood") return this.refiningManager.getActiveSession() !== undefined;
-    if (family === "Ore") return this.metalRefiningManager.getActiveSession() !== undefined;
-    if (family === "Hide") return this.leatherRefiningManager.getActiveSession() !== undefined;
-    if (family === "Fiber") return this.clothRefiningManager.getActiveSession() !== undefined;
-    return false;
+    if (!isSupportedRefiningFamily(family)) return false;
+
+    return (
+      this.families[family].manager.getActiveSession() !== undefined
+    );
   }
 
-  private getWoodRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? PINE_PLANK_RECIPE : BIRCH_PLANK_RECIPE;
-  }
-
-  private getMetalRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? IRON_BAR_RECIPE : COPPER_BAR_RECIPE;
-  }
-
-  private getLeatherRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? THICK_LEATHER_RECIPE : STURDY_LEATHER_RECIPE;
-  }
-
-  private getClothRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? FINE_CLOTH_RECIPE : LINEN_CLOTH_RECIPE;
+  private getRecipe(
+    family: SupportedRefiningFamily,
+    tier: ProductionTier = this.getProductionTier(),
+  ): ProductionRefiningRecipe {
+    return getProductionRefiningRecipe(
+      this.families[family].productionFamilyId,
+      tier,
+    );
   }
 
   private reserveRefiningRequirements(
     requirements: readonly ReservedRefiningRequirement[],
   ): readonly ReservedRefiningRequirement[] | undefined {
-    const canPay = requirements.every((requirement) =>
-      this.inventoryManager.getTotalQuantity(this.productionStorageId, requirement.itemId) >= requirement.quantity);
+    const canPay = requirements.every(
+      (requirement) =>
+        this.inventoryManager.getTotalQuantity(
+          this.productionStorageId,
+          requirement.itemId,
+        ) >= requirement.quantity,
+    );
+
     if (!canPay) return undefined;
 
     const reserved: ReservedRefiningRequirement[] = [];
+
     for (const requirement of requirements) {
       const removed = this.inventoryManager.removeQuantity(
         this.productionStorageId,
         requirement.itemId,
         requirement.quantity,
       );
+
       if (!removed.ok) {
-        for (const entry of reserved) {
-          this.inventoryManager.addQuantity(this.productionStorageId, entry.itemId, entry.quantity, {
-            itemId: entry.itemId,
-            stackable: true,
-            maxStack: 999,
-          });
-        }
+        this.refundRefiningRequirements(reserved);
         return undefined;
       }
+
       reserved.push(requirement);
     }
+
     return reserved;
   }
 
@@ -195,348 +253,216 @@ export class RefiningRuntime {
     requirements: readonly ReservedRefiningRequirement[],
   ): void {
     for (const requirement of requirements) {
-      this.inventoryManager.addQuantity(this.productionStorageId, requirement.itemId, requirement.quantity, {
-        itemId: requirement.itemId,
-        stackable: true,
-        maxStack: 999,
-      });
+      this.inventoryManager.addQuantity(
+        this.productionStorageId,
+        requirement.itemId,
+        requirement.quantity,
+        {
+          itemId: requirement.itemId,
+          stackable: true,
+          maxStack: 999,
+        },
+      );
     }
   }
 
   private startRefiningCycle(
-    recipe = this.getWoodRecipe(),
+    family: SupportedRefiningFamily,
+    recipe: ProductionRefiningRecipe = this.getRecipe(family),
     tickCounter: number = 0,
   ): boolean {
-    const reserved = this.reserveRefiningRequirements(recipe.requirements);
-    if (reserved === undefined) return false;
-    this.reservedRefiningInputs = reserved;
-    this.activeWoodRefiningRecipe = recipe;
-    const started = this.refiningManager.startRefining(
-      {
-        recipeId: asRecipeId(recipe.id),
-        stationId: asCraftStationId(recipe.stationId),
-        quantity: recipe.outputQuantity,
-      },
-      { baseRefineTicks: recipe.durationTicks, speedModifier: 1 },
-      tickCounter,
-    );
-    if (!started.ok) {
-      this.refundRefiningRequirements(this.reservedRefiningInputs);
-      this.reservedRefiningInputs = [];
-      this.activeWoodRefiningRecipe = undefined;
-      return false;
-    }
-    return true;
-  }
+    const definition = this.families[family];
+    const state = this.states[family];
 
-  private startMetalRefiningCycle(
-    recipe = this.getMetalRecipe(),
-    tickCounter: number = 0,
-  ): boolean {
-    const reserved = this.reserveRefiningRequirements(recipe.requirements);
-    if (reserved === undefined) return false;
-    this.reservedMetalInputs = reserved;
-    this.activeMetalRefiningRecipe = recipe;
-    const started = this.metalRefiningManager.startRefining(
-      {
-        recipeId: asRecipeId(recipe.id),
-        stationId: asCraftStationId(recipe.stationId),
-        quantity: recipe.outputQuantity,
-      },
-      { baseRefineTicks: recipe.durationTicks, speedModifier: 1 },
-      tickCounter,
+    const reserved = this.reserveRefiningRequirements(
+      recipe.requirements,
     );
-    if (!started.ok) {
-      this.refundRefiningRequirements(this.reservedMetalInputs);
-      this.reservedMetalInputs = [];
-      this.activeMetalRefiningRecipe = undefined;
-      return false;
-    }
-    return true;
-  }
 
-  private startLeatherRefiningCycle(
-    recipe = this.getLeatherRecipe(),
-    tickCounter: number = 0,
-  ): boolean {
-    const reserved = this.reserveRefiningRequirements(recipe.requirements);
     if (reserved === undefined) return false;
-    this.reservedLeatherInputs = reserved;
-    this.activeLeatherRefiningRecipe = recipe;
-    const started = this.leatherRefiningManager.startRefining(
-      {
-        recipeId: asRecipeId(recipe.id),
-        stationId: asCraftStationId(recipe.stationId),
-        quantity: recipe.outputQuantity,
-      },
-      { baseRefineTicks: recipe.durationTicks, speedModifier: 1 },
-      tickCounter,
-    );
-    if (!started.ok) {
-      this.refundRefiningRequirements(this.reservedLeatherInputs);
-      this.reservedLeatherInputs = [];
-      this.activeLeatherRefiningRecipe = undefined;
-      return false;
-    }
-    return true;
-  }
 
-  private startClothRefiningCycle(
-    recipe = this.getClothRecipe(),
-    tickCounter: number = 0,
-  ): boolean {
-    const reserved = this.reserveRefiningRequirements(recipe.requirements);
-    if (reserved === undefined) return false;
-    this.reservedClothInputs = reserved;
-    this.activeClothRefiningRecipe = recipe;
-    const started = this.clothRefiningManager.startRefining(
+    state.reservedInputs = reserved;
+    state.activeRecipe = recipe;
+
+    const started = definition.manager.startRefining(
       {
         recipeId: asRecipeId(recipe.id),
         stationId: asCraftStationId(recipe.stationId),
         quantity: recipe.outputQuantity,
       },
-      { baseRefineTicks: recipe.durationTicks, speedModifier: 1 },
+      {
+        baseRefineTicks: recipe.durationTicks,
+        speedModifier: 1,
+      },
       tickCounter,
     );
+
     if (!started.ok) {
-      this.refundRefiningRequirements(this.reservedClothInputs);
-      this.reservedClothInputs = [];
-      this.activeClothRefiningRecipe = undefined;
+      this.refundRefiningRequirements(state.reservedInputs);
+      state.reservedInputs = [];
+      state.activeRecipe = undefined;
       return false;
     }
+
     return true;
   }
 
   private setupCompletedSubscriptions(): void {
-    this.refiningManager.events.subscribe("refine:completed", () => {
-      const recipe = this.activeWoodRefiningRecipe ?? this.getWoodRecipe();
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.outputItemId,
-        recipe.outputQuantity,
-        { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
+    for (const family of SUPPORTED_REFINING_FAMILIES) {
+      this.families[family].manager.events.subscribe(
+        "refine:completed",
+        () => {
+          this.completeRefiningCycle(family);
+        },
       );
-      if (!added.ok) {
-        this.refundRefiningRequirements(this.reservedRefiningInputs);
-        this.automaticRefining = false;
-        this.activeWoodRefiningRecipe = undefined;
-        this.reservedRefiningInputs = [];
-        this.refiningManager.clear();
-      } else {
-        this.reservedRefiningInputs = [];
-        this.refiningManager.clear();
-        if (this.automaticRefining && !this.startRefiningCycle(recipe, this.currentTickCounter)) {
-          this.automaticRefining = false;
-          this.activeWoodRefiningRecipe = undefined;
-        } else if (!this.automaticRefining) {
-          this.activeWoodRefiningRecipe = undefined;
-        }
-      }
-      this.notifyRefineCompleted({
-        family: "Wood",
-        added: added.ok,
-        outputItemId: recipe.outputItemId,
-        outputQuantity: recipe.outputQuantity,
-      });
-    });
+    }
+  }
 
-    this.metalRefiningManager.events.subscribe("refine:completed", () => {
-      const recipe = this.activeMetalRefiningRecipe ?? this.getMetalRecipe();
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.outputItemId,
-        recipe.outputQuantity,
-        { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
-      );
-      if (!added.ok) {
-        this.refundRefiningRequirements(this.reservedMetalInputs);
-        this.automaticMetalRefining = false;
-        this.activeMetalRefiningRecipe = undefined;
-        this.reservedMetalInputs = [];
-        this.metalRefiningManager.clear();
-      } else {
-        this.reservedMetalInputs = [];
-        this.metalRefiningManager.clear();
-        if (this.automaticMetalRefining && !this.startMetalRefiningCycle(recipe, this.currentTickCounter)) {
-          this.automaticMetalRefining = false;
-          this.activeMetalRefiningRecipe = undefined;
-        } else if (!this.automaticMetalRefining) {
-          this.activeMetalRefiningRecipe = undefined;
-        }
-      }
-      this.notifyRefineCompleted({
-        family: "Ore",
-        added: added.ok,
-        outputItemId: recipe.outputItemId,
-        outputQuantity: recipe.outputQuantity,
-      });
-    });
+  private completeRefiningCycle(
+    family: SupportedRefiningFamily,
+  ): void {
+    const definition = this.families[family];
+    const state = this.states[family];
 
-    this.leatherRefiningManager.events.subscribe("refine:completed", () => {
-      const recipe = this.activeLeatherRefiningRecipe ?? this.getLeatherRecipe();
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.outputItemId,
-        recipe.outputQuantity,
-        { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
-      );
-      if (!added.ok) {
-        this.refundRefiningRequirements(this.reservedLeatherInputs);
-        this.automaticLeatherRefining = false;
-        this.activeLeatherRefiningRecipe = undefined;
-        this.reservedLeatherInputs = [];
-        this.leatherRefiningManager.clear();
-      } else {
-        this.reservedLeatherInputs = [];
-        this.leatherRefiningManager.clear();
-        if (this.automaticLeatherRefining && !this.startLeatherRefiningCycle(recipe, this.currentTickCounter)) {
-          this.automaticLeatherRefining = false;
-          this.activeLeatherRefiningRecipe = undefined;
-        } else if (!this.automaticLeatherRefining) {
-          this.activeLeatherRefiningRecipe = undefined;
-        }
-      }
-      this.notifyRefineCompleted({
-        family: "Hide",
-        added: added.ok,
-        outputItemId: recipe.outputItemId,
-        outputQuantity: recipe.outputQuantity,
-      });
-    });
+    const recipe =
+      state.activeRecipe ?? this.getRecipe(family);
 
-    this.clothRefiningManager.events.subscribe("refine:completed", () => {
-      const recipe = this.activeClothRefiningRecipe ?? this.getClothRecipe();
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.outputItemId,
-        recipe.outputQuantity,
-        { itemId: recipe.outputItemId, stackable: true, maxStack: 999 },
-      );
-      if (!added.ok) {
-        this.refundRefiningRequirements(this.reservedClothInputs);
-        this.automaticClothRefining = false;
-        this.activeClothRefiningRecipe = undefined;
-        this.reservedClothInputs = [];
-        this.clothRefiningManager.clear();
-      } else {
-        this.reservedClothInputs = [];
-        this.clothRefiningManager.clear();
-        if (this.automaticClothRefining && !this.startClothRefiningCycle(recipe, this.currentTickCounter)) {
-          this.automaticClothRefining = false;
-          this.activeClothRefiningRecipe = undefined;
-        } else if (!this.automaticClothRefining) {
-          this.activeClothRefiningRecipe = undefined;
-        }
+    const added = this.inventoryManager.addQuantity(
+      this.productionStorageId,
+      recipe.outputItemId,
+      recipe.outputQuantity,
+      {
+        itemId: recipe.outputItemId,
+        stackable: true,
+        maxStack: 999,
+      },
+    );
+
+    if (!added.ok) {
+      this.refundRefiningRequirements(state.reservedInputs);
+
+      state.automatic = false;
+      state.activeRecipe = undefined;
+      state.reservedInputs = [];
+
+      definition.manager.clear();
+    } else {
+      state.reservedInputs = [];
+      definition.manager.clear();
+
+      if (
+        state.automatic &&
+        !this.startRefiningCycle(
+          family,
+          recipe,
+          this.currentTickCounter,
+        )
+      ) {
+        state.automatic = false;
+        state.activeRecipe = undefined;
+      } else if (!state.automatic) {
+        state.activeRecipe = undefined;
       }
-      this.notifyRefineCompleted({
-        family: "Fiber",
-        added: added.ok,
-        outputItemId: recipe.outputItemId,
-        outputQuantity: recipe.outputQuantity,
-      });
+    }
+
+    this.notifyRefineCompleted({
+      family,
+      added: added.ok,
+      outputItemId: recipe.outputItemId,
+      outputQuantity: recipe.outputQuantity,
     });
   }
 
-  public toggleRefining(tickCounter: number = 0): ToggleRefiningResult {
-    if (this.automaticRefining) {
-      this.automaticRefining = false;
-      const session = this.refiningManager.getActiveSession();
-      if (session !== undefined) {
-        this.refiningManager.cancelSession(session.id);
-        this.refundRefiningRequirements(this.reservedRefiningInputs);
-        this.reservedRefiningInputs = [];
-        this.activeWoodRefiningRecipe = undefined;
-        this.refiningManager.clear();
-      }
-      return { action: "stopped", family: "Wood" };
+  private stopRefiningFamily(
+    family: SupportedRefiningFamily,
+  ): void {
+    const definition = this.families[family];
+    const state = this.states[family];
+
+    state.automatic = false;
+
+    const session = definition.manager.getActiveSession();
+
+    if (session !== undefined) {
+      definition.manager.cancelSession(session.id);
+      this.refundRefiningRequirements(state.reservedInputs);
     }
 
-    this.automaticRefining = true;
-    if (!this.startRefiningCycle(this.getWoodRecipe(), tickCounter)) {
-      this.automaticRefining = false;
-      return { action: "failed", family: "Wood" };
-    }
-    return { action: "started", family: "Wood" };
+    state.reservedInputs = [];
+    state.activeRecipe = undefined;
+    definition.manager.clear();
   }
 
-  public toggleMetalRefining(tickCounter: number = 0): ToggleRefiningResult {
-    if (this.automaticMetalRefining) {
-      this.automaticMetalRefining = false;
-      const session = this.metalRefiningManager.getActiveSession();
-      if (session !== undefined) {
-        this.metalRefiningManager.cancelSession(session.id);
-        this.refundRefiningRequirements(this.reservedMetalInputs);
-        this.reservedMetalInputs = [];
-        this.activeMetalRefiningRecipe = undefined;
-        this.metalRefiningManager.clear();
-      }
-      return { action: "stopped", family: "Ore" };
+  private toggleRefiningFamily(
+    family: SupportedRefiningFamily,
+    tickCounter: number = 0,
+  ): ToggleRefiningResult {
+    const state = this.states[family];
+
+    if (state.automatic) {
+      this.stopRefiningFamily(family);
+      return { action: "stopped", family };
     }
 
-    this.automaticMetalRefining = true;
-    if (!this.startMetalRefiningCycle(this.getMetalRecipe(), tickCounter)) {
-      this.automaticMetalRefining = false;
-      return { action: "failed", family: "Ore" };
+    state.automatic = true;
+
+    if (
+      !this.startRefiningCycle(
+        family,
+        this.getRecipe(family),
+        tickCounter,
+      )
+    ) {
+      state.automatic = false;
+      return { action: "failed", family };
     }
-    return { action: "started", family: "Ore" };
+
+    return { action: "started", family };
   }
 
-  public toggleLeatherRefining(tickCounter: number = 0): ToggleRefiningResult {
-    if (this.automaticLeatherRefining) {
-      this.automaticLeatherRefining = false;
-      const session = this.leatherRefiningManager.getActiveSession();
-      if (session !== undefined) {
-        this.leatherRefiningManager.cancelSession(session.id);
-        this.refundRefiningRequirements(this.reservedLeatherInputs);
-        this.reservedLeatherInputs = [];
-        this.activeLeatherRefiningRecipe = undefined;
-        this.leatherRefiningManager.clear();
-      }
-      return { action: "stopped", family: "Hide" };
-    }
-
-    this.automaticLeatherRefining = true;
-    if (!this.startLeatherRefiningCycle(this.getLeatherRecipe(), tickCounter)) {
-      this.automaticLeatherRefining = false;
-      return { action: "failed", family: "Hide" };
-    }
-    return { action: "started", family: "Hide" };
+  public toggleRefining(
+    tickCounter: number = 0,
+  ): ToggleRefiningResult {
+    return this.toggleRefiningFamily("Wood", tickCounter);
   }
 
-  public toggleClothRefining(tickCounter: number = 0): ToggleRefiningResult {
-    if (this.automaticClothRefining) {
-      this.automaticClothRefining = false;
-      const session = this.clothRefiningManager.getActiveSession();
-      if (session !== undefined) {
-        this.clothRefiningManager.cancelSession(session.id);
-        this.refundRefiningRequirements(this.reservedClothInputs);
-        this.reservedClothInputs = [];
-        this.activeClothRefiningRecipe = undefined;
-        this.clothRefiningManager.clear();
-      }
-      return { action: "stopped", family: "Fiber" };
-    }
-
-    this.automaticClothRefining = true;
-    if (!this.startClothRefiningCycle(this.getClothRecipe(), tickCounter)) {
-      this.automaticClothRefining = false;
-      return { action: "failed", family: "Fiber" };
-    }
-    return { action: "started", family: "Fiber" };
+  public toggleMetalRefining(
+    tickCounter: number = 0,
+  ): ToggleRefiningResult {
+    return this.toggleRefiningFamily("Ore", tickCounter);
   }
 
-  public refineAllAvailable(tickCounter: number = 0): { readonly startedAtLeastOne: boolean } {
-    const refiningLines = [
-      { manager: this.refiningManager, toggle: () => this.toggleRefining(tickCounter) },
-      { manager: this.metalRefiningManager, toggle: () => this.toggleMetalRefining(tickCounter) },
-      { manager: this.leatherRefiningManager, toggle: () => this.toggleLeatherRefining(tickCounter) },
-      { manager: this.clothRefiningManager, toggle: () => this.toggleClothRefining(tickCounter) },
-    ] as const;
+  public toggleLeatherRefining(
+    tickCounter: number = 0,
+  ): ToggleRefiningResult {
+    return this.toggleRefiningFamily("Hide", tickCounter);
+  }
+
+  public toggleClothRefining(
+    tickCounter: number = 0,
+  ): ToggleRefiningResult {
+    return this.toggleRefiningFamily("Fiber", tickCounter);
+  }
+
+  public refineAllAvailable(
+    tickCounter: number = 0,
+  ): { readonly startedAtLeastOne: boolean } {
     let startedAtLeastOne = false;
-    for (const line of refiningLines) {
-      if (line.manager.getActiveSession() !== undefined) continue;
-      if (line.toggle().action === "started") startedAtLeastOne = true;
+
+    for (const family of SUPPORTED_REFINING_FAMILIES) {
+      if (
+        this.families[family].manager.getActiveSession() !== undefined
+      ) {
+        continue;
+      }
+
+      if (
+        this.toggleRefiningFamily(family, tickCounter).action ===
+        "started"
+      ) {
+        startedAtLeastOne = true;
+      }
     }
+
     return { startedAtLeastOne };
   }
 }
@@ -549,11 +475,15 @@ function isReservedRefiningRequirement(
   value: unknown,
 ): value is ReservedRefiningRequirement {
   if (value === null || typeof value !== "object") return false;
+
   const candidate = value as Record<string, unknown>;
-  return typeof candidate.itemId === "string"
-    && typeof candidate.quantity === "number"
-    && Number.isInteger(candidate.quantity)
-    && candidate.quantity > 0;
+
+  return (
+    typeof candidate.itemId === "string" &&
+    typeof candidate.quantity === "number" &&
+    Number.isInteger(candidate.quantity) &&
+    candidate.quantity > 0
+  );
 }
 
 export class RefiningSaveProvider implements SaveProvider {
@@ -566,27 +496,49 @@ export class RefiningSaveProvider implements SaveProvider {
   ) {}
 
   save(): unknown {
-    const reservedInputs = this.refiningRuntime.getAllReservedInputs();
-    return { reservedInputs } satisfies SavedRefiningRecoveryPayload;
+    const reservedInputs =
+      this.refiningRuntime.getAllReservedInputs();
+
+    return {
+      reservedInputs,
+    } satisfies SavedRefiningRecoveryPayload;
   }
 
   load(data: unknown): void {
-    if (data === null || typeof data !== "object" || !("reservedInputs" in data)) {
+    if (
+      data === null ||
+      typeof data !== "object" ||
+      !("reservedInputs" in data)
+    ) {
       return;
     }
+
     const rawReservedInputs: unknown = data.reservedInputs;
-    if (!Array.isArray(rawReservedInputs) || rawReservedInputs.length === 0) {
+
+    if (
+      !Array.isArray(rawReservedInputs) ||
+      rawReservedInputs.length === 0
+    ) {
       return;
     }
-    const reservedInputs = rawReservedInputs.filter(isReservedRefiningRequirement);
+
+    const reservedInputs = rawReservedInputs.filter(
+      isReservedRefiningRequirement,
+    );
 
     const productionStorageId = this.getProductionStorageId();
+
     for (const input of reservedInputs) {
-      this.inventoryManager.addQuantity(productionStorageId, input.itemId, input.quantity, {
-        itemId: input.itemId,
-        stackable: true,
-        maxStack: 999,
-      });
+      this.inventoryManager.addQuantity(
+        productionStorageId,
+        input.itemId,
+        input.quantity,
+        {
+          itemId: input.itemId,
+          stackable: true,
+          maxStack: 999,
+        },
+      );
     }
   }
 }

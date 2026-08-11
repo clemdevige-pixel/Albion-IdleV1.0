@@ -1,16 +1,16 @@
 import type { EntityId } from "@game/core";
 import type {
+  ExperienceService,
   GatheringCoordinator,
   GatheringManager,
   GatheringSessionId,
   GatheringToolDefinition,
   InventoryManager,
+  MasteryId,
   MasteryService,
-  ExperienceService,
   ProgressionOrchestrator,
   ResourceFamily,
   ResourceNodeId,
-  MasteryId,
 } from "@game/gameplay";
 import { asGatheringSessionId } from "@game/gameplay";
 import {
@@ -37,10 +37,41 @@ export {
 const ACTIVE_GATHERING_PERFECT_BONUS_RATIO = 0.04;
 const ACTIVE_GATHERING_CORRECT_BONUS_RATIO = 0.02;
 
+type ProductionTier = 3 | 4;
+type SupportedGatheringFamily = Extract<
+  ResourceFamily,
+  "Wood" | "Ore" | "Hide" | "Fiber"
+>;
+
+const SUPPORTED_GATHERING_FAMILIES: readonly SupportedGatheringFamily[] = [
+  "Wood",
+  "Ore",
+  "Hide",
+  "Fiber",
+];
+
+interface GatheringFamilyRuntime {
+  readonly coordinator: GatheringCoordinator;
+  readonly manager: GatheringManager;
+  readonly masteryId: MasteryId;
+  readonly getNodeId: (tier: ProductionTier) => ResourceNodeId;
+  readonly getTool: (tier: ProductionTier) => GatheringToolDefinition;
+  readonly getRawItemId: (tier: ProductionTier) => string;
+}
+
+interface MutableGatheringState {
+  automatic: boolean;
+  miniGame: {
+    sessionId: GatheringSessionId | null;
+    strikesUsed: number;
+    tier: ProductionTier | null;
+  };
+}
+
 export interface ActiveGatheringMiniGameState {
   readonly sessionId: GatheringSessionId | null;
   readonly strikesUsed: number;
-  readonly tier: 3 | 4 | null;
+  readonly tier: ProductionTier | null;
 }
 
 export type ToggleGatheringResult =
@@ -49,7 +80,11 @@ export type ToggleGatheringResult =
   | { readonly action: "failed"; readonly family: ResourceFamily };
 
 export type GatheringStrikeResult =
-  | { readonly ok: true; readonly family: ResourceFamily; readonly strikesUsed: number }
+  | {
+      readonly ok: true;
+      readonly family: ResourceFamily;
+      readonly strikesUsed: number;
+    }
   | { readonly ok: false };
 
 export interface GatheringCompletionEvent {
@@ -57,7 +92,7 @@ export interface GatheringCompletionEvent {
   readonly added: boolean;
   readonly quantityAdded: number;
   readonly itemLabel: string;
-  readonly completedTier: 3 | 4;
+  readonly completedTier: ProductionTier;
 }
 
 export interface GatheringNodesAndTools {
@@ -94,74 +129,127 @@ export interface GatheringRuntimeDependencies {
   readonly masteryService: MasteryService;
   readonly experienceService: ExperienceService;
   readonly progressionOrchestrator: ProgressionOrchestrator;
+
   /** @deprecated Production resources should use productionStorageId. */
   readonly heroId?: EntityId;
   readonly productionStorageId?: EntityId;
 
   readonly nodesAndTools: GatheringNodesAndTools;
-  readonly getProductionTier: () => 3 | 4;
+  readonly getProductionTier: () => ProductionTier;
+}
+
+function isSupportedGatheringFamily(
+  family: ResourceFamily,
+): family is SupportedGatheringFamily {
+  return SUPPORTED_GATHERING_FAMILIES.includes(
+    family as SupportedGatheringFamily,
+  );
 }
 
 export class GatheringRuntime {
-  private readonly gatheringCoordinator: GatheringCoordinator;
-  private readonly gatheringManager: GatheringManager;
-  private readonly oreGatheringCoordinator: GatheringCoordinator;
-  private readonly oreGatheringManager: GatheringManager;
-  private readonly hideGatheringCoordinator: GatheringCoordinator;
-  private readonly hideGatheringManager: GatheringManager;
-  private readonly fiberGatheringCoordinator: GatheringCoordinator;
-  private readonly fiberGatheringManager: GatheringManager;
-
   private readonly inventoryManager: InventoryManager;
   private readonly masteryService: MasteryService;
   private readonly experienceService: ExperienceService;
   private readonly productionStorageId: EntityId;
-  private readonly nodesAndTools: GatheringNodesAndTools;
-  private readonly getProductionTier: () => 3 | 4;
+  private readonly getProductionTier: () => ProductionTier;
 
-  private readonly activeGatheringMiniGames: Record<ResourceFamily, {
-    sessionId: GatheringSessionId | null;
-    strikesUsed: number;
-    tier: 3 | 4 | null;
-  }> = {
-    Wood: { sessionId: null, strikesUsed: 0, tier: null },
-    Ore: { sessionId: null, strikesUsed: 0, tier: null },
-    Hide: { sessionId: null, strikesUsed: 0, tier: null },
-    Fiber: { sessionId: null, strikesUsed: 0, tier: null },
-    Stone: { sessionId: null, strikesUsed: 0, tier: null },
+  private readonly families: Readonly<
+    Record<SupportedGatheringFamily, GatheringFamilyRuntime>
+  >;
+
+  private readonly states: Record<
+    SupportedGatheringFamily,
+    MutableGatheringState
+  > = {
+    Wood: {
+      automatic: false,
+      miniGame: { sessionId: null, strikesUsed: 0, tier: null },
+    },
+    Ore: {
+      automatic: false,
+      miniGame: { sessionId: null, strikesUsed: 0, tier: null },
+    },
+    Hide: {
+      automatic: false,
+      miniGame: { sessionId: null, strikesUsed: 0, tier: null },
+    },
+    Fiber: {
+      automatic: false,
+      miniGame: { sessionId: null, strikesUsed: 0, tier: null },
+    },
   };
 
-  private automaticGathering = false;
-  private automaticOreGathering = false;
-  private automaticHideGathering = false;
-  private automaticFiberGathering = false;
   private currentTickCounter = 0;
 
-  private readonly completionListeners = new Set<(evt: GatheringCompletionEvent) => void>();
+  private readonly completionListeners = new Set<
+    (evt: GatheringCompletionEvent) => void
+  >();
 
   public constructor(deps: GatheringRuntimeDependencies) {
-    this.gatheringCoordinator = deps.gatheringCoordinator;
-    this.gatheringManager = deps.gatheringManager;
-    this.oreGatheringCoordinator = deps.oreGatheringCoordinator;
-    this.oreGatheringManager = deps.oreGatheringManager;
-    this.hideGatheringCoordinator = deps.hideGatheringCoordinator;
-    this.hideGatheringManager = deps.hideGatheringManager;
-    this.fiberGatheringCoordinator = deps.fiberGatheringCoordinator;
-    this.fiberGatheringManager = deps.fiberGatheringManager;
-
     this.inventoryManager = deps.inventoryManager;
     this.masteryService = deps.masteryService;
     this.experienceService = deps.experienceService;
-    const storageId = deps.productionStorageId ?? deps.heroId;
-    if (storageId === undefined) throw new Error("GatheringRuntime requires production storage");
-    this.productionStorageId = storageId;
-    this.nodesAndTools = deps.nodesAndTools;
     this.getProductionTier = deps.getProductionTier;
+
+    const storageId = deps.productionStorageId ?? deps.heroId;
+    if (storageId === undefined) {
+      throw new Error("GatheringRuntime requires production storage");
+    }
+    this.productionStorageId = storageId;
+
+    const nodes = deps.nodesAndTools;
+
+    this.families = {
+      Wood: {
+        coordinator: deps.gatheringCoordinator,
+        manager: deps.gatheringManager,
+        masteryId: WOOD_GATHERING_MASTERY_ID,
+        getNodeId: (tier) =>
+          tier === 4 ? nodes.pineNodeId : nodes.birchNodeId,
+        getTool: (tier) =>
+          tier === 4 ? nodes.tier4Axe : nodes.starterAxe,
+        getRawItemId: (tier) => getWoodRecipe(tier).rawItemId,
+      },
+      Ore: {
+        coordinator: deps.oreGatheringCoordinator,
+        manager: deps.oreGatheringManager,
+        masteryId: ORE_GATHERING_MASTERY_ID,
+        getNodeId: (tier) =>
+          tier === 4 ? nodes.ironNodeId : nodes.copperNodeId,
+        getTool: (tier) =>
+          tier === 4 ? nodes.tier4Pickaxe : nodes.starterPickaxe,
+        getRawItemId: (tier) => getMetalRecipe(tier).rawItemId,
+      },
+      Hide: {
+        coordinator: deps.hideGatheringCoordinator,
+        manager: deps.hideGatheringManager,
+        masteryId: HIDE_GATHERING_MASTERY_ID,
+        getNodeId: (tier) =>
+          tier === 4 ? nodes.thickHideNodeId : nodes.sturdyHideNodeId,
+        getTool: (tier) =>
+          tier === 4
+            ? nodes.tier4SkinningKnife
+            : nodes.starterSkinningKnife,
+        getRawItemId: (tier) => getLeatherRecipe(tier).rawItemId,
+      },
+      Fiber: {
+        coordinator: deps.fiberGatheringCoordinator,
+        manager: deps.fiberGatheringManager,
+        masteryId: FIBER_GATHERING_MASTERY_ID,
+        getNodeId: (tier) =>
+          tier === 4 ? nodes.fineFiberNodeId : nodes.linenFiberNodeId,
+        getTool: (tier) =>
+          tier === 4 ? nodes.tier4Sickle : nodes.starterSickle,
+        getRawItemId: (tier) => getClothRecipe(tier).rawItemId,
+      },
+    };
 
     this.setupCompletedSubscriptions();
   }
 
-  public subscribeGatherCompleted(listener: (evt: GatheringCompletionEvent) => void): () => void {
+  public subscribeGatherCompleted(
+    listener: (evt: GatheringCompletionEvent) => void,
+  ): () => void {
     this.completionListeners.add(listener);
     return () => {
       this.completionListeners.delete(listener);
@@ -174,8 +262,14 @@ export class GatheringRuntime {
     }
   }
 
-  public getActiveMiniGameState(family: ResourceFamily): ActiveGatheringMiniGameState {
-    const state = this.activeGatheringMiniGames[family];
+  public getActiveMiniGameState(
+    family: ResourceFamily,
+  ): ActiveGatheringMiniGameState {
+    if (!isSupportedGatheringFamily(family)) {
+      return { sessionId: null, strikesUsed: 0, tier: null };
+    }
+
+    const state = this.states[family].miniGame;
     return {
       sessionId: state.sessionId,
       strikesUsed: state.strikesUsed,
@@ -185,22 +279,32 @@ export class GatheringRuntime {
 
   public tick(tickCounter: number): void {
     this.currentTickCounter = tickCounter;
-    this.gatheringCoordinator.tick(tickCounter);
-    this.oreGatheringCoordinator.tick(tickCounter);
-    this.hideGatheringCoordinator.tick(tickCounter);
-    this.fiberGatheringCoordinator.tick(tickCounter);
+
+    for (const family of SUPPORTED_GATHERING_FAMILIES) {
+      this.families[family].coordinator.tick(tickCounter);
+    }
   }
 
   private beginActiveGatheringMiniGame(
-    resourceFamily: ResourceFamily,
+    family: SupportedGatheringFamily,
     sessionId: GatheringSessionId,
-    tier: 3 | 4,
+    tier: ProductionTier,
   ): void {
-    this.activeGatheringMiniGames[resourceFamily] = { sessionId, strikesUsed: 0, tier };
+    this.states[family].miniGame = {
+      sessionId,
+      strikesUsed: 0,
+      tier,
+    };
   }
 
-  private endActiveGatheringMiniGame(resourceFamily: ResourceFamily): void {
-    this.activeGatheringMiniGames[resourceFamily] = { sessionId: null, strikesUsed: 0, tier: null };
+  private endActiveGatheringMiniGame(
+    family: SupportedGatheringFamily,
+  ): void {
+    this.states[family].miniGame = {
+      sessionId: null,
+      strikesUsed: 0,
+      tier: null,
+    };
   }
 
   public getGatheringMasteryLevel(masteryId: MasteryId): number {
@@ -210,7 +314,8 @@ export class GatheringRuntime {
   public getHeroGatheringMasteryModifier(masteryId: MasteryId): number {
     return Math.max(
       0.5,
-      1 - Math.min(100, this.getGatheringMasteryLevel(masteryId)) * 0.005,
+      1 -
+        Math.min(100, this.getGatheringMasteryLevel(masteryId)) * 0.005,
     );
   }
 
@@ -218,15 +323,20 @@ export class GatheringRuntime {
     const tier = this.getProductionTier();
     const baseTicks = tier === 4 ? 36 : 24;
     const toolModifier = tier === 4 ? 0.85 : 1;
+
     return Math.max(
       1,
-      Math.ceil(baseTicks * toolModifier * this.getHeroGatheringMasteryModifier(masteryId)),
+      Math.ceil(
+        baseTicks *
+          toolModifier *
+          this.getHeroGatheringMasteryModifier(masteryId),
+      ),
     );
   }
 
   private awardGatheringMastery(
     masteryId: MasteryId,
-    gatheredTier: 3 | 4 = this.getProductionTier(),
+    gatheredTier: ProductionTier = this.getProductionTier(),
   ): void {
     this.experienceService.addExperience(
       masteryId,
@@ -235,339 +345,216 @@ export class GatheringRuntime {
     );
   }
 
-  private startGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
+  private startGatheringCycle(
+    family: SupportedGatheringFamily,
+    cycleTier: ProductionTier = this.getProductionTier(),
+    tickCounter: number = 0,
+  ): boolean {
+    const definition = this.families[family];
+
     if (
-      this.getGatheringMasteryLevel(WOOD_GATHERING_MASTERY_ID)
-      < getRequiredGatheringMasteryForTier(cycleTier)
+      this.getGatheringMasteryLevel(definition.masteryId) <
+      getRequiredGatheringMasteryForTier(cycleTier)
     ) {
       return false;
     }
-    const baseTool = cycleTier === 4 ? this.nodesAndTools.tier4Axe : this.nodesAndTools.starterAxe;
-    const result = this.gatheringCoordinator.startGathering(
-      cycleTier === 4 ? this.nodesAndTools.pineNodeId : this.nodesAndTools.birchNodeId,
-      [{
-        ...baseTool,
-        speedModifier:
-          baseTool.speedModifier * this.getHeroGatheringMasteryModifier(WOOD_GATHERING_MASTERY_ID),
-      }],
+
+    const baseTool = definition.getTool(cycleTier);
+    const result = definition.coordinator.startGathering(
+      definition.getNodeId(cycleTier),
+      [
+        {
+          ...baseTool,
+          speedModifier:
+            baseTool.speedModifier *
+            this.getHeroGatheringMasteryModifier(definition.masteryId),
+        },
+      ],
       tickCounter,
     );
+
     if (result.ok) {
-      this.beginActiveGatheringMiniGame("Wood", asGatheringSessionId(result.sessionId), cycleTier);
+      this.beginActiveGatheringMiniGame(
+        family,
+        asGatheringSessionId(result.sessionId),
+        cycleTier,
+      );
     }
-    return result.ok;
-  }
 
-  private startOreGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
-    if (
-      this.getGatheringMasteryLevel(ORE_GATHERING_MASTERY_ID)
-      < getRequiredGatheringMasteryForTier(cycleTier)
-    ) {
-      return false;
-    }
-    const baseTool = cycleTier === 4 ? this.nodesAndTools.tier4Pickaxe : this.nodesAndTools.starterPickaxe;
-    const result = this.oreGatheringCoordinator.startGathering(
-      cycleTier === 4 ? this.nodesAndTools.ironNodeId : this.nodesAndTools.copperNodeId,
-      [{
-        ...baseTool,
-        speedModifier:
-          baseTool.speedModifier * this.getHeroGatheringMasteryModifier(ORE_GATHERING_MASTERY_ID),
-      }],
-      tickCounter,
-    );
-    if (result.ok) this.beginActiveGatheringMiniGame("Ore", asGatheringSessionId(result.sessionId), cycleTier);
-    return result.ok;
-  }
-
-  private startHideGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
-    if (
-      this.getGatheringMasteryLevel(HIDE_GATHERING_MASTERY_ID)
-      < getRequiredGatheringMasteryForTier(cycleTier)
-    ) {
-      return false;
-    }
-    const baseTool = cycleTier === 4 ? this.nodesAndTools.tier4SkinningKnife : this.nodesAndTools.starterSkinningKnife;
-    const result = this.hideGatheringCoordinator.startGathering(
-      cycleTier === 4 ? this.nodesAndTools.thickHideNodeId : this.nodesAndTools.sturdyHideNodeId,
-      [{
-        ...baseTool,
-        speedModifier:
-          baseTool.speedModifier * this.getHeroGatheringMasteryModifier(HIDE_GATHERING_MASTERY_ID),
-      }],
-      tickCounter,
-    );
-    if (result.ok) this.beginActiveGatheringMiniGame("Hide", asGatheringSessionId(result.sessionId), cycleTier);
-    return result.ok;
-  }
-
-  private startFiberGatheringCycle(cycleTier: 3 | 4 = this.getProductionTier(), tickCounter: number = 0): boolean {
-    if (
-      this.getGatheringMasteryLevel(FIBER_GATHERING_MASTERY_ID)
-      < getRequiredGatheringMasteryForTier(cycleTier)
-    ) {
-      return false;
-    }
-    const baseTool = cycleTier === 4 ? this.nodesAndTools.tier4Sickle : this.nodesAndTools.starterSickle;
-    const result = this.fiberGatheringCoordinator.startGathering(
-      cycleTier === 4 ? this.nodesAndTools.fineFiberNodeId : this.nodesAndTools.linenFiberNodeId,
-      [{
-        ...baseTool,
-        speedModifier:
-          baseTool.speedModifier * this.getHeroGatheringMasteryModifier(FIBER_GATHERING_MASTERY_ID),
-      }],
-      tickCounter,
-    );
-    if (result.ok) this.beginActiveGatheringMiniGame("Fiber", asGatheringSessionId(result.sessionId), cycleTier);
     return result.ok;
   }
 
   private setupCompletedSubscriptions(): void {
-    this.gatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = this.activeGatheringMiniGames["Wood"]?.tier ?? this.getProductionTier();
-      this.endActiveGatheringMiniGame("Wood");
-      const recipe = getWoodRecipe(completedTier);
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.rawItemId,
-        result.quantityGathered,
-        { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
-      );
-      if (added.ok) {
-        this.awardGatheringMastery(WOOD_GATHERING_MASTERY_ID, completedTier);
-      }
-      if (this.automaticGathering && !this.startGatheringCycle(completedTier, this.currentTickCounter)) {
-        this.automaticGathering = false;
-      }
-      const itemLabel = getProductionFamilyByGameplayFamily("Wood").tiers[completedTier].resourceName;
-      this.notifyGatherCompleted({
-        family: "Wood",
-        added: added.ok,
-        quantityAdded: added.ok ? added.value.added : 0,
-        itemLabel,
-        completedTier,
-      });
-    });
+    for (const family of SUPPORTED_GATHERING_FAMILIES) {
+      const definition = this.families[family];
 
-    this.oreGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = this.activeGatheringMiniGames["Ore"]?.tier ?? this.getProductionTier();
-      this.endActiveGatheringMiniGame("Ore");
-      const recipe = getMetalRecipe(completedTier);
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.rawItemId,
-        result.quantityGathered,
-        { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
+      definition.manager.events.subscribe(
+        "gatherCompleted",
+        ({ result }) => {
+          this.completeGatheringCycle(
+            family,
+            result.quantityGathered,
+          );
+        },
       );
-      if (added.ok) {
-        this.awardGatheringMastery(ORE_GATHERING_MASTERY_ID, completedTier);
-      }
-      if (this.automaticOreGathering && !this.startOreGatheringCycle(completedTier, this.currentTickCounter)) {
-        this.automaticOreGathering = false;
-      }
-      const itemLabel = getProductionFamilyByGameplayFamily("Ore").tiers[completedTier].resourceName;
-      this.notifyGatherCompleted({
-        family: "Ore",
-        added: added.ok,
-        quantityAdded: added.ok ? added.value.added : 0,
-        itemLabel,
-        completedTier,
-      });
-    });
+    }
+  }
 
-    this.hideGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = this.activeGatheringMiniGames["Hide"]?.tier ?? this.getProductionTier();
-      this.endActiveGatheringMiniGame("Hide");
-      const recipe = getLeatherRecipe(completedTier);
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.rawItemId,
-        result.quantityGathered,
-        { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
-      );
-      if (added.ok) {
-        this.awardGatheringMastery(HIDE_GATHERING_MASTERY_ID, completedTier);
-      }
-      if (this.automaticHideGathering && !this.startHideGatheringCycle(completedTier, this.currentTickCounter)) {
-        this.automaticHideGathering = false;
-      }
-      const itemLabel = getProductionFamilyByGameplayFamily("Hide").tiers[completedTier].resourceName;
-      this.notifyGatherCompleted({
-        family: "Hide",
-        added: added.ok,
-        quantityAdded: added.ok ? added.value.added : 0,
-        itemLabel,
-        completedTier,
-      });
-    });
+  private completeGatheringCycle(
+    family: SupportedGatheringFamily,
+    quantityGathered: number,
+  ): void {
+    const state = this.states[family];
+    const definition = this.families[family];
 
-    this.fiberGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
-      const completedTier = this.activeGatheringMiniGames["Fiber"]?.tier ?? this.getProductionTier();
-      this.endActiveGatheringMiniGame("Fiber");
-      const recipe = getClothRecipe(completedTier);
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        recipe.rawItemId,
-        result.quantityGathered,
-        { itemId: recipe.rawItemId, stackable: true, maxStack: 999 },
-      );
-      if (added.ok) {
-        this.awardGatheringMastery(FIBER_GATHERING_MASTERY_ID, completedTier);
-      }
-      if (this.automaticFiberGathering && !this.startFiberGatheringCycle(completedTier, this.currentTickCounter)) {
-        this.automaticFiberGathering = false;
-      }
-      const itemLabel = getProductionFamilyByGameplayFamily("Fiber").tiers[completedTier].resourceName;
-      this.notifyGatherCompleted({
-        family: "Fiber",
-        added: added.ok,
-        quantityAdded: added.ok ? added.value.added : 0,
-        itemLabel,
+    const completedTier =
+      state.miniGame.tier ?? this.getProductionTier();
+
+    this.endActiveGatheringMiniGame(family);
+
+    const rawItemId = definition.getRawItemId(completedTier);
+
+    const added = this.inventoryManager.addQuantity(
+      this.productionStorageId,
+      rawItemId,
+      quantityGathered,
+      {
+        itemId: rawItemId,
+        stackable: true,
+        maxStack: 999,
+      },
+    );
+
+    if (added.ok) {
+      this.awardGatheringMastery(
+        definition.masteryId,
         completedTier,
-      });
+      );
+    }
+
+    if (
+      state.automatic &&
+      !this.startGatheringCycle(
+        family,
+        completedTier,
+        this.currentTickCounter,
+      )
+    ) {
+      state.automatic = false;
+    }
+
+    const itemLabel =
+      getProductionFamilyByGameplayFamily(family)
+        .tiers[completedTier].resourceName;
+
+    this.notifyGatherCompleted({
+      family,
+      added: added.ok,
+      quantityAdded: added.ok ? added.value.added : 0,
+      itemLabel,
+      completedTier,
     });
   }
 
   public isHeroGathering(): boolean {
-    return (
-      this.automaticGathering
-      || this.automaticOreGathering
-      || this.automaticHideGathering
-      || this.automaticFiberGathering
-      || this.gatheringCoordinator.getActiveSession() !== undefined
-      || this.oreGatheringCoordinator.getActiveSession() !== undefined
-      || this.hideGatheringCoordinator.getActiveSession() !== undefined
-      || this.fiberGatheringCoordinator.getActiveSession() !== undefined
-    );
+    return SUPPORTED_GATHERING_FAMILIES.some((family) => {
+      const state = this.states[family];
+      const coordinator = this.families[family].coordinator;
+
+      return (
+        state.automatic ||
+        coordinator.getActiveSession() !== undefined
+      );
+    });
   }
 
   public stopAllGathering(): boolean {
     const wasGathering = this.isHeroGathering();
 
-    this.automaticGathering = false;
-    this.automaticOreGathering = false;
-    this.automaticHideGathering = false;
-    this.automaticFiberGathering = false;
-
-    const woodSession = this.gatheringCoordinator.getActiveSession();
-    if (woodSession !== undefined) this.gatheringManager.interruptSession(woodSession.id);
-    const oreSession = this.oreGatheringCoordinator.getActiveSession();
-    if (oreSession !== undefined) this.oreGatheringManager.interruptSession(oreSession.id);
-    const hideSession = this.hideGatheringCoordinator.getActiveSession();
-    if (hideSession !== undefined) this.hideGatheringManager.interruptSession(hideSession.id);
-    const fiberSession = this.fiberGatheringCoordinator.getActiveSession();
-    if (fiberSession !== undefined) this.fiberGatheringManager.interruptSession(fiberSession.id);
-
-    this.endActiveGatheringMiniGame("Wood");
-    this.endActiveGatheringMiniGame("Ore");
-    this.endActiveGatheringMiniGame("Hide");
-    this.endActiveGatheringMiniGame("Fiber");
+    for (const family of SUPPORTED_GATHERING_FAMILIES) {
+      this.stopGatheringFamily(family);
+    }
 
     return wasGathering;
   }
 
-  private stopOtherGathering(exceptFamily?: ResourceFamily): void {
-    if (exceptFamily !== "Wood") {
-      this.automaticGathering = false;
-      const session = this.gatheringCoordinator.getActiveSession();
-      if (session !== undefined) this.gatheringManager.interruptSession(session.id);
-      this.endActiveGatheringMiniGame("Wood");
+  private stopGatheringFamily(
+    family: SupportedGatheringFamily,
+  ): void {
+    const state = this.states[family];
+    const definition = this.families[family];
+
+    state.automatic = false;
+
+    const session = definition.coordinator.getActiveSession();
+    if (session !== undefined) {
+      definition.manager.interruptSession(session.id);
     }
-    if (exceptFamily !== "Ore") {
-      this.automaticOreGathering = false;
-      const session = this.oreGatheringCoordinator.getActiveSession();
-      if (session !== undefined) this.oreGatheringManager.interruptSession(session.id);
-      this.endActiveGatheringMiniGame("Ore");
-    }
-    if (exceptFamily !== "Hide") {
-      this.automaticHideGathering = false;
-      const session = this.hideGatheringCoordinator.getActiveSession();
-      if (session !== undefined) this.hideGatheringManager.interruptSession(session.id);
-      this.endActiveGatheringMiniGame("Hide");
-    }
-    if (exceptFamily !== "Fiber") {
-      this.automaticFiberGathering = false;
-      const session = this.fiberGatheringCoordinator.getActiveSession();
-      if (session !== undefined) this.fiberGatheringManager.interruptSession(session.id);
-      this.endActiveGatheringMiniGame("Fiber");
-    }
+
+    this.endActiveGatheringMiniGame(family);
   }
 
-  public toggleGathering(tickCounter: number = 0): ToggleGatheringResult {
-    if (this.automaticGathering) {
-      this.automaticGathering = false;
-      const session = this.gatheringCoordinator.getActiveSession();
-      if (session !== undefined) {
-        this.gatheringManager.interruptSession(session.id);
+  private stopOtherGathering(
+    exceptFamily?: SupportedGatheringFamily,
+  ): void {
+    for (const family of SUPPORTED_GATHERING_FAMILIES) {
+      if (family !== exceptFamily) {
+        this.stopGatheringFamily(family);
       }
-      this.endActiveGatheringMiniGame("Wood");
-      return { action: "stopped", family: "Wood" };
     }
-
-    this.stopOtherGathering("Wood");
-
-    this.automaticGathering = true;
-    if (!this.startGatheringCycle(this.getProductionTier(), tickCounter)) {
-      this.automaticGathering = false;
-      return { action: "failed", family: "Wood" };
-    }
-    return { action: "started", family: "Wood" };
   }
 
-  public toggleOreGathering(tickCounter: number = 0): ToggleGatheringResult {
-    if (this.automaticOreGathering) {
-      this.automaticOreGathering = false;
-      const session = this.oreGatheringCoordinator.getActiveSession();
-      if (session !== undefined) this.oreGatheringManager.interruptSession(session.id);
-      this.endActiveGatheringMiniGame("Ore");
-      return { action: "stopped", family: "Ore" };
+  private toggleGatheringFamily(
+    family: SupportedGatheringFamily,
+    tickCounter: number = 0,
+  ): ToggleGatheringResult {
+    const state = this.states[family];
+
+    if (state.automatic) {
+      this.stopGatheringFamily(family);
+      return { action: "stopped", family };
     }
 
-    this.stopOtherGathering("Ore");
+    this.stopOtherGathering(family);
 
-    this.automaticOreGathering = true;
-    if (!this.startOreGatheringCycle(this.getProductionTier(), tickCounter)) {
-      this.automaticOreGathering = false;
-      return { action: "failed", family: "Ore" };
+    state.automatic = true;
+
+    if (
+      !this.startGatheringCycle(
+        family,
+        this.getProductionTier(),
+        tickCounter,
+      )
+    ) {
+      state.automatic = false;
+      return { action: "failed", family };
     }
-    return { action: "started", family: "Ore" };
+
+    return { action: "started", family };
   }
 
-  public toggleHideGathering(tickCounter: number = 0): ToggleGatheringResult {
-    if (this.automaticHideGathering) {
-      this.automaticHideGathering = false;
-      const session = this.hideGatheringCoordinator.getActiveSession();
-      if (session !== undefined) this.hideGatheringManager.interruptSession(session.id);
-      this.endActiveGatheringMiniGame("Hide");
-      return { action: "stopped", family: "Hide" };
-    }
-
-    this.stopOtherGathering("Hide");
-
-    this.automaticHideGathering = true;
-    if (!this.startHideGatheringCycle(this.getProductionTier(), tickCounter)) {
-      this.automaticHideGathering = false;
-      return { action: "failed", family: "Hide" };
-    }
-    return { action: "started", family: "Hide" };
+  public toggleGathering(
+    tickCounter: number = 0,
+  ): ToggleGatheringResult {
+    return this.toggleGatheringFamily("Wood", tickCounter);
   }
 
-  public toggleFiberGathering(tickCounter: number = 0): ToggleGatheringResult {
-    if (this.automaticFiberGathering) {
-      this.automaticFiberGathering = false;
-      const session = this.fiberGatheringCoordinator.getActiveSession();
-      if (session !== undefined) this.fiberGatheringManager.interruptSession(session.id);
-      this.endActiveGatheringMiniGame("Fiber");
-      return { action: "stopped", family: "Fiber" };
-    }
+  public toggleOreGathering(
+    tickCounter: number = 0,
+  ): ToggleGatheringResult {
+    return this.toggleGatheringFamily("Ore", tickCounter);
+  }
 
-    this.stopOtherGathering("Fiber");
+  public toggleHideGathering(
+    tickCounter: number = 0,
+  ): ToggleGatheringResult {
+    return this.toggleGatheringFamily("Hide", tickCounter);
+  }
 
-    this.automaticFiberGathering = true;
-    if (!this.startFiberGatheringCycle(this.getProductionTier(), tickCounter)) {
-      this.automaticFiberGathering = false;
-      return { action: "failed", family: "Fiber" };
-    }
-    return { action: "started", family: "Fiber" };
+  public toggleFiberGathering(
+    tickCounter: number = 0,
+  ): ToggleGatheringResult {
+    return this.toggleGatheringFamily("Fiber", tickCounter);
   }
 
   public performGatheringStrike(
@@ -575,44 +562,44 @@ export class GatheringRuntime {
     quality: "miss" | "correct" | "perfect",
     tickCounter: number = 0,
   ): GatheringStrikeResult {
-    const coordinator = resourceFamily === "Wood"
-      ? this.gatheringCoordinator
-      : resourceFamily === "Ore"
-        ? this.oreGatheringCoordinator
-        : resourceFamily === "Hide"
-          ? this.hideGatheringCoordinator
-          : resourceFamily === "Fiber"
-            ? this.fiberGatheringCoordinator
-            : undefined;
-    const isAutomatic = resourceFamily === "Wood"
-      ? this.automaticGathering
-      : resourceFamily === "Ore"
-        ? this.automaticOreGathering
-        : resourceFamily === "Hide"
-          ? this.automaticHideGathering
-          : resourceFamily === "Fiber"
-            ? this.automaticFiberGathering
-            : false;
-    const miniGame = this.activeGatheringMiniGames[resourceFamily];
-    const session = coordinator?.getActiveSession();
+    if (!isSupportedGatheringFamily(resourceFamily)) {
+      return { ok: false };
+    }
+
+    const state = this.states[resourceFamily];
+    const definition = this.families[resourceFamily];
+    const miniGame = state.miniGame;
+    const session = definition.coordinator.getActiveSession();
+
     if (
-      !isAutomatic
-      || coordinator === undefined
-      || miniGame === undefined
-      || session === undefined
-      || String(session.id) !== miniGame.sessionId
+      !state.automatic ||
+      session === undefined ||
+      miniGame.sessionId === null ||
+      String(session.id) !== String(miniGame.sessionId)
     ) {
       return { ok: false };
     }
 
     miniGame.strikesUsed += 1;
+
     if (quality !== "miss") {
-      const ratio = quality === "perfect"
-        ? ACTIVE_GATHERING_PERFECT_BONUS_RATIO
-        : ACTIVE_GATHERING_CORRECT_BONUS_RATIO;
+      const ratio =
+        quality === "perfect"
+          ? ACTIVE_GATHERING_PERFECT_BONUS_RATIO
+          : ACTIVE_GATHERING_CORRECT_BONUS_RATIO;
+
       const bonusTicks = session.getRequiredTicks() * ratio;
-      coordinator.advanceActiveSession(bonusTicks, tickCounter);
+
+      definition.coordinator.advanceActiveSession(
+        bonusTicks,
+        tickCounter,
+      );
     }
-    return { ok: true, family: resourceFamily, strikesUsed: miniGame.strikesUsed };
+
+    return {
+      ok: true,
+      family: resourceFamily,
+      strikesUsed: miniGame.strikesUsed,
+    };
   }
 }

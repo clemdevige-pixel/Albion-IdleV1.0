@@ -29,7 +29,6 @@ import {
 } from "../data/workerContentCatalog.js";
 import { getProductionRefiningRecipe } from "../data/refiningRecipes.js";
 import {
-  ORE_GATHERING_MASTERY_ID,
   getHeroGatheringXpFromWorkerForTier,
   getWorkerGatheringXpForTier,
 } from "../data/progressionContentCatalog.js";
@@ -46,15 +45,43 @@ export {
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;
 
-const WOODCUTTER_DEFINITION_ID = WORKER_DEFINITION_IDS.woodcutter;
-const MINER_DEFINITION_ID = WORKER_DEFINITION_IDS.miner;
-const SKINNER_DEFINITION_ID = WORKER_DEFINITION_IDS.skinner;
-const FIBER_HARVESTER_DEFINITION_ID = WORKER_DEFINITION_IDS.fiberHarvester;
+type ProductionTier = 3 | 4;
 
-const GATHER_WOOD_TASK_ID = WORKER_TASK_IDS.wood;
-const GATHER_COPPER_TASK_ID = WORKER_TASK_IDS.ore;
-const GATHER_HIDE_TASK_ID = WORKER_TASK_IDS.hide;
-const GATHER_FIBER_TASK_ID = WORKER_TASK_IDS.fiber;
+type SupportedWorkerProfession = Extract<
+  WorkerProfession,
+  "woodcutter" | "miner" | "skinner" | "fiber_harvester"
+>;
+
+interface WorkerProfessionRuntimeDefinition {
+  readonly definitionId: WorkerDefinitionId;
+  readonly taskId: WorkerTaskDefinitionId;
+}
+
+const WORKER_PROFESSION_RUNTIME_DEFINITIONS = {
+  woodcutter: {
+    definitionId: WORKER_DEFINITION_IDS.woodcutter,
+    taskId: WORKER_TASK_IDS.wood,
+  },
+  miner: {
+    definitionId: WORKER_DEFINITION_IDS.miner,
+    taskId: WORKER_TASK_IDS.ore,
+  },
+  skinner: {
+    definitionId: WORKER_DEFINITION_IDS.skinner,
+    taskId: WORKER_TASK_IDS.hide,
+  },
+  fiber_harvester: {
+    definitionId: WORKER_DEFINITION_IDS.fiberHarvester,
+    taskId: WORKER_TASK_IDS.fiber,
+  },
+} as const satisfies Record<
+  SupportedWorkerProfession,
+  WorkerProfessionRuntimeDefinition
+>;
+
+const SUPPORTED_WORKER_PROFESSIONS = new Set<string>(
+  Object.keys(WORKER_PROFESSION_RUNTIME_DEFINITIONS),
+);
 
 export interface WorkerSnapshot {
   readonly id: WorkerId;
@@ -80,7 +107,7 @@ export interface WorkerClientSaveData {
   readonly profession: WorkerProfession;
   readonly displayName: string;
   readonly mastery: number;
-  readonly productionTier: 3 | 4;
+  readonly productionTier: ProductionTier;
   readonly state: "idle" | "working" | "paused";
   readonly elapsedTicks: number;
 }
@@ -96,7 +123,7 @@ export type ToggleWorkerResult =
 export interface WorkerCycleCompletionEvent {
   readonly workerId: WorkerId;
   readonly profession: WorkerProfession;
-  readonly assignedTier: 3 | 4;
+  readonly assignedTier: ProductionTier;
   readonly itemId: string;
   readonly yieldQuantity: number;
   readonly addedToInventory: boolean;
@@ -108,7 +135,7 @@ export interface WorkerCycleCompletionEvent {
 export type WorkerDomainEvent =
   | { readonly type: "recruit_success"; readonly workerId: WorkerId; readonly displayName: string; readonly profession: WorkerProfession }
   | { readonly type: "recruit_insufficient_funds"; readonly profession: WorkerProfession }
-  | { readonly type: "storage_full"; readonly workerId: WorkerId; readonly profession: WorkerProfession; readonly assignedTier: 3 | 4 };
+  | { readonly type: "storage_full"; readonly workerId: WorkerId; readonly profession: WorkerProfession; readonly assignedTier: ProductionTier };
 
 export interface WorkerRuntimeDependencies {
   readonly inventoryManager: InventoryManager;
@@ -118,7 +145,7 @@ export interface WorkerRuntimeDependencies {
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly experienceService: ExperienceService;
-  readonly getProductionTier: () => 3 | 4;
+  readonly getProductionTier: () => ProductionTier;
   readonly getRequiredGatheringMasteryForTier: (tier: number) => number;
 }
 
@@ -128,7 +155,7 @@ export class WorkerRuntime {
   private readonly currencyService: CurrencyService;
   private readonly walletId: WalletId;
   private readonly experienceService: ExperienceService;
-  private readonly getProductionTier: () => 3 | 4;
+  private readonly getProductionTier: () => ProductionTier;
   private readonly getRequiredGatheringMasteryForTier: (tier: number) => number;
 
   private readonly workerRegistry: WorkerRegistry;
@@ -140,24 +167,10 @@ export class WorkerRuntime {
   private readonly workerScheduler: WorkerScheduler;
 
   private readonly workerByProfession = new Map<WorkerProfession, WorkerId>();
-  private readonly workerProductionTier = new Map<WorkerId, 3 | 4>();
+  private readonly workerProductionTier = new Map<WorkerId, ProductionTier>();
 
   private readonly cycleCompletionListeners = new Set<(evt: WorkerCycleCompletionEvent) => void>();
   private readonly domainEventListeners = new Set<(evt: WorkerDomainEvent) => void>();
-
-  private readonly workerTaskByProfession = {
-    woodcutter: GATHER_WOOD_TASK_ID,
-    miner: GATHER_COPPER_TASK_ID,
-    skinner: GATHER_HIDE_TASK_ID,
-    fiber_harvester: GATHER_FIBER_TASK_ID,
-  } as const;
-
-  private readonly workerDefinitionByProfession = {
-    woodcutter: WOODCUTTER_DEFINITION_ID,
-    miner: MINER_DEFINITION_ID,
-    skinner: SKINNER_DEFINITION_ID,
-    fiber_harvester: FIBER_HARVESTER_DEFINITION_ID,
-  } as const;
 
   public constructor(deps: WorkerRuntimeDependencies) {
     this.inventoryManager = deps.inventoryManager;
@@ -221,31 +234,59 @@ export class WorkerRuntime {
     }
   }
 
-  public isSupportedWorkerProfession(profession: string): profession is keyof typeof this.workerTaskByProfession {
-    return Object.prototype.hasOwnProperty.call(this.workerTaskByProfession, profession);
+  public isSupportedWorkerProfession(
+    profession: string,
+  ): profession is SupportedWorkerProfession {
+    return SUPPORTED_WORKER_PROFESSIONS.has(profession);
   }
 
-  private workerRawItemId(profession: WorkerProfession, tier: 3 | 4): string {
+  private getWorkerProfessionDefinition(
+    profession: SupportedWorkerProfession,
+  ): WorkerProfessionRuntimeDefinition {
+    return WORKER_PROFESSION_RUNTIME_DEFINITIONS[profession];
+  }
+
+  private getWorkerProductionFamily(
+    profession: SupportedWorkerProfession,
+  ) {
     const definition = getProductionFamilyByProfession(profession);
-    if (definition === undefined) return "item_resource_stone_t3";
+
+    if (definition === undefined) {
+      throw new Error(
+        `Missing production family for supported worker profession: ${profession}`,
+      );
+    }
+
+    return definition;
+  }
+
+  private workerRawItemId(
+    profession: SupportedWorkerProfession,
+    tier: ProductionTier,
+  ): string {
+    const definition = this.getWorkerProductionFamily(profession);
+
     return getProductionRefiningRecipe(
       getProductionFamilyId(definition.gameplayFamily),
       tier,
     ).rawItemId;
   }
 
-  private workerMasteryId(profession: WorkerProfession): MasteryId {
-    const definition = getProductionFamilyByProfession(profession);
-    if (definition !== undefined) return definition.masteryId;
-    return ORE_GATHERING_MASTERY_ID;
+  private workerMasteryId(
+    profession: SupportedWorkerProfession,
+  ): MasteryId {
+    return this.getWorkerProductionFamily(profession).masteryId;
+  }
+  private workerTaskForProfession(
+    profession: SupportedWorkerProfession,
+  ): WorkerTaskDefinitionId {
+    return this.getWorkerProfessionDefinition(profession).taskId;
   }
 
-  private workerTaskForProfession(profession: keyof typeof this.workerTaskByProfession): WorkerTaskDefinitionId {
-    return this.workerTaskByProfession[profession];
-  }
-
-  private workerDefinitionForProfession(profession: keyof typeof this.workerDefinitionByProfession): WorkerDefinitionId {
-    return this.workerDefinitionByProfession[profession];
+  private workerDefinitionForProfession(
+    profession: SupportedWorkerProfession,
+  ): WorkerDefinitionId {
+    return this.getWorkerProfessionDefinition(profession).definitionId;
   }
 
   public getWorkerMasteryLevel(masteryXp: number): number {
@@ -256,7 +297,7 @@ export class WorkerRuntime {
     return Math.max(0, level) ** 2 * 100;
   }
 
-  public getWorkerSpeedModifier(masteryXp: number, tier: 3 | 4): number {
+  public getWorkerSpeedModifier(masteryXp: number, tier: ProductionTier): number {
     const level = this.getWorkerMasteryLevel(masteryXp);
     const tierModifier = tier === 4 ? 0.75 : 1;
     return tierModifier * (1 + level * 0.005);
@@ -279,11 +320,11 @@ export class WorkerRuntime {
     return false;
   }
 
-  public getAssignedTier(workerId: WorkerId): 3 | 4 {
+  public getAssignedTier(workerId: WorkerId): ProductionTier {
     return this.workerProductionTier.get(workerId) ?? this.getProductionTier();
   }
 
-  public getWorkerMasteryDetails(masteryXp: number, tier: 3 | 4): WorkerMasteryDetails {
+  public getWorkerMasteryDetails(masteryXp: number, tier: ProductionTier): WorkerMasteryDetails {
     const masteryLevel = this.getWorkerMasteryLevel(masteryXp);
     return {
       masteryLevel,
@@ -295,7 +336,7 @@ export class WorkerRuntime {
 
   public startWorkerCycle(
     workerId: WorkerId,
-    assignedTier: 3 | 4 = this.getProductionTier(),
+    assignedTier: ProductionTier = this.getProductionTier(),
   ): boolean {
     const worker = this.workerManager.getWorker(workerId);
     if (
@@ -383,7 +424,22 @@ export class WorkerRuntime {
     };
   }
 
+  private restartWorkerForTier(
+    workerId: WorkerId,
+    profession: SupportedWorkerProfession,
+    tier: ProductionTier,
+  ): ToggleWorkerResult {
+    this.workerScheduler.removeSession(workerId);
+    this.workerManager.updateState(workerId, "assigned");
+
+    return this.startWorkerCycle(workerId, tier)
+      ? { ok: true, action: "restarted", profession }
+      : { ok: false, reason: "execution_failed", profession };
+  }
   public toggleWorker(profession: WorkerProfession): ToggleWorkerResult {
+    if (!this.isSupportedWorkerProfession(profession)) {
+      return { ok: false, reason: "not_found", profession };
+    }
     const workerId = this.workerByProfession.get(profession);
     if (workerId === undefined) {
       return { ok: false, reason: "not_found", profession };
@@ -393,13 +449,11 @@ export class WorkerRuntime {
 
     if (session?.state === "executing") {
       const assignedTier = this.workerProductionTier.get(workerId) ?? currentGlobalTier;
-      if (assignedTier !== currentGlobalTier) {
-        this.workerScheduler.removeSession(workerId);
-        this.workerManager.updateState(workerId, "assigned");
-        const restarted = this.startWorkerCycle(workerId, currentGlobalTier);
-        return restarted
-          ? { ok: true, action: "restarted", profession }
-          : { ok: false, reason: "execution_failed", profession };
+      if (assignedTier !== currentGlobalTier) {        return this.restartWorkerForTier(
+          workerId,
+          profession,
+          currentGlobalTier,
+        );
       }
       session.pause();
       this.workerManager.updateState(workerId, "assigned");
@@ -408,13 +462,11 @@ export class WorkerRuntime {
 
     if (session?.state === "paused") {
       const assignedTier = this.workerProductionTier.get(workerId) ?? currentGlobalTier;
-      if (assignedTier !== currentGlobalTier) {
-        this.workerScheduler.removeSession(workerId);
-        this.workerManager.updateState(workerId, "assigned");
-        const restarted = this.startWorkerCycle(workerId, currentGlobalTier);
-        return restarted
-          ? { ok: true, action: "restarted", profession }
-          : { ok: false, reason: "execution_failed", profession };
+      if (assignedTier !== currentGlobalTier) {        return this.restartWorkerForTier(
+          workerId,
+          profession,
+          currentGlobalTier,
+        );
       }
       session.resume();
       this.workerManager.updateState(workerId, "working");
