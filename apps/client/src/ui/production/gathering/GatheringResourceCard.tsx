@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
+import { WORKER_PROFESSION_LABELS } from "../../../data/productionFamilyCatalog";
 import type { GatheringResourceModel } from "./gatheringModels";
 import type { GatheringActions } from "./useGatheringActions";
 
@@ -77,7 +78,7 @@ export function GatheringResourceCard({ resource, tier, recruitmentCost, actions
         <h3>Worker</h3>
         {worker === undefined ? (
           <>
-            <div><span>Emplacement worker libre</span><small>{professionLabel(resource.profession)} · Profession permanente</small></div>
+            <div><span>Emplacement worker libre</span><small>{WORKER_PROFESSION_LABELS[resource.profession]} · Profession permanente</small></div>
             {confirmRecruitment ? (
               <div className="ui-gathering-card__confirm">
                 <p>Recruter ce worker pour {String(recruitmentCost)} Silver ?</p>
@@ -116,14 +117,4 @@ export function GatheringResourceCard({ resource, tier, recruitmentCost, actions
 function ProgressBar({ value }: { readonly value: number }): JSX.Element {
   const progress = Math.max(0, Math.min(100, value));
   return <div className="ui-gathering-progress" aria-label={`${String(Math.round(progress))}%`}><span style={{ width: `${String(progress)}%` }} /></div>;
-}
-
-function professionLabel(profession: GatheringResourceModel["profession"]): string {
-  switch (profession) {
-    case "woodcutter": return "Bûcheron";
-    case "miner": return "Mineur";
-    case "skinner": return "Dépeceur";
-    case "fiber_harvester": return "Herboriste";
-    case "stonecutter": return "Tailleur de pierre";
-  }
 }

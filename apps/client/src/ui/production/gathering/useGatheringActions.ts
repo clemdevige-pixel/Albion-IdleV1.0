@@ -29,6 +29,7 @@ export function useGatheringActions(): GatheringActions {
       case "hide": return toggleHideGathering();
       case "fiber": return toggleFiberGathering();
       case "ore": return toggleOreGathering();
+      default: return assertNever(resource);
     }
   }, [toggleFiberGathering, toggleGathering, toggleHideGathering, toggleOreGathering]);
 
@@ -43,4 +44,8 @@ export function useGatheringActions(): GatheringActions {
     toggleWorker,
     strike,
   };
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unsupported Gathering resource: ${String(value)}`);
 }

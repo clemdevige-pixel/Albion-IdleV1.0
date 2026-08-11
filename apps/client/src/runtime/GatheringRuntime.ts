@@ -12,42 +12,30 @@ import type {
   ResourceNodeId,
   MasteryId,
 } from "@game/gameplay";
+import { asGatheringSessionId } from "@game/gameplay";
 import {
-  asMasteryId,
-  asGatheringSessionId,
-} from "@game/gameplay";
-import {
-  BIRCH_PLANK_RECIPE,
-  COPPER_BAR_RECIPE,
-  PINE_PLANK_RECIPE,
-  IRON_BAR_RECIPE,
-  STURDY_LEATHER_RECIPE,
-  LINEN_CLOTH_RECIPE,
-  THICK_LEATHER_RECIPE,
-  FINE_CLOTH_RECIPE,
+  getClothRecipe,
+  getLeatherRecipe,
+  getMetalRecipe,
+  getWoodRecipe,
 } from "../data/refiningRecipes.js";
+import { getProductionFamilyByGameplayFamily } from "../data/productionFamilyCatalog.js";
+import {
+  FIBER_GATHERING_MASTERY_ID,
+  HIDE_GATHERING_MASTERY_ID,
+  ORE_GATHERING_MASTERY_ID,
+  WOOD_GATHERING_MASTERY_ID,
+  getHeroGatheringXpForTier,
+  getRequiredGatheringMasteryForTier,
+} from "../data/progressionContentCatalog.js";
 
-const WOOD_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_wood");
-const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");
-const HIDE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_hide");
-const FIBER_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_fiber");
+export {
+  getHeroGatheringXpForTier,
+  getRequiredGatheringMasteryForTier,
+} from "../data/progressionContentCatalog.js";
 
 const ACTIVE_GATHERING_PERFECT_BONUS_RATIO = 0.04;
 const ACTIVE_GATHERING_CORRECT_BONUS_RATIO = 0.02;
-
-export function getHeroGatheringXpForTier(tier: number): number {
-  return Math.max(1, Math.round(5 * (1.6 ** Math.max(0, tier - 3))));
-}
-
-export function getRequiredGatheringMasteryForTier(tier: number): number {
-  if (
-    typeof window !== "undefined"
-    && new URLSearchParams(window.location.search).get("productionTest") === "1"
-  ) {
-    return 0;
-  }
-  return Math.max(0, tier - 3) * 3;
-}
 
 export interface ActiveGatheringMiniGameState {
   readonly sessionId: GatheringSessionId | null;
@@ -236,24 +224,8 @@ export class GatheringRuntime {
     );
   }
 
-  private getWoodRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? PINE_PLANK_RECIPE : BIRCH_PLANK_RECIPE;
-  }
-
-  private getMetalRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? IRON_BAR_RECIPE : COPPER_BAR_RECIPE;
-  }
-
-  private getLeatherRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? THICK_LEATHER_RECIPE : STURDY_LEATHER_RECIPE;
-  }
-
-  private getClothRecipe(tier: 3 | 4 = this.getProductionTier()) {
-    return tier === 4 ? FINE_CLOTH_RECIPE : LINEN_CLOTH_RECIPE;
-  }
-
   private awardGatheringMastery(
-    masteryId: ReturnType<typeof asMasteryId>,
+    masteryId: MasteryId,
     gatheredTier: 3 | 4 = this.getProductionTier(),
   ): void {
     this.experienceService.addExperience(
@@ -353,7 +325,7 @@ export class GatheringRuntime {
     this.gatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
       const completedTier = this.activeGatheringMiniGames["Wood"]?.tier ?? this.getProductionTier();
       this.endActiveGatheringMiniGame("Wood");
-      const recipe = this.getWoodRecipe(completedTier);
+      const recipe = getWoodRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
         this.productionStorageId,
         recipe.rawItemId,
@@ -366,7 +338,7 @@ export class GatheringRuntime {
       if (this.automaticGathering && !this.startGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticGathering = false;
       }
-      const itemLabel = completedTier === 4 ? "Bois de pin" : "Bois de bouleau";
+      const itemLabel = getProductionFamilyByGameplayFamily("Wood").tiers[completedTier].resourceName;
       this.notifyGatherCompleted({
         family: "Wood",
         added: added.ok,
@@ -379,7 +351,7 @@ export class GatheringRuntime {
     this.oreGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
       const completedTier = this.activeGatheringMiniGames["Ore"]?.tier ?? this.getProductionTier();
       this.endActiveGatheringMiniGame("Ore");
-      const recipe = this.getMetalRecipe(completedTier);
+      const recipe = getMetalRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
         this.productionStorageId,
         recipe.rawItemId,
@@ -392,7 +364,7 @@ export class GatheringRuntime {
       if (this.automaticOreGathering && !this.startOreGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticOreGathering = false;
       }
-      const itemLabel = completedTier === 4 ? "Minerai de fer" : "Minerai de cuivre";
+      const itemLabel = getProductionFamilyByGameplayFamily("Ore").tiers[completedTier].resourceName;
       this.notifyGatherCompleted({
         family: "Ore",
         added: added.ok,
@@ -405,7 +377,7 @@ export class GatheringRuntime {
     this.hideGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
       const completedTier = this.activeGatheringMiniGames["Hide"]?.tier ?? this.getProductionTier();
       this.endActiveGatheringMiniGame("Hide");
-      const recipe = this.getLeatherRecipe(completedTier);
+      const recipe = getLeatherRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
         this.productionStorageId,
         recipe.rawItemId,
@@ -418,7 +390,7 @@ export class GatheringRuntime {
       if (this.automaticHideGathering && !this.startHideGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticHideGathering = false;
       }
-      const itemLabel = completedTier === 4 ? "Peau épaisse" : "Peau robuste";
+      const itemLabel = getProductionFamilyByGameplayFamily("Hide").tiers[completedTier].resourceName;
       this.notifyGatherCompleted({
         family: "Hide",
         added: added.ok,
@@ -431,7 +403,7 @@ export class GatheringRuntime {
     this.fiberGatheringManager.events.subscribe("gatherCompleted", ({ result }) => {
       const completedTier = this.activeGatheringMiniGames["Fiber"]?.tier ?? this.getProductionTier();
       this.endActiveGatheringMiniGame("Fiber");
-      const recipe = this.getClothRecipe(completedTier);
+      const recipe = getClothRecipe(completedTier);
       const added = this.inventoryManager.addQuantity(
         this.productionStorageId,
         recipe.rawItemId,
@@ -444,7 +416,7 @@ export class GatheringRuntime {
       if (this.automaticFiberGathering && !this.startFiberGatheringCycle(completedTier, this.currentTickCounter)) {
         this.automaticFiberGathering = false;
       }
-      const itemLabel = completedTier === 4 ? "Fibre fine" : "Fibre de lin";
+      const itemLabel = getProductionFamilyByGameplayFamily("Fiber").tiers[completedTier].resourceName;
       this.notifyGatherCompleted({
         family: "Fiber",
         added: added.ok,

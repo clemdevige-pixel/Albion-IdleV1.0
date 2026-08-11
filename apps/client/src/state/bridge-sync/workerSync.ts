@@ -4,27 +4,15 @@ import type {
   WorkerProfessionVM,
   WorkerVM,
 } from "../../game/GameBridge";
+import {
+  WORKER_PROFESSION_LABELS,
+  getWorkerResourceLabel,
+} from "../../data/productionFamilyCatalog";
 
-export const WORKER_PROFESSION_LABELS: Record<WorkerProfessionVM, string> = {
-  woodcutter: "Bûcheron",
-  miner: "Mineur",
-  stonecutter: "Tailleur de pierre",
-  skinner: "Dépeceur",
-  fiber_harvester: "Herboriste",
-};
-
-export function getWorkerResourceLabel(
-  profession: WorkerProfessionVM,
-  tier: 3 | 4,
-): string {
-  switch (profession) {
-    case "woodcutter": return tier === 4 ? "Bois de pin" : "Bois de bouleau";
-    case "miner": return tier === 4 ? "Minerai de fer" : "Minerai de cuivre";
-    case "stonecutter": return "Pierre";
-    case "skinner": return tier === 4 ? "Peau épaisse" : "Peau robuste";
-    case "fiber_harvester": return tier === 4 ? "Fibre fine" : "Fibre de lin";
-  }
-}
+export {
+  WORKER_PROFESSION_LABELS,
+  getWorkerResourceLabel,
+} from "../../data/productionFamilyCatalog";
 
 export function syncWorkersToBridge(
   bridge: GameBridge,

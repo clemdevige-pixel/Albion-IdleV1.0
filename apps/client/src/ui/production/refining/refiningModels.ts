@@ -1,6 +1,11 @@
 import type { GameBridgeState, RefiningRequirementVM, RefiningVM } from "../../../game/GameBridge";
+import {
+  PRODUCTION_FAMILY_IDS,
+  getProductionFamilyDefinition,
+  type ProductionFamilyId,
+} from "../../../data/productionFamilyCatalog";
 
-export type RefiningFamilyId = "wood" | "ore" | "hide" | "fiber";
+export type RefiningFamilyId = ProductionFamilyId;
 
 export interface RefiningRequirementModel extends RefiningRequirementVM {
   readonly label: string;
@@ -44,18 +49,20 @@ export function selectRefiningSource(state: GameBridgeState): RefiningSource {
 }
 
 export function buildRefiningModel(source: RefiningSource): RefiningModel {
-  const createFamily = (
-    id: RefiningFamilyId,
-    label: string,
-    rawLabel: string,
-    rawIcon: string,
-    refinedIcon: string,
-    activity: RefiningVM,
-  ): RefiningFamilyModel => {
+  const activities = {
+    wood: source.refining,
+    ore: source.metalRefining,
+    hide: source.leatherRefining,
+    fiber: source.clothRefining,
+  } satisfies Record<RefiningFamilyId, RefiningVM>;
+
+  const createFamily = (id: RefiningFamilyId): RefiningFamilyModel => {
+    const definition = getProductionFamilyDefinition(id);
+    const activity = activities[id];
     const requirements = activity.requirements.map((requirement) => ({
       ...requirement,
-      label: formatMaterialName(requirement.itemId, rawLabel),
-      icon: materialIcon(requirement.itemId, rawIcon, refinedIcon),
+      label: formatMaterialName(requirement.itemId, definition.rawMaterialLabel),
+      icon: materialIcon(requirement.itemId, definition.rawIcon, definition.refinedIcon),
     }));
     const availableCycles = requirements.length === 0
       ? 0
@@ -64,10 +71,10 @@ export function buildRefiningModel(source: RefiningSource): RefiningModel {
       )));
     return {
       id,
-      label,
-      rawLabel,
-      rawIcon,
-      refinedIcon,
+      label: definition.label,
+      rawLabel: definition.rawMaterialLabel,
+      rawIcon: definition.rawIcon,
+      refinedIcon: definition.refinedIcon,
       activity,
       requirements,
       availableCycles,
@@ -76,12 +83,7 @@ export function buildRefiningModel(source: RefiningSource): RefiningModel {
     };
   };
 
-  const families = [
-    createFamily("wood", "Bois", "Bois", "resource-birch-log.png", "resource-birch-planks.png", source.refining),
-    createFamily("ore", "Minerai", "Minerai", "resource-copper-ore.png", "resource-copper-ingot.png", source.metalRefining),
-    createFamily("hide", "Peau", "Peau", "resource-hide.png", "resource-leather.png", source.leatherRefining),
-    createFamily("fiber", "Fibres", "Fibre", "resource-fiber.png", "resource-cloth.png", source.clothRefining),
-  ] as const;
+  const families = PRODUCTION_FAMILY_IDS.map(createFamily);
 
   return {
     tier: source.tier,

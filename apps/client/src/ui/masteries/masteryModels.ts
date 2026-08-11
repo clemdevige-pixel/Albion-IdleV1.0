@@ -1,6 +1,10 @@
 import type { GameBridgeState, MasteryVM, WorkerVM } from "../../game/GameBridge";
 import { getWeaponMasteryFamilyDefinitions } from "../../data/weaponContentCatalog";
 import { resolveWeaponFamilyCraftPresentation } from "../../data/equipmentPresentation";
+import {
+  PRODUCTION_FAMILY_IDS,
+  getProductionFamilyDefinition,
+} from "../../data/productionFamilyCatalog";
 import { masteryProgressPercent } from "../shared/masteryProgress";
 
 export type MasteryCategoryId = "combat" | "gathering";
@@ -32,19 +36,6 @@ export interface MasteriesSource {
   readonly progression: GameBridgeState["progression"];
   readonly workers: GameBridgeState["workers"];
 }
-
-interface GatheringFamilyDefinition {
-  readonly masteryId: string;
-  readonly profession: WorkerVM["profession"];
-  readonly icon: string;
-}
-
-const GATHERING_FAMILIES: readonly GatheringFamilyDefinition[] = [
-  { masteryId: "mastery_gathering_wood", profession: "woodcutter", icon: "🌲" },
-  { masteryId: "mastery_gathering_ore", profession: "miner", icon: "⛏" },
-  { masteryId: "mastery_gathering_hide", profession: "skinner", icon: "🦌" },
-  { masteryId: "mastery_gathering_fiber", profession: "fiber_harvester", icon: "🌿" },
-] as const;
 
 export function selectMasteriesSource(state: GameBridgeState): MasteriesSource {
   return { progression: state.progression, workers: state.workers };
@@ -99,7 +90,8 @@ export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
     return [{ ...combatProgress(family, true), icon: presentation?.symbol ?? "◆", specializations }];
   });
 
-  const gathering = GATHERING_FAMILIES.flatMap((definition): readonly MasteryFamilyModel[] => {
+  const gathering = PRODUCTION_FAMILY_IDS.flatMap((familyId): readonly MasteryFamilyModel[] => {
+    const definition = getProductionFamilyDefinition(familyId);
     const family = masteryById.get(definition.masteryId);
     if (family === undefined) return [];
     const speedBonus = Math.min(50, family.level * 0.5);
@@ -116,7 +108,7 @@ export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
       isUnlocked: family.isUnlocked,
       bonuses: [`+${String(speedBonus)}% vitesse de récolte`, "1 ressource par cycle"],
       subtitle: "Maîtrise du héros",
-      icon: definition.icon,
+      icon: definition.masterySymbol,
       specializations,
     }];
   });

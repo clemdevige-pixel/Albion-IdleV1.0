@@ -12,7 +12,6 @@ import type {
   WalletId,
 } from "@game/gameplay";
 import {
-  asMasteryId,
   WorkerAssignmentManager,
   WorkerExecutor,
   WorkerManager,
@@ -28,16 +27,21 @@ import {
   WORKER_TASK_DEFINITIONS,
   WORKER_TASK_IDS,
 } from "../data/workerContentCatalog.js";
+import { getProductionRefiningRecipe } from "../data/refiningRecipes.js";
 import {
-  BIRCH_PLANK_RECIPE,
-  COPPER_BAR_RECIPE,
-  FINE_CLOTH_RECIPE,
-  IRON_BAR_RECIPE,
-  LINEN_CLOTH_RECIPE,
-  PINE_PLANK_RECIPE,
-  STURDY_LEATHER_RECIPE,
-  THICK_LEATHER_RECIPE,
-} from "../data/refiningRecipes.js";
+  ORE_GATHERING_MASTERY_ID,
+  getHeroGatheringXpFromWorkerForTier,
+  getWorkerGatheringXpForTier,
+} from "../data/progressionContentCatalog.js";
+import {
+  getProductionFamilyByProfession,
+  getProductionFamilyId,
+} from "../data/productionFamilyCatalog.js";
+
+export {
+  getHeroGatheringXpFromWorkerForTier,
+  getWorkerGatheringXpForTier,
+} from "../data/progressionContentCatalog.js";
 
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;
@@ -51,19 +55,6 @@ const GATHER_WOOD_TASK_ID = WORKER_TASK_IDS.wood;
 const GATHER_COPPER_TASK_ID = WORKER_TASK_IDS.ore;
 const GATHER_HIDE_TASK_ID = WORKER_TASK_IDS.hide;
 const GATHER_FIBER_TASK_ID = WORKER_TASK_IDS.fiber;
-
-const WOOD_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_wood");
-const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");
-const HIDE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_hide");
-const FIBER_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_fiber");
-
-export function getWorkerGatheringXpForTier(tier: number): number {
-  return Math.max(1, Math.round(4 * (1.5 ** Math.max(0, tier - 3))));
-}
-
-export function getHeroGatheringXpFromWorkerForTier(tier: number): number {
-  return Math.max(1, Math.round(2 * (1.5 ** Math.max(0, tier - 3))));
-}
 
 export interface WorkerSnapshot {
   readonly id: WorkerId;
@@ -235,23 +226,18 @@ export class WorkerRuntime {
   }
 
   private workerRawItemId(profession: WorkerProfession, tier: 3 | 4): string {
-    switch (profession) {
-      case "woodcutter": return tier === 4 ? PINE_PLANK_RECIPE.rawItemId : BIRCH_PLANK_RECIPE.rawItemId;
-      case "miner": return tier === 4 ? IRON_BAR_RECIPE.rawItemId : COPPER_BAR_RECIPE.rawItemId;
-      case "stonecutter": return "item_resource_stone_t3";
-      case "skinner": return tier === 4 ? THICK_LEATHER_RECIPE.rawItemId : STURDY_LEATHER_RECIPE.rawItemId;
-      case "fiber_harvester": return tier === 4 ? FINE_CLOTH_RECIPE.rawItemId : LINEN_CLOTH_RECIPE.rawItemId;
-    }
+    const definition = getProductionFamilyByProfession(profession);
+    if (definition === undefined) return "item_resource_stone_t3";
+    return getProductionRefiningRecipe(
+      getProductionFamilyId(definition.gameplayFamily),
+      tier,
+    ).rawItemId;
   }
 
   private workerMasteryId(profession: WorkerProfession): MasteryId {
-    switch (profession) {
-      case "woodcutter": return WOOD_GATHERING_MASTERY_ID;
-      case "miner": return ORE_GATHERING_MASTERY_ID;
-      case "stonecutter": return ORE_GATHERING_MASTERY_ID;
-      case "skinner": return HIDE_GATHERING_MASTERY_ID;
-      case "fiber_harvester": return FIBER_GATHERING_MASTERY_ID;
-    }
+    const definition = getProductionFamilyByProfession(profession);
+    if (definition !== undefined) return definition.masteryId;
+    return ORE_GATHERING_MASTERY_ID;
   }
 
   private workerTaskForProfession(profession: keyof typeof this.workerTaskByProfession): WorkerTaskDefinitionId {

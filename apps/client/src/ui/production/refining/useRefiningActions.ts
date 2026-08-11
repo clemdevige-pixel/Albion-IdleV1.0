@@ -24,8 +24,13 @@ export function useRefiningActions(): RefiningActions {
       case "ore": return toggleMetalRefining();
       case "hide": return toggleLeatherRefining();
       case "fiber": return toggleClothRefining();
+      default: return assertNever(family);
     }
   }, [toggleClothRefining, toggleLeatherRefining, toggleMetalRefining, toggleRefining]);
 
   return { setTier: setProductionTier, toggle, refineAll: refineAllAvailable };
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unsupported Refining family: ${String(value)}`);
 }

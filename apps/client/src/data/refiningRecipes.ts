@@ -7,6 +7,7 @@ import {
   resolveWeaponTier,
   type WeaponCraftMaterial,
 } from "./weaponContentCatalog.js";
+import type { ProductionFamilyId, ProductionTier } from "./productionFamilyCatalog.js";
 
 export const BIRCH_PLANK_RECIPE = { id: "recipe_refine_birch_planks_t3", name: "Planches de bouleau", tier: 3, rawItemId: "item_resource_wood_t3", requirements: [{ itemId: "item_resource_wood_t3", quantity: 4 }], outputItemId: "item_refined_planks_t3", outputQuantity: 1, durationTicks: 6, stationId: "station_lumbermill_t3" } as const;
 export const COPPER_BAR_RECIPE = { id: "recipe_refine_copper_bars_t3", name: "Lingots de cuivre", tier: 3, rawItemId: "item_resource_copper_ore_t3", requirements: [{ itemId: "item_resource_copper_ore_t3", quantity: 4 }], outputItemId: "item_refined_copper_bar_t3", outputQuantity: 1, durationTicks: 6, stationId: "station_smelter_t3" } as const;
@@ -21,6 +22,26 @@ export function getWoodRecipe(tier: 3 | 4) { return tier === 4 ? PINE_PLANK_RECI
 export function getMetalRecipe(tier: 3 | 4) { return tier === 4 ? IRON_BAR_RECIPE : COPPER_BAR_RECIPE; }
 export function getLeatherRecipe(tier: 3 | 4) { return tier === 4 ? THICK_LEATHER_RECIPE : STURDY_LEATHER_RECIPE; }
 export function getClothRecipe(tier: 3 | 4) { return tier === 4 ? FINE_CLOTH_RECIPE : LINEN_CLOTH_RECIPE; }
+
+export type ProductionRefiningRecipe =
+  | ReturnType<typeof getWoodRecipe>
+  | ReturnType<typeof getMetalRecipe>
+  | ReturnType<typeof getLeatherRecipe>
+  | ReturnType<typeof getClothRecipe>;
+
+const PRODUCTION_REFINING_RECIPE_RESOLVERS = {
+  wood: getWoodRecipe,
+  ore: getMetalRecipe,
+  hide: getLeatherRecipe,
+  fiber: getClothRecipe,
+} satisfies Record<ProductionFamilyId, (tier: ProductionTier) => ProductionRefiningRecipe>;
+
+export function getProductionRefiningRecipe(
+  family: ProductionFamilyId,
+  tier: ProductionTier,
+): ProductionRefiningRecipe {
+  return PRODUCTION_REFINING_RECIPE_RESOLVERS[family](tier);
+}
 
 const MATERIAL_ITEM_BY_KIND = {
   wood: (tier: 3 | 4) => getWoodRecipe(tier).outputItemId,

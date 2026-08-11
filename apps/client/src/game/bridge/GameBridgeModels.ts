@@ -1,4 +1,4 @@
-import type { CombatState, EquipmentSlot, VendorRole } from "@game/gameplay";
+import type { CombatState, EquipmentSlot, VendorRole, WorkerProfession } from "@game/gameplay";
 
 export interface DamageNumberEvent {
   readonly id: number;
@@ -253,12 +253,7 @@ export interface CraftingVM {
   readonly recipes: readonly CraftingRecipeVM[];
 }
 
-export type WorkerProfessionVM =
-  | "woodcutter"
-  | "miner"
-  | "stonecutter"
-  | "skinner"
-  | "fiber_harvester";
+export type WorkerProfessionVM = WorkerProfession;
 
 export interface WorkerVM {
   readonly id: string;

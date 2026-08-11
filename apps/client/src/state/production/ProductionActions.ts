@@ -9,6 +9,7 @@ import type {
   ProductionBridgeAdapter,
   SupportedProductionFamily,
 } from "./ProductionBridgeAdapter";
+import { isSupportedProductionFamily } from "../../data/productionFamilyCatalog";
 
 interface ProductionActionsDependencies {
   readonly bridge: GameBridge;
@@ -60,7 +61,8 @@ export class ProductionActions {
     resourceFamily: string,
     quality: "miss" | "correct" | "perfect",
   ): boolean {
-    const family = resourceFamily as ResourceFamily;
+    if (!isSupportedProductionFamily(resourceFamily)) return false;
+    const family: ResourceFamily = resourceFamily;
     const result = this.deps.gatheringRuntime.performGatheringStrike(
       family,
       quality,
@@ -68,7 +70,7 @@ export class ProductionActions {
     );
     if (!result.ok) return false;
 
-    this.deps.productionBridge.syncGathering(family as SupportedProductionFamily);
+    this.deps.productionBridge.syncGathering(resourceFamily);
     return true;
   }
 
@@ -117,6 +119,7 @@ export class ProductionActions {
       case "Ore": return this.deps.gatheringRuntime.toggleOreGathering(tick);
       case "Hide": return this.deps.gatheringRuntime.toggleHideGathering(tick);
       case "Fiber": return this.deps.gatheringRuntime.toggleFiberGathering(tick);
+      default: return assertNever(family);
     }
   }
 
@@ -127,6 +130,11 @@ export class ProductionActions {
       case "Ore": return this.deps.refiningRuntime.toggleMetalRefining(tick);
       case "Hide": return this.deps.refiningRuntime.toggleLeatherRefining(tick);
       case "Fiber": return this.deps.refiningRuntime.toggleClothRefining(tick);
+      default: return assertNever(family);
     }
   }
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unsupported Production family: ${String(value)}`);
 }

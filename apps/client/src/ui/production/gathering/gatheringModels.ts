@@ -5,9 +5,14 @@ import type {
   WorkerProfessionVM,
   WorkerVM,
 } from "../../../game/GameBridge";
+import {
+  PRODUCTION_FAMILY_IDS,
+  getProductionFamilyDefinition,
+  type ProductionFamilyId,
+} from "../../../data/productionFamilyCatalog";
 import { masteryProgressPercent } from "../../shared/masteryProgress";
 
-export type GatheringResourceId = "wood" | "hide" | "fiber" | "ore";
+export type GatheringResourceId = ProductionFamilyId;
 
 export interface GatheringHeroMasteryModel {
   readonly level: number;
@@ -62,17 +67,17 @@ export function selectGatheringSource(state: GameBridgeState): GatheringSource {
 }
 
 export function buildGatheringModel(source: GatheringSource): GatheringModel {
-  const createResource = (
-    id: GatheringResourceId,
-    activity: GatheringVM,
-    label: string,
-    icon: string,
-    profession: WorkerProfessionVM,
-    masteryId: string,
-    tier3Tool: string,
-    tier4Tool: string,
-  ): GatheringResourceModel => {
-    const mastery = source.masteries.find((candidate) => candidate.id === masteryId);
+  const activities = {
+    wood: source.gathering,
+    ore: source.oreGathering,
+    hide: source.hideGathering,
+    fiber: source.fiberGathering,
+  } satisfies Record<GatheringResourceId, GatheringVM>;
+
+  const createResource = (id: GatheringResourceId): GatheringResourceModel => {
+    const definition = getProductionFamilyDefinition(id);
+    const activity = activities[id];
+    const mastery = source.masteries.find((candidate) => candidate.id === definition.masteryId);
     const heroMastery = mastery === undefined
       ? { level: activity.masteryLevel, currentXp: 0, xpToNextLevel: 0, progressPercent: 0 }
       : {
@@ -86,11 +91,11 @@ export function buildGatheringModel(source: GatheringSource): GatheringModel {
       id,
       activity,
       heroMastery,
-      label,
-      icon,
-      profession,
-      tool: source.tier === 4 ? tier4Tool : tier3Tool,
-      worker: source.workers.find((worker) => worker.profession === profession),
+      label: definition.label,
+      icon: definition.gatheringIcon,
+      profession: definition.profession,
+      tool: definition.tiers[source.tier].toolName,
+      worker: source.workers.find((worker) => worker.profession === definition.profession),
     };
   };
 
@@ -99,11 +104,6 @@ export function buildGatheringModel(source: GatheringSource): GatheringModel {
     recruitmentCost: source.recruitmentCost,
     workerCapacity: source.workerCapacity,
     recruitedWorkerCount: source.workers.length,
-    resources: [
-      createResource("wood", source.gathering, "Bois", "resource-birch-node.png", "woodcutter", "mastery_gathering_wood", "Hache de compagnon", "Hache T4"),
-      createResource("ore", source.oreGathering, "Minerai", "resource-copper-pickaxe.png", "miner", "mastery_gathering_ore", "Pioche de compagnon", "Pioche T4"),
-      createResource("hide", source.hideGathering, "Peau", "resource-hide.png", "skinner", "mastery_gathering_hide", "Couteau de dépeçage", "Couteau de dépeçage T4"),
-      createResource("fiber", source.fiberGathering, "Fibres", "resource-fiber.png", "fiber_harvester", "mastery_gathering_fiber", "Faucille de compagnon", "Faucille T4"),
-    ],
+    resources: PRODUCTION_FAMILY_IDS.map(createResource),
   };
 }

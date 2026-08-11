@@ -1,25 +1,23 @@
 import type { EntityId } from "@game/core";
-import type {
-  GatheringCoordinator,
-  InventoryManager,
-  RefiningManager,
-  ResourceFamily,
-} from "@game/gameplay";
+import type { GatheringCoordinator, InventoryManager, RefiningManager } from "@game/gameplay";
 import {
   EQUIPMENT_CRAFT_RECIPES,
   getClothRecipe,
   getLeatherRecipe,
   getMetalRecipe,
+  getProductionRefiningRecipe,
   getWoodRecipe,
 } from "../../data/refiningRecipes";
 import { getItemPower } from "../../data/itemPower";
+import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
 import {
-  FIBER_GATHERING_MASTERY_ID,
-  HIDE_GATHERING_MASTERY_ID,
-  ORE_GATHERING_MASTERY_ID,
-  WOOD_GATHERING_MASTERY_ID,
-  getRequiredGatheringMasteryForTier,
-} from "../../data/progressionContentCatalog";
+  PRODUCTION_FAMILIES,
+  getProductionFamilyByGameplayFamily,
+  getProductionFamilyId,
+  type ProductionFamilyId,
+  type ProductionTier,
+  type SupportedProductionFamily,
+} from "../../data/productionFamilyCatalog";
 import type { GameBridge } from "../../game/GameBridge";
 import type { GatheringRuntime } from "../../runtime/GatheringRuntime";
 import type { RefiningRuntime } from "../../runtime/RefiningRuntime";
@@ -29,11 +27,7 @@ import {
   syncRefiningToBridge,
 } from "../bridgeSync";
 
-export type ProductionTier = 3 | 4;
-export type SupportedProductionFamily = Extract<
-  ResourceFamily,
-  "Wood" | "Ore" | "Hide" | "Fiber"
->;
+export type { ProductionTier, SupportedProductionFamily } from "../../data/productionFamilyCatalog";
 
 interface ProductionBridgeAdapterDependencies {
   readonly bridge: GameBridge;
@@ -124,51 +118,32 @@ export class ProductionBridgeAdapter {
 
   private getFamilyConfig(family: SupportedProductionFamily, tier: ProductionTier) {
     const { bridge } = this.deps;
-
-    switch (family) {
-      case "Wood":
-        return {
-          masteryId: WOOD_GATHERING_MASTERY_ID,
-          resourceName: tier === 4 ? "Bois de pin" : "Bois de bouleau",
-          visualManifestId: "resource_wood",
-          recipe: getWoodRecipe(tier),
-          updateGathering: (vm: Parameters<GameBridge["updateGathering"]>[0]) => bridge.updateGathering(vm),
-          updateRefining: (vm: Parameters<GameBridge["updateRefining"]>[0]) => bridge.updateRefining(vm),
-        };
-      case "Ore":
-        return {
-          masteryId: ORE_GATHERING_MASTERY_ID,
-          resourceName: tier === 4 ? "Minerai de fer" : "Minerai de cuivre",
-          visualManifestId: "resource_ore",
-          recipe: getMetalRecipe(tier),
-          updateGathering: (vm: Parameters<GameBridge["updateOreGathering"]>[0]) => bridge.updateOreGathering(vm),
-          updateRefining: (vm: Parameters<GameBridge["updateMetalRefining"]>[0]) => bridge.updateMetalRefining(vm),
-        };
-      case "Hide":
-        return {
-          masteryId: HIDE_GATHERING_MASTERY_ID,
-          resourceName: tier === 4 ? "Peau épaisse" : "Peau robuste",
-          visualManifestId: "resource_hide",
-          recipe: getLeatherRecipe(tier),
-          updateGathering: (vm: Parameters<GameBridge["updateHideGathering"]>[0]) => bridge.updateHideGathering(vm),
-          updateRefining: (vm: Parameters<GameBridge["updateLeatherRefining"]>[0]) => bridge.updateLeatherRefining(vm),
-        };
-      case "Fiber":
-        return {
-          masteryId: FIBER_GATHERING_MASTERY_ID,
-          resourceName: tier === 4 ? "Fibre fine" : "Fibre de lin",
-          visualManifestId: "resource_fiber",
-          recipe: getClothRecipe(tier),
-          updateGathering: (vm: Parameters<GameBridge["updateFiberGathering"]>[0]) => bridge.updateFiberGathering(vm),
-          updateRefining: (vm: Parameters<GameBridge["updateClothRefining"]>[0]) => bridge.updateClothRefining(vm),
-        };
-    }
+    const id = getProductionFamilyId(family);
+    const definition = getProductionFamilyByGameplayFamily(family);
+    return {
+      masteryId: definition.masteryId,
+      resourceName: definition.tiers[tier].resourceName,
+      visualManifestId: definition.visualManifestId,
+      recipe: getProductionRefiningRecipe(id, tier),
+      updateGathering: GATHERING_UPDATERS[id](bridge),
+      updateRefining: REFINING_UPDATERS[id](bridge),
+    };
   }
 }
 
-const PRODUCTION_FAMILIES: readonly SupportedProductionFamily[] = [
-  "Wood",
-  "Ore",
-  "Hide",
-  "Fiber",
-];
+type GatheringUpdater = (vm: Parameters<GameBridge["updateGathering"]>[0]) => void;
+type RefiningUpdater = (vm: Parameters<GameBridge["updateRefining"]>[0]) => void;
+
+const GATHERING_UPDATERS = {
+  wood: (bridge: GameBridge): GatheringUpdater => (vm) => bridge.updateGathering(vm),
+  ore: (bridge: GameBridge): GatheringUpdater => (vm) => bridge.updateOreGathering(vm),
+  hide: (bridge: GameBridge): GatheringUpdater => (vm) => bridge.updateHideGathering(vm),
+  fiber: (bridge: GameBridge): GatheringUpdater => (vm) => bridge.updateFiberGathering(vm),
+} satisfies Record<ProductionFamilyId, (bridge: GameBridge) => GatheringUpdater>;
+
+const REFINING_UPDATERS = {
+  wood: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateRefining(vm),
+  ore: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateMetalRefining(vm),
+  hide: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateLeatherRefining(vm),
+  fiber: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateClothRefining(vm),
+} satisfies Record<ProductionFamilyId, (bridge: GameBridge) => RefiningUpdater>;
