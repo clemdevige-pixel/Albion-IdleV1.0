@@ -22,11 +22,12 @@ describe("monsterContentCatalog", () => {
     }
   });
 
-  it("keeps definition IDs coherent with their catalog keys", () => {
+  it("keeps definition IDs coherent with identity-only combat metadata", () => {
     for (const [key, definition] of Object.entries(MONSTER_DEFINITIONS)) {
       expect(definition.id).toBe(key);
       expect(definition.visualManifestId.length).toBeGreaterThan(0);
-      expect(definition.combat.attackSpeed).toBeGreaterThan(0);
+      expect(["physical", "magical"]).toContain(definition.combat.damageType);
+      expect(definition.rewards.lootTableId.length).toBeGreaterThan(0);
     }
   });
 
@@ -38,18 +39,25 @@ describe("monsterContentCatalog", () => {
       for (const abilityId of definition.abilityIds) {
         expect(getMonsterAbilityDefinition(abilityId).id).toBe(abilityId);
       }
-      expect(() => buildMonsterRuntimeAbilities(definition.category, definition.abilityIds)).not.toThrow();
+      expect(() =>
+        buildMonsterRuntimeAbilities(definition.category, definition.abilityIds)
+      ).not.toThrow();
     }
   });
 
   it("applies faster authored cooldown cadence to higher monster categories", () => {
     const abilityId = Object.values(MONSTER_DEFINITIONS)
       .flatMap((definition) => definition.abilityIds)[0];
+
     expect(abilityId).toBeDefined();
     if (abilityId === undefined) return;
+
     const authored = getMonsterAbilityDefinition(abilityId);
     const bossRuntime = buildMonsterRuntimeAbilities("boss", [abilityId])[0];
-    expect(bossRuntime?.cooldown).toBe(authored.cooldown * MONSTER_CATEGORY_BEHAVIORS.boss.cooldownMultiplier);
+
+    expect(bossRuntime?.cooldown).toBe(
+      authored.cooldown * MONSTER_CATEGORY_BEHAVIORS.boss.cooldownMultiplier,
+    );
     expect(MONSTER_CATEGORY_BEHAVIORS.boss.cooldownMultiplier).toBeLessThan(
       MONSTER_CATEGORY_BEHAVIORS.normal.cooldownMultiplier,
     );
@@ -59,6 +67,7 @@ describe("monsterContentCatalog", () => {
     const zone = asZoneDefinitionId("zone_forest_t3");
     const first = resolveMonsterForEncounter(zone, 0, 0, () => 0);
     const last = resolveMonsterForEncounter(zone, 0, 0, () => 0.999);
+
     expect(first.category).toBe("normal");
     expect(last.category).toBe("normal");
     expect(first.id).not.toBe(last.id);
@@ -66,16 +75,19 @@ describe("monsterContentCatalog", () => {
 
   it("selects segment and biome bosses from explicit pool slots", () => {
     const zone = asZoneDefinitionId("zone_swamp_t3");
+
     const segmentBoss = resolveMonsterForEncounter(
       zone,
       0,
       ENCOUNTERS_PER_SEGMENT - 1,
     );
+
     const biomeBoss = resolveMonsterForEncounter(
       zone,
       SEGMENTS_PER_ZONE - 1,
       ENCOUNTERS_PER_SEGMENT - 1,
     );
+
     expect(segmentBoss.tags).toContain("segment_boss");
     expect(biomeBoss.tags).toContain("biome_boss");
   });

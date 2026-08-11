@@ -67,9 +67,13 @@ export function CharacterModule(): JSX.Element {
             ? null
             : { slot, x: event.clientX, y: event.clientY });
         }}
-        onDoubleClick={entry?.itemId === undefined ? undefined : () => {
-          if (actions.unequip(slot)) setPickerSlot(null);
-        }}
+        {...(entry?.itemId === undefined
+  ? {}
+  : {
+      onDoubleClick: () => {
+        if (actions.unequip(slot)) setPickerSlot(null);
+      },
+    })}
       />
     );
   };

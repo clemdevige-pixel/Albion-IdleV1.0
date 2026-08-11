@@ -11,6 +11,7 @@ export interface EnemyCombatProfile {
   readonly damage: number;
   readonly armor: number;
   readonly magicResistance: number;
+  readonly attackSpeed: number;
 }
 
 export interface EncounterRewards {
@@ -49,6 +50,7 @@ export function getEnemyCombatProfile(
     damage: Math.floor(baseDmg * damageScale),
     armor: Math.floor(baseArmor * defenseScale),
     magicResistance: Math.floor(3 * defenseScale),
+    attackSpeed: 0.8,
   };
 }
 

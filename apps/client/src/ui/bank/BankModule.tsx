@@ -37,7 +37,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
           label="Objets dans la banque"
           interactive
           draggable
-          onItemDrop={onMove}
+          {...(onMove === undefined ? {} : { onItemDrop: onMove })}
           onItemDoubleClick={(_event, slot) => {
             if (slot.itemId !== undefined) onTransferToInventory?.(slot.position);
           }}

@@ -39,7 +39,7 @@ function createStandardWeaponRecipe(itemId: string) {
   const family = resolveWeaponFamilyId(itemId);
   const name = getWeaponSpecializationName(itemId);
   if (tier === undefined || craft?.kind !== "standard" || family === undefined || name === undefined) return undefined;
-  const requirements = craft.materials.map((material) => materialRequirement(material, tier));
+  const requirements: Array<{ itemId: string; quantity: number }> = craft.materials.map((material) => materialRequirement(material, tier));
   const previousItemId = resolvePreviousWeaponTierItemId(itemId);
   if (tier >= 4) {
     if (previousItemId === undefined) throw new Error(`Standard weapon ${itemId} is missing its T${String(tier - 1)} predecessor.`);

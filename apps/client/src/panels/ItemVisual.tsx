@@ -66,8 +66,8 @@ function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefin
     icon: presentation.itemIcon,
     tier,
     slot: "weapon",
-    handling: equipment.handling,
-    stats: equipment.stats,
+    ...(equipment.handling === "one_handed" || equipment.handling === "two_handed" ? { handling: equipment.handling } : {}),
+    stats: equipment.stats ?? {},
   };
 }
 

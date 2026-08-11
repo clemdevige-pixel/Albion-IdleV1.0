@@ -5,10 +5,7 @@ import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
 import { ENCHANTMENT_MATERIAL_NAMES } from "../data/economyContentCatalog.js";
-import {
-  applyMonsterRewardModifiers,
-  getMonsterDefinition,
-} from "../data/monsterContentCatalog.js";
+import { getMonsterDefinition } from "../data/monsterContentCatalog.js";
 import {
   clearActiveMonsterIdentity,
   getMonsterDefinitionIdForEntity,
@@ -51,9 +48,7 @@ export function setupCombatRewardAdapter(
     const monster = monsterDefinitionId === undefined
       ? undefined
       : getMonsterDefinition(monsterDefinitionId);
-    const rewards = monster === undefined
-      ? progressionRewards
-      : applyMonsterRewardModifiers(progressionRewards, monster);
+    const rewards = progressionRewards;
     const lootTableId = monster?.rewards.lootTableId ?? "loot_monster_generic";
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(

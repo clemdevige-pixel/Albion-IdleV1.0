@@ -111,12 +111,10 @@ export function spawnEnemyForSegment(
     ctx.segmentIndex,
     ctx.encounterIndex,
   );
-  const maxHealth = Math.floor(profile.hp * monster.combat.health);
-  const damage = Math.floor(profile.damage * monster.combat.damage);
-  const armor = Math.floor(profile.armor * monster.combat.armor);
-  const magicResistance = Math.floor(
-    profile.magicResistance * monster.combat.magicResistance,
-  );
+  const maxHealth = profile.hp;
+  const damage = profile.damage;
+  const armor = profile.armor;
+  const magicResistance = profile.magicResistance;
   const physicalDamage = monster.combat.damageType === "physical" ? damage : 0;
   const magicalDamage = monster.combat.damageType === "magical" ? damage : 0;
 
@@ -126,7 +124,7 @@ export function spawnEnemyForSegment(
       maxHealth,
       physDamage: physicalDamage,
       magDamage: magicalDamage,
-      attackSpeed: monster.combat.attackSpeed,
+      attackSpeed: profile.attackSpeed,
       armor,
       magicRes: magicResistance,
     },

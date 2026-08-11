@@ -13,6 +13,7 @@ import {
   TargetValidator,
   createDefaultStatRegistry,
   getEncounterRewards,
+  getEnemyCombatProfile,
 } from "@game/gameplay";
 import { MONSTER_LOOT_TABLES } from "./economyContentCatalog";
 import {
@@ -35,23 +36,23 @@ import {
 import { spawnEnemyForSegment } from "../runtime/combatEntityFactory";
 
 describe("monster pipeline global contract", () => {
-  it("resolves every authored dependency from the monster definition", () => {
+  it("keeps monster definitions limited to identity and authored content", () => {
     for (const [monsterId, monster] of Object.entries(MONSTER_DEFINITIONS)) {
       expect(monster.id).toBe(monsterId);
-      expect(monster.combat.health).toBeGreaterThan(0);
-      expect(monster.combat.damage).toBeGreaterThan(0);
-      expect(monster.combat.attackSpeed).toBeGreaterThan(0);
-      expect(monster.rewards.silverMultiplier).toBeGreaterThan(0);
-      expect(monster.rewards.fameMultiplier).toBeGreaterThan(0);
+      expect(["physical", "magical"]).toContain(monster.combat.damageType);
       expect(MONSTER_LOOT_TABLES[monster.rewards.lootTableId]).toBeDefined();
       expect(renderManifestRegistry.getStaticActor(monster.visualManifestId)).toBeDefined();
 
       const behavior = MONSTER_CATEGORY_BEHAVIORS[monster.category];
       expect(monster.abilityIds.length).toBeLessThanOrEqual(behavior.maxActiveAbilities);
+
       for (const abilityId of monster.abilityIds) {
         expect(MONSTER_ABILITIES[abilityId]).toBeDefined();
       }
-      expect(() => buildMonsterRuntimeAbilities(monster.category, monster.abilityIds)).not.toThrow();
+
+      expect(() =>
+        buildMonsterRuntimeAbilities(monster.category, monster.abilityIds)
+      ).not.toThrow();
     }
   });
 
@@ -59,30 +60,38 @@ describe("monster pipeline global contract", () => {
     for (const zone of ZONE_DEFINITIONS) {
       const pool = ZONE_ENCOUNTER_POOLS[String(zone.id)];
       expect(pool).toBeDefined();
+
       const zoneMonsterIds = zone.monsterSpawns
         .map((spawn) => String(spawn.definitionId))
         .sort();
+
       expect(zoneMonsterIds).toEqual([...(pool?.normal ?? [])].sort());
     }
   });
 
-  it("keeps zone and segment progression as the reward base before monster modifiers", () => {
-    const early = getEncounterRewards(0, 0, 0);
+  it("uses zone, segment and encounter as the canonical combat and reward progression", () => {
+    const earlyCombat = getEnemyCombatProfile(0, 0, 0);
+    const laterCombat = getEnemyCombatProfile(0, 1, 0);
+
+    expect(laterCombat.hp).toBeGreaterThan(earlyCombat.hp);
+    expect(laterCombat.damage).toBeGreaterThan(earlyCombat.damage);
+    expect(earlyCombat.attackSpeed).toBeGreaterThan(0);
+
+    const earlyReward = getEncounterRewards(0, 0, 0);
     const laterSegment = getEncounterRewards(0, 1, 0);
     const laterZone = getEncounterRewards(1, 0, 0);
-    expect(laterSegment.silver).toBeGreaterThan(early.silver);
-    expect(laterSegment.fame).toBeGreaterThan(early.fame);
-    expect(laterZone.silver).toBeGreaterThan(early.silver);
-    expect(laterZone.fame).toBeGreaterThan(early.fame);
+
+    expect(laterSegment.silver).toBeGreaterThan(earlyReward.silver);
+    expect(laterSegment.fame).toBeGreaterThan(earlyReward.fame);
+    expect(laterZone.silver).toBeGreaterThan(earlyReward.silver);
+    expect(laterZone.fame).toBeGreaterThan(earlyReward.fame);
 
     for (const monster of Object.values(MONSTER_DEFINITIONS)) {
-      const resolved = applyMonsterRewardModifiers(laterSegment, monster);
-      expect(resolved.silver).toBeGreaterThanOrEqual(0);
-      expect(resolved.fame).toBeGreaterThanOrEqual(0);
+      expect(applyMonsterRewardModifiers(laterSegment, monster)).toEqual(laterSegment);
     }
   });
 
-  it("spawns an authored boss with identity, abilities, rewards and renderer all resolvable", () => {
+  it("spawns an authored boss with canonical stats and authored identity", () => {
     const world = new World(createRuntimeServices());
     const statsManager = new StatsManager(world, createDefaultStatRegistry());
     const damageManager = new DamageManager(world, statsManager);
@@ -90,6 +99,7 @@ describe("monster pipeline global contract", () => {
     const targetManager = new TargetManager(world, new TargetValidator(world));
     const autoAttackManager = new AutoAttackManager(world, targetManager, statsManager);
     const abilityManager = new AbilityManager(world, statsManager);
+
     const deps = {
       world,
       statsManager,
@@ -100,29 +110,39 @@ describe("monster pipeline global contract", () => {
       abilityManager,
     };
 
+    const encounterIndex = ENCOUNTERS_PER_SEGMENT - 1;
+
     const spawned = spawnEnemyForSegment(
       deps,
       new BiomeResolver(new BiomeRegistry()),
       {
         zoneIndex: 0,
         segmentIndex: 0,
-        encounterIndex: ENCOUNTERS_PER_SEGMENT - 1,
+        encounterIndex,
         zoneDefId: WORLD_ZONE_IDS.forest,
         zoneName: "Birch Forest",
       },
     );
+
     const monster = getMonsterDefinition(spawned.monsterDefinitionId);
+    const canonicalProfile = getEnemyCombatProfile(0, 0, encounterIndex);
 
     expect(monster.category).toBe("boss");
+    expect(spawned.maxHealth).toBe(canonicalProfile.hp);
     expect(getMonsterDefinitionIdForEntity(spawned.id)).toBe(monster.id);
-    expect(renderManifestRegistry.getStaticActor(spawned.visualManifestId)?.id).toBe(monster.visualManifestId);
-    expect(abilityManager.getAbilities(spawned.id).map((entry) => String(entry.abilityId))).toEqual(monster.abilityIds);
+
+    expect(
+      renderManifestRegistry.getStaticActor(spawned.visualManifestId)?.id,
+    ).toBe(monster.visualManifestId);
+
+    expect(
+      abilityManager.getAbilities(spawned.id).map((entry) => String(entry.abilityId)),
+    ).toEqual(monster.abilityIds);
+
     expect(MONSTER_LOOT_TABLES[monster.rewards.lootTableId]).toBeDefined();
 
-    const baseReward = getEncounterRewards(0, 0, ENCOUNTERS_PER_SEGMENT - 1);
-    const finalReward = applyMonsterRewardModifiers(baseReward, monster);
-    expect(finalReward.silver).toBeGreaterThanOrEqual(baseReward.silver);
-    expect(finalReward.fame).toBeGreaterThanOrEqual(baseReward.fame);
+    const baseReward = getEncounterRewards(0, 0, encounterIndex);
+    expect(applyMonsterRewardModifiers(baseReward, monster)).toEqual(baseReward);
 
     clearActiveMonsterIdentity(spawned.id);
   });
