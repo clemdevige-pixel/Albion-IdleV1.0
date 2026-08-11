@@ -32,7 +32,6 @@ import {
   asWalletId,
   asPlayerId,
   asCombatSessionId,
-  asZoneDefinitionId,
   type DamageEventMap,
   type WorldIntegrationEventMap,
 } from "@game/gameplay";
@@ -46,6 +45,7 @@ import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { CLIENT_ABILITIES } from "../data/weaponContentCatalog.js";
 import { getWeaponAttackSpeed } from "../data/itemPower.js";
 import { getItemDefinition } from "../panels/ItemVisual.js";
+import { WORLD_ZONE_IDS } from "../data/worldContentCatalog.js";
 import {
   MASTERY_DEFINITIONS,
   DESTINY_NODES,
@@ -227,7 +227,7 @@ describe("combatRuntimeAndAdapter regression suite", () => {
           zoneIndex: 0,
           segmentIndex: 0,
           encounterIndex: 0,
-          zoneDefId: asZoneDefinitionId("forest"),
+          zoneDefId: WORLD_ZONE_IDS.forest,
           zoneName: "Forest",
           highestUnlockedSegment: 0,
           farmMode: false,

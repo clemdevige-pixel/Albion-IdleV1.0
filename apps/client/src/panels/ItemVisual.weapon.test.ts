@@ -4,6 +4,7 @@ import {
   resolveWeaponMastery,
   resolveWeaponTier,
 } from "../data/weaponContentCatalog.js";
+import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemDefinition } from "./ItemVisual.js";
 
 const WEAPON_IDS = [
@@ -22,18 +23,20 @@ describe("ItemVisual weapon derivation", () => {
   it.each(WEAPON_IDS)("derives gameplay metadata for %s from weaponContentCatalog", (itemId) => {
     const visual = getItemDefinition(itemId);
     const equipment = WEAPON_ITEM_DEFINITIONS[itemId];
+    const resolvedEquipment = resolveEquipmentInfo(itemId);
     const tier = resolveWeaponTier(itemId);
     const mastery = resolveWeaponMastery(itemId);
 
     expect(visual).toBeDefined();
     expect(equipment).toBeDefined();
+    expect(resolvedEquipment).toBeDefined();
     expect(tier).toBeDefined();
     expect(mastery).toBeDefined();
 
     expect(visual?.slot).toBe("weapon");
     expect(visual?.tier).toBe(tier);
     expect(visual?.handling).toBe(equipment?.handling);
-    expect(visual?.stats).toEqual(equipment?.stats);
+    expect(visual?.stats).toEqual(resolvedEquipment?.stats);
     expect(visual?.name.endsWith(`T${String(tier)}`)).toBe(true);
     expect(visual?.icon.length).toBeGreaterThan(0);
   });
