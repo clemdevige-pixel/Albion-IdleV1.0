@@ -195,7 +195,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       heroId,
     });
 
-    let combatRewardAdapter: ReturnType<typeof setupCombatRewardAdapter>;
     const bridgeSyncCoordinator = new GameBridgeSyncCoordinator({
       bridge,
       inventoryManager,
@@ -224,7 +223,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     });
     const resyncAll = (): void => { bridgeSyncCoordinator.syncAll(); };
 
-    combatRewardAdapter = setupCombatRewardAdapter({
+    const combatRewardAdapter = setupCombatRewardAdapter({
       combatService,
       combatRewardRuntime,
       worldRuntime,

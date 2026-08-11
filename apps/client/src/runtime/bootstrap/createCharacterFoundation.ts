@@ -47,8 +47,6 @@ export function createCharacterEquipmentFoundation({
   onStatsChanged,
 }: CharacterEquipmentFoundationDependencies) {
   const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
-  let equipmentManager: EquipmentManager;
-
   const syncWeaponMasteryStats = (entityId: EntityId): void => {
     recalculateWeaponMasteryStats(
       statsManager,
@@ -75,7 +73,7 @@ export function createCharacterEquipmentFoundation({
     },
   );
 
-  equipmentManager = new EquipmentManager(
+  const equipmentManager = new EquipmentManager(
     world,
     inventoryManager,
     resolveEquipmentInfo,
