@@ -1,10 +1,9 @@
-import type { UiModuleDefinition } from "../modules/moduleDefinition";
+﻿import type { UiModuleDefinition } from "../modules/moduleDefinition";
 import type { UiModuleId } from "./moduleIds";
 import { UI_MODULE_IDS } from "./moduleIds";
 
 export const UI_MODULE_LABELS: Readonly<Record<UiModuleId, string>> = {
   dashboard: "Tableau de bord",
-  bank: "Banque",
   character: "Personnage",
   inventory: "Inventaire",
   masteries: "Maîtrises",
@@ -12,10 +11,6 @@ export const UI_MODULE_LABELS: Readonly<Record<UiModuleId, string>> = {
   craft: "Fabrication",
   merchant: "Marchand",
   world: "Monde",
-  equipment: "Équipement",
-  stats: "Caractéristiques",
-  wallet: "Portefeuille",
-  repair: "Réparation",
 };
 
 export const PRIMARY_UI_MODULES: readonly UiModuleDefinition[] = [

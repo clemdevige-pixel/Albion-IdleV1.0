@@ -1,22 +1,20 @@
-import { useNavigation } from "../navigation";
+﻿import { useNavigation } from "../navigation";
 import { UI_MODULE_IDS } from "../navigation/moduleIds";
 import { UI_MODULE_LABELS } from "../navigation/moduleCatalog";
 import { ModuleHeader } from "../shared";
 import { DashboardModule } from "../dashboard";
 import { CharacterModule } from "../character";
 import { InventoryModule } from "../inventory";
-import { BankModule } from "../bank";
 import { MasteriesModule } from "../masteries";
 import { ProductionModule } from "../production";
 import { MerchantModule } from "../merchant";
-import { LegacyModuleContent } from "./LegacyModuleContent";
 
 export function RightPanelHost(): JSX.Element {
   const { activeModule, returnToDashboard } = useNavigation();
+
   const isDashboard = activeModule === UI_MODULE_IDS.dashboard;
   const isCharacter = activeModule === UI_MODULE_IDS.character;
   const isInventory = activeModule === UI_MODULE_IDS.inventory;
-  const isBank = activeModule === UI_MODULE_IDS.bank;
   const isMasteries = activeModule === UI_MODULE_IDS.masteries;
   const isProduction = activeModule === UI_MODULE_IDS.production;
   const isMerchant = activeModule === UI_MODULE_IDS.merchant;
@@ -41,6 +39,7 @@ export function RightPanelHost(): JSX.Element {
           }
         />
       </div>
+
       <div className="ui-right-panel__content">
         {isDashboard ? (
           <DashboardModule />
@@ -48,8 +47,6 @@ export function RightPanelHost(): JSX.Element {
           <CharacterModule />
         ) : isInventory ? (
           <InventoryModule />
-        ) : isBank ? (
-          <BankModule />
         ) : isMasteries ? (
           <MasteriesModule />
         ) : isProduction ? (
@@ -57,7 +54,7 @@ export function RightPanelHost(): JSX.Element {
         ) : isMerchant ? (
           <MerchantModule />
         ) : (
-          <LegacyModuleContent />
+          <DashboardModule />
         )}
       </div>
     </aside>

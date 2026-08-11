@@ -1,20 +1,13 @@
-import { GameProvider } from "./state/GameContext";
-import { PanelManagerProvider } from "./panels/PanelManager";
-import { AppLayout } from "./layout/AppLayout";
+﻿import { GameProvider } from "./state/GameContext";
+import { NavigationProvider } from "./ui/navigation";
+import { AppShell } from "./ui/shell";
 
-/**
- * Application shell.
- *
- * React owns the permanent shell while Phaser remains mounted in its world
- * region. GameProvider exposes runtime services; PanelManagerProvider keeps
- * legacy panels on the typed single-module navigation contract.
- */
 export function App(): JSX.Element {
   return (
     <GameProvider>
-      <PanelManagerProvider>
-        <AppLayout />
-      </PanelManagerProvider>
+      <NavigationProvider>
+        <AppShell />
+      </NavigationProvider>
     </GameProvider>
   );
 }
