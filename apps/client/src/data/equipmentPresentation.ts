@@ -1,14 +1,11 @@
 import {
   WEAPON_FAMILIES,
-  resolveWeaponMastery,
+  resolveWeaponPresentation,
   type WeaponFamilyId,
+  type WeaponPresentationContent,
 } from "./weaponContentCatalog.js";
 
-export interface EquipmentPresentationDefinition {
-  readonly itemIcon: string;
-  readonly actorManifestId: string;
-  readonly combatProfileId: string;
-}
+export type EquipmentPresentationDefinition = WeaponPresentationContent;
 
 export interface WeaponFamilyCraftPresentation {
   readonly label: string;
@@ -16,49 +13,8 @@ export interface WeaponFamilyCraftPresentation {
 }
 
 /**
- * Presentation is authored once per weapon specialization, not once per tier.
- * Gameplay identity stays in weaponContentCatalog; this catalog owns only
- * explicit visual/runtime presentation choices.
- */
-const PRESENTATION_BY_SPECIALIZATION: Readonly<
-  Record<string, EquipmentPresentationDefinition>
-> = {
-  mastery_broadsword: {
-    itemIcon: "item-broadsword-pixel-v1.png",
-    actorManifestId: "hero_broadsword",
-    combatProfileId: "melee",
-  },
-  mastery_longbow: {
-    itemIcon: "item-longbow-pixel-v1.png",
-    actorManifestId: "hero_bow",
-    combatProfileId: "bow",
-  },
-  mastery_badon: {
-    itemIcon: "item-badon-pixel-v1.png",
-    actorManifestId: "hero_bow",
-    combatProfileId: "badon",
-  },
-  mastery_t4_fire_staff: {
-    itemIcon: "item-fire-staff-pixel-v1.png",
-    actorManifestId: "hero_fire_staff",
-    combatProfileId: "fire_staff",
-  },
-  mastery_spiked_gauntlets: {
-    itemIcon: "item-spiked-gauntlets-pixel-v1.png",
-    actorManifestId: "hero_spiked_gauntlets",
-    combatProfileId: "melee",
-  },
-  mastery_dagger_pair: {
-    itemIcon: "item-dagger-pair-pixel-v1.png",
-    actorManifestId: "hero_dagger_pair",
-    combatProfileId: "melee",
-  },
-};
-
-/**
- * Craft-family presentation is explicit presentation content, but it is keyed
- * by the authoritative family IDs. Adding a gameplay family therefore forces
- * its presentation to be declared here instead of editing the crafting UI.
+ * Craft-family presentation is explicit presentation content, keyed by the
+ * authoritative gameplay family IDs.
  */
 const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
   Record<WeaponFamilyId, WeaponFamilyCraftPresentation>
@@ -70,14 +26,15 @@ const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
   dagger: { label: WEAPON_FAMILIES.dagger.name, symbol: "††" },
 };
 
-/** Presentation metadata boundary for equipped weapons and item visuals. */
+/**
+ * Equipped weapon presentation is authored directly on the authoritative
+ * weapon specialization content. No specialization-specific routing lives here.
+ */
 export function resolveEquipmentPresentation(
   itemId: string | undefined,
 ): EquipmentPresentationDefinition | undefined {
   if (itemId === undefined) return undefined;
-  const mastery = resolveWeaponMastery(itemId);
-  if (mastery === undefined) return undefined;
-  return PRESENTATION_BY_SPECIALIZATION[mastery.weaponId];
+  return resolveWeaponPresentation(itemId);
 }
 
 export function resolveWeaponFamilyCraftPresentation(
