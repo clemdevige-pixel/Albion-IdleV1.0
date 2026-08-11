@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadInitialRuntimeSave } from "./GameRuntimeLifecycle";
+import {
+  cancelDeferredRuntimeDisposal,
+  deferRuntimeDisposal,
+  loadInitialRuntimeSave,
+} from "./GameRuntimeLifecycle";
 
 function createDependencies(options?: {
   readonly hasSave?: boolean;
@@ -72,5 +76,34 @@ describe("initial runtime save loading", () => {
     expect(deps.addEconomyNotification).toHaveBeenCalledWith(
       expect.objectContaining({ type: "error" }),
     );
+  });
+});
+
+describe("runtime disposal scheduling", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("keeps the runtime alive when StrictMode immediately remounts", () => {
+    vi.useFakeTimers();
+    const runtimeKey = {};
+    const dispose = vi.fn();
+
+    deferRuntimeDisposal(runtimeKey, dispose);
+    cancelDeferredRuntimeDisposal(runtimeKey);
+    vi.runAllTimers();
+
+    expect(dispose).not.toHaveBeenCalled();
+  });
+
+  it("disposes the runtime after a real unmount", () => {
+    vi.useFakeTimers();
+    const runtimeKey = {};
+    const dispose = vi.fn();
+
+    deferRuntimeDisposal(runtimeKey, dispose);
+    vi.runAllTimers();
+
+    expect(dispose).toHaveBeenCalledTimes(1);
   });
 });

@@ -109,14 +109,24 @@ export function syncGatheringToBridge(
   resourceName: string,
   resourceFamily: GatheringVM["resourceFamily"],
   visualManifestId: string,
-  resourceTier: 3 | 4,
+  resourceTier: GatheringVM["resourceTier"],
   storedQuantity: number,
   strikesUsed: number,
+  activeResource?: {
+    readonly resourceName: string;
+    readonly resourceTier: GatheringVM["resourceTier"];
+  },
 ): void {
   const requiredTicks = session?.getRequiredTicks() ?? defaultDurationTicks;
   const elapsedTicks = session?.getElapsedTicks(currentTick) ?? 0;
+  const progress = session === undefined
+    ? 0
+    : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100));
+  const activeTier = activeResource?.resourceTier ?? resourceTier;
+  const isViewedTierActive = session !== undefined && activeTier === resourceTier;
+  const viewedDurationTicks = isViewedTierActive ? requiredTicks : defaultDurationTicks;
   updateBridge({
-    status: session === undefined ? "idle" : "gathering",
+    status: isViewedTierActive ? "gathering" : "idle",
     resourceName,
     resourceFamily,
     visualManifestId,
@@ -124,12 +134,20 @@ export function syncGatheringToBridge(
     masteryLevel,
     requiredMasteryLevel,
     isMasteryUnlocked: masteryLevel >= requiredMasteryLevel,
-    progress: session === undefined
-      ? 0
-      : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100)),
-    durationSeconds: requiredTicks * 0.5,
+    progress: isViewedTierActive ? progress : 0,
+    durationSeconds: viewedDurationTicks * 0.5,
     storedQuantity,
-    activeMiniGame: session === undefined
+    activeCycle: session === undefined
+      ? undefined
+      : {
+          resourceName: activeResource?.resourceName ?? resourceName,
+          resourceTier: activeTier,
+          progress,
+          durationSeconds: requiredTicks * 0.5,
+          cycleId: String(session.id),
+          strikesUsed,
+        },
+    activeMiniGame: !isViewedTierActive
       ? undefined
       : { cycleId: String(session.id), strikesUsed },
   });

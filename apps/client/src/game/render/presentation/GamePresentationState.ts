@@ -3,6 +3,7 @@ import type {
   GameBridge,
   GatheringVM,
 } from "../../GameBridge";
+import { selectRunningGathering } from "../../bridge/GatheringBridgeSelectors";
 
 export interface WeaponPresentationState {
   readonly visualManifestId: string | undefined;
@@ -19,7 +20,7 @@ export function selectActiveGathering(
     bridge.hideGathering,
     bridge.fiberGathering,
   ];
-  return activities.find((activity) => activity.status === "gathering");
+  return selectRunningGathering(activities);
 }
 
 export function selectEquippedWeapon(

@@ -1,4 +1,5 @@
 import type { GameBridgeState, GatheringVM } from "../../game/GameBridge";
+import { selectRunningGathering } from "../../game/bridge/GatheringBridgeSelectors";
 
 /** Returns the single gathering activity currently owned by the hero. */
 export function selectActiveGathering(
@@ -10,5 +11,5 @@ export function selectActiveGathering(
     state.hideGathering,
     state.fiberGathering,
   ];
-  return activities.find((activity) => activity.status === "gathering");
+  return selectRunningGathering(activities);
 }

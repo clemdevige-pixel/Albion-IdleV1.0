@@ -22,6 +22,33 @@ interface InitialSavePersistence {
 }
 
 const runtimeHandles = new WeakMap<GameBridge, GameRuntimeLifecycleHandle>();
+const pendingRuntimeDisposals = new WeakMap<object, ReturnType<typeof setTimeout>>();
+
+/**
+ * React StrictMode immediately remounts effects in development. Deferring the
+ * permanent runtime disposal lets that remount cancel destruction while a real
+ * unmount still releases subscriptions and coordinators on the next task.
+ */
+export function deferRuntimeDisposal(
+  runtimeKey: object,
+  dispose: () => void,
+): void {
+  const previous = pendingRuntimeDisposals.get(runtimeKey);
+  if (previous !== undefined) clearTimeout(previous);
+
+  const timeout = setTimeout(() => {
+    pendingRuntimeDisposals.delete(runtimeKey);
+    dispose();
+  }, 0);
+  pendingRuntimeDisposals.set(runtimeKey, timeout);
+}
+
+export function cancelDeferredRuntimeDisposal(runtimeKey: object): void {
+  const timeout = pendingRuntimeDisposals.get(runtimeKey);
+  if (timeout === undefined) return;
+  clearTimeout(timeout);
+  pendingRuntimeDisposals.delete(runtimeKey);
+}
 
 export function registerGameRuntimeLifecycle(
   bridge: GameBridge,
@@ -69,6 +96,7 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     if (handle === undefined) {
       throw new Error("Game runtime lifecycle was not registered");
     }
+    cancelDeferredRuntimeDisposal(services.bridge);
 
     const lifecycle = new RuntimeLifecycle();
     lifecycle.start(handle.tick, handle.tickIntervalMs);
@@ -83,7 +111,7 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     return () => {
       lifecycle.stop();
       stopAutosave();
-      handle.dispose();
+      deferRuntimeDisposal(services.bridge, handle.dispose);
     };
   }, [services]);
 }

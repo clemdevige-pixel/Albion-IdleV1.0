@@ -15,6 +15,7 @@ export function GatheringResourceCard({ resource, tier, recruitmentCost, actions
   const [confirmRecruitment, setConfirmRecruitment] = useState(false);
   const { activity, heroMastery, worker } = resource;
   const heroActive = activity.status === "gathering";
+  const otherTierActive = activity.activeCycle !== undefined && !heroActive;
   const workerMasteryBlocked = worker !== undefined
     && worker.mastery < activity.requiredMasteryLevel
     && !(worker.state === "working" && worker.productionTier === tier);
@@ -52,16 +53,26 @@ export function GatheringResourceCard({ resource, tier, recruitmentCost, actions
         </div>
         <header className="ui-gathering-card__hero-status">
           <small>Rendement : 1 / cycle</small>
-          <b className={heroActive ? "is-active" : ""}>{heroActive ? "En récolte" : activity.isMasteryUnlocked ? "Disponible" : "Bloqué"}</b>
+          <b className={heroActive || otherTierActive ? "is-active" : ""}>
+            {heroActive
+              ? "En récolte"
+              : otherTierActive
+                ? `T${String(activity.activeCycle?.resourceTier)} en cours`
+                : activity.isMasteryUnlocked ? "Disponible" : "Bloqué"}
+          </b>
         </header>
         <ProgressBar value={activity.progress} />
         <button
-          className={`ui-gathering-card__hero-action${heroActive ? " is-stop" : ""}`}
+          className={`ui-gathering-card__hero-action${heroActive || otherTierActive ? " is-stop" : ""}`}
           type="button"
-          disabled={!heroActive && !activity.isMasteryUnlocked}
+          disabled={!heroActive && !otherTierActive && !activity.isMasteryUnlocked}
           onClick={() => { actions.toggleHero(resource.id); }}
         >
-          {heroActive ? "Arrêter la récolte" : "Récolter avec le héros"}
+          {heroActive
+            ? "Arrêter la récolte"
+            : otherTierActive
+              ? `Arrêter la récolte T${String(activity.activeCycle?.resourceTier)}`
+              : "Récolter avec le héros"}
         </button>
 
         {heroActive && activity.activeMiniGame !== undefined && (

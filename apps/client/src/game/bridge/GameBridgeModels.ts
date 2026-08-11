@@ -194,6 +194,21 @@ export interface GatheringVM {
   readonly progress: number;
   readonly durationSeconds: number;
   readonly storedQuantity: number;
+  /**
+   * Authoritative cycle currently running for this resource family.
+   *
+   * This is deliberately distinct from the tier projected by the Production
+   * panel: browsing another tier must never retarget the world presentation
+   * or leak the running cycle's progress into the browsed tier.
+   */
+  readonly activeCycle?: {
+    readonly resourceName: string;
+    readonly resourceTier: number;
+    readonly progress: number;
+    readonly durationSeconds: number;
+    readonly cycleId: string;
+    readonly strikesUsed: number;
+  } | undefined;
   readonly activeMiniGame?: {
     readonly cycleId: string;
     readonly strikesUsed: number;

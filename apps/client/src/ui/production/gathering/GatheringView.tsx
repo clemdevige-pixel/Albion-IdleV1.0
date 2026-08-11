@@ -25,7 +25,7 @@ export function GatheringView(): JSX.Element {
 
       <nav className="ui-gathering__families" aria-label="Familles de récolte">
         {model.resources.map((entry) => {
-          const active = entry.activity.status === "gathering" || entry.worker?.state === "working";
+          const active = entry.activity.activeCycle !== undefined || entry.worker?.state === "working";
           return (
             <button
               key={entry.id}

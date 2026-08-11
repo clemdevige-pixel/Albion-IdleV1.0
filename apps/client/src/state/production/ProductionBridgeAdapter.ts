@@ -54,10 +54,19 @@ export class ProductionBridgeAdapter {
     const { gatheringRuntime, inventoryManager, productionStorageId } = this.deps;
     const tier = this.deps.getProductionTier();
     const config = this.getFamilyConfig(family, tier);
+    const session = this.deps.gatheringCoordinators[family].getActiveSession();
+    const miniGame = gatheringRuntime.getActiveMiniGameState(family);
+    const activeTier = session === undefined ? undefined : miniGame.tier ?? tier;
+    const activeResource = activeTier === undefined
+      ? undefined
+      : {
+          resourceName: this.getFamilyConfig(family, activeTier).resourceName,
+          resourceTier: activeTier,
+        };
 
     syncGatheringToBridge(
       config.updateGathering,
-      this.deps.gatheringCoordinators[family].getActiveSession(),
+      session,
       this.deps.getCurrentTick(),
       gatheringRuntime.getGatheringMasteryLevel(config.masteryId),
       getRequiredGatheringMasteryForTier(tier),
@@ -67,7 +76,8 @@ export class ProductionBridgeAdapter {
       config.visualManifestId,
       tier,
       inventoryManager.getTotalQuantity(productionStorageId, config.recipe.rawItemId),
-      gatheringRuntime.getActiveMiniGameState(family).strikesUsed,
+      miniGame.strikesUsed,
+      activeResource,
     );
   }
 
