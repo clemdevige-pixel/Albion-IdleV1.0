@@ -42,7 +42,15 @@ renderManifestRegistry.registerActor(heroBroadswordManifest);
 renderManifestRegistry.registerActor(heroBowManifest);
 renderManifestRegistry.registerActor(heroFireStaffManifest);
 renderManifestRegistry.registerActor(heroSpikedGauntletsManifest);
-renderManifestRegistry.registerActor(heroDaggerPairManifest);
+const heroDaggerPair = renderManifestRegistry.registerActor(heroDaggerPairManifest);
+Object.assign(heroDaggerPair.poses.death, {
+  frameWidth: heroDaggerPairManifest.poses.death.frameWidth,
+  frameHeight: heroDaggerPairManifest.poses.death.frameHeight,
+  startFrame: heroDaggerPairManifest.poses.death.startFrame,
+  endFrame: heroDaggerPairManifest.poses.death.endFrame,
+  frameRate: heroDaggerPairManifest.poses.death.frameRate,
+  repeat: heroDaggerPairManifest.poses.death.repeat,
+});
 renderManifestRegistry.setDefaultActor(heroBroadswordManifest.id);
 renderManifestRegistry.registerStaticActor(stonefangWolfManifest);
 renderManifestRegistry.registerStaticActor(razorwingHarpyManifest);
