@@ -6,44 +6,50 @@
   "offset": { "x": 0, "y": 58 },
   "animations": {
     "idle": {
-      "textureKey": "hero-dagger-pair-idle-sheet",
-      "assetPath": "/assets/characters/hero-dagger-pair-idle-sheet-v1.png",
-      "frameWidth": 210,
-      "frameHeight": 165,
+      "textureKey": "hero-dagger-pair-idle-sheet-v2",
+      "assetPath": "/assets/characters/hero_dual_dagger_idle.png",
+      "frameWidth": 352,
+      "frameHeight": 448,
       "startFrame": 0,
-      "endFrame": 6,
+      "endFrame": 5,
       "frameRate": 6,
       "repeat": -1,
-      "display": { "width": 190, "height": 173 }
+      "display": { "width": 157.1428571429, "height": 200 }
     },
     "walk": {
-      "textureKey": "hero-dagger-pair-walk-placeholder",
-      "assetPath": "/assets/characters/hero-dagger-pair-idle-sheet-v1.png",
-      "frameWidth": 210,
-      "frameHeight": 165,
+      "textureKey": "hero-dagger-pair-walk-placeholder-v2",
+      "assetPath": "/assets/characters/hero_dual_dagger_idle.png",
+      "frameWidth": 352,
+      "frameHeight": 448,
       "startFrame": 0,
-      "endFrame": 6,
-      "frameRate": 10,
-      "repeat": 0,
-      "display": { "width": 190, "height": 173 }
+      "endFrame": 5,
+      "frameRate": 6,
+      "repeat": -1,
+      "display": { "width": 157.1428571429, "height": 200 }
     },
     "attack": {
-      "textureKey": "hero-dagger-pair-attack-placeholder",
-      "assetPath": "/assets/characters/hero-dagger-pair-idle-sheet-v1.png",
-      "frameWidth": 210,
-      "frameHeight": 165,
+      "textureKey": "hero-dagger-pair-attack-sheet-v2",
+      "assetPath": "/assets/characters/hero_dual_dagger_attack.png",
+      "frameWidth": 467,
+      "frameHeight": 448,
       "startFrame": 0,
-      "endFrame": 6,
+      "endFrame": 5,
       "frameRate": 16,
       "repeat": 0,
-      "display": { "width": 190, "height": 173 }
+      "display": { "width": 208.4821428571, "height": 200 }
     }
   },
   "poses": {
     "death": {
-      "textureKey": "hero-broadsword-death",
-      "assetPath": "/assets/characters/hero-broadsword-death-v2.png",
-      "display": { "width": 220, "height": 200 }
+      "textureKey": "hero-dagger-pair-death-sheet-v2",
+      "assetPath": "/assets/characters/hero_dual_dagger_death.png",
+      "frameWidth": 352,
+      "frameHeight": 448,
+      "startFrame": 0,
+      "endFrame": 5,
+      "frameRate": 8,
+      "repeat": 0,
+      "display": { "width": 157.1428571429, "height": 200 }
     }
   },
   "visualProfile": "melee",
