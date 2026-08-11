@@ -41,6 +41,48 @@ export class SaveGameActions {
     if (!this.deps.persistence.hasSave()) return false;
 
     this.deps.persistence.load();
+    this.applyLoadedState();
+
+    this.deps.bridge.addEconomyNotification({
+      id: `notif_load_${String(Date.now())}`,
+      type: "success",
+      message: this.deps.persistence.getLastLoadSource() === "backup"
+        ? "Backup save restored"
+        : "Game loaded",
+      timestamp: Date.now(),
+    });
+    return true;
+  }
+
+  exportSave(): string {
+    this.deps.persistence.save(this.deps.getCurrentTick());
+    return this.deps.persistence.exportSave();
+  }
+
+  importSave(raw: string): boolean {
+    try {
+      this.deps.persistence.importSave(raw);
+      this.applyLoadedState();
+      this.deps.bridge.addEconomyNotification({
+        id: `notif_import_${String(Date.now())}`,
+        type: "success",
+        message: "Save imported",
+        timestamp: Date.now(),
+      });
+      return true;
+    } catch (error) {
+      console.error("[Persistence] Save import failed:", error);
+      this.deps.bridge.addEconomyNotification({
+        id: `notif_import_error_${String(Date.now())}`,
+        type: "error",
+        message: "Save import failed. Previous save preserved.",
+        timestamp: Date.now(),
+      });
+      return false;
+    }
+  }
+
+  private applyLoadedState(): void {
     migrateLegacyProductionMaterials(
       this.deps.inventoryManager,
       this.deps.heroId,
@@ -55,14 +97,6 @@ export class SaveGameActions {
     this.deps.resetSilverBalance(balance.ok ? balance.value : 0);
     this.deps.syncPlayerHealth();
     this.deps.resyncAll();
-
-    this.deps.bridge.addEconomyNotification({
-      id: `notif_load_${String(Date.now())}`,
-      type: "success",
-      message: "Game loaded",
-      timestamp: Date.now(),
-    });
-    return true;
   }
 
   hasSave(): boolean {

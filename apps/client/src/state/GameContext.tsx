@@ -1064,6 +1064,8 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const saveGame = (): void => { saveGameActions.save(); };
     const loadGame = (): boolean => saveGameActions.load();
     const hasSave = (): boolean => saveGameActions.hasSave();
+    const exportSave = (): string => saveGameActions.exportSave();
+    const importSave = (raw: string): boolean => saveGameActions.importSave(raw);
 
     // --- Start combat runtime --------------------------------------------------
     const combatRuntime = new CombatRuntime({
@@ -1392,7 +1394,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       toggleRefining, toggleMetalRefining, toggleLeatherRefining, toggleClothRefining,
       refineAllAvailable,
       setProductionTier, craftEquipment, recruitWorker, toggleWorker, repairAll,
-      saveGame, loadGame, hasSave,
+      saveGame, loadGame, hasSave, exportSave, importSave,
     };
   }, []);
 

@@ -170,7 +170,8 @@
 .permanent-header__action:hover { color: var(--ui-color-accent-hover); border-color: var(--ui-color-accent); }
 .permanent-header__action:disabled { cursor: default; opacity: 0.56; }
 .permanent-header__action.is-muted { opacity: 0.45; filter: grayscale(1); }
-.permanent-header__notification-settings { position: relative; }
+.permanent-header__notification-settings,
+.permanent-header__save-settings { position: relative; }
 .permanent-header__notification-menu {
   position: absolute;
   top: calc(100% + 9px);
@@ -191,6 +192,33 @@
 .permanent-header__notification-menu label { padding: 6px 1px; color: var(--ui-color-text-secondary); font-size: var(--ui-text-xs); }
 .permanent-header__notification-menu input { accent-color: var(--ui-color-accent); }
 .permanent-header__notification-menu > small { display: block; padding-top: var(--ui-space-2); margin-top: var(--ui-space-1); color: var(--ui-color-text-muted); border-top: var(--ui-border-width) solid var(--ui-color-border-subtle); font-size: 9px; }
+.permanent-header__save-menu {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  z-index: var(--ui-z-modal);
+  display: grid;
+  gap: var(--ui-space-2);
+  width: 235px;
+  padding: var(--ui-space-3);
+  color: var(--ui-color-text-primary);
+  background: rgb(9 14 21 / 98%);
+  border: var(--ui-border-width) solid var(--ui-color-border-strong);
+  border-radius: var(--ui-radius-sm);
+  box-shadow: 0 18px 36px rgb(0 0 0 / 52%);
+}
+.permanent-header__save-menu > strong { color: var(--ui-color-accent); }
+.permanent-header__save-menu > p { margin: 0; color: var(--ui-color-text-muted); font-size: 9px; line-height: 1.45; }
+.permanent-header__save-menu > button {
+  padding: 7px 9px;
+  color: var(--ui-color-text-primary);
+  background: #171d25;
+  border: var(--ui-border-width) solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-xs);
+  cursor: pointer;
+}
+.permanent-header__save-menu > button:hover { color: var(--ui-color-accent-hover); border-color: var(--ui-color-accent); }
+.permanent-header__save-menu > small { color: var(--ui-color-text-secondary); font-size: 9px; }
 
 .permanent-bottom-nav {
   display: flex;

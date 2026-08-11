@@ -11,6 +11,16 @@ interface GameRuntimeLifecycleHandle {
   readonly dispose: () => void;
 }
 
+interface InitialSaveServices {
+  readonly bridge: Pick<GameBridge, "addEconomyNotification">;
+  readonly hasSave: () => boolean;
+  readonly loadGame: () => boolean;
+}
+
+interface InitialSavePersistence {
+  readonly setLoadFailed: (failed: boolean) => void;
+}
+
 const runtimeHandles = new WeakMap<GameBridge, GameRuntimeLifecycleHandle>();
 
 export function registerGameRuntimeLifecycle(
@@ -20,9 +30,39 @@ export function registerGameRuntimeLifecycle(
   runtimeHandles.set(bridge, handle);
 }
 
+/** Loads a runtime save before auto-save starts and locks saving on failure. */
+export function loadInitialRuntimeSave(
+  services: InitialSaveServices,
+  persistence: InitialSavePersistence,
+): void {
+  try {
+    if (!services.hasSave()) return;
+
+    if (!services.loadGame()) {
+      persistence.setLoadFailed(true);
+      console.error("[Persistence] Auto-load failed: save slot existed but load returned false");
+      services.bridge.addEconomyNotification({
+        id: `notif_load_failed_${String(Date.now())}`,
+        type: "error",
+        message: "Save could not be loaded. Auto-save has been disabled.",
+        timestamp: Date.now(),
+      });
+    }
+  } catch (error) {
+    persistence.setLoadFailed(true);
+    console.error("[Persistence] Failed during initial save check or load:", error);
+    services.bridge.addEconomyNotification({
+      id: `notif_load_failed_${String(Date.now())}`,
+      type: "error",
+      message: "Save could not be loaded. Auto-save has been disabled.",
+      timestamp: Date.now(),
+    });
+  }
+}
+
 /** Owns the browser lifecycle around an already assembled game runtime. */
 export function useGameRuntimeLifecycle(services: GameServices): void {
-  const initialLoadAttemptedRef = useRef(false);
+  const loadedRuntimeRef = useRef<GameBridge | undefined>(undefined);
 
   useEffect(() => {
     const handle = runtimeHandles.get(services.bridge);
@@ -33,20 +73,9 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     const lifecycle = new RuntimeLifecycle();
     lifecycle.start(handle.tick, handle.tickIntervalMs);
 
-    if (!initialLoadAttemptedRef.current) {
-      initialLoadAttemptedRef.current = true;
-      try {
-        if (services.hasSave()) {
-          const success = services.loadGame();
-          if (!success) {
-            handle.persistence.setLoadFailed(true);
-            console.error("[Persistence] Auto-load failed: save slot existed but load returned false");
-          }
-        }
-      } catch (error) {
-        handle.persistence.setLoadFailed(true);
-        console.error("[Persistence] Failed during initial save check or load:", error);
-      }
+    if (loadedRuntimeRef.current !== services.bridge) {
+      loadedRuntimeRef.current = services.bridge;
+      loadInitialRuntimeSave(services, handle.persistence);
     }
 
     const stopAutosave = handle.persistence.startAutosave(() => services.saveGame());

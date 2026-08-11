@@ -67,4 +67,54 @@ describe("SaveManager", () => {
     manager.save("x", 0);
     expect(manager.has("x")).toBe(true);
   });
+
+  it("exports and imports a validated portable save", () => {
+    const source = createManager();
+    const sourceProvider = new MockProvider("test", { hp: 75 });
+    source.registerProvider(sourceProvider);
+    source.save("source", 12);
+
+    const portable = source.exportSave("source");
+    const target = createManager();
+    const targetProvider = new MockProvider("test", { hp: 1 });
+    target.registerProvider(targetProvider);
+    target.importSave("target", portable);
+    target.load("target");
+
+    expect(targetProvider.state).toEqual({ hp: 75 });
+  });
+
+  it("does not replace a slot when an imported checksum is invalid", () => {
+    const manager = createManager();
+    const provider = new MockProvider("test", { hp: 100 });
+    manager.registerProvider(provider);
+    manager.save("slot", 10);
+    const original = manager.exportSave("slot");
+    const corrupted = JSON.parse(original) as {
+      payload: { test: { hp: number } };
+    };
+    corrupted.payload.test.hp = 0;
+
+    expect(() => manager.importSave("slot", JSON.stringify(corrupted))).toThrow(
+      /Checksum mismatch/,
+    );
+    expect(manager.exportSave("slot")).toBe(original);
+  });
+
+  it("rejects a save created by a newer incompatible version", () => {
+    const source = createManager();
+    source.registerProvider(new MockProvider("test", { hp: 100 }));
+    source.save("slot", 10);
+    const future = JSON.parse(source.exportSave("slot")) as {
+      version: number;
+      metadata: { version: number };
+    };
+    future.version = 2;
+    future.metadata.version = 2;
+
+    expect(() => source.importSave("future", JSON.stringify(future))).toThrow(
+      /Version mismatch/,
+    );
+    expect(source.has("future")).toBe(false);
+  });
 });

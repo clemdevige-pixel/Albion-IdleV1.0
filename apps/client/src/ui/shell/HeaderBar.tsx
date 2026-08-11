@@ -2,6 +2,7 @@ import { CurrencyDisplay } from "../../panels/CurrencyDisplay";
 import { UI_MODULE_IDS, useNavigation } from "../navigation";
 import { useHeaderUiModel } from "../state";
 import { NotificationPreferencesMenu } from "./NotificationPreferencesMenu";
+import { SaveManagementMenu } from "./SaveManagementMenu";
 import "./permanentShell.css";
 
 function formatCompact(value: number): string {
@@ -86,9 +87,7 @@ export function HeaderBar(): JSX.Element {
 
       <div className="permanent-header__actions">
         <NotificationPreferencesMenu />
-        <button type="button" className="permanent-header__action" aria-label="Paramètres" disabled>
-          <span aria-hidden="true">⚙</span>
-        </button>
+        <SaveManagementMenu />
       </div>
     </div>
   );

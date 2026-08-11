@@ -19,12 +19,21 @@ import {
 } from "@game/gameplay";
 import {
   LocalStorageSaveRepository,
-  MigrationPipeline,
   SaveManager,
   VersionManager,
+  type SaveRepository,
   type SaveProvider,
 } from "@game/persistence";
 import type { EntityId, World } from "@game/core";
+import {
+  backupCurrentSave,
+  loadSaveWithBackup,
+  type SaveLoadSource,
+} from "./saveBackup";
+import {
+  CURRENT_RUNTIME_SAVE_VERSION,
+  createRuntimeMigrationPipeline,
+} from "./saveMigrations";
 
 export const DEFAULT_SAVE_SLOT_ID = "albion_idle_save_v1";
 
@@ -46,7 +55,10 @@ export interface RuntimePersistenceDependencies {
 
 export class RuntimePersistence {
   private readonly saveManager: SaveManager;
+  private readonly saveRepository: SaveRepository;
   private readonly saveSlotId: string;
+  private readonly backupSlotId: string;
+  private lastLoadSource: SaveLoadSource | undefined = undefined;
   private loadFailed: boolean = false;
   private isAutosaving: boolean = false;
   private autoSaveIntervalId: number | undefined = undefined;
@@ -55,12 +67,13 @@ export class RuntimePersistence {
 
   public constructor(deps: RuntimePersistenceDependencies) {
     this.saveSlotId = deps.saveSlotId ?? DEFAULT_SAVE_SLOT_ID;
-    const saveRepository = new LocalStorageSaveRepository();
-    const versionManager = new VersionManager(1);
-    const migrationPipeline = new MigrationPipeline();
+    this.backupSlotId = `${this.saveSlotId}_backup`;
+    this.saveRepository = new LocalStorageSaveRepository();
+    const versionManager = new VersionManager(CURRENT_RUNTIME_SAVE_VERSION);
+    const migrationPipeline = createRuntimeMigrationPipeline();
 
     this.saveManager = new SaveManager({
-      repository: saveRepository,
+      repository: this.saveRepository,
       versionManager,
       migrationPipeline,
       buildVersion: "0.10.5",
@@ -110,15 +123,73 @@ export class RuntimePersistence {
   }
 
   public hasSave(): boolean {
-    return this.saveManager.has(this.saveSlotId);
+    return this.saveManager.has(this.saveSlotId)
+      || this.saveManager.has(this.backupSlotId);
   }
 
   public save(tickCounter: number = 0): void {
+    backupCurrentSave(
+      this.saveRepository,
+      this.saveSlotId,
+      this.backupSlotId,
+    );
     this.saveManager.save(this.saveSlotId, tickCounter);
   }
 
   public load(): void {
-    this.saveManager.load(this.saveSlotId);
+    this.lastLoadSource = loadSaveWithBackup(
+      this.saveRepository,
+      this.saveSlotId,
+      this.backupSlotId,
+      (slotId) => { this.saveManager.load(slotId); },
+    );
+  }
+
+  /** Creates a validated portable backup of the latest primary save. */
+  public exportSave(): string {
+    const sourceSlotId = this.saveManager.has(this.saveSlotId)
+      ? this.saveSlotId
+      : this.backupSlotId;
+    return this.saveManager.exportSave(sourceSlotId);
+  }
+
+  /**
+   * Validates an imported save before touching the primary slot, then loads it.
+   * If a provider rejects it, the previous primary snapshot is restored.
+   */
+  public importSave(raw: string): void {
+    const importSlotId = `${this.saveSlotId}_import`;
+    this.saveManager.importSave(importSlotId, raw);
+
+    backupCurrentSave(
+      this.saveRepository,
+      this.saveSlotId,
+      this.backupSlotId,
+    );
+    this.saveRepository.save(
+      this.saveSlotId,
+      this.saveRepository.get(importSlotId),
+    );
+    this.saveManager.delete(importSlotId);
+
+    try {
+      this.saveManager.load(this.saveSlotId);
+      this.lastLoadSource = "primary";
+    } catch (error) {
+      if (this.saveRepository.has(this.backupSlotId)) {
+        this.saveManager.load(this.backupSlotId);
+        this.saveRepository.save(
+          this.saveSlotId,
+          this.saveRepository.get(this.backupSlotId),
+        );
+        this.lastLoadSource = "backup";
+      }
+      throw error;
+    }
+  }
+
+  public getLastLoadSource(): SaveLoadSource | undefined {
+    return this.lastLoadSource;
   }
 
   public isLoadFailed(): boolean {

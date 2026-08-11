@@ -15,9 +15,11 @@
 }
 
 .ui-shell__header {
+  position: relative;
   grid-area: header;
   min-width: 0;
-  z-index: var(--ui-z-navigation);
+  z-index: var(--ui-z-modal);
+  overflow: visible;
   border-bottom: var(--ui-border-width) solid var(--ui-color-border-strong);
   background: #0b0e12;
   box-shadow: 0 4px 18px rgb(0 0 0 / 42%);

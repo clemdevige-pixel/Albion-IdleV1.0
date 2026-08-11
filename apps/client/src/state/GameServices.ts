@@ -69,4 +69,6 @@ export interface GameServices {
   readonly saveGame: () => void;
   readonly loadGame: () => boolean;
   readonly hasSave: () => boolean;
+  readonly exportSave: () => string;
+  readonly importSave: (raw: string) => boolean;
 }

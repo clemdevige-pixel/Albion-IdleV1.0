@@ -73,20 +73,19 @@ export class SaveManager {
   }
 
   load(id: string): void {
-    const raw = this.repository.get(id);
-    this.validator.validateFormat(raw);
-    this.validator.validateChecksum(raw);
-
-    let save = raw;
-    if (this.versionManager.isOld(save.version)) {
-      save = this.migrationPipeline.migrate(
-        save,
-        this.versionManager.currentVersion,
-      );
-    }
-
-    this.validator.validateVersion(save);
+    const save = this.prepareSave(this.repository.get(id));
     this.loader.load(save.payload);
+  }
+
+  /** Returns a validated, portable representation of an existing save. */
+  exportSave(id: string): string {
+    return serialize(this.prepareSave(this.repository.get(id)));
+  }
+
+  /** Validates a portable save completely before replacing the target slot. */
+  importSave(id: string, raw: string): void {
+    const save = this.prepareSave(deserialize(raw));
+    this.repository.save(id, save);
   }
 
   list(): string[] {
@@ -99,5 +98,22 @@ export class SaveManager {
 
   has(id: string): boolean {
     return this.repository.has(id);
+  }
+
+  private prepareSave(raw: SaveFormat): SaveFormat {
+    this.validator.validateFormat(raw);
+    this.validator.validateChecksum(raw);
+
+    const save = this.versionManager.isOld(raw.version)
+      ? this.migrationPipeline.migrate(
+        raw,
+        this.versionManager.currentVersion,
+      )
+      : raw;
+
+    this.validator.validateFormat(save);
+    this.validator.validateChecksum(save);
+    this.validator.validateVersion(save);
+    return save;
   }
 }
