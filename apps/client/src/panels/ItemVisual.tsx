@@ -5,6 +5,7 @@ import {
   resolveWeaponTier,
 } from "../data/weaponContentCatalog";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
+import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 
 export interface ItemVisualDefinition {
   readonly name: string;
@@ -72,7 +73,16 @@ function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefin
 }
 
 export function getItemDefinition(itemId: string): ItemVisualDefinition | undefined {
-  return getWeaponItemDefinition(itemId) ?? NON_WEAPON_ITEM_VISUALS[itemId];
+  const visual = getWeaponItemDefinition(itemId) ?? NON_WEAPON_ITEM_VISUALS[itemId];
+  if (visual === undefined) return undefined;
+
+  const equipment = resolveEquipmentInfo(itemId);
+  if (equipment === undefined) return visual;
+
+  return {
+    ...visual,
+    stats: equipment.stats ?? {},
+  };
 }
 
 export function getItemDisplayName(itemId: string): string {
