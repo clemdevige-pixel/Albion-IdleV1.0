@@ -25,7 +25,7 @@ describe("masteryModels weapon families", () => {
         ],
       },
       workers: { capacity: 0, recruitmentCost: 0, workers: [] },
-    } as never);
+    });
 
     const daggers = model.categories.combat.find((family) => family.id === "mastery_dagger");
     expect(daggers?.name).toBe("Dagues");

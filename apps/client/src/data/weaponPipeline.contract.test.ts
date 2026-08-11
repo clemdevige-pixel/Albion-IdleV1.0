@@ -143,7 +143,7 @@ describe("weapon pipeline contract", () => {
         masteries: WEAPON_MASTERY_DEFINITIONS.map(makeMasteryVm),
       },
       workers: { capacity: 0, recruitmentCost: 0, workers: [] },
-    } as never);
+    });
 
     const combatById = new Map(model.categories.combat.map((family) => [family.id, family]));
 

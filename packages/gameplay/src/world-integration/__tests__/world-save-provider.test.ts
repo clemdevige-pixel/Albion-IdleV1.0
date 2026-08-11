@@ -42,9 +42,10 @@ describe("WorldSaveProvider", () => {
   });
 
   it("restores world subsystem state and location state on load", () => {
+    const loadWorldState = vi.fn();
     const mockCoordinator = {
       getWorldState: vi.fn(),
-      loadWorldState: vi.fn(),
+      loadWorldState,
     } as unknown as WorldCoordinator;
 
     const setLocationState = vi.fn();
@@ -70,14 +71,15 @@ describe("WorldSaveProvider", () => {
 
     provider.load(payload);
 
-    expect(mockCoordinator.loadWorldState).toHaveBeenCalledWith(payload.world);
+    expect(loadWorldState).toHaveBeenCalledWith(payload.world);
     expect(setLocationState).toHaveBeenCalledWith(payload.location);
   });
 
   it("supports backward compatibility when location property is missing", () => {
+    const loadWorldState = vi.fn();
     const mockCoordinator = {
       getWorldState: vi.fn(),
-      loadWorldState: vi.fn(),
+      loadWorldState,
     } as unknown as WorldCoordinator;
 
     const setLocationState = vi.fn();
@@ -97,7 +99,7 @@ describe("WorldSaveProvider", () => {
 
     provider.load(payload);
 
-    expect(mockCoordinator.loadWorldState).toHaveBeenCalledWith(payload.world);
+    expect(loadWorldState).toHaveBeenCalledWith(payload.world);
     expect(setLocationState).toHaveBeenCalledWith(undefined);
   });
 });

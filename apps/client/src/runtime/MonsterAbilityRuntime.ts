@@ -1,6 +1,5 @@
 import type { EntityId } from "@game/core";
 import {
-  type AbilityId,
   type AbilityManager,
   type DamageManager,
   type DeathManager,
@@ -58,7 +57,7 @@ export function tickMonsterAbilities(
 
   const execution = deps.abilityManager.executeIntent({
     entityId: monsterEntityId,
-    abilityId: readyAbility.abilityId as AbilityId,
+    abilityId: readyAbility.abilityId,
     primaryTarget: heroEntityId,
     tick,
   });

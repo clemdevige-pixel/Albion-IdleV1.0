@@ -22,7 +22,6 @@ import type { EncounterDefinition } from "../types.js";
 const ATTACK_SPEED = "stat_attack_speed" as StatId;
 const MAX_HEALTH = "stat_max_health" as StatId;
 const PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
-const MAX_ENERGY = "stat_max_energy" as StatId;
 
 function createTestWorld(): World {
   return new World(createRuntimeServices());
@@ -72,14 +71,13 @@ function setupAll(world: World) {
 function createEntity(
   world: World,
   m: ReturnType<typeof setupAll>,
-  opts: { health?: number; damage?: number; attackSpeed?: number; energy?: number } = {},
+  opts: { health?: number; damage?: number; attackSpeed?: number } = {},
 ): EntityId {
   const entity = world.createEntity();
   m.statsManager.attachStats(entity);
   m.statsManager.setBaseStat(entity, MAX_HEALTH, opts.health ?? 100);
   m.statsManager.setBaseStat(entity, PHYSICAL_DAMAGE, opts.damage ?? 10);
   m.statsManager.setBaseStat(entity, ATTACK_SPEED, opts.attackSpeed ?? 1.0);
-  m.statsManager.setBaseStat(entity, MAX_ENERGY, opts.energy ?? 100);
   m.statsManager.calculateStats(entity);
   m.damageManager.attachHealth(entity);
   m.deathManager.attachDeath(entity);
@@ -132,7 +130,7 @@ function makeActiveAbility(): AbilityDefinitionLike {
     id: "fireball",
     cooldown: 5,
     castTime: 0,
-    resourceCost: { energy: 10 },
+    resourceCost: {},
     interruptible: false,
     category: "active",
   };

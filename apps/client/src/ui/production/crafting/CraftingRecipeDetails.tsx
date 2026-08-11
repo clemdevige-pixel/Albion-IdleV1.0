@@ -1,4 +1,5 @@
 import type { CraftingRecipeVM, CraftingRequirementVM } from "../../../game/GameBridge";
+import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import { getItemDefinition, ItemVisual } from "../../../panels/ItemVisual";
 
 interface CraftingRecipeDetailsProps {
@@ -13,7 +14,9 @@ export function CraftingRecipeDetails({ recipe, onCraft }: CraftingRecipeDetails
   return (
     <section className="ui-crafting-detail" aria-labelledby="ui-crafting-recipe-title">
       <div className="ui-crafting-detail__result">
-        <div className="ui-crafting-detail__visual"><ItemVisual itemId={recipe.outputItemId} /></div>
+        <ItemHoverTooltip itemId={recipe.outputItemId} quantity={Math.max(1, recipe.craftedQuantity)}>
+          <div className="ui-crafting-detail__visual"><ItemVisual itemId={recipe.outputItemId} /></div>
+        </ItemHoverTooltip>
         <div className="ui-crafting-detail__identity">
           <span className="ui-production__eyebrow">Objet sélectionné</span>
           <h3 id="ui-crafting-recipe-title">{recipe.recipeName}</h3>
@@ -46,8 +49,19 @@ function RequirementGroup({ title, requirements, predecessor = false }: { readon
         const presentation = getRequirementPresentation(requirement.itemId);
         return (
           <div className={`ui-crafting-requirement${available ? " is-ready" : " is-missing"}`} key={requirement.itemId}>
-            <span className="ui-crafting-requirement__icon"><img src={presentation.iconPath} alt="" /></span>
-            <span className="ui-crafting-requirement__name">{presentation.label}<small>T{presentation.tier}</small></span>
+            {getItemDefinition(requirement.itemId) === undefined ? (
+              <>
+                <span className="ui-crafting-requirement__icon"><img src={presentation.iconPath} alt="" /></span>
+                <span className="ui-crafting-requirement__name">{presentation.label}<small>T{presentation.tier}</small></span>
+              </>
+            ) : (
+              <ItemHoverTooltip itemId={requirement.itemId} quantity={requirement.available}>
+                <span className="ui-crafting-requirement__item">
+                  <span className="ui-crafting-requirement__icon"><img src={presentation.iconPath} alt="" /></span>
+                  <span className="ui-crafting-requirement__name">{presentation.label}<small>T{presentation.tier}</small></span>
+                </span>
+              </ItemHoverTooltip>
+            )}
             <strong>{requirement.available} / {requirement.quantity}</strong>
           </div>
         );

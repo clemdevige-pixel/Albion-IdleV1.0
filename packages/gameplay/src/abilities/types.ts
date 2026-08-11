@@ -13,7 +13,7 @@ export interface AbilityDefinitionLike {
   readonly id: string;
   readonly cooldown: number;
   readonly castTime: number;
-  readonly resourceCost: { readonly energy?: number; readonly health?: number };
+  readonly resourceCost: { readonly health?: number };
   readonly interruptible: boolean;
   readonly category?: AbilityCategory | undefined;
   readonly range?: number | undefined;

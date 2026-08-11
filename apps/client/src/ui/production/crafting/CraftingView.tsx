@@ -50,7 +50,7 @@ export function CraftingView(): JSX.Element {
           <div className="ui-crafting__selectors">
             <label>
               <span>Famille</span>
-              <select value={family.id} onChange={(event) => { setRequestedFamily(event.target.value as CraftingFamilyId); setRequestedRecipeId(undefined); }}>
+              <select value={family.id} onChange={(event) => { setRequestedFamily(event.target.value); setRequestedRecipeId(undefined); }}>
                 {category.families.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
               </select>
             </label>

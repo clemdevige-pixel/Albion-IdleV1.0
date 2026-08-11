@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import type Phaser from "phaser";
 import type { GatheringVM } from "../../GameBridge";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 import { GatheringPresentationSystem } from "../systems/GatheringPresentationSystem";

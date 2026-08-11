@@ -1,5 +1,6 @@
 import type { EntityId } from "@game/core";
-import { CombatService, StatsManager, getEncounterRewards } from "@game/gameplay";
+import type { CombatService, StatsManager} from "@game/gameplay";
+import { getEncounterRewards } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";

@@ -166,7 +166,7 @@ describe("AutoAttack", () => {
     expect(managers.autoAttackManager.consumeAttack(attacker)).toBe(false);
   });
 
-  it("timer overflow carries to next cycle", () => {
+  it("discards timer overflow to prevent an immediate follow-up attack", () => {
     const attacker = createAttacker(world, managers, 1.0);
     const target = world.createEntity();
     managers.targetManager.setTarget(attacker, target);
@@ -174,7 +174,7 @@ describe("AutoAttack", () => {
 
     expect(managers.autoAttackManager.tick(attacker, 1.3)).toBe(true);
     const data = world.getComponent(attacker, AutoAttackComponent);
-    expect(data.timer).toBeCloseTo(0.3);
+    expect(data.timer).toBe(0);
   });
 
   it("determinism: same ticks produce same results", () => {

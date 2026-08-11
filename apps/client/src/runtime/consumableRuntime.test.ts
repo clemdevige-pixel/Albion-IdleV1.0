@@ -51,7 +51,6 @@ function setupTestEnvironment() {
   const consumableRuntime = new ConsumableRuntime({
     inventoryManager,
     damageManager,
-    abilityManager,
     deathManager,
     heroId,
   });
@@ -62,7 +61,6 @@ function setupTestEnvironment() {
     inventoryManager,
     damageManager,
     deathManager,
-    abilityManager,
     consumableRuntime,
   };
 }

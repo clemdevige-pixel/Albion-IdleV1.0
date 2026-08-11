@@ -36,7 +36,6 @@ const NON_WEAPON_ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = 
 
 const CONSUMABLE_VISUALS: Readonly<Record<string, ConsumableVisualDefinition>> = {
   item_health_potion: { name: "Potion de soin", icon: "item-health-potion-pixel-v1.png" },
-  item_energy_potion: { name: "Potion d'énergie", icon: "item-energy-potion-pixel-v1.png" },
 };
 
 const RESOURCE_VISUALS: Readonly<Record<string, { readonly name: string; readonly icon: string }>> = {

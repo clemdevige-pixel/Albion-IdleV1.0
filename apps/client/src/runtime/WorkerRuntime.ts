@@ -445,7 +445,7 @@ export class WorkerRuntime {
     return this.workerManager.getAllWorkers()
       .filter((worker) => this.isSupportedWorkerProfession(worker.profession))
       .map((worker) => {
-        const profession = worker.profession as WorkerProfession;
+        const profession = worker.profession;
         const session = this.workerScheduler.getSession(worker.id);
         return {
           profession,

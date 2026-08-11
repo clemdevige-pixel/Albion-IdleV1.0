@@ -545,6 +545,17 @@ export interface SavedRefiningRecoveryPayload {
   readonly reservedInputs: readonly ReservedRefiningRequirement[];
 }
 
+function isReservedRefiningRequirement(
+  value: unknown,
+): value is ReservedRefiningRequirement {
+  if (value === null || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.itemId === "string"
+    && typeof candidate.quantity === "number"
+    && Number.isInteger(candidate.quantity)
+    && candidate.quantity > 0;
+}
+
 export class RefiningSaveProvider implements SaveProvider {
   readonly providerId = "refining";
 
@@ -560,13 +571,17 @@ export class RefiningSaveProvider implements SaveProvider {
   }
 
   load(data: unknown): void {
-    const payload = data as SavedRefiningRecoveryPayload | undefined;
-    if (!payload || !Array.isArray(payload.reservedInputs) || payload.reservedInputs.length === 0) {
+    if (data === null || typeof data !== "object" || !("reservedInputs" in data)) {
       return;
     }
+    const rawReservedInputs: unknown = data.reservedInputs;
+    if (!Array.isArray(rawReservedInputs) || rawReservedInputs.length === 0) {
+      return;
+    }
+    const reservedInputs = rawReservedInputs.filter(isReservedRefiningRequirement);
 
     const productionStorageId = this.getProductionStorageId();
-    for (const input of payload.reservedInputs) {
+    for (const input of reservedInputs) {
       this.inventoryManager.addQuantity(productionStorageId, input.itemId, input.quantity, {
         itemId: input.itemId,
         stackable: true,

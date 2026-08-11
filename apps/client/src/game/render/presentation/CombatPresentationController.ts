@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import type Phaser from "phaser";
 import type { GameBridge } from "../../GameBridge";
 import { createActorSprite } from "../PhaserActorRenderer";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";

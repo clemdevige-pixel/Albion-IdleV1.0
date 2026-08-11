@@ -30,7 +30,7 @@ export function recalculateWeaponMasteryStats(
   if (weaponDefinition === undefined) return;
 
   const masteries = [...masteryService.getAllMasteries().values()].map((mastery) => ({
-    id: mastery.masteryId as string,
+    id: mastery.masteryId,
     level: mastery.level,
   }));
   const bonusIp = getMasteryItemPowerBonus(equippedWeapon.itemId, masteries);

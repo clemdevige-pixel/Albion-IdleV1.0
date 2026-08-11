@@ -5,10 +5,14 @@ import {
   getItemDisplayName,
   ItemVisual,
 } from "./ItemVisual";
-import { getEnchantmentItemPowerBonus } from "@game/gameplay";
+import {
+  getEnchantmentItemPowerBonus,
+  getEnchantmentStatMultiplier,
+} from "@game/gameplay";
 import {
   getEffectiveItemPower,
   getItemPower,
+  getMasteryDamageMultiplier,
   getMasteryItemPowerBonus,
   getWeaponAttackSpeed,
 } from "../data/itemPower";
@@ -56,10 +60,20 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
     enchantment,
   );
   const enchantmentItemPowerBonus = getEnchantmentItemPowerBonus(enchantment);
+  const enchantmentStatMultiplier = getEnchantmentStatMultiplier(enchantment);
+  const masteryDamageMultiplier = getMasteryDamageMultiplier(
+    itemId,
+    state.progression.masteries,
+  );
   const equipped = definition === undefined
     ? undefined
     : state.equipment.slots.find((slot) => slot.slot === definition.slot);
   const equippedDefinition = equipped?.itemId === undefined ? undefined : getItemDefinition(equipped.itemId);
+  const equippedEnchantment = equipped?.enchantment ?? 0;
+  const equippedEnchantmentStatMultiplier = getEnchantmentStatMultiplier(equippedEnchantment);
+  const equippedMasteryDamageMultiplier = equipped?.itemId === undefined
+    ? 1
+    : getMasteryDamageMultiplier(equipped.itemId, state.progression.masteries);
   const attackSpeed = getWeaponAttackSpeed(itemId);
   const equippedAttackSpeed = equipped?.itemId === undefined
     ? undefined
@@ -69,9 +83,7 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
     : state.repair.items.find((item) => item.instanceId === instanceId);
   const consumableDescription = itemId === "item_health_potion"
     ? `Restaure ${String(state.consumables.healthPotionHealPercent)}% des PV maximum. Recharge : ${String(state.consumables.healthPotionCooldown)} s.`
-    : itemId === "item_energy_potion"
-      ? "Restaure instantanément de l’énergie."
-      : undefined;
+    : undefined;
 
   return (
     <div className={`item-tooltip${getEnchantmentFrameClass(enchantment)}`}>
@@ -116,22 +128,40 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
               </div>
             </>
           )}
-          {Object.entries(definition.stats).map(([statId, value]) => {
-            const equippedValue = equippedDefinition?.stats[statId] ?? 0;
-            const delta = value - equippedValue;
-            const showDelta = equippedDefinition !== undefined && equipped?.itemId !== itemId;
-            return (
-              <div key={statId}>
-                <span>{STAT_LABELS[statId] ?? statId}</span>
-                <strong>+{formatStatValue(value)}</strong>
-                {showDelta && (
-                  <em className={delta >= 0 ? "is-positive" : "is-negative"}>
-                    {delta >= 0 ? "+" : ""}{formatStatValue(delta)}
-                  </em>
-                )}
-              </div>
-            );
-          })}
+          {Object.entries(definition.stats)
+            .filter(([statId]) => statId !== "stat_attack_speed")
+            .map(([statId, value]) => {
+              const effectiveValue = getEffectiveEquipmentStat(
+                statId,
+                value,
+                enchantmentStatMultiplier,
+                masteryDamageMultiplier,
+              );
+              const ipBonus = effectiveValue - value;
+              const equippedBaseValue = equippedDefinition?.stats[statId] ?? 0;
+              const equippedValue = getEffectiveEquipmentStat(
+                statId,
+                equippedBaseValue,
+                equippedEnchantmentStatMultiplier,
+                equippedMasteryDamageMultiplier,
+              );
+              const delta = effectiveValue - equippedValue;
+              const showDelta = equippedDefinition !== undefined && equipped?.itemId !== itemId;
+              return (
+                <div key={statId}>
+                  <span>{STAT_LABELS[statId] ?? statId}</span>
+                  <strong>
+                    +{formatStatValue(effectiveValue)}
+                    {ipBonus > 0 && <small>(+{formatStatValue(ipBonus)} via IP)</small>}
+                  </strong>
+                  {showDelta && (
+                    <em className={delta >= 0 ? "is-positive" : "is-negative"}>
+                      {delta >= 0 ? "+" : ""}{formatStatValue(delta)}
+                    </em>
+                  )}
+                </div>
+              );
+            })}
           {attackSpeed !== undefined && (
             <div>
               <span>Vitesse d'attaque</span>
@@ -164,4 +194,15 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
       )}
     </div>
   );
+}
+
+function getEffectiveEquipmentStat(
+  statId: string,
+  baseValue: number,
+  enchantmentMultiplier: number,
+  masteryDamageMultiplier: number,
+): number {
+  const enchantmentValue = baseValue * enchantmentMultiplier;
+  const isWeaponDamage = statId === "stat_physical_damage" || statId === "stat_magical_damage";
+  return enchantmentValue + (isWeaponDamage ? baseValue * (masteryDamageMultiplier - 1) : 0);
 }

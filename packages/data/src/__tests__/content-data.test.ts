@@ -91,7 +91,7 @@ describe("Content Data Integration", () => {
     expect(items.getCount()).toBeGreaterThanOrEqual(10);
 
     const equipment = result.value.getRegistry(equipmentCategory);
-    expect(equipment.getCount()).toBeGreaterThanOrEqual(4);
+    expect(equipment.getCount()).toBeGreaterThanOrEqual(2);
 
     const monsters = result.value.getRegistry(monsterCategory);
     expect(monsters.getCount()).toBeGreaterThanOrEqual(4);

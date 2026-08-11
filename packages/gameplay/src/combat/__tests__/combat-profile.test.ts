@@ -10,6 +10,7 @@ describe("combat-profile", () => {
         damage: 19,
         armor: 5,
         magicResistance: 3,
+        attackSpeed: 0.8,
       });
     });
 

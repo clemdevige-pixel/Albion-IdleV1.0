@@ -1,12 +1,13 @@
+import type {
+  DurabilityStore,
+  EquipmentManager,
+  InventoryManager} from "@game/gameplay";
 import {
   DestinyBoardSaveProvider,
   DurabilitySaveProvider,
-  DurabilityStore,
-  EquipmentManager,
   EquipmentSaveProvider,
   ExperienceSaveProvider,
   FameSaveProvider,
-  InventoryManager,
   InventorySaveProvider,
   MasterySaveProvider,
   WalletSaveProvider,

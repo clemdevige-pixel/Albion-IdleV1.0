@@ -30,15 +30,12 @@ export interface CombatAbilityVM {
   readonly shortcut: "Q";
   readonly cooldown: number;
   readonly cooldownRemaining: number;
-  readonly energyCost: number;
   readonly isReady: boolean;
   readonly autoCast: boolean;
 }
 
 export interface CombatAbilitiesVM {
   readonly primary: CombatAbilityVM | null;
-  readonly currentEnergy: number;
-  readonly maxEnergy: number;
 }
 
 export interface ConsumablesVM {
@@ -272,6 +269,7 @@ export interface RefiningRequirementVM {
 }
 
 export interface CraftingRecipeVM {
+  /** Content-owned family identifier. New weapon families must not require a bridge change. */
   readonly family: string;
   readonly recipeName: string;
   readonly outputItemId: string;
@@ -487,8 +485,6 @@ const EMPTY_WORKERS: WorkersVM = {
 };
 const EMPTY_ABILITIES: CombatAbilitiesVM = {
   primary: null,
-  currentEnergy: 0,
-  maxEnergy: 0,
 };
 const EMPTY_CONSUMABLES: ConsumablesVM = {
   healthPotionCooldown: 20,

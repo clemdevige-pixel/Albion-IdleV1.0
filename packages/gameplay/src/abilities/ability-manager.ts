@@ -1,29 +1,24 @@
 import type { EntityId, World } from "@game/core";
 import type { EventBus } from "@game/core";
 import type { StatsManager } from "../stats/index.js";
-import type { StatId } from "../stats/types.js";
 import { HealthComponent } from "../damage/components.js";
-import { AbilitiesComponent, EnergyComponent } from "./components.js";
-import type { AbilityData, EnergyData } from "./components.js";
+import { AbilitiesComponent } from "./components.js";
+import type { AbilityData } from "./components.js";
 import { AbilityValidator } from "./ability-validator.js";
 import { CastManager } from "./cast-manager.js";
 import { CooldownManager } from "./cooldown-manager.js";
 import type { AbilityEventMap } from "./ability-events.js";
 import type { AbilityDefinitionLike, AbilityEntry, AbilityId, AbilityIntent, AbilityExecutionResult } from "./types.js";
 
-const MAX_ENERGY_STAT = "stat_max_energy" as StatId;
-
 export class AbilityManager {
   readonly #world: World;
-  readonly #statsManager: StatsManager;
   readonly #validator: AbilityValidator;
   readonly #castManager = new CastManager();
   readonly #cooldownManager = new CooldownManager();
   #eventBus: EventBus<AbilityEventMap> | undefined;
 
-  constructor(world: World, statsManager: StatsManager) {
+  constructor(world: World, _statsManager: StatsManager) {
     this.#world = world;
-    this.#statsManager = statsManager;
     this.#validator = new AbilityValidator(world);
   }
 
@@ -34,48 +29,10 @@ export class AbilityManager {
   attachAbilities(entityId: EntityId): void {
     const data: AbilityData = { abilities: new Map() };
     this.#world.addComponent(entityId, AbilitiesComponent, data);
-    const maxEnergy = this.#statsManager.hasStats(entityId)
-      ? this.#statsManager.getStat(entityId, MAX_ENERGY_STAT).computed
-      : 0;
-    const energy: EnergyData = { currentEnergy: maxEnergy, maxEnergy };
-    this.#world.addComponent(entityId, EnergyComponent, energy);
   }
 
   detachAbilities(entityId: EntityId): void {
     this.#world.removeComponent(entityId, AbilitiesComponent);
-    if (this.#world.hasComponent(entityId, EnergyComponent)) {
-      this.#world.removeComponent(entityId, EnergyComponent);
-    }
-  }
-
-  getEnergy(entityId: EntityId): EnergyData {
-    return this.#world.getComponent(entityId, EnergyComponent);
-  }
-
-  restoreEnergy(entityId: EntityId, amount: number): number {
-    const energy = this.getEnergy(entityId);
-    const actual = Math.min(amount, energy.maxEnergy - energy.currentEnergy);
-    energy.currentEnergy = Math.min(energy.maxEnergy, energy.currentEnergy + amount);
-    return actual;
-  }
-
-  /**
-   * Re-reads maximum energy from stats while preserving the current ratio,
-   * mirroring DamageManager.syncMaxHealth.
-   */
-  syncMaxEnergy(entityId: EntityId): void {
-    const energy = this.getEnergy(entityId);
-    const previousMax = energy.maxEnergy;
-    const previousCurrent = energy.currentEnergy;
-    const newMax = this.#statsManager.getStat(entityId, MAX_ENERGY_STAT).computed;
-
-    energy.maxEnergy = newMax;
-    if (previousMax <= 0) {
-      energy.currentEnergy = Math.min(previousCurrent, newMax);
-      return;
-    }
-    const ratio = previousCurrent / previousMax;
-    energy.currentEnergy = Math.min(Math.max(Math.round(newMax * ratio), 0), newMax);
   }
 
   learnAbility(entityId: EntityId, definition: AbilityDefinitionLike): void {
@@ -234,15 +191,11 @@ export class AbilityManager {
   }
 
   /**
-   * Costs consume runtime pools only — current energy and current health.
-   * Base statistics are never mutated (AI_BIBLE 11_STAT §5).
+   * Optional health costs consume current health only. Base statistics are
+   * never mutated.
    */
   #deductCosts(entityId: EntityId, entry: AbilityEntry): void {
     const cost = entry.definition.resourceCost;
-    if (cost.energy !== undefined && cost.energy > 0) {
-      const energy = this.#world.getComponent(entityId, EnergyComponent);
-      energy.currentEnergy = Math.max(0, energy.currentEnergy - cost.energy);
-    }
     if (cost.health !== undefined && cost.health > 0) {
       const health = this.#world.getComponent(entityId, HealthComponent);
       health.currentHealth = Math.max(1, health.currentHealth - cost.health);

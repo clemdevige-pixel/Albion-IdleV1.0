@@ -16,7 +16,6 @@ export const AbilityDefinitionSchema = z.object({
   weaponFamily: z.string().nullable(),
   cooldown: z.number().min(0),
   resourceCost: z.object({
-    energy: z.number().optional(),
     health: z.number().optional(),
   }),
   castTime: z.number().min(0),

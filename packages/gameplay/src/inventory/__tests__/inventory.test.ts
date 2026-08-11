@@ -414,8 +414,8 @@ describe("InventorySaveProvider", () => {
     expect(saved.capacity).toBe(3);
     expect(saved.nextInstanceCounter).toBe(2);
     expect(saved.slots).toEqual([
-      { position: 0, instanceId: "item_0", itemId: "RESOURCE_WOOD", quantity: 1 },
-      { position: 2, instanceId: "item_1", itemId: "EQUIPMENT_SWORD", quantity: 1 },
+      { position: 0, instanceId: "item_0", itemId: "RESOURCE_WOOD", quantity: 1, enchantment: 0 },
+      { position: 2, instanceId: "item_1", itemId: "EQUIPMENT_SWORD", quantity: 1, enchantment: 0 },
     ]);
   });
 

@@ -25,7 +25,6 @@ export class StatRegistry {
 
 const DEFAULT_STATS: readonly StatDefinition[] = [
   { id: "stat_max_health" as StatId, min: 1, max: Infinity, defaultBase: 100 },
-  { id: "stat_max_energy" as StatId, min: 0, max: Infinity, defaultBase: 50 },
   { id: "stat_physical_damage" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_magical_damage" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_armor" as StatId, min: 0, max: Infinity, defaultBase: 0 },

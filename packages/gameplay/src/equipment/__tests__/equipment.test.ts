@@ -125,14 +125,19 @@ describe("EquipmentManager", () => {
     });
   });
 
-  it("refuses to equip a stacked entry", () => {
+  it("equips one item from a stacked entry and preserves the remainder", () => {
     inventoryManager.addQuantity(entityId, "item_iron_helmet", 2, {
       itemId: "item_iron_helmet",
       stackable: true,
       maxStack: 10,
     });
     const result = equipmentManager.equipFromInventory(entityId, 0);
-    expect(result).toEqual({ ok: false, reason: "invalid_quantity" });
+    expect(result.ok).toBe(true);
+    expect(equipmentManager.getEquippedItem(entityId, "head")?.quantity).toBe(1);
+    expect(inventoryManager.getSlot(entityId, 0)).toMatchObject({
+      ok: true,
+      value: { entry: { itemId: "item_iron_helmet", quantity: 1 } },
+    });
   });
 
   it("unequips back to the first free inventory slot", () => {

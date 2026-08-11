@@ -1,2 +1,2 @@
-export const readFile = async () => "";
+export const readFile = () => Promise.resolve("");
 export default {};

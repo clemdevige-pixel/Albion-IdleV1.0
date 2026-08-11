@@ -45,6 +45,21 @@
       "requiredBuildingId": null,
       "tier": 4,
       "tags": ["cooking", "food"]
+    },
+    {
+      "id": "recipe_craft_sword_t4",
+      "category": "crafting",
+      "inputs": [
+        { "itemId": "item_refined_metal_bar_t4", "quantity": 8 },
+        { "itemId": "item_refined_planks_t4", "quantity": 2 }
+      ],
+      "outputs": [
+        { "itemId": "item_weapon_sword_t4_broadsword", "quantity": 1 }
+      ],
+      "productionTime": 45,
+      "requiredBuildingId": "building_forge_t4",
+      "tier": 4,
+      "tags": ["crafting", "weapon", "sword"]
     }
   ]
 }

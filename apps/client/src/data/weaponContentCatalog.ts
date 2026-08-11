@@ -29,36 +29,36 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
   {
     familyId: "sword", specializationMasteryId: "mastery_broadsword", specializationName: "Épée large", combatProfile: "sword",
     craft: { kind: "standard", materials: [{ kind: "metal", quantity: 6 }, { kind: "leather", quantity: 2 }] },
-    ability: { id: "ability_sword_heroic_strike", name: "Frappe héroïque", description: "Une frappe lourde infligeant 175 % des dégâts physiques.", icon: "⚔️", category: "active", cooldown: 8, castTime: 0, resourceCost: { energy: 12 }, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.75 },
+    ability: { id: "ability_sword_heroic_strike", name: "Frappe héroïque", description: "Une frappe lourde infligeant 175 % des dégâts physiques.", icon: "⚔️", category: "active", cooldown: 8, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.75 },
     items: [{ itemId: "item_weapon_sword_t3_broadsword", tier: 3, handling: "one_handed", stats: { stat_physical_damage: 45 }, sellPrice: 70 }, { itemId: "item_weapon_sword_t4_broadsword", tier: 4, handling: "one_handed", stats: { stat_physical_damage: 75 }, sellPrice: 200 }],
   },
   {
     familyId: "bow", specializationMasteryId: "mastery_longbow", specializationName: "Arc long", combatProfile: "bow",
     craft: { kind: "standard", materials: [{ kind: "wood", quantity: 6 }, { kind: "leather", quantity: 2 }, { kind: "cloth", quantity: 2 }] },
-    ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: { energy: 8 }, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
+    ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
     items: [{ itemId: "item_weapon_bow_t3_longbow", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 50 }, sellPrice: 70 }, { itemId: "item_weapon_bow_t4_longbow", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 85 }, sellPrice: 200 }],
   },
   {
     familyId: "bow", specializationMasteryId: "mastery_badon", specializationName: "Badon", combatProfile: "bow", craft: { kind: "artifact_pending" },
-    ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: { energy: 8 }, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
+    ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
     items: [{ itemId: "item_weapon_bow_t4_badon", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 }],
   },
   {
     familyId: "fire_staff", specializationMasteryId: "mastery_t4_fire_staff", specializationName: "Bâton de feu", combatProfile: "staff",
     craft: { kind: "standard", materials: [{ kind: "wood", quantity: 4 }, { kind: "metal", quantity: 4 }, { kind: "cloth", quantity: 2 }] },
-    ability: { id: "ability_fire_fireball", name: "Boule de feu", description: "Un projectile ardent infligeant 170 % des dégâts magiques.", icon: "🔥", category: "active", cooldown: 5, castTime: 0, resourceCost: { energy: 15 }, interruptible: true, targetRule: "current_target", damageType: "magical", bonusDamageRatio: 0.7 },
+    ability: { id: "ability_fire_fireball", name: "Boule de feu", description: "Un projectile ardent infligeant 170 % des dégâts magiques.", icon: "🔥", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical", bonusDamageRatio: 0.7 },
     items: [{ itemId: "item_weapon_staff_t3_fire", tier: 3, handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 }, { itemId: "item_weapon_staff_t4_fire", tier: 4, handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 }],
   },
   {
     familyId: "gloves", specializationMasteryId: "mastery_spiked_gauntlets", specializationName: "Gantelets à pointes", combatProfile: "gloves",
     craft: { kind: "standard", materials: [{ kind: "metal", quantity: 5 }, { kind: "leather", quantity: 3 }] },
-    ability: { id: "ability_gloves_shockwave", name: "Onde percutante", description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.", icon: "🥊", category: "active", cooldown: 6, castTime: 0, resourceCost: { energy: 10 }, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.8 },
+    ability: { id: "ability_gloves_shockwave", name: "Onde percutante", description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.", icon: "🥊", category: "active", cooldown: 6, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.8 },
     items: [{ itemId: "item_weapon_gloves_t3_spiked_gauntlets", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 38 }, sellPrice: 75 }, { itemId: "item_weapon_gloves_t4_spiked_gauntlets", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 66 }, sellPrice: 210 }],
   },
   {
     familyId: "dagger", specializationMasteryId: "mastery_dagger_pair", specializationName: "Paire de dagues", combatProfile: "dagger",
     craft: { kind: "standard", materials: [{ kind: "metal", quantity: 6 }, { kind: "leather", quantity: 2 }] },
-    ability: { id: "ability_dagger_double_slash", name: "Double entaille", description: "Deux lames frappent en succession rapide pour infliger 150 % des dégâts physiques.", icon: "🗡️", category: "active", cooldown: 4, castTime: 0, resourceCost: { energy: 8 }, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.5 },
+    ability: { id: "ability_dagger_double_slash", name: "Double entaille", description: "Deux lames frappent en succession rapide pour infliger 150 % des dégâts physiques.", icon: "🗡️", category: "active", cooldown: 4, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.5 },
     items: [{ itemId: "item_weapon_dagger_t3_pair", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 34 }, sellPrice: 75 }, { itemId: "item_weapon_dagger_t4_pair", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 58 }, sellPrice: 210 }],
   },
 ];

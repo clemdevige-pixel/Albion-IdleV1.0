@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import type Phaser from "phaser";
 import type {
   WorldStatusRenderManifest,
   WorldStatusTextManifest,
@@ -56,9 +56,7 @@ export class WorldStatusSystem {
     this.stateText.setText(
       status.combatState === "victory"
         ? "VICTOIRE"
-        : status.combatState === "defeat"
-          ? "DÉFAITE"
-          : "",
+        : "",
     );
   }
 

@@ -77,15 +77,16 @@ describe("Mastery Experience Curve (Variant B)", () => {
     const table = new ExperienceTable(WEAPON_MASTERY_XP);
     expect(table.getMaxLevel()).toBe(100);
 
-    // Cumulative XP for level 10 = 7,500
-    expect(table.getLevel(7499, 100)).toEqual({ level: 9, remainingXp: 4799 });
-    expect(table.getLevel(7500, 100)).toEqual({ level: 10, remainingXp: 0 });
+    // Index zero is the level 0 -> 1 requirement. The first nine levels cost 7,500 XP.
+    expect(table.getLevel(7499, 100)).toEqual({ level: 8, remainingXp: 2099 });
+    expect(table.getLevel(7500, 100)).toEqual({ level: 9, remainingXp: 0 });
 
-    // Level 11 -> requires 2,740 XP (total 10,240 XP)
-    expect(table.getLevel(10240, 100)).toEqual({ level: 11, remainingXp: 0 });
+    // Reaching level 10 additionally consumes the index-nine requirement (2,700 XP).
+    expect(table.getLevel(10200, 100)).toEqual({ level: 10, remainingXp: 0 });
+    expect(table.getLevel(12940, 100)).toEqual({ level: 11, remainingXp: 0 });
 
     // Level 100 max level capping & overflow
-    const totalTo100 = 6558810;
+    const totalTo100 = WEAPON_MASTERY_XP.reduce((total, requirement) => total + requirement, 0);
     expect(table.getLevel(totalTo100, 100)).toEqual({ level: 100, remainingXp: 0 });
     expect(table.getLevel(totalTo100 + 500, 100)).toEqual({ level: 100, remainingXp: 500 });
   });

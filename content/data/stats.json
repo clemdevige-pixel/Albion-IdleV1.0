@@ -15,18 +15,6 @@
       "displayFormat": "integer"
     },
     {
-      "id": "stat_max_energy",
-      "category": "primary",
-      "valueType": "integer",
-      "defaultValue": 50,
-      "minimumValue": 0,
-      "maximumValue": null,
-      "precision": 0,
-      "visible": true,
-      "stackable": true,
-      "displayFormat": "integer"
-    },
-    {
       "id": "stat_physical_damage",
       "category": "offensive",
       "valueType": "integer",
@@ -163,18 +151,6 @@
       "category": "defensive",
       "valueType": "float",
       "defaultValue": 0,
-      "minimumValue": 0,
-      "maximumValue": null,
-      "precision": 1,
-      "visible": true,
-      "stackable": true,
-      "displayFormat": "decimal"
-    },
-    {
-      "id": "stat_energy_regen",
-      "category": "primary",
-      "valueType": "float",
-      "defaultValue": 1.0,
       "minimumValue": 0,
       "maximumValue": null,
       "precision": 1,

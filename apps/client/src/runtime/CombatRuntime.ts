@@ -1,17 +1,18 @@
 import type { EntityId, World } from "@game/core";
-import {
+import type {
   AbilityManager,
   AutoAttackManager,
   BiomeResolver,
   CombatOrchestrator,
   CombatService,
   DamageManager,
-  DeathComponent,
   DeathManager,
   EffectManager,
   EquipmentManager,
   StatsManager,
-  TargetManager,
+  TargetManager} from "@game/gameplay";
+import {
+  DeathComponent,
   asEncounterId,
   type AbilityId,
   type CombatState,
@@ -31,13 +32,6 @@ import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
-
-/**
- * Temporary live-combat rule: monster active abilities remain authored/learned in the
- * content pipeline but are not executed. Current bestiary balance is auto-attack only
- * until the shared monster action cadence/scheduler is redesigned and rebalanced.
- */
-export const MONSTER_ACTIVE_ABILITIES_ENABLED = false;
 
 export interface CombatLocationState {
   readonly zoneIndex: number;
@@ -385,7 +379,6 @@ export class CombatRuntime {
     }
 
     this.abilityManager.tickAbilities(this.heroId, dt);
-    this.abilityManager.restoreEnergy(this.heroId, 1.5);
     if (this.primaryAbilityAutoCast) {
       this.usePrimaryAbility();
     }
@@ -424,7 +417,7 @@ export class CombatRuntime {
     const heroHealth = this.damageManager.getHealth(this.heroId);
 
     return {
-      combatState: tickResult.ok ? (tickResult.value.state as CombatState) : "combat",
+      combatState: tickResult.ok ? (tickResult.value.state) : "combat",
       activeEnemy: enemyHealth ? {
         id: this.activeEnemyId,
         currentHealth: enemyHealth.currentHealth,

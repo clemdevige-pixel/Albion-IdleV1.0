@@ -110,7 +110,7 @@ const validAbility: AbilityDefinition = {
   owner: "any",
   weaponFamily: "sword",
   cooldown: 5,
-  resourceCost: { energy: 10 },
+  resourceCost: {},
   castTime: 0,
   range: 3,
   targetRule: "enemy",

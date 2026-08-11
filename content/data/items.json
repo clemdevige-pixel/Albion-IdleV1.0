@@ -81,6 +81,32 @@
       "referenceId": null
     },
     {
+      "id": "item_refined_copper_bar_t3",
+      "category": "refined_resource",
+      "tier": 3,
+      "supportsQuality": false,
+      "supportsEnchantments": false,
+      "stackable": true,
+      "maxStack": 999,
+      "weight": 2.0,
+      "baseValue": 20,
+      "tags": ["refined", "metal"],
+      "referenceId": null
+    },
+    {
+      "id": "item_refined_planks_t3",
+      "category": "refined_resource",
+      "tier": 3,
+      "supportsQuality": false,
+      "supportsEnchantments": false,
+      "stackable": true,
+      "maxStack": 999,
+      "weight": 2.0,
+      "baseValue": 20,
+      "tags": ["refined", "wood"],
+      "referenceId": null
+    },
+    {
       "id": "item_refined_planks_t4",
       "category": "refined_resource",
       "tier": 4,
@@ -117,6 +143,19 @@
       "weight": 0.2,
       "baseValue": 30,
       "tags": ["potion", "consumable", "healing"],
+      "referenceId": null
+    },
+    {
+      "id": "item_weapon_sword_t4_broadsword",
+      "category": "equipment",
+      "tier": 4,
+      "supportsQuality": true,
+      "supportsEnchantments": true,
+      "stackable": false,
+      "maxStack": 1,
+      "weight": 5.0,
+      "baseValue": 500,
+      "tags": ["weapon", "sword", "broadsword", "craftable"],
       "referenceId": null
     }
   ]

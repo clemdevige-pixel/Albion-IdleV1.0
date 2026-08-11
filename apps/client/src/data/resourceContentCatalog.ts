@@ -50,7 +50,7 @@ export const RESOURCE_DEFINITIONS = {
   birch: {
     id: asResourceDefinitionId("resource_birch_wood_t3"),
     name: "Bois de bouleau",
-    family: "Wood" as ResourceFamily,
+    family: "Wood",
     tier: 3,
     maxCharges: 999,
     respawnDurationTicks: 240,
@@ -60,7 +60,7 @@ export const RESOURCE_DEFINITIONS = {
   copper: {
     id: asResourceDefinitionId("resource_copper_ore_t3"),
     name: "Minerai de cuivre",
-    family: "Ore" as ResourceFamily,
+    family: "Ore",
     tier: 3,
     maxCharges: 999,
     respawnDurationTicks: 240,
@@ -70,7 +70,7 @@ export const RESOURCE_DEFINITIONS = {
   pine: {
     id: asResourceDefinitionId("resource_wood_t4"),
     name: "Bois de pin",
-    family: "Wood" as ResourceFamily,
+    family: "Wood",
     tier: 4,
     maxCharges: 999,
     respawnDurationTicks: 360,
@@ -80,7 +80,7 @@ export const RESOURCE_DEFINITIONS = {
   iron: {
     id: asResourceDefinitionId("resource_ore_t4"),
     name: "Minerai de fer",
-    family: "Ore" as ResourceFamily,
+    family: "Ore",
     tier: 4,
     maxCharges: 999,
     respawnDurationTicks: 360,

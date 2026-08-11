@@ -1660,20 +1660,6 @@ body {
   filter: grayscale(1);
 }
 
-.ability-bar__energy {
-  min-width: 38px;
-  align-self: center;
-  color: #72a7ff;
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.ability-bar__energy span {
-  margin: 0 2px;
-  color: var(--text-muted);
-}
-
 .ability-bar__auto {
   align-self: center;
   padding: 5px 6px;
@@ -5682,6 +5668,16 @@ canvas {
 
 .item-tooltip__stats strong {
   color: var(--text-primary);
+  text-align: right;
+}
+
+.item-tooltip__stats strong small {
+  display: block;
+  margin-top: 1px;
+  color: #6fbd73;
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .item-tooltip__stats em {
@@ -6528,15 +6524,6 @@ canvas {
   background: linear-gradient(180deg, #151c26, #0b1017);
 }
 
-.ability-bar__energy {
-  min-width: 47px;
-  padding: 5px 4px;
-  color: #76adff;
-  background: rgba(8, 13, 21, 0.72);
-  border: 1px solid rgba(67, 104, 160, 0.38);
-  border-radius: 3px;
-}
-
 .ability-bar__separator {
   height: 44px;
   margin: 0 4px;
@@ -6611,7 +6598,6 @@ canvas {
     width: 44px;
     height: 44px;
   }
-  .ability-bar__energy { display: none; }
   .bottomnav { justify-content: flex-start; padding-inline: 6px; }
   .bottomnav__tab { flex: 0 0 82px; min-width: 82px; }
 }

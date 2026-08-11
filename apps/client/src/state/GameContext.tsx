@@ -8,7 +8,6 @@ import {
   CombatOrchestrator,
   DamageManager,
   HealthComponent,
-  EnergyComponent,
   DeathManager,
   TargetManager,
   AutoAttackManager,
@@ -260,12 +259,19 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     orchestrator.initialize();
 
     // --- Equipment stat sync --------------------------------------------------
-    let syncWeaponMasteryStats: ((entityId: EntityId) => void) | undefined;
+    const syncWeaponMasteryStats = (entityId: EntityId): void => {
+      recalculateWeaponMasteryStats(
+        statsManager,
+        equipmentManager,
+        masteryService,
+        entityId,
+      );
+    };
     const equipmentStatSync = new EquipmentStatSync(
       statsManager,
       resolveEquipmentInfo,
       (entityId, changedStats) => {
-        syncWeaponMasteryStats?.(entityId);
+        syncWeaponMasteryStats(entityId);
         if (
           changedStats.includes(STAT_MAX_HEALTH) &&
           world.hasComponent(entityId, HealthComponent)
@@ -273,12 +279,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
           damageManager.syncMaxHealth(entityId);
           const health = damageManager.getHealth(entityId);
           bridge.updatePlayerHealth(health.currentHealth, health.maxHealth);
-        }
-        if (
-          changedStats.includes("stat_max_energy" as StatId) &&
-          world.hasComponent(entityId, EnergyComponent)
-        ) {
-          abilityManager.syncMaxEnergy(entityId);
         }
         syncStatsToBridge(bridge, statsManager, entityId);
       },
@@ -327,20 +327,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     masteryService.discoverMastery(ORE_GATHERING_MASTERY_ID);
     masteryService.discoverMastery(HIDE_GATHERING_MASTERY_ID);
     masteryService.discoverMastery(FIBER_GATHERING_MASTERY_ID);
-
-    /**
-     * Rebuild the weapon-only damage granted by mastery IP.
-     * +100 bonus IP = +20% of the weapon's own primary damage.
-     * Hero base damage, attack speed and defensive stats are never scaled.
-     */
-    syncWeaponMasteryStats = (entityId: EntityId): void => {
-      recalculateWeaponMasteryStats(
-        statsManager,
-        equipmentManager,
-        masteryService,
-        entityId,
-      );
-    };
 
     // --- Durability & Repair systems -------------------------------------------
     const durabilityStore = new DurabilityStore();
@@ -1366,6 +1352,28 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         heroId,
         productionStorageId,
       );
+      // Save compatibility: convert the removed energy consumable instead of
+      // leaving an orphaned item in the player inventory or bank.
+      for (const inventoryId of [heroId, bankId]) {
+        const legacyQuantity = inventoryManager.getTotalQuantity(
+          inventoryId,
+          "item_energy_potion",
+        );
+        if (legacyQuantity <= 0) continue;
+
+        const removed = inventoryManager.removeQuantity(
+          inventoryId,
+          "item_energy_potion",
+          legacyQuantity,
+        );
+        if (removed.ok) {
+          inventoryManager.addQuantity(
+            inventoryId,
+            "item_health_potion",
+            legacyQuantity,
+          );
+        }
+      }
 
       // After load, re-read wallet balance
       const balResult = currencyService.getBalance(walletId, "currency_silver");
@@ -1515,7 +1523,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const consumableRuntime = new ConsumableRuntime({
       inventoryManager,
       damageManager,
-      abilityManager,
       deathManager,
       heroId,
     });
@@ -1637,27 +1644,22 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
           bridge.addEconomyNotification({
             id: `notif_consumable_full_${String(Date.now())}`,
             type: "error",
-            message: "Impossible à utiliser : ressource déjà pleine",
+            message: "Impossible à utiliser : points de vie déjà au maximum",
             timestamp: Date.now(),
           });
         }
         return false;
       }
 
-      if (result.itemId === "item_health_potion") {
-        syncConsumables();
-        if (result.currentHealth !== undefined && result.maxHealth !== undefined) {
-          bridge.updatePlayerHealth(result.currentHealth, result.maxHealth);
-        }
+      syncConsumables();
+      if (result.currentHealth !== undefined && result.maxHealth !== undefined) {
+        bridge.updatePlayerHealth(result.currentHealth, result.maxHealth);
       }
-      const message = result.itemId === "item_health_potion"
-        ? `Potion de soin : +${String(result.restored)} PV`
-        : `Potion d'énergie : +${String(result.restored)} énergie`;
       syncInventoryToBridge(bridge, inventoryManager, heroId);
       bridge.addEconomyNotification({
         id: `notif_consumable_${String(Date.now())}`,
         type: "success",
-        message,
+        message: `Potion de soin : +${String(result.restored)} PV`,
         timestamp: Date.now(),
       });
       return true;

@@ -305,7 +305,7 @@ describe("CraftingRuntime Tn progression test suite", () => {
         return { ok: false, reason: "inventory_full" } as const;
       }
       return originalAddQuantity(entityId, itemId, quantity, stackInfo, enchantment);
-    }) as typeof env.inventoryManager.addQuantity;
+    });
 
     const res = env.runtime.craftEquipment("item_weapon_sword_t4_broadsword");
     expect(res.ok).toBe(false);

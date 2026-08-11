@@ -12,6 +12,15 @@ import { WORLD_ZONE_ORDER } from "../data/worldContentCatalog.js";
 const FOREST_ZONE_DEF_ID = WORLD_ZONE_ORDER[0]!;
 const ZONE_ORDER: readonly ZoneDefinitionId[] = WORLD_ZONE_ORDER;
 
+function isSavedZoneMemory(value: unknown): value is SavedZoneMemory {
+  if (value === null || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.zoneDefId === "string"
+    && typeof candidate.currentSegment === "number"
+    && typeof candidate.highestUnlockedSegment === "number"
+    && Array.isArray(candidate.completedSegments);
+}
+
 export interface WorldRuntimeDependencies {
   readonly zoneManager: ZoneManager;
   readonly progressionManager: WorldProgressionManager;
@@ -252,11 +261,12 @@ export class WorldRuntime {
     savedLocation: WorldLocationSaveState | undefined,
   ): void {
     if (savedLocation !== undefined) {
-      if (Array.isArray(savedLocation.zoneMemories)) {
+      const rawZoneMemories: unknown = savedLocation.zoneMemories;
+      if (Array.isArray(rawZoneMemories)) {
         const memoryByZoneDefId = new Map<ZoneDefinitionId, SavedZoneMemory>();
-        for (const mem of savedLocation.zoneMemories) {
-          if (mem && typeof mem.zoneDefId === "string") {
-            memoryByZoneDefId.set(mem.zoneDefId as ZoneDefinitionId, mem);
+        for (const memory of rawZoneMemories) {
+          if (isSavedZoneMemory(memory)) {
+            memoryByZoneDefId.set(memory.zoneDefId, memory);
           }
         }
 
@@ -268,9 +278,15 @@ export class WorldRuntime {
               0,
               Math.min(SEGMENTS_PER_ZONE - 1, Math.floor(savedMem.highestUnlockedSegment ?? 0)),
             );
-            const validCompletedSegments = Array.isArray(savedMem.completedSegments)
-              ? [...new Set(savedMem.completedSegments)]
-                  .filter((s) => Number.isInteger(s) && s >= 0 && s < SEGMENTS_PER_ZONE && s <= highestUnlockedSegment)
+            const rawCompletedSegments: unknown = savedMem.completedSegments;
+            const validCompletedSegments = Array.isArray(rawCompletedSegments)
+              ? [...new Set(rawCompletedSegments.filter(
+                  (segment): segment is number => typeof segment === "number",
+                ))]
+                  .filter((segment) => Number.isInteger(segment)
+                    && segment >= 0
+                    && segment < SEGMENTS_PER_ZONE
+                    && segment <= highestUnlockedSegment)
                   .sort((a, b) => a - b)
               : [];
             const currentSegment = Math.max(
@@ -287,7 +303,7 @@ export class WorldRuntime {
           }
         }
 
-        const targetZoneDefId = savedLocation.activeZoneDefId as ZoneDefinitionId;
+        const targetZoneDefId = savedLocation.activeZoneDefId;
         const targetIndex = ZONE_ORDER.indexOf(targetZoneDefId);
         const resolvedIndex = (targetIndex >= 0 && this.progressionManager.isUnlocked(targetZoneDefId))
           ? targetIndex
@@ -309,7 +325,7 @@ export class WorldRuntime {
       } else {
         // Legacy / partial payload without zoneMemories array:
         // Reuse legacy location fields: activeZoneDefId, activeSegment, farmMode
-        const targetZoneDefId = savedLocation.activeZoneDefId as ZoneDefinitionId;
+        const targetZoneDefId = savedLocation.activeZoneDefId;
         const targetIndex = ZONE_ORDER.indexOf(targetZoneDefId);
         const resolvedIndex = (targetIndex >= 0 && this.progressionManager.isUnlocked(targetZoneDefId))
           ? targetIndex

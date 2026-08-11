@@ -1,13 +1,14 @@
 import type { EntityId, World } from "@game/core";
-import {
+import type {
   AbilityManager,
   AutoAttackManager,
   BiomeResolver,
   DamageManager,
   DeathManager,
-  PositionComponent,
   StatsManager,
-  TargetManager,
+  TargetManager} from "@game/gameplay";
+import {
+  PositionComponent,
   getEnemyCombatProfile,
   type StatId,
   type ZoneDefinitionId,

@@ -1,5 +1,5 @@
 import type { EntityId } from "@game/core";
-import type { AbilityManager, DamageManager, DeathManager, InventoryManager } from "@game/gameplay";
+import type { DamageManager, DeathManager, InventoryManager } from "@game/gameplay";
 import {
   HEALTH_POTION_COOLDOWN_SECONDS,
   HEALTH_POTION_HEAL_RATIO,
@@ -44,7 +44,6 @@ export interface ConsumableRuntimeState {
 export interface ConsumableRuntimeDependencies {
   readonly inventoryManager: InventoryManager;
   readonly damageManager: DamageManager;
-  readonly abilityManager: AbilityManager;
   readonly deathManager: DeathManager;
   readonly heroId: EntityId;
 }
@@ -52,7 +51,6 @@ export interface ConsumableRuntimeDependencies {
 export class ConsumableRuntime {
   private readonly inventoryManager: InventoryManager;
   private readonly damageManager: DamageManager;
-  private readonly abilityManager: AbilityManager;
   private readonly deathManager: DeathManager;
   private readonly heroId: EntityId;
 
@@ -61,7 +59,6 @@ export class ConsumableRuntime {
   constructor(deps: ConsumableRuntimeDependencies) {
     this.inventoryManager = deps.inventoryManager;
     this.damageManager = deps.damageManager;
-    this.abilityManager = deps.abilityManager;
     this.deathManager = deps.deathManager;
     this.heroId = deps.heroId;
   }
@@ -104,9 +101,6 @@ export class ConsumableRuntime {
         Math.ceil(health.maxHealth * HEALTH_POTION_HEAL_RATIO),
         health.maxHealth - health.currentHealth,
       );
-    } else if (itemId === "item_energy_potion") {
-      const energy = this.abilityManager.getEnergy(this.heroId);
-      availableRestore = Math.min(50, energy.maxEnergy - energy.currentEnergy);
     } else {
       return { ok: false, reason: "unknown_item" };
     }
@@ -120,26 +114,16 @@ export class ConsumableRuntime {
       return { ok: false, reason: "not_in_inventory" };
     }
 
-    const restored = itemId === "item_health_potion"
-      ? this.damageManager.healDamage(this.heroId, availableRestore)
-      : this.abilityManager.restoreEnergy(this.heroId, 50);
+    const restored = this.damageManager.healDamage(this.heroId, availableRestore);
 
-    if (itemId === "item_health_potion") {
-      this.healthPotionCooldownRemaining = HEALTH_POTION_COOLDOWN_SECONDS;
-      const health = this.damageManager.getHealth(this.heroId);
-      return {
-        ok: true,
-        itemId,
-        restored,
-        currentHealth: health.currentHealth,
-        maxHealth: health.maxHealth,
-      };
-    }
-
+    this.healthPotionCooldownRemaining = HEALTH_POTION_COOLDOWN_SECONDS;
+    const health = this.damageManager.getHealth(this.heroId);
     return {
       ok: true,
       itemId,
       restored,
+      currentHealth: health.currentHealth,
+      maxHealth: health.maxHealth,
     };
   }
 }

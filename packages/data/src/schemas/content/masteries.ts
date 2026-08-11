@@ -2,7 +2,13 @@ import { z } from "zod";
 import { defineDataCategory } from "../../category.js";
 import { asDataId } from "../../data-id.js";
 
-const MasteryCategory = z.enum(["combat", "gathering", "crafting", "refining"]);
+const MasteryCategory = z.enum([
+  "combat",
+  "weapon_specialization",
+  "gathering",
+  "crafting",
+  "refining",
+]);
 
 export const MasteryDefinitionSchema = z.object({
   id: z.string(),

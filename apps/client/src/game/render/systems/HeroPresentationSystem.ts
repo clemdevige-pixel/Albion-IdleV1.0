@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import type Phaser from "phaser";
 import type { ActorRenderManifest } from "../RenderManifest";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 import { ActorAnimationSystem } from "./ActorAnimationSystem";

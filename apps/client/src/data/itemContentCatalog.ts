@@ -82,7 +82,6 @@ export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
 
 export const CONSUMABLE_STACK_DEFINITIONS: Readonly<Record<string, number>> = {
   item_health_potion: 99,
-  item_energy_potion: 99,
 };
 
 export function resolveCatalogStackInfo(itemId: string) {
@@ -177,7 +176,7 @@ export function resolveItemStackInfo(itemId: string) {
   if (ITEM_DEFINITIONS[itemId] !== undefined) {
     return { itemId, stackable: true, maxStack: 20 };
   }
-  if (itemId === "item_health_potion" || itemId === "item_energy_potion") {
+  if (itemId === "item_health_potion") {
     return { itemId, stackable: true, maxStack: 99 };
   }
   if (itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_")) {

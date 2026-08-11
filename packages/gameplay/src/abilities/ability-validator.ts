@@ -1,6 +1,5 @@
 import type { EntityId, World } from "@game/core";
 import { HealthComponent } from "../damage/components.js";
-import { EnergyComponent } from "./components.js";
 import type { AbilityData } from "./components.js";
 import type { AbilityId, AbilityEntry } from "./types.js";
 
@@ -24,18 +23,11 @@ export class AbilityValidator {
   }
 
   /**
-   * Resource costs are validated against runtime pools (current energy /
-   * current health), never against base stats (AI_BIBLE 11_STAT §5,
-   * 24_ABILITY_DATA "Resource Cost"). A health cost must leave the caster
-   * alive.
+   * Health costs are validated against current health and must leave the
+   * caster alive. Cooldowns remain the normal active-ability limiter.
    */
   hasResources(entityId: EntityId, entry: AbilityEntry): boolean {
     const cost = entry.definition.resourceCost;
-    if (cost.energy !== undefined && cost.energy > 0) {
-      if (!this.#world.hasComponent(entityId, EnergyComponent)) return false;
-      const energy = this.#world.getComponent(entityId, EnergyComponent);
-      if (energy.currentEnergy < cost.energy) return false;
-    }
     if (cost.health !== undefined && cost.health > 0) {
       if (!this.#world.hasComponent(entityId, HealthComponent)) return false;
       const health = this.#world.getComponent(entityId, HealthComponent);

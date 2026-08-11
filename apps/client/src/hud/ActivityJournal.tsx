@@ -124,25 +124,27 @@ export function ActivityJournal(): JSX.Element {
 
   return (
     <section className="activity-journal" aria-label="Journal d'activite">
-      <div className="activity-journal__ornament" aria-hidden="true">
-        <span />
-        <strong>Journal</strong>
-        <span />
-      </div>
-      <div className="activity-journal__tabs" role="tablist">
-        {(["general", "combat", "loot"] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            className={activeTab === tab ? "is-active" : ""}
-            onClick={() => { setActiveTab(tab); }}
-          >
-            {tab === "general" ? "General" : tab === "combat" ? "Combat" : "Butin"}
-          </button>
-        ))}
-      </div>
+      <header className="activity-journal__header">
+        <div className="activity-journal__title">
+          <span aria-hidden="true">◈</span>
+          <strong>Journal</strong>
+          <small>{String(visibleEntries.length)}</small>
+        </div>
+        <div className="activity-journal__tabs" role="tablist">
+          {(["general", "combat", "loot"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              className={activeTab === tab ? "is-active" : ""}
+              onClick={() => { setActiveTab(tab); }}
+            >
+              {tab === "general" ? "Général" : tab === "combat" ? "Combat" : "Butin"}
+            </button>
+          ))}
+        </div>
+      </header>
       <div ref={historyRef} className="activity-journal__history" role="log" aria-live="polite">
         {visibleEntries.length === 0 ? (
           <div className="activity-journal__empty">Aucune activite enregistree.</div>
@@ -151,6 +153,7 @@ export function ActivityJournal(): JSX.Element {
             key={entry.id}
             className={`activity-journal__entry activity-journal__entry--${entry.tone}`}
           >
+            <i aria-hidden="true" />
             <time>[{TIME_FORMATTER.format(entry.timestamp)}]</time>
             <span>{entry.message}</span>
           </div>

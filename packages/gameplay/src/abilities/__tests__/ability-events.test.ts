@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { World, createRuntimeServices, EventBus } from "@game/core";
 import type { EntityId } from "@game/core";
 import { StatsManager, createDefaultStatRegistry } from "../../stats/index.js";
-import type { StatId } from "../../stats/types.js";
 import { HealthComponent } from "../../damage/components.js";
 import { AbilityManager } from "../ability-manager.js";
 import type { AbilityEventMap } from "../ability-events.js";
@@ -105,12 +104,11 @@ describe("AbilityManager.executeIntent", () => {
   it("reject insufficient resources", () => {
     const other = world.createEntity();
     statsManager.attachStats(other);
-    statsManager.setBaseStat(other, "stat_max_energy" as StatId, 5);
     statsManager.calculateStats(other);
     manager.attachAbilities(other);
     world.addComponent(other, HealthComponent, { currentHealth: 100, maxHealth: 100 });
 
-    manager.learnAbility(other, makeDef({ id: "slash", category: "active", resourceCost: { energy: 10 } }));
+    manager.learnAbility(other, makeDef({ id: "slash", category: "active", resourceCost: { health: 100 } }));
     const result = manager.executeIntent(intent({ entityId: other }));
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("insufficient_resources");

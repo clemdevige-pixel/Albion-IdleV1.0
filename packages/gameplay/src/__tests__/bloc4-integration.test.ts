@@ -111,7 +111,6 @@ describe("Bloc 4 — Full Lifecycle Integration", () => {
 
     statsManager.attachStats(entityId);
     statsManager.setBaseStat(entityId, sid("stat_max_health"), 100);
-    statsManager.setBaseStat(entityId, sid("stat_max_energy"), 50);
     statsManager.calculateStats(entityId);
 
     inventoryManager.createInventory(entityId, 8);
@@ -131,16 +130,12 @@ describe("Bloc 4 — Full Lifecycle Integration", () => {
       id: "slash",
       cooldown: 3,
       castTime: 0,
-      resourceCost: { energy: 10 },
+      resourceCost: {},
     });
     abilityManager.learnAbility(entityId, abilityDef);
 
     const castResult = abilityManager.castAbility(entityId, aid("slash"));
     expect(castResult).toBe(true);
-
-    // Cost consumed from the runtime energy pool; base stat untouched (11_STAT §5)
-    expect(abilityManager.getEnergy(entityId).currentEnergy).toBe(40);
-    expect(statsManager.getStat(entityId, sid("stat_max_energy")).base).toBe(50);
 
     expect(abilityManager.isAbilityReady(entityId, aid("slash"))).toBe(false);
     abilityManager.tickAbilities(entityId, 3);
@@ -214,7 +209,7 @@ describe("Bloc 4 — Character + Equipment + Inventory", () => {
 });
 
 describe("Bloc 4 — Character + Abilities + Stats", () => {
-  it("casting ability deducts cost from the energy pool", () => {
+  it("casting an ability is governed by cooldown", () => {
     const { world } = makeWorld();
     const { characterManager, statsManager, abilityManager } = makeManagers(world);
 
@@ -224,30 +219,12 @@ describe("Bloc 4 — Character + Abilities + Stats", () => {
     statsManager.attachStats(entityId);
     abilityManager.attachAbilities(entityId);
 
-    const def = makeAbilityDef({ resourceCost: { energy: 15 }, castTime: 0, cooldown: 2 });
+    const def = makeAbilityDef({ resourceCost: {}, castTime: 0, cooldown: 2 });
     abilityManager.learnAbility(entityId, def);
-    abilityManager.castAbility(entityId, aid("fireball"));
-
-    expect(abilityManager.getEnergy(entityId).currentEnergy).toBe(35);
-    expect(statsManager.getStat(entityId, sid("stat_max_energy")).base).toBe(50);
-  });
-
-  it("cannot cast when energy is insufficient", () => {
-    const { world } = makeWorld();
-    const { characterManager, statsManager, abilityManager } = makeManagers(world);
-
-    const charId = characterManager.createCharacter({ name: "Mage", tick: 0 });
-    const entityId = characterManager.getCharacter(charId)!.entityId;
-
-    statsManager.attachStats(entityId);
-    statsManager.setBaseStat(entityId, sid("stat_max_energy"), 5);
-    statsManager.calculateStats(entityId);
-    abilityManager.attachAbilities(entityId);
-
-    const def = makeAbilityDef({ resourceCost: { energy: 10 }, castTime: 0, cooldown: 2 });
-    abilityManager.learnAbility(entityId, def);
-    const result = abilityManager.castAbility(entityId, aid("fireball"));
-    expect(result).toBe(false);
+    expect(abilityManager.castAbility(entityId, aid("fireball"))).toBe(true);
+    expect(abilityManager.castAbility(entityId, aid("fireball"))).toBe(false);
+    abilityManager.tickAbilities(entityId, 2);
+    expect(abilityManager.castAbility(entityId, aid("fireball"))).toBe(true);
   });
 });
 
@@ -327,7 +304,6 @@ describe("Bloc 4 — Determinism", () => {
   it("running the full scenario twice produces identical results", () => {
     const results: {
       hp: number;
-      energy: number;
       weaponInstanceId: string | undefined;
       abilityState: string;
       cooldown: number;
@@ -343,14 +319,13 @@ describe("Bloc 4 — Determinism", () => {
 
       statsManager.attachStats(entityId);
       statsManager.setBaseStat(entityId, sid("stat_max_health"), 100);
-      statsManager.setBaseStat(entityId, sid("stat_max_energy"), 50);
       inventoryManager.createInventory(entityId, 4);
       equipmentManager.attachEquipment(entityId);
       inventoryManager.addEntry(entityId, "item_iron_sword", 0);
       equipmentManager.equipFromInventory(entityId, 0);
       abilityManager.attachAbilities(entityId);
 
-      const def = makeAbilityDef({ id: "strike", castTime: 1, cooldown: 3, resourceCost: { energy: 10 } });
+      const def = makeAbilityDef({ id: "strike", castTime: 1, cooldown: 3, resourceCost: {} });
       abilityManager.learnAbility(entityId, def);
       abilityManager.castAbility(entityId, aid("strike"));
       abilityManager.tickAbilities(entityId, 0.5);
@@ -362,7 +337,6 @@ describe("Bloc 4 — Determinism", () => {
       const entry = abilityManager.getAbility(entityId, aid("strike"))!;
       results.push({
         hp: statsManager.getStat(entityId, sid("stat_max_health")).computed,
-        energy: statsManager.getStat(entityId, sid("stat_max_energy")).base,
         weaponInstanceId: equipmentManager.getEquippedItem(entityId, "weapon")?.instanceId,
         abilityState: entry.state,
         cooldown: entry.cooldownRemaining,

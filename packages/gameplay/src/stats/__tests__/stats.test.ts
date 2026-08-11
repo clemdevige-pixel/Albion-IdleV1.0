@@ -49,11 +49,10 @@ describe("StatRegistry", () => {
     expect(() => registry.register(TEST_DEF)).toThrow();
   });
 
-  it("createDefaultStatRegistry registers 8 stats", () => {
+  it("createDefaultStatRegistry registers 7 stats", () => {
     const registry = createDefaultStatRegistry();
-    expect(registry.getAll()).toHaveLength(8);
+    expect(registry.getAll()).toHaveLength(7);
     expect(registry.has(sid("stat_max_health"))).toBe(true);
-    expect(registry.has(sid("stat_max_energy"))).toBe(true);
     expect(registry.has(sid("stat_physical_damage"))).toBe(true);
     expect(registry.has(sid("stat_armor"))).toBe(true);
     expect(registry.has(sid("stat_attack_speed"))).toBe(true);

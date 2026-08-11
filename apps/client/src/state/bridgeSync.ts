@@ -9,7 +9,6 @@ import { isProductionMaterial } from "../runtime/ProductionStorage.js";
 
 const STAT_IDS: readonly StatId[] = [
   "stat_max_health" as StatId,
-  "stat_max_energy" as StatId,
   "stat_physical_damage" as StatId,
   "stat_magical_damage" as StatId,
   "stat_armor" as StatId,
@@ -505,8 +504,6 @@ export function syncAbilitiesToBridge(
   const entry = abilityId === undefined
     ? undefined
     : abilityManager.getAbility(heroId, abilityId as AbilityId);
-  const energy = abilityManager.getEnergy(heroId);
-
   bridge.updateAbilities({
     primary: definition === undefined || entry === undefined
       ? null
@@ -518,14 +515,8 @@ export function syncAbilitiesToBridge(
           shortcut: "Q",
           cooldown: definition.cooldown,
           cooldownRemaining: Math.max(0, entry.cooldownRemaining),
-          energyCost: definition.resourceCost.energy ?? 0,
-          isReady:
-            entry.state === "ready"
-            && energy.currentEnergy >= (definition.resourceCost.energy ?? 0)
-            && bridge.combatState === "combat",
+          isReady: entry.state === "ready" && bridge.combatState === "combat",
           autoCast: isAutoCastEnabled,
         },
-    currentEnergy: energy.currentEnergy,
-    maxEnergy: energy.maxEnergy,
   });
 }

@@ -1,5 +1,4 @@
 import { CombatStateBar } from "./CombatStateBar";
-import { AbilityBar } from "./AbilityBar";
 import { ActiveEffectsDisplay } from "./ActiveEffectsDisplay";
 
 /**
@@ -11,9 +10,6 @@ export function HudRoot(): JSX.Element {
       <div className="hud-root__top">
         <CombatStateBar />
         <ActiveEffectsDisplay />
-      </div>
-      <div className="hud-root__bottom">
-        <AbilityBar />
       </div>
     </div>
   );

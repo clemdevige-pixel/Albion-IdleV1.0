@@ -10,7 +10,6 @@ export interface LootTableDefinition {
 
 export const GENERIC_COMBAT_LOOT: readonly LootDropDefinition[] = [
   { itemId: "item_health_potion", weight: 20 },
-  { itemId: "item_energy_potion", weight: 15 },
 ];
 
 const UNDEAD_COMBAT_LOOT: readonly LootDropDefinition[] = [
@@ -85,7 +84,6 @@ export const REPAIR_COST_DEFINITIONS = [
 
 export const GENERAL_VENDOR_FIXED_OFFERS = [
   { itemId: "item_health_potion", buyPrice: 50, sellPrice: 20, maxPerTransaction: null, enabled: true },
-  { itemId: "item_energy_potion", buyPrice: 75, sellPrice: 30, maxPerTransaction: null, enabled: true },
   { itemId: "item_leather_armor", buyPrice: null, sellPrice: 60, maxPerTransaction: null, enabled: true },
   { itemId: "item_wooden_shield", buyPrice: null, sellPrice: 48, maxPerTransaction: null, enabled: true },
   { itemId: "item_shield_t3_reinforced", buyPrice: null, sellPrice: 90, maxPerTransaction: null, enabled: true },

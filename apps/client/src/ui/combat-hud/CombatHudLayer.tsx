@@ -1,4 +1,5 @@
 import { ActivityJournal } from "../../hud/ActivityJournal";
+import { AbilityBar } from "../../hud/AbilityBar";
 import { HudRoot } from "../../hud/HudRoot";
 import { EconomyNotifications } from "../../panels/EconomyNotifications";
 import "./combatHud.css";
@@ -11,7 +12,12 @@ export function CombatHudLayer(): JSX.Element {
   return (
     <div className="combat-hud-layer">
       <HudRoot />
-      <ActivityJournal />
+      <div className="combat-hud-journal">
+        <ActivityJournal />
+      </div>
+      <div className="combat-hud-actions">
+        <AbilityBar />
+      </div>
       <EconomyNotifications />
     </div>
   );

@@ -13,8 +13,6 @@ const HEALTH_POTION_ID = "item_health_potion";
 
 export interface AbilityBarUiModel {
   readonly ability: CombatAbilityVM | null;
-  readonly currentEnergy: number;
-  readonly maxEnergy: number;
   readonly potionCount: number;
   readonly potionCooldown: number;
   readonly potionCooldownRemaining: number;
@@ -24,8 +22,6 @@ export interface AbilityBarUiModel {
 function selectAbilityBar(state: GameBridgeState): AbilityBarUiModel {
   return {
     ability: state.abilities.primary,
-    currentEnergy: state.abilities.currentEnergy,
-    maxEnergy: state.abilities.maxEnergy,
     potionCount: state.inventory.slots.reduce(
       (total, slot) => slot.itemId === HEALTH_POTION_ID ? total + slot.quantity : total,
       0,

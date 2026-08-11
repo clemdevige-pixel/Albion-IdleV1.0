@@ -18,6 +18,7 @@
 .ui-crafting-detail__result { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: var(--ui-space-3); }
 .ui-crafting-detail__visual,
 .ui-crafting-requirement__icon { display: grid; place-items: center; overflow: hidden; }
+.ui-crafting-detail__result > .item-hover-target { display: block; width: 84px; height: 84px; }
 .ui-crafting-detail__visual { width: 84px; height: 84px; border: var(--ui-border-width) solid var(--ui-color-border-subtle); border-radius: var(--ui-radius-sm); background: #0a1018; }
 .ui-crafting-detail__visual .item-visual__image { max-width: 88%; max-height: 88%; object-fit: contain; }
 .ui-crafting-detail h3 { margin: 3px 0; color: var(--ui-color-accent-hover); font-family: var(--ui-font-display); font-size: var(--ui-text-lg); }
@@ -34,6 +35,8 @@
 .ui-crafting-requirement__icon { width: 28px; height: 28px; }
 .ui-crafting-requirement__icon img { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
 .ui-crafting-requirement__name { min-width: 0; overflow: hidden; color: var(--ui-color-text-secondary); text-overflow: ellipsis; white-space: nowrap; }
+.ui-crafting-requirement > .item-hover-target { display: block; min-width: 0; }
+.ui-crafting-requirement__item { display: grid; grid-template-columns: 30px minmax(0, 1fr); align-items: center; gap: var(--ui-space-2); min-width: 0; }
 .ui-crafting-requirement__name small { display: block; color: var(--ui-color-text-muted); font-size: .55rem; }
 .ui-crafting-requirement strong { color: var(--ui-color-negative); font-size: var(--ui-text-xs); }
 .ui-crafting-requirement.is-ready strong { color: var(--ui-color-positive); }

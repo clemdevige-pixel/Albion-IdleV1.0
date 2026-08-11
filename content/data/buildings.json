@@ -23,6 +23,17 @@
         { "itemId": "item_resource_ore_t4", "quantity": 20 }
       ],
       "tags": ["refining"]
+    },
+    {
+      "id": "building_lumbermill_t4",
+      "category": "refining",
+      "tier": 4,
+      "maxWorkers": 1,
+      "supportedRecipeIds": ["recipe_refine_planks_t4"],
+      "upgradeCost": [
+        { "itemId": "item_resource_wood_t4", "quantity": 20 }
+      ],
+      "tags": ["refining"]
     }
   ]
 }

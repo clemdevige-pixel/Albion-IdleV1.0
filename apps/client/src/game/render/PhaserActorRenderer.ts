@@ -2,10 +2,20 @@ import Phaser from "phaser";
 import {
   ACTOR_ANIMATION_STATES,
   type ActorAnimationState,
+  type ActorPoseManifest,
   type ActorRenderManifest,
 } from "./RenderManifest";
 
-function hasAnimatedDeath(manifest: ActorRenderManifest): boolean {
+type AnimatedActorPoseManifest = ActorPoseManifest & Required<Pick<
+  ActorPoseManifest,
+  "frameWidth" | "frameHeight" | "startFrame" | "endFrame" | "frameRate"
+>>;
+
+function hasAnimatedDeath(
+  manifest: ActorRenderManifest,
+): manifest is ActorRenderManifest & {
+  readonly poses: { readonly death: AnimatedActorPoseManifest };
+} {
   const death = manifest.poses.death;
   return death.frameWidth !== undefined
     && death.frameHeight !== undefined
@@ -25,13 +35,14 @@ export function preloadActorManifest(
       frameHeight: animation.frameHeight,
     });
   }
-  const death = manifest.poses.death;
   if (hasAnimatedDeath(manifest)) {
+    const death = manifest.poses.death;
     scene.load.spritesheet(death.textureKey, death.assetPath, {
       frameWidth: death.frameWidth,
       frameHeight: death.frameHeight,
     });
   } else {
+    const death = manifest.poses.death;
     scene.load.image(death.textureKey, death.assetPath);
   }
 }

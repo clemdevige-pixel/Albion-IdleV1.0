@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import type { EntityId } from "@game/core";
 import { StatsManager, createDefaultStatRegistry } from "../../stats/index.js";
-import type { StatId } from "../../stats/types.js";
+import { HealthComponent } from "../../damage/components.js";
 import { AbilityManager } from "../ability-manager.js";
 import { canTransition, transition } from "../ability-state-machine.js";
 import { CooldownManager } from "../cooldown-manager.js";
@@ -121,33 +121,15 @@ describe("AbilityManager", () => {
     expect(result).toBe(false);
   });
 
-  it("resource cost validation — insufficient energy prevents cast", () => {
+  it("resource cost validation — lethal health cost prevents cast", () => {
     const other = world.createEntity();
     statsManager.attachStats(other);
-    statsManager.setBaseStat(other, "stat_max_energy" as StatId, 5);
     statsManager.calculateStats(other);
     manager.attachAbilities(other);
-    manager.learnAbility(other, makeDef({ resourceCost: { energy: 10 } }));
+    world.addComponent(other, HealthComponent, { currentHealth: 10, maxHealth: 10 });
+    manager.learnAbility(other, makeDef({ resourceCost: { health: 10 } }));
     const result = manager.castAbility(other, aid("fireball"));
     expect(result).toBe(false);
-  });
-
-  it("resource cost deducted from energy pool, base stat untouched (11_STAT §5)", () => {
-    manager.learnAbility(entity, makeDef({ resourceCost: { energy: 10 }, castTime: 0, cooldown: 1 }));
-    manager.castAbility(entity, aid("fireball"));
-    // default max energy = 50 → pool drops to 40
-    expect(manager.getEnergy(entity).currentEnergy).toBe(40);
-    expect(manager.getEnergy(entity).maxEnergy).toBe(50);
-    // base stat is never mutated
-    expect(statsManager.getStat(entity, "stat_max_energy" as StatId).base).toBe(50);
-  });
-
-  it("restoreEnergy refills the pool up to maxEnergy", () => {
-    manager.learnAbility(entity, makeDef({ resourceCost: { energy: 20 }, castTime: 0, cooldown: 1 }));
-    manager.castAbility(entity, aid("fireball"));
-    expect(manager.getEnergy(entity).currentEnergy).toBe(30);
-    expect(manager.restoreEnergy(entity, 100)).toBe(20);
-    expect(manager.getEnergy(entity).currentEnergy).toBe(50);
   });
 
   it("disabled state — can't cast, enable returns to ready", () => {
