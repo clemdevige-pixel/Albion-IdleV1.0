@@ -28,6 +28,12 @@ export interface ActorPoseManifest {
   readonly textureKey: string;
   readonly assetPath: string;
   readonly display: ActorDisplayManifest;
+  readonly frameWidth?: number;
+  readonly frameHeight?: number;
+  readonly startFrame?: number;
+  readonly endFrame?: number;
+  readonly frameRate?: number;
+  readonly repeat?: number;
 }
 
 export interface ActorRenderManifest {
