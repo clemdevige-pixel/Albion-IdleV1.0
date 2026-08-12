@@ -61,6 +61,26 @@ describe("buildCraftingModel", () => {
     ]);
   });
 
+  it("puts fragment conversions in the Autre category", () => {
+    const model = buildCraftingModel({
+      tier: 3,
+      recipes: [
+        recipe("item_resource_dungeon_key_morgana", 3, "other"),
+        recipe("item_resource_artifact_morgana", 3, "other"),
+      ],
+    });
+
+    const other = model.categories.find((category) => category.id === "other");
+    expect(other?.label).toBe("Autre");
+    expect(other?.families).toHaveLength(1);
+    expect(other?.families[0]).toMatchObject({
+      id: "other",
+      label: "Conversions",
+      symbol: "◆",
+    });
+    expect(other?.families[0]?.recipes).toHaveLength(2);
+  });
+
   it("accepts a new family ID without changing GameBridge or craftingModels unions", () => {
     const model = buildCraftingModel({
       tier: 3,
