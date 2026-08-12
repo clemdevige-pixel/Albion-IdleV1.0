@@ -31,6 +31,7 @@ import {
   spawnEnemyForSegment,
   type SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
+import { combatStopController } from "./CombatStopController.js";
 import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
@@ -245,13 +246,24 @@ export class CombatRuntime {
 
   public tick(dt: number, tickCounter: number): CombatDomainTickResult {
     this.currentTick = tickCounter;
-    if (this.ports.isCombatSuspended()) return { combatState: "idle" };
+    if (combatStopController.isPaused() || this.ports.isCombatSuspended()) {
+      return { combatState: "idle" };
+    }
     const session = this.combatService.getActiveSession();
     if (session === undefined) {
       let enteredNewSegment = false;
       if (this.awaitingResumeAfterDefeat) return { combatState: "defeat" };
       if (this.completedEncounterResult === "defeat") { this.completedEncounterResult = null; this.awaitingResumeAfterDefeat = true; this.ports.onDefeat(); return { combatState: "defeat" }; }
-      if (this.completedEncounterResult === "victory") { const res = this.ports.onVictory(); enteredNewSegment = res.enteredNewSegment; }
+      if (this.completedEncounterResult === "victory") {
+        const completedSegment = this.ports.getLocationState().encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+        const res = this.ports.onVictory();
+        enteredNewSegment = res.enteredNewSegment;
+        this.completedEncounterResult = null;
+        if (completedSegment && combatStopController.pauseAfterSegment()) {
+          if (enteredNewSegment) this.restoreHeroHealth();
+          return { combatState: "idle" };
+        }
+      }
       this.completedEncounterResult = null;
       const loc = this.ports.getLocationState();
       const enteringBoss = loc.encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
