@@ -1,21 +1,32 @@
 import type { EntityId } from "@game/core";
 import type { InventoryManager } from "@game/gameplay";
 
-/** Raw and refined production materials never occupy the hero item inventory. */
-export function isProductionMaterial(itemId: string): boolean {
-  if (
-    itemId === "item_resource_enchantment_essence"
+/**
+ * Resources that belong to the player's visible item inventory rather than the
+ * hidden production-material storage. Keep this classification explicit:
+ * faction loot also uses the `item_resource_` prefix and must survive save/load
+ * migrations in the hero inventory.
+ */
+export function isVisibleInventoryResource(itemId: string): boolean {
+  return itemId === "item_resource_enchantment_essence"
     || itemId === "item_resource_arcane_crystal"
     || itemId === "item_resource_enchantment_catalyst"
-  ) {
-    return false;
-  }
+    || itemId.startsWith("item_resource_key_fragment_")
+    || itemId.startsWith("item_resource_dungeon_key_")
+    || itemId.startsWith("item_resource_artifact_fragment_")
+    || itemId.startsWith("item_resource_artifact_");
+}
+
+/** Raw and refined production materials never occupy the hero item inventory. */
+export function isProductionMaterial(itemId: string): boolean {
+  if (isVisibleInventoryResource(itemId)) return false;
   return itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_");
 }
 
 /**
  * Moves materials from legacy saves out of the hero inventory.
- * Enchantment currencies deliberately remain regular inventory items.
+ * Enchantment currencies and faction loot deliberately remain regular
+ * inventory items.
  */
 export function migrateLegacyProductionMaterials(
   inventoryManager: InventoryManager,
