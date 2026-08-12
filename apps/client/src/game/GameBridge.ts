@@ -90,10 +90,20 @@ export class GameBridge {
 
   setCombatState(combatState: CombatState): void { this.#update({ combatState }); }
 
-  addDamageNumber(amount: number, target: "player" | "enemy"): void {
+  addDamageNumber(
+    amount: number,
+    target: "player" | "enemy",
+    abilityId?: string,
+  ): void {
     const damageNumbers = [
       ...this.#state.damageNumbers,
-      { id: this.#nextDamageNumberId, amount, target, timestamp: Date.now() },
+      {
+        id: this.#nextDamageNumberId,
+        amount,
+        target,
+        timestamp: Date.now(),
+        ...(abilityId === undefined ? {} : { abilityId }),
+      },
     ].slice(-20);
     this.#nextDamageNumberId += 1;
     this.#update({ damageNumbers });
