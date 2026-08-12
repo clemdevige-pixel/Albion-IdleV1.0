@@ -1,6 +1,7 @@
 import { ENCHANTMENT_MINIMUM_ITEM_TIER, type EquipmentInfoLike } from "@game/gameplay";
 import { WEAPON_ITEM_DEFINITIONS } from "./weaponContentCatalog.js";
 import { getWeaponAttackSpeed, getItemTier } from "./itemPower.js";
+import { getWeaponHandlingOffensiveMultiplier } from "./weaponHandlingBalance.js";
 import {
   EQUIPMENT_CRAFT_RECIPES,
   BIRCH_PLANK_RECIPE,
@@ -120,10 +121,20 @@ export function resolveEquipmentInfo(itemId: string): EquipmentInfoLike | undefi
     return { ...definition, stats };
   }
 
+  const handlingMultiplier = getWeaponHandlingOffensiveMultiplier(definition.handling);
+  const physicalDamage = stats.stat_physical_damage;
+  const magicalDamage = stats.stat_magical_damage;
+
   return {
     ...definition,
     stats: {
       ...stats,
+      ...(physicalDamage === undefined
+        ? {}
+        : { stat_physical_damage: physicalDamage * handlingMultiplier }),
+      ...(magicalDamage === undefined
+        ? {}
+        : { stat_magical_damage: magicalDamage * handlingMultiplier }),
       stat_attack_speed: intrinsicAttackSpeed - HERO_BASE_ATTACK_SPEED,
     },
   };
