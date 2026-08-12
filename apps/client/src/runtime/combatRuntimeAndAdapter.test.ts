@@ -397,8 +397,8 @@ describe("combatRuntimeAndAdapter regression suite", () => {
     expect(gauntletsTotalDps).toBeCloseTo(112.20, 1);
 
     // 5. Fire Staff T4
-    const fireStaffStats = resolveEquipmentInfo("item_weapon_staff_t4_fire")!.stats!;
-    const fireStaffSpeed = getWeaponAttackSpeed("item_weapon_staff_t4_fire")!;
+    const fireStaffStats = resolveEquipmentInfo("item_weapon_staff_t4_infernal")!.stats!;
+    const fireStaffSpeed = getWeaponAttackSpeed("item_weapon_staff_t4_infernal")!;
     const fireStaffAutoDps = fireStaffStats.stat_magical_damage! * fireStaffSpeed;
     const fireStaffAbility = CLIENT_ABILITIES["ability_fire_fireball"]!;
     expect(fireStaffAbility.cooldown).toBe(5);
@@ -414,8 +414,8 @@ describe("combatRuntimeAndAdapter regression suite", () => {
       "item_weapon_bow_t3_longbow",
       "item_weapon_bow_t4_longbow",
       "item_weapon_bow_t4_badon",
-      "item_weapon_staff_t3_fire",
-      "item_weapon_staff_t4_fire",
+      "item_weapon_staff_t3_infernal",
+      "item_weapon_staff_t4_infernal",
       "item_weapon_gloves_t3_spiked_gauntlets",
       "item_weapon_gloves_t4_spiked_gauntlets",
     ];

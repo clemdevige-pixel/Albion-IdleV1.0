@@ -62,11 +62,11 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     items: [{ itemId: "item_weapon_bow_t4_badon", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 }],
   },
   {
-    familyId: "fire_staff", specializationMasteryId: "mastery_t4_fire_staff", specializationName: "Bâton de feu", combatProfile: "staff",
+    familyId: "fire_staff", specializationMasteryId: "mastery_infernal_staff", specializationName: "Bâton Infernal", combatProfile: "staff",
     presentation: { itemIcon: "item-fire-staff-pixel-v1.png", actorManifestId: "hero_fire_staff", combatProfileId: "fire_staff" },
     craft: { kind: "standard", materials: [{ kind: "wood", quantity: 4 }, { kind: "metal", quantity: 4 }, { kind: "cloth", quantity: 2 }] },
     ability: { id: "ability_fire_fireball", name: "Boule de feu", description: "Un projectile ardent infligeant 170 % des dégâts magiques.", icon: "🔥", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical", bonusDamageRatio: 0.7 },
-    items: [{ itemId: "item_weapon_staff_t3_fire", tier: 3, handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 }, { itemId: "item_weapon_staff_t4_fire", tier: 4, handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 }],
+    items: [{ itemId: "item_weapon_staff_t3_infernal", tier: 3, handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 }, { itemId: "item_weapon_staff_t4_infernal", tier: 4, handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 }],
   },
   {
     familyId: "gloves", specializationMasteryId: "mastery_spiked_gauntlets", specializationName: "Gantelets à pointes", combatProfile: "gloves",

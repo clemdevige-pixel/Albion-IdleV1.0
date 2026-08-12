@@ -168,7 +168,7 @@ export function initializeStarterLoadout({
 
   for (const starterWeaponId of [
     "item_weapon_bow_t3_longbow",
-    "item_weapon_staff_t3_fire",
+    "item_weapon_staff_t3_infernal",
   ]) {
     const starterWeapon = inventoryManager.addEntry(heroId, starterWeaponId);
     if (starterWeapon.ok) {

@@ -63,7 +63,7 @@ describe("createCharacterFoundation", () => {
       .listSlots(heroId)
       .flatMap((slot) => slot.entry === undefined ? [] : [slot.entry.itemId]);
     expect(inventoryItems).toContain("item_weapon_bow_t3_longbow");
-    expect(inventoryItems).toContain("item_weapon_staff_t3_fire");
+    expect(inventoryItems).toContain("item_weapon_staff_t3_infernal");
     expect(storage.enchantmentService).toBeDefined();
 
     combat.orchestrator.dispose();

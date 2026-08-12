@@ -7,8 +7,8 @@ describe("weapon equipment presentation", () => {
       .toEqual(resolveEquipmentPresentation("item_weapon_sword_t4_broadsword"));
     expect(resolveEquipmentPresentation("item_weapon_bow_t3_longbow"))
       .toEqual(resolveEquipmentPresentation("item_weapon_bow_t4_longbow"));
-    expect(resolveEquipmentPresentation("item_weapon_staff_t3_fire"))
-      .toEqual(resolveEquipmentPresentation("item_weapon_staff_t4_fire"));
+    expect(resolveEquipmentPresentation("item_weapon_staff_t3_infernal"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_staff_t4_infernal"));
     expect(resolveEquipmentPresentation("item_weapon_gloves_t3_spiked_gauntlets"))
       .toEqual(resolveEquipmentPresentation("item_weapon_gloves_t4_spiked_gauntlets"));
   });

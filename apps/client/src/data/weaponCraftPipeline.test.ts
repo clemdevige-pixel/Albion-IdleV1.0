@@ -12,7 +12,7 @@ import {
 const STANDARD_SPECIALIZATIONS = [
   ["item_weapon_sword_t3_broadsword", "item_weapon_sword_t4_broadsword"],
   ["item_weapon_bow_t3_longbow", "item_weapon_bow_t4_longbow"],
-  ["item_weapon_staff_t3_fire", "item_weapon_staff_t4_fire"],
+  ["item_weapon_staff_t3_infernal", "item_weapon_staff_t4_infernal"],
   ["item_weapon_gloves_t3_spiked_gauntlets", "item_weapon_gloves_t4_spiked_gauntlets"],
 ] as const;
 

@@ -18,8 +18,8 @@ const EXPECTED_WEAPONS = [
   { itemId: "item_weapon_bow_t3_longbow", tier: 3, family: "bow", profile: "bow", attackSpeed: 1, familyId: "mastery_bow", specializationId: "mastery_longbow", abilityId: "ability_bow_aimed_shot" },
   { itemId: "item_weapon_bow_t4_longbow", tier: 4, family: "bow", profile: "bow", attackSpeed: 1, familyId: "mastery_bow", specializationId: "mastery_longbow", abilityId: "ability_bow_aimed_shot" },
   { itemId: "item_weapon_bow_t4_badon", tier: 4, family: "bow", profile: "bow", attackSpeed: 1, familyId: "mastery_bow", specializationId: "mastery_badon", abilityId: "ability_bow_aimed_shot" },
-  { itemId: "item_weapon_staff_t3_fire", tier: 3, family: "fire_staff", profile: "staff", attackSpeed: 0.9, familyId: "mastery_fire_staff", specializationId: "mastery_t4_fire_staff", abilityId: "ability_fire_fireball" },
-  { itemId: "item_weapon_staff_t4_fire", tier: 4, family: "fire_staff", profile: "staff", attackSpeed: 0.9, familyId: "mastery_fire_staff", specializationId: "mastery_t4_fire_staff", abilityId: "ability_fire_fireball" },
+  { itemId: "item_weapon_staff_t3_infernal", tier: 3, family: "fire_staff", profile: "staff", attackSpeed: 0.9, familyId: "mastery_fire_staff", specializationId: "mastery_infernal_staff", abilityId: "ability_fire_fireball" },
+  { itemId: "item_weapon_staff_t4_infernal", tier: 4, family: "fire_staff", profile: "staff", attackSpeed: 0.9, familyId: "mastery_fire_staff", specializationId: "mastery_infernal_staff", abilityId: "ability_fire_fireball" },
   { itemId: "item_weapon_gloves_t3_spiked_gauntlets", tier: 3, family: "gloves", profile: "gloves", attackSpeed: 1.4, familyId: "mastery_gloves", specializationId: "mastery_spiked_gauntlets", abilityId: "ability_gloves_shockwave" },
   { itemId: "item_weapon_gloves_t4_spiked_gauntlets", tier: 4, family: "gloves", profile: "gloves", attackSpeed: 1.4, familyId: "mastery_gloves", specializationId: "mastery_spiked_gauntlets", abilityId: "ability_gloves_shockwave" },
   { itemId: "item_weapon_dagger_t3_pair", tier: 3, family: "dagger", profile: "dagger", attackSpeed: 1.6, familyId: "mastery_dagger", specializationId: "mastery_dagger_pair", abilityId: "ability_dagger_double_slash" },
@@ -53,7 +53,7 @@ describe("weapon content catalog", () => {
     for (const id of ["mastery_sword", "mastery_bow", "mastery_fire_staff", "mastery_gloves", "mastery_dagger"]) {
       expect(categories.get(id)).toBe("weapon");
     }
-    for (const id of ["mastery_broadsword", "mastery_longbow", "mastery_badon", "mastery_t4_fire_staff", "mastery_spiked_gauntlets", "mastery_dagger_pair"]) {
+    for (const id of ["mastery_broadsword", "mastery_longbow", "mastery_badon", "mastery_infernal_staff", "mastery_spiked_gauntlets", "mastery_dagger_pair"]) {
       expect(categories.get(id)).toBe("weapon_specialization");
     }
   });

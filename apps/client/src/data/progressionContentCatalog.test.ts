@@ -21,7 +21,7 @@ describe("progressionContentCatalog", () => {
     expect(byId.get("mastery_broadsword")?.category).toBe("weapon_specialization");
     expect(byId.get("mastery_longbow")?.category).toBe("weapon_specialization");
     expect(byId.get("mastery_badon")?.category).toBe("weapon_specialization");
-    expect(byId.get("mastery_t4_fire_staff")?.category).toBe("weapon_specialization");
+    expect(byId.get("mastery_infernal_staff")?.category).toBe("weapon_specialization");
     expect(byId.get("mastery_spiked_gauntlets")?.category).toBe("weapon_specialization");
   });
 
@@ -31,7 +31,7 @@ describe("progressionContentCatalog", () => {
     expect(getMasteryDisplayName("mastery_bow")).toBe("Arcs");
     expect(getMasteryDisplayName("mastery_badon")).toBe("Badon");
     expect(getMasteryDisplayName("mastery_fire_staff")).toBe("Bâtons de feu");
-    expect(getMasteryDisplayName("mastery_t4_fire_staff")).toBe("Bâton de feu");
+    expect(getMasteryDisplayName("mastery_infernal_staff")).toBe("Bâton Infernal");
     expect(getMasteryDisplayName("mastery_gloves")).toBe("Gants");
     expect(getMasteryDisplayName("mastery_spiked_gauntlets")).toBe("Gantelets à pointes");
   });
