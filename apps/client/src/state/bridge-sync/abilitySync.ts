@@ -4,7 +4,9 @@ import {
   resolveUnlockedWeaponAbilities,
   resolveWeaponMastery,
 } from "../../data/weaponContentCatalog";
-import type { GameBridge } from "../../game/GameBridge";
+import type { CombatAbilityVM, GameBridge } from "../../game/GameBridge";
+
+const SHORTCUTS = ["Q", "W", "E"] as const;
 
 export function syncAbilitiesToBridge(
   bridge: GameBridge,
@@ -22,27 +24,33 @@ export function syncAbilitiesToBridge(
         (mastery) => mastery.id === String(masteryRoute.weaponId),
       )?.level ?? 0;
 
-  const definition = resolveUnlockedWeaponAbilities(
+  const definitions = resolveUnlockedWeaponAbilities(
     equippedWeaponId,
     specializationMasteryLevel,
-  )[0];
-  const entry = definition === undefined
-    ? undefined
-    : abilityManager.getAbility(heroId, definition.id as AbilityId);
+  ).slice(0, 3);
+
+  const toViewModel = (slotIndex: number): CombatAbilityVM | null => {
+    const definition = definitions[slotIndex];
+    if (definition === undefined) return null;
+    const entry = abilityManager.getAbility(heroId, definition.id as AbilityId);
+    if (entry === undefined) return null;
+
+    return {
+      id: definition.id,
+      name: definition.name,
+      description: definition.description,
+      icon: definition.icon,
+      shortcut: SHORTCUTS[slotIndex] ?? "Q",
+      cooldown: definition.cooldown,
+      cooldownRemaining: Math.max(0, entry.cooldownRemaining),
+      isReady: entry.state === "ready" && bridge.combatState === "combat",
+      autoCast: isAutoCastEnabled,
+    };
+  };
 
   bridge.updateAbilities({
-    primary: definition === undefined || entry === undefined
-      ? null
-      : {
-          id: definition.id,
-          name: definition.name,
-          description: definition.description,
-          icon: definition.icon,
-          shortcut: "Q",
-          cooldown: definition.cooldown,
-          cooldownRemaining: Math.max(0, entry.cooldownRemaining),
-          isReady: entry.state === "ready" && bridge.combatState === "combat",
-          autoCast: isAutoCastEnabled,
-        },
+    primary: toViewModel(0),
+    secondary: toViewModel(1),
+    ultimate: toViewModel(2),
   });
 }
