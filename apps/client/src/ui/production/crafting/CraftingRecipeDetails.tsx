@@ -12,9 +12,13 @@ interface CraftingRecipeDetailsProps {
 }
 
 export function CraftingRecipeDetails({ recipe, onCraft }: CraftingRecipeDetailsProps): JSX.Element {
-  const predecessorRequirements = recipe.requirements.filter((requirement) => isPredecessor(requirement, recipe.tier));
-  const materialRequirements = recipe.requirements.filter((requirement) => !isPredecessor(requirement, recipe.tier));
-  const isConversion = recipe.family === "other";
+  const isConversion = recipe.family.startsWith("other_");
+  const predecessorRequirements = isConversion
+    ? []
+    : recipe.requirements.filter((requirement) => isPredecessor(requirement, recipe.tier));
+  const materialRequirements = isConversion
+    ? recipe.requirements
+    : recipe.requirements.filter((requirement) => !isPredecessor(requirement, recipe.tier));
 
   return (
     <section className="ui-crafting-detail" aria-labelledby="ui-crafting-recipe-title">
