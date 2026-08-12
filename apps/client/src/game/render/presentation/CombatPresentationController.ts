@@ -59,16 +59,8 @@ export class CombatPresentationController {
 
     this.heroSystem = new HeroPresentationSystem(playerSprite, heroManifest.id);
     this.actorSystem = new ActorSystem(scene);
-    this.actorSystem.register(
-      this.playerBody,
-      this.playerHomeX,
-      heroManifest.ambientMotion,
-    );
-    this.actorSystem.register(
-      this.enemyBody,
-      this.enemyHomeX,
-      enemyManifest.ambientMotion,
-    );
+    this.actorSystem.register(this.playerBody, this.playerHomeX, heroManifest.ambientMotion);
+    this.actorSystem.register(this.enemyBody, this.enemyHomeX, enemyManifest.ambientMotion);
 
     this.damageNumberSystem = new DamageNumberSystem(
       scene,
@@ -101,10 +93,7 @@ export class CombatPresentationController {
       presentCombatEvent: (event) => this.combatSystem.present(event),
     });
 
-    this.hudSystem = new WorldHudSystem(
-      scene,
-      renderManifestRegistry.requireDefaultWorldHud(),
-    );
+    this.hudSystem = new WorldHudSystem(scene, renderManifestRegistry.requireDefaultWorldHud());
     this.hudSystem.createPlayer(this.playerHomeX, this.entityY);
     this.hudSystem.createEnemy(this.enemyHomeX, this.entityY);
   }
@@ -144,9 +133,7 @@ export class CombatPresentationController {
     });
     this.actorSystem.setAmbientMotion(
       this.playerBody,
-      renderManifestRegistry.requireActor(
-        weapon.visualManifestId ?? this.defaultHeroManifestId,
-      ).ambientMotion,
+      renderManifestRegistry.requireActor(weapon.visualManifestId ?? this.defaultHeroManifestId).ambientMotion,
     );
   }
 
@@ -157,20 +144,10 @@ export class CombatPresentationController {
     });
     this.actorSystem.setAmbientMotion(
       this.enemyBody,
-      renderManifestRegistry.requireStaticActor(
-        bridge.enemyVisualManifestId,
-      ).ambientMotion,
+      renderManifestRegistry.requireStaticActor(bridge.enemyVisualManifestId).ambientMotion,
     );
-    this.hudSystem.layoutEnemy(
-      this.enemyHomeX,
-      this.enemyBody.y,
-      this.enemySystem.hudLayout,
-    );
-    this.hudSystem.updateEnemy(
-      bridge.enemyHealth,
-      bridge.enemyMaxHealth,
-      bridge.enemyName,
-    );
+    this.hudSystem.layoutEnemy(this.enemyHomeX, this.enemyBody.y, this.enemySystem.hudLayout);
+    this.hudSystem.updateEnemy(bridge.enemyHealth, bridge.enemyMaxHealth, bridge.enemyName);
   }
 
   private updateDamageEvents(bridge: GameBridge): void {
@@ -179,12 +156,7 @@ export class CombatPresentationController {
       if (event.target === "player") {
         const style = this.resolveEnemyVfxStyle(bridge.enemyVisualManifestId);
         if (style !== undefined) {
-          this.vfxSystem.presentEnemyAttack(
-            style,
-            this.enemyHomeX,
-            this.playerHomeX,
-            this.entityY,
-          );
+          this.vfxSystem.presentEnemyAttack(style, this.enemyHomeX, this.playerHomeX, this.entityY);
         }
       }
       this.director.enqueueCombatEvent(event);
@@ -196,10 +168,22 @@ export class CombatPresentationController {
     if (visualManifestId.includes("undead_skeleton_archer")) return "undead_ranged";
     if (visualManifestId.includes("undead_spectral_knight")) return "undead_spectral";
     if (visualManifestId.includes("undead_lich")) return "undead_lich";
-    if (
-      visualManifestId.includes("undead_skeleton_swordsman")
-      || visualManifestId.includes("undead_warrior")
-    ) return "undead_melee";
+    if (visualManifestId.includes("undead_skeleton_swordsman") || visualManifestId.includes("undead_warrior")) return "undead_melee";
+
+    if (visualManifestId.includes("morgana_witch")) return "morgana_shadow";
+    if (visualManifestId.includes("morgana_suppressor")) return "morgana_bolt";
+    if (visualManifestId.includes("morgana_dark_knight")) return "morgana_knight";
+    if (visualManifestId.includes("morgana_high_priestess")) return "morgana_priestess";
+
+    if (visualManifestId.includes("keeper_warrior")) return "keeper_melee";
+    if (visualManifestId.includes("keeper_shaman")) return "keeper_spirit";
+    if (visualManifestId.includes("keeper_champion")) return "keeper_champion";
+    if (visualManifestId.includes("keeper_ancient")) return "keeper_ancient";
+
+    if (visualManifestId.includes("heretic_thug")) return "heretic_melee";
+    if (visualManifestId.includes("heretic_firestarter")) return "heretic_fire";
+    if (visualManifestId.includes("heretic_enforcer")) return "heretic_enforcer";
+    if (visualManifestId.includes("heretic_madmen")) return "heretic_madmen";
     return undefined;
   }
 }
