@@ -1,20 +1,20 @@
 import type { EntityId } from "@game/core";
 import type { GatheringCoordinator, InventoryManager, RefiningManager } from "@game/gameplay";
 import {
-  EQUIPMENT_CRAFT_RECIPES,
   getClothRecipe,
   getLeatherRecipe,
   getMetalRecipe,
   getProductionRefiningRecipe,
   getWoodRecipe,
 } from "../../data/refiningRecipes";
+import { ALL_CRAFT_RECIPES } from "../../data/specialCraftRecipes";
 import { getItemPower } from "../../data/itemPower";
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
 import {
   PRODUCTION_FAMILIES,
   getProductionFamilyByGameplayFamily,
   getProductionFamilyId,
-requireProductionTierPresentation,
+  requireProductionTierPresentation,
   type ProductionFamilyId,
   type ProductionTier,
   type SupportedProductionFamily,
@@ -123,7 +123,7 @@ export class ProductionBridgeAdapter {
         clothItemId: getClothRecipe(tier).outputItemId,
       },
       getItemPower,
-      EQUIPMENT_CRAFT_RECIPES,
+      ALL_CRAFT_RECIPES,
     );
   }
 
@@ -155,6 +155,6 @@ const GATHERING_UPDATERS = {
 const REFINING_UPDATERS = {
   wood: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateRefining(vm),
   ore: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateMetalRefining(vm),
-  hide: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateLeatherRefining(vm),
+  hide: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateHideGathering(vm),
   fiber: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateClothRefining(vm),
 } satisfies Record<ProductionFamilyId, (bridge: GameBridge) => RefiningUpdater>;
