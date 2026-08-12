@@ -15,6 +15,7 @@ export function CraftingView(): JSX.Element {
   const category = model.categories.find((entry) => entry.id === requestedCategory) ?? model.categories[0];
   const family = category?.families.find((entry) => entry.id === requestedFamily) ?? category?.families[0];
   const recipe = family?.recipes.find((entry) => entry.outputItemId === requestedRecipeId) ?? family?.recipes[0];
+  const isTierIndependentCategory = category?.id === "other";
 
   const selectCategory = (categoryId: CraftingCategoryId): void => {
     setRequestedCategory(categoryId);
@@ -26,13 +27,15 @@ export function CraftingView(): JSX.Element {
     <div className="ui-production-view ui-crafting">
       <header className="ui-production-view__header">
         <div><span className="ui-production__eyebrow">Forge</span><h2>Fabrication</h2></div>
-        <div className="ui-production__tier-selector" aria-label="Tier de fabrication">
-          {([3, 4] as const).map((tier) => (
-            <button type="button" key={tier} className={model.tier === tier ? "is-active" : ""} aria-pressed={model.tier === tier} onClick={() => { actions.setTier(tier); }}>
-              T{tier}
-            </button>
-          ))}
-        </div>
+        {!isTierIndependentCategory && (
+          <div className="ui-production__tier-selector" aria-label="Tier de fabrication">
+            {([3, 4] as const).map((tier) => (
+              <button type="button" key={tier} className={model.tier === tier ? "is-active" : ""} aria-pressed={model.tier === tier} onClick={() => { actions.setTier(tier); }}>
+                T{tier}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <nav className="ui-crafting__categories" aria-label="Catégorie d’équipement">
@@ -44,7 +47,7 @@ export function CraftingView(): JSX.Element {
       </nav>
 
       {category === undefined || family === undefined || recipe === undefined ? (
-        <p className="ui-production__empty">Aucune recette disponible pour ce tier.</p>
+        <p className="ui-production__empty">{isTierIndependentCategory ? "Aucune conversion disponible." : "Aucune recette disponible pour ce tier."}</p>
       ) : (
         <>
           <div className="ui-crafting__selectors">
