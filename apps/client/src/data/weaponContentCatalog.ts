@@ -23,10 +23,17 @@ export const WEAPON_FAMILIES = {
 export type WeaponFamilyId = keyof typeof WEAPON_FAMILIES;
 
 interface WeaponItemContent { readonly itemId: string; readonly tier: 3 | 4; readonly handling: EquipmentInfoLike["handling"]; readonly stats: EquipmentInfoLike["stats"]; readonly sellPrice: number; }
+export interface WeaponProjectilePresentation {
+  readonly kind: "projectile";
+  readonly projectileId: string;
+  readonly releaseDelayMs: number;
+}
+
 export interface WeaponPresentationContent {
   readonly itemIcon: string;
   readonly actorManifestId: string;
   readonly combatProfileId: string;
+  readonly combatPresentation?: WeaponProjectilePresentation;
 }
 
 interface WeaponSpecializationContent {
@@ -50,20 +57,20 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
   },
   {
     familyId: "bow", specializationMasteryId: "mastery_longbow", specializationName: "Arc long", combatProfile: "bow",
-    presentation: { itemIcon: "item-longbow-pixel-v1.png", actorManifestId: "hero_bow", combatProfileId: "bow" },
+    presentation: { itemIcon: "item-longbow-pixel-v1.png", actorManifestId: "hero_bow", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "arrow", releaseDelayMs: 355 } },
     craft: { kind: "standard", materials: [{ kind: "wood", quantity: 6 }, { kind: "leather", quantity: 2 }, { kind: "cloth", quantity: 2 }] },
     ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
     items: [{ itemId: "item_weapon_bow_t3_longbow", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 50 }, sellPrice: 70 }, { itemId: "item_weapon_bow_t4_longbow", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 85 }, sellPrice: 200 }],
   },
   {
     familyId: "bow", specializationMasteryId: "mastery_badon", specializationName: "Badon", combatProfile: "bow",
-    presentation: { itemIcon: "item-badon-pixel-v1.png", actorManifestId: "hero_bow", combatProfileId: "badon" }, craft: { kind: "artifact_pending" },
+    presentation: { itemIcon: "item-badon-pixel-v1.png", actorManifestId: "hero_bow", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "badon_arrow", releaseDelayMs: 355 } }, craft: { kind: "artifact_pending" },
     ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
     items: [{ itemId: "item_weapon_bow_t4_badon", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 }],
   },
   {
     familyId: "fire_staff", specializationMasteryId: "mastery_infernal_staff", specializationName: "Bâton Infernal", combatProfile: "staff",
-    presentation: { itemIcon: "item-fire-staff-pixel-v1.png", actorManifestId: "hero_fire_staff", combatProfileId: "fire_staff" },
+    presentation: { itemIcon: "item-fire-staff-pixel-v1.png", actorManifestId: "hero_fire_staff", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "fireball", releaseDelayMs: 355 } },
     craft: { kind: "standard", materials: [{ kind: "wood", quantity: 4 }, { kind: "metal", quantity: 4 }, { kind: "cloth", quantity: 2 }] },
     ability: { id: "ability_fire_fireball", name: "Boule de feu", description: "Un projectile ardent infligeant 170 % des dégâts magiques.", icon: "🔥", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical", bonusDamageRatio: 0.7 },
     items: [{ itemId: "item_weapon_staff_t3_infernal", tier: 3, handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 }, { itemId: "item_weapon_staff_t4_infernal", tier: 4, handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 }],

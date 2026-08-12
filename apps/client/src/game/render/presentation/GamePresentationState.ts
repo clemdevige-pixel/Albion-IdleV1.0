@@ -8,6 +8,7 @@ import { selectRunningGathering } from "../../bridge/GatheringBridgeSelectors";
 export interface WeaponPresentationState {
   readonly visualManifestId: string | undefined;
   readonly combatProfileId: string | undefined;
+readonly combatPresentation: EquipmentSlotVM["combatPresentation"];
 }
 
 /** Converts gameplay-facing bridge data into renderer-facing selections. */
@@ -36,5 +37,6 @@ export function selectWeaponPresentation(
   return {
     visualManifestId: weapon?.visualManifestId,
     combatProfileId: weapon?.combatPresentationProfileId,
+combatPresentation: weapon?.combatPresentation,
   };
 }

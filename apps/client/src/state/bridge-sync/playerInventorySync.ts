@@ -83,6 +83,7 @@ export function syncEquipmentToBridge(
       enchantment: getEnchantmentLevel(entry),
       visualManifestId: presentation?.actorManifestId,
       combatPresentationProfileId: presentation?.combatProfileId,
+combatPresentation: presentation?.combatPresentation,
     };
   });
   bridge.updateEquipment({ slots });

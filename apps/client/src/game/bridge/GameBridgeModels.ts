@@ -50,6 +50,12 @@ export interface InventoryVM {
   readonly occupied: number;
 }
 
+export interface WeaponCombatPresentationVM {
+  readonly kind: "projectile";
+  readonly projectileId: string;
+  readonly releaseDelayMs: number;
+}
+
 export interface EquipmentSlotVM {
   readonly slot: EquipmentSlot;
   readonly itemId: string | undefined;
@@ -57,6 +63,7 @@ export interface EquipmentSlotVM {
   readonly enchantment: 0 | 1 | 2 | 3 | 4;
   readonly visualManifestId: string | undefined;
   readonly combatPresentationProfileId: string | undefined;
+readonly combatPresentation: WeaponCombatPresentationVM | undefined;
 }
 
 export interface EquipmentVM {

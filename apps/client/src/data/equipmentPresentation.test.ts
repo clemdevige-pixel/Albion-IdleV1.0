@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { resolveEquipmentPresentation } from "./equipmentPresentation.js";
 
 describe("weapon equipment presentation", () => {
@@ -19,11 +19,50 @@ describe("weapon equipment presentation", () => {
       actorManifestId: "hero_broadsword",
       combatProfileId: "melee",
     });
+
+    expect(resolveEquipmentPresentation("item_weapon_bow_t4_longbow")).toEqual({
+      itemIcon: "item-longbow-pixel-v1.png",
+      actorManifestId: "hero_bow",
+      combatProfileId: "projectile",
+      combatPresentation: {
+        kind: "projectile",
+        projectileId: "arrow",
+        releaseDelayMs: 355,
+      },
+    });
+
     expect(resolveEquipmentPresentation("item_weapon_bow_t4_badon")).toEqual({
       itemIcon: "item-badon-pixel-v1.png",
       actorManifestId: "hero_bow",
-      combatProfileId: "badon",
+      combatProfileId: "projectile",
+      combatPresentation: {
+        kind: "projectile",
+        projectileId: "badon_arrow",
+        releaseDelayMs: 355,
+      },
     });
+
+    expect(resolveEquipmentPresentation("item_weapon_staff_t4_infernal")).toEqual({
+      itemIcon: "item-fire-staff-pixel-v1.png",
+      actorManifestId: "hero_fire_staff",
+      combatProfileId: "projectile",
+      combatPresentation: {
+        kind: "projectile",
+        projectileId: "fireball",
+        releaseDelayMs: 355,
+      },
+    });
+  });
+
+  it("does not add projectile presentation to melee weapons", () => {
+    expect(resolveEquipmentPresentation("item_weapon_sword_t4_broadsword")?.combatPresentation)
+      .toBeUndefined();
+
+    expect(resolveEquipmentPresentation("item_weapon_gloves_t4_spiked_gauntlets")?.combatPresentation)
+      .toBeUndefined();
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_t4_pair")?.combatPresentation)
+      .toBeUndefined();
   });
 
   it("does not infer presentation for unknown weapon ids", () => {

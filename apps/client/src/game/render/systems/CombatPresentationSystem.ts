@@ -1,10 +1,6 @@
 import type Phaser from "phaser";
-import type { DamageNumberEvent } from "../../GameBridge";
+import type { DamageNumberEvent, EquipmentSlotVM } from "../../GameBridge";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
-import {
-  resolveRangedCombatPresentation,
-  type RangedCombatPresentationProfile,
-} from "../manifests/combatPresentationProfiles";
 import { visualProfileRegistry } from "../VisualProfileRegistry";
 import type { ActorSystem } from "./ActorSystem";
 import type { DamageNumberSystem } from "./DamageNumberSystem";
@@ -19,6 +15,7 @@ export interface CombatPresentationActors {
 export interface EquippedWeaponPresentation {
   readonly visualManifestId: string | undefined;
   readonly combatProfileId: string | undefined;
+  readonly combatPresentation: EquipmentSlotVM["combatPresentation"];
 }
 
 /** Translates authoritative combat events into generic visual sequences. */
@@ -35,14 +32,12 @@ export class CombatPresentationSystem {
 
   public present(event: DamageNumberEvent): void {
     const weapon = this.getWeaponPresentation();
-    if (event.target === "enemy") {
-      const ranged = resolveRangedCombatPresentation(
-        weapon.combatProfileId,
-      );
-      if (ranged !== undefined) {
-        this.presentRanged(event, ranged);
-        return;
-      }
+    if (
+      event.target === "enemy"
+      && weapon.combatPresentation?.kind === "projectile"
+    ) {
+      this.presentRanged(event, weapon.combatPresentation);
+      return;
     }
     this.presentMelee(event, weapon.visualManifestId);
   }
@@ -87,7 +82,7 @@ export class CombatPresentationSystem {
 
   private presentRanged(
     event: DamageNumberEvent,
-    profile: RangedCombatPresentationProfile,
+    profile: NonNullable<EquipmentSlotVM["combatPresentation"]>,
   ): void {
     this.heroSystem.play("attack");
     this.scene.time.delayedCall(profile.releaseDelayMs, () => {
