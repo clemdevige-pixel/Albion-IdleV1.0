@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { DamageNumberEvent, EquipmentSlotVM } from "../../GameBridge";
+import { resolveAbilityVfx, type AbilityVfxDefinition } from "../../../data/abilityVfxCatalog";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 import { visualProfileRegistry } from "../VisualProfileRegistry";
 import type { ActorSystem } from "./ActorSystem";
@@ -18,6 +19,8 @@ export interface EquippedWeaponPresentation {
   readonly combatPresentation: EquipmentSlotVM["combatPresentation"];
 }
 
+type AbilityDamageEvent = DamageNumberEvent & { readonly abilityId?: string };
+
 /** Translates authoritative combat events into generic visual sequences. */
 export class CombatPresentationSystem {
   public constructor(
@@ -32,19 +35,21 @@ export class CombatPresentationSystem {
 
   public present(event: DamageNumberEvent): void {
     const weapon = this.getWeaponPresentation();
+    const abilityVfx = resolveAbilityVfx((event as AbilityDamageEvent).abilityId);
     if (
       event.target === "enemy"
       && weapon.combatPresentation?.kind === "projectile"
     ) {
-      this.presentRanged(event, weapon.combatPresentation);
+      this.presentRanged(event, weapon.combatPresentation, abilityVfx);
       return;
     }
-    this.presentMelee(event, weapon.visualManifestId);
+    this.presentMelee(event, weapon.visualManifestId, abilityVfx);
   }
 
   private presentMelee(
     event: DamageNumberEvent,
     visualManifestId: string | undefined,
+    abilityVfx: AbilityVfxDefinition | undefined,
   ): void {
     const victim = event.target === "player"
       ? this.actors.player
@@ -75,6 +80,9 @@ export class CombatPresentationSystem {
     });
 
     this.scene.time.delayedCall(presentation?.impactDelayMs ?? 75, () => {
+      if (abilityVfx !== undefined && event.target === "enemy") {
+        this.presentAbilityVfx(victim, abilityVfx);
+      }
       this.damageNumberSystem.present(event);
       this.presentVictimReaction(victim, event.target);
     });
@@ -83,16 +91,57 @@ export class CombatPresentationSystem {
   private presentRanged(
     event: DamageNumberEvent,
     profile: NonNullable<EquipmentSlotVM["combatPresentation"]>,
+    abilityVfx: AbilityVfxDefinition | undefined,
   ): void {
     this.heroSystem.play("attack");
     this.scene.time.delayedCall(profile.releaseDelayMs, () => {
       this.projectileSystem.present({
         manifest: renderManifestRegistry.requireProjectile(profile.projectileId),
         onImpact: () => {
+          if (abilityVfx !== undefined) {
+            this.presentAbilityVfx(this.actors.enemy, abilityVfx);
+          }
           this.damageNumberSystem.present(event);
           this.presentVictimReaction(this.actors.enemy, "enemy");
         },
       });
+    });
+  }
+
+  private presentAbilityVfx(
+    victim: Phaser.GameObjects.Container,
+    definition: AbilityVfxDefinition,
+  ): void {
+    const graphics = this.scene.add.graphics();
+    graphics.setPosition(victim.x, victim.y - 4);
+    graphics.setDepth(120);
+    graphics.setScale(definition.scale);
+    graphics.lineStyle(definition.strokeWidth, definition.color, 0.95);
+
+    if (definition.kind === "slash") {
+      for (let layer = 0; layer < definition.layers; layer += 1) {
+        const offset = (layer - (definition.layers - 1) / 2) * 9;
+        graphics.lineBetween(-24 + offset, 25, 24 + offset, -25);
+      }
+    } else {
+      const radius = 22;
+      for (let layer = 0; layer < definition.layers; layer += 1) {
+        graphics.strokeCircle(0, 0, radius + layer * 7);
+      }
+      graphics.lineBetween(-30, 0, 30, 0);
+      graphics.lineBetween(0, -30, 0, 30);
+      graphics.lineBetween(-22, -22, 22, 22);
+      graphics.lineBetween(-22, 22, 22, -22);
+    }
+
+    this.scene.tweens.add({
+      targets: graphics,
+      alpha: 0,
+      scaleX: definition.scale * 1.22,
+      scaleY: definition.scale * 1.22,
+      duration: definition.durationMs,
+      ease: "Quad.easeOut",
+      onComplete: () => { graphics.destroy(); },
     });
   }
 
