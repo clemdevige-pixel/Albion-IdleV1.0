@@ -20,11 +20,14 @@ import {
   type WeaponHandling,
 } from "./types.js";
 
+export type EquipmentMutationGuard = (entityId: EntityId) => boolean;
+
 export class EquipmentManager {
   readonly #world: World;
   readonly #inventoryManager: InventoryManager;
   readonly #resolveEquipmentInfo: EquipmentInfoResolver;
   readonly #statSync: EquipmentStatSync | undefined;
+  readonly #canMutate: EquipmentMutationGuard | undefined;
   readonly #equipped = new Set<EntityId>();
 
   constructor(
@@ -32,11 +35,13 @@ export class EquipmentManager {
     inventoryManager: InventoryManager,
     resolveEquipmentInfo: EquipmentInfoResolver,
     statSync?: EquipmentStatSync,
+    canMutate?: EquipmentMutationGuard,
   ) {
     this.#world = world;
     this.#inventoryManager = inventoryManager;
     this.#resolveEquipmentInfo = resolveEquipmentInfo;
     this.#statSync = statSync;
+    this.#canMutate = canMutate;
   }
 
   get equipmentInfoResolver(): EquipmentInfoResolver {
@@ -79,7 +84,7 @@ export class EquipmentManager {
     instanceId: ItemInstanceId,
     enchantment: EnchantmentLevel,
   ): boolean {
-    if (!isEnchantmentLevel(enchantment)) return false;
+    if (!this.#isMutationAllowed(entityId) || !isEnchantmentLevel(enchantment)) return false;
     const data = this.#getData(entityId);
     for (const [slot, entry] of data.slots) {
       if (entry.instanceId !== instanceId) continue;
@@ -91,6 +96,9 @@ export class EquipmentManager {
   }
 
   canEquip(entityId: EntityId, itemId: string): EquipmentResult<EquipmentInfoLike> {
+    if (!this.#isMutationAllowed(entityId)) {
+      return equipmentFail("equipment_locked");
+    }
     const info = this.#resolveEquipmentInfo(itemId);
     if (info === undefined) {
       return equipmentFail("not_equippable");
@@ -103,6 +111,9 @@ export class EquipmentManager {
   }
 
   equipFromInventory(entityId: EntityId, position: number): EquipmentResult<EquipOutcome> {
+    if (!this.#isMutationAllowed(entityId)) {
+      return equipmentFail("equipment_locked");
+    }
     const data = this.#getData(entityId);
     const slotResult = this.#inventoryManager.getSlot(entityId, position);
     if (!slotResult.ok) {
@@ -127,8 +138,6 @@ export class EquipmentManager {
       displacedOffHand = data.slots.get("off_hand");
     }
 
-    // A single source item vacates its slot. A stacked source remains in place,
-    // so every displaced equipped item needs another free inventory slot.
     const returningCount = [replaced, displacedOffHand].filter(
       (returningEntry) =>
         returningEntry !== undefined
@@ -171,6 +180,9 @@ export class EquipmentManager {
   }
 
   unequipToInventory(entityId: EntityId, slot: EquipmentSlot): EquipmentResult<UnequipOutcome> {
+    if (!this.#isMutationAllowed(entityId)) {
+      return equipmentFail("equipment_locked");
+    }
     const data = this.#getData(entityId);
     const entry = data.slots.get(slot);
     if (entry === undefined) {
@@ -211,5 +223,9 @@ export class EquipmentManager {
       return "none";
     }
     return this.#resolveEquipmentInfo(weapon.itemId)?.handling ?? "none";
+  }
+
+  #isMutationAllowed(entityId: EntityId): boolean {
+    return this.#canMutate?.(entityId) ?? true;
   }
 }
