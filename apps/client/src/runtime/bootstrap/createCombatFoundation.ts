@@ -11,6 +11,7 @@ import {
   TargetManager,
   TargetValidator,
   createDefaultStatRegistry,
+  type AbilityEventMap,
   type DamageEventMap,
 } from "@game/gameplay";
 
@@ -33,6 +34,8 @@ export function createCombatFoundation() {
     statsManager,
   );
   const abilityManager = new AbilityManager(world, statsManager);
+  const abilityEventBus = new EventBus<AbilityEventMap>();
+  abilityManager.setEventBus(abilityEventBus);
   const effectManager = new EffectManager();
   const combatService = new CombatService(
     damageManager,
@@ -57,6 +60,7 @@ export function createCombatFoundation() {
     targetManager,
     autoAttackManager,
     abilityManager,
+    abilityEventBus,
     effectManager,
     combatService,
     orchestrator,
