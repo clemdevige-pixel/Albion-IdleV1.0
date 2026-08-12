@@ -73,11 +73,12 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
     tier: source.tier,
     categories: categories
       .map((category) => {
-        const categoryRecipes = recipesForTier.filter((recipe) => {
-          if (category.id === "other") return recipe.family.startsWith("other_");
-          if (category.id === "armors") return recipe.family === "armor";
-          return recipe.family !== "armor" && !recipe.family.startsWith("other_");
-        });
+        const categoryRecipes = category.id === "other"
+          ? source.recipes.filter((recipe) => recipe.family.startsWith("other_"))
+          : recipesForTier.filter((recipe) => {
+              if (category.id === "armors") return recipe.family === "armor";
+              return recipe.family !== "armor" && !recipe.family.startsWith("other_");
+            });
         const familyIds: readonly CraftingFamilyId[] = category.id === "armors"
           ? (["armor_head", "armor_chest", "armor_boots"] as const).filter((id) =>
               categoryRecipes.some((recipe) => resolveArmorFamilyId(recipe) === id),
