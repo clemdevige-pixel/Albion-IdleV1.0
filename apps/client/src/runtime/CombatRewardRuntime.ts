@@ -10,8 +10,9 @@ import type {
   WalletId,
 } from "@game/gameplay";
 import {
-  rollEnchantmentMaterial,
-  rollLootTable,
+  rollBlueZoneCombatDrops,
+  type BlueZoneCombatDrop,
+  type BlueZoneLootContext,
 } from "../data/economyContentCatalog";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog";
@@ -24,12 +25,7 @@ export interface EnemyKilledRewardResult {
     readonly weaponId: MasteryId;
     readonly familyId: MasteryId;
   } | undefined;
-  readonly equipmentDropped?: {
-    readonly itemId: string;
-  } | undefined;
-  readonly enchantmentMaterialDropped?: {
-    readonly itemId: string;
-  } | undefined;
+  readonly itemDrops: readonly BlueZoneCombatDrop[];
 }
 
 export interface CombatRewardRuntimeDependencies {
@@ -67,7 +63,7 @@ export class CombatRewardRuntime {
   public processEnemyKilledReward(
     silverReward: number,
     fameReward: number,
-    lootTableId: string = "loot_monster_generic",
+    lootContext: BlueZoneLootContext,
   ): EnemyKilledRewardResult {
     this.currencyService.credit(this.walletId, "currency_silver", silverReward, "Loot");
     const balRes = this.currencyService.getBalance(this.walletId, "currency_silver");
@@ -93,51 +89,33 @@ export class CombatRewardRuntime {
       };
     }
 
-    let equipmentDropped: EnemyKilledRewardResult["equipmentDropped"];
-    const droppedItemId = rollLootTable(lootTableId);
-    if (droppedItemId !== undefined) {
-      const addResult = this.inventoryManager.addQuantity(this.heroId, droppedItemId, 1);
-      if (addResult.ok) {
-        const eqInfo = resolveEquipmentInfo(droppedItemId);
-        if (eqInfo !== undefined) {
-          const position = addResult.value.affectedPositions[0];
-          if (position !== undefined) {
-            const slot = this.inventoryManager.getSlot(this.heroId, position);
-            if (slot.ok && slot.value.entry !== undefined) {
-              const existingDurability = this.durabilityStore.get(slot.value.entry.instanceId);
-              if (existingDurability === undefined) {
-                this.durabilityStore.attach(slot.value.entry.instanceId, 100);
-              }
+    const itemDrops: BlueZoneCombatDrop[] = [];
+    for (const drop of rollBlueZoneCombatDrops(lootContext)) {
+      const addResult = this.inventoryManager.addQuantity(this.heroId, drop.itemId, 1);
+      if (!addResult.ok) continue;
+
+      const eqInfo = resolveEquipmentInfo(drop.itemId);
+      if (eqInfo !== undefined) {
+        const position = addResult.value.affectedPositions[0];
+        if (position !== undefined) {
+          const slot = this.inventoryManager.getSlot(this.heroId, position);
+          if (slot.ok && slot.value.entry !== undefined) {
+            const existingDurability = this.durabilityStore.get(slot.value.entry.instanceId);
+            if (existingDurability === undefined) {
+              this.durabilityStore.attach(slot.value.entry.instanceId, 100);
             }
           }
         }
-        equipmentDropped = {
-          itemId: droppedItemId,
-        };
       }
-    }
 
-    let enchantmentMaterialDropped: EnemyKilledRewardResult["enchantmentMaterialDropped"];
-    const enchantmentMaterialId = rollEnchantmentMaterial();
-    if (enchantmentMaterialId !== undefined) {
-      const materialResult = this.inventoryManager.addQuantity(
-        this.heroId,
-        enchantmentMaterialId,
-        1,
-      );
-      if (materialResult.ok) {
-        enchantmentMaterialDropped = {
-          itemId: enchantmentMaterialId,
-        };
-      }
+      itemDrops.push(drop);
     }
 
     return {
       silverEarned: silverReward,
       newBalance,
       fameEarned,
-      equipmentDropped,
-      enchantmentMaterialDropped,
+      itemDrops,
     };
   }
 }
