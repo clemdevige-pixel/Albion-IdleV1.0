@@ -31,12 +31,40 @@ export interface CombatRewardAdapter {
   readonly dispose: () => void;
 }
 
+const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
+  animal: "Animal",
+  generic: "Générique",
+  heretic: "Hérétique",
+  keeper: "Keeper",
+  morgana: "Morgana",
+  undead: "Mort-vivant",
+};
+
+function formatFactionName(factionId: string): string {
+  return FACTION_DISPLAY_NAMES[factionId]
+    ?? factionId
+      .split("_")
+      .filter((part) => part.length > 0)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+      .join(" ");
+}
+
 function formatDropName(itemId: string): string {
-  return ENCHANTMENT_MATERIAL_NAMES[itemId]
-    ?? itemId
-      .replace("item_resource_", "")
-      .replace("item_", "")
-      .replace(/_/g, " ");
+  const enchantmentName = ENCHANTMENT_MATERIAL_NAMES[itemId];
+  if (enchantmentName !== undefined) return enchantmentName;
+
+  const factionPrefixes = [
+    "item_resource_artifact_fragment_",
+    "item_resource_artifact_",
+    "item_resource_dungeon_key_",
+    "item_resource_key_fragment_",
+  ] as const;
+  for (const prefix of factionPrefixes) {
+    if (itemId.startsWith(prefix)) return formatFactionName(itemId.slice(prefix.length));
+  }
+
+  if (itemId === "item_health_potion") return "Potion de soin";
+  return itemId.replace("item_resource_", "").replace("item_", "").replace(/_/g, " ");
 }
 
 export function setupCombatRewardAdapter(
