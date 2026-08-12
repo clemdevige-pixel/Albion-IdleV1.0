@@ -31,6 +31,14 @@ export interface CombatRewardAdapter {
   readonly dispose: () => void;
 }
 
+function formatDropName(itemId: string): string {
+  return ENCHANTMENT_MATERIAL_NAMES[itemId]
+    ?? itemId
+      .replace("item_resource_", "")
+      .replace("item_", "")
+      .replace(/_/g, " ");
+}
+
 export function setupCombatRewardAdapter(
   options: CombatRewardAdapterOptions,
 ): CombatRewardAdapter {
@@ -50,12 +58,21 @@ export function setupCombatRewardAdapter(
       ? undefined
       : getMonsterDefinition(monsterDefinitionId);
     const rewards = progressionRewards;
-    const lootTableId = monster?.rewards.lootTableId ?? "loot_monster_generic";
+
+    const isFinalBoss = monster?.tags.includes("biome_boss") ?? false;
+    const isBoss = isFinalBoss
+      || (monster?.tags.includes("segment_boss") ?? false)
+      || monster?.category === "boss";
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(
       rewards.silver,
       rewards.fame,
-      lootTableId,
+      {
+        segmentIndex: options.worldRuntime.currentSegment,
+        faction: monster?.faction ?? "generic",
+        isBoss,
+        isFinalBoss,
+      },
     );
     clearActiveMonsterIdentity(event.entityId);
 
@@ -89,25 +106,24 @@ export function setupCombatRewardAdapter(
       });
     }
 
-    if (rewardResult.equipmentDropped !== undefined) {
-      const formattedName = rewardResult.equipmentDropped.itemId
-        .replace("item_", "")
-        .replace(/_/g, " ");
-      options.bridge.addEconomyNotification({
-        id: `notif_loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-        type: "success",
-        message: `Loot: ${formattedName}`,
-        timestamp: Date.now(),
-      });
-    }
+    for (const drop of rewardResult.itemDrops) {
+      const dropName = formatDropName(drop.itemId);
+      const prefix = drop.kind === "artifact"
+        ? "Artefact"
+        : drop.kind === "artifact_fragment"
+          ? "Fragment d’artefact"
+          : drop.kind === "key"
+            ? "Clé de donjon"
+            : drop.kind === "key_fragment"
+              ? "Fragment de clé"
+              : drop.kind === "enchantment"
+                ? "Enchantement"
+                : "Loot";
 
-    if (rewardResult.enchantmentMaterialDropped !== undefined) {
-      const matId = rewardResult.enchantmentMaterialDropped.itemId;
-      const matName = ENCHANTMENT_MATERIAL_NAMES[matId] ?? matId;
       options.bridge.addEconomyNotification({
-        id: `notif_enchantment_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
+        id: `notif_drop_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
         type: "success",
-        message: `Rare : ${matName}`,
+        message: `${prefix} : ${dropName}`,
         timestamp: Date.now(),
       });
     }
