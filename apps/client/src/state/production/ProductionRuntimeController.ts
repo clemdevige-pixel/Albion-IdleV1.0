@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../data/productionFamilyCatalog";
 import type { EntityId } from "@game/core";
 import type {
   CurrencyService,
@@ -32,8 +33,8 @@ interface ProductionRuntimeControllerDependencies {
   readonly walletId: WalletId;
   readonly progressionOrchestrator: ProgressionOrchestrator;
   readonly getCurrentTick: () => number;
-  readonly getProductionTier: () => 3 | 4;
-  readonly setProductionTier: (tier: 3 | 4) => void;
+  readonly getProductionTier: () => ProductionTier;
+  readonly setProductionTier: (tier: ProductionTier) => void;
   readonly prepareCombatResumeAfterGathering: () => void;
   readonly workerCapacity: number;
   readonly workerRecruitmentCost: number;
@@ -160,7 +161,7 @@ export class ProductionRuntimeController {
     return this.#actions.craftEquipment(outputItemId);
   }
 
-  setTier(tier: 3 | 4): boolean {
+  setTier(tier: ProductionTier): boolean {
     this.#dependencies.setProductionTier(tier);
     this.syncAll();
     return true;

@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import type { CraftingRecipeVM, GameBridgeState } from "../../../game/GameBridge";
 import { resolveEquipmentInfo } from "../../../data/itemContentCatalog";
 import { resolveWeaponFamilyCraftPresentation } from "../../../data/equipmentPresentation";
@@ -20,7 +21,7 @@ export interface CraftingCategoryModel {
 }
 
 export interface CraftingModel {
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly categories: readonly CraftingCategoryModel[];
 }
 
@@ -50,7 +51,7 @@ function resolveCraftingFamilyPresentation(familyId: string) {
 }
 
 interface CraftingSource {
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly recipes: readonly CraftingRecipeVM[];
 }
 

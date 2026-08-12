@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import { useState } from "react";
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
 import { WORKER_PROFESSION_LABELS } from "../../../data/productionFamilyCatalog";
@@ -6,7 +7,7 @@ import type { GatheringActions } from "./useGatheringActions";
 
 interface GatheringResourceCardProps {
   readonly resource: GatheringResourceModel;
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly recruitmentCost: number;
   readonly actions: GatheringActions;
 }

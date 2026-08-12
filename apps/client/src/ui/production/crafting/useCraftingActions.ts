@@ -1,7 +1,8 @@
+import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import { useGameServices } from "../../../state/GameContext";
 
 export interface CraftingActions {
-  readonly setTier: (tier: 3 | 4) => boolean;
+  readonly setTier: (tier: ProductionTier) => boolean;
   readonly craft: (outputItemId: string) => boolean;
 }
 

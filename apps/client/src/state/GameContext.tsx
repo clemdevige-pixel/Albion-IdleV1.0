@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../data/productionFamilyCatalog";
 import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
@@ -57,7 +58,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const eventBus = new EventBus<UIEventMap>();
     const bridge = new GameBridge();
     let tickCounter = 0;
-    let productionTier: 3 | 4 = 3;
+    let productionTier: ProductionTier = 3;
 
     // --- Framework-agnostic combat foundation --------------------------------
     const {
@@ -98,7 +99,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       },
     });
 
-    // --- Currency & Economy setup (early — RepairService needs it) ---------------
+    // --- Currency & Economy setup (early Ã¢â‚¬â€ RepairService needs it) ---------------
     const {
       currencyService,
       playerId,
@@ -473,17 +474,11 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
         worldNavigationActions.selectZone(zoneNumber, segmentNumber)
       ),
       returnToCombat: () => productionController.returnToCombat(),
-      toggleGathering: () => productionController.toggleGathering("Wood"),
+      toggleGathering: (family) => productionController.toggleGathering(family),
       performGatheringStrike: (resourceFamily, quality) => (
         productionController.performGatheringStrike(resourceFamily, quality)
       ),
-      toggleOreGathering: () => productionController.toggleGathering("Ore"),
-      toggleHideGathering: () => productionController.toggleGathering("Hide"),
-      toggleFiberGathering: () => productionController.toggleGathering("Fiber"),
-      toggleRefining: () => productionController.toggleRefining("Wood"),
-      toggleMetalRefining: () => productionController.toggleRefining("Ore"),
-      toggleLeatherRefining: () => productionController.toggleRefining("Hide"),
-      toggleClothRefining: () => productionController.toggleRefining("Fiber"),
+      toggleRefining: (family) => productionController.toggleRefining(family),
       refineAllAvailable: () => productionController.refineAllAvailable(),
       setProductionTier: (tier) => productionController.setTier(tier),
       craftEquipment: (outputItemId) => (

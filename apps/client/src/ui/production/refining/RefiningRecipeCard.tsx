@@ -1,9 +1,10 @@
+import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import type { RefiningActions } from "./useRefiningActions";
 import type { RefiningFamilyModel } from "./refiningModels";
 
 interface RefiningRecipeCardProps {
   readonly family: RefiningFamilyModel;
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly actions: RefiningActions;
 }
 

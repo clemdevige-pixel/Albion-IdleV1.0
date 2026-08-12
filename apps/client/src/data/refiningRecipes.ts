@@ -18,39 +18,89 @@ export const LINEN_CLOTH_RECIPE = { id: "recipe_refine_linen_cloth_t3", name: "T
 export const THICK_LEATHER_RECIPE = { id: "recipe_refine_thick_leather_t4", name: "Cuir épais", tier: 4, rawItemId: "item_resource_hide_t4", requirements: [{ itemId: "item_resource_hide_t4", quantity: 2 }, { itemId: "item_refined_leather_t3", quantity: 1 }], outputItemId: "item_refined_leather_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_tannery_t4" } as const;
 export const FINE_CLOTH_RECIPE = { id: "recipe_refine_fine_cloth_t4", name: "Tissu fin", tier: 4, rawItemId: "item_resource_fiber_t4", requirements: [{ itemId: "item_resource_fiber_t4", quantity: 2 }, { itemId: "item_refined_cloth_t3", quantity: 1 }], outputItemId: "item_refined_cloth_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_loom_t4" } as const;
 
-export function getWoodRecipe(tier: 3 | 4) { return tier === 4 ? PINE_PLANK_RECIPE : BIRCH_PLANK_RECIPE; }
-export function getMetalRecipe(tier: 3 | 4) { return tier === 4 ? IRON_BAR_RECIPE : COPPER_BAR_RECIPE; }
-export function getLeatherRecipe(tier: 3 | 4) { return tier === 4 ? THICK_LEATHER_RECIPE : STURDY_LEATHER_RECIPE; }
-export function getClothRecipe(tier: 3 | 4) { return tier === 4 ? FINE_CLOTH_RECIPE : LINEN_CLOTH_RECIPE; }
-
 export type ProductionRefiningRecipe =
-  | ReturnType<typeof getWoodRecipe>
-  | ReturnType<typeof getMetalRecipe>
-  | ReturnType<typeof getLeatherRecipe>
-  | ReturnType<typeof getClothRecipe>;
+  | typeof BIRCH_PLANK_RECIPE
+  | typeof COPPER_BAR_RECIPE
+  | typeof PINE_PLANK_RECIPE
+  | typeof IRON_BAR_RECIPE
+  | typeof STURDY_LEATHER_RECIPE
+  | typeof LINEN_CLOTH_RECIPE
+  | typeof THICK_LEATHER_RECIPE
+  | typeof FINE_CLOTH_RECIPE;
 
-const PRODUCTION_REFINING_RECIPE_RESOLVERS = {
-  wood: getWoodRecipe,
-  ore: getMetalRecipe,
-  hide: getLeatherRecipe,
-  fiber: getClothRecipe,
-} satisfies Record<ProductionFamilyId, (tier: ProductionTier) => ProductionRefiningRecipe>;
+const PRODUCTION_REFINING_RECIPES = {
+  wood: {
+    3: BIRCH_PLANK_RECIPE,
+    4: PINE_PLANK_RECIPE,
+  },
+  ore: {
+    3: COPPER_BAR_RECIPE,
+    4: IRON_BAR_RECIPE,
+  },
+  hide: {
+    3: STURDY_LEATHER_RECIPE,
+    4: THICK_LEATHER_RECIPE,
+  },
+  fiber: {
+    3: LINEN_CLOTH_RECIPE,
+    4: FINE_CLOTH_RECIPE,
+  },
+} as const satisfies Record<
+  ProductionFamilyId,
+  Partial<Record<ProductionTier, ProductionRefiningRecipe>>
+>;
 
 export function getProductionRefiningRecipe(
   family: ProductionFamilyId,
   tier: ProductionTier,
 ): ProductionRefiningRecipe {
-  return PRODUCTION_REFINING_RECIPE_RESOLVERS[family](tier);
+  const recipes = PRODUCTION_REFINING_RECIPES[family] as Readonly<
+    Partial<Record<ProductionTier, ProductionRefiningRecipe>>
+  >;
+
+  const recipe = recipes[tier];
+
+  if (recipe === undefined) {
+    throw new Error(
+      `Refining content missing for ${family} T${String(tier)}`,
+    );
+  }
+
+  return recipe;
+}
+
+export function getWoodRecipe(
+  tier: ProductionTier,
+): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("wood", tier);
+}
+
+export function getMetalRecipe(
+  tier: ProductionTier,
+): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("ore", tier);
+}
+
+export function getLeatherRecipe(
+  tier: ProductionTier,
+): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("hide", tier);
+}
+
+export function getClothRecipe(
+  tier: ProductionTier,
+): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("fiber", tier);
 }
 
 const MATERIAL_ITEM_BY_KIND = {
-  wood: (tier: 3 | 4) => getWoodRecipe(tier).outputItemId,
-  metal: (tier: 3 | 4) => getMetalRecipe(tier).outputItemId,
-  leather: (tier: 3 | 4) => getLeatherRecipe(tier).outputItemId,
-  cloth: (tier: 3 | 4) => getClothRecipe(tier).outputItemId,
+  wood: (tier: ProductionTier) => getWoodRecipe(tier).outputItemId,
+  metal: (tier: ProductionTier) => getMetalRecipe(tier).outputItemId,
+  leather: (tier: ProductionTier) => getLeatherRecipe(tier).outputItemId,
+  cloth: (tier: ProductionTier) => getClothRecipe(tier).outputItemId,
 } as const;
 
-function materialRequirement(material: WeaponCraftMaterial, tier: 3 | 4) {
+function materialRequirement(material: WeaponCraftMaterial, tier: ProductionTier) {
   return { itemId: MATERIAL_ITEM_BY_KIND[material.kind](tier), quantity: material.quantity };
 }
 

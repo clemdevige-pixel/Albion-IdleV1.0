@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../data/productionFamilyCatalog";
 import type { CombatState, EquipmentSlot, VendorRole, WorkerProfession } from "@game/gameplay";
 
 export interface DamageNumberEvent {
@@ -267,7 +268,7 @@ export interface CraftingRecipeVM {
 }
 
 export interface CraftingVM {
-  readonly productionTier: 3 | 4;
+  readonly productionTier: ProductionTier;
   readonly plankQuantity: number;
   readonly barQuantity: number;
   readonly leatherQuantity: number;
@@ -282,7 +283,7 @@ export interface WorkerVM {
   readonly displayName: string;
   readonly profession: WorkerProfessionVM;
   readonly professionName: string;
-  readonly productionTier: 3 | 4;
+  readonly productionTier: ProductionTier;
   readonly resourceName: string;
   readonly state: "idle" | "working" | "paused";
   readonly mastery: number;

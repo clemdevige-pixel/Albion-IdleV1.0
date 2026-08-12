@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import type { GameBridgeState, RefiningRequirementVM, RefiningVM } from "../../../game/GameBridge";
 import {
   PRODUCTION_FAMILY_IDS,
@@ -25,13 +26,13 @@ export interface RefiningFamilyModel {
 }
 
 export interface RefiningModel {
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly families: readonly RefiningFamilyModel[];
   readonly activeJobs: readonly RefiningFamilyModel[];
 }
 
 interface RefiningSource {
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly refining: RefiningVM;
   readonly metalRefining: RefiningVM;
   readonly leatherRefining: RefiningVM;

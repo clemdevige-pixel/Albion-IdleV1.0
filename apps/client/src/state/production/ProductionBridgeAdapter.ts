@@ -14,6 +14,7 @@ import {
   PRODUCTION_FAMILIES,
   getProductionFamilyByGameplayFamily,
   getProductionFamilyId,
+requireProductionTierPresentation,
   type ProductionFamilyId,
   type ProductionTier,
   type SupportedProductionFamily,
@@ -132,7 +133,7 @@ export class ProductionBridgeAdapter {
     const definition = getProductionFamilyByGameplayFamily(family);
     return {
       masteryId: definition.masteryId,
-      resourceName: definition.tiers[tier].resourceName,
+      resourceName: requireProductionTierPresentation(family, tier).resourceName,
       visualManifestId: definition.visualManifestId,
       recipe: getProductionRefiningRecipe(id, tier),
       updateGathering: GATHERING_UPDATERS[id](bridge),

@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../data/productionFamilyCatalog";
 import type { EntityId } from "@game/core";
 import { canCraftRecipe, type InventoryManager } from "@game/gameplay";
 import type {
@@ -13,7 +14,7 @@ export function syncCraftingToBridge(
   inventoryManager: InventoryManager,
   heroId: EntityId,
   productionStorageId: EntityId,
-  productionTier: 3 | 4,
+  productionTier: ProductionTier,
   resourceOutputItemIds: {
     woodItemId: string;
     metalItemId: string;

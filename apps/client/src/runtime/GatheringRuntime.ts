@@ -1,3 +1,4 @@
+import { getProductionRefiningRecipe } from "../data/refiningRecipes.js";
 import type { EntityId } from "@game/core";
 import type {
   ExperienceService,
@@ -14,17 +15,15 @@ import type {
 } from "@game/gameplay";
 import { asGatheringSessionId } from "@game/gameplay";
 import {
-  getClothRecipe,
-  getLeatherRecipe,
-  getMetalRecipe,
-  getWoodRecipe,
-} from "../data/refiningRecipes.js";
-import { getProductionFamilyByGameplayFamily } from "../data/productionFamilyCatalog.js";
+getProductionFamilyByGameplayFamily,
+getProductionFamilyId,
+getProductionTierRules,
+PRODUCTION_FAMILIES,
+requireProductionTierPresentation,
+type ProductionTier,
+type SupportedProductionFamily,
+} from "../data/productionFamilyCatalog.js";
 import {
-  FIBER_GATHERING_MASTERY_ID,
-  HIDE_GATHERING_MASTERY_ID,
-  ORE_GATHERING_MASTERY_ID,
-  WOOD_GATHERING_MASTERY_ID,
   getHeroGatheringXpForTier,
   getRequiredGatheringMasteryForTier,
 } from "../data/progressionContentCatalog.js";
@@ -37,18 +36,10 @@ export {
 const ACTIVE_GATHERING_PERFECT_BONUS_RATIO = 0.04;
 const ACTIVE_GATHERING_CORRECT_BONUS_RATIO = 0.02;
 
-type ProductionTier = 3 | 4;
-type SupportedGatheringFamily = Extract<
-  ResourceFamily,
-  "Wood" | "Ore" | "Hide" | "Fiber"
->;
+type SupportedGatheringFamily = SupportedProductionFamily;
 
-const SUPPORTED_GATHERING_FAMILIES: readonly SupportedGatheringFamily[] = [
-  "Wood",
-  "Ore",
-  "Hide",
-  "Fiber",
-];
+const SUPPORTED_GATHERING_FAMILIES: readonly SupportedGatheringFamily[] =
+  PRODUCTION_FAMILIES;
 
 interface GatheringFamilyRuntime {
   readonly coordinator: GatheringCoordinator;
@@ -95,35 +86,28 @@ export interface GatheringCompletionEvent {
   readonly completedTier: ProductionTier;
 }
 
-export interface GatheringNodesAndTools {
-  readonly birchNodeId: ResourceNodeId;
-  readonly pineNodeId: ResourceNodeId;
-  readonly copperNodeId: ResourceNodeId;
-  readonly ironNodeId: ResourceNodeId;
-  readonly sturdyHideNodeId: ResourceNodeId;
-  readonly thickHideNodeId: ResourceNodeId;
-  readonly linenFiberNodeId: ResourceNodeId;
-  readonly fineFiberNodeId: ResourceNodeId;
-
-  readonly starterAxe: GatheringToolDefinition;
-  readonly tier4Axe: GatheringToolDefinition;
-  readonly starterPickaxe: GatheringToolDefinition;
-  readonly tier4Pickaxe: GatheringToolDefinition;
-  readonly starterSkinningKnife: GatheringToolDefinition;
-  readonly tier4SkinningKnife: GatheringToolDefinition;
-  readonly starterSickle: GatheringToolDefinition;
-  readonly tier4Sickle: GatheringToolDefinition;
+export interface GatheringTierContent {
+  readonly nodeId: ResourceNodeId;
+  readonly tool: GatheringToolDefinition;
 }
 
+export type GatheringNodesAndTools = Readonly<
+  Record<
+    SupportedGatheringFamily,
+    Readonly<Partial<Record<ProductionTier, GatheringTierContent>>>
+  >
+>;
+
 export interface GatheringRuntimeDependencies {
-  readonly gatheringCoordinator: GatheringCoordinator;
-  readonly gatheringManager: GatheringManager;
-  readonly oreGatheringCoordinator: GatheringCoordinator;
-  readonly oreGatheringManager: GatheringManager;
-  readonly hideGatheringCoordinator: GatheringCoordinator;
-  readonly hideGatheringManager: GatheringManager;
-  readonly fiberGatheringCoordinator: GatheringCoordinator;
-  readonly fiberGatheringManager: GatheringManager;
+  readonly gatheringFamilies: Readonly<
+    Record<
+      SupportedGatheringFamily,
+      {
+        readonly coordinator: GatheringCoordinator;
+        readonly manager: GatheringManager;
+      }
+    >
+  >;
 
   readonly inventoryManager: InventoryManager;
   readonly masteryService: MasteryService;
@@ -199,52 +183,57 @@ export class GatheringRuntime {
 
     const nodes = deps.nodesAndTools;
 
-    this.families = {
-      Wood: {
-        coordinator: deps.gatheringCoordinator,
-        manager: deps.gatheringManager,
-        masteryId: WOOD_GATHERING_MASTERY_ID,
-        getNodeId: (tier) =>
-          tier === 4 ? nodes.pineNodeId : nodes.birchNodeId,
-        getTool: (tier) =>
-          tier === 4 ? nodes.tier4Axe : nodes.starterAxe,
-        getRawItemId: (tier) => getWoodRecipe(tier).rawItemId,
-      },
-      Ore: {
-        coordinator: deps.oreGatheringCoordinator,
-        manager: deps.oreGatheringManager,
-        masteryId: ORE_GATHERING_MASTERY_ID,
-        getNodeId: (tier) =>
-          tier === 4 ? nodes.ironNodeId : nodes.copperNodeId,
-        getTool: (tier) =>
-          tier === 4 ? nodes.tier4Pickaxe : nodes.starterPickaxe,
-        getRawItemId: (tier) => getMetalRecipe(tier).rawItemId,
-      },
-      Hide: {
-        coordinator: deps.hideGatheringCoordinator,
-        manager: deps.hideGatheringManager,
-        masteryId: HIDE_GATHERING_MASTERY_ID,
-        getNodeId: (tier) =>
-          tier === 4 ? nodes.thickHideNodeId : nodes.sturdyHideNodeId,
-        getTool: (tier) =>
-          tier === 4
-            ? nodes.tier4SkinningKnife
-            : nodes.starterSkinningKnife,
-        getRawItemId: (tier) => getLeatherRecipe(tier).rawItemId,
-      },
-      Fiber: {
-        coordinator: deps.fiberGatheringCoordinator,
-        manager: deps.fiberGatheringManager,
-        masteryId: FIBER_GATHERING_MASTERY_ID,
-        getNodeId: (tier) =>
-          tier === 4 ? nodes.fineFiberNodeId : nodes.linenFiberNodeId,
-        getTool: (tier) =>
-          tier === 4 ? nodes.tier4Sickle : nodes.starterSickle,
-        getRawItemId: (tier) => getClothRecipe(tier).rawItemId,
-      },
+    const requireTierContent = (
+      family: SupportedGatheringFamily,
+      tier: ProductionTier,
+    ): GatheringTierContent => {
+      const content = nodes[family][tier];
+
+      if (content === undefined) {
+        throw new Error(
+          `Gathering content missing for ${family} T${String(tier)}`,
+        );
+      }
+
+      return content;
     };
 
-    this.setupCompletedSubscriptions();
+    const familyEntries = SUPPORTED_GATHERING_FAMILIES.map((family) => {
+  const catalogDefinition = getProductionFamilyByGameplayFamily(family);
+
+  const runtimeDefinition: GatheringFamilyRuntime = {
+    ...deps.gatheringFamilies[family],
+    masteryId: catalogDefinition.masteryId,
+    getNodeId: (tier) => requireTierContent(family, tier).nodeId,
+    getTool: (tier) => requireTierContent(family, tier).tool,
+    getRawItemId: (tier) =>
+      getProductionRefiningRecipe(
+        getProductionFamilyId(family),
+        tier,
+      ).rawItemId,
+  };
+
+  return [family, runtimeDefinition] as const;
+});
+
+this.families = Object.fromEntries(
+  familyEntries,
+) as Record<SupportedGatheringFamily, GatheringFamilyRuntime>;
+
+this.states = Object.fromEntries(
+  SUPPORTED_GATHERING_FAMILIES.map((family) => [
+    family,
+    {
+      automatic: false,
+      miniGame: {
+        sessionId: null,
+        strikesUsed: 0,
+        tier: null,
+      },
+    },
+  ]),
+) as Record<SupportedGatheringFamily, MutableGatheringState>;
+this.setupCompletedSubscriptions();
   }
 
   public subscribeGatherCompleted(
@@ -321,8 +310,9 @@ export class GatheringRuntime {
 
   public getGatheringDurationTicks(masteryId: MasteryId): number {
     const tier = this.getProductionTier();
-    const baseTicks = tier === 4 ? 36 : 24;
-    const toolModifier = tier === 4 ? 0.85 : 1;
+    const tierRules = getProductionTierRules(tier);
+    const baseTicks = tierRules.gatheringBaseTicks;
+    const toolModifier = tierRules.gatheringToolSpeedModifier;
 
     return Math.max(
       1,
@@ -444,8 +434,10 @@ export class GatheringRuntime {
     }
 
     const itemLabel =
-      getProductionFamilyByGameplayFamily(family)
-        .tiers[completedTier].resourceName;
+      requireProductionTierPresentation(
+        family,
+        completedTier,
+      ).resourceName;
 
     this.notifyGatherCompleted({
       family,
@@ -504,7 +496,7 @@ export class GatheringRuntime {
     }
   }
 
-  private toggleGatheringFamily(
+  public toggleGatheringFamily(
     family: SupportedGatheringFamily,
     tickCounter: number = 0,
   ): ToggleGatheringResult {
@@ -533,31 +525,7 @@ export class GatheringRuntime {
     return { action: "started", family };
   }
 
-  public toggleGathering(
-    tickCounter: number = 0,
-  ): ToggleGatheringResult {
-    return this.toggleGatheringFamily("Wood", tickCounter);
-  }
-
-  public toggleOreGathering(
-    tickCounter: number = 0,
-  ): ToggleGatheringResult {
-    return this.toggleGatheringFamily("Ore", tickCounter);
-  }
-
-  public toggleHideGathering(
-    tickCounter: number = 0,
-  ): ToggleGatheringResult {
-    return this.toggleGatheringFamily("Hide", tickCounter);
-  }
-
-  public toggleFiberGathering(
-    tickCounter: number = 0,
-  ): ToggleGatheringResult {
-    return this.toggleGatheringFamily("Fiber", tickCounter);
-  }
-
-  public performGatheringStrike(
+public performGatheringStrike(
     resourceFamily: ResourceFamily,
     quality: "miss" | "correct" | "perfect",
     tickCounter: number = 0,

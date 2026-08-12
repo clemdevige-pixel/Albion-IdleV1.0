@@ -1,3 +1,4 @@
+import { getProductionTierRules, type ProductionTier } from "./productionFamilyCatalog.js";
 import {
   asGatheringToolId,
   asResourceDefinitionId,
@@ -315,7 +316,7 @@ export function setupResourceContentCatalog(
     key: string,
     name: string,
     family: ResourceFamily,
-    tier: 3 | 4,
+    tier: ProductionTier,
   ) => {
     const definitionId = asResourceDefinitionId(`resource_${key}_t${String(tier)}`);
     const resourceId = asResourceId(`resource_${key}_t${String(tier)}_runtime`);
@@ -326,7 +327,7 @@ export function setupResourceContentCatalog(
       family,
       tier,
       maxCharges: 999,
-      respawnDurationTicks: tier === 4 ? 360 : 240,
+      respawnDurationTicks: getProductionTierRules(tier).resourceRespawnDurationTicks,
       baseYield: 1,
       tags: [key, family.toLowerCase(), `tier${String(tier)}`],
     });

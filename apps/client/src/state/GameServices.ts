@@ -1,3 +1,5 @@
+import type { SupportedProductionFamily } from "../data/productionFamilyCatalog";
+import type { ProductionTier } from "../data/productionFamilyCatalog";
 import type { EventBus, EntityId } from "@game/core";
 import type {
   CombatOrchestrator,
@@ -48,20 +50,14 @@ export interface GameServices {
   readonly setSegmentFarmMode: (enabled: boolean) => void;
   readonly selectZone: (zoneNumber: number, segmentNumber?: number) => boolean;
   readonly returnToCombat: () => boolean;
-  readonly toggleGathering: () => boolean;
+  readonly toggleGathering: (family: SupportedProductionFamily) => boolean;
   readonly performGatheringStrike: (
     resourceFamily: string,
     quality: "miss" | "correct" | "perfect",
   ) => boolean;
-  readonly toggleOreGathering: () => boolean;
-  readonly toggleHideGathering: () => boolean;
-  readonly toggleFiberGathering: () => boolean;
-  readonly toggleRefining: () => boolean;
-  readonly toggleMetalRefining: () => boolean;
-  readonly toggleLeatherRefining: () => boolean;
-  readonly toggleClothRefining: () => boolean;
+  readonly toggleRefining: (family: SupportedProductionFamily) => boolean;
   readonly refineAllAvailable: () => boolean;
-  readonly setProductionTier: (tier: 3 | 4) => boolean;
+  readonly setProductionTier: (tier: ProductionTier) => boolean;
   readonly craftEquipment: (outputItemId: string) => boolean;
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
   readonly toggleWorker: (profession: WorkerProfessionVM) => boolean;

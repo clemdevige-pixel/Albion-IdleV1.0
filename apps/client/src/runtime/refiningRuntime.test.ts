@@ -21,10 +21,12 @@ function setupTestEnvironment(inventoryCapacity = 10) {
   let productionTier: 3 | 4 = 3;
 
   const runtime = new RefiningRuntime({
-    refiningManager,
-    metalRefiningManager,
-    leatherRefiningManager,
-    clothRefiningManager,
+    refiningManagers: {
+      Wood: refiningManager,
+      Ore: metalRefiningManager,
+      Hide: leatherRefiningManager,
+      Fiber: clothRefiningManager,
+    },
     inventoryManager,
     heroId,
     getProductionTier: () => productionTier,
@@ -64,7 +66,7 @@ describe("RefiningRuntime regression suite", () => {
     expect(env.inventoryManager.findFreeSlots(env.heroId).length).toBe(0);
 
     // Start refining
-    const startRes = env.runtime.toggleRefining(0);
+    const startRes = env.runtime.toggleRefiningFamily("Wood", 0);
     expect(startRes.action).toBe("started");
     expect(env.runtime.isRefiningActive("Wood")).toBe(true);
 
@@ -105,7 +107,7 @@ describe("RefiningRuntime regression suite", () => {
     });
 
     // Start refining
-    const startRes = env.runtime.toggleRefining(0);
+    const startRes = env.runtime.toggleRefiningFamily("Wood", 0);
     expect(startRes.action).toBe("started");
 
     // Tick to completion
@@ -144,7 +146,7 @@ describe("RefiningRuntime regression suite", () => {
     });
 
     // Start auto-refining
-    env.runtime.toggleRefining(0);
+    env.runtime.toggleRefiningFamily("Wood", 0);
 
     // First cycle ticks (ticks 1..6)
     for (let tick = 1; tick <= 6; tick++) {
@@ -189,7 +191,7 @@ describe("RefiningRuntime regression suite", () => {
     });
 
     // Toggle T4 refining
-    const startRes = env.runtime.toggleRefining(0);
+    const startRes = env.runtime.toggleRefiningFamily("Wood", 0);
 
     // Fails to start because T3 refined plank requirement is missing
     expect(startRes.action).toBe("failed");
@@ -213,7 +215,7 @@ describe("RefiningRuntime regression suite", () => {
       });
 
       // Start refining
-      env.runtime.toggleRefining(0);
+      env.runtime.toggleRefiningFamily("Wood", 0);
       expect(env.runtime.isRefiningActive("Wood")).toBe(true);
 
       // Mid-cycle autosave occurs
@@ -260,7 +262,7 @@ describe("RefiningRuntime regression suite", () => {
       });
 
       // Start refining
-      env.runtime.toggleRefining(0);
+      env.runtime.toggleRefiningFamily("Wood", 0);
 
       // Mid-cycle save
       const saveData = provider.save();
@@ -336,8 +338,8 @@ describe("RefiningRuntime regression suite", () => {
       });
 
       // Start Wood refining and Metal refining
-      env.runtime.toggleRefining(0);
-      env.runtime.toggleMetalRefining(0);
+      env.runtime.toggleRefiningFamily("Wood", 0);
+      env.runtime.toggleRefiningFamily("Ore", 0);
 
       // Mid-cycle save
       const saveData = provider.save() as { reservedInputs: readonly { itemId: string; quantity: number }[] };
@@ -384,10 +386,12 @@ describe("RefiningRuntime production storage boundary", () => {
     inventoryManager.createInventory(productionStorageId, 16);
 
     const runtime = new RefiningRuntime({
-      refiningManager: new RefiningManager(),
-      metalRefiningManager: new RefiningManager(),
-      leatherRefiningManager: new RefiningManager(),
-      clothRefiningManager: new RefiningManager(),
+      refiningManagers: {
+        Wood: new RefiningManager(),
+        Ore: new RefiningManager(),
+        Hide: new RefiningManager(),
+        Fiber: new RefiningManager(),
+      },
       inventoryManager,
       productionStorageId,
       getProductionTier: () => 3,
@@ -399,7 +403,7 @@ describe("RefiningRuntime production storage boundary", () => {
       maxStack: 999,
     });
 
-    expect(runtime.toggleRefining(0).action).toBe("started");
+    expect(runtime.toggleRefiningFamily("Wood", 0).action).toBe("started");
     for (let tick = 1; tick <= 6; tick += 1) runtime.tick(tick);
 
     expect(inventoryManager.getOccupiedCount(heroId)).toBe(0);

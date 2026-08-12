@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../data/productionFamilyCatalog.js";
 import type { EntityId } from "@game/core";
 import {
   GatheringCoordinator,
@@ -37,7 +38,7 @@ interface ProductionFoundationDependencies {
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly forestZoneDefId: ZoneDefinitionId;
-  readonly getProductionTier: () => 3 | 4;
+  readonly getProductionTier: () => ProductionTier;
 }
 
 /**
@@ -61,10 +62,12 @@ export function createProductionFoundation({
   const resourceRuntime = new ResourceRuntime();
   const resourceNodeRegistry = new ResourceNodeRegistry();
   const resourceNodeManager = new ResourceNodeManager();
-  const gatheringManager = new GatheringManager(resourceRegistry);
-  const oreGatheringManager = new GatheringManager(resourceRegistry);
-  const hideGatheringManager = new GatheringManager(resourceRegistry);
-  const fiberGatheringManager = new GatheringManager(resourceRegistry);
+  const gatheringManagers = {
+    Wood: new GatheringManager(resourceRegistry),
+    Ore: new GatheringManager(resourceRegistry),
+    Hide: new GatheringManager(resourceRegistry),
+    Fiber: new GatheringManager(resourceRegistry),
+  } as const;
   const gatheringToolRegistry = new GatheringToolRegistry();
 
   const nodesAndTools = setupResourceContentCatalog({
@@ -92,55 +95,103 @@ export function createProductionFoundation({
     gatheringToolRegistry,
   );
 
-  const gatheringCoordinator = createGatheringCoordinator(gatheringManager);
-  const oreGatheringCoordinator = createGatheringCoordinator(oreGatheringManager);
-  const hideGatheringCoordinator = createGatheringCoordinator(hideGatheringManager);
-  const fiberGatheringCoordinator = createGatheringCoordinator(fiberGatheringManager);
+  const gatheringCoordinators = {
+    Wood: createGatheringCoordinator(gatheringManagers.Wood),
+    Ore: createGatheringCoordinator(gatheringManagers.Ore),
+    Hide: createGatheringCoordinator(gatheringManagers.Hide),
+    Fiber: createGatheringCoordinator(gatheringManagers.Fiber),
+  } as const;
+
+  const gatheringFamilies = {
+    Wood: {
+      manager: gatheringManagers.Wood,
+      coordinator: gatheringCoordinators.Wood,
+    },
+    Ore: {
+      manager: gatheringManagers.Ore,
+      coordinator: gatheringCoordinators.Ore,
+    },
+    Hide: {
+      manager: gatheringManagers.Hide,
+      coordinator: gatheringCoordinators.Hide,
+    },
+    Fiber: {
+      manager: gatheringManagers.Fiber,
+      coordinator: gatheringCoordinators.Fiber,
+    },
+  } as const;
 
   const gatheringRuntime = new GatheringRuntime({
-    gatheringCoordinator,
-    gatheringManager,
-    oreGatheringCoordinator,
-    oreGatheringManager,
-    hideGatheringCoordinator,
-    hideGatheringManager,
-    fiberGatheringCoordinator,
-    fiberGatheringManager,
+    gatheringFamilies,
     inventoryManager,
     masteryService,
     experienceService,
     progressionOrchestrator,
     productionStorageId,
     nodesAndTools: {
-      birchNodeId: nodesAndTools.birchNode.id,
-      pineNodeId: nodesAndTools.pineNode.id,
-      copperNodeId: nodesAndTools.copperNode.id,
-      ironNodeId: nodesAndTools.ironNode.id,
-      sturdyHideNodeId: nodesAndTools.sturdyHideNode.id,
-      thickHideNodeId: nodesAndTools.thickHideNode.id,
-      linenFiberNodeId: nodesAndTools.linenFiberNode.id,
-      fineFiberNodeId: nodesAndTools.fineFiberNode.id,
-      starterAxe: nodesAndTools.starterAxe,
-      tier4Axe: nodesAndTools.tier4Axe,
-      starterPickaxe: nodesAndTools.starterPickaxe,
-      tier4Pickaxe: nodesAndTools.tier4Pickaxe,
-      starterSkinningKnife: nodesAndTools.starterSkinningKnife,
-      tier4SkinningKnife: nodesAndTools.tier4SkinningKnife,
-      starterSickle: nodesAndTools.starterSickle,
-      tier4Sickle: nodesAndTools.tier4Sickle,
+      Wood: {
+        3: {
+          nodeId: nodesAndTools.birchNode.id,
+          tool: nodesAndTools.starterAxe,
+        },
+        4: {
+          nodeId: nodesAndTools.pineNode.id,
+          tool: nodesAndTools.tier4Axe,
+        },
+      },
+      Ore: {
+        3: {
+          nodeId: nodesAndTools.copperNode.id,
+          tool: nodesAndTools.starterPickaxe,
+        },
+        4: {
+          nodeId: nodesAndTools.ironNode.id,
+          tool: nodesAndTools.tier4Pickaxe,
+        },
+      },
+      Hide: {
+        3: {
+          nodeId: nodesAndTools.sturdyHideNode.id,
+          tool: nodesAndTools.starterSkinningKnife,
+        },
+        4: {
+          nodeId: nodesAndTools.thickHideNode.id,
+          tool: nodesAndTools.tier4SkinningKnife,
+        },
+      },
+      Fiber: {
+        3: {
+          nodeId: nodesAndTools.linenFiberNode.id,
+          tool: nodesAndTools.starterSickle,
+        },
+        4: {
+          nodeId: nodesAndTools.fineFiberNode.id,
+          tool: nodesAndTools.tier4Sickle,
+        },
+      },
     },
     getProductionTier,
   });
+
+  const gatheringCoordinator = gatheringCoordinators.Wood;
+  const oreGatheringCoordinator = gatheringCoordinators.Ore;
+  const hideGatheringCoordinator = gatheringCoordinators.Hide;
+  const fiberGatheringCoordinator = gatheringCoordinators.Fiber;
 
   const refiningManager = new RefiningManager();
   const metalRefiningManager = new RefiningManager();
   const leatherRefiningManager = new RefiningManager();
   const clothRefiningManager = new RefiningManager();
+
+  const refiningManagers = {
+    Wood: refiningManager,
+    Ore: metalRefiningManager,
+    Hide: leatherRefiningManager,
+    Fiber: clothRefiningManager,
+  } as const;
+
   const refiningRuntime = new RefiningRuntime({
-    refiningManager,
-    metalRefiningManager,
-    leatherRefiningManager,
-    clothRefiningManager,
+    refiningManagers,
     inventoryManager,
     productionStorageId,
     getProductionTier,

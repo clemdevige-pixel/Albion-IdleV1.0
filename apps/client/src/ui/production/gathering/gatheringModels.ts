@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import type {
   GameBridgeState,
   GatheringVM,
@@ -8,6 +9,7 @@ import type {
 import {
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
+  requireProductionTierPresentation,
   type ProductionFamilyId,
 } from "../../../data/productionFamilyCatalog";
 import { masteryProgressPercent } from "../../shared/masteryProgress";
@@ -33,7 +35,7 @@ export interface GatheringResourceModel {
 }
 
 export interface GatheringModel {
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly recruitmentCost: number;
   readonly workerCapacity: number;
   readonly recruitedWorkerCount: number;
@@ -41,7 +43,7 @@ export interface GatheringModel {
 }
 
 interface GatheringSource {
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly recruitmentCost: number;
   readonly workerCapacity: number;
   readonly workers: readonly WorkerVM[];
@@ -94,7 +96,7 @@ export function buildGatheringModel(source: GatheringSource): GatheringModel {
       label: definition.label,
       icon: definition.gatheringIcon,
       profession: definition.profession,
-      tool: definition.tiers[source.tier].toolName,
+      tool: requireProductionTierPresentation(definition.gameplayFamily, source.tier).toolName,
       worker: source.workers.find((worker) => worker.profession === definition.profession),
     };
   };

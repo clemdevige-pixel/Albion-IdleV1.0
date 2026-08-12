@@ -35,6 +35,9 @@ import {
 import {
   getProductionFamilyByProfession,
   getProductionFamilyId,
+  getProductionTierRules,
+  isProductionTier,
+  type ProductionTier,
 } from "../data/productionFamilyCatalog.js";
 
 export {
@@ -45,7 +48,6 @@ export {
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;
 
-type ProductionTier = 3 | 4;
 
 type SupportedWorkerProfession = Extract<
   WorkerProfession,
@@ -299,7 +301,7 @@ export class WorkerRuntime {
 
   public getWorkerSpeedModifier(masteryXp: number, tier: ProductionTier): number {
     const level = this.getWorkerMasteryLevel(masteryXp);
-    const tierModifier = tier === 4 ? 0.75 : 1;
+    const tierModifier = getProductionTierRules(tier).workerSpeedModifier;
     return tierModifier * (1 + level * 0.005);
   }
 
@@ -529,7 +531,9 @@ export class WorkerRuntime {
       );
       if (!assigned.ok) continue;
       this.workerByProfession.set(raw.profession, created.worker.id);
-      const savedTier = raw.productionTier === 4 ? 4 : 3;
+      const savedTier = isProductionTier(raw.productionTier)
+        ? raw.productionTier
+        : this.getProductionTier();
       this.workerProductionTier.set(created.worker.id, savedTier);
       this.workerManager.updateState(created.worker.id, "assigned");
 

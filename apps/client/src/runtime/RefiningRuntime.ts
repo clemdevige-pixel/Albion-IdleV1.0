@@ -13,29 +13,15 @@ import {
   getProductionRefiningRecipe,
   type ProductionRefiningRecipe,
 } from "../data/refiningRecipes.js";
-import type {
-  ProductionFamilyId,
-  ProductionTier,
+import {
+  getProductionFamilyId,
+  PRODUCTION_FAMILIES,
+  type ProductionFamilyId,
+  type ProductionTier,
+  type SupportedProductionFamily,
 } from "../data/productionFamilyCatalog.js";
 
-type SupportedRefiningFamily = Extract<
-  ResourceFamily,
-  "Wood" | "Ore" | "Hide" | "Fiber"
->;
-
-const SUPPORTED_REFINING_FAMILIES: readonly SupportedRefiningFamily[] = [
-  "Wood",
-  "Ore",
-  "Hide",
-  "Fiber",
-];
-
-const PRODUCTION_FAMILY_BY_REFINING_FAMILY = {
-  Wood: "wood",
-  Ore: "ore",
-  Hide: "hide",
-  Fiber: "fiber",
-} as const satisfies Record<SupportedRefiningFamily, ProductionFamilyId>;
+type SupportedRefiningFamily = SupportedProductionFamily;
 
 export interface ReservedRefiningRequirement {
   readonly itemId: string;
@@ -47,6 +33,9 @@ export type ToggleRefiningResult =
   | { readonly action: "stopped"; readonly family: ResourceFamily }
   | { readonly action: "failed"; readonly family: ResourceFamily };
 
+const SUPPORTED_REFINING_FAMILIES: readonly SupportedRefiningFamily[] =
+  PRODUCTION_FAMILIES;
+
 export interface RefiningCompletionEvent {
   readonly family: ResourceFamily;
   readonly added: boolean;
@@ -55,10 +44,9 @@ export interface RefiningCompletionEvent {
 }
 
 export interface RefiningRuntimeDependencies {
-  readonly refiningManager: RefiningManager;
-  readonly metalRefiningManager: RefiningManager;
-  readonly leatherRefiningManager: RefiningManager;
-  readonly clothRefiningManager: RefiningManager;
+  readonly refiningManagers: Readonly<
+  Record<SupportedRefiningFamily, RefiningManager>
+>;
 
   readonly inventoryManager: InventoryManager;
 
@@ -100,28 +88,7 @@ export class RefiningRuntime {
   private readonly states: Record<
     SupportedRefiningFamily,
     RefiningFamilyState
-  > = {
-    Wood: {
-      automatic: false,
-      reservedInputs: [],
-      activeRecipe: undefined,
-    },
-    Ore: {
-      automatic: false,
-      reservedInputs: [],
-      activeRecipe: undefined,
-    },
-    Hide: {
-      automatic: false,
-      reservedInputs: [],
-      activeRecipe: undefined,
-    },
-    Fiber: {
-      automatic: false,
-      reservedInputs: [],
-      activeRecipe: undefined,
-    },
-  };
+  >;
 
   private currentTickCounter = 0;
 
@@ -139,25 +106,29 @@ export class RefiningRuntime {
     }
     this.productionStorageId = storageId;
 
-    this.families = {
-      Wood: {
-        manager: deps.refiningManager,
-        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Wood,
-      },
-      Ore: {
-        manager: deps.metalRefiningManager,
-        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Ore,
-      },
-      Hide: {
-        manager: deps.leatherRefiningManager,
-        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Hide,
-      },
-      Fiber: {
-        manager: deps.clothRefiningManager,
-        productionFamilyId: PRODUCTION_FAMILY_BY_REFINING_FAMILY.Fiber,
-      },
-    };
+    this.families = Object.fromEntries(
+      SUPPORTED_REFINING_FAMILIES.map((family) => [
+        family,
+        {
+          manager: deps.refiningManagers[family],
+          productionFamilyId: getProductionFamilyId(family),
+        },
+      ]),
+    ) as Record<
+      SupportedRefiningFamily,
+      RefiningFamilyRuntimeDefinition
+    >;
 
+    this.states = Object.fromEntries(
+      SUPPORTED_REFINING_FAMILIES.map((family) => [
+        family,
+        {
+          automatic: false,
+          reservedInputs: [],
+          activeRecipe: undefined,
+        },
+      ]),
+    ) as unknown as Record<SupportedRefiningFamily, RefiningFamilyState>;
     this.setupCompletedSubscriptions();
   }
 
@@ -392,7 +363,7 @@ export class RefiningRuntime {
     definition.manager.clear();
   }
 
-  private toggleRefiningFamily(
+  public toggleRefiningFamily(
     family: SupportedRefiningFamily,
     tickCounter: number = 0,
   ): ToggleRefiningResult {
@@ -419,31 +390,7 @@ export class RefiningRuntime {
     return { action: "started", family };
   }
 
-  public toggleRefining(
-    tickCounter: number = 0,
-  ): ToggleRefiningResult {
-    return this.toggleRefiningFamily("Wood", tickCounter);
-  }
-
-  public toggleMetalRefining(
-    tickCounter: number = 0,
-  ): ToggleRefiningResult {
-    return this.toggleRefiningFamily("Ore", tickCounter);
-  }
-
-  public toggleLeatherRefining(
-    tickCounter: number = 0,
-  ): ToggleRefiningResult {
-    return this.toggleRefiningFamily("Hide", tickCounter);
-  }
-
-  public toggleClothRefining(
-    tickCounter: number = 0,
-  ): ToggleRefiningResult {
-    return this.toggleRefiningFamily("Fiber", tickCounter);
-  }
-
-  public refineAllAvailable(
+public refineAllAvailable(
     tickCounter: number = 0,
   ): { readonly startedAtLeastOne: boolean } {
     let startedAtLeastOne = false;

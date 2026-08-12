@@ -113,28 +113,17 @@ export class ProductionActions {
   }
 
   private toggleGatheringRuntime(family: SupportedProductionFamily) {
-    const tick = this.deps.getCurrentTick();
-    switch (family) {
-      case "Wood": return this.deps.gatheringRuntime.toggleGathering(tick);
-      case "Ore": return this.deps.gatheringRuntime.toggleOreGathering(tick);
-      case "Hide": return this.deps.gatheringRuntime.toggleHideGathering(tick);
-      case "Fiber": return this.deps.gatheringRuntime.toggleFiberGathering(tick);
-      default: return assertNever(family);
-    }
+    return this.deps.gatheringRuntime.toggleGatheringFamily(
+      family,
+      this.deps.getCurrentTick(),
+    );
   }
 
   private toggleRefiningRuntime(family: SupportedProductionFamily) {
-    const tick = this.deps.getCurrentTick();
-    switch (family) {
-      case "Wood": return this.deps.refiningRuntime.toggleRefining(tick);
-      case "Ore": return this.deps.refiningRuntime.toggleMetalRefining(tick);
-      case "Hide": return this.deps.refiningRuntime.toggleLeatherRefining(tick);
-      case "Fiber": return this.deps.refiningRuntime.toggleClothRefining(tick);
-      default: return assertNever(family);
-    }
+    return this.deps.refiningRuntime.toggleRefiningFamily(
+      family,
+      this.deps.getCurrentTick(),
+    );
   }
 }
 
-function assertNever(value: never): never {
-  throw new Error(`Unsupported Production family: ${String(value)}`);
-}

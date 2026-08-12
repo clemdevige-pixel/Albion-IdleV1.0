@@ -1,3 +1,4 @@
+import type { ProductionTier } from "../../data/productionFamilyCatalog";
 import type { WorkerId } from "@game/gameplay";
 import type {
   GameBridge,
@@ -26,8 +27,8 @@ export function syncWorkersToBridge(
   getWorkerSession: (
     workerId: WorkerId,
   ) => { state: string; getProgress: () => number; totalTicks?: number } | undefined,
-  getAssignedTier: (workerId: WorkerId) => 3 | 4,
-  getWorkerMasteryDetails: (masteryXp: number, tier: 3 | 4) => {
+  getAssignedTier: (workerId: WorkerId) => ProductionTier,
+  getWorkerMasteryDetails: (masteryXp: number, tier: ProductionTier) => {
     masteryLevel: number;
     currentThreshold: number;
     nextThreshold: number;
