@@ -8,16 +8,6 @@ import {
   type WorldHudRenderManifest,
   type WorldStatusRenderManifest,
 } from "./RenderManifest";
-import {
-  parseActorRenderManifest,
-  parseEnvironmentRenderManifest,
-  parseFloatingTextRenderManifest,
-  parseProjectileRenderManifest,
-  parseWorldHudRenderManifest,
-  parseWorldStatusRenderManifest,
-  parseResourceNodeRenderManifest,
-  parseStaticActorRenderManifest,
-} from "./RenderManifestParsing";
 
 interface RenderManifestWithId {
   readonly id: string;
@@ -75,8 +65,7 @@ export class RenderManifestRegistry {
   #defaultWorldStatusId: string | undefined;
   readonly #defaultFloatingTextIds = new Map<"player" | "enemy", string>();
 
-  registerActor(value: unknown): ActorRenderManifest {
-    const manifest = parseActorRenderManifest(value);
+  registerActor(manifest: ActorRenderManifest): ActorRenderManifest {
 
     return this.#actors.register(
       manifest,
@@ -112,8 +101,7 @@ export class RenderManifestRegistry {
     return this.requireActor(this.#defaultActorId);
   }
 
-  registerStaticActor(value: unknown): StaticActorRenderManifest {
-    const manifest = parseStaticActorRenderManifest(value);
+  registerStaticActor(manifest: StaticActorRenderManifest): StaticActorRenderManifest {
 
     return this.#staticActors.register(
       manifest,
@@ -149,8 +137,7 @@ export class RenderManifestRegistry {
     return this.requireStaticActor(this.#defaultStaticActorId);
   }
 
-  registerResourceNode(value: unknown): ResourceNodeRenderManifest {
-    const manifest = parseResourceNodeRenderManifest(value);
+  registerResourceNode(manifest: ResourceNodeRenderManifest): ResourceNodeRenderManifest {
 
     return this.#resourceNodes.register(
       manifest,
@@ -170,8 +157,7 @@ export class RenderManifestRegistry {
     return this.#resourceNodes.list();
   }
 
-  registerFloatingText(value: unknown): FloatingTextRenderManifest {
-    const manifest = parseFloatingTextRenderManifest(value);
+  registerFloatingText(manifest: FloatingTextRenderManifest): FloatingTextRenderManifest {
 
     return this.#floatingTexts.register(
       manifest,
@@ -208,8 +194,7 @@ export class RenderManifestRegistry {
     return this.requireFloatingText(id);
   }
 
-  registerWorldHud(value: unknown): WorldHudRenderManifest {
-    const manifest = parseWorldHudRenderManifest(value);
+  registerWorldHud(manifest: WorldHudRenderManifest): WorldHudRenderManifest {
 
     return this.#worldHuds.register(
       manifest,
@@ -237,8 +222,7 @@ export class RenderManifestRegistry {
     return this.requireWorldHud(this.#defaultWorldHudId);
   }
 
-  registerWorldStatus(value: unknown): WorldStatusRenderManifest {
-    const manifest = parseWorldStatusRenderManifest(value);
+  registerWorldStatus(manifest: WorldStatusRenderManifest): WorldStatusRenderManifest {
 
     return this.#worldStatuses.register(
       manifest,
@@ -271,8 +255,7 @@ export class RenderManifestRegistry {
     return this.requireWorldStatus(this.#defaultWorldStatusId);
   }
 
-  registerProjectile(value: unknown): ProjectileRenderManifest {
-    const manifest = parseProjectileRenderManifest(value);
+  registerProjectile(manifest: ProjectileRenderManifest): ProjectileRenderManifest {
 
     return this.#projectiles.register(
       manifest,
@@ -291,8 +274,7 @@ export class RenderManifestRegistry {
     );
   }
 
-  registerEnvironment(value: unknown): EnvironmentRenderManifest {
-    const manifest = parseEnvironmentRenderManifest(value);
+  registerEnvironment(manifest: EnvironmentRenderManifest): EnvironmentRenderManifest {
 
     return this.#environments.register(
       manifest,

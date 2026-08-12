@@ -36,13 +36,23 @@ import enemyDamageTextManifest from "./manifests/floating-text-enemy-damage.rend
 import worldHudManifest from "./manifests/world-hud-default.render.json";
 import worldStatusManifest from "./manifests/world-status-default.render.json";
 import { RenderManifestRegistry } from "./RenderManifestRegistry";
+import {
+  parseActorRenderManifest,
+  parseEnvironmentRenderManifest,
+  parseFloatingTextRenderManifest,
+  parseProjectileRenderManifest,
+  parseResourceNodeRenderManifest,
+  parseStaticActorRenderManifest,
+  parseWorldHudRenderManifest,
+  parseWorldStatusRenderManifest,
+} from "./RenderManifestParsing";
 
 export const renderManifestRegistry = new RenderManifestRegistry();
-renderManifestRegistry.registerActor(heroBroadswordManifest);
-renderManifestRegistry.registerActor(heroBowManifest);
-renderManifestRegistry.registerActor(heroFireStaffManifest);
-renderManifestRegistry.registerActor(heroSpikedGauntletsManifest);
-const heroDaggerPair = renderManifestRegistry.registerActor(heroDaggerPairManifest);
+renderManifestRegistry.registerActor(parseActorRenderManifest(heroBroadswordManifest));
+renderManifestRegistry.registerActor(parseActorRenderManifest(heroBowManifest));
+renderManifestRegistry.registerActor(parseActorRenderManifest(heroFireStaffManifest));
+renderManifestRegistry.registerActor(parseActorRenderManifest(heroSpikedGauntletsManifest));
+const heroDaggerPair = renderManifestRegistry.registerActor(parseActorRenderManifest(heroDaggerPairManifest));
 Object.assign(heroDaggerPair.poses.death, {
   frameWidth: heroDaggerPairManifest.poses.death.frameWidth,
   frameHeight: heroDaggerPairManifest.poses.death.frameHeight,
@@ -52,41 +62,41 @@ Object.assign(heroDaggerPair.poses.death, {
   repeat: heroDaggerPairManifest.poses.death.repeat,
 });
 renderManifestRegistry.setDefaultActor(heroBroadswordManifest.id);
-renderManifestRegistry.registerStaticActor(stonefangWolfManifest);
-renderManifestRegistry.registerStaticActor(razorwingHarpyManifest);
-renderManifestRegistry.registerStaticActor(morganaWitchManifest);
-renderManifestRegistry.registerStaticActor(morganaSuppressorManifest);
-renderManifestRegistry.registerStaticActor(morganaDarkKnightManifest);
-renderManifestRegistry.registerStaticActor(morganaHighPriestessManifest);
-renderManifestRegistry.registerStaticActor(ancientRuneGolemManifest);
-renderManifestRegistry.registerStaticActor(undeadWarriorManifest);
-renderManifestRegistry.registerStaticActor(undeadSkeletonSwordsmanManifest);
-renderManifestRegistry.registerStaticActor(undeadSkeletonArcherManifest);
-renderManifestRegistry.registerStaticActor(undeadSpectralKnightManifest);
-renderManifestRegistry.registerStaticActor(undeadLichManifest);
-renderManifestRegistry.registerStaticActor(keeperWarriorManifest);
-renderManifestRegistry.registerStaticActor(keeperShamanManifest);
-renderManifestRegistry.registerStaticActor(keeperChampionManifest);
-renderManifestRegistry.registerStaticActor(keeperAncientManifest);
-renderManifestRegistry.registerStaticActor(hereticThugManifest);
-renderManifestRegistry.registerStaticActor(hereticFirestarterManifest);
-renderManifestRegistry.registerStaticActor(hereticEnforcerManifest);
-renderManifestRegistry.registerStaticActor(hereticMadmenManifest);
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(stonefangWolfManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(razorwingHarpyManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(morganaWitchManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(morganaSuppressorManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(morganaDarkKnightManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(morganaHighPriestessManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(ancientRuneGolemManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(undeadWarriorManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(undeadSkeletonSwordsmanManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(undeadSkeletonArcherManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(undeadSpectralKnightManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(undeadLichManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(keeperWarriorManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(keeperShamanManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(keeperChampionManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(keeperAncientManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(hereticThugManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(hereticFirestarterManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(hereticEnforcerManifest));
+renderManifestRegistry.registerStaticActor(parseStaticActorRenderManifest(hereticMadmenManifest));
 renderManifestRegistry.setDefaultStaticActor(undeadWarriorManifest.id);
-renderManifestRegistry.registerResourceNode(woodResourceManifest);
-renderManifestRegistry.registerResourceNode(oreResourceManifest);
-renderManifestRegistry.registerResourceNode(hideResourceManifest);
-renderManifestRegistry.registerResourceNode(fiberResourceManifest);
-renderManifestRegistry.registerProjectile(arrowManifest);
-renderManifestRegistry.registerProjectile(badonArrowManifest);
-renderManifestRegistry.registerProjectile(fireballManifest);
-renderManifestRegistry.registerEnvironment(birchForestEnvironment);
+renderManifestRegistry.registerResourceNode(parseResourceNodeRenderManifest(woodResourceManifest));
+renderManifestRegistry.registerResourceNode(parseResourceNodeRenderManifest(oreResourceManifest));
+renderManifestRegistry.registerResourceNode(parseResourceNodeRenderManifest(hideResourceManifest));
+renderManifestRegistry.registerResourceNode(parseResourceNodeRenderManifest(fiberResourceManifest));
+renderManifestRegistry.registerProjectile(parseProjectileRenderManifest(arrowManifest));
+renderManifestRegistry.registerProjectile(parseProjectileRenderManifest(badonArrowManifest));
+renderManifestRegistry.registerProjectile(parseProjectileRenderManifest(fireballManifest));
+renderManifestRegistry.registerEnvironment(parseEnvironmentRenderManifest(birchForestEnvironment));
 renderManifestRegistry.setDefaultEnvironment(birchForestEnvironment.id);
-renderManifestRegistry.registerFloatingText(playerDamageTextManifest);
-renderManifestRegistry.registerFloatingText(enemyDamageTextManifest);
+renderManifestRegistry.registerFloatingText(parseFloatingTextRenderManifest(playerDamageTextManifest));
+renderManifestRegistry.registerFloatingText(parseFloatingTextRenderManifest(enemyDamageTextManifest));
 renderManifestRegistry.setDefaultFloatingText("player", playerDamageTextManifest.id);
 renderManifestRegistry.setDefaultFloatingText("enemy", enemyDamageTextManifest.id);
-renderManifestRegistry.registerWorldHud(worldHudManifest);
+renderManifestRegistry.registerWorldHud(parseWorldHudRenderManifest(worldHudManifest));
 renderManifestRegistry.setDefaultWorldHud(worldHudManifest.id);
-renderManifestRegistry.registerWorldStatus(worldStatusManifest);
+renderManifestRegistry.registerWorldStatus(parseWorldStatusRenderManifest(worldStatusManifest));
 renderManifestRegistry.setDefaultWorldStatus(worldStatusManifest.id);
