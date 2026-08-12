@@ -55,6 +55,26 @@ export function requireNumber(
   return value;
 }
 
+function optionalNumber(
+  record: Record<string, unknown>,
+  key: string,
+  context: string,
+): number | undefined {
+  const value = record[key];
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(
+      `${context}.${key} doit être un nombre fini`,
+    );
+  }
+
+  return value;
+}
+
 export function parseDisplay(
   value: unknown,
   context: string,
@@ -215,6 +235,39 @@ export function parseActorRenderManifest(
     ]),
   ) as unknown as ActorRenderManifest["animations"];
 
+  const deathPose = poses["death"];
+
+  const deathFrameWidth = optionalNumber(
+    deathPose,
+    "frameWidth",
+    "poses.death",
+  );
+  const deathFrameHeight = optionalNumber(
+    deathPose,
+    "frameHeight",
+    "poses.death",
+  );
+  const deathStartFrame = optionalNumber(
+    deathPose,
+    "startFrame",
+    "poses.death",
+  );
+  const deathEndFrame = optionalNumber(
+    deathPose,
+    "endFrame",
+    "poses.death",
+  );
+  const deathFrameRate = optionalNumber(
+    deathPose,
+    "frameRate",
+    "poses.death",
+  );
+  const deathRepeat = optionalNumber(
+    deathPose,
+    "repeat",
+    "poses.death",
+  );
+
   return {
     schemaVersion: 1,
     id: requireString(value, "id", "manifest"),
@@ -235,19 +288,37 @@ export function parseActorRenderManifest(
     poses: {
       death: {
         textureKey: requireString(
-          poses["death"],
+          deathPose,
           "textureKey",
           "poses.death",
         ),
         assetPath: requireString(
-          poses["death"],
+          deathPose,
           "assetPath",
           "poses.death",
         ),
         display: parseDisplay(
-          poses["death"]["display"],
+          deathPose["display"],
           "poses.death.display",
         ),
+        ...(deathFrameWidth === undefined
+          ? {}
+          : { frameWidth: deathFrameWidth }),
+        ...(deathFrameHeight === undefined
+          ? {}
+          : { frameHeight: deathFrameHeight }),
+        ...(deathStartFrame === undefined
+          ? {}
+          : { startFrame: deathStartFrame }),
+        ...(deathEndFrame === undefined
+          ? {}
+          : { endFrame: deathEndFrame }),
+        ...(deathFrameRate === undefined
+          ? {}
+          : { frameRate: deathFrameRate }),
+        ...(deathRepeat === undefined
+          ? {}
+          : { repeat: deathRepeat }),
       },
     },
 

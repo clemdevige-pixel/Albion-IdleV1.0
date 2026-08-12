@@ -20,3 +20,22 @@ describe("parseRenderManifest", () => {
     ).toThrow("Unsupported render manifest kind");
   });
 });
+
+import daggerPairManifest from "./manifests/hero-dagger-pair.render.json";
+
+describe("Dagger Pair death pose parsing", () => {
+  it("preserves animated death metadata from the manifest", () => {
+    const parsed = parseRenderManifest(daggerPairManifest);
+
+    if (parsed.kind !== "actor") {
+      throw new Error("Expected actor manifest");
+    }
+
+    expect(parsed.poses.death.frameWidth).toBe(512);
+    expect(parsed.poses.death.frameHeight).toBe(512);
+    expect(parsed.poses.death.startFrame).toBe(0);
+    expect(parsed.poses.death.endFrame).toBe(5);
+    expect(parsed.poses.death.frameRate).toBe(8);
+    expect(parsed.poses.death.repeat).toBe(0);
+  });
+});

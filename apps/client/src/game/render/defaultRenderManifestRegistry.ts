@@ -1,4 +1,3 @@
-import heroDaggerPairManifest from "./manifests/hero-dagger-pair.render.json";
 import { RenderManifestRegistry } from "./RenderManifestRegistry";
 import { parseRenderManifest } from "./RenderManifestParsing";
 
@@ -49,24 +48,6 @@ for (const rawManifest of Object.values(rawManifestModules)) {
       break;
   }
 }
-
-/**
- * Historical compatibility patch.
- * Removed separately during P3 once death-pose animation metadata
- * is preserved directly by the actor manifest parser.
- */
-const heroDaggerPair = renderManifestRegistry.requireActor(
-  heroDaggerPairManifest.id,
-);
-
-Object.assign(heroDaggerPair.poses.death, {
-  frameWidth: heroDaggerPairManifest.poses.death.frameWidth,
-  frameHeight: heroDaggerPairManifest.poses.death.frameHeight,
-  startFrame: heroDaggerPairManifest.poses.death.startFrame,
-  endFrame: heroDaggerPairManifest.poses.death.endFrame,
-  frameRate: heroDaggerPairManifest.poses.death.frameRate,
-  repeat: heroDaggerPairManifest.poses.death.repeat,
-});
 
 renderManifestRegistry.setDefaultActor("hero_broadsword");
 renderManifestRegistry.setDefaultStaticActor("monster_undead_warrior");
