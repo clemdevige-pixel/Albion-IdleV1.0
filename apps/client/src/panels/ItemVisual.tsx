@@ -21,6 +21,12 @@ interface ConsumableVisualDefinition {
   readonly icon: string;
 }
 
+interface SymbolVisualDefinition {
+  readonly name: string;
+  readonly symbol: string;
+  readonly className: string;
+}
+
 const NON_WEAPON_ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = {
   item_leather_armor: { name: "Armure de cuir", icon: "item-leather-armor-pixel-v1.png", tier: 3, slot: "chest", stats: { stat_armor: 8, stat_max_health: 50 } },
   item_wooden_shield: { name: "Bouclier en bois", icon: "item-wooden-shield-pixel-v1.png", tier: 3, slot: "off_hand", stats: { stat_armor: 5, stat_magic_resistance: 3 } },
@@ -50,6 +56,46 @@ const ENCHANTMENT_RESOURCE_VISUALS: Readonly<Record<string, { readonly name: str
   item_resource_arcane_crystal: { name: "Cristal arcanique", symbol: "◆" },
   item_resource_enchantment_catalyst: { name: "Catalyseur d’enchantement", symbol: "⬢" },
 };
+
+const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
+  animal: "Animal",
+  generic: "Générique",
+  heretic: "Hérétique",
+  keeper: "Keeper",
+  morgana: "Morgana",
+  undead: "Mort-vivant",
+};
+
+function formatFactionName(factionId: string): string {
+  return FACTION_DISPLAY_NAMES[factionId]
+    ?? factionId
+      .split("_")
+      .filter((part) => part.length > 0)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+      .join(" ");
+}
+
+function getBlueZoneSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
+  const definitions = [
+    { prefix: "item_resource_artifact_fragment_", label: "Fragment d’artefact", symbol: "◈", className: "artifact-fragment" },
+    { prefix: "item_resource_artifact_", label: "Artefact", symbol: "✺", className: "artifact" },
+    { prefix: "item_resource_dungeon_key_", label: "Clé de donjon", symbol: "⚿", className: "dungeon-key" },
+    { prefix: "item_resource_key_fragment_", label: "Fragment de clé", symbol: "⌁", className: "key-fragment" },
+  ] as const;
+
+  for (const definition of definitions) {
+    if (!itemId.startsWith(definition.prefix)) continue;
+    const factionId = itemId.slice(definition.prefix.length);
+    if (factionId.length === 0) return undefined;
+    return {
+      name: `${definition.label} · ${formatFactionName(factionId)}`,
+      symbol: definition.symbol,
+      className: definition.className,
+    };
+  }
+
+  return undefined;
+}
 
 function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefined {
   const equipment = WEAPON_ITEM_DEFINITIONS[itemId];
@@ -89,6 +135,7 @@ export function getItemDisplayName(itemId: string): string {
     ?? CONSUMABLE_VISUALS[itemId]?.name
     ?? RESOURCE_VISUALS[itemId]?.name
     ?? ENCHANTMENT_RESOURCE_VISUALS[itemId]?.name
+    ?? getBlueZoneSpecialLootVisual(itemId)?.name
     ?? itemId.replace("item_", "").replace(/_/g, " ");
 }
 
@@ -103,8 +150,12 @@ export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element
   const visual = getItemDefinition(itemId) ?? CONSUMABLE_VISUALS[itemId];
   const resource = RESOURCE_VISUALS[itemId];
   const enchantmentResource = ENCHANTMENT_RESOURCE_VISUALS[itemId];
+  const specialLoot = getBlueZoneSpecialLootVisual(itemId);
   if (enchantmentResource !== undefined) {
     return <span className="item-visual__fallback item-visual__fallback--enchantment" aria-label={enchantmentResource.name}>{enchantmentResource.symbol}</span>;
+  }
+  if (specialLoot !== undefined) {
+    return <span className={`item-visual__fallback item-visual__fallback--${specialLoot.className}`} aria-label={specialLoot.name}>{specialLoot.symbol}</span>;
   }
   if (resource !== undefined) {
     return <img className="item-visual__image item-visual__image--resource" src={`/assets/resources/${resource.icon}`} alt={resource.name} draggable={false} />;
