@@ -138,6 +138,14 @@ export class CombatPresentationController {
   }
 
   private updateEnemy(bridge: GameBridge): void {
+    // When combat is intentionally paused after a completed segment, the last
+    // defeated encounter remains the bridge's most recent enemy presentation.
+    // Hide that defeated actor/HUD instead of leaving a 0 HP boss standing on
+    // screen until combat resumes and a new encounter is spawned.
+    const showEnemy = !(bridge.combatState === "idle" && bridge.enemyHealth <= 0);
+    this.setEnemyVisible(showEnemy);
+    if (!showEnemy) return;
+
     this.enemySystem.update({
       visualManifestId: bridge.enemyVisualManifestId,
       isBoss: bridge.world.encounterType === "boss",
