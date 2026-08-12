@@ -51,6 +51,35 @@ export interface SpawnedEnemyResult {
   readonly monsterDefinitionId: string;
 }
 
+/**
+ * Keeps the pre-polish enemy damage budget stable when authored abilities are
+ * executed in addition to auto attacks.
+ *
+ * Before Combat Identity, expected raw DPS is `profileDamage * attackSpeed`.
+ * With abilities, both auto attacks and abilities use the same adjusted damage
+ * stat. Solving
+ *
+ *   adjusted * (attackSpeed + sum(multiplier / cooldown)) = old DPS
+ *
+ * gives an adjusted base damage that preserves the previous long-run budget.
+ * This deliberately changes delivery/timing, not progression difficulty.
+ */
+export function calculateAbilityBudgetedEnemyDamage(
+  profileDamage: number,
+  attackSpeed: number,
+  abilities: readonly { readonly cooldown: number; readonly damageMultiplier: number }[],
+): number {
+  if (profileDamage <= 0 || attackSpeed <= 0 || abilities.length === 0) {
+    return profileDamage;
+  }
+  const abilityPressure = abilities.reduce((total, ability) => {
+    if (ability.cooldown <= 0 || ability.damageMultiplier <= 0) return total;
+    return total + (ability.damageMultiplier / ability.cooldown);
+  }, 0);
+  if (abilityPressure <= 0) return profileDamage;
+  return profileDamage * attackSpeed / (attackSpeed + abilityPressure);
+}
+
 export function setupCombatEntity(
   deps: CombatEntityFactoryDependencies,
   baseStats: {
@@ -113,7 +142,12 @@ export function spawnEnemyForSegment(
     ctx.encounterIndex,
   );
   const maxHealth = profile.hp;
-  const damage = profile.damage;
+  const runtimeAbilities = buildMonsterRuntimeAbilities(monster.category, monster.abilityIds);
+  const damage = calculateAbilityBudgetedEnemyDamage(
+    profile.damage,
+    profile.attackSpeed,
+    runtimeAbilities,
+  );
   const armor = profile.armor;
   const magicResistance = profile.magicResistance;
   const physicalDamage = monster.combat.damageType === "physical" ? damage : 0;
@@ -133,7 +167,7 @@ export function spawnEnemyForSegment(
   );
   setActiveMonsterIdentity(enemyId, monster.id);
 
-  for (const ability of buildMonsterRuntimeAbilities(monster.category, monster.abilityIds)) {
+  for (const ability of runtimeAbilities) {
     deps.abilityManager.learnAbility(enemyId, ability);
   }
 
