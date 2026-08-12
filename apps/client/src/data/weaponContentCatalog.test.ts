@@ -5,6 +5,8 @@ import {
   WEAPON_MASTERY_DEFINITIONS,
   getWeaponFamilyDisplayName,
   resolvePrimaryAbilityId,
+  resolveUnlockedWeaponAbilities,
+  resolveWeaponAbilityUnlocks,
   resolveWeaponAttackSpeed,
   resolveWeaponCombatProfile,
   resolveWeaponFamilyId,
@@ -39,6 +41,19 @@ describe("weapon content catalog", () => {
     }
   });
 
+  it("authors weapon abilities as mastery-gated data", () => {
+    for (const expected of EXPECTED_WEAPONS) {
+      const unlocks = resolveWeaponAbilityUnlocks(expected.itemId);
+      expect(unlocks.length).toBeGreaterThan(0);
+      expect(unlocks[0]).toMatchObject({
+        unlockMasteryLevel: 1,
+        ability: { id: expected.abilityId },
+      });
+      expect(resolveUnlockedWeaponAbilities(expected.itemId, 0)).toEqual([]);
+      expect(resolveUnlockedWeaponAbilities(expected.itemId, 1).map((ability) => ability.id)).toContain(expected.abilityId);
+    }
+  });
+
   it("authors each weapon family once", () => {
     expect(WEAPON_FAMILIES.sword).toEqual({ masteryId: "mastery_sword", name: "Épées" });
     expect(WEAPON_FAMILIES.bow).toEqual({ masteryId: "mastery_bow", name: "Arcs" });
@@ -69,6 +84,8 @@ describe("weapon content catalog", () => {
 
   it("does not infer unknown weapons from item-id naming conventions", () => {
     expect(resolvePrimaryAbilityId("item_weapon_sword_t9_fake")).toBeUndefined();
+    expect(resolveWeaponAbilityUnlocks("item_weapon_sword_t9_fake")).toEqual([]);
+    expect(resolveUnlockedWeaponAbilities("item_weapon_sword_t9_fake", 100)).toEqual([]);
     expect(resolveWeaponFamilyId("item_weapon_sword_t9_fake")).toBeUndefined();
     expect(resolveWeaponMastery("item_weapon_bow_t9_fake")).toBeUndefined();
     expect(resolveWeaponTier("item_weapon_staff_t9_fake")).toBeUndefined();
