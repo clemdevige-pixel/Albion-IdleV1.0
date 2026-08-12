@@ -58,7 +58,7 @@ export class VfxSystem {
         .circle(sourceX - 18, y - 34, lich ? 9 : 5, lich ? 0x8f5cff : 0xc8d7e8, lich ? 0.85 : 0.75)
         .setStrokeStyle(1, lich ? 0xd7b8ff : 0xffffff, 0.9)
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setDepth(8);
+        .setDepth(12);
       this.activeObjects.add(orb);
       const tween = this.scene.tweens.add({
         targets: orb,
@@ -66,11 +66,11 @@ export class VfxSystem {
         y: y - 20,
         alpha: 0.15,
         scale: lich ? 1.5 : 1.15,
-        duration: lich ? 260 : 180,
+        duration: lich ? 300 : 220,
         ease: "Quad.In",
         onComplete: () => {
           this.destroyTransient(orb, tween);
-          this.presentEnemyImpact(targetX, y - 20, lich ? 0x8f5cff : 0xc8d7e8, lich ? 18 : 11);
+          this.presentEnemyImpact(targetX, y - 20, lich ? 0x8f5cff : 0xc8d7e8, lich ? 22 : 14);
         },
       });
       this.activeTweens.add(tween);
@@ -78,40 +78,82 @@ export class VfxSystem {
     }
 
     if (style === "undead_spectral") {
+      const glow = this.scene.add
+        .circle(targetX, y - 24, 24, 0x72e5d1, 0.18)
+        .setStrokeStyle(3, 0xa8fff1, 0.95)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(12);
       const slash = this.scene.add
-        .ellipse(targetX, y - 22, 16, 54, 0x72e5d1, 0.35)
+        .ellipse(targetX, y - 24, 24, 76, 0x72e5d1, 0.72)
+        .setStrokeStyle(2, 0xd8fff8, 1)
         .setAngle(-38)
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setDepth(8);
+        .setDepth(13);
+      this.activeObjects.add(glow);
       this.activeObjects.add(slash);
-      const tween = this.scene.tweens.add({
+
+      const glowTween = this.scene.tweens.add({
+        targets: glow,
+        scale: 1.7,
+        alpha: 0,
+        duration: 340,
+        ease: "Cubic.Out",
+        onComplete: () => this.destroyTransient(glow, glowTween),
+      });
+      const slashTween = this.scene.tweens.add({
         targets: slash,
-        scaleX: 2.2,
+        scaleX: 2.6,
         scaleY: 1.25,
         alpha: 0,
-        duration: 180,
+        duration: 320,
         ease: "Cubic.Out",
-        onComplete: () => this.destroyTransient(slash, tween),
+        onComplete: () => {
+          this.destroyTransient(slash, slashTween);
+          this.presentEnemyImpact(targetX, y - 24, 0x72e5d1, 24);
+        },
       });
-      this.activeTweens.add(tween);
+      this.activeTweens.add(glowTween);
+      this.activeTweens.add(slashTween);
       return;
     }
 
-    const slash = this.scene.add
-      .rectangle(targetX, y - 22, 5, 42, 0xe8edf2, 0.6)
+    const impactY = y - 24;
+    const arc = this.scene.add
+      .ellipse(targetX, impactY, 18, 68, 0xf4f7fb, 0.72)
+      .setStrokeStyle(2, 0xffffff, 1)
       .setAngle(-42)
       .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(8);
-    this.activeObjects.add(slash);
-    const tween = this.scene.tweens.add({
-      targets: slash,
-      scaleY: 1.35,
+      .setDepth(13);
+    const flash = this.scene.add
+      .circle(targetX, impactY, 18, 0xffffff, 0.16)
+      .setStrokeStyle(2, 0xe8edf2, 0.9)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(12);
+    this.activeObjects.add(arc);
+    this.activeObjects.add(flash);
+
+    const arcTween = this.scene.tweens.add({
+      targets: arc,
+      scaleX: 2.3,
+      scaleY: 1.2,
       alpha: 0,
-      duration: 120,
-      ease: "Quad.Out",
-      onComplete: () => this.destroyTransient(slash, tween),
+      duration: 280,
+      ease: "Cubic.Out",
+      onComplete: () => {
+        this.destroyTransient(arc, arcTween);
+        this.presentEnemyImpact(targetX, impactY, 0xe8edf2, 18);
+      },
     });
-    this.activeTweens.add(tween);
+    const flashTween = this.scene.tweens.add({
+      targets: flash,
+      scale: 1.8,
+      alpha: 0,
+      duration: 300,
+      ease: "Quad.Out",
+      onComplete: () => this.destroyTransient(flash, flashTween),
+    });
+    this.activeTweens.add(arcTween);
+    this.activeTweens.add(flashTween);
   }
 
   public clear(): void {
@@ -123,16 +165,16 @@ export class VfxSystem {
 
   private presentEnemyImpact(x: number, y: number, color: number, radius: number): void {
     const burst = this.scene.add
-      .circle(x, y, radius, color, 0.22)
-      .setStrokeStyle(2, color, 0.8)
+      .circle(x, y, radius, color, 0.28)
+      .setStrokeStyle(3, color, 0.95)
       .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(8);
+      .setDepth(14);
     this.activeObjects.add(burst);
     const tween = this.scene.tweens.add({
       targets: burst,
-      scale: 1.8,
+      scale: 1.9,
       alpha: 0,
-      duration: 160,
+      duration: 240,
       ease: "Cubic.Out",
       onComplete: () => this.destroyTransient(burst, tween),
     });
