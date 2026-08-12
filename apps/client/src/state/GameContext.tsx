@@ -48,8 +48,6 @@ export { useGameBridge, useGameServices } from "./GameServicesContext.js";
 
 export const HERO_BASE_ATTACK_SPEED = 1.2;
 
-// -- Constants -------------------------------------------------------------
-
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;
 
@@ -60,7 +58,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     let tickCounter = 0;
     let productionTier: ProductionTier = 3;
 
-    // --- Framework-agnostic combat foundation --------------------------------
     const {
       world,
       statsManager,
@@ -99,7 +96,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       },
     });
 
-    // --- Currency & Economy setup (early Ã¢â‚¬â€ RepairService needs it) ---------------
     const {
       currencyService,
       playerId,
@@ -110,7 +106,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       economyTransactionService,
     } = createEconomyFoundation({ inventoryManager, equipmentManager });
 
-    // --- World systems ---------------------------------------------------------
     const worldFoundation = createWorldFoundation();
     const {
       biomeResolver,
@@ -134,7 +129,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       abilityManager,
     };
 
-    // --- Create hero ----------------------------------------------------------
     const heroId = setupCombatEntity(
       combatEntityFactoryDeps,
       { maxHealth: 500, physDamage: 0, attackSpeed: 1.2, armor: 10, magicRes: 5 },
@@ -154,7 +148,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       walletId,
     });
 
-    // --- Gathering vertical slice ---------------------------------------------
     const productionFoundation = createProductionFoundation({
       inventoryManager,
       masteryService,
@@ -236,7 +229,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     });
     bridgeSyncCoordinator.syncInitialState();
 
-    // --- Persistence setup -------------------------------------------------------
     const persistence = new RuntimePersistence({
       inventoryManager,
       world,
@@ -283,7 +275,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const exportSave = (): string => saveGameActions.exportSave();
     const importSave = (raw: string): boolean => saveGameActions.importSave(raw);
 
-    // --- Start combat runtime --------------------------------------------------
     const combatRuntime = new CombatRuntime({
       world,
       heroId,
@@ -297,6 +288,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       effectManager,
       statsManager,
       equipmentManager,
+      masteryService,
       biomeResolver,
       ports: {
         onVictory: () => {
@@ -378,8 +370,9 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
     const initialCombat = combatRuntime.initialize();
     combatBridgeAdapter.presentInitialCombat(initialCombat);
 
-    const usePrimaryAbility = (): boolean =>
-      combatBridgeAdapter.usePrimaryAbility();
+    const useWeaponAbility = (slotIndex: number): boolean =>
+      combatBridgeAdapter.useWeaponAbility(slotIndex);
+    const usePrimaryAbility = (): boolean => useWeaponAbility(0);
     const setPrimaryAbilityAutoCast = (enabled: boolean): void => {
       combatBridgeAdapter.setPrimaryAbilityAutoCast(enabled);
     };
@@ -391,7 +384,6 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       heroId,
     });
 
-    // --- Combat tick function (started in useEffect to survive StrictMode) ----
     const TICK_INTERVAL = 500;
     const DT = 0.5;
     const syncConsumables = (): void => {
@@ -465,6 +457,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       statsManager, currencyService, economyTransactionService, vendorRegistry,
       walletId, playerId, worldCoordinator,
       useConsumable: (itemId) => consumableActions.use(itemId),
+      useWeaponAbility,
       usePrimaryAbility,
       setPrimaryAbilityAutoCast,
       resumeExploration: () => worldNavigationActions.resumeExploration(),
