@@ -58,7 +58,8 @@ export type EquipmentFailureReason =
   | "invalid_quantity"
   | "two_handed_conflict"
   | "slot_empty"
-  | "inventory_full";
+  | "inventory_full"
+  | "equipment_locked";
 
 export type EquipmentResult<T> =
   | { readonly ok: true; readonly value: T }
