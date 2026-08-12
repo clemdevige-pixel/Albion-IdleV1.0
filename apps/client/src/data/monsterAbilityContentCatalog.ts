@@ -21,7 +21,6 @@ export const MONSTER_CATEGORY_BEHAVIORS: Readonly<Record<MonsterCategory, Monste
 
 export const MONSTER_ABILITY_IDS = {
   undeadHeavySlash: "monster_ability_undead_heavy_slash",
-  runeGolemCrushingBlow: "monster_ability_rune_golem_crushing_blow",
   undeadPiercingShot: "monster_ability_undead_piercing_shot",
   spectralKnightSoulCleave: "monster_ability_spectral_knight_soul_cleave",
   spectralKnightPhantomStrike: "monster_ability_spectral_knight_phantom_strike",
@@ -38,6 +37,12 @@ export const MONSTER_ABILITY_IDS = {
   keeperChampionStoneGuard: "monster_ability_keeper_champion_stone_guard",
   keeperAncientSpiritBurst: "monster_ability_keeper_ancient_spirit_burst",
   keeperAncientPrimalCrush: "monster_ability_keeper_ancient_primal_crush",
+  hereticThugDirtyStrike: "monster_ability_heretic_thug_dirty_strike",
+  hereticFirestarterFirebomb: "monster_ability_heretic_firestarter_firebomb",
+  hereticEnforcerHeavySmash: "monster_ability_heretic_enforcer_heavy_smash",
+  hereticEnforcerRush: "monster_ability_heretic_enforcer_rush",
+  hereticMadmenWildSwing: "monster_ability_heretic_madmen_wild_swing",
+  hereticMadmenPowderBlast: "monster_ability_heretic_madmen_powder_blast",
 } as const;
 
 const ability = (id: string, name: string, cooldown: number, damageType: DamageType, damageMultiplier: number, interruptible = false): MonsterAbilityDefinition => ({
@@ -47,7 +52,6 @@ const ability = (id: string, name: string, cooldown: number, damageType: DamageT
 
 export const MONSTER_ABILITIES: Readonly<Record<string, MonsterAbilityDefinition>> = {
   [MONSTER_ABILITY_IDS.undeadHeavySlash]: ability(MONSTER_ABILITY_IDS.undeadHeavySlash, "Heavy Slash", 10, "physical", 1.35),
-  [MONSTER_ABILITY_IDS.runeGolemCrushingBlow]: ability(MONSTER_ABILITY_IDS.runeGolemCrushingBlow, "Crushing Blow", 12, "physical", 1.6),
   [MONSTER_ABILITY_IDS.undeadPiercingShot]: ability(MONSTER_ABILITY_IDS.undeadPiercingShot, "Flèche perforante", 9, "physical", 1.2, true),
   [MONSTER_ABILITY_IDS.spectralKnightSoulCleave]: ability(MONSTER_ABILITY_IDS.spectralKnightSoulCleave, "Entaille spectrale", 9, "physical", 1.5),
   [MONSTER_ABILITY_IDS.spectralKnightPhantomStrike]: ability(MONSTER_ABILITY_IDS.spectralKnightPhantomStrike, "Frappe fantôme", 6, "physical", 1.25),
@@ -64,6 +68,12 @@ export const MONSTER_ABILITIES: Readonly<Record<string, MonsterAbilityDefinition
   [MONSTER_ABILITY_IDS.keeperChampionStoneGuard]: ability(MONSTER_ABILITY_IDS.keeperChampionStoneGuard, "Frappe tellurique", 6, "physical", 1.3),
   [MONSTER_ABILITY_IDS.keeperAncientSpiritBurst]: ability(MONSTER_ABILITY_IDS.keeperAncientSpiritBurst, "Déchaînement spirituel", 8, "magical", 1.5, true),
   [MONSTER_ABILITY_IDS.keeperAncientPrimalCrush]: ability(MONSTER_ABILITY_IDS.keeperAncientPrimalCrush, "Écrasement primordial", 14, "physical", 1.85),
+  [MONSTER_ABILITY_IDS.hereticThugDirtyStrike]: ability(MONSTER_ABILITY_IDS.hereticThugDirtyStrike, "Coup vicieux", 9, "physical", 1.2),
+  [MONSTER_ABILITY_IDS.hereticFirestarterFirebomb]: ability(MONSTER_ABILITY_IDS.hereticFirestarterFirebomb, "Bombe incendiaire", 9, "magical", 1.25, true),
+  [MONSTER_ABILITY_IDS.hereticEnforcerHeavySmash]: ability(MONSTER_ABILITY_IDS.hereticEnforcerHeavySmash, "Fracassement lourd", 9, "physical", 1.55),
+  [MONSTER_ABILITY_IDS.hereticEnforcerRush]: ability(MONSTER_ABILITY_IDS.hereticEnforcerRush, "Ruée brutale", 6, "physical", 1.3),
+  [MONSTER_ABILITY_IDS.hereticMadmenWildSwing]: ability(MONSTER_ABILITY_IDS.hereticMadmenWildSwing, "Frappe démente", 8, "physical", 1.5),
+  [MONSTER_ABILITY_IDS.hereticMadmenPowderBlast]: ability(MONSTER_ABILITY_IDS.hereticMadmenPowderBlast, "Explosion de poudre", 14, "physical", 1.8, true),
 };
 
 export function getMonsterAbilityDefinition(id: string): MonsterAbilityDefinition {
