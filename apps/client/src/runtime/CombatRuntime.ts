@@ -155,6 +155,14 @@ export class CombatRuntime {
     return result !== null;
   }
 
+  private useNextReadyHeroAbility(): boolean {
+    const unlockedAbilities = this.getUnlockedHeroWeaponAbilities();
+    for (let slotIndex = 0; slotIndex < unlockedAbilities.length; slotIndex += 1) {
+      if (this.useWeaponAbility(slotIndex)) return true;
+    }
+    return false;
+  }
+
   public spawnEnemy(): SpawnedEnemyResult {
     const loc = this.ports.getLocationState();
     return spawnEnemyForSegment(this.combatEntityFactoryDeps, this.biomeResolver, { zoneIndex: loc.zoneIndex, segmentIndex: loc.segmentIndex, encounterIndex: loc.encounterIndex, zoneDefId: loc.zoneDefId, zoneName: loc.zoneName });
@@ -222,8 +230,10 @@ export class CombatRuntime {
     if (definition === undefined || !this.damageManager.isAlive(this.activeEnemyId)) return false;
     const execution = this.abilityManager.executeIntent({ entityId: this.heroId, abilityId: definition.id as AbilityId, primaryTarget: this.activeEnemyId, tick: this.currentTick });
     if (!execution.ok) return false;
-    this.autoAttackManager.stopAutoAttack(this.heroId);
-    this.autoAttackManager.startAutoAttack(this.heroId);
+
+    // Hero abilities are instant actions layered on top of the normal attack
+    // cadence. They must not restart AutoAttackManager, otherwise unlocking W/E
+    // can reduce real DPS by repeatedly delaying the next basic attack.
     const sourceStat = definition.damageType === "magical" ? STAT_MAGICAL_DAMAGE : STAT_PHYSICAL_DAMAGE;
     const sourceDamage = this.statsManager.getStat(this.heroId, sourceStat).computed;
     const result = this.damageManager.processDamage({ source: this.heroId, target: this.activeEnemyId, baseDamage: sourceDamage * definition.bonusDamageRatio, damageType: definition.damageType, source_type: "ability" });
@@ -257,10 +267,7 @@ export class CombatRuntime {
 
     this.abilityManager.tickAbilities(this.heroId, dt);
     this.abilityManager.tickAbilities(this.activeEnemyId, dt);
-    if (this.primaryAbilityAutoCast) {
-      const unlockedAbilities = this.getUnlockedHeroWeaponAbilities();
-      for (let slotIndex = 0; slotIndex < unlockedAbilities.length; slotIndex += 1) this.useWeaponAbility(slotIndex);
-    }
+    if (this.primaryAbilityAutoCast) this.useNextReadyHeroAbility();
     this.useReadyEnemyAbility();
     const tickResult = this.orchestrator.tick(dt);
     this.finalizeActiveEnemyDeath(tickCounter);
