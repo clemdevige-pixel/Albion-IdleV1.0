@@ -118,20 +118,23 @@ export class CombatPresentationSystem {
     graphics.setScale(definition.scale);
     graphics.lineStyle(definition.strokeWidth, definition.color, 0.95);
 
-    if (definition.kind === "slash") {
-      for (let layer = 0; layer < definition.layers; layer += 1) {
-        const offset = (layer - (definition.layers - 1) / 2) * 9;
-        graphics.lineBetween(-24 + offset, 25, 24 + offset, -25);
-      }
-    } else {
-      const radius = 22;
-      for (let layer = 0; layer < definition.layers; layer += 1) {
-        graphics.strokeCircle(0, 0, radius + layer * 7);
-      }
-      graphics.lineBetween(-30, 0, 30, 0);
-      graphics.lineBetween(0, -30, 0, 30);
-      graphics.lineBetween(-22, -22, 22, 22);
-      graphics.lineBetween(-22, 22, 22, -22);
+    switch (definition.kind) {
+      case "slash":
+        this.drawSlash(graphics, definition.layers);
+        break;
+      case "pierce":
+        this.drawPierce(graphics, definition.layers);
+        break;
+      case "storm":
+        this.drawStorm(graphics, definition.layers);
+        break;
+      case "shockwave":
+        this.drawShockwave(graphics, definition.layers);
+        break;
+      case "burst":
+      default:
+        this.drawBurst(graphics, definition.layers);
+        break;
     }
 
     this.scene.tweens.add({
@@ -143,6 +146,53 @@ export class CombatPresentationSystem {
       ease: "Quad.easeOut",
       onComplete: () => { graphics.destroy(); },
     });
+  }
+
+  private drawSlash(graphics: Phaser.GameObjects.Graphics, layers: number): void {
+    for (let layer = 0; layer < layers; layer += 1) {
+      const offset = (layer - (layers - 1) / 2) * 9;
+      graphics.lineBetween(-24 + offset, 25, 24 + offset, -25);
+    }
+  }
+
+  private drawBurst(graphics: Phaser.GameObjects.Graphics, layers: number): void {
+    const radius = 22;
+    for (let layer = 0; layer < layers; layer += 1) {
+      graphics.strokeCircle(0, 0, radius + layer * 7);
+    }
+    graphics.lineBetween(-30, 0, 30, 0);
+    graphics.lineBetween(0, -30, 0, 30);
+    graphics.lineBetween(-22, -22, 22, 22);
+    graphics.lineBetween(-22, 22, 22, -22);
+  }
+
+  private drawPierce(graphics: Phaser.GameObjects.Graphics, layers: number): void {
+    for (let layer = 0; layer < layers; layer += 1) {
+      const offset = (layer - (layers - 1) / 2) * 7;
+      graphics.lineBetween(-38, offset, 34, offset);
+      graphics.lineBetween(34, offset, 20, offset - 9);
+      graphics.lineBetween(34, offset, 20, offset + 9);
+    }
+  }
+
+  private drawStorm(graphics: Phaser.GameObjects.Graphics, layers: number): void {
+    for (let layer = 0; layer < layers; layer += 1) {
+      const radius = 18 + layer * 8;
+      graphics.strokeCircle(0, 0, radius);
+      const direction = layer % 2 === 0 ? 1 : -1;
+      graphics.lineBetween(-radius, -6 * direction, radius, 6 * direction);
+      graphics.lineBetween(-6 * direction, -radius, 6 * direction, radius);
+    }
+  }
+
+  private drawShockwave(graphics: Phaser.GameObjects.Graphics, layers: number): void {
+    for (let layer = 0; layer < layers; layer += 1) {
+      const radiusX = 25 + layer * 10;
+      const radiusY = 10 + layer * 4;
+      graphics.strokeEllipse(0, 15, radiusX * 2, radiusY * 2);
+    }
+    graphics.lineBetween(-22, 20, -10, 4);
+    graphics.lineBetween(22, 20, 10, 4);
   }
 
   private presentVictimReaction(
