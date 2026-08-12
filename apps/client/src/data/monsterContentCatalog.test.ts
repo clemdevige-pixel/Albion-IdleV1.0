@@ -73,6 +73,21 @@ describe("monsterContentCatalog", () => {
     expect(first.id).not.toBe(last.id);
   });
 
+  it("uses only implemented progression factions in every Blue Zone encounter", () => {
+    const progressionFactions = new Set(["Undead", "Morgana", "Heretic", "Keeper"]);
+    for (const pool of Object.values(ZONE_ENCOUNTER_POOLS)) {
+      for (const monsterId of [...pool.normal, pool.segmentBoss, pool.biomeBoss]) {
+        expect(progressionFactions.has(getMonsterDefinition(monsterId).faction)).toBe(true);
+      }
+    }
+  });
+
+  it("removes legacy prototype wolf, harpy and rune golem definitions", () => {
+    expect(Object.keys(MONSTER_DEFINITIONS)).not.toContain("monster_stonefang_wolf");
+    expect(Object.keys(MONSTER_DEFINITIONS)).not.toContain("monster_razorwing_harpy");
+    expect(Object.keys(MONSTER_DEFINITIONS)).not.toContain("boss_ancient_rune_golem");
+  });
+
   it("selects segment and biome bosses from explicit pool slots", () => {
     const zone = asZoneDefinitionId("zone_swamp_t3");
 
