@@ -30,19 +30,22 @@ interface CharacterEquipmentFoundationDependencies {
   readonly statsManager: StatsManager;
   readonly damageManager: DamageManager;
   readonly masteryService: MasteryService;
+  readonly canMutateEquipment?: (entityId: EntityId) => boolean;
   readonly onPlayerHealthChanged: (currentHealth: number, maxHealth: number) => void;
   readonly onStatsChanged: (entityId: EntityId) => void;
 }
 
 /**
  * Creates the authoritative inventory/equipment managers and their stat bridge.
- * UI callbacks are injected so this assembly remains independent from React.
+ * UI callbacks and mutation policy are injected so this assembly remains
+ * independent from React and from combat implementation details.
  */
 export function createCharacterEquipmentFoundation({
   world,
   statsManager,
   damageManager,
   masteryService,
+  canMutateEquipment,
   onPlayerHealthChanged,
   onStatsChanged,
 }: CharacterEquipmentFoundationDependencies) {
@@ -78,6 +81,7 @@ export function createCharacterEquipmentFoundation({
     inventoryManager,
     resolveEquipmentInfo,
     equipmentStatSync,
+    canMutateEquipment,
   );
 
   return {
