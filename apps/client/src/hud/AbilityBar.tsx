@@ -6,12 +6,13 @@ import {
   useCombatHudActions,
 } from "../ui/combat-hud/combatHudSelectors";
 
-const LOCKED_SLOTS = ["W", "E"] as const;
+const SHORTCUTS = ["Q", "W", "E"] as const;
 
 export function AbilityBar(): JSX.Element {
   const model = useAbilityBarUiModel();
   const actions = useCombatHudActions();
-  const ability = model.ability;
+  const abilities = model.abilities;
+  const primaryAbility = abilities[0];
   const potionCount = model.potionCount;
   const potionCooldown = model.potionCooldownRemaining;
   const potionCooldownRatio = model.potionCooldown <= 0
@@ -22,8 +23,8 @@ export function AbilityBar(): JSX.Element {
     if (potionCount > 0 && potionCooldown <= 0) actions.useHealthPotion();
   }, [actions, potionCount, potionCooldown]);
 
-  const usePrimaryAbility = useCallback(() => {
-    actions.usePrimaryAbility();
+  const useWeaponAbility = useCallback((slotIndex: number) => {
+    actions.useWeaponAbility(slotIndex);
   }, [actions]);
 
   useEffect(() => {
@@ -36,55 +37,69 @@ export function AbilityBar(): JSX.Element {
         || event.repeat
       ) return;
 
-      if (event.code === "KeyQ") usePrimaryAbility();
+      if (event.code === "KeyQ") useWeaponAbility(0);
+      if (event.code === "KeyW") useWeaponAbility(1);
+      if (event.code === "KeyE") useWeaponAbility(2);
       if (event.code === "Digit1") useHealthPotion();
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => { window.removeEventListener("keydown", onKeyDown); };
-  }, [useHealthPotion, usePrimaryAbility]);
-
-  const cooldownRatio = ability === null || ability.cooldown <= 0
-    ? 0
-    : Math.min(1, ability.cooldownRemaining / ability.cooldown);
+  }, [useHealthPotion, useWeaponAbility]);
 
   return (
     <section className="combat-controls" aria-label="Commandes de combat">
       <div className="combat-controls__abilities">
         <span className="combat-controls__label">Compétences</span>
         <div className="ability-bar__skills">
-          <button
-            type="button"
-            className={`ability-bar__slot ability-bar__slot--active${
-              ability?.isReady === true ? " ability-bar__slot--ready" : ""
-            }`}
-            aria-label={ability?.name ?? "Aucune capacité équipée"}
-            disabled={ability === null}
-            onClick={usePrimaryAbility}
-          >
-            <span className="ability-bar__key">Q</span>
-            <span className="ability-bar__ability-icon">{ability?.icon ?? "?"}</span>
-            {ability !== null && ability.cooldownRemaining > 0 && (
-              <span className="ability-bar__cooldown-number">
-                {ability.cooldownRemaining.toFixed(1)}
-              </span>
-            )}
-            <span
-              className="ability-bar__cooldown"
-              style={{ height: `${String(Math.round(cooldownRatio * 100))}%` }}
-            />
-            <div className="ability-tooltip" role="tooltip">
-              {ability === null ? (
-                <span className="ability-tooltip__empty">
-                  Équipez une arme pour obtenir une capacité.
-                </span>
-              ) : (
-                <>
+          {abilities.map((ability, slotIndex) => {
+            const shortcut = SHORTCUTS[slotIndex] ?? "Q";
+            const cooldownRatio = ability === null || ability.cooldown <= 0
+              ? 0
+              : Math.min(1, ability.cooldownRemaining / ability.cooldown);
+
+            if (ability === null) {
+              return (
+                <button
+                  key={shortcut}
+                  type="button"
+                  className="ability-bar__slot ability-bar__slot--locked"
+                  title={`Emplacement ${shortcut} non débloqué`}
+                  disabled
+                >
+                  <span className="ability-bar__key">{shortcut}</span>
+                  <span className="ability-bar__lock" aria-hidden="true">◆</span>
+                </button>
+              );
+            }
+
+            return (
+              <button
+                key={shortcut}
+                type="button"
+                className={`ability-bar__slot ability-bar__slot--active${
+                  ability.isReady ? " ability-bar__slot--ready" : ""
+                }`}
+                aria-label={ability.name}
+                onClick={() => { useWeaponAbility(slotIndex); }}
+              >
+                <span className="ability-bar__key">{shortcut}</span>
+                <span className="ability-bar__ability-icon">{ability.icon}</span>
+                {ability.cooldownRemaining > 0 && (
+                  <span className="ability-bar__cooldown-number">
+                    {ability.cooldownRemaining.toFixed(1)}
+                  </span>
+                )}
+                <span
+                  className="ability-bar__cooldown"
+                  style={{ height: `${String(Math.round(cooldownRatio * 100))}%` }}
+                />
+                <div className="ability-tooltip" role="tooltip">
                   <div className="ability-tooltip__header">
                     <span className="ability-tooltip__icon">{ability.icon}</span>
                     <div>
                       <strong>{ability.name}</strong>
-                      <span>Capacité active · Touche Q</span>
+                      <span>Capacité active · Touche {shortcut}</span>
                     </div>
                   </div>
                   <p>{ability.description}</p>
@@ -96,23 +111,10 @@ export function AbilityBar(): JSX.Element {
                   }`}>
                     {ability.autoCast ? "Activation automatique" : "Activation manuelle"}
                   </div>
-                </>
-              )}
-            </div>
-          </button>
-
-          {LOCKED_SLOTS.map((label) => (
-            <button
-              key={label}
-              type="button"
-              className="ability-bar__slot ability-bar__slot--locked"
-              title={`Emplacement ${label} non débloqué`}
-              disabled
-            >
-              <span className="ability-bar__key">{label}</span>
-              <span className="ability-bar__lock" aria-hidden="true">◆</span>
-            </button>
-          ))}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -120,10 +122,10 @@ export function AbilityBar(): JSX.Element {
         <span className="combat-controls__label">Tactique</span>
         <button
           type="button"
-          className={`ability-bar__auto${ability?.autoCast === true ? " ability-bar__auto--enabled" : ""}`}
-          title="Activer ou désactiver l’utilisation automatique de la capacité"
-          disabled={ability === null}
-          onClick={() => { actions.setPrimaryAbilityAutoCast(!(ability?.autoCast ?? false)); }}
+          className={`ability-bar__auto${primaryAbility?.autoCast === true ? " ability-bar__auto--enabled" : ""}`}
+          title="Activer ou désactiver l’utilisation automatique des compétences"
+          disabled={primaryAbility === null}
+          onClick={() => { actions.setPrimaryAbilityAutoCast(!(primaryAbility?.autoCast ?? false)); }}
         >
           <span>AUTO</span>
           <i aria-hidden="true" />
