@@ -1,8 +1,8 @@
 import type { EntityId } from "@game/core";
 import type { AbilityId, AbilityManager } from "@game/gameplay";
 import {
-  CLIENT_ABILITIES,
-  resolvePrimaryAbilityId,
+  resolveUnlockedWeaponAbilities,
+  resolveWeaponMastery,
 } from "../../data/weaponContentCatalog";
 import type { GameBridge } from "../../game/GameBridge";
 
@@ -13,11 +13,23 @@ export function syncAbilitiesToBridge(
   equippedWeaponId: string | undefined,
   isAutoCastEnabled: boolean,
 ): void {
-  const abilityId = resolvePrimaryAbilityId(equippedWeaponId);
-  const definition = abilityId === undefined ? undefined : CLIENT_ABILITIES[abilityId];
-  const entry = abilityId === undefined
+  const masteryRoute = equippedWeaponId === undefined
     ? undefined
-    : abilityManager.getAbility(heroId, abilityId as AbilityId);
+    : resolveWeaponMastery(equippedWeaponId);
+  const specializationMasteryLevel = masteryRoute === undefined
+    ? 0
+    : bridge.progression.masteries.find(
+        (mastery) => mastery.id === String(masteryRoute.weaponId),
+      )?.level ?? 0;
+
+  const definition = resolveUnlockedWeaponAbilities(
+    equippedWeaponId,
+    specializationMasteryLevel,
+  )[0];
+  const entry = definition === undefined
+    ? undefined
+    : abilityManager.getAbility(heroId, definition.id as AbilityId);
+
   bridge.updateAbilities({
     primary: definition === undefined || entry === undefined
       ? null
