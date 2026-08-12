@@ -4,6 +4,7 @@ import { InventoryManager } from "@game/gameplay";
 import { resolveItemStackInfo } from "../data/itemContentCatalog.js";
 import {
   isProductionMaterial,
+  isVisibleInventoryResource,
   migrateLegacyProductionMaterials,
 } from "./ProductionStorage.js";
 
@@ -41,5 +42,40 @@ describe("production storage migration", () => {
     expect(isProductionMaterial("item_resource_enchantment_essence")).toBe(false);
     expect(isProductionMaterial("item_resource_arcane_crystal")).toBe(false);
     expect(isProductionMaterial("item_resource_enchantment_catalyst")).toBe(false);
+  });
+
+  it("keeps faction key and artifact loot in the hero inventory during load migration", () => {
+    const factionLoot = [
+      "item_resource_key_fragment_morgana",
+      "item_resource_dungeon_key_morgana",
+      "item_resource_artifact_fragment_morgana",
+      "item_resource_artifact_morgana",
+      "item_resource_key_fragment_undead",
+      "item_resource_artifact_fragment_keeper",
+    ];
+
+    for (const itemId of factionLoot) {
+      expect(isVisibleInventoryResource(itemId)).toBe(true);
+      expect(isProductionMaterial(itemId)).toBe(false);
+    }
+
+    const world = new World(createRuntimeServices());
+    const heroId = world.createEntity();
+    const productionStorageId = world.createEntity();
+    const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
+    inventoryManager.createInventory(heroId, 12);
+    inventoryManager.createInventory(productionStorageId, 16);
+
+    inventoryManager.addQuantity(heroId, "item_resource_key_fragment_morgana", 17);
+    inventoryManager.addQuantity(heroId, "item_resource_artifact_fragment_morgana", 9);
+
+    expect(migrateLegacyProductionMaterials(
+      inventoryManager,
+      heroId,
+      productionStorageId,
+    )).toBe(0);
+    expect(inventoryManager.getTotalQuantity(heroId, "item_resource_key_fragment_morgana")).toBe(17);
+    expect(inventoryManager.getTotalQuantity(heroId, "item_resource_artifact_fragment_morgana")).toBe(9);
+    expect(inventoryManager.getTotalQuantity(productionStorageId, "item_resource_key_fragment_morgana")).toBe(0);
   });
 });
