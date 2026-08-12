@@ -2,6 +2,7 @@ import { ActivityJournal } from "../../hud/ActivityJournal";
 import { AbilityBar } from "../../hud/AbilityBar";
 import { HudRoot } from "../../hud/HudRoot";
 import { EconomyNotifications } from "../../panels/EconomyNotifications";
+import { CombatStopButton } from "./CombatStopButton";
 import "./combatHud.css";
 
 /**
@@ -16,6 +17,7 @@ export function CombatHudLayer(): JSX.Element {
         <ActivityJournal />
       </div>
       <div className="combat-hud-actions">
+        <CombatStopButton />
         <AbilityBar />
       </div>
       <EconomyNotifications />
