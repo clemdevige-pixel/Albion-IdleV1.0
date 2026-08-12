@@ -61,24 +61,24 @@ describe("buildCraftingModel", () => {
     ]);
   });
 
-  it("puts fragment conversions in the Autre category", () => {
+  it("splits Autre into Clé and Artefact families", () => {
     const model = buildCraftingModel({
       tier: 3,
       recipes: [
-        recipe("item_resource_dungeon_key_morgana", 3, "other"),
-        recipe("item_resource_artifact_morgana", 3, "other"),
+        recipe("item_resource_dungeon_key_morgana", 3, "other_key"),
+        recipe("item_resource_dungeon_key_undead", 3, "other_key"),
+        recipe("item_resource_artifact_morgana", 3, "other_artifact"),
       ],
     });
 
     const other = model.categories.find((category) => category.id === "other");
     expect(other?.label).toBe("Autre");
-    expect(other?.families).toHaveLength(1);
-    expect(other?.families[0]).toMatchObject({
-      id: "other",
-      label: "Conversions",
-      symbol: "◆",
-    });
+    expect(other?.families.map((family) => [family.id, family.label])).toEqual([
+      ["other_key", "Clé"],
+      ["other_artifact", "Artefact"],
+    ]);
     expect(other?.families[0]?.recipes).toHaveLength(2);
+    expect(other?.families[1]?.recipes).toHaveLength(1);
   });
 
   it("accepts a new family ID without changing GameBridge or craftingModels unions", () => {
