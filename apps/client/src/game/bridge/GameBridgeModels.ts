@@ -20,7 +20,7 @@ export interface CombatAbilityVM {
   readonly name: string;
   readonly description: string;
   readonly icon: string;
-  readonly shortcut: "Q";
+  readonly shortcut: "Q" | "W" | "E";
   readonly cooldown: number;
   readonly cooldownRemaining: number;
   readonly isReady: boolean;
@@ -29,6 +29,8 @@ export interface CombatAbilityVM {
 
 export interface CombatAbilitiesVM {
   readonly primary: CombatAbilityVM | null;
+  readonly secondary: CombatAbilityVM | null;
+  readonly ultimate: CombatAbilityVM | null;
 }
 
 export interface ConsumablesVM {
@@ -64,7 +66,7 @@ export interface EquipmentSlotVM {
   readonly enchantment: 0 | 1 | 2 | 3 | 4;
   readonly visualManifestId: string | undefined;
   readonly combatPresentationProfileId: string | undefined;
-readonly combatPresentation: WeaponCombatPresentationVM | undefined;
+  readonly combatPresentation: WeaponCombatPresentationVM | undefined;
 }
 
 export interface EquipmentVM {
@@ -381,7 +383,7 @@ export function createInitialGameBridgeState(): GameBridgeState {
     segmentFamePerHour: 0,
     damageNumbers: [],
     activeEffects: [],
-    abilities: { primary: null },
+    abilities: { primary: null, secondary: null, ultimate: null },
     consumables: {
       healthPotionCooldown: 20,
       healthPotionCooldownRemaining: 0,
