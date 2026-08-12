@@ -43,7 +43,7 @@ export interface GameServices {
   readonly playerId: PlayerId;
   readonly worldCoordinator: WorldCoordinator;
   readonly useConsumable: (itemId: string) => boolean;
-  readonly useWeaponAbility: (slotIndex: number) => boolean;
+  readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
   readonly usePrimaryAbility: () => boolean;
   readonly setPrimaryAbilityAutoCast: (enabled: boolean) => void;
