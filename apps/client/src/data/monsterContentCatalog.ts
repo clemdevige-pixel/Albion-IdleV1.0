@@ -9,26 +9,19 @@ export interface MonsterRewardDefinition { readonly lootTableId: string; }
 export interface MonsterContentDefinition { readonly id: string; readonly name: string; readonly faction: string; readonly category: MonsterCategory; readonly tier: 3 | 4; readonly visualManifestId: string; readonly combat: MonsterCombatModifiers; readonly rewards: MonsterRewardDefinition; readonly abilityIds: readonly string[]; readonly tags: readonly string[]; }
 export interface ZoneEncounterPool { readonly normal: readonly string[]; readonly segmentBoss: string; readonly biomeBoss: string; }
 
-const DEFAULT_COMBAT: MonsterCombatModifiers = { damageType: "physical" };
-const DEFAULT_REWARDS: MonsterRewardDefinition = { lootTableId: "loot_monster_generic" };
-
 export const MONSTER_IDS = {
-  stonefangWolf: "monster_stonefang_wolf", razorwingHarpy: "monster_razorwing_harpy",
   morganaWitch: "monster_morgana_witch", morganaSuppressor: "monster_morgana_suppressor", morganaDarkKnight: "monster_morgana_dark_knight", morganaHighPriestess: "boss_morgana_high_priestess",
-  undeadWarrior: "monster_undead_warrior", ancientRuneGolem: "boss_ancient_rune_golem", undeadSkeletonSwordsman: "monster_undead_skeleton_swordsman", undeadSkeletonArcher: "monster_undead_skeleton_archer", undeadSpectralKnight: "monster_undead_spectral_knight", undeadLich: "boss_undead_lich",
+  undeadWarrior: "monster_undead_warrior", undeadSkeletonSwordsman: "monster_undead_skeleton_swordsman", undeadSkeletonArcher: "monster_undead_skeleton_archer", undeadSpectralKnight: "monster_undead_spectral_knight", undeadLich: "boss_undead_lich",
   keeperWarrior: "monster_keeper_warrior", keeperShaman: "monster_keeper_shaman", keeperChampion: "monster_keeper_champion", keeperAncient: "boss_keeper_ancient",
   hereticThug: "monster_heretic_thug", hereticFirestarter: "monster_heretic_firestarter", hereticEnforcer: "monster_heretic_enforcer", hereticMadmen: "boss_heretic_madmen",
 } as const;
 
 export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefinition>> = {
-  [MONSTER_IDS.stonefangWolf]: { id: MONSTER_IDS.stonefangWolf, name: "Stonefang Wolf", faction: "Animal", category: "normal", tier: 3, visualManifestId: "monster_stonefang_wolf", combat: DEFAULT_COMBAT, rewards: DEFAULT_REWARDS, abilityIds: [], tags: ["beast", "roaming"] },
-  [MONSTER_IDS.razorwingHarpy]: { id: MONSTER_IDS.razorwingHarpy, name: "Razorwing Harpy", faction: "Keeper", category: "normal", tier: 3, visualManifestId: "monster_razorwing_harpy", combat: DEFAULT_COMBAT, rewards: DEFAULT_REWARDS, abilityIds: [], tags: ["harpy", "roaming"] },
   [MONSTER_IDS.morganaWitch]: { id: MONSTER_IDS.morganaWitch, name: "Morgana Witch", faction: "Morgana", category: "normal", tier: 3, visualManifestId: "monster_morgana_witch", combat: { damageType: "magical" }, rewards: { lootTableId: "loot_morgana_normal" }, abilityIds: [MONSTER_ABILITY_IDS.morganaWitchShadowBolt], tags: ["morgana", "caster", "ranged"] },
   [MONSTER_IDS.morganaSuppressor]: { id: MONSTER_IDS.morganaSuppressor, name: "Morgana Suppressor", faction: "Morgana", category: "normal", tier: 3, visualManifestId: "monster_morgana_suppressor", combat: { damageType: "physical" }, rewards: { lootTableId: "loot_morgana_normal" }, abilityIds: [MONSTER_ABILITY_IDS.morganaSuppressorBolt], tags: ["morgana", "ranged", "crossbow"] },
   [MONSTER_IDS.morganaDarkKnight]: { id: MONSTER_IDS.morganaDarkKnight, name: "Morgana Dark Knight", faction: "Morgana", category: "elite", tier: 3, visualManifestId: "monster_morgana_dark_knight", combat: { damageType: "physical" }, rewards: { lootTableId: "loot_morgana_elite" }, abilityIds: [MONSTER_ABILITY_IDS.morganaDarkKnightVoidCleave, MONSTER_ABILITY_IDS.morganaDarkKnightCrushingAdvance], tags: ["morgana", "elite", "melee", "segment_boss"] },
   [MONSTER_IDS.morganaHighPriestess]: { id: MONSTER_IDS.morganaHighPriestess, name: "Morgana High Priestess", faction: "Morgana", category: "boss", tier: 3, visualManifestId: "boss_morgana_high_priestess", combat: { damageType: "magical" }, rewards: { lootTableId: "loot_morgana_boss" }, abilityIds: [MONSTER_ABILITY_IDS.morganaHighPriestessDarkOrb, MONSTER_ABILITY_IDS.morganaHighPriestessRitualBlast], tags: ["morgana", "caster", "boss", "biome_boss"] },
-  [MONSTER_IDS.undeadWarrior]: { id: MONSTER_IDS.undeadWarrior, name: "Undead Warrior", faction: "Undead", category: "boss", tier: 3, visualManifestId: "monster_undead_warrior", combat: DEFAULT_COMBAT, rewards: { lootTableId: "loot_monster_undead_boss" }, abilityIds: [MONSTER_ABILITY_IDS.undeadHeavySlash], tags: ["undead", "segment_boss"] },
-  [MONSTER_IDS.ancientRuneGolem]: { id: MONSTER_IDS.ancientRuneGolem, name: "Ancient Rune Golem", faction: "Keeper", category: "boss", tier: 4, visualManifestId: "boss_ancient_rune_golem", combat: DEFAULT_COMBAT, rewards: { lootTableId: "loot_monster_keeper_boss" }, abilityIds: [MONSTER_ABILITY_IDS.runeGolemCrushingBlow], tags: ["golem", "biome_boss"] },
+  [MONSTER_IDS.undeadWarrior]: { id: MONSTER_IDS.undeadWarrior, name: "Undead Warrior", faction: "Undead", category: "boss", tier: 3, visualManifestId: "monster_undead_warrior", combat: { damageType: "physical" }, rewards: { lootTableId: "loot_monster_undead_boss" }, abilityIds: [MONSTER_ABILITY_IDS.undeadHeavySlash], tags: ["undead", "segment_boss"] },
   [MONSTER_IDS.undeadSkeletonSwordsman]: { id: MONSTER_IDS.undeadSkeletonSwordsman, name: "Squelette épéiste", faction: "Undead", category: "normal", tier: 3, visualManifestId: "monster_undead_skeleton_swordsman", combat: { damageType: "physical" }, rewards: { lootTableId: "loot_undead_normal" }, abilityIds: [], tags: ["undead", "skeleton", "melee"] },
   [MONSTER_IDS.undeadSkeletonArcher]: { id: MONSTER_IDS.undeadSkeletonArcher, name: "Squelette archer", faction: "Undead", category: "normal", tier: 3, visualManifestId: "monster_undead_skeleton_archer", combat: { damageType: "physical" }, rewards: { lootTableId: "loot_undead_normal" }, abilityIds: [MONSTER_ABILITY_IDS.undeadPiercingShot], tags: ["undead", "skeleton", "ranged"] },
   [MONSTER_IDS.undeadSpectralKnight]: { id: MONSTER_IDS.undeadSpectralKnight, name: "Chevalier spectral", faction: "Undead", category: "elite", tier: 3, visualManifestId: "monster_undead_spectral_knight", combat: { damageType: "physical" }, rewards: { lootTableId: "loot_undead_elite" }, abilityIds: [MONSTER_ABILITY_IDS.spectralKnightSoulCleave, MONSTER_ABILITY_IDS.spectralKnightPhantomStrike], tags: ["undead", "spectral", "elite", "segment_boss"] },
@@ -43,14 +36,16 @@ export const MONSTER_DEFINITIONS: Readonly<Record<string, MonsterContentDefiniti
   [MONSTER_IDS.hereticMadmen]: { id: MONSTER_IDS.hereticMadmen, name: "Heretic Madmen", faction: "Heretic", category: "boss", tier: 4, visualManifestId: "boss_heretic_madmen", combat: { damageType: "physical" }, rewards: { lootTableId: "loot_monster_generic" }, abilityIds: [], tags: ["heretic", "boss", "melee", "biome_boss"] },
 };
 
-const CURRENT_NORMAL_POOL = [MONSTER_IDS.stonefangWolf, MONSTER_IDS.razorwingHarpy, MONSTER_IDS.morganaWitch] as const;
 const UNDEAD_PILOT_NORMAL_POOL = [MONSTER_IDS.undeadSkeletonSwordsman, MONSTER_IDS.undeadSkeletonArcher] as const;
 const MORGANA_PILOT_NORMAL_POOL = [MONSTER_IDS.morganaWitch, MONSTER_IDS.morganaSuppressor] as const;
 const KEEPER_PILOT_NORMAL_POOL = [MONSTER_IDS.keeperWarrior, MONSTER_IDS.keeperShaman] as const;
 const HERETIC_PILOT_NORMAL_POOL = [MONSTER_IDS.hereticThug, MONSTER_IDS.hereticFirestarter] as const;
 
 export const ZONE_ENCOUNTER_POOLS: Readonly<Record<string, ZoneEncounterPool>> = {
-  zone_forest_t3: { normal: CURRENT_NORMAL_POOL, segmentBoss: MONSTER_IDS.undeadWarrior, biomeBoss: MONSTER_IDS.ancientRuneGolem },
+  // The original wolf/harpy/golem encounters were prototype content from before
+  // faction implementation. Zone 1 now uses the existing Undead roster end to
+  // end, so every combat reward resolves to a real faction progression item.
+  zone_forest_t3: { normal: UNDEAD_PILOT_NORMAL_POOL, segmentBoss: MONSTER_IDS.undeadSpectralKnight, biomeBoss: MONSTER_IDS.undeadLich },
   zone_swamp_t3: { normal: UNDEAD_PILOT_NORMAL_POOL, segmentBoss: MONSTER_IDS.undeadSpectralKnight, biomeBoss: MONSTER_IDS.undeadLich },
   zone_highland_t3: { normal: MORGANA_PILOT_NORMAL_POOL, segmentBoss: MONSTER_IDS.morganaDarkKnight, biomeBoss: MONSTER_IDS.morganaHighPriestess },
   zone_steppe_t4: { normal: HERETIC_PILOT_NORMAL_POOL, segmentBoss: MONSTER_IDS.hereticEnforcer, biomeBoss: MONSTER_IDS.hereticMadmen },
