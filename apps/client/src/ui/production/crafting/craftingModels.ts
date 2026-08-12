@@ -27,7 +27,8 @@ export interface CraftingModel {
 
 const NON_WEAPON_FAMILY_PRESENTATION: Readonly<Record<string, { readonly label: string; readonly symbol: string }>> = {
   offhand: { label: "Mains gauches", symbol: "◉" },
-  other: { label: "Conversions", symbol: "◆" },
+  other_key: { label: "Clé", symbol: "⚿" },
+  other_artifact: { label: "Artefact", symbol: "✺" },
 };
 
 const ARMOR_FAMILY_PRESENTATION: Readonly<Record<CraftingArmorFamilyId, { readonly label: string; readonly symbol: string }>> = {
@@ -73,9 +74,9 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
     categories: categories
       .map((category) => {
         const categoryRecipes = recipesForTier.filter((recipe) => {
-          if (category.id === "other") return recipe.family === "other";
+          if (category.id === "other") return recipe.family.startsWith("other_");
           if (category.id === "armors") return recipe.family === "armor";
-          return recipe.family !== "armor" && recipe.family !== "other";
+          return recipe.family !== "armor" && !recipe.family.startsWith("other_");
         });
         const familyIds: readonly CraftingFamilyId[] = category.id === "armors"
           ? (["armor_head", "armor_chest", "armor_boots"] as const).filter((id) =>
