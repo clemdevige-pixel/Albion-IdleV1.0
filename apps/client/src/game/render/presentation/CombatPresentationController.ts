@@ -8,7 +8,7 @@ import { DamageNumberSystem } from "../systems/DamageNumberSystem";
 import { EnemyPresentationSystem } from "../systems/EnemyPresentationSystem";
 import { HeroPresentationSystem } from "../systems/HeroPresentationSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
-import { VfxSystem } from "../systems/VfxSystem";
+import { VfxSystem, type EnemyVfxStyle } from "../systems/VfxSystem";
 import { WorldHudSystem } from "../systems/WorldHudSystem";
 import { PresentationDirector } from "./PresentationDirector";
 import { selectWeaponPresentation } from "./GamePresentationState";
@@ -176,8 +176,30 @@ export class CombatPresentationController {
   private updateDamageEvents(bridge: GameBridge): void {
     for (const event of bridge.damageNumbers) {
       if (event.id <= this.lastDamageEventId) continue;
+      if (event.target === "player") {
+        const style = this.resolveEnemyVfxStyle(bridge.enemyVisualManifestId);
+        if (style !== undefined) {
+          this.vfxSystem.presentEnemyAttack(
+            style,
+            this.enemyHomeX,
+            this.playerHomeX,
+            this.entityY,
+          );
+        }
+      }
       this.director.enqueueCombatEvent(event);
       this.lastDamageEventId = Math.max(this.lastDamageEventId, event.id);
     }
+  }
+
+  private resolveEnemyVfxStyle(visualManifestId: string): EnemyVfxStyle | undefined {
+    if (visualManifestId.includes("undead_skeleton_archer")) return "undead_ranged";
+    if (visualManifestId.includes("undead_spectral_knight")) return "undead_spectral";
+    if (visualManifestId.includes("undead_lich")) return "undead_lich";
+    if (
+      visualManifestId.includes("undead_skeleton_swordsman")
+      || visualManifestId.includes("undead_warrior")
+    ) return "undead_melee";
+    return undefined;
   }
 }
