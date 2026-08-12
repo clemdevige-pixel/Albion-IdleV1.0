@@ -44,11 +44,28 @@ export function CombatStopButton(): JSX.Element | null {
   return (
     <button
       type="button"
-      className={`combat-stop-button combat-stop-button--${state}`}
       onClick={handleClick}
       title={state === "running"
         ? "Le combat s'arrêtera après la fin du segment en cours."
         : undefined}
+      style={{
+        minWidth: 154,
+        height: 34,
+        padding: "0 14px",
+        border: "1px solid rgba(220, 190, 128, 0.55)",
+        borderRadius: 6,
+        background: state === "paused"
+          ? "rgba(55, 105, 72, 0.92)"
+          : state === "stop_requested"
+            ? "rgba(118, 82, 42, 0.92)"
+            : "rgba(80, 45, 42, 0.92)",
+        color: "#f4ead3",
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: "0.02em",
+        cursor: "pointer",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.28)",
+      }}
     >
       {label}
     </button>
