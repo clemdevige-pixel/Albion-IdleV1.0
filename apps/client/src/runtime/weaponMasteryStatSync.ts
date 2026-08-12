@@ -1,7 +1,7 @@
 import type { EntityId } from "@game/core";
 import type { EquipmentManager, MasteryService, StatsManager, ModifierId, StatId } from "@game/gameplay";
 import { getMasteryItemPowerBonus } from "../data/itemPower.js";
-import { ITEM_DEFINITIONS } from "../data/itemContentCatalog.js";
+import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 
 export const MASTERY_PHYSICAL_DAMAGE_MODIFIER = "mastery_weapon_physical_damage" as ModifierId;
 export const MASTERY_MAGICAL_DAMAGE_MODIFIER = "mastery_weapon_magical_damage" as ModifierId;
@@ -11,7 +11,8 @@ const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
 
 /**
  * Rebuild the weapon-only damage granted by mastery IP.
- * +100 bonus IP = +20% of the weapon's own primary damage.
+ * +100 bonus IP = +20% of the weapon's effective primary damage, including
+ * its authored one-handed/two-handed offensive budget.
  * Hero base damage, attack speed and defensive stats are never scaled.
  */
 export function recalculateWeaponMasteryStats(
@@ -26,7 +27,7 @@ export function recalculateWeaponMasteryStats(
   const equippedWeapon = equipmentManager.getEquippedItem(entityId, "weapon");
   if (equippedWeapon === undefined) return;
 
-  const weaponDefinition = ITEM_DEFINITIONS[equippedWeapon.itemId];
+  const weaponDefinition = resolveEquipmentInfo(equippedWeapon.itemId);
   if (weaponDefinition === undefined) return;
 
   const masteries = [...masteryService.getAllMasteries().values()].map((mastery) => ({
