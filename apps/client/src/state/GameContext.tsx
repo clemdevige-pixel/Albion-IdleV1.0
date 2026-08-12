@@ -88,6 +88,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       statsManager,
       damageManager,
       masteryService,
+      canMutateEquipment: () => !combatService.isInCombat(),
       onPlayerHealthChanged: (currentHealth, maxHealth) => {
         bridge.updatePlayerHealth(currentHealth, maxHealth);
       },
