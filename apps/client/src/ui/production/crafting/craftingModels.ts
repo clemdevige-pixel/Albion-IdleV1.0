@@ -5,7 +5,7 @@ import { resolveWeaponFamilyCraftPresentation } from "../../../data/equipmentPre
 
 export type CraftingArmorFamilyId = "armor_head" | "armor_chest" | "armor_boots";
 export type CraftingFamilyId = string;
-export type CraftingCategoryId = "weapons" | "armors";
+export type CraftingCategoryId = "weapons" | "armors" | "other";
 
 export interface CraftingFamilyModel {
   readonly id: CraftingFamilyId;
@@ -27,6 +27,7 @@ export interface CraftingModel {
 
 const NON_WEAPON_FAMILY_PRESENTATION: Readonly<Record<string, { readonly label: string; readonly symbol: string }>> = {
   offhand: { label: "Mains gauches", symbol: "◉" },
+  other: { label: "Conversions", symbol: "◆" },
 };
 
 const ARMOR_FAMILY_PRESENTATION: Readonly<Record<CraftingArmorFamilyId, { readonly label: string; readonly symbol: string }>> = {
@@ -64,15 +65,18 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
   const categories: readonly { readonly id: CraftingCategoryId; readonly label: string }[] = [
     { id: "weapons", label: "Armes" },
     { id: "armors", label: "Armures" },
+    { id: "other", label: "Autre" },
   ];
 
   return {
     tier: source.tier,
     categories: categories
       .map((category) => {
-        const categoryRecipes = recipesForTier.filter((recipe) =>
-          category.id === "armors" ? recipe.family === "armor" : recipe.family !== "armor",
-        );
+        const categoryRecipes = recipesForTier.filter((recipe) => {
+          if (category.id === "other") return recipe.family === "other";
+          if (category.id === "armors") return recipe.family === "armor";
+          return recipe.family !== "armor" && recipe.family !== "other";
+        });
         const familyIds: readonly CraftingFamilyId[] = category.id === "armors"
           ? (["armor_head", "armor_chest", "armor_boots"] as const).filter((id) =>
               categoryRecipes.some((recipe) => resolveArmorFamilyId(recipe) === id),
