@@ -26,6 +26,7 @@ import { CraftingRuntime } from "../CraftingRuntime.js";
 import { GatheringRuntime } from "../GatheringRuntime.js";
 import { RefiningRuntime } from "../RefiningRuntime.js";
 import { WorkerRuntime } from "../WorkerRuntime.js";
+import { createAtomicProductionInventoryManager } from "../AtomicProductionInventory.js";
 
 interface ProductionFoundationDependencies {
   readonly inventoryManager: InventoryManager;
@@ -58,6 +59,9 @@ export function createProductionFoundation({
   forestZoneDefId,
   getProductionTier,
 }: ProductionFoundationDependencies) {
+  const productionInventoryManager = createAtomicProductionInventoryManager(
+    inventoryManager,
+  );
   const resourceRegistry = new ResourceRegistry();
   const resourceRuntime = new ResourceRuntime();
   const resourceNodeRegistry = new ResourceNodeRegistry();
@@ -123,7 +127,7 @@ export function createProductionFoundation({
 
   const gatheringRuntime = new GatheringRuntime({
     gatheringFamilies,
-    inventoryManager,
+    inventoryManager: productionInventoryManager,
     masteryService,
     experienceService,
     progressionOrchestrator,
@@ -192,7 +196,7 @@ export function createProductionFoundation({
 
   const refiningRuntime = new RefiningRuntime({
     refiningManagers,
-    inventoryManager,
+    inventoryManager: productionInventoryManager,
     productionStorageId,
     getProductionTier,
   });
@@ -207,13 +211,22 @@ export function createProductionFoundation({
   });
 
   const workerRuntime = new WorkerRuntime({
-    inventoryManager,
+    inventoryManager: productionInventoryManager,
     productionStorageId,
     currencyService,
     walletId,
     experienceService,
     getProductionTier,
     getRequiredGatheringMasteryForTier,
+  });
+
+  // WorkerRuntime restarts a completed cycle before emitting storage_full.
+  // Pause that freshly restarted session synchronously so a full storage never
+  // creates an endless loop of discarded cycles and repeated notifications.
+  workerRuntime.subscribeDomainEvent((event) => {
+    if (event.type === "storage_full") {
+      workerRuntime.toggleWorker(event.profession);
+    }
   });
 
   return {
