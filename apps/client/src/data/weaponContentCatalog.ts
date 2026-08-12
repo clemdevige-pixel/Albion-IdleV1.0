@@ -10,6 +10,7 @@ export type WeaponCombatProfile = "dagger" | "sword" | "bow" | "staff" | "hammer
 export const WEAPON_ATTACK_SPEED_BY_PROFILE: Readonly<Record<WeaponCombatProfile, number>> = { dagger: 1.6, sword: 1.2, bow: 1, staff: 0.9, hammer: 0.75, gloves: 1.4 };
 
 export interface ClientAbilityDefinition extends AbilityDefinitionLike { readonly name: string; readonly description: string; readonly icon: string; readonly damageType: DamageType; readonly bonusDamageRatio: number; }
+export interface WeaponAbilityUnlock { readonly unlockMasteryLevel: number; readonly ability: ClientAbilityDefinition; }
 export interface WeaponCraftMaterial { readonly kind: "wood" | "metal" | "leather" | "cloth"; readonly quantity: number; }
 export type WeaponCraftRule = { readonly kind: "standard"; readonly materials: readonly WeaponCraftMaterial[] } | { readonly kind: "artifact_pending" };
 
@@ -42,7 +43,7 @@ interface WeaponSpecializationContent {
   readonly specializationName: string;
   readonly combatProfile: WeaponCombatProfile;
   readonly presentation: WeaponPresentationContent;
-  readonly ability: ClientAbilityDefinition;
+  readonly abilities: readonly WeaponAbilityUnlock[];
   readonly craft: WeaponCraftRule;
   readonly items: readonly WeaponItemContent[];
 }
@@ -52,51 +53,71 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     familyId: "sword", specializationMasteryId: "mastery_broadsword", specializationName: "Épée large", combatProfile: "sword",
     presentation: { itemIcon: "item-broadsword-pixel-v1.png", actorManifestId: "hero_broadsword", combatProfileId: "melee" },
     craft: { kind: "standard", materials: [{ kind: "metal", quantity: 6 }, { kind: "leather", quantity: 2 }] },
-    ability: { id: "ability_sword_heroic_strike", name: "Frappe héroïque", description: "Une frappe lourde infligeant 175 % des dégâts physiques.", icon: "⚔️", category: "active", cooldown: 8, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.75 },
+    abilities: [{ unlockMasteryLevel: 1, ability: { id: "ability_sword_heroic_strike", name: "Frappe héroïque", description: "Une frappe lourde infligeant 175 % des dégâts physiques.", icon: "⚔️", category: "active", cooldown: 8, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.75 } }],
     items: [{ itemId: "item_weapon_sword_t3_broadsword", tier: 3, handling: "one_handed", stats: { stat_physical_damage: 45 }, sellPrice: 70 }, { itemId: "item_weapon_sword_t4_broadsword", tier: 4, handling: "one_handed", stats: { stat_physical_damage: 75 }, sellPrice: 200 }],
   },
   {
     familyId: "bow", specializationMasteryId: "mastery_longbow", specializationName: "Arc long", combatProfile: "bow",
     presentation: { itemIcon: "item-longbow-pixel-v1.png", actorManifestId: "hero_bow", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "arrow", releaseDelayMs: 355 } },
     craft: { kind: "standard", materials: [{ kind: "wood", quantity: 6 }, { kind: "leather", quantity: 2 }, { kind: "cloth", quantity: 2 }] },
-    ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
+    abilities: [{ unlockMasteryLevel: 1, ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 } }],
     items: [{ itemId: "item_weapon_bow_t3_longbow", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 50 }, sellPrice: 70 }, { itemId: "item_weapon_bow_t4_longbow", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 85 }, sellPrice: 200 }],
   },
   {
     familyId: "bow", specializationMasteryId: "mastery_badon", specializationName: "Badon", combatProfile: "bow",
     presentation: { itemIcon: "item-badon-pixel-v1.png", actorManifestId: "hero_bow", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "badon_arrow", releaseDelayMs: 355 } }, craft: { kind: "artifact_pending" },
-    ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 },
+    abilities: [{ unlockMasteryLevel: 1, ability: { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant 160 % des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.6 } }],
     items: [{ itemId: "item_weapon_bow_t4_badon", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 87 }, sellPrice: 260 }],
   },
   {
     familyId: "fire_staff", specializationMasteryId: "mastery_infernal_staff", specializationName: "Bâton Infernal", combatProfile: "staff",
     presentation: { itemIcon: "item-fire-staff-pixel-v1.png", actorManifestId: "hero_fire_staff", combatProfileId: "projectile", combatPresentation: { kind: "projectile", projectileId: "fireball", releaseDelayMs: 355 } },
     craft: { kind: "standard", materials: [{ kind: "wood", quantity: 4 }, { kind: "metal", quantity: 4 }, { kind: "cloth", quantity: 2 }] },
-    ability: { id: "ability_fire_fireball", name: "Boule de feu", description: "Un projectile ardent infligeant 170 % des dégâts magiques.", icon: "🔥", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical", bonusDamageRatio: 0.7 },
+    abilities: [{ unlockMasteryLevel: 1, ability: { id: "ability_fire_fireball", name: "Boule de feu", description: "Un projectile ardent infligeant 170 % des dégâts magiques.", icon: "🔥", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical", bonusDamageRatio: 0.7 } }],
     items: [{ itemId: "item_weapon_staff_t3_infernal", tier: 3, handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 }, { itemId: "item_weapon_staff_t4_infernal", tier: 4, handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 }],
   },
   {
     familyId: "gloves", specializationMasteryId: "mastery_spiked_gauntlets", specializationName: "Gantelets à pointes", combatProfile: "gloves",
     presentation: { itemIcon: "item-spiked-gauntlets-pixel-v1.png", actorManifestId: "hero_spiked_gauntlets", combatProfileId: "melee" },
     craft: { kind: "standard", materials: [{ kind: "metal", quantity: 5 }, { kind: "leather", quantity: 3 }] },
-    ability: { id: "ability_gloves_shockwave", name: "Onde percutante", description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.", icon: "🥊", category: "active", cooldown: 6, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.8 },
+    abilities: [{ unlockMasteryLevel: 1, ability: { id: "ability_gloves_shockwave", name: "Onde percutante", description: "Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.", icon: "🥊", category: "active", cooldown: 6, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.8 } }],
     items: [{ itemId: "item_weapon_gloves_t3_spiked_gauntlets", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 38 }, sellPrice: 75 }, { itemId: "item_weapon_gloves_t4_spiked_gauntlets", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 66 }, sellPrice: 210 }],
   },
   {
     familyId: "dagger", specializationMasteryId: "mastery_dagger_pair", specializationName: "Paire de dagues", combatProfile: "dagger",
     presentation: { itemIcon: "item-dagger-pair-pixel-v1.png", actorManifestId: "hero_dagger_pair", combatProfileId: "melee" },
     craft: { kind: "standard", materials: [{ kind: "metal", quantity: 6 }, { kind: "leather", quantity: 2 }] },
-    ability: { id: "ability_dagger_double_slash", name: "Double entaille", description: "Deux lames frappent en succession rapide pour infliger 150 % des dégâts physiques.", icon: "🗡️", category: "active", cooldown: 4, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.5 },
+    abilities: [{ unlockMasteryLevel: 1, ability: { id: "ability_dagger_double_slash", name: "Double entaille", description: "Deux lames frappent en succession rapide pour infliger 150 % des dégâts physiques.", icon: "🗡️", category: "active", cooldown: 4, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical", bonusDamageRatio: 0.5 } }],
     items: [{ itemId: "item_weapon_dagger_t3_pair", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 34 }, sellPrice: 75 }, { itemId: "item_weapon_dagger_t4_pair", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 58 }, sellPrice: 210 }],
   },
 ];
 
-export const CLIENT_ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> = Object.fromEntries(WEAPON_CONTENT.map((entry) => [entry.ability.id, entry.ability]));
+export const CLIENT_ABILITIES: Readonly<Record<string, ClientAbilityDefinition>> = Object.fromEntries(
+  WEAPON_CONTENT.flatMap((entry) => entry.abilities.map(({ ability }) => [ability.id, ability] as const)),
+);
 export const WEAPON_ITEM_DEFINITIONS: Readonly<Record<string, EquipmentInfoLike>> = Object.fromEntries(WEAPON_CONTENT.flatMap((entry) => entry.items).map((item) => [item.itemId, { itemId: item.itemId, slot: "weapon", handling: item.handling, stats: item.stats }]));
 interface WeaponItemRoute { readonly specialization: WeaponSpecializationContent; readonly item: WeaponItemContent; }
 const CONTENT_BY_ITEM_ID = new Map<string, WeaponItemRoute>(WEAPON_CONTENT.flatMap((specialization) => specialization.items.map((item) => [item.itemId, { specialization, item }] as const)));
 
-export function resolvePrimaryAbilityId(itemId: string | null | undefined): string | undefined { if (itemId == null) return undefined; return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.ability.id; }
+export function resolveWeaponAbilityUnlocks(itemId: string | null | undefined): readonly WeaponAbilityUnlock[] {
+  if (itemId == null) return [];
+  return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.abilities ?? [];
+}
+
+export function resolveUnlockedWeaponAbilities(
+  itemId: string | null | undefined,
+  specializationMasteryLevel: number,
+): readonly ClientAbilityDefinition[] {
+  return resolveWeaponAbilityUnlocks(itemId)
+    .filter(({ unlockMasteryLevel }) => specializationMasteryLevel >= unlockMasteryLevel)
+    .sort((a, b) => a.unlockMasteryLevel - b.unlockMasteryLevel)
+    .map(({ ability }) => ability);
+}
+
+/** @deprecated Compatibility helper for the existing single-Q runtime. */
+export function resolvePrimaryAbilityId(itemId: string | null | undefined): string | undefined {
+  return resolveWeaponAbilityUnlocks(itemId)[0]?.ability.id;
+}
 export interface WeaponMasteryRoute { readonly familyId: ReturnType<typeof asMasteryId>; readonly weaponId: ReturnType<typeof asMasteryId>; }
 export function resolveWeaponMastery(itemId: string): WeaponMasteryRoute | undefined { const entry = CONTENT_BY_ITEM_ID.get(itemId)?.specialization; if (entry === undefined) return undefined; const family = WEAPON_FAMILIES[entry.familyId]; return { familyId: asMasteryId(family.masteryId), weaponId: asMasteryId(entry.specializationMasteryId) }; }
 export function resolveWeaponFamilyId(itemId: string): WeaponFamilyId | undefined { return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.familyId; }
