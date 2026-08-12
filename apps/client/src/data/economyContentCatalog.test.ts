@@ -7,6 +7,11 @@ import {
   rollBlueZoneCombatDrops,
 } from "./economyContentCatalog";
 
+function sequenceRandom(values: readonly number[]): () => number {
+  let index = 0;
+  return () => values[index++] ?? 1;
+}
+
 describe("Blue Zone combat loot", () => {
   it("uses the approved segment 1 to 10 progression curve", () => {
     expect(BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS).toEqual([
@@ -35,6 +40,36 @@ describe("Blue Zone combat loot", () => {
       "key_fragment",
       "key",
     ]);
+  });
+
+  it("uses zone advancement to improve the same faction drop rate", () => {
+    const regularRolls = [1, 1, 1, 1, 0.025, 1] as const;
+    const earlyDrops = rollBlueZoneCombatDrops(
+      { segmentIndex: 0, faction: "Morgana", isBoss: false, isFinalBoss: false },
+      sequenceRandom(regularRolls),
+    );
+    const lateDrops = rollBlueZoneCombatDrops(
+      { segmentIndex: 9, faction: "Morgana", isBoss: false, isFinalBoss: false },
+      sequenceRandom(regularRolls),
+    );
+
+    expect(earlyDrops.some((drop) => drop.kind === "key_fragment")).toBe(false);
+    expect(lateDrops.some((drop) => drop.kind === "key_fragment")).toBe(true);
+  });
+
+  it("gives bosses the approved x2 multiplier on special regular rolls", () => {
+    const regularRolls = [1, 1, 1, 1, 0.03, 1] as const;
+    const normalDrops = rollBlueZoneCombatDrops(
+      { segmentIndex: 0, faction: "Keeper", isBoss: false, isFinalBoss: false },
+      sequenceRandom(regularRolls),
+    );
+    const bossDrops = rollBlueZoneCombatDrops(
+      { segmentIndex: 0, faction: "Keeper", isBoss: true, isFinalBoss: false },
+      sequenceRandom([...regularRolls, 1, 1]),
+    );
+
+    expect(normalDrops.some((drop) => drop.kind === "key_fragment")).toBe(false);
+    expect(bossDrops.some((drop) => drop.kind === "key_fragment")).toBe(true);
   });
 
   it("uses faction only to select dungeon loot identity", () => {
