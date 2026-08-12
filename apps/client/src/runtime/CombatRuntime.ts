@@ -24,6 +24,7 @@ import {
   CLIENT_ABILITIES,
   resolvePrimaryAbilityId,
 } from "../data/weaponContentCatalog";
+import { getMonsterAbilityDefinition } from "../data/monsterAbilityContentCatalog";
 import {
   spawnEnemyForSegment,
   type SpawnedEnemyResult,
@@ -144,6 +145,48 @@ export class CombatRuntime {
   private getEquippedWeaponId(): string | undefined {
     const item = this.equipmentManager.getEquippedItem(this.heroId, "weapon");
     return item?.itemId;
+  }
+
+  private useReadyEnemyAbility(): boolean {
+    if (!this.damageManager.isAlive(this.activeEnemyId) || !this.damageManager.isAlive(this.heroId)) {
+      return false;
+    }
+
+    const readyAbility = this.abilityManager
+      .getAbilities(this.activeEnemyId)
+      .find((entry) => entry.state === "ready" && entry.definition.category !== "passive");
+    if (readyAbility === undefined) return false;
+
+    const definition = getMonsterAbilityDefinition(String(readyAbility.abilityId));
+    const execution = this.abilityManager.executeIntent({
+      entityId: this.activeEnemyId,
+      abilityId: readyAbility.abilityId,
+      primaryTarget: this.heroId,
+      tick: this.currentTick,
+    });
+    if (!execution.ok) return false;
+
+    // Reset the enemy auto-attack cadence just like the player's authored
+    // ability. This prevents a special attack and an auto attack landing in
+    // the same instant and keeps the preserved long-run damage budget legible.
+    this.autoAttackManager.stopAutoAttack(this.activeEnemyId);
+    this.autoAttackManager.startAutoAttack(this.activeEnemyId);
+
+    const sourceStat = definition.damageType === "magical"
+      ? STAT_MAGICAL_DAMAGE
+      : STAT_PHYSICAL_DAMAGE;
+    const sourceDamage = this.statsManager.getStat(this.activeEnemyId, sourceStat).computed;
+    const result = this.damageManager.processDamage({
+      source: this.activeEnemyId,
+      target: this.heroId,
+      baseDamage: sourceDamage * definition.damageMultiplier,
+      damageType: definition.damageType,
+      source_type: "ability",
+    });
+    if (result?.targetDied === true) {
+      this.deathManager.checkDeath(this.heroId, this.activeEnemyId, this.currentTick);
+    }
+    return result !== null;
   }
 
   public spawnEnemy(): SpawnedEnemyResult {
@@ -379,9 +422,11 @@ export class CombatRuntime {
     }
 
     this.abilityManager.tickAbilities(this.heroId, dt);
+    this.abilityManager.tickAbilities(this.activeEnemyId, dt);
     if (this.primaryAbilityAutoCast) {
       this.usePrimaryAbility();
     }
+    this.useReadyEnemyAbility();
 
     const tickResult = this.orchestrator.tick(dt);
 
