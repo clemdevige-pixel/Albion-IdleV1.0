@@ -39,11 +39,143 @@ function makeMigration(fromVersion: number): SaveMigration {
 }
 
 describe("runtime save migration registry", () => {
-  it("keeps the current live format at version 1", () => {
-    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(1);
+  it("keeps the current live format at version 2", () => {
+    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(2);
     const pipeline = createRuntimeMigrationPipeline();
-    const save = makeSave(1);
-    expect(pipeline.migrate(save, 1)).toBe(save);
+    const save = makeSave(2);
+    expect(pipeline.migrate(save, 2)).toBe(save);
+  });
+
+  it("migrates legacy Fire Staff mastery and item ids from v1 to v2", () => {
+    const payload = {
+      experience: {
+        masteries: [
+          {
+            masteryId: "mastery_t4_fire_staff",
+            totalLifetimeXp: 12345,
+            maxLevel: 100,
+          },
+        ],
+      },
+      mastery: {
+        unlocked: [
+          "mastery_fire_staff",
+          "mastery_t4_fire_staff",
+        ],
+        overflowPool: 50,
+      },
+      inventory: {
+        inventories: [
+          {
+            slots: [
+              {
+                position: 0,
+                instanceId: "weapon-1",
+                itemId: "item_weapon_staff_t3_fire",
+                quantity: 1,
+              },
+              {
+                position: 1,
+                instanceId: "weapon-2",
+                itemId: "item_weapon_staff_t4_fire",
+                quantity: 1,
+              },
+            ],
+            activeBag: null,
+          },
+        ],
+      },
+      equipment: {
+        equipments: [
+          {
+            slots: [
+              {
+                slot: "weapon",
+                instanceId: "weapon-3",
+                itemId: "item_weapon_staff_t4_fire",
+                quantity: 1,
+              },
+            ],
+          },
+        ],
+      },
+      unrelated: "fire_staff",
+    };
+
+    const save: SaveFormat = {
+      version: 1,
+      metadata: {
+        version: 1,
+        createdAt: 0,
+        updatedAt: 0,
+        buildVersion: "test",
+        seed: 42,
+      },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+
+    const migrated = createRuntimeMigrationPipeline().migrate(save, 2);
+
+    expect(migrated.version).toBe(2);
+    expect(migrated.metadata.version).toBe(2);
+
+    expect(migrated.payload).toEqual({
+      experience: {
+        masteries: [
+          {
+            masteryId: "mastery_infernal_staff",
+            totalLifetimeXp: 12345,
+            maxLevel: 100,
+          },
+        ],
+      },
+      mastery: {
+        unlocked: [
+          "mastery_fire_staff",
+          "mastery_infernal_staff",
+        ],
+        overflowPool: 50,
+      },
+      inventory: {
+        inventories: [
+          {
+            slots: [
+              {
+                position: 0,
+                instanceId: "weapon-1",
+                itemId: "item_weapon_staff_t3_infernal",
+                quantity: 1,
+              },
+              {
+                position: 1,
+                instanceId: "weapon-2",
+                itemId: "item_weapon_staff_t4_infernal",
+                quantity: 1,
+              },
+            ],
+            activeBag: null,
+          },
+        ],
+      },
+      equipment: {
+        equipments: [
+          {
+            slots: [
+              {
+                slot: "weapon",
+                instanceId: "weapon-3",
+                itemId: "item_weapon_staff_t4_infernal",
+                quantity: 1,
+              },
+            ],
+          },
+        ],
+      },
+      unrelated: "fire_staff",
+    });
+
+    expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
   });
 
   it("builds a complete contiguous migration path", () => {

@@ -1,5 +1,7 @@
 import {
+  computeChecksum,
   MigrationPipeline,
+  type SaveFormat,
   type SaveMigration,
 } from "@game/persistence";
 
@@ -7,11 +9,65 @@ import {
  * Increment only when the persisted payload shape changes incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 1;
+export const CURRENT_RUNTIME_SAVE_VERSION = 2;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
-/** Ordered, explicit registry for future runtime save migrations. */
-export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [];
+const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
+  mastery_t4_fire_staff: "mastery_infernal_staff",
+  item_weapon_staff_t3_fire: "item_weapon_staff_t3_infernal",
+  item_weapon_staff_t4_fire: "item_weapon_staff_t4_infernal",
+};
+
+function migrateLegacyIds(value: unknown): unknown {
+  if (typeof value === "string") {
+    return LEGACY_ID_RENAMES[value] ?? value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(migrateLegacyIds);
+  }
+
+  if (value !== null && typeof value === "object") {
+    const migrated: Record<string, unknown> = {};
+
+    for (const [key, child] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      migrated[key] = migrateLegacyIds(child);
+    }
+
+    return migrated;
+  }
+
+  return value;
+}
+
+const migrateV1ToV2: SaveMigration = {
+  fromVersion: 1,
+  toVersion: 2,
+
+  migrate(save: SaveFormat): SaveFormat {
+    const payload = migrateLegacyIds(
+      save.payload,
+    ) as Record<string, unknown>;
+
+    return {
+      ...save,
+      version: 2,
+      metadata: {
+        ...save.metadata,
+        version: 2,
+      },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+  },
+};
+
+/** Ordered, explicit registry for runtime save migrations. */
+export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
+  migrateV1ToV2,
+];
 
 export interface RuntimeMigrationPipelineOptions {
   readonly currentVersion?: number;
