@@ -66,30 +66,16 @@ export interface CombatRuntimeDependencies {
   readonly effectManager: EffectManager;
   readonly statsManager: StatsManager;
   readonly equipmentManager: EquipmentManager;
-  readonly masteryService: MasteryService;
+  readonly masteryService?: MasteryService;
   readonly biomeResolver: BiomeResolver;
   readonly ports: CombatRuntimePorts;
 }
 
 export interface CombatDomainTickResult {
   readonly combatState: CombatState;
-  readonly activeEnemy?: {
-    readonly id: EntityId;
-    readonly currentHealth: number;
-    readonly maxHealth: number;
-    readonly name: string;
-    readonly visualManifestId: string;
-  } | undefined;
-  readonly playerHealth?: {
-    readonly currentHealth: number;
-    readonly maxHealth: number;
-  } | undefined;
-  readonly activeEffects?: Array<{
-    readonly id: string;
-    readonly definitionId: string;
-    readonly effectType: StatusEffectType;
-    readonly remainingDuration: number;
-  }> | undefined;
+  readonly activeEnemy?: { readonly id: EntityId; readonly currentHealth: number; readonly maxHealth: number; readonly name: string; readonly visualManifestId: string } | undefined;
+  readonly playerHealth?: { readonly currentHealth: number; readonly maxHealth: number } | undefined;
+  readonly activeEffects?: Array<{ readonly id: string; readonly definitionId: string; readonly effectType: StatusEffectType; readonly remainingDuration: number }> | undefined;
   readonly spawnedEnemy?: SpawnedEnemyResult | undefined;
 }
 
@@ -106,7 +92,7 @@ export class CombatRuntime {
   private readonly effectManager: EffectManager;
   private readonly statsManager: StatsManager;
   private readonly equipmentManager: EquipmentManager;
-  private readonly masteryService: MasteryService;
+  private readonly masteryService: MasteryService | undefined;
   private readonly biomeResolver: BiomeResolver;
   private readonly ports: CombatRuntimePorts;
 
@@ -136,31 +122,20 @@ export class CombatRuntime {
   }
 
   private get combatEntityFactoryDeps() {
-    return {
-      world: this.world,
-      statsManager: this.statsManager,
-      damageManager: this.damageManager,
-      deathManager: this.deathManager,
-      targetManager: this.targetManager,
-      autoAttackManager: this.autoAttackManager,
-      abilityManager: this.abilityManager,
-    };
+    return { world: this.world, statsManager: this.statsManager, damageManager: this.damageManager, deathManager: this.deathManager, targetManager: this.targetManager, autoAttackManager: this.autoAttackManager, abilityManager: this.abilityManager };
   }
 
   private getEquippedWeaponId(): string | undefined {
-    const item = this.equipmentManager.getEquippedItem(this.heroId, "weapon");
-    return item?.itemId;
+    return this.equipmentManager.getEquippedItem(this.heroId, "weapon")?.itemId;
   }
 
   private getUnlockedHeroWeaponAbilities() {
     const equippedWeaponId = this.getEquippedWeaponId();
     if (equippedWeaponId === undefined) return [];
-
     const masteryRoute = resolveWeaponMastery(equippedWeaponId);
     const masteryLevel = masteryRoute === undefined
       ? 0
-      : this.masteryService.getMasteryState(masteryRoute.weaponId)?.level ?? 0;
-
+      : this.masteryService?.getMasteryState(masteryRoute.weaponId)?.level ?? 1;
     return resolveUnlockedWeaponAbilities(equippedWeaponId, masteryLevel);
   }
 
