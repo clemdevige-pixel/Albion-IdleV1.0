@@ -67,6 +67,16 @@ function formatDropName(itemId: string): string {
   return itemId.replace("item_resource_", "").replace("item_", "").replace(/_/g, " ");
 }
 
+function formatDropCategory(kind: string): string {
+  if (kind === "artifact") return "Artefact";
+  if (kind === "artifact_fragment") return "Fragment d’artefact";
+  if (kind === "key") return "Clé de donjon";
+  if (kind === "key_fragment") return "Fragment de clé";
+  if (kind === "enchantment") return "Enchantement";
+  if (kind === "consumable") return "Consommable";
+  return "Loot";
+}
+
 export function setupCombatRewardAdapter(
   options: CombatRewardAdapterOptions,
 ): CombatRewardAdapter {
@@ -136,23 +146,22 @@ export function setupCombatRewardAdapter(
 
     for (const drop of rewardResult.itemDrops) {
       const dropName = formatDropName(drop.itemId);
-      const prefix = drop.kind === "artifact"
-        ? "Artefact"
-        : drop.kind === "artifact_fragment"
-          ? "Fragment d’artefact"
-          : drop.kind === "key"
-            ? "Clé de donjon"
-            : drop.kind === "key_fragment"
-              ? "Fragment de clé"
-              : drop.kind === "enchantment"
-                ? "Enchantement"
-                : "Loot";
+      const category = formatDropCategory(drop.kind);
+      const timestamp = Date.now();
+
+      options.bridge.addTransaction({
+        id: `loot_item_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
+        type: "credit",
+        description: `${category} : ${dropName}`,
+        amount: 1,
+        timestamp,
+      });
 
       options.bridge.addEconomyNotification({
-        id: `notif_drop_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
+        id: `notif_drop_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
         type: "success",
-        message: `${prefix} : ${dropName}`,
-        timestamp: Date.now(),
+        message: `${category} : ${dropName}`,
+        timestamp,
       });
     }
 
