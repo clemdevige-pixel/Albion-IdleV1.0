@@ -1,7 +1,10 @@
 import type { EntityId } from "@game/core";
 import type { DurabilityStore, InventoryManager } from "@game/gameplay";
 import { canCraftRecipe } from "@game/gameplay";
-import type { ClientCraftRecipe } from "../data/specialCraftRecipes.js";
+import {
+  SPECIAL_CRAFT_RECIPES,
+  type ClientCraftRecipe,
+} from "../data/specialCraftRecipes.js";
 import { isProductionMaterial } from "./ProductionStorage.js";
 
 export type CraftEquipmentResult =
@@ -37,7 +40,12 @@ export class CraftingRuntime {
     this.heroId = deps.heroId;
     this.productionStorageId = deps.productionStorageId ?? deps.heroId;
     this.durabilityStore = deps.durabilityStore;
-    this.recipes = deps.recipes;
+    this.recipes = [
+      ...deps.recipes,
+      ...SPECIAL_CRAFT_RECIPES.filter((special) =>
+        !deps.recipes.some((recipe) => recipe.outputItemId === special.outputItemId),
+      ),
+    ];
     this.getItemPower = deps.getItemPower;
   }
 
