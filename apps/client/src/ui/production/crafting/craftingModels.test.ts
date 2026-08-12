@@ -81,6 +81,42 @@ describe("buildCraftingModel", () => {
     expect(other?.families[1]?.recipes).toHaveLength(1);
   });
 
+  it("keeps key and artifact conversions available regardless of selected production tier", () => {
+    const recipes = [
+      recipe("item_resource_dungeon_key_morgana", 3, "other_key"),
+      recipe("item_resource_dungeon_key_keeper", 4, "other_key"),
+      recipe("item_resource_artifact_morgana", 3, "other_artifact"),
+      recipe("item_resource_artifact_keeper", 4, "other_artifact"),
+      recipe("item_weapon_sword_t3_broadsword", 3, "sword"),
+      recipe("item_weapon_sword_t4_broadsword", 4, "sword"),
+    ];
+
+    const t3Model = buildCraftingModel({ tier: 3, recipes });
+    const t4Model = buildCraftingModel({ tier: 4, recipes });
+    const t3Other = t3Model.categories.find((category) => category.id === "other");
+    const t4Other = t4Model.categories.find((category) => category.id === "other");
+
+    expect(t3Other?.families.flatMap((family) => family.recipes.map((entry) => entry.outputItemId))).toEqual([
+      "item_resource_dungeon_key_morgana",
+      "item_resource_dungeon_key_keeper",
+      "item_resource_artifact_morgana",
+      "item_resource_artifact_keeper",
+    ]);
+    expect(t4Other?.families.flatMap((family) => family.recipes.map((entry) => entry.outputItemId))).toEqual([
+      "item_resource_dungeon_key_morgana",
+      "item_resource_dungeon_key_keeper",
+      "item_resource_artifact_morgana",
+      "item_resource_artifact_keeper",
+    ]);
+
+    expect(t3Model.categories.find((category) => category.id === "weapons")?.families[0]?.recipes.map((entry) => entry.outputItemId)).toEqual([
+      "item_weapon_sword_t3_broadsword",
+    ]);
+    expect(t4Model.categories.find((category) => category.id === "weapons")?.families[0]?.recipes.map((entry) => entry.outputItemId)).toEqual([
+      "item_weapon_sword_t4_broadsword",
+    ]);
+  });
+
   it("accepts a new family ID without changing GameBridge or craftingModels unions", () => {
     const model = buildCraftingModel({
       tier: 3,
