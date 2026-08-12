@@ -115,7 +115,10 @@ export function DashboardZoneCard({
           Farm
         </button>
       </div>
-      <div className="dashboard-zone__combat-stop">
+      <div
+        className="dashboard-zone__combat-stop"
+        style={{ display: "flex", justifyContent: "center", marginTop: 8 }}
+      >
         <CombatStopButton />
       </div>
       <div className="dashboard-zone__footer">
