@@ -16,6 +16,7 @@ import {
   getMasteryItemPowerBonus,
   getWeaponAttackSpeed,
 } from "../data/itemPower";
+import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 
 const SLOT_LABELS: Readonly<Record<string, string>> = {
   head: "Tête", chest: "Torse", boots: "Bottes", weapon: "Arme", off_hand: "Main gauche", cape: "Cape",
@@ -49,6 +50,7 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
       ?? state.equipment.slots.find((slot) => slot.instanceId === instanceId)?.enchantment
       ?? 0;
   const definition = getItemDefinition(itemId);
+  const effectiveDefinition = resolveEquipmentInfo(itemId) ?? definition;
   const itemPower = getItemPower(itemId);
   const masteryItemPowerBonus = getMasteryItemPowerBonus(
     itemId,
@@ -69,6 +71,9 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
     ? undefined
     : state.equipment.slots.find((slot) => slot.slot === definition.slot);
   const equippedDefinition = equipped?.itemId === undefined ? undefined : getItemDefinition(equipped.itemId);
+  const equippedEffectiveDefinition = equipped?.itemId === undefined
+    ? undefined
+    : resolveEquipmentInfo(equipped.itemId) ?? equippedDefinition;
   const equippedEnchantment = equipped?.enchantment ?? 0;
   const equippedEnchantmentStatMultiplier = getEnchantmentStatMultiplier(equippedEnchantment);
   const equippedMasteryDamageMultiplier = equipped?.itemId === undefined
@@ -128,7 +133,7 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
               </div>
             </>
           )}
-          {Object.entries(definition.stats)
+          {Object.entries(effectiveDefinition?.stats ?? definition.stats)
             .filter(([statId]) => statId !== "stat_attack_speed")
             .map(([statId, value]) => {
               const effectiveValue = getEffectiveEquipmentStat(
@@ -137,8 +142,9 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
                 enchantmentStatMultiplier,
                 masteryDamageMultiplier,
               );
-              const ipBonus = effectiveValue - value;
-              const equippedBaseValue = equippedDefinition?.stats[statId] ?? 0;
+              const authoredBaseValue = definition.stats[statId] ?? value;
+              const ipBonus = effectiveValue - authoredBaseValue;
+              const equippedBaseValue = equippedEffectiveDefinition?.stats[statId] ?? 0;
               const equippedValue = getEffectiveEquipmentStat(
                 statId,
                 equippedBaseValue,
@@ -152,7 +158,7 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
                   <span>{STAT_LABELS[statId] ?? statId}</span>
                   <strong>
                     +{formatStatValue(effectiveValue)}
-                    {ipBonus > 0 && <small>(+{formatStatValue(ipBonus)} via IP)</small>}
+                    {ipBonus > 0 && <small>(+{formatStatValue(ipBonus)} via IP/2M)</small>}
                   </strong>
                   {showDelta && (
                     <em className={delta >= 0 ? "is-positive" : "is-negative"}>
