@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CombatStopButton } from "../../combat-hud/CombatStopButton";
 import { DashboardCard } from "./DashboardCard";
 import type { DashboardZoneModel, DashboardZoneOptionModel } from "../dashboardModels";
 
@@ -113,6 +114,9 @@ export function DashboardZoneCard({
         >
           Farm
         </button>
+      </div>
+      <div className="dashboard-zone__combat-stop">
+        <CombatStopButton />
       </div>
       <div className="dashboard-zone__footer">
         <div>
