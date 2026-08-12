@@ -1,5 +1,6 @@
 import type { EntityId, EventBus } from "@game/core";
 import type {
+  AbilityEventMap,
   AbilityManager,
   DamageEventMap,
   DamageManager,
@@ -40,6 +41,7 @@ export class CombatBridgeAdapter {
   readonly #combatRuntime: CombatRuntime;
   readonly #worldRuntime: WorldRuntime;
   readonly #updateWorldBridge: () => void;
+  #pendingHeroAbilityId: string | undefined;
 
   constructor(dependencies: CombatBridgeAdapterDependencies) {
     this.#bridge = dependencies.bridge;
@@ -52,6 +54,14 @@ export class CombatBridgeAdapter {
     this.#updateWorldBridge = dependencies.updateWorldBridge;
   }
 
+  bindAbilityEvents(eventBus: EventBus<AbilityEventMap>): () => void {
+    return eventBus.subscribe("AbilityExecuted", (event) => {
+      if (event.entityId === this.#heroId) {
+        this.#pendingHeroAbilityId = String(event.abilityId);
+      }
+    });
+  }
+
   bindDamageEvents(eventBus: EventBus<DamageEventMap>): () => void {
     const unsubscribeHealth = eventBus.subscribe("HealthChanged", (event) => {
       if (event.entityId === this.#heroId) {
@@ -61,10 +71,11 @@ export class CombatBridgeAdapter {
       }
     });
     const unsubscribeDamage = eventBus.subscribe("DamageDealt", (event) => {
-      this.#bridge.addDamageNumber(
-        event.finalDamage,
-        event.target === this.#heroId ? "player" : "enemy",
-      );
+      const target = event.target === this.#heroId ? "player" : "enemy";
+      const abilityId = event.source === this.#heroId && target === "enemy"
+        ? this.#consumePendingHeroAbilityId()
+        : undefined;
+      this.#bridge.addDamageNumber(event.finalDamage, target, abilityId);
     });
 
     return () => {
@@ -171,6 +182,12 @@ export class CombatBridgeAdapter {
       );
     }
     this.syncAbilities();
+  }
+
+  #consumePendingHeroAbilityId(): string | undefined {
+    const abilityId = this.#pendingHeroAbilityId;
+    this.#pendingHeroAbilityId = undefined;
+    return abilityId;
   }
 
   #getEquippedWeaponId(): string | undefined {
