@@ -105,11 +105,15 @@ export class CombatBridgeAdapter {
     );
   }
 
-  usePrimaryAbility(): boolean {
+  useWeaponAbility(slotIndex: number): boolean {
     if (this.#bridge.combatState !== "combat") return false;
-    const used = this.#combatRuntime.usePrimaryAbility();
+    const used = this.#combatRuntime.useWeaponAbility(slotIndex);
     this.syncAbilities();
     return used;
+  }
+
+  usePrimaryAbility(): boolean {
+    return this.useWeaponAbility(0);
   }
 
   setPrimaryAbilityAutoCast(enabled: boolean): void {
