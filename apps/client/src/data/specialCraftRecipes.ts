@@ -25,7 +25,7 @@ const BLUE_ZONE_FACTION_CRAFTING = [
 export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = BLUE_ZONE_FACTION_CRAFTING.flatMap((faction) => [
   {
     id: `CRAFT_DUNGEON_KEY_${faction.id.toUpperCase()}`,
-    family: "other",
+    family: "other_key",
     name: `Clé de donjon · ${faction.name}`,
     tier: faction.tier,
     outputItemId: `item_resource_dungeon_key_${faction.id}`,
@@ -39,7 +39,7 @@ export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = BLUE_ZONE_FAC
   },
   {
     id: `CRAFT_ARTIFACT_${faction.id.toUpperCase()}`,
-    family: "other",
+    family: "other_artifact",
     name: `Artefact · ${faction.name}`,
     tier: faction.tier,
     outputItemId: `item_resource_artifact_${faction.id}`,
