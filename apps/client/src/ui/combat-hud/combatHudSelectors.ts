@@ -12,7 +12,11 @@ import { shallowEqual, useGameUiSelector } from "../state";
 const HEALTH_POTION_ID = "item_health_potion";
 
 export interface AbilityBarUiModel {
-  readonly ability: CombatAbilityVM | null;
+  readonly abilities: readonly [
+    CombatAbilityVM | null,
+    CombatAbilityVM | null,
+    CombatAbilityVM | null,
+  ];
   readonly potionCount: number;
   readonly potionCooldown: number;
   readonly potionCooldownRemaining: number;
@@ -21,7 +25,11 @@ export interface AbilityBarUiModel {
 
 function selectAbilityBar(state: GameBridgeState): AbilityBarUiModel {
   return {
-    ability: state.abilities.primary,
+    abilities: [
+      state.abilities.primary,
+      state.abilities.secondary,
+      state.abilities.ultimate,
+    ],
     potionCount: state.inventory.slots.reduce(
       (total, slot) => slot.itemId === HEALTH_POTION_ID ? total + slot.quantity : total,
       0,
@@ -89,7 +97,7 @@ export function useNotificationFeed(): readonly EconomyNotificationVM[] {
 
 export interface CombatHudActions {
   readonly useHealthPotion: () => boolean;
-  readonly usePrimaryAbility: () => boolean;
+  readonly useWeaponAbility: (slotIndex: number) => boolean;
   readonly setPrimaryAbilityAutoCast: (enabled: boolean) => void;
   readonly resumeExploration: () => boolean;
   readonly dismissNotification: (id: string) => void;
@@ -101,7 +109,10 @@ export function useCombatHudActions(): CombatHudActions {
   return useMemo(
     () => ({
       useHealthPotion: () => services.useConsumable(HEALTH_POTION_ID),
-      usePrimaryAbility: services.usePrimaryAbility,
+      useWeaponAbility: (slotIndex: number) => (
+        services.useWeaponAbility?.(slotIndex)
+        ?? (slotIndex === 0 ? services.usePrimaryAbility() : false)
+      ),
       setPrimaryAbilityAutoCast: services.setPrimaryAbilityAutoCast,
       resumeExploration: services.resumeExploration,
       dismissNotification: (id: string) => {
