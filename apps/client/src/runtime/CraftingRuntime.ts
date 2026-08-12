@@ -1,7 +1,7 @@
 import type { EntityId } from "@game/core";
 import type { DurabilityStore, InventoryManager } from "@game/gameplay";
 import { canCraftRecipe } from "@game/gameplay";
-import type { EQUIPMENT_CRAFT_RECIPES } from "../data/refiningRecipes.js";
+import type { ClientCraftRecipe } from "../data/specialCraftRecipes.js";
 import { isProductionMaterial } from "./ProductionStorage.js";
 
 export type CraftEquipmentResult =
@@ -20,7 +20,7 @@ export interface CraftingRuntimeDependencies {
   readonly heroId: EntityId;
   readonly productionStorageId?: EntityId;
   readonly durabilityStore: DurabilityStore;
-  readonly recipes: typeof EQUIPMENT_CRAFT_RECIPES;
+  readonly recipes: readonly ClientCraftRecipe[];
   readonly getItemPower: (itemId: string) => number | undefined;
 }
 
@@ -29,7 +29,7 @@ export class CraftingRuntime {
   private readonly heroId: EntityId;
   private readonly productionStorageId: EntityId;
   private readonly durabilityStore: DurabilityStore;
-  private readonly recipes: typeof EQUIPMENT_CRAFT_RECIPES;
+  private readonly recipes: readonly ClientCraftRecipe[];
   private readonly getItemPower: (itemId: string) => number | undefined;
 
   public constructor(deps: CraftingRuntimeDependencies) {
@@ -92,8 +92,9 @@ export class CraftingRuntime {
       return { ok: false };
     }
 
+    const itemPower = this.getItemPower(recipe.outputItemId);
     const outputPosition = output.value.affectedPositions[0];
-    if (outputPosition !== undefined) {
+    if (itemPower !== undefined && outputPosition !== undefined) {
       const outputSlot = this.inventoryManager.getSlot(this.heroId, outputPosition);
       const outputEntry = outputSlot.ok ? outputSlot.value.entry : undefined;
       if (
@@ -103,13 +104,12 @@ export class CraftingRuntime {
         this.durabilityStore.attach(outputEntry.instanceId, 100);
       }
     }
-    const itemPower = this.getItemPower(recipe.outputItemId) ?? 0;
 
     return {
       ok: true,
       recipeName: recipe.name,
       outputItemId: recipe.outputItemId,
-      itemPower,
+      itemPower: itemPower ?? 0,
     };
   }
 }
