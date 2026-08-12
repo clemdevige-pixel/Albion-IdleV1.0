@@ -28,6 +28,15 @@ const EXPECTED_WEAPONS = [
   { itemId: "item_weapon_dagger_t4_pair", tier: 4, family: "dagger", profile: "dagger", attackSpeed: 1.6, familyId: "mastery_dagger", specializationId: "mastery_dagger_pair", abilityId: "ability_dagger_double_slash" },
 ] as const;
 
+const SPECIALIZATION_ITEM_IDS = [
+  "item_weapon_sword_t3_broadsword",
+  "item_weapon_bow_t3_longbow",
+  "item_weapon_bow_t4_badon",
+  "item_weapon_staff_t3_infernal",
+  "item_weapon_gloves_t3_spiked_gauntlets",
+  "item_weapon_dagger_t3_pair",
+] as const;
+
 describe("weapon content catalog", () => {
   it("is the source of truth for family, tier, combat profile, speed, mastery and primary ability", () => {
     for (const expected of EXPECTED_WEAPONS) {
@@ -41,17 +50,35 @@ describe("weapon content catalog", () => {
     }
   });
 
-  it("authors weapon abilities as mastery-gated data", () => {
-    for (const expected of EXPECTED_WEAPONS) {
-      const unlocks = resolveWeaponAbilityUnlocks(expected.itemId);
-      expect(unlocks.length).toBeGreaterThan(0);
-      expect(unlocks[0]).toMatchObject({
-        unlockMasteryLevel: 1,
-        ability: { id: expected.abilityId },
-      });
-      expect(resolveUnlockedWeaponAbilities(expected.itemId, 0)).toEqual([]);
-      expect(resolveUnlockedWeaponAbilities(expected.itemId, 1).map((ability) => ability.id)).toContain(expected.abilityId);
+  it("authors every current specialization as a three-skill mastery kit", () => {
+    for (const itemId of SPECIALIZATION_ITEM_IDS) {
+      const unlocks = resolveWeaponAbilityUnlocks(itemId);
+      expect(unlocks.map((entry) => entry.unlockMasteryLevel)).toEqual([1, 10, 30]);
+      expect(new Set(unlocks.map((entry) => entry.ability.id)).size).toBe(3);
+      for (const { ability } of unlocks) {
+        expect(CLIENT_ABILITIES[ability.id]).toBe(ability);
+      }
     }
+  });
+
+  it("unlocks Q, W and E strictly from authored mastery thresholds", () => {
+    for (const itemId of SPECIALIZATION_ITEM_IDS) {
+      expect(resolveUnlockedWeaponAbilities(itemId, 0)).toHaveLength(0);
+      expect(resolveUnlockedWeaponAbilities(itemId, 1)).toHaveLength(1);
+      expect(resolveUnlockedWeaponAbilities(itemId, 9)).toHaveLength(1);
+      expect(resolveUnlockedWeaponAbilities(itemId, 10)).toHaveLength(2);
+      expect(resolveUnlockedWeaponAbilities(itemId, 29)).toHaveLength(2);
+      expect(resolveUnlockedWeaponAbilities(itemId, 30)).toHaveLength(3);
+      expect(resolveUnlockedWeaponAbilities(itemId, 100)).toHaveLength(3);
+    }
+  });
+
+  it("preserves all existing M1 ability balance", () => {
+    expect(CLIENT_ABILITIES.ability_sword_heroic_strike).toMatchObject({ cooldown: 8, bonusDamageRatio: 0.75 });
+    expect(CLIENT_ABILITIES.ability_bow_aimed_shot).toMatchObject({ cooldown: 5, bonusDamageRatio: 0.6 });
+    expect(CLIENT_ABILITIES.ability_fire_fireball).toMatchObject({ cooldown: 5, bonusDamageRatio: 0.7 });
+    expect(CLIENT_ABILITIES.ability_gloves_shockwave).toMatchObject({ cooldown: 6, bonusDamageRatio: 0.8 });
+    expect(CLIENT_ABILITIES.ability_dagger_double_slash).toMatchObject({ cooldown: 4, bonusDamageRatio: 0.5 });
   });
 
   it("authors each weapon family once", () => {
@@ -71,15 +98,6 @@ describe("weapon content catalog", () => {
     for (const id of ["mastery_broadsword", "mastery_longbow", "mastery_badon", "mastery_infernal_staff", "mastery_spiked_gauntlets", "mastery_dagger_pair"]) {
       expect(categories.get(id)).toBe("weapon_specialization");
     }
-  });
-
-  it("locks Dagger Pair gameplay balance", () => {
-    expect(CLIENT_ABILITIES.ability_dagger_double_slash).toMatchObject({
-      name: "Double entaille",
-      cooldown: 4,
-      damageType: "physical",
-      bonusDamageRatio: 0.5,
-    });
   });
 
   it("does not infer unknown weapons from item-id naming conventions", () => {
