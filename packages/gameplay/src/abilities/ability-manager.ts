@@ -26,6 +26,12 @@ export class AbilityManager {
     this.#eventBus = bus;
   }
 
+  subscribeAbilityExecuted(
+    listener: (event: AbilityEventMap["AbilityExecuted"]) => void,
+  ): () => void {
+    return this.#eventBus?.subscribe("AbilityExecuted", listener) ?? (() => {});
+  }
+
   attachAbilities(entityId: EntityId): void {
     const data: AbilityData = { abilities: new Map() };
     this.#world.addComponent(entityId, AbilitiesComponent, data);
@@ -134,7 +140,6 @@ export class AbilityManager {
   executeIntent(intent: AbilityIntent): AbilityExecutionResult {
     const { entityId, abilityId } = intent;
 
-    // Check entity alive
     if (this.#world.hasComponent(entityId, HealthComponent)) {
       const health = this.#world.getComponent(entityId, HealthComponent);
       if (health.currentHealth <= 0) {
@@ -152,27 +157,22 @@ export class AbilityManager {
       return { ok: false, reason: "ability_not_ready" };
     }
 
-    // Passive abilities cannot be "executed"
     const category = entry.definition.category ?? "active";
     if (category === "passive") {
       return { ok: false, reason: "ability_locked" };
     }
 
-    // Resource check
     if (!this.#validator.hasResources(entityId, entry)) {
       return { ok: false, reason: "insufficient_resources" };
     }
 
-    // Deduct costs
     this.#deductCosts(entityId, entry);
 
-    // Start cooldown
     if (entry.definition.cooldown > 0) {
       this.#cooldownManager.startCooldown(entry, entry.definition.cooldown);
       this.#eventBus?.publish("AbilityCooldownStarted", { entityId, abilityId, duration: entry.definition.cooldown });
     }
 
-    // Emit execution event
     this.#eventBus?.publish("AbilityExecuted", {
       entityId,
       abilityId,
@@ -190,10 +190,6 @@ export class AbilityManager {
     return this.#world.getComponent(entityId, AbilitiesComponent);
   }
 
-  /**
-   * Optional health costs consume current health only. Base statistics are
-   * never mutated.
-   */
   #deductCosts(entityId: EntityId, entry: AbilityEntry): void {
     const cost = entry.definition.resourceCost;
     if (cost.health !== undefined && cost.health > 0) {
