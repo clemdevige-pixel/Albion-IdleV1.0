@@ -1079,3 +1079,51 @@ export function parseEnvironmentRenderManifest(
     },
   };
 }
+export type ParsedRenderManifest =
+  | ReturnType<typeof parseActorRenderManifest>
+  | ReturnType<typeof parseStaticActorRenderManifest>
+  | ReturnType<typeof parseResourceNodeRenderManifest>
+  | ReturnType<typeof parseProjectileRenderManifest>
+  | ReturnType<typeof parseFloatingTextRenderManifest>
+  | ReturnType<typeof parseWorldHudRenderManifest>
+  | ReturnType<typeof parseWorldStatusRenderManifest>
+  | ReturnType<typeof parseEnvironmentRenderManifest>;
+
+export function parseRenderManifest(
+  value: unknown,
+): ParsedRenderManifest {
+  if (!isRecord(value)) {
+    throw new Error("Render manifest must be an object");
+  }
+
+  switch (value["kind"]) {
+    case "actor":
+      return parseActorRenderManifest(value);
+
+    case "static_actor":
+      return parseStaticActorRenderManifest(value);
+
+    case "resource_node":
+      return parseResourceNodeRenderManifest(value);
+
+    case "projectile":
+      return parseProjectileRenderManifest(value);
+
+    case "floating_text":
+      return parseFloatingTextRenderManifest(value);
+
+    case "world_hud":
+      return parseWorldHudRenderManifest(value);
+
+    case "world_status":
+      return parseWorldStatusRenderManifest(value);
+
+    case "environment":
+      return parseEnvironmentRenderManifest(value);
+
+    default:
+      throw new Error(
+        `Unsupported render manifest kind: ${String(value["kind"])}`,
+      );
+  }
+}
