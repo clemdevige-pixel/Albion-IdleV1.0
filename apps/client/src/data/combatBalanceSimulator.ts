@@ -5,6 +5,10 @@ import {
   type EnchantmentLevel,
 } from "@game/gameplay";
 import {
+  HEALTH_POTION_COOLDOWN_SECONDS,
+  HEALTH_POTION_HEAL_RATIO,
+} from "./economyContentCatalog.js";
+import {
   WEAPON_ITEM_DEFINITIONS,
   resolveUnlockedWeaponAbilities,
   resolveWeaponAttackSpeed,
@@ -28,6 +32,11 @@ export interface CombatBalanceEquipmentPiece {
   readonly enchantment?: EnchantmentLevel;
 }
 
+export interface CombatBalanceConsumablePolicy {
+  readonly healthPotion: "disabled" | "auto";
+  readonly healthThresholdRatio?: number;
+}
+
 export interface CombatBalanceLoadout {
   readonly weaponId: string;
   readonly masteryLevel: number;
@@ -38,6 +47,7 @@ export interface CombatBalanceLoadout {
   readonly baseHealth?: number;
   readonly baseArmor?: number;
   readonly baseMagicResistance?: number;
+  readonly consumables?: CombatBalanceConsumablePolicy;
 }
 
 export interface CombatBalanceBreakdown {
@@ -45,9 +55,11 @@ export interface CombatBalanceBreakdown {
   readonly abilityDamage: number;
   readonly dotDamage: number;
   readonly damageTaken: number;
+  readonly healingReceived: number;
   readonly autoAttacks: number;
   readonly abilityCasts: number;
   readonly dotTicks: number;
+  readonly healthPotionsUsed: number;
 }
 
 export interface CombatBalanceResult {
@@ -90,6 +102,7 @@ interface DefensiveStats {
 const DEFAULT_HERO_HEALTH = 500;
 const DEFAULT_HERO_ARMOR = 0;
 const DEFAULT_HERO_MAGIC_RESISTANCE = 0;
+const DEFAULT_POTION_THRESHOLD_RATIO = 1 - HEALTH_POTION_HEAL_RATIO;
 const STEP_SECONDS = 0.05;
 const MAX_SIMULATION_SECONDS = 180;
 
@@ -188,12 +201,19 @@ export function simulateCombatBalance(
   const abilities = resolveUnlockedWeaponAbilities(loadout.weaponId, loadout.masteryLevel);
   const cooldowns = new Map(abilities.map((ability) => [ability.id, 0]));
   const worn = equipmentDefenses(loadout);
+  const maxHeroHealth = (loadout.baseHealth ?? DEFAULT_HERO_HEALTH) + worn.health;
+  const potionPolicy = loadout.consumables?.healthPotion ?? "disabled";
+  const potionThresholdRatio = Math.max(
+    0,
+    Math.min(1, loadout.consumables?.healthThresholdRatio ?? DEFAULT_POTION_THRESHOLD_RATIO),
+  );
 
-  let heroHealth = (loadout.baseHealth ?? DEFAULT_HERO_HEALTH) + worn.health;
+  let heroHealth = maxHeroHealth;
   let enemyHealth = enemy.health;
   let elapsed = 0;
   let heroAttackTimer = 0;
   let enemyAttackTimer = 0;
+  let healthPotionCooldownRemaining = 0;
   const effects: TimedEffect[] = [];
   const dots: ActiveDot[] = [];
   const breakdown = {
@@ -201,9 +221,26 @@ export function simulateCombatBalance(
     abilityDamage: 0,
     dotDamage: 0,
     damageTaken: 0,
+    healingReceived: 0,
     autoAttacks: 0,
     abilityCasts: 0,
     dotTicks: 0,
+    healthPotionsUsed: 0,
+  };
+
+  const tryUseHealthPotion = (): void => {
+    if (potionPolicy !== "auto" || heroHealth <= 0 || healthPotionCooldownRemaining > 0) return;
+    if (heroHealth / maxHeroHealth > potionThresholdRatio) return;
+    const missingHealth = maxHeroHealth - heroHealth;
+    if (missingHealth <= 0) return;
+    const restored = Math.min(
+      Math.ceil(maxHeroHealth * HEALTH_POTION_HEAL_RATIO),
+      missingHealth,
+    );
+    heroHealth = Math.min(maxHeroHealth, heroHealth + restored);
+    breakdown.healingReceived += restored;
+    breakdown.healthPotionsUsed += 1;
+    healthPotionCooldownRemaining = HEALTH_POTION_COOLDOWN_SECONDS;
   };
 
   const dealToEnemy = (
@@ -233,6 +270,7 @@ export function simulateCombatBalance(
 
   while (heroHealth > 0 && enemyHealth > 0 && elapsed < MAX_SIMULATION_SECONDS) {
     elapsed += STEP_SECONDS;
+    healthPotionCooldownRemaining = Math.max(0, healthPotionCooldownRemaining - STEP_SECONDS);
 
     for (const ability of abilities) {
       cooldowns.set(ability.id, Math.max(0, (cooldowns.get(ability.id) ?? 0) - STEP_SECONDS));
@@ -340,6 +378,7 @@ export function simulateCombatBalance(
         const incoming = Math.min(heroHealth, applyDamage(0, sourceDamage, type, armor, magicResistance));
         heroHealth = Math.max(0, heroHealth - incoming);
         breakdown.damageTaken += incoming;
+        tryUseHealthPotion();
       }
     }
   }
@@ -361,9 +400,11 @@ export function simulateCombatBalance(
       abilityDamage: Number(breakdown.abilityDamage.toFixed(2)),
       dotDamage: Number(breakdown.dotDamage.toFixed(2)),
       damageTaken: Number(breakdown.damageTaken.toFixed(2)),
+      healingReceived: Number(breakdown.healingReceived.toFixed(2)),
       autoAttacks: breakdown.autoAttacks,
       abilityCasts: breakdown.abilityCasts,
       dotTicks: breakdown.dotTicks,
+      healthPotionsUsed: breakdown.healthPotionsUsed,
     },
   };
 }
