@@ -29,10 +29,10 @@ describe("Morgana family content contract", () => {
     }
   });
 
-  it("uses Stone Highlands as the temporary Morgana pilot pool", () => {
-    const pool = ZONE_ENCOUNTER_POOLS.zone_highland_t3;
-    expect(pool?.normal).toEqual([MONSTER_IDS.morganaWitch, MONSTER_IDS.morganaSuppressor]);
-    expect(pool?.segmentBoss).toBe(MONSTER_IDS.morganaDarkKnight);
+  it("uses Morgana as Golden Steppe's dominant faction", () => {
+    const pool = ZONE_ENCOUNTER_POOLS.zone_steppe_t4;
+    expect(pool?.dominant.normal).toEqual([MONSTER_IDS.morganaWitch, MONSTER_IDS.morganaSuppressor]);
+    expect(pool?.dominant.elite).toBe(MONSTER_IDS.morganaDarkKnight);
     expect(pool?.biomeBoss).toBe(MONSTER_IDS.morganaHighPriestess);
   });
 

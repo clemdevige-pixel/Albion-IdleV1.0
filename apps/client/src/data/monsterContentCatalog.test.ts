@@ -16,7 +16,13 @@ import {
 describe("monsterContentCatalog", () => {
   it("keeps every encounter-pool reference resolvable", () => {
     for (const pool of Object.values(ZONE_ENCOUNTER_POOLS)) {
-      for (const monsterId of [...pool.normal, pool.segmentBoss, pool.biomeBoss]) {
+      for (const monsterId of [
+        ...pool.dominant.normal,
+        pool.dominant.elite,
+        ...pool.secondary.normal,
+        pool.secondary.elite,
+        pool.biomeBoss,
+      ]) {
         expect(getMonsterDefinition(monsterId).id).toBe(monsterId);
       }
     }
@@ -65,18 +71,26 @@ describe("monsterContentCatalog", () => {
 
   it("selects normal encounters from the zone pool deterministically", () => {
     const zone = asZoneDefinitionId("zone_forest_t3");
-    const first = resolveMonsterForEncounter(zone, 0, 0, () => 0);
-    const last = resolveMonsterForEncounter(zone, 0, 0, () => 0.999);
+    const first = resolveMonsterForEncounter(zone, 0, 0);
+    const repeated = resolveMonsterForEncounter(zone, 0, 0);
+    const next = resolveMonsterForEncounter(zone, 0, 1);
 
     expect(first.category).toBe("normal");
-    expect(last.category).toBe("normal");
-    expect(first.id).not.toBe(last.id);
+    expect(repeated.id).toBe(first.id);
+    expect(next.category).toBe("normal");
+    expect(next.id).not.toBe(first.id);
   });
 
   it("uses only implemented progression factions in every Blue Zone encounter", () => {
     const progressionFactions = new Set(["Undead", "Morgana", "Heretic", "Keeper"]);
     for (const pool of Object.values(ZONE_ENCOUNTER_POOLS)) {
-      for (const monsterId of [...pool.normal, pool.segmentBoss, pool.biomeBoss]) {
+      for (const monsterId of [
+        ...pool.dominant.normal,
+        pool.dominant.elite,
+        ...pool.secondary.normal,
+        pool.secondary.elite,
+        pool.biomeBoss,
+      ]) {
         expect(progressionFactions.has(getMonsterDefinition(monsterId).faction)).toBe(true);
       }
     }
@@ -105,6 +119,55 @@ describe("monsterContentCatalog", () => {
 
     expect(segmentBoss.tags).toContain("segment_boss");
     expect(biomeBoss.tags).toContain("biome_boss");
+  });
+
+  it("uses four normal encounters followed by one deterministic elite", () => {
+    const zone = asZoneDefinitionId("zone_forest_t3");
+
+    for (let encounterIndex = 0; encounterIndex < ENCOUNTERS_PER_SEGMENT - 1; encounterIndex += 1) {
+      expect(resolveMonsterForEncounter(zone, 4, encounterIndex).category).toBe("normal");
+    }
+
+    const firstElite = resolveMonsterForEncounter(zone, 0, ENCOUNTERS_PER_SEGMENT - 1);
+    const repeatedElite = resolveMonsterForEncounter(zone, 0, ENCOUNTERS_PER_SEGMENT - 1);
+    expect(firstElite.category).toBe("elite");
+    expect(repeatedElite.id).toBe(firstElite.id);
+  });
+
+  it("introduces the secondary faction progressively without replacing the dominant faction", () => {
+    const zone = asZoneDefinitionId("zone_forest_t3");
+
+    const early = resolveMonsterForEncounter(zone, 0, 0);
+    const laterSecondary = resolveMonsterForEncounter(zone, 6, 0);
+    const laterDominant = resolveMonsterForEncounter(zone, 7, 0);
+
+    expect(early.faction).toBe("Keeper");
+    expect(laterSecondary.faction).toBe("Heretic");
+    expect(laterDominant.faction).toBe("Keeper");
+  });
+
+  it("keeps every zone/segment/encounter assignment stable", () => {
+    for (const zoneId of Object.keys(ZONE_ENCOUNTER_POOLS)) {
+      const zone = asZoneDefinitionId(zoneId);
+      for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
+        for (let encounterIndex = 0; encounterIndex < ENCOUNTERS_PER_SEGMENT; encounterIndex += 1) {
+          const first = resolveMonsterForEncounter(zone, segmentIndex, encounterIndex);
+          const repeated = resolveMonsterForEncounter(zone, segmentIndex, encounterIndex);
+          expect(repeated.id).toBe(first.id);
+        }
+      }
+    }
+  });
+
+  it("reserves segment 10 encounter 5 for the zone boss", () => {
+    for (const zoneId of Object.keys(ZONE_ENCOUNTER_POOLS)) {
+      const boss = resolveMonsterForEncounter(
+        asZoneDefinitionId(zoneId),
+        SEGMENTS_PER_ZONE - 1,
+        ENCOUNTERS_PER_SEGMENT - 1,
+      );
+      expect(boss.category).toBe("boss");
+    }
   });
 
   it("has an explicit encounter pool for every current world zone", () => {

@@ -12,6 +12,7 @@ import {
 import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
 import type { WorldVM } from "../../game/GameBridge.js";
 import { resolveEnvironmentPresentation } from "../../data/environmentPresentation.js";
+import { resolveEncounterCategory } from "../../data/monsterContentCatalog.js";
 import {
   BIOME_BY_ZONE,
   BIOME_DEFINITIONS,
@@ -140,10 +141,10 @@ export function buildWorldViewModel({
           ? null
           : worldRuntime.pendingSegment + 1,
     farmMode: worldRuntime.farmMode,
-    encounterType:
-      worldRuntime.currentEncounter === ENCOUNTERS_PER_SEGMENT - 1
-        ? "boss"
-        : "normal",
+    encounterType: resolveEncounterCategory(
+      worldRuntime.currentSegment,
+      worldRuntime.currentEncounter,
+    ),
     zoneProgress: Math.floor(
       ((worldRuntime.currentSegment * ENCOUNTERS_PER_SEGMENT
         + worldRuntime.currentEncounter)

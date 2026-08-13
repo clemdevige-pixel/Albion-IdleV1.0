@@ -29,10 +29,10 @@ describe("Keeper family content contract", () => {
     }
   });
 
-  it("uses Mountain T4 as the temporary Keeper pilot pool", () => {
+  it("uses Keeper as Mountain T4's dominant faction", () => {
     const pool = ZONE_ENCOUNTER_POOLS.zone_mountain_t4;
-    expect(pool?.normal).toEqual([MONSTER_IDS.keeperWarrior, MONSTER_IDS.keeperShaman]);
-    expect(pool?.segmentBoss).toBe(MONSTER_IDS.keeperChampion);
+    expect(pool?.dominant.normal).toEqual([MONSTER_IDS.keeperWarrior, MONSTER_IDS.keeperShaman]);
+    expect(pool?.dominant.elite).toBe(MONSTER_IDS.keeperChampion);
     expect(pool?.biomeBoss).toBe(MONSTER_IDS.keeperAncient);
   });
 

@@ -13,7 +13,6 @@ import {
   type StatId,
   type ZoneDefinitionId,
 } from "@game/gameplay";
-import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
 import { resolveMonsterForEncounter } from "../data/monsterContentCatalog";
 import { buildMonsterRuntimeAbilities } from "../data/monsterAbilityContentCatalog";
 import { setActiveMonsterIdentity } from "./activeMonsterIdentity";
@@ -129,8 +128,6 @@ export function spawnEnemyForSegment(
   _biomeResolver: BiomeResolver,
   ctx: EnemySpawnContext,
 ): SpawnedEnemyResult {
-  const isBoss = ctx.encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-  const isBiomeBoss = isBoss && ctx.segmentIndex === SEGMENTS_PER_ZONE - 1;
   const monster = resolveMonsterForEncounter(
     ctx.zoneDefId,
     ctx.segmentIndex,
@@ -171,10 +168,10 @@ export function spawnEnemyForSegment(
     deps.abilityManager.learnAbility(enemyId, ability);
   }
 
-  const prefix = isBiomeBoss
+  const prefix = monster.category === "boss"
     ? "[BIOME BOSS] "
-    : isBoss
-      ? "[BOSS] "
+    : monster.category === "elite"
+      ? "[ELITE] "
       : "";
 
   return {

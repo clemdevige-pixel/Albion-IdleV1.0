@@ -81,6 +81,7 @@ interface ProductionFamilyDefinition {
   readonly masteryId: MasteryId;
   readonly label: string;
   readonly masterySymbol: string;
+  readonly professionIcon: string;
   readonly visualManifestId: string;
   readonly gatheringIcon: string;
   readonly rawIcon: string;
@@ -98,6 +99,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
     masteryId: WOOD_GATHERING_MASTERY_ID,
     label: "Bois",
     masterySymbol: "🌲",
+    professionIcon: "/assets/ui/professions/profession-woodcutting.png",
     visualManifestId: "resource_wood",
     gatheringIcon: "resource-birch-node.png",
     rawIcon: "resource-birch-log.png",
@@ -115,6 +117,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
     masteryId: ORE_GATHERING_MASTERY_ID,
     label: "Minerai",
     masterySymbol: "⛏",
+    professionIcon: "/assets/ui/professions/profession-mining.png",
     visualManifestId: "resource_ore",
     gatheringIcon: "resource-copper-pickaxe.png",
     rawIcon: "resource-copper-ore.png",
@@ -132,6 +135,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
     masteryId: HIDE_GATHERING_MASTERY_ID,
     label: "Peau",
     masterySymbol: "🦌",
+    professionIcon: "/assets/ui/professions/profession-skinning.png",
     visualManifestId: "resource_hide",
     gatheringIcon: "resource-hide.png",
     rawIcon: "resource-hide.png",
@@ -149,6 +153,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
     masteryId: FIBER_GATHERING_MASTERY_ID,
     label: "Fibres",
     masterySymbol: "🌿",
+    professionIcon: "/assets/ui/professions/profession-fiber-harvesting.png",
     visualManifestId: "resource_fiber",
     gatheringIcon: "resource-fiber.png",
     rawIcon: "resource-fiber.png",

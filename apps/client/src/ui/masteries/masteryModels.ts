@@ -23,6 +23,7 @@ export interface MasteryProgressModel {
 
 export interface MasteryFamilyModel extends MasteryProgressModel {
   readonly icon: string;
+  readonly iconAsset?: string;
   readonly specializations: readonly MasteryProgressModel[];
 }
 
@@ -109,6 +110,7 @@ export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
       bonuses: [`+${String(speedBonus)}% vitesse de récolte`, "1 ressource par cycle"],
       subtitle: "Maîtrise du héros",
       icon: definition.masterySymbol,
+      iconAsset: definition.professionIcon,
       specializations,
     }];
   });

@@ -187,7 +187,7 @@ export interface WorldVM {
   readonly completedSegments: readonly number[];
   readonly pendingSegmentIndex: number | null;
   readonly farmMode: boolean;
-  readonly encounterType: "normal" | "boss" | "resource";
+  readonly encounterType: "normal" | "elite" | "boss" | "resource";
   readonly zoneProgress: number;
   readonly isFirstVisit: boolean;
 }

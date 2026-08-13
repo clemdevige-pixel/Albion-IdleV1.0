@@ -129,11 +129,12 @@ export function selectDashboardZone(state: GameBridgeState): DashboardZoneModel 
   });
 
   const isBossEncounter = world.encounterType === "boss";
+  const isEliteEncounter = world.encounterType === "elite";
   const encountersUntilBoss = Math.max(0, world.encounterCount - world.encounterIndex);
   const bossTitle = world.segmentIndex === world.segmentCount
     ? "Boss de zone"
-    : `Boss du segment ${String(world.segmentIndex)}`;
-  const bossDetail = isBossEncounter
+    : `Élite du segment ${String(world.segmentIndex)}`;
+  const bossDetail = isBossEncounter || isEliteEncounter
     ? (state.enemyName !== "" ? state.enemyName : "Affrontement en cours")
     : encountersUntilBoss === 0
       ? "Prochain affrontement"

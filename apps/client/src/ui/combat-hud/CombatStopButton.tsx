@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from "react";
-import { useGameBridge } from "../../state/GameContext";
+import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { combatStopController } from "../../runtime/CombatStopController";
 
 export function CombatStopButton(): JSX.Element | null {
   const bridge = useGameBridge();
+  const { bridge: gameBridge } = useGameServices();
   const state = useSyncExternalStore(
     (listener) => combatStopController.subscribe(listener),
     () => combatStopController.getState(),
@@ -16,7 +17,7 @@ export function CombatStopButton(): JSX.Element | null {
   const handleClick = (): void => {
     if (state === "running") {
       if (!combatStopController.requestStopAfterSegment()) return;
-      bridge.addEconomyNotification({
+      gameBridge.addEconomyNotification({
         id: `notif_combat_stop_${String(Date.now())}`,
         type: "success",
         message: "Arrêt demandé : le combat s'arrêtera à la fin du segment en cours.",
@@ -26,7 +27,7 @@ export function CombatStopButton(): JSX.Element | null {
     }
 
     if (combatStopController.resume()) {
-      bridge.addEconomyNotification({
+      gameBridge.addEconomyNotification({
         id: `notif_combat_resume_${String(Date.now())}`,
         type: "success",
         message: state === "paused" ? "Combat repris." : "Arrêt du combat annulé.",

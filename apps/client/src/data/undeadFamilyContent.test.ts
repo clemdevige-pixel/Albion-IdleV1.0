@@ -35,9 +35,9 @@ describe("Undead family pilot content", () => {
     }
   });
 
-  it("uses the Dark Swamp as the temporary end-to-end family test pool", () => {
-    const normalA = resolveMonsterForEncounter(WORLD_ZONE_IDS.swamp, 0, 0, () => 0);
-    const normalB = resolveMonsterForEncounter(WORLD_ZONE_IDS.swamp, 0, 0, () => 0.999);
+  it("uses Undead as the dominant Dark Swamp faction", () => {
+    const normalA = resolveMonsterForEncounter(WORLD_ZONE_IDS.swamp, 0, 0);
+    const normalB = resolveMonsterForEncounter(WORLD_ZONE_IDS.swamp, 0, 1);
     const elite = resolveMonsterForEncounter(
       WORLD_ZONE_IDS.swamp,
       0,
@@ -49,10 +49,8 @@ describe("Undead family pilot content", () => {
       ENCOUNTERS_PER_SEGMENT - 1,
     );
 
-    expect([normalA.id, normalB.id].sort()).toEqual([
-      MONSTER_IDS.undeadSkeletonArcher,
-      MONSTER_IDS.undeadSkeletonSwordsman,
-    ].sort());
+    expect(normalA.faction).toBe("Undead");
+    expect(normalB.faction).toBe("Undead");
     expect(elite.id).toBe(MONSTER_IDS.undeadSpectralKnight);
     expect(elite.category).toBe("elite");
     expect(boss.id).toBe(MONSTER_IDS.undeadLich);

@@ -144,7 +144,7 @@ export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps):
               );
               const authoredBaseValue = definition.stats[statId] ?? value;
               const ipBonus = effectiveValue - authoredBaseValue;
-              const equippedBaseValue = equippedEffectiveDefinition?.stats[statId] ?? 0;
+              const equippedBaseValue = equippedEffectiveDefinition?.stats?.[statId] ?? 0;
               const equippedValue = getEffectiveEquipmentStat(
                 statId,
                 equippedBaseValue,

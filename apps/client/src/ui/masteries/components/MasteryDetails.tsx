@@ -1,4 +1,5 @@
 import type { MasteryFamilyModel, MasteryProgressModel } from "../masteryModels";
+import { MasteryFamilyIcon } from "./MasteryFamilyIcon";
 import { MasteryProgressBar } from "./MasteryProgressBar";
 
 function BonusList({ bonuses }: { readonly bonuses: readonly string[] }): JSX.Element {
@@ -22,7 +23,7 @@ export function MasteryDetails({ family }: { readonly family: MasteryFamilyModel
   return (
     <section className="ui-mastery-details">
       <header className="ui-mastery-details__header">
-        <span className="ui-mastery-details__icon" aria-hidden="true">{family.icon}</span>
+        <MasteryFamilyIcon family={family} className="ui-mastery-details__icon" />
         <div className="ui-mastery-details__title">
           <small>{family.subtitle}</small>
           <div><h3>{family.name}</h3><strong>Niv. {String(family.level)}</strong></div>

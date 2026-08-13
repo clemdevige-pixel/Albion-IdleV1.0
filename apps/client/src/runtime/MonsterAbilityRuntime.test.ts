@@ -73,7 +73,7 @@ describe("MonsterAbilityRuntime", () => {
 
   it("marks the hero dead when a monster ability deals lethal damage", () => {
     const env = setup();
-    const ability = MONSTER_ABILITIES[MONSTER_ABILITY_IDS.runeGolemCrushingBlow]!;
+    const ability = MONSTER_ABILITIES[MONSTER_ABILITY_IDS.undeadHeavySlash]!;
     env.abilityManager.learnAbility(env.monsterId, ability);
     env.damageManager.getHealth(env.heroId).currentHealth = 1;
 

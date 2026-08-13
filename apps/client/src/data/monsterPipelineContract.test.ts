@@ -65,7 +65,10 @@ describe("monster pipeline global contract", () => {
         .map((spawn) => String(spawn.definitionId))
         .sort();
 
-      expect(zoneMonsterIds).toEqual([...(pool?.normal ?? [])].sort());
+      expect(zoneMonsterIds).toEqual([
+        ...(pool?.dominant.normal ?? []),
+        ...(pool?.secondary.normal ?? []),
+      ].sort());
     }
   });
 
@@ -127,7 +130,7 @@ describe("monster pipeline global contract", () => {
     const monster = getMonsterDefinition(spawned.monsterDefinitionId);
     const canonicalProfile = getEnemyCombatProfile(0, 0, encounterIndex);
 
-    expect(monster.category).toBe("boss");
+    expect(monster.category).toBe("elite");
     expect(spawned.maxHealth).toBe(canonicalProfile.hp);
     expect(getMonsterDefinitionIdForEntity(spawned.id)).toBe(monster.id);
 

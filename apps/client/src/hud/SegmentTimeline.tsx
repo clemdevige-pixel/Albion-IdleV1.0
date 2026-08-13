@@ -111,7 +111,7 @@ export function SegmentTimeline(): JSX.Element {
       <div className="segment-timeline__details">
         <span>
           {isViewingActiveZone
-            ? `Segment ${world.segmentIndex}/${world.segmentCount} · Rencontre ${world.encounterIndex}/${world.encounterCount}${world.encounterType === "boss" ? " · BOSS" : ""}`
+            ? `Segment ${world.segmentIndex}/${world.segmentCount} · Rencontre ${world.encounterIndex}/${world.encounterCount}${world.encounterType === "boss" ? " · BOSS" : world.encounterType === "elite" ? " · ÉLITE" : ""}`
             : `Dernier segment actif : ${viewedZone.segmentIndex}/${world.segmentCount}`}
         </span>
         <strong>

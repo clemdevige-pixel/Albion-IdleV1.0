@@ -31,7 +31,12 @@ function buildNormalMonsterSpawns(
   groupPrefix: string,
   respawnDelayTicks: number,
 ): ZoneDefinition["monsterSpawns"] {
-  return getZoneEncounterPool(zoneDefId).normal.map((monsterId, index) => ({
+  const pool = getZoneEncounterPool(zoneDefId);
+  const monsterIds = [...new Set([
+    ...pool.dominant.normal,
+    ...pool.secondary.normal,
+  ])];
+  return monsterIds.map((monsterId, index) => ({
     definitionId: asMonsterDefinitionId(monsterId),
     spawnGroupId: asSpawnGroupId(`${groupPrefix}_${String(index + 1)}`),
     count: 1,

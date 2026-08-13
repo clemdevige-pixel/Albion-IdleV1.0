@@ -1,4 +1,5 @@
 import type { MasteryFamilyModel } from "../masteryModels";
+import { MasteryFamilyIcon } from "./MasteryFamilyIcon";
 
 interface MasteryFamilyListProps {
   readonly families: readonly MasteryFamilyModel[];
@@ -16,7 +17,7 @@ export function MasteryFamilyList({ families, selectedId, onSelect }: MasteryFam
           className={`ui-mastery-family${family.id === selectedId ? " is-selected" : ""}${family.isUnlocked ? "" : " is-locked"}`}
           onClick={() => { onSelect(family.id); }}
         >
-          <span className="ui-mastery-family__icon" aria-hidden="true">{family.icon}</span>
+          <MasteryFamilyIcon family={family} className="ui-mastery-family__icon" />
           <span className="ui-mastery-family__body">
             <span className="ui-mastery-family__heading">
               <strong>{family.name}</strong>

@@ -14,6 +14,7 @@ export type WeaponHandling = EquipmentInfoLike["handling"];
  * offensive tradeoff for surrendering the off-hand slot.
  */
 export const WEAPON_HANDLING_OFFENSIVE_MULTIPLIER: Readonly<Record<WeaponHandling, number>> = {
+  none: 1,
   one_handed: 1,
   two_handed: 1.4,
 };
