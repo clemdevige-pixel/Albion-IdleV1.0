@@ -20,7 +20,11 @@ export interface EquippedWeaponPresentation {
   readonly combatPresentation: EquipmentSlotVM["combatPresentation"];
 }
 
-type AbilityDamageEvent = DamageNumberEvent & { readonly abilityId?: string };
+type PresentationDamageEvent = DamageNumberEvent & {
+  readonly abilityId?: string;
+  readonly sourceType?: "auto_attack" | "ability" | "effect" | "other";
+  readonly targetHealthAfter?: number;
+};
 
 /** Translates authoritative combat events into generic visual sequences. */
 export class CombatPresentationSystem {
@@ -32,23 +36,36 @@ export class CombatPresentationSystem {
     private readonly projectileSystem: ProjectileSystem,
     private readonly damageNumberSystem: DamageNumberSystem,
     private readonly getWeaponPresentation: () => EquippedWeaponPresentation,
+    private readonly onPresentedImpact: (event: PresentationDamageEvent) => void = () => {},
   ) {}
 
   public present(event: DamageNumberEvent): void {
+    const presentationEvent = event as PresentationDamageEvent;
     const weapon = this.getWeaponPresentation();
-    const abilityVfx = resolveAbilityVfx((event as AbilityDamageEvent).abilityId);
+    const abilityVfx = resolveAbilityVfx(presentationEvent.abilityId);
+
+    if (presentationEvent.sourceType === "effect") {
+      this.presentEffectDamage(presentationEvent);
+      return;
+    }
+
     if (
       event.target === "enemy"
       && weapon.combatPresentation?.kind === "projectile"
     ) {
-      this.presentRanged(event, weapon.combatPresentation, abilityVfx);
+      this.presentRanged(presentationEvent, weapon.combatPresentation, abilityVfx);
       return;
     }
-    this.presentMelee(event, weapon.visualManifestId, abilityVfx);
+    this.presentMelee(presentationEvent, weapon.visualManifestId, abilityVfx);
+  }
+
+  private presentEffectDamage(event: PresentationDamageEvent): void {
+    this.damageNumberSystem.present(event);
+    this.onPresentedImpact(event);
   }
 
   private presentMelee(
-    event: DamageNumberEvent,
+    event: PresentationDamageEvent,
     visualManifestId: string | undefined,
     abilityVfx: AbilityVfxDefinition | undefined,
   ): void {
@@ -86,11 +103,12 @@ export class CombatPresentationSystem {
       }
       this.damageNumberSystem.present(event);
       this.presentVictimReaction(victim, event.target);
+      this.onPresentedImpact(event);
     });
   }
 
   private presentRanged(
-    event: DamageNumberEvent,
+    event: PresentationDamageEvent,
     profile: NonNullable<EquipmentSlotVM["combatPresentation"]>,
     abilityVfx: AbilityVfxDefinition | undefined,
   ): void {
@@ -107,6 +125,7 @@ export class CombatPresentationSystem {
           }
           this.damageNumberSystem.present(event);
           this.presentVictimReaction(this.actors.enemy, "enemy");
+          this.onPresentedImpact(event);
         },
       });
     });
