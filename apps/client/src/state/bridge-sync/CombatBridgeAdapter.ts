@@ -61,21 +61,26 @@ export class CombatBridgeAdapter {
       if (event.entityId === this.#heroId) {
         this.#bridge.updatePlayerHealth(event.newHealth, event.maxHealth);
       } else {
+        // Enemy health remains authoritative in the bridge, but world-space
+        // presentation deliberately consumes DamageDealt.targetHealthAfter at
+        // visual impact time so projectile weapons do not appear to hit late.
         this.#bridge.updateEnemyHealth(event.newHealth, event.maxHealth);
       }
     });
     const unsubscribeDamage = eventBus.subscribe("DamageDealt", (event) => {
       const target = event.target === this.#heroId ? "player" : "enemy";
-
-      // Periodic/status-effect damage is already represented by the health
-      // change and active-effect presentation. It must not masquerade as a
-      // fresh weapon attack/projectile.
-      if (event.sourceType === "effect") return;
-
-      const abilityId = event.source === this.#heroId && target === "enemy"
+      const abilityId = event.source === this.#heroId
+        && target === "enemy"
+        && event.sourceType === "ability"
         ? this.#consumePendingHeroAbilityId()
         : undefined;
-      this.#bridge.addDamageNumber(event.finalDamage, target, abilityId);
+      this.#bridge.addDamageNumber(
+        event.finalDamage,
+        target,
+        abilityId,
+        event.sourceType,
+        event.targetHealthAfter,
+      );
     });
 
     return () => {
