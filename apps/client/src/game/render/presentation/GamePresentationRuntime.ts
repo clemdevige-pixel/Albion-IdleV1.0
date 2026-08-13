@@ -4,6 +4,10 @@ import { selectActiveGathering } from "./GamePresentationState";
 import { ActivityPresentationController } from "./ActivityPresentationController";
 import { CombatPresentationController } from "./CombatPresentationController";
 import { invalidateCombatPresentation } from "./CombatPresentationInvalidation";
+import {
+  clearPresentedEnemyHealth,
+  resetPresentedEnemyHealth,
+} from "./CombatPresentedHealth";
 import { WorldPresentationController } from "./WorldPresentationController";
 
 /** Thin coordinator for the specialized presentation controllers. */
@@ -42,14 +46,14 @@ export class GamePresentationRuntime {
       bridge.world.segmentIndex,
       bridge.world.encounterIndex,
     ].join(":");
-    if (
-      this.lastEncounterPresentationKey !== undefined
-      && encounterPresentationKey !== this.lastEncounterPresentationKey
-    ) {
-      const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
-      invalidateCombatPresentation(latestDamageEventId);
+    if (encounterPresentationKey !== this.lastEncounterPresentationKey) {
+      if (this.lastEncounterPresentationKey !== undefined) {
+        const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
+        invalidateCombatPresentation(latestDamageEventId);
+      }
+      resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      this.lastEncounterPresentationKey = encounterPresentationKey;
     }
-    this.lastEncounterPresentationKey = encounterPresentationKey;
 
     const gathering = selectActiveGathering(bridge);
     this.combat?.update(bridge);
@@ -61,6 +65,7 @@ export class GamePresentationRuntime {
     this.activity?.clear();
     this.combat?.clear();
     this.world?.clear();
+    clearPresentedEnemyHealth();
     this.activity = undefined;
     this.combat = undefined;
     this.world = undefined;
