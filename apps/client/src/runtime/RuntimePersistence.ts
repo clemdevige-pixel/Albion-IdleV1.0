@@ -34,8 +34,9 @@ import {
   CURRENT_RUNTIME_SAVE_VERSION,
   createRuntimeMigrationPipeline,
 } from "./saveMigrations";
+import { LEGACY_SAVE_SLOT_ID, getSaveBackupSlotId } from "./saveSlots";
 
-export const DEFAULT_SAVE_SLOT_ID = "albion_idle_save_v1";
+export const DEFAULT_SAVE_SLOT_ID = LEGACY_SAVE_SLOT_ID;
 
 export interface RuntimePersistenceDependencies {
   readonly inventoryManager: InventoryManager;
@@ -67,7 +68,7 @@ export class RuntimePersistence {
 
   public constructor(deps: RuntimePersistenceDependencies) {
     this.saveSlotId = deps.saveSlotId ?? DEFAULT_SAVE_SLOT_ID;
-    this.backupSlotId = `${this.saveSlotId}_backup`;
+    this.backupSlotId = getSaveBackupSlotId(this.saveSlotId);
     this.saveRepository = new LocalStorageSaveRepository();
     const versionManager = new VersionManager(CURRENT_RUNTIME_SAVE_VERSION);
     const migrationPipeline = createRuntimeMigrationPipeline();

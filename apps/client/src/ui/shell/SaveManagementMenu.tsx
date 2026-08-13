@@ -1,5 +1,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { useGameServices } from "../../state/GameContext";
+import { useSaveSlotSession } from "../../state/SaveSlotSessionContext";
+import { getSaveSlotNumber } from "../../runtime/saveSlots";
 
 function downloadSave(raw: string): void {
   const blob = new Blob([raw], { type: "application/json" });
@@ -12,7 +14,8 @@ function downloadSave(raw: string): void {
 }
 
 export function SaveManagementMenu(): JSX.Element {
-  const { exportSave, importSave } = useGameServices();
+  const { exportSave, importSave, saveGame } = useGameServices();
+  const { activeSlotId, returnToSlotSelection } = useSaveSlotSession();
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<string | undefined>();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +47,17 @@ export function SaveManagementMenu(): JSX.Element {
     }
   };
 
+  const handleChangeSlot = (): void => {
+    if (!window.confirm("Sauvegarder et retourner au choix de partie ?")) return;
+    try {
+      saveGame();
+      returnToSlotSelection();
+    } catch (error) {
+      console.error("[Persistence] Could not save before leaving slot:", error);
+      setStatus("Sauvegarde impossible. Changement de partie annulé.");
+    }
+  };
+
   return (
     <div className="permanent-header__save-settings">
       <button
@@ -57,12 +71,13 @@ export function SaveManagementMenu(): JSX.Element {
       </button>
       {isOpen ? (
         <div className="permanent-header__save-menu">
-          <strong>Sauvegarde</strong>
-          <p>Conservez une copie locale ou restaurez-la sur cet appareil.</p>
+          <strong>Sauvegarde · Partie {String(getSaveSlotNumber(activeSlotId))}</strong>
+          <p>Conservez une copie locale, restaurez-la ou changez de partie.</p>
           <button type="button" onClick={handleExport}>Exporter</button>
           <button type="button" onClick={() => { inputRef.current?.click(); }}>
             Importer
           </button>
+          <button type="button" onClick={handleChangeSlot}>Changer de partie</button>
           <input
             ref={inputRef}
             type="file"

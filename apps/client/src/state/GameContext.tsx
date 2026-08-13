@@ -42,6 +42,7 @@ import {
 import { CombatBridgeAdapter } from "./bridge-sync/CombatBridgeAdapter.js";
 import { GameBridgeSyncCoordinator } from "./bridge-sync/GameBridgeSyncCoordinator.js";
 import { GameRuntimeTickController } from "../runtime/GameRuntimeTickController.js";
+import type { PlayerSaveSlotId } from "../runtime/saveSlots.js";
 
 export type { GameServices, UIEventMap } from "./GameServices.js";
 export { useGameBridge, useGameServices } from "./GameServicesContext.js";
@@ -51,7 +52,13 @@ export const HERO_BASE_ATTACK_SPEED = 1.2;
 const WORKER_RECRUITMENT_COST = 250;
 const WORKER_CAPACITY = 4;
 
-export function GameProvider({ children }: { readonly children: ReactNode }): JSX.Element {
+export function GameProvider({
+  saveSlotId,
+  children,
+}: {
+  readonly saveSlotId: PlayerSaveSlotId;
+  readonly children: ReactNode;
+}): JSX.Element {
   const services = useMemo<GameServices>(() => {
     const eventBus = new EventBus<UIEventMap>();
     const bridge = new GameBridge();
@@ -243,6 +250,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       fameService,
       destinyBoardService,
       durabilityStore,
+      saveSlotId,
     });
 
     const refiningSaveProvider = new RefiningSaveProvider(
@@ -483,7 +491,7 @@ export function GameProvider({ children }: { readonly children: ReactNode }): JS
       repairAll: () => repairActions.repairAll(),
       saveGame, loadGame, hasSave, exportSave, importSave,
     };
-  }, []);
+  }, [saveSlotId]);
 
   useGameRuntimeLifecycle(services);
 

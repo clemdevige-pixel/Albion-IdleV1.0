@@ -1,0 +1,22 @@
+.save-slot-screen { display: grid; width: 100vw; min-width: 0; height: 100vh; place-items: center; padding: clamp(18px, 4vw, 56px); box-sizing: border-box; color: var(--ui-color-text-primary); background: radial-gradient(circle at 50% 12%, rgb(151 101 29 / 16%), transparent 28%), linear-gradient(rgb(5 8 11 / 76%), rgb(5 8 11 / 94%)), url("/assets/birch-forest-combat-background-pixel-v1.png") center / cover no-repeat, #070a0e; }
+.save-slot-screen__panel { width: min(720px, 100%); padding: clamp(20px, 3vw, 36px); background: rgb(8 12 17 / 96%); border: 1px solid #76531f; box-shadow: 0 24px 70px rgb(0 0 0 / 70%), inset 0 0 0 1px rgb(227 183 82 / 5%); }
+.save-slot-screen__header { display: flex; align-items: center; gap: 16px; padding-bottom: 22px; border-bottom: 1px solid #342816; }
+.save-slot-screen__header p, .save-slot-screen__header h1, .save-slot-screen__footer p { margin: 0; }
+.save-slot-screen__header p { color: #8d7651; font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+.save-slot-screen__header h1 { margin-top: 3px; color: #ebce7c; font-family: var(--ui-font-display); font-size: clamp(24px, 4vw, 34px); font-weight: 600; }
+.save-slot-screen__crest { display: grid; width: 50px; height: 58px; place-items: center; color: #f3cc67; background: #17120b; border: 1px solid #9b702b; clip-path: polygon(50% 0, 94% 17%, 86% 77%, 50% 100%, 14% 77%, 6% 17%); font-size: 11px; font-weight: 800; }
+.save-slot-screen__list { display: grid; gap: 10px; padding: 22px 0; }
+.save-slot-card { position: relative; overflow: hidden; background: linear-gradient(180deg, #121821, #0c1117); border: 1px solid #2b3037; }
+.save-slot-card.is-occupied { border-color: #5f4824; }
+.save-slot-card__select { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 14px; width: 100%; min-height: 76px; padding: 10px 112px 10px 14px; color: inherit; font: inherit; text-align: left; background: transparent; border: 0; cursor: pointer; }
+.save-slot-card__select:hover { background: rgb(148 101 34 / 10%); }
+.save-slot-card__number { display: grid; width: 42px; height: 42px; place-items: center; color: #ebc967; background: #19150e; border: 1px solid #7f5d24; border-radius: 50%; font-family: var(--ui-font-display); font-size: 19px; }
+.save-slot-card__copy { display: grid; gap: 4px; min-width: 0; }
+.save-slot-card__copy strong { color: #eee3ca; font-family: var(--ui-font-display); font-size: 17px; }
+.save-slot-card__copy small { color: #858b94; font-size: 10px; }
+.save-slot-card__action { color: #e7bd50; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.save-slot-card__delete { position: absolute; top: 50%; right: 13px; padding: 7px 8px; color: #9e817b; background: #171316; border: 1px solid #493236; cursor: pointer; transform: translateY(-50%); }
+.save-slot-card__delete:hover { color: #efb1a4; border-color: #8e4b4b; }
+.save-slot-screen__footer { display: grid; gap: 5px; padding-top: 15px; color: #777e86; border-top: 1px solid #342816; font-size: 9px; text-align: center; }
+.save-slot-screen__footer [role="alert"] { color: #df9a88; }
+@media (max-width: 560px) { .save-slot-card__select { grid-template-columns: 42px minmax(0, 1fr); padding-right: 92px; } .save-slot-card__action { display: none; } }
