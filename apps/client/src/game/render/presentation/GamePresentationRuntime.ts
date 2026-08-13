@@ -3,6 +3,7 @@ import type { GameBridge } from "../../GameBridge";
 import { selectActiveGathering } from "./GamePresentationState";
 import { ActivityPresentationController } from "./ActivityPresentationController";
 import { CombatPresentationController } from "./CombatPresentationController";
+import { invalidateCombatPresentation } from "./CombatPresentationInvalidation";
 import { WorldPresentationController } from "./WorldPresentationController";
 
 /** Thin coordinator for the specialized presentation controllers. */
@@ -10,6 +11,7 @@ export class GamePresentationRuntime {
   private combat: CombatPresentationController | undefined;
   private activity: ActivityPresentationController | undefined;
   private world: WorldPresentationController | undefined;
+  private lastEncounterPresentationKey: string | undefined;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -34,6 +36,20 @@ export class GamePresentationRuntime {
   public update(): void {
     const bridge = this.getBridge();
     if (bridge === undefined) return;
+
+    const encounterPresentationKey = [
+      bridge.world.zoneDefId,
+      bridge.world.segmentIndex,
+      bridge.world.encounterIndex,
+    ].join(":");
+    if (
+      this.lastEncounterPresentationKey !== undefined
+      && encounterPresentationKey !== this.lastEncounterPresentationKey
+    ) {
+      invalidateCombatPresentation();
+    }
+    this.lastEncounterPresentationKey = encounterPresentationKey;
+
     const gathering = selectActiveGathering(bridge);
     this.combat?.update(bridge);
     this.activity?.update(gathering);
@@ -47,5 +63,6 @@ export class GamePresentationRuntime {
     this.activity = undefined;
     this.combat = undefined;
     this.world = undefined;
+    this.lastEncounterPresentationKey = undefined;
   }
 }
