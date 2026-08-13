@@ -10,7 +10,11 @@ interface WorldZonesViewProps {
 
 function currentZone(zone: DashboardZoneModel): DashboardZoneOptionModel {
   return zone.zones.find((candidate) => candidate.isActive) ?? zone.zones[0] ?? {
+    zoneDefId: "",
     zoneIndex: zone.zoneIndex,
+    worldBandId: zone.worldBandId,
+    zoneIndexWithinBand: zone.zoneIndexWithinBand,
+    tier: 0,
     biomeName: zone.biomeName,
     zoneName: zone.zoneName,
     isUnlocked: true,
@@ -23,14 +27,19 @@ function currentZone(zone: DashboardZoneModel): DashboardZoneOptionModel {
 }
 
 export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesViewProps): JSX.Element {
-  const [selectedBand, setSelectedBand] = useState<WorldBandId>("blue");
+  const [selectedBand, setSelectedBand] = useState<WorldBandId>(zone.worldBandId);
   const [viewedZoneIndex, setViewedZoneIndex] = useState(zone.zoneIndex);
 
-  useEffect(() => { setViewedZoneIndex(zone.zoneIndex); }, [zone.zoneIndex]);
+  useEffect(() => {
+    setViewedZoneIndex(zone.zoneIndex);
+    setSelectedBand(zone.worldBandId);
+  }, [zone.zoneIndex, zone.worldBandId]);
 
-  const viewedZone = zone.zones.find((candidate) => candidate.zoneIndex === viewedZoneIndex)
+  const bandZones = zone.zones.filter((candidate) => candidate.worldBandId === selectedBand);
+  const viewedZone = bandZones.find((candidate) => candidate.zoneIndex === viewedZoneIndex)
+    ?? bandZones[0]
     ?? currentZone(zone);
-  const selectedBandModel = WORLD_BANDS.find((band) => band.id === selectedBand) ?? WORLD_BANDS[0];
+  const selectedBandModel = WORLD_BANDS.find((band) => band.id === selectedBand) ?? WORLD_BANDS[0]!;
 
   return (
     <div className="world-zones">
@@ -44,7 +53,7 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
         ))}
       </div>
 
-      {selectedBandModel?.isAvailable === false ? (
+      {selectedBandModel.isAvailable === false ? (
         <section className={`world-upcoming world-upcoming--${selectedBandModel.id}`}>
           <span className="world-upcoming__crest" aria-hidden="true">◇</span>
           <small>Zone {selectedBandModel.label}</small>
@@ -53,13 +62,16 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
         </section>
       ) : (
         <>
-          <section className="world-zone-list" aria-label="Zones du monde bleu">
-            {zone.zones.map((candidate, index) => (
+          <section
+            className="world-zone-list"
+            aria-label={`Zones du monde ${selectedBandModel.label.toLowerCase()}`}
+          >
+            {bandZones.map((candidate, index) => (
               <button key={candidate.zoneIndex} type="button" className={`world-zone-row${candidate.zoneIndex === viewedZone.zoneIndex ? " is-selected" : ""}${candidate.isActive ? " is-current" : ""}${!candidate.isUnlocked ? " is-locked" : ""}`} onClick={() => { setViewedZoneIndex(candidate.zoneIndex); }}>
                 <span className="world-zone-row__number">{String(index + 1).padStart(2, "0")}</span>
                 <span className="world-zone-row__identity">
                   <strong>{candidate.zoneName}</strong>
-                  <small>{candidate.biomeName} · {candidate.zoneIndex <= 3 ? "T3" : "T4"}</small>
+                  <small>{candidate.biomeName} · T{candidate.tier}</small>
                 </span>
                 <span className="world-zone-row__state">{candidate.isActive ? "Actuelle" : candidate.isUnlocked ? "Accessible" : "Verrouillée"}</span>
               </button>
@@ -68,12 +80,18 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
 
           <section className="world-zone-detail">
             <header>
-              <div><small>Zone sélectionnée</small><h2>{viewedZone.zoneName}</h2><p>{viewedZone.biomeName} · Monde bleu</p></div>
+              <div>
+                <small>Zone sélectionnée</small>
+                <h2>{viewedZone.zoneName}</h2>
+                <p>
+                  {viewedZone.biomeName} · Monde {selectedBandModel.label.toLowerCase()}
+                </p>
+              </div>
               <span className={viewedZone.isUnlocked ? "is-unlocked" : ""}>{viewedZone.isUnlocked ? "Accessible" : "Verrouillée"}</span>
             </header>
 
             <div className="world-zone-detail__stats">
-              <span><small>Palier</small><strong>{viewedZone.zoneIndex <= 3 ? "T3" : "T4"}</strong></span>
+              <span><small>Palier</small><strong>T{viewedZone.tier}</strong></span>
               <span><small>IP conseillé</small><strong>{viewedZone.recommendedItemPower}</strong></span>
               <span><small>Progression</small><strong>{viewedZone.unlockedSegmentCount} / {zone.segmentCount}</strong></span>
             </div>

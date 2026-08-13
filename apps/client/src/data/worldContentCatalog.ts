@@ -8,6 +8,10 @@ import {
   type ZoneDefinitionId,
   type ZoneUnlockDefinition,
 } from "@game/gameplay";
+import {
+  WORLD_BAND_DEFINITIONS,
+  type WorldBandId,
+} from "@game/data";
 import { getZoneEncounterPool } from "./monsterContentCatalog";
 
 export const WORLD_ZONE_IDS = {
@@ -17,6 +21,40 @@ export const WORLD_ZONE_IDS = {
   steppe: asZoneDefinitionId("zone_steppe_t4"),
   mountain: asZoneDefinitionId("zone_mountain_t4"),
 } as const;
+
+export const WORLD_ZONE_IDS_BY_BAND: Readonly<
+  Record<WorldBandId, readonly ZoneDefinitionId[]>
+> = {
+  blue: Object.values(WORLD_ZONE_IDS),
+  yellow: [],
+  orange: [],
+  red: [],
+  black: [],
+};
+
+export interface WorldZonePlacement {
+  readonly bandId: WorldBandId;
+  readonly zoneIndexWithinBand: number;
+  readonly tier: number;
+}
+
+export function getWorldZonePlacement(
+  zoneDefId: ZoneDefinitionId | string,
+): WorldZonePlacement {
+  for (const band of WORLD_BAND_DEFINITIONS) {
+    const zoneIndexWithinBand = WORLD_ZONE_IDS_BY_BAND[band.id].findIndex(
+      (candidate) => candidate === zoneDefId,
+    );
+    if (zoneIndexWithinBand >= 0) {
+      const zoneDefinition = ZONE_DEFINITIONS.find(({ id }) => id === zoneDefId);
+      if (zoneDefinition === undefined) {
+        throw new Error(`Zone definition is missing for world placement: ${String(zoneDefId)}`);
+      }
+      return { bandId: band.id, zoneIndexWithinBand, tier: zoneDefinition.tier };
+    }
+  }
+  throw new Error(`Zone is not assigned to a world band: ${String(zoneDefId)}`);
+}
 
 export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
   { id: asBiomeId("biome_forest"), name: "Forest", theme: "Nature", difficultyModifier: 0.72, enemyFamilies: ["Animal", "Keeper"], resourceFamilies: ["Wood", "Hide"], encounterPoolId: "encounter_pool_forest", visualThemeId: "visual_forest", ambientAudioId: "audio_forest", musicPlaylistId: "music_forest", weather: "None", lighting: "Day", decorationDensity: "Normal", tags: ["nature", "starter"] },
@@ -68,4 +106,6 @@ export const ZONE_UNLOCK_DEFINITIONS: readonly ZoneUnlockDefinition[] = [
   { zoneDefId: WORLD_ZONE_IDS.mountain, conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.steppe }] },
 ];
 
-export const WORLD_ZONE_ORDER = Object.values(WORLD_ZONE_IDS);
+export const WORLD_ZONE_ORDER = WORLD_BAND_DEFINITIONS.flatMap(
+  ({ id }) => WORLD_ZONE_IDS_BY_BAND[id],
+);

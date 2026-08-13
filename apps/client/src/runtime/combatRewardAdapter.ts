@@ -7,6 +7,7 @@ import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
 import { ENCHANTMENT_MATERIAL_NAMES } from "../data/economyContentCatalog.js";
 import { getMonsterDefinition } from "../data/monsterContentCatalog.js";
+import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import {
   clearActiveMonsterIdentity,
   getMonsterDefinitionIdForEntity,
@@ -86,10 +87,14 @@ export function setupCombatRewardAdapter(
   const unsubscribe = options.combatService.events.subscribe("enemyKilled", (event) => {
     options.bridge.incrementEnemiesKilled();
 
+    const zonePlacement = getWorldZonePlacement(
+      options.worldRuntime.getActiveZoneDef().defId,
+    );
     const progressionRewards = getEncounterRewards(
-      options.worldRuntime.currentZoneIndex,
+      zonePlacement.zoneIndexWithinBand,
       options.worldRuntime.currentSegment,
       options.worldRuntime.currentEncounter,
+      zonePlacement.bandId,
     );
     const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
     const monster = monsterDefinitionId === undefined

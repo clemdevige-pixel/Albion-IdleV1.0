@@ -3,7 +3,8 @@ import {
   ENCOUNTERS_PER_SEGMENT,
   ENCOUNTER_DIFFICULTY_GROWTH,
   REWARD_RANKS_PER_ZONE,
-  WORLD_ONE_COMBAT_CURVE,
+  getWorldCombatProgression,
+  type WorldBandId,
 } from "@game/data";
 
 export interface EnemyCombatProfile {
@@ -23,11 +24,16 @@ export function getEnemyCombatProfile(
   zoneIndex: number,
   segmentIndex: number,
   encounterIndex: number,
+  worldBandId: WorldBandId = "blue",
 ): EnemyCombatProfile {
   const isBoss = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-  const curve =
-    WORLD_ONE_COMBAT_CURVE[zoneIndex]
-    ?? WORLD_ONE_COMBAT_CURVE[WORLD_ONE_COMBAT_CURVE.length - 1]!;
+  const worldProgression = getWorldCombatProgression(worldBandId);
+  const curve = worldProgression.curve[zoneIndex];
+  if (curve === undefined) {
+    throw new RangeError(
+      `Missing combat curve for ${worldBandId} zone index ${String(zoneIndex)}`,
+    );
+  }
   const segmentProgress =
     Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex))
     / (SEGMENTS_PER_ZONE - 1);
@@ -58,9 +64,12 @@ export function getEncounterRewards(
   zoneIndex: number,
   segmentIndex: number,
   encounterIndex: number,
+  worldBandId: WorldBandId = "blue",
 ): EncounterRewards {
+  const worldProgression = getWorldCombatProgression(worldBandId);
   const progressionRank =
-    zoneIndex * REWARD_RANKS_PER_ZONE +
+    worldProgression.rewardRankOffset
+    + zoneIndex * REWARD_RANKS_PER_ZONE +
     segmentIndex *
       ((REWARD_RANKS_PER_ZONE - 1) / (SEGMENTS_PER_ZONE - 1));
   const isBoss = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;

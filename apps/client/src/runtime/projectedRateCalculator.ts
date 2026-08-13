@@ -1,4 +1,4 @@
-import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
+import { ENCOUNTERS_PER_SEGMENT, type WorldBandId } from "@game/data";
 import { getEnemyCombatProfile, getEncounterRewards } from "@game/gameplay";
 import {
   CLIENT_ABILITIES,
@@ -13,6 +13,7 @@ export interface CalculateProjectedRateInput {
   readonly equippedWeaponId?: string | undefined;
   readonly primaryAbilityAutoCast: boolean;
   readonly currentZoneIndex: number;
+  readonly currentWorldBandId?: WorldBandId | undefined;
   readonly currentSegment: number;
 }
 
@@ -31,6 +32,7 @@ export function calculateProjectedSegmentRates(
     equippedWeaponId,
     primaryAbilityAutoCast,
     currentZoneIndex,
+    currentWorldBandId = "blue",
     currentSegment,
   } = input;
 
@@ -55,6 +57,7 @@ export function calculateProjectedSegmentRates(
       currentZoneIndex,
       currentSegment,
       encounterIndex,
+      currentWorldBandId,
     );
     const autoResistance = autoAttackIsMagical
       ? enemy.magicResistance
@@ -89,6 +92,7 @@ export function calculateProjectedSegmentRates(
       currentZoneIndex,
       currentSegment,
       encounterIndex,
+      currentWorldBandId,
     );
     projectedSilver += rewards.silver;
     if (canEarnFame) projectedFame += rewards.fame;

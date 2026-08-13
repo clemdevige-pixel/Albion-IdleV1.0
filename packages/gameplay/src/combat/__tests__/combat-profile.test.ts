@@ -63,6 +63,12 @@ describe("combat-profile", () => {
         expect(boss.armor).toBeGreaterThanOrEqual(normal.armor);
       }
     });
+
+    it("does not silently reuse Blue balancing for an unauthored future world", () => {
+      expect(() => getEnemyCombatProfile(0, 0, 0, "yellow")).toThrow(
+        /Combat progression is not authored for world band: yellow/,
+      );
+    });
   });
 
   describe("getEncounterRewards", () => {
@@ -110,6 +116,12 @@ describe("combat-profile", () => {
         expect(boss.silver).toBe(normal.silver * 2);
         expect(boss.fame).toBe(normal.fame * 2);
       }
+    });
+
+    it("does not silently reuse Blue rewards for an unauthored future world", () => {
+      expect(() => getEncounterRewards(0, 0, 0, "yellow")).toThrow(
+        /Combat progression is not authored for world band: yellow/,
+      );
     });
   });
 });

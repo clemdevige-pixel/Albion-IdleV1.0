@@ -61,3 +61,6 @@ export * from "./assets/index.js";
 
 // Combat progression config
 export * from "./config/combat-progression.js";
+
+// World progression bands
+export * from "./config/world-bands.js";

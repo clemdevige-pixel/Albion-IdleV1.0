@@ -14,6 +14,7 @@ import {
   type ZoneDefinitionId,
 } from "@game/gameplay";
 import { resolveMonsterForEncounter } from "../data/monsterContentCatalog";
+import { getWorldZonePlacement } from "../data/worldContentCatalog";
 import { buildMonsterRuntimeAbilities } from "../data/monsterAbilityContentCatalog";
 import { setActiveMonsterIdentity } from "./activeMonsterIdentity";
 
@@ -133,10 +134,12 @@ export function spawnEnemyForSegment(
     ctx.segmentIndex,
     ctx.encounterIndex,
   );
+  const placement = getWorldZonePlacement(ctx.zoneDefId);
   const profile = getEnemyCombatProfile(
-    ctx.zoneIndex,
+    placement.zoneIndexWithinBand,
     ctx.segmentIndex,
     ctx.encounterIndex,
+    placement.bandId,
   );
   const maxHealth = profile.hp;
   const runtimeAbilities = buildMonsterRuntimeAbilities(monster.category, monster.abilityIds);

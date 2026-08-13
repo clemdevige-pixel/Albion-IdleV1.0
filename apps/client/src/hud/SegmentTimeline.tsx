@@ -117,8 +117,9 @@ export function SegmentTimeline(): JSX.Element {
         <strong>
           IP recommandé : {String(
             getSegmentRecommendedItemPower(
-              viewedZone.zoneIndex,
+              viewedZone.zoneIndexWithinBand + 1,
               displayedSegment,
+              viewedZone.worldBandId,
             ),
           )}
         </strong>

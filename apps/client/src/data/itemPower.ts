@@ -1,3 +1,4 @@
+import type { WorldBandId } from "@game/data";
 import {
   getBonusItemPowerStatMultiplier,
   getEnchantmentItemPowerBonus,
@@ -50,8 +51,35 @@ export interface WeaponMasteryIds {
  * consumables and player decisions allow progression below these values.
  * Future IP-progression systems can progressively close that deliberate gap.
  */
-export const ZONE_RECOMMENDED_ITEM_POWER = [220, 300, 360, 430, 510] as const;
-const ZONE_END_RECOMMENDED_ITEM_POWER = [300, 360, 430, 510, 600] as const;
+export interface WorldItemPowerProgression {
+  readonly zoneStart: readonly number[];
+  readonly zoneEnd: readonly number[];
+}
+
+export const BLUE_WORLD_ITEM_POWER_PROGRESSION = {
+  zoneStart: [220, 300, 360, 430, 510],
+  zoneEnd: [300, 360, 430, 510, 600],
+} as const satisfies WorldItemPowerProgression;
+
+/** Backwards-compatible export for the existing Blue-world balance tests. */
+export const ZONE_RECOMMENDED_ITEM_POWER =
+  BLUE_WORLD_ITEM_POWER_PROGRESSION.zoneStart;
+
+const WORLD_ITEM_POWER_PROGRESSION: Partial<
+  Readonly<Record<WorldBandId, WorldItemPowerProgression>>
+> = {
+  blue: BLUE_WORLD_ITEM_POWER_PROGRESSION,
+};
+
+function getWorldItemPowerProgression(
+  worldBandId: WorldBandId,
+): WorldItemPowerProgression {
+  const progression = WORLD_ITEM_POWER_PROGRESSION[worldBandId];
+  if (progression === undefined) {
+    throw new Error(`Item Power progression is not authored for world band: ${worldBandId}`);
+  }
+  return progression;
+}
 
 export function getItemTier(itemId: string): 3 | 4 | undefined {
   return resolveWeaponTier(itemId) ?? NON_WEAPON_ITEM_TIERS[itemId];
@@ -115,19 +143,33 @@ export function getMasteryDamageMultiplier(
   );
 }
 
-export function getZoneRecommendedItemPower(zoneIndex: number): number {
-  return ZONE_RECOMMENDED_ITEM_POWER[zoneIndex - 1] ?? 400;
+export function getZoneRecommendedItemPower(
+  zoneIndex: number,
+  worldBandId: WorldBandId = "blue",
+): number {
+  const progression = getWorldItemPowerProgression(worldBandId);
+  const itemPower = progression.zoneStart[zoneIndex - 1];
+  if (itemPower === undefined) {
+    throw new RangeError(
+      `Missing Item Power target for ${worldBandId} zone ${String(zoneIndex)}`,
+    );
+  }
+  return itemPower;
 }
 
 export function getSegmentRecommendedItemPower(
   zoneIndex: number,
   segmentIndex: number,
+  worldBandId: WorldBandId = "blue",
 ): number {
-  const zoneBase = getZoneRecommendedItemPower(zoneIndex);
-  const zoneEnd =
-    ZONE_END_RECOMMENDED_ITEM_POWER[zoneIndex - 1]
-    ?? ZONE_END_RECOMMENDED_ITEM_POWER[ZONE_END_RECOMMENDED_ITEM_POWER.length - 1]
-    ?? zoneBase;
+  const progression = getWorldItemPowerProgression(worldBandId);
+  const zoneBase = getZoneRecommendedItemPower(zoneIndex, worldBandId);
+  const zoneEnd = progression.zoneEnd[zoneIndex - 1];
+  if (zoneEnd === undefined) {
+    throw new RangeError(
+      `Missing Item Power end target for ${worldBandId} zone ${String(zoneIndex)}`,
+    );
+  }
   const progress = Math.max(0, Math.min(9, segmentIndex - 1)) / 9;
   return Math.round(zoneBase + (zoneEnd - zoneBase) * progress);
 }

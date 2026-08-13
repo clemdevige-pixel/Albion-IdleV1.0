@@ -2,9 +2,10 @@ import type { GameBridgeState } from "../../game/GameBridge";
 import { MONSTER_DEFINITIONS, type MonsterCategory } from "../../data/monsterContentCatalog";
 import { renderManifestRegistry } from "../../game/render/defaultRenderManifestRegistry";
 import { selectDashboardZone, type DashboardZoneModel } from "../dashboard/dashboardModels";
+import { WORLD_BAND_DEFINITIONS, type WorldBandId } from "@game/data";
 
 export type WorldTabId = "zones" | "bestiary" | "achievements";
-export type WorldBandId = "blue" | "yellow" | "orange" | "red" | "black";
+export type { WorldBandId } from "@game/data";
 
 export interface WorldBandModel {
   readonly id: WorldBandId;
@@ -24,13 +25,16 @@ export interface BestiaryEntryModel {
   readonly imageSrc: string | undefined;
 }
 
-export const WORLD_BANDS: readonly WorldBandModel[] = [
-  { id: "blue", label: "Bleue", tierLabel: "T3 → T4", isAvailable: true },
-  { id: "yellow", label: "Jaune", tierLabel: "À venir", isAvailable: false },
-  { id: "orange", label: "Orange", tierLabel: "À venir", isAvailable: false },
-  { id: "red", label: "Rouge", tierLabel: "À venir", isAvailable: false },
-  { id: "black", label: "Noire", tierLabel: "À venir", isAvailable: false },
-] as const;
+export const WORLD_BANDS: readonly WorldBandModel[] = WORLD_BAND_DEFINITIONS.map(
+  (band) => ({
+    id: band.id,
+    label: band.label,
+    tierLabel: band.minimumTier === band.maximumTier
+      ? `T${String(band.minimumTier)}`
+      : `T${String(band.minimumTier)} → T${String(band.maximumTier)}`,
+    isAvailable: band.contentStatus === "implemented",
+  }),
+);
 
 export const WORLD_BESTIARY: readonly BestiaryEntryModel[] = Object.values(
   MONSTER_DEFINITIONS,

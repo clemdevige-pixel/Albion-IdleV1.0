@@ -1,4 +1,5 @@
 import type { ProductionTier } from "../../data/productionFamilyCatalog";
+import type { WorldBandId } from "@game/data";
 import type { CombatState, EquipmentSlot, VendorRole, WorkerProfession } from "@game/gameplay";
 
 export interface DamageNumberEvent {
@@ -157,7 +158,11 @@ export interface EconomyNotificationVM {
 }
 
 export interface ZoneProgressVM {
+  readonly zoneDefId: string;
   readonly zoneIndex: number;
+  readonly worldBandId: WorldBandId;
+  readonly zoneIndexWithinBand: number;
+  readonly tier: number;
   readonly zoneName: string;
   readonly biomeName: string;
   readonly isUnlocked: boolean;
@@ -169,6 +174,8 @@ export interface ZoneProgressVM {
 
 export interface WorldVM {
   readonly zoneIndex: number;
+  readonly worldBandId: WorldBandId;
+  readonly zoneIndexWithinBand: number;
   readonly zoneCount: number;
   readonly canGoPreviousZone: boolean;
   readonly canGoNextZone: boolean;
@@ -401,6 +408,8 @@ export function createInitialGameBridgeState(): GameBridgeState {
     economyNotifications: [],
     world: {
       zoneIndex: 1,
+      worldBandId: "blue",
+      zoneIndexWithinBand: 0,
       zoneCount: 1,
       canGoPreviousZone: false,
       canGoNextZone: false,

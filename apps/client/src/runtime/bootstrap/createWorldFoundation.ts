@@ -18,6 +18,7 @@ import {
   BIOME_DEFINITIONS,
   WORLD_ZONE_IDS,
   WORLD_ZONE_ORDER,
+  getWorldZonePlacement,
   ZONE_DEFINITIONS,
   ZONE_UNLOCK_DEFINITIONS,
 } from "../../data/worldContentCatalog.js";
@@ -92,9 +93,12 @@ export function buildWorldViewModel({
   const zone = worldRuntime.getActiveZoneDef();
   const biome = biomeResolver.resolve(zone.defId);
   const saveState = worldRuntime.getWorldLocationSaveState();
+  const activePlacement = getWorldZonePlacement(zone.defId);
 
   return {
     zoneIndex: worldRuntime.currentZoneIndex + 1,
+    worldBandId: activePlacement.bandId,
+    zoneIndexWithinBand: activePlacement.zoneIndexWithinBand,
     zoneCount: zoneOrder.length,
     canGoPreviousZone: worldRuntime.currentZoneIndex > 0,
     canGoNextZone:
@@ -107,9 +111,14 @@ export function buildWorldViewModel({
       const zoneBiome = biomeResolver.resolve(zoneDefId);
       const memory = saveState.zoneMemories[index]!;
       const isActive = index === worldRuntime.currentZoneIndex;
+      const placement = getWorldZonePlacement(zoneDefId);
 
       return {
+        zoneDefId,
         zoneIndex: index + 1,
+        worldBandId: placement.bandId,
+        zoneIndexWithinBand: placement.zoneIndexWithinBand,
+        tier: placement.tier,
         zoneName: definition?.name ?? "Unknown",
         biomeName: zoneBiome?.name ?? "Unknown",
         isUnlocked: progressionManager.isUnlocked(zoneDefId),

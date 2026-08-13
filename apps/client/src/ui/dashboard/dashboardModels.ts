@@ -3,6 +3,7 @@ import type {
   GatheringVM,
   TransactionEntryType,
 } from "../../game/GameBridge";
+import type { WorldBandId } from "@game/data";
 import { getSegmentRecommendedItemPower } from "../../data/itemPower";
 import { calculateAverageEquippedItemPower } from "../state/equipmentUiSelectors";
 import { selectActiveGathering } from "../state/gatheringUiSelectors";
@@ -26,7 +27,11 @@ export interface DashboardSegmentModel {
 }
 
 export interface DashboardZoneOptionModel {
+  readonly zoneDefId: string;
   readonly zoneIndex: number;
+  readonly worldBandId: WorldBandId;
+  readonly zoneIndexWithinBand: number;
+  readonly tier: number;
   readonly biomeName: string;
   readonly zoneName: string;
   readonly isUnlocked: boolean;
@@ -39,6 +44,8 @@ export interface DashboardZoneOptionModel {
 
 export interface DashboardZoneModel {
   readonly zoneIndex: number;
+  readonly worldBandId: WorldBandId;
+  readonly zoneIndexWithinBand: number;
   readonly zoneCount: number;
   readonly farmMode: boolean;
   readonly biomeName: string;
@@ -152,7 +159,11 @@ export function selectDashboardZone(state: GameBridgeState): DashboardZoneModel 
     });
     const displayedSegment = zone.isActive ? world.segmentIndex : zone.segmentIndex;
     return {
+      zoneDefId: zone.zoneDefId,
       zoneIndex: zone.zoneIndex,
+      worldBandId: zone.worldBandId,
+      zoneIndexWithinBand: zone.zoneIndexWithinBand,
+      tier: zone.tier,
       biomeName: zone.biomeName,
       zoneName: zone.zoneName,
       isUnlocked: zone.isUnlocked,
@@ -160,12 +171,18 @@ export function selectDashboardZone(state: GameBridgeState): DashboardZoneModel 
       segmentIndex: displayedSegment,
       unlockedSegmentCount: zone.unlockedSegmentCount,
       segments: zoneSegments,
-      recommendedItemPower: getSegmentRecommendedItemPower(zone.zoneIndex, displayedSegment),
+      recommendedItemPower: getSegmentRecommendedItemPower(
+        zone.zoneIndexWithinBand + 1,
+        displayedSegment,
+        zone.worldBandId,
+      ),
     };
   });
 
   return {
     zoneIndex: world.zoneIndex,
+    worldBandId: world.worldBandId,
+    zoneIndexWithinBand: world.zoneIndexWithinBand,
     zoneCount: world.zoneCount,
     farmMode: world.farmMode,
     biomeName: world.biomeName,
@@ -176,8 +193,9 @@ export function selectDashboardZone(state: GameBridgeState): DashboardZoneModel 
     encounterCount: world.encounterCount,
     progress: world.zoneProgress,
     recommendedItemPower: getSegmentRecommendedItemPower(
-      world.zoneIndex,
+      world.zoneIndexWithinBand + 1,
       world.segmentIndex,
+      world.worldBandId,
     ),
     segments,
     bossTitle,

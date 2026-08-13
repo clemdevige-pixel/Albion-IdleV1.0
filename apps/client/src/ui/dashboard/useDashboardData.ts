@@ -38,6 +38,10 @@ function sameZones(
     const candidate = next[index];
     return candidate !== undefined
       && zone.zoneIndex === candidate.zoneIndex
+      && zone.zoneDefId === candidate.zoneDefId
+      && zone.worldBandId === candidate.worldBandId
+      && zone.zoneIndexWithinBand === candidate.zoneIndexWithinBand
+      && zone.tier === candidate.tier
       && zone.biomeName === candidate.biomeName
       && zone.zoneName === candidate.zoneName
       && zone.isUnlocked === candidate.isUnlocked
@@ -94,6 +98,8 @@ export function useDashboardPlayer(): DashboardPlayerModel {
 export function useDashboardZone(): DashboardZoneModel {
   return useGameUiSelector(selectDashboardZone, (previous, next) =>
     previous.zoneIndex === next.zoneIndex
+    && previous.worldBandId === next.worldBandId
+    && previous.zoneIndexWithinBand === next.zoneIndexWithinBand
     && previous.zoneCount === next.zoneCount
     && previous.farmMode === next.farmMode
     && previous.biomeName === next.biomeName

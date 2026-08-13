@@ -11,7 +11,11 @@ interface DashboardZoneCardProps {
 
 function fallbackZone(zone: DashboardZoneModel): DashboardZoneOptionModel {
   return {
+    zoneDefId: "",
     zoneIndex: zone.zoneIndex,
+    worldBandId: zone.worldBandId,
+    zoneIndexWithinBand: zone.zoneIndexWithinBand,
+    tier: 0,
     biomeName: zone.biomeName,
     zoneName: zone.zoneName,
     isUnlocked: true,

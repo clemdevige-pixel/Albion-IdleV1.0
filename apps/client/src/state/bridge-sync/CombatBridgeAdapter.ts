@@ -12,6 +12,7 @@ import type {
   CombatRuntime,
 } from "../../runtime/CombatRuntime";
 import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalculator";
+import { getWorldZonePlacement } from "../../data/worldContentCatalog";
 import type { WorldRuntime } from "../../runtime/WorldRuntime";
 import { syncAbilitiesToBridge } from "../bridgeSync";
 
@@ -79,13 +80,15 @@ export class CombatBridgeAdapter {
   }
 
   syncProjectedSegmentRates(): void {
+    const placement = getWorldZonePlacement(this.#worldRuntime.getActiveZoneDef().defId);
     const rates = calculateProjectedSegmentRates({
       physicalDamage: this.#statsManager.getStat(this.#heroId, STAT_PHYSICAL_DAMAGE).computed,
       magicalDamage: this.#statsManager.getStat(this.#heroId, STAT_MAGICAL_DAMAGE).computed,
       attackSpeed: this.#statsManager.getStat(this.#heroId, STAT_ATTACK_SPEED).computed,
       equippedWeaponId: this.#getEquippedWeaponId(),
       primaryAbilityAutoCast: this.#combatRuntime.isAutoCastEnabled(),
-      currentZoneIndex: this.#worldRuntime.currentZoneIndex,
+      currentZoneIndex: placement.zoneIndexWithinBand,
+      currentWorldBandId: placement.bandId,
       currentSegment: this.#worldRuntime.currentSegment,
     });
     this.#bridge.updateSegmentRates(rates.silverPerHour, rates.famePerHour);
