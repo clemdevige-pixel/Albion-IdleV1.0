@@ -23,6 +23,8 @@ type AbilityDamageEvent = DamageNumberEvent & { readonly abilityId?: string };
 
 /** Translates authoritative combat events into generic visual sequences. */
 export class CombatPresentationSystem {
+  private rangedPresentationGeneration = 0;
+
   public constructor(
     private readonly scene: Phaser.Scene,
     private readonly actors: CombatPresentationActors,
@@ -44,6 +46,17 @@ export class CombatPresentationSystem {
       return;
     }
     this.presentMelee(event, weapon.visualManifestId, abilityVfx);
+  }
+
+  /**
+   * Invalidates presentation work belonging to the previous encounter.
+   * Gameplay damage is authoritative and has already resolved before this
+   * renderer receives an event, so stale projectiles must never be allowed to
+   * visually impact a newly spawned enemy.
+   */
+  public beginEncounterPresentation(): void {
+    this.rangedPresentationGeneration += 1;
+    this.projectileSystem.clear();
   }
 
   private presentMelee(
@@ -93,11 +106,14 @@ export class CombatPresentationSystem {
     profile: NonNullable<EquipmentSlotVM["combatPresentation"]>,
     abilityVfx: AbilityVfxDefinition | undefined,
   ): void {
+    const generation = this.rangedPresentationGeneration;
     this.heroSystem.play("attack");
     this.scene.time.delayedCall(profile.releaseDelayMs, () => {
+      if (generation !== this.rangedPresentationGeneration) return;
       this.projectileSystem.present({
         manifest: renderManifestRegistry.requireProjectile(profile.projectileId),
         onImpact: () => {
+          if (generation !== this.rangedPresentationGeneration) return;
           if (abilityVfx !== undefined) {
             this.presentAbilityVfx(this.actors.enemy, abilityVfx);
           }
