@@ -15,6 +15,8 @@ export interface DiscordOAuthClient {
 export interface DiscordOAuthFlowRepository {
   issueState(now?: number): Promise<string>;
   consumeState(state: string, now?: number): Promise<boolean>;
+  issueStateForOrigin(returnOrigin: string, now?: number): Promise<string>;
+  consumeStateWithOrigin(state: string, now?: number): Promise<string | undefined>;
   issueExchange(session: AuthSession, now?: number): Promise<string>;
   consumeExchange(code: string, now?: number): Promise<AuthSession | undefined>;
 }
@@ -60,19 +62,27 @@ interface ExpiringValue<T> { readonly value: T; readonly expiresAt: number; }
 
 /** Short-lived OAuth state and one-time browser exchange codes. */
 export class DiscordOAuthFlowStore implements DiscordOAuthFlowRepository {
-  private readonly states = new Map<string, number>();
+  private readonly states = new Map<string, ExpiringValue<string | undefined>>();
   private readonly exchanges = new Map<string, ExpiringValue<AuthSession>>();
 
   public async issueState(now = Date.now()): Promise<string> {
-    const state = randomBytes(24).toString("base64url");
-    this.states.set(state, now + 5 * 60_000);
-    return state;
+    return this.issueStateInternal(undefined, now);
+  }
+
+  public async issueStateForOrigin(returnOrigin: string, now = Date.now()): Promise<string> {
+    return this.issueStateInternal(returnOrigin, now);
   }
 
   public async consumeState(state: string, now = Date.now()): Promise<boolean> {
-    const expiresAt = this.states.get(state);
+    const entry = this.states.get(state);
     this.states.delete(state);
-    return expiresAt !== undefined && expiresAt >= now;
+    return entry !== undefined && entry.expiresAt >= now;
+  }
+
+  public async consumeStateWithOrigin(state: string, now = Date.now()): Promise<string | undefined> {
+    const entry = this.states.get(state);
+    this.states.delete(state);
+    return entry !== undefined && entry.expiresAt >= now ? entry.value : undefined;
   }
 
   public async issueExchange(session: AuthSession, now = Date.now()): Promise<string> {
@@ -85,6 +95,12 @@ export class DiscordOAuthFlowStore implements DiscordOAuthFlowRepository {
     const entry = this.exchanges.get(code);
     this.exchanges.delete(code);
     return entry !== undefined && entry.expiresAt >= now ? entry.value : undefined;
+  }
+
+  private async issueStateInternal(returnOrigin: string | undefined, now: number): Promise<string> {
+    const state = randomBytes(24).toString("base64url");
+    this.states.set(state, { value: returnOrigin, expiresAt: now + 5 * 60_000 });
+    return state;
   }
 }
 
