@@ -19,6 +19,7 @@ import {
   WORLD_ZONE_IDS,
   WORLD_ZONE_ORDER,
   getWorldZonePlacement,
+  validateWorldContentCatalog,
   ZONE_DEFINITIONS,
   ZONE_UNLOCK_DEFINITIONS,
 } from "../../data/worldContentCatalog.js";
@@ -26,6 +27,8 @@ import { WorldRuntime } from "../WorldRuntime.js";
 
 /** Framework-agnostic world registries, progression and runtime assembly. */
 export function createWorldFoundation() {
+  validateWorldContentCatalog();
+
   const biomeRegistry = new BiomeRegistry();
   for (const definition of BIOME_DEFINITIONS) {
     biomeRegistry.register(definition);

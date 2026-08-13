@@ -98,14 +98,57 @@ export const BIOME_BY_ZONE = new Map([
   [WORLD_ZONE_IDS.mountain, asBiomeId("biome_mountain")],
 ]);
 
-export const ZONE_UNLOCK_DEFINITIONS: readonly ZoneUnlockDefinition[] = [
-  { zoneDefId: WORLD_ZONE_IDS.forest, conditions: [], unlockedByDefault: true },
-  { zoneDefId: WORLD_ZONE_IDS.swamp, conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.forest }] },
-  { zoneDefId: WORLD_ZONE_IDS.highland, conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.swamp }] },
-  { zoneDefId: WORLD_ZONE_IDS.steppe, conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.highland }] },
-  { zoneDefId: WORLD_ZONE_IDS.mountain, conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.steppe }] },
-];
-
 export const WORLD_ZONE_ORDER = WORLD_BAND_DEFINITIONS.flatMap(
   ({ id }) => WORLD_ZONE_IDS_BY_BAND[id],
 );
+
+/**
+ * Builds one deterministic progression chain across world-band boundaries.
+ * Appending the first Yellow zone therefore makes completion of the final
+ * Blue zone its unlock requirement without adding another special case.
+ */
+export function buildZoneUnlockDefinitions(
+  zoneOrder: readonly ZoneDefinitionId[],
+): readonly ZoneUnlockDefinition[] {
+  return zoneOrder.map((zoneDefId, index) => {
+    const previousZoneDefId = zoneOrder[index - 1];
+    return previousZoneDefId === undefined
+      ? { zoneDefId, conditions: [], unlockedByDefault: true }
+      : {
+          zoneDefId,
+          conditions: [{ type: "zone_completed" as const, targetZoneDefId: previousZoneDefId }],
+        };
+  });
+}
+
+export const ZONE_UNLOCK_DEFINITIONS: readonly ZoneUnlockDefinition[] =
+  buildZoneUnlockDefinitions(WORLD_ZONE_ORDER);
+
+/** Fails fast when authored world content is only partially registered. */
+export function validateWorldContentCatalog(): void {
+  const assignedZoneIds = WORLD_BAND_DEFINITIONS.flatMap(
+    ({ id }) => WORLD_ZONE_IDS_BY_BAND[id],
+  );
+  const uniqueZoneIds = new Set(assignedZoneIds);
+
+  if (uniqueZoneIds.size !== assignedZoneIds.length) {
+    throw new Error("A world zone is assigned to more than one world band");
+  }
+
+  const definitionIds = new Set(ZONE_DEFINITIONS.map(({ id }) => id));
+  for (const zoneDefId of assignedZoneIds) {
+    if (!definitionIds.has(zoneDefId)) {
+      throw new Error(`Missing zone definition: ${String(zoneDefId)}`);
+    }
+    if (!BIOME_BY_ZONE.has(zoneDefId)) {
+      throw new Error(`Missing biome assignment: ${String(zoneDefId)}`);
+    }
+    getZoneEncounterPool(zoneDefId);
+  }
+
+  for (const zoneDefId of definitionIds) {
+    if (!uniqueZoneIds.has(zoneDefId)) {
+      throw new Error(`Zone is not assigned to a world band: ${String(zoneDefId)}`);
+    }
+  }
+}

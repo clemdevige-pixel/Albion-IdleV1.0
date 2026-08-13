@@ -6,7 +6,7 @@ export type MonsterCategory = "normal" | "veteran" | "elite" | "boss";
 
 export interface MonsterCombatModifiers { readonly damageType: DamageType; }
 export interface MonsterRewardDefinition { readonly lootTableId: string; }
-export interface MonsterContentDefinition { readonly id: string; readonly name: string; readonly faction: string; readonly category: MonsterCategory; readonly tier: 3 | 4; readonly visualManifestId: string; readonly combat: MonsterCombatModifiers; readonly rewards: MonsterRewardDefinition; readonly abilityIds: readonly string[]; readonly tags: readonly string[]; }
+export interface MonsterContentDefinition { readonly id: string; readonly name: string; readonly faction: string; readonly category: MonsterCategory; readonly tier: number; readonly visualManifestId: string; readonly combat: MonsterCombatModifiers; readonly rewards: MonsterRewardDefinition; readonly abilityIds: readonly string[]; readonly tags: readonly string[]; }
 export interface FactionEncounterRoster {
   readonly faction: string;
   readonly normal: readonly string[];
