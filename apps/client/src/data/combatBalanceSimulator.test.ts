@@ -74,4 +74,31 @@ describe("combat balance simulator", () => {
     expect(m30.breakdown.abilityCasts).toBeGreaterThanOrEqual(m1.breakdown.abilityCasts);
     expect(m30.breakdown.abilityDamage).toBeGreaterThan(m1.breakdown.abilityDamage);
   });
+
+  it("separates AFK and active potion survival without changing outgoing DPS rules", () => {
+    const dangerousEnemy: CombatBalanceEnemyProfile = {
+      ...TEST_ENEMY,
+      health: 3200,
+      physicalDamage: 55,
+    };
+    const loadout = {
+      weaponId: "item_weapon_sword_t4_broadsword",
+      offHandId: "item_shield_t4_reinforced",
+      masteryLevel: 10,
+    } as const;
+    const afk = simulateCombatBalance(loadout, dangerousEnemy);
+    const active = simulateCombatBalance(
+      {
+        ...loadout,
+        consumables: { healthPotion: "auto" },
+      },
+      dangerousEnemy,
+    );
+
+    expect(afk.breakdown.healthPotionsUsed).toBe(0);
+    expect(afk.breakdown.healingReceived).toBe(0);
+    expect(active.breakdown.healthPotionsUsed).toBeGreaterThan(0);
+    expect(active.breakdown.healingReceived).toBeGreaterThan(0);
+    expect(active.heroHealthRemaining).toBeGreaterThanOrEqual(afk.heroHealthRemaining);
+  });
 });
