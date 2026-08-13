@@ -1,5 +1,5 @@
 import type Phaser from "phaser";
-import type { GameBridge } from "../../GameBridge";
+import type { DamageNumberEvent, GameBridge } from "../../GameBridge";
 import { createActorSprite } from "../PhaserActorRenderer";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 import { ActorSystem } from "../systems/ActorSystem";
@@ -10,8 +10,13 @@ import { HeroPresentationSystem } from "../systems/HeroPresentationSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
 import { VfxSystem, type EnemyVfxStyle } from "../systems/VfxSystem";
 import { WorldHudSystem } from "../systems/WorldHudSystem";
+import { getPresentedEnemyHealth } from "./CombatPresentedHealth";
 import { PresentationDirector } from "./PresentationDirector";
 import { selectWeaponPresentation } from "./GamePresentationState";
+
+type PresentationDamageEvent = DamageNumberEvent & {
+  readonly sourceType?: "auto_attack" | "ability" | "effect" | "other";
+};
 
 /** Coordinates actors, combat events and in-world combat HUD. */
 export class CombatPresentationController {
@@ -32,6 +37,9 @@ export class CombatPresentationController {
   private readonly director: PresentationDirector;
   private readonly defaultHeroManifestId: string;
   private lastDamageEventId = 0;
+  private displayedEnemyName: string | undefined;
+  private displayedEnemyVisualManifestId: string | undefined;
+  private displayedEnemyIsBoss = false;
 
   public constructor(
     scene: Phaser.Scene,
@@ -46,15 +54,8 @@ export class CombatPresentationController {
     const enemyManifest = renderManifestRegistry.requireDefaultStaticActor();
     this.defaultHeroManifestId = heroManifest.id;
     const playerSprite = createActorSprite(scene, heroManifest);
-    this.playerBody = scene.add
-      .container(this.playerHomeX, this.entityY, [playerSprite])
-      .setDepth(5);
-    this.enemySystem = new EnemyPresentationSystem(
-      scene,
-      this.enemyHomeX,
-      this.entityY,
-      enemyManifest,
-    );
+    this.playerBody = scene.add.container(this.playerHomeX, this.entityY, [playerSprite]).setDepth(5);
+    this.enemySystem = new EnemyPresentationSystem(scene, this.enemyHomeX, this.entityY, enemyManifest);
     this.enemyBody = this.enemySystem.body;
 
     this.heroSystem = new HeroPresentationSystem(playerSprite, heroManifest.id);
@@ -138,31 +139,66 @@ export class CombatPresentationController {
   }
 
   private updateEnemy(bridge: GameBridge): void {
-    // When combat is intentionally paused after a completed segment, the last
-    // defeated encounter remains the bridge's most recent enemy presentation.
-    // Hide that defeated actor/HUD instead of leaving a 0 HP boss standing on
-    // screen until combat resumes and a new encounter is spawned.
-    const showEnemy = !(bridge.combatState === "idle" && bridge.enemyHealth <= 0);
+    const presented = getPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+    const incomingName = bridge.enemyName;
+    const incomingVisualManifestId = bridge.enemyVisualManifestId;
+    const incomingIsBoss = bridge.world.encounterType === "boss";
+
+    if (this.displayedEnemyVisualManifestId === undefined) {
+      this.adoptEnemyPresentation(incomingName, incomingVisualManifestId, incomingIsBoss);
+    } else {
+      const identityChanged = incomingVisualManifestId !== this.displayedEnemyVisualManifestId
+        || incomingName !== this.displayedEnemyName;
+      if (identityChanged && presented.current <= 0) {
+        this.adoptEnemyPresentation(incomingName, incomingVisualManifestId, incomingIsBoss);
+      }
+    }
+
+    const showEnemy = !(bridge.combatState === "idle" && presented.current <= 0);
     this.setEnemyVisible(showEnemy);
     if (!showEnemy) return;
 
+    const visualManifestId = this.displayedEnemyVisualManifestId ?? incomingVisualManifestId;
     this.enemySystem.update({
-      visualManifestId: bridge.enemyVisualManifestId,
-      isBoss: bridge.world.encounterType === "boss",
+      visualManifestId,
+      isBoss: this.displayedEnemyIsBoss,
     });
     this.actorSystem.setAmbientMotion(
       this.enemyBody,
-      renderManifestRegistry.requireStaticActor(bridge.enemyVisualManifestId).ambientMotion,
+      renderManifestRegistry.requireStaticActor(visualManifestId).ambientMotion,
     );
     this.hudSystem.layoutEnemy(this.enemyHomeX, this.enemyBody.y, this.enemySystem.hudLayout);
-    this.hudSystem.updateEnemy(bridge.enemyHealth, bridge.enemyMaxHealth, bridge.enemyName);
+    this.hudSystem.updateEnemy(
+      bridge.enemyHealth,
+      bridge.enemyMaxHealth,
+      this.displayedEnemyName ?? incomingName,
+    );
+  }
+
+  private adoptEnemyPresentation(name: string, visualManifestId: string, isBoss: boolean): void {
+    this.displayedEnemyName = name;
+    this.displayedEnemyVisualManifestId = visualManifestId;
+    this.displayedEnemyIsBoss = isBoss;
   }
 
   private updateDamageEvents(bridge: GameBridge): void {
     for (const event of bridge.damageNumbers) {
       if (event.id <= this.lastDamageEventId) continue;
+      const presentationEvent = event as PresentationDamageEvent;
+
+      if (presentationEvent.sourceType === "effect") {
+        // Periodic effects are already authoritative at the moment they are
+        // emitted and have no travel time. Present them immediately so an
+        // encounter transition cannot invalidate a burn tick before it is seen.
+        this.combatSystem.present(event);
+        this.lastDamageEventId = Math.max(this.lastDamageEventId, event.id);
+        continue;
+      }
+
       if (event.target === "player") {
-        const style = this.resolveEnemyVfxStyle(bridge.enemyVisualManifestId);
+        const style = this.resolveEnemyVfxStyle(
+          this.displayedEnemyVisualManifestId ?? bridge.enemyVisualManifestId,
+        );
         if (style !== undefined) {
           this.vfxSystem.presentEnemyAttack(style, this.enemyHomeX, this.playerHomeX, this.entityY);
         }
@@ -177,17 +213,14 @@ export class CombatPresentationController {
     if (visualManifestId.includes("undead_spectral_knight")) return "undead_spectral";
     if (visualManifestId.includes("undead_lich")) return "undead_lich";
     if (visualManifestId.includes("undead_skeleton_swordsman") || visualManifestId.includes("undead_warrior")) return "undead_melee";
-
     if (visualManifestId.includes("morgana_witch")) return "morgana_shadow";
     if (visualManifestId.includes("morgana_suppressor")) return "morgana_bolt";
     if (visualManifestId.includes("morgana_dark_knight")) return "morgana_knight";
     if (visualManifestId.includes("morgana_high_priestess")) return "morgana_priestess";
-
     if (visualManifestId.includes("keeper_warrior")) return "keeper_melee";
     if (visualManifestId.includes("keeper_shaman")) return "keeper_spirit";
     if (visualManifestId.includes("keeper_champion")) return "keeper_champion";
     if (visualManifestId.includes("keeper_ancient")) return "keeper_ancient";
-
     if (visualManifestId.includes("heretic_thug")) return "heretic_melee";
     if (visualManifestId.includes("heretic_firestarter")) return "heretic_fire";
     if (visualManifestId.includes("heretic_enforcer")) return "heretic_enforcer";
