@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { StatusEffectWorldVfx } from "../../../data/statusEffectPresentationCatalog";
+import type { StatusEffectWorldVfx } from "../../../data/statusEffectWorldVfxCatalog";
 
 /** Presentation-only persistent VFX for active status effects. */
 export class StatusEffectVfxSystem {
