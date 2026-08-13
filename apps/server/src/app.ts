@@ -17,22 +17,17 @@ export interface BuildServerOptions {
   discordClient?: DiscordOAuthClient;
   discordFlowStore?: DiscordOAuthFlowRepository;
   clientOrigin?: string;
+  clientOrigins?: readonly string[];
   cloudSaveRepository?: CloudSaveRepository;
 }
 
-/**
- * Constructs a fully-configured but not-yet-listening Fastify instance.
- *
- * Separated from network start-up so it can be exercised in tests via
- * `app.inject(...)` without binding a port.
- */
 export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
-  const app = Fastify({
-    logger: { level: options.logLevel ?? "info" },
-  });
+  const app = Fastify({ logger: { level: options.logLevel ?? "info" } });
+  const primaryClientOrigin = options.clientOrigin ?? "http://localhost:5173";
+  const allowedClientOrigins = [...new Set([primaryClientOrigin, ...(options.clientOrigins ?? [])])];
 
   void app.register(cors, {
-    origin: options.clientOrigin ?? "http://localhost:5173",
+    origin: allowedClientOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   });
 
@@ -41,11 +36,10 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
   const discord = options.discordConfig === undefined ? undefined : {
     config: options.discordConfig,
     client: options.discordClient ?? new DiscordHttpOAuthClient(options.discordConfig),
-    clientOrigin: options.clientOrigin ?? "http://localhost:5173",
+    clientOrigin: primaryClientOrigin,
     ...(options.discordFlowStore === undefined ? {} : { flowStore: options.discordFlowStore }),
   };
   registerAuthRoutes(app, auth, discord);
   registerSaveRoutes(app, auth, options.cloudSaveRepository ?? new InMemoryCloudSaveRepository());
-
   return app;
 }

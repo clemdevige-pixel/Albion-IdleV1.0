@@ -31,6 +31,7 @@ async function start(): Promise<void> {
   const app = buildServer({
     logLevel: config.logLevel,
     clientOrigin: config.clientOrigin,
+    clientOrigins: config.clientOrigins,
     authRepository,
     cloudSaveRepository,
     ...(discordConfig === undefined ? {} : { discordConfig }),
