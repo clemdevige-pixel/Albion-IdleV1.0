@@ -74,6 +74,31 @@ describe("combat-profile", () => {
         /Combat progression is not authored for world band: orange/,
       );
     });
+
+    it("keeps Yellow deterministic, monotonic and aligned with its 600-800 IP band", () => {
+      const first = getEnemyCombatProfile(0, 0, 0, "yellow");
+      let previous = first;
+
+      for (let zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
+        for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
+          const current = getEnemyCombatProfile(
+            zoneIndex,
+            segmentIndex,
+            0,
+            "yellow",
+          );
+          expect(current.hp).toBeGreaterThanOrEqual(previous.hp);
+          expect(current.damage).toBeGreaterThanOrEqual(previous.damage);
+          expect(current.armor).toBeGreaterThanOrEqual(previous.armor);
+          previous = current;
+        }
+      }
+
+      // 600 -> 800 IP materially improves full equipment, but not by 2.3x.
+      // Keep the authored enemy band inside the same controlled growth budget.
+      expect(previous.hp / first.hp).toBeLessThanOrEqual(1.75);
+      expect(previous.damage / first.damage).toBeLessThanOrEqual(1.75);
+    });
   });
 
   describe("getEncounterRewards", () => {

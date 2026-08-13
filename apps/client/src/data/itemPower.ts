@@ -61,10 +61,14 @@ export const BLUE_WORLD_ITEM_POWER_PROGRESSION = {
   zoneEnd: [300, 360, 430, 510, 600],
 } as const satisfies WorldItemPowerProgression;
 
-/** Initial Yellow targets; intentionally isolated for later balance passes. */
+/**
+ * Yellow continues the enchanted-T4 / T5 overlap used by Albion-style IP:
+ * T4.1 equals T5.0, T4.2 equals T5.1 and T4.3 equals T5.2.
+ * The final 800 IP target is therefore reachable with T5.3 before mastery IP.
+ */
 export const YELLOW_WORLD_ITEM_POWER_PROGRESSION = {
-  zoneStart: [600, 650, 720, 800, 890],
-  zoneEnd: [650, 720, 800, 890, 1000],
+  zoneStart: [600, 640, 680, 720, 760],
+  zoneEnd: [640, 680, 720, 760, 800],
 } as const satisfies WorldItemPowerProgression;
 
 /** Backwards-compatible export for the existing Blue-world balance tests. */

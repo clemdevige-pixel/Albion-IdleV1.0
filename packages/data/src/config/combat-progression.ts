@@ -28,11 +28,11 @@ export const BLUE_WORLD_COMBAT_CURVE = [
  * T5 equipment and systems are introduced.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
-  { healthStart: 4.3, healthEnd: 5, damageStart: 4.8, damageEnd: 5.5, defenseStart: 2.1, defenseEnd: 2.35 },
-  { healthStart: 5, healthEnd: 5.9, damageStart: 5.4, damageEnd: 6.2, defenseStart: 2.35, defenseEnd: 2.65 },
-  { healthStart: 5.9, healthEnd: 7, damageStart: 6.1, damageEnd: 7, defenseStart: 2.65, defenseEnd: 3 },
-  { healthStart: 7, healthEnd: 8.3, damageStart: 6.9, damageEnd: 8, defenseStart: 3, defenseEnd: 3.4 },
-  { healthStart: 8.3, healthEnd: 10, damageStart: 7.9, damageEnd: 9.2, defenseStart: 3.4, defenseEnd: 3.9 },
+  { healthStart: 4.3, healthEnd: 4.75, damageStart: 4.8, damageEnd: 5.2, defenseStart: 2.1, defenseEnd: 2.3 },
+  { healthStart: 4.75, healthEnd: 5.25, damageStart: 5.21, damageEnd: 5.65, defenseStart: 2.3, defenseEnd: 2.5 },
+  { healthStart: 5.25, healthEnd: 5.85, damageStart: 5.66, damageEnd: 6.2, defenseStart: 2.5, defenseEnd: 2.75 },
+  { healthStart: 5.85, healthEnd: 6.5, damageStart: 6.21, damageEnd: 7, defenseStart: 2.75, defenseEnd: 3 },
+  { healthStart: 6.5, healthEnd: 7.2, damageStart: 7.01, damageEnd: 8, defenseStart: 3, defenseEnd: 3.2 },
 ] as const;
 
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
