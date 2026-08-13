@@ -24,6 +24,7 @@ import {
 export * from "./bridge/GameBridgeModels";
 
 type BridgeListener = () => void;
+type DamagePresentationSource = "auto_attack" | "ability" | "effect" | "other";
 
 /**
  * Stable React/Phaser presentation bridge.
@@ -94,6 +95,8 @@ export class GameBridge {
     amount: number,
     target: "player" | "enemy",
     abilityId?: string,
+    sourceType: DamagePresentationSource = "other",
+    targetHealthAfter?: number,
   ): void {
     const damageNumbers = [
       ...this.#state.damageNumbers,
@@ -102,6 +105,8 @@ export class GameBridge {
         amount,
         target,
         timestamp: Date.now(),
+        sourceType,
+        ...(targetHealthAfter === undefined ? {} : { targetHealthAfter }),
         ...(abilityId === undefined ? {} : { abilityId }),
       },
     ].slice(-20);
