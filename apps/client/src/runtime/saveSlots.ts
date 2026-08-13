@@ -15,3 +15,8 @@ export function getSaveBackupSlotId(slotId: string): string {
 export function getSaveSlotNumber(slotId: PlayerSaveSlotId): number {
   return PLAYER_SAVE_SLOT_IDS.indexOf(slotId) + 1;
 }
+
+/** Storage identity for a logical slot owned by one authenticated account. */
+export function getAccountSaveSlotId(accountId: string, slotId: PlayerSaveSlotId): string {
+  return `account_${accountId}_${slotId}`;
+}

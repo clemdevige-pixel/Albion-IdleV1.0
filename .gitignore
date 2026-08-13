@@ -23,3 +23,10 @@ coverage/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Local server state (accounts/sessions must never be versioned)
+apps/server/data/
+**/auth-store.json
+**/auth-store.json.*.tmp
+**/cloud-saves.json
+**/cloud-saves.json.*.tmp

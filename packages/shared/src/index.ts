@@ -1,2 +1,41 @@
-export { API_VERSION, HEALTH_ROUTE } from "./constants.js";
+export {
+  API_VERSION,
+  HEALTH_ROUTE,
+  AUTH_REGISTER_ROUTE,
+  AUTH_LOGIN_ROUTE,
+  AUTH_SESSION_ROUTE,
+  AUTH_LOGOUT_ROUTE,
+  AUTH_PROVIDERS_ROUTE,
+  AUTH_DISCORD_START_ROUTE,
+  AUTH_DISCORD_CALLBACK_ROUTE,
+  AUTH_DISCORD_EXCHANGE_ROUTE,
+  CLOUD_SAVES_ROUTE,
+} from "./constants.js";
 export { HealthStatusSchema, type HealthStatus } from "./contracts/health.js";
+export {
+  AccountIdSchema,
+  AccountSchema,
+  RegisterRequestSchema,
+  LoginRequestSchema,
+  AuthSessionSchema,
+  AuthErrorSchema,
+  AuthProvidersSchema,
+  DiscordExchangeRequestSchema,
+  type Account,
+  type RegisterRequest,
+  type LoginRequest,
+  type AuthSession,
+  type AuthError,
+  type AuthProviders,
+  type DiscordExchangeRequest,
+} from "./contracts/auth.js";
+export {
+  CloudSaveSlotIdSchema,
+  CloudSaveDocumentSchema,
+  CloudSaveSummarySchema,
+  CloudSaveListSchema,
+  type CloudSaveSlotId,
+  type CloudSaveDocument,
+  type CloudSaveSummary,
+  type CloudSaveList,
+} from "./contracts/cloud-save.js";

@@ -1,0 +1,22 @@
+.auth-screen { display:grid; width:100vw; height:100vh; place-items:center; padding:clamp(18px,4vw,56px); box-sizing:border-box; color:var(--ui-color-text-primary); background:radial-gradient(circle at 50% 12%,rgb(151 101 29 / 16%),transparent 28%),linear-gradient(rgb(5 8 11 / 76%),rgb(5 8 11 / 94%)),url("/assets/birch-forest-combat-background-pixel-v1.png") center/cover no-repeat,#070a0e; }
+.auth-panel { width:min(430px,100%); padding:clamp(22px,3vw,34px); background:rgb(8 12 17 / 96%); border:1px solid #76531f; box-shadow:0 24px 70px rgb(0 0 0 / 70%); }
+.auth-panel__header { display:flex; align-items:center; gap:16px; padding-bottom:20px; border-bottom:1px solid #342816; }
+.auth-panel__header p,.auth-panel__header h1 { margin:0; }
+.auth-panel__header p { color:#8d7651; font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+.auth-panel__header h1 { margin-top:3px; color:#ebce7c; font-family:var(--ui-font-display); font-size:28px; font-weight:600; }
+.auth-panel__crest { display:grid; width:50px; height:58px; place-items:center; color:#f3cc67; background:#17120b; border:1px solid #9b702b; clip-path:polygon(50% 0,94% 17%,86% 77%,50% 100%,14% 77%,6% 17%); font-size:11px; font-weight:800; }
+.auth-panel__loading { margin:28px 0 4px; color:#989187; text-align:center; }
+.auth-discord,.auth-submit { width:100%; min-height:42px; color:#f7f2e9; font:700 12px var(--ui-font-body); border:1px solid transparent; cursor:pointer; }
+.auth-discord { margin-top:22px; background:#5865f2; border-color:#7882f5; }
+.auth-discord:disabled { color:#777; background:#23252a; border-color:#34373d; cursor:not-allowed; }
+.auth-divider { display:flex; align-items:center; gap:10px; margin:17px 0; color:#756c5e; font-size:9px; text-transform:uppercase; }
+.auth-divider::before,.auth-divider::after { flex:1; height:1px; background:#342816; content:""; }
+.auth-form { display:grid; gap:12px; }
+.auth-form label { display:grid; gap:5px; color:#a89d8b; font-size:10px; font-weight:700; text-transform:uppercase; }
+.auth-form input { height:38px; padding:0 11px; color:#eee3ca; background:#10151c; border:1px solid #343942; outline:0; }
+.auth-form input:focus { border-color:#9b702b; box-shadow:0 0 0 2px rgb(155 112 43 / 15%); }
+.auth-submit { margin-top:4px; color:#171109; background:linear-gradient(#e0b84d,#aa7720); border-color:#e5c364; }
+.auth-submit:disabled { opacity:.55; cursor:wait; }
+.auth-switch { width:100%; margin-top:14px; color:#a68d62; background:transparent; border:0; font-size:10px; cursor:pointer; }
+.auth-switch:hover { color:#e7bd50; }
+.auth-error { margin:14px 0 0; padding:9px; color:#efb1a4; background:#201417; border:1px solid #6d3438; font-size:10px; text-align:center; }

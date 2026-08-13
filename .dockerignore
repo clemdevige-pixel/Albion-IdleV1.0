@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+.vercel
+node_modules
+**/node_modules
+dist
+**/dist
+coverage
+apps/server/data
+.env
+.env.*.local
+*.log

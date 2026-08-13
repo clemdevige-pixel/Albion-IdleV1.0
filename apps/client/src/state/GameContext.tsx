@@ -1,6 +1,6 @@
 import type { ProductionTier } from "../data/productionFamilyCatalog";
 import { useMemo, type ReactNode } from "react";
-import { RuntimePersistence } from "../runtime/RuntimePersistence.js";
+import { RuntimePersistence, type RuntimePersistenceDependencies } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
 import { WorldSaveProvider } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge";
@@ -42,7 +42,6 @@ import {
 import { CombatBridgeAdapter } from "./bridge-sync/CombatBridgeAdapter.js";
 import { GameBridgeSyncCoordinator } from "./bridge-sync/GameBridgeSyncCoordinator.js";
 import { GameRuntimeTickController } from "../runtime/GameRuntimeTickController.js";
-import type { PlayerSaveSlotId } from "../runtime/saveSlots.js";
 
 export type { GameServices, UIEventMap } from "./GameServices.js";
 export { useGameBridge, useGameServices } from "./GameServicesContext.js";
@@ -54,9 +53,11 @@ const WORKER_CAPACITY = 4;
 
 export function GameProvider({
   saveSlotId,
+  onLocalSave,
   children,
 }: {
-  readonly saveSlotId: PlayerSaveSlotId;
+  readonly saveSlotId: string;
+  readonly onLocalSave?: RuntimePersistenceDependencies["onLocalSave"];
   readonly children: ReactNode;
 }): JSX.Element {
   const services = useMemo<GameServices>(() => {
@@ -251,6 +252,7 @@ export function GameProvider({
       destinyBoardService,
       durabilityStore,
       saveSlotId,
+      ...(onLocalSave === undefined ? {} : { onLocalSave }),
     });
 
     const refiningSaveProvider = new RefiningSaveProvider(
@@ -491,7 +493,7 @@ export function GameProvider({
       repairAll: () => repairActions.repairAll(),
       saveGame, loadGame, hasSave, exportSave, importSave,
     };
-  }, [saveSlotId]);
+  }, [saveSlotId, onLocalSave]);
 
   useGameRuntimeLifecycle(services);
 

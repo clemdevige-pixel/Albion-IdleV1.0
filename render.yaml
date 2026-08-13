@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: albion-idle-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.server
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVER_HOST
+        value: 0.0.0.0
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_REDIRECT_URI
+        sync: false

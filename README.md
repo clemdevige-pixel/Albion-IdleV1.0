@@ -78,7 +78,7 @@ Albion Idle is a PC-focused, 2D pixel-art idle RPG and side-scroller inspired by
 | **Persistence (Save/Load)** | **Implemented** | Local browser persistence (`localStorage`) saving inventory, bank, equipment, wallets, masteries, durability. |
 | **Monster Assignment** | **Partially Implemented** | Combat runtime functions with randomized normal enemy profiles and dedicated boss assets; zone-specific monster pools planned. |
 | **Inventory & Bank** | **Partially Implemented** | Hero inventory and bank storage exist; drag-and-drop inter-inventory transfers are simplified. |
-| **Cloud Save & Auth** | **Planned** | Backend (`apps/server`) currently operates as a health-check endpoint shell. No authentication or cloud save yet. |
+| **Cloud Save & Auth** | **Implemented** | Local credentials and Discord OAuth, three account-scoped save slots, local-first persistence and PostgreSQL cloud synchronization. |
 | **Dungeons & PvP** | **Deferred** | Faction dungeons, PvP, guilds, and player marketplace are planned for future major phases. |
 
 ---
@@ -114,7 +114,7 @@ The repository is structured as a pnpm workspace monorepo enforcing strict bound
 ### Workspace Packages
 
 - **`apps/client`**: React 18 UI shell, HUD, floating panels, tooltips, and Phaser 3 combat scene renderer (`src/game/`).
-- **`apps/server`**: Fastify backend server (currently hosting technical `/health` endpoints).
+- **`apps/server`**: Fastify backend for health checks, local/Discord authentication and PostgreSQL-backed cloud saves.
 - **`packages/gameplay`** (`@game/gameplay`): Authoritative simulation logic for combat, gathering, refining, crafting, equipment, inventory, experience, fame, masteries, and worker execution.
 - **`packages/core`** (`@game/core`): Fixed-timestep loop, clock, RNG, event bus, and Entity-Component-System (ECS) world.
 - **`packages/data`** (`@game/data`): Zod content schemas, validating loaders, and item/recipe catalogs.
@@ -144,9 +144,9 @@ The repository is structured as a pnpm workspace monorepo enforcing strict bound
 
 ## Persistence
 
-- **Save Storage**: Browser `localStorage` using `LocalStorageSaveRepository` under save key `albion_idle_save_v1`.
+- **Save Storage**: Browser `localStorage` for local-first account slots, synchronized with the authenticated cloud-save API.
 - **Persisted State**: Hero inventory, bank storage, worn equipment, silver balance, experience & mastery progress, unlocked destiny board nodes, and item durability.
-- **Unimplemented**: Cloud save synchronization, user accounts, server-side database persistence.
+- **Cloud Storage**: PostgreSQL-backed authentication, OAuth state and three server-side save slots in production. See [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md).
 
 ---
 

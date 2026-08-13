@@ -35,6 +35,7 @@ import {
   createRuntimeMigrationPipeline,
 } from "./saveMigrations";
 import { LEGACY_SAVE_SLOT_ID, getSaveBackupSlotId } from "./saveSlots";
+import type { SaveFormat } from "@game/persistence";
 
 export const DEFAULT_SAVE_SLOT_ID = LEGACY_SAVE_SLOT_ID;
 
@@ -52,6 +53,7 @@ export interface RuntimePersistenceDependencies {
   readonly destinyBoardService: DestinyBoardService;
   readonly durabilityStore: DurabilityStore;
   readonly saveSlotId?: string;
+  readonly onLocalSave?: (save: SaveFormat) => void;
 }
 
 export class RuntimePersistence {
@@ -65,10 +67,12 @@ export class RuntimePersistence {
   private autoSaveIntervalId: number | undefined = undefined;
   private handleVisibilityChange: (() => void) | undefined = undefined;
   private handlePageHide: (() => void) | undefined = undefined;
+  private readonly onLocalSave: ((save: SaveFormat) => void) | undefined;
 
   public constructor(deps: RuntimePersistenceDependencies) {
     this.saveSlotId = deps.saveSlotId ?? DEFAULT_SAVE_SLOT_ID;
     this.backupSlotId = getSaveBackupSlotId(this.saveSlotId);
+    this.onLocalSave = deps.onLocalSave;
     this.saveRepository = new LocalStorageSaveRepository();
     const versionManager = new VersionManager(CURRENT_RUNTIME_SAVE_VERSION);
     const migrationPipeline = createRuntimeMigrationPipeline();
@@ -135,6 +139,7 @@ export class RuntimePersistence {
       this.backupSlotId,
     );
     this.saveManager.save(this.saveSlotId, tickCounter);
+    this.onLocalSave?.(this.saveRepository.get(this.saveSlotId));
   }
 
   public load(): void {

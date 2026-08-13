@@ -47,6 +47,28 @@ describe("SaveManager", () => {
     expect(provider.state).toEqual({ hp: 100, name: "hero" });
   });
 
+  it("uses a monotonic wall-clock timestamp across runtime sessions", () => {
+    const repository = new InMemorySaveRepository();
+    const createWithRepository = (): SaveManager => new SaveManager({
+      repository,
+      versionManager: new VersionManager(1),
+      migrationPipeline: new MigrationPipeline(),
+      buildVersion: "0.1.0",
+      seed: 42,
+    });
+    const first = createWithRepository();
+    first.registerProvider(new MockProvider("test", { hp: 100 }));
+    first.save("slot", 5000);
+    const firstUpdatedAt = repository.get("slot").metadata.updatedAt;
+
+    const restarted = createWithRepository();
+    restarted.registerProvider(new MockProvider("test", { hp: 90 }));
+    restarted.save("slot", 1);
+
+    expect(repository.get("slot").metadata.updatedAt).toBeGreaterThan(firstUpdatedAt);
+    expect(repository.get("slot").metadata.updatedAt).toBeGreaterThan(1_000_000_000_000);
+  });
+
   it("lists and deletes saves", () => {
     const manager = createManager();
     manager.registerProvider(new MockProvider("p", {}));

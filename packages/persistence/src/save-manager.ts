@@ -43,14 +43,20 @@ export class SaveManager {
     this.loader.register(provider);
   }
 
-  save(id: string, tick: number): void {
+  save(id: string, _tick: number): void {
     const payload = this.builder.build();
     const checksum = computeChecksum(payload);
-    const now = tick;
 
     const existing = this.repository.has(id)
       ? this.repository.get(id)
       : undefined;
+    // Save metadata is also used to reconcile browser and cloud copies. A
+    // runtime tick restarts at zero for every session, so it cannot establish
+    // which copy was saved most recently across devices or reloads.
+    const now = Math.max(
+      Date.now(),
+      (existing?.metadata.updatedAt ?? 0) + 1,
+    );
 
     const metadata: SaveMetadata = {
       version: this.versionManager.currentVersion,
