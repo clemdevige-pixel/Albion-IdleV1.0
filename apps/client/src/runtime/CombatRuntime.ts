@@ -25,6 +25,7 @@ import {
   CLIENT_ABILITIES,
   resolveUnlockedWeaponAbilities,
   resolveWeaponMastery,
+  type ClientAbilityDefinition,
 } from "../data/weaponContentCatalog";
 import { getMonsterAbilityDefinition } from "../data/monsterAbilityContentCatalog";
 import {
@@ -140,6 +141,18 @@ export class CombatRuntime {
     return resolveUnlockedWeaponAbilities(equippedWeaponId, masteryLevel);
   }
 
+  private canAutoCastAbility(definition: ClientAbilityDefinition): boolean {
+    const rule = definition.autoCast;
+    if (rule === undefined || rule.kind === "always") return true;
+    if (!this.damageManager.isAlive(this.activeEnemyId)) return false;
+    const health = this.damageManager.getHealth(this.activeEnemyId);
+    if (health.maxHealth <= 0) return false;
+    if (rule.kind === "target_health_below") {
+      return health.currentHealth / health.maxHealth <= rule.ratio;
+    }
+    return true;
+  }
+
   private useReadyEnemyAbility(): boolean {
     if (!this.damageManager.isAlive(this.activeEnemyId) || !this.damageManager.isAlive(this.heroId)) return false;
     const readyAbility = this.abilityManager.getAbilities(this.activeEnemyId).find((entry) => entry.state === "ready" && entry.definition.category !== "passive");
@@ -159,6 +172,8 @@ export class CombatRuntime {
   private useNextReadyHeroAbility(): boolean {
     const unlockedAbilities = this.getUnlockedHeroWeaponAbilities();
     for (let slotIndex = 0; slotIndex < unlockedAbilities.length; slotIndex += 1) {
+      const definition = unlockedAbilities[slotIndex];
+      if (definition === undefined || !this.canAutoCastAbility(definition)) continue;
       if (this.useWeaponAbility(slotIndex)) return true;
     }
     return false;
