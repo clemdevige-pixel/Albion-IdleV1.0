@@ -16,7 +16,10 @@ export interface BuildServerOptions {
   discordConfig?: DiscordOAuthConfig;
   discordClient?: DiscordOAuthClient;
   discordFlowStore?: DiscordOAuthFlowRepository;
+  /** Primary client origin, still used for OAuth redirects. */
   clientOrigin?: string;
+  /** Additional trusted browser origins allowed to call the API via CORS. */
+  clientOrigins?: readonly string[];
   cloudSaveRepository?: CloudSaveRepository;
 }
 
@@ -31,8 +34,13 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
     logger: { level: options.logLevel ?? "info" },
   });
 
+  const primaryClientOrigin = options.clientOrigin ?? "http://localhost:5173";
+  const allowedClientOrigins = options.clientOrigins === undefined || options.clientOrigins.length === 0
+    ? [primaryClientOrigin]
+    : [...new Set([primaryClientOrigin, ...options.clientOrigins])];
+
   void app.register(cors, {
-    origin: options.clientOrigin ?? "http://localhost:5173",
+    origin: allowedClientOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   });
 
@@ -41,7 +49,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
   const discord = options.discordConfig === undefined ? undefined : {
     config: options.discordConfig,
     client: options.discordClient ?? new DiscordHttpOAuthClient(options.discordConfig),
-    clientOrigin: options.clientOrigin ?? "http://localhost:5173",
+    clientOrigin: primaryClientOrigin,
     ...(options.discordFlowStore === undefined ? {} : { flowStore: options.discordFlowStore }),
   };
   registerAuthRoutes(app, auth, discord);
