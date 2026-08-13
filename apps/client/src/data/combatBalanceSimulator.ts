@@ -1,4 +1,9 @@
-import { calculateDamage, type DamageType } from "@game/gameplay";
+import {
+  calculateDamage,
+  getEnchantmentStatMultiplier,
+  type DamageType,
+  type EnchantmentLevel,
+} from "@game/gameplay";
 import {
   WEAPON_ITEM_DEFINITIONS,
   resolveUnlockedWeaponAbilities,
@@ -18,10 +23,18 @@ export interface CombatBalanceEnemyProfile {
   readonly attackSpeed: number;
 }
 
+export interface CombatBalanceEquipmentPiece {
+  readonly itemId: string;
+  readonly enchantment?: EnchantmentLevel;
+}
+
 export interface CombatBalanceLoadout {
   readonly weaponId: string;
   readonly masteryLevel: number;
+  readonly weaponEnchantment?: EnchantmentLevel;
   readonly offHandId?: string;
+  readonly offHandEnchantment?: EnchantmentLevel;
+  readonly equipment?: readonly CombatBalanceEquipmentPiece[];
   readonly baseHealth?: number;
   readonly baseArmor?: number;
   readonly baseMagicResistance?: number;
@@ -68,6 +81,12 @@ interface ActiveDot {
   ticksRemaining: number;
 }
 
+interface DefensiveStats {
+  readonly health: number;
+  readonly armor: number;
+  readonly magicResistance: number;
+}
+
 const DEFAULT_HERO_HEALTH = 500;
 const DEFAULT_HERO_ARMOR = 0;
 const DEFAULT_HERO_MAGIC_RESISTANCE = 0;
@@ -80,27 +99,43 @@ function weaponDamage(loadout: CombatBalanceLoadout): {
 } {
   const weapon = WEAPON_ITEM_DEFINITIONS[loadout.weaponId];
   if (weapon === undefined) throw new Error(`Unknown weapon: ${loadout.weaponId}`);
-  const multiplier = getWeaponHandlingOffensiveMultiplier(weapon.handling);
-  const physical = (weapon.stats.stat_physical_damage ?? 0) * multiplier;
-  const magical = (weapon.stats.stat_magical_damage ?? 0) * multiplier;
+  const handlingMultiplier = getWeaponHandlingOffensiveMultiplier(weapon.handling);
+  const enchantmentMultiplier = getEnchantmentStatMultiplier(loadout.weaponEnchantment ?? 0);
+  const physical = (weapon.stats.stat_physical_damage ?? 0) * handlingMultiplier * enchantmentMultiplier;
+  const magical = (weapon.stats.stat_magical_damage ?? 0) * handlingMultiplier * enchantmentMultiplier;
   return magical > physical
     ? { amount: magical, damageType: "magical" }
     : { amount: physical, damageType: "physical" };
 }
 
-function offHandDefenses(offHandId: string | undefined): {
-  readonly armor: number;
-  readonly magicResistance: number;
-} {
-  if (offHandId === undefined) return { armor: 0, magicResistance: 0 };
-  const item = NON_WEAPON_ITEM_DEFINITIONS[offHandId];
-  if (item === undefined || item.slot !== "off_hand") {
-    throw new Error(`Unknown off-hand: ${offHandId}`);
-  }
+function readDefensivePiece(itemId: string, enchantment: EnchantmentLevel): DefensiveStats {
+  const item = NON_WEAPON_ITEM_DEFINITIONS[itemId];
+  if (item === undefined) throw new Error(`Unknown equipment: ${itemId}`);
+  const multiplier = getEnchantmentStatMultiplier(enchantment);
   return {
-    armor: item.stats.stat_armor ?? 0,
-    magicResistance: item.stats.stat_magic_resistance ?? 0,
+    health: (item.stats.stat_max_health ?? 0) * multiplier,
+    armor: (item.stats.stat_armor ?? 0) * multiplier,
+    magicResistance: (item.stats.stat_magic_resistance ?? 0) * multiplier,
   };
+}
+
+function equipmentDefenses(loadout: CombatBalanceLoadout): DefensiveStats {
+  const pieces: CombatBalanceEquipmentPiece[] = [...(loadout.equipment ?? [])];
+  if (loadout.offHandId !== undefined) {
+    const offHand = NON_WEAPON_ITEM_DEFINITIONS[loadout.offHandId];
+    if (offHand === undefined || offHand.slot !== "off_hand") {
+      throw new Error(`Unknown off-hand: ${loadout.offHandId}`);
+    }
+    pieces.push({ itemId: loadout.offHandId, enchantment: loadout.offHandEnchantment ?? 0 });
+  }
+  return pieces.reduce<DefensiveStats>((total, piece) => {
+    const stats = readDefensivePiece(piece.itemId, piece.enchantment ?? 0);
+    return {
+      health: total.health + stats.health,
+      armor: total.armor + stats.armor,
+      magicResistance: total.magicResistance + stats.magicResistance,
+    };
+  }, { health: 0, armor: 0, magicResistance: 0 });
 }
 
 function applyDamage(
@@ -109,12 +144,13 @@ function applyDamage(
   damageType: DamageType,
   armor: number,
   magicResistance: number,
+  includeSourceStat = true,
 ): number {
   return calculateDamage(
     baseDamage,
     {
-      physicalDamage: damageType === "physical" ? sourceDamage : 0,
-      magicalDamage: damageType === "magical" ? sourceDamage : 0,
+      physicalDamage: includeSourceStat && damageType === "physical" ? sourceDamage : 0,
+      magicalDamage: includeSourceStat && damageType === "magical" ? sourceDamage : 0,
     },
     { armor, magicResistance },
     damageType,
@@ -151,9 +187,9 @@ export function simulateCombatBalance(
   const attackSpeed = resolveWeaponAttackSpeed(loadout.weaponId) ?? 1;
   const abilities = resolveUnlockedWeaponAbilities(loadout.weaponId, loadout.masteryLevel);
   const cooldowns = new Map(abilities.map((ability) => [ability.id, 0]));
-  const offHand = offHandDefenses(loadout.offHandId);
+  const worn = equipmentDefenses(loadout);
 
-  let heroHealth = loadout.baseHealth ?? DEFAULT_HERO_HEALTH;
+  let heroHealth = (loadout.baseHealth ?? DEFAULT_HERO_HEALTH) + worn.health;
   let enemyHealth = enemy.health;
   let elapsed = 0;
   let heroAttackTimer = 0;
@@ -170,10 +206,19 @@ export function simulateCombatBalance(
     dotTicks: 0,
   };
 
-  const dealToEnemy = (baseDamage: number, sourceDamage: number, damageType: DamageType, bucket: "auto" | "ability" | "dot") => {
+  const dealToEnemy = (
+    baseDamage: number,
+    sourceDamage: number,
+    damageType: DamageType,
+    bucket: "auto" | "ability" | "dot",
+    includeSourceStat = true,
+  ) => {
     const armor = effectiveResistance(enemy.armor, "stat_armor", effects);
     const magicResistance = effectiveResistance(enemy.magicResistance, "stat_magic_resistance", effects);
-    const dealt = Math.min(enemyHealth, applyDamage(baseDamage, sourceDamage, damageType, armor, magicResistance));
+    const dealt = Math.min(
+      enemyHealth,
+      applyDamage(baseDamage, sourceDamage, damageType, armor, magicResistance, includeSourceStat),
+    );
     enemyHealth = Math.max(0, enemyHealth - dealt);
     if (bucket === "auto") {
       breakdown.autoAttackDamage += dealt;
@@ -203,7 +248,7 @@ export function simulateCombatBalance(
       while (dot.intervalRemaining <= 0 && dot.ticksRemaining > 0 && enemyHealth > 0) {
         dot.intervalRemaining += dot.interval;
         dot.ticksRemaining -= 1;
-        dealToEnemy(dot.sourceDamage * dot.ratio, dot.sourceDamage, dot.damageType, "dot");
+        dealToEnemy(dot.sourceDamage * dot.ratio, dot.sourceDamage, dot.damageType, "dot", false);
       }
       if (dot.ticksRemaining <= 0) dots.splice(index, 1);
     }
@@ -290,8 +335,8 @@ export function simulateCombatBalance(
         enemyAttackTimer -= enemyInterval;
         const type = enemyDamageType(enemy);
         const sourceDamage = type === "magical" ? enemy.magicalDamage : enemy.physicalDamage;
-        const armor = (loadout.baseArmor ?? DEFAULT_HERO_ARMOR) + offHand.armor;
-        const magicResistance = (loadout.baseMagicResistance ?? DEFAULT_HERO_MAGIC_RESISTANCE) + offHand.magicResistance;
+        const armor = (loadout.baseArmor ?? DEFAULT_HERO_ARMOR) + worn.armor;
+        const magicResistance = (loadout.baseMagicResistance ?? DEFAULT_HERO_MAGIC_RESISTANCE) + worn.magicResistance;
         const incoming = Math.min(heroHealth, applyDamage(0, sourceDamage, type, armor, magicResistance));
         heroHealth = Math.max(0, heroHealth - incoming);
         breakdown.damageTaken += incoming;
