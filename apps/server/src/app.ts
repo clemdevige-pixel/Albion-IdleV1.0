@@ -37,6 +37,7 @@ export function buildServer(options: BuildServerOptions = {}): FastifyInstance {
     config: options.discordConfig,
     client: options.discordClient ?? new DiscordHttpOAuthClient(options.discordConfig),
     clientOrigin: primaryClientOrigin,
+    allowedClientOrigins,
     ...(options.discordFlowStore === undefined ? {} : { flowStore: options.discordFlowStore }),
   };
   registerAuthRoutes(app, auth, discord);
