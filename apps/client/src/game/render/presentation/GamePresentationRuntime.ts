@@ -46,7 +46,8 @@ export class GamePresentationRuntime {
       this.lastEncounterPresentationKey !== undefined
       && encounterPresentationKey !== this.lastEncounterPresentationKey
     ) {
-      invalidateCombatPresentation();
+      const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
+      invalidateCombatPresentation(latestDamageEventId);
     }
     this.lastEncounterPresentationKey = encounterPresentationKey;
 
