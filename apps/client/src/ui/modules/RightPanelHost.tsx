@@ -8,6 +8,7 @@ import { InventoryModule } from "../inventory";
 import { MasteriesModule } from "../masteries";
 import { ProductionModule } from "../production";
 import { MerchantModule } from "../merchant";
+import { WorldModule } from "../world";
 
 export function RightPanelHost(): JSX.Element {
   const { activeModule, returnToDashboard } = useNavigation();
@@ -18,6 +19,7 @@ export function RightPanelHost(): JSX.Element {
   const isMasteries = activeModule === UI_MODULE_IDS.masteries;
   const isProduction = activeModule === UI_MODULE_IDS.production;
   const isMerchant = activeModule === UI_MODULE_IDS.merchant;
+  const isWorld = activeModule === UI_MODULE_IDS.world;
 
   return (
     <aside className="ui-right-panel" aria-label="Panneau principal">
@@ -53,6 +55,8 @@ export function RightPanelHost(): JSX.Element {
           <ProductionModule />
         ) : isMerchant ? (
           <MerchantModule />
+        ) : isWorld ? (
+          <WorldModule />
         ) : (
           <DashboardModule />
         )}
