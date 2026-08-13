@@ -18,7 +18,13 @@ export function resetPresentedEnemyHealth(current: number, maximum: number): voi
 
 export function applyPresentedEnemyImpact(targetHealthAfter: number): void {
   if (!enemyHealth.initialized) return;
-  enemyHealth.current = Math.max(0, Math.min(enemyHealth.maximum, targetHealthAfter));
+  // Presentation events can resolve out of order (e.g. an immediate DoT tick
+  // before an older projectile reaches the target). Damage must never make the
+  // presented health bar move backwards within the same encounter.
+  enemyHealth.current = Math.min(
+    enemyHealth.current,
+    Math.max(0, Math.min(enemyHealth.maximum, targetHealthAfter)),
+  );
 }
 
 export function getPresentedEnemyHealth(
