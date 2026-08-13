@@ -1,3 +1,4 @@
+import { resolveStatusEffectPresentation } from "../data/statusEffectPresentationCatalog";
 import { useActiveEffectsUiModel } from "../ui/combat-hud/combatHudSelectors";
 
 const EFFECT_SYMBOLS: Record<string, string> = {
@@ -9,9 +10,7 @@ const EFFECT_SYMBOLS: Record<string, string> = {
   silence: "x",
 };
 
-/**
- * Small status effect icons for active buffs/debuffs.
- */
+/** Small status effect icons for active buffs/debuffs. */
 export function ActiveEffectsDisplay(): JSX.Element {
   const activeEffects = useActiveEffectsUiModel();
 
@@ -21,17 +20,21 @@ export function ActiveEffectsDisplay(): JSX.Element {
 
   return (
     <div className="active-effects">
-      {activeEffects.map((effect) => (
-        <div
-          key={effect.id}
-          className={`active-effects__icon active-effects__icon--${effect.type}`}
-          title={`${effect.name} (${String(Math.ceil(effect.remainingDuration))}s)`}
-        >
-          <span className="active-effects__symbol">
-            {EFFECT_SYMBOLS[effect.type] ?? "?"}
-          </span>
-        </div>
-      ))}
+      {activeEffects.map((effect) => {
+        const presentation = resolveStatusEffectPresentation(effect.name);
+        const label = presentation?.label ?? effect.name;
+        const symbol = presentation?.symbol ?? EFFECT_SYMBOLS[effect.type] ?? "?";
+        return (
+          <div
+            key={effect.id}
+            className={`active-effects__icon active-effects__icon--${effect.type}`}
+            title={`${label} (${String(Math.ceil(effect.remainingDuration))}s)`}
+            aria-label={`${label} ${String(Math.ceil(effect.remainingDuration))}s`}
+          >
+            <span className="active-effects__symbol">{symbol}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
