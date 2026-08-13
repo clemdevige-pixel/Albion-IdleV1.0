@@ -46,6 +46,12 @@ export class GamePresentationRuntime {
       encounterPresentationKey !== this.lastEncounterPresentationKey
       && isPresentedEnemyDefeated()
     ) {
+      // Let the combat presentation adopt the newly spawned enemy while the
+      // previous encounter is still presented at 0 HP. Resetting the health
+      // first would make CombatPresentationController keep the previous actor
+      // forever because identity changes are intentionally gated on visual death.
+      this.combat?.update(bridge);
+
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
