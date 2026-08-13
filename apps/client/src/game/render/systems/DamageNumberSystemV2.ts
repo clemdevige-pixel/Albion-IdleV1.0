@@ -5,6 +5,7 @@ import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 
 type PresentedDamageEvent = DamageNumberEvent & {
   readonly targetHealthAfter?: number;
+  readonly sourceType?: "auto_attack" | "ability" | "effect" | "other";
 };
 
 export interface DamageNumberAnchor {
@@ -46,9 +47,10 @@ export class DamageNumberSystem {
     const displayedAmount = Number.isInteger(roundedAmount)
       ? String(Math.trunc(roundedAmount))
       : roundedAmount.toFixed(1);
+    const effectPrefix = presentedEvent.sourceType === "effect" ? "• " : "";
 
     const damageText = this.scene.add
-      .text(anchor.x + offsetX, anchor.y, `-${displayedAmount}`, {
+      .text(anchor.x + offsetX, anchor.y, `${effectPrefix}-${displayedAmount}`, {
         fontFamily: manifest.textStyle.fontFamily,
         fontSize: `${String(manifest.textStyle.fontSize)}px`,
         fontStyle: manifest.textStyle.fontStyle,
@@ -57,15 +59,15 @@ export class DamageNumberSystem {
         strokeThickness: manifest.textStyle.strokeThickness,
       })
       .setOrigin(0.5)
-      .setScale(manifest.motion.startScale)
-      .setDepth(manifest.depth);
+      .setScale(presentedEvent.sourceType === "effect" ? manifest.motion.startScale * 0.88 : manifest.motion.startScale)
+      .setDepth(manifest.depth + (presentedEvent.sourceType === "effect" ? 1 : 0));
 
     this.activeTexts.add(damageText);
     const tween = this.scene.tweens.add({
       targets: damageText,
       y: anchor.y - manifest.motion.riseDistance,
       alpha: 0,
-      scale: manifest.motion.endScale,
+      scale: presentedEvent.sourceType === "effect" ? manifest.motion.endScale * 0.88 : manifest.motion.endScale,
       duration: manifest.motion.durationMs,
       ease: manifest.motion.ease,
       onComplete: () => {
