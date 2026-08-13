@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { ProjectileRenderManifest } from "../RenderManifest";
+import { subscribeCombatPresentationInvalidation } from "../presentation/CombatPresentationInvalidation";
 import type { VfxSystem } from "./VfxSystem";
 
 export interface ProjectilePath {
@@ -26,12 +27,17 @@ export interface ProjectilePresentation {
 export class ProjectileSystem {
   private readonly activeObjects = new Set<Phaser.GameObjects.GameObject>();
   private readonly activeTweens = new Set<Phaser.Tweens.Tween>();
+  private readonly unsubscribeInvalidation: () => void;
 
   public constructor(
     private readonly scene: Phaser.Scene,
     private readonly resolvePath: ProjectilePathResolver,
     private readonly vfxSystem: VfxSystem,
-  ) {}
+  ) {
+    this.unsubscribeInvalidation = subscribeCombatPresentationInvalidation(() => {
+      this.clear();
+    });
+  }
 
   public present(presentation: ProjectilePresentation): void {
     const { manifest, onImpact } = presentation;
@@ -101,6 +107,11 @@ export class ProjectileSystem {
       gameObject.destroy();
     }
     this.activeObjects.clear();
+  }
+
+  public destroy(): void {
+    this.unsubscribeInvalidation();
+    this.clear();
   }
 
   private parseColor(value: string): number {
