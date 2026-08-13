@@ -143,7 +143,7 @@ export class WeaponAbilityMechanicsRuntime {
       while (dot.intervalRemaining <= 0 && dot.ticksRemaining > 0 && this.deps.damageManager.isAlive(dot.target)) {
         dot.intervalRemaining += dot.interval;
         dot.ticksRemaining -= 1;
-        const result = this.deps.damageManager.processDamage({ source: dot.source, target: dot.target, baseDamage: dot.sourceDamage * dot.ratio, damageType: dot.damageType, source_type: "ability" });
+        const result = this.deps.damageManager.processDamage({ source: dot.source, target: dot.target, baseDamage: dot.sourceDamage * dot.ratio, damageType: dot.damageType, source_type: "effect" });
         if (result?.targetDied === true) this.deps.onTargetKilled(tick);
       }
       if (dot.ticksRemaining <= 0) this.dots.splice(index, 1);

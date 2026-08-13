@@ -66,6 +66,12 @@ export class CombatBridgeAdapter {
     });
     const unsubscribeDamage = eventBus.subscribe("DamageDealt", (event) => {
       const target = event.target === this.#heroId ? "player" : "enemy";
+
+      // Periodic/status-effect damage is already represented by the health
+      // change and active-effect presentation. It must not masquerade as a
+      // fresh weapon attack/projectile.
+      if (event.sourceType === "effect") return;
+
       const abilityId = event.source === this.#heroId && target === "enemy"
         ? this.#consumePendingHeroAbilityId()
         : undefined;
