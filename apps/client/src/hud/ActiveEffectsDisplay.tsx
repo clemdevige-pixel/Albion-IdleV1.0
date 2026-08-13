@@ -1,40 +1,54 @@
-import { resolveStatusEffectPresentation } from "../data/statusEffectPresentationCatalog";
+import {
+  resolveStatusEffectAnchor,
+  resolveStatusEffectPresentation,
+  type StatusEffectAnchor,
+} from "../data/statusEffectPresentationCatalog";
+import type { ActiveEffectDisplay } from "../game/GameBridge";
 import { useActiveEffectsUiModel } from "../ui/combat-hud/combatHudSelectors";
 
-const EFFECT_SYMBOLS: Record<string, string> = {
-  buff: "+",
-  debuff: "-",
-  stun: "!",
-  root: "#",
-  slow: "~",
-  silence: "x",
-};
-
-/** Small status effect icons for active buffs/debuffs. */
-export function ActiveEffectsDisplay(): JSX.Element {
-  const activeEffects = useActiveEffectsUiModel();
-
-  if (activeEffects.length === 0) {
-    return <div className="active-effects" />;
-  }
+function EffectGroup({
+  anchor,
+  effects,
+}: {
+  readonly anchor: StatusEffectAnchor;
+  readonly effects: readonly ActiveEffectDisplay[];
+}): JSX.Element | null {
+  const anchored = effects.filter(
+    (effect) => resolveStatusEffectAnchor(effect.name, effect.type) === anchor,
+  );
+  if (anchored.length === 0) return null;
 
   return (
-    <div className="active-effects">
-      {activeEffects.map((effect) => {
-        const presentation = resolveStatusEffectPresentation(effect.name);
-        const label = presentation?.label ?? effect.name;
-        const symbol = presentation?.symbol ?? EFFECT_SYMBOLS[effect.type] ?? "?";
+    <div className={`active-effects active-effects--${anchor}`}>
+      {anchored.map((effect) => {
+        const presentation = resolveStatusEffectPresentation(effect.name, effect.type);
         return (
           <div
             key={effect.id}
             className={`active-effects__icon active-effects__icon--${effect.type}`}
-            title={`${label} (${String(Math.ceil(effect.remainingDuration))}s)`}
-            aria-label={`${label} ${String(Math.ceil(effect.remainingDuration))}s`}
+            tabIndex={0}
+            aria-label={`${presentation.label} ${String(Math.ceil(effect.remainingDuration))} secondes`}
           >
-            <span className="active-effects__symbol">{symbol}</span>
+            <span className="active-effects__symbol">{presentation.symbol}</span>
+            <div className="active-effects__tooltip" role="tooltip">
+              <strong>{presentation.label}</strong>
+              <span>{presentation.description}</span>
+              <small>{String(Math.max(0, Math.ceil(effect.remainingDuration)))}s restantes</small>
+            </div>
           </div>
         );
       })}
     </div>
+  );
+}
+
+/** Generic actor-anchored status effects for current and future buffs/debuffs. */
+export function ActiveEffectsDisplay(): JSX.Element {
+  const effects = useActiveEffectsUiModel();
+  return (
+    <>
+      <EffectGroup anchor="player" effects={effects} />
+      <EffectGroup anchor="enemy" effects={effects} />
+    </>
   );
 }
