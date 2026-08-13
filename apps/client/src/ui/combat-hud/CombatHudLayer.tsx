@@ -2,6 +2,7 @@ import { ActivityJournal } from "../../hud/ActivityJournal";
 import { AbilityBar } from "../../hud/AbilityBar";
 import { HudRoot } from "../../hud/HudRoot";
 import { EconomyNotifications } from "../../panels/EconomyNotifications";
+import { EnemyStatusVfxOverlay } from "./EnemyStatusVfxOverlay";
 import "./combatHud.css";
 
 /**
@@ -12,6 +13,7 @@ export function CombatHudLayer(): JSX.Element {
   return (
     <div className="combat-hud-layer">
       <HudRoot />
+      <EnemyStatusVfxOverlay />
       <div className="combat-hud-journal">
         <ActivityJournal />
       </div>
