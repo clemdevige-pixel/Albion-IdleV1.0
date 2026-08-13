@@ -132,48 +132,7 @@ export function createProductionFoundation({
     experienceService,
     progressionOrchestrator,
     productionStorageId,
-    nodesAndTools: {
-      Wood: {
-        3: {
-          nodeId: nodesAndTools.birchNode.id,
-          tool: nodesAndTools.starterAxe,
-        },
-        4: {
-          nodeId: nodesAndTools.pineNode.id,
-          tool: nodesAndTools.tier4Axe,
-        },
-      },
-      Ore: {
-        3: {
-          nodeId: nodesAndTools.copperNode.id,
-          tool: nodesAndTools.starterPickaxe,
-        },
-        4: {
-          nodeId: nodesAndTools.ironNode.id,
-          tool: nodesAndTools.tier4Pickaxe,
-        },
-      },
-      Hide: {
-        3: {
-          nodeId: nodesAndTools.sturdyHideNode.id,
-          tool: nodesAndTools.starterSkinningKnife,
-        },
-        4: {
-          nodeId: nodesAndTools.thickHideNode.id,
-          tool: nodesAndTools.tier4SkinningKnife,
-        },
-      },
-      Fiber: {
-        3: {
-          nodeId: nodesAndTools.linenFiberNode.id,
-          tool: nodesAndTools.starterSickle,
-        },
-        4: {
-          nodeId: nodesAndTools.fineFiberNode.id,
-          tool: nodesAndTools.tier4Sickle,
-        },
-      },
-    },
+    nodesAndTools,
     getProductionTier,
   });
 

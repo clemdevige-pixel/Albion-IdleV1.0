@@ -4,7 +4,7 @@ import { buildCraftingModel } from "./craftingModels";
 
 function recipe(
   outputItemId: string,
-  tier: 3 | 4,
+  tier: CraftingRecipeVM["tier"],
   family: CraftingRecipeVM["family"] = "armor",
 ): CraftingRecipeVM {
   return {

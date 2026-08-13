@@ -130,6 +130,29 @@ describe("WorldProgressionManager", () => {
     expect(mgr2.getCompletedZones()).toContain(ZONE_A);
   });
 
+  it("unlocks newly registered content when an older save already completed its prerequisite", () => {
+    const previousFinalZone = ZONE_A;
+    const newlyAddedZone = ZONE_B;
+    const mgr2 = new WorldProgressionManager();
+
+    mgr2.registerUnlockDefinition({
+      zoneDefId: previousFinalZone,
+      conditions: [],
+      unlockedByDefault: true,
+    });
+    mgr2.registerUnlockDefinition({
+      zoneDefId: newlyAddedZone,
+      conditions: [{ type: "zone_completed", targetZoneDefId: previousFinalZone }],
+    });
+
+    mgr2.loadState({
+      unlockedZones: [previousFinalZone],
+      completedZones: [previousFinalZone],
+    });
+
+    expect(mgr2.isUnlocked(newlyAddedZone)).toBe(true);
+  });
+
   // -----------------------------------------------------------------------
   // Clear
   // -----------------------------------------------------------------------

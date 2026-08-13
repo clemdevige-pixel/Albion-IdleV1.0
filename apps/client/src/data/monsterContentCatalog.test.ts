@@ -81,7 +81,7 @@ describe("monsterContentCatalog", () => {
     expect(next.id).not.toBe(first.id);
   });
 
-  it("uses only implemented progression factions in every Blue Zone encounter", () => {
+  it("uses only implemented progression factions in every authored encounter", () => {
     const progressionFactions = new Set(["Undead", "Morgana", "Heretic", "Keeper"]);
     for (const pool of Object.values(ZONE_ENCOUNTER_POOLS)) {
       for (const monsterId of [
@@ -172,10 +172,15 @@ describe("monsterContentCatalog", () => {
 
   it("has an explicit encounter pool for every current world zone", () => {
     expect(Object.keys(ZONE_ENCOUNTER_POOLS).sort()).toEqual([
+      "zone_amberwood_t5",
       "zone_forest_t3",
+      "zone_gloamfen_t5",
       "zone_highland_t3",
+      "zone_ironveil_t5",
       "zone_mountain_t4",
       "zone_steppe_t4",
+      "zone_stormwatch_t5",
+      "zone_sunscar_t5",
       "zone_swamp_t3",
     ]);
   });

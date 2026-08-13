@@ -20,13 +20,34 @@ export const WORLD_ZONE_IDS = {
   highland: asZoneDefinitionId("zone_highland_t3"),
   steppe: asZoneDefinitionId("zone_steppe_t4"),
   mountain: asZoneDefinitionId("zone_mountain_t4"),
+  amberwood: asZoneDefinitionId("zone_amberwood_t5"),
+  gloamfen: asZoneDefinitionId("zone_gloamfen_t5"),
+  stormwatch: asZoneDefinitionId("zone_stormwatch_t5"),
+  sunscar: asZoneDefinitionId("zone_sunscar_t5"),
+  ironveil: asZoneDefinitionId("zone_ironveil_t5"),
 } as const;
+
+const BLUE_WORLD_ZONE_IDS = [
+  WORLD_ZONE_IDS.forest,
+  WORLD_ZONE_IDS.swamp,
+  WORLD_ZONE_IDS.highland,
+  WORLD_ZONE_IDS.steppe,
+  WORLD_ZONE_IDS.mountain,
+] as const;
+
+const YELLOW_WORLD_ZONE_IDS = [
+  WORLD_ZONE_IDS.amberwood,
+  WORLD_ZONE_IDS.gloamfen,
+  WORLD_ZONE_IDS.stormwatch,
+  WORLD_ZONE_IDS.sunscar,
+  WORLD_ZONE_IDS.ironveil,
+] as const;
 
 export const WORLD_ZONE_IDS_BY_BAND: Readonly<
   Record<WorldBandId, readonly ZoneDefinitionId[]>
 > = {
-  blue: Object.values(WORLD_ZONE_IDS),
-  yellow: [],
+  blue: BLUE_WORLD_ZONE_IDS,
+  yellow: YELLOW_WORLD_ZONE_IDS,
   orange: [],
   red: [],
   black: [],
@@ -88,6 +109,11 @@ export const ZONE_DEFINITIONS: readonly ZoneDefinition[] = [
   { id: WORLD_ZONE_IDS.highland, name: "Stone Highlands", tier: 3, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.highland, "grp_highland", 45), tags: ["highland", "tier3"] },
   { id: WORLD_ZONE_IDS.steppe, name: "Golden Steppe", tier: 4, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.steppe, "grp_steppe", 50), tags: ["steppe", "tier4"] },
   { id: WORLD_ZONE_IDS.mountain, name: "Frostpeak Mountain", tier: 4, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.mountain, "grp_mountain", 60), tags: ["mountain", "tier4", "final"] },
+  { id: WORLD_ZONE_IDS.amberwood, name: "Amberwood Forest", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.amberwood, "grp_amberwood", 65), tags: ["forest", "yellow", "tier5", "starter"] },
+  { id: WORLD_ZONE_IDS.gloamfen, name: "Gloamfen Marsh", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.gloamfen, "grp_gloamfen", 70), tags: ["swamp", "yellow", "tier5"] },
+  { id: WORLD_ZONE_IDS.stormwatch, name: "Stormwatch Highlands", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.stormwatch, "grp_stormwatch", 75), tags: ["highland", "yellow", "tier5"] },
+  { id: WORLD_ZONE_IDS.sunscar, name: "Sunscar Steppe", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.sunscar, "grp_sunscar", 80), tags: ["steppe", "yellow", "tier5"] },
+  { id: WORLD_ZONE_IDS.ironveil, name: "Ironveil Peaks", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.ironveil, "grp_ironveil", 85), tags: ["mountain", "yellow", "tier5", "final"] },
 ];
 
 export const BIOME_BY_ZONE = new Map([
@@ -96,6 +122,11 @@ export const BIOME_BY_ZONE = new Map([
   [WORLD_ZONE_IDS.highland, asBiomeId("biome_highland")],
   [WORLD_ZONE_IDS.steppe, asBiomeId("biome_steppe")],
   [WORLD_ZONE_IDS.mountain, asBiomeId("biome_mountain")],
+  [WORLD_ZONE_IDS.amberwood, asBiomeId("biome_forest")],
+  [WORLD_ZONE_IDS.gloamfen, asBiomeId("biome_swamp")],
+  [WORLD_ZONE_IDS.stormwatch, asBiomeId("biome_highland")],
+  [WORLD_ZONE_IDS.sunscar, asBiomeId("biome_steppe")],
+  [WORLD_ZONE_IDS.ironveil, asBiomeId("biome_mountain")],
 ]);
 
 export const WORLD_ZONE_ORDER = WORLD_BAND_DEFINITIONS.flatMap(

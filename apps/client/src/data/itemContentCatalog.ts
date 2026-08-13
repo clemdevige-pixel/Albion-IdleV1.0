@@ -79,6 +79,30 @@ export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
     handling: "one_handed",
     stats: { stat_armor: 6, stat_magic_resistance: 4 },
   },
+  item_shield_t5_reinforced: {
+    itemId: "item_shield_t5_reinforced",
+    slot: "off_hand",
+    handling: "one_handed",
+    stats: { stat_armor: 22, stat_magic_resistance: 13 },
+  },
+  item_helmet_t5_reinforced: {
+    itemId: "item_helmet_t5_reinforced",
+    slot: "head",
+    handling: "one_handed",
+    stats: { stat_armor: 12, stat_magic_resistance: 9, stat_max_health: 85 },
+  },
+  item_armor_t5_leather: {
+    itemId: "item_armor_t5_leather",
+    slot: "chest",
+    handling: "one_handed",
+    stats: { stat_armor: 21, stat_magic_resistance: 15, stat_max_health: 135 },
+  },
+  item_boots_t5_leather: {
+    itemId: "item_boots_t5_leather",
+    slot: "boots",
+    handling: "one_handed",
+    stats: { stat_armor: 9, stat_magic_resistance: 6 },
+  },
 };
 
 export const CONSUMABLE_STACK_DEFINITIONS: Readonly<Record<string, number>> = {

@@ -5,10 +5,11 @@ import {
   ORE_GATHERING_MASTERY_ID,
   WOOD_GATHERING_MASTERY_ID,
 } from "./progressionContentCatalog.js";
-import { GATHERING_TOOL_DEFINITIONS } from "./resourceContentCatalog.js";
-
 export const PRODUCTION_TIERS = [3, 4, 5, 6, 7, 8] as const;
 export type ProductionTier = (typeof PRODUCTION_TIERS)[number];
+
+/** Tiers whose complete gathering/refining/crafting content is authored. */
+export const PRODUCTION_CONTENT_TIERS = [3, 4, 5] as const satisfies readonly ProductionTier[];
 
 export function isProductionTier(value: unknown): value is ProductionTier {
   return (
@@ -106,8 +107,9 @@ export const PRODUCTION_FAMILY_CATALOG = {
     refinedIcon: "resource-birch-planks.png",
     rawMaterialLabel: "Bois",
     tiers: {
-      3: { resourceName: "Bois de bouleau", toolName: GATHERING_TOOL_DEFINITIONS.starterAxe.name },
-      4: { resourceName: "Bois de pin", toolName: GATHERING_TOOL_DEFINITIONS.tier4Axe.name },
+      3: { resourceName: "Bois de bouleau", toolName: "Hache de compagnon" },
+      4: { resourceName: "Bois de pin", toolName: "Hache d'expert" },
+      5: { resourceName: "Bois de cèdre", toolName: "Hache de maître" },
     },
   },
   ore: {
@@ -124,8 +126,9 @@ export const PRODUCTION_FAMILY_CATALOG = {
     refinedIcon: "resource-copper-ingot.png",
     rawMaterialLabel: "Minerai",
     tiers: {
-      3: { resourceName: "Minerai de cuivre", toolName: GATHERING_TOOL_DEFINITIONS.starterPickaxe.name },
-      4: { resourceName: "Minerai de fer", toolName: GATHERING_TOOL_DEFINITIONS.tier4Pickaxe.name },
+      3: { resourceName: "Minerai de cuivre", toolName: "Pioche de compagnon" },
+      4: { resourceName: "Minerai de fer", toolName: "Pioche d'expert" },
+      5: { resourceName: "Minerai de titane", toolName: "Pioche de maître" },
     },
   },
   hide: {
@@ -142,8 +145,9 @@ export const PRODUCTION_FAMILY_CATALOG = {
     refinedIcon: "resource-leather.png",
     rawMaterialLabel: "Peau",
     tiers: {
-      3: { resourceName: "Peau robuste", toolName: GATHERING_TOOL_DEFINITIONS.starterSkinningKnife.name },
-      4: { resourceName: "Peau épaisse", toolName: GATHERING_TOOL_DEFINITIONS.tier4SkinningKnife.name },
+      3: { resourceName: "Peau robuste", toolName: "Couteau de dépeçage" },
+      4: { resourceName: "Peau épaisse", toolName: "Couteau de dépeçage d'expert" },
+      5: { resourceName: "Peau lourde", toolName: "Couteau de dépeçage de maître" },
     },
   },
   fiber: {
@@ -160,8 +164,9 @@ export const PRODUCTION_FAMILY_CATALOG = {
     refinedIcon: "resource-cloth.png",
     rawMaterialLabel: "Fibre",
     tiers: {
-      3: { resourceName: "Fibre de lin", toolName: GATHERING_TOOL_DEFINITIONS.starterSickle.name },
-      4: { resourceName: "Fibre fine", toolName: GATHERING_TOOL_DEFINITIONS.tier4Sickle.name },
+      3: { resourceName: "Fibre de lin", toolName: "Faucille de compagnon" },
+      4: { resourceName: "Fibre fine", toolName: "Faucille d'expert" },
+      5: { resourceName: "Fibre céleste", toolName: "Faucille de maître" },
     },
   },
 } as const satisfies Record<string, ProductionFamilyDefinition>;

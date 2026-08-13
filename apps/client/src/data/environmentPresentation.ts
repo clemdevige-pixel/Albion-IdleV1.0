@@ -4,6 +4,11 @@ const ENVIRONMENT_BY_ZONE_ID: Readonly<Record<string, string>> = {
   zone_highland_t3: "birch_forest",
   zone_steppe_t4: "birch_forest",
   zone_mountain_t4: "birch_forest",
+  zone_amberwood_t5: "birch_forest",
+  zone_gloamfen_t5: "birch_forest",
+  zone_stormwatch_t5: "birch_forest",
+  zone_sunscar_t5: "birch_forest",
+  zone_ironveil_t5: "birch_forest",
 };
 
 /** Presentation metadata boundary for world environments. */

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PRODUCTION_CONTENT_TIERS } from "../../../data/productionFamilyCatalog";
 import { RefiningJobs } from "./RefiningJobs";
 import { RefiningRecipeCard } from "./RefiningRecipeCard";
 import type { RefiningFamilyId } from "./refiningModels";
@@ -15,7 +16,7 @@ export function RefiningView(): JSX.Element {
     <div className="ui-refining">
       <div className="ui-refining__toolbar">
         <div className="ui-refining__tiers" role="group" aria-label="Palier de raffinage">
-          {([3, 4] as const).map((tier) => (
+          {PRODUCTION_CONTENT_TIERS.map((tier) => (
             <button key={tier} type="button" className={model.tier === tier ? "is-active" : ""} aria-pressed={model.tier === tier} onClick={() => { actions.setTier(tier); }}>T{String(tier)}</button>
           ))}
         </div>

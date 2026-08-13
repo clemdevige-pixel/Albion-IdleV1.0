@@ -18,32 +18,43 @@ export const LINEN_CLOTH_RECIPE = { id: "recipe_refine_linen_cloth_t3", name: "T
 export const THICK_LEATHER_RECIPE = { id: "recipe_refine_thick_leather_t4", name: "Cuir épais", tier: 4, rawItemId: "item_resource_hide_t4", requirements: [{ itemId: "item_resource_hide_t4", quantity: 2 }, { itemId: "item_refined_leather_t3", quantity: 1 }], outputItemId: "item_refined_leather_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_tannery_t4" } as const;
 export const FINE_CLOTH_RECIPE = { id: "recipe_refine_fine_cloth_t4", name: "Tissu fin", tier: 4, rawItemId: "item_resource_fiber_t4", requirements: [{ itemId: "item_resource_fiber_t4", quantity: 2 }, { itemId: "item_refined_cloth_t3", quantity: 1 }], outputItemId: "item_refined_cloth_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_loom_t4" } as const;
 
-export type ProductionRefiningRecipe =
-  | typeof BIRCH_PLANK_RECIPE
-  | typeof COPPER_BAR_RECIPE
-  | typeof PINE_PLANK_RECIPE
-  | typeof IRON_BAR_RECIPE
-  | typeof STURDY_LEATHER_RECIPE
-  | typeof LINEN_CLOTH_RECIPE
-  | typeof THICK_LEATHER_RECIPE
-  | typeof FINE_CLOTH_RECIPE;
+export const CEDAR_PLANK_RECIPE = { id: "recipe_refine_cedar_planks_t5", name: "Planches de cèdre", tier: 5, rawItemId: "item_resource_wood_t5", requirements: [{ itemId: "item_resource_wood_t5", quantity: 2 }, { itemId: "item_refined_planks_t4", quantity: 1 }], outputItemId: "item_refined_planks_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_lumbermill_t5" } as const;
+export const TITANIUM_BAR_RECIPE = { id: "recipe_refine_titanium_bars_t5", name: "Lingots de titane", tier: 5, rawItemId: "item_resource_ore_t5", requirements: [{ itemId: "item_resource_ore_t5", quantity: 2 }, { itemId: "item_refined_metal_bar_t4", quantity: 1 }], outputItemId: "item_refined_metal_bar_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_smelter_t5" } as const;
+export const HEAVY_LEATHER_RECIPE = { id: "recipe_refine_heavy_leather_t5", name: "Cuir lourd", tier: 5, rawItemId: "item_resource_hide_t5", requirements: [{ itemId: "item_resource_hide_t5", quantity: 2 }, { itemId: "item_refined_leather_t4", quantity: 1 }], outputItemId: "item_refined_leather_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_tannery_t5" } as const;
+export const ORNATE_CLOTH_RECIPE = { id: "recipe_refine_ornate_cloth_t5", name: "Tissu orné", tier: 5, rawItemId: "item_resource_fiber_t5", requirements: [{ itemId: "item_resource_fiber_t5", quantity: 2 }, { itemId: "item_refined_cloth_t4", quantity: 1 }], outputItemId: "item_refined_cloth_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_loom_t5" } as const;
+
+export interface ProductionRefiningRecipe {
+  readonly id: string;
+  readonly name: string;
+  readonly tier: ProductionTier;
+  readonly rawItemId: string;
+  readonly requirements: readonly { readonly itemId: string; readonly quantity: number }[];
+  readonly outputItemId: string;
+  readonly outputQuantity: number;
+  readonly durationTicks: number;
+  readonly stationId: string;
+}
 
 const PRODUCTION_REFINING_RECIPES = {
   wood: {
     3: BIRCH_PLANK_RECIPE,
     4: PINE_PLANK_RECIPE,
+    5: CEDAR_PLANK_RECIPE,
   },
   ore: {
     3: COPPER_BAR_RECIPE,
     4: IRON_BAR_RECIPE,
+    5: TITANIUM_BAR_RECIPE,
   },
   hide: {
     3: STURDY_LEATHER_RECIPE,
     4: THICK_LEATHER_RECIPE,
+    5: HEAVY_LEATHER_RECIPE,
   },
   fiber: {
     3: LINEN_CLOTH_RECIPE,
     4: FINE_CLOTH_RECIPE,
+    5: ORNATE_CLOTH_RECIPE,
   },
 } as const satisfies Record<
   ProductionFamilyId,
@@ -145,11 +156,68 @@ export const BADON_TEMPORARY_RECIPE = {
   ],
 } as const;
 
+const T5_NON_WEAPON_CRAFT_RECIPES = [
+  {
+    id: "CRAFT_REINFORCED_SHIELD_T5_0",
+    name: "Bouclier renforcé T5",
+    family: "offhand",
+    tier: 5,
+    outputItemId: "item_shield_t5_reinforced",
+    durationTicks: 0,
+    requirements: [
+      { itemId: CEDAR_PLANK_RECIPE.outputItemId, quantity: 5 },
+      { itemId: TITANIUM_BAR_RECIPE.outputItemId, quantity: 5 },
+      { itemId: HEAVY_LEATHER_RECIPE.outputItemId, quantity: 3 },
+      { itemId: "item_shield_t4_reinforced", quantity: 1 },
+    ],
+  },
+  {
+    id: "CRAFT_REINFORCED_HELMET_T5_0",
+    name: "Casque renforcé T5",
+    family: "armor",
+    tier: 5,
+    outputItemId: "item_helmet_t5_reinforced",
+    durationTicks: 0,
+    requirements: [
+      { itemId: TITANIUM_BAR_RECIPE.outputItemId, quantity: 7 },
+      { itemId: HEAVY_LEATHER_RECIPE.outputItemId, quantity: 3 },
+      { itemId: "item_helmet_t4_reinforced", quantity: 1 },
+    ],
+  },
+  {
+    id: "CRAFT_LEATHER_ARMOR_T5_0",
+    name: "Armure de cuir T5",
+    family: "armor",
+    tier: 5,
+    outputItemId: "item_armor_t5_leather",
+    durationTicks: 0,
+    requirements: [
+      { itemId: HEAVY_LEATHER_RECIPE.outputItemId, quantity: 7 },
+      { itemId: ORNATE_CLOTH_RECIPE.outputItemId, quantity: 4 },
+      { itemId: "item_armor_t4_leather", quantity: 1 },
+    ],
+  },
+  {
+    id: "CRAFT_LEATHER_BOOTS_T5_0",
+    name: "Bottes de cuir T5",
+    family: "armor",
+    tier: 5,
+    outputItemId: "item_boots_t5_leather",
+    durationTicks: 0,
+    requirements: [
+      { itemId: HEAVY_LEATHER_RECIPE.outputItemId, quantity: 5 },
+      { itemId: ORNATE_CLOTH_RECIPE.outputItemId, quantity: 3 },
+      { itemId: "item_boots_t4_leather", quantity: 1 },
+    ],
+  },
+] as const;
+
 export const EQUIPMENT_CRAFT_RECIPES = [
   REINFORCED_SHIELD_RECIPE,
   { id: "CRAFT_REINFORCED_SHIELD_T4_0", name: "Bouclier renforcé T4", family: "offhand", tier: 4, outputItemId: "item_shield_t4_reinforced", durationTicks: 0, requirements: [{ itemId: PINE_PLANK_RECIPE.outputItemId, quantity: 4 }, { itemId: IRON_BAR_RECIPE.outputItemId, quantity: 4 }, { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 2 }, { itemId: "item_shield_t3_reinforced", quantity: 1 }] },
   ...STANDARD_WEAPON_CRAFT_RECIPES,
   BADON_TEMPORARY_RECIPE,
+  ...T5_NON_WEAPON_CRAFT_RECIPES,
   { id: "CRAFT_IRON_HELMET_T3_0", name: "Casque en fer T3", family: "armor", tier: 3, outputItemId: "item_iron_helmet", durationTicks: 0, requirements: [{ itemId: COPPER_BAR_RECIPE.outputItemId, quantity: 4 }, { itemId: STURDY_LEATHER_RECIPE.outputItemId, quantity: 1 }] },
   { id: "CRAFT_LEATHER_ARMOR_T3_0", name: "Armure de cuir T3", family: "armor", tier: 3, outputItemId: "item_leather_armor", durationTicks: 0, requirements: [{ itemId: STURDY_LEATHER_RECIPE.outputItemId, quantity: 4 }, { itemId: LINEN_CLOTH_RECIPE.outputItemId, quantity: 2 }] },
   { id: "CRAFT_LEATHER_BOOTS_T3_0", name: "Bottes de cuir T3", family: "armor", tier: 3, outputItemId: "item_leather_boots", durationTicks: 0, requirements: [{ itemId: STURDY_LEATHER_RECIPE.outputItemId, quantity: 3 }, { itemId: LINEN_CLOTH_RECIPE.outputItemId, quantity: 1 }] },

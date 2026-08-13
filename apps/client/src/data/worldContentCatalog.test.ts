@@ -28,6 +28,11 @@ describe("worldContentCatalog", () => {
       zoneIndexWithinBand: 4,
       tier: 4,
     });
+    expect(getWorldZonePlacement(WORLD_ZONE_IDS.amberwood)).toEqual({
+      bandId: "yellow",
+      zoneIndexWithinBand: 0,
+      tier: 5,
+    });
   });
 
   it("generates the existing progression chain without special cases", () => {
@@ -37,7 +42,7 @@ describe("worldContentCatalog", () => {
       conditions: [],
     });
     expect(ZONE_UNLOCK_DEFINITIONS.at(-1)?.conditions).toEqual([
-      { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.steppe },
+      { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.sunscar },
     ]);
   });
 
@@ -50,6 +55,19 @@ describe("worldContentCatalog", () => {
 
     expect(definitions.at(-1)).toEqual({
       zoneDefId: firstYellowZone,
+      conditions: [
+        { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.mountain },
+      ],
+    });
+  });
+
+  it("links the authored first Yellow zone to the final Blue zone", () => {
+    const firstYellowIndex = ZONE_UNLOCK_DEFINITIONS.findIndex(
+      ({ zoneDefId }) => zoneDefId === WORLD_ZONE_IDS.amberwood,
+    );
+
+    expect(ZONE_UNLOCK_DEFINITIONS[firstYellowIndex]).toEqual({
+      zoneDefId: WORLD_ZONE_IDS.amberwood,
       conditions: [
         { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.mountain },
       ],

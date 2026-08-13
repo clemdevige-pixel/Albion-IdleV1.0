@@ -64,9 +64,14 @@ describe("combat-profile", () => {
       }
     });
 
-    it("does not silently reuse Blue balancing for an unauthored future world", () => {
-      expect(() => getEnemyCombatProfile(0, 0, 0, "yellow")).toThrow(
-        /Combat progression is not authored for world band: yellow/,
+    it("uses an independent Yellow curve and rejects the next unauthored world", () => {
+      const blueEnd = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 0, "blue");
+      const yellowStart = getEnemyCombatProfile(0, 0, 0, "yellow");
+
+      expect(yellowStart.hp).toBeGreaterThanOrEqual(blueEnd.hp);
+      expect(yellowStart.damage).toBeGreaterThanOrEqual(blueEnd.damage);
+      expect(() => getEnemyCombatProfile(0, 0, 0, "orange")).toThrow(
+        /Combat progression is not authored for world band: orange/,
       );
     });
   });
@@ -118,9 +123,14 @@ describe("combat-profile", () => {
       }
     });
 
-    it("does not silently reuse Blue rewards for an unauthored future world", () => {
-      expect(() => getEncounterRewards(0, 0, 0, "yellow")).toThrow(
-        /Combat progression is not authored for world band: yellow/,
+    it("continues reward ranks in Yellow and rejects unauthored Orange rewards", () => {
+      const blueEnd = getEncounterRewards(4, SEGMENTS_PER_ZONE - 1, 0, "blue");
+      const yellowStart = getEncounterRewards(0, 0, 0, "yellow");
+
+      expect(yellowStart.silver).toBeGreaterThan(blueEnd.silver);
+      expect(yellowStart.fame).toBeGreaterThan(blueEnd.fame);
+      expect(() => getEncounterRewards(0, 0, 0, "orange")).toThrow(
+        /Combat progression is not authored for world band: orange/,
       );
     });
   });

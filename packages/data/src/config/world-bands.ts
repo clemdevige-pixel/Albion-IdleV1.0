@@ -39,7 +39,7 @@ export const WORLD_BAND_DEFINITIONS: readonly WorldBandDefinition[] = [
     progressionOrder: 1,
     minimumTier: 5,
     maximumTier: 5,
-    contentStatus: "planned",
+    contentStatus: "implemented",
   },
   {
     id: "orange",

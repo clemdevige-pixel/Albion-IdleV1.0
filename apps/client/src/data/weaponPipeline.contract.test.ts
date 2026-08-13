@@ -103,8 +103,8 @@ describe("weapon pipeline contract", () => {
       expect(enchantment?.itemTier, `${itemId}: enchantment tier`).toBe(tier);
       if (tier === 3) {
         expect(enchantment?.enchantable, `${itemId}: T3 must not be enchantable`).toBe(false);
-      } else if (tier === 4) {
-        expect(enchantment?.enchantable, `${itemId}: T4 must be enchantable`).toBe(true);
+      } else {
+        expect(enchantment?.enchantable, `${itemId}: T${String(tier)} must be enchantable`).toBe(true);
       }
 
       if (craftRule?.kind === "standard") {
@@ -119,10 +119,10 @@ describe("weapon pipeline contract", () => {
 
         if (tier === 3) {
           expect(weaponRequirements, `${itemId}: T3 predecessor requirements`).toHaveLength(0);
-        } else if (tier === 4) {
+        } else {
           const predecessor = resolvePreviousWeaponTierItemId(itemId);
-          expect(predecessor, `${itemId}: T4 predecessor route`).toBeDefined();
-          expect(weaponRequirements, `${itemId}: T4 predecessor requirement count`).toEqual([
+          expect(predecessor, `${itemId}: T${String(tier)} predecessor route`).toBeDefined();
+          expect(weaponRequirements, `${itemId}: T${String(tier)} predecessor requirement count`).toEqual([
             { itemId: predecessor, quantity: 1 },
           ]);
         }

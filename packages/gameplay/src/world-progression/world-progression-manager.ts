@@ -89,6 +89,15 @@ export class WorldProgressionManager {
       this._completedZones.add(id);
     }
 
+    // Content updates can introduce new zones whose prerequisites were
+    // already completed by an older save. Re-evaluate those definitions on
+    // restore so the save immediately benefits from the newly added chain.
+    this.checkAndUnlock({
+      currentTier: 0,
+      currentFame: 0,
+      completedZones: this._completedZones,
+    });
+
     this._emitStateChanged();
   }
 

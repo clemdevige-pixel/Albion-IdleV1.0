@@ -12,6 +12,7 @@ describe("world UI models", () => {
     ]);
     expect(WORLD_BANDS.filter((band) => band.isAvailable).map((band) => band.id)).toEqual([
       "blue",
+      "yellow",
     ]);
   });
 

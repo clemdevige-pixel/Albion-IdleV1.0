@@ -101,6 +101,11 @@ export const ZONE_ENCOUNTER_POOLS: Readonly<Record<string, ZoneEncounterPool>> =
   zone_highland_t3: { dominant: FACTION_ENCOUNTER_ROSTERS.Heretic, secondary: FACTION_ENCOUNTER_ROSTERS.Keeper, biomeBoss: MONSTER_IDS.hereticMadmen },
   zone_steppe_t4: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Heretic, biomeBoss: MONSTER_IDS.morganaHighPriestess },
   zone_mountain_t4: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.keeperAncient },
+  zone_amberwood_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Keeper, biomeBoss: MONSTER_IDS.morganaHighPriestess },
+  zone_gloamfen_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Undead, secondary: FACTION_ENCOUNTER_ROSTERS.Heretic, biomeBoss: MONSTER_IDS.undeadLich },
+  zone_stormwatch_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Morgana, biomeBoss: MONSTER_IDS.keeperAncient },
+  zone_sunscar_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Heretic, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.hereticMadmen },
+  zone_ironveil_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.morganaHighPriestess },
 };
 
 export function getMonsterDefinition(id: string): MonsterContentDefinition { const definition = MONSTER_DEFINITIONS[id]; if (definition === undefined) throw new Error(`Unknown monster definition: ${id}`); return definition; }

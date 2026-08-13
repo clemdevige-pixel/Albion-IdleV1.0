@@ -17,9 +17,10 @@ describe("world band definitions", () => {
     });
   });
 
-  it("reserves the future world order without marking unauthored bands implemented", () => {
+  it("marks Blue and Yellow implemented while reserving later worlds", () => {
     expect(WORLD_BAND_DEFINITIONS.map(({ id }) => id)).toEqual(WORLD_BAND_IDS);
-    expect(WORLD_BAND_DEFINITIONS.slice(1).every(
+    expect(getWorldBandDefinition("yellow").contentStatus).toBe("implemented");
+    expect(WORLD_BAND_DEFINITIONS.slice(2).every(
       ({ contentStatus }) => contentStatus === "planned",
     )).toBe(true);
   });

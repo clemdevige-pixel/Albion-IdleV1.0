@@ -5,6 +5,7 @@ import {
   type DamageType,
   type EquipmentInfoLike,
 } from "@game/gameplay";
+import type { ProductionTier } from "./productionFamilyCatalog.js";
 
 export type WeaponCombatProfile = "dagger" | "sword" | "bow" | "staff" | "hammer" | "gloves";
 export const WEAPON_ATTACK_SPEED_BY_PROFILE: Readonly<Record<WeaponCombatProfile, number>> = {
@@ -49,7 +50,7 @@ export type WeaponFamilyId = keyof typeof WEAPON_FAMILIES;
 
 interface WeaponItemContent {
   readonly itemId: string;
-  readonly tier: 3 | 4;
+  readonly tier: ProductionTier;
   readonly handling: EquipmentInfoLike["handling"];
   readonly stats: EquipmentInfoLike["stats"];
   readonly sellPrice: number;
@@ -147,6 +148,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     items: [
       { itemId: "item_weapon_sword_t3_broadsword", tier: 3, handling: "one_handed", stats: { stat_physical_damage: 45 }, sellPrice: 70 },
       { itemId: "item_weapon_sword_t4_broadsword", tier: 4, handling: "one_handed", stats: { stat_physical_damage: 75 }, sellPrice: 200 },
+      { itemId: "item_weapon_sword_t5_broadsword", tier: 5, handling: "one_handed", stats: { stat_physical_damage: 110 }, sellPrice: 500 },
     ],
   },
   {
@@ -217,6 +219,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     items: [
       { itemId: "item_weapon_bow_t3_longbow", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 50 }, sellPrice: 70 },
       { itemId: "item_weapon_bow_t4_longbow", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 85 }, sellPrice: 200 },
+      { itemId: "item_weapon_bow_t5_longbow", tier: 5, handling: "two_handed", stats: { stat_physical_damage: 125 }, sellPrice: 500 },
     ],
   },
   {
@@ -356,6 +359,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     items: [
       { itemId: "item_weapon_staff_t3_infernal", tier: 3, handling: "two_handed", stats: { stat_magical_damage: 48 }, sellPrice: 80 },
       { itemId: "item_weapon_staff_t4_infernal", tier: 4, handling: "two_handed", stats: { stat_magical_damage: 90 }, sellPrice: 220 },
+      { itemId: "item_weapon_staff_t5_infernal", tier: 5, handling: "two_handed", stats: { stat_magical_damage: 132 }, sellPrice: 540 },
     ],
   },
   {
@@ -425,6 +429,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     items: [
       { itemId: "item_weapon_gloves_t3_spiked_gauntlets", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 38 }, sellPrice: 75 },
       { itemId: "item_weapon_gloves_t4_spiked_gauntlets", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 66 }, sellPrice: 210 },
+      { itemId: "item_weapon_gloves_t5_spiked_gauntlets", tier: 5, handling: "two_handed", stats: { stat_physical_damage: 96 }, sellPrice: 520 },
     ],
   },
   {
@@ -494,6 +499,7 @@ const WEAPON_CONTENT: readonly WeaponSpecializationContent[] = [
     items: [
       { itemId: "item_weapon_dagger_t3_pair", tier: 3, handling: "two_handed", stats: { stat_physical_damage: 34 }, sellPrice: 75 },
       { itemId: "item_weapon_dagger_t4_pair", tier: 4, handling: "two_handed", stats: { stat_physical_damage: 58 }, sellPrice: 210 },
+      { itemId: "item_weapon_dagger_t5_pair", tier: 5, handling: "two_handed", stats: { stat_physical_damage: 84 }, sellPrice: 520 },
     ],
   },
 ];
@@ -562,7 +568,7 @@ export function resolveWeaponFamilyId(itemId: string): WeaponFamilyId | undefine
   return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.familyId;
 }
 
-export function resolveWeaponTier(itemId: string): 3 | 4 | undefined {
+export function resolveWeaponTier(itemId: string): ProductionTier | undefined {
   return CONTENT_BY_ITEM_ID.get(itemId)?.item.tier;
 }
 

@@ -11,6 +11,7 @@ import {
   resolveWeaponTier,
   type WeaponCombatProfile,
 } from "./weaponContentCatalog.js";
+import type { ProductionTier } from "./productionFamilyCatalog.js";
 
 /**
  * External Item Power balancing data for the T3→T4 vertical slice.
@@ -20,20 +21,19 @@ import {
 export const ITEM_POWER_BY_TIER = {
   3: 300,
   4: 400,
+  5: 500,
+  6: 600,
+  7: 700,
+  8: 800,
 } as const;
 
-/** Non-weapon tiers remain here until the equipment pipeline is centralized. */
-const NON_WEAPON_ITEM_TIERS: Readonly<Record<string, 3 | 4>> = {
+/** Legacy non-weapon IDs that predate the tier naming convention. */
+const LEGACY_NON_WEAPON_ITEM_TIERS: Readonly<Record<string, ProductionTier>> = {
   item_leather_armor: 3,
   item_wooden_shield: 3,
-  item_shield_t3_reinforced: 3,
-  item_shield_t4_reinforced: 4,
   item_iron_helmet: 3,
   item_leather_boots: 3,
   item_traveler_cape: 3,
-  item_helmet_t4_reinforced: 4,
-  item_armor_t4_leather: 4,
-  item_boots_t4_leather: 4,
 };
 
 export interface MasteryLevel {
@@ -61,6 +61,12 @@ export const BLUE_WORLD_ITEM_POWER_PROGRESSION = {
   zoneEnd: [300, 360, 430, 510, 600],
 } as const satisfies WorldItemPowerProgression;
 
+/** Initial Yellow targets; intentionally isolated for later balance passes. */
+export const YELLOW_WORLD_ITEM_POWER_PROGRESSION = {
+  zoneStart: [600, 650, 720, 800, 890],
+  zoneEnd: [650, 720, 800, 890, 1000],
+} as const satisfies WorldItemPowerProgression;
+
 /** Backwards-compatible export for the existing Blue-world balance tests. */
 export const ZONE_RECOMMENDED_ITEM_POWER =
   BLUE_WORLD_ITEM_POWER_PROGRESSION.zoneStart;
@@ -69,6 +75,7 @@ const WORLD_ITEM_POWER_PROGRESSION: Partial<
   Readonly<Record<WorldBandId, WorldItemPowerProgression>>
 > = {
   blue: BLUE_WORLD_ITEM_POWER_PROGRESSION,
+  yellow: YELLOW_WORLD_ITEM_POWER_PROGRESSION,
 };
 
 function getWorldItemPowerProgression(
@@ -81,8 +88,16 @@ function getWorldItemPowerProgression(
   return progression;
 }
 
-export function getItemTier(itemId: string): 3 | 4 | undefined {
-  return resolveWeaponTier(itemId) ?? NON_WEAPON_ITEM_TIERS[itemId];
+function parseTierFromItemId(itemId: string): ProductionTier | undefined {
+  const match = /(?:^|_)t([3-8])(?:_|$)/.exec(itemId);
+  if (match === null) return undefined;
+  return Number(match[1]) as ProductionTier;
+}
+
+export function getItemTier(itemId: string): ProductionTier | undefined {
+  return resolveWeaponTier(itemId)
+    ?? parseTierFromItemId(itemId)
+    ?? LEGACY_NON_WEAPON_ITEM_TIERS[itemId];
 }
 
 export function getItemPower(itemId: string): number | undefined {

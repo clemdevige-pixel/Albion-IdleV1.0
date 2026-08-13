@@ -22,6 +22,19 @@ export const BLUE_WORLD_COMBAT_CURVE = [
   { healthStart: 3.4, healthEnd: 4.3, damageStart: 3.75, damageEnd: 4.8, defenseStart: 1.75, defenseEnd: 2.1 },
 ] as const;
 
+/**
+ * First Yellow-world curve. It deliberately continues from the end of Blue
+ * without reusing Blue indices, so the band can be tuned independently as
+ * T5 equipment and systems are introduced.
+ */
+export const YELLOW_WORLD_COMBAT_CURVE = [
+  { healthStart: 4.3, healthEnd: 5, damageStart: 4.8, damageEnd: 5.5, defenseStart: 2.1, defenseEnd: 2.35 },
+  { healthStart: 5, healthEnd: 5.9, damageStart: 5.4, damageEnd: 6.2, defenseStart: 2.35, defenseEnd: 2.65 },
+  { healthStart: 5.9, healthEnd: 7, damageStart: 6.1, damageEnd: 7, defenseStart: 2.65, defenseEnd: 3 },
+  { healthStart: 7, healthEnd: 8.3, damageStart: 6.9, damageEnd: 8, defenseStart: 3, defenseEnd: 3.4 },
+  { healthStart: 8.3, healthEnd: 10, damageStart: 7.9, damageEnd: 9.2, defenseStart: 3.4, defenseEnd: 3.9 },
+] as const;
+
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
 export const WORLD_ONE_COMBAT_CURVE = BLUE_WORLD_COMBAT_CURVE;
 
@@ -40,6 +53,10 @@ export const WORLD_COMBAT_PROGRESSION: Partial<
   blue: {
     curve: BLUE_WORLD_COMBAT_CURVE,
     rewardRankOffset: 0,
+  },
+  yellow: {
+    curve: YELLOW_WORLD_COMBAT_CURVE,
+    rewardRankOffset: BLUE_WORLD_COMBAT_CURVE.length * REWARD_RANKS_PER_ZONE,
   },
 } as const;
 
