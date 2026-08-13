@@ -5,7 +5,7 @@ import {
   prepareRegisteredRenderAssets,
 } from "./render/RenderAssetPipeline";
 import { renderManifestRegistry } from "./render/defaultRenderManifestRegistry";
-import { GamePresentationRuntime } from "./render/presentation/GamePresentationRuntime";
+import { GamePresentationRuntime } from "./render/presentation/GamePresentationRuntimeV2";
 
 /** Phaser entry point. Gameplay remains authoritative through GameBridge. */
 export class GameScene extends Phaser.Scene {
