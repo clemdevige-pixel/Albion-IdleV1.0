@@ -37,6 +37,14 @@ export function getPresentedEnemyHealth(
   return { current: enemyHealth.current, maximum: enemyHealth.maximum };
 }
 
+export function isPresentedEnemyDefeated(): boolean {
+  return enemyHealth.initialized && enemyHealth.current <= 0;
+}
+
+export function isPresentedEnemyHealthInitialized(): boolean {
+  return enemyHealth.initialized;
+}
+
 export function clearPresentedEnemyHealth(): void {
   enemyHealth.current = 0;
   enemyHealth.maximum = 0;
