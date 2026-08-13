@@ -2,6 +2,7 @@ services:
   - type: web
     name: albion-idle-api
     runtime: docker
+    branch: main
     region: frankfurt
     plan: free
     dockerfilePath: ./Dockerfile.server
