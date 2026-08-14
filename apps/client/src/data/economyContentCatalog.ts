@@ -37,19 +37,21 @@ export const BLUE_ZONE_BASE_DROP_RATES = {
 } as const;
 
 /**
- * Provisional enchantment-drop calibration.
+ * Enchantment shard calibration.
  *
- * Shards are intentionally not assigned one fixed chance per monster. The
- * caller provides a weight derived from the actual combat profile so tougher
- * enemies compensate for their lower kill rate. A small depth bonus makes
- * advancing within a zone slightly preferable to farming segment 1 forever.
- * The future TTK balance pass can retune these values without changing item or
- * recipe data.
+ * The baseline is derived from the current T4 combat curves and the validated
+ * economy target of roughly 25-30 shards/hour on a good same-tier farming
+ * segment. Difficulty weighting keeps slow-to-kill enemies competitive while
+ * the small depth bonus prevents the earliest trivial segment from becoming
+ * the permanent optimal farm.
+ *
+ * Elite and boss multipliers are mutually exclusive: a segment boss may carry
+ * both tags in content data, but it must never receive both multipliers.
  */
-export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.05;
-export const ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT = 0.02;
-export const ENCHANTMENT_SHARD_ELITE_MULTIPLIER = 1.35;
-export const ENCHANTMENT_SHARD_BOSS_MULTIPLIER = 2;
+export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.025;
+export const ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT = 0.015;
+export const ENCHANTMENT_SHARD_ELITE_MULTIPLIER = 1.2;
+export const ENCHANTMENT_SHARD_BOSS_MULTIPLIER = 1.35;
 
 export const BLUE_ZONE_BOSS_DROP_RATES = {
   segmentBossArtifactFragment: 0.2,
@@ -97,10 +99,7 @@ function rollChance(chance: number, random: () => number): boolean {
   return random() < Math.min(1, Math.max(0, chance));
 }
 
-/**
- * Supports expected values above 1 without probability caps distorting later
- * balance: whole units are guaranteed and only the fractional remainder rolls.
- */
+/** Supports expected values above 1 without probability-cap distortion. */
 function rollExpectedQuantity(expected: number, random: () => number): number {
   const safeExpected = Math.max(0, expected);
   const guaranteed = Math.floor(safeExpected);
@@ -124,13 +123,15 @@ export function getEnchantmentShardExpectedDrop(
 ): number {
   const depthBonus =
     1 + Math.max(0, context.segmentIndex) * ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT;
-  const eliteMultiplier = context.isElite ? ENCHANTMENT_SHARD_ELITE_MULTIPLIER : 1;
-  const bossMultiplier = context.isBoss ? ENCHANTMENT_SHARD_BOSS_MULTIPLIER : 1;
+  const categoryMultiplier = context.isBoss
+    ? ENCHANTMENT_SHARD_BOSS_MULTIPLIER
+    : context.isElite
+      ? ENCHANTMENT_SHARD_ELITE_MULTIPLIER
+      : 1;
   return ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
     * Math.max(0, context.enchantmentDropWeight)
     * depthBonus
-    * eliteMultiplier
-    * bossMultiplier;
+    * categoryMultiplier;
 }
 
 export function rollBlueZoneCombatDrops(
@@ -142,14 +143,10 @@ export function rollBlueZoneCombatDrops(
   const specialMultiplier = context.isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1;
   const factionId = normalizeFactionId(context.faction);
 
-  // Consumable: scales with zone advancement, but does not receive the boss
-  // special-drop multiplier.
   if (rollChance(BLUE_ZONE_BASE_DROP_RATES.healthPotion * segmentMultiplier, random)) {
     drops.push({ itemId: "item_health_potion", kind: "consumable", quantity: 1 });
   }
 
-  // Exactly one enchantment resource exists per world tier. Its expected drop
-  // follows monster difficulty rather than a universal per-kill percentage.
   const shardQuantity = rollExpectedQuantity(
     getEnchantmentShardExpectedDrop(context),
     random,
@@ -162,7 +159,6 @@ export function rollBlueZoneCombatDrops(
     });
   }
 
-  // Dungeon progression is faction-specific, but rates are faction-agnostic.
   if (rollChance(BLUE_ZONE_BASE_DROP_RATES.keyFragment * segmentMultiplier * specialMultiplier, random)) {
     drops.push({ itemId: `item_resource_key_fragment_${factionId}`, kind: "key_fragment", quantity: 1 });
   }
@@ -170,8 +166,6 @@ export function rollBlueZoneCombatDrops(
     drops.push({ itemId: `item_resource_dungeon_key_${factionId}`, kind: "key", quantity: 1 });
   }
 
-  // Artifact progression is boss-exclusive. Final biome bosses use the
-  // stronger final-boss rates approved for the Blue Zone vertical slice.
   if (context.isBoss) {
     const fragmentChance = context.isFinalBoss
       ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifactFragment
