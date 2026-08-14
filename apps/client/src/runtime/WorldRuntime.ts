@@ -21,6 +21,11 @@ function isSavedZoneMemory(value: unknown): value is SavedZoneMemory {
     && Array.isArray(candidate.completedSegments);
 }
 
+function clampEncounter(value: unknown): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(ENCOUNTERS_PER_SEGMENT - 1, Math.floor(value)));
+}
+
 export interface WorldRuntimeDependencies {
   readonly zoneManager: ZoneManager;
   readonly progressionManager: WorldProgressionManager;
@@ -57,33 +62,15 @@ export class WorldRuntime {
     this.worldCoordinator = deps.worldCoordinator;
   }
 
-  public get currentZoneIndex(): number {
-    return this.worldTick.currentZoneIndex;
-  }
-  public get currentSegment(): number {
-    return this.worldTick.currentSegment;
-  }
-  public get currentEncounter(): number {
-    return this.worldTick.currentEncounter;
-  }
-  public get highestUnlockedSegment(): number {
-    return this.worldTick.highestUnlockedSegment;
-  }
-  public get farmMode(): boolean {
-    return this.worldTick.farmMode;
-  }
-  public get pendingSegment(): number | null {
-    return this.worldTick.pendingSegment;
-  }
-  public get pendingZone(): number | null {
-    return this.worldTick.pendingZone;
-  }
-  public get pendingZoneSegment(): number | null {
-    return this.worldTick.pendingZoneSegment;
-  }
-  public get completedSegments(): ReadonlySet<number> {
-    return this.worldTick.completedSegments;
-  }
+  public get currentZoneIndex(): number { return this.worldTick.currentZoneIndex; }
+  public get currentSegment(): number { return this.worldTick.currentSegment; }
+  public get currentEncounter(): number { return this.worldTick.currentEncounter; }
+  public get highestUnlockedSegment(): number { return this.worldTick.highestUnlockedSegment; }
+  public get farmMode(): boolean { return this.worldTick.farmMode; }
+  public get pendingSegment(): number | null { return this.worldTick.pendingSegment; }
+  public get pendingZone(): number | null { return this.worldTick.pendingZone; }
+  public get pendingZoneSegment(): number | null { return this.worldTick.pendingZoneSegment; }
+  public get completedSegments(): ReadonlySet<number> { return this.worldTick.completedSegments; }
 
   public saveCurrentZoneProgress(): void {
     const memory = this.zoneMemories[this.worldTick.currentZoneIndex]!;
@@ -120,46 +107,25 @@ export class WorldRuntime {
 
   public selectSegment(segmentNumber: number): boolean {
     const segment = segmentNumber - 1;
-    if (
-      segment < 0 ||
-      segment >= SEGMENTS_PER_ZONE ||
-      segment > this.worldTick.highestUnlockedSegment
-    ) {
-      return false;
-    }
+    if (segment < 0 || segment >= SEGMENTS_PER_ZONE || segment > this.worldTick.highestUnlockedSegment) return false;
     this.worldTick.currentSegment = segment;
     this.worldTick.currentEncounter = 0;
     this.worldTick.pendingSegment = null;
     return true;
   }
 
-  public setSegmentFarmMode(enabled: boolean): void {
-    this.worldTick.farmMode = enabled;
-  }
+  public setSegmentFarmMode(enabled: boolean): void { this.worldTick.farmMode = enabled; }
 
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
     const nextIndex = zoneNumber - 1;
     const nextDefId = ZONE_ORDER[nextIndex];
     const targetSegment = (segmentNumber ?? 1) - 1;
     const memory = this.zoneMemories[nextIndex];
-    const highestUnlockedSegment =
-      nextIndex === this.worldTick.currentZoneIndex
-        ? this.worldTick.highestUnlockedSegment
-        : memory?.highestUnlockedSegment ?? -1;
-    if (
-      nextDefId === undefined
-      || !this.progressionManager.isUnlocked(nextDefId)
-      || targetSegment < 0
-      || targetSegment >= SEGMENTS_PER_ZONE
-      || targetSegment > highestUnlockedSegment
-    ) {
-      return false;
-    }
-
-    if (nextIndex === this.worldTick.currentZoneIndex) {
-      return this.selectSegment(targetSegment + 1);
-    }
-
+    const highestUnlockedSegment = nextIndex === this.worldTick.currentZoneIndex
+      ? this.worldTick.highestUnlockedSegment
+      : memory?.highestUnlockedSegment ?? -1;
+    if (nextDefId === undefined || !this.progressionManager.isUnlocked(nextDefId) || targetSegment < 0 || targetSegment >= SEGMENTS_PER_ZONE || targetSegment > highestUnlockedSegment) return false;
+    if (nextIndex === this.worldTick.currentZoneIndex) return this.selectSegment(targetSegment + 1);
     this.changeActiveZone(nextIndex, targetSegment);
     return true;
   }
@@ -173,10 +139,7 @@ export class WorldRuntime {
       this.worldTick.completedSegments.add(this.worldTick.currentSegment);
       enteredNewSegment = true;
 
-      if (
-        this.worldTick.currentSegment < SEGMENTS_PER_ZONE - 1
-        && this.worldTick.currentSegment === this.worldTick.highestUnlockedSegment
-      ) {
+      if (this.worldTick.currentSegment < SEGMENTS_PER_ZONE - 1 && this.worldTick.currentSegment === this.worldTick.highestUnlockedSegment) {
         this.worldTick.highestUnlockedSegment += 1;
       } else if (this.worldTick.currentSegment === SEGMENTS_PER_ZONE - 1) {
         const currentDefId = ZONE_ORDER[this.worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
@@ -192,10 +155,7 @@ export class WorldRuntime {
         } else {
           const nextIndex = this.worldTick.currentZoneIndex + 1;
           const nextDefId = ZONE_ORDER[nextIndex];
-          if (
-            nextDefId !== undefined
-            && this.progressionManager.isUnlocked(nextDefId)
-          ) {
+          if (nextDefId !== undefined && this.progressionManager.isUnlocked(nextDefId)) {
             this.changeActiveZone(nextIndex);
             this.worldTick.farmMode = false;
           }
@@ -209,10 +169,7 @@ export class WorldRuntime {
     }
 
     if (this.worldTick.pendingZone !== null) {
-      this.changeActiveZone(
-        this.worldTick.pendingZone,
-        this.worldTick.pendingZoneSegment ?? 0,
-      );
+      this.changeActiveZone(this.worldTick.pendingZone, this.worldTick.pendingZoneSegment ?? 0);
       enteredNewSegment = true;
     }
 
@@ -222,10 +179,7 @@ export class WorldRuntime {
   public advanceDefeat(): void {
     this.worldTick.currentEncounter = 0;
     if (this.worldTick.pendingZone !== null) {
-      this.changeActiveZone(
-        this.worldTick.pendingZone,
-        this.worldTick.pendingZoneSegment ?? 0,
-      );
+      this.changeActiveZone(this.worldTick.pendingZone, this.worldTick.pendingZoneSegment ?? 0);
     } else if (this.worldTick.pendingSegment !== null) {
       this.worldTick.currentSegment = this.worldTick.pendingSegment;
       this.worldTick.pendingSegment = null;
@@ -238,11 +192,13 @@ export class WorldRuntime {
       const memory = this.zoneMemories[index]!;
       const isActive = index === this.worldTick.currentZoneIndex;
       const currentSeg = isActive ? this.worldTick.currentSegment : memory.currentSegment;
+      const currentEncounter = isActive ? this.worldTick.currentEncounter : memory.currentEncounter;
       const highestSeg = isActive ? this.worldTick.highestUnlockedSegment : memory.highestUnlockedSegment;
       const completedSegs = isActive ? [...this.worldTick.completedSegments] : [...memory.completedSegments];
       return {
         zoneDefId,
         currentSegment: currentSeg,
+        currentEncounter,
         highestUnlockedSegment: highestSeg,
         completedSegments: completedSegs.sort((a, b) => a - b),
       };
@@ -252,51 +208,34 @@ export class WorldRuntime {
     return {
       activeZoneDefId,
       activeSegment: this.worldTick.currentSegment,
+      activeEncounter: this.worldTick.currentEncounter,
       farmMode: this.worldTick.farmMode,
       zoneMemories: memories,
     };
   }
 
-  public setWorldLocationSaveState(
-    savedLocation: WorldLocationSaveState | undefined,
-  ): void {
+  public setWorldLocationSaveState(savedLocation: WorldLocationSaveState | undefined): void {
     if (savedLocation !== undefined) {
       const rawZoneMemories: unknown = savedLocation.zoneMemories;
       if (Array.isArray(rawZoneMemories)) {
         const memoryByZoneDefId = new Map<ZoneDefinitionId, SavedZoneMemory>();
-        for (const memory of rawZoneMemories) {
-          if (isSavedZoneMemory(memory)) {
-            memoryByZoneDefId.set(memory.zoneDefId, memory);
-          }
-        }
+        for (const memory of rawZoneMemories) if (isSavedZoneMemory(memory)) memoryByZoneDefId.set(memory.zoneDefId, memory);
 
         for (let i = 0; i < ZONE_ORDER.length; i += 1) {
           const zoneDefId = ZONE_ORDER[i]!;
           const savedMem = memoryByZoneDefId.get(zoneDefId);
           if (savedMem !== undefined) {
-            const highestUnlockedSegment = Math.max(
-              0,
-              Math.min(SEGMENTS_PER_ZONE - 1, Math.floor(savedMem.highestUnlockedSegment ?? 0)),
-            );
+            const highestUnlockedSegment = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, Math.floor(savedMem.highestUnlockedSegment ?? 0)));
             const rawCompletedSegments: unknown = savedMem.completedSegments;
             const validCompletedSegments = Array.isArray(rawCompletedSegments)
-              ? [...new Set(rawCompletedSegments.filter(
-                  (segment): segment is number => typeof segment === "number",
-                ))]
-                  .filter((segment) => Number.isInteger(segment)
-                    && segment >= 0
-                    && segment < SEGMENTS_PER_ZONE
-                    && segment <= highestUnlockedSegment)
-                  .sort((a, b) => a - b)
+              ? [...new Set(rawCompletedSegments.filter((segment): segment is number => typeof segment === "number"))]
+                .filter((segment) => Number.isInteger(segment) && segment >= 0 && segment < SEGMENTS_PER_ZONE && segment <= highestUnlockedSegment)
+                .sort((a, b) => a - b)
               : [];
-            const currentSegment = Math.max(
-              0,
-              Math.min(highestUnlockedSegment, Math.floor(savedMem.currentSegment ?? 0)),
-            );
-
+            const currentSegment = Math.max(0, Math.min(highestUnlockedSegment, Math.floor(savedMem.currentSegment ?? 0)));
             this.zoneMemories[i] = {
               currentSegment,
-              currentEncounter: 0,
+              currentEncounter: clampEncounter(savedMem.currentEncounter),
               highestUnlockedSegment,
               completedSegments: new Set(validCompletedSegments),
             };
@@ -305,51 +244,36 @@ export class WorldRuntime {
 
         const targetZoneDefId = savedLocation.activeZoneDefId;
         const targetIndex = ZONE_ORDER.indexOf(targetZoneDefId);
-        const resolvedIndex = (targetIndex >= 0 && this.progressionManager.isUnlocked(targetZoneDefId))
-          ? targetIndex
-          : 0;
-
+        const resolvedIndex = (targetIndex >= 0 && this.progressionManager.isUnlocked(targetZoneDefId)) ? targetIndex : 0;
         this.worldTick.currentZoneIndex = resolvedIndex;
         const memory = this.zoneMemories[resolvedIndex]!;
         const highestUnlocked = memory.highestUnlockedSegment;
-        const resolvedSegment = Math.max(
-          0,
-          Math.min(highestUnlocked, Math.floor(savedLocation.activeSegment ?? memory.currentSegment)),
-        );
+        const resolvedSegment = Math.max(0, Math.min(highestUnlocked, Math.floor(savedLocation.activeSegment ?? memory.currentSegment)));
 
         this.worldTick.currentSegment = resolvedSegment;
-        this.worldTick.currentEncounter = 0;
+        this.worldTick.currentEncounter = clampEncounter(savedLocation.activeEncounter ?? memory.currentEncounter);
         this.worldTick.highestUnlockedSegment = memory.highestUnlockedSegment;
         this.worldTick.completedSegments = new Set(memory.completedSegments);
         this.worldTick.farmMode = Boolean(savedLocation.farmMode);
       } else {
-        // Legacy / partial payload without zoneMemories array:
-        // Reuse legacy location fields: activeZoneDefId, activeSegment, farmMode
         const targetZoneDefId = savedLocation.activeZoneDefId;
         const targetIndex = ZONE_ORDER.indexOf(targetZoneDefId);
-        const resolvedIndex = (targetIndex >= 0 && this.progressionManager.isUnlocked(targetZoneDefId))
-          ? targetIndex
-          : 0;
-
+        const resolvedIndex = (targetIndex >= 0 && this.progressionManager.isUnlocked(targetZoneDefId)) ? targetIndex : 0;
         const memory = this.zoneMemories[resolvedIndex]!;
         const rawSegment = Math.floor(savedLocation.activeSegment ?? 0);
-        const resolvedSegment = Math.max(
-          0,
-          Math.min(SEGMENTS_PER_ZONE - 1, rawSegment),
-        );
-
+        const resolvedSegment = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, rawSegment));
         memory.currentSegment = resolvedSegment;
+        memory.currentEncounter = clampEncounter(savedLocation.activeEncounter);
         memory.highestUnlockedSegment = Math.max(memory.highestUnlockedSegment, resolvedSegment);
 
         this.worldTick.currentZoneIndex = resolvedIndex;
         this.worldTick.currentSegment = resolvedSegment;
-        this.worldTick.currentEncounter = 0;
+        this.worldTick.currentEncounter = memory.currentEncounter;
         this.worldTick.highestUnlockedSegment = memory.highestUnlockedSegment;
         this.worldTick.completedSegments = new Set(memory.completedSegments);
         this.worldTick.farmMode = Boolean(savedLocation.farmMode);
       }
     } else {
-      // Backward compatibility: default Forest / segment 0 state
       this.worldTick.currentZoneIndex = 0;
       this.worldTick.currentSegment = 0;
       this.worldTick.currentEncounter = 0;
