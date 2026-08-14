@@ -19,21 +19,16 @@ const OUTPUT_PATH = path.resolve(
 );
 
 function runPnpm(args: readonly string[]): void {
-  const pnpmCli = path.resolve("node_modules", "pnpm", "bin", "pnpm.cjs");
-  const fallbackPnpmCli = path.resolve(
-    "node_modules",
-    ".pnpm",
-    "pnpm@9.15.0",
-    "node_modules",
-    "pnpm",
-    "bin",
-    "pnpm.cjs",
-  );
-  const cli = fs.existsSync(pnpmCli) ? pnpmCli : fallbackPnpmCli;
-  if (!fs.existsSync(cli)) {
-    throw new Error("Unable to locate pnpm CLI in node_modules");
+  if (process.platform === "win32") {
+    execFileSync("cmd.exe", ["/d", "/s", "/c", "pnpm.cmd", ...args], {
+      cwd: process.cwd(),
+      stdio: "inherit",
+      env: process.env,
+    });
+    return;
   }
-  execFileSync(process.execPath, [cli, ...args], {
+
+  execFileSync("pnpm", [...args], {
     cwd: process.cwd(),
     stdio: "inherit",
     env: process.env,
