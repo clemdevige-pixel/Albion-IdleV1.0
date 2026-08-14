@@ -67,3 +67,4 @@ export * from "./config/world-bands.js";
 
 // Player Island configuration
 export * from "./config/island.js";
+export * from "./config/island-progression.js";
