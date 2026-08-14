@@ -41,6 +41,11 @@ class CombatStopController {
     return true;
   }
 
+  /** New runtime/load boundaries must never inherit a pause request from another session. */
+  reset(): void {
+    this.#setState("running");
+  }
+
   subscribe(listener: Listener): () => void {
     this.#listeners.add(listener);
     return () => { this.#listeners.delete(listener); };
