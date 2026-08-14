@@ -233,7 +233,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
 ] as const;
 
 export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
-  // The layout is visual-first. No punitive plot capacity rule is enforced.
+  // Visual slots only: there are enough plots for every currently planned
+  // building, so placement cannot permanently block a production branch.
   plots: [
     { id: "plot_01", column: 1, row: 1 },
     { id: "plot_02", column: 2, row: 1 },
@@ -243,6 +244,10 @@ export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
     { id: "plot_06", column: 2, row: 2 },
     { id: "plot_07", column: 3, row: 2 },
     { id: "plot_08", column: 4, row: 2 },
+    { id: "plot_09", column: 1, row: 3 },
+    { id: "plot_10", column: 2, row: 3 },
+    { id: "plot_11", column: 3, row: 3 },
+    { id: "plot_12", column: 4, row: 3 },
   ],
   buildings: BUILDINGS,
   initialBuildings: [
