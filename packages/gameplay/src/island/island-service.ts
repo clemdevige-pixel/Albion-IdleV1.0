@@ -136,8 +136,12 @@ export class PlayerIslandService implements SaveProvider {
     const parsed = IslandSnapshotSchema.safeParse(data);
     if (!parsed.success || !this.#isValidSnapshot(parsed.data)) return;
 
+    const savedPlotById = new Map(parsed.data.plots.map((plot) => [plot.id, plot] as const));
     this.#state = {
-      plots: parsed.data.plots.map((plot) => ({ ...plot })),
+      plots: this.#config.plots.map((plot) => ({
+        id: plot.id,
+        buildingInstanceId: savedPlotById.get(plot.id)?.buildingInstanceId ?? null,
+      })),
       buildings: parsed.data.buildings.map((building) => ({ ...building })),
     };
   }
@@ -149,7 +153,6 @@ export class PlayerIslandService implements SaveProvider {
     const buildingDefinitionIds = new Set(snapshot.buildings.map((building) => building.definitionId));
     const validBuildingIds = new Set(this.#config.buildings.map((building) => building.id));
 
-    if (snapshot.plots.length !== this.#config.plots.length) return false;
     if (snapshotPlotIds.size !== snapshot.plots.length) return false;
     if (snapshot.plots.some((plot) => !validPlotIds.has(plot.id))) return false;
     if (buildingInstanceIds.size !== snapshot.buildings.length) return false;
