@@ -24,6 +24,13 @@ export interface PlayerIslandState {
   readonly buildings: readonly IslandBuildingState[];
 }
 
+export type PlaceIslandBuildingResult =
+  | { readonly ok: true; readonly building: IslandBuildingState }
+  | {
+      readonly ok: false;
+      readonly reason: "unknown_building" | "unknown_plot" | "plot_occupied" | "already_built";
+    };
+
 const IslandBuildingIdSchema = z.enum(ISLAND_BUILDING_IDS);
 const IslandSnapshotSchema = z.object({
   version: z.literal(1),
@@ -58,9 +65,8 @@ function createInitialState(config: PlayerIslandConfig): PlayerIslandState {
 
 /**
  * Authoritative Player Island state for the current save.
- *
- * Phase 1 intentionally owns only identity, placement and building level. It
- * does not duplicate gathering, refining, crafting, worker or storage rules.
+ * Owns building identity, placement and levels only. Economy, workers and
+ * production remain owned by their existing domains.
  */
 export class PlayerIslandService implements SaveProvider {
   readonly providerId = "player_island";
@@ -78,6 +84,44 @@ export class PlayerIslandService implements SaveProvider {
 
   getBuildingLevel(definitionId: IslandBuildingId): number | undefined {
     return this.#state.buildings.find((building) => building.definitionId === definitionId)?.level;
+  }
+
+  canPlaceBuilding(definitionId: IslandBuildingId, plotId: string): PlaceIslandBuildingResult {
+    if (!this.#config.buildings.some((definition) => definition.id === definitionId)) {
+      return { ok: false, reason: "unknown_building" };
+    }
+    const plot = this.#state.plots.find((candidate) => candidate.id === plotId);
+    if (plot === undefined) return { ok: false, reason: "unknown_plot" };
+    if (plot.buildingInstanceId !== null) return { ok: false, reason: "plot_occupied" };
+    if (this.#state.buildings.some((building) => building.definitionId === definitionId)) {
+      return { ok: false, reason: "already_built" };
+    }
+
+    return {
+      ok: true,
+      building: {
+        instanceId: `island_${definitionId}`,
+        definitionId,
+        plotId,
+        level: 1,
+      },
+    };
+  }
+
+  placeBuilding(definitionId: IslandBuildingId, plotId: string): PlaceIslandBuildingResult {
+    const preview = this.canPlaceBuilding(definitionId, plotId);
+    if (!preview.ok) return preview;
+
+    this.#state = {
+      plots: this.#state.plots.map((plot) => (
+        plot.id === plotId
+          ? { ...plot, buildingInstanceId: preview.building.instanceId }
+          : plot
+      )),
+      buildings: [...this.#state.buildings, preview.building],
+    };
+
+    return preview;
   }
 
   save(): IslandSnapshot {
@@ -102,15 +146,24 @@ export class PlayerIslandService implements SaveProvider {
     const validPlotIds = new Set(this.#config.plots.map((plot) => plot.id));
     const snapshotPlotIds = new Set(snapshot.plots.map((plot) => plot.id));
     const buildingInstanceIds = new Set(snapshot.buildings.map((building) => building.instanceId));
+    const buildingDefinitionIds = new Set(snapshot.buildings.map((building) => building.definitionId));
+    const validBuildingIds = new Set(this.#config.buildings.map((building) => building.id));
 
     if (snapshot.plots.length !== this.#config.plots.length) return false;
     if (snapshotPlotIds.size !== snapshot.plots.length) return false;
     if (snapshot.plots.some((plot) => !validPlotIds.has(plot.id))) return false;
     if (buildingInstanceIds.size !== snapshot.buildings.length) return false;
+    if (buildingDefinitionIds.size !== snapshot.buildings.length) return false;
     if (snapshot.buildings.some((building) => !validPlotIds.has(building.plotId))) return false;
+    if (snapshot.buildings.some((building) => !validBuildingIds.has(building.definitionId))) return false;
 
     for (const plot of snapshot.plots) {
       if (plot.buildingInstanceId !== null && !buildingInstanceIds.has(plot.buildingInstanceId)) return false;
+    }
+
+    for (const building of snapshot.buildings) {
+      const plot = snapshot.plots.find((candidate) => candidate.id === building.plotId);
+      if (plot?.buildingInstanceId !== building.instanceId) return false;
     }
 
     return true;
