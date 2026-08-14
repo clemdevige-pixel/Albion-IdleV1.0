@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   getIslandBuildingDefinition,
+  getIslandBuildingMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
 import { PRODUCTION_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
@@ -16,13 +17,20 @@ import "./craftingBuilding.css";
 
 export function CraftingBuildingPanel({
   definitionId,
+  level,
 }: {
   readonly definitionId: IslandBuildingId;
+  readonly level: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const service = definition.craftingService;
   if (service === undefined) {
     throw new Error(`Crafting building ${definitionId} has no crafting service data`);
+  }
+
+  const maxTier = getIslandBuildingMaxProductionTier(definitionId, level);
+  if (maxTier === undefined) {
+    throw new Error(`Crafting building ${definitionId} level ${String(level)} has no progression data`);
   }
 
   const model = useCraftingData();
@@ -43,20 +51,25 @@ export function CraftingBuildingPanel({
     <div className="ui-island-crafting-building">
       {!tierIndependent && (
         <div className="ui-island-crafting-building__tiers" role="group" aria-label="Tier de fabrication">
-          {PRODUCTION_CONTENT_TIERS.map((tier) => (
-            <button
-              key={tier}
-              type="button"
-              className={model.tier === tier ? "is-active" : ""}
-              onClick={() => {
-                actions.setTier(tier);
-                setRequestedFamily(undefined);
-                setRequestedRecipeId(undefined);
-              }}
-            >
-              T{String(tier)}
-            </button>
-          ))}
+          {PRODUCTION_CONTENT_TIERS.map((tier) => {
+            const buildingLocked = tier > maxTier;
+            return (
+              <button
+                key={tier}
+                type="button"
+                className={model.tier === tier ? "is-active" : ""}
+                disabled={buildingLocked}
+                title={buildingLocked ? `Améliorez l’atelier pour débloquer T${String(tier)}` : undefined}
+                onClick={() => {
+                  actions.setTier(tier);
+                  setRequestedFamily(undefined);
+                  setRequestedRecipeId(undefined);
+                }}
+              >
+                T{String(tier)}{buildingLocked ? " 🔒" : ""}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -79,6 +92,10 @@ export function CraftingBuildingPanel({
 
       {category === undefined || family === undefined || recipe === undefined ? (
         <div className="ui-island__selection-status">Aucune recette disponible pour cette sélection.</div>
+      ) : model.tier > maxTier && !tierIndependent ? (
+        <div className="ui-island__selection-status">
+          Atelier niveau {String(level)} : fabrication limitée au T{String(maxTier)}.
+        </div>
       ) : (
         <>
           <div className="ui-island-crafting-building__selectors">
