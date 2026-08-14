@@ -33,6 +33,7 @@ export function IslandModule(): JSX.Element {
     selectedPlotId,
     selectedBuildingInstanceId,
     selectBuilding,
+    clearSelection,
   } = useIslandSelection();
 
   const buildingByInstanceId = useMemo(
@@ -50,6 +51,7 @@ export function IslandModule(): JSX.Element {
   if (selectedBuilding !== undefined) {
     return (
       <div className="ui-island">
+        <IslandOverviewButton onClick={clearSelection} />
         <BuildingSummary definitionId={selectedBuilding.definitionId} level={selectedBuilding.level} />
       </div>
     );
@@ -58,6 +60,7 @@ export function IslandModule(): JSX.Element {
   if (selectedPlotId !== null) {
     return (
       <div className="ui-island">
+        <IslandOverviewButton onClick={clearSelection} />
         <ConstructionPanel
           plotId={selectedPlotId}
           islandLevel={islandLevel}
@@ -86,6 +89,14 @@ export function IslandModule(): JSX.Element {
         <p>La vue centrale de l'île reste visible pendant que ce panneau affiche le contenu sélectionné.</p>
       </section>
     </div>
+  );
+}
+
+function IslandOverviewButton({ onClick }: { readonly onClick: () => void }): JSX.Element {
+  return (
+    <button type="button" className="ui-island__overview-button" onClick={onClick}>
+      ← Vue d'ensemble de l'île
+    </button>
   );
 }
 
