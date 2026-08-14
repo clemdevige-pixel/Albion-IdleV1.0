@@ -1,6 +1,8 @@
 import {
   PLAYER_ISLAND_CONFIG,
   getIslandBuildingDefinition,
+  getIslandLevelDefinition,
+  getNextIslandLevelDefinition,
   type IslandBuildingDefinition,
   type IslandBuildingId,
 } from "@game/data";
@@ -12,10 +14,12 @@ import {
 
 export function ConstructionPanel({
   plotId,
+  islandLevel,
   builtDefinitionIds,
   onBuilt,
 }: {
   readonly plotId: string;
+  readonly islandLevel: number;
   readonly builtDefinitionIds: ReadonlySet<IslandBuildingId>;
   readonly onBuilt: (definitionId: IslandBuildingId) => void;
 }): JSX.Element {
@@ -25,6 +29,8 @@ export function ConstructionPanel({
     productionStorageId,
     constructIslandBuilding,
   } = useGameServices();
+  const currentIslandLevel = getIslandLevelDefinition(islandLevel);
+  const nextIslandLevel = getNextIslandLevelDefinition(islandLevel);
 
   const availableBuildings = PLAYER_ISLAND_CONFIG.buildings.filter(
     (definition): definition is IslandBuildingDefinition & { construction: NonNullable<IslandBuildingDefinition["construction"]> } => (
@@ -47,11 +53,17 @@ export function ConstructionPanel({
         <span className="ui-island__eyebrow">Construction</span>
         <strong>Emplacement libre</strong>
       </div>
-      <p>Les prérequis et coûts de construction viennent du catalogue Island.</p>
+      <p>Les prérequis, coûts et déblocages viennent du catalogue Island.</p>
 
       <div className="ui-island-construction__list">
         {availableBuildings.map((definition) => {
           const construction = definition.construction;
+          const categoryUnlocked = currentIslandLevel?.unlockedCategories.includes(definition.category) === true;
+          const unlockLevel = categoryUnlocked
+            ? islandLevel
+            : nextIslandLevel?.unlockedCategories.includes(definition.category) === true
+              ? nextIslandLevel.level
+              : undefined;
           const missingPrerequisites = (construction.prerequisiteBuildings ?? [])
             .filter((buildingId) => !builtDefinitionIds.has(buildingId));
           const materialState = construction.requirements.map((requirement) => ({
@@ -62,7 +74,8 @@ export function ConstructionPanel({
               requirement.itemId,
             ),
           }));
-          const affordable = missingPrerequisites.length === 0
+          const affordable = categoryUnlocked
+            && missingPrerequisites.length === 0
             && wallet.silver >= construction.silver
             && materialState.every((requirement) => requirement.available >= requirement.quantity);
 
@@ -75,6 +88,13 @@ export function ConstructionPanel({
                   <small>{definition.description}</small>
                 </div>
               </header>
+              {!categoryUnlocked && (
+                <div className="ui-island-construction__costs">
+                  <span className="is-missing">
+                    {unlockLevel === undefined ? "Non débloqué" : `Requiert île niv. ${String(unlockLevel)}`}
+                  </span>
+                </div>
+              )}
               {missingPrerequisites.length > 0 && (
                 <div className="ui-island-construction__costs">
                   {missingPrerequisites.map((buildingId) => (
@@ -104,9 +124,11 @@ export function ConstructionPanel({
                   if (constructIslandBuilding(definition.id, plotId)) onBuilt(definition.id);
                 }}
               >
-                {missingPrerequisites.length > 0
-                  ? "Prérequis manquant"
-                  : affordable ? "Construire" : "Ressources insuffisantes"}
+                {!categoryUnlocked
+                  ? "Niveau d'île insuffisant"
+                  : missingPrerequisites.length > 0
+                    ? "Prérequis manquant"
+                    : affordable ? "Construire" : "Ressources insuffisantes"}
               </button>
             </article>
           );
