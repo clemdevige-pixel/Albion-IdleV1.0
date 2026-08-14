@@ -6,7 +6,6 @@ import { CombatPresentationController } from "./CombatPresentationController";
 import { invalidateCombatPresentation } from "./CombatPresentationInvalidation";
 import {
   clearPresentedEnemyHealth,
-  isPresentedEnemyDefeated,
   resetPresentedEnemyHealth,
 } from "./CombatPresentedHealth";
 import { WorldPresentationController } from "./WorldPresentationController";
@@ -17,6 +16,7 @@ export class GamePresentationRuntime {
   private activity: ActivityPresentationController | undefined;
   private world: WorldPresentationController | undefined;
   private lastEncounterPresentationKey: string | undefined;
+  private lastCombatState: GameBridge["combatState"] | undefined;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -38,20 +38,24 @@ export class GamePresentationRuntime {
       bridge.world.segmentIndex,
       bridge.world.encounterIndex,
     ].join(":");
+    const enteredCombat = bridge.combatState === "combat"
+      && this.lastCombatState !== undefined
+      && this.lastCombatState !== "combat";
+    const encounterKeyChanged = this.lastEncounterPresentationKey !== undefined
+      && encounterPresentationKey !== this.lastEncounterPresentationKey;
 
     if (this.lastEncounterPresentationKey === undefined) {
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
       this.lastEncounterPresentationKey = encounterPresentationKey;
-    } else if (
-      encounterPresentationKey !== this.lastEncounterPresentationKey
-      && isPresentedEnemyDefeated()
-    ) {
-      // Let the combat presentation adopt the newly spawned enemy while the
-      // previous encounter is still presented at 0 HP. Resetting the health
-      // first would make CombatPresentationController keep the previous actor
-      // forever because identity changes are intentionally gated on visual death.
-      this.combat?.update(bridge);
-
+    } else if (encounterKeyChanged || enteredCombat) {
+      // A presentation encounter boundary is not always a world-index change:
+      // defeat/resume retries the same encounter and stop/resume may also restart
+      // combat without changing zone/segment/encounter. In both cases the bridge
+      // already contains the newly spawned enemy and its full health.
+      //
+      // Invalidate delayed impacts/projectiles from the previous encounter before
+      // resetting presentation health so stale visuals can never damage the new
+      // health bar.
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
@@ -62,6 +66,7 @@ export class GamePresentationRuntime {
     this.combat?.update(bridge);
     this.activity?.update(gathering);
     this.world?.update(bridge, gathering);
+    this.lastCombatState = bridge.combatState;
   }
 
   public clear(): void {
@@ -73,5 +78,6 @@ export class GamePresentationRuntime {
     this.combat = undefined;
     this.world = undefined;
     this.lastEncounterPresentationKey = undefined;
+    this.lastCombatState = undefined;
   }
 }
