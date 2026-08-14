@@ -4,6 +4,7 @@ import { GatheringResourceCard } from "./GatheringResourceCard";
 import type { GatheringResourceId } from "./gatheringModels";
 import { useGatheringActions } from "./useGatheringActions";
 import { useGatheringData } from "./useGatheringData";
+import "../production.css";
 
 export function GatheringView(): JSX.Element {
   const model = useGatheringData();
