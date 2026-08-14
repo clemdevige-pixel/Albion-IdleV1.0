@@ -60,6 +60,7 @@ export interface GameServices {
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
   readonly toggleWorker: (profession: WorkerProfessionVM, tier: ProductionTier) => boolean;
   readonly constructIslandBuilding: (definitionId: IslandBuildingId, plotId: string) => boolean;
+  readonly upgradeIslandBuilding: (definitionId: IslandBuildingId) => boolean;
   readonly repairAll: () => boolean;
   readonly saveGame: () => void;
   readonly loadGame: () => boolean;
