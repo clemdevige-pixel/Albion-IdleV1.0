@@ -1,0 +1,124 @@
+.ui-island-gathering-building {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ui-island-gathering-building__resource,
+.ui-island-gathering-building__worker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(185, 156, 104, 0.14);
+  border-radius: 8px;
+  background: rgba(15, 18, 21, 0.42);
+}
+
+.ui-island-gathering-building__resource {
+  justify-content: flex-start;
+}
+
+.ui-island-gathering-building__resource img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.ui-island-gathering-building__resource > div,
+.ui-island-gathering-building__worker > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ui-island-gathering-building small {
+  color: rgba(220, 205, 179, 0.56);
+  font-size: 9px;
+}
+
+.ui-island-gathering-building__worker > span {
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 9px;
+  color: rgba(218, 205, 182, 0.7);
+  background: rgba(74, 72, 68, 0.32);
+}
+
+.ui-island-gathering-building__worker > span.is-working {
+  color: rgba(180, 222, 165, 0.9);
+  background: rgba(59, 101, 54, 0.26);
+}
+
+.ui-island-gathering-building__tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ui-island-gathering-building__tiers button {
+  border: 1px solid rgba(184, 158, 111, 0.2);
+  border-radius: 6px;
+  background: rgba(22, 25, 28, 0.7);
+  color: rgba(229, 218, 198, 0.62);
+  padding: 6px;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.ui-island-gathering-building__tiers button.is-active {
+  border-color: rgba(214, 177, 108, 0.66);
+  background: rgba(89, 66, 36, 0.5);
+  color: #f1dfbb;
+}
+
+.ui-island-gathering-building__tiers button:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.ui-island-gathering-building__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: rgba(218, 205, 182, 0.65);
+  font-size: 9px;
+}
+
+.ui-island-gathering-building__facts span {
+  border: 1px solid rgba(182, 159, 116, 0.13);
+  border-radius: 999px;
+  padding: 3px 6px;
+}
+
+.ui-island-gathering-building__progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ui-island-gathering-building__progress span {
+  display: block;
+  height: 100%;
+  background: rgba(210, 179, 116, 0.72);
+}
+
+.ui-island-gathering-building__action {
+  border: 1px solid rgba(205, 169, 101, 0.42);
+  border-radius: 7px;
+  background: rgba(99, 72, 36, 0.52);
+  color: #f0ddb7;
+  padding: 8px;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.ui-island-gathering-building__action:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
