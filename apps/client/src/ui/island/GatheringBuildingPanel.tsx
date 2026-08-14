@@ -9,6 +9,7 @@ import {
 } from "../../data/productionFamilyCatalog";
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import "./gatheringBuilding.css";
 
 export function GatheringBuildingPanel({
   definitionId,
