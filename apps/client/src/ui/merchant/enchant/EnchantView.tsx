@@ -9,6 +9,7 @@ import { useEnchantActions } from "./useEnchantActions";
 import { useEnchantData } from "./useEnchantData";
 
 const FAILURE_MESSAGES: Readonly<Record<string, string>> = {
+  combat_active: "Arrêtez le combat et attendez la fin du segment avant d’enchanter.",
   level_reserved: "Le niveau .4 est réservé à une mécanique ultérieure.",
   maximum_level_reached: "Niveau maximal actuellement disponible atteint.",
   insufficient_silver: "Silver insuffisant.",
@@ -90,7 +91,7 @@ export function EnchantView(): JSX.Element {
                 ))}
               </dl>
               {model.preview.failureReason !== undefined && (
-                <p className="ui-merchant__warning">{FAILURE_MESSAGES[model.preview.failureReason] ?? model.preview.failureReason}</p>
+                <p className="ui-merchant__warning">{FAILURE_MESSAGES[model.preview.failureReason] ?? "Enchantement indisponible."}</p>
               )}
               <button
                 type="button"
