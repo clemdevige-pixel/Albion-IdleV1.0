@@ -17,15 +17,8 @@ import type {
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
 
-/** Events owned by the client application layer. */
 export type UIEventMap = Record<string, unknown>;
 
-/**
- * Public application contract exposed to React consumers.
- *
- * The implementation remains assembled by GameProvider. Keeping this contract
- * separate prevents UI modules from depending on the composition root itself.
- */
 export interface GameServices {
   readonly eventBus: EventBus<UIEventMap>;
   readonly bridge: GameBridge;
@@ -60,10 +53,12 @@ export interface GameServices {
   ) => boolean;
   readonly toggleRefining: (family: SupportedProductionFamily) => boolean;
   readonly refineAllAvailable: () => boolean;
-  readonly setProductionTier: (tier: ProductionTier) => boolean;
+  readonly setGatheringTier: (tier: ProductionTier) => boolean;
+  readonly setRefiningTier: (tier: ProductionTier) => boolean;
+  readonly setCraftingTier: (tier: ProductionTier) => boolean;
   readonly craftEquipment: (outputItemId: string) => boolean;
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
-  readonly toggleWorker: (profession: WorkerProfessionVM) => boolean;
+  readonly toggleWorker: (profession: WorkerProfessionVM, tier: ProductionTier) => boolean;
   readonly constructIslandBuilding: (definitionId: IslandBuildingId, plotId: string) => boolean;
   readonly repairAll: () => boolean;
   readonly saveGame: () => void;
