@@ -437,7 +437,10 @@ export function GameProvider({
       starterSelectionPending = false;
       recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
       resyncAll();
-      combatBridgeAdapter.presentInitialCombat(combatRuntime.initialize());
+      // The first encounter already exists and was merely suspended while the
+      // starter gate was open. Re-initializing here would create a second enemy
+      // and attempt to start another encounter before the first one is closed.
+      // Clearing the suspension lets the existing encounter resume on the next tick.
       saveGame();
       return true;
     };
