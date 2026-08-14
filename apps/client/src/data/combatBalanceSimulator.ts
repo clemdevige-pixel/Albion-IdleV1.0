@@ -62,6 +62,13 @@ export interface CombatBalanceBreakdown {
   readonly healthPotionsUsed: number;
 }
 
+export interface CombatBalanceSessionState {
+  readonly heroHealth: number;
+  readonly healthPotionCooldownRemaining: number;
+  readonly heroAttackTimer: number;
+  readonly abilityCooldowns: Readonly<Record<string, number>>;
+}
+
 export interface CombatBalanceResult {
   readonly weaponId: string;
   readonly offHandId?: string;
@@ -73,6 +80,7 @@ export interface CombatBalanceResult {
   readonly dps: number;
   readonly incomingDps: number;
   readonly breakdown: CombatBalanceBreakdown;
+  readonly sessionState: CombatBalanceSessionState;
 }
 
 interface TimedEffect {
@@ -114,8 +122,9 @@ function weaponDamage(loadout: CombatBalanceLoadout): {
   if (weapon === undefined) throw new Error(`Unknown weapon: ${loadout.weaponId}`);
   const handlingMultiplier = getWeaponHandlingOffensiveMultiplier(weapon.handling);
   const enchantmentMultiplier = getEnchantmentStatMultiplier(loadout.weaponEnchantment ?? 0);
-  const physical = (weapon.stats.stat_physical_damage ?? 0) * handlingMultiplier * enchantmentMultiplier;
-  const magical = (weapon.stats.stat_magical_damage ?? 0) * handlingMultiplier * enchantmentMultiplier;
+  const weaponStats = weapon.stats ?? {};
+  const physical = (weaponStats.stat_physical_damage ?? 0) * handlingMultiplier * enchantmentMultiplier;
+  const magical = (weaponStats.stat_magical_damage ?? 0) * handlingMultiplier * enchantmentMultiplier;
   return magical > physical
     ? { amount: magical, damageType: "magical" }
     : { amount: physical, damageType: "physical" };
@@ -125,10 +134,11 @@ function readDefensivePiece(itemId: string, enchantment: EnchantmentLevel): Defe
   const item = NON_WEAPON_ITEM_DEFINITIONS[itemId];
   if (item === undefined) throw new Error(`Unknown equipment: ${itemId}`);
   const multiplier = getEnchantmentStatMultiplier(enchantment);
+  const itemStats = item.stats ?? {};
   return {
-    health: (item.stats.stat_max_health ?? 0) * multiplier,
-    armor: (item.stats.stat_armor ?? 0) * multiplier,
-    magicResistance: (item.stats.stat_magic_resistance ?? 0) * multiplier,
+    health: (itemStats.stat_max_health ?? 0) * multiplier,
+    armor: (itemStats.stat_armor ?? 0) * multiplier,
+    magicResistance: (itemStats.stat_magic_resistance ?? 0) * multiplier,
   };
 }
 
@@ -193,13 +203,19 @@ function hasEffect(effects: readonly TimedEffect[], dots: readonly ActiveDot[], 
 export function simulateCombatBalance(
   loadout: CombatBalanceLoadout,
   enemy: CombatBalanceEnemyProfile,
+  initialState?: CombatBalanceSessionState,
 ): CombatBalanceResult {
   const weapon = WEAPON_ITEM_DEFINITIONS[loadout.weaponId];
   if (weapon === undefined) throw new Error(`Unknown weapon: ${loadout.weaponId}`);
   const offensive = weaponDamage(loadout);
   const attackSpeed = resolveWeaponAttackSpeed(loadout.weaponId) ?? 1;
   const abilities = resolveUnlockedWeaponAbilities(loadout.weaponId, loadout.masteryLevel);
-  const cooldowns = new Map(abilities.map((ability) => [ability.id, 0]));
+  const cooldowns = new Map(
+    abilities.map((ability) => [
+      ability.id,
+      initialState?.abilityCooldowns[ability.id] ?? 0,
+    ]),
+  );
   const worn = equipmentDefenses(loadout);
   const maxHeroHealth = (loadout.baseHealth ?? DEFAULT_HERO_HEALTH) + worn.health;
   const potionPolicy = loadout.consumables?.healthPotion ?? "disabled";
@@ -208,12 +224,16 @@ export function simulateCombatBalance(
     Math.min(1, loadout.consumables?.healthThresholdRatio ?? DEFAULT_POTION_THRESHOLD_RATIO),
   );
 
-  let heroHealth = maxHeroHealth;
+  let heroHealth = Math.min(
+    initialState?.heroHealth ?? maxHeroHealth,
+    maxHeroHealth,
+  );
   let enemyHealth = enemy.health;
   let elapsed = 0;
-  let heroAttackTimer = 0;
+  let heroAttackTimer = initialState?.heroAttackTimer ?? 0;
   let enemyAttackTimer = 0;
-  let healthPotionCooldownRemaining = 0;
+  let healthPotionCooldownRemaining =
+    initialState?.healthPotionCooldownRemaining ?? 0;
   const effects: TimedEffect[] = [];
   const dots: ActiveDot[] = [];
   const breakdown = {
@@ -346,8 +366,8 @@ export function simulateCombatBalance(
             effects.push({
               effectId: mechanic.effectId,
               remaining: duration,
-              statId: mechanic.statId,
-              statDelta: mechanic.statDelta,
+              ...(mechanic.statId === undefined ? {} : { statId: mechanic.statId }),
+              ...(mechanic.statDelta === undefined ? {} : { statDelta: mechanic.statDelta }),
               effectType: mechanic.effectType,
             });
           }
@@ -387,7 +407,7 @@ export function simulateCombatBalance(
   const duration = Math.max(STEP_SECONDS, elapsed);
   return {
     weaponId: loadout.weaponId,
-    offHandId: loadout.offHandId,
+    ...(loadout.offHandId === undefined ? {} : { offHandId: loadout.offHandId }),
     masteryLevel: loadout.masteryLevel,
     victory: enemyHealth <= 0 && heroHealth > 0,
     elapsedSeconds: Number(elapsed.toFixed(2)),
@@ -406,6 +426,140 @@ export function simulateCombatBalance(
       dotTicks: breakdown.dotTicks,
       healthPotionsUsed: breakdown.healthPotionsUsed,
     },
+    sessionState: {
+      heroHealth: Number(heroHealth.toFixed(2)),
+      healthPotionCooldownRemaining: Number(
+        healthPotionCooldownRemaining.toFixed(2),
+      ),
+      heroAttackTimer: Number(heroAttackTimer.toFixed(4)),
+      abilityCooldowns: Object.fromEntries(
+        [...cooldowns.entries()].map(([id, value]) => [
+          id,
+          Number(value.toFixed(2)),
+        ]),
+      ),
+    },
+  };
+}
+
+
+export interface CombatBalanceSegmentResult {
+  readonly weaponId: string;
+  readonly offHandId?: string;
+  readonly masteryLevel: number;
+  readonly victory: boolean;
+  readonly encounterReached: number;
+  readonly elapsedSeconds: number;
+  readonly heroHealthRemaining: number;
+  readonly breakdown: CombatBalanceBreakdown;
+  readonly encounterResults: readonly CombatBalanceResult[];
+}
+
+export interface CombatBalanceSegmentOptions {
+  readonly fullHealBeforeEncounter?: number;
+}
+
+export function simulateCombatSegment(
+  loadout: CombatBalanceLoadout,
+  enemies: readonly CombatBalanceEnemyProfile[],
+  options: CombatBalanceSegmentOptions = {},
+): CombatBalanceSegmentResult {
+  const fullHealBeforeEncounter = options.fullHealBeforeEncounter ?? 5;
+
+  let state: CombatBalanceSessionState | undefined;
+  let elapsedSeconds = 0;
+
+  const encounterResults: CombatBalanceResult[] = [];
+
+  const breakdown = {
+    autoAttackDamage: 0,
+    abilityDamage: 0,
+    dotDamage: 0,
+    damageTaken: 0,
+    healingReceived: 0,
+    autoAttacks: 0,
+    abilityCasts: 0,
+    dotTicks: 0,
+    healthPotionsUsed: 0,
+  };
+
+  for (let encounterIndex = 0; encounterIndex < enemies.length; encounterIndex += 1) {
+    const encounterNumber = encounterIndex + 1;
+    const enemy = enemies[encounterIndex]!;
+
+    // Rencontres 1 -> 4 : �tat persistant.
+    // Juste avant la rencontre 5 : reset des PV uniquement.
+    if (encounterNumber === fullHealBeforeEncounter && state !== undefined) {
+      state = {
+        ...state,
+        heroHealth: Number.POSITIVE_INFINITY,
+      };
+    }
+
+    const result = simulateCombatBalance(loadout, enemy, state);
+    encounterResults.push(result);
+
+    elapsedSeconds += result.elapsedSeconds;
+
+    breakdown.autoAttackDamage += result.breakdown.autoAttackDamage;
+    breakdown.abilityDamage += result.breakdown.abilityDamage;
+    breakdown.dotDamage += result.breakdown.dotDamage;
+    breakdown.damageTaken += result.breakdown.damageTaken;
+    breakdown.healingReceived += result.breakdown.healingReceived;
+    breakdown.autoAttacks += result.breakdown.autoAttacks;
+    breakdown.abilityCasts += result.breakdown.abilityCasts;
+    breakdown.dotTicks += result.breakdown.dotTicks;
+    breakdown.healthPotionsUsed += result.breakdown.healthPotionsUsed;
+
+    if (!result.victory) {
+      return {
+        weaponId: loadout.weaponId,
+        ...(loadout.offHandId === undefined ? {} : { offHandId: loadout.offHandId }),
+        masteryLevel: loadout.masteryLevel,
+        victory: false,
+        encounterReached: encounterNumber,
+        elapsedSeconds: Number(elapsedSeconds.toFixed(2)),
+        heroHealthRemaining: result.heroHealthRemaining,
+        breakdown: {
+          autoAttackDamage: Number(breakdown.autoAttackDamage.toFixed(2)),
+          abilityDamage: Number(breakdown.abilityDamage.toFixed(2)),
+          dotDamage: Number(breakdown.dotDamage.toFixed(2)),
+          damageTaken: Number(breakdown.damageTaken.toFixed(2)),
+          healingReceived: Number(breakdown.healingReceived.toFixed(2)),
+          autoAttacks: breakdown.autoAttacks,
+          abilityCasts: breakdown.abilityCasts,
+          dotTicks: breakdown.dotTicks,
+          healthPotionsUsed: breakdown.healthPotionsUsed,
+        },
+        encounterResults,
+      };
+    }
+
+    state = result.sessionState;
+  }
+
+  const lastResult = encounterResults.at(-1);
+
+  return {
+    weaponId: loadout.weaponId,
+    ...(loadout.offHandId === undefined ? {} : { offHandId: loadout.offHandId }),
+    masteryLevel: loadout.masteryLevel,
+    victory: true,
+    encounterReached: enemies.length,
+    elapsedSeconds: Number(elapsedSeconds.toFixed(2)),
+    heroHealthRemaining: lastResult?.heroHealthRemaining ?? 0,
+    breakdown: {
+      autoAttackDamage: Number(breakdown.autoAttackDamage.toFixed(2)),
+      abilityDamage: Number(breakdown.abilityDamage.toFixed(2)),
+      dotDamage: Number(breakdown.dotDamage.toFixed(2)),
+      damageTaken: Number(breakdown.damageTaken.toFixed(2)),
+      healingReceived: Number(breakdown.healingReceived.toFixed(2)),
+      autoAttacks: breakdown.autoAttacks,
+      abilityCasts: breakdown.abilityCasts,
+      dotTicks: breakdown.dotTicks,
+      healthPotionsUsed: breakdown.healthPotionsUsed,
+    },
+    encounterResults,
   };
 }
 

@@ -64,7 +64,8 @@ describe("combat balance simulator", () => {
       },
       TEST_ENEMY,
     );
-    expect(shielded.breakdown.damageTaken).toBeLessThan(bare.breakdown.damageTaken);
+    expect(shielded.incomingDps).toBeLessThan(bare.incomingDps);
+    expect(shielded.elapsedSeconds).toBeGreaterThanOrEqual(bare.elapsedSeconds);
   });
 
   it("accounts for DoT contribution on the infernal staff", () => {

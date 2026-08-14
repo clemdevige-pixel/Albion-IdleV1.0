@@ -1,61 +1,85 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { getEnemyCombatProfile } from "@game/gameplay";
+
 import {
-  compareCombatBalance,
-  simulateCombatBalance,
+  simulateCombatSegment,
   type CombatBalanceEnemyProfile,
   type CombatBalanceLoadout,
 } from "../apps/client/src/data/combatBalanceSimulator.js";
+
 import { getSegmentRecommendedItemPower } from "../apps/client/src/data/itemPower.js";
 import { resolveMonsterForEncounter } from "../apps/client/src/data/monsterContentCatalog.js";
+
 import {
   WEAPON_ITEM_DEFINITIONS,
   resolveWeaponTier,
 } from "../apps/client/src/data/weaponContentCatalog.js";
+
 import {
   WORLD_ZONE_IDS_BY_BAND,
   ZONE_DEFINITIONS,
   getWorldZonePlacement,
 } from "../apps/client/src/data/worldContentCatalog.js";
 
+type Enchantment = 0 | 1 | 2 | 3;
+type FarmMode = "AFK" | "ACTIVE";
+
+const ENCOUNTERS_PER_SEGMENT = 5;
+const MASTERY_LEVELS = [1, 10, 30] as const;
+const ENCHANTMENTS = [0, 1, 2, 3] as const;
+const FARM_MODES = ["AFK", "ACTIVE"] as const;
+
 const weapons = Object.keys(WEAPON_ITEM_DEFINITIONS)
   .filter((weaponId) => resolveWeaponTier(weaponId) === 4)
   .sort();
+
 const armor = [
   "item_helmet_t4_reinforced",
   "item_armor_t4_leather",
   "item_boots_t4_leather",
 ] as const;
-const ENCOUNTERS_PER_SEGMENT = 5;
-
-type Enchantment = 0 | 1 | 2 | 3;
-type FarmMode = "AFK" | "ACTIVE";
 
 function enchantmentForIp(ip: number): Enchantment {
   return Math.max(0, Math.min(3, Math.ceil((ip - 400) / 100))) as Enchantment;
 }
 
-function make(
+function gearLabel(enchantment: Enchantment): string {
+  return "4." + enchantment;
+}
+
+function makeLoadout(
   weaponId: string,
   masteryLevel: number,
   enchantment: Enchantment,
-  mode: FarmMode = "AFK",
+  mode: FarmMode,
 ): CombatBalanceLoadout {
   const weapon = WEAPON_ITEM_DEFINITIONS[weaponId];
-  if (weapon === undefined) throw new Error(`Unknown benchmark weapon: ${weaponId}`);
+
+  if (weapon === undefined) {
+    throw new Error("Unknown benchmark weapon: " + weaponId);
+  }
+
   const usesOffHand = weapon.handling === "one_handed";
 
   return {
     weaponId,
     masteryLevel,
     weaponEnchantment: enchantment,
-    equipment: armor.map((itemId) => ({ itemId, enchantment })),
+    equipment: armor.map((itemId) => ({
+      itemId,
+      enchantment,
+    })),
     ...(usesOffHand
       ? {
           offHandId: "item_shield_t4_reinforced",
           offHandEnchantment: enchantment,
         }
       : {}),
-    consumables: { healthPotion: mode === "ACTIVE" ? "auto" : "disabled" },
+    consumables: {
+      healthPotion: mode === "ACTIVE" ? "auto" : "disabled",
+    },
   };
 }
 
@@ -63,115 +87,193 @@ function realEnemy(
   zoneDefId: string,
   segmentIndex: number,
   encounterIndex: number,
-): { readonly profile: CombatBalanceEnemyProfile; readonly monsterName: string; readonly category: string } {
+): CombatBalanceEnemyProfile {
   const placement = getWorldZonePlacement(zoneDefId);
+
   const profile = getEnemyCombatProfile(
     placement.zoneIndexWithinBand,
     segmentIndex,
     encounterIndex,
     placement.bandId,
   );
-  const monster = resolveMonsterForEncounter(zoneDefId as never, segmentIndex, encounterIndex);
+
+  const monster = resolveMonsterForEncounter(
+    zoneDefId as never,
+    segmentIndex,
+    encounterIndex,
+  );
+
   const magical = monster.combat.damageType === "magical";
+
   return {
-    profile: {
-      id: `${zoneDefId}_s${String(segmentIndex + 1)}_e${String(encounterIndex + 1)}_${monster.id}`,
-      health: profile.hp,
-      armor: profile.armor,
-      magicResistance: profile.magicResistance,
-      physicalDamage: magical ? 0 : profile.damage,
-      magicalDamage: magical ? profile.damage : 0,
-      attackSpeed: profile.attackSpeed,
-    },
-    monsterName: monster.name,
-    category: monster.category,
+    id:
+      zoneDefId +
+      "_s" +
+      (segmentIndex + 1) +
+      "_e" +
+      (encounterIndex + 1) +
+      "_" +
+      monster.id,
+    health: profile.hp,
+    armor: profile.armor,
+    magicResistance: profile.magicResistance,
+    physicalDamage: magical ? 0 : profile.damage,
+    magicalDamage: magical ? profile.damage : 0,
+    attackSpeed: profile.attackSpeed,
   };
 }
 
-console.log(`\n=== Auto-discovered T4 weapons (${weapons.length}) ===`);
-console.log(weapons.join("\n"));
-
-console.log("\n=== T4 equipment progression by Blue stage ===");
-for (let zone = 1; zone <= 5; zone += 1) {
-  for (let segment = 1; segment <= 10; segment += 1) {
-    const ip = getSegmentRecommendedItemPower(zone, segment, "blue");
-    console.log(`Z${zone} S${segment}: ${ip} IP -> T4.${enchantmentForIp(ip)}`);
-  }
+interface BenchmarkRow {
+  zone: string;
+  segment: number;
+  ip: number;
+  recommendedGear: string;
+  isRecommendedGear: boolean;
+  weapon: string;
+  mastery: number;
+  gear: string;
+  mode: FarmMode;
+  victory: boolean;
+  encounterReached: number;
+  totalTime: number;
+  hpLeft: number;
+  potions: number;
+  healing: number;
+  autoAttackDamage: number;
+  abilityDamage: number;
+  dotDamage: number;
+  damageTaken: number;
 }
 
-console.log("\n=== Real Blue encounters — M30, stage-recommended T4 enchantment ===");
-const blueZones = WORLD_ZONE_IDS_BY_BAND.blue;
-for (const zoneDefId of blueZones) {
+const rows: BenchmarkRow[] = [];
+
+console.log("");
+console.log("=== Albion Idle complete combat benchmark ===");
+console.log(
+  "Weapons: " +
+    weapons.length +
+    " | Masteries: " +
+    MASTERY_LEVELS.join("/") +
+    " | Gear: 4.0/4.1/4.2/4.3 | Modes: AFK/ACTIVE",
+);
+
+for (const weapon of weapons) {
+  console.log(" - " + weapon);
+}
+
+for (const zoneDefId of WORLD_ZONE_IDS_BY_BAND.blue) {
   const placement = getWorldZonePlacement(zoneDefId);
   const zone = ZONE_DEFINITIONS.find(({ id }) => id === zoneDefId);
+
   if (zone === undefined) continue;
 
-  console.log(`\n## ${zone.name}`);
-  const rows: Record<string, unknown>[] = [];
-
   for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
+    const segmentNumber = segmentIndex + 1;
+
     const ip = getSegmentRecommendedItemPower(
       placement.zoneIndexWithinBand + 1,
-      segmentIndex + 1,
+      segmentNumber,
       placement.bandId,
     );
-    const enchantment = enchantmentForIp(ip);
 
-    for (let encounterIndex = 0; encounterIndex < ENCOUNTERS_PER_SEGMENT; encounterIndex += 1) {
-      const enemy = realEnemy(zoneDefId, segmentIndex, encounterIndex);
-      for (const mode of ["AFK", "ACTIVE"] as const) {
-        const results = compareCombatBalance(
-          weapons.map((weaponId) => make(weaponId, 30, enchantment, mode)),
-          enemy.profile,
-        );
-        const wins = results.filter((result) => result.victory);
-        const fastest = wins[0];
-        const slowestWinner = wins.at(-1);
-        const mostPotions = Math.max(...results.map((result) => result.breakdown.healthPotionsUsed));
-        rows.push({
-          segment: segmentIndex + 1,
-          encounter: encounterIndex + 1,
-          monster: enemy.monsterName,
-          category: enemy.category,
-          mode,
-          ip,
-          gear: `4.${enchantment}`,
-          wins: `${wins.length}/${results.length}`,
-          fastest: fastest?.weaponId.replace("item_weapon_", "") ?? "—",
-          fastestTtk: fastest?.elapsedSeconds ?? "—",
-          slowestWinnerTtk: slowestWinner?.elapsedSeconds ?? "—",
-          maxPotions: mostPotions,
-        });
+    const recommendedEnchantment = enchantmentForIp(ip);
+
+    const enemies = Array.from(
+      { length: ENCOUNTERS_PER_SEGMENT },
+      (_, encounterIndex) =>
+        realEnemy(zoneDefId, segmentIndex, encounterIndex),
+    );
+
+    for (const mastery of MASTERY_LEVELS) {
+      for (const enchantment of ENCHANTMENTS) {
+        for (const mode of FARM_MODES) {
+          for (const weaponId of weapons) {
+            const result = simulateCombatSegment(
+              makeLoadout(weaponId, mastery, enchantment, mode),
+              enemies,
+              { fullHealBeforeEncounter: 5 },
+            );
+
+            rows.push({
+              zone: zone.name,
+              segment: segmentNumber,
+              ip,
+              recommendedGear: gearLabel(recommendedEnchantment),
+              isRecommendedGear: enchantment === recommendedEnchantment,
+              weapon: weaponId.replace("item_weapon_", ""),
+              mastery,
+              gear: gearLabel(enchantment),
+              mode,
+              victory: result.victory,
+              encounterReached: result.encounterReached,
+              totalTime: result.elapsedSeconds,
+              hpLeft: result.heroHealthRemaining,
+              potions: result.breakdown.healthPotionsUsed,
+              healing: result.breakdown.healingReceived,
+              autoAttackDamage: result.breakdown.autoAttackDamage,
+              abilityDamage: result.breakdown.abilityDamage,
+              dotDamage: result.breakdown.dotDamage,
+              damageTaken: result.breakdown.damageTaken,
+            });
+          }
+        }
       }
     }
   }
-  console.table(rows);
 }
 
-console.log("\n=== Focus: Sword M10 4.3 vs Daggers M30 4.3, AFK vs ACTIVE ===");
-const referenceEnemy: CombatBalanceEnemyProfile = {
-  id: "t4_reference_target",
-  health: 3000,
-  armor: 25,
-  magicResistance: 25,
-  physicalDamage: 44,
-  magicalDamage: 0,
-  attackSpeed: 0.9,
+const outputDir = path.resolve("node_modules", ".cache", "albion-idle");
+fs.mkdirSync(outputDir, { recursive: true });
+
+const csvPath = path.join(outputDir, "combat-balance.csv");
+
+const headers = Object.keys(rows[0] ?? {});
+
+const csvEscape = (value: unknown): string => {
+  const text = String(value ?? "");
+  return text.includes(",") || text.includes('"') || text.includes("\n")
+    ? '"' + text.replace(/"/g, '""') + '"'
+    : text;
 };
-for (const mode of ["AFK", "ACTIVE"] as const) {
-  const results = [
-    simulateCombatBalance(make("item_weapon_sword_t4_broadsword", 10, 3, mode), referenceEnemy),
-    simulateCombatBalance(make("item_weapon_dagger_t4_pair", 30, 3, mode), referenceEnemy),
-  ];
-  console.log(`\n${mode}`);
-  console.table(results.map((result) => ({
-    weapon: result.weaponId.replace("item_weapon_", ""),
-    mastery: result.masteryLevel,
-    win: result.victory,
-    ttk: result.elapsedSeconds,
-    hpLeft: result.heroHealthRemaining,
-    dps: result.dps,
-    potions: result.breakdown.healthPotionsUsed,
-    healing: result.breakdown.healingReceived,
-  })));
-}
+
+const csv = [
+  headers.join(","),
+  ...rows.map((row) =>
+    headers
+      .map((header) =>
+        csvEscape(row[header as keyof BenchmarkRow]),
+      )
+      .join(","),
+  ),
+].join("\n");
+
+fs.writeFileSync(csvPath, csv, "utf8");
+
+console.log("");
+console.log("Generated " + rows.length + " benchmark results.");
+console.log("Full CSV: " + csvPath);
+
+console.log("");
+console.log("=== Mountain diagnostic - M30 - 4.2 vs 4.3 ===");
+
+const mountainRows = rows.filter(
+  (row) =>
+    row.zone === "Frostpeak Mountain" &&
+    row.mastery === 30 &&
+    (row.gear === "4.2" || row.gear === "4.3"),
+);
+
+console.table(
+  mountainRows.map((row) => ({
+    segment: row.segment,
+    mode: row.mode,
+    gear: row.gear,
+    weapon: row.weapon,
+    result: row.victory
+      ? "WIN"
+      : "LOSS E" + row.encounterReached,
+    time: row.totalTime,
+    hpLeft: row.hpLeft,
+    potions: row.potions,
+  })),
+);
