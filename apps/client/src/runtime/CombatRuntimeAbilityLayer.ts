@@ -53,6 +53,14 @@ export class CombatRuntime extends LegacyCombatRuntime {
     let result: CombatDomainTickResult;
     try { result = super.tick(dt, tickCounter); }
     finally { this.inTick = false; }
+
+    if (
+      result.spawnedEnemy !== undefined
+      && this.runtimeDeps.ports.getLocationState().encounterIndex === 0
+    ) {
+      this.runtimeDeps.abilityManager.resetCooldowns(this.runtimeDeps.heroId);
+    }
+
     this.effects.reconcile(targets);
     return result;
   }
