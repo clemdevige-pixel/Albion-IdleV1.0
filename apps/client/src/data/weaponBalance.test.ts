@@ -29,7 +29,26 @@ describe("Blue weapon balance pass", () => {
     expect(firstDamageRatio("ability_dagger_flurry")).toBeCloseTo(0.76);
   });
 
-  it("does not change M30 signature mechanics", () => {
+  it("keeps Broadsword execution autocast conditional in authored data", () => {
+    expect(getWeaponAbilityMechanics("ability_sword_execution")?.autoRule).toEqual({
+      kind: "target_health_below",
+      ratio: 0.3,
+    });
+  });
+
+  it("gives Spiked W a short authored control window without an AFK-specific branch", () => {
+    const stun = getWeaponAbilityMechanics("ability_gloves_breaking_combo")?.mechanics.find(
+      (mechanic) => mechanic.kind === "status" && mechanic.effectType === "stun",
+    );
+    expect(stun).toEqual({
+      kind: "status",
+      effectId: "effect_gloves_combo_stun",
+      effectType: "stun",
+      duration: 0.75,
+    });
+  });
+
+  it("does not change M30 signature damage mechanics", () => {
     expect(firstDamageRatio("ability_sword_execution")).toBeCloseTo(1.55);
     expect(firstDamageRatio("ability_bow_deadeye")).toBeCloseTo(1.95);
     expect(firstDamageRatio("ability_fire_cataclysm")).toBeCloseTo(1.2);
