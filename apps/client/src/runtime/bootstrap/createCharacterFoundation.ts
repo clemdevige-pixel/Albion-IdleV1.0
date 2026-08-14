@@ -20,6 +20,10 @@ import {
   resolveEnchantmentItemInfo,
   resolveItemStackInfo,
 } from "../../data/itemContentCatalog.js";
+import {
+  getStarterLoadoutItemIds,
+  getStarterWeaponOptions,
+} from "../../data/starterLoadoutCatalog.js";
 import { resolveWeaponMastery } from "../../data/weaponContentCatalog.js";
 import { isProductionMaterial } from "../ProductionStorage.js";
 import { recalculateWeaponMasteryStats } from "../weaponMasteryStatSync.js";
@@ -143,44 +147,39 @@ interface StarterLoadoutDependencies {
   readonly equipmentManager: EquipmentManager;
   readonly durabilityStore: DurabilityStore;
   readonly masteryService: MasteryService;
+  readonly weaponItemId?: string;
 }
 
-/** Seeds the validated starter weapons without granting unused masteries. */
+/**
+ * Grants exactly one selected T3 starter weapon plus the common full T3 set.
+ * One-handed weapons receive the authored T3 off-hand automatically.
+ */
 export function initializeStarterLoadout({
   heroId,
   inventoryManager,
   equipmentManager,
   durabilityStore,
   masteryService,
-}: StarterLoadoutDependencies): void {
-  const starterSwordItemId = "item_weapon_sword_t3_broadsword";
-  const starterSwordMasteryRoute = resolveWeaponMastery(starterSwordItemId);
-  if (starterSwordMasteryRoute === undefined) {
-    throw new Error("Starter Broadsword mastery route is missing from weapon content catalog");
+  weaponItemId = "item_weapon_sword_t3_broadsword",
+}: StarterLoadoutDependencies): boolean {
+  const starterOption = getStarterWeaponOptions().find((option) => option.itemId === weaponItemId);
+  const loadoutItemIds = getStarterLoadoutItemIds(weaponItemId);
+  const masteryRoute = resolveWeaponMastery(weaponItemId);
+  if (starterOption === undefined || loadoutItemIds === undefined || masteryRoute === undefined) {
+    return false;
   }
 
-  const starterSwordPosition = 0;
-  const starterSword = inventoryManager.addEntry(
-    heroId,
-    starterSwordItemId,
-    starterSwordPosition,
-  );
-  if (starterSword.ok) {
-    durabilityStore.attach(starterSword.value.instanceId, 100);
-    equipmentManager.equipFromInventory(heroId, starterSwordPosition);
-    masteryService.discoverMastery(starterSwordMasteryRoute.familyId);
-    masteryService.discoverMastery(starterSwordMasteryRoute.weaponId);
+  for (const [position, itemId] of loadoutItemIds.entries()) {
+    const added = inventoryManager.addEntry(heroId, itemId, position);
+    if (!added.ok) return false;
+    durabilityStore.attach(added.value.instanceId, 100);
+    const equipped = equipmentManager.equipFromInventory(heroId, position);
+    if (!equipped.ok) return false;
   }
 
-  for (const starterWeaponId of [
-    "item_weapon_bow_t3_longbow",
-    "item_weapon_staff_t3_infernal",
-  ]) {
-    const starterWeapon = inventoryManager.addEntry(heroId, starterWeaponId);
-    if (starterWeapon.ok) {
-      durabilityStore.attach(starterWeapon.value.instanceId, 100);
-    }
-  }
+  masteryService.discoverMastery(masteryRoute.familyId);
+  masteryService.discoverMastery(masteryRoute.weaponId);
+  return true;
 }
 
 export type CharacterEquipmentFoundation = ReturnType<
