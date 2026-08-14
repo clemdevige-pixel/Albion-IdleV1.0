@@ -70,11 +70,17 @@ describe("combat loot", () => {
     expect(boss).toBeGreaterThan(elite);
   });
 
+  it("keeps health potions out of combat loot", () => {
+    const drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
+
+    expect(drops.some((drop) => drop.itemId === "item_health_potion")).toBe(false);
+    expect(drops.some((drop) => drop.kind === "consumable")).toBe(false);
+  });
+
   it("allows independent regular drops on the same kill", () => {
     const drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
 
     expect(drops.map((drop) => drop.kind)).toEqual([
-      "consumable",
       "enchantment",
       "key_fragment",
       "key",
@@ -82,8 +88,8 @@ describe("combat loot", () => {
   });
 
   it("uses zone advancement to improve faction key drop rate", () => {
-    // health potion fails, shard fails, key fragment sits between early and late thresholds, key fails.
-    const rolls = [1, 1, 0.025, 1] as const;
+    // shard fails, key fragment sits between early and late thresholds, key fails.
+    const rolls = [1, 0.025, 1] as const;
     const earlyDrops = rollBlueZoneCombatDrops(
       BASE_CONTEXT,
       sequenceRandom(rolls),
