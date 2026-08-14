@@ -29,6 +29,12 @@ describe("player island config", () => {
     expect(new Set(instanceIds).size).toBe(instanceIds.length);
   });
 
+  it("provides enough plots for every planned building", () => {
+    expect(PLAYER_ISLAND_CONFIG.plots.length).toBeGreaterThanOrEqual(
+      PLAYER_ISLAND_CONFIG.buildings.length,
+    );
+  });
+
   it("maps every gathering building to one authored production family and profession", () => {
     const gatheringBuildings = PLAYER_ISLAND_CONFIG.buildings.filter(
       (building) => building.category === "gathering",
