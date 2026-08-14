@@ -29,7 +29,7 @@ import {
 } from "../apps/client/src/data/worldContentCatalog.js";
 import { getSegmentRecommendedItemPower } from "../apps/client/src/data/itemPower.js";
 
-const DT = 0.05;
+const DT = 0.5;
 const MAX_SEGMENT_SECONDS = 180;
 const MASTERY_LEVELS = [1, 10, 30] as const;
 const MODES = ["AFK", "ACTIVE"] as const;
