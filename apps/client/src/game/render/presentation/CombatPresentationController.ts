@@ -149,7 +149,11 @@ export class CombatPresentationController {
     } else {
       const identityChanged = incomingVisualManifestId !== this.displayedEnemyVisualManifestId
         || incomingName !== this.displayedEnemyName;
-      if (identityChanged && presented.current <= 0) {
+      // Enemy identity is authored only when CombatBridgeAdapter receives a
+      // spawnedEnemy. At that point the new encounter is authoritative, even if
+      // its health has already been written to the bridge. Waiting for <= 0 here
+      // caused the previous sprite to survive stop/resume and defeat/resume.
+      if (identityChanged) {
         this.adoptEnemyPresentation(incomingName, incomingVisualManifestId, incomingIsBoss);
       }
     }
