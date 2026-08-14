@@ -66,9 +66,6 @@ export class CombatBridgeAdapter {
       if (event.entityId === this.#heroId) {
         this.#bridge.updatePlayerHealth(event.newHealth, event.maxHealth);
       } else {
-        // Enemy health remains authoritative in the bridge, but world-space
-        // presentation deliberately consumes DamageDealt.targetHealthAfter at
-        // visual impact time so projectile weapons do not appear to hit late.
         this.#bridge.updateEnemyHealth(event.newHealth, event.maxHealth);
       }
     });
@@ -177,6 +174,7 @@ export class CombatBridgeAdapter {
 
     this.#lastCombatStartBlockGeneration = generation;
     if (getCombatStartBlockReason() === "weapon_required") {
+      this.#bridge.clearEnemyPresentation();
       this.#bridge.addEconomyNotification({
         id: `notif_combat_weapon_required_${String(generation)}`,
         type: "error",
