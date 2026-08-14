@@ -4,6 +4,7 @@ import { WeaponAbilityEffectTracker } from "./WeaponAbilityEffectTracker.js";
 import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.js";
 import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
+import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
 
 export class CombatRuntime extends LegacyCombatRuntime {
   private readonly mechanics: WeaponAbilityMechanicsRuntime;
@@ -59,6 +60,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
       && this.runtimeDeps.ports.getLocationState().encounterIndex === 0
     ) {
       this.runtimeDeps.abilityManager.resetCooldowns(this.runtimeDeps.heroId);
+      markCombatSegmentStart();
     }
 
     this.effects.reconcile(targets);
