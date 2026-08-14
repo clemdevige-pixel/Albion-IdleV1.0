@@ -145,14 +145,12 @@ export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
   ],
 };
 
-const BUILDING_BY_ID = new Map(BUILDINGS.map((definition) => [definition.id, definition]));
+const BUILDING_BY_ID = new Map<IslandBuildingId, IslandBuildingDefinition>(
+  BUILDINGS.map((definition) => [definition.id, definition] as const),
+);
 
 export function getIslandBuildingDefinition(id: IslandBuildingId): IslandBuildingDefinition {
   const definition = BUILDING_BY_ID.get(id);
   if (definition === undefined) throw new Error(`Unknown island building: ${id}`);
   return definition;
-}
-
-export function isIslandBuildingId(value: string): value is IslandBuildingId {
-  return BUILDING_BY_ID.has(value as IslandBuildingId);
 }
