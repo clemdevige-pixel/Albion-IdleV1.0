@@ -1,6 +1,7 @@
 import type { CombatState } from "@game/gameplay";
 import {
   createInitialGameBridgeState,
+  TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
   type ActiveEffectDisplay,
   type CombatAbilitiesVM,
   type ConsumablesVM,
@@ -96,7 +97,9 @@ export class GameBridge {
       enemyHealth: 0,
       enemyMaxHealth: 0,
       enemyName: "",
-      enemyVisualManifestId: "",
+      // Keep a valid technical manifest while the authoritative enemy is absent.
+      // Presentation visibility is driven by enemyMaxHealth/name, not this fallback.
+      enemyVisualManifestId: TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
       activeEffects: [],
     });
   }
