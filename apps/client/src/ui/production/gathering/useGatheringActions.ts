@@ -7,7 +7,6 @@ import type { GatheringResourceId } from "./gatheringModels";
 export interface GatheringActions {
   readonly setTier: (tier: ProductionTier) => boolean;
   readonly toggleHero: (resource: GatheringResourceId) => boolean;
-  readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
   readonly toggleWorker: (profession: WorkerProfessionVM) => boolean;
   readonly strike: (resourceFamily: string, quality: "miss" | "correct" | "perfect") => boolean;
 }
@@ -16,7 +15,6 @@ export function useGatheringActions(): GatheringActions {
   const {
     setProductionTier,
     toggleGathering,
-    recruitWorker,
     toggleWorker,
     performGatheringStrike,
   } = useGameServices();
@@ -34,9 +32,7 @@ export function useGatheringActions(): GatheringActions {
   return {
     setTier: setProductionTier,
     toggleHero,
-    recruitWorker,
     toggleWorker,
     strike,
   };
 }
-
