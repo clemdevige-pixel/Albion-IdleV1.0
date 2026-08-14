@@ -147,27 +147,82 @@
 .world-upcoming--black { --band-color: #756585; }
 .world-achievements button { margin-top: 10px; padding: 7px 18px; color: #6f6d68; background: #11151a; border: 1px solid #32363c; }
 
-.world-bestiary__filters { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 2px; }
-.world-bestiary__filters button { flex: 0 0 auto; min-height: 27px; padding: 0 8px; font-size: 8px; border-color: #30343a; background: #0c1015; }
+.world-bestiary__filter-group { display: grid; gap: 4px; }
+.world-bestiary__filter-group > small { color: #8d826e; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.world-bestiary__filters { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+.world-bestiary__filters button { flex: 0 0 auto; min-height: 30px; padding: 0 10px; font-size: 10px; border-color: #30343a; background: #0c1015; }
 .world-bestiary__filters button.is-active { color: #e9c969; border-color: #835e27; background: #21190f; }
-.world-bestiary__count { margin: 0; color: #756f65; font-size: 8px; text-align: right; text-transform: uppercase; }
-.world-bestiary__grid { display: grid; gap: 5px; }
-.world-creature { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 8px; min-width: 0; padding: 7px; background: linear-gradient(100deg, #11161d, #090d12); border: 1px solid #2d3239; }
+.world-bestiary__count { margin: 0; color: #827a6e; font-size: 9px; text-align: right; text-transform: uppercase; }
+.world-bestiary__grid { display: grid; gap: 6px; }
+
+.world-creature {
+  min-width: 0;
+  overflow: hidden;
+  background: linear-gradient(100deg, #11161d, #090d12);
+  border: 1px solid #2d3239;
+}
 .world-creature--elite { border-color: #66512c; }
 .world-creature--boss { border-color: #7a3e32; background: linear-gradient(100deg, #1b1010, #090d12); }
-.world-creature__portrait { display: grid; grid-row: 1 / 3; width: 68px; height: 68px; place-items: center; overflow: hidden; background: radial-gradient(circle, #262d37, #080b0f 70%); border: 1px solid #3a414b; }
+.world-creature.is-selected { border-color: #9a7130; box-shadow: inset 0 0 0 1px rgb(213 164 72 / 12%); }
+
+.world-creature__summary {
+  display: grid;
+  grid-template-columns: 72px minmax(145px, 1.25fr) minmax(160px, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.world-creature__summary:hover { background: rgb(255 214 116 / 3%); }
+.world-creature__portrait { display: grid; width: 72px; height: 72px; place-items: center; overflow: hidden; background: radial-gradient(circle, #262d37, #080b0f 70%); border: 1px solid #3a414b; }
 .world-creature__portrait img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
-.world-creature__identity { display: grid; align-content: center; min-width: 0; }
-.world-creature__identity small { color: #b48637; font-size: 7px; text-transform: uppercase; }
-.world-creature__identity strong { overflow: hidden; color: #e5ddca; font: 12px var(--ui-font-display); text-overflow: ellipsis; white-space: nowrap; }
-.world-creature__identity span { color: #777e88; font-size: 8px; }
-.world-creature dl { display: grid; grid-column: 2; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0; }
-.world-creature dl div { display: grid; padding-top: 4px; border-top: 1px solid #282d34; }
-.world-creature dt { color: #6f747c; font-size: 7px; }
-.world-creature dd { margin: 0; color: #aaa18f; font-size: 8px; }
+.world-creature__identity { display: grid; align-content: center; gap: 2px; min-width: 0; }
+.world-creature__identity small { color: #c3933d; font-size: 9px; font-weight: 700; letter-spacing: .035em; text-transform: uppercase; }
+.world-creature__identity strong { overflow: hidden; color: #eee4ce; font: 16px/1.1 var(--ui-font-display); text-overflow: ellipsis; white-space: nowrap; }
+.world-creature__identity span { color: #9299a3; font-size: 11px; }
+.world-creature dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; }
+.world-creature dl div { display: grid; gap: 3px; padding: 5px 0; border-top: 1px solid #303640; }
+.world-creature dt { color: #7f8791; font-size: 9px; text-transform: uppercase; }
+.world-creature dd { margin: 0; color: #c2b7a1; font-size: 11px; font-weight: 600; }
+
+.world-creature__loot { display: grid; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid #403522; background: #090d12; }
+.world-creature__loot > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.world-creature__loot > header small { color: #d3b15c; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.world-creature__loot > header span { color: #858b94; font-size: 9px; }
+.world-creature__loot > p { margin: 0; color: #848a91; font-size: 10px; }
+.world-creature__loot-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.world-creature__loot-item { position: relative; display: grid; width: 42px; height: 42px; place-items: center; background: #10151b; border: 1px solid #353c46; }
+.world-creature__loot-item .item-visual__image,
+.world-creature__loot-item .item-visual__fallback { max-width: 30px; max-height: 30px; }
+.world-creature__loot-tooltip {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  min-width: 150px;
+  padding: 7px 9px;
+  transform: translateX(-50%);
+  background: #090c10;
+  border: 1px solid #66502c;
+  box-shadow: 0 5px 18px rgb(0 0 0 / 55%);
+  pointer-events: none;
+}
+.world-creature__loot-tooltip strong { display: block; color: #ead59c; font-size: 10px; }
+.world-creature__loot-tooltip span { display: block; margin-top: 3px; color: #a8adb4; font-size: 9px; white-space: nowrap; }
+.world-creature__loot-item:hover .world-creature__loot-tooltip,
+.world-creature__loot-item:focus .world-creature__loot-tooltip { display: block; }
 
 @media (max-width: 1100px) {
   .world-band-list { grid-template-columns: repeat(3, 1fr); }
   .world-zone-row { grid-template-columns: 26px minmax(0, 1fr); }
   .world-zone-row__state { display: none; }
+  .world-creature__summary { grid-template-columns: 68px minmax(0, 1fr); }
+  .world-creature__summary dl { grid-column: 2; }
 }
