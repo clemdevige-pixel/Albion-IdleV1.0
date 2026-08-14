@@ -6,7 +6,7 @@ import {
   type StatId,
   type StatsManager,
 } from "@game/gameplay";
-import { AUTO_CAST_MAX_IMMEDIATE_DAMAGE_TO_REMAINING_HP_RATIO } from "../data/combatAutomationPolicy.js";
+import { isExcessiveAutoCastOverkill } from "../data/combatAutomationPolicy.js";
 import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
 import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
 
@@ -78,6 +78,5 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
     }
   }
 
-  return estimatedImmediateDamage
-    > health.currentHealth * AUTO_CAST_MAX_IMMEDIATE_DAMAGE_TO_REMAINING_HP_RATIO;
+  return isExcessiveAutoCastOverkill(estimatedImmediateDamage, health.currentHealth);
 }
