@@ -153,17 +153,19 @@
 .world-bestiary__filters button { flex: 0 0 auto; min-height: 30px; padding: 0 10px; font-size: 10px; border-color: #30343a; background: #0c1015; }
 .world-bestiary__filters button.is-active { color: #e9c969; border-color: #835e27; background: #21190f; }
 .world-bestiary__count { margin: 0; color: #827a6e; font-size: 9px; text-align: right; text-transform: uppercase; }
-.world-bestiary__grid { display: grid; gap: 6px; }
+.world-bestiary__grid { display: grid; gap: 6px; overflow: visible; }
 
 .world-creature {
+  position: relative;
+  z-index: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   background: linear-gradient(100deg, #11161d, #090d12);
   border: 1px solid #2d3239;
 }
 .world-creature--elite { border-color: #66512c; }
 .world-creature--boss { border-color: #7a3e32; background: linear-gradient(100deg, #1b1010, #090d12); }
-.world-creature.is-selected { border-color: #9a7130; box-shadow: inset 0 0 0 1px rgb(213 164 72 / 12%); }
+.world-creature.is-selected { z-index: 5; border-color: #9a7130; box-shadow: inset 0 0 0 1px rgb(213 164 72 / 12%); }
 
 .world-creature__summary {
   display: grid;
@@ -191,18 +193,20 @@
 .world-creature dt { color: #7f8791; font-size: 9px; text-transform: uppercase; }
 .world-creature dd { margin: 0; color: #c2b7a1; font-size: 11px; font-weight: 600; }
 
-.world-creature__loot { display: grid; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid #403522; background: #090d12; }
+.world-creature__loot { position: relative; display: grid; gap: 8px; overflow: visible; padding: 10px 12px 12px; border-top: 1px solid #403522; background: #090d12; }
 .world-creature__loot > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .world-creature__loot > header small { color: #d3b15c; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .world-creature__loot > header span { color: #858b94; font-size: 9px; }
 .world-creature__loot > p { margin: 0; color: #848a91; font-size: 10px; }
-.world-creature__loot-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-.world-creature__loot-item { position: relative; display: grid; width: 42px; height: 42px; place-items: center; background: #10151b; border: 1px solid #353c46; }
+.world-creature__loot-grid { display: flex; flex-wrap: wrap; gap: 7px; overflow: visible; }
+.world-creature__loot-item { position: relative; z-index: 0; display: grid; width: 42px; height: 42px; place-items: center; background: #10151b; border: 1px solid #353c46; }
+.world-creature__loot-item:hover,
+.world-creature__loot-item:focus { z-index: 1001; }
 .world-creature__loot-item .item-visual__image,
 .world-creature__loot-item .item-visual__fallback { max-width: 30px; max-height: 30px; }
 .world-creature__loot-tooltip {
   position: absolute;
-  z-index: 20;
+  z-index: 1002;
   bottom: calc(100% + 6px);
   left: 50%;
   display: none;
