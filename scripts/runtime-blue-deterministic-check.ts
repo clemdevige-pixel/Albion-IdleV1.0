@@ -19,9 +19,10 @@ const OUTPUT_PATH = path.resolve(
 );
 
 function runBenchmark(): Buffer {
+  const tsxCli = path.resolve("node_modules", "tsx", "dist", "cli.mjs");
   execFileSync(
-    process.platform === "win32" ? "pnpm.cmd" : "pnpm",
-    ["exec", "tsx", "scripts/runtime-blue-progression-farm-run.ts"],
+    process.execPath,
+    [tsxCli, "scripts/runtime-blue-progression-farm-run.ts"],
     {
       cwd: process.cwd(),
       stdio: "inherit",
