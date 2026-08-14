@@ -37,6 +37,7 @@ import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
+const NO_ENEMY_ID = 0 as EntityId;
 
 export interface CombatLocationState {
   readonly zoneIndex: number;
@@ -98,7 +99,7 @@ export class CombatRuntime {
   private readonly biomeResolver: BiomeResolver;
   private readonly ports: CombatRuntimePorts;
 
-  private activeEnemyId: EntityId = 0 as EntityId;
+  private activeEnemyId: EntityId = NO_ENEMY_ID;
   private encounterCounter = 0;
   private completedEncounterResult: "victory" | "defeat" | null = null;
   private awaitingResumeAfterDefeat = false;
@@ -179,6 +180,17 @@ export class CombatRuntime {
     return false;
   }
 
+  private destroyEnemyEntity(enemyId: EntityId): void {
+    if (enemyId === NO_ENEMY_ID) return;
+    this.effectManager.removeAllEffects(enemyId);
+    if (this.world.hasEntity(enemyId)) this.world.destroyEntity(enemyId);
+  }
+
+  private cleanupActiveEnemy(): void {
+    this.destroyEnemyEntity(this.activeEnemyId);
+    this.activeEnemyId = NO_ENEMY_ID;
+  }
+
   public spawnEnemy(): SpawnedEnemyResult {
     const loc = this.ports.getLocationState();
     return spawnEnemyForSegment(this.combatEntityFactoryDeps, this.biomeResolver, { zoneIndex: loc.zoneIndex, segmentIndex: loc.segmentIndex, encounterIndex: loc.encounterIndex, zoneDefId: loc.zoneDefId, zoneName: loc.zoneName });
@@ -214,12 +226,15 @@ export class CombatRuntime {
     const session = this.combatService.getActiveSession();
     if (session !== undefined) {
       this.combatService.cancelEncounter();
-      this.effectManager.removeAllEffects(this.heroId);
       for (const enemyId of session.participants.enemies) {
-        this.effectManager.removeAllEffects(enemyId);
-        if (this.world.hasEntity(enemyId)) this.world.destroyEntity(enemyId);
+        this.destroyEnemyEntity(enemyId);
       }
     }
+    // The active enemy can outlive the CombatService session after victory or
+    // defeat. Always clear it as well so a resume can never retain a stale ECS
+    // entity from the previous encounter.
+    this.cleanupActiveEnemy();
+    this.effectManager.removeAllEffects(this.heroId);
     this.completedEncounterResult = null;
     this.awaitingResumeAfterDefeat = false;
     this.reviveHero();
@@ -268,8 +283,15 @@ export class CombatRuntime {
     if (session === undefined) {
       let enteredNewSegment = false;
       if (this.awaitingResumeAfterDefeat) return { combatState: "defeat" };
-      if (this.completedEncounterResult === "defeat") { this.completedEncounterResult = null; this.awaitingResumeAfterDefeat = true; this.ports.onDefeat(); return { combatState: "defeat" }; }
+      if (this.completedEncounterResult === "defeat") {
+        this.cleanupActiveEnemy();
+        this.completedEncounterResult = null;
+        this.awaitingResumeAfterDefeat = true;
+        this.ports.onDefeat();
+        return { combatState: "defeat" };
+      }
       if (this.completedEncounterResult === "victory") {
+        this.cleanupActiveEnemy();
         const completedSegment = this.ports.getLocationState().encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
         const res = this.ports.onVictory();
         enteredNewSegment = res.enteredNewSegment;
@@ -278,6 +300,10 @@ export class CombatRuntime {
           if (enteredNewSegment) this.restoreHeroHealth();
           return { combatState: "idle" };
         }
+      } else {
+        // Session-less states also happen after an explicit stop/travel action.
+        // Ensure no stale enemy survives before starting the replacement encounter.
+        this.cleanupActiveEnemy();
       }
       this.completedEncounterResult = null;
       const loc = this.ports.getLocationState();
