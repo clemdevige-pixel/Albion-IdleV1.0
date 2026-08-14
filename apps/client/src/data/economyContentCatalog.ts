@@ -221,10 +221,6 @@ export const ENCHANTMENT_MATERIAL_NAMES: Readonly<Record<string, string>> = {
   item_resource_enchantment_shard_t6: "Éclat d’enchantement T6",
   item_resource_enchantment_shard_t7: "Éclat d’enchantement T7",
   item_resource_enchantment_shard_t8: "Éclat d’enchantement T8",
-  // Legacy save labels: these resources are no longer produced or consumed.
-  item_resource_enchantment_essence: "Essence d’enchantement (ancienne)",
-  item_resource_arcane_crystal: "Cristal arcanique (ancien)",
-  item_resource_enchantment_catalyst: "Catalyseur d’enchantement (ancien)",
 };
 
 /** @deprecated Use rollBlueZoneCombatDrops with a tiered loot context. */
