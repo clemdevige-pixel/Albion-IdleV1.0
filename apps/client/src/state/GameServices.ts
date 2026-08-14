@@ -1,5 +1,6 @@
 import type { SupportedProductionFamily } from "../data/productionFamilyCatalog";
 import type { ProductionTier } from "../data/productionFamilyCatalog";
+import type { IslandBuildingId } from "@game/data";
 import type { EventBus, EntityId } from "@game/core";
 import type {
   CombatOrchestrator,
@@ -63,6 +64,7 @@ export interface GameServices {
   readonly craftEquipment: (outputItemId: string) => boolean;
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
   readonly toggleWorker: (profession: WorkerProfessionVM) => boolean;
+  readonly constructIslandBuilding: (definitionId: IslandBuildingId, plotId: string) => boolean;
   readonly repairAll: () => boolean;
   readonly saveGame: () => void;
   readonly loadGame: () => boolean;
