@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { PLAYER_ISLAND_CONFIG, getIslandBuildingDefinition, type IslandBuildingId } from "@game/data";
 import { useGameBridge } from "../../state/GameContext";
 import { ProductionModule } from "../production";
+import { StoragePanel } from "./StoragePanel";
 import { WorkerHousePanel } from "./WorkerHousePanel";
 import "./island.css";
 
@@ -171,6 +172,8 @@ function BuildingSummary({
       <p>{definition.description}</p>
       {definitionId === "worker_house" ? (
         <WorkerHousePanel level={level} />
+      ) : definitionId === "storage" ? (
+        <StoragePanel />
       ) : (
         <div className="ui-island__selection-status">
           Fondation active · fonctionnalités du bâtiment à connecter dans les phases suivantes
