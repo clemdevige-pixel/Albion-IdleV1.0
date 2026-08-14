@@ -153,6 +153,10 @@ interface StarterLoadoutDependencies {
 /**
  * Grants exactly one selected T3 starter weapon plus the common full T3 set.
  * One-handed weapons receive the authored T3 off-hand automatically.
+ *
+ * Each item is inserted into the inventory's actual current free slot and then
+ * equipped from that same slot. Starter assembly must not assume that inventory
+ * positions stay stable while equipFromInventory removes entries.
  */
 export function initializeStarterLoadout({
   heroId,
@@ -169,7 +173,9 @@ export function initializeStarterLoadout({
     return false;
   }
 
-  for (const [position, itemId] of loadoutItemIds.entries()) {
+  for (const itemId of loadoutItemIds) {
+    const position = inventoryManager.findFreeSlots(heroId)[0];
+    if (position === undefined) return false;
     const added = inventoryManager.addEntry(heroId, itemId, position);
     if (!added.ok) return false;
     durabilityStore.attach(added.value.instanceId, 100);
