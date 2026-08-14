@@ -4,34 +4,11 @@ import {
   type IslandBuildingDefinition,
   type IslandBuildingId,
 } from "@game/data";
-import {
-  PRODUCTION_CONTENT_TIERS,
-  PRODUCTION_FAMILY_IDS,
-  getProductionFamilyDefinition,
-} from "../../data/productionFamilyCatalog";
-import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
-
-function quantityForItem(
-  inventoryManager: ReturnType<typeof useGameServices>["inventoryManager"],
-  storageId: ReturnType<typeof useGameServices>["productionStorageId"],
-  itemId: string,
-): number {
-  return inventoryManager.findEntriesByItemId(storageId, itemId)
-    .reduce((total, slot) => total + (slot.entry?.quantity ?? 0), 0);
-}
-
-function materialLabel(itemId: string): string {
-  for (const familyId of PRODUCTION_FAMILY_IDS) {
-    const family = getProductionFamilyDefinition(familyId);
-    for (const tier of PRODUCTION_CONTENT_TIERS) {
-      const recipe = getProductionRefiningRecipe(familyId, tier);
-      if (recipe.rawItemId === itemId) return `${family.rawMaterialLabel} T${String(tier)}`;
-      if (recipe.outputItemId === itemId) return `${family.label} raffiné T${String(tier)}`;
-    }
-  }
-  return itemId;
-}
+import {
+  getIslandMaterialLabel,
+  getIslandMaterialQuantity,
+} from "./islandMaterialPresentation";
 
 export function ConstructionPanel({
   plotId,
@@ -79,7 +56,11 @@ export function ConstructionPanel({
             .filter((buildingId) => !builtDefinitionIds.has(buildingId));
           const materialState = construction.requirements.map((requirement) => ({
             ...requirement,
-            available: quantityForItem(inventoryManager, productionStorageId, requirement.itemId),
+            available: getIslandMaterialQuantity(
+              inventoryManager,
+              productionStorageId,
+              requirement.itemId,
+            ),
           }));
           const affordable = missingPrerequisites.length === 0
             && wallet.silver >= construction.silver
@@ -112,7 +93,7 @@ export function ConstructionPanel({
                     key={requirement.itemId}
                     className={requirement.available >= requirement.quantity ? "is-ready" : "is-missing"}
                   >
-                    {materialLabel(requirement.itemId)} {String(requirement.available)} / {String(requirement.quantity)}
+                    {getIslandMaterialLabel(requirement.itemId)} {String(requirement.available)} / {String(requirement.quantity)}
                   </span>
                 ))}
               </div>
