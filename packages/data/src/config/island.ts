@@ -13,8 +13,14 @@ export const ISLAND_BUILDING_IDS = [
 ] as const;
 
 export type IslandBuildingId = (typeof ISLAND_BUILDING_IDS)[number];
-
 export type IslandBuildingCategory = "workers" | "gathering" | "refining" | "crafting" | "storage";
+export type IslandProductionFamily = "wood" | "ore" | "hide" | "fiber";
+export type IslandWorkerProfession = "woodcutter" | "miner" | "skinner" | "fiber_harvester";
+
+export interface IslandGatheringServiceDefinition {
+  readonly productionFamily: IslandProductionFamily;
+  readonly workerProfession: IslandWorkerProfession;
+}
 
 export interface IslandBuildingDefinition {
   readonly id: IslandBuildingId;
@@ -22,6 +28,7 @@ export interface IslandBuildingDefinition {
   readonly category: IslandBuildingCategory;
   readonly description: string;
   readonly icon: string;
+  readonly gatheringService?: IslandGatheringServiceDefinition;
 }
 
 export interface IslandPlotDefinition {
@@ -71,6 +78,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "gathering",
     description: "Production passive de bois par les ouvriers affectés.",
     icon: "♣",
+    gatheringService: { productionFamily: "wood", workerProfession: "woodcutter" },
   },
   {
     id: "mine",
@@ -78,6 +86,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "gathering",
     description: "Production passive de minerai par les ouvriers affectés.",
     icon: "◆",
+    gatheringService: { productionFamily: "ore", workerProfession: "miner" },
   },
   {
     id: "hunting_camp",
@@ -85,6 +94,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "gathering",
     description: "Production passive de peaux par les ouvriers affectés.",
     icon: "◈",
+    gatheringService: { productionFamily: "hide", workerProfession: "skinner" },
   },
   {
     id: "fiber_camp",
@@ -92,6 +102,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "gathering",
     description: "Production passive de fibres par les ouvriers affectés.",
     icon: "≈",
+    gatheringService: { productionFamily: "fiber", workerProfession: "fiber_harvester" },
   },
   {
     id: "sawmill",
