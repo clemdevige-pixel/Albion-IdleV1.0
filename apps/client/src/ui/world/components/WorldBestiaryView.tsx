@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { ItemVisual, getItemDisplayName } from "../../../panels/ItemVisual";
 import {
   BESTIARY_FACTIONS,
@@ -15,6 +16,13 @@ const CATEGORY_LABELS = {
   elite: "Élite",
   boss: "Boss",
 } as const;
+
+interface LootTooltipState {
+  readonly itemName: string;
+  readonly rate: string;
+  readonly left: number;
+  readonly top: number;
+}
 
 function formatDropPercent(value: number): string {
   const percent = value * 100;
@@ -33,6 +41,7 @@ export function WorldBestiaryView(): JSX.Element {
   const [faction, setFaction] = useState("Toutes");
   const [bandId, setBandId] = useState<WorldBandId | "all">("all");
   const [selectedMonsterId, setSelectedMonsterId] = useState<string | undefined>();
+  const [lootTooltip, setLootTooltip] = useState<LootTooltipState | undefined>();
 
   const entries = useMemo(
     () => WORLD_BESTIARY.filter((entry) => {
@@ -42,6 +51,20 @@ export function WorldBestiaryView(): JSX.Element {
     }),
     [bandId, faction],
   );
+
+  const showLootTooltip = (
+    element: HTMLElement,
+    itemName: string,
+    rate: string,
+  ): void => {
+    const rect = element.getBoundingClientRect();
+    setLootTooltip({
+      itemName,
+      rate,
+      left: rect.left + rect.width / 2,
+      top: rect.top - 7,
+    });
+  };
 
   return (
     <div className="world-bestiary">
@@ -100,6 +123,7 @@ export function WorldBestiaryView(): JSX.Element {
                 aria-expanded={isSelected}
                 onClick={() => {
                   setSelectedMonsterId(isSelected ? undefined : entry.id);
+                  setLootTooltip(undefined);
                 }}
               >
                 <div className="world-creature__portrait">
@@ -146,12 +170,16 @@ export function WorldBestiaryView(): JSX.Element {
                               className="world-creature__loot-item"
                               tabIndex={0}
                               aria-label={`${itemName} · ${rate}`}
+                              onMouseEnter={(event) => {
+                                showLootTooltip(event.currentTarget, itemName, rate);
+                              }}
+                              onMouseLeave={() => { setLootTooltip(undefined); }}
+                              onFocus={(event) => {
+                                showLootTooltip(event.currentTarget, itemName, rate);
+                              }}
+                              onBlur={() => { setLootTooltip(undefined); }}
                             >
                               <ItemVisual itemId={drop.itemId} />
-                              <div className="world-creature__loot-tooltip" role="tooltip">
-                                <strong>{itemName}</strong>
-                                <span>Taux : {rate}</span>
-                              </div>
                             </div>
                           );
                         })}
@@ -163,6 +191,18 @@ export function WorldBestiaryView(): JSX.Element {
           );
         })}
       </div>
+
+      {lootTooltip !== undefined && createPortal(
+        <div
+          className="world-creature__loot-tooltip world-creature__loot-tooltip--portal"
+          role="tooltip"
+          style={{ left: lootTooltip.left, top: lootTooltip.top }}
+        >
+          <strong>{lootTooltip.itemName}</strong>
+          <span>Taux : {lootTooltip.rate}</span>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
