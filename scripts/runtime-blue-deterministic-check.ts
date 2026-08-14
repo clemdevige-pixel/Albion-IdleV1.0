@@ -14,7 +14,7 @@ import path from "node:path";
 const ROOT = process.cwd();
 const CLIENT_DIR = path.resolve(ROOT, "apps", "client");
 const OUTPUT_PATH = path.resolve(
-  ROOT,
+  CLIENT_DIR,
   "node_modules",
   ".cache",
   "albion-idle",
