@@ -5,6 +5,7 @@ import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.j
 import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
 import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
+import { markCombatStartBlocked } from "./CombatStartGuard.js";
 import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
 
 export class CombatRuntime extends LegacyCombatRuntime {
@@ -12,6 +13,8 @@ export class CombatRuntime extends LegacyCombatRuntime {
   private readonly effects: WeaponAbilityEffectTracker;
   private inTick = false;
   private abilityTick = 0;
+  private initialized = false;
+  private weaponBlocked = false;
 
   constructor(private readonly runtimeDeps: CombatRuntimeDependencies) {
     super(runtimeDeps);
@@ -24,6 +27,14 @@ export class CombatRuntime extends LegacyCombatRuntime {
       onTargetKilled: (tick) => { this.finalizeActiveEnemyDeath(tick); },
     });
     this.effects = new WeaponAbilityEffectTracker(runtimeDeps.world, runtimeDeps.effectManager, this.mechanics);
+  }
+
+  override initialize(): CombatDomainTickResult {
+    if (!this.hasEquippedWeapon()) return { combatState: "idle" };
+    this.initialized = true;
+    const result = super.initialize();
+    this.handleSegmentStart(result);
+    return result;
   }
 
   override useWeaponAbility(slotIndex: number): boolean {
@@ -60,6 +71,31 @@ export class CombatRuntime extends LegacyCombatRuntime {
 
   override tick(dt: number, tickCounter: number): CombatDomainTickResult {
     this.abilityTick = tickCounter;
+
+    // Starter selection and gathering are authoritative suspension states. They
+    // must not emit a weapon warning while combat is intentionally unavailable.
+    if (this.runtimeDeps.ports.isCombatSuspended()) {
+      return super.tick(dt, tickCounter);
+    }
+
+    if (!this.hasEquippedWeapon()) {
+      if (!this.weaponBlocked) {
+        if (this.initialized) this.interruptEncounter();
+        this.weaponBlocked = true;
+        markCombatStartBlocked("weapon_required");
+      }
+      return { combatState: "idle" };
+    }
+
+    this.weaponBlocked = false;
+
+    if (!this.initialized) {
+      this.initialized = true;
+      const initial = super.initialize();
+      this.handleSegmentStart(initial);
+      return initial;
+    }
+
     if (this.runtimeDeps.combatService.getActiveSession() === undefined) this.mechanics.clear();
     this.mechanics.tick(dt, tickCounter);
     const targets = [this.runtimeDeps.heroId, this.getActiveEnemyId()] as const;
@@ -69,6 +105,12 @@ export class CombatRuntime extends LegacyCombatRuntime {
     try { result = super.tick(dt, tickCounter); }
     finally { this.inTick = false; }
 
+    this.handleSegmentStart(result);
+    this.effects.reconcile(targets);
+    return result;
+  }
+
+  private handleSegmentStart(result: CombatDomainTickResult): void {
     if (
       result.spawnedEnemy !== undefined
       && this.runtimeDeps.ports.getLocationState().encounterIndex === 0
@@ -76,9 +118,10 @@ export class CombatRuntime extends LegacyCombatRuntime {
       this.runtimeDeps.abilityManager.resetCooldowns(this.runtimeDeps.heroId);
       markCombatSegmentStart();
     }
+  }
 
-    this.effects.reconcile(targets);
-    return result;
+  private hasEquippedWeapon(): boolean {
+    return this.runtimeDeps.equipmentManager.getEquippedItem(this.runtimeDeps.heroId, "weapon") !== undefined;
   }
 
   private resolveAbility(slotIndex: number) {
