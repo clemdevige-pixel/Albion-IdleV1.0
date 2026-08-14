@@ -395,11 +395,11 @@ export function createInitialGameBridgeState(): GameBridgeState {
   return {
     playerHealth: 100,
     playerMaxHealth: 100,
-    enemyHealth: 100,
-    enemyMaxHealth: 100,
+    enemyHealth: 0,
+    enemyMaxHealth: 0,
     combatState: "idle",
-    enemyName: "Forest Wolf",
-    enemyVisualManifestId: "monster_undead_warrior",
+    enemyName: "",
+    enemyVisualManifestId: "",
     enemiesKilled: 0,
     zoneElapsed: 0,
     segmentSilverPerHour: 0,
@@ -471,7 +471,7 @@ export function createInitialGameBridgeState(): GameBridgeState {
       visualManifestId: "resource_fiber",
     },
     refining: EMPTY_REFINING,
-    metalRefining: { ...EMPTY_REFINING, recipeName: "Lingots de cuivre" },
+    metalRefining: { ...EMPTY_REFINING, recipeName: "Lingot de cuivre" },
     leatherRefining: { ...EMPTY_REFINING, recipeName: "Cuir robuste" },
     clothRefining: { ...EMPTY_REFINING, recipeName: "Tissu de lin" },
     crafting: {
@@ -487,6 +487,9 @@ export function createInitialGameBridgeState(): GameBridgeState {
       recruitmentCost: INITIAL_WORKER_HOUSE.recruitmentCost,
       workers: [],
     },
-    island: { plots: [], buildings: [] },
+    island: {
+      plots: [],
+      buildings: [],
+    },
   };
 }
