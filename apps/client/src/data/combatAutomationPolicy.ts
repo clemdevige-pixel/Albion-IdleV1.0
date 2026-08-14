@@ -6,3 +6,12 @@
  * target has health remaining. Manual casts are never constrained by this.
  */
 export const AUTO_CAST_MAX_IMMEDIATE_DAMAGE_TO_REMAINING_HP_RATIO = 1.5;
+
+export function isExcessiveAutoCastOverkill(
+  estimatedImmediateDamage: number,
+  remainingHealth: number,
+): boolean {
+  if (remainingHealth <= 0) return true;
+  return estimatedImmediateDamage
+    > remainingHealth * AUTO_CAST_MAX_IMMEDIATE_DAMAGE_TO_REMAINING_HP_RATIO;
+}
