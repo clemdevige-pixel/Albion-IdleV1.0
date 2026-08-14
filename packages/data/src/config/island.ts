@@ -22,6 +22,10 @@ export interface IslandGatheringServiceDefinition {
   readonly workerProfession: IslandWorkerProfession;
 }
 
+export interface IslandRefiningServiceDefinition {
+  readonly productionFamily: IslandProductionFamily;
+}
+
 export interface IslandConstructionRequirement {
   readonly itemId: string;
   readonly quantity: number;
@@ -30,6 +34,7 @@ export interface IslandConstructionRequirement {
 export interface IslandConstructionDefinition {
   readonly silver: number;
   readonly requirements: readonly IslandConstructionRequirement[];
+  readonly prerequisiteBuildings?: readonly IslandBuildingId[];
 }
 
 export interface IslandBuildingDefinition {
@@ -39,6 +44,7 @@ export interface IslandBuildingDefinition {
   readonly description: string;
   readonly icon: string;
   readonly gatheringService?: IslandGatheringServiceDefinition;
+  readonly refiningService?: IslandRefiningServiceDefinition;
   readonly construction?: IslandConstructionDefinition;
 }
 
@@ -75,7 +81,11 @@ export interface PlayerIslandConfig {
 }
 
 const GATHERING_BUILDING_SILVER_COST = 100;
+const REFINING_BUILDING_SILVER_COST = 150;
 const T3_WOOD_ID = "item_resource_wood_t3";
+const T3_ORE_ID = "item_resource_copper_ore_t3";
+const T3_HIDE_ID = "item_resource_hide_t3";
+const T3_FIBER_ID = "item_resource_fiber_t3";
 
 const BUILDINGS: readonly IslandBuildingDefinition[] = [
   {
@@ -115,7 +125,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
       silver: GATHERING_BUILDING_SILVER_COST,
       requirements: [
         { itemId: T3_WOOD_ID, quantity: 12 },
-        { itemId: "item_resource_copper_ore_t3", quantity: 8 },
+        { itemId: T3_ORE_ID, quantity: 8 },
       ],
     },
   },
@@ -130,7 +140,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
       silver: GATHERING_BUILDING_SILVER_COST,
       requirements: [
         { itemId: T3_WOOD_ID, quantity: 12 },
-        { itemId: "item_resource_hide_t3", quantity: 8 },
+        { itemId: T3_HIDE_ID, quantity: 8 },
       ],
     },
   },
@@ -145,7 +155,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
       silver: GATHERING_BUILDING_SILVER_COST,
       requirements: [
         { itemId: T3_WOOD_ID, quantity: 12 },
-        { itemId: "item_resource_fiber_t3", quantity: 8 },
+        { itemId: T3_FIBER_ID, quantity: 8 },
       ],
     },
   },
@@ -155,6 +165,15 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "refining",
     description: "Transformation du bois brut en planches.",
     icon: "▥",
+    refiningService: { productionFamily: "wood" },
+    construction: {
+      silver: REFINING_BUILDING_SILVER_COST,
+      requirements: [
+        { itemId: T3_WOOD_ID, quantity: 20 },
+        { itemId: T3_ORE_ID, quantity: 10 },
+      ],
+      prerequisiteBuildings: ["lumber_camp"],
+    },
   },
   {
     id: "smelter",
@@ -162,6 +181,15 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "refining",
     description: "Transformation du minerai en lingots.",
     icon: "♨",
+    refiningService: { productionFamily: "ore" },
+    construction: {
+      silver: REFINING_BUILDING_SILVER_COST,
+      requirements: [
+        { itemId: T3_WOOD_ID, quantity: 20 },
+        { itemId: T3_ORE_ID, quantity: 10 },
+      ],
+      prerequisiteBuildings: ["mine"],
+    },
   },
   {
     id: "tannery",
@@ -169,6 +197,15 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "refining",
     description: "Transformation des peaux en cuir.",
     icon: "◫",
+    refiningService: { productionFamily: "hide" },
+    construction: {
+      silver: REFINING_BUILDING_SILVER_COST,
+      requirements: [
+        { itemId: T3_WOOD_ID, quantity: 20 },
+        { itemId: T3_HIDE_ID, quantity: 10 },
+      ],
+      prerequisiteBuildings: ["hunting_camp"],
+    },
   },
   {
     id: "weaver",
@@ -176,6 +213,15 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "refining",
     description: "Transformation des fibres en tissu.",
     icon: "≋",
+    refiningService: { productionFamily: "fiber" },
+    construction: {
+      silver: REFINING_BUILDING_SILVER_COST,
+      requirements: [
+        { itemId: T3_WOOD_ID, quantity: 20 },
+        { itemId: T3_FIBER_ID, quantity: 10 },
+      ],
+      prerequisiteBuildings: ["fiber_camp"],
+    },
   },
   {
     id: "workshop",
