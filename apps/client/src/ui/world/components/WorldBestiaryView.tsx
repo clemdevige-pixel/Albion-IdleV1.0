@@ -194,7 +194,7 @@ export function WorldBestiaryView(): JSX.Element {
 
       {lootTooltip !== undefined && createPortal(
         <div
-          className="world-creature__loot-tooltip world-creature__loot-tooltip--portal"
+          className="world-creature__loot-tooltip--portal"
           role="tooltip"
           style={{ left: lootTooltip.left, top: lootTooltip.top }}
         >
