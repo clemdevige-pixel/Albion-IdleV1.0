@@ -7,7 +7,6 @@ import { CharacterModule } from "../character";
 import { InventoryModule } from "../inventory";
 import { MasteriesModule } from "../masteries";
 import { IslandModule } from "../island";
-import { ProductionModule } from "../production";
 import { MerchantModule } from "../merchant";
 import { WorldModule } from "../world";
 
@@ -19,7 +18,6 @@ export function RightPanelHost(): JSX.Element {
   const isInventory = activeModule === UI_MODULE_IDS.inventory;
   const isMasteries = activeModule === UI_MODULE_IDS.masteries;
   const isIsland = activeModule === UI_MODULE_IDS.island;
-  const isProduction = activeModule === UI_MODULE_IDS.production;
   const isMerchant = activeModule === UI_MODULE_IDS.merchant;
   const isWorld = activeModule === UI_MODULE_IDS.world;
 
@@ -55,8 +53,6 @@ export function RightPanelHost(): JSX.Element {
           <MasteriesModule />
         ) : isIsland ? (
           <IslandModule />
-        ) : isProduction ? (
-          <ProductionModule />
         ) : isMerchant ? (
           <MerchantModule />
         ) : isWorld ? (
