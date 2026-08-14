@@ -61,7 +61,12 @@ export function EnchantView(): JSX.Element {
           {model.preview !== undefined && (
             <section className="ui-merchant-detail ui-merchant-enchant__detail">
               <div className="ui-merchant-detail__item">
-                <ItemHoverTooltip itemId={model.preview.itemId} quantity={1} instanceId={model.preview.instanceId}>
+                <ItemHoverTooltip
+                  itemId={model.preview.itemId}
+                  quantity={1}
+                  instanceId={model.preview.instanceId}
+                  enchantmentOverride={model.preview.nextLevel ?? model.preview.currentLevel}
+                >
                   <span className="ui-merchant-detail__visual"><ItemVisual itemId={model.preview.itemId} /></span>
                 </ItemHoverTooltip>
                 <div>
