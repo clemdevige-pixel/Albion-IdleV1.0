@@ -42,7 +42,10 @@ export class EnemyPresentationSystem {
       .image(fallback.offset.x, fallback.offset.y, fallback.textureKey)
       .setOrigin(fallback.origin.x, fallback.origin.y)
       .setDisplaySize(fallback.display.width, fallback.display.height);
-    this.body = scene.add.container(x, y, [this.sprite]).setDepth(5);
+    // The fallback exists only so renderer dependencies always have a valid
+    // manifest. It must never be presented as a real enemy before the combat
+    // bridge publishes an authoritative spawn.
+    this.body = scene.add.container(x, y, [this.sprite]).setDepth(5).setVisible(false);
   }
 
   public update(state: EnemyPresentationState): void {
