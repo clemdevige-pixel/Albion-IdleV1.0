@@ -1,5 +1,4 @@
 import type { ProductionTier } from "../../../data/productionFamilyCatalog";
-import { useState } from "react";
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
 import { WORKER_PROFESSION_LABELS } from "../../../data/productionFamilyCatalog";
 import type { GatheringResourceModel } from "./gatheringModels";
@@ -8,12 +7,10 @@ import type { GatheringActions } from "./useGatheringActions";
 interface GatheringResourceCardProps {
   readonly resource: GatheringResourceModel;
   readonly tier: ProductionTier;
-  readonly recruitmentCost: number;
   readonly actions: GatheringActions;
 }
 
-export function GatheringResourceCard({ resource, tier, recruitmentCost, actions }: GatheringResourceCardProps): JSX.Element {
-  const [confirmRecruitment, setConfirmRecruitment] = useState(false);
+export function GatheringResourceCard({ resource, tier, actions }: GatheringResourceCardProps): JSX.Element {
   const { activity, heroMastery, worker } = resource;
   const heroActive = activity.status === "gathering";
   const otherTierActive = activity.activeCycle !== undefined && !heroActive;
@@ -89,18 +86,10 @@ export function GatheringResourceCard({ resource, tier, recruitmentCost, actions
       <section className="ui-gathering-card__role ui-gathering-card__worker">
         <h3>Worker</h3>
         {worker === undefined ? (
-          <>
-            <div><span>Emplacement worker libre</span><small>{WORKER_PROFESSION_LABELS[resource.profession]} · Profession permanente</small></div>
-            {confirmRecruitment ? (
-              <div className="ui-gathering-card__confirm">
-                <p>Recruter ce worker pour {String(recruitmentCost)} Silver ?</p>
-                <button type="button" onClick={() => { if (actions.recruitWorker(resource.profession)) setConfirmRecruitment(false); }}>Confirmer</button>
-                <button type="button" onClick={() => { setConfirmRecruitment(false); }}>Annuler</button>
-              </div>
-            ) : (
-              <button type="button" onClick={() => { setConfirmRecruitment(true); }}>Recruter · {String(recruitmentCost)} S</button>
-            )}
-          </>
+          <div>
+            <span>Aucun {WORKER_PROFESSION_LABELS[resource.profession].toLocaleLowerCase("fr-FR")} recruté</span>
+            <small>Le recrutement est désormais géré depuis la Maison des ouvriers sur l'île.</small>
+          </div>
         ) : (
           <>
             <div className="ui-gathering-card__worker-summary">
