@@ -1,0 +1,220 @@
+.ui-island {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ui-island__tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ui-island__tabs button {
+  border: 1px solid rgba(190, 159, 105, 0.28);
+  border-radius: 8px;
+  background: rgba(17, 20, 25, 0.82);
+  color: rgba(238, 231, 216, 0.7);
+  padding: 9px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ui-island__tabs button.is-active {
+  border-color: rgba(216, 181, 116, 0.72);
+  background: rgba(91, 70, 42, 0.42);
+  color: #f2e1bd;
+}
+
+.ui-island__intro,
+.ui-island__selection,
+.ui-island__catalog,
+.ui-island__transition-note {
+  border: 1px solid rgba(190, 159, 105, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(35, 39, 45, 0.88), rgba(20, 23, 28, 0.9));
+}
+
+.ui-island__intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.ui-island__intro > div,
+.ui-island__selection-heading > div,
+.ui-island__catalog-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ui-island__intro strong,
+.ui-island__selection strong {
+  color: #f4e7ca;
+  font-size: 15px;
+}
+
+.ui-island__eyebrow {
+  color: rgba(214, 186, 133, 0.7);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ui-island__count,
+.ui-island__level {
+  border: 1px solid rgba(197, 160, 94, 0.3);
+  border-radius: 999px;
+  color: #ddc28f;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.ui-island__plots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 92px);
+  gap: 8px;
+}
+
+.ui-island__plot {
+  min-width: 0;
+  border: 1px solid rgba(174, 148, 105, 0.28);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(48, 54, 48, 0.76), rgba(27, 32, 30, 0.9));
+  color: #ece1ca;
+  padding: 8px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.ui-island__plot:hover,
+.ui-island__plot.is-selected {
+  border-color: rgba(222, 183, 111, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(222, 183, 111, 0.18);
+}
+
+.ui-island__plot.is-empty {
+  border-style: dashed;
+  background: rgba(22, 25, 26, 0.55);
+  color: rgba(225, 215, 195, 0.52);
+}
+
+.ui-island__plot span:not(.ui-island__plot-icon) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ui-island__plot small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(221, 207, 181, 0.55);
+  font-size: 9px;
+}
+
+.ui-island__plot-icon,
+.ui-island__selection-icon {
+  color: #d8b574;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.ui-island__selection {
+  padding: 13px;
+}
+
+.ui-island__selection-heading {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.ui-island__selection p,
+.ui-island__selection--empty p {
+  color: rgba(232, 224, 209, 0.68);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 10px 0 0;
+}
+
+.ui-island__selection-status {
+  margin-top: 10px;
+  border-top: 1px solid rgba(190, 159, 105, 0.15);
+  padding-top: 9px;
+  color: rgba(207, 187, 151, 0.64);
+  font-size: 10px;
+}
+
+.ui-island__catalog {
+  padding: 12px;
+}
+
+.ui-island__catalog-grid {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.ui-island__catalog-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid rgba(185, 156, 104, 0.12);
+  border-radius: 7px;
+  background: rgba(16, 19, 22, 0.42);
+}
+
+.ui-island__catalog-item > span {
+  color: #d8b574;
+  text-align: center;
+}
+
+.ui-island__catalog-item strong {
+  overflow: hidden;
+  color: rgba(240, 229, 209, 0.88);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-island__catalog-item small {
+  color: rgba(216, 202, 177, 0.48);
+  font-size: 9px;
+}
+
+.ui-island__transition-note {
+  padding: 9px 11px;
+  color: rgba(218, 198, 163, 0.7);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1100px) {
+  .ui-island__plots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(4, 88px);
+  }
+
+  .ui-island__plot {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+}
