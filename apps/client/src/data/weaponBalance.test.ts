@@ -9,24 +9,24 @@ function firstDamageRatio(abilityId: string): number | undefined {
 
 describe("Blue weapon balance pass", () => {
   it("keeps attack-speed tuning authored by specialization rather than runtime mode", () => {
-    expect(getWeaponAttackSpeed("item_weapon_sword_t4_broadsword")).toBeCloseTo(1.128);
-    expect(getWeaponAttackSpeed("item_weapon_gloves_t4_spiked_gauntlets")).toBeCloseTo(1.274);
-    expect(getWeaponAttackSpeed("item_weapon_dagger_t4_pair")).toBeCloseTo(1.52);
-    expect(getWeaponAttackSpeed("item_weapon_bow_t4_longbow")).toBeCloseTo(1);
+    expect(getWeaponAttackSpeed("item_weapon_sword_t4_broadsword")).toBeCloseTo(1.08);
+    expect(getWeaponAttackSpeed("item_weapon_gloves_t4_spiked_gauntlets")).toBeCloseTo(1.19);
+    expect(getWeaponAttackSpeed("item_weapon_dagger_t4_pair")).toBeCloseTo(1.44);
+    expect(getWeaponAttackSpeed("item_weapon_bow_t4_longbow")).toBeCloseTo(0.95);
     expect(getWeaponAttackSpeed("item_weapon_staff_t4_infernal")).toBeCloseTo(0.9);
   });
 
-  it("authors the first-pass pre-M30 Q/W ratios in the mechanics data", () => {
-    expect(firstDamageRatio("ability_sword_heroic_strike")).toBeCloseTo(0.85125);
-    expect(firstDamageRatio("ability_sword_guard_breaker")).toBeCloseTo(0.96475);
-    expect(firstDamageRatio("ability_bow_aimed_shot")).toBeCloseTo(0.552);
-    expect(firstDamageRatio("ability_bow_piercing_arrow")).toBeCloseTo(0.736);
-    expect(firstDamageRatio("ability_fire_fireball")).toBeCloseTo(0.4095);
-    expect(firstDamageRatio("ability_fire_infernal_burst")).toBeCloseTo(0.728);
-    expect(firstDamageRatio("ability_gloves_shockwave")).toBeCloseTo(0.896);
-    expect(firstDamageRatio("ability_gloves_breaking_combo")).toBeCloseTo(1.15);
-    expect(firstDamageRatio("ability_dagger_double_slash")).toBeCloseTo(0.475);
-    expect(firstDamageRatio("ability_dagger_flurry")).toBeCloseTo(0.76);
+  it("authors the active-progression pre-M30 Q/W ratios in mechanics data", () => {
+    expect(firstDamageRatio("ability_sword_heroic_strike")).toBeCloseTo(0.7875);
+    expect(firstDamageRatio("ability_sword_guard_breaker")).toBeCloseTo(0.8925);
+    expect(firstDamageRatio("ability_bow_aimed_shot")).toBeCloseTo(0.51);
+    expect(firstDamageRatio("ability_bow_piercing_arrow")).toBeCloseTo(0.68);
+    expect(firstDamageRatio("ability_fire_fireball")).toBeCloseTo(0.3825);
+    expect(firstDamageRatio("ability_fire_infernal_burst")).toBeCloseTo(0.68);
+    expect(firstDamageRatio("ability_gloves_shockwave")).toBeCloseTo(0.84);
+    expect(firstDamageRatio("ability_gloves_breaking_combo")).toBeCloseTo(1.05);
+    expect(firstDamageRatio("ability_dagger_double_slash")).toBeCloseTo(0.45);
+    expect(firstDamageRatio("ability_dagger_flurry")).toBeCloseTo(0.72);
   });
 
   it("keeps Broadsword execution autocast conditional in authored data", () => {
@@ -36,16 +36,11 @@ describe("Blue weapon balance pass", () => {
     });
   });
 
-  it("gives Spiked W a short authored control window without an AFK-specific branch", () => {
+  it("does not retain the temporary AFK-motivated stun on Spiked W", () => {
     const stun = getWeaponAbilityMechanics("ability_gloves_breaking_combo")?.mechanics.find(
       (mechanic) => mechanic.kind === "status" && mechanic.effectType === "stun",
     );
-    expect(stun).toEqual({
-      kind: "status",
-      effectId: "effect_gloves_combo_stun",
-      effectType: "stun",
-      duration: 0.75,
-    });
+    expect(stun).toBeUndefined();
   });
 
   it("does not change M30 signature damage mechanics", () => {
