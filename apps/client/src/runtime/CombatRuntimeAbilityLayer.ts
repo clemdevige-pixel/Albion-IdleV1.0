@@ -9,7 +9,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
   private readonly mechanics: WeaponAbilityMechanicsRuntime;
   private readonly effects: WeaponAbilityEffectTracker;
   private inTick = false;
-  private currentTick = 0;
+  private abilityTick = 0;
 
   constructor(private readonly runtimeDeps: CombatRuntimeDependencies) {
     super(runtimeDeps);
@@ -33,9 +33,9 @@ export class CombatRuntime extends LegacyCombatRuntime {
       entityId: this.runtimeDeps.heroId,
       abilityId: definition.id as AbilityId,
       primaryTarget: target,
-      tick: this.currentTick,
+      tick: this.abilityTick,
     });
-    return used.ok && this.mechanics.execute(definition, target, this.currentTick);
+    return used.ok && this.mechanics.execute(definition, target, this.abilityTick);
   }
 
   override interruptEncounter(): void {
@@ -44,7 +44,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
   }
 
   override tick(dt: number, tickCounter: number): CombatDomainTickResult {
-    this.currentTick = tickCounter;
+    this.abilityTick = tickCounter;
     if (this.runtimeDeps.combatService.getActiveSession() === undefined) this.mechanics.clear();
     this.mechanics.tick(dt, tickCounter);
     const targets = [this.runtimeDeps.heroId, this.getActiveEnemyId()] as const;
