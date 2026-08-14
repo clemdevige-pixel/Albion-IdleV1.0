@@ -32,11 +32,13 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     label: "Domaine artisanal",
     unlockedCategories: ["workers", "storage", "gathering", "refining"],
     requirementToReach: { minimumBuildings: 6, minimumBuildingsAtLevel: 2, buildingLevel: 2 },
+    // Lv1 cannot refine yet, so this bootstrap cost must use resources obtainable
+    // through the hero/workers before the refining category is unlocked.
     upgradeCost: {
       silver: 1000,
       requirements: [
-        { itemId: "item_refined_planks_t3", quantity: 20 },
-        { itemId: "item_refined_copper_bar_t3", quantity: 20 },
+        { itemId: "item_resource_wood_t3", quantity: 40 },
+        { itemId: "item_resource_copper_ore_t3", quantity: 40 },
       ],
     },
   },
