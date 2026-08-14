@@ -1,5 +1,5 @@
 import type { ProductionTier } from "../../data/productionFamilyCatalog";
-import type { WorldBandId } from "@game/data";
+import type { IslandBuildingId, WorldBandId } from "@game/data";
 import type { CombatState, EquipmentSlot, VendorRole, WorkerProfession } from "@game/gameplay";
 
 export interface DamageNumberEvent {
@@ -211,13 +211,6 @@ export interface GatheringVM {
   readonly progress: number;
   readonly durationSeconds: number;
   readonly storedQuantity: number;
-  /**
-   * Authoritative cycle currently running for this resource family.
-   *
-   * This is deliberately distinct from the tier projected by the Production
-   * panel: browsing another tier must never retarget the world presentation
-   * or leak the running cycle's progress into the browsed tier.
-   */
   readonly activeCycle?: {
     readonly resourceName: string;
     readonly resourceTier: number;
@@ -309,6 +302,23 @@ export interface WorkersVM {
   readonly workers: readonly WorkerVM[];
 }
 
+export interface IslandPlotVM {
+  readonly id: string;
+  readonly buildingInstanceId: string | null;
+}
+
+export interface IslandBuildingVM {
+  readonly instanceId: string;
+  readonly definitionId: IslandBuildingId;
+  readonly plotId: string;
+  readonly level: number;
+}
+
+export interface IslandVM {
+  readonly plots: readonly IslandPlotVM[];
+  readonly buildings: readonly IslandBuildingVM[];
+}
+
 export interface GameBridgeState {
   readonly playerHealth: number;
   readonly playerMaxHealth: number;
@@ -346,6 +356,7 @@ export interface GameBridgeState {
   readonly clothRefining: RefiningVM;
   readonly crafting: CraftingVM;
   readonly workers: WorkersVM;
+  readonly island: IslandVM;
 }
 
 const EMPTY_INVENTORY: InventoryVM = { slots: [], capacity: 0, occupied: 0 };
@@ -467,5 +478,6 @@ export function createInitialGameBridgeState(): GameBridgeState {
       recipes: [],
     },
     workers: { capacity: 4, recruitmentCost: 250, workers: [] },
+    island: { plots: [], buildings: [] },
   };
 }
