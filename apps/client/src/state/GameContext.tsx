@@ -533,6 +533,8 @@ export function GameProvider({
         islandActions.constructBuilding(definitionId, plotId)
       ),
       upgradeIslandBuilding: (definitionId) => islandActions.upgradeBuilding(definitionId),
+      getIslandLevel: () => islandService.getState().level,
+      upgradeIslandLevel: () => islandActions.upgradeIslandLevel(),
       repairAll: () => repairActions.repairAll(),
       saveGame, loadGame, hasSave, exportSave, importSave,
     };
