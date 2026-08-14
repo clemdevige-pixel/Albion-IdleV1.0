@@ -2,7 +2,7 @@ import type { ProductionTier } from "../data/productionFamilyCatalog";
 import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence, type RuntimePersistenceDependencies } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
-import { WorldSaveProvider } from "@game/gameplay";
+import { PlayerIslandService, WorldSaveProvider } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge";
 import { RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
@@ -63,6 +63,14 @@ export function GameProvider({
   const services = useMemo<GameServices>(() => {
     const eventBus = new EventBus<UIEventMap>();
     const bridge = new GameBridge();
+    const islandService = new PlayerIslandService();
+    const syncIslandToBridge = (): void => {
+      const island = islandService.getState();
+      bridge.updateIsland({
+        plots: island.plots.map((plot) => ({ ...plot })),
+        buildings: island.buildings.map((building) => ({ ...building })),
+      });
+    };
     let tickCounter = 0;
     let productionTier: ProductionTier = 3;
 
@@ -224,7 +232,10 @@ export function GameProvider({
       },
       updateWorldBridge,
     });
-    const resyncAll = (): void => { bridgeSyncCoordinator.syncAll(); };
+    const resyncAll = (): void => {
+      bridgeSyncCoordinator.syncAll();
+      syncIslandToBridge();
+    };
 
     const combatRewardAdapter = setupCombatRewardAdapter({
       combatService,
@@ -237,6 +248,7 @@ export function GameProvider({
       resyncAll: () => resyncAll(),
     });
     bridgeSyncCoordinator.syncInitialState();
+    syncIslandToBridge();
 
     const persistence = new RuntimePersistence({
       inventoryManager,
@@ -254,6 +266,7 @@ export function GameProvider({
       saveSlotId,
       ...(onLocalSave === undefined ? {} : { onLocalSave }),
     });
+    persistence.registerProvider(islandService);
 
     const refiningSaveProvider = new RefiningSaveProvider(
       refiningRuntime,
