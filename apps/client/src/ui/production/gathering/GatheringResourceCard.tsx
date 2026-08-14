@@ -14,9 +14,6 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
   const { activity, heroMastery, worker } = resource;
   const heroActive = activity.status === "gathering";
   const otherTierActive = activity.activeCycle !== undefined && !heroActive;
-  const workerMasteryBlocked = worker !== undefined
-    && worker.mastery < activity.requiredMasteryLevel
-    && !(worker.state === "working" && worker.productionTier === tier);
 
   return (
     <article className={`ui-gathering-card${heroActive ? " is-active" : ""}`}>
@@ -88,27 +85,16 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
         {worker === undefined ? (
           <div>
             <span>Aucun {WORKER_PROFESSION_LABELS[resource.profession].toLocaleLowerCase("fr-FR")} recruté</span>
-            <small>Le recrutement est désormais géré depuis la Maison des ouvriers sur l'île.</small>
+            <small>Recrutement : Maison des ouvriers · Production passive : bâtiment de récolte correspondant.</small>
           </div>
         ) : (
-          <>
-            <div className="ui-gathering-card__worker-summary">
-              <div>
-                <span>{worker.displayName} · {worker.professionName}</span>
-                <small>T{String(worker.productionTier)} · Maîtrise {String(worker.mastery)} · {String(worker.yieldPerCycle)} / {String(worker.durationSeconds)} s</small>
-              </div>
-              <b className={`is-${worker.state}`}>{worker.state === "working" ? "Actif" : worker.state === "paused" ? "En pause" : "Disponible"}</b>
+          <div className="ui-gathering-card__worker-summary">
+            <div>
+              <span>{worker.displayName} · {worker.professionName}</span>
+              <small>T{String(worker.productionTier)} · Maîtrise {String(worker.mastery)} · gestion depuis l'île</small>
             </div>
-            <ProgressBar value={worker.progress} />
-            <small className="ui-gathering-card__worker-xp">{String(worker.masteryXp)} / {String(worker.masteryXpToNext)} XP worker</small>
-            <button type="button" disabled={workerMasteryBlocked} onClick={() => { actions.toggleWorker(resource.profession); }}>
-              {workerMasteryBlocked
-                ? `Maîtrise ${String(activity.requiredMasteryLevel)} requise`
-                : worker.productionTier !== tier
-                  ? `Affecter au T${String(tier)}`
-                  : worker.state === "working" ? "Mettre en pause" : "Lancer la production"}
-            </button>
-          </>
+            <b className={`is-${worker.state}`}>{worker.state === "working" ? "Actif" : worker.state === "paused" ? "En pause" : "Disponible"}</b>
+          </div>
         )}
       </section>
     </article>
