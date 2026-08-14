@@ -1,5 +1,5 @@
-import type { EntityId } from "@game/core";
-import type { EffectManager, StatusEffectType, World } from "@game/gameplay";
+import type { EntityId, World } from "@game/core";
+import type { EffectManager, StatusEffectType } from "@game/gameplay";
 import type { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.js";
 
 type Snapshot = { readonly id: unknown; readonly target: EntityId; readonly effectType: StatusEffectType };
