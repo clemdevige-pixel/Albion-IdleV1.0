@@ -10,6 +10,7 @@ import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
 import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
+import { combatStopController } from "../runtime/CombatStopController.js";
 import { recalculateWeaponMasteryStats } from "../runtime/weaponMasteryStatSync.js";
 import {
   syncInventoryToBridge,
@@ -180,6 +181,7 @@ export function GameProvider({
       equipmentManager,
       currencyService,
       walletId,
+      canEnchantNow: () => combatStopController.isPaused(),
     });
 
     const productionFoundation = createProductionFoundation({
