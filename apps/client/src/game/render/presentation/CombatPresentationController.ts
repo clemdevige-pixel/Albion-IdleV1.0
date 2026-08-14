@@ -139,9 +139,21 @@ export class CombatPresentationController {
   }
 
   private updateEnemy(bridge: GameBridge): void {
-    const presented = getPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
     const incomingName = bridge.enemyName;
     const incomingVisualManifestId = bridge.enemyVisualManifestId;
+    const hasAuthoritativeEnemy = incomingName.length > 0
+      && incomingVisualManifestId.length > 0
+      && bridge.enemyMaxHealth > 0;
+
+    if (!hasAuthoritativeEnemy) {
+      this.displayedEnemyName = undefined;
+      this.displayedEnemyVisualManifestId = undefined;
+      this.displayedEnemyIsBoss = false;
+      this.setEnemyVisible(false);
+      return;
+    }
+
+    const presented = getPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
     const incomingIsBoss = bridge.world.encounterType === "boss";
 
     if (this.displayedEnemyVisualManifestId === undefined) {
@@ -149,10 +161,6 @@ export class CombatPresentationController {
     } else {
       const identityChanged = incomingVisualManifestId !== this.displayedEnemyVisualManifestId
         || incomingName !== this.displayedEnemyName;
-      // Enemy identity is authored only when CombatBridgeAdapter receives a
-      // spawnedEnemy. At that point the new encounter is authoritative, even if
-      // its health has already been written to the bridge. Waiting for <= 0 here
-      // caused the previous sprite to survive stop/resume and defeat/resume.
       if (identityChanged) {
         this.adoptEnemyPresentation(incomingName, incomingVisualManifestId, incomingIsBoss);
       }
@@ -191,20 +199,18 @@ export class CombatPresentationController {
       const presentationEvent = event as PresentationDamageEvent;
 
       if (presentationEvent.sourceType === "effect") {
-        // Periodic effects are already authoritative at the moment they are
-        // emitted and have no travel time. Present them immediately so an
-        // encounter transition cannot invalidate a burn tick before it is seen.
         this.combatSystem.present(event);
         this.lastDamageEventId = Math.max(this.lastDamageEventId, event.id);
         continue;
       }
 
       if (event.target === "player") {
-        const style = this.resolveEnemyVfxStyle(
-          this.displayedEnemyVisualManifestId ?? bridge.enemyVisualManifestId,
-        );
-        if (style !== undefined) {
-          this.vfxSystem.presentEnemyAttack(style, this.enemyHomeX, this.playerHomeX, this.entityY);
+        const visualManifestId = this.displayedEnemyVisualManifestId ?? bridge.enemyVisualManifestId;
+        if (visualManifestId.length > 0) {
+          const style = this.resolveEnemyVfxStyle(visualManifestId);
+          if (style !== undefined) {
+            this.vfxSystem.presentEnemyAttack(style, this.enemyHomeX, this.playerHomeX, this.entityY);
+          }
         }
       }
       this.director.enqueueCombatEvent(event);
