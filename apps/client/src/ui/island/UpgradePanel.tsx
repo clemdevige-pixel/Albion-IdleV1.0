@@ -24,6 +24,7 @@ export function UpgradePanel({
     inventoryManager,
     productionStorageId,
     upgradeIslandBuilding,
+    getIslandLevel,
   } = useGameServices();
   const definition = getIslandBuildingDefinition(definitionId);
   const cost = current.upgradeToNext;
@@ -39,6 +40,8 @@ export function UpgradePanel({
   const next = getIslandOperationalLevelDefinition(definitionId, level + 1);
   if (next === undefined) return null;
 
+  const islandLevel = getIslandLevel();
+  const islandLevelBlocked = next.level > islandLevel;
   const materials = cost.requirements.map((requirement) => ({
     ...requirement,
     available: getIslandMaterialQuantity(
@@ -49,15 +52,23 @@ export function UpgradePanel({
   }));
   const affordable = wallet.silver >= cost.silver
     && materials.every((requirement) => requirement.available >= requirement.quantity);
+  const canUpgrade = !islandLevelBlocked && affordable;
 
   return (
     <section className="ui-island-upgrade">
       <div>
         <span className="ui-island__eyebrow">Amélioration</span>
         <strong>Niv. {String(level)} → Niv. {String(next.level)}</strong>
-        <small>T{String(next.maxProductionTier)} débloqué</small>
+        <small>
+          {islandLevelBlocked
+            ? `Requiert Île niv. ${String(next.level)}`
+            : `T${String(next.maxProductionTier)} débloqué`}
+        </small>
       </div>
       <div className="ui-island-construction__costs">
+        {islandLevelBlocked && (
+          <span className="is-missing">Île niv. {String(islandLevel)} / {String(next.level)}</span>
+        )}
         <span className={wallet.silver >= cost.silver ? "is-ready" : "is-missing"}>
           {String(cost.silver)} Silver
         </span>
@@ -72,10 +83,14 @@ export function UpgradePanel({
       </div>
       <button
         type="button"
-        disabled={!affordable}
+        disabled={!canUpgrade}
         onClick={() => { upgradeIslandBuilding(definitionId); }}
       >
-        {affordable ? `Améliorer au niveau ${String(next.level)}` : "Ressources insuffisantes"}
+        {islandLevelBlocked
+          ? `Atteignez Île niv. ${String(next.level)}`
+          : affordable
+            ? `Améliorer au niveau ${String(next.level)}`
+            : "Ressources insuffisantes"}
       </button>
     </section>
   );
