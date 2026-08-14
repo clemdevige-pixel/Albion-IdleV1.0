@@ -11,11 +11,9 @@ export interface LootTableDefinition {
 }
 
 /**
- * BLUE POLISH 1
- * Combat loot is intentionally split into independent rolls. A key fragment,
- * an enchantment shard and a potion can therefore drop from the same kill.
- * Faction selects the identity of dungeon/artifact loot; encounter difficulty
- * selects the probability.
+ * Combat loot uses independent rolls. A key fragment, an enchantment shard and
+ * a potion can therefore drop from the same kill. The definitions below are
+ * also consumed by the Bestiary so gameplay and UI share one source of truth.
  */
 export const BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS = [
   1,
@@ -91,12 +89,75 @@ export interface BlueZoneLootContext {
   readonly enchantmentDropWeight: number;
 }
 
-function normalizeFactionId(faction: string): string {
-  return faction.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
+export interface CombatLootExpectation {
+  readonly itemId: string;
+  readonly kind: BlueZoneCombatDropKind;
+  /** Expected quantity per kill. Values below 1 are equivalent to drop chance. */
+  readonly expectedQuantity: number;
 }
 
-function rollChance(chance: number, random: () => number): boolean {
-  return random() < Math.min(1, Math.max(0, chance));
+type CombatLootItemSource =
+  | { readonly type: "fixed"; readonly itemId: string }
+  | { readonly type: "enchantment_shard" }
+  | {
+      readonly type: "faction";
+      readonly prefix: string;
+    };
+
+type CombatLootRateModel =
+  | { readonly type: "segment_scaled"; readonly baseRate: number; readonly bossMultiplier: boolean }
+  | { readonly type: "enchantment" }
+  | { readonly type: "artifact_fragment" }
+  | { readonly type: "artifact" };
+
+export interface CombatLootRuleDefinition {
+  readonly kind: BlueZoneCombatDropKind;
+  readonly item: CombatLootItemSource;
+  readonly rate: CombatLootRateModel;
+}
+
+/**
+ * Authoritative active combat-loot definitions.
+ *
+ * Adding a simple droppable item should normally be a data addition here, not
+ * a new Bestiary/UI special case. Dynamic faction/tier identities are resolved
+ * generically by the item source.
+ */
+export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
+  {
+    kind: "consumable",
+    item: { type: "fixed", itemId: "item_health_potion" },
+    rate: { type: "segment_scaled", baseRate: BLUE_ZONE_BASE_DROP_RATES.healthPotion, bossMultiplier: false },
+  },
+  {
+    kind: "enchantment",
+    item: { type: "enchantment_shard" },
+    rate: { type: "enchantment" },
+  },
+  {
+    kind: "key_fragment",
+    item: { type: "faction", prefix: "item_resource_key_fragment_" },
+    rate: { type: "segment_scaled", baseRate: BLUE_ZONE_BASE_DROP_RATES.keyFragment, bossMultiplier: true },
+  },
+  {
+    kind: "key",
+    item: { type: "faction", prefix: "item_resource_dungeon_key_" },
+    rate: { type: "segment_scaled", baseRate: BLUE_ZONE_BASE_DROP_RATES.completeKey, bossMultiplier: true },
+  },
+  {
+    kind: "artifact_fragment",
+    item: { type: "faction", prefix: "item_resource_artifact_fragment_" },
+    rate: { type: "artifact_fragment" },
+  },
+  {
+    kind: "artifact",
+    item: { type: "faction", prefix: "item_resource_artifact_" },
+    rate: { type: "artifact" },
+  },
+] as const;
+
+function normalizeFactionId(faction: string): string {
+  return faction.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
 }
 
 /** Supports expected values above 1 without probability-cap distortion. */
@@ -134,54 +195,74 @@ export function getEnchantmentShardExpectedDrop(
     * categoryMultiplier;
 }
 
+function resolveCombatLootItemId(
+  source: CombatLootItemSource,
+  context: BlueZoneLootContext,
+): string {
+  if (source.type === "fixed") return source.itemId;
+  if (source.type === "enchantment_shard") {
+    return getEnchantmentShardItemId(context.enchantmentTier);
+  }
+  return `${source.prefix}${normalizeFactionId(context.faction)}`;
+}
+
+function resolveCombatLootExpectedQuantity(
+  rate: CombatLootRateModel,
+  context: BlueZoneLootContext,
+): number {
+  if (rate.type === "enchantment") return getEnchantmentShardExpectedDrop(context);
+
+  if (rate.type === "segment_scaled") {
+    const bossMultiplier = rate.bossMultiplier && context.isBoss
+      ? BOSS_SPECIAL_DROP_MULTIPLIER
+      : 1;
+    return rate.baseRate * getBlueZoneSegmentLootMultiplier(context.segmentIndex) * bossMultiplier;
+  }
+
+  if (!context.isBoss) return 0;
+  if (rate.type === "artifact_fragment") {
+    return context.isFinalBoss
+      ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifactFragment
+      : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifactFragment;
+  }
+  return context.isFinalBoss
+    ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifact
+    : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifact;
+}
+
+/**
+ * Deterministic projection consumed by both runtime rolls and Bestiary display.
+ * This is the single source of truth for which active combat drops exist and
+ * their context-dependent probabilities/yields.
+ */
+export function getCombatLootExpectations(
+  context: BlueZoneLootContext,
+): readonly CombatLootExpectation[] {
+  return COMBAT_LOOT_RULES.flatMap((rule) => {
+    const expectedQuantity = resolveCombatLootExpectedQuantity(rule.rate, context);
+    if (expectedQuantity <= 0) return [];
+    return [{
+      itemId: resolveCombatLootItemId(rule.item, context),
+      kind: rule.kind,
+      expectedQuantity,
+    }];
+  });
+}
+
 export function rollBlueZoneCombatDrops(
   context: BlueZoneLootContext,
   random: () => number = Math.random,
 ): readonly BlueZoneCombatDrop[] {
   const drops: BlueZoneCombatDrop[] = [];
-  const segmentMultiplier = getBlueZoneSegmentLootMultiplier(context.segmentIndex);
-  const specialMultiplier = context.isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1;
-  const factionId = normalizeFactionId(context.faction);
-
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.healthPotion * segmentMultiplier, random)) {
-    drops.push({ itemId: "item_health_potion", kind: "consumable", quantity: 1 });
-  }
-
-  const shardQuantity = rollExpectedQuantity(
-    getEnchantmentShardExpectedDrop(context),
-    random,
-  );
-  if (shardQuantity > 0) {
+  for (const expectation of getCombatLootExpectations(context)) {
+    const quantity = rollExpectedQuantity(expectation.expectedQuantity, random);
+    if (quantity <= 0) continue;
     drops.push({
-      itemId: getEnchantmentShardItemId(context.enchantmentTier),
-      kind: "enchantment",
-      quantity: shardQuantity,
+      itemId: expectation.itemId,
+      kind: expectation.kind,
+      quantity,
     });
   }
-
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.keyFragment * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: `item_resource_key_fragment_${factionId}`, kind: "key_fragment", quantity: 1 });
-  }
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.completeKey * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: `item_resource_dungeon_key_${factionId}`, kind: "key", quantity: 1 });
-  }
-
-  if (context.isBoss) {
-    const fragmentChance = context.isFinalBoss
-      ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifactFragment
-      : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifactFragment;
-    const artifactChance = context.isFinalBoss
-      ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifact
-      : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifact;
-
-    if (rollChance(fragmentChance, random)) {
-      drops.push({ itemId: `item_resource_artifact_fragment_${factionId}`, kind: "artifact_fragment", quantity: 1 });
-    }
-    if (rollChance(artifactChance, random)) {
-      drops.push({ itemId: `item_resource_artifact_${factionId}`, kind: "artifact", quantity: 1 });
-    }
-  }
-
   return drops;
 }
 
