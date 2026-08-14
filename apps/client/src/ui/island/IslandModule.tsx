@@ -4,6 +4,7 @@ import { useGameBridge } from "../../state/GameContext";
 import { ProductionModule } from "../production";
 import { ConstructionPanel } from "./ConstructionPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
+import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
 import { WorkerHousePanel } from "./WorkerHousePanel";
 import "./island.css";
@@ -198,6 +199,8 @@ function BuildingSummary({
         <StoragePanel />
       ) : definition.gatheringService !== undefined ? (
         <GatheringBuildingPanel definitionId={definitionId} />
+      ) : definition.refiningService !== undefined ? (
+        <RefiningBuildingPanel definitionId={definitionId} />
       ) : (
         <div className="ui-island__selection-status">
           Bâtiment construit · fonctionnalités à connecter dans les phases suivantes
