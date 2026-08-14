@@ -39,7 +39,9 @@ interface ProductionFoundationDependencies {
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly forestZoneDefId: ZoneDefinitionId;
-  readonly getProductionTier: () => ProductionTier;
+  readonly getGatheringTier: () => ProductionTier;
+  readonly getRefiningTier: () => ProductionTier;
+  readonly getWorkerTier: () => ProductionTier;
 }
 
 /**
@@ -57,7 +59,9 @@ export function createProductionFoundation({
   currencyService,
   walletId,
   forestZoneDefId,
-  getProductionTier,
+  getGatheringTier,
+  getRefiningTier,
+  getWorkerTier,
 }: ProductionFoundationDependencies) {
   const productionInventoryManager = createAtomicProductionInventoryManager(
     inventoryManager,
@@ -83,7 +87,6 @@ export function createProductionFoundation({
     forestZoneDefId,
   });
 
-  // Production nodes are renewable; preserve the long-session safeguard.
   resourceRuntime.events.subscribe("resourceDepleted", ({ resourceId }) => {
     resourceRuntime.restore(resourceId);
   });
@@ -107,22 +110,10 @@ export function createProductionFoundation({
   } as const;
 
   const gatheringFamilies = {
-    Wood: {
-      manager: gatheringManagers.Wood,
-      coordinator: gatheringCoordinators.Wood,
-    },
-    Ore: {
-      manager: gatheringManagers.Ore,
-      coordinator: gatheringCoordinators.Ore,
-    },
-    Hide: {
-      manager: gatheringManagers.Hide,
-      coordinator: gatheringCoordinators.Hide,
-    },
-    Fiber: {
-      manager: gatheringManagers.Fiber,
-      coordinator: gatheringCoordinators.Fiber,
-    },
+    Wood: { manager: gatheringManagers.Wood, coordinator: gatheringCoordinators.Wood },
+    Ore: { manager: gatheringManagers.Ore, coordinator: gatheringCoordinators.Ore },
+    Hide: { manager: gatheringManagers.Hide, coordinator: gatheringCoordinators.Hide },
+    Fiber: { manager: gatheringManagers.Fiber, coordinator: gatheringCoordinators.Fiber },
   } as const;
 
   const gatheringRuntime = new GatheringRuntime({
@@ -133,7 +124,7 @@ export function createProductionFoundation({
     progressionOrchestrator,
     productionStorageId,
     nodesAndTools,
-    getProductionTier,
+    getProductionTier: getGatheringTier,
   });
 
   const gatheringCoordinator = gatheringCoordinators.Wood;
@@ -157,7 +148,7 @@ export function createProductionFoundation({
     refiningManagers,
     inventoryManager: productionInventoryManager,
     productionStorageId,
-    getProductionTier,
+    getProductionTier: getRefiningTier,
   });
 
   const craftingRuntime = new CraftingRuntime({
@@ -175,13 +166,10 @@ export function createProductionFoundation({
     currencyService,
     walletId,
     experienceService,
-    getProductionTier,
+    getProductionTier: getWorkerTier,
     getRequiredGatheringMasteryForTier,
   });
 
-  // WorkerRuntime restarts a completed cycle before emitting storage_full.
-  // Pause that freshly restarted session synchronously so a full storage never
-  // creates an endless loop of discarded cycles and repeated notifications.
   workerRuntime.subscribeDomainEvent((event) => {
     if (event.type === "storage_full") {
       workerRuntime.toggleWorker(event.profession);
