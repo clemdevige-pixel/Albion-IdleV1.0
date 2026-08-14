@@ -3,7 +3,12 @@ import {
   compareCombatBalance,
   simulateCombatBalance,
   type CombatBalanceEnemyProfile,
+  type CombatBalanceLoadout,
 } from "./combatBalanceSimulator.js";
+import {
+  WEAPON_ITEM_DEFINITIONS,
+  resolveWeaponTier,
+} from "./weaponContentCatalog.js";
 
 const TEST_ENEMY: CombatBalanceEnemyProfile = {
   id: "balance_dummy_t4",
@@ -15,21 +20,30 @@ const TEST_ENEMY: CombatBalanceEnemyProfile = {
   attackSpeed: 0.9,
 };
 
-const T4_LOADOUTS = [
-  { weaponId: "item_weapon_sword_t4_broadsword", offHandId: "item_shield_t4_reinforced", masteryLevel: 30 },
-  { weaponId: "item_weapon_bow_t4_longbow", masteryLevel: 30 },
-  { weaponId: "item_weapon_bow_t4_badon", masteryLevel: 30 },
-  { weaponId: "item_weapon_staff_t4_infernal", masteryLevel: 30 },
-  { weaponId: "item_weapon_gloves_t4_spiked_gauntlets", masteryLevel: 30 },
-  { weaponId: "item_weapon_dagger_t4_pair", masteryLevel: 30 },
-] as const;
+function makeT4BenchmarkLoadouts(): readonly CombatBalanceLoadout[] {
+  return Object.entries(WEAPON_ITEM_DEFINITIONS)
+    .filter(([weaponId]) => resolveWeaponTier(weaponId) === 4)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([weaponId, weapon]) => ({
+      weaponId,
+      masteryLevel: 30,
+      ...(weapon.handling === "one_handed"
+        ? { offHandId: "item_shield_t4_reinforced" }
+        : {}),
+    }));
+}
+
+const T4_LOADOUTS = makeT4BenchmarkLoadouts();
 
 describe("combat balance simulator", () => {
-  it("simulates every current T4 weapon deterministically", () => {
+  it("simulates every current and future registered T4 weapon deterministically", () => {
     const first = compareCombatBalance(T4_LOADOUTS, TEST_ENEMY);
     const second = compareCombatBalance(T4_LOADOUTS, TEST_ENEMY);
     expect(first).toEqual(second);
     expect(first).toHaveLength(T4_LOADOUTS.length);
+    expect(first).toHaveLength(
+      Object.keys(WEAPON_ITEM_DEFINITIONS).filter((weaponId) => resolveWeaponTier(weaponId) === 4).length,
+    );
     for (const result of first) {
       expect(Number.isFinite(result.dps)).toBe(true);
       expect(Number.isFinite(result.incomingDps)).toBe(true);
