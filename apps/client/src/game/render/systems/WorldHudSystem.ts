@@ -41,6 +41,9 @@ export class WorldHudSystem {
       this.colorToNumber(this.manifest.healthBar.lowerGradient[0]),
       "300/300",
     );
+    // The values above are construction fallbacks only. No enemy HUD should be
+    // visible before CombatPresentationController receives an authoritative spawn.
+    this.setEnemyVisible(false);
   }
 
   public updatePlayer(current: number, maximum: number): void {
