@@ -1,0 +1,93 @@
+.ui-island-world {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(80, 102, 74, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(24, 29, 31, 0.98), rgba(13, 16, 18, 0.99));
+}
+
+.ui-island-world__header,
+.ui-island-world__hint {
+  position: relative;
+  z-index: 2;
+  margin: 14px 16px 0;
+  border: 1px solid rgba(190, 159, 105, 0.22);
+  border-radius: 10px;
+  background: rgba(18, 21, 24, 0.82);
+}
+
+.ui-island-world__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 14px;
+}
+
+.ui-island-world__header > div { display: flex; flex-direction: column; gap: 3px; }
+.ui-island-world__header span { font-size: 10px; letter-spacing: .1em; color: rgba(214, 186, 133, .68); }
+.ui-island-world__header strong { color: #f2e4c6; font-size: 16px; }
+.ui-island-world__header small { color: rgba(225, 214, 194, .58); }
+
+.ui-island-world__surface {
+  flex: 1;
+  min-height: 0;
+  padding: 18px 28px;
+  display: grid;
+  place-items: center;
+}
+
+.ui-island-world__plots {
+  width: min(900px, 100%);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  grid-auto-rows: minmax(130px, 1fr);
+  gap: 18px;
+}
+
+.ui-island-world__plot {
+  position: relative;
+  min-width: 0;
+  min-height: 130px;
+  border: 1px solid rgba(176, 150, 107, .34);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(57, 67, 57, .82), rgba(29, 35, 31, .92));
+  color: #eee2ca;
+  box-shadow: 0 8px 24px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.ui-island-world__plot:hover,
+.ui-island-world__plot.is-selected {
+  border-color: rgba(222, 183, 111, .85);
+  box-shadow: 0 10px 30px rgba(0,0,0,.28), inset 0 0 0 1px rgba(222,183,111,.18);
+}
+
+.ui-island-world__plot.is-empty {
+  border-style: dashed;
+  background: rgba(18, 22, 22, .52);
+  color: rgba(229, 218, 198, .55);
+}
+
+.ui-island-world__plot-icon { font-size: 30px; color: #d8b574; line-height: 1; }
+.ui-island-world__plot strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-island-world__plot small { color: rgba(222, 207, 181, .58); }
+.ui-island-world__status { margin-top: 4px; border-radius: 999px; padding: 3px 7px; font-size: 9px; background: rgba(255,255,255,.06); }
+.ui-island-world__status.is-working { color: rgba(174, 220, 160, .9); }
+.ui-island-world__status.is-paused { color: rgba(226, 190, 122, .9); }
+
+.ui-island-world__hint { margin-top: 0; margin-bottom: 14px; padding: 8px 12px; text-align: center; color: rgba(221, 205, 177, .58); font-size: 10px; }
+
+@media (max-width: 1150px) {
+  .ui-island-world__plots { grid-template-columns: repeat(3, minmax(120px, 1fr)); }
+  .ui-island-world__plot { grid-column: auto !important; grid-row: auto !important; }
+}
