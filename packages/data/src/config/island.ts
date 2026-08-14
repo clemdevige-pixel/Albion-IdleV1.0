@@ -160,6 +160,9 @@ export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
 const BUILDING_BY_ID = new Map<IslandBuildingId, IslandBuildingDefinition>(
   BUILDINGS.map((definition) => [definition.id, definition] as const),
 );
+const INITIAL_BUILDING_BY_ID = new Map<IslandBuildingId, InitialIslandBuildingDefinition>(
+  PLAYER_ISLAND_CONFIG.initialBuildings.map((definition) => [definition.definitionId, definition] as const),
+);
 const WORKER_HOUSE_LEVEL_BY_LEVEL = new Map<number, IslandWorkerHouseLevelDefinition>(
   PLAYER_ISLAND_CONFIG.workerHouseLevels.map((definition) => [definition.level, definition] as const),
 );
@@ -170,8 +173,20 @@ export function getIslandBuildingDefinition(id: IslandBuildingId): IslandBuildin
   return definition;
 }
 
+export function getInitialIslandBuildingDefinition(id: IslandBuildingId): InitialIslandBuildingDefinition {
+  const definition = INITIAL_BUILDING_BY_ID.get(id);
+  if (definition === undefined) throw new Error(`Missing initial island building: ${id}`);
+  return definition;
+}
+
 export function getIslandWorkerHouseLevelDefinition(level: number): IslandWorkerHouseLevelDefinition {
   const definition = WORKER_HOUSE_LEVEL_BY_LEVEL.get(level);
   if (definition === undefined) throw new Error(`Missing worker house level data: ${String(level)}`);
   return definition;
+}
+
+export function getInitialIslandWorkerHouseLevelDefinition(): IslandWorkerHouseLevelDefinition {
+  return getIslandWorkerHouseLevelDefinition(
+    getInitialIslandBuildingDefinition("worker_house").level,
+  );
 }
