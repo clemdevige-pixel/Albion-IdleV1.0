@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  PLAYER_ISLAND_CONFIG,
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
   type IslandBuildingId,
@@ -14,6 +13,7 @@ import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
 import { UpgradePanel } from "./UpgradePanel";
 import { WorkerHousePanel } from "./WorkerHousePanel";
+import { useIslandSelection } from "./IslandSelectionContext";
 import "./island.css";
 
 const CATEGORY_LABELS = {
@@ -29,17 +29,14 @@ export function IslandModule(): JSX.Element {
   const { getIslandLevel } = useGameServices();
   const islandLevel = getIslandLevel();
   const islandLevelDefinition = getIslandLevelDefinition(islandLevel);
-  const [selectedBuildingInstanceId, setSelectedBuildingInstanceId] = useState<string | null>(
-    island.buildings[0]?.instanceId ?? null,
-  );
-  const [selectedPlotId, setSelectedPlotId] = useState<string | null>(
-    island.buildings[0]?.plotId ?? null,
-  );
+  const {
+    selectedPlotId,
+    selectedBuildingInstanceId,
+    selectBuilding,
+  } = useIslandSelection();
 
   const buildingByInstanceId = useMemo(
-    () => new Map(
-      island.buildings.map((building) => [building.instanceId, building] as const),
-    ),
+    () => new Map(island.buildings.map((building) => [building.instanceId, building] as const)),
     [island.buildings],
   );
   const builtDefinitionIds = useMemo(
@@ -49,95 +46,44 @@ export function IslandModule(): JSX.Element {
   const selectedBuilding = selectedBuildingInstanceId === null
     ? undefined
     : buildingByInstanceId.get(selectedBuildingInstanceId);
-  const selectedDefinition = selectedBuilding === undefined
-    ? undefined
-    : getIslandBuildingDefinition(selectedBuilding.definitionId);
 
-  return (
-    <div className="ui-island">
-      <section className="ui-island__intro">
-        <div>
-          <span className="ui-island__eyebrow">Hub économique permanent</span>
-          <strong>Île du joueur · Niv. {String(islandLevel)}</strong>
-          <small>{islandLevelDefinition?.label ?? "Développement"}</small>
-        </div>
-        <span className="ui-island__count">{island.buildings.length} bâtiments</span>
-      </section>
+  if (selectedBuilding !== undefined) {
+    return (
+      <div className="ui-island">
+        <BuildingSummary definitionId={selectedBuilding.definitionId} level={selectedBuilding.level} />
+      </div>
+    );
+  }
 
-      <IslandLevelPanel />
-
-      <section className="ui-island__plots" aria-label="Implantation de l'île">
-        {PLAYER_ISLAND_CONFIG.plots.map((plotDefinition) => {
-          const plot = island.plots.find((candidate) => candidate.id === plotDefinition.id);
-          const building = plot?.buildingInstanceId === null || plot?.buildingInstanceId === undefined
-            ? undefined
-            : buildingByInstanceId.get(plot.buildingInstanceId);
-          const definition = building === undefined
-            ? undefined
-            : getIslandBuildingDefinition(building.definitionId);
-          const selected = building === undefined
-            ? selectedBuildingInstanceId === null && selectedPlotId === plotDefinition.id
-            : selectedBuildingInstanceId === building.instanceId;
-
-          return (
-            <button
-              key={plotDefinition.id}
-              type="button"
-              className={`ui-island__plot${building === undefined ? " is-empty" : ""}${selected ? " is-selected" : ""}`}
-              style={{ gridColumn: plotDefinition.column, gridRow: plotDefinition.row }}
-              onClick={() => {
-                setSelectedPlotId(plotDefinition.id);
-                setSelectedBuildingInstanceId(building?.instanceId ?? null);
-              }}
-            >
-              {building === undefined || definition === undefined ? (
-                <>
-                  <span className="ui-island__plot-icon">＋</span>
-                  <span>Emplacement</span>
-                  <small>Construire</small>
-                </>
-              ) : (
-                <>
-                  <span className="ui-island__plot-icon">{definition.icon}</span>
-                  <span>{definition.label}</span>
-                  <small>Niveau {building.level}</small>
-                </>
-              )}
-            </button>
-          );
-        })}
-      </section>
-
-      {selectedBuilding !== undefined && selectedDefinition !== undefined ? (
-        <BuildingSummary definitionId={selectedDefinition.id} level={selectedBuilding.level} />
-      ) : selectedPlotId !== null ? (
+  if (selectedPlotId !== null) {
+    return (
+      <div className="ui-island">
         <ConstructionPanel
           plotId={selectedPlotId}
           islandLevel={islandLevel}
           builtDefinitionIds={builtDefinitionIds}
           onBuilt={(definitionId) => {
-            setSelectedBuildingInstanceId(`island_${definitionId}`);
+            selectBuilding(selectedPlotId, `island_${definitionId}`);
           }}
         />
-      ) : (
-        <section className="ui-island__selection ui-island__selection--empty">
-          <strong>Sélectionnez un emplacement</strong>
-        </section>
-      )}
+      </div>
+    );
+  }
 
-      <section className="ui-island__catalog">
-        <span className="ui-island__eyebrow">Infrastructure prévue</span>
-        <div className="ui-island__catalog-grid">
-          {PLAYER_ISLAND_CONFIG.buildings.map((definition) => (
-            <div key={definition.id} className="ui-island__catalog-item">
-              <span>{definition.icon}</span>
-              <div>
-                <strong>{definition.label}</strong>
-                <small>{CATEGORY_LABELS[definition.category]}</small>
-              </div>
-            </div>
-          ))}
+  return (
+    <div className="ui-island">
+      <section className="ui-island__intro">
+        <div>
+          <span className="ui-island__eyebrow">Vue d'ensemble</span>
+          <strong>Île du joueur · Niv. {String(islandLevel)}</strong>
+          <small>{islandLevelDefinition?.label ?? "Développement"}</small>
         </div>
+        <span className="ui-island__count">{String(island.buildings.length)} bâtiments</span>
+      </section>
+      <IslandLevelPanel />
+      <section className="ui-island__selection ui-island__selection--empty">
+        <strong>Sélectionnez un bâtiment ou un emplacement libre</strong>
+        <p>La vue centrale de l'île reste visible pendant que ce panneau affiche le contenu sélectionné.</p>
       </section>
     </div>
   );
@@ -160,7 +106,7 @@ function BuildingSummary({
           <span className="ui-island__eyebrow">{CATEGORY_LABELS[definition.category]}</span>
           <strong>{definition.label}</strong>
         </div>
-        <span className="ui-island__level">Niv. {level}</span>
+        <span className="ui-island__level">Niv. {String(level)}</span>
       </div>
       <p>{definition.description}</p>
       {definitionId === "worker_house" ? (
@@ -174,9 +120,7 @@ function BuildingSummary({
       ) : definition.craftingService !== undefined ? (
         <CraftingBuildingPanel definitionId={definitionId} level={level} />
       ) : (
-        <div className="ui-island__selection-status">
-          Bâtiment construit · fonctionnalités à connecter dans les phases suivantes
-        </div>
+        <div className="ui-island__selection-status">Bâtiment construit</div>
       )}
       <UpgradePanel definitionId={definitionId} level={level} />
     </section>
