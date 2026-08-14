@@ -7,6 +7,7 @@ import {
   getBestiaryLoot,
   type WorldBandId,
 } from "../worldModels";
+import "./WorldBestiaryView.css";
 
 const CATEGORY_LABELS = {
   normal: "Normal",
