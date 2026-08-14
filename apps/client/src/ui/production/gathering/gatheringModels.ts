@@ -36,7 +36,6 @@ export interface GatheringResourceModel {
 
 export interface GatheringModel {
   readonly tier: ProductionTier;
-  readonly recruitmentCost: number;
   readonly workerCapacity: number;
   readonly recruitedWorkerCount: number;
   readonly resources: readonly GatheringResourceModel[];
@@ -44,7 +43,6 @@ export interface GatheringModel {
 
 interface GatheringSource {
   readonly tier: ProductionTier;
-  readonly recruitmentCost: number;
   readonly workerCapacity: number;
   readonly workers: readonly WorkerVM[];
   readonly masteries: readonly MasteryVM[];
@@ -57,7 +55,6 @@ interface GatheringSource {
 export function selectGatheringSource(state: GameBridgeState): GatheringSource {
   return {
     tier: state.crafting.productionTier,
-    recruitmentCost: state.workers.recruitmentCost,
     workerCapacity: state.workers.capacity,
     workers: state.workers.workers,
     masteries: state.progression.masteries,
@@ -103,7 +100,6 @@ export function buildGatheringModel(source: GatheringSource): GatheringModel {
 
   return {
     tier: source.tier,
-    recruitmentCost: source.recruitmentCost,
     workerCapacity: source.workerCapacity,
     recruitedWorkerCount: source.workers.length,
     resources: PRODUCTION_FAMILY_IDS.map(createResource),
