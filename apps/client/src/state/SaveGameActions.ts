@@ -2,6 +2,7 @@ import type { EntityId } from "@game/core";
 import type { CurrencyService, InventoryManager, WalletId } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge";
 import type { RuntimePersistence } from "../runtime/RuntimePersistence";
+import { combatStopController } from "../runtime/CombatStopController";
 import { migrateLegacyProductionMaterials } from "../runtime/ProductionStorage";
 
 interface SaveGameActionsDependencies {
@@ -40,6 +41,9 @@ export class SaveGameActions {
   load(): boolean {
     if (!this.deps.persistence.hasSave()) return false;
 
+    // A save is a new combat lifecycle boundary. Never inherit a pending stop
+    // or paused state from the runtime that existed before the load.
+    combatStopController.reset();
     this.deps.persistence.load();
     this.applyLoadedState();
 
@@ -61,6 +65,7 @@ export class SaveGameActions {
 
   importSave(raw: string): boolean {
     try {
+      combatStopController.reset();
       this.deps.persistence.importSave(raw);
       this.applyLoadedState();
       this.deps.bridge.addEconomyNotification({
