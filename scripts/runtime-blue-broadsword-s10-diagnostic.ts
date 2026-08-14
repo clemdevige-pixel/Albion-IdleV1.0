@@ -32,6 +32,12 @@ const LOADOUT = [
   "item_boots_t4_leather",
 ] as const;
 
+// Diagnostic tracing follows the authored weapon unlock order instead of
+// duplicating ability ids. This prevents the test harness from drifting when
+// an ability is renamed/replaced in weaponContentCatalog.
+const AUTHORED_ABILITY_IDS = resolveUnlockedWeaponAbilities(WEAPON_ID, 100).map((ability) => String(ability.id));
+const ABILITY_SLOT_BY_ID = new Map(AUTHORED_ABILITY_IDS.map((abilityId, slotIndex) => [abilityId, slotIndex] as const));
+
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_ATTACK_SPEED = "stat_attack_speed" as StatId;
 const STAT_ARMOR = "stat_armor" as StatId;
@@ -95,10 +101,10 @@ function runOnce(level: number) {
     const result = originalExecute(intent);
     if (result.ok) {
       if (intent.entityId === heroId) {
-        const id = String(intent.abilityId);
-        if (id === "ability_sword_heroic_strike") q++;
-        else if (id === "ability_sword_blade_flurry") w++;
-        else if (id === "ability_sword_execution") e++;
+        const slotIndex = ABILITY_SLOT_BY_ID.get(String(intent.abilityId));
+        if (slotIndex === 0) q++;
+        else if (slotIndex === 1) w++;
+        else if (slotIndex === 2) e++;
       } else enemyAbilities++;
     }
     return result;
@@ -157,6 +163,10 @@ function runOnce(level: number) {
   }
 
   const mastery = progression.masteryService.getMasteryState(route.weaponId)?.level ?? -1;
+  const totalW = traces.reduce((sum, trace) => sum + trace.w, 0);
+  if (mastery >= 10 && totalW === 0) {
+    throw new Error(`Broadsword W is unlocked at mastery ${mastery} but was never cast during the diagnostic`);
+  }
   return {
     mastery, result: finalResult, elapsed: Number(elapsed.toFixed(2)),
     maxHp: Number(combat.damageManager.getHealth(heroId).maxHealth.toFixed(2)),
@@ -179,4 +189,4 @@ for (const level of MASTERY_LEVELS) {
     magicRes: first.magicRes, abilities: first.abilities }]);
   console.table(first.traces);
 }
-console.log("\nPASS: every Broadsword Frostpeak S10 scenario was deterministic across two identical runs.");
+console.log("\nPASS: every Broadsword Frostpeak S10 scenario was deterministic across two identical runs, and unlocked W casts were observed.");
