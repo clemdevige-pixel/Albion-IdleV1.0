@@ -1,3 +1,5 @@
+import { getEnchantmentShardItemId } from "@game/gameplay";
+
 export interface LootDropDefinition {
   readonly itemId: string;
   readonly weight: number;
@@ -11,7 +13,7 @@ export interface LootTableDefinition {
 /**
  * BLUE POLISH 1
  * Combat loot is intentionally split into independent rolls. A key fragment,
- * an enchantment material and a potion can therefore drop from the same kill.
+ * an enchantment shard and a potion can therefore drop from the same kill.
  * Faction selects the identity of dungeon/artifact loot; encounter difficulty
  * selects the probability.
  */
@@ -30,12 +32,24 @@ export const BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS = [
 
 export const BLUE_ZONE_BASE_DROP_RATES = {
   healthPotion: 0.05,
-  enchantmentEssence: 0.06,
-  arcaneCrystal: 0.015,
-  enchantmentCatalyst: 0.0025,
   keyFragment: 0.02,
   completeKey: 0.001,
 } as const;
+
+/**
+ * Provisional enchantment-drop calibration.
+ *
+ * Shards are intentionally not assigned one fixed chance per monster. The
+ * caller provides a weight derived from the actual combat profile so tougher
+ * enemies compensate for their lower kill rate. A small depth bonus makes
+ * advancing within a zone slightly preferable to farming segment 1 forever.
+ * The future TTK balance pass can retune these values without changing item or
+ * recipe data.
+ */
+export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.05;
+export const ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT = 0.02;
+export const ENCHANTMENT_SHARD_ELITE_MULTIPLIER = 1.35;
+export const ENCHANTMENT_SHARD_BOSS_MULTIPLIER = 2;
 
 export const BLUE_ZONE_BOSS_DROP_RATES = {
   segmentBossArtifactFragment: 0.2,
@@ -59,14 +73,20 @@ export type BlueZoneCombatDropKind =
 export interface BlueZoneCombatDrop {
   readonly itemId: string;
   readonly kind: BlueZoneCombatDropKind;
+  readonly quantity: number;
 }
 
 export interface BlueZoneLootContext {
   /** Zero-based segment index (0..9). */
   readonly segmentIndex: number;
   readonly faction: string;
+  readonly isElite: boolean;
   readonly isBoss: boolean;
   readonly isFinalBoss: boolean;
+  /** Equipment tier represented by the current world band: blue=T4, yellow=T5, etc. */
+  readonly enchantmentTier: number;
+  /** Relative monster combat weight. 1 = first regular enemy of the current band. */
+  readonly enchantmentDropWeight: number;
 }
 
 function normalizeFactionId(faction: string): string {
@@ -77,12 +97,40 @@ function rollChance(chance: number, random: () => number): boolean {
   return random() < Math.min(1, Math.max(0, chance));
 }
 
+/**
+ * Supports expected values above 1 without probability caps distorting later
+ * balance: whole units are guaranteed and only the fractional remainder rolls.
+ */
+function rollExpectedQuantity(expected: number, random: () => number): number {
+  const safeExpected = Math.max(0, expected);
+  const guaranteed = Math.floor(safeExpected);
+  const fractional = safeExpected - guaranteed;
+  return guaranteed + (fractional > 0 && random() < fractional ? 1 : 0);
+}
+
 export function getBlueZoneSegmentLootMultiplier(segmentIndex: number): number {
   const clampedIndex = Math.min(
     BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS.length - 1,
     Math.max(0, Math.floor(segmentIndex)),
   );
   return BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS[clampedIndex] ?? 1;
+}
+
+export function getEnchantmentShardExpectedDrop(
+  context: Pick<
+    BlueZoneLootContext,
+    "segmentIndex" | "isElite" | "isBoss" | "enchantmentDropWeight"
+  >,
+): number {
+  const depthBonus =
+    1 + Math.max(0, context.segmentIndex) * ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT;
+  const eliteMultiplier = context.isElite ? ENCHANTMENT_SHARD_ELITE_MULTIPLIER : 1;
+  const bossMultiplier = context.isBoss ? ENCHANTMENT_SHARD_BOSS_MULTIPLIER : 1;
+  return ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
+    * Math.max(0, context.enchantmentDropWeight)
+    * depthBonus
+    * eliteMultiplier
+    * bossMultiplier;
 }
 
 export function rollBlueZoneCombatDrops(
@@ -97,27 +145,29 @@ export function rollBlueZoneCombatDrops(
   // Consumable: scales with zone advancement, but does not receive the boss
   // special-drop multiplier.
   if (rollChance(BLUE_ZONE_BASE_DROP_RATES.healthPotion * segmentMultiplier, random)) {
-    drops.push({ itemId: "item_health_potion", kind: "consumable" });
+    drops.push({ itemId: "item_health_potion", kind: "consumable", quantity: 1 });
   }
 
-  // Independent enchantment rolls. These are deliberately not mutually
-  // exclusive so rare jackpots do not erase regular progression rewards.
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.enchantmentEssence * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: "item_resource_enchantment_essence", kind: "enchantment" });
-  }
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.arcaneCrystal * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: "item_resource_arcane_crystal", kind: "enchantment" });
-  }
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.enchantmentCatalyst * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: "item_resource_enchantment_catalyst", kind: "enchantment" });
+  // Exactly one enchantment resource exists per world tier. Its expected drop
+  // follows monster difficulty rather than a universal per-kill percentage.
+  const shardQuantity = rollExpectedQuantity(
+    getEnchantmentShardExpectedDrop(context),
+    random,
+  );
+  if (shardQuantity > 0) {
+    drops.push({
+      itemId: getEnchantmentShardItemId(context.enchantmentTier),
+      kind: "enchantment",
+      quantity: shardQuantity,
+    });
   }
 
   // Dungeon progression is faction-specific, but rates are faction-agnostic.
   if (rollChance(BLUE_ZONE_BASE_DROP_RATES.keyFragment * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: `item_resource_key_fragment_${factionId}`, kind: "key_fragment" });
+    drops.push({ itemId: `item_resource_key_fragment_${factionId}`, kind: "key_fragment", quantity: 1 });
   }
   if (rollChance(BLUE_ZONE_BASE_DROP_RATES.completeKey * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: `item_resource_dungeon_key_${factionId}`, kind: "key" });
+    drops.push({ itemId: `item_resource_dungeon_key_${factionId}`, kind: "key", quantity: 1 });
   }
 
   // Artifact progression is boss-exclusive. Final biome bosses use the
@@ -131,10 +181,10 @@ export function rollBlueZoneCombatDrops(
       : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifact;
 
     if (rollChance(fragmentChance, random)) {
-      drops.push({ itemId: `item_resource_artifact_fragment_${factionId}`, kind: "artifact_fragment" });
+      drops.push({ itemId: `item_resource_artifact_fragment_${factionId}`, kind: "artifact_fragment", quantity: 1 });
     }
     if (rollChance(artifactChance, random)) {
-      drops.push({ itemId: `item_resource_artifact_${factionId}`, kind: "artifact" });
+      drops.push({ itemId: `item_resource_artifact_${factionId}`, kind: "artifact", quantity: 1 });
     }
   }
 
@@ -142,7 +192,7 @@ export function rollBlueZoneCombatDrops(
 }
 
 // Legacy tables are retained temporarily for compatibility with content that
-// has not yet migrated to the Blue Zone independent-roll reward pipeline.
+// has not yet migrated to the independent-roll reward pipeline.
 export const GENERIC_COMBAT_LOOT: readonly LootDropDefinition[] = [
   { itemId: "item_health_potion", weight: 20 },
 ];
@@ -166,18 +216,22 @@ export const HEALTH_POTION_HEAL_RATIO = 0.3;
 export const HEALTH_POTION_COOLDOWN_SECONDS = 20;
 
 export const ENCHANTMENT_MATERIAL_NAMES: Readonly<Record<string, string>> = {
-  item_resource_enchantment_essence: "Essence d’enchantement",
-  item_resource_arcane_crystal: "Cristal arcanique",
-  item_resource_enchantment_catalyst: "Catalyseur d’enchantement",
+  item_resource_enchantment_shard_t4: "Éclat d’enchantement T4",
+  item_resource_enchantment_shard_t5: "Éclat d’enchantement T5",
+  item_resource_enchantment_shard_t6: "Éclat d’enchantement T6",
+  item_resource_enchantment_shard_t7: "Éclat d’enchantement T7",
+  item_resource_enchantment_shard_t8: "Éclat d’enchantement T8",
+  // Legacy save labels: these resources are no longer produced or consumed.
+  item_resource_enchantment_essence: "Essence d’enchantement (ancienne)",
+  item_resource_arcane_crystal: "Cristal arcanique (ancien)",
+  item_resource_enchantment_catalyst: "Catalyseur d’enchantement (ancien)",
 };
 
-/** @deprecated Blue Zone combat uses rollBlueZoneCombatDrops. */
+/** @deprecated Use rollBlueZoneCombatDrops with a tiered loot context. */
 export function rollEnchantmentMaterial(): string | undefined {
-  const roll = Math.random();
-  if (roll < 0.005) return "item_resource_enchantment_catalyst";
-  if (roll < 0.025) return "item_resource_arcane_crystal";
-  if (roll < 0.105) return "item_resource_enchantment_essence";
-  return undefined;
+  return Math.random() < ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
+    ? getEnchantmentShardItemId(4)
+    : undefined;
 }
 
 /** @deprecated Blue Zone combat uses rollBlueZoneCombatDrops. */
