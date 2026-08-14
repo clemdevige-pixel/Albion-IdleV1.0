@@ -37,10 +37,17 @@ export interface InitialIslandBuildingDefinition {
   readonly level: number;
 }
 
+export interface IslandWorkerHouseLevelDefinition {
+  readonly level: number;
+  readonly workerCapacity: number;
+  readonly recruitmentCost: number;
+}
+
 export interface PlayerIslandConfig {
   readonly plots: readonly IslandPlotDefinition[];
   readonly buildings: readonly IslandBuildingDefinition[];
   readonly initialBuildings: readonly InitialIslandBuildingDefinition[];
+  readonly workerHouseLevels: readonly IslandWorkerHouseLevelDefinition[];
 }
 
 const BUILDINGS: readonly IslandBuildingDefinition[] = [
@@ -143,14 +150,28 @@ export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
     { instanceId: "island_worker_house", definitionId: "worker_house", plotId: "plot_01", level: 1 },
     { instanceId: "island_storage", definitionId: "storage", plotId: "plot_02", level: 1 },
   ],
+  // Only the already-existing baseline is defined for now. Additional levels
+  // require balancing validation rather than invented placeholder values.
+  workerHouseLevels: [
+    { level: 1, workerCapacity: 4, recruitmentCost: 250 },
+  ],
 };
 
 const BUILDING_BY_ID = new Map<IslandBuildingId, IslandBuildingDefinition>(
   BUILDINGS.map((definition) => [definition.id, definition] as const),
 );
+const WORKER_HOUSE_LEVEL_BY_LEVEL = new Map<number, IslandWorkerHouseLevelDefinition>(
+  PLAYER_ISLAND_CONFIG.workerHouseLevels.map((definition) => [definition.level, definition] as const),
+);
 
 export function getIslandBuildingDefinition(id: IslandBuildingId): IslandBuildingDefinition {
   const definition = BUILDING_BY_ID.get(id);
   if (definition === undefined) throw new Error(`Unknown island building: ${id}`);
+  return definition;
+}
+
+export function getIslandWorkerHouseLevelDefinition(level: number): IslandWorkerHouseLevelDefinition {
+  const definition = WORKER_HOUSE_LEVEL_BY_LEVEL.get(level);
+  if (definition === undefined) throw new Error(`Missing worker house level data: ${String(level)}`);
   return definition;
 }
