@@ -109,22 +109,21 @@
   height: 30px;
 }
 
-.world-creature__loot-tooltip {
-  position: absolute;
-  z-index: 15;
-  bottom: calc(100% + 7px);
-  left: 50%;
-  display: none;
+.world-creature__loot-tooltip--portal {
+  position: fixed;
+  z-index: 2147483000;
+  display: grid;
+  gap: 2px;
   min-width: 135px;
   padding: 6px 7px;
-  transform: translateX(-50%);
+  transform: translate(-50%, -100%);
   pointer-events: none;
   background: #080b0f;
   border: 1px solid #765623;
   box-shadow: 0 5px 14px rgb(0 0 0 / 55%);
 }
 
-.world-creature__loot-tooltip::after {
+.world-creature__loot-tooltip--portal::after {
   position: absolute;
   top: 100%;
   left: 50%;
@@ -137,19 +136,13 @@
   border-bottom: 1px solid #765623;
 }
 
-.world-creature__loot-item:hover .world-creature__loot-tooltip,
-.world-creature__loot-item:focus-visible .world-creature__loot-tooltip {
-  display: grid;
-  gap: 2px;
-}
-
-.world-creature__loot-tooltip strong {
+.world-creature__loot-tooltip--portal strong {
   color: #e6d8b8;
   font-size: 8px;
   white-space: nowrap;
 }
 
-.world-creature__loot-tooltip span {
+.world-creature__loot-tooltip--portal span {
   color: #b99c5d;
   font-size: 8px;
   white-space: nowrap;
