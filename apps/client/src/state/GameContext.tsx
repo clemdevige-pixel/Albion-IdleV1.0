@@ -146,6 +146,12 @@ export function GameProvider({
     const updateWorldBridge = (): void => {
       bridge.updateWorld(buildWorldViewModel(worldFoundation));
     };
+    const isWorldRequirementMet: GameServices["isWorldRequirementMet"] = (requirement) => {
+      const memory = worldRuntime
+        .getWorldLocationSaveState()
+        .zoneMemories.find((entry) => entry.zoneDefId === requirement.zoneDefId);
+      return (memory?.completedSegments.length ?? 0) >= requirement.minimumCompletedSegments;
+    };
 
     const combatEntityFactoryDeps = {
       world,
@@ -262,6 +268,7 @@ export function GameProvider({
       currencyService,
       walletId,
       bridge,
+      isWorldRequirementMet,
       resyncAll,
     });
 
@@ -523,6 +530,7 @@ export function GameProvider({
       walletId, playerId, worldCoordinator,
       needsStarterSelection: () => starterSelectionPending,
       selectStarterWeapon,
+      isWorldRequirementMet,
       useConsumable: (itemId) => consumableActions.use(itemId),
       useWeaponAbility,
       usePrimaryAbility,
