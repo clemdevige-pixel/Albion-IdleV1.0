@@ -35,9 +35,11 @@ export const WEAPON_ABILITY_MECHANICS: Readonly<Record<string, AbilityMechanicsP
   ability_fire_infernal_burst: { autoRule: { kind: "target_has_effect", effectId: "effect_fire_burn" }, mechanics: [{ kind: "damage", ratio: 0.728, bonusEffect: { effectId: "effect_fire_burn", bonusRatio: 0.3185 } }] },
   ability_fire_cataclysm: { mechanics: [{ kind: "damage", ratio: 1.2 }, { kind: "dot", effectId: "effect_fire_cataclysm", ratio: 0.12, interval: 1, ticks: 5 }] },
 
-  // Spiked: reinforce Q/W while its auto-attack cadence is reduced in the weapon catalog.
+  // Spiked: Q/W carry pre-M30 power. W also provides a short control window so
+  // the 2H specialization is less dependent on ACTIVE-only potion sustain.
+  // This remains mode-agnostic and is consumed by the generic ability runtime.
   ability_gloves_shockwave: { mechanics: [{ kind: "damage", ratio: 0.896 }] },
-  ability_gloves_breaking_combo: { mechanics: [{ kind: "damage", ratio: 1.15, hits: 3 }] },
+  ability_gloves_breaking_combo: { mechanics: [{ kind: "damage", ratio: 1.15, hits: 3 }, { kind: "status", effectId: "effect_gloves_combo_stun", effectType: "stun", duration: 0.75 }] },
   ability_gloves_seismic_impact: { mechanics: [{ kind: "damage", ratio: 1.4 }, { kind: "status", effectId: "effect_gloves_stun", effectType: "stun", duration: 1.5 }] },
 
   // Dagger Pair: -5% Q/W authored ratios; AA cadence is reduced separately.
