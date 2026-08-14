@@ -167,8 +167,10 @@ export class CombatPresentationController {
     }
 
     const showEnemy = !(bridge.combatState === "idle" && presented.current <= 0);
-    this.setEnemyVisible(showEnemy);
-    if (!showEnemy) return;
+    if (!showEnemy) {
+      this.setEnemyVisible(false);
+      return;
+    }
 
     const visualManifestId = this.displayedEnemyVisualManifestId ?? incomingVisualManifestId;
     this.enemySystem.update({
@@ -185,6 +187,11 @@ export class CombatPresentationController {
       bridge.enemyMaxHealth,
       this.displayedEnemyName ?? incomingName,
     );
+
+    // Reveal only after sprite, layout and health/name are all synchronized.
+    // This prevents construction fallbacks from flashing during reloads or
+    // partially-applied presentation updates.
+    this.setEnemyVisible(true);
   }
 
   private adoptEnemyPresentation(name: string, visualManifestId: string, isBoss: boolean): void {
