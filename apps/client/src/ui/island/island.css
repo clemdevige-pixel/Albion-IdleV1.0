@@ -159,6 +159,83 @@
   font-size: 10px;
 }
 
+.ui-island-construction__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ui-island-construction__card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(185, 156, 104, 0.18);
+  border-radius: 8px;
+  background: rgba(14, 17, 20, 0.46);
+}
+
+.ui-island-construction__card header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.ui-island-construction__card header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ui-island-construction__card header small {
+  color: rgba(224, 213, 194, 0.56);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.ui-island-construction__costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ui-island-construction__costs span {
+  border: 1px solid rgba(182, 159, 116, 0.18);
+  border-radius: 999px;
+  padding: 3px 6px;
+  font-size: 9px;
+}
+
+.ui-island-construction__costs .is-ready {
+  color: rgba(178, 218, 165, 0.85);
+}
+
+.ui-island-construction__costs .is-missing {
+  color: rgba(224, 150, 136, 0.88);
+}
+
+.ui-island-construction__card button {
+  border: 1px solid rgba(205, 169, 101, 0.42);
+  border-radius: 7px;
+  background: rgba(99, 72, 36, 0.52);
+  color: #f0ddb7;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.ui-island-construction__card button:disabled {
+  border-color: rgba(145, 137, 123, 0.18);
+  background: rgba(35, 37, 39, 0.5);
+  color: rgba(214, 205, 190, 0.38);
+  cursor: default;
+}
+
 .ui-island__catalog {
   padding: 12px;
 }
@@ -208,8 +285,12 @@
 }
 
 @media (max-width: 1100px) {
-  .ui-island__plots {
+  .ui-island__plots,
+  .ui-island-construction__list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ui-island__plots {
     grid-template-rows: repeat(4, 88px);
   }
 
