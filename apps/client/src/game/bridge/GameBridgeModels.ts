@@ -399,7 +399,10 @@ export function createInitialGameBridgeState(): GameBridgeState {
     enemyMaxHealth: 0,
     combatState: "idle",
     enemyName: "",
-    enemyVisualManifestId: "",
+    // Technical fallback only: enemyMaxHealth === 0 means there is no
+    // authoritative enemy. Keeping a valid manifest prevents bootstrap-only
+    // presentation helpers from resolving an empty manifest id.
+    enemyVisualManifestId: "monster_undead_warrior",
     enemiesKilled: 0,
     zoneElapsed: 0,
     segmentSilverPerHour: 0,
@@ -471,9 +474,18 @@ export function createInitialGameBridgeState(): GameBridgeState {
       visualManifestId: "resource_fiber",
     },
     refining: EMPTY_REFINING,
-    metalRefining: { ...EMPTY_REFINING, recipeName: "Lingot de cuivre" },
-    leatherRefining: { ...EMPTY_REFINING, recipeName: "Cuir robuste" },
-    clothRefining: { ...EMPTY_REFINING, recipeName: "Tissu de lin" },
+    metalRefining: {
+      ...EMPTY_REFINING,
+      recipeName: "Lingots de cuivre",
+    },
+    leatherRefining: {
+      ...EMPTY_REFINING,
+      recipeName: "Cuir robuste",
+    },
+    clothRefining: {
+      ...EMPTY_REFINING,
+      recipeName: "Tissu de lin",
+    },
     crafting: {
       productionTier: 3,
       plankQuantity: 0,
