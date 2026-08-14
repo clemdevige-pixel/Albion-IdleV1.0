@@ -3,6 +3,7 @@ import { PLAYER_ISLAND_CONFIG, getIslandBuildingDefinition, type IslandBuildingI
 import { useGameBridge } from "../../state/GameContext";
 import { ProductionModule } from "../production";
 import { ConstructionPanel } from "./ConstructionPanel";
+import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
 import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
@@ -201,6 +202,8 @@ function BuildingSummary({
         <GatheringBuildingPanel definitionId={definitionId} />
       ) : definition.refiningService !== undefined ? (
         <RefiningBuildingPanel definitionId={definitionId} />
+      ) : definition.craftingService !== undefined ? (
+        <CraftingBuildingPanel definitionId={definitionId} />
       ) : (
         <div className="ui-island__selection-status">
           Bâtiment construit · fonctionnalités à connecter dans les phases suivantes
