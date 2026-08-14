@@ -48,7 +48,6 @@ export function GatheringView(): JSX.Element {
           key={resource.id}
           resource={resource}
           tier={model.tier}
-          recruitmentCost={model.recruitmentCost}
           actions={actions}
         />
       )}
