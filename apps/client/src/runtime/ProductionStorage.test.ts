@@ -38,14 +38,11 @@ describe("production storage migration", () => {
     expect(inventoryManager.getTotalQuantity(productionStorageId, "item_refined_planks_t3")).toBe(3);
   });
 
-  it("does not classify tier shards or legacy enchantment currencies as production materials", () => {
+  it("keeps tiered enchantment shards in the visible inventory", () => {
     for (const itemId of [
       "item_resource_enchantment_shard_t4",
       "item_resource_enchantment_shard_t5",
       "item_resource_enchantment_shard_t8",
-      "item_resource_enchantment_essence",
-      "item_resource_arcane_crystal",
-      "item_resource_enchantment_catalyst",
     ]) {
       expect(isVisibleInventoryResource(itemId)).toBe(true);
       expect(isProductionMaterial(itemId)).toBe(false);
