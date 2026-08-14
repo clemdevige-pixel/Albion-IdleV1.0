@@ -10,6 +10,7 @@ import {
   type GameBridgeState,
   type GatheringVM,
   type InventoryVM,
+  type IslandVM,
   type ProgressionVM,
   type RefiningVM,
   type RepairVM,
@@ -75,6 +76,7 @@ export class GameBridge {
   get clothRefining() { return this.#state.clothRefining; }
   get crafting() { return this.#state.crafting; }
   get workers() { return this.#state.workers; }
+  get island() { return this.#state.island; }
 
   readonly subscribe = (listener: BridgeListener): (() => void) => {
     this.#listeners.add(listener);
@@ -169,6 +171,7 @@ export class GameBridge {
   updateClothRefining(clothRefining: RefiningVM): void { this.#update({ clothRefining }); }
   updateCrafting(crafting: CraftingVM): void { this.#update({ crafting }); }
   updateWorkers(workers: WorkersVM): void { this.#update({ workers }); }
+  updateIsland(island: IslandVM): void { this.#update({ island }); }
   updateConsumables(consumables: ConsumablesVM): void { this.#update({ consumables }); }
 
   readonly getSnapshot = (): GameBridgeState => this.#state;
