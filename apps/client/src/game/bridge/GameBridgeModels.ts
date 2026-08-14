@@ -363,6 +363,8 @@ export interface GameBridgeState {
   readonly island: IslandVM;
 }
 
+export const TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID = "monster_undead_warrior";
+
 const EMPTY_INVENTORY: InventoryVM = { slots: [], capacity: 0, occupied: 0 };
 const EMPTY_GATHERING: GatheringVM = {
   status: "idle",
@@ -402,7 +404,7 @@ export function createInitialGameBridgeState(): GameBridgeState {
     // Technical fallback only: enemyMaxHealth === 0 means there is no
     // authoritative enemy. Keeping a valid manifest prevents bootstrap-only
     // presentation helpers from resolving an empty manifest id.
-    enemyVisualManifestId: "monster_undead_warrior",
+    enemyVisualManifestId: TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
     enemiesKilled: 0,
     zoneElapsed: 0,
     segmentSilverPerHour: 0,
@@ -474,18 +476,9 @@ export function createInitialGameBridgeState(): GameBridgeState {
       visualManifestId: "resource_fiber",
     },
     refining: EMPTY_REFINING,
-    metalRefining: {
-      ...EMPTY_REFINING,
-      recipeName: "Lingots de cuivre",
-    },
-    leatherRefining: {
-      ...EMPTY_REFINING,
-      recipeName: "Cuir robuste",
-    },
-    clothRefining: {
-      ...EMPTY_REFINING,
-      recipeName: "Tissu de lin",
-    },
+    metalRefining: { ...EMPTY_REFINING, recipeName: "Lingots de cuivre" },
+    leatherRefining: { ...EMPTY_REFINING, recipeName: "Cuir robuste" },
+    clothRefining: { ...EMPTY_REFINING, recipeName: "Tissu de lin" },
     crafting: {
       productionTier: 3,
       plankQuantity: 0,
@@ -499,9 +492,6 @@ export function createInitialGameBridgeState(): GameBridgeState {
       recruitmentCost: INITIAL_WORKER_HOUSE.recruitmentCost,
       workers: [],
     },
-    island: {
-      plots: [],
-      buildings: [],
-    },
+    island: { plots: [], buildings: [] },
   };
 }
