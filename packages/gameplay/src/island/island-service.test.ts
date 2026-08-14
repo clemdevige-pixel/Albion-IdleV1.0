@@ -7,6 +7,7 @@ describe("PlayerIslandService", () => {
     const service = new PlayerIslandService();
     const state = service.getState();
 
+    expect(state.level).toBe(1);
     expect(state.plots.map((plot) => plot.id)).toEqual(
       PLAYER_ISLAND_CONFIG.plots.map((plot) => plot.id),
     );
@@ -62,19 +63,64 @@ describe("PlayerIslandService", () => {
     expect(service.upgradeBuilding("storage")).toEqual({ ok: false, reason: "unauthored_level" });
   });
 
-  it("round-trips persisted island state after construction and upgrade", () => {
+  it("requires real island development before raising the island level", () => {
+    const service = new PlayerIslandService();
+
+    expect(service.canUpgradeIslandLevel()).toEqual({ ok: false, reason: "requirements_not_met" });
+
+    service.placeBuilding("lumber_camp", "plot_03");
+    service.placeBuilding("mine", "plot_04");
+    service.placeBuilding("hunting_camp", "plot_05");
+    service.placeBuilding("fiber_camp", "plot_06");
+    service.upgradeBuilding("lumber_camp");
+    service.upgradeBuilding("mine");
+
+    expect(service.canUpgradeIslandLevel()).toEqual({ ok: true, level: 2 });
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 2 });
+    expect(service.getState().level).toBe(2);
+  });
+
+  it("supports the authored Lv1 to Lv3 development path", () => {
+    const service = new PlayerIslandService();
+    service.placeBuilding("lumber_camp", "plot_03");
+    service.placeBuilding("mine", "plot_04");
+    service.placeBuilding("hunting_camp", "plot_05");
+    service.placeBuilding("fiber_camp", "plot_06");
+    service.upgradeBuilding("lumber_camp");
+    service.upgradeBuilding("mine");
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 2 });
+
+    service.placeBuilding("sawmill", "plot_07");
+    service.placeBuilding("smelter", "plot_08");
+    service.placeBuilding("tannery", "plot_09");
+    service.placeBuilding("weaver", "plot_10");
+    service.upgradeBuilding("hunting_camp");
+    service.upgradeBuilding("fiber_camp");
+
+    expect(service.canUpgradeIslandLevel()).toEqual({ ok: true, level: 3 });
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 3 });
+    expect(service.upgradeIslandLevel()).toEqual({ ok: false, reason: "max_level" });
+  });
+
+  it("round-trips persisted island state after construction, building upgrade and island upgrade", () => {
     const source = new PlayerIslandService();
-    source.placeBuilding("mine", "plot_03");
+    source.placeBuilding("lumber_camp", "plot_03");
+    source.placeBuilding("mine", "plot_04");
+    source.placeBuilding("hunting_camp", "plot_05");
+    source.placeBuilding("fiber_camp", "plot_06");
+    source.upgradeBuilding("lumber_camp");
     source.upgradeBuilding("mine");
+    source.upgradeIslandLevel();
     const snapshot = source.save();
     const restored = new PlayerIslandService();
 
     restored.load(snapshot);
 
     expect(restored.getState()).toEqual(source.getState());
+    expect(restored.getState().level).toBe(2);
   });
 
-  it("migrates an older snapshot by appending newly authored plots", () => {
+  it("migrates an older snapshot by defaulting its island level and appending newly authored plots", () => {
     const service = new PlayerIslandService();
     service.load({
       version: 1,
@@ -95,6 +141,7 @@ describe("PlayerIslandService", () => {
       ],
     });
 
+    expect(service.getState().level).toBe(1);
     expect(service.getState().buildings.some((building) => building.definitionId === "mine")).toBe(true);
     expect(service.getState().plots).toHaveLength(PLAYER_ISLAND_CONFIG.plots.length);
     expect(service.getState().plots.find((plot) => plot.id === "plot_09")?.buildingInstanceId).toBeNull();
