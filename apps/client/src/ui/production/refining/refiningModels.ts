@@ -20,6 +20,7 @@ export interface RefiningFamilyModel {
   readonly rawLabel: string;
   readonly rawIcon: string;
   readonly refinedIcon: string;
+  readonly tier: ProductionTier;
   readonly activity: RefiningVM;
   readonly requirements: readonly RefiningRequirementModel[];
   readonly availableCycles: number;
@@ -27,13 +28,13 @@ export interface RefiningFamilyModel {
 }
 
 export interface RefiningModel {
+  /** @deprecated Refining tiers are family-scoped. */
   readonly tier: ProductionTier;
   readonly families: readonly RefiningFamilyModel[];
   readonly activeJobs: readonly RefiningFamilyModel[];
 }
 
 interface RefiningSource {
-  readonly tier: ProductionTier;
   readonly refining: RefiningVM;
   readonly metalRefining: RefiningVM;
   readonly leatherRefining: RefiningVM;
@@ -42,7 +43,6 @@ interface RefiningSource {
 
 export function selectRefiningSource(state: GameBridgeState): RefiningSource {
   return {
-    tier: inferRefiningTier(state.refining),
     refining: state.refining,
     metalRefining: state.metalRefining,
     leatherRefining: state.leatherRefining,
@@ -77,6 +77,7 @@ export function buildRefiningModel(source: RefiningSource): RefiningModel {
       rawLabel: definition.rawMaterialLabel,
       rawIcon: definition.rawIcon,
       refinedIcon: definition.refinedIcon,
+      tier: inferRefiningTier(activity),
       activity,
       requirements,
       availableCycles,
@@ -88,7 +89,7 @@ export function buildRefiningModel(source: RefiningSource): RefiningModel {
   const families = PRODUCTION_FAMILY_IDS.map(createFamily);
 
   return {
-    tier: source.tier,
+    tier: families[0]?.tier ?? 3,
     families,
     activeJobs: families.filter((family) => family.activity.status === "refining"),
   };
