@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { getStarterWeaponOptions } from "../../data/starterLoadoutCatalog.js";
+import { combatStopController } from "../../runtime/CombatStopController.js";
 import { useGameServices } from "../../state/GameServicesContext.js";
 import "./starterSelection.css";
 
@@ -7,6 +8,10 @@ export function StarterSelectionGate({ children }: { readonly children: ReactNod
   const services = useGameServices();
   const [pending, setPending] = useState(() => services.needsStarterSelection());
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pending) combatStopController.reset();
+  }, [pending]);
 
   if (!pending) return <>{children}</>;
 
