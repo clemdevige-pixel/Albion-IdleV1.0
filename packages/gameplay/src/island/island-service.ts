@@ -1,4 +1,9 @@
-import { PLAYER_ISLAND_CONFIG, isIslandBuildingId, type IslandBuildingId, type PlayerIslandConfig } from "@game/data";
+import {
+  ISLAND_BUILDING_IDS,
+  PLAYER_ISLAND_CONFIG,
+  type IslandBuildingId,
+  type PlayerIslandConfig,
+} from "@game/data";
 import type { SaveProvider } from "@game/persistence";
 import { z } from "zod";
 
@@ -19,6 +24,7 @@ export interface PlayerIslandState {
   readonly buildings: readonly IslandBuildingState[];
 }
 
+const IslandBuildingIdSchema = z.enum(ISLAND_BUILDING_IDS);
 const IslandSnapshotSchema = z.object({
   version: z.literal(1),
   plots: z.array(z.object({
@@ -27,7 +33,7 @@ const IslandSnapshotSchema = z.object({
   })),
   buildings: z.array(z.object({
     instanceId: z.string().min(1),
-    definitionId: z.string().min(1),
+    definitionId: IslandBuildingIdSchema,
     plotId: z.string().min(1),
     level: z.number().int().min(1),
   })),
@@ -82,12 +88,7 @@ export class PlayerIslandService implements SaveProvider {
 
     this.#state = {
       plots: parsed.data.plots.map((plot) => ({ ...plot })),
-      buildings: parsed.data.buildings.map((building) => ({
-        instanceId: building.instanceId,
-        definitionId: building.definitionId as IslandBuildingId,
-        plotId: building.plotId,
-        level: building.level,
-      })),
+      buildings: parsed.data.buildings.map((building) => ({ ...building })),
     };
   }
 
@@ -97,11 +98,7 @@ export class PlayerIslandService implements SaveProvider {
 
     if (snapshot.plots.length !== this.#config.plots.length) return false;
     if (snapshot.plots.some((plot) => !validPlotIds.has(plot.id))) return false;
-
-    for (const building of snapshot.buildings) {
-      if (!isIslandBuildingId(building.definitionId)) return false;
-      if (!validPlotIds.has(building.plotId)) return false;
-    }
+    if (snapshot.buildings.some((building) => !validPlotIds.has(building.plotId))) return false;
 
     for (const plot of snapshot.plots) {
       if (plot.buildingInstanceId !== null && !buildingInstanceIds.has(plot.buildingInstanceId)) return false;
