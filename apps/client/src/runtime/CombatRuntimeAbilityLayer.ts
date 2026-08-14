@@ -5,6 +5,7 @@ import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.j
 import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
 import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
+import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
 
 export class CombatRuntime extends LegacyCombatRuntime {
   private readonly mechanics: WeaponAbilityMechanicsRuntime;
@@ -29,7 +30,20 @@ export class CombatRuntime extends LegacyCombatRuntime {
     const definition = this.resolveAbility(slotIndex);
     const target = this.getActiveEnemyId();
     if (definition === undefined || !this.runtimeDeps.damageManager.isAlive(target)) return false;
-    if (this.inTick && !this.mechanics.canAutoCast(definition, target)) return false;
+    if (
+      this.inTick
+      && (
+        !this.mechanics.canAutoCast(definition, target)
+        || shouldHoldAutoCastForOverkill({
+          heroId: this.runtimeDeps.heroId,
+          targetId: target,
+          definition,
+          damageManager: this.runtimeDeps.damageManager,
+          effectManager: this.runtimeDeps.effectManager,
+          statsManager: this.runtimeDeps.statsManager,
+        })
+      )
+    ) return false;
     const used = this.runtimeDeps.abilityManager.executeIntent({
       entityId: this.runtimeDeps.heroId,
       abilityId: definition.id as AbilityId,
