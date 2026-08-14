@@ -35,8 +35,8 @@ interface ProductionRuntimeControllerDependencies {
   readonly getCurrentTick: () => number;
   readonly getGatheringTier: () => ProductionTier;
   readonly setGatheringTier: (tier: ProductionTier) => void;
-  readonly getRefiningTier: () => ProductionTier;
-  readonly setRefiningTier: (tier: ProductionTier) => void;
+  readonly getRefiningTier: (family: ProductionFamily) => ProductionTier;
+  readonly setRefiningTier: (family: ProductionFamily, tier: ProductionTier) => void;
   readonly getCraftingTier: () => ProductionTier;
   readonly setCraftingTier: (tier: ProductionTier) => void;
   readonly setWorkerTier: (tier: ProductionTier) => void;
@@ -142,9 +142,9 @@ export class ProductionRuntimeController {
     return true;
   }
 
-  setRefiningTier(tier: ProductionTier): boolean {
-    this.#dependencies.setRefiningTier(tier);
-    this.#bridgeAdapter.syncAllRefining();
+  setRefiningTier(family: ProductionFamily, tier: ProductionTier): boolean {
+    this.#dependencies.setRefiningTier(family, tier);
+    this.#bridgeAdapter.syncRefining(family);
     return true;
   }
 
