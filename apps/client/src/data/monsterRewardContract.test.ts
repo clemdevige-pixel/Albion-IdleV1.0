@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MONSTER_LOOT_TABLES } from "./economyContentCatalog";
+import { getCombatLootExpectations } from "./economyContentCatalog";
 import {
   MONSTER_DEFINITIONS,
   applyMonsterRewardModifiers,
@@ -7,10 +7,31 @@ import {
 } from "./monsterContentCatalog";
 
 describe("monster reward contract", () => {
-  it("keeps every monster loot-table reference resolvable", () => {
-    for (const definition of Object.values(MONSTER_DEFINITIONS)) {
-      expect(MONSTER_LOOT_TABLES[definition.rewards.lootTableId]).toBeDefined();
-    }
+  it("keeps active combat loot projection resolvable from runtime context", () => {
+    const normalLoot = getCombatLootExpectations({
+      segmentIndex: 0,
+      faction: "Keeper",
+      isElite: false,
+      isBoss: false,
+      isFinalBoss: false,
+      enchantmentTier: 4,
+      enchantmentDropWeight: 1,
+    });
+    const bossLoot = getCombatLootExpectations({
+      segmentIndex: 9,
+      faction: "Keeper",
+      isElite: false,
+      isBoss: true,
+      isFinalBoss: true,
+      enchantmentTier: 4,
+      enchantmentDropWeight: 2,
+    });
+
+    expect(normalLoot.length).toBeGreaterThan(0);
+    expect(normalLoot.some((drop) => drop.kind === "enchantment")).toBe(true);
+    expect(normalLoot.some((drop) => drop.itemId === "item_health_potion")).toBe(false);
+    expect(bossLoot.some((drop) => drop.kind === "artifact_fragment")).toBe(true);
+    expect(bossLoot.some((drop) => drop.kind === "artifact")).toBe(true);
   });
 
   it("never changes canonical zone/segment rewards based on monster identity", () => {
