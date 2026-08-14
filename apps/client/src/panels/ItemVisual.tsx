@@ -6,6 +6,7 @@ import {
 } from "../data/weaponContentCatalog";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
+import "./itemRarity.css";
 
 export interface ItemVisualDefinition {
   readonly name: string;
@@ -94,11 +95,8 @@ const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
 
 function formatFactionName(factionId: string): string {
   return FACTION_DISPLAY_NAMES[factionId]
-    ?? factionId
-      .split("_")
-      .filter((part) => part.length > 0)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(" ");
+    ?? factionId.split("_").filter((part) => part.length > 0)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(" ");
 }
 
 function getBlueZoneSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
@@ -108,18 +106,12 @@ function getBlueZoneSpecialLootVisual(itemId: string): SymbolVisualDefinition | 
     { prefix: "item_resource_dungeon_key_", label: "Clé de donjon", symbol: "⚿", className: "dungeon-key" },
     { prefix: "item_resource_key_fragment_", label: "Fragment de clé", symbol: "⌁", className: "key-fragment" },
   ] as const;
-
   for (const definition of definitions) {
     if (!itemId.startsWith(definition.prefix)) continue;
     const factionId = itemId.slice(definition.prefix.length);
     if (factionId.length === 0) return undefined;
-    return {
-      name: `${definition.label} · ${formatFactionName(factionId)}`,
-      symbol: definition.symbol,
-      className: definition.className,
-    };
+    return { name: `${definition.label} · ${formatFactionName(factionId)}`, symbol: definition.symbol, className: definition.className };
   }
-
   return undefined;
 }
 
@@ -129,10 +121,8 @@ function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefin
   const mastery = resolveWeaponMastery(itemId);
   const presentation = resolveEquipmentPresentation(itemId);
   if (equipment === undefined || tier === undefined || mastery === undefined || presentation === undefined) return undefined;
-
   const specializationName = getWeaponMasteryDisplayName(mastery.weaponId);
   if (specializationName === undefined) return undefined;
-
   return {
     name: `${specializationName} T${String(tier)}`,
     icon: presentation.itemIcon,
@@ -146,14 +136,9 @@ function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefin
 export function getItemDefinition(itemId: string): ItemVisualDefinition | undefined {
   const visual = getWeaponItemDefinition(itemId) ?? NON_WEAPON_ITEM_VISUALS[itemId];
   if (visual === undefined) return undefined;
-
   const equipment = resolveEquipmentInfo(itemId);
   if (equipment === undefined) return visual;
-
-  return {
-    ...visual,
-    stats: equipment.stats ?? {},
-  };
+  return { ...visual, stats: equipment.stats ?? {} };
 }
 
 export function getItemDisplayName(itemId: string): string {
@@ -165,11 +150,16 @@ export function getItemDisplayName(itemId: string): string {
     ?? itemId.replace("item_", "").replace(/_/g, " ");
 }
 
-export function getEnchantmentFrameClass(enchantment: number | undefined): string {
-  if (enchantment === 1 || enchantment === 2 || enchantment === 3) {
-    return ` enchantment-frame--${String(enchantment)}`;
-  }
-  return "";
+/** Tier is the equipment rarity/halo channel. */
+export function getEquipmentTierFrameClass(tier: number | undefined): string {
+  return tier !== undefined && tier >= 3 && tier <= 8 ? ` equipment-tier-frame--${String(tier)}` : "";
+}
+
+/** Enchantment is a text-only channel and must never drive the equipment halo. */
+export function getEnchantmentTextClass(enchantment: number | undefined): string {
+  return enchantment !== undefined && enchantment >= 0 && enchantment <= 4
+    ? ` enchantment-text--${String(enchantment)}`
+    : "";
 }
 
 export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element {
@@ -177,17 +167,9 @@ export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element
   const resource = RESOURCE_VISUALS[itemId];
   const enchantmentResource = ENCHANTMENT_RESOURCE_VISUALS[itemId];
   const specialLoot = getBlueZoneSpecialLootVisual(itemId);
-  if (enchantmentResource !== undefined) {
-    return <span className="item-visual__fallback item-visual__fallback--enchantment" aria-label={enchantmentResource.name}>{enchantmentResource.symbol}</span>;
-  }
-  if (specialLoot !== undefined) {
-    return <span className={`item-visual__fallback item-visual__fallback--${specialLoot.className}`} aria-label={specialLoot.name}>{specialLoot.symbol}</span>;
-  }
-  if (resource !== undefined) {
-    return <img className="item-visual__image item-visual__image--resource" src={`/assets/resources/${resource.icon}`} alt={resource.name} draggable={false} />;
-  }
-  if (visual === undefined) {
-    return <span className="item-visual__fallback">{itemId.slice(0, 2).toUpperCase()}</span>;
-  }
+  if (enchantmentResource !== undefined) return <span className="item-visual__fallback item-visual__fallback--enchantment" aria-label={enchantmentResource.name}>{enchantmentResource.symbol}</span>;
+  if (specialLoot !== undefined) return <span className={`item-visual__fallback item-visual__fallback--${specialLoot.className}`} aria-label={specialLoot.name}>{specialLoot.symbol}</span>;
+  if (resource !== undefined) return <img className="item-visual__image item-visual__image--resource" src={`/assets/resources/${resource.icon}`} alt={resource.name} draggable={false} />;
+  if (visual === undefined) return <span className="item-visual__fallback">{itemId.slice(0, 2).toUpperCase()}</span>;
   return <img className="item-visual__image" src={`/assets/items/${visual.icon}`} alt={visual.name} draggable={false} />;
 }
