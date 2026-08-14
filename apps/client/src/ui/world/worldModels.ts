@@ -115,39 +115,47 @@ function buildEncounterContexts(): readonly BestiaryEncounterContext[] {
   return contexts;
 }
 
-function aggregateLootRanges(
-  contexts: readonly BestiaryEncounterContext[],
+function mergeLootRanges(
+  drops: readonly BestiaryLootRangeModel[],
 ): readonly BestiaryLootRangeModel[] {
   const ranges = new Map<string, BestiaryLootRangeModel>();
 
-  for (const context of contexts) {
-    for (const expectation of getCombatLootExpectations(context.lootContext)) {
-      const key = `${expectation.kind}:${expectation.itemId}`;
-      const previous = ranges.get(key);
-      if (previous === undefined) {
-        ranges.set(key, {
-          itemId: expectation.itemId,
-          kind: expectation.kind,
-          minimumExpectedQuantity: expectation.expectedQuantity,
-          maximumExpectedQuantity: expectation.expectedQuantity,
-        });
-        continue;
-      }
-      ranges.set(key, {
-        ...previous,
-        minimumExpectedQuantity: Math.min(
-          previous.minimumExpectedQuantity,
-          expectation.expectedQuantity,
-        ),
-        maximumExpectedQuantity: Math.max(
-          previous.maximumExpectedQuantity,
-          expectation.expectedQuantity,
-        ),
-      });
+  for (const drop of drops) {
+    const key = `${drop.kind}:${drop.itemId}`;
+    const previous = ranges.get(key);
+    if (previous === undefined) {
+      ranges.set(key, drop);
+      continue;
     }
+    ranges.set(key, {
+      ...previous,
+      minimumExpectedQuantity: Math.min(
+        previous.minimumExpectedQuantity,
+        drop.minimumExpectedQuantity,
+      ),
+      maximumExpectedQuantity: Math.max(
+        previous.maximumExpectedQuantity,
+        drop.maximumExpectedQuantity,
+      ),
+    });
   }
 
   return [...ranges.values()].sort((left, right) => left.kind.localeCompare(right.kind));
+}
+
+function aggregateLootRanges(
+  contexts: readonly BestiaryEncounterContext[],
+): readonly BestiaryLootRangeModel[] {
+  return mergeLootRanges(
+    contexts.flatMap((context) => getCombatLootExpectations(context.lootContext).map(
+      (expectation): BestiaryLootRangeModel => ({
+        itemId: expectation.itemId,
+        kind: expectation.kind,
+        minimumExpectedQuantity: expectation.expectedQuantity,
+        maximumExpectedQuantity: expectation.expectedQuantity,
+      }),
+    )),
+  );
 }
 
 const BESTIARY_ENCOUNTER_CONTEXTS = buildEncounterContexts();
@@ -193,16 +201,8 @@ export function getBestiaryLoot(
   bandId: WorldBandId | "all",
 ): readonly BestiaryLootRangeModel[] {
   if (bandId !== "all") return entry.lootByBand[bandId] ?? [];
-  return aggregateLootRanges(
-    entry.bandIds.flatMap((entryBandId) => {
-      const loot = entry.lootByBand[entryBandId] ?? [];
-      return loot.map((drop) => ({
-        monsterId: entry.id,
-        bandId: entryBandId,
-        lootContext: undefined,
-        drop,
-      }));
-    }).map(({ drop }) => drop),
+  return mergeLootRanges(
+    entry.bandIds.flatMap((entryBandId) => entry.lootByBand[entryBandId] ?? []),
   );
 }
 
