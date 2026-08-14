@@ -1,5 +1,6 @@
 import {
   getIslandBuildingDefinition,
+  getIslandBuildingMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
 import { PRODUCTION_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
@@ -9,13 +10,20 @@ import "./refiningBuilding.css";
 
 export function RefiningBuildingPanel({
   definitionId,
+  level,
 }: {
   readonly definitionId: IslandBuildingId;
+  readonly level: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const service = definition.refiningService;
   if (service === undefined) {
     throw new Error(`Refining building ${definitionId} has no refining service data`);
+  }
+
+  const maxTier = getIslandBuildingMaxProductionTier(definitionId, level);
+  if (maxTier === undefined) {
+    throw new Error(`Refining building ${definitionId} level ${String(level)} has no progression data`);
   }
 
   const model = useRefiningData();
@@ -30,16 +38,21 @@ export function RefiningBuildingPanel({
   return (
     <div className="ui-island-refining-building">
       <div className="ui-island-refining-building__tiers" role="group" aria-label="Tier de raffinage">
-        {PRODUCTION_CONTENT_TIERS.map((tier) => (
-          <button
-            key={tier}
-            type="button"
-            className={model.tier === tier ? "is-active" : ""}
-            onClick={() => { actions.setTier(tier); }}
-          >
-            T{String(tier)}
-          </button>
-        ))}
+        {PRODUCTION_CONTENT_TIERS.map((tier) => {
+          const buildingLocked = tier > maxTier;
+          return (
+            <button
+              key={tier}
+              type="button"
+              className={family.tier === tier ? "is-active" : ""}
+              disabled={buildingLocked || active}
+              title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : undefined}
+              onClick={() => { actions.setTier(family.id, tier); }}
+            >
+              T{String(tier)}{buildingLocked ? " 🔒" : ""}
+            </button>
+          );
+        })}
       </div>
 
       <div className="ui-island-refining-building__recipe">
@@ -70,7 +83,7 @@ export function RefiningBuildingPanel({
       <button
         className="ui-island-refining-building__action"
         type="button"
-        disabled={!active && !family.canStart}
+        disabled={!active && (!family.canStart || family.tier > maxTier)}
         onClick={() => { actions.toggle(family.id); }}
       >
         {active ? "Arrêter le raffinage" : family.canStart ? "Lancer le raffinage" : "Matériaux insuffisants"}
