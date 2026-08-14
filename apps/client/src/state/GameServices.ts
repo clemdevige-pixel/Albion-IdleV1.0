@@ -54,7 +54,7 @@ export interface GameServices {
   readonly toggleRefining: (family: SupportedProductionFamily) => boolean;
   readonly refineAllAvailable: () => boolean;
   readonly setGatheringTier: (tier: ProductionTier) => boolean;
-  readonly setRefiningTier: (tier: ProductionTier) => boolean;
+  readonly setRefiningTier: (family: SupportedProductionFamily, tier: ProductionTier) => boolean;
   readonly setCraftingTier: (tier: ProductionTier) => boolean;
   readonly craftEquipment: (outputItemId: string) => boolean;
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
