@@ -9,24 +9,24 @@ function firstDamageRatio(abilityId: string): number | undefined {
 
 describe("Blue weapon balance pass", () => {
   it("keeps attack-speed tuning authored by specialization rather than runtime mode", () => {
-    expect(getWeaponAttackSpeed("item_weapon_sword_t4_broadsword")).toBeCloseTo(1.08);
-    expect(getWeaponAttackSpeed("item_weapon_gloves_t4_spiked_gauntlets")).toBeCloseTo(1.19);
-    expect(getWeaponAttackSpeed("item_weapon_dagger_t4_pair")).toBeCloseTo(1.44);
-    expect(getWeaponAttackSpeed("item_weapon_bow_t4_longbow")).toBeCloseTo(0.95);
+    expect(getWeaponAttackSpeed("item_weapon_sword_t4_broadsword")).toBeCloseTo(1.032);
+    expect(getWeaponAttackSpeed("item_weapon_gloves_t4_spiked_gauntlets")).toBeCloseTo(1.148);
+    expect(getWeaponAttackSpeed("item_weapon_dagger_t4_pair")).toBeCloseTo(1.392);
+    expect(getWeaponAttackSpeed("item_weapon_bow_t4_longbow")).toBeCloseTo(1);
     expect(getWeaponAttackSpeed("item_weapon_staff_t4_infernal")).toBeCloseTo(0.9);
   });
 
-  it("authors the active-progression pre-M30 Q/W ratios in mechanics data", () => {
-    expect(firstDamageRatio("ability_sword_heroic_strike")).toBeCloseTo(0.7875);
-    expect(firstDamageRatio("ability_sword_guard_breaker")).toBeCloseTo(0.8925);
-    expect(firstDamageRatio("ability_bow_aimed_shot")).toBeCloseTo(0.51);
-    expect(firstDamageRatio("ability_bow_piercing_arrow")).toBeCloseTo(0.68);
-    expect(firstDamageRatio("ability_fire_fireball")).toBeCloseTo(0.3825);
-    expect(firstDamageRatio("ability_fire_infernal_burst")).toBeCloseTo(0.68);
-    expect(firstDamageRatio("ability_gloves_shockwave")).toBeCloseTo(0.84);
-    expect(firstDamageRatio("ability_gloves_breaking_combo")).toBeCloseTo(1.05);
-    expect(firstDamageRatio("ability_dagger_double_slash")).toBeCloseTo(0.45);
-    expect(firstDamageRatio("ability_dagger_flurry")).toBeCloseTo(0.72);
+  it("authors the refined active-progression pre-M30 Q/W ratios in mechanics data", () => {
+    expect(firstDamageRatio("ability_sword_heroic_strike")).toBeCloseTo(0.75);
+    expect(firstDamageRatio("ability_sword_guard_breaker")).toBeCloseTo(0.85);
+    expect(firstDamageRatio("ability_bow_aimed_shot")).toBeCloseTo(0.534);
+    expect(firstDamageRatio("ability_bow_piercing_arrow")).toBeCloseTo(0.712);
+    expect(firstDamageRatio("ability_fire_fireball")).toBeCloseTo(0.36);
+    expect(firstDamageRatio("ability_fire_infernal_burst")).toBeCloseTo(0.64);
+    expect(firstDamageRatio("ability_gloves_shockwave")).toBeCloseTo(0.776);
+    expect(firstDamageRatio("ability_gloves_breaking_combo")).toBeCloseTo(0.97);
+    expect(firstDamageRatio("ability_dagger_double_slash")).toBeCloseTo(0.435);
+    expect(firstDamageRatio("ability_dagger_flurry")).toBeCloseTo(0.696);
   });
 
   it("keeps Broadsword execution autocast conditional in authored data", () => {
