@@ -33,7 +33,7 @@ export type PlaceIslandBuildingResult =
 
 export type UpgradeIslandBuildingResult =
   | { readonly ok: true; readonly building: IslandBuildingState }
-  | { readonly ok: false; readonly reason: "not_built" | "max_level" | "unauthored_level" };
+  | { readonly ok: false; readonly reason: "not_built" | "max_level" | "unauthored_level" | "island_level_required" };
 
 export type UpgradeIslandLevelResult =
   | { readonly ok: true; readonly level: number }
@@ -109,6 +109,7 @@ export class PlayerIslandService implements SaveProvider {
     if (currentLevel.upgradeToNext === undefined) return { ok: false, reason: "max_level" };
     const nextLevel = getIslandOperationalLevelDefinition(definitionId, building.level + 1);
     if (nextLevel === undefined) return { ok: false, reason: "unauthored_level" };
+    if (nextLevel.level > this.#state.level) return { ok: false, reason: "island_level_required" };
     return { ok: true, building: { ...building, level: nextLevel.level } };
   }
 
@@ -149,10 +150,16 @@ export class PlayerIslandService implements SaveProvider {
     const parsed = IslandSnapshotSchema.safeParse(data);
     if (!parsed.success || !this.#isValidSnapshot(parsed.data)) return;
     const savedPlotById = new Map(parsed.data.plots.map((plot) => [plot.id, plot] as const));
+    const islandLevel = parsed.data.level ?? 1;
     this.#state = {
-      level: parsed.data.level ?? 1,
+      level: islandLevel,
       plots: this.#config.plots.map((plot) => ({ id: plot.id, buildingInstanceId: savedPlotById.get(plot.id)?.buildingInstanceId ?? null })),
-      buildings: parsed.data.buildings.map((building) => ({ ...building })),
+      // Migration guard: snapshots created before island-level gating may contain
+      // buildings above the island level. Clamp them to the newly authoritative cap.
+      buildings: parsed.data.buildings.map((building) => ({
+        ...building,
+        level: Math.min(building.level, islandLevel),
+      })),
     };
   }
 
