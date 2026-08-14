@@ -4,11 +4,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * TEMPORARY BLUE RUNTIME DIAGNOSTIC.
+ * Permanent Blue runtime determinism guard.
  *
- * Runs the real Blue progression benchmark twice from the active development
- * branch and requires the generated CSV to be byte-for-byte identical.
- * Delete this file once Blue runtime determinism has been validated.
+ * Runs the canonical Blue progression benchmark three times from a clean process
+ * boundary and requires the generated CSV to be byte-for-byte identical.
+ * This protects balance work from tuning against simulation noise.
  */
 
 const ROOT = process.cwd();
@@ -20,21 +20,29 @@ const OUTPUT_PATH = path.resolve(
   "albion-idle",
   "runtime-blue-persistent-progression-farm.csv",
 );
+const RUN_COUNT = 3;
 
-function runPnpm(args: readonly string[], cwd = ROOT): void {
+function runPnpm(args: readonly string[], cwd = ROOT, silent = false): void {
+  const env = {
+    ...process.env,
+    TZ: "UTC",
+    LANG: process.env.LANG ?? "C",
+    LC_ALL: process.env.LC_ALL ?? "C",
+  };
+
   if (process.platform === "win32") {
     execFileSync("cmd.exe", ["/d", "/s", "/c", "pnpm.cmd", ...args], {
       cwd,
-      stdio: "inherit",
-      env: process.env,
+      stdio: silent ? "pipe" : "inherit",
+      env,
     });
     return;
   }
 
   execFileSync("pnpm", [...args], {
     cwd,
-    stdio: "inherit",
-    env: process.env,
+    stdio: silent ? "pipe" : "inherit",
+    env,
   });
 }
 
@@ -48,12 +56,10 @@ function prepareWorkspace(): void {
 }
 
 function runBenchmark(): Buffer {
-  // Run from apps/client so Node resolves @game/* through the client's
-  // workspace dependencies. The benchmark script itself remains the canonical
-  // script under /scripts.
   runPnpm(
     ["exec", "tsx", path.resolve(ROOT, "scripts", "runtime-blue-progression-farm-run.ts")],
     CLIENT_DIR,
+    true,
   );
 
   if (!fs.existsSync(OUTPUT_PATH)) {
@@ -95,8 +101,9 @@ function validateCsv(value: Buffer): void {
     "result",
   ];
 
+  const columns = header.split(",");
   for (const column of requiredColumns) {
-    if (!header.split(",").includes(column)) {
+    if (!columns.includes(column)) {
       throw new Error(`Blue runtime CSV is missing required column: ${column}`);
     }
   }
@@ -112,27 +119,31 @@ function validateCsv(value: Buffer): void {
   }
 }
 
-console.log("=== TEMP BLUE RUNTIME DETERMINISM CHECK ===");
+console.log("=== BLUE RUNTIME DETERMINISM CHECK ===");
 prepareWorkspace();
-console.log("Run 1/2");
-const first = runBenchmark();
-validateCsv(first);
-const firstHash = sha256(first);
 
-console.log("\nRun 2/2");
-const second = runBenchmark();
-validateCsv(second);
-const secondHash = sha256(second);
-
-console.log(`\nRun 1 SHA-256: ${firstHash}`);
-console.log(`Run 2 SHA-256: ${secondHash}`);
-
-if (!first.equals(second)) {
-  throw new Error(
-    "Blue runtime is NOT deterministic: the two progression CSV outputs differ",
-  );
+const outputs: Buffer[] = [];
+for (let index = 0; index < RUN_COUNT; index += 1) {
+  console.log(`Run ${index + 1}/${RUN_COUNT}`);
+  const output = runBenchmark();
+  validateCsv(output);
+  outputs.push(output);
+  console.log(`  SHA-256: ${sha256(output)}`);
 }
 
-const rowCount = first.toString("utf8").trim().split(/\r?\n/).length - 1;
-console.log(`Rows compared: ${rowCount}`);
-console.log("PASS: Blue runtime progression output is byte-for-byte deterministic.");
+const baseline = outputs[0];
+if (baseline === undefined) {
+  throw new Error("Blue runtime determinism check produced no output");
+}
+
+for (let index = 1; index < outputs.length; index += 1) {
+  if (!baseline.equals(outputs[index]!)) {
+    throw new Error(
+      `Blue runtime is NOT deterministic: run 1 differs from run ${index + 1}`,
+    );
+  }
+}
+
+const rowCount = baseline.toString("utf8").trim().split(/\r?\n/).length - 1;
+console.log(`Rows compared per run: ${rowCount}`);
+console.log(`PASS: ${RUN_COUNT} Blue runtime outputs are byte-for-byte identical.`);
