@@ -17,7 +17,8 @@ import {
   getWorldZonePlacement,
 } from "../apps/client/src/data/worldContentCatalog.js";
 
-const DT = 0.05;
+// Must match GameContext live runtime exactly.
+const DT = 0.5;
 const MAX_SECONDS = 300;
 const MASTERY_LEVEL = 26;
 
@@ -178,8 +179,7 @@ let tick = 0;
 while (!cleared && !defeated && elapsed < MAX_SECONDS) {
   tick += 1;
   elapsed += DT;
-  const result = runtime.tick(DT, tick);
-  if (result.combatState === "defeat") defeated = true;
+  runtime.tick(DT, tick);
 }
 
 const finalHealth = combat.damageManager.getHealth(heroId);
@@ -189,6 +189,7 @@ const family = progression.masteryService.getMasteryState(masteryRoute.familyId)
 console.log("\n=== LIVE CALIBRATION: Infernal M26 / Frostpeak Mountain S10 / AFK ===");
 console.table(LOADOUT.map((item) => ({ item: item.itemId, enchantment: `4.${item.enchantment}` })));
 console.log({
+  liveTickSeconds: DT,
   expectedLiveIpFromScreenshot: 634.8,
   specializationMastery: specialization?.level,
   familyMastery: family?.level,
