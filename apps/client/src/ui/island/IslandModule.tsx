@@ -3,6 +3,7 @@ import { PLAYER_ISLAND_CONFIG, getIslandBuildingDefinition, type IslandBuildingI
 import { useGameBridge } from "../../state/GameContext";
 import { ProductionModule } from "../production";
 import { ConstructionPanel } from "./ConstructionPanel";
+import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
 import { WorkerHousePanel } from "./WorkerHousePanel";
 import "./island.css";
@@ -195,9 +196,11 @@ function BuildingSummary({
         <WorkerHousePanel level={level} />
       ) : definitionId === "storage" ? (
         <StoragePanel />
+      ) : definition.gatheringService !== undefined ? (
+        <GatheringBuildingPanel definitionId={definitionId} />
       ) : (
         <div className="ui-island__selection-status">
-          Bâtiment construit · affectation des workers à connecter dans l'étape suivante
+          Bâtiment construit · fonctionnalités à connecter dans les phases suivantes
         </div>
       )}
     </section>
