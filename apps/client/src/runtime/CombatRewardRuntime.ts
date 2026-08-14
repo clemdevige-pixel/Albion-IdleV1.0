@@ -91,8 +91,13 @@ export class CombatRewardRuntime {
 
     const itemDrops: BlueZoneCombatDrop[] = [];
     for (const drop of rollBlueZoneCombatDrops(lootContext)) {
-      const addResult = this.inventoryManager.addQuantity(this.heroId, drop.itemId, 1);
-      if (!addResult.ok) continue;
+      const addResult = this.inventoryManager.addQuantity(this.heroId, drop.itemId, drop.quantity);
+      if (!addResult.ok || addResult.value.added <= 0) continue;
+
+      const acceptedDrop: BlueZoneCombatDrop = {
+        ...drop,
+        quantity: addResult.value.added,
+      };
 
       const eqInfo = resolveEquipmentInfo(drop.itemId);
       if (eqInfo !== undefined) {
@@ -108,7 +113,7 @@ export class CombatRewardRuntime {
         }
       }
 
-      itemDrops.push(drop);
+      itemDrops.push(acceptedDrop);
     }
 
     return {
