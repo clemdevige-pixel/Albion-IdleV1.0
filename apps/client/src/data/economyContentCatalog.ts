@@ -1,19 +1,10 @@
 import { getEnchantmentShardItemId } from "@game/gameplay";
 
-export interface LootDropDefinition {
-  readonly itemId: string;
-  readonly weight: number;
-}
-
-export interface LootTableDefinition {
-  readonly dropChance: number;
-  readonly drops: readonly LootDropDefinition[];
-}
-
 /**
  * Combat loot uses independent rolls. A key fragment, an enchantment shard and
- * a potion can therefore drop from the same kill. The definitions below are
- * also consumed by the Bestiary so gameplay and UI share one source of truth.
+ * other eligible rewards can therefore drop from the same kill. The definitions
+ * below are also consumed by the Bestiary so gameplay and UI share one source
+ * of truth.
  */
 export const BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS = [
   1,
@@ -29,7 +20,6 @@ export const BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS = [
 ] as const;
 
 export const BLUE_ZONE_BASE_DROP_RATES = {
-  healthPotion: 0.05,
   keyFragment: 0.02,
   completeKey: 0.001,
 } as const;
@@ -122,13 +112,11 @@ export interface CombatLootRuleDefinition {
  * Adding a simple droppable item should normally be a data addition here, not
  * a new Bestiary/UI special case. Dynamic faction/tier identities are resolved
  * generically by the item source.
+ *
+ * Health potions are intentionally vendor-only and are therefore absent from
+ * active combat loot.
  */
 export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
-  {
-    kind: "consumable",
-    item: { type: "fixed", itemId: "item_health_potion" },
-    rate: { type: "segment_scaled", baseRate: BLUE_ZONE_BASE_DROP_RATES.healthPotion, bossMultiplier: false },
-  },
   {
     kind: "enchantment",
     item: { type: "enchantment_shard" },
@@ -266,27 +254,6 @@ export function rollBlueZoneCombatDrops(
   return drops;
 }
 
-// Legacy tables are retained temporarily for compatibility with content that
-// has not yet migrated to the independent-roll reward pipeline.
-export const GENERIC_COMBAT_LOOT: readonly LootDropDefinition[] = [
-  { itemId: "item_health_potion", weight: 20 },
-];
-
-export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> = {
-  loot_monster_generic: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_monster_undead_boss: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_monster_keeper_boss: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_undead_normal: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_undead_elite: { dropChance: 0.3, drops: GENERIC_COMBAT_LOOT },
-  loot_undead_boss: { dropChance: 0.45, drops: GENERIC_COMBAT_LOOT },
-  loot_morgana_normal: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_morgana_elite: { dropChance: 0.3, drops: GENERIC_COMBAT_LOOT },
-  loot_morgana_boss: { dropChance: 0.45, drops: GENERIC_COMBAT_LOOT },
-  loot_keeper_normal: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_keeper_elite: { dropChance: 0.3, drops: GENERIC_COMBAT_LOOT },
-  loot_keeper_boss: { dropChance: 0.45, drops: GENERIC_COMBAT_LOOT },
-};
-
 export const HEALTH_POTION_HEAL_RATIO = 0.3;
 export const HEALTH_POTION_COOLDOWN_SECONDS = 20;
 
@@ -303,24 +270,6 @@ export function rollEnchantmentMaterial(): string | undefined {
   return Math.random() < ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
     ? getEnchantmentShardItemId(4)
     : undefined;
-}
-
-/** @deprecated Blue Zone combat uses rollBlueZoneCombatDrops. */
-export function rollLootTable(lootTableId: string): string | undefined {
-  const table = MONSTER_LOOT_TABLES[lootTableId];
-  if (table === undefined) throw new Error(`Unknown monster loot table: ${lootTableId}`);
-  if (Math.random() > table.dropChance) return undefined;
-  const totalWeight = table.drops.reduce((sum, definition) => sum + definition.weight, 0);
-  let roll = Math.random() * totalWeight;
-  for (const definition of table.drops) {
-    roll -= definition.weight;
-    if (roll <= 0) return definition.itemId;
-  }
-  return undefined;
-}
-
-export function rollGenericCombatLoot(): string | undefined {
-  return rollLootTable("loot_monster_generic");
 }
 
 export const REPAIR_COST_DEFINITIONS = [
