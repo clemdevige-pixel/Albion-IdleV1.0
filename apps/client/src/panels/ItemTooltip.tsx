@@ -8,6 +8,7 @@ import {
 import {
   getEnchantmentItemPowerBonus,
   getEnchantmentStatMultiplier,
+  type EnchantmentLevel,
 } from "@game/gameplay";
 import {
   getEffectiveItemPower,
@@ -40,15 +41,23 @@ export interface ItemTooltipProps {
   readonly itemId: string;
   readonly quantity: number;
   readonly instanceId: string | undefined;
+  /** Optional projected state used by deterministic previews such as enchanting. */
+  readonly enchantmentOverride?: EnchantmentLevel | undefined;
 }
 
-export function ItemTooltip({ itemId, quantity, instanceId }: ItemTooltipProps): JSX.Element {
+export function ItemTooltip({
+  itemId,
+  quantity,
+  instanceId,
+  enchantmentOverride,
+}: ItemTooltipProps): JSX.Element {
   const state = useGameBridge();
-  const enchantment = instanceId === undefined
+  const persistedEnchantment = instanceId === undefined
     ? 0
     : state.inventory.slots.find((slot) => slot.instanceId === instanceId)?.enchantment
       ?? state.equipment.slots.find((slot) => slot.instanceId === instanceId)?.enchantment
       ?? 0;
+  const enchantment = enchantmentOverride ?? persistedEnchantment;
   const definition = getItemDefinition(itemId);
   const effectiveDefinition = resolveEquipmentInfo(itemId) ?? definition;
   const itemPower = getItemPower(itemId);
