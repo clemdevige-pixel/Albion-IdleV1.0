@@ -3,6 +3,7 @@ import type { GameBridgeState, RefiningRequirementVM, RefiningVM } from "../../.
 import {
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
+  isProductionTier,
   type ProductionFamilyId,
 } from "../../../data/productionFamilyCatalog";
 
@@ -41,7 +42,7 @@ interface RefiningSource {
 
 export function selectRefiningSource(state: GameBridgeState): RefiningSource {
   return {
-    tier: state.crafting.productionTier,
+    tier: inferRefiningTier(state.refining),
     refining: state.refining,
     metalRefining: state.metalRefining,
     leatherRefining: state.leatherRefining,
@@ -91,6 +92,15 @@ export function buildRefiningModel(source: RefiningSource): RefiningModel {
     families,
     activeJobs: families.filter((family) => family.activity.status === "refining"),
   };
+}
+
+function inferRefiningTier(activity: RefiningVM): ProductionTier {
+  const rawItemId = activity.requirements.find((requirement) => (
+    requirement.itemId.startsWith("item_resource_")
+  ))?.itemId;
+  const rawTier = rawItemId?.match(/_t(\d+)$/i)?.[1];
+  const tier = rawTier === undefined ? 3 : Number(rawTier);
+  return isProductionTier(tier) ? tier : 3;
 }
 
 function formatMaterialName(itemId: string, rawLabel: string): string {
