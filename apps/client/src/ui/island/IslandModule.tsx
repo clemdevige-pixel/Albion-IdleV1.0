@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { PLAYER_ISLAND_CONFIG, getIslandBuildingDefinition, type IslandBuildingId } from "@game/data";
 import { useGameBridge } from "../../state/GameContext";
 import { ProductionModule } from "../production";
+import { ConstructionPanel } from "./ConstructionPanel";
 import { StoragePanel } from "./StoragePanel";
 import { WorkerHousePanel } from "./WorkerHousePanel";
 import "./island.css";
@@ -22,11 +23,18 @@ export function IslandModule(): JSX.Element {
   const [selectedBuildingInstanceId, setSelectedBuildingInstanceId] = useState<string | null>(
     island.buildings[0]?.instanceId ?? null,
   );
+  const [selectedPlotId, setSelectedPlotId] = useState<string | null>(
+    island.buildings[0]?.plotId ?? null,
+  );
 
   const buildingByInstanceId = useMemo(
     () => new Map(
       island.buildings.map((building) => [building.instanceId, building] as const),
     ),
+    [island.buildings],
+  );
+  const builtDefinitionIds = useMemo(
+    () => new Set(island.buildings.map((building) => building.definitionId)),
     [island.buildings],
   );
   const selectedBuilding = selectedBuildingInstanceId === null
@@ -69,20 +77,26 @@ export function IslandModule(): JSX.Element {
           const definition = building === undefined
             ? undefined
             : getIslandBuildingDefinition(building.definitionId);
+          const selected = building === undefined
+            ? selectedBuildingInstanceId === null && selectedPlotId === plotDefinition.id
+            : selectedBuildingInstanceId === building.instanceId;
 
           return (
             <button
               key={plotDefinition.id}
               type="button"
-              className={`ui-island__plot${building === undefined ? " is-empty" : ""}${selectedBuildingInstanceId === building?.instanceId ? " is-selected" : ""}`}
+              className={`ui-island__plot${building === undefined ? " is-empty" : ""}${selected ? " is-selected" : ""}`}
               style={{ gridColumn: plotDefinition.column, gridRow: plotDefinition.row }}
-              onClick={() => { setSelectedBuildingInstanceId(building?.instanceId ?? null); }}
+              onClick={() => {
+                setSelectedPlotId(plotDefinition.id);
+                setSelectedBuildingInstanceId(building?.instanceId ?? null);
+              }}
             >
               {building === undefined || definition === undefined ? (
                 <>
                   <span className="ui-island__plot-icon">＋</span>
                   <span>Emplacement</span>
-                  <small>Règle de placement à définir</small>
+                  <small>Construire</small>
                 </>
               ) : (
                 <>
@@ -98,10 +112,17 @@ export function IslandModule(): JSX.Element {
 
       {selectedBuilding !== undefined && selectedDefinition !== undefined ? (
         <BuildingSummary definitionId={selectedDefinition.id} level={selectedBuilding.level} />
+      ) : selectedPlotId !== null ? (
+        <ConstructionPanel
+          plotId={selectedPlotId}
+          builtDefinitionIds={builtDefinitionIds}
+          onBuilt={(definitionId) => {
+            setSelectedBuildingInstanceId(`island_${definitionId}`);
+          }}
+        />
       ) : (
         <section className="ui-island__selection ui-island__selection--empty">
-          <strong>Emplacement libre</strong>
-          <p>La construction et les règles de plots seront ajoutées après validation de leur impact sur la progression.</p>
+          <strong>Sélectionnez un emplacement</strong>
         </section>
       )}
 
@@ -176,7 +197,7 @@ function BuildingSummary({
         <StoragePanel />
       ) : (
         <div className="ui-island__selection-status">
-          Fondation active · fonctionnalités du bâtiment à connecter dans les phases suivantes
+          Bâtiment construit · affectation des workers à connecter dans l'étape suivante
         </div>
       )}
     </section>
