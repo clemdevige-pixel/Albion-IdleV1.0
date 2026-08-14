@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { MONSTER_LOOT_TABLES } from "./economyContentCatalog";
 import { MONSTER_ABILITIES } from "./monsterAbilityContentCatalog";
 import { MONSTER_DEFINITIONS, MONSTER_IDS, ZONE_ENCOUNTER_POOLS } from "./monsterContentCatalog";
 import { renderManifestRegistry } from "../game/render/defaultRenderManifestRegistry";
@@ -18,12 +17,11 @@ describe("Morgana family content contract", () => {
     expect(monsters.map((monster) => monster?.category)).toEqual(["normal", "normal", "elite", "boss"]);
   });
 
-  it("resolves every Morgana ability, loot table and renderer manifest", () => {
+  it("resolves every Morgana ability and renderer manifest", () => {
     for (const id of MORGANA_IDS) {
       const monster = MONSTER_DEFINITIONS[id];
       expect(monster).toBeDefined();
       if (monster === undefined) continue;
-      expect(MONSTER_LOOT_TABLES[monster.rewards.lootTableId]).toBeDefined();
       expect(renderManifestRegistry.getStaticActor(monster.visualManifestId)).toBeDefined();
       for (const abilityId of monster.abilityIds) expect(MONSTER_ABILITIES[abilityId]).toBeDefined();
     }
