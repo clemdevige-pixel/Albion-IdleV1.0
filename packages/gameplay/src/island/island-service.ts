@@ -1,6 +1,7 @@
 import {
   ISLAND_BUILDING_IDS,
   PLAYER_ISLAND_CONFIG,
+  getIslandOperationalLevelDefinition,
   type IslandBuildingId,
   type PlayerIslandConfig,
 } from "@game/data";
@@ -29,6 +30,13 @@ export type PlaceIslandBuildingResult =
   | {
       readonly ok: false;
       readonly reason: "unknown_building" | "unknown_plot" | "plot_occupied" | "already_built";
+    };
+
+export type UpgradeIslandBuildingResult =
+  | { readonly ok: true; readonly building: IslandBuildingState }
+  | {
+      readonly ok: false;
+      readonly reason: "not_built" | "max_level" | "unauthored_level";
     };
 
 const IslandBuildingIdSchema = z.enum(ISLAND_BUILDING_IDS);
@@ -124,6 +132,37 @@ export class PlayerIslandService implements SaveProvider {
     return preview;
   }
 
+  canUpgradeBuilding(definitionId: IslandBuildingId): UpgradeIslandBuildingResult {
+    const building = this.#state.buildings.find((candidate) => candidate.definitionId === definitionId);
+    if (building === undefined) return { ok: false, reason: "not_built" };
+
+    const currentLevel = getIslandOperationalLevelDefinition(definitionId, building.level);
+    if (currentLevel === undefined) return { ok: false, reason: "unauthored_level" };
+    if (currentLevel.upgradeToNext === undefined) return { ok: false, reason: "max_level" };
+
+    const nextLevel = getIslandOperationalLevelDefinition(definitionId, building.level + 1);
+    if (nextLevel === undefined) return { ok: false, reason: "unauthored_level" };
+
+    return {
+      ok: true,
+      building: { ...building, level: nextLevel.level },
+    };
+  }
+
+  upgradeBuilding(definitionId: IslandBuildingId): UpgradeIslandBuildingResult {
+    const preview = this.canUpgradeBuilding(definitionId);
+    if (!preview.ok) return preview;
+
+    this.#state = {
+      plots: this.#state.plots,
+      buildings: this.#state.buildings.map((building) => (
+        building.definitionId === definitionId ? preview.building : building
+      )),
+    };
+
+    return preview;
+  }
+
   save(): IslandSnapshot {
     return {
       version: 1,
@@ -159,6 +198,12 @@ export class PlayerIslandService implements SaveProvider {
     if (buildingDefinitionIds.size !== snapshot.buildings.length) return false;
     if (snapshot.buildings.some((building) => !validPlotIds.has(building.plotId))) return false;
     if (snapshot.buildings.some((building) => !validBuildingIds.has(building.definitionId))) return false;
+
+    for (const building of snapshot.buildings) {
+      const progression = getIslandOperationalLevelDefinition(building.definitionId, building.level);
+      const isUtilityBuilding = building.definitionId === "worker_house" || building.definitionId === "storage";
+      if (!isUtilityBuilding && progression === undefined) return false;
+    }
 
     for (const plot of snapshot.plots) {
       if (plot.buildingInstanceId !== null && !buildingInstanceIds.has(plot.buildingInstanceId)) return false;
