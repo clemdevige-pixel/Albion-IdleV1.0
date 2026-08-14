@@ -36,13 +36,11 @@ export class WorldHudSystem {
     this.enemy = this.createActorHud(
       x,
       y,
-      "ENNEMI",
+      "",
       this.manifest.actorLabel.enemyColor,
       this.colorToNumber(this.manifest.healthBar.lowerGradient[0]),
-      "300/300",
+      "0/0",
     );
-    // The values above are construction fallbacks only. No enemy HUD should be
-    // visible before CombatPresentationController receives an authoritative spawn.
     this.setEnemyVisible(false);
   }
 
