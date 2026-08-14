@@ -8,19 +8,18 @@ import {
 import { getSegmentRecommendedItemPower } from "../apps/client/src/data/itemPower.js";
 import { resolveMonsterForEncounter } from "../apps/client/src/data/monsterContentCatalog.js";
 import {
+  WEAPON_ITEM_DEFINITIONS,
+  resolveWeaponTier,
+} from "../apps/client/src/data/weaponContentCatalog.js";
+import {
   WORLD_ZONE_IDS_BY_BAND,
   ZONE_DEFINITIONS,
   getWorldZonePlacement,
 } from "../apps/client/src/data/worldContentCatalog.js";
 
-const weapons = [
-  "item_weapon_sword_t4_broadsword",
-  "item_weapon_bow_t4_longbow",
-  "item_weapon_bow_t4_badon",
-  "item_weapon_staff_t4_infernal",
-  "item_weapon_gloves_t4_spiked_gauntlets",
-  "item_weapon_dagger_t4_pair",
-] as const;
+const weapons = Object.keys(WEAPON_ITEM_DEFINITIONS)
+  .filter((weaponId) => resolveWeaponTier(weaponId) === 4)
+  .sort();
 const armor = [
   "item_helmet_t4_reinforced",
   "item_armor_t4_leather",
@@ -41,12 +40,16 @@ function make(
   enchantment: Enchantment,
   mode: FarmMode = "AFK",
 ): CombatBalanceLoadout {
+  const weapon = WEAPON_ITEM_DEFINITIONS[weaponId];
+  if (weapon === undefined) throw new Error(`Unknown benchmark weapon: ${weaponId}`);
+  const usesOffHand = weapon.handling === "one_handed";
+
   return {
     weaponId,
     masteryLevel,
     weaponEnchantment: enchantment,
     equipment: armor.map((itemId) => ({ itemId, enchantment })),
-    ...(weaponId.includes("sword")
+    ...(usesOffHand
       ? {
           offHandId: "item_shield_t4_reinforced",
           offHandEnchantment: enchantment,
@@ -84,6 +87,9 @@ function realEnemy(
     category: monster.category,
   };
 }
+
+console.log(`\n=== Auto-discovered T4 weapons (${weapons.length}) ===`);
+console.log(weapons.join("\n"));
 
 console.log("\n=== T4 equipment progression by Blue stage ===");
 for (let zone = 1; zone <= 5; zone += 1) {
