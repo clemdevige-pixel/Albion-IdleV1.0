@@ -44,6 +44,7 @@ import {
 import { CombatBridgeAdapter } from "./bridge-sync/CombatBridgeAdapter.js";
 import { GameBridgeSyncCoordinator } from "./bridge-sync/GameBridgeSyncCoordinator.js";
 import { GameRuntimeTickController } from "../runtime/GameRuntimeTickController.js";
+import { StarterSelectionGate } from "../ui/starter/StarterSelectionGate.js";
 
 export type { GameServices, UIEventMap } from "./GameServices.js";
 export { useGameBridge, useGameServices } from "./GameServicesContext.js";
@@ -73,6 +74,7 @@ export function GameProvider({
       });
     };
     let tickCounter = 0;
+    let starterSelectionPending = false;
     let gatheringTier: ProductionTier = 3;
     const refiningTiers: Record<SupportedProductionFamily, ProductionTier> = {
       Wood: 3,
@@ -113,7 +115,7 @@ export function GameProvider({
       statsManager,
       damageManager,
       masteryService,
-      canMutateEquipment: () => !combatService.isInCombat(),
+      canMutateEquipment: () => starterSelectionPending || !combatService.isInCombat(),
       onPlayerHealthChanged: (currentHealth, maxHealth) => {
         bridge.updatePlayerHealth(currentHealth, maxHealth);
       },
@@ -197,14 +199,6 @@ export function GameProvider({
       hideGatheringCoordinator,
       fiberGatheringCoordinator,
     } = productionFoundation;
-
-    initializeStarterLoadout({
-      heroId,
-      inventoryManager,
-      equipmentManager,
-      durabilityStore,
-      masteryService,
-    });
 
     const combatRewardRuntime = new CombatRewardRuntime({
       currencyService,
@@ -295,6 +289,7 @@ export function GameProvider({
       () => productionStorageId,
     );
     persistence.registerProvider(refiningSaveProvider);
+    starterSelectionPending = !persistence.hasSave();
 
     const saveGameActions = new SaveGameActions({
       bridge,
@@ -358,7 +353,7 @@ export function GameProvider({
             farmMode: worldRuntime.farmMode,
           };
         },
-        isCombatSuspended: () => gatheringRuntime.isHeroGathering(),
+        isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
       },
     });
 
@@ -419,6 +414,26 @@ export function GameProvider({
 
     const initialCombat = combatRuntime.initialize();
     combatBridgeAdapter.presentInitialCombat(initialCombat);
+
+    const selectStarterWeapon = (itemId: string): boolean => {
+      if (!starterSelectionPending) return false;
+      const initialized = initializeStarterLoadout({
+        heroId,
+        inventoryManager,
+        equipmentManager,
+        durabilityStore,
+        masteryService,
+        weaponItemId: itemId,
+      });
+      if (!initialized) return false;
+
+      starterSelectionPending = false;
+      recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
+      resyncAll();
+      combatBridgeAdapter.presentInitialCombat(combatRuntime.initialize());
+      saveGame();
+      return true;
+    };
 
     const useWeaponAbility = (slotIndex: number): boolean =>
       combatBridgeAdapter.useWeaponAbility(slotIndex);
@@ -506,6 +521,8 @@ export function GameProvider({
       enchantmentService,
       statsManager, currencyService, economyTransactionService, vendorRegistry,
       walletId, playerId, worldCoordinator,
+      needsStarterSelection: () => starterSelectionPending,
+      selectStarterWeapon,
       useConsumable: (itemId) => consumableActions.use(itemId),
       useWeaponAbility,
       usePrimaryAbility,
@@ -544,7 +561,7 @@ export function GameProvider({
 
   return (
     <GameServicesContextProvider services={services}>
-      {children}
+      <StarterSelectionGate>{children}</StarterSelectionGate>
     </GameServicesContextProvider>
   );
 }
