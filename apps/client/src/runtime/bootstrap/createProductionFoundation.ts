@@ -22,6 +22,7 @@ import { EQUIPMENT_CRAFT_RECIPES } from "../../data/refiningRecipes.js";
 import { getItemPower } from "../../data/itemPower.js";
 import { setupResourceContentCatalog } from "../../data/resourceContentCatalog.js";
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog.js";
+import type { SupportedProductionFamily } from "../../data/productionFamilyCatalog.js";
 import { CraftingRuntime } from "../CraftingRuntime.js";
 import { GatheringRuntime } from "../GatheringRuntime.js";
 import { RefiningRuntime } from "../RefiningRuntime.js";
@@ -40,7 +41,7 @@ interface ProductionFoundationDependencies {
   readonly walletId: WalletId;
   readonly forestZoneDefId: ZoneDefinitionId;
   readonly getGatheringTier: () => ProductionTier;
-  readonly getRefiningTier: () => ProductionTier;
+  readonly getRefiningTier: (family: SupportedProductionFamily) => ProductionTier;
   readonly getWorkerTier: () => ProductionTier;
 }
 
