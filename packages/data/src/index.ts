@@ -64,3 +64,6 @@ export * from "./config/combat-progression.js";
 
 // World progression bands
 export * from "./config/world-bands.js";
+
+// Player Island configuration
+export * from "./config/island.js";
