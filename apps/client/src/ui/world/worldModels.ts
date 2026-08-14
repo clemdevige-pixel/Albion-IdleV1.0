@@ -4,7 +4,7 @@ import { renderManifestRegistry } from "../../game/render/defaultRenderManifestR
 import { selectDashboardZone, type DashboardZoneModel } from "../dashboard/dashboardModels";
 import { WORLD_BAND_DEFINITIONS, type WorldBandId } from "@game/data";
 
-export type WorldTabId = "zones" | "bestiary" | "achievements";
+export type WorldTabId = "zones" | "gathering" | "bestiary" | "achievements";
 export type { WorldBandId } from "@game/data";
 
 export interface WorldBandModel {
