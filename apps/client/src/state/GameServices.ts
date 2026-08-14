@@ -1,6 +1,6 @@
 import type { SupportedProductionFamily } from "../data/productionFamilyCatalog";
 import type { ProductionTier } from "../data/productionFamilyCatalog";
-import type { IslandBuildingId } from "@game/data";
+import type { IslandBuildingId, IslandWorldRequirement } from "@game/data";
 import type { EventBus, EntityId } from "@game/core";
 import type {
   CombatOrchestrator,
@@ -38,6 +38,7 @@ export interface GameServices {
   readonly worldCoordinator: WorldCoordinator;
   readonly needsStarterSelection: () => boolean;
   readonly selectStarterWeapon: (itemId: string) => boolean;
+  readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
