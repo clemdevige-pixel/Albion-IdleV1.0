@@ -5,7 +5,7 @@ import {
 } from "@game/gameplay";
 import { getItemDisplayName } from "../../../panels/ItemVisual";
 import { useGameServices } from "../../../state/GameContext";
-import { getOwnedItemTotals } from "../merchantModels";
+import { isProductionMaterial } from "../../../runtime/ProductionStorage";
 import { useMerchantData } from "../useMerchantData";
 import type { EnchantModel, EnchantableItemModel } from "./enchantModels";
 
@@ -17,7 +17,12 @@ const STOCK_ITEM_IDS = [
 
 export function useEnchantData(requestedInstanceId: string | null): EnchantModel {
   const snapshot = useMerchantData();
-  const { enchantmentService } = useGameServices();
+  const {
+    enchantmentService,
+    inventoryManager,
+    heroId,
+    productionStorageId,
+  } = useGameServices();
 
   return useMemo(() => {
     const inventoryItems: readonly EnchantableItemModel[] = snapshot.inventory.slots.flatMap((slot) => {
@@ -66,7 +71,6 @@ export function useEnchantData(requestedInstanceId: string | null): EnchantModel
       canAfford: rawPreview.canAfford,
       failureReason: rawPreview.failureReason,
     };
-    const owned = getOwnedItemTotals(snapshot.inventory);
 
     return {
       silver: snapshot.wallet.silver,
@@ -77,8 +81,18 @@ export function useEnchantData(requestedInstanceId: string | null): EnchantModel
       stocks: STOCK_ITEM_IDS.map((itemId) => ({
         itemId,
         name: getItemDisplayName(itemId),
-        quantity: owned.get(itemId) ?? 0,
+        quantity: inventoryManager.getTotalQuantity(
+          isProductionMaterial(itemId) ? productionStorageId : heroId,
+          itemId,
+        ),
       })),
     };
-  }, [enchantmentService, requestedInstanceId, snapshot]);
+  }, [
+    enchantmentService,
+    heroId,
+    inventoryManager,
+    productionStorageId,
+    requestedInstanceId,
+    snapshot,
+  ]);
 }
