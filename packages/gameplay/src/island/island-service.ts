@@ -76,6 +76,10 @@ export class PlayerIslandService implements SaveProvider {
     return this.#state;
   }
 
+  getBuildingLevel(definitionId: IslandBuildingId): number | undefined {
+    return this.#state.buildings.find((building) => building.definitionId === definitionId)?.level;
+  }
+
   save(): IslandSnapshot {
     return {
       version: 1,
