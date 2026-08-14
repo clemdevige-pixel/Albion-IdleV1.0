@@ -5,6 +5,7 @@ import {
   getIslandOperationalLevelDefinition,
   getNextIslandLevelDefinition,
   type IslandBuildingId,
+  type IslandWorldRequirement,
 } from "@game/data";
 import type { CurrencyService, InventoryManager, PlayerIslandService, WalletId } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge";
@@ -16,6 +17,7 @@ interface IslandActionsDependencies {
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly bridge: GameBridge;
+  readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
   readonly resyncAll: () => void;
 }
 
@@ -63,7 +65,9 @@ export class IslandActions {
     if (!preview.ok) return false;
     const next = getNextIslandLevelDefinition(this.#deps.islandService.getState().level);
     const cost = next?.upgradeCost;
-    if (next === undefined || cost === undefined || !this.#canAfford(cost.silver, cost.requirements)) return false;
+    if (next === undefined || cost === undefined) return false;
+    if (next.worldRequirementToReach !== undefined && !this.#deps.isWorldRequirementMet(next.worldRequirementToReach)) return false;
+    if (!this.#canAfford(cost.silver, cost.requirements)) return false;
     if (!this.#pay(cost.silver, cost.requirements)) return false;
     const upgraded = this.#deps.islandService.upgradeIslandLevel();
     if (!upgraded.ok) { this.#refund(cost.silver, cost.requirements); return false; }
