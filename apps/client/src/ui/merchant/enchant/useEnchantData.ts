@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import {
+  ENCHANTMENT_RESOURCE_TIERS,
   getEnchantmentItemPowerBonus,
+  getEnchantmentShardItemId,
   type ItemInstanceId,
 } from "@game/gameplay";
 import { getItemDisplayName } from "../../../panels/ItemVisual";
@@ -9,11 +11,7 @@ import { isProductionMaterial } from "../../../runtime/ProductionStorage";
 import { useMerchantData } from "../useMerchantData";
 import type { EnchantModel, EnchantableItemModel } from "./enchantModels";
 
-const STOCK_ITEM_IDS = [
-  "item_resource_enchantment_essence",
-  "item_resource_arcane_crystal",
-  "item_resource_enchantment_catalyst",
-] as const;
+const STOCK_ITEM_IDS = ENCHANTMENT_RESOURCE_TIERS.map(getEnchantmentShardItemId);
 
 export function useEnchantData(requestedInstanceId: string | null): EnchantModel {
   const snapshot = useMerchantData();
