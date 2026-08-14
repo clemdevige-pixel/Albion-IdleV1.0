@@ -4,6 +4,7 @@ import {
   getProductionFamilyDefinition,
 } from "../../data/productionFamilyCatalog";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import "./workerHouse.css";
 
 export function WorkerHousePanel({ level }: { readonly level: number }): JSX.Element {
   const { workers } = useGameBridge();
