@@ -1,7 +1,8 @@
 import type { MouseEvent, ReactNode } from "react";
 import { ItemHoverTooltip } from "../../panels/ItemHoverTooltip";
 import {
-  getEnchantmentFrameClass,
+  getEnchantmentTextClass,
+  getEquipmentTierFrameClass,
   getItemDefinition,
   ItemVisual,
 } from "../../panels/ItemVisual";
@@ -18,26 +19,12 @@ interface ItemSlotProps {
   readonly onDoubleClick?: () => void;
 }
 
-export function ItemSlot({
-  label,
-  itemId,
-  instanceId,
-  enchantment,
-  selected = false,
-  disabled = false,
-  disabledContent,
-  onClick,
-  onDoubleClick,
-}: ItemSlotProps): JSX.Element {
+export function ItemSlot({ label, itemId, instanceId, enchantment, selected = false, disabled = false, disabledContent, onClick, onDoubleClick }: ItemSlotProps): JSX.Element {
   const definition = itemId === undefined ? undefined : getItemDefinition(itemId);
   const content = (
     <button
       type="button"
-      className={`ui-item-slot${itemId !== undefined ? " ui-item-slot--filled" : ""}${
-        selected ? " ui-item-slot--selected" : ""
-      }${disabled ? " ui-item-slot--disabled" : ""}${
-        getEnchantmentFrameClass(enchantment)
-      }`}
+      className={`ui-item-slot${itemId !== undefined ? " ui-item-slot--filled" : ""}${selected ? " ui-item-slot--selected" : ""}${disabled ? " ui-item-slot--disabled" : ""}${getEquipmentTierFrameClass(definition?.tier)}`}
       disabled={disabled}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -50,21 +37,14 @@ export function ItemSlot({
         <>
           <span className="ui-item-slot__visual"><ItemVisual itemId={itemId} /></span>
           {definition !== undefined && (
-            <span className="ui-item-slot__meta">
-              T{String(definition.tier)}{enchantment > 0 ? ` .${String(enchantment)}` : ""}
+            <span className={`ui-item-slot__meta${getEnchantmentTextClass(enchantment)}`}>
+              T{String(definition.tier)}.{String(enchantment)}
             </span>
           )}
         </>
-      ) : (
-        <span className="ui-item-slot__empty">+</span>
-      )}
+      ) : <span className="ui-item-slot__empty">+</span>}
     </button>
   );
-
   if (itemId === undefined || disabled) return content;
-  return (
-    <ItemHoverTooltip itemId={itemId} quantity={1} instanceId={instanceId}>
-      {content}
-    </ItemHoverTooltip>
-  );
+  return <ItemHoverTooltip itemId={itemId} quantity={1} instanceId={instanceId}>{content}</ItemHoverTooltip>;
 }
