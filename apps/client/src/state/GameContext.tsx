@@ -1,4 +1,4 @@
-import type { ProductionTier } from "../data/productionFamilyCatalog";
+import type { ProductionTier, SupportedProductionFamily } from "../data/productionFamilyCatalog";
 import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence, type RuntimePersistenceDependencies } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
@@ -74,7 +74,12 @@ export function GameProvider({
     };
     let tickCounter = 0;
     let gatheringTier: ProductionTier = 3;
-    let refiningTier: ProductionTier = 3;
+    const refiningTiers: Record<SupportedProductionFamily, ProductionTier> = {
+      Wood: 3,
+      Ore: 3,
+      Hide: 3,
+      Fiber: 3,
+    };
     let craftingTier: ProductionTier = 3;
     let workerTier: ProductionTier = 3;
 
@@ -181,7 +186,7 @@ export function GameProvider({
       walletId,
       forestZoneDefId: FOREST_ZONE_DEF_ID,
       getGatheringTier: () => gatheringTier,
-      getRefiningTier: () => refiningTier,
+      getRefiningTier: (family) => refiningTiers[family],
       getWorkerTier: () => workerTier,
     });
     const {
@@ -376,8 +381,8 @@ export function GameProvider({
       getCurrentTick: () => tickCounter,
       getGatheringTier: () => gatheringTier,
       setGatheringTier: (tier) => { gatheringTier = tier; },
-      getRefiningTier: () => refiningTier,
-      setRefiningTier: (tier) => { refiningTier = tier; },
+      getRefiningTier: (family) => refiningTiers[family],
+      setRefiningTier: (family, tier) => { refiningTiers[family] = tier; },
       getCraftingTier: () => craftingTier,
       setCraftingTier: (tier) => { craftingTier = tier; },
       setWorkerTier: (tier) => { workerTier = tier; },
@@ -519,7 +524,7 @@ export function GameProvider({
       toggleRefining: (family) => productionController.toggleRefining(family),
       refineAllAvailable: () => productionController.refineAllAvailable(),
       setGatheringTier: (tier) => productionController.setGatheringTier(tier),
-      setRefiningTier: (tier) => productionController.setRefiningTier(tier),
+      setRefiningTier: (family, tier) => productionController.setRefiningTier(family, tier),
       setCraftingTier: (tier) => productionController.setCraftingTier(tier),
       craftEquipment: (outputItemId) => productionController.craftEquipment(outputItemId),
       recruitWorker: (profession) => productionController.recruitWorker(profession),
@@ -527,6 +532,7 @@ export function GameProvider({
       constructIslandBuilding: (definitionId, plotId) => (
         islandActions.constructBuilding(definitionId, plotId)
       ),
+      upgradeIslandBuilding: (definitionId) => islandActions.upgradeBuilding(definitionId),
       repairAll: () => repairActions.repairAll(),
       saveGame, loadGame, hasSave, exportSave, importSave,
     };
