@@ -15,7 +15,8 @@ export function AppShell(): JSX.Element {
     <IslandSelectionProvider>
       <div className="ui-app-shell">
         <HeaderRegion />
-        {isIsland ? <IslandWorldRegion /> : <GameWorldRegion />}
+        <GameWorldRegion hidden={isIsland} />
+        {isIsland && <IslandWorldRegion />}
         <RightPanelHost />
         <BottomBarRegion />
       </div>
