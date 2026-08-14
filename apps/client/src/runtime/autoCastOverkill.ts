@@ -1,5 +1,11 @@
 import type { EntityId } from "@game/core";
-import { calculateDamage, type DamageManager, type StatId, type StatsManager } from "@game/gameplay";
+import {
+  calculateDamage,
+  type DamageManager,
+  type EffectManager,
+  type StatId,
+  type StatsManager,
+} from "@game/gameplay";
 import { AUTO_CAST_MAX_IMMEDIATE_DAMAGE_TO_REMAINING_HP_RATIO } from "../data/combatAutomationPolicy.js";
 import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
 import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
@@ -14,6 +20,7 @@ export interface AutoCastOverkillDeps {
   readonly targetId: EntityId;
   readonly definition: ClientAbilityDefinition;
   readonly damageManager: DamageManager;
+  readonly effectManager: EffectManager;
   readonly statsManager: StatsManager;
 }
 
@@ -52,11 +59,10 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
       }
       if (
         mechanic.bonusEffect !== undefined
-        && false
+        && deps.effectManager
+          .getActiveEffects(deps.targetId)
+          .some((effect) => effect.definition.id === mechanic.bonusEffect?.effectId)
       ) {
-        // Effect-conditioned bonuses are deliberately handled by the runtime's
-        // normal auto-rule. The overkill guard stays conservative rather than
-        // duplicating EffectManager state here.
         totalRatio += mechanic.bonusEffect.bonusRatio;
       }
 
