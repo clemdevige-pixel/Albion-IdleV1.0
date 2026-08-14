@@ -22,7 +22,9 @@ export function IslandModule(): JSX.Element {
   );
 
   const buildingByInstanceId = useMemo(
-    () => new Map(island.buildings.map((building) => [building.instanceId, building])),
+    () => new Map(
+      island.buildings.map((building) => [building.instanceId, building] as const),
+    ),
     [island.buildings],
   );
   const selectedBuilding = selectedBuildingInstanceId === null
