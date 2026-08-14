@@ -76,9 +76,15 @@ const RESOURCE_VISUALS: Readonly<Record<string, { readonly name: string; readonl
 };
 
 const ENCHANTMENT_RESOURCE_VISUALS: Readonly<Record<string, { readonly name: string; readonly symbol: string }>> = {
-  item_resource_enchantment_essence: { name: "Essence d’enchantement", symbol: "✦" },
-  item_resource_arcane_crystal: { name: "Cristal arcanique", symbol: "◆" },
-  item_resource_enchantment_catalyst: { name: "Catalyseur d’enchantement", symbol: "⬢" },
+  item_resource_enchantment_shard_t4: { name: "Éclat d’enchantement T4", symbol: "✦" },
+  item_resource_enchantment_shard_t5: { name: "Éclat d’enchantement T5", symbol: "✦" },
+  item_resource_enchantment_shard_t6: { name: "Éclat d’enchantement T6", symbol: "✦" },
+  item_resource_enchantment_shard_t7: { name: "Éclat d’enchantement T7", symbol: "✦" },
+  item_resource_enchantment_shard_t8: { name: "Éclat d’enchantement T8", symbol: "✦" },
+  // Legacy save presentation only.
+  item_resource_enchantment_essence: { name: "Essence d’enchantement (ancienne)", symbol: "✦" },
+  item_resource_arcane_crystal: { name: "Cristal arcanique (ancien)", symbol: "◆" },
+  item_resource_enchantment_catalyst: { name: "Catalyseur d’enchantement (ancien)", symbol: "⬢" },
 };
 
 const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
