@@ -18,6 +18,37 @@ const OUTPUT_PATH = path.resolve(
   "runtime-blue-persistent-progression-farm.csv",
 );
 
+function runPnpm(args: readonly string[]): void {
+  const pnpmCli = path.resolve("node_modules", "pnpm", "bin", "pnpm.cjs");
+  const fallbackPnpmCli = path.resolve(
+    "node_modules",
+    ".pnpm",
+    "pnpm@9.15.0",
+    "node_modules",
+    "pnpm",
+    "bin",
+    "pnpm.cjs",
+  );
+  const cli = fs.existsSync(pnpmCli) ? pnpmCli : fallbackPnpmCli;
+  if (!fs.existsSync(cli)) {
+    throw new Error("Unable to locate pnpm CLI in node_modules");
+  }
+  execFileSync(process.execPath, [cli, ...args], {
+    cwd: process.cwd(),
+    stdio: "inherit",
+    env: process.env,
+  });
+}
+
+function prepareWorkspace(): void {
+  console.log("Preparing workspace packages required by the Blue runtime...");
+  runPnpm(["--filter", "@game/shared", "build"]);
+  runPnpm(["--filter", "@game/core", "build"]);
+  runPnpm(["--filter", "@game/data", "build"]);
+  runPnpm(["--filter", "@game/persistence", "build"]);
+  runPnpm(["--filter", "@game/gameplay", "build"]);
+}
+
 function runBenchmark(): Buffer {
   const tsxCli = path.resolve("node_modules", "tsx", "dist", "cli.mjs");
   execFileSync(
@@ -87,6 +118,7 @@ function validateCsv(value: Buffer): void {
 }
 
 console.log("=== TEMP BLUE RUNTIME DETERMINISM CHECK ===");
+prepareWorkspace();
 console.log("Run 1/2");
 const first = runBenchmark();
 validateCsv(first);
