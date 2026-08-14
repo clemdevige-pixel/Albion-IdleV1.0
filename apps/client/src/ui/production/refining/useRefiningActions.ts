@@ -11,7 +11,7 @@ export interface RefiningActions {
 
 export function useRefiningActions(): RefiningActions {
   const {
-    setProductionTier,
+    setRefiningTier,
     toggleRefining,
     refineAllAvailable,
   } = useGameServices();
@@ -22,6 +22,5 @@ export function useRefiningActions(): RefiningActions {
     )
   ), [toggleRefining]);
 
-  return { setTier: setProductionTier, toggle, refineAll: refineAllAvailable };
+  return { setTier: setRefiningTier, toggle, refineAll: refineAllAvailable };
 }
-
