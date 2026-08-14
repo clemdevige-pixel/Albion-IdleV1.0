@@ -43,7 +43,9 @@ type IslandSnapshot = z.infer<typeof IslandSnapshotSchema>;
 
 function createInitialState(config: PlayerIslandConfig): PlayerIslandState {
   const buildings: IslandBuildingState[] = config.initialBuildings.map((building) => ({ ...building }));
-  const buildingByPlot = new Map(buildings.map((building) => [building.plotId, building.instanceId]));
+  const buildingByPlot = new Map<string, string>(
+    buildings.map((building) => [building.plotId, building.instanceId] as const),
+  );
 
   return {
     plots: config.plots.map((plot) => ({
@@ -94,10 +96,13 @@ export class PlayerIslandService implements SaveProvider {
 
   #isValidSnapshot(snapshot: IslandSnapshot): boolean {
     const validPlotIds = new Set(this.#config.plots.map((plot) => plot.id));
+    const snapshotPlotIds = new Set(snapshot.plots.map((plot) => plot.id));
     const buildingInstanceIds = new Set(snapshot.buildings.map((building) => building.instanceId));
 
     if (snapshot.plots.length !== this.#config.plots.length) return false;
+    if (snapshotPlotIds.size !== snapshot.plots.length) return false;
     if (snapshot.plots.some((plot) => !validPlotIds.has(plot.id))) return false;
+    if (buildingInstanceIds.size !== snapshot.buildings.length) return false;
     if (snapshot.buildings.some((building) => !validPlotIds.has(building.plotId))) return false;
 
     for (const plot of snapshot.plots) {
