@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { PLAYER_ISLAND_CONFIG, getIslandBuildingDefinition, type IslandBuildingId } from "@game/data";
 import { useGameBridge } from "../../state/GameContext";
-import { ProductionModule } from "../production";
 import { ConstructionPanel } from "./ConstructionPanel";
 import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
@@ -9,8 +8,6 @@ import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
 import { WorkerHousePanel } from "./WorkerHousePanel";
 import "./island.css";
-
-type IslandView = "island" | "production";
 
 const CATEGORY_LABELS = {
   workers: "Ouvriers",
@@ -22,7 +19,6 @@ const CATEGORY_LABELS = {
 
 export function IslandModule(): JSX.Element {
   const { island } = useGameBridge();
-  const [view, setView] = useState<IslandView>("island");
   const [selectedBuildingInstanceId, setSelectedBuildingInstanceId] = useState<string | null>(
     island.buildings[0]?.instanceId ?? null,
   );
@@ -47,22 +43,8 @@ export function IslandModule(): JSX.Element {
     ? undefined
     : getIslandBuildingDefinition(selectedBuilding.definitionId);
 
-  if (view === "production") {
-    return (
-      <div className="ui-island">
-        <IslandNavigation activeView={view} onChange={setView} />
-        <div className="ui-island__transition-note">
-          Interface Production conservée pendant la migration des activités vers les bâtiments de l'île.
-        </div>
-        <ProductionModule />
-      </div>
-    );
-  }
-
   return (
     <div className="ui-island">
-      <IslandNavigation activeView={view} onChange={setView} />
-
       <section className="ui-island__intro">
         <div>
           <span className="ui-island__eyebrow">Hub économique permanent</span>
@@ -144,33 +126,6 @@ export function IslandModule(): JSX.Element {
         </div>
       </section>
     </div>
-  );
-}
-
-function IslandNavigation({
-  activeView,
-  onChange,
-}: {
-  readonly activeView: IslandView;
-  readonly onChange: (view: IslandView) => void;
-}): JSX.Element {
-  return (
-    <nav className="ui-island__tabs" aria-label="Sections de l'île">
-      <button
-        type="button"
-        className={activeView === "island" ? "is-active" : ""}
-        onClick={() => { onChange("island"); }}
-      >
-        Île
-      </button>
-      <button
-        type="button"
-        className={activeView === "production" ? "is-active" : ""}
-        onClick={() => { onChange("production"); }}
-      >
-        Production actuelle
-      </button>
-    </nav>
   );
 }
 
