@@ -8,8 +8,6 @@ export const UI_MODULE_LABELS: Readonly<Record<UiModuleId, string>> = {
   inventory: "Inventaire",
   masteries: "Maîtrises",
   island: "Île",
-  production: "Production",
-  craft: "Fabrication",
   merchant: "Marchand",
   world: "Monde",
 };
