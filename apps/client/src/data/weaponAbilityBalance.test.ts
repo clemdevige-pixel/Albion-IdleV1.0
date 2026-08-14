@@ -17,7 +17,8 @@ const T4_WEAPONS = [
 ] as const;
 
 function effectiveDamage(itemId: string): number {
-  const definition = WEAPON_ITEM_DEFINITIONS[itemId]!;
+  const definition = WEAPON_ITEM_DEFINITIONS[itemId];
+  if (definition === undefined || definition.stats === undefined) return 0;
   const authored = definition.stats.stat_physical_damage ?? definition.stats.stat_magical_damage ?? 0;
   return authored * getWeaponHandlingOffensiveMultiplier(definition.handling);
 }
@@ -57,7 +58,9 @@ describe("weapon ability balance envelope", () => {
   });
 
   it("keeps execution conditional in auto while manual data remains available", () => {
-    expect(CLIENT_ABILITIES.ability_sword_execution.autoCast).toEqual({ kind: "target_health_below", ratio: 0.3 });
+    const execution = CLIENT_ABILITIES.ability_sword_execution;
+    expect(execution).toBeDefined();
+    expect(execution?.autoCast).toEqual({ kind: "target_health_below", ratio: 0.3 });
     expect(getWeaponAbilityMechanics("ability_sword_execution")?.autoRule).toEqual({ kind: "target_health_below", ratio: 0.3 });
   });
 });
