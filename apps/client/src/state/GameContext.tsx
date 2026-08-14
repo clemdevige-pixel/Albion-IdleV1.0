@@ -2,6 +2,7 @@ import type { ProductionTier } from "../data/productionFamilyCatalog";
 import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence, type RuntimePersistenceDependencies } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
+import { getInitialIslandWorkerHouseLevelDefinition } from "@game/data";
 import { PlayerIslandService, WorldSaveProvider } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge";
 import { RefiningSaveProvider } from "../runtime/RefiningRuntime";
@@ -48,8 +49,7 @@ export { useGameBridge, useGameServices } from "./GameServicesContext.js";
 
 export const HERO_BASE_ATTACK_SPEED = 1.2;
 
-const WORKER_RECRUITMENT_COST = 250;
-const WORKER_CAPACITY = 4;
+const WORKER_HOUSE_BASELINE = getInitialIslandWorkerHouseLevelDefinition();
 
 export function GameProvider({
   saveSlotId,
@@ -363,8 +363,8 @@ export function GameProvider({
       prepareCombatResumeAfterGathering: () => {
         worldNavigationActions.prepareCombatResumeAfterGathering();
       },
-      workerCapacity: WORKER_CAPACITY,
-      workerRecruitmentCost: WORKER_RECRUITMENT_COST,
+      workerCapacity: WORKER_HOUSE_BASELINE.workerCapacity,
+      workerRecruitmentCost: WORKER_HOUSE_BASELINE.recruitmentCost,
     });
     persistence.registerProvider(productionController.createWorkerSaveProvider());
 
