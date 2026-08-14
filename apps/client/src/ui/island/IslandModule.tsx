@@ -1,9 +1,15 @@
 import { useMemo, useState } from "react";
-import { PLAYER_ISLAND_CONFIG, getIslandBuildingDefinition, type IslandBuildingId } from "@game/data";
-import { useGameBridge } from "../../state/GameContext";
+import {
+  PLAYER_ISLAND_CONFIG,
+  getIslandBuildingDefinition,
+  getIslandLevelDefinition,
+  type IslandBuildingId,
+} from "@game/data";
+import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { ConstructionPanel } from "./ConstructionPanel";
 import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
+import { IslandLevelPanel } from "./IslandLevelPanel";
 import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
 import { UpgradePanel } from "./UpgradePanel";
@@ -20,6 +26,9 @@ const CATEGORY_LABELS = {
 
 export function IslandModule(): JSX.Element {
   const { island } = useGameBridge();
+  const { getIslandLevel } = useGameServices();
+  const islandLevel = getIslandLevel();
+  const islandLevelDefinition = getIslandLevelDefinition(islandLevel);
   const [selectedBuildingInstanceId, setSelectedBuildingInstanceId] = useState<string | null>(
     island.buildings[0]?.instanceId ?? null,
   );
@@ -49,10 +58,13 @@ export function IslandModule(): JSX.Element {
       <section className="ui-island__intro">
         <div>
           <span className="ui-island__eyebrow">Hub économique permanent</span>
-          <strong>Île du joueur</strong>
+          <strong>Île du joueur · Niv. {String(islandLevel)}</strong>
+          <small>{islandLevelDefinition?.label ?? "Développement"}</small>
         </div>
         <span className="ui-island__count">{island.buildings.length} bâtiments</span>
       </section>
+
+      <IslandLevelPanel />
 
       <section className="ui-island__plots" aria-label="Implantation de l'île">
         {PLAYER_ISLAND_CONFIG.plots.map((plotDefinition) => {
@@ -101,6 +113,7 @@ export function IslandModule(): JSX.Element {
       ) : selectedPlotId !== null ? (
         <ConstructionPanel
           plotId={selectedPlotId}
+          islandLevel={islandLevel}
           builtDefinitionIds={builtDefinitionIds}
           onBuilt={(definitionId) => {
             setSelectedBuildingInstanceId(`island_${definitionId}`);
