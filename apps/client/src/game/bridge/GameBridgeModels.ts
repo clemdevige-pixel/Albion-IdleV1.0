@@ -1,5 +1,9 @@
 import type { ProductionTier } from "../../data/productionFamilyCatalog";
-import type { IslandBuildingId, WorldBandId } from "@game/data";
+import {
+  getInitialIslandWorkerHouseLevelDefinition,
+  type IslandBuildingId,
+  type WorldBandId,
+} from "@game/data";
 import type { CombatState, EquipmentSlot, VendorRole, WorkerProfession } from "@game/gameplay";
 
 export interface DamageNumberEvent {
@@ -385,6 +389,7 @@ const EMPTY_REFINING: RefiningVM = {
   reservedInputQuantity: 0,
   requirements: [],
 };
+const INITIAL_WORKER_HOUSE = getInitialIslandWorkerHouseLevelDefinition();
 
 export function createInitialGameBridgeState(): GameBridgeState {
   return {
@@ -477,7 +482,11 @@ export function createInitialGameBridgeState(): GameBridgeState {
       clothQuantity: 0,
       recipes: [],
     },
-    workers: { capacity: 4, recruitmentCost: 250, workers: [] },
+    workers: {
+      capacity: INITIAL_WORKER_HOUSE.workerCapacity,
+      recruitmentCost: INITIAL_WORKER_HOUSE.recruitmentCost,
+      workers: [],
+    },
     island: { plots: [], buildings: [] },
   };
 }
