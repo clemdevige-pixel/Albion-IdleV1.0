@@ -16,6 +16,7 @@ export type IslandBuildingId = (typeof ISLAND_BUILDING_IDS)[number];
 export type IslandBuildingCategory = "workers" | "gathering" | "refining" | "crafting" | "storage";
 export type IslandProductionFamily = "wood" | "ore" | "hide" | "fiber";
 export type IslandWorkerProfession = "woodcutter" | "miner" | "skinner" | "fiber_harvester";
+export type IslandCraftingCategory = "weapons" | "armors" | "other";
 
 export interface IslandGatheringServiceDefinition {
   readonly productionFamily: IslandProductionFamily;
@@ -24,6 +25,10 @@ export interface IslandGatheringServiceDefinition {
 
 export interface IslandRefiningServiceDefinition {
   readonly productionFamily: IslandProductionFamily;
+}
+
+export interface IslandCraftingServiceDefinition {
+  readonly categories: readonly IslandCraftingCategory[];
 }
 
 export interface IslandConstructionRequirement {
@@ -45,6 +50,7 @@ export interface IslandBuildingDefinition {
   readonly icon: string;
   readonly gatheringService?: IslandGatheringServiceDefinition;
   readonly refiningService?: IslandRefiningServiceDefinition;
+  readonly craftingService?: IslandCraftingServiceDefinition;
   readonly construction?: IslandConstructionDefinition;
 }
 
@@ -82,10 +88,13 @@ export interface PlayerIslandConfig {
 
 const GATHERING_BUILDING_SILVER_COST = 100;
 const REFINING_BUILDING_SILVER_COST = 150;
+const WORKSHOP_SILVER_COST = 200;
 const T3_WOOD_ID = "item_resource_wood_t3";
 const T3_ORE_ID = "item_resource_copper_ore_t3";
 const T3_HIDE_ID = "item_resource_hide_t3";
 const T3_FIBER_ID = "item_resource_fiber_t3";
+const T3_PLANKS_ID = "item_refined_planks_t3";
+const T3_BARS_ID = "item_refined_copper_bar_t3";
 
 const BUILDINGS: readonly IslandBuildingDefinition[] = [
   {
@@ -229,6 +238,15 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     category: "crafting",
     description: "Fabrication des armes, armures et objets utiles au héros.",
     icon: "⚒",
+    craftingService: { categories: ["weapons", "armors", "other"] },
+    construction: {
+      silver: WORKSHOP_SILVER_COST,
+      requirements: [
+        { itemId: T3_PLANKS_ID, quantity: 8 },
+        { itemId: T3_BARS_ID, quantity: 8 },
+      ],
+      prerequisiteBuildings: ["sawmill", "smelter"],
+    },
   },
 ] as const;
 
