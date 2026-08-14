@@ -22,6 +22,16 @@ export interface IslandGatheringServiceDefinition {
   readonly workerProfession: IslandWorkerProfession;
 }
 
+export interface IslandConstructionRequirement {
+  readonly itemId: string;
+  readonly quantity: number;
+}
+
+export interface IslandConstructionDefinition {
+  readonly silver: number;
+  readonly requirements: readonly IslandConstructionRequirement[];
+}
+
 export interface IslandBuildingDefinition {
   readonly id: IslandBuildingId;
   readonly label: string;
@@ -29,6 +39,7 @@ export interface IslandBuildingDefinition {
   readonly description: string;
   readonly icon: string;
   readonly gatheringService?: IslandGatheringServiceDefinition;
+  readonly construction?: IslandConstructionDefinition;
 }
 
 export interface IslandPlotDefinition {
@@ -63,6 +74,9 @@ export interface PlayerIslandConfig {
   readonly storageLevels: readonly IslandStorageLevelDefinition[];
 }
 
+const GATHERING_BUILDING_SILVER_COST = 100;
+const T3_WOOD_ID = "item_resource_wood_t3";
+
 const BUILDINGS: readonly IslandBuildingDefinition[] = [
   {
     id: "worker_house",
@@ -85,6 +99,10 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     description: "Production passive de bois par les ouvriers affectés.",
     icon: "♣",
     gatheringService: { productionFamily: "wood", workerProfession: "woodcutter" },
+    construction: {
+      silver: GATHERING_BUILDING_SILVER_COST,
+      requirements: [{ itemId: T3_WOOD_ID, quantity: 20 }],
+    },
   },
   {
     id: "mine",
@@ -93,6 +111,13 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     description: "Production passive de minerai par les ouvriers affectés.",
     icon: "◆",
     gatheringService: { productionFamily: "ore", workerProfession: "miner" },
+    construction: {
+      silver: GATHERING_BUILDING_SILVER_COST,
+      requirements: [
+        { itemId: T3_WOOD_ID, quantity: 12 },
+        { itemId: "item_resource_copper_ore_t3", quantity: 8 },
+      ],
+    },
   },
   {
     id: "hunting_camp",
@@ -101,6 +126,13 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     description: "Production passive de peaux par les ouvriers affectés.",
     icon: "◈",
     gatheringService: { productionFamily: "hide", workerProfession: "skinner" },
+    construction: {
+      silver: GATHERING_BUILDING_SILVER_COST,
+      requirements: [
+        { itemId: T3_WOOD_ID, quantity: 12 },
+        { itemId: "item_resource_hide_t3", quantity: 8 },
+      ],
+    },
   },
   {
     id: "fiber_camp",
@@ -109,6 +141,13 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     description: "Production passive de fibres par les ouvriers affectés.",
     icon: "≈",
     gatheringService: { productionFamily: "fiber", workerProfession: "fiber_harvester" },
+    construction: {
+      silver: GATHERING_BUILDING_SILVER_COST,
+      requirements: [
+        { itemId: T3_WOOD_ID, quantity: 12 },
+        { itemId: "item_resource_fiber_t3", quantity: 8 },
+      ],
+    },
   },
   {
     id: "sawmill",
@@ -148,8 +187,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
 ] as const;
 
 export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
-  // Phase 1: these plots only describe the visual layout. No gameplay capacity
-  // or punitive placement restriction is enforced until the plot design is validated.
+  // The layout is visual-first. No punitive plot capacity rule is enforced.
   plots: [
     { id: "plot_01", column: 1, row: 1 },
     { id: "plot_02", column: 2, row: 1 },
@@ -161,14 +199,11 @@ export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
     { id: "plot_08", column: 4, row: 2 },
   ],
   buildings: BUILDINGS,
-  // Minimal technical starting state. Construction/progression rules are added
-  // in later Island phases and remain entirely data-driven.
   initialBuildings: [
     { instanceId: "island_worker_house", definitionId: "worker_house", plotId: "plot_01", level: 1 },
     { instanceId: "island_storage", definitionId: "storage", plotId: "plot_02", level: 1 },
   ],
-  // Only already-existing baselines are defined for now. Additional levels
-  // require balancing validation rather than invented placeholder values.
+  // Existing vertical-slice baselines. Additional levels remain unauthored.
   workerHouseLevels: [
     { level: 1, workerCapacity: 4, recruitmentCost: 250 },
   ],
