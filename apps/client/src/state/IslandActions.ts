@@ -35,7 +35,7 @@ export class IslandActions {
     const builtIds = new Set(this.#deps.islandService.getState().buildings.map((building) => building.definitionId));
     if (construction.prerequisiteBuildings?.some((requiredId) => !builtIds.has(requiredId)) === true) return false;
     if (!this.#canAfford(construction.silver, construction.requirements)) return false;
-    if (!this.#pay(construction.silver, construction.requirements, "Island construction")) return false;
+    if (!this.#pay(construction.silver, construction.requirements)) return false;
     const built = this.#deps.islandService.placeBuilding(definitionId, plotId);
     if (!built.ok) { this.#refund(construction.silver, construction.requirements); return false; }
     this.#deps.resyncAll();
@@ -49,7 +49,7 @@ export class IslandActions {
     const currentDefinition = getIslandOperationalLevelDefinition(definitionId, preview.building.level - 1);
     const cost = currentDefinition?.upgradeToNext;
     if (cost === undefined || !this.#canAfford(cost.silver, cost.requirements)) return false;
-    if (!this.#pay(cost.silver, cost.requirements, "Island upgrade")) return false;
+    if (!this.#pay(cost.silver, cost.requirements)) return false;
     const upgraded = this.#deps.islandService.upgradeBuilding(definitionId);
     if (!upgraded.ok) { this.#refund(cost.silver, cost.requirements); return false; }
     this.#deps.resyncAll();
@@ -64,7 +64,7 @@ export class IslandActions {
     const next = getNextIslandLevelDefinition(this.#deps.islandService.getState().level);
     const cost = next?.upgradeCost;
     if (next === undefined || cost === undefined || !this.#canAfford(cost.silver, cost.requirements)) return false;
-    if (!this.#pay(cost.silver, cost.requirements, "Island level upgrade")) return false;
+    if (!this.#pay(cost.silver, cost.requirements)) return false;
     const upgraded = this.#deps.islandService.upgradeIslandLevel();
     if (!upgraded.ok) { this.#refund(cost.silver, cost.requirements); return false; }
     this.#deps.resyncAll();
@@ -84,8 +84,8 @@ export class IslandActions {
     return balance.ok && balance.value >= silver;
   }
 
-  #pay(silver: number, materials: readonly { readonly itemId: string; readonly quantity: number }[], reason: string): boolean {
-    const payment = this.#deps.currencyService.debit(this.#deps.walletId, "currency_silver", silver, reason);
+  #pay(silver: number, materials: readonly { readonly itemId: string; readonly quantity: number }[]): boolean {
+    const payment = this.#deps.currencyService.debit(this.#deps.walletId, "currency_silver", silver);
     if (!payment.ok) return false;
     const paidMaterials: Array<{ itemId: string; quantity: number }> = [];
     for (const requirement of materials) {
