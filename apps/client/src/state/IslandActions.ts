@@ -37,6 +37,13 @@ export class IslandActions {
     const placement = this.#deps.islandService.canPlaceBuilding(definitionId, plotId);
     if (!placement.ok) return false;
 
+    const builtIds = new Set(
+      this.#deps.islandService.getState().buildings.map((building) => building.definitionId),
+    );
+    if (construction.prerequisiteBuildings?.some((requiredId) => !builtIds.has(requiredId)) === true) {
+      return false;
+    }
+
     for (const requirement of construction.requirements) {
       const available = this.#deps.inventoryManager
         .findEntriesByItemId(this.#deps.productionStorageId, requirement.itemId)
