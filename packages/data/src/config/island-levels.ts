@@ -38,19 +38,12 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 2,
     label: "Domaine artisanal",
     unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
-    // Buildings cannot exceed the current island level. Reaching Lv2 therefore
-    // depends only on having developed the Lv1 gathering foundation.
     requirementToReach: { minimumBuildings: 6, minimumBuildingsAtLevel: 0, buildingLevel: 2 },
-    // World and economy are deliberately coupled only at tier boundaries.
-    // Completing Dark Swamp opens the T4 economic transition; Stone Highlands
-    // can then be approached with progressively upgraded T4 equipment.
     worldRequirementToReach: {
       zoneDefId: "zone_swamp_t3",
       minimumCompletedSegments: 10,
       label: "Terminer Dark Swamp",
     },
-    // Lv1 cannot refine yet, so this bootstrap cost must use resources obtainable
-    // through the hero/workers before the refining category is unlocked.
     upgradeCost: {
       silver: 1000,
       requirements: [
@@ -63,11 +56,12 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 3,
     label: "Domaine développé",
     unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
-    // At island Lv2, production buildings may reach Lv2. Those upgrades are the
-    // development proof required before unlocking the final authored island tier.
-    // The future Yellow-zone T5 world gate is intentionally authored separately
-    // once its exact checkpoint is validated.
     requirementToReach: { minimumBuildings: 10, minimumBuildingsAtLevel: 4, buildingLevel: 2 },
+    worldRequirementToReach: {
+      zoneDefId: "zone_mountain_t4",
+      minimumCompletedSegments: 10,
+      label: "Terminer Frostpeak Mountain",
+    },
     upgradeCost: {
       silver: 2500,
       requirements: [
