@@ -23,7 +23,7 @@ export function GatheringBuildingPanel({
   }
 
   const { workers } = useGameBridge();
-  const { setProductionTier, toggleWorker } = useGameServices();
+  const { toggleWorker } = useGameServices();
   const family = getProductionFamilyDefinition(service.productionFamily);
   const worker = workers.workers.find((candidate) => candidate.profession === service.workerProfession);
   const [selectedTier, setSelectedTier] = useState(worker?.productionTier ?? PRODUCTION_CONTENT_TIERS[0]);
@@ -87,10 +87,7 @@ export function GatheringBuildingPanel({
             className="ui-island-gathering-building__action"
             type="button"
             disabled={masteryBlocked}
-            onClick={() => {
-              setProductionTier(selectedTier);
-              toggleWorker(service.workerProfession);
-            }}
+            onClick={() => { toggleWorker(service.workerProfession, selectedTier); }}
           >
             {masteryBlocked
               ? `Maîtrise ${String(requiredMastery)} requise`
