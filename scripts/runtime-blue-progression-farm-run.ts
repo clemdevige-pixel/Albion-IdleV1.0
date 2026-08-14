@@ -28,7 +28,7 @@ import {
 } from "../apps/client/src/data/worldContentCatalog.js";
 import { getSegmentRecommendedItemPower } from "../apps/client/src/data/itemPower.js";
 
-const DT = 0.05;
+const DT = 0.5;
 const MAX_TOTAL_SECONDS = 60 * 60 * 4;
 const MAX_MASTERY = 100;
 const MODES = ["AFK", "ACTIVE"] as const;
