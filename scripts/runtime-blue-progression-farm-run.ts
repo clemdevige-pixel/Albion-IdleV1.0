@@ -218,7 +218,6 @@ function runProgression(lineage: WeaponLineage, mode: Mode): {
     const armor = preset.tier === 3 ? T3_ARMOR : T4_ARMOR;
     const items: string[] = [currentWeaponId, ...armor];
 
-    // One-handed weapons always carry their matching shield in this benchmark.
     if (definition.handling === "one_handed") {
       items.push(
         preset.tier === 3
@@ -363,11 +362,6 @@ function runProgression(lineage: WeaponLineage, mode: Mode): {
   };
 
   const cleanActiveEnemy = (runtime: CombatRuntime): void => {
-    const enemyId = runtime.getActiveEnemyId();
-    if (combat.world.hasEntity(enemyId)) {
-      combat.effectManager.removeAllEffects(enemyId);
-      combat.world.destroyEntity(enemyId);
-    }
     runtime.interruptEncounter();
   };
 
@@ -491,8 +485,6 @@ function runProgression(lineage: WeaponLineage, mode: Mode): {
     if (result.combatState !== "defeat") continue;
 
     if (farming) {
-      // A segment previously cleared should remain farmable because mastery only rises.
-      // If it does not, stop instead of silently inventing progress.
       segmentDeaths += 1;
       zoneListIndex = wallLocation?.zoneListIndex ?? zoneListIndex;
       segmentIndex = wallLocation?.segmentIndex ?? segmentIndex;
@@ -527,8 +519,6 @@ function runProgression(lineage: WeaponLineage, mode: Mode): {
       continue;
     }
 
-    // At 4.3, gear can no longer solve the wall. Farm the last cleared segment
-    // until the specialization gains one mastery level, then retry this wall.
     if (lastCleared === undefined || masteryLevel() >= MAX_MASTERY) {
       closeSegmentRow("BLOCKED");
       blocked = true;
@@ -619,19 +609,12 @@ const escape = (value: unknown): string => {
     ? `"${text.replace(/"/g, '""')}"`
     : text;
 };
-
-fs.writeFileSync(
-  csvPath,
-  [
-    headers.join(","),
-    ...allRows.map((row) =>
-      headers.map((header) => escape(row[header as keyof SegmentProgressionRow])).join(","),
-    ),
-  ].join("\n"),
-  "utf8",
-);
-
-console.log(`\nGenerated ${allRows.length} persistent progression segment results.`);
-console.log(`Upgrade events: ${allUpgrades.length}`);
-console.log(`Mastery farm cycles: ${allFarms.length}`);
+const csv = [
+  headers.join(","),
+  ...allRows.map((row) =>
+    headers.map((header) => escape(row[header as keyof SegmentProgressionRow])).join(","),
+  ),
+].join("\n");
+fs.writeFileSync(csvPath, csv, "utf8");
+console.log(`\nGenerated ${allRows.length} segment progression rows.`);
 console.log(`CSV: ${csvPath}`);
