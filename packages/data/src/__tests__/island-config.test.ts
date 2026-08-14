@@ -1,17 +1,24 @@
 import { describe, expect, it } from "vitest";
 import {
   PLAYER_ISLAND_CONFIG,
+  getInitialIslandStorageLevelDefinition,
   getInitialIslandWorkerHouseLevelDefinition,
 } from "../config/island.js";
 
 describe("player island config", () => {
-  it("resolves the initial worker house baseline from authored island data", () => {
+  it("resolves initial utility building baselines from authored island data", () => {
     const workerHouse = PLAYER_ISLAND_CONFIG.initialBuildings.find(
       (building) => building.definitionId === "worker_house",
     );
+    const storage = PLAYER_ISLAND_CONFIG.initialBuildings.find(
+      (building) => building.definitionId === "storage",
+    );
 
     expect(workerHouse).toBeDefined();
+    expect(storage).toBeDefined();
     expect(getInitialIslandWorkerHouseLevelDefinition().level).toBe(workerHouse?.level);
+    expect(getInitialIslandStorageLevelDefinition().level).toBe(storage?.level);
+    expect(getInitialIslandStorageLevelDefinition().capacity).toBe(256);
   });
 
   it("keeps initial building placements unique", () => {
