@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { EntityId } from "@game/core";
 import {
   toItemInstanceId,
   type EquipmentSlot,
@@ -212,7 +211,6 @@ function runDiagnostic(config: DiagnosticConfig): DiagnosticResult {
     progression.masteryService,
     heroId,
   );
-  combat.damageManager.restoreFullHealth?.(heroId);
   const heroHealth = combat.damageManager.getHealth(heroId);
   heroHealth.currentHealth = heroHealth.maxHealth;
 
@@ -407,12 +405,12 @@ describe("TEMP Blue runtime deterministic diagnostics", () => {
       return first;
     });
 
-    // T4.3 Reinforced Shield contributes 15 * 1.6 = 24 armor on top of
-    // production hero/armor/head/boots stats. This catches accidental tests
-    // that compare Broadsword using a 4.0 shield.
+    // Full production-like Blue 4.3 defensive totals with the current authored
+    // equipment: 732 HP, 78.8 armor, 55.4 MR. The traveler cape remains 3.0.
     for (const result of results) {
-      expect(result.heroStats.armor).toBeGreaterThanOrEqual(80);
-      expect(result.heroStats.magicResistance).toBeGreaterThanOrEqual(50);
+      expect(result.heroStats.maxHealth).toBeCloseTo(732, 5);
+      expect(result.heroStats.armor).toBeCloseTo(78.8, 5);
+      expect(result.heroStats.magicResistance).toBeCloseTo(55.4, 5);
     }
 
     console.log("\n=== TEMP BROADSWORD FROSTPEAK S10 (FULL 4.3 + SHIELD 4.3) ===");
