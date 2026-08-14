@@ -37,9 +37,35 @@ describe("PlayerIslandService", () => {
     expect(service.placeBuilding("lumber_camp", "plot_03")).toEqual({ ok: false, reason: "plot_occupied" });
   });
 
-  it("round-trips persisted island state after construction", () => {
+  it("upgrades an authored production building one level at a time", () => {
+    const service = new PlayerIslandService();
+    service.placeBuilding("mine", "plot_03");
+
+    expect(service.upgradeBuilding("mine")).toEqual({
+      ok: true,
+      building: {
+        instanceId: "island_mine",
+        definitionId: "mine",
+        plotId: "plot_03",
+        level: 2,
+      },
+    });
+    expect(service.getBuildingLevel("mine")).toBe(2);
+    expect(service.upgradeBuilding("mine").ok).toBe(true);
+    expect(service.getBuildingLevel("mine")).toBe(3);
+    expect(service.upgradeBuilding("mine")).toEqual({ ok: false, reason: "max_level" });
+  });
+
+  it("does not create upgrades for utility buildings without authored progression", () => {
+    const service = new PlayerIslandService();
+    expect(service.upgradeBuilding("worker_house")).toEqual({ ok: false, reason: "unauthored_level" });
+    expect(service.upgradeBuilding("storage")).toEqual({ ok: false, reason: "unauthored_level" });
+  });
+
+  it("round-trips persisted island state after construction and upgrade", () => {
     const source = new PlayerIslandService();
     source.placeBuilding("mine", "plot_03");
+    source.upgradeBuilding("mine");
     const snapshot = source.save();
     const restored = new PlayerIslandService();
 
