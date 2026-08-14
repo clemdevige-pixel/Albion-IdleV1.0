@@ -33,8 +33,13 @@ interface ProductionRuntimeControllerDependencies {
   readonly walletId: WalletId;
   readonly progressionOrchestrator: ProgressionOrchestrator;
   readonly getCurrentTick: () => number;
-  readonly getProductionTier: () => ProductionTier;
-  readonly setProductionTier: (tier: ProductionTier) => void;
+  readonly getGatheringTier: () => ProductionTier;
+  readonly setGatheringTier: (tier: ProductionTier) => void;
+  readonly getRefiningTier: () => ProductionTier;
+  readonly setRefiningTier: (tier: ProductionTier) => void;
+  readonly getCraftingTier: () => ProductionTier;
+  readonly setCraftingTier: (tier: ProductionTier) => void;
+  readonly setWorkerTier: (tier: ProductionTier) => void;
   readonly prepareCombatResumeAfterGathering: () => void;
   readonly workerCapacity: number;
   readonly workerRecruitmentCost: number;
@@ -70,7 +75,9 @@ export class ProductionRuntimeController {
         Fiber: foundation.clothRefiningManager,
       },
       getCurrentTick: dependencies.getCurrentTick,
-      getProductionTier: dependencies.getProductionTier,
+      getGatheringTier: dependencies.getGatheringTier,
+      getRefiningTier: dependencies.getRefiningTier,
+      getCraftingTier: dependencies.getCraftingTier,
     });
     this.#actions = new ProductionActions({
       bridge: dependencies.bridge,
@@ -101,30 +108,14 @@ export class ProductionRuntimeController {
   syncActiveProduction(): void {
     const foundation = this.#dependencies.foundation;
     if (foundation.workerRuntime.hasActiveWorkerSession()) this.syncWorkers();
-    if (foundation.gatheringCoordinator.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncGathering("Wood");
-    }
-    if (foundation.oreGatheringCoordinator.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncGathering("Ore");
-    }
-    if (foundation.hideGatheringCoordinator.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncGathering("Hide");
-    }
-    if (foundation.fiberGatheringCoordinator.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncGathering("Fiber");
-    }
-    if (foundation.refiningManager.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncRefining("Wood");
-    }
-    if (foundation.metalRefiningManager.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncRefining("Ore");
-    }
-    if (foundation.leatherRefiningManager.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncRefining("Hide");
-    }
-    if (foundation.clothRefiningManager.getActiveSession() !== undefined) {
-      this.#bridgeAdapter.syncRefining("Fiber");
-    }
+    if (foundation.gatheringCoordinator.getActiveSession() !== undefined) this.#bridgeAdapter.syncGathering("Wood");
+    if (foundation.oreGatheringCoordinator.getActiveSession() !== undefined) this.#bridgeAdapter.syncGathering("Ore");
+    if (foundation.hideGatheringCoordinator.getActiveSession() !== undefined) this.#bridgeAdapter.syncGathering("Hide");
+    if (foundation.fiberGatheringCoordinator.getActiveSession() !== undefined) this.#bridgeAdapter.syncGathering("Fiber");
+    if (foundation.refiningManager.getActiveSession() !== undefined) this.#bridgeAdapter.syncRefining("Wood");
+    if (foundation.metalRefiningManager.getActiveSession() !== undefined) this.#bridgeAdapter.syncRefining("Ore");
+    if (foundation.leatherRefiningManager.getActiveSession() !== undefined) this.#bridgeAdapter.syncRefining("Hide");
+    if (foundation.clothRefiningManager.getActiveSession() !== undefined) this.#bridgeAdapter.syncRefining("Fiber");
   }
 
   tick(tick: number): void {
@@ -134,36 +125,32 @@ export class ProductionRuntimeController {
     foundation.workerRuntime.tick(tick);
   }
 
-  toggleGathering(family: ProductionFamily): boolean {
-    return this.#actions.toggleGathering(family);
-  }
+  toggleGathering(family: ProductionFamily): boolean { return this.#actions.toggleGathering(family); }
+  returnToCombat(): boolean { return this.#actions.returnToCombat(); }
 
-  returnToCombat(): boolean {
-    return this.#actions.returnToCombat();
-  }
-
-  performGatheringStrike(
-    family: string,
-    quality: "miss" | "correct" | "perfect",
-  ): boolean {
+  performGatheringStrike(family: string, quality: "miss" | "correct" | "perfect"): boolean {
     return this.#actions.performGatheringStrike(family, quality);
   }
 
-  toggleRefining(family: ProductionFamily): boolean {
-    return this.#actions.toggleRefining(family);
+  toggleRefining(family: ProductionFamily): boolean { return this.#actions.toggleRefining(family); }
+  refineAllAvailable(): boolean { return this.#actions.refineAllAvailable(); }
+  craftEquipment(outputItemId: string): boolean { return this.#actions.craftEquipment(outputItemId); }
+
+  setGatheringTier(tier: ProductionTier): boolean {
+    this.#dependencies.setGatheringTier(tier);
+    this.#bridgeAdapter.syncAllGathering();
+    return true;
   }
 
-  refineAllAvailable(): boolean {
-    return this.#actions.refineAllAvailable();
+  setRefiningTier(tier: ProductionTier): boolean {
+    this.#dependencies.setRefiningTier(tier);
+    this.#bridgeAdapter.syncAllRefining();
+    return true;
   }
 
-  craftEquipment(outputItemId: string): boolean {
-    return this.#actions.craftEquipment(outputItemId);
-  }
-
-  setTier(tier: ProductionTier): boolean {
-    this.#dependencies.setProductionTier(tier);
-    this.syncAll();
+  setCraftingTier(tier: ProductionTier): boolean {
+    this.#dependencies.setCraftingTier(tier);
+    this.#bridgeAdapter.syncCrafting();
     return true;
   }
 
@@ -171,7 +158,8 @@ export class ProductionRuntimeController {
     return this.#dependencies.foundation.workerRuntime.recruitWorker(profession).ok;
   }
 
-  toggleWorker(profession: WorkerProfessionVM): boolean {
+  toggleWorker(profession: WorkerProfessionVM, tier: ProductionTier): boolean {
+    this.#dependencies.setWorkerTier(tier);
     const result = this.#dependencies.foundation.workerRuntime.toggleWorker(profession);
     this.syncWorkers();
     return result.ok;
@@ -203,19 +191,13 @@ export class ProductionRuntimeController {
   }
 
   dispose(): void {
-    for (const unsubscribe of this.#unsubscribes.splice(0)) {
-      unsubscribe();
-    }
+    for (const unsubscribe of this.#unsubscribes.splice(0)) unsubscribe();
   }
 
   #bindEvents(): void {
     const { foundation, bridge } = this.#dependencies;
     this.#unsubscribes.push(foundation.gatheringRuntime.subscribeGatherCompleted((event) => {
-      syncInventoryToBridge(
-        bridge,
-        this.#dependencies.inventoryManager,
-        this.#dependencies.heroId,
-      );
+      syncInventoryToBridge(bridge, this.#dependencies.inventoryManager, this.#dependencies.heroId);
       this.#syncFamily(event.family);
       this.#bridgeAdapter.syncCrafting();
       this.#syncMasteryProgression();
@@ -230,22 +212,14 @@ export class ProductionRuntimeController {
     }));
 
     this.#unsubscribes.push(foundation.refiningRuntime.subscribeRefineCompleted((event) => {
-      syncInventoryToBridge(
-        bridge,
-        this.#dependencies.inventoryManager,
-        this.#dependencies.heroId,
-      );
+      syncInventoryToBridge(bridge, this.#dependencies.inventoryManager, this.#dependencies.heroId);
       this.#syncFamily(event.family);
       this.#bridgeAdapter.syncCrafting();
     }));
 
     this.#unsubscribes.push(foundation.workerRuntime.subscribeCycleCompleted(() => {
       this.#syncMasteryProgression();
-      syncInventoryToBridge(
-        bridge,
-        this.#dependencies.inventoryManager,
-        this.#dependencies.heroId,
-      );
+      syncInventoryToBridge(bridge, this.#dependencies.inventoryManager, this.#dependencies.heroId);
       this.syncAll();
     }));
 
@@ -293,8 +267,7 @@ export class ProductionRuntimeController {
   }
 
   #syncMasteryProgression(): void {
-    const state = this.#dependencies.progressionOrchestrator
-      .getFullProgressionState();
+    const state = this.#dependencies.progressionOrchestrator.getFullProgressionState();
     syncProgressionToBridge(
       this.#dependencies.bridge,
       state.totalFame,
