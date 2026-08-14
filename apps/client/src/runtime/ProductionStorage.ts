@@ -8,7 +8,10 @@ import type { InventoryManager } from "@game/gameplay";
  * migrations in the hero inventory.
  */
 export function isVisibleInventoryResource(itemId: string): boolean {
-  return itemId === "item_resource_enchantment_essence"
+  return itemId.startsWith("item_resource_enchantment_shard_t")
+    // Legacy enchantment resources remain visible in old saves but are no
+    // longer produced or consumed by the current enchantment system.
+    || itemId === "item_resource_enchantment_essence"
     || itemId === "item_resource_arcane_crystal"
     || itemId === "item_resource_enchantment_catalyst"
     || itemId.startsWith("item_resource_key_fragment_")
