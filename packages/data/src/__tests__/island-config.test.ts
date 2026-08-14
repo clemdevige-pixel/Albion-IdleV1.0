@@ -67,6 +67,17 @@ describe("player island config", () => {
     ]);
   });
 
+  it("authors the workshop as the shared crafting building without forcing every refining branch", () => {
+    const workshop = PLAYER_ISLAND_CONFIG.buildings.find(
+      (building) => building.id === "workshop",
+    );
+
+    expect(workshop?.craftingService?.categories).toEqual(["weapons", "armors", "other"]);
+    expect(workshop?.construction?.prerequisiteBuildings).toEqual(["sawmill", "smelter"]);
+    expect(workshop?.construction?.prerequisiteBuildings).not.toContain("tannery");
+    expect(workshop?.construction?.prerequisiteBuildings).not.toContain("weaver");
+  });
+
   it("keeps construction costs authored and positive", () => {
     const constructible = PLAYER_ISLAND_CONFIG.buildings.filter(
       (building) => building.construction !== undefined,
