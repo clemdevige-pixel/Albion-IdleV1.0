@@ -21,4 +21,18 @@ describe("player island config", () => {
     expect(new Set(plotIds).size).toBe(plotIds.length);
     expect(new Set(instanceIds).size).toBe(instanceIds.length);
   });
+
+  it("maps every gathering building to one authored production family and profession", () => {
+    const gatheringBuildings = PLAYER_ISLAND_CONFIG.buildings.filter(
+      (building) => building.category === "gathering",
+    );
+
+    expect(gatheringBuildings).toHaveLength(4);
+    expect(gatheringBuildings.map((building) => building.gatheringService)).toEqual([
+      { productionFamily: "wood", workerProfession: "woodcutter" },
+      { productionFamily: "ore", workerProfession: "miner" },
+      { productionFamily: "hide", workerProfession: "skinner" },
+      { productionFamily: "fiber", workerProfession: "fiber_harvester" },
+    ]);
+  });
 });
