@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   getIslandBuildingDefinition,
+  getIslandBuildingMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
 import {
@@ -13,8 +14,10 @@ import "./gatheringBuilding.css";
 
 export function GatheringBuildingPanel({
   definitionId,
+  level,
 }: {
   readonly definitionId: IslandBuildingId;
+  readonly level: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const service = definition.gatheringService;
@@ -22,11 +25,18 @@ export function GatheringBuildingPanel({
     throw new Error(`Gathering building ${definitionId} has no gathering service data`);
   }
 
+  const maxTier = getIslandBuildingMaxProductionTier(definitionId, level);
+  if (maxTier === undefined) {
+    throw new Error(`Gathering building ${definitionId} level ${String(level)} has no progression data`);
+  }
+
   const { workers } = useGameBridge();
   const { toggleWorker } = useGameServices();
   const family = getProductionFamilyDefinition(service.productionFamily);
   const worker = workers.workers.find((candidate) => candidate.profession === service.workerProfession);
-  const [selectedTier, setSelectedTier] = useState(worker?.productionTier ?? PRODUCTION_CONTENT_TIERS[0]);
+  const workerTier = worker?.productionTier ?? PRODUCTION_CONTENT_TIERS[0];
+  const initialTier = workerTier > maxTier ? maxTier : workerTier;
+  const [selectedTier, setSelectedTier] = useState(initialTier);
   const requiredMastery = getRequiredGatheringMasteryForTier(selectedTier);
   const masteryBlocked = worker !== undefined && worker.mastery < requiredMastery;
 
@@ -35,7 +45,7 @@ export function GatheringBuildingPanel({
       <div className="ui-island-gathering-building__resource">
         <img src={`/assets/resources/${family.rawIcon}`} alt="" />
         <div>
-          <small>Production passive</small>
+          <small>Production passive · jusqu’au T{String(maxTier)}</small>
           <strong>{family.label}</strong>
         </div>
       </div>
@@ -58,16 +68,18 @@ export function GatheringBuildingPanel({
 
           <div className="ui-island-gathering-building__tiers" role="group" aria-label="Tier de production du worker">
             {PRODUCTION_CONTENT_TIERS.map((tier) => {
-              const locked = worker.mastery < getRequiredGatheringMasteryForTier(tier);
+              const masteryLocked = worker.mastery < getRequiredGatheringMasteryForTier(tier);
+              const buildingLocked = tier > maxTier;
               return (
                 <button
                   key={tier}
                   type="button"
                   className={selectedTier === tier ? "is-active" : ""}
-                  disabled={locked}
+                  disabled={masteryLocked || buildingLocked}
+                  title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : undefined}
                   onClick={() => { setSelectedTier(tier); }}
                 >
-                  T{String(tier)}
+                  T{String(tier)}{buildingLocked ? " 🔒" : ""}
                 </button>
               );
             })}
@@ -86,7 +98,7 @@ export function GatheringBuildingPanel({
           <button
             className="ui-island-gathering-building__action"
             type="button"
-            disabled={masteryBlocked}
+            disabled={masteryBlocked || selectedTier > maxTier}
             onClick={() => { toggleWorker(service.workerProfession, selectedTier); }}
           >
             {masteryBlocked
