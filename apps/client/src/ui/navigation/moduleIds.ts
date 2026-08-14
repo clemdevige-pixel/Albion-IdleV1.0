@@ -4,8 +4,6 @@
   inventory: "inventory",
   masteries: "masteries",
   island: "island",
-  production: "production",
-  craft: "craft",
   merchant: "merchant",
   world: "world",
 } as const;
