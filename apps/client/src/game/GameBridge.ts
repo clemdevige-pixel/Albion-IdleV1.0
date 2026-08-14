@@ -91,6 +91,16 @@ export class GameBridge {
     this.#update({ enemyHealth: current, enemyMaxHealth: max });
   }
 
+  clearEnemyPresentation(): void {
+    this.#update({
+      enemyHealth: 0,
+      enemyMaxHealth: 0,
+      enemyName: "",
+      enemyVisualManifestId: "",
+      activeEffects: [],
+    });
+  }
+
   setCombatState(combatState: CombatState): void { this.#update({ combatState }); }
 
   addDamageNumber(
