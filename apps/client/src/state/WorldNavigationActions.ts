@@ -95,6 +95,10 @@ export class WorldNavigationActions {
 
   private interruptEncounterForTravel(): void {
     this.deps.combatRuntime.interruptEncounter();
+    // Travel is an authoritative encounter boundary. Clear the bridge in the
+    // same transaction as the runtime interruption so presentation can never
+    // render the previous enemy for a frame while the world location changes.
+    this.deps.bridge.clearEnemyPresentation();
     this.deps.bridge.setCombatState("walking");
   }
 }
