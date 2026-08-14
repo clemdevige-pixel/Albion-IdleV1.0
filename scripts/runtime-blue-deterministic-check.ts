@@ -11,17 +11,20 @@ import path from "node:path";
  * Delete this file once Blue runtime determinism has been validated.
  */
 
+const ROOT = process.cwd();
+const CLIENT_DIR = path.resolve(ROOT, "apps", "client");
 const OUTPUT_PATH = path.resolve(
+  ROOT,
   "node_modules",
   ".cache",
   "albion-idle",
   "runtime-blue-persistent-progression-farm.csv",
 );
 
-function runPnpm(args: readonly string[]): void {
+function runPnpm(args: readonly string[], cwd = ROOT): void {
   if (process.platform === "win32") {
     execFileSync("cmd.exe", ["/d", "/s", "/c", "pnpm.cmd", ...args], {
-      cwd: process.cwd(),
+      cwd,
       stdio: "inherit",
       env: process.env,
     });
@@ -29,7 +32,7 @@ function runPnpm(args: readonly string[]): void {
   }
 
   execFileSync("pnpm", [...args], {
-    cwd: process.cwd(),
+    cwd,
     stdio: "inherit",
     env: process.env,
   });
@@ -45,15 +48,12 @@ function prepareWorkspace(): void {
 }
 
 function runBenchmark(): Buffer {
-  const tsxCli = path.resolve("node_modules", "tsx", "dist", "cli.mjs");
-  execFileSync(
-    process.execPath,
-    [tsxCli, "scripts/runtime-blue-progression-farm-run.ts"],
-    {
-      cwd: process.cwd(),
-      stdio: "inherit",
-      env: process.env,
-    },
+  // Run from apps/client so Node resolves @game/* through the client's
+  // workspace dependencies. The benchmark script itself remains the canonical
+  // script under /scripts.
+  runPnpm(
+    ["exec", "tsx", path.resolve(ROOT, "scripts", "runtime-blue-progression-farm-run.ts")],
+    CLIENT_DIR,
   );
 
   if (!fs.existsSync(OUTPUT_PATH)) {
