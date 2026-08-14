@@ -17,7 +17,18 @@ export function RefiningView(): JSX.Element {
       <div className="ui-refining__toolbar">
         <div className="ui-refining__tiers" role="group" aria-label="Palier de raffinage">
           {PRODUCTION_CONTENT_TIERS.map((tier) => (
-            <button key={tier} type="button" className={model.tier === tier ? "is-active" : ""} aria-pressed={model.tier === tier} onClick={() => { actions.setTier(tier); }}>T{String(tier)}</button>
+            <button
+              key={tier}
+              type="button"
+              className={family?.tier === tier ? "is-active" : ""}
+              aria-pressed={family?.tier === tier}
+              disabled={family === undefined}
+              onClick={() => {
+                if (family !== undefined) actions.setTier(family.id, tier);
+              }}
+            >
+              T{String(tier)}
+            </button>
           ))}
         </div>
         <button className="ui-refining__all" type="button" onClick={() => { actions.refineAll(); }}>Tout raffiner</button>
@@ -33,7 +44,7 @@ export function RefiningView(): JSX.Element {
         ))}
       </nav>
 
-      {family !== undefined && <RefiningRecipeCard family={family} tier={model.tier} actions={actions} />}
+      {family !== undefined && <RefiningRecipeCard family={family} tier={family.tier} actions={actions} />}
       <RefiningJobs jobs={model.activeJobs} />
     </div>
   );
