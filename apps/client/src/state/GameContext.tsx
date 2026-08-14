@@ -27,6 +27,7 @@ import { SaveGameActions } from "./SaveGameActions.js";
 import { WorldNavigationActions } from "./WorldNavigationActions.js";
 import { ConsumableActions } from "./ConsumableActions.js";
 import { RepairActions } from "./RepairActions.js";
+import { IslandActions } from "./IslandActions.js";
 import { createCombatFoundation } from "../runtime/bootstrap/createCombatFoundation.js";
 import { createProgressionFoundation } from "../runtime/bootstrap/createProgressionFoundation.js";
 import { createEconomyFoundation } from "../runtime/bootstrap/createEconomyFoundation.js";
@@ -249,6 +250,16 @@ export function GameProvider({
     });
     bridgeSyncCoordinator.syncInitialState();
     syncIslandToBridge();
+
+    const islandActions = new IslandActions({
+      islandService,
+      inventoryManager,
+      productionStorageId,
+      currencyService,
+      walletId,
+      bridge,
+      resyncAll,
+    });
 
     const persistence = new RuntimePersistence({
       inventoryManager,
@@ -503,6 +514,9 @@ export function GameProvider({
       ),
       recruitWorker: (profession) => productionController.recruitWorker(profession),
       toggleWorker: (profession) => productionController.toggleWorker(profession),
+      constructIslandBuilding: (definitionId, plotId) => (
+        islandActions.constructBuilding(definitionId, plotId)
+      ),
       repairAll: () => repairActions.repairAll(),
       saveGame, loadGame, hasSave, exportSave, importSave,
     };
