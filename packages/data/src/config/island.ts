@@ -50,11 +50,17 @@ export interface IslandWorkerHouseLevelDefinition {
   readonly recruitmentCost: number;
 }
 
+export interface IslandStorageLevelDefinition {
+  readonly level: number;
+  readonly capacity: number;
+}
+
 export interface PlayerIslandConfig {
   readonly plots: readonly IslandPlotDefinition[];
   readonly buildings: readonly IslandBuildingDefinition[];
   readonly initialBuildings: readonly InitialIslandBuildingDefinition[];
   readonly workerHouseLevels: readonly IslandWorkerHouseLevelDefinition[];
+  readonly storageLevels: readonly IslandStorageLevelDefinition[];
 }
 
 const BUILDINGS: readonly IslandBuildingDefinition[] = [
@@ -161,10 +167,13 @@ export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
     { instanceId: "island_worker_house", definitionId: "worker_house", plotId: "plot_01", level: 1 },
     { instanceId: "island_storage", definitionId: "storage", plotId: "plot_02", level: 1 },
   ],
-  // Only the already-existing baseline is defined for now. Additional levels
+  // Only already-existing baselines are defined for now. Additional levels
   // require balancing validation rather than invented placeholder values.
   workerHouseLevels: [
     { level: 1, workerCapacity: 4, recruitmentCost: 250 },
+  ],
+  storageLevels: [
+    { level: 1, capacity: 256 },
   ],
 };
 
@@ -176,6 +185,9 @@ const INITIAL_BUILDING_BY_ID = new Map<IslandBuildingId, InitialIslandBuildingDe
 );
 const WORKER_HOUSE_LEVEL_BY_LEVEL = new Map<number, IslandWorkerHouseLevelDefinition>(
   PLAYER_ISLAND_CONFIG.workerHouseLevels.map((definition) => [definition.level, definition] as const),
+);
+const STORAGE_LEVEL_BY_LEVEL = new Map<number, IslandStorageLevelDefinition>(
+  PLAYER_ISLAND_CONFIG.storageLevels.map((definition) => [definition.level, definition] as const),
 );
 
 export function getIslandBuildingDefinition(id: IslandBuildingId): IslandBuildingDefinition {
@@ -199,5 +211,17 @@ export function getIslandWorkerHouseLevelDefinition(level: number): IslandWorker
 export function getInitialIslandWorkerHouseLevelDefinition(): IslandWorkerHouseLevelDefinition {
   return getIslandWorkerHouseLevelDefinition(
     getInitialIslandBuildingDefinition("worker_house").level,
+  );
+}
+
+export function getIslandStorageLevelDefinition(level: number): IslandStorageLevelDefinition {
+  const definition = STORAGE_LEVEL_BY_LEVEL.get(level);
+  if (definition === undefined) throw new Error(`Missing storage level data: ${String(level)}`);
+  return definition;
+}
+
+export function getInitialIslandStorageLevelDefinition(): IslandStorageLevelDefinition {
+  return getIslandStorageLevelDefinition(
+    getInitialIslandBuildingDefinition("storage").level,
   );
 }
