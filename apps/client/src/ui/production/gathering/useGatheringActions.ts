@@ -1,21 +1,18 @@
 import type { ProductionTier, SupportedProductionFamily } from "../../../data/productionFamilyCatalog";
 import { useCallback } from "react";
-import type { WorkerProfessionVM } from "../../../game/GameBridge";
 import { useGameServices } from "../../../state/GameContext";
 import type { GatheringResourceId } from "./gatheringModels";
 
 export interface GatheringActions {
   readonly setTier: (tier: ProductionTier) => boolean;
   readonly toggleHero: (resource: GatheringResourceId) => boolean;
-  readonly toggleWorker: (profession: WorkerProfessionVM) => boolean;
   readonly strike: (resourceFamily: string, quality: "miss" | "correct" | "perfect") => boolean;
 }
 
 export function useGatheringActions(): GatheringActions {
   const {
-    setProductionTier,
+    setGatheringTier,
     toggleGathering,
-    toggleWorker,
     performGatheringStrike,
   } = useGameServices();
 
@@ -30,9 +27,8 @@ export function useGatheringActions(): GatheringActions {
   ), [performGatheringStrike]);
 
   return {
-    setTier: setProductionTier,
+    setTier: setGatheringTier,
     toggleHero,
-    toggleWorker,
     strike,
   };
 }
