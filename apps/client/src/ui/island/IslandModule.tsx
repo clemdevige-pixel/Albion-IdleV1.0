@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { PLAYER_ISLAND_CONFIG, getIslandBuildingDefinition, type IslandBuildingId } from "@game/data";
 import { useGameBridge } from "../../state/GameContext";
 import { ProductionModule } from "../production";
+import { WorkerHousePanel } from "./WorkerHousePanel";
 import "./island.css";
 
 type IslandView = "island" | "production";
@@ -168,7 +169,13 @@ function BuildingSummary({
         <span className="ui-island__level">Niv. {level}</span>
       </div>
       <p>{definition.description}</p>
-      <div className="ui-island__selection-status">Fondation active · fonctionnalités du bâtiment à connecter dans les phases suivantes</div>
+      {definitionId === "worker_house" ? (
+        <WorkerHousePanel level={level} />
+      ) : (
+        <div className="ui-island__selection-status">
+          Fondation active · fonctionnalités du bâtiment à connecter dans les phases suivantes
+        </div>
+      )}
     </section>
   );
 }
