@@ -73,7 +73,10 @@ export function GameProvider({
       });
     };
     let tickCounter = 0;
-    let productionTier: ProductionTier = 3;
+    let gatheringTier: ProductionTier = 3;
+    let refiningTier: ProductionTier = 3;
+    let craftingTier: ProductionTier = 3;
+    let workerTier: ProductionTier = 3;
 
     const {
       world,
@@ -177,7 +180,9 @@ export function GameProvider({
       currencyService,
       walletId,
       forestZoneDefId: FOREST_ZONE_DEF_ID,
-      getProductionTier: () => productionTier,
+      getGatheringTier: () => gatheringTier,
+      getRefiningTier: () => refiningTier,
+      getWorkerTier: () => workerTier,
     });
     const {
       gatheringRuntime,
@@ -369,8 +374,13 @@ export function GameProvider({
       walletId,
       progressionOrchestrator,
       getCurrentTick: () => tickCounter,
-      getProductionTier: () => productionTier,
-      setProductionTier: (tier) => { productionTier = tier; },
+      getGatheringTier: () => gatheringTier,
+      setGatheringTier: (tier) => { gatheringTier = tier; },
+      getRefiningTier: () => refiningTier,
+      setRefiningTier: (tier) => { refiningTier = tier; },
+      getCraftingTier: () => craftingTier,
+      setCraftingTier: (tier) => { craftingTier = tier; },
+      setWorkerTier: (tier) => { workerTier = tier; },
       prepareCombatResumeAfterGathering: () => {
         worldNavigationActions.prepareCombatResumeAfterGathering();
       },
@@ -508,12 +518,12 @@ export function GameProvider({
       ),
       toggleRefining: (family) => productionController.toggleRefining(family),
       refineAllAvailable: () => productionController.refineAllAvailable(),
-      setProductionTier: (tier) => productionController.setTier(tier),
-      craftEquipment: (outputItemId) => (
-        productionController.craftEquipment(outputItemId)
-      ),
+      setGatheringTier: (tier) => productionController.setGatheringTier(tier),
+      setRefiningTier: (tier) => productionController.setRefiningTier(tier),
+      setCraftingTier: (tier) => productionController.setCraftingTier(tier),
+      craftEquipment: (outputItemId) => productionController.craftEquipment(outputItemId),
       recruitWorker: (profession) => productionController.recruitWorker(profession),
-      toggleWorker: (profession) => productionController.toggleWorker(profession),
+      toggleWorker: (profession, tier) => productionController.toggleWorker(profession, tier),
       constructIslandBuilding: (definitionId, plotId) => (
         islandActions.constructBuilding(definitionId, plotId)
       ),
