@@ -80,7 +80,8 @@ export class IslandActions {
     for (const requirement of materials) {
       if (this.#deps.inventoryManager.getTotalQuantity(this.#deps.productionStorageId, requirement.itemId) < requirement.quantity) return false;
     }
-    return this.#deps.currencyService.getBalance(this.#deps.walletId, "currency_silver") >= silver;
+    const balance = this.#deps.currencyService.getBalance(this.#deps.walletId, "currency_silver");
+    return balance.ok && balance.value >= silver;
   }
 
   #pay(silver: number, materials: readonly { readonly itemId: string; readonly quantity: number }[], reason: string): boolean {
