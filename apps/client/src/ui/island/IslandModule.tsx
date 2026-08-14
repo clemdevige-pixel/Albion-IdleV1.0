@@ -6,6 +6,7 @@ import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
 import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
+import { UpgradePanel } from "./UpgradePanel";
 import { WorkerHousePanel } from "./WorkerHousePanel";
 import "./island.css";
 
@@ -154,16 +155,17 @@ function BuildingSummary({
       ) : definitionId === "storage" ? (
         <StoragePanel />
       ) : definition.gatheringService !== undefined ? (
-        <GatheringBuildingPanel definitionId={definitionId} />
+        <GatheringBuildingPanel definitionId={definitionId} level={level} />
       ) : definition.refiningService !== undefined ? (
-        <RefiningBuildingPanel definitionId={definitionId} />
+        <RefiningBuildingPanel definitionId={definitionId} level={level} />
       ) : definition.craftingService !== undefined ? (
-        <CraftingBuildingPanel definitionId={definitionId} />
+        <CraftingBuildingPanel definitionId={definitionId} level={level} />
       ) : (
         <div className="ui-island__selection-status">
           Bâtiment construit · fonctionnalités à connecter dans les phases suivantes
         </div>
       )}
+      <UpgradePanel definitionId={definitionId} level={level} />
     </section>
   );
 }
