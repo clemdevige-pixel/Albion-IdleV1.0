@@ -48,6 +48,32 @@ describe("PlayerIslandService", () => {
     expect(restored.getState()).toEqual(source.getState());
   });
 
+  it("migrates an older snapshot by appending newly authored plots", () => {
+    const service = new PlayerIslandService();
+    service.load({
+      version: 1,
+      plots: [
+        { id: "plot_01", buildingInstanceId: "island_worker_house" },
+        { id: "plot_02", buildingInstanceId: "island_storage" },
+        { id: "plot_03", buildingInstanceId: "island_mine" },
+        { id: "plot_04", buildingInstanceId: null },
+        { id: "plot_05", buildingInstanceId: null },
+        { id: "plot_06", buildingInstanceId: null },
+        { id: "plot_07", buildingInstanceId: null },
+        { id: "plot_08", buildingInstanceId: null },
+      ],
+      buildings: [
+        { instanceId: "island_worker_house", definitionId: "worker_house", plotId: "plot_01", level: 1 },
+        { instanceId: "island_storage", definitionId: "storage", plotId: "plot_02", level: 1 },
+        { instanceId: "island_mine", definitionId: "mine", plotId: "plot_03", level: 1 },
+      ],
+    });
+
+    expect(service.getState().buildings.some((building) => building.definitionId === "mine")).toBe(true);
+    expect(service.getState().plots).toHaveLength(PLAYER_ISLAND_CONFIG.plots.length);
+    expect(service.getState().plots.find((plot) => plot.id === "plot_09")?.buildingInstanceId).toBeNull();
+  });
+
   it("ignores snapshots containing unknown plots", () => {
     const service = new PlayerIslandService();
     const initialState = service.getState();
