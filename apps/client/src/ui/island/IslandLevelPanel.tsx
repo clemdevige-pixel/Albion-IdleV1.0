@@ -7,6 +7,7 @@ import {
   getIslandMaterialLabel,
   getIslandMaterialQuantity,
 } from "./islandMaterialPresentation";
+import "./islandLevel.css";
 
 export function IslandLevelPanel(): JSX.Element {
   const { island, wallet } = useGameBridge();
