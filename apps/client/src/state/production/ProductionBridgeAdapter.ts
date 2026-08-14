@@ -41,7 +41,7 @@ interface ProductionBridgeAdapterDependencies {
   readonly refiningManagers: Readonly<Record<SupportedProductionFamily, RefiningManager>>;
   readonly getCurrentTick: () => number;
   readonly getGatheringTier: () => ProductionTier;
-  readonly getRefiningTier: () => ProductionTier;
+  readonly getRefiningTier: (family: SupportedProductionFamily) => ProductionTier;
   readonly getCraftingTier: () => ProductionTier;
 }
 
@@ -90,7 +90,7 @@ export class ProductionBridgeAdapter {
 
   syncRefining(family: SupportedProductionFamily): void {
     const { inventoryManager, productionStorageId, refiningRuntime } = this.deps;
-    const tier = this.deps.getRefiningTier();
+    const tier = this.deps.getRefiningTier(family);
     const config = this.getFamilyConfig(family, tier);
 
     syncRefiningToBridge(
