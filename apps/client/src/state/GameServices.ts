@@ -36,6 +36,8 @@ export interface GameServices {
   readonly walletId: WalletId;
   readonly playerId: PlayerId;
   readonly worldCoordinator: WorldCoordinator;
+  readonly needsStarterSelection: () => boolean;
+  readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
