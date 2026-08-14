@@ -1,8 +1,15 @@
 import {
   PLAYER_ISLAND_CONFIG,
+  getIslandBuildingDefinition,
   type IslandBuildingDefinition,
   type IslandBuildingId,
 } from "@game/data";
+import {
+  PRODUCTION_CONTENT_TIERS,
+  PRODUCTION_FAMILY_IDS,
+  getProductionFamilyDefinition,
+} from "../../data/productionFamilyCatalog";
+import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 
 function quantityForItem(
@@ -15,10 +22,14 @@ function quantityForItem(
 }
 
 function materialLabel(itemId: string): string {
-  if (itemId === "item_resource_wood_t3") return "Bois T3";
-  if (itemId === "item_resource_copper_ore_t3") return "Minerai T3";
-  if (itemId === "item_resource_hide_t3") return "Peau T3";
-  if (itemId === "item_resource_fiber_t3") return "Fibre T3";
+  for (const familyId of PRODUCTION_FAMILY_IDS) {
+    const family = getProductionFamilyDefinition(familyId);
+    for (const tier of PRODUCTION_CONTENT_TIERS) {
+      const recipe = getProductionRefiningRecipe(familyId, tier);
+      if (recipe.rawItemId === itemId) return `${family.rawMaterialLabel} T${String(tier)}`;
+      if (recipe.outputItemId === itemId) return `${family.label} raffiné T${String(tier)}`;
+    }
+  }
   return itemId;
 }
 
@@ -59,16 +70,19 @@ export function ConstructionPanel({
         <span className="ui-island__eyebrow">Construction</span>
         <strong>Emplacement libre</strong>
       </div>
-      <p>Les bâtiments de récolte utilisent uniquement des ressources T3 accessibles directement au héros.</p>
+      <p>Les prérequis et coûts de construction viennent du catalogue Island.</p>
 
       <div className="ui-island-construction__list">
         {availableBuildings.map((definition) => {
           const construction = definition.construction;
+          const missingPrerequisites = (construction.prerequisiteBuildings ?? [])
+            .filter((buildingId) => !builtDefinitionIds.has(buildingId));
           const materialState = construction.requirements.map((requirement) => ({
             ...requirement,
             available: quantityForItem(inventoryManager, productionStorageId, requirement.itemId),
           }));
-          const affordable = wallet.silver >= construction.silver
+          const affordable = missingPrerequisites.length === 0
+            && wallet.silver >= construction.silver
             && materialState.every((requirement) => requirement.available >= requirement.quantity);
 
           return (
@@ -80,6 +94,15 @@ export function ConstructionPanel({
                   <small>{definition.description}</small>
                 </div>
               </header>
+              {missingPrerequisites.length > 0 && (
+                <div className="ui-island-construction__costs">
+                  {missingPrerequisites.map((buildingId) => (
+                    <span key={buildingId} className="is-missing">
+                      Requiert {getIslandBuildingDefinition(buildingId).label}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="ui-island-construction__costs">
                 <span className={wallet.silver >= construction.silver ? "is-ready" : "is-missing"}>
                   {String(construction.silver)} Silver
@@ -100,7 +123,9 @@ export function ConstructionPanel({
                   if (constructIslandBuilding(definition.id, plotId)) onBuilt(definition.id);
                 }}
               >
-                {affordable ? "Construire" : "Ressources insuffisantes"}
+                {missingPrerequisites.length > 0
+                  ? "Prérequis manquant"
+                  : affordable ? "Construire" : "Ressources insuffisantes"}
               </button>
             </article>
           );
