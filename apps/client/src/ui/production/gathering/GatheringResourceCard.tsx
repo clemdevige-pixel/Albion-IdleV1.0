@@ -1,6 +1,5 @@
 import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
-import { WORKER_PROFESSION_LABELS } from "../../../data/productionFamilyCatalog";
 import type { GatheringResourceModel } from "./gatheringModels";
 import type { GatheringActions } from "./useGatheringActions";
 
@@ -11,7 +10,7 @@ interface GatheringResourceCardProps {
 }
 
 export function GatheringResourceCard({ resource, tier, actions }: GatheringResourceCardProps): JSX.Element {
-  const { activity, heroMastery, worker } = resource;
+  const { activity, heroMastery } = resource;
   const heroActive = activity.status === "gathering";
   const otherTierActive = activity.activeCycle !== undefined && !heroActive;
 
@@ -77,24 +76,6 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
             durationSeconds={activity.durationSeconds}
             onStrike={(quality) => actions.strike(activity.resourceFamily, quality)}
           />
-        )}
-      </section>
-
-      <section className="ui-gathering-card__role ui-gathering-card__worker">
-        <h3>Worker</h3>
-        {worker === undefined ? (
-          <div>
-            <span>Aucun {WORKER_PROFESSION_LABELS[resource.profession].toLocaleLowerCase("fr-FR")} recruté</span>
-            <small>Recrutement : Maison des ouvriers · Production passive : bâtiment de récolte correspondant.</small>
-          </div>
-        ) : (
-          <div className="ui-gathering-card__worker-summary">
-            <div>
-              <span>{worker.displayName} · {worker.professionName}</span>
-              <small>T{String(worker.productionTier)} · Maîtrise {String(worker.mastery)} · gestion depuis l'île</small>
-            </div>
-            <b className={`is-${worker.state}`}>{worker.state === "working" ? "Actif" : worker.state === "paused" ? "En pause" : "Disponible"}</b>
-          </div>
         )}
       </section>
     </article>
