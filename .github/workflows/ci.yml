@@ -6,6 +6,25 @@ on:
   pull_request:
 
 jobs:
+  blue-runtime-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run temporary Blue runtime diagnostic
+        run: pnpm vitest run apps/client/src/runtime/blueRuntimeDeterministicDiagnostic.test.ts --reporter=verbose
+
   verify:
     runs-on: ubuntu-latest
     steps:
