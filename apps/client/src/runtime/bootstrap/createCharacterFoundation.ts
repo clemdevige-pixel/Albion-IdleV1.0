@@ -1,4 +1,5 @@
 import type { EntityId, World } from "@game/core";
+import { getInitialIslandStorageLevelDefinition } from "@game/data";
 import {
   EnchantmentService,
   EquipmentManager,
@@ -24,6 +25,7 @@ import { isProductionMaterial } from "../ProductionStorage.js";
 import { recalculateWeaponMasteryStats } from "../weaponMasteryStatSync.js";
 
 const STAT_MAX_HEALTH = "stat_max_health" as StatId;
+const INITIAL_ISLAND_STORAGE = getInitialIslandStorageLevelDefinition();
 
 interface CharacterEquipmentFoundationDependencies {
   readonly world: World;
@@ -114,7 +116,7 @@ export function createCharacterStorageFoundation({
   const bankId = world.createEntity();
   inventoryManager.createInventory(bankId, 64);
   const productionStorageId = world.createEntity();
-  inventoryManager.createInventory(productionStorageId, 256);
+  inventoryManager.createInventory(productionStorageId, INITIAL_ISLAND_STORAGE.capacity);
   equipmentManager.attachEquipment(heroId);
 
   const enchantmentService = new EnchantmentService({
