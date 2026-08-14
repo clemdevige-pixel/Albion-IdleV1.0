@@ -15,6 +15,10 @@ import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalcu
 import { getWorldZonePlacement } from "../../data/worldContentCatalog";
 import type { WorldRuntime } from "../../runtime/WorldRuntime";
 import { syncAbilitiesToBridge } from "../bridgeSync";
+import {
+  getCombatStartBlockGeneration,
+  getCombatStartBlockReason,
+} from "../../runtime/CombatStartGuard.js";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
@@ -41,6 +45,7 @@ export class CombatBridgeAdapter {
   readonly #worldRuntime: WorldRuntime;
   readonly #updateWorldBridge: () => void;
   #pendingHeroAbilityId: string | undefined;
+  #lastCombatStartBlockGeneration = getCombatStartBlockGeneration();
 
   constructor(dependencies: CombatBridgeAdapterDependencies) {
     this.#bridge = dependencies.bridge;
@@ -135,6 +140,7 @@ export class CombatBridgeAdapter {
       this.#bridge.updateEnemyHealth(result.activeEnemy.currentHealth, result.activeEnemy.maxHealth);
     }
     this.#bridge.setCombatState(result.combatState);
+    this.#syncCombatStartBlockNotification();
     this.syncAbilities();
   }
 
@@ -161,7 +167,23 @@ export class CombatBridgeAdapter {
         remainingDuration: effect.remainingDuration,
       })));
     }
+    this.#syncCombatStartBlockNotification();
     this.syncAbilities();
+  }
+
+  #syncCombatStartBlockNotification(): void {
+    const generation = getCombatStartBlockGeneration();
+    if (generation === this.#lastCombatStartBlockGeneration) return;
+
+    this.#lastCombatStartBlockGeneration = generation;
+    if (getCombatStartBlockReason() === "weapon_required") {
+      this.#bridge.addEconomyNotification({
+        id: `notif_combat_weapon_required_${String(generation)}`,
+        type: "error",
+        message: "Équipez une arme pour commencer le combat.",
+        timestamp: Date.now(),
+      });
+    }
   }
 
   #consumePendingHeroAbilityId(): string | undefined {
