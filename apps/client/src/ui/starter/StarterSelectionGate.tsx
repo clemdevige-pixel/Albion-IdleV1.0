@@ -23,7 +23,7 @@ export function StarterSelectionGate({ children }: { readonly children: ReactNod
         <header className="ui-starter__header">
           <span>NOUVEL AVENTURIER</span>
           <h1>Choisissez votre arme starter</h1>
-          <p>Vous commencez avec un équipement complet T3. Votre choix détermine uniquement votre première arme et les maîtrises découvertes au départ.</p>
+          <p>Vous commencez uniquement avec l'arme T3 choisie. Les autres équipements devront être obtenus au cours de votre progression.</p>
         </header>
 
         <div className="ui-starter__weapons">
@@ -37,7 +37,7 @@ export function StarterSelectionGate({ children }: { readonly children: ReactNod
                 if (services.selectStarterWeapon(option.itemId)) {
                   setPending(false);
                 } else {
-                  setError("Impossible d'attribuer cet équipement de départ.");
+                  setError("Impossible d'attribuer cette arme de départ.");
                 }
               }}
             >
@@ -47,13 +47,13 @@ export function StarterSelectionGate({ children }: { readonly children: ReactNod
                   : <img src={`/assets/items/${option.itemIcon}`} alt="" />}
               </span>
               <strong>{option.label}</strong>
-              <small>T3 · {option.handling === "one_handed" ? "1 main + bouclier T3" : "2 mains"}</small>
+              <small>T3 · {option.handling === "one_handed" ? "1 main" : "2 mains"}</small>
             </button>
           ))}
         </div>
 
         <footer className="ui-starter__footer">
-          <span>Set commun : casque, armure, bottes et cape T3</span>
+          <span>Seule l'arme sélectionnée est offerte au départ.</span>
           {error !== null && <strong role="alert">{error}</strong>}
         </footer>
       </section>
