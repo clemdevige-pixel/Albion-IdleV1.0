@@ -31,9 +31,10 @@ export const BLUE_WORLD_COMBAT_CURVE = [
   { healthStart: 1.1, healthEnd: 1.35, damageStart: 0.85, damageEnd: 0.95, defenseStart: 1.0, defenseEnd: 1.1 },
   { healthStart: 1.35, healthEnd: 1.75, damageStart: 0.95, damageEnd: 1.1, defenseStart: 1.1, defenseEnd: 1.25 },
   { healthStart: 1.75, healthEnd: 2.35, damageStart: 1.1, damageEnd: 1.3, defenseStart: 1.25, defenseEnd: 1.45 },
-  // T4.2 / M20-25 synthetic benchmark clears S10 narrowly at 1.45. The
-  // previous 1.60 endpoint still required roughly M30 despite T4.2 gear.
-  { healthStart: 2.35, healthEnd: 3.4, damageStart: 1.3, damageEnd: 1.45, defenseStart: 1.45, defenseEnd: 1.7 },
+  // T4.2 / M20-25 synthetic benchmark clears S10 with a small but real safety
+  // margin at 1.35. 1.45 was technically clearable but left <1% HP before the
+  // encounter-five heal, which was too fragile for runtime timing variance.
+  { healthStart: 2.35, healthEnd: 3.4, damageStart: 1.3, damageEnd: 1.35, defenseStart: 1.45, defenseEnd: 1.7 },
 ] as const;
 
 /**
