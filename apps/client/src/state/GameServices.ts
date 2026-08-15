@@ -55,7 +55,6 @@ export interface GameServices {
     quality: "miss" | "correct" | "perfect",
   ) => boolean;
   readonly toggleRefining: (family: SupportedProductionFamily) => boolean;
-  readonly refineAllAvailable: () => boolean;
   readonly setGatheringTier: (tier: ProductionTier) => boolean;
   readonly setRefiningTier: (family: SupportedProductionFamily, tier: ProductionTier) => boolean;
   readonly setCraftingTier: (tier: ProductionTier) => boolean;
