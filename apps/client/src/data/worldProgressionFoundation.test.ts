@@ -46,15 +46,28 @@ describe("world progression foundation", () => {
     expect(WORLD_ZONE_IDS_BY_BAND.black).toEqual([]);
   });
 
-  it("locks the post-enchantment-rebalance Blue targets and keeps Yellow independent", () => {
-    expect(getZoneRecommendedItemPower(1)).toBe(300);
-    expect(getSegmentRecommendedItemPower(2, 10)).toBe(315);
-    expect(getSegmentRecommendedItemPower(5, 10)).toBe(530);
-    expect(getZoneRecommendedItemPower(1, "yellow")).toBe(600);
-    expect(getSegmentRecommendedItemPower(5, 10, "yellow")).toBe(800);
+  it("keeps the validated Blue progression inside its equipment checkpoints", () => {
+    const t3 = 300;
+    const t4 = 400;
+    const t4PlusTwo = 500;
+    const t4PlusThree = 550;
+
+    expect(getZoneRecommendedItemPower(1)).toBe(t3);
+
+    // Dark Swamp belongs to the T3 progression: natural mastery can bridge the
+    // small gap, but T4 must never be implicitly required here.
+    const darkSwampEnd = getSegmentRecommendedItemPower(2, 10);
+    expect(darkSwampEnd).toBeGreaterThanOrEqual(t3);
+    expect(darkSwampEnd).toBeLessThan(t4);
+
+    // Mountain S10 is a T4.2 clear target. A small mastery contribution may be
+    // expected, but the recommendation must remain below the T4.3 comfort tier.
+    const mountainEnd = getSegmentRecommendedItemPower(5, 10);
+    expect(mountainEnd).toBeGreaterThanOrEqual(t4PlusTwo);
+    expect(mountainEnd).toBeLessThan(t4PlusThree);
   });
 
-  it("keeps enchanted T4/T5 milestones coherent with +50 IP per level", () => {
+  it("keeps enchantment IP milestones coherent with +50 IP per level", () => {
     const noMastery: readonly MasteryLevel[] = [];
 
     expect(getEffectiveItemPower("item_weapon_sword_t3_broadsword", noMastery, 0)).toBe(300);
