@@ -62,11 +62,11 @@ describe("synthetic ideal weapon benchmark", () => {
     }
   });
 
-  it("does not pretend a target-health execute is available against a fresh target", () => {
+  it("does not pretend a target-health finisher is available against a fresh target", () => {
     const beforeSignature = getWeaponBenchmarkProfile("item_weapon_sword_t4_broadsword", 29, 2);
     const withSignature = getWeaponBenchmarkProfile("item_weapon_sword_t4_broadsword", 30, 2);
 
-    // M30 gains Exécution for sustained combat, but the <30% HP rule means it
+    // M30 gains Exécution for sustained combat, but the <50% HP rule means it
     // is not counted as an immediate segment opener against a fresh target.
     expect(withSignature.sustainedDps).toBeGreaterThan(beforeSignature.sustainedDps);
     expect(withSignature.openerDps5s / beforeSignature.openerDps5s).toBeLessThan(1.01);
