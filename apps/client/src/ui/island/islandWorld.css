@@ -12,7 +12,7 @@
 .ui-island-world__hint {
   position: relative;
   z-index: 30;
-  margin: 14px 16px 0;
+  margin: 10px 12px 0;
   border: 1px solid rgba(190,159,105,.26);
   border-radius: 8px;
   background: rgba(8,14,18,.84);
@@ -25,7 +25,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 .ui-island-world__header > div { display: flex; flex-direction: column; gap: 2px; }
 .ui-island-world__header span { font-size: 9px; letter-spacing: .12em; color: rgba(214,186,133,.7); }
@@ -37,17 +37,18 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  padding: 8px 14px 4px;
+  padding: 0;
+  overflow: hidden;
   display: grid;
   place-items: center;
 }
 
 .ui-island-world__island {
   position: relative;
-  width: min(1180px, 100%);
-  aspect-ratio: 16 / 9;
-  max-height: 100%;
-  background: url("/assets/island-background.webp") center / contain no-repeat;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: url("/assets/island-background.webp") center / cover no-repeat;
   filter: drop-shadow(0 14px 22px rgba(0,0,0,.28));
 }
 
@@ -56,9 +57,10 @@
   --island-building-image: none;
   position: absolute;
   z-index: 10;
-  width: clamp(92px, 13.5vw, 154px);
-  aspect-ratio: 1.48 / 1;
-  transform: translate(-50%, -67%) scale(var(--island-building-scale));
+  width: clamp(145px, 16vw, 230px);
+  aspect-ratio: 1.2 / 1;
+  transform: translate(-50%, -100%) scale(var(--island-building-scale));
+  transform-origin: 50% 100%;
   border: 0;
   background: transparent;
   color: #eee2ca;
@@ -70,7 +72,7 @@
 
 .ui-island-world__asset {
   position: absolute;
-  inset: -16% -28% -4%;
+  inset: -8% -16% 0;
   display: block;
   background-image: var(--island-building-image);
   background-size: contain;
@@ -83,14 +85,14 @@
 .ui-island-world__plot:hover,
 .ui-island-world__plot:focus-visible {
   z-index: 18;
-  transform: translate(-50%, -70%) scale(calc(var(--island-building-scale) * 1.06));
+  transform: translate(-50%, -100%) scale(calc(var(--island-building-scale) * 1.05));
   filter: brightness(1.12);
   outline: none;
 }
 
 .ui-island-world__plot.is-selected {
   z-index: 19;
-  transform: translate(-50%, -70%) scale(calc(var(--island-building-scale) * 1.07));
+  transform: translate(-50%, -100%) scale(calc(var(--island-building-scale) * 1.06));
 }
 
 .ui-island-world__plot.is-selected .ui-island-world__asset {
@@ -99,7 +101,7 @@
     drop-shadow(0 0 7px rgba(231,185,82,.9));
 }
 
-.ui-island-world__plot.is-empty .ui-island-world__asset { opacity: .78; }
+.ui-island-world__plot.is-empty .ui-island-world__asset { opacity: .82; }
 .ui-island-world__plot.is-empty:hover .ui-island-world__asset,
 .ui-island-world__plot.is-empty.is-selected .ui-island-world__asset { opacity: 1; }
 
@@ -107,7 +109,7 @@
   position: absolute;
   z-index: 4;
   left: 50%;
-  top: 88%;
+  top: 96%;
   min-width: 118px;
   max-width: 165px;
   transform: translate(-50%, 5px);
@@ -140,8 +142,8 @@
 
 .ui-island-world__hint {
   margin-top: 0;
-  margin-bottom: 14px;
-  padding: 7px 12px;
+  margin-bottom: 10px;
+  padding: 6px 10px;
   display: flex;
   justify-content: space-between;
   gap: 14px;
@@ -150,6 +152,6 @@
 }
 
 @media (max-width: 1150px) {
-  .ui-island-world__plot { width: clamp(82px, 13vw, 122px); }
+  .ui-island-world__plot { width: clamp(120px, 15vw, 190px); }
   .ui-island-world__hover-label { min-width: 102px; }
 }
