@@ -48,24 +48,32 @@ export interface WeaponMasteryIds {
 }
 
 /**
- * Recommended IP is a comfort target, not a hard gate. Active abilities,
- * consumables and player decisions allow progression below these values.
- * Future IP-progression systems can progressively close that deliberate gap.
+ * Recommended IP is a comfort/progression target, never a hard gate.
+ * It follows the validated Blue progression contract rather than assuming the
+ * obsolete +100 IP per enchantment curve.
  */
 export interface WorldItemPowerProgression {
   readonly zoneStart: readonly number[];
   readonly zoneEnd: readonly number[];
 }
 
+/**
+ * Blue contract after the +50 IP/enchantment rebalance:
+ * - early T3 remains around the 300 IP baseline;
+ * - Dark Swamp is the T4 unlock checkpoint;
+ * - the middle of Blue bridges into T4.0/T4.1;
+ * - Mountain S10 targets roughly 530 effective IP, reachable by T4.2 plus
+ *   natural weapon/family mastery;
+ * - T4.3 sits above the requirement and is intended as comfort/AFK headroom.
+ */
 export const BLUE_WORLD_ITEM_POWER_PROGRESSION = {
-  zoneStart: [220, 300, 360, 430, 510],
-  zoneEnd: [300, 360, 430, 510, 600],
+  zoneStart: [300, 305, 315, 400, 460],
+  zoneEnd: [305, 315, 400, 460, 530],
 } as const satisfies WorldItemPowerProgression;
 
 /**
- * Yellow continues the enchanted-T4 / T5 overlap used by Albion-style IP:
- * T4.1 equals T5.0, T4.2 equals T5.1 and T4.3 equals T5.2.
- * The final 800 IP target is therefore reachable with T5.3 before mastery IP.
+ * Yellow remains independently authored for the later T5 balance pass.
+ * Do not infer its combat tuning from the Blue pass.
  */
 export const YELLOW_WORLD_ITEM_POWER_PROGRESSION = {
   zoneStart: [600, 640, 680, 720, 760],
