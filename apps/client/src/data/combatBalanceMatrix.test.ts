@@ -85,21 +85,14 @@ function projectPlayer(
 
     maxHealth += (stats.stat_max_health ?? 0) * defensiveMultiplier.maxHealth * ipMultiplier;
     armor += (stats.stat_armor ?? 0) * defensiveMultiplier.armor * ipMultiplier;
-    magicResistance +=
-      (stats.stat_magic_resistance ?? 0)
-      * defensiveMultiplier.magicResistance
-      * ipMultiplier;
+    magicResistance += (stats.stat_magic_resistance ?? 0) * defensiveMultiplier.magicResistance * ipMultiplier;
     physicalDamage += (stats.stat_physical_damage ?? 0) * ipMultiplier;
     magicalDamage += (stats.stat_magical_damage ?? 0) * ipMultiplier;
   }
 
   const attackSpeed = getWeaponAttackSpeed(loadout.weaponItemId);
   if (attackSpeed === undefined) throw new Error(`Missing attack speed for ${loadout.weaponItemId}`);
-
-  const abilities = resolveUnlockedWeaponAbilities(
-    loadout.weaponItemId,
-    loadout.specializationMasteryLevel,
-  );
+  const abilities = resolveUnlockedWeaponAbilities(loadout.weaponItemId, loadout.specializationMasteryLevel);
   const primaryAbility = abilities[0];
   const damageType = physicalDamage > 0 ? "physical" as const : "magical" as const;
 
@@ -118,93 +111,32 @@ function projectPlayer(
   };
 }
 
-function getPlayerSustainedDpsAgainstEnemy(
-  player: ProjectedPlayerProfile,
-  enemy: ReturnType<typeof getEnemyCombatProfile>,
-): number {
-  const primaryDamage = player.damageType === "physical"
-    ? player.physicalDamage
-    : player.magicalDamage;
-  const defenderStats = {
-    armor: enemy.armor,
-    magicResistance: enemy.magicResistance,
-  };
-  const autoDamage = calculateDamage(
-    primaryDamage,
-    { physicalDamage: 0, magicalDamage: 0 },
-    defenderStats,
-    player.damageType,
-  ).mitigatedDamage;
+function getPlayerSustainedDpsAgainstEnemy(player: ProjectedPlayerProfile, enemy: ReturnType<typeof getEnemyCombatProfile>): number {
+  const primaryDamage = player.damageType === "physical" ? player.physicalDamage : player.magicalDamage;
+  const defenderStats = { armor: enemy.armor, magicResistance: enemy.magicResistance };
+  const autoDamage = calculateDamage(primaryDamage, { physicalDamage: 0, magicalDamage: 0 }, defenderStats, player.damageType).mitigatedDamage;
   const autoDps = autoDamage * player.attackSpeed;
-
-  if (player.abilityCooldownSeconds === null || player.abilityCooldownSeconds <= 0) {
-    return autoDps;
-  }
-
+  if (player.abilityCooldownSeconds === null || player.abilityCooldownSeconds <= 0) return autoDps;
   const abilityRawDamage = primaryDamage * (1 + player.abilityDamageRatio);
-  const abilityDamage = calculateDamage(
-    abilityRawDamage,
-    { physicalDamage: 0, magicalDamage: 0 },
-    defenderStats,
-    player.damageType,
-  ).mitigatedDamage;
+  const abilityDamage = calculateDamage(abilityRawDamage, { physicalDamage: 0, magicalDamage: 0 }, defenderStats, player.damageType).mitigatedDamage;
   return autoDps + abilityDamage / player.abilityCooldownSeconds;
 }
 
-function projectEncounter(
-  player: ProjectedPlayerProfile,
-  zoneIndex: number,
-  segmentIndex: number,
-  encounterIndex: number,
-  worldBandId: "blue",
-): { readonly timeToKillSeconds: number; readonly damageTaken: number } {
+function projectEncounter(player: ProjectedPlayerProfile, zoneIndex: number, segmentIndex: number, encounterIndex: number, worldBandId: "blue") {
   const enemy = getEnemyCombatProfile(zoneIndex, segmentIndex, encounterIndex, worldBandId);
   const playerDps = getPlayerSustainedDpsAgainstEnemy(player, enemy);
   const timeToKillSeconds = enemy.hp / Math.max(1, playerDps);
-  const enemyHit = calculateDamage(
-    enemy.damage,
-    { physicalDamage: 0, magicalDamage: 0 },
-    { armor: player.armor, magicResistance: player.magicResistance },
-    "physical",
-  ).mitigatedDamage;
-  return {
-    timeToKillSeconds,
-    damageTaken: enemyHit * enemy.attackSpeed * timeToKillSeconds,
-  };
+  const enemyHit = calculateDamage(enemy.damage, { physicalDamage: 0, magicalDamage: 0 }, { armor: player.armor, magicResistance: player.magicResistance }, "physical").mitigatedDamage;
+  return { timeToKillSeconds, damageTaken: enemyHit * enemy.attackSpeed * timeToKillSeconds };
 }
 
-function projectCheckpoint(
-  loadout: CombatBalanceLoadoutDefinition,
-  checkpoint: (typeof COMBAT_BALANCE_CHECKPOINTS)[number],
-  reallocation: CombatBalanceReallocationDefinition = COMBAT_BALANCE_REALLOCATIONS[0],
-): ProjectedCheckpointResult {
+function projectCheckpoint(loadout: CombatBalanceLoadoutDefinition, checkpoint: (typeof COMBAT_BALANCE_CHECKPOINTS)[number], reallocation: CombatBalanceReallocationDefinition = COMBAT_BALANCE_REALLOCATIONS[0]): ProjectedCheckpointResult {
   const player = projectPlayer(loadout, reallocation);
-  const normalEncounters = [0, 1, 2, 3].map((encounterIndex) =>
-    projectEncounter(
-      player,
-      checkpoint.zoneIndex,
-      checkpoint.segmentIndex,
-      encounterIndex,
-      checkpoint.worldBandId,
-    ),
-  );
-  const elite = projectEncounter(
-    player,
-    checkpoint.zoneIndex,
-    checkpoint.segmentIndex,
-    4,
-    checkpoint.worldBandId,
-  );
-  const normalWaveDamageTaken = normalEncounters.reduce(
-    (total, encounter) => total + encounter.damageTaken,
-    0,
-  );
-
-  const clearWithoutPotion =
-    normalWaveDamageTaken < player.maxHealth
-    && elite.damageTaken < player.maxHealth;
+  const normalEncounters = [0, 1, 2, 3].map((encounterIndex) => projectEncounter(player, checkpoint.zoneIndex, checkpoint.segmentIndex, encounterIndex, checkpoint.worldBandId));
+  const elite = projectEncounter(player, checkpoint.zoneIndex, checkpoint.segmentIndex, 4, checkpoint.worldBandId);
+  const normalWaveDamageTaken = normalEncounters.reduce((total, encounter) => total + encounter.damageTaken, 0);
+  const clearWithoutPotion = normalWaveDamageTaken < player.maxHealth && elite.damageTaken < player.maxHealth;
   const healthRemainingAfterElite = Math.max(0, player.maxHealth - elite.damageTaken);
-
   return {
     loadoutId: loadout.id,
     checkpointId: checkpoint.id,
@@ -234,12 +166,9 @@ describe("data-driven combat balance matrix", () => {
     expect(COMBAT_BALANCE_LOADOUTS.length).toBeGreaterThan(0);
     expect(COMBAT_BALANCE_CHECKPOINTS.length).toBeGreaterThan(0);
     expect(COMBAT_BALANCE_REALLOCATIONS.length).toBeGreaterThan(0);
-
     for (const loadout of COMBAT_BALANCE_LOADOUTS) {
       expect(resolveEquipmentInfo(loadout.weaponItemId)).toBeDefined();
-      for (const itemId of loadout.equipmentItemIds) {
-        expect(resolveEquipmentInfo(itemId)).toBeDefined();
-      }
+      for (const itemId of loadout.equipmentItemIds) expect(resolveEquipmentInfo(itemId)).toBeDefined();
       expect(projectPlayer(loadout).maxHealth).toBeGreaterThan(0);
     }
   });
@@ -248,9 +177,7 @@ describe("data-driven combat balance matrix", () => {
     const current = COMBAT_BALANCE_REALLOCATIONS[0];
     const rows = COMBAT_BALANCE_LOADOUTS.map((loadout) => {
       const player = projectPlayer(loadout, current);
-      const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) =>
-        projectCheckpoint(loadout, checkpoint, current),
-      );
+      const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) => projectCheckpoint(loadout, checkpoint, current));
       return {
         id: loadout.id,
         role: loadout.role,
@@ -262,99 +189,40 @@ describe("data-driven combat balance matrix", () => {
         deepestProjectedClear: getDeepestClear(results),
       };
     });
-
     console.table(rows);
     expect(rows.every((row) => row.physicalEhp > 0 && row.magicalEhp > 0)).toBe(true);
   });
 
-  it("compares real-stat reallocations while pinning current 1H, physical 2H and magical 2H T4.3 totals", () => {
+  it("pins current T4.3 totals for all reference weapon models", () => {
     const current = COMBAT_BALANCE_REALLOCATIONS[0];
-    const ceilingIds = [
-      "broadsword_t4_full_3",
-      "longbow_t4_full_3",
-      "infernal_t4_full_3",
-    ] as const;
-    const ceilings = ceilingIds.map((id) => {
-      const loadout = requireLoadout(id);
-      return { loadout, profile: projectPlayer(loadout, current) };
-    });
-
-    const rows = COMBAT_BALANCE_REALLOCATIONS.flatMap((reallocation) =>
-      COMBAT_BALANCE_LOADOUTS.map((loadout) => {
-        const player = projectPlayer(loadout, reallocation);
-        const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) =>
-          projectCheckpoint(loadout, checkpoint, reallocation),
-        );
-        return {
-          reallocation: reallocation.id,
-          loadout: loadout.id,
-          hp: Number(player.maxHealth.toFixed(1)),
-          armor: Number(player.armor.toFixed(1)),
-          mr: Number(player.magicResistance.toFixed(1)),
-          physicalEhp: Math.round(player.physicalEffectiveHealth),
-          deepestProjectedClear: getDeepestClear(results),
-        };
-      }),
-    );
-
-    console.table(rows);
-
+    const ceilingIds = ["broadsword_t4_full_3", "longbow_t4_full_3", "infernal_t4_full_3"] as const;
     for (const reallocation of COMBAT_BALANCE_REALLOCATIONS) {
-      for (const { loadout, profile: ceiling } of ceilings) {
-        const candidateCeiling = projectPlayer(loadout, reallocation);
-        expect(candidateCeiling.maxHealth).toBeCloseTo(ceiling.maxHealth, 8);
-        expect(candidateCeiling.armor).toBeCloseTo(ceiling.armor, 8);
-        expect(candidateCeiling.magicResistance).toBeCloseTo(ceiling.magicResistance, 8);
+      for (const id of ceilingIds) {
+        const loadout = requireLoadout(id);
+        const baseline = projectPlayer(loadout, current);
+        const projected = projectPlayer(loadout, reallocation);
+        expect(projected.maxHealth).toBeCloseTo(baseline.maxHealth, 8);
+        expect(projected.armor).toBeCloseTo(baseline.armor, 8);
+        expect(projected.magicResistance).toBeCloseTo(baseline.magicResistance, 8);
       }
     }
   });
 
-  it("can preserve current full-T3 and full-T4.3 totals with a 300/0/0 naked hero", () => {
-    const current = COMBAT_BALANCE_REALLOCATIONS[0];
-    const candidate = COMBAT_BALANCE_REALLOCATIONS.find(
-      (entry) => entry.id === "candidate_300_preserve_t3_t43",
-    );
-    if (candidate === undefined) throw new Error("Missing preserve-T3/T4.3 candidate");
+  it("tests central T3 model 530/21/18 with naked 300/0/0", () => {
+    const candidate = COMBAT_BALANCE_REALLOCATIONS.find((entry) => entry.id === "candidate_300_t3_530_21_18_t43_current");
+    if (candidate === undefined) throw new Error("Missing central T3 candidate");
 
     const ids = [
-      "broadsword_t3_full",
-      "longbow_t3_full",
-      "infernal_t3_full",
-      "broadsword_t4_full_3",
-      "longbow_t4_full_3",
-      "infernal_t4_full_3",
+      "broadsword_t3_weapon_only", "broadsword_t3_chest", "broadsword_t3_core", "broadsword_t3_full",
+      "longbow_t3_weapon_only", "longbow_t3_chest", "longbow_t3_core", "longbow_t3_full",
+      "infernal_t3_weapon_only", "infernal_t3_chest", "infernal_t3_core", "infernal_t3_full",
+      "broadsword_t4_full_3", "longbow_t4_full_3", "infernal_t4_full_3",
     ] as const;
 
-    for (const id of ids) {
-      const loadout = requireLoadout(id);
-      const baseline = projectPlayer(loadout, current);
-      const projected = projectPlayer(loadout, candidate);
-      expect(projected.maxHealth).toBeCloseTo(baseline.maxHealth, 8);
-      expect(projected.armor).toBeCloseTo(baseline.armor, 8);
-      expect(projected.magicResistance).toBeCloseTo(baseline.magicResistance, 8);
-    }
-
-    const diagnosticIds = [
-      "broadsword_t3_weapon_only",
-      "broadsword_t3_chest",
-      "broadsword_t3_core",
-      "broadsword_t3_full",
-      "longbow_t3_weapon_only",
-      "longbow_t3_chest",
-      "longbow_t3_core",
-      "longbow_t3_full",
-      "infernal_t3_weapon_only",
-      "infernal_t3_chest",
-      "infernal_t3_core",
-      "infernal_t3_full",
-    ] as const;
-
-    const rows = diagnosticIds.map((id) => {
+    const rows = ids.map((id) => {
       const loadout = requireLoadout(id);
       const player = projectPlayer(loadout, candidate);
-      const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) =>
-        projectCheckpoint(loadout, checkpoint, candidate),
-      );
+      const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) => projectCheckpoint(loadout, checkpoint, candidate));
       return {
         loadout: id,
         hp: Number(player.maxHealth.toFixed(1)),
@@ -366,5 +234,18 @@ describe("data-driven combat balance matrix", () => {
     });
 
     console.table(rows);
+
+    const broadsword = rows.find((row) => row.loadout === "broadsword_t3_full");
+    const longbow = rows.find((row) => row.loadout === "longbow_t3_full");
+    const infernal = rows.find((row) => row.loadout === "infernal_t3_full");
+    expect(broadsword?.hp).toBeCloseTo(530, 8);
+    expect(broadsword?.armor).toBeCloseTo(30, 8);
+    expect(broadsword?.mr).toBeCloseTo(23, 8);
+    expect(longbow?.hp).toBeCloseTo(530, 8);
+    expect(longbow?.armor).toBeCloseTo(21, 8);
+    expect(longbow?.mr).toBeCloseTo(18, 8);
+    expect(infernal?.hp).toBeCloseTo(530, 8);
+    expect(infernal?.armor).toBeCloseTo(21, 8);
+    expect(infernal?.mr).toBeCloseTo(18, 8);
   });
 });
