@@ -16,6 +16,8 @@ export interface WeaponBenchmarkProfile {
   readonly masteryLevel: number;
   readonly enchantment: BenchmarkEnchantment;
   readonly sustainedDps: number;
+  readonly openerDps5s: number;
+  readonly openerDps10s: number;
   readonly autoAttackDps: number;
   readonly abilityDps: number;
   readonly unlockedAbilityCount: number;
@@ -42,6 +44,8 @@ export interface WeaponCombatBenchmarkProfile {
 export interface SyntheticIdealWeaponProfile {
   readonly masteryLevel: number;
   readonly sustainedDps: number;
+  readonly openerDps5s: number;
+  readonly openerDps10s: number;
   readonly lowerBound: number;
   readonly upperBound: number;
 }
@@ -151,6 +155,52 @@ function autoCastAvailabilityFactor(itemId: string, abilityId: string, masteryLe
   return 1;
 }
 
+/**
+ * Segment opener availability differs from long-run availability: a target-health
+ * execute cannot fire against a fresh encounter, while an effect-gated ability
+ * can participate in the opener if another unlocked auto-cast ability authors
+ * the prerequisite effect. This mirrors the segment-start cooldown reset without
+ * pretending that every conditional signature fires at t=0.
+ */
+function openerAvailabilityFactor(itemId: string, abilityId: string, masteryLevel: number): number {
+  const rule = getWeaponAbilityMechanics(abilityId)?.autoRule;
+  if (rule === undefined || rule.kind === "always") return 1;
+  if (rule.kind === "target_health_below") return 0;
+  if (rule.kind === "target_has_effect") {
+    return hasUnlockedEffect(itemId, masteryLevel, rule.effectId) ? 1 : 0;
+  }
+  return 1;
+}
+
+function castsInsideWindow(cooldown: number, windowSeconds: number): number {
+  const safeCooldown = Math.max(0.5, cooldown);
+  const safeWindow = Math.max(0, windowSeconds);
+  if (safeWindow <= 0) return 0;
+  // Cast at t=0, then again for each cooldown that becomes ready strictly
+  // before the window closes. Cooldowns are reset at segment start.
+  return 1 + Math.floor(Math.max(0, safeWindow - 1e-9) / safeCooldown);
+}
+
+function openerDps(
+  itemId: string,
+  masteryLevel: number,
+  sourceDamage: number,
+  autoAttackDps: number,
+  windowSeconds: number,
+): number {
+  let totalDamage = autoAttackDps * windowSeconds;
+  for (const ability of resolveUnlockedWeaponAbilities(itemId, masteryLevel)) {
+    const availability = openerAvailabilityFactor(itemId, ability.id, masteryLevel);
+    if (availability <= 0) continue;
+    const ratio = abilityTotalRatio(itemId, ability.id, masteryLevel, ability.bonusDamageRatio);
+    totalDamage += sourceDamage
+      * ratio
+      * castsInsideWindow(ability.cooldown, windowSeconds)
+      * availability;
+  }
+  return totalDamage / Math.max(0.001, windowSeconds);
+}
+
 function defensiveLoadoutForWeapon(itemId: string): {
   readonly armorItemIds: readonly string[];
   readonly offHandItemId?: string | undefined;
@@ -216,6 +266,8 @@ export function getWeaponBenchmarkProfile(
     masteryLevel,
     enchantment,
     sustainedDps: autoAttackDps + abilityDps,
+    openerDps5s: openerDps(itemId, masteryLevel, sourceDamage, autoAttackDps, 5),
+    openerDps10s: openerDps(itemId, masteryLevel, sourceDamage, autoAttackDps, 10),
     autoAttackDps,
     abilityDps,
     unlockedAbilityCount: unlocked.length,
@@ -268,8 +320,8 @@ export function getWeaponCombatBenchmarkProfile(
 }
 
 /**
- * Synthetic reference = median sustained output of the compared set, never one
- * live weapon. +/-10% is the first-pass offensive envelope.
+ * Synthetic reference = median sustained and opener output of the compared set,
+ * never one live weapon. +/-10% is the first-pass sustained offensive envelope.
  */
 export function getSyntheticIdealWeaponProfile(
   profiles: readonly WeaponBenchmarkProfile[],
@@ -280,6 +332,8 @@ export function getSyntheticIdealWeaponProfile(
   return {
     masteryLevel,
     sustainedDps,
+    openerDps5s: median(comparable.map((profile) => profile.openerDps5s)),
+    openerDps10s: median(comparable.map((profile) => profile.openerDps10s)),
     lowerBound: sustainedDps * 0.9,
     upperBound: sustainedDps * 1.1,
   };
