@@ -29,6 +29,22 @@ export interface WeaponAbilityMechanicsRuntimeDeps {
   readonly onTargetKilled: (tick: number) => void;
 }
 
+/**
+ * DamageManager adds one full source-stat hit to every damage request. For a
+ * multi-hit ability we therefore split the authored TOTAL ability budget
+ * `(1 + bonusRatio) * sourceDamage` across all hits and subtract the implicit
+ * source-stat contribution from each request's baseDamage.
+ */
+export function getAbilityHitBaseDamage(
+  sourceDamage: number,
+  bonusRatio: number,
+  hits: number,
+): number {
+  const safeHits = Math.max(1, Math.floor(hits));
+  const intendedDamagePerHit = sourceDamage * (1 + bonusRatio) / safeHits;
+  return intendedDamagePerHit - sourceDamage;
+}
+
 export class WeaponAbilityMechanicsRuntime {
   private readonly dots: ActiveDot[] = [];
   private readonly modifiers = new Map<string, TrackedModifier>();
@@ -71,11 +87,12 @@ export class WeaponAbilityMechanicsRuntime {
           totalRatio += mechanic.bonusEffect.bonusRatio;
         }
         const hits = Math.max(1, mechanic.hits ?? 1);
+        const baseDamagePerHit = getAbilityHitBaseDamage(sourceDamage, totalRatio, hits);
         for (let hit = 0; hit < hits && this.deps.damageManager.isAlive(target); hit += 1) {
           const result = this.deps.damageManager.processDamage({
             source: this.deps.heroId,
             target,
-            baseDamage: sourceDamage * (totalRatio / hits),
+            baseDamage: baseDamagePerHit,
             damageType: definition.damageType,
             source_type: "ability",
           });
@@ -143,9 +160,6 @@ export class WeaponAbilityMechanicsRuntime {
       while (dot.intervalRemaining <= 0 && dot.ticksRemaining > 0 && this.deps.damageManager.isAlive(dot.target)) {
         dot.intervalRemaining += dot.interval;
         dot.ticksRemaining -= 1;
-        // DamageManager adds the matching offensive source stat to baseDamage.
-        // DoT ratios are total fractions (0.08 = 8%), unlike direct ability
-        // ratios which are authored as bonus damage over the base hit.
         const result = this.deps.damageManager.processDamage({
           source: dot.source,
           target: dot.target,
