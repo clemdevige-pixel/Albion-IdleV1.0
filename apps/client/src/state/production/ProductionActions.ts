@@ -87,9 +87,19 @@ export class ProductionActions {
   }
 
   refineAllAvailable(): boolean {
-    return this.deps.refiningRuntime
-      .refineAllAvailable(this.deps.getCurrentTick())
-      .startedAtLeastOne;
+    const result = this.deps.refiningRuntime.refineAllAvailable(
+      this.deps.getCurrentTick(),
+    );
+    if (!result.startedAtLeastOne) return false;
+
+    syncInventoryToBridge(
+      this.deps.bridge,
+      this.deps.inventoryManager,
+      this.deps.heroId,
+    );
+    this.deps.productionBridge.syncAllRefining();
+    this.deps.productionBridge.syncCrafting();
+    return true;
   }
 
   craftEquipment(outputItemId: string): boolean {
@@ -126,4 +136,3 @@ export class ProductionActions {
     );
   }
 }
-
