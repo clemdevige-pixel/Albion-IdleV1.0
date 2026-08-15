@@ -22,41 +22,44 @@ export class InMemoryAuthRepository implements AuthRepository {
   private readonly accountIdsByDiscordId = new Map<string, string>();
   private readonly sessions = new Map<string, { readonly accountId: string; readonly expiresAt: string }>();
 
-  public async findAccountByEmail(email: string): Promise<StoredAccount | undefined> {
+  public findAccountByEmail(email: string): Promise<StoredAccount | undefined> {
     const id = this.accountIdsByEmail.get(email);
-    return id === undefined ? undefined : this.accountsById.get(id);
+    return Promise.resolve(id === undefined ? undefined : this.accountsById.get(id));
   }
 
-  public async findAccountById(accountId: string): Promise<StoredAccount | undefined> {
-    return this.accountsById.get(accountId);
+  public findAccountById(accountId: string): Promise<StoredAccount | undefined> {
+    return Promise.resolve(this.accountsById.get(accountId));
   }
 
-  public async findAccountByDiscordId(discordId: string): Promise<StoredAccount | undefined> {
+  public findAccountByDiscordId(discordId: string): Promise<StoredAccount | undefined> {
     const id = this.accountIdsByDiscordId.get(discordId);
-    return id === undefined ? undefined : this.accountsById.get(id);
+    return Promise.resolve(id === undefined ? undefined : this.accountsById.get(id));
   }
 
-  public async saveAccount(account: StoredAccount): Promise<void> {
+  public saveAccount(account: StoredAccount): Promise<void> {
     this.accountsById.set(account.id, account);
     if (account.email !== null) this.accountIdsByEmail.set(account.email, account.id);
     if (account.discordId !== undefined) this.accountIdsByDiscordId.set(account.discordId, account.id);
+    return Promise.resolve();
   }
 
-  public async saveSession(tokenHash: string, accountId: string, expiresAt: string): Promise<void> {
+  public saveSession(tokenHash: string, accountId: string, expiresAt: string): Promise<void> {
     this.sessions.set(tokenHash, { accountId, expiresAt });
+    return Promise.resolve();
   }
 
-  public async findSessionAccountId(tokenHash: string): Promise<string | undefined> {
+  public findSessionAccountId(tokenHash: string): Promise<string | undefined> {
     const session = this.sessions.get(tokenHash);
-    if (session === undefined) return undefined;
+    if (session === undefined) return Promise.resolve(undefined);
     if (Date.parse(session.expiresAt) <= Date.now()) {
       this.sessions.delete(tokenHash);
-      return undefined;
+      return Promise.resolve(undefined);
     }
-    return session.accountId;
+    return Promise.resolve(session.accountId);
   }
 
-  public async deleteSession(tokenHash: string): Promise<void> {
+  public deleteSession(tokenHash: string): Promise<void> {
     this.sessions.delete(tokenHash);
+    return Promise.resolve();
   }
 }
