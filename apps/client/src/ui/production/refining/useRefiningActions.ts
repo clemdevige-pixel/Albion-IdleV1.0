@@ -6,7 +6,6 @@ import type { RefiningFamilyId } from "./refiningModels";
 export interface RefiningActions {
   readonly setTier: (family: RefiningFamilyId, tier: ProductionTier) => boolean;
   readonly toggle: (family: RefiningFamilyId) => boolean;
-  readonly refineAll: () => boolean;
 }
 
 function toGameplayFamily(family: RefiningFamilyId): SupportedProductionFamily {
@@ -17,7 +16,6 @@ export function useRefiningActions(): RefiningActions {
   const {
     setRefiningTier,
     toggleRefining,
-    refineAllAvailable,
   } = useGameServices();
 
   const setTier = useCallback((family: RefiningFamilyId, tier: ProductionTier): boolean => (
@@ -28,5 +26,5 @@ export function useRefiningActions(): RefiningActions {
     toggleRefining(toGameplayFamily(family))
   ), [toggleRefining]);
 
-  return { setTier, toggle, refineAll: refineAllAvailable };
+  return { setTier, toggle };
 }
