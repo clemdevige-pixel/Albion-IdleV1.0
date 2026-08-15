@@ -7,7 +7,7 @@ import {
   type CombatRuntimeBenchmarkResult,
 } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 
-export interface EnchantmentShardTtkBenchmarkInput extends CombatRuntimeBenchmarkInput {}
+export type EnchantmentShardTtkBenchmarkInput = CombatRuntimeBenchmarkInput;
 
 export interface EnchantmentShardTtkBenchmarkResult extends CombatRuntimeBenchmarkResult {
   readonly expectedShardsPerSegment: number;
