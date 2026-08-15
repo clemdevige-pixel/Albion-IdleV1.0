@@ -177,4 +177,14 @@ export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDef
       magicResistance: 1.0959232613908874,
     },
   },
+  {
+    id: "reallocation_probe_300",
+    label: "Seuil 300 HP",
+    hero: { maxHealth: 300, armor: 1, magicResistance: 0 },
+    equipmentStatMultiplier: {
+      maxHealth: 2.061007957559682,
+      armor: 1.1610017889087658,
+      magicResistance: 1.119904076738609,
+    },
+  },
 ] as const;
