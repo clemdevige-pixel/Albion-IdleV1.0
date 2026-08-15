@@ -62,6 +62,20 @@ describe("MonsterAbilityRuntime", () => {
     expect(env.abilityManager.getAbility(env.monsterId, ability.id as never)?.state).toBe("cooldown");
   });
 
+  it("treats damageMultiplier as the total hit multiplier", () => {
+    const env = setup();
+    const ability = MONSTER_ABILITIES[MONSTER_ABILITY_IDS.undeadHeavySlash]!;
+    env.abilityManager.learnAbility(env.monsterId, ability);
+
+    const before = env.damageManager.getHealth(env.heroId).currentHealth;
+    expect(tickMonsterAbilities(env, env.monsterId, env.heroId, 0.1, 1)).toBe(true);
+    const after = env.damageManager.getHealth(env.heroId).currentHealth;
+
+    // Heavy Slash is authored at 1.35x and the monster has 20 physical damage:
+    // 20 * 1.35 = 27 total damage, not 20 + (20 * 1.35) = 47.
+    expect(before - after).toBeCloseTo(27, 6);
+  });
+
   it("does not execute an ability again while it is on cooldown", () => {
     const env = setup();
     const ability = MONSTER_ABILITIES[MONSTER_ABILITY_IDS.undeadHeavySlash]!;
