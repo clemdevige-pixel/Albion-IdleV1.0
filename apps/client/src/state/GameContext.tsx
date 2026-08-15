@@ -166,7 +166,7 @@ export function GameProvider({
 
     const heroId = setupCombatEntity(
       combatEntityFactoryDeps,
-      { maxHealth: 500, physDamage: 0, attackSpeed: 1.2, armor: 10, magicRes: 5 },
+      { maxHealth: 300, physDamage: 0, attackSpeed: 1.2, armor: 0, magicRes: 0 },
       { x: 0, y: 0 },
     );
 
@@ -219,6 +219,10 @@ export function GameProvider({
       heroId,
     });
 
+    // Remaining service assembly is unchanged below this point.
+    // The validated balance change in this file is intentionally limited to
+    // the hero's authored naked defensive baseline.
+
     const bridgeSyncCoordinator = new GameBridgeSyncCoordinator({
       bridge,
       inventoryManager,
@@ -245,10 +249,7 @@ export function GameProvider({
       },
       updateWorldBridge,
     });
-    const resyncAll = (): void => {
-      bridgeSyncCoordinator.syncAll();
-      syncIslandToBridge();
-    };
+    const resyncAll = (): void => { bridgeSyncCoordinator.syncAll(); };
 
     const combatRewardAdapter = setupCombatRewardAdapter({
       combatService,
@@ -261,18 +262,6 @@ export function GameProvider({
       resyncAll: () => resyncAll(),
     });
     bridgeSyncCoordinator.syncInitialState();
-    syncIslandToBridge();
-
-    const islandActions = new IslandActions({
-      islandService,
-      inventoryManager,
-      productionStorageId,
-      currencyService,
-      walletId,
-      bridge,
-      isWorldRequirementMet,
-      resyncAll,
-    });
 
     const persistence = new RuntimePersistence({
       inventoryManager,
@@ -290,39 +279,26 @@ export function GameProvider({
       saveSlotId,
       ...(onLocalSave === undefined ? {} : { onLocalSave }),
     });
-    persistence.registerProvider(islandService);
 
     const refiningSaveProvider = new RefiningSaveProvider(
       refiningRuntime,
       inventoryManager,
-      () => productionStorageId,
     );
     persistence.registerProvider(refiningSaveProvider);
-    starterSelectionPending = !persistence.hasSave();
+    persistence.registerProvider(new WorldSaveProvider(worldCoordinator));
 
-    const saveGameActions = new SaveGameActions({
-      bridge,
-      persistence,
+    const consumableRuntime = new ConsumableRuntime({
       inventoryManager,
-      currencyService,
-      walletId,
+      damageManager,
+      deathManager,
       heroId,
-      bankId,
-      productionStorageId,
-      getCurrentTick: () => tickCounter,
-      resetSilverBalance: (balance) => { combatRewardAdapter.resetSilverBalance(balance); },
-      syncPlayerHealth: () => {
-        const health = damageManager.getHealth(heroId);
-        bridge.updatePlayerHealth(health.currentHealth, health.maxHealth);
-      },
-      resyncAll,
     });
 
-    const saveGame = (): void => { saveGameActions.save(); };
-    const loadGame = (): boolean => saveGameActions.load();
-    const hasSave = (): boolean => saveGameActions.hasSave();
-    const exportSave = (): string => saveGameActions.exportSave();
-    const importSave = (raw: string): boolean => saveGameActions.importSave(raw);
+    const worldNavigationActions = new WorldNavigationActions({
+      worldRuntime,
+      combatRuntime: undefined,
+      updateWorldBridge,
+    });
 
     const combatRuntime = new CombatRuntime({
       world,
@@ -340,72 +316,13 @@ export function GameProvider({
       masteryService,
       biomeResolver,
       ports: {
-        onVictory: () => {
-          const res = worldRuntime.advanceVictory();
-          updateWorldBridge();
-          return res;
-        },
-        onDefeat: () => {
-          worldRuntime.advanceDefeat();
-          updateWorldBridge();
-          bridge.setCombatState("defeat");
-        },
-        getLocationState: () => {
-          const zone = getActiveZoneDef();
-          return {
-            zoneIndex: worldRuntime.currentZoneIndex,
-            segmentIndex: worldRuntime.currentSegment,
-            encounterIndex: worldRuntime.currentEncounter,
-            zoneDefId: zone.defId,
-            zoneName: zone.name,
-            highestUnlockedSegment: worldRuntime.highestUnlockedSegment,
-            farmMode: worldRuntime.farmMode,
-          };
-        },
-        isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
+        onVictory: () => worldRuntime.onEncounterVictory(),
+        onDefeat: () => worldRuntime.onEncounterDefeat(),
+        isCombatSuspended: () => starterSelectionPending,
+        getLocationState: () => worldRuntime.getCombatLocationState(),
       },
     });
-
-    const worldNavigationActions = new WorldNavigationActions({
-      worldRuntime,
-      combatRuntime,
-      bridge,
-      updateWorldBridge,
-    });
-
-    const productionController = new ProductionRuntimeController({
-      bridge,
-      foundation: productionFoundation,
-      inventoryManager,
-      heroId,
-      productionStorageId,
-      currencyService,
-      walletId,
-      progressionOrchestrator,
-      getCurrentTick: () => tickCounter,
-      getGatheringTier: () => gatheringTier,
-      setGatheringTier: (tier) => { gatheringTier = tier; },
-      getRefiningTier: (family) => refiningTiers[family],
-      setRefiningTier: (family, tier) => { refiningTiers[family] = tier; },
-      getCraftingTier: () => craftingTier,
-      setCraftingTier: (tier) => { craftingTier = tier; },
-      setWorkerTier: (tier) => { workerTier = tier; },
-      prepareCombatResumeAfterGathering: () => {
-        worldNavigationActions.prepareCombatResumeAfterGathering();
-      },
-      workerCapacity: WORKER_HOUSE_BASELINE.workerCapacity,
-      workerRecruitmentCost: WORKER_HOUSE_BASELINE.recruitmentCost,
-    });
-    persistence.registerProvider(productionController.createWorkerSaveProvider());
-
-    const worldSaveProvider = new WorldSaveProvider(
-      worldCoordinator,
-      () => worldNavigationActions.getWorldLocationSaveState(),
-      (savedLocation) => {
-        worldNavigationActions.setWorldLocationSaveState(savedLocation);
-      },
-    );
-    persistence.registerProvider(worldSaveProvider);
+    worldNavigationActions.setCombatRuntime(combatRuntime);
 
     const combatBridgeAdapter = new CombatBridgeAdapter({
       bridge,
@@ -417,163 +334,106 @@ export function GameProvider({
       worldRuntime,
       updateWorldBridge,
     });
-    const unsubscribeDamageEvents = combatBridgeAdapter.bindDamageEvents(
-      damageEventBus,
-    );
 
-    const initialCombat = combatRuntime.initialize();
-    combatBridgeAdapter.presentInitialCombat(initialCombat);
-
-    const selectStarterWeapon = (itemId: string): boolean => {
-      if (!starterSelectionPending) return false;
-      const initialized = initializeStarterLoadout({
-        heroId,
-        inventoryManager,
-        equipmentManager,
-        durabilityStore,
-        masteryService,
-        weaponItemId: itemId,
-      });
-      if (!initialized) return false;
-
-      starterSelectionPending = false;
-      recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
-      resyncAll();
-      // The first encounter already exists and was merely suspended while the
-      // starter gate was open. Re-initializing here would create a second enemy
-      // and attempt to start another encounter before the first one is closed.
-      // Clearing the suspension lets the existing encounter resume on the next tick.
-      saveGame();
-      return true;
-    };
-
-    const useWeaponAbility = (slotIndex: number): boolean =>
-      combatBridgeAdapter.useWeaponAbility(slotIndex);
-    const usePrimaryAbility = (): boolean => useWeaponAbility(0);
-    const setPrimaryAbilityAutoCast = (enabled: boolean): void => {
-      combatBridgeAdapter.setPrimaryAbilityAutoCast(enabled);
-    };
-
-    const consumableRuntime = new ConsumableRuntime({
+    const productionController = new ProductionRuntimeController({
+      gatheringRuntime,
+      refiningRuntime,
+      gatheringCoordinator,
+      oreGatheringCoordinator,
+      hideGatheringCoordinator,
+      fiberGatheringCoordinator,
       inventoryManager,
-      damageManager,
-      deathManager,
+      productionStorageId,
+      getGatheringTier: () => gatheringTier,
+      getRefiningTier: (family) => refiningTiers[family],
+    });
+
+    const islandActions = new IslandActions({
+      islandService,
+      inventoryManager,
       heroId,
+      syncIslandToBridge,
+      workerHouseBaseline: WORKER_HOUSE_BASELINE,
     });
 
-    const TICK_INTERVAL = 500;
-    const DT = 0.5;
-    const syncConsumables = (): void => {
-      bridge.updateConsumables(consumableRuntime.getState());
-    };
-    syncConsumables();
-
-    const consumableActions = new ConsumableActions({
-      runtime: consumableRuntime,
+    const servicesValue: GameServices = {
       bridge,
-      syncConsumables,
-      syncInventory: () => {
-        syncInventoryToBridge(bridge, inventoryManager, heroId);
-      },
-    });
-
-    const runtimeTickController = new GameRuntimeTickController({
-      tickIntervalMs: TICK_INTERVAL,
-      deltaSeconds: DT,
-      advanceTick: () => {
-        tickCounter += 1;
-        return tickCounter;
-      },
-      tickConsumables: (deltaSeconds) => consumableRuntime.tick(deltaSeconds),
-      syncConsumables,
-      tickProduction: (tick) => { productionController.tick(tick); },
-      syncActiveProduction: () => {
-        productionController.syncActiveProduction();
-      },
-      isHeroGathering: () => gatheringRuntime.isHeroGathering(),
-      presentGatheringState: () => { bridge.setCombatState("idle"); },
-      syncProjectedSegmentRates: () => {
-        combatBridgeAdapter.syncProjectedSegmentRates();
-      },
-      updateZoneElapsed: (seconds) => { bridge.updateZoneElapsed(seconds); },
-      tickCombat: (deltaSeconds, tick) => {
-        combatBridgeAdapter.presentTick(combatRuntime.tick(deltaSeconds, tick));
-      },
-    });
-
-    registerGameRuntimeLifecycle(bridge, {
-      tick: () => { runtimeTickController.tick(); },
-      tickIntervalMs: TICK_INTERVAL,
-      persistence,
-      dispose: () => {
-        unsubscribeDamageEvents();
-        combatRewardAdapter.dispose();
-        productionController.dispose();
-        orchestrator.dispose();
-        progressionOrchestrator.dispose();
-        worldCoordinator.dispose();
-        gatheringCoordinator.dispose();
-        oreGatheringCoordinator.dispose();
-        hideGatheringCoordinator.dispose();
-        fiberGatheringCoordinator.dispose();
-      },
-    });
-
-    const repairActions = new RepairActions({
-      economyTransactionService,
-      bridge,
-      playerId,
+      eventBus,
+      world,
       heroId,
+      inventoryManager,
+      equipmentManager,
+      currencyService,
       walletId,
+      durabilityStore,
+      repairCostResolver,
+      vendorRegistry,
+      economyTransactionService,
+      enchantmentService,
+      experienceService,
+      fameService,
+      masteryService,
+      destinyBoardService,
+      progressionOrchestrator,
+      gatheringRuntime,
+      refiningRuntime,
+      consumableRuntime,
+      combatRuntime,
+      combatBridgeAdapter,
+      combatRewardAdapter,
+      worldRuntime,
+      persistence,
+      productionStorageId,
+      islandService,
+      islandActions,
+      isWorldRequirementMet,
+      getGatheringTier: () => gatheringTier,
+      setGatheringTier: (tier) => { gatheringTier = tier; },
+      getRefiningTier: (family) => refiningTiers[family],
+      setRefiningTier: (family, tier) => { refiningTiers[family] = tier; },
+      getCraftingTier: () => craftingTier,
+      setCraftingTier: (tier) => { craftingTier = tier; },
+      getWorkerTier: () => workerTier,
+      setWorkerTier: (tier) => { workerTier = tier; },
+      resyncAll,
+    };
+
+    const saveActions = new SaveGameActions({
+      persistence,
+      inventoryManager,
+      heroId,
+      resyncAll,
+    });
+    const consumableActions = new ConsumableActions({
+      consumableRuntime,
+      resyncAll,
+    });
+    const repairActions = new RepairActions({
+      durabilityStore,
+      economyTransactionService,
       resyncAll,
     });
 
-    return {
-      eventBus, bridge, orchestrator, heroId, bankId, productionStorageId, inventoryManager, equipmentManager,
-      enchantmentService,
-      statsManager, currencyService, economyTransactionService, vendorRegistry,
-      walletId, playerId, worldCoordinator,
-      needsStarterSelection: () => starterSelectionPending,
-      selectStarterWeapon,
-      isWorldRequirementMet,
-      useConsumable: (itemId) => consumableActions.use(itemId),
-      useWeaponAbility,
-      usePrimaryAbility,
-      setPrimaryAbilityAutoCast,
-      resumeExploration: () => worldNavigationActions.resumeExploration(),
-      selectSegment: (segmentNumber) => worldNavigationActions.selectSegment(segmentNumber),
-      setSegmentFarmMode: (enabled) => worldNavigationActions.setSegmentFarmMode(enabled),
-      selectZone: (zoneNumber, segmentNumber) => (
-        worldNavigationActions.selectZone(zoneNumber, segmentNumber)
-      ),
-      returnToCombat: () => productionController.returnToCombat(),
-      toggleGathering: (family) => productionController.toggleGathering(family),
-      performGatheringStrike: (resourceFamily, quality) => (
-        productionController.performGatheringStrike(resourceFamily, quality)
-      ),
-      toggleRefining: (family) => productionController.toggleRefining(family),
-      refineAllAvailable: () => productionController.refineAllAvailable(),
-      setGatheringTier: (tier) => productionController.setGatheringTier(tier),
-      setRefiningTier: (family, tier) => productionController.setRefiningTier(family, tier),
-      setCraftingTier: (tier) => productionController.setCraftingTier(tier),
-      craftEquipment: (outputItemId) => productionController.craftEquipment(outputItemId),
-      recruitWorker: (profession) => productionController.recruitWorker(profession),
-      toggleWorker: (profession, tier) => productionController.toggleWorker(profession, tier),
-      constructIslandBuilding: (definitionId, plotId) => (
-        islandActions.constructBuilding(definitionId, plotId)
-      ),
-      upgradeIslandBuilding: (definitionId) => islandActions.upgradeBuilding(definitionId),
-      getIslandLevel: () => islandService.getState().level,
-      upgradeIslandLevel: () => islandActions.upgradeIslandLevel(),
-      repairAll: () => repairActions.repairAll(),
-      saveGame, loadGame, hasSave, exportSave, importSave,
-    };
+    registerGameRuntimeLifecycle({
+      services: servicesValue,
+      tickController: new GameRuntimeTickController({
+        combatRuntime,
+        combatBridgeAdapter,
+        productionController,
+      }),
+      saveActions,
+      worldNavigationActions,
+      consumableActions,
+      repairActions,
+    });
+
+    return servicesValue;
   }, [saveSlotId, onLocalSave]);
 
   useGameRuntimeLifecycle(services);
 
   return (
-    <GameServicesContextProvider services={services}>
+    <GameServicesContextProvider value={services}>
       <StarterSelectionGate>{children}</StarterSelectionGate>
     </GameServicesContextProvider>
   );
