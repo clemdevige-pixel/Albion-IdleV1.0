@@ -27,3 +27,6 @@ jobs:
 
       - name: Verify Blue runtime determinism
         run: pnpm exec tsx scripts/runtime-blue-deterministic-check.ts
+
+      - name: Run data-driven combat balance matrix
+        run: pnpm --filter @game/client test -- combatBalanceMatrix.test.ts
