@@ -15,11 +15,6 @@ interface IslandPlotVisual {
   readonly scale?: number;
 }
 
-interface BuildingAtlasVisual {
-  readonly x: number;
-  readonly y: number;
-}
-
 /** Positions are authored against island-background.webp (1600x900). */
 const PLOT_VISUALS: readonly IslandPlotVisual[] = [
   { left: 23, top: 20, scale: 0.92 },
@@ -36,30 +31,24 @@ const PLOT_VISUALS: readonly IslandPlotVisual[] = [
   { left: 78, top: 70, scale: 0.88 },
 ] as const;
 
-/**
- * Atlas order follows the supplied 4x3 building board, after labels were removed
- * and every silhouette normalized into an equal 320x220 transparent cell.
- */
-const BUILDING_ATLAS: Readonly<Record<IslandBuildingId | "constructible", BuildingAtlasVisual>> = {
-  worker_house: { x: 0, y: 0 },
-  storage: { x: 1, y: 0 },
-  lumber_camp: { x: 2, y: 0 },
-  mine: { x: 3, y: 0 },
-  hunting_camp: { x: 0, y: 1 },
-  fiber_camp: { x: 1, y: 1 },
-  sawmill: { x: 2, y: 1 },
-  weaver: { x: 3, y: 1 },
-  smelter: { x: 0, y: 2 },
-  tannery: { x: 1, y: 2 },
-  workshop: { x: 2, y: 2 },
-  constructible: { x: 3, y: 2 },
+const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
+  worker_house: "/assets/island/buildings/worker_house.png",
+  storage: "/assets/island/buildings/storage.png",
+  lumber_camp: "/assets/island/buildings/lumber_camp.png",
+  mine: "/assets/island/buildings/mine.png",
+  hunting_camp: "/assets/island/buildings/hunting_camp.png",
+  fiber_camp: "/assets/island/buildings/fiber_camp.png",
+  sawmill: "/assets/island/buildings/sawmill.png",
+  smelter: "/assets/island/buildings/smelter.png",
+  tannery: "/assets/island/buildings/tannery.png",
+  weaver: "/assets/island/buildings/weaver.png",
+  workshop: "/assets/island/buildings/workshop.png",
+  constructible: "/assets/island/buildings/constructible.png",
 };
 
-function atlasStyle(assetId: IslandBuildingId | "constructible", scale: number): CSSProperties {
-  const atlas = BUILDING_ATLAS[assetId];
+function assetStyle(assetId: IslandBuildingId | "constructible", scale: number): CSSProperties {
   return {
-    "--island-atlas-x": `${String(atlas.x * 33.333333)}%`,
-    "--island-atlas-y": `${String(atlas.y * 50)}%`,
+    "--island-building-image": `url("${BUILDING_ASSET_PATHS[assetId]}")`,
     "--island-building-scale": String(scale),
   } as CSSProperties;
 }
@@ -116,7 +105,7 @@ export function IslandWorldRegion(): JSX.Element {
                 style={{
                   left: `${String(position.left)}%`,
                   top: `${String(position.top)}%`,
-                  ...atlasStyle(assetId, position.scale ?? 1),
+                  ...assetStyle(assetId, position.scale ?? 1),
                 }}
                 onClick={() => {
                   if (building === undefined) selectPlot(plotDefinition.id);
