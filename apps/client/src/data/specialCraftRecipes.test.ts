@@ -13,7 +13,7 @@ describe("special crafting conversions", () => {
 
     expect(keyRecipes).toHaveLength(5);
     for (const recipe of keyRecipes) {
-      expect(recipe.family).toBe("other");
+      expect(recipe.family).toBe("other_key");
       expect(recipe.requirements).toHaveLength(1);
       expect(recipe.requirements[0]?.quantity).toBe(KEY_FRAGMENTS_PER_KEY);
       expect(recipe.requirements[0]?.itemId).toContain("key_fragment");
@@ -28,7 +28,7 @@ describe("special crafting conversions", () => {
 
     expect(artifactRecipes).toHaveLength(5);
     for (const recipe of artifactRecipes) {
-      expect(recipe.family).toBe("other");
+      expect(recipe.family).toBe("other_artifact");
       expect(recipe.requirements).toHaveLength(1);
       expect(recipe.requirements[0]?.quantity).toBe(ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE);
       expect(recipe.requirements[0]?.itemId).toContain("artifact_fragment");

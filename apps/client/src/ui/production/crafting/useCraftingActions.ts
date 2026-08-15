@@ -7,6 +7,6 @@ export interface CraftingActions {
 }
 
 export function useCraftingActions(): CraftingActions {
-  const { setProductionTier, craftEquipment } = useGameServices();
-  return { setTier: setProductionTier, craft: craftEquipment };
+  const { setCraftingTier, craftEquipment } = useGameServices();
+  return { setTier: setCraftingTier, craft: craftEquipment };
 }

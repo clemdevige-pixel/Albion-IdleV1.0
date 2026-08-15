@@ -1,11 +1,13 @@
 import type { EntityId } from "@game/core";
-import type { DamageType } from "./types.js";
+import type { DamageSourceType, DamageType } from "./types.js";
 
 /** Payload emitted after every successful {@link DamageManager.processDamage}. */
 export interface DamageDealtEvent {
   readonly source: EntityId;
   readonly target: EntityId;
   readonly damageType: DamageType;
+  /** Generic origin of the damage, preserved for presentation/logging consumers. */
+  readonly sourceType: DamageSourceType;
   readonly rawDamage: number;
   readonly finalDamage: number;
   readonly targetHealthAfter: number;

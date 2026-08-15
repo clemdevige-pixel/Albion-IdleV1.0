@@ -60,7 +60,11 @@ export class AuthClient {
     }));
   }
 
-  public discordAuthorizationUrl(): string { return this.endpoint(AUTH_DISCORD_START_ROUTE); }
+  public discordAuthorizationUrl(): string {
+    const url = new URL(this.endpoint(AUTH_DISCORD_START_ROUTE), window.location.origin);
+    url.searchParams.set("return_origin", window.location.origin);
+    return url.toString();
+  }
 
   private async postSession(path: string, body: unknown): Promise<AuthSession> {
     const response = await fetch(this.endpoint(path), {

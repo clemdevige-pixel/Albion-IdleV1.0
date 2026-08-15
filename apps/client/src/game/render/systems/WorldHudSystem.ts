@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { WorldHudRenderManifest } from "../RenderManifest";
+import { getPresentedEnemyHealth } from "../presentation/CombatPresentedHealth";
 
 interface ActorHealthHud {
   readonly background: Phaser.GameObjects.Rectangle;
@@ -35,11 +36,12 @@ export class WorldHudSystem {
     this.enemy = this.createActorHud(
       x,
       y,
-      "ENNEMI",
+      "",
       this.manifest.actorLabel.enemyColor,
       this.colorToNumber(this.manifest.healthBar.lowerGradient[0]),
-      "300/300",
+      "0/0",
     );
+    this.setEnemyVisible(false);
   }
 
   public updatePlayer(current: number, maximum: number): void {
@@ -47,7 +49,8 @@ export class WorldHudSystem {
   }
 
   public updateEnemy(current: number, maximum: number, name: string): void {
-    this.updateActor(this.enemy, current, maximum);
+    const presented = getPresentedEnemyHealth(current, maximum);
+    this.updateActor(this.enemy, presented.current, presented.maximum);
     this.enemy.label.setText(name);
   }
 

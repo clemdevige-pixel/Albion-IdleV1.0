@@ -1,37 +1,153 @@
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { resolveStatusEffectDotDetails } from "../data/statusEffectDotPresentation";
+import {
+  resolveStatusEffectAnchor,
+  resolveStatusEffectPresentation,
+  type StatusEffectAnchor,
+} from "../data/statusEffectPresentationCatalog";
+import type { ActiveEffectDisplay, StatsVM } from "../game/GameBridge";
+import { renderManifestRegistry } from "../game/render/defaultRenderManifestRegistry";
 import { useActiveEffectsUiModel } from "../ui/combat-hud/combatHudSelectors";
+import { useGameUiSelector } from "../ui/state";
+import "./activeEffectsWorld.css";
 
-const EFFECT_SYMBOLS: Record<string, string> = {
-  buff: "+",
-  debuff: "-",
-  stun: "!",
-  root: "#",
-  slow: "~",
-  silence: "x",
-};
+interface EffectAnchorPosition {
+  readonly left: number;
+  readonly top: number;
+}
 
-/**
- * Small status effect icons for active buffs/debuffs.
- */
+interface EffectAnchorPositions {
+  readonly player: EffectAnchorPosition;
+  readonly enemy: EffectAnchorPosition;
+}
+
+function formatDamage(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(Math.trunc(rounded)) : rounded.toFixed(1);
+}
+
+function resolveDotDamageText(effectId: string, stats: StatsVM): readonly string[] {
+  const dot = resolveStatusEffectDotDetails(effectId);
+  if (dot === undefined) return [];
+  const statId = dot.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage";
+  const sourceDamage = stats.stats.find((stat) => stat.id === statId)?.computed ?? 0;
+  const perTick = sourceDamage * dot.ratio;
+  const total = perTick * dot.ticks;
+  return [
+    `${formatDamage(perTick)} dégâts bruts par tick`,
+    `${String(dot.ticks)} ticks · ${formatDamage(total)} dégâts bruts au total`,
+    `1 tick toutes les ${String(dot.interval)}s`,
+  ];
+}
+
+function EffectGroup({
+  anchor,
+  effects,
+  position,
+  stats,
+}: {
+  readonly anchor: StatusEffectAnchor;
+  readonly effects: readonly ActiveEffectDisplay[];
+  readonly position: EffectAnchorPosition;
+  readonly stats: StatsVM;
+}): JSX.Element | null {
+  const anchored = effects.filter(
+    (effect) => resolveStatusEffectAnchor(effect.name, effect.type) === anchor,
+  );
+  if (anchored.length === 0) return null;
+
+  const style: CSSProperties = { left: position.left, top: position.top };
+  return (
+    <div className={`active-effects active-effects--${anchor}`} style={style}>
+      {anchored.map((effect) => {
+        const presentation = resolveStatusEffectPresentation(effect.name, effect.type);
+        const dotLines = resolveDotDamageText(effect.name, stats);
+        return (
+          <div
+            key={effect.id}
+            className={`active-effects__icon active-effects__icon--${effect.type}`}
+            tabIndex={0}
+            aria-label={`${presentation.label} ${String(Math.ceil(effect.remainingDuration))} secondes`}
+          >
+            <span className="active-effects__symbol">{presentation.symbol}</span>
+            <div className="active-effects__tooltip" role="tooltip">
+              <strong>{presentation.label}</strong>
+              <span>{presentation.description}</span>
+              {dotLines.map((line) => <span key={line}>{line}</span>)}
+              <small>{String(Math.max(0, Math.ceil(effect.remainingDuration)))}s restantes</small>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function useEffectAnchorPositions(enemyHealthBarOffsetY: number): EffectAnchorPositions {
+  const worldHud = renderManifestRegistry.requireDefaultWorldHud();
+  const [positions, setPositions] = useState<EffectAnchorPositions>({
+    player: { left: 0, top: 0 },
+    enemy: { left: 0, top: 0 },
+  });
+
+  useEffect(() => {
+    const updatePositions = (): void => {
+      const canvas = document.querySelector("canvas");
+      const layer = document.querySelector(".combat-hud-layer");
+      if (!(canvas instanceof HTMLCanvasElement) || !(layer instanceof HTMLElement)) return;
+
+      const canvasRect = canvas.getBoundingClientRect();
+      const layerRect = layer.getBoundingClientRect();
+      if (canvas.width <= 0 || canvas.height <= 0 || canvasRect.width <= 0 || canvasRect.height <= 0) return;
+
+      const scaleX = canvasRect.width / canvas.width;
+      const scaleY = canvasRect.height / canvas.height;
+      const canvasLeft = canvasRect.left - layerRect.left;
+      const canvasTop = canvasRect.top - layerRect.top;
+      const entityY = canvas.height * 0.61;
+      const gapBelowBar = 18;
+
+      setPositions({
+        player: {
+          left: canvasLeft + canvas.width * 0.32 * scaleX,
+          top: canvasTop + (entityY - worldHud.healthBar.offsetY) * scaleY + gapBelowBar,
+        },
+        enemy: {
+          left: canvasLeft + canvas.width * 0.68 * scaleX,
+          top: canvasTop + (entityY - enemyHealthBarOffsetY) * scaleY + gapBelowBar,
+        },
+      });
+    };
+
+    updatePositions();
+    window.addEventListener("resize", updatePositions);
+    const observer = new ResizeObserver(updatePositions);
+    const canvas = document.querySelector("canvas");
+    if (canvas !== null) observer.observe(canvas);
+    return () => {
+      window.removeEventListener("resize", updatePositions);
+      observer.disconnect();
+    };
+  }, [enemyHealthBarOffsetY, worldHud.healthBar.offsetY]);
+
+  return positions;
+}
+
+/** Generic actor-anchored status effects for current and future buffs/debuffs. */
 export function ActiveEffectsDisplay(): JSX.Element {
-  const activeEffects = useActiveEffectsUiModel();
-
-  if (activeEffects.length === 0) {
-    return <div className="active-effects" />;
-  }
+  const effects = useActiveEffectsUiModel();
+  const enemyVisualManifestId = useGameUiSelector((state) => state.enemyVisualManifestId);
+  const stats = useGameUiSelector((state) => state.stats);
+  const enemyManifest = useMemo(
+    () => renderManifestRegistry.requireStaticActor(enemyVisualManifestId),
+    [enemyVisualManifestId],
+  );
+  const positions = useEffectAnchorPositions(enemyManifest.hud.healthBarOffsetY);
 
   return (
-    <div className="active-effects">
-      {activeEffects.map((effect) => (
-        <div
-          key={effect.id}
-          className={`active-effects__icon active-effects__icon--${effect.type}`}
-          title={`${effect.name} (${String(Math.ceil(effect.remainingDuration))}s)`}
-        >
-          <span className="active-effects__symbol">
-            {EFFECT_SYMBOLS[effect.type] ?? "?"}
-          </span>
-        </div>
-      ))}
-    </div>
+    <>
+      <EffectGroup anchor="player" effects={effects} position={positions.player} stats={stats} />
+      <EffectGroup anchor="enemy" effects={effects} position={positions.enemy} stats={stats} />
+    </>
   );
 }

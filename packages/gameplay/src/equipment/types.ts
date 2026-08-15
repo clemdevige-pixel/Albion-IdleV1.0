@@ -1,4 +1,4 @@
-import type { InventoryEntry } from "../inventory/types.js";
+import type { EnchantmentLevel, InventoryEntry } from "../inventory/types.js";
 
 /**
  * V1 equipment slots per AI_BIBLE 31_EQUIPMENT_SYSTEM "Equipment Slots (V1)":
@@ -30,6 +30,11 @@ export interface EquipmentInfoLike {
   readonly handling: WeaponHandling;
   /** Fixed additive stat bonuses keyed by StatId (11_STAT §6: equipment bonuses are additive). */
   readonly stats?: Readonly<Record<string, number>> | undefined;
+  /** Explicit content policy. Missing means not enchantable; callers never infer eligibility from naming/crafting. */
+  readonly enchantment?: {
+    readonly enabled: boolean;
+    readonly maximumLevel: EnchantmentLevel;
+  } | undefined;
 }
 
 /** Items without equipment info are not equippable (23_EQUIPMENT "Item First"). */

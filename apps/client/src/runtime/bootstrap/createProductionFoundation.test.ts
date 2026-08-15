@@ -35,7 +35,9 @@ describe("createProductionFoundation", () => {
       currencyService: economy.currencyService,
       walletId: economy.walletId,
       forestZoneDefId: world.forestZoneDefId,
-      getProductionTier: () => 3,
+      getGatheringTier: () => 3,
+      getRefiningTier: () => 3,
+      getWorkerTier: () => 3,
     });
 
     expect(production.gatheringRuntime.isHeroGathering()).toBe(false);

@@ -86,12 +86,6 @@ export class ProductionActions {
     return result.action === "started" || result.action === "stopped";
   }
 
-  refineAllAvailable(): boolean {
-    return this.deps.refiningRuntime
-      .refineAllAvailable(this.deps.getCurrentTick())
-      .startedAtLeastOne;
-  }
-
   craftEquipment(outputItemId: string): boolean {
     const result = this.deps.craftingRuntime.craftEquipment(outputItemId);
     if (!result.ok) return false;
@@ -126,4 +120,3 @@ export class ProductionActions {
     );
   }
 }
-

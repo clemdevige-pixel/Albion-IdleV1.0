@@ -6,6 +6,8 @@ import type { WorldSaveState } from "./world-integration-types.js";
 export interface SavedZoneMemory {
   readonly zoneDefId: ZoneDefinitionId;
   readonly currentSegment: number;
+  /** Optional for backward compatibility with saves authored before encounter persistence. */
+  readonly currentEncounter?: number;
   readonly highestUnlockedSegment: number;
   readonly completedSegments: readonly number[];
 }
@@ -13,6 +15,8 @@ export interface SavedZoneMemory {
 export interface WorldLocationSaveState {
   readonly activeZoneDefId: ZoneDefinitionId;
   readonly activeSegment: number;
+  /** Optional for backward compatibility with saves authored before encounter persistence. */
+  readonly activeEncounter?: number;
   readonly farmMode: boolean;
   readonly zoneMemories: readonly SavedZoneMemory[];
 }

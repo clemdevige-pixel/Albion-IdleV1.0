@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
-import { MONSTER_LOOT_TABLES } from "./economyContentCatalog";
 import { MONSTER_ABILITIES } from "./monsterAbilityContentCatalog";
 import {
   MONSTER_IDS,
@@ -24,10 +23,9 @@ describe("Undead family pilot content", () => {
     }
   });
 
-  it("resolves every ability, loot table and render manifest", () => {
+  it("resolves every ability and render manifest", () => {
     for (const id of familyIds) {
       const monster = getMonsterDefinition(id);
-      expect(MONSTER_LOOT_TABLES[monster.rewards.lootTableId]).toBeDefined();
       expect(renderManifestRegistry.getStaticActor(monster.visualManifestId)).toBeDefined();
       for (const abilityId of monster.abilityIds) {
         expect(MONSTER_ABILITIES[abilityId]).toBeDefined();

@@ -1,5 +1,6 @@
 import type { EntityId } from "@game/core";
 import { EventBus } from "@game/core";
+import { getInitialIslandWorkerHouseLevelDefinition } from "@game/data";
 import type {
   CurrencyService,
   ExperienceService,
@@ -45,9 +46,7 @@ export {
   getWorkerGatheringXpForTier,
 } from "../data/progressionContentCatalog.js";
 
-const WORKER_RECRUITMENT_COST = 250;
-const WORKER_CAPACITY = 4;
-
+const WORKER_HOUSE_BASELINE = getInitialIslandWorkerHouseLevelDefinition();
 
 type SupportedWorkerProfession = Extract<
   WorkerProfession,
@@ -279,6 +278,7 @@ export class WorkerRuntime {
   ): MasteryId {
     return this.getWorkerProductionFamily(profession).masteryId;
   }
+
   private workerTaskForProfession(
     profession: SupportedWorkerProfession,
   ): WorkerTaskDefinitionId {
@@ -315,9 +315,7 @@ export class WorkerRuntime {
 
   public hasActiveWorkerSession(): boolean {
     for (const session of this.workerScheduler.getAllSessions()) {
-      if (session.state === "executing") {
-        return true;
-      }
+      if (session.state === "executing") return true;
     }
     return false;
   }
@@ -365,7 +363,7 @@ export class WorkerRuntime {
     if (
       !this.isSupportedWorkerProfession(profession)
       || this.workerByProfession.has(profession)
-      || this.workerManager.getAllWorkers().length >= WORKER_CAPACITY
+      || this.workerManager.getAllWorkers().length >= WORKER_HOUSE_BASELINE.workerCapacity
     ) {
       return { ok: false, reason: "capacity_reached", profession };
     }
@@ -373,7 +371,7 @@ export class WorkerRuntime {
     const payment = this.currencyService.debit(
       this.walletId,
       "currency_silver",
-      WORKER_RECRUITMENT_COST,
+      WORKER_HOUSE_BASELINE.recruitmentCost,
       "Worker",
     );
     if (!payment.ok) {
@@ -391,7 +389,7 @@ export class WorkerRuntime {
       this.currencyService.credit(
         this.walletId,
         "currency_silver",
-        WORKER_RECRUITMENT_COST,
+        WORKER_HOUSE_BASELINE.recruitmentCost,
       );
       return { ok: false, reason: "creation_failed", profession };
     }
@@ -403,7 +401,7 @@ export class WorkerRuntime {
       this.currencyService.credit(
         this.walletId,
         "currency_silver",
-        WORKER_RECRUITMENT_COST,
+        WORKER_HOUSE_BASELINE.recruitmentCost,
       );
       return { ok: false, reason: "assignment_failed", profession };
     }
@@ -438,6 +436,7 @@ export class WorkerRuntime {
       ? { ok: true, action: "restarted", profession }
       : { ok: false, reason: "execution_failed", profession };
   }
+
   public toggleWorker(profession: WorkerProfession): ToggleWorkerResult {
     if (!this.isSupportedWorkerProfession(profession)) {
       return { ok: false, reason: "not_found", profession };
@@ -451,11 +450,8 @@ export class WorkerRuntime {
 
     if (session?.state === "executing") {
       const assignedTier = this.workerProductionTier.get(workerId) ?? currentGlobalTier;
-      if (assignedTier !== currentGlobalTier) {        return this.restartWorkerForTier(
-          workerId,
-          profession,
-          currentGlobalTier,
-        );
+      if (assignedTier !== currentGlobalTier) {
+        return this.restartWorkerForTier(workerId, profession, currentGlobalTier);
       }
       session.pause();
       this.workerManager.updateState(workerId, "assigned");
@@ -464,11 +460,8 @@ export class WorkerRuntime {
 
     if (session?.state === "paused") {
       const assignedTier = this.workerProductionTier.get(workerId) ?? currentGlobalTier;
-      if (assignedTier !== currentGlobalTier) {        return this.restartWorkerForTier(
-          workerId,
-          profession,
-          currentGlobalTier,
-        );
+      if (assignedTier !== currentGlobalTier) {
+        return this.restartWorkerForTier(workerId, profession, currentGlobalTier);
       }
       session.resume();
       this.workerManager.updateState(workerId, "working");
@@ -513,9 +506,7 @@ export class WorkerRuntime {
     this.workerByProfession.clear();
     this.workerProductionTier.clear();
 
-    if (!Array.isArray(data)) {
-      return;
-    }
+    if (!Array.isArray(data)) return;
 
     for (const raw of data as WorkerClientSaveData[]) {
       if (!this.isSupportedWorkerProfession(raw.profession)) continue;

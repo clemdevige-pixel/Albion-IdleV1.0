@@ -40,7 +40,9 @@ interface ProductionBridgeAdapterDependencies {
   readonly gatheringCoordinators: Readonly<Record<SupportedProductionFamily, GatheringCoordinator>>;
   readonly refiningManagers: Readonly<Record<SupportedProductionFamily, RefiningManager>>;
   readonly getCurrentTick: () => number;
-  readonly getProductionTier: () => ProductionTier;
+  readonly getGatheringTier: () => ProductionTier;
+  readonly getRefiningTier: (family: SupportedProductionFamily) => ProductionTier;
+  readonly getCraftingTier: () => ProductionTier;
 }
 
 /** Projects authoritative Production runtimes into GameBridge view models. */
@@ -53,7 +55,7 @@ export class ProductionBridgeAdapter {
 
   syncGathering(family: SupportedProductionFamily): void {
     const { gatheringRuntime, inventoryManager, productionStorageId } = this.deps;
-    const tier = this.deps.getProductionTier();
+    const tier = this.deps.getGatheringTier();
     const config = this.getFamilyConfig(family, tier);
     const session = this.deps.gatheringCoordinators[family].getActiveSession();
     const miniGame = gatheringRuntime.getActiveMiniGameState(family);
@@ -88,12 +90,21 @@ export class ProductionBridgeAdapter {
 
   syncRefining(family: SupportedProductionFamily): void {
     const { inventoryManager, productionStorageId, refiningRuntime } = this.deps;
-    const tier = this.deps.getProductionTier();
+    const tier = this.deps.getRefiningTier(family);
     const config = this.getFamilyConfig(family, tier);
+    const activeSession = this.deps.refiningManagers[family].getActiveSession();
+    const session = activeSession ?? (
+      refiningRuntime.isAutomaticEnabled(family)
+        ? {
+            getRequiredTicks: () => config.recipe.durationTicks,
+            getProgress: () => 0,
+          }
+        : undefined
+    );
 
     syncRefiningToBridge(
       config.updateRefining,
-      this.deps.refiningManagers[family].getActiveSession(),
+      session,
       this.deps.getCurrentTick(),
       config.recipe,
       refiningRuntime.getReservedInputs(family),
@@ -108,7 +119,7 @@ export class ProductionBridgeAdapter {
 
   syncCrafting(): void {
     const { bridge, heroId, inventoryManager, productionStorageId } = this.deps;
-    const tier = this.deps.getProductionTier();
+    const tier = this.deps.getCraftingTier();
 
     syncCraftingToBridge(
       bridge,

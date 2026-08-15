@@ -1,5 +1,6 @@
 import type { SupportedProductionFamily } from "../data/productionFamilyCatalog";
 import type { ProductionTier } from "../data/productionFamilyCatalog";
+import type { IslandBuildingId, IslandWorldRequirement } from "@game/data";
 import type { EventBus, EntityId } from "@game/core";
 import type {
   CombatOrchestrator,
@@ -16,15 +17,8 @@ import type {
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
 
-/** Events owned by the client application layer. */
 export type UIEventMap = Record<string, unknown>;
 
-/**
- * Public application contract exposed to React consumers.
- *
- * The implementation remains assembled by GameProvider. Keeping this contract
- * separate prevents UI modules from depending on the composition root itself.
- */
 export interface GameServices {
   readonly eventBus: EventBus<UIEventMap>;
   readonly bridge: GameBridge;
@@ -42,6 +36,9 @@ export interface GameServices {
   readonly walletId: WalletId;
   readonly playerId: PlayerId;
   readonly worldCoordinator: WorldCoordinator;
+  readonly needsStarterSelection: () => boolean;
+  readonly selectStarterWeapon: (itemId: string) => boolean;
+  readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
@@ -58,11 +55,16 @@ export interface GameServices {
     quality: "miss" | "correct" | "perfect",
   ) => boolean;
   readonly toggleRefining: (family: SupportedProductionFamily) => boolean;
-  readonly refineAllAvailable: () => boolean;
-  readonly setProductionTier: (tier: ProductionTier) => boolean;
+  readonly setGatheringTier: (tier: ProductionTier) => boolean;
+  readonly setRefiningTier: (family: SupportedProductionFamily, tier: ProductionTier) => boolean;
+  readonly setCraftingTier: (tier: ProductionTier) => boolean;
   readonly craftEquipment: (outputItemId: string) => boolean;
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
-  readonly toggleWorker: (profession: WorkerProfessionVM) => boolean;
+  readonly toggleWorker: (profession: WorkerProfessionVM, tier: ProductionTier) => boolean;
+  readonly constructIslandBuilding: (definitionId: IslandBuildingId, plotId: string) => boolean;
+  readonly upgradeIslandBuilding: (definitionId: IslandBuildingId) => boolean;
+  readonly getIslandLevel: () => number;
+  readonly upgradeIslandLevel: () => boolean;
   readonly repairAll: () => boolean;
   readonly saveGame: () => void;
   readonly loadGame: () => boolean;

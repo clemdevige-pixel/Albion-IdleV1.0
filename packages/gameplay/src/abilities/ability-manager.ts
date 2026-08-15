@@ -120,6 +120,15 @@ export class AbilityManager {
     }
   }
 
+  resetCooldowns(entityId: EntityId): void {
+    const data = this.#getData(entityId);
+    for (const entry of data.abilities.values()) {
+      if (entry.state !== "cooldown") continue;
+      entry.state = "ready";
+      entry.cooldownRemaining = 0;
+    }
+  }
+
   getAbilities(entityId: EntityId): readonly AbilityEntry[] {
     return [...this.#getData(entityId).abilities.values()];
   }

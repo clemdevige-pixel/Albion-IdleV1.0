@@ -6,8 +6,10 @@ import {
   getWorldZonePlacement,
 } from "./worldContentCatalog";
 import {
+  getEffectiveItemPower,
   getSegmentRecommendedItemPower,
   getZoneRecommendedItemPower,
+  type MasteryLevel,
 } from "./itemPower";
 
 describe("world progression foundation", () => {
@@ -44,10 +46,52 @@ describe("world progression foundation", () => {
     expect(WORLD_ZONE_IDS_BY_BAND.black).toEqual([]);
   });
 
-  it("keeps Blue targets and authors an independent Yellow Item Power curve", () => {
-    expect(getZoneRecommendedItemPower(1)).toBe(220);
-    expect(getSegmentRecommendedItemPower(5, 10)).toBe(600);
-    expect(getZoneRecommendedItemPower(1, "yellow")).toBe(600);
-    expect(getSegmentRecommendedItemPower(5, 10, "yellow")).toBe(1000);
+  it("keeps the validated Blue progression inside its equipment checkpoints", () => {
+    const t3 = 300;
+    const t4 = 400;
+    const t4PlusTwo = 500;
+    const t4PlusThree = 550;
+
+    expect(getZoneRecommendedItemPower(1)).toBe(t3);
+
+    // Dark Swamp belongs to the T3 progression: natural mastery can bridge the
+    // small gap, but T4 must never be implicitly required here.
+    const darkSwampEnd = getSegmentRecommendedItemPower(2, 10);
+    expect(darkSwampEnd).toBeGreaterThanOrEqual(t3);
+    expect(darkSwampEnd).toBeLessThan(t4);
+
+    // Mountain S10 is a T4.2 clear target. A small mastery contribution may be
+    // expected, but the recommendation must remain below the T4.3 comfort tier.
+    const mountainEnd = getSegmentRecommendedItemPower(5, 10);
+    expect(mountainEnd).toBeGreaterThanOrEqual(t4PlusTwo);
+    expect(mountainEnd).toBeLessThan(t4PlusThree);
+  });
+
+  it("keeps enchantment IP milestones coherent with +50 IP per level", () => {
+    const noMastery: readonly MasteryLevel[] = [];
+
+    expect(getEffectiveItemPower("item_weapon_sword_t3_broadsword", noMastery, 0)).toBe(300);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 0)).toBe(400);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 1)).toBe(450);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 2)).toBe(500);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 3)).toBe(550);
+    expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 0)).toBe(500);
+    expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 3)).toBe(650);
+  });
+
+  it("keeps every provisional Yellow recommendation monotonic", () => {
+    let previous = getZoneRecommendedItemPower(1, "yellow");
+
+    for (let zoneIndex = 1; zoneIndex <= 5; zoneIndex += 1) {
+      for (let segmentIndex = 1; segmentIndex <= 10; segmentIndex += 1) {
+        const current = getSegmentRecommendedItemPower(
+          zoneIndex,
+          segmentIndex,
+          "yellow",
+        );
+        expect(current).toBeGreaterThanOrEqual(previous);
+        previous = current;
+      }
+    }
   });
 });

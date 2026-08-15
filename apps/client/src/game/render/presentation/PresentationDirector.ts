@@ -1,4 +1,5 @@
 import type { DamageNumberEvent } from "../../GameBridge";
+import { getCombatPresentationDamageEventCutoff } from "./CombatPresentationInvalidation";
 import {
   PresentationQueue,
   type PresentationCommand,
@@ -29,6 +30,8 @@ export class PresentationDirector {
   ) {}
 
   public enqueueCombatEvent(event: DamageNumberEvent): void {
+    if (event.id <= getCombatPresentationDamageEventCutoff()) return;
+
     const command: CombatPresentationCommand = {
       id: `combat:${String(event.id)}`,
       kind: COMBAT_EVENT_KIND,
@@ -59,7 +62,9 @@ export class PresentationDirector {
 
   private present(command: PresentationCommand): void {
     if (command.kind === COMBAT_EVENT_KIND) {
-      this.handlers.presentCombatEvent(command.payload as DamageNumberEvent);
+      const event = command.payload as DamageNumberEvent;
+      if (event.id <= getCombatPresentationDamageEventCutoff()) return;
+      this.handlers.presentCombatEvent(event);
     }
   }
 }

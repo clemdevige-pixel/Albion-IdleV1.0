@@ -1,7 +1,7 @@
 import type { DragEvent, MouseEvent } from "react";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemHoverTooltip } from "../../panels/ItemHoverTooltip";
-import { getEnchantmentFrameClass, getItemDefinition, ItemVisual } from "../../panels/ItemVisual";
+import { getEnchantmentTextClass, getEquipmentTierFrameClass, getItemDefinition, ItemVisual } from "../../panels/ItemVisual";
 import "./itemGrid.css";
 
 interface ItemGridProps {
@@ -14,15 +14,7 @@ interface ItemGridProps {
   readonly onItemDrop?: (from: number, to: number) => void;
 }
 
-export function ItemGrid({
-  slots,
-  label,
-  interactive = false,
-  draggable = false,
-  onItemDoubleClick,
-  onItemContextMenu,
-  onItemDrop,
-}: ItemGridProps): JSX.Element {
+export function ItemGrid({ slots, label, interactive = false, draggable = false, onItemDoubleClick, onItemContextMenu, onItemDrop }: ItemGridProps): JSX.Element {
   const readSource = (event: DragEvent<HTMLButtonElement>): number | undefined => {
     const parsed = Number(event.dataTransfer.getData("text/plain"));
     return Number.isInteger(parsed) ? parsed : undefined;
@@ -38,59 +30,30 @@ export function ItemGrid({
             key={slot.position}
             type="button"
             role="gridcell"
-            className={`ui-item-grid__slot${itemId !== undefined ? " ui-item-grid__slot--filled" : ""}${getEnchantmentFrameClass(slot.enchantment)}`}
+            className={`ui-item-grid__slot${itemId !== undefined ? " ui-item-grid__slot--filled" : ""}${getEquipmentTierFrameClass(definition?.tier)}`}
             disabled={itemId === undefined && !draggable}
             draggable={draggable && itemId !== undefined}
-            onDragStart={(event) => {
-              if (!draggable || itemId === undefined) return;
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", String(slot.position));
-            }}
-            onDragOver={(event) => {
-              if (!draggable) return;
-              event.preventDefault();
-              event.dataTransfer.dropEffect = "move";
-            }}
-            onDrop={(event) => {
-              if (!draggable) return;
-              event.preventDefault();
-              const from = readSource(event);
-              if (from !== undefined) onItemDrop?.(from, slot.position);
-            }}
-            onDoubleClick={(event) => {
-              if (itemId !== undefined) onItemDoubleClick?.(event, slot);
-            }}
-            onContextMenu={(event) => {
-              if (itemId !== undefined) onItemContextMenu?.(event, slot);
-            }}
+            onDragStart={(event) => { if (!draggable || itemId === undefined) return; event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", String(slot.position)); }}
+            onDragOver={(event) => { if (!draggable) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
+            onDrop={(event) => { if (!draggable) return; event.preventDefault(); const from = readSource(event); if (from !== undefined) onItemDrop?.(from, slot.position); }}
+            onDoubleClick={(event) => { if (itemId !== undefined) onItemDoubleClick?.(event, slot); }}
+            onContextMenu={(event) => { if (itemId !== undefined) onItemContextMenu?.(event, slot); }}
           >
             {itemId !== undefined && (
               <>
                 <span className="ui-item-grid__visual"><ItemVisual itemId={itemId} /></span>
                 {definition !== undefined && (
-                  <span className="ui-item-grid__tier">
-                    T{String(definition.tier)}{slot.enchantment > 0 ? `.${String(slot.enchantment)}` : ""}
+                  <span className={`ui-item-grid__tier${getEnchantmentTextClass(slot.enchantment)}`}>
+                    T{String(definition.tier)}.{String(slot.enchantment)}
                   </span>
                 )}
-                {slot.quantity > 1 && (
-                  <span className="ui-item-grid__quantity">{String(slot.quantity)}</span>
-                )}
+                {slot.quantity > 1 && <span className="ui-item-grid__quantity">{String(slot.quantity)}</span>}
               </>
             )}
           </button>
         );
-
         if (itemId === undefined) return slotButton;
-        return (
-          <ItemHoverTooltip
-            key={slot.position}
-            itemId={itemId}
-            quantity={slot.quantity}
-            instanceId={slot.instanceId}
-          >
-            {slotButton}
-          </ItemHoverTooltip>
-        );
+        return <ItemHoverTooltip key={slot.position} itemId={itemId} quantity={slot.quantity} instanceId={slot.instanceId}>{slotButton}</ItemHoverTooltip>;
       })}
       {interactive && <span className="sr-only">Double-cliquez pour utiliser ou équiper. Glissez-déposez pour déplacer.</span>}
     </div>

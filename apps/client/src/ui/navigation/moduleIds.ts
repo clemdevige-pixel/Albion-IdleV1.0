@@ -3,8 +3,7 @@
   character: "character",
   inventory: "inventory",
   masteries: "masteries",
-  production: "production",
-  craft: "craft",
+  island: "island",
   merchant: "merchant",
   world: "world",
 } as const;

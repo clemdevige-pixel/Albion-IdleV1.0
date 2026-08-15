@@ -8,9 +8,7 @@ import type { InventoryManager } from "@game/gameplay";
  * migrations in the hero inventory.
  */
 export function isVisibleInventoryResource(itemId: string): boolean {
-  return itemId === "item_resource_enchantment_essence"
-    || itemId === "item_resource_arcane_crystal"
-    || itemId === "item_resource_enchantment_catalyst"
+  return itemId.startsWith("item_resource_enchantment_shard_t")
     || itemId.startsWith("item_resource_key_fragment_")
     || itemId.startsWith("item_resource_dungeon_key_")
     || itemId.startsWith("item_resource_artifact_fragment_")
@@ -25,8 +23,8 @@ export function isProductionMaterial(itemId: string): boolean {
 
 /**
  * Moves materials from legacy saves out of the hero inventory.
- * Enchantment currencies and faction loot deliberately remain regular
- * inventory items.
+ * Enchantment shards and faction loot deliberately remain regular inventory
+ * items.
  */
 export function migrateLegacyProductionMaterials(
   inventoryManager: InventoryManager,

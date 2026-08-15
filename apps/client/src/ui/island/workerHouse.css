@@ -1,0 +1,127 @@
+.ui-island-worker-house {
+  margin-top: 12px;
+}
+
+.ui-island-worker-house__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ui-island-worker-house__stats > div,
+.ui-island-worker-house__worker,
+.ui-island-worker-house__recruit-grid button {
+  border: 1px solid rgba(190, 159, 105, 0.16);
+  border-radius: 8px;
+  background: rgba(15, 18, 21, 0.46);
+}
+
+.ui-island-worker-house__stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 10px;
+}
+
+.ui-island-worker-house__stats small,
+.ui-island-worker-house__worker small,
+.ui-island-worker-house__recruit-grid small {
+  color: rgba(219, 204, 178, 0.55);
+  font-size: 9px;
+}
+
+.ui-island-worker-house__stats strong,
+.ui-island-worker-house__worker strong,
+.ui-island-worker-house__recruit-grid strong {
+  color: #eee1c7;
+  font-size: 11px;
+}
+
+.ui-island-worker-house__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.ui-island-worker-house__worker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.ui-island-worker-house__worker > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ui-island-worker-house__worker > span {
+  flex: 0 0 auto;
+  color: rgba(220, 204, 177, 0.62);
+  font-size: 9px;
+}
+
+.ui-island-worker-house__worker > span.is-working {
+  color: #b9d398;
+}
+
+.ui-island-worker-house__worker > span.is-paused {
+  color: #d4b77c;
+}
+
+.ui-island-worker-house__empty {
+  margin: 0;
+  padding: 9px 0;
+}
+
+.ui-island-worker-house__recruitment {
+  margin-top: 12px;
+}
+
+.ui-island-worker-house__recruit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.ui-island-worker-house__recruit-grid button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 8px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-island-worker-house__recruit-grid button:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+.ui-island-worker-house__recruit-grid img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.ui-island-worker-house__recruit-grid button > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@media (max-width: 1100px) {
+  .ui-island-worker-house__stats,
+  .ui-island-worker-house__recruit-grid {
+    grid-template-columns: 1fr;
+  }
+}

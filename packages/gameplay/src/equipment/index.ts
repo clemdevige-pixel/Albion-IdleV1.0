@@ -12,6 +12,7 @@ export { EQUIPMENT_SLOTS, equipmentOk, equipmentFail } from "./types.js";
 export { EquipmentComponent, type EquipmentData } from "./components.js";
 export { EquipmentManager } from "./equipment-manager.js";
 export { EquipmentStatSync, type EquipmentStatsChangedHook } from "./equipment-stat-sync.js";
+export { roundEquipmentStatValue } from "./equipment-stat-rounding.js";
 export { isValidSlot, validateEquipmentState } from "./equipment-validator.js";
 export { EquipmentSaveProvider } from "./equipment-save-provider.js";
 export {
@@ -24,9 +25,13 @@ export {
 export {
   ENCHANTMENT_RECIPES,
   ENCHANTMENT_MINIMUM_ITEM_TIER,
+  ENCHANTMENT_MAXIMUM_ITEM_TIER,
+  ENCHANTMENT_RESOURCE_TIERS,
+  ENCHANTMENT_SHARD_COSTS,
   ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS,
   ENCHANTMENT_CATEGORY_COST_MULTIPLIERS,
   ENCHANTMENT_TIER_COST_MULTIPLIERS,
+  getEnchantmentShardItemId,
   getNextEnchantmentRecipe,
   scaleEnchantmentRecipe,
   type ActiveEnchantmentLevel,

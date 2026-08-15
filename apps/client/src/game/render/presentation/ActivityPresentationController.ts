@@ -24,7 +24,10 @@ export class ActivityPresentationController {
 
   public update(gathering: GatheringVM | undefined): void {
     const isGathering = this.gatheringSystem.update(gathering);
-    this.combat.setEnemyVisible(!isGathering);
+    // Gathering may temporarily hide combat presentation, but it must never
+    // force an enemy visible. Enemy visibility belongs to the combat
+    // presentation controller and requires an authoritative spawned enemy.
+    if (isGathering) this.combat.setEnemyVisible(false);
   }
 
   public clear(): void {

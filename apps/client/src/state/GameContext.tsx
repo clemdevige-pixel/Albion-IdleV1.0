@@ -1,14 +1,16 @@
-import type { ProductionTier } from "../data/productionFamilyCatalog";
+import type { ProductionTier, SupportedProductionFamily } from "../data/productionFamilyCatalog";
 import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence, type RuntimePersistenceDependencies } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
-import { WorldSaveProvider } from "@game/gameplay";
+import { getInitialIslandWorkerHouseLevelDefinition } from "@game/data";
+import { PlayerIslandService, WorldSaveProvider } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge";
 import { RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
 import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
+import { combatStopController } from "../runtime/CombatStopController.js";
 import { recalculateWeaponMasteryStats } from "../runtime/weaponMasteryStatSync.js";
 import {
   syncInventoryToBridge,
@@ -26,6 +28,7 @@ import { SaveGameActions } from "./SaveGameActions.js";
 import { WorldNavigationActions } from "./WorldNavigationActions.js";
 import { ConsumableActions } from "./ConsumableActions.js";
 import { RepairActions } from "./RepairActions.js";
+import { IslandActions } from "./IslandActions.js";
 import { createCombatFoundation } from "../runtime/bootstrap/createCombatFoundation.js";
 import { createProgressionFoundation } from "../runtime/bootstrap/createProgressionFoundation.js";
 import { createEconomyFoundation } from "../runtime/bootstrap/createEconomyFoundation.js";
@@ -42,14 +45,14 @@ import {
 import { CombatBridgeAdapter } from "./bridge-sync/CombatBridgeAdapter.js";
 import { GameBridgeSyncCoordinator } from "./bridge-sync/GameBridgeSyncCoordinator.js";
 import { GameRuntimeTickController } from "../runtime/GameRuntimeTickController.js";
+import { StarterSelectionGate } from "../ui/starter/StarterSelectionGate.js";
 
 export type { GameServices, UIEventMap } from "./GameServices.js";
 export { useGameBridge, useGameServices } from "./GameServicesContext.js";
 
 export const HERO_BASE_ATTACK_SPEED = 1.2;
 
-const WORKER_RECRUITMENT_COST = 250;
-const WORKER_CAPACITY = 4;
+const WORKER_HOUSE_BASELINE = getInitialIslandWorkerHouseLevelDefinition();
 
 export function GameProvider({
   saveSlotId,
@@ -63,8 +66,25 @@ export function GameProvider({
   const services = useMemo<GameServices>(() => {
     const eventBus = new EventBus<UIEventMap>();
     const bridge = new GameBridge();
+    const islandService = new PlayerIslandService();
+    const syncIslandToBridge = (): void => {
+      const island = islandService.getState();
+      bridge.updateIsland({
+        plots: island.plots.map((plot) => ({ ...plot })),
+        buildings: island.buildings.map((building) => ({ ...building })),
+      });
+    };
     let tickCounter = 0;
-    let productionTier: ProductionTier = 3;
+    let starterSelectionPending = false;
+    let gatheringTier: ProductionTier = 3;
+    const refiningTiers: Record<SupportedProductionFamily, ProductionTier> = {
+      Wood: 3,
+      Ore: 3,
+      Hide: 3,
+      Fiber: 3,
+    };
+    let craftingTier: ProductionTier = 3;
+    let workerTier: ProductionTier = 3;
 
     const {
       world,
@@ -96,7 +116,7 @@ export function GameProvider({
       statsManager,
       damageManager,
       masteryService,
-      canMutateEquipment: () => !combatService.isInCombat(),
+      canMutateEquipment: () => starterSelectionPending || !combatService.isInCombat(),
       onPlayerHealthChanged: (currentHealth, maxHealth) => {
         bridge.updatePlayerHealth(currentHealth, maxHealth);
       },
@@ -127,6 +147,12 @@ export function GameProvider({
     const updateWorldBridge = (): void => {
       bridge.updateWorld(buildWorldViewModel(worldFoundation));
     };
+    const isWorldRequirementMet: GameServices["isWorldRequirementMet"] = (requirement) => {
+      const memory = worldRuntime
+        .getWorldLocationSaveState()
+        .zoneMemories.find((entry) => entry.zoneDefId === requirement.zoneDefId);
+      return (memory?.completedSegments.length ?? 0) >= requirement.minimumCompletedSegments;
+    };
 
     const combatEntityFactoryDeps = {
       world,
@@ -140,7 +166,7 @@ export function GameProvider({
 
     const heroId = setupCombatEntity(
       combatEntityFactoryDeps,
-      { maxHealth: 500, physDamage: 0, attackSpeed: 1.2, armor: 10, magicRes: 5 },
+      { maxHealth: 300, physDamage: 0, attackSpeed: 1.2, armor: 0, magicRes: 0 },
       { x: 0, y: 0 },
     );
 
@@ -155,6 +181,7 @@ export function GameProvider({
       equipmentManager,
       currencyService,
       walletId,
+      canEnchantNow: () => combatStopController.isPaused(),
     });
 
     const productionFoundation = createProductionFoundation({
@@ -168,7 +195,9 @@ export function GameProvider({
       currencyService,
       walletId,
       forestZoneDefId: FOREST_ZONE_DEF_ID,
-      getProductionTier: () => productionTier,
+      getGatheringTier: () => gatheringTier,
+      getRefiningTier: (family) => refiningTiers[family],
+      getWorkerTier: () => workerTier,
     });
     const {
       gatheringRuntime,
@@ -178,14 +207,6 @@ export function GameProvider({
       hideGatheringCoordinator,
       fiberGatheringCoordinator,
     } = productionFoundation;
-
-    initializeStarterLoadout({
-      heroId,
-      inventoryManager,
-      equipmentManager,
-      durabilityStore,
-      masteryService,
-    });
 
     const combatRewardRuntime = new CombatRewardRuntime({
       currencyService,
@@ -224,7 +245,10 @@ export function GameProvider({
       },
       updateWorldBridge,
     });
-    const resyncAll = (): void => { bridgeSyncCoordinator.syncAll(); };
+    const resyncAll = (): void => {
+      bridgeSyncCoordinator.syncAll();
+      syncIslandToBridge();
+    };
 
     const combatRewardAdapter = setupCombatRewardAdapter({
       combatService,
@@ -237,6 +261,18 @@ export function GameProvider({
       resyncAll: () => resyncAll(),
     });
     bridgeSyncCoordinator.syncInitialState();
+    syncIslandToBridge();
+
+    const islandActions = new IslandActions({
+      islandService,
+      inventoryManager,
+      productionStorageId,
+      currencyService,
+      walletId,
+      bridge,
+      isWorldRequirementMet,
+      resyncAll,
+    });
 
     const persistence = new RuntimePersistence({
       inventoryManager,
@@ -254,6 +290,7 @@ export function GameProvider({
       saveSlotId,
       ...(onLocalSave === undefined ? {} : { onLocalSave }),
     });
+    persistence.registerProvider(islandService);
 
     const refiningSaveProvider = new RefiningSaveProvider(
       refiningRuntime,
@@ -261,6 +298,7 @@ export function GameProvider({
       () => productionStorageId,
     );
     persistence.registerProvider(refiningSaveProvider);
+    starterSelectionPending = !persistence.hasSave();
 
     const saveGameActions = new SaveGameActions({
       bridge,
@@ -324,7 +362,7 @@ export function GameProvider({
             farmMode: worldRuntime.farmMode,
           };
         },
-        isCombatSuspended: () => gatheringRuntime.isHeroGathering(),
+        isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
       },
     });
 
@@ -345,13 +383,18 @@ export function GameProvider({
       walletId,
       progressionOrchestrator,
       getCurrentTick: () => tickCounter,
-      getProductionTier: () => productionTier,
-      setProductionTier: (tier) => { productionTier = tier; },
+      getGatheringTier: () => gatheringTier,
+      setGatheringTier: (tier) => { gatheringTier = tier; },
+      getRefiningTier: (family) => refiningTiers[family],
+      setRefiningTier: (family, tier) => { refiningTiers[family] = tier; },
+      getCraftingTier: () => craftingTier,
+      setCraftingTier: (tier) => { craftingTier = tier; },
+      setWorkerTier: (tier) => { workerTier = tier; },
       prepareCombatResumeAfterGathering: () => {
         worldNavigationActions.prepareCombatResumeAfterGathering();
       },
-      workerCapacity: WORKER_CAPACITY,
-      workerRecruitmentCost: WORKER_RECRUITMENT_COST,
+      workerCapacity: WORKER_HOUSE_BASELINE.workerCapacity,
+      workerRecruitmentCost: WORKER_HOUSE_BASELINE.recruitmentCost,
     });
     persistence.registerProvider(productionController.createWorkerSaveProvider());
 
@@ -380,6 +423,29 @@ export function GameProvider({
 
     const initialCombat = combatRuntime.initialize();
     combatBridgeAdapter.presentInitialCombat(initialCombat);
+
+    const selectStarterWeapon = (itemId: string): boolean => {
+      if (!starterSelectionPending) return false;
+      const initialized = initializeStarterLoadout({
+        heroId,
+        inventoryManager,
+        equipmentManager,
+        durabilityStore,
+        masteryService,
+        weaponItemId: itemId,
+      });
+      if (!initialized) return false;
+
+      starterSelectionPending = false;
+      recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
+      resyncAll();
+      // The first encounter already exists and was merely suspended while the
+      // starter gate was open. Re-initializing here would create a second enemy
+      // and attempt to start another encounter before the first one is closed.
+      // Clearing the suspension lets the existing encounter resume on the next tick.
+      saveGame();
+      return true;
+    };
 
     const useWeaponAbility = (slotIndex: number): boolean =>
       combatBridgeAdapter.useWeaponAbility(slotIndex);
@@ -467,6 +533,9 @@ export function GameProvider({
       enchantmentService,
       statsManager, currencyService, economyTransactionService, vendorRegistry,
       walletId, playerId, worldCoordinator,
+      needsStarterSelection: () => starterSelectionPending,
+      selectStarterWeapon,
+      isWorldRequirementMet,
       useConsumable: (itemId) => consumableActions.use(itemId),
       useWeaponAbility,
       usePrimaryAbility,
@@ -483,13 +552,18 @@ export function GameProvider({
         productionController.performGatheringStrike(resourceFamily, quality)
       ),
       toggleRefining: (family) => productionController.toggleRefining(family),
-      refineAllAvailable: () => productionController.refineAllAvailable(),
-      setProductionTier: (tier) => productionController.setTier(tier),
-      craftEquipment: (outputItemId) => (
-        productionController.craftEquipment(outputItemId)
-      ),
+      setGatheringTier: (tier) => productionController.setGatheringTier(tier),
+      setRefiningTier: (family, tier) => productionController.setRefiningTier(family, tier),
+      setCraftingTier: (tier) => productionController.setCraftingTier(tier),
+      craftEquipment: (outputItemId) => productionController.craftEquipment(outputItemId),
       recruitWorker: (profession) => productionController.recruitWorker(profession),
-      toggleWorker: (profession) => productionController.toggleWorker(profession),
+      toggleWorker: (profession, tier) => productionController.toggleWorker(profession, tier),
+      constructIslandBuilding: (definitionId, plotId) => (
+        islandActions.constructBuilding(definitionId, plotId)
+      ),
+      upgradeIslandBuilding: (definitionId) => islandActions.upgradeBuilding(definitionId),
+      getIslandLevel: () => islandService.getState().level,
+      upgradeIslandLevel: () => islandActions.upgradeIslandLevel(),
       repairAll: () => repairActions.repairAll(),
       saveGame, loadGame, hasSave, exportSave, importSave,
     };
@@ -499,7 +573,7 @@ export function GameProvider({
 
   return (
     <GameServicesContextProvider services={services}>
-      {children}
+      <StarterSelectionGate>{children}</StarterSelectionGate>
     </GameServicesContextProvider>
   );
 }

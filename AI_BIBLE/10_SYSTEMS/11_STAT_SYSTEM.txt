@@ -1,743 +1,240 @@
 ## ALBION IDLE — STAT SYSTEM
 
 **Document type:** System Specification
-**Version:** 1.0
-**Status:** Draft for validation
-**Authority level:** Core Gameplay System
-**Parent authority:** `000_PROJECT_BIBLE.txt`
-**Dependencies:** `10_CHARACTER_SYSTEM.txt`, `06_GLOSSARY.txt`, `03_DESIGN_CONSTRAINTS.txt`
+**Status:** ACTIVE — aligned with current runtime
+**Authority:** `000_PROJECT_BIBLE.txt` + live gameplay/data implementation
 
 ---
 
-# 1. PURPOSE
+# Purpose
 
-The Stat System defines how the Hero's core statistics are represented, calculated and updated.
+The Stat System defines the stable combat values used by the Hero and equipment. It calculates/aggregates values; CombatRuntime decides how those values resolve in combat.
 
-For the Vertical Slice, the system must remain:
-
-* simple;
-* deterministic;
-* readable;
-* easy to balance;
-* independent from combat resolution.
-
-The Stat System calculates values.
-
-It does not decide how those values are used during combat.
+The system must remain deterministic, readable and data-driven.
 
 ---
 
-# 2. CORE STATISTICS
+# Current Combat Stat Model
 
-The Vertical Slice supports exactly three core statistics:
+The current combat model uses these principal values:
 
-* Maximum Health Points;
-* Damage;
-* Defense.
+- Maximum Health;
+- physical/magical offensive values supplied by weapons/abilities;
+- Armor;
+- Magic Resistance;
+- Attack Speed where defined by the combat/weapon profile.
 
-No other statistic is part of the initial implementation.
+There is no Energy/Mana resource in the current combat design.
 
-The following examples are intentionally excluded:
+Critical-hit systems are not part of the current validated combat baseline.
 
-* critical hit chance;
-* critical damage;
-* attack speed;
-* movement speed;
-* dodge;
-* accuracy;
-* resistance types;
-* cooldown reduction;
-* life steal;
-* health regeneration.
+The canonical naked Hero defensive baseline used by the current runtime benchmarks is:
 
-These may only be introduced through a future validated specification.
+```text
+Maximum Health: 300
+Armor: 0
+Magic Resistance: 0
+```
+
+These are balancing values and must stay synchronized with authoritative runtime/data configuration.
 
 ---
 
-# 3. STAT IDENTIFIERS
+# Stat Sources
 
-Each core statistic must use a stable internal identifier.
+Final combat values may be affected by:
 
-Recommended identifiers:
+- Hero baseline;
+- equipped weapon;
+- armor equipment;
+- offhand;
+- mastery;
+- enchantment;
+- active gameplay effects/consumables where their owning system applies them.
 
-```text
-max_health
-damage
-defense
-```
-
-Displayed names may be localized independently from these identifiers.
-
-Internal identifiers must never depend on translated display text.
+The Stat System must not invent a second implementation of those systems.
 
 ---
 
-# 4. STAT SOURCES
+# Equipment
 
-A final statistic may receive values from the following permanent sources:
+Equipment is a major source of combat power.
 
-* Hero base statistics;
-* equipped items;
-* unlocked Masteries.
+Armor pieces can contribute Maximum Health, Armor and Magic Resistance according to their authored data.
 
-For the Vertical Slice, no temporary source is supported.
+Weapons own their offensive profile and ability package.
 
-Temporary sources include, but are not limited to:
+One-handed weapons may equip an offhand. Offhand bonuses belong to the offhand and must remain separable from the intrinsic weapon profile for balancing purposes.
 
-* food;
-* potions;
-* temporary buffs;
-* temporary debuffs;
-* timed effects;
-* environmental bonuses.
-
-These systems are explicitly deferred.
+This distinction is mandatory because multiple offhand identities are expected.
 
 ---
 
-# 5. BASE STATISTICS
+# Enchantment
 
-The Hero possesses one base value for each core statistic.
+Enchantments are multiplicative equipment upgrades according to the current equipment/enchantment implementation.
 
-Required base values:
+Benchmark calculations must use the same enchantment rules as gameplay. Do not document or implement an independent approximation when the shared gameplay rule is available.
 
-```text
-base_max_health
-base_damage
-base_defense
-```
-
-Base values provide a valid playable Hero even when no equipment or Mastery bonus is applied.
-
-The exact numerical values belong to balancing data and are not defined by this document.
-
-Base statistics must not change during normal progression.
-
-Permanent progression comes from Masteries and equipment, not from modifying the Hero's base values.
+Equipment not eligible for a given enchantment rule must not be silently upgraded by benchmark helpers.
 
 ---
 
-# 6. EQUIPMENT BONUSES
+# Mastery
 
-Each equipped item may provide fixed bonuses to one or more core statistics.
+Mastery contributes permanent specialization according to authored mastery data.
 
-Examples:
+The Stat System consumes the resulting values. It does not own mastery progression or unlock logic.
 
-```text
-+50 Maximum Health
-+8 Damage
-+4 Defense
-```
-
-Equipment bonuses are additive.
-
-An equipped item may provide:
-
-* no stat bonus;
-* one stat bonus;
-* several stat bonuses.
-
-The Item and Equipment systems define which item provides which bonus.
-
-The Stat System only aggregates valid equipped bonuses.
+Benchmark scenarios must specify the mastery level expected at the progression checkpoint being tested.
 
 ---
 
-# 7. MASTERY BONUSES
+# Health
 
-Masteries provide fixed numerical bonuses.
+Current Health is mutable runtime state.
 
-Examples:
+Maximum Health is derived from the current character/loadout state.
 
-```text
-+5 Maximum Health
-+1 Damage
-+1 Defense
-```
-
-Masteries do not provide percentage-based bonuses during the Vertical Slice.
-
-Mastery bonuses are additive and permanent while the corresponding Mastery progression remains unlocked.
-
-The Mastery System owns:
-
-* progression conditions;
-* Mastery levels;
-* unlock requirements;
-* awarded bonuses.
-
-The Stat System only receives and aggregates the resulting bonus values.
-
----
-
-# 8. FINAL STAT CALCULATION
-
-Each final statistic is calculated through simple addition.
-
-The general rule is:
-
-```text
-Final Stat =
-Base Value
-+ Sum of Equipment Bonuses
-+ Sum of Mastery Bonuses
-```
-
-Therefore:
-
-```text
-Final Maximum Health =
-Base Maximum Health
-+ Equipment Maximum Health Bonuses
-+ Mastery Maximum Health Bonuses
-```
-
-```text
-Final Damage =
-Base Damage
-+ Equipment Damage Bonuses
-+ Mastery Damage Bonuses
-```
-
-```text
-Final Defense =
-Base Defense
-+ Equipment Defense Bonuses
-+ Mastery Defense Bonuses
-```
-
-No multiplicative calculation is used.
-
-No percentage modifier is used.
-
-No source-order priority is required because all supported modifiers are additive.
-
----
-
-# 9. INTEGER VALUES
-
-All core statistics must use integer values.
-
-Fractional stat values are not supported.
-
-Examples of valid values:
-
-```text
-100 Maximum Health
-24 Damage
-12 Defense
-```
-
-Examples of invalid stored values:
-
-```text
-100.5 Maximum Health
-24.75 Damage
-12.2 Defense
-```
-
-If another system produces a fractional result while using a statistic, that system must define its own rounding rule.
-
-The Stat System itself only exposes integer stat values.
-
----
-
-# 10. MINIMUM VALUES
-
-Final statistics must never be lower than their permitted minimum.
-
-Vertical Slice minimums:
-
-```text
-Maximum Health >= 1
-Damage >= 0
-Defense >= 0
-```
-
-The Hero must never have zero or negative Maximum Health.
-
-Negative Damage and negative Defense are not supported.
-
-Invalid calculated values must be clamped to the relevant minimum and reported through development logging.
-
----
-
-# 11. CURRENT HEALTH
-
-Current Health is a mutable runtime value.
-
-Maximum Health is a derived statistic.
-
-The following rule must always remain true:
+The invariant is:
 
 ```text
 0 <= Current Health <= Maximum Health
 ```
 
-Current Health is modified by systems such as:
+A defeated Hero remains at zero until a system explicitly revives/heals them. Recalculating stats must not itself revive the Hero.
 
-* Combat;
-* death handling;
-* healing;
-* save loading.
-
-The Stat System validates Current Health against the current Maximum Health.
+When equipment changes Maximum Health during normal live character management, the owning character/stat flow must preserve a coherent health state and never grant unintended free healing.
 
 ---
 
-# 12. MAXIMUM HEALTH CHANGES
+# Armor and Magic Resistance
 
-When Maximum Health changes, Current Health must preserve the same health percentage.
+Armor and Magic Resistance are separate defensive axes.
 
-This rule applies when Maximum Health changes because of:
+They must not be collapsed into one generic `Defense` value in balancing documentation or benchmark output.
 
-* equipping an item;
-* unequipping an item;
-* replacing an item;
-* gaining a Mastery bonus;
-* loading corrected stat data.
+For cross-build diagnostic comparison, tooling may calculate effective-health metrics such as:
 
-Calculation:
+- physical EHP;
+- magical EHP;
+- average EHP.
+
+These are benchmark/analysis metrics, not additional stored Hero stats.
+
+---
+
+# Offensive Analysis
+
+Raw weapon damage alone is not sufficient to describe offensive power.
+
+Balance tooling may derive:
+
+- auto-attack DPS;
+- ability DPS;
+- sustained DPS;
+- opener DPS over defined windows;
+- ability unlock contribution.
+
+These values are diagnostic metrics derived from the real weapon/ability data.
+
+---
+
+# Weapon vs Loadout Power
+
+Balancing must distinguish:
 
 ```text
-Previous Health Ratio =
-Previous Current Health / Previous Maximum Health
+Weapon-only profile
 ```
+
+from:
 
 ```text
-New Current Health =
-New Maximum Health × Previous Health Ratio
+Weapon + armor + optional offhand loadout
 ```
 
-Example:
+A shield's EHP must not be attributed to the Broadsword itself. Likewise, future offensive or utility offhands must be evaluated as explicit loadout components.
 
-```text
-Previous Maximum Health: 100
-Previous Current Health: 50
-Previous Health Ratio: 50%
-
-New Maximum Health: 140
-New Current Health: 70
-```
-
-This prevents equipment changes from granting free healing or causing disproportionate health loss.
+The reusable package benchmark is responsible for exposing both views.
 
 ---
 
-# 13. HEALTH ROUNDING
+# Data Ownership
 
-Because Current Health uses integer values, recalculated health may require rounding.
+Stat numbers must be authored in the appropriate data/configuration source.
 
-The Vertical Slice uses standard rounding to the nearest integer.
+UI components, scenes and benchmark tests must consume authoritative values rather than hardcoding alternative balancing copies.
 
-Example:
-
-```text
-Previous Health Ratio: 65%
-New Maximum Health: 125
-
-Raw New Current Health: 81.25
-Stored New Current Health: 81
-```
-
-After rounding, Current Health must still be clamped between zero and Maximum Health.
+When a benchmark needs a baseline, that baseline must be kept in parity with the live runtime and protected by tests.
 
 ---
 
-# 14. ZERO-HEALTH EXCEPTION
-
-If the Hero has zero Current Health before a Maximum Health recalculation, the Hero remains at zero Current Health.
-
-A stat recalculation must never revive a defeated Hero.
-
-Example:
-
-```text
-Previous Current Health: 0
-New Maximum Health: 200
-New Current Health: 0
-```
-
-Revival belongs to the death and activity recovery rules, not to the Stat System.
-
----
-
-# 15. RECALCULATION TRIGGERS
-
-The Stat System must recalculate final statistics when:
-
-* the Hero is created;
-* equipment is equipped;
-* equipment is unequipped;
-* equipment is replaced;
-* a Mastery bonus changes;
-* a save is loaded;
-* relevant balancing data is refreshed during development.
-
-Combat damage received does not require a full stat recalculation.
-
-It only changes Current Health.
-
----
-
-# 16. RECALCULATION ORDER
-
-When a recalculation occurs, the system must:
-
-1. store the previous Maximum Health;
-2. store the previous Current Health;
-3. calculate the previous health ratio;
-4. read base statistics;
-5. aggregate valid equipment bonuses;
-6. aggregate valid Mastery bonuses;
-7. calculate final statistics;
-8. apply minimum-value validation;
-9. recalculate Current Health from the previous ratio;
-10. clamp Current Health;
-11. notify dependent systems.
-
-This order must remain deterministic.
-
----
-
-# 17. INITIAL HERO CREATION
-
-When a new Hero is created:
-
-* final statistics are calculated;
-* Current Health is initialized at Maximum Health;
-* no previous health ratio is required.
-
-Initial state:
-
-```text
-Current Health = Final Maximum Health
-```
-
-The Hero begins a new save at full health unless another validated specification explicitly overrides this rule.
-
----
-
-# 18. SAVE LOADING
-
-On save loading:
-
-* stored permanent source data is loaded;
-* final statistics are recalculated;
-* stored Current Health is restored;
-* Current Health is validated against the recalculated Maximum Health.
-
-Final derived statistics should not be trusted solely because they exist in save data.
-
-The current equipment, Masteries and base values remain the authoritative sources.
-
-If stored Current Health exceeds the recalculated Maximum Health, it must be clamped.
-
----
-
-# 19. CACHING
-
-Final statistics may be cached on the Hero for runtime access.
-
-Cached values must be treated as derived data.
-
-Recommended cached values:
-
-```text
-final_max_health
-final_damage
-final_defense
-```
-
-A cached value must be refreshed whenever a relevant source changes.
-
-Gameplay systems must not independently reconstruct Hero statistics if the Stat System already exposes validated final values.
-
----
-
-# 20. SYSTEM INTERACTIONS
-
-The Stat System receives data from:
-
-* Character System;
-* Equipment System;
-* Mastery System;
-* balancing data.
-
-The Stat System exposes data to:
-
-* Combat System;
-* User Interface;
-* Activity System;
-* Save System;
-* enemy comparison or requirement systems.
-
-The Stat System must not directly:
-
-* equip items;
-* award Mastery progression;
-* apply combat damage;
-* determine loot;
-* execute activities.
-
----
-
-# 21. EVENTS
-
-Recommended events:
-
-```text
-stats_recalculation_requested
-stats_recalculated
-maximum_health_changed
-current_health_changed
-hero_defeated
-```
-
-A stat recalculation event should include, where useful:
-
-* previous values;
-* new values;
-* source of the recalculation.
-
-Example recalculation sources:
-
-```text
-equipment_change
-mastery_change
-new_hero
-save_load
-development_refresh
-```
-
----
-
-# 22. USER INTERFACE REQUIREMENTS
-
-The interface must be able to display:
-
-* Current Health;
-* Maximum Health;
-* Damage;
-* Defense.
-
-Recommended health display:
-
-```text
-Current Health / Maximum Health
-```
-
-Example:
-
-```text
-720 / 900 HP
-```
-
-The interface may also display a breakdown of permanent sources.
-
-Example:
-
-```text
-Damage: 42
-Base: 10
-Equipment: +25
-Masteries: +7
-```
-
-A detailed breakdown is useful for debugging and player comprehension but is not mandatory for the first playable implementation.
-
----
-
-# 23. NO TEMPORARY STATISTICS
-
-The Vertical Slice does not support temporary statistic modifiers.
-
-Therefore, the initial implementation must not require:
-
-* modifier durations;
-* effect stacking;
-* buff expiration;
-* debuff immunity;
-* potion effects;
-* food effects;
-* temporary modifier serialization.
-
-The architecture should avoid deliberately blocking future modifiers, but Claude must not implement a speculative generalized buff framework during the Vertical Slice.
-
-Future food and potion systems will receive their own validated specifications before temporary statistics are added.
-
----
-
-# 24. DATA VALIDATION
-
-Each stat source must be validated.
-
-Invalid examples:
-
-* unknown statistic identifier;
-* non-integer stat bonus;
-* missing base statistic;
-* Maximum Health below one;
-* duplicate application of the same equipment item;
-* duplicate application of the same Mastery reward;
-* Current Health above Maximum Health.
-
-Invalid data must not silently corrupt the Hero's final statistics.
-
-Development builds should report clear errors containing:
-
-* affected Hero;
-* affected statistic;
-* invalid source;
-* received value;
-* applied fallback or clamp.
-
----
-
-# 25. DETERMINISM
+# Determinism
 
 Given identical:
 
-* base statistics;
-* equipped items;
-* Mastery state;
+- Hero baseline;
+- equipment;
+- enchantment;
+- mastery;
+- active effects;
 
-the Stat System must always produce identical final statistics.
+the Stat System must produce identical combat values.
 
-The result must not depend on:
-
-* frame rate;
-* source iteration order;
-* current time;
-* random values;
-* user interface state.
+Results must not depend on frame rate, UI state, wall-clock time or random iteration order.
 
 ---
 
-# 26. EXAMPLE CALCULATION
+# Balancing Validation
 
-Example Hero sources:
+The current reusable tools are:
 
-```text
-Base:
-Maximum Health: 100
-Damage: 10
-Defense: 5
-```
+- `apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts` for exact live-runtime encounters;
+- `apps/client/src/data/weaponIdealBenchmark.ts` for weapon/defensive analytical profiles;
+- `apps/client/src/data/weaponPackageBenchmark.ts` for weapon-only, neutral and explicit-loadout scoring.
 
-```text
-Equipment:
-Weapon: +15 Damage
-Head: +20 Maximum Health
-Chest: +80 Maximum Health, +6 Defense
-Boots: +2 Defense
-Cape: +5 Damage
-```
-
-```text
-Masteries:
-+30 Maximum Health
-+4 Damage
-+3 Defense
-```
-
-Final result:
-
-```text
-Maximum Health:
-100 + 20 + 80 + 30 = 230
-```
-
-```text
-Damage:
-10 + 15 + 5 + 4 = 34
-```
-
-```text
-Defense:
-5 + 6 + 2 + 3 = 16
-```
-
-Final Hero statistics:
-
-```text
-Maximum Health: 230
-Damage: 34
-Defense: 16
-```
+Synthetic metrics diagnose *why* a build behaves differently. Live CombatRuntime tests determine whether a progression checkpoint actually clears.
 
 ---
 
-# 27. VALIDATION RULES
+# Required Regression Properties
 
-The following conditions must always remain true:
+Tests should protect at minimum:
 
-* only three core statistics exist in the Vertical Slice;
-* final statistics use simple addition;
-* equipment bonuses are fixed values;
-* Mastery bonuses are fixed values;
-* no percentage stat modifiers are active;
-* no temporary stat modifiers are active;
-* Maximum Health is at least one;
-* Damage and Defense are never negative;
-* Current Health never exceeds Maximum Health;
-* Maximum Health changes preserve the current health percentage;
-* recalculating statistics cannot revive the Hero;
-* all final stat calculations are deterministic.
+- naked Hero baseline parity;
+- full-equipment aggregation;
+- Armor/MR separation;
+- one-handed offhand contribution;
+- enchantment scaling parity;
+- mastery scaling parity;
+- weapon-only vs loadout separation;
+- deterministic repeated calculations;
+- health invariants;
+- exact runtime benchmark compatibility.
 
 ---
 
-# 28. MINIMUM TESTS
+# Out of Scope
 
-Required tests:
+This document does not own:
 
-* calculate statistics using base values only;
-* calculate statistics with one equipped item;
-* calculate statistics with all equipment slots;
-* calculate statistics with Mastery bonuses;
-* aggregate equipment and Mastery bonuses;
-* verify that all modifiers are additive;
-* reject or report an unknown stat identifier;
-* clamp Maximum Health to its minimum;
-* clamp negative Damage;
-* clamp negative Defense;
-* initialize a new Hero at full health;
-* preserve health percentage when Maximum Health increases;
-* preserve health percentage when Maximum Health decreases;
-* keep Current Health at zero during recalculation;
-* prevent Current Health from exceeding Maximum Health;
-* recalculate statistics after equipping an item;
-* recalculate statistics after unequipping an item;
-* recalculate statistics after a Mastery update;
-* produce identical results from identical inputs;
-* load a save and rebuild derived statistics from authoritative sources.
+- enemy curve authoring;
+- ability behavior;
+- potion behavior;
+- mastery progression rules;
+- equipment recipes;
+- zone progression requirements;
+- loot/reward balance.
+
+Those systems consume or modify stats through their dedicated implementation/data.
 
 ---
 
-# 29. OUT OF SCOPE
+# Summary
 
-This document intentionally excludes:
+The current Albion Idle stat model is intentionally compact but no longer the old `HP / Damage / generic Defense` prototype. Combat balancing uses real Maximum Health, Armor, Magic Resistance and weapon/ability offensive profiles, with enchantment, mastery and offhands treated as explicit power sources.
 
-* damage resolution formulas;
-* enemy statistics;
-* critical hits;
-* attack speed;
-* cooldown statistics;
-* health regeneration;
-* elemental damage;
-* elemental resistance;
-* armor penetration;
-* temporary buffs;
-* temporary debuffs;
-* food;
-* potions;
-* status effects;
-* equipment compatibility;
-* Mastery progression rules;
-* final balancing values.
-
-These elements require separate validated specifications.
-
----
+The naked Hero baseline is 300 HP / 0 Armor / 0 MR, and all balance tooling must remain in parity with the live runtime.
 
 # END OF DOCUMENT

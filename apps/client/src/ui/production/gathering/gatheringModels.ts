@@ -1,16 +1,11 @@
-import type { ProductionTier } from "../../../data/productionFamilyCatalog";
-import type {
-  GameBridgeState,
-  GatheringVM,
-  MasteryVM,
-  WorkerProfessionVM,
-  WorkerVM,
-} from "../../../game/GameBridge";
+import type { GameBridgeState, GatheringVM, MasteryVM } from "../../../game/GameBridge";
 import {
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
+  isProductionTier,
   requireProductionTierPresentation,
   type ProductionFamilyId,
+  type ProductionTier,
 } from "../../../data/productionFamilyCatalog";
 import { masteryProgressPercent } from "../../shared/masteryProgress";
 
@@ -28,25 +23,17 @@ export interface GatheringResourceModel {
   readonly label: string;
   readonly icon: string;
   readonly tool: string;
-  readonly profession: WorkerProfessionVM;
   readonly activity: GatheringVM;
   readonly heroMastery: GatheringHeroMasteryModel;
-  readonly worker: WorkerVM | undefined;
 }
 
 export interface GatheringModel {
   readonly tier: ProductionTier;
-  readonly recruitmentCost: number;
-  readonly workerCapacity: number;
-  readonly recruitedWorkerCount: number;
   readonly resources: readonly GatheringResourceModel[];
 }
 
 interface GatheringSource {
   readonly tier: ProductionTier;
-  readonly recruitmentCost: number;
-  readonly workerCapacity: number;
-  readonly workers: readonly WorkerVM[];
   readonly masteries: readonly MasteryVM[];
   readonly gathering: GatheringVM;
   readonly hideGathering: GatheringVM;
@@ -55,11 +42,11 @@ interface GatheringSource {
 }
 
 export function selectGatheringSource(state: GameBridgeState): GatheringSource {
+  const tier = isProductionTier(state.gathering.resourceTier)
+    ? state.gathering.resourceTier
+    : 3;
   return {
-    tier: state.crafting.productionTier,
-    recruitmentCost: state.workers.recruitmentCost,
-    workerCapacity: state.workers.capacity,
-    workers: state.workers.workers,
+    tier,
     masteries: state.progression.masteries,
     gathering: state.gathering,
     hideGathering: state.hideGathering,
@@ -95,17 +82,12 @@ export function buildGatheringModel(source: GatheringSource): GatheringModel {
       heroMastery,
       label: definition.label,
       icon: definition.gatheringIcon,
-      profession: definition.profession,
       tool: requireProductionTierPresentation(definition.gameplayFamily, source.tier).toolName,
-      worker: source.workers.find((worker) => worker.profession === definition.profession),
     };
   };
 
   return {
     tier: source.tier,
-    recruitmentCost: source.recruitmentCost,
-    workerCapacity: source.workerCapacity,
-    recruitedWorkerCount: source.workers.length,
     resources: PRODUCTION_FAMILY_IDS.map(createResource),
   };
 }

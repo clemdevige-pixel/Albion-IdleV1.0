@@ -15,7 +15,6 @@ import {
   getEncounterRewards,
   getEnemyCombatProfile,
 } from "@game/gameplay";
-import { MONSTER_LOOT_TABLES } from "./economyContentCatalog";
 import {
   MONSTER_ABILITIES,
   MONSTER_CATEGORY_BEHAVIORS,
@@ -40,7 +39,6 @@ describe("monster pipeline global contract", () => {
     for (const [monsterId, monster] of Object.entries(MONSTER_DEFINITIONS)) {
       expect(monster.id).toBe(monsterId);
       expect(["physical", "magical"]).toContain(monster.combat.damageType);
-      expect(MONSTER_LOOT_TABLES[monster.rewards.lootTableId]).toBeDefined();
       expect(renderManifestRegistry.getStaticActor(monster.visualManifestId)).toBeDefined();
 
       const behavior = MONSTER_CATEGORY_BEHAVIORS[monster.category];
@@ -141,8 +139,6 @@ describe("monster pipeline global contract", () => {
     expect(
       abilityManager.getAbilities(spawned.id).map((entry) => String(entry.abilityId)),
     ).toEqual(monster.abilityIds);
-
-    expect(MONSTER_LOOT_TABLES[monster.rewards.lootTableId]).toBeDefined();
 
     const baseReward = getEncounterRewards(0, 0, encounterIndex);
     expect(applyMonsterRewardModifiers(baseReward, monster)).toEqual(baseReward);

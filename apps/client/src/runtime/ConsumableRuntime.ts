@@ -4,6 +4,7 @@ import {
   HEALTH_POTION_COOLDOWN_SECONDS,
   HEALTH_POTION_HEAL_RATIO,
 } from "../data/economyContentCatalog";
+import { getCombatSegmentStartGeneration } from "./CombatSegmentLifecycle.js";
 
 export type UseConsumableResult =
   | {
@@ -55,6 +56,7 @@ export class ConsumableRuntime {
   private readonly heroId: EntityId;
 
   private healthPotionCooldownRemaining = 0;
+  private lastSegmentStartGeneration = getCombatSegmentStartGeneration();
 
   constructor(deps: ConsumableRuntimeDependencies) {
     this.inventoryManager = deps.inventoryManager;
@@ -64,6 +66,7 @@ export class ConsumableRuntime {
   }
 
   public tick(dt: number): boolean {
+    const reset = this.syncSegmentStart();
     if (this.healthPotionCooldownRemaining > 0) {
       this.healthPotionCooldownRemaining = Math.max(
         0,
@@ -71,10 +74,11 @@ export class ConsumableRuntime {
       );
       return true;
     }
-    return false;
+    return reset;
   }
 
   public getState(): ConsumableRuntimeState {
+    this.syncSegmentStart();
     return {
       healthPotionCooldown: HEALTH_POTION_COOLDOWN_SECONDS,
       healthPotionCooldownRemaining: this.healthPotionCooldownRemaining,
@@ -83,6 +87,8 @@ export class ConsumableRuntime {
   }
 
   public useConsumable(itemId: string): UseConsumableResult {
+    this.syncSegmentStart();
+
     if (this.deathManager.isDead(this.heroId)) {
       return { ok: false, reason: "hero_dead" };
     }
@@ -125,5 +131,15 @@ export class ConsumableRuntime {
       currentHealth: health.currentHealth,
       maxHealth: health.maxHealth,
     };
+  }
+
+  private syncSegmentStart(): boolean {
+    const generation = getCombatSegmentStartGeneration();
+    if (generation === this.lastSegmentStartGeneration) return false;
+
+    this.lastSegmentStartGeneration = generation;
+    const hadCooldown = this.healthPotionCooldownRemaining > 0;
+    this.healthPotionCooldownRemaining = 0;
+    return hadCooldown;
   }
 }

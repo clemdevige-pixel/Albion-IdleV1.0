@@ -1,0 +1,42 @@
+/* Shared equipment visual language.
+ * Tier owns the frame/halo; enchantment owns only the Tn.x text color. */
+.equipment-tier-frame--3 { --equipment-tier-color: #55b86a; }
+.equipment-tier-frame--4 { --equipment-tier-color: #5599e6; }
+.equipment-tier-frame--5 { --equipment-tier-color: #d85b5b; }
+.equipment-tier-frame--6 { --equipment-tier-color: #e58b3f; }
+.equipment-tier-frame--7 { --equipment-tier-color: #e2c84f; }
+.equipment-tier-frame--8 { --equipment-tier-color: #f1f3f6; }
+
+.equipment-tier-frame--3,
+.equipment-tier-frame--4,
+.equipment-tier-frame--5,
+.equipment-tier-frame--6,
+.equipment-tier-frame--7,
+.equipment-tier-frame--8 {
+  border-color: color-mix(in srgb, var(--equipment-tier-color) 72%, transparent) !important;
+  box-shadow: inset 0 0 13px color-mix(in srgb, var(--equipment-tier-color) 14%, transparent),
+    0 0 12px color-mix(in srgb, var(--equipment-tier-color) 22%, transparent);
+}
+
+.equipment-tier-frame--3:hover,
+.equipment-tier-frame--4:hover,
+.equipment-tier-frame--5:hover,
+.equipment-tier-frame--6:hover,
+.equipment-tier-frame--7:hover,
+.equipment-tier-frame--8:hover,
+.equipment-tier-frame--3:focus-visible,
+.equipment-tier-frame--4:focus-visible,
+.equipment-tier-frame--5:focus-visible,
+.equipment-tier-frame--6:focus-visible,
+.equipment-tier-frame--7:focus-visible,
+.equipment-tier-frame--8:focus-visible {
+  border-color: var(--equipment-tier-color) !important;
+  box-shadow: inset 0 0 15px color-mix(in srgb, var(--equipment-tier-color) 18%, transparent),
+    0 0 16px color-mix(in srgb, var(--equipment-tier-color) 32%, transparent);
+}
+
+.enchantment-text--0 { color: #c5cad2 !important; }
+.enchantment-text--1 { color: #62c879 !important; }
+.enchantment-text--2 { color: #63a8f2 !important; }
+.enchantment-text--3 { color: #b77bea !important; }
+.enchantment-text--4 { color: #ead253 !important; }

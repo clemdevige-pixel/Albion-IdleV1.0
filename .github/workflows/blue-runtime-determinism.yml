@@ -1,0 +1,34 @@
+name: Blue Runtime Determinism
+
+on:
+  push:
+    branches:
+      - agent/albion-idle-development
+  pull_request:
+    branches:
+      - agent/albion-idle-development
+
+jobs:
+  blue-runtime-determinism:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify Blue runtime determinism
+        run: pnpm exec tsx scripts/runtime-blue-deterministic-check.ts
+
+      - name: Verify defensive equipment balance contract
+        run: |
+          pnpm --filter @game/gameplay test -- equipment-stat-rounding.test.ts
+          pnpm --filter @game/client test -- defensiveEquipmentBalance.test.ts

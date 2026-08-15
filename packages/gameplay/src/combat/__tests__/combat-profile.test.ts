@@ -4,21 +4,34 @@ import { getEnemyCombatProfile, getEncounterRewards } from "../combat-profile.js
 
 describe("combat-profile", () => {
   describe("getEnemyCombatProfile", () => {
-    it("calculates normal enemy profile for zone 0, segment 0, encounter 0", () => {
+    it("calculates the recalibrated normal enemy profile for Blue start", () => {
       const profile = getEnemyCombatProfile(0, 0, 0);
       expect(profile).toEqual({
-        hp: 300,
-        damage: 19,
-        armor: 5,
-        magicResistance: 3,
+        hp: 270,
+        damage: 11,
+        armor: 4,
+        magicResistance: 2,
         attackSpeed: 0.8,
       });
     });
 
-    it("calculates boss enemy profile for zone 0, segment 0, encounter 4 (boss)", () => {
-      const bossProfile = getEnemyCombatProfile(0, 0, 4);
-      expect(bossProfile.hp).toBeGreaterThan(500);
-      expect(bossProfile.damage).toBeGreaterThan(25);
+    it("treats encounter five as an elite before segment 10", () => {
+      const normal = getEnemyCombatProfile(0, 0, 3);
+      const elite = getEnemyCombatProfile(0, 0, 4);
+
+      expect(elite.hp).toBeGreaterThan(normal.hp);
+      expect(elite.damage).toBeGreaterThan(normal.damage);
+      expect(elite.armor).toBeGreaterThan(normal.armor);
+      expect(elite.hp).toBeLessThan(500);
+    });
+
+    it("reserves the full boss envelope for encounter five of segment 10", () => {
+      const elite = getEnemyCombatProfile(0, SEGMENTS_PER_ZONE - 2, 4);
+      const boss = getEnemyCombatProfile(0, SEGMENTS_PER_ZONE - 1, 4);
+
+      expect(boss.hp).toBeGreaterThan(elite.hp);
+      expect(boss.damage).toBeGreaterThan(elite.damage);
+      expect(boss.armor).toBeGreaterThan(elite.armor);
     });
 
     it("scales stats for higher zone and segment indices", () => {
@@ -45,23 +58,35 @@ describe("combat-profile", () => {
       }
     });
 
-    it("keeps each segment boss clearly above the preceding normal encounter", () => {
+    it("keeps each segment elite/boss clearly above the preceding normal encounter", () => {
       for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
         const normal = getEnemyCombatProfile(
           0,
           segmentIndex,
           ENCOUNTERS_PER_SEGMENT - 2,
         );
-        const boss = getEnemyCombatProfile(
+        const special = getEnemyCombatProfile(
           0,
           segmentIndex,
           ENCOUNTERS_PER_SEGMENT - 1,
         );
 
-        expect(boss.hp).toBeGreaterThan(normal.hp);
-        expect(boss.damage).toBeGreaterThan(normal.damage);
-        expect(boss.armor).toBeGreaterThanOrEqual(normal.armor);
+        expect(special.hp).toBeGreaterThan(normal.hp);
+        expect(special.damage).toBeGreaterThan(normal.damage);
+        expect(special.armor).toBeGreaterThanOrEqual(normal.armor);
       }
+    });
+
+    it("keeps Mountain S10 structurally above the preceding Mountain segment", () => {
+      const previousNormal = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 2, 3, "blue");
+      const normal = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 3, "blue");
+      const boss = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 4, "blue");
+
+      expect(normal.hp).toBeGreaterThan(previousNormal.hp);
+      expect(normal.damage).toBeGreaterThanOrEqual(previousNormal.damage);
+      expect(normal.armor).toBeGreaterThanOrEqual(previousNormal.armor);
+      expect(boss.hp).toBeGreaterThan(normal.hp);
+      expect(boss.damage).toBeGreaterThan(normal.damage);
     });
 
     it("uses an independent Yellow curve and rejects the next unauthored world", () => {
@@ -74,6 +99,29 @@ describe("combat-profile", () => {
         /Combat progression is not authored for world band: orange/,
       );
     });
+
+    it("keeps Yellow deterministic and monotonic within its provisional band", () => {
+      const first = getEnemyCombatProfile(0, 0, 0, "yellow");
+      let previous = first;
+
+      for (let zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
+        for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
+          const current = getEnemyCombatProfile(
+            zoneIndex,
+            segmentIndex,
+            0,
+            "yellow",
+          );
+          expect(current.hp).toBeGreaterThanOrEqual(previous.hp);
+          expect(current.damage).toBeGreaterThanOrEqual(previous.damage);
+          expect(current.armor).toBeGreaterThanOrEqual(previous.armor);
+          previous = current;
+        }
+      }
+
+      expect(previous.hp / first.hp).toBeLessThanOrEqual(1.75);
+      expect(previous.damage / first.damage).toBeLessThanOrEqual(1.75);
+    });
   });
 
   describe("getEncounterRewards", () => {
@@ -85,11 +133,11 @@ describe("combat-profile", () => {
       });
     });
 
-    it("doubles rewards for boss encounter (encounterIndex 4)", () => {
+    it("doubles rewards for encounter five", () => {
       const normalRewards = getEncounterRewards(0, 0, 0);
-      const bossRewards = getEncounterRewards(0, 0, 4);
-      expect(bossRewards.silver).toBe(normalRewards.silver * 2);
-      expect(bossRewards.fame).toBe(normalRewards.fame * 2);
+      const specialRewards = getEncounterRewards(0, 0, 4);
+      expect(specialRewards.silver).toBe(normalRewards.silver * 2);
+      expect(specialRewards.fame).toBe(normalRewards.fame * 2);
     });
 
     it("increases rewards for higher progression ranks", () => {
@@ -110,23 +158,22 @@ describe("combat-profile", () => {
       }
     });
 
-    it("keeps every segment boss at exactly double its segment normal reward", () => {
+    it("keeps every encounter-five reward at exactly double its segment normal reward", () => {
       for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
         const normal = getEncounterRewards(0, segmentIndex, 0);
-        const boss = getEncounterRewards(
+        const special = getEncounterRewards(
           0,
           segmentIndex,
           ENCOUNTERS_PER_SEGMENT - 1,
         );
-        expect(boss.silver).toBe(normal.silver * 2);
-        expect(boss.fame).toBe(normal.fame * 2);
+        expect(special.silver).toBe(normal.silver * 2);
+        expect(special.fame).toBe(normal.fame * 2);
       }
     });
 
     it("continues reward ranks in Yellow and rejects unauthored Orange rewards", () => {
       const blueEnd = getEncounterRewards(4, SEGMENTS_PER_ZONE - 1, 0, "blue");
       const yellowStart = getEncounterRewards(0, 0, 0, "yellow");
-
       expect(yellowStart.silver).toBeGreaterThan(blueEnd.silver);
       expect(yellowStart.fame).toBeGreaterThan(blueEnd.fame);
       expect(() => getEncounterRewards(0, 0, 0, "orange")).toThrow(

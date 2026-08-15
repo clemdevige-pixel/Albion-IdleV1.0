@@ -12,6 +12,28 @@ export interface EnchantmentMaterialCost {
  * Every caller uses this single authoritative threshold.
  */
 export const ENCHANTMENT_MINIMUM_ITEM_TIER = 4;
+export const ENCHANTMENT_MAXIMUM_ITEM_TIER = 8;
+
+/** One combat-earned enchantment resource exists per equipment tier. */
+export const ENCHANTMENT_RESOURCE_TIERS = [4, 5, 6, 7, 8] as const;
+
+/**
+ * Validated shard baseline. Values are incremental costs for each step, so a
+ * .0 -> .3 item consumes 110 shards total (10 + 30 + 70).
+ */
+export const ENCHANTMENT_SHARD_COSTS: Readonly<Record<ActiveEnchantmentLevel, number>> = {
+  1: 10,
+  2: 30,
+  3: 70,
+};
+
+export function getEnchantmentShardItemId(itemTier: number): string {
+  const normalizedTier = Math.max(
+    ENCHANTMENT_MINIMUM_ITEM_TIER,
+    Math.min(ENCHANTMENT_MAXIMUM_ITEM_TIER, Math.floor(itemTier)),
+  );
+  return `item_resource_enchantment_shard_t${String(normalizedTier)}`;
+}
 
 export const ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS:
 Readonly<Record<ActiveEnchantmentLevel, number>> = {
@@ -54,8 +76,10 @@ Readonly<Record<EnchantmentCostCategory, number>> = {
 };
 
 /**
- * V1 balancing table. Values are deliberately centralized so economy tuning
- * never requires changes to transaction or UI code.
+ * Base recipes now contain only the deterministic Silver step. The shard for
+ * the item's own tier is injected by scaleEnchantmentRecipe, which prevents a
+ * T4 resource from ever paying for a T5+ enchantment. Refined craft materials
+ * remain secondary sinks and are also injected there.
  *
  * Level .4 remains structurally reserved but disabled until its dedicated
  * mechanics are designed.
@@ -66,28 +90,21 @@ export const ENCHANTMENT_RECIPES: Readonly<Record<1 | 2 | 3 | 4, EnchantmentReci
     toLevel: 1,
     enabled: true,
     silverCost: 250,
-    materials: [{ itemId: "item_resource_enchantment_essence", quantity: 2 }],
+    materials: [],
   },
   2: {
     fromLevel: 1,
     toLevel: 2,
     enabled: true,
     silverCost: 1_000,
-    materials: [
-      { itemId: "item_resource_enchantment_essence", quantity: 5 },
-      { itemId: "item_resource_arcane_crystal", quantity: 2 },
-    ],
+    materials: [],
   },
   3: {
     fromLevel: 2,
     toLevel: 3,
     enabled: true,
     silverCost: 5_000,
-    materials: [
-      { itemId: "item_resource_enchantment_essence", quantity: 10 },
-      { itemId: "item_resource_arcane_crystal", quantity: 5 },
-      { itemId: "item_resource_enchantment_catalyst", quantity: 1 },
-    ],
+    materials: [],
   },
   4: {
     fromLevel: 3,
@@ -116,26 +133,34 @@ export function scaleEnchantmentRecipe(
     ?? Math.max(1, 1 + (itemTier - 3) * 0.75);
   const multiplier =
     tierMultiplier * ENCHANTMENT_CATEGORY_COST_MULTIPLIERS[category];
+  const activeLevel =
+    recipe.toLevel >= 1 && recipe.toLevel <= 3
+      ? recipe.toLevel as ActiveEnchantmentLevel
+      : undefined;
+
   return {
     ...recipe,
-    silverCost: Math.max(1, Math.round(recipe.silverCost * multiplier)),
+    silverCost: recipe.enabled
+      ? Math.max(1, Math.round(recipe.silverCost * multiplier))
+      : recipe.silverCost,
     materials: [
-      ...recipe.materials.map((material) => ({
-        ...material,
-        quantity: Math.max(1, Math.ceil(material.quantity * multiplier)),
-      })),
-      ...(
-        recipe.toLevel >= 1 && recipe.toLevel <= 3
-          ? craftMaterials.map((material) => ({
-              ...material,
-              quantity:
-                material.quantity
-                * ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS[
-                  recipe.toLevel as ActiveEnchantmentLevel
-                ],
-            }))
-          : []
-      ),
+      ...(activeLevel === undefined
+        ? []
+        : [{
+            itemId: getEnchantmentShardItemId(itemTier),
+            // Shards encode combat time. Their 10/30/70 baseline deliberately
+            // does not scale by weapon category or tier; those differences are
+            // already represented by Silver and refined-material sinks.
+            quantity: ENCHANTMENT_SHARD_COSTS[activeLevel],
+          }]),
+      ...(activeLevel === undefined
+        ? []
+        : craftMaterials.map((material) => ({
+            ...material,
+            quantity:
+              material.quantity
+              * ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS[activeLevel],
+          }))),
     ],
   };
 }

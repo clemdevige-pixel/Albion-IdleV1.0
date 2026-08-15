@@ -4,6 +4,7 @@ import { GatheringResourceCard } from "./GatheringResourceCard";
 import type { GatheringResourceId } from "./gatheringModels";
 import { useGatheringActions } from "./useGatheringActions";
 import { useGatheringData } from "./useGatheringData";
+import "../production.css";
 
 export function GatheringView(): JSX.Element {
   const model = useGatheringData();
@@ -21,12 +22,12 @@ export function GatheringView(): JSX.Element {
             </button>
           ))}
         </div>
-        <span>Workers {String(model.recruitedWorkerCount)} / {String(model.workerCapacity)}</span>
+        <span>Récolte active du héros</span>
       </div>
 
       <nav className="ui-gathering__families" aria-label="Familles de récolte">
         {model.resources.map((entry) => {
-          const active = entry.activity.activeCycle !== undefined || entry.worker?.state === "working";
+          const active = entry.activity.activeCycle !== undefined;
           return (
             <button
               key={entry.id}
@@ -37,7 +38,7 @@ export function GatheringView(): JSX.Element {
             >
               <img src={`/assets/resources/${entry.icon}`} alt="" />
               <span>{entry.label}</span>
-              {active && <i aria-label="Activité en cours" />}
+              {active && <i aria-label="Récolte active" />}
             </button>
           );
         })}
@@ -48,7 +49,6 @@ export function GatheringView(): JSX.Element {
           key={resource.id}
           resource={resource}
           tier={model.tier}
-          recruitmentCost={model.recruitmentCost}
           actions={actions}
         />
       )}

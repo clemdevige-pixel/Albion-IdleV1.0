@@ -1,0 +1,120 @@
+.ui-island-refining-building {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ui-island-refining-building__tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.ui-island-refining-building__tiers button {
+  border: 1px solid rgba(184, 158, 111, 0.2);
+  border-radius: 6px;
+  background: rgba(22, 25, 28, 0.7);
+  color: rgba(229, 218, 198, 0.62);
+  padding: 6px;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.ui-island-refining-building__tiers button.is-active {
+  border-color: rgba(214, 177, 108, 0.66);
+  background: rgba(89, 66, 36, 0.5);
+  color: #f1dfbb;
+}
+
+.ui-island-refining-building__recipe {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid rgba(185, 156, 104, 0.14);
+  border-radius: 8px;
+  background: rgba(15, 18, 21, 0.42);
+}
+
+.ui-island-refining-building__recipe img,
+.ui-island-refining-building__requirements img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.ui-island-refining-building__recipe > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ui-island-refining-building__recipe small,
+.ui-island-refining-building__requirements span {
+  color: rgba(220, 205, 179, 0.56);
+  font-size: 9px;
+}
+
+.ui-island-refining-building__recipe > span {
+  color: rgba(219, 196, 152, 0.78);
+  font-size: 9px;
+}
+
+.ui-island-refining-building__requirements {
+  display: grid;
+  gap: 6px;
+}
+
+.ui-island-refining-building__requirements > div {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 7px;
+  padding: 7px;
+  border-radius: 7px;
+  background: rgba(17, 20, 23, 0.45);
+}
+
+.ui-island-refining-building__requirements b {
+  font-size: 9px;
+}
+
+.ui-island-refining-building__requirements .is-ready {
+  color: rgba(178, 218, 165, 0.85);
+}
+
+.ui-island-refining-building__requirements .is-missing {
+  color: rgba(224, 150, 136, 0.88);
+}
+
+.ui-island-refining-building__progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ui-island-refining-building__progress span {
+  display: block;
+  height: 100%;
+  background: rgba(210, 179, 116, 0.72);
+}
+
+.ui-island-refining-building__action {
+  border: 1px solid rgba(205, 169, 101, 0.42);
+  border-radius: 7px;
+  background: rgba(99, 72, 36, 0.52);
+  color: #f0ddb7;
+  padding: 8px;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.ui-island-refining-building__action:disabled {
+  opacity: 0.38;
+  cursor: default;
+}

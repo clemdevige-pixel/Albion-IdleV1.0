@@ -4,16 +4,28 @@ import {
   BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS,
   KEY_FRAGMENTS_PER_KEY,
   getBlueZoneSegmentLootMultiplier,
+  getEnchantmentShardExpectedDrop,
   rollBlueZoneCombatDrops,
+  type BlueZoneLootContext,
 } from "./economyContentCatalog";
+
+const BASE_CONTEXT: BlueZoneLootContext = {
+  segmentIndex: 0,
+  faction: "Morgana",
+  isElite: false,
+  isBoss: false,
+  isFinalBoss: false,
+  enchantmentTier: 4,
+  enchantmentDropWeight: 1,
+};
 
 function sequenceRandom(values: readonly number[]): () => number {
   let index = 0;
   return () => values[index++] ?? 1;
 }
 
-describe("Blue Zone combat loot", () => {
-  it("uses the approved segment 1 to 10 progression curve", () => {
+describe("combat loot", () => {
+  it("keeps the existing non-enchantment segment progression curve", () => {
     expect(BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS).toEqual([
       1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.5,
     ]);
@@ -26,59 +38,75 @@ describe("Blue Zone combat loot", () => {
     expect(ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE).toBe(200);
   });
 
-  it("allows independent regular drops on the same kill", () => {
-    const drops = rollBlueZoneCombatDrops(
-      { segmentIndex: 0, faction: "Morgana", isBoss: false, isFinalBoss: false },
+  it("drops exactly the shard matching the current world tier", () => {
+    const t4Drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
+    const t5Drops = rollBlueZoneCombatDrops(
+      { ...BASE_CONTEXT, enchantmentTier: 5 },
       () => 0,
     );
 
+    expect(t4Drops.find((drop) => drop.kind === "enchantment")).toMatchObject({
+      itemId: "item_resource_enchantment_shard_t4",
+      quantity: 1,
+    });
+    expect(t5Drops.find((drop) => drop.kind === "enchantment")).toMatchObject({
+      itemId: "item_resource_enchantment_shard_t5",
+      quantity: 1,
+    });
+  });
+
+  it("scales enchantment yield with enemy difficulty and zone depth", () => {
+    const early = getEnchantmentShardExpectedDrop(BASE_CONTEXT);
+    const deeperTougher = getEnchantmentShardExpectedDrop({
+      ...BASE_CONTEXT,
+      segmentIndex: 9,
+      enchantmentDropWeight: 3,
+    });
+    const elite = getEnchantmentShardExpectedDrop({ ...BASE_CONTEXT, isElite: true });
+    const boss = getEnchantmentShardExpectedDrop({ ...BASE_CONTEXT, isBoss: true });
+
+    expect(deeperTougher).toBeGreaterThan(early * 3);
+    expect(elite).toBeGreaterThan(early);
+    expect(boss).toBeGreaterThan(elite);
+  });
+
+  it("keeps health potions out of combat loot", () => {
+    const drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
+
+    expect(drops.some((drop) => drop.itemId === "item_health_potion")).toBe(false);
+    expect(drops.some((drop) => drop.kind === "consumable")).toBe(false);
+  });
+
+  it("allows independent regular drops on the same kill", () => {
+    const drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
+
     expect(drops.map((drop) => drop.kind)).toEqual([
-      "consumable",
-      "enchantment",
-      "enchantment",
       "enchantment",
       "key_fragment",
       "key",
     ]);
   });
 
-  it("uses zone advancement to improve the same faction drop rate", () => {
-    const regularRolls = [1, 1, 1, 1, 0.025, 1] as const;
+  it("uses zone advancement to improve faction key drop rate", () => {
+    // shard fails, key fragment sits between early and late thresholds, key fails.
+    const rolls = [1, 0.025, 1] as const;
     const earlyDrops = rollBlueZoneCombatDrops(
-      { segmentIndex: 0, faction: "Morgana", isBoss: false, isFinalBoss: false },
-      sequenceRandom(regularRolls),
+      BASE_CONTEXT,
+      sequenceRandom(rolls),
     );
     const lateDrops = rollBlueZoneCombatDrops(
-      { segmentIndex: 9, faction: "Morgana", isBoss: false, isFinalBoss: false },
-      sequenceRandom(regularRolls),
+      { ...BASE_CONTEXT, segmentIndex: 9 },
+      sequenceRandom(rolls),
     );
 
     expect(earlyDrops.some((drop) => drop.kind === "key_fragment")).toBe(false);
     expect(lateDrops.some((drop) => drop.kind === "key_fragment")).toBe(true);
   });
 
-  it("gives bosses the approved x2 multiplier on special regular rolls", () => {
-    const regularRolls = [1, 1, 1, 1, 0.03, 1] as const;
-    const normalDrops = rollBlueZoneCombatDrops(
-      { segmentIndex: 0, faction: "Keeper", isBoss: false, isFinalBoss: false },
-      sequenceRandom(regularRolls),
-    );
-    const bossDrops = rollBlueZoneCombatDrops(
-      { segmentIndex: 0, faction: "Keeper", isBoss: true, isFinalBoss: false },
-      sequenceRandom([...regularRolls, 1, 1]),
-    );
-
-    expect(normalDrops.some((drop) => drop.kind === "key_fragment")).toBe(false);
-    expect(bossDrops.some((drop) => drop.kind === "key_fragment")).toBe(true);
-  });
-
   it("uses faction only to select dungeon loot identity", () => {
-    const morgana = rollBlueZoneCombatDrops(
-      { segmentIndex: 0, faction: "Morgana", isBoss: false, isFinalBoss: false },
-      () => 0,
-    );
+    const morgana = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
     const keeper = rollBlueZoneCombatDrops(
-      { segmentIndex: 0, faction: "Keeper", isBoss: false, isFinalBoss: false },
+      { ...BASE_CONTEXT, faction: "Keeper" },
       () => 0,
     );
 
@@ -90,7 +118,7 @@ describe("Blue Zone combat loot", () => {
 
   it("never drops artifacts from normal monsters", () => {
     const drops = rollBlueZoneCombatDrops(
-      { segmentIndex: 9, faction: "Undead", isBoss: false, isFinalBoss: false },
+      { ...BASE_CONTEXT, segmentIndex: 9, faction: "Undead" },
       () => 0,
     );
 
@@ -100,7 +128,13 @@ describe("Blue Zone combat loot", () => {
 
   it("enables faction-specific artifact rolls for bosses", () => {
     const drops = rollBlueZoneCombatDrops(
-      { segmentIndex: 9, faction: "Keeper", isBoss: true, isFinalBoss: true },
+      {
+        ...BASE_CONTEXT,
+        segmentIndex: 9,
+        faction: "Keeper",
+        isBoss: true,
+        isFinalBoss: true,
+      },
       () => 0,
     );
 

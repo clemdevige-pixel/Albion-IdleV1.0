@@ -12,19 +12,10 @@ import type {
 } from "./types.js";
 import { asStatusEffectId } from "./types.js";
 
-// ---------------------------------------------------------------------------
-// EffectManager — purely runtime status-effect tracker
-// ---------------------------------------------------------------------------
-
 export class EffectManager {
   readonly events = new EventBus<EffectEventMap>();
-
   readonly #effects = new Map<EntityId, ActiveStatusEffect[]>();
   #idCounter = 0;
-
-  // -----------------------------------------------------------------------
-  // Application
-  // -----------------------------------------------------------------------
 
   applyEffect(
     source: EntityId,
@@ -32,14 +23,10 @@ export class EffectManager {
     definition: StatusEffectDefinition,
     tick: number,
   ): StatusEffectResult<ActiveStatusEffect> {
-    if (definition.duration <= 0) {
-      return { ok: false, reason: "invalid_duration" };
-    }
-    if (definition.strength < 0) {
-      return { ok: false, reason: "invalid_effect" };
-    }
+    if (definition.duration <= 0) return { ok: false, reason: "invalid_duration" };
+    if (definition.strength < 0) return { ok: false, reason: "invalid_effect" };
 
-    const existing = this.#findExisting(target, definition.effectType, source);
+    const existing = this.#findExisting(target, definition.effectType, source, definition.id);
 
     if (existing !== undefined && definition.refreshOnReapply) {
       const previousDuration = existing.remainingDuration;
@@ -53,10 +40,7 @@ export class EffectManager {
       return { ok: true, value: refreshed };
     }
 
-    if (existing !== undefined) {
-      // Same type + same source but refreshOnReapply is false — keep existing, no-op
-      return { ok: true, value: existing };
-    }
+    if (existing !== undefined) return { ok: true, value: existing };
 
     const effect: ActiveStatusEffect = {
       id: this.#nextId(),
@@ -72,50 +56,30 @@ export class EffectManager {
     const list = this.#effects.get(target) ?? [];
     list.push(effect);
     this.#effects.set(target, list);
-
     this.events.publish("StatusApplied", { effect });
     return { ok: true, value: effect };
   }
 
-  // -----------------------------------------------------------------------
-  // Removal
-  // -----------------------------------------------------------------------
-
   removeEffect(target: EntityId, effectId: StatusEffectId): StatusEffectResult<void> {
     const list = this.#effects.get(target);
-    if (list === undefined) {
-      return { ok: false, reason: "effect_not_found" };
-    }
+    if (list === undefined) return { ok: false, reason: "effect_not_found" };
     const idx = list.findIndex((e) => e.id === effectId);
-    if (idx === -1) {
-      return { ok: false, reason: "effect_not_found" };
-    }
+    if (idx === -1) return { ok: false, reason: "effect_not_found" };
     const [removed] = list.splice(idx, 1) as [ActiveStatusEffect];
-    if (list.length === 0) {
-      this.#effects.delete(target);
-    }
+    if (list.length === 0) this.#effects.delete(target);
     this.events.publish("StatusRemoved", { effect: removed });
     return { ok: true, value: undefined };
   }
 
   removeAllEffects(target: EntityId): void {
     const list = this.#effects.get(target);
-    if (list === undefined) {
-      return;
-    }
-    for (const effect of [...list]) {
-      this.events.publish("StatusRemoved", { effect });
-    }
+    if (list === undefined) return;
+    for (const effect of [...list]) this.events.publish("StatusRemoved", { effect });
     this.#effects.delete(target);
   }
 
-  // -----------------------------------------------------------------------
-  // Tick
-  // -----------------------------------------------------------------------
-
   tickEffects(deltaTime: number): readonly ExpiredEffect[] {
     const expired: ExpiredEffect[] = [];
-
     for (const [target, list] of this.#effects) {
       let i = 0;
       while (i < list.length) {
@@ -123,7 +87,6 @@ export class EffectManager {
           ...list[i]!,
           remainingDuration: list[i]!.remainingDuration - deltaTime,
         };
-
         if (updated.remainingDuration <= 0) {
           list.splice(i, 1);
           expired.push({ effect: updated });
@@ -133,18 +96,10 @@ export class EffectManager {
           i += 1;
         }
       }
-
-      if (list.length === 0) {
-        this.#effects.delete(target);
-      }
+      if (list.length === 0) this.#effects.delete(target);
     }
-
     return expired;
   }
-
-  // -----------------------------------------------------------------------
-  // Queries
-  // -----------------------------------------------------------------------
 
   getActiveEffects(target: EntityId): readonly ActiveStatusEffect[] {
     return this.#effects.get(target) ?? [];
@@ -154,17 +109,9 @@ export class EffectManager {
     return this.getActiveEffects(target).some((e) => e.effectType === effectType);
   }
 
-  isStunned(target: EntityId): boolean {
-    return this.hasEffectType(target, "stun");
-  }
-
-  isRooted(target: EntityId): boolean {
-    return this.hasEffectType(target, "root");
-  }
-
-  isSilenced(target: EntityId): boolean {
-    return this.hasEffectType(target, "silence");
-  }
+  isStunned(target: EntityId): boolean { return this.hasEffectType(target, "stun"); }
+  isRooted(target: EntityId): boolean { return this.hasEffectType(target, "root"); }
+  isSilenced(target: EntityId): boolean { return this.hasEffectType(target, "silence"); }
 
   getModifiers(
     target: EntityId,
@@ -179,19 +126,11 @@ export class EffectManager {
     let value = baseValue;
     const mods = this.getModifiers(target, category);
     for (const mod of mods) {
-      if (mod.effectType === "buff") {
-        value += mod.strength;
-      } else {
-        // debuff, slow — subtract
-        value -= mod.strength;
-      }
+      if (mod.effectType === "buff") value += mod.strength;
+      else value -= mod.strength;
     }
     return value;
   }
-
-  // -----------------------------------------------------------------------
-  // Internal helpers
-  // -----------------------------------------------------------------------
 
   #nextId(): StatusEffectId {
     this.#idCounter += 1;
@@ -202,22 +141,21 @@ export class EffectManager {
     target: EntityId,
     effectType: StatusEffectType,
     source: EntityId,
+    definitionId: string,
   ): ActiveStatusEffect | undefined {
     const list = this.#effects.get(target);
-    if (list === undefined) {
-      return undefined;
-    }
-    return list.find((e) => e.effectType === effectType && e.source === source);
+    if (list === undefined) return undefined;
+    return list.find((e) =>
+      e.effectType === effectType
+      && e.source === source
+      && e.definition.id === definitionId,
+    );
   }
 
   #replace(target: EntityId, effectId: StatusEffectId, replacement: ActiveStatusEffect): void {
     const list = this.#effects.get(target);
-    if (list === undefined) {
-      return;
-    }
+    if (list === undefined) return;
     const idx = list.findIndex((e) => e.id === effectId);
-    if (idx !== -1) {
-      list[idx] = replacement;
-    }
+    if (idx !== -1) list[idx] = replacement;
   }
 }

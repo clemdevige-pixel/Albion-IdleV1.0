@@ -20,13 +20,25 @@ export interface EncounterRewards {
   readonly fame: number;
 }
 
+type EncounterCombatRank = "normal" | "elite" | "boss";
+
+function getEncounterCombatRank(
+  segmentIndex: number,
+  encounterIndex: number,
+): EncounterCombatRank {
+  const safeSegmentIndex = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex));
+  const safeEncounterIndex = Math.max(0, Math.min(ENCOUNTERS_PER_SEGMENT - 1, encounterIndex));
+  if (safeEncounterIndex !== ENCOUNTERS_PER_SEGMENT - 1) return "normal";
+  return safeSegmentIndex === SEGMENTS_PER_ZONE - 1 ? "boss" : "elite";
+}
+
 export function getEnemyCombatProfile(
   zoneIndex: number,
   segmentIndex: number,
   encounterIndex: number,
   worldBandId: WorldBandId = "blue",
 ): EnemyCombatProfile {
-  const isBoss = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+  const rank = getEncounterCombatRank(segmentIndex, encounterIndex);
   const worldProgression = getWorldCombatProgression(worldBandId);
   const curve = worldProgression.curve[zoneIndex];
   if (curve === undefined) {
@@ -47,9 +59,13 @@ export function getEnemyCombatProfile(
     interpolate(curve.damageStart, curve.damageEnd) * encounterScale;
   const defenseScale =
     interpolate(curve.defenseStart, curve.defenseEnd);
-  const baseHp = isBoss ? 520 : 300;
-  const baseDmg = isBoss ? 26 : 15;
-  const baseArmor = isBoss ? 12 : 5;
+
+  // Encounter 5 on segments 1..9 is an elite, not a biome boss. The old
+  // profile treated both as bosses, creating a large artificial spike every
+  // segment. Final segment encounter 5 retains the real boss envelope.
+  const baseHp = rank === "boss" ? 520 : rank === "elite" ? 390 : 300;
+  const baseDmg = rank === "boss" ? 26 : rank === "elite" ? 19 : 15;
+  const baseArmor = rank === "boss" ? 12 : rank === "elite" ? 8 : 5;
 
   return {
     hp: Math.floor(baseHp * healthScale),
@@ -72,8 +88,8 @@ export function getEncounterRewards(
     + zoneIndex * REWARD_RANKS_PER_ZONE +
     segmentIndex *
       ((REWARD_RANKS_PER_ZONE - 1) / (SEGMENTS_PER_ZONE - 1));
-  const isBoss = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-  const encounterMultiplier = isBoss ? 2 : 1;
+  const isBossEncounter = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+  const encounterMultiplier = isBossEncounter ? 2 : 1;
 
   return {
     silver: Math.round(10 + progressionRank * 3) * encounterMultiplier,

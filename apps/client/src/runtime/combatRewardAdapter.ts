@@ -1,6 +1,7 @@
 import type { EntityId } from "@game/core";
-import type { CombatService, StatsManager} from "@game/gameplay";
-import { getEncounterRewards } from "@game/gameplay";
+import { getWorldBandDefinition } from "@game/data";
+import type { CombatService, StatsManager } from "@game/gameplay";
+import { getEncounterRewards, getEnemyCombatProfile } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";
@@ -106,6 +107,22 @@ export function setupCombatRewardAdapter(
     const isBoss = isFinalBoss
       || (monster?.tags.includes("segment_boss") ?? false)
       || monster?.category === "boss";
+    const isElite = monster?.category === "elite";
+
+    // Temporary anti-1.1 calibration: shard yield follows the authored enemy HP
+    // curve instead of one universal drop chance. The future combat/TTK audit
+    // can replace this weight without changing enchantment recipes or item IDs.
+    const enemyProfile = getEnemyCombatProfile(
+      zonePlacement.zoneIndexWithinBand,
+      options.worldRuntime.currentSegment,
+      options.worldRuntime.currentEncounter,
+      zonePlacement.bandId,
+    );
+    const bandBaselineProfile = getEnemyCombatProfile(0, 0, 0, zonePlacement.bandId);
+    const enchantmentDropWeight = bandBaselineProfile.hp <= 0
+      ? 1
+      : enemyProfile.hp / bandBaselineProfile.hp;
+    const enchantmentTier = getWorldBandDefinition(zonePlacement.bandId).maximumTier;
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(
       rewards.silver,
@@ -113,8 +130,11 @@ export function setupCombatRewardAdapter(
       {
         segmentIndex: options.worldRuntime.currentSegment,
         faction: monster?.faction ?? "generic",
+        isElite,
         isBoss,
         isFinalBoss,
+        enchantmentTier,
+        enchantmentDropWeight,
       },
     );
     clearActiveMonsterIdentity(event.entityId);
@@ -152,20 +172,21 @@ export function setupCombatRewardAdapter(
     for (const drop of rewardResult.itemDrops) {
       const dropName = formatDropName(drop.itemId);
       const category = formatDropCategory(drop.kind);
+      const quantitySuffix = drop.quantity > 1 ? ` ×${String(drop.quantity)}` : "";
       const timestamp = Date.now();
 
       options.bridge.addTransaction({
         id: `loot_item_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
         type: "credit",
-        description: `${category} : ${dropName}`,
-        amount: 1,
+        description: `${category} : ${dropName}${quantitySuffix}`,
+        amount: drop.quantity,
         timestamp,
       });
 
       options.bridge.addEconomyNotification({
         id: `notif_drop_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
         type: "success",
-        message: `${category} : ${dropName}`,
+        message: `${category} : ${dropName}${quantitySuffix}`,
         timestamp,
       });
     }

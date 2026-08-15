@@ -1,0 +1,53 @@
+import { getEnchantmentStatMultiplier } from "@game/gameplay";
+import { getWeaponAbilityMechanics } from "./weaponAbilityMechanics";
+import { getItemTier, getWeaponAttackSpeed } from "./itemPower";
+import { resolveEquipmentInfo } from "./itemContentCatalog";
+import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "./weaponContentCatalog";
+
+export const WEAPON_BALANCE_MASTERY_CHECKPOINTS = [1, 10, 30, 50] as const;
+export type WeaponBalanceMasteryCheckpoint = (typeof WEAPON_BALANCE_MASTERY_CHECKPOINTS)[number];
+export type BenchmarkEnchantment = 0 | 1 | 2 | 3;
+
+export interface WeaponBenchmarkProfile {
+  readonly itemId: string; readonly masteryLevel: number; readonly enchantment: BenchmarkEnchantment;
+  readonly sustainedDps: number; readonly openerDps5s: number; readonly openerDps10s: number;
+  readonly autoAttackDps: number; readonly abilityDps: number; readonly unlockedAbilityCount: number;
+  readonly handling: "one_handed" | "two_handed" | "none";
+}
+export interface BenchmarkDefensiveLoadout { readonly armorItemIds: readonly string[]; readonly offHandItemId?: string | undefined; }
+export interface WeaponDefensiveBenchmarkProfile {
+  readonly itemId: string; readonly enchantment: BenchmarkEnchantment; readonly maxHealth: number; readonly armor: number;
+  readonly magicResistance: number; readonly physicalEffectiveHealth: number; readonly magicalEffectiveHealth: number;
+  readonly averageEffectiveHealth: number; readonly offHandItemId?: string | undefined;
+}
+export interface WeaponCombatBenchmarkProfile { readonly offense: WeaponBenchmarkProfile; readonly defense: WeaponDefensiveBenchmarkProfile; }
+export interface SyntheticIdealWeaponProfile { readonly masteryLevel: number; readonly sustainedDps: number; readonly openerDps5s: number; readonly openerDps10s: number; readonly lowerBound: number; readonly upperBound: number; }
+export interface SyntheticIdealCombatProfile extends SyntheticIdealWeaponProfile { readonly physicalEffectiveHealth: number; readonly magicalEffectiveHealth: number; readonly averageEffectiveHealth: number; }
+
+// Must stay in parity with setupCombatEntity / live hero creation.
+export const BASE_HERO_MAX_HEALTH = 300;
+export const BASE_HERO_ARMOR = 0;
+export const BASE_HERO_MAGIC_RESISTANCE = 0;
+export const T3_DEFENSIVE_LOADOUT = ["item_iron_helmet", "item_leather_armor", "item_leather_boots", "item_traveler_cape"] as const;
+export const T4_DEFENSIVE_LOADOUT = ["item_helmet_t4_reinforced", "item_armor_t4_leather", "item_boots_t4_leather", "item_traveler_cape"] as const;
+export const T3_SHIELD = "item_shield_t3_reinforced";
+export const T4_SHIELD = "item_shield_t4_reinforced";
+
+function median(values: readonly number[]): number { const sorted=[...values].sort((a,b)=>a-b); if(sorted.length===0)return 0; const middle=Math.floor(sorted.length/2); return sorted.length%2===1?(sorted[middle]??0):((sorted[middle-1]??0)+(sorted[middle]??0))/2; }
+function sourceDamageWithMastery(itemId:string, masteryLevel:number, enchantment:BenchmarkEnchantment):number { const info=resolveEquipmentInfo(itemId); const base=info?.stats?.stat_physical_damage??info?.stats?.stat_magical_damage??0; return base*getEnchantmentStatMultiplier(enchantment)*(1+(masteryLevel*1.5)/500); }
+function hasUnlockedEffect(itemId:string, masteryLevel:number, effectId:string):boolean { return resolveUnlockedWeaponAbilities(itemId,masteryLevel).some((ability)=>(getWeaponAbilityMechanics(ability.id)?.mechanics??[]).some((m)=>(m.kind==="status"||m.kind==="dot")&&m.effectId===effectId)); }
+function abilityTotalRatio(itemId:string, abilityId:string, masteryLevel:number, fallbackBonusRatio:number):number { const profile=getWeaponAbilityMechanics(abilityId); if(profile===undefined)return 1+fallbackBonusRatio; let total=0; for(const m of profile.mechanics){ if(m.kind==="damage"){let ratio=1+m.ratio;if(m.bonusHealthBelow!==undefined)ratio+=m.bonusHealthBelow.bonusRatio;if(m.bonusEffect!==undefined&&hasUnlockedEffect(itemId,masteryLevel,m.bonusEffect.effectId))ratio+=m.bonusEffect.bonusRatio;total+=ratio;} else if(m.kind==="dot")total+=m.ratio*m.ticks;} return total; }
+function autoCastAvailabilityFactor(itemId:string, abilityId:string, masteryLevel:number):number { const rule=getWeaponAbilityMechanics(abilityId)?.autoRule;if(rule===undefined||rule.kind==="always")return 1;if(rule.kind==="target_health_below")return Math.max(0,Math.min(1,rule.ratio));if(rule.kind==="target_has_effect")return hasUnlockedEffect(itemId,masteryLevel,rule.effectId)?1:0;return 1; }
+function openerAvailabilityFactor(itemId:string, abilityId:string, masteryLevel:number):number { const rule=getWeaponAbilityMechanics(abilityId)?.autoRule;if(rule===undefined||rule.kind==="always")return 1;if(rule.kind==="target_health_below")return 0;if(rule.kind==="target_has_effect")return hasUnlockedEffect(itemId,masteryLevel,rule.effectId)?1:0;return 1; }
+function castsInsideWindow(cooldown:number, windowSeconds:number):number { const safe=Math.max(.5,cooldown);if(windowSeconds<=0)return 0;return 1+Math.floor(Math.max(0,windowSeconds-1e-9)/safe); }
+function openerDps(itemId:string, masteryLevel:number, sourceDamage:number, autoAttackDps:number, windowSeconds:number):number { let total=autoAttackDps*windowSeconds;for(const ability of resolveUnlockedWeaponAbilities(itemId,masteryLevel)){const availability=openerAvailabilityFactor(itemId,ability.id,masteryLevel);if(availability<=0)continue;total+=sourceDamage*abilityTotalRatio(itemId,ability.id,masteryLevel,ability.bonusDamageRatio)*castsInsideWindow(ability.cooldown,windowSeconds)*availability;}return total/Math.max(.001,windowSeconds); }
+function defaultDefensiveLoadoutForWeapon(itemId:string):BenchmarkDefensiveLoadout { const definition=resolveEquipmentInfo(itemId);const tier=getItemTier(itemId);if(definition===undefined||definition.slot!=="weapon"||(tier!==3&&tier!==4))throw new Error(`Defensive benchmark is authored for T3/T4 weapons only: ${itemId}`);const armorItemIds=tier===3?T3_DEFENSIVE_LOADOUT:T4_DEFENSIVE_LOADOUT;if(definition.handling!=="one_handed")return {armorItemIds};return {armorItemIds,offHandItemId:tier===3?T3_SHIELD:T4_SHIELD}; }
+function effectiveEquipmentStat(itemId:string, statId:"stat_max_health"|"stat_armor"|"stat_magic_resistance", enchantment:BenchmarkEnchantment):number { const info=resolveEquipmentInfo(itemId);const value=info?.stats?.[statId]??0;const tier=getItemTier(itemId);return value*(tier!==undefined&&tier>=4?getEnchantmentStatMultiplier(enchantment):1); }
+function effectiveHealth(maxHealth:number,resistance:number):number { const safe=Math.min(80,Math.max(0,resistance));return maxHealth/(1-safe/100); }
+
+export function getWeaponBenchmarkProfile(itemId:string,masteryLevel:number,enchantment:BenchmarkEnchantment=0):WeaponBenchmarkProfile { const definition=resolveEquipmentInfo(itemId);if(definition===undefined||definition.slot!=="weapon")throw new Error(`Unknown weapon benchmark item: ${itemId}`);if(resolveWeaponMastery(itemId)===undefined)throw new Error(`Weapon has no mastery route: ${itemId}`);const sourceDamage=sourceDamageWithMastery(itemId,masteryLevel,enchantment);const autoAttackDps=sourceDamage*(getWeaponAttackSpeed(itemId)??1);const unlocked=resolveUnlockedWeaponAbilities(itemId,masteryLevel);const abilityDps=unlocked.reduce((total,ability)=>total+sourceDamage*abilityTotalRatio(itemId,ability.id,masteryLevel,ability.bonusDamageRatio)*autoCastAvailabilityFactor(itemId,ability.id,masteryLevel)/Math.max(.5,ability.cooldown),0);return {itemId,masteryLevel,enchantment,sustainedDps:autoAttackDps+abilityDps,openerDps5s:openerDps(itemId,masteryLevel,sourceDamage,autoAttackDps,5),openerDps10s:openerDps(itemId,masteryLevel,sourceDamage,autoAttackDps,10),autoAttackDps,abilityDps,unlockedAbilityCount:unlocked.length,handling:definition.handling}; }
+
+export function getWeaponDefensiveBenchmarkProfile(itemId:string,enchantment:BenchmarkEnchantment=0,loadout?:BenchmarkDefensiveLoadout):WeaponDefensiveBenchmarkProfile { const resolved=loadout??defaultDefensiveLoadoutForWeapon(itemId);const definition=resolveEquipmentInfo(itemId);if(definition===undefined||definition.slot!=="weapon")throw new Error(`Unknown weapon benchmark item: ${itemId}`);if(resolved.offHandItemId!==undefined&&definition.handling!=="one_handed")throw new Error(`Two-handed benchmark cannot equip an off-hand: ${itemId}`);const itemIds=resolved.offHandItemId===undefined?resolved.armorItemIds:[...resolved.armorItemIds,resolved.offHandItemId];let maxHealth=BASE_HERO_MAX_HEALTH,armor=BASE_HERO_ARMOR,magicResistance=BASE_HERO_MAGIC_RESISTANCE;for(const defensiveItemId of itemIds){maxHealth+=effectiveEquipmentStat(defensiveItemId,"stat_max_health",enchantment);armor+=effectiveEquipmentStat(defensiveItemId,"stat_armor",enchantment);magicResistance+=effectiveEquipmentStat(defensiveItemId,"stat_magic_resistance",enchantment);}const physicalEffectiveHealth=effectiveHealth(maxHealth,armor);const magicalEffectiveHealth=effectiveHealth(maxHealth,magicResistance);return {itemId,enchantment,maxHealth,armor,magicResistance,physicalEffectiveHealth,magicalEffectiveHealth,averageEffectiveHealth:(physicalEffectiveHealth+magicalEffectiveHealth)/2,...(resolved.offHandItemId===undefined?{}:{offHandItemId:resolved.offHandItemId})}; }
+export function getWeaponCombatBenchmarkProfile(itemId:string,masteryLevel:number,enchantment:BenchmarkEnchantment=0,loadout?:BenchmarkDefensiveLoadout):WeaponCombatBenchmarkProfile { return {offense:getWeaponBenchmarkProfile(itemId,masteryLevel,enchantment),defense:getWeaponDefensiveBenchmarkProfile(itemId,enchantment,loadout)}; }
+export function getSyntheticIdealWeaponProfile(profiles:readonly WeaponBenchmarkProfile[],masteryLevel:number):SyntheticIdealWeaponProfile { const comparable=profiles.filter((p)=>p.masteryLevel===masteryLevel);const sustainedDps=median(comparable.map((p)=>p.sustainedDps));return {masteryLevel,sustainedDps,openerDps5s:median(comparable.map((p)=>p.openerDps5s)),openerDps10s:median(comparable.map((p)=>p.openerDps10s)),lowerBound:sustainedDps*.9,upperBound:sustainedDps*1.1}; }
+export function getSyntheticIdealCombatProfile(profiles:readonly WeaponCombatBenchmarkProfile[],masteryLevel:number):SyntheticIdealCombatProfile { const comparable=profiles.filter((p)=>p.offense.masteryLevel===masteryLevel);const offense=getSyntheticIdealWeaponProfile(comparable.map((p)=>p.offense),masteryLevel);const physicalEffectiveHealth=median(comparable.map((p)=>p.defense.physicalEffectiveHealth));const magicalEffectiveHealth=median(comparable.map((p)=>p.defense.magicalEffectiveHealth));return {...offense,physicalEffectiveHealth,magicalEffectiveHealth,averageEffectiveHealth:(physicalEffectiveHealth+magicalEffectiveHealth)/2}; }

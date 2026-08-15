@@ -2,7 +2,14 @@ import type { EntityId } from "@game/core";
 import type { CurrencyService, InventoryManager, WalletId } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge";
 import type { RuntimePersistence } from "../runtime/RuntimePersistence";
+import { combatStopController } from "../runtime/CombatStopController";
 import { migrateLegacyProductionMaterials } from "../runtime/ProductionStorage";
+
+const REMOVED_ENCHANTMENT_RESOURCE_IDS = [
+  "item_resource_enchantment_essence",
+  "item_resource_arcane_crystal",
+  "item_resource_enchantment_catalyst",
+] as const;
 
 interface SaveGameActionsDependencies {
   readonly bridge: GameBridge;
@@ -40,6 +47,9 @@ export class SaveGameActions {
   load(): boolean {
     if (!this.deps.persistence.hasSave()) return false;
 
+    // A save is a new combat lifecycle boundary. Never inherit a pending stop
+    // or paused state from the runtime that existed before the load.
+    combatStopController.reset();
     this.deps.persistence.load();
     this.applyLoadedState();
 
@@ -61,6 +71,7 @@ export class SaveGameActions {
 
   importSave(raw: string): boolean {
     try {
+      combatStopController.reset();
       this.deps.persistence.importSave(raw);
       this.applyLoadedState();
       this.deps.bridge.addEconomyNotification({
@@ -83,6 +94,7 @@ export class SaveGameActions {
   }
 
   private applyLoadedState(): void {
+    this.removeLegacyEnchantmentResources();
     migrateLegacyProductionMaterials(
       this.deps.inventoryManager,
       this.deps.heroId,
@@ -101,6 +113,21 @@ export class SaveGameActions {
 
   hasSave(): boolean {
     return this.deps.persistence.hasSave();
+  }
+
+  private removeLegacyEnchantmentResources(): void {
+    for (const inventoryId of [
+      this.deps.heroId,
+      this.deps.bankId,
+      this.deps.productionStorageId,
+    ]) {
+      for (const itemId of REMOVED_ENCHANTMENT_RESOURCE_IDS) {
+        const quantity = this.deps.inventoryManager.getTotalQuantity(inventoryId, itemId);
+        if (quantity > 0) {
+          this.deps.inventoryManager.removeQuantity(inventoryId, itemId, quantity);
+        }
+      }
+    }
   }
 
   private migrateRemovedEnergyConsumables(): void {

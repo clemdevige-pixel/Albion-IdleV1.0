@@ -4,6 +4,7 @@ import type { StatsManager } from "../stats/stats-manager.js";
 import type { ModifierId, StatId, StatModifier } from "../stats/types.js";
 import type { EquipmentInfoResolver, EquipmentSlot } from "./types.js";
 import { getEnchantmentStatMultiplier } from "./enchantment-balance.js";
+import { roundEquipmentStatValue } from "./equipment-stat-rounding.js";
 
 const EQUIPMENT_SOURCE_PREFIX = "equipment:";
 const EQUIPMENT_MODIFIER_PRIORITY = 0;
@@ -87,13 +88,17 @@ export class EquipmentStatSync {
       );
       for (const [statKey, value] of Object.entries(stats)) {
         const id = `equip_${slot}_${statKey}` as ModifierId;
+        const statId = statKey as StatId;
+        const scaledValue = statKey === "stat_attack_speed"
+          ? value
+          : value * enchantmentMultiplier;
         desired.set(id, {
           id,
-          statId: statKey as StatId,
+          statId,
           type: "flat",
           value: statKey === "stat_attack_speed"
-            ? value
-            : value * enchantmentMultiplier,
+            ? scaledValue
+            : roundEquipmentStatValue(statId, scaledValue),
           priority: EQUIPMENT_MODIFIER_PRIORITY,
           source: `${EQUIPMENT_SOURCE_PREFIX}${slot}`,
         });

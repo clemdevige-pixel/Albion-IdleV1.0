@@ -1,0 +1,63 @@
+.enemy-status-vfx {
+  position: absolute;
+  z-index: 6;
+  left: 68%;
+  top: 55%;
+  width: 72px;
+  height: 86px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px rgba(255, 92, 26, 0.55));
+}
+
+.enemy-status-vfx__flame,
+.enemy-status-vfx__glow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.enemy-status-vfx__flame {
+  bottom: 10px;
+  width: 18px;
+  height: 42px;
+  border-radius: 60% 40% 55% 45%;
+  background: radial-gradient(circle at 50% 75%, #ffd66b 0 18%, #ff8a2d 42%, rgba(255, 66, 24, 0.15) 75%);
+  transform-origin: 50% 100%;
+  animation: enemy-status-burn 420ms ease-in-out infinite alternate;
+}
+
+.enemy-status-vfx__flame--left {
+  margin-left: -19px;
+  height: 32px;
+  animation-delay: -120ms;
+}
+
+.enemy-status-vfx__flame--center {
+  height: 50px;
+}
+
+.enemy-status-vfx__flame--right {
+  margin-left: 18px;
+  height: 36px;
+  animation-delay: -240ms;
+}
+
+.enemy-status-vfx__glow {
+  bottom: 2px;
+  width: 58px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 102, 30, 0.22);
+  animation: enemy-status-glow 620ms ease-in-out infinite alternate;
+}
+
+@keyframes enemy-status-burn {
+  from { transform: translateX(-50%) scale(0.82, 0.92) rotate(-3deg); opacity: 0.65; }
+  to { transform: translateX(-50%) scale(1.08, 1.16) rotate(4deg); opacity: 0.95; }
+}
+
+@keyframes enemy-status-glow {
+  from { transform: translateX(-50%) scaleX(0.85); opacity: 0.45; }
+  to { transform: translateX(-50%) scaleX(1.15); opacity: 0.9; }
+}

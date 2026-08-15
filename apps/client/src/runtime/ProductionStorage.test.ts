@@ -38,10 +38,15 @@ describe("production storage migration", () => {
     expect(inventoryManager.getTotalQuantity(productionStorageId, "item_refined_planks_t3")).toBe(3);
   });
 
-  it("does not classify visible enchantment currencies as production materials", () => {
-    expect(isProductionMaterial("item_resource_enchantment_essence")).toBe(false);
-    expect(isProductionMaterial("item_resource_arcane_crystal")).toBe(false);
-    expect(isProductionMaterial("item_resource_enchantment_catalyst")).toBe(false);
+  it("keeps tiered enchantment shards in the visible inventory", () => {
+    for (const itemId of [
+      "item_resource_enchantment_shard_t4",
+      "item_resource_enchantment_shard_t5",
+      "item_resource_enchantment_shard_t8",
+    ]) {
+      expect(isVisibleInventoryResource(itemId)).toBe(true);
+      expect(isProductionMaterial(itemId)).toBe(false);
+    }
   });
 
   it("keeps faction key and artifact loot in the hero inventory during load migration", () => {

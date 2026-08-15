@@ -1,19 +1,10 @@
-export interface LootDropDefinition {
-  readonly itemId: string;
-  readonly weight: number;
-}
-
-export interface LootTableDefinition {
-  readonly dropChance: number;
-  readonly drops: readonly LootDropDefinition[];
-}
+import { getEnchantmentShardItemId } from "@game/gameplay";
 
 /**
- * BLUE POLISH 1
- * Combat loot is intentionally split into independent rolls. A key fragment,
- * an enchantment material and a potion can therefore drop from the same kill.
- * Faction selects the identity of dungeon/artifact loot; encounter difficulty
- * selects the probability.
+ * Combat loot uses independent rolls. A key fragment, an enchantment shard and
+ * other eligible rewards can therefore drop from the same kill. The definitions
+ * below are also consumed by the Bestiary so gameplay and UI share one source
+ * of truth.
  */
 export const BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS = [
   1,
@@ -29,13 +20,26 @@ export const BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS = [
 ] as const;
 
 export const BLUE_ZONE_BASE_DROP_RATES = {
-  healthPotion: 0.05,
-  enchantmentEssence: 0.06,
-  arcaneCrystal: 0.015,
-  enchantmentCatalyst: 0.0025,
   keyFragment: 0.02,
   completeKey: 0.001,
 } as const;
+
+/**
+ * Enchantment shard calibration.
+ *
+ * The baseline is calibrated against the synthetic T4.2 / M20 combat profile,
+ * using the same weapon envelope and Blue TTK model as progression balance.
+ * Deep T4 farming lands around the validated 25-30 shards/hour target while
+ * the depth/HP weighting prevents trivial early segments from becoming the
+ * permanent optimal farm.
+ *
+ * Elite and boss multipliers are mutually exclusive: a segment boss may carry
+ * both tags in content data, but it must never receive both multipliers.
+ */
+export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.011;
+export const ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT = 0.015;
+export const ENCHANTMENT_SHARD_ELITE_MULTIPLIER = 1.2;
+export const ENCHANTMENT_SHARD_BOSS_MULTIPLIER = 1.35;
 
 export const BLUE_ZONE_BOSS_DROP_RATES = {
   segmentBossArtifactFragment: 0.2,
@@ -59,22 +63,97 @@ export type BlueZoneCombatDropKind =
 export interface BlueZoneCombatDrop {
   readonly itemId: string;
   readonly kind: BlueZoneCombatDropKind;
+  readonly quantity: number;
 }
 
 export interface BlueZoneLootContext {
   /** Zero-based segment index (0..9). */
   readonly segmentIndex: number;
   readonly faction: string;
+  readonly isElite: boolean;
   readonly isBoss: boolean;
   readonly isFinalBoss: boolean;
+  /** Equipment tier represented by the current world band: blue=T4, yellow=T5, etc. */
+  readonly enchantmentTier: number;
+  /** Relative monster combat weight. 1 = first regular enemy of the current band. */
+  readonly enchantmentDropWeight: number;
 }
+
+export interface CombatLootExpectation {
+  readonly itemId: string;
+  readonly kind: BlueZoneCombatDropKind;
+  /** Expected quantity per kill. Values below 1 are equivalent to drop chance. */
+  readonly expectedQuantity: number;
+}
+
+type CombatLootItemSource =
+  | { readonly type: "fixed"; readonly itemId: string }
+  | { readonly type: "enchantment_shard" }
+  | {
+      readonly type: "faction";
+      readonly prefix: string;
+    };
+
+type CombatLootRateModel =
+  | { readonly type: "segment_scaled"; readonly baseRate: number; readonly bossMultiplier: boolean }
+  | { readonly type: "enchantment" }
+  | { readonly type: "artifact_fragment" }
+  | { readonly type: "artifact" };
+
+export interface CombatLootRuleDefinition {
+  readonly kind: BlueZoneCombatDropKind;
+  readonly item: CombatLootItemSource;
+  readonly rate: CombatLootRateModel;
+}
+
+/**
+ * Authoritative active combat-loot definitions.
+ *
+ * Adding a simple droppable item should normally be a data addition here, not
+ * a new Bestiary/UI special case. Dynamic faction/tier identities are resolved
+ * generically by the item source.
+ *
+ * Health potions are intentionally vendor-only and are therefore absent from
+ * active combat loot.
+ */
+export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
+  {
+    kind: "enchantment",
+    item: { type: "enchantment_shard" },
+    rate: { type: "enchantment" },
+  },
+  {
+    kind: "key_fragment",
+    item: { type: "faction", prefix: "item_resource_key_fragment_" },
+    rate: { type: "segment_scaled", baseRate: BLUE_ZONE_BASE_DROP_RATES.keyFragment, bossMultiplier: true },
+  },
+  {
+    kind: "key",
+    item: { type: "faction", prefix: "item_resource_dungeon_key_" },
+    rate: { type: "segment_scaled", baseRate: BLUE_ZONE_BASE_DROP_RATES.completeKey, bossMultiplier: true },
+  },
+  {
+    kind: "artifact_fragment",
+    item: { type: "faction", prefix: "item_resource_artifact_fragment_" },
+    rate: { type: "artifact_fragment" },
+  },
+  {
+    kind: "artifact",
+    item: { type: "faction", prefix: "item_resource_artifact_" },
+    rate: { type: "artifact" },
+  },
+] as const;
 
 function normalizeFactionId(faction: string): string {
   return faction.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
 }
 
-function rollChance(chance: number, random: () => number): boolean {
-  return random() < Math.min(1, Math.max(0, chance));
+/** Supports expected values above 1 without probability-cap distortion. */
+function rollExpectedQuantity(expected: number, random: () => number): number {
+  const safeExpected = Math.max(0, expected);
+  const guaranteed = Math.floor(safeExpected);
+  const fractional = safeExpected - guaranteed;
+  return guaranteed + (fractional > 0 && random() < fractional ? 1 : 0);
 }
 
 export function getBlueZoneSegmentLootMultiplier(segmentIndex: number): number {
@@ -85,117 +164,112 @@ export function getBlueZoneSegmentLootMultiplier(segmentIndex: number): number {
   return BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS[clampedIndex] ?? 1;
 }
 
+export function getEnchantmentShardExpectedDrop(
+  context: Pick<
+    BlueZoneLootContext,
+    "segmentIndex" | "isElite" | "isBoss" | "enchantmentDropWeight"
+  >,
+): number {
+  const depthBonus =
+    1 + Math.max(0, context.segmentIndex) * ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT;
+  const categoryMultiplier = context.isBoss
+    ? ENCHANTMENT_SHARD_BOSS_MULTIPLIER
+    : context.isElite
+      ? ENCHANTMENT_SHARD_ELITE_MULTIPLIER
+      : 1;
+  return ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
+    * Math.max(0, context.enchantmentDropWeight)
+    * depthBonus
+    * categoryMultiplier;
+}
+
+function resolveCombatLootItemId(
+  source: CombatLootItemSource,
+  context: BlueZoneLootContext,
+): string {
+  if (source.type === "fixed") return source.itemId;
+  if (source.type === "enchantment_shard") {
+    return getEnchantmentShardItemId(context.enchantmentTier);
+  }
+  return `${source.prefix}${normalizeFactionId(context.faction)}`;
+}
+
+function resolveCombatLootExpectedQuantity(
+  rate: CombatLootRateModel,
+  context: BlueZoneLootContext,
+): number {
+  if (rate.type === "enchantment") return getEnchantmentShardExpectedDrop(context);
+
+  if (rate.type === "segment_scaled") {
+    const bossMultiplier = rate.bossMultiplier && context.isBoss
+      ? BOSS_SPECIAL_DROP_MULTIPLIER
+      : 1;
+    return rate.baseRate * getBlueZoneSegmentLootMultiplier(context.segmentIndex) * bossMultiplier;
+  }
+
+  if (!context.isBoss) return 0;
+  if (rate.type === "artifact_fragment") {
+    return context.isFinalBoss
+      ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifactFragment
+      : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifactFragment;
+  }
+  return context.isFinalBoss
+    ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifact
+    : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifact;
+}
+
+/**
+ * Deterministic projection consumed by both runtime rolls and Bestiary display.
+ * This is the single source of truth for which active combat drops exist and
+ * their context-dependent probabilities/yields.
+ */
+export function getCombatLootExpectations(
+  context: BlueZoneLootContext,
+): readonly CombatLootExpectation[] {
+  return COMBAT_LOOT_RULES.flatMap((rule) => {
+    const expectedQuantity = resolveCombatLootExpectedQuantity(rule.rate, context);
+    if (expectedQuantity <= 0) return [];
+    return [{
+      itemId: resolveCombatLootItemId(rule.item, context),
+      kind: rule.kind,
+      expectedQuantity,
+    }];
+  });
+}
+
 export function rollBlueZoneCombatDrops(
   context: BlueZoneLootContext,
   random: () => number = Math.random,
 ): readonly BlueZoneCombatDrop[] {
   const drops: BlueZoneCombatDrop[] = [];
-  const segmentMultiplier = getBlueZoneSegmentLootMultiplier(context.segmentIndex);
-  const specialMultiplier = context.isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1;
-  const factionId = normalizeFactionId(context.faction);
-
-  // Consumable: scales with zone advancement, but does not receive the boss
-  // special-drop multiplier.
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.healthPotion * segmentMultiplier, random)) {
-    drops.push({ itemId: "item_health_potion", kind: "consumable" });
+  for (const expectation of getCombatLootExpectations(context)) {
+    const quantity = rollExpectedQuantity(expectation.expectedQuantity, random);
+    if (quantity <= 0) continue;
+    drops.push({
+      itemId: expectation.itemId,
+      kind: expectation.kind,
+      quantity,
+    });
   }
-
-  // Independent enchantment rolls. These are deliberately not mutually
-  // exclusive so rare jackpots do not erase regular progression rewards.
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.enchantmentEssence * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: "item_resource_enchantment_essence", kind: "enchantment" });
-  }
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.arcaneCrystal * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: "item_resource_arcane_crystal", kind: "enchantment" });
-  }
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.enchantmentCatalyst * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: "item_resource_enchantment_catalyst", kind: "enchantment" });
-  }
-
-  // Dungeon progression is faction-specific, but rates are faction-agnostic.
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.keyFragment * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: `item_resource_key_fragment_${factionId}`, kind: "key_fragment" });
-  }
-  if (rollChance(BLUE_ZONE_BASE_DROP_RATES.completeKey * segmentMultiplier * specialMultiplier, random)) {
-    drops.push({ itemId: `item_resource_dungeon_key_${factionId}`, kind: "key" });
-  }
-
-  // Artifact progression is boss-exclusive. Final biome bosses use the
-  // stronger final-boss rates approved for the Blue Zone vertical slice.
-  if (context.isBoss) {
-    const fragmentChance = context.isFinalBoss
-      ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifactFragment
-      : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifactFragment;
-    const artifactChance = context.isFinalBoss
-      ? BLUE_ZONE_BOSS_DROP_RATES.finalBossArtifact
-      : BLUE_ZONE_BOSS_DROP_RATES.segmentBossArtifact;
-
-    if (rollChance(fragmentChance, random)) {
-      drops.push({ itemId: `item_resource_artifact_fragment_${factionId}`, kind: "artifact_fragment" });
-    }
-    if (rollChance(artifactChance, random)) {
-      drops.push({ itemId: `item_resource_artifact_${factionId}`, kind: "artifact" });
-    }
-  }
-
   return drops;
 }
-
-// Legacy tables are retained temporarily for compatibility with content that
-// has not yet migrated to the Blue Zone independent-roll reward pipeline.
-export const GENERIC_COMBAT_LOOT: readonly LootDropDefinition[] = [
-  { itemId: "item_health_potion", weight: 20 },
-];
-
-export const MONSTER_LOOT_TABLES: Readonly<Record<string, LootTableDefinition>> = {
-  loot_monster_generic: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_monster_undead_boss: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_monster_keeper_boss: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_undead_normal: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_undead_elite: { dropChance: 0.3, drops: GENERIC_COMBAT_LOOT },
-  loot_undead_boss: { dropChance: 0.45, drops: GENERIC_COMBAT_LOOT },
-  loot_morgana_normal: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_morgana_elite: { dropChance: 0.3, drops: GENERIC_COMBAT_LOOT },
-  loot_morgana_boss: { dropChance: 0.45, drops: GENERIC_COMBAT_LOOT },
-  loot_keeper_normal: { dropChance: 0.2, drops: GENERIC_COMBAT_LOOT },
-  loot_keeper_elite: { dropChance: 0.3, drops: GENERIC_COMBAT_LOOT },
-  loot_keeper_boss: { dropChance: 0.45, drops: GENERIC_COMBAT_LOOT },
-};
 
 export const HEALTH_POTION_HEAL_RATIO = 0.3;
 export const HEALTH_POTION_COOLDOWN_SECONDS = 20;
 
 export const ENCHANTMENT_MATERIAL_NAMES: Readonly<Record<string, string>> = {
-  item_resource_enchantment_essence: "Essence d’enchantement",
-  item_resource_arcane_crystal: "Cristal arcanique",
-  item_resource_enchantment_catalyst: "Catalyseur d’enchantement",
+  item_resource_enchantment_shard_t4: "Éclat d’enchantement T4",
+  item_resource_enchantment_shard_t5: "Éclat d’enchantement T5",
+  item_resource_enchantment_shard_t6: "Éclat d’enchantement T6",
+  item_resource_enchantment_shard_t7: "Éclat d’enchantement T7",
+  item_resource_enchantment_shard_t8: "Éclat d’enchantement T8",
 };
 
-/** @deprecated Blue Zone combat uses rollBlueZoneCombatDrops. */
+/** @deprecated Use rollBlueZoneCombatDrops with a tiered loot context. */
 export function rollEnchantmentMaterial(): string | undefined {
-  const roll = Math.random();
-  if (roll < 0.005) return "item_resource_enchantment_catalyst";
-  if (roll < 0.025) return "item_resource_arcane_crystal";
-  if (roll < 0.105) return "item_resource_enchantment_essence";
-  return undefined;
-}
-
-/** @deprecated Blue Zone combat uses rollBlueZoneCombatDrops. */
-export function rollLootTable(lootTableId: string): string | undefined {
-  const table = MONSTER_LOOT_TABLES[lootTableId];
-  if (table === undefined) throw new Error(`Unknown monster loot table: ${lootTableId}`);
-  if (Math.random() > table.dropChance) return undefined;
-  const totalWeight = table.drops.reduce((sum, definition) => sum + definition.weight, 0);
-  let roll = Math.random() * totalWeight;
-  for (const definition of table.drops) {
-    roll -= definition.weight;
-    if (roll <= 0) return definition.itemId;
-  }
-  return undefined;
-}
-
-export function rollGenericCombatLoot(): string | undefined {
-  return rollLootTable("loot_monster_generic");
+  return Math.random() < ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
+    ? getEnchantmentShardItemId(4)
+    : undefined;
 }
 
 export const REPAIR_COST_DEFINITIONS = [

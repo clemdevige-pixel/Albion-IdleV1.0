@@ -3,13 +3,18 @@ import type { EnchantmentLevel } from "../inventory/types.js";
 /**
  * Single balancing source for enchantment Item Power.
  * Saves store only the level, so these values can change without migration.
+ *
+ * Validated baseline: +50 IP per active enchantment level. This keeps .3 a
+ * strong optimization (+150 IP) without letting enchantment replace the next
+ * equipment tier.
  */
 export const ENCHANTMENT_ITEM_POWER: Readonly<Record<EnchantmentLevel, number>> = {
   0: 0,
-  1: 100,
-  2: 200,
-  3: 300,
-  4: 400,
+  1: 50,
+  2: 100,
+  3: 150,
+  // .4 is structurally reserved for future endgame design.
+  4: 200,
 };
 
 /** Shared conversion rule for every bonus Item Power source. */

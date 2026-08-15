@@ -45,16 +45,13 @@ export interface RefiningCompletionEvent {
 
 export interface RefiningRuntimeDependencies {
   readonly refiningManagers: Readonly<
-  Record<SupportedRefiningFamily, RefiningManager>
->;
-
+    Record<SupportedRefiningFamily, RefiningManager>
+  >;
   readonly inventoryManager: InventoryManager;
-
   /** @deprecated Production resources should use productionStorageId. */
   readonly heroId?: EntityId;
   readonly productionStorageId?: EntityId;
-
-  readonly getProductionTier: () => ProductionTier;
+  readonly getProductionTier: (family: SupportedRefiningFamily) => ProductionTier;
 }
 
 interface RefiningFamilyRuntimeDefinition {
@@ -79,19 +76,15 @@ function isSupportedRefiningFamily(
 export class RefiningRuntime {
   private readonly inventoryManager: InventoryManager;
   private readonly productionStorageId: EntityId;
-  private readonly getProductionTier: () => ProductionTier;
-
+  private readonly getProductionTier: (family: SupportedRefiningFamily) => ProductionTier;
   private readonly families: Readonly<
     Record<SupportedRefiningFamily, RefiningFamilyRuntimeDefinition>
   >;
-
   private readonly states: Record<
     SupportedRefiningFamily,
     RefiningFamilyState
   >;
-
   private currentTickCounter = 0;
-
   private readonly completionListeners = new Set<
     (evt: RefiningCompletionEvent) => void
   >();
@@ -136,23 +129,25 @@ export class RefiningRuntime {
     listener: (evt: RefiningCompletionEvent) => void,
   ): () => void {
     this.completionListeners.add(listener);
-
     return () => {
       this.completionListeners.delete(listener);
     };
   }
 
   private notifyRefineCompleted(evt: RefiningCompletionEvent): void {
-    for (const listener of this.completionListeners) {
-      listener(evt);
-    }
+    for (const listener of this.completionListeners) listener(evt);
   }
 
   public tick(tickCounter: number): void {
     this.currentTickCounter = tickCounter;
-
     for (const family of SUPPORTED_REFINING_FAMILIES) {
-      this.families[family].manager.tick(tickCounter);
+      const definition = this.families[family];
+      definition.manager.tick(tickCounter);
+
+      const state = this.states[family];
+      if (state.automatic && definition.manager.getActiveSession() === undefined) {
+        this.startRefiningCycle(family, this.getRecipe(family), tickCounter);
+      }
     }
   }
 
@@ -171,15 +166,33 @@ export class RefiningRuntime {
 
   public isRefiningActive(family: ResourceFamily): boolean {
     if (!isSupportedRefiningFamily(family)) return false;
+    return this.families[family].manager.getActiveSession() !== undefined;
+  }
 
-    return (
-      this.families[family].manager.getActiveSession() !== undefined
-    );
+  public isAutomaticEnabled(family: ResourceFamily): boolean {
+    if (!isSupportedRefiningFamily(family)) return false;
+    return this.states[family].automatic;
+  }
+
+  /**
+   * Persistence load replaces the authoritative production-storage snapshot.
+   * Any live sessions belong to the pre-load timeline and must therefore be
+   * discarded without refunding their in-memory reservations into the restored
+   * inventory. The save provider will restore the saved reservations exactly once.
+   */
+  public resetForPersistenceLoad(): void {
+    for (const family of SUPPORTED_REFINING_FAMILIES) {
+      const state = this.states[family];
+      state.automatic = false;
+      state.reservedInputs = [];
+      state.activeRecipe = undefined;
+      this.families[family].manager.clear();
+    }
   }
 
   private getRecipe(
     family: SupportedRefiningFamily,
-    tier: ProductionTier = this.getProductionTier(),
+    tier: ProductionTier = this.getProductionTier(family),
   ): ProductionRefiningRecipe {
     return getProductionRefiningRecipe(
       this.families[family].productionFamilyId,
@@ -197,26 +210,21 @@ export class RefiningRuntime {
           requirement.itemId,
         ) >= requirement.quantity,
     );
-
     if (!canPay) return undefined;
 
     const reserved: ReservedRefiningRequirement[] = [];
-
     for (const requirement of requirements) {
       const removed = this.inventoryManager.removeQuantity(
         this.productionStorageId,
         requirement.itemId,
         requirement.quantity,
       );
-
       if (!removed.ok) {
         this.refundRefiningRequirements(reserved);
         return undefined;
       }
-
       reserved.push(requirement);
     }
-
     return reserved;
   }
 
@@ -244,11 +252,9 @@ export class RefiningRuntime {
   ): boolean {
     const definition = this.families[family];
     const state = this.states[family];
+    if (definition.manager.getActiveSession() !== undefined) return false;
 
-    const reserved = this.reserveRefiningRequirements(
-      recipe.requirements,
-    );
-
+    const reserved = this.reserveRefiningRequirements(recipe.requirements);
     if (reserved === undefined) return false;
 
     state.reservedInputs = reserved;
@@ -273,7 +279,6 @@ export class RefiningRuntime {
       state.activeRecipe = undefined;
       return false;
     }
-
     return true;
   }
 
@@ -293,9 +298,7 @@ export class RefiningRuntime {
   ): void {
     const definition = this.families[family];
     const state = this.states[family];
-
-    const recipe =
-      state.activeRecipe ?? this.getRecipe(family);
+    const recipe = state.activeRecipe ?? this.getRecipe(family);
 
     const added = this.inventoryManager.addQuantity(
       this.productionStorageId,
@@ -310,27 +313,20 @@ export class RefiningRuntime {
 
     if (!added.ok) {
       this.refundRefiningRequirements(state.reservedInputs);
-
       state.automatic = false;
       state.activeRecipe = undefined;
       state.reservedInputs = [];
-
       definition.manager.clear();
     } else {
       state.reservedInputs = [];
       definition.manager.clear();
-
-      if (
-        state.automatic &&
-        !this.startRefiningCycle(
-          family,
-          recipe,
-          this.currentTickCounter,
-        )
-      ) {
-        state.automatic = false;
-        state.activeRecipe = undefined;
-      } else if (!state.automatic) {
+      if (state.automatic) {
+        if (!this.startRefiningCycle(family, recipe, this.currentTickCounter)) {
+          // Automatic refining remains armed while waiting for the worker or
+          // active gathering to replenish the shared production storage.
+          state.activeRecipe = undefined;
+        }
+      } else {
         state.activeRecipe = undefined;
       }
     }
@@ -348,9 +344,7 @@ export class RefiningRuntime {
   ): void {
     const definition = this.families[family];
     const state = this.states[family];
-
     state.automatic = false;
-
     const session = definition.manager.getActiveSession();
 
     if (session !== undefined) {
@@ -368,49 +362,17 @@ export class RefiningRuntime {
     tickCounter: number = 0,
   ): ToggleRefiningResult {
     const state = this.states[family];
-
     if (state.automatic) {
       this.stopRefiningFamily(family);
       return { action: "stopped", family };
     }
 
     state.automatic = true;
-
-    if (
-      !this.startRefiningCycle(
-        family,
-        this.getRecipe(family),
-        tickCounter,
-      )
-    ) {
+    if (!this.startRefiningCycle(family, this.getRecipe(family), tickCounter)) {
       state.automatic = false;
       return { action: "failed", family };
     }
-
     return { action: "started", family };
-  }
-
-public refineAllAvailable(
-    tickCounter: number = 0,
-  ): { readonly startedAtLeastOne: boolean } {
-    let startedAtLeastOne = false;
-
-    for (const family of SUPPORTED_REFINING_FAMILIES) {
-      if (
-        this.families[family].manager.getActiveSession() !== undefined
-      ) {
-        continue;
-      }
-
-      if (
-        this.toggleRefiningFamily(family, tickCounter).action ===
-        "started"
-      ) {
-        startedAtLeastOne = true;
-      }
-    }
-
-    return { startedAtLeastOne };
   }
 }
 
@@ -422,9 +384,7 @@ function isReservedRefiningRequirement(
   value: unknown,
 ): value is ReservedRefiningRequirement {
   if (value === null || typeof value !== "object") return false;
-
   const candidate = value as Record<string, unknown>;
-
   return (
     typeof candidate.itemId === "string" &&
     typeof candidate.quantity === "number" &&
@@ -443,36 +403,27 @@ export class RefiningSaveProvider implements SaveProvider {
   ) {}
 
   save(): unknown {
-    const reservedInputs =
-      this.refiningRuntime.getAllReservedInputs();
-
     return {
-      reservedInputs,
+      reservedInputs: this.refiningRuntime.getAllReservedInputs(),
     } satisfies SavedRefiningRecoveryPayload;
   }
 
   load(data: unknown): void {
+    // Loading into an already-running GameProvider must first discard the live
+    // pre-load sessions. Do not refund them: the authoritative inventory has
+    // already been replaced by the persistence snapshot at this point.
+    this.refiningRuntime.resetForPersistenceLoad();
+
     if (
       data === null ||
       typeof data !== "object" ||
       !("reservedInputs" in data)
-    ) {
-      return;
-    }
+    ) return;
 
     const rawReservedInputs: unknown = data.reservedInputs;
+    if (!Array.isArray(rawReservedInputs) || rawReservedInputs.length === 0) return;
 
-    if (
-      !Array.isArray(rawReservedInputs) ||
-      rawReservedInputs.length === 0
-    ) {
-      return;
-    }
-
-    const reservedInputs = rawReservedInputs.filter(
-      isReservedRefiningRequirement,
-    );
-
+    const reservedInputs = rawReservedInputs.filter(isReservedRefiningRequirement);
     const productionStorageId = this.getProductionStorageId();
 
     for (const input of reservedInputs) {

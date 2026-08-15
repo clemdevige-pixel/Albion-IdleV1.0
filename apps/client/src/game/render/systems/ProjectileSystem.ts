@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { ProjectileRenderManifest } from "../RenderManifest";
+import { subscribeCombatPresentationInvalidation } from "../presentation/CombatPresentationInvalidation";
 import type { VfxSystem } from "./VfxSystem";
 
 export interface ProjectilePath {
@@ -26,14 +27,24 @@ export interface ProjectilePresentation {
 export class ProjectileSystem {
   private readonly activeObjects = new Set<Phaser.GameObjects.GameObject>();
   private readonly activeTweens = new Set<Phaser.Tweens.Tween>();
+  private readonly unsubscribeInvalidation: () => void;
+  private destroyed = false;
 
   public constructor(
     private readonly scene: Phaser.Scene,
     private readonly resolvePath: ProjectilePathResolver,
     private readonly vfxSystem: VfxSystem,
-  ) {}
+  ) {
+    this.unsubscribeInvalidation = subscribeCombatPresentationInvalidation(() => {
+      this.clear();
+    });
+    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.destroy();
+    });
+  }
 
   public present(presentation: ProjectilePresentation): void {
+    if (this.destroyed) return;
     const { manifest, onImpact } = presentation;
     const path = this.resolvePath(manifest);
     const fillColor = this.parseColor(manifest.fillColor);
@@ -77,6 +88,7 @@ export class ProjectileSystem {
         this.activeTweens.delete(flightTween);
         this.activeObjects.delete(projectile);
         projectile.destroy();
+        if (this.destroyed) return;
         onImpact();
 
         if (manifest.impactEffect !== undefined) {
@@ -101,6 +113,13 @@ export class ProjectileSystem {
       gameObject.destroy();
     }
     this.activeObjects.clear();
+  }
+
+  public destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.unsubscribeInvalidation();
+    this.clear();
   }
 
   private parseColor(value: string): number {

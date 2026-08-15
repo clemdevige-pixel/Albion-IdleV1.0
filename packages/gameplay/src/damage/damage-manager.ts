@@ -68,8 +68,6 @@ export class DamageManager {
       request.damageType,
     );
 
-    // 21_DAMAGE "Validation": a request must carry positive damage; zero-damage
-    // requests are discarded with no gameplay effect.
     if (calc.rawDamage <= 0) return null;
 
     const health = this.getHealth(request.target);
@@ -90,7 +88,6 @@ export class DamageManager {
       overkill,
       targetHealthBefore: healthBefore,
       targetHealthAfter: health.currentHealth,
-      // Death check immediately after health reduction (21_DAMAGE Rule 14).
       targetDied,
     };
 
@@ -105,6 +102,7 @@ export class DamageManager {
         source: request.source,
         target: request.target,
         damageType: request.damageType,
+        sourceType: request.source_type,
         rawDamage: calc.rawDamage,
         finalDamage,
         targetHealthAfter: health.currentHealth,
@@ -163,12 +161,6 @@ export class DamageManager {
     return actual;
   }
 
-  /**
-   * Re-reads maximum health from stats, preserving the current health ratio
-   * (AI_BIBLE 11_STAT_SYSTEM §12–14): standard rounding to the nearest integer,
-   * clamped to [0, max]. A hero at zero health stays at zero — a stat
-   * recalculation must never revive a defeated entity.
-   */
   syncMaxHealth(entityId: EntityId): void {
     const health = this.getHealth(entityId);
     const previousMax = health.maxHealth;
@@ -178,7 +170,6 @@ export class DamageManager {
     health.maxHealth = newMax;
 
     if (previousCurrent <= 0) {
-      // Zero-health exception (11_STAT §14).
       health.currentHealth = 0;
       return;
     }

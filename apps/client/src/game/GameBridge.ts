@@ -1,6 +1,7 @@
 import type { CombatState } from "@game/gameplay";
 import {
   createInitialGameBridgeState,
+  TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
   type ActiveEffectDisplay,
   type CombatAbilitiesVM,
   type ConsumablesVM,
@@ -10,6 +11,7 @@ import {
   type GameBridgeState,
   type GatheringVM,
   type InventoryVM,
+  type IslandVM,
   type ProgressionVM,
   type RefiningVM,
   type RepairVM,
@@ -24,6 +26,7 @@ import {
 export * from "./bridge/GameBridgeModels";
 
 type BridgeListener = () => void;
+type DamagePresentationSource = "auto_attack" | "ability" | "effect" | "other";
 
 /**
  * Stable React/Phaser presentation bridge.
@@ -74,6 +77,7 @@ export class GameBridge {
   get clothRefining() { return this.#state.clothRefining; }
   get crafting() { return this.#state.crafting; }
   get workers() { return this.#state.workers; }
+  get island() { return this.#state.island; }
 
   readonly subscribe = (listener: BridgeListener): (() => void) => {
     this.#listeners.add(listener);
@@ -88,12 +92,26 @@ export class GameBridge {
     this.#update({ enemyHealth: current, enemyMaxHealth: max });
   }
 
+  clearEnemyPresentation(): void {
+    this.#update({
+      enemyHealth: 0,
+      enemyMaxHealth: 0,
+      enemyName: "",
+      // Keep a valid technical manifest while the authoritative enemy is absent.
+      // Presentation visibility is driven by enemyMaxHealth/name, not this fallback.
+      enemyVisualManifestId: TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
+      activeEffects: [],
+    });
+  }
+
   setCombatState(combatState: CombatState): void { this.#update({ combatState }); }
 
   addDamageNumber(
     amount: number,
     target: "player" | "enemy",
     abilityId?: string,
+    sourceType: DamagePresentationSource = "other",
+    targetHealthAfter?: number,
   ): void {
     const damageNumbers = [
       ...this.#state.damageNumbers,
@@ -102,6 +120,8 @@ export class GameBridge {
         amount,
         target,
         timestamp: Date.now(),
+        sourceType,
+        ...(targetHealthAfter === undefined ? {} : { targetHealthAfter }),
         ...(abilityId === undefined ? {} : { abilityId }),
       },
     ].slice(-20);
@@ -164,6 +184,7 @@ export class GameBridge {
   updateClothRefining(clothRefining: RefiningVM): void { this.#update({ clothRefining }); }
   updateCrafting(crafting: CraftingVM): void { this.#update({ crafting }); }
   updateWorkers(workers: WorkersVM): void { this.#update({ workers }); }
+  updateIsland(island: IslandVM): void { this.#update({ island }); }
   updateConsumables(consumables: ConsumablesVM): void { this.#update({ consumables }); }
 
   readonly getSnapshot = (): GameBridgeState => this.#state;

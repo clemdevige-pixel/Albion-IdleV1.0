@@ -2,1487 +2,278 @@
 
 ## Purpose
 
-The Enchantment System defines how equipment is progressively upgraded beyond its base Tier.
+The Enchantment System upgrades an existing equipment instance beyond its base Tier while preserving Tier identity.
 
-Enchantments represent the primary vertical progression system of the late game and very late game.
+Enchantments are permanent, item-specific, guaranteed, sequential, resource-intensive and data-driven.
 
-The system allows players to improve existing equipment without introducing Tier 9, Tier 10, or infinite equipment inflation.
-
-Enchantments are:
-
-- Permanent
-- Item-specific
-- Guaranteed
-- Sequential
-- Resource-intensive
-- Fully data-driven
+V1 uses enchantment levels `.0` to `.3`. Level `.4` remains structurally reserved for future endgame design and is not currently obtainable.
 
 ---
 
-# Design Goals
+# Validated V1 Rules
 
-The Enchantment System must:
+| Level | Display | Cumulative Item Power bonus | Incremental Tier Shard cost |
+|---:|---|---:|---:|
+| 0 | .0 | +0 IP | - |
+| 1 | .1 | +50 IP | 10 |
+| 2 | .2 | +100 IP | 30 |
+| 3 | .3 | +150 IP | 70 |
+| 4 | .4 | Reserved | Reserved |
 
-- Provide long-term vertical progression.
-- Avoid random upgrade failures.
-- Preserve the value of crafting.
-- Create permanent demand for multiple resources.
-- Support a strong Silver sink.
-- Keep progression readable.
-- Prevent enchantment transfer exploits.
-- Avoid endless enchantment inflation.
-- Support future equipment categories.
+A `.0 -> .3` progression consumes 110 enchantment shards total.
 
----
+The validated V1 baseline is +50 Item Power per active enchantment level. With the current conversion this corresponds approximately to +10% / +20% / +30% cumulative numerical power at `.1` / `.2` / `.3`.
 
-# Core Philosophy
+Enchanting strongly optimizes equipment inside its Tier without replacing Tier progression. In the current balance, a T5.0 item remains stronger than the corresponding T4.3 item.
 
-Enchantments are a long-term investment into a specific item.
-
-The player does not gamble for power.
-
-Instead, the player gathers the required resources, pays the required costs, and receives a guaranteed upgrade.
-
-The challenge comes from:
-
-- Resource acquisition
-- Silver investment
-- Material rarity
-- Progression time
-- Economic planning
-
-It does not come from random failure.
+`.3` must not be required to unlock the next Tier. It is an optimization goal, not a progression gate.
 
 ---
 
-# Enchantment Levels
+# Tier Eligibility
 
-The game supports five enchantment states.
+V1 enchantment starts at Tier 4 and supports T4 through T8 resources.
 
-| Enchantment Level | Display Format |
-|---:|---|
-| 0 | .0 |
-| 1 | .1 |
-| 2 | .2 |
-| 3 | .3 |
-| 4 | .4 |
-
-The maximum enchantment level is `.4`.
-
-Examples:
-
-- T4.0
-- T5.1
-- T6.2
-- T7.3
-- T8.4
-
-No enchantment level above `.4` is planned.
-
----
-
-# Maximum Equipment State
-
-The highest planned equipment state is:
-
-T8.4
-
-An item may additionally possess any valid Quality.
-
-Examples:
-
-- T8.4 Normal
-- T8.4 Good
-- T8.4 Outstanding
-- T8.4 Excellent
-- T8.4 Masterpiece
-
-Quality and Enchantment remain independent.
-
----
-
-# Equipment Creation Rule
-
-All crafted equipment is initially created at enchantment level `.0`.
-
-Examples:
-
-- T4.0 Sword
-- T6.0 Plate Armor
-- T8.0 Staff
-
-Crafting does not directly generate enchanted equipment.
-
-The Enchantment System is a separate post-crafting process.
-
----
-
-# Item Lifecycle
-
-The intended equipment lifecycle is:
-
-Gather Resources
-
-↓
-
-Refine Resources
-
-↓
-
-Craft Base Equipment
-
-↓
-
-Generate Permanent Quality
-
-↓
-
-Gather Enchantment Materials
-
-↓
-
-Upgrade to .1
-
-↓
-
-Upgrade to .2
-
-↓
-
-Upgrade to .3
-
-↓
-
-Upgrade to .4
-
-This separates crafting excellence from late-game vertical progression.
+Equipment definitions remain authoritative for whether a specific item/category is enchantable and for its maximum enchantment level. The architecture supports weapons, off-hands, helmets, chest armor, boots and capes when enabled by their data.
 
 ---
 
 # Sequential Progression
 
-Enchantments follow a strictly linear progression.
+Valid V1 transitions are `.0 -> .1`, `.1 -> .2` and `.2 -> .3`. `.3 -> .4` is reserved for future design. Levels cannot be skipped.
 
-An item may only be upgraded to the next enchantment level.
-
-Valid transitions:
-
-- .0 → .1
-- .1 → .2
-- .2 → .3
-- .3 → .4
-
-Invalid transitions:
-
-- .0 → .2
-- .0 → .4
-- .1 → .3
-- .2 → .4
-
-No enchantment level may be skipped.
-
----
-
-# Upgrade Validation
-
-Before an upgrade begins, the system must verify:
-
-- The item is enchantable.
-- The item is below enchantment level .4.
-- The requested level is exactly CurrentLevel + 1.
-- The player owns every required material.
-- The player owns enough Silver.
-- The item is not currently locked by another operation.
-- The item instance still exists.
-- The player has sufficient inventory capacity for any returned outputs.
-- Any additional system-specific requirement is satisfied.
-
-If any validation fails, no resources are consumed.
+Enchanting does not change the item's base Tier, quality, identity or equipment category.
 
 ---
 
 # Guaranteed Success
 
-Every valid enchantment upgrade succeeds.
+Every valid enchantment succeeds. There is no failure chance, critical failure, downgrade, item destruction, fail stack, pity system, random material loss or regression.
 
-There is no:
-
-- Failure chance
-- Critical failure
-- Downgrade
-- Item destruction
-- Material loss on failure
-- Enchantment instability
-- Random regression
-
-Once all requirements are met and the transaction is confirmed, the item advances exactly one enchantment level.
+Difficulty comes from obtaining the required resources, materials and Silver, not from gambling the item.
 
 ---
 
-# No Random Success System
+# Tier-Specific Enchantment Resource
 
-The following mechanics are explicitly excluded:
+V1 uses exactly one dedicated combat-earned enchantment resource per Tier:
 
-- Percentage-based upgrade success
-- Fail stacks
-- Pity systems
-- Protection scrolls
-- Item destruction prevention
-- Downgrade protection
-- Random enhancement stones
+- Enchantment Shard T4
+- Enchantment Shard T5
+- Enchantment Shard T6
+- Enchantment Shard T7
+- Enchantment Shard T8
 
-The Enchantment System is deterministic.
+A shard can only pay for equipment of its own Tier. There is no transmutation or conversion between shard Tiers.
 
----
-
-# Item-Specific Enchantments
-
-Enchantments are permanently attached to the exact item instance that receives them.
-
-They cannot be:
-
-- Transferred
-- Extracted
-- Copied
-- Duplicated
-- Moved
-- Swapped
-- Inherited
-- Recovered from destruction
-- Applied to another item
-
----
-
-# Transfer Example
-
-The player owns:
-
-T8.4 Good Sword
-
-The player later obtains:
-
-T8.0 Masterpiece Sword
-
-The player cannot transfer the `.4` enchantment from the Good Sword to the Masterpiece Sword.
-
-The Masterpiece Sword must be upgraded independently.
-
----
-
-# Economic Consequence
-
-Each optimized item requires its own complete enchantment investment.
-
-This creates persistent demand for:
-
-- Base equipment
-- High-quality crafts
-- Enchantment materials
-- Silver
-- Gathering
-- Refining
-- Crafting services
-
-A new superior-quality base item does not invalidate the economic journey required to enchant it.
-
----
-
-# Quality Independence
-
-Quality never changes during enchantment.
-
-Examples:
-
-T8.0 Good
-
-↓
-
-T8.1 Good
-
-↓
-
-T8.2 Good
-
-↓
-
-T8.3 Good
-
-↓
-
-T8.4 Good
-
-The item remains Good throughout the entire process.
-
-Likewise:
-
-T8.0 Masterpiece
-
-↓
-
-T8.4 Masterpiece
-
-The Quality System and Enchantment System never modify each other's state.
-
----
-
-# Tier Independence
-
-Enchantments do not change the item's Tier.
-
-Examples:
-
-T6.4 remains Tier 6.
-
-T8.1 remains Tier 8.
-
-Tier and Enchantment are separate properties.
-
----
-
-# Mastery Independence
-
-Weapon Mastery determines whether the player may equip a weapon Tier.
-
-Mastery does not automatically enchant equipment.
-
-Enchanting an item does not grant Mastery XP unless explicitly defined by a separate system.
-
-A player's Mastery and an item's Enchantment remain independent.
-
----
-
-# Equipment Eligibility
-
-The system must define which equipment categories are enchantable.
-
-The architecture must support enchantments on:
-
-- Weapons
-- Off-Hands
-- Helmets
-- Chest Armor
-- Boots
-- Capes
-
-V1 activation may be limited by configuration.
-
-Very late-game progression is expected to focus primarily on weapons first.
-
-Other equipment categories may be enabled later through Data Tables.
-
----
-
-# Enchantment Permission
-
-Each equipment definition contains an enchantment permission configuration.
-
-Possible values include:
-
-- EnchantmentDisabled
-- EnchantmentEnabled
-- EnchantmentLevelCap
-
-Example:
-
-Weapon A
-
-- EnchantmentEnabled = true
-- EnchantmentLevelCap = 4
-
-Cape B
-
-- EnchantmentEnabled = false
-- EnchantmentLevelCap = 0
-
-This avoids hardcoding equipment eligibility.
+The former universal Essence / Crystal / Catalyst model is obsolete and must not be used by active gameplay. Legacy copies may only exist transiently for save migration and are removed when old saves are loaded/imported.
 
 ---
 
 # Enchantment Costs
 
-Every enchantment transition has its own cost.
+Every active upgrade consumes matching Tier shards, refined craft materials associated with the equipment, and Silver.
 
-The cost may include:
+The shard is the primary combat-time limiter. Refined materials preserve interaction with Gathering / Refining / Crafting. Silver provides an economic sink. These three costs should not all be tuned as extreme bottlenecks simultaneously.
 
-- Silver
-- Common Enchantment Materials
-- Rare Enchantment Materials
-- Level-Specific Components
-- Biome-Specific Components
-- Boss Components
-- Future Catalysts
-- Future Service Fees
+Validated incremental shard curve:
 
-Each transition is balanced independently.
+- `.0 -> .1`: 10 shards
+- `.1 -> .2`: 30 shards
+- `.2 -> .3`: 70 shards
 
----
+Shard quantities do not scale by weapon category or equipment Tier. Tier/category differences may instead affect Silver and refined-material costs.
 
-# Cost Scaling
-
-Costs increase as enchantment level rises.
-
-Scaling occurs in two ways:
-
-- Higher quantities
-- Greater material diversity
-
-Later enchantment levels require more resources and rarer components.
+Current refined-material quantity multipliers are x1 / x2 / x4 for `.1` / `.2` / `.3`. Silver increases with enchantment level and may additionally scale with Tier and equipment category through data.
 
 ---
 
-# Illustrative Cost Structure
+# Resource Acquisition
 
-The following structure is illustrative only.
+Enchantment shards are combat loot from content corresponding to their Tier:
 
-## .0 → .1
+- T4 content / Blue progression -> T4 shards
+- T5 content / Yellow progression -> T5 shards
+- T6 content -> T6 shards
+- T7 content -> T7 shards
+- T8 content -> T8 shards
 
-Possible requirements:
+Normal monsters may drop shards. Elite enemies and bosses should provide better expected enchantment-resource yield than ordinary enemies.
 
-- Silver
-- Enchantment Essence
-
----
-
-## .1 → .2
-
-Possible requirements:
-
-- Silver
-- Enchantment Essence
-- Arcane Crystal
+Enchantment shards are NOT awarded simply for completing a segment.
 
 ---
 
-## .2 → .3
+# Anti-Trivial-Farm Rule
 
-Possible requirements:
+A universal fixed drop chance per monster is forbidden because it would make the weakest / fastest-killed monster the optimal enchantment farm.
 
-- Silver
-- Enchantment Essence
-- Arcane Crystal
-- Enchantment Catalyst
+Drop balancing must be evaluated through expected enchantment shards per unit of time using actual monster difficulty / TTK and spawn cadence.
 
----
+Progressing deeper into content of the same Tier must be at least competitive with farming its earliest trivial segment and should generally provide a modestly better expected yield when difficulty increases.
 
-## .3 → .4
-
-Possible requirements:
-
-- Silver
-- Enchantment Essence
-- Arcane Crystal
-- Enchantment Catalyst
-- Ancient Core
-
-All names and amounts are placeholders.
-
-Final materials belong entirely to Data Tables.
+The current implementation uses provisional difficulty weighting based on monster profile/depth with elite and boss modifiers. Final rates are deliberately NOT locked until the dedicated monster/TTK balance pass is performed with runtime data.
 
 ---
 
-# Multiple Resource Philosophy
+# Item Power and Stat Interaction
 
-The system does not rely on one universal enchantment material.
+Each active enchantment level adds +50 Item Power:
 
-Multiple material categories are required to support:
+- `.0`: +0 IP
+- `.1`: +50 IP
+- `.2`: +100 IP
+- `.3`: +150 IP
 
-- Several economic markets
-- Different gameplay activities
-- Biome relevance
-- Boss farming
-- Gathering specialization
-- Long-term resource demand
+The Stat System remains authoritative for converting Item Power into final numerical statistics.
 
----
-
-# Persistent Material Relevance
-
-Because enchantment progression is sequential, materials used for early enchantment levels remain permanently useful.
-
-Every new item must pass through:
-
-- .1
-- .2
-- .3
-- .4
-
-A player seeking a `.4` item still consumes the materials required for all previous stages.
-
-This prevents lower-level enchantment resources from becoming obsolete.
+Enchantments do not automatically unlock abilities, change ability identity/slots, grant Mastery XP, change Tier or change Quality. Mastery, Tier, Quality and Enchantment remain independent progression dimensions.
 
 ---
 
-# Material Sources
+# Item-Specific State
 
-Enchantment materials may come from:
+Enchantments belong to the exact equipment instance. They cannot be transferred, extracted, copied, duplicated, moved to another item or inherited by a replacement item.
 
-- Combat Loot
-- Elite Enemies
-- Bosses
-- Biome Bosses
-- Gathering
-- Refining
-- Salvaging
-- Events
-- Marketplace Trading
-- Future Activities
+A superior replacement item must be enchanted independently.
 
-The Enchantment System does not directly control resource generation.
-
-It consumes resources defined by the economy and loot systems.
+Enchantable equipment uses persistent instance identity; item type, Tier, quality or inventory position alone are not authoritative identities.
 
 ---
 
-# Biome Integration
+# Upgrade Validation
 
-Enchanting may require components associated with specific biomes.
+Before an upgrade commits, V1 validates at minimum:
 
-This helps preserve the relevance of older biomes.
+- Item instance exists.
+- Item is enchantable.
+- Next level is valid and enabled.
+- Item has not reached its configured cap.
+- Player owns enough matching Tier shards.
+- Player owns required refined materials.
+- Player owns enough Silver.
+- Required inventory capacity exists when necessary.
+- Enchantment is currently permitted by combat state.
+- Transaction has not already been processed.
 
-Example structure:
-
-- Forest Component
-- Mountain Component
-- Swamp Component
-- Infernal Component
-
-Exact resource assignments are defined elsewhere.
-
----
-
-# Cycle Integration
-
-Cycles may increase the acquisition rate of enchantment resources.
-
-Cycles do not:
-
-- Create new enchantment levels
-- Change the `.4` maximum
-- Automatically enchant equipment
-- Increase an existing item's enchantment beyond `.4`
-
-Cycle progression affects resource availability, not the structural enchantment cap.
+Future systems may add reservation, inventory-lock, server/save-transaction or other restrictions without changing the core enchantment rules.
 
 ---
 
-# Enchantment Power
+# Combat Restriction
 
-Each enchantment level applies a defined power modifier.
+Enchanting is forbidden for the entire duration of an active combat segment, including transitions between monsters.
 
-Possible affected values include:
+The rule uses authoritative combat stop/segment state rather than a transient presentation state such as whether an enemy is visible on the current frame.
 
-- Item Power
-- Base Damage
-- Armor
-- Magic Resistance
-- Maximum Health
-- Ability Scaling
-- Secondary Stats
+- Segment `running` -> forbidden.
+- `stop_requested` -> forbidden.
+- Segment fully `paused` / stopped -> allowed, subject to other validations.
 
-The Enchantment System does not hardcode which statistics are modified.
-
-Each item or stat profile resolves its modifiers through data.
+This prevents enchanting during the transition window between two monsters.
 
 ---
 
-# Stat Calculation
+# Equipped Items
 
-Conceptual calculation:
+The current architecture may enchant an equipped item when it can safely resolve/update its persistent instance and the player is outside an active combat segment.
 
-Final Item Stats
-
-=
-
-Base Tier Stats
-
-×
-
-Quality Modifier
-
-×
-
-Enchantment Modifier
-
-×
-
-Other Valid Modifiers
-
-The exact order of operations must be globally consistent.
-
-The Stat System remains the authority for final calculations.
-
----
-
-# Enchantment Modifier Model
-
-Each enchantment level may define:
-
-- Item Power Bonus
-- Global Stat Multiplier
-- Category-Specific Multiplier
-- Individual Stat Modifiers
-- Future Ability Modifiers
-
-V1 should use the simplest model compatible with balancing needs.
-
-All values remain data-driven.
-
----
-
-# Ability Interaction
-
-Enchantments primarily improve numerical equipment performance.
-
-They do not automatically unlock new abilities.
-
-An enchantment level may influence ability scaling only through existing item statistics or configured modifiers.
-
-Enchantments do not change:
-
-- Ability identity
-- Ability slot
-- Ability AI condition
-- Ability activation behavior
-
-Unless a future system explicitly defines an exception.
-
----
-
-# Cape Interaction
-
-If cape enchantments are enabled later, they may improve:
-
-- Secondary statistics
-- Passive magnitude
-- Passive cooldown
-- Passive duration
-
-Cape enchantments must not change the cape's PassiveEffectID.
-
-The identity of the cape remains unchanged.
-
----
-
-# Upgrade Interface
-
-The enchantment interface must display:
-
-- Selected item
-- Current enchantment level
-- Next enchantment level
-- Current stats
-- Projected stats
-- Required materials
-- Owned material quantities
-- Missing material quantities
-- Silver cost
-- Confirmation action
-
-The result must be fully predictable before confirmation.
-
----
-
-# Confirmation Flow
-
-Recommended flow:
-
-1. Player selects an item.
-2. System identifies the next valid level.
-3. System loads the upgrade recipe.
-4. Interface displays exact costs.
-5. Interface displays exact stat changes.
-6. Player confirms.
-7. Server validates all conditions.
-8. Costs are consumed atomically.
-9. Item enchantment level increases.
-10. Derived stats are recalculated.
-11. Inventory and equipment UI refresh.
-12. Transaction is saved.
-
----
-
-# Equipped Item Enchantment
-
-An equipped item may be enchanted only if the implementation safely supports it.
-
-Recommended V1 rule:
-
-The player must unequip the item before enchanting it.
-
-Advantages:
-
-- Simpler validation
-- Cleaner stat recalculation
-- Lower risk of combat-state conflicts
-- Easier transaction handling
-
-The architecture may later support enchanting equipped items outside combat.
-
----
-
-# Combat Restrictions
-
-Enchanting is not allowed while:
-
-- Combat is active
-- An encounter is unresolved
-- The item is reserved by another system
-- The inventory is locked
-- The player is in a restricted state
-- A save transaction is incomplete
-
-These restrictions prevent duplication and state desynchronization.
+Unequipping is not an intrinsic V1 design requirement.
 
 ---
 
 # Transaction Safety
 
-Enchanting must be atomic.
+Enchanting is intended to behave as one deterministic transaction: upgrade exactly one item by one level, consume exactly the required materials and Silver, and never process the same transaction identifier twice.
 
-The complete transaction either succeeds or does nothing.
+Transaction identifiers protect against duplicate requests/double clicks.
 
-The system must never allow a state where:
-
-- Materials are consumed but the item is not upgraded.
-- The item is upgraded but Silver is not consumed.
-- The item is upgraded twice.
-- The item disappears.
-- The same request is processed multiple times.
+The implementation must continue moving toward strict atomic commit/rollback guarantees. A failure during the commit sequence must never become an accepted gameplay state where only part of the transaction has persisted.
 
 ---
 
-# Idempotency
+# Upgrade Interface
 
-Every enchantment request should contain a unique transaction identifier.
+The interface should expose selected equipment, current `Tn.x`, next `Tn.x`, current/projected stats, required/owned/missing materials, Silver cost, blocking reason and confirmation action.
 
-Repeated processing of the same identifier must not apply the upgrade more than once.
-
-This protects against:
-
-- Network retries
-- Double-clicks
-- Client resubmissions
-- Save interruptions
+The result must be predictable before confirmation. Technical failure keys must not be exposed directly to the player; UI-facing reasons use readable/localized messages.
 
 ---
 
-# Inventory Instance Identity
+# Visual Language
 
-Enchantments apply to unique item instances.
+Tier and Enchantment use two independent visual channels.
 
-Each enchantable item must have a persistent ItemInstanceID.
+## Equipment Halo / Frame = Base Tier
 
-The system must not identify an enchanted item only through:
+- T3: green
+- T4: blue
+- T5: red
+- T6: orange
+- T7: yellow
+- T8: white
 
-- Item type
-- Tier
-- Quality
-- Inventory position
+Enchanting an item must never change its Tier halo/frame.
 
-The unique instance is the authority.
+## `Tn.x` Text Color = Enchantment Level
 
----
+- `.0`: white / grey
+- `.1`: green
+- `.2`: blue
+- `.3`: purple
+- `.4`: yellow
 
-# Item Stacking
+Example: a T4.3 item keeps the T4 blue halo while its `T4.3` label uses the `.3` purple enchantment color.
 
-Equipment with individual enchantment state cannot stack unless every persistent property is identical and the inventory architecture safely supports stacked instances.
-
-Recommended V1 rule:
-
-Enchantable equipment items do not stack.
-
-Resources used for enchanting may stack.
-
----
-
-# Market Integration
-
-Enchanted items remain fully tradeable.
-
-They are not:
-
-- Soulbound
-- Account-bound
-- Character-bound
-- Bind-on-equip
-
-A player may sell any enchanted equipment item.
+These presentation rules are shared across equipment UI surfaces.
 
 ---
 
-# Market Identity
+# Persistence and Legacy Migration
 
-The market must distinguish items by at least:
+Enchantment level is persistent item-instance state. Current saves persist enchantment level rather than baked Item Power, so changing the global IP baseline does not require rewriting each enchanted item instance.
 
-- ItemID
-- Tier
-- Enchantment Level
-- Quality
-- Durability State, if applicable
-- Additional future modifiers
-
-Examples:
-
-- T8.2 Good Sword
-- T8.2 Masterpiece Sword
-- T8.4 Good Sword
-
-These must be treated as distinct market products.
+Legacy universal resources (Essence / Crystal / Catalyst) are removed from old player storage rather than converted into new Tier shards. There is intentionally no legacy-resource-to-shard conversion.
 
 ---
 
-# Price Formation
+# Repair / Salvage / Reversal
 
-The game does not impose a fixed market value for enchanted equipment.
+Enchanting must not act as a free repair mechanic. Unless a future rule changes this, durability semantics are preserved.
 
-The player economy determines price based on:
+If Salvaging later returns enchantment resources, recovered value must remain below total invested value and must not create a closed generation loop.
 
-- Base item cost
-- Quality
-- Enchantment level
-- Material cost
-- Silver cost
-- Demand
-- Supply
-- Build popularity
-- Scarcity
+V1 does not support lowering an item's enchantment level.
 
 ---
 
-# Silver Sink
+# Future `.4`
 
-Every upgrade may require Silver.
+`.4` remains structurally reserved for future endgame design. Current V1 rules intentionally do not define its resource cost, special components, Item Power bonus, unlock condition or acquisition loop.
 
-Silver costs should increase with enchantment level.
-
-This creates a scalable endgame currency sink.
-
-The exact curve is defined in data.
+Do not infer `.4` by automatically extending the `.1/.2/.3` curve. When `.4` is designed, this document and authoritative data must be updated together.
 
 ---
 
-# Repair Interaction
-
-Enchanting an item does not automatically repair it unless explicitly configured.
-
-Recommended rule:
-
-- Enchantment level changes.
-- Current durability remains unchanged as a percentage.
-- Maximum durability is recalculated if enchantment affects it.
-
-Example:
-
-An item at 60% durability remains at approximately 60% durability after enchanting.
-
-This prevents enchantment from becoming a free repair mechanic.
-
----
-
-# Salvage Interaction
-
-If Salvaging is implemented later, enchanted items may return some enchantment materials.
-
-The recovery rate must be below total invested cost.
-
-The system must never allow a closed loop that generates infinite resources.
-
-Possible recovery modifiers:
-
-- Enchantment level
-- Item Tier
-- Item Quality
-- Salvage Station
-- Salvage Mastery
-
-Salvage rules belong to a dedicated system.
-
----
-
-# No Enchantment Reversal
-
-V1 does not support reducing an item's enchantment level.
-
-Players cannot convert:
-
-T8.4
-
-into
-
-T8.3 + Materials
-
-Enchantments are permanent upward investments.
-
-A future disenchantment system would require its own design document and economy analysis.
-
----
-
-# No Enchantment Reroll
-
-Enchantments contain no random stat roll.
-
-All items of the same:
-
-- Item definition
-- Tier
-- Enchantment level
-- Quality
-
-receive the same deterministic enchantment modifiers unless another future system adds variable affixes.
-
----
-
-# Offline Progression
-
-If enchantment upgrades are instant in V1, no offline progression is required.
-
-The architecture may support timed enchantment processes later.
-
-A future timed process could include:
-
-- Start timestamp
-- Completion timestamp
-- Queue position
-- Station assignment
-- Offline completion
-
-V1 should remain instant unless another document explicitly enables timers.
-
----
-
-# Notifications
-
-Successful enchantment should trigger:
-
-- Upgrade confirmation
-- New item display name
-- Updated stats
-- Resource consumption summary
-- Optional visual effect
-- Optional achievement check
-
-High-level upgrades such as `.4` may use stronger presentation.
-
----
-
-# Visual Presentation
-
-The item's enchantment level must be visible in:
-
-- Inventory
-- Equipment panel
-- Loot display
-- Market listings
-- Crafting comparison
-- Enchantment interface
-- Item tooltip
-
-Recommended format:
-
-Tier.Enchantment
-
-Examples:
-
-- T6.0
-- T7.3
-- T8.4
-
----
-
-# Tooltip Requirements
-
-An enchanted item tooltip should display:
-
-- Item Name
-- Tier
-- Enchantment
-- Quality
-- Current Item Power
-- Base Stats
-- Enchantment Contribution
-- Quality Contribution
-- Mastery Requirement
-- Durability
-- Passive or Abilities
-- Market-relevant properties
-
-The contribution breakdown helps players understand where power comes from.
-
----
-
-# Data Tables
-
-The system requires at minimum the following data structures.
-
----
-
-## EnchantmentLevelTable
-
-Fields:
-
-- EnchantmentLevel
-- DisplaySuffix
-- DisplayOrder
-- GlobalItemPowerModifier
-- GlobalStatModifier
-- IsMaximumLevel
-
----
-
-## EnchantmentEligibilityTable
-
-Fields:
-
-- EquipmentCategory
-- IsEnchantable
-- MaximumEnchantmentLevel
-- V1Enabled
-
----
-
-## EnchantmentUpgradeRecipeTable
-
-Fields:
-
-- RecipeID
-- EquipmentCategory
-- ItemTier
-- FromEnchantmentLevel
-- ToEnchantmentLevel
-- SilverCost
-- RequiredMaterialList
-- UpgradeDuration
-- RequiredStationID
-- Enabled
-
----
-
-## EnchantmentMaterialRequirement
-
-Fields:
-
-- MaterialID
-- RequiredQuantity
-
-This structure is referenced by EnchantmentUpgradeRecipeTable.
-
----
-
-## EnchantmentStatModifierTable
-
-Fields:
-
-- EnchantmentLevel
-- EquipmentCategory
-- StatID
-- ModifierType
-- ModifierValue
-
----
-
-## EnchantmentTierCostModifierTable
-
-Fields:
-
-- ItemTier
-- SilverMultiplier
-- MaterialQuantityMultiplier
-- RareMaterialMultiplier
-
----
-
-## EnchantmentCategoryCostModifierTable
-
-Fields:
-
-- EquipmentCategory
-- SilverMultiplier
-- MaterialMultiplier
-
----
-
-## EnchantmentVisualTable
-
-Fields:
-
-- EnchantmentLevel
-- IconModifier
-- FrameModifier
-- GlowEffectID
-- UpgradeEffectID
-
----
-
-# Suggested Runtime Components
-
-Recommended implementation components include:
-
-EnchantmentService
-
-Responsibilities:
-
-- Validate upgrade requests
-- Resolve recipes
-- Calculate costs
-- Execute transactions
-- Update item state
-
----
-
-EnchantmentCostResolver
-
-Responsibilities:
-
-- Read base recipe
-- Apply Tier modifiers
-- Apply category modifiers
-- Apply event modifiers
-- Return final deterministic cost
-
----
-
-EnchantmentStatResolver
-
-Responsibilities:
-
-- Read enchantment level
-- Resolve stat modifiers
-- Send modifiers to the Stat System
-
----
-
-EnchantmentTransaction
-
-Responsibilities:
-
-- Lock item instance
-- Validate resources
-- Consume resources
-- Apply upgrade
-- Save state
-- Prevent duplicate execution
-
----
-
-# Events
-
-The system should publish events such as:
-
-- OnEnchantmentStarted
-- OnEnchantmentCompleted
-- OnEnchantmentFailedValidation
-- OnMaximumEnchantmentReached
-- OnEnchantedItemEquipped
-- OnEnchantedItemSold
-
-Other systems may subscribe without direct coupling.
-
----
-
-# Save Data
-
-Each enchantable item instance must persist at minimum:
-
-- ItemInstanceID
-- ItemDefinitionID
-- Tier
-- Quality
-- EnchantmentLevel
-- CurrentDurability
-- MaximumDurability
-- LockState
-- AdditionalFutureProperties
-
-Upgrade transaction records should persist:
-
-- TransactionID
-- ItemInstanceID
-- PreviousLevel
-- NewLevel
-- ConsumedResources
-- SilverConsumed
-- Timestamp
-- Result
-
----
-
-# Validation Rules
-
-The system must reject an upgrade when:
-
-- The item does not exist.
-- The item is not enchantable.
-- The item is already .4.
-- The requested level skips a stage.
-- The recipe does not exist.
-- Materials are insufficient.
-- Silver is insufficient.
-- The item is locked.
-- The player is in combat.
-- The transaction has already been processed.
-- The save state cannot be secured.
-
----
-
-# Edge Cases
-
-## Maximum Level Item
-
-Attempting to enchant a `.4` item returns:
-
-Maximum Enchantment Reached
-
-No cost is consumed.
-
----
-
-## Item Sold During Interface Use
-
-The final server validation fails.
-
-No cost is consumed.
-
----
-
-## Item Moved Between Inventory Slots
-
-The operation still targets ItemInstanceID.
-
-Inventory position is irrelevant.
-
----
-
-## Double Confirmation
-
-Only the first valid transaction is processed.
-
-The repeated transaction identifier is ignored.
-
----
-
-## Resource Quantity Changes
-
-Costs are recalculated and revalidated at confirmation time.
-
-The preview is not authoritative.
-
----
-
-## Equipment Definition Disabled
-
-Existing enchanted items remain valid.
-
-New upgrades may be disabled through configuration.
-
----
-
-## Tier Balance Update
-
-Existing item identities remain unchanged.
-
-Derived statistics are recalculated from current tables.
-
----
-
-# Balancing Principles
-
-The system should be balanced around total progression cost rather than success probability.
-
-Key balancing variables include:
-
-- Silver cost per stage
-- Common material quantities
-- Rare material quantities
-- Tier multipliers
-- Equipment category multipliers
-- Resource acquisition rates
-- Market supply
-- Cycle reward scaling
-
----
-
-# Cost Curve Philosophy
-
-Recommended cost behavior:
-
-.0 → .1
-
-Accessible early upgrade
-
-.1 → .2
-
-Meaningful investment
-
-.2 → .3
-
-Major late-game investment
-
-.3 → .4
-
-Very late-game objective
-
-The final transition should be expensive because of known costs, not random failure.
-
----
-
-# Category Balance
-
-Enchanting a Two-Handed weapon may cost more than enchanting a One-Handed weapon because it occupies two equipment slots.
-
-Alternatively, category costs may be normalized through total power contribution.
-
-This must remain configurable.
-
-No category-specific formula should be hardcoded.
-
----
-
-# Tier Balance
-
-Higher-Tier items should generally require more enchantment resources than lower-Tier items.
-
-Example principle:
-
-T8.1 costs more than T4.1.
-
-Exact scaling belongs to the EnchantmentTierCostModifierTable.
-
----
-
-# Player Communication
-
-The game must clearly communicate:
-
-- Success is guaranteed.
-- Enchantments cannot be transferred.
-- Quality will not change.
-- The upgrade is permanent.
-- The exact cost.
-- The exact result.
-- The next available level.
-- The `.4` maximum.
-
-No major consequence should be hidden.
-
----
-
-# Analytics
-
-Recommended analytics events include:
-
-- Enchantment attempt
-- Enchantment success
-- Upgrade level
-- Item Tier
-- Item Quality
-- Equipment category
-- Silver consumed
-- Materials consumed
-- Time since previous enchantment
-- Market value before and after
-- Player Cycle
-- Player Mastery
-
-These events support economic balancing.
-
----
-
-# Security Considerations
-
-All authoritative enchantment logic must run server-side or in the authoritative simulation layer.
-
-The client may:
-
-- Display costs
-- Preview results
-- Request an upgrade
-
-The client must never directly set:
-
-- Enchantment level
-- Resource consumption
-- Silver cost
-- Final stats
-
----
-
-# Future Extensions
-
-The architecture supports future additions such as:
-
-- Enchantment stations
-- Enchantment professions
-- Timed enchantment queues
-- Guild enchantment bonuses
-- Event cost reductions
-- Cosmetic enchantment effects
-- Enchantment achievements
-- Enchantment-specific quests
-- Salvage recovery
-- Additional enchantable equipment categories
-
-The `.4` structural cap remains unchanged unless a future design document explicitly replaces it.
-
----
-
-# Explicitly Excluded from V1
-
-V1 does not include:
-
-- Enchantment failure
-- Item destruction
-- Enchantment downgrade
-- Enchantment transfer
-- Enchantment extraction
-- Enchantment skipping
-- Enchantment levels above .4
-- Random enchantment rolls
-- Protection consumables
-- Direct crafting of enchanted equipment
-- Automatic enchantment from Mastery
-- Enchantment-based binding
-
----
-
-# System Relationships
-
-The Enchantment System interacts with:
-
-- Item System
-- Equipment System
-- Inventory System
-- Stat System
-- Crafting System
-- Refining System
-- Gathering System
-- Loot System
-- Economy System
-- Currency System
-- Market System
-- Durability System
-- Save System
-- UI System
-
-Each interaction must occur through defined interfaces or events.
-
----
-
-# Summary
-
-The Enchantment System provides the primary vertical progression path for late-game and very late-game equipment.
-
-All equipment begins at `.0` and advances sequentially through `.1`, `.2`, `.3`, and `.4`.
-
-Every upgrade is guaranteed.
-
-Difficulty comes from increasing Silver costs, larger material quantities, and progressively rarer resource requirements.
-
-Enchantments are permanently attached to individual item instances and cannot be transferred, extracted, or skipped.
-
-Quality, Tier, Mastery, and Enchantment remain fully independent.
-
-The system creates long-term demand for equipment, resources, crafting, gathering, combat, and currency while avoiding random failure and infinite gear inflation.
-
-The entire system is deterministic, transaction-safe, modular, and fully data-driven.
-
-DOCUMENT TERMINÉ
+# Current Closure Status
+
+Validated during the Enchanter implementation pass:
+
+- Deterministic guaranteed upgrades.
+- Sequential `.0 -> .1 -> .2 -> .3` progression.
+- +50 IP per active enchantment level.
+- One Tier-specific enchantment shard for each Tier T4-T8.
+- No shard transmutation between Tiers.
+- 10 / 30 / 70 incremental shard costs.
+- Silver and refined materials retained as secondary sinks.
+- Combat-segment restriction uses authoritative segment state.
+- Old universal resources removed from active gameplay and handled only by legacy-save cleanup.
+- Tier halo and enchantment-label colors separated.
+- Automated typecheck/tests and manual gameplay validation completed during implementation.
+
+Intentionally deferred:
+
+- Final per-monster shard drop rates, pending dedicated monster/TTK balance.
+- `.4` endgame design.
+- Future market/salvage integrations.
+- Stronger transactional rollback/atomicity hardening if required by persistence/server evolution.

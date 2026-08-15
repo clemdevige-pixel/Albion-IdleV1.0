@@ -37,8 +37,46 @@ describe("createWorldFoundation", () => {
 
     const restored = foundation.worldRuntime.getWorldLocationSaveState();
     expect(restored.zoneMemories).toHaveLength(10);
-    expect(restored.zoneMemories.slice(0, blueMemories.length)).toEqual(blueMemories);
+    expect(restored.zoneMemories.slice(0, blueMemories.length)).toEqual(
+      blueMemories.map((memory) => ({ ...memory, currentEncounter: 0 })),
+    );
     expect(restored.zoneMemories.slice(blueMemories.length).map(({ zoneDefId }) => zoneDefId))
       .toEqual(WORLD_ZONE_IDS_BY_BAND.yellow);
+  });
+
+  it("persists the encounter index so reload cannot replay rewarded fights", () => {
+    const first = createWorldFoundation();
+    first.worldRuntime.advanceVictory();
+    first.worldRuntime.advanceVictory();
+    first.worldRuntime.advanceVictory();
+
+    expect(first.worldRuntime.currentEncounter).toBe(3);
+    const saved = first.worldRuntime.getWorldLocationSaveState();
+    expect(saved.activeEncounter).toBe(3);
+    expect(saved.zoneMemories[0]?.currentEncounter).toBe(3);
+
+    const restored = createWorldFoundation();
+    restored.worldRuntime.setWorldLocationSaveState(saved);
+
+    expect(restored.worldRuntime.currentSegment).toBe(0);
+    expect(restored.worldRuntime.currentEncounter).toBe(3);
+    expect(restored.worldRuntime.getWorldLocationSaveState().activeEncounter).toBe(3);
+  });
+
+  it("keeps legacy saves compatible by defaulting missing encounter progress to zero", () => {
+    const foundation = createWorldFoundation();
+    foundation.worldRuntime.setWorldLocationSaveState({
+      activeZoneDefId: WORLD_ZONE_IDS.forest,
+      activeSegment: 0,
+      farmMode: false,
+      zoneMemories: [{
+        zoneDefId: WORLD_ZONE_IDS.forest,
+        currentSegment: 0,
+        highestUnlockedSegment: 0,
+        completedSegments: [],
+      }],
+    });
+
+    expect(foundation.worldRuntime.currentEncounter).toBe(0);
   });
 });

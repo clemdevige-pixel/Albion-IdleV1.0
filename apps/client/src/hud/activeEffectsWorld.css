@@ -1,0 +1,74 @@
+.combat-hud-layer .active-effects {
+  position: absolute;
+  z-index: 32;
+  display: flex;
+  gap: 5px;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.combat-hud-layer .active-effects--player { left: 32%; }
+.combat-hud-layer .active-effects--enemy { left: 68%; }
+
+.combat-hud-layer .active-effects__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #66532d;
+  border-radius: 4px;
+  color: #f3c965;
+  background: rgba(9, 12, 16, 0.94);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: help;
+  outline: none;
+}
+
+.combat-hud-layer .active-effects__icon:hover,
+.combat-hud-layer .active-effects__icon:focus-visible { border-color: #d3a63d; }
+
+.combat-hud-layer .active-effects__tooltip {
+  position: absolute;
+  z-index: 80;
+  left: 50%;
+  top: calc(100% + 8px);
+  display: grid;
+  gap: 4px;
+  width: 220px;
+  padding: 9px 10px;
+  border: 1px solid #6f582d;
+  border-radius: 4px;
+  color: #c9c3b7;
+  background: rgba(8, 11, 15, 0.98);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -3px);
+  pointer-events: none;
+  text-align: left;
+}
+
+.combat-hud-layer .active-effects__tooltip strong {
+  color: #e3b74c;
+  font-family: var(--ui-font-display, Georgia, serif);
+  font-size: 12px;
+}
+
+.combat-hud-layer .active-effects__tooltip span {
+  color: #aaa69e;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.combat-hud-layer .active-effects__tooltip small {
+  color: #7f838a;
+  font-size: 9px;
+}
+
+.combat-hud-layer .active-effects__icon:hover .active-effects__tooltip,
+.combat-hud-layer .active-effects__icon:focus-visible .active-effects__tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}

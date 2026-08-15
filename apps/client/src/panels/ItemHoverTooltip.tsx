@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import type { EnchantmentLevel } from "@game/gameplay";
 import { ItemTooltip } from "./ItemTooltip";
 
 interface ItemHoverTooltipProps {
   readonly itemId: string;
   readonly quantity?: number;
   readonly instanceId?: string | undefined;
+  readonly enchantmentOverride?: EnchantmentLevel | undefined;
   readonly children: ReactNode;
 }
 
@@ -13,6 +15,7 @@ export function ItemHoverTooltip({
   itemId,
   quantity = 1,
   instanceId,
+  enchantmentOverride,
   children,
 }: ItemHoverTooltipProps): JSX.Element {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -38,7 +41,12 @@ export function ItemHoverTooltip({
           }}
           role="tooltip"
         >
-          <ItemTooltip itemId={itemId} quantity={quantity} instanceId={instanceId} />
+          <ItemTooltip
+            itemId={itemId}
+            quantity={quantity}
+            instanceId={instanceId}
+            enchantmentOverride={enchantmentOverride}
+          />
         </div>,
         document.body,
       )}

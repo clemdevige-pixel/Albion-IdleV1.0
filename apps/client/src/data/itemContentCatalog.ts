@@ -14,7 +14,8 @@ const HERO_BASE_ATTACK_SPEED = 1.2;
 
 /**
  * Non-weapon equipment content. Weapon entries live in weaponContentCatalog.
- * Future armor, off-hand and cape definitions belong here, never in React.
+ * Defensive gear uses authored tier values; enchantment scaling is applied by
+ * EquipmentStatSync and must not be baked into these definitions.
  */
 export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
   Record<string, EquipmentInfoLike>
@@ -23,7 +24,7 @@ export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
     itemId: "item_leather_armor",
     slot: "chest",
     handling: "one_handed",
-    stats: { stat_armor: 8, stat_magic_resistance: 6, stat_max_health: 50 },
+    stats: { stat_armor: 11, stat_magic_resistance: 8, stat_max_health: 145 },
   },
   item_wooden_shield: {
     itemId: "item_wooden_shield",
@@ -47,13 +48,13 @@ export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
     itemId: "item_iron_helmet",
     slot: "head",
     handling: "one_handed",
-    stats: { stat_armor: 4, stat_magic_resistance: 3, stat_max_health: 30 },
+    stats: { stat_armor: 6, stat_magic_resistance: 4, stat_max_health: 85 },
   },
   item_leather_boots: {
     itemId: "item_leather_boots",
     slot: "boots",
     handling: "one_handed",
-    stats: { stat_armor: 3, stat_magic_resistance: 2 },
+    stats: { stat_armor: 4, stat_magic_resistance: 3 },
   },
   item_traveler_cape: {
     itemId: "item_traveler_cape",
@@ -65,19 +66,19 @@ export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
     itemId: "item_helmet_t4_reinforced",
     slot: "head",
     handling: "one_handed",
-    stats: { stat_armor: 8, stat_magic_resistance: 6, stat_max_health: 55 },
+    stats: { stat_armor: 10, stat_magic_resistance: 7, stat_max_health: 115 },
   },
   item_armor_t4_leather: {
     itemId: "item_armor_t4_leather",
     slot: "chest",
     handling: "one_handed",
-    stats: { stat_armor: 14, stat_magic_resistance: 10, stat_max_health: 90 },
+    stats: { stat_armor: 18, stat_magic_resistance: 12, stat_max_health: 185 },
   },
   item_boots_t4_leather: {
     itemId: "item_boots_t4_leather",
     slot: "boots",
     handling: "one_handed",
-    stats: { stat_armor: 6, stat_magic_resistance: 4 },
+    stats: { stat_armor: 8, stat_magic_resistance: 5 },
   },
   item_shield_t5_reinforced: {
     itemId: "item_shield_t5_reinforced",
@@ -89,19 +90,19 @@ export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
     itemId: "item_helmet_t5_reinforced",
     slot: "head",
     handling: "one_handed",
-    stats: { stat_armor: 12, stat_magic_resistance: 9, stat_max_health: 85 },
+    stats: { stat_armor: 15, stat_magic_resistance: 11, stat_max_health: 160 },
   },
   item_armor_t5_leather: {
     itemId: "item_armor_t5_leather",
     slot: "chest",
     handling: "one_handed",
-    stats: { stat_armor: 21, stat_magic_resistance: 15, stat_max_health: 135 },
+    stats: { stat_armor: 26, stat_magic_resistance: 18, stat_max_health: 260 },
   },
   item_boots_t5_leather: {
     itemId: "item_boots_t5_leather",
     slot: "boots",
     handling: "one_handed",
-    stats: { stat_armor: 9, stat_magic_resistance: 6 },
+    stats: { stat_armor: 11, stat_magic_resistance: 7 },
   },
 };
 
