@@ -73,7 +73,10 @@ export function tickMonsterAbilities(
   const result = deps.damageManager.processDamage({
     source: monsterEntityId,
     target: heroEntityId,
-    baseDamage: sourceDamage * damageMultiplier,
+    // DamageManager always adds the attacker's matching offensive stat.
+    // Monster ability damageMultiplier is authored as the TOTAL hit multiplier
+    // (1.35 = 135%), so only the bonus part belongs in baseDamage.
+    baseDamage: sourceDamage * (damageMultiplier - 1),
     damageType,
     source_type: "ability",
   });
