@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runBlueRuntimeBenchmark } from "../runtime/BlueRuntimeBenchmarkHarness.js";
+import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 
 const CASES = [
@@ -10,11 +10,11 @@ const CASES = [
   { weaponItemId: "item_weapon_gloves_t3_spiked_gauntlets", zoneDefId: WORLD_ZONE_IDS.swamp, segmentIndex: 2, label: "spiked_swamp_s3" },
 ] as const;
 
-describe("Blue runtime harness sanity", () => {
-  it("runs naked early-game calibration probes through the exact live CombatRuntime", () => {
-    const rows = CASES.map((input) => runBlueRuntimeBenchmark({ ...input, masteryLevel: 1 }));
+describe("Combat runtime benchmark harness sanity", () => {
+  it("runs early-game calibration probes through the exact live CombatRuntime", () => {
+    const rows = CASES.map((input) => runCombatRuntimeBenchmark({ ...input, masteryLevel: 1 }));
     console.table(rows.map(({ label, clear, seconds, hpPercent, encounterReached, maxHealth }) => ({ label, clear, seconds, hpPercent, encounterReached, maxHealth })));
-    console.log("[BLUE_RUNTIME_SANITY]", JSON.stringify(rows, null, 2));
+    console.log("[COMBAT_RUNTIME_SANITY]", JSON.stringify(rows, null, 2));
 
     expect(rows).toHaveLength(CASES.length);
     expect(rows.every((row) => row.maxHealth === 300)).toBe(true);
