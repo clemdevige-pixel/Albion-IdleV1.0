@@ -27,8 +27,12 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
   const islandDefinition = getIslandLevelDefinition(islandLevel);
   const maxBuildingLevel = islandDefinition?.maxBuildingLevel ?? islandLevel;
   const islandLevelBlocked = next.level > maxBuildingLevel;
-  const materials = cost.requirements.map((requirement) => ({ ...requirement, available: getIslandMaterialQuantity(inventoryManager, productionStorageId, requirement.itemId) }));
-  const affordable = wallet.silver >= cost.silver && materials.every((requirement) => requirement.available >= requirement.quantity);
+  const materials = cost.requirements.map((requirement) => ({
+    ...requirement,
+    available: getIslandMaterialQuantity(inventoryManager, productionStorageId, requirement.itemId),
+  }));
+  const silverReady = wallet.silver >= cost.silver;
+  const affordable = silverReady && materials.every((requirement) => requirement.available >= requirement.quantity);
   const canUpgrade = !islandLevelBlocked && affordable;
 
   return (
@@ -42,17 +46,44 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
           {islandLevelBlocked ? `Île niv. ${String(next.level)} requise` : `T${String(next.maxProductionTier)} débloqué`}
         </span>
       </div>
-      <div className="ui-island-construction__costs ui-island-upgrade__costs">
-        {islandLevelBlocked && <span className="is-missing">Bâtiments max niv. {String(maxBuildingLevel)}</span>}
-        <span className={wallet.silver >= cost.silver ? "is-ready" : "is-missing"}>◉ {String(cost.silver)} Silver</span>
-        {materials.map((requirement) => (
-          <span key={requirement.itemId} className={requirement.available >= requirement.quantity ? "is-ready" : "is-missing"}>
-            {getIslandMaterialLabel(requirement.itemId)} <b>{String(requirement.available)} / {String(requirement.quantity)}</b>
-          </span>
-        ))}
+
+      <div className="ui-island-upgrade__requirements">
+        <div className={islandLevelBlocked ? "ui-island-upgrade__requirement is-missing" : "ui-island-upgrade__requirement is-ready"}>
+          <span className="ui-island-upgrade__requirement-icon" aria-hidden="true">⌂</span>
+          <div>
+            <small>Bâtiments max niv. {String(maxBuildingLevel)}</small>
+            <strong>{String(maxBuildingLevel)} / {String(next.level)}</strong>
+          </div>
+        </div>
+
+        <div className={silverReady ? "ui-island-upgrade__requirement is-ready" : "ui-island-upgrade__requirement is-missing"}>
+          <span className="ui-island-upgrade__requirement-icon" aria-hidden="true">◉</span>
+          <div>
+            <small>{String(cost.silver)} Silver</small>
+            <strong>{String(wallet.silver)} / {String(cost.silver)}</strong>
+          </div>
+        </div>
+
+        {materials.map((requirement) => {
+          const ready = requirement.available >= requirement.quantity;
+          return (
+            <div key={requirement.itemId} className={ready ? "ui-island-upgrade__requirement is-ready" : "ui-island-upgrade__requirement is-missing"}>
+              <span className="ui-island-upgrade__requirement-icon" aria-hidden="true">◆</span>
+              <div>
+                <small>{getIslandMaterialLabel(requirement.itemId)}</small>
+                <strong>{String(requirement.available)} / {String(requirement.quantity)}</strong>
+              </div>
+            </div>
+          );
+        })}
       </div>
+
       <button type="button" disabled={!canUpgrade} onClick={() => { upgradeIslandBuilding(definitionId); }}>
-        {islandLevelBlocked ? `Débloquez bâtiments niv. ${String(next.level)}` : affordable ? `⬆  Améliorer au niveau ${String(next.level)}` : "Ressources insuffisantes"}
+        {islandLevelBlocked
+          ? `🔒  Débloquez bâtiments niv. ${String(next.level)}`
+          : affordable
+            ? `⬆  Améliorer au niveau ${String(next.level)}`
+            : "Ressources insuffisantes"}
       </button>
     </section>
   );
