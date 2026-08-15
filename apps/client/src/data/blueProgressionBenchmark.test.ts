@@ -37,56 +37,92 @@ describe("Blue progression balance benchmark", () => {
     expect(result.encounters[4]?.startedAtFullHealth).toBe(true);
   });
 
-  it("keeps Dark Swamp S10 clearable by the neutral T3 profile once Q progression is mature", () => {
+  it("keeps Forest comfortable for natural T3 progression without potions", () => {
     const result = benchmarkSyntheticIdealBlueSegment({
+      weaponItemIds: T3_STARTERS,
+      masteryLevel: 4,
+      enchantment: 0,
+      zoneDefId: WORLD_ZONE_IDS.forest,
+      segmentIndex: 9,
+      useHealthPotions: false,
+    });
+
+    expect(result.clear).toBe(true);
+    expect(result.remainingHealthRatio).toBeGreaterThan(0.25);
+    expect(result.potionsUsed).toBe(0);
+  });
+
+  it("makes Dark Swamp S10 a difficult T3 clear that needs potion support", () => {
+    const withoutPotion = benchmarkSyntheticIdealBlueSegment({
       weaponItemIds: T3_STARTERS,
       masteryLevel: 10,
       enchantment: 0,
       zoneDefId: WORLD_ZONE_IDS.swamp,
       segmentIndex: 9,
+      useHealthPotions: false,
+    });
+    const withPotion = benchmarkSyntheticIdealBlueSegment({
+      weaponItemIds: T3_STARTERS,
+      masteryLevel: 10,
+      enchantment: 0,
+      zoneDefId: WORLD_ZONE_IDS.swamp,
+      segmentIndex: 9,
+      useHealthPotions: true,
     });
 
-    expect(result.clear).toBe(true);
-    expect(result.encounters).toHaveLength(5);
-    // It remains a progression checkpoint rather than a trivial farm target.
-    expect(result.remainingHealthRatio).toBeLessThan(0.35);
+    expect(withoutPotion.clear).toBe(false);
+    expect(withPotion.clear).toBe(true);
+    expect(withPotion.potionsUsed).toBeGreaterThan(0);
   });
 
-  it("uses T4.2 plus Q/W mastery as the Mountain S10 clear contract", () => {
+  it("prevents T3 from remaining a viable late-Blue progression loadout", () => {
+    const highlandEnd = benchmarkSyntheticIdealBlueSegment({
+      weaponItemIds: T3_STARTERS,
+      masteryLevel: 10,
+      enchantment: 0,
+      zoneDefId: WORLD_ZONE_IDS.highland,
+      segmentIndex: 9,
+      useHealthPotions: true,
+    });
+
+    expect(highlandEnd.clear).toBe(false);
+  });
+
+  it("makes Mountain S10 a difficult T4.2 clear with potion support", () => {
+    const withoutPotion = benchmarkSyntheticIdealBlueSegment({
+      weaponItemIds: T4_STANDARD,
+      masteryLevel: 20,
+      enchantment: 2,
+      zoneDefId: WORLD_ZONE_IDS.mountain,
+      segmentIndex: 9,
+      useHealthPotions: false,
+    });
+    const withPotion = benchmarkSyntheticIdealBlueSegment({
+      weaponItemIds: T4_STANDARD,
+      masteryLevel: 20,
+      enchantment: 2,
+      zoneDefId: WORLD_ZONE_IDS.mountain,
+      segmentIndex: 9,
+      useHealthPotions: true,
+    });
+
+    expect(withoutPotion.clear).toBe(false);
+    expect(withPotion.clear).toBe(true);
+    expect(withPotion.potionsUsed).toBeGreaterThan(0);
+  });
+
+  it("turns T4.3 into a no-potion comfort/farm profile on Mountain S10", () => {
     const result = benchmarkSyntheticIdealBlueSegment({
-      weaponItemIds: T4_STANDARD,
-      masteryLevel: 20,
-      enchantment: 2,
-      zoneDefId: WORLD_ZONE_IDS.mountain,
-      segmentIndex: 9,
-    });
-
-    expect(result.clear).toBe(true);
-    expect(result.encounters).toHaveLength(5);
-    // T4.2 is the minimum progression target, so the neutral profile should
-    // clear narrowly rather than have large AFK headroom.
-    expect(result.remainingHealthRatio).toBeGreaterThan(0);
-    expect(result.remainingHealthRatio).toBeLessThan(0.2);
-  });
-
-  it("gives T4.3 materially more Mountain S10 comfort than T4.2", () => {
-    const plusTwo = benchmarkSyntheticIdealBlueSegment({
-      weaponItemIds: T4_STANDARD,
-      masteryLevel: 20,
-      enchantment: 2,
-      zoneDefId: WORLD_ZONE_IDS.mountain,
-      segmentIndex: 9,
-    });
-    const plusThree = benchmarkSyntheticIdealBlueSegment({
       weaponItemIds: T4_STANDARD,
       masteryLevel: 20,
       enchantment: 3,
       zoneDefId: WORLD_ZONE_IDS.mountain,
       segmentIndex: 9,
+      useHealthPotions: false,
     });
 
-    expect(plusThree.clear).toBe(true);
-    expect(plusThree.totalTimeSeconds).toBeLessThan(plusTwo.totalTimeSeconds);
-    expect(plusThree.remainingHealthRatio).toBeGreaterThan(plusTwo.remainingHealthRatio + 0.1);
+    expect(result.clear).toBe(true);
+    expect(result.remainingHealthRatio).toBeGreaterThan(0.15);
+    expect(result.potionsUsed).toBe(0);
   });
 });
