@@ -20,9 +20,11 @@
 .ui-island__plot span:not(.ui-island__plot-icon) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 700; }
 .ui-island__plot small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(221, 207, 181, 0.55); font-size: 9px; }
 .ui-island__plot-icon, .ui-island__selection-icon { color: #d8b574; font-size: 20px; line-height: 1; }
-.ui-island__selection { padding: 15px; box-shadow: inset 0 1px 0 rgba(255,255,255,.015); }
-.ui-island__selection-heading { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; }
-.ui-island__selection p, .ui-island__selection--empty p { color: rgba(232, 224, 209, 0.7); font-size: 11px; line-height: 1.5; margin: 11px 0 0; }
+.ui-island__selection { padding: 17px; border-radius: 13px; box-shadow: inset 0 1px 0 rgba(255,255,255,.018); }
+.ui-island__selection-heading { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+.ui-island__selection-heading .ui-island__selection-icon { width: 28px; text-align: center; font-size: 18px; }
+.ui-island__selection-heading strong { font-size: 17px; line-height: 1.1; }
+.ui-island__selection p, .ui-island__selection--empty p { color: rgba(232, 224, 209, 0.72); font-size: 11px; line-height: 1.55; margin: 13px 0 0; }
 .ui-island__selection-status { margin-top: 10px; border-top: 1px solid rgba(190, 159, 105, 0.15); padding-top: 9px; color: rgba(207, 187, 151, 0.64); font-size: 10px; }
 .ui-island-construction__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
 .ui-island-construction__card { display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 10px; border: 1px solid rgba(185, 156, 104, 0.18); border-radius: 8px; background: rgba(14, 17, 20, 0.46); }
@@ -45,18 +47,142 @@
 .ui-island__catalog-item small { color: rgba(216, 202, 177, 0.48); font-size: 9px; }
 .ui-island__transition-note { padding: 9px 11px; color: rgba(218, 198, 163, 0.7); font-size: 10px; line-height: 1.4; }
 
-.ui-island-upgrade { display: flex; flex-direction: column; gap: 9px; margin-top: 3px; padding-top: 12px; border-top: 1px solid rgba(190, 159, 105, 0.16); }
-.ui-island-upgrade__heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
-.ui-island-upgrade__heading > div { display: flex; flex-direction: column; gap: 2px; }
-.ui-island-upgrade__heading strong { font-size: 15px; }
-.ui-island-upgrade__unlock { border-radius: 5px; padding: 4px 7px; color: #c79af3; background: rgba(110, 57, 151, 0.28); font-size: 9px; font-weight: 700; text-transform: uppercase; }
-.ui-island-upgrade__unlock.is-locked { color: rgba(221, 194, 159, .55); background: rgba(65, 60, 55, .35); }
-.ui-island-upgrade__costs b { color: #8bd47d; }
-.ui-island-upgrade > button { min-height: 42px; border: 1px solid rgba(218, 174, 92, 0.66); border-radius: 8px; background: linear-gradient(180deg, rgba(116, 82, 40, .78), rgba(76, 55, 31, .82)); color: #f4dfb5; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
-.ui-island-upgrade > button:disabled { opacity: .38; cursor: default; }
+.ui-island-upgrade {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin-top: 2px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(190, 159, 105, 0.18);
+}
+
+.ui-island-upgrade__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ui-island-upgrade__heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ui-island-upgrade__heading strong {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.ui-island-upgrade__unlock {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border: 1px solid rgba(171, 92, 220, 0.42);
+  border-radius: 8px;
+  padding: 5px 9px;
+  color: #cc8cf4;
+  background: rgba(93, 43, 130, 0.3);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ui-island-upgrade__unlock.is-locked {
+  color: rgba(215, 193, 163, .58);
+  border-color: rgba(123, 103, 78, .24);
+  background: rgba(65, 60, 55, .34);
+}
+
+.ui-island-upgrade__requirements {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ui-island-upgrade__requirement {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(183, 157, 111, 0.18);
+  border-radius: 9px;
+  background: rgba(8, 13, 17, .62);
+}
+
+.ui-island-upgrade__requirement-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(190, 159, 105, .18);
+  border-radius: 50%;
+  color: #d5b170;
+  background: rgba(6, 10, 13, .72);
+  font-size: 15px;
+}
+
+.ui-island-upgrade__requirement > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ui-island-upgrade__requirement small {
+  overflow: hidden;
+  color: rgba(222, 207, 183, .66);
+  font-size: 8px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-island-upgrade__requirement strong {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.ui-island-upgrade__requirement.is-ready strong {
+  color: #8ee37d;
+}
+
+.ui-island-upgrade__requirement.is-missing strong {
+  color: #ee766f;
+}
+
+.ui-island-upgrade > button {
+  min-height: 50px;
+  border: 1px solid rgba(218, 174, 92, 0.68);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(116, 82, 40, .82), rgba(76, 55, 31, .86));
+  color: #f4dfb5;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 225, 171, 0.05);
+}
+
+.ui-island-upgrade > button:hover:not(:disabled) {
+  border-color: rgba(238, 187, 92, .92);
+  filter: brightness(1.04);
+}
+
+.ui-island-upgrade > button:disabled {
+  border-color: rgba(130, 109, 81, .22);
+  background: linear-gradient(180deg, rgba(63, 54, 44, .6), rgba(45, 40, 34, .64));
+  color: rgba(206, 193, 172, .42);
+  cursor: default;
+}
 
 @media (max-width: 1100px) {
   .ui-island__plots, .ui-island-construction__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ui-island__plots { grid-auto-rows: 88px; }
   .ui-island__plot { grid-column: auto !important; grid-row: auto !important; }
+  .ui-island-upgrade__requirements { grid-template-columns: 1fr; }
 }
