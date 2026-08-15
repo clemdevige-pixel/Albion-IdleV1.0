@@ -28,7 +28,8 @@ export interface CombatBalanceReallocationDefinition {
   readonly id: string;
   readonly label: string;
   readonly hero: CombatBalanceSyntheticHeroDefinition;
-  readonly equipmentStatMultiplier: CombatBalanceSyntheticHeroDefinition;
+  readonly t3CoreStatMultiplier: CombatBalanceSyntheticHeroDefinition;
+  readonly t4CoreStatMultiplier: CombatBalanceSyntheticHeroDefinition;
   readonly offHandStatMultiplier: CombatBalanceSyntheticHeroDefinition;
 }
 
@@ -141,57 +142,89 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
   })),
 ] as const;
 
+const IDENTITY_MULTIPLIER: CombatBalanceSyntheticHeroDefinition = {
+  maxHealth: 1,
+  armor: 1,
+  magicResistance: 1,
+};
+
 /**
- * Experimental real-stat reallocations.
- *
- * Core armor and off-hand are solved independently so the current T4.3 ceiling
- * is preserved for BOTH weapon handling models:
- * - 2H physical/magical: head + chest + boots + cape, no off-hand;
- * - 1H: same core set + reinforced shield.
- *
- * This keeps every moved stat as real authored equipment power, fully scalable
- * through normal IP, while preventing a Broadsword+shield calibration from
- * silently nerfing two-handed weapons.
+ * Ceiling-only probes: move innate hero defense into real equipment stats while
+ * preserving the current T4.3 ceiling. T3 is allowed to move in these probes.
  */
-const makeReallocation = (
+const makeCeilingReallocation = (
   id: string,
   label: string,
   hero: CombatBalanceSyntheticHeroDefinition,
-): CombatBalanceReallocationDefinition => ({
-  id,
-  label,
-  hero,
-  equipmentStatMultiplier: {
+): CombatBalanceReallocationDefinition => {
+  const t4CoreStatMultiplier = {
     // Current 2H T4.3 ceiling: 688.5 HP / 46.4 Armor / 35 MR.
+    // Cape remains authored at 4 MR and is intentionally not folded into core scaling.
     maxHealth: (688.5 - hero.maxHealth) / (145 * 1.3),
     armor: (46.4 - hero.armor) / (28 * 1.3),
-    // Cape T3 contributes 4 MR without enchantment; T4 core contributes 20 MR.
-    magicResistance: (35 - hero.magicResistance) / (4 + 20 * 1.3),
+    magicResistance: (35 - hero.magicResistance - 4) / (20 * 1.3),
+  };
+  return {
+    id,
+    label,
+    hero,
+    t3CoreStatMultiplier: t4CoreStatMultiplier,
+    t4CoreStatMultiplier,
+    offHandStatMultiplier: IDENTITY_MULTIPLIER,
+  };
+};
+
+/**
+ * Candidate envelope requested by design:
+ * - naked hero: 300 HP / 0 Armor / 0 MR;
+ * - full T3 totals stay at their CURRENT values;
+ * - full T4.3 totals stay at their CURRENT values;
+ * - all moved power remains authored equipment power and therefore scales through normal IP.
+ *
+ * Cape and shield keep their authored values. Core armor (head/chest/boots) is
+ * solved independently at T3 and T4, which is equivalent to authoring new tier values
+ * rather than introducing any non-IP-scalable hidden bonus.
+ */
+const PRESERVE_T3_T43_300: CombatBalanceReallocationDefinition = {
+  id: "candidate_300_preserve_t3_t43",
+  label: "300 HP · T3 actuel préservé · T4.3 actuel préservé",
+  hero: { maxHealth: 300, armor: 0, magicResistance: 0 },
+  t3CoreStatMultiplier: {
+    // Current full T3 2H target: 580 HP / 25 Armor / 20 MR.
+    // Core authored totals are +80 HP / +15 Armor / +11 MR, plus fixed 4 MR cape.
+    maxHealth: (580 - 300) / 80,
+    armor: 25 / 15,
+    magicResistance: (20 - 4) / 11,
   },
-  // Preserve authored shield contribution itself. Once the shared 2H/core
-  // ceiling is preserved, keeping shield stats unchanged also preserves the
-  // current 1H+shield T4.3 ceiling (65.9 Armor / 46.7 MR).
-  offHandStatMultiplier: { maxHealth: 1, armor: 1, magicResistance: 1 },
-});
+  t4CoreStatMultiplier: {
+    // Current full T4.3 2H target: 688.5 HP / 46.4 Armor / 35 MR.
+    maxHealth: (688.5 - 300) / (145 * 1.3),
+    armor: 46.4 / (28 * 1.3),
+    magicResistance: (35 - 4) / (20 * 1.3),
+  },
+  offHandStatMultiplier: IDENTITY_MULTIPLIER,
+};
 
 export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDefinition[] = [
   {
     id: "current",
     label: "Actuel",
     hero: { maxHealth: 500, armor: 10, magicResistance: 5 },
-    equipmentStatMultiplier: { maxHealth: 1, armor: 1, magicResistance: 1 },
-    offHandStatMultiplier: { maxHealth: 1, armor: 1, magicResistance: 1 },
+    t3CoreStatMultiplier: IDENTITY_MULTIPLIER,
+    t4CoreStatMultiplier: IDENTITY_MULTIPLIER,
+    offHandStatMultiplier: IDENTITY_MULTIPLIER,
   },
-  makeReallocation("reallocation_light", "Réallocation légère", { maxHealth: 440, armor: 8, magicResistance: 4 }),
-  makeReallocation("reallocation_medium", "Réallocation moyenne", { maxHealth: 400, armor: 6, magicResistance: 3 }),
-  makeReallocation("reallocation_strong", "Réallocation forte", { maxHealth: 360, armor: 4, magicResistance: 2 }),
-  makeReallocation("reallocation_probe_340", "Seuil 340 HP", { maxHealth: 340, armor: 3, magicResistance: 1.5 }),
-  makeReallocation("reallocation_probe_320", "Seuil 320 HP", { maxHealth: 320, armor: 2, magicResistance: 1 }),
+  makeCeilingReallocation("reallocation_light", "Réallocation légère", { maxHealth: 440, armor: 8, magicResistance: 4 }),
+  makeCeilingReallocation("reallocation_medium", "Réallocation moyenne", { maxHealth: 400, armor: 6, magicResistance: 3 }),
+  makeCeilingReallocation("reallocation_strong", "Réallocation forte", { maxHealth: 360, armor: 4, magicResistance: 2 }),
+  makeCeilingReallocation("reallocation_probe_340", "Seuil 340 HP", { maxHealth: 340, armor: 3, magicResistance: 1.5 }),
+  makeCeilingReallocation("reallocation_probe_320", "Seuil 320 HP", { maxHealth: 320, armor: 2, magicResistance: 1 }),
   ...([280, 285, 290, 295, 300, 305, 310, 315] as const).map((maxHealth) =>
-    makeReallocation(
+    makeCeilingReallocation(
       `reallocation_probe_${String(maxHealth)}_zero_def`,
       `${String(maxHealth)} HP · 0 Armor/MR`,
       { maxHealth, armor: 0, magicResistance: 0 },
     ),
   ),
+  PRESERVE_T3_T43_300,
 ] as const;
