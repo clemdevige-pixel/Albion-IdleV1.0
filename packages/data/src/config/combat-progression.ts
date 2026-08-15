@@ -14,18 +14,30 @@ export interface ZoneCombatCurve {
   readonly defenseEnd: number;
 }
 
+/**
+ * Blue progression is calibrated around the validated vertical-slice contract:
+ * - T3.0 carries the early game and can clear Dark Swamp with natural mastery.
+ * - T4 progression starts after that checkpoint.
+ * - Mountain S10 must be clearable around T4.2 with natural Q/W mastery.
+ * - T4.3 is comfort / reliable AFK headroom, not a progression requirement.
+ *
+ * The previous curve predated the +50 IP/enchantment rebalance and scaled
+ * incoming damage much faster than the player's defensive envelope. Health is
+ * still allowed to grow meaningfully so late encounters take longer, while
+ * damage and defense use a substantially flatter curve.
+ */
 export const BLUE_WORLD_COMBAT_CURVE = [
-  { healthStart: 1, healthEnd: 1.9, damageStart: 1.3, damageEnd: 2.4, defenseStart: 1, defenseEnd: 1.15 },
-  { healthStart: 1.9, healthEnd: 2.25, damageStart: 2.35, damageEnd: 2.65, defenseStart: 1.15, defenseEnd: 1.3 },
-  { healthStart: 2.25, healthEnd: 2.7, damageStart: 2.6, damageEnd: 3.05, defenseStart: 1.3, defenseEnd: 1.5 },
-  { healthStart: 2.7, healthEnd: 3.4, damageStart: 3, damageEnd: 3.8, defenseStart: 1.5, defenseEnd: 1.75 },
-  { healthStart: 3.4, healthEnd: 4.3, damageStart: 3.75, damageEnd: 4.8, defenseStart: 1.75, defenseEnd: 2.1 },
+  { healthStart: 0.9, healthEnd: 1.1, damageStart: 0.75, damageEnd: 0.85, defenseStart: 0.9, defenseEnd: 1.0 },
+  { healthStart: 1.1, healthEnd: 1.35, damageStart: 0.85, damageEnd: 0.95, defenseStart: 1.0, defenseEnd: 1.1 },
+  { healthStart: 1.35, healthEnd: 1.75, damageStart: 0.95, damageEnd: 1.1, defenseStart: 1.1, defenseEnd: 1.25 },
+  { healthStart: 1.75, healthEnd: 2.35, damageStart: 1.1, damageEnd: 1.3, defenseStart: 1.25, defenseEnd: 1.45 },
+  { healthStart: 2.35, healthEnd: 3.4, damageStart: 1.3, damageEnd: 1.6, defenseStart: 1.45, defenseEnd: 1.7 },
 ] as const;
 
 /**
- * First Yellow-world curve. It deliberately continues from the end of Blue
- * without reusing Blue indices, so the band can be tuned independently as
- * T5 equipment and systems are introduced.
+ * First Yellow-world curve. It deliberately remains independently authored.
+ * Yellow will receive its own dedicated T5 balance pass after Blue and weapon
+ * envelopes are validated in runtime.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 4.3, healthEnd: 4.75, damageStart: 4.8, damageEnd: 5.2, defenseStart: 2.1, defenseEnd: 2.3 },
