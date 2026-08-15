@@ -133,7 +133,6 @@ export class ProductionRuntimeController {
   }
 
   toggleRefining(family: ProductionFamily): boolean { return this.#actions.toggleRefining(family); }
-  refineAllAvailable(): boolean { return this.#actions.refineAllAvailable(); }
   craftEquipment(outputItemId: string): boolean { return this.#actions.craftEquipment(outputItemId); }
 
   setGatheringTier(tier: ProductionTier): boolean {
