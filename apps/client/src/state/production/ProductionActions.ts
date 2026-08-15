@@ -86,22 +86,6 @@ export class ProductionActions {
     return result.action === "started" || result.action === "stopped";
   }
 
-  refineAllAvailable(): boolean {
-    const result = this.deps.refiningRuntime.refineAllAvailable(
-      this.deps.getCurrentTick(),
-    );
-    if (!result.startedAtLeastOne) return false;
-
-    syncInventoryToBridge(
-      this.deps.bridge,
-      this.deps.inventoryManager,
-      this.deps.heroId,
-    );
-    this.deps.productionBridge.syncAllRefining();
-    this.deps.productionBridge.syncCrafting();
-    return true;
-  }
-
   craftEquipment(outputItemId: string): boolean {
     const result = this.deps.craftingRuntime.craftEquipment(outputItemId);
     if (!result.ok) return false;
