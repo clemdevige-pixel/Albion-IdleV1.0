@@ -23,10 +23,11 @@ const T3_SHIELD = "item_shield_t3_reinforced";
 const T4_SHIELD = "item_shield_t4_reinforced";
 
 type Mode = "full_t3" | "t4_torso" | "t4_two_piece" | "full_t4";
-type Checkpoint = { readonly id: string; readonly segmentIndex: number; readonly tier: 3 | 4; readonly mastery: number; readonly mode: Mode };
+type Checkpoint = { readonly id: string; readonly segmentIndex: number; readonly tier: 3 | 4; readonly mastery: number; readonly mode: Mode; readonly useHealthPotions?: boolean };
 
 const CHECKPOINTS: readonly Checkpoint[] = [
   { id: "highland_s1_full_t3", segmentIndex: 0, tier: 3, mastery: 10, mode: "full_t3" },
+  { id: "highland_s1_full_t3_potion", segmentIndex: 0, tier: 3, mastery: 10, mode: "full_t3", useHealthPotions: true },
   { id: "highland_s3_full_t3", segmentIndex: 2, tier: 3, mastery: 11, mode: "full_t3" },
   { id: "highland_s4_t4_torso", segmentIndex: 3, tier: 4, mastery: 11, mode: "t4_torso" },
   { id: "highland_s6_t4_two_piece", segmentIndex: 5, tier: 4, mastery: 12, mode: "t4_two_piece" },
@@ -59,13 +60,14 @@ describe("Blue Highlands runtime progression sweep", () => {
           equipmentItemIds: equipmentFor(weaponItemId, checkpoint),
           masteryLevel: checkpoint.mastery,
           enchantment: 0,
-          useHealthPotions: false,
+          useHealthPotions: checkpoint.useHealthPotions ?? false,
         });
         return {
           checkpoint: checkpoint.id,
           weapon: weaponItemId.replace("item_weapon_", "").replace("_t3_", " ").replace("_t4_", " "),
           clear: result.clear,
           hpPercent: result.hpPercent,
+          potions: result.potionsUsed,
           encounters: result.encounterReached,
           hp: result.maxHealth,
           armor: result.armor,
