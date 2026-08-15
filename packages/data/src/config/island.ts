@@ -252,7 +252,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
 
 export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
   // One gameplay plot per authored grassy parcel on the island background.
-  // There are exactly eleven parcels for the eleven currently planned buildings.
+  // The source art contains twelve parcels; the twelfth remains available for future content.
   plots: [
     { id: "plot_01", column: 1, row: 1 },
     { id: "plot_02", column: 2, row: 1 },
@@ -265,6 +265,7 @@ export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
     { id: "plot_09", column: 2, row: 3 },
     { id: "plot_10", column: 3, row: 3 },
     { id: "plot_11", column: 4, row: 3 },
+    { id: "plot_12", column: 5, row: 3 },
   ],
   buildings: BUILDINGS,
   initialBuildings: [
