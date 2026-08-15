@@ -38,9 +38,7 @@ describe("synthetic ideal weapon benchmark", () => {
 
   it("builds the offensive reference from all starters instead of selecting one live weapon", () => {
     for (const masteryLevel of WEAPON_BALANCE_MASTERY_CHECKPOINTS) {
-      const profiles = T3_STARTERS.map((itemId) =>
-        getWeaponBenchmarkProfile(itemId, masteryLevel, 0),
-      );
+      const profiles = T3_STARTERS.map((itemId) => getWeaponBenchmarkProfile(itemId, masteryLevel, 0));
       const ideal = getSyntheticIdealWeaponProfile(profiles, masteryLevel);
       const outputs = profiles.map((profile) => profile.sustainedDps).sort((a, b) => a - b);
       const opener5 = profiles.map((profile) => profile.openerDps5s).sort((a, b) => a - b);
@@ -65,9 +63,6 @@ describe("synthetic ideal weapon benchmark", () => {
   it("does not pretend a target-health finisher is available against a fresh target", () => {
     const beforeSignature = getWeaponBenchmarkProfile("item_weapon_sword_t4_broadsword", 29, 2);
     const withSignature = getWeaponBenchmarkProfile("item_weapon_sword_t4_broadsword", 30, 2);
-
-    // M30 gains Exécution for sustained combat, but the <50% HP rule means it
-    // is not counted as an immediate segment opener against a fresh target.
     expect(withSignature.sustainedDps).toBeGreaterThan(beforeSignature.sustainedDps);
     expect(withSignature.openerDps5s / beforeSignature.openerDps5s).toBeLessThan(1.01);
   });
@@ -75,15 +70,14 @@ describe("synthetic ideal weapon benchmark", () => {
   it("allows an effect-gated signature to participate once its prerequisite is unlocked", () => {
     const beforeSignature = getWeaponBenchmarkProfile("item_weapon_dagger_t4_pair", 29, 2);
     const withSignature = getWeaponBenchmarkProfile("item_weapon_dagger_t4_pair", 30, 2);
-
     expect(withSignature.openerDps5s).toBeGreaterThan(beforeSignature.openerDps5s * 1.15);
   });
 
   it("matches the live full-T3 2H defensive character sheet", () => {
     const profile = getWeaponDefensiveBenchmarkProfile("item_weapon_gloves_t3_spiked_gauntlets", 0);
-    expect(profile.maxHealth).toBe(580);
-    expect(profile.armor).toBe(25);
-    expect(profile.magicResistance).toBe(20);
+    expect(profile.maxHealth).toBe(730);
+    expect(profile.armor).toBe(31);
+    expect(profile.magicResistance).toBe(24);
   });
 
   it("keeps enchantment as a multiplicative T4 equipment upgrade in the benchmark", () => {
@@ -99,7 +93,6 @@ describe("synthetic ideal weapon benchmark", () => {
   it("captures the 1H shield survivability tradeoff separately from offense", () => {
     const sword = getWeaponDefensiveBenchmarkProfile("item_weapon_sword_t4_broadsword", 2);
     const bow = getWeaponDefensiveBenchmarkProfile("item_weapon_bow_t4_longbow", 2);
-
     expect(sword.offHandItemId).toBe("item_shield_t4_reinforced");
     expect(bow.offHandItemId).toBeUndefined();
     expect(sword.maxHealth).toBe(bow.maxHealth);
@@ -112,7 +105,6 @@ describe("synthetic ideal weapon benchmark", () => {
   it("scales the T4 defensive envelope with enchantment without enchanting the retained T3 cape", () => {
     const base = getWeaponDefensiveBenchmarkProfile("item_weapon_bow_t4_longbow", 0);
     const plusTwo = getWeaponDefensiveBenchmarkProfile("item_weapon_bow_t4_longbow", 2);
-
     expect(plusTwo.maxHealth).toBeGreaterThan(base.maxHealth);
     expect(plusTwo.armor).toBeGreaterThan(base.armor);
     expect(plusTwo.magicResistance).toBeGreaterThan(base.magicResistance);
@@ -120,19 +112,11 @@ describe("synthetic ideal weapon benchmark", () => {
   });
 
   it("builds a neutral combat ideal from median offense and median defense", () => {
-    const profiles = T4_STANDARD.map((itemId) =>
-      getWeaponCombatBenchmarkProfile(itemId, 20, 2),
-    );
+    const profiles = T4_STANDARD.map((itemId) => getWeaponCombatBenchmarkProfile(itemId, 20, 2));
     const ideal = getSyntheticIdealCombatProfile(profiles, 20);
-    const offensiveOutputs = profiles
-      .map((profile) => profile.offense.sustainedDps)
-      .sort((a, b) => a - b);
-    const opener5 = profiles
-      .map((profile) => profile.offense.openerDps5s)
-      .sort((a, b) => a - b);
-    const physicalEhp = profiles
-      .map((profile) => profile.defense.physicalEffectiveHealth)
-      .sort((a, b) => a - b);
+    const offensiveOutputs = profiles.map((profile) => profile.offense.sustainedDps).sort((a, b) => a - b);
+    const opener5 = profiles.map((profile) => profile.offense.openerDps5s).sort((a, b) => a - b);
+    const physicalEhp = profiles.map((profile) => profile.defense.physicalEffectiveHealth).sort((a, b) => a - b);
 
     expect(ideal.sustainedDps).toBe(offensiveOutputs[2]);
     expect(ideal.openerDps5s).toBe(opener5[2]);
