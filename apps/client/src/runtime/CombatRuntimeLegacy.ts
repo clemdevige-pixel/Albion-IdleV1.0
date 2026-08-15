@@ -165,7 +165,15 @@ export class CombatRuntime {
     this.autoAttackManager.startAutoAttack(this.activeEnemyId);
     const sourceStat = definition.damageType === "magical" ? STAT_MAGICAL_DAMAGE : STAT_PHYSICAL_DAMAGE;
     const sourceDamage = this.statsManager.getStat(this.activeEnemyId, sourceStat).computed;
-    const result = this.damageManager.processDamage({ source: this.activeEnemyId, target: this.heroId, baseDamage: sourceDamage * definition.damageMultiplier, damageType: definition.damageType, source_type: "ability" });
+    const result = this.damageManager.processDamage({
+      source: this.activeEnemyId,
+      target: this.heroId,
+      // DamageManager already adds the matching offensive source stat.
+      // Monster damageMultiplier is authored as the TOTAL hit multiplier.
+      baseDamage: sourceDamage * (definition.damageMultiplier - 1),
+      damageType: definition.damageType,
+      source_type: "ability",
+    });
     if (result?.targetDied === true) this.deathManager.checkDeath(this.heroId, this.activeEnemyId, this.currentTick);
     return result !== null;
   }
