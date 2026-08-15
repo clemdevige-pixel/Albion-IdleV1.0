@@ -53,7 +53,7 @@ function shortWeaponName(itemId: string): string {
 function equipmentFor(weaponItemId: string, checkpoint: Checkpoint): readonly string[] {
   if (checkpoint.armor === "none") return [];
   if (checkpoint.armor === "torso_t3") return ["item_leather_armor"];
-  const armor = checkpoint.weaponTier === 3 ? [...T3_ARMOR] : [...T4_ARMOR];
+  const armor: string[] = checkpoint.weaponTier === 3 ? [...T3_ARMOR] : [...T4_ARMOR];
   if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") {
     armor.push(checkpoint.weaponTier === 3 ? T3_SHIELD : T4_SHIELD);
   }
