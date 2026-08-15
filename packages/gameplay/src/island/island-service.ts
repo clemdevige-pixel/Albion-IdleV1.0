@@ -1,6 +1,7 @@
 import {
   ISLAND_BUILDING_IDS,
   PLAYER_ISLAND_CONFIG,
+  getIslandLevelDefinition,
   getIslandOperationalLevelDefinition,
   getNextIslandLevelDefinition,
   type IslandBuildingId,
@@ -37,7 +38,7 @@ export type UpgradeIslandBuildingResult =
 
 export type UpgradeIslandLevelResult =
   | { readonly ok: true; readonly level: number }
-  | { readonly ok: false; readonly reason: "max_level" | "requirements_not_met" };
+  | { readonly ok: false; readonly reason: "max_level" };
 
 const IslandBuildingIdSchema = z.enum(ISLAND_BUILDING_IDS);
 const IslandSnapshotSchema = z.object({
@@ -109,7 +110,9 @@ export class PlayerIslandService implements SaveProvider {
     if (currentLevel.upgradeToNext === undefined) return { ok: false, reason: "max_level" };
     const nextLevel = getIslandOperationalLevelDefinition(definitionId, building.level + 1);
     if (nextLevel === undefined) return { ok: false, reason: "unauthored_level" };
-    if (nextLevel.level > this.#state.level) return { ok: false, reason: "island_level_required" };
+    const islandDefinition = getIslandLevelDefinition(this.#state.level);
+    const maxBuildingLevel = islandDefinition?.maxBuildingLevel ?? this.#state.level;
+    if (nextLevel.level > maxBuildingLevel) return { ok: false, reason: "island_level_required" };
     return { ok: true, building: { ...building, level: nextLevel.level } };
   }
 
@@ -126,12 +129,8 @@ export class PlayerIslandService implements SaveProvider {
   canUpgradeIslandLevel(): UpgradeIslandLevelResult {
     const next = getNextIslandLevelDefinition(this.#state.level);
     if (next === undefined) return { ok: false, reason: "max_level" };
-    const requirement = next.requirementToReach;
-    if (requirement === undefined) return { ok: true, level: next.level };
-    const developedBuildings = this.#state.buildings.filter((building) => building.level >= requirement.buildingLevel).length;
-    if (this.#state.buildings.length < requirement.minimumBuildings || developedBuildings < requirement.minimumBuildingsAtLevel) {
-      return { ok: false, reason: "requirements_not_met" };
-    }
+    // World progression and economy are application-layer requirements because
+    // this domain service owns neither the world state nor player resources.
     return { ok: true, level: next.level };
   }
 
@@ -151,14 +150,15 @@ export class PlayerIslandService implements SaveProvider {
     if (!parsed.success || !this.#isValidSnapshot(parsed.data)) return;
     const savedPlotById = new Map(parsed.data.plots.map((plot) => [plot.id, plot] as const));
     const islandLevel = parsed.data.level ?? 1;
+    const maxBuildingLevel = getIslandLevelDefinition(islandLevel)?.maxBuildingLevel ?? islandLevel;
     this.#state = {
       level: islandLevel,
       plots: this.#config.plots.map((plot) => ({ id: plot.id, buildingInstanceId: savedPlotById.get(plot.id)?.buildingInstanceId ?? null })),
       // Migration guard: snapshots created before island-level gating may contain
-      // buildings above the island level. Clamp them to the newly authoritative cap.
+      // buildings above the island's authored building-level cap.
       buildings: parsed.data.buildings.map((building) => ({
         ...building,
-        level: Math.min(building.level, islandLevel),
+        level: Math.min(building.level, maxBuildingLevel),
       })),
     };
   }
