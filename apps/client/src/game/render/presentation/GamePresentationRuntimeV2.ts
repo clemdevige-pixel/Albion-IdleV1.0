@@ -3,7 +3,10 @@ import type { GameBridge } from "../../GameBridge";
 import { selectActiveGathering } from "./GamePresentationState";
 import { ActivityPresentationController } from "./ActivityPresentationController";
 import { CombatPresentationController } from "./CombatPresentationController";
-import { invalidateCombatPresentation } from "./CombatPresentationInvalidation";
+import {
+  invalidateCombatPresentation,
+  resetCombatPresentationSession,
+} from "./CombatPresentationInvalidation";
 import {
   clearPresentedEnemyHealth,
   resetPresentedEnemyHealth,
@@ -24,7 +27,9 @@ export class GamePresentationRuntime {
   ) {}
 
   public create(): void {
-    this.world = new WorldPresentationController(this.scene, this.getBridge());
+    const bridge = this.getBridge();
+    resetCombatPresentationSession(bridge?.damageNumbers.at(-1)?.id ?? 0);
+    this.world = new WorldPresentationController(this.scene, bridge);
     this.combat = new CombatPresentationController(this.scene, this.getBridge);
     this.activity = new ActivityPresentationController(this.scene, this.combat);
   }
