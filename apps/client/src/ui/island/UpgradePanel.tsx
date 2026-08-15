@@ -1,5 +1,6 @@
 import {
   getIslandBuildingDefinition,
+  getIslandLevelDefinition,
   getIslandOperationalLevelDefinition,
   type IslandBuildingId,
 } from "@game/data";
@@ -41,7 +42,9 @@ export function UpgradePanel({
   if (next === undefined) return null;
 
   const islandLevel = getIslandLevel();
-  const islandLevelBlocked = next.level > islandLevel;
+  const islandDefinition = getIslandLevelDefinition(islandLevel);
+  const maxBuildingLevel = islandDefinition?.maxBuildingLevel ?? islandLevel;
+  const islandLevelBlocked = next.level > maxBuildingLevel;
   const materials = cost.requirements.map((requirement) => ({
     ...requirement,
     available: getIslandMaterialQuantity(
@@ -61,13 +64,13 @@ export function UpgradePanel({
         <strong>Niv. {String(level)} → Niv. {String(next.level)}</strong>
         <small>
           {islandLevelBlocked
-            ? `Requiert Île niv. ${String(next.level)}`
+            ? `Requiert Île autorisant les bâtiments niv. ${String(next.level)}`
             : `T${String(next.maxProductionTier)} débloqué`}
         </small>
       </div>
       <div className="ui-island-construction__costs">
         {islandLevelBlocked && (
-          <span className="is-missing">Île niv. {String(islandLevel)} / {String(next.level)}</span>
+          <span className="is-missing">Bâtiments max niv. {String(maxBuildingLevel)}</span>
         )}
         <span className={wallet.silver >= cost.silver ? "is-ready" : "is-missing"}>
           {String(cost.silver)} Silver
@@ -87,7 +90,7 @@ export function UpgradePanel({
         onClick={() => { upgradeIslandBuilding(definitionId); }}
       >
         {islandLevelBlocked
-          ? `Atteignez Île niv. ${String(next.level)}`
+          ? `Débloquez bâtiments niv. ${String(next.level)}`
           : affordable
             ? `Améliorer au niveau ${String(next.level)}`
             : "Ressources insuffisantes"}
