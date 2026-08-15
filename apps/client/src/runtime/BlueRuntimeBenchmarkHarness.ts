@@ -16,6 +16,7 @@ import {
   TargetManager,
   TargetValidator,
   createDefaultStatRegistry,
+  type StatId,
   type ZoneDefinitionId,
 } from "@game/gameplay";
 import { resolveEquipmentInfo, resolveItemStackInfo } from "../data/itemContentCatalog.js";
@@ -30,6 +31,8 @@ import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
 const DT = 1 / 20;
 const MAX_TICKS = 20 * 180;
 const POTION_ITEM_ID = "item_health_potion";
+const STAT_ARMOR = "stat_armor" as StatId;
+const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 
 export interface BlueRuntimeBenchmarkInput {
   readonly label: string;
@@ -125,7 +128,6 @@ export function runBlueRuntimeBenchmark(input: BlueRuntimeBenchmarkInput): BlueR
   const equipmentStatSync = new EquipmentStatSync(statsManager, resolveEquipmentInfo, () => {});
   const equipmentManager = new EquipmentManager(world, inventoryManager, resolveEquipmentInfo, equipmentStatSync);
 
-  // Authoritative naked hero baseline copied from GameContext's live bootstrap.
   const heroId = setupCombatEntity(
     { world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager },
     { maxHealth: 300, physDamage: 0, attackSpeed: 1.2, armor: 0, magicRes: 0 },
@@ -215,8 +217,8 @@ export function runBlueRuntimeBenchmark(input: BlueRuntimeBenchmarkInput): BlueR
     hpPercent: Number(((health.currentHealth / health.maxHealth) * 100).toFixed(1)),
     encounterReached: encounterIndex + 1,
     maxHealth: health.maxHealth,
-    armor: statsManager.getStat(heroId, "stat_armor").computed,
-    magicResistance: statsManager.getStat(heroId, "stat_magic_resistance").computed,
+    armor: statsManager.getStat(heroId, STAT_ARMOR).computed,
+    magicResistance: statsManager.getStat(heroId, STAT_MAGIC_RESISTANCE).computed,
     potionsUsed,
     masteryLevel,
   };
