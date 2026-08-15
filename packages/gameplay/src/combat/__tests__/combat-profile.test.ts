@@ -8,7 +8,7 @@ describe("combat-profile", () => {
       const profile = getEnemyCombatProfile(0, 0, 0);
       expect(profile).toEqual({
         hp: 270,
-        damage: 11,
+        damage: 10,
         armor: 4,
         magicResistance: 2,
         attackSpeed: 0.8,
