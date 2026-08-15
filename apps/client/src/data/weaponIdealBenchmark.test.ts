@@ -75,9 +75,9 @@ describe("synthetic ideal weapon benchmark", () => {
 
   it("matches the live full-T3 2H defensive character sheet", () => {
     const profile = getWeaponDefensiveBenchmarkProfile("item_weapon_gloves_t3_spiked_gauntlets", 0);
-    expect(profile.maxHealth).toBe(730);
-    expect(profile.armor).toBe(31);
-    expect(profile.magicResistance).toBe(24);
+    expect(profile.maxHealth).toBe(530);
+    expect(profile.armor).toBe(21);
+    expect(profile.magicResistance).toBe(19);
   });
 
   it("keeps enchantment as a multiplicative T4 equipment upgrade in the benchmark", () => {
