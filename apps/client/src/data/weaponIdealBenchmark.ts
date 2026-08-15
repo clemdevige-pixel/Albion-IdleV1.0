@@ -44,24 +44,45 @@ function sourceDamageWithMastery(
   const info = resolveEquipmentInfo(itemId);
   const base = info?.stats?.stat_physical_damage ?? info?.stats?.stat_magical_damage ?? 0;
   const enchantmentMultiplier = getEnchantmentStatMultiplier(enchantment);
-  // Family mastery grants +0.5 IP/level and specialization +1 IP/level.
-  // +100 bonus IP = +20% weapon damage, therefore same-level family + spec
-  // contribute +0.3% weapon damage per mastery level.
   const masteryMultiplier = 1 + (masteryLevel * 1.5) / 500;
   return base * enchantmentMultiplier * masteryMultiplier;
 }
 
-function directAbilityTotalRatio(abilityId: string, fallbackBonusRatio: number): number {
+function hasUnlockedEffect(itemId: string, masteryLevel: number, effectId: string): boolean {
+  return resolveUnlockedWeaponAbilities(itemId, masteryLevel).some((ability) => {
+    const mechanics = getWeaponAbilityMechanics(ability.id)?.mechanics ?? [];
+    return mechanics.some((mechanic) =>
+      (mechanic.kind === "status" || mechanic.kind === "dot")
+      && mechanic.effectId === effectId,
+    );
+  });
+}
+
+function abilityTotalRatio(
+  itemId: string,
+  abilityId: string,
+  masteryLevel: number,
+  fallbackBonusRatio: number,
+): number {
   const profile = getWeaponAbilityMechanics(abilityId);
   if (profile === undefined) return 1 + fallbackBonusRatio;
 
   let total = 0;
   for (const mechanic of profile.mechanics) {
     if (mechanic.kind === "damage") {
-      // Runtime damage mechanics author `ratio` as bonus damage over one full
-      // source-stat hit. `hits` only changes presentation/delivery, never the
-      // total offensive budget.
-      total += 1 + mechanic.ratio;
+      let ratio = 1 + mechanic.ratio;
+      if (mechanic.bonusHealthBelow !== undefined) {
+        // This bonus is guaranteed whenever a target-health autocast reaches
+        // its execute window, so the availability factor handles uptime.
+        ratio += mechanic.bonusHealthBelow.bonusRatio;
+      }
+      if (
+        mechanic.bonusEffect !== undefined
+        && hasUnlockedEffect(itemId, masteryLevel, mechanic.bonusEffect.effectId)
+      ) {
+        ratio += mechanic.bonusEffect.bonusRatio;
+      }
+      total += ratio;
       continue;
     }
     if (mechanic.kind === "dot") {
@@ -77,15 +98,7 @@ function autoCastAvailabilityFactor(itemId: string, abilityId: string, masteryLe
   if (rule === undefined || rule.kind === "always") return 1;
   if (rule.kind === "target_health_below") return Math.max(0, Math.min(1, rule.ratio));
   if (rule.kind === "target_has_effect") {
-    const unlocked = resolveUnlockedWeaponAbilities(itemId, masteryLevel);
-    const prerequisiteExists = unlocked.some((ability) => {
-      const mechanics = getWeaponAbilityMechanics(ability.id)?.mechanics ?? [];
-      return mechanics.some((mechanic) =>
-        (mechanic.kind === "status" || mechanic.kind === "dot")
-        && mechanic.effectId === rule.effectId,
-      );
-    });
-    return prerequisiteExists ? 1 : 0;
+    return hasUnlockedEffect(itemId, masteryLevel, rule.effectId) ? 1 : 0;
   }
   return 1;
 }
@@ -108,7 +121,7 @@ export function getWeaponBenchmarkProfile(
   const unlocked = resolveUnlockedWeaponAbilities(itemId, masteryLevel);
   const abilityDps = unlocked.reduce((total, ability) => {
     const availability = autoCastAvailabilityFactor(itemId, ability.id, masteryLevel);
-    const totalRatio = directAbilityTotalRatio(ability.id, ability.bonusDamageRatio);
+    const totalRatio = abilityTotalRatio(itemId, ability.id, masteryLevel, ability.bonusDamageRatio);
     return total + sourceDamage * totalRatio * availability / Math.max(0.5, ability.cooldown);
   }, 0);
 
@@ -125,9 +138,8 @@ export function getWeaponBenchmarkProfile(
 }
 
 /**
- * The balance reference is deliberately synthetic: it is the median sustained
- * output of the compared weapon set, never one live weapon. The +/-10% band is
- * the first-pass healthy envelope. Defensive utility (notably 1H + shield),
+ * Synthetic reference = median sustained output of the compared set, never one
+ * live weapon. +/-10% is the first-pass offensive envelope. Defensive utility,
  * control and encounter-specific value are evaluated separately before a final
  * weapon adjustment is accepted.
  */
