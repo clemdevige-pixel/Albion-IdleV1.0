@@ -11,6 +11,7 @@ function createHarness(options?: {
   const savedLocation = {
     activeZoneDefId: "zone_forest",
     activeSegment: 2,
+    activeEncounter: 3,
     farmMode: false,
     zoneMemories: [],
   } as unknown as WorldLocationSaveState;
@@ -18,7 +19,8 @@ function createHarness(options?: {
     farmMode: options?.farmMode ?? false,
     currentSegment: 2,
     highestUnlockedSegment: 5,
-    selectSegment: vi.fn(() => options?.segmentAccepted ?? true),
+    selectSegment: vi.fn(() => true),
+    queueSegmentChange: vi.fn(() => options?.segmentAccepted ?? true),
     setSegmentFarmMode: vi.fn(),
     selectZone: vi.fn(() => options?.zoneAccepted ?? true),
     getWorldLocationSaveState: vi.fn(() => savedLocation),
@@ -29,7 +31,7 @@ function createHarness(options?: {
     restoreHeroHealth: vi.fn(),
     resumeExploration: vi.fn(() => options?.explorationResumed ?? true),
   };
-  const bridge = { setCombatState: vi.fn() };
+  const bridge = { setCombatState: vi.fn(), clearEnemyPresentation: vi.fn() };
   const updateWorldBridge = vi.fn();
   const actions = new WorldNavigationActions({
     worldRuntime,
@@ -42,18 +44,19 @@ function createHarness(options?: {
 }
 
 describe("WorldNavigationActions", () => {
-  it("coordinates an accepted segment change", () => {
+  it("queues an accepted manual segment change without interrupting combat", () => {
     const harness = createHarness();
 
     expect(harness.actions.selectSegment(4)).toBe(true);
-    expect(harness.worldRuntime.selectSegment).toHaveBeenCalledWith(4);
-    expect(harness.combatRuntime.interruptEncounter).toHaveBeenCalledOnce();
-    expect(harness.combatRuntime.restoreHeroHealth).toHaveBeenCalledOnce();
+    expect(harness.worldRuntime.queueSegmentChange).toHaveBeenCalledWith(4);
+    expect(harness.worldRuntime.selectSegment).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
+    expect(harness.bridge.setCombatState).not.toHaveBeenCalled();
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
-    expect(harness.bridge.setCombatState).toHaveBeenCalledWith("walking");
   });
 
-  it("does not interrupt combat when a segment is rejected", () => {
+  it("does not alter combat when a manual segment destination is rejected", () => {
     const harness = createHarness({ segmentAccepted: false });
 
     expect(harness.actions.selectSegment(9)).toBe(false);
@@ -72,10 +75,10 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
-  it("resumes the correct segment after gathering", () => {
+  it("always resumes gathering from the beginning of the segment that was left", () => {
     const progression = createHarness({ farmMode: false });
     progression.actions.prepareCombatResumeAfterGathering();
-    expect(progression.worldRuntime.selectSegment).toHaveBeenCalledWith(6);
+    expect(progression.worldRuntime.selectSegment).toHaveBeenCalledWith(3);
 
     const farming = createHarness({ farmMode: true });
     farming.actions.prepareCombatResumeAfterGathering();
