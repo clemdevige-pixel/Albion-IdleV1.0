@@ -2,332 +2,230 @@
 
 ## Purpose
 
-The Progression System defines how the player becomes stronger throughout the game.
+The Progression System defines how the player becomes stronger and unlocks harder content without a global character level.
 
-Unlike traditional RPGs, character power is not driven by a global character level.
-
-Instead, progression is distributed across multiple independent systems that continuously reinforce each other.
-
-The Progression System acts as the central hub connecting combat, exploration, economy, crafting, equipment, and masteries.
-
-Its objective is to provide long-term progression while encouraging experimentation with different weapons and gameplay styles.
+Progression is produced by the interaction of combat, equipment, enchantments, masteries, production and the Player Island. The current runtime and validated balancing data are authoritative when numerical details evolve.
 
 ---
 
-# Design Goals
+# Core Principles
 
-The Progression System must:
-
-- Eliminate traditional character levels.
-- Encourage long-term progression.
-- Reward active gameplay.
-- Support horizontal and vertical progression.
-- Promote equipment specialization.
-- Encourage weapon diversity.
-- Remain fully data-driven.
-- Scale indefinitely through future content.
+- No global character level.
+- Equipment is the primary source of immediate combat power.
+- Masteries provide permanent specialization, bonuses and ability progression.
+- Production exists to create the equipment and consumables required to overcome progression walls.
+- World progression is divided into world bands, zones and segments.
+- Difficulty walls intentionally create reasons to gather, refine, craft, enchant or use consumables.
+- Progression and balance remain data-driven.
 
 ---
 
-# Core Progression Pillars
+# Player Power
 
-Player power is generated from multiple progression pillars.
+Combat power comes mainly from:
 
-No single system should represent the entirety of player progression.
+- weapon and its abilities;
+- armor pieces;
+- offhand when the weapon is one-handed;
+- equipment tier;
+- enchantment;
+- mastery;
+- consumables during assisted progression.
 
-## Pillar 1 — Equipment
+There is no Energy/Mana resource in the current combat model. Active abilities are governed by cooldowns.
 
-Equipment is the primary source of combat power.
-
-Equipment determines:
-
-- Attack
-- Defense
-- Health
-- Energy
-- Ability Set
-- Weapon Type
-- Armor Type
-
-Equipment upgrades provide the largest increases in player strength.
+An offhand is an independent equipment component. A one-handed weapon must not be permanently balanced as if one specific offhand were intrinsic to the weapon.
 
 ---
 
-## Pillar 2 — Weapon Mastery
+# Vertical and Horizontal Progression
 
-Every weapon owns an independent Mastery progression.
+Vertical progression increases combat capability:
 
-Using a weapon grants experience only to that weapon.
+- higher equipment tiers;
+- enchantments;
+- mastery bonuses;
+- equipment optimization.
 
-Each Mastery unlocks:
+Horizontal progression expands options:
 
-- Equipment Tier progression
-- Passive upgrades
-- Active ability upgrades
-- Flat stat bonuses
-- Additional progression rewards
-
-Masteries never share progress.
-
-Example:
-
-- Broadsword Mastery
-- Claymore Mastery
-- Dual Sword Mastery
-
-are completely independent.
+- new weapons;
+- new offhands;
+- armor choices;
+- new crafting/refining/gathering options;
+- island buildings and upgrades;
+- workers and production choices.
 
 ---
 
-## Pillar 3 — Economy
+# World Progression Structure
 
-The player's economy continuously improves progression.
+The progression hierarchy is:
 
-Examples:
+World Band
+→ Zone
+→ Segment
+→ Encounters
 
-- Better crafting
-- Better refining
-- Better gathering
-- Better islands
-- Better workers
-- Better equipment production
+A zone is not merely a stat range. It owns a progression purpose and expected equipment envelope.
 
-Economic progression indirectly increases combat efficiency.
+The current Blue world contains the validated progression baseline used to calibrate future bands.
 
 ---
 
-# No Character Level
+# Validated Blue Progression Contract
 
-The game does not contain a global player level.
+| Step | Expected equipment | Function |
+| --- | --- | --- |
+| Birch Forest | starter weapon alone | discovery; no meaningful friction |
+| Early Dark Swamp | starter weapon | first progression wall |
+| Swamp S2-S6 | 1-2 T3 pieces | each craft buys additional segments |
+| Swamp S6-S10 | full / near-full T3 | T3 consolidation |
+| Swamp S10 | full T3 | clear possible without potion |
+| After Swamp | Island N2 / T4 production | production pivot |
+| Stone Highlands | T3 → first T4 pieces | transition; potion may bridge the initial wall |
+| Golden Steppe | full T4.0 → first enchantments | T4 consolidation |
+| Frostpeak | T4.1 → T4.2 | final Blue difficulty ramp |
+| Frostpeak S10 | T4.2 assisted/optimized; T4.3 reliable AFK | end of Blue |
 
-The following systems do not exist:
-
-- Character XP Level
-- Global Skill Points
-- Character Level Scaling
-
-Player strength is determined exclusively by progression systems.
-
----
-
-# Progression Flow
-
-The standard progression loop is:
-
-Combat
-
-↓
-
-Loot
-
-↓
-
-Crafting / Economy
-
-↓
-
-Better Equipment
-
-↓
-
-Weapon Mastery
-
-↓
-
-Access to Higher Equipment Tiers
-
-↓
-
-Harder Biomes
-
-↓
-
-Better Rewards
-
-↓
-
-Repeat
-
-This loop continuously repeats throughout the game.
+This table is a design contract, not a substitute for runtime benchmarking.
 
 ---
 
-# Progression Categories
+# Progression Walls
 
-Progression can be divided into two categories.
+A wall is intentional when it communicates the next useful player action.
 
-## Vertical Progression
+Valid responses to a wall may include:
 
-Vertical Progression increases player power.
+- craft another armor piece;
+- improve equipment tier;
+- enchant equipment;
+- increase relevant mastery;
+- use a health potion for an assisted push;
+- change weapon/loadout.
 
-Examples:
+A wall is unhealthy when the required solution is unclear, when the previous upgrade provides no visible progress, or when a single weapon/loadout bypasses the intended progression by an excessive margin.
 
-- Better weapon tier
-- Better armor tier
-- Mastery rewards
-- Improved abilities
-
----
-
-## Horizontal Progression
-
-Horizontal Progression expands player possibilities.
-
-Examples:
-
-- New weapon types
-- New armor builds
-- New crafting options
-- New gathering professions
-- New island upgrades
-- New workers
-
-Horizontal Progression increases strategic possibilities without directly increasing combat power.
+Consumables are allowed to bridge a difficult transition. They must not automatically redefine the expected AFK equipment threshold.
 
 ---
 
-# Weapon Progression
+# Island and Building Progression
 
-Weapons are never locked behind an unlock system.
+Island progression is linked to world/zone progression.
 
-If a player owns a weapon, the weapon may immediately be equipped.
+When the required world progression cap is reached, the Island may level up. Building tier progression is then gated by the Island level.
 
-Each newly equipped weapon starts using its corresponding Mastery.
+Therefore the macro loop is:
 
-Example:
+Combat progression
+→ Island level eligibility
+→ Building tier eligibility
+→ Production upgrade
+→ Better equipment
+→ Further combat progression
 
-Player crafts a Claymore.
-
-↓
-
-Player equips Claymore immediately.
-
-↓
-
-Claymore Mastery begins progressing.
-
-No additional unlock is required.
+This keeps the Island subordinate to and supportive of the hero progression loop.
 
 ---
 
-# Equipment Tier Progression
+# Mastery
 
-Equipment Tier access is controlled by Weapon Mastery.
+There is no universal character XP level.
 
-Default Version 1 progression:
+Masteries are activity/equipment-specific permanent progression. They may provide ability unlocks, bonuses and specialization according to their own authored data.
 
-| Mastery Level | Equipment Tier |
-|--------------|----------------|
-| 1 | T3 |
-| 20 | T4 |
-| 40 | T5 |
-| 60 | T6 |
-| 80 | T7 |
-| 100 | T8 |
+Do not duplicate mastery tier thresholds in this document. The runtime mastery/content data is authoritative.
 
-These thresholds are balancing values only.
-
-They must remain fully configurable through data.
+Balance benchmarks must use mastery levels representative of the tested progression checkpoint rather than assuming a fixed universal mastery value.
 
 ---
 
-# Progression Sources
+# Equipment Tier and Enchantment
 
-Player progression may originate from:
+Tier and enchantment are distinct progression axes.
 
-- Combat
-- Exploration
-- Loot
-- Bosses
-- Crafting
-- Refining
-- Gathering
-- Workers
-- Island Development
-- Equipment
-- Weapon Masteries
+Tier represents the equipment generation/content tier.
 
-Future systems may introduce additional progression sources without modifying the architecture.
+Enchantment increases the power of eligible equipment within that tier and is an important vertical progression tool, especially late in a world band.
+
+The current Blue calibration deliberately transitions from T4.0 to T4.1/T4.2/T4.3 rather than introducing a new tier inside Blue.
+
+Future world bands should author their own expected tier/enchantment progression contract before numerical tuning begins.
 
 ---
 
-# Progression Persistence
+# Weapon Diversity
 
-All progression is permanent.
+Different weapons are allowed to have different combat identities.
 
-The player never loses:
+For comparable weapons, a performance delta of roughly 5-10% can be acceptable when justified by identity, burst profile, utility, handling or defensive trade-offs.
 
-- Mastery Levels
-- Equipment Unlocks
-- Crafting Progress
-- Refining Progress
-- Gathering Progress
-- Worker Progress
-- Island Progress
+Do not balance solely from sustained DPS.
 
-Temporary combat failure never removes progression.
+Evaluation should consider:
 
----
+- sustained DPS;
+- opener/burst windows;
+- ability contribution;
+- handling (1H/2H);
+- defensive package;
+- offhand contribution;
+- actual runtime clear behavior.
 
-# Future Scalability
-
-The Progression System must support future expansion.
-
-Examples:
-
-- New Weapons
-- New Armor Types
-- New Masteries
-- New Biomes
-- New Equipment Tiers
-- New Cycles
-- New Progression Systems
-
-Future content must integrate without modifying the core architecture.
+Weapon-only power and weapon+offhand loadout power must remain separately measurable.
 
 ---
 
-# System Interactions
+# Runtime Validation
 
-The Progression System interacts with:
+Synthetic arithmetic is useful for diagnosis, but progression acceptance is determined with the exact live CombatRuntime.
 
-- Experience System
-- Mastery System
-- Equipment System
-- Combat System
-- Loot System
-- Crafting System
-- Refining System
-- Gathering System
-- Worker System
-- Player Island System
-- Exploration System
+Reusable tools:
 
-The Progression System coordinates progression but never directly manages the internal logic of these systems.
+- `apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts`
+- `apps/client/src/data/weaponIdealBenchmark.ts`
+- `apps/client/src/data/weaponPackageBenchmark.ts`
+
+Zone-specific sweeps are scenarios built on the generic runtime harness. Future bands must reuse the harness instead of creating band-specific simulation engines.
 
 ---
 
-# Data Driven Design
+# Data-Driven Requirements
 
-The Progression System contains no hardcoded balancing values.
+Numerical progression values belong in authored data/configuration, not UI or scene conditionals.
 
-All progression thresholds, unlocks, rewards, and requirements are defined through data tables.
+Current combat progression curves are authored in:
 
-The game logic only evaluates progression rules and applies the configured results.
+`packages/data/src/config/combat-progression.ts`
+
+Content identity and zone definitions remain in their dedicated data catalogs.
+
+Adding a future zone or weapon should normally require data + benchmark scenarios, not new combat rules.
 
 ---
 
-# Data Tables
+# Acceptance Rules for Future Progression
 
-The Progression System uses data tables including, but not limited to:
+Before a new world band is considered balanced:
 
-- ProgressionSettingsTable
-- EquipmentTierUnlockTable
-- ProgressionRequirementTable
-- ProgressionRewardTable
+1. define its intended equipment/enchantment progression contract;
+2. benchmark representative weapons/loadouts with the live runtime;
+3. verify the entry wall and each meaningful upgrade checkpoint;
+4. distinguish assisted clears (potions/manual intervention) from reliable AFK clears;
+5. verify weapon deltas and outliers with weapon/package scoring;
+6. adjust authored data, not the benchmark, to reach the intended contract;
+7. retain regression tests for validated checkpoints.
 
-All balancing values are defined by data.
+---
 
-The system logic must never rely on hardcoded numerical values.
+# Summary
+
+Albion Idle progression is a sequence of readable walls and power responses rather than a global level treadmill.
+
+Combat exposes a need. Production, equipment, enchantment, mastery, consumables and loadout choices answer that need. The Island unlocks production capacity according to world progression, and improved production feeds the hero back into combat.
+
+The validated Blue curve is the first reference implementation of this philosophy and the calibration template for future world bands.
 
 DOCUMENT TERMINÉ
