@@ -1,5 +1,9 @@
 import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { getEnemyCombatProfile, type ZoneDefinitionId } from "@game/gameplay";
+import {
+  HEALTH_POTION_COOLDOWN_SECONDS,
+  HEALTH_POTION_HEAL_RATIO,
+} from "./economyContentCatalog";
 import { resolveMonsterForEncounter } from "./monsterContentCatalog";
 import { getWeaponAbilityMechanics } from "./weaponAbilityMechanics";
 import { resolveEquipmentInfo } from "./itemContentCatalog";
@@ -18,6 +22,8 @@ export interface BlueSegmentBenchmarkInput {
   readonly zoneDefId: ZoneDefinitionId;
   /** Zero-based segment index. */
   readonly segmentIndex: number;
+  /** Simulates skilled/manual potion usage. Cooldown still applies normally. */
+  readonly useHealthPotions?: boolean;
 }
 
 export interface SyntheticBlueSegmentBenchmarkInput {
@@ -27,6 +33,8 @@ export interface SyntheticBlueSegmentBenchmarkInput {
   readonly zoneDefId: ZoneDefinitionId;
   /** Zero-based segment index. */
   readonly segmentIndex: number;
+  /** Simulates skilled/manual potion usage. Cooldown still applies normally. */
+  readonly useHealthPotions?: boolean;
 }
 
 export interface BlueEncounterBenchmarkResult {
@@ -36,6 +44,7 @@ export interface BlueEncounterBenchmarkResult {
   readonly damageTaken: number;
   readonly healthAfter: number;
   readonly startedAtFullHealth: boolean;
+  readonly potionsUsed: number;
 }
 
 export interface BlueSegmentBenchmarkResult {
@@ -44,6 +53,7 @@ export interface BlueSegmentBenchmarkResult {
   readonly totalDamageTaken: number;
   readonly remainingHealth: number;
   readonly remainingHealthRatio: number;
+  readonly potionsUsed: number;
   readonly encounters: readonly BlueEncounterBenchmarkResult[];
 }
 
@@ -53,6 +63,15 @@ interface NeutralCombatEnvelope {
   readonly armor: number;
   readonly magicResistance: number;
 }
+
+interface IncomingDamageResolution {
+  readonly healthAfter: number;
+  readonly cooldownAfter: number;
+  readonly potionsUsed: number;
+  readonly survived: boolean;
+}
+
+const POTION_USE_HEALTH_RATIO = 1 - HEALTH_POTION_HEAL_RATIO;
 
 function median(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
@@ -146,6 +165,100 @@ function assertBluePlacement(zoneDefId: ZoneDefinitionId) {
 }
 
 /**
+ * Applies continuous incoming pressure for one encounter. Potion usage models a
+ * skilled player: use only when at least the full 30% heal can be consumed,
+ * then respect the real 20 s cooldown. The cooldown is ready at segment start,
+ * matching ConsumableRuntime's segment-start reset, but the pre-encounter-5
+ * full heal does not reset the potion cooldown.
+ */
+function resolveIncomingDamage(
+  health: number,
+  maxHealth: number,
+  enemyDps: number,
+  duration: number,
+  initialCooldown: number,
+  useHealthPotions: boolean,
+): IncomingDamageResolution {
+  if (enemyDps <= 0 || duration <= 0) {
+    return {
+      healthAfter: health,
+      cooldownAfter: Math.max(0, initialCooldown - duration),
+      potionsUsed: 0,
+      survived: health > 0,
+    };
+  }
+
+  let currentHealth = health;
+  let cooldown = Math.max(0, initialCooldown);
+  let remaining = duration;
+  let potionsUsed = 0;
+  const thresholdHealth = maxHealth * POTION_USE_HEALTH_RATIO;
+  const healAmount = Math.ceil(maxHealth * HEALTH_POTION_HEAL_RATIO);
+
+  while (remaining > 1e-9 && currentHealth > 0) {
+    if (useHealthPotions && cooldown <= 1e-9 && currentHealth <= thresholdHealth) {
+      currentHealth = Math.min(maxHealth, currentHealth + healAmount);
+      cooldown = HEALTH_POTION_COOLDOWN_SECONDS;
+      potionsUsed += 1;
+      continue;
+    }
+
+    const timeToDeath = currentHealth / enemyDps;
+    const timeToPotionThreshold = currentHealth > thresholdHealth
+      ? (currentHealth - thresholdHealth) / enemyDps
+      : Number.POSITIVE_INFINITY;
+    const timeToCooldownReady = cooldown > 1e-9
+      ? cooldown
+      : Number.POSITIVE_INFINITY;
+    const step = Math.min(
+      remaining,
+      timeToDeath,
+      timeToPotionThreshold,
+      timeToCooldownReady,
+    );
+
+    if (!Number.isFinite(step) || step <= 1e-9) {
+      // No future potion event can change the outcome; consume the remainder.
+      currentHealth -= enemyDps * remaining;
+      cooldown = Math.max(0, cooldown - remaining);
+      remaining = 0;
+      break;
+    }
+
+    currentHealth -= enemyDps * step;
+    cooldown = Math.max(0, cooldown - step);
+    remaining -= step;
+  }
+
+  return {
+    healthAfter: Math.max(0, currentHealth),
+    cooldownAfter: cooldown,
+    potionsUsed,
+    survived: currentHealth > 0,
+  };
+}
+
+function buildResult(
+  clear: boolean,
+  totalTimeSeconds: number,
+  totalDamageTaken: number,
+  currentHealth: number,
+  maxHealth: number,
+  potionsUsed: number,
+  encounters: readonly BlueEncounterBenchmarkResult[],
+): BlueSegmentBenchmarkResult {
+  return {
+    clear,
+    totalTimeSeconds,
+    totalDamageTaken,
+    remainingHealth: currentHealth,
+    remainingHealthRatio: currentHealth / maxHealth,
+    potionsUsed,
+    encounters,
+  };
+}
+
+/**
  * Deterministic progression estimator using the same authored enemy profiles,
  * monster damage types, player equipment stats and weapon ability data as the
  * live runtime. Exact animation/cast timing remains runtime/manual validation.
@@ -170,12 +283,13 @@ export function benchmarkBlueSegment(
 
   const encounters: BlueEncounterBenchmarkResult[] = [];
   let currentHealth = combat.defense.maxHealth;
+  let potionCooldown = 0;
+  let totalPotionsUsed = 0;
   let totalDamageTaken = 0;
   let totalTimeSeconds = 0;
   let clear = true;
 
   for (let encounterIndex = 0; encounterIndex < ENCOUNTERS_PER_SEGMENT; encounterIndex += 1) {
-    // Live CombatRuntime restores the hero immediately before encounter five.
     const startedAtFullHealth = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
     if (startedAtFullHealth) currentHealth = combat.defense.maxHealth;
 
@@ -198,34 +312,45 @@ export function benchmarkBlueSegment(
       * enemy.attackSpeed
       * (1 - clampResistance(heroResistance) / 100)
       * (1 - pressureReduction);
-    const damageTaken = enemyDps * timeToKillSeconds;
-    currentHealth -= damageTaken;
-    totalDamageTaken += damageTaken;
+    const theoreticalDamage = enemyDps * timeToKillSeconds;
+    const resolved = resolveIncomingDamage(
+      currentHealth,
+      combat.defense.maxHealth,
+      enemyDps,
+      timeToKillSeconds,
+      potionCooldown,
+      input.useHealthPotions === true,
+    );
+    currentHealth = resolved.healthAfter;
+    potionCooldown = resolved.cooldownAfter;
+    totalPotionsUsed += resolved.potionsUsed;
+    totalDamageTaken += theoreticalDamage;
     totalTimeSeconds += timeToKillSeconds;
 
     encounters.push({
       encounterIndex,
       monsterId: monster.id,
       timeToKillSeconds,
-      damageTaken,
-      healthAfter: Math.max(0, currentHealth),
+      damageTaken: theoreticalDamage,
+      healthAfter: currentHealth,
       startedAtFullHealth,
+      potionsUsed: resolved.potionsUsed,
     });
-    if (currentHealth <= 0) {
+    if (!resolved.survived) {
       clear = false;
-      currentHealth = 0;
       break;
     }
   }
 
-  return {
+  return buildResult(
     clear,
     totalTimeSeconds,
     totalDamageTaken,
-    remainingHealth: currentHealth,
-    remainingHealthRatio: currentHealth / combat.defense.maxHealth,
+    currentHealth,
+    combat.defense.maxHealth,
+    totalPotionsUsed,
     encounters,
-  };
+  );
 }
 
 /**
@@ -245,6 +370,8 @@ export function benchmarkSyntheticIdealBlueSegment(
 
   const encounters: BlueEncounterBenchmarkResult[] = [];
   let currentHealth = ideal.maxHealth;
+  let potionCooldown = 0;
+  let totalPotionsUsed = 0;
   let totalDamageTaken = 0;
   let totalTimeSeconds = 0;
   let clear = true;
@@ -273,32 +400,43 @@ export function benchmarkSyntheticIdealBlueSegment(
     const enemyDps = enemy.damage
       * enemy.attackSpeed
       * (1 - clampResistance(heroResistance) / 100);
-    const damageTaken = enemyDps * timeToKillSeconds;
-    currentHealth -= damageTaken;
-    totalDamageTaken += damageTaken;
+    const theoreticalDamage = enemyDps * timeToKillSeconds;
+    const resolved = resolveIncomingDamage(
+      currentHealth,
+      ideal.maxHealth,
+      enemyDps,
+      timeToKillSeconds,
+      potionCooldown,
+      input.useHealthPotions === true,
+    );
+    currentHealth = resolved.healthAfter;
+    potionCooldown = resolved.cooldownAfter;
+    totalPotionsUsed += resolved.potionsUsed;
+    totalDamageTaken += theoreticalDamage;
     totalTimeSeconds += timeToKillSeconds;
 
     encounters.push({
       encounterIndex,
       monsterId: monster.id,
       timeToKillSeconds,
-      damageTaken,
-      healthAfter: Math.max(0, currentHealth),
+      damageTaken: theoreticalDamage,
+      healthAfter: currentHealth,
       startedAtFullHealth,
+      potionsUsed: resolved.potionsUsed,
     });
-    if (currentHealth <= 0) {
+    if (!resolved.survived) {
       clear = false;
-      currentHealth = 0;
       break;
     }
   }
 
-  return {
+  return buildResult(
     clear,
     totalTimeSeconds,
     totalDamageTaken,
-    remainingHealth: currentHealth,
-    remainingHealthRatio: currentHealth / ideal.maxHealth,
+    currentHealth,
+    ideal.maxHealth,
+    totalPotionsUsed,
     encounters,
-  };
+  );
 }
