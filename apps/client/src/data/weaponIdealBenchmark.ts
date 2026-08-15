@@ -1,6 +1,6 @@
 import { getEnchantmentStatMultiplier } from "@game/gameplay";
 import { getWeaponAbilityMechanics } from "./weaponAbilityMechanics";
-import { getWeaponAttackSpeed } from "./itemPower";
+import { getItemTier, getWeaponAttackSpeed } from "./itemPower";
 import { resolveEquipmentInfo } from "./itemContentCatalog";
 import {
   resolveUnlockedWeaponAbilities,
@@ -9,11 +9,12 @@ import {
 
 export const WEAPON_BALANCE_MASTERY_CHECKPOINTS = [1, 10, 30, 50] as const;
 export type WeaponBalanceMasteryCheckpoint = (typeof WEAPON_BALANCE_MASTERY_CHECKPOINTS)[number];
+export type BenchmarkEnchantment = 0 | 1 | 2 | 3;
 
 export interface WeaponBenchmarkProfile {
   readonly itemId: string;
-  readonly masteryLevel: WeaponBalanceMasteryCheckpoint;
-  readonly enchantment: 0 | 1 | 2 | 3;
+  readonly masteryLevel: number;
+  readonly enchantment: BenchmarkEnchantment;
   readonly sustainedDps: number;
   readonly autoAttackDps: number;
   readonly abilityDps: number;
@@ -21,12 +22,52 @@ export interface WeaponBenchmarkProfile {
   readonly handling: "one_handed" | "two_handed" | "none";
 }
 
+export interface WeaponDefensiveBenchmarkProfile {
+  readonly itemId: string;
+  readonly enchantment: BenchmarkEnchantment;
+  readonly maxHealth: number;
+  readonly armor: number;
+  readonly magicResistance: number;
+  readonly physicalEffectiveHealth: number;
+  readonly magicalEffectiveHealth: number;
+  readonly averageEffectiveHealth: number;
+  readonly offHandItemId?: string | undefined;
+}
+
+export interface WeaponCombatBenchmarkProfile {
+  readonly offense: WeaponBenchmarkProfile;
+  readonly defense: WeaponDefensiveBenchmarkProfile;
+}
+
 export interface SyntheticIdealWeaponProfile {
-  readonly masteryLevel: WeaponBalanceMasteryCheckpoint;
+  readonly masteryLevel: number;
   readonly sustainedDps: number;
   readonly lowerBound: number;
   readonly upperBound: number;
 }
+
+export interface SyntheticIdealCombatProfile extends SyntheticIdealWeaponProfile {
+  readonly physicalEffectiveHealth: number;
+  readonly magicalEffectiveHealth: number;
+  readonly averageEffectiveHealth: number;
+}
+
+const BASE_HERO_MAX_HEALTH = 100;
+const T3_DEFENSIVE_LOADOUT = [
+  "item_iron_helmet",
+  "item_leather_armor",
+  "item_leather_boots",
+  "item_traveler_cape",
+] as const;
+const T4_DEFENSIVE_LOADOUT = [
+  "item_helmet_t4_reinforced",
+  "item_armor_t4_leather",
+  "item_boots_t4_leather",
+  // No authored T4 cape exists yet; the current progression keeps the T3 cape.
+  "item_traveler_cape",
+] as const;
+const T3_SHIELD = "item_shield_t3_reinforced";
+const T4_SHIELD = "item_shield_t4_reinforced";
 
 function median(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
@@ -39,11 +80,13 @@ function median(values: readonly number[]): number {
 function sourceDamageWithMastery(
   itemId: string,
   masteryLevel: number,
-  enchantment: 0 | 1 | 2 | 3,
+  enchantment: BenchmarkEnchantment,
 ): number {
   const info = resolveEquipmentInfo(itemId);
   const base = info?.stats?.stat_physical_damage ?? info?.stats?.stat_magical_damage ?? 0;
   const enchantmentMultiplier = getEnchantmentStatMultiplier(enchantment);
+  // Same-level family + specialization = 1.5 bonus IP / mastery level.
+  // +100 bonus IP = +20% weapon damage => +0.3% damage / mastery level.
   const masteryMultiplier = 1 + (masteryLevel * 1.5) / 500;
   return base * enchantmentMultiplier * masteryMultiplier;
 }
@@ -72,8 +115,6 @@ function abilityTotalRatio(
     if (mechanic.kind === "damage") {
       let ratio = 1 + mechanic.ratio;
       if (mechanic.bonusHealthBelow !== undefined) {
-        // This bonus is guaranteed whenever a target-health autocast reaches
-        // its execute window, so the availability factor handles uptime.
         ratio += mechanic.bonusHealthBelow.bonusRatio;
       }
       if (
@@ -103,10 +144,48 @@ function autoCastAvailabilityFactor(itemId: string, abilityId: string, masteryLe
   return 1;
 }
 
+function defensiveLoadoutForWeapon(itemId: string): {
+  readonly armorItemIds: readonly string[];
+  readonly offHandItemId?: string | undefined;
+} {
+  const definition = resolveEquipmentInfo(itemId);
+  const tier = getItemTier(itemId);
+  if (definition === undefined || definition.slot !== "weapon" || (tier !== 3 && tier !== 4)) {
+    throw new Error(`Defensive benchmark is authored for T3/T4 weapons only: ${itemId}`);
+  }
+  const armorItemIds = tier === 3 ? T3_DEFENSIVE_LOADOUT : T4_DEFENSIVE_LOADOUT;
+  if (definition.handling !== "one_handed") return { armorItemIds };
+  return {
+    armorItemIds,
+    offHandItemId: tier === 3 ? T3_SHIELD : T4_SHIELD,
+  };
+}
+
+function effectiveEquipmentStat(
+  itemId: string,
+  statId: "stat_max_health" | "stat_armor" | "stat_magic_resistance",
+  enchantment: BenchmarkEnchantment,
+): number {
+  const info = resolveEquipmentInfo(itemId);
+  const value = info?.stats?.[statId] ?? 0;
+  const tier = getItemTier(itemId);
+  // T3 cannot be enchanted. This also keeps the current T3 cape untouched when
+  // it is part of a T4 loadout.
+  const multiplier = tier !== undefined && tier >= 4
+    ? getEnchantmentStatMultiplier(enchantment)
+    : 1;
+  return value * multiplier;
+}
+
+function effectiveHealth(maxHealth: number, resistance: number): number {
+  const safeResistance = Math.min(80, Math.max(0, resistance));
+  return maxHealth / (1 - safeResistance / 100);
+}
+
 export function getWeaponBenchmarkProfile(
   itemId: string,
-  masteryLevel: WeaponBalanceMasteryCheckpoint,
-  enchantment: 0 | 1 | 2 | 3 = 0,
+  masteryLevel: number,
+  enchantment: BenchmarkEnchantment = 0,
 ): WeaponBenchmarkProfile {
   const definition = resolveEquipmentInfo(itemId);
   if (definition === undefined || definition.slot !== "weapon") {
@@ -137,15 +216,57 @@ export function getWeaponBenchmarkProfile(
   };
 }
 
+export function getWeaponDefensiveBenchmarkProfile(
+  itemId: string,
+  enchantment: BenchmarkEnchantment = 0,
+): WeaponDefensiveBenchmarkProfile {
+  const { armorItemIds, offHandItemId } = defensiveLoadoutForWeapon(itemId);
+  const itemIds = offHandItemId === undefined
+    ? armorItemIds
+    : [...armorItemIds, offHandItemId];
+
+  let maxHealth = BASE_HERO_MAX_HEALTH;
+  let armor = 0;
+  let magicResistance = 0;
+  for (const defensiveItemId of itemIds) {
+    maxHealth += effectiveEquipmentStat(defensiveItemId, "stat_max_health", enchantment);
+    armor += effectiveEquipmentStat(defensiveItemId, "stat_armor", enchantment);
+    magicResistance += effectiveEquipmentStat(defensiveItemId, "stat_magic_resistance", enchantment);
+  }
+
+  const physicalEffectiveHealth = effectiveHealth(maxHealth, armor);
+  const magicalEffectiveHealth = effectiveHealth(maxHealth, magicResistance);
+  return {
+    itemId,
+    enchantment,
+    maxHealth,
+    armor,
+    magicResistance,
+    physicalEffectiveHealth,
+    magicalEffectiveHealth,
+    averageEffectiveHealth: (physicalEffectiveHealth + magicalEffectiveHealth) / 2,
+    offHandItemId,
+  };
+}
+
+export function getWeaponCombatBenchmarkProfile(
+  itemId: string,
+  masteryLevel: number,
+  enchantment: BenchmarkEnchantment = 0,
+): WeaponCombatBenchmarkProfile {
+  return {
+    offense: getWeaponBenchmarkProfile(itemId, masteryLevel, enchantment),
+    defense: getWeaponDefensiveBenchmarkProfile(itemId, enchantment),
+  };
+}
+
 /**
  * Synthetic reference = median sustained output of the compared set, never one
- * live weapon. +/-10% is the first-pass offensive envelope. Defensive utility,
- * control and encounter-specific value are evaluated separately before a final
- * weapon adjustment is accepted.
+ * live weapon. +/-10% is the first-pass offensive envelope.
  */
 export function getSyntheticIdealWeaponProfile(
   profiles: readonly WeaponBenchmarkProfile[],
-  masteryLevel: WeaponBalanceMasteryCheckpoint,
+  masteryLevel: number,
 ): SyntheticIdealWeaponProfile {
   const comparable = profiles.filter((profile) => profile.masteryLevel === masteryLevel);
   const sustainedDps = median(comparable.map((profile) => profile.sustainedDps));
@@ -154,5 +275,33 @@ export function getSyntheticIdealWeaponProfile(
     sustainedDps,
     lowerBound: sustainedDps * 0.9,
     upperBound: sustainedDps * 1.1,
+  };
+}
+
+/**
+ * Combat ideal keeps offense and defense as separate budgets. We deliberately
+ * do not collapse them into one arbitrary score: a 1H shield build is allowed
+ * to trade clear speed for survivability while 2H builds do the inverse.
+ */
+export function getSyntheticIdealCombatProfile(
+  profiles: readonly WeaponCombatBenchmarkProfile[],
+  masteryLevel: number,
+): SyntheticIdealCombatProfile {
+  const comparable = profiles.filter((profile) => profile.offense.masteryLevel === masteryLevel);
+  const offense = getSyntheticIdealWeaponProfile(
+    comparable.map((profile) => profile.offense),
+    masteryLevel,
+  );
+  const physicalEffectiveHealth = median(
+    comparable.map((profile) => profile.defense.physicalEffectiveHealth),
+  );
+  const magicalEffectiveHealth = median(
+    comparable.map((profile) => profile.defense.magicalEffectiveHealth),
+  );
+  return {
+    ...offense,
+    physicalEffectiveHealth,
+    magicalEffectiveHealth,
+    averageEffectiveHealth: (physicalEffectiveHealth + magicalEffectiveHealth) / 2,
   };
 }
