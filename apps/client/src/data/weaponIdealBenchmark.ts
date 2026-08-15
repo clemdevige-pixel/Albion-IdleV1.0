@@ -2,10 +2,7 @@ import { getEnchantmentStatMultiplier } from "@game/gameplay";
 import { getWeaponAbilityMechanics } from "./weaponAbilityMechanics";
 import { getItemTier, getWeaponAttackSpeed } from "./itemPower";
 import { resolveEquipmentInfo } from "./itemContentCatalog";
-import {
-  resolveUnlockedWeaponAbilities,
-  resolveWeaponMastery,
-} from "./weaponContentCatalog";
+import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "./weaponContentCatalog";
 
 export const WEAPON_BALANCE_MASTERY_CHECKPOINTS = [1, 10, 30, 50] as const;
 export type WeaponBalanceMasteryCheckpoint = (typeof WEAPON_BALANCE_MASTERY_CHECKPOINTS)[number];
@@ -27,9 +24,10 @@ export interface WeaponCombatBenchmarkProfile { readonly offense: WeaponBenchmar
 export interface SyntheticIdealWeaponProfile { readonly masteryLevel: number; readonly sustainedDps: number; readonly openerDps5s: number; readonly openerDps10s: number; readonly lowerBound: number; readonly upperBound: number; }
 export interface SyntheticIdealCombatProfile extends SyntheticIdealWeaponProfile { readonly physicalEffectiveHealth: number; readonly magicalEffectiveHealth: number; readonly averageEffectiveHealth: number; }
 
-export const BASE_HERO_MAX_HEALTH = 500;
-export const BASE_HERO_ARMOR = 10;
-export const BASE_HERO_MAGIC_RESISTANCE = 5;
+// Must stay in parity with setupCombatEntity / live hero creation.
+export const BASE_HERO_MAX_HEALTH = 300;
+export const BASE_HERO_ARMOR = 0;
+export const BASE_HERO_MAGIC_RESISTANCE = 0;
 export const T3_DEFENSIVE_LOADOUT = ["item_iron_helmet", "item_leather_armor", "item_leather_boots", "item_traveler_cape"] as const;
 export const T4_DEFENSIVE_LOADOUT = ["item_helmet_t4_reinforced", "item_armor_t4_leather", "item_boots_t4_leather", "item_traveler_cape"] as const;
 export const T3_SHIELD = "item_shield_t3_reinforced";
