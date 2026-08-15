@@ -16,6 +16,7 @@ import {
   TargetManager,
   TargetValidator,
   createDefaultStatRegistry,
+  type MasteryId,
   type StatId,
   type ZoneDefinitionId,
 } from "@game/gameplay";
@@ -85,6 +86,20 @@ function equipItem(
   }
 }
 
+function seedOneMasteryLevel(
+  masteryId: MasteryId,
+  targetLevel: number,
+  masteryService: ReturnType<typeof createProgressionFoundation>["masteryService"],
+  experienceService: ReturnType<typeof createProgressionFoundation>["experienceService"],
+): number {
+  const table = masteryService._getTable(masteryId);
+  if (table === undefined) throw new Error(`Missing mastery table for ${String(masteryId)}`);
+  let totalXp = 0;
+  for (let level = 0; level < targetLevel; level += 1) totalXp += table.getRequiredXp(level);
+  if (totalXp > 0) experienceService.addExperience(masteryId, totalXp, "combat");
+  return masteryService.getMasteryState(masteryId)?.level ?? 0;
+}
+
 function seedMasteryLevel(
   input: BlueRuntimeBenchmarkInput,
   masteryService: ReturnType<typeof createProgressionFoundation>["masteryService"],
@@ -95,12 +110,10 @@ function seedMasteryLevel(
   masteryService.discoverMastery(route.familyId);
   masteryService.discoverMastery(route.weaponId);
   const targetLevel = Math.max(1, Math.floor(input.masteryLevel ?? 1));
-  const table = masteryService._getTable(route.weaponId);
-  if (table === undefined) throw new Error(`Missing mastery table for ${input.weaponItemId}`);
-  let totalXp = 0;
-  for (let level = 0; level < targetLevel; level += 1) totalXp += table.getRequiredXp(level);
-  if (totalXp > 0) experienceService.addExperience(route.weaponId, totalXp, "combat");
-  return masteryService.getMasteryState(route.weaponId)?.level ?? 0;
+  // Live combat rewards both the weapon specialization and its family. Seed both
+  // so mastery IP in this harness matches the actual progression package.
+  seedOneMasteryLevel(route.familyId, targetLevel, masteryService, experienceService);
+  return seedOneMasteryLevel(route.weaponId, targetLevel, masteryService, experienceService);
 }
 
 /**
@@ -155,6 +168,7 @@ export function runBlueRuntimeBenchmark(input: BlueRuntimeBenchmarkInput): BlueR
   let finishedSegment = false;
   let defeated = false;
   let potionsUsed = 0;
+  let segmentEndHpPercent: number | undefined;
   const runtime = new CombatRuntime({
     world,
     heroId,
@@ -175,6 +189,8 @@ export function runBlueRuntimeBenchmark(input: BlueRuntimeBenchmarkInput): BlueR
       onDefeat: () => { defeated = true; },
       onVictory: () => {
         if (encounterIndex >= 4) {
+          const health = damageManager.getHealth(heroId);
+          segmentEndHpPercent = (health.currentHealth / health.maxHealth) * 100;
           finishedSegment = true;
           return { enteredNewSegment: true };
         }
@@ -214,7 +230,7 @@ export function runBlueRuntimeBenchmark(input: BlueRuntimeBenchmarkInput): BlueR
     weaponItemId: input.weaponItemId,
     clear: finishedSegment && !defeated,
     seconds: Number((ticks * DT).toFixed(1)),
-    hpPercent: Number(((health.currentHealth / health.maxHealth) * 100).toFixed(1)),
+    hpPercent: Number((segmentEndHpPercent ?? ((health.currentHealth / health.maxHealth) * 100)).toFixed(1)),
     encounterReached: encounterIndex + 1,
     maxHealth: health.maxHealth,
     armor: statsManager.getStat(heroId, STAT_ARMOR).computed,
