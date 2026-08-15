@@ -3,6 +3,7 @@ import {
   getIslandBuildingDefinition,
   getIslandBuildingMaxProductionTier,
   type IslandBuildingId,
+  type IslandWorkerProfession,
 } from "@game/data";
 import {
   PRODUCTION_CONTENT_TIERS,
@@ -11,6 +12,13 @@ import {
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./gatheringBuilding.css";
+
+const WORKER_PROFESSION_ICONS: Readonly<Record<IslandWorkerProfession, string>> = {
+  woodcutter: "🪓",
+  miner: "⛏",
+  skinner: "🗡",
+  fiber_harvester: "🌾",
+};
 
 export function GatheringBuildingPanel({
   definitionId,
@@ -57,7 +65,9 @@ export function GatheringBuildingPanel({
       ) : (
         <>
           <div className="ui-island-gathering-building__worker">
-            <span className="ui-island-gathering-building__worker-avatar" aria-hidden="true">⛏</span>
+            <span className="ui-island-gathering-building__worker-avatar" aria-hidden="true">
+              {WORKER_PROFESSION_ICONS[service.workerProfession]}
+            </span>
             <div>
               <small>Ouvrier affectable</small>
               <strong>{worker.displayName} · {worker.professionName}</strong>
@@ -75,7 +85,8 @@ export function GatheringBuildingPanel({
 
           <div className="ui-island-gathering-building__tiers" role="group" aria-label="Tier de production du worker">
             {PRODUCTION_CONTENT_TIERS.map((tier) => {
-              const masteryLocked = worker.mastery < getRequiredGatheringMasteryForTier(tier);
+              const requiredTierMastery = getRequiredGatheringMasteryForTier(tier);
+              const masteryLocked = worker.mastery < requiredTierMastery;
               const buildingLocked = tier > maxTier;
               return (
                 <button
@@ -83,24 +94,41 @@ export function GatheringBuildingPanel({
                   type="button"
                   className={selectedTier === tier ? "is-active" : ""}
                   disabled={masteryLocked || buildingLocked}
-                  title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : masteryLocked ? `Maîtrise ${String(getRequiredGatheringMasteryForTier(tier))} requise` : undefined}
+                  title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : masteryLocked ? `Maîtrise ${String(requiredTierMastery)} requise` : undefined}
                   onClick={() => { setSelectedTier(tier); }}
                 >
-                  T{String(tier)}{buildingLocked || masteryLocked ? <span aria-hidden="true"> 🔒</span> : null}
+                  <span>T{String(tier)}</span>
+                  {buildingLocked || masteryLocked ? <b aria-hidden="true">🔒</b> : null}
                 </button>
               );
             })}
           </div>
 
           <div className="ui-island-gathering-building__facts">
-            <span><b>◆</b><small>Maîtrise</small><strong>{String(worker.mastery)}</strong></span>
-            <span><b>◷</b><small>Cycle</small><strong>{String(worker.yieldPerCycle)} / {String(worker.durationSeconds)} s</strong></span>
-            <span><small>Tier actuel</small><strong>T{String(worker.productionTier)}</strong></span>
+            <span>
+              <b className="ui-island-gathering-building__fact-icon">◆</b>
+              <small>Maîtrise</small>
+              <strong>{String(worker.mastery)}</strong>
+            </span>
+            <span>
+              <b className="ui-island-gathering-building__fact-icon">◷</b>
+              <small>Cycle</small>
+              <strong>{String(worker.yieldPerCycle)} / {String(worker.durationSeconds)} s</strong>
+            </span>
+            <span>
+              <small>Tier actuel</small>
+              <strong>T{String(worker.productionTier)}</strong>
+            </span>
           </div>
 
           <div className="ui-island-gathering-building__progress-block">
-            <div><span>Progression récolte (T{String(worker.productionTier)})</span><strong>{String(Math.round(progress))}%</strong></div>
-            <div className="ui-island-gathering-building__progress"><span style={{ width: `${String(progress)}%` }} /></div>
+            <div>
+              <span>Progression récolte (T{String(worker.productionTier)})</span>
+              <strong>{String(Math.round(progress))}%</strong>
+            </div>
+            <div className="ui-island-gathering-building__progress">
+              <span style={{ width: `${String(progress)}%` }} />
+            </div>
           </div>
 
           <button
