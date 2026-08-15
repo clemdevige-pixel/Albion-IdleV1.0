@@ -48,6 +48,18 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.pendingSegment).toBeNull();
   });
 
+  it("does not consume a queued segment change on defeat", () => {
+    const { worldRuntime } = createLoadedWorld(0);
+
+    expect(worldRuntime.queueSegmentChange(1)).toBe(true);
+    worldRuntime.advanceVictory();
+    worldRuntime.advanceDefeat();
+
+    expect(worldRuntime.currentSegment).toBe(2);
+    expect(worldRuntime.currentEncounter).toBe(0);
+    expect(worldRuntime.pendingSegment).toBe(0);
+  });
+
   it("restarts the saved active segment from encounter zero on load", () => {
     const { worldRuntime } = createLoadedWorld(3);
 
