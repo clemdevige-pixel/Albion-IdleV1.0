@@ -66,11 +66,11 @@ function projectPlayer(
     const ipMultiplier = getIpMultiplier(itemId, loadout);
     const defensiveMultiplier = definition.slot === "weapon"
       ? { maxHealth: 1, armor: 1, magicResistance: 1 }
-      : reallocation.equipmentStatMultiplier;
+      : definition.slot === "off_hand"
+        ? reallocation.offHandStatMultiplier
+        : reallocation.equipmentStatMultiplier;
     const stats = definition.stats ?? {};
 
-    // Reallocation changes real authored equipment budgets first; normal IP
-    // scaling is then applied on top. No defensive stat bypasses IP.
     maxHealth += (stats.stat_max_health ?? 0) * defensiveMultiplier.maxHealth * ipMultiplier;
     armor += (stats.stat_armor ?? 0) * defensiveMultiplier.armor * ipMultiplier;
     magicResistance +=
@@ -249,11 +249,14 @@ describe("data-driven combat balance matrix", () => {
     expect(rows.every((row) => row.physicalEhp > 0 && row.magicalEhp > 0)).toBe(true);
   });
 
-  it("compares real-stat reallocations while pinning current T4.3 totals", () => {
+  it("compares real-stat reallocations while pinning current 1H and 2H T4.3 totals", () => {
     const current = COMBAT_BALANCE_REALLOCATIONS[0];
-    const t43 = COMBAT_BALANCE_LOADOUTS.find((loadout) => loadout.id === "broadsword_t4_full_3");
-    if (t43 === undefined) throw new Error("Missing T4.3 ceiling loadout");
-    const ceiling = projectPlayer(t43, current);
+    const ceilingIds = ["broadsword_t4_full_3", "longbow_t4_full_3"] as const;
+    const ceilings = ceilingIds.map((id) => {
+      const loadout = COMBAT_BALANCE_LOADOUTS.find((candidate) => candidate.id === id);
+      if (loadout === undefined) throw new Error(`Missing T4.3 ceiling loadout: ${id}`);
+      return { loadout, profile: projectPlayer(loadout, current) };
+    });
 
     const rows = COMBAT_BALANCE_REALLOCATIONS.flatMap((reallocation) =>
       COMBAT_BALANCE_LOADOUTS.map((loadout) => {
@@ -276,10 +279,12 @@ describe("data-driven combat balance matrix", () => {
     console.table(rows);
 
     for (const reallocation of COMBAT_BALANCE_REALLOCATIONS) {
-      const candidateCeiling = projectPlayer(t43, reallocation);
-      expect(candidateCeiling.maxHealth).toBeCloseTo(ceiling.maxHealth, 8);
-      expect(candidateCeiling.armor).toBeCloseTo(ceiling.armor, 8);
-      expect(candidateCeiling.magicResistance).toBeCloseTo(ceiling.magicResistance, 8);
+      for (const { loadout, profile: ceiling } of ceilings) {
+        const candidateCeiling = projectPlayer(loadout, reallocation);
+        expect(candidateCeiling.maxHealth).toBeCloseTo(ceiling.maxHealth, 8);
+        expect(candidateCeiling.armor).toBeCloseTo(ceiling.armor, 8);
+        expect(candidateCeiling.magicResistance).toBeCloseTo(ceiling.magicResistance, 8);
+      }
     }
   });
 });
