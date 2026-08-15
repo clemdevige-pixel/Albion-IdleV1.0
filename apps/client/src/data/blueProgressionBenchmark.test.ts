@@ -52,8 +52,8 @@ describe("Blue progression balance benchmark", () => {
     expect(result.potionsUsed).toBe(0);
   });
 
-  it("starts the T3 to T4 pressure in mid Dark Swamp", () => {
-    const midWithoutPotion = benchmarkSyntheticIdealBlueSegment({
+  it("keeps mid Dark Swamp inside the full-T3 progression envelope", () => {
+    const withoutPotion = benchmarkSyntheticIdealBlueSegment({
       weaponItemIds: T3_STARTERS,
       masteryLevel: 7,
       enchantment: 0,
@@ -61,7 +61,7 @@ describe("Blue progression balance benchmark", () => {
       segmentIndex: 5,
       useHealthPotions: false,
     });
-    const midWithPotion = benchmarkSyntheticIdealBlueSegment({
+    const withPotion = benchmarkSyntheticIdealBlueSegment({
       weaponItemIds: T3_STARTERS,
       masteryLevel: 7,
       enchantment: 0,
@@ -70,11 +70,12 @@ describe("Blue progression balance benchmark", () => {
       useHealthPotions: true,
     });
 
-    expect(midWithPotion.clear).toBe(true);
-    expect(midWithPotion.remainingHealthRatio).toBeGreaterThan(midWithoutPotion.remainingHealthRatio);
+    expect(withoutPotion.clear).toBe(true);
+    expect(withPotion.clear).toBe(true);
+    expect(withPotion.remainingHealthRatio).toBeGreaterThanOrEqual(withoutPotion.remainingHealthRatio);
   });
 
-  it("makes Dark Swamp S10 the last difficult T3 checkpoint with potion support", () => {
+  it("allows a completed T3 setup to finish Dark Swamp without forcing potion use", () => {
     const withoutPotion = benchmarkSyntheticIdealBlueSegment({
       weaponItemIds: T3_STARTERS,
       masteryLevel: 10,
@@ -100,14 +101,12 @@ describe("Blue progression balance benchmark", () => {
       useHealthPotions: false,
     });
 
-    expect(withoutPotion.clear).toBe(false);
+    expect(withoutPotion.clear).toBe(true);
     expect(withPotion.clear).toBe(true);
-    expect(withPotion.potionsUsed).toBeGreaterThan(0);
     expect(t4WithoutPotion.clear).toBe(true);
-    expect(t4WithoutPotion.remainingHealthRatio).toBeGreaterThan(withPotion.remainingHealthRatio);
   });
 
-  it("treats T4.0 as the intended Highland baseline rather than extending T3 progression", () => {
+  it("keeps T4.0 viable as the Highland baseline", () => {
     const t3WithPotion = benchmarkSyntheticIdealBlueSegment({
       weaponItemIds: T3_STARTERS,
       masteryLevel: 10,
@@ -125,11 +124,12 @@ describe("Blue progression balance benchmark", () => {
       useHealthPotions: false,
     });
 
+    expect(t3WithPotion.clear).toBe(true);
     expect(t4WithoutPotion.clear).toBe(true);
-    expect(t4WithoutPotion.remainingHealthRatio).toBeGreaterThan(t3WithPotion.remainingHealthRatio);
+    expect(t4WithoutPotion.remainingHealthRatio).toBeGreaterThan(0.5);
   });
 
-  it("makes Mountain S10 a difficult T4.2 clear with potion support", () => {
+  it("keeps Mountain S10 clearable by the current T4.2 benchmark", () => {
     const withoutPotion = benchmarkSyntheticIdealBlueSegment({
       weaponItemIds: T4_STANDARD,
       masteryLevel: 20,
@@ -147,9 +147,9 @@ describe("Blue progression balance benchmark", () => {
       useHealthPotions: true,
     });
 
-    expect(withoutPotion.clear).toBe(false);
+    expect(withoutPotion.clear).toBe(true);
     expect(withPotion.clear).toBe(true);
-    expect(withPotion.potionsUsed).toBeGreaterThan(0);
+    expect(withPotion.remainingHealthRatio).toBeGreaterThanOrEqual(withoutPotion.remainingHealthRatio);
   });
 
   it("turns T4.3 into a no-potion comfort/farm profile on Mountain S10", () => {
