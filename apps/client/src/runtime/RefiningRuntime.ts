@@ -163,6 +163,22 @@ export class RefiningRuntime {
     return this.families[family].manager.getActiveSession() !== undefined;
   }
 
+  /**
+   * Persistence load replaces the authoritative production-storage snapshot.
+   * Any live sessions belong to the pre-load timeline and must therefore be
+   * discarded without refunding their in-memory reservations into the restored
+   * inventory. The save provider will restore the saved reservations exactly once.
+   */
+  public resetForPersistenceLoad(): void {
+    for (const family of SUPPORTED_REFINING_FAMILIES) {
+      const state = this.states[family];
+      state.automatic = false;
+      state.reservedInputs = [];
+      state.activeRecipe = undefined;
+      this.families[family].manager.clear();
+    }
+  }
+
   private getRecipe(
     family: SupportedRefiningFamily,
     tier: ProductionTier = this.getProductionTier(family),
@@ -397,6 +413,11 @@ export class RefiningSaveProvider implements SaveProvider {
   }
 
   load(data: unknown): void {
+    // Loading into an already-running GameProvider must first discard the live
+    // pre-load sessions. Do not refund them: the authoritative inventory has
+    // already been replaced by the persistence snapshot at this point.
+    this.refiningRuntime.resetForPersistenceLoad();
+
     if (
       data === null ||
       typeof data !== "object" ||
