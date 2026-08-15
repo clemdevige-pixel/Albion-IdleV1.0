@@ -20,10 +20,12 @@ export interface AbilityMechanicsProfile {
  */
 export const WEAPON_ABILITY_MECHANICS: Readonly<Record<string, AbilityMechanicsProfile>> = {
   // Broadsword: active-progression tuning. Q/W are back to authored baseline;
-  // AA carries the remaining pre-M30 reduction. E remains unchanged at M30.
+  // AA carries the remaining pre-M30 reduction. Exécution remains a true
+  // finisher (<30% HP auto-cast), but its bonus damage now activates below 50%
+  // HP so the finisher receives its empowered hit more reliably in live combat.
   ability_sword_heroic_strike: { mechanics: [{ kind: "damage", ratio: 0.75 }] },
   ability_sword_guard_breaker: { mechanics: [{ kind: "damage", ratio: 0.85 }, { kind: "status", effectId: "effect_sword_armor_break", effectType: "debuff", duration: 5, statId: "stat_armor", statDelta: -12 }] },
-  ability_sword_execution: { autoRule: { kind: "target_health_below", ratio: 0.3 }, mechanics: [{ kind: "damage", ratio: 1.55, bonusHealthBelow: { ratio: 0.3, bonusRatio: 0.75 } }] },
+  ability_sword_execution: { autoRule: { kind: "target_health_below", ratio: 0.3 }, mechanics: [{ kind: "damage", ratio: 1.55, bonusHealthBelow: { ratio: 0.5, bonusRatio: 0.75 } }] },
 
   // Longbow: recover from the previous Frostpeak breakpoint overshoot.
   // Q/W sit at -11% from authored baseline; AA returns to baseline cadence.
