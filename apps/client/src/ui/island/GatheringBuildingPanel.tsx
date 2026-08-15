@@ -3,22 +3,18 @@ import {
   getIslandBuildingDefinition,
   getIslandBuildingMaxProductionTier,
   type IslandBuildingId,
-  type IslandWorkerProfession,
 } from "@game/data";
 import {
   PRODUCTION_CONTENT_TIERS,
+  PRODUCTION_TIERS,
   getProductionFamilyDefinition,
+  type ProductionTier,
 } from "../../data/productionFamilyCatalog";
+import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import { getIslandMaterialQuantity } from "./islandMaterialPresentation";
 import "./gatheringBuilding.css";
-
-const WORKER_PROFESSION_ICONS: Readonly<Record<IslandWorkerProfession, string>> = {
-  woodcutter: "🪓",
-  miner: "⛏",
-  skinner: "🗡",
-  fiber_harvester: "🌾",
-};
 
 export function GatheringBuildingPanel({
   definitionId,
@@ -35,15 +31,26 @@ export function GatheringBuildingPanel({
   if (maxTier === undefined) throw new Error(`Gathering building ${definitionId} level ${String(level)} has no progression data`);
 
   const { workers } = useGameBridge();
-  const { toggleWorker } = useGameServices();
+  const {
+    toggleWorker,
+    inventoryManager,
+    productionStorageId,
+  } = useGameServices();
   const family = getProductionFamilyDefinition(service.productionFamily);
   const worker = workers.workers.find((candidate) => candidate.profession === service.workerProfession);
   const workerTier = worker?.productionTier ?? PRODUCTION_CONTENT_TIERS[0];
   const initialTier = workerTier > maxTier ? maxTier : workerTier;
-  const [selectedTier, setSelectedTier] = useState(initialTier);
-  const requiredMastery = getRequiredGatheringMasteryForTier(selectedTier);
+  const [selectedTier, setSelectedTier] = useState<ProductionTier>(initialTier);
+  const selectedTierIsAuthored = PRODUCTION_CONTENT_TIERS.some((tier) => tier === selectedTier);
+  const requiredMastery = selectedTierIsAuthored ? getRequiredGatheringMasteryForTier(selectedTier) : Number.POSITIVE_INFINITY;
   const masteryBlocked = worker !== undefined && worker.mastery < requiredMastery;
   const progress = worker === undefined ? 0 : Math.max(0, Math.min(100, worker.progress));
+  const selectedRawItemId = selectedTierIsAuthored
+    ? getProductionRefiningRecipe(service.productionFamily, selectedTier).rawItemId
+    : undefined;
+  const currentStock = selectedRawItemId === undefined
+    ? 0
+    : getIslandMaterialQuantity(inventoryManager, productionStorageId, selectedRawItemId);
 
   return (
     <div className="ui-island-gathering-building">
@@ -56,6 +63,10 @@ export function GatheringBuildingPanel({
           <strong>{family.label}</strong>
           <em>Production passive jusqu’au <b>T{String(maxTier)}</b></em>
         </div>
+        <div className="ui-island-gathering-building__stock">
+          <small>Stock T{String(selectedTier)}</small>
+          <strong>{selectedTierIsAuthored ? String(currentStock) : "—"}</strong>
+        </div>
       </div>
 
       {worker === undefined ? (
@@ -66,7 +77,7 @@ export function GatheringBuildingPanel({
         <>
           <div className="ui-island-gathering-building__worker">
             <span className="ui-island-gathering-building__worker-avatar" aria-hidden="true">
-              {WORKER_PROFESSION_ICONS[service.workerProfession]}
+              <img src={family.professionIcon} alt="" />
             </span>
             <div>
               <small>Ouvrier affectable</small>
@@ -79,62 +90,53 @@ export function GatheringBuildingPanel({
 
           <div className="ui-island-gathering-building__hint">
             {worker.state === "working"
-              ? "Production automatique active. Vous pouvez maintenant gather activement la même ressource pour accélérer votre progression."
-              : `Sélectionnez T${String(selectedTier)} puis lancez la production. Le gather actif du héros reste disponible en parallèle.`}
+              ? "Production automatique active. Le gather actif du héros peut accélérer cette même ressource."
+              : `Sélectionnez T${String(selectedTier)} puis lancez la production.`}
           </div>
 
           <div className="ui-island-gathering-building__tiers" role="group" aria-label="Tier de production du worker">
-            {PRODUCTION_CONTENT_TIERS.map((tier) => {
-              const requiredTierMastery = getRequiredGatheringMasteryForTier(tier);
-              const masteryLocked = worker.mastery < requiredTierMastery;
+            {PRODUCTION_TIERS.map((tier) => {
+              const authored = PRODUCTION_CONTENT_TIERS.some((contentTier) => contentTier === tier);
+              const masteryLocked = authored && worker.mastery < getRequiredGatheringMasteryForTier(tier);
               const buildingLocked = tier > maxTier;
+              const unavailable = !authored || masteryLocked || buildingLocked;
+              const title = !authored
+                ? `T${String(tier)} prévu pour le futur contenu`
+                : buildingLocked
+                  ? `Améliorez le bâtiment pour débloquer T${String(tier)}`
+                  : masteryLocked
+                    ? `Maîtrise ${String(getRequiredGatheringMasteryForTier(tier))} requise`
+                    : undefined;
               return (
                 <button
                   key={tier}
                   type="button"
                   className={selectedTier === tier ? "is-active" : ""}
-                  disabled={masteryLocked || buildingLocked}
-                  title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : masteryLocked ? `Maîtrise ${String(requiredTierMastery)} requise` : undefined}
+                  disabled={unavailable}
+                  title={title}
                   onClick={() => { setSelectedTier(tier); }}
                 >
-                  <span>T{String(tier)}</span>
-                  {buildingLocked || masteryLocked ? <b aria-hidden="true">🔒</b> : null}
+                  T{String(tier)}{unavailable ? <span aria-hidden="true"> 🔒</span> : null}
                 </button>
               );
             })}
           </div>
 
           <div className="ui-island-gathering-building__facts">
-            <span>
-              <b className="ui-island-gathering-building__fact-icon">◆</b>
-              <small>Maîtrise</small>
-              <strong>{String(worker.mastery)}</strong>
-            </span>
-            <span>
-              <b className="ui-island-gathering-building__fact-icon">◷</b>
-              <small>Cycle</small>
-              <strong>{String(worker.yieldPerCycle)} / {String(worker.durationSeconds)} s</strong>
-            </span>
-            <span>
-              <small>Tier actuel</small>
-              <strong>T{String(worker.productionTier)}</strong>
-            </span>
+            <span><b>◆</b><small>Maîtrise</small><strong>{String(worker.mastery)}</strong></span>
+            <span><b>◷</b><small>Cycle</small><strong>{String(worker.yieldPerCycle)} / {String(worker.durationSeconds)} s</strong></span>
+            <span><small>Tier actuel</small><strong>T{String(worker.productionTier)}</strong></span>
           </div>
 
           <div className="ui-island-gathering-building__progress-block">
-            <div>
-              <span>Progression récolte (T{String(worker.productionTier)})</span>
-              <strong>{String(Math.round(progress))}%</strong>
-            </div>
-            <div className="ui-island-gathering-building__progress">
-              <span style={{ width: `${String(progress)}%` }} />
-            </div>
+            <div><span>Progression récolte (T{String(worker.productionTier)})</span><strong>{String(Math.round(progress))}%</strong></div>
+            <div className="ui-island-gathering-building__progress"><span style={{ width: `${String(progress)}%` }} /></div>
           </div>
 
           <button
             className="ui-island-gathering-building__action"
             type="button"
-            disabled={masteryBlocked || selectedTier > maxTier}
+            disabled={masteryBlocked || selectedTier > maxTier || !selectedTierIsAuthored}
             onClick={() => { toggleWorker(service.workerProfession, selectedTier); }}
           >
             {masteryBlocked
