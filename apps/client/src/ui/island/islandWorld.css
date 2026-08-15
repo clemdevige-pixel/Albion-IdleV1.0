@@ -53,12 +53,11 @@
 
 .ui-island-world__plot {
   --island-building-scale: 1;
-  --island-atlas-x: 0%;
-  --island-atlas-y: 0%;
+  --island-building-image: none;
   position: absolute;
   z-index: 10;
   width: clamp(92px, 13.5vw, 154px);
-  aspect-ratio: 320 / 220;
+  aspect-ratio: 1.48 / 1;
   transform: translate(-50%, -67%) scale(var(--island-building-scale));
   border: 0;
   background: transparent;
@@ -71,11 +70,11 @@
 
 .ui-island-world__asset {
   position: absolute;
-  inset: 0;
+  inset: -16% -28% -4%;
   display: block;
-  background-image: url("/assets/island/island-buildings-atlas.webp");
-  background-size: 400% 300%;
-  background-position: var(--island-atlas-x) var(--island-atlas-y);
+  background-image: var(--island-building-image);
+  background-size: contain;
+  background-position: center bottom;
   background-repeat: no-repeat;
   pointer-events: none;
   filter: drop-shadow(0 7px 5px rgba(0,0,0,.34));
@@ -100,13 +99,9 @@
     drop-shadow(0 0 7px rgba(231,185,82,.9));
 }
 
-.ui-island-world__plot.is-empty .ui-island-world__asset {
-  opacity: .78;
-}
+.ui-island-world__plot.is-empty .ui-island-world__asset { opacity: .78; }
 .ui-island-world__plot.is-empty:hover .ui-island-world__asset,
-.ui-island-world__plot.is-empty.is-selected .ui-island-world__asset {
-  opacity: 1;
-}
+.ui-island-world__plot.is-empty.is-selected .ui-island-world__asset { opacity: 1; }
 
 .ui-island-world__hover-label {
   position: absolute;
