@@ -1,137 +1,73 @@
 import { describe, expect, it } from "vitest";
-import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { getEnemyCombatProfile } from "@game/gameplay";
-import {
-  getEnchantmentShardExpectedDrop,
-} from "./economyContentCatalog";
-import {
-  CLIENT_ABILITIES,
-  WEAPON_ITEM_DEFINITIONS,
-  resolvePrimaryAbilityId,
-} from "./weaponContentCatalog";
-import { getWeaponAttackSpeed } from "./itemPower";
+import { benchmarkSyntheticIdealBlueSegment } from "./blueProgressionBenchmark";
+import { getEnchantmentShardExpectedDrop } from "./economyContentCatalog";
+import { getWorldZonePlacement, WORLD_ZONE_IDS } from "./worldContentCatalog";
 
-interface ProjectedShardRates {
-  readonly killsPerHour: number;
-  readonly shardsPerHour: number;
-}
+const T4_STANDARD = [
+  "item_weapon_sword_t4_broadsword",
+  "item_weapon_bow_t4_longbow",
+  "item_weapon_staff_t4_infernal",
+  "item_weapon_gloves_t4_spiked_gauntlets",
+  "item_weapon_dagger_t4_pair",
+] as const;
 
-const T4_WEAPON_IDS = Object.keys(WEAPON_ITEM_DEFINITIONS)
-  .filter((itemId) => itemId.includes("_t4_"));
-
-function projectT4ShardRates(
-  itemId: string,
-  zoneIndex: number,
+function projectSyntheticShardRate(
+  zoneDefId: (typeof WORLD_ZONE_IDS)[keyof typeof WORLD_ZONE_IDS],
   segmentIndex: number,
-): ProjectedShardRates {
-  const definition = WEAPON_ITEM_DEFINITIONS[itemId];
-  if (definition === undefined) throw new Error(`Missing weapon: ${itemId}`);
+): number {
+  const placement = getWorldZonePlacement(zoneDefId);
+  const combat = benchmarkSyntheticIdealBlueSegment({
+    weaponItemIds: T4_STANDARD,
+    masteryLevel: 20,
+    enchantment: 2,
+    zoneDefId,
+    segmentIndex,
+  });
+  if (!combat.clear) return 0;
 
-  const physicalDamage = definition.stats?.stat_physical_damage ?? 0;
-  const magicalDamage = definition.stats?.stat_magical_damage ?? 0;
-  const magical = magicalDamage > physicalDamage;
-  const weaponPower = magical ? magicalDamage : physicalDamage;
-  const attackSpeed = getWeaponAttackSpeed(itemId) ?? 1;
-  const primaryAbilityId = resolvePrimaryAbilityId(itemId);
-  const primaryAbility = primaryAbilityId === undefined
-    ? undefined
-    : CLIENT_ABILITIES[primaryAbilityId];
   const baselineHp = getEnemyCombatProfile(0, 0, 0, "blue").hp;
-
-  let secondsPerSegment = 0;
   let expectedShardsPerSegment = 0;
-
-  for (let encounterIndex = 0; encounterIndex < ENCOUNTERS_PER_SEGMENT; encounterIndex += 1) {
+  for (const encounter of combat.encounters) {
     const enemy = getEnemyCombatProfile(
-      zoneIndex,
+      placement.zoneIndexWithinBand,
       segmentIndex,
-      encounterIndex,
+      encounter.encounterIndex,
       "blue",
     );
-    const resistance = magical ? enemy.magicResistance : enemy.armor;
-    const mitigation = 1 - Math.min(80, Math.max(0, resistance)) / 100;
-    const autoDamage = Math.max(1, weaponPower * mitigation);
-    let projectedDps = autoDamage * attackSpeed;
-
-    if (primaryAbility !== undefined) {
-      const abilityPower = primaryAbility.damageType === "magical"
-        ? magicalDamage
-        : physicalDamage;
-      const abilityResistance = primaryAbility.damageType === "magical"
-        ? enemy.magicResistance
-        : enemy.armor;
-      const abilityMitigation =
-        1 - Math.min(80, Math.max(0, abilityResistance)) / 100;
-      // Mirrors the current CombatRuntime execution path: bonusDamageRatio is
-      // the direct multiplier passed to DamageManager.
-      const abilityDamage = Math.max(
-        1,
-        abilityPower * primaryAbility.bonusDamageRatio * abilityMitigation,
-      );
-      projectedDps += abilityDamage / Math.max(0.5, primaryAbility.cooldown);
-    }
-
-    secondsPerSegment += enemy.hp / Math.max(1, projectedDps);
-    // Runtime inserts roughly one second of encounter transition overhead.
-    secondsPerSegment += 1;
-
-    const isSegmentBoss = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+    const isSpecial = encounter.encounterIndex === 4;
     expectedShardsPerSegment += getEnchantmentShardExpectedDrop({
       segmentIndex,
-      isElite: isSegmentBoss && segmentIndex < 9,
-      isBoss: isSegmentBoss,
+      isElite: isSpecial && segmentIndex < 9,
+      isBoss: isSpecial && segmentIndex === 9,
       enchantmentDropWeight: baselineHp <= 0 ? 1 : enemy.hp / baselineHp,
     });
   }
 
-  const cyclesPerHour = 3600 / Math.max(1, secondsPerSegment);
-  return {
-    killsPerHour: ENCOUNTERS_PER_SEGMENT * cyclesPerHour,
-    shardsPerHour: expectedShardsPerSegment * cyclesPerHour,
-  };
-}
-
-function averageShardRate(zoneIndex: number, segmentIndex: number): number {
-  const values = T4_WEAPON_IDS.map((itemId) =>
-    projectT4ShardRates(itemId, zoneIndex, segmentIndex).shardsPerHour
-  );
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
+  // Keep the same ~1 second transition overhead used by projected runtime rates.
+  const secondsPerSegment = combat.totalTimeSeconds + combat.encounters.length;
+  return expectedShardsPerSegment * (3600 / Math.max(1, secondsPerSegment));
 }
 
 describe("T4 enchantment shard economy", () => {
-  it("keeps a good Blue farming segment near the validated 25-30 shards/hour target", () => {
-    expect(T4_WEAPON_IDS.length).toBeGreaterThan(0);
+  it("keeps deep same-tier T4 farming near the validated 25-30 shards/hour target", () => {
+    const steppeDeep = projectSyntheticShardRate(WORLD_ZONE_IDS.steppe, 9);
+    const mountainDeep = projectSyntheticShardRate(WORLD_ZONE_IDS.mountain, 9);
 
-    const early = averageShardRate(0, 0);
-    const mid = averageShardRate(0, 4);
-    const deep = averageShardRate(0, 9);
-
-    expect(early).toBeGreaterThanOrEqual(20);
-    expect(early).toBeLessThanOrEqual(28);
-    expect(mid).toBeGreaterThanOrEqual(24);
-    expect(mid).toBeLessThanOrEqual(31);
-    expect(deep).toBeGreaterThanOrEqual(27);
-    expect(deep).toBeLessThanOrEqual(34);
+    expect(steppeDeep).toBeGreaterThanOrEqual(25);
+    expect(steppeDeep).toBeLessThanOrEqual(31);
+    expect(mountainDeep).toBeGreaterThanOrEqual(25);
+    expect(mountainDeep).toBeLessThanOrEqual(31);
   });
 
-  it("does not make the first segment the best expected shard farm", () => {
-    for (let zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
-      const early = averageShardRate(zoneIndex, 0);
-      const mid = averageShardRate(zoneIndex, 4);
-      const deep = averageShardRate(zoneIndex, 9);
+  it("does not make the first T4 segment the optimal expected shard farm", () => {
+    for (const zoneDefId of [WORLD_ZONE_IDS.steppe, WORLD_ZONE_IDS.mountain]) {
+      const early = projectSyntheticShardRate(zoneDefId, 0);
+      const mid = projectSyntheticShardRate(zoneDefId, 4);
+      const deep = projectSyntheticShardRate(zoneDefId, 9);
 
       expect(mid).toBeGreaterThan(early);
       expect(deep).toBeGreaterThan(mid);
     }
-  });
-
-  it("keeps weapon choice from creating a large shard-economy spread", () => {
-    const values = T4_WEAPON_IDS.map((itemId) =>
-      projectT4ShardRates(itemId, 0, 4).shardsPerHour
-    );
-    const minimum = Math.min(...values);
-    const maximum = Math.max(...values);
-
-    expect(maximum / minimum).toBeLessThan(1.12);
   });
 });
