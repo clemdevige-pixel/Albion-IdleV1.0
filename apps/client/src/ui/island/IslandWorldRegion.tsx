@@ -18,21 +18,22 @@ interface IslandPlotVisual {
 /**
  * Ground anchors measured from the player's annotated in-game screenshot.
  * Percentages target the rendered surface because the background uses `cover`.
- * Spatial order is top-to-bottom, then left-to-right across the 12 marked parcels.
+ * Each `top` is the usable lower area of the matching red-outlined parcel, not
+ * its geometric centre: building assets are bottom-anchored by CSS.
  */
 const PLOT_VISUALS: readonly IslandPlotVisual[] = [
-  { left: 28.2, top: 29.0, scale: 0.98 },
-  { left: 46.5, top: 27.0, scale: 1.02 },
-  { left: 70.8, top: 33.0, scale: 0.96 },
-  { left: 17.8, top: 47.5, scale: 0.94 },
-  { left: 37.9, top: 48.5, scale: 0.98 },
-  { left: 57.0, top: 44.5, scale: 0.98 },
-  { left: 81.8, top: 51.0, scale: 0.94 },
-  { left: 66.2, top: 62.0, scale: 0.96 },
-  { left: 19.8, top: 71.5, scale: 0.94 },
-  { left: 37.3, top: 77.0, scale: 0.98 },
-  { left: 55.9, top: 82.0, scale: 0.98 },
-  { left: 79.0, top: 79.5, scale: 0.94 },
+  { left: 28.2, top: 28.1, scale: 0.98 },
+  { left: 46.5, top: 26.8, scale: 1.02 },
+  { left: 70.8, top: 30.9, scale: 0.96 },
+  { left: 17.9, top: 43.7, scale: 0.94 },
+  { left: 37.9, top: 44.3, scale: 0.98 },
+  { left: 57.1, top: 41.8, scale: 0.98 },
+  { left: 81.8, top: 48.4, scale: 0.94 },
+  { left: 66.2, top: 59.6, scale: 0.96 },
+  { left: 19.8, top: 68.6, scale: 0.94 },
+  { left: 37.3, top: 74.6, scale: 0.98 },
+  { left: 55.9, top: 78.1, scale: 0.98 },
+  { left: 79.0, top: 75.9, scale: 0.94 },
 ] as const;
 
 const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
