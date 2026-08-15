@@ -1,4 +1,4 @@
-import type { EnchantmentLevel } from "@game/gameplay";
+import type { EnchantmentLevel, EquipmentInfoLike } from "@game/gameplay";
 
 export interface CombatBalanceSyntheticHeroDefinition {
   readonly maxHealth: number;
@@ -20,32 +20,27 @@ export interface CombatBalanceCheckpointDefinition {
   readonly id: string;
   readonly label: string;
   readonly worldBandId: "blue";
-  /** Zero-based index inside the authored world-band combat curve. */
   readonly zoneIndex: number;
-  /** Zero-based segment index. */
   readonly segmentIndex: number;
 }
 
-/**
- * Synthetic player envelope used by the balancing process.
- *
- * This mirrors the current runtime hero baseline so the diagnostic can isolate
- * the marginal value of equipment. It intentionally lives in balance data,
- * never inside test control flow. If the runtime baseline changes, this catalog
- * must be updated in the same balancing pass.
- */
+export interface CombatBalanceCoverageInterventionDefinition {
+  readonly id: string;
+  readonly label: string;
+  /** Base power removed from the naked hero before equipment is applied. */
+  readonly heroReduction: CombatBalanceSyntheticHeroDefinition;
+  /** Slots that restore the removed baseline independently from item tier/IP. */
+  readonly recoverySlots: readonly EquipmentInfoLike["slot"][];
+  /** Fixed, non-IP-scaled recovery granted by each authored recovery slot. */
+  readonly recoveryPerEquippedSlot: CombatBalanceSyntheticHeroDefinition;
+}
+
 export const COMBAT_BALANCE_SYNTHETIC_HERO: CombatBalanceSyntheticHeroDefinition = {
   maxHealth: 500,
   armor: 10,
   magicResistance: 5,
 };
 
-/**
- * Representative one-handed progression route.
- *
- * The matrix is intentionally authored as data: adding another weapon family,
- * partial-set breakpoint or enchantment state requires only another entry.
- */
 export const COMBAT_BALANCE_LOADOUTS: readonly CombatBalanceLoadoutDefinition[] = [
   {
     id: "broadsword_t3_weapon_only",
@@ -89,9 +84,9 @@ export const COMBAT_BALANCE_LOADOUTS: readonly CombatBalanceLoadoutDefinition[] 
     specializationMasteryLevel: 1,
     role: "guardrail",
   },
-  {
-    id: "broadsword_t4_full_0",
-    label: "Broadsword T4.0 · set T4 de référence",
+  ...([0, 1, 2, 3] as const).map((enchantment) => ({
+    id: `broadsword_t4_full_${String(enchantment)}`,
+    label: `Broadsword T4.${String(enchantment)} · set T4 de référence`,
     weaponItemId: "item_weapon_sword_t4_broadsword",
     equipmentItemIds: [
       "item_helmet_t4_reinforced",
@@ -100,61 +95,12 @@ export const COMBAT_BALANCE_LOADOUTS: readonly CombatBalanceLoadoutDefinition[] 
       "item_traveler_cape",
       "item_shield_t4_reinforced",
     ],
-    enchantment: 0,
+    enchantment,
     specializationMasteryLevel: 1,
-    role: "guardrail",
-  },
-  {
-    id: "broadsword_t4_full_1",
-    label: "Broadsword T4.1 · set T4 enchanté .1",
-    weaponItemId: "item_weapon_sword_t4_broadsword",
-    equipmentItemIds: [
-      "item_helmet_t4_reinforced",
-      "item_armor_t4_leather",
-      "item_boots_t4_leather",
-      "item_traveler_cape",
-      "item_shield_t4_reinforced",
-    ],
-    enchantment: 1,
-    specializationMasteryLevel: 1,
-    role: "guardrail",
-  },
-  {
-    id: "broadsword_t4_full_2",
-    label: "Broadsword T4.2 · set T4 enchanté .2",
-    weaponItemId: "item_weapon_sword_t4_broadsword",
-    equipmentItemIds: [
-      "item_helmet_t4_reinforced",
-      "item_armor_t4_leather",
-      "item_boots_t4_leather",
-      "item_traveler_cape",
-      "item_shield_t4_reinforced",
-    ],
-    enchantment: 2,
-    specializationMasteryLevel: 1,
-    role: "guardrail",
-  },
-  {
-    id: "broadsword_t4_full_3",
-    label: "Broadsword T4.3 · set T4 enchanté .3",
-    weaponItemId: "item_weapon_sword_t4_broadsword",
-    equipmentItemIds: [
-      "item_helmet_t4_reinforced",
-      "item_armor_t4_leather",
-      "item_boots_t4_leather",
-      "item_traveler_cape",
-      "item_shield_t4_reinforced",
-    ],
-    enchantment: 3,
-    specializationMasteryLevel: 1,
-    role: "guardrail",
-  },
+    role: "guardrail" as const,
+  })),
 ] as const;
 
-/**
- * Diagnostic checkpoints intentionally cover every early Blue segment.
- * Tests iterate these definitions and never own zone/segment thresholds.
- */
 export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinition[] = [
   ...Array.from({ length: 10 }, (_, segmentIndex) => ({
     id: `forest_s${String(segmentIndex + 1)}`,
@@ -170,4 +116,41 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
     zoneIndex: 1,
     segmentIndex,
   })),
+] as const;
+
+/**
+ * Experimental coverage candidates. They do not change item stats or IP.
+ * Every non-baseline candidate removes a slice of naked-hero defense, then
+ * restores exactly that slice across head/chest/boots. Therefore a fully
+ * equipped core set retains the current defensive baseline by construction.
+ */
+export const COMBAT_BALANCE_COVERAGE_INTERVENTIONS: readonly CombatBalanceCoverageInterventionDefinition[] = [
+  {
+    id: "current",
+    label: "Actuel",
+    heroReduction: { maxHealth: 0, armor: 0, magicResistance: 0 },
+    recoverySlots: ["head", "chest", "boots"],
+    recoveryPerEquippedSlot: { maxHealth: 0, armor: 0, magicResistance: 0 },
+  },
+  {
+    id: "coverage_light",
+    label: "Couverture légère",
+    heroReduction: { maxHealth: 60, armor: 3, magicResistance: 1.5 },
+    recoverySlots: ["head", "chest", "boots"],
+    recoveryPerEquippedSlot: { maxHealth: 20, armor: 1, magicResistance: 0.5 },
+  },
+  {
+    id: "coverage_medium",
+    label: "Couverture moyenne",
+    heroReduction: { maxHealth: 120, armor: 6, magicResistance: 3 },
+    recoverySlots: ["head", "chest", "boots"],
+    recoveryPerEquippedSlot: { maxHealth: 40, armor: 2, magicResistance: 1 },
+  },
+  {
+    id: "coverage_strong",
+    label: "Couverture forte",
+    heroReduction: { maxHealth: 180, armor: 9, magicResistance: 4.5 },
+    recoverySlots: ["head", "chest", "boots"],
+    recoveryPerEquippedSlot: { maxHealth: 60, armor: 3, magicResistance: 1.5 },
+  },
 ] as const;
