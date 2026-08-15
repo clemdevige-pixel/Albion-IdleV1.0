@@ -365,19 +365,6 @@ export class RefiningRuntime {
     }
     return { action: "started", family };
   }
-
-  public refineAllAvailable(
-    tickCounter: number = 0,
-  ): { readonly startedAtLeastOne: boolean } {
-    let startedAtLeastOne = false;
-    for (const family of SUPPORTED_REFINING_FAMILIES) {
-      if (this.families[family].manager.getActiveSession() !== undefined) continue;
-      if (this.toggleRefiningFamily(family, tickCounter).action === "started") {
-        startedAtLeastOne = true;
-      }
-    }
-    return { startedAtLeastOne };
-  }
 }
 
 export interface SavedRefiningRecoveryPayload {
