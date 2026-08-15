@@ -143,7 +143,61 @@ Manual validation completed for the first transition: a full-T3 Dual Dagger prof
 
 ---
 
-# 7. Tests: what to keep
+# 7. Validated defensive equipment baseline — 2026-08-15
+
+The hero's naked defensive baseline is intentionally weak so armor progression carries real gameplay value:
+- Naked hero: 300 HP / 0 Armor / 0 Magic Resistance.
+- Defensive growth is authored on equipment, not hidden on the character baseline.
+- The table below is the validated full-set 2H envelope: head + chest + boots + Traveler Cape, with no offhand.
+
+VALIDATED FULL 2H DEFENSIVE LADDER
+- T3.0: 530 HP / 21 Armor / 19 MR.
+- T4.0: 600 HP / 36 Armor / 28 MR.
+- T4.1: 630 HP / 40 Armor / 31 MR.
+- T4.2: 660 HP / 44 Armor / 32 MR.
+- T4.3: 690 HP / 46 Armor / 36 MR.
+- T5.0: 720 HP / 52 Armor / 40 MR.
+- T5.1: 760 HP / 58 Armor / 44 MR.
+- T5.2: 800 HP / 62 Armor / 47 MR.
+- T5.3: 850 HP / 68 Armor / 50 MR.
+
+AUTHORED CORE ITEM VALUES
+T3:
+- Head: 85 HP / 6 Armor / 4 MR.
+- Chest: 145 HP / 11 Armor / 8 MR.
+- Boots: 0 HP / 4 Armor / 3 MR.
+
+T4:
+- Head: 115 HP / 10 Armor / 7 MR.
+- Chest: 185 HP / 18 Armor / 12 MR.
+- Boots: 0 HP / 8 Armor / 5 MR.
+
+T5:
+- Head: 160 HP / 15 Armor / 11 MR.
+- Chest: 260 HP / 26 Armor / 18 MR.
+- Boots: 0 HP / 11 Armor / 7 MR.
+
+ACCESSORY / HANDLING RULES
+- Traveler Cape remains a fixed +4 MR baseline contribution in this ladder.
+- Reinforced Shield remains separate from the 2H envelope: T3 +9 Armor/+5 MR; T4 +15/+9; T5 +22/+13.
+- A 1H weapon must therefore be evaluated with its actual offhand; never compare Broadsword survivability to a 2H profile without accounting for the shield.
+- T5 stats are independently authored and may exceed T4.3. Base tier IP is not a substitute for authored item stats.
+
+ENCHANTMENT AND REAL ROUNDING CONTRACT
+- Active enchantment levels grant +50 IP each (.1 +50, .2 +100, .3 +150).
+- The current IP conversion remains +20% equipment stats per +100 bonus IP, therefore +10% per active enchantment level.
+- Scaling is calculated per equipped item before aggregation.
+- The resulting gameplay stat is rounded per item; rounding is not presentation-only.
+- Max HP rounds to the nearest multiple of 5, with exact ties upward.
+- Armor and Magic Resistance round to the nearest integer, with exact ties upward.
+- Authored physical/magical item damage follows integer rounding after equipment scaling; attack speed is excluded because it is a weapon identity property.
+- Mastery IP, mastery ability unlocks and other progression layers remain separate balance axes and must not be folded into these base defensive values.
+
+This baseline is a durable balance contract and must be protected by semantic/data-driven tests rather than temporary tuning snapshots.
+
+---
+
+# 8. Tests: what to keep
 
 KEEP tests that protect:
 - mastery unlock thresholds;
@@ -153,7 +207,8 @@ KEEP tests that protect:
 - live potion and heal-boundary semantics;
 - progression checkpoint contracts;
 - monotonic structural progression;
-- data integrity and deterministic behavior.
+- data integrity and deterministic behavior;
+- the validated defensive ladder and real equipment-stat rounding contract.
 
 REMOVE OR REWRITE tests that only freeze:
 - temporary tuning ratios;
@@ -165,7 +220,7 @@ When a checkpoint test fails after an intentional balance change, adjust authore
 
 ---
 
-# 8. Source-of-truth rule
+# 9. Source-of-truth rule
 
 Runtime data and benchmark helpers must consume the same authored weapon, ability, equipment, monster and progression data wherever possible.
 
