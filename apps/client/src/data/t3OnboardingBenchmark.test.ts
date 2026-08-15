@@ -3,6 +3,7 @@ import { createRuntimeServices } from "@game/core";
 import {
   PLAYER_ISLAND_CONFIG,
   getIslandBuildingDefinition,
+  getIslandLevelDefinition,
   type IslandBuildingId,
 } from "@game/data";
 import {
@@ -87,7 +88,6 @@ function buildScenario(targetItemId: string): T3OnboardingRow {
   const requiredBuildings = new Set<IslandBuildingId>();
   collectRequiredBuildings("workshop", requiredBuildings);
 
-  // Add the refining building for every refined family used directly by the target recipe.
   const refiningBuildingByFamily: Readonly<Record<ProductionFamilyId, IslandBuildingId>> = {
     wood: "sawmill",
     ore: "smelter",
@@ -153,7 +153,7 @@ describe("T3 onboarding economy benchmark", () => {
   });
 
   it("keeps level-1 island access to the complete T3 production chain", () => {
-    const levelOne = (await import("@game/data")).getIslandLevelDefinition(1);
+    const levelOne = getIslandLevelDefinition(1);
     expect(levelOne?.unlockedCategories).toEqual(
       expect.arrayContaining(["gathering", "refining", "crafting"]),
     );
