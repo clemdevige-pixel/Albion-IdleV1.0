@@ -552,7 +552,6 @@ export function GameProvider({
         productionController.performGatheringStrike(resourceFamily, quality)
       ),
       toggleRefining: (family) => productionController.toggleRefining(family),
-      refineAllAvailable: () => productionController.refineAllAvailable(),
       setGatheringTier: (tier) => productionController.setGatheringTier(tier),
       setRefiningTier: (family, tier) => productionController.setRefiningTier(family, tier),
       setCraftingTier: (tier) => productionController.setCraftingTier(tier),
