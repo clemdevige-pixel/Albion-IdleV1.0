@@ -2,12 +2,6 @@ import type { IslandBuildingCategory } from "./island.js";
 
 export type IslandLevel = 1 | 2 | 3;
 
-export interface IslandLevelRequirement {
-  readonly minimumBuildings: number;
-  readonly minimumBuildingsAtLevel: number;
-  readonly buildingLevel: number;
-}
-
 export interface IslandWorldRequirement {
   readonly zoneDefId: string;
   readonly minimumCompletedSegments: number;
@@ -23,7 +17,8 @@ export interface IslandLevelDefinition {
   readonly level: IslandLevel;
   readonly label: string;
   readonly unlockedCategories: readonly IslandBuildingCategory[];
-  readonly requirementToReach?: IslandLevelRequirement;
+  /** Buildings may never be upgraded above the current island level. */
+  readonly maxBuildingLevel: number;
   readonly worldRequirementToReach?: IslandWorldRequirement;
   readonly upgradeCost?: IslandLevelUpgradeCost;
 }
@@ -36,12 +31,13 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     // gather -> refine -> craft. Higher island levels gate development and
     // production tiers, not access to these foundational systems.
     unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    maxBuildingLevel: 1,
   },
   {
     level: 2,
     label: "Domaine artisanal",
     unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
-    requirementToReach: { minimumBuildings: 6, minimumBuildingsAtLevel: 0, buildingLevel: 2 },
+    maxBuildingLevel: 2,
     worldRequirementToReach: {
       zoneDefId: "zone_swamp_t3",
       minimumCompletedSegments: 10,
@@ -59,7 +55,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 3,
     label: "Domaine développé",
     unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
-    requirementToReach: { minimumBuildings: 10, minimumBuildingsAtLevel: 4, buildingLevel: 2 },
+    maxBuildingLevel: 3,
     worldRequirementToReach: {
       zoneDefId: "zone_mountain_t4",
       minimumCompletedSegments: 10,
