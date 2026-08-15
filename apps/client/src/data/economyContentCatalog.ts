@@ -27,16 +27,16 @@ export const BLUE_ZONE_BASE_DROP_RATES = {
 /**
  * Enchantment shard calibration.
  *
- * The baseline is derived from the current T4 combat curves and the validated
- * economy target of roughly 25-30 shards/hour on a good same-tier farming
- * segment. Difficulty weighting keeps slow-to-kill enemies competitive while
- * the small depth bonus prevents the earliest trivial segment from becoming
- * the permanent optimal farm.
+ * The baseline is calibrated against the synthetic T4.2 / M20 combat profile,
+ * using the same weapon envelope and Blue TTK model as progression balance.
+ * Deep T4 farming lands around the validated 25-30 shards/hour target while
+ * the depth/HP weighting prevents trivial early segments from becoming the
+ * permanent optimal farm.
  *
  * Elite and boss multipliers are mutually exclusive: a segment boss may carry
  * both tags in content data, but it must never receive both multipliers.
  */
-export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.025;
+export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.011;
 export const ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT = 0.015;
 export const ENCHANTMENT_SHARD_ELITE_MULTIPLIER = 1.2;
 export const ENCHANTMENT_SHARD_BOSS_MULTIPLIER = 1.35;
@@ -258,35 +258,9 @@ export const HEALTH_POTION_HEAL_RATIO = 0.3;
 export const HEALTH_POTION_COOLDOWN_SECONDS = 20;
 
 export const ENCHANTMENT_MATERIAL_NAMES: Readonly<Record<string, string>> = {
-  item_resource_enchantment_shard_t4: "Éclat d’enchantement T4",
-  item_resource_enchantment_shard_t5: "Éclat d’enchantement T5",
-  item_resource_enchantment_shard_t6: "Éclat d’enchantement T6",
-  item_resource_enchantment_shard_t7: "Éclat d’enchantement T7",
-  item_resource_enchantment_shard_t8: "Éclat d’enchantement T8",
+  item_resource_enchant_shard_t4: "Éclat runique T4",
+  item_resource_enchant_shard_t5: "Éclat runique T5",
+  item_resource_enchant_shard_t6: "Éclat runique T6",
+  item_resource_enchant_shard_t7: "Éclat runique T7",
+  item_resource_enchant_shard_t8: "Éclat runique T8",
 };
-
-/** @deprecated Use rollBlueZoneCombatDrops with a tiered loot context. */
-export function rollEnchantmentMaterial(): string | undefined {
-  return Math.random() < ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
-    ? getEnchantmentShardItemId(4)
-    : undefined;
-}
-
-export const REPAIR_COST_DEFINITIONS = [
-  { equipmentCategory: "weapon", itemTier: 3, baseRepairCost: 40, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "armor", itemTier: 3, baseRepairCost: 30, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "accessory", itemTier: 3, baseRepairCost: 25, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "weapon", itemTier: 4, baseRepairCost: 70, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "armor", itemTier: 4, baseRepairCost: 55, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "accessory", itemTier: 4, baseRepairCost: 45, costMultiplier: 1.0, enabled: true },
-];
-
-export const GENERAL_VENDOR_FIXED_OFFERS = [
-  { itemId: "item_health_potion", buyPrice: 50, sellPrice: 20, maxPerTransaction: null, enabled: true },
-  { itemId: "item_leather_armor", buyPrice: null, sellPrice: 60, maxPerTransaction: null, enabled: true },
-  { itemId: "item_wooden_shield", buyPrice: null, sellPrice: 48, maxPerTransaction: null, enabled: true },
-  { itemId: "item_shield_t3_reinforced", buyPrice: null, sellPrice: 90, maxPerTransaction: null, enabled: true },
-  { itemId: "item_iron_helmet", buyPrice: null, sellPrice: 70, maxPerTransaction: null, enabled: true },
-  { itemId: "item_leather_boots", buyPrice: null, sellPrice: 55, maxPerTransaction: null, enabled: true },
-  { itemId: "item_traveler_cape", buyPrice: null, sellPrice: 65, maxPerTransaction: null, enabled: true },
-];
