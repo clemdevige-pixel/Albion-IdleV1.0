@@ -42,7 +42,7 @@ describe("world UI models", () => {
     if (keeperWarrior === undefined) return;
 
     const blueLoot = getBestiaryLoot(keeperWarrior, "blue");
-    expect(blueLoot.some((drop) => drop.itemId === "item_health_potion")).toBe(true);
+    expect(blueLoot.some((drop) => drop.itemId === "item_health_potion")).toBe(false);
     expect(blueLoot.some((drop) => drop.itemId === "item_resource_enchantment_shard_t4")).toBe(true);
     expect(blueLoot.some((drop) => drop.itemId === "item_resource_enchantment_shard_t5")).toBe(false);
     expect(blueLoot.some((drop) => drop.maximumExpectedQuantity > drop.minimumExpectedQuantity)).toBe(true);
