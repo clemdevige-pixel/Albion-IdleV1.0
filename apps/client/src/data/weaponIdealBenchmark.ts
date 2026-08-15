@@ -52,7 +52,14 @@ export interface SyntheticIdealCombatProfile extends SyntheticIdealWeaponProfile
   readonly averageEffectiveHealth: number;
 }
 
-const BASE_HERO_MAX_HEALTH = 100;
+// These are the live naked-hero defensive baselines. Keeping them explicit is
+// intentional: the balance benchmark must reproduce the same defensive envelope
+// as the runtime before equipment is added. Full T3 therefore resolves to
+// 580 HP / 25 Armor / 20 MR for a 2H loadout, matching the in-game character
+// sheet (500+30+50 HP, 10+4+8+3 Armor, 5+3+6+2+4 MR).
+const BASE_HERO_MAX_HEALTH = 500;
+const BASE_HERO_ARMOR = 10;
+const BASE_HERO_MAGIC_RESISTANCE = 5;
 const T3_DEFENSIVE_LOADOUT = [
   "item_iron_helmet",
   "item_leather_armor",
@@ -226,8 +233,8 @@ export function getWeaponDefensiveBenchmarkProfile(
     : [...armorItemIds, offHandItemId];
 
   let maxHealth = BASE_HERO_MAX_HEALTH;
-  let armor = 0;
-  let magicResistance = 0;
+  let armor = BASE_HERO_ARMOR;
+  let magicResistance = BASE_HERO_MAGIC_RESISTANCE;
   for (const defensiveItemId of itemIds) {
     maxHealth += effectiveEquipmentStat(defensiveItemId, "stat_max_health", enchantment);
     armor += effectiveEquipmentStat(defensiveItemId, "stat_armor", enchantment);
