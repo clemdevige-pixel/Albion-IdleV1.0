@@ -3,15 +3,6 @@ import { getWeaponSpecializationName, resolveWeaponPresentation, resolveWeaponTi
 
 export const STARTER_TIER = 3 as const;
 
-export const STARTER_COMMON_EQUIPMENT_ITEM_IDS = [
-  "item_iron_helmet",
-  "item_leather_armor",
-  "item_leather_boots",
-  "item_traveler_cape",
-] as const;
-
-export const STARTER_ONE_HANDED_OFFHAND_ITEM_ID = "item_shield_t3_reinforced";
-
 export interface StarterWeaponOption {
   readonly itemId: string;
   readonly label: string;
@@ -40,9 +31,5 @@ export function getStarterLoadoutItemIds(weaponItemId: string): readonly string[
   const weapon = getStarterWeaponOptions().find((option) => option.itemId === weaponItemId);
   if (weapon === undefined) return undefined;
 
-  return [
-    weapon.itemId,
-    ...(weapon.handling === "one_handed" ? [STARTER_ONE_HANDED_OFFHAND_ITEM_ID] : []),
-    ...STARTER_COMMON_EQUIPMENT_ITEM_IDS,
-  ];
+  return [weapon.itemId];
 }
