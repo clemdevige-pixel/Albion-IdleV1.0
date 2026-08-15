@@ -21,14 +21,10 @@ export function GatheringBuildingPanel({
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const service = definition.gatheringService;
-  if (service === undefined) {
-    throw new Error(`Gathering building ${definitionId} has no gathering service data`);
-  }
+  if (service === undefined) throw new Error(`Gathering building ${definitionId} has no gathering service data`);
 
   const maxTier = getIslandBuildingMaxProductionTier(definitionId, level);
-  if (maxTier === undefined) {
-    throw new Error(`Gathering building ${definitionId} level ${String(level)} has no progression data`);
-  }
+  if (maxTier === undefined) throw new Error(`Gathering building ${definitionId} level ${String(level)} has no progression data`);
 
   const { workers } = useGameBridge();
   const { toggleWorker } = useGameServices();
@@ -39,14 +35,18 @@ export function GatheringBuildingPanel({
   const [selectedTier, setSelectedTier] = useState(initialTier);
   const requiredMastery = getRequiredGatheringMasteryForTier(selectedTier);
   const masteryBlocked = worker !== undefined && worker.mastery < requiredMastery;
+  const progress = worker === undefined ? 0 : Math.max(0, Math.min(100, worker.progress));
 
   return (
     <div className="ui-island-gathering-building">
       <div className="ui-island-gathering-building__resource">
-        <img src={`/assets/resources/${family.rawIcon}`} alt="" />
+        <span className="ui-island-gathering-building__resource-icon">
+          <img src={`/assets/resources/${family.rawIcon}`} alt="" />
+        </span>
         <div>
-          <small>Production passive · jusqu’au T{String(maxTier)}</small>
+          <small>Ressource produite</small>
           <strong>{family.label}</strong>
+          <em>Production passive jusqu’au <b>T{String(maxTier)}</b></em>
         </div>
       </div>
 
@@ -57,24 +57,21 @@ export function GatheringBuildingPanel({
       ) : (
         <>
           <div className="ui-island-gathering-building__worker">
+            <span className="ui-island-gathering-building__worker-avatar" aria-hidden="true">⛏</span>
             <div>
               <small>Ouvrier affectable</small>
               <strong>{worker.displayName} · {worker.professionName}</strong>
             </div>
-            <span className={`is-${worker.state}`}>
-              {worker.state === "working" ? "En production" : worker.state === "paused" ? "En pause" : "Disponible"}
+            <span className={`ui-island-gathering-building__worker-state is-${worker.state}`}>
+              <i />{worker.state === "working" ? "En production" : worker.state === "paused" ? "En pause" : "Disponible"}
             </span>
           </div>
 
-          {worker.state !== "working" ? (
-            <div className="ui-island__selection-status">
-              Sélectionnez T{String(selectedTier)} puis lancez la production. Le worker récoltera automatiquement ; le gather actif du héros reste disponible en parallèle.
-            </div>
-          ) : (
-            <div className="ui-island__selection-status">
-              Production automatique active. Vous pouvez maintenant gather activement la même ressource pour accélérer votre progression.
-            </div>
-          )}
+          <div className="ui-island-gathering-building__hint">
+            {worker.state === "working"
+              ? "Production automatique active. Vous pouvez maintenant gather activement la même ressource pour accélérer votre progression."
+              : `Sélectionnez T${String(selectedTier)} puis lancez la production. Le gather actif du héros reste disponible en parallèle.`}
+          </div>
 
           <div className="ui-island-gathering-building__tiers" role="group" aria-label="Tier de production du worker">
             {PRODUCTION_CONTENT_TIERS.map((tier) => {
@@ -86,23 +83,24 @@ export function GatheringBuildingPanel({
                   type="button"
                   className={selectedTier === tier ? "is-active" : ""}
                   disabled={masteryLocked || buildingLocked}
-                  title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : undefined}
+                  title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : masteryLocked ? `Maîtrise ${String(getRequiredGatheringMasteryForTier(tier))} requise` : undefined}
                   onClick={() => { setSelectedTier(tier); }}
                 >
-                  T{String(tier)}{buildingLocked ? " 🔒" : ""}
+                  T{String(tier)}{buildingLocked || masteryLocked ? <span aria-hidden="true"> 🔒</span> : null}
                 </button>
               );
             })}
           </div>
 
           <div className="ui-island-gathering-building__facts">
-            <span>Maîtrise {String(worker.mastery)}</span>
-            <span>{String(worker.yieldPerCycle)} / {String(worker.durationSeconds)} s</span>
-            <span>T{String(worker.productionTier)} actuel</span>
+            <span><b>◆</b><small>Maîtrise</small><strong>{String(worker.mastery)}</strong></span>
+            <span><b>◷</b><small>Cycle</small><strong>{String(worker.yieldPerCycle)} / {String(worker.durationSeconds)} s</strong></span>
+            <span><small>Tier actuel</small><strong>T{String(worker.productionTier)}</strong></span>
           </div>
 
-          <div className="ui-island-gathering-building__progress">
-            <span style={{ width: `${String(Math.max(0, Math.min(100, worker.progress)))}%` }} />
+          <div className="ui-island-gathering-building__progress-block">
+            <div><span>Progression récolte (T{String(worker.productionTier)})</span><strong>{String(Math.round(progress))}%</strong></div>
+            <div className="ui-island-gathering-building__progress"><span style={{ width: `${String(progress)}%` }} /></div>
           </div>
 
           <button
@@ -114,10 +112,10 @@ export function GatheringBuildingPanel({
             {masteryBlocked
               ? `Maîtrise ${String(requiredMastery)} requise`
               : worker.state === "working" && worker.productionTier === selectedTier
-                ? "Mettre en pause"
+                ? "Ⅱ  Mettre en pause"
                 : worker.productionTier !== selectedTier
                   ? `Affecter au T${String(selectedTier)}`
-                  : worker.state === "paused" ? "Reprendre la production" : "Lancer la production"}
+                  : worker.state === "paused" ? "▶  Reprendre la production" : "▶  Lancer la production"}
           </button>
         </>
       )}
