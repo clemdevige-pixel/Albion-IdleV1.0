@@ -12,6 +12,7 @@ export { EQUIPMENT_SLOTS, equipmentOk, equipmentFail } from "./types.js";
 export { EquipmentComponent, type EquipmentData } from "./components.js";
 export { EquipmentManager } from "./equipment-manager.js";
 export { EquipmentStatSync, type EquipmentStatsChangedHook } from "./equipment-stat-sync.js";
+export { roundEquipmentStatValue } from "./equipment-stat-rounding.js";
 export { isValidSlot, validateEquipmentState } from "./equipment-validator.js";
 export { EquipmentSaveProvider } from "./equipment-save-provider.js";
 export {
