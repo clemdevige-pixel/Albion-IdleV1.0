@@ -9,6 +9,7 @@ import { ConstructionPanel } from "./ConstructionPanel";
 import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
 import { IslandLevelPanel } from "./IslandLevelPanel";
+import { IslandOnboardingGuide } from "./IslandOnboardingGuide";
 import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
 import { UpgradePanel } from "./UpgradePanel";
@@ -83,6 +84,7 @@ export function IslandModule(): JSX.Element {
         </div>
         <span className="ui-island__count">{String(island.buildings.length)} bâtiments</span>
       </section>
+      <IslandOnboardingGuide />
       <IslandLevelPanel />
       <section className="ui-island__selection ui-island__selection--empty">
         <strong>Sélectionnez un bâtiment ou un emplacement libre</strong>
