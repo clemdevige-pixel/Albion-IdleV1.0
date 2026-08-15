@@ -4,746 +4,171 @@
 
 # Purpose
 
-The Enemy Data document defines every enemy that can appear throughout the game.
+Enemy Data defines enemy identity/content while shared combat progression data determines how encounters scale through world bands, zones and segments.
 
-Enemies are entirely data-driven and are built by composing reusable gameplay systems.
-
-An Enemy definition describes **what an enemy is**, not how combat is simulated.
-
-Enemy Data defines:
-
-- Identity
-- Family
-- Tier
-- Category
-- Statistics
-- Abilities
-- AI Profile
-- Loot Table
-- Experience Reward
-- Spawn Weight
-- Visual References
-- Audio References
-
-Enemy Data does **not** define:
-
-- AI Logic
-- Combat Formulas
-- Loot Generation
-- Damage Calculations
-- Status Effect Behavior
-
-These belong to their dedicated systems.
+Enemy definitions describe what an enemy is. They do not implement CombatRuntime or duplicate world difficulty curves.
 
 ---
 
-# Design Philosophy
+# Enemy Definition Responsibilities
 
-The Enemy Data system follows seven principles.
+Enemy/content data may define or reference:
 
----
+- stable ID;
+- display identity;
+- family/category;
+- base combat profile;
+- abilities/AI profile;
+- loot/rewards;
+- spawn/encounter metadata;
+- visual/audio references;
+- tags/content source.
 
-## Data Driven
-
-Every enemy is fully described by data.
-
-Adding a new enemy should never require new gameplay code unless introducing an entirely new mechanic.
-
----
-
-## Modular
-
-Enemy definitions reference existing systems.
-
-Examples:
-
-- Stat Data
-- Ability Data
-- AI Data
-- Loot Table Data
-- Animation Data
-- Audio Data
-
-Enemy definitions never duplicate gameplay logic.
+Runtime state such as current HP, cooldowns, target and effects remains outside immutable content definitions.
 
 ---
 
-## Family Based
+# Data-Driven Rule
 
-Enemies belong to logical families.
+Adding a conventional enemy must not require a new combat code path.
 
-Examples:
+New code is justified only when the enemy introduces a genuinely new mechanic that cannot be represented by existing reusable systems.
 
-- Undead
-- Morgana
-- Heretic
-- Keeper
-- Demon
-- Animal
-
-Families simplify balancing, spawning and content creation.
+Enemy identity, zone difficulty and combat simulation must remain separate concerns.
 
 ---
 
-## Tier Driven
+# World Difficulty Scaling
 
-Enemy power scales primarily through Tier.
+The current world progression model does NOT use the obsolete infinite Cycle scaling model.
 
-Enemy definitions do not manually duplicate higher-tier versions unless gameplay differs.
+World difficulty is authored by world band and zone through shared combat progression configuration:
 
----
+`packages/data/src/config/combat-progression.ts`
 
-## Deterministic
+A zone curve provides authored start/end multipliers for relevant enemy combat dimensions. Segment interpolation and encounter growth then produce the actual progression inside the zone.
 
-Two identical enemies spawned under identical conditions always possess identical base values.
-
----
-
-## Immutable
-
-Enemy definitions never change during gameplay.
-
-Runtime entities contain temporary values only.
-
----
-
-## Extensible
-
-Future families, bosses and seasonal enemies must integrate without modifying existing definitions.
-
----
-
-# Responsibilities
-
-Enemy Data defines:
-
-- Identity
-- Family
-- Category
-- Tier
-- Base Statistics
-- Ability References
-- AI Profile
-- Loot Table
-- XP Reward
-- Spawn Weight
-- Visual Assets
-- Audio Assets
-
-Enemy Data does NOT define:
-
-- Current Health
-- Current Cooldowns
-- Current Position
-- Current Target
-- Current Aggro
-
-Those belong to runtime entities.
-
----
-
-# Enemy Definition
-
-Every Enemy contains:
+Therefore enemy power in a progression encounter is conceptually:
 
 ```text
-ID
-
-↓
-
-Name
-
-↓
-
-Family
-
-↓
-
-Category
-
-↓
-
-Tier
-
-↓
-
-Statistics
-
-↓
-
-Abilities
-
-↓
-
-AI Profile
-
-↓
-
-Loot Table
-
-↓
-
-Experience
-
-↓
-
-Spawn Weight
-
-↓
-
-Animation
-
-↓
-
-Visual Effects
-
-↓
-
-Audio
-
-↓
-
-Tags
+Enemy/content base profile
+× authored world/zone combat curve
+× segment position
+× encounter growth / encounter-specific rules
 ```
+
+The exact implementation remains authoritative over this conceptual description.
 
 ---
 
-# Identifier
+# Zone Purpose Before Numbers
 
-Every Enemy owns one globally unique identifier.
+Enemy difficulty values must be tuned against an explicit progression contract.
 
-Examples:
+For the validated Blue world:
 
-```
-enemy_undead_skeleton
+- Forest teaches and should not create meaningful starter friction;
+- early Swamp creates the first starter wall;
+- Swamp rewards progressive T3 crafting;
+- Highlands transitions T3 → T4;
+- Steppe consolidates T4.0 and introduces enchantment pressure;
+- Frostpeak transitions T4.1 → T4.2, with T4.3 as the reliable S10 AFK threshold.
 
-enemy_undead_archer
-
-enemy_morgana_knight
-
-enemy_keeper_guardian
-
-enemy_animal_wolf
-```
-
-Identifiers never include quality or enchantment.
+Future world bands must define an equivalent intended equipment envelope before numerical enemy tuning.
 
 ---
 
-# Display Name
+# Runtime Validation
 
-Localized display name.
+Enemy balance is accepted through the exact live CombatRuntime, not by comparing isolated enemy stat totals.
 
-Examples:
+Reusable harness:
 
-```
-Skeleton
+`apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts`
 
-Skeleton Archer
+A benchmark scenario supplies:
 
-Morgana Knight
+- zone;
+- segment;
+- weapon;
+- equipment/loadout;
+- mastery;
+- enchantment;
+- potion policy.
 
-Dire Wolf
-```
-
-Localization is handled separately.
-
----
-
-# Families
-
-Version 1 supports:
-
-- Undead
-- Morgana
-- Heretic
-- Keeper
-- Demon
-- Animal
-
-Additional families may be added later.
+The output measures actual clear/failure behavior and remaining HP.
 
 ---
 
-# Categories
+# Weapon Diversity Constraint
 
-Enemies belong to one category.
+Enemy curves must be tested against multiple representative weapon profiles.
 
-Supported categories:
+A zone must not be tuned exclusively around one weapon.
 
-- Normal
-- Elite
-- Boss
-- Resource Enemy
+Comparable weapons may legitimately differ by roughly 5-10% where their combat identities justify it. Larger runtime differences should first be diagnosed through weapon/package benchmarking before weakening or strengthening the entire enemy curve.
 
-Resource Enemies replace traditional gathering nodes.
+This prevents a weapon-specific issue from being hidden inside global monster balance.
 
 ---
 
-# Tier
+# Defensive and Offensive Pressure
 
-Supported tiers:
+Enemy tuning must account for both:
 
-```
-T1
+- player offensive package / time-to-kill;
+- player defensive package / effective survivability.
 
-T2
-
-T3
-
-T4
-
-T5
-
-T6
-
-T7
-
-T8
-```
-
-Tier determines progression scaling.
+One-handed weapons with offhands require explicit loadout evaluation. Shield survivability belongs to the shield/loadout, not intrinsically to the weapon.
 
 ---
 
-# Statistics
+# Consumables and AFK Thresholds
 
-Enemy statistics reference Stat IDs.
+Potion-assisted progression and reliable AFK progression are distinct balance states.
 
-Example:
+An enemy/zone checkpoint may intentionally:
 
-```json
-{
-    "stats": {
-        "stat_max_health": 450,
-        "stat_physical_damage": 82,
-        "stat_attack_speed": 1.20
-    }
-}
-```
+- block an unprepared AFK build;
+- become clearable with potion assistance;
+- become reliably AFK-clearable after the next intended equipment/enchantment upgrade.
 
-Only base values are stored.
-
-Scaling is calculated at runtime.
-
----
-
-# Ability References
-
-Enemies reference reusable Abilities.
-
-Example:
-
-```json
-{
-    "abilityIds": [
-        "ability_enemy_slash",
-        "ability_enemy_roar"
-    ]
-}
-```
-
-Abilities remain reusable.
-
----
-
-# AI Profile
-
-Every enemy references one AI Profile.
-
-Example:
-
-```
-ai_melee_basic
-
-ai_ranged_basic
-
-ai_boss_guardian
-
-ai_resource_enemy
-```
-
-AI behavior is defined elsewhere.
-
----
-
-# Loot Table
-
-Each enemy references exactly one Loot Table.
-
-Example:
-
-```
-loot_table_undead_t4
-```
-
-Loot generation remains independent.
-
----
-
-# Experience Reward
-
-Enemies define a base Weapon Mastery reward.
-
-Example:
-
-```
-120 XP
-
-450 XP
-
-1800 XP
-```
-
-Cycle scaling is applied separately.
-
----
-
-# Spawn Weight
-
-Defines relative spawn probability.
-
-Examples:
-
-```
-100
-
-50
-
-15
-
-5
-```
-
-Higher values spawn more frequently.
-
-Spawn Weight is interpreted within Encounter definitions.
-
----
-
-# Resource Type
-
-Only Resource Enemies define a resource type.
-
-Examples:
-
-```
-Ore
-
-Wood
-
-Fiber
-
-Hide
-
-Stone
-```
-
-Other enemies use:
-
-```
-None
-```
-
----
-
-# Animation Set
-
-Every enemy references one animation set.
-
-Examples:
-
-```
-animset_skeleton
-
-animset_wolf
-
-animset_morgana_knight
-```
-
-Animation logic remains independent.
-
----
-
-# Visual Effects
-
-Optional VFX references.
-
-Examples:
-
-```
-vfx_undead_spawn
-
-vfx_fire_aura
-
-vfx_boss_death
-```
-
----
-
-# Audio
-
-Enemy audio references.
-
-Examples:
-
-```
-sfx_skeleton_attack
-
-sfx_wolf_howl
-
-sfx_boss_roar
-```
-
----
-
-# Tags
-
-Examples:
-
-```
-undead
-
-melee
-
-fire
-
-resource
-
-elite
-
-boss
-
-humanoid
-
-animal
-```
-
-Tags simplify filtering and balancing.
-
----
-
-# Runtime Representation
-
-```
-Enemy Definition
-
-↓
-
-Runtime Enemy
-
-↓
-
-Current HP
-
-↓
-
-Current Effects
-
-↓
-
-Death
-
-↓
-
-Destroyed
-```
-
-Definitions never contain runtime state.
+Frostpeak S10 is the current reference example: T4.2 is an assisted/optimized push state; T4.3 is the reliable AFK target.
 
 ---
 
 # Validation
 
-Validation checks:
+Enemy/content definitions should validate all references they actually own, including IDs, abilities, loot and assets where applicable.
 
-- Unique ID
-- Existing Family
-- Existing Category
-- Valid Tier
-- Existing Stat IDs
-- Existing Ability IDs
-- Existing AI Profile
-- Existing Loot Table
-- Existing Animation Set
-- Valid Spawn Weight
+Combat balance regression must separately validate that authored enemy/zone values still satisfy the progression contract after changes to:
 
-Invalid definitions never load.
+- weapon data;
+- armor/offhands;
+- abilities;
+- enchantment;
+- mastery;
+- combat formulas;
+- zone curves.
 
 ---
 
-# Unsupported Features
+# Extensibility
 
-Version 1 does not support:
+Future enemies, families and world bands should reuse:
 
-- Procedural Enemy Generation
-- Random Stat Rolls
-- Dynamic AI Assignment
-- Runtime Enemy Definitions
-- Evolution During Combat
+- existing enemy/content schemas;
+- shared combat progression configuration;
+- exact CombatRuntime benchmark harness;
+- weapon/package benchmark tooling.
 
----
-
-# Example Definition
-
-```json
-{
-    "id": "enemy_undead_skeleton",
-    "name": "Skeleton",
-    "family": "Undead",
-    "category": "Normal",
-    "tier": 4,
-    "stats": {
-        "stat_max_health": 450,
-        "stat_physical_damage": 82,
-        "stat_attack_speed": 1.20
-    },
-    "abilityIds": [
-        "ability_enemy_slash"
-    ],
-    "aiProfileId": "ai_melee_basic",
-    "lootTableId": "loot_table_undead_t4",
-    "experienceReward": 120,
-    "spawnWeight": 100,
-    "resourceType": null,
-    "animationSetId": "animset_skeleton",
-    "vfxIds": [],
-    "sfxIds": [
-        "sfx_skeleton_attack"
-    ],
-    "tags": [
-        "undead",
-        "melee"
-    ],
-    "source": "core"
-}
-```
-
----
-
-# Runtime Lifecycle
-
-```
-Load Enemy
-
-↓
-
-Validate
-
-↓
-
-Resolve References
-
-↓
-
-Register Enemy
-
-↓
-
-Encounter Spawn
-
-↓
-
-Runtime Entity
-
-↓
-
-Death
-
-↓
-
-Destroy Runtime Entity
-```
-
-Enemy definitions remain immutable.
-
----
-
-# Acceptance Criteria
-
-The Enemy Data document is complete when:
-
-- Every Enemy has a unique identifier.
-- Every Enemy belongs to one family.
-- Every Enemy belongs to one category.
-- Every Enemy defines a Tier.
-- Statistics reference Stat IDs.
-- Abilities reference Ability IDs.
-- AI references an AI Profile.
-- Loot references a Loot Table.
-- Experience rewards are configurable.
-- Spawn Weight is configurable.
-- Runtime entities remain independent from definitions.
-
----
-
-# Immutable Design Rules
-
-Rule 01
-
-Every Enemy is completely data-driven.
-
-Rule 02
-
-Every Enemy has a globally unique identifier.
-
-Rule 03
-
-Enemies belong to predefined families.
-
-Rule 04
-
-Enemies belong to predefined categories.
-
-Rule 05
-
-Statistics reference Stat IDs.
-
-Rule 06
-
-Abilities reference Ability IDs.
-
-Rule 07
-
-Every Enemy references one AI Profile.
-
-Rule 08
-
-Every Enemy references one Loot Table.
-
-Rule 09
-
-Only Resource Enemies define a Resource Type.
-
-Rule 10
-
-Spawn Weight is data-driven.
-
-Rule 11
-
-Definitions never contain runtime state.
-
-Rule 12
-
-Validation prevents invalid definitions.
-
-Rule 13
-
-Enemy definitions are immutable.
-
-Rule 14
-
-Every Enemy may declare its content source.
-
-Rule 15
-
-Future enemy families must remain compatible with the shared data architecture.
+Do not create parallel per-band combat simulators or copied balancing tables.
 
 ---
 
 # Summary
 
-The Enemy Data document defines every enemy through a modular and fully data-driven architecture. By separating identity, statistics, abilities, AI, loot and audiovisual references into independent systems, it enables scalable content creation while maintaining deterministic behavior and strong validation. This architecture supports the expansion of the bestiary with minimal maintenance cost and provides a robust foundation for future biomes, factions, bosses and seasonal content.
+Enemy Data owns enemy identity and reusable content references. World/zone progression data owns difficulty curves. CombatRuntime owns actual resolution. Keeping those responsibilities separate makes future zones and enemies data-driven and allows every new progression chapter to be calibrated with the same benchmark pipeline already validated on Blue.
 
 =========================
 DOCUMENT TERMINÉ
