@@ -2,6 +2,7 @@ import type { WorldLocationSaveState } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
 
 interface WorldNavigationRuntime {
+  readonly currentZoneIndex: number;
   readonly farmMode: boolean;
   readonly currentSegment: number;
   readonly highestUnlockedSegment: number;
@@ -52,12 +53,7 @@ export class WorldNavigationActions {
   }
 
   public selectSegment(segmentNumber: number): boolean {
-    if (!this.deps.worldRuntime.queueSegmentChange(segmentNumber)) return false;
-
-    // Manual segment travel is deferred until the current segment completes.
-    // Keep the active encounter running and only expose the pending destination.
-    this.deps.updateWorldBridge();
-    return true;
+    return this.queueManualSegmentChange(segmentNumber);
   }
 
   public setSegmentFarmMode(enabled: boolean): void {
@@ -66,6 +62,11 @@ export class WorldNavigationActions {
   }
 
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
+    const activeZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
+    if (zoneNumber === activeZoneNumber) {
+      return this.queueManualSegmentChange(segmentNumber ?? 1);
+    }
+
     if (!this.deps.worldRuntime.selectZone(zoneNumber, segmentNumber)) return false;
 
     this.interruptEncounterForTravel();
@@ -92,6 +93,15 @@ export class WorldNavigationActions {
     this.deps.combatRuntime.restoreHeroHealth();
     this.deps.updateWorldBridge();
     this.deps.bridge.setCombatState("walking");
+  }
+
+  private queueManualSegmentChange(segmentNumber: number): boolean {
+    if (!this.deps.worldRuntime.queueSegmentChange(segmentNumber)) return false;
+
+    // Manual segment travel is deferred until the current segment completes.
+    // Keep the active encounter running and only expose the pending destination.
+    this.deps.updateWorldBridge();
+    return true;
   }
 
   private interruptEncounterForTravel(): void {
