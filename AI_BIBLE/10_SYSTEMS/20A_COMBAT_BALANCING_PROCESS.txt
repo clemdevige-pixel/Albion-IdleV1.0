@@ -4,228 +4,247 @@
 
 # Purpose
 
-This document is the authoritative process for balancing future weapons and combat zones in Albion Idle.
+This document is the authoritative workflow for balancing combat zones, weapons, equipment and off-hand combinations in Albion Idle.
 
-Balance must not be driven by one live weapon, raw DPS alone, or isolated monster stat caps.
-The reference is the interaction between the player's complete combat envelope and authored encounter curves.
-
----
-
-# 1. Player combat envelope
-
-Every weapon is evaluated as a complete profile.
-
-OFFENSIVE ENVELOPE
-- Auto-attack damage and cadence.
-- Q / W / E only when actually unlocked by mastery.
-- Mastery checkpoints: M1, M10, M30, with M50 used as an advanced verification point.
-- Cooldowns and segment-start cooldown reset.
-- DoT, multi-hit, debuffs and conditional bonuses.
-- Damage type and enemy mitigation.
-- Sustained DPS as the primary offensive metric.
-- 5 s / 10 s opener pressure as a secondary identity metric, not a universal balance target.
-
-DEFENSIVE ENVELOPE
-- Max HP.
-- Armor and magic resistance.
-- Effective health against physical and magical damage.
-- Offhand contribution for 1H weapons.
-- Consumable contribution when the progression contract expects potion usage.
-- Full heal immediately before encounter 5 must be represented exactly as live runtime behavior.
-
-A defensive weapon is allowed to sit below the offensive center only when its defensive envelope materially compensates for that loss in real encounters.
+The live CombatRuntime is the source of truth for player-vs-zone difficulty. Synthetic DPS/EHP tools are diagnostic tools used to understand why a runtime result occurs; they do not replace the runtime.
 
 ---
 
-# 2. Synthetic ideal weapon
+# 1. Core balancing rules
 
-Never select an arbitrary live weapon as the universal source of truth.
-
-The synthetic ideal is built from the median performance of the current comparison set at the same tier, enchantment and mastery checkpoint.
-It provides a neutral reference for offense and defense.
-
-A practical live weapon may be used as a readable center after validation, but it does not replace the synthetic ideal.
-
-Current validated starter reference:
-- Dual Dagger is the practical offensive center of the Blue benchmark.
-- Longbow and Infernal Staff may sit modestly above that center as offensive 2H profiles.
-- Spiked Gauntlets target the same general 2H envelope with their own timing/control identity.
-- Broadsword intentionally targets roughly 82-85% of the practical offensive reference because Reinforced Shield contributes a materially stronger defensive envelope.
-
-Do not force all weapons to identical DPS.
-Balance comparable total combat effectiveness while preserving weapon identity.
+1. Balance from authored data, never from renderer/UI exceptions.
+2. Use the exact live combat stack for progression validation.
+3. Do not compensate for a weapon problem by globally weakening a zone.
+4. Do not compensate for a zone problem by inflating every equipment item.
+5. Preserve weapon identity: equal DPS is not the goal.
+6. For comparable weapons in the same handling class, an approximately 5-10% performance delta is acceptable when it serves identity and the complete package remains coherent.
+7. A one-handed weapon and its off-hand are separate balance objects. Never attribute off-hand power to the intrinsic weapon score.
+8. Potions are a progression tool, not part of an AFK baseline unless the contract explicitly says otherwise.
+9. Raw tuning values are data. The progression contract is design law.
 
 ---
 
-# 3. Weapon creation / rebalance workflow
+# 2. Live benchmark architecture
+
+PRIMARY RUNTIME TOOL
+- apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts
+- Entry point: runCombatRuntimeBenchmark(...)
+- Accepts any authored ZoneDefinitionId; it is not Blue-specific.
+- Runs the exact live CombatRuntime tick by tick.
+- Uses live equipment, mastery, ability, damage, death, consumable and zone-placement systems.
+- Max-health synchronization must remain identical to live character equipment behavior.
+- No alternate combat formula may be implemented inside this harness.
+
+PRIMARY WEAPON DIAGNOSTICS
+- apps/client/src/data/weaponIdealBenchmark.ts
+- apps/client/src/data/weaponPackageBenchmark.ts
+
+weaponIdealBenchmark provides:
+- sustained DPS;
+- opener DPS at 5 s and 10 s;
+- AA DPS and ability DPS;
+- mastery unlock-aware ability contribution;
+- HP / Armor / MR;
+- physical, magical and average effective health;
+- median synthetic ideal profiles.
+
+weaponPackageBenchmark separates:
+- WEAPON ONLY: intrinsic offensive identity;
+- NEUTRAL PACKAGE: identical armor and no off-hand, useful for comparable weapon checks;
+- EXPLICIT LOADOUT: weapon + explicitly selected armor/off-hand, useful for real build power.
+
+Future off-hands must be passed explicitly through BenchmarkDefensiveLoadout. Do not recreate a rule where every 1H weapon implicitly owns a shield.
+
+---
+
+# 3. Player baseline and defensive ladder
+
+LIVE NAKED HERO
+- 300 HP
+- 0 Armor
+- 0 Magic Resistance
+
+Validated full 2H defensive reference (head + chest + boots + Traveler Cape, no off-hand):
+- T3.0: 530 HP / 21 Armor / 19 MR
+- T4.0: 600 HP / 36 Armor / 28 MR
+- T4.1: 630 HP / 40 Armor / 31 MR
+- T4.2: 660 HP / 44 Armor / 32 MR
+- T4.3: 690 HP / 46 Armor / 36 MR
+- T5.0: 720 HP / 52 Armor / 40 MR
+- T5.1: 760 HP / 58 Armor / 44 MR
+- T5.2: 800 HP / 62 Armor / 47 MR
+- T5.3: 850 HP / 68 Armor / 50 MR
+
+Reinforced Shield remains a separate off-hand contribution:
+- T3: +9 Armor / +5 MR
+- T4: +15 Armor / +9 MR
+- T5: +22 Armor / +13 MR
+
+These values are protected by defensiveEquipmentBalance.test.ts and must remain data-driven.
+
+---
+
+# 4. Weapon balancing workflow
 
 For every new weapon or major rebalance:
 
-1. Author the intended identity first: sustained, burst, control, DoT, defensive, finisher, etc.
-2. Define 1H/2H and therefore the expected defensive/offensive tradeoff.
-3. Run the weapon benchmark at M1 / M10 / M30 / M50.
-4. Compare sustained DPS to the synthetic ideal and practical center.
-5. Inspect opener 5 s / 10 s only where relevant to the weapon identity.
-6. Compare physical and magical effective health.
-7. Run the weapon against real progression checkpoints with the exact authored encounter sequence.
-8. Compare TTK, remaining HP, potion usage and clear/fail state.
-9. Tune the smallest appropriate authored lever (AA cadence, base damage, ability ratio, cooldown, utility), rather than applying mode-specific exceptions.
-10. Run typecheck + full tests.
-11. Perform a small manual validation on the most representative progression checkpoint.
+1. Define the intended identity: sustained, burst, DoT, execute, control, defensive, hybrid, etc.
+2. Define handling: 1H or 2H. Handling alone does not define the off-hand.
+3. Run weapon-only diagnostics at representative mastery/enchantment checkpoints.
+4. Compare sustained DPS to the median synthetic ideal.
+5. Inspect opener 5 s / 10 s to understand burst/timing identity.
+6. For same-class comparisons, treat roughly +/-5-10% as an acceptable design envelope unless runtime behavior reveals a real outlier.
+7. Run a neutral package with the same armor and no off-hand.
+8. Run one or more explicit real loadouts. For 1H weapons, test each relevant off-hand separately when those off-hands exist.
+9. Validate the weapon at real progression checkpoints with CombatRuntimeBenchmarkHarness.
+10. Tune the smallest authored lever: base damage, attack cadence, ability ratio, cooldown, conditional mechanic, control, or explicit off-hand stats.
+11. Re-run typecheck + weapon diagnostics + affected progression sweeps.
 
-Do not add ACTIVE-only or AFK-only balance multipliers to repair an individual weapon.
-The same authored combat profile must remain the source for both modes unless a future design decision explicitly changes this rule.
-
----
-
-# 4. Zone balancing workflow
-
-Zone balance is created by crossing the authored monster curve with player combat envelopes.
-
-For each progression band, define explicit checkpoints before tuning monster numbers:
-- expected equipment tier/enchantment;
-- expected mastery range;
-- whether potion use is optional, useful, or required;
-- expected state: comfortable / normal / difficult / progression wall / farm-AFK.
-
-Then simulate the synthetic player profile through the real encounter sequence.
-Measure:
-- clear/fail;
-- total time / TTK;
-- remaining HP;
-- potion count and cooldown availability;
-- pressure before encounter 5;
-- result after the encounter-5 heal boundary;
-- boss result.
-
-Do not balance a zone by monster HP or damage caps in isolation.
-Structural tests may enforce monotonic progression, but player-vs-zone checkpoint tests are the authority for difficulty.
+A weapon may be below the offensive center if another part of its explicit build package compensates. The diagnostic must still report that offensive deficit rather than hiding it inside a single score.
 
 ---
 
-# 5. Potion semantics
+# 5. Zone balancing workflow
 
-Potions are part of the combat envelope when the progression contract calls for difficult active progression.
+For each new zone or world band:
 
-Definitions:
-- COMFORTABLE / AFK: should not depend on potion use.
-- DIFFICULT WITH RECOMMENDED GEAR: may intentionally require correct potion use.
-- PROGRESSION WALL: the previous equipment profile should no longer reliably clear even with potion support.
+1. Write the progression contract before editing enemy numbers.
+2. Define checkpoints covering entry, middle, late zone and final wall.
+3. For every checkpoint define:
+   - expected weapon/equipment tier;
+   - expected enchantment;
+   - expected mastery range;
+   - potion expectation: none / useful / required;
+   - expected state: comfortable / progression / wall / AFK farm.
+4. Run the exact live runtime across the representative weapon set.
+5. Read clear/fail, remaining HP, encounter reached, duration and potion usage together.
+6. Check weapon-only/package diagnostics before changing the zone when only one weapon is failing.
+7. Tune only the smallest relevant authored zone curve endpoint or content stat.
+8. Re-run earlier checkpoints to protect the shape of the curve.
+9. Freeze the contract semantically; do not freeze accidental historical tuning values.
 
-The simulator must use live potion behavior, including heal amount and cooldown. A potion must never be modeled as a free heal available for every encounter.
-
----
-
-# 6. Current validated Blue progression contract
-
-Forest:
-- T3 baseline.
-- Comfortable without potion.
-
-Dark Swamp:
-- T3 pressure begins during the middle of the zone.
-- Mid/late Dark Swamp is the T3 -> T4 transition, not Highland.
-- Dark Swamp S10 may be cleared by optimized T3 with potion support, but should fail without potion around the upper T3 limit.
-- T4.0 should make the end of Dark Swamp clearly more comfortable.
-
-Highland:
-- T4.0 is the intended baseline.
-
-Steppe:
-- Progression rises from T4.0 toward T4.1, with potion pressure on harder walls.
-
-Mountain:
-- Progression rises from T4.1 toward T4.2.
-- Mountain S10: T4.2 with potion support = difficult intended clear.
-- Mountain S10: T4.3 = comfort / farm profile, with no potion dependency expected.
-
-Manual validation completed for the first transition: a full-T3 Dual Dagger profile without potions reached Dark Swamp segment 9 before dying, matching the intended mid/late-Swamp T3 limit.
+When adding Yellow/Red/Black content, reuse CombatRuntimeBenchmarkHarness with the new ZoneDefinitionId. Do not create YellowRuntimeBenchmarkHarness, RedRuntimeBenchmarkHarness, etc.
 
 ---
 
-# 7. Validated defensive equipment baseline — 2026-08-15
+# 6. Potion and AFK semantics
 
-The hero's naked defensive baseline is intentionally weak so armor progression carries real gameplay value:
-- Naked hero: 300 HP / 0 Armor / 0 Magic Resistance.
-- Defensive growth is authored on equipment, not hidden on the character baseline.
-- The table below is the validated full-set 2H envelope: head + chest + boots + Traveler Cape, with no offhand.
+NO POTION / AFK COMFORT
+- A stable farm profile should clear without potion dependency.
 
-VALIDATED FULL 2H DEFENSIVE LADDER
-- T3.0: 530 HP / 21 Armor / 19 MR.
-- T4.0: 600 HP / 36 Armor / 28 MR.
-- T4.1: 630 HP / 40 Armor / 31 MR.
-- T4.2: 660 HP / 44 Armor / 32 MR.
-- T4.3: 690 HP / 46 Armor / 36 MR.
-- T5.0: 720 HP / 52 Armor / 40 MR.
-- T5.1: 760 HP / 58 Armor / 44 MR.
-- T5.2: 800 HP / 62 Armor / 47 MR.
-- T5.3: 850 HP / 68 Armor / 50 MR.
+POTION BRIDGE
+- A previous gear level may use potions to enter or advance into the next progression block.
+- This is valid when the next gear upgrade removes the dependency.
 
-AUTHORED CORE ITEM VALUES
-T3:
-- Head: 85 HP / 6 Armor / 4 MR.
-- Chest: 145 HP / 11 Armor / 8 MR.
-- Boots: 0 HP / 4 Armor / 3 MR.
+DIFFICULT CLEAR
+- Recommended gear may require potion support or optimization on a final wall.
 
-T4:
-- Head: 115 HP / 10 Armor / 7 MR.
-- Chest: 185 HP / 18 Armor / 12 MR.
-- Boots: 0 HP / 8 Armor / 5 MR.
+AFK THRESHOLD
+- The next meaningful upgrade should turn a difficult/potion-assisted wall into reliable potion-free farming.
 
-T5:
-- Head: 160 HP / 15 Armor / 11 MR.
-- Chest: 260 HP / 26 Armor / 18 MR.
-- Boots: 0 HP / 11 Armor / 7 MR.
-
-ACCESSORY / HANDLING RULES
-- Traveler Cape remains a fixed +4 MR baseline contribution in this ladder.
-- Reinforced Shield remains separate from the 2H envelope: T3 +9 Armor/+5 MR; T4 +15/+9; T5 +22/+13.
-- A 1H weapon must therefore be evaluated with its actual offhand; never compare Broadsword survivability to a 2H profile without accounting for the shield.
-- T5 stats are independently authored and may exceed T4.3. Base tier IP is not a substitute for authored item stats.
-
-ENCHANTMENT AND REAL ROUNDING CONTRACT
-- Active enchantment levels grant +50 IP each (.1 +50, .2 +100, .3 +150).
-- The current IP conversion remains +20% equipment stats per +100 bonus IP, therefore +10% per active enchantment level.
-- Scaling is calculated per equipped item before aggregation.
-- The resulting gameplay stat is rounded per item; rounding is not presentation-only.
-- Max HP rounds to the nearest multiple of 5, with exact ties upward.
-- Armor and Magic Resistance round to the nearest integer, with exact ties upward.
-- Authored physical/magical item damage follows integer rounding after equipment scaling; attack speed is excluded because it is a weapon identity property.
-- Mastery IP, mastery ability unlocks and other progression layers remain separate balance axes and must not be folded into these base defensive values.
-
-This baseline is a durable balance contract and must be protected by semantic/data-driven tests rather than temporary tuning snapshots.
+The benchmark uses the live health potion behavior and cooldown. Never model a free heal per encounter.
 
 ---
 
-# 8. Tests: what to keep
+# 7. Validated Blue progression contract — 2026-08-16
+
+BIRCH FOREST
+Expected: starter weapon only.
+Function: discovery, no real friction.
+Validated runtime result: all five starter weapons can clear S10 without potion.
+
+DARK SWAMP — EARLY
+Expected: starter weapon.
+Function: first real progression wall.
+The exact segment reached may vary by weapon identity; this variation is acceptable.
+
+DARK SWAMP S2 -> S6
+Expected: one to two T3 armor crafts.
+Function: each craft should visibly buy several more segments.
+Validated runtime checkpoints show meaningful recovery from chest and two-piece T3 upgrades.
+
+DARK SWAMP S6 -> S10
+Expected: quasi-full to full T3.
+Function: consolidation.
+S10 contract: full T3 can clear without potion across the representative weapon set.
+
+AFTER DARK SWAMP
+Progression pivot: Island level 2 enables the T4 production step according to the island/world progression contract.
+
+STONE HIGHLANDS
+Expected: full T3 -> first T4 pieces.
+Function: T3/T4 transition.
+Full T3 is not expected to be an autonomous farm baseline at the entrance. Potion support can bridge the first step; T4 pieces then remove that dependency progressively.
+Full T4.0 clears the zone.
+
+GOLDEN STEPPE
+Expected: full T4.0 -> first enchantments.
+Function: T4 consolidation.
+T4.0 handles early/mid Steppe; T4.1 is the intended late-zone progression tool.
+A single weapon-specific failure must be checked against its package before changing the global curve.
+
+FROSTPEAK / MOUNTAIN
+Expected: T4.1 -> T4.2, with T4.3 as autonomous comfort.
+Function: final Blue difficulty block.
+T4.1 progresses through early Mountain.
+T4.2 can push deep and may require potion/optimization at S10; it is intentionally not a guaranteed AFK clear.
+T4.3 clears S10 without potion across the representative weapon set and is the intended reliable AFK/farm threshold.
+
+This Blue contract supersedes older documentation that placed the T3->T4 transition inside Dark Swamp or required potion for full-T3 Swamp S10.
+
+---
+
+# 8. Current representative weapon interpretation
+
+At T4.1/T4.2 before later mastery unlocks:
+- Dagger Pair and Spiked Gauntlets sit close to the 2H offensive median.
+- Longbow and Infernal Staff sit roughly around +10% sustained offense versus the median; this is near the accepted high side of the same-class envelope.
+- Broadsword is substantially below the 2H offensive median, but the current reference Broadsword + Reinforced Shield loadout gains materially more EHP.
+
+Important: this does NOT mean Broadsword inherently owns that defensive score. Future off-hands will produce different 1H packages. Always report weapon-only and explicit-loadout results separately.
+
+---
+
+# 9. Tests and regression policy
+
+CORE BALANCE REGRESSION SET
+- blueRuntimeParity.test.ts
+- blueT3ProgressionSweep.test.ts
+- blueHighlandProgressionSweep.test.ts
+- blueSteppeProgressionSweep.test.ts
+- blueFrostpeakProgressionSweep.test.ts
+- blueRuntimeProgressionMatrix.test.ts
+- weaponIdealBenchmark.test.ts
+- weaponPackageScore.test.ts
+- defensiveEquipmentBalance.test.ts
 
 KEEP tests that protect:
-- mastery unlock thresholds;
-- combat formulas and mechanics;
-- synthetic benchmark construction;
-- defensive/offensive envelope behavior;
-- live potion and heal-boundary semantics;
-- progression checkpoint contracts;
-- monotonic structural progression;
-- data integrity and deterministic behavior;
-- the validated defensive ladder and real equipment-stat rounding contract.
+- live runtime parity;
+- mastery unlock semantics;
+- equipment-stat application and rounding;
+- weapon diagnostic construction;
+- explicit off-hand separation;
+- validated progression checkpoints;
+- potion behavior;
+- deterministic data integrity.
 
-REMOVE OR REWRITE tests that only freeze:
-- temporary tuning ratios;
-- obsolete absolute monster HP/damage ceilings;
-- old weapon-specific DPS bands;
-- historical multipliers that are no longer design contracts.
-
-When a checkpoint test fails after an intentional balance change, adjust authored balance to the validated contract first. Do not weaken the assertion merely to make the suite green unless the design contract itself has changed.
+REMOVE tests/tools that only preserve obsolete synthetic hero baselines, historical tuning ratios or old monster ceilings. The retired combatBalanceMatrix synthetic reallocation tool must not be reintroduced; real runtime sweeps replaced it.
 
 ---
 
-# 9. Source-of-truth rule
+# 10. Final validation command
 
-Runtime data and benchmark helpers must consume the same authored weapon, ability, equipment, monster and progression data wherever possible.
+From the repository root:
 
-A benchmark that reimplements old formulas independently is not trustworthy.
-When live formulas change, benchmark coverage must detect the mismatch.
+pnpm.cmd --filter @game/client typecheck
+pnpm.cmd --filter @game/client test -- blueRuntimeParity.test.ts blueT3ProgressionSweep.test.ts blueHighlandProgressionSweep.test.ts blueSteppeProgressionSweep.test.ts blueFrostpeakProgressionSweep.test.ts blueRuntimeProgressionMatrix.test.ts weaponIdealBenchmark.test.ts weaponPackageScore.test.ts defensiveEquipmentBalance.test.ts --reporter=verbose
 
-Balance decisions must be documented as contracts and then protected by semantic tests.
-Raw tuning values remain data, not design law.
+After targeted balance validation, run the full client suite before merging to main.
+
+---
+
+# Source-of-truth rule
+
+Difficulty truth = live CombatRuntime + authored content data.
+Weapon diagnostics explain the result; they never override it.
+Documentation stores the intended contract; tests protect the contract.
