@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   WEAPON_BALANCE_MASTERY_CHECKPOINTS,
+  getSyntheticIdealCombatProfile,
   getSyntheticIdealWeaponProfile,
   getWeaponBenchmarkProfile,
+  getWeaponCombatBenchmarkProfile,
+  getWeaponDefensiveBenchmarkProfile,
 } from "./weaponIdealBenchmark";
 
 const T3_STARTERS = [
@@ -25,13 +28,15 @@ describe("synthetic ideal weapon benchmark", () => {
   it("uses the real mastery unlock ladder 1 / 10 / 30", () => {
     for (const itemId of T3_STARTERS) {
       expect(getWeaponBenchmarkProfile(itemId, 1).unlockedAbilityCount).toBe(1);
+      expect(getWeaponBenchmarkProfile(itemId, 9).unlockedAbilityCount).toBe(1);
       expect(getWeaponBenchmarkProfile(itemId, 10).unlockedAbilityCount).toBe(2);
+      expect(getWeaponBenchmarkProfile(itemId, 29).unlockedAbilityCount).toBe(2);
       expect(getWeaponBenchmarkProfile(itemId, 30).unlockedAbilityCount).toBe(3);
       expect(getWeaponBenchmarkProfile(itemId, 50).unlockedAbilityCount).toBe(3);
     }
   });
 
-  it("builds the reference from all starters instead of selecting one live weapon", () => {
+  it("builds the offensive reference from all starters instead of selecting one live weapon", () => {
     for (const masteryLevel of WEAPON_BALANCE_MASTERY_CHECKPOINTS) {
       const profiles = T3_STARTERS.map((itemId) =>
         getWeaponBenchmarkProfile(itemId, masteryLevel, 0),
@@ -45,7 +50,7 @@ describe("synthetic ideal weapon benchmark", () => {
     }
   });
 
-  it("keeps enchantment as a multiplicative equipment upgrade in the benchmark", () => {
+  it("keeps enchantment as a multiplicative T4 equipment upgrade in the benchmark", () => {
     for (const itemId of T4_STANDARD) {
       const base = getWeaponBenchmarkProfile(itemId, 30, 0);
       const plusTwo = getWeaponBenchmarkProfile(itemId, 30, 2);
@@ -53,12 +58,43 @@ describe("synthetic ideal weapon benchmark", () => {
     }
   });
 
-  it("captures the authored 1H versus 2H offensive tradeoff instead of hiding it", () => {
-    const sword = getWeaponBenchmarkProfile("item_weapon_sword_t4_broadsword", 10, 2);
-    const bow = getWeaponBenchmarkProfile("item_weapon_bow_t4_longbow", 10, 2);
+  it("captures the 1H shield survivability tradeoff separately from offense", () => {
+    const sword = getWeaponDefensiveBenchmarkProfile("item_weapon_sword_t4_broadsword", 2);
+    const bow = getWeaponDefensiveBenchmarkProfile("item_weapon_bow_t4_longbow", 2);
 
-    expect(sword.handling).toBe("one_handed");
-    expect(bow.handling).toBe("two_handed");
-    expect(bow.sustainedDps).toBeGreaterThan(sword.sustainedDps);
+    expect(sword.offHandItemId).toBe("item_shield_t4_reinforced");
+    expect(bow.offHandItemId).toBeUndefined();
+    expect(sword.maxHealth).toBe(bow.maxHealth);
+    expect(sword.armor).toBeGreaterThan(bow.armor);
+    expect(sword.magicResistance).toBeGreaterThan(bow.magicResistance);
+    expect(sword.physicalEffectiveHealth).toBeGreaterThan(bow.physicalEffectiveHealth);
+    expect(sword.magicalEffectiveHealth).toBeGreaterThan(bow.magicalEffectiveHealth);
+  });
+
+  it("scales the T4 defensive envelope with enchantment without enchanting the retained T3 cape", () => {
+    const base = getWeaponDefensiveBenchmarkProfile("item_weapon_bow_t4_longbow", 0);
+    const plusTwo = getWeaponDefensiveBenchmarkProfile("item_weapon_bow_t4_longbow", 2);
+
+    expect(plusTwo.maxHealth).toBeGreaterThan(base.maxHealth);
+    expect(plusTwo.armor).toBeGreaterThan(base.armor);
+    expect(plusTwo.magicResistance).toBeGreaterThan(base.magicResistance);
+    expect(plusTwo.averageEffectiveHealth).toBeGreaterThan(base.averageEffectiveHealth);
+  });
+
+  it("builds a neutral combat ideal from median offense and median defense", () => {
+    const profiles = T4_STANDARD.map((itemId) =>
+      getWeaponCombatBenchmarkProfile(itemId, 20, 2),
+    );
+    const ideal = getSyntheticIdealCombatProfile(profiles, 20);
+    const offensiveOutputs = profiles
+      .map((profile) => profile.offense.sustainedDps)
+      .sort((a, b) => a - b);
+    const physicalEhp = profiles
+      .map((profile) => profile.defense.physicalEffectiveHealth)
+      .sort((a, b) => a - b);
+
+    expect(ideal.sustainedDps).toBe(offensiveOutputs[2]);
+    expect(ideal.physicalEffectiveHealth).toBe(physicalEhp[2]);
+    expect(ideal.averageEffectiveHealth).toBeGreaterThan(0);
   });
 });
