@@ -1,4 +1,6 @@
-import { getIslandBuildingDefinition, type IslandBuildingId } from "@game/data";
+import type { IslandBuildingId } from "@game/data";
+import { ItemHoverTooltip } from "../../panels/ItemHoverTooltip";
+import { getItemDefinition, ItemVisual } from "../../panels/ItemVisual";
 import { useGameBridge } from "../../state/GameContext";
 import { getIslandMaterialLabel } from "./islandMaterialPresentation";
 
@@ -15,13 +17,18 @@ const GATHERING_BUILDING_IDS: readonly IslandBuildingId[] = [
  * owns a first crafted T3 armor/offhand piece beyond the starter weapon.
  */
 export function IslandOnboardingGuide(): JSX.Element | null {
-  const { island, crafting, workers } = useGameBridge();
+  const { island, crafting, workers, equipment } = useGameBridge();
   const builtIds = new Set(island.buildings.map((building) => building.definitionId));
   const workshopBuilt = builtIds.has("workshop");
   const gatheringBuildings = GATHERING_BUILDING_IDS.filter((id) => builtIds.has(id));
+  const equippedWeaponId = equipment.slots.find((slot) => slot.slot === "weapon")?.itemId;
+  const equippedWeapon = equippedWeaponId === undefined ? undefined : getItemDefinition(equippedWeaponId);
+  const usesTwoHandedWeapon = equippedWeapon?.handling === "two_handed";
 
   const t3FirstGearRecipes = crafting.recipes.filter((recipe) => (
-    recipe.tier === 3 && (recipe.family === "armor" || recipe.family === "offhand")
+    recipe.tier === 3
+    && (recipe.family === "armor" || recipe.family === "offhand")
+    && !(usesTwoHandedWeapon && recipe.family === "offhand")
   ));
   const hasFirstCraftedGear = t3FirstGearRecipes.some((recipe) => recipe.craftedQuantity > 0);
 
@@ -39,10 +46,15 @@ export function IslandOnboardingGuide(): JSX.Element | null {
       </p>
 
       {t3FirstGearRecipes.length > 0 && (
-        <div className="ui-island-construction__list">
+        <div className="ui-island-construction__list ui-island-onboarding__recipes">
           {t3FirstGearRecipes.map((recipe) => (
-            <article key={recipe.outputItemId} className="ui-island-construction__card">
+            <article key={recipe.outputItemId} className="ui-island-construction__card ui-island-onboarding__recipe-card">
               <header>
+                <ItemHoverTooltip itemId={recipe.outputItemId}>
+                  <span className="ui-island-onboarding__item-icon" aria-label={`Détails de ${recipe.recipeName}`}>
+                    <ItemVisual itemId={recipe.outputItemId} />
+                  </span>
+                </ItemHoverTooltip>
                 <div>
                   <strong>{recipe.recipeName}</strong>
                   <small>
@@ -80,19 +92,6 @@ export function IslandOnboardingGuide(): JSX.Element | null {
           Rappel : le worker récolte automatiquement et le gather actif du héros s’ajoute à sa production.
         </div>
       )}
-
-      {gatheringBuildings.map((buildingId) => {
-        const definition = getIslandBuildingDefinition(buildingId);
-        const profession = definition.gatheringService?.workerProfession;
-        if (profession === undefined) return null;
-        const worker = workers.workers.find((candidate) => candidate.profession === profession);
-        if (worker === undefined) return null;
-        return (
-          <div key={buildingId} className="ui-island__selection-status">
-            {definition.label} : {worker.displayName} est {worker.state === "working" ? "en production" : "prêt à être affecté"}.
-          </div>
-        );
-      })}
     </section>
   );
 }
