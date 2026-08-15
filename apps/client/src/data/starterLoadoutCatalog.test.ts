@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  STARTER_ONE_HANDED_OFFHAND_ITEM_ID,
   getStarterLoadoutItemIds,
   getStarterWeaponOptions,
 } from "./starterLoadoutCatalog";
@@ -19,10 +18,10 @@ describe("starterLoadoutCatalog", () => {
     expect(itemIds).not.toContain("item_weapon_bow_t4_badon");
   });
 
-  it("adds the T3 off-hand only to one-handed starter loadouts", () => {
+  it("builds weapon-only starter loadouts for one-handed and two-handed weapons", () => {
     expect(getStarterLoadoutItemIds("item_weapon_sword_t3_broadsword"))
-      .toContain(STARTER_ONE_HANDED_OFFHAND_ITEM_ID);
+      .toEqual(["item_weapon_sword_t3_broadsword"]);
     expect(getStarterLoadoutItemIds("item_weapon_bow_t3_longbow"))
-      .not.toContain(STARTER_ONE_HANDED_OFFHAND_ITEM_ID);
+      .toEqual(["item_weapon_bow_t3_longbow"]);
   });
 });
