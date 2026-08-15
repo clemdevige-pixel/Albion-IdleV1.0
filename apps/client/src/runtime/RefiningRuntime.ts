@@ -141,7 +141,13 @@ export class RefiningRuntime {
   public tick(tickCounter: number): void {
     this.currentTickCounter = tickCounter;
     for (const family of SUPPORTED_REFINING_FAMILIES) {
-      this.families[family].manager.tick(tickCounter);
+      const definition = this.families[family];
+      definition.manager.tick(tickCounter);
+
+      const state = this.states[family];
+      if (state.automatic && definition.manager.getActiveSession() === undefined) {
+        this.startRefiningCycle(family, this.getRecipe(family), tickCounter);
+      }
     }
   }
 
@@ -161,6 +167,11 @@ export class RefiningRuntime {
   public isRefiningActive(family: ResourceFamily): boolean {
     if (!isSupportedRefiningFamily(family)) return false;
     return this.families[family].manager.getActiveSession() !== undefined;
+  }
+
+  public isAutomaticEnabled(family: ResourceFamily): boolean {
+    if (!isSupportedRefiningFamily(family)) return false;
+    return this.states[family].automatic;
   }
 
   /**
@@ -241,6 +252,8 @@ export class RefiningRuntime {
   ): boolean {
     const definition = this.families[family];
     const state = this.states[family];
+    if (definition.manager.getActiveSession() !== undefined) return false;
+
     const reserved = this.reserveRefiningRequirements(recipe.requirements);
     if (reserved === undefined) return false;
 
@@ -307,17 +320,13 @@ export class RefiningRuntime {
     } else {
       state.reservedInputs = [];
       definition.manager.clear();
-      if (
-        state.automatic &&
-        !this.startRefiningCycle(
-          family,
-          recipe,
-          this.currentTickCounter,
-        )
-      ) {
-        state.automatic = false;
-        state.activeRecipe = undefined;
-      } else if (!state.automatic) {
+      if (state.automatic) {
+        if (!this.startRefiningCycle(family, recipe, this.currentTickCounter)) {
+          // Automatic refining remains armed while waiting for the worker or
+          // active gathering to replenish the shared production storage.
+          state.activeRecipe = undefined;
+        }
+      } else {
         state.activeRecipe = undefined;
       }
     }
