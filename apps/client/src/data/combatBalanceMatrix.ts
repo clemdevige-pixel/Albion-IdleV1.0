@@ -119,6 +119,9 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
  * remains genuine authored equipment power and therefore scales through normal
  * IP. Multipliers are solved backwards so full T4.3 remains exactly on the
  * current defensive ceiling (688.5 HP / 65.9 Armor / 46.7 MR).
+ *
+ * Fine probes intentionally use 0 naked Armor / 0 naked MR: if the hero is
+ * unequipped, all mitigation is expected to come from actual equipment.
  */
 export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDefinition[] = [
   {
@@ -178,13 +181,43 @@ export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDef
     },
   },
   {
-    id: "reallocation_probe_300",
-    label: "Seuil 300 HP",
-    hero: { maxHealth: 300, armor: 1, magicResistance: 0 },
+    id: "reallocation_probe_300_zero_def",
+    label: "300 HP · 0 Armor/MR",
+    hero: { maxHealth: 300, armor: 0, magicResistance: 0 },
     equipmentStatMultiplier: {
       maxHealth: 2.061007957559682,
-      armor: 1.1610017889087658,
-      magicResistance: 1.119904076738609,
+      armor: 1.1788908765652952,
+      magicResistance: 1.0885780885780887,
+    },
+  },
+  {
+    id: "reallocation_probe_305_zero_def",
+    label: "305 HP · 0 Armor/MR",
+    hero: { maxHealth: 305, armor: 0, magicResistance: 0 },
+    equipmentStatMultiplier: {
+      maxHealth: 2.0344827586206895,
+      armor: 1.1788908765652952,
+      magicResistance: 1.0885780885780887,
+    },
+  },
+  {
+    id: "reallocation_probe_310_zero_def",
+    label: "310 HP · 0 Armor/MR",
+    hero: { maxHealth: 310, armor: 0, magicResistance: 0 },
+    equipmentStatMultiplier: {
+      maxHealth: 2.0079575596816976,
+      armor: 1.1788908765652952,
+      magicResistance: 1.0885780885780887,
+    },
+  },
+  {
+    id: "reallocation_probe_315_zero_def",
+    label: "315 HP · 0 Armor/MR",
+    hero: { maxHealth: 315, armor: 0, magicResistance: 0 },
+    equipmentStatMultiplier: {
+      maxHealth: 1.9814323607427056,
+      armor: 1.1788908765652952,
+      magicResistance: 1.0885780885780887,
     },
   },
 ] as const;
