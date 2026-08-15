@@ -5,34 +5,19 @@
   flex-direction: column;
   min-width: 0;
   isolation: isolate;
-  background: #17272b;
-}
-
-.ui-island-world__sky {
-  position: absolute;
-  inset: 0 0 55%;
-  z-index: -4;
-  background: linear-gradient(180deg, #263d43 0%, #38534e 70%, #405c50 100%);
-}
-
-.ui-island-world__water {
-  position: absolute;
-  inset: 42% 0 0;
-  z-index: -3;
-  background:
-    repeating-linear-gradient(174deg, rgba(255,255,255,.035) 0 2px, transparent 2px 13px),
-    linear-gradient(180deg, #294b50, #18383f 70%, #122e35);
+  background: #071b2d;
 }
 
 .ui-island-world__header,
 .ui-island-world__hint {
   position: relative;
-  z-index: 20;
+  z-index: 30;
   margin: 14px 16px 0;
   border: 1px solid rgba(190,159,105,.26);
   border-radius: 8px;
-  background: rgba(15,20,21,.82);
-  box-shadow: 0 5px 18px rgba(0,0,0,.24);
+  background: rgba(8,14,18,.84);
+  box-shadow: 0 5px 18px rgba(0,0,0,.28);
+  backdrop-filter: blur(3px);
 }
 
 .ui-island-world__header {
@@ -52,84 +37,124 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  padding: 8px 18px 4px;
+  padding: 8px 14px 4px;
   display: grid;
   place-items: center;
 }
 
 .ui-island-world__island {
   position: relative;
-  width: min(980px, 96%);
-  height: min(620px, 96%);
-  min-height: 470px;
+  width: min(1180px, 100%);
+  aspect-ratio: 16 / 9;
+  max-height: 100%;
+  background: url("/assets/island/island-background.webp") center / contain no-repeat;
+  filter: drop-shadow(0 14px 22px rgba(0,0,0,.28));
 }
-
-.ui-island-world__shore,
-.ui-island-world__grass {
-  position: absolute;
-  inset: 4% 3% 2%;
-  clip-path: polygon(10% 22%, 22% 8%, 46% 3%, 69% 8%, 89% 22%, 97% 43%, 91% 68%, 74% 88%, 48% 96%, 24% 89%, 7% 70%, 2% 47%);
-}
-.ui-island-world__shore { transform: translateY(9px); background: #9b8055; filter: drop-shadow(0 16px 18px rgba(0,0,0,.3)); }
-.ui-island-world__grass {
-  inset: 5% 4% 5%;
-  background:
-    radial-gradient(circle at 30% 32%, rgba(117,139,72,.4), transparent 19%),
-    radial-gradient(circle at 72% 63%, rgba(58,91,50,.4), transparent 22%),
-    linear-gradient(145deg, #587142, #3f613b 62%, #345437);
-  box-shadow: inset 0 0 45px rgba(20,38,26,.36);
-}
-
-.ui-island-world__path { position: absolute; z-index: 2; height: 8%; border-radius: 50%; background: rgba(154,126,78,.48); filter: blur(.2px); pointer-events: none; }
-.ui-island-world__path.path-a { width: 64%; left: 18%; top: 47%; transform: rotate(2deg); }
-.ui-island-world__path.path-b { width: 42%; left: 28%; top: 48%; transform: rotate(58deg); }
-.ui-island-world__path.path-c { width: 37%; left: 35%; top: 49%; transform: rotate(-48deg); }
-.ui-island-world__decor { position: absolute; z-index: 5; color: #253f2c; text-shadow: 5px 7px rgba(0,0,0,.18); font-size: 34px; pointer-events: none; }
-.decor-tree-a { left: 7%; top: 34%; }
-.decor-tree-b { right: 8%; top: 61%; transform: scale(1.25); }
-.decor-rock { left: 50%; bottom: 7%; color: #586258; font-size: 22px; }
 
 .ui-island-world__plot {
+  --island-building-scale: 1;
+  --island-atlas-x: 0%;
+  --island-atlas-y: 0%;
   position: absolute;
   z-index: 10;
-  width: clamp(82px, 11vw, 126px);
-  min-height: 92px;
-  transform: translate(-50%, -50%);
+  width: clamp(92px, 13.5vw, 154px);
+  aspect-ratio: 320 / 220;
+  transform: translate(-50%, -67%) scale(var(--island-building-scale));
   border: 0;
   background: transparent;
   color: #eee2ca;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
   padding: 0;
   cursor: pointer;
   overflow: visible;
+  transition: transform .14s ease, filter .14s ease;
 }
-.ui-island-world__plot-shadow { position: absolute; left: 13%; right: 13%; top: 51%; height: 20px; border-radius: 50%; background: rgba(10,18,12,.28); filter: blur(3px); }
-.ui-island-world__building { position: relative; z-index: 2; width: 62px; height: 52px; display: flex; align-items: flex-end; justify-content: center; transition: transform .14s ease; }
-.ui-island-world__building-roof { position: absolute; z-index: 2; top: 2px; left: 8px; width: 46px; height: 27px; background: #66503a; clip-path: polygon(50% 0, 100% 72%, 87% 100%, 13% 100%, 0 72%); border-bottom: 3px solid #443629; }
-.ui-island-world__building-body { position: relative; z-index: 3; width: 44px; height: 31px; border: 2px solid #3e352b; border-radius: 2px; background: #8b7656; display: grid; place-items: center; color: #e0bd78; font-size: 18px; box-shadow: inset 0 -8px rgba(53,45,36,.2); }
-.ui-island-world__plot.is-empty .ui-island-world__building { width: 58px; height: 43px; border: 2px dashed rgba(222,199,154,.4); border-radius: 50%; background: rgba(43,65,43,.32); }
-.ui-island-world__plot.is-empty .ui-island-world__building-roof { display: none; }
-.ui-island-world__plot.is-empty .ui-island-world__building-body { width: auto; height: auto; border: 0; background: transparent; box-shadow: none; font-size: 25px; color: rgba(239,210,154,.7); }
-.ui-island-world__plot:hover .ui-island-world__building,
-.ui-island-world__plot.is-selected .ui-island-world__building { transform: translateY(-4px) scale(1.05); }
-.ui-island-world__plot.is-selected .ui-island-world__building-body { outline: 2px solid rgba(230,188,105,.85); outline-offset: 3px; }
 
-.ui-island-world__label { position: relative; z-index: 4; margin-top: 3px; min-width: 96px; max-width: 142px; padding: 4px 6px; border: 1px solid rgba(190,159,105,.22); border-radius: 5px; background: rgba(16,20,18,.84); box-shadow: 0 3px 8px rgba(0,0,0,.22); display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
-.ui-island-world__label strong { max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
-.ui-island-world__label small { margin-top: 2px; color: rgba(222,207,181,.62); font-size: 9px; }
+.ui-island-world__asset {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-image: url("/assets/island/island-buildings-atlas.webp");
+  background-size: 400% 300%;
+  background-position: var(--island-atlas-x) var(--island-atlas-y);
+  background-repeat: no-repeat;
+  pointer-events: none;
+  filter: drop-shadow(0 7px 5px rgba(0,0,0,.34));
+}
+
+.ui-island-world__plot:hover,
+.ui-island-world__plot:focus-visible {
+  z-index: 18;
+  transform: translate(-50%, -70%) scale(calc(var(--island-building-scale) * 1.06));
+  filter: brightness(1.12);
+  outline: none;
+}
+
+.ui-island-world__plot.is-selected {
+  z-index: 19;
+  transform: translate(-50%, -70%) scale(calc(var(--island-building-scale) * 1.07));
+}
+
+.ui-island-world__plot.is-selected .ui-island-world__asset {
+  filter:
+    drop-shadow(0 7px 5px rgba(0,0,0,.34))
+    drop-shadow(0 0 7px rgba(231,185,82,.9));
+}
+
+.ui-island-world__plot.is-empty .ui-island-world__asset {
+  opacity: .78;
+}
+.ui-island-world__plot.is-empty:hover .ui-island-world__asset,
+.ui-island-world__plot.is-empty.is-selected .ui-island-world__asset {
+  opacity: 1;
+}
+
+.ui-island-world__hover-label {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 88%;
+  min-width: 118px;
+  max-width: 165px;
+  transform: translate(-50%, 5px);
+  padding: 5px 8px;
+  border: 1px solid rgba(205,163,80,.48);
+  border-radius: 5px;
+  background: rgba(8,13,17,.94);
+  box-shadow: 0 5px 12px rgba(0,0,0,.36);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+}
+.ui-island-world__plot:hover .ui-island-world__hover-label,
+.ui-island-world__plot:focus-visible .ui-island-world__hover-label,
+.ui-island-world__plot.is-selected .ui-island-world__hover-label {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+.ui-island-world__hover-label strong { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.ui-island-world__hover-label small { margin-top: 2px; color: rgba(222,207,181,.65); font-size: 9px; }
 .ui-island-world__status { margin-top: 3px; font-size: 8px; font-style: normal; }
 .ui-island-world__status.is-working { color: rgba(174,220,160,.95); }
 .ui-island-world__status.is-paused { color: rgba(226,190,122,.95); }
 
-.ui-island-world__hint { margin-top: 0; margin-bottom: 14px; padding: 7px 12px; display: flex; justify-content: space-between; gap: 14px; color: rgba(221,205,177,.58); font-size: 9px; }
+.ui-island-world__hint {
+  margin-top: 0;
+  margin-bottom: 14px;
+  padding: 7px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: rgba(221,205,177,.58);
+  font-size: 9px;
+}
 
 @media (max-width: 1150px) {
-  .ui-island-world__island { width: 100%; min-height: 430px; }
-  .ui-island-world__plot { width: 92px; }
-  .ui-island-world__building { transform: scale(.88); }
-  .ui-island-world__label { min-width: 84px; max-width: 104px; }
-  .ui-island-world__label strong { max-width: 92px; }
+  .ui-island-world__plot { width: clamp(82px, 13vw, 122px); }
+  .ui-island-world__hover-label { min-width: 102px; }
 }
