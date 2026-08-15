@@ -16,6 +16,7 @@ function createHarness(options?: {
     zoneMemories: [],
   } as unknown as WorldLocationSaveState;
   const worldRuntime = {
+    currentZoneIndex: 0,
     farmMode: options?.farmMode ?? false,
     currentSegment: 2,
     highestUnlockedSegment: 5,
@@ -56,6 +57,17 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
+  it("queues timeline travel inside the active zone instead of interrupting combat", () => {
+    const harness = createHarness();
+
+    expect(harness.actions.selectZone(1, 4)).toBe(true);
+    expect(harness.worldRuntime.queueSegmentChange).toHaveBeenCalledWith(4);
+    expect(harness.worldRuntime.selectZone).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
+    expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
   it("does not alter combat when a manual segment destination is rejected", () => {
     const harness = createHarness({ segmentAccepted: false });
 
@@ -65,7 +77,7 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).not.toHaveBeenCalled();
   });
 
-  it("coordinates accepted zone travel without owning unlock rules", () => {
+  it("coordinates accepted cross-zone travel without owning unlock rules", () => {
     const harness = createHarness();
 
     expect(harness.actions.selectZone(3, 2)).toBe(true);
