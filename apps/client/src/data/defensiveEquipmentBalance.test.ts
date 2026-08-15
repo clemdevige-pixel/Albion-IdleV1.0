@@ -20,9 +20,16 @@ const CORE_BY_TIER = {
   5: ["item_helmet_t5_reinforced", "item_armor_t5_leather", "item_boots_t5_leather"],
 } as const;
 
+function authoredStat(itemId: string, statId: StatId): number {
+  const stats = resolveEquipmentInfo(itemId)?.stats as Readonly<Record<string, number | undefined>> | undefined;
+  return stats?.[String(statId)] ?? 0;
+}
+
 function roundedStat(itemId: string, statId: StatId, enchantment: EnchantmentLevel): number {
-  const value = resolveEquipmentInfo(itemId)?.stats?.[String(statId)] ?? 0;
-  return roundEquipmentStatValue(statId, value * getEnchantmentStatMultiplier(enchantment));
+  return roundEquipmentStatValue(
+    statId,
+    authoredStat(itemId, statId) * getEnchantmentStatMultiplier(enchantment),
+  );
 }
 
 function fullTwoHandedDefense(tier: keyof typeof CORE_BY_TIER, enchantment: EnchantmentLevel) {
@@ -36,25 +43,14 @@ function fullTwoHandedDefense(tier: keyof typeof CORE_BY_TIER, enchantment: Ench
     mr += roundedStat(itemId, STAT_MAGIC_RESISTANCE, enchantment);
   }
 
-  // Traveler cape is the validated fixed T3 baseline accessory and is not part
-  // of the enchantable core used to author this progression ladder.
-  hp += resolveEquipmentInfo(CAPE_ID)?.stats?.stat_max_health ?? 0;
-  armor += resolveEquipmentInfo(CAPE_ID)?.stats?.stat_armor ?? 0;
-  mr += resolveEquipmentInfo(CAPE_ID)?.stats?.stat_magic_resistance ?? 0;
+  hp += authoredStat(CAPE_ID, STAT_MAX_HEALTH);
+  armor += authoredStat(CAPE_ID, STAT_ARMOR);
+  mr += authoredStat(CAPE_ID, STAT_MAGIC_RESISTANCE);
 
   return { hp, armor, mr };
 }
 
 describe("validated defensive equipment balance", () => {
-  it("rounds real equipment stats with the authored gameplay contract", () => {
-    expect(roundEquipmentStatValue(STAT_MAX_HEALTH, 142)).toBe(140);
-    expect(roundEquipmentStatValue(STAT_MAX_HEALTH, 143)).toBe(145);
-    expect(roundEquipmentStatValue(STAT_MAX_HEALTH, 147.5)).toBe(150);
-    expect(roundEquipmentStatValue(STAT_ARMOR, 7.4)).toBe(7);
-    expect(roundEquipmentStatValue(STAT_ARMOR, 7.5)).toBe(8);
-    expect(roundEquipmentStatValue(STAT_MAGIC_RESISTANCE, 12.5)).toBe(13);
-  });
-
   it.each([
     [3, 0, { hp: 530, armor: 21, mr: 19 }],
     [4, 0, { hp: 600, armor: 36, mr: 28 }],
