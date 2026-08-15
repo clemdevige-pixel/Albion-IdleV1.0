@@ -25,6 +25,7 @@ export interface DiscordRouteOptions {
   readonly config: DiscordOAuthConfig;
   readonly client: DiscordOAuthClient;
   readonly clientOrigin: string;
+  readonly allowedClientOrigins: readonly string[];
   readonly flowStore?: DiscordOAuthFlowRepository;
 }
 
@@ -52,11 +53,8 @@ export function registerAuthRoutes(app: FastifyInstance, auth: AuthService, disc
     if (!parsed.success) {
       return reply.status(400).send({ code: "INVALID_REQUEST", message: "Informations de compte invalides." });
     }
-    try {
-      return await auth.register(parsed.data);
-    } catch (error) {
-      return sendFailure(reply, error);
-    }
+    try { return await auth.register(parsed.data); }
+    catch (error) { return sendFailure(reply, error); }
   });
 
   app.post(AUTH_LOGIN_ROUTE, async (request, reply) => {
@@ -64,21 +62,15 @@ export function registerAuthRoutes(app: FastifyInstance, auth: AuthService, disc
     if (!parsed.success) {
       return reply.status(400).send({ code: "INVALID_REQUEST", message: "Identifiants invalides." });
     }
-    try {
-      return await auth.login(parsed.data);
-    } catch (error) {
-      return sendFailure(reply, error);
-    }
+    try { return await auth.login(parsed.data); }
+    catch (error) { return sendFailure(reply, error); }
   });
 
   app.get(AUTH_SESSION_ROUTE, async (request, reply) => {
     const token = getBearerToken(request);
     if (token === undefined) return reply.status(401).send({ code: "UNAUTHORIZED", message: "Session requise." });
-    try {
-      return { account: await auth.getAccount(token) };
-    } catch (error) {
-      return sendFailure(reply, error);
-    }
+    try { return { account: await auth.getAccount(token) }; }
+    catch (error) { return sendFailure(reply, error); }
   });
 
   app.post(AUTH_LOGOUT_ROUTE, async (request, reply) => {
@@ -87,22 +79,31 @@ export function registerAuthRoutes(app: FastifyInstance, auth: AuthService, disc
     return reply.status(204).send();
   });
 
-  app.get(AUTH_DISCORD_START_ROUTE, async (_request, reply) => {
+  app.get(AUTH_DISCORD_START_ROUTE, async (request, reply) => {
     if (discord === undefined) return reply.status(503).send({ code: "PROVIDER_UNAVAILABLE", message: "Discord n'est pas configuré." });
-    const state = await discordFlow.issueState();
+    const query = request.query as { return_origin?: unknown };
+    const requestedOrigin = typeof query.return_origin === "string" ? query.return_origin : discord.clientOrigin;
+    if (!discord.allowedClientOrigins.includes(requestedOrigin)) {
+      return reply.status(400).send({ code: "INVALID_REQUEST", message: "Origine de retour non autorisée." });
+    }
+    const state = await discordFlow.issueStateForOrigin(requestedOrigin);
     return reply.redirect(buildDiscordAuthorizationUrl(discord.config, state));
   });
 
   app.get(AUTH_DISCORD_CALLBACK_ROUTE, async (request, reply) => {
     if (discord === undefined) return reply.status(503).send({ code: "PROVIDER_UNAVAILABLE", message: "Discord n'est pas configuré." });
     const query = request.query as { code?: unknown; state?: unknown };
-    if (typeof query.code !== "string" || typeof query.state !== "string" || !(await discordFlow.consumeState(query.state))) {
+    if (typeof query.code !== "string" || typeof query.state !== "string") {
+      return reply.status(400).send({ code: "OAUTH_FAILED", message: "Retour Discord invalide ou expiré." });
+    }
+    const returnOrigin = await discordFlow.consumeStateWithOrigin(query.state);
+    if (returnOrigin === undefined || !discord.allowedClientOrigins.includes(returnOrigin)) {
       return reply.status(400).send({ code: "OAUTH_FAILED", message: "Retour Discord invalide ou expiré." });
     }
     try {
       const identity = await discord.client.exchangeCode(query.code);
       const exchangeCode = await discordFlow.issueExchange(await auth.loginWithDiscord(identity));
-      const destination = new URL(discord.clientOrigin);
+      const destination = new URL(returnOrigin);
       destination.searchParams.set("discord_auth_code", exchangeCode);
       return reply.redirect(destination.toString());
     } catch {
