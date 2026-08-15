@@ -48,6 +48,29 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.pendingSegment).toBeNull();
   });
 
+  it("applies queued cross-zone travel only after the current segment completes", () => {
+    const { worldRuntime, progressionManager, forestZoneDefId } = createLoadedWorld(0);
+    progressionManager.markCompleted(forestZoneDefId);
+
+    expect(worldRuntime.selectZone(2, 1)).toBe(true);
+    expect(worldRuntime.currentZoneIndex).toBe(0);
+    expect(worldRuntime.pendingZone).toBe(1);
+    expect(worldRuntime.pendingZoneSegment).toBe(0);
+
+    for (let encounter = 0; encounter < 4; encounter += 1) {
+      worldRuntime.advanceVictory();
+    }
+    expect(worldRuntime.currentZoneIndex).toBe(0);
+    expect(worldRuntime.currentEncounter).toBe(4);
+    expect(worldRuntime.pendingZone).toBe(1);
+
+    worldRuntime.advanceVictory();
+    expect(worldRuntime.currentZoneIndex).toBe(1);
+    expect(worldRuntime.currentSegment).toBe(0);
+    expect(worldRuntime.currentEncounter).toBe(0);
+    expect(worldRuntime.pendingZone).toBeNull();
+  });
+
   it("applies a queued segment destination when defeat ends the current attempt", () => {
     const { worldRuntime } = createLoadedWorld(0);
 
@@ -58,6 +81,20 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.currentSegment).toBe(0);
     expect(worldRuntime.currentEncounter).toBe(0);
     expect(worldRuntime.pendingSegment).toBeNull();
+  });
+
+  it("applies queued cross-zone travel when defeat ends the current attempt", () => {
+    const { worldRuntime, progressionManager, forestZoneDefId } = createLoadedWorld(0);
+    progressionManager.markCompleted(forestZoneDefId);
+
+    expect(worldRuntime.selectZone(2, 1)).toBe(true);
+    worldRuntime.advanceVictory();
+    worldRuntime.advanceDefeat();
+
+    expect(worldRuntime.currentZoneIndex).toBe(1);
+    expect(worldRuntime.currentSegment).toBe(0);
+    expect(worldRuntime.currentEncounter).toBe(0);
+    expect(worldRuntime.pendingZone).toBeNull();
   });
 
   it("restarts the saved active segment from encounter zero on load", () => {
