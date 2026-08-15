@@ -251,21 +251,20 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
 ] as const;
 
 export const PLAYER_ISLAND_CONFIG: PlayerIslandConfig = {
-  // Visual slots only: there are enough plots for every currently planned
-  // building, so placement cannot permanently block a production branch.
+  // One gameplay plot per authored grassy parcel on the island background.
+  // There are exactly eleven parcels for the eleven currently planned buildings.
   plots: [
     { id: "plot_01", column: 1, row: 1 },
     { id: "plot_02", column: 2, row: 1 },
     { id: "plot_03", column: 3, row: 1 },
-    { id: "plot_04", column: 4, row: 1 },
-    { id: "plot_05", column: 1, row: 2 },
-    { id: "plot_06", column: 2, row: 2 },
-    { id: "plot_07", column: 3, row: 2 },
-    { id: "plot_08", column: 4, row: 2 },
-    { id: "plot_09", column: 1, row: 3 },
-    { id: "plot_10", column: 2, row: 3 },
-    { id: "plot_11", column: 3, row: 3 },
-    { id: "plot_12", column: 4, row: 3 },
+    { id: "plot_04", column: 1, row: 2 },
+    { id: "plot_05", column: 2, row: 2 },
+    { id: "plot_06", column: 3, row: 2 },
+    { id: "plot_07", column: 4, row: 2 },
+    { id: "plot_08", column: 1, row: 3 },
+    { id: "plot_09", column: 2, row: 3 },
+    { id: "plot_10", column: 3, row: 3 },
+    { id: "plot_11", column: 4, row: 3 },
   ],
   buildings: BUILDINGS,
   initialBuildings: [
