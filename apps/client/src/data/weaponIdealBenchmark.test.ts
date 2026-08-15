@@ -43,11 +43,40 @@ describe("synthetic ideal weapon benchmark", () => {
       );
       const ideal = getSyntheticIdealWeaponProfile(profiles, masteryLevel);
       const outputs = profiles.map((profile) => profile.sustainedDps).sort((a, b) => a - b);
+      const opener5 = profiles.map((profile) => profile.openerDps5s).sort((a, b) => a - b);
+      const opener10 = profiles.map((profile) => profile.openerDps10s).sort((a, b) => a - b);
 
       expect(ideal.sustainedDps).toBe(outputs[2]);
+      expect(ideal.openerDps5s).toBe(opener5[2]);
+      expect(ideal.openerDps10s).toBe(opener10[2]);
       expect(ideal.lowerBound).toBeCloseTo(ideal.sustainedDps * 0.9, 8);
       expect(ideal.upperBound).toBeCloseTo(ideal.sustainedDps * 1.1, 8);
     }
+  });
+
+  it("models segment-start cooldown reset as real opener pressure", () => {
+    for (const itemId of T4_STANDARD) {
+      const profile = getWeaponBenchmarkProfile(itemId, 20, 2);
+      expect(profile.openerDps5s).toBeGreaterThan(profile.autoAttackDps);
+      expect(profile.openerDps10s).toBeGreaterThan(profile.autoAttackDps);
+    }
+  });
+
+  it("does not pretend a target-health execute is available against a fresh target", () => {
+    const beforeSignature = getWeaponBenchmarkProfile("item_weapon_sword_t4_broadsword", 29, 2);
+    const withSignature = getWeaponBenchmarkProfile("item_weapon_sword_t4_broadsword", 30, 2);
+
+    // M30 gains Exécution for sustained combat, but the <30% HP rule means it
+    // is not counted as an immediate segment opener against a fresh target.
+    expect(withSignature.sustainedDps).toBeGreaterThan(beforeSignature.sustainedDps);
+    expect(withSignature.openerDps5s / beforeSignature.openerDps5s).toBeLessThan(1.01);
+  });
+
+  it("allows an effect-gated signature to participate once its prerequisite is unlocked", () => {
+    const beforeSignature = getWeaponBenchmarkProfile("item_weapon_dagger_t4_pair", 29, 2);
+    const withSignature = getWeaponBenchmarkProfile("item_weapon_dagger_t4_pair", 30, 2);
+
+    expect(withSignature.openerDps5s).toBeGreaterThan(beforeSignature.openerDps5s * 1.15);
   });
 
   it("matches the live full-T3 2H defensive character sheet", () => {
@@ -62,6 +91,8 @@ describe("synthetic ideal weapon benchmark", () => {
       const base = getWeaponBenchmarkProfile(itemId, 30, 0);
       const plusTwo = getWeaponBenchmarkProfile(itemId, 30, 2);
       expect(plusTwo.sustainedDps / base.sustainedDps).toBeCloseTo(1.2, 8);
+      expect(plusTwo.openerDps5s / base.openerDps5s).toBeCloseTo(1.2, 8);
+      expect(plusTwo.openerDps10s / base.openerDps10s).toBeCloseTo(1.2, 8);
     }
   });
 
@@ -96,11 +127,15 @@ describe("synthetic ideal weapon benchmark", () => {
     const offensiveOutputs = profiles
       .map((profile) => profile.offense.sustainedDps)
       .sort((a, b) => a - b);
+    const opener5 = profiles
+      .map((profile) => profile.offense.openerDps5s)
+      .sort((a, b) => a - b);
     const physicalEhp = profiles
       .map((profile) => profile.defense.physicalEffectiveHealth)
       .sort((a, b) => a - b);
 
     expect(ideal.sustainedDps).toBe(offensiveOutputs[2]);
+    expect(ideal.openerDps5s).toBe(opener5[2]);
     expect(ideal.physicalEffectiveHealth).toBe(physicalEhp[2]);
     expect(ideal.averageEffectiveHealth).toBeGreaterThan(0);
   });
