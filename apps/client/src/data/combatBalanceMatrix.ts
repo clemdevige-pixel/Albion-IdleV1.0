@@ -122,6 +122,8 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
  *
  * Fine probes intentionally use 0 naked Armor / 0 naked MR: if the hero is
  * unequipped, all mitigation is expected to come from actual equipment.
+ * The MR solve preserves the T3 cape's fixed 4 MR separately from scalable T4
+ * armor pieces.
  */
 export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDefinition[] = [
   {
@@ -180,44 +182,14 @@ export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDef
       magicResistance: 1.0959232613908874,
     },
   },
-  {
-    id: "reallocation_probe_300_zero_def",
-    label: "300 HP · 0 Armor/MR",
-    hero: { maxHealth: 300, armor: 0, magicResistance: 0 },
+  ...([300, 305, 310, 315] as const).map((maxHealth) => ({
+    id: `reallocation_probe_${String(maxHealth)}_zero_def`,
+    label: `${String(maxHealth)} HP · 0 Armor/MR`,
+    hero: { maxHealth, armor: 0, magicResistance: 0 },
     equipmentStatMultiplier: {
-      maxHealth: 2.061007957559682,
-      armor: 1.1788908765652952,
-      magicResistance: 1.0885780885780887,
+      maxHealth: (688.5 - maxHealth) / (145 * 1.3),
+      armor: 65.9 / (43 * 1.3),
+      magicResistance: (46.7 - 4) / (29 * 1.3),
     },
-  },
-  {
-    id: "reallocation_probe_305_zero_def",
-    label: "305 HP · 0 Armor/MR",
-    hero: { maxHealth: 305, armor: 0, magicResistance: 0 },
-    equipmentStatMultiplier: {
-      maxHealth: 2.0344827586206895,
-      armor: 1.1788908765652952,
-      magicResistance: 1.0885780885780887,
-    },
-  },
-  {
-    id: "reallocation_probe_310_zero_def",
-    label: "310 HP · 0 Armor/MR",
-    hero: { maxHealth: 310, armor: 0, magicResistance: 0 },
-    equipmentStatMultiplier: {
-      maxHealth: 2.0079575596816976,
-      armor: 1.1788908765652952,
-      magicResistance: 1.0885780885780887,
-    },
-  },
-  {
-    id: "reallocation_probe_315_zero_def",
-    label: "315 HP · 0 Armor/MR",
-    hero: { maxHealth: 315, armor: 0, magicResistance: 0 },
-    equipmentStatMultiplier: {
-      maxHealth: 1.9814323607427056,
-      armor: 1.1788908765652952,
-      magicResistance: 1.0885780885780887,
-    },
-  },
+  })),
 ] as const;
