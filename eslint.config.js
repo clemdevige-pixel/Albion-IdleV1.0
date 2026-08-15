@@ -25,8 +25,8 @@ export default tseslint.config(
     },
   },
   {
-    // Config and script files are not part of the typed project graph.
-    files: ["**/*.config.{js,ts}", "**/*.config.*.{js,ts}", "**/vitest.workspace.ts"],
+    // Config and standalone script files are not part of the typed project graph.
+    files: ["**/*.config.{js,ts}", "**/*.config.*.{js,ts}", "**/vitest.workspace.ts", "scripts/**/*.ts"],
     ...tseslint.configs.disableTypeChecked,
   },
   prettier,
