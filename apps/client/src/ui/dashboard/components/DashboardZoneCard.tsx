@@ -93,19 +93,10 @@ export function DashboardZoneCard({
       <div className="dashboard-zone__timeline" aria-label="Progression des segments">
         {viewedZone.segments.map((segment) => {
           const pending = pendingSegment === segment.index;
-          const combatCurrent = viewedZone.isActive && segment.index === zone.segmentIndex;
-          const visualState = pending ? "current" : segment.state;
-          const classes = [
-            "dashboard-zone__segment",
-            `dashboard-zone__segment--${visualState}`,
-            pending ? "dashboard-zone__segment--pending" : "",
-            hasPendingSegment && combatCurrent && !pending ? "dashboard-zone__segment--combat-current" : "",
-          ].filter(Boolean).join(" ");
-
           return (
             <button
               key={segment.index}
-              className={classes}
+              className={`dashboard-zone__segment dashboard-zone__segment--${segment.state}`}
               type="button"
               disabled={segment.state === "locked"}
               title={segment.state === "locked"
@@ -120,29 +111,25 @@ export function DashboardZoneCard({
                   : `Aller au segment ${String(segment.index)}`}
               onClick={() => { onSelectSegment(viewedZone.zoneIndex, segment.index); }}
             >
-              <span>{pending ? "…" : segment.isZoneBoss ? "☠" : String(segment.index)}</span>
+              <span
+                style={pending ? { outline: "1px dashed currentColor", outlineOffset: 2 } : undefined}
+              >
+                {segment.isZoneBoss ? "☠" : String(segment.index)}
+              </span>
             </button>
           );
         })}
       </div>
 
-      <div className="dashboard-zone__timeline-labels" aria-hidden="true">
+      <div className="dashboard-zone__timeline-labels" aria-live="polite">
         <span>Départ</span>
         <strong>
-          Segment {String(displayedSegment)} / {String(zone.segmentCount)}
-          {hasPendingSegment ? " · EN ATTENTE" : ""}
+          {hasPendingSegment
+            ? `Segment ${String(pendingSegment)} en attente`
+            : `Segment ${String(viewedZone.segmentIndex)} / ${String(zone.segmentCount)}`}
         </strong>
         <span>Boss</span>
       </div>
-
-      {hasPendingSegment && viewedZone.isActive ? (
-        <div className="dashboard-zone__pending-notice" role="status">
-          <strong>Changement en attente : segment {String(pendingSegment)}</strong>
-          <span>
-            Combat en cours : segment {String(zone.segmentIndex)}, rencontre {String(zone.encounterIndex)}/{String(zone.encounterCount)} · changement appliqué à la fin du segment.
-          </span>
-        </div>
-      ) : null}
 
       <div className="dashboard-progress dashboard-progress--gold" aria-label="Progression de zone">
         <span style={{ width: `${String(Math.max(0, Math.min(100, zone.progress)))}%` }} />
