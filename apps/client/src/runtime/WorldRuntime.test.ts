@@ -1,17 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { WorldLocationSaveState } from "@game/gameplay";
+import { WORLD_ZONE_IDS } from "../data/worldContentCatalog";
 import { createWorldFoundation } from "./bootstrap/createWorldFoundation";
 
 function createLoadedWorld(activeEncounter: number) {
   const foundation = createWorldFoundation();
   const savedLocation = {
-    activeZoneDefId: "zone_forest",
+    activeZoneDefId: WORLD_ZONE_IDS.forest,
     activeSegment: 2,
     activeEncounter,
     farmMode: false,
     zoneMemories: [
       {
-        zoneDefId: "zone_forest",
+        zoneDefId: WORLD_ZONE_IDS.forest,
         currentSegment: 2,
         currentEncounter: activeEncounter,
         highestUnlockedSegment: 5,
@@ -57,9 +58,7 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.pendingZone).toBe(1);
     expect(worldRuntime.pendingZoneSegment).toBe(0);
 
-    for (let encounter = 0; encounter < 4; encounter += 1) {
-      worldRuntime.advanceVictory();
-    }
+    for (let encounter = 0; encounter < 4; encounter += 1) worldRuntime.advanceVictory();
     expect(worldRuntime.currentZoneIndex).toBe(0);
     expect(worldRuntime.currentEncounter).toBe(4);
     expect(worldRuntime.pendingZone).toBe(1);
@@ -97,11 +96,11 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.pendingZone).toBeNull();
   });
 
-  it("restarts the saved active segment from encounter zero on load", () => {
+  it("restores the saved active encounter so rewarded fights cannot be replayed", () => {
     const { worldRuntime } = createLoadedWorld(3);
 
     expect(worldRuntime.currentSegment).toBe(2);
-    expect(worldRuntime.currentEncounter).toBe(0);
-    expect(worldRuntime.getWorldLocationSaveState().activeEncounter).toBe(0);
+    expect(worldRuntime.currentEncounter).toBe(3);
+    expect(worldRuntime.getWorldLocationSaveState().activeEncounter).toBe(3);
   });
 });
