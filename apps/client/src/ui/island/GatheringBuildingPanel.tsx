@@ -52,7 +52,7 @@ export function GatheringBuildingPanel({
 
       {worker === undefined ? (
         <div className="ui-island__selection-status">
-          Aucun {family.professionName.toLocaleLowerCase("fr-FR")} recruté. Recrutez-le depuis la Maison des ouvriers.
+          Étape suivante : recrutez un {family.professionName.toLocaleLowerCase("fr-FR")} depuis la Maison des ouvriers. Il produira automatiquement ici pendant que le héros peut gather activement en parallèle.
         </div>
       ) : (
         <>
@@ -65,6 +65,16 @@ export function GatheringBuildingPanel({
               {worker.state === "working" ? "En production" : worker.state === "paused" ? "En pause" : "Disponible"}
             </span>
           </div>
+
+          {worker.state !== "working" ? (
+            <div className="ui-island__selection-status">
+              Sélectionnez T{String(selectedTier)} puis lancez la production. Le worker récoltera automatiquement ; le gather actif du héros reste disponible en parallèle.
+            </div>
+          ) : (
+            <div className="ui-island__selection-status">
+              Production automatique active. Vous pouvez maintenant gather activement la même ressource pour accélérer votre progression.
+            </div>
+          )}
 
           <div className="ui-island-gathering-building__tiers" role="group" aria-label="Tier de production du worker">
             {PRODUCTION_CONTENT_TIERS.map((tier) => {
