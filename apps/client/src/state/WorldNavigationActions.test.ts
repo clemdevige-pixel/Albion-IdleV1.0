@@ -61,8 +61,7 @@ describe("WorldNavigationActions", () => {
     const harness = createHarness();
 
     expect(harness.actions.selectZone(1, 4)).toBe(true);
-    expect(harness.worldRuntime.queueSegmentChange).toHaveBeenCalledWith(4);
-    expect(harness.worldRuntime.selectZone).not.toHaveBeenCalled();
+    expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(1, 4);
     expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
     expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
@@ -77,13 +76,14 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).not.toHaveBeenCalled();
   });
 
-  it("coordinates accepted cross-zone travel without owning unlock rules", () => {
+  it("queues accepted cross-zone travel without interrupting combat", () => {
     const harness = createHarness();
 
     expect(harness.actions.selectZone(3, 2)).toBe(true);
     expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(3, 2);
-    expect(harness.combatRuntime.interruptEncounter).toHaveBeenCalledOnce();
-    expect(harness.combatRuntime.restoreHeroHealth).toHaveBeenCalledOnce();
+    expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
+    expect(harness.bridge.setCombatState).not.toHaveBeenCalled();
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
