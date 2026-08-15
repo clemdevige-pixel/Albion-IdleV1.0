@@ -25,9 +25,15 @@ export function SegmentTimeline(): JSX.Element {
   }
 
   const isViewingActiveZone = viewedZone.zoneIndex === world.zoneIndex;
-  const displayedSegment = isViewingActiveZone
-    ? world.segmentIndex
-    : viewedZone.segmentIndex;
+  const hasPendingSegmentInViewedZone =
+    world.pendingZoneIndex === viewedZone.zoneIndex
+    && world.pendingSegmentIndex !== null;
+  const selectedSegment = hasPendingSegmentInViewedZone
+    ? world.pendingSegmentIndex
+    : isViewingActiveZone
+      ? world.segmentIndex
+      : viewedZone.segmentIndex;
+  const displayedSegment = selectedSegment;
 
   const isGathering = [
     state.gathering,
@@ -75,18 +81,19 @@ export function SegmentTimeline(): JSX.Element {
         {segments.map((segment, index) => {
           const locked =
             !viewedZone.isUnlocked || segment > viewedZone.unlockedSegmentCount;
-          const current = isViewingActiveZone && segment === world.segmentIndex;
-          const completed = viewedZone.completedSegments.includes(segment);
+          const combatCurrent = isViewingActiveZone && segment === world.segmentIndex;
           const pending =
             world.pendingZoneIndex === viewedZone.zoneIndex
             && world.pendingSegmentIndex === segment;
+          const selected = segment === selectedSegment;
+          const completed = viewedZone.completedSegments.includes(segment);
           const classes = [
             "segment-timeline__node",
             locked ? "segment-timeline__node--locked" : "",
             completed ? "segment-timeline__node--completed" : "",
-            current ? "segment-timeline__node--current" : "",
+            selected ? "segment-timeline__node--current" : "",
             pending ? "segment-timeline__node--pending" : "",
-            current ? "segment-timeline__node--marker" : "",
+            selected ? "segment-timeline__node--marker" : "",
           ].filter(Boolean).join(" ");
 
           return (
@@ -97,10 +104,18 @@ export function SegmentTimeline(): JSX.Element {
                 type="button"
                 disabled={locked}
                 onClick={() => { selectZone(viewedZone.zoneIndex, segment); }}
-                title={locked ? "Segment verrouillé" : `Aller au segment ${segment}`}
-                aria-label={locked ? `Segment ${segment} verrouillé` : `Aller au segment ${segment}`}
+                title={locked
+                  ? "Segment verrouillé"
+                  : pending
+                    ? `Segment ${segment} sélectionné · changement à la fin du segment en cours`
+                    : `Aller au segment ${segment}`}
+                aria-label={locked
+                  ? `Segment ${segment} verrouillé`
+                  : pending
+                    ? `Segment ${segment} sélectionné, changement en attente`
+                    : `Aller au segment ${segment}`}
               >
-                <span aria-hidden="true">{current ? "☠" : ""}</span>
+                <span aria-hidden="true">{pending ? "…" : selected ? "☠" : combatCurrent ? "•" : ""}</span>
               </button>
               <span className="segment-timeline__number">{segment}</span>
             </div>
@@ -110,9 +125,11 @@ export function SegmentTimeline(): JSX.Element {
 
       <div className="segment-timeline__details">
         <span>
-          {isViewingActiveZone
-            ? `Segment ${world.segmentIndex}/${world.segmentCount} · Rencontre ${world.encounterIndex}/${world.encounterCount}${world.encounterType === "boss" ? " · BOSS" : world.encounterType === "elite" ? " · ÉLITE" : ""}`
-            : `Dernier segment actif : ${viewedZone.segmentIndex}/${world.segmentCount}`}
+          {hasPendingSegmentInViewedZone
+            ? `Segment ${selectedSegment} sélectionné · EN ATTENTE — combat en cours : segment ${world.segmentIndex}, rencontre ${world.encounterIndex}/${world.encounterCount}`
+            : isViewingActiveZone
+              ? `Segment ${world.segmentIndex}/${world.segmentCount} · Rencontre ${world.encounterIndex}/${world.encounterCount}${world.encounterType === "boss" ? " · BOSS" : world.encounterType === "elite" ? " · ÉLITE" : ""}`
+              : `Dernier segment actif : ${viewedZone.segmentIndex}/${world.segmentCount}`}
         </span>
         <strong>
           IP recommandé : {String(
@@ -143,7 +160,7 @@ export function SegmentTimeline(): JSX.Element {
 
       {world.pendingZoneIndex !== null ? (
         <div className="segment-timeline__pending">
-          Déplacement programmé : zone {world.pendingZoneIndex}, segment {world.pendingSegmentIndex}
+          Changement en attente : segment {world.pendingSegmentIndex} · appliqué à la fin du segment courant
         </div>
       ) : null}
     </section>
