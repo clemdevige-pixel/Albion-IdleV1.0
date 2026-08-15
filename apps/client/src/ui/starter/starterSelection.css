@@ -1,8 +1,12 @@
 .ui-starter {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 28px;
+  overflow: auto;
   background:
     radial-gradient(circle at 50% 35%, rgba(93, 119, 76, .2), transparent 38%),
     linear-gradient(180deg, #162326, #101719 72%);
