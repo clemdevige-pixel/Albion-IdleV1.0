@@ -32,6 +32,7 @@ import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
 const DT = 1 / 20;
 const MAX_TICKS = 20 * 180;
 const POTION_ITEM_ID = "item_health_potion";
+const STAT_MAX_HEALTH = "stat_max_health" as StatId;
 const STAT_ARMOR = "stat_armor" as StatId;
 const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 
@@ -110,8 +111,6 @@ function seedMasteryLevel(
   masteryService.discoverMastery(route.familyId);
   masteryService.discoverMastery(route.weaponId);
   const targetLevel = Math.max(1, Math.floor(input.masteryLevel ?? 1));
-  // Live combat rewards both the weapon specialization and its family. Seed both
-  // so mastery IP in this harness matches the actual progression package.
   seedOneMasteryLevel(route.familyId, targetLevel, masteryService, experienceService);
   return seedOneMasteryLevel(route.weaponId, targetLevel, masteryService, experienceService);
 }
@@ -138,7 +137,11 @@ export function runBlueRuntimeBenchmark(input: BlueRuntimeBenchmarkInput): BlueR
 
   const { masteryService, experienceService } = createProgressionFoundation();
   const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
-  const equipmentStatSync = new EquipmentStatSync(statsManager, resolveEquipmentInfo, () => {});
+  // Mirror the live character foundation: equipment Max HP changes must be
+  // propagated from StatsManager into the HealthComponent immediately.
+  const equipmentStatSync = new EquipmentStatSync(statsManager, resolveEquipmentInfo, (entityId, changedStats) => {
+    if (changedStats.includes(STAT_MAX_HEALTH)) damageManager.syncMaxHealth(entityId);
+  });
   const equipmentManager = new EquipmentManager(world, inventoryManager, resolveEquipmentInfo, equipmentStatSync);
 
   const heroId = setupCombatEntity(
