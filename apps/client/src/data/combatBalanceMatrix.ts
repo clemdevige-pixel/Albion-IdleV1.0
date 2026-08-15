@@ -187,7 +187,7 @@ export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDef
   makeReallocation("reallocation_strong", "Réallocation forte", { maxHealth: 360, armor: 4, magicResistance: 2 }),
   makeReallocation("reallocation_probe_340", "Seuil 340 HP", { maxHealth: 340, armor: 3, magicResistance: 1.5 }),
   makeReallocation("reallocation_probe_320", "Seuil 320 HP", { maxHealth: 320, armor: 2, magicResistance: 1 }),
-  ...([300, 305, 310, 315] as const).map((maxHealth) =>
+  ...([280, 285, 290, 295, 300, 305, 310, 315] as const).map((maxHealth) =>
     makeReallocation(
       `reallocation_probe_${String(maxHealth)}_zero_def`,
       `${String(maxHealth)} HP · 0 Armor/MR`,
