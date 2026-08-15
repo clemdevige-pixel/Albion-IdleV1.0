@@ -1,4 +1,4 @@
-import type { EnchantmentLevel, EquipmentInfoLike } from "@game/gameplay";
+import type { EnchantmentLevel } from "@game/gameplay";
 
 export interface CombatBalanceSyntheticHeroDefinition {
   readonly maxHealth: number;
@@ -24,15 +24,17 @@ export interface CombatBalanceCheckpointDefinition {
   readonly segmentIndex: number;
 }
 
-export interface CombatBalanceCoverageInterventionDefinition {
+export interface CombatBalanceReallocationDefinition {
   readonly id: string;
   readonly label: string;
-  /** Base power removed from the naked hero before equipment is applied. */
-  readonly heroReduction: CombatBalanceSyntheticHeroDefinition;
-  /** Slots that restore the removed baseline independently from item tier/IP. */
-  readonly recoverySlots: readonly EquipmentInfoLike["slot"][];
-  /** Fixed, non-IP-scaled recovery granted by each authored recovery slot. */
-  readonly recoveryPerEquippedSlot: CombatBalanceSyntheticHeroDefinition;
+  /** Naked-hero defensive baseline used by this candidate. */
+  readonly hero: CombatBalanceSyntheticHeroDefinition;
+  /**
+   * Multipliers applied to authored defensive equipment stats before normal IP
+   * scaling. These are real equipment-stat reallocations, not hidden/fixed
+   * coverage bonuses, so enchantment/mastery IP continues to work normally.
+   */
+  readonly equipmentStatMultiplier: CombatBalanceSyntheticHeroDefinition;
 }
 
 export const COMBAT_BALANCE_SYNTHETIC_HERO: CombatBalanceSyntheticHeroDefinition = {
@@ -119,38 +121,49 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
 ] as const;
 
 /**
- * Experimental coverage candidates. They do not change item stats or IP.
- * Every non-baseline candidate removes a slice of naked-hero defense, then
- * restores exactly that slice across head/chest/boots. Therefore a fully
- * equipped core set retains the current defensive baseline by construction.
+ * Experimental real-stat reallocations.
+ *
+ * Each candidate lowers the naked-hero baseline and increases authored armor
+ * stats. The multipliers are solved backwards from the current full T4.3
+ * defensive totals (688.5 HP / 65.9 Armor / 46.7 MR), so T4.3 remains the hard
+ * ceiling while every added equipment stat still participates in normal IP
+ * scaling. These values are diagnostics only; they do not mutate live data.
  */
-export const COMBAT_BALANCE_COVERAGE_INTERVENTIONS: readonly CombatBalanceCoverageInterventionDefinition[] = [
+export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDefinition[] = [
   {
     id: "current",
     label: "Actuel",
-    heroReduction: { maxHealth: 0, armor: 0, magicResistance: 0 },
-    recoverySlots: ["head", "chest", "boots"],
-    recoveryPerEquippedSlot: { maxHealth: 0, armor: 0, magicResistance: 0 },
+    hero: { maxHealth: 500, armor: 10, magicResistance: 5 },
+    equipmentStatMultiplier: { maxHealth: 1, armor: 1, magicResistance: 1 },
   },
   {
-    id: "coverage_light",
-    label: "Couverture légère",
-    heroReduction: { maxHealth: 60, armor: 3, magicResistance: 1.5 },
-    recoverySlots: ["head", "chest", "boots"],
-    recoveryPerEquippedSlot: { maxHealth: 20, armor: 1, magicResistance: 0.5 },
+    id: "reallocation_light",
+    label: "Réallocation légère",
+    hero: { maxHealth: 440, armor: 8, magicResistance: 4 },
+    equipmentStatMultiplier: {
+      maxHealth: 1.3183023872679045,
+      armor: 1.0357781753130593,
+      magicResistance: 1.023980815347722,
+    },
   },
   {
-    id: "coverage_medium",
-    label: "Couverture moyenne",
-    heroReduction: { maxHealth: 120, armor: 6, magicResistance: 3 },
-    recoverySlots: ["head", "chest", "boots"],
-    recoveryPerEquippedSlot: { maxHealth: 40, armor: 2, magicResistance: 1 },
+    id: "reallocation_medium",
+    label: "Réallocation moyenne",
+    hero: { maxHealth: 400, armor: 6, magicResistance: 3 },
+    equipmentStatMultiplier: {
+      maxHealth: 1.530503978779841,
+      armor: 1.071556350626118,
+      magicResistance: 1.0479616306954436,
+    },
   },
   {
-    id: "coverage_strong",
-    label: "Couverture forte",
-    heroReduction: { maxHealth: 180, armor: 9, magicResistance: 4.5 },
-    recoverySlots: ["head", "chest", "boots"],
-    recoveryPerEquippedSlot: { maxHealth: 60, armor: 3, magicResistance: 1.5 },
+    id: "reallocation_strong",
+    label: "Réallocation forte",
+    hero: { maxHealth: 360, armor: 4, magicResistance: 2 },
+    equipmentStatMultiplier: {
+      maxHealth: 1.742705570291777,
+      armor: 1.1073345259391771,
+      magicResistance: 1.0719424460431655,
+    },
   },
 ] as const;
