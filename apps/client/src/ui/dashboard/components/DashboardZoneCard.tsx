@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { getSegmentRecommendedItemPower } from "../../../data/itemPower";
+import { useGameBridge } from "../../../state/GameContext";
 import { CombatStopButton } from "../../combat-hud/CombatStopButton";
 import { DashboardCard } from "./DashboardCard";
 import type { DashboardZoneModel, DashboardZoneOptionModel } from "../dashboardModels";
@@ -32,6 +34,7 @@ export function DashboardZoneCard({
   onSelectSegment,
   onSetFarmMode,
 }: DashboardZoneCardProps): JSX.Element {
+  const bridge = useGameBridge();
   const [viewedZoneIndex, setViewedZoneIndex] = useState(zone.zoneIndex);
 
   useEffect(() => {
@@ -42,12 +45,23 @@ export function DashboardZoneCard({
     ?? zone.zones.find((candidate) => candidate.isActive)
     ?? fallbackZone(zone);
 
+  const pendingSegment = bridge.world.pendingZoneIndex === viewedZone.zoneIndex
+    ? bridge.world.pendingSegmentIndex
+    : null;
+  const hasPendingSegment = pendingSegment !== null;
+  const displayedSegment = hasPendingSegment ? pendingSegment : viewedZone.segmentIndex;
+  const displayedRecommendedItemPower = getSegmentRecommendedItemPower(
+    viewedZone.zoneIndexWithinBand + 1,
+    displayedSegment,
+    viewedZone.worldBandId,
+  );
+
   return (
     <DashboardCard
       title="Zone actuelle"
       iconSrc="/assets/ui/nav-world.png"
       className="dashboard-card--zone"
-      meta={<span className="dashboard-zone__ip">IP conseillé · {String(viewedZone.recommendedItemPower)}</span>}
+      meta={<span className="dashboard-zone__ip">IP conseillé · {String(displayedRecommendedItemPower)}</span>}
     >
       <div className="dashboard-zone__browser">
         <button
@@ -77,26 +91,58 @@ export function DashboardZoneCard({
       </div>
 
       <div className="dashboard-zone__timeline" aria-label="Progression des segments">
-        {viewedZone.segments.map((segment) => (
-          <button
-            key={segment.index}
-            className={`dashboard-zone__segment dashboard-zone__segment--${segment.state}`}
-            type="button"
-            disabled={segment.state === "locked"}
-            title={segment.state === "locked" ? "Segment verrouillé" : `Aller au segment ${String(segment.index)}`}
-            aria-label={segment.state === "locked" ? `Segment ${String(segment.index)} verrouillé` : `Aller au segment ${String(segment.index)}`}
-            onClick={() => { onSelectSegment(viewedZone.zoneIndex, segment.index); }}
-          >
-            <span>{segment.isZoneBoss ? "☠" : String(segment.index)}</span>
-          </button>
-        ))}
+        {viewedZone.segments.map((segment) => {
+          const pending = pendingSegment === segment.index;
+          const combatCurrent = viewedZone.isActive && segment.index === zone.segmentIndex;
+          const visualState = pending ? "current" : segment.state;
+          const classes = [
+            "dashboard-zone__segment",
+            `dashboard-zone__segment--${visualState}`,
+            pending ? "dashboard-zone__segment--pending" : "",
+            hasPendingSegment && combatCurrent && !pending ? "dashboard-zone__segment--combat-current" : "",
+          ].filter(Boolean).join(" ");
+
+          return (
+            <button
+              key={segment.index}
+              className={classes}
+              type="button"
+              disabled={segment.state === "locked"}
+              title={segment.state === "locked"
+                ? "Segment verrouillé"
+                : pending
+                  ? `Segment ${String(segment.index)} sélectionné · changement à la fin du segment courant`
+                  : `Aller au segment ${String(segment.index)}`}
+              aria-label={segment.state === "locked"
+                ? `Segment ${String(segment.index)} verrouillé`
+                : pending
+                  ? `Segment ${String(segment.index)} sélectionné, changement en attente`
+                  : `Aller au segment ${String(segment.index)}`}
+              onClick={() => { onSelectSegment(viewedZone.zoneIndex, segment.index); }}
+            >
+              <span>{pending ? "…" : segment.isZoneBoss ? "☠" : String(segment.index)}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="dashboard-zone__timeline-labels" aria-hidden="true">
         <span>Départ</span>
-        <strong>Segment {String(viewedZone.segmentIndex)} / {String(zone.segmentCount)}</strong>
+        <strong>
+          Segment {String(displayedSegment)} / {String(zone.segmentCount)}
+          {hasPendingSegment ? " · EN ATTENTE" : ""}
+        </strong>
         <span>Boss</span>
       </div>
+
+      {hasPendingSegment && viewedZone.isActive ? (
+        <div className="dashboard-zone__pending-notice" role="status">
+          <strong>Changement en attente : segment {String(pendingSegment)}</strong>
+          <span>
+            Combat en cours : segment {String(zone.segmentIndex)}, rencontre {String(zone.encounterIndex)}/{String(zone.encounterCount)} · changement appliqué à la fin du segment.
+          </span>
+        </div>
+      ) : null}
 
       <div className="dashboard-progress dashboard-progress--gold" aria-label="Progression de zone">
         <span style={{ width: `${String(Math.max(0, Math.min(100, zone.progress)))}%` }} />
