@@ -112,6 +112,8 @@ export class WorldRuntime {
     this.worldTick.currentSegment = segment;
     this.worldTick.currentEncounter = 0;
     this.worldTick.pendingSegment = null;
+    this.worldTick.pendingZone = null;
+    this.worldTick.pendingZoneSegment = null;
     return true;
   }
 
@@ -120,11 +122,18 @@ export class WorldRuntime {
     const segment = segmentNumber - 1;
     if (segment < 0 || segment >= SEGMENTS_PER_ZONE || segment > this.worldTick.highestUnlockedSegment) return false;
     this.worldTick.pendingSegment = segment;
+    this.worldTick.pendingZone = null;
+    this.worldTick.pendingZoneSegment = null;
     return true;
   }
 
   public setSegmentFarmMode(enabled: boolean): void { this.worldTick.farmMode = enabled; }
 
+  /**
+   * Queues all player-directed world travel. Same-zone and cross-zone clicks
+   * follow the same lifecycle rule: apply after the current segment completes,
+   * or immediately after defeat because that ends the current segment attempt.
+   */
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
     const nextIndex = zoneNumber - 1;
     const nextDefId = ZONE_ORDER[nextIndex];
@@ -134,8 +143,14 @@ export class WorldRuntime {
       ? this.worldTick.highestUnlockedSegment
       : memory?.highestUnlockedSegment ?? -1;
     if (nextDefId === undefined || !this.progressionManager.isUnlocked(nextDefId) || targetSegment < 0 || targetSegment >= SEGMENTS_PER_ZONE || targetSegment > highestUnlockedSegment) return false;
-    if (nextIndex === this.worldTick.currentZoneIndex) return this.selectSegment(targetSegment + 1);
-    this.changeActiveZone(nextIndex, targetSegment);
+
+    if (nextIndex === this.worldTick.currentZoneIndex) {
+      return this.queueSegmentChange(targetSegment + 1);
+    }
+
+    this.worldTick.pendingSegment = null;
+    this.worldTick.pendingZone = nextIndex;
+    this.worldTick.pendingZoneSegment = targetSegment;
     return true;
   }
 
@@ -155,10 +170,12 @@ export class WorldRuntime {
         this.progressionManager.markCompleted(currentDefId);
       }
 
-      if (this.worldTick.pendingSegment !== null) {
+      if (this.worldTick.pendingZone !== null) {
+        this.changeActiveZone(this.worldTick.pendingZone, this.worldTick.pendingZoneSegment ?? 0);
+      } else if (this.worldTick.pendingSegment !== null) {
         this.worldTick.currentSegment = this.worldTick.pendingSegment;
         this.worldTick.pendingSegment = null;
-      } else if (!this.worldTick.farmMode && this.worldTick.pendingZone === null) {
+      } else if (!this.worldTick.farmMode) {
         if (this.worldTick.currentSegment < SEGMENTS_PER_ZONE - 1) {
           this.worldTick.currentSegment += 1;
         } else {
@@ -170,11 +187,6 @@ export class WorldRuntime {
           }
         }
       }
-    }
-
-    if (this.worldTick.pendingZone !== null) {
-      this.changeActiveZone(this.worldTick.pendingZone, this.worldTick.pendingZoneSegment ?? 0);
-      enteredNewSegment = true;
     }
 
     return { enteredNewSegment };
