@@ -249,9 +249,13 @@ describe("data-driven combat balance matrix", () => {
     expect(rows.every((row) => row.physicalEhp > 0 && row.magicalEhp > 0)).toBe(true);
   });
 
-  it("compares real-stat reallocations while pinning current 1H and 2H T4.3 totals", () => {
+  it("compares real-stat reallocations while pinning current 1H, physical 2H and magical 2H T4.3 totals", () => {
     const current = COMBAT_BALANCE_REALLOCATIONS[0];
-    const ceilingIds = ["broadsword_t4_full_3", "longbow_t4_full_3"] as const;
+    const ceilingIds = [
+      "broadsword_t4_full_3",
+      "longbow_t4_full_3",
+      "infernal_t4_full_3",
+    ] as const;
     const ceilings = ceilingIds.map((id) => {
       const loadout = COMBAT_BALANCE_LOADOUTS.find((candidate) => candidate.id === id);
       if (loadout === undefined) throw new Error(`Missing T4.3 ceiling loadout: ${id}`);
