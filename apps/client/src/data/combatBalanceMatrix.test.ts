@@ -42,11 +42,27 @@ interface ProjectedCheckpointResult {
 }
 
 const capResistance = (value: number): number => Math.min(80, Math.max(0, value));
+const IDENTITY = { maxHealth: 1, armor: 1, magicResistance: 1 } as const;
 
 function getIpMultiplier(itemId: string, loadout: CombatBalanceLoadoutDefinition): number {
   const tier = getItemTier(itemId);
   if (tier === undefined || tier < 4) return 1;
   return getEnchantmentStatMultiplier(loadout.enchantment);
+}
+
+function getDefensiveMultiplier(
+  itemId: string,
+  loadout: CombatBalanceLoadoutDefinition,
+  reallocation: CombatBalanceReallocationDefinition,
+) {
+  const definition = resolveEquipmentInfo(itemId);
+  if (definition === undefined) throw new Error(`Unknown balance item: ${itemId}`);
+  if (definition.slot === "weapon" || definition.slot === "cape") return IDENTITY;
+  if (definition.slot === "off_hand") return reallocation.offHandStatMultiplier;
+  const weaponTier = getItemTier(loadout.weaponItemId) ?? 3;
+  return weaponTier >= 4
+    ? reallocation.t4CoreStatMultiplier
+    : reallocation.t3CoreStatMultiplier;
 }
 
 function projectPlayer(
@@ -64,11 +80,7 @@ function projectPlayer(
     const definition = resolveEquipmentInfo(itemId);
     if (definition === undefined) throw new Error(`Unknown balance item: ${itemId}`);
     const ipMultiplier = getIpMultiplier(itemId, loadout);
-    const defensiveMultiplier = definition.slot === "weapon"
-      ? { maxHealth: 1, armor: 1, magicResistance: 1 }
-      : definition.slot === "off_hand"
-        ? reallocation.offHandStatMultiplier
-        : reallocation.equipmentStatMultiplier;
+    const defensiveMultiplier = getDefensiveMultiplier(itemId, loadout, reallocation);
     const stats = definition.stats ?? {};
 
     maxHealth += (stats.stat_max_health ?? 0) * defensiveMultiplier.maxHealth * ipMultiplier;
@@ -211,6 +223,12 @@ function getDeepestClear(results: readonly ProjectedCheckpointResult[]): string 
   return deepest?.checkpointLabel ?? "Aucun checkpoint";
 }
 
+function requireLoadout(id: string): CombatBalanceLoadoutDefinition {
+  const loadout = COMBAT_BALANCE_LOADOUTS.find((candidate) => candidate.id === id);
+  if (loadout === undefined) throw new Error(`Missing balance loadout: ${id}`);
+  return loadout;
+}
+
 describe("data-driven combat balance matrix", () => {
   it("resolves every authored loadout/checkpoint/reallocation", () => {
     expect(COMBAT_BALANCE_LOADOUTS.length).toBeGreaterThan(0);
@@ -257,8 +275,7 @@ describe("data-driven combat balance matrix", () => {
       "infernal_t4_full_3",
     ] as const;
     const ceilings = ceilingIds.map((id) => {
-      const loadout = COMBAT_BALANCE_LOADOUTS.find((candidate) => candidate.id === id);
-      if (loadout === undefined) throw new Error(`Missing T4.3 ceiling loadout: ${id}`);
+      const loadout = requireLoadout(id);
       return { loadout, profile: projectPlayer(loadout, current) };
     });
 
@@ -290,5 +307,64 @@ describe("data-driven combat balance matrix", () => {
         expect(candidateCeiling.magicResistance).toBeCloseTo(ceiling.magicResistance, 8);
       }
     }
+  });
+
+  it("can preserve current full-T3 and full-T4.3 totals with a 300/0/0 naked hero", () => {
+    const current = COMBAT_BALANCE_REALLOCATIONS[0];
+    const candidate = COMBAT_BALANCE_REALLOCATIONS.find(
+      (entry) => entry.id === "candidate_300_preserve_t3_t43",
+    );
+    if (candidate === undefined) throw new Error("Missing preserve-T3/T4.3 candidate");
+
+    const ids = [
+      "broadsword_t3_full",
+      "longbow_t3_full",
+      "infernal_t3_full",
+      "broadsword_t4_full_3",
+      "longbow_t4_full_3",
+      "infernal_t4_full_3",
+    ] as const;
+
+    for (const id of ids) {
+      const loadout = requireLoadout(id);
+      const baseline = projectPlayer(loadout, current);
+      const projected = projectPlayer(loadout, candidate);
+      expect(projected.maxHealth).toBeCloseTo(baseline.maxHealth, 8);
+      expect(projected.armor).toBeCloseTo(baseline.armor, 8);
+      expect(projected.magicResistance).toBeCloseTo(baseline.magicResistance, 8);
+    }
+
+    const diagnosticIds = [
+      "broadsword_t3_weapon_only",
+      "broadsword_t3_chest",
+      "broadsword_t3_core",
+      "broadsword_t3_full",
+      "longbow_t3_weapon_only",
+      "longbow_t3_chest",
+      "longbow_t3_core",
+      "longbow_t3_full",
+      "infernal_t3_weapon_only",
+      "infernal_t3_chest",
+      "infernal_t3_core",
+      "infernal_t3_full",
+    ] as const;
+
+    const rows = diagnosticIds.map((id) => {
+      const loadout = requireLoadout(id);
+      const player = projectPlayer(loadout, candidate);
+      const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) =>
+        projectCheckpoint(loadout, checkpoint, candidate),
+      );
+      return {
+        loadout: id,
+        hp: Number(player.maxHealth.toFixed(1)),
+        armor: Number(player.armor.toFixed(1)),
+        mr: Number(player.magicResistance.toFixed(1)),
+        physicalEhp: Math.round(player.physicalEffectiveHealth),
+        deepestProjectedClear: getDeepestClear(results),
+      };
+    });
+
+    console.table(rows);
   });
 });
