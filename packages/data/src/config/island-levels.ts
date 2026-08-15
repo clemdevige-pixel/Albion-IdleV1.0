@@ -32,7 +32,10 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
   {
     level: 1,
     label: "Campement",
-    unlockedCategories: ["workers", "storage", "gathering"],
+    // The first island loop must teach the complete active T3 production chain:
+    // gather -> refine -> craft. Higher island levels gate development and
+    // production tiers, not access to these foundational systems.
+    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
   },
   {
     level: 2,
