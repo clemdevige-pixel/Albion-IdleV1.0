@@ -108,7 +108,11 @@ export function buildWorldViewModel({
       worldRuntime.currentZoneIndex + 1 < zoneOrder.length
       && progressionManager.isUnlocked(zoneOrder[worldRuntime.currentZoneIndex + 1]!),
     pendingZoneIndex:
-      worldRuntime.pendingZone === null ? null : worldRuntime.pendingZone + 1,
+      worldRuntime.pendingZone !== null
+        ? worldRuntime.pendingZone + 1
+        : worldRuntime.pendingSegment !== null
+          ? worldRuntime.currentZoneIndex + 1
+          : null,
     zones: zoneOrder.map((zoneDefId, index) => {
       const definition = zoneManager.registry.get(zoneDefId);
       const zoneBiome = biomeResolver.resolve(zoneDefId);
