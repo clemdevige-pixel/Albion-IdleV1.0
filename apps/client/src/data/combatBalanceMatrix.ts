@@ -148,18 +148,12 @@ const IDENTITY_MULTIPLIER: CombatBalanceSyntheticHeroDefinition = {
   magicResistance: 1,
 };
 
-/**
- * Ceiling-only probes: move innate hero defense into real equipment stats while
- * preserving the current T4.3 ceiling. T3 is allowed to move in these probes.
- */
 const makeCeilingReallocation = (
   id: string,
   label: string,
   hero: CombatBalanceSyntheticHeroDefinition,
 ): CombatBalanceReallocationDefinition => {
   const t4CoreStatMultiplier = {
-    // Current 2H T4.3 ceiling: 688.5 HP / 46.4 Armor / 35 MR.
-    // Cape remains authored at 4 MR and is intentionally not folded into core scaling.
     maxHealth: (688.5 - hero.maxHealth) / (145 * 1.3),
     armor: (46.4 - hero.armor) / (28 * 1.3),
     magicResistance: (35 - hero.magicResistance - 4) / (20 * 1.3),
@@ -174,30 +168,40 @@ const makeCeilingReallocation = (
   };
 };
 
-/**
- * Candidate envelope requested by design:
- * - naked hero: 300 HP / 0 Armor / 0 MR;
- * - full T3 totals stay at their CURRENT values;
- * - full T4.3 totals stay at their CURRENT values;
- * - all moved power remains authored equipment power and therefore scales through normal IP.
- *
- * Cape and shield keep their authored values. Core armor (head/chest/boots) is
- * solved independently at T3 and T4, which is equivalent to authoring new tier values
- * rather than introducing any non-IP-scalable hidden bonus.
- */
 const PRESERVE_T3_T43_300: CombatBalanceReallocationDefinition = {
   id: "candidate_300_preserve_t3_t43",
   label: "300 HP · T3 actuel préservé · T4.3 actuel préservé",
   hero: { maxHealth: 300, armor: 0, magicResistance: 0 },
   t3CoreStatMultiplier: {
-    // Current full T3 2H target: 580 HP / 25 Armor / 20 MR.
-    // Core authored totals are +80 HP / +15 Armor / +11 MR, plus fixed 4 MR cape.
     maxHealth: (580 - 300) / 80,
     armor: 25 / 15,
     magicResistance: (20 - 4) / 11,
   },
   t4CoreStatMultiplier: {
-    // Current full T4.3 2H target: 688.5 HP / 46.4 Armor / 35 MR.
+    maxHealth: (688.5 - 300) / (145 * 1.3),
+    armor: 46.4 / (28 * 1.3),
+    magicResistance: (35 - 4) / (20 * 1.3),
+  },
+  offHandStatMultiplier: IDENTITY_MULTIPLIER,
+};
+
+/**
+ * Central design candidate:
+ * - naked hero: 300 HP / 0 Armor / 0 MR;
+ * - full T3 2H target: 530 HP / 21 Armor / 18 MR;
+ * - full T4.3 2H target remains exactly current: 688.5 / 46.4 / 35;
+ * - cape and shield keep authored values.
+ */
+const CENTRAL_T3_530_21_18: CombatBalanceReallocationDefinition = {
+  id: "candidate_300_t3_530_21_18_t43_current",
+  label: "300/0/0 · T3 530/21/18 · T4.3 actuel",
+  hero: { maxHealth: 300, armor: 0, magicResistance: 0 },
+  t3CoreStatMultiplier: {
+    maxHealth: (530 - 300) / 80,
+    armor: 21 / 15,
+    magicResistance: (18 - 4) / 11,
+  },
+  t4CoreStatMultiplier: {
     maxHealth: (688.5 - 300) / (145 * 1.3),
     armor: 46.4 / (28 * 1.3),
     magicResistance: (35 - 4) / (20 * 1.3),
@@ -227,4 +231,5 @@ export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDef
     ),
   ),
   PRESERVE_T3_T43_300,
+  CENTRAL_T3_530_21_18,
 ] as const;
