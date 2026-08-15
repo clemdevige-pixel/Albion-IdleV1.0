@@ -15,26 +15,25 @@ export interface ZoneCombatCurve {
 }
 
 /**
- * Blue progression is calibrated around the validated vertical-slice contract:
- * - T3.0 carries the early game and can clear Dark Swamp with natural mastery.
- * - T4 progression starts after that checkpoint.
- * - Mountain S10 must be clearable around T4.2 with natural Q/W mastery.
- * - T4.3 is comfort / reliable AFK headroom, not a progression requirement.
+ * Blue progression contract:
+ * - Forest is comfortable in T3.0.
+ * - Mid/late Dark Swamp is the first real T4 pressure point. Optimised T3.0 can
+ *   still finish the zone, but the final stretch is expected to use potions.
+ * - T4.0 restores comfort after the transition, then T4.1 is progressively
+ *   pressured through Steppe/Mountain.
+ * - Mountain S10 is a difficult T4.2 clear with potion usage.
+ * - T4.3 should remove the potion dependency and provide AFK/farm headroom.
  *
- * The previous curve predated the +50 IP/enchantment rebalance and scaled
- * incoming damage much faster than the player's defensive envelope. Health is
- * still allowed to grow meaningfully so late encounters take longer, while
- * damage and defense use a substantially flatter curve.
+ * These values are crossed against the synthetic offensive/defensive player
+ * envelope. Potions are part of the difficult-clear budget; the full heal before
+ * encounter five remains a separate runtime rule.
  */
 export const BLUE_WORLD_COMBAT_CURVE = [
-  { healthStart: 0.9, healthEnd: 1.1, damageStart: 0.75, damageEnd: 0.85, defenseStart: 0.9, defenseEnd: 1.0 },
-  { healthStart: 1.1, healthEnd: 1.35, damageStart: 0.85, damageEnd: 0.95, defenseStart: 1.0, defenseEnd: 1.1 },
-  { healthStart: 1.35, healthEnd: 1.75, damageStart: 0.95, damageEnd: 1.1, defenseStart: 1.1, defenseEnd: 1.25 },
-  { healthStart: 1.75, healthEnd: 2.35, damageStart: 1.1, damageEnd: 1.3, defenseStart: 1.25, defenseEnd: 1.45 },
-  // T4.2 / M20-25 synthetic benchmark clears S10 with a small but real safety
-  // margin at 1.35. 1.45 was technically clearable but left <1% HP before the
-  // encounter-five heal, which was too fragile for runtime timing variance.
-  { healthStart: 2.35, healthEnd: 3.4, damageStart: 1.3, damageEnd: 1.35, defenseStart: 1.45, defenseEnd: 1.7 },
+  { healthStart: 0.9, healthEnd: 1.15, damageStart: 0.75, damageEnd: 1.2, defenseStart: 0.9, defenseEnd: 1.0 },
+  { healthStart: 1.15, healthEnd: 1.7, damageStart: 1.2, damageEnd: 2.6, defenseStart: 1.0, defenseEnd: 1.15 },
+  { healthStart: 1.7, healthEnd: 2.3, damageStart: 2.6, damageEnd: 3.0, defenseStart: 1.15, defenseEnd: 1.3 },
+  { healthStart: 2.3, healthEnd: 3.1, damageStart: 3.0, damageEnd: 3.3, defenseStart: 1.3, defenseEnd: 1.5 },
+  { healthStart: 3.1, healthEnd: 4.0, damageStart: 3.3, damageEnd: 3.5, defenseStart: 1.5, defenseEnd: 1.8 },
 ] as const;
 
 /**
