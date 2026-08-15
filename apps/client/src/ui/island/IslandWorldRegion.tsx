@@ -16,24 +16,28 @@ interface IslandPlotVisual {
 }
 
 /**
- * Eleven visual ground anchors measured from the authored 1600x900 island source.
- * Order is 3 upper parcels, 4 middle parcels, then 4 lower parcels.
- * `top` is the building ground line, deliberately placed in the lower half of grass.
+ * Ground anchors measured against the authored 1600x900 island source.
+ * The source contains twelve distinct grassy parcels: 3 upper, 4 middle, 5 lower.
+ * `top` represents the building ground line rather than the visual center.
  */
 const PLOT_VISUALS: readonly IslandPlotVisual[] = [
-  { left: 28.4, top: 29.5, scale: 0.98 },
-  { left: 53.1, top: 27.5, scale: 1.02 },
-  { left: 76.7, top: 31.5, scale: 0.98 },
+  // Upper row
+  { left: 29.0, top: 29.0, scale: 0.98 },
+  { left: 52.8, top: 27.8, scale: 1.02 },
+  { left: 76.0, top: 30.0, scale: 0.98 },
 
-  { left: 20.6, top: 46.5, scale: 0.96 },
-  { left: 40.0, top: 47.5, scale: 1.00 },
-  { left: 60.3, top: 47.5, scale: 1.00 },
-  { left: 82.5, top: 51.0, scale: 0.96 },
+  // Middle row
+  { left: 18.5, top: 45.0, scale: 0.95 },
+  { left: 39.0, top: 44.5, scale: 0.98 },
+  { left: 61.0, top: 44.5, scale: 0.98 },
+  { left: 82.5, top: 46.0, scale: 0.95 },
 
-  { left: 22.8, top: 68.2, scale: 0.96 },
-  { left: 41.9, top: 70.5, scale: 1.00 },
-  { left: 62.5, top: 70.5, scale: 0.99 },
-  { left: 81.5, top: 72.5, scale: 0.96 },
+  // Lower row
+  { left: 17.0, top: 65.0, scale: 0.93 },
+  { left: 34.0, top: 66.5, scale: 0.96 },
+  { left: 51.0, top: 67.0, scale: 0.97 },
+  { left: 68.0, top: 67.0, scale: 0.96 },
+  { left: 84.0, top: 66.0, scale: 0.93 },
 ] as const;
 
 const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
