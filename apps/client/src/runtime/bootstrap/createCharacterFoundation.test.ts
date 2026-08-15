@@ -38,7 +38,7 @@ function createFixture() {
 }
 
 describe("createCharacterFoundation", () => {
-  it("grants a full T3 starter set and off-hand for a one-handed weapon", () => {
+  it("grants only the selected one-handed starter weapon", () => {
     const fixture = createFixture();
     const granted = initializeStarterLoadout({
       heroId: fixture.heroId,
@@ -52,11 +52,12 @@ describe("createCharacterFoundation", () => {
     expect(granted).toBe(true);
     const equipped = fixture.equipment.equipmentManager.getEquipped(fixture.heroId);
     expect(equipped.get("weapon")?.itemId).toBe("item_weapon_sword_t3_broadsword");
-    expect(equipped.get("off_hand")?.itemId).toBe("item_shield_t3_reinforced");
-    expect(equipped.get("head")?.itemId).toBe("item_iron_helmet");
-    expect(equipped.get("chest")?.itemId).toBe("item_leather_armor");
-    expect(equipped.get("boots")?.itemId).toBe("item_leather_boots");
-    expect(equipped.get("cape")?.itemId).toBe("item_traveler_cape");
+    expect(equipped.get("off_hand")).toBeUndefined();
+    expect(equipped.get("head")).toBeUndefined();
+    expect(equipped.get("chest")).toBeUndefined();
+    expect(equipped.get("boots")).toBeUndefined();
+    expect(equipped.get("cape")).toBeUndefined();
+    expect([...equipped.values()]).toHaveLength(1);
     expect(fixture.equipment.inventoryManager.getBaseCapacity(fixture.heroId)).toBe(24);
     expect(fixture.equipment.inventoryManager.getBaseCapacity(fixture.storage.bankId)).toBe(64);
     expect(fixture.equipment.inventoryManager.getBaseCapacity(fixture.storage.productionStorageId)).toBe(256);
@@ -64,7 +65,7 @@ describe("createCharacterFoundation", () => {
     fixture.combat.orchestrator.dispose();
   });
 
-  it("does not grant an off-hand or unused weapons for a two-handed starter", () => {
+  it("grants only the selected two-handed starter weapon", () => {
     const fixture = createFixture();
     const granted = initializeStarterLoadout({
       heroId: fixture.heroId,
@@ -79,6 +80,11 @@ describe("createCharacterFoundation", () => {
     const equipped = fixture.equipment.equipmentManager.getEquipped(fixture.heroId);
     expect(equipped.get("weapon")?.itemId).toBe("item_weapon_bow_t3_longbow");
     expect(equipped.get("off_hand")).toBeUndefined();
+    expect(equipped.get("head")).toBeUndefined();
+    expect(equipped.get("chest")).toBeUndefined();
+    expect(equipped.get("boots")).toBeUndefined();
+    expect(equipped.get("cape")).toBeUndefined();
+    expect([...equipped.values()]).toHaveLength(1);
     const inventoryItems = fixture.equipment.inventoryManager
       .listSlots(fixture.heroId)
       .flatMap((slot) => slot.entry === undefined ? [] : [slot.entry.itemId]);
