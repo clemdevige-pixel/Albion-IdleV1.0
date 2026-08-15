@@ -75,8 +75,10 @@ export function createAtomicProductionInventoryManager(
         );
       }
 
-      const value = Reflect.get(target, property, target);
-      return typeof value === "function" ? value.bind(target) : value;
+      const value: unknown = Reflect.get(target, property, target);
+      if (typeof value !== "function") return value;
+      const callable = value as (...args: unknown[]) => unknown;
+      return (...args: unknown[]) => callable.apply(target, args);
     },
   });
 }
