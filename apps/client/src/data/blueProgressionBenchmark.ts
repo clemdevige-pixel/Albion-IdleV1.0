@@ -7,11 +7,21 @@ import { resolveUnlockedWeaponAbilities } from "./weaponContentCatalog";
 import {
   getWeaponCombatBenchmarkProfile,
   type BenchmarkEnchantment,
+  type WeaponCombatBenchmarkProfile,
 } from "./weaponIdealBenchmark";
 import { getWorldZonePlacement } from "./worldContentCatalog";
 
 export interface BlueSegmentBenchmarkInput {
   readonly weaponItemId: string;
+  readonly masteryLevel: number;
+  readonly enchantment: BenchmarkEnchantment;
+  readonly zoneDefId: ZoneDefinitionId;
+  /** Zero-based segment index. */
+  readonly segmentIndex: number;
+}
+
+export interface SyntheticBlueSegmentBenchmarkInput {
+  readonly weaponItemIds: readonly string[];
   readonly masteryLevel: number;
   readonly enchantment: BenchmarkEnchantment;
   readonly zoneDefId: ZoneDefinitionId;
@@ -37,6 +47,21 @@ export interface BlueSegmentBenchmarkResult {
   readonly encounters: readonly BlueEncounterBenchmarkResult[];
 }
 
+interface NeutralCombatEnvelope {
+  readonly sustainedDps: number;
+  readonly maxHealth: number;
+  readonly armor: number;
+  readonly magicResistance: number;
+}
+
+function median(values: readonly number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  if (sorted.length === 0) return 0;
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 1) return sorted[middle] ?? 0;
+  return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+}
+
 function clampResistance(value: number): number {
   return Math.min(80, Math.max(0, value));
 }
@@ -57,10 +82,7 @@ function availabilityFactor(itemId: string, masteryLevel: number, abilityId: str
   return 1;
 }
 
-/**
- * Average resistance reduction produced by unlocked auto-cast abilities.
- * This is deliberately an uptime estimate, not a second combat runtime.
- */
+/** Average resistance reduction produced by unlocked auto-cast abilities. */
 function averageResistanceReduction(
   itemId: string,
   masteryLevel: number,
@@ -105,23 +127,33 @@ function weaponDamageType(itemId: string): "physical" | "magical" {
     : "physical";
 }
 
+function syntheticEnvelope(profiles: readonly WeaponCombatBenchmarkProfile[]): NeutralCombatEnvelope {
+  if (profiles.length === 0) throw new Error("Synthetic Blue benchmark requires at least one weapon");
+  return {
+    sustainedDps: median(profiles.map((profile) => profile.offense.sustainedDps)),
+    maxHealth: median(profiles.map((profile) => profile.defense.maxHealth)),
+    armor: median(profiles.map((profile) => profile.defense.armor)),
+    magicResistance: median(profiles.map((profile) => profile.defense.magicResistance)),
+  };
+}
+
+function assertBluePlacement(zoneDefId: ZoneDefinitionId) {
+  const placement = getWorldZonePlacement(zoneDefId);
+  if (placement.bandId !== "blue") {
+    throw new Error(`Blue benchmark cannot simulate ${placement.bandId} content`);
+  }
+  return placement;
+}
+
 /**
  * Deterministic progression estimator using the same authored enemy profiles,
  * monster damage types, player equipment stats and weapon ability data as the
- * live runtime.
- *
- * Runtime-specific timing details (animation frames, exact first-cast timing,
- * overkill holds) stay out of this model. The benchmark is a balance guardrail,
- * while final validation remains a short manual/runtime test.
+ * live runtime. Exact animation/cast timing remains runtime/manual validation.
  */
 export function benchmarkBlueSegment(
   input: BlueSegmentBenchmarkInput,
 ): BlueSegmentBenchmarkResult {
-  const placement = getWorldZonePlacement(input.zoneDefId);
-  if (placement.bandId !== "blue") {
-    throw new Error(`Blue benchmark cannot simulate ${placement.bandId} content`);
-  }
-
+  const placement = assertBluePlacement(input.zoneDefId);
   const combat = getWeaponCombatBenchmarkProfile(
     input.weaponItemId,
     input.masteryLevel,
@@ -153,19 +185,10 @@ export function benchmarkBlueSegment(
       encounterIndex,
       "blue",
     );
-    const monster = resolveMonsterForEncounter(
-      input.zoneDefId,
-      input.segmentIndex,
-      encounterIndex,
-    );
-    const enemyResistance = damageType === "magical"
-      ? enemy.magicResistance
-      : enemy.armor;
+    const monster = resolveMonsterForEncounter(input.zoneDefId, input.segmentIndex, encounterIndex);
+    const enemyResistance = damageType === "magical" ? enemy.magicResistance : enemy.armor;
     const effectiveEnemyResistance = clampResistance(enemyResistance - resistanceReduction);
-    const playerDps = Math.max(
-      1,
-      combat.offense.sustainedDps * (1 - effectiveEnemyResistance / 100),
-    );
+    const playerDps = Math.max(1, combat.offense.sustainedDps * (1 - effectiveEnemyResistance / 100));
     const timeToKillSeconds = enemy.hp / playerDps;
 
     const heroResistance = monster.combat.damageType === "magical"
@@ -188,7 +211,6 @@ export function benchmarkBlueSegment(
       healthAfter: Math.max(0, currentHealth),
       startedAtFullHealth,
     });
-
     if (currentHealth <= 0) {
       clear = false;
       currentHealth = 0;
@@ -202,6 +224,81 @@ export function benchmarkBlueSegment(
     totalDamageTaken,
     remainingHealth: currentHealth,
     remainingHealthRatio: currentHealth / combat.defense.maxHealth,
+    encounters,
+  };
+}
+
+/**
+ * Neutral "ideal weapon" simulation. Offense, HP, Armor and MR are medians of
+ * the supplied weapon loadouts. No live weapon's debuff/stun identity is baked
+ * into the target. Enemy Armor/MR are averaged for outgoing damage so physical
+ * and magical weapon representation remains neutral.
+ */
+export function benchmarkSyntheticIdealBlueSegment(
+  input: SyntheticBlueSegmentBenchmarkInput,
+): BlueSegmentBenchmarkResult {
+  const placement = assertBluePlacement(input.zoneDefId);
+  const profiles = input.weaponItemIds.map((itemId) =>
+    getWeaponCombatBenchmarkProfile(itemId, input.masteryLevel, input.enchantment),
+  );
+  const ideal = syntheticEnvelope(profiles);
+
+  const encounters: BlueEncounterBenchmarkResult[] = [];
+  let currentHealth = ideal.maxHealth;
+  let totalDamageTaken = 0;
+  let totalTimeSeconds = 0;
+  let clear = true;
+
+  for (let encounterIndex = 0; encounterIndex < ENCOUNTERS_PER_SEGMENT; encounterIndex += 1) {
+    const startedAtFullHealth = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+    if (startedAtFullHealth) currentHealth = ideal.maxHealth;
+
+    const enemy = getEnemyCombatProfile(
+      placement.zoneIndexWithinBand,
+      input.segmentIndex,
+      encounterIndex,
+      "blue",
+    );
+    const monster = resolveMonsterForEncounter(input.zoneDefId, input.segmentIndex, encounterIndex);
+    const neutralEnemyResistance = (enemy.armor + enemy.magicResistance) / 2;
+    const playerDps = Math.max(
+      1,
+      ideal.sustainedDps * (1 - clampResistance(neutralEnemyResistance) / 100),
+    );
+    const timeToKillSeconds = enemy.hp / playerDps;
+
+    const heroResistance = monster.combat.damageType === "magical"
+      ? ideal.magicResistance
+      : ideal.armor;
+    const enemyDps = enemy.damage
+      * enemy.attackSpeed
+      * (1 - clampResistance(heroResistance) / 100);
+    const damageTaken = enemyDps * timeToKillSeconds;
+    currentHealth -= damageTaken;
+    totalDamageTaken += damageTaken;
+    totalTimeSeconds += timeToKillSeconds;
+
+    encounters.push({
+      encounterIndex,
+      monsterId: monster.id,
+      timeToKillSeconds,
+      damageTaken,
+      healthAfter: Math.max(0, currentHealth),
+      startedAtFullHealth,
+    });
+    if (currentHealth <= 0) {
+      clear = false;
+      currentHealth = 0;
+      break;
+    }
+  }
+
+  return {
+    clear,
+    totalTimeSeconds,
+    totalDamageTaken,
+    remainingHealth: currentHealth,
+    remainingHealthRatio: currentHealth / ideal.maxHealth,
     encounters,
   };
 }
