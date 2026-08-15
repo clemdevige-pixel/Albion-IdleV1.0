@@ -22,8 +22,8 @@ interface IslandPlotVisual {
  * its geometric centre: building assets are bottom-anchored by CSS.
  */
 const PLOT_VISUALS: readonly IslandPlotVisual[] = [
-  { left: 28.2, top: 28.1, scale: 0.98 },
-  { left: 46.5, top: 26.8, scale: 1.02 },
+  { left: 28.2, top: 28.1, scale: 1.05 },
+  { left: 48.0, top: 25.3, scale: 1.02 },
   { left: 70.8, top: 30.9, scale: 0.96 },
   { left: 17.9, top: 43.7, scale: 0.94 },
   { left: 37.9, top: 44.3, scale: 0.98 },
