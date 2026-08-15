@@ -42,14 +42,22 @@ const T3_CORE = ["item_iron_helmet", "item_leather_armor", "item_leather_boots"]
 const T4_CORE = ["item_helmet_t4_reinforced", "item_armor_t4_leather", "item_boots_t4_leather"] as const;
 const CAPE = "item_traveler_cape" as const;
 
+type BalanceWeaponPrefix = "broadsword" | "longbow" | "infernal";
+
+const getWeaponLabel = (prefix: BalanceWeaponPrefix): string => {
+  if (prefix === "broadsword") return "Broadsword";
+  if (prefix === "longbow") return "Longbow";
+  return "Infernal Staff";
+};
+
 const makeT3Diagnostics = (
-  prefix: "broadsword" | "longbow",
+  prefix: BalanceWeaponPrefix,
   weaponItemId: string,
   includeShield: boolean,
 ): readonly CombatBalanceLoadoutDefinition[] => [
   {
     id: `${prefix}_t3_weapon_only`,
-    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · arme seule`,
+    label: `${getWeaponLabel(prefix)} T3 · arme seule`,
     weaponItemId,
     equipmentItemIds: [],
     enchantment: 0,
@@ -58,7 +66,7 @@ const makeT3Diagnostics = (
   },
   {
     id: `${prefix}_t3_chest`,
-    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · + torse`,
+    label: `${getWeaponLabel(prefix)} T3 · + torse`,
     weaponItemId,
     equipmentItemIds: ["item_leather_armor"],
     enchantment: 0,
@@ -67,7 +75,7 @@ const makeT3Diagnostics = (
   },
   {
     id: `${prefix}_t3_core`,
-    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · casque + torse + bottes`,
+    label: `${getWeaponLabel(prefix)} T3 · casque + torse + bottes`,
     weaponItemId,
     equipmentItemIds: T3_CORE,
     enchantment: 0,
@@ -76,7 +84,7 @@ const makeT3Diagnostics = (
   },
   {
     id: `${prefix}_t3_full`,
-    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · set complet`,
+    label: `${getWeaponLabel(prefix)} T3 · set complet`,
     weaponItemId,
     equipmentItemIds: [
       ...T3_CORE,
@@ -90,12 +98,12 @@ const makeT3Diagnostics = (
 ];
 
 const makeT4Guardrails = (
-  prefix: "broadsword" | "longbow",
+  prefix: BalanceWeaponPrefix,
   weaponItemId: string,
   includeShield: boolean,
 ): readonly CombatBalanceLoadoutDefinition[] => ([0, 1, 2, 3] as const).map((enchantment) => ({
   id: `${prefix}_t4_full_${String(enchantment)}`,
-  label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T4.${String(enchantment)} · set T4 de référence`,
+  label: `${getWeaponLabel(prefix)} T4.${String(enchantment)} · set T4 de référence`,
   weaponItemId,
   equipmentItemIds: [
     ...T4_CORE,
@@ -112,6 +120,8 @@ export const COMBAT_BALANCE_LOADOUTS: readonly CombatBalanceLoadoutDefinition[] 
   ...makeT4Guardrails("broadsword", "item_weapon_sword_t4_broadsword", true),
   ...makeT3Diagnostics("longbow", "item_weapon_bow_t3_longbow", false),
   ...makeT4Guardrails("longbow", "item_weapon_bow_t4_longbow", false),
+  ...makeT3Diagnostics("infernal", "item_weapon_staff_t3_infernal", false),
+  ...makeT4Guardrails("infernal", "item_weapon_staff_t4_infernal", false),
 ] as const;
 
 export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinition[] = [
@@ -136,7 +146,7 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
  *
  * Core armor and off-hand are solved independently so the current T4.3 ceiling
  * is preserved for BOTH weapon handling models:
- * - 2H: head + chest + boots + cape, no off-hand;
+ * - 2H physical/magical: head + chest + boots + cape, no off-hand;
  * - 1H: same core set + reinforced shield.
  *
  * This keeps every moved stat as real authored equipment power, fully scalable
