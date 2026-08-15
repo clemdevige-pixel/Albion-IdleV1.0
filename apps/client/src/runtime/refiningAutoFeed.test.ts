@@ -82,7 +82,7 @@ describe("RefiningRuntime automatic feed regression", () => {
     for (let tick = 1; tick <= 6; tick += 1) env.runtime.tick(tick);
 
     expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(1);
-    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_bar_t3")).toBe(1);
+    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_copper_bar_t3")).toBe(1);
     expect(env.runtime.isRefiningActive("Wood")).toBe(false);
     expect(env.runtime.isAutomaticEnabled("Wood")).toBe(true);
     expect(env.runtime.isRefiningActive("Ore")).toBe(true);
@@ -100,7 +100,7 @@ describe("RefiningRuntime automatic feed regression", () => {
     for (let tick = 8; tick <= 13; tick += 1) env.runtime.tick(tick);
 
     expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(2);
-    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_bar_t3")).toBe(2);
+    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_copper_bar_t3")).toBe(2);
     expect(env.runtime.isAutomaticEnabled("Wood")).toBe(true);
     expect(env.runtime.isAutomaticEnabled("Ore")).toBe(true);
   });
