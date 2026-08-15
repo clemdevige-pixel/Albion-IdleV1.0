@@ -105,12 +105,21 @@ export class WorldRuntime {
     return { defId, tier: def?.tier ?? 3, name: def?.name ?? "Unknown" };
   }
 
+  /** Immediate internal repositioning used by lifecycle boundaries such as gathering. */
   public selectSegment(segmentNumber: number): boolean {
     const segment = segmentNumber - 1;
     if (segment < 0 || segment >= SEGMENTS_PER_ZONE || segment > this.worldTick.highestUnlockedSegment) return false;
     this.worldTick.currentSegment = segment;
     this.worldTick.currentEncounter = 0;
     this.worldTick.pendingSegment = null;
+    return true;
+  }
+
+  /** Player-directed segment travel is applied only after the current segment completes. */
+  public queueSegmentChange(segmentNumber: number): boolean {
+    const segment = segmentNumber - 1;
+    if (segment < 0 || segment >= SEGMENTS_PER_ZONE || segment > this.worldTick.highestUnlockedSegment) return false;
+    this.worldTick.pendingSegment = segment;
     return true;
   }
 
@@ -161,11 +170,6 @@ export class WorldRuntime {
           }
         }
       }
-    } else if (this.worldTick.pendingSegment !== null) {
-      this.worldTick.currentSegment = this.worldTick.pendingSegment;
-      this.worldTick.currentEncounter = 0;
-      this.worldTick.pendingSegment = null;
-      enteredNewSegment = true;
     }
 
     if (this.worldTick.pendingZone !== null) {
@@ -251,7 +255,10 @@ export class WorldRuntime {
         const resolvedSegment = Math.max(0, Math.min(highestUnlocked, Math.floor(savedLocation.activeSegment ?? memory.currentSegment)));
 
         this.worldTick.currentSegment = resolvedSegment;
-        this.worldTick.currentEncounter = clampEncounter(savedLocation.activeEncounter ?? memory.currentEncounter);
+        // Loading is a combat lifecycle boundary: always restart the active segment.
+        this.worldTick.currentEncounter = 0;
+        memory.currentSegment = resolvedSegment;
+        memory.currentEncounter = 0;
         this.worldTick.highestUnlockedSegment = memory.highestUnlockedSegment;
         this.worldTick.completedSegments = new Set(memory.completedSegments);
         this.worldTick.farmMode = Boolean(savedLocation.farmMode);
@@ -263,12 +270,12 @@ export class WorldRuntime {
         const rawSegment = Math.floor(savedLocation.activeSegment ?? 0);
         const resolvedSegment = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, rawSegment));
         memory.currentSegment = resolvedSegment;
-        memory.currentEncounter = clampEncounter(savedLocation.activeEncounter);
+        memory.currentEncounter = 0;
         memory.highestUnlockedSegment = Math.max(memory.highestUnlockedSegment, resolvedSegment);
 
         this.worldTick.currentZoneIndex = resolvedIndex;
         this.worldTick.currentSegment = resolvedSegment;
-        this.worldTick.currentEncounter = memory.currentEncounter;
+        this.worldTick.currentEncounter = 0;
         this.worldTick.highestUnlockedSegment = memory.highestUnlockedSegment;
         this.worldTick.completedSegments = new Set(memory.completedSegments);
         this.worldTick.farmMode = Boolean(savedLocation.farmMode);
@@ -281,6 +288,10 @@ export class WorldRuntime {
       this.worldTick.completedSegments.clear();
       this.worldTick.farmMode = false;
     }
+
+    this.worldTick.pendingSegment = null;
+    this.worldTick.pendingZone = null;
+    this.worldTick.pendingZoneSegment = null;
 
     const activeZoneDefId = ZONE_ORDER[this.worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
     this.zoneManager.changeZone(activeZoneDefId);
