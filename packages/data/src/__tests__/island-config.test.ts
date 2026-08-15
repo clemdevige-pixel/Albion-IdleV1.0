@@ -67,15 +67,23 @@ describe("player island config", () => {
     ]);
   });
 
-  it("authors the workshop as the shared crafting building without forcing every refining branch", () => {
+  it("authors the workshop as a shared flexible crafting building", () => {
     const workshop = PLAYER_ISLAND_CONFIG.buildings.find(
       (building) => building.id === "workshop",
     );
 
     expect(workshop?.craftingService?.categories).toEqual(["weapons", "armors", "other"]);
-    expect(workshop?.construction?.prerequisiteBuildings).toEqual(["sawmill", "smelter"]);
-    expect(workshop?.construction?.prerequisiteBuildings).not.toContain("tannery");
-    expect(workshop?.construction?.prerequisiteBuildings).not.toContain("weaver");
+    expect(workshop?.construction?.prerequisiteBuildings).toBeUndefined();
+    expect(workshop?.construction?.flexibleRequirement).toEqual({
+      itemIds: [
+        "item_refined_planks_t3",
+        "item_refined_copper_bar_t3",
+        "item_refined_leather_t3",
+        "item_refined_cloth_t3",
+      ],
+      totalQuantity: 6,
+      minimumDistinctItemIds: 2,
+    });
   });
 
   it("keeps construction costs authored and positive", () => {
@@ -85,10 +93,18 @@ describe("player island config", () => {
 
     expect(constructible.length).toBeGreaterThan(0);
     for (const building of constructible) {
-      expect(building.construction?.silver).toBeGreaterThan(0);
-      expect(building.construction?.requirements.length).toBeGreaterThan(0);
-      for (const requirement of building.construction?.requirements ?? []) {
+      const construction = building.construction;
+      expect(construction?.silver).toBeGreaterThan(0);
+      const fixedRequirements = construction?.requirements.length ?? 0;
+      const flexibleRequirements = construction?.flexibleRequirement?.totalQuantity ?? 0;
+      expect(fixedRequirements + flexibleRequirements).toBeGreaterThan(0);
+      for (const requirement of construction?.requirements ?? []) {
         expect(requirement.quantity).toBeGreaterThan(0);
+      }
+      if (construction?.flexibleRequirement !== undefined) {
+        expect(construction.flexibleRequirement.itemIds.length).toBeGreaterThan(0);
+        expect(construction.flexibleRequirement.totalQuantity).toBeGreaterThan(0);
+        expect(construction.flexibleRequirement.minimumDistinctItemIds).toBeGreaterThan(0);
       }
     }
   });
