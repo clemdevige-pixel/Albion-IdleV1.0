@@ -65,39 +65,39 @@ export class DiscordOAuthFlowStore implements DiscordOAuthFlowRepository {
   private readonly states = new Map<string, ExpiringValue<string | undefined>>();
   private readonly exchanges = new Map<string, ExpiringValue<AuthSession>>();
 
-  public async issueState(now = Date.now()): Promise<string> {
-    return this.issueStateInternal(undefined, now);
+  public issueState(now = Date.now()): Promise<string> {
+    return Promise.resolve(this.issueStateInternal(undefined, now));
   }
 
-  public async issueStateForOrigin(returnOrigin: string, now = Date.now()): Promise<string> {
-    return this.issueStateInternal(returnOrigin, now);
+  public issueStateForOrigin(returnOrigin: string, now = Date.now()): Promise<string> {
+    return Promise.resolve(this.issueStateInternal(returnOrigin, now));
   }
 
-  public async consumeState(state: string, now = Date.now()): Promise<boolean> {
+  public consumeState(state: string, now = Date.now()): Promise<boolean> {
     const entry = this.states.get(state);
     this.states.delete(state);
-    return entry !== undefined && entry.expiresAt >= now;
+    return Promise.resolve(entry !== undefined && entry.expiresAt >= now);
   }
 
-  public async consumeStateWithOrigin(state: string, now = Date.now()): Promise<string | undefined> {
+  public consumeStateWithOrigin(state: string, now = Date.now()): Promise<string | undefined> {
     const entry = this.states.get(state);
     this.states.delete(state);
-    return entry !== undefined && entry.expiresAt >= now ? entry.value : undefined;
+    return Promise.resolve(entry !== undefined && entry.expiresAt >= now ? entry.value : undefined);
   }
 
-  public async issueExchange(session: AuthSession, now = Date.now()): Promise<string> {
+  public issueExchange(session: AuthSession, now = Date.now()): Promise<string> {
     const code = randomBytes(32).toString("base64url");
     this.exchanges.set(code, { value: session, expiresAt: now + 60_000 });
-    return code;
+    return Promise.resolve(code);
   }
 
-  public async consumeExchange(code: string, now = Date.now()): Promise<AuthSession | undefined> {
+  public consumeExchange(code: string, now = Date.now()): Promise<AuthSession | undefined> {
     const entry = this.exchanges.get(code);
     this.exchanges.delete(code);
-    return entry !== undefined && entry.expiresAt >= now ? entry.value : undefined;
+    return Promise.resolve(entry !== undefined && entry.expiresAt >= now ? entry.value : undefined);
   }
 
-  private async issueStateInternal(returnOrigin: string | undefined, now: number): Promise<string> {
+  private issueStateInternal(returnOrigin: string | undefined, now: number): string {
     const state = randomBytes(24).toString("base64url");
     this.states.set(state, { value: returnOrigin, expiresAt: now + 5 * 60_000 });
     return state;
