@@ -120,7 +120,7 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     gatheringService: { productionFamily: "wood", workerProfession: "woodcutter" },
     construction: {
       silver: GATHERING_BUILDING_SILVER_COST,
-      requirements: [{ itemId: T3_WOOD_ID, quantity: 20 }],
+      requirements: [{ itemId: T3_WOOD_ID, quantity: 8 }],
     },
   },
   {
@@ -133,8 +133,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: GATHERING_BUILDING_SILVER_COST,
       requirements: [
-        { itemId: T3_WOOD_ID, quantity: 12 },
-        { itemId: T3_ORE_ID, quantity: 8 },
+        { itemId: T3_WOOD_ID, quantity: 4 },
+        { itemId: T3_ORE_ID, quantity: 6 },
       ],
     },
   },
@@ -148,8 +148,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: GATHERING_BUILDING_SILVER_COST,
       requirements: [
-        { itemId: T3_WOOD_ID, quantity: 12 },
-        { itemId: T3_HIDE_ID, quantity: 8 },
+        { itemId: T3_WOOD_ID, quantity: 4 },
+        { itemId: T3_HIDE_ID, quantity: 6 },
       ],
     },
   },
@@ -163,8 +163,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: GATHERING_BUILDING_SILVER_COST,
       requirements: [
-        { itemId: T3_WOOD_ID, quantity: 12 },
-        { itemId: T3_FIBER_ID, quantity: 8 },
+        { itemId: T3_WOOD_ID, quantity: 4 },
+        { itemId: T3_FIBER_ID, quantity: 6 },
       ],
     },
   },
@@ -178,8 +178,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: REFINING_BUILDING_SILVER_COST,
       requirements: [
-        { itemId: T3_WOOD_ID, quantity: 20 },
-        { itemId: T3_ORE_ID, quantity: 10 },
+        { itemId: T3_WOOD_ID, quantity: 8 },
+        { itemId: T3_ORE_ID, quantity: 4 },
       ],
       prerequisiteBuildings: ["lumber_camp"],
     },
@@ -194,8 +194,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: REFINING_BUILDING_SILVER_COST,
       requirements: [
-        { itemId: T3_WOOD_ID, quantity: 20 },
-        { itemId: T3_ORE_ID, quantity: 10 },
+        { itemId: T3_WOOD_ID, quantity: 4 },
+        { itemId: T3_ORE_ID, quantity: 8 },
       ],
       prerequisiteBuildings: ["mine"],
     },
@@ -210,8 +210,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: REFINING_BUILDING_SILVER_COST,
       requirements: [
-        { itemId: T3_WOOD_ID, quantity: 20 },
-        { itemId: T3_HIDE_ID, quantity: 10 },
+        { itemId: T3_WOOD_ID, quantity: 4 },
+        { itemId: T3_HIDE_ID, quantity: 8 },
       ],
       prerequisiteBuildings: ["hunting_camp"],
     },
@@ -226,8 +226,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: REFINING_BUILDING_SILVER_COST,
       requirements: [
-        { itemId: T3_WOOD_ID, quantity: 20 },
-        { itemId: T3_FIBER_ID, quantity: 10 },
+        { itemId: T3_WOOD_ID, quantity: 4 },
+        { itemId: T3_FIBER_ID, quantity: 8 },
       ],
       prerequisiteBuildings: ["fiber_camp"],
     },
@@ -242,8 +242,8 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     construction: {
       silver: WORKSHOP_SILVER_COST,
       requirements: [
-        { itemId: T3_PLANKS_ID, quantity: 8 },
-        { itemId: T3_BARS_ID, quantity: 8 },
+        { itemId: T3_PLANKS_ID, quantity: 4 },
+        { itemId: T3_BARS_ID, quantity: 4 },
       ],
       prerequisiteBuildings: ["sawmill", "smelter"],
     },
