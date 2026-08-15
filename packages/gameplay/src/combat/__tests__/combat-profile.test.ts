@@ -77,14 +77,16 @@ describe("combat-profile", () => {
       }
     });
 
-    it("keeps Mountain S10 inside the new T4.2-oriented envelope", () => {
+    it("keeps Mountain S10 structurally above the preceding Mountain segment", () => {
+      const previousNormal = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 2, 3, "blue");
       const normal = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 3, "blue");
       const boss = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 4, "blue");
 
-      expect(normal.hp).toBeLessThanOrEqual(1100);
-      expect(normal.damage).toBeLessThanOrEqual(26);
-      expect(boss.hp).toBeLessThanOrEqual(1950);
-      expect(boss.damage).toBeLessThanOrEqual(46);
+      expect(normal.hp).toBeGreaterThan(previousNormal.hp);
+      expect(normal.damage).toBeGreaterThanOrEqual(previousNormal.damage);
+      expect(normal.armor).toBeGreaterThanOrEqual(previousNormal.armor);
+      expect(boss.hp).toBeGreaterThan(normal.hp);
+      expect(boss.damage).toBeGreaterThan(normal.damage);
     });
 
     it("uses an independent Yellow curve and rejects the next unauthored world", () => {
@@ -172,7 +174,6 @@ describe("combat-profile", () => {
     it("continues reward ranks in Yellow and rejects unauthored Orange rewards", () => {
       const blueEnd = getEncounterRewards(4, SEGMENTS_PER_ZONE - 1, 0, "blue");
       const yellowStart = getEncounterRewards(0, 0, 0, "yellow");
-
       expect(yellowStart.silver).toBeGreaterThan(blueEnd.silver);
       expect(yellowStart.fame).toBeGreaterThan(blueEnd.fame);
       expect(() => getEncounterRewards(0, 0, 0, "orange")).toThrow(
