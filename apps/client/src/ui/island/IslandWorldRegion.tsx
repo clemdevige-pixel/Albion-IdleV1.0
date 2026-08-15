@@ -15,20 +15,23 @@ interface IslandPlotVisual {
   readonly scale?: number;
 }
 
-/** Positions are authored against island-background.webp (1600x900). */
+/**
+ * Plot anchors authored directly against island-background.webp (1600x900).
+ * `top` is the visual ground/foot anchor of the building, not the parcel centre.
+ */
 const PLOT_VISUALS: readonly IslandPlotVisual[] = [
-  { left: 23, top: 20, scale: 0.92 },
-  { left: 47, top: 17, scale: 0.96 },
-  { left: 69, top: 20, scale: 0.92 },
-  { left: 84, top: 31, scale: 0.88 },
-  { left: 16, top: 42, scale: 0.9 },
-  { left: 38, top: 37, scale: 0.96 },
-  { left: 59, top: 38, scale: 0.96 },
-  { left: 80, top: 47, scale: 0.9 },
-  { left: 20, top: 63, scale: 0.9 },
-  { left: 42, top: 58, scale: 0.96 },
-  { left: 62, top: 61, scale: 0.94 },
-  { left: 78, top: 70, scale: 0.88 },
+  { left: 25.0, top: 33.0, scale: 1.00 },
+  { left: 48.0, top: 28.5, scale: 1.04 },
+  { left: 71.5, top: 32.5, scale: 1.00 },
+  { left: 86.0, top: 39.0, scale: 0.96 },
+  { left: 18.0, top: 50.5, scale: 0.98 },
+  { left: 40.5, top: 46.0, scale: 1.03 },
+  { left: 61.5, top: 47.0, scale: 1.03 },
+  { left: 81.5, top: 53.0, scale: 0.98 },
+  { left: 21.0, top: 69.0, scale: 0.98 },
+  { left: 42.5, top: 65.0, scale: 1.03 },
+  { left: 63.5, top: 66.0, scale: 1.01 },
+  { left: 79.5, top: 71.5, scale: 0.96 },
 ] as const;
 
 const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
