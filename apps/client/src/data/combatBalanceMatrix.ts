@@ -27,13 +27,7 @@ export interface CombatBalanceCheckpointDefinition {
 export interface CombatBalanceReallocationDefinition {
   readonly id: string;
   readonly label: string;
-  /** Naked-hero defensive baseline used by this candidate. */
   readonly hero: CombatBalanceSyntheticHeroDefinition;
-  /**
-   * Multipliers applied to authored defensive equipment stats before normal IP
-   * scaling. These are real equipment-stat reallocations, not hidden/fixed
-   * coverage bonuses, so enchantment/mastery IP continues to work normally.
-   */
   readonly equipmentStatMultiplier: CombatBalanceSyntheticHeroDefinition;
 }
 
@@ -121,13 +115,10 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
 ] as const;
 
 /**
- * Experimental real-stat reallocations.
- *
- * Each candidate lowers the naked-hero baseline and increases authored armor
- * stats. The multipliers are solved backwards from the current full T4.3
- * defensive totals (688.5 HP / 65.9 Armor / 46.7 MR), so T4.3 remains the hard
- * ceiling while every added equipment stat still participates in normal IP
- * scaling. These values are diagnostics only; they do not mutate live data.
+ * Experimental real-stat reallocations. All defensive power moved onto items
+ * remains genuine authored equipment power and therefore scales through normal
+ * IP. Multipliers are solved backwards so full T4.3 remains exactly on the
+ * current defensive ceiling (688.5 HP / 65.9 Armor / 46.7 MR).
  */
 export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDefinition[] = [
   {
@@ -164,6 +155,26 @@ export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDef
       maxHealth: 1.742705570291777,
       armor: 1.1073345259391771,
       magicResistance: 1.0719424460431655,
+    },
+  },
+  {
+    id: "reallocation_probe_340",
+    label: "Seuil 340 HP",
+    hero: { maxHealth: 340, armor: 3, magicResistance: 1.5 },
+    equipmentStatMultiplier: {
+      maxHealth: 1.8488063660477454,
+      armor: 1.1252236135957068,
+      magicResistance: 1.0839328537170263,
+    },
+  },
+  {
+    id: "reallocation_probe_320",
+    label: "Seuil 320 HP",
+    hero: { maxHealth: 320, armor: 2, magicResistance: 1 },
+    equipmentStatMultiplier: {
+      maxHealth: 1.9549071618037135,
+      armor: 1.1431127012522362,
+      magicResistance: 1.0959232613908874,
     },
   },
 ] as const;
