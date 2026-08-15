@@ -12,7 +12,8 @@ import {
   LoginRequestSchema,
   RegisterRequestSchema,
 } from "@game/shared";
-import { AuthFailure, AuthService } from "../auth/AuthService.js";
+import { AuthFailure } from "../auth/AuthService.js";
+import type { AuthService } from "../auth/AuthService.js";
 import {
   buildDiscordAuthorizationUrl,
   DiscordOAuthFlowStore,
@@ -47,7 +48,7 @@ function sendFailure(reply: FastifyReply, error: unknown): FastifyReply {
 export function registerAuthRoutes(app: FastifyInstance, auth: AuthService, discord?: DiscordRouteOptions): void {
   const discordFlow = discord?.flowStore ?? new DiscordOAuthFlowStore();
 
-  app.get(AUTH_PROVIDERS_ROUTE, async () => ({ discord: { enabled: discord !== undefined } }));
+  app.get(AUTH_PROVIDERS_ROUTE, () => ({ discord: { enabled: discord !== undefined } }));
   app.post(AUTH_REGISTER_ROUTE, async (request, reply) => {
     const parsed = RegisterRequestSchema.safeParse(request.body);
     if (!parsed.success) {

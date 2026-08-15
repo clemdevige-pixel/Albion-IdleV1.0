@@ -66,15 +66,8 @@ describe("PlayerIslandService", () => {
     expect(service.upgradeBuilding("storage")).toEqual({ ok: false, reason: "unauthored_level" });
   });
 
-  it("requires real island development before raising the island level", () => {
+  it("leaves world progression gating to the island action layer", () => {
     const service = new PlayerIslandService();
-
-    expect(service.canUpgradeIslandLevel()).toEqual({ ok: false, reason: "requirements_not_met" });
-
-    service.placeBuilding("lumber_camp", "plot_03");
-    service.placeBuilding("mine", "plot_04");
-    service.placeBuilding("hunting_camp", "plot_05");
-    service.placeBuilding("fiber_camp", "plot_06");
 
     expect(service.canUpgradeIslandLevel()).toEqual({ ok: true, level: 2 });
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 2 });

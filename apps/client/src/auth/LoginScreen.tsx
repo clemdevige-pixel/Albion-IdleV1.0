@@ -3,6 +3,11 @@ import type { AuthProviders, AuthSession } from "@game/shared";
 import type { AuthClient } from "./AuthClient";
 import "./auth.css";
 
+function readFormString(form: FormData, key: string): string {
+  const value = form.get(key);
+  return typeof value === "string" ? value : "";
+}
+
 export function LoginScreen({ mode, providers, startupError, client, onAuthenticated }: {
   readonly mode: "loading" | "ready";
   readonly providers: AuthProviders;
@@ -18,12 +23,12 @@ export function LoginScreen({ mode, providers, startupError, client, onAuthentic
     event.preventDefault();
     if (client === undefined) return;
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "");
-    const password = String(form.get("password") ?? "");
+    const email = readFormString(form, "email");
+    const password = readFormString(form, "password");
     setBusy(true); setError(undefined);
     try {
       const session = creating
-        ? await client.register({ email, password, displayName: String(form.get("displayName") ?? "") })
+        ? await client.register({ email, password, displayName: readFormString(form, "displayName") })
         : await client.login({ email, password });
       onAuthenticated(session);
     } catch (caught) {

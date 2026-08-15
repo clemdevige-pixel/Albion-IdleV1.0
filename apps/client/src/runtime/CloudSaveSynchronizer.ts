@@ -1,6 +1,6 @@
 import { LocalStorageSaveRepository, type SaveFormat, type SaveRepository } from "@game/persistence";
 import type { CloudSaveSlotId } from "@game/shared";
-import { CloudSaveClient } from "./CloudSaveClient";
+import type { CloudSaveClient } from "./CloudSaveClient";
 import { PLAYER_SAVE_SLOT_IDS, getAccountSaveSlotId, getSaveBackupSlotId } from "./saveSlots";
 
 function latestLocal(repository: SaveRepository, primaryId: string): SaveFormat | undefined {

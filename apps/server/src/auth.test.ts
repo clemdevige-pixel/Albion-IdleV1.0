@@ -85,14 +85,14 @@ describe("authentication endpoints", () => {
 
 describe("Discord authentication", () => {
   const discordClient: DiscordOAuthClient = {
-    async exchangeCode() {
-      return {
+    exchangeCode() {
+      return Promise.resolve({
         id: "discord-user-42",
         username: "discord-hero",
         globalName: "Discord Hero",
         email: "discord@example.com",
         emailVerified: true,
-      };
+      });
     },
   };
 
