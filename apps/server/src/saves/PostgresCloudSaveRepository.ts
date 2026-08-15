@@ -1,5 +1,5 @@
 import { CloudSaveDocumentSchema, type CloudSaveDocument, type CloudSaveSlotId, type CloudSaveSummary } from "@game/shared";
-import type { Sql } from "postgres";
+import type { JSONValue, Sql } from "postgres";
 import type { CloudSaveRepository } from "./CloudSaveRepository.js";
 
 interface SaveRow { slot_id: CloudSaveSlotId; document: unknown; updated_at_ms: string; }
@@ -10,9 +10,10 @@ export class PostgresCloudSaveRepository implements CloudSaveRepository {
   public async list(accountId: string): Promise<readonly CloudSaveSummary[]> { const rows = await this.sql<SaveRow[]>`select slot_id, updated_at_ms from player_saves where account_id = ${accountId}`; return rows.map((row) => ({ slotId: row.slot_id, updatedAt: Number(row.updated_at_ms) })); }
   public async get(accountId: string, slotId: CloudSaveSlotId): Promise<CloudSaveDocument | undefined> { const rows = await this.sql<SaveRow[]>`select slot_id, document, updated_at_ms from player_saves where account_id = ${accountId} and slot_id = ${slotId} limit 1`; return rows[0] === undefined ? undefined : CloudSaveDocumentSchema.parse(rows[0].document); }
   public async save(accountId: string, slotId: CloudSaveSlotId, document: CloudSaveDocument): Promise<boolean> {
+    const serializedDocument = JSON.parse(JSON.stringify(document)) as JSONValue;
     const rows = await this.sql<{ updated_at_ms: string }[]>`
       insert into player_saves (account_id, slot_id, document, updated_at_ms)
-      values (${accountId}, ${slotId}, ${this.sql.json(JSON.parse(JSON.stringify(document)))}, ${document.metadata.updatedAt})
+      values (${accountId}, ${slotId}, ${this.sql.json(serializedDocument)}, ${document.metadata.updatedAt})
       on conflict (account_id, slot_id) do update set document = excluded.document, updated_at_ms = excluded.updated_at_ms
       where player_saves.updated_at_ms <= excluded.updated_at_ms returning updated_at_ms
     `;
