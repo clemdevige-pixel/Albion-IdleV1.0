@@ -29,6 +29,7 @@ export interface CombatBalanceReallocationDefinition {
   readonly label: string;
   readonly hero: CombatBalanceSyntheticHeroDefinition;
   readonly equipmentStatMultiplier: CombatBalanceSyntheticHeroDefinition;
+  readonly offHandStatMultiplier: CombatBalanceSyntheticHeroDefinition;
 }
 
 export const COMBAT_BALANCE_SYNTHETIC_HERO: CombatBalanceSyntheticHeroDefinition = {
@@ -37,64 +38,80 @@ export const COMBAT_BALANCE_SYNTHETIC_HERO: CombatBalanceSyntheticHeroDefinition
   magicResistance: 5,
 };
 
-export const COMBAT_BALANCE_LOADOUTS: readonly CombatBalanceLoadoutDefinition[] = [
+const T3_CORE = ["item_iron_helmet", "item_leather_armor", "item_leather_boots"] as const;
+const T4_CORE = ["item_helmet_t4_reinforced", "item_armor_t4_leather", "item_boots_t4_leather"] as const;
+const CAPE = "item_traveler_cape" as const;
+
+const makeT3Diagnostics = (
+  prefix: "broadsword" | "longbow",
+  weaponItemId: string,
+  includeShield: boolean,
+): readonly CombatBalanceLoadoutDefinition[] => [
   {
-    id: "broadsword_t3_weapon_only",
-    label: "Broadsword T3 · arme seule",
-    weaponItemId: "item_weapon_sword_t3_broadsword",
+    id: `${prefix}_t3_weapon_only`,
+    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · arme seule`,
+    weaponItemId,
     equipmentItemIds: [],
     enchantment: 0,
     specializationMasteryLevel: 1,
     role: "diagnostic",
   },
   {
-    id: "broadsword_t3_chest",
-    label: "Broadsword T3 · + torse",
-    weaponItemId: "item_weapon_sword_t3_broadsword",
+    id: `${prefix}_t3_chest`,
+    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · + torse`,
+    weaponItemId,
     equipmentItemIds: ["item_leather_armor"],
     enchantment: 0,
     specializationMasteryLevel: 1,
     role: "diagnostic",
   },
   {
-    id: "broadsword_t3_core",
-    label: "Broadsword T3 · casque + torse + bottes",
-    weaponItemId: "item_weapon_sword_t3_broadsword",
-    equipmentItemIds: ["item_iron_helmet", "item_leather_armor", "item_leather_boots"],
+    id: `${prefix}_t3_core`,
+    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · casque + torse + bottes`,
+    weaponItemId,
+    equipmentItemIds: T3_CORE,
     enchantment: 0,
     specializationMasteryLevel: 1,
     role: "diagnostic",
   },
   {
-    id: "broadsword_t3_full",
-    label: "Broadsword T3 · set complet",
-    weaponItemId: "item_weapon_sword_t3_broadsword",
+    id: `${prefix}_t3_full`,
+    label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T3 · set complet`,
+    weaponItemId,
     equipmentItemIds: [
-      "item_iron_helmet",
-      "item_leather_armor",
-      "item_leather_boots",
-      "item_traveler_cape",
-      "item_shield_t3_reinforced",
+      ...T3_CORE,
+      CAPE,
+      ...(includeShield ? ["item_shield_t3_reinforced"] : []),
     ],
     enchantment: 0,
     specializationMasteryLevel: 1,
     role: "guardrail",
   },
-  ...([0, 1, 2, 3] as const).map((enchantment) => ({
-    id: `broadsword_t4_full_${String(enchantment)}`,
-    label: `Broadsword T4.${String(enchantment)} · set T4 de référence`,
-    weaponItemId: "item_weapon_sword_t4_broadsword",
-    equipmentItemIds: [
-      "item_helmet_t4_reinforced",
-      "item_armor_t4_leather",
-      "item_boots_t4_leather",
-      "item_traveler_cape",
-      "item_shield_t4_reinforced",
-    ],
-    enchantment,
-    specializationMasteryLevel: 1,
-    role: "guardrail" as const,
-  })),
+];
+
+const makeT4Guardrails = (
+  prefix: "broadsword" | "longbow",
+  weaponItemId: string,
+  includeShield: boolean,
+): readonly CombatBalanceLoadoutDefinition[] => ([0, 1, 2, 3] as const).map((enchantment) => ({
+  id: `${prefix}_t4_full_${String(enchantment)}`,
+  label: `${prefix === "broadsword" ? "Broadsword" : "Longbow"} T4.${String(enchantment)} · set T4 de référence`,
+  weaponItemId,
+  equipmentItemIds: [
+    ...T4_CORE,
+    CAPE,
+    ...(includeShield ? ["item_shield_t4_reinforced"] : []),
+  ],
+  enchantment,
+  specializationMasteryLevel: 1,
+  role: "guardrail" as const,
+}));
+
+export const COMBAT_BALANCE_LOADOUTS: readonly CombatBalanceLoadoutDefinition[] = [
+  ...makeT3Diagnostics("broadsword", "item_weapon_sword_t3_broadsword", true),
+  ...makeT4Guardrails("broadsword", "item_weapon_sword_t4_broadsword", true),
+  ...makeT3Diagnostics("longbow", "item_weapon_bow_t3_longbow", false),
+  ...makeT4Guardrails("longbow", "item_weapon_bow_t4_longbow", false),
 ] as const;
 
 export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinition[] = [
@@ -115,81 +132,56 @@ export const COMBAT_BALANCE_CHECKPOINTS: readonly CombatBalanceCheckpointDefinit
 ] as const;
 
 /**
- * Experimental real-stat reallocations. All defensive power moved onto items
- * remains genuine authored equipment power and therefore scales through normal
- * IP. Multipliers are solved backwards so full T4.3 remains exactly on the
- * current defensive ceiling (688.5 HP / 65.9 Armor / 46.7 MR).
+ * Experimental real-stat reallocations.
  *
- * Fine probes intentionally use 0 naked Armor / 0 naked MR: if the hero is
- * unequipped, all mitigation is expected to come from actual equipment.
- * The MR solve preserves the T3 cape's fixed 4 MR separately from scalable T4
- * armor pieces.
+ * Core armor and off-hand are solved independently so the current T4.3 ceiling
+ * is preserved for BOTH weapon handling models:
+ * - 2H: head + chest + boots + cape, no off-hand;
+ * - 1H: same core set + reinforced shield.
+ *
+ * This keeps every moved stat as real authored equipment power, fully scalable
+ * through normal IP, while preventing a Broadsword+shield calibration from
+ * silently nerfing two-handed weapons.
  */
+const makeReallocation = (
+  id: string,
+  label: string,
+  hero: CombatBalanceSyntheticHeroDefinition,
+): CombatBalanceReallocationDefinition => ({
+  id,
+  label,
+  hero,
+  equipmentStatMultiplier: {
+    // Current 2H T4.3 ceiling: 688.5 HP / 46.4 Armor / 35 MR.
+    maxHealth: (688.5 - hero.maxHealth) / (145 * 1.3),
+    armor: (46.4 - hero.armor) / (28 * 1.3),
+    // Cape T3 contributes 4 MR without enchantment; T4 core contributes 20 MR.
+    magicResistance: (35 - hero.magicResistance) / (4 + 20 * 1.3),
+  },
+  // Preserve authored shield contribution itself. Once the shared 2H/core
+  // ceiling is preserved, keeping shield stats unchanged also preserves the
+  // current 1H+shield T4.3 ceiling (65.9 Armor / 46.7 MR).
+  offHandStatMultiplier: { maxHealth: 1, armor: 1, magicResistance: 1 },
+});
+
 export const COMBAT_BALANCE_REALLOCATIONS: readonly CombatBalanceReallocationDefinition[] = [
   {
     id: "current",
     label: "Actuel",
     hero: { maxHealth: 500, armor: 10, magicResistance: 5 },
     equipmentStatMultiplier: { maxHealth: 1, armor: 1, magicResistance: 1 },
+    offHandStatMultiplier: { maxHealth: 1, armor: 1, magicResistance: 1 },
   },
-  {
-    id: "reallocation_light",
-    label: "Réallocation légère",
-    hero: { maxHealth: 440, armor: 8, magicResistance: 4 },
-    equipmentStatMultiplier: {
-      maxHealth: 1.3183023872679045,
-      armor: 1.0357781753130593,
-      magicResistance: 1.023980815347722,
-    },
-  },
-  {
-    id: "reallocation_medium",
-    label: "Réallocation moyenne",
-    hero: { maxHealth: 400, armor: 6, magicResistance: 3 },
-    equipmentStatMultiplier: {
-      maxHealth: 1.530503978779841,
-      armor: 1.071556350626118,
-      magicResistance: 1.0479616306954436,
-    },
-  },
-  {
-    id: "reallocation_strong",
-    label: "Réallocation forte",
-    hero: { maxHealth: 360, armor: 4, magicResistance: 2 },
-    equipmentStatMultiplier: {
-      maxHealth: 1.742705570291777,
-      armor: 1.1073345259391771,
-      magicResistance: 1.0719424460431655,
-    },
-  },
-  {
-    id: "reallocation_probe_340",
-    label: "Seuil 340 HP",
-    hero: { maxHealth: 340, armor: 3, magicResistance: 1.5 },
-    equipmentStatMultiplier: {
-      maxHealth: 1.8488063660477454,
-      armor: 1.1252236135957068,
-      magicResistance: 1.0839328537170263,
-    },
-  },
-  {
-    id: "reallocation_probe_320",
-    label: "Seuil 320 HP",
-    hero: { maxHealth: 320, armor: 2, magicResistance: 1 },
-    equipmentStatMultiplier: {
-      maxHealth: 1.9549071618037135,
-      armor: 1.1431127012522362,
-      magicResistance: 1.0959232613908874,
-    },
-  },
-  ...([300, 305, 310, 315] as const).map((maxHealth) => ({
-    id: `reallocation_probe_${String(maxHealth)}_zero_def`,
-    label: `${String(maxHealth)} HP · 0 Armor/MR`,
-    hero: { maxHealth, armor: 0, magicResistance: 0 },
-    equipmentStatMultiplier: {
-      maxHealth: (688.5 - maxHealth) / (145 * 1.3),
-      armor: 65.9 / (43 * 1.3),
-      magicResistance: (46.7 - 4) / (29 * 1.3),
-    },
-  })),
+  makeReallocation("reallocation_light", "Réallocation légère", { maxHealth: 440, armor: 8, magicResistance: 4 }),
+  makeReallocation("reallocation_medium", "Réallocation moyenne", { maxHealth: 400, armor: 6, magicResistance: 3 }),
+  makeReallocation("reallocation_strong", "Réallocation forte", { maxHealth: 360, armor: 4, magicResistance: 2 }),
+  makeReallocation("reallocation_probe_340", "Seuil 340 HP", { maxHealth: 340, armor: 3, magicResistance: 1.5 }),
+  makeReallocation("reallocation_probe_320", "Seuil 320 HP", { maxHealth: 320, armor: 2, magicResistance: 1 }),
+  ...([300, 305, 310, 315] as const).map((maxHealth) =>
+    makeReallocation(
+      `reallocation_probe_${String(maxHealth)}_zero_def`,
+      `${String(maxHealth)} HP · 0 Armor/MR`,
+      { maxHealth, armor: 0, magicResistance: 0 },
+    ),
+  ),
 ] as const;
