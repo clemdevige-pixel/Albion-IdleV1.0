@@ -32,18 +32,18 @@ const PLOT_VISUALS: readonly IslandPlotVisual[] = [
 ] as const;
 
 const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
-  worker_house: "/assets/island/buildings/worker_house.png",
-  storage: "/assets/island/buildings/storage.png",
-  lumber_camp: "/assets/island/buildings/lumber_camp.png",
-  mine: "/assets/island/buildings/mine.png",
-  hunting_camp: "/assets/island/buildings/hunting_camp.png",
-  fiber_camp: "/assets/island/buildings/fiber_camp.png",
-  sawmill: "/assets/island/buildings/sawmill.png",
-  smelter: "/assets/island/buildings/smelter.png",
-  tannery: "/assets/island/buildings/tannery.png",
-  weaver: "/assets/island/buildings/weaver.png",
-  workshop: "/assets/island/buildings/workshop.png",
-  constructible: "/assets/island/buildings/constructible.png",
+  worker_house: "/assets/worker_house.png",
+  storage: "/assets/storage.png",
+  lumber_camp: "/assets/lumber_camp.png",
+  mine: "/assets/mine.png",
+  hunting_camp: "/assets/hunting_camp.png",
+  fiber_camp: "/assets/fiber_camp.png",
+  sawmill: "/assets/sawmill.png",
+  smelter: "/assets/smelter.png",
+  tannery: "/assets/tannery.png",
+  weaver: "/assets/weaver.png",
+  workshop: "/assets/workshop.png",
+  constructible: "/assets/constructible.png",
 };
 
 function assetStyle(assetId: IslandBuildingId | "constructible", scale: number): CSSProperties {
