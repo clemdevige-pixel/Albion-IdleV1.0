@@ -51,7 +51,7 @@ export function IslandModule(): JSX.Element {
 
   if (selectedBuilding !== undefined) {
     return (
-      <div className="ui-island">
+      <div className="ui-island ui-island--detail">
         <IslandOverviewButton onClick={clearSelection} />
         <BuildingSummary definitionId={selectedBuilding.definitionId} level={selectedBuilding.level} />
       </div>
@@ -60,7 +60,7 @@ export function IslandModule(): JSX.Element {
 
   if (selectedPlotId !== null) {
     return (
-      <div className="ui-island">
+      <div className="ui-island ui-island--detail">
         <IslandOverviewButton onClick={clearSelection} />
         <ConstructionPanel
           plotId={selectedPlotId}
@@ -97,7 +97,9 @@ export function IslandModule(): JSX.Element {
 function IslandOverviewButton({ onClick }: { readonly onClick: () => void }): JSX.Element {
   return (
     <button type="button" className="ui-island__overview-button" onClick={onClick}>
-      ← Vue d'ensemble de l'île
+      <span aria-hidden="true" className="ui-island__overview-button-icon">←</span>
+      <strong>Vue d'ensemble de l'île</strong>
+      <span aria-hidden="true" className="ui-island__overview-button-mark">◆</span>
     </button>
   );
 }
