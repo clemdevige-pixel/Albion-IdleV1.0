@@ -16,24 +16,24 @@ interface IslandPlotVisual {
 }
 
 /**
- * Visual anchors for the 12 grassy parcels authored into island-background.webp.
- * Coordinates deliberately sit inside the parcel footprint (toward its lower half),
- * so the building ground line remains on grass instead of on the separating roads.
- * Array order follows PLAYER_ISLAND_CONFIG.plots.
+ * Eleven visual ground anchors measured from the authored 1600x900 island source.
+ * Order is 3 upper parcels, 4 middle parcels, then 4 lower parcels.
+ * `top` is the building ground line, deliberately placed in the lower half of grass.
  */
 const PLOT_VISUALS: readonly IslandPlotVisual[] = [
-  { left: 27.0, top: 35.0, scale: 0.98 },
-  { left: 48.5, top: 31.0, scale: 1.02 },
-  { left: 70.5, top: 35.0, scale: 0.98 },
-  { left: 84.0, top: 42.5, scale: 0.94 },
-  { left: 19.5, top: 53.5, scale: 0.96 },
-  { left: 39.0, top: 50.5, scale: 1.00 },
-  { left: 60.5, top: 51.0, scale: 1.00 },
-  { left: 79.0, top: 56.5, scale: 0.96 },
-  { left: 22.0, top: 70.5, scale: 0.96 },
-  { left: 42.0, top: 68.5, scale: 1.00 },
-  { left: 63.0, top: 69.0, scale: 0.99 },
-  { left: 78.0, top: 73.5, scale: 0.94 },
+  { left: 28.4, top: 29.5, scale: 0.98 },
+  { left: 53.1, top: 27.5, scale: 1.02 },
+  { left: 76.7, top: 31.5, scale: 0.98 },
+
+  { left: 20.6, top: 46.5, scale: 0.96 },
+  { left: 40.0, top: 47.5, scale: 1.00 },
+  { left: 60.3, top: 47.5, scale: 1.00 },
+  { left: 82.5, top: 51.0, scale: 0.96 },
+
+  { left: 22.8, top: 68.2, scale: 0.96 },
+  { left: 41.9, top: 70.5, scale: 1.00 },
+  { left: 62.5, top: 70.5, scale: 0.99 },
+  { left: 81.5, top: 72.5, scale: 0.96 },
 ] as const;
 
 const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
