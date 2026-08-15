@@ -62,15 +62,11 @@ export class WorldNavigationActions {
   }
 
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
-    const activeZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
-    if (zoneNumber === activeZoneNumber) {
-      return this.queueManualSegmentChange(segmentNumber ?? 1);
-    }
-
     if (!this.deps.worldRuntime.selectZone(zoneNumber, segmentNumber)) return false;
 
-    this.interruptEncounterForTravel();
-    this.deps.combatRuntime.restoreHeroHealth();
+    // All player-directed travel is queued by WorldRuntime, including cross-zone
+    // destinations. Keep the current combat untouched until segment completion
+    // (or defeat, which ends the current attempt).
     this.deps.updateWorldBridge();
     return true;
   }
