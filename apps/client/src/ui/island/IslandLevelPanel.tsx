@@ -10,7 +10,7 @@ import {
 import "./islandLevel.css";
 
 export function IslandLevelPanel(): JSX.Element {
-  const { island, wallet } = useGameBridge();
+  const { wallet } = useGameBridge();
   const {
     getIslandLevel,
     upgradeIslandLevel,
@@ -32,20 +32,12 @@ export function IslandLevelPanel(): JSX.Element {
         <div>
           <span className="ui-island__eyebrow">Progression de l'île</span>
           <strong>Île niveau {String(level)} · {current.label}</strong>
-          <small>Niveau maximum actuellement authoré</small>
+          <small>Niveau maximum actuellement authoré · bâtiments jusqu'au niveau {String(current.maxBuildingLevel)}</small>
         </div>
       </section>
     );
   }
 
-  const requirement = next.requirementToReach;
-  const developedBuildings = requirement === undefined
-    ? island.buildings.length
-    : island.buildings.filter((building) => building.level >= requirement.buildingLevel).length;
-  const developmentReady = requirement === undefined || (
-    island.buildings.length >= requirement.minimumBuildings
-    && developedBuildings >= requirement.minimumBuildingsAtLevel
-  );
   const worldRequirement = next.worldRequirementToReach;
   const worldReady = worldRequirement === undefined || isWorldRequirementMet(worldRequirement);
   const cost = next.upgradeCost;
@@ -56,7 +48,7 @@ export function IslandLevelPanel(): JSX.Element {
   const economyReady = cost !== undefined
     && wallet.silver >= cost.silver
     && materials.every((entry) => entry.available >= entry.quantity);
-  const canUpgrade = developmentReady && worldReady && economyReady;
+  const canUpgrade = worldReady && economyReady;
 
   return (
     <section className="ui-island-level">
@@ -69,23 +61,11 @@ export function IslandLevelPanel(): JSX.Element {
         <span className="ui-island__level">Niv. {String(level)}</span>
       </div>
 
-      {(requirement !== undefined || worldRequirement !== undefined) && (
+      {worldRequirement !== undefined && (
         <div className="ui-island-level__requirements">
-          {requirement !== undefined && (
-            <>
-              <span className={island.buildings.length >= requirement.minimumBuildings ? "is-ready" : "is-missing"}>
-                Bâtiments {String(island.buildings.length)} / {String(requirement.minimumBuildings)}
-              </span>
-              <span className={developedBuildings >= requirement.minimumBuildingsAtLevel ? "is-ready" : "is-missing"}>
-                Bâtiments niv. {String(requirement.buildingLevel)}+ {String(developedBuildings)} / {String(requirement.minimumBuildingsAtLevel)}
-              </span>
-            </>
-          )}
-          {worldRequirement !== undefined && (
-            <span className={worldReady ? "is-ready" : "is-missing"}>
-              Monde · {worldRequirement.label}
-            </span>
-          )}
+          <span className={worldReady ? "is-ready" : "is-missing"}>
+            Monde · {worldRequirement.label}
+          </span>
         </div>
       )}
 
@@ -103,17 +83,15 @@ export function IslandLevelPanel(): JSX.Element {
       )}
 
       <div className="ui-island-level__unlocks">
-        Débloque : {next.unlockedCategories.filter((category) => !current.unlockedCategories.includes(category)).join(", ") || "capacités transversales"}
+        Débloque : amélioration des bâtiments jusqu'au niveau {String(next.maxBuildingLevel)}
       </div>
 
       <button type="button" disabled={!canUpgrade} onClick={() => { upgradeIslandLevel(); }}>
         {!worldReady
           ? worldRequirement?.label ?? "Progression Monde insuffisante"
-          : !developmentReady
-            ? "Développement insuffisant"
-            : !economyReady
-              ? "Ressources insuffisantes"
-              : `Améliorer l'île au niveau ${String(next.level)}`}
+          : !economyReady
+            ? "Ressources insuffisantes"
+            : `Améliorer l'île au niveau ${String(next.level)}`}
       </button>
     </section>
   );
