@@ -15,22 +15,24 @@ export interface ZoneCombatCurve {
 }
 
 /**
- * Blue progression contract:
- * - Forest is comfortable in T3.0.
- * - Mid/late Dark Swamp is the first real T4 pressure point. Optimised T3.0 can
- *   still finish the zone, but the final stretch is expected to use potions.
- * - T4.0 restores comfort after the transition, then T4.1 is progressively
- *   pressured through Steppe/Mountain.
- * - Mountain S10 is a difficult T4.2 clear with potion usage.
- * - T4.3 should remove the potion dependency and provide AFK/farm headroom.
+ * Blue progression contract (live CombatRuntime is the balance source of truth):
+ * - Birch Forest: starter weapon only, discovery, no real friction.
+ * - Early Dark Swamp: first meaningful starter wall.
+ * - Swamp S2-S6: 1-2 T3 armor crafts should buy a few segments each.
+ * - Swamp S6-S10: quasi/full T3 consolidation.
+ * - Swamp S10: full T3 must be clearable without a potion.
+ * - Highlands: T3 -> first T4 transition.
+ * - Steppe: full T4.0 / first enchantments.
+ * - Frostpeak: T4.1 -> T4.2, with T4.2 able to clear S10 and T4.3 providing comfort.
  *
- * These values are crossed against the synthetic offensive/defensive player
- * envelope. Potions are part of the difficult-clear budget; the full heal before
- * encounter five remains a separate runtime rule.
+ * Forest/Swamp are calibrated first. Later Blue zones intentionally keep their
+ * previous values until the T3 progression block is validated in live runtime.
  */
 export const BLUE_WORLD_COMBAT_CURVE = [
-  { healthStart: 0.9, healthEnd: 1.15, damageStart: 0.75, damageEnd: 1.2, defenseStart: 0.9, defenseEnd: 1.0 },
-  { healthStart: 1.15, healthEnd: 1.7, damageStart: 1.2, damageEnd: 2.6, defenseStart: 1.0, defenseEnd: 1.15 },
+  // Forest: lower late-zone pressure so every starter weapon can finish the tutorial/discovery zone.
+  { healthStart: 0.86, healthEnd: 1.02, damageStart: 0.66, damageEnd: 0.9, defenseStart: 0.86, defenseEnd: 0.94 },
+  // Swamp: preserve an early naked wall, but flatten the old late damage spike so T3 armor progression matters.
+  { healthStart: 1.08, healthEnd: 1.48, damageStart: 1.05, damageEnd: 1.32, defenseStart: 0.96, defenseEnd: 1.08 },
   { healthStart: 1.7, healthEnd: 2.3, damageStart: 2.6, damageEnd: 3.0, defenseStart: 1.15, defenseEnd: 1.3 },
   { healthStart: 2.3, healthEnd: 3.1, damageStart: 3.0, damageEnd: 3.3, defenseStart: 1.3, defenseEnd: 1.5 },
   { healthStart: 3.1, healthEnd: 4.0, damageStart: 3.3, damageEnd: 3.5, defenseStart: 1.5, defenseEnd: 1.8 },
