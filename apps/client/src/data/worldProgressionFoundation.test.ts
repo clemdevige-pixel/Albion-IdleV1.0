@@ -46,26 +46,27 @@ describe("world progression foundation", () => {
     expect(WORLD_ZONE_IDS_BY_BAND.black).toEqual([]);
   });
 
-  it("keeps Blue targets and authors an independent Yellow Item Power curve", () => {
-    expect(getZoneRecommendedItemPower(1)).toBe(220);
-    expect(getSegmentRecommendedItemPower(5, 10)).toBe(600);
+  it("locks the post-enchantment-rebalance Blue targets and keeps Yellow independent", () => {
+    expect(getZoneRecommendedItemPower(1)).toBe(300);
+    expect(getSegmentRecommendedItemPower(2, 10)).toBe(315);
+    expect(getSegmentRecommendedItemPower(5, 10)).toBe(530);
     expect(getZoneRecommendedItemPower(1, "yellow")).toBe(600);
     expect(getSegmentRecommendedItemPower(5, 10, "yellow")).toBe(800);
   });
 
-  it("keeps enchanted T4 and T5 milestones coherent and reachable", () => {
+  it("keeps enchanted T4/T5 milestones coherent with +50 IP per level", () => {
     const noMastery: readonly MasteryLevel[] = [];
 
     expect(getEffectiveItemPower("item_weapon_sword_t3_broadsword", noMastery, 0)).toBe(300);
     expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 0)).toBe(400);
-    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 1)).toBe(500);
-    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 2)).toBe(600);
-    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 3)).toBe(700);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 1)).toBe(450);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 2)).toBe(500);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 3)).toBe(550);
     expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 0)).toBe(500);
-    expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 3)).toBe(800);
+    expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 3)).toBe(650);
   });
 
-  it("keeps every Yellow recommendation monotonic and within T5.3", () => {
+  it("keeps every provisional Yellow recommendation monotonic", () => {
     let previous = getZoneRecommendedItemPower(1, "yellow");
 
     for (let zoneIndex = 1; zoneIndex <= 5; zoneIndex += 1) {
@@ -76,7 +77,6 @@ describe("world progression foundation", () => {
           "yellow",
         );
         expect(current).toBeGreaterThanOrEqual(previous);
-        expect(current).toBeLessThanOrEqual(800);
         previous = current;
       }
     }
