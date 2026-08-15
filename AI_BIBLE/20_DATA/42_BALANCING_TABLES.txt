@@ -4,601 +4,177 @@
 
 # Purpose
 
-The Balancing Tables document defines every numerical progression table used by the game.
+This document describes the balancing-data architecture that is actually used by Albion Idle.
 
-Balancing Tables centralize progression values and mathematical curves outside gameplay systems.
-
-Instead of hardcoding numbers into systems, every scalable value references one or more balancing tables.
-
-Examples include:
-
-- Experience Requirements
-- Health Scaling
-- Damage Scaling
-- Reward Scaling
-- Cycle Multipliers
-- Crafting Time
-- Gathering Speed
-- Repair Cost
-- Economy Values
-
-Balancing Tables are shared across the entire project.
+The project is data-driven, but it does not require every number to live inside one generic table engine. The source of truth is the authored data/catalog/config module that owns the concern, while gameplay/runtime systems consume that data without carrying zone- or weapon-specific tuning branches.
 
 ---
 
-# Design Philosophy
+# 1. Rules
 
-The Balancing Table system follows seven principles.
-
----
-
-## Single Source of Truth
-
-Every scalable value exists in exactly one table.
-
-Gameplay systems never duplicate progression values.
+1. A tunable value has one authoritative authored source.
+2. Gameplay/runtime code must not duplicate tuning data.
+3. Renderer/UI code must never own gameplay balance.
+4. Benchmarks consume the same authored data and runtime systems as the game whenever possible.
+5. A semantic progression contract is documented separately from raw multipliers.
+6. Old synthetic snapshots are not balancing tables and must not become sources of truth.
+7. Future regions, tiers, weapons and off-hands extend existing catalogs/configs rather than creating mode-specific hardcoded branches.
 
 ---
 
-## Fully Data Driven
+# 2. Current combat balancing sources
 
-Every balancing value is stored externally.
+ZONE / WORLD-BAND CURVES
+Authoritative module:
+- packages/data/src/config/combat-progression.ts
 
-Changing progression never requires modifying gameplay code.
+Responsibilities:
+- segments per zone;
+- encounters per segment;
+- encounter growth;
+- per-world-band zone combat curves;
+- health / damage / defense start and end multipliers;
+- reward-rank offsets.
 
----
+Current authored Blue curve:
+- Birch Forest: health 0.90 -> 1.08; damage 0.72 -> 0.98; defense 0.90 -> 0.98
+- Dark Swamp: health 1.15 -> 1.55; damage 1.18 -> 1.80; defense 1.00 -> 1.10
+- Stone Highlands: health 1.70 -> 2.30; damage 2.60 -> 3.00; defense 1.15 -> 1.30
+- Golden Steppe: health 2.30 -> 3.02; damage 3.00 -> 3.18; defense 1.30 -> 1.46
+- Frostpeak / Mountain: health 3.10 -> 4.00; damage 3.30 -> 3.50; defense 1.50 -> 1.80
 
-## Shared
-
-Multiple systems may reference the same table.
-
-Example:
-
-```
-Standard XP Table
-
-↓
-
-Sword Mastery
-
-↓
-
-Bow Mastery
-
-↓
-
-Axe Mastery
-```
+These numbers are tuning data. The intended difficulty meaning is defined in 20A_COMBAT_BALANCING_PROCESS.txt.
 
 ---
 
-## Deterministic
+# 3. Equipment / weapon sources
 
-Tables contain predefined values only.
+EQUIPMENT AND ITEM STATS
+Authoritative client content access:
+- apps/client/src/data/itemContentCatalog.ts
 
-No balancing table generates runtime randomness.
+WEAPON CONTENT / MASTERY / ABILITIES
+Authoritative client content access:
+- apps/client/src/data/weaponContentCatalog.ts
+- apps/client/src/data/weaponAbilityMechanics.ts
+- apps/client/src/data/itemPower.ts
+
+ENCHANTMENT SCALING
+Authoritative gameplay functions are consumed directly by equipment/runtime and benchmark code. Do not duplicate enchantment multipliers inside tests.
+
+DEFENSIVE REFERENCE LADDER
+Protected by:
+- apps/client/src/data/defensiveEquipmentBalance.test.ts
+
+The naked baseline is 300 HP / 0 Armor / 0 MR. Equipment supplies the defensive progression.
 
 ---
 
-## Modular
+# 4. Benchmark data architecture
 
-Each table represents one balancing concern.
+LIVE PLAYER-VS-ZONE BENCHMARK
+- apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts
+
+The harness accepts any authored ZoneDefinitionId and runs the exact live CombatRuntime. It is deliberately world-band agnostic.
+
+WEAPON DIAGNOSTICS
+- apps/client/src/data/weaponIdealBenchmark.ts
+- apps/client/src/data/weaponPackageBenchmark.ts
+
+The benchmark architecture separates:
+- intrinsic weapon offense;
+- neutral armor package;
+- explicit real loadout including an optional off-hand.
+
+This separation is mandatory for future 1H/off-hand balancing.
+
+---
+
+# 5. How to add a future zone
+
+Do NOT create a new region-specific runtime harness.
+
+Procedure:
+1. Author the zone and its placement in the existing world content data.
+2. Author/extend its world-band combat curve in combat-progression.ts.
+3. Define the expected gear/mastery/potion checkpoints in a zone progression sweep.
+4. Call runCombatRuntimeBenchmark with the new ZoneDefinitionId.
+5. Compare representative weapons/loadouts.
+6. Tune the authored curve only after checking whether an isolated failure is actually a weapon-package issue.
+7. Add semantic regression assertions/checkpoints once the contract is validated.
+
+The same process applies to Yellow, Red, Black and future bands.
+
+---
+
+# 6. How to add a future weapon
+
+Procedure:
+1. Author item stats, handling, attack speed, abilities and mastery route in existing catalogs/data.
+2. Run buildWeaponOnlyBenchmark(...) against the intended comparison set.
+3. Run buildWeaponPackageBenchmark(...) with a neutral armor loadout.
+4. Run buildWeaponPackageBenchmark(...) again for explicit real loadouts.
+5. If the weapon is 1H, test the relevant off-hand combinations explicitly. Never assume that 1H means Reinforced Shield.
+6. Validate real progression checkpoints through CombatRuntimeBenchmarkHarness.
+7. Accept identity-driven variation when same-class performance remains roughly within the agreed 5-10% envelope or when a larger difference is justified by an explicit package tradeoff.
+
+---
+
+# 7. What belongs in authored balance data
 
 Examples:
+- enemy health/damage/defense curves;
+- equipment base stats;
+- weapon base damage and cadence;
+- ability ratios, cooldowns and conditions;
+- mastery progression values;
+- enchantment scaling;
+- potion heal/cooldown values;
+- gathering/refining/crafting costs and durations;
+- reward/drop/economy values.
 
-- XP
-- Damage
-- Health
-- Rewards
-
-They remain completely independent.
-
----
-
-## Easy To Tune
-
-Designers should be able to rebalance the game by editing tables without touching gameplay logic.
-
----
-
-## Extensible
-
-New balancing tables may be introduced at any time without impacting existing systems.
+What does NOT belong in balance data:
+- temporary benchmark compensation;
+- renderer-only multipliers;
+- weapon-name conditions inside CombatRuntime;
+- ACTIVE-only/AFK-only stat hacks;
+- duplicated copies of live formulas in tests.
 
 ---
 
-# Responsibilities
+# 8. Interpolation and curve semantics
 
-Balancing Tables define:
+Combat zone curves currently use authored start/end values and the existing progression interpolation/runtime pipeline.
 
-- Numerical Progression
-- Multipliers
-- Curves
-- Lookup Values
-- Shared Progression Data
+Do not create bespoke per-segment values unless a real design need cannot be represented by the existing curve architecture. Prefer the smallest data-driven curve change that achieves the progression contract.
 
-Balancing Tables do NOT define:
-
-- Gameplay Logic
-- Runtime State
-- Character Statistics
-- Enemy Definitions
-- Item Definitions
+A structural monotonic curve does not prove good balance. Runtime checkpoint results are the authority for player-facing difficulty.
 
 ---
 
-# Table Definition
+# 9. Versioning / change discipline
 
-Every Balancing Table contains:
+For a meaningful balance change:
+1. record the design intent;
+2. modify the authoritative authored data;
+3. run targeted runtime/weapon benchmarks;
+4. run regression tests;
+5. update 20A when the progression contract changes;
+6. update this document only when the balancing architecture/source-of-truth layout changes;
+7. append the decision log for durable design changes.
 
-```text
-ID
-
-↓
-
-Table Type
-
-↓
-
-Lookup Values
-
-↓
-
-Interpolation Mode
-
-↓
-
-Tags
-```
+Do not turn every temporary tuning iteration into a permanent design rule.
 
 ---
 
-# Identifier
+# 10. Current deprecated balance artifacts
 
-Every Balancing Table owns one globally unique identifier.
+The old synthetic combatBalanceMatrix reallocation tool is obsolete and has been removed. It used synthetic hero baselines and partial weapon sets that no longer represent the live game.
 
-Examples:
-
-```
-xp_table_mastery_standard
-
-health_scaling_cycle
-
-reward_scaling_zone
-
-repair_cost_table
-
-crafting_time_table
-```
-
----
-
-# Table Types
-
-Version 1 supports:
-
-- Experience
-- Scaling
-- Multiplier
-- Cost
-- Duration
-- Probability
-
-Future versions may introduce additional categories.
-
----
-
-# Lookup Method
-
-Tables are accessed using keys.
-
-Examples:
-
-```
-Level
-
-↓
-
-Experience
-```
-
-or
-
-```
-Cycle
-
-↓
-
-Multiplier
-```
-
-or
-
-```
-Tier
-
-↓
-
-Repair Cost
-```
-
-Gameplay systems never calculate values internally.
-
----
-
-# Table Format
-
-Every table follows the same structure.
-
-Example:
-
-```json
-{
-    "id": "xp_table_mastery_standard",
-    "type": "Experience",
-    "entries": [
-        {
-            "key": 1,
-            "value": 100
-        },
-        {
-            "key": 2,
-            "value": 250
-        },
-        {
-            "key": 3,
-            "value": 450
-        }
-    ]
-}
-```
-
----
-
-# Interpolation
-
-Version 1 supports two lookup modes.
-
----
-
-## Exact Lookup
-
-The requested key must exist.
-
-Example:
-
-```
-Tier 4
-
-↓
-
-120 Silver
-```
-
----
-
-## Continuous Lookup
-
-Values may be interpolated.
-
-Example:
-
-```
-Cycle 5
-
-↓
-
-1.35
-
-Cycle 6
-
-↓
-
-1.42
-```
-
-Interpolation method:
-
-```
-Linear
-```
-
----
-
-# Experience Tables
-
-Shared by Masteries.
-
-Example:
-
-```
-Mastery
-
-↓
-
-XP Table
-
-↓
-
-XP Requirement
-```
-
----
-
-# Scaling Tables
-
-Used by:
-
-- Enemy Health
-- Enemy Damage
-- Reward Multipliers
-- Cycle Scaling
-
-These tables work together with the Progress Scaling System.
-
----
-
-# Economy Tables
-
-Examples:
-
-- Vendor Multipliers
-- Repair Costs
-- Construction Costs
-
-Economic rules remain external.
-
----
-
-# Duration Tables
-
-Examples:
-
-- Crafting Time
-- Refining Time
-- Building Construction
-- Worker Production
-
----
-
-# Probability Tables
-
-Used when probability changes according to progression.
-
-Examples:
-
-- Rare Drop Bonus
-- Gathering Bonus
-- Future Event Chances
-
-Version 1 uses these sparingly.
-
----
-
-# Versioning
-
-Every table contains:
-
-```
-Version
-
-↓
-
-Source
-
-↓
-
-Last Modified
-```
-
-These values assist balancing workflows.
-
----
-
-# Runtime Representation
-
-```
-Balancing Table
-
-↓
-
-Lookup Request
-
-↓
-
-Value Returned
-
-↓
-
-Gameplay System
-```
-
-Tables never contain runtime state.
-
----
-
-# Validation
-
-Validation checks:
-
-- Unique ID
-- Valid Table Type
-- Ordered Keys
-- Duplicate Keys
-- Valid Numeric Values
-- Existing References
-
-Invalid tables never load.
-
----
-
-# Unsupported Features
-
-Version 1 does not support:
-
-- Scripted Curves
-- Formula Parsing
-- Runtime Editing
-- Recursive Tables
-- Procedural Balancing
-- External Database Queries
-
----
-
-# Example Definition
-
-```json
-{
-    "id": "health_scaling_cycle",
-    "type": "Scaling",
-    "interpolation": "Linear",
-    "entries": [
-        {
-            "key": 1,
-            "value": 1.00
-        },
-        {
-            "key": 2,
-            "value": 1.10
-        },
-        {
-            "key": 3,
-            "value": 1.22
-        },
-        {
-            "key": 4,
-            "value": 1.36
-        }
-    ],
-    "tags": [
-        "health",
-        "cycle",
-        "scaling"
-    ],
-    "source": "core",
-    "version": 1
-}
-```
-
----
-
-# Runtime Lifecycle
-
-```
-Load Tables
-
-↓
-
-Validate
-
-↓
-
-Register
-
-↓
-
-Gameplay Requests Value
-
-↓
-
-Lookup
-
-↓
-
-Return Value
-
-↓
-
-Continue Gameplay
-```
-
-Definitions remain immutable.
-
----
-
-# Acceptance Criteria
-
-The Balancing Tables document is complete when:
-
-- Every table has a unique identifier.
-- Table Types are predefined.
-- Keys are ordered.
-- Duplicate keys are rejected.
-- Lookup modes are configurable.
-- Shared references are supported.
-- Runtime state remains separate.
-- Validation guarantees integrity.
-
----
-
-# Immutable Design Rules
-
-Rule 01
-
-Every Balancing Table is completely data-driven.
-
-Rule 02
-
-Gameplay systems never hardcode progression values.
-
-Rule 03
-
-Every scalable value belongs to one Balancing Table.
-
-Rule 04
-
-Tables are referenced exclusively through identifiers.
-
-Rule 05
-
-Lookup keys are deterministic.
-
-Rule 06
-
-Interpolation is optional.
-
-Rule 07
-
-Tables never contain gameplay logic.
-
-Rule 08
-
-Tables never contain runtime state.
-
-Rule 09
-
-Validation prevents duplicate or invalid entries.
-
-Rule 10
-
-Tables remain immutable after loading.
-
-Rule 11
-
-Every table supports versioning.
-
-Rule 12
-
-Every table may declare its content source.
-
-Rule 13
-
-Future balancing categories must remain compatible with the shared data architecture.
-
-Rule 14
-
-Gameplay systems consume tables but never modify them.
-
-Rule 15
-
-Balancing data remains centralized throughout the entire project.
+The old Blue-specific runtime harness is obsolete and has been replaced by CombatRuntimeBenchmarkHarness so future world bands reuse the exact same tool.
 
 ---
 
 # Summary
 
-The Balancing Tables document establishes a centralized, deterministic and fully data-driven architecture for every numerical progression used throughout the game. By separating progression values, scaling curves, multipliers and lookup data from gameplay systems, it creates a single source of truth that simplifies balancing, improves maintainability and allows designers to tune the game's economy, progression and combat without modifying code. This document completes the Data Architecture by providing the mathematical foundation shared across all gameplay systems.
-
-=========================
-DOCUMENT TERMINÉ
-=========================
+Albion Idle balance is data-driven through domain-owned catalogs/configuration, validated by a generic live-runtime benchmark and generic weapon-package diagnostics. Future zones and weapons extend these existing sources and tools rather than creating new special-case systems.
