@@ -6,11 +6,10 @@ import {
 } from "@game/gameplay";
 import {
   COMBAT_BALANCE_CHECKPOINTS,
-  COMBAT_BALANCE_COVERAGE_INTERVENTIONS,
   COMBAT_BALANCE_LOADOUTS,
-  COMBAT_BALANCE_SYNTHETIC_HERO,
-  type CombatBalanceCoverageInterventionDefinition,
+  COMBAT_BALANCE_REALLOCATIONS,
   type CombatBalanceLoadoutDefinition,
+  type CombatBalanceReallocationDefinition,
 } from "./combatBalanceMatrix.js";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { getItemTier, getWeaponAttackSpeed } from "./itemPower.js";
@@ -44,7 +43,7 @@ interface ProjectedCheckpointResult {
 
 const capResistance = (value: number): number => Math.min(80, Math.max(0, value));
 
-function getEquipmentStatMultiplier(itemId: string, loadout: CombatBalanceLoadoutDefinition): number {
+function getIpMultiplier(itemId: string, loadout: CombatBalanceLoadoutDefinition): number {
   const tier = getItemTier(itemId);
   if (tier === undefined || tier < 4) return 1;
   return getEnchantmentStatMultiplier(loadout.enchantment);
@@ -52,38 +51,35 @@ function getEquipmentStatMultiplier(itemId: string, loadout: CombatBalanceLoadou
 
 function projectPlayer(
   loadout: CombatBalanceLoadoutDefinition,
-  intervention: CombatBalanceCoverageInterventionDefinition = COMBAT_BALANCE_COVERAGE_INTERVENTIONS[0],
+  reallocation: CombatBalanceReallocationDefinition = COMBAT_BALANCE_REALLOCATIONS[0],
 ): ProjectedPlayerProfile {
   const allItemIds = [loadout.weaponItemId, ...loadout.equipmentItemIds];
-  let maxHealth = COMBAT_BALANCE_SYNTHETIC_HERO.maxHealth - intervention.heroReduction.maxHealth;
-  let armor = COMBAT_BALANCE_SYNTHETIC_HERO.armor - intervention.heroReduction.armor;
-  let magicResistance = COMBAT_BALANCE_SYNTHETIC_HERO.magicResistance - intervention.heroReduction.magicResistance;
+  let maxHealth = reallocation.hero.maxHealth;
+  let armor = reallocation.hero.armor;
+  let magicResistance = reallocation.hero.magicResistance;
   let physicalDamage = 0;
   let magicalDamage = 0;
-  let recoverySlotCount = 0;
 
   for (const itemId of allItemIds) {
     const definition = resolveEquipmentInfo(itemId);
     if (definition === undefined) throw new Error(`Unknown balance item: ${itemId}`);
-    const multiplier = getEquipmentStatMultiplier(itemId, loadout);
+    const ipMultiplier = getIpMultiplier(itemId, loadout);
+    const defensiveMultiplier = definition.slot === "weapon"
+      ? { maxHealth: 1, armor: 1, magicResistance: 1 }
+      : reallocation.equipmentStatMultiplier;
     const stats = definition.stats ?? {};
-    maxHealth += (stats.stat_max_health ?? 0) * multiplier;
-    armor += (stats.stat_armor ?? 0) * multiplier;
-    magicResistance += (stats.stat_magic_resistance ?? 0) * multiplier;
-    physicalDamage += (stats.stat_physical_damage ?? 0) * multiplier;
-    magicalDamage += (stats.stat_magical_damage ?? 0) * multiplier;
 
-    if (
-      definition.slot !== "weapon"
-      && intervention.recoverySlots.includes(definition.slot)
-    ) {
-      recoverySlotCount += 1;
-    }
+    // Reallocation changes real authored equipment budgets first; normal IP
+    // scaling is then applied on top. No defensive stat bypasses IP.
+    maxHealth += (stats.stat_max_health ?? 0) * defensiveMultiplier.maxHealth * ipMultiplier;
+    armor += (stats.stat_armor ?? 0) * defensiveMultiplier.armor * ipMultiplier;
+    magicResistance +=
+      (stats.stat_magic_resistance ?? 0)
+      * defensiveMultiplier.magicResistance
+      * ipMultiplier;
+    physicalDamage += (stats.stat_physical_damage ?? 0) * ipMultiplier;
+    magicalDamage += (stats.stat_magical_damage ?? 0) * ipMultiplier;
   }
-
-  maxHealth += intervention.recoveryPerEquippedSlot.maxHealth * recoverySlotCount;
-  armor += intervention.recoveryPerEquippedSlot.armor * recoverySlotCount;
-  magicResistance += intervention.recoveryPerEquippedSlot.magicResistance * recoverySlotCount;
 
   const attackSpeed = getWeaponAttackSpeed(loadout.weaponItemId);
   if (attackSpeed === undefined) throw new Error(`Missing attack speed for ${loadout.weaponItemId}`);
@@ -168,9 +164,9 @@ function projectEncounter(
 function projectCheckpoint(
   loadout: CombatBalanceLoadoutDefinition,
   checkpoint: (typeof COMBAT_BALANCE_CHECKPOINTS)[number],
-  intervention: CombatBalanceCoverageInterventionDefinition = COMBAT_BALANCE_COVERAGE_INTERVENTIONS[0],
+  reallocation: CombatBalanceReallocationDefinition = COMBAT_BALANCE_REALLOCATIONS[0],
 ): ProjectedCheckpointResult {
-  const player = projectPlayer(loadout, intervention);
+  const player = projectPlayer(loadout, reallocation);
   const normalEncounters = [0, 1, 2, 3].map((encounterIndex) =>
     projectEncounter(
       player,
@@ -216,10 +212,10 @@ function getDeepestClear(results: readonly ProjectedCheckpointResult[]): string 
 }
 
 describe("data-driven combat balance matrix", () => {
-  it("resolves every authored loadout and checkpoint without test-owned balance thresholds", () => {
+  it("resolves every authored loadout/checkpoint/reallocation", () => {
     expect(COMBAT_BALANCE_LOADOUTS.length).toBeGreaterThan(0);
     expect(COMBAT_BALANCE_CHECKPOINTS.length).toBeGreaterThan(0);
-    expect(COMBAT_BALANCE_COVERAGE_INTERVENTIONS.length).toBeGreaterThan(0);
+    expect(COMBAT_BALANCE_REALLOCATIONS.length).toBeGreaterThan(0);
 
     for (const loadout of COMBAT_BALANCE_LOADOUTS) {
       expect(resolveEquipmentInfo(loadout.weaponItemId)).toBeDefined();
@@ -230,11 +226,12 @@ describe("data-driven combat balance matrix", () => {
     }
   });
 
-  it("projects the current early-Blue baseline for every authored loadout", () => {
+  it("projects the current early-Blue baseline", () => {
+    const current = COMBAT_BALANCE_REALLOCATIONS[0];
     const rows = COMBAT_BALANCE_LOADOUTS.map((loadout) => {
-      const player = projectPlayer(loadout);
+      const player = projectPlayer(loadout, current);
       const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) =>
-        projectCheckpoint(loadout, checkpoint),
+        projectCheckpoint(loadout, checkpoint, current),
       );
       return {
         id: loadout.id,
@@ -249,54 +246,27 @@ describe("data-driven combat balance matrix", () => {
     });
 
     console.table(rows);
-
-    for (const row of rows) {
-      expect(Number.isFinite(row.hp)).toBe(true);
-      expect(Number.isFinite(row.physicalEhp)).toBe(true);
-      expect(Number.isFinite(row.magicalEhp)).toBe(true);
-    }
-  });
-
-  it("reports marginal defensive value for each authored loadout stage", () => {
-    const rows = COMBAT_BALANCE_LOADOUTS.map((loadout) => {
-      const player = projectPlayer(loadout);
-      return {
-        id: loadout.id,
-        hp: Math.round(player.maxHealth),
-        armor: Number(player.armor.toFixed(1)),
-        magicResistance: Number(player.magicResistance.toFixed(1)),
-        physicalEhp: Math.round(player.physicalEffectiveHealth),
-        magicalEhp: Math.round(player.magicalEffectiveHealth),
-      };
-    });
-
-    console.table(rows);
     expect(rows.every((row) => row.physicalEhp > 0 && row.magicalEhp > 0)).toBe(true);
   });
 
-  it("compares data-driven under-equipped interventions while preserving full-set guardrails", () => {
-    const current = COMBAT_BALANCE_COVERAGE_INTERVENTIONS[0];
-    const currentGuardrails = new Map(
-      COMBAT_BALANCE_LOADOUTS
-        .filter((loadout) => loadout.role === "guardrail")
-        .map((loadout) => {
-          const player = projectPlayer(loadout, current);
-          return [loadout.id, player.physicalEffectiveHealth] as const;
-        }),
-    );
+  it("compares real-stat reallocations while pinning current T4.3 totals", () => {
+    const current = COMBAT_BALANCE_REALLOCATIONS[0];
+    const t43 = COMBAT_BALANCE_LOADOUTS.find((loadout) => loadout.id === "broadsword_t4_full_3");
+    if (t43 === undefined) throw new Error("Missing T4.3 ceiling loadout");
+    const ceiling = projectPlayer(t43, current);
 
-    const rows = COMBAT_BALANCE_COVERAGE_INTERVENTIONS.flatMap((intervention) =>
+    const rows = COMBAT_BALANCE_REALLOCATIONS.flatMap((reallocation) =>
       COMBAT_BALANCE_LOADOUTS.map((loadout) => {
-        const player = projectPlayer(loadout, intervention);
+        const player = projectPlayer(loadout, reallocation);
         const results = COMBAT_BALANCE_CHECKPOINTS.map((checkpoint) =>
-          projectCheckpoint(loadout, checkpoint, intervention),
+          projectCheckpoint(loadout, checkpoint, reallocation),
         );
         return {
-          intervention: intervention.id,
+          reallocation: reallocation.id,
           loadout: loadout.id,
-          role: loadout.role,
-          hp: Math.round(player.maxHealth),
+          hp: Number(player.maxHealth.toFixed(1)),
           armor: Number(player.armor.toFixed(1)),
+          mr: Number(player.magicResistance.toFixed(1)),
           physicalEhp: Math.round(player.physicalEffectiveHealth),
           deepestProjectedClear: getDeepestClear(results),
         };
@@ -305,12 +275,11 @@ describe("data-driven combat balance matrix", () => {
 
     console.table(rows);
 
-    for (const intervention of COMBAT_BALANCE_COVERAGE_INTERVENTIONS) {
-      for (const loadout of COMBAT_BALANCE_LOADOUTS.filter((candidate) => candidate.role === "guardrail")) {
-        const baselineEhp = currentGuardrails.get(loadout.id);
-        if (baselineEhp === undefined) throw new Error(`Missing baseline guardrail: ${loadout.id}`);
-        expect(projectPlayer(loadout, intervention).physicalEffectiveHealth).toBeCloseTo(baselineEhp, 8);
-      }
+    for (const reallocation of COMBAT_BALANCE_REALLOCATIONS) {
+      const candidateCeiling = projectPlayer(t43, reallocation);
+      expect(candidateCeiling.maxHealth).toBeCloseTo(ceiling.maxHealth, 8);
+      expect(candidateCeiling.armor).toBeCloseTo(ceiling.armor, 8);
+      expect(candidateCeiling.magicResistance).toBeCloseTo(ceiling.magicResistance, 8);
     }
   });
 });
