@@ -22,17 +22,15 @@ export interface ZoneCombatCurve {
  * - Swamp S6-S10: quasi/full T3 consolidation.
  * - Swamp S10: full T3 clearable without potion.
  * - Highlands: T3 -> first T4 transition.
- * - Steppe: full T4.0 / first enchantments.
+ * - Steppe: full T4.0 / first enchantments; T4.1 should clear S10 with tension.
  * - Mountain: T4.1 -> T4.2; T4.2 clears S10, T4.3 provides comfort.
- *
- * Only Forest and Swamp are adjusted in this pass. Later Blue zones keep their
- * existing values until the T3 block is validated in live runtime.
  */
 export const BLUE_WORLD_COMBAT_CURVE = [
   { healthStart: 0.9, healthEnd: 1.08, damageStart: 0.72, damageEnd: 0.98, defenseStart: 0.9, defenseEnd: 0.98 },
   { healthStart: 1.15, healthEnd: 1.55, damageStart: 1.18, damageEnd: 1.8, defenseStart: 1.0, defenseEnd: 1.1 },
   { healthStart: 1.7, healthEnd: 2.3, damageStart: 2.6, damageEnd: 3.0, defenseStart: 1.15, defenseEnd: 1.3 },
-  { healthStart: 2.3, healthEnd: 3.1, damageStart: 3.0, damageEnd: 3.3, defenseStart: 1.3, defenseEnd: 1.5 },
+  // Preserve Steppe's T4.0 early/mid consolidation while easing only the interpolated late-zone endpoint.
+  { healthStart: 2.3, healthEnd: 3.02, damageStart: 3.0, damageEnd: 3.18, defenseStart: 1.3, defenseEnd: 1.46 },
   { healthStart: 3.1, healthEnd: 4.0, damageStart: 3.3, damageEnd: 3.5, defenseStart: 1.5, defenseEnd: 1.8 },
 ] as const;
 
