@@ -6,6 +6,7 @@ interface WorldNavigationRuntime {
   readonly currentSegment: number;
   readonly highestUnlockedSegment: number;
   selectSegment(segmentNumber: number): boolean;
+  queueSegmentChange(segmentNumber: number): boolean;
   setSegmentFarmMode(enabled: boolean): void;
   selectZone(zoneNumber: number, segmentNumber?: number): boolean;
   getWorldLocationSaveState(): WorldLocationSaveState;
@@ -40,21 +41,21 @@ export class WorldNavigationActions {
 
   public prepareCombatResumeAfterGathering(): void {
     const { worldRuntime } = this.deps;
-    const resumeSegment = worldRuntime.farmMode
-      ? worldRuntime.currentSegment
-      : worldRuntime.highestUnlockedSegment;
+    const resumeSegment = worldRuntime.currentSegment;
 
     this.interruptEncounterForTravel();
+    // Gathering is an explicit combat lifecycle boundary: resume from encounter 1
+    // of the exact segment the player left, regardless of farm mode/progression.
     worldRuntime.selectSegment(resumeSegment + 1);
     this.deps.combatRuntime.restoreHeroHealth();
     this.deps.updateWorldBridge();
   }
 
   public selectSegment(segmentNumber: number): boolean {
-    if (!this.deps.worldRuntime.selectSegment(segmentNumber)) return false;
+    if (!this.deps.worldRuntime.queueSegmentChange(segmentNumber)) return false;
 
-    this.interruptEncounterForTravel();
-    this.deps.combatRuntime.restoreHeroHealth();
+    // Manual segment travel is deferred until the current segment completes.
+    // Keep the active encounter running and only expose the pending destination.
     this.deps.updateWorldBridge();
     return true;
   }
