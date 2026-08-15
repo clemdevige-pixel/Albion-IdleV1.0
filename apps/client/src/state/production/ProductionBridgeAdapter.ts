@@ -92,10 +92,19 @@ export class ProductionBridgeAdapter {
     const { inventoryManager, productionStorageId, refiningRuntime } = this.deps;
     const tier = this.deps.getRefiningTier(family);
     const config = this.getFamilyConfig(family, tier);
+    const activeSession = this.deps.refiningManagers[family].getActiveSession();
+    const session = activeSession ?? (
+      refiningRuntime.isAutomaticEnabled(family)
+        ? {
+            getRequiredTicks: () => config.recipe.durationTicks,
+            getProgress: () => 0,
+          }
+        : undefined
+    );
 
     syncRefiningToBridge(
       config.updateRefining,
-      this.deps.refiningManagers[family].getActiveSession(),
+      session,
       this.deps.getCurrentTick(),
       config.recipe,
       refiningRuntime.getReservedInputs(family),
