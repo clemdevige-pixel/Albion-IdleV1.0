@@ -38,7 +38,7 @@ function secondsWithOneDedicatedWorker(
   workerPerSecond: number,
 ): { readonly seconds: number; readonly family: ProductionFamilyId } {
   const totalRaw = Object.values(rawTotals).reduce((sum, quantity) => sum + quantity, 0);
-  let best = { seconds: totalRaw / heroPerSecond, family: T3_FAMILIES[0] ?? "wood" as ProductionFamilyId };
+  let best = { seconds: totalRaw / heroPerSecond, family: T3_FAMILIES[0] ?? "wood" };
 
   for (const family of T3_FAMILIES) {
     const workerTarget = rawTotals[family];
