@@ -16,28 +16,23 @@ interface IslandPlotVisual {
 }
 
 /**
- * Ground anchors measured against the authored 1600x900 island source.
- * The source contains twelve distinct grassy parcels: 3 upper, 4 middle, 5 lower.
- * `top` represents the building ground line rather than the visual center.
+ * Ground anchors measured from the player's annotated in-game screenshot.
+ * Percentages target the rendered surface because the background uses `cover`.
+ * Spatial order is top-to-bottom, then left-to-right across the 12 marked parcels.
  */
 const PLOT_VISUALS: readonly IslandPlotVisual[] = [
-  // Upper row
-  { left: 29.0, top: 29.0, scale: 0.98 },
-  { left: 52.8, top: 27.8, scale: 1.02 },
-  { left: 76.0, top: 30.0, scale: 0.98 },
-
-  // Middle row
-  { left: 18.5, top: 45.0, scale: 0.95 },
-  { left: 39.0, top: 44.5, scale: 0.98 },
-  { left: 61.0, top: 44.5, scale: 0.98 },
-  { left: 82.5, top: 46.0, scale: 0.95 },
-
-  // Lower row
-  { left: 17.0, top: 65.0, scale: 0.93 },
-  { left: 34.0, top: 66.5, scale: 0.96 },
-  { left: 51.0, top: 67.0, scale: 0.97 },
-  { left: 68.0, top: 67.0, scale: 0.96 },
-  { left: 84.0, top: 66.0, scale: 0.93 },
+  { left: 28.2, top: 29.0, scale: 0.98 },
+  { left: 46.5, top: 27.0, scale: 1.02 },
+  { left: 70.8, top: 33.0, scale: 0.96 },
+  { left: 17.8, top: 47.5, scale: 0.94 },
+  { left: 37.9, top: 48.5, scale: 0.98 },
+  { left: 57.0, top: 44.5, scale: 0.98 },
+  { left: 81.8, top: 51.0, scale: 0.94 },
+  { left: 66.2, top: 62.0, scale: 0.96 },
+  { left: 19.8, top: 71.5, scale: 0.94 },
+  { left: 37.3, top: 77.0, scale: 0.98 },
+  { left: 55.9, top: 82.0, scale: 0.98 },
+  { left: 79.0, top: 79.5, scale: 0.94 },
 ] as const;
 
 const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
@@ -111,11 +106,7 @@ export function IslandWorldRegion(): JSX.Element {
                 aria-label={accessibleLabel}
                 title={accessibleLabel}
                 className={`ui-island-world__plot${building === undefined ? " is-empty" : " is-built"}${selected ? " is-selected" : ""}`}
-                style={{
-                  left: `${String(position.left)}%`,
-                  top: `${String(position.top)}%`,
-                  ...assetStyle(assetId, position.scale ?? 1),
-                }}
+                style={{ left: `${String(position.left)}%`, top: `${String(position.top)}%`, ...assetStyle(assetId, position.scale ?? 1) }}
                 onClick={() => {
                   if (building === undefined) selectPlot(plotDefinition.id);
                   else selectBuilding(plotDefinition.id, building.instanceId);
