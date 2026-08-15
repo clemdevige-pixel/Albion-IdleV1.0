@@ -184,10 +184,9 @@ export class WorldRuntime {
     this.worldTick.currentEncounter = 0;
     if (this.worldTick.pendingZone !== null) {
       this.changeActiveZone(this.worldTick.pendingZone, this.worldTick.pendingZoneSegment ?? 0);
-    } else if (this.worldTick.pendingSegment !== null) {
-      this.worldTick.currentSegment = this.worldTick.pendingSegment;
-      this.worldTick.pendingSegment = null;
     }
+    // A queued segment change is intentionally preserved through defeat: the
+    // player must still complete the current segment before that travel applies.
   }
 
   public getWorldLocationSaveState(): WorldLocationSaveState {
