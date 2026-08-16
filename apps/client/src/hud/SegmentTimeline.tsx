@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { getSegmentRecommendedItemPower } from "../data/itemPower";
 import { calculateProjectedSegmentRates } from "../runtime/projectedRateCalculator";
 import { useGameBridge, useGameServices } from "../state/GameContext";
@@ -20,6 +21,8 @@ export function SegmentTimeline(): JSX.Element {
   const { world } = state;
   const { selectZone, setSegmentFarmMode } = useGameServices();
   const [viewedZoneIndex, setViewedZoneIndex] = useState(world.zoneIndex);
+  const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setViewedZoneIndex(world.zoneIndex);
@@ -125,6 +128,10 @@ export function SegmentTimeline(): JSX.Element {
           const accessibleLabel = locked
             ? `Segment ${String(segment)} verrouillé`
             : `Aller au segment ${String(segment)}. IP conseillé ${String(recommendedIp)}. Silver par heure ${formatRate(rates?.silverPerHour ?? 0)}. Fame par heure ${formatRate(rates?.famePerHour ?? 0)}.`;
+          const showTooltip = !locked
+            && rates !== undefined
+            && hoveredSegment === segment
+            && tooltipPosition !== null;
 
           return (
             <div className="segment-timeline__step" key={segment}>
@@ -134,12 +141,39 @@ export function SegmentTimeline(): JSX.Element {
                 type="button"
                 disabled={locked}
                 onClick={() => { selectZone(viewedZone.zoneIndex, segment); }}
+                onMouseEnter={(event) => {
+                  setHoveredSegment(segment);
+                  setTooltipPosition({ x: event.clientX, y: event.clientY });
+                }}
+                onMouseMove={(event) => {
+                  setTooltipPosition({ x: event.clientX, y: event.clientY });
+                }}
+                onMouseLeave={() => {
+                  setHoveredSegment(null);
+                  setTooltipPosition(null);
+                }}
+                onFocus={(event) => {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  setHoveredSegment(segment);
+                  setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.bottom });
+                }}
+                onBlur={() => {
+                  setHoveredSegment(null);
+                  setTooltipPosition(null);
+                }}
                 aria-label={accessibleLabel}
               >
                 <span aria-hidden="true">{current ? "☠" : ""}</span>
               </button>
-              {!locked && rates !== undefined ? (
-                <div className="segment-timeline__tooltip" role="tooltip">
+              {showTooltip && createPortal(
+                <div
+                  className="segment-timeline__tooltip"
+                  role="tooltip"
+                  style={{
+                    left: `${String(Math.max(12, Math.min(tooltipPosition.x + 18, window.innerWidth - 276)))}px`,
+                    top: `${String(Math.max(12, Math.min(tooltipPosition.y + 18, window.innerHeight - 220)))}px`,
+                  }}
+                >
                   <strong className="segment-timeline__tooltip-title">Segment {segment}</strong>
                   <span className="segment-timeline__tooltip-ip">IP CONSEILLÉ : {recommendedIp}</span>
                   <span className="segment-timeline__tooltip-divider" />
@@ -158,8 +192,9 @@ export function SegmentTimeline(): JSX.Element {
                     <span aria-hidden="true">▣</span>
                     Cliquer pour aller à ce segment
                   </span>
-                </div>
-              ) : null}
+                </div>,
+                document.body,
+              )}
               <span className="segment-timeline__number">{segment}</span>
             </div>
           );
