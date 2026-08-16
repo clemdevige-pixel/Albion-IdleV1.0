@@ -196,6 +196,21 @@ export class CombatRuntime {
     return false;
   }
 
+  private collectActiveEffects(): Array<{ id: string; definitionId: string; effectType: StatusEffectType; remainingDuration: number }> {
+    const activeEffects: Array<{ id: string; definitionId: string; effectType: StatusEffectType; remainingDuration: number }> = [];
+    for (const [, effects] of this.orchestrator.getState().activeEffects) {
+      for (const effect of effects) {
+        activeEffects.push({
+          id: effect.id,
+          definitionId: effect.definition.id,
+          effectType: effect.effectType,
+          remainingDuration: effect.remainingDuration,
+        });
+      }
+    }
+    return activeEffects;
+  }
+
   private destroyEnemyEntity(enemyId: EntityId): void {
     if (enemyId === NO_ENEMY_ID) return;
     this.effectManager.removeAllEffects(enemyId);
@@ -320,7 +335,7 @@ export class CombatRuntime {
         this.completedEncounterResult = null;
         this.awaitingResumeAfterDefeat = true;
         this.ports.onDefeat();
-        return { combatState: "defeat" };
+        return { combatState: "defeat", activeEffects: this.collectActiveEffects() };
       }
       if (this.completedEncounterResult === "victory") {
         this.cleanupActiveEnemy();
@@ -329,9 +344,10 @@ export class CombatRuntime {
         this.completedEncounterResult = null;
         this.completedVictoryLocationChanged = false;
         this.completedVictoryEndedSegment = false;
+        if (completedSegment) this.effectManager.removeAllEffects(this.heroId);
         if (completedSegment && combatStopController.pauseAfterSegment()) {
           if (locationChangedAfterVictory) this.restoreHeroHealth();
-          return { combatState: "idle" };
+          return { combatState: "idle", activeEffects: this.collectActiveEffects() };
         }
       } else {
         this.cleanupActiveEnemy();
@@ -348,7 +364,7 @@ export class CombatRuntime {
       const encounterResult = this.combatService.startEncounter({ id: asEncounterId(`encounter_${String(this.encounterCounter)}`), enemies: [{ entityId: enemy.id }] }, this.heroId);
       const enemyHealth = this.damageManager.getHealth(enemy.id);
       const heroHealth = this.damageManager.getHealth(this.heroId);
-      return { combatState: encounterResult.ok ? "combat" : "idle", activeEnemy: { id: enemy.id, currentHealth: enemyHealth.currentHealth, maxHealth: enemyHealth.maxHealth, name: enemy.name, visualManifestId: enemy.visualManifestId }, playerHealth: { currentHealth: heroHealth.currentHealth, maxHealth: heroHealth.maxHealth }, spawnedEnemy: enemy };
+      return { combatState: encounterResult.ok ? "combat" : "idle", activeEnemy: { id: enemy.id, currentHealth: enemyHealth.currentHealth, maxHealth: enemyHealth.maxHealth, name: enemy.name, visualManifestId: enemy.visualManifestId }, playerHealth: { currentHealth: heroHealth.currentHealth, maxHealth: heroHealth.maxHealth }, activeEffects: this.collectActiveEffects(), spawnedEnemy: enemy };
     }
 
     this.abilityManager.tickAbilities(this.heroId, dt);
@@ -362,8 +378,8 @@ export class CombatRuntime {
       const endedState = activeSession.state;
       if (endedState === "victory") {
         const locationBeforeVictory = this.ports.getLocationState();
-        this.completedVictoryEndedSegment = locationBeforeVictory.encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-        this.ports.onVictory();
+        const victoryResult = this.ports.onVictory();
+        this.completedVictoryEndedSegment = victoryResult.enteredNewSegment;
         const locationAfterVictory = this.ports.getLocationState();
         this.completedVictoryLocationChanged = locationBeforeVictory.zoneIndex !== locationAfterVictory.zoneIndex
           || locationBeforeVictory.segmentIndex !== locationAfterVictory.segmentIndex;
@@ -374,12 +390,11 @@ export class CombatRuntime {
         this.completedEncounterResult = null;
       }
       this.combatService.endEncounter();
-      if (endedState === "defeat") this.cleanupActiveEnemy();
-      return { combatState: endedState };
+      this.cleanupActiveEnemy();
+      return { combatState: endedState, activeEffects: this.collectActiveEffects() };
     }
 
-    const activeEffects: Array<{ id: string; definitionId: string; effectType: StatusEffectType; remainingDuration: number }> = [];
-    for (const [, effects] of this.orchestrator.getState().activeEffects) for (const eff of effects) activeEffects.push({ id: eff.id, definitionId: eff.definition.id, effectType: eff.effectType, remainingDuration: eff.remainingDuration });
+    const activeEffects = this.collectActiveEffects();
     const enemyHealth = this.damageManager.isAlive(this.activeEnemyId) ? this.damageManager.getHealth(this.activeEnemyId) : undefined;
     const heroHealth = this.damageManager.getHealth(this.heroId);
     return { combatState: tickResult.ok ? tickResult.value.state : "combat", activeEnemy: enemyHealth ? { id: this.activeEnemyId, currentHealth: enemyHealth.currentHealth, maxHealth: enemyHealth.maxHealth, name: "", visualManifestId: "" } : undefined, playerHealth: { currentHealth: heroHealth.currentHealth, maxHealth: heroHealth.maxHealth }, activeEffects };
