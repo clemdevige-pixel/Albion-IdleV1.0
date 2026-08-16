@@ -2,6 +2,7 @@ import type { EntityId } from "@game/core";
 import type { InventoryManager, ResourceFamily } from "@game/gameplay";
 import type { GameBridge } from "../../game/GameBridge";
 import type { CraftingRuntime } from "../../runtime/CraftingRuntime";
+import type { CombatLoopState } from "../../runtime/CombatRuntime";
 import { combatStopController } from "../../runtime/CombatStopController";
 import type { GatheringRuntime } from "../../runtime/GatheringRuntime";
 import type { RefiningRuntime } from "../../runtime/RefiningRuntime";
@@ -21,6 +22,7 @@ interface ProductionActionsDependencies {
   readonly craftingRuntime: CraftingRuntime;
   readonly productionBridge: ProductionBridgeAdapter;
   readonly getCurrentTick: () => number;
+  readonly getCombatLoopState: () => CombatLoopState;
   readonly prepareCombatResumeAfterGathering: () => void;
 }
 
@@ -39,7 +41,8 @@ export class ProductionActions {
       return this.applyGatheringToggle(family);
     }
 
-    if (this.deps.bridge.combatState === "combat") {
+    const loopState = this.deps.getCombatLoopState();
+    if (loopState === "combat" || loopState === "stop_requested") {
       this.setQueuedGatheringFamily(family);
       if (combatStopController.getState() === "running") {
         combatStopController.requestStopAfterSegment();
@@ -122,6 +125,7 @@ export class ProductionActions {
       id: `notif_craft_${String(Date.now())}`,
       type: "success",
       message: `Fabriqué : ${result.recipeName} · ${String(result.itemPower)} IP`,
+      amount: undefined,
       timestamp: Date.now(),
     });
     return true;
