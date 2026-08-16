@@ -11,6 +11,7 @@ import {
   clearPresentedEnemyHealth,
   resetPresentedEnemyHealth,
 } from "./CombatPresentedHealth";
+import { resolveCombatPresentationTransition } from "./CombatPresentationTransition";
 import { WorldPresentationController } from "./WorldPresentationController";
 
 /** Thin coordinator for the specialized presentation controllers. */
@@ -43,31 +44,27 @@ export class GamePresentationRuntime {
       bridge.world.segmentIndex,
       bridge.world.encounterIndex,
     ].join(":");
-    const enteredCombat = bridge.combatState === "combat"
-      && this.lastCombatState !== undefined
-      && this.lastCombatState !== "combat";
-    const enteredCombatFromVictory = enteredCombat && this.lastCombatState === "victory";
-    const encounterKeyChanged = this.lastEncounterPresentationKey !== undefined
-      && encounterPresentationKey !== this.lastEncounterPresentationKey;
+    const transition = resolveCombatPresentationTransition({
+      previousCombatState: this.lastCombatState,
+      nextCombatState: bridge.combatState,
+      previousEncounterKey: this.lastEncounterPresentationKey,
+      nextEncounterKey: encounterPresentationKey,
+    });
 
-    if (this.lastEncounterPresentationKey === undefined) {
+    if (transition === "initialize") {
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
       this.lastEncounterPresentationKey = encounterPresentationKey;
-    } else if (enteredCombat && !enteredCombatFromVictory) {
+    } else if (transition === "hard_reset") {
       // Defeat/resume, pause/resume and explicit travel are hard encounter
-      // boundaries. Unlike victory progression there is no killing impact that
-      // needs to finish, so the previous enemy identity must be discarded even
-      // when the world key changed while combat was stopped.
+      // boundaries. There is no killing impact to preserve.
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
       this.combat?.invalidateEncounterPresentation();
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
       this.lastEncounterPresentationKey = encounterPresentationKey;
-    } else if (encounterKeyChanged) {
-      // Normal victory progression is presentation-asynchronous: the domain can
-      // already expose the next encounter while the killing melee impact or
-      // projectile is still in flight. Preserve the defeated actor until the
-      // presentation controller completes that hand-off.
+    } else if (transition === "victory_handoff") {
+      // Victory progression is presentation-asynchronous: the domain can expose
+      // the next encounter before the killing impact has finished visually.
       this.lastEncounterPresentationKey = encounterPresentationKey;
     }
 
