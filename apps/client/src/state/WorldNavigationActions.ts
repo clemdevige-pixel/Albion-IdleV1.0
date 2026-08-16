@@ -1,6 +1,6 @@
 import type { WorldLocationSaveState } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
-import type { CombatLoopState } from "../runtime/CombatRuntimeAbilityLayer.js";
+import type { CombatLoopState } from "../runtime/CombatRuntime.js";
 
 interface WorldNavigationRuntime {
   readonly currentZoneIndex: number;
