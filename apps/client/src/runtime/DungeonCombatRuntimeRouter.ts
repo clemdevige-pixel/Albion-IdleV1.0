@@ -21,17 +21,24 @@ export interface CombatVictoryResult {
  */
 export class DungeonCombatRuntimeRouter {
   readonly flowPolicy: CombatFlowPolicy;
+  private restoreHealthOnNextWorldEncounter = false;
 
   constructor(
     private readonly dungeonRuntime: DungeonRuntime,
     private readonly encounterSource: DungeonCombatEncounterSource,
   ) {
     this.flowPolicy = {
-      shouldRestoreHeroHealthBeforeEncounter: (context) => (
-        this.isDungeonActive()
-          ? CONTINUOUS_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter(context)
-          : WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter(context)
-      ),
+      shouldRestoreHeroHealthBeforeEncounter: (context) => {
+        if (this.isDungeonActive()) {
+          this.restoreHealthOnNextWorldEncounter = true;
+          return CONTINUOUS_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter(context);
+        }
+        if (this.restoreHealthOnNextWorldEncounter) {
+          this.restoreHealthOnNextWorldEncounter = false;
+          return true;
+        }
+        return WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter(context);
+      },
       shouldResetHeroCooldownsOnEncounterStart: (context) => (
         this.isDungeonActive()
           ? CONTINUOUS_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart(context)
@@ -59,6 +66,7 @@ export class DungeonCombatRuntimeRouter {
 
   onVictory(worldVictory: () => CombatVictoryResult): CombatVictoryResult {
     if (!this.isDungeonActive()) return worldVictory();
+    this.restoreHealthOnNextWorldEncounter = true;
     const encounter = this.dungeonRuntime.getActiveEncounter();
     if (encounter === undefined) return { enteredNewSegment: false };
     this.dungeonRuntime.completeEncounter(encounter.id);
@@ -70,6 +78,7 @@ export class DungeonCombatRuntimeRouter {
       worldDefeat();
       return;
     }
+    this.restoreHealthOnNextWorldEncounter = true;
     this.dungeonRuntime.fail();
   }
 }
