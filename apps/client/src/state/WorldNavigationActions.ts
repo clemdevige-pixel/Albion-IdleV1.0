@@ -1,5 +1,6 @@
 import type { WorldLocationSaveState } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
+import { combatStopController } from "../runtime/CombatStopController.js";
 
 interface WorldNavigationRuntime {
   readonly currentZoneIndex: number;
@@ -10,6 +11,7 @@ interface WorldNavigationRuntime {
   queueSegmentChange(segmentNumber: number): boolean;
   setSegmentFarmMode(enabled: boolean): void;
   selectZone(zoneNumber: number, segmentNumber?: number): boolean;
+  changeActiveZone(nextIndex: number, targetSegment?: number, tickCounter?: number): void;
   getWorldLocationSaveState(): WorldLocationSaveState;
   setWorldLocationSaveState(savedLocation: WorldLocationSaveState | undefined): void;
 }
@@ -53,6 +55,11 @@ export class WorldNavigationActions {
   }
 
   public selectSegment(segmentNumber: number): boolean {
+    if (this.canTravelImmediately()) {
+      if (!this.deps.worldRuntime.selectSegment(segmentNumber)) return false;
+      this.deps.updateWorldBridge();
+      return true;
+    }
     return this.queueManualSegmentChange(segmentNumber);
   }
 
@@ -62,11 +69,25 @@ export class WorldNavigationActions {
   }
 
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
-    if (!this.deps.worldRuntime.selectZone(zoneNumber, segmentNumber)) return false;
+    const targetSegment = segmentNumber ?? 1;
+    const currentZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
 
-    // All player-directed travel is queued by WorldRuntime, including cross-zone
-    // destinations. Keep the current combat untouched until segment completion
-    // (or defeat, which ends the current attempt).
+    // WorldRuntime remains the single validation authority for zone unlocks and
+    // segment bounds. During active combat it also owns the queued destination.
+    if (!this.deps.worldRuntime.selectZone(zoneNumber, targetSegment)) return false;
+
+    if (this.canTravelImmediately()) {
+      if (zoneNumber === currentZoneNumber) {
+        // selectZone queued the validated same-zone destination; apply it now
+        // because no encounter is active to wait for.
+        this.deps.worldRuntime.selectSegment(targetSegment);
+      } else {
+        // Cross-zone travel uses the already validated destination. changeActiveZone
+        // consumes/clears the queued fields while preserving the inactive combat state.
+        this.deps.worldRuntime.changeActiveZone(zoneNumber - 1, targetSegment - 1);
+      }
+    }
+
     this.deps.updateWorldBridge();
     return true;
   }
@@ -89,6 +110,10 @@ export class WorldNavigationActions {
     this.deps.combatRuntime.restoreHeroHealth();
     this.deps.updateWorldBridge();
     this.deps.bridge.setCombatState("walking");
+  }
+
+  private canTravelImmediately(): boolean {
+    return combatStopController.isPaused() || this.deps.bridge.combatState === "defeat";
   }
 
   private queueManualSegmentChange(segmentNumber: number): boolean {
