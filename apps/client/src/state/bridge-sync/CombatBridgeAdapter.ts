@@ -136,6 +136,9 @@ export class CombatBridgeAdapter {
       this.#bridge.setEnemyPresentation(result.activeEnemy.name, result.activeEnemy.visualManifestId);
       this.#bridge.updateEnemyHealth(result.activeEnemy.currentHealth, result.activeEnemy.maxHealth);
     }
+    if (result.playerHealth !== undefined) {
+      this.#bridge.updatePlayerHealth(result.playerHealth.currentHealth, result.playerHealth.maxHealth);
+    }
     this.#bridge.setCombatState(result.combatState);
     this.#syncCombatStartBlockNotification();
     this.syncAbilities();
