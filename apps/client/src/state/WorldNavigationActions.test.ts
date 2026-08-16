@@ -142,10 +142,10 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
-  it("always resumes gathering from the beginning of the segment that was left", () => {
+  it("resumes gathering from progression frontier or the selected farm segment", () => {
     const progression = createHarness({ farmMode: false });
     progression.actions.prepareCombatResumeAfterGathering();
-    expect(progression.worldRuntime.selectSegment).toHaveBeenCalledWith(3);
+    expect(progression.worldRuntime.selectSegment).toHaveBeenCalledWith(6);
 
     const farming = createHarness({ farmMode: true });
     farming.actions.prepareCombatResumeAfterGathering();
