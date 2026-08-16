@@ -9,6 +9,7 @@ import {
 import { isExcessiveAutoCastOverkill } from "../data/combatAutomationPolicy.js";
 import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
 import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
+import { getAbilityHitBaseDamage, resolveAbilityDamageRatio } from "./WeaponAbilityMechanicsRuntime.js";
 
 const PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
@@ -30,51 +31,40 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
   const health = deps.damageManager.getHealth(deps.targetId);
   if (health.currentHealth <= 0) return true;
 
+  const profile = getWeaponAbilityMechanics(deps.definition.id);
+  // Weapon abilities without authored mechanics are invalid content. Hold the
+  // auto-cast instead of silently estimating legacy metadata that runtime will reject.
+  if (profile === undefined) return true;
+
   const physicalDamage = deps.statsManager.getStat(deps.heroId, PHYSICAL_DAMAGE).computed;
   const magicalDamage = deps.statsManager.getStat(deps.heroId, MAGICAL_DAMAGE).computed;
   const armor = deps.statsManager.getStat(deps.targetId, ARMOR).computed;
   const magicResistance = deps.statsManager.getStat(deps.targetId, MAGIC_RESISTANCE).computed;
   const sourceDamage = deps.definition.damageType === "magical" ? magicalDamage : physicalDamage;
+  const healthRatio = health.maxHealth > 0 ? health.currentHealth / health.maxHealth : undefined;
+  const activeEffectIds = new Set(
+    deps.effectManager.getActiveEffects(deps.targetId).map((effect) => effect.definition.id),
+  );
 
-  const profile = getWeaponAbilityMechanics(deps.definition.id);
-  const damageMechanics = profile?.mechanics.filter((mechanic) => mechanic.kind === "damage") ?? [];
-
+  const damageMechanics = profile.mechanics.filter((mechanic) => mechanic.kind === "damage");
   let estimatedImmediateDamage = 0;
-  if (damageMechanics.length === 0) {
-    estimatedImmediateDamage = calculateDamage(
-      sourceDamage * deps.definition.bonusDamageRatio,
-      { physicalDamage, magicalDamage },
-      { armor, magicResistance },
-      deps.definition.damageType,
-    ).mitigatedDamage;
-  } else {
-    for (const mechanic of damageMechanics) {
-      let totalRatio = mechanic.ratio;
-      if (
-        mechanic.bonusHealthBelow !== undefined
-        && health.maxHealth > 0
-        && health.currentHealth / health.maxHealth <= mechanic.bonusHealthBelow.ratio
-      ) {
-        totalRatio += mechanic.bonusHealthBelow.bonusRatio;
-      }
-      if (
-        mechanic.bonusEffect !== undefined
-        && deps.effectManager
-          .getActiveEffects(deps.targetId)
-          .some((effect) => effect.definition.id === mechanic.bonusEffect?.effectId)
-      ) {
-        totalRatio += mechanic.bonusEffect.bonusRatio;
-      }
 
-      const hits = Math.max(1, mechanic.hits ?? 1);
-      for (let hit = 0; hit < hits; hit += 1) {
-        estimatedImmediateDamage += calculateDamage(
-          sourceDamage * (totalRatio / hits),
-          { physicalDamage, magicalDamage },
-          { armor, magicResistance },
-          deps.definition.damageType,
-        ).mitigatedDamage;
-      }
+  for (const mechanic of damageMechanics) {
+    const totalRatio = resolveAbilityDamageRatio(
+      mechanic,
+      healthRatio,
+      (effectId) => activeEffectIds.has(effectId),
+    );
+    const hits = Math.max(1, mechanic.hits ?? 1);
+    const baseDamagePerHit = getAbilityHitBaseDamage(sourceDamage, totalRatio, hits);
+
+    for (let hit = 0; hit < hits; hit += 1) {
+      estimatedImmediateDamage += calculateDamage(
+        baseDamagePerHit,
+        { physicalDamage, magicalDamage },
+        { armor, magicResistance },
+        deps.definition.damageType,
+      ).mitigatedDamage;
     }
   }
 
