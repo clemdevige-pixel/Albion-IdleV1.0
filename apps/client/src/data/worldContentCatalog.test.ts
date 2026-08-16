@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { asZoneDefinitionId } from "@game/gameplay";
 import {
+  BIOME_BY_ZONE,
+  WORLD_ZONE_CONTENT,
   WORLD_ZONE_IDS,
   WORLD_ZONE_IDS_BY_BAND,
   WORLD_ZONE_ORDER,
+  ZONE_DEFINITIONS,
   ZONE_UNLOCK_DEFINITIONS,
   buildZoneUnlockDefinitions,
   getWorldZonePlacement,
@@ -13,6 +16,25 @@ import {
 describe("worldContentCatalog", () => {
   it("keeps every current authored zone fully registered", () => {
     expect(() => validateWorldContentCatalog()).not.toThrow();
+  });
+
+  it("derives runtime definitions, biome assignments and IDs from one authored catalog", () => {
+    const authored = Object.entries(WORLD_ZONE_CONTENT);
+
+    expect(ZONE_DEFINITIONS).toHaveLength(authored.length);
+    expect(BIOME_BY_ZONE.size).toBe(authored.length);
+
+    for (const [key, definition] of authored) {
+      expect(WORLD_ZONE_IDS[key as keyof typeof WORLD_ZONE_IDS]).toBe(definition.id);
+      expect(ZONE_DEFINITIONS.find(({ id }) => id === definition.id)).toMatchObject({
+        id: definition.id,
+        name: definition.name,
+        tier: definition.tier,
+        tags: [...definition.tags],
+      });
+      expect(BIOME_BY_ZONE.get(definition.id)).toBe(definition.biomeId);
+      expect(WORLD_ZONE_IDS_BY_BAND[definition.bandId]).toContain(definition.id);
+    }
   });
 
   it("derives the flat runtime order from the ordered world bands", () => {
