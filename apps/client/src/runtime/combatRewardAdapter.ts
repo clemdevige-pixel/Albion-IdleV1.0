@@ -9,6 +9,7 @@ import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
 import {
   ENCHANTMENT_MATERIAL_NAMES,
+  getDungeonKeyProgressionWeight,
   getEnchantmentShardProgressionWeight,
 } from "../data/economyContentCatalog.js";
 import { getMonsterDefinition } from "../data/monsterContentCatalog.js";
@@ -154,6 +155,11 @@ export function setupCombatRewardAdapter(
       zonePlacement.zoneIndexWithinBand,
       options.worldRuntime.currentSegment,
     );
+    const dungeonKeyDropWeight = getDungeonKeyProgressionWeight(
+      zonePlacement.bandId,
+      zonePlacement.zoneIndexWithinBand,
+      options.worldRuntime.currentSegment,
+    );
     const enchantmentTier = getWorldBandDefinition(zonePlacement.bandId).maximumTier;
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(
@@ -167,6 +173,7 @@ export function setupCombatRewardAdapter(
         isFinalBoss,
         enchantmentTier,
         enchantmentDropWeight,
+        dungeonKeyDropWeight,
       },
     );
     clearActiveMonsterIdentity(event.entityId);
