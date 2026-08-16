@@ -6,6 +6,7 @@ import {
 } from "../../data/monsterContentCatalog";
 import {
   getCombatLootExpectations,
+  getDungeonKeyProgressionWeight,
   type CombatDropKind,
   type CombatLootContext,
 } from "../../data/economyContentCatalog";
@@ -106,6 +107,11 @@ function buildEncounterContexts(): readonly BestiaryEncounterContext[] {
             enchantmentDropWeight: baselineProfile.hp <= 0
               ? 1
               : enemyProfile.hp / baselineProfile.hp,
+            dungeonKeyDropWeight: getDungeonKeyProgressionWeight(
+              placement.bandId,
+              placement.zoneIndexWithinBand,
+              segmentIndex,
+            ),
           },
         });
       }
