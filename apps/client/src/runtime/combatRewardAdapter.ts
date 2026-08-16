@@ -27,6 +27,8 @@ export interface CombatRewardAdapterOptions {
   readonly heroId: EntityId;
   readonly recalculateWeaponMasteryStats: () => void;
   readonly resyncAll: () => void;
+  /** Dungeon rewards are resolved by their own loot path, never by World progression. */
+  readonly isDungeonActive?: () => boolean;
 }
 
 export interface CombatRewardAdapter {
@@ -90,6 +92,13 @@ export function setupCombatRewardAdapter(
 
   const unsubscribe = options.combatService.events.subscribe("enemyKilled", (event) => {
     options.bridge.incrementEnemiesKilled();
+
+    // Dungeon loot has a different economy contract. Until that resolver is
+    // attached, never leak World silver/fame/shards/keys into dungeon kills.
+    if (options.isDungeonActive?.() === true) {
+      clearActiveMonsterIdentity(event.entityId);
+      return;
+    }
 
     const zonePlacement = getWorldZonePlacement(
       options.worldRuntime.getActiveZoneDef().defId,
