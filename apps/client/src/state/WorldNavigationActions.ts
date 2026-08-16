@@ -61,6 +61,9 @@ export class WorldNavigationActions {
   public selectSegment(segmentNumber: number): boolean {
     if (this.canTravelImmediately()) {
       if (!this.deps.worldRuntime.selectSegment(segmentNumber)) return false;
+      if (this.deps.bridge.combatState === "defeat") {
+        this.deps.bridge.clearEnemyPresentation();
+      }
       this.deps.updateWorldBridge();
       return true;
     }
@@ -75,6 +78,7 @@ export class WorldNavigationActions {
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
     const targetSegment = segmentNumber ?? 1;
     const currentZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
+    const wasDefeated = this.deps.bridge.combatState === "defeat";
 
     // WorldRuntime remains the single validation authority for zone unlocks and
     // segment bounds. During active combat it also owns the queued destination.
@@ -90,6 +94,7 @@ export class WorldNavigationActions {
         // consumes/clears the queued fields while preserving the inactive combat state.
         this.deps.worldRuntime.changeActiveZone(zoneNumber - 1, targetSegment - 1);
       }
+      if (wasDefeated) this.deps.bridge.clearEnemyPresentation();
     }
 
     this.deps.updateWorldBridge();
@@ -98,7 +103,13 @@ export class WorldNavigationActions {
 
   public resumeExploration(): boolean {
     const resumed = this.deps.combatRuntime.resumeExploration();
-    if (resumed) this.deps.bridge.setCombatState("walking");
+    if (resumed) {
+      // The defeated ECS enemy is already gone, but its bridge presentation can
+      // still be visible. Clear it before the next authoritative spawn so Phaser
+      // cannot reject the replacement as a different still-living encounter.
+      this.deps.bridge.clearEnemyPresentation();
+      this.deps.bridge.setCombatState("walking");
+    }
     return resumed;
   }
 
