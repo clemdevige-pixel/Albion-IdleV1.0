@@ -36,17 +36,18 @@ export const BLUE_WORLD_COMBAT_CURVE = [
 
 /**
  * Yellow T5 calibration curve.
- * Health and defense remain on the originally authored progression while the
- * first runtime balance pass reduces the provisional damage ramp. The target
- * shape is T4.3 entry -> T5.0 consolidation -> T5.1/T5.2 progression -> T5.3
- * final comfort, validated by the generic live CombatRuntime benchmark.
+ * Zone starts preserve the validated early-zone difficulty from the first pass.
+ * Endpoints are independently authored so the final boss remains a wall without
+ * requiring an enchantment tier beyond the zone's intended progression target:
+ * Amberwood T5.0->T5.1, Gloamfen T5.1, Stormwatch T5.2,
+ * Sunscar T5.2->T5.3, Ironveil T5.3.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
-  { healthStart: 4.3, healthEnd: 4.75, damageStart: 3.55, damageEnd: 3.9, defenseStart: 2.1, defenseEnd: 2.3 },
-  { healthStart: 4.75, healthEnd: 5.25, damageStart: 3.9, damageEnd: 4.3, defenseStart: 2.3, defenseEnd: 2.5 },
-  { healthStart: 5.25, healthEnd: 5.85, damageStart: 4.3, damageEnd: 4.7, defenseStart: 2.5, defenseEnd: 2.75 },
+  { healthStart: 4.3, healthEnd: 4.45, damageStart: 3.55, damageEnd: 3.7, defenseStart: 2.1, defenseEnd: 2.18 },
+  { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.9, damageEnd: 4.0, defenseStart: 2.3, defenseEnd: 2.35 },
+  { healthStart: 5.25, healthEnd: 5.55, damageStart: 4.3, damageEnd: 4.5, defenseStart: 2.5, defenseEnd: 2.62 },
   { healthStart: 5.85, healthEnd: 6.5, damageStart: 4.7, damageEnd: 5.15, defenseStart: 2.75, defenseEnd: 3 },
-  { healthStart: 6.5, healthEnd: 7.2, damageStart: 5.15, damageEnd: 5.65, defenseStart: 3, defenseEnd: 3.2 },
+  { healthStart: 6.5, healthEnd: 6.65, damageStart: 5.15, damageEnd: 5.2, defenseStart: 3, defenseEnd: 3.05 },
 ] as const;
 
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
