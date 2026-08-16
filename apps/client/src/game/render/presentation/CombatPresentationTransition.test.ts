@@ -11,7 +11,7 @@ describe("combat presentation transition policy", () => {
     })).toBe("initialize");
   });
 
-  it.each(["defeat", "idle", "walking"] as const)(
+  it.each(["defeat", "idle", "walking", "paused"] as const)(
     "hard-resets when combat restarts from %s",
     (previousCombatState) => {
       expect(resolveCombatPresentationTransition({
@@ -32,6 +32,33 @@ describe("combat presentation transition policy", () => {
     })).toBe("hard_reset");
   });
 
+  it("hard-resets immediately when the player changes encounter while defeated", () => {
+    expect(resolveCombatPresentationTransition({
+      previousCombatState: "defeat",
+      nextCombatState: "defeat",
+      previousEncounterKey: "zone:1:1",
+      nextEncounterKey: "zone:2:1",
+    })).toBe("hard_reset");
+  });
+
+  it("hard-resets when defeat transitions to walking before the replacement spawn", () => {
+    expect(resolveCombatPresentationTransition({
+      previousCombatState: "defeat",
+      nextCombatState: "walking",
+      previousEncounterKey: "zone:1:1",
+      nextEncounterKey: "zone:1:1",
+    })).toBe("hard_reset");
+  });
+
+  it("hard-resets paused travel before combat resumes", () => {
+    expect(resolveCombatPresentationTransition({
+      previousCombatState: "idle",
+      nextCombatState: "idle",
+      previousEncounterKey: "zone:1:1",
+      nextEncounterKey: "zone:2:1",
+    })).toBe("hard_reset");
+  });
+
   it("preserves the victory handoff when the next encounter key arrives", () => {
     expect(resolveCombatPresentationTransition({
       previousCombatState: "victory",
@@ -41,7 +68,7 @@ describe("combat presentation transition policy", () => {
     })).toBe("victory_handoff");
   });
 
-  it("treats an asynchronous key change outside a restart as a handoff", () => {
+  it("preserves an asynchronous victory key change before combat restarts", () => {
     expect(resolveCombatPresentationTransition({
       previousCombatState: "victory",
       nextCombatState: "victory",
