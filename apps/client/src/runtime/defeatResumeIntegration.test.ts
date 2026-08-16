@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { EquipmentManager } from "@game/gameplay";
+import type { EquipmentManager, ZoneDefinitionId } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge.js";
 import { WORLD_ZONE_IDS } from "../data/worldContentCatalog.js";
 import { WorldNavigationActions } from "../state/WorldNavigationActions.js";
@@ -17,7 +17,7 @@ const BLUE_ZONE_IDS = [
   WORLD_ZONE_IDS.mountain,
 ] as const;
 
-function createScenario(zoneDefId: string) {
+function createScenario(zoneDefId: ZoneDefinitionId) {
   const combat = createCombatFoundation();
   const world = createWorldFoundation();
   const bridge = new GameBridge();
@@ -47,12 +47,12 @@ function createScenario(zoneDefId: string) {
   } as unknown as EquipmentManager;
 
   world.worldRuntime.setWorldLocationSaveState({
-    activeZoneDefId: zoneDefId as never,
+    activeZoneDefId: zoneDefId,
     activeSegment: 0,
     activeEncounter: 0,
     farmMode: false,
     zoneMemories: [{
-      zoneDefId: zoneDefId as never,
+      zoneDefId,
       currentSegment: 0,
       currentEncounter: 0,
       highestUnlockedSegment: 2,
@@ -158,7 +158,7 @@ afterEach(() => {
 describe.each([
   ["Blue", WORLD_ZONE_IDS.forest],
   ["Yellow", WORLD_ZONE_IDS.amberwood],
-])("%s combat loop integration", (_band, zoneDefId) => {
+] as const)("%s combat loop integration", (_band, zoneDefId) => {
   it("spawns a fresh encounter after real defeat -> segment change -> resume", () => {
     const scenario = createScenario(zoneDefId);
 
