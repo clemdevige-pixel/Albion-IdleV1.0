@@ -41,14 +41,14 @@ export const BLUE_WORLD_COMBAT_CURVE = [
  * Amberwood T5.0->T5.1, Gloamfen T5.1,
  * Stormwatch T5.1 + potion / T5.2 without,
  * Sunscar T5.2,
- * Ironveil T5.2 + potion / T5.3 without.
+ * Ironveil T5.2 + potion / T5.3 as comfort.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 4.3, healthEnd: 4.45, damageStart: 3.55, damageEnd: 3.7, defenseStart: 2.1, defenseEnd: 2.18 },
   { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.9, damageEnd: 4.0, defenseStart: 2.3, defenseEnd: 2.35 },
-  { healthStart: 5.25, healthEnd: 5.45, damageStart: 4.3, damageEnd: 4.4, defenseStart: 2.5, defenseEnd: 2.58 },
+  { healthStart: 5.25, healthEnd: 5.4, damageStart: 4.3, damageEnd: 4.35, defenseStart: 2.5, defenseEnd: 2.56 },
   { healthStart: 5.85, healthEnd: 6.5, damageStart: 4.7, damageEnd: 5.15, defenseStart: 2.75, defenseEnd: 3 },
-  { healthStart: 6.5, healthEnd: 6.35, damageStart: 5.15, damageEnd: 5.0, defenseStart: 3, defenseEnd: 2.95 },
+  { healthStart: 6.5, healthEnd: 6.25, damageStart: 5.15, damageEnd: 4.9, defenseStart: 3, defenseEnd: 2.9 },
 ] as const;
 
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
