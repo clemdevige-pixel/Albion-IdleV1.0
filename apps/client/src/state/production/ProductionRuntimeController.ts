@@ -123,6 +123,7 @@ export class ProductionRuntimeController {
     foundation.gatheringRuntime.tick(tick);
     foundation.refiningRuntime.tick(tick);
     foundation.workerRuntime.tick(tick);
+    this.#actions.pollQueuedGathering();
   }
 
   toggleGathering(family: ProductionFamily): boolean { return this.#actions.toggleGathering(family); }
