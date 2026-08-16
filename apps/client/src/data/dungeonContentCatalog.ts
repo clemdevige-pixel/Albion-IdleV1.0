@@ -1,5 +1,6 @@
 import { getEnemyCombatProfile, type DungeonDefinition } from "@game/gameplay";
 import type { WorldBandId } from "@game/data";
+import { getDungeonKeyItemId } from "./dungeonKeyContentCatalog.js";
 import { MONSTER_IDS } from "./monsterContentCatalog.js";
 import type { AuthoredEnemyCombatProfile } from "../runtime/combatEntityFactory.js";
 
@@ -55,11 +56,13 @@ const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefin
   [FACTION_T4_COMBAT_PROFILE.id]: FACTION_T4_COMBAT_PROFILE,
 };
 
+const T4_DUNGEON_KEY_ITEM_ID = getDungeonKeyItemId(4);
+
 export const KEEPER_T4_DUNGEON: DungeonDefinition = {
   id: KEEPER_T4_DUNGEON_ID,
   tier: 4,
   faction: "Keeper",
-  keyItemId: "item_resource_dungeon_key_keeper",
+  keyItemId: T4_DUNGEON_KEY_ITEM_ID,
   combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: KEEPER_T4_LOOT_TABLE_ID,
   encounters: [
@@ -75,7 +78,7 @@ export const HERETIC_T4_DUNGEON: DungeonDefinition = {
   id: HERETIC_T4_DUNGEON_ID,
   tier: 4,
   faction: "Heretic",
-  keyItemId: "item_resource_dungeon_key_heretic",
+  keyItemId: T4_DUNGEON_KEY_ITEM_ID,
   combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: HERETIC_T4_LOOT_TABLE_ID,
   encounters: [
@@ -91,7 +94,7 @@ export const UNDEAD_T4_DUNGEON: DungeonDefinition = {
   id: UNDEAD_T4_DUNGEON_ID,
   tier: 4,
   faction: "Undead",
-  keyItemId: "item_resource_dungeon_key_undead",
+  keyItemId: T4_DUNGEON_KEY_ITEM_ID,
   combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: UNDEAD_T4_LOOT_TABLE_ID,
   encounters: [
@@ -107,7 +110,7 @@ export const MORGANA_T4_DUNGEON: DungeonDefinition = {
   id: MORGANA_T4_DUNGEON_ID,
   tier: 4,
   faction: "Morgana",
-  keyItemId: "item_resource_dungeon_key_morgana",
+  keyItemId: T4_DUNGEON_KEY_ITEM_ID,
   combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: MORGANA_T4_LOOT_TABLE_ID,
   encounters: [
