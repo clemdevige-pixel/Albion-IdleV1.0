@@ -5,6 +5,7 @@ import { WeaponAbilityEffectTracker } from "./WeaponAbilityEffectTracker.js";
 import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.js";
 import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
+import type { SpawnedEnemyResult } from "./combatEntityFactory.js";
 import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
 import { markCombatStartBlocked } from "./CombatStartGuard.js";
 import { combatStopController } from "./CombatStopController.js";
@@ -22,6 +23,15 @@ export type CombatLoopState =
   | "suspended"
   | "idle";
 
+export interface CombatRuntimeAbilityDependencies extends CombatRuntimeDependencies {
+  /**
+   * Optional authored encounter source. Returning undefined keeps the existing
+   * world spawn path. This lets dungeon content reuse the exact same combat
+   * runtime without creating a parallel combat loop.
+   */
+  readonly spawnEnemyOverride?: () => SpawnedEnemyResult | undefined;
+}
+
 export class CombatRuntime extends LegacyCombatRuntime {
   private readonly mechanics: WeaponAbilityMechanicsRuntime;
   private readonly effects: WeaponAbilityEffectTracker;
@@ -31,7 +41,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
   private weaponBlocked = false;
   private lastEnemySnapshot: EnemySnapshot | undefined;
 
-  constructor(private readonly runtimeDeps: CombatRuntimeDependencies) {
+  constructor(private readonly runtimeDeps: CombatRuntimeAbilityDependencies) {
     super(runtimeDeps);
     this.mechanics = new WeaponAbilityMechanicsRuntime({
       heroId: runtimeDeps.heroId,
@@ -42,6 +52,10 @@ export class CombatRuntime extends LegacyCombatRuntime {
       onTargetKilled: (tick) => { this.finalizeActiveEnemyDeath(tick); },
     });
     this.effects = new WeaponAbilityEffectTracker(runtimeDeps.world, runtimeDeps.effectManager, this.mechanics);
+  }
+
+  override spawnEnemy(): SpawnedEnemyResult {
+    return this.runtimeDeps.spawnEnemyOverride?.() ?? super.spawnEnemy();
   }
 
   public getLoopState(): CombatLoopState {
