@@ -124,12 +124,27 @@ export class CombatPresentationController {
     this.hudSystem.setEnemyVisible(visible);
   }
 
-  public clear(): void {
-    clearPresentedEnemyHealth();
+  /**
+   * Invalidates one encounter presentation without destroying the scene actors.
+   * Used for non-victory lifecycle boundaries (defeat/resume, pause/resume,
+   * explicit travel) where the previous enemy must never gate the next spawn.
+   */
+  public invalidateEncounterPresentation(): void {
     this.director.clear();
     this.damageNumberSystem.clear();
-    this.projectileSystem.clear();
     this.vfxSystem.clear();
+    this.displayedEnemyName = undefined;
+    this.displayedEnemyVisualManifestId = undefined;
+    this.displayedEnemyEncounterKey = undefined;
+    this.displayedEnemyIsBoss = false;
+    this.defeatedEnemyPresentedAtMs = undefined;
+    clearPresentedEnemyHealth();
+    this.setEnemyVisible(false);
+  }
+
+  public clear(): void {
+    this.invalidateEncounterPresentation();
+    this.projectileSystem.clear();
     this.actorSystem.clear();
     this.heroSystem.clear();
     this.hudSystem.clear();
