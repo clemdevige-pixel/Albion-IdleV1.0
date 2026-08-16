@@ -1,4 +1,5 @@
 import { getEnchantmentShardItemId } from "@game/gameplay";
+import type { WorldBandId } from "@game/data";
 
 /**
  * Combat loot uses independent rolls. A key fragment, an enchantment shard and
@@ -27,17 +28,52 @@ export const BASE_COMBAT_DROP_RATES = {
 /**
  * Enchantment shard calibration.
  *
- * The current baseline was calibrated against the validated Blue T4 runtime
- * benchmark. The rule itself is world-band agnostic: the caller supplies the
- * active enchantment tier and relative enemy combat weight.
- *
- * Elite and boss multipliers are mutually exclusive: a segment boss may carry
- * both tags in content data, but it must never receive both multipliers.
+ * Shard progression is authored independently from enemy HP. Each zone owns a
+ * start/end progression weight which interpolates across its ten segments so
+ * shard income follows actual enchantment walls while preserving an incentive
+ * to farm deeper accessible segments.
  */
 export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.011;
 export const ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT = 0.015;
 export const ENCHANTMENT_SHARD_ELITE_MULTIPLIER = 1.2;
 export const ENCHANTMENT_SHARD_BOSS_MULTIPLIER = 1.35;
+
+export interface EnchantmentShardZoneProgressionWeight {
+  readonly start: number;
+  readonly end: number;
+}
+
+export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Partial<
+  Readonly<Record<WorldBandId, readonly EnchantmentShardZoneProgressionWeight[]>>
+> = {
+  blue: [
+    { start: 0.35, end: 0.5 },
+    { start: 0.5, end: 0.9 },
+    { start: 0.9, end: 2.0 },
+    { start: 3.8, end: 6.5 },
+    { start: 6.8, end: 9.5 },
+  ],
+  yellow: [
+    { start: 3.5, end: 5.5 },
+    { start: 4.8, end: 6.2 },
+    { start: 5.8, end: 7.4 },
+    { start: 7.6, end: 10.2 },
+    { start: 9.0, end: 10.5 },
+  ],
+} as const;
+
+export function getEnchantmentShardProgressionWeight(
+  bandId: WorldBandId,
+  zoneIndexWithinBand: number,
+  segmentIndex: number,
+): number {
+  const bandWeights = ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS[bandId];
+  const zone = bandWeights?.[zoneIndexWithinBand];
+  if (zone === undefined) return 0;
+  const clampedSegment = Math.max(0, Math.min(9, Math.floor(segmentIndex)));
+  const progress = clampedSegment / 9;
+  return zone.start + (zone.end - zone.start) * progress;
+}
 
 export const BOSS_DROP_RATES = {
   segmentBossArtifactFragment: 0.2,
@@ -73,7 +109,7 @@ export interface CombatLootContext {
   readonly isFinalBoss: boolean;
   /** Equipment tier represented by the current world band: blue=T4, yellow=T5, etc. */
   readonly enchantmentTier: number;
-  /** Relative monster combat weight. 1 = first regular enemy of the current band. */
+  /** Authored relative shard-progression weight for the active zone/segment. */
   readonly enchantmentDropWeight: number;
 }
 

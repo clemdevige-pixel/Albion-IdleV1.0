@@ -1,5 +1,8 @@
-import { getEnemyCombatProfile, type ZoneDefinitionId } from "@game/gameplay";
-import { getEnchantmentShardExpectedDrop } from "./economyContentCatalog.js";
+import type { ZoneDefinitionId } from "@game/gameplay";
+import {
+  getEnchantmentShardExpectedDrop,
+  getEnchantmentShardProgressionWeight,
+} from "./economyContentCatalog.js";
 import { getWorldZonePlacement } from "./worldContentCatalog.js";
 import {
   runCombatRuntimeBenchmark,
@@ -21,22 +24,20 @@ export function getExpectedEnchantmentShardsPerSegment(
   segmentIndex: number,
 ): number {
   const placement = getWorldZonePlacement(zoneDefId);
-  const baselineHp = getEnemyCombatProfile(0, 0, 0, placement.bandId).hp;
+  const progressionWeight = getEnchantmentShardProgressionWeight(
+    placement.bandId,
+    placement.zoneIndexWithinBand,
+    segmentIndex,
+  );
   let expected = 0;
 
   for (let encounterIndex = 0; encounterIndex < 5; encounterIndex += 1) {
-    const enemy = getEnemyCombatProfile(
-      placement.zoneIndexWithinBand,
-      segmentIndex,
-      encounterIndex,
-      placement.bandId,
-    );
     const isSpecial = encounterIndex === 4;
     expected += getEnchantmentShardExpectedDrop({
       segmentIndex,
       isElite: isSpecial && segmentIndex < 9,
       isBoss: isSpecial && segmentIndex === 9,
-      enchantmentDropWeight: baselineHp <= 0 ? 1 : enemy.hp / baselineHp,
+      enchantmentDropWeight: progressionWeight,
     });
   }
 
