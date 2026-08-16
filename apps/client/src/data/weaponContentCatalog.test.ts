@@ -4,6 +4,7 @@ import {
   resolvePrimaryAbilityId,
   resolveUnlockedWeaponAbilities,
   resolveWeaponAbilityUnlocks,
+  resolveWeaponAttackSpeed,
   resolveWeaponFamilyId,
   resolveWeaponMastery,
   resolveWeaponTier,
@@ -27,6 +28,15 @@ describe("weapon content catalog", () => {
       weaponId: "mastery_badon",
     });
     expect(resolvePrimaryAbilityId("item_weapon_bow_t4_badon")).toBe("ability_bow_aimed_shot");
+  });
+
+  it("authors final attack cadence on each specialization without a second balance layer", () => {
+    expect(resolveWeaponAttackSpeed("item_weapon_sword_t4_broadsword")).toBeCloseTo(1.296);
+    expect(resolveWeaponAttackSpeed("item_weapon_bow_t4_longbow")).toBe(1);
+    expect(resolveWeaponAttackSpeed("item_weapon_bow_t4_badon")).toBe(1);
+    expect(resolveWeaponAttackSpeed("item_weapon_staff_t4_infernal")).toBe(0.9);
+    expect(resolveWeaponAttackSpeed("item_weapon_gloves_t4_spiked_gauntlets")).toBeCloseTo(1.204);
+    expect(resolveWeaponAttackSpeed("item_weapon_dagger_t4_pair")).toBeCloseTo(1.392);
   });
 
   it("composes Q/W from family and E from specialization", () => {
