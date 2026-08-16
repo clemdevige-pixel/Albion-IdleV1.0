@@ -26,29 +26,62 @@ interface ProductionActionsDependencies {
 /** Thin application actions around authoritative Production runtimes. */
 export class ProductionActions {
   private readonly deps: ProductionActionsDependencies;
+  private queuedGatheringFamily: SupportedProductionFamily | null = null;
+  private queuedZoneIndex = 0;
+  private queuedSegmentIndex = 0;
+  private lastObservedEncounterIndex = 0;
 
   constructor(deps: ProductionActionsDependencies) {
     this.deps = deps;
+    this.lastObservedEncounterIndex = deps.bridge.world.encounterIndex;
   }
 
   toggleGathering(family: SupportedProductionFamily): boolean {
-    const result = this.toggleGatheringRuntime(family);
+    if (this.deps.gatheringRuntime.isHeroGathering()) {
+      this.queuedGatheringFamily = null;
+      return this.applyGatheringToggle(family);
+    }
 
-    if (result.action === "stopped") {
-      this.deps.productionBridge.syncAllGathering();
-      this.deps.bridge.setCombatState("walking");
+    if (this.deps.bridge.combatState === "combat") {
+      this.queuedGatheringFamily = family;
+      this.queuedZoneIndex = this.deps.bridge.world.zoneIndex;
+      this.queuedSegmentIndex = this.deps.bridge.world.segmentIndex;
+      this.lastObservedEncounterIndex = this.deps.bridge.world.encounterIndex;
+      this.deps.bridge.addEconomyNotification({
+        id: `notif_gather_queue_${String(Date.now())}`,
+        type: "success",
+        message: "Récolte programmée : départ à la fin du segment en cours.",
+        timestamp: Date.now(),
+      });
       return true;
     }
-    if (result.action === "started") {
-      this.deps.prepareCombatResumeAfterGathering();
-      this.deps.bridge.setCombatState("idle");
-      this.deps.productionBridge.syncAllGathering();
-      return true;
-    }
-    return false;
+
+    this.queuedGatheringFamily = null;
+    return this.applyGatheringToggle(family);
+  }
+
+  pollQueuedGathering(): void {
+    const currentEncounter = this.deps.bridge.world.encounterIndex;
+    const currentZone = this.deps.bridge.world.zoneIndex;
+    const currentSegment = this.deps.bridge.world.segmentIndex;
+    const crossedBoundary = currentZone !== this.queuedZoneIndex
+      || currentSegment !== this.queuedSegmentIndex
+      || currentEncounter < this.lastObservedEncounterIndex;
+    this.lastObservedEncounterIndex = currentEncounter;
+
+    if (
+      this.queuedGatheringFamily === null
+      || !crossedBoundary
+      || this.deps.bridge.combatState === "defeat"
+    ) return;
+
+    const family = this.queuedGatheringFamily;
+    this.queuedGatheringFamily = null;
+    this.applyGatheringToggle(family);
   }
 
   returnToCombat(): boolean {
+    this.queuedGatheringFamily = null;
     if (!this.deps.gatheringRuntime.isHeroGathering()) return false;
 
     this.deps.gatheringRuntime.stopAllGathering();
@@ -104,6 +137,23 @@ export class ProductionActions {
       timestamp: Date.now(),
     });
     return true;
+  }
+
+  private applyGatheringToggle(family: SupportedProductionFamily): boolean {
+    const result = this.toggleGatheringRuntime(family);
+
+    if (result.action === "stopped") {
+      this.deps.productionBridge.syncAllGathering();
+      this.deps.bridge.setCombatState("walking");
+      return true;
+    }
+    if (result.action === "started") {
+      this.deps.prepareCombatResumeAfterGathering();
+      this.deps.bridge.setCombatState("idle");
+      this.deps.productionBridge.syncAllGathering();
+      return true;
+    }
+    return false;
   }
 
   private toggleGatheringRuntime(family: SupportedProductionFamily) {
