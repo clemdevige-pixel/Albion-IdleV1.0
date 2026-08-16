@@ -9,11 +9,11 @@ const T4_DUNGEON: DungeonDefinition = {
   faction: "test",
   keyItemId: "item_resource_dungeon_key_test",
   encounters: [
-    { id: "normal_1", kind: "normal", encounterId: "monster_test_normal" },
-    { id: "normal_2", kind: "normal", encounterId: "monster_test_normal" },
-    { id: "elite", kind: "elite", encounterId: "monster_test_elite" },
-    { id: "normal_3", kind: "normal", encounterId: "monster_test_normal" },
-    { id: "boss", kind: "boss", encounterId: "monster_test_boss", lootTableId: "loot_test_boss" },
+    { id: "normal_1", kind: "normal", monsterDefinitionId: "monster_test_normal" },
+    { id: "normal_2", kind: "normal", monsterDefinitionId: "monster_test_normal" },
+    { id: "elite", kind: "elite", monsterDefinitionId: "monster_test_elite" },
+    { id: "normal_3", kind: "normal", monsterDefinitionId: "monster_test_normal" },
+    { id: "boss", kind: "boss", monsterDefinitionId: "monster_test_boss", lootTableId: "loot_test_boss" },
   ],
 };
 
