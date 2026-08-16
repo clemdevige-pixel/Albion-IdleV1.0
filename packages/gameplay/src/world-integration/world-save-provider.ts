@@ -19,6 +19,8 @@ export interface WorldLocationSaveState {
   readonly activeEncounter?: number;
   readonly farmMode: boolean;
   readonly zoneMemories: readonly SavedZoneMemory[];
+  /** Exploration remains blocked after defeat until the player explicitly resumes. */
+  readonly awaitingResumeAfterDefeat?: boolean;
 }
 
 export interface WorldSavePayload {
