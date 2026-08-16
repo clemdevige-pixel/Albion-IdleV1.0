@@ -37,17 +37,18 @@ export const BLUE_WORLD_COMBAT_CURVE = [
 /**
  * Yellow T5 calibration curve.
  * Zone starts preserve the validated early-zone difficulty from the first pass.
- * Endpoints are independently authored so the final boss remains a wall without
- * requiring an enchantment tier beyond the zone's intended progression target:
- * Amberwood T5.0->T5.1, Gloamfen T5.1, Stormwatch T5.2,
- * Sunscar T5.2->T5.3, Ironveil T5.3.
+ * Final-boss targets are intentionally distributed across the T5 ladder:
+ * Amberwood T5.0->T5.1, Gloamfen T5.1,
+ * Stormwatch T5.1 + potion / T5.2 without,
+ * Sunscar T5.2,
+ * Ironveil T5.2 + potion / T5.3 without.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 4.3, healthEnd: 4.45, damageStart: 3.55, damageEnd: 3.7, defenseStart: 2.1, defenseEnd: 2.18 },
   { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.9, damageEnd: 4.0, defenseStart: 2.3, defenseEnd: 2.35 },
-  { healthStart: 5.25, healthEnd: 5.55, damageStart: 4.3, damageEnd: 4.5, defenseStart: 2.5, defenseEnd: 2.62 },
+  { healthStart: 5.25, healthEnd: 5.45, damageStart: 4.3, damageEnd: 4.4, defenseStart: 2.5, defenseEnd: 2.58 },
   { healthStart: 5.85, healthEnd: 6.5, damageStart: 4.7, damageEnd: 5.15, defenseStart: 2.75, defenseEnd: 3 },
-  { healthStart: 6.5, healthEnd: 6.65, damageStart: 5.15, damageEnd: 5.2, defenseStart: 3, defenseEnd: 3.05 },
+  { healthStart: 6.5, healthEnd: 6.35, damageStart: 5.15, damageEnd: 5.0, defenseStart: 3, defenseEnd: 2.95 },
 ] as const;
 
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
