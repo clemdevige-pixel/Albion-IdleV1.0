@@ -23,6 +23,7 @@ import { selectWeaponPresentation } from "./GamePresentationState";
 type PresentationDamageEvent = DamageNumberEvent & {
   readonly sourceType?: "auto_attack" | "ability" | "effect" | "other";
   readonly targetHealthAfter?: number;
+  readonly encounterKey?: string;
 };
 
 const DEFEATED_ENEMY_HOLD_MS = 120;
@@ -264,6 +265,11 @@ export class CombatPresentationController {
 
   private handlePresentedImpact(event: PresentationDamageEvent): void {
     if (event.target !== "enemy" || event.targetHealthAfter === undefined) return;
+    if (
+      event.encounterKey !== undefined
+      && this.displayedEnemyEncounterKey !== undefined
+      && event.encounterKey !== this.displayedEnemyEncounterKey
+    ) return;
     applyPresentedEnemyImpact(event.targetHealthAfter);
     if (event.targetHealthAfter <= 0 && this.defeatedEnemyPresentedAtMs === undefined) {
       this.defeatedEnemyPresentedAtMs = this.scene.time.now;
@@ -277,6 +283,16 @@ export class CombatPresentationController {
     for (const event of bridge.damageNumbers) {
       if (event.id <= this.lastDamageEventId) continue;
       const presentationEvent = event as PresentationDamageEvent;
+
+      if (
+        event.target === "enemy"
+        && presentationEvent.encounterKey !== undefined
+        && this.displayedEnemyEncounterKey !== undefined
+        && presentationEvent.encounterKey !== this.displayedEnemyEncounterKey
+      ) {
+        this.lastDamageEventId = Math.max(this.lastDamageEventId, event.id);
+        continue;
+      }
 
       if (presentationEvent.sourceType === "effect") {
         this.combatSystem.present(event);
