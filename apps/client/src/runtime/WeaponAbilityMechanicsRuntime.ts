@@ -5,6 +5,11 @@ import type {
   AbilityMechanic,
   ClientAbilityDefinition,
 } from "../data/weaponContentCatalog.js";
+import {
+  canContinueWeaponMultiHit,
+  matchesWeaponDotIdentity,
+  snapshotWeaponDotSourceDamage,
+} from "../data/weaponMechanicsContract.js";
 
 interface ActiveDot {
   readonly effectId: string;
@@ -97,6 +102,9 @@ export class WeaponAbilityMechanicsRuntime {
     const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
     let dealtDamage = false;
 
+    // Mechanics execute strictly in authored array order. This is part of the
+    // shared weapon mechanics contract and lets damage/status/DoT sequencing be
+    // expressed in data without weapon-specific runtime branches.
     for (const mechanic of profile.mechanics) {
       if (!this.deps.damageManager.isAlive(target)) break;
       if (mechanic.kind === "damage") {
@@ -109,7 +117,11 @@ export class WeaponAbilityMechanicsRuntime {
         );
         const hits = Math.max(1, mechanic.hits ?? 1);
         const baseDamagePerHit = getAbilityHitBaseDamage(sourceDamage, totalRatio, hits);
-        for (let hit = 0; hit < hits && this.deps.damageManager.isAlive(target); hit += 1) {
+        for (
+          let hit = 0;
+          hit < hits && canContinueWeaponMultiHit(this.deps.damageManager.isAlive(target));
+          hit += 1
+        ) {
           const result = this.deps.damageManager.processDamage({
             source: this.deps.heroId,
             target,
@@ -132,12 +144,15 @@ export class WeaponAbilityMechanicsRuntime {
           strength: mechanic.ratio,
           refreshOnReapply: true,
         }, tick);
-        const existing = this.dots.find((dot) =>
-          dot.source === this.deps.heroId
-          && dot.target === target
-          && dot.effectId === mechanic.effectId
-        );
+        const incomingIdentity = {
+          source: this.deps.heroId,
+          target,
+          effectId: mechanic.effectId,
+        };
+        const existing = this.dots.find((dot) => matchesWeaponDotIdentity(dot, incomingIdentity));
         if (existing !== undefined) {
+          // Same-effect DoTs do not stack. Reapplication refreshes their schedule
+          // and tick count while keeping the original source-damage snapshot.
           existing.intervalRemaining = mechanic.interval;
           existing.ticksRemaining = mechanic.ticks;
         } else {
@@ -146,7 +161,7 @@ export class WeaponAbilityMechanicsRuntime {
             source: this.deps.heroId,
             target,
             damageType: definition.damageType,
-            sourceDamage,
+            sourceDamage: snapshotWeaponDotSourceDamage(sourceDamage),
             ratio: mechanic.ratio,
             intervalRemaining: mechanic.interval,
             interval: mechanic.interval,
