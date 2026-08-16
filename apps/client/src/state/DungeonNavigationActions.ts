@@ -16,6 +16,7 @@ interface DungeonStopController {
   isPaused(): boolean;
   requestStopAfterSegment(): boolean;
   reset(): void;
+  subscribe(listener: () => void): () => void;
 }
 
 interface DungeonNavigationActionsDependencies {
@@ -43,6 +44,7 @@ export interface DungeonNavigationState {
  */
 export class DungeonNavigationActions {
   private pendingDefinitionId: string | null = null;
+  private unsubscribePendingPause: (() => void) | undefined;
 
   public constructor(private readonly deps: DungeonNavigationActionsDependencies) {}
 
@@ -67,21 +69,15 @@ export class DungeonNavigationActions {
 
     if (loopState === "combat" || loopState === "stop_requested") {
       this.pendingDefinitionId = definitionId;
+      this.watchForSegmentPause();
       if (loopState === "combat" && !this.deps.stopController.requestStopAfterSegment()) {
-        this.pendingDefinitionId = null;
+        this.clearPendingStart();
         return false;
       }
       this.deps.onStateChanged();
       return true;
     }
 
-    return this.startNow(definitionId);
-  }
-
-  /** Called after each combat tick so a queued entry crosses only at segment pause. */
-  public flushPendingStart(): boolean {
-    const definitionId = this.pendingDefinitionId;
-    if (definitionId === null || !this.deps.stopController.isPaused()) return false;
     return this.startNow(definitionId);
   }
 
@@ -94,6 +90,22 @@ export class DungeonNavigationActions {
     return true;
   }
 
+  public dispose(): void {
+    this.unsubscribePendingPause?.();
+    this.unsubscribePendingPause = undefined;
+  }
+
+  private watchForSegmentPause(): void {
+    this.unsubscribePendingPause?.();
+    this.unsubscribePendingPause = this.deps.stopController.subscribe(() => {
+      const definitionId = this.pendingDefinitionId;
+      if (definitionId === null || !this.deps.stopController.isPaused()) return;
+      this.unsubscribePendingPause?.();
+      this.unsubscribePendingPause = undefined;
+      this.startNow(definitionId);
+    });
+  }
+
   private startNow(definitionId: string): boolean {
     this.deps.combatRuntime.interruptEncounter();
     const started = this.deps.dungeonRuntime.start(
@@ -102,19 +114,16 @@ export class DungeonNavigationActions {
       this.deps.inventoryManager,
     );
 
-    if (!started.ok) {
-      this.pendingDefinitionId = null;
-      this.deps.stopController.reset();
-      this.deps.onStateChanged();
-      return false;
-    }
-
-    this.pendingDefinitionId = null;
-    // The pause belongs to the world segment boundary. A dungeon is a new combat
-    // session and must start in running state rather than inheriting that pause.
+    this.clearPendingStart();
     this.deps.stopController.reset();
     this.deps.onStateChanged();
-    return true;
+    return started.ok;
+  }
+
+  private clearPendingStart(): void {
+    this.pendingDefinitionId = null;
+    this.unsubscribePendingPause?.();
+    this.unsubscribePendingPause = undefined;
   }
 
   private canConsumeDungeonKey(definitionId: string): boolean {
