@@ -143,7 +143,7 @@ export function WorldDungeonsView(): JSX.Element {
                       ? "La clé sera consommée uniquement au moment de l’entrée."
                       : keyCount > 0
                         ? "En combat, l’entrée attendra la fin du segment actuel."
-                        : "Une clé Keeper est requise pour entrer."}
+                        : `Une clé ${dungeon.faction} est requise pour entrer.`}
                 </p>
                 {isActiveDungeon ? (
                   <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>
