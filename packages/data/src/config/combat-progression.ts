@@ -48,7 +48,9 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.9, damageEnd: 4.0, defenseStart: 2.3, defenseEnd: 2.35 },
   { healthStart: 5.25, healthEnd: 5.4, damageStart: 4.3, damageEnd: 4.35, defenseStart: 2.5, defenseEnd: 2.56 },
   { healthStart: 5.85, healthEnd: 6.5, damageStart: 4.7, damageEnd: 5.15, defenseStart: 2.75, defenseEnd: 3 },
-  { healthStart: 6.5, healthEnd: 6.25, damageStart: 5.15, damageEnd: 4.9, defenseStart: 3, defenseEnd: 2.9 },
+  // Ironveil starts at Sunscar's endpoint and must never become easier as segments advance.
+  // Keep the authored boundary flat until a future zone-wide balance pass gives it a new upward slope.
+  { healthStart: 6.5, healthEnd: 6.5, damageStart: 5.15, damageEnd: 5.15, defenseStart: 3, defenseEnd: 3 },
 ] as const;
 
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
