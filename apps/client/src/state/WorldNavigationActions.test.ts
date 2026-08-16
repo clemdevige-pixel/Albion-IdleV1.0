@@ -39,7 +39,7 @@ function createHarness(options?: {
     resumeExploration: vi.fn(() => options?.explorationResumed ?? true),
     isAwaitingResumeAfterDefeat: vi.fn(() => options?.awaitingResumeAfterDefeat ?? false),
     restoreAwaitingResumeAfterDefeat: vi.fn(),
-    getLoopState: vi.fn(() => options?.loopState ?? "combat" as CombatLoopState),
+    getLoopState: vi.fn((): CombatLoopState => options?.loopState ?? "combat"),
   };
   const bridge = {
     setCombatState: vi.fn(),
