@@ -113,6 +113,7 @@ export class GameBridge {
     abilityId?: string,
     sourceType: DamagePresentationSource = "other",
     targetHealthAfter?: number,
+    encounterKey?: string,
   ): void {
     const damageNumbers = [
       ...this.#state.damageNumbers,
@@ -124,6 +125,7 @@ export class GameBridge {
         sourceType,
         ...(targetHealthAfter === undefined ? {} : { targetHealthAfter }),
         ...(abilityId === undefined ? {} : { abilityId }),
+        ...(encounterKey === undefined ? {} : { encounterKey }),
       },
     ].slice(-20);
     this.#nextDamageNumberId += 1;
