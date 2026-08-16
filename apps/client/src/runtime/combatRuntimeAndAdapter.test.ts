@@ -127,8 +127,9 @@ function createTestEnvironment() {
 }
 
 describe("combatRuntimeAndAdapter regression suite", () => {
-  it("CombatRuntime same-tick victory", () => {
+  it("CombatRuntime commits victory progression in the same tick as the victory result", () => {
     const env = createTestEnvironment();
+    let victoryCommits = 0;
 
     const combatRuntime = new CombatRuntime({
       world: env.world,
@@ -145,7 +146,10 @@ describe("combatRuntimeAndAdapter regression suite", () => {
       equipmentManager: env.equipmentManager,
       biomeResolver: new BiomeResolver(new BiomeRegistry()),
       ports: {
-        onVictory: () => ({ enteredNewSegment: true }),
+        onVictory: () => {
+          victoryCommits += 1;
+          return { enteredNewSegment: true };
+        },
         onDefeat: () => {},
         isCombatSuspended: () => false,
         getLocationState: () => ({ zoneIndex: 0, segmentIndex: 0, encounterIndex: 0, zoneDefId: WORLD_ZONE_IDS.forest, zoneName: "Forest", highestUnlockedSegment: 0, farmMode: false }),
@@ -163,6 +167,7 @@ describe("combatRuntimeAndAdapter regression suite", () => {
 
     const tickResult = combatRuntime.tick(0.5, 2);
     expect(tickResult.combatState).toBe("victory");
+    expect(victoryCommits).toBe(1);
   });
 
   it("does not heal the hero when a farm loop completes without changing zone or segment", () => {
