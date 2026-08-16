@@ -9,6 +9,7 @@ import type {
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../../game/GameBridge";
 import type { ProductionFoundation } from "../../runtime/bootstrap/createProductionFoundation";
+import type { CombatLoopState } from "../../runtime/CombatRuntime";
 import {
   buildMasteryViewModels,
   getWorkerResourceLabel,
@@ -33,6 +34,7 @@ interface ProductionRuntimeControllerDependencies {
   readonly walletId: WalletId;
   readonly progressionOrchestrator: ProgressionOrchestrator;
   readonly getCurrentTick: () => number;
+  readonly getCombatLoopState: () => CombatLoopState;
   readonly getGatheringTier: () => ProductionTier;
   readonly setGatheringTier: (tier: ProductionTier) => void;
   readonly getRefiningTier: (family: ProductionFamily) => ProductionTier;
@@ -88,6 +90,7 @@ export class ProductionRuntimeController {
       craftingRuntime: foundation.craftingRuntime,
       productionBridge: this.#bridgeAdapter,
       getCurrentTick: dependencies.getCurrentTick,
+      getCombatLoopState: dependencies.getCombatLoopState,
       prepareCombatResumeAfterGathering:
         dependencies.prepareCombatResumeAfterGathering,
     });
@@ -123,6 +126,7 @@ export class ProductionRuntimeController {
     foundation.gatheringRuntime.tick(tick);
     foundation.refiningRuntime.tick(tick);
     foundation.workerRuntime.tick(tick);
+    this.#actions.pollQueuedGathering();
   }
 
   toggleGathering(family: ProductionFamily): boolean { return this.#actions.toggleGathering(family); }

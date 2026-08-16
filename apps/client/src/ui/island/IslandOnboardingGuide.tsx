@@ -11,13 +11,15 @@ const GATHERING_BUILDING_IDS: readonly IslandBuildingId[] = [
   "fiber_camp",
 ];
 
+const FIRST_GEAR_SLOTS = new Set(["head", "torso", "boots", "off_hand"]);
+
 /**
- * Lightweight onboarding derived entirely from authoritative game state.
- * No tutorial flags are stored: guidance disappears naturally once the player
- * owns a first crafted T3 armor/offhand piece beyond the starter weapon.
+ * Lightweight onboarding derived entirely from persisted authoritative state.
+ * Possessing a first armor/offhand item permanently advances the guide even
+ * after reload; no volatile crafting-session counter is used as a tutorial flag.
  */
 export function IslandOnboardingGuide(): JSX.Element | null {
-  const { island, crafting, workers, equipment } = useGameBridge();
+  const { island, crafting, workers, equipment, inventory, bank } = useGameBridge();
   const builtIds = new Set(island.buildings.map((building) => building.definitionId));
   const workshopBuilt = builtIds.has("workshop");
   const gatheringBuildings = GATHERING_BUILDING_IDS.filter((id) => builtIds.has(id));
@@ -30,7 +32,18 @@ export function IslandOnboardingGuide(): JSX.Element | null {
     && (recipe.family === "armor" || recipe.family === "offhand")
     && !(usesTwoHandedWeapon && recipe.family === "offhand")
   ));
-  const hasFirstCraftedGear = t3FirstGearRecipes.some((recipe) => recipe.craftedQuantity > 0);
+  const ownedItemIds = [
+    ...equipment.slots.map((slot) => slot.itemId),
+    ...inventory.slots.map((slot) => slot.itemId),
+    ...bank.slots.map((slot) => slot.itemId),
+  ].filter((itemId): itemId is string => itemId !== undefined);
+  const hasFirstCraftedGear = ownedItemIds.some((itemId) => {
+    const definition = getItemDefinition(itemId);
+    return definition !== undefined
+      && definition.tier >= 3
+      && definition.slot !== undefined
+      && FIRST_GEAR_SLOTS.has(definition.slot);
+  });
 
   if (hasFirstCraftedGear) return null;
 

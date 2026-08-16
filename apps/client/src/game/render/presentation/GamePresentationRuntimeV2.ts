@@ -11,6 +11,7 @@ import {
   clearPresentedEnemyHealth,
   resetPresentedEnemyHealth,
 } from "./CombatPresentedHealth";
+import { resolveCombatPresentationTransition } from "./CombatPresentationTransition";
 import { WorldPresentationController } from "./WorldPresentationController";
 
 /** Thin coordinator for the specialized presentation controllers. */
@@ -38,32 +39,37 @@ export class GamePresentationRuntime {
     const bridge = this.getBridge();
     if (bridge === undefined) return;
 
-    const encounterPresentationKey = [
-      bridge.world.zoneDefId,
-      bridge.world.segmentIndex,
-      bridge.world.encounterIndex,
-    ].join(":");
-    const enteredCombat = bridge.combatState === "combat"
-      && this.lastCombatState !== undefined
-      && this.lastCombatState !== "combat";
-    const encounterKeyChanged = this.lastEncounterPresentationKey !== undefined
-      && encounterPresentationKey !== this.lastEncounterPresentationKey;
+    const encounterPresentationKey = bridge.enemyEncounterKey;
+    const transition = resolveCombatPresentationTransition({
+      previousCombatState: this.lastCombatState,
+      nextCombatState: bridge.combatState,
+      previousEncounterKey: this.lastEncounterPresentationKey,
+      nextEncounterKey: encounterPresentationKey,
+    });
 
-    if (this.lastEncounterPresentationKey === undefined) {
-      resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+    if (transition === "initialize") {
+      if (this.hasAuthoritativeEnemySnapshot(bridge)) {
+        resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      } else {
+        clearPresentedEnemyHealth();
+      }
       this.lastEncounterPresentationKey = encounterPresentationKey;
-    } else if (encounterKeyChanged || enteredCombat) {
-      // A presentation encounter boundary is not always a world-index change:
-      // defeat/resume retries the same encounter and stop/resume may also restart
-      // combat without changing zone/segment/encounter. In both cases the bridge
-      // already contains the newly spawned enemy and its full health.
-      //
-      // Invalidate delayed impacts/projectiles from the previous encounter before
-      // resetting presentation health so stale visuals can never damage the new
-      // health bar.
+    } else if (transition === "hard_reset") {
+      // Defeat/resume, pause/resume and explicit travel are hard encounter
+      // boundaries. Clear the old encounter immediately, but never seed the
+      // next health bar from stale bridge values while no new combat snapshot
+      // has been published yet.
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
-      resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      this.combat?.invalidateEncounterPresentation();
+      if (bridge.combatState === "combat" && this.hasAuthoritativeEnemySnapshot(bridge)) {
+        resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      }
+      this.lastEncounterPresentationKey = encounterPresentationKey;
+    } else if (transition === "victory_handoff") {
+      // Victory progression is presentation-asynchronous. The new enemy snapshot
+      // is already atomic, but the controller intentionally keeps presenting the
+      // defeated enemy until its killing impact has finished.
       this.lastEncounterPresentationKey = encounterPresentationKey;
     }
 
@@ -84,5 +90,12 @@ export class GamePresentationRuntime {
     this.world = undefined;
     this.lastEncounterPresentationKey = undefined;
     this.lastCombatState = undefined;
+  }
+
+  private hasAuthoritativeEnemySnapshot(bridge: GameBridge): boolean {
+    return bridge.enemyEncounterKey.length > 0
+      && bridge.enemyName.length > 0
+      && bridge.enemyVisualManifestId.length > 0
+      && bridge.enemyMaxHealth > 0;
   }
 }

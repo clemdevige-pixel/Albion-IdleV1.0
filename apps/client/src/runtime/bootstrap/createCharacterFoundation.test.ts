@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DeathComponent } from "@game/gameplay";
 import { setupCombatEntity } from "../combatEntityFactory";
 import { createCombatFoundation } from "./createCombatFoundation";
 import {
@@ -9,7 +10,7 @@ import {
 import { createEconomyFoundation } from "./createEconomyFoundation";
 import { createProgressionFoundation } from "./createProgressionFoundation";
 
-function createFixture() {
+function createFixture(canEnchantNow?: () => boolean) {
   const combat = createCombatFoundation();
   const progression = createProgressionFoundation();
   const equipment = createCharacterEquipmentFoundation({
@@ -33,6 +34,7 @@ function createFixture() {
     equipmentManager: equipment.equipmentManager,
     currencyService: economy.currencyService,
     walletId: economy.walletId,
+    ...(canEnchantNow === undefined ? {} : { canEnchantNow }),
   });
   return { combat, progression, equipment, economy, heroId, storage };
 }
@@ -90,6 +92,34 @@ describe("createCharacterFoundation", () => {
       .flatMap((slot) => slot.entry === undefined ? [] : [slot.entry.itemId]);
     expect(inventoryItems).not.toContain("item_weapon_sword_t3_broadsword");
     expect(inventoryItems).not.toContain("item_weapon_staff_t3_infernal");
+
+    fixture.combat.orchestrator.dispose();
+  });
+
+  it("finds enchantable bank items and bypasses the action lock only while dead", () => {
+    const fixture = createFixture(() => false);
+    const position = fixture.equipment.inventoryManager.findFreeSlots(fixture.storage.bankId)[0];
+    expect(position).toBeDefined();
+    if (position === undefined) throw new Error("Expected a free bank slot");
+
+    const added = fixture.equipment.inventoryManager.addEntry(
+      fixture.storage.bankId,
+      "item_weapon_sword_t4_broadsword",
+      position,
+    );
+    expect(added.ok).toBe(true);
+    if (!added.ok) throw new Error("Expected bank item creation to succeed");
+
+    expect(fixture.storage.enchantmentService.preview(added.value.instanceId)?.failureReason)
+      .toBe("combat_active");
+
+    const death = fixture.combat.world.tryGetComponent(fixture.heroId, DeathComponent);
+    expect(death).toBeDefined();
+    if (death !== undefined) death.isDead = true;
+
+    const deadPreview = fixture.storage.enchantmentService.preview(added.value.instanceId);
+    expect(deadPreview).toBeDefined();
+    expect(deadPreview?.failureReason).not.toBe("combat_active");
 
     fixture.combat.orchestrator.dispose();
   });

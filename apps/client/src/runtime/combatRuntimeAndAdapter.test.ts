@@ -127,8 +127,9 @@ function createTestEnvironment() {
 }
 
 describe("combatRuntimeAndAdapter regression suite", () => {
-  it("CombatRuntime same-tick victory", () => {
+  it("CombatRuntime commits victory progression in the same tick as the victory result", () => {
     const env = createTestEnvironment();
+    let victoryCommits = 0;
 
     const combatRuntime = new CombatRuntime({
       world: env.world,
@@ -145,7 +146,10 @@ describe("combatRuntimeAndAdapter regression suite", () => {
       equipmentManager: env.equipmentManager,
       biomeResolver: new BiomeResolver(new BiomeRegistry()),
       ports: {
-        onVictory: () => ({ enteredNewSegment: true }),
+        onVictory: () => {
+          victoryCommits += 1;
+          return { enteredNewSegment: true };
+        },
         onDefeat: () => {},
         isCombatSuspended: () => false,
         getLocationState: () => ({ zoneIndex: 0, segmentIndex: 0, encounterIndex: 0, zoneDefId: WORLD_ZONE_IDS.forest, zoneName: "Forest", highestUnlockedSegment: 0, farmMode: false }),
@@ -163,6 +167,60 @@ describe("combatRuntimeAndAdapter regression suite", () => {
 
     const tickResult = combatRuntime.tick(0.5, 2);
     expect(tickResult.combatState).toBe("victory");
+    expect(victoryCommits).toBe(1);
+  });
+
+  it("does not heal the hero when a farm loop completes without changing zone or segment", () => {
+    const env = createTestEnvironment();
+    let encounterIndex = 4;
+
+    const combatRuntime = new CombatRuntime({
+      world: env.world,
+      heroId: env.heroId,
+      combatService: env.combatService,
+      orchestrator: env.orchestrator,
+      damageManager: env.damageManager,
+      deathManager: env.deathManager,
+      targetManager: env.targetManager,
+      autoAttackManager: env.autoAttackManager,
+      abilityManager: env.abilityManager,
+      effectManager: env.effectManager,
+      statsManager: env.statsManager,
+      equipmentManager: env.equipmentManager,
+      biomeResolver: new BiomeResolver(new BiomeRegistry()),
+      ports: {
+        onVictory: () => {
+          encounterIndex = 0;
+          // WorldRuntime currently reports segment completion through this flag
+          // even when Farm keeps the player on the same segment.
+          return { enteredNewSegment: true };
+        },
+        onDefeat: () => {},
+        isCombatSuspended: () => false,
+        getLocationState: () => ({
+          zoneIndex: 0,
+          segmentIndex: 2,
+          encounterIndex,
+          zoneDefId: WORLD_ZONE_IDS.forest,
+          zoneName: "Forest",
+          highestUnlockedSegment: 2,
+          farmMode: true,
+        }),
+      },
+    });
+
+    combatRuntime.tick(0.5, 1);
+    const session = env.combatService.getActiveSession();
+    const enemyId = session?.participants.enemies[0];
+    if (enemyId === undefined) throw new Error("Expected active farm encounter");
+    env.damageManager.getHealth(enemyId).currentHealth = 5;
+
+    expect(combatRuntime.tick(0.5, 2).combatState).toBe("victory");
+    env.damageManager.getHealth(env.heroId).currentHealth = 40;
+
+    const nextEncounter = combatRuntime.tick(0.5, 3);
+    expect(nextEncounter.playerHealth?.currentHealth).toBe(40);
+    expect(nextEncounter.playerHealth?.maxHealth).toBe(100);
   });
 
   it("combatRewardAdapter reward execution", () => {

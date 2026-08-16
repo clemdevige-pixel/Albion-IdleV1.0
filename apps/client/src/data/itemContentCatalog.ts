@@ -1,5 +1,8 @@
 import { ENCHANTMENT_MINIMUM_ITEM_TIER, type EquipmentInfoLike } from "@game/gameplay";
 import { WEAPON_ITEM_DEFINITIONS } from "./weaponContentCatalog.js";
+import {
+  PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS,
+} from "./nonWeaponEquipmentContentCatalog.js";
 import { getWeaponAttackSpeed, getItemTier } from "./itemPower.js";
 import { getWeaponHandlingOffensiveMultiplier } from "./weaponHandlingBalance.js";
 import {
@@ -13,96 +16,25 @@ import {
 const HERO_BASE_ATTACK_SPEED = 1.2;
 
 /**
- * Non-weapon equipment content. Weapon entries live in weaponContentCatalog.
- * Defensive gear uses authored tier values; enchantment scaling is applied by
- * EquipmentStatSync and must not be baked into these definitions.
+ * Non-weapon equipment content. Conventional tier-progressing equipment is
+ * derived from nonWeaponEquipmentContentCatalog; only standalone exceptions
+ * live directly here.
  */
 export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
   Record<string, EquipmentInfoLike>
 > = {
-  item_leather_armor: {
-    itemId: "item_leather_armor",
-    slot: "chest",
-    handling: "one_handed",
-    stats: { stat_armor: 11, stat_magic_resistance: 8, stat_max_health: 145 },
-  },
+  ...PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS,
   item_wooden_shield: {
     itemId: "item_wooden_shield",
     slot: "off_hand",
     handling: "one_handed",
     stats: { stat_armor: 5, stat_magic_resistance: 3 },
   },
-  item_shield_t3_reinforced: {
-    itemId: "item_shield_t3_reinforced",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 9, stat_magic_resistance: 5 },
-  },
-  item_shield_t4_reinforced: {
-    itemId: "item_shield_t4_reinforced",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 15, stat_magic_resistance: 9 },
-  },
-  item_iron_helmet: {
-    itemId: "item_iron_helmet",
-    slot: "head",
-    handling: "one_handed",
-    stats: { stat_armor: 6, stat_magic_resistance: 4, stat_max_health: 85 },
-  },
-  item_leather_boots: {
-    itemId: "item_leather_boots",
-    slot: "boots",
-    handling: "one_handed",
-    stats: { stat_armor: 4, stat_magic_resistance: 3 },
-  },
   item_traveler_cape: {
     itemId: "item_traveler_cape",
     slot: "cape",
     handling: "one_handed",
     stats: { stat_magic_resistance: 4 },
-  },
-  item_helmet_t4_reinforced: {
-    itemId: "item_helmet_t4_reinforced",
-    slot: "head",
-    handling: "one_handed",
-    stats: { stat_armor: 10, stat_magic_resistance: 7, stat_max_health: 115 },
-  },
-  item_armor_t4_leather: {
-    itemId: "item_armor_t4_leather",
-    slot: "chest",
-    handling: "one_handed",
-    stats: { stat_armor: 18, stat_magic_resistance: 12, stat_max_health: 185 },
-  },
-  item_boots_t4_leather: {
-    itemId: "item_boots_t4_leather",
-    slot: "boots",
-    handling: "one_handed",
-    stats: { stat_armor: 8, stat_magic_resistance: 5 },
-  },
-  item_shield_t5_reinforced: {
-    itemId: "item_shield_t5_reinforced",
-    slot: "off_hand",
-    handling: "one_handed",
-    stats: { stat_armor: 22, stat_magic_resistance: 13 },
-  },
-  item_helmet_t5_reinforced: {
-    itemId: "item_helmet_t5_reinforced",
-    slot: "head",
-    handling: "one_handed",
-    stats: { stat_armor: 15, stat_magic_resistance: 11, stat_max_health: 160 },
-  },
-  item_armor_t5_leather: {
-    itemId: "item_armor_t5_leather",
-    slot: "chest",
-    handling: "one_handed",
-    stats: { stat_armor: 26, stat_magic_resistance: 18, stat_max_health: 260 },
-  },
-  item_boots_t5_leather: {
-    itemId: "item_boots_t5_leather",
-    slot: "boots",
-    handling: "one_handed",
-    stats: { stat_armor: 11, stat_magic_resistance: 7 },
   },
 };
 

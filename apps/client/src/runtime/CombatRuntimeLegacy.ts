@@ -33,6 +33,7 @@ import {
   type SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
 import { combatStopController } from "./CombatStopController.js";
+import { canUseActiveAbility } from "./combatActionControl.js";
 import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
@@ -102,6 +103,8 @@ export class CombatRuntime {
   private activeEnemyId: EntityId = NO_ENEMY_ID;
   private encounterCounter = 0;
   private completedEncounterResult: "victory" | "defeat" | null = null;
+  private completedVictoryLocationChanged = false;
+  private completedVictoryEndedSegment = false;
   private awaitingResumeAfterDefeat = false;
   private primaryAbilityAutoCast = true;
   private currentTick = 0;
@@ -156,6 +159,7 @@ export class CombatRuntime {
 
   private useReadyEnemyAbility(): boolean {
     if (!this.damageManager.isAlive(this.activeEnemyId) || !this.damageManager.isAlive(this.heroId)) return false;
+    if (!canUseActiveAbility(this.effectManager, this.activeEnemyId)) return false;
     const readyAbility = this.abilityManager.getAbilities(this.activeEnemyId).find((entry) => entry.state === "ready" && entry.definition.category !== "passive");
     if (readyAbility === undefined) return false;
     const definition = getMonsterAbilityDefinition(String(readyAbility.abilityId));
@@ -219,6 +223,22 @@ export class CombatRuntime {
   public setPrimaryAbilityAutoCast(enabled: boolean): void { this.primaryAbilityAutoCast = enabled; }
   public isAwaitingResumeAfterDefeat(): boolean { return this.awaitingResumeAfterDefeat; }
 
+  public restoreAwaitingResumeAfterDefeat(): void {
+    this.cleanupActiveEnemy();
+    this.effectManager.removeAllEffects(this.heroId);
+    this.completedEncounterResult = null;
+    this.completedVictoryLocationChanged = false;
+    this.completedVictoryEndedSegment = false;
+    this.awaitingResumeAfterDefeat = true;
+    const health = this.damageManager.getHealth(this.heroId);
+    health.currentHealth = 0;
+    const heroDeathData = this.world.tryGetComponent(this.heroId, DeathComponent);
+    if (heroDeathData !== undefined) {
+      heroDeathData.isDead = true;
+      heroDeathData.processed = true;
+    }
+  }
+
   public restoreHeroHealth(): void {
     const health = this.damageManager.getHealth(this.heroId);
     this.damageManager.healDamage(this.heroId, health.maxHealth - health.currentHealth);
@@ -244,6 +264,8 @@ export class CombatRuntime {
     this.cleanupActiveEnemy();
     this.effectManager.removeAllEffects(this.heroId);
     this.completedEncounterResult = null;
+    this.completedVictoryLocationChanged = false;
+    this.completedVictoryEndedSegment = false;
     this.awaitingResumeAfterDefeat = false;
     this.reviveHero();
   }
@@ -266,7 +288,11 @@ export class CombatRuntime {
 
   public useWeaponAbility(slotIndex: number): boolean {
     const definition = this.getUnlockedHeroWeaponAbilities()[slotIndex];
-    if (definition === undefined || !this.damageManager.isAlive(this.activeEnemyId)) return false;
+    if (
+      definition === undefined
+      || !this.damageManager.isAlive(this.activeEnemyId)
+      || !canUseActiveAbility(this.effectManager, this.heroId)
+    ) return false;
     const execution = this.abilityManager.executeIntent({ entityId: this.heroId, abilityId: definition.id as AbilityId, primaryTarget: this.activeEnemyId, tick: this.currentTick });
     if (!execution.ok) return false;
 
@@ -289,7 +315,7 @@ export class CombatRuntime {
     }
     const session = this.combatService.getActiveSession();
     if (session === undefined) {
-      let enteredNewSegment = false;
+      let locationChangedAfterVictory = false;
       if (this.awaitingResumeAfterDefeat) return { combatState: "defeat" };
       if (this.completedEncounterResult === "defeat") {
         this.cleanupActiveEnemy();
@@ -300,12 +326,13 @@ export class CombatRuntime {
       }
       if (this.completedEncounterResult === "victory") {
         this.cleanupActiveEnemy();
-        const completedSegment = this.ports.getLocationState().encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-        const res = this.ports.onVictory();
-        enteredNewSegment = res.enteredNewSegment;
+        locationChangedAfterVictory = this.completedVictoryLocationChanged;
+        const completedSegment = this.completedVictoryEndedSegment;
         this.completedEncounterResult = null;
+        this.completedVictoryLocationChanged = false;
+        this.completedVictoryEndedSegment = false;
         if (completedSegment && combatStopController.pauseAfterSegment()) {
-          if (enteredNewSegment) this.restoreHeroHealth();
+          if (locationChangedAfterVictory) this.restoreHeroHealth();
           return { combatState: "idle" };
         }
       } else {
@@ -319,7 +346,7 @@ export class CombatRuntime {
       this.encounterCounter += 1;
       const enemy = this.spawnEnemy();
       this.activeEnemyId = enemy.id;
-      if (enteredNewSegment || enteringBoss) this.restoreHeroHealth();
+      if (locationChangedAfterVictory || enteringBoss) this.restoreHeroHealth();
       const encounterResult = this.combatService.startEncounter({ id: asEncounterId(`encounter_${String(this.encounterCounter)}`), enemies: [{ entityId: enemy.id }] }, this.heroId);
       const enemyHealth = this.damageManager.getHealth(enemy.id);
       const heroHealth = this.damageManager.getHealth(this.heroId);
@@ -333,7 +360,25 @@ export class CombatRuntime {
     const tickResult = this.orchestrator.tick(dt);
     this.finalizeActiveEnemyDeath(tickCounter);
     const activeSession = this.combatService.getActiveSession();
-    if (activeSession?.state === "victory" || activeSession?.state === "defeat") { this.completedEncounterResult = activeSession.state; this.combatService.endEncounter(); return { combatState: activeSession.state }; }
+    if (activeSession?.state === "victory" || activeSession?.state === "defeat") {
+      const endedState = activeSession.state;
+      if (endedState === "victory") {
+        const locationBeforeVictory = this.ports.getLocationState();
+        this.completedVictoryEndedSegment = locationBeforeVictory.encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+        this.ports.onVictory();
+        const locationAfterVictory = this.ports.getLocationState();
+        this.completedVictoryLocationChanged = locationBeforeVictory.zoneIndex !== locationAfterVictory.zoneIndex
+          || locationBeforeVictory.segmentIndex !== locationAfterVictory.segmentIndex;
+        this.completedEncounterResult = "victory";
+      } else {
+        this.ports.onDefeat();
+        this.awaitingResumeAfterDefeat = true;
+        this.completedEncounterResult = null;
+      }
+      this.combatService.endEncounter();
+      if (endedState === "defeat") this.cleanupActiveEnemy();
+      return { combatState: endedState };
+    }
 
     const activeEffects: Array<{ id: string; definitionId: string; effectType: StatusEffectType; remainingDuration: number }> = [];
     for (const [, effects] of this.orchestrator.getState().activeEffects) for (const eff of effects) activeEffects.push({ id: eff.id, definitionId: eff.definition.id, effectType: eff.effectType, remainingDuration: eff.remainingDuration });

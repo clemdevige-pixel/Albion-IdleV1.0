@@ -7,6 +7,7 @@ import {
   type StatId,
   type StatsManager,
 } from "@game/gameplay";
+import { canUseActiveAbility } from "./combatActionControl.js";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
@@ -40,12 +41,7 @@ export function tickMonsterAbilities(
 
   deps.abilityManager.tickAbilities(monsterEntityId, deltaTime);
 
-  if (
-    deps.effectManager.isStunned(monsterEntityId)
-    || deps.effectManager.isSilenced(monsterEntityId)
-  ) {
-    return false;
-  }
+  if (!canUseActiveAbility(deps.effectManager, monsterEntityId)) return false;
 
   const readyAbility = deps.abilityManager
     .getAbilities(monsterEntityId)

@@ -1,12 +1,28 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { getSegmentRecommendedItemPower } from "../data/itemPower";
+import { calculateProjectedSegmentRates } from "../runtime/projectedRateCalculator";
 import { useGameBridge, useGameServices } from "../state/GameContext";
+import "./SegmentTimeline.css";
+
+function readComputedStat(
+  stats: ReturnType<typeof useGameBridge>["stats"],
+  id: string,
+): number {
+  return stats.stats.find((entry) => entry.id === id)?.computed ?? 0;
+}
+
+function formatRate(value: number): string {
+  return Math.round(value).toLocaleString("fr-FR");
+}
 
 export function SegmentTimeline(): JSX.Element {
   const state = useGameBridge();
   const { world } = state;
   const { selectZone, setSegmentFarmMode } = useGameServices();
   const [viewedZoneIndex, setViewedZoneIndex] = useState(world.zoneIndex);
+  const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setViewedZoneIndex(world.zoneIndex);
@@ -39,6 +55,12 @@ export function SegmentTimeline(): JSX.Element {
   if (isGathering) {
     return <div className="segment-timeline segment-timeline--hidden" />;
   }
+
+  const equippedWeaponId = state.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId;
+  const physicalDamage = readComputedStat(state.stats, "stat_physical_damage");
+  const magicalDamage = readComputedStat(state.stats, "stat_magical_damage");
+  const attackSpeed = readComputedStat(state.stats, "stat_attack_speed");
+  const primaryAbilityAutoCast = state.abilities.primary?.autoCast ?? false;
 
   return (
     <section className="segment-timeline segment-timeline--sidebar">
@@ -88,20 +110,98 @@ export function SegmentTimeline(): JSX.Element {
             pending ? "segment-timeline__node--pending" : "",
             current ? "segment-timeline__node--marker" : "",
           ].filter(Boolean).join(" ");
+          const rates = locked ? undefined : calculateProjectedSegmentRates({
+            physicalDamage,
+            magicalDamage,
+            attackSpeed,
+            equippedWeaponId,
+            primaryAbilityAutoCast,
+            currentZoneIndex: viewedZone.zoneIndexWithinBand,
+            currentWorldBandId: viewedZone.worldBandId,
+            currentSegment: segment - 1,
+          });
+          const recommendedIp = getSegmentRecommendedItemPower(
+            viewedZone.zoneIndexWithinBand + 1,
+            segment,
+            viewedZone.worldBandId,
+          );
+          const accessibleLabel = locked
+            ? `Segment ${String(segment)} verrouillé`
+            : `Aller au segment ${String(segment)}. IP conseillé ${String(recommendedIp)}. Silver par heure ${formatRate(rates?.silverPerHour ?? 0)}. Fame par heure ${formatRate(rates?.famePerHour ?? 0)}.`;
+          const showTooltip = !locked
+            && rates !== undefined
+            && hoveredSegment === segment
+            && tooltipPosition !== null;
 
           return (
-            <div className="segment-timeline__step" key={segment}>
+            <div
+              className="segment-timeline__step"
+              key={segment}
+              onPointerEnter={(event) => {
+                if (locked) return;
+                setHoveredSegment(segment);
+                setTooltipPosition({ x: event.clientX, y: event.clientY });
+              }}
+              onPointerMove={(event) => {
+                if (locked) return;
+                setHoveredSegment(segment);
+                setTooltipPosition({ x: event.clientX, y: event.clientY });
+              }}
+              onPointerLeave={() => {
+                setHoveredSegment(null);
+                setTooltipPosition(null);
+              }}
+            >
               {index > 0 ? <span className="segment-timeline__connector" /> : null}
               <button
                 className={classes}
                 type="button"
                 disabled={locked}
                 onClick={() => { selectZone(viewedZone.zoneIndex, segment); }}
-                title={locked ? "Segment verrouillé" : `Aller au segment ${segment}`}
-                aria-label={locked ? `Segment ${segment} verrouillé` : `Aller au segment ${segment}`}
+                onFocus={(event) => {
+                  if (locked) return;
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  setHoveredSegment(segment);
+                  setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.bottom });
+                }}
+                onBlur={() => {
+                  setHoveredSegment(null);
+                  setTooltipPosition(null);
+                }}
+                aria-label={accessibleLabel}
               >
                 <span aria-hidden="true">{current ? "☠" : ""}</span>
               </button>
+              {showTooltip && createPortal(
+                <div
+                  className="segment-timeline__tooltip"
+                  role="tooltip"
+                  style={{
+                    left: `${String(Math.max(12, Math.min(tooltipPosition.x + 18, window.innerWidth - 276)))}px`,
+                    top: `${String(Math.max(12, Math.min(tooltipPosition.y + 18, window.innerHeight - 220)))}px`,
+                  }}
+                >
+                  <strong className="segment-timeline__tooltip-title">Segment {segment}</strong>
+                  <span className="segment-timeline__tooltip-ip">IP CONSEILLÉ : {recommendedIp}</span>
+                  <span className="segment-timeline__tooltip-divider" />
+                  <span className="segment-timeline__tooltip-rate">
+                    <span className="segment-timeline__tooltip-icon" aria-hidden="true">◉</span>
+                    <span>Silver/h</span>
+                    <b>{formatRate(rates.silverPerHour)}</b>
+                  </span>
+                  <span className="segment-timeline__tooltip-rate">
+                    <span className="segment-timeline__tooltip-icon segment-timeline__tooltip-icon--fame" aria-hidden="true">★</span>
+                    <span>Fame/h</span>
+                    <b>{formatRate(rates.famePerHour)}</b>
+                  </span>
+                  <span className="segment-timeline__tooltip-divider" />
+                  <span className="segment-timeline__tooltip-action">
+                    <span aria-hidden="true">▣</span>
+                    Cliquer pour aller à ce segment
+                  </span>
+                </div>,
+                document.body,
+              )}
               <span className="segment-timeline__number">{segment}</span>
             </div>
           );

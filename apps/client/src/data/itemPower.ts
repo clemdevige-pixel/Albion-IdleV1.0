@@ -11,7 +11,6 @@ import {
   resolveWeaponTier,
   type WeaponCombatProfile,
 } from "./weaponContentCatalog.js";
-import { getWeaponSpecializationBalance } from "./weaponBalance.js";
 import type { ProductionTier } from "./productionFamilyCatalog.js";
 
 /**
@@ -133,12 +132,7 @@ export function getWeaponCombatProfile(itemId: string): WeaponCombatProfile | un
 }
 
 export function getWeaponAttackSpeed(itemId: string): number | undefined {
-  const baseAttackSpeed = resolveWeaponAttackSpeed(itemId);
-  if (baseAttackSpeed === undefined) return undefined;
-  const route = resolveWeaponMastery(itemId);
-  if (route === undefined) return baseAttackSpeed;
-  const multiplier = getWeaponSpecializationBalance(route.weaponId)?.autoAttackSpeedMultiplier ?? 1;
-  return baseAttackSpeed * multiplier;
+  return resolveWeaponAttackSpeed(itemId);
 }
 
 export function getMasteryItemPowerBonus(

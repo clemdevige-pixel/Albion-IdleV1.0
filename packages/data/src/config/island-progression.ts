@@ -1,6 +1,11 @@
 import type { IslandBuildingId } from "./island.js";
 
-export type IslandProductionTier = 3 | 4 | 5;
+/**
+ * Structural production-tier envelope for island operational progression.
+ * Content is currently authored through T5, but future T6/T7/T8 building
+ * levels must not require changing this type or the consuming runtime/UI.
+ */
+export type IslandProductionTier = 3 | 4 | 5 | 6 | 7 | 8;
 
 export interface IslandUpgradeRequirement {
   readonly itemId: string;

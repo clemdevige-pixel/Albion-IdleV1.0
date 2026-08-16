@@ -1,10 +1,18 @@
 import type { EntityId } from "@game/core";
 import type { AutoAttackManager, DamageManager, EffectManager, StatsManager } from "@game/gameplay";
 import type { DamageType, ModifierId, StatId } from "@game/gameplay";
-import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
-import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
+import type {
+  AbilityMechanic,
+  ClientAbilityDefinition,
+} from "../data/weaponContentCatalog.js";
+import {
+  canContinueWeaponMultiHit,
+  matchesWeaponDotIdentity,
+  snapshotWeaponDotSourceDamage,
+} from "../data/weaponMechanicsContract.js";
 
 interface ActiveDot {
+  readonly effectId: string;
   readonly source: EntityId;
   readonly target: EntityId;
   readonly damageType: DamageType;
@@ -19,6 +27,8 @@ interface TrackedModifier {
   readonly target: EntityId;
   readonly modifierId: ModifierId;
 }
+
+type DamageMechanic = Extract<AbilityMechanic, { readonly kind: "damage" }>;
 
 export interface WeaponAbilityMechanicsRuntimeDeps {
   readonly heroId: EntityId;
@@ -45,6 +55,26 @@ export function getAbilityHitBaseDamage(
   return intendedDamagePerHit - sourceDamage;
 }
 
+/** Shared conditional-ratio resolver used by both execution and overkill estimation. */
+export function resolveAbilityDamageRatio(
+  mechanic: DamageMechanic,
+  healthRatio: number | undefined,
+  hasEffect: (effectId: string) => boolean,
+): number {
+  let totalRatio = mechanic.ratio;
+  if (
+    mechanic.bonusHealthBelow !== undefined
+    && healthRatio !== undefined
+    && healthRatio <= mechanic.bonusHealthBelow.ratio
+  ) {
+    totalRatio += mechanic.bonusHealthBelow.bonusRatio;
+  }
+  if (mechanic.bonusEffect !== undefined && hasEffect(mechanic.bonusEffect.effectId)) {
+    totalRatio += mechanic.bonusEffect.bonusRatio;
+  }
+  return totalRatio;
+}
+
 export class WeaponAbilityMechanicsRuntime {
   private readonly dots: ActiveDot[] = [];
   private readonly modifiers = new Map<string, TrackedModifier>();
@@ -52,8 +82,7 @@ export class WeaponAbilityMechanicsRuntime {
   public constructor(private readonly deps: WeaponAbilityMechanicsRuntimeDeps) {}
 
   public canAutoCast(definition: ClientAbilityDefinition, target: EntityId): boolean {
-    const profile = getWeaponAbilityMechanics(definition.id);
-    const rule = profile?.autoRule ?? definition.autoCast;
+    const rule = definition.mechanics.autoRule;
     if (rule === undefined || rule.kind === "always") return true;
     if (!this.deps.damageManager.isAlive(target)) return false;
 
@@ -68,27 +97,31 @@ export class WeaponAbilityMechanicsRuntime {
   }
 
   public execute(definition: ClientAbilityDefinition, target: EntityId, tick: number): boolean {
-    const profile = getWeaponAbilityMechanics(definition.id);
-    if (profile === undefined) return this.executeLegacyDamage(definition, target, tick);
-
+    const profile = definition.mechanics;
     const sourceStat = (definition.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage") as StatId;
     const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
     let dealtDamage = false;
 
+    // Mechanics execute strictly in authored array order. This is part of the
+    // shared weapon mechanics contract and lets damage/status/DoT sequencing be
+    // expressed in data without weapon-specific runtime branches.
     for (const mechanic of profile.mechanics) {
       if (!this.deps.damageManager.isAlive(target)) break;
       if (mechanic.kind === "damage") {
-        let totalRatio = mechanic.ratio;
         const health = this.deps.damageManager.getHealth(target);
-        if (mechanic.bonusHealthBelow !== undefined && health.maxHealth > 0 && health.currentHealth / health.maxHealth <= mechanic.bonusHealthBelow.ratio) {
-          totalRatio += mechanic.bonusHealthBelow.bonusRatio;
-        }
-        if (mechanic.bonusEffect !== undefined && this.hasEffect(target, mechanic.bonusEffect.effectId)) {
-          totalRatio += mechanic.bonusEffect.bonusRatio;
-        }
+        const healthRatio = health.maxHealth > 0 ? health.currentHealth / health.maxHealth : undefined;
+        const totalRatio = resolveAbilityDamageRatio(
+          mechanic,
+          healthRatio,
+          (effectId) => this.hasEffect(target, effectId),
+        );
         const hits = Math.max(1, mechanic.hits ?? 1);
         const baseDamagePerHit = getAbilityHitBaseDamage(sourceDamage, totalRatio, hits);
-        for (let hit = 0; hit < hits && this.deps.damageManager.isAlive(target); hit += 1) {
+        for (
+          let hit = 0;
+          hit < hits && canContinueWeaponMultiHit(this.deps.damageManager.isAlive(target));
+          hit += 1
+        ) {
           const result = this.deps.damageManager.processDamage({
             source: this.deps.heroId,
             target,
@@ -111,12 +144,29 @@ export class WeaponAbilityMechanicsRuntime {
           strength: mechanic.ratio,
           refreshOnReapply: true,
         }, tick);
-        const existing = this.dots.find((dot) => dot.target === target && dot.damageType === definition.damageType && dot.ratio === mechanic.ratio);
+        const incomingIdentity = {
+          source: this.deps.heroId,
+          target,
+          effectId: mechanic.effectId,
+        };
+        const existing = this.dots.find((dot) => matchesWeaponDotIdentity(dot, incomingIdentity));
         if (existing !== undefined) {
+          // Same-effect DoTs do not stack. Reapplication refreshes their schedule
+          // and tick count while keeping the original source-damage snapshot.
           existing.intervalRemaining = mechanic.interval;
           existing.ticksRemaining = mechanic.ticks;
         } else {
-          this.dots.push({ source: this.deps.heroId, target, damageType: definition.damageType, sourceDamage, ratio: mechanic.ratio, intervalRemaining: mechanic.interval, interval: mechanic.interval, ticksRemaining: mechanic.ticks });
+          this.dots.push({
+            effectId: mechanic.effectId,
+            source: this.deps.heroId,
+            target,
+            damageType: definition.damageType,
+            sourceDamage: snapshotWeaponDotSourceDamage(sourceDamage),
+            ratio: mechanic.ratio,
+            intervalRemaining: mechanic.interval,
+            interval: mechanic.interval,
+            ticksRemaining: mechanic.ticks,
+          });
         }
         continue;
       }
@@ -177,8 +227,7 @@ export class WeaponAbilityMechanicsRuntime {
     for (const { effect } of expiredEffects) {
       const tracked = this.modifiers.get(String(effect.id));
       if (tracked !== undefined) {
-        this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
-        this.deps.statsManager.calculateStats(tracked.target);
+        this.removeTrackedModifier(tracked);
         this.modifiers.delete(String(effect.id));
       }
       if (effect.effectType === "stun" && this.deps.damageManager.isAlive(effect.target)) {
@@ -189,22 +238,22 @@ export class WeaponAbilityMechanicsRuntime {
 
   public clear(): void {
     this.dots.splice(0, this.dots.length);
-    for (const tracked of this.modifiers.values()) {
-      this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
-      if (this.deps.statsManager.hasStats(tracked.target)) this.deps.statsManager.calculateStats(tracked.target);
-    }
+    for (const tracked of this.modifiers.values()) this.removeTrackedModifier(tracked);
     this.modifiers.clear();
+  }
+
+  /**
+   * Effect bookkeeping can outlive its ECS target by one presentation/runtime
+   * reconciliation step. Cleanup must therefore be idempotent: if the target's
+   * StatsComponent is already gone, there is nothing left to remove.
+   */
+  private removeTrackedModifier(tracked: TrackedModifier): void {
+    if (!this.deps.statsManager.hasStats(tracked.target)) return;
+    this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
+    this.deps.statsManager.calculateStats(tracked.target);
   }
 
   private hasEffect(target: EntityId, effectId: string): boolean {
     return this.deps.effectManager.getActiveEffects(target).some((effect) => effect.definition.id === effectId);
-  }
-
-  private executeLegacyDamage(definition: ClientAbilityDefinition, target: EntityId, tick: number): boolean {
-    const sourceStat = (definition.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage") as StatId;
-    const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
-    const result = this.deps.damageManager.processDamage({ source: this.deps.heroId, target, baseDamage: sourceDamage * definition.bonusDamageRatio, damageType: definition.damageType, source_type: "ability" });
-    if (result?.targetDied === true) this.deps.onTargetKilled(tick);
-    return result !== null;
   }
 }

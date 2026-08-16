@@ -45,6 +45,30 @@ interface ProductionBridgeAdapterDependencies {
   readonly getCraftingTier: () => ProductionTier;
 }
 
+export function syncCraftingProjection(
+  bridge: GameBridge,
+  inventoryManager: InventoryManager,
+  heroId: EntityId,
+  productionStorageId: EntityId,
+  tier: ProductionTier,
+): void {
+  syncCraftingToBridge(
+    bridge,
+    inventoryManager,
+    heroId,
+    productionStorageId,
+    tier,
+    {
+      woodItemId: getWoodRecipe(tier).outputItemId,
+      metalItemId: getMetalRecipe(tier).outputItemId,
+      leatherItemId: getLeatherRecipe(tier).outputItemId,
+      clothItemId: getClothRecipe(tier).outputItemId,
+    },
+    getItemPower,
+    ALL_CRAFT_RECIPES,
+  );
+}
+
 /** Projects authoritative Production runtimes into GameBridge view models. */
 export class ProductionBridgeAdapter {
   private readonly deps: ProductionBridgeAdapterDependencies;
@@ -118,23 +142,12 @@ export class ProductionBridgeAdapter {
   }
 
   syncCrafting(): void {
-    const { bridge, heroId, inventoryManager, productionStorageId } = this.deps;
-    const tier = this.deps.getCraftingTier();
-
-    syncCraftingToBridge(
-      bridge,
-      inventoryManager,
-      heroId,
-      productionStorageId,
-      tier,
-      {
-        woodItemId: getWoodRecipe(tier).outputItemId,
-        metalItemId: getMetalRecipe(tier).outputItemId,
-        leatherItemId: getLeatherRecipe(tier).outputItemId,
-        clothItemId: getClothRecipe(tier).outputItemId,
-      },
-      getItemPower,
-      ALL_CRAFT_RECIPES,
+    syncCraftingProjection(
+      this.deps.bridge,
+      this.deps.inventoryManager,
+      this.deps.heroId,
+      this.deps.productionStorageId,
+      this.deps.getCraftingTier(),
     );
   }
 

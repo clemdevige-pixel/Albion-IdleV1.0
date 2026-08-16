@@ -1,12 +1,25 @@
 import type { AbilityId } from "@game/gameplay";
 import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "../data/weaponContentCatalog.js";
+import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
 import { WeaponAbilityEffectTracker } from "./WeaponAbilityEffectTracker.js";
 import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.js";
 import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
 import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
 import { markCombatStartBlocked } from "./CombatStartGuard.js";
+import { combatStopController } from "./CombatStopController.js";
+import { canUseActiveAbility } from "./combatActionControl.js";
 import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
+
+type EnemySnapshot = NonNullable<CombatDomainTickResult["activeEnemy"]>;
+
+export type CombatLoopState =
+  | "combat"
+  | "stop_requested"
+  | "paused"
+  | "defeat"
+  | "suspended"
+  | "idle";
 
 export class CombatRuntime extends LegacyCombatRuntime {
   private readonly mechanics: WeaponAbilityMechanicsRuntime;
@@ -15,6 +28,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
   private abilityTick = 0;
   private initialized = false;
   private weaponBlocked = false;
+  private lastEnemySnapshot: EnemySnapshot | undefined;
 
   constructor(private readonly runtimeDeps: CombatRuntimeDependencies) {
     super(runtimeDeps);
@@ -29,10 +43,21 @@ export class CombatRuntime extends LegacyCombatRuntime {
     this.effects = new WeaponAbilityEffectTracker(runtimeDeps.world, runtimeDeps.effectManager, this.mechanics);
   }
 
+  public getLoopState(): CombatLoopState {
+    if (this.isAwaitingResumeAfterDefeat()) return "defeat";
+    if (combatStopController.isPaused()) return "paused";
+    if (this.runtimeDeps.ports.isCombatSuspended()) return "suspended";
+    if (this.runtimeDeps.combatService.isInCombat()) {
+      return combatStopController.isStopRequested() ? "stop_requested" : "combat";
+    }
+    return "idle";
+  }
+
   override initialize(): CombatDomainTickResult {
     if (!this.hasEquippedWeapon()) return { combatState: "idle" };
     this.initialized = true;
     const result = super.initialize();
+    this.captureEnemySnapshot(result);
     this.handleSegmentStart(result);
     return result;
   }
@@ -40,7 +65,12 @@ export class CombatRuntime extends LegacyCombatRuntime {
   override useWeaponAbility(slotIndex: number): boolean {
     const definition = this.resolveAbility(slotIndex);
     const target = this.getActiveEnemyId();
-    if (definition === undefined || !this.runtimeDeps.damageManager.isAlive(target)) return false;
+    if (
+      definition === undefined
+      || getWeaponAbilityMechanics(definition.id) === undefined
+      || !this.runtimeDeps.damageManager.isAlive(target)
+      || !canUseActiveAbility(this.runtimeDeps.effectManager, this.runtimeDeps.heroId)
+    ) return false;
     if (
       this.inTick
       && (
@@ -66,7 +96,21 @@ export class CombatRuntime extends LegacyCombatRuntime {
 
   override interruptEncounter(): void {
     this.mechanics.clear();
+    this.lastEnemySnapshot = undefined;
     super.interruptEncounter();
+  }
+
+  override resumeExploration(): boolean {
+    const resumed = super.resumeExploration();
+    if (!resumed) return false;
+
+    // Defeat is an explicit combat-flow boundary. Any pending segment-stop
+    // belongs to the expedition that just ended and must not leak into the
+    // resumed expedition.
+    combatStopController.reset();
+    this.mechanics.clear();
+    this.lastEnemySnapshot = undefined;
+    return true;
   }
 
   override tick(dt: number, tickCounter: number): CombatDomainTickResult {
@@ -92,6 +136,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
     if (!this.initialized) {
       this.initialized = true;
       const initial = super.initialize();
+      this.captureEnemySnapshot(initial);
       this.handleSegmentStart(initial);
       return initial;
     }
@@ -105,9 +150,26 @@ export class CombatRuntime extends LegacyCombatRuntime {
     try { result = super.tick(dt, tickCounter); }
     finally { this.inTick = false; }
 
+    // A defeat terminates the current expedition. A previously requested stop
+    // cannot remain armed across the defeat/resume boundary.
+    if (result.combatState === "defeat") combatStopController.reset();
+
     this.handleSegmentStart(result);
     this.effects.reconcile(targets);
+
+    if (result.combatState === "victory" && result.activeEnemy === undefined && this.lastEnemySnapshot !== undefined) {
+      return {
+        ...result,
+        activeEnemy: { ...this.lastEnemySnapshot, currentHealth: 0 },
+      };
+    }
+
+    this.captureEnemySnapshot(result);
     return result;
+  }
+
+  private captureEnemySnapshot(result: CombatDomainTickResult): void {
+    if (result.activeEnemy !== undefined) this.lastEnemySnapshot = result.activeEnemy;
   }
 
   private handleSegmentStart(result: CombatDomainTickResult): void {

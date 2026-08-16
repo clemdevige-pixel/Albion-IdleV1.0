@@ -137,6 +137,10 @@
 .ui-merchant-enchant__stocks span { overflow: hidden; color: var(--ui-color-text-muted); font-size: .55rem; text-overflow: ellipsis; white-space: nowrap; }
 .ui-merchant-enchant__stocks strong { color: var(--ui-color-accent-hover); }
 .ui-merchant-enchant__level { display: block; margin-top: var(--ui-space-1); color: #c18ae8; }
+.ui-merchant-enchant__tier-filter { display: flex; flex-wrap: wrap; gap: var(--ui-space-1); }
+.ui-merchant-enchant__tier-filter button { min-width: 42px; min-height: 30px; padding: 0 var(--ui-space-2); border: var(--ui-border-width) solid var(--ui-color-border-subtle); border-radius: var(--ui-radius-xs); color: var(--ui-color-text-secondary); background: #111720; font: inherit; font-size: var(--ui-text-xs); font-weight: var(--ui-weight-semibold); cursor: pointer; }
+.ui-merchant-enchant__tier-filter button:hover { border-color: #76518e; color: #e2c8f1; }
+.ui-merchant-enchant__tier-filter button.is-active { border-color: #8a5ca5; color: #f3e6ff; background: linear-gradient(#59366e, #34203f); }
 
 .ui-merchant-repair__row { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: var(--ui-space-2); padding: var(--ui-space-2); border-bottom: var(--ui-border-width) solid var(--ui-color-border-subtle); }
 .ui-merchant-repair__row:last-child { border-bottom: 0; }

@@ -8,45 +8,162 @@ import {
 import type { ProductionTier } from "./productionFamilyCatalog.js";
 
 export type WeaponCombatProfile = "dagger" | "sword" | "bow" | "staff" | "hammer" | "gloves";
-export const WEAPON_ATTACK_SPEED_BY_PROFILE: Readonly<Record<WeaponCombatProfile, number>> = {
-  dagger: 1.6, sword: 1.2, bow: 1, staff: 0.9, hammer: 0.75, gloves: 1.4,
-};
-export type AbilityAutoCastRule = { readonly kind: "always" } | { readonly kind: "target_health_below"; readonly ratio: number };
-export interface ClientAbilityDefinition extends AbilityDefinitionLike { readonly name: string; readonly description: string; readonly icon: string; readonly damageType: DamageType; readonly bonusDamageRatio: number; readonly autoCast?: AbilityAutoCastRule; }
-export interface WeaponAbilityUnlock { readonly unlockMasteryLevel: number; readonly source: "family" | "specialization"; readonly ability: ClientAbilityDefinition; }
+
+export type AbilityAutoRule =
+  | { readonly kind: "always" }
+  | { readonly kind: "target_health_below"; readonly ratio: number }
+  | { readonly kind: "target_has_effect"; readonly effectId: string };
+
+export type AbilityMechanic =
+  | {
+      readonly kind: "damage";
+      readonly ratio: number;
+      readonly hits?: number;
+      readonly bonusHealthBelow?: { readonly ratio: number; readonly bonusRatio: number };
+      readonly bonusEffect?: { readonly effectId: string; readonly bonusRatio: number };
+    }
+  | {
+      readonly kind: "status";
+      readonly effectId: string;
+      readonly effectType: "debuff" | "stun" | "silence";
+      readonly duration: number;
+      readonly statId?: "stat_armor" | "stat_magic_resistance";
+      readonly statDelta?: number;
+    }
+  | {
+      readonly kind: "dot";
+      readonly effectId: string;
+      readonly ratio: number;
+      readonly interval: number;
+      readonly ticks: number;
+    };
+
+export interface AbilityMechanicsProfile {
+  readonly autoRule?: AbilityAutoRule;
+  readonly mechanics: readonly AbilityMechanic[];
+}
+
+export type AbilityAutoCastRule = AbilityAutoRule;
+
+export interface ClientAbilityDefinition extends AbilityDefinitionLike {
+  readonly name: string;
+  readonly description: string;
+  readonly icon: string;
+  readonly damageType: DamageType;
+  /** Authoritative combat behavior and balance for this ability. */
+  readonly mechanics: AbilityMechanicsProfile;
+  /** @deprecated Compatibility projection derived from mechanics. Never author directly. */
+  readonly bonusDamageRatio: number;
+  /** @deprecated Compatibility projection derived from mechanics. Never author directly. */
+  readonly autoCast?: AbilityAutoCastRule;
+}
+
+export interface WeaponAbilityUnlock {
+  readonly unlockMasteryLevel: number;
+  readonly source: "family" | "specialization";
+  readonly ability: ClientAbilityDefinition;
+}
 export interface WeaponCraftMaterial { readonly kind: "wood" | "metal" | "leather" | "cloth"; readonly quantity: number; }
 export type WeaponCraftRule = { readonly kind: "standard"; readonly materials: readonly WeaponCraftMaterial[] } | { readonly kind: "artifact_pending" };
+
+type AuthoredAbilityDefinition = Omit<ClientAbilityDefinition, "mechanics" | "bonusDamageRatio" | "autoCast">;
+type DamageMechanic = Extract<AbilityMechanic, { readonly kind: "damage" }>;
+
+function defineWeaponAbility(
+  definition: AuthoredAbilityDefinition,
+  mechanics: AbilityMechanicsProfile,
+): ClientAbilityDefinition {
+  const primaryDamage = mechanics.mechanics.find(
+    (mechanic): mechanic is DamageMechanic => mechanic.kind === "damage",
+  );
+  return {
+    ...definition,
+    mechanics,
+    bonusDamageRatio: primaryDamage?.ratio ?? 0,
+    ...(mechanics.autoRule === undefined ? {} : { autoCast: mechanics.autoRule }),
+  };
+}
+
 const ABILITIES = {
-  swordHeroicStrike:{id:"ability_sword_heroic_strike",name:"Frappe héroïque",description:"Une frappe lourde infligeant 175 % des dégâts physiques.",icon:"⚔️",category:"active",cooldown:8,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:.75},
-  swordGuardBreaker:{id:"ability_sword_guard_breaker",name:"Brise-garde",description:"Une frappe maîtrisée infligeant de lourds dégâts physiques.",icon:"🛡️",category:"active",cooldown:12,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:1.05},
-  broadswordExecution:{id:"ability_sword_execution",name:"Exécution",description:"Une attaque signature dévastatrice concentrant toute la puissance de l'épée.",icon:"💥",category:"active",cooldown:28,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:1.9,autoCast:{kind:"target_health_below",ratio:.3}},
-  bowAimedShot:{id:"ability_bow_aimed_shot",name:"Tir ajusté",description:"Un tir précis infligeant 160 % des dégâts physiques.",icon:"🏹",category:"active",cooldown:5,castTime:0,resourceCost:{},interruptible:true,targetRule:"current_target",damageType:"physical",bonusDamageRatio:.6},
-  bowPiercingArrow:{id:"ability_bow_piercing_arrow",name:"Flèche perforante",description:"Un projectile puissant transperce la cible et inflige de lourds dégâts physiques.",icon:"➶",category:"active",cooldown:10,castTime:0,resourceCost:{},interruptible:true,targetRule:"current_target",damageType:"physical",bonusDamageRatio:.95},
-  longbowDeadeye:{id:"ability_bow_deadeye",name:"Œil mortel",description:"Un tir ultime d'une précision absolue infligeant des dégâts physiques massifs.",icon:"🎯",category:"active",cooldown:25,castTime:0,resourceCost:{},interruptible:true,targetRule:"current_target",damageType:"physical",bonusDamageRatio:1.7},
-  badonRagingStorm:{id:"ability_bow_badon_raging_storm",name:"Tempête déchaînée",description:"Badon libère sa puissance signature dans une attaque dévastatrice.",icon:"🌩️",category:"active",cooldown:28,castTime:0,resourceCost:{},interruptible:true,targetRule:"current_target",damageType:"physical",bonusDamageRatio:1.85},
-  fireFireball:{id:"ability_fire_fireball",name:"Boule de feu",description:"Un projectile ardent infligeant 170 % des dégâts magiques.",icon:"🔥",category:"active",cooldown:5,castTime:0,resourceCost:{},interruptible:true,targetRule:"current_target",damageType:"magical",bonusDamageRatio:.7},
-  fireInfernalBurst:{id:"ability_fire_infernal_burst",name:"Explosion infernale",description:"Une déflagration concentrée inflige de lourds dégâts magiques.",icon:"☄️",category:"active",cooldown:10,castTime:0,resourceCost:{},interruptible:true,targetRule:"current_target",damageType:"magical",bonusDamageRatio:1.1},
-  infernalCataclysm:{id:"ability_fire_cataclysm",name:"Cataclysme",description:"Le bâton concentre un déluge de flammes dans une attaque magique ultime.",icon:"🌋",category:"active",cooldown:30,castTime:0,resourceCost:{},interruptible:true,targetRule:"current_target",damageType:"magical",bonusDamageRatio:2},
-  glovesShockwave:{id:"ability_gloves_shockwave",name:"Onde percutante",description:"Un double impact libère une onde de choc infligeant 180 % des dégâts physiques.",icon:"🥊",category:"active",cooldown:6,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:.8},
-  glovesBreakingCombo:{id:"ability_gloves_breaking_combo",name:"Combo fracassant",description:"Une combinaison brutale de coups inflige de lourds dégâts physiques.",icon:"👊",category:"active",cooldown:9,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:1},
-  spikedSeismicImpact:{id:"ability_gloves_seismic_impact",name:"Impact sismique",description:"Un impact signature libère toute la force des gantelets en un seul coup.",icon:"💢",category:"active",cooldown:24,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:1.65},
-  daggerDoubleSlash:{id:"ability_dagger_double_slash",name:"Double entaille",description:"Deux lames frappent en succession rapide pour infliger 150 % des dégâts physiques.",icon:"🗡️",category:"active",cooldown:4,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:.5},
-  daggerFlurry:{id:"ability_dagger_flurry",name:"Rafale de lames",description:"Une succession fulgurante d'entailles inflige de lourds dégâts physiques.",icon:"⚔",category:"active",cooldown:8,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:.85},
-  daggerPairAssassination:{id:"ability_dagger_assassination",name:"Assassinat",description:"Une attaque signature extrêmement violente frappe la cible avec les deux lames.",icon:"☠️",category:"active",cooldown:22,castTime:0,resourceCost:{},interruptible:false,targetRule:"current_target",damageType:"physical",bonusDamageRatio:1.55},
+  swordHeroicStrike: defineWeaponAbility(
+    { id: "ability_sword_heroic_strike", name: "Frappe héroïque", description: "Une frappe lourde infligeant des dégâts physiques.", icon: "⚔️", category: "active", cooldown: 8, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 0.75 }] },
+  ),
+  swordGuardBreaker: defineWeaponAbility(
+    { id: "ability_sword_guard_breaker", name: "Brise-garde", description: "Inflige des dégâts physiques et réduit temporairement l'armure de la cible.", icon: "🛡️", category: "active", cooldown: 12, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 0.85 }, { kind: "status", effectId: "effect_sword_armor_break", effectType: "debuff", duration: 5, statId: "stat_armor", statDelta: -12 }] },
+  ),
+  broadswordExecution: defineWeaponAbility(
+    { id: "ability_sword_execution", name: "Exécution", description: "Une frappe de finition renforcée contre les cibles affaiblies.", icon: "💥", category: "active", cooldown: 28, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { autoRule: { kind: "target_health_below", ratio: 0.5 }, mechanics: [{ kind: "damage", ratio: 1.55, bonusHealthBelow: { ratio: 0.5, bonusRatio: 0.75 } }] },
+  ),
+  bowAimedShot: defineWeaponAbility(
+    { id: "ability_bow_aimed_shot", name: "Tir ajusté", description: "Un tir précis infligeant des dégâts physiques.", icon: "🏹", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 0.534 }] },
+  ),
+  bowPiercingArrow: defineWeaponAbility(
+    { id: "ability_bow_piercing_arrow", name: "Flèche perforante", description: "Un projectile puissant inflige des dégâts physiques et réduit temporairement l'armure de la cible.", icon: "➶", category: "active", cooldown: 10, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 0.712 }, { kind: "status", effectId: "effect_bow_pierce", effectType: "debuff", duration: 4, statId: "stat_armor", statDelta: -8 }] },
+  ),
+  longbowDeadeye: defineWeaponAbility(
+    { id: "ability_bow_deadeye", name: "Œil mortel", description: "Un tir ultime d'une précision absolue infligeant de lourds dégâts physiques.", icon: "🎯", category: "active", cooldown: 25, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 1.95 }] },
+  ),
+  badonRagingStorm: defineWeaponAbility(
+    { id: "ability_bow_badon_raging_storm", name: "Tempête déchaînée", description: "Badon libère une attaque dévastatrice qui étourdit brièvement la cible.", icon: "🌩️", category: "active", cooldown: 28, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 1.35 }, { kind: "status", effectId: "effect_bow_badon_stun", effectType: "stun", duration: 1.25 }] },
+  ),
+  fireFireball: defineWeaponAbility(
+    { id: "ability_fire_fireball", name: "Boule de feu", description: "Un projectile ardent inflige des dégâts magiques et embrase la cible.", icon: "🔥", category: "active", cooldown: 5, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical" },
+    { mechanics: [{ kind: "damage", ratio: 0.36 }, { kind: "dot", effectId: "effect_fire_burn", ratio: 0.064, interval: 1, ticks: 3 }] },
+  ),
+  fireInfernalBurst: defineWeaponAbility(
+    { id: "ability_fire_infernal_burst", name: "Explosion infernale", description: "Une déflagration concentrée renforcée contre une cible embrasée.", icon: "☄️", category: "active", cooldown: 10, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical" },
+    { autoRule: { kind: "target_has_effect", effectId: "effect_fire_burn" }, mechanics: [{ kind: "damage", ratio: 0.64, bonusEffect: { effectId: "effect_fire_burn", bonusRatio: 0.28 } }] },
+  ),
+  infernalCataclysm: defineWeaponAbility(
+    { id: "ability_fire_cataclysm", name: "Cataclysme", description: "Le bâton libère une attaque magique massive qui consume la cible dans le temps.", icon: "🌋", category: "active", cooldown: 30, castTime: 0, resourceCost: {}, interruptible: true, targetRule: "current_target", damageType: "magical" },
+    { mechanics: [{ kind: "damage", ratio: 1.2 }, { kind: "dot", effectId: "effect_fire_cataclysm", ratio: 0.12, interval: 1, ticks: 5 }] },
+  ),
+  glovesShockwave: defineWeaponAbility(
+    { id: "ability_gloves_shockwave", name: "Onde percutante", description: "Une onde de choc infligeant des dégâts physiques.", icon: "🥊", category: "active", cooldown: 6, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 1.08 }] },
+  ),
+  glovesBreakingCombo: defineWeaponAbility(
+    { id: "ability_gloves_breaking_combo", name: "Combo fracassant", description: "Une combinaison brutale de plusieurs impacts physiques.", icon: "👊", category: "active", cooldown: 9, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 0.97, hits: 3 }] },
+  ),
+  spikedSeismicImpact: defineWeaponAbility(
+    { id: "ability_gloves_seismic_impact", name: "Impact sismique", description: "Un impact signature infligeant de lourds dégâts physiques et étourdissant la cible.", icon: "💢", category: "active", cooldown: 24, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 1.4 }, { kind: "status", effectId: "effect_gloves_stun", effectType: "stun", duration: 1.5 }] },
+  ),
+  daggerDoubleSlash: defineWeaponAbility(
+    { id: "ability_dagger_double_slash", name: "Double entaille", description: "Les deux lames frappent la cible en succession rapide.", icon: "🗡️", category: "active", cooldown: 4, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 0.5, hits: 2 }] },
+  ),
+  daggerFlurry: defineWeaponAbility(
+    { id: "ability_dagger_flurry", name: "Rafale de lames", description: "Une rafale de coups ouvre la garde de la cible pour préparer l'assassinat.", icon: "⚔", category: "active", cooldown: 8, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { mechanics: [{ kind: "damage", ratio: 0.696, hits: 4 }, { kind: "status", effectId: "effect_dagger_opening", effectType: "debuff", duration: 4 }] },
+  ),
+  daggerPairAssassination: defineWeaponAbility(
+    { id: "ability_dagger_assassination", name: "Assassinat", description: "Une attaque signature renforcée contre une cible dont la garde a été ouverte.", icon: "☠️", category: "active", cooldown: 22, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
+    { autoRule: { kind: "target_has_effect", effectId: "effect_dagger_opening" }, mechanics: [{ kind: "damage", ratio: 1.35, bonusEffect: { effectId: "effect_dagger_opening", bonusRatio: 0.45 } }] },
+  ),
 } as const satisfies Readonly<Record<string, ClientAbilityDefinition>>;
+
 export const WEAPON_FAMILIES={sword:{masteryId:"mastery_sword",name:"Épées",sharedAbilities:[ABILITIES.swordHeroicStrike,ABILITIES.swordGuardBreaker]},bow:{masteryId:"mastery_bow",name:"Arcs",sharedAbilities:[ABILITIES.bowAimedShot,ABILITIES.bowPiercingArrow]},fire_staff:{masteryId:"mastery_fire_staff",name:"Bâtons de feu",sharedAbilities:[ABILITIES.fireFireball,ABILITIES.fireInfernalBurst]},gloves:{masteryId:"mastery_gloves",name:"Gants",sharedAbilities:[ABILITIES.glovesShockwave,ABILITIES.glovesBreakingCombo]},dagger:{masteryId:"mastery_dagger",name:"Dagues",sharedAbilities:[ABILITIES.daggerDoubleSlash,ABILITIES.daggerFlurry]}} as const;
 export type WeaponFamilyId=keyof typeof WEAPON_FAMILIES;
 interface WeaponItemContent{readonly itemId:string;readonly tier:ProductionTier;readonly handling:EquipmentInfoLike["handling"];readonly stats:EquipmentInfoLike["stats"];readonly sellPrice:number;}
 export interface WeaponProjectilePresentation{readonly kind:"projectile";readonly projectileId:string;readonly releaseDelayMs:number;}
 export interface WeaponPresentationContent{readonly itemIcon:string;readonly actorManifestId:string;readonly combatProfileId:string;readonly combatPresentation?:WeaponProjectilePresentation;}
-interface WeaponSpecializationContent{readonly familyId:WeaponFamilyId;readonly specializationMasteryId:string;readonly specializationName:string;readonly combatProfile:WeaponCombatProfile;readonly presentation:WeaponPresentationContent;readonly signatureAbility:ClientAbilityDefinition;readonly craft:WeaponCraftRule;readonly items:readonly WeaponItemContent[];}
+interface WeaponSpecializationContent{readonly familyId:WeaponFamilyId;readonly specializationMasteryId:string;readonly specializationName:string;readonly combatProfile:WeaponCombatProfile;readonly attackSpeed:number;readonly presentation:WeaponPresentationContent;readonly signatureAbility:ClientAbilityDefinition;readonly craft:WeaponCraftRule;readonly items:readonly WeaponItemContent[];}
 const WEAPON_CONTENT:readonly WeaponSpecializationContent[]=[
-{familyId:"sword",specializationMasteryId:"mastery_broadsword",specializationName:"Épée large",combatProfile:"sword",presentation:{itemIcon:"item-broadsword-pixel-v1.png",actorManifestId:"hero_broadsword",combatProfileId:"melee"},signatureAbility:ABILITIES.broadswordExecution,craft:{kind:"standard",materials:[{kind:"metal",quantity:6},{kind:"leather",quantity:2}]},items:[{itemId:"item_weapon_sword_t3_broadsword",tier:3,handling:"one_handed",stats:{stat_physical_damage:45},sellPrice:70},{itemId:"item_weapon_sword_t4_broadsword",tier:4,handling:"one_handed",stats:{stat_physical_damage:75},sellPrice:200},{itemId:"item_weapon_sword_t5_broadsword",tier:5,handling:"one_handed",stats:{stat_physical_damage:110},sellPrice:500}]},
-{familyId:"bow",specializationMasteryId:"mastery_longbow",specializationName:"Arc long",combatProfile:"bow",presentation:{itemIcon:"item-longbow-pixel-v1.png",actorManifestId:"hero_bow",combatProfileId:"projectile",combatPresentation:{kind:"projectile",projectileId:"arrow",releaseDelayMs:355}},signatureAbility:ABILITIES.longbowDeadeye,craft:{kind:"standard",materials:[{kind:"wood",quantity:6},{kind:"leather",quantity:2},{kind:"cloth",quantity:2}]},items:[{itemId:"item_weapon_bow_t3_longbow",tier:3,handling:"two_handed",stats:{stat_physical_damage:50},sellPrice:70},{itemId:"item_weapon_bow_t4_longbow",tier:4,handling:"two_handed",stats:{stat_physical_damage:85},sellPrice:200},{itemId:"item_weapon_bow_t5_longbow",tier:5,handling:"two_handed",stats:{stat_physical_damage:125},sellPrice:500}]},
-{familyId:"bow",specializationMasteryId:"mastery_badon",specializationName:"Badon",combatProfile:"bow",presentation:{itemIcon:"item-badon-pixel-v1.png",actorManifestId:"hero_bow",combatProfileId:"projectile",combatPresentation:{kind:"projectile",projectileId:"badon_arrow",releaseDelayMs:355}},signatureAbility:ABILITIES.badonRagingStorm,craft:{kind:"artifact_pending"},items:[{itemId:"item_weapon_bow_t4_badon",tier:4,handling:"two_handed",stats:{stat_physical_damage:87},sellPrice:260}]},
-{familyId:"fire_staff",specializationMasteryId:"mastery_infernal_staff",specializationName:"Bâton Infernal",combatProfile:"staff",presentation:{itemIcon:"item-fire-staff-pixel-v1.png",actorManifestId:"hero_fire_staff",combatProfileId:"projectile",combatPresentation:{kind:"projectile",projectileId:"fireball",releaseDelayMs:355}},signatureAbility:ABILITIES.infernalCataclysm,craft:{kind:"standard",materials:[{kind:"wood",quantity:4},{kind:"metal",quantity:4},{kind:"cloth",quantity:2}]},items:[{itemId:"item_weapon_staff_t3_infernal",tier:3,handling:"two_handed",stats:{stat_magical_damage:48},sellPrice:80},{itemId:"item_weapon_staff_t4_infernal",tier:4,handling:"two_handed",stats:{stat_magical_damage:90},sellPrice:220},{itemId:"item_weapon_staff_t5_infernal",tier:5,handling:"two_handed",stats:{stat_magical_damage:132},sellPrice:540}]},
-{familyId:"gloves",specializationMasteryId:"mastery_spiked_gauntlets",specializationName:"Gantelets à pointes",combatProfile:"gloves",presentation:{itemIcon:"item-spiked-gauntlets-pixel-v1.png",actorManifestId:"hero_spiked_gauntlets",combatProfileId:"melee"},signatureAbility:ABILITIES.spikedSeismicImpact,craft:{kind:"standard",materials:[{kind:"metal",quantity:5},{kind:"leather",quantity:3}]},items:[{itemId:"item_weapon_gloves_t3_spiked_gauntlets",tier:3,handling:"two_handed",stats:{stat_physical_damage:38},sellPrice:75},{itemId:"item_weapon_gloves_t4_spiked_gauntlets",tier:4,handling:"two_handed",stats:{stat_physical_damage:66},sellPrice:210},{itemId:"item_weapon_gloves_t5_spiked_gauntlets",tier:5,handling:"two_handed",stats:{stat_physical_damage:96},sellPrice:520}]},
-{familyId:"dagger",specializationMasteryId:"mastery_dagger_pair",specializationName:"Paire de dagues",combatProfile:"dagger",presentation:{itemIcon:"item-dagger-pair-pixel-v1.png",actorManifestId:"hero_dagger_pair",combatProfileId:"melee"},signatureAbility:ABILITIES.daggerPairAssassination,craft:{kind:"standard",materials:[{kind:"metal",quantity:6},{kind:"leather",quantity:2}]},items:[{itemId:"item_weapon_dagger_t3_pair",tier:3,handling:"two_handed",stats:{stat_physical_damage:34},sellPrice:75},{itemId:"item_weapon_dagger_t4_pair",tier:4,handling:"two_handed",stats:{stat_physical_damage:58},sellPrice:210},{itemId:"item_weapon_dagger_t5_pair",tier:5,handling:"two_handed",stats:{stat_physical_damage:84},sellPrice:520}]},];
+{familyId:"sword",specializationMasteryId:"mastery_broadsword",specializationName:"Épée large",combatProfile:"sword",attackSpeed:1.296,presentation:{itemIcon:"item-broadsword-pixel-v1.png",actorManifestId:"hero_broadsword",combatProfileId:"melee"},signatureAbility:ABILITIES.broadswordExecution,craft:{kind:"standard",materials:[{kind:"metal",quantity:6},{kind:"leather",quantity:2}]},items:[{itemId:"item_weapon_sword_t3_broadsword",tier:3,handling:"one_handed",stats:{stat_physical_damage:45},sellPrice:70},{itemId:"item_weapon_sword_t4_broadsword",tier:4,handling:"one_handed",stats:{stat_physical_damage:75},sellPrice:200},{itemId:"item_weapon_sword_t5_broadsword",tier:5,handling:"one_handed",stats:{stat_physical_damage:110},sellPrice:500}]},
+{familyId:"bow",specializationMasteryId:"mastery_longbow",specializationName:"Arc long",combatProfile:"bow",attackSpeed:1,presentation:{itemIcon:"item-longbow-pixel-v1.png",actorManifestId:"hero_bow",combatProfileId:"projectile",combatPresentation:{kind:"projectile",projectileId:"arrow",releaseDelayMs:355}},signatureAbility:ABILITIES.longbowDeadeye,craft:{kind:"standard",materials:[{kind:"wood",quantity:6},{kind:"leather",quantity:2},{kind:"cloth",quantity:2}]},items:[{itemId:"item_weapon_bow_t3_longbow",tier:3,handling:"two_handed",stats:{stat_physical_damage:50},sellPrice:70},{itemId:"item_weapon_bow_t4_longbow",tier:4,handling:"two_handed",stats:{stat_physical_damage:85},sellPrice:200},{itemId:"item_weapon_bow_t5_longbow",tier:5,handling:"two_handed",stats:{stat_physical_damage:125},sellPrice:500}]},
+{familyId:"bow",specializationMasteryId:"mastery_badon",specializationName:"Badon",combatProfile:"bow",attackSpeed:1,presentation:{itemIcon:"item-badon-pixel-v1.png",actorManifestId:"hero_bow",combatProfileId:"projectile",combatPresentation:{kind:"projectile",projectileId:"badon_arrow",releaseDelayMs:355}},signatureAbility:ABILITIES.badonRagingStorm,craft:{kind:"artifact_pending"},items:[{itemId:"item_weapon_bow_t4_badon",tier:4,handling:"two_handed",stats:{stat_physical_damage:87},sellPrice:260}]},
+{familyId:"fire_staff",specializationMasteryId:"mastery_infernal_staff",specializationName:"Bâton Infernal",combatProfile:"staff",attackSpeed:0.9,presentation:{itemIcon:"item-fire-staff-pixel-v1.png",actorManifestId:"hero_fire_staff",combatProfileId:"projectile",combatPresentation:{kind:"projectile",projectileId:"fireball",releaseDelayMs:355}},signatureAbility:ABILITIES.infernalCataclysm,craft:{kind:"standard",materials:[{kind:"wood",quantity:4},{kind:"metal",quantity:4},{kind:"cloth",quantity:2}]},items:[{itemId:"item_weapon_staff_t3_infernal",tier:3,handling:"two_handed",stats:{stat_magical_damage:48},sellPrice:80},{itemId:"item_weapon_staff_t4_infernal",tier:4,handling:"two_handed",stats:{stat_magical_damage:90},sellPrice:220},{itemId:"item_weapon_staff_t5_infernal",tier:5,handling:"two_handed",stats:{stat_magical_damage:132},sellPrice:540}]},
+{familyId:"gloves",specializationMasteryId:"mastery_spiked_gauntlets",specializationName:"Gantelets à pointes",combatProfile:"gloves",attackSpeed:1.204,presentation:{itemIcon:"item-spiked-gauntlets-pixel-v1.png",actorManifestId:"hero_spiked_gauntlets",combatProfileId:"melee"},signatureAbility:ABILITIES.spikedSeismicImpact,craft:{kind:"standard",materials:[{kind:"metal",quantity:5},{kind:"leather",quantity:3}]},items:[{itemId:"item_weapon_gloves_t3_spiked_gauntlets",tier:3,handling:"two_handed",stats:{stat_physical_damage:38},sellPrice:75},{itemId:"item_weapon_gloves_t4_spiked_gauntlets",tier:4,handling:"two_handed",stats:{stat_physical_damage:66},sellPrice:210},{itemId:"item_weapon_gloves_t5_spiked_gauntlets",tier:5,handling:"two_handed",stats:{stat_physical_damage:96},sellPrice:520}]},
+{familyId:"dagger",specializationMasteryId:"mastery_dagger_pair",specializationName:"Paire de dagues",combatProfile:"dagger",attackSpeed:1.392,presentation:{itemIcon:"item-dagger-pair-pixel-v1.png",actorManifestId:"hero_dagger_pair",combatProfileId:"melee"},signatureAbility:ABILITIES.daggerPairAssassination,craft:{kind:"standard",materials:[{kind:"metal",quantity:6},{kind:"leather",quantity:2}]},items:[{itemId:"item_weapon_dagger_t3_pair",tier:3,handling:"two_handed",stats:{stat_physical_damage:34},sellPrice:75},{itemId:"item_weapon_dagger_t4_pair",tier:4,handling:"two_handed",stats:{stat_physical_damage:58},sellPrice:210},{itemId:"item_weapon_dagger_t5_pair",tier:5,handling:"two_handed",stats:{stat_physical_damage:84},sellPrice:520}]},];
 export const CLIENT_ABILITIES:Readonly<Record<string,ClientAbilityDefinition>>=Object.fromEntries(Object.values(ABILITIES).map(a=>[a.id,a] as const));
 export const WEAPON_ITEM_DEFINITIONS:Readonly<Record<string,EquipmentInfoLike>>=Object.fromEntries(WEAPON_CONTENT.flatMap(e=>e.items).map(item=>[item.itemId,{itemId:item.itemId,slot:"weapon",handling:item.handling,stats:item.stats,enchantment:{enabled:item.tier>=4,maximumLevel:item.tier>=4?3:0}}]));
 interface WeaponItemRoute{readonly specialization:WeaponSpecializationContent;readonly item:WeaponItemContent;}
@@ -60,7 +177,7 @@ export function resolveWeaponFamilyId(itemId:string):WeaponFamilyId|undefined{re
 export function resolveWeaponTier(itemId:string):ProductionTier|undefined{return CONTENT_BY_ITEM_ID.get(itemId)?.item.tier;}
 export function resolveWeaponPresentation(itemId:string):WeaponPresentationContent|undefined{return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.presentation;}
 export function resolveWeaponCombatProfile(itemId:string):WeaponCombatProfile|undefined{return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.combatProfile;}
-export function resolveWeaponAttackSpeed(itemId:string):number|undefined{const p=resolveWeaponCombatProfile(itemId);return p===undefined?undefined:WEAPON_ATTACK_SPEED_BY_PROFILE[p];}
+export function resolveWeaponAttackSpeed(itemId:string):number|undefined{return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.attackSpeed;}
 export function resolveWeaponCraftRule(itemId:string):WeaponCraftRule|undefined{return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.craft;}
 export function resolvePreviousWeaponTierItemId(itemId:string):string|undefined{const r=CONTENT_BY_ITEM_ID.get(itemId);if(!r||r.item.tier<4||r.specialization.craft.kind!=="standard")return;return r.specialization.items.find(i=>i.tier===r.item.tier-1)?.itemId;}
 export function getWeaponSpecializationName(itemId:string):string|undefined{return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.specializationName;}

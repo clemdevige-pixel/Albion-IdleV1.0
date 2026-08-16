@@ -5,6 +5,7 @@ import type { GatheringResourceId } from "./gatheringModels";
 import { useGatheringActions } from "./useGatheringActions";
 import { useGatheringData } from "./useGatheringData";
 import "../production.css";
+import "./GatheringView.css";
 
 export function GatheringView(): JSX.Element {
   const model = useGatheringData();
@@ -24,6 +25,18 @@ export function GatheringView(): JSX.Element {
         </div>
         <span>Récolte active du héros</span>
       </div>
+
+      {model.queued !== null && (
+        <div className="ui-gathering__queued" role="status" aria-live="polite">
+          <div>
+            <strong>La récolte commencera à la fin de votre segment</strong>
+            <span>Le combat actuel continue jusqu'à la dernière rencontre.</span>
+          </div>
+          <b>
+            Rencontre {String(model.queued.encounterIndex)} / {String(model.queued.encounterCount)}
+          </b>
+        </div>
+      )}
 
       <nav className="ui-gathering__families" aria-label="Familles de récolte">
         {model.resources.map((entry) => {

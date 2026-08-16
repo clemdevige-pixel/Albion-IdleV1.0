@@ -1,10 +1,12 @@
 import type { EnchantmentFailureReason, EnchantmentLevel } from "@game/gameplay";
 
+export type EnchantItemSource = "equipped" | "inventory" | "bank";
+
 export interface EnchantableItemModel {
   readonly itemId: string;
   readonly instanceId: string;
   readonly enchantment: EnchantmentLevel;
-  readonly equipped: boolean;
+  readonly source: EnchantItemSource;
 }
 
 export interface EnchantmentMaterialModel {
@@ -37,6 +39,7 @@ export interface EnchantModel {
   readonly silver: number;
   readonly incomeRate: number;
   readonly items: readonly EnchantableItemModel[];
+  readonly availableTiers: readonly number[];
   readonly selectedInstanceId: string | undefined;
   readonly preview: EnchantmentPreviewModel | undefined;
   readonly stocks: readonly EnchantmentStockModel[];

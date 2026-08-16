@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
-  BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS,
+  SEGMENT_LOOT_MULTIPLIERS,
   KEY_FRAGMENTS_PER_KEY,
-  getBlueZoneSegmentLootMultiplier,
+  getAuthoredRepairCostTiers,
+  getMissingRepairCostDefinitions,
+  getSegmentLootMultiplier,
   getEnchantmentShardExpectedDrop,
-  rollBlueZoneCombatDrops,
-  type BlueZoneLootContext,
+  rollCombatDrops,
+  type CombatLootContext,
 } from "./economyContentCatalog";
 
-const BASE_CONTEXT: BlueZoneLootContext = {
+const BASE_CONTEXT: CombatLootContext = {
   segmentIndex: 0,
   faction: "Morgana",
   isElite: false,
@@ -26,11 +28,11 @@ function sequenceRandom(values: readonly number[]): () => number {
 
 describe("combat loot", () => {
   it("keeps the existing non-enchantment segment progression curve", () => {
-    expect(BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS).toEqual([
+    expect(SEGMENT_LOOT_MULTIPLIERS).toEqual([
       1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.5,
     ]);
-    expect(getBlueZoneSegmentLootMultiplier(0)).toBe(1);
-    expect(getBlueZoneSegmentLootMultiplier(9)).toBe(1.5);
+    expect(getSegmentLootMultiplier(0)).toBe(1);
+    expect(getSegmentLootMultiplier(9)).toBe(1.5);
   });
 
   it("keeps the approved fragment conversion targets", () => {
@@ -39,8 +41,8 @@ describe("combat loot", () => {
   });
 
   it("drops exactly the shard matching the current world tier", () => {
-    const t4Drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
-    const t5Drops = rollBlueZoneCombatDrops(
+    const t4Drops = rollCombatDrops(BASE_CONTEXT, () => 0);
+    const t5Drops = rollCombatDrops(
       { ...BASE_CONTEXT, enchantmentTier: 5 },
       () => 0,
     );
@@ -71,14 +73,14 @@ describe("combat loot", () => {
   });
 
   it("keeps health potions out of combat loot", () => {
-    const drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
+    const drops = rollCombatDrops(BASE_CONTEXT, () => 0);
 
     expect(drops.some((drop) => drop.itemId === "item_health_potion")).toBe(false);
     expect(drops.some((drop) => drop.kind === "consumable")).toBe(false);
   });
 
   it("allows independent regular drops on the same kill", () => {
-    const drops = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
+    const drops = rollCombatDrops(BASE_CONTEXT, () => 0);
 
     expect(drops.map((drop) => drop.kind)).toEqual([
       "enchantment",
@@ -88,13 +90,12 @@ describe("combat loot", () => {
   });
 
   it("uses zone advancement to improve faction key drop rate", () => {
-    // shard fails, key fragment sits between early and late thresholds, key fails.
     const rolls = [1, 0.025, 1] as const;
-    const earlyDrops = rollBlueZoneCombatDrops(
+    const earlyDrops = rollCombatDrops(
       BASE_CONTEXT,
       sequenceRandom(rolls),
     );
-    const lateDrops = rollBlueZoneCombatDrops(
+    const lateDrops = rollCombatDrops(
       { ...BASE_CONTEXT, segmentIndex: 9 },
       sequenceRandom(rolls),
     );
@@ -104,8 +105,8 @@ describe("combat loot", () => {
   });
 
   it("uses faction only to select dungeon loot identity", () => {
-    const morgana = rollBlueZoneCombatDrops(BASE_CONTEXT, () => 0);
-    const keeper = rollBlueZoneCombatDrops(
+    const morgana = rollCombatDrops(BASE_CONTEXT, () => 0);
+    const keeper = rollCombatDrops(
       { ...BASE_CONTEXT, faction: "Keeper" },
       () => 0,
     );
@@ -117,7 +118,7 @@ describe("combat loot", () => {
   });
 
   it("never drops artifacts from normal monsters", () => {
-    const drops = rollBlueZoneCombatDrops(
+    const drops = rollCombatDrops(
       { ...BASE_CONTEXT, segmentIndex: 9, faction: "Undead" },
       () => 0,
     );
@@ -127,7 +128,7 @@ describe("combat loot", () => {
   });
 
   it("enables faction-specific artifact rolls for bosses", () => {
-    const drops = rollBlueZoneCombatDrops(
+    const drops = rollCombatDrops(
       {
         ...BASE_CONTEXT,
         segmentIndex: 9,
@@ -142,5 +143,20 @@ describe("combat loot", () => {
       .toBe("item_resource_artifact_fragment_keeper");
     expect(drops.find((drop) => drop.kind === "artifact")?.itemId)
       .toBe("item_resource_artifact_keeper");
+  });
+});
+
+describe("repair economy readiness", () => {
+  it("keeps every approved repair category complete for authored repair tiers", () => {
+    expect(getAuthoredRepairCostTiers()).toEqual([3, 4]);
+    expect(getMissingRepairCostDefinitions([3, 4])).toEqual([]);
+  });
+
+  it("reports T5 as an explicit balance gap instead of inventing prices", () => {
+    expect(getMissingRepairCostDefinitions([5])).toEqual([
+      { itemTier: 5, equipmentCategory: "weapon" },
+      { itemTier: 5, equipmentCategory: "armor" },
+      { itemTier: 5, equipmentCategory: "accessory" },
+    ]);
   });
 });

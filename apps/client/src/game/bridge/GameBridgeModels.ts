@@ -350,6 +350,7 @@ export interface GameBridgeState {
   readonly transactionHistory: readonly TransactionEntryVM[];
   readonly economyNotifications: readonly EconomyNotificationVM[];
   readonly world: WorldVM;
+  readonly queuedGatheringFamily: string | null;
   readonly gathering: GatheringVM;
   readonly oreGathering: GatheringVM;
   readonly hideGathering: GatheringVM;
@@ -453,6 +454,7 @@ export function createInitialGameBridgeState(): GameBridgeState {
       zoneProgress: 0,
       isFirstVisit: false,
     },
+    queuedGatheringFamily: null,
     gathering: EMPTY_GATHERING,
     oreGathering: {
       ...EMPTY_GATHERING,

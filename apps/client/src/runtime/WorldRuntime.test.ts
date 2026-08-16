@@ -103,4 +103,57 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.currentEncounter).toBe(3);
     expect(worldRuntime.getWorldLocationSaveState().activeEncounter).toBe(3);
   });
+
+  it("does not unlock the next segment when the progression frontier is farmed", () => {
+    const foundation = createWorldFoundation();
+    const savedLocation = {
+      activeZoneDefId: WORLD_ZONE_IDS.forest,
+      activeSegment: 5,
+      activeEncounter: 4,
+      farmMode: true,
+      zoneMemories: [
+        {
+          zoneDefId: WORLD_ZONE_IDS.forest,
+          currentSegment: 5,
+          currentEncounter: 4,
+          highestUnlockedSegment: 5,
+          completedSegments: [0, 1, 2, 3, 4],
+        },
+      ],
+    } as unknown as WorldLocationSaveState;
+
+    foundation.worldRuntime.setWorldLocationSaveState(savedLocation);
+    foundation.worldRuntime.advanceVictory();
+
+    expect(foundation.worldRuntime.currentSegment).toBe(5);
+    expect(foundation.worldRuntime.currentEncounter).toBe(0);
+    expect(foundation.worldRuntime.highestUnlockedSegment).toBe(5);
+  });
+
+  it("does not complete a zone when its final segment is farmed", () => {
+    const foundation = createWorldFoundation();
+    const savedLocation = {
+      activeZoneDefId: WORLD_ZONE_IDS.forest,
+      activeSegment: 9,
+      activeEncounter: 4,
+      farmMode: true,
+      zoneMemories: [
+        {
+          zoneDefId: WORLD_ZONE_IDS.forest,
+          currentSegment: 9,
+          currentEncounter: 4,
+          highestUnlockedSegment: 9,
+          completedSegments: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        },
+      ],
+    } as unknown as WorldLocationSaveState;
+
+    foundation.worldRuntime.setWorldLocationSaveState(savedLocation);
+    expect(foundation.progressionManager.isUnlocked(WORLD_ZONE_IDS.swamp)).toBe(false);
+
+    foundation.worldRuntime.advanceVictory();
+
+    expect(foundation.worldRuntime.currentSegment).toBe(9);
+    expect(foundation.progressionManager.isUnlocked(WORLD_ZONE_IDS.swamp)).toBe(false);
+  });
 });

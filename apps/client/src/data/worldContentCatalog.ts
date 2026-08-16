@@ -4,6 +4,7 @@ import {
   asSpawnGroupId,
   asZoneDefinitionId,
   type BiomeDefinition,
+  type BiomeId,
   type ZoneDefinition,
   type ZoneDefinitionId,
   type ZoneUnlockDefinition,
@@ -14,44 +15,44 @@ import {
 } from "@game/data";
 import { getZoneEncounterPool } from "./monsterContentCatalog";
 
-export const WORLD_ZONE_IDS = {
-  forest: asZoneDefinitionId("zone_forest_t3"),
-  swamp: asZoneDefinitionId("zone_swamp_t3"),
-  highland: asZoneDefinitionId("zone_highland_t3"),
-  steppe: asZoneDefinitionId("zone_steppe_t4"),
-  mountain: asZoneDefinitionId("zone_mountain_t4"),
-  amberwood: asZoneDefinitionId("zone_amberwood_t5"),
-  gloamfen: asZoneDefinitionId("zone_gloamfen_t5"),
-  stormwatch: asZoneDefinitionId("zone_stormwatch_t5"),
-  sunscar: asZoneDefinitionId("zone_sunscar_t5"),
-  ironveil: asZoneDefinitionId("zone_ironveil_t5"),
-} as const;
+interface WorldZoneContentDefinition {
+  readonly id: ZoneDefinitionId;
+  readonly name: string;
+  readonly bandId: WorldBandId;
+  readonly tier: number;
+  readonly biomeId: BiomeId;
+  readonly spawnGroupPrefix: string;
+  readonly respawnDelayTicks: number;
+  readonly tags: readonly string[];
+}
 
-const BLUE_WORLD_ZONE_IDS = [
-  WORLD_ZONE_IDS.forest,
-  WORLD_ZONE_IDS.swamp,
-  WORLD_ZONE_IDS.highland,
-  WORLD_ZONE_IDS.steppe,
-  WORLD_ZONE_IDS.mountain,
-] as const;
+export const WORLD_ZONE_CONTENT = {
+  forest: { id: asZoneDefinitionId("zone_forest_t3"), name: "Birch Forest", bandId: "blue", tier: 3, biomeId: asBiomeId("biome_forest"), spawnGroupPrefix: "grp_forest", respawnDelayTicks: 30, tags: ["forest", "starter"] },
+  swamp: { id: asZoneDefinitionId("zone_swamp_t3"), name: "Dark Swamp", bandId: "blue", tier: 3, biomeId: asBiomeId("biome_swamp"), spawnGroupPrefix: "grp_swamp", respawnDelayTicks: 40, tags: ["swamp"] },
+  highland: { id: asZoneDefinitionId("zone_highland_t3"), name: "Stone Highlands", bandId: "blue", tier: 3, biomeId: asBiomeId("biome_highland"), spawnGroupPrefix: "grp_highland", respawnDelayTicks: 45, tags: ["highland", "tier3"] },
+  steppe: { id: asZoneDefinitionId("zone_steppe_t4"), name: "Golden Steppe", bandId: "blue", tier: 4, biomeId: asBiomeId("biome_steppe"), spawnGroupPrefix: "grp_steppe", respawnDelayTicks: 50, tags: ["steppe", "tier4"] },
+  mountain: { id: asZoneDefinitionId("zone_mountain_t4"), name: "Frostpeak Mountain", bandId: "blue", tier: 4, biomeId: asBiomeId("biome_mountain"), spawnGroupPrefix: "grp_mountain", respawnDelayTicks: 60, tags: ["mountain", "tier4", "final"] },
+  amberwood: { id: asZoneDefinitionId("zone_amberwood_t5"), name: "Amberwood Forest", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_forest"), spawnGroupPrefix: "grp_amberwood", respawnDelayTicks: 65, tags: ["forest", "yellow", "tier5", "starter"] },
+  gloamfen: { id: asZoneDefinitionId("zone_gloamfen_t5"), name: "Gloamfen Marsh", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_swamp"), spawnGroupPrefix: "grp_gloamfen", respawnDelayTicks: 70, tags: ["swamp", "yellow", "tier5"] },
+  stormwatch: { id: asZoneDefinitionId("zone_stormwatch_t5"), name: "Stormwatch Highlands", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_highland"), spawnGroupPrefix: "grp_stormwatch", respawnDelayTicks: 75, tags: ["highland", "yellow", "tier5"] },
+  sunscar: { id: asZoneDefinitionId("zone_sunscar_t5"), name: "Sunscar Steppe", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_steppe"), spawnGroupPrefix: "grp_sunscar", respawnDelayTicks: 80, tags: ["steppe", "yellow", "tier5"] },
+  ironveil: { id: asZoneDefinitionId("zone_ironveil_t5"), name: "Ironveil Peaks", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_mountain"), spawnGroupPrefix: "grp_ironveil", respawnDelayTicks: 85, tags: ["mountain", "yellow", "tier5", "final"] },
+} as const satisfies Readonly<Record<string, WorldZoneContentDefinition>>;
 
-const YELLOW_WORLD_ZONE_IDS = [
-  WORLD_ZONE_IDS.amberwood,
-  WORLD_ZONE_IDS.gloamfen,
-  WORLD_ZONE_IDS.stormwatch,
-  WORLD_ZONE_IDS.sunscar,
-  WORLD_ZONE_IDS.ironveil,
-] as const;
+export type WorldZoneKey = keyof typeof WORLD_ZONE_CONTENT;
 
-export const WORLD_ZONE_IDS_BY_BAND: Readonly<
-  Record<WorldBandId, readonly ZoneDefinitionId[]>
-> = {
-  blue: BLUE_WORLD_ZONE_IDS,
-  yellow: YELLOW_WORLD_ZONE_IDS,
-  orange: [],
-  red: [],
-  black: [],
-};
+export const WORLD_ZONE_IDS = Object.fromEntries(
+  Object.entries(WORLD_ZONE_CONTENT).map(([key, definition]) => [key, definition.id]),
+) as { readonly [K in WorldZoneKey]: (typeof WORLD_ZONE_CONTENT)[K]["id"] };
+
+const ZONE_CONTENT_VALUES: readonly WorldZoneContentDefinition[] = Object.values(WORLD_ZONE_CONTENT);
+
+export const WORLD_ZONE_IDS_BY_BAND = Object.fromEntries(
+  WORLD_BAND_DEFINITIONS.map(({ id }) => [
+    id,
+    ZONE_CONTENT_VALUES.filter((definition) => definition.bandId === id).map((definition) => definition.id),
+  ]),
+) as unknown as Readonly<Record<WorldBandId, readonly ZoneDefinitionId[]>>;
 
 export interface WorldZonePlacement {
   readonly bandId: WorldBandId;
@@ -59,22 +60,12 @@ export interface WorldZonePlacement {
   readonly tier: number;
 }
 
-export function getWorldZonePlacement(
-  zoneDefId: ZoneDefinitionId | string,
-): WorldZonePlacement {
-  for (const band of WORLD_BAND_DEFINITIONS) {
-    const zoneIndexWithinBand = WORLD_ZONE_IDS_BY_BAND[band.id].findIndex(
-      (candidate) => candidate === zoneDefId,
-    );
-    if (zoneIndexWithinBand >= 0) {
-      const zoneDefinition = ZONE_DEFINITIONS.find(({ id }) => id === zoneDefId);
-      if (zoneDefinition === undefined) {
-        throw new Error(`Zone definition is missing for world placement: ${String(zoneDefId)}`);
-      }
-      return { bandId: band.id, zoneIndexWithinBand, tier: zoneDefinition.tier };
-    }
-  }
-  throw new Error(`Zone is not assigned to a world band: ${String(zoneDefId)}`);
+export function getWorldZonePlacement(zoneDefId: ZoneDefinitionId | string): WorldZonePlacement {
+  const definition = ZONE_CONTENT_VALUES.find(({ id }) => id === zoneDefId);
+  if (definition === undefined) throw new Error(`Zone is not assigned to a world band: ${String(zoneDefId)}`);
+  const zoneIndexWithinBand = WORLD_ZONE_IDS_BY_BAND[definition.bandId].findIndex((candidate) => candidate === definition.id);
+  if (zoneIndexWithinBand < 0) throw new Error(`Zone placement is inconsistent: ${String(zoneDefId)}`);
+  return { bandId: definition.bandId, zoneIndexWithinBand, tier: definition.tier };
 }
 
 export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
@@ -85,16 +76,9 @@ export const BIOME_DEFINITIONS: readonly BiomeDefinition[] = [
   { id: asBiomeId("biome_mountain"), name: "Mountain", theme: "Frozen", difficultyModifier: 1.42, enemyFamilies: ["Keeper", "Demon"], resourceFamilies: ["Ore", "Stone"], encounterPoolId: "encounter_pool_mountain", visualThemeId: "visual_mountain", ambientAudioId: "audio_mountain", musicPlaylistId: "music_mountain", weather: "Snow", lighting: "Cold", decorationDensity: "Normal", tags: ["mountain", "tier4", "final"] },
 ];
 
-function buildNormalMonsterSpawns(
-  zoneDefId: ZoneDefinitionId,
-  groupPrefix: string,
-  respawnDelayTicks: number,
-): ZoneDefinition["monsterSpawns"] {
+function buildNormalMonsterSpawns(zoneDefId: ZoneDefinitionId, groupPrefix: string, respawnDelayTicks: number): ZoneDefinition["monsterSpawns"] {
   const pool = getZoneEncounterPool(zoneDefId);
-  const monsterIds = [...new Set([
-    ...pool.dominant.normal,
-    ...pool.secondary.normal,
-  ])];
+  const monsterIds = [...new Set([...pool.dominant.normal, ...pool.secondary.normal])];
   return monsterIds.map((monsterId, index) => ({
     definitionId: asMonsterDefinitionId(monsterId),
     spawnGroupId: asSpawnGroupId(`${groupPrefix}_${String(index + 1)}`),
@@ -103,83 +87,41 @@ function buildNormalMonsterSpawns(
   }));
 }
 
-export const ZONE_DEFINITIONS: readonly ZoneDefinition[] = [
-  { id: WORLD_ZONE_IDS.forest, name: "Birch Forest", tier: 3, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.forest, "grp_forest", 30), tags: ["forest", "starter"] },
-  { id: WORLD_ZONE_IDS.swamp, name: "Dark Swamp", tier: 3, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.swamp, "grp_swamp", 40), tags: ["swamp"] },
-  { id: WORLD_ZONE_IDS.highland, name: "Stone Highlands", tier: 3, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.highland, "grp_highland", 45), tags: ["highland", "tier3"] },
-  { id: WORLD_ZONE_IDS.steppe, name: "Golden Steppe", tier: 4, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.steppe, "grp_steppe", 50), tags: ["steppe", "tier4"] },
-  { id: WORLD_ZONE_IDS.mountain, name: "Frostpeak Mountain", tier: 4, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.mountain, "grp_mountain", 60), tags: ["mountain", "tier4", "final"] },
-  { id: WORLD_ZONE_IDS.amberwood, name: "Amberwood Forest", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.amberwood, "grp_amberwood", 65), tags: ["forest", "yellow", "tier5", "starter"] },
-  { id: WORLD_ZONE_IDS.gloamfen, name: "Gloamfen Marsh", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.gloamfen, "grp_gloamfen", 70), tags: ["swamp", "yellow", "tier5"] },
-  { id: WORLD_ZONE_IDS.stormwatch, name: "Stormwatch Highlands", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.stormwatch, "grp_stormwatch", 75), tags: ["highland", "yellow", "tier5"] },
-  { id: WORLD_ZONE_IDS.sunscar, name: "Sunscar Steppe", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.sunscar, "grp_sunscar", 80), tags: ["steppe", "yellow", "tier5"] },
-  { id: WORLD_ZONE_IDS.ironveil, name: "Ironveil Peaks", tier: 5, monsterSpawns: buildNormalMonsterSpawns(WORLD_ZONE_IDS.ironveil, "grp_ironveil", 85), tags: ["mountain", "yellow", "tier5", "final"] },
-];
+export const ZONE_DEFINITIONS: readonly ZoneDefinition[] = ZONE_CONTENT_VALUES.map((definition) => ({
+  id: definition.id,
+  name: definition.name,
+  tier: definition.tier,
+  monsterSpawns: buildNormalMonsterSpawns(definition.id, definition.spawnGroupPrefix, definition.respawnDelayTicks),
+  tags: [...definition.tags],
+}));
 
-export const BIOME_BY_ZONE = new Map([
-  [WORLD_ZONE_IDS.forest, asBiomeId("biome_forest")],
-  [WORLD_ZONE_IDS.swamp, asBiomeId("biome_swamp")],
-  [WORLD_ZONE_IDS.highland, asBiomeId("biome_highland")],
-  [WORLD_ZONE_IDS.steppe, asBiomeId("biome_steppe")],
-  [WORLD_ZONE_IDS.mountain, asBiomeId("biome_mountain")],
-  [WORLD_ZONE_IDS.amberwood, asBiomeId("biome_forest")],
-  [WORLD_ZONE_IDS.gloamfen, asBiomeId("biome_swamp")],
-  [WORLD_ZONE_IDS.stormwatch, asBiomeId("biome_highland")],
-  [WORLD_ZONE_IDS.sunscar, asBiomeId("biome_steppe")],
-  [WORLD_ZONE_IDS.ironveil, asBiomeId("biome_mountain")],
-]);
-
-export const WORLD_ZONE_ORDER = WORLD_BAND_DEFINITIONS.flatMap(
-  ({ id }) => WORLD_ZONE_IDS_BY_BAND[id],
+export const BIOME_BY_ZONE = new Map<ZoneDefinitionId, BiomeId>(
+  ZONE_CONTENT_VALUES.map((definition) => [definition.id, definition.biomeId]),
 );
 
-/**
- * Builds one deterministic progression chain across world-band boundaries.
- * Appending the first Yellow zone therefore makes completion of the final
- * Blue zone its unlock requirement without adding another special case.
- */
-export function buildZoneUnlockDefinitions(
-  zoneOrder: readonly ZoneDefinitionId[],
-): readonly ZoneUnlockDefinition[] {
+export const WORLD_ZONE_ORDER = WORLD_BAND_DEFINITIONS.flatMap(({ id }) => WORLD_ZONE_IDS_BY_BAND[id]);
+
+export function buildZoneUnlockDefinitions(zoneOrder: readonly ZoneDefinitionId[]): readonly ZoneUnlockDefinition[] {
   return zoneOrder.map((zoneDefId, index) => {
     const previousZoneDefId = zoneOrder[index - 1];
     return previousZoneDefId === undefined
       ? { zoneDefId, conditions: [], unlockedByDefault: true }
-      : {
-          zoneDefId,
-          conditions: [{ type: "zone_completed" as const, targetZoneDefId: previousZoneDefId }],
-        };
+      : { zoneDefId, conditions: [{ type: "zone_completed" as const, targetZoneDefId: previousZoneDefId }] };
   });
 }
 
-export const ZONE_UNLOCK_DEFINITIONS: readonly ZoneUnlockDefinition[] =
-  buildZoneUnlockDefinitions(WORLD_ZONE_ORDER);
+export const ZONE_UNLOCK_DEFINITIONS: readonly ZoneUnlockDefinition[] = buildZoneUnlockDefinitions(WORLD_ZONE_ORDER);
 
-/** Fails fast when authored world content is only partially registered. */
 export function validateWorldContentCatalog(): void {
-  const assignedZoneIds = WORLD_BAND_DEFINITIONS.flatMap(
-    ({ id }) => WORLD_ZONE_IDS_BY_BAND[id],
-  );
-  const uniqueZoneIds = new Set(assignedZoneIds);
+  const zoneIds = ZONE_CONTENT_VALUES.map(({ id }) => id);
+  if (new Set(zoneIds).size !== zoneIds.length) throw new Error("A world zone ID is authored more than once");
 
-  if (uniqueZoneIds.size !== assignedZoneIds.length) {
-    throw new Error("A world zone is assigned to more than one world band");
+  const biomeIds = new Set(BIOME_DEFINITIONS.map(({ id }) => id));
+  for (const definition of ZONE_CONTENT_VALUES) {
+    if (!biomeIds.has(definition.biomeId)) throw new Error(`Missing biome definition for zone: ${String(definition.id)}`);
+    getZoneEncounterPool(definition.id);
   }
 
-  const definitionIds = new Set(ZONE_DEFINITIONS.map(({ id }) => id));
-  for (const zoneDefId of assignedZoneIds) {
-    if (!definitionIds.has(zoneDefId)) {
-      throw new Error(`Missing zone definition: ${String(zoneDefId)}`);
-    }
-    if (!BIOME_BY_ZONE.has(zoneDefId)) {
-      throw new Error(`Missing biome assignment: ${String(zoneDefId)}`);
-    }
-    getZoneEncounterPool(zoneDefId);
-  }
-
-  for (const zoneDefId of definitionIds) {
-    if (!uniqueZoneIds.has(zoneDefId)) {
-      throw new Error(`Zone is not assigned to a world band: ${String(zoneDefId)}`);
-    }
-  }
+  const derivedDefinitionIds = new Set(ZONE_DEFINITIONS.map(({ id }) => id));
+  if (derivedDefinitionIds.size !== zoneIds.length) throw new Error("Derived zone definitions do not match authored world content");
 }

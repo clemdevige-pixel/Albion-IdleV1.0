@@ -24,4 +24,25 @@ describe("world band definitions", () => {
       ({ contentStatus }) => contentStatus === "planned",
     )).toBe(true);
   });
+
+  it("routes the planned endgame bands directly to T6, T7 and T8", () => {
+    expect(getWorldBandDefinition("orange")).toMatchObject({
+      progressionOrder: 2,
+      minimumTier: 6,
+      maximumTier: 6,
+      contentStatus: "planned",
+    });
+    expect(getWorldBandDefinition("red")).toMatchObject({
+      progressionOrder: 3,
+      minimumTier: 7,
+      maximumTier: 7,
+      contentStatus: "planned",
+    });
+    expect(getWorldBandDefinition("black")).toMatchObject({
+      progressionOrder: 4,
+      minimumTier: 8,
+      maximumTier: 8,
+      contentStatus: "planned",
+    });
+  });
 });

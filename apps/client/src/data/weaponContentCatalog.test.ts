@@ -4,6 +4,7 @@ import {
   resolvePrimaryAbilityId,
   resolveUnlockedWeaponAbilities,
   resolveWeaponAbilityUnlocks,
+  resolveWeaponAttackSpeed,
   resolveWeaponFamilyId,
   resolveWeaponMastery,
   resolveWeaponTier,
@@ -27,6 +28,15 @@ describe("weapon content catalog", () => {
       weaponId: "mastery_badon",
     });
     expect(resolvePrimaryAbilityId("item_weapon_bow_t4_badon")).toBe("ability_bow_aimed_shot");
+  });
+
+  it("authors final attack cadence on each specialization without a second balance layer", () => {
+    expect(resolveWeaponAttackSpeed("item_weapon_sword_t4_broadsword")).toBeCloseTo(1.296);
+    expect(resolveWeaponAttackSpeed("item_weapon_bow_t4_longbow")).toBe(1);
+    expect(resolveWeaponAttackSpeed("item_weapon_bow_t4_badon")).toBe(1);
+    expect(resolveWeaponAttackSpeed("item_weapon_staff_t4_infernal")).toBe(0.9);
+    expect(resolveWeaponAttackSpeed("item_weapon_gloves_t4_spiked_gauntlets")).toBeCloseTo(1.204);
+    expect(resolveWeaponAttackSpeed("item_weapon_dagger_t4_pair")).toBeCloseTo(1.392);
   });
 
   it("composes Q/W from family and E from specialization", () => {
@@ -61,19 +71,39 @@ describe("weapon content catalog", () => {
     }
   });
 
-  it("authors conditional autocast without changing manual availability", () => {
-    expect(CLIENT_ABILITIES.ability_sword_execution?.autoCast).toEqual({
+  it("authors conditional autocast on the authoritative ability mechanics", () => {
+    expect(CLIENT_ABILITIES["ability_sword_execution"]?.mechanics.autoRule).toEqual({
       kind: "target_health_below",
-      ratio: 0.3,
+      ratio: 0.5,
     });
   });
 
-  it("keeps current M1 balance values", () => {
-    expect(CLIENT_ABILITIES.ability_sword_heroic_strike).toMatchObject({ cooldown: 8, bonusDamageRatio: 0.75 });
-    expect(CLIENT_ABILITIES.ability_bow_aimed_shot).toMatchObject({ cooldown: 5, bonusDamageRatio: 0.6 });
-    expect(CLIENT_ABILITIES.ability_fire_fireball).toMatchObject({ cooldown: 5, bonusDamageRatio: 0.7 });
-    expect(CLIENT_ABILITIES.ability_gloves_shockwave).toMatchObject({ cooldown: 6, bonusDamageRatio: 0.8 });
-    expect(CLIENT_ABILITIES.ability_dagger_double_slash).toMatchObject({ cooldown: 4, bonusDamageRatio: 0.5 });
+  it("keeps current live M1 mechanics", () => {
+    expect(CLIENT_ABILITIES["ability_sword_heroic_strike"]).toMatchObject({
+      cooldown: 8,
+      mechanics: { mechanics: [{ kind: "damage", ratio: 0.75 }] },
+    });
+    expect(CLIENT_ABILITIES["ability_bow_aimed_shot"]).toMatchObject({
+      cooldown: 5,
+      mechanics: { mechanics: [{ kind: "damage", ratio: 0.534 }] },
+    });
+    expect(CLIENT_ABILITIES["ability_fire_fireball"]).toMatchObject({
+      cooldown: 5,
+      mechanics: {
+        mechanics: [
+          { kind: "damage", ratio: 0.36 },
+          { kind: "dot", effectId: "effect_fire_burn", ratio: 0.064, interval: 1, ticks: 3 },
+        ],
+      },
+    });
+    expect(CLIENT_ABILITIES["ability_gloves_shockwave"]).toMatchObject({
+      cooldown: 6,
+      mechanics: { mechanics: [{ kind: "damage", ratio: 0.776 }] },
+    });
+    expect(CLIENT_ABILITIES["ability_dagger_double_slash"]).toMatchObject({
+      cooldown: 4,
+      mechanics: { mechanics: [{ kind: "damage", ratio: 0.435, hits: 2 }] },
+    });
   });
 
   it("does not infer unknown weapons", () => {

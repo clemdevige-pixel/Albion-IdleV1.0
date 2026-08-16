@@ -5,7 +5,7 @@ import {
   getEnchantmentShardItemId,
   type ItemInstanceId,
 } from "@game/gameplay";
-import { getItemDisplayName } from "../../../panels/ItemVisual";
+import { getItemDefinition, getItemDisplayName } from "../../../panels/ItemVisual";
 import { useGameServices } from "../../../state/GameContext";
 import { isProductionMaterial } from "../../../runtime/ProductionStorage";
 import { useMerchantData } from "../useMerchantData";
@@ -13,7 +13,10 @@ import type { EnchantModel, EnchantableItemModel } from "./enchantModels";
 
 const STOCK_ITEM_IDS = ENCHANTMENT_RESOURCE_TIERS.map(getEnchantmentShardItemId);
 
-export function useEnchantData(requestedInstanceId: string | null): EnchantModel {
+export function useEnchantData(
+  requestedInstanceId: string | null,
+  selectedTier: number | null,
+): EnchantModel {
   const snapshot = useMerchantData();
   const {
     enchantmentService,
@@ -23,16 +26,20 @@ export function useEnchantData(requestedInstanceId: string | null): EnchantModel
   } = useGameServices();
 
   return useMemo(() => {
-    const inventoryItems: readonly EnchantableItemModel[] = snapshot.inventory.slots.flatMap((slot) => {
+    const toEnchantableItems = (
+      slots: typeof snapshot.inventory.slots,
+      source: EnchantableItemModel["source"],
+    ): readonly EnchantableItemModel[] => slots.flatMap((slot) => {
       if (slot.itemId === undefined || slot.instanceId === undefined) return [];
       const preview = enchantmentService.preview(slot.instanceId as ItemInstanceId);
       return preview === undefined || preview.failureReason === "item_not_enchantable" ? [] : [{
         itemId: slot.itemId,
         instanceId: slot.instanceId,
         enchantment: slot.enchantment,
-        equipped: false,
+        source,
       }];
     });
+
     const equippedItems: readonly EnchantableItemModel[] = snapshot.equipment.slots.flatMap((slot) => {
       if (slot.itemId === undefined || slot.instanceId === undefined) return [];
       const preview = enchantmentService.preview(slot.instanceId as ItemInstanceId);
@@ -40,10 +47,19 @@ export function useEnchantData(requestedInstanceId: string | null): EnchantModel
         itemId: slot.itemId,
         instanceId: slot.instanceId,
         enchantment: slot.enchantment,
-        equipped: true,
+        source: "equipped" as const,
       }];
     });
-    const items = [...equippedItems, ...inventoryItems];
+    const inventoryItems = toEnchantableItems(snapshot.inventory.slots, "inventory");
+    const bankItems = toEnchantableItems(snapshot.bank.slots, "bank");
+    const allItems = [...equippedItems, ...inventoryItems, ...bankItems];
+    const availableTiers = [...new Set(allItems.flatMap((item) => {
+      const tier = getItemDefinition(item.itemId)?.tier;
+      return tier === undefined ? [] : [tier];
+    }))].sort((a, b) => a - b);
+    const items = selectedTier === null
+      ? allItems
+      : allItems.filter((item) => getItemDefinition(item.itemId)?.tier === selectedTier);
     const selectedInstanceId = items.some((item) => item.instanceId === requestedInstanceId)
       ? requestedInstanceId ?? undefined
       : items[0]?.instanceId;
@@ -74,6 +90,7 @@ export function useEnchantData(requestedInstanceId: string | null): EnchantModel
       silver: snapshot.wallet.silver,
       incomeRate: snapshot.wallet.incomeRate,
       items,
+      availableTiers,
       selectedInstanceId,
       preview,
       stocks: STOCK_ITEM_IDS.map((itemId) => ({
@@ -91,6 +108,7 @@ export function useEnchantData(requestedInstanceId: string | null): EnchantModel
     inventoryManager,
     productionStorageId,
     requestedInstanceId,
+    selectedTier,
     snapshot,
   ]);
 }

@@ -10,9 +10,9 @@ import type {
   WalletId,
 } from "@game/gameplay";
 import {
-  rollBlueZoneCombatDrops,
-  type BlueZoneCombatDrop,
-  type BlueZoneLootContext,
+  rollCombatDrops,
+  type CombatDrop,
+  type CombatLootContext,
 } from "../data/economyContentCatalog";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog";
@@ -25,7 +25,7 @@ export interface EnemyKilledRewardResult {
     readonly weaponId: MasteryId;
     readonly familyId: MasteryId;
   } | undefined;
-  readonly itemDrops: readonly BlueZoneCombatDrop[];
+  readonly itemDrops: readonly CombatDrop[];
 }
 
 export interface CombatRewardRuntimeDependencies {
@@ -63,7 +63,7 @@ export class CombatRewardRuntime {
   public processEnemyKilledReward(
     silverReward: number,
     fameReward: number,
-    lootContext: BlueZoneLootContext,
+    lootContext: CombatLootContext,
   ): EnemyKilledRewardResult {
     this.currencyService.credit(this.walletId, "currency_silver", silverReward, "Loot");
     const balRes = this.currencyService.getBalance(this.walletId, "currency_silver");
@@ -89,12 +89,12 @@ export class CombatRewardRuntime {
       };
     }
 
-    const itemDrops: BlueZoneCombatDrop[] = [];
-    for (const drop of rollBlueZoneCombatDrops(lootContext)) {
+    const itemDrops: CombatDrop[] = [];
+    for (const drop of rollCombatDrops(lootContext)) {
       const addResult = this.inventoryManager.addQuantity(this.heroId, drop.itemId, drop.quantity);
       if (!addResult.ok || addResult.value.added <= 0) continue;
 
-      const acceptedDrop: BlueZoneCombatDrop = {
+      const acceptedDrop: CombatDrop = {
         ...drop,
         quantity: addResult.value.added,
       };

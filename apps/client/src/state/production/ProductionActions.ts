@@ -2,6 +2,8 @@ import type { EntityId } from "@game/core";
 import type { InventoryManager, ResourceFamily } from "@game/gameplay";
 import type { GameBridge } from "../../game/GameBridge";
 import type { CraftingRuntime } from "../../runtime/CraftingRuntime";
+import type { CombatLoopState } from "../../runtime/CombatRuntime";
+import { combatStopController } from "../../runtime/CombatStopController";
 import type { GatheringRuntime } from "../../runtime/GatheringRuntime";
 import type { RefiningRuntime } from "../../runtime/RefiningRuntime";
 import { syncInventoryToBridge } from "../bridgeSync";
@@ -20,35 +22,57 @@ interface ProductionActionsDependencies {
   readonly craftingRuntime: CraftingRuntime;
   readonly productionBridge: ProductionBridgeAdapter;
   readonly getCurrentTick: () => number;
+  readonly getCombatLoopState: () => CombatLoopState;
   readonly prepareCombatResumeAfterGathering: () => void;
 }
 
 /** Thin application actions around authoritative Production runtimes. */
 export class ProductionActions {
   private readonly deps: ProductionActionsDependencies;
+  private queuedGatheringFamily: SupportedProductionFamily | null = null;
 
   constructor(deps: ProductionActionsDependencies) {
     this.deps = deps;
   }
 
   toggleGathering(family: SupportedProductionFamily): boolean {
-    const result = this.toggleGatheringRuntime(family);
+    if (this.deps.gatheringRuntime.isHeroGathering()) {
+      this.setQueuedGatheringFamily(null);
+      return this.applyGatheringToggle(family);
+    }
 
-    if (result.action === "stopped") {
-      this.deps.productionBridge.syncAllGathering();
-      this.deps.bridge.setCombatState("walking");
+    const loopState = this.deps.getCombatLoopState();
+    if (loopState === "combat" || loopState === "stop_requested") {
+      this.setQueuedGatheringFamily(family);
+      if (combatStopController.getState() === "running") {
+        combatStopController.requestStopAfterSegment();
+      }
+      this.deps.bridge.addEconomyNotification({
+        id: `notif_gather_queue_${String(Date.now())}`,
+        type: "success",
+        message: "Récolte programmée : départ à la fin du segment en cours.",
+        timestamp: Date.now(),
+      });
       return true;
     }
-    if (result.action === "started") {
-      this.deps.prepareCombatResumeAfterGathering();
-      this.deps.bridge.setCombatState("idle");
-      this.deps.productionBridge.syncAllGathering();
-      return true;
-    }
-    return false;
+
+    this.setQueuedGatheringFamily(null);
+    return this.applyGatheringToggle(family);
+  }
+
+  pollQueuedGathering(): void {
+    const family = this.queuedGatheringFamily;
+    if (family === null || !combatStopController.isPaused()) return;
+
+    this.setQueuedGatheringFamily(null);
+    // Gathering itself suspends combat. Resume the generic stop controller so
+    // returning from gathering does not inherit the temporary segment-stop.
+    combatStopController.resume();
+    this.applyGatheringToggle(family);
   }
 
   returnToCombat(): boolean {
+    this.setQueuedGatheringFamily(null);
     if (!this.deps.gatheringRuntime.isHeroGathering()) return false;
 
     this.deps.gatheringRuntime.stopAllGathering();
@@ -104,6 +128,28 @@ export class ProductionActions {
       timestamp: Date.now(),
     });
     return true;
+  }
+
+  private setQueuedGatheringFamily(family: SupportedProductionFamily | null): void {
+    this.queuedGatheringFamily = family;
+    this.deps.bridge.updateQueuedGatheringFamily(family);
+  }
+
+  private applyGatheringToggle(family: SupportedProductionFamily): boolean {
+    const result = this.toggleGatheringRuntime(family);
+
+    if (result.action === "stopped") {
+      this.deps.productionBridge.syncAllGathering();
+      this.deps.bridge.setCombatState("walking");
+      return true;
+    }
+    if (result.action === "started") {
+      this.deps.prepareCombatResumeAfterGathering();
+      this.deps.bridge.setCombatState("idle");
+      this.deps.productionBridge.syncAllGathering();
+      return true;
+    }
+    return false;
   }
 
   private toggleGatheringRuntime(family: SupportedProductionFamily) {
