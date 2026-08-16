@@ -6,6 +6,7 @@ import {
   syncInventoryToBridge,
   syncStatsToBridge,
 } from "../../state/bridgeSync";
+import { syncCraftingProjection } from "../../state/production/ProductionBridgeAdapter";
 
 interface CharacterActions {
   readonly equip: (inventoryPosition: number) => boolean;
@@ -37,10 +38,17 @@ export function useCharacterActions(): CharacterActions {
   const services = useGameServices();
 
   const refreshCharacterState = useCallback(() => {
-    const { bridge, equipmentManager, inventoryManager, statsManager, heroId } = services;
+    const { bridge, equipmentManager, inventoryManager, statsManager, heroId, productionStorageId } = services;
     syncInventoryToBridge(bridge, inventoryManager, heroId);
     syncEquipmentToBridge(bridge, equipmentManager, heroId);
     syncStatsToBridge(bridge, statsManager, heroId);
+    syncCraftingProjection(
+      bridge,
+      inventoryManager,
+      heroId,
+      productionStorageId,
+      bridge.crafting.productionTier,
+    );
   }, [services]);
 
   const equip = useCallback((inventoryPosition: number): boolean => {
