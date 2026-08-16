@@ -20,6 +20,8 @@ interface CombatNavigationRuntime {
   interruptEncounter(): void;
   restoreHeroHealth(): void;
   resumeExploration(): boolean;
+  isAwaitingResumeAfterDefeat(): boolean;
+  restoreAwaitingResumeAfterDefeat(): void;
 }
 
 interface WorldNavigationActionsDependencies {
@@ -101,14 +103,27 @@ export class WorldNavigationActions {
   }
 
   public getWorldLocationSaveState(): WorldLocationSaveState {
-    return this.deps.worldRuntime.getWorldLocationSaveState();
+    return {
+      ...this.deps.worldRuntime.getWorldLocationSaveState(),
+      awaitingResumeAfterDefeat: this.deps.combatRuntime.isAwaitingResumeAfterDefeat(),
+    };
   }
 
   public setWorldLocationSaveState(
     savedLocation: WorldLocationSaveState | undefined,
   ): void {
+    const restoreDefeat = savedLocation?.awaitingResumeAfterDefeat === true;
+
     this.interruptEncounterForTravel();
     this.deps.worldRuntime.setWorldLocationSaveState(savedLocation);
+
+    if (restoreDefeat) {
+      this.deps.combatRuntime.restoreAwaitingResumeAfterDefeat();
+      this.deps.updateWorldBridge();
+      this.deps.bridge.setCombatState("defeat");
+      return;
+    }
+
     this.deps.combatRuntime.restoreHeroHealth();
     this.deps.updateWorldBridge();
     this.deps.bridge.setCombatState("walking");
