@@ -10,6 +10,7 @@ import { markCombatStartBlocked } from "./CombatStartGuard.js";
 import { combatStopController } from "./CombatStopController.js";
 import { canUseActiveAbility } from "./combatActionControl.js";
 import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
+import { WORLD_COMBAT_FLOW_POLICY } from "./CombatFlowPolicy.js";
 
 type EnemySnapshot = NonNullable<CombatDomainTickResult["activeEnemy"]>;
 
@@ -104,9 +105,6 @@ export class CombatRuntime extends LegacyCombatRuntime {
     const resumed = super.resumeExploration();
     if (!resumed) return false;
 
-    // Defeat is an explicit combat-flow boundary. Any pending segment-stop
-    // belongs to the expedition that just ended and must not leak into the
-    // resumed expedition.
     combatStopController.reset();
     this.mechanics.clear();
     this.lastEnemySnapshot = undefined;
@@ -116,8 +114,6 @@ export class CombatRuntime extends LegacyCombatRuntime {
   override tick(dt: number, tickCounter: number): CombatDomainTickResult {
     this.abilityTick = tickCounter;
 
-    // Starter selection and gathering are authoritative suspension states. They
-    // must not emit a weapon warning while combat is intentionally unavailable.
     if (this.runtimeDeps.ports.isCombatSuspended()) {
       return super.tick(dt, tickCounter);
     }
@@ -150,8 +146,6 @@ export class CombatRuntime extends LegacyCombatRuntime {
     try { result = super.tick(dt, tickCounter); }
     finally { this.inTick = false; }
 
-    // A defeat terminates the current expedition. A previously requested stop
-    // cannot remain armed across the defeat/resume boundary.
     if (result.combatState === "defeat") combatStopController.reset();
 
     this.handleSegmentStart(result);
@@ -173,13 +167,15 @@ export class CombatRuntime extends LegacyCombatRuntime {
   }
 
   private handleSegmentStart(result: CombatDomainTickResult): void {
-    if (
-      result.spawnedEnemy !== undefined
-      && this.runtimeDeps.ports.getLocationState().encounterIndex === 0
-    ) {
+    if (result.spawnedEnemy === undefined) return;
+    const location = this.runtimeDeps.ports.getLocationState();
+    if (location.encounterIndex !== 0) return;
+
+    const policy = this.runtimeDeps.ports.flowPolicy ?? WORLD_COMBAT_FLOW_POLICY;
+    if (policy.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: location.encounterIndex })) {
       this.runtimeDeps.abilityManager.resetCooldowns(this.runtimeDeps.heroId);
-      markCombatSegmentStart();
     }
+    markCombatSegmentStart();
   }
 
   private hasEquippedWeapon(): boolean {
