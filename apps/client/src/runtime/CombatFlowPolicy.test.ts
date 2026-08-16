@@ -1,0 +1,36 @@
+import { describe, expect, it } from "vitest";
+import {
+  CONTINUOUS_COMBAT_FLOW_POLICY,
+  WORLD_COMBAT_FLOW_POLICY,
+} from "./CombatFlowPolicy.js";
+
+describe("CombatFlowPolicy", () => {
+  it("preserves current World heal behavior", () => {
+    expect(WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: false,
+      enteringBoss: false,
+    })).toBe(false);
+    expect(WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: true,
+      enteringBoss: false,
+    })).toBe(true);
+    expect(WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: false,
+      enteringBoss: true,
+    })).toBe(true);
+  });
+
+  it("preserves current World segment cooldown reset", () => {
+    expect(WORLD_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 0 })).toBe(true);
+    expect(WORLD_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 1 })).toBe(false);
+  });
+
+  it("keeps HP and cooldowns continuous for dungeon-style combat", () => {
+    expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: true,
+      enteringBoss: true,
+    })).toBe(false);
+    expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 0 })).toBe(false);
+    expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 4 })).toBe(false);
+  });
+});
