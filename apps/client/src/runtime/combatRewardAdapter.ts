@@ -4,6 +4,7 @@ import type { CombatService, StatsManager } from "@game/gameplay";
 import { getEncounterRewards } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
+import type { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
 import {
@@ -21,13 +22,13 @@ import { syncStatsToBridge } from "../state/bridgeSync.js";
 export interface CombatRewardAdapterOptions {
   readonly combatService: CombatService;
   readonly combatRewardRuntime: CombatRewardRuntime;
+  readonly dungeonRewardRuntime?: DungeonRewardRuntime;
   readonly worldRuntime: WorldRuntime;
   readonly bridge: GameBridge;
   readonly statsManager: StatsManager;
   readonly heroId: EntityId;
   readonly recalculateWeaponMasteryStats: () => void;
   readonly resyncAll: () => void;
-  /** Dungeon rewards are resolved by their own loot path, never by World progression. */
   readonly isDungeonActive?: () => boolean;
 }
 
@@ -84,6 +85,32 @@ function formatDropCategory(kind: string): string {
   return "Loot";
 }
 
+function publishDungeonDrops(
+  options: CombatRewardAdapterOptions,
+  drops: readonly { readonly itemId: string; readonly kind: string; readonly quantity: number }[],
+): void {
+  for (const drop of drops) {
+    const dropName = formatDropName(drop.itemId);
+    const category = formatDropCategory(drop.kind);
+    const quantitySuffix = drop.quantity > 1 ? ` ×${String(drop.quantity)}` : "";
+    const timestamp = Date.now();
+
+    options.bridge.addTransaction({
+      id: `loot_item_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
+      type: "credit",
+      description: `${category} : ${dropName}${quantitySuffix}`,
+      amount: drop.quantity,
+      timestamp,
+    });
+    options.bridge.addEconomyNotification({
+      id: `notif_drop_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
+      type: "success",
+      message: `${category} : ${dropName}${quantitySuffix}`,
+      timestamp,
+    });
+  }
+}
+
 export function setupCombatRewardAdapter(
   options: CombatRewardAdapterOptions,
 ): CombatRewardAdapter {
@@ -93,10 +120,11 @@ export function setupCombatRewardAdapter(
   const unsubscribe = options.combatService.events.subscribe("enemyKilled", (event) => {
     options.bridge.incrementEnemiesKilled();
 
-    // Dungeon loot has a different economy contract. Until that resolver is
-    // attached, never leak World silver/fame/shards/keys into dungeon kills.
     if (options.isDungeonActive?.() === true) {
+      const reward = options.dungeonRewardRuntime?.processCurrentEncounterVictory();
       clearActiveMonsterIdentity(event.entityId);
+      if (reward !== undefined) publishDungeonDrops(options, reward.drops);
+      options.resyncAll();
       return;
     }
 
