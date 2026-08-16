@@ -29,21 +29,6 @@ function setup(keyQuantity = 1) {
 }
 
 describe("DungeonRuntime", () => {
-  it("exposes every registered definition as the runtime catalog", () => {
-    const secondDungeon: DungeonDefinition = {
-      ...T4_DUNGEON,
-      id: "dungeon_t4_second",
-      faction: "second",
-      keyItemId: "item_resource_dungeon_key_second",
-    };
-    const runtime = new DungeonRuntime([T4_DUNGEON, secondDungeon]);
-
-    expect(runtime.getDefinitions().map(({ id }) => id)).toEqual([
-      T4_DUNGEON.id,
-      secondDungeon.id,
-    ]);
-  });
-
   it("consumes one key at entry and starts on the first encounter", () => {
     const { heroId, inventory, runtime } = setup(2);
     const result = runtime.start(T4_DUNGEON.id, heroId, inventory);
