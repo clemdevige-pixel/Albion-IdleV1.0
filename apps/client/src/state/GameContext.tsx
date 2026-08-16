@@ -33,6 +33,7 @@ import {
 } from "./GameRuntimeLifecycle.js";
 import { SaveGameActions } from "./SaveGameActions.js";
 import { WorldNavigationActions } from "./WorldNavigationActions.js";
+import { DungeonNavigationActions } from "./DungeonNavigationActions.js";
 import { ConsumableActions } from "./ConsumableActions.js";
 import { RepairActions } from "./RepairActions.js";
 import { IslandActions } from "./IslandActions.js";
@@ -402,6 +403,17 @@ export function GameProvider({
       updateWorldBridge,
     });
 
+    const dungeonNavigationActions = new DungeonNavigationActions({
+      dungeonRuntime,
+      inventoryManager,
+      equipmentManager,
+      heroId,
+      combatRuntime,
+      stopController: combatStopController,
+      isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
+      onStateChanged: resyncAll,
+    });
+
     const productionController = new ProductionRuntimeController({
       bridge,
       foundation: productionFoundation,
@@ -533,6 +545,7 @@ export function GameProvider({
       persistence,
       dispose: () => {
         unsubscribeDamageEvents();
+        dungeonNavigationActions.dispose();
         combatRewardAdapter.dispose();
         productionController.dispose();
         orchestrator.dispose();
@@ -554,29 +567,6 @@ export function GameProvider({
       resyncAll,
     });
 
-    const startDungeon = (definitionId: string): boolean => {
-      if (
-        starterSelectionPending
-        || gatheringRuntime.isHeroGathering()
-        || dungeonCombatRouter.isDungeonActive()
-        || equipmentManager.getEquippedItem(heroId, "weapon") === undefined
-      ) return false;
-
-      combatRuntime.interruptEncounter();
-      const started = dungeonRuntime.start(definitionId, heroId, inventoryManager);
-      if (!started.ok) return false;
-      resyncAll();
-      return true;
-    };
-
-    const abandonDungeon = (): boolean => {
-      if (!dungeonCombatRouter.isDungeonActive()) return false;
-      dungeonRuntime.abandon();
-      combatRuntime.interruptEncounter();
-      resyncAll();
-      return true;
-    };
-
     return {
       eventBus, bridge, orchestrator, heroId, bankId, productionStorageId, inventoryManager, equipmentManager,
       enchantmentService,
@@ -585,9 +575,10 @@ export function GameProvider({
       needsStarterSelection: () => starterSelectionPending,
       selectStarterWeapon,
       isWorldRequirementMet,
-      startDungeon,
-      abandonDungeon,
+      startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
+      abandonDungeon: () => dungeonNavigationActions.abandon(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
+      getDungeonState: () => dungeonNavigationActions.getState(),
       useConsumable: (itemId) => consumableActions.use(itemId),
       useWeaponAbility,
       usePrimaryAbility,
