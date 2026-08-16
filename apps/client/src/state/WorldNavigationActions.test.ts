@@ -9,6 +9,8 @@ function createHarness(options?: {
   readonly explorationResumed?: boolean;
   readonly farmMode?: boolean;
   readonly combatState?: "combat" | "defeat" | "idle" | "walking";
+  readonly awaitingResumeAfterDefeat?: boolean;
+  readonly savedDefeat?: boolean;
 }) {
   const savedLocation = {
     activeZoneDefId: "zone_forest",
@@ -16,6 +18,7 @@ function createHarness(options?: {
     activeEncounter: 3,
     farmMode: false,
     zoneMemories: [],
+    ...(options?.savedDefeat === true ? { awaitingResumeAfterDefeat: true } : {}),
   } as unknown as WorldLocationSaveState;
   const worldRuntime = {
     currentZoneIndex: 0,
@@ -34,6 +37,8 @@ function createHarness(options?: {
     interruptEncounter: vi.fn(),
     restoreHeroHealth: vi.fn(),
     resumeExploration: vi.fn(() => options?.explorationResumed ?? true),
+    isAwaitingResumeAfterDefeat: vi.fn(() => options?.awaitingResumeAfterDefeat ?? false),
+    restoreAwaitingResumeAfterDefeat: vi.fn(),
   };
   const bridge = {
     combatState: options?.combatState ?? "combat",
@@ -152,6 +157,15 @@ describe("WorldNavigationActions", () => {
     expect(farming.worldRuntime.selectSegment).toHaveBeenCalledWith(3);
   });
 
+  it("includes the authoritative defeat lock in world location saves", () => {
+    const harness = createHarness({ awaitingResumeAfterDefeat: true });
+
+    const saved = harness.actions.getWorldLocationSaveState();
+
+    expect(saved.awaitingResumeAfterDefeat).toBe(true);
+    expect(harness.combatRuntime.isAwaitingResumeAfterDefeat).toHaveBeenCalledOnce();
+  });
+
   it("restores saved location through authoritative runtimes", () => {
     const harness = createHarness();
 
@@ -161,6 +175,21 @@ describe("WorldNavigationActions", () => {
       .toHaveBeenCalledWith(harness.savedLocation);
     expect(harness.combatRuntime.interruptEncounter).toHaveBeenCalledOnce();
     expect(harness.combatRuntime.restoreHeroHealth).toHaveBeenCalledOnce();
+    expect(harness.combatRuntime.restoreAwaitingResumeAfterDefeat).not.toHaveBeenCalled();
+    expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
+  it("restores a saved defeat without healing or restarting exploration", () => {
+    const harness = createHarness({ savedDefeat: true });
+
+    harness.actions.setWorldLocationSaveState(harness.savedLocation);
+
+    expect(harness.worldRuntime.setWorldLocationSaveState)
+      .toHaveBeenCalledWith(harness.savedLocation);
+    expect(harness.combatRuntime.interruptEncounter).toHaveBeenCalledOnce();
+    expect(harness.combatRuntime.restoreAwaitingResumeAfterDefeat).toHaveBeenCalledOnce();
+    expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
+    expect(harness.bridge.setCombatState).toHaveBeenLastCalledWith("defeat");
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 });
