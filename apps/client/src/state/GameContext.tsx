@@ -3,7 +3,7 @@ import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence, type RuntimePersistenceDependencies } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
 import { getInitialIslandWorkerHouseLevelDefinition } from "@game/data";
-import { PlayerIslandService, WorldSaveProvider } from "@game/gameplay";
+import { DungeonRuntime, PlayerIslandService, WorldSaveProvider } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge";
 import { RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
@@ -12,6 +12,12 @@ import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
 import { combatStopController } from "../runtime/CombatStopController.js";
 import { recalculateWeaponMasteryStats } from "../runtime/weaponMasteryStatSync.js";
+import { DungeonCombatEncounterSource } from "../runtime/DungeonCombatEncounterSource.js";
+import { DungeonCombatRuntimeRouter } from "../runtime/DungeonCombatRuntimeRouter.js";
+import {
+  DUNGEON_DEFINITIONS,
+  resolveKeeperT4DungeonCombatProfile,
+} from "../data/dungeonContentCatalog.js";
 import {
   syncInventoryToBridge,
   syncStatsToBridge,
@@ -67,6 +73,7 @@ export function GameProvider({
     const eventBus = new EventBus<UIEventMap>();
     const bridge = new GameBridge();
     const islandService = new PlayerIslandService();
+    const dungeonRuntime = new DungeonRuntime(DUNGEON_DEFINITIONS);
     const syncIslandToBridge = (): void => {
       const island = islandService.getState();
       bridge.updateIsland({
@@ -116,7 +123,10 @@ export function GameProvider({
       statsManager,
       damageManager,
       masteryService,
-      canMutateEquipment: () => starterSelectionPending || !combatService.isInCombat(),
+      canMutateEquipment: () => (
+        starterSelectionPending
+        || (!combatService.isInCombat() && !dungeonRuntime.activeRun?.status.includes("active"))
+      ),
       onPlayerHealthChanged: (currentHealth, maxHealth) => {
         bridge.updatePlayerHealth(currentHealth, maxHealth);
       },
@@ -164,6 +174,15 @@ export function GameProvider({
       abilityManager,
     };
 
+    const dungeonEncounterSource = new DungeonCombatEncounterSource(
+      dungeonRuntime,
+      resolveKeeperT4DungeonCombatProfile,
+    );
+    const dungeonCombatRouter = new DungeonCombatRuntimeRouter(
+      dungeonRuntime,
+      dungeonEncounterSource,
+    );
+
     const heroId = setupCombatEntity(
       combatEntityFactoryDeps,
       { maxHealth: 300, physDamage: 0, attackSpeed: 1.2, armor: 0, magicRes: 0 },
@@ -181,7 +200,7 @@ export function GameProvider({
       equipmentManager,
       currencyService,
       walletId,
-      canEnchantNow: () => combatStopController.isPaused(),
+      canEnchantNow: () => combatStopController.isPaused() && !dungeonCombatRouter.isDungeonActive(),
     });
 
     const productionFoundation = createProductionFoundation({
@@ -259,6 +278,7 @@ export function GameProvider({
       heroId,
       recalculateWeaponMasteryStats: () => recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId),
       resyncAll: () => resyncAll(),
+      isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
     });
     bridgeSyncCoordinator.syncInitialState();
     syncIslandToBridge();
@@ -339,23 +359,24 @@ export function GameProvider({
       equipmentManager,
       masteryService,
       biomeResolver,
+      spawnEnemyOverride: () => dungeonCombatRouter.spawnEnemyOverride(combatEntityFactoryDeps),
       ports: {
-        onVictory: () => {
+        onVictory: () => dungeonCombatRouter.onVictory(() => {
           const res = worldRuntime.advanceVictory();
           updateWorldBridge();
           return res;
-        },
-        onDefeat: () => {
+        }),
+        onDefeat: () => dungeonCombatRouter.onDefeat(() => {
           worldRuntime.advanceDefeat();
           updateWorldBridge();
           bridge.setCombatState("defeat");
-        },
+        }),
         getLocationState: () => {
           const zone = getActiveZoneDef();
           return {
             zoneIndex: worldRuntime.currentZoneIndex,
             segmentIndex: worldRuntime.currentSegment,
-            encounterIndex: worldRuntime.currentEncounter,
+            encounterIndex: dungeonCombatRouter.getEncounterIndex(worldRuntime.currentEncounter),
             zoneDefId: zone.defId,
             zoneName: zone.name,
             highestUnlockedSegment: worldRuntime.highestUnlockedSegment,
@@ -363,6 +384,7 @@ export function GameProvider({
           };
         },
         isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
+        flowPolicy: dungeonCombatRouter.flowPolicy,
       },
     });
 
@@ -372,6 +394,33 @@ export function GameProvider({
       bridge,
       updateWorldBridge,
     });
+
+    const startDungeon = (definitionId: string): boolean => {
+      if (
+        starterSelectionPending
+        || gatheringRuntime.isHeroGathering()
+        || dungeonCombatRouter.isDungeonActive()
+        || equipmentManager.getEquippedItem(heroId, "weapon") === undefined
+      ) return false;
+
+      const started = dungeonRuntime.start(definitionId, heroId, inventoryManager);
+      if (!started.ok) return false;
+
+      combatStopController.reset();
+      combatRuntime.interruptEncounter();
+      syncInventoryToBridge(bridge, inventoryManager, heroId);
+      bridge.setCombatState("idle");
+      return true;
+    };
+
+    const abandonDungeon = (): boolean => {
+      if (!dungeonCombatRouter.isDungeonActive()) return false;
+      dungeonRuntime.abandon();
+      combatStopController.reset();
+      combatRuntime.interruptEncounter();
+      bridge.setCombatState("idle");
+      return true;
+    };
 
     const productionController = new ProductionRuntimeController({
       bridge,
@@ -440,10 +489,6 @@ export function GameProvider({
       starterSelectionPending = false;
       recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
       resyncAll();
-      // The first encounter already exists and was merely suspended while the
-      // starter gate was open. Re-initializing here would create a second enemy
-      // and attempt to start another encounter before the first one is closed.
-      // Clearing the suspension lets the existing encounter resume on the next tick.
       saveGame();
       return true;
     };
@@ -547,6 +592,9 @@ export function GameProvider({
       selectZone: (zoneNumber, segmentNumber) => (
         worldNavigationActions.selectZone(zoneNumber, segmentNumber)
       ),
+      startDungeon,
+      abandonDungeon,
+      isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
       returnToCombat: () => productionController.returnToCombat(),
       toggleGathering: (family) => productionController.toggleGathering(family),
       performGatheringStrike: (resourceFamily, quality) => (
