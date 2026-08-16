@@ -128,6 +128,29 @@ function forceRealDefeat(
   expect(scenario.combat.combatService.getActiveSession()).toBeUndefined();
 }
 
+function forceRealVictory(
+  scenario: ReturnType<typeof createScenario>,
+  tick: number,
+): void {
+  const session = scenario.combat.combatService.getActiveSession();
+  const enemyId = session?.participants.enemies[0];
+  if (enemyId === undefined) throw new Error("Expected active enemy before forced victory");
+
+  const enemyHealth = scenario.combat.damageManager.getHealth(enemyId);
+  scenario.combat.damageManager.processDamage({
+    source: scenario.heroId,
+    target: enemyId,
+    baseDamage: enemyHealth.currentHealth + enemyHealth.maxHealth,
+    damageType: "true",
+    source_type: "other",
+  });
+  scenario.combat.deathManager.checkDeath(enemyId, scenario.heroId, tick);
+
+  const victory = scenario.combatRuntime.tick(0.5, tick);
+  expect(victory.combatState).toBe("victory");
+  expect(scenario.combat.combatService.getActiveSession()).toBeUndefined();
+}
+
 afterEach(() => {
   combatStopController.reset();
 });
@@ -135,7 +158,7 @@ afterEach(() => {
 describe.each([
   ["Blue", WORLD_ZONE_IDS.forest],
   ["Yellow", WORLD_ZONE_IDS.amberwood],
-])("%s defeat travel resume integration", (_band, zoneDefId) => {
+])("%s combat loop integration", (_band, zoneDefId) => {
   it("spawns a fresh encounter after real defeat -> segment change -> resume", () => {
     const scenario = createScenario(zoneDefId);
 
@@ -174,5 +197,56 @@ describe.each([
     expect(resumed.combatState).toBe("combat");
     expect(resumed.spawnedEnemy).toBeDefined();
     expect(scenario.world.worldRuntime.currentSegment).toBe(0);
+  });
+
+  it("clears a pending segment stop when the hero dies", () => {
+    const scenario = createScenario(zoneDefId);
+
+    expect(scenario.combatRuntime.initialize().combatState).toBe("combat");
+    expect(combatStopController.requestStopAfterSegment()).toBe(true);
+    expect(scenario.combatRuntime.getLoopState()).toBe("stop_requested");
+
+    forceRealDefeat(scenario, 1);
+
+    expect(combatStopController.getState()).toBe("running");
+    expect(scenario.navigation.resumeExploration()).toBe(true);
+    expect(scenario.combatRuntime.tick(0.5, 2).combatState).toBe("combat");
+  });
+
+  it("stops only after segment completion, allows paused travel, then resumes on the selected segment", () => {
+    const scenario = createScenario(zoneDefId);
+    let tick = 1;
+
+    expect(scenario.combatRuntime.initialize().combatState).toBe("combat");
+    expect(combatStopController.requestStopAfterSegment()).toBe(true);
+    expect(scenario.combatRuntime.getLoopState()).toBe("stop_requested");
+
+    for (let encounter = 0; encounter < 5; encounter += 1) {
+      forceRealVictory(scenario, tick);
+      tick += 1;
+      if (encounter < 4) {
+        const nextEncounter = scenario.combatRuntime.tick(0.5, tick);
+        tick += 1;
+        expect(nextEncounter.combatState).toBe("combat");
+        expect(nextEncounter.spawnedEnemy).toBeDefined();
+        expect(scenario.combatRuntime.getLoopState()).toBe("stop_requested");
+      }
+    }
+
+    const paused = scenario.combatRuntime.tick(0.5, tick);
+    tick += 1;
+    expect(paused.combatState).toBe("idle");
+    expect(scenario.combatRuntime.getLoopState()).toBe("paused");
+    expect(scenario.world.worldRuntime.currentSegment).toBe(1);
+
+    expect(scenario.navigation.selectSegment(1)).toBe(true);
+    expect(scenario.world.worldRuntime.currentSegment).toBe(0);
+    expect(combatStopController.resume()).toBe(true);
+
+    const resumed = scenario.combatRuntime.tick(0.5, tick);
+    expect(resumed.combatState).toBe("combat");
+    expect(resumed.spawnedEnemy).toBeDefined();
+    expect(scenario.world.worldRuntime.currentSegment).toBe(0);
+    expect(scenario.combatRuntime.getLoopState()).toBe("combat");
   });
 });
