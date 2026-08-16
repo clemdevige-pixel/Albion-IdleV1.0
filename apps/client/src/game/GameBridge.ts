@@ -28,6 +28,14 @@ export * from "./bridge/GameBridgeModels";
 type BridgeListener = () => void;
 type DamagePresentationSource = "auto_attack" | "ability" | "effect" | "other";
 
+export interface EnemyPresentationSnapshot {
+  readonly encounterKey: string;
+  readonly name: string;
+  readonly visualManifestId: string;
+  readonly currentHealth: number;
+  readonly maxHealth: number;
+}
+
 /**
  * Stable React/Phaser presentation bridge.
  *
@@ -37,6 +45,7 @@ type DamagePresentationSource = "auto_attack" | "ability" | "effect" | "other";
  */
 export class GameBridge {
   #state: GameBridgeState = createInitialGameBridgeState();
+  #enemyEncounterKey = "";
   #nextDamageNumberId = 1;
   #notifyScheduled = false;
   readonly #listeners = new Set<BridgeListener>();
@@ -45,6 +54,7 @@ export class GameBridge {
   get playerMaxHealth(): number { return this.#state.playerMaxHealth; }
   get enemyHealth(): number { return this.#state.enemyHealth; }
   get enemyMaxHealth(): number { return this.#state.enemyMaxHealth; }
+  get enemyEncounterKey(): string { return this.#enemyEncounterKey; }
   get combatState(): CombatState { return this.#state.combatState; }
   get enemyName(): string { return this.#state.enemyName; }
   get enemyVisualManifestId(): string { return this.#state.enemyVisualManifestId; }
@@ -93,7 +103,18 @@ export class GameBridge {
     this.#update({ enemyHealth: current, enemyMaxHealth: max });
   }
 
+  setEnemySnapshot(snapshot: EnemyPresentationSnapshot): void {
+    this.#enemyEncounterKey = snapshot.encounterKey;
+    this.#update({
+      enemyHealth: snapshot.currentHealth,
+      enemyMaxHealth: snapshot.maxHealth,
+      enemyName: snapshot.name,
+      enemyVisualManifestId: snapshot.visualManifestId,
+    });
+  }
+
   clearEnemyPresentation(): void {
+    this.#enemyEncounterKey = "";
     this.#update({
       enemyHealth: 0,
       enemyMaxHealth: 0,
