@@ -134,25 +134,32 @@ export function SegmentTimeline(): JSX.Element {
             && tooltipPosition !== null;
 
           return (
-            <div className="segment-timeline__step" key={segment}>
+            <div
+              className="segment-timeline__step"
+              key={segment}
+              onPointerEnter={(event) => {
+                if (locked) return;
+                setHoveredSegment(segment);
+                setTooltipPosition({ x: event.clientX, y: event.clientY });
+              }}
+              onPointerMove={(event) => {
+                if (locked) return;
+                setHoveredSegment(segment);
+                setTooltipPosition({ x: event.clientX, y: event.clientY });
+              }}
+              onPointerLeave={() => {
+                setHoveredSegment(null);
+                setTooltipPosition(null);
+              }}
+            >
               {index > 0 ? <span className="segment-timeline__connector" /> : null}
               <button
                 className={classes}
                 type="button"
                 disabled={locked}
                 onClick={() => { selectZone(viewedZone.zoneIndex, segment); }}
-                onMouseEnter={(event) => {
-                  setHoveredSegment(segment);
-                  setTooltipPosition({ x: event.clientX, y: event.clientY });
-                }}
-                onMouseMove={(event) => {
-                  setTooltipPosition({ x: event.clientX, y: event.clientY });
-                }}
-                onMouseLeave={() => {
-                  setHoveredSegment(null);
-                  setTooltipPosition(null);
-                }}
                 onFocus={(event) => {
+                  if (locked) return;
                   const rect = event.currentTarget.getBoundingClientRect();
                   setHoveredSegment(segment);
                   setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.bottom });
