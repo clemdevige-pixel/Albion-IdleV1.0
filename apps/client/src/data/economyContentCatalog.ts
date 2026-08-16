@@ -6,10 +6,8 @@ import {
 } from "./dungeonKeyContentCatalog.js";
 
 /**
- * Combat loot uses independent rolls. A key fragment, an enchantment shard and
- * other eligible rewards can therefore drop from the same kill. The definitions
- * below are also consumed by the Bestiary so gameplay and UI share one source
- * of truth.
+ * Generic depth curve retained for other non-enchantment loot families.
+ * Dungeon keys use their own band progression profile below.
  */
 export const SEGMENT_LOOT_MULTIPLIERS = [
   1,
@@ -28,6 +26,47 @@ export const BASE_COMBAT_DROP_RATES = {
   keyFragment: 0.02,
   completeKey: 0.001,
 } as const;
+
+/**
+ * Dungeon key progression is independent for every world band because each
+ * band drops a different key tier. The same authored shape is reused as the
+ * starting balance profile: low at band entry, progressively stronger through
+ * the walls, and highest at the end of the band.
+ */
+export interface DungeonKeyZoneProgressionWeight {
+  readonly start: number;
+  readonly end: number;
+}
+
+export const DEFAULT_DUNGEON_KEY_BAND_PROGRESSION: readonly DungeonKeyZoneProgressionWeight[] = [
+  { start: 0.45, end: 0.6 },
+  { start: 0.65, end: 0.9 },
+  { start: 0.95, end: 1.4 },
+  { start: 1.5, end: 2.4 },
+  { start: 2.6, end: 4.0 },
+] as const;
+
+export const DUNGEON_KEY_PROGRESSION_WEIGHTS: Readonly<
+  Record<WorldBandId, readonly DungeonKeyZoneProgressionWeight[]>
+> = {
+  blue: DEFAULT_DUNGEON_KEY_BAND_PROGRESSION,
+  yellow: DEFAULT_DUNGEON_KEY_BAND_PROGRESSION,
+  orange: DEFAULT_DUNGEON_KEY_BAND_PROGRESSION,
+  red: DEFAULT_DUNGEON_KEY_BAND_PROGRESSION,
+  black: DEFAULT_DUNGEON_KEY_BAND_PROGRESSION,
+} as const;
+
+export function getDungeonKeyProgressionWeight(
+  bandId: WorldBandId,
+  zoneIndexWithinBand: number,
+  segmentIndex: number,
+): number {
+  const zone = DUNGEON_KEY_PROGRESSION_WEIGHTS[bandId][zoneIndexWithinBand];
+  if (zone === undefined) return 0;
+  const clampedSegment = Math.max(0, Math.min(9, Math.floor(segmentIndex)));
+  const progress = clampedSegment / 9;
+  return zone.start + (zone.end - zone.start) * progress;
+}
 
 /**
  * Enchantment shard calibration.
@@ -115,6 +154,8 @@ export interface CombatLootContext {
   readonly enchantmentTier: number;
   /** Authored relative shard-progression weight for the active zone/segment. */
   readonly enchantmentDropWeight: number;
+  /** Authored relative dungeon-key progression weight for the active zone/segment. */
+  readonly dungeonKeyDropWeight: number;
 }
 
 export interface CombatLootExpectation {
@@ -136,6 +177,7 @@ type CombatLootItemSource =
 
 type CombatLootRateModel =
   | { readonly type: "segment_scaled"; readonly baseRate: number; readonly bossMultiplier: boolean }
+  | { readonly type: "dungeon_key"; readonly baseRate: number; readonly bossMultiplier: boolean }
   | { readonly type: "enchantment" }
   | { readonly type: "artifact_fragment" }
   | { readonly type: "artifact" };
@@ -165,12 +207,12 @@ export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
   {
     kind: "key_fragment",
     item: { type: "dungeon_key_fragment" },
-    rate: { type: "segment_scaled", baseRate: BASE_COMBAT_DROP_RATES.keyFragment, bossMultiplier: true },
+    rate: { type: "dungeon_key", baseRate: BASE_COMBAT_DROP_RATES.keyFragment, bossMultiplier: true },
   },
   {
     kind: "key",
     item: { type: "dungeon_key" },
-    rate: { type: "segment_scaled", baseRate: BASE_COMBAT_DROP_RATES.completeKey, bossMultiplier: true },
+    rate: { type: "dungeon_key", baseRate: BASE_COMBAT_DROP_RATES.completeKey, bossMultiplier: true },
   },
   {
     kind: "artifact_fragment",
@@ -245,6 +287,13 @@ function resolveCombatLootExpectedQuantity(
   context: CombatLootContext,
 ): number {
   if (rate.type === "enchantment") return getEnchantmentShardExpectedDrop(context);
+
+  if (rate.type === "dungeon_key") {
+    const bossMultiplier = rate.bossMultiplier && context.isBoss
+      ? BOSS_SPECIAL_DROP_MULTIPLIER
+      : 1;
+    return rate.baseRate * Math.max(0, context.dungeonKeyDropWeight) * bossMultiplier;
+  }
 
   if (rate.type === "segment_scaled") {
     const bossMultiplier = rate.bossMultiplier && context.isBoss
