@@ -170,8 +170,9 @@ export class CombatPresentationController {
   private updateEnemy(bridge: GameBridge): void {
     const incomingName = bridge.enemyName;
     const incomingVisualManifestId = bridge.enemyVisualManifestId;
-    const incomingEncounterKey = this.getEncounterPresentationKey(bridge);
-    const hasAuthoritativeEnemy = incomingName.length > 0
+    const incomingEncounterKey = bridge.enemyEncounterKey;
+    const hasAuthoritativeEnemy = incomingEncounterKey.length > 0
+      && incomingName.length > 0
       && incomingVisualManifestId.length > 0
       && bridge.enemyMaxHealth > 0;
 
@@ -262,14 +263,6 @@ export class CombatPresentationController {
     this.displayedEnemyIsBoss = isBoss;
     this.defeatedEnemyPresentedAtMs = undefined;
     resetPresentedEnemyHealth(currentHealth, maxHealth);
-  }
-
-  private getEncounterPresentationKey(bridge: GameBridge): string {
-    return [
-      bridge.world.zoneDefId,
-      bridge.world.segmentIndex,
-      bridge.world.encounterIndex,
-    ].join(":");
   }
 
   private canReplacePresentedEnemy(): boolean {
