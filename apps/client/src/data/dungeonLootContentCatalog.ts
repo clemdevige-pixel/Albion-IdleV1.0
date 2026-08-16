@@ -1,4 +1,5 @@
 import type { DungeonEncounterKind } from "@game/gameplay";
+import { KEEPER_T4_LOOT_TABLE_ID } from "./dungeonContentCatalog.js";
 
 export interface DungeonEncounterLootDefinition {
   readonly artifactFragmentQuantity: number;
@@ -6,20 +7,16 @@ export interface DungeonEncounterLootDefinition {
 }
 
 export interface DungeonLootDefinition {
-  readonly dungeonDefinitionId: string;
+  readonly id: string;
   readonly faction: string;
   readonly artifactFragmentItemId: string;
   readonly artifactItemId: string;
   readonly encounters: Readonly<Record<DungeonEncounterKind, DungeonEncounterLootDefinition>>;
 }
 
-/**
- * Provisional V1 economy values. Runtime behavior is stable; these numbers are
- * intentionally isolated here so balance can be benchmarked without touching
- * dungeon/combat code.
- */
+/** Provisional V1 economy values, isolated from runtime code. */
 export const KEEPER_T4_DUNGEON_LOOT: DungeonLootDefinition = {
-  dungeonDefinitionId: "dungeon_keeper_t4",
+  id: KEEPER_T4_LOOT_TABLE_ID,
   faction: "Keeper",
   artifactFragmentItemId: "item_resource_artifact_fragment_keeper",
   artifactItemId: "item_resource_artifact_keeper",
@@ -31,11 +28,11 @@ export const KEEPER_T4_DUNGEON_LOOT: DungeonLootDefinition = {
 };
 
 export const DUNGEON_LOOT_DEFINITIONS: Readonly<Record<string, DungeonLootDefinition>> = {
-  [KEEPER_T4_DUNGEON_LOOT.dungeonDefinitionId]: KEEPER_T4_DUNGEON_LOOT,
+  [KEEPER_T4_DUNGEON_LOOT.id]: KEEPER_T4_DUNGEON_LOOT,
 };
 
-export function getDungeonLootDefinition(dungeonDefinitionId: string): DungeonLootDefinition {
-  const definition = DUNGEON_LOOT_DEFINITIONS[dungeonDefinitionId];
-  if (definition === undefined) throw new Error(`Unknown dungeon loot definition: ${dungeonDefinitionId}`);
+export function getDungeonLootDefinition(lootTableId: string): DungeonLootDefinition {
+  const definition = DUNGEON_LOOT_DEFINITIONS[lootTableId];
+  if (definition === undefined) throw new Error(`Unknown dungeon loot table: ${lootTableId}`);
   return definition;
 }
