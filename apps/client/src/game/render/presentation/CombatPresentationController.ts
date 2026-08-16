@@ -10,13 +10,22 @@ import { HeroPresentationSystem } from "../systems/HeroPresentationSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
 import { VfxSystem, type EnemyVfxStyle } from "../systems/VfxSystem";
 import { WorldHudSystem } from "../systems/WorldHudSystem";
-import { getPresentedEnemyHealth } from "./CombatPresentedHealth";
+import {
+  applyPresentedEnemyImpact,
+  clearPresentedEnemyHealth,
+  getPresentedEnemyHealth,
+  isPresentedEnemyDefeated,
+  resetPresentedEnemyHealth,
+} from "./CombatPresentedHealth";
 import { PresentationDirector } from "./PresentationDirector";
 import { selectWeaponPresentation } from "./GamePresentationState";
 
 type PresentationDamageEvent = DamageNumberEvent & {
   readonly sourceType?: "auto_attack" | "ability" | "effect" | "other";
+  readonly targetHealthAfter?: number;
 };
+
+const DEFEATED_ENEMY_HOLD_MS = 120;
 
 /** Coordinates actors, combat events and in-world combat HUD. */
 export class CombatPresentationController {
@@ -40,9 +49,10 @@ export class CombatPresentationController {
   private displayedEnemyName: string | undefined;
   private displayedEnemyVisualManifestId: string | undefined;
   private displayedEnemyIsBoss = false;
+  private defeatedEnemyPresentedAtMs: number | undefined;
 
   public constructor(
-    scene: Phaser.Scene,
+    private readonly scene: Phaser.Scene,
     private readonly getBridge: () => GameBridge | undefined,
   ) {
     const { width, height } = scene.scale;
@@ -89,6 +99,7 @@ export class CombatPresentationController {
       this.projectileSystem,
       this.damageNumberSystem,
       () => selectWeaponPresentation(this.getBridge()),
+      (event) => { this.handlePresentedImpact(event); },
     );
     this.director = new PresentationDirector({
       presentCombatEvent: (event) => this.combatSystem.present(event),
@@ -112,6 +123,7 @@ export class CombatPresentationController {
   }
 
   public clear(): void {
+    clearPresentedEnemyHealth();
     this.director.clear();
     this.damageNumberSystem.clear();
     this.projectileSystem.clear();
@@ -149,30 +161,53 @@ export class CombatPresentationController {
       this.displayedEnemyName = undefined;
       this.displayedEnemyVisualManifestId = undefined;
       this.displayedEnemyIsBoss = false;
+      this.defeatedEnemyPresentedAtMs = undefined;
+      clearPresentedEnemyHealth();
       this.setEnemyVisible(false);
       return;
     }
 
-    const presented = getPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
     const incomingIsBoss = bridge.world.encounterType === "boss";
 
     if (this.displayedEnemyVisualManifestId === undefined) {
-      this.adoptEnemyPresentation(incomingName, incomingVisualManifestId, incomingIsBoss);
+      this.adoptEnemyPresentation(
+        incomingName,
+        incomingVisualManifestId,
+        incomingIsBoss,
+        bridge.enemyHealth,
+        bridge.enemyMaxHealth,
+      );
     } else {
       const identityChanged = incomingVisualManifestId !== this.displayedEnemyVisualManifestId
         || incomingName !== this.displayedEnemyName;
+      if (identityChanged && !this.canReplacePresentedEnemy()) {
+        this.renderDisplayedEnemy(bridge);
+        return;
+      }
       if (identityChanged) {
-        this.adoptEnemyPresentation(incomingName, incomingVisualManifestId, incomingIsBoss);
+        this.adoptEnemyPresentation(
+          incomingName,
+          incomingVisualManifestId,
+          incomingIsBoss,
+          bridge.enemyHealth,
+          bridge.enemyMaxHealth,
+        );
       }
     }
 
+    this.renderDisplayedEnemy(bridge);
+  }
+
+  private renderDisplayedEnemy(bridge: GameBridge): void {
+    const presented = getPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
     const showEnemy = !(bridge.combatState === "idle" && presented.current <= 0);
     if (!showEnemy) {
       this.setEnemyVisible(false);
       return;
     }
 
-    const visualManifestId = this.displayedEnemyVisualManifestId ?? incomingVisualManifestId;
+    const visualManifestId = this.displayedEnemyVisualManifestId ?? bridge.enemyVisualManifestId;
+    const displayedName = this.displayedEnemyName ?? bridge.enemyName;
     this.enemySystem.update({
       visualManifestId,
       isBoss: this.displayedEnemyIsBoss,
@@ -183,21 +218,43 @@ export class CombatPresentationController {
     );
     this.hudSystem.layoutEnemy(this.enemyHomeX, this.enemyBody.y, this.enemySystem.hudLayout);
     this.hudSystem.updateEnemy(
-      bridge.enemyHealth,
-      bridge.enemyMaxHealth,
-      this.displayedEnemyName ?? incomingName,
+      presented.current,
+      presented.maximum,
+      displayedName,
     );
 
-    // Reveal only after sprite, layout and health/name are all synchronized.
-    // This prevents construction fallbacks from flashing during reloads or
-    // partially-applied presentation updates.
     this.setEnemyVisible(true);
   }
 
-  private adoptEnemyPresentation(name: string, visualManifestId: string, isBoss: boolean): void {
+  private adoptEnemyPresentation(
+    name: string,
+    visualManifestId: string,
+    isBoss: boolean,
+    currentHealth: number,
+    maxHealth: number,
+  ): void {
     this.displayedEnemyName = name;
     this.displayedEnemyVisualManifestId = visualManifestId;
     this.displayedEnemyIsBoss = isBoss;
+    this.defeatedEnemyPresentedAtMs = undefined;
+    resetPresentedEnemyHealth(currentHealth, maxHealth);
+  }
+
+  private canReplacePresentedEnemy(): boolean {
+    if (!isPresentedEnemyDefeated()) return false;
+    if (this.defeatedEnemyPresentedAtMs === undefined) return false;
+    return this.scene.time.now - this.defeatedEnemyPresentedAtMs >= DEFEATED_ENEMY_HOLD_MS;
+  }
+
+  private handlePresentedImpact(event: PresentationDamageEvent): void {
+    if (event.target !== "enemy" || event.targetHealthAfter === undefined) return;
+    applyPresentedEnemyImpact(event.targetHealthAfter);
+    if (event.targetHealthAfter <= 0 && this.defeatedEnemyPresentedAtMs === undefined) {
+      this.defeatedEnemyPresentedAtMs = this.scene.time.now;
+    }
+
+    const bridge = this.getBridge();
+    if (bridge !== undefined) this.renderDisplayedEnemy(bridge);
   }
 
   private updateDamageEvents(bridge: GameBridge): void {
