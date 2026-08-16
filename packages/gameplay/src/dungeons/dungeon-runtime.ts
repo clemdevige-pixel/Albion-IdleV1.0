@@ -9,8 +9,6 @@ export interface DungeonEncounterDefinition {
   readonly kind: DungeonEncounterKind;
   /** Existing monster-content definition used by the shared combat runtime. */
   readonly monsterDefinitionId: string;
-  /** Content-owned loot table reference. Loot resolution remains outside this state machine. */
-  readonly lootTableId?: string;
 }
 
 export interface DungeonDefinition {
@@ -18,6 +16,10 @@ export interface DungeonDefinition {
   readonly tier: number;
   readonly faction: string;
   readonly keyItemId: string;
+  /** Resolves the authored combat curve without coupling GameContext to a dungeon. */
+  readonly combatProfileId: string;
+  /** Resolves dungeon rewards without coupling the reward runtime to a faction. */
+  readonly lootTableId: string;
   readonly encounters: readonly DungeonEncounterDefinition[];
 }
 
@@ -43,14 +45,7 @@ export type DungeonAdvanceResult =
   | { readonly ok: true; readonly state: DungeonRunState }
   | { readonly ok: false; readonly reason: DungeonAdvanceFailureReason };
 
-/**
- * Owns only the deterministic lifecycle of a dungeon attempt.
- *
- * Combat, loot rolls, HP, cooldowns and equipment live in their existing
- * systems. Keeping those systems mounted while a run advances naturally gives
- * the V1 contract its persistent HP/cooldowns and equipment snapshot semantics
- * without duplicating combat state here.
- */
+/** Owns only the deterministic lifecycle of a dungeon attempt. */
 export class DungeonRuntime {
   readonly #definitions = new Map<string, DungeonDefinition>();
   #activeRun: DungeonRunState | undefined;
@@ -60,8 +55,14 @@ export class DungeonRuntime {
   }
 
   registerDefinition(definition: DungeonDefinition): void {
-    if (definition.id.length === 0 || definition.keyItemId.length === 0 || definition.encounters.length === 0) {
-      throw new Error("Dungeon definitions require id, keyItemId and at least one encounter");
+    if (
+      definition.id.length === 0
+      || definition.keyItemId.length === 0
+      || definition.combatProfileId.length === 0
+      || definition.lootTableId.length === 0
+      || definition.encounters.length === 0
+    ) {
+      throw new Error("Dungeon definitions require id, keyItemId, combatProfileId, lootTableId and at least one encounter");
     }
     if (definition.encounters.some((encounter) => encounter.monsterDefinitionId.length === 0)) {
       throw new Error(`Dungeon ${definition.id} contains an encounter without monsterDefinitionId`);
@@ -89,16 +90,11 @@ export class DungeonRuntime {
     return this.#definitions.get(run.definitionId)?.encounters[run.encounterIndex];
   }
 
-  start(
-    definitionId: string,
-    heroId: EntityId,
-    inventory: InventoryManager,
-  ): DungeonStartResult {
+  start(definitionId: string, heroId: EntityId, inventory: InventoryManager): DungeonStartResult {
     if (this.#activeRun?.status === "active") return { ok: false, reason: "run_already_active" };
     const definition = this.#definitions.get(definitionId);
     if (definition === undefined) return { ok: false, reason: "invalid_definition" };
 
-    // The key is consumed atomically at entry. No refund occurs on failure or abandon.
     const consumed = inventory.removeQuantity(heroId, definition.keyItemId, 1);
     if (!consumed.ok) return { ok: false, reason: "missing_key" };
 
@@ -130,13 +126,8 @@ export class DungeonRuntime {
     return { ok: true, state };
   }
 
-  fail(): DungeonRunState | undefined {
-    return this.#finish("failed");
-  }
-
-  abandon(): DungeonRunState | undefined {
-    return this.#finish("abandoned");
-  }
+  fail(): DungeonRunState | undefined { return this.#finish("failed"); }
+  abandon(): DungeonRunState | undefined { return this.#finish("abandoned"); }
 
   clearFinishedRun(): void {
     if (this.#activeRun?.status !== "active") this.#activeRun = undefined;
