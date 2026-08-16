@@ -5,7 +5,6 @@ import type { EventBus, EntityId } from "@game/core";
 import type {
   CombatOrchestrator,
   CurrencyService,
-  DungeonDefinition,
   DungeonRunState,
   EconomyTransactionService,
   EnchantmentService,
@@ -22,7 +21,6 @@ import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
 export type UIEventMap = Record<string, unknown>;
 
 export interface DungeonNavigationVM {
-  readonly definitions: readonly DungeonDefinition[];
   readonly activeRun: DungeonRunState | undefined;
   readonly pendingDefinitionId: string | null;
 }
