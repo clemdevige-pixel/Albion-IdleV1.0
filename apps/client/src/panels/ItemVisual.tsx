@@ -69,7 +69,7 @@ function formatFactionName(factionId: string): string {
     .join(" ");
 }
 
-function getBlueZoneSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
+function getCombatSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
   const definitions = [
     { prefix: "item_resource_artifact_fragment_", label: "Fragment d’artefact", symbol: "◈", className: "artifact-fragment" },
     { prefix: "item_resource_artifact_", label: "Artefact", symbol: "✺", className: "artifact" },
@@ -128,7 +128,7 @@ export function getItemDisplayName(itemId: string): string {
     ?? CONSUMABLE_VISUALS[itemId]?.name
     ?? PRODUCTION_RESOURCE_VISUALS[itemId]?.name
     ?? ENCHANTMENT_RESOURCE_VISUALS[itemId]?.name
-    ?? getBlueZoneSpecialLootVisual(itemId)?.name
+    ?? getCombatSpecialLootVisual(itemId)?.name
     ?? itemId.replace("item_", "").replace(/_/g, " ");
 }
 
@@ -153,7 +153,7 @@ export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element
   const visual = getItemDefinition(itemId) ?? CONSUMABLE_VISUALS[itemId];
   const resource = PRODUCTION_RESOURCE_VISUALS[itemId];
   const enchantmentResource = ENCHANTMENT_RESOURCE_VISUALS[itemId];
-  const specialLoot = getBlueZoneSpecialLootVisual(itemId);
+  const specialLoot = getCombatSpecialLootVisual(itemId);
 
   if (enchantmentResource !== undefined) {
     return (
