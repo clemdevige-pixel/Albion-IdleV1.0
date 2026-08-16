@@ -13,7 +13,7 @@ import {
 } from "../data/itemVisualContentCatalog";
 import "./itemRarity.css";
 
-export interface ItemVisualDefinition extends CatalogItemVisualDefinition {}
+export type ItemVisualDefinition = CatalogItemVisualDefinition;
 interface ConsumableVisualDefinition { readonly name: string; readonly icon: string; }
 interface SymbolVisualDefinition { readonly name: string; readonly symbol: string; readonly className: string; }
 
@@ -44,11 +44,7 @@ const CONSUMABLE_VISUALS: Readonly<Record<string, ConsumableVisualDefinition>> =
   item_health_potion: { name: "Potion de soin", icon: "item-health-potion-pixel-v1.png" },
 };
 
-const RESOURCE_VISUALS = PRODUCTION_RESOURCE_VISUALS;
-
-const ENCHANTMENT_RESOURCE_VISUALS: Readonly<
-  Record<string, { readonly name: string; readonly symbol: string }>
-> = {
+const ENCHANTMENT_RESOURCE_VISUALS: Readonly<Record<string, { readonly name: string; readonly symbol: string }>> = {
   item_resource_enchantment_shard_t4: { name: "Éclat d’enchantement T4", symbol: "✦" },
   item_resource_enchantment_shard_t5: { name: "Éclat d’enchantement T5", symbol: "✦" },
   item_resource_enchantment_shard_t6: { name: "Éclat d’enchantement T6", symbol: "✦" },
@@ -66,22 +62,20 @@ const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
 };
 
 function formatFactionName(factionId: string): string {
-  return FACTION_DISPLAY_NAMES[factionId]
-    ?? factionId
-      .split("_")
-      .filter((part) => part.length > 0)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(" ");
+  return FACTION_DISPLAY_NAMES[factionId] ?? factionId
+    .split("_")
+    .filter((part) => part.length > 0)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
 }
 
-function getCombatSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
+function getBlueZoneSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
   const definitions = [
     { prefix: "item_resource_artifact_fragment_", label: "Fragment d’artefact", symbol: "◈", className: "artifact-fragment" },
     { prefix: "item_resource_artifact_", label: "Artefact", symbol: "✺", className: "artifact" },
     { prefix: "item_resource_dungeon_key_", label: "Clé de donjon", symbol: "⚿", className: "dungeon-key" },
     { prefix: "item_resource_key_fragment_", label: "Fragment de clé", symbol: "⌁", className: "key-fragment" },
   ] as const;
-
   for (const definition of definitions) {
     if (!itemId.startsWith(definition.prefix)) continue;
     const factionId = itemId.slice(definition.prefix.length);
@@ -105,11 +99,11 @@ function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefin
     || tier === undefined
     || mastery === undefined
     || presentation === undefined
-  ) return undefined;
-
+  ) {
+    return undefined;
+  }
   const specializationName = getWeaponMasteryDisplayName(mastery.weaponId);
   if (specializationName === undefined) return undefined;
-
   return {
     name: `${specializationName} T${String(tier)}`,
     icon: presentation.itemIcon,
@@ -126,17 +120,15 @@ export function getItemDefinition(itemId: string): ItemVisualDefinition | undefi
   const visual = getWeaponItemDefinition(itemId) ?? NON_WEAPON_ITEM_VISUALS[itemId];
   if (visual === undefined) return undefined;
   const equipment = resolveEquipmentInfo(itemId);
-  return equipment === undefined
-    ? visual
-    : { ...visual, stats: equipment.stats ?? {} };
+  return equipment === undefined ? visual : { ...visual, stats: equipment.stats ?? {} };
 }
 
 export function getItemDisplayName(itemId: string): string {
   return getItemDefinition(itemId)?.name
     ?? CONSUMABLE_VISUALS[itemId]?.name
-    ?? RESOURCE_VISUALS[itemId]?.name
+    ?? PRODUCTION_RESOURCE_VISUALS[itemId]?.name
     ?? ENCHANTMENT_RESOURCE_VISUALS[itemId]?.name
-    ?? getCombatSpecialLootVisual(itemId)?.name
+    ?? getBlueZoneSpecialLootVisual(itemId)?.name
     ?? itemId.replace("item_", "").replace(/_/g, " ");
 }
 
@@ -159,9 +151,9 @@ export function getEnchantmentFrameClass(_enchantment: number | undefined): stri
 
 export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element {
   const visual = getItemDefinition(itemId) ?? CONSUMABLE_VISUALS[itemId];
-  const resource = RESOURCE_VISUALS[itemId];
+  const resource = PRODUCTION_RESOURCE_VISUALS[itemId];
   const enchantmentResource = ENCHANTMENT_RESOURCE_VISUALS[itemId];
-  const specialLoot = getCombatSpecialLootVisual(itemId);
+  const specialLoot = getBlueZoneSpecialLootVisual(itemId);
 
   if (enchantmentResource !== undefined) {
     return (
