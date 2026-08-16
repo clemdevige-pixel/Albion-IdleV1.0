@@ -100,10 +100,12 @@ describe("createCharacterFoundation", () => {
     const fixture = createFixture(() => false);
     const position = fixture.equipment.inventoryManager.findFreeSlots(fixture.storage.bankId)[0];
     expect(position).toBeDefined();
+    if (position === undefined) throw new Error("Expected a free bank slot");
+
     const added = fixture.equipment.inventoryManager.addEntry(
       fixture.storage.bankId,
       "item_weapon_sword_t4_broadsword",
-      position!,
+      position,
     );
     expect(added.ok).toBe(true);
     if (!added.ok) throw new Error("Expected bank item creation to succeed");
