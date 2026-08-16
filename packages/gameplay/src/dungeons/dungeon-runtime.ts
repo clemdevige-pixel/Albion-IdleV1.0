@@ -80,6 +80,11 @@ export class DungeonRuntime {
     return this.#definitions.get(definitionId);
   }
 
+  /** Single source of truth for consumers that need the registered dungeon catalog. */
+  getDefinitions(): readonly DungeonDefinition[] {
+    return [...this.#definitions.values()];
+  }
+
   get activeRun(): DungeonRunState | undefined {
     return this.#activeRun;
   }
