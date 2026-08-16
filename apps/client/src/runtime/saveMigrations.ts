@@ -9,7 +9,7 @@ import {
  * Increment only when the persisted payload shape changes incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 2;
+export const CURRENT_RUNTIME_SAVE_VERSION = 3;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
 const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
@@ -42,6 +42,29 @@ function migrateLegacyIds(value: unknown): unknown {
   return value;
 }
 
+function migrateLegacyDungeonKeyId(value: string): string {
+  if (/^item_resource_dungeon_key_(?!t\d+$)[a-z0-9_]+$/.test(value)) {
+    return "item_resource_dungeon_key_t4";
+  }
+  if (/^item_resource_key_fragment_[a-z0-9_]+$/.test(value)) {
+    return "item_resource_dungeon_key_fragment_t4";
+  }
+  return value;
+}
+
+function migrateLegacyDungeonKeys(value: unknown): unknown {
+  if (typeof value === "string") return migrateLegacyDungeonKeyId(value);
+  if (Array.isArray(value)) return value.map(migrateLegacyDungeonKeys);
+  if (value !== null && typeof value === "object") {
+    const migrated: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      migrated[key] = migrateLegacyDungeonKeys(child);
+    }
+    return migrated;
+  }
+  return value;
+}
+
 const migrateV1ToV2: SaveMigration = {
   fromVersion: 1,
   toVersion: 2,
@@ -64,9 +87,26 @@ const migrateV1ToV2: SaveMigration = {
   },
 };
 
+const migrateV2ToV3: SaveMigration = {
+  fromVersion: 2,
+  toVersion: 3,
+
+  migrate(save: SaveFormat): SaveFormat {
+    const payload = migrateLegacyDungeonKeys(save.payload) as Record<string, unknown>;
+    return {
+      ...save,
+      version: 3,
+      metadata: { ...save.metadata, version: 3 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+  },
+};
+
 /** Ordered, explicit registry for runtime save migrations. */
 export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV1ToV2,
+  migrateV2ToV3,
 ];
 
 export interface RuntimeMigrationPipelineOptions {
