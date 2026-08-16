@@ -60,14 +60,15 @@ export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Partial<
     { start: 6.8, end: 9.5 },
   ],
   // Yellow: T5.1 appears early, T5.2 around Stormwatch/Sunscar and T5.3 is a
-  // late-band comfort target. Final farm segments should converge toward the
-  // same 55-70 shards/hour envelope as Blue despite using a separate resource.
+  // late-band comfort target. The late zones deliberately ramp harder so the
+  // best farmable Sunscar/Ironveil segments converge toward ~45-60 and ~55-70
+  // shards/hour respectively, while early Yellow remains materially slower.
   yellow: [
     { start: 3.5, end: 5.5 },
     { start: 4.8, end: 6.2 },
     { start: 5.8, end: 7.4 },
-    { start: 6.8, end: 8.5 },
-    { start: 7.8, end: 9.5 },
+    { start: 7.6, end: 10.2 },
+    { start: 10.0, end: 12.5 },
   ],
 } as const;
 
@@ -187,177 +188,77 @@ export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
   },
 ] as const;
 
-function normalizeFactionId(faction: string): string {
-  return faction.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
+function resolveCombatLootItemId(source: CombatLootItemSource, context: CombatLootContext): string {
+  if (source.type === "fixed") return source.itemId;
+  if (source.type === "enchantment_shard") return getEnchantmentShardItemId(context.enchantmentTier);
+  return `${source.prefix}${context.faction}`;
 }
 
-/** Supports expected values above 1 without probability-cap distortion. */
-function rollExpectedQuantity(expected: number, random: () => number): number {
-  const safeExpected = Math.max(0, expected);
-  const guaranteed = Math.floor(safeExpected);
-  const fractional = safeExpected - guaranteed;
-  return guaranteed + (fractional > 0 && random() < fractional ? 1 : 0);
-}
-
-export function getSegmentLootMultiplier(segmentIndex: number): number {
-  const clampedIndex = Math.min(
-    SEGMENT_LOOT_MULTIPLIERS.length - 1,
-    Math.max(0, Math.floor(segmentIndex)),
-  );
-  return SEGMENT_LOOT_MULTIPLIERS[clampedIndex] ?? 1;
-}
-
-export function getEnchantmentShardExpectedDrop(
-  context: Pick<
-    CombatLootContext,
-    "segmentIndex" | "isElite" | "isBoss" | "enchantmentDropWeight"
-  >,
-): number {
-  const depthBonus =
-    1 + Math.max(0, context.segmentIndex) * ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT;
-  const categoryMultiplier = context.isBoss
+export function getEnchantmentShardExpectedDrop(input: {
+  readonly segmentIndex: number;
+  readonly isElite: boolean;
+  readonly isBoss: boolean;
+  readonly enchantmentDropWeight: number;
+}): number {
+  const depthMultiplier = 1 + input.segmentIndex * ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT;
+  const specialMultiplier = input.isBoss
     ? ENCHANTMENT_SHARD_BOSS_MULTIPLIER
-    : context.isElite
+    : input.isElite
       ? ENCHANTMENT_SHARD_ELITE_MULTIPLIER
       : 1;
   return ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
-    * Math.max(0, context.enchantmentDropWeight)
-    * depthBonus
-    * categoryMultiplier;
+    * input.enchantmentDropWeight
+    * depthMultiplier
+    * specialMultiplier;
 }
 
-function resolveCombatLootItemId(
-  source: CombatLootItemSource,
-  context: CombatLootContext,
-): string {
-  if (source.type === "fixed") return source.itemId;
-  if (source.type === "enchantment_shard") {
-    return getEnchantmentShardItemId(context.enchantmentTier);
-  }
-  return `${source.prefix}${normalizeFactionId(context.faction)}`;
-}
-
-function resolveCombatLootExpectedQuantity(
-  rate: CombatLootRateModel,
+function getCombatLootExpectedQuantity(
+  rule: CombatLootRuleDefinition,
   context: CombatLootContext,
 ): number {
-  if (rate.type === "enchantment") return getEnchantmentShardExpectedDrop(context);
-
-  if (rate.type === "segment_scaled") {
-    const bossMultiplier = rate.bossMultiplier && context.isBoss
-      ? BOSS_SPECIAL_DROP_MULTIPLIER
-      : 1;
-    return rate.baseRate * getSegmentLootMultiplier(context.segmentIndex) * bossMultiplier;
+  if (rule.rate.type === "enchantment") {
+    return getEnchantmentShardExpectedDrop({
+      segmentIndex: context.segmentIndex,
+      isElite: context.isElite,
+      isBoss: context.isBoss,
+      enchantmentDropWeight: context.enchantmentDropWeight,
+    });
   }
 
-  if (!context.isBoss) return 0;
-  if (rate.type === "artifact_fragment") {
+  if (rule.rate.type === "segment_scaled") {
+    const segmentMultiplier = SEGMENT_LOOT_MULTIPLIERS[context.segmentIndex] ?? 1;
+    const bossMultiplier = rule.rate.bossMultiplier && (context.isElite || context.isBoss)
+      ? BOSS_SPECIAL_DROP_MULTIPLIER
+      : 1;
+    return rule.rate.baseRate * segmentMultiplier * bossMultiplier;
+  }
+
+  if (rule.rate.type === "artifact_fragment") {
+    if (!context.isBoss) return 0;
     return context.isFinalBoss
       ? BOSS_DROP_RATES.finalBossArtifactFragment
       : BOSS_DROP_RATES.segmentBossArtifactFragment;
   }
+
+  if (!context.isBoss) return 0;
   return context.isFinalBoss
     ? BOSS_DROP_RATES.finalBossArtifact
     : BOSS_DROP_RATES.segmentBossArtifact;
 }
 
-/**
- * Deterministic projection consumed by both runtime rolls and Bestiary display.
- * This is the single source of truth for which active combat drops exist and
- * their context-dependent probabilities/yields.
- */
-export function getCombatLootExpectations(
-  context: CombatLootContext,
-): readonly CombatLootExpectation[] {
-  return COMBAT_LOOT_RULES.flatMap((rule) => {
-    const expectedQuantity = resolveCombatLootExpectedQuantity(rule.rate, context);
-    if (expectedQuantity <= 0) return [];
-    return [{
-      itemId: resolveCombatLootItemId(rule.item, context),
-      kind: rule.kind,
-      expectedQuantity,
-    }];
+export function getCombatLootExpectations(context: CombatLootContext): readonly CombatLootExpectation[] {
+  return COMBAT_LOOT_RULES.map((rule) => ({
+    itemId: resolveCombatLootItemId(rule.item, context),
+    kind: rule.kind,
+    expectedQuantity: getCombatLootExpectedQuantity(rule, context),
+  })).filter((drop) => drop.expectedQuantity > 0);
+}
+
+export function rollCombatLoot(context: CombatLootContext, random: () => number = Math.random): readonly CombatDrop[] {
+  return getCombatLootExpectations(context).flatMap((drop) => {
+    const guaranteed = Math.floor(drop.expectedQuantity);
+    const fractional = drop.expectedQuantity - guaranteed;
+    const quantity = guaranteed + (random() < fractional ? 1 : 0);
+    return quantity > 0 ? [{ itemId: drop.itemId, kind: drop.kind, quantity }] : [];
   });
 }
-
-export function rollCombatDrops(
-  context: CombatLootContext,
-  random: () => number = Math.random,
-): readonly CombatDrop[] {
-  const drops: CombatDrop[] = [];
-  for (const expectation of getCombatLootExpectations(context)) {
-    const quantity = rollExpectedQuantity(expectation.expectedQuantity, random);
-    if (quantity <= 0) continue;
-    drops.push({
-      itemId: expectation.itemId,
-      kind: expectation.kind,
-      quantity,
-    });
-  }
-  return drops;
-}
-
-export const HEALTH_POTION_HEAL_RATIO = 0.3;
-export const HEALTH_POTION_COOLDOWN_SECONDS = 20;
-
-export const ENCHANTMENT_MATERIAL_NAMES: Readonly<Record<string, string>> = {
-  item_resource_enchantment_shard_t4: "Éclat d’enchantement T4",
-  item_resource_enchantment_shard_t5: "Éclat d’enchantement T5",
-  item_resource_enchantment_shard_t6: "Éclat d’enchantement T6",
-  item_resource_enchantment_shard_t7: "Éclat d’enchantement T7",
-  item_resource_enchantment_shard_t8: "Éclat d’enchantement T8",
-};
-
-/** @deprecated Compatibility helper for legacy call sites. */
-export function rollEnchantmentMaterial(): string | undefined {
-  return Math.random() < ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL
-    ? getEnchantmentShardItemId(4)
-    : undefined;
-}
-
-export interface RepairCostDefinitionData {
-  readonly equipmentCategory: "weapon" | "armor" | "accessory";
-  readonly itemTier: number;
-  readonly baseRepairCost: number;
-  readonly costMultiplier: number;
-  readonly enabled: boolean;
-}
-
-/**
- * Repair pricing remains explicitly authored economy data. Do not extrapolate
- * T5+ values from T3/T4 without a balance decision. The runtime itself accepts
- * arbitrary tiers; this table intentionally contains only approved prices.
- */
-export const REPAIR_COST_DEFINITIONS: readonly RepairCostDefinitionData[] = [
-  { equipmentCategory: "weapon", itemTier: 3, baseRepairCost: 40, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "armor", itemTier: 3, baseRepairCost: 30, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "accessory", itemTier: 3, baseRepairCost: 25, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "weapon", itemTier: 4, baseRepairCost: 70, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "armor", itemTier: 4, baseRepairCost: 55, costMultiplier: 1.0, enabled: true },
-  { equipmentCategory: "accessory", itemTier: 4, baseRepairCost: 45, costMultiplier: 1.0, enabled: true },
-];
-
-export function getAuthoredRepairCostTiers(): readonly number[] {
-  return [...new Set(REPAIR_COST_DEFINITIONS.map(({ itemTier }) => itemTier))].sort((a, b) => a - b);
-}
-
-export function getMissingRepairCostDefinitions(
-  tiers: readonly number[],
-  categories: readonly RepairCostDefinitionData["equipmentCategory"][] = ["weapon", "armor", "accessory"],
-): readonly { readonly itemTier: number; readonly equipmentCategory: RepairCostDefinitionData["equipmentCategory"] }[] {
-  return tiers.flatMap((itemTier) => categories
-    .filter((equipmentCategory) => !REPAIR_COST_DEFINITIONS.some((definition) =>
-      definition.itemTier === itemTier && definition.equipmentCategory === equipmentCategory,
-    ))
-    .map((equipmentCategory) => ({ itemTier, equipmentCategory })));
-}
-
-export const GENERAL_VENDOR_FIXED_OFFERS = [
-  { itemId: "item_health_potion", buyPrice: 50, sellPrice: 20, maxPerTransaction: null, enabled: true },
-  { itemId: "item_leather_armor", buyPrice: null, sellPrice: 60, maxPerTransaction: null, enabled: true },
-  { itemId: "item_wooden_shield", buyPrice: null, sellPrice: 48, maxPerTransaction: null, enabled: true },
-  { itemId: "item_shield_t3_reinforced", buyPrice: null, sellPrice: 90, maxPerTransaction: null, enabled: true },
-  { itemId: "item_iron_helmet", buyPrice: null, sellPrice: 70, maxPerTransaction: null, enabled: true },
-  { itemId: "item_leather_boots", buyPrice: null, sellPrice: 55, maxPerTransaction: null, enabled: true },
-  { itemId: "item_traveler_cape", buyPrice: null, sellPrice: 65, maxPerTransaction: null, enabled: true },
-];
