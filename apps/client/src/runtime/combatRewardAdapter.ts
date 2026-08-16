@@ -1,12 +1,15 @@
 import type { EntityId } from "@game/core";
 import { getWorldBandDefinition } from "@game/data";
 import type { CombatService, StatsManager } from "@game/gameplay";
-import { getEncounterRewards, getEnemyCombatProfile } from "@game/gameplay";
+import { getEncounterRewards } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
-import { ENCHANTMENT_MATERIAL_NAMES } from "../data/economyContentCatalog.js";
+import {
+  ENCHANTMENT_MATERIAL_NAMES,
+  getEnchantmentShardProgressionWeight,
+} from "../data/economyContentCatalog.js";
 import { getMonsterDefinition } from "../data/monsterContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import {
@@ -109,19 +112,11 @@ export function setupCombatRewardAdapter(
       || monster?.category === "boss";
     const isElite = monster?.category === "elite";
 
-    // Temporary anti-1.1 calibration: shard yield follows the authored enemy HP
-    // curve instead of one universal drop chance. The future combat/TTK audit
-    // can replace this weight without changing enchantment recipes or item IDs.
-    const enemyProfile = getEnemyCombatProfile(
+    const enchantmentDropWeight = getEnchantmentShardProgressionWeight(
+      zonePlacement.bandId,
       zonePlacement.zoneIndexWithinBand,
       options.worldRuntime.currentSegment,
-      options.worldRuntime.currentEncounter,
-      zonePlacement.bandId,
     );
-    const bandBaselineProfile = getEnemyCombatProfile(0, 0, 0, zonePlacement.bandId);
-    const enchantmentDropWeight = bandBaselineProfile.hp <= 0
-      ? 1
-      : enemyProfile.hp / bandBaselineProfile.hp;
     const enchantmentTier = getWorldBandDefinition(zonePlacement.bandId).maximumTier;
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(
