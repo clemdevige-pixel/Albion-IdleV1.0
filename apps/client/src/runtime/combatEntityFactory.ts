@@ -13,7 +13,11 @@ import {
   type StatId,
   type ZoneDefinitionId,
 } from "@game/gameplay";
-import { resolveMonsterForEncounter } from "../data/monsterContentCatalog";
+import {
+  getMonsterDefinition,
+  resolveMonsterForEncounter,
+  type MonsterContentDefinition,
+} from "../data/monsterContentCatalog";
 import { getWorldZonePlacement } from "../data/worldContentCatalog";
 import { buildMonsterRuntimeAbilities } from "../data/monsterAbilityContentCatalog";
 import { setActiveMonsterIdentity } from "./activeMonsterIdentity";
@@ -41,6 +45,20 @@ export interface EnemySpawnContext {
   readonly encounterIndex: number;
   readonly zoneDefId: ZoneDefinitionId;
   readonly zoneName: string;
+}
+
+export interface AuthoredEnemyCombatProfile {
+  readonly hp: number;
+  readonly damage: number;
+  readonly attackSpeed: number;
+  readonly armor: number;
+  readonly magicResistance: number;
+}
+
+export interface AuthoredEnemySpawnInput {
+  readonly monsterDefinitionId: string;
+  readonly profile: AuthoredEnemyCombatProfile;
+  readonly contextLabel?: string;
 }
 
 export interface SpawnedEnemyResult {
@@ -124,6 +142,70 @@ export function setupCombatEntity(
   return id;
 }
 
+function spawnMonsterWithProfile(
+  deps: CombatEntityFactoryDependencies,
+  monster: MonsterContentDefinition,
+  profile: AuthoredEnemyCombatProfile,
+  contextLabel?: string,
+): SpawnedEnemyResult {
+  const runtimeAbilities = buildMonsterRuntimeAbilities(monster.category, monster.abilityIds);
+  const damage = calculateAbilityBudgetedEnemyDamage(
+    profile.damage,
+    profile.attackSpeed,
+    runtimeAbilities,
+  );
+  const physicalDamage = monster.combat.damageType === "physical" ? damage : 0;
+  const magicalDamage = monster.combat.damageType === "magical" ? damage : 0;
+
+  const enemyId = setupCombatEntity(
+    deps,
+    {
+      maxHealth: profile.hp,
+      physDamage: physicalDamage,
+      magDamage: magicalDamage,
+      attackSpeed: profile.attackSpeed,
+      armor: profile.armor,
+      magicRes: profile.magicResistance,
+    },
+    { x: 100, y: 0 },
+  );
+  setActiveMonsterIdentity(enemyId, monster.id);
+
+  for (const ability of runtimeAbilities) deps.abilityManager.learnAbility(enemyId, ability);
+
+  const prefix = monster.category === "boss"
+    ? "[BIOME BOSS] "
+    : monster.category === "elite"
+      ? "[ELITE] "
+      : "";
+  const suffix = contextLabel === undefined || contextLabel.length === 0 ? "" : ` - ${contextLabel}`;
+
+  return {
+    id: enemyId,
+    maxHealth: profile.hp,
+    name: `${prefix}${monster.name}${suffix}`,
+    visualManifestId: monster.visualManifestId,
+    monsterDefinitionId: monster.id,
+  };
+}
+
+/**
+ * Generic authored spawn path used by non-World combat content (dungeons,
+ * future instanced encounters). Monster identity stays in the existing content
+ * catalog while combat numbers are supplied by that content's own data curve.
+ */
+export function spawnAuthoredEnemy(
+  deps: CombatEntityFactoryDependencies,
+  input: AuthoredEnemySpawnInput,
+): SpawnedEnemyResult {
+  return spawnMonsterWithProfile(
+    deps,
+    getMonsterDefinition(input.monsterDefinitionId),
+    input.profile,
+    input.contextLabel,
+  );
+}
+
 export function spawnEnemyForSegment(
   deps: CombatEntityFactoryDependencies,
   _biomeResolver: BiomeResolver,
@@ -141,47 +223,5 @@ export function spawnEnemyForSegment(
     ctx.encounterIndex,
     placement.bandId,
   );
-  const maxHealth = profile.hp;
-  const runtimeAbilities = buildMonsterRuntimeAbilities(monster.category, monster.abilityIds);
-  const damage = calculateAbilityBudgetedEnemyDamage(
-    profile.damage,
-    profile.attackSpeed,
-    runtimeAbilities,
-  );
-  const armor = profile.armor;
-  const magicResistance = profile.magicResistance;
-  const physicalDamage = monster.combat.damageType === "physical" ? damage : 0;
-  const magicalDamage = monster.combat.damageType === "magical" ? damage : 0;
-
-  const enemyId = setupCombatEntity(
-    deps,
-    {
-      maxHealth,
-      physDamage: physicalDamage,
-      magDamage: magicalDamage,
-      attackSpeed: profile.attackSpeed,
-      armor,
-      magicRes: magicResistance,
-    },
-    { x: 100, y: 0 },
-  );
-  setActiveMonsterIdentity(enemyId, monster.id);
-
-  for (const ability of runtimeAbilities) {
-    deps.abilityManager.learnAbility(enemyId, ability);
-  }
-
-  const prefix = monster.category === "boss"
-    ? "[BIOME BOSS] "
-    : monster.category === "elite"
-      ? "[ELITE] "
-      : "";
-
-  return {
-    id: enemyId,
-    maxHealth,
-    name: `${prefix}${monster.name} - ${ctx.zoneName}`,
-    visualManifestId: monster.visualManifestId,
-    monsterDefinitionId: monster.id,
-  };
+  return spawnMonsterWithProfile(deps, monster, profile, ctx.zoneName);
 }
