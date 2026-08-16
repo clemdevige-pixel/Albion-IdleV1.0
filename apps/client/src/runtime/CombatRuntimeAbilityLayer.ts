@@ -1,5 +1,6 @@
 import type { AbilityId } from "@game/gameplay";
 import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "../data/weaponContentCatalog.js";
+import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
 import { WeaponAbilityEffectTracker } from "./WeaponAbilityEffectTracker.js";
 import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.js";
 import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
@@ -8,6 +9,8 @@ import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
 import { markCombatStartBlocked } from "./CombatStartGuard.js";
 import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
 
+type EnemySnapshot = NonNullable<CombatDomainTickResult["activeEnemy"]>;
+
 export class CombatRuntime extends LegacyCombatRuntime {
   private readonly mechanics: WeaponAbilityMechanicsRuntime;
   private readonly effects: WeaponAbilityEffectTracker;
@@ -15,6 +18,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
   private abilityTick = 0;
   private initialized = false;
   private weaponBlocked = false;
+  private lastEnemySnapshot: EnemySnapshot | undefined;
 
   constructor(private readonly runtimeDeps: CombatRuntimeDependencies) {
     super(runtimeDeps);
@@ -33,6 +37,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
     if (!this.hasEquippedWeapon()) return { combatState: "idle" };
     this.initialized = true;
     const result = super.initialize();
+    this.captureEnemySnapshot(result);
     this.handleSegmentStart(result);
     return result;
   }
@@ -40,7 +45,11 @@ export class CombatRuntime extends LegacyCombatRuntime {
   override useWeaponAbility(slotIndex: number): boolean {
     const definition = this.resolveAbility(slotIndex);
     const target = this.getActiveEnemyId();
-    if (definition === undefined || !this.runtimeDeps.damageManager.isAlive(target)) return false;
+    if (
+      definition === undefined
+      || getWeaponAbilityMechanics(definition.id) === undefined
+      || !this.runtimeDeps.damageManager.isAlive(target)
+    ) return false;
     if (
       this.inTick
       && (
@@ -66,6 +75,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
 
   override interruptEncounter(): void {
     this.mechanics.clear();
+    this.lastEnemySnapshot = undefined;
     super.interruptEncounter();
   }
 
@@ -92,6 +102,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
     if (!this.initialized) {
       this.initialized = true;
       const initial = super.initialize();
+      this.captureEnemySnapshot(initial);
       this.handleSegmentStart(initial);
       return initial;
     }
@@ -107,7 +118,20 @@ export class CombatRuntime extends LegacyCombatRuntime {
 
     this.handleSegmentStart(result);
     this.effects.reconcile(targets);
+
+    if (result.combatState === "victory" && result.activeEnemy === undefined && this.lastEnemySnapshot !== undefined) {
+      return {
+        ...result,
+        activeEnemy: { ...this.lastEnemySnapshot, currentHealth: 0 },
+      };
+    }
+
+    this.captureEnemySnapshot(result);
     return result;
+  }
+
+  private captureEnemySnapshot(result: CombatDomainTickResult): void {
+    if (result.activeEnemy !== undefined) this.lastEnemySnapshot = result.activeEnemy;
   }
 
   private handleSegmentStart(result: CombatDomainTickResult): void {
