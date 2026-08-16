@@ -1,8 +1,10 @@
 import type { EntityId } from "@game/core";
 import type { AutoAttackManager, DamageManager, EffectManager, StatsManager } from "@game/gameplay";
 import type { DamageType, ModifierId, StatId } from "@game/gameplay";
-import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
-import { getWeaponAbilityMechanics, type AbilityMechanic } from "../data/weaponAbilityMechanics.js";
+import type {
+  AbilityMechanic,
+  ClientAbilityDefinition,
+} from "../data/weaponContentCatalog.js";
 
 interface ActiveDot {
   readonly effectId: string;
@@ -75,9 +77,7 @@ export class WeaponAbilityMechanicsRuntime {
   public constructor(private readonly deps: WeaponAbilityMechanicsRuntimeDeps) {}
 
   public canAutoCast(definition: ClientAbilityDefinition, target: EntityId): boolean {
-    const profile = getWeaponAbilityMechanics(definition.id);
-    if (profile === undefined) return false;
-    const rule = profile.autoRule;
+    const rule = definition.mechanics.autoRule;
     if (rule === undefined || rule.kind === "always") return true;
     if (!this.deps.damageManager.isAlive(target)) return false;
 
@@ -92,9 +92,7 @@ export class WeaponAbilityMechanicsRuntime {
   }
 
   public execute(definition: ClientAbilityDefinition, target: EntityId, tick: number): boolean {
-    const profile = getWeaponAbilityMechanics(definition.id);
-    if (profile === undefined) return false;
-
+    const profile = definition.mechanics;
     const sourceStat = (definition.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage") as StatId;
     const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
     let dealtDamage = false;
