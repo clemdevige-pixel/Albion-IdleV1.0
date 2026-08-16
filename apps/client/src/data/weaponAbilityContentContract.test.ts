@@ -35,8 +35,8 @@ describe("weapon ability content contract", () => {
   });
 
   it("keeps conditional weapon combos fully described by their own ability data", () => {
-    const infernalBurst = CLIENT_ABILITIES.ability_fire_infernal_burst;
-    const assassination = CLIENT_ABILITIES.ability_dagger_assassination;
+    const infernalBurst = CLIENT_ABILITIES["ability_fire_infernal_burst"];
+    const assassination = CLIENT_ABILITIES["ability_dagger_assassination"];
 
     expect(infernalBurst?.mechanics.autoRule).toEqual({
       kind: "target_has_effect",
