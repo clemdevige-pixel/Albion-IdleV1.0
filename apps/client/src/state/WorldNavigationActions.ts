@@ -44,11 +44,13 @@ export class WorldNavigationActions {
 
   public prepareCombatResumeAfterGathering(): void {
     const { worldRuntime } = this.deps;
-    const resumeSegment = worldRuntime.currentSegment;
+    const resumeSegment = worldRuntime.farmMode
+      ? worldRuntime.currentSegment
+      : worldRuntime.highestUnlockedSegment;
 
     this.interruptEncounterForTravel();
-    // Gathering is an explicit combat lifecycle boundary: resume from encounter 1
-    // of the exact segment the player left, regardless of farm mode/progression.
+    // Gathering is an explicit combat lifecycle boundary. Progression resumes
+    // from the furthest unlocked segment; Farm resumes the selected segment.
     worldRuntime.selectSegment(resumeSegment + 1);
     this.deps.combatRuntime.restoreHeroHealth();
     this.deps.updateWorldBridge();
