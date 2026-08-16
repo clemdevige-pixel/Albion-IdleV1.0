@@ -125,7 +125,6 @@ export class ProductionActions {
       id: `notif_craft_${String(Date.now())}`,
       type: "success",
       message: `Fabriqué : ${result.recipeName} · ${String(result.itemPower)} IP`,
-      amount: undefined,
       timestamp: Date.now(),
     });
     return true;
