@@ -3,6 +3,7 @@ import type { EquipmentManager, ZoneDefinitionId } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge.js";
 import { WORLD_ZONE_IDS } from "../data/worldContentCatalog.js";
 import { WorldNavigationActions } from "../state/WorldNavigationActions.js";
+import { CombatBridgeAdapter } from "../state/bridge-sync/CombatBridgeAdapter.js";
 import { CombatRuntime } from "./CombatRuntime.js";
 import { combatStopController } from "./CombatStopController.js";
 import { setupCombatEntity } from "./combatEntityFactory.js";
@@ -101,13 +102,32 @@ function createScenario(zoneDefId: ZoneDefinitionId) {
     updateWorldBridge: () => {},
   });
 
-  return { combat, world, bridge, heroId, combatRuntime, navigation };
+  const combatBridgeAdapter = new CombatBridgeAdapter({
+    bridge,
+    heroId,
+    abilityManager: combat.abilityManager,
+    damageManager: combat.damageManager,
+    statsManager: combat.statsManager,
+    combatRuntime,
+    worldRuntime: world.worldRuntime,
+    updateWorldBridge: () => {},
+  });
+
+  return {
+    combat,
+    world,
+    bridge,
+    heroId,
+    combatRuntime,
+    navigation,
+    combatBridgeAdapter,
+  };
 }
 
 function forceRealDefeat(
   scenario: ReturnType<typeof createScenario>,
   tick: number,
-): void {
+) {
   const session = scenario.combat.combatService.getActiveSession();
   const enemyId = session?.participants.enemies[0];
   if (enemyId === undefined) throw new Error("Expected active enemy before forced defeat");
@@ -126,6 +146,7 @@ function forceRealDefeat(
   expect(defeat.combatState).toBe("defeat");
   expect(scenario.combatRuntime.getLoopState()).toBe("defeat");
   expect(scenario.combat.combatService.getActiveSession()).toBeUndefined();
+  return defeat;
 }
 
 function forceRealVictory(
@@ -197,6 +218,35 @@ describe.each([
     expect(resumed.combatState).toBe("combat");
     expect(resumed.spawnedEnemy).toBeDefined();
     expect(scenario.world.worldRuntime.currentSegment).toBe(0);
+  });
+
+  it("clears the defeated enemy snapshot before publishing the resumed encounter", () => {
+    const scenario = createScenario(zoneDefId);
+
+    const initial = scenario.combatRuntime.initialize();
+    scenario.combatBridgeAdapter.presentInitialCombat(initial);
+    expect(scenario.bridge.enemyEncounterKey.length).toBeGreaterThan(0);
+    expect(scenario.bridge.enemyMaxHealth).toBeGreaterThan(0);
+
+    const defeat = forceRealDefeat(scenario, 1);
+    scenario.combatBridgeAdapter.presentTick(defeat);
+
+    expect(scenario.bridge.combatState).toBe("defeat");
+    expect(scenario.bridge.enemyEncounterKey).toBe("");
+    expect(scenario.bridge.enemyMaxHealth).toBe(0);
+    expect(scenario.bridge.enemyName).toBe("");
+
+    expect(scenario.navigation.resumeExploration()).toBe(true);
+    expect(scenario.bridge.combatState).toBe("walking");
+    expect(scenario.bridge.enemyEncounterKey).toBe("");
+
+    const resumed = scenario.combatRuntime.tick(0.5, 2);
+    scenario.combatBridgeAdapter.presentTick(resumed);
+
+    expect(scenario.bridge.combatState).toBe("combat");
+    expect(scenario.bridge.enemyEncounterKey.length).toBeGreaterThan(0);
+    expect(scenario.bridge.enemyMaxHealth).toBeGreaterThan(0);
+    expect(scenario.bridge.enemyName.length).toBeGreaterThan(0);
   });
 
   it("clears a pending segment stop when the hero dies", () => {
