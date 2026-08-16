@@ -28,6 +28,7 @@ export * from "./biomes/index.js";
 export * from "./world-progression/index.js";
 export * from "./exploration/index.js";
 export * from "./world-integration/index.js";
+export * from "./dungeons/index.js";
 export * from "./resources/index.js";
 export * from "./resource-nodes/index.js";
 export * from "./gathering/index.js";
