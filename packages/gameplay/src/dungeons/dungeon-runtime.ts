@@ -7,8 +7,8 @@ export type DungeonRunStatus = "active" | "cleared" | "failed" | "abandoned";
 export interface DungeonEncounterDefinition {
   readonly id: string;
   readonly kind: DungeonEncounterKind;
-  /** Content-owned combat profile / monster reference. The runtime does not interpret it. */
-  readonly encounterId: string;
+  /** Existing monster-content definition used by the shared combat runtime. */
+  readonly monsterDefinitionId: string;
   /** Content-owned loot table reference. Loot resolution remains outside this state machine. */
   readonly lootTableId?: string;
 }
@@ -62,6 +62,9 @@ export class DungeonRuntime {
   registerDefinition(definition: DungeonDefinition): void {
     if (definition.id.length === 0 || definition.keyItemId.length === 0 || definition.encounters.length === 0) {
       throw new Error("Dungeon definitions require id, keyItemId and at least one encounter");
+    }
+    if (definition.encounters.some((encounter) => encounter.monsterDefinitionId.length === 0)) {
+      throw new Error(`Dungeon ${definition.id} contains an encounter without monsterDefinitionId`);
     }
     if (definition.encounters.at(-1)?.kind !== "boss") {
       throw new Error(`Dungeon ${definition.id} must end with a boss encounter`);
