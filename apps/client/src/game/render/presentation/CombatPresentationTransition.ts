@@ -22,17 +22,25 @@ export function resolveCombatPresentationTransition(
 ): CombatPresentationTransition {
   if (input.previousEncounterKey === undefined) return "initialize";
 
+  const encounterKeyChanged = input.nextEncounterKey !== input.previousEncounterKey;
   const enteredCombat = input.nextCombatState === "combat"
     && input.previousCombatState !== undefined
     && input.previousCombatState !== "combat";
+  const leftDefeat = input.previousCombatState === "defeat"
+    && input.nextCombatState !== "defeat";
+  const changedEncounterOutsideCombat = encounterKeyChanged
+    && input.nextCombatState !== "combat"
+    && input.nextCombatState !== "victory";
 
-  if (enteredCombat && input.previousCombatState !== "victory") {
+  if (
+    leftDefeat
+    || changedEncounterOutsideCombat
+    || (enteredCombat && input.previousCombatState !== "victory")
+  ) {
     return "hard_reset";
   }
 
-  if (input.nextEncounterKey !== input.previousEncounterKey) {
-    return "victory_handoff";
-  }
+  if (encounterKeyChanged) return "victory_handoff";
 
   return "none";
 }
