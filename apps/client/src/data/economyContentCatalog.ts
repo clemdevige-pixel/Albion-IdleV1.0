@@ -60,15 +60,15 @@ export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Partial<
     { start: 6.8, end: 9.5 },
   ],
   // Yellow: T5.1 appears early, T5.2 around Stormwatch/Sunscar and T5.3 is a
-  // late-band comfort target. The late zones deliberately ramp harder so the
-  // best farmable Sunscar/Ironveil segments converge toward ~45-60 and ~55-70
-  // shards/hour respectively, while early Yellow remains materially slower.
+  // late-band comfort target. Sunscar ramps into the late-game farm window;
+  // Ironveil keeps improving with depth but caps its fastest clears near the
+  // intended ~55-70 shards/hour end-of-band envelope.
   yellow: [
     { start: 3.5, end: 5.5 },
     { start: 4.8, end: 6.2 },
     { start: 5.8, end: 7.4 },
     { start: 7.6, end: 10.2 },
-    { start: 10.0, end: 12.5 },
+    { start: 9.0, end: 10.5 },
   ],
 } as const;
 
