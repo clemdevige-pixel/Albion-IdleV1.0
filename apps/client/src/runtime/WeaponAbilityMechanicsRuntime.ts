@@ -2,9 +2,10 @@ import type { EntityId } from "@game/core";
 import type { AutoAttackManager, DamageManager, EffectManager, StatsManager } from "@game/gameplay";
 import type { DamageType, ModifierId, StatId } from "@game/gameplay";
 import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
-import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
+import { getWeaponAbilityMechanics, type AbilityMechanic } from "../data/weaponAbilityMechanics.js";
 
 interface ActiveDot {
+  readonly effectId: string;
   readonly source: EntityId;
   readonly target: EntityId;
   readonly damageType: DamageType;
@@ -19,6 +20,8 @@ interface TrackedModifier {
   readonly target: EntityId;
   readonly modifierId: ModifierId;
 }
+
+type DamageMechanic = Extract<AbilityMechanic, { readonly kind: "damage" }>;
 
 export interface WeaponAbilityMechanicsRuntimeDeps {
   readonly heroId: EntityId;
@@ -45,6 +48,26 @@ export function getAbilityHitBaseDamage(
   return intendedDamagePerHit - sourceDamage;
 }
 
+/** Shared conditional-ratio resolver used by both execution and overkill estimation. */
+export function resolveAbilityDamageRatio(
+  mechanic: DamageMechanic,
+  healthRatio: number | undefined,
+  hasEffect: (effectId: string) => boolean,
+): number {
+  let totalRatio = mechanic.ratio;
+  if (
+    mechanic.bonusHealthBelow !== undefined
+    && healthRatio !== undefined
+    && healthRatio <= mechanic.bonusHealthBelow.ratio
+  ) {
+    totalRatio += mechanic.bonusHealthBelow.bonusRatio;
+  }
+  if (mechanic.bonusEffect !== undefined && hasEffect(mechanic.bonusEffect.effectId)) {
+    totalRatio += mechanic.bonusEffect.bonusRatio;
+  }
+  return totalRatio;
+}
+
 export class WeaponAbilityMechanicsRuntime {
   private readonly dots: ActiveDot[] = [];
   private readonly modifiers = new Map<string, TrackedModifier>();
@@ -53,7 +76,8 @@ export class WeaponAbilityMechanicsRuntime {
 
   public canAutoCast(definition: ClientAbilityDefinition, target: EntityId): boolean {
     const profile = getWeaponAbilityMechanics(definition.id);
-    const rule = profile?.autoRule ?? definition.autoCast;
+    if (profile === undefined) return false;
+    const rule = profile.autoRule;
     if (rule === undefined || rule.kind === "always") return true;
     if (!this.deps.damageManager.isAlive(target)) return false;
 
@@ -69,7 +93,7 @@ export class WeaponAbilityMechanicsRuntime {
 
   public execute(definition: ClientAbilityDefinition, target: EntityId, tick: number): boolean {
     const profile = getWeaponAbilityMechanics(definition.id);
-    if (profile === undefined) return this.executeLegacyDamage(definition, target, tick);
+    if (profile === undefined) return false;
 
     const sourceStat = (definition.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage") as StatId;
     const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
@@ -78,14 +102,13 @@ export class WeaponAbilityMechanicsRuntime {
     for (const mechanic of profile.mechanics) {
       if (!this.deps.damageManager.isAlive(target)) break;
       if (mechanic.kind === "damage") {
-        let totalRatio = mechanic.ratio;
         const health = this.deps.damageManager.getHealth(target);
-        if (mechanic.bonusHealthBelow !== undefined && health.maxHealth > 0 && health.currentHealth / health.maxHealth <= mechanic.bonusHealthBelow.ratio) {
-          totalRatio += mechanic.bonusHealthBelow.bonusRatio;
-        }
-        if (mechanic.bonusEffect !== undefined && this.hasEffect(target, mechanic.bonusEffect.effectId)) {
-          totalRatio += mechanic.bonusEffect.bonusRatio;
-        }
+        const healthRatio = health.maxHealth > 0 ? health.currentHealth / health.maxHealth : undefined;
+        const totalRatio = resolveAbilityDamageRatio(
+          mechanic,
+          healthRatio,
+          (effectId) => this.hasEffect(target, effectId),
+        );
         const hits = Math.max(1, mechanic.hits ?? 1);
         const baseDamagePerHit = getAbilityHitBaseDamage(sourceDamage, totalRatio, hits);
         for (let hit = 0; hit < hits && this.deps.damageManager.isAlive(target); hit += 1) {
@@ -111,12 +134,26 @@ export class WeaponAbilityMechanicsRuntime {
           strength: mechanic.ratio,
           refreshOnReapply: true,
         }, tick);
-        const existing = this.dots.find((dot) => dot.target === target && dot.damageType === definition.damageType && dot.ratio === mechanic.ratio);
+        const existing = this.dots.find((dot) =>
+          dot.source === this.deps.heroId
+          && dot.target === target
+          && dot.effectId === mechanic.effectId
+        );
         if (existing !== undefined) {
           existing.intervalRemaining = mechanic.interval;
           existing.ticksRemaining = mechanic.ticks;
         } else {
-          this.dots.push({ source: this.deps.heroId, target, damageType: definition.damageType, sourceDamage, ratio: mechanic.ratio, intervalRemaining: mechanic.interval, interval: mechanic.interval, ticksRemaining: mechanic.ticks });
+          this.dots.push({
+            effectId: mechanic.effectId,
+            source: this.deps.heroId,
+            target,
+            damageType: definition.damageType,
+            sourceDamage,
+            ratio: mechanic.ratio,
+            intervalRemaining: mechanic.interval,
+            interval: mechanic.interval,
+            ticksRemaining: mechanic.ticks,
+          });
         }
         continue;
       }
@@ -198,13 +235,5 @@ export class WeaponAbilityMechanicsRuntime {
 
   private hasEffect(target: EntityId, effectId: string): boolean {
     return this.deps.effectManager.getActiveEffects(target).some((effect) => effect.definition.id === effectId);
-  }
-
-  private executeLegacyDamage(definition: ClientAbilityDefinition, target: EntityId, tick: number): boolean {
-    const sourceStat = (definition.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage") as StatId;
-    const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
-    const result = this.deps.damageManager.processDamage({ source: this.deps.heroId, target, baseDamage: sourceDamage * definition.bonusDamageRatio, damageType: definition.damageType, source_type: "ability" });
-    if (result?.targetDied === true) this.deps.onTargetKilled(tick);
-    return result !== null;
   }
 }
