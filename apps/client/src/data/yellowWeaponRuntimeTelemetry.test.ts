@@ -55,8 +55,12 @@ function round(value: number): number {
   return Number(value.toFixed(1));
 }
 
+function dps(damage: number, seconds: number): number {
+  return Number((damage / Math.max(0.001, seconds)).toFixed(2));
+}
+
 describe("Yellow weapon runtime telemetry", () => {
-  it("splits actual outgoing damage into AA / Q / W / ultimate on Yellow S10", () => {
+  it("splits actual outgoing DPS into AA / Q / W / ultimate on Yellow S10", () => {
     const originalProcessDamage = DamageManager.prototype.processDamage;
     const originalUseWeaponAbility = CombatRuntime.prototype.useWeaponAbility;
     let activeSources: SourceBuckets | undefined;
@@ -131,14 +135,16 @@ describe("Yellow weapon runtime telemetry", () => {
         const bySlot = activeSlotBuckets.get(player.source) ?? new Map<number, DamageBucket>();
         const slots = abilities.map((ability, slot) => {
           const bucket = bySlot.get(slot) ?? emptyBucket();
+          const damage = round(bucket.finalDamage);
           return {
             key: slot === 0 ? "Q" : slot === 1 ? "W" : "ULT",
             abilityId: ability.id,
             slot,
             casts: activeCasts?.[slot] ?? 0,
             hits: bucket.hits,
-            damage: round(bucket.finalDamage),
+            damage,
             damagePerCast: round(bucket.finalDamage / Math.max(1, activeCasts?.[slot] ?? 0)),
+            dps: dps(bucket.finalDamage, result.seconds),
           };
         });
         const auto = player.buckets.auto_attack;
@@ -158,37 +164,40 @@ describe("Yellow weapon runtime telemetry", () => {
           potions: result.potionsUsed,
           playerSource: player.source,
           distinctTargets: player.distinctTargets,
-          actualDps: Number((totalFinalDamage / Math.max(0.001, result.seconds)).toFixed(2)),
+          actualDps: dps(totalFinalDamage, result.seconds),
           aaHits: auto.hits,
           aaDamage: round(auto.finalDamage),
+          aaDps: dps(auto.finalDamage, result.seconds),
           q: q ?? null,
           w: w ?? null,
           ult: ult ?? null,
           effectHits: effect.hits,
           effectDamage: round(effect.finalDamage),
+          effectDps: dps(effect.finalDamage, result.seconds),
           directAbilityDamage: round(ability.finalDamage),
           totalDamage: round(totalFinalDamage),
           slots,
         };
       }));
 
-      console.table(rows.map(({ checkpoint, weapon, clear, actualDps, aaDamage, q, w, ult, effectDamage }) => ({
+      console.table(rows.map(({ checkpoint, weapon, clear, actualDps, aaDps, q, w, ult, effectDps }) => ({
         checkpoint,
         weapon,
         clear,
-        actualDps,
-        AA: aaDamage,
-        Q: q?.damage ?? 0,
-        W: w?.damage ?? 0,
-        ULT: ult?.damage ?? 0,
-        Effect: effectDamage,
+        totalDps: actualDps,
+        aaDps,
+        qDps: q?.dps ?? 0,
+        wDps: w?.dps ?? 0,
+        ultDps: ult?.dps ?? 0,
+        effectDps,
       })));
-      console.log("[YELLOW_WEAPON_RUNTIME_SLOT_TELEMETRY]", JSON.stringify(rows, null, 2));
+      console.log("[YELLOW_WEAPON_RUNTIME_SLOT_DPS]", JSON.stringify(rows, null, 2));
 
       expect(rows).toHaveLength(CASES.length * WEAPONS.length);
       expect(rows.every((row) => row.distinctTargets >= 1)).toBe(true);
       expect(rows.every((row) => row.actualDps > 0)).toBe(true);
-      expect(rows.every((row) => round(row.slots.reduce((sum, slot) => sum + slot.damage, 0)) === row.directAbilityDamage)).toBe(true);
+      // Diagnostic consistency only: tolerate independent display rounding of slot totals.
+      expect(rows.every((row) => Math.abs(row.slots.reduce((sum, slot) => sum + slot.damage, 0) - row.directAbilityDamage) <= 0.2)).toBe(true);
     } finally {
       DamageManager.prototype.processDamage = originalProcessDamage;
       CombatRuntime.prototype.useWeaponAbility = originalUseWeaponAbility;
