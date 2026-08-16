@@ -7,6 +7,7 @@ import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
 import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
 import { markCombatStartBlocked } from "./CombatStartGuard.js";
+import { canUseActiveAbility } from "./combatActionControl.js";
 import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
 
 type EnemySnapshot = NonNullable<CombatDomainTickResult["activeEnemy"]>;
@@ -49,6 +50,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
       definition === undefined
       || getWeaponAbilityMechanics(definition.id) === undefined
       || !this.runtimeDeps.damageManager.isAlive(target)
+      || !canUseActiveAbility(this.runtimeDeps.effectManager, this.runtimeDeps.heroId)
     ) return false;
     if (
       this.inTick
