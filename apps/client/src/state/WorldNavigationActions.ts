@@ -63,7 +63,6 @@ export class WorldNavigationActions {
     const loopState = this.deps.combatRuntime.getLoopState();
     if (this.canTravelImmediately(loopState)) {
       if (!this.deps.worldRuntime.selectSegment(segmentNumber)) return false;
-      if (loopState === "defeat") this.deps.bridge.clearEnemyPresentation();
       this.deps.updateWorldBridge();
       return true;
     }
@@ -94,7 +93,6 @@ export class WorldNavigationActions {
         // consumes/clears the queued fields while preserving the inactive combat state.
         this.deps.worldRuntime.changeActiveZone(zoneNumber - 1, targetSegment - 1);
       }
-      if (loopState === "defeat") this.deps.bridge.clearEnemyPresentation();
     }
 
     this.deps.updateWorldBridge();
@@ -103,12 +101,7 @@ export class WorldNavigationActions {
 
   public resumeExploration(): boolean {
     const resumed = this.deps.combatRuntime.resumeExploration();
-    if (resumed) {
-      // Bridge cleanup is presentation output only. The actual defeat/resume
-      // decision already happened inside CombatRuntime.
-      this.deps.bridge.clearEnemyPresentation();
-      this.deps.bridge.setCombatState("walking");
-    }
+    if (resumed) this.deps.bridge.setCombatState("walking");
     return resumed;
   }
 
@@ -154,10 +147,6 @@ export class WorldNavigationActions {
 
   private interruptEncounterForTravel(): void {
     this.deps.combatRuntime.interruptEncounter();
-    // Travel is an authoritative encounter boundary. Clear the bridge in the
-    // same transaction as the runtime interruption so presentation can never
-    // render the previous enemy for a frame while the world location changes.
-    this.deps.bridge.clearEnemyPresentation();
     this.deps.bridge.setCombatState("walking");
   }
 }
