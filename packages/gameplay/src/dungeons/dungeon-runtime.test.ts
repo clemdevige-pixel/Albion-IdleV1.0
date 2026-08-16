@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { World } from "@game/core";
+import { World, createRuntimeServices } from "@game/core";
 import { InventoryManager } from "../inventory/index.js";
 import { DungeonRuntime, type DungeonDefinition } from "./dungeon-runtime.js";
 
@@ -18,9 +18,13 @@ const T4_DUNGEON: DungeonDefinition = {
 };
 
 function setup(keyQuantity = 1) {
-  const world = new World();
+  const world = new World(createRuntimeServices());
   const heroId = world.createEntity();
-  const inventory = new InventoryManager(world, () => ({ maxStack: 999 }));
+  const inventory = new InventoryManager(world, (itemId) => ({
+    itemId,
+    stackable: true,
+    maxStack: 999,
+  }));
   inventory.createInventory(heroId, 12);
   if (keyQuantity > 0) inventory.addQuantity(heroId, T4_DUNGEON.keyItemId, keyQuantity);
   const runtime = new DungeonRuntime([T4_DUNGEON]);
