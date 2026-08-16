@@ -3,9 +3,20 @@ import type { WorldBandId } from "@game/data";
 import { MONSTER_IDS } from "./monsterContentCatalog.js";
 import type { AuthoredEnemyCombatProfile } from "../runtime/combatEntityFactory.js";
 
+export const FACTION_T4_COMBAT_PROFILE_ID = "dungeon_combat_faction_t4";
+
 export const KEEPER_T4_DUNGEON_ID = "dungeon_keeper_t4";
-export const KEEPER_T4_COMBAT_PROFILE_ID = "dungeon_combat_keeper_t4";
+export const HERETIC_T4_DUNGEON_ID = "dungeon_heretic_t4";
+export const UNDEAD_T4_DUNGEON_ID = "dungeon_undead_t4";
+export const MORGANA_T4_DUNGEON_ID = "dungeon_morgana_t4";
+
 export const KEEPER_T4_LOOT_TABLE_ID = "dungeon_loot_keeper_t4";
+export const HERETIC_T4_LOOT_TABLE_ID = "dungeon_loot_heretic_t4";
+export const UNDEAD_T4_LOOT_TABLE_ID = "dungeon_loot_undead_t4";
+export const MORGANA_T4_LOOT_TABLE_ID = "dungeon_loot_morgana_t4";
+
+/** @deprecated T4 faction dungeons now share one authored combat profile. */
+export const KEEPER_T4_COMBAT_PROFILE_ID = FACTION_T4_COMBAT_PROFILE_ID;
 
 interface DungeonCombatProfileStep {
   readonly sourceSegmentIndex: number;
@@ -22,8 +33,13 @@ interface DungeonCombatProfileDefinition {
   readonly steps: readonly DungeonCombatProfileStep[];
 }
 
-const KEEPER_T4_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: KEEPER_T4_COMBAT_PROFILE_ID,
+/**
+ * Shared T4 faction-dungeon pressure curve.
+ * Monster families/abilities provide encounter identity; the progression
+ * envelope stays common so new factions do not duplicate balance numbers.
+ */
+const FACTION_T4_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
+  id: FACTION_T4_COMBAT_PROFILE_ID,
   bandId: "blue",
   sourceZoneIndexWithinBand: 4,
   steps: [
@@ -36,7 +52,7 @@ const KEEPER_T4_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
 };
 
 const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefinition>> = {
-  [KEEPER_T4_COMBAT_PROFILE.id]: KEEPER_T4_COMBAT_PROFILE,
+  [FACTION_T4_COMBAT_PROFILE.id]: FACTION_T4_COMBAT_PROFILE,
 };
 
 export const KEEPER_T4_DUNGEON: DungeonDefinition = {
@@ -44,7 +60,7 @@ export const KEEPER_T4_DUNGEON: DungeonDefinition = {
   tier: 4,
   faction: "Keeper",
   keyItemId: "item_resource_dungeon_key_keeper",
-  combatProfileId: KEEPER_T4_COMBAT_PROFILE_ID,
+  combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: KEEPER_T4_LOOT_TABLE_ID,
   encounters: [
     { id: "keeper_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.keeperWarrior },
@@ -55,7 +71,60 @@ export const KEEPER_T4_DUNGEON: DungeonDefinition = {
   ],
 };
 
-export const DUNGEON_DEFINITIONS = [KEEPER_T4_DUNGEON] as const;
+export const HERETIC_T4_DUNGEON: DungeonDefinition = {
+  id: HERETIC_T4_DUNGEON_ID,
+  tier: 4,
+  faction: "Heretic",
+  keyItemId: "item_resource_dungeon_key_heretic",
+  combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
+  lootTableId: HERETIC_T4_LOOT_TABLE_ID,
+  encounters: [
+    { id: "heretic_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticScavenger },
+    { id: "heretic_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticBerserker },
+    { id: "heretic_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.hereticPyromaniac },
+    { id: "heretic_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticBombardier },
+    { id: "heretic_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.hereticWarlord },
+  ],
+};
+
+export const UNDEAD_T4_DUNGEON: DungeonDefinition = {
+  id: UNDEAD_T4_DUNGEON_ID,
+  tier: 4,
+  faction: "Undead",
+  keyItemId: "item_resource_dungeon_key_undead",
+  combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
+  lootTableId: UNDEAD_T4_LOOT_TABLE_ID,
+  encounters: [
+    { id: "undead_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadSkeleton },
+    { id: "undead_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadGhoul },
+    { id: "undead_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.undeadChampion },
+    { id: "undead_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadNecromancer },
+    { id: "undead_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.undeadLich },
+  ],
+};
+
+export const MORGANA_T4_DUNGEON: DungeonDefinition = {
+  id: MORGANA_T4_DUNGEON_ID,
+  tier: 4,
+  faction: "Morgana",
+  keyItemId: "item_resource_dungeon_key_morgana",
+  combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
+  lootTableId: MORGANA_T4_LOOT_TABLE_ID,
+  encounters: [
+    { id: "morgana_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaCultist },
+    { id: "morgana_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaAssassin },
+    { id: "morgana_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.morganaKnight },
+    { id: "morgana_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaDarkMage },
+    { id: "morgana_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.morganaDemonPrince },
+  ],
+};
+
+export const DUNGEON_DEFINITIONS = [
+  KEEPER_T4_DUNGEON,
+  HERETIC_T4_DUNGEON,
+  UNDEAD_T4_DUNGEON,
+  MORGANA_T4_DUNGEON,
+] as const;
 
 const DUNGEON_DEFINITION_BY_ID: Readonly<Record<string, DungeonDefinition>> = Object.fromEntries(
   DUNGEON_DEFINITIONS.map((definition) => [definition.id, definition]),
