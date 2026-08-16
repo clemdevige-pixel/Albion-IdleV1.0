@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { ItemInstanceId } from "@game/gameplay";
 import { useGameServices } from "../../../state/GameContext";
-import { syncEquipmentToBridge, syncInventoryToBridge, syncWalletToBridge } from "../../../state/bridgeSync";
+import { syncBankToBridge, syncEquipmentToBridge, syncInventoryToBridge, syncWalletToBridge } from "../../../state/bridgeSync";
 
 const FAILURE_MESSAGES: Readonly<Record<string, string>> = {
   combat_active: "Arrêtez le combat avant d'enchanter un équipement.",
@@ -28,6 +28,7 @@ export function useEnchantActions(): { readonly enchant: (instanceId: string, in
       timestamp: Date.now(),
     });
     syncInventoryToBridge(services.bridge, services.inventoryManager, services.heroId);
+    syncBankToBridge(services.bridge, services.inventoryManager, services.bankId);
     syncEquipmentToBridge(services.bridge, services.equipmentManager, services.heroId);
     syncWalletToBridge(services.bridge, services.currencyService, services.walletId, incomeRate);
     return result.instanceId;
