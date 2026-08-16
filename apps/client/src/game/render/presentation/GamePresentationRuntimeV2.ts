@@ -47,6 +47,19 @@ export class GamePresentationRuntime {
       nextEncounterKey: encounterPresentationKey,
     });
 
+    if (import.meta.env.DEV && transition !== "none") {
+      console.debug("[combat-presentation] transition", {
+        transition,
+        previousCombatState: this.lastCombatState,
+        nextCombatState: bridge.combatState,
+        previousEncounterKey: this.lastEncounterPresentationKey,
+        nextEncounterKey: encounterPresentationKey,
+        enemyName: bridge.enemyName,
+        enemyHealth: bridge.enemyHealth,
+        enemyMaxHealth: bridge.enemyMaxHealth,
+      });
+    }
+
     if (transition === "initialize") {
       if (this.hasAuthoritativeEnemySnapshot(bridge)) {
         resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
