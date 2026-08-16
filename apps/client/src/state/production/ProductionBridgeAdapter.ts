@@ -179,6 +179,6 @@ const GATHERING_UPDATERS = {
 const REFINING_UPDATERS = {
   wood: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateRefining(vm),
   ore: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateMetalRefining(vm),
-  hide: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateHideRefining(vm),
-  fiber: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateFiberRefining(vm),
+  hide: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateLeatherRefining(vm),
+  fiber: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateClothRefining(vm),
 } satisfies Record<ProductionFamilyId, (bridge: GameBridge) => RefiningUpdater>;
