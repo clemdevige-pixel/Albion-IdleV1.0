@@ -2,6 +2,7 @@ import type { EntityId } from "@game/core";
 import type { InventoryManager, ResourceFamily } from "@game/gameplay";
 import type { GameBridge } from "../../game/GameBridge";
 import type { CraftingRuntime } from "../../runtime/CraftingRuntime";
+import { combatStopController } from "../../runtime/CombatStopController";
 import type { GatheringRuntime } from "../../runtime/GatheringRuntime";
 import type { RefiningRuntime } from "../../runtime/RefiningRuntime";
 import { syncInventoryToBridge } from "../bridgeSync";
@@ -35,11 +36,14 @@ export class ProductionActions {
   toggleGathering(family: SupportedProductionFamily): boolean {
     if (this.deps.gatheringRuntime.isHeroGathering()) {
       this.queuedGatheringFamily = null;
-      return this.applyGatheringToggle(family, true);
+      return this.applyGatheringToggle(family);
     }
 
     if (this.deps.bridge.combatState === "combat") {
       this.queuedGatheringFamily = family;
+      if (combatStopController.getState() === "running") {
+        combatStopController.requestStopAfterSegment();
+      }
       this.deps.bridge.addEconomyNotification({
         id: `notif_gather_queue_${String(Date.now())}`,
         type: "success",
@@ -50,14 +54,18 @@ export class ProductionActions {
     }
 
     this.queuedGatheringFamily = null;
-    return this.applyGatheringToggle(family, true);
+    return this.applyGatheringToggle(family);
   }
 
-  startQueuedGatheringAtSegmentBoundary(): boolean {
+  pollQueuedGathering(): void {
     const family = this.queuedGatheringFamily;
-    if (family === null) return false;
+    if (family === null || !combatStopController.isPaused()) return;
+
     this.queuedGatheringFamily = null;
-    return this.applyGatheringToggle(family, false);
+    // Gathering itself suspends combat. Resume the generic stop controller so
+    // returning from gathering does not inherit the temporary segment-stop.
+    combatStopController.resume();
+    this.applyGatheringToggle(family);
   }
 
   returnToCombat(): boolean {
@@ -119,10 +127,7 @@ export class ProductionActions {
     return true;
   }
 
-  private applyGatheringToggle(
-    family: SupportedProductionFamily,
-    prepareCombatResume: boolean,
-  ): boolean {
+  private applyGatheringToggle(family: SupportedProductionFamily): boolean {
     const result = this.toggleGatheringRuntime(family);
 
     if (result.action === "stopped") {
@@ -131,7 +136,7 @@ export class ProductionActions {
       return true;
     }
     if (result.action === "started") {
-      if (prepareCombatResume) this.deps.prepareCombatResumeAfterGathering();
+      this.deps.prepareCombatResumeAfterGathering();
       this.deps.bridge.setCombatState("idle");
       this.deps.productionBridge.syncAllGathering();
       return true;
