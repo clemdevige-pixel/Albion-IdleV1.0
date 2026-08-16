@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
+  DEFAULT_DUNGEON_KEY_BAND_PROGRESSION,
   SEGMENT_LOOT_MULTIPLIERS,
   KEY_FRAGMENTS_PER_KEY,
   getAuthoredRepairCostTiers,
+  getDungeonKeyProgressionWeight,
   getMissingRepairCostDefinitions,
   getSegmentLootMultiplier,
   getEnchantmentShardExpectedDrop,
@@ -19,6 +21,7 @@ const BASE_CONTEXT: CombatLootContext = {
   isFinalBoss: false,
   enchantmentTier: 4,
   enchantmentDropWeight: 1,
+  dungeonKeyDropWeight: 1,
 };
 
 function sequenceRandom(values: readonly number[]): () => number {
@@ -27,7 +30,7 @@ function sequenceRandom(values: readonly number[]): () => number {
 }
 
 describe("combat loot", () => {
-  it("keeps the existing non-enchantment segment progression curve", () => {
+  it("keeps the generic segment progression curve available for other loot families", () => {
     expect(SEGMENT_LOOT_MULTIPLIERS).toEqual([
       1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.35, 1.4, 1.5,
     ]);
@@ -38,6 +41,15 @@ describe("combat loot", () => {
   it("keeps the approved fragment conversion targets", () => {
     expect(KEY_FRAGMENTS_PER_KEY).toBe(50);
     expect(ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE).toBe(200);
+  });
+
+  it("uses an independent progressive key curve inside every world band", () => {
+    expect(DEFAULT_DUNGEON_KEY_BAND_PROGRESSION).toHaveLength(5);
+    expect(getDungeonKeyProgressionWeight("blue", 0, 0)).toBe(0.45);
+    expect(getDungeonKeyProgressionWeight("blue", 4, 9)).toBe(4);
+    expect(getDungeonKeyProgressionWeight("yellow", 0, 0)).toBe(0.45);
+    expect(getDungeonKeyProgressionWeight("yellow", 4, 9)).toBe(4);
+    expect(getDungeonKeyProgressionWeight("orange", 0, 0)).toBe(0.45);
   });
 
   it("drops exactly the shard matching the current world tier", () => {
@@ -89,14 +101,14 @@ describe("combat loot", () => {
     ]);
   });
 
-  it("uses zone advancement to improve dungeon key drop rate", () => {
+  it("uses authored band progression to improve dungeon key drop rate", () => {
     const rolls = [1, 0.025, 1] as const;
     const earlyDrops = rollCombatDrops(
-      BASE_CONTEXT,
+      { ...BASE_CONTEXT, dungeonKeyDropWeight: 0.45 },
       sequenceRandom(rolls),
     );
     const lateDrops = rollCombatDrops(
-      { ...BASE_CONTEXT, segmentIndex: 9 },
+      { ...BASE_CONTEXT, segmentIndex: 9, dungeonKeyDropWeight: 4 },
       sequenceRandom(rolls),
     );
 
