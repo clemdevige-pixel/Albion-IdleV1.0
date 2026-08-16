@@ -4,14 +4,14 @@ import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 
 const REPRESENTATIVE_WEAPONS = {
-  t4: [
+  4: [
     "item_weapon_sword_t4_broadsword",
     "item_weapon_bow_t4_longbow",
     "item_weapon_staff_t4_infernal",
     "item_weapon_gloves_t4_spiked_gauntlets",
     "item_weapon_dagger_t4_pair",
   ],
-  t5: [
+  5: [
     "item_weapon_sword_t5_broadsword",
     "item_weapon_bow_t5_longbow",
     "item_weapon_staff_t5_infernal",
