@@ -33,27 +33,40 @@ describe("production tier content contract", () => {
     }
   });
 
-  it("requires the previous refined tier when refining T5", () => {
+  it("requires the previous refined tier for every authored tier after T3", () => {
     for (const familyId of PRODUCTION_FAMILY_IDS) {
-      const recipe = getProductionRefiningRecipe(familyId, 5);
-      expect(recipe.requirements.some((entry) => entry.itemId.endsWith("_t4"))).toBe(true);
-      expect(recipe.requirements.some((entry) => entry.itemId.endsWith("_t5"))).toBe(true);
+      for (const tier of PRODUCTION_CONTENT_TIERS) {
+        if (tier === 3) continue;
+        const recipe = getProductionRefiningRecipe(familyId, tier);
+        expect(
+          recipe.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier - 1)}`)),
+          `${familyId} T${String(tier)} should consume previous refined tier`,
+        ).toBe(true);
+        expect(
+          recipe.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier)}`)),
+          `${familyId} T${String(tier)} should consume current raw tier`,
+        ).toBe(true);
+      }
     }
   });
 
-  it("exposes a T5 craft recipe for each standard weapon and armor family", () => {
-    const t5Recipes = EQUIPMENT_CRAFT_RECIPES.filter((recipe) => recipe.tier === 5);
-    expect(t5Recipes.map((recipe) => recipe.outputItemId)).toEqual(expect.arrayContaining([
-      "item_weapon_sword_t5_broadsword",
-      "item_weapon_bow_t5_longbow",
-      "item_weapon_staff_t5_infernal",
-      "item_weapon_gloves_t5_spiked_gauntlets",
-      "item_weapon_dagger_t5_pair",
-      "item_shield_t5_reinforced",
-      "item_helmet_t5_reinforced",
-      "item_armor_t5_leather",
-      "item_boots_t5_leather",
+  it("exposes standard weapon and armor recipes for the highest authored tier", () => {
+    const highestAuthoredTier = Math.max(...PRODUCTION_CONTENT_TIERS);
+    const recipes = EQUIPMENT_CRAFT_RECIPES.filter(
+      (recipe) => recipe.tier === highestAuthoredTier,
+    );
+
+    expect(recipes.map((recipe) => recipe.outputItemId)).toEqual(expect.arrayContaining([
+      `item_weapon_sword_t${String(highestAuthoredTier)}_broadsword`,
+      `item_weapon_bow_t${String(highestAuthoredTier)}_longbow`,
+      `item_weapon_staff_t${String(highestAuthoredTier)}_infernal`,
+      `item_weapon_gloves_t${String(highestAuthoredTier)}_spiked_gauntlets`,
+      `item_weapon_dagger_t${String(highestAuthoredTier)}_pair`,
+      `item_shield_t${String(highestAuthoredTier)}_reinforced`,
+      `item_helmet_t${String(highestAuthoredTier)}_reinforced`,
+      `item_armor_t${String(highestAuthoredTier)}_leather`,
+      `item_boots_t${String(highestAuthoredTier)}_leather`,
     ]));
-    expect(t5Recipes).toHaveLength(9);
+    expect(recipes).toHaveLength(9);
   });
 });
