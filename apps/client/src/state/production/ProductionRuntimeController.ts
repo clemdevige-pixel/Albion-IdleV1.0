@@ -123,10 +123,10 @@ export class ProductionRuntimeController {
     foundation.gatheringRuntime.tick(tick);
     foundation.refiningRuntime.tick(tick);
     foundation.workerRuntime.tick(tick);
-    this.#actions.pollQueuedGathering();
   }
 
   toggleGathering(family: ProductionFamily): boolean { return this.#actions.toggleGathering(family); }
+  startQueuedGatheringAtSegmentBoundary(): boolean { return this.#actions.startQueuedGatheringAtSegmentBoundary(); }
   returnToCombat(): boolean { return this.#actions.returnToCombat(); }
 
   performGatheringStrike(family: string, quality: "miss" | "correct" | "perfect"): boolean {
