@@ -67,6 +67,7 @@ export class GameBridge {
   get transactionHistory() { return this.#state.transactionHistory; }
   get economyNotifications() { return this.#state.economyNotifications; }
   get world() { return this.#state.world; }
+  get queuedGatheringFamily(): string | null { return this.#state.queuedGatheringFamily; }
   get gathering() { return this.#state.gathering; }
   get oreGathering() { return this.#state.oreGathering; }
   get hideGathering() { return this.#state.hideGathering; }
@@ -174,6 +175,9 @@ export class GameBridge {
   }
 
   updateWorld(world: WorldVM): void { this.#update({ world }); }
+  updateQueuedGatheringFamily(queuedGatheringFamily: string | null): void {
+    this.#update({ queuedGatheringFamily });
+  }
   updateGathering(gathering: GatheringVM): void { this.#update({ gathering }); }
   updateOreGathering(oreGathering: GatheringVM): void { this.#update({ oreGathering }); }
   updateHideGathering(hideGathering: GatheringVM): void { this.#update({ hideGathering }); }
