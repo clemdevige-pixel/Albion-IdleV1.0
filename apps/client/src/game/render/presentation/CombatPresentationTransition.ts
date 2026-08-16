@@ -28,12 +28,15 @@ export function resolveCombatPresentationTransition(
     && input.previousCombatState !== "combat";
   const leftDefeat = input.previousCombatState === "defeat"
     && input.nextCombatState !== "defeat";
+  const leftCombatForTravel = input.previousCombatState === "combat"
+    && input.nextCombatState === "walking";
   const changedEncounterOutsideCombat = encounterKeyChanged
     && input.nextCombatState !== "combat"
     && input.nextCombatState !== "victory";
 
   if (
     leftDefeat
+    || leftCombatForTravel
     || changedEncounterOutsideCombat
     || (enteredCombat && input.previousCombatState !== "victory")
   ) {
