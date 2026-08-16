@@ -65,7 +65,11 @@ export class DungeonCombatRuntimeRouter {
   }
 
   onVictory(worldVictory: () => CombatVictoryResult): CombatVictoryResult {
-    if (!this.isDungeonActive()) return worldVictory();
+    if (!this.isDungeonActive()) {
+      const result = worldVictory();
+      if (result.enteredNewSegment) this.restoreHealthOnNextWorldEncounter = true;
+      return result;
+    }
     this.restoreHealthOnNextWorldEncounter = true;
     const encounter = this.dungeonRuntime.getActiveEncounter();
     if (encounter === undefined) return { enteredNewSegment: false };
