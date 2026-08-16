@@ -126,7 +126,8 @@ export class CombatBridgeAdapter {
   }
 
   useWeaponAbility(slotIndex: number): boolean {
-    if (this.#bridge.combatState !== "combat") return false;
+    const loopState = this.#combatRuntime.getLoopState();
+    if (loopState !== "combat" && loopState !== "stop_requested") return false;
     const used = this.#combatRuntime.useWeaponAbility(slotIndex);
     this.syncAbilities();
     return used;
