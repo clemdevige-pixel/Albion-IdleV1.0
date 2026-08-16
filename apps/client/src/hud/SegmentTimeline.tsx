@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import { getSegmentRecommendedItemPower } from "../data/itemPower";
 import { calculateProjectedSegmentRates } from "../runtime/projectedRateCalculator";
 import { useGameBridge, useGameServices } from "../state/GameContext";
+import "./SegmentTimeline.css";
 
 function readComputedStat(
   stats: ReturnType<typeof useGameBridge>["stats"],
   id: string,
 ): number {
   return stats.stats.find((entry) => entry.id === id)?.computed ?? 0;
+}
+
+function formatRate(value: number): string {
+  return Math.round(value).toLocaleString("fr-FR");
 }
 
 export function SegmentTimeline(): JSX.Element {
@@ -112,9 +117,14 @@ export function SegmentTimeline(): JSX.Element {
             currentWorldBandId: viewedZone.worldBandId,
             currentSegment: segment - 1,
           });
-          const title = locked
-            ? "Segment verrouillé"
-            : `Aller au segment ${String(segment)}\nSilver/h : ${String(Math.round(rates?.silverPerHour ?? 0))}\nFame/h : ${String(Math.round(rates?.famePerHour ?? 0))}`;
+          const recommendedIp = getSegmentRecommendedItemPower(
+            viewedZone.zoneIndexWithinBand + 1,
+            segment,
+            viewedZone.worldBandId,
+          );
+          const accessibleLabel = locked
+            ? `Segment ${String(segment)} verrouillé`
+            : `Aller au segment ${String(segment)}. IP conseillé ${String(recommendedIp)}. Silver par heure ${formatRate(rates?.silverPerHour ?? 0)}. Fame par heure ${formatRate(rates?.famePerHour ?? 0)}.`;
 
           return (
             <div className="segment-timeline__step" key={segment}>
@@ -124,11 +134,32 @@ export function SegmentTimeline(): JSX.Element {
                 type="button"
                 disabled={locked}
                 onClick={() => { selectZone(viewedZone.zoneIndex, segment); }}
-                title={title}
-                aria-label={locked ? `Segment ${segment} verrouillé` : `Aller au segment ${segment}`}
+                aria-label={accessibleLabel}
               >
                 <span aria-hidden="true">{current ? "☠" : ""}</span>
               </button>
+              {!locked && rates !== undefined ? (
+                <div className="segment-timeline__tooltip" role="tooltip">
+                  <strong className="segment-timeline__tooltip-title">Segment {segment}</strong>
+                  <span className="segment-timeline__tooltip-ip">IP CONSEILLÉ : {recommendedIp}</span>
+                  <span className="segment-timeline__tooltip-divider" />
+                  <span className="segment-timeline__tooltip-rate">
+                    <span className="segment-timeline__tooltip-icon" aria-hidden="true">◉</span>
+                    <span>Silver/h</span>
+                    <b>{formatRate(rates.silverPerHour)}</b>
+                  </span>
+                  <span className="segment-timeline__tooltip-rate">
+                    <span className="segment-timeline__tooltip-icon segment-timeline__tooltip-icon--fame" aria-hidden="true">★</span>
+                    <span>Fame/h</span>
+                    <b>{formatRate(rates.famePerHour)}</b>
+                  </span>
+                  <span className="segment-timeline__tooltip-divider" />
+                  <span className="segment-timeline__tooltip-action">
+                    <span aria-hidden="true">▣</span>
+                    Cliquer pour aller à ce segment
+                  </span>
+                </div>
+              ) : null}
               <span className="segment-timeline__number">{segment}</span>
             </div>
           );
