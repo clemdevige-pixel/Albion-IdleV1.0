@@ -39,11 +39,7 @@ export class GamePresentationRuntime {
     const bridge = this.getBridge();
     if (bridge === undefined) return;
 
-    const encounterPresentationKey = [
-      bridge.world.zoneDefId,
-      bridge.world.segmentIndex,
-      bridge.world.encounterIndex,
-    ].join(":");
+    const encounterPresentationKey = bridge.enemyEncounterKey;
     const transition = resolveCombatPresentationTransition({
       previousCombatState: this.lastCombatState,
       nextCombatState: bridge.combatState,
@@ -52,19 +48,28 @@ export class GamePresentationRuntime {
     });
 
     if (transition === "initialize") {
-      resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      if (this.hasAuthoritativeEnemySnapshot(bridge)) {
+        resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      } else {
+        clearPresentedEnemyHealth();
+      }
       this.lastEncounterPresentationKey = encounterPresentationKey;
     } else if (transition === "hard_reset") {
       // Defeat/resume, pause/resume and explicit travel are hard encounter
-      // boundaries. There is no killing impact to preserve.
+      // boundaries. Clear the old encounter immediately, but never seed the
+      // next health bar from stale bridge values while no new combat snapshot
+      // has been published yet.
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
       this.combat?.invalidateEncounterPresentation();
-      resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      if (bridge.combatState === "combat" && this.hasAuthoritativeEnemySnapshot(bridge)) {
+        resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      }
       this.lastEncounterPresentationKey = encounterPresentationKey;
     } else if (transition === "victory_handoff") {
-      // Victory progression is presentation-asynchronous: the domain can expose
-      // the next encounter before the killing impact has finished visually.
+      // Victory progression is presentation-asynchronous. The new enemy snapshot
+      // is already atomic, but the controller intentionally keeps presenting the
+      // defeated enemy until its killing impact has finished.
       this.lastEncounterPresentationKey = encounterPresentationKey;
     }
 
@@ -85,5 +90,12 @@ export class GamePresentationRuntime {
     this.world = undefined;
     this.lastEncounterPresentationKey = undefined;
     this.lastCombatState = undefined;
+  }
+
+  private hasAuthoritativeEnemySnapshot(bridge: GameBridge): boolean {
+    return bridge.enemyEncounterKey.length > 0
+      && bridge.enemyName.length > 0
+      && bridge.enemyVisualManifestId.length > 0
+      && bridge.enemyMaxHealth > 0;
   }
 }
