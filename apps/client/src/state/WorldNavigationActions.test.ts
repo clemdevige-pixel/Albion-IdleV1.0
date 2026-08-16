@@ -84,13 +84,14 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
-  it("applies a segment selection immediately after defeat", () => {
+  it("applies a segment selection immediately after defeat and clears the stale enemy presentation", () => {
     const harness = createHarness({ combatState: "defeat" });
 
     expect(harness.actions.selectSegment(2)).toBe(true);
     expect(harness.worldRuntime.selectSegment).toHaveBeenCalledWith(2);
     expect(harness.worldRuntime.queueSegmentChange).not.toHaveBeenCalled();
     expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
+    expect(harness.bridge.clearEnemyPresentation).toHaveBeenCalledOnce();
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
@@ -105,13 +106,14 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
-  it("applies same-zone timeline travel immediately after defeat", () => {
+  it("applies same-zone timeline travel immediately after defeat and clears the stale enemy presentation", () => {
     const harness = createHarness({ combatState: "defeat" });
 
     expect(harness.actions.selectZone(1, 4)).toBe(true);
     expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(1, 4);
     expect(harness.worldRuntime.selectSegment).toHaveBeenCalledWith(4);
     expect(harness.worldRuntime.changeActiveZone).not.toHaveBeenCalled();
+    expect(harness.bridge.clearEnemyPresentation).toHaveBeenCalledOnce();
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
@@ -145,6 +147,15 @@ describe("WorldNavigationActions", () => {
     expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
     expect(harness.bridge.setCombatState).not.toHaveBeenCalled();
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
+  it("clears defeated enemy presentation before exploration resumes", () => {
+    const harness = createHarness({ combatState: "defeat", explorationResumed: true });
+
+    expect(harness.actions.resumeExploration()).toBe(true);
+    expect(harness.combatRuntime.resumeExploration).toHaveBeenCalledOnce();
+    expect(harness.bridge.clearEnemyPresentation).toHaveBeenCalledOnce();
+    expect(harness.bridge.setCombatState).toHaveBeenCalledWith("walking");
   });
 
   it("resumes gathering from progression frontier or the selected farm segment", () => {
