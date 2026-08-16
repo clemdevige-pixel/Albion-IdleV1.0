@@ -2,20 +2,23 @@ import { useState } from "react";
 import { GatheringView } from "../production/gathering/GatheringView";
 import { WorldAchievementsView } from "./components/WorldAchievementsView";
 import { WorldBestiaryView } from "./components/WorldBestiaryView";
+import { WorldDungeonsView } from "./components/WorldDungeonsView";
 import { WorldZonesView } from "./components/WorldZonesView";
 import { useWorldActions, useWorldZones } from "./useWorldData";
-import type { WorldTabId } from "./worldModels";
 import "./world.css";
 
-const TABS: readonly { readonly id: WorldTabId; readonly label: string }[] = [
+type WorldModuleTabId = "zones" | "dungeons" | "gathering" | "bestiary" | "achievements";
+
+const TABS: readonly { readonly id: WorldModuleTabId; readonly label: string }[] = [
   { id: "zones", label: "Zones" },
+  { id: "dungeons", label: "Donjons" },
   { id: "gathering", label: "Récolte" },
   { id: "bestiary", label: "Bestiaire" },
   { id: "achievements", label: "Succès" },
 ];
 
 export function WorldModule(): JSX.Element {
-  const [activeTab, setActiveTab] = useState<WorldTabId>("zones");
+  const [activeTab, setActiveTab] = useState<WorldModuleTabId>("zones");
   const zone = useWorldZones();
   const actions = useWorldActions();
 
@@ -32,6 +35,8 @@ export function WorldModule(): JSX.Element {
 
       {activeTab === "zones" ? (
         <WorldZonesView zone={zone} onTravel={actions.travelToSegment} onSetFarmMode={actions.setFarmMode} />
+      ) : activeTab === "dungeons" ? (
+        <WorldDungeonsView />
       ) : activeTab === "gathering" ? (
         <GatheringView />
       ) : activeTab === "bestiary" ? (
