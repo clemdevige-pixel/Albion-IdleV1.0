@@ -76,13 +76,7 @@ export class CombatBridgeAdapter {
         && event.sourceType === "ability"
         ? this.#consumePendingHeroAbilityId()
         : undefined;
-      const encounterKey = target === "enemy"
-        ? [
-            this.#worldRuntime.getActiveZoneDef().defId,
-            this.#worldRuntime.currentSegment + 1,
-            this.#worldRuntime.currentEncounter + 1,
-          ].join(":")
-        : undefined;
+      const encounterKey = target === "enemy" ? this.#getCurrentEncounterKey() : undefined;
       this.#bridge.addDamageNumber(
         event.finalDamage,
         target,
@@ -142,8 +136,13 @@ export class CombatBridgeAdapter {
 
   presentInitialCombat(result: CombatDomainTickResult): void {
     if (result.activeEnemy !== undefined) {
-      this.#bridge.setEnemyPresentation(result.activeEnemy.name, result.activeEnemy.visualManifestId);
-      this.#bridge.updateEnemyHealth(result.activeEnemy.currentHealth, result.activeEnemy.maxHealth);
+      this.#bridge.setEnemySnapshot({
+        encounterKey: this.#getCurrentEncounterKey(),
+        name: result.activeEnemy.name,
+        visualManifestId: result.activeEnemy.visualManifestId,
+        currentHealth: result.activeEnemy.currentHealth,
+        maxHealth: result.activeEnemy.maxHealth,
+      });
     }
     if (result.playerHealth !== undefined) {
       this.#bridge.updatePlayerHealth(result.playerHealth.currentHealth, result.playerHealth.maxHealth);
@@ -156,8 +155,13 @@ export class CombatBridgeAdapter {
   presentTick(result: CombatDomainTickResult): void {
     if (result.spawnedEnemy !== undefined) {
       const health = this.#damageManager.getHealth(result.spawnedEnemy.id);
-      this.#bridge.updateEnemyHealth(health.currentHealth, health.maxHealth);
-      this.#bridge.setEnemyPresentation(result.spawnedEnemy.name, result.spawnedEnemy.visualManifestId);
+      this.#bridge.setEnemySnapshot({
+        encounterKey: this.#getCurrentEncounterKey(),
+        name: result.spawnedEnemy.name,
+        visualManifestId: result.spawnedEnemy.visualManifestId,
+        currentHealth: health.currentHealth,
+        maxHealth: health.maxHealth,
+      });
       this.#updateWorldBridge();
     } else if (result.activeEnemy !== undefined && result.activeEnemy.id !== 0) {
       this.#bridge.updateEnemyHealth(result.activeEnemy.currentHealth, result.activeEnemy.maxHealth);
@@ -200,6 +204,14 @@ export class CombatBridgeAdapter {
     const abilityId = this.#pendingHeroAbilityId;
     this.#pendingHeroAbilityId = undefined;
     return abilityId;
+  }
+
+  #getCurrentEncounterKey(): string {
+    return [
+      this.#worldRuntime.getActiveZoneDef().defId,
+      this.#worldRuntime.currentSegment + 1,
+      this.#worldRuntime.currentEncounter + 1,
+    ].join(":");
   }
 
   #getEquippedWeaponId(): string | undefined {
