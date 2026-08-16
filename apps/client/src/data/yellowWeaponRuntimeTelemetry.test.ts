@@ -27,6 +27,7 @@ const CASES = [
 type SourceType = DamageRequest["source_type"];
 type DamageBucket = { hits: number; rawDamage: number; finalDamage: number; targets: Set<number> };
 type SourceBuckets = Map<number, Record<SourceType, DamageBucket>>;
+type AbilitySlotBuckets = Map<number, Map<number, DamageBucket>>;
 
 function emptyBucket(): DamageBucket {
   return { hits: 0, rawDamage: 0, finalDamage: 0, targets: new Set<number>() };
@@ -50,12 +51,18 @@ function summarizePlayerSource(sourceBuckets: SourceBuckets) {
   return ranked[0];
 }
 
+function round(value: number): number {
+  return Number(value.toFixed(1));
+}
+
 describe("Yellow weapon runtime telemetry", () => {
-  it("compares actual player casts and outgoing damage sources on Yellow S10", () => {
+  it("splits actual outgoing damage into AA / Q / W / ultimate on Yellow S10", () => {
     const originalProcessDamage = DamageManager.prototype.processDamage;
     const originalUseWeaponAbility = CombatRuntime.prototype.useWeaponAbility;
     let activeSources: SourceBuckets | undefined;
+    let activeSlotBuckets: AbilitySlotBuckets | undefined;
     let activeCasts: number[] | undefined;
+    let activeAbilitySlot: number | undefined;
 
     DamageManager.prototype.processDamage = function patchedProcessDamage(request: DamageRequest): DamageResult | null {
       const result = originalProcessDamage.call(this, request);
@@ -71,19 +78,42 @@ describe("Yellow weapon runtime telemetry", () => {
         bucket.rawDamage += result.rawDamage;
         bucket.finalDamage += result.finalDamage;
         bucket.targets.add(Number(request.target));
+
+        if (request.source_type === "ability" && activeAbilitySlot !== undefined && activeSlotBuckets !== undefined) {
+          let bySlot = activeSlotBuckets.get(source);
+          if (bySlot === undefined) {
+            bySlot = new Map();
+            activeSlotBuckets.set(source, bySlot);
+          }
+          let slotBucket = bySlot.get(activeAbilitySlot);
+          if (slotBucket === undefined) {
+            slotBucket = emptyBucket();
+            bySlot.set(activeAbilitySlot, slotBucket);
+          }
+          slotBucket.hits += 1;
+          slotBucket.rawDamage += result.rawDamage;
+          slotBucket.finalDamage += result.finalDamage;
+          slotBucket.targets.add(Number(request.target));
+        }
       }
       return result;
     };
 
     CombatRuntime.prototype.useWeaponAbility = function patchedUseWeaponAbility(slotIndex: number): boolean {
-      const used = originalUseWeaponAbility.call(this, slotIndex);
-      if (used && activeCasts !== undefined) activeCasts[slotIndex] = (activeCasts[slotIndex] ?? 0) + 1;
-      return used;
+      activeAbilitySlot = slotIndex;
+      try {
+        const used = originalUseWeaponAbility.call(this, slotIndex);
+        if (used && activeCasts !== undefined) activeCasts[slotIndex] = (activeCasts[slotIndex] ?? 0) + 1;
+        return used;
+      } finally {
+        activeAbilitySlot = undefined;
+      }
     };
 
     try {
       const rows = CASES.flatMap((probe) => WEAPONS.map((weaponItemId) => {
         activeSources = new Map();
+        activeSlotBuckets = new Map();
         activeCasts = [];
         const result = runCombatRuntimeBenchmark({
           label: probe.id,
@@ -98,11 +128,26 @@ describe("Yellow weapon runtime telemetry", () => {
         const player = summarizePlayerSource(activeSources);
         if (player === undefined) throw new Error(`No outgoing damage source captured for ${weaponItemId}`);
         const abilities = resolveUnlockedWeaponAbilities(weaponItemId, probe.mastery);
-        const casts = abilities.map((ability, slot) => ({ abilityId: ability.id, slot, casts: activeCasts?.[slot] ?? 0 }));
+        const bySlot = activeSlotBuckets.get(player.source) ?? new Map<number, DamageBucket>();
+        const slots = abilities.map((ability, slot) => {
+          const bucket = bySlot.get(slot) ?? emptyBucket();
+          return {
+            key: slot === 0 ? "Q" : slot === 1 ? "W" : "ULT",
+            abilityId: ability.id,
+            slot,
+            casts: activeCasts?.[slot] ?? 0,
+            hits: bucket.hits,
+            damage: round(bucket.finalDamage),
+            damagePerCast: round(bucket.finalDamage / Math.max(1, activeCasts?.[slot] ?? 0)),
+          };
+        });
         const auto = player.buckets.auto_attack;
         const ability = player.buckets.ability;
         const effect = player.buckets.effect;
         const totalFinalDamage = auto.finalDamage + ability.finalDamage + effect.finalDamage + player.buckets.other.finalDamage;
+        const q = slots[0];
+        const w = slots[1];
+        const ult = slots[2];
         return {
           checkpoint: probe.id,
           weapon: weaponItemId.replace("item_weapon_", "").replace("_t5_", " "),
@@ -114,25 +159,36 @@ describe("Yellow weapon runtime telemetry", () => {
           playerSource: player.source,
           distinctTargets: player.distinctTargets,
           actualDps: Number((totalFinalDamage / Math.max(0.001, result.seconds)).toFixed(2)),
-          autoHits: auto.hits,
-          autoDamage: Number(auto.finalDamage.toFixed(1)),
-          abilityHits: ability.hits,
-          abilityDamage: Number(ability.finalDamage.toFixed(1)),
+          aaHits: auto.hits,
+          aaDamage: round(auto.finalDamage),
+          q: q ?? null,
+          w: w ?? null,
+          ult: ult ?? null,
           effectHits: effect.hits,
-          effectDamage: Number(effect.finalDamage.toFixed(1)),
-          abilityDamageSharePct: Number((ability.finalDamage / Math.max(1, totalFinalDamage) * 100).toFixed(1)),
-          casts,
+          effectDamage: round(effect.finalDamage),
+          directAbilityDamage: round(ability.finalDamage),
+          totalDamage: round(totalFinalDamage),
+          slots,
         };
       }));
 
-      console.table(rows.map(({ checkpoint, weapon, clear, actualDps, autoHits, autoDamage, abilityHits, abilityDamage, effectHits, effectDamage, abilityDamageSharePct }) => ({
-        checkpoint, weapon, clear, actualDps, autoHits, autoDamage, abilityHits, abilityDamage, effectHits, effectDamage, abilityDamageSharePct,
+      console.table(rows.map(({ checkpoint, weapon, clear, actualDps, aaDamage, q, w, ult, effectDamage }) => ({
+        checkpoint,
+        weapon,
+        clear,
+        actualDps,
+        AA: aaDamage,
+        Q: q?.damage ?? 0,
+        W: w?.damage ?? 0,
+        ULT: ult?.damage ?? 0,
+        Effect: effectDamage,
       })));
-      console.log("[YELLOW_WEAPON_RUNTIME_TELEMETRY]", JSON.stringify(rows, null, 2));
+      console.log("[YELLOW_WEAPON_RUNTIME_SLOT_TELEMETRY]", JSON.stringify(rows, null, 2));
 
       expect(rows).toHaveLength(CASES.length * WEAPONS.length);
       expect(rows.every((row) => row.distinctTargets >= 1)).toBe(true);
       expect(rows.every((row) => row.actualDps > 0)).toBe(true);
+      expect(rows.every((row) => round(row.slots.reduce((sum, slot) => sum + slot.damage, 0)) === row.directAbilityDamage)).toBe(true);
     } finally {
       DamageManager.prototype.processDamage = originalProcessDamage;
       CombatRuntime.prototype.useWeaponAbility = originalUseWeaponAbility;
