@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import type { GameBridgeState } from "../../../game/GameBridge.js";
 import { DUNGEON_DEFINITIONS } from "../../../data/dungeonContentCatalog.js";
 import { useGameServices } from "../../../state/GameContext.js";
 import { useGameUiSelector } from "../../state/useGameUiSelector.js";
@@ -40,7 +41,7 @@ function sameDungeonPresentation(
 
 export function WorldDungeonsView(): JSX.Element {
   const { startDungeon, abandonDungeon, isDungeonActive } = useGameServices();
-  const selectDungeonPresentation = useCallback((state): DungeonPresentationModel => ({
+  const selectDungeonPresentation = useCallback((state: GameBridgeState): DungeonPresentationModel => ({
     inventory: inventoryQuantities(state.inventory.slots),
     active: isDungeonActive(),
     enemyName: state.enemyName,
