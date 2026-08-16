@@ -46,26 +46,29 @@ export class GamePresentationRuntime {
     const enteredCombat = bridge.combatState === "combat"
       && this.lastCombatState !== undefined
       && this.lastCombatState !== "combat";
+    const enteredCombatFromVictory = enteredCombat && this.lastCombatState === "victory";
     const encounterKeyChanged = this.lastEncounterPresentationKey !== undefined
       && encounterPresentationKey !== this.lastEncounterPresentationKey;
 
     if (this.lastEncounterPresentationKey === undefined) {
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
       this.lastEncounterPresentationKey = encounterPresentationKey;
+    } else if (enteredCombat && !enteredCombatFromVictory) {
+      // Defeat/resume, pause/resume and explicit travel are hard encounter
+      // boundaries. Unlike victory progression there is no killing impact that
+      // needs to finish, so the previous enemy identity must be discarded even
+      // when the world key changed while combat was stopped.
+      const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
+      invalidateCombatPresentation(latestDamageEventId);
+      this.combat?.invalidateEncounterPresentation();
+      resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
+      this.lastEncounterPresentationKey = encounterPresentationKey;
     } else if (encounterKeyChanged) {
       // Normal victory progression is presentation-asynchronous: the domain can
       // already expose the next encounter while the killing melee impact or
-      // projectile is still in flight. Do not invalidate/reset here. The combat
-      // presentation controller owns the visual hand-off and will keep the old
-      // enemy until the killing impact has actually been presented.
+      // projectile is still in flight. Preserve the defeated actor until the
+      // presentation controller completes that hand-off.
       this.lastEncounterPresentationKey = encounterPresentationKey;
-    } else if (enteredCombat) {
-      // Same-key combat restarts (defeat/resume, stop/resume) are different:
-      // there is no previous killing impact to finish, so stale delayed visuals
-      // must still be invalidated before presenting the restarted encounter.
-      const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
-      invalidateCombatPresentation(latestDamageEventId);
-      resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
     }
 
     const gathering = selectActiveGathering(bridge);
