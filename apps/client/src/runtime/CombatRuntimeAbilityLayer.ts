@@ -81,20 +81,6 @@ export class CombatRuntime extends LegacyCombatRuntime {
     super.interruptEncounter();
   }
 
-  override resumeExploration(): boolean {
-    const resumed = super.resumeExploration();
-    if (!resumed) return false;
-
-    // Defeat/resume is a full encounter lifecycle boundary. Force the next
-    // runtime tick through initialize() instead of reusing the previously
-    // initialized ability-layer state after the defeated enemy was destroyed.
-    this.mechanics.clear();
-    this.lastEnemySnapshot = undefined;
-    this.initialized = false;
-    this.weaponBlocked = false;
-    return true;
-  }
-
   override tick(dt: number, tickCounter: number): CombatDomainTickResult {
     this.abilityTick = tickCounter;
 
