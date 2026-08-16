@@ -361,7 +361,8 @@ export class CombatRuntime {
     this.finalizeActiveEnemyDeath(tickCounter);
     const activeSession = this.combatService.getActiveSession();
     if (activeSession?.state === "victory" || activeSession?.state === "defeat") {
-      if (activeSession.state === "victory") {
+      const endedState = activeSession.state;
+      if (endedState === "victory") {
         const locationBeforeVictory = this.ports.getLocationState();
         this.completedVictoryEndedSegment = locationBeforeVictory.encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
         this.ports.onVictory();
@@ -372,11 +373,11 @@ export class CombatRuntime {
       } else {
         this.ports.onDefeat();
         this.awaitingResumeAfterDefeat = true;
-        this.cleanupActiveEnemy();
         this.completedEncounterResult = null;
       }
       this.combatService.endEncounter();
-      return { combatState: activeSession.state };
+      if (endedState === "defeat") this.cleanupActiveEnemy();
+      return { combatState: endedState };
     }
 
     const activeEffects: Array<{ id: string; definitionId: string; effectType: StatusEffectType; remainingDuration: number }> = [];
