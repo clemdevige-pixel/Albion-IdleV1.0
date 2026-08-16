@@ -1,0 +1,149 @@
+import type { EntityId } from "@game/core";
+import type { InventoryManager } from "../inventory/index.js";
+
+export type DungeonEncounterKind = "normal" | "elite" | "boss";
+export type DungeonRunStatus = "active" | "cleared" | "failed" | "abandoned";
+
+export interface DungeonEncounterDefinition {
+  readonly id: string;
+  readonly kind: DungeonEncounterKind;
+  /** Content-owned combat profile / monster reference. The runtime does not interpret it. */
+  readonly encounterId: string;
+  /** Content-owned loot table reference. Loot resolution remains outside this state machine. */
+  readonly lootTableId?: string;
+}
+
+export interface DungeonDefinition {
+  readonly id: string;
+  readonly tier: number;
+  readonly faction: string;
+  readonly keyItemId: string;
+  readonly encounters: readonly DungeonEncounterDefinition[];
+}
+
+export interface DungeonRunState {
+  readonly definitionId: string;
+  readonly status: DungeonRunStatus;
+  readonly encounterIndex: number;
+  readonly completedEncounterIds: readonly string[];
+}
+
+export type DungeonStartFailureReason =
+  | "run_already_active"
+  | "missing_key"
+  | "invalid_definition";
+
+export type DungeonStartResult =
+  | { readonly ok: true; readonly state: DungeonRunState }
+  | { readonly ok: false; readonly reason: DungeonStartFailureReason };
+
+export type DungeonAdvanceFailureReason = "no_active_run" | "encounter_mismatch";
+
+export type DungeonAdvanceResult =
+  | { readonly ok: true; readonly state: DungeonRunState }
+  | { readonly ok: false; readonly reason: DungeonAdvanceFailureReason };
+
+/**
+ * Owns only the deterministic lifecycle of a dungeon attempt.
+ *
+ * Combat, loot rolls, HP, cooldowns and equipment live in their existing
+ * systems. Keeping those systems mounted while a run advances naturally gives
+ * the V1 contract its persistent HP/cooldowns and equipment snapshot semantics
+ * without duplicating combat state here.
+ */
+export class DungeonRuntime {
+  readonly #definitions = new Map<string, DungeonDefinition>();
+  #activeRun: DungeonRunState | undefined;
+
+  constructor(definitions: readonly DungeonDefinition[] = []) {
+    for (const definition of definitions) this.registerDefinition(definition);
+  }
+
+  registerDefinition(definition: DungeonDefinition): void {
+    if (definition.id.length === 0 || definition.keyItemId.length === 0 || definition.encounters.length === 0) {
+      throw new Error("Dungeon definitions require id, keyItemId and at least one encounter");
+    }
+    if (definition.encounters.at(-1)?.kind !== "boss") {
+      throw new Error(`Dungeon ${definition.id} must end with a boss encounter`);
+    }
+    if (new Set(definition.encounters.map((encounter) => encounter.id)).size !== definition.encounters.length) {
+      throw new Error(`Dungeon ${definition.id} contains duplicate encounter ids`);
+    }
+    this.#definitions.set(definition.id, definition);
+  }
+
+  getDefinition(definitionId: string): DungeonDefinition | undefined {
+    return this.#definitions.get(definitionId);
+  }
+
+  get activeRun(): DungeonRunState | undefined {
+    return this.#activeRun;
+  }
+
+  getActiveEncounter(): DungeonEncounterDefinition | undefined {
+    const run = this.#activeRun;
+    if (run === undefined || run.status !== "active") return undefined;
+    return this.#definitions.get(run.definitionId)?.encounters[run.encounterIndex];
+  }
+
+  start(
+    definitionId: string,
+    heroId: EntityId,
+    inventory: InventoryManager,
+  ): DungeonStartResult {
+    if (this.#activeRun?.status === "active") return { ok: false, reason: "run_already_active" };
+    const definition = this.#definitions.get(definitionId);
+    if (definition === undefined) return { ok: false, reason: "invalid_definition" };
+
+    // The key is consumed atomically at entry. No refund occurs on failure or abandon.
+    const consumed = inventory.removeQuantity(heroId, definition.keyItemId, 1);
+    if (!consumed.ok) return { ok: false, reason: "missing_key" };
+
+    const state: DungeonRunState = {
+      definitionId,
+      status: "active",
+      encounterIndex: 0,
+      completedEncounterIds: [],
+    };
+    this.#activeRun = state;
+    return { ok: true, state };
+  }
+
+  completeEncounter(encounterId: string): DungeonAdvanceResult {
+    const run = this.#activeRun;
+    const encounter = this.getActiveEncounter();
+    if (run === undefined || run.status !== "active" || encounter === undefined) {
+      return { ok: false, reason: "no_active_run" };
+    }
+    if (encounter.id !== encounterId) return { ok: false, reason: "encounter_mismatch" };
+
+    const definition = this.#definitions.get(run.definitionId)!;
+    const completedEncounterIds = [...run.completedEncounterIds, encounter.id];
+    const cleared = run.encounterIndex === definition.encounters.length - 1;
+    const state: DungeonRunState = cleared
+      ? { ...run, status: "cleared", completedEncounterIds }
+      : { ...run, encounterIndex: run.encounterIndex + 1, completedEncounterIds };
+    this.#activeRun = state;
+    return { ok: true, state };
+  }
+
+  fail(): DungeonRunState | undefined {
+    return this.#finish("failed");
+  }
+
+  abandon(): DungeonRunState | undefined {
+    return this.#finish("abandoned");
+  }
+
+  clearFinishedRun(): void {
+    if (this.#activeRun?.status !== "active") this.#activeRun = undefined;
+  }
+
+  #finish(status: "failed" | "abandoned"): DungeonRunState | undefined {
+    const run = this.#activeRun;
+    if (run === undefined || run.status !== "active") return run;
+    const state = { ...run, status } as const;
+    this.#activeRun = state;
+    return state;
+  }
+}
