@@ -3,6 +3,7 @@ import { DamageManager, type DamageRequest, type DamageResult } from "@game/game
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { resolveUnlockedWeaponAbilities } from "./weaponContentCatalog.js";
+import { getWeaponAttackSpeed } from "./itemPower.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 
 const WEAPONS = [
@@ -60,7 +61,7 @@ function dps(damage: number, seconds: number): number {
 }
 
 describe("Yellow weapon runtime telemetry", () => {
-  it("splits actual outgoing DPS into AA / Q / W / ultimate on Yellow S10", () => {
+  it("splits actual outgoing DPS and exposes auto-attack cadence on Yellow S10", () => {
     const originalProcessDamage = DamageManager.prototype.processDamage;
     const originalUseWeaponAbility = CombatRuntime.prototype.useWeaponAbility;
     let activeSources: SourceBuckets | undefined;
@@ -154,6 +155,8 @@ describe("Yellow weapon runtime telemetry", () => {
         const q = slots[0];
         const w = slots[1];
         const ult = slots[2];
+        const intrinsicAttackSpeed = getWeaponAttackSpeed(weaponItemId) ?? 0;
+        const observedAaHitsPerSecond = auto.hits / Math.max(0.001, result.seconds);
         return {
           checkpoint: probe.id,
           weapon: weaponItemId.replace("item_weapon_", "").replace("_t5_", " "),
@@ -168,6 +171,13 @@ describe("Yellow weapon runtime telemetry", () => {
           aaHits: auto.hits,
           aaDamage: round(auto.finalDamage),
           aaDps: dps(auto.finalDamage, result.seconds),
+          aaDamagePerHit: round(auto.finalDamage / Math.max(1, auto.hits)),
+          aaRawDamagePerHit: round(auto.rawDamage / Math.max(1, auto.hits)),
+          intrinsicAttackSpeed,
+          observedAaHitsPerSecond: Number(observedAaHitsPerSecond.toFixed(3)),
+          cadenceVsIntrinsicPct: intrinsicAttackSpeed > 0
+            ? Number((observedAaHitsPerSecond / intrinsicAttackSpeed * 100).toFixed(1))
+            : 0,
           q: q ?? null,
           w: w ?? null,
           ult: ult ?? null,
@@ -180,23 +190,22 @@ describe("Yellow weapon runtime telemetry", () => {
         };
       }));
 
-      console.table(rows.map(({ checkpoint, weapon, clear, actualDps, aaDps, q, w, ult, effectDps }) => ({
+      console.table(rows.map(({ checkpoint, weapon, clear, aaDps, aaDamagePerHit, aaRawDamagePerHit, intrinsicAttackSpeed, observedAaHitsPerSecond, cadenceVsIntrinsicPct }) => ({
         checkpoint,
         weapon,
         clear,
-        totalDps: actualDps,
         aaDps,
-        qDps: q?.dps ?? 0,
-        wDps: w?.dps ?? 0,
-        ultDps: ult?.dps ?? 0,
-        effectDps,
+        aaDamagePerHit,
+        aaRawDamagePerHit,
+        intrinsicAttackSpeed,
+        observedAaHitsPerSecond,
+        cadenceVsIntrinsicPct,
       })));
-      console.log("[YELLOW_WEAPON_RUNTIME_SLOT_DPS]", JSON.stringify(rows, null, 2));
+      console.log("[YELLOW_WEAPON_RUNTIME_AA_TELEMETRY]", JSON.stringify(rows, null, 2));
 
       expect(rows).toHaveLength(CASES.length * WEAPONS.length);
       expect(rows.every((row) => row.distinctTargets >= 1)).toBe(true);
       expect(rows.every((row) => row.actualDps > 0)).toBe(true);
-      // Diagnostic consistency only: tolerate independent display rounding of slot totals.
       expect(rows.every((row) => Math.abs(row.slots.reduce((sum, slot) => sum + slot.damage, 0) - row.directAbilityDamage) <= 0.2)).toBe(true);
     } finally {
       DamageManager.prototype.processDamage = originalProcessDamage;
