@@ -49,6 +49,32 @@ describe("DungeonCombatRuntimeRouter", () => {
     expect(dungeonRuntime.getActiveEncounter()?.id).toBe("boss");
   });
 
+  it("heals once when returning to world combat after a dungeon ends", () => {
+    const { router } = setup(true);
+    router.onVictory(() => ({ enteredNewSegment: false }));
+    router.onVictory(() => ({ enteredNewSegment: false }));
+
+    expect(router.isDungeonActive()).toBe(false);
+    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: false,
+      enteringBoss: false,
+    })).toBe(true);
+    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: false,
+      enteringBoss: false,
+    })).toBe(false);
+  });
+
+  it("heals after every completed world segment, including farm-mode repeats", () => {
+    const { router } = setup(false);
+    router.onVictory(() => ({ enteredNewSegment: true }));
+
+    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: false,
+      enteringBoss: false,
+    })).toBe(true);
+  });
+
   it("routes defeat into DungeonRuntime without advancing world progression", () => {
     const { dungeonRuntime, router } = setup(true);
     let worldDefeats = 0;
@@ -63,8 +89,8 @@ describe("DungeonCombatRuntimeRouter", () => {
     let worldDefeats = 0;
     expect(router.onVictory(() => {
       worldVictories += 1;
-      return { enteredNewSegment: true };
-    })).toEqual({ enteredNewSegment: true });
+      return { enteredNewSegment: false };
+    })).toEqual({ enteredNewSegment: false });
     router.onDefeat(() => { worldDefeats += 1; });
     expect(worldVictories).toBe(1);
     expect(worldDefeats).toBe(1);
