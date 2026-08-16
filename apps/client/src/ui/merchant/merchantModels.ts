@@ -1,4 +1,5 @@
 import type {
+  BankVM,
   EquipmentVM,
   GameBridgeState,
   InventoryVM,
@@ -13,6 +14,7 @@ export interface MerchantSnapshot {
   readonly wallet: WalletVM;
   readonly vendor: VendorVM;
   readonly inventory: InventoryVM;
+  readonly bank: BankVM;
   readonly equipment: EquipmentVM;
   readonly repair: RepairVM;
 }
@@ -22,6 +24,7 @@ export function selectMerchantSnapshot(state: GameBridgeState): MerchantSnapshot
     wallet: state.wallet,
     vendor: state.vendor,
     inventory: state.inventory,
+    bank: state.bank,
     equipment: state.equipment,
     repair: state.repair,
   };
