@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getDungeonKeyItemId } from "./dungeonKeyContentCatalog.js";
 import {
   DUNGEON_DEFINITIONS,
   FACTION_T4_COMBAT_PROFILE_ID,
@@ -23,9 +24,12 @@ describe("dungeonContentCatalog", () => {
     for (const dungeon of DUNGEON_DEFINITIONS) {
       expect(dungeon.tier).toBe(4);
       expect(dungeon.combatProfileId).toBe(FACTION_T4_COMBAT_PROFILE_ID);
-      expect(dungeon.keyItemId).toBe(`item_resource_dungeon_key_${dungeon.faction.toLowerCase()}`);
+      expect(dungeon.keyItemId).toBe(getDungeonKeyItemId(4));
       expect(dungeon.encounters.map(({ kind }) => kind)).toEqual(EXPECTED_STRUCTURE);
     }
+    expect(new Set(DUNGEON_DEFINITIONS.map(({ keyItemId }) => keyItemId))).toEqual(
+      new Set([getDungeonKeyItemId(4)]),
+    );
   });
 
   it("resolves every authored faction step through the generic combat profile registry", () => {
