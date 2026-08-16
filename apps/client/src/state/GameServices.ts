@@ -48,6 +48,9 @@ export interface GameServices {
   readonly selectSegment: (segmentNumber: number) => boolean;
   readonly setSegmentFarmMode: (enabled: boolean) => void;
   readonly selectZone: (zoneNumber: number, segmentNumber?: number) => boolean;
+  readonly startDungeon: (definitionId: string) => boolean;
+  readonly abandonDungeon: () => boolean;
+  readonly isDungeonActive: () => boolean;
   readonly returnToCombat: () => boolean;
   readonly toggleGathering: (family: SupportedProductionFamily) => boolean;
   readonly performGatheringStrike: (
