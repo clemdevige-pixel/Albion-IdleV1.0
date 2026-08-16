@@ -1,5 +1,9 @@
 import { getEnchantmentShardItemId } from "@game/gameplay";
 import type { WorldBandId } from "@game/data";
+import {
+  getDungeonKeyFragmentItemId,
+  getDungeonKeyItemId,
+} from "./dungeonKeyContentCatalog.js";
 
 /**
  * Combat loot uses independent rolls. A key fragment, an enchantment shard and
@@ -123,6 +127,8 @@ export interface CombatLootExpectation {
 type CombatLootItemSource =
   | { readonly type: "fixed"; readonly itemId: string }
   | { readonly type: "enchantment_shard" }
+  | { readonly type: "dungeon_key_fragment" }
+  | { readonly type: "dungeon_key" }
   | {
       readonly type: "faction";
       readonly prefix: string;
@@ -158,12 +164,12 @@ export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
   },
   {
     kind: "key_fragment",
-    item: { type: "faction", prefix: "item_resource_key_fragment_" },
+    item: { type: "dungeon_key_fragment" },
     rate: { type: "segment_scaled", baseRate: BASE_COMBAT_DROP_RATES.keyFragment, bossMultiplier: true },
   },
   {
     kind: "key",
-    item: { type: "faction", prefix: "item_resource_dungeon_key_" },
+    item: { type: "dungeon_key" },
     rate: { type: "segment_scaled", baseRate: BASE_COMBAT_DROP_RATES.completeKey, bossMultiplier: true },
   },
   {
@@ -224,6 +230,12 @@ function resolveCombatLootItemId(
   if (source.type === "fixed") return source.itemId;
   if (source.type === "enchantment_shard") {
     return getEnchantmentShardItemId(context.enchantmentTier);
+  }
+  if (source.type === "dungeon_key_fragment") {
+    return getDungeonKeyFragmentItemId(context.enchantmentTier);
+  }
+  if (source.type === "dungeon_key") {
+    return getDungeonKeyItemId(context.enchantmentTier);
   }
   return `${source.prefix}${normalizeFactionId(context.faction)}`;
 }
