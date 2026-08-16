@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getCombatLootExpectations } from "./economyContentCatalog";
+import {
+  getCombatLootExpectations,
+  getDungeonKeyProgressionWeight,
+} from "./economyContentCatalog";
 import {
   MONSTER_DEFINITIONS,
   applyMonsterRewardModifiers,
@@ -16,6 +19,7 @@ describe("monster reward contract", () => {
       isFinalBoss: false,
       enchantmentTier: 4,
       enchantmentDropWeight: 1,
+      dungeonKeyDropWeight: getDungeonKeyProgressionWeight("blue", 0, 0),
     });
     const bossLoot = getCombatLootExpectations({
       segmentIndex: 9,
@@ -25,6 +29,7 @@ describe("monster reward contract", () => {
       isFinalBoss: true,
       enchantmentTier: 4,
       enchantmentDropWeight: 2,
+      dungeonKeyDropWeight: getDungeonKeyProgressionWeight("blue", 4, 9),
     });
 
     expect(normalLoot.length).toBeGreaterThan(0);
