@@ -5,6 +5,7 @@ import type { EventBus, EntityId } from "@game/core";
 import type {
   CombatOrchestrator,
   CurrencyService,
+  DungeonRunState,
   EconomyTransactionService,
   EnchantmentService,
   EquipmentManager,
@@ -18,6 +19,11 @@ import type {
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
 
 export type UIEventMap = Record<string, unknown>;
+
+export interface DungeonNavigationVM {
+  readonly activeRun: DungeonRunState | undefined;
+  readonly pendingDefinitionId: string | null;
+}
 
 export interface GameServices {
   readonly eventBus: EventBus<UIEventMap>;
@@ -51,6 +57,7 @@ export interface GameServices {
   readonly startDungeon: (definitionId: string) => boolean;
   readonly abandonDungeon: () => boolean;
   readonly isDungeonActive: () => boolean;
+  readonly getDungeonState: () => DungeonNavigationVM;
   readonly returnToCombat: () => boolean;
   readonly toggleGathering: (family: SupportedProductionFamily) => boolean;
   readonly performGatheringStrike: (
