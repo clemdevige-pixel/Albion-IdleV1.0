@@ -19,19 +19,32 @@ const FAILURE_MESSAGES: Readonly<Record<string, string>> = {
   inventory_full: "Inventaire plein.",
 };
 
+const SOURCE_LABELS = {
+  equipped: "Équipé",
+  inventory: "Inventaire",
+  bank: "Banque",
+} as const;
+
 export function EnchantView(): JSX.Element {
   const [requestedInstanceId, setRequestedInstanceId] = useState<string | null>(null);
-  const model = useEnchantData(requestedInstanceId);
+  const [selectedTier, setSelectedTier] = useState<number | null>(null);
+  const model = useEnchantData(requestedInstanceId, selectedTier);
   const actions = useEnchantActions();
   return (
     <div className="ui-merchant-service ui-merchant-enchant">
       <section className="ui-merchant-enchant__stocks" aria-label="Stocks d’enchantement">
         {model.stocks.map((stock) => <div key={stock.itemId}><ItemVisual itemId={stock.itemId} /><span>{stock.name}</span><strong>{String(stock.quantity)}</strong></div>)}
       </section>
+      <section className="ui-merchant-enchant__tier-filter" aria-label="Filtrer les équipements par tier">
+        <button type="button" className={selectedTier === null ? "is-active" : ""} onClick={() => { setSelectedTier(null); setRequestedInstanceId(null); }}>Tous</button>
+        {model.availableTiers.map((tier) => (
+          <button type="button" key={tier} className={selectedTier === tier ? "is-active" : ""} onClick={() => { setSelectedTier(tier); setRequestedInstanceId(null); }}>T{String(tier)}</button>
+        ))}
+      </section>
       {model.items.length === 0 ? <p className="ui-merchant__empty">Aucun équipement compatible disponible.</p> : (
         <>
           <section className="ui-merchant-list" aria-label="Équipements à enchanter">
-            <div className="ui-merchant-section-title"><span>Équipements</span><small>Inventaire et équipés</small></div>
+            <div className="ui-merchant-section-title"><span>Équipements</span><small>Inventaire, banque et équipés</small></div>
             {model.items.map((item) => {
               const definition = getItemDefinition(item.itemId);
               return (
@@ -39,7 +52,7 @@ export function EnchantView(): JSX.Element {
                   <ItemHoverTooltip itemId={item.itemId} quantity={1} instanceId={item.instanceId}><span className="ui-merchant-item-row__visual"><ItemVisual itemId={item.itemId} /></span></ItemHoverTooltip>
                   <span className="ui-merchant-item-row__identity">
                     <strong>{getItemDisplayName(item.itemId)}</strong>
-                    <small className={getEnchantmentTextClass(item.enchantment).trim()}>T{String(definition?.tier ?? "?")}.{String(item.enchantment)}{item.equipped ? " · Équipé" : ""}</small>
+                    <small className={getEnchantmentTextClass(item.enchantment).trim()}>T{String(definition?.tier ?? "?")}.{String(item.enchantment)} · {SOURCE_LABELS[item.source]}</small>
                   </span>
                   <b className={getEnchantmentTextClass(item.enchantment).trim()}>.{String(item.enchantment)}</b>
                 </button>
