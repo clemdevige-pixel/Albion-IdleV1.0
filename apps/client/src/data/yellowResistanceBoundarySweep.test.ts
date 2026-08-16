@@ -46,39 +46,41 @@ function equipmentFor(weaponItemId: string): readonly string[] {
 
 describe("Yellow resistance and potion boundary sweep", () => {
   it("measures S10 physical/magical pressure with and without health potions", () => {
-    const rows = CASES.flatMap((probe) => probe.enchantments.flatMap((enchantment) => [false, true].map((useHealthPotions) => {
-      const weaponResults = WEAPONS.map((weaponItemId) => {
-        const result = runCombatRuntimeBenchmark({
-          label: `${probe.zone}_s10_t5_${String(enchantment)}_${useHealthPotions ? "potions" : "no_potions"}`,
-          weaponItemId,
-          zoneDefId: WORLD_ZONE_IDS[probe.zone],
-          segmentIndex: 9,
-          equipmentItemIds: equipmentFor(weaponItemId),
-          masteryLevel: probe.mastery,
-          enchantment,
-          useHealthPotions,
+    const rows = CASES.flatMap((probe) => probe.enchantments.flatMap((enchantment) =>
+      [false, true].map((useHealthPotions) => {
+        const weaponResults = WEAPONS.map((weaponItemId) => {
+          const result = runCombatRuntimeBenchmark({
+            label: `${probe.zone}_s10_t5_${String(enchantment)}_${useHealthPotions ? "potions" : "no_potions"}`,
+            weaponItemId,
+            zoneDefId: WORLD_ZONE_IDS[probe.zone],
+            segmentIndex: 9,
+            equipmentItemIds: equipmentFor(weaponItemId),
+            masteryLevel: probe.mastery,
+            enchantment,
+            useHealthPotions,
+          });
+          return {
+            weapon: weaponItemId.replace("item_weapon_", "").replace("_t5_", " "),
+            clear: result.clear,
+            hpPercent: result.hpPercent,
+            encounters: result.encounterReached,
+            potionsUsed: result.potionsUsed,
+            hp: result.maxHealth,
+            armor: result.armor,
+            magicResistance: result.magicResistance,
+          };
         });
-        return {
-          weapon: weaponItemId.replace("item_weapon_", "").replace("_t5_", " "),
-          clear: result.clear,
-          hpPercent: result.hpPercent,
-          encounters: result.encounterReached,
-          potionsUsed: result.potionsUsed,
-          hp: result.maxHealth,
-          armor: result.armor,
-          magicResistance: result.magicResistance,
-        };
-      });
 
-      return {
-        zone: probe.zone,
-        enchantment,
-        mastery: probe.mastery,
-        potions: useHealthPotions,
-        clearCount: weaponResults.filter((result) => result.clear).length,
-        weapons: weaponResults,
-      };
-    }))));
+        return {
+          zone: probe.zone,
+          enchantment,
+          mastery: probe.mastery,
+          potions: useHealthPotions,
+          clearCount: weaponResults.filter((result) => result.clear).length,
+          weapons: weaponResults,
+        };
+      }),
+    ));
 
     console.table(rows.map(({ zone, enchantment, mastery, potions, clearCount }) => ({
       zone,
