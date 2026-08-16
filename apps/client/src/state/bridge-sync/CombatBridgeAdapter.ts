@@ -76,12 +76,20 @@ export class CombatBridgeAdapter {
         && event.sourceType === "ability"
         ? this.#consumePendingHeroAbilityId()
         : undefined;
+      const encounterKey = target === "enemy"
+        ? [
+            this.#worldRuntime.getActiveZoneDef().defId,
+            this.#worldRuntime.currentSegment + 1,
+            this.#worldRuntime.currentEncounter + 1,
+          ].join(":")
+        : undefined;
       this.#bridge.addDamageNumber(
         event.finalDamage,
         target,
         abilityId,
         event.sourceType,
         event.targetHealthAfter,
+        encounterKey,
       );
     });
 
