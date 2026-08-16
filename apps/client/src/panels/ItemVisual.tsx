@@ -69,11 +69,35 @@ function formatFactionName(factionId: string): string {
     .join(" ");
 }
 
+function getTieredDungeonKeyVisual(itemId: string): SymbolVisualDefinition | undefined {
+  const fragmentMatch = itemId.match(/^item_resource_dungeon_key_fragment_t([4-8])$/);
+  if (fragmentMatch !== null) {
+    return {
+      name: `Fragment de clé de donjon T${fragmentMatch[1]}`,
+      symbol: "⌁",
+      className: "key-fragment",
+    };
+  }
+
+  const keyMatch = itemId.match(/^item_resource_dungeon_key_t([4-8])$/);
+  if (keyMatch !== null) {
+    return {
+      name: `Clé de donjon T${keyMatch[1]}`,
+      symbol: "⚿",
+      className: "dungeon-key",
+    };
+  }
+
+  return undefined;
+}
+
 function getCombatSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
+  const tieredDungeonKey = getTieredDungeonKeyVisual(itemId);
+  if (tieredDungeonKey !== undefined) return tieredDungeonKey;
+
   const definitions = [
     { prefix: "item_resource_artifact_fragment_", label: "Fragment d’artefact", symbol: "◈", className: "artifact-fragment" },
     { prefix: "item_resource_artifact_", label: "Artefact", symbol: "✺", className: "artifact" },
-    { prefix: "item_resource_dungeon_key_", label: "Clé de donjon", symbol: "⚿", className: "dungeon-key" },
     { prefix: "item_resource_key_fragment_", label: "Fragment de clé", symbol: "⌁", className: "key-fragment" },
   ] as const;
   for (const definition of definitions) {
