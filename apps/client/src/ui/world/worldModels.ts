@@ -6,8 +6,8 @@ import {
 } from "../../data/monsterContentCatalog";
 import {
   getCombatLootExpectations,
-  type BlueZoneCombatDropKind,
-  type BlueZoneLootContext,
+  type CombatDropKind,
+  type CombatLootContext,
 } from "../../data/economyContentCatalog";
 import {
   ZONE_DEFINITIONS,
@@ -36,7 +36,7 @@ export interface WorldBandModel {
 
 export interface BestiaryLootRangeModel {
   readonly itemId: string;
-  readonly kind: BlueZoneCombatDropKind;
+  readonly kind: CombatDropKind;
   readonly minimumExpectedQuantity: number;
   readonly maximumExpectedQuantity: number;
 }
@@ -57,7 +57,7 @@ export interface BestiaryEntryModel {
 interface BestiaryEncounterContext {
   readonly monsterId: string;
   readonly bandId: WorldBandId;
-  readonly lootContext: BlueZoneLootContext;
+  readonly lootContext: CombatLootContext;
 }
 
 export const WORLD_BANDS: readonly WorldBandModel[] = WORLD_BAND_DEFINITIONS.map(
