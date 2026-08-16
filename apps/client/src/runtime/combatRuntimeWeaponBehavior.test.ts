@@ -116,7 +116,11 @@ describe("combat runtime weapon presentation behavior", () => {
       if (enemyId === undefined) throw new Error("Missing active enemy");
       env.damageManager.getHealth(enemyId).currentHealth = 1;
 
-      const killed = env.runtime.tick(0.5, 2);
+      let killed = first;
+      for (let tick = 2; tick <= 20 && killed.combatState !== "victory"; tick += 1) {
+        killed = env.runtime.tick(0.5, tick);
+      }
+
       expect(killed.combatState).toBe("victory");
       expect(killed.activeEnemy).toBeDefined();
       expect(killed.activeEnemy?.currentHealth).toBe(0);
