@@ -7,7 +7,6 @@ import {
   type StatsManager,
 } from "@game/gameplay";
 import { isExcessiveAutoCastOverkill } from "../data/combatAutomationPolicy.js";
-import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
 import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
 import { getAbilityHitBaseDamage, resolveAbilityDamageRatio } from "./WeaponAbilityMechanicsRuntime.js";
 
@@ -31,11 +30,6 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
   const health = deps.damageManager.getHealth(deps.targetId);
   if (health.currentHealth <= 0) return true;
 
-  const profile = getWeaponAbilityMechanics(deps.definition.id);
-  // Weapon abilities without authored mechanics are invalid content. Hold the
-  // auto-cast instead of silently estimating legacy metadata that runtime will reject.
-  if (profile === undefined) return true;
-
   const physicalDamage = deps.statsManager.getStat(deps.heroId, PHYSICAL_DAMAGE).computed;
   const magicalDamage = deps.statsManager.getStat(deps.heroId, MAGICAL_DAMAGE).computed;
   const armor = deps.statsManager.getStat(deps.targetId, ARMOR).computed;
@@ -46,7 +40,9 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
     deps.effectManager.getActiveEffects(deps.targetId).map((effect) => effect.definition.id),
   );
 
-  const damageMechanics = profile.mechanics.filter((mechanic) => mechanic.kind === "damage");
+  const damageMechanics = deps.definition.mechanics.mechanics.filter(
+    (mechanic) => mechanic.kind === "damage",
+  );
   let estimatedImmediateDamage = 0;
 
   for (const mechanic of damageMechanics) {
