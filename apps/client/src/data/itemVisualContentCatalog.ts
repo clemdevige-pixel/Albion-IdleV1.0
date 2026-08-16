@@ -34,15 +34,14 @@ const NON_WEAPON_ICON_BY_FAMILY: Readonly<Record<string, string>> = {
   leather_boots: "item-leather-boots-pixel-v1.png",
 };
 
-export const PROGRESSION_NON_WEAPON_VISUALS: Readonly<
-  Record<string, CatalogItemVisualDefinition>
-> = Object.fromEntries(
-  PROGRESSION_EQUIPMENT_CONTENT.flatMap((family) => {
-    const icon = NON_WEAPON_ICON_BY_FAMILY[family.familyId];
-    if (icon === undefined) {
-      throw new Error(`Missing item icon for progression equipment family: ${family.familyId}`);
-    }
-    return family.items.map((item) => [
+const progressionNonWeaponVisualEntries: Array<readonly [string, CatalogItemVisualDefinition]> = [];
+for (const family of PROGRESSION_EQUIPMENT_CONTENT) {
+  const icon = NON_WEAPON_ICON_BY_FAMILY[family.familyId];
+  if (icon === undefined) {
+    throw new Error(`Missing item icon for progression equipment family: ${family.familyId}`);
+  }
+  for (const item of family.items) {
+    progressionNonWeaponVisualEntries.push([
       item.itemId,
       {
         name: item.name,
@@ -54,36 +53,41 @@ export const PROGRESSION_NON_WEAPON_VISUALS: Readonly<
           : {}),
         stats: item.stats,
       },
-    ] as const);
-  }),
-);
+    ]);
+  }
+}
+
+export const PROGRESSION_NON_WEAPON_VISUALS: Readonly<
+  Record<string, CatalogItemVisualDefinition>
+> = Object.fromEntries(progressionNonWeaponVisualEntries);
 
 /**
  * Raw/refined resource presentation is projected from the production content
  * itself. T6+ resource visuals therefore arrive automatically when the tier is
  * added to PRODUCTION_CONTENT_TIERS and its family/refining data is authored.
  */
+const productionResourceVisualEntries: Array<readonly [string, CatalogResourceVisualDefinition]> = [];
+for (const familyId of PRODUCTION_FAMILY_IDS) {
+  const family = getProductionFamilyDefinition(familyId);
+  for (const tier of PRODUCTION_CONTENT_TIERS) {
+    const presentation = family.tiers[tier];
+    if (presentation === undefined) {
+      throw new Error(`Missing production presentation for ${familyId} T${String(tier)}`);
+    }
+    const recipe = getProductionRefiningRecipe(familyId, tier);
+    productionResourceVisualEntries.push(
+      [
+        recipe.rawItemId,
+        { name: presentation.resourceName, icon: family.rawIcon },
+      ],
+      [
+        recipe.outputItemId,
+        { name: recipe.name, icon: family.refinedIcon },
+      ],
+    );
+  }
+}
+
 export const PRODUCTION_RESOURCE_VISUALS: Readonly<
   Record<string, CatalogResourceVisualDefinition>
-> = Object.fromEntries(
-  PRODUCTION_FAMILY_IDS.flatMap((familyId) => {
-    const family = getProductionFamilyDefinition(familyId);
-    return PRODUCTION_CONTENT_TIERS.flatMap((tier) => {
-      const presentation = family.tiers[tier];
-      if (presentation === undefined) {
-        throw new Error(`Missing production presentation for ${familyId} T${String(tier)}`);
-      }
-      const recipe = getProductionRefiningRecipe(familyId, tier);
-      return [
-        [
-          recipe.rawItemId,
-          { name: presentation.resourceName, icon: family.rawIcon },
-        ] as const,
-        [
-          recipe.outputItemId,
-          { name: recipe.name, icon: family.refinedIcon },
-        ] as const,
-      ];
-    });
-  }),
-);
+> = Object.fromEntries(productionResourceVisualEntries);
