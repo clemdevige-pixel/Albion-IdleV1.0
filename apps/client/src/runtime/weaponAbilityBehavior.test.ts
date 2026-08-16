@@ -96,6 +96,21 @@ describe("weapon ability live behavior", () => {
     expect(env.damageManager.getHealth(env.enemyId).currentHealth).toBeCloseTo(afterThreeTicks, 5);
   });
 
+  it("keeps Infernal Burn and Cataclysm as independent DoTs", () => {
+    const env = createBehaviorEnvironment(2000);
+    env.mechanics.execute(CLIENT_ABILITIES.ability_fire_fireball, env.enemyId, 1);
+    env.mechanics.execute(CLIENT_ABILITIES.ability_fire_cataclysm, env.enemyId, 1);
+
+    expect(activeEffectIds(env.effectManager, env.enemyId)).toEqual(
+      expect.arrayContaining(["effect_fire_burn", "effect_fire_cataclysm"]),
+    );
+
+    const before = env.damageManager.getHealth(env.enemyId).currentHealth;
+    env.mechanics.tick(1, 2);
+    const after = env.damageManager.getHealth(env.enemyId).currentHealth;
+    expect(before - after).toBeCloseTo(18.4, 5);
+  });
+
   it("Infernal Burn can kill once without waiting for another direct hit", () => {
     const env = createBehaviorEnvironment();
     const fireball = CLIENT_ABILITIES.ability_fire_fireball;
