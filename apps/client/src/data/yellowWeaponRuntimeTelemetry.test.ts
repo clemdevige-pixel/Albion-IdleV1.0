@@ -212,4 +212,79 @@ describe("Yellow weapon runtime telemetry", () => {
       CombatRuntime.prototype.useWeaponAbility = originalUseWeaponAbility;
     }
   });
+
+  it("isolates the AA-only baseline without weapon ability synergies", () => {
+    const originalProcessDamage = DamageManager.prototype.processDamage;
+    const originalUseWeaponAbility = CombatRuntime.prototype.useWeaponAbility;
+    let activeSources: SourceBuckets | undefined;
+
+    DamageManager.prototype.processDamage = function patchedProcessDamage(request: DamageRequest): DamageResult | null {
+      const result = originalProcessDamage.call(this, request);
+      if (activeSources !== undefined && result !== null) {
+        const source = Number(request.source);
+        let buckets = activeSources.get(source);
+        if (buckets === undefined) {
+          buckets = emptySourceBuckets();
+          activeSources.set(source, buckets);
+        }
+        const bucket = buckets[request.source_type];
+        bucket.hits += 1;
+        bucket.rawDamage += result.rawDamage;
+        bucket.finalDamage += result.finalDamage;
+        bucket.targets.add(Number(request.target));
+      }
+      return result;
+    };
+
+    CombatRuntime.prototype.useWeaponAbility = function disableAbilities(_slotIndex: number): boolean {
+      return false;
+    };
+
+    try {
+      const rows = CASES.flatMap((probe) => WEAPONS.map((weaponItemId) => {
+        activeSources = new Map();
+        const result = runCombatRuntimeBenchmark({
+          label: `${probe.id}_aa_only`,
+          weaponItemId,
+          zoneDefId: WORLD_ZONE_IDS[probe.zone],
+          segmentIndex: 9,
+          equipmentItemIds: ARMOR,
+          masteryLevel: probe.mastery,
+          enchantment: probe.enchantment,
+          useHealthPotions: true,
+        });
+        const player = summarizePlayerSource(activeSources);
+        if (player === undefined) throw new Error(`No outgoing damage source captured for ${weaponItemId}`);
+        const auto = player.buckets.auto_attack;
+        const intrinsicAttackSpeed = getWeaponAttackSpeed(weaponItemId) ?? 0;
+        const observedAaHitsPerSecond = auto.hits / Math.max(0.001, result.seconds);
+        return {
+          checkpoint: probe.id,
+          weapon: weaponItemId.replace("item_weapon_", "").replace("_t5_", " "),
+          clear: result.clear,
+          seconds: result.seconds,
+          encounters: result.encounterReached,
+          aaHits: auto.hits,
+          aaDamage: round(auto.finalDamage),
+          aaDps: dps(auto.finalDamage, result.seconds),
+          aaDamagePerHit: round(auto.finalDamage / Math.max(1, auto.hits)),
+          aaRawDamagePerHit: round(auto.rawDamage / Math.max(1, auto.hits)),
+          intrinsicAttackSpeed,
+          observedAaHitsPerSecond: Number(observedAaHitsPerSecond.toFixed(3)),
+          cadenceVsIntrinsicPct: intrinsicAttackSpeed > 0
+            ? Number((observedAaHitsPerSecond / intrinsicAttackSpeed * 100).toFixed(1))
+            : 0,
+        };
+      }));
+
+      console.table(rows);
+      console.log("[YELLOW_WEAPON_AA_ONLY_BASELINE]", JSON.stringify(rows, null, 2));
+
+      expect(rows).toHaveLength(CASES.length * WEAPONS.length);
+      expect(rows.every((row) => row.aaHits > 0)).toBe(true);
+    } finally {
+      DamageManager.prototype.processDamage = originalProcessDamage;
+      CombatRuntime.prototype.useWeaponAbility = originalUseWeaponAbility;
+    }
+  });
 });
