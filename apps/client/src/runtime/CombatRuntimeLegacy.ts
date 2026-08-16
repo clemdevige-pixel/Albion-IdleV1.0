@@ -223,6 +223,22 @@ export class CombatRuntime {
   public setPrimaryAbilityAutoCast(enabled: boolean): void { this.primaryAbilityAutoCast = enabled; }
   public isAwaitingResumeAfterDefeat(): boolean { return this.awaitingResumeAfterDefeat; }
 
+  public restoreAwaitingResumeAfterDefeat(): void {
+    this.cleanupActiveEnemy();
+    this.effectManager.removeAllEffects(this.heroId);
+    this.completedEncounterResult = null;
+    this.completedVictoryLocationChanged = false;
+    this.completedVictoryEndedSegment = false;
+    this.awaitingResumeAfterDefeat = true;
+    const health = this.damageManager.getHealth(this.heroId);
+    health.currentHealth = 0;
+    const heroDeathData = this.world.tryGetComponent(this.heroId, DeathComponent);
+    if (heroDeathData !== undefined) {
+      heroDeathData.isDead = true;
+      heroDeathData.processed = true;
+    }
+  }
+
   public restoreHeroHealth(): void {
     const health = this.damageManager.getHealth(this.heroId);
     this.damageManager.healDamage(this.heroId, health.maxHealth - health.currentHealth);
@@ -352,8 +368,13 @@ export class CombatRuntime {
         const locationAfterVictory = this.ports.getLocationState();
         this.completedVictoryLocationChanged = locationBeforeVictory.zoneIndex !== locationAfterVictory.zoneIndex
           || locationBeforeVictory.segmentIndex !== locationAfterVictory.segmentIndex;
+        this.completedEncounterResult = "victory";
+      } else {
+        this.ports.onDefeat();
+        this.awaitingResumeAfterDefeat = true;
+        this.cleanupActiveEnemy();
+        this.completedEncounterResult = null;
       }
-      this.completedEncounterResult = activeSession.state;
       this.combatService.endEncounter();
       return { combatState: activeSession.state };
     }
