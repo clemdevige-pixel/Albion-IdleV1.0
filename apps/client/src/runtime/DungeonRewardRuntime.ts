@@ -14,13 +14,7 @@ export interface DungeonEncounterRewardResult {
   readonly drops: readonly DungeonRewardDrop[];
 }
 
-/**
- * Resolves only dungeon-specific inventory rewards. Silver, fame, enchantment
- * shards and world keys deliberately remain outside this runtime.
- *
- * Rewards are committed immediately when an encounter is won, so already-won
- * loot naturally survives a later defeat/abandon without any escrow layer.
- */
+/** Resolves only dungeon-specific inventory rewards. */
 export class DungeonRewardRuntime {
   constructor(
     private readonly dungeonRuntime: DungeonRuntime,
@@ -34,7 +28,12 @@ export class DungeonRewardRuntime {
     const encounter = this.dungeonRuntime.getActiveEncounter();
     if (run === undefined || run.status !== "active" || encounter === undefined) return undefined;
 
-    const lootDefinition = getDungeonLootDefinition(run.definitionId);
+    const dungeonDefinition = this.dungeonRuntime.getDefinition(run.definitionId);
+    if (dungeonDefinition === undefined) {
+      throw new Error(`Unknown active dungeon definition: ${run.definitionId}`);
+    }
+
+    const lootDefinition = getDungeonLootDefinition(dungeonDefinition.lootTableId);
     const encounterLoot = lootDefinition.encounters[encounter.kind];
     const drops: DungeonRewardDrop[] = [];
 
