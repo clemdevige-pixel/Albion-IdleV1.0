@@ -127,7 +127,7 @@ const ABILITIES = {
   ),
   glovesShockwave: defineWeaponAbility(
     { id: "ability_gloves_shockwave", name: "Onde percutante", description: "Une onde de choc infligeant des dégâts physiques.", icon: "🥊", category: "active", cooldown: 6, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
-    { mechanics: [{ kind: "damage", ratio: 0.776 }] },
+    { mechanics: [{ kind: "damage", ratio: 1.08 }] },
   ),
   glovesBreakingCombo: defineWeaponAbility(
     { id: "ability_gloves_breaking_combo", name: "Combo fracassant", description: "Une combinaison brutale de plusieurs impacts physiques.", icon: "👊", category: "active", cooldown: 9, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
@@ -139,7 +139,7 @@ const ABILITIES = {
   ),
   daggerDoubleSlash: defineWeaponAbility(
     { id: "ability_dagger_double_slash", name: "Double entaille", description: "Les deux lames frappent la cible en succession rapide.", icon: "🗡️", category: "active", cooldown: 4, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
-    { mechanics: [{ kind: "damage", ratio: 0.435, hits: 2 }] },
+    { mechanics: [{ kind: "damage", ratio: 0.5, hits: 2 }] },
   ),
   daggerFlurry: defineWeaponAbility(
     { id: "ability_dagger_flurry", name: "Rafale de lames", description: "Une rafale de coups ouvre la garde de la cible pour préparer l'assassinat.", icon: "⚔", category: "active", cooldown: 8, castTime: 0, resourceCost: {}, interruptible: false, targetRule: "current_target", damageType: "physical" },
