@@ -7,10 +7,19 @@ import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
 import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
 import { markCombatStartBlocked } from "./CombatStartGuard.js";
+import { combatStopController } from "./CombatStopController.js";
 import { canUseActiveAbility } from "./combatActionControl.js";
 import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
 
 type EnemySnapshot = NonNullable<CombatDomainTickResult["activeEnemy"]>;
+
+export type CombatLoopState =
+  | "combat"
+  | "stop_requested"
+  | "paused"
+  | "defeat"
+  | "suspended"
+  | "idle";
 
 export class CombatRuntime extends LegacyCombatRuntime {
   private readonly mechanics: WeaponAbilityMechanicsRuntime;
@@ -32,6 +41,16 @@ export class CombatRuntime extends LegacyCombatRuntime {
       onTargetKilled: (tick) => { this.finalizeActiveEnemyDeath(tick); },
     });
     this.effects = new WeaponAbilityEffectTracker(runtimeDeps.world, runtimeDeps.effectManager, this.mechanics);
+  }
+
+  public getLoopState(): CombatLoopState {
+    if (this.isAwaitingResumeAfterDefeat()) return "defeat";
+    if (combatStopController.isPaused()) return "paused";
+    if (this.runtimeDeps.ports.isCombatSuspended()) return "suspended";
+    if (this.runtimeDeps.combatService.isInCombat()) {
+      return combatStopController.isStopRequested() ? "stop_requested" : "combat";
+    }
+    return "idle";
   }
 
   override initialize(): CombatDomainTickResult {
@@ -81,6 +100,19 @@ export class CombatRuntime extends LegacyCombatRuntime {
     super.interruptEncounter();
   }
 
+  override resumeExploration(): boolean {
+    const resumed = super.resumeExploration();
+    if (!resumed) return false;
+
+    // Defeat is an explicit combat-flow boundary. Any pending segment-stop
+    // belongs to the expedition that just ended and must not leak into the
+    // resumed expedition.
+    combatStopController.reset();
+    this.mechanics.clear();
+    this.lastEnemySnapshot = undefined;
+    return true;
+  }
+
   override tick(dt: number, tickCounter: number): CombatDomainTickResult {
     this.abilityTick = tickCounter;
 
@@ -117,6 +149,10 @@ export class CombatRuntime extends LegacyCombatRuntime {
     let result: CombatDomainTickResult;
     try { result = super.tick(dt, tickCounter); }
     finally { this.inTick = false; }
+
+    // A defeat terminates the current expedition. A previously requested stop
+    // cannot remain armed across the defeat/resume boundary.
+    if (result.combatState === "defeat") combatStopController.reset();
 
     this.handleSegmentStart(result);
     this.effects.reconcile(targets);
