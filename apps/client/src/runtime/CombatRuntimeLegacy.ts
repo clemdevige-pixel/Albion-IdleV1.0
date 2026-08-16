@@ -35,6 +35,7 @@ import {
 import { combatStopController } from "./CombatStopController.js";
 import { canUseActiveAbility } from "./combatActionControl.js";
 import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
+import { WORLD_COMBAT_FLOW_POLICY, type CombatFlowPolicy } from "./CombatFlowPolicy.js";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
@@ -55,6 +56,7 @@ export interface CombatRuntimePorts {
   readonly onDefeat: () => void;
   readonly getLocationState: () => CombatLocationState;
   readonly isCombatSuspended: () => boolean;
+  readonly flowPolicy?: CombatFlowPolicy;
 }
 
 export interface CombatRuntimeDependencies {
@@ -127,6 +129,10 @@ export class CombatRuntime {
     this.ports = deps.ports;
   }
 
+  private get flowPolicy(): CombatFlowPolicy {
+    return this.ports.flowPolicy ?? WORLD_COMBAT_FLOW_POLICY;
+  }
+
   private get combatEntityFactoryDeps() {
     return { world: this.world, statsManager: this.statsManager, damageManager: this.damageManager, deathManager: this.deathManager, targetManager: this.targetManager, autoAttackManager: this.autoAttackManager, abilityManager: this.abilityManager };
   }
@@ -172,8 +178,6 @@ export class CombatRuntime {
     const result = this.damageManager.processDamage({
       source: this.activeEnemyId,
       target: this.heroId,
-      // DamageManager already adds the matching offensive source stat.
-      // Monster damageMultiplier is authored as the TOTAL hit multiplier.
       baseDamage: sourceDamage * (definition.damageMultiplier - 1),
       damageType: definition.damageType,
       source_type: "ability",
@@ -258,9 +262,6 @@ export class CombatRuntime {
         this.destroyEnemyEntity(enemyId);
       }
     }
-    // The active enemy can outlive the CombatService session after victory or
-    // defeat. Always clear it as well so a resume can never retain a stale ECS
-    // entity from the previous encounter.
     this.cleanupActiveEnemy();
     this.effectManager.removeAllEffects(this.heroId);
     this.completedEncounterResult = null;
@@ -296,9 +297,6 @@ export class CombatRuntime {
     const execution = this.abilityManager.executeIntent({ entityId: this.heroId, abilityId: definition.id as AbilityId, primaryTarget: this.activeEnemyId, tick: this.currentTick });
     if (!execution.ok) return false;
 
-    // Hero abilities are instant actions layered on top of the normal attack
-    // cadence. They must not restart AutoAttackManager, otherwise unlocking W/E
-    // can reduce real DPS by repeatedly delaying the next basic attack.
     const sourceStat = definition.damageType === "magical" ? STAT_MAGICAL_DAMAGE : STAT_PHYSICAL_DAMAGE;
     const sourceDamage = this.statsManager.getStat(this.heroId, sourceStat).computed;
     const result = this.damageManager.processDamage({ source: this.heroId, target: this.activeEnemyId, baseDamage: sourceDamage * definition.bonusDamageRatio, damageType: definition.damageType, source_type: "ability" });
@@ -336,8 +334,6 @@ export class CombatRuntime {
           return { combatState: "idle" };
         }
       } else {
-        // Session-less states also happen after an explicit stop/travel action.
-        // Ensure no stale enemy survives before starting the replacement encounter.
         this.cleanupActiveEnemy();
       }
       this.completedEncounterResult = null;
@@ -346,7 +342,9 @@ export class CombatRuntime {
       this.encounterCounter += 1;
       const enemy = this.spawnEnemy();
       this.activeEnemyId = enemy.id;
-      if (locationChangedAfterVictory || enteringBoss) this.restoreHeroHealth();
+      if (this.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({ locationChangedAfterVictory, enteringBoss })) {
+        this.restoreHeroHealth();
+      }
       const encounterResult = this.combatService.startEncounter({ id: asEncounterId(`encounter_${String(this.encounterCounter)}`), enemies: [{ entityId: enemy.id }] }, this.heroId);
       const enemyHealth = this.damageManager.getHealth(enemy.id);
       const heroHealth = this.damageManager.getHealth(this.heroId);
