@@ -7,9 +7,9 @@ export const WEAPON_MECHANICS_CONTRACT = {
     stopOnTargetDeath: true,
   },
   dot: {
-    damageScaling: "snapshot_source_damage_on_apply",
+    damageScaling: "snapshot_source_damage_on_first_apply",
     identity: "source_target_effect_id",
-    reapply: "refresh_duration_and_ticks",
+    reapply: "refresh_duration_and_ticks_keep_snapshot",
     stacking: "same_effect_does_not_stack",
   },
   status: {
@@ -40,7 +40,7 @@ export function canContinueWeaponMultiHit(targetIsAlive: boolean): boolean {
   return !WEAPON_MECHANICS_CONTRACT.multiHit.stopOnTargetDeath || targetIsAlive;
 }
 
-/** Current global DoT contract: offensive source damage is snapshotted on application. */
+/** Current global DoT contract: source damage is frozen until that DoT expires. */
 export function snapshotWeaponDotSourceDamage(sourceDamage: number): number {
   return sourceDamage;
 }
