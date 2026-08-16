@@ -1,7 +1,5 @@
 import {
   CLIENT_ABILITIES,
-  type AbilityAutoRule,
-  type AbilityMechanic,
   type AbilityMechanicsProfile,
 } from "./weaponContentCatalog.js";
 
