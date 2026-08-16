@@ -52,19 +52,20 @@ export class GamePresentationRuntime {
     if (this.lastEncounterPresentationKey === undefined) {
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
       this.lastEncounterPresentationKey = encounterPresentationKey;
-    } else if (encounterKeyChanged || enteredCombat) {
-      // A presentation encounter boundary is not always a world-index change:
-      // defeat/resume retries the same encounter and stop/resume may also restart
-      // combat without changing zone/segment/encounter. In both cases the bridge
-      // already contains the newly spawned enemy and its full health.
-      //
-      // Invalidate delayed impacts/projectiles from the previous encounter before
-      // resetting presentation health so stale visuals can never damage the new
-      // health bar.
+    } else if (encounterKeyChanged) {
+      // Normal victory progression is presentation-asynchronous: the domain can
+      // already expose the next encounter while the killing melee impact or
+      // projectile is still in flight. Do not invalidate/reset here. The combat
+      // presentation controller owns the visual hand-off and will keep the old
+      // enemy until the killing impact has actually been presented.
+      this.lastEncounterPresentationKey = encounterPresentationKey;
+    } else if (enteredCombat) {
+      // Same-key combat restarts (defeat/resume, stop/resume) are different:
+      // there is no previous killing impact to finish, so stale delayed visuals
+      // must still be invalidated before presenting the restarted encounter.
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
       resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
-      this.lastEncounterPresentationKey = encounterPresentationKey;
     }
 
     const gathering = selectActiveGathering(bridge);
