@@ -227,8 +227,7 @@ export class WeaponAbilityMechanicsRuntime {
     for (const { effect } of expiredEffects) {
       const tracked = this.modifiers.get(String(effect.id));
       if (tracked !== undefined) {
-        this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
-        this.deps.statsManager.calculateStats(tracked.target);
+        this.removeTrackedModifier(tracked);
         this.modifiers.delete(String(effect.id));
       }
       if (effect.effectType === "stun" && this.deps.damageManager.isAlive(effect.target)) {
@@ -239,11 +238,19 @@ export class WeaponAbilityMechanicsRuntime {
 
   public clear(): void {
     this.dots.splice(0, this.dots.length);
-    for (const tracked of this.modifiers.values()) {
-      this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
-      if (this.deps.statsManager.hasStats(tracked.target)) this.deps.statsManager.calculateStats(tracked.target);
-    }
+    for (const tracked of this.modifiers.values()) this.removeTrackedModifier(tracked);
     this.modifiers.clear();
+  }
+
+  /**
+   * Effect bookkeeping can outlive its ECS target by one presentation/runtime
+   * reconciliation step. Cleanup must therefore be idempotent: if the target's
+   * StatsComponent is already gone, there is nothing left to remove.
+   */
+  private removeTrackedModifier(tracked: TrackedModifier): void {
+    if (!this.deps.statsManager.hasStats(tracked.target)) return;
+    this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
+    this.deps.statsManager.calculateStats(tracked.target);
   }
 
   private hasEffect(target: EntityId, effectId: string): boolean {
