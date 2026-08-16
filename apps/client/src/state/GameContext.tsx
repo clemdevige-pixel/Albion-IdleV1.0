@@ -536,6 +536,7 @@ export function GameProvider({
       updateZoneElapsed: (seconds) => { bridge.updateZoneElapsed(seconds); },
       tickCombat: (deltaSeconds, tick) => {
         combatBridgeAdapter.presentTick(combatRuntime.tick(deltaSeconds, tick));
+        dungeonNavigationActions.flushPendingStart();
       },
     });
 
@@ -545,7 +546,6 @@ export function GameProvider({
       persistence,
       dispose: () => {
         unsubscribeDamageEvents();
-        dungeonNavigationActions.dispose();
         combatRewardAdapter.dispose();
         productionController.dispose();
         orchestrator.dispose();
