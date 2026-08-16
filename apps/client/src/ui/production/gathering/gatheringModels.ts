@@ -27,9 +27,16 @@ export interface GatheringResourceModel {
   readonly heroMastery: GatheringHeroMasteryModel;
 }
 
+export interface QueuedGatheringModel {
+  readonly family: string;
+  readonly encounterIndex: number;
+  readonly encounterCount: number;
+}
+
 export interface GatheringModel {
   readonly tier: ProductionTier;
   readonly resources: readonly GatheringResourceModel[];
+  readonly queued: QueuedGatheringModel | null;
 }
 
 interface GatheringSource {
@@ -39,6 +46,9 @@ interface GatheringSource {
   readonly hideGathering: GatheringVM;
   readonly fiberGathering: GatheringVM;
   readonly oreGathering: GatheringVM;
+  readonly queuedGatheringFamily: string | null;
+  readonly encounterIndex: number;
+  readonly encounterCount: number;
 }
 
 export function selectGatheringSource(state: GameBridgeState): GatheringSource {
@@ -52,6 +62,9 @@ export function selectGatheringSource(state: GameBridgeState): GatheringSource {
     hideGathering: state.hideGathering,
     fiberGathering: state.fiberGathering,
     oreGathering: state.oreGathering,
+    queuedGatheringFamily: state.queuedGatheringFamily,
+    encounterIndex: state.world.encounterIndex,
+    encounterCount: state.world.encounterCount,
   };
 }
 
@@ -89,5 +102,12 @@ export function buildGatheringModel(source: GatheringSource): GatheringModel {
   return {
     tier: source.tier,
     resources: PRODUCTION_FAMILY_IDS.map(createResource),
+    queued: source.queuedGatheringFamily === null
+      ? null
+      : {
+          family: source.queuedGatheringFamily,
+          encounterIndex: source.encounterIndex,
+          encounterCount: source.encounterCount,
+        },
   };
 }
