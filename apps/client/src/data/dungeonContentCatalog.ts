@@ -79,11 +79,11 @@ export const HERETIC_T4_DUNGEON: DungeonDefinition = {
   combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: HERETIC_T4_LOOT_TABLE_ID,
   encounters: [
-    { id: "heretic_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticScavenger },
-    { id: "heretic_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticBerserker },
-    { id: "heretic_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.hereticPyromaniac },
-    { id: "heretic_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticBombardier },
-    { id: "heretic_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.hereticWarlord },
+    { id: "heretic_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticThug },
+    { id: "heretic_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticFirestarter },
+    { id: "heretic_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.hereticEnforcer },
+    { id: "heretic_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.hereticThug },
+    { id: "heretic_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.hereticMadmen },
   ],
 };
 
@@ -95,10 +95,10 @@ export const UNDEAD_T4_DUNGEON: DungeonDefinition = {
   combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: UNDEAD_T4_LOOT_TABLE_ID,
   encounters: [
-    { id: "undead_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadSkeleton },
-    { id: "undead_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadGhoul },
-    { id: "undead_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.undeadChampion },
-    { id: "undead_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadNecromancer },
+    { id: "undead_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadSkeletonSwordsman },
+    { id: "undead_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadSkeletonArcher },
+    { id: "undead_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.undeadSpectralKnight },
+    { id: "undead_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.undeadSkeletonSwordsman },
     { id: "undead_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.undeadLich },
   ],
 };
@@ -111,11 +111,11 @@ export const MORGANA_T4_DUNGEON: DungeonDefinition = {
   combatProfileId: FACTION_T4_COMBAT_PROFILE_ID,
   lootTableId: MORGANA_T4_LOOT_TABLE_ID,
   encounters: [
-    { id: "morgana_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaCultist },
-    { id: "morgana_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaAssassin },
-    { id: "morgana_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.morganaKnight },
-    { id: "morgana_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaDarkMage },
-    { id: "morgana_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.morganaDemonPrince },
+    { id: "morgana_t4_normal_1", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaWitch },
+    { id: "morgana_t4_normal_2", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaSuppressor },
+    { id: "morgana_t4_elite", kind: "elite", monsterDefinitionId: MONSTER_IDS.morganaDarkKnight },
+    { id: "morgana_t4_normal_3", kind: "normal", monsterDefinitionId: MONSTER_IDS.morganaWitch },
+    { id: "morgana_t4_boss", kind: "boss", monsterDefinitionId: MONSTER_IDS.morganaHighPriestess },
   ],
 };
 
