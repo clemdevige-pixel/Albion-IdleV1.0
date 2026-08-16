@@ -295,7 +295,7 @@ export class CombatRuntime {
     }
     const session = this.combatService.getActiveSession();
     if (session === undefined) {
-      let enteredNewSegment = false;
+      let locationChangedAfterVictory = false;
       if (this.awaitingResumeAfterDefeat) return { combatState: "defeat" };
       if (this.completedEncounterResult === "defeat") {
         this.cleanupActiveEnemy();
@@ -306,12 +306,15 @@ export class CombatRuntime {
       }
       if (this.completedEncounterResult === "victory") {
         this.cleanupActiveEnemy();
-        const completedSegment = this.ports.getLocationState().encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
-        const res = this.ports.onVictory();
-        enteredNewSegment = res.enteredNewSegment;
+        const locationBeforeVictory = this.ports.getLocationState();
+        const completedSegment = locationBeforeVictory.encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+        this.ports.onVictory();
+        const locationAfterVictory = this.ports.getLocationState();
+        locationChangedAfterVictory = locationBeforeVictory.zoneIndex !== locationAfterVictory.zoneIndex
+          || locationBeforeVictory.segmentIndex !== locationAfterVictory.segmentIndex;
         this.completedEncounterResult = null;
         if (completedSegment && combatStopController.pauseAfterSegment()) {
-          if (enteredNewSegment) this.restoreHeroHealth();
+          if (locationChangedAfterVictory) this.restoreHeroHealth();
           return { combatState: "idle" };
         }
       } else {
@@ -325,7 +328,7 @@ export class CombatRuntime {
       this.encounterCounter += 1;
       const enemy = this.spawnEnemy();
       this.activeEnemyId = enemy.id;
-      if (enteredNewSegment || enteringBoss) this.restoreHeroHealth();
+      if (locationChangedAfterVictory || enteringBoss) this.restoreHeroHealth();
       const encounterResult = this.combatService.startEncounter({ id: asEncounterId(`encounter_${String(this.encounterCounter)}`), enemies: [{ entityId: enemy.id }] }, this.heroId);
       const enemyHealth = this.damageManager.getHealth(enemy.id);
       const heroHealth = this.damageManager.getHealth(this.heroId);
