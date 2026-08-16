@@ -11,19 +11,24 @@ import {
 
 describe("non-weapon equipment content catalog", () => {
   it("derives one item definition and one recipe for every authored progression item", () => {
-    const authoredItems = PROGRESSION_EQUIPMENT_CONTENT.flatMap((family) => family.items);
+    const authoredItemCount = PROGRESSION_EQUIPMENT_CONTENT.reduce(
+      (count, family) => count + family.items.length,
+      0,
+    );
 
-    expect(Object.keys(PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS)).toHaveLength(authoredItems.length);
-    expect(STANDARD_NON_WEAPON_CRAFT_RECIPES).toHaveLength(authoredItems.length);
+    expect(Object.keys(PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS)).toHaveLength(authoredItemCount);
+    expect(STANDARD_NON_WEAPON_CRAFT_RECIPES).toHaveLength(authoredItemCount);
 
-    for (const item of authoredItems) {
-      expect(PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS[item.itemId]?.stats).toEqual(item.stats);
-      expect(
-        STANDARD_NON_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === item.itemId),
-      ).toBe(true);
-      expect(
-        EQUIPMENT_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === item.itemId),
-      ).toBe(true);
+    for (const family of PROGRESSION_EQUIPMENT_CONTENT) {
+      for (const item of family.items) {
+        expect(PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS[item.itemId]?.stats).toEqual(item.stats);
+        expect(
+          STANDARD_NON_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === item.itemId),
+        ).toBe(true);
+        expect(
+          EQUIPMENT_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === item.itemId),
+        ).toBe(true);
+      }
     }
   });
 
