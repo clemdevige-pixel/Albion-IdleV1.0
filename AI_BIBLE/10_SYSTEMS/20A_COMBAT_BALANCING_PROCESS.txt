@@ -17,10 +17,11 @@ The live CombatRuntime is the source of truth for player-vs-zone difficulty. Syn
 3. Do not compensate for a weapon problem by globally weakening a zone.
 4. Do not compensate for a zone problem by inflating every equipment item.
 5. Preserve weapon identity: equal DPS is not the goal.
-6. For comparable weapons in the same handling class, an approximately 5-10% performance delta is acceptable when it serves identity and the complete package remains coherent.
+6. For comparable weapons intended to fill the same role, an approximately 5-10% performance delta is acceptable when it serves identity and the complete package remains coherent. Weapons with deliberately different content niches may diverge more strongly when their strengths reverse in other relevant content.
 7. A one-handed weapon and its off-hand are separate balance objects. Never attribute off-hand power to the intrinsic weapon score.
 8. Potions are a progression tool, not part of an AFK baseline unless the contract explicitly says otherwise.
 9. Raw tuning values are data. The progression contract is design law.
+10. Long-term weapon balance targets viability across the game, not equivalence in every activity. Different weapons should become genuinely better or worse depending on content type.
 
 ---
 
@@ -90,17 +91,69 @@ For every new weapon or major rebalance:
 
 1. Define the intended identity: sustained, burst, DoT, execute, control, defensive, hybrid, etc.
 2. Define handling: 1H or 2H. Handling alone does not define the off-hand.
-3. Run weapon-only diagnostics at representative mastery/enchantment checkpoints.
-4. Compare sustained DPS to the median synthetic ideal.
-5. Inspect opener 5 s / 10 s to understand burst/timing identity.
-6. For same-class comparisons, treat roughly +/-5-10% as an acceptable design envelope unless runtime behavior reveals a real outlier.
-7. Run a neutral package with the same armor and no off-hand.
-8. Run one or more explicit real loadouts. For 1H weapons, test each relevant off-hand separately when those off-hands exist.
-9. Validate the weapon at real progression checkpoints with CombatRuntimeBenchmarkHarness.
-10. Tune the smallest authored lever: base damage, attack cadence, ability ratio, cooldown, conditional mechanic, control, or explicit off-hand stats.
-11. Re-run typecheck + weapon diagnostics + affected progression sweeps.
+3. Define the content niches the weapon is expected to excel in, remain viable in, and struggle in when enough differentiated content exists.
+4. Run weapon-only diagnostics at representative mastery/enchantment checkpoints.
+5. Compare sustained DPS to the median synthetic ideal.
+6. Inspect opener 5 s / 10 s to understand burst/timing identity.
+7. For weapons intended to fill the same role, treat roughly +/-5-10% as an acceptable design envelope unless runtime behavior reveals a real outlier. Do not apply this envelope blindly across intentionally different niches.
+8. Run a neutral package with the same armor and no off-hand.
+9. Run one or more explicit real loadouts. For 1H weapons, test each relevant off-hand separately when those off-hands exist.
+10. Validate the weapon at real progression checkpoints with CombatRuntimeBenchmarkHarness.
+11. When multiple content archetypes exist, compare the weapon across those archetypes rather than forcing a universal score toward 100.
+12. Tune the smallest authored lever: base damage, attack cadence, ability ratio, cooldown, conditional mechanic, control, or explicit off-hand stats.
+13. Re-run typecheck + weapon diagnostics + affected progression sweeps.
 
-A weapon may be below the offensive center if another part of its explicit build package compensates. The diagnostic must still report that offensive deficit rather than hiding it inside a single score.
+A weapon may be below the offensive center if another part of its explicit build package or content niche compensates. The diagnostic must still report that difference rather than hiding it inside a single score.
+
+---
+
+# 4A. Future weapon specialization philosophy — PARKED / NOT FOR CURRENT BLUE IMPLEMENTATION
+
+This section records an approved long-term direction. It is intentionally NOT a request to retrofit or destabilize the currently validated Blue progression.
+
+TARGET
+- Weapons should be viable across the game without being equally good everywhere.
+- A richer game should reward choosing equipment for the activity being attempted.
+- Examples of useful niches include fast farming, single-target/boss pressure, multi-target/AoE encounters, burst/push progression, long encounters, control-heavy encounters, execution mechanics and other future content-specific interactions.
+- A weapon being clearly best for one activity is acceptable when other weapons have meaningful activities where the ranking changes.
+- Avoid artificial per-content damage bonuses when the same differentiation can emerge naturally from weapon mechanics interacting with encounter design.
+
+DETERMINISTIC COMBAT CONSEQUENCE
+The current combat loop is deterministic. If an identical loadout clears an identical segment once, repeating that exact segment does not create additional failure risk merely because one build ends with less HP.
+
+Therefore "lower yield in exchange for safety" is not automatically a real trade-off in the current system. Once both builds deterministically clear the loop, excess survivability has no direct economic value unless content mechanics make that survivability relevant.
+
+CURRENT ENCHANTMENT-SHARD EXAMPLE
+The TTK economy benchmark shows that faster offensive weapons can produce materially more shards/hour than slower weapons on the same deterministic farm segment. This is accepted: universal resource farming does not need identical throughput across every weapon when weapon specialization is an intended long-term feature.
+
+FUTURE CONTROLLED VARIABILITY — PARKED IDEA
+If combat content later needs less linear repetition, prefer controlled variability in encounter/content composition rather than randomizing the player's core combat math.
+
+Preferred future levers:
+- alternate authored encounter compositions;
+- elite/special encounters;
+- enemy ability/pattern variants;
+- content modifiers/affixes;
+- different encounter archetypes that naturally favor different weapon kits.
+
+Avoid by default:
+- random damage variance solely for uncertainty;
+- random hit/miss systems;
+- generic crit/dodge RNG added only to make AFK outcomes unpredictable.
+
+The intended principle is:
+
+PLAYER COMBAT MATH REMAINS HIGHLY DETERMINISTIC
++
+CONTENT MAY EVENTUALLY INTRODUCE CONTROLLED VARIABILITY
+
+If this direction is implemented later, balance tooling must distinguish at minimum:
+- nominal clear;
+- content-archetype performance;
+- reliable AFK clear against the authored variability envelope;
+- farming throughput.
+
+Do not implement this future variability during the current Blue balancing baseline without a separate design validation.
 
 ---
 
@@ -203,6 +256,8 @@ At T4.1/T4.2 before later mastery unlocks:
 
 Important: this does NOT mean Broadsword inherently owns that defensive score. Future off-hands will produce different 1H packages. Always report weapon-only and explicit-loadout results separately.
 
+The current shard-farming TTK differences are not automatically treated as a defect. Higher throughput from weapons better suited to deterministic farming is compatible with the long-term specialization philosophy, provided future content creates meaningful niches for other weapons.
+
 ---
 
 # 9. Tests and regression policy
@@ -217,6 +272,7 @@ CORE BALANCE REGRESSION SET
 - weaponIdealBenchmark.test.ts
 - weaponPackageScore.test.ts
 - defensiveEquipmentBalance.test.ts
+- enchantmentShardTtkBenchmark.test.ts
 
 KEEP tests that protect:
 - live runtime parity;
@@ -226,7 +282,8 @@ KEEP tests that protect:
 - explicit off-hand separation;
 - validated progression checkpoints;
 - potion behavior;
-- deterministic data integrity.
+- deterministic data integrity;
+- TTK-derived economy measurements when combat throughput affects universal progression resources.
 
 REMOVE tests/tools that only preserve obsolete synthetic hero baselines, historical tuning ratios or old monster ceilings. The retired combatBalanceMatrix synthetic reallocation tool must not be reintroduced; real runtime sweeps replaced it.
 
@@ -237,7 +294,7 @@ REMOVE tests/tools that only preserve obsolete synthetic hero baselines, histori
 From the repository root:
 
 pnpm.cmd --filter @game/client typecheck
-pnpm.cmd --filter @game/client test -- blueRuntimeParity.test.ts blueT3ProgressionSweep.test.ts blueHighlandProgressionSweep.test.ts blueSteppeProgressionSweep.test.ts blueFrostpeakProgressionSweep.test.ts blueRuntimeProgressionMatrix.test.ts weaponIdealBenchmark.test.ts weaponPackageScore.test.ts defensiveEquipmentBalance.test.ts --reporter=verbose
+pnpm.cmd --filter @game/client test -- blueRuntimeParity.test.ts blueT3ProgressionSweep.test.ts blueHighlandProgressionSweep.test.ts blueSteppeProgressionSweep.test.ts blueFrostpeakProgressionSweep.test.ts blueRuntimeProgressionMatrix.test.ts weaponIdealBenchmark.test.ts weaponPackageScore.test.ts defensiveEquipmentBalance.test.ts enchantmentShardTtkBenchmark.test.ts --reporter=verbose
 
 After targeted balance validation, run the full client suite before merging to main.
 
