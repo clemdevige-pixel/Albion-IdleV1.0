@@ -74,9 +74,7 @@ export function resolveDungeonCombatProfile(input: {
 }): AuthoredEnemyCombatProfile {
   const dungeon = getDungeonDefinition(input.dungeonDefinitionId);
   const profile = DUNGEON_COMBAT_PROFILES[dungeon.combatProfileId];
-  if (profile === undefined) {
-    throw new Error(`Unknown dungeon combat profile: ${dungeon.combatProfileId}`);
-  }
+  if (profile === undefined) throw new Error(`Unknown dungeon combat profile: ${dungeon.combatProfileId}`);
 
   const step = profile.steps[input.encounterIndex];
   if (step === undefined) {
@@ -103,3 +101,6 @@ export function resolveDungeonCombatProfile(input: {
     magicResistance: Math.round(base.magicResistance * step.defense),
   };
 }
+
+/** @deprecated Temporary import compatibility; all resolution is now generic. */
+export const resolveKeeperT4DungeonCombatProfile = resolveDungeonCombatProfile;
