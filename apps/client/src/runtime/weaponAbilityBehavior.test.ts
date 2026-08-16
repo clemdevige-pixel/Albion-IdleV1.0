@@ -117,6 +117,44 @@ describe("weapon ability live behavior", () => {
     expect(before - after).toBeCloseTo(18.4, 5);
   });
 
+  it("refreshes the same Burn instead of stacking a second copy", () => {
+    const env = createBehaviorEnvironment(2000);
+    const fireball = requireAbility("ability_fire_fireball");
+
+    env.mechanics.execute(fireball, env.enemyId, 1);
+    env.mechanics.tick(1, 2);
+    expect(activeEffectIds(env.effectManager, env.enemyId).filter((id) => id === "effect_fire_burn")).toHaveLength(1);
+
+    env.mechanics.execute(fireball, env.enemyId, 3);
+    expect(activeEffectIds(env.effectManager, env.enemyId).filter((id) => id === "effect_fire_burn")).toHaveLength(1);
+
+    const beforeRefreshedTicks = env.damageManager.getHealth(env.enemyId).currentHealth;
+    env.mechanics.tick(1, 4);
+    env.mechanics.tick(1, 5);
+    env.mechanics.tick(1, 6);
+    const afterRefreshedTicks = env.damageManager.getHealth(env.enemyId).currentHealth;
+    expect(beforeRefreshedTicks - afterRefreshedTicks).toBeCloseTo(19.2, 5);
+
+    env.mechanics.tick(1, 7);
+    expect(env.damageManager.getHealth(env.enemyId).currentHealth).toBeCloseTo(afterRefreshedTicks, 5);
+  });
+
+  it("refreshes the same status effect instead of stacking duplicates", () => {
+    const env = createBehaviorEnvironment(2000);
+    const flurry = requireAbility("ability_dagger_flurry");
+
+    env.mechanics.execute(flurry, env.enemyId, 1);
+    expect(activeEffectIds(env.effectManager, env.enemyId).filter((id) => id === "effect_dagger_opening")).toHaveLength(1);
+
+    env.effectManager.tickEffects(3);
+    env.mechanics.execute(flurry, env.enemyId, 4);
+    const openingEffects = env.effectManager.getActiveEffects(env.enemyId)
+      .filter((effect) => effect.definition.id === "effect_dagger_opening");
+
+    expect(openingEffects).toHaveLength(1);
+    expect(openingEffects[0]?.remainingDuration).toBeCloseTo(4, 5);
+  });
+
   it("Infernal Burn can kill once without waiting for another direct hit", () => {
     const env = createBehaviorEnvironment();
     const fireball = requireAbility("ability_fire_fireball");
