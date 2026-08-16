@@ -165,6 +165,12 @@ export class CombatBridgeAdapter {
       this.#updateWorldBridge();
     } else if (result.activeEnemy !== undefined && result.activeEnemy.id !== 0) {
       this.#bridge.updateEnemyHealth(result.activeEnemy.currentHealth, result.activeEnemy.maxHealth);
+    } else if (result.combatState === "defeat") {
+      // Defeat is an authoritative encounter boundary: CombatRuntime has already
+      // destroyed the active enemy. The bridge must drop the matching snapshot
+      // in the same tick so presentation cannot re-adopt a dead encounter during
+      // defeat -> walking -> combat resume.
+      this.#bridge.clearEnemyPresentation();
     }
 
     if (result.playerHealth !== undefined) {
