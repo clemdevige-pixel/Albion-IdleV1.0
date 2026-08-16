@@ -228,7 +228,7 @@ describe("combatRuntimeAndAdapter regression suite", () => {
       statsManager: env.statsManager,
       heroId: env.heroId,
       recalculateWeaponMasteryStats: () => recalculateWeaponMasteryStats(env.statsManager, env.equipmentManager, env.masteryService, env.heroId),
-      resyncAll: () => resyncAll(),
+      resyncAll: () => {},
     });
     const sessionId = asCombatSessionId("combat_test");
     const before = env.currencyService.getBalance(env.walletId, "currency_silver");
