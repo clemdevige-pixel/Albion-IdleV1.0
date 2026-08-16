@@ -1,6 +1,5 @@
 import type { EntityId } from "@game/core";
 import type {
-  DungeonDefinition,
   DungeonRunState,
   DungeonRuntime,
   EquipmentManager,
@@ -31,7 +30,6 @@ interface DungeonNavigationActionsDependencies {
 }
 
 export interface DungeonNavigationState {
-  readonly definitions: readonly DungeonDefinition[];
   readonly activeRun: DungeonRunState | undefined;
   readonly pendingDefinitionId: string | null;
 }
@@ -50,7 +48,6 @@ export class DungeonNavigationActions {
 
   public getState(): DungeonNavigationState {
     return {
-      definitions: this.deps.dungeonRuntime.getDefinitions(),
       activeRun: this.deps.dungeonRuntime.activeRun,
       pendingDefinitionId: this.pendingDefinitionId,
     };
