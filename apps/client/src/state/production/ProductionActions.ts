@@ -35,12 +35,12 @@ export class ProductionActions {
 
   toggleGathering(family: SupportedProductionFamily): boolean {
     if (this.deps.gatheringRuntime.isHeroGathering()) {
-      this.queuedGatheringFamily = null;
+      this.setQueuedGatheringFamily(null);
       return this.applyGatheringToggle(family);
     }
 
     if (this.deps.bridge.combatState === "combat") {
-      this.queuedGatheringFamily = family;
+      this.setQueuedGatheringFamily(family);
       if (combatStopController.getState() === "running") {
         combatStopController.requestStopAfterSegment();
       }
@@ -53,7 +53,7 @@ export class ProductionActions {
       return true;
     }
 
-    this.queuedGatheringFamily = null;
+    this.setQueuedGatheringFamily(null);
     return this.applyGatheringToggle(family);
   }
 
@@ -61,7 +61,7 @@ export class ProductionActions {
     const family = this.queuedGatheringFamily;
     if (family === null || !combatStopController.isPaused()) return;
 
-    this.queuedGatheringFamily = null;
+    this.setQueuedGatheringFamily(null);
     // Gathering itself suspends combat. Resume the generic stop controller so
     // returning from gathering does not inherit the temporary segment-stop.
     combatStopController.resume();
@@ -69,7 +69,7 @@ export class ProductionActions {
   }
 
   returnToCombat(): boolean {
-    this.queuedGatheringFamily = null;
+    this.setQueuedGatheringFamily(null);
     if (!this.deps.gatheringRuntime.isHeroGathering()) return false;
 
     this.deps.gatheringRuntime.stopAllGathering();
@@ -125,6 +125,11 @@ export class ProductionActions {
       timestamp: Date.now(),
     });
     return true;
+  }
+
+  private setQueuedGatheringFamily(family: SupportedProductionFamily | null): void {
+    this.queuedGatheringFamily = family;
+    this.deps.bridge.updateQueuedGatheringFamily(family);
   }
 
   private applyGatheringToggle(family: SupportedProductionFamily): boolean {
