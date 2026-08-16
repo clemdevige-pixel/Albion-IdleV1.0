@@ -28,13 +28,13 @@ describe("dungeonContentCatalog", () => {
     );
 
     for (const profile of profiles) {
-      expect(profile.maxHealth).toBeGreaterThan(0);
+      expect(profile.hp).toBeGreaterThan(0);
       expect(profile.damage).toBeGreaterThan(0);
       expect(profile.armor).toBeGreaterThanOrEqual(0);
       expect(profile.magicResistance).toBeGreaterThanOrEqual(0);
     }
 
-    expect(profiles.at(-1)?.maxHealth).toBeGreaterThan(profiles[0]?.maxHealth ?? 0);
+    expect(profiles.at(-1)?.hp).toBeGreaterThan(profiles[0]?.hp ?? 0);
     expect(profiles.at(-1)?.damage).toBeGreaterThan(profiles[0]?.damage ?? 0);
   });
 
