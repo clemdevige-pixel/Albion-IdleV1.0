@@ -383,6 +383,7 @@ export function GameProvider({
       walletId,
       progressionOrchestrator,
       getCurrentTick: () => tickCounter,
+      getCombatLoopState: () => combatRuntime.getLoopState(),
       getGatheringTier: () => gatheringTier,
       setGatheringTier: (tier) => { gatheringTier = tier; },
       getRefiningTier: (family) => refiningTiers[family],
