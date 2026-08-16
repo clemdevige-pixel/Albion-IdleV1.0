@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { CombatLoopState } from "../../runtime/CombatRuntime";
 import { combatStopController } from "../../runtime/CombatStopController";
 import { ProductionActions } from "./ProductionActions";
 
-function createHarness() {
+function createHarness(loopState: CombatLoopState = "combat") {
   const bridge = {
     combatState: "combat" as const,
     updateQueuedGatheringFamily: vi.fn(),
@@ -22,6 +23,7 @@ function createHarness() {
     syncAllRefining: vi.fn(),
     syncCrafting: vi.fn(),
   };
+  const prepareCombatResumeAfterGathering = vi.fn();
   const actions = new ProductionActions({
     bridge: bridge as never,
     heroId: 1 as never,
@@ -31,10 +33,17 @@ function createHarness() {
     craftingRuntime: {} as never,
     productionBridge: productionBridge as never,
     getCurrentTick: () => 42,
-    prepareCombatResumeAfterGathering: vi.fn(),
+    getCombatLoopState: () => loopState,
+    prepareCombatResumeAfterGathering,
   });
 
-  return { actions, bridge, gatheringRuntime, productionBridge };
+  return {
+    actions,
+    bridge,
+    gatheringRuntime,
+    productionBridge,
+    prepareCombatResumeAfterGathering,
+  };
 }
 
 afterEach(() => {
@@ -42,14 +51,25 @@ afterEach(() => {
 });
 
 describe("ProductionActions gathering queue lifecycle", () => {
-  it("queues gathering during combat and starts it only after the segment stop", () => {
-    const harness = createHarness();
+  it.each(["combat", "stop_requested"] as const)(
+    "queues gathering while combat loop is %s",
+    (loopState) => {
+      const harness = createHarness(loopState);
+      if (loopState === "stop_requested") {
+        expect(combatStopController.requestStopAfterSegment()).toBe(true);
+      }
+
+      expect(harness.actions.toggleGathering("Wood")).toBe(true);
+      expect(combatStopController.isStopRequested()).toBe(true);
+      expect(harness.bridge.updateQueuedGatheringFamily).toHaveBeenCalledWith("Wood");
+      expect(harness.gatheringRuntime.toggleGatheringFamily).not.toHaveBeenCalled();
+    },
+  );
+
+  it("starts queued gathering only after the segment stop", () => {
+    const harness = createHarness("combat");
 
     expect(harness.actions.toggleGathering("Wood")).toBe(true);
-    expect(combatStopController.isStopRequested()).toBe(true);
-    expect(harness.bridge.updateQueuedGatheringFamily).toHaveBeenCalledWith("Wood");
-    expect(harness.gatheringRuntime.toggleGatheringFamily).not.toHaveBeenCalled();
-
     expect(combatStopController.pauseAfterSegment()).toBe(true);
     harness.actions.pollQueuedGathering();
 
@@ -59,4 +79,17 @@ describe("ProductionActions gathering queue lifecycle", () => {
     expect(harness.bridge.setCombatState).toHaveBeenCalledWith("idle");
     expect(harness.productionBridge.syncAllGathering).toHaveBeenCalledOnce();
   });
+
+  it.each(["paused", "defeat", "idle", "suspended"] as const)(
+    "starts gathering immediately while combat loop is %s",
+    (loopState) => {
+      const harness = createHarness(loopState);
+
+      expect(harness.actions.toggleGathering("Wood")).toBe(true);
+      expect(harness.bridge.updateQueuedGatheringFamily).toHaveBeenLastCalledWith(null);
+      expect(harness.gatheringRuntime.toggleGatheringFamily).toHaveBeenCalledWith("Wood", 42);
+      expect(combatStopController.isStopRequested()).toBe(false);
+      expect(harness.prepareCombatResumeAfterGathering).toHaveBeenCalledOnce();
+    },
+  );
 });
