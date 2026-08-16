@@ -50,6 +50,15 @@ describe("combat presentation transition policy", () => {
     })).toBe("hard_reset");
   });
 
+  it("hard-resets explicit travel out of an active encounter", () => {
+    expect(resolveCombatPresentationTransition({
+      previousCombatState: "combat",
+      nextCombatState: "walking",
+      previousEncounterKey: "zone:1:1",
+      nextEncounterKey: "zone:1:1",
+    })).toBe("hard_reset");
+  });
+
   it("hard-resets paused travel before combat resumes", () => {
     expect(resolveCombatPresentationTransition({
       previousCombatState: "idle",
