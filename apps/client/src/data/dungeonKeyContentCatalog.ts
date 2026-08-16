@@ -18,10 +18,17 @@ export function getDungeonKeyTierForWorldBand(bandId: WorldBandId): DungeonKeyTi
   return DUNGEON_KEY_TIER_BY_WORLD_BAND[bandId];
 }
 
-export function getDungeonKeyFragmentItemId(tier: DungeonKeyTier): string {
-  return `item_resource_dungeon_key_fragment_t${tier}`;
+function assertDungeonKeyTier(tier: number): DungeonKeyTier {
+  if (tier !== 4 && tier !== 5 && tier !== 6 && tier !== 7 && tier !== 8) {
+    throw new Error(`Unsupported dungeon key tier: ${String(tier)}`);
+  }
+  return tier;
 }
 
-export function getDungeonKeyItemId(tier: DungeonKeyTier): string {
-  return `item_resource_dungeon_key_t${tier}`;
+export function getDungeonKeyFragmentItemId(tier: number): string {
+  return `item_resource_dungeon_key_fragment_t${assertDungeonKeyTier(tier)}`;
+}
+
+export function getDungeonKeyItemId(tier: number): string {
+  return `item_resource_dungeon_key_t${assertDungeonKeyTier(tier)}`;
 }
