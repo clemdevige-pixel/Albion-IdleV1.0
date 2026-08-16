@@ -33,6 +33,7 @@ import {
   type SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
 import { combatStopController } from "./CombatStopController.js";
+import { canUseActiveAbility } from "./combatActionControl.js";
 import { ENCOUNTERS_PER_SEGMENT } from "@game/data";
 
 const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
@@ -156,6 +157,7 @@ export class CombatRuntime {
 
   private useReadyEnemyAbility(): boolean {
     if (!this.damageManager.isAlive(this.activeEnemyId) || !this.damageManager.isAlive(this.heroId)) return false;
+    if (!canUseActiveAbility(this.effectManager, this.activeEnemyId)) return false;
     const readyAbility = this.abilityManager.getAbilities(this.activeEnemyId).find((entry) => entry.state === "ready" && entry.definition.category !== "passive");
     if (readyAbility === undefined) return false;
     const definition = getMonsterAbilityDefinition(String(readyAbility.abilityId));
@@ -266,7 +268,11 @@ export class CombatRuntime {
 
   public useWeaponAbility(slotIndex: number): boolean {
     const definition = this.getUnlockedHeroWeaponAbilities()[slotIndex];
-    if (definition === undefined || !this.damageManager.isAlive(this.activeEnemyId)) return false;
+    if (
+      definition === undefined
+      || !this.damageManager.isAlive(this.activeEnemyId)
+      || !canUseActiveAbility(this.effectManager, this.heroId)
+    ) return false;
     const execution = this.abilityManager.executeIntent({ entityId: this.heroId, abilityId: definition.id as AbilityId, primaryTarget: this.activeEnemyId, tick: this.currentTick });
     if (!execution.ok) return false;
 
