@@ -15,6 +15,12 @@ import { CLIENT_ABILITIES } from "../data/weaponContentCatalog";
 import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime";
 import { setupCombatEntity } from "./combatEntityFactory";
 
+function requireAbility(abilityId: string) {
+  const ability = CLIENT_ABILITIES[abilityId];
+  if (ability === undefined) throw new Error(`Missing client ability ${abilityId}`);
+  return ability;
+}
+
 function createBehaviorEnvironment(enemyHealth = 1000) {
   const world = new World(createRuntimeServices());
   const statsManager = new StatsManager(world, createDefaultStatRegistry());
@@ -72,8 +78,8 @@ function activeEffectIds(
 describe("weapon ability live behavior", () => {
   it("Infernal Fireball opens Burst, then Burn ticks exactly three times", () => {
     const env = createBehaviorEnvironment();
-    const fireball = CLIENT_ABILITIES.ability_fire_fireball;
-    const burst = CLIENT_ABILITIES.ability_fire_infernal_burst;
+    const fireball = requireAbility("ability_fire_fireball");
+    const burst = requireAbility("ability_fire_infernal_burst");
 
     expect(env.mechanics.canAutoCast(burst, env.enemyId)).toBe(false);
     expect(env.mechanics.execute(fireball, env.enemyId, 1)).toBe(true);
@@ -98,8 +104,8 @@ describe("weapon ability live behavior", () => {
 
   it("keeps Infernal Burn and Cataclysm as independent DoTs", () => {
     const env = createBehaviorEnvironment(2000);
-    env.mechanics.execute(CLIENT_ABILITIES.ability_fire_fireball, env.enemyId, 1);
-    env.mechanics.execute(CLIENT_ABILITIES.ability_fire_cataclysm, env.enemyId, 1);
+    env.mechanics.execute(requireAbility("ability_fire_fireball"), env.enemyId, 1);
+    env.mechanics.execute(requireAbility("ability_fire_cataclysm"), env.enemyId, 1);
 
     expect(activeEffectIds(env.effectManager, env.enemyId)).toEqual(
       expect.arrayContaining(["effect_fire_burn", "effect_fire_cataclysm"]),
@@ -113,7 +119,7 @@ describe("weapon ability live behavior", () => {
 
   it("Infernal Burn can kill once without waiting for another direct hit", () => {
     const env = createBehaviorEnvironment();
-    const fireball = CLIENT_ABILITIES.ability_fire_fireball;
+    const fireball = requireAbility("ability_fire_fireball");
 
     env.mechanics.execute(fireball, env.enemyId, 1);
     env.damageManager.getHealth(env.enemyId).currentHealth = 5;
@@ -125,8 +131,8 @@ describe("weapon ability live behavior", () => {
 
   it("Dagger Flurry opens Assassination and its effect-conditioned bonus", () => {
     const env = createBehaviorEnvironment();
-    const flurry = CLIENT_ABILITIES.ability_dagger_flurry;
-    const assassination = CLIENT_ABILITIES.ability_dagger_assassination;
+    const flurry = requireAbility("ability_dagger_flurry");
+    const assassination = requireAbility("ability_dagger_assassination");
 
     expect(env.mechanics.canAutoCast(assassination, env.enemyId)).toBe(false);
     expect(env.mechanics.execute(flurry, env.enemyId, 1)).toBe(true);
@@ -141,7 +147,7 @@ describe("weapon ability live behavior", () => {
 
   it("Spiked multi-hit stops cleanly when the target dies during the combo", () => {
     const env = createBehaviorEnvironment(70);
-    const combo = CLIENT_ABILITIES.ability_gloves_breaking_combo;
+    const combo = requireAbility("ability_gloves_breaking_combo");
 
     expect(env.mechanics.execute(combo, env.enemyId, 1)).toBe(true);
     expect(env.damageManager.getHealth(env.enemyId).currentHealth).toBe(0);
@@ -150,7 +156,7 @@ describe("weapon ability live behavior", () => {
 
   it("Broadsword Execution only autocasts at or below 50% and receives its finisher bonus", () => {
     const env = createBehaviorEnvironment(1000);
-    const execution = CLIENT_ABILITIES.ability_sword_execution;
+    const execution = requireAbility("ability_sword_execution");
     const health = env.damageManager.getHealth(env.enemyId);
 
     health.currentHealth = 501;
