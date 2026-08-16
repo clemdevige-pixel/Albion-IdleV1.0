@@ -60,6 +60,11 @@
   box-shadow: inset 0 -2px #8a6225;
 }
 
+.world-dungeon-card.is-pending {
+  border-color: #66502b;
+  box-shadow: inset 0 -2px #66502b;
+}
+
 .world-dungeon-card__header,
 .world-dungeon-card__footer {
   display: flex;
@@ -83,7 +88,8 @@
   letter-spacing: .055em;
 }
 
-.world-dungeon-card__header > span.is-running {
+.world-dungeon-card__header > span.is-running,
+.world-dungeon-card__header > span.is-pending {
   color: #f0cb6d;
   border-color: #8a6225;
   background: #241b0e;
@@ -139,6 +145,19 @@
   border-color: #8a6225;
 }
 
+.world-dungeon-step.is-current {
+  color: #f0d593;
+  border-color: #c18a31;
+  background: #241b0e;
+  box-shadow: inset 0 -2px #c18a31;
+}
+
+.world-dungeon-step.is-completed {
+  color: #8ca67b;
+  border-color: #465b3b;
+  background: #0d140d;
+}
+
 .world-dungeon-step b {
   font: 700 10px var(--ui-font-display);
 }
@@ -157,6 +176,10 @@
   padding: 7px 8px;
   border-left: 2px solid #8a6225;
   background: #111318;
+}
+
+.world-dungeon-card__current.is-pending {
+  border-left-color: #66502b;
 }
 
 .world-dungeon-card__current strong {
