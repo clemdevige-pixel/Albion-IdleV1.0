@@ -89,7 +89,7 @@ describe("combat loot", () => {
     ]);
   });
 
-  it("uses zone advancement to improve faction key drop rate", () => {
+  it("uses zone advancement to improve dungeon key drop rate", () => {
     const rolls = [1, 0.025, 1] as const;
     const earlyDrops = rollCombatDrops(
       BASE_CONTEXT,
@@ -104,17 +104,27 @@ describe("combat loot", () => {
     expect(lateDrops.some((drop) => drop.kind === "key_fragment")).toBe(true);
   });
 
-  it("uses faction only to select dungeon loot identity", () => {
-    const morgana = rollCombatDrops(BASE_CONTEXT, () => 0);
-    const keeper = rollCombatDrops(
+  it("uses world tier, not faction, to select dungeon entry currency", () => {
+    const morganaT4 = rollCombatDrops(BASE_CONTEXT, () => 0);
+    const keeperT4 = rollCombatDrops(
       { ...BASE_CONTEXT, faction: "Keeper" },
       () => 0,
     );
+    const morganaT5 = rollCombatDrops(
+      { ...BASE_CONTEXT, enchantmentTier: 5 },
+      () => 0,
+    );
 
-    expect(morgana.find((drop) => drop.kind === "key_fragment")?.itemId)
-      .toBe("item_resource_key_fragment_morgana");
-    expect(keeper.find((drop) => drop.kind === "key_fragment")?.itemId)
-      .toBe("item_resource_key_fragment_keeper");
+    expect(morganaT4.find((drop) => drop.kind === "key_fragment")?.itemId)
+      .toBe("item_resource_dungeon_key_fragment_t4");
+    expect(keeperT4.find((drop) => drop.kind === "key_fragment")?.itemId)
+      .toBe("item_resource_dungeon_key_fragment_t4");
+    expect(morganaT4.find((drop) => drop.kind === "key")?.itemId)
+      .toBe("item_resource_dungeon_key_t4");
+    expect(morganaT5.find((drop) => drop.kind === "key_fragment")?.itemId)
+      .toBe("item_resource_dungeon_key_fragment_t5");
+    expect(morganaT5.find((drop) => drop.kind === "key")?.itemId)
+      .toBe("item_resource_dungeon_key_t5");
   });
 
   it("never drops artifacts from normal monsters", () => {
@@ -127,7 +137,7 @@ describe("combat loot", () => {
     expect(drops.some((drop) => drop.kind === "artifact")).toBe(false);
   });
 
-  it("enables faction-specific artifact rolls for bosses", () => {
+  it("keeps artifacts faction-specific for bosses", () => {
     const drops = rollCombatDrops(
       {
         ...BASE_CONTEXT,
