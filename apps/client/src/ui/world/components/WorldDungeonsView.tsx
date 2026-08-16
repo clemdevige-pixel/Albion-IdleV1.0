@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import type { GameBridgeState } from "../../../game/GameBridge.js";
-import { DUNGEON_DEFINITIONS } from "../../../data/dungeonContentCatalog.js";
 import { useGameServices } from "../../../state/GameContext.js";
 import { useGameUiSelector } from "../../state/useGameUiSelector.js";
 import "./WorldDungeonsView.css";
@@ -45,6 +44,7 @@ function sameDungeonPresentation(
 
 export function WorldDungeonsView(): JSX.Element {
   const { startDungeon, abandonDungeon, getDungeonState } = useGameServices();
+  const dungeonDefinitions = getDungeonState().definitions;
   const selectDungeonPresentation = useCallback((state: GameBridgeState): DungeonPresentationModel => {
     const dungeonState = getDungeonState();
     const activeRun = dungeonState.activeRun?.status === "active"
@@ -76,7 +76,7 @@ export function WorldDungeonsView(): JSX.Element {
       </header>
 
       <div className="world-dungeons__list">
-        {DUNGEON_DEFINITIONS.map((dungeon) => {
+        {dungeonDefinitions.map((dungeon) => {
           const keyCount = presentation.inventory[dungeon.keyItemId] ?? 0;
           const isActiveDungeon = presentation.activeDefinitionId === dungeon.id;
           const isPendingDungeon = presentation.pendingDefinitionId === dungeon.id;
