@@ -57,7 +57,7 @@ export function resolveKeeperT4DungeonCombatProfile(input: {
   );
 
   return {
-    maxHealth: Math.round(base.hp * step.hp),
+    hp: Math.round(base.hp * step.hp),
     damage: Math.round(base.damage * step.damage),
     attackSpeed: base.attackSpeed,
     armor: Math.round(base.armor * step.defense),
