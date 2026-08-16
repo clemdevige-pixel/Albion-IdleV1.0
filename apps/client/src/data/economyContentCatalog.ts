@@ -316,20 +316,3 @@ export const GENERAL_VENDOR_FIXED_OFFERS = [
   { itemId: "item_leather_boots", buyPrice: null, sellPrice: 55, maxPerTransaction: null, enabled: true },
   { itemId: "item_traveler_cape", buyPrice: null, sellPrice: 65, maxPerTransaction: null, enabled: true },
 ];
-
-/** @deprecated Use SEGMENT_LOOT_MULTIPLIERS. */
-export const BLUE_ZONE_SEGMENT_LOOT_MULTIPLIERS = SEGMENT_LOOT_MULTIPLIERS;
-/** @deprecated Use BASE_COMBAT_DROP_RATES. */
-export const BLUE_ZONE_BASE_DROP_RATES = BASE_COMBAT_DROP_RATES;
-/** @deprecated Use BOSS_DROP_RATES. */
-export const BLUE_ZONE_BOSS_DROP_RATES = BOSS_DROP_RATES;
-/** @deprecated Use CombatDropKind. */
-export type BlueZoneCombatDropKind = CombatDropKind;
-/** @deprecated Use CombatDrop. */
-export type BlueZoneCombatDrop = CombatDrop;
-/** @deprecated Use CombatLootContext. */
-export type BlueZoneLootContext = CombatLootContext;
-/** @deprecated Use getSegmentLootMultiplier. */
-export const getBlueZoneSegmentLootMultiplier = getSegmentLootMultiplier;
-/** @deprecated Use rollCombatDrops. */
-export const rollBlueZoneCombatDrops = rollCombatDrops;
