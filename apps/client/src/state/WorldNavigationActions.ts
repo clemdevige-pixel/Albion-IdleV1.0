@@ -1,6 +1,6 @@
 import type { WorldLocationSaveState } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
-import { combatStopController } from "../runtime/CombatStopController.js";
+import type { CombatLoopState } from "../runtime/CombatRuntimeAbilityLayer.js";
 
 interface WorldNavigationRuntime {
   readonly currentZoneIndex: number;
@@ -22,6 +22,7 @@ interface CombatNavigationRuntime {
   resumeExploration(): boolean;
   isAwaitingResumeAfterDefeat(): boolean;
   restoreAwaitingResumeAfterDefeat(): void;
+  getLoopState(): CombatLoopState;
 }
 
 interface WorldNavigationActionsDependencies {
@@ -34,8 +35,8 @@ interface WorldNavigationActionsDependencies {
 /**
  * Application-level world navigation actions.
  *
- * WorldRuntime and CombatRuntime remain authoritative. This class only
- * coordinates their existing operations and updates the presentation bridge.
+ * WorldRuntime owns location/progression and CombatRuntime owns combat lifecycle.
+ * GameBridge is presentation output only and must never decide navigation rules.
  */
 export class WorldNavigationActions {
   private readonly deps: WorldNavigationActionsDependencies;
@@ -59,11 +60,10 @@ export class WorldNavigationActions {
   }
 
   public selectSegment(segmentNumber: number): boolean {
-    if (this.canTravelImmediately()) {
+    const loopState = this.deps.combatRuntime.getLoopState();
+    if (this.canTravelImmediately(loopState)) {
       if (!this.deps.worldRuntime.selectSegment(segmentNumber)) return false;
-      if (this.deps.bridge.combatState === "defeat") {
-        this.deps.bridge.clearEnemyPresentation();
-      }
+      if (loopState === "defeat") this.deps.bridge.clearEnemyPresentation();
       this.deps.updateWorldBridge();
       return true;
     }
@@ -78,13 +78,13 @@ export class WorldNavigationActions {
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
     const targetSegment = segmentNumber ?? 1;
     const currentZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
-    const wasDefeated = this.deps.bridge.combatState === "defeat";
+    const loopState = this.deps.combatRuntime.getLoopState();
 
     // WorldRuntime remains the single validation authority for zone unlocks and
     // segment bounds. During active combat it also owns the queued destination.
     if (!this.deps.worldRuntime.selectZone(zoneNumber, targetSegment)) return false;
 
-    if (this.canTravelImmediately()) {
+    if (this.canTravelImmediately(loopState)) {
       if (zoneNumber === currentZoneNumber) {
         // selectZone queued the validated same-zone destination; apply it now
         // because no encounter is active to wait for.
@@ -94,7 +94,7 @@ export class WorldNavigationActions {
         // consumes/clears the queued fields while preserving the inactive combat state.
         this.deps.worldRuntime.changeActiveZone(zoneNumber - 1, targetSegment - 1);
       }
-      if (wasDefeated) this.deps.bridge.clearEnemyPresentation();
+      if (loopState === "defeat") this.deps.bridge.clearEnemyPresentation();
     }
 
     this.deps.updateWorldBridge();
@@ -104,9 +104,8 @@ export class WorldNavigationActions {
   public resumeExploration(): boolean {
     const resumed = this.deps.combatRuntime.resumeExploration();
     if (resumed) {
-      // The defeated ECS enemy is already gone, but its bridge presentation can
-      // still be visible. Clear it before the next authoritative spawn so Phaser
-      // cannot reject the replacement as a different still-living encounter.
+      // Bridge cleanup is presentation output only. The actual defeat/resume
+      // decision already happened inside CombatRuntime.
       this.deps.bridge.clearEnemyPresentation();
       this.deps.bridge.setCombatState("walking");
     }
@@ -140,8 +139,8 @@ export class WorldNavigationActions {
     this.deps.bridge.setCombatState("walking");
   }
 
-  private canTravelImmediately(): boolean {
-    return combatStopController.isPaused() || this.deps.bridge.combatState === "defeat";
+  private canTravelImmediately(loopState: CombatLoopState): boolean {
+    return loopState === "paused" || loopState === "defeat";
   }
 
   private queueManualSegmentChange(segmentNumber: number): boolean {
