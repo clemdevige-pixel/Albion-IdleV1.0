@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WorldLocationSaveState } from "@game/gameplay";
+import { combatStopController } from "../runtime/CombatStopController";
 import { WorldNavigationActions } from "./WorldNavigationActions";
 
 function createHarness(options?: {
@@ -7,6 +8,7 @@ function createHarness(options?: {
   readonly zoneAccepted?: boolean;
   readonly explorationResumed?: boolean;
   readonly farmMode?: boolean;
+  readonly combatState?: "combat" | "defeat" | "idle" | "walking";
 }) {
   const savedLocation = {
     activeZoneDefId: "zone_forest",
@@ -20,10 +22,11 @@ function createHarness(options?: {
     farmMode: options?.farmMode ?? false,
     currentSegment: 2,
     highestUnlockedSegment: 5,
-    selectSegment: vi.fn(() => true),
+    selectSegment: vi.fn(() => options?.segmentAccepted ?? true),
     queueSegmentChange: vi.fn(() => options?.segmentAccepted ?? true),
     setSegmentFarmMode: vi.fn(),
     selectZone: vi.fn(() => options?.zoneAccepted ?? true),
+    changeActiveZone: vi.fn(),
     getWorldLocationSaveState: vi.fn(() => savedLocation),
     setWorldLocationSaveState: vi.fn(),
   };
@@ -32,7 +35,11 @@ function createHarness(options?: {
     restoreHeroHealth: vi.fn(),
     resumeExploration: vi.fn(() => options?.explorationResumed ?? true),
   };
-  const bridge = { setCombatState: vi.fn(), clearEnemyPresentation: vi.fn() };
+  const bridge = {
+    combatState: options?.combatState ?? "combat",
+    setCombatState: vi.fn(),
+    clearEnemyPresentation: vi.fn(),
+  };
   const updateWorldBridge = vi.fn();
   const actions = new WorldNavigationActions({
     worldRuntime,
@@ -44,8 +51,12 @@ function createHarness(options?: {
   return { actions, worldRuntime, combatRuntime, bridge, updateWorldBridge, savedLocation };
 }
 
+afterEach(() => {
+  combatStopController.reset();
+});
+
 describe("WorldNavigationActions", () => {
-  it("queues an accepted manual segment change without interrupting combat", () => {
+  it("queues an accepted manual segment change without interrupting active combat", () => {
     const harness = createHarness();
 
     expect(harness.actions.selectSegment(4)).toBe(true);
@@ -57,13 +68,56 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
-  it("queues timeline travel inside the active zone instead of interrupting combat", () => {
+  it("applies a segment selection immediately while combat is paused", () => {
+    const harness = createHarness({ combatState: "idle" });
+    expect(combatStopController.requestStopAfterSegment()).toBe(true);
+    expect(combatStopController.pauseAfterSegment()).toBe(true);
+
+    expect(harness.actions.selectSegment(4)).toBe(true);
+    expect(harness.worldRuntime.selectSegment).toHaveBeenCalledWith(4);
+    expect(harness.worldRuntime.queueSegmentChange).not.toHaveBeenCalled();
+    expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
+  it("applies a segment selection immediately after defeat", () => {
+    const harness = createHarness({ combatState: "defeat" });
+
+    expect(harness.actions.selectSegment(2)).toBe(true);
+    expect(harness.worldRuntime.selectSegment).toHaveBeenCalledWith(2);
+    expect(harness.worldRuntime.queueSegmentChange).not.toHaveBeenCalled();
+    expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
+    expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
+  it("queues timeline travel inside the active zone during active combat", () => {
     const harness = createHarness();
 
     expect(harness.actions.selectZone(1, 4)).toBe(true);
     expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(1, 4);
+    expect(harness.worldRuntime.selectSegment).not.toHaveBeenCalled();
     expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
     expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
+    expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
+  it("applies same-zone timeline travel immediately after defeat", () => {
+    const harness = createHarness({ combatState: "defeat" });
+
+    expect(harness.actions.selectZone(1, 4)).toBe(true);
+    expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(1, 4);
+    expect(harness.worldRuntime.selectSegment).toHaveBeenCalledWith(4);
+    expect(harness.worldRuntime.changeActiveZone).not.toHaveBeenCalled();
+    expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
+  it("applies validated cross-zone timeline travel immediately while paused", () => {
+    const harness = createHarness({ combatState: "idle" });
+    expect(combatStopController.requestStopAfterSegment()).toBe(true);
+    expect(combatStopController.pauseAfterSegment()).toBe(true);
+
+    expect(harness.actions.selectZone(3, 2)).toBe(true);
+    expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(3, 2);
+    expect(harness.worldRuntime.changeActiveZone).toHaveBeenCalledWith(2, 1);
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
   });
 
@@ -76,11 +130,12 @@ describe("WorldNavigationActions", () => {
     expect(harness.updateWorldBridge).not.toHaveBeenCalled();
   });
 
-  it("queues accepted cross-zone travel without interrupting combat", () => {
+  it("queues accepted cross-zone travel without interrupting active combat", () => {
     const harness = createHarness();
 
     expect(harness.actions.selectZone(3, 2)).toBe(true);
     expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(3, 2);
+    expect(harness.worldRuntime.changeActiveZone).not.toHaveBeenCalled();
     expect(harness.combatRuntime.interruptEncounter).not.toHaveBeenCalled();
     expect(harness.combatRuntime.restoreHeroHealth).not.toHaveBeenCalled();
     expect(harness.bridge.setCombatState).not.toHaveBeenCalled();
