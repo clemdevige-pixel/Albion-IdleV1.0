@@ -1,61 +1,158 @@
 .ui-island-crafting-building {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 7px;
+  margin-top: 8px;
 }
 
 .ui-island-crafting-building__tiers,
 .ui-island-crafting-building__categories {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 
 .ui-island-crafting-building__tiers button,
 .ui-island-crafting-building__categories button {
-  border: 1px solid rgba(184, 158, 111, 0.2);
+  min-height: 30px;
+  border: 1px solid var(--ui-color-border-subtle);
   border-radius: 6px;
-  background: rgba(22, 25, 28, 0.7);
-  color: rgba(229, 218, 198, 0.62);
-  padding: 6px;
+  background: rgba(12, 16, 21, 0.68);
+  color: var(--ui-color-text-secondary);
+  padding: 4px 6px;
   font: inherit;
-  font-size: 10px;
+  font-size: 9px;
+  font-weight: 700;
   cursor: pointer;
 }
 
 .ui-island-crafting-building__tiers button.is-active,
 .ui-island-crafting-building__categories button.is-active {
-  border-color: rgba(214, 177, 108, 0.66);
-  background: rgba(89, 66, 36, 0.5);
-  color: #f1dfbb;
+  border-color: rgba(208, 157, 52, 0.62);
+  background: linear-gradient(145deg, rgba(75, 53, 26, 0.68), rgba(35, 26, 18, 0.78));
+  color: var(--ui-color-accent);
 }
+
+.ui-island-crafting-building__tiers button:disabled { opacity: 0.3; cursor: default; }
 
 .ui-island-crafting-building__selectors {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
 .ui-island-crafting-building__selectors label {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: 4px;
-  color: rgba(218, 205, 182, 0.64);
-  font-size: 9px;
+  gap: 3px;
+  color: var(--ui-color-text-muted);
+  font-size: 8px;
 }
 
 .ui-island-crafting-building__selectors select {
   min-width: 0;
-  border: 1px solid rgba(185, 156, 104, 0.22);
-  border-radius: 7px;
-  background: rgba(18, 21, 24, 0.88);
-  color: #eadfc8;
-  padding: 7px;
+  min-height: 29px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 6px;
+  background: rgba(12, 16, 21, 0.82);
+  color: var(--ui-color-text-primary);
+  padding: 5px 7px;
   font: inherit;
-  font-size: 10px;
+  font-size: 9px;
 }
 
 .ui-island-crafting-building .ui-crafting-detail {
-  margin-top: 0;
+  gap: 8px;
+  margin-top: 1px;
+  padding: 8px;
+  border-color: var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-md);
+  background: linear-gradient(145deg, rgba(35, 26, 18, 0.42), rgba(11, 14, 19, 0.9));
+}
+
+.ui-island-crafting-building .ui-crafting-detail__result {
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 9px;
+}
+
+.ui-island-crafting-building .ui-crafting-detail__result > .item-hover-target,
+.ui-island-crafting-building .ui-crafting-detail__visual {
+  width: 62px;
+  height: 62px;
+}
+
+.ui-island-crafting-building .ui-crafting-detail__identity h3 {
+  margin: 2px 0;
+  font-size: 13px;
+}
+
+.ui-island-crafting-building .ui-crafting-detail__identity p {
+  margin-top: 2px;
+  font-size: 9px;
+}
+
+.ui-island-crafting-building .ui-crafting-detail__identity dl {
+  gap: 1px;
+  margin-top: 5px;
+  font-size: 9px;
+}
+
+.ui-island-crafting-building .ui-crafting-detail__requirements {
+  gap: 2px;
+}
+
+.ui-island-crafting-building .ui-crafting-detail__requirements h4 {
+  padding-bottom: 3px;
+  font-size: 9px;
+}
+
+.ui-island-crafting-building .ui-crafting-requirement {
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 6px;
+  min-height: 35px;
+  padding: 4px 5px;
+}
+
+.ui-island-crafting-building .ui-crafting-requirement__icon {
+  width: 24px;
+  height: 24px;
+}
+
+.ui-island-crafting-building .ui-crafting-requirement__item {
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 6px;
+}
+
+.ui-island-crafting-building .ui-crafting-requirement__name,
+.ui-island-crafting-building .ui-crafting-requirement strong {
+  font-size: 9px;
+}
+
+.ui-island-crafting-building .ui-production__primary-action {
+  justify-self: start;
+  min-height: 29px;
+  border: 1px solid rgba(208, 157, 52, 0.45);
+  border-radius: 6px;
+  background: rgba(52, 39, 23, 0.64);
+  color: var(--ui-color-accent);
+  padding: 5px 12px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ui-island-crafting-building .ui-production__primary-action:hover:not(:disabled) {
+  border-color: rgba(208, 157, 52, 0.72);
+  background: rgba(73, 52, 26, 0.76);
+}
+
+.ui-island-crafting-building .ui-production__primary-action:disabled {
+  border-color: rgba(130, 109, 81, 0.22);
+  background: rgba(45, 40, 34, 0.42);
+  color: rgba(206, 193, 172, 0.42);
+  opacity: 1;
+}
+
+@media (max-width: 34rem) {
+  .ui-island-crafting-building__selectors { grid-template-columns: 1fr; }
 }
