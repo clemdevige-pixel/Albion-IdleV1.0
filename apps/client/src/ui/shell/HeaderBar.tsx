@@ -1,4 +1,3 @@
-import { CurrencyDisplay } from "../../panels/CurrencyDisplay";
 import { UI_MODULE_IDS, useNavigation } from "../navigation";
 import { useActiveMasteryUiModel, useHeaderUiModel } from "../state";
 import { NotificationPreferencesMenu } from "./NotificationPreferencesMenu";
@@ -80,12 +79,22 @@ export function HeaderBar(): JSX.Element {
 
       <div className="permanent-header__economy" aria-label="Économie et progression">
         <div className="permanent-header__resource">
-          <span className="permanent-header__resource-icon" aria-hidden="true">S</span>
-          <span><small>Silver</small><CurrencyDisplay amount={header.silver} incomeRate={header.incomeRate} /></span>
+          <span className="permanent-header__resource-icon" aria-hidden="true">
+            <img src="/assets/ui/ui-silver.png" alt="" draggable={false} />
+          </span>
+          <span className="permanent-header__resource-copy">
+            <small>Silver</small>
+            <strong>{formatCompact(header.silver)}</strong>
+          </span>
         </div>
         <div className="permanent-header__resource permanent-header__resource--fame">
-          <span className="permanent-header__resource-icon" aria-hidden="true">★</span>
-          <span><small>Fame</small><strong>{formatCompact(header.totalFame)}</strong></span>
+          <span className="permanent-header__resource-icon" aria-hidden="true">
+            <img src="/assets/ui/ui-fame.png" alt="" draggable={false} />
+          </span>
+          <span className="permanent-header__resource-copy">
+            <small>Fame</small>
+            <strong>{formatCompact(header.totalFame)}</strong>
+          </span>
         </div>
       </div>
 
