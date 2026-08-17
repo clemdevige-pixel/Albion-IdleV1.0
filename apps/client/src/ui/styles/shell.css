@@ -72,100 +72,9 @@
   background: linear-gradient(90deg, transparent 3%, rgb(183 132 47 / 36%) 34%, rgb(183 132 47 / 36%) 66%, transparent 97%);
 }
 
-.world-segment-strip {
-  position: relative;
-  z-index: 16;
-  display: grid;
-  grid-template-columns: 82px minmax(0, 1fr);
-  align-items: center;
-  gap: var(--ui-space-3);
-  min-width: 0;
-  padding: 4px clamp(14px, 1.6vw, 24px);
-  background: #090c10;
-  border-bottom: 1px solid rgb(151 106 37 / 48%);
-  box-shadow: inset 0 -1px rgb(0 0 0 / 82%);
-}
-
-.world-segment-strip__label {
-  color: #b88d3f;
-  font-family: var(--ui-font-display);
-  font-size: 8px;
-  font-weight: var(--ui-weight-semibold);
-  letter-spacing: .11em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.world-segment-strip__timeline {
-  position: relative;
-  display: grid;
-  align-items: center;
-  width: min(690px, 82%);
-  justify-self: center;
-}
-
-.world-segment-strip__timeline::before {
-  position: absolute;
-  right: 14px;
-  left: 14px;
-  top: 50%;
-  height: 1px;
-  content: "";
-  background: linear-gradient(90deg, #8a6126, #6f4e21 72%, #332819);
-  transform: translateY(-50%);
-}
-
-.world-segment-strip__segment {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: 26px;
-  min-width: 26px;
-  height: 26px;
-  padding: 0;
-  place-items: center;
-  justify-self: center;
-  color: #a99575;
-  font: 700 9px/1 var(--ui-font-sans);
-  background: #090c10;
-  border: 1px solid #65502d;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
-}
-
-.world-segment-strip__segment:hover:not(:disabled) {
-  color: #e5c67b;
-  border-color: #c9983c;
-  box-shadow: 0 0 8px rgb(201 152 60 / 18%);
-  transform: translateY(-1px);
-}
-.world-segment-strip__segment:disabled {
-  color: #625a4d;
-  border-color: #393226;
-  background: #090b0e;
-  cursor: default;
-  opacity: 1;
-}
-.world-segment-strip__segment--complete {
-  color: #e2c271;
-  background: #17130c;
-  border-color: #8a672b;
-}
-.world-segment-strip__segment--current {
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  color: #171108;
-  font-size: 10px;
-  background: linear-gradient(180deg, #f0ca62, #b97e27);
-  border-color: #f0cf73;
-  box-shadow: 0 0 12px rgb(226 176 67 / 38%);
-}
-.world-segment-strip__segment.is-pending {
-  outline: 1px dashed var(--ui-color-accent);
-  outline-offset: 3px;
-}
+/* WorldSegmentStrip owns its own component layout in shell/WorldSegmentStrip.css.
+ * Keep timeline/segment presentation out of this shell-level stylesheet to avoid
+ * CSS injection-order differences between Vite HMR and a full page reload. */
 
 .ui-shell__combat-surface {
   position: relative;
@@ -375,14 +284,6 @@
   .ui-shell__header .topbar__logo {
     font-size: var(--ui-text-lg);
   }
-
-  .world-segment-strip {
-    grid-template-columns: 1fr;
-    gap: 2px;
-    padding-block: 5px;
-  }
-
-  .world-segment-strip__label { display: none; }
 
   .ui-shell__bottom .permanent-bottom-nav {
     justify-content: flex-start;
