@@ -60,9 +60,9 @@ export function CombatStopButton({
         ? "Le combat s'arrêtera après la fin du segment en cours."
         : undefined}
       style={{
-        minWidth: compact ? 104 : 154,
-        height: compact ? 29 : 34,
-        padding: compact ? "0 10px" : "0 14px",
+        minWidth: compact ? 96 : 154,
+        height: compact ? 27 : 34,
+        padding: compact ? "0 8px" : "0 14px",
         border: "1px solid rgba(220, 190, 128, 0.55)",
         borderRadius: compact ? 4 : 6,
         background: state === "paused"
@@ -71,12 +71,12 @@ export function CombatStopButton({
             ? "rgba(118, 82, 42, 0.92)"
             : "rgba(80, 45, 42, 0.92)",
         color: "#f4ead3",
-        fontSize: compact ? 10 : 12,
+        fontSize: compact ? 9 : 12,
         fontWeight: 700,
-        letterSpacing: compact ? "0.025em" : "0.02em",
+        letterSpacing: compact ? "0.02em" : "0.02em",
         cursor: "pointer",
         boxShadow: compact
-          ? "inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 4px rgba(0, 0, 0, 0.24)"
+          ? "inset 0 1px 0 rgba(255,255,255,0.035), 0 1px 3px rgba(0, 0, 0, 0.22)"
           : "0 2px 8px rgba(0, 0, 0, 0.28)",
         whiteSpace: "nowrap",
       }}
