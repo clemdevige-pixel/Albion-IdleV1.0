@@ -68,12 +68,12 @@ export function CharacterModule(): JSX.Element {
             : { slot, x: event.clientX, y: event.clientY });
         }}
         {...(entry?.itemId === undefined
-  ? {}
-  : {
-      onDoubleClick: () => {
-        if (actions.unequip(slot)) setPickerSlot(null);
-      },
-    })}
+          ? {}
+          : {
+              onDoubleClick: () => {
+                if (actions.unequip(slot)) setPickerSlot(null);
+              },
+            })}
       />
     );
   };
@@ -83,11 +83,13 @@ export function CharacterModule(): JSX.Element {
       <section className="character-module__equipment" aria-label="Équipement actuel">
         <div className="character-module__equipment-heading">
           <span>Équipement</span>
-          <small>Cliquez pour remplacer · double-cliquez pour retirer</small>
         </div>
 
         <div className="character-module__loadout">
-          <div className="character-module__slots">{LEFT_SLOTS.map(renderSlot)}</div>
+          <div className="character-module__slots character-module__slots--left">
+            {LEFT_SLOTS.map(renderSlot)}
+          </div>
+
           <div className="character-module__hero">
             <div className="character-module__hero-halo" />
             <div
@@ -98,35 +100,52 @@ export function CharacterModule(): JSX.Element {
               role="img"
               aria-label="Aperçu du héros équipé"
             />
-            <strong>HÉROS</strong>
           </div>
-          <div className="character-module__slots">{RIGHT_SLOTS.map(renderSlot)}</div>
+
+          <div className="character-module__slots character-module__slots--right">
+            {RIGHT_SLOTS.map(renderSlot)}
+          </div>
         </div>
       </section>
 
-      <section className="character-module__power">
-        <span>Puissance d’objet moyenne</span>
-        <strong>{formatValue(character.itemPower)} <small>IP</small></strong>
-      </section>
+      <section className="character-module__stats" aria-label="Statistiques de combat">
+        <article className="character-module__stat-card character-module__stat-card--ip">
+          <img src="/assets/ui/ip.png" alt="" aria-hidden="true" draggable={false} />
+          <div>
+            <span>Item Power</span>
+            <strong>{formatValue(character.itemPower)} <small>IP</small></strong>
+          </div>
+        </article>
 
-      <section className="character-module__stats" aria-label="Statistiques essentielles">
-        <h3>Statistiques essentielles</h3>
-        <div className="character-module__stat-grid">
-          <article>
+        <article className="character-module__stat-card">
+          <img src="/assets/ui/health.png" alt="" aria-hidden="true" draggable={false} />
+          <div>
             <span>Points de vie</span>
             <strong>{formatValue(character.stats.health)} / {formatValue(character.stats.maxHealth)}</strong>
-          </article>
-          <article>
+          </div>
+        </article>
+
+        <article className="character-module__stat-card">
+          <img src="/assets/ui/damage.png" alt="" aria-hidden="true" draggable={false} />
+          <div>
             <span>Dégâts</span>
-            <div><small>Phys.</small><strong>{formatValue(character.stats.physicalDamage)}</strong></div>
-            <div><small>Mag.</small><strong>{formatValue(character.stats.magicalDamage)}</strong></div>
-          </article>
-          <article>
+            <div className="character-module__stat-values">
+              <span><small>Phys.</small><strong>{formatValue(character.stats.physicalDamage)}</strong></span>
+              <span><small>Mag.</small><strong>{formatValue(character.stats.magicalDamage)}</strong></span>
+            </div>
+          </div>
+        </article>
+
+        <article className="character-module__stat-card">
+          <img src="/assets/ui/armor.png" alt="" aria-hidden="true" draggable={false} />
+          <div>
             <span>Défense</span>
-            <div><small>Armure</small><strong>{formatValue(character.stats.armor)}</strong></div>
-            <div><small>Résist.</small><strong>{formatValue(character.stats.magicResistance)}</strong></div>
-          </article>
-        </div>
+            <div className="character-module__stat-values">
+              <span><small>Armure</small><strong>{formatValue(character.stats.armor)}</strong></span>
+              <span><small>Résist.</small><strong>{formatValue(character.stats.magicResistance)}</strong></span>
+            </div>
+          </div>
+        </article>
       </section>
 
       {pickerSlot !== null && (
