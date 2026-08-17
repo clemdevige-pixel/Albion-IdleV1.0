@@ -116,7 +116,7 @@ export function WorldDungeonsView(): JSX.Element {
                   <h3>{dungeon.faction}</h3>
                 </div>
                 <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : ""}>
-                  {isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce segment" : "Disponible"}
+                  {isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : "Disponible"}
                 </span>
               </header>
 
@@ -155,8 +155,8 @@ export function WorldDungeonsView(): JSX.Element {
                 </div>
               ) : isPendingDungeon ? (
                 <div className="world-dungeon-card__current is-pending">
-                  <small>Transition programmée</small>
-                  <strong>Le segment actuel sera terminé avant l’entrée.</strong>
+                  <small>Entrée en attente</small>
+                  <strong>Le donjon commencera dès que l’ennemi actuel sera vaincu.</strong>
                 </div>
               ) : null}
 
@@ -166,7 +166,7 @@ export function WorldDungeonsView(): JSX.Element {
                     {isActiveDungeon
                       ? "Abandonner termine définitivement cette tentative."
                       : keyCount > 0
-                        ? "En combat, l’entrée attendra la fin du segment actuel."
+                        ? "En combat, l’entrée attendra la fin de l’ennemi actuel."
                         : `Clé ${dungeon.faction} requise.`}
                   </p>
                 )}
