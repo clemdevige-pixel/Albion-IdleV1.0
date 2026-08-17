@@ -47,6 +47,7 @@ export function MasteriesModule(): JSX.Element {
         <p className="ui-masteries__empty">Aucune maîtrise disponible dans cette catégorie.</p>
       ) : (
         <MasteryFamilyList
+          category={category}
           families={families}
           selectedId={expandedId}
           onSelect={(id) => {
