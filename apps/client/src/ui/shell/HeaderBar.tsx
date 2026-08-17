@@ -1,3 +1,7 @@
+import type { CSSProperties } from "react";
+import { useAuthSession } from "../../auth/AuthSessionContext";
+import { resolveWeaponPresentation } from "../../data/weaponContentCatalog";
+import { renderManifestRegistry } from "../../game/render/defaultRenderManifestRegistry";
 import { UI_MODULE_IDS, useNavigation } from "../navigation";
 import { useActiveMasteryUiModel, useHeaderUiModel } from "../state";
 import { NotificationPreferencesMenu } from "./NotificationPreferencesMenu";
@@ -12,10 +16,36 @@ function formatCompact(value: number): string {
   }).format(value);
 }
 
+function resolveHeroPortraitStyle(weaponItemId: string | null): CSSProperties {
+  const actorManifestId = weaponItemId === null
+    ? undefined
+    : resolveWeaponPresentation(weaponItemId)?.actorManifestId;
+  const actor = actorManifestId === undefined
+    ? renderManifestRegistry.requireDefaultActor()
+    : renderManifestRegistry.getActor(actorManifestId) ?? renderManifestRegistry.requireDefaultActor();
+  const idle = actor.animations.idle;
+  const frameCount = idle.endFrame - idle.startFrame + 1;
+  const displayedFrameWidth = 122;
+  const portraitSize = 50;
+  const scale = displayedFrameWidth / idle.frameWidth;
+  const displayedFrameHeight = idle.frameHeight * scale;
+  const x = -((idle.startFrame * displayedFrameWidth) + ((displayedFrameWidth - portraitSize) / 2));
+  const y = -(displayedFrameHeight * 0.07);
+
+  return {
+    backgroundImage: `url("${idle.assetPath}")`,
+    backgroundRepeat: "no-repeat",
+    backgroundSize: `${displayedFrameWidth * frameCount}px ${displayedFrameHeight}px`,
+    backgroundPosition: `${x}px ${y}px`,
+  };
+}
+
 export function HeaderBar(): JSX.Element {
+  const { account } = useAuthSession();
   const header = useHeaderUiModel();
   const activeMastery = useActiveMasteryUiModel();
   const navigation = useNavigation();
+  const portraitStyle = resolveHeroPortraitStyle(header.weaponItemId);
 
   return (
     <div className="permanent-header">
@@ -35,11 +65,11 @@ export function HeaderBar(): JSX.Element {
         onClick={() => { navigation.openModule(UI_MODULE_IDS.character); }}
         aria-label="Ouvrir le personnage"
       >
-        <span className="permanent-header__portrait">
-          <img src="/assets/ui/nav-character.png" alt="" draggable={false} />
+        <span className="permanent-header__portrait" aria-hidden="true">
+          <span className="permanent-header__portrait-sprite" style={portraitStyle} />
         </span>
         <span className="permanent-header__player-copy">
-          <strong>Adventurer</strong>
+          <strong>{account.displayName}</strong>
           <small><span aria-hidden="true">⚔</span> {String(header.itemPower)} IP</small>
         </span>
       </button>
