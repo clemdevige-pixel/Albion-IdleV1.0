@@ -4,6 +4,7 @@ import { useActiveMasteryUiModel, useHeaderUiModel } from "../state";
 import { NotificationPreferencesMenu } from "./NotificationPreferencesMenu";
 import { SaveManagementMenu } from "./SaveManagementMenu";
 import "./permanentShell.css";
+import "./HeaderBar.css";
 
 function formatCompact(value: number): string {
   return Intl.NumberFormat("fr-FR", {
