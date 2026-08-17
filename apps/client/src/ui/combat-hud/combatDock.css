@@ -1,8 +1,8 @@
 /* Lower combat dock for the permanent world surface.
  * Presentation only: existing journal and combat actions remain authoritative.
- * The dock starts exactly where the Phaser viewport ends (68% of combat surface). */
+ * The dock starts where the preserved Phaser viewport ends. */
 .combat-hud-journal {
-  top: 68%;
+  top: calc(68% + var(--ui-world-strip-growth, 0px));
   bottom: 0;
   left: 0;
   width: clamp(320px, 31%, 390px);
@@ -17,7 +17,7 @@
 }
 
 .combat-hud-actions {
-  top: 68%;
+  top: calc(68% + var(--ui-world-strip-growth, 0px));
   right: 0;
   bottom: 0;
   left: clamp(320px, 31%, 390px);
