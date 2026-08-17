@@ -25,7 +25,7 @@
   align-items: center;
   justify-content: space-between;
   min-height: 28px;
-  padding-bottom: var(--ui-space-2);
+  padding-bottom: 6px;
   color: var(--ui-color-accent);
   border-bottom: var(--ui-border-width) solid var(--ui-color-border-subtle);
 }
@@ -38,16 +38,29 @@
 
 .character-module__loadout {
   display: grid;
-  grid-template-columns: 72px minmax(154px, 1fr) 72px;
+  grid-template-columns: 80px minmax(166px, 1fr) 80px;
   gap: 12px;
   align-items: center;
-  padding-top: var(--ui-space-3);
+  padding-top: 7px;
 }
 
 .character-module__slots {
   display: grid;
   gap: 10px;
   align-content: center;
+}
+
+.character-module__slots .ui-item-slot {
+  width: 80px;
+  min-width: 80px;
+}
+
+.character-module__slots .ui-item-slot__label {
+  max-width: 100%;
+  font-size: 8px;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .character-module__hero {
@@ -62,10 +75,10 @@
 
 .character-module__hero::after {
   position: absolute;
-  right: 16%;
+  right: 12%;
   bottom: 8px;
-  left: 16%;
-  height: 14px;
+  left: 12%;
+  height: 16px;
   border-radius: 50%;
   content: "";
   background: rgb(0 0 0 / 42%);
@@ -74,7 +87,7 @@
 
 .character-module__hero-halo {
   position: absolute;
-  inset: 11% 0 5%;
+  inset: 7% 0 4%;
   border-radius: 50%;
   background:
     radial-gradient(circle at 50% 48%, rgb(174 126 49 / 14%), transparent 42%),
@@ -85,7 +98,7 @@
 .character-module__hero-idle {
   position: relative;
   z-index: 1;
-  width: min(100%, 232px);
+  width: min(100%, 268px);
   aspect-ratio: 420 / 330;
   background-repeat: no-repeat;
   background-position: center bottom;
@@ -108,7 +121,7 @@
 
 .character-module__stat-card {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 54px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
   min-width: 0;
@@ -128,8 +141,8 @@
 
 .character-module__stat-card > img {
   display: block;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -225,10 +238,11 @@
 @media (max-width: 1100px) {
   .character-module { padding: var(--ui-space-2); }
   .character-module__equipment { padding: var(--ui-space-2); }
-  .character-module__loadout { grid-template-columns: 62px minmax(122px, 1fr) 62px; gap: 8px; }
+  .character-module__loadout { grid-template-columns: 68px minmax(130px, 1fr) 68px; gap: 8px; }
+  .character-module__slots .ui-item-slot { width: 68px; min-width: 68px; }
   .character-module__hero { min-height: 248px; }
-  .character-module__hero-idle { width: min(100%, 198px); }
+  .character-module__hero-idle { width: min(100%, 226px); }
   .character-module__stats { grid-template-columns: 1fr; }
-  .character-module__stat-card { grid-template-columns: 42px minmax(0, 1fr); min-height: 62px; }
-  .character-module__stat-card > img { width: 40px; height: 40px; }
+  .character-module__stat-card { grid-template-columns: 46px minmax(0, 1fr); min-height: 62px; }
+  .character-module__stat-card > img { width: 44px; height: 44px; }
 }
