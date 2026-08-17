@@ -1,6 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { GameBridgeState } from "../../../game/GameBridge.js";
 import { DUNGEON_DEFINITIONS } from "../../../data/dungeonContentCatalog.js";
+import type { DungeonKeyTier } from "../../../data/dungeonKeyContentCatalog.js";
 import { useGameServices } from "../../../state/GameContext.js";
 import { useGameUiSelector } from "../../state/useGameUiSelector.js";
 import "./WorldDungeonsView.css";
@@ -13,6 +14,8 @@ interface DungeonPresentationModel {
   readonly enemyName: string;
   readonly combatState: string;
 }
+
+const DUNGEON_TIERS: readonly DungeonKeyTier[] = [4, 5, 6, 7, 8];
 
 const DUNGEON_VISUALS = {
   keeper: "/assets/world/dungeons/keeper-dungeon-t4.png",
@@ -57,6 +60,7 @@ function sameDungeonPresentation(
 
 export function WorldDungeonsView(): JSX.Element {
   const { startDungeon, abandonDungeon, getDungeonState } = useGameServices();
+  const [selectedTier, setSelectedTier] = useState<DungeonKeyTier>(4);
   const selectDungeonPresentation = useCallback((state: GameBridgeState): DungeonPresentationModel => {
     const dungeonState = getDungeonState();
     const activeRun = dungeonState.activeRun?.status === "active"
@@ -75,6 +79,10 @@ export function WorldDungeonsView(): JSX.Element {
     selectDungeonPresentation,
     sameDungeonPresentation,
   );
+  const visibleDungeons = useMemo(
+    () => DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === selectedTier),
+    [selectedTier],
+  );
 
   return (
     <div className="world-dungeons">
@@ -86,8 +94,27 @@ export function WorldDungeonsView(): JSX.Element {
         <p>1 clé consommée à l’entrée · PV et cooldowns persistent · équipement verrouillé jusqu’à la sortie.</p>
       </header>
 
+      <div className="world-dungeons__tiers" role="group" aria-label="Tier de donjon">
+        {DUNGEON_TIERS.map((tier) => (
+          <button
+            key={tier}
+            type="button"
+            className={selectedTier === tier ? "is-active" : ""}
+            aria-pressed={selectedTier === tier}
+            onClick={() => { setSelectedTier(tier); }}
+          >
+            T{tier}
+          </button>
+        ))}
+      </div>
+
       <div className="world-dungeons__list">
-        {DUNGEON_DEFINITIONS.map((dungeon) => {
+        {visibleDungeons.length === 0 ? (
+          <div className="world-dungeons__empty">
+            <strong>Aucun donjon T{selectedTier} disponible.</strong>
+            <span>Ce palier sera ajouté à la progression des donjons.</span>
+          </div>
+        ) : visibleDungeons.map((dungeon) => {
           const keyCount = presentation.inventory[dungeon.keyItemId] ?? 0;
           const isActiveDungeon = presentation.activeDefinitionId === dungeon.id;
           const isPendingDungeon = presentation.pendingDefinitionId === dungeon.id;
@@ -167,7 +194,7 @@ export function WorldDungeonsView(): JSX.Element {
                       ? "Abandonner termine définitivement cette tentative."
                       : keyCount > 0
                         ? "En combat, l’entrée attendra la fin de l’ennemi actuel."
-                        : `Clé ${dungeon.faction} requise.`}
+                        : `Clé T${dungeon.tier} requise.`}
                   </p>
                 )}
                 {isActiveDungeon ? (
