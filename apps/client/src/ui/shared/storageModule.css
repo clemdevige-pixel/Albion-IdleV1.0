@@ -71,12 +71,12 @@
 
 .storage-module__sort-button {
   display: grid;
-  width: 50px;
-  height: 50px;
-  min-height: 50px !important;
-  padding: 3px !important;
+  width: 58px;
+  height: 58px;
+  min-height: 58px !important;
+  padding: 0 !important;
   place-items: center;
-  overflow: hidden;
+  overflow: visible;
   border-color: transparent !important;
   background: transparent !important;
   box-shadow: none;
@@ -92,8 +92,8 @@
 
 .storage-module__sort-button img {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   object-fit: contain;
   image-rendering: pixelated;
   pointer-events: none;
