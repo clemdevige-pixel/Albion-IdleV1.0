@@ -6,31 +6,74 @@
   bottom: 0;
   left: 0;
   width: 28%;
-  height: 132px;
-  padding: 7px 0 7px 7px;
+  height: var(--ui-combat-dock-height, 132px);
+  padding: 7px;
   box-sizing: border-box;
   background: rgb(7 10 14 / 92%);
   border-top: 1px solid rgb(145 99 34 / 62%);
 }
 
 .combat-hud-journal .activity-journal {
+  position: relative;
+  inset: auto;
   width: 100%;
+  min-width: 0;
   height: 100%;
+  box-sizing: border-box;
+}
+
+.combat-hud-journal .activity-journal__header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.combat-hud-journal .activity-journal__title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 106px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.combat-hud-journal .activity-journal__tabs {
+  min-width: 0;
 }
 
 .combat-hud-journal .activity-journal__tabs button {
+  min-width: 0;
+  padding-inline: 7px;
+  overflow: hidden;
   font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .combat-hud-journal .activity-journal__history {
+  min-width: 0;
   padding: 7px 9px;
+  box-sizing: border-box;
 }
 
 .combat-hud-journal .activity-journal__entry {
+  grid-template-columns: 6px auto minmax(0, 1fr);
+  align-items: start;
   gap: 6px;
+  min-width: 0;
   padding-block: 2px;
   font-size: 10px;
   line-height: 1.35;
+}
+
+.combat-hud-journal .activity-journal__entry time {
+  white-space: nowrap;
+}
+
+.combat-hud-journal .activity-journal__entry span {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .combat-hud-journal .activity-journal__empty {
@@ -42,11 +85,11 @@
   right: 0;
   bottom: 0;
   left: 28%;
-  height: 132px;
+  height: var(--ui-combat-dock-height, 132px);
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 10px 18px 10px clamp(42px, 6vw, 92px);
+  justify-content: center;
+  padding: 10px 18px;
   box-sizing: border-box;
   transform: none;
   background:
@@ -64,7 +107,7 @@
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 18px;
   padding: 7px 9px;
   box-sizing: border-box;
@@ -116,8 +159,6 @@
   font-size: 12px;
 }
 
-/* Potion is part of the same action row as Q/W/E and Auto.
- * The wrapper owns no extra geometry: the slot itself is the visual unit. */
 .combat-hud-actions .ability-bar__potion-wrapper {
   position: relative;
   display: flex;
@@ -144,7 +185,11 @@
 @media (max-width: 1100px) {
   .combat-hud-journal {
     width: 30%;
-    height: 116px;
+  }
+
+  .combat-hud-journal .activity-journal__title {
+    min-width: 92px;
+    padding-inline: 6px;
   }
 
   .combat-hud-journal .activity-journal__tabs button,
@@ -158,14 +203,14 @@
   }
 
   .combat-hud-journal .activity-journal__entry {
+    grid-template-columns: 5px auto minmax(0, 1fr);
     gap: 5px;
     padding-block: 1px;
   }
 
   .combat-hud-actions {
     left: 30%;
-    height: 116px;
-    padding: 8px 10px 8px 34px;
+    padding: 8px 10px;
   }
 
   .combat-hud-actions .combat-controls {
