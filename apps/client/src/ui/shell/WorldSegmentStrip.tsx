@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getSegmentRecommendedItemPower } from "../../data/itemPower";
 import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalculator";
@@ -71,7 +71,8 @@ export function WorldSegmentStrip(): JSX.Element {
       </div>
 
       <div className="world-segment-strip__timeline">
-        {viewedZone.segments.map((segment, segmentPosition) => {
+        <span className="world-segment-strip__rail" aria-hidden="true" />
+        {viewedZone.segments.map((segment) => {
           const locked = segment.state === "locked" || !viewedZone.isUnlocked;
           const pending = bridge.world.pendingZoneIndex === viewedZone.zoneIndex
             && bridge.world.pendingSegmentIndex === segment.index;
@@ -96,73 +97,69 @@ export function WorldSegmentStrip(): JSX.Element {
             && tooltipPosition !== null;
 
           return (
-            <Fragment key={segment.index}>
-              <button
-                type="button"
-                className={`world-segment-strip__segment world-segment-strip__segment--${segment.state}${segment.isZoneBoss ? " world-segment-strip__segment--boss" : ""}${pending ? " is-pending" : ""}`}
-                disabled={locked}
-                aria-current={viewedZone.isActive && segment.state === "current" ? "step" : undefined}
-                aria-label={locked
-                  ? `Segment ${String(segment.index)} verrouillé`
-                  : `Segment ${String(segment.index)}. IP conseillé ${String(recommendedIp)}. Silver par heure ${formatRate(rates?.silverPerHour ?? 0)}. Fame par heure ${formatRate(rates?.famePerHour ?? 0)}.${pending ? " Changement en attente." : ""}`}
-                onMouseEnter={(event) => {
-                  if (locked) return;
-                  setHoveredSegment(segment.index);
-                  setTooltipPosition({ x: event.clientX, y: event.clientY });
-                }}
-                onMouseMove={(event) => {
-                  if (locked) return;
-                  setTooltipPosition({ x: event.clientX, y: event.clientY });
-                }}
-                onMouseLeave={() => {
-                  setHoveredSegment(null);
-                  setTooltipPosition(null);
-                }}
-                onFocus={(event) => {
-                  if (locked) return;
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  setHoveredSegment(segment.index);
-                  setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.bottom });
-                }}
-                onBlur={() => {
-                  setHoveredSegment(null);
-                  setTooltipPosition(null);
-                }}
-                onClick={() => { selectZoneSegment(viewedZone.zoneIndex, segment.index); }}
-              >
-                <span>{segment.isZoneBoss ? "" : String(segment.index)}</span>
-                {showTooltip && createPortal(
-                  <div
-                    className="dashboard-zone-tooltip"
-                    role="tooltip"
-                    style={{
-                      left: `${String(Math.max(12, Math.min(tooltipPosition.x + 16, window.innerWidth - 286)))}px`,
-                      top: `${String(Math.max(12, Math.min(tooltipPosition.y + 16, window.innerHeight - 210)))}px`,
-                    }}
-                  >
-                    <strong className="dashboard-zone-tooltip__title">Segment {String(segment.index)}</strong>
-                    <span className="dashboard-zone-tooltip__ip">IP CONSEILLÉ · {String(recommendedIp)}</span>
-                    <span className="dashboard-zone-tooltip__divider" />
-                    <span className="dashboard-zone-tooltip__rate">
-                      <span className="dashboard-zone-tooltip__icon" aria-hidden="true">◉</span>
-                      <span>Silver/h</span>
-                      <b className="dashboard-zone-tooltip__value dashboard-zone-tooltip__value--silver">{formatRate(rates.silverPerHour)}</b>
-                    </span>
-                    <span className="dashboard-zone-tooltip__rate">
-                      <span className="dashboard-zone-tooltip__icon dashboard-zone-tooltip__icon--fame" aria-hidden="true">★</span>
-                      <span>Fame/h</span>
-                      <b className="dashboard-zone-tooltip__value dashboard-zone-tooltip__value--fame">{formatRate(rates.famePerHour)}</b>
-                    </span>
-                    <span className="dashboard-zone-tooltip__divider" />
-                    <span className="dashboard-zone-tooltip__action">Cliquer pour aller à ce segment</span>
-                  </div>,
-                  document.body,
-                )}
-              </button>
-              {segmentPosition < viewedZone.segments.length - 1 && (
-                <span className="world-segment-strip__connector" aria-hidden="true" />
+            <button
+              key={segment.index}
+              type="button"
+              className={`world-segment-strip__segment world-segment-strip__segment--${segment.state}${segment.isZoneBoss ? " world-segment-strip__segment--boss" : ""}${pending ? " is-pending" : ""}`}
+              disabled={locked}
+              aria-current={viewedZone.isActive && segment.state === "current" ? "step" : undefined}
+              aria-label={locked
+                ? `Segment ${String(segment.index)} verrouillé`
+                : `Segment ${String(segment.index)}. IP conseillé ${String(recommendedIp)}. Silver par heure ${formatRate(rates?.silverPerHour ?? 0)}. Fame par heure ${formatRate(rates?.famePerHour ?? 0)}.${pending ? " Changement en attente." : ""}`}
+              onMouseEnter={(event) => {
+                if (locked) return;
+                setHoveredSegment(segment.index);
+                setTooltipPosition({ x: event.clientX, y: event.clientY });
+              }}
+              onMouseMove={(event) => {
+                if (locked) return;
+                setTooltipPosition({ x: event.clientX, y: event.clientY });
+              }}
+              onMouseLeave={() => {
+                setHoveredSegment(null);
+                setTooltipPosition(null);
+              }}
+              onFocus={(event) => {
+                if (locked) return;
+                const rect = event.currentTarget.getBoundingClientRect();
+                setHoveredSegment(segment.index);
+                setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.bottom });
+              }}
+              onBlur={() => {
+                setHoveredSegment(null);
+                setTooltipPosition(null);
+              }}
+              onClick={() => { selectZoneSegment(viewedZone.zoneIndex, segment.index); }}
+            >
+              <span>{segment.isZoneBoss ? "" : String(segment.index)}</span>
+              {showTooltip && createPortal(
+                <div
+                  className="dashboard-zone-tooltip"
+                  role="tooltip"
+                  style={{
+                    left: `${String(Math.max(12, Math.min(tooltipPosition.x + 16, window.innerWidth - 286)))}px`,
+                    top: `${String(Math.max(12, Math.min(tooltipPosition.y + 16, window.innerHeight - 210)))}px`,
+                  }}
+                >
+                  <strong className="dashboard-zone-tooltip__title">Segment {String(segment.index)}</strong>
+                  <span className="dashboard-zone-tooltip__ip">IP CONSEILLÉ · {String(recommendedIp)}</span>
+                  <span className="dashboard-zone-tooltip__divider" />
+                  <span className="dashboard-zone-tooltip__rate">
+                    <span className="dashboard-zone-tooltip__icon" aria-hidden="true">◉</span>
+                    <span>Silver/h</span>
+                    <b className="dashboard-zone-tooltip__value dashboard-zone-tooltip__value--silver">{formatRate(rates.silverPerHour)}</b>
+                  </span>
+                  <span className="dashboard-zone-tooltip__rate">
+                    <span className="dashboard-zone-tooltip__icon dashboard-zone-tooltip__icon--fame" aria-hidden="true">★</span>
+                    <span>Fame/h</span>
+                    <b className="dashboard-zone-tooltip__value dashboard-zone-tooltip__value--fame">{formatRate(rates.famePerHour)}</b>
+                  </span>
+                  <span className="dashboard-zone-tooltip__divider" />
+                  <span className="dashboard-zone-tooltip__action">Cliquer pour aller à ce segment</span>
+                </div>,
+                document.body,
               )}
-            </Fragment>
+            </button>
           );
         })}
       </div>
