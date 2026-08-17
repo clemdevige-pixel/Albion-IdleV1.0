@@ -99,17 +99,17 @@ function useEffectAnchorPositions(enemyHealthBarOffsetY: number): EffectAnchorPo
   useEffect(() => {
     const updatePositions = (): void => {
       const canvas = document.querySelector("canvas");
-      const layer = document.querySelector(".combat-hud-layer");
-      if (!(canvas instanceof HTMLCanvasElement) || !(layer instanceof HTMLElement)) return;
+      const hudRoot = document.querySelector(".hud-root");
+      if (!(canvas instanceof HTMLCanvasElement) || !(hudRoot instanceof HTMLElement)) return;
 
       const canvasRect = canvas.getBoundingClientRect();
-      const layerRect = layer.getBoundingClientRect();
+      const hudRect = hudRoot.getBoundingClientRect();
       if (canvas.width <= 0 || canvas.height <= 0 || canvasRect.width <= 0 || canvasRect.height <= 0) return;
 
       const scaleX = canvasRect.width / canvas.width;
       const scaleY = canvasRect.height / canvas.height;
-      const canvasLeft = canvasRect.left - layerRect.left;
-      const canvasTop = canvasRect.top - layerRect.top;
+      const canvasLeft = canvasRect.left - hudRect.left;
+      const canvasTop = canvasRect.top - hudRect.top;
       const entityY = canvas.height * 0.61;
       const gapBelowBar = 18;
 
