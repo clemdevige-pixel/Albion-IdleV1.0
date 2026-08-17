@@ -1,12 +1,11 @@
 import { PRIMARY_UI_MODULES, useNavigation } from "../navigation";
-import "./BottomNavigation.css";
 
 export function BottomNavigation(): JSX.Element {
   const navigation = useNavigation();
 
   return (
     <nav className="permanent-bottom-nav" aria-label="Navigation principale">
-      {PRIMARY_UI_MODULES.map((module) => {
+      {PRIMARY_UI_MODULES.map((module, index) => {
         const isActive = navigation.activeModule === module.id;
         return (
           <button
@@ -16,6 +15,9 @@ export function BottomNavigation(): JSX.Element {
             aria-pressed={isActive}
             onClick={() => { navigation.toggleModule(module.id); }}
           >
+            <span className="permanent-bottom-nav__index" aria-hidden="true">
+              {String(index + 1).padStart(2, "0")}
+            </span>
             <span className="permanent-bottom-nav__icon" aria-hidden="true">
               <img src={`/assets/ui/${module.icon ?? ""}`} alt="" draggable={false} />
             </span>
