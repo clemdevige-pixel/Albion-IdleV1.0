@@ -94,7 +94,6 @@
 
 .world-segment-strip__timeline {
   display: grid;
-  grid-template-columns: repeat(10, minmax(22px, 1fr));
   align-items: center;
   gap: 5px;
   width: min(620px, 100%);
@@ -128,7 +127,7 @@
 
 .world-segment-strip__segment:last-child::after { display: none; }
 .world-segment-strip__segment:disabled { cursor: default; opacity: .46; }
-.world-segment-strip__segment--completed {
+.world-segment-strip__segment--complete {
   color: #17120a;
   background: #b9862b;
   border-color: #d6ad54;
