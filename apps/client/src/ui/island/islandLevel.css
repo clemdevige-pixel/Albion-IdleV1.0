@@ -1,73 +1,95 @@
 .ui-island-level {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border: 1px solid rgba(190, 159, 105, 0.22);
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(35, 39, 45, 0.88), rgba(20, 23, 28, 0.9));
-  padding: 12px 14px;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-md);
+  background: linear-gradient(145deg, rgba(35, 26, 18, 0.62), rgba(11, 14, 19, 0.88));
+  color: var(--ui-color-text-primary);
 }
 
 .ui-island-level > div:first-child,
 .ui-island-level__heading > div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .ui-island-level__heading {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .ui-island-level strong {
-  color: #f4e7ca;
-  font-size: 13px;
+  overflow: hidden;
+  color: var(--ui-color-text-primary);
+  font-size: var(--ui-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ui-island-level small,
 .ui-island-level__unlocks {
-  color: rgba(218, 198, 163, 0.66);
-  font-size: 10px;
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+  line-height: 1.3;
 }
 
-.ui-island-level__requirements {
+.ui-island-level__requirements,
+.ui-island-level .ui-island-construction__costs {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 
-.ui-island-level__requirements span {
-  border: 1px solid rgba(182, 159, 116, 0.18);
-  border-radius: 999px;
-  padding: 3px 6px;
+.ui-island-level__requirements span,
+.ui-island-level .ui-island-construction__costs span {
+  padding: 2px 5px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-sm);
+  background: rgba(15, 19, 27, 0.58);
   font-size: 9px;
 }
 
 .ui-island-level .is-ready {
-  color: rgba(178, 218, 165, 0.85);
+  color: #8ee37d;
 }
 
 .ui-island-level .is-missing {
-  color: rgba(224, 150, 136, 0.88);
+  color: #ee766f;
+}
+
+.ui-island-level__unlocks {
+  padding-top: 5px;
+  border-top: 1px solid rgba(208, 157, 52, 0.13);
 }
 
 .ui-island-level button {
-  border: 1px solid rgba(205, 169, 101, 0.42);
-  border-radius: 7px;
-  background: rgba(99, 72, 36, 0.52);
-  color: #f0ddb7;
-  padding: 8px 10px;
+  min-height: 30px;
+  border: 1px solid rgba(208, 157, 52, 0.45);
+  border-radius: var(--ui-radius-sm);
+  background: rgba(177, 127, 37, 0.15);
+  color: var(--ui-color-accent);
+  padding: 5px 8px;
   font: inherit;
-  font-size: 10px;
+  font-size: var(--ui-text-xs);
+  font-weight: 700;
   cursor: pointer;
+  transition: border-color var(--ui-duration-fast), background var(--ui-duration-fast);
+}
+
+.ui-island-level button:hover:not(:disabled) {
+  border-color: rgba(208, 157, 52, 0.72);
+  background: rgba(177, 127, 37, 0.22);
 }
 
 .ui-island-level button:disabled {
-  border-color: rgba(145, 137, 123, 0.18);
-  background: rgba(35, 37, 39, 0.5);
-  color: rgba(214, 205, 190, 0.38);
+  border-color: var(--ui-color-border-subtle);
+  background: rgba(15, 19, 27, 0.48);
+  color: var(--ui-color-text-muted);
   cursor: default;
+  opacity: 0.55;
 }
