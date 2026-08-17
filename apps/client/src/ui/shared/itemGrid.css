@@ -81,6 +81,7 @@
   width: 68%;
   height: 68%;
   object-position: center;
+  transform: translateY(-10%);
 }
 
 .ui-item-grid__visual > .item-visual__image--key-fragment {
