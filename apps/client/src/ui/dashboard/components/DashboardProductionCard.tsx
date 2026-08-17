@@ -2,6 +2,7 @@ import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
 import type { DashboardProductionModel } from "../dashboardModels";
 import { useDashboardGatheringActions } from "../useDashboardData";
 import { DashboardCard } from "./DashboardCard";
+import "./DashboardProductionCard.css";
 
 interface DashboardProductionCardProps {
   readonly production: DashboardProductionModel;
@@ -24,7 +25,7 @@ export function DashboardProductionCard({
       title="Production"
       iconSrc="/assets/ui/nav-production.png"
       className="dashboard-card--production"
-      meta={production.hiddenTaskCount > 0 ? `+${String(production.hiddenTaskCount)}` : undefined}
+      meta={production.hiddenTaskCount > 0 ? `+${String(production.hiddenTaskCount)} autre${production.hiddenTaskCount > 1 ? "s" : ""}` : undefined}
     >
       {production.tasks.length === 0 ? (
         <p className="dashboard-empty">Aucune production active.</p>
