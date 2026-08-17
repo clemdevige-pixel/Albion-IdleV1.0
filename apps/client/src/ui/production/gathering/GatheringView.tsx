@@ -29,8 +29,8 @@ export function GatheringView(): JSX.Element {
       {model.queued !== null && (
         <div className="ui-gathering__queued" role="status" aria-live="polite">
           <div>
-            <strong>La récolte commencera à la fin de votre segment</strong>
-            <span>Le combat actuel continue jusqu'à la dernière rencontre.</span>
+            <strong>Récolte en attente du combat en cours</strong>
+            <span>Elle commencera dès que l'ennemi actuel sera vaincu.</span>
           </div>
           <b>
             Rencontre {String(model.queued.encounterIndex)} / {String(model.queued.encounterCount)}
