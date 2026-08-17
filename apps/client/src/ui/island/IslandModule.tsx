@@ -75,7 +75,7 @@ export function IslandModule(): JSX.Element {
   }
 
   return (
-    <div className="ui-island">
+    <div className="ui-island ui-island--overview">
       <section className="ui-island__intro">
         <div>
           <span className="ui-island__eyebrow">Île du joueur</span>
@@ -86,10 +86,10 @@ export function IslandModule(): JSX.Element {
       </section>
       <IslandLevelPanel />
       <IslandOnboardingGuide />
-      <section className="ui-island__selection ui-island__selection--empty">
-        <strong>Sélectionnez un bâtiment ou un emplacement libre</strong>
-        <p>La vue centrale de l'île reste visible pendant que ce panneau affiche le contenu sélectionné.</p>
-      </section>
+      <div className="ui-island__overview-hint">
+        <span aria-hidden="true">◆</span>
+        <span>Sélectionnez un bâtiment ou un emplacement libre sur l’île pour afficher sa gestion.</span>
+      </div>
     </div>
   );
 }
