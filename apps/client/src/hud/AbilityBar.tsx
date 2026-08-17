@@ -5,6 +5,7 @@ import {
   useAbilityBarUiModel,
   useCombatHudActions,
 } from "../ui/combat-hud/combatHudSelectors";
+import "./AbilityBar.css";
 
 const SHORTCUTS = ["Q", "W", "E"] as const;
 
@@ -123,12 +124,18 @@ export function AbilityBar(): JSX.Element {
         <button
           type="button"
           className={`ability-bar__auto${primaryAbility?.autoCast === true ? " ability-bar__auto--enabled" : ""}`}
-          title="Activer ou désactiver l’utilisation automatique des compétences"
+          title={primaryAbility?.autoCast === true ? "Désactiver l'utilisation automatique des compétences" : "Activer l'utilisation automatique des compétences"}
+          aria-label={primaryAbility?.autoCast === true ? "Désactiver l'utilisation automatique des compétences" : "Activer l'utilisation automatique des compétences"}
+          aria-pressed={primaryAbility?.autoCast === true}
           disabled={primaryAbility === null}
           onClick={() => { actions.setPrimaryAbilityAutoCast(!(primaryAbility?.autoCast ?? false)); }}
         >
-          <span>AUTO</span>
-          <i aria-hidden="true" />
+          <img
+            className="ability-bar__auto-image"
+            src={primaryAbility?.autoCast === true ? "/assets/ui/auto_active.png" : "/assets/ui/auto_inactive.png"}
+            alt=""
+            aria-hidden="true"
+          />
         </button>
       </div>
 
