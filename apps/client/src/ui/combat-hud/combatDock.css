@@ -46,7 +46,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 10px 18px 10px clamp(72px, 8vw, 128px);
+  padding: 10px 18px 10px clamp(42px, 6vw, 92px);
   box-sizing: border-box;
   transform: none;
   background:
@@ -61,10 +61,13 @@
   width: auto;
   min-width: 0;
   min-height: 82px;
-  gap: 16px;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
   padding: 7px 9px;
   box-sizing: border-box;
-  justify-content: center;
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -77,17 +80,20 @@
 .combat-hud-actions .combat-controls__abilities,
 .combat-hud-actions .combat-controls__utility,
 .combat-hud-actions .combat-controls__consumable {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  align-self: center;
   gap: 0;
-  padding-right: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .combat-hud-actions .ability-bar__skills {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
   gap: 14px;
-}
-
-.combat-hud-actions .combat-controls__utility,
-.combat-hud-actions .combat-controls__consumable {
-  margin-left: 3px;
 }
 
 .combat-hud-actions .ability-bar__slot {
@@ -108,6 +114,31 @@
   height: 68px;
   padding-inline: 15px;
   font-size: 12px;
+}
+
+/* Potion is part of the same action row as Q/W/E and Auto.
+ * The wrapper owns no extra geometry: the slot itself is the visual unit. */
+.combat-hud-actions .ability-bar__potion-wrapper {
+  position: relative;
+  display: flex;
+  flex: 0 0 68px;
+  width: 68px;
+  height: 68px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.combat-hud-actions .ability-bar__slot--potion {
+  position: relative;
+  inset: auto;
+  flex: 0 0 68px;
+  width: 68px;
+  min-width: 68px;
+  height: 68px;
+  margin: 0;
+  transform: none;
 }
 
 @media (max-width: 1100px) {
@@ -134,12 +165,12 @@
   .combat-hud-actions {
     left: 30%;
     height: 116px;
-    padding: 8px 10px 8px 42px;
+    padding: 8px 10px 8px 34px;
   }
 
   .combat-hud-actions .combat-controls {
     min-height: 68px;
-    gap: 11px;
+    gap: 12px;
     padding-inline: 6px;
   }
 
@@ -147,10 +178,18 @@
     gap: 10px;
   }
 
-  .combat-hud-actions .ability-bar__slot {
+  .combat-hud-actions .ability-bar__slot,
+  .combat-hud-actions .ability-bar__slot--potion {
     width: 56px;
     min-width: 56px;
     height: 56px;
+    flex-basis: 56px;
+  }
+
+  .combat-hud-actions .ability-bar__potion-wrapper {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
   }
 
   .combat-hud-actions .ability-bar__ability-icon,
