@@ -1,39 +1,52 @@
 .dashboard-yield {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ui-space-2);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
   margin: 0;
 }
 
 .dashboard-yield__metric {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
-  padding: 10px 12px;
-  background: linear-gradient(180deg, rgb(45 38 24 / 55%), rgb(15 19 25 / 78%));
-  border: 1px solid #3d3427;
+  padding: 7px 8px;
+  background: #0b0f14;
+  border: 1px solid #302c25;
   border-radius: var(--ui-radius-sm);
 }
 
 .dashboard-yield__metric dt {
-  color: var(--ui-color-text-muted);
-  font-size: var(--ui-text-xs);
+  overflow: hidden;
+  color: #929bab;
+  font-size: 8px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .dashboard-yield__metric dd {
   margin: 0;
-  color: var(--ui-color-text-primary);
+  color: #d8dce4;
   font-family: var(--ui-font-display);
-  font-size: var(--ui-text-lg);
+  font-size: 12px;
   font-weight: var(--ui-weight-bold);
   line-height: 1.1;
 }
 
-.dashboard-yield__metric--silver dd {
-  color: #d8dce4;
+.dashboard-yield__metric--silver,
+.dashboard-yield__metric--fame {
+  border-color: #4a3b24;
+  background: linear-gradient(180deg, rgb(49 40 23 / 48%), #0b0f14);
 }
 
+.dashboard-yield__metric--silver dd,
 .dashboard-yield__metric--fame dd {
-  color: var(--ui-color-accent-hover);
+  font-size: 15px;
+}
+
+.dashboard-yield__metric--silver dd { color: #d8dce4; }
+.dashboard-yield__metric--fame dd { color: var(--ui-color-accent-hover); }
+
+@media (max-width: 1220px) {
+  .dashboard-yield { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
