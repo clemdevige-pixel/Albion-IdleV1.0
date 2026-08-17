@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { DashboardZoneModel, DashboardZoneOptionModel } from "../../dashboard/dashboardModels";
 import { WORLD_BANDS, type WorldBandId } from "../worldModels";
+import "./WorldZoneTimeline.css";
 
 interface WorldZonesViewProps {
   readonly zone: DashboardZoneModel;
@@ -40,6 +41,10 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
     ?? bandZones[0]
     ?? currentZone(zone);
   const selectedBandModel = WORLD_BANDS.find((band) => band.id === selectedBand) ?? WORLD_BANDS[0]!;
+  const progressedSegmentCount = viewedZone.segments.filter((segment) => segment.state !== "locked").length;
+  const timelineProgress = viewedZone.segments.length <= 1
+    ? 100
+    : Math.max(0, Math.min(100, ((progressedSegmentCount - 1) / (viewedZone.segments.length - 1)) * 100));
 
   return (
     <div className="world-zones">
@@ -62,10 +67,7 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
         </section>
       ) : (
         <>
-          <section
-            className="world-zone-list"
-            aria-label={`Zones du monde ${selectedBandModel.label.toLowerCase()}`}
-          >
+          <section className="world-zone-list" aria-label={`Zones du monde ${selectedBandModel.label.toLowerCase()}`}>
             {bandZones.map((candidate, index) => (
               <button key={candidate.zoneIndex} type="button" className={`world-zone-row world-zone-row--${candidate.worldBandId}${candidate.zoneIndex === viewedZone.zoneIndex ? " is-selected" : ""}${candidate.isActive ? " is-current" : ""}${!candidate.isUnlocked ? " is-locked" : ""}`} onClick={() => { setViewedZoneIndex(candidate.zoneIndex); }}>
                 <span className="world-zone-row__number">{String(index + 1).padStart(2, "0")}</span>
@@ -95,10 +97,13 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               <span><small>Progression</small><strong>{viewedZone.unlockedSegmentCount} / {zone.segmentCount}</strong></span>
             </div>
 
-            <div className="world-zone-detail__timeline" aria-label="Segments de la zone">
+            <div className="world-zone-detail__timeline world-zone-timeline" aria-label="Segments de la zone">
+              <span className="world-zone-timeline__rail" aria-hidden="true">
+                <span className="world-zone-timeline__rail-progress" style={{ width: `${String(timelineProgress)}%` }} />
+              </span>
               {viewedZone.segments.map((segment) => (
-                <button key={segment.index} type="button" className={`world-zone-segment world-zone-segment--${segment.state}`} disabled={segment.state === "locked"} title={segment.state === "locked" ? `Segment ${segment.index} verrouillé` : `Voyager au segment ${segment.index}`} onClick={() => { onTravel(viewedZone.zoneIndex, segment.index); }}>
-                  <span>{segment.isZoneBoss ? "☠" : segment.index}</span>
+                <button key={segment.index} type="button" className={`world-zone-segment world-zone-timeline__segment world-zone-timeline__segment--${segment.state}${segment.isZoneBoss ? " world-zone-timeline__segment--boss" : ""}`} disabled={segment.state === "locked"} title={segment.state === "locked" ? `Segment ${segment.index} verrouillé` : `Voyager au segment ${segment.index}`} onClick={() => { onTravel(viewedZone.zoneIndex, segment.index); }}>
+                  <span>{segment.index}</span>
                   <small>{segment.index}</small>
                 </button>
               ))}
