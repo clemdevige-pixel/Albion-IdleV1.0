@@ -1,14 +1,16 @@
 .dashboard-yield {
   display: grid;
-  grid-template-columns: 1.12fr 1.12fr .88fr .88fr;
+  grid-template-columns: 1.08fr 1.08fr .92fr .92fr;
   gap: 5px;
   margin: 0;
 }
 
 .dashboard-yield__metric {
   display: grid;
-  gap: 2px;
+  align-content: center;
+  gap: 3px;
   min-width: 0;
+  min-height: 52px;
   padding: 7px 8px;
   background: #0b0f14;
   border: 1px solid #302c25;
@@ -16,7 +18,7 @@
 }
 
 .dashboard-yield__metric dt {
-  color: #929bab;
+  color: #a2adbb;
   font-size: 8px;
   line-height: 1.2;
   white-space: normal;
@@ -26,7 +28,7 @@
   margin: 0;
   color: #d8dce4;
   font-family: var(--ui-font-display);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: var(--ui-weight-bold);
   line-height: 1.1;
 }
