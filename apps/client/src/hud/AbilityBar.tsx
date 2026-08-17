@@ -125,8 +125,7 @@ export function AbilityBar(): JSX.Element {
         </div>
       </div>
 
-      <div className="combat-controls__utility">
-        <span className="combat-controls__label">Tactique</span>
+      <div className="ability-bar__auto-control">
         <button
           type="button"
           className={`ability-bar__auto${primaryAbility?.autoCast === true ? " ability-bar__auto--enabled" : ""}`}
