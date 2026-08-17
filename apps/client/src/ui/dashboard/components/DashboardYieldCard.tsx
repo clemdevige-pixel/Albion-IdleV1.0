@@ -1,6 +1,7 @@
 import { formatCompactNumber } from "../../shared";
 import type { DashboardSessionModel } from "../dashboardModels";
 import { DashboardCard } from "./DashboardCard";
+import "./DashboardYieldCard.css";
 
 type DashboardYieldModel = Pick<DashboardSessionModel, "silverPerHour" | "famePerHour">;
 
