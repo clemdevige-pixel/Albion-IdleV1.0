@@ -34,12 +34,12 @@
 }
 
 .ui-shell__world {
-  --ui-world-strip-growth: 42px;
+  --ui-world-strip-height: 84px;
   --ui-combat-dock-height: 132px;
   position: relative;
   display: grid;
   grid-area: world;
-  grid-template-rows: 42px minmax(0, 1fr);
+  grid-template-rows: var(--ui-world-strip-height) minmax(0, 1fr);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -71,10 +71,6 @@
   height: 2px;
   background: linear-gradient(90deg, transparent 3%, rgb(183 132 47 / 36%) 34%, rgb(183 132 47 / 36%) 66%, transparent 97%);
 }
-
-/* WorldSegmentStrip owns its own component layout in shell/WorldSegmentStrip.css.
- * Keep timeline/segment presentation out of this shell-level stylesheet to avoid
- * CSS injection-order differences between Vite HMR and a full page reload. */
 
 .ui-shell__combat-surface {
   position: relative;
@@ -277,7 +273,7 @@
   }
 
   .ui-shell__world {
-    --ui-world-strip-growth: 34px;
+    --ui-world-strip-height: 76px;
     --ui-combat-dock-height: 116px;
   }
 
