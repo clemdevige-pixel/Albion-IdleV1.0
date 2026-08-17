@@ -84,7 +84,7 @@
 
 .ui-mastery-family {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 14px;
+  grid-template-columns: 34px minmax(0, 1fr) 14px;
   gap: 8px;
   align-items: center;
   width: 100%;
@@ -106,15 +106,15 @@
 .ui-mastery-family__icon {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   font-size: 20px;
   text-align: center;
 }
 
 .ui-mastery-family__icon img {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -196,7 +196,7 @@
 .ui-mastery-family__expanded {
   display: grid;
   gap: 7px;
-  padding: 0 9px 9px 43px;
+  padding: 0 9px 9px 47px;
   border-top: 1px solid rgba(208, 157, 52, 0.18);
 }
 
