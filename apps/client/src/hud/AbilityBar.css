@@ -1,7 +1,7 @@
 .combat-action-bar {
   --combat-action-slot-size: 68px;
   --combat-action-gap: 8px;
-  --combat-auto-width: 60px;
+  --combat-auto-width: 80px;
 
   display: flex;
   align-items: center;
@@ -242,7 +242,7 @@
   .combat-action-bar {
     --combat-action-slot-size: 56px;
     --combat-action-gap: 6px;
-    --combat-auto-width: 50px;
+    --combat-auto-width: 66px;
 
     gap: 8px;
     padding: 6px 8px;
