@@ -143,28 +143,28 @@ export function WorldSegmentStrip(): JSX.Element {
               <span>{segment.isZoneBoss ? "" : String(segment.index)}</span>
               {showTooltip && createPortal(
                 <div
-                  className="dashboard-zone-tooltip"
+                  className="world-segment-strip__tooltip"
                   role="tooltip"
                   style={{
                     left: `${String(Math.max(12, Math.min(tooltipPosition.x + 16, window.innerWidth - 286)))}px`,
                     top: `${String(Math.max(12, Math.min(tooltipPosition.y + 16, window.innerHeight - 210)))}px`,
                   }}
                 >
-                  <strong className="dashboard-zone-tooltip__title">Segment {String(segment.index)}</strong>
-                  <span className="dashboard-zone-tooltip__ip">IP CONSEILLÉ · {String(recommendedIp)}</span>
-                  <span className="dashboard-zone-tooltip__divider" />
-                  <span className="dashboard-zone-tooltip__rate">
-                    <span className="dashboard-zone-tooltip__icon" aria-hidden="true">◉</span>
+                  <strong className="world-segment-strip__tooltip-title">Segment {String(segment.index)}</strong>
+                  <span className="world-segment-strip__tooltip-ip">IP CONSEILLÉ · {String(recommendedIp)}</span>
+                  <span className="world-segment-strip__tooltip-divider" />
+                  <span className="world-segment-strip__tooltip-rate">
+                    <span className="world-segment-strip__tooltip-icon" aria-hidden="true">◉</span>
                     <span>Silver/h</span>
-                    <b className="dashboard-zone-tooltip__value dashboard-zone-tooltip__value--silver">{formatRate(rates.silverPerHour)}</b>
+                    <b className="world-segment-strip__tooltip-value world-segment-strip__tooltip-value--silver">{formatRate(rates.silverPerHour)}</b>
                   </span>
-                  <span className="dashboard-zone-tooltip__rate">
-                    <span className="dashboard-zone-tooltip__icon dashboard-zone-tooltip__icon--fame" aria-hidden="true">★</span>
+                  <span className="world-segment-strip__tooltip-rate">
+                    <span className="world-segment-strip__tooltip-icon world-segment-strip__tooltip-icon--fame" aria-hidden="true">★</span>
                     <span>Fame/h</span>
-                    <b className="dashboard-zone-tooltip__value dashboard-zone-tooltip__value--fame">{formatRate(rates.famePerHour)}</b>
+                    <b className="world-segment-strip__tooltip-value world-segment-strip__tooltip-value--fame">{formatRate(rates.famePerHour)}</b>
                   </span>
-                  <span className="dashboard-zone-tooltip__divider" />
-                  <span className="dashboard-zone-tooltip__action">Cliquer pour aller à ce segment</span>
+                  <span className="world-segment-strip__tooltip-divider" />
+                  <span className="world-segment-strip__tooltip-action">Cliquer pour aller à ce segment</span>
                 </div>,
                 document.body,
               )}
