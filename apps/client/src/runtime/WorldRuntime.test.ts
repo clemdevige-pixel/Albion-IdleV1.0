@@ -26,31 +26,21 @@ function createLoadedWorld(activeEncounter: number) {
 }
 
 describe("WorldRuntime combat navigation rules", () => {
-  it("applies a queued manual segment change only after the current segment completes", () => {
-    const { worldRuntime } = createLoadedWorld(0);
-
-    worldRuntime.advanceVictory();
-    worldRuntime.advanceVictory();
-    worldRuntime.advanceVictory();
-    expect(worldRuntime.currentSegment).toBe(2);
-    expect(worldRuntime.currentEncounter).toBe(3);
+  it("applies a queued manual segment change after the current encounter completes", () => {
+    const { worldRuntime } = createLoadedWorld(2);
 
     expect(worldRuntime.queueSegmentChange(1)).toBe(true);
     expect(worldRuntime.pendingSegment).toBe(0);
 
     worldRuntime.advanceVictory();
-    expect(worldRuntime.currentSegment).toBe(2);
-    expect(worldRuntime.currentEncounter).toBe(4);
-    expect(worldRuntime.pendingSegment).toBe(0);
 
-    worldRuntime.advanceVictory();
     expect(worldRuntime.currentSegment).toBe(0);
     expect(worldRuntime.currentEncounter).toBe(0);
     expect(worldRuntime.pendingSegment).toBeNull();
   });
 
-  it("applies queued cross-zone travel only after the current segment completes", () => {
-    const { worldRuntime, progressionManager, forestZoneDefId } = createLoadedWorld(0);
+  it("applies queued cross-zone travel after the current encounter completes", () => {
+    const { worldRuntime, progressionManager, forestZoneDefId } = createLoadedWorld(2);
     progressionManager.markCompleted(forestZoneDefId);
 
     expect(worldRuntime.selectZone(2, 1)).toBe(true);
@@ -58,23 +48,28 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.pendingZone).toBe(1);
     expect(worldRuntime.pendingZoneSegment).toBe(0);
 
-    for (let encounter = 0; encounter < 4; encounter += 1) worldRuntime.advanceVictory();
-    expect(worldRuntime.currentZoneIndex).toBe(0);
-    expect(worldRuntime.currentEncounter).toBe(4);
-    expect(worldRuntime.pendingZone).toBe(1);
-
     worldRuntime.advanceVictory();
+
     expect(worldRuntime.currentZoneIndex).toBe(1);
     expect(worldRuntime.currentSegment).toBe(0);
     expect(worldRuntime.currentEncounter).toBe(0);
     expect(worldRuntime.pendingZone).toBeNull();
   });
 
+  it("keeps normal world progression unchanged when no manual destination is queued", () => {
+    const { worldRuntime } = createLoadedWorld(2);
+
+    worldRuntime.advanceVictory();
+
+    expect(worldRuntime.currentSegment).toBe(2);
+    expect(worldRuntime.currentEncounter).toBe(3);
+    expect(worldRuntime.pendingSegment).toBeNull();
+  });
+
   it("applies a queued segment destination when defeat ends the current attempt", () => {
     const { worldRuntime } = createLoadedWorld(0);
 
     expect(worldRuntime.queueSegmentChange(1)).toBe(true);
-    worldRuntime.advanceVictory();
     worldRuntime.advanceDefeat();
 
     expect(worldRuntime.currentSegment).toBe(0);
@@ -87,7 +82,6 @@ describe("WorldRuntime combat navigation rules", () => {
     progressionManager.markCompleted(forestZoneDefId);
 
     expect(worldRuntime.selectZone(2, 1)).toBe(true);
-    worldRuntime.advanceVictory();
     worldRuntime.advanceDefeat();
 
     expect(worldRuntime.currentZoneIndex).toBe(1);
