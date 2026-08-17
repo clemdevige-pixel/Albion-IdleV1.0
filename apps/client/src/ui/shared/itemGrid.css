@@ -78,10 +78,8 @@
 
 /* Special-loot sizing is presentation-only: keep source assets untouched. */
 .ui-item-grid__visual > .item-visual__image--dungeon-key {
-  width: 150%;
-  height: 150%;
-  max-width: none;
-  max-height: none;
+  width: 100%;
+  height: 100%;
 }
 
 .ui-item-grid__visual > .item-visual__image--key-fragment {
