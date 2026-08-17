@@ -103,7 +103,7 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               </span>
               {viewedZone.segments.map((segment) => (
                 <button key={segment.index} type="button" className={`world-zone-segment world-zone-timeline__segment world-zone-timeline__segment--${segment.state}${segment.isZoneBoss ? " world-zone-timeline__segment--boss" : ""}`} disabled={segment.state === "locked"} title={segment.state === "locked" ? `Segment ${segment.index} verrouillé` : `Voyager au segment ${segment.index}`} onClick={() => { onTravel(viewedZone.zoneIndex, segment.index); }}>
-                  <span>{segment.index}</span>
+                  <span>{segment.isZoneBoss ? "" : segment.index}</span>
                   <small>{segment.index}</small>
                 </button>
               ))}
