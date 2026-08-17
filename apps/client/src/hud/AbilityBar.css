@@ -1,3 +1,20 @@
+.ability-bar__ability-icon,
+.ability-tooltip__icon {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.ability-bar__ability-icon img,
+.ability-tooltip__icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 .ability-bar__auto,
 .ability-bar__auto--enabled {
   width: 54px;
