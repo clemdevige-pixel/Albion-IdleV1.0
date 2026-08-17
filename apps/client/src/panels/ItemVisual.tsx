@@ -15,7 +15,7 @@ import "./itemRarity.css";
 
 export type ItemVisualDefinition = CatalogItemVisualDefinition;
 interface ConsumableVisualDefinition { readonly name: string; readonly icon: string; }
-interface SymbolVisualDefinition { readonly name: string; readonly symbol: string; readonly className: string; }
+interface EnchantmentResourceVisualDefinition { readonly name: string; readonly icon: string; }
 interface SpecialLootVisualDefinition {
   readonly name: string;
   readonly className: string;
@@ -50,12 +50,12 @@ const CONSUMABLE_VISUALS: Readonly<Record<string, ConsumableVisualDefinition>> =
   item_health_potion: { name: "Potion de soin", icon: "item-health-potion-pixel-v1.png" },
 };
 
-const ENCHANTMENT_RESOURCE_VISUALS: Readonly<Record<string, { readonly name: string; readonly symbol: string }>> = {
-  item_resource_enchantment_shard_t4: { name: "Éclat d’enchantement T4", symbol: "✦" },
-  item_resource_enchantment_shard_t5: { name: "Éclat d’enchantement T5", symbol: "✦" },
-  item_resource_enchantment_shard_t6: { name: "Éclat d’enchantement T6", symbol: "✦" },
-  item_resource_enchantment_shard_t7: { name: "Éclat d’enchantement T7", symbol: "✦" },
-  item_resource_enchantment_shard_t8: { name: "Éclat d’enchantement T8", symbol: "✦" },
+const ENCHANTMENT_RESOURCE_VISUALS: Readonly<Record<string, EnchantmentResourceVisualDefinition>> = {
+  item_resource_enchantment_shard_t4: { name: "Éclat d’enchantement T4", icon: "eclat_enchantement_t4_bleu.png" },
+  item_resource_enchantment_shard_t5: { name: "Éclat d’enchantement T5", icon: "eclat_enchantement_t5_rouge.png" },
+  item_resource_enchantment_shard_t6: { name: "Éclat d’enchantement T6", icon: "eclat_enchantement_t6_orange.png" },
+  item_resource_enchantment_shard_t7: { name: "Éclat d’enchantement T7", icon: "eclat_enchantement_t7_jaune.png" },
+  item_resource_enchantment_shard_t8: { name: "Éclat d’enchantement T8", icon: "eclat_enchantement_t8_blanc.png" },
 };
 
 const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
@@ -223,12 +223,12 @@ export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element
 
   if (enchantmentResource !== undefined) {
     return (
-      <span
-        className="item-visual__fallback item-visual__fallback--enchantment"
-        aria-label={enchantmentResource.name}
-      >
-        {enchantmentResource.symbol}
-      </span>
+      <img
+        className="item-visual__image item-visual__image--special item-visual__image--enchantment"
+        src={`/assets/items/${enchantmentResource.icon}`}
+        alt={enchantmentResource.name}
+        draggable={false}
+      />
     );
   }
   if (specialLoot !== undefined) {
