@@ -113,6 +113,7 @@ function BuildingSummary({
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const flatSelection = definitionId === "worker_house"
+    || definitionId === "storage"
     || definition.gatheringService !== undefined
     || definition.refiningService !== undefined
     || definition.craftingService !== undefined;
