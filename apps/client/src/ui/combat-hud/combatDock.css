@@ -14,8 +14,54 @@
 }
 
 .combat-hud-journal .activity-journal {
+  position: relative;
+  inset: auto;
   width: 100%;
+  min-width: 0;
   height: 100%;
+  border-radius: 2px;
+  box-sizing: border-box;
+}
+
+.combat-hud-journal .activity-journal__tabs {
+  height: 31px;
+}
+
+.combat-hud-journal .activity-journal__tabs button {
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.combat-hud-journal .activity-journal__history {
+  height: calc(100% - 31px);
+  padding: 7px 9px 8px;
+  scrollbar-gutter: stable;
+}
+
+.combat-hud-journal .activity-journal__entry {
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 7px;
+  padding-block: 2px;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.combat-hud-journal .activity-journal__entry time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combat-hud-journal .activity-journal__entry span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.combat-hud-journal .activity-journal__empty {
+  padding-top: 14px;
+  font-size: 10px;
 }
 
 .combat-hud-actions {
@@ -26,8 +72,8 @@
   height: 132px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 10px 18px;
+  justify-content: flex-start;
+  padding: 10px 18px 10px clamp(72px, 8vw, 128px);
   box-sizing: border-box;
   transform: none;
   background:
@@ -97,10 +143,31 @@
     height: 116px;
   }
 
+  .combat-hud-journal .activity-journal__tabs {
+    height: 28px;
+  }
+
+  .combat-hud-journal .activity-journal__tabs button,
+  .combat-hud-journal .activity-journal__entry,
+  .combat-hud-journal .activity-journal__empty {
+    font-size: 9px;
+  }
+
+  .combat-hud-journal .activity-journal__history {
+    height: calc(100% - 28px);
+    padding: 5px 7px 6px;
+  }
+
+  .combat-hud-journal .activity-journal__entry {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 5px;
+    padding-block: 1px;
+  }
+
   .combat-hud-actions {
     left: 30%;
     height: 116px;
-    padding: 8px 10px;
+    padding: 8px 10px 8px 42px;
   }
 
   .combat-hud-actions .combat-controls {
