@@ -7,19 +7,24 @@ describe("dungeonLootContentCatalog", () => {
     for (const dungeon of DUNGEON_DEFINITIONS) {
       const loot = getDungeonLootDefinition(dungeon.lootTableId);
       const suffix = dungeon.faction.toLowerCase();
-
       expect(loot.faction).toBe(dungeon.faction);
       expect(loot.artifactFragmentItemId).toBe(`item_resource_artifact_fragment_${suffix}`);
       expect(loot.artifactItemId).toBe(`item_resource_artifact_${suffix}`);
     }
   });
 
-  it("shares the provisional T4 reward economy without duplicating runtime tuning", () => {
+  it("shares one provisional reward profile per dungeon tier", () => {
     for (const dungeon of DUNGEON_DEFINITIONS) {
       const loot = getDungeonLootDefinition(dungeon.lootTableId);
-      expect(loot.encounters.normal).toEqual({ artifactFragmentQuantity: 4, artifactDropChance: 0 });
-      expect(loot.encounters.elite).toEqual({ artifactFragmentQuantity: 10, artifactDropChance: 0 });
-      expect(loot.encounters.boss).toEqual({ artifactFragmentQuantity: 28, artifactDropChance: 0.1 });
+      if (dungeon.tier === 4) {
+        expect(loot.encounters.normal).toEqual({ artifactFragmentQuantity: 4, artifactDropChance: 0 });
+        expect(loot.encounters.elite).toEqual({ artifactFragmentQuantity: 10, artifactDropChance: 0 });
+        expect(loot.encounters.boss).toEqual({ artifactFragmentQuantity: 28, artifactDropChance: 0.1 });
+      } else if (dungeon.tier === 5) {
+        expect(loot.encounters.normal).toEqual({ artifactFragmentQuantity: 5, artifactDropChance: 0 });
+        expect(loot.encounters.elite).toEqual({ artifactFragmentQuantity: 12, artifactDropChance: 0 });
+        expect(loot.encounters.boss).toEqual({ artifactFragmentQuantity: 34, artifactDropChance: 0.12 });
+      }
     }
   });
 
