@@ -118,35 +118,49 @@
 
 .ui-shell__bottom .permanent-bottom-nav {
   justify-content: space-evenly;
+  align-items: center;
   gap: clamp(12px, 1.6vw, 28px);
-  padding: 12px clamp(22px, 3.8vw, 64px);
+  padding: 9px clamp(22px, 3.8vw, 64px);
 }
 
 .ui-shell__bottom .permanent-bottom-nav__item {
   flex: 1 1 0;
   min-width: 0;
   max-width: 190px;
-  height: 78px;
-  padding: 8px 14px;
-  grid-template-columns: 44px minmax(0, auto);
-  gap: 10px;
+  height: 96px;
+  padding: 7px 14px 9px;
+  grid-template-columns: 1fr;
+  grid-template-rows: 62px auto;
+  align-items: center;
+  justify-items: center;
+  gap: 3px;
 }
 
 .ui-shell__bottom .permanent-bottom-nav__icon,
 .ui-shell__bottom .permanent-bottom-nav__icon img {
-  width: 42px;
-  height: 42px;
+  width: 60px;
+  height: 60px;
 }
 
 .ui-shell__bottom .permanent-bottom-nav__label {
-  font-size: 13px;
+  width: 100%;
+  overflow: visible;
+  color: #d8cab0;
+  font-size: 14px;
+  font-weight: var(--ui-weight-semibold);
+  line-height: 1;
   letter-spacing: 0.025em;
+  text-align: center;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
-.ui-shell__bottom .permanent-bottom-nav__index {
-  top: 6px;
-  right: 8px;
-  font-size: 8px;
+.ui-shell__bottom .permanent-bottom-nav__item:hover .permanent-bottom-nav__label {
+  color: #ead9b6;
+}
+
+.ui-shell__bottom .permanent-bottom-nav__item.is-active .permanent-bottom-nav__label {
+  color: var(--ui-color-accent-hover);
 }
 
 .ui-right-panel {
@@ -284,24 +298,25 @@
   .ui-shell__bottom .permanent-bottom-nav {
     justify-content: flex-start;
     gap: 8px;
-    padding-inline: 12px;
+    padding: 10px 12px;
   }
 
   .ui-shell__bottom .permanent-bottom-nav__item {
     flex: 1 0 112px;
-    height: 72px;
-    padding-inline: 8px;
-    grid-template-columns: 34px minmax(0, auto);
-    gap: 7px;
+    height: 90px;
+    padding: 6px 8px 8px;
+    grid-template-columns: 1fr;
+    grid-template-rows: 54px auto;
+    gap: 3px;
   }
 
   .ui-shell__bottom .permanent-bottom-nav__icon,
   .ui-shell__bottom .permanent-bottom-nav__icon img {
-    width: 34px;
-    height: 34px;
+    width: 52px;
+    height: 52px;
   }
 
   .ui-shell__bottom .permanent-bottom-nav__label {
-    font-size: 11px;
+    font-size: 12px;
   }
 }
