@@ -55,6 +55,7 @@ export interface DashboardZoneModel {
   readonly segmentCount: number;
   readonly encounterIndex: number;
   readonly encounterCount: number;
+  readonly pendingSegmentIndex: number | undefined;
   readonly progress: number;
   readonly recommendedItemPower: number;
   readonly segments: readonly DashboardSegmentModel[];
@@ -187,6 +188,10 @@ export function selectDashboardZone(state: GameBridgeState): DashboardZoneModel 
     };
   });
 
+  const pendingSegmentIndex = world.pendingZoneIndex === world.zoneIndex
+    ? world.pendingSegmentIndex ?? undefined
+    : undefined;
+
   return {
     zoneIndex: world.zoneIndex,
     worldBandId: world.worldBandId,
@@ -199,6 +204,7 @@ export function selectDashboardZone(state: GameBridgeState): DashboardZoneModel 
     segmentCount: world.segmentCount,
     encounterIndex: world.encounterIndex,
     encounterCount: world.encounterCount,
+    pendingSegmentIndex,
     progress: world.zoneProgress,
     recommendedItemPower: getSegmentRecommendedItemPower(
       world.zoneIndexWithinBand + 1,
