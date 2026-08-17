@@ -51,26 +51,27 @@
   transition: width var(--ui-duration-normal) linear;
 }
 
-/* Header economy counters: presentation is scoped here so the shell layout stays untouched. */
+/* Economy presentation only: keep the permanent shell grid and responsive rules untouched. */
 .permanent-header__economy {
-  align-self: start;
-  padding-block: 3px 0;
+  align-self: stretch;
+  align-items: center;
+  margin-right: 48px;
 }
 
 .permanent-header__resource {
-  min-width: 96px;
-  height: 30px;
-  gap: 6px;
-  padding: 0 9px;
+  min-width: 142px;
+  height: 100%;
+  gap: 10px;
+  padding: 0 14px;
 }
 
 .permanent-header__resource-icon {
   display: grid;
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
   place-items: center;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -79,28 +80,32 @@
 
 .permanent-header__resource-icon img {
   display: block;
-  width: 22px;
-  height: 22px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
   image-rendering: pixelated;
 }
 
 .permanent-header__resource-copy {
   display: grid;
-  min-width: 0;
-  gap: 0;
+  min-width: 72px;
+  gap: 3px;
+  align-content: center;
   line-height: 1;
 }
 
 .permanent-header__resource-copy small {
-  font-size: 7px;
+  color: var(--ui-color-text-muted);
+  font-size: 9px;
   line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .permanent-header__resource-copy strong {
-  margin-top: 2px;
+  margin: 0;
   color: #efe4cb;
-  font-size: 12px;
-  line-height: 1;
+  font-size: 16px;
+  line-height: 1.05;
   white-space: nowrap;
 }
