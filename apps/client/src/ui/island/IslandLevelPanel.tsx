@@ -28,13 +28,11 @@ export function IslandLevelPanel(): JSX.Element {
 
   if (next === undefined) {
     return (
-      <section className="ui-island-level">
-        <div>
-          <span className="ui-island__eyebrow">Progression de l'île</span>
-          <strong>Île niveau {String(level)} · {current.label}</strong>
-          <small>Niveau maximum actuellement authoré · bâtiments jusqu'au niveau {String(current.maxBuildingLevel)}</small>
-        </div>
-      </section>
+      <div className="ui-island-level ui-island-level--max">
+        <span>Progression de l'île</span>
+        <strong>Niveau maximum actuel atteint</strong>
+        <b aria-label="Terminé">✓</b>
+      </div>
     );
   }
 
