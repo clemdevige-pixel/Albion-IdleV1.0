@@ -4,6 +4,7 @@ import { HudRoot } from "../../hud/HudRoot";
 import { EconomyNotifications } from "../../panels/EconomyNotifications";
 import { EnemyStatusVfxOverlay } from "./EnemyStatusVfxOverlay";
 import "./combatHud.css";
+import "./combatDock.css";
 
 /**
  * React-owned presentation layer displayed over the persistent Phaser world.
