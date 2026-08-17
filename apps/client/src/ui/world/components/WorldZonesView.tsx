@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { WORLD_ZONE_IDS } from "../../../data/worldContentCatalog";
 import type { DashboardZoneModel, DashboardZoneOptionModel } from "../../dashboard/dashboardModels";
 import { WORLD_BANDS, type WorldBandId } from "../worldModels";
 import "./WorldZoneTimeline.css";
@@ -9,18 +10,21 @@ interface WorldZonesViewProps {
   readonly onSetFarmMode: (enabled: boolean) => void;
 }
 
-const ZONE_VISUALS = {
-  "birch forest": "/assets/world/zones/birch_forest.png",
-  "dark swamp": "/assets/world/zones/dark_swamp.png",
-  "stone highlands": "/assets/world/zones/stone_highlands.png",
-  "golden steppe": "/assets/world/zones/golden_steppe.png",
-  "frostpeak mountain": "/assets/world/zones/frostpeak_mountain.png",
-} as const;
+const ZONE_VISUALS: Readonly<Record<string, string>> = {
+  [WORLD_ZONE_IDS.forest]: "/assets/world/zones/birch_forest.png",
+  [WORLD_ZONE_IDS.swamp]: "/assets/world/zones/dark_swamp.png",
+  [WORLD_ZONE_IDS.highland]: "/assets/world/zones/stone_highlands.png",
+  [WORLD_ZONE_IDS.steppe]: "/assets/world/zones/golden_steppe.png",
+  [WORLD_ZONE_IDS.mountain]: "/assets/world/zones/frostpeak_mountain.png",
+  [WORLD_ZONE_IDS.amberwood]: "/assets/world/zones/amberwood_forest.png",
+  [WORLD_ZONE_IDS.gloamfen]: "/assets/world/zones/gloamfen_marsh.png",
+  [WORLD_ZONE_IDS.stormwatch]: "/assets/world/zones/stormwatch_highlands.png",
+  [WORLD_ZONE_IDS.sunscar]: "/assets/world/zones/sunscar_steppe.png",
+  [WORLD_ZONE_IDS.ironveil]: "/assets/world/zones/ironveil_peaks.png",
+};
 
 function zoneVisual(zone: DashboardZoneOptionModel): string | undefined {
-  const zoneName = zone.zoneName.toLowerCase();
-  const biomeName = zone.biomeName.toLowerCase();
-  return Object.entries(ZONE_VISUALS).find(([key]) => zoneName.includes(key) || biomeName.includes(key))?.[1];
+  return ZONE_VISUALS[zone.zoneDefId];
 }
 
 function currentZone(zone: DashboardZoneModel): DashboardZoneOptionModel {
