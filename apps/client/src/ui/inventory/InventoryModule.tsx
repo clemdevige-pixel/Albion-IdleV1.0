@@ -15,16 +15,41 @@ interface ContextMenuState {
 }
 
 type StorageTab = "inventory" | "bank";
+type InventoryFilter = "all" | "equipment" | "resources" | "special";
+
+const INVENTORY_FILTERS: readonly { readonly id: InventoryFilter; readonly label: string }[] = [
+  { id: "all", label: "Tous" },
+  { id: "equipment", label: "Équipement" },
+  { id: "resources", label: "Ressources" },
+  { id: "special", label: "Spéciaux" },
+];
+
+function isSpecialInventoryItem(itemId: string): boolean {
+  return itemId.startsWith("item_resource_dungeon_key_")
+    || itemId.startsWith("item_resource_artifact_")
+    || itemId.startsWith("item_resource_key_fragment_");
+}
+
+function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter): boolean {
+  if (filter === "all") return true;
+  const itemId = slot.itemId;
+  if (itemId === undefined) return false;
+  if (filter === "equipment") return getItemDefinition(itemId) !== undefined;
+  if (filter === "special") return isSpecialInventoryItem(itemId);
+  return getItemDefinition(itemId) === undefined && !isSpecialInventoryItem(itemId);
+}
 
 export function InventoryModule(): JSX.Element {
   const inventory = useInventoryData();
   const actions = useInventoryActions();
   const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
+  const [activeFilter, setActiveFilter] = useState<InventoryFilter>("all");
   const [selectedPosition, setSelectedPosition] = useState<number | undefined>(undefined);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const capacityRatio = inventory.capacity === 0
     ? 0
     : Math.min(100, (inventory.occupied / inventory.capacity) * 100);
+  const filteredSlots = inventory.slots.filter((slot) => matchesInventoryFilter(slot, activeFilter));
   const selectedSlot = selectedPosition === undefined
     ? undefined
     : inventory.slots.find((slot) => slot.position === selectedPosition && slot.itemId !== undefined);
@@ -50,6 +75,12 @@ export function InventoryModule(): JSX.Element {
   ) => {
     event.preventDefault();
     setContextMenu({ position: slot.position, x: event.clientX, y: event.clientY });
+  }, []);
+
+  const handleFilterChange = useCallback((filter: InventoryFilter) => {
+    setActiveFilter(filter);
+    setSelectedPosition(undefined);
+    setContextMenu(null);
   }, []);
 
   return (
@@ -85,21 +116,38 @@ export function InventoryModule(): JSX.Element {
             <button type="button" className="storage-module__sort-button" onClick={() => { actions.sort("inventory"); }} aria-label="Trier l’inventaire" title="Trier l’inventaire">
               <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
             </button>
+            <div className="storage-module__filters" role="group" aria-label="Filtrer l’inventaire">
+              {INVENTORY_FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  className={activeFilter === filter.id ? "is-active" : ""}
+                  aria-pressed={activeFilter === filter.id}
+                  onClick={() => { handleFilterChange(filter.id); }}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
             <span className="storage-module__shortcut">Maj + double-clic → banque</span>
           </div>
 
           <section className="storage-module__surface">
-            <ItemGrid
-              slots={inventory.slots}
-              label="Objets dans l’inventaire"
-              interactive
-              draggable
-              selectedPosition={selectedPosition}
-              onItemClick={(slot) => { setSelectedPosition(slot.position); }}
-              onItemDrop={(from, to) => { actions.move("inventory", from, to); }}
-              onItemDoubleClick={handleDoubleClick}
-              onItemContextMenu={handleContextMenu}
-            />
+            {filteredSlots.length > 0 ? (
+              <ItemGrid
+                slots={filteredSlots}
+                label={`Objets dans l’inventaire · filtre ${INVENTORY_FILTERS.find((filter) => filter.id === activeFilter)?.label ?? "Tous"}`}
+                interactive
+                draggable
+                selectedPosition={selectedPosition}
+                onItemClick={(slot) => { setSelectedPosition(slot.position); }}
+                onItemDrop={(from, to) => { actions.move("inventory", from, to); }}
+                onItemDoubleClick={handleDoubleClick}
+                onItemContextMenu={handleContextMenu}
+              />
+            ) : (
+              <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>
+            )}
           </section>
 
           {selectedSlot !== undefined && selectedItemId !== undefined ? (
