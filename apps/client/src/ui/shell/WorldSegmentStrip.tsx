@@ -38,7 +38,7 @@ export function WorldSegmentStrip(): JSX.Element {
       <span className="world-segment-strip__label">Progression</span>
       <div
         className="world-segment-strip__timeline"
-        style={{ gridTemplateColumns: `repeat(${String(Math.max(1, zone.segmentCount))}, minmax(22px, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${String(Math.max(1, zone.segmentCount))}, 1fr)` }}
       >
         {zone.segments.map((segment) => {
           const locked = segment.state === "locked";
@@ -99,7 +99,7 @@ export function WorldSegmentStrip(): JSX.Element {
               }}
               onClick={() => { selectZoneSegment(zone.zoneIndex, segment.index); }}
             >
-              <span>{segment.state === "complete" ? "✓" : segment.isZoneBoss ? "☠" : String(segment.index)}</span>
+              <span>{segment.isZoneBoss ? "☠" : String(segment.index)}</span>
               {showTooltip && createPortal(
                 <div
                   className="dashboard-zone-tooltip"
