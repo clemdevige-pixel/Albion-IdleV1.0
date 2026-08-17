@@ -288,7 +288,6 @@
   .permanent-header__location { width: min(100%, 320px); }
   .permanent-header__resource { min-width: 105px; padding-inline: var(--ui-space-2); }
   .permanent-header__resource-icon { display: none; }
-  .permanent-bottom-nav__item { grid-template-columns: 27px auto; min-width: 82px; padding-inline: var(--ui-space-2); }
 }
 
 @media (max-width: 950px) {
