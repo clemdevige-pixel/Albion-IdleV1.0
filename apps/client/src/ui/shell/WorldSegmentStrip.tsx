@@ -42,6 +42,10 @@ export function WorldSegmentStrip(): JSX.Element {
   const magicalDamage = readComputedStat(bridge.stats, "stat_magical_damage");
   const attackSpeed = readComputedStat(bridge.stats, "stat_attack_speed");
   const primaryAbilityAutoCast = bridge.abilities.primary?.autoCast ?? false;
+  const progressedSegmentCount = viewedZone.segments.filter((segment) => segment.state !== "locked").length;
+  const railProgress = viewedZone.segments.length <= 1
+    ? 100
+    : Math.max(0, Math.min(100, ((progressedSegmentCount - 1) / (viewedZone.segments.length - 1)) * 100));
 
   return (
     <div className="world-segment-strip" aria-label="Navigation des zones et segments">
@@ -71,7 +75,12 @@ export function WorldSegmentStrip(): JSX.Element {
       </div>
 
       <div className="world-segment-strip__timeline">
-        <span className="world-segment-strip__rail" aria-hidden="true" />
+        <span className="world-segment-strip__rail" aria-hidden="true">
+          <span
+            className="world-segment-strip__rail-progress"
+            style={{ width: `${String(railProgress)}%` }}
+          />
+        </span>
         {viewedZone.segments.map((segment) => {
           const locked = segment.state === "locked" || !viewedZone.isUnlocked;
           const pending = bridge.world.pendingZoneIndex === viewedZone.zoneIndex
