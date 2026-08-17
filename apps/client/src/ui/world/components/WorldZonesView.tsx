@@ -9,6 +9,20 @@ interface WorldZonesViewProps {
   readonly onSetFarmMode: (enabled: boolean) => void;
 }
 
+const ZONE_VISUALS = {
+  "birch forest": "/assets/world/zones/birch_forest.png",
+  "dark swamp": "/assets/world/zones/dark_swamp.png",
+  "stone highlands": "/assets/world/zones/stone_highlands.png",
+  "golden steppe": "/assets/world/zones/golden_steppe.png",
+  "frostpeak mountain": "/assets/world/zones/frostpeak_mountain.png",
+} as const;
+
+function zoneVisual(zone: DashboardZoneOptionModel): string | undefined {
+  const zoneName = zone.zoneName.toLowerCase();
+  const biomeName = zone.biomeName.toLowerCase();
+  return Object.entries(ZONE_VISUALS).find(([key]) => zoneName.includes(key) || biomeName.includes(key))?.[1];
+}
+
 function currentZone(zone: DashboardZoneModel): DashboardZoneOptionModel {
   return zone.zones.find((candidate) => candidate.isActive) ?? zone.zones[0] ?? {
     zoneDefId: "",
@@ -68,17 +82,22 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
       ) : (
         <>
           <section className="world-zone-list" aria-label={`Zones du monde ${selectedBandModel.label.toLowerCase()}`}>
-            {bandZones.map((candidate, index) => (
-              <button key={candidate.zoneIndex} type="button" className={`world-zone-row world-zone-row--${candidate.worldBandId}${candidate.zoneIndex === viewedZone.zoneIndex ? " is-selected" : ""}${candidate.isActive ? " is-current" : ""}${!candidate.isUnlocked ? " is-locked" : ""}`} onClick={() => { setViewedZoneIndex(candidate.zoneIndex); }}>
-                <span className="world-zone-row__number">{String(index + 1).padStart(2, "0")}</span>
-                <span className="world-zone-row__visual" aria-hidden="true" />
-                <span className="world-zone-row__identity">
-                  <strong>{candidate.zoneName}</strong>
-                  <small>{candidate.biomeName} · T{candidate.tier}</small>
-                </span>
-                <span className="world-zone-row__state">{candidate.isActive ? "Actuelle" : candidate.isUnlocked ? "Accessible" : "Verrouillée"}</span>
-              </button>
-            ))}
+            {bandZones.map((candidate, index) => {
+              const visual = zoneVisual(candidate);
+              return (
+                <button key={candidate.zoneIndex} type="button" className={`world-zone-row world-zone-row--${candidate.worldBandId}${candidate.zoneIndex === viewedZone.zoneIndex ? " is-selected" : ""}${candidate.isActive ? " is-current" : ""}${!candidate.isUnlocked ? " is-locked" : ""}`} onClick={() => { setViewedZoneIndex(candidate.zoneIndex); }}>
+                  <span className="world-zone-row__number">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="world-zone-row__visual" aria-hidden="true">
+                    {visual !== undefined ? <img src={visual} alt="" /> : null}
+                  </span>
+                  <span className="world-zone-row__identity">
+                    <strong>{candidate.zoneName}</strong>
+                    <small>{candidate.biomeName} · T{candidate.tier}</small>
+                  </span>
+                  <span className="world-zone-row__state">{candidate.isActive ? "Actuelle" : candidate.isUnlocked ? "Accessible" : "Verrouillée"}</span>
+                </button>
+              );
+            })}
           </section>
 
           <section className="world-zone-detail">
