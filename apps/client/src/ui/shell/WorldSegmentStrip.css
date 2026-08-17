@@ -17,17 +17,18 @@
 
 .world-segment-strip__zone-browser {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  grid-template-columns: 30px auto 30px;
   align-items: center;
+  justify-content: center;
   justify-self: center;
-  width: min(500px, 54%);
-  gap: 12px;
+  width: 100%;
+  gap: 10px;
 }
 
 .world-segment-strip__zone-heading {
   display: grid;
   gap: 1px;
-  min-width: 0;
+  min-width: 220px;
   text-align: center;
 }
 
@@ -53,13 +54,13 @@
 
 .world-segment-strip__zone-arrow {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   place-items: center;
   justify-self: center;
   color: #d9ba69;
-  font: 700 20px/1 var(--ui-font-sans);
+  font: 700 18px/1 var(--ui-font-sans);
   background: #11100d;
   border: 1px solid #745729;
   border-radius: 50%;
@@ -118,8 +119,12 @@
   }
 
   .world-segment-strip__zone-browser {
-    width: min(440px, 72%);
-    gap: 8px;
+    width: 100%;
+    gap: 7px;
+  }
+
+  .world-segment-strip__zone-heading {
+    min-width: 190px;
   }
 
   .world-segment-strip__timeline {
