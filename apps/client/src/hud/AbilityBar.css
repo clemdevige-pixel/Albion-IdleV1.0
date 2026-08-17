@@ -1,6 +1,8 @@
 .combat-action-bar {
   --combat-action-slot-size: 68px;
   --combat-action-gap: 8px;
+  --combat-auto-width: 58px;
+  --combat-auto-height: 42px;
 
   display: flex;
   align-items: center;
@@ -133,10 +135,10 @@
 .combat-action-bar__auto--enabled {
   display: grid;
   place-items: center;
-  width: 94px;
-  height: 54px;
-  min-width: 94px;
-  min-height: 54px;
+  width: var(--combat-auto-width);
+  height: var(--combat-auto-height);
+  min-width: var(--combat-auto-width);
+  min-height: var(--combat-auto-height);
   padding: 0;
   overflow: visible;
   border: 0;
@@ -148,9 +150,9 @@
 
 .combat-action-bar__auto img {
   display: block;
-  width: 94px;
-  height: 54px;
-  object-fit: fill;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   image-rendering: pixelated;
   pointer-events: none;
 }
@@ -241,6 +243,8 @@
   .combat-action-bar {
     --combat-action-slot-size: 56px;
     --combat-action-gap: 6px;
+    --combat-auto-width: 48px;
+    --combat-auto-height: 36px;
 
     gap: 8px;
     padding: 6px 8px;
@@ -248,14 +252,5 @@
 
   .combat-action-bar__separator {
     height: 44px;
-  }
-
-  .combat-action-bar__auto,
-  .combat-action-bar__auto--enabled,
-  .combat-action-bar__auto img {
-    width: 78px;
-    min-width: 78px;
-    height: 46px;
-    min-height: 46px;
   }
 }
