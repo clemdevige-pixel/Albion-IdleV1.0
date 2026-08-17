@@ -12,6 +12,8 @@ export function DashboardCombatCard({
   zone,
   onSetFarmMode,
 }: DashboardCombatCardProps): JSX.Element {
+  const pendingSegment = zone.pendingSegmentIndex;
+
   return (
     <DashboardCard
       title="Combat"
@@ -20,6 +22,11 @@ export function DashboardCombatCard({
       meta={<span className="dashboard-combat__encounter">Encounter {String(zone.encounterIndex)} / {String(zone.encounterCount)}</span>}
     >
       <div className="dashboard-combat">
+        {pendingSegment !== undefined && (
+          <div className="dashboard-combat__pending" role="status">
+            Changement vers le segment {String(pendingSegment)} en attente · fin de l'encounter en cours
+          </div>
+        )}
         <div className="dashboard-combat__modes" aria-label="Mode de combat">
           <button
             type="button"
