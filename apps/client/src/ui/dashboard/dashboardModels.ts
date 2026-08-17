@@ -109,18 +109,11 @@ export interface DashboardYieldModel {
   readonly keyFragmentsPerHour: number;
 }
 
-function getComputedStat(state: GameBridgeState, id: string): number {
-  return state.stats.stats.find((entry) => entry.id === id)?.computed ?? 0;
-}
-
 export function selectDashboardPlayer(state: GameBridgeState): DashboardPlayerModel {
   return {
-    itemPower: calculateAverageEquippedItemPower(
-      state.equipment,
-      state.progression.masteries,
-    ),
-    health: state.playerHealth,
-    maxHealth: state.playerMaxHealth,
+    itemPower: calculateAverageEquippedItemPower(state),
+    health: state.hero.health,
+    maxHealth: getComputedStat(state, "stat_health"),
     physicalDamage: getComputedStat(state, "stat_physical_damage"),
     magicalDamage: getComputedStat(state, "stat_magical_damage"),
     armor: getComputedStat(state, "stat_armor"),
@@ -129,114 +122,89 @@ export function selectDashboardPlayer(state: GameBridgeState): DashboardPlayerMo
 }
 
 export function selectDashboardZone(state: GameBridgeState): DashboardZoneModel {
-  const { world } = state;
-  const completedSegments = new Set(world.completedSegments);
-  const segments = Array.from({ length: world.segmentCount }, (_, offset) => {
-    const index = offset + 1;
-    let segmentState: DashboardSegmentState = "locked";
-    if (index === world.segmentIndex) segmentState = "current";
-    else if (completedSegments.has(index)) segmentState = "complete";
-    else if (index <= world.unlockedSegmentCount) segmentState = "available";
-    return {
-      index,
-      state: segmentState,
-      isZoneBoss: index === world.segmentCount,
-    };
-  });
-
-  const isBossEncounter = world.encounterType === "boss";
-  const isEliteEncounter = world.encounterType === "elite";
-  const encountersUntilBoss = Math.max(0, world.encounterCount - world.encounterIndex);
-  const bossTitle = world.segmentIndex === world.segmentCount
-    ? "Boss de zone"
-    : `Élite du segment ${String(world.segmentIndex)}`;
-  const bossDetail = isBossEncounter || isEliteEncounter
-    ? (state.enemyName !== "" ? state.enemyName : "Affrontement en cours")
-    : encountersUntilBoss === 0
-      ? "Prochain affrontement"
-      : `Dans ${String(encountersUntilBoss)} rencontre${encountersUntilBoss > 1 ? "s" : ""}`;
-
-  const zones = world.zones.map((zone): DashboardZoneOptionModel => {
-    const completed = new Set(zone.completedSegments);
-    const zoneSegments = Array.from({ length: world.segmentCount }, (_, offset) => {
-      const index = offset + 1;
-      let state: DashboardSegmentState = "locked";
-      if (zone.isActive && index === world.segmentIndex) state = "current";
-      else if (completed.has(index)) state = "complete";
-      else if (zone.isUnlocked && index <= zone.unlockedSegmentCount) state = "available";
-      return { index, state, isZoneBoss: index === world.segmentCount };
-    });
-    const displayedSegment = zone.isActive ? world.segmentIndex : zone.segmentIndex;
-    return {
-      zoneDefId: zone.zoneDefId,
-      zoneIndex: zone.zoneIndex,
-      worldBandId: zone.worldBandId,
-      zoneIndexWithinBand: zone.zoneIndexWithinBand,
-      tier: zone.tier,
-      biomeName: zone.biomeName,
-      zoneName: zone.zoneName,
-      isUnlocked: zone.isUnlocked,
-      isActive: zone.isActive,
-      segmentIndex: displayedSegment,
-      unlockedSegmentCount: zone.unlockedSegmentCount,
-      segments: zoneSegments,
-      recommendedItemPower: getSegmentRecommendedItemPower(
-        zone.zoneIndexWithinBand + 1,
-        displayedSegment,
-        zone.worldBandId,
-      ),
-    };
-  });
-
-  const pendingSegmentIndex = world.pendingZoneIndex === world.zoneIndex
-    ? world.pendingSegmentIndex ?? undefined
-    : undefined;
+  const zone = state.world.zone;
+  const segments = zone.segments.map((segment, index) => ({
+    index: index + 1,
+    state: index + 1 < state.world.segmentIndex
+      ? "complete" as const
+      : index + 1 === state.world.segmentIndex
+        ? "current" as const
+        : index + 1 <= state.world.unlockedSegmentCount
+          ? "available" as const
+          : "locked" as const,
+    isZoneBoss: segment.isZoneBoss,
+  }));
+  const zones = state.world.zones.map((option) => ({
+    zoneDefId: option.zoneDefId,
+    zoneIndex: option.zoneIndex,
+    worldBandId: option.worldBandId,
+    zoneIndexWithinBand: option.zoneIndexWithinBand,
+    tier: option.tier,
+    biomeName: option.biomeName,
+    zoneName: option.zoneName,
+    isUnlocked: option.isUnlocked,
+    isActive: option.isActive,
+    segmentIndex: option.segmentIndex,
+    unlockedSegmentCount: option.unlockedSegmentCount,
+    segments: option.segments.map((segment, index) => ({
+      index: index + 1,
+      state: index + 1 < option.segmentIndex
+        ? "complete" as const
+        : index + 1 === option.segmentIndex
+          ? "current" as const
+          : index + 1 <= option.unlockedSegmentCount
+            ? "available" as const
+            : "locked" as const,
+      isZoneBoss: segment.isZoneBoss,
+    })),
+    recommendedItemPower: getSegmentRecommendedItemPower(
+      option.worldBandId,
+      option.zoneIndexWithinBand,
+      option.segmentIndex,
+    ),
+  }));
 
   return {
-    zoneIndex: world.zoneIndex,
-    worldBandId: world.worldBandId,
-    zoneIndexWithinBand: world.zoneIndexWithinBand,
-    zoneCount: world.zoneCount,
-    farmMode: world.farmMode,
-    biomeName: world.biomeName,
-    zoneName: world.zoneName,
-    segmentIndex: world.segmentIndex,
-    segmentCount: world.segmentCount,
-    encounterIndex: world.encounterIndex,
-    encounterCount: world.encounterCount,
-    pendingSegmentIndex,
-    progress: world.zoneProgress,
+    zoneIndex: state.world.zoneIndex,
+    worldBandId: state.world.worldBandId,
+    zoneIndexWithinBand: state.world.zoneIndexWithinBand,
+    zoneCount: state.world.zoneCount,
+    farmMode: state.world.farmMode,
+    biomeName: zone.biomeName,
+    zoneName: zone.zoneName,
+    segmentIndex: state.world.segmentIndex,
+    segmentCount: zone.segments.length,
+    encounterIndex: state.world.encounterIndex,
+    encounterCount: state.world.encounterCount,
+    pendingSegmentIndex: state.world.pendingSegmentIndex,
+    progress: state.world.segmentProgress,
     recommendedItemPower: getSegmentRecommendedItemPower(
-      world.zoneIndexWithinBand + 1,
-      world.segmentIndex,
-      world.worldBandId,
+      state.world.worldBandId,
+      state.world.zoneIndexWithinBand,
+      state.world.segmentIndex,
     ),
     segments,
-    bossTitle,
-    bossDetail,
+    bossTitle: state.world.bossTitle,
+    bossDetail: state.world.bossDetail,
     zones,
   };
 }
 
-function gatheringTask(gathering: GatheringVM): DashboardProductionTask {
-  return {
-    id: `gathering-${gathering.resourceFamily}`,
-    kind: "gathering",
-    label: gathering.resourceName,
-    detail: `Récolte T${String(gathering.resourceTier)} · ${String(gathering.durationSeconds)} s`,
-    progress: gathering.progress,
-  };
-}
-
-export function selectDashboardProduction(
-  state: GameBridgeState,
-): DashboardProductionModel {
+export function selectDashboardProduction(state: GameBridgeState): DashboardProductionModel {
   const tasks: DashboardProductionTask[] = [];
-  const activeGathering = selectActiveGathering(state);
-  if (activeGathering !== undefined) tasks.push(gatheringTask(activeGathering));
+  const activeGathering: GatheringVM | undefined = selectActiveGathering(state);
+  if (activeGathering !== undefined) {
+    tasks.push({
+      id: `gathering-${activeGathering.resourceFamily}`,
+      kind: "gathering",
+      label: activeGathering.resourceName,
+      detail: `Récolte · T${String(activeGathering.tier)}`,
+      progress: activeGathering.progress,
+    });
+  }
 
   const refiningActivities = [
-    ["wood", state.refining],
+    ["wood", state.woodRefining],
     ["metal", state.metalRefining],
     ["leather", state.leatherRefining],
     ["cloth", state.clothRefining],
@@ -263,7 +231,7 @@ export function selectDashboardProduction(
     });
   }
 
-  const visibleTasks = tasks.slice(0, 3);
+  const visibleTasks = tasks.slice(0, 4);
   const miniGame = activeGathering?.activeMiniGame;
   return {
     tasks: visibleTasks,
