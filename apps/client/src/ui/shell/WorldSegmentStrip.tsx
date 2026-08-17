@@ -13,7 +13,10 @@ export function WorldSegmentStrip(): JSX.Element {
   return (
     <div className="world-segment-strip" aria-label="Progression des segments">
       <span className="world-segment-strip__label">Frise de segment</span>
-      <div className="world-segment-strip__timeline">
+      <div
+        className="world-segment-strip__timeline"
+        style={{ gridTemplateColumns: `repeat(${String(Math.max(1, zone.segmentCount))}, minmax(22px, 1fr))` }}
+      >
         {zone.segments.map((segment) => {
           const locked = segment.state === "locked";
           const pending = bridge.world.pendingZoneIndex === zone.zoneIndex
