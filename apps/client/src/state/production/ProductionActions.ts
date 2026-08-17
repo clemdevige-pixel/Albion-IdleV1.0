@@ -45,12 +45,12 @@ export class ProductionActions {
     if (loopState === "combat" || loopState === "stop_requested") {
       this.setQueuedGatheringFamily(family);
       if (combatStopController.getState() === "running") {
-        combatStopController.requestStopAfterSegment();
+        combatStopController.requestStopAfterEncounter();
       }
       this.deps.bridge.addEconomyNotification({
         id: `notif_gather_queue_${String(Date.now())}`,
         type: "success",
-        message: "Récolte programmée : départ à la fin du segment en cours.",
+        message: "Récolte programmée : départ à la fin du combat en cours.",
         timestamp: Date.now(),
       });
       return true;
@@ -66,7 +66,7 @@ export class ProductionActions {
 
     this.setQueuedGatheringFamily(null);
     // Gathering itself suspends combat. Resume the generic stop controller so
-    // returning from gathering does not inherit the temporary segment-stop.
+    // returning from gathering does not inherit the temporary encounter-stop.
     combatStopController.resume();
     this.applyGatheringToggle(family);
   }
