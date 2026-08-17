@@ -160,6 +160,17 @@ export function useDashboardSession(): DashboardSessionModel {
   );
 }
 
+export function useDashboardYield(): Pick<DashboardSessionModel, "silverPerHour" | "famePerHour"> {
+  return useGameUiSelector(
+    (state) => ({
+      silverPerHour: state.segmentSilverPerHour,
+      famePerHour: state.segmentFamePerHour,
+    }),
+    (previous, next) => previous.silverPerHour === next.silverPerHour
+      && previous.famePerHour === next.famePerHour,
+  );
+}
+
 export function useDashboardGatheringActions(): {
   readonly strike: (resourceFamily: string, quality: "correct" | "perfect" | "miss") => boolean;
   readonly returnToCombat: () => void;
