@@ -56,7 +56,7 @@ describe("ProductionActions gathering queue lifecycle", () => {
     (loopState) => {
       const harness = createHarness(loopState);
       if (loopState === "stop_requested") {
-        expect(combatStopController.requestStopAfterSegment()).toBe(true);
+        expect(combatStopController.requestStopAfterEncounter()).toBe(true);
       }
 
       expect(harness.actions.toggleGathering("Wood")).toBe(true);
@@ -66,11 +66,11 @@ describe("ProductionActions gathering queue lifecycle", () => {
     },
   );
 
-  it("starts queued gathering only after the segment stop", () => {
+  it("starts queued gathering only after the current encounter ends", () => {
     const harness = createHarness("combat");
 
     expect(harness.actions.toggleGathering("Wood")).toBe(true);
-    expect(combatStopController.pauseAfterSegment()).toBe(true);
+    expect(combatStopController.pauseAfterEncounter()).toBe(true);
     harness.actions.pollQueuedGathering();
 
     expect(combatStopController.getState()).toBe("running");
@@ -78,6 +78,17 @@ describe("ProductionActions gathering queue lifecycle", () => {
     expect(harness.gatheringRuntime.toggleGatheringFamily).toHaveBeenCalledWith("Wood", 42);
     expect(harness.bridge.setCombatState).toHaveBeenCalledWith("idle");
     expect(harness.productionBridge.syncAllGathering).toHaveBeenCalledOnce();
+  });
+
+  it("announces that queued gathering waits only for the current fight", () => {
+    const harness = createHarness("combat");
+
+    expect(harness.actions.toggleGathering("Wood")).toBe(true);
+    expect(harness.bridge.addEconomyNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Récolte programmée : départ à la fin du combat en cours.",
+      }),
+    );
   });
 
   it.each(["paused", "defeat", "idle", "suspended"] as const)(
