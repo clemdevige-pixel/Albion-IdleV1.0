@@ -112,7 +112,9 @@ function BuildingSummary({
   readonly level: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
-  const flatSelection = definitionId === "worker_house" || definition.gatheringService !== undefined;
+  const flatSelection = definitionId === "worker_house"
+    || definition.gatheringService !== undefined
+    || definition.refiningService !== undefined;
   const selectionClassName = flatSelection
     ? "ui-island__selection ui-island__selection--flat"
     : "ui-island__selection";
