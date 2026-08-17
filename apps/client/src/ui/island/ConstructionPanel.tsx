@@ -28,7 +28,7 @@ export function ConstructionPanel({ plotId, islandLevel, builtDefinitionIds, onB
     return <section className="ui-island__selection ui-island__selection--empty"><strong>Emplacement libre</strong><p>Aucun bâtiment constructible supplémentaire n'est autorisé pour cette phase.</p></section>;
   }
 
-  return <section className="ui-island__selection ui-island-construction">
+  return <section className="ui-island-construction">
     <div className="ui-island-construction__heading"><span className="ui-island__eyebrow">Construction</span><strong>Emplacement libre</strong></div>
     <p>Choisissez un bâtiment. Les coûts et prérequis sont vérifiés automatiquement.</p>
     <div className="ui-island-construction__list">{availableBuildings.map((definition) => {
