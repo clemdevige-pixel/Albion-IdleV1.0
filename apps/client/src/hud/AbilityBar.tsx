@@ -9,6 +9,8 @@ import {
 import "./AbilityBar.css";
 
 const SHORTCUTS = ["Q", "W", "E"] as const;
+const AUTO_OFF_ICON_PATH = "/assets/ui/auto_off.png";
+const AUTO_ON_ICON_PATH = "/assets/ui/auto_on.png";
 
 export function AbilityBar(): JSX.Element {
   const model = useAbilityBarUiModel();
@@ -137,7 +139,7 @@ export function AbilityBar(): JSX.Element {
         onClick={() => { actions.setPrimaryAbilityAutoCast(!(primaryAbility?.autoCast ?? false)); }}
       >
         <img
-          src={primaryAbility?.autoCast === true ? "/assets/ui/auto_active.png" : "/assets/ui/auto_inactive.png"}
+          src={primaryAbility?.autoCast === true ? AUTO_ON_ICON_PATH : AUTO_OFF_ICON_PATH}
           alt=""
           aria-hidden="true"
         />
