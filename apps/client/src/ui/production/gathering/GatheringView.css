@@ -19,12 +19,12 @@
 
 .ui-gathering__queued strong {
   color: #f0cb6d;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .ui-gathering__queued span {
-  color: var(--ui-color-text-muted);
-  font-size: 8px;
+  color: var(--ui-color-text-secondary);
+  font-size: 9px;
 }
 
 .ui-gathering__queued > b {
@@ -41,7 +41,7 @@
 
 /* World gathering compact presentation: keep production mechanics, align hierarchy with Zones/Donjons. */
 .ui-world .ui-gathering { gap: 8px; }
-.ui-world .ui-gathering__toolbar { min-height: 29px; font-size: 9px; }
+.ui-world .ui-gathering__toolbar { min-height: 29px; font-size: 9px; color: var(--ui-color-text-secondary); }
 .ui-world .ui-gathering__tiers { gap: 5px; }
 .ui-world .ui-gathering__tiers button { min-width: 39px; padding: 6px 8px; font-size: 9px; }
 .ui-world .ui-gathering__families { gap: 5px; }
@@ -58,10 +58,10 @@
 .ui-world .ui-gathering-card__header { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 7px; }
 .ui-world .ui-gathering-card__icon { width: 38px; border-radius: 6px; background: #080b0f; }
 .ui-world .ui-gathering-card__icon img { width: 31px; height: 31px; }
-.ui-world .ui-gathering-card__identity > span { font-size: 8px; }
+.ui-world .ui-gathering-card__identity > span { font-size: 9px; }
 .ui-world .ui-gathering-card__identity strong { font-size: 14px; }
-.ui-world .ui-gathering-card__identity small { font-size: 8px; }
-.ui-world .ui-gathering-card__reserve small { font-size: 8px; }
+.ui-world .ui-gathering-card__identity small { color: var(--ui-color-text-secondary); font-size: 9px; }
+.ui-world .ui-gathering-card__reserve small { color: var(--ui-color-text-secondary); font-size: 8px; }
 .ui-world .ui-gathering-card__reserve b { font-size: 13px; }
 
 .ui-world .ui-gathering-card__facts {
@@ -72,38 +72,38 @@
   background: rgba(12, 16, 21, .68);
 }
 .ui-world .ui-gathering-card__facts > div {
-  gap: 1px;
-  padding: 5px 6px;
+  gap: 2px;
+  padding: 6px;
   border: 0;
   border-right: 1px solid rgba(208, 157, 52, .13);
   text-align: center;
 }
 .ui-world .ui-gathering-card__facts > div:last-child { border-right: 0; }
-.ui-world .ui-gathering-card__facts dt { font-size: 7px; }
-.ui-world .ui-gathering-card__facts dd { font-size: 9px; }
+.ui-world .ui-gathering-card__facts dt { color: #8fa0b5; font-size: 8px; }
+.ui-world .ui-gathering-card__facts dd { color: #d4dbe5; font-size: 9px; }
 
 .ui-world .ui-gathering-card__role {
-  gap: 6px;
+  gap: 7px;
   padding: 7px;
   border-radius: 6px;
   background: rgba(8, 11, 15, .72);
 }
 .ui-world .ui-gathering-card__role > header { align-items: center; }
 .ui-world .ui-gathering-card__role > header span { font-size: 11px; }
-.ui-world .ui-gathering-card__role > header small,
-.ui-world .ui-gathering-card__role > header b,
+.ui-world .ui-gathering-card__role > header small { color: #c1c9d4; font-size: 9px; }
+.ui-world .ui-gathering-card__role > header b { font-size: 9px; }
 .ui-world .ui-gathering-card__mastery small,
-.ui-world .ui-gathering-card__hero-status small { font-size: 8px; }
-.ui-world .ui-gathering-card__mastery span { font-size: 9px; }
+.ui-world .ui-gathering-card__hero-status small { color: #aab5c4; font-size: 9px; }
+.ui-world .ui-gathering-card__mastery span { color: #d4dbe5; font-size: 9px; }
 .ui-world .ui-gathering-progress { height: 4px; }
 
 .ui-world .ui-gathering-card__hero-status > b {
   padding: 3px 6px;
   border: 1px solid #353b43;
   border-radius: 999px;
-  color: #9ba3ad;
+  color: #aeb7c2;
   background: #0b0e12;
-  font-size: 8px;
+  font-size: 9px;
   line-height: 1;
 }
 .ui-world .ui-gathering-card__hero-status > b.is-active {
@@ -127,7 +127,7 @@
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action:hover:not(:disabled) { color: #f0d593; background: #302313; }
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action.is-stop {
   border-color: #79443e;
-  color: #ce8a82;
+  color: #e7aaa2;
   background: #1c1110;
 }
 
@@ -138,3 +138,6 @@
   border-radius: 6px;
   background: rgba(17, 15, 11, .72);
 }
+.ui-world .ui-gathering-card .active-gathering__header { font-size: 9px; }
+.ui-world .ui-gathering-card .active-gathering__header strong { font-size: 9px; }
+.ui-world .ui-gathering-card .active-gathering__hint { color: #c2cad5; font-size: 9px; line-height: 1.35; }
