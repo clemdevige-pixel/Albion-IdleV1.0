@@ -1,47 +1,57 @@
 .ui-island-worker-house {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .ui-island-worker-house__stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
 }
 
 .ui-island-worker-house__stats > div,
 .ui-island-worker-house__worker,
 .ui-island-worker-house__recruit-grid button {
-  border: 1px solid rgba(190, 159, 105, 0.16);
-  border-radius: 8px;
-  background: rgba(15, 18, 21, 0.46);
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-md);
+  background: linear-gradient(145deg, rgba(35, 26, 18, 0.42), rgba(11, 14, 19, 0.9));
 }
 
 .ui-island-worker-house__stats > div {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 9px 10px;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
 }
 
 .ui-island-worker-house__stats small,
 .ui-island-worker-house__worker small,
 .ui-island-worker-house__recruit-grid small {
-  color: rgba(219, 204, 178, 0.55);
+  color: var(--ui-color-text-muted);
   font-size: 9px;
+  line-height: 1.3;
 }
 
 .ui-island-worker-house__stats strong,
 .ui-island-worker-house__worker strong,
 .ui-island-worker-house__recruit-grid strong {
-  color: #eee1c7;
+  color: var(--ui-color-text-primary);
   font-size: 11px;
+}
+
+.ui-island-worker-house__stats strong {
+  flex: none;
+  color: var(--ui-color-accent);
+  font-size: 12px;
 }
 
 .ui-island-worker-house__list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 9px;
+  gap: 5px;
+  margin-top: 8px;
 }
 
 .ui-island-worker-house__worker {
@@ -49,44 +59,49 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 7px 8px;
 }
 
 .ui-island-worker-house__worker > div {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .ui-island-worker-house__worker > span {
   flex: 0 0 auto;
-  color: rgba(220, 204, 177, 0.62);
+  color: var(--ui-color-text-muted);
   font-size: 9px;
 }
 
-.ui-island-worker-house__worker > span.is-working {
-  color: #b9d398;
-}
-
-.ui-island-worker-house__worker > span.is-paused {
-  color: #d4b77c;
-}
+.ui-island-worker-house__worker > span.is-working { color: #8ee37d; }
+.ui-island-worker-house__worker > span.is-paused { color: #d4b77c; }
 
 .ui-island-worker-house__empty {
   margin: 0;
-  padding: 9px 0;
+  padding: 7px 2px;
+  color: var(--ui-color-text-muted);
+  font-size: 10px;
 }
 
 .ui-island-worker-house__recruitment {
-  margin-top: 12px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(208, 157, 52, 0.13);
+}
+
+.ui-island-worker-house__recruitment > .ui-island__eyebrow {
+  color: var(--ui-color-accent);
+  font-size: 9px;
+  font-weight: 800;
 }
 
 .ui-island-worker-house__recruit-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
-  margin-top: 7px;
+  margin-top: 6px;
 }
 
 .ui-island-worker-house__recruit-grid button {
@@ -94,22 +109,29 @@
   grid-template-columns: 28px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
-  padding: 8px;
+  min-height: 48px;
+  padding: 7px 8px;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
+.ui-island-worker-house__recruit-grid button:not(:disabled):hover {
+  border-color: rgba(208, 157, 52, 0.46);
+  background: linear-gradient(145deg, rgba(47, 35, 20, 0.5), rgba(12, 16, 21, 0.72));
+}
+
 .ui-island-worker-house__recruit-grid button:disabled {
   cursor: default;
-  opacity: 0.48;
+  opacity: 0.44;
 }
 
 .ui-island-worker-house__recruit-grid img {
   width: 26px;
   height: 26px;
   object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .ui-island-worker-house__recruit-grid button > span {
@@ -117,6 +139,15 @@
   min-width: 0;
   flex-direction: column;
   gap: 2px;
+}
+
+.ui-island-worker-house .ui-island__selection-status {
+  margin-top: 9px;
+  padding: 7px 2px 0;
+  border-top: 1px solid rgba(208, 157, 52, 0.13);
+  color: var(--ui-color-text-muted);
+  font-size: 9px;
+  line-height: 1.4;
 }
 
 @media (max-width: 1100px) {
