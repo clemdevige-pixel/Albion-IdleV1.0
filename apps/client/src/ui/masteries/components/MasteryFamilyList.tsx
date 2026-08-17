@@ -1,8 +1,9 @@
-import type { MasteryFamilyModel, MasteryProgressModel } from "../masteryModels";
+import type { MasteryCategoryId, MasteryFamilyModel, MasteryProgressModel } from "../masteryModels";
 import { MasteryFamilyIcon } from "./MasteryFamilyIcon";
 import { MasteryProgressBar } from "./MasteryProgressBar";
 
 interface MasteryFamilyListProps {
+  readonly category: MasteryCategoryId;
   readonly families: readonly MasteryFamilyModel[];
   readonly selectedId: string | undefined;
   readonly onSelect: (id: string) => void;
@@ -12,7 +13,7 @@ function BonusList({ bonuses }: { readonly bonuses: readonly string[] }): JSX.El
   return <ul className="ui-mastery-bonuses">{bonuses.map((bonus) => <li key={bonus}>{bonus}</li>)}</ul>;
 }
 
-function SpecializationRow({ mastery }: { readonly mastery: MasteryProgressModel }): JSX.Element {
+function ChildMasteryRow({ mastery }: { readonly mastery: MasteryProgressModel }): JSX.Element {
   return (
     <article className={`ui-mastery-specialization${mastery.isUnlocked ? "" : " is-locked"}`}>
       <div className="ui-mastery-specialization__heading">
@@ -28,7 +29,12 @@ function SpecializationRow({ mastery }: { readonly mastery: MasteryProgressModel
   );
 }
 
-export function MasteryFamilyList({ families, selectedId, onSelect }: MasteryFamilyListProps): JSX.Element {
+export function MasteryFamilyList({ category, families, selectedId, onSelect }: MasteryFamilyListProps): JSX.Element {
+  const childLabel = category === "gathering" ? "Travailleurs" : "Spécialisations";
+  const emptyChildLabel = category === "gathering"
+    ? "Aucun travailleur disponible"
+    : "Aucune spécialisation disponible";
+
   return (
     <div className="ui-mastery-families" role="list" aria-label="Familles de maîtrises">
       {families.map((family) => {
@@ -66,12 +72,12 @@ export function MasteryFamilyList({ families, selectedId, onSelect }: MasteryFam
                   <BonusList bonuses={family.bonuses} />
                 </div>
                 <div className="ui-mastery-family__section-title">
-                  {family.specializations.length > 0 ? "Spécialisations" : "Aucune spécialisation disponible"}
+                  {family.specializations.length > 0 ? childLabel : emptyChildLabel}
                 </div>
                 {family.specializations.length > 0 && (
-                  <div className="ui-mastery-specializations">
-                    {family.specializations.map((specialization) => (
-                      <SpecializationRow key={specialization.id} mastery={specialization} />
+                  <div className="ui-mastery-specializations" aria-label={childLabel}>
+                    {family.specializations.map((entry) => (
+                      <ChildMasteryRow key={entry.id} mastery={entry} />
                     ))}
                   </div>
                 )}
