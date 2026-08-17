@@ -47,15 +47,22 @@ export function IslandOnboardingGuide(): JSX.Element | null {
 
   if (hasFirstCraftedGear) return null;
 
+  const objective = gatheringBuildings.length === 0
+    ? "1. Choisissez un bâtiment de récolte correspondant aux matériaux de votre recette."
+    : workers.workers.length === 0
+      ? "2. Recrutez l’ouvrier correspondant depuis la Maison des ouvriers."
+      : !workshopBuilt
+        ? "3. Lancez le worker, récoltez en parallèle puis raffinez avant de construire l’Atelier."
+        : "4. Terminez le raffinage puis fabriquez votre première pièce T3.";
+
   return (
-    <section className="ui-island__selection">
-      <div>
+    <section className="ui-island__selection ui-island-onboarding">
+      <div className="ui-island-onboarding__heading">
         <span className="ui-island__eyebrow">Premiers pas T3</span>
         <strong>Préparez votre premier équipement</strong>
       </div>
-      <p>
-        Consultez d’abord les besoins de l’objet qui vous intéresse : vous n’avez pas besoin de construire
-        toutes les filières immédiatement. Une filière ciblée et un premier ouvrier suffisent pour découvrir la boucle.
+      <p className="ui-island-onboarding__description">
+        Consultez les besoins de l’objet visé : une filière ciblée et un premier ouvrier suffisent pour démarrer.
       </p>
 
       {t3FirstGearRecipes.length > 0 && (
@@ -82,28 +89,15 @@ export function IslandOnboardingGuide(): JSX.Element | null {
         </div>
       )}
 
-      {gatheringBuildings.length === 0 ? (
-        <div className="ui-island__selection-status">
-          1. Choisissez un premier bâtiment de récolte correspondant aux matériaux de votre recette.
-        </div>
-      ) : workers.workers.length === 0 ? (
-        <div className="ui-island__selection-status">
-          2. Recrutez l’ouvrier correspondant depuis la Maison des ouvriers. Un seul ouvrier suffit pour démarrer : vous pourrez développer les autres métiers plus tard.
-        </div>
-      ) : !workshopBuilt ? (
-        <div className="ui-island__selection-status">
-          3. Lancez le worker depuis son bâtiment, récoltez activement en parallèle, puis raffinez les matériaux nécessaires avant de construire l’Atelier d’équipement.
-        </div>
-      ) : (
-        <div className="ui-island__selection-status">
-          4. Votre Atelier est prêt : terminez le raffinage puis fabriquez votre première pièce T3 pour reprendre la progression de combat.
-        </div>
-      )}
+      <div className="ui-island-onboarding__objective">
+        <span aria-hidden="true">◆</span>
+        <span>{objective}</span>
+      </div>
 
       {gatheringBuildings.length > 0 && (
-        <div className="ui-island__selection-status">
-          Rappel : le worker récolte automatiquement et le gather actif du héros s’ajoute à sa production.
-        </div>
+        <small className="ui-island-onboarding__reminder">
+          Le worker récolte automatiquement ; la récolte active du héros s’ajoute à sa production.
+        </small>
       )}
     </section>
   );
