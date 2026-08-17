@@ -1,0 +1,61 @@
+name: Trim AUTO assets
+
+on:
+  push:
+    branches:
+      - agent/albion-idle-development
+    paths:
+      - .github/workflows/trim-auto-assets.yml
+
+permissions:
+  contents: write
+
+jobs:
+  trim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/albion-idle-development
+
+      - name: Trim shared transparent padding
+        run: |
+          python -m pip install --quiet pillow
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          paths = [
+              Path('apps/client/public/assets/ui/auto_active.png'),
+              Path('apps/client/public/assets/ui/auto_inactive.png'),
+          ]
+
+          images = [Image.open(path).convert('RGBA') for path in paths]
+          boxes = [image.getchannel('A').getbbox() for image in images]
+          if any(box is None for box in boxes):
+              raise SystemExit('AUTO asset has no visible alpha content')
+
+          left = min(box[0] for box in boxes)
+          top = min(box[1] for box in boxes)
+          right = max(box[2] for box in boxes)
+          bottom = max(box[3] for box in boxes)
+          shared_box = (left, top, right, bottom)
+
+          for path, image in zip(paths, images):
+              old_size = image.size
+              cropped = image.crop(shared_box)
+              cropped.save(path, optimize=True)
+              print(f'{path}: {old_size} -> {cropped.size}; bbox={shared_box}')
+          PY
+
+      - name: Commit trimmed assets
+        run: |
+          if git diff --quiet -- apps/client/public/assets/ui/auto_active.png apps/client/public/assets/ui/auto_inactive.png; then
+            echo "No transparent padding to trim."
+            exit 0
+          fi
+          git config user.name "Albion Idle Asset Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add apps/client/public/assets/ui/auto_active.png apps/client/public/assets/ui/auto_inactive.png
+          git commit -m "chore(assets): trim AUTO button transparent padding"
+          git push origin HEAD:agent/albion-idle-development
