@@ -18,8 +18,11 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
     <div className="storage-module">
       <section className="storage-module__summary" aria-label="Capacité de la banque">
         <div className="storage-module__summary-row">
-          <span>Coffre de banque</span>
-          <strong>{String(bank.occupied)} / {String(bank.capacity)}</strong>
+          <div>
+            <small>Stockage sécurisé</small>
+            <span>Coffre de banque</span>
+          </div>
+          <strong>{String(bank.occupied)} <small>/ {String(bank.capacity)}</small></strong>
         </div>
         <div className="storage-module__capacity-track" aria-hidden="true">
           <span className="storage-module__capacity-fill" style={{ width: `${String(capacityRatio)}%` }} />
@@ -27,8 +30,16 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
       </section>
 
       <div className="storage-module__toolbar">
-        <button type="button" onClick={onSort}>Trier</button>
-        <span>Double-clic : vers l’inventaire</span>
+        <button
+          type="button"
+          className="storage-module__sort-button"
+          onClick={onSort}
+          aria-label="Trier la banque"
+        >
+          <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
+          <span>Trier</span>
+        </button>
+        <span className="storage-module__shortcut">Double-clic → inventaire</span>
       </div>
 
       <section className="storage-module__surface">
