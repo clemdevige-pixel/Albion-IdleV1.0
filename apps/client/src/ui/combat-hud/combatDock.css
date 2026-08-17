@@ -1,0 +1,100 @@
+/* Compact lower combat dock for the permanent world surface.
+ * Presentation only: existing journal and combat actions remain authoritative. */
+.combat-hud-journal {
+  left: 12px;
+  bottom: 12px;
+  width: clamp(280px, 29%, 340px);
+  height: 138px;
+}
+
+.combat-hud-journal .activity-journal {
+  width: 100%;
+  height: 100%;
+}
+
+.combat-hud-actions {
+  right: 12px;
+  bottom: 12px;
+  left: clamp(304px, calc(29% + 24px), 364px);
+  height: 138px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+  background:
+    linear-gradient(90deg, rgb(112 75 27 / 5%), transparent 18%, transparent 82%, rgb(112 75 27 / 5%)),
+    rgb(7 10 14 / 72%);
+  border: 1px solid rgb(112 79 34 / 34%);
+  box-shadow: inset 0 1px rgb(230 184 83 / 4%);
+}
+
+.combat-hud-actions .combat-controls {
+  gap: 5px;
+  padding: 5px 6px;
+  box-shadow:
+    0 0 0 1px #020304,
+    inset 0 1px rgb(239 194 93 / 10%),
+    0 8px 20px rgb(0 0 0 / 42%);
+}
+
+.combat-hud-actions .combat-controls__label {
+  display: none;
+}
+
+.combat-hud-actions .combat-controls__abilities,
+.combat-hud-actions .combat-controls__utility,
+.combat-hud-actions .combat-controls__consumable {
+  gap: 0;
+}
+
+.combat-hud-actions .combat-controls__abilities {
+  padding-right: 6px;
+}
+
+.combat-hud-actions .combat-controls__utility {
+  padding-right: 6px;
+}
+
+.combat-hud-actions .ability-bar__skills {
+  gap: 4px;
+}
+
+.combat-hud-actions .ability-bar__slot {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+}
+
+.combat-hud-actions .ability-bar__ability-icon,
+.combat-hud-actions .ability-bar__potion-visual {
+  width: 36px;
+  height: 36px;
+  font-size: 23px;
+}
+
+.combat-hud-actions .ability-bar__auto {
+  height: 48px;
+  padding-inline: 9px;
+}
+
+@media (max-width: 1100px) {
+  .combat-hud-journal {
+    width: 270px;
+    height: 120px;
+  }
+
+  .combat-hud-actions {
+    left: 294px;
+    height: 120px;
+  }
+
+  .combat-hud-actions .ability-bar__slot {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .combat-hud-actions .ability-bar__auto {
+    height: 44px;
+  }
+}
