@@ -26,6 +26,10 @@ function formatValue(value: number): string {
   });
 }
 
+function formatWholeValue(value: number): string {
+  return Math.round(value).toLocaleString("fr-FR");
+}
+
 export function CharacterModule(): JSX.Element {
   const character = useCharacterData();
   const actions = useCharacterActions();
@@ -113,7 +117,7 @@ export function CharacterModule(): JSX.Element {
           <img src="/assets/ui/ip.png" alt="" aria-hidden="true" draggable={false} />
           <div>
             <span>Item Power</span>
-            <strong>{formatValue(character.itemPower)} <small>IP</small></strong>
+            <strong>{formatValue(character.itemPower)}</strong>
           </div>
         </article>
 
@@ -121,7 +125,7 @@ export function CharacterModule(): JSX.Element {
           <img src="/assets/ui/health.png" alt="" aria-hidden="true" draggable={false} />
           <div>
             <span>Points de vie</span>
-            <strong>{formatValue(character.stats.health)} / {formatValue(character.stats.maxHealth)}</strong>
+            <strong>{formatWholeValue(character.stats.health)} / {formatWholeValue(character.stats.maxHealth)}</strong>
           </div>
         </article>
 
