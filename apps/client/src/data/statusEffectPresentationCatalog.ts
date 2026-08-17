@@ -9,6 +9,18 @@ export interface StatusEffectPresentationDefinition {
 }
 
 const STATUS_EFFECT_PRESENTATIONS: Readonly<Record<string, StatusEffectPresentationDefinition>> = {
+  effect_sword_armor_break: {
+    label: "Armure brisée",
+    symbol: "−",
+    description: "L'armure de la cible est temporairement réduite.",
+    anchor: "enemy",
+  },
+  effect_dagger_opening: {
+    label: "Garde ouverte",
+    symbol: "−",
+    description: "La cible est exposée et devient vulnérable à Assassinat.",
+    anchor: "enemy",
+  },
   effect_fire_burn: {
     label: "Brûlure",
     symbol: "🔥",
@@ -19,6 +31,18 @@ const STATUS_EFFECT_PRESENTATIONS: Readonly<Record<string, StatusEffectPresentat
     label: "Cataclysme",
     symbol: "🔥",
     description: "Subit les flammes persistantes de Cataclysme.",
+    anchor: "enemy",
+  },
+  effect_bow_badon_stun: {
+    label: "Étourdissement",
+    symbol: "!",
+    description: "La cible est temporairement incapable d'agir.",
+    anchor: "enemy",
+  },
+  effect_gloves_stun: {
+    label: "Étourdissement",
+    symbol: "!",
+    description: "La cible est temporairement incapable d'agir.",
     anchor: "enemy",
   },
 };
