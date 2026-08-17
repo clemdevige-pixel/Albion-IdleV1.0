@@ -45,11 +45,6 @@ export function ConstructionPanel({ plotId, islandLevel, builtDefinitionIds, onB
       const flexibleDistinct = flexibleState?.entries.filter((entry) => entry.available > 0).length ?? 0;
       const flexibleAffordable = flexibleState === undefined || (flexibleAvailableTotal >= flexibleState.totalQuantity && flexibleDistinct >= flexibleState.minimumDistinctItemIds);
       const affordable = categoryUnlocked && missingPrerequisites.length === 0 && wallet.silver >= construction.silver && materialState.every((requirement) => requirement.available >= requirement.quantity) && flexibleAffordable;
-      const blockedLabel = !categoryUnlocked
-        ? unlockLevel === undefined ? "Non débloqué" : `Île niv. ${String(unlockLevel)} requise`
-        : missingPrerequisites.length > 0
-          ? `${getIslandBuildingDefinition(missingPrerequisites[0]!).label} requis`
-          : "Ressources insuffisantes";
 
       return <article key={definition.id} className={`ui-island-construction__card${affordable ? " is-buildable" : ""}`}>
         <header>
@@ -68,7 +63,7 @@ export function ConstructionPanel({ plotId, islandLevel, builtDefinitionIds, onB
           {materialState.map((requirement) => <span key={requirement.itemId} className={requirement.available >= requirement.quantity ? "is-ready" : "is-missing"}>{getIslandMaterialLabel(requirement.itemId)} {String(requirement.available)} / {String(requirement.quantity)}</span>)}
           {flexibleState !== undefined && <span className={flexibleAffordable ? "is-ready" : "is-missing"}>Raffinés {String(flexibleAvailableTotal)} / {String(flexibleState.totalQuantity)} · {String(flexibleDistinct)} / {String(flexibleState.minimumDistinctItemIds)} familles</span>}
         </div>
-        {affordable ? <button type="button" onClick={() => { if (constructIslandBuilding(definition.id, plotId)) onBuilt(definition.id); }}>Construire</button> : <div className="ui-island-construction__blocked"><span aria-hidden="true">◆</span>{blockedLabel}</div>}
+        {affordable && <button type="button" onClick={() => { if (constructIslandBuilding(definition.id, plotId)) onBuilt(definition.id); }}>Construire</button>}
       </article>;
     })}</div>
   </section>;
