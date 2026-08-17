@@ -67,8 +67,9 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
             aria-label={`Zones du monde ${selectedBandModel.label.toLowerCase()}`}
           >
             {bandZones.map((candidate, index) => (
-              <button key={candidate.zoneIndex} type="button" className={`world-zone-row${candidate.zoneIndex === viewedZone.zoneIndex ? " is-selected" : ""}${candidate.isActive ? " is-current" : ""}${!candidate.isUnlocked ? " is-locked" : ""}`} onClick={() => { setViewedZoneIndex(candidate.zoneIndex); }}>
+              <button key={candidate.zoneIndex} type="button" className={`world-zone-row world-zone-row--${candidate.worldBandId}${candidate.zoneIndex === viewedZone.zoneIndex ? " is-selected" : ""}${candidate.isActive ? " is-current" : ""}${!candidate.isUnlocked ? " is-locked" : ""}`} onClick={() => { setViewedZoneIndex(candidate.zoneIndex); }}>
                 <span className="world-zone-row__number">{String(index + 1).padStart(2, "0")}</span>
+                <span className="world-zone-row__visual" aria-hidden="true" />
                 <span className="world-zone-row__identity">
                   <strong>{candidate.zoneName}</strong>
                   <small>{candidate.biomeName} · T{candidate.tier}</small>
@@ -83,9 +84,7 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               <div>
                 <small>Zone sélectionnée</small>
                 <h2>{viewedZone.zoneName}</h2>
-                <p>
-                  {viewedZone.biomeName} · Monde {selectedBandModel.label.toLowerCase()}
-                </p>
+                <p>{viewedZone.biomeName} · Monde {selectedBandModel.label.toLowerCase()}</p>
               </div>
               <span className={viewedZone.isUnlocked ? "is-unlocked" : ""}>{viewedZone.isUnlocked ? "Accessible" : "Verrouillée"}</span>
             </header>
