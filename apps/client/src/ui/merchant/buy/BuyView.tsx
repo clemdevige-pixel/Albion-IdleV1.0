@@ -37,7 +37,7 @@ export function BuyView(): JSX.Element {
   return (
     <div className="ui-merchant-service ui-merchant-buy">
       <section className="ui-merchant-list" aria-label="Catalogue du marchand">
-        <div className="ui-merchant-section-title"><span>Catalogue réel</span><small>Stock illimité</small></div>
+        <div className="ui-merchant-section-title"><span>Catalogue</span><small>Stock illimité</small></div>
         {catalogue.map((offer) => (
           <button
             type="button"
@@ -57,27 +57,29 @@ export function BuyView(): JSX.Element {
         ))}
       </section>
 
-      <section className="ui-merchant-detail">
+      <section className="ui-merchant-detail ui-merchant-buy__detail">
         <div className="ui-merchant-detail__item">
           <ItemHoverTooltip itemId={selected.itemId} quantity={quantity}>
             <span className="ui-merchant-detail__visual"><ItemVisual itemId={selected.itemId} /></span>
           </ItemHoverTooltip>
-          <div><span>Article sélectionné</span><h3>{getItemDisplayName(selected.itemId)}</h3></div>
+          <div>
+            <span>Achat</span>
+            <h3>{getItemDisplayName(selected.itemId)}</h3>
+            <small>Prix unitaire · {String(selected.unitPrice)} Silver</small>
+          </div>
         </div>
-        <dl className="ui-merchant-detail__facts">
-          <div><dt>Prix unitaire</dt><dd>{String(selected.unitPrice)} Silver</dd></div>
-          <div><dt>Votre solde</dt><dd>{String(model.silver)} Silver</dd></div>
-        </dl>
-        <div className="ui-merchant-detail__quantity">
-          <span>Quantité</span>
-          <QuantityControl
-            label={`Quantité de ${getItemDisplayName(selected.itemId)}`}
-            value={quantity}
-            maximum={maximum}
-            onChange={(next) => { setQuantities((current) => ({ ...current, [selected.itemId]: next })); }}
-          />
+        <div className="ui-merchant-buy__purchase-row">
+          <div className="ui-merchant-detail__quantity">
+            <span>Quantité</span>
+            <QuantityControl
+              label={`Quantité de ${getItemDisplayName(selected.itemId)}`}
+              value={quantity}
+              maximum={maximum}
+              onChange={(next) => { setQuantities((current) => ({ ...current, [selected.itemId]: next })); }}
+            />
+          </div>
+          <div className="ui-merchant-detail__total"><span>Total</span><strong>{String(total)} Silver</strong></div>
         </div>
-        <div className="ui-merchant-detail__total"><span>Total</span><strong>{String(total)} Silver</strong></div>
         <button
           type="button"
           className="ui-merchant__primary"
