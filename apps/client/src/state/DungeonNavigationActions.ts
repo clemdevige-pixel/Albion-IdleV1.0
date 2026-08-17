@@ -14,7 +14,7 @@ interface DungeonCombatRuntime {
 
 interface DungeonStopController {
   isPaused(): boolean;
-  requestStopAfterSegment(): boolean;
+  requestStopAfterEncounter(): boolean;
   reset(): void;
 }
 
@@ -37,8 +37,8 @@ export interface DungeonNavigationState {
 /**
  * Application-level dungeon navigation.
  *
- * Entering a dungeon follows the exact same combat boundary as manual pause:
- * an active segment is allowed to finish, CombatStopController reaches paused,
+ * Entering a dungeon follows the same combat boundary as other deferred actions:
+ * the active encounter is allowed to finish, CombatStopController reaches paused,
  * then the world encounter is replaced by the dungeon run and combat resumes.
  */
 export class DungeonNavigationActions {
@@ -67,7 +67,7 @@ export class DungeonNavigationActions {
 
     if (loopState === "combat" || loopState === "stop_requested") {
       this.pendingDefinitionId = definitionId;
-      if (loopState === "combat" && !this.deps.stopController.requestStopAfterSegment()) {
+      if (loopState === "combat" && !this.deps.stopController.requestStopAfterEncounter()) {
         this.pendingDefinitionId = null;
         return false;
       }
@@ -103,8 +103,8 @@ export class DungeonNavigationActions {
     );
 
     this.pendingDefinitionId = null;
-    // The pause belongs to the completed world segment. The dungeon starts as a
-    // fresh combat session and must not inherit the world pause state.
+    // The pause belongs to the completed world encounter. The dungeon starts as
+    // a fresh combat session and must not inherit the world pause state.
     this.deps.stopController.reset();
     this.deps.onStateChanged();
     return started.ok;
