@@ -35,7 +35,11 @@ export function WorldSegmentStrip(): JSX.Element {
 
   const viewedZone = zone.zones.find((candidate) => candidate.zoneIndex === viewedZoneIndex)
     ?? zone.zones.find((candidate) => candidate.isActive)
-    ?? zone;
+    ?? zone.zones[0];
+
+  if (viewedZone === undefined) {
+    return <div className="world-segment-strip" aria-label="Navigation des zones et segments" />;
+  }
 
   const equippedWeaponId = bridge.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId;
   const physicalDamage = readComputedStat(bridge.stats, "stat_physical_damage");
