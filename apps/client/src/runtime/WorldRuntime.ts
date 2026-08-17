@@ -181,6 +181,16 @@ export class WorldRuntime {
       }
     }
 
+    if (!enteredNewSegment) {
+      if (this.worldTick.pendingZone !== null) {
+        this.changeActiveZone(this.worldTick.pendingZone, this.worldTick.pendingZoneSegment ?? 0);
+      } else if (this.worldTick.pendingSegment !== null) {
+        this.worldTick.currentSegment = this.worldTick.pendingSegment;
+        this.worldTick.currentEncounter = 0;
+        this.worldTick.pendingSegment = null;
+      }
+    }
+
     return { enteredNewSegment };
   }
 
