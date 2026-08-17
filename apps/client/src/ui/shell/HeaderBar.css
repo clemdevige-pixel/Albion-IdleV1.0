@@ -1,3 +1,17 @@
+.permanent-header__brand {
+  min-width: 156px;
+  padding: 0 10px;
+  justify-content: center;
+}
+
+.permanent-header__brand-logo {
+  display: block;
+  width: 132px;
+  height: 54px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
 .permanent-header__location {
   width: min(100%, 360px);
   justify-self: start;
@@ -142,4 +156,27 @@
   font-size: 16px;
   line-height: 1.05;
   white-space: nowrap;
+}
+
+@media (max-width: 1250px) {
+  .permanent-header__brand {
+    min-width: 118px;
+    padding-inline: 8px;
+  }
+
+  .permanent-header__brand-logo {
+    width: 104px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 680px) {
+  .permanent-header__brand {
+    min-width: 64px;
+  }
+
+  .permanent-header__brand-logo {
+    width: 58px;
+    height: 44px;
+  }
 }
