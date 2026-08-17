@@ -146,7 +146,10 @@ export class RefiningRuntime {
 
       const state = this.states[family];
       if (state.automatic && definition.manager.getActiveSession() === undefined) {
-        this.startRefiningCycle(family, this.getRecipe(family), tickCounter);
+        if (!this.startRefiningCycle(family, this.getRecipe(family), tickCounter)) {
+          state.automatic = false;
+          state.activeRecipe = undefined;
+        }
       }
     }
   }
@@ -322,8 +325,7 @@ export class RefiningRuntime {
       definition.manager.clear();
       if (state.automatic) {
         if (!this.startRefiningCycle(family, recipe, this.currentTickCounter)) {
-          // Automatic refining remains armed while waiting for the worker or
-          // active gathering to replenish the shared production storage.
+          state.automatic = false;
           state.activeRecipe = undefined;
         }
       } else {
