@@ -20,6 +20,9 @@
   min-width: 0;
   height: 100%;
   box-sizing: border-box;
+  border-color: rgb(128 91 36 / 78%);
+  background: rgb(6 9 12 / 96%);
+  box-shadow: inset 0 0 0 1px rgb(232 186 88 / 3%);
 }
 
 .combat-hud-journal .activity-journal__header {
@@ -27,56 +30,124 @@
   grid-template-columns: auto minmax(0, 1fr);
   align-items: stretch;
   min-width: 0;
+  height: 30px;
+  border-bottom: 1px solid rgb(112 82 34 / 72%);
 }
 
 .combat-hud-journal .activity-journal__title {
   display: flex;
   align-items: center;
-  gap: 5px;
-  min-width: 106px;
-  padding: 0 8px;
+  gap: 6px;
+  min-width: 108px;
+  padding: 0 9px;
+  color: #c59b45;
+  font-family: var(--ui-font-display);
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
   white-space: nowrap;
+}
+
+.combat-hud-journal .activity-journal__title small {
+  min-width: 20px;
+  padding: 1px 4px;
+  color: #8f8067;
+  background: rgb(255 255 255 / 3%);
+  border: 1px solid rgb(126 94 43 / 38%);
+  border-radius: 2px;
+  font-family: var(--ui-font-sans);
+  font-size: 8px;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .combat-hud-journal .activity-journal__tabs {
   min-width: 0;
+  height: 30px;
 }
 
 .combat-hud-journal .activity-journal__tabs button {
   min-width: 0;
-  padding-inline: 7px;
+  padding-inline: 8px;
   overflow: hidden;
+  color: #97999d;
   font-size: 10px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.combat-hud-journal .activity-journal__tabs button.is-active {
+  color: #f0c75d;
+  background: linear-gradient(180deg, rgb(66 49 22 / 72%), rgb(37 30 18 / 48%));
+  box-shadow: inset 0 -2px #d1a339;
+}
+
 .combat-hud-journal .activity-journal__history {
   min-width: 0;
-  padding: 7px 9px;
+  height: calc(100% - 30px);
+  padding: 7px 9px 8px;
   box-sizing: border-box;
+  scrollbar-color: #755523 #0a0d11;
+  scrollbar-width: thin;
+}
+
+.combat-hud-journal .activity-journal__history::-webkit-scrollbar {
+  width: 5px;
+}
+
+.combat-hud-journal .activity-journal__history::-webkit-scrollbar-track {
+  background: #090c10;
+}
+
+.combat-hud-journal .activity-journal__history::-webkit-scrollbar-thumb {
+  background: #6d5024;
+  border-radius: 2px;
 }
 
 .combat-hud-journal .activity-journal__entry {
-  grid-template-columns: 6px auto minmax(0, 1fr);
+  grid-template-columns: 6px 58px minmax(0, 1fr);
   align-items: start;
   gap: 6px;
   min-width: 0;
   padding-block: 2px;
+  color: #c0bbb0;
   font-size: 10px;
   line-height: 1.35;
 }
 
+.combat-hud-journal .activity-journal__entry i {
+  width: 4px;
+  height: 4px;
+  margin-top: 5px;
+  background: #78746c;
+  border-radius: 50%;
+}
+
+.combat-hud-journal .activity-journal__entry--positive i {
+  background: #65c878;
+  box-shadow: 0 0 5px rgb(101 200 120 / 35%);
+}
+
+.combat-hud-journal .activity-journal__entry--negative i {
+  background: #d66b62;
+  box-shadow: 0 0 5px rgb(214 107 98 / 30%);
+}
+
 .combat-hud-journal .activity-journal__entry time {
+  color: #6f747d;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .combat-hud-journal .activity-journal__entry span {
   min-width: 0;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .combat-hud-journal .activity-journal__empty {
+  padding-top: 14px;
+  color: #73767d;
   font-size: 10px;
 }
 
@@ -188,8 +259,14 @@
   }
 
   .combat-hud-journal .activity-journal__title {
-    min-width: 92px;
+    min-width: 94px;
     padding-inline: 6px;
+    font-size: 9px;
+  }
+
+  .combat-hud-journal .activity-journal__title small {
+    min-width: 18px;
+    font-size: 7px;
   }
 
   .combat-hud-journal .activity-journal__tabs button,
@@ -203,7 +280,7 @@
   }
 
   .combat-hud-journal .activity-journal__entry {
-    grid-template-columns: 5px auto minmax(0, 1fr);
+    grid-template-columns: 5px 52px minmax(0, 1fr);
     gap: 5px;
     padding-block: 1px;
   }
