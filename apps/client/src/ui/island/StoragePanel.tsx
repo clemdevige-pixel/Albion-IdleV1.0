@@ -1,6 +1,7 @@
 import {
   PRODUCTION_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
+  PRODUCTION_TIERS,
   getProductionFamilyDefinition,
 } from "../../data/productionFamilyCatalog";
 import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
@@ -47,8 +48,25 @@ export function StoragePanel(): JSX.Element {
                 <strong>{family.label}</strong>
               </header>
               <div className="ui-island-storage__tiers">
-                {PRODUCTION_CONTENT_TIERS.map((tier) => {
-                  const recipe = getProductionRefiningRecipe(familyId, tier);
+                {PRODUCTION_TIERS.map((tier) => {
+                  const hasContent = PRODUCTION_CONTENT_TIERS.includes(
+                    tier as (typeof PRODUCTION_CONTENT_TIERS)[number],
+                  );
+
+                  if (!hasContent) {
+                    return (
+                      <div key={tier} className="ui-island-storage__tier is-pending">
+                        <span>T{String(tier)}</span>
+                        <div><small>Brut</small><b>—</b></div>
+                        <div><small>Raffiné</small><b>—</b></div>
+                      </div>
+                    );
+                  }
+
+                  const recipe = getProductionRefiningRecipe(
+                    familyId,
+                    tier as (typeof PRODUCTION_CONTENT_TIERS)[number],
+                  );
                   const rawQuantity = quantityForItem(
                     inventoryManager,
                     productionStorageId,
