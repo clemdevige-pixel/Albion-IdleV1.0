@@ -25,15 +25,16 @@
   overflow: hidden;
   color: #eadcb9;
   font-family: var(--ui-font-display);
-  font-size: 12px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .dashboard-combat__location span {
   flex: 0 0 auto;
-  color: #9a8d76;
-  font-size: 9px;
+  color: #b3a17e;
+  font-size: 10px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
