@@ -55,8 +55,12 @@ export function HeaderBar(): JSX.Element {
         onClick={navigation.returnToDashboard}
         aria-label="Retourner au tableau de bord"
       >
-        <span className="permanent-header__crest" aria-hidden="true">AI</span>
-        <span>Albion <strong>Idle</strong></span>
+        <img
+          className="permanent-header__brand-logo"
+          src="/assets/ui/albion_idle.png"
+          alt="Albion Idle"
+          draggable={false}
+        />
       </button>
 
       <button
