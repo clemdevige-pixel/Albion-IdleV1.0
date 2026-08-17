@@ -22,8 +22,17 @@ export function DashboardCombatCard({
       meta={<span className="dashboard-combat__encounter">Encounter {String(zone.encounterIndex)} / {String(zone.encounterCount)}</span>}
     >
       <div className="dashboard-combat">
-        <div className="dashboard-combat__control-row">
-          <span className="dashboard-combat__mode-label">Mode</span>
+        {pendingSegment !== undefined && (
+          <div className="dashboard-combat__pending" role="status">
+            <span className="dashboard-combat__pending-icon" aria-hidden="true">↪</span>
+            <span className="dashboard-combat__pending-copy">
+              <strong>Segment {String(pendingSegment)} en attente</strong>
+              <small>Changement après l'encounter en cours</small>
+            </span>
+          </div>
+        )}
+
+        <div className="dashboard-combat__control-bar">
           <div className="dashboard-combat__modes" aria-label="Mode de combat">
             <button
               type="button"
@@ -42,20 +51,9 @@ export function DashboardCombatCard({
               Farm
             </button>
           </div>
-        </div>
-
-        {pendingSegment !== undefined && (
-          <div className="dashboard-combat__pending" role="status">
-            <span className="dashboard-combat__pending-icon" aria-hidden="true">↪</span>
-            <span className="dashboard-combat__pending-copy">
-              <strong>Segment {String(pendingSegment)} en attente</strong>
-              <small>Changement après l'encounter en cours</small>
-            </span>
+          <div className="dashboard-combat__stop">
+            <CombatStopButton persistent compact />
           </div>
-        )}
-
-        <div className="dashboard-combat__stop">
-          <CombatStopButton persistent />
         </div>
       </div>
     </DashboardCard>
