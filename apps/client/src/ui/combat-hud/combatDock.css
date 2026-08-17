@@ -5,7 +5,7 @@
   top: auto;
   bottom: 0;
   left: 0;
-  width: 32%;
+  width: 28%;
   height: 132px;
   padding: 7px 0 7px 7px;
   box-sizing: border-box;
@@ -22,7 +22,7 @@
   top: auto;
   right: 0;
   bottom: 0;
-  left: 32%;
+  left: 28%;
   height: 132px;
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@
   box-sizing: border-box;
   transform: none;
   background:
-    linear-gradient(90deg, rgb(112 75 27 / 7%), transparent 22%, transparent 78%, rgb(112 75 27 / 7%)),
+    linear-gradient(90deg, rgb(112 75 27 / 6%), transparent 18%, transparent 82%, rgb(112 75 27 / 6%)),
     rgb(7 10 14 / 92%);
   border-top: 1px solid rgb(145 99 34 / 62%);
   border-left: 1px solid rgb(112 79 34 / 42%);
@@ -39,16 +39,16 @@
 }
 
 .combat-hud-actions .combat-controls {
-  width: min(640px, 94%);
-  min-height: 86px;
-  gap: 10px;
-  padding: 9px 11px;
+  width: auto;
+  min-width: 0;
+  min-height: 82px;
+  gap: 16px;
+  padding: 7px 9px;
   box-sizing: border-box;
   justify-content: center;
-  box-shadow:
-    0 0 0 1px #020304,
-    inset 0 1px rgb(239 194 93 / 12%),
-    0 8px 20px rgb(0 0 0 / 42%);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .combat-hud-actions .combat-controls__label {
@@ -59,15 +59,16 @@
 .combat-hud-actions .combat-controls__utility,
 .combat-hud-actions .combat-controls__consumable {
   gap: 0;
-}
-
-.combat-hud-actions .combat-controls__abilities,
-.combat-hud-actions .combat-controls__utility {
-  padding-right: 10px;
+  padding-right: 0;
 }
 
 .combat-hud-actions .ability-bar__skills {
-  gap: 7px;
+  gap: 14px;
+}
+
+.combat-hud-actions .combat-controls__utility,
+.combat-hud-actions .combat-controls__consumable {
+  margin-left: 3px;
 }
 
 .combat-hud-actions .ability-bar__slot {
@@ -92,19 +93,24 @@
 
 @media (max-width: 1100px) {
   .combat-hud-journal {
-    width: 34%;
+    width: 30%;
     height: 116px;
   }
 
   .combat-hud-actions {
-    left: 34%;
+    left: 30%;
     height: 116px;
     padding: 8px 10px;
   }
 
   .combat-hud-actions .combat-controls {
-    width: min(540px, 96%);
-    min-height: 72px;
+    min-height: 68px;
+    gap: 11px;
+    padding-inline: 6px;
+  }
+
+  .combat-hud-actions .ability-bar__skills {
+    gap: 10px;
   }
 
   .combat-hud-actions .ability-bar__slot {
