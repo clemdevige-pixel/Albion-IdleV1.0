@@ -2,7 +2,12 @@ import { useSyncExternalStore } from "react";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { combatStopController } from "../../runtime/CombatStopController";
 
-export function CombatStopButton(): JSX.Element | null {
+interface CombatStopButtonProps {
+  /** Keeps the control mounted outside the transient `combat` presentation state. */
+  readonly persistent?: boolean;
+}
+
+export function CombatStopButton({ persistent = false }: CombatStopButtonProps): JSX.Element | null {
   const bridge = useGameBridge();
   const { bridge: gameBridge } = useGameServices();
   const state = useSyncExternalStore(
@@ -11,7 +16,7 @@ export function CombatStopButton(): JSX.Element | null {
     () => combatStopController.getState(),
   );
 
-  const visible = bridge.combatState === "combat" || state !== "running";
+  const visible = persistent || bridge.combatState === "combat" || state !== "running";
   if (!visible) return null;
 
   const handleClick = (): void => {
