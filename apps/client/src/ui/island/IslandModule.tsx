@@ -114,7 +114,8 @@ function BuildingSummary({
   const definition = getIslandBuildingDefinition(definitionId);
   const flatSelection = definitionId === "worker_house"
     || definition.gatheringService !== undefined
-    || definition.refiningService !== undefined;
+    || definition.refiningService !== undefined
+    || definition.craftingService !== undefined;
   const selectionClassName = flatSelection
     ? "ui-island__selection ui-island__selection--flat"
     : "ui-island__selection";
