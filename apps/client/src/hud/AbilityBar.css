@@ -37,14 +37,25 @@
 
 .combat-action-bar__slot--ability {
   overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   cursor: pointer;
 }
 
 .combat-action-bar__slot--ability:hover,
-.combat-action-bar__slot--ability:focus-visible {
-  border-color: #e5b447;
+.combat-action-bar__slot--ability:focus-visible,
+.combat-action-bar__slot--ability.combat-action-bar__slot--ready {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   outline: none;
-  box-shadow: 0 0 10px rgba(211, 155, 48, 0.28);
+}
+
+.combat-action-bar__slot--ability:hover .combat-action-bar__ability-image,
+.combat-action-bar__slot--ability:focus-visible .combat-action-bar__ability-image {
+  filter: brightness(1.08);
 }
 
 .combat-action-bar__slot--ready {
@@ -58,7 +69,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 2px;
+  border-radius: 0;
   image-rendering: pixelated;
   pointer-events: none;
 }
