@@ -24,7 +24,11 @@ export function DashboardCombatCard({
       <div className="dashboard-combat">
         {pendingSegment !== undefined && (
           <div className="dashboard-combat__pending" role="status">
-            Changement vers le segment {String(pendingSegment)} en attente · fin de l'encounter en cours
+            <span className="dashboard-combat__pending-icon" aria-hidden="true">↪</span>
+            <span className="dashboard-combat__pending-copy">
+              <strong>Changement de segment en attente</strong>
+              <small>Segment {String(pendingSegment)} · à la fin de l'encounter en cours</small>
+            </span>
           </div>
         )}
         <div className="dashboard-combat__modes" aria-label="Mode de combat">
