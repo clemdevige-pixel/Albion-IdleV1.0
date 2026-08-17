@@ -50,3 +50,57 @@
   box-shadow: 0 0 4px rgb(224 173 49 / 42%);
   transition: width var(--ui-duration-normal) linear;
 }
+
+/* Header economy counters: presentation is scoped here so the shell layout stays untouched. */
+.permanent-header__economy {
+  align-self: start;
+  padding-block: 3px 0;
+}
+
+.permanent-header__resource {
+  min-width: 96px;
+  height: 30px;
+  gap: 6px;
+  padding: 0 9px;
+}
+
+.permanent-header__resource-icon {
+  display: grid;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.permanent-header__resource-icon img {
+  display: block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.permanent-header__resource-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0;
+  line-height: 1;
+}
+
+.permanent-header__resource-copy small {
+  font-size: 7px;
+  line-height: 1;
+}
+
+.permanent-header__resource-copy strong {
+  margin-top: 2px;
+  color: #efe4cb;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
