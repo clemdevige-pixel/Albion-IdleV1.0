@@ -107,8 +107,8 @@
 
 .ui-island-gathering-building__hint {
   padding: 0 2px;
-  color: var(--ui-color-text-muted);
-  font-size: 9px;
+  color: var(--ui-color-text-secondary);
+  font-size: 10px;
   line-height: 1.35;
 }
 
@@ -166,7 +166,7 @@
 }
 
 .ui-island-gathering-building__facts > span:last-child { border-right: 0; }
-.ui-island-gathering-building__facts b { grid-row: 1 / 3; align-self: center; color: #a76ae8; font-size: 11px; }
+.ui-island-gathering-building__facts b { grid-row: 1 / 3; align-self: center; color: var(--ui-color-accent); font-size: 11px; }
 .ui-island-gathering-building__facts small { grid-column: 2; }
 .ui-island-gathering-building__facts strong { grid-column: 2; color: var(--ui-color-text-primary); font-size: 10px; line-height: 1.05; }
 .ui-island-gathering-building__facts > span:last-child small,
@@ -175,9 +175,9 @@
 
 .ui-island-gathering-building__progress-block { display: flex; flex-direction: column; gap: 4px; }
 .ui-island-gathering-building__progress-block > div:first-child { display: flex; align-items: end; justify-content: space-between; color: var(--ui-color-text-secondary); font-size: 8px; }
-.ui-island-gathering-building__progress-block > div:first-child strong { color: #c98df5; font-size: 12px; line-height: 1; }
+.ui-island-gathering-building__progress-block > div:first-child strong { color: var(--ui-color-accent); font-size: 12px; line-height: 1; }
 .ui-island-gathering-building__progress { height: 6px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, 0.075); }
-.ui-island-gathering-building__progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #9a5bd2, #b76de7 55%, #c982f1); }
+.ui-island-gathering-building__progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, rgba(174, 125, 38, 0.92), var(--ui-color-accent)); }
 
 .ui-island-gathering-building__action {
   align-self: flex-start;
@@ -199,6 +199,14 @@
 .ui-island__selection--flat .ui-island-upgrade {
   margin-top: 3px;
   padding-top: 9px;
+}
+
+.ui-island__selection--flat .ui-island-upgrade > button:disabled {
+  align-self: flex-start;
+  min-height: 27px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 9px;
 }
 
 @media (max-width: 980px) {
