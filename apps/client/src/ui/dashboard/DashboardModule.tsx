@@ -1,37 +1,32 @@
 import "./dashboard.css";
 import {
-  useDashboardActivity,
   useDashboardPlayer,
   useDashboardProduction,
-  useDashboardSession,
+  useDashboardYield,
   useDashboardZone,
   useDashboardZoneActions,
 } from "./useDashboardData";
-import { DashboardActivityCard } from "./components/DashboardActivityCard";
+import { DashboardCombatCard } from "./components/DashboardCombatCard";
 import { DashboardPlayerCard } from "./components/DashboardPlayerCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
-import { DashboardSessionCard } from "./components/DashboardSessionCard";
-import { DashboardZoneCard } from "./components/DashboardZoneCard";
+import { DashboardYieldCard } from "./components/DashboardYieldCard";
 
 export function DashboardModule(): JSX.Element {
   const player = useDashboardPlayer();
   const zone = useDashboardZone();
   const zoneActions = useDashboardZoneActions();
   const production = useDashboardProduction();
-  const activity = useDashboardActivity();
-  const session = useDashboardSession();
+  const yieldData = useDashboardYield();
 
   return (
     <div className="dashboard-module">
-      <DashboardZoneCard
+      <DashboardCombatCard
         zone={zone}
-        onSelectSegment={zoneActions.selectZoneSegment}
         onSetFarmMode={zoneActions.setFarmMode}
       />
       <DashboardPlayerCard player={player} />
+      <DashboardYieldCard yieldData={yieldData} />
       <DashboardProductionCard production={production} />
-      <DashboardActivityCard entries={activity} />
-      <DashboardSessionCard session={session} />
     </div>
   );
 }
