@@ -7,6 +7,7 @@ export interface HeaderUiModel {
   readonly incomeRate: number;
   readonly totalFame: number;
   readonly itemPower: number;
+  readonly weaponItemId: string | null;
   readonly biomeName: string;
   readonly zoneName: string;
   readonly segmentIndex: number;
@@ -23,6 +24,7 @@ function selectHeaderUiModel(state: GameBridgeState): HeaderUiModel {
       state.equipment,
       state.progression.masteries,
     ),
+    weaponItemId: state.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId ?? null,
     biomeName: state.world.biomeName,
     zoneName: state.world.zoneName,
     segmentIndex: state.world.segmentIndex,
