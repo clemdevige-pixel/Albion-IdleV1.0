@@ -98,6 +98,10 @@
   object-fit: contain;
   image-rendering: pixelated;
 }
+.world-dungeon-card__visual[data-tier="4"] img {
+  transform: scale(1.16);
+  transform-origin: center;
+}
 .world-dungeon-card__identity { display: grid; align-content: center; min-width: 0; gap: 2px; }
 .world-dungeon-card__identity small { font-size: 8px; }
 .world-dungeon-card__header h3 { overflow: hidden; color: var(--ui-color-text-primary); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
