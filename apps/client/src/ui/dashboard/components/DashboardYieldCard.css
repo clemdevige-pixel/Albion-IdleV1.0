@@ -1,6 +1,6 @@
 .dashboard-yield {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1.12fr 1.12fr .88fr .88fr;
   gap: 5px;
   margin: 0;
 }
@@ -16,12 +16,10 @@
 }
 
 .dashboard-yield__metric dt {
-  overflow: hidden;
   color: #929bab;
   font-size: 8px;
-  line-height: 1.15;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
+  white-space: normal;
 }
 
 .dashboard-yield__metric dd {
