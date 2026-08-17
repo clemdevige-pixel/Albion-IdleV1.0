@@ -1,4 +1,4 @@
-.combat-hud-layer .active-effects {
+.active-effects {
   position: absolute;
   z-index: 32;
   display: flex;
@@ -7,10 +7,7 @@
   pointer-events: auto;
 }
 
-.combat-hud-layer .active-effects--player { left: 32%; }
-.combat-hud-layer .active-effects--enemy { left: 68%; }
-
-.combat-hud-layer .active-effects__icon {
+.active-effects__icon {
   position: relative;
   display: grid;
   place-items: center;
@@ -26,7 +23,7 @@
   outline: none;
 }
 
-.combat-hud-layer .active-effects__symbol {
+.active-effects__symbol {
   display: grid;
   width: 100%;
   height: 100%;
@@ -34,7 +31,7 @@
   overflow: hidden;
 }
 
-.combat-hud-layer .active-effects__symbol img {
+.active-effects__symbol img {
   display: block;
   width: 100%;
   height: 100%;
@@ -43,10 +40,12 @@
   pointer-events: none;
 }
 
-.combat-hud-layer .active-effects__icon:hover,
-.combat-hud-layer .active-effects__icon:focus-visible { border-color: #d3a63d; }
+.active-effects__icon:hover,
+.active-effects__icon:focus-visible {
+  border-color: #d3a63d;
+}
 
-.combat-hud-layer .active-effects__tooltip {
+.active-effects__tooltip {
   position: absolute;
   z-index: 80;
   left: 50%;
@@ -66,25 +65,25 @@
   text-align: left;
 }
 
-.combat-hud-layer .active-effects__tooltip strong {
+.active-effects__tooltip strong {
   color: #e3b74c;
   font-family: var(--ui-font-display, Georgia, serif);
   font-size: 12px;
 }
 
-.combat-hud-layer .active-effects__tooltip span {
+.active-effects__tooltip span {
   color: #aaa69e;
   font-size: 10px;
   line-height: 1.4;
 }
 
-.combat-hud-layer .active-effects__tooltip small {
+.active-effects__tooltip small {
   color: #7f838a;
   font-size: 9px;
 }
 
-.combat-hud-layer .active-effects__icon:hover .active-effects__tooltip,
-.combat-hud-layer .active-effects__icon:focus-visible .active-effects__tooltip {
+.active-effects__icon:hover .active-effects__tooltip,
+.active-effects__icon:focus-visible .active-effects__tooltip {
   opacity: 1;
   visibility: visible;
   transform: translate(-50%, 0);
