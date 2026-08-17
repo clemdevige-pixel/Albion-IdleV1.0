@@ -27,7 +27,7 @@
   font-size: var(--ui-text-xs);
   font-weight: var(--ui-weight-semibold);
   cursor: pointer;
-  transition: border-color var(--ui-duration-fast), color var(--ui-duration-fast), background var(--ui-duration-fast), box-shadow var(--ui-duration-fast);
+  transition: border-color var(--ui-duration-fast), color var(--ui-duration-fast), background var(--ui-duration-fast), box-shadow var(--ui-duration-fast), transform var(--ui-duration-fast);
 }
 
 .storage-module__tabs button {
@@ -70,25 +70,33 @@
 }
 
 .storage-module__sort-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
+  display: grid;
+  width: 50px;
+  height: 50px;
+  min-height: 50px !important;
+  padding: 3px !important;
+  place-items: center;
+  overflow: hidden;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.storage-module__sort-button:hover,
+.storage-module__sort-button:focus-visible {
+  border-color: rgb(176 126 43 / 38%) !important;
+  background: rgb(93 64 26 / 12%) !important;
+  box-shadow: inset 0 0 10px rgb(218 164 57 / 6%);
+  transform: translateY(-1px);
 }
 
 .storage-module__sort-button img {
   display: block;
-  width: 27px;
-  height: 27px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
-}
-
-.storage-module__sort-button span {
-  color: inherit;
-  font-size: 10px;
-  font-weight: var(--ui-weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  pointer-events: none;
 }
 
 .storage-module__shortcut {
