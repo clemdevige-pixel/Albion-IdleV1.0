@@ -1,6 +1,6 @@
 import { CurrencyDisplay } from "../../panels/CurrencyDisplay";
 import { UI_MODULE_IDS, useNavigation } from "../navigation";
-import { useHeaderUiModel } from "../state";
+import { useActiveMasteryUiModel, useHeaderUiModel } from "../state";
 import { NotificationPreferencesMenu } from "./NotificationPreferencesMenu";
 import { SaveManagementMenu } from "./SaveManagementMenu";
 import "./permanentShell.css";
@@ -14,10 +14,8 @@ function formatCompact(value: number): string {
 
 export function HeaderBar(): JSX.Element {
   const header = useHeaderUiModel();
+  const activeMastery = useActiveMasteryUiModel();
   const navigation = useNavigation();
-  const location = header.biomeName === ""
-    ? "Zone inconnue"
-    : `${header.biomeName} — ${header.zoneName}`;
 
   return (
     <div className="permanent-header">
@@ -49,11 +47,34 @@ export function HeaderBar(): JSX.Element {
       <button
         type="button"
         className="permanent-header__location"
-        onClick={navigation.returnToDashboard}
-        aria-label="Afficher le tableau de bord de la zone"
+        onClick={() => { navigation.openModule(UI_MODULE_IDS.masteries); }}
+        aria-label="Ouvrir les maîtrises"
       >
-        <span className="permanent-header__eyebrow">Localisation</span>
-        <strong title={location}>{location}</strong>
+        <span className="permanent-header__eyebrow">Maîtrise active</span>
+        {activeMastery === null ? (
+          <strong>Aucune maîtrise active</strong>
+        ) : (
+          <>
+            <strong title={activeMastery.name}>
+              <span aria-hidden="true">{activeMastery.icon}</span>{" "}
+              {activeMastery.name} · Niv. {String(activeMastery.level)}
+            </strong>
+            <span className="permanent-header__segment-row">
+              <span>{formatCompact(activeMastery.currentXp)} / {formatCompact(activeMastery.xpToNextLevel)} XP</span>
+              <span>{Math.round(activeMastery.progressPercent)}%</span>
+            </span>
+            <span
+              className="permanent-header__progress"
+              role="progressbar"
+              aria-label={`Progression ${activeMastery.name}`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(activeMastery.progressPercent)}
+            >
+              <span style={{ width: `${String(activeMastery.progressPercent)}%` }} />
+            </span>
+          </>
+        )}
       </button>
 
       <div className="permanent-header__economy" aria-label="Économie et progression">
