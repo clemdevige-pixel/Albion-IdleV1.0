@@ -25,7 +25,10 @@ export function ConstructionPanel({ plotId, islandLevel, builtDefinitionIds, onB
   const availableBuildings = PLAYER_ISLAND_CONFIG.buildings.filter((definition): definition is IslandBuildingDefinition & { construction: NonNullable<IslandBuildingDefinition["construction"]> } => definition.construction !== undefined && !builtDefinitionIds.has(definition.id));
 
   if (availableBuildings.length === 0) {
-    return <section className="ui-island__selection ui-island__selection--empty"><strong>Emplacement libre</strong><p>Aucun bâtiment constructible supplémentaire n'est autorisé pour cette phase.</p></section>;
+    return <section className="ui-island-construction ui-island-construction--empty">
+      <div className="ui-island-construction__heading"><span className="ui-island__eyebrow">Construction</span><strong>Emplacement libre</strong></div>
+      <div className="ui-island-construction__empty-hint"><span aria-hidden="true">◆</span><span>Aucun bâtiment constructible supplémentaire n'est autorisé pour cette phase.</span></div>
+    </section>;
   }
 
   return <section className="ui-island-construction ui-island--overview">
