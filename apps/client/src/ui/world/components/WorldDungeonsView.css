@@ -13,6 +13,42 @@
   border-bottom: 1px solid rgba(208, 157, 52, 0.18);
 }
 
+.world-dungeons__tiers {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+.world-dungeons__tiers button {
+  min-height: 26px;
+  border: 1px solid #30343a;
+  border-radius: 5px;
+  color: #8f969f;
+  background: #0b0e12;
+  font: 700 9px var(--ui-font-display);
+  cursor: pointer;
+}
+.world-dungeons__tiers button:hover { color: #d9c489; border-color: #66502b; }
+.world-dungeons__tiers button.is-active {
+  color: #f0d593;
+  border-color: #8a6225;
+  background: #241b0e;
+  box-shadow: inset 0 -2px #b58c43;
+}
+.world-dungeons__empty {
+  display: grid;
+  gap: 3px;
+  min-height: 84px;
+  place-content: center;
+  padding: 12px;
+  border: 1px dashed #30343a;
+  border-radius: var(--ui-radius-md);
+  color: var(--ui-color-text-muted);
+  background: rgba(11, 14, 18, .5);
+  text-align: center;
+}
+.world-dungeons__empty strong { color: #b9b1a4; font-size: 10px; }
+.world-dungeons__empty span { font-size: 8px; }
+
 .world-dungeons__intro small,
 .world-dungeon-card small { color: var(--ui-color-text-muted); }
 
