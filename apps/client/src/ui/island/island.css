@@ -36,17 +36,28 @@
 .ui-island__selection p, .ui-island__selection--empty p { color: rgba(232, 224, 209, 0.72); font-size: 11px; line-height: 1.55; margin: 13px 0 0; }
 .ui-island__selection-status { margin-top: 10px; border-top: 1px solid rgba(190, 159, 105, 0.15); padding-top: 9px; color: rgba(207, 187, 151, 0.64); font-size: 10px; }
 
-.ui-island-construction__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-.ui-island-construction__card { display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 10px; border: 1px solid rgba(185, 156, 104, 0.18); border-radius: 8px; background: rgba(14, 17, 20, 0.46); }
-.ui-island-construction__card header { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; }
+.ui-island-construction__heading { display: flex; align-items: baseline; gap: 7px; }
+.ui-island-construction > p { margin-top: 5px !important; color: var(--ui-color-text-muted) !important; font-size: 10px !important; line-height: 1.35 !important; }
+.ui-island-construction__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 9px; }
+.ui-island-construction__card { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 8px; border: 1px solid rgba(185, 156, 104, 0.18); border-radius: 8px; background: rgba(12, 16, 21, 0.62); }
+.ui-island-construction__card.is-buildable { border-color: rgba(208, 157, 52, 0.46); background: linear-gradient(145deg, rgba(47, 35, 20, 0.5), rgba(12, 16, 21, 0.72)); }
+.ui-island-construction__card header { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 7px; align-items: start; }
+.ui-island-construction__card header .ui-island__selection-icon { width: 22px; padding-top: 2px; font-size: 15px; text-align: center; }
 .ui-island-construction__card header > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ui-island-construction__card header small { color: rgba(224, 213, 194, 0.68); font-size: 10px; line-height: 1.35; }
-.ui-island-construction__costs { display: flex; flex-wrap: wrap; gap: 5px; }
-.ui-island-construction__costs span { border: 1px solid rgba(182, 159, 116, 0.26); border-radius: 6px; padding: 3px 6px; font-size: 11px; font-weight: 600; line-height: 1.35; background: rgba(10, 14, 17, .5); }
+.ui-island-construction__title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+.ui-island-construction__title-row strong { min-width: 0; overflow: hidden; font-size: 13px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.ui-island-construction__title-row > span { flex: none; color: rgba(208, 157, 52, 0.72); font-size: 8px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.ui-island-construction__card header small { display: -webkit-box; overflow: hidden; color: var(--ui-color-text-muted); font-size: 9px; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.ui-island-construction__prerequisites { display: flex; flex-wrap: wrap; gap: 4px; }
+.ui-island-construction__prerequisites span { padding: 2px 5px; border: 1px solid rgba(238, 118, 111, 0.32); border-radius: 5px; background: rgba(92, 31, 29, 0.14); color: #ee766f; font-size: 9px; font-weight: 600; line-height: 1.3; }
+.ui-island-construction__costs { display: flex; flex-wrap: wrap; gap: 4px; }
+.ui-island-construction__costs span { border: 1px solid rgba(182, 159, 116, 0.26); border-radius: 5px; padding: 2px 5px; font-size: 10px; font-weight: 600; line-height: 1.3; background: rgba(10, 14, 17, .5); }
 .ui-island-construction__costs .is-ready { color: #8ee37d; }
 .ui-island-construction__costs .is-missing { color: #ee766f; }
-.ui-island-construction__card button { border: 1px solid rgba(205, 169, 101, 0.42); border-radius: 7px; background: rgba(99, 72, 36, 0.52); color: #f0ddb7; padding: 7px 8px; font: inherit; font-size: 10px; cursor: pointer; }
-.ui-island-construction__card button:disabled { border-color: rgba(145, 137, 123, 0.18); background: rgba(35, 37, 39, 0.5); color: rgba(214, 205, 190, 0.38); cursor: default; }
+.ui-island-construction__blocked { display: flex; align-items: center; gap: 5px; min-height: 20px; color: var(--ui-color-text-muted); font-size: 9px; line-height: 1.25; }
+.ui-island-construction__blocked > span { color: rgba(208, 157, 52, 0.42); font-size: 6px; }
+.ui-island-construction__card button { min-height: 26px; border: 1px solid rgba(218, 174, 92, 0.62); border-radius: 6px; background: rgba(99, 72, 36, 0.58); color: #f0ddb7; padding: 4px 7px; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
+.ui-island-construction__card button:hover { border-color: rgba(238, 187, 92, .9); background: rgba(116, 82, 40, .72); }
 
 .ui-island-onboarding { padding: 11px 12px; background: linear-gradient(145deg, rgba(35, 26, 18, 0.42), rgba(11, 14, 19, 0.9)); }
 .ui-island-onboarding__heading { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
