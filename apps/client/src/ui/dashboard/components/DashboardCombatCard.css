@@ -1,6 +1,6 @@
 .dashboard-combat {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .dashboard-combat__encounter {
@@ -14,7 +14,7 @@
 .dashboard-combat__control-bar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 7px;
   align-items: center;
 }
 
@@ -64,24 +64,24 @@
 
 .dashboard-combat__pending {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: 7px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 6px;
   align-items: center;
-  min-height: 31px;
-  padding: 4px 7px;
-  border: 1px solid rgb(139 103 40 / 48%);
+  min-height: 28px;
+  padding: 3px 6px;
+  border: 1px solid rgb(139 103 40 / 44%);
   border-left: 2px solid #bd8d36;
   border-radius: var(--ui-radius-sm);
-  background: linear-gradient(90deg, rgb(72 53 24 / 38%), rgb(15 18 22 / 72%) 70%);
+  background: linear-gradient(90deg, rgb(72 53 24 / 34%), rgb(15 18 22 / 68%) 70%);
 }
 
 .dashboard-combat__pending-icon {
   display: grid;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   place-items: center;
   color: #e6b94e;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1;
   text-shadow: 0 1px 0 #000;
@@ -90,7 +90,7 @@
 .dashboard-combat__pending-copy {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 5px;
+  gap: 4px;
   align-items: baseline;
   min-width: 0;
 }
@@ -98,7 +98,7 @@
 .dashboard-combat__pending-copy strong {
   overflow: hidden;
   color: #d9b65f;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: var(--ui-weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -107,7 +107,7 @@
 .dashboard-combat__pending-copy small {
   overflow: hidden;
   color: #807665;
-  font-size: 9px;
+  font-size: 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
