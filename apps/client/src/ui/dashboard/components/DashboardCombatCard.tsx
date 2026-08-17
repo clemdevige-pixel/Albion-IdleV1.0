@@ -39,7 +39,7 @@ export function DashboardCombatCard({
           </button>
         </div>
         <div className="dashboard-combat__stop">
-          <CombatStopButton />
+          <CombatStopButton persistent />
         </div>
       </div>
     </DashboardCard>
