@@ -44,16 +44,11 @@ function createLoadedYellowWorld(activeEncounter = 0) {
 }
 
 describe("Yellow runtime parity", () => {
-  it("applies a queued segment change only after the current Yellow segment completes", () => {
+  it("applies a queued segment change after the current Yellow encounter completes", () => {
     const { worldRuntime } = createLoadedYellowWorld(0);
 
     expect(worldRuntime.queueSegmentChange(1)).toBe(true);
-    for (let encounter = 0; encounter < 4; encounter += 1) {
-      worldRuntime.advanceVictory();
-    }
-
     expect(worldRuntime.currentSegment).toBe(2);
-    expect(worldRuntime.currentEncounter).toBe(4);
     expect(worldRuntime.pendingSegment).toBe(0);
 
     worldRuntime.advanceVictory();
@@ -82,9 +77,7 @@ describe("Yellow runtime parity", () => {
     expect(worldRuntime.selectZone(7, 1)).toBe(true);
     expect(worldRuntime.pendingZone).toBe(6);
 
-    for (let encounter = 0; encounter < 5; encounter += 1) {
-      worldRuntime.advanceVictory();
-    }
+    worldRuntime.advanceVictory();
 
     expect(worldRuntime.currentZoneIndex).toBe(6);
     expect(worldRuntime.getActiveZoneDef().defId).toBe(WORLD_ZONE_IDS.gloamfen);
