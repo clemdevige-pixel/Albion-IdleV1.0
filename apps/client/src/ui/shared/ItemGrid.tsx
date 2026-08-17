@@ -9,7 +9,7 @@ interface ItemGridProps {
   readonly label: string;
   readonly interactive?: boolean;
   readonly draggable?: boolean;
-  readonly selectedPosition?: number;
+  readonly selectedPosition?: number | undefined;
   readonly onItemClick?: (slot: InventorySlotVM) => void;
   readonly onItemDoubleClick?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
   readonly onItemContextMenu?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
