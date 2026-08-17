@@ -5,6 +5,7 @@ import type {
 } from "../../game/GameBridge";
 import type { WorldBandId } from "@game/data";
 import { getSegmentRecommendedItemPower } from "../../data/itemPower";
+import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalculator";
 import { calculateAverageEquippedItemPower } from "../state/equipmentUiSelectors";
 import { selectActiveGathering } from "../state/gatheringUiSelectors";
 
@@ -98,6 +99,13 @@ export interface DashboardSessionModel {
   readonly enemiesKilled: number;
   readonly silverPerHour: number;
   readonly famePerHour: number;
+}
+
+export interface DashboardYieldModel {
+  readonly silverPerHour: number;
+  readonly famePerHour: number;
+  readonly enchantmentShardsPerHour: number;
+  readonly keyFragmentsPerHour: number;
 }
 
 function getComputedStat(state: GameBridgeState, id: string): number {
@@ -277,5 +285,26 @@ export function selectDashboardSession(state: GameBridgeState): DashboardSession
     enemiesKilled: state.enemiesKilled,
     silverPerHour: state.segmentSilverPerHour,
     famePerHour: state.segmentFamePerHour,
+  };
+}
+
+export function selectDashboardYield(state: GameBridgeState): DashboardYieldModel {
+  const equippedWeaponId = state.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId;
+  const projected = calculateProjectedSegmentRates({
+    physicalDamage: getComputedStat(state, "stat_physical_damage"),
+    magicalDamage: getComputedStat(state, "stat_magical_damage"),
+    attackSpeed: getComputedStat(state, "stat_attack_speed"),
+    equippedWeaponId,
+    primaryAbilityAutoCast: state.abilities.primary?.autoCast ?? false,
+    currentZoneIndex: state.world.zoneIndexWithinBand,
+    currentWorldBandId: state.world.worldBandId,
+    currentSegment: state.world.segmentIndex - 1,
+  });
+
+  return {
+    silverPerHour: state.segmentSilverPerHour,
+    famePerHour: state.segmentFamePerHour,
+    enchantmentShardsPerHour: projected.enchantmentShardsPerHour,
+    keyFragmentsPerHour: projected.keyFragmentsPerHour,
   };
 }
