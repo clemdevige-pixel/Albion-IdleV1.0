@@ -35,6 +35,7 @@
 
 .ui-shell__world {
   --ui-world-strip-growth: 42px;
+  --ui-combat-dock-height: 132px;
   position: relative;
   display: grid;
   grid-area: world;
@@ -176,11 +177,11 @@
 
 .ui-shell__world .game-viewport {
   position: absolute;
-  inset: 0 0 auto;
+  inset: 0 0 var(--ui-combat-dock-height);
   width: 100%;
   height: auto;
-  max-height: calc(68% + var(--ui-world-strip-growth));
-  aspect-ratio: 12 / 5;
+  max-height: none;
+  aspect-ratio: auto;
   overflow: hidden;
 }
 
@@ -369,6 +370,7 @@
 
   .ui-shell__world {
     --ui-world-strip-growth: 34px;
+    --ui-combat-dock-height: 116px;
   }
 
   .ui-shell__header .topbar__logo {
