@@ -1,7 +1,7 @@
 import { useCallback, useState, type MouseEvent } from "react";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
-import { getItemDefinition } from "../../panels/ItemVisual";
+import { getItemDefinition, getItemDisplayName, ItemVisual } from "../../panels/ItemVisual";
 import { BankModule } from "../bank";
 import { ItemGrid } from "../shared";
 import { useInventoryActions } from "./useInventoryActions";
@@ -20,10 +20,16 @@ export function InventoryModule(): JSX.Element {
   const inventory = useInventoryData();
   const actions = useInventoryActions();
   const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
+  const [selectedPosition, setSelectedPosition] = useState<number | undefined>(undefined);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const capacityRatio = inventory.capacity === 0
     ? 0
     : Math.min(100, (inventory.occupied / inventory.capacity) * 100);
+  const selectedSlot = selectedPosition === undefined
+    ? undefined
+    : inventory.slots.find((slot) => slot.position === selectedPosition && slot.itemId !== undefined);
+  const selectedItemId = selectedSlot?.itemId;
+  const selectedDefinition = selectedItemId === undefined ? undefined : getItemDefinition(selectedItemId);
 
   const handleDoubleClick = useCallback((
     event: MouseEvent<HTMLButtonElement>,
@@ -49,22 +55,10 @@ export function InventoryModule(): JSX.Element {
   return (
     <div className="storage-module">
       <div className="storage-module__tabs" role="tablist" aria-label="Stockage">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "inventory"}
-          className={activeTab === "inventory" ? "is-active" : ""}
-          onClick={() => { setActiveTab("inventory"); }}
-        >
+        <button type="button" role="tab" aria-selected={activeTab === "inventory"} className={activeTab === "inventory" ? "is-active" : ""} onClick={() => { setActiveTab("inventory"); }}>
           Inventaire
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "bank"}
-          className={activeTab === "bank" ? "is-active" : ""}
-          onClick={() => { setActiveTab("bank"); }}
-        >
+        <button type="button" role="tab" aria-selected={activeTab === "bank"} className={activeTab === "bank" ? "is-active" : ""} onClick={() => { setActiveTab("bank"); }}>
           Banque
         </button>
       </div>
@@ -72,19 +66,14 @@ export function InventoryModule(): JSX.Element {
       {activeTab === "bank" ? (
         <BankModule
           onMove={(from, to) => { actions.move("bank", from, to); }}
-          onTransferToInventory={(position) => {
-            actions.transfer("bank", position, "inventory");
-          }}
+          onTransferToInventory={(position) => { actions.transfer("bank", position, "inventory"); }}
           onSort={() => { actions.sort("bank"); }}
         />
       ) : (
         <>
           <section className="storage-module__summary" aria-label="Capacité de l’inventaire">
             <div className="storage-module__summary-row">
-              <div>
-                <small>Stockage personnel</small>
-                <span>Sac du héros</span>
-              </div>
+              <div><small>Stockage personnel</small><span>Sac du héros</span></div>
               <strong>{String(inventory.occupied)} <small>/ {String(inventory.capacity)}</small></strong>
             </div>
             <div className="storage-module__capacity-track" aria-hidden="true">
@@ -93,13 +82,7 @@ export function InventoryModule(): JSX.Element {
           </section>
 
           <div className="storage-module__toolbar">
-            <button
-              type="button"
-              className="storage-module__sort-button"
-              onClick={() => { actions.sort("inventory"); }}
-              aria-label="Trier l’inventaire"
-              title="Trier l’inventaire"
-            >
+            <button type="button" className="storage-module__sort-button" onClick={() => { actions.sort("inventory"); }} aria-label="Trier l’inventaire" title="Trier l’inventaire">
               <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
             </button>
             <span className="storage-module__shortcut">Maj + double-clic → banque</span>
@@ -111,15 +94,29 @@ export function InventoryModule(): JSX.Element {
               label="Objets dans l’inventaire"
               interactive
               draggable
+              selectedPosition={selectedPosition}
+              onItemClick={(slot) => { setSelectedPosition(slot.position); }}
               onItemDrop={(from, to) => { actions.move("inventory", from, to); }}
               onItemDoubleClick={handleDoubleClick}
               onItemContextMenu={handleContextMenu}
             />
           </section>
 
-          <p className="storage-module__hint">
-            Glissez-déposez pour organiser · double-cliquez pour équiper ou utiliser.
-          </p>
+          {selectedSlot !== undefined && selectedItemId !== undefined ? (
+            <section className="storage-module__selection" aria-label="Objet sélectionné">
+              <span className="storage-module__selection-visual"><ItemVisual itemId={selectedItemId} /></span>
+              <div className="storage-module__selection-copy">
+                <strong>{getItemDisplayName(selectedItemId)}</strong>
+                <span>
+                  {selectedDefinition !== undefined ? `T${String(selectedDefinition.tier)}.${String(selectedSlot.enchantment)}` : "Objet"}
+                  {selectedSlot.quantity > 1 ? ` · ×${String(selectedSlot.quantity)}` : ""}
+                </span>
+              </div>
+              <span className="storage-module__selection-action">Double-clic : utiliser / équiper</span>
+            </section>
+          ) : (
+            <p className="storage-module__hint">Cliquez un objet pour afficher ses détails · glissez-déposez pour organiser.</p>
+          )}
 
           {contextMenu !== null && (
             <ItemContextMenu
@@ -128,10 +125,7 @@ export function InventoryModule(): JSX.Element {
               y={contextMenu.y}
               itemId={inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId ?? ""}
               onClose={() => { setContextMenu(null); }}
-              onEquip={(position) => {
-                actions.equip(position);
-                setContextMenu(null);
-              }}
+              onEquip={(position) => { actions.equip(position); setContextMenu(null); }}
             />
           )}
         </>
