@@ -48,12 +48,12 @@ export function WorldSegmentStrip(): JSX.Element {
       <div className="world-segment-strip__zone-browser">
         <button
           type="button"
-          className="world-segment-strip__zone-arrow"
+          className="world-segment-strip__zone-arrow world-segment-strip__zone-arrow--previous"
           disabled={viewedZone.zoneIndex <= 1}
           aria-label="Consulter la zone précédente"
           onClick={() => { setViewedZoneIndex((current) => Math.max(1, current - 1)); }}
         >
-          ‹
+          <span aria-hidden="true">‹</span>
         </button>
         <div className="world-segment-strip__zone-heading">
           <strong>{viewedZone.biomeName} — {viewedZone.zoneName}</strong>
@@ -61,12 +61,12 @@ export function WorldSegmentStrip(): JSX.Element {
         </div>
         <button
           type="button"
-          className="world-segment-strip__zone-arrow"
+          className="world-segment-strip__zone-arrow world-segment-strip__zone-arrow--next"
           disabled={viewedZone.zoneIndex >= zone.zoneCount}
           aria-label="Consulter la zone suivante"
           onClick={() => { setViewedZoneIndex((current) => Math.min(zone.zoneCount, current + 1)); }}
         >
-          ›
+          <span aria-hidden="true">›</span>
         </button>
       </div>
 
@@ -102,7 +102,7 @@ export function WorldSegmentStrip(): JSX.Element {
             <button
               key={segment.index}
               type="button"
-              className={`world-segment-strip__segment world-segment-strip__segment--${segment.state}${pending ? " is-pending" : ""}`}
+              className={`world-segment-strip__segment world-segment-strip__segment--${segment.state}${segment.isZoneBoss ? " world-segment-strip__segment--boss" : ""}${pending ? " is-pending" : ""}`}
               disabled={locked}
               aria-current={viewedZone.isActive && segment.state === "current" ? "step" : undefined}
               aria-label={locked
@@ -133,7 +133,7 @@ export function WorldSegmentStrip(): JSX.Element {
               }}
               onClick={() => { selectZoneSegment(viewedZone.zoneIndex, segment.index); }}
             >
-              <span>{segment.isZoneBoss ? "☠" : String(segment.index)}</span>
+              <span>{segment.isZoneBoss ? "" : String(segment.index)}</span>
               {showTooltip && createPortal(
                 <div
                   className="dashboard-zone-tooltip"
