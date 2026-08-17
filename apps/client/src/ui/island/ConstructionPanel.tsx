@@ -50,7 +50,8 @@ export function ConstructionPanel({ plotId, islandLevel, builtDefinitionIds, onB
         <header>
           <span className="ui-island__selection-icon">{definition.icon}</span>
           <div>
-            <div className="ui-island-construction__title-row"><strong>{definition.label}</strong><span>{CATEGORY_LABELS[definition.category]}</span></div>
+            <span className="ui-island__eyebrow">{CATEGORY_LABELS[definition.category]}</span>
+            <div className="ui-island-construction__title-row"><strong>{definition.label}</strong></div>
             <small>{definition.description}</small>
           </div>
         </header>
