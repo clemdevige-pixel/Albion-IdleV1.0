@@ -16,7 +16,7 @@ export const PRIMARY_UI_MODULES: readonly UiModuleDefinition[] = [
   { id: UI_MODULE_IDS.character, label: "Personnage", icon: "nav-character.png" },
   { id: UI_MODULE_IDS.inventory, label: "Inventaire", icon: "nav-inventory.png" },
   { id: UI_MODULE_IDS.masteries, label: "Maîtrises", icon: "nav-masteries.png" },
-  { id: UI_MODULE_IDS.island, label: "Île", icon: "nav-island.png" },
-  { id: UI_MODULE_IDS.merchant, label: "Marchand", icon: "nav-merchant.png" },
+  { id: UI_MODULE_IDS.island, label: "Île", icon: "nav-production.png" },
+  { id: UI_MODULE_IDS.merchant, label: "Marchand", icon: "nav-vendor.png" },
   { id: UI_MODULE_IDS.world, label: "Monde", icon: "nav-world.png" },
 ] as const;
