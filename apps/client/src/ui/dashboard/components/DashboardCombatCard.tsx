@@ -19,15 +19,20 @@ export function DashboardCombatCard({
       title="Combat"
       iconSrc="/assets/ui/nav-world.png"
       className="dashboard-card--combat"
-      meta={<span className="dashboard-combat__encounter">Encounter {String(zone.encounterIndex)} / {String(zone.encounterCount)}</span>}
+      meta={<span className="dashboard-combat__encounter">Rencontre {String(zone.encounterIndex)} / {String(zone.encounterCount)}</span>}
     >
       <div className="dashboard-combat">
+        <div className="dashboard-combat__location">
+          <strong>{zone.zoneName}</strong>
+          <span>Segment {String(zone.segmentIndex)} / {String(zone.segmentCount)}</span>
+        </div>
+
         {pendingSegment !== undefined && (
           <div className="dashboard-combat__pending" role="status">
             <span className="dashboard-combat__pending-icon" aria-hidden="true">↪</span>
             <span className="dashboard-combat__pending-copy">
               <strong>Segment {String(pendingSegment)} en attente</strong>
-              <small>Changement après l'encounter en cours</small>
+              <small>Changement après la rencontre en cours</small>
             </span>
           </div>
         )}
