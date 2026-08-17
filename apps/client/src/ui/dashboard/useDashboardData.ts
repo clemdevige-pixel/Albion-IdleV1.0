@@ -6,6 +6,7 @@ import {
   selectDashboardPlayer,
   selectDashboardProduction,
   selectDashboardSession,
+  selectDashboardYield,
   selectDashboardZone,
   type DashboardActivityEntry,
   type DashboardPlayerModel,
@@ -13,6 +14,7 @@ import {
   type DashboardProductionTask,
   type DashboardSegmentModel,
   type DashboardSessionModel,
+  type DashboardYieldModel,
   type DashboardZoneModel,
   type DashboardZoneOptionModel,
 } from "./dashboardModels";
@@ -160,14 +162,12 @@ export function useDashboardSession(): DashboardSessionModel {
   );
 }
 
-export function useDashboardYield(): Pick<DashboardSessionModel, "silverPerHour" | "famePerHour"> {
-  return useGameUiSelector(
-    (state) => ({
-      silverPerHour: state.segmentSilverPerHour,
-      famePerHour: state.segmentFamePerHour,
-    }),
-    (previous, next) => previous.silverPerHour === next.silverPerHour
-      && previous.famePerHour === next.famePerHour,
+export function useDashboardYield(): DashboardYieldModel {
+  return useGameUiSelector(selectDashboardYield, (previous, next) =>
+    previous.silverPerHour === next.silverPerHour
+    && previous.famePerHour === next.famePerHour
+    && previous.enchantmentShardsPerHour === next.enchantmentShardsPerHour
+    && previous.keyFragmentsPerHour === next.keyFragmentsPerHour,
   );
 }
 
