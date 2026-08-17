@@ -1,6 +1,7 @@
 import { CombatStopButton } from "../../combat-hud/CombatStopButton";
 import type { DashboardZoneModel } from "../dashboardModels";
 import { DashboardCard } from "./DashboardCard";
+import "./DashboardCombatCard.css";
 
 interface DashboardCombatCardProps {
   readonly zone: DashboardZoneModel;
