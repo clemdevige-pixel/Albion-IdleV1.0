@@ -161,6 +161,9 @@ export class CombatRuntime extends LegacyCombatRuntime {
     finally { this.inTick = false; }
 
     if (result.combatState === "defeat") combatStopController.reset();
+    if (result.combatState === "victory" && combatStopController.pauseAfterEncounter()) {
+      this.runtimeDeps.effectManager.removeAllEffects(this.runtimeDeps.heroId);
+    }
 
     this.handleSegmentStart(result);
     this.effects.reconcile(targets);
