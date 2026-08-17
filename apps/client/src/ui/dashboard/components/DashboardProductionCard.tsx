@@ -1,5 +1,6 @@
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
-import type { DashboardProductionModel } from "../dashboardModels";
+import { PRODUCTION_FAMILY_CATALOG } from "../../../data/productionFamilyCatalog";
+import type { DashboardProductionModel, DashboardProductionTask } from "../dashboardModels";
 import { useDashboardGatheringActions } from "../useDashboardData";
 import { DashboardCard } from "./DashboardCard";
 import "./DashboardProductionCard.css";
@@ -13,6 +14,19 @@ const KIND_LABELS = {
   refining: "Raffinage",
   worker: "Worker",
 } as const;
+
+const RESOURCE_ICONS = Object.values(PRODUCTION_FAMILY_CATALOG).map((family) => ({
+  terms: [family.label, family.rawMaterialLabel, ...Object.values(family.tiers).map((tier) => tier.resourceName)],
+  src: family.professionIcon,
+}));
+
+function getTaskIcon(task: DashboardProductionTask): string {
+  const searchable = `${task.label} ${task.detail}`.toLocaleLowerCase("fr");
+  const resource = RESOURCE_ICONS.find(({ terms }) =>
+    terms.some((term) => searchable.includes(term.toLocaleLowerCase("fr"))),
+  );
+  return resource?.src ?? "/assets/ui/nav-production.png";
+}
 
 export function DashboardProductionCard({
   production,
@@ -33,7 +47,9 @@ export function DashboardProductionCard({
         <div className="dashboard-production__list">
           {production.tasks.map((task) => (
             <div key={task.id} className="dashboard-production__task">
-              <span className={`dashboard-production__kind dashboard-production__kind--${task.kind}`} aria-hidden="true" />
+              <span className="dashboard-production__visual" aria-hidden="true">
+                <img src={getTaskIcon(task)} alt="" />
+              </span>
               <div>
                 <span>{KIND_LABELS[task.kind]}</span>
                 <strong>{task.label}</strong>
