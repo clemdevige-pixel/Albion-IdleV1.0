@@ -1,0 +1,29 @@
+.ability-bar__auto,
+.ability-bar__auto--enabled {
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.ability-bar__auto:hover:not(:disabled),
+.ability-bar__auto:focus-visible:not(:disabled) {
+  border: 0;
+  background: transparent;
+  filter: brightness(1.08);
+  outline: none;
+}
+
+.ability-bar__auto:disabled {
+  opacity: 0.4;
+}
+
+.ability-bar__auto-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
