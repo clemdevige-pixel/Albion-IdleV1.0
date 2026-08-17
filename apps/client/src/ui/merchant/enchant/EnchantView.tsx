@@ -10,10 +10,12 @@ import {
 import { useEnchantActions } from "./useEnchantActions";
 import { useEnchantData } from "./useEnchantData";
 
+const MAX_ENCHANTMENT_LEVEL = 4;
+
 const FAILURE_MESSAGES: Readonly<Record<string, string>> = {
   combat_active: "Arrêtez le combat et attendez la fin du segment avant d’enchanter.",
   level_reserved: "Le niveau .4 est réservé à une mécanique ultérieure.",
-  maximum_level_reached: "Niveau maximal actuellement disponible atteint.",
+  maximum_level_reached: "Niveau maximal d’enchantement atteint (.4).",
   insufficient_silver: "Silver insuffisant.",
   insufficient_materials: "Ressources insuffisantes.",
   inventory_full: "Inventaire plein.",
@@ -24,6 +26,20 @@ const SOURCE_LABELS = {
   inventory: "Inventaire",
   bank: "Banque",
 } as const;
+
+function EnchantmentScale({ level }: { readonly level: number }): JSX.Element {
+  return (
+    <span className="ui-merchant-enchant__scale" aria-label={`Enchantement ${String(level)} sur ${String(MAX_ENCHANTMENT_LEVEL)}`}>
+      <small>Niveau d’enchantement</small>
+      <span className="ui-merchant-enchant__pips" aria-hidden="true">
+        {Array.from({ length: MAX_ENCHANTMENT_LEVEL }, (_, index) => (
+          <i key={index} className={index < level ? "is-filled" : ""} />
+        ))}
+      </span>
+      <b className={getEnchantmentTextClass(level).trim()}>.{String(level)}</b>
+    </span>
+  );
+}
 
 export function EnchantView(): JSX.Element {
   const [requestedInstanceId, setRequestedInstanceId] = useState<string | null>(null);
@@ -48,13 +64,13 @@ export function EnchantView(): JSX.Element {
             {model.items.map((item) => {
               const definition = getItemDefinition(item.itemId);
               return (
-                <button type="button" key={item.instanceId} className={`ui-merchant-item-row${item.instanceId === model.selectedInstanceId ? " is-selected" : ""}${getEquipmentTierFrameClass(definition?.tier)}`} onClick={() => { setRequestedInstanceId(item.instanceId); }}>
+                <button type="button" key={item.instanceId} className={`ui-merchant-item-row ui-merchant-enchant__item-row${item.instanceId === model.selectedInstanceId ? " is-selected" : ""}${getEquipmentTierFrameClass(definition?.tier)}`} onClick={() => { setRequestedInstanceId(item.instanceId); }}>
                   <ItemHoverTooltip itemId={item.itemId} quantity={1} instanceId={item.instanceId}><span className="ui-merchant-item-row__visual"><ItemVisual itemId={item.itemId} /></span></ItemHoverTooltip>
                   <span className="ui-merchant-item-row__identity">
                     <strong>{getItemDisplayName(item.itemId)}</strong>
                     <small className={getEnchantmentTextClass(item.enchantment).trim()}>T{String(definition?.tier ?? "?")}.{String(item.enchantment)} · {SOURCE_LABELS[item.source]}</small>
                   </span>
-                  <b className={getEnchantmentTextClass(item.enchantment).trim()}>.{String(item.enchantment)}</b>
+                  <EnchantmentScale level={item.enchantment} />
                 </button>
               );
             })}
