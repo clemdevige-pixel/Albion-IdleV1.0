@@ -16,6 +16,12 @@ import "./itemRarity.css";
 export type ItemVisualDefinition = CatalogItemVisualDefinition;
 interface ConsumableVisualDefinition { readonly name: string; readonly icon: string; }
 interface SymbolVisualDefinition { readonly name: string; readonly symbol: string; readonly className: string; }
+interface SpecialLootVisualDefinition {
+  readonly name: string;
+  readonly className: string;
+  readonly icon?: string;
+  readonly symbol?: string;
+}
 
 /** Non-progression equipment that intentionally sits outside the tier families. */
 const LEGACY_NON_WEAPON_ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = {
@@ -61,6 +67,16 @@ const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
   undead: "Mort-vivant",
 };
 
+const DUNGEON_KEY_ASSET_COLOR_BY_TIER: Readonly<Record<number, string>> = {
+  4: "blue",
+  5: "red",
+  6: "orange",
+  7: "yellow",
+  8: "white",
+};
+
+const ARTIFACT_ASSET_FACTIONS = new Set(["heretic", "keeper", "morgana", "undead"]);
+
 function formatFactionName(factionId: string): string {
   return FACTION_DISPLAY_NAMES[factionId] ?? factionId
     .split("_")
@@ -69,47 +85,73 @@ function formatFactionName(factionId: string): string {
     .join(" ");
 }
 
-function getTieredDungeonKeyVisual(itemId: string): SymbolVisualDefinition | undefined {
+function getTieredDungeonKeyVisual(itemId: string): SpecialLootVisualDefinition | undefined {
   const fragmentMatch = itemId.match(/^item_resource_dungeon_key_fragment_t([4-8])$/);
   if (fragmentMatch !== null) {
+    const tier = Number(fragmentMatch[1]);
+    const color = DUNGEON_KEY_ASSET_COLOR_BY_TIER[tier];
     return {
-      name: `Fragment de clé de donjon T${fragmentMatch[1]}`,
-      symbol: "⌁",
+      name: `Fragment de clé de donjon T${String(tier)}`,
       className: "key-fragment",
+      ...(color === undefined ? { symbol: "⌁" } : { icon: `fragment_key_t${String(tier)}_${color}.png` }),
     };
   }
 
   const keyMatch = itemId.match(/^item_resource_dungeon_key_t([4-8])$/);
   if (keyMatch !== null) {
+    const tier = Number(keyMatch[1]);
+    const color = DUNGEON_KEY_ASSET_COLOR_BY_TIER[tier];
     return {
-      name: `Clé de donjon T${keyMatch[1]}`,
-      symbol: "⚿",
+      name: `Clé de donjon T${String(tier)}`,
       className: "dungeon-key",
+      ...(color === undefined ? { symbol: "⚿" } : { icon: `key_t${String(tier)}_${color}.png` }),
     };
   }
 
   return undefined;
 }
 
-function getCombatSpecialLootVisual(itemId: string): SymbolVisualDefinition | undefined {
+function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition | undefined {
   const tieredDungeonKey = getTieredDungeonKeyVisual(itemId);
   if (tieredDungeonKey !== undefined) return tieredDungeonKey;
 
-  const definitions = [
-    { prefix: "item_resource_artifact_fragment_", label: "Fragment d’artefact", symbol: "◈", className: "artifact-fragment" },
-    { prefix: "item_resource_artifact_", label: "Artefact", symbol: "✺", className: "artifact" },
-    { prefix: "item_resource_key_fragment_", label: "Fragment de clé", symbol: "⌁", className: "key-fragment" },
-  ] as const;
-  for (const definition of definitions) {
-    if (!itemId.startsWith(definition.prefix)) continue;
-    const factionId = itemId.slice(definition.prefix.length);
+  const artifactFragmentPrefix = "item_resource_artifact_fragment_";
+  if (itemId.startsWith(artifactFragmentPrefix)) {
+    const factionId = itemId.slice(artifactFragmentPrefix.length);
     if (factionId.length === 0) return undefined;
     return {
-      name: `${definition.label} · ${formatFactionName(factionId)}`,
-      symbol: definition.symbol,
-      className: definition.className,
+      name: `Fragment d’artefact · ${formatFactionName(factionId)}`,
+      className: "artifact-fragment",
+      ...(ARTIFACT_ASSET_FACTIONS.has(factionId)
+        ? { icon: `artifact-fragment-${factionId}.png` }
+        : { symbol: "◈" }),
     };
   }
+
+  const artifactPrefix = "item_resource_artifact_";
+  if (itemId.startsWith(artifactPrefix)) {
+    const factionId = itemId.slice(artifactPrefix.length);
+    if (factionId.length === 0) return undefined;
+    return {
+      name: `Artefact · ${formatFactionName(factionId)}`,
+      className: "artifact",
+      ...(ARTIFACT_ASSET_FACTIONS.has(factionId)
+        ? { icon: `artifact-${factionId}.png` }
+        : { symbol: "✺" }),
+    };
+  }
+
+  const keyFragmentPrefix = "item_resource_key_fragment_";
+  if (itemId.startsWith(keyFragmentPrefix)) {
+    const factionId = itemId.slice(keyFragmentPrefix.length);
+    if (factionId.length === 0) return undefined;
+    return {
+      name: `Fragment de clé · ${formatFactionName(factionId)}`,
+      className: "key-fragment",
+      symbol: "⌁",
+    };
+  }
+
   return undefined;
 }
 
@@ -190,12 +232,22 @@ export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element
     );
   }
   if (specialLoot !== undefined) {
+    if (specialLoot.icon !== undefined) {
+      return (
+        <img
+          className={`item-visual__image item-visual__image--special item-visual__image--${specialLoot.className}`}
+          src={`/assets/items/${specialLoot.icon}`}
+          alt={specialLoot.name}
+          draggable={false}
+        />
+      );
+    }
     return (
       <span
         className={`item-visual__fallback item-visual__fallback--${specialLoot.className}`}
         aria-label={specialLoot.name}
       >
-        {specialLoot.symbol}
+        {specialLoot.symbol ?? "?"}
       </span>
     );
   }
