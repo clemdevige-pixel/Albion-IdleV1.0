@@ -42,14 +42,23 @@ export function useGameUiSelector<T>(
   return useSyncExternalStore(bridge.subscribe, getSelectedSnapshot, getSelectedSnapshot);
 }
 
-export function shallowEqual<T extends object>(previous: T, next: T): boolean {
+export function shallowEqual<T>(previous: T, next: T): boolean {
   if (Object.is(previous, next)) return true;
 
-  const previousKeys = Object.keys(previous);
-  const nextKeys = Object.keys(next);
-  if (previousKeys.length !== nextKeys.length) return false;
+  if (
+    previous === null
+    || next === null
+    || typeof previous !== "object"
+    || typeof next !== "object"
+  ) {
+    return false;
+  }
 
   const previousRecord = previous as Record<string, unknown>;
   const nextRecord = next as Record<string, unknown>;
+  const previousKeys = Object.keys(previousRecord);
+  const nextKeys = Object.keys(nextRecord);
+  if (previousKeys.length !== nextKeys.length) return false;
+
   return previousKeys.every((key) => Object.is(previousRecord[key], nextRecord[key]));
 }
