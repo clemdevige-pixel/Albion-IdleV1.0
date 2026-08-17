@@ -6,9 +6,17 @@ describe("CombatStopController", () => {
     combatStopController.reset();
   });
 
+  it("transitions from running to paused at the current encounter boundary", () => {
+    expect(combatStopController.requestStopAfterEncounter()).toBe(true);
+    expect(combatStopController.getState()).toBe("stop_requested");
+
+    expect(combatStopController.pauseAfterEncounter()).toBe(true);
+    expect(combatStopController.getState()).toBe("paused");
+  });
+
   it("resets a paused combat lifecycle back to running", () => {
-    expect(combatStopController.requestStopAfterSegment()).toBe(true);
-    expect(combatStopController.pauseAfterSegment()).toBe(true);
+    expect(combatStopController.requestStopAfterEncounter()).toBe(true);
+    expect(combatStopController.pauseAfterEncounter()).toBe(true);
     expect(combatStopController.getState()).toBe("paused");
 
     combatStopController.reset();
@@ -18,7 +26,7 @@ describe("CombatStopController", () => {
   });
 
   it("resets a pending stop request back to running", () => {
-    expect(combatStopController.requestStopAfterSegment()).toBe(true);
+    expect(combatStopController.requestStopAfterEncounter()).toBe(true);
     expect(combatStopController.getState()).toBe("stop_requested");
 
     combatStopController.reset();
