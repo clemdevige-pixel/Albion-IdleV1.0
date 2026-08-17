@@ -17,106 +17,26 @@
   background: rgba(11, 14, 19, 0.7);
 }
 
-.ui-island-level--max > span {
-  color: var(--ui-color-text-muted);
-  font-size: var(--ui-text-xs);
-}
-
-.ui-island-level--max > strong {
-  color: var(--ui-color-text-secondary);
-  font-size: var(--ui-text-xs);
-  font-weight: 600;
-  text-align: right;
-}
-
-.ui-island-level--max > b {
-  color: #8ee37d;
-  font-size: 11px;
-}
-
-.ui-island-level > div:first-child,
-.ui-island-level__heading > div {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-}
-
-.ui-island-level__heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 6px;
-}
-
-.ui-island-level strong {
-  overflow: hidden;
-  color: var(--ui-color-text-primary);
-  font-size: var(--ui-text-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ui-island-level small,
-.ui-island-level__unlocks {
-  color: var(--ui-color-text-muted);
-  font-size: var(--ui-text-xs);
-  line-height: 1.2;
-}
-
-.ui-island-level__requirements,
-.ui-island-level .ui-island-construction__costs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
-.ui-island-level__requirements span,
-.ui-island-level .ui-island-construction__costs span {
-  padding: 1px 4px;
+.ui-island-level--max > span { color: var(--ui-color-text-muted); font-size: var(--ui-text-xs); }
+.ui-island-level--max > strong { color: var(--ui-color-text-secondary); font-size: var(--ui-text-xs); font-weight: 600; text-align: right; }
+.ui-island-level--max > b { color: #8ee37d; font-size: 11px; }
+.ui-island-level > div:first-child, .ui-island-level__heading > div { display: grid; gap: 1px; min-width: 0; }
+.ui-island-level__heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; }
+.ui-island-level strong { overflow: hidden; color: var(--ui-color-text-primary); font-size: var(--ui-text-sm); text-overflow: ellipsis; white-space: nowrap; }
+.ui-island-level small, .ui-island-level__unlocks { color: var(--ui-color-text-muted); font-size: var(--ui-text-xs); line-height: 1.2; }
+.ui-island-level__requirements, .ui-island-level .ui-island-construction__costs { display: flex; flex-wrap: wrap; gap: 4px; }
+.ui-island-level__requirements span, .ui-island-level .ui-island-construction__costs span {
+  padding: 2px 6px;
   border: 1px solid var(--ui-color-border-subtle);
   border-radius: var(--ui-radius-sm);
-  background: rgba(15, 19, 27, 0.58);
-  font-size: 8px;
+  background: rgba(15, 19, 27, 0.68);
+  font-size: 10px;
+  font-weight: 600;
   line-height: 1.35;
 }
-
-.ui-island-level .is-ready {
-  color: #8ee37d;
-}
-
-.ui-island-level .is-missing {
-  color: #ee766f;
-}
-
-.ui-island-level__unlocks {
-  margin-top: 1px;
-  padding-top: 4px;
-  border-top: 1px solid rgba(208, 157, 52, 0.13);
-}
-
-.ui-island-level button {
-  min-height: 26px;
-  border: 1px solid rgba(208, 157, 52, 0.45);
-  border-radius: var(--ui-radius-sm);
-  background: rgba(177, 127, 37, 0.15);
-  color: var(--ui-color-accent);
-  padding: 3px 8px;
-  font: inherit;
-  font-size: var(--ui-text-xs);
-  font-weight: 700;
-  cursor: pointer;
-  transition: border-color var(--ui-duration-fast), background var(--ui-duration-fast);
-}
-
-.ui-island-level button:hover:not(:disabled) {
-  border-color: rgba(208, 157, 52, 0.72);
-  background: rgba(177, 127, 37, 0.22);
-}
-
-.ui-island-level button:disabled {
-  border-color: var(--ui-color-border-subtle);
-  background: rgba(15, 19, 27, 0.48);
-  color: var(--ui-color-text-muted);
-  cursor: default;
-  opacity: 0.55;
-}
+.ui-island-level .is-ready { color: #8ee37d; }
+.ui-island-level .is-missing { color: #ee766f; }
+.ui-island-level__unlocks { margin-top: 1px; padding-top: 4px; border-top: 1px solid rgba(208, 157, 52, 0.13); }
+.ui-island-level button { min-height: 28px; border: 1px solid rgba(208, 157, 52, 0.45); border-radius: var(--ui-radius-sm); background: rgba(177, 127, 37, 0.15); color: var(--ui-color-accent); padding: 4px 8px; font: inherit; font-size: var(--ui-text-xs); font-weight: 700; cursor: pointer; transition: border-color var(--ui-duration-fast), background var(--ui-duration-fast); }
+.ui-island-level button:hover:not(:disabled) { border-color: rgba(208, 157, 52, 0.72); background: rgba(177, 127, 37, 0.22); }
+.ui-island-level button:disabled { border-color: var(--ui-color-border-subtle); background: rgba(15, 19, 27, 0.48); color: var(--ui-color-text-muted); cursor: default; opacity: 0.55; }
