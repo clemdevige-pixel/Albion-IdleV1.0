@@ -1,13 +1,13 @@
 .permanent-header__brand {
-  min-width: 156px;
-  padding: 0 10px;
+  min-width: 184px;
+  padding: 0 8px;
   justify-content: center;
 }
 
 .permanent-header__brand-logo {
   display: block;
-  width: 132px;
-  height: 54px;
+  width: 164px;
+  height: 60px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -160,23 +160,23 @@
 
 @media (max-width: 1250px) {
   .permanent-header__brand {
-    min-width: 118px;
-    padding-inline: 8px;
+    min-width: 144px;
+    padding-inline: 6px;
   }
 
   .permanent-header__brand-logo {
-    width: 104px;
-    height: 48px;
+    width: 132px;
+    height: 54px;
   }
 }
 
 @media (max-width: 680px) {
   .permanent-header__brand {
-    min-width: 64px;
+    min-width: 76px;
   }
 
   .permanent-header__brand-logo {
-    width: 58px;
-    height: 44px;
+    width: 70px;
+    height: 48px;
   }
 }
