@@ -67,12 +67,11 @@ export function WorldDungeonsView(): JSX.Element {
   return (
     <div className="world-dungeons">
       <header className="world-dungeons__intro">
-        <small>Expéditions instanciées</small>
-        <h2>Donjons</h2>
-        <p>
-          Une clé est consommée à l’entrée. Les PV et cooldowns persistent pendant toute la run,
-          et l’équipement reste verrouillé jusqu’à la sortie.
-        </p>
+        <div>
+          <small>EXPÉDITIONS INSTANCIÉES</small>
+          <h2>Donjons</h2>
+        </div>
+        <p>1 clé consommée à l’entrée · PV et cooldowns persistent · équipement verrouillé jusqu’à la sortie.</p>
       </header>
 
       <div className="world-dungeons__list">
@@ -83,6 +82,12 @@ export function WorldDungeonsView(): JSX.Element {
           const canEnter = presentation.activeDefinitionId === null
             && presentation.pendingDefinitionId === null
             && keyCount > 0;
+          const progressedEncounterCount = isActiveDungeon && presentation.activeEncounterIndex !== null
+            ? presentation.activeEncounterIndex
+            : 0;
+          const routeProgress = dungeon.encounters.length <= 1
+            ? 100
+            : Math.max(0, Math.min(100, (progressedEncounterCount / (dungeon.encounters.length - 1)) * 100));
 
           return (
             <article
@@ -90,7 +95,8 @@ export function WorldDungeonsView(): JSX.Element {
               className={`world-dungeon-card${isActiveDungeon ? " is-active" : ""}${isPendingDungeon ? " is-pending" : ""}`}
             >
               <header className="world-dungeon-card__header">
-                <div>
+                <span className="world-dungeon-card__visual" aria-hidden="true" />
+                <div className="world-dungeon-card__identity">
                   <small>Donjon T{dungeon.tier}</small>
                   <h3>{dungeon.faction}</h3>
                 </div>
@@ -100,12 +106,15 @@ export function WorldDungeonsView(): JSX.Element {
               </header>
 
               <div className="world-dungeon-card__stats">
-                <span><small>Difficulté cible</small><strong>T{dungeon.tier}.3+</strong></span>
+                <span><small>Difficulté</small><strong>T{dungeon.tier}.3+</strong></span>
                 <span><small>Rencontres</small><strong>{dungeon.encounters.length}</strong></span>
                 <span><small>Clés</small><strong>{keyCount}</strong></span>
               </div>
 
               <div className="world-dungeon-card__route" aria-label="Structure du donjon">
+                <span className="world-dungeon-card__route-rail" aria-hidden="true">
+                  <span style={{ width: `${String(routeProgress)}%` }} />
+                </span>
                 {dungeon.encounters.map((encounter, index) => {
                   const isCurrent = isActiveDungeon && presentation.activeEncounterIndex === index;
                   const isCompleted = isActiveDungeon
@@ -115,9 +124,10 @@ export function WorldDungeonsView(): JSX.Element {
                     <span
                       key={encounter.id}
                       className={`world-dungeon-step world-dungeon-step--${encounter.kind}${isCurrent ? " is-current" : ""}${isCompleted ? " is-completed" : ""}`}
+                      title={encounter.kind === "boss" ? "Boss" : encounter.kind === "elite" ? "Élite" : "Normal"}
                     >
                       <b>{isCompleted ? "✓" : index + 1}</b>
-                      <small>{encounter.kind === "boss" ? "Boss" : encounter.kind === "elite" ? "Élite" : "Normal"}</small>
+                      <small>{index + 1}</small>
                     </span>
                   );
                 })}
@@ -136,14 +146,14 @@ export function WorldDungeonsView(): JSX.Element {
               ) : null}
 
               <footer className="world-dungeon-card__footer">
-                <p>
+                <p className={isPendingDungeon || !canEnter ? "is-status" : ""}>
                   {isActiveDungeon
                     ? "Abandonner termine définitivement cette tentative."
                     : isPendingDungeon
-                      ? "La clé sera consommée uniquement au moment de l’entrée."
+                      ? "Entrée programmée · la clé sera consommée au moment de l’entrée."
                       : keyCount > 0
                         ? "En combat, l’entrée attendra la fin du segment actuel."
-                        : `Une clé ${dungeon.faction} est requise pour entrer.`}
+                        : `Clé ${dungeon.faction} requise.`}
                 </p>
                 {isActiveDungeon ? (
                   <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>
