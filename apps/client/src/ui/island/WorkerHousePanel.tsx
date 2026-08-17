@@ -73,7 +73,7 @@ export function WorkerHousePanel({ level }: { readonly level: number }): JSX.Ele
       </section>
 
       <div className="ui-island__selection-status">
-        Recrutez le métier correspondant à votre bâtiment de récolte, puis ouvrez ce bâtiment pour lancer sa production. Le worker récolte automatiquement pendant que le héros peut gather activement en parallèle.
+        Chaque ouvrier produit automatiquement dans le bâtiment de récolte correspondant.
       </div>
     </div>
   );
