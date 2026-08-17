@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { resolveStatusEffectIconPath } from "../data/abilityIconPresentation";
 import { resolveStatusEffectDotDetails } from "../data/statusEffectDotPresentation";
 import {
   resolveStatusEffectAnchor,
@@ -61,6 +62,7 @@ function EffectGroup({
     <div className={`active-effects active-effects--${anchor}`} style={style}>
       {anchored.map((effect) => {
         const presentation = resolveStatusEffectPresentation(effect.name, effect.type);
+        const iconPath = resolveStatusEffectIconPath(effect.name, effect.type);
         const dotLines = resolveDotDamageText(effect.name, stats);
         return (
           <div
@@ -69,7 +71,11 @@ function EffectGroup({
             tabIndex={0}
             aria-label={`${presentation.label} ${String(Math.ceil(effect.remainingDuration))} secondes`}
           >
-            <span className="active-effects__symbol">{presentation.symbol}</span>
+            <span className="active-effects__symbol">
+              {iconPath === undefined
+                ? presentation.symbol
+                : <img src={iconPath} alt="" aria-hidden="true" />}
+            </span>
             <div className="active-effects__tooltip" role="tooltip">
               <strong>{presentation.label}</strong>
               <span>{presentation.description}</span>
