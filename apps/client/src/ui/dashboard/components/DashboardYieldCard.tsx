@@ -1,9 +1,7 @@
 import { formatCompactNumber } from "../../shared";
-import type { DashboardSessionModel } from "../dashboardModels";
+import type { DashboardYieldModel } from "../dashboardModels";
 import { DashboardCard } from "./DashboardCard";
 import "./DashboardYieldCard.css";
-
-type DashboardYieldModel = Pick<DashboardSessionModel, "silverPerHour" | "famePerHour">;
 
 interface DashboardYieldCardProps {
   readonly yieldData: DashboardYieldModel;
@@ -12,6 +10,8 @@ interface DashboardYieldCardProps {
 const YIELD_METRICS = [
   { id: "silver", label: "Silver / heure", field: "silverPerHour" },
   { id: "fame", label: "Fame / heure", field: "famePerHour" },
+  { id: "enchantment-shard", label: "Éclats d’enchantement / heure", field: "enchantmentShardsPerHour" },
+  { id: "key-fragment", label: "Fragments de clef / heure", field: "keyFragmentsPerHour" },
 ] as const satisfies readonly {
   readonly id: string;
   readonly label: string;
