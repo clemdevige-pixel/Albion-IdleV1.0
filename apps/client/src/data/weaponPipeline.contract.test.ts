@@ -26,10 +26,7 @@ import {
   resolveRepairableInfo,
 } from "./itemContentCatalog.js";
 import { getItemPower } from "./itemPower.js";
-import {
-  resolveEquipmentPresentation,
-  resolveWeaponFamilyCraftPresentation,
-} from "./equipmentPresentation.js";
+import { resolveEquipmentPresentation } from "./equipmentPresentation.js";
 import { buildMasteriesModel } from "../ui/masteries/masteryModels.js";
 
 const WEAPON_ITEM_IDS = Object.keys(WEAPON_ITEM_DEFINITIONS);
@@ -149,12 +146,11 @@ describe("weapon pipeline contract", () => {
 
     for (const definition of getWeaponMasteryFamilyDefinitions()) {
       const family = combatById.get(definition.masteryId);
-      const presentation = resolveWeaponFamilyCraftPresentation(definition.familyId);
 
       expect(family, `${definition.familyId}: Masteries family`).toBeDefined();
       expect(family?.name, `${definition.familyId}: family display name`).toBe(WEAPON_FAMILIES[definition.familyId].name);
-      expect(presentation, `${definition.familyId}: family presentation`).toBeDefined();
-      expect(family?.icon, `${definition.familyId}: family icon`).toBe(presentation?.symbol);
+      expect(family?.iconAsset, `${definition.familyId}: family icon asset`).toBeDefined();
+      expect(family?.iconAsset?.length ?? 0, `${definition.familyId}: family icon asset path`).toBeGreaterThan(0);
       expect(
         family?.specializations.map((specialization) => specialization.id).sort(),
         `${definition.familyId}: specialization topology`,
