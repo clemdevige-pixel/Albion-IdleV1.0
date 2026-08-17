@@ -1,6 +1,13 @@
 import { ENCOUNTERS_PER_SEGMENT, type WorldBandId } from "@game/data";
 import { getEnemyCombatProfile, getEncounterRewards } from "@game/gameplay";
 import {
+  BASE_COMBAT_DROP_RATES,
+  BOSS_SPECIAL_DROP_MULTIPLIER,
+  getDungeonKeyProgressionWeight,
+  getEnchantmentShardExpectedDrop,
+  getEnchantmentShardProgressionWeight,
+} from "../data/economyContentCatalog.js";
+import {
   CLIENT_ABILITIES,
   resolvePrimaryAbilityId,
   resolveWeaponMastery,
@@ -20,6 +27,8 @@ export interface CalculateProjectedRateInput {
 export interface ProjectedSegmentRates {
   readonly silverPerHour: number;
   readonly famePerHour: number;
+  readonly enchantmentShardsPerHour: number;
+  readonly keyFragmentsPerHour: number;
 }
 
 export function calculateProjectedSegmentRates(
@@ -43,10 +52,22 @@ export function calculateProjectedSegmentRates(
   const abilityId = resolvePrimaryAbilityId(equippedWeaponId);
   const ability = abilityId === undefined ? undefined : CLIENT_ABILITIES[abilityId];
   const canEarnFame = resolveWeaponMastery(equippedWeaponId ?? "") !== undefined;
+  const enchantmentDropWeight = getEnchantmentShardProgressionWeight(
+    currentWorldBandId,
+    currentZoneIndex,
+    currentSegment,
+  );
+  const dungeonKeyDropWeight = getDungeonKeyProgressionWeight(
+    currentWorldBandId,
+    currentZoneIndex,
+    currentSegment,
+  );
 
   let projectedSeconds = 0;
   let projectedSilver = 0;
   let projectedFame = 0;
+  let projectedEnchantmentShards = 0;
+  let projectedKeyFragments = 0;
 
   for (
     let encounterIndex = 0;
@@ -96,6 +117,20 @@ export function calculateProjectedSegmentRates(
     );
     projectedSilver += rewards.silver;
     if (canEarnFame) projectedFame += rewards.fame;
+
+    const isSpecialEncounter = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
+    const isBoss = isSpecialEncounter && currentSegment === 9;
+    const isElite = isSpecialEncounter && currentSegment < 9;
+
+    projectedEnchantmentShards += getEnchantmentShardExpectedDrop({
+      segmentIndex: currentSegment,
+      isElite,
+      isBoss,
+      enchantmentDropWeight,
+    });
+    projectedKeyFragments += BASE_COMBAT_DROP_RATES.keyFragment
+      * dungeonKeyDropWeight
+      * (isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1);
   }
 
   const cyclesPerHour = 3600 / Math.max(1, projectedSeconds);
@@ -103,5 +138,7 @@ export function calculateProjectedSegmentRates(
   return {
     silverPerHour: projectedSilver * cyclesPerHour,
     famePerHour: projectedFame * cyclesPerHour,
+    enchantmentShardsPerHour: projectedEnchantmentShards * cyclesPerHour,
+    keyFragmentsPerHour: projectedKeyFragments * cyclesPerHour,
   };
 }
