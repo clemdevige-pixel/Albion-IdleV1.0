@@ -4,7 +4,7 @@ type Listener = () => void;
 
 /**
  * Client-level combat flow controller.
- * It owns only the player's request to stop after the current segment;
+ * It owns only the player's request to stop after the current encounter;
  * combat outcomes and world progression remain authoritative elsewhere.
  */
 class CombatStopController {
@@ -23,16 +23,26 @@ class CombatStopController {
     return this.#state === "stop_requested";
   }
 
-  requestStopAfterSegment(): boolean {
+  requestStopAfterEncounter(): boolean {
     if (this.#state !== "running") return false;
     this.#setState("stop_requested");
     return true;
   }
 
-  pauseAfterSegment(): boolean {
+  pauseAfterEncounter(): boolean {
     if (this.#state !== "stop_requested") return false;
     this.#setState("paused");
     return true;
+  }
+
+  /** @deprecated Use requestStopAfterEncounter(). */
+  requestStopAfterSegment(): boolean {
+    return this.requestStopAfterEncounter();
+  }
+
+  /** @deprecated Use pauseAfterEncounter(). */
+  pauseAfterSegment(): boolean {
+    return this.pauseAfterEncounter();
   }
 
   resume(): boolean {
