@@ -17,16 +17,19 @@ interface DungeonPresentationModel {
 
 const DUNGEON_TIERS: readonly DungeonKeyTier[] = [4, 5, 6, 7, 8];
 
-const DUNGEON_VISUALS = {
-  keeper: "/assets/world/dungeons/keeper-dungeon-t4.png",
-  heretic: "/assets/world/dungeons/heretic-dungeon-t4.png",
-  undead: "/assets/world/dungeons/undead-dungeon-t4.png",
-  morgana: "/assets/world/dungeons/morgana-dungeon-t4.png",
+const DUNGEON_VISUAL_SLUGS = {
+  keeper: "keeper",
+  heretic: "heretic",
+  undead: "undead",
+  morgana: "morgana",
 } as const;
 
-function dungeonVisual(faction: string): string | undefined {
-  const key = faction.toLowerCase() as keyof typeof DUNGEON_VISUALS;
-  return DUNGEON_VISUALS[key];
+function dungeonVisual(faction: string, tier: number): string | undefined {
+  const key = faction.toLowerCase() as keyof typeof DUNGEON_VISUAL_SLUGS;
+  const slug = DUNGEON_VISUAL_SLUGS[key];
+  return slug === undefined
+    ? undefined
+    : `/assets/world/dungeons/${slug}-dungeon-t${String(tier)}.png`;
 }
 
 function inventoryQuantities(
@@ -127,7 +130,7 @@ export function WorldDungeonsView(): JSX.Element {
           const routeProgress = dungeon.encounters.length <= 1
             ? 100
             : Math.max(0, Math.min(100, (progressedEncounterCount / (dungeon.encounters.length - 1)) * 100));
-          const visual = dungeonVisual(dungeon.faction);
+          const visual = dungeonVisual(dungeon.faction, dungeon.tier);
 
           return (
             <article
