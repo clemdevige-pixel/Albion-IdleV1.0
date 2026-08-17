@@ -1,3 +1,4 @@
+import { useGameBridge } from "../../state/GameContext";
 import { useDashboardZone, useDashboardZoneActions } from "../dashboard/useDashboardData";
 
 /**
@@ -5,6 +6,7 @@ import { useDashboardZone, useDashboardZoneActions } from "../dashboard/useDashb
  * Segment navigation remains backed by the existing dashboard/world actions.
  */
 export function WorldSegmentStrip(): JSX.Element {
+  const bridge = useGameBridge();
   const zone = useDashboardZone();
   const { selectZoneSegment } = useDashboardZoneActions();
 
@@ -14,7 +16,8 @@ export function WorldSegmentStrip(): JSX.Element {
       <div className="world-segment-strip__timeline">
         {zone.segments.map((segment) => {
           const locked = segment.state === "locked";
-          const pending = zone.pendingSegmentIndex === segment.index;
+          const pending = bridge.world.pendingZoneIndex === zone.zoneIndex
+            && bridge.world.pendingSegmentIndex === segment.index;
           return (
             <button
               key={segment.index}
