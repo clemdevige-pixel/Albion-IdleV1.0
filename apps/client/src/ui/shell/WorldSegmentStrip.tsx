@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getSegmentRecommendedItemPower } from "../../data/itemPower";
 import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalculator";
@@ -17,15 +17,24 @@ function formatRate(value: number): string {
 }
 
 /**
- * Single permanent segment timeline for the active world zone.
- * Owns the segment navigation and the existing projected-rate hover information.
+ * Single permanent world browser for zones and segments.
+ * Reuses the dashboard zone model and keeps projected-rate hover information in one place.
  */
 export function WorldSegmentStrip(): JSX.Element {
   const bridge = useGameBridge();
   const zone = useDashboardZone();
   const { selectZoneSegment } = useDashboardZoneActions();
+  const [viewedZoneIndex, setViewedZoneIndex] = useState(zone.zoneIndex);
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    setViewedZoneIndex(zone.zoneIndex);
+  }, [zone.zoneIndex]);
+
+  const viewedZone = zone.zones.find((candidate) => candidate.zoneIndex === viewedZoneIndex)
+    ?? zone.zones.find((candidate) => candidate.isActive)
+    ?? zone;
 
   const equippedWeaponId = bridge.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId;
   const physicalDamage = readComputedStat(bridge.stats, "stat_physical_damage");
@@ -34,20 +43,44 @@ export function WorldSegmentStrip(): JSX.Element {
   const primaryAbilityAutoCast = bridge.abilities.primary?.autoCast ?? false;
 
   return (
-    <div className="world-segment-strip" aria-label="Progression des segments">
-      <span className="world-segment-strip__label">Progression</span>
+    <div className="world-segment-strip" aria-label="Navigation des zones et segments">
+      <div className="world-segment-strip__zone-browser">
+        <button
+          type="button"
+          className="world-segment-strip__zone-arrow"
+          disabled={viewedZone.zoneIndex <= 1}
+          aria-label="Consulter la zone précédente"
+          onClick={() => { setViewedZoneIndex((current) => Math.max(1, current - 1)); }}
+        >
+          ‹
+        </button>
+        <div className="world-segment-strip__zone-heading">
+          <strong>{viewedZone.biomeName} — {viewedZone.zoneName}</strong>
+          <span>{viewedZone.isActive ? "Zone actuelle" : viewedZone.isUnlocked ? "Zone accessible" : "Zone verrouillée"}</span>
+        </div>
+        <button
+          type="button"
+          className="world-segment-strip__zone-arrow"
+          disabled={viewedZone.zoneIndex >= zone.zoneCount}
+          aria-label="Consulter la zone suivante"
+          onClick={() => { setViewedZoneIndex((current) => Math.min(zone.zoneCount, current + 1)); }}
+        >
+          ›
+        </button>
+      </div>
+
       <div
         className="world-segment-strip__timeline"
         style={{ gridTemplateColumns: `repeat(${String(Math.max(1, zone.segmentCount))}, 1fr)` }}
       >
-        {zone.segments.map((segment) => {
-          const locked = segment.state === "locked";
-          const pending = bridge.world.pendingZoneIndex === zone.zoneIndex
+        {viewedZone.segments.map((segment) => {
+          const locked = segment.state === "locked" || !viewedZone.isUnlocked;
+          const pending = bridge.world.pendingZoneIndex === viewedZone.zoneIndex
             && bridge.world.pendingSegmentIndex === segment.index;
           const recommendedIp = getSegmentRecommendedItemPower(
-            zone.zoneIndexWithinBand + 1,
+            viewedZone.zoneIndexWithinBand + 1,
             segment.index,
-            zone.worldBandId,
+            viewedZone.worldBandId,
           );
           const rates = locked ? undefined : calculateProjectedSegmentRates({
             physicalDamage,
@@ -55,8 +88,8 @@ export function WorldSegmentStrip(): JSX.Element {
             attackSpeed,
             equippedWeaponId,
             primaryAbilityAutoCast,
-            currentZoneIndex: zone.zoneIndexWithinBand,
-            currentWorldBandId: zone.worldBandId,
+            currentZoneIndex: viewedZone.zoneIndexWithinBand,
+            currentWorldBandId: viewedZone.worldBandId,
             currentSegment: segment.index - 1,
           });
           const showTooltip = !locked
@@ -70,7 +103,7 @@ export function WorldSegmentStrip(): JSX.Element {
               type="button"
               className={`world-segment-strip__segment world-segment-strip__segment--${segment.state}${pending ? " is-pending" : ""}`}
               disabled={locked}
-              aria-current={segment.state === "current" ? "step" : undefined}
+              aria-current={viewedZone.isActive && segment.state === "current" ? "step" : undefined}
               aria-label={locked
                 ? `Segment ${String(segment.index)} verrouillé`
                 : `Segment ${String(segment.index)}. IP conseillé ${String(recommendedIp)}. Silver par heure ${formatRate(rates?.silverPerHour ?? 0)}. Fame par heure ${formatRate(rates?.famePerHour ?? 0)}.${pending ? " Changement en attente." : ""}`}
@@ -97,7 +130,7 @@ export function WorldSegmentStrip(): JSX.Element {
                 setHoveredSegment(null);
                 setTooltipPosition(null);
               }}
-              onClick={() => { selectZoneSegment(zone.zoneIndex, segment.index); }}
+              onClick={() => { selectZoneSegment(viewedZone.zoneIndex, segment.index); }}
             >
               <span>{segment.isZoneBoss ? "☠" : String(segment.index)}</span>
               {showTooltip && createPortal(
