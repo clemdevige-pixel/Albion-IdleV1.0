@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { resolveAbilityIconPath } from "../data/abilityIconPresentation";
 import { ItemVisual } from "../panels/ItemVisual";
 import {
   HEALTH_POTION_ID,
@@ -74,6 +75,7 @@ export function AbilityBar(): JSX.Element {
               );
             }
 
+            const iconPath = resolveAbilityIconPath(ability.id);
             return (
               <button
                 key={shortcut}
@@ -85,7 +87,9 @@ export function AbilityBar(): JSX.Element {
                 onClick={() => { useWeaponAbility(slotIndex); }}
               >
                 <span className="ability-bar__key">{shortcut}</span>
-                <span className="ability-bar__ability-icon">{ability.icon}</span>
+                <span className="ability-bar__ability-icon">
+                  <img src={iconPath} alt="" aria-hidden="true" />
+                </span>
                 {ability.cooldownRemaining > 0 && (
                   <span className="ability-bar__cooldown-number">
                     {ability.cooldownRemaining.toFixed(1)}
@@ -97,7 +101,9 @@ export function AbilityBar(): JSX.Element {
                 />
                 <div className="ability-tooltip" role="tooltip">
                   <div className="ability-tooltip__header">
-                    <span className="ability-tooltip__icon">{ability.icon}</span>
+                    <span className="ability-tooltip__icon">
+                      <img src={iconPath} alt="" aria-hidden="true" />
+                    </span>
                     <div>
                       <strong>{ability.name}</strong>
                       <span>Capacité active · Touche {shortcut}</span>
