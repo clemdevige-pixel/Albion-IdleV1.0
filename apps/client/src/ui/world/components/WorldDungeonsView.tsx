@@ -146,28 +146,28 @@ export function WorldDungeonsView(): JSX.Element {
               ) : null}
 
               <footer className="world-dungeon-card__footer">
-                <p className={isPendingDungeon || !canEnter ? "is-status" : ""}>
-                  {isActiveDungeon
-                    ? "Abandonner termine définitivement cette tentative."
-                    : isPendingDungeon
-                      ? "Entrée programmée · la clé sera consommée au moment de l’entrée."
+                {!isPendingDungeon && (
+                  <p className={!canEnter ? "is-status" : ""}>
+                    {isActiveDungeon
+                      ? "Abandonner termine définitivement cette tentative."
                       : keyCount > 0
                         ? "En combat, l’entrée attendra la fin du segment actuel."
                         : `Clé ${dungeon.faction} requise.`}
-                </p>
+                  </p>
+                )}
                 {isActiveDungeon ? (
                   <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>
                     Abandonner
                   </button>
-                ) : (
+                ) : !isPendingDungeon ? (
                   <button
                     type="button"
                     disabled={!canEnter}
                     onClick={() => { startDungeon(dungeon.id); }}
                   >
-                    {isPendingDungeon ? "Entrée programmée" : keyCount > 0 ? "Entrer" : "Clé requise"}
+                    {keyCount > 0 ? "Entrer" : "Clé requise"}
                   </button>
-                )}
+                ) : null}
               </footer>
             </article>
           );
