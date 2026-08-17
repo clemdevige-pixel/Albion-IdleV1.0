@@ -78,14 +78,14 @@ export function IslandModule(): JSX.Element {
     <div className="ui-island">
       <section className="ui-island__intro">
         <div>
-          <span className="ui-island__eyebrow">Vue d'ensemble</span>
-          <strong>Île du joueur · Niv. {String(islandLevel)}</strong>
-          <small>{islandLevelDefinition?.label ?? "Développement"}</small>
+          <span className="ui-island__eyebrow">Île du joueur</span>
+          <strong>Niveau {String(islandLevel)} · {islandLevelDefinition?.label ?? "Développement"}</strong>
+          <small>Développez vos bâtiments et vos filières de production.</small>
         </div>
         <span className="ui-island__count">{String(island.buildings.length)} bâtiments</span>
       </section>
-      <IslandOnboardingGuide />
       <IslandLevelPanel />
+      <IslandOnboardingGuide />
       <section className="ui-island__selection ui-island__selection--empty">
         <strong>Sélectionnez un bâtiment ou un emplacement libre</strong>
         <p>La vue centrale de l'île reste visible pendant que ce panneau affiche le contenu sélectionné.</p>
