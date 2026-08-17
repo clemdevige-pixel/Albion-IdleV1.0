@@ -1,5 +1,6 @@
-import type { MasteryFamilyModel } from "../masteryModels";
+import type { MasteryFamilyModel, MasteryProgressModel } from "../masteryModels";
 import { MasteryFamilyIcon } from "./MasteryFamilyIcon";
+import { MasteryProgressBar } from "./MasteryProgressBar";
 
 interface MasteryFamilyListProps {
   readonly families: readonly MasteryFamilyModel[];
@@ -7,28 +8,78 @@ interface MasteryFamilyListProps {
   readonly onSelect: (id: string) => void;
 }
 
+function BonusList({ bonuses }: { readonly bonuses: readonly string[] }): JSX.Element {
+  return <ul className="ui-mastery-bonuses">{bonuses.map((bonus) => <li key={bonus}>{bonus}</li>)}</ul>;
+}
+
+function SpecializationRow({ mastery }: { readonly mastery: MasteryProgressModel }): JSX.Element {
+  return (
+    <article className={`ui-mastery-specialization${mastery.isUnlocked ? "" : " is-locked"}`}>
+      <div className="ui-mastery-specialization__heading">
+        <div>
+          <h4>{mastery.name}</h4>
+          {mastery.subtitle !== undefined && <small>{mastery.subtitle}</small>}
+        </div>
+        <strong>Niv. {String(mastery.level)}</strong>
+      </div>
+      <MasteryProgressBar mastery={mastery} />
+      <BonusList bonuses={mastery.bonuses} />
+    </article>
+  );
+}
+
 export function MasteryFamilyList({ families, selectedId, onSelect }: MasteryFamilyListProps): JSX.Element {
   return (
-    <nav className="ui-mastery-families" aria-label="Familles de maîtrises">
-      {families.map((family) => (
-        <button
-          key={family.id}
-          type="button"
-          className={`ui-mastery-family${family.id === selectedId ? " is-selected" : ""}${family.isUnlocked ? "" : " is-locked"}`}
-          onClick={() => { onSelect(family.id); }}
-        >
-          <MasteryFamilyIcon family={family} className="ui-mastery-family__icon" />
-          <span className="ui-mastery-family__body">
-            <span className="ui-mastery-family__heading">
-              <strong>{family.name}</strong>
-              <b>Niv. {String(family.level)}</b>
-            </span>
-            <span className="ui-mastery-family__track">
-              <span style={{ width: `${String(family.progressPercent)}%` }} />
-            </span>
-          </span>
-        </button>
-      ))}
-    </nav>
+    <div className="ui-mastery-families" role="list" aria-label="Familles de maîtrises">
+      {families.map((family) => {
+        const expanded = family.id === selectedId;
+        const detailsId = `mastery-family-${family.id}`;
+        return (
+          <section key={family.id} className={`ui-mastery-family-group${expanded ? " is-expanded" : ""}${family.isUnlocked ? "" : " is-locked"}`} role="listitem">
+            <button
+              type="button"
+              className="ui-mastery-family"
+              aria-expanded={expanded}
+              aria-controls={detailsId}
+              onClick={() => { onSelect(family.id); }}
+            >
+              <MasteryFamilyIcon family={family} className="ui-mastery-family__icon" />
+              <span className="ui-mastery-family__body">
+                <span className="ui-mastery-family__heading">
+                  <strong>{family.name}</strong>
+                  <b>Niv. {String(family.level)}</b>
+                </span>
+                <span className="ui-mastery-family__track">
+                  <span style={{ width: `${String(family.progressPercent)}%` }} />
+                </span>
+                <span className="ui-mastery-family__meta">
+                  <span>{String(family.currentXp)} / {String(family.xpToNextLevel)} XP</span>
+                  <span>{family.bonuses[0] ?? ""}</span>
+                </span>
+              </span>
+              <span className="ui-mastery-family__chevron" aria-hidden="true">›</span>
+            </button>
+
+            {expanded && (
+              <div id={detailsId} className="ui-mastery-family__expanded">
+                <div className="ui-mastery-family__bonus-row">
+                  <BonusList bonuses={family.bonuses} />
+                </div>
+                <div className="ui-mastery-family__section-title">
+                  {family.specializations.length > 0 ? "Spécialisations" : "Aucune spécialisation disponible"}
+                </div>
+                {family.specializations.length > 0 && (
+                  <div className="ui-mastery-specializations">
+                    {family.specializations.map((specialization) => (
+                      <SpecializationRow key={specialization.id} mastery={specialization} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
   );
 }
