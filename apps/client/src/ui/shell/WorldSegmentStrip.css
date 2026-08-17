@@ -98,19 +98,23 @@
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: min(940px, 95%);
   justify-self: center;
 }
 
-.world-segment-strip__connector {
-  position: relative;
+/* One rail spans the complete data-driven segment set, avoiding tile restarts between nodes. */
+.world-segment-strip__rail {
+  position: absolute;
   z-index: 0;
-  flex: 1 1 0;
-  min-width: 18px;
+  top: 50%;
+  right: 21px;
+  left: 21px;
   height: 12px;
-  margin-inline: -2px;
+  transform: translateY(-50%);
+  pointer-events: none;
   background-image: url("/assets/ui/timeline/timeline_connector_tile.png");
-  background-position: center;
+  background-position: left center;
   background-repeat: repeat-x;
   background-size: auto 12px;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
@@ -139,7 +143,6 @@
   transition: filter 120ms ease, transform 120ms ease;
 }
 
-/* Only the selected/current segment keeps its number visible. */
 .world-segment-strip__segment > span {
   visibility: hidden;
 }
@@ -163,7 +166,6 @@
   transform: translateY(-1px) scale(1.035);
 }
 
-/* Locked/non-validated segments explicitly keep the normal node asset. */
 .world-segment-strip__segment--locked,
 .world-segment-strip__segment--locked:disabled,
 .world-segment-strip__segment:disabled {
@@ -252,8 +254,9 @@
     height: 34px;
   }
 
-  .world-segment-strip__connector {
-    min-width: 12px;
+  .world-segment-strip__rail {
+    right: 18px;
+    left: 18px;
     height: 10px;
     background-size: auto 10px;
   }
