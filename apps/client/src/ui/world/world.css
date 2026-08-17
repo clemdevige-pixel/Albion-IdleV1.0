@@ -36,7 +36,7 @@
   text-transform: uppercase;
 }
 
-.ui-world__tabs button small { color: var(--ui-color-text-muted); font: 7px var(--ui-font-sans); }
+.ui-world__tabs button small { color: var(--ui-color-text-muted); font: 8px var(--ui-font-sans); }
 .ui-world__tabs button.is-active {
   color: var(--ui-color-accent);
   border-color: rgba(208, 157, 52, 0.62);
@@ -67,7 +67,7 @@
 }
 
 .world-band span { overflow: hidden; font-size: 9px; font-weight: 700; text-overflow: ellipsis; text-transform: uppercase; }
-.world-band small { color: #656b73; font-size: 7px; }
+.world-band small { color: #727b86; font-size: 8px; }
 .world-band b { position: absolute; top: 3px; right: 4px; color: #5c5f65; font-size: 7px; }
 .world-band.is-active { color: #f0d593; border-color: var(--band-color, #8b6327); box-shadow: inset 0 -2px var(--band-color, #8b6327); }
 .world-band--blue { --band-color: #557fbc; }
@@ -117,7 +117,7 @@
 .world-zone-row__identity { display: grid; min-width: 0; gap: 1px; }
 .world-zone-row__identity strong { overflow: hidden; color: var(--ui-color-text-primary); font: 12px var(--ui-font-display); text-overflow: ellipsis; white-space: nowrap; }
 .world-zone-row__identity small,
-.world-zone-row__state { color: var(--ui-color-text-muted); font-size: 8px; text-transform: uppercase; }
+.world-zone-row__state { color: #89929d; font-size: 9px; text-transform: uppercase; }
 .world-zone-row.is-current .world-zone-row__state { color: #8fc279; }
 
 .world-zone-detail {
@@ -139,9 +139,9 @@
 }
 .world-zone-detail > header div { min-width: 0; }
 .world-zone-detail > header small,
-.world-zone-detail > header p { margin: 0; color: var(--ui-color-text-muted); font-size: 8px; text-transform: uppercase; }
+.world-zone-detail > header p { margin: 0; color: #89929d; font-size: 9px; text-transform: uppercase; }
 .world-zone-detail > header h2 { margin: 2px 0; color: var(--ui-color-text-primary); font: 15px var(--ui-font-display); }
-.world-zone-detail > header > span { align-self: start; padding: 3px 5px; border: 1px solid #59312f; border-radius: 5px; color: #9d665f; font-size: 8px; }
+.world-zone-detail > header > span { align-self: start; padding: 3px 5px; border: 1px solid #59312f; border-radius: 5px; color: #9d665f; font-size: 9px; }
 .world-zone-detail > header > span.is-unlocked { color: #8ec37b; border-color: #365839; }
 .world-zone-detail__stats {
   display: grid;
@@ -153,7 +153,7 @@
 }
 .world-zone-detail__stats span { display: grid; gap: 1px; padding: 6px 7px; text-align: center; border-right: 1px solid rgba(208, 157, 52, 0.13); }
 .world-zone-detail__stats span:last-child { border-right: 0; }
-.world-zone-detail__stats small { color: var(--ui-color-text-muted); font-size: 7px; text-transform: uppercase; }
+.world-zone-detail__stats small { color: #89929d; font-size: 8px; text-transform: uppercase; }
 .world-zone-detail__stats strong { color: var(--ui-color-accent); font-size: 11px; }
 
 .world-zone-detail__timeline { display: flex; align-items: start; min-height: 43px; padding: 2px 2px 0; }
@@ -166,7 +166,7 @@
 .world-zone-segment--available span { color: #d5bb79; border-color: #8d692e; }
 .world-zone-segment--current span { width: 25px; height: 25px; color: #201305; background: radial-gradient(circle, #ffe58a, #b8791d); border-color: #ffd568; box-shadow: 0 0 12px rgb(230 174 48 / 55%); }
 .world-zone-segment:disabled { cursor: default; }
-.world-zone-detail__encounter { margin: -2px 0 0; color: var(--ui-color-text-muted); font-size: 8px; text-align: center; }
+.world-zone-detail__encounter { margin: -1px 0 0; color: #8f98a3; font-size: 9px; text-align: center; }
 .world-zone-detail__modes { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .world-zone-detail__modes button {
   min-height: 30px;
@@ -182,7 +182,7 @@
   font-weight: 700;
   background: linear-gradient(145deg, rgba(75, 53, 26, 0.68), rgba(35, 26, 18, 0.78));
 }
-.world-zone-detail__hint { margin: 0; color: var(--ui-color-text-muted); font-size: 8px; line-height: 1.4; }
+.world-zone-detail__hint { margin: 0; color: #89929d; font-size: 9px; line-height: 1.4; }
 
 .world-upcoming,
 .world-achievements { display: grid; min-height: 340px; place-content: center; justify-items: center; padding: 25px; text-align: center; background: radial-gradient(circle, rgb(104 77 48 / 16%), transparent 58%), #090d12; border: 1px solid #3b332b; }
