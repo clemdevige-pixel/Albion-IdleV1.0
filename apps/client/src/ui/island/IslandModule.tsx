@@ -112,9 +112,12 @@ function BuildingSummary({
   readonly level: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
+  const selectionClassName = definitionId === "worker_house"
+    ? "ui-island__selection ui-island__selection--flat"
+    : "ui-island__selection";
 
   return (
-    <section className="ui-island__selection">
+    <section className={selectionClassName}>
       <div className="ui-island__selection-heading">
         <span className="ui-island__selection-icon">{definition.icon}</span>
         <div>
