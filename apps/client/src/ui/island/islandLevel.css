@@ -9,6 +9,31 @@
   color: var(--ui-color-text-primary);
 }
 
+.ui-island-level--max {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  background: rgba(11, 14, 19, 0.7);
+}
+
+.ui-island-level--max > span {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+}
+
+.ui-island-level--max > strong {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+  font-weight: 600;
+  text-align: right;
+}
+
+.ui-island-level--max > b {
+  color: #8ee37d;
+  font-size: 11px;
+}
+
 .ui-island-level > div:first-child,
 .ui-island-level__heading > div {
   display: grid;
