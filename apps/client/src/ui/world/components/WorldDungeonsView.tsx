@@ -138,7 +138,7 @@ export function WorldDungeonsView(): JSX.Element {
               className={`world-dungeon-card${isActiveDungeon ? " is-active" : ""}${isPendingDungeon ? " is-pending" : ""}`}
             >
               <header className="world-dungeon-card__header">
-                <span className="world-dungeon-card__visual" aria-hidden="true">
+                <span className="world-dungeon-card__visual" data-tier={dungeon.tier} aria-hidden="true">
                   {visual !== undefined ? <img src={visual} alt="" /> : null}
                 </span>
                 <div className="world-dungeon-card__identity">
