@@ -98,9 +98,9 @@ export function InventoryModule(): JSX.Element {
               className="storage-module__sort-button"
               onClick={() => { actions.sort("inventory"); }}
               aria-label="Trier l’inventaire"
+              title="Trier l’inventaire"
             >
               <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
-              <span>Trier</span>
             </button>
             <span className="storage-module__shortcut">Maj + double-clic → banque</span>
           </div>
