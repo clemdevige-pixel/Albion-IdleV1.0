@@ -26,11 +26,11 @@ export function CombatStopButton({
 
   const handleClick = (): void => {
     if (state === "running") {
-      if (!combatStopController.requestStopAfterSegment()) return;
+      if (!combatStopController.requestStopAfterEncounter()) return;
       gameBridge.addEconomyNotification({
         id: `notif_combat_stop_${String(Date.now())}`,
         type: "success",
-        message: "Arrêt demandé : le combat s'arrêtera à la fin du segment en cours.",
+        message: "Arrêt demandé : le combat s'arrêtera après l'ennemi en cours.",
         timestamp: Date.now(),
       });
       return;
@@ -57,7 +57,7 @@ export function CombatStopButton({
       type="button"
       onClick={handleClick}
       title={state === "running"
-        ? "Le combat s'arrêtera après la fin du segment en cours."
+        ? "Le combat s'arrêtera après l'ennemi en cours."
         : undefined}
       style={{
         minWidth: compact ? 96 : 154,
