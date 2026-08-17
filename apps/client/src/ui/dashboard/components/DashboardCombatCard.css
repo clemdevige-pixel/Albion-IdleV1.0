@@ -1,6 +1,6 @@
 .dashboard-combat {
   display: grid;
-  gap: 9px;
+  gap: 8px;
 }
 
 .dashboard-combat__encounter {
@@ -11,24 +11,17 @@
   white-space: nowrap;
 }
 
-.dashboard-combat__control-row {
+.dashboard-combat__control-bar {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: center;
-}
-
-.dashboard-combat__mode-label {
-  color: var(--ui-color-text-muted);
-  font-size: 9px;
-  font-weight: var(--ui-weight-bold);
-  letter-spacing: .12em;
-  text-transform: uppercase;
 }
 
 .dashboard-combat__modes {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(58px, .58fr);
+  grid-template-columns: minmax(0, 1.45fr) minmax(56px, .75fr);
+  min-width: 0;
   padding: 2px;
   background: rgb(8 11 15 / 82%);
   border: 1px solid #393329;
@@ -71,11 +64,11 @@
 
 .dashboard-combat__pending {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 20px minmax(0, 1fr);
   gap: 7px;
   align-items: center;
-  min-height: 34px;
-  padding: 5px 8px;
+  min-height: 31px;
+  padding: 4px 7px;
   border: 1px solid rgb(139 103 40 / 48%);
   border-left: 2px solid #bd8d36;
   border-radius: var(--ui-radius-sm);
@@ -84,11 +77,11 @@
 
 .dashboard-combat__pending-icon {
   display: grid;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   place-items: center;
   color: #e6b94e;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   line-height: 1;
   text-shadow: 0 1px 0 #000;
@@ -96,7 +89,9 @@
 
 .dashboard-combat__pending-copy {
   display: grid;
-  gap: 1px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px;
+  align-items: baseline;
   min-width: 0;
 }
 
@@ -120,14 +115,19 @@
 .dashboard-combat__stop {
   display: flex;
   justify-content: flex-end;
-  padding-top: 1px;
 }
 
 .dashboard-combat__stop > * {
-  width: auto;
+  flex: 0 0 auto;
   max-width: 100%;
-  min-height: 27px;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  font-size: 9px;
+}
+
+@media (max-width: 1220px) {
+  .dashboard-combat__control-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-combat__stop {
+    justify-content: flex-end;
+  }
 }
