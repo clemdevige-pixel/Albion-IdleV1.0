@@ -139,7 +139,7 @@ export class WorldNavigationActions {
   private queueManualSegmentChange(segmentNumber: number): boolean {
     if (!this.deps.worldRuntime.queueSegmentChange(segmentNumber)) return false;
 
-    // Manual segment travel is deferred until the current segment completes.
+    // Manual segment travel is deferred until the current encounter completes.
     // Keep the active encounter running and only expose the pending destination.
     this.deps.updateWorldBridge();
     return true;
