@@ -35,9 +35,9 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
           className="storage-module__sort-button"
           onClick={onSort}
           aria-label="Trier la banque"
+          title="Trier la banque"
         >
           <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
-          <span>Trier</span>
         </button>
         <span className="storage-module__shortcut">Double-clic → inventaire</span>
       </div>
