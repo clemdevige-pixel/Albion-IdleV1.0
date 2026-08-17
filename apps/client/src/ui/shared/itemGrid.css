@@ -49,8 +49,32 @@
 }
 
 .ui-item-grid__slot:disabled { opacity: 1; }
-.ui-item-grid__visual { display: block; width: 82%; height: 82%; }
-.ui-item-grid__visual > img { width: 100%; height: 100%; object-fit: contain; }
+
+.ui-item-grid__visual {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  width: 82%;
+  height: 82%;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ui-item-grid__visual > img,
+.ui-item-grid__visual > span {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+}
+
+.ui-item-grid__visual > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
 
 /* Special-loot sizing is presentation-only: keep source assets untouched. */
 .ui-item-grid__visual > .item-visual__image--dungeon-key {
@@ -64,10 +88,13 @@
 }
 
 .ui-item-grid__visual > .item-visual__image--artifact {
-  width: 116%;
-  height: 116%;
-  max-width: none;
-  max-height: none;
+  width: 100%;
+  height: 100%;
+}
+
+.ui-item-grid__visual > .item-visual__image--enchantment {
+  width: 78%;
+  height: 78%;
 }
 
 .ui-item-grid__tier {
@@ -89,6 +116,18 @@
   font-weight: var(--ui-weight-bold);
   text-align: right;
   text-shadow: 0 1px 2px #000;
+}
+
+.ui-item-grid > .sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 @media (max-width: 1100px) {
