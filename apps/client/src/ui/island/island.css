@@ -4,6 +4,57 @@
   gap: 14px;
 }
 
+.ui-island--overview {
+  gap: 8px;
+  padding: 8px;
+}
+
+.ui-island--overview .ui-island__intro {
+  padding: 8px 9px;
+  border-color: var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-md);
+  background: linear-gradient(145deg, rgba(35, 26, 18, 0.62), rgba(11, 14, 19, 0.88));
+}
+
+.ui-island--overview .ui-island__intro strong {
+  color: var(--ui-color-text-primary);
+  font-size: var(--ui-text-sm);
+}
+
+.ui-island--overview .ui-island__intro small {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+}
+
+.ui-island--overview .ui-island__count {
+  padding: 4px 7px;
+  border-color: rgba(208, 157, 52, 0.32);
+  color: var(--ui-color-accent);
+  font-size: var(--ui-text-xs);
+}
+
+.ui-island__overview-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 4px 2px;
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.ui-island__overview-hint > span:first-child {
+  flex: none;
+  color: rgba(208, 157, 52, 0.44);
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.ui-island__overview-hint > span:last-child {
+  min-width: 0;
+}
+
 .ui-island__tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .ui-island__tabs button { border: 1px solid rgba(190, 159, 105, 0.28); border-radius: 8px; background: rgba(17, 20, 25, 0.82); color: rgba(238, 231, 216, 0.7); padding: 9px 10px; font: inherit; cursor: pointer; }
 .ui-island__tabs button.is-active { border-color: rgba(216, 181, 116, 0.72); background: rgba(91, 70, 42, 0.42); color: #f2e1bd; }
