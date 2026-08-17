@@ -4,6 +4,7 @@ import { getSegmentRecommendedItemPower } from "../../data/itemPower";
 import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalculator";
 import { useGameBridge } from "../../state/GameContext";
 import { useDashboardZone, useDashboardZoneActions } from "../dashboard/useDashboardData";
+import "./WorldSegmentStrip.css";
 
 function readComputedStat(
   stats: ReturnType<typeof useGameBridge>["stats"],
