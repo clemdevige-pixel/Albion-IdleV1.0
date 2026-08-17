@@ -1,6 +1,5 @@
 import type { GameBridgeState, MasteryVM, WorkerVM } from "../../game/GameBridge";
-import { getWeaponMasteryFamilyDefinitions } from "../../data/weaponContentCatalog";
-import { resolveWeaponFamilyCraftPresentation } from "../../data/equipmentPresentation";
+import { getWeaponMasteryFamilyDefinitions, type WeaponFamilyId } from "../../data/weaponContentCatalog";
 import {
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
@@ -8,6 +7,14 @@ import {
 import { masteryProgressPercent } from "../shared/masteryProgress";
 
 export type MasteryCategoryId = "combat" | "gathering";
+
+const COMBAT_MASTERY_ICON_ASSETS: Readonly<Record<WeaponFamilyId, string>> = {
+  sword: "/assets/ui/masteries/epee.png",
+  bow: "/assets/ui/masteries/arc.png",
+  fire_staff: "/assets/ui/masteries/baton_feu.png",
+  gloves: "/assets/ui/masteries/gants.png",
+  dagger: "/assets/ui/masteries/dagues.png",
+};
 
 export interface MasteryProgressModel {
   readonly id: string;
@@ -87,8 +94,12 @@ export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
       const mastery = masteryById.get(id);
       return mastery === undefined ? [] : [combatProgress(mastery, false)];
     });
-    const presentation = resolveWeaponFamilyCraftPresentation(definition.familyId);
-    return [{ ...combatProgress(family, true), icon: presentation?.symbol ?? "◆", specializations }];
+    return [{
+      ...combatProgress(family, true),
+      icon: "◆",
+      iconAsset: COMBAT_MASTERY_ICON_ASSETS[definition.familyId],
+      specializations,
+    }];
   });
 
   const gathering = PRODUCTION_FAMILY_IDS.flatMap((familyId): readonly MasteryFamilyModel[] => {
