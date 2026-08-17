@@ -14,6 +14,18 @@ interface DungeonPresentationModel {
   readonly combatState: string;
 }
 
+const DUNGEON_VISUALS = {
+  keeper: "/assets/world/dungeons/keeper-dungeon-t4.png",
+  heretic: "/assets/world/dungeons/heretic-dungeon-t4.png",
+  undead: "/assets/world/dungeons/undead-dungeon-t4.png",
+  morgana: "/assets/world/dungeons/morgana-dungeon-t4.png",
+} as const;
+
+function dungeonVisual(faction: string): string | undefined {
+  const key = faction.toLowerCase() as keyof typeof DUNGEON_VISUALS;
+  return DUNGEON_VISUALS[key];
+}
+
 function inventoryQuantities(
   slots: readonly { readonly itemId: string | undefined; readonly quantity: number }[],
 ): Readonly<Record<string, number>> {
@@ -88,6 +100,7 @@ export function WorldDungeonsView(): JSX.Element {
           const routeProgress = dungeon.encounters.length <= 1
             ? 100
             : Math.max(0, Math.min(100, (progressedEncounterCount / (dungeon.encounters.length - 1)) * 100));
+          const visual = dungeonVisual(dungeon.faction);
 
           return (
             <article
@@ -95,7 +108,9 @@ export function WorldDungeonsView(): JSX.Element {
               className={`world-dungeon-card${isActiveDungeon ? " is-active" : ""}${isPendingDungeon ? " is-pending" : ""}`}
             >
               <header className="world-dungeon-card__header">
-                <span className="world-dungeon-card__visual" aria-hidden="true" />
+                <span className="world-dungeon-card__visual" aria-hidden="true">
+                  {visual !== undefined ? <img src={visual} alt="" /> : null}
+                </span>
                 <div className="world-dungeon-card__identity">
                   <small>Donjon T{dungeon.tier}</small>
                   <h3>{dungeon.faction}</h3>
