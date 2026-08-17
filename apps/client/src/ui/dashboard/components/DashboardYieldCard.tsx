@@ -10,8 +10,8 @@ interface DashboardYieldCardProps {
 const YIELD_METRICS = [
   { id: "silver", label: "Silver / heure", field: "silverPerHour" },
   { id: "fame", label: "Fame / heure", field: "famePerHour" },
-  { id: "enchantment-shard", label: "Éclats d’enchantement / heure", field: "enchantmentShardsPerHour" },
-  { id: "key-fragment", label: "Fragments de clef / heure", field: "keyFragmentsPerHour" },
+  { id: "enchantment-shard", label: "Éclats d’enchant. / h", field: "enchantmentShardsPerHour" },
+  { id: "key-fragment", label: "Fragments de clef / h", field: "keyFragmentsPerHour" },
 ] as const satisfies readonly {
   readonly id: string;
   readonly label: string;
