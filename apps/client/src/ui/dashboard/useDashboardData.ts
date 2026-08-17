@@ -110,6 +110,7 @@ export function useDashboardZone(): DashboardZoneModel {
     && previous.segmentCount === next.segmentCount
     && previous.encounterIndex === next.encounterIndex
     && previous.encounterCount === next.encounterCount
+    && previous.pendingSegmentIndex === next.pendingSegmentIndex
     && previous.progress === next.progress
     && previous.recommendedItemPower === next.recommendedItemPower
     && previous.bossTitle === next.bossTitle
