@@ -161,51 +161,81 @@
 .ui-merchant-enchant__tier-filter button.is-active { border-color: #8a5ca5; color: #f3e6ff; background: linear-gradient(#59366e, #34203f); }
 
 .ui-merchant-enchant__item-row {
-  grid-template-columns: 40px minmax(0, 1fr) 118px;
-  min-height: 49px;
-  padding-top: 6px;
-  padding-bottom: 6px;
+  grid-template-columns: 48px minmax(0, 1fr) 132px;
+  min-height: 62px;
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--ui-color-border-subtle);
+  box-shadow: none;
 }
-.ui-merchant-enchant__item-row .ui-merchant-item-row__identity strong { font-size: 11px; }
-.ui-merchant-enchant__item-row .ui-merchant-item-row__identity small { font-size: 9px; }
+.ui-merchant-enchant__item-row:last-child { border-bottom: 0; }
+.ui-merchant-enchant__item-row.is-selected {
+  background: linear-gradient(90deg, rgba(132, 91, 21, 0.16), transparent);
+  box-shadow: inset 2px 0 var(--ui-color-accent);
+}
+.ui-merchant-enchant__item-row .ui-merchant-item-row__visual {
+  width: 44px;
+  height: 44px;
+}
+.ui-merchant-enchant__item-row .ui-merchant-item-row__identity { gap: 3px; }
+.ui-merchant-enchant__item-row .ui-merchant-item-row__identity strong { font-size: 12px; }
+.ui-merchant-enchant__item-row .ui-merchant-item-row__identity small { font-size: 10px; }
 .ui-merchant-enchant__scale {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto auto;
   align-items: center;
-  gap: 3px 6px;
+  gap: 5px 8px;
   min-width: 0;
 }
 .ui-merchant-enchant__scale > small {
   grid-column: 1 / -1;
   overflow: hidden;
-  color: #8fa0b5;
+  color: #9aabba;
   font-size: 8px;
   line-height: 1;
   text-transform: uppercase;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ui-merchant-enchant__pips { display: flex; gap: 4px; align-items: center; }
+.ui-merchant-enchant__pips { display: flex; gap: 6px; align-items: center; }
 .ui-merchant-enchant__pips i {
   display: block;
-  width: 8px;
-  height: 8px;
-  border: 1px solid #495260;
-  background: #151a21;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #56606c;
+  background: #11161c;
   transform: rotate(45deg);
 }
-.ui-merchant-enchant__pips i.is-filled {
+.ui-merchant-enchant__scale--1 .ui-merchant-enchant__pips i.is-filled {
+  border-color: #8fe58a;
+  background: linear-gradient(135deg, #73d875, #2f8439);
+  box-shadow: 0 0 5px rgb(82 194 91 / 42%);
+}
+.ui-merchant-enchant__scale--2 .ui-merchant-enchant__pips i.is-filled {
+  border-color: #79bfff;
+  background: linear-gradient(135deg, #6dbdff, #276fae);
+  box-shadow: 0 0 5px rgb(73 158 230 / 42%);
+}
+.ui-merchant-enchant__scale--3 .ui-merchant-enchant__pips i.is-filled {
   border-color: #c58bf1;
   background: linear-gradient(135deg, #d9a4ff, #7c43a2);
-  box-shadow: 0 0 4px rgb(187 109 232 / 45%);
+  box-shadow: 0 0 5px rgb(187 109 232 / 45%);
+}
+.ui-merchant-enchant__scale--4 .ui-merchant-enchant__pips i.is-filled {
+  border-color: #f3d06a;
+  background: linear-gradient(135deg, #ffe58a, #b77b17);
+  box-shadow: 0 0 6px rgb(224 171 55 / 48%);
 }
 .ui-merchant-enchant__scale > b {
-  color: #c18ae8;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   white-space: nowrap;
 }
+.ui-merchant-enchant__scale--1 > b { color: #73d875; }
+.ui-merchant-enchant__scale--2 > b { color: #6dbdff; }
+.ui-merchant-enchant__scale--3 > b { color: #c18ae8; }
+.ui-merchant-enchant__scale--4 > b { color: #f0c95a; }
+.ui-merchant-enchant__scale--0 > b { color: #d6dbe2; }
 
 .ui-merchant-repair__row { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: var(--ui-space-2); padding: var(--ui-space-2); border-bottom: var(--ui-border-width) solid var(--ui-color-border-subtle); }
 .ui-merchant-repair__row:last-child { border-bottom: 0; }
@@ -221,5 +251,7 @@
   .ui-merchant-buy__purchase-row { grid-template-columns: 1fr; }
   .ui-merchant-enchant__stocks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ui-merchant-enchant__stocks > div { border-bottom: var(--ui-border-width) solid var(--ui-color-border-subtle); }
-  .ui-merchant-enchant__item-row { grid-template-columns: 40px minmax(0, 1fr) 102px; }
+  .ui-merchant-enchant__item-row { grid-template-columns: 44px minmax(0, 1fr) 112px; min-height: 58px; padding: 7px; }
+  .ui-merchant-enchant__item-row .ui-merchant-item-row__visual { width: 40px; height: 40px; }
+  .ui-merchant-enchant__pips { gap: 5px; }
 }
