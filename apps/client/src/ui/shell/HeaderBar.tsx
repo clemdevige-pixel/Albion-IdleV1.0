@@ -50,28 +50,10 @@ export function HeaderBar(): JSX.Element {
         type="button"
         className="permanent-header__location"
         onClick={navigation.returnToDashboard}
-        aria-label="Afficher la progression de zone"
+        aria-label="Afficher le tableau de bord de la zone"
       >
         <span className="permanent-header__eyebrow">Localisation</span>
         <strong title={location}>{location}</strong>
-        <span className="permanent-header__segment-row">
-          <span>Segment {String(header.segmentIndex)} / {String(header.segmentCount)}</span>
-          <span>{String(Math.round(header.zoneProgress))}%</span>
-        </span>
-        <span className="permanent-header__progress" aria-hidden="true">
-          <span style={{ width: `${String(header.zoneProgress)}%` }} />
-        </span>
-        <span className="permanent-header__segment-track" aria-hidden="true">
-          {Array.from({ length: Math.max(1, header.segmentCount) }, (_, index) => {
-            const segment = index + 1;
-            const state = segment < header.segmentIndex
-              ? "is-complete"
-              : segment === header.segmentIndex
-                ? "is-current"
-                : "";
-            return <i key={segment} className={state} />;
-          })}
-        </span>
       </button>
 
       <div className="permanent-header__economy" aria-label="Économie et progression">
