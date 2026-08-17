@@ -81,8 +81,11 @@ export function InventoryModule(): JSX.Element {
         <>
           <section className="storage-module__summary" aria-label="Capacité de l’inventaire">
             <div className="storage-module__summary-row">
-              <span>Sac du héros</span>
-              <strong>{String(inventory.occupied)} / {String(inventory.capacity)}</strong>
+              <div>
+                <small>Stockage personnel</small>
+                <span>Sac du héros</span>
+              </div>
+              <strong>{String(inventory.occupied)} <small>/ {String(inventory.capacity)}</small></strong>
             </div>
             <div className="storage-module__capacity-track" aria-hidden="true">
               <span className="storage-module__capacity-fill" style={{ width: `${String(capacityRatio)}%` }} />
@@ -90,8 +93,16 @@ export function InventoryModule(): JSX.Element {
           </section>
 
           <div className="storage-module__toolbar">
-            <button type="button" onClick={() => { actions.sort("inventory"); }}>Trier</button>
-            <span>Maj + double-clic : vers la banque</span>
+            <button
+              type="button"
+              className="storage-module__sort-button"
+              onClick={() => { actions.sort("inventory"); }}
+              aria-label="Trier l’inventaire"
+            >
+              <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
+              <span>Trier</span>
+            </button>
+            <span className="storage-module__shortcut">Maj + double-clic → banque</span>
           </div>
 
           <section className="storage-module__surface">
@@ -107,7 +118,7 @@ export function InventoryModule(): JSX.Element {
           </section>
 
           <p className="storage-module__hint">
-            Glissez-déposez pour choisir l’emplacement. Double-cliquez pour équiper ou utiliser.
+            Glissez-déposez pour organiser · double-cliquez pour équiper ou utiliser.
           </p>
 
           {contextMenu !== null && (
