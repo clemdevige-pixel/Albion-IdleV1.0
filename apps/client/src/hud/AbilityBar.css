@@ -35,6 +35,7 @@
 }
 
 .combat-action-bar__slot--ability {
+  overflow: visible;
   cursor: pointer;
 }
 
@@ -56,6 +57,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 2px;
   image-rendering: pixelated;
   pointer-events: none;
 }
