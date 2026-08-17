@@ -17,7 +17,7 @@
 
 .world-segment-strip__zone-browser {
   display: grid;
-  grid-template-columns: 40px auto 40px;
+  grid-template-columns: 34px auto 34px;
   align-items: center;
   justify-content: center;
   justify-self: center;
@@ -55,8 +55,8 @@
 
 .world-segment-strip__zone-arrow {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   place-items: center;
   justify-self: center;
@@ -243,6 +243,7 @@
   }
 
   .world-segment-strip__zone-browser {
+    grid-template-columns: 30px auto 30px;
     width: 100%;
     gap: 7px;
   }
@@ -261,8 +262,8 @@
   }
 
   .world-segment-strip__zone-arrow {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
   }
 
   .world-segment-strip__rail {
