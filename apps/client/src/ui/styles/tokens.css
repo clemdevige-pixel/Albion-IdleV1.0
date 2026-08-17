@@ -46,7 +46,7 @@
    * The world remains the dominant surface, while the right sidebar is wide
    * enough to host modules without duplicating combat information in-world. */
   --ui-shell-header-height: 64px;
-  --ui-shell-bottom-height: 58px;
+  --ui-shell-bottom-height: 116px;
   --ui-shell-panel-width: clamp(360px, 28vw, 470px);
 
   /* Typography */
