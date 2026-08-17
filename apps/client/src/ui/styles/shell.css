@@ -212,14 +212,35 @@
 
 .ui-shell__bottom .permanent-bottom-nav {
   justify-content: space-evenly;
-  gap: clamp(8px, 1.35vw, 22px);
-  padding-inline: clamp(18px, 3.5vw, 58px);
+  gap: clamp(12px, 1.6vw, 28px);
+  padding: 12px clamp(22px, 3.8vw, 64px);
 }
 
 .ui-shell__bottom .permanent-bottom-nav__item {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 176px;
+  max-width: 190px;
+  height: 78px;
+  padding: 8px 14px;
+  grid-template-columns: 44px minmax(0, auto);
+  gap: 10px;
+}
+
+.ui-shell__bottom .permanent-bottom-nav__icon,
+.ui-shell__bottom .permanent-bottom-nav__icon img {
+  width: 42px;
+  height: 42px;
+}
+
+.ui-shell__bottom .permanent-bottom-nav__label {
+  font-size: 13px;
+  letter-spacing: 0.025em;
+}
+
+.ui-shell__bottom .permanent-bottom-nav__index {
+  top: 6px;
+  right: 8px;
+  font-size: 8px;
 }
 
 .ui-right-panel {
@@ -359,11 +380,25 @@
 
   .ui-shell__bottom .permanent-bottom-nav {
     justify-content: flex-start;
-    gap: 6px;
-    padding-inline: 10px;
+    gap: 8px;
+    padding-inline: 12px;
   }
 
   .ui-shell__bottom .permanent-bottom-nav__item {
-    flex: 1 0 96px;
+    flex: 1 0 112px;
+    height: 72px;
+    padding-inline: 8px;
+    grid-template-columns: 34px minmax(0, auto);
+    gap: 7px;
+  }
+
+  .ui-shell__bottom .permanent-bottom-nav__icon,
+  .ui-shell__bottom .permanent-bottom-nav__icon img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .ui-shell__bottom .permanent-bottom-nav__label {
+    font-size: 11px;
   }
 }
