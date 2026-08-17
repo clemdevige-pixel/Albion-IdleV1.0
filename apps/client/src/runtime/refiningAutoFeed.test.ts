@@ -25,7 +25,7 @@ function createRuntime() {
 }
 
 describe("RefiningRuntime automatic feed regression", () => {
-  it("stays armed after temporary input exhaustion and restarts when storage is replenished", () => {
+  it("stops automatic refining when the next cycle cannot reserve its inputs", () => {
     const env = createRuntime();
 
     env.inventoryManager.addQuantity(env.productionStorageId, "item_resource_wood_t3", 4, {
@@ -41,7 +41,7 @@ describe("RefiningRuntime automatic feed regression", () => {
 
     expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(1);
     expect(env.runtime.isRefiningActive("Wood")).toBe(false);
-    expect(env.runtime.isAutomaticEnabled("Wood")).toBe(true);
+    expect(env.runtime.isAutomaticEnabled("Wood")).toBe(false);
 
     env.inventoryManager.addQuantity(env.productionStorageId, "item_resource_wood_t3", 4, {
       itemId: "item_resource_wood_t3",
@@ -50,19 +50,17 @@ describe("RefiningRuntime automatic feed regression", () => {
     });
 
     env.runtime.tick(7);
-    expect(env.runtime.isRefiningActive("Wood")).toBe(true);
 
-    for (let tick = 8; tick <= 13; tick += 1) env.runtime.tick(tick);
-
-    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(2);
     expect(env.runtime.isRefiningActive("Wood")).toBe(false);
-    expect(env.runtime.isAutomaticEnabled("Wood")).toBe(true);
-
-    expect(env.runtime.toggleRefiningFamily("Wood", 14).action).toBe("stopped");
     expect(env.runtime.isAutomaticEnabled("Wood")).toBe(false);
+    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_resource_wood_t3")).toBe(4);
+    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(1);
+
+    expect(env.runtime.toggleRefiningFamily("Wood", 8).action).toBe("started");
+    expect(env.runtime.isRefiningActive("Wood")).toBe(true);
   });
 
-  it("keeps simultaneous refining families isolated while one waits for replenishment", () => {
+  it("stops only the exhausted family while other refining families continue", () => {
     const env = createRuntime();
 
     env.inventoryManager.addQuantity(env.productionStorageId, "item_resource_wood_t3", 4, {
@@ -84,8 +82,9 @@ describe("RefiningRuntime automatic feed regression", () => {
     expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(1);
     expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_copper_bar_t3")).toBe(1);
     expect(env.runtime.isRefiningActive("Wood")).toBe(false);
-    expect(env.runtime.isAutomaticEnabled("Wood")).toBe(true);
+    expect(env.runtime.isAutomaticEnabled("Wood")).toBe(false);
     expect(env.runtime.isRefiningActive("Ore")).toBe(true);
+    expect(env.runtime.isAutomaticEnabled("Ore")).toBe(true);
 
     env.inventoryManager.addQuantity(env.productionStorageId, "item_resource_wood_t3", 4, {
       itemId: "item_resource_wood_t3",
@@ -94,14 +93,14 @@ describe("RefiningRuntime automatic feed regression", () => {
     });
 
     env.runtime.tick(7);
-    expect(env.runtime.isRefiningActive("Wood")).toBe(true);
+    expect(env.runtime.isRefiningActive("Wood")).toBe(false);
+    expect(env.runtime.isAutomaticEnabled("Wood")).toBe(false);
     expect(env.runtime.isRefiningActive("Ore")).toBe(true);
 
-    for (let tick = 8; tick <= 13; tick += 1) env.runtime.tick(tick);
+    for (let tick = 8; tick <= 12; tick += 1) env.runtime.tick(tick);
 
-    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(2);
+    expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_planks_t3")).toBe(1);
     expect(env.inventoryManager.getTotalQuantity(env.productionStorageId, "item_refined_copper_bar_t3")).toBe(2);
-    expect(env.runtime.isAutomaticEnabled("Wood")).toBe(true);
-    expect(env.runtime.isAutomaticEnabled("Ore")).toBe(true);
+    expect(env.runtime.isAutomaticEnabled("Ore")).toBe(false);
   });
 });
