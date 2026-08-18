@@ -22,9 +22,9 @@ export const ENCHANTMENT_RESOURCE_TIERS = [4, 5, 6, 7, 8] as const;
  * .4 is the Awakened transition and consumes 100 tier-matching fragments/shards.
  */
 export const ENCHANTMENT_SHARD_COSTS: Readonly<Record<ActiveEnchantmentLevel, number>> = {
-  1: 10,
-  2: 30,
-  3: 70,
+  1: 6,
+  2: 16,
+  3: 30,
   4: 100,
 };
 
@@ -69,8 +69,9 @@ export const ENCHANTMENT_TIER_COST_MULTIPLIERS: Readonly<Record<number, number>>
 };
 
 /**
- * Silver pricing. A 1H + off-hand package must cost exactly the same as a 2H
- * package, so each half uses 0.75 while a 2H weapon uses 1.5.
+ * Silver pricing for .1-.3. A 1H + off-hand package must cost exactly the same
+ * as a 2H package, so each half uses 0.75 while a 2H weapon uses 1.5.
+ * .4 is weapon Awakening and is resolved as a full weapon cost below.
  */
 export const ENCHANTMENT_CATEGORY_COST_MULTIPLIERS:
 Readonly<Record<EnchantmentCostCategory, number>> = {
@@ -82,9 +83,10 @@ Readonly<Record<EnchantmentCostCategory, number>> = {
 };
 
 /**
- * Combat-time/resource share for the weapon package.
+ * Combat-time/resource share for the .1-.3 weapon package.
  * 1H + off-hand = 50% + 50% = one 2H package.
  * Armor/cape keep their full per-item resource cost.
+ * .4 is weapon Awakening and is resolved as a full weapon cost below.
  */
 export const ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS:
 Readonly<Record<EnchantmentCostCategory, number>> = {
@@ -99,9 +101,9 @@ Readonly<Record<EnchantmentCostCategory, number>> = {
  * Base recipes contain the deterministic Silver step. The tier-matching shard
  * and refined craft materials are injected by scaleEnchantmentRecipe.
  *
- * .4 is not a separate craft: it is the final .3 -> .4 enchantment step.
- * Its base Silver value intentionally remains authored data and is scaled by
- * the same tier/category multipliers as .1-.3.
+ * .4 is not a normal package enchantment: it is the weapon Awakening step.
+ * Eligible 1H and 2H weapons therefore pay the same full weapon resource and
+ * Silver cost. Off-hands remain capped at .3 by authored item policy.
  */
 export const ENCHANTMENT_RECIPES: Readonly<Record<1 | 2 | 3 | 4, EnchantmentRecipe>> = {
   1: {
@@ -145,6 +147,24 @@ function scaleResourceQuantity(quantity: number, multiplier: number): number {
   return Math.max(1, Math.round(quantity * multiplier));
 }
 
+function getCategorySilverMultiplier(
+  category: EnchantmentCostCategory,
+  activeLevel: ActiveEnchantmentLevel | undefined,
+): number {
+  if (activeLevel === 4 && category === "one_handed_weapon") {
+    return ENCHANTMENT_CATEGORY_COST_MULTIPLIERS.two_handed_weapon;
+  }
+  return ENCHANTMENT_CATEGORY_COST_MULTIPLIERS[category];
+}
+
+function getCategoryResourceMultiplier(
+  category: EnchantmentCostCategory,
+  activeLevel: ActiveEnchantmentLevel | undefined,
+): number {
+  if (activeLevel === 4 && category === "one_handed_weapon") return 1;
+  return ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS[category];
+}
+
 export function scaleEnchantmentRecipe(
   recipe: EnchantmentRecipe,
   itemTier: number,
@@ -154,13 +174,13 @@ export function scaleEnchantmentRecipe(
   const tierMultiplier =
     ENCHANTMENT_TIER_COST_MULTIPLIERS[itemTier]
     ?? Math.max(1, 1 + (itemTier - 3) * 0.75);
-  const silverMultiplier =
-    tierMultiplier * ENCHANTMENT_CATEGORY_COST_MULTIPLIERS[category];
-  const resourceMultiplier = ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS[category];
   const activeLevel =
     recipe.toLevel >= 1 && recipe.toLevel <= 4
       ? recipe.toLevel as ActiveEnchantmentLevel
       : undefined;
+  const silverMultiplier =
+    tierMultiplier * getCategorySilverMultiplier(category, activeLevel);
+  const resourceMultiplier = getCategoryResourceMultiplier(category, activeLevel);
 
   return {
     ...recipe,
