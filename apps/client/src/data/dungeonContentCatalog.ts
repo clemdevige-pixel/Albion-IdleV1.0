@@ -7,6 +7,7 @@ import type { AuthoredEnemyCombatProfile } from "../runtime/combatEntityFactory.
 export const FACTION_T4_COMBAT_PROFILE_ID = "dungeon_combat_faction_t4";
 export const FACTION_T5_COMBAT_PROFILE_ID = "dungeon_combat_faction_t5";
 export const FACTION_T6_COMBAT_PROFILE_ID = "dungeon_combat_faction_t6";
+export const FACTION_T7_COMBAT_PROFILE_ID = "dungeon_combat_faction_t7";
 
 export const KEEPER_T4_DUNGEON_ID = "dungeon_keeper_t4";
 export const HERETIC_T4_DUNGEON_ID = "dungeon_heretic_t4";
@@ -20,6 +21,10 @@ export const KEEPER_T6_DUNGEON_ID = "dungeon_keeper_t6";
 export const HERETIC_T6_DUNGEON_ID = "dungeon_heretic_t6";
 export const UNDEAD_T6_DUNGEON_ID = "dungeon_undead_t6";
 export const MORGANA_T6_DUNGEON_ID = "dungeon_morgana_t6";
+export const KEEPER_T7_DUNGEON_ID = "dungeon_keeper_t7";
+export const HERETIC_T7_DUNGEON_ID = "dungeon_heretic_t7";
+export const UNDEAD_T7_DUNGEON_ID = "dungeon_undead_t7";
+export const MORGANA_T7_DUNGEON_ID = "dungeon_morgana_t7";
 
 export const KEEPER_T4_LOOT_TABLE_ID = "dungeon_loot_keeper_t4";
 export const HERETIC_T4_LOOT_TABLE_ID = "dungeon_loot_heretic_t4";
@@ -33,6 +38,10 @@ export const KEEPER_T6_LOOT_TABLE_ID = "dungeon_loot_keeper_t6";
 export const HERETIC_T6_LOOT_TABLE_ID = "dungeon_loot_heretic_t6";
 export const UNDEAD_T6_LOOT_TABLE_ID = "dungeon_loot_undead_t6";
 export const MORGANA_T6_LOOT_TABLE_ID = "dungeon_loot_morgana_t6";
+export const KEEPER_T7_LOOT_TABLE_ID = "dungeon_loot_keeper_t7";
+export const HERETIC_T7_LOOT_TABLE_ID = "dungeon_loot_heretic_t7";
+export const UNDEAD_T7_LOOT_TABLE_ID = "dungeon_loot_undead_t7";
+export const MORGANA_T7_LOOT_TABLE_ID = "dungeon_loot_morgana_t7";
 
 /** @deprecated T4 faction dungeons now share one authored combat profile. */
 export const KEEPER_T4_COMBAT_PROFILE_ID = FACTION_T4_COMBAT_PROFILE_ID;
@@ -61,12 +70,11 @@ const FACTION_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
 ];
 
 /**
- * T6 keeps the same HP/defense optimization wall but trims raw incoming damage.
- * Ashenpeak already requires T6.3 + sustain, and dungeon HP/cooldowns persist
- * across all five encounters. The intended boundary is therefore full T6.3 +
- * meaningful mastery + potions, without changing the validated Orange curve.
+ * High-tier faction dungeons keep the optimization wall while trimming raw
+ * incoming damage because world-end bosses are already sustain checks and the
+ * dungeon runtime persists HP/cooldowns across all five encounters.
  */
-const FACTION_T6_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
+const HIGH_TIER_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
   { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
   { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.0, defense: 1.06 },
@@ -82,13 +90,17 @@ const FACTION_T5_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
   id: FACTION_T5_COMBAT_PROFILE_ID, bandId: "yellow", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS,
 };
 const FACTION_T6_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4, steps: FACTION_T6_DUNGEON_PRESSURE_STEPS,
+  id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS,
+};
+const FACTION_T7_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
+  id: FACTION_T7_COMBAT_PROFILE_ID, bandId: "red", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS,
 };
 
 const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefinition>> = {
   [FACTION_T4_COMBAT_PROFILE.id]: FACTION_T4_COMBAT_PROFILE,
   [FACTION_T5_COMBAT_PROFILE.id]: FACTION_T5_COMBAT_PROFILE,
   [FACTION_T6_COMBAT_PROFILE.id]: FACTION_T6_COMBAT_PROFILE,
+  [FACTION_T7_COMBAT_PROFILE.id]: FACTION_T7_COMBAT_PROFILE,
 };
 
 interface FactionDungeonRoster {
@@ -106,7 +118,7 @@ const FACTION_DUNGEON_ROSTERS = {
   morgana: { faction: "Morgana", normalA: MONSTER_IDS.morganaWitch, normalB: MONSTER_IDS.morganaSuppressor, elite: MONSTER_IDS.morganaDarkKnight, boss: MONSTER_IDS.morganaHighPriestess },
 } as const satisfies Readonly<Record<string, FactionDungeonRoster>>;
 
-type AuthoredDungeonTier = 4 | 5 | 6;
+type AuthoredDungeonTier = 4 | 5 | 6 | 7;
 
 function createFactionDungeon(input: {
   readonly id: string;
@@ -141,11 +153,16 @@ export const KEEPER_T6_DUNGEON = createFactionDungeon({ id: KEEPER_T6_DUNGEON_ID
 export const HERETIC_T6_DUNGEON = createFactionDungeon({ id: HERETIC_T6_DUNGEON_ID, tier: 6, combatProfileId: FACTION_T6_COMBAT_PROFILE_ID, lootTableId: HERETIC_T6_LOOT_TABLE_ID, roster: FACTION_DUNGEON_ROSTERS.heretic, slug: "heretic" });
 export const UNDEAD_T6_DUNGEON = createFactionDungeon({ id: UNDEAD_T6_DUNGEON_ID, tier: 6, combatProfileId: FACTION_T6_COMBAT_PROFILE_ID, lootTableId: UNDEAD_T6_LOOT_TABLE_ID, roster: FACTION_DUNGEON_ROSTERS.undead, slug: "undead" });
 export const MORGANA_T6_DUNGEON = createFactionDungeon({ id: MORGANA_T6_DUNGEON_ID, tier: 6, combatProfileId: FACTION_T6_COMBAT_PROFILE_ID, lootTableId: MORGANA_T6_LOOT_TABLE_ID, roster: FACTION_DUNGEON_ROSTERS.morgana, slug: "morgana" });
+export const KEEPER_T7_DUNGEON = createFactionDungeon({ id: KEEPER_T7_DUNGEON_ID, tier: 7, combatProfileId: FACTION_T7_COMBAT_PROFILE_ID, lootTableId: KEEPER_T7_LOOT_TABLE_ID, roster: FACTION_DUNGEON_ROSTERS.keeper, slug: "keeper" });
+export const HERETIC_T7_DUNGEON = createFactionDungeon({ id: HERETIC_T7_DUNGEON_ID, tier: 7, combatProfileId: FACTION_T7_COMBAT_PROFILE_ID, lootTableId: HERETIC_T7_LOOT_TABLE_ID, roster: FACTION_DUNGEON_ROSTERS.heretic, slug: "heretic" });
+export const UNDEAD_T7_DUNGEON = createFactionDungeon({ id: UNDEAD_T7_DUNGEON_ID, tier: 7, combatProfileId: FACTION_T7_COMBAT_PROFILE_ID, lootTableId: UNDEAD_T7_LOOT_TABLE_ID, roster: FACTION_DUNGEON_ROSTERS.undead, slug: "undead" });
+export const MORGANA_T7_DUNGEON = createFactionDungeon({ id: MORGANA_T7_DUNGEON_ID, tier: 7, combatProfileId: FACTION_T7_COMBAT_PROFILE_ID, lootTableId: MORGANA_T7_LOOT_TABLE_ID, roster: FACTION_DUNGEON_ROSTERS.morgana, slug: "morgana" });
 
 export const DUNGEON_DEFINITIONS = [
   KEEPER_T4_DUNGEON, HERETIC_T4_DUNGEON, UNDEAD_T4_DUNGEON, MORGANA_T4_DUNGEON,
   KEEPER_T5_DUNGEON, HERETIC_T5_DUNGEON, UNDEAD_T5_DUNGEON, MORGANA_T5_DUNGEON,
   KEEPER_T6_DUNGEON, HERETIC_T6_DUNGEON, UNDEAD_T6_DUNGEON, MORGANA_T6_DUNGEON,
+  KEEPER_T7_DUNGEON, HERETIC_T7_DUNGEON, UNDEAD_T7_DUNGEON, MORGANA_T7_DUNGEON,
 ] as const;
 
 const DUNGEON_DEFINITION_BY_ID: Readonly<Record<string, DungeonDefinition>> = Object.fromEntries(DUNGEON_DEFINITIONS.map((definition) => [definition.id, definition]));
