@@ -21,6 +21,7 @@
     "validate:data": "tsx packages/tooling/src/bin/validate-data.ts",
     "validate:assets": "tsx packages/tooling/src/bin/validate-assets.ts",
     "benchmark:weapon-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-weapon-role-world-sweep.ts",
+    "benchmark:boss-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-role-telemetry.ts",
     "clean": "tsc -b --clean"
   },
   "devDependencies": {
