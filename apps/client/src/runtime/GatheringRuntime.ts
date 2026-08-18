@@ -1,4 +1,3 @@
-import { getProductionRefiningRecipe } from "../data/refiningRecipes.js";
 import type { EntityId } from "@game/core";
 import type {
   ExperienceService,
@@ -16,7 +15,6 @@ import type {
 import { asGatheringSessionId } from "@game/gameplay";
 import {
 getProductionFamilyByGameplayFamily,
-getProductionFamilyId,
 getProductionTierRules,
 PRODUCTION_FAMILIES,
 requireProductionTierPresentation,
@@ -89,6 +87,7 @@ export interface GatheringCompletionEvent {
 export interface GatheringTierContent {
   readonly nodeId: ResourceNodeId;
   readonly tool: GatheringToolDefinition;
+  readonly rawItemId: string;
 }
 
 export type GatheringNodesAndTools = Readonly<
@@ -206,11 +205,7 @@ export class GatheringRuntime {
     masteryId: catalogDefinition.masteryId,
     getNodeId: (tier) => requireTierContent(family, tier).nodeId,
     getTool: (tier) => requireTierContent(family, tier).tool,
-    getRawItemId: (tier) =>
-      getProductionRefiningRecipe(
-        getProductionFamilyId(family),
-        tier,
-      ).rawItemId,
+    getRawItemId: (tier) => requireTierContent(family, tier).rawItemId,
   };
 
   return [family, runtimeDefinition] as const;
