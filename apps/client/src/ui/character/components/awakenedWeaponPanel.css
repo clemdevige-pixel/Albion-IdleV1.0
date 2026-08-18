@@ -17,6 +17,10 @@
   gap: 8px;
 }
 
+.character-module__awakening-heading-row .character-module__equipment-heading small {
+  margin-left: 8px;
+}
+
 .character-module__awakening .character-module__equipment-heading small {
   color: var(--ui-color-text-muted);
   font-size: 9px;
@@ -113,7 +117,7 @@
 .character-module__awakening-roll-info dt,
 .character-module__awakening-roll-info dd {
   margin: 0;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .character-module__awakening-roll-info dt {
