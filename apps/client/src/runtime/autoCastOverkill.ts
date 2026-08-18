@@ -31,6 +31,12 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
   const health = deps.damageManager.getHealth(deps.targetId);
   if (health.currentHealth <= 0) return true;
 
+  // A setup-gated payoff is only available while its authored effect window is
+  // active. Once that condition is satisfied, preserving the combo contract is
+  // more important than generic overkill conservation. The auto-rule itself
+  // already prevents these abilities from firing outside their setup window.
+  if (deps.definition.mechanics.autoRule?.kind === "target_has_effect") return false;
+
   const physicalDamage = deps.statsManager.getStat(deps.heroId, PHYSICAL_DAMAGE).computed;
   const magicalDamage = deps.statsManager.getStat(deps.heroId, MAGICAL_DAMAGE).computed;
   const abilityPower = deps.statsManager.getStat(deps.heroId, ABILITY_POWER).computed;
