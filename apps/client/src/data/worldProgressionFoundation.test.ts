@@ -33,7 +33,7 @@ describe("world progression foundation", () => {
     ]);
   });
 
-  it("registers the authored Yellow, Orange and Red worlds without populating Black", () => {
+  it("registers the authored Yellow, Orange, Red and Black worlds", () => {
     expect(WORLD_ZONE_IDS_BY_BAND.yellow).toEqual([
       WORLD_ZONE_IDS.amberwood,
       WORLD_ZONE_IDS.gloamfen,
@@ -55,7 +55,13 @@ describe("world progression foundation", () => {
       WORLD_ZONE_IDS.crimsonSteppe,
       WORLD_ZONE_IDS.doompeak,
     ]);
-    expect(WORLD_ZONE_IDS_BY_BAND.black).toEqual([]);
+    expect(WORLD_ZONE_IDS_BY_BAND.black).toEqual([
+      WORLD_ZONE_IDS.blackwood,
+      WORLD_ZONE_IDS.shadowfen,
+      WORLD_ZONE_IDS.obsidianHighlands,
+      WORLD_ZONE_IDS.duskfallSteppe,
+      WORLD_ZONE_IDS.blackspire,
+    ]);
   });
 
   it("keeps the validated Blue progression inside its equipment checkpoints", () => {
