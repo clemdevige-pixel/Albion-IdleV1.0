@@ -34,17 +34,18 @@ describe("production tier content contract", () => {
   it("keeps worker/full production rollout independent from refining and crafting rollout", () => {
     expect(PRODUCTION_CONTENT_TIERS).toEqual([3, 4, 5]);
     expect(REFINING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7, 8]);
-    expect(CRAFTING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7]);
+    expect(CRAFTING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7, 8]);
   });
 
-  it("exposes conventional T7 weapon and armor recipes with T6 predecessors", () => {
+  it("exposes conventional T8 weapon and armor recipes with T7 predecessors", () => {
     const highestCraftingTier = Math.max(...CRAFTING_CONTENT_TIERS);
     const recipes = EQUIPMENT_CRAFT_RECIPES.filter((recipe) => recipe.tier === highestCraftingTier);
-    expect(highestCraftingTier).toBe(7);
-    expect(recipes.map((recipe) => recipe.outputItemId)).toEqual(expect.arrayContaining(["item_weapon_sword_t7_broadsword", "item_weapon_bow_t7_longbow", "item_weapon_staff_t7_infernal", "item_weapon_gloves_t7_spiked_gauntlets", "item_weapon_dagger_t7_pair", "item_shield_t7_reinforced", "item_helmet_t7_reinforced", "item_armor_t7_leather", "item_boots_t7_leather"]));
+    expect(highestCraftingTier).toBe(8);
+    expect(recipes.map((recipe) => recipe.outputItemId)).toEqual(expect.arrayContaining(["item_weapon_sword_t8_broadsword", "item_weapon_bow_t8_longbow", "item_weapon_staff_t8_infernal", "item_weapon_gloves_t8_spiked_gauntlets", "item_weapon_dagger_t8_pair", "item_shield_t8_reinforced", "item_helmet_t8_reinforced", "item_armor_t8_leather", "item_boots_t8_leather"]));
     expect(recipes).toHaveLength(9);
     for (const recipe of recipes) {
-      expect(recipe.requirements.some((entry) => entry.itemId.includes("_t6_") || entry.itemId.endsWith("_t6")), `${recipe.outputItemId} should consume its T6 predecessor`).toBe(true);
+      expect(recipe.requirements.some((entry) => entry.itemId.includes("_t7_") || entry.itemId.endsWith("_t7")), `${recipe.outputItemId} should consume its T7 predecessor`).toBe(true);
+      expect(recipe.requirements.some((entry) => entry.itemId.startsWith("item_refined_") && entry.itemId.endsWith("_t8")), `${recipe.outputItemId} should consume T8 refined materials`).toBe(true);
     }
   });
 });
