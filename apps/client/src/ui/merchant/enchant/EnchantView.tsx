@@ -13,8 +13,8 @@ const MAX_ENCHANTMENT_LEVEL = 4;
 
 const FAILURE_MESSAGES: Readonly<Record<string, string>> = {
   combat_active: "Arrêtez le combat et attendez la fin du segment avant d’enchanter.",
-  level_reserved: "Le niveau .4 est réservé à une mécanique ultérieure.",
-  maximum_level_reached: "Niveau maximal d’enchantement atteint (.4).",
+  level_reserved: "Ce niveau d’enchantement n’est pas disponible pour cet équipement.",
+  maximum_level_reached: "Niveau maximal d’enchantement atteint.",
   insufficient_silver: "Silver insuffisant.",
   insufficient_materials: "Ressources insuffisantes.",
   inventory_full: "Inventaire plein.",
