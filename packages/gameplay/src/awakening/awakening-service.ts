@@ -4,6 +4,7 @@ import type { ItemInstanceId } from "../inventory/types.js";
 import { DEFAULT_AWAKENED_WEAPON_BALANCE } from "./balance.js";
 import {
   deriveAwakenedWeaponState,
+  getEffectiveCooldownReductionPercent,
   getEligibleAwakenedTraits,
   rollAwakenedTrait,
 } from "./calculations.js";
@@ -17,6 +18,7 @@ import type {
   AwakenedTraitId,
   AwakenedTraitOffer,
   AwakenedWeaponBalance,
+  AwakenedWeaponDerivedState,
   AwakenedWeaponState,
   AwakenedWeaponTier,
 } from "./types.js";
@@ -64,6 +66,18 @@ export class AwakenedWeaponService {
 
   getState(itemInstanceId: ItemInstanceId): AwakenedWeaponState | undefined {
     return this.states.get(itemInstanceId);
+  }
+
+  getDerivedState(itemInstanceId: ItemInstanceId): AwakenedWeaponDerivedState | undefined {
+    const state = this.states.get(itemInstanceId);
+    return state === undefined ? undefined : deriveAwakenedWeaponState(state, this.balance);
+  }
+
+  /** Returns the player-facing value for a stored trait value. */
+  getDisplayTraitValue(traitId: AwakenedTraitId, value: number): number {
+    return traitId === "cooldown_reduction"
+      ? getEffectiveCooldownReductionPercent(value, this.balance)
+      : value;
   }
 
   listStates(): readonly AwakenedWeaponState[] {
