@@ -1,4 +1,5 @@
 import {
+  AwakenedWeaponService,
   CurrencyRegistry,
   CurrencyService,
   DurabilityStore,
@@ -30,7 +31,7 @@ interface EconomyFoundationDependencies {
   readonly equipmentManager: EquipmentManager;
 }
 
-/** Framework-agnostic currency, vendor, durability and repair assembly. */
+/** Framework-agnostic currency, vendor, durability, repair and awakened-weapon assembly. */
 export function createEconomyFoundation({
   inventoryManager,
   equipmentManager,
@@ -42,7 +43,7 @@ export function createEconomyFoundation({
     minValue: 0,
     maxValue: null,
     acquisitionSources: ["Loot", "VendorSale", "Quest"],
-    spendingSources: ["Vendor", "Building", "Craft", "Worker"],
+    spendingSources: ["Vendor", "Building", "Craft", "Worker", "Awakening"],
   });
 
   const currencyService = new CurrencyService(currencyRegistry);
@@ -50,6 +51,11 @@ export function createEconomyFoundation({
   const walletId = asWalletId("wallet_1");
   currencyService.createWallet(walletId, playerId);
   currencyService.credit(walletId, "currency_silver", 1000, "Loot");
+
+  const awakenedWeaponService = new AwakenedWeaponService(currencyService, {
+    silverCurrencyId: "currency_silver",
+    silverSpendSource: "Awakening",
+  });
 
   const durabilityStore = new DurabilityStore();
   const repairStationRegistry = new RepairStationRegistry();
@@ -104,6 +110,7 @@ export function createEconomyFoundation({
   return {
     currencyRegistry,
     currencyService,
+    awakenedWeaponService,
     playerId,
     walletId,
     durabilityStore,
