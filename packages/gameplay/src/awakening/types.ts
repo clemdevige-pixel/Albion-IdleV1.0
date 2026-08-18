@@ -37,8 +37,8 @@ export interface AwakenedWeaponBalance {
   readonly strainPerModification: number;
   readonly attunementStrainLinearCoefficient: number;
   readonly attunementStrainQuadraticCoefficient: number;
-  readonly silverStrainDivisor: number;
-  readonly silverStrainExponent: number;
+  readonly silverStrainLinearCoefficient: number;
+  readonly silverStrainQuadraticCoefficient: number;
   readonly cdrAsymptotePercent: number;
   readonly cdrCurveConstant: number;
 }
