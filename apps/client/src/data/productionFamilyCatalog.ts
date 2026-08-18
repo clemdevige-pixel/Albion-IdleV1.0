@@ -16,7 +16,7 @@ export const GATHERING_CONTENT_TIERS = [3, 4, 5, 6, 7, 8] as const satisfies rea
 export type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
 
 /** Tiers whose refining recipes are authored. */
-export const REFINING_CONTENT_TIERS = [3, 4, 5, 6, 7] as const satisfies readonly ProductionTier[];
+export const REFINING_CONTENT_TIERS = [3, 4, 5, 6, 7, 8] as const satisfies readonly ProductionTier[];
 export type RefiningContentTier = (typeof REFINING_CONTENT_TIERS)[number];
 
 /** Tiers whose conventional equipment crafting content is authored. */
