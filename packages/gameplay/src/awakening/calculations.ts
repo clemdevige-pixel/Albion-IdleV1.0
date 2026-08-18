@@ -34,8 +34,13 @@ export function getAwakenedAttunementCap(
   balance: AwakenedWeaponBalance,
 ): number {
   const initialCap = balance.tiers[state.tier].initialAttunementCap;
+  const strain = Math.max(0, state.strain);
+  const strainScaledCap = initialCap * (1 + strain * balance.attunementCapGrowthPerStrain);
   const nextCost = getAwakenedActionCost(state, balance).attunement;
-  return roundCurrency(Math.max(initialCap, nextCost * balance.attunementCapCostMultiplier));
+  return roundCurrency(Math.max(
+    strainScaledCap,
+    nextCost * balance.attunementCapCostMultiplier,
+  ));
 }
 
 export function getUnlockedAwakenedTraitSlots(
