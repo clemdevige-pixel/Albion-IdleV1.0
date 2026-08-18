@@ -68,13 +68,31 @@ export const ENCHANTMENT_TIER_COST_MULTIPLIERS: Readonly<Record<number, number>>
   8: 5,
 };
 
+/**
+ * Silver pricing. A 1H + off-hand package must cost exactly the same as a 2H
+ * package, so each half uses 0.75 while a 2H weapon uses 1.5.
+ */
 export const ENCHANTMENT_CATEGORY_COST_MULTIPLIERS:
 Readonly<Record<EnchantmentCostCategory, number>> = {
-  one_handed_weapon: 1,
+  one_handed_weapon: 0.75,
   two_handed_weapon: 1.5,
   off_hand: 0.75,
   armor: 0.8,
   cape: 0.7,
+};
+
+/**
+ * Combat-time/resource share for the weapon package.
+ * 1H + off-hand = 50% + 50% = one 2H package.
+ * Armor/cape keep their full per-item resource cost.
+ */
+export const ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS:
+Readonly<Record<EnchantmentCostCategory, number>> = {
+  one_handed_weapon: 0.5,
+  two_handed_weapon: 1,
+  off_hand: 0.5,
+  armor: 1,
+  cape: 1,
 };
 
 /**
@@ -123,6 +141,10 @@ export function getNextEnchantmentRecipe(
   return ENCHANTMENT_RECIPES[(currentLevel + 1) as 1 | 2 | 3 | 4];
 }
 
+function scaleResourceQuantity(quantity: number, multiplier: number): number {
+  return Math.max(1, Math.round(quantity * multiplier));
+}
+
 export function scaleEnchantmentRecipe(
   recipe: EnchantmentRecipe,
   itemTier: number,
@@ -132,8 +154,9 @@ export function scaleEnchantmentRecipe(
   const tierMultiplier =
     ENCHANTMENT_TIER_COST_MULTIPLIERS[itemTier]
     ?? Math.max(1, 1 + (itemTier - 3) * 0.75);
-  const multiplier =
+  const silverMultiplier =
     tierMultiplier * ENCHANTMENT_CATEGORY_COST_MULTIPLIERS[category];
+  const resourceMultiplier = ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS[category];
   const activeLevel =
     recipe.toLevel >= 1 && recipe.toLevel <= 4
       ? recipe.toLevel as ActiveEnchantmentLevel
@@ -142,25 +165,26 @@ export function scaleEnchantmentRecipe(
   return {
     ...recipe,
     silverCost: recipe.enabled
-      ? Math.max(1, Math.round(recipe.silverCost * multiplier))
+      ? Math.max(1, Math.round(recipe.silverCost * silverMultiplier))
       : recipe.silverCost,
     materials: [
       ...(activeLevel === undefined
         ? []
         : [{
             itemId: getEnchantmentShardItemId(itemTier),
-            // Tier shards encode combat time and never cross-pay another tier.
-            // Quantity is authored per enchantment step, independently of
-            // weapon category and tier.
-            quantity: ENCHANTMENT_SHARD_COSTS[activeLevel],
+            quantity: scaleResourceQuantity(
+              ENCHANTMENT_SHARD_COSTS[activeLevel],
+              resourceMultiplier,
+            ),
           }]),
       ...(activeLevel === undefined
         ? []
         : craftMaterials.map((material) => ({
             ...material,
-            quantity:
-              material.quantity
-              * ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS[activeLevel],
+            quantity: scaleResourceQuantity(
+              material.quantity * ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS[activeLevel],
+              resourceMultiplier,
+            ),
           }))),
     ],
   };
