@@ -88,7 +88,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   if (state === undefined || derived === undefined || equippedWeaponInstanceId === undefined) {
     return (
       <section className="character-module__awakening" aria-label="Éveil de l'arme">
-        <div className="character-module__equipment-heading"><span>Éveil .4</span></div>
+        <div className="character-module__equipment-heading"><span>Éveil de l'arme</span></div>
         <p className="character-module__awakening-empty">
           L'état d'éveil de cette arme .4 est indisponible. Rééquipe l'arme ou recharge la sauvegarde.
         </p>
@@ -122,7 +122,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
           id: `notif_awakening_failed_${String(Date.now())}`,
           type: "error",
           message: result.reason === "awakening_threshold_not_reached"
-            ? "Attunement insuffisant pour éveiller cette arme."
+            ? "Harmonisation insuffisante pour éveiller cette arme."
             : "Impossible d'éveiller cette arme dans l'état actuel.",
           timestamp: Date.now(),
         });
@@ -141,12 +141,12 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
     return (
       <section className="character-module__awakening" aria-label="Éveil de l'arme">
         <div className="character-module__equipment-heading">
-          <span>Éveil .4</span>
+          <span>Éveil de l'arme</span>
           <small>Non éveillée</small>
         </div>
         <div className="character-module__awakening-summary">
           <div>
-            <span>Attunement d'éveil</span>
+            <span>Harmonisation d'éveil</span>
             <strong>{formatNumber(state.storedAttunement, 0)} / {formatNumber(derived.awakeningAttunementThreshold, 0)}</strong>
           </div>
           <div>
@@ -155,7 +155,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
           </div>
         </div>
         <p className="character-module__awakening-empty">
-          Équipe cette arme .4 et gagne de la Fame PvE éligible pour charger son Attunement, puis éveille-la pour débloquer les traits.
+          Équipe cette arme .4 et gagne de la Fame PvE éligible pour charger son Harmonisation, puis éveille-la pour débloquer les traits.
         </p>
         <button
           type="button"
@@ -196,13 +196,13 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
     <section className="character-module__awakening" aria-label="Éveil de l'arme">
       <div className="character-module__awakening-heading-row">
         <div className="character-module__equipment-heading">
-          <span>Éveil .4</span>
+          <span>Éveil de l'arme</span>
           <small>Strain {String(state.strain)}</small>
         </div>
         <button
           type="button"
           className="character-module__awakening-info-button"
-          aria-label="Voir les plages de roll des traits"
+          aria-label="Voir les plages de lancement des traits"
           aria-expanded={showRollInfo}
           onClick={() => { setShowRollInfo((value) => !value); }}
         >
@@ -213,9 +213,9 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
       {showRollInfo && (
         <div className="character-module__awakening-roll-info">
           <div>
-            <strong>Rolls possibles</strong>
+            <strong>Lancements possibles</strong>
             <small>
-              Crit amélioration : {formatNumber(services.awakenedWeaponService.getCriticalChance() * 100, 0)}% · ×2. Aucun crit au choix/reroll.
+              Crit amélioration : {formatNumber(services.awakenedWeaponService.getCriticalChance() * 100, 0)}% · ×2.
             </small>
           </div>
           <dl>
@@ -238,7 +238,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
 
       <div className="character-module__awakening-summary">
         <div>
-          <span>Attunement</span>
+          <span>Harmonisation</span>
           <strong>{formatNumber(state.storedAttunement, 0)} / {formatNumber(derived.attunementCap, 0)}</strong>
         </div>
         <div>
@@ -246,8 +246,8 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
           <strong>{formatNumber(state.lifetimeAttunementInvested, 0)}</strong>
         </div>
         <div>
-          <span>Prochain Awake</span>
-          <strong>{formatNumber(actionCost.attunement, 0)} Att. · {formatNumber(actionCost.silver, 0)} Silver</strong>
+          <span>Prochain éveil</span>
+          <strong>{formatNumber(actionCost.attunement, 0)} Harm. · {formatNumber(actionCost.silver, 0)} Silver</strong>
         </div>
       </div>
 
@@ -283,7 +283,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
                         Améliorer
                       </button>
                       <button type="button" onClick={() => { setConfirmation({ kind: "offer", targetIndex: index }); }}>
-                        Reroll
+                        Relance
                       </button>
                     </>
                   )}
@@ -297,7 +297,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
       {offer !== undefined && (
         <div className="character-module__awakening-offer">
           <div>
-            <small>{offer.kind === "fill" ? "Choisissez votre trait" : `Reroll du trait ${String(offer.targetIndex + 1)}`}</small>
+            <small>{offer.kind === "fill" ? "Choisissez votre trait" : `Relance du trait ${String(offer.targetIndex + 1)}`}</small>
             <strong>Propositions</strong>
           </div>
           <div className="character-module__awakening-proposals">
@@ -339,18 +339,18 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
           balance={bridge.wallet.silver}
           valueLabel="Coût Silver"
           additionalConfirmCondition={confirmation.kind === "reset" || canPayAttunement}
-          blockedMessage="Attunement insuffisant"
+          blockedMessage="Harmonisation insuffisante"
           confirmLabel={confirmation.kind === "reset" ? "Réinitialiser" : "Confirmer"}
           onConfirm={confirmAction}
           onCancel={() => { setConfirmation(null); }}
         >
           {confirmation.kind === "reset" ? (
             <p>
-              Tous les traits, leur progression, la Strain et l'Attunement seront perdus. L'arme restera .4 et devra être éveillée à nouveau.
+              Tous les traits, leur progression, la Strain et l'Harmonisation seront perdus. L'arme restera .4 et devra être éveillée à nouveau.
             </p>
           ) : (
             <p>
-              Coût : <strong>{formatNumber(actionCost.attunement, 0)} Attunement</strong>. La Strain passera de {String(state.strain)} à {String(state.strain + 1)}.
+              Coût : <strong>{formatNumber(actionCost.attunement, 0)} Harmonisation</strong>. La Strain passera de {String(state.strain)} à {String(state.strain + 1)}.
             </p>
           )}
         </TransactionConfirmModal>
