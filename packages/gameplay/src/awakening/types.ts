@@ -35,10 +35,8 @@ export interface AwakenedWeaponBalance {
   readonly criticalChance: number;
   readonly criticalMultiplier: number;
   readonly strainPerModification: number;
-  readonly attunementStrainLinearCoefficient: number;
-  readonly attunementStrainQuadraticCoefficient: number;
-  readonly silverStrainLinearCoefficient: number;
-  readonly silverStrainQuadraticCoefficient: number;
+  readonly attunementGrowthPerStrain: number;
+  readonly silverGrowthPerStrain: number;
   readonly cdrAsymptotePercent: number;
   readonly cdrCurveConstant: number;
 }
