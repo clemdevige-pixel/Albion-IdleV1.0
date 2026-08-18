@@ -35,13 +35,14 @@ A successful .3 -> .4 commit immediately registers a fresh, UNAWAKENED weapon st
 
 ## 2. CORE LOOP
 
-.4 acquisition -> eligible PvE Fame -> stored Attunement -> reach initial Awakening threshold -> Awaken Weapon -> spend Attunement + Silver on trait actions -> gain Strain -> future costs rise.
+.4 acquisition -> eligible PvE Fame -> stored Attunement -> reach initial Awakening threshold -> spend that Attunement to Awaken Weapon -> spend Attunement + Silver on trait actions -> gain Strain -> future costs and storage rise.
 
 Baseline conversion:
 - 1 eligible PvE Fame = 1 Attunement.
 - Fame continues to feed its normal systems independently.
 - Attunement earned while the weapon storage is full is not banked beyond the cap.
 - A weapon of tier Tn only gains Attunement from eligible PvE content of tier >= n.
+- Fame Bonus increases progression/mastery Fame only. It NEVER increases Attunement gain; Attunement always uses raw eligible PvE Fame.
 
 The weapon tracks separately:
 - Awakened / unawakened state;
@@ -57,14 +58,20 @@ A freshly acquired .4 weapon must first accumulate a minimum amount of Attunemen
 
 Baseline thresholds:
 
-Tier | Awakening threshold
+Tier | Awakening threshold / cost
 T4.4 | 5,000
 T5.4 | 10,000
 T6.4 | 15,000
 T7.4 | 20,000
 T8.4 | 25,000
 
-The threshold is a requirement, not a modification cost. Reaching it enables the explicit Awaken Weapon action. Awakening itself does not add Strain and does not consume Silver.
+Reaching the threshold enables the explicit Awaken Weapon action. Confirming Awakening CONSUMES exactly the tier threshold from stored Attunement and records that amount as lifetime Attunement invested.
+
+Awakening itself:
+- consumes no Silver;
+- adds no Strain;
+- consumes the required Attunement;
+- unlocks access to trait actions.
 
 Before Awakening:
 - Attunement can be earned and stored normally;
@@ -73,7 +80,7 @@ Before Awakening:
 
 ## 4. ATTUNEMENT STORAGE
 
-Baseline initial caps remain:
+Baseline initial caps:
 
 Tier | Initial cap
 T4.4 | 15,000
@@ -82,11 +89,21 @@ T6.4 | 35,000
 T7.4 | 38,000
 T8.4 | 40,000
 
-Dynamic storage rule:
+The maximum storage increases after every trait modification because every modification adds Strain.
 
-AttunementCap = max(InitialCap, NextAttunementCost * 1.5)
+Baseline dynamic storage rule:
 
-The multiplier 1.5 is data-driven.
+StrainScaledCap = InitialCap * (1 + Strain * 0.025)
+AttunementCap = max(StrainScaledCap, NextAttunementCost * 1.5)
+
+Therefore each +1 Strain adds storage equal to 2.5% of the tier's initial cap:
+- T4: +375 capacity per Strain;
+- T5: +700 capacity per Strain;
+- T6: +875 capacity per Strain;
+- T7: +950 capacity per Strain;
+- T8: +1,000 capacity per Strain.
+
+The 2.5% growth and x1.5 next-cost safeguard are data-driven.
 The next cost must be the real cost at the weapon's current Strain, not the tier base cost.
 
 ## 5. TRAIT SLOTS
@@ -104,7 +121,7 @@ Trait slot thresholds are data-driven.
 
 ## 6. TRAIT POOL
 
-Exactly 7 trait types are currently validated:
+Exactly 8 trait types are currently validated:
 
 1. Item Power (IP)
 2. Damage
@@ -113,10 +130,13 @@ Exactly 7 trait types are currently validated:
 5. Max HP
 6. Armor
 7. Magic Resistance (MR)
+8. Fame Bonus
 
 Attack Speed is explicitly excluded from the awakened trait pool.
 
 Duplicate traits on one weapon are forbidden. When selecting/rerolling a slot, traits already occupying other slots are excluded from the eligible pool.
+
+Fame Bonus applies to progression/mastery Fame earned while the awakened .4 weapon is equipped. It does not modify Attunement gain and therefore cannot accelerate its own Awakening progression.
 
 ## 7. BASELINE TRAIT ROLLS
 
@@ -130,6 +150,7 @@ CDR progression | +0.5 to +1 internal progression
 Max HP | +3 to +6 HP
 Armor | +0.5 to +1.0 Armor
 Magic Resistance | +0.5 to +1.0 MR
+Fame Bonus | +0.5% to +1.0% Fame
 
 Percentage rolls may be continuous values. IP is integer-valued.
 HP, Armor and MR are flat values, not percentage modifiers.
@@ -149,6 +170,8 @@ Critical Attunement:
 - does not change future roll ranges.
 
 Critical Attunement NEVER applies while choosing a trait for an empty slot and NEVER applies while choosing a replacement trait during a reroll. Trait-selection proposals always display and grant their normal base roll.
+
+Fame Bonus follows the same critical rule as other traits: no critical on selection/reroll, but improvements can critically double the rolled Fame Bonus gain.
 
 For CDR, a critical improvement doubles the INTERNAL progression gained before effective CDR is recalculated. It must never directly double the displayed effective CDR percentage.
 
@@ -240,7 +263,7 @@ Reset effects:
 - no Silver refunded;
 - the item remains a .4 weapon and is not destroyed/downgraded.
 
-After reset, the weapon must again reach its tier Awakening threshold before traits can be rolled.
+After reset, the weapon must again reach and PAY its tier Awakening threshold before traits can be rolled.
 
 ## 14. STRAIN AND COSTS
 
@@ -294,16 +317,19 @@ The implementation must preserve these invariants:
 - only authored .4-eligible weapons may enter Awakening.
 - a successful .4 transaction registers an UNAWAKENED state for the committed ItemInstanceId.
 - trait actions are impossible until the initial tier Awakening threshold is reached and the weapon is explicitly Awakened.
+- initial Awakening consumes its full Attunement threshold, consumes no Silver and adds no Strain.
 - .4 progression is instance-specific.
 - No duplicate traits on one weapon.
 - No free trait modification.
 - Every trait modification attempt adds Strain except the initial Awakening and full reset.
+- every +1 Strain increases the baseline Attunement storage capacity by 2.5% of the tier initial cap, while next-cost x1.5 remains a minimum-cap safeguard.
 - Critical Attunement can occur only on improvements of an already selected trait, never during initial trait choice or reroll selection.
 - Critical Attunement rewards luck and never punishes it with extra Strain.
 - Reroll cannot transfer accumulated value to another trait.
 - Full reset returns the weapon to the unawakened .4 state.
 - Stored Attunement and lifetime invested Attunement are distinct values.
 - Slot unlocks are controlled by Strain thresholds 0 / 10 / 30.
+- Fame Bonus modifies progression/mastery Fame only; raw eligible Fame remains the sole source for Attunement.
 - CDR UI must display effective reduction, never its hidden progression variable.
 - Balance values are authored data, not branching gameplay logic.
 
@@ -331,7 +357,8 @@ Recommended separation of concerns:
 - deterministic RNG integration for trait proposals, rolls and critical resolution;
 - explicit domain actions for initial Awakening, trait improvement, reroll and reset;
 - persistence of every instance-specific field;
-- UI consumes resolved state and previews from the domain layer; UI must not reproduce formulas.
+- UI consumes resolved state and previews from the domain layer; UI must not reproduce formulas;
+- Fame Bonus is applied in the reward/progression pipeline after raw Fame is captured for Attunement.
 
 Do not create parallel combat-stat formulas for awakened weapons. Trait outputs must feed the existing stat/equipment/combat pipelines.
 
