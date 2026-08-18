@@ -24,6 +24,7 @@
     "benchmark:boss-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-role-telemetry.ts",
     "benchmark:boss-only": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-only-role-telemetry.ts",
     "benchmark:blue-contract": "tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-contract-audit.ts",
+    "benchmark:broadsword-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-wall-audit.ts",
     "clean": "tsc -b --clean"
   },
   "devDependencies": {
