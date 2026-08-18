@@ -83,12 +83,14 @@ export function rollAwakenedTrait(
   traitId: AwakenedTraitId,
   roll01: () => number,
   balance: AwakenedWeaponBalance,
+  allowCritical = true,
 ): AwakenedTraitRollResult {
   const range = balance.traitRolls[traitId];
   const valueRoll = Math.min(1, Math.max(0, roll01()));
   const raw = range.min + (range.max - range.min) * valueRoll;
   const baseRoll = range.integer === true ? Math.round(raw) : raw;
-  const critical = Math.min(1, Math.max(0, roll01())) < balance.criticalChance;
+  const critical = allowCritical
+    && Math.min(1, Math.max(0, roll01())) < balance.criticalChance;
   return {
     traitId,
     baseRoll,
