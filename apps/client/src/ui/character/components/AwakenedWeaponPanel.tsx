@@ -12,6 +12,7 @@ const TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
   max_health: "Points de vie",
   armor: "Armure",
   magic_resistance: "Résistance magique",
+  fame_bonus: "Bonus de Fame",
 };
 
 type PendingConfirmation =
@@ -30,7 +31,12 @@ function formatTraitValue(
 ): string {
   const displayed = resolveDisplayValue(traitId, value);
   if (traitId === "item_power") return `+${formatNumber(displayed, 0)} IP`;
-  if (traitId === "damage" || traitId === "ability_power" || traitId === "cooldown_reduction") {
+  if (
+    traitId === "damage"
+    || traitId === "ability_power"
+    || traitId === "cooldown_reduction"
+    || traitId === "fame_bonus"
+  ) {
     return `+${formatNumber(displayed)}%`;
   }
   return `+${formatNumber(displayed)}`;
@@ -222,8 +228,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
                 onClick={() => { services.resolveAwakenedTraitOffer(proposal.traitId); }}
               >
                 <span>{TRAIT_LABELS[proposal.traitId]}</span>
-                <strong>{displayTraitValue(proposal.traitId, proposal.finalGain)}</strong>
-                {proposal.critical && <em>CRIT ×2</em>}
+                <strong>{displayTraitValue(proposal.traitId, proposal.baseRoll)}</strong>
               </button>
             ))}
           </div>
