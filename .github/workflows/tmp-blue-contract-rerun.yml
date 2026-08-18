@@ -1,0 +1,35 @@
+name: Temporary Blue Contract Rerun
+
+on:
+  pull_request:
+    branches:
+      - agent/albion-idle-development
+
+jobs:
+  blue-contract-rerun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck client
+        run: pnpm --filter client typecheck
+
+      - name: Verify realistic benchmark enchantment eligibility
+        run: pnpm --filter @game/client test -- CombatRuntimeBenchmarkHarness.enchantment.test.ts --reporter=verbose
+
+      - name: Rerun Blue progression contract
+        run: pnpm benchmark:blue-contract
+
+      - name: Rerun Frostpeak progression sweep
+        run: pnpm --filter @game/client test -- blueFrostpeakProgressionSweep.test.ts --reporter=verbose
