@@ -20,7 +20,7 @@ export const REFINING_CONTENT_TIERS = [3, 4, 5, 6, 7, 8] as const satisfies read
 export type RefiningContentTier = (typeof REFINING_CONTENT_TIERS)[number];
 
 /** Tiers whose conventional equipment crafting content is authored. */
-export const CRAFTING_CONTENT_TIERS = [3, 4, 5, 6, 7] as const satisfies readonly ProductionTier[];
+export const CRAFTING_CONTENT_TIERS = [3, 4, 5, 6, 7, 8] as const satisfies readonly ProductionTier[];
 
 export function isProductionTier(value: unknown): value is ProductionTier {
   return typeof value === "number" && PRODUCTION_TIERS.includes(value as ProductionTier);
