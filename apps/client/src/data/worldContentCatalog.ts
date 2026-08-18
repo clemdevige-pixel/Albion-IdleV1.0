@@ -25,6 +25,11 @@ export const WORLD_ZONE_CONTENT = {
   redspire: { id: asZoneDefinitionId("zone_redspire_t7"), name: "Redspire Highlands", bandId: "red", tier: 7, biomeId: asBiomeId("biome_highland"), spawnGroupPrefix: "grp_redspire", respawnDelayTicks: 125, tags: ["highland", "red", "tier7"] },
   crimsonSteppe: { id: asZoneDefinitionId("zone_crimson_steppe_t7"), name: "Crimson Steppe", bandId: "red", tier: 7, biomeId: asBiomeId("biome_steppe"), spawnGroupPrefix: "grp_crimson_steppe", respawnDelayTicks: 130, tags: ["steppe", "red", "tier7"] },
   doompeak: { id: asZoneDefinitionId("zone_doompeak_t7"), name: "Doompeak Mountain", bandId: "red", tier: 7, biomeId: asBiomeId("biome_mountain"), spawnGroupPrefix: "grp_doompeak", respawnDelayTicks: 135, tags: ["mountain", "red", "tier7", "final"] },
+  blackwood: { id: asZoneDefinitionId("zone_blackwood_t8"), name: "Blackwood Forest", bandId: "black", tier: 8, biomeId: asBiomeId("biome_forest"), spawnGroupPrefix: "grp_blackwood", respawnDelayTicks: 140, tags: ["forest", "black", "tier8", "starter"] },
+  shadowfen: { id: asZoneDefinitionId("zone_shadowfen_t8"), name: "Shadowfen Marsh", bandId: "black", tier: 8, biomeId: asBiomeId("biome_swamp"), spawnGroupPrefix: "grp_shadowfen", respawnDelayTicks: 145, tags: ["swamp", "black", "tier8"] },
+  obsidianHighlands: { id: asZoneDefinitionId("zone_obsidian_highlands_t8"), name: "Obsidian Highlands", bandId: "black", tier: 8, biomeId: asBiomeId("biome_highland"), spawnGroupPrefix: "grp_obsidian_highlands", respawnDelayTicks: 150, tags: ["highland", "black", "tier8"] },
+  duskfallSteppe: { id: asZoneDefinitionId("zone_duskfall_steppe_t8"), name: "Duskfall Steppe", bandId: "black", tier: 8, biomeId: asBiomeId("biome_steppe"), spawnGroupPrefix: "grp_duskfall_steppe", respawnDelayTicks: 155, tags: ["steppe", "black", "tier8"] },
+  blackspire: { id: asZoneDefinitionId("zone_blackspire_t8"), name: "Blackspire Mountain", bandId: "black", tier: 8, biomeId: asBiomeId("biome_mountain"), spawnGroupPrefix: "grp_blackspire", respawnDelayTicks: 160, tags: ["mountain", "black", "tier8", "final"] },
 } as const satisfies Readonly<Record<string, WorldZoneContentDefinition>>;
 
 export type WorldZoneKey = keyof typeof WORLD_ZONE_CONTENT;
