@@ -63,9 +63,11 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   const [criticalTrait, setCriticalTrait] = useState<AwakenedTraitId | null>(null);
 
   const equippedWeapon = bridge.equipment.slots.find((slot) => slot.slot === "weapon");
+  const equippedWeaponItemId = equippedWeapon?.itemId;
   const awakeningEligible = equippedWeapon !== undefined
     && equippedWeapon.enchantment === 4
-    && isAwakeningEligibleWeapon(equippedWeapon.itemId);
+    && equippedWeaponItemId !== undefined
+    && isAwakeningEligibleWeapon(equippedWeaponItemId);
   const equippedWeaponInstanceId = equippedWeapon?.instanceId as ItemInstanceId | undefined;
   const state = awakeningEligible && equippedWeaponInstanceId !== undefined
     ? services.awakenedWeaponService.getState(equippedWeaponInstanceId)
