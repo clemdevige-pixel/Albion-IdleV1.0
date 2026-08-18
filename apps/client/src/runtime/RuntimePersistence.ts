@@ -1,8 +1,11 @@
 import type {
+  AwakenedWeaponService,
   DurabilityStore,
   EquipmentManager,
-  InventoryManager} from "@game/gameplay";
+  InventoryManager,
+} from "@game/gameplay";
 import {
+  AwakeningSaveProvider,
   DestinyBoardSaveProvider,
   DurabilitySaveProvider,
   EquipmentSaveProvider,
@@ -47,6 +50,7 @@ export interface RuntimePersistenceDependencies {
   readonly productionStorageId: EntityId;
   readonly equipmentManager: EquipmentManager;
   readonly currencyService: CurrencyService;
+  readonly awakenedWeaponService: AwakenedWeaponService;
   readonly experienceService: ExperienceService;
   readonly masteryService: MasteryService;
   readonly fameService: FameService;
@@ -100,6 +104,7 @@ export class RuntimePersistence {
       () => deps.heroId,
     );
     const walletSaveProvider = new WalletSaveProvider(deps.currencyService);
+    const awakeningSaveProvider = new AwakeningSaveProvider(deps.awakenedWeaponService);
     const experienceSaveProvider = new ExperienceSaveProvider(
       deps.experienceService,
       (masteryId) => deps.masteryService._getTable(masteryId),
@@ -116,6 +121,7 @@ export class RuntimePersistence {
     this.saveManager.registerProvider(inventorySaveProvider);
     this.saveManager.registerProvider(equipmentSaveProvider);
     this.saveManager.registerProvider(walletSaveProvider);
+    this.saveManager.registerProvider(awakeningSaveProvider);
     this.saveManager.registerProvider(experienceSaveProvider);
     this.saveManager.registerProvider(fameSaveProvider);
     this.saveManager.registerProvider(masterySaveProvider);
