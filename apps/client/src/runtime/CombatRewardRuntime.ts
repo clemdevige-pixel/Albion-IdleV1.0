@@ -93,11 +93,18 @@ export class CombatRewardRuntime {
       this.progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.familyId);
       this.progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.weaponId);
 
-      this.progressionOrchestrator.onFameEarned(activeWeaponRoute.weaponId, fameReward, "combat");
-      this.experienceService.addExperience(activeWeaponRoute.familyId, fameReward, "combat");
+      // Fame Bonus improves progression Fame only. Attunement deliberately uses
+      // the raw eligible PvE Fame below so the trait cannot accelerate itself.
+      const fameBonusPercent = equippedWeapon?.enchantment === 4
+        ? this.awakenedWeaponService.getTraitValue(equippedWeapon.instanceId, "fame_bonus")
+        : 0;
+      const progressionFame = fameReward + Math.floor(fameReward * fameBonusPercent / 100);
+
+      this.progressionOrchestrator.onFameEarned(activeWeaponRoute.weaponId, progressionFame, "combat");
+      this.experienceService.addExperience(activeWeaponRoute.familyId, progressionFame, "combat");
 
       fameEarned = {
-        amount: fameReward,
+        amount: progressionFame,
         weaponId: activeWeaponRoute.weaponId,
         familyId: activeWeaponRoute.familyId,
       };
