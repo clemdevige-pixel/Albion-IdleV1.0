@@ -14,17 +14,15 @@ describe("dungeonLootContentCatalog", () => {
   });
 
   it("shares one provisional reward profile per dungeon tier", () => {
+    const expected = {
+      4: { normal: { artifactFragmentQuantity: 4, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 10, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 28, artifactDropChance: 0.1 } },
+      5: { normal: { artifactFragmentQuantity: 5, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 12, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 34, artifactDropChance: 0.12 } },
+      6: { normal: { artifactFragmentQuantity: 6, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 14, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 40, artifactDropChance: 0.14 } },
+    } as const;
     for (const dungeon of DUNGEON_DEFINITIONS) {
-      const loot = getDungeonLootDefinition(dungeon.lootTableId);
-      if (dungeon.tier === 4) {
-        expect(loot.encounters.normal).toEqual({ artifactFragmentQuantity: 4, artifactDropChance: 0 });
-        expect(loot.encounters.elite).toEqual({ artifactFragmentQuantity: 10, artifactDropChance: 0 });
-        expect(loot.encounters.boss).toEqual({ artifactFragmentQuantity: 28, artifactDropChance: 0.1 });
-      } else if (dungeon.tier === 5) {
-        expect(loot.encounters.normal).toEqual({ artifactFragmentQuantity: 5, artifactDropChance: 0 });
-        expect(loot.encounters.elite).toEqual({ artifactFragmentQuantity: 12, artifactDropChance: 0 });
-        expect(loot.encounters.boss).toEqual({ artifactFragmentQuantity: 34, artifactDropChance: 0.12 });
-      }
+      const profile = expected[dungeon.tier as keyof typeof expected];
+      if (profile === undefined) throw new Error(`Unexpected authored dungeon tier: ${String(dungeon.tier)}`);
+      expect(getDungeonLootDefinition(dungeon.lootTableId).encounters).toEqual(profile);
     }
   });
 
