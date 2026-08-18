@@ -36,10 +36,12 @@ describe("weapon craft pipeline", () => {
 
   it("requires the same-specialization predecessor for every standard tier after T3", () => {
     for (const specialization of STANDARD_SPECIALIZATIONS) {
-      for (let index = 1; index < specialization.length; index += 1) {
-        const previousItemId = specialization[index - 1];
-        const itemId = specialization[index];
-        const tier = index + 3;
+      for (const [offset, itemId] of specialization.slice(1).entries()) {
+        const previousItemId = specialization[offset];
+        if (previousItemId === undefined) {
+          throw new Error(`Missing predecessor for ${itemId}`);
+        }
+        const tier = offset + 4;
 
         expect(resolveWeaponTier(itemId)).toBe(tier);
         expect(resolvePreviousWeaponTierItemId(itemId)).toBe(previousItemId);
