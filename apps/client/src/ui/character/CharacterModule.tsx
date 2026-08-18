@@ -3,6 +3,7 @@ import type { EquipmentSlot } from "@game/gameplay";
 import { getItemDefinition } from "../../panels/ItemVisual";
 import { ItemSlot } from "../shared/ItemSlot";
 import { getEquippedHeroIdlePresentation } from "./characterPresentation";
+import { AwakenedWeaponPanel } from "./components/AwakenedWeaponPanel";
 import { CharacterEquipmentPicker } from "./components/CharacterEquipmentPicker";
 import { useCharacterActions } from "./useCharacterActions";
 import { useCharacterData } from "./useCharacterData";
@@ -151,6 +152,8 @@ export function CharacterModule(): JSX.Element {
           </div>
         </article>
       </section>
+
+      <AwakenedWeaponPanel />
 
       {pickerSlot !== null && (
         <CharacterEquipmentPicker
