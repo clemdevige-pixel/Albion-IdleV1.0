@@ -47,6 +47,8 @@ export interface CombatRuntimeBenchmarkInput {
   readonly zoneDefId: ZoneDefinitionId;
   /** Zero-based segment index. */
   readonly segmentIndex: number;
+  /** Optional zero-based encounter to start from. Useful for isolated world boss diagnostics. */
+  readonly startingEncounterIndex?: number;
   readonly equipmentItemIds?: readonly string[];
   readonly enchantment?: BenchmarkEnchantment;
   readonly masteryLevel?: number;
@@ -81,15 +83,10 @@ export interface CombatRuntimeBenchmarkResult {
   readonly magicResistance: number;
   readonly potionsUsed: number;
   readonly masteryLevel: number;
-  /** Actual post-mitigation, non-overkill damage dealt by the hero during the benchmark. */
   readonly damageDealt: number;
-  /** Actual post-mitigation, non-overkill damage received by the hero during the benchmark. */
   readonly damageReceived: number;
-  /** Observed hero damage per elapsed combat second. Diagnostic only; never used by runtime balance. */
   readonly observedDps: number;
-  /** Benchmark-only breakdown from the live DamageDealt event source type. */
   readonly damageBySource: CombatRuntimeDamageSourceTelemetry;
-  /** Benchmark-only live cast counts and immediate damage by authored weapon ability. */
   readonly abilities: readonly CombatRuntimeAbilityTelemetry[];
 }
 
@@ -181,11 +178,6 @@ function seedMasteryLevel(
   return seedOneMasteryLevel(route.weaponId, targetLevel, masteryService, experienceService);
 }
 
-/**
- * Generic balance harness that runs the exact live CombatRuntime tick by tick.
- * Zone/world-band/dungeon tuning belongs in authored data, not in this harness.
- * Keep this thin: no alternate DPS/EHP or enemy formulas are allowed here.
- */
 export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): CombatRuntimeBenchmarkResult {
   const placement = getWorldZonePlacement(input.zoneDefId);
   const dungeon = input.dungeonDefinitionId === undefined ? undefined : getDungeonDefinition(input.dungeonDefinitionId);
@@ -246,7 +238,8 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   }
   const consumableRuntime = new ConsumableRuntime({ inventoryManager, damageManager, deathManager, heroId });
 
-  let encounterIndex = 0;
+  const lastEncounterIndex = dungeon?.encounters.length !== undefined ? dungeon.encounters.length - 1 : 4;
+  let encounterIndex = Math.max(0, Math.min(lastEncounterIndex, Math.floor(input.startingEncounterIndex ?? 0)));
   let finishedSegment = false;
   let defeated = false;
   let potionsUsed = 0;
@@ -291,7 +284,6 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
       ...(dungeon === undefined ? {} : { flowPolicy: CONTINUOUS_COMBAT_FLOW_POLICY }),
       onDefeat: () => { defeated = true; },
       onVictory: () => {
-        const lastEncounterIndex = dungeon?.encounters.length !== undefined ? dungeon.encounters.length - 1 : 4;
         if (encounterIndex >= lastEncounterIndex) {
           const health = damageManager.getHealth(heroId);
           segmentEndHpPercent = (health.currentHealth / health.maxHealth) * 100;
