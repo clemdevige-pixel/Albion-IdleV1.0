@@ -26,7 +26,7 @@ jobs:
         run: pnpm --filter client typecheck
 
       - name: Verify realistic benchmark enchantment eligibility
-        run: pnpm --filter @game/client test -- CombatRuntimeBenchmarkHarness.enchantment.test.ts --reporter=verbose
+        run: pnpm --filter @game/client test -- CombatRuntimeBenchmarkHarness.test.ts --reporter=verbose
 
       - name: Rerun Blue progression contract
         run: pnpm benchmark:blue-contract
