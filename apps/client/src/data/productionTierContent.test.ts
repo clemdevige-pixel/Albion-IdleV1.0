@@ -5,7 +5,7 @@ import { EQUIPMENT_CRAFT_RECIPES, getProductionRefiningRecipe } from "./refining
 
 describe("production tier content contract", () => {
   it("keeps every authored gathering tier complete without requiring refining rollout", () => {
-    expect(GATHERING_CONTENT_TIERS).toContain(7);
+    expect(GATHERING_CONTENT_TIERS).toContain(8);
     for (const familyId of PRODUCTION_FAMILY_IDS) {
       const family = getProductionFamilyDefinition(familyId);
       for (const tier of GATHERING_CONTENT_TIERS) {
@@ -19,7 +19,7 @@ describe("production tier content contract", () => {
   });
 
   it("keeps every authored refining tier complete without requiring craft rollout", () => {
-    expect(REFINING_CONTENT_TIERS).toContain(7);
+    expect(REFINING_CONTENT_TIERS).toContain(8);
     for (const familyId of PRODUCTION_FAMILY_IDS) {
       for (const tier of REFINING_CONTENT_TIERS) {
         const resource = RESOURCE_TIER_CONTENT[familyId][tier]; const refining = getProductionRefiningRecipe(familyId, tier);
@@ -33,7 +33,7 @@ describe("production tier content contract", () => {
 
   it("keeps worker/full production rollout independent from refining and crafting rollout", () => {
     expect(PRODUCTION_CONTENT_TIERS).toEqual([3, 4, 5]);
-    expect(REFINING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7]);
+    expect(REFINING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7, 8]);
     expect(CRAFTING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7]);
   });
 
