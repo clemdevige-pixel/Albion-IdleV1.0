@@ -9,6 +9,19 @@ import type {
   AwakenedWeaponTier,
 } from "./types.js";
 
+interface SavedAwakenedRoll {
+  traitId: string;
+  baseRoll: number;
+  critical: boolean;
+  finalGain: number;
+}
+
+interface SavedAwakenedOffer {
+  kind: string;
+  targetIndex: number;
+  proposals: SavedAwakenedRoll[];
+}
+
 interface SavedAwakenedWeaponState {
   itemInstanceId: string;
   tier: number;
@@ -16,16 +29,7 @@ interface SavedAwakenedWeaponState {
   lifetimeAttunementInvested: number;
   strain: number;
   traits: Array<{ traitId: string; value: number }>;
-  pendingTraitOffer?: {
-    kind: string;
-    targetIndex: number;
-    proposals: Array<{
-      traitId: string;
-      baseRoll: number;
-      critical: boolean;
-      finalGain: number;
-    }>;
-  };
+  pendingTraitOffer?: SavedAwakenedOffer;
 }
 
 interface AwakeningSavePayload {
@@ -54,9 +58,7 @@ function finiteNonNegative(value: number): boolean {
   return Number.isFinite(value) && value >= 0;
 }
 
-function restoreRoll(saved: SavedAwakenedWeaponState["pendingTraitOffer"] extends infer T
-  ? T extends { proposals: Array<infer P> } ? P : never
-  : never): AwakenedTraitRollResult {
+function restoreRoll(saved: SavedAwakenedRoll): AwakenedTraitRollResult {
   if (!isTrait(saved.traitId)) throw new Error(`Invalid awakening save: trait ${saved.traitId}`);
   if (!finiteNonNegative(saved.baseRoll) || !finiteNonNegative(saved.finalGain)) {
     throw new Error("Invalid awakening save: invalid roll value");
@@ -69,17 +71,20 @@ function restoreRoll(saved: SavedAwakenedWeaponState["pendingTraitOffer"] extend
   };
 }
 
-function restoreOffer(saved: NonNullable<SavedAwakenedWeaponState["pendingTraitOffer"]>): AwakenedTraitOffer {
+function restoreOffer(saved: SavedAwakenedOffer): AwakenedTraitOffer {
   if (saved.kind !== "fill" && saved.kind !== "reroll") {
     throw new Error(`Invalid awakening save: offer kind ${saved.kind}`);
   }
   if (!Number.isInteger(saved.targetIndex) || saved.targetIndex < 0 || saved.targetIndex > 2) {
     throw new Error("Invalid awakening save: offer target");
   }
+  if (!Array.isArray(saved.proposals) || saved.proposals.length === 0) {
+    throw new Error("Invalid awakening save: empty offer");
+  }
   return {
     kind: saved.kind,
     targetIndex: saved.targetIndex,
-    proposals: saved.proposals.map((proposal) => restoreRoll(proposal)),
+    proposals: saved.proposals.map(restoreRoll),
   };
 }
 
