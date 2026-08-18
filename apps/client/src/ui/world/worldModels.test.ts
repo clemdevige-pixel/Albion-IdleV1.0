@@ -17,6 +17,7 @@ describe("world UI models", () => {
     expect(WORLD_BANDS.filter((band) => band.isAvailable).map((band) => band.id)).toEqual([
       "blue",
       "yellow",
+      "orange",
     ]);
   });
 
@@ -34,6 +35,7 @@ describe("world UI models", () => {
     expect(keeperWarrior).toBeDefined();
     expect(keeperWarrior?.bandIds).toContain("blue");
     expect(keeperWarrior?.bandIds).toContain("yellow");
+    expect(keeperWarrior?.bandIds).toContain("orange");
   });
 
   it("exposes data-driven loot ranges from the same active combat loot rules", () => {
