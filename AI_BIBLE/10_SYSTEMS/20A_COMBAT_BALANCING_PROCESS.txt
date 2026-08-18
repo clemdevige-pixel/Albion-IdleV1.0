@@ -22,6 +22,8 @@ The live CombatRuntime is the source of truth for player-vs-zone difficulty. Syn
 8. Potions are a progression tool, not part of an AFK baseline unless the contract explicitly says otherwise.
 9. Raw tuning values are data. The progression contract is design law.
 10. Long-term weapon balance targets viability across the game, not equivalence in every activity. Different weapons should become genuinely better or worse depending on content type.
+11. World difficulty is monotonic. A later zone or segment must never be structurally easier than the previous progression point. Zone starts must not regress below the previous zone end, and intra-zone curves must not decrease.
+12. Representative weapons are not required to clear every normal progression wall with identical ease. When a checkpoint is not explicitly defined as potion-free/AFK, a weapon that fails without potion but clears with the expected gear/mastery plus potion remains progression-valid when that difference is coherent with its weapon profile.
 
 ---
 
@@ -169,12 +171,14 @@ For each new zone or world band:
    - expected mastery range;
    - potion expectation: none / useful / required;
    - expected state: comfortable / progression / wall / AFK farm.
-4. Run the exact live runtime across the representative weapon set.
-5. Read clear/fail, remaining HP, encounter reached, duration and potion usage together.
-6. Check weapon-only/package diagnostics before changing the zone when only one weapon is failing.
-7. Tune only the smallest relevant authored zone curve endpoint or content stat.
-8. Re-run earlier checkpoints to protect the shape of the curve.
-9. Freeze the contract semantically; do not freeze accidental historical tuning values.
+4. Validate structural monotonicity before runtime tuning: every zone curve must rise internally and every later zone start must remain at least as difficult as the previous zone end on authored HP / damage / defense pressure.
+5. Run the exact live runtime across the representative weapon set.
+6. Read clear/fail, remaining HP, encounter reached, duration and potion usage together.
+7. On a non-AFK progression checkpoint, rerun failed representative weapons with live potion behavior before declaring the world curve invalid. A potion-assisted clear can be valid profile-driven progression.
+8. Check weapon-only/package diagnostics before changing the zone when only one weapon is failing.
+9. Tune only the smallest relevant authored zone curve endpoint or content stat.
+10. Re-run earlier checkpoints to protect the shape of the curve.
+11. Freeze the contract semantically; do not freeze accidental historical tuning values.
 
 When adding Yellow/Red/Black content, reuse CombatRuntimeBenchmarkHarness with the new ZoneDefinitionId. Do not create YellowRuntimeBenchmarkHarness, RedRuntimeBenchmarkHarness, etc.
 
@@ -184,10 +188,16 @@ When adding Yellow/Red/Black content, reuse CombatRuntimeBenchmarkHarness with t
 
 NO POTION / AFK COMFORT
 - A stable farm profile should clear without potion dependency.
+- When a checkpoint explicitly defines a potion-free or reliable AFK threshold, every representative weapon covered by that contract must satisfy it.
 
 POTION BRIDGE
 - A previous gear level may use potions to enter or advance into the next progression block.
 - This is valid when the next gear upgrade removes the dependency.
+
+ROLE-AWARE POTION FALLBACK
+- On an ordinary progression wall where potion-free play is not an explicit requirement, representative weapons do not need identical clear comfort.
+- If an expected-gear weapon fails without potion but clears with the live potion system, the checkpoint may remain VALID when the need is consistent with the weapon's authored gameplay/content profile.
+- This is not permission to hide a broken weapon or broken world curve: failure even with potion, repeated broad failure across unrelated profiles, or violation of the monotonic world rule still requires investigation.
 
 DIFFICULT CLEAR
 - Recommended gear may require potion support or optimization on a final wall.
@@ -199,7 +209,7 @@ The benchmark uses the live health potion behavior and cooldown. Never model a f
 
 ---
 
-# 7. Validated Blue progression contract — 2026-08-16
+# 7. Validated Blue progression contract — 2026-08-19
 
 BIRCH FOREST
 Expected: starter weapon only.
@@ -219,7 +229,7 @@ Validated runtime checkpoints show meaningful recovery from chest and two-piece 
 DARK SWAMP S6 -> S10
 Expected: quasi-full to full T3.
 Function: consolidation.
-S10 contract: full T3 can clear without potion across the representative weapon set.
+Full T3 is the intended progression level. Role-dependent potion support is acceptable if a representative weapon needs it; this is not an AFK threshold.
 
 AFTER DARK SWAMP
 Progression pivot: Island level 2 enables the T4 production step according to the island/world progression contract.
@@ -228,22 +238,24 @@ STONE HIGHLANDS
 Expected: full T3 -> first T4 pieces.
 Function: T3/T4 transition.
 Full T3 is not expected to be an autonomous farm baseline at the entrance. Potion support can bridge the first step; T4 pieces then remove that dependency progressively.
-Full T4.0 clears the zone.
+Full T4.0 is the intended zone-clear progression level; role-dependent potion support remains acceptable unless a stricter checkpoint is authored.
 
 GOLDEN STEPPE
 Expected: full T4.0 -> first enchantments.
 Function: T4 consolidation.
 T4.0 handles early/mid Steppe; T4.1 is the intended late-zone progression tool.
-A single weapon-specific failure must be checked against its package before changing the global curve.
+A weapon-specific potion dependency at the expected progression level is acceptable when coherent with its profile. A single failure must still be checked against its package before changing the global curve.
 
 FROSTPEAK / MOUNTAIN
 Expected: T4.1 -> T4.2, with T4.3 as autonomous comfort.
 Function: final Blue difficulty block.
-T4.1 progresses through early Mountain.
+T4.1 progresses through early Mountain. Some weapon profiles may require potion support on an early/mid wall; that remains valid progression and is not a reason to make Frostpeak easier than late Steppe.
 T4.2 can push deep and may require potion/optimization at S10; it is intentionally not a guaranteed AFK clear.
 T4.3 clears S10 without potion across the representative weapon set and is the intended reliable AFK/farm threshold.
 
-This Blue contract supersedes older documentation that placed the T3->T4 transition inside Dark Swamp or required potion for full-T3 Swamp S10.
+WORLD ORDER INVARIANT
+- Blue progression must remain structurally monotonic across every zone transition.
+- In particular, Frostpeak S1 must remain harder than Golden Steppe S10 in the authored curve; solving a Frostpeak checkpoint by lowering its start below Steppe S10 is invalid.
 
 ---
 
@@ -281,7 +293,8 @@ KEEP tests that protect:
 - weapon diagnostic construction;
 - explicit off-hand separation;
 - validated progression checkpoints;
-- potion behavior;
+- potion behavior and role-aware potion fallback semantics;
+- monotonic world-curve ordering;
 - deterministic data integrity;
 - TTK-derived economy measurements when combat throughput affects universal progression resources.
 
