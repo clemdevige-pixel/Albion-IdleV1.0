@@ -16,9 +16,9 @@ export interface WorldItemPowerProgression { readonly zoneStart: readonly number
 export const BLUE_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [300, 305, 315, 400, 460], zoneEnd: [305, 315, 400, 460, 530] } as const satisfies WorldItemPowerProgression;
 export const YELLOW_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [600, 640, 680, 720, 760], zoneEnd: [640, 680, 720, 760, 800] } as const satisfies WorldItemPowerProgression;
 export const ORANGE_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [800, 840, 880, 920, 960], zoneEnd: [840, 880, 920, 960, 1000] } as const satisfies WorldItemPowerProgression;
-
-/** Provisional Red/T7 recommendation envelope; final breakpoints belong to the dedicated T7 runtime balance pass. */
 export const RED_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [1000, 1040, 1080, 1120, 1160], zoneEnd: [1040, 1080, 1120, 1160, 1200] } as const satisfies WorldItemPowerProgression;
+/** Provisional Black/T8 envelope. Final breakpoints belong to the global T4-T8 balance pass. */
+export const BLACK_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [1200, 1240, 1280, 1320, 1360], zoneEnd: [1240, 1280, 1320, 1360, 1400] } as const satisfies WorldItemPowerProgression;
 
 export const ZONE_RECOMMENDED_ITEM_POWER = BLUE_WORLD_ITEM_POWER_PROGRESSION.zoneStart;
 
@@ -27,6 +27,7 @@ const WORLD_ITEM_POWER_PROGRESSION: Partial<Readonly<Record<WorldBandId, WorldIt
   yellow: YELLOW_WORLD_ITEM_POWER_PROGRESSION,
   orange: ORANGE_WORLD_ITEM_POWER_PROGRESSION,
   red: RED_WORLD_ITEM_POWER_PROGRESSION,
+  black: BLACK_WORLD_ITEM_POWER_PROGRESSION,
 };
 
 function getWorldItemPowerProgression(worldBandId: WorldBandId): WorldItemPowerProgression {
