@@ -9,7 +9,8 @@ export type AwakenedTraitId =
   | "cooldown_reduction"
   | "max_health"
   | "armor"
-  | "magic_resistance";
+  | "magic_resistance"
+  | "fame_bonus";
 
 export interface AwakenedTraitRollRange {
   readonly min: number;
@@ -30,6 +31,7 @@ export interface AwakenedWeaponBalance {
   readonly traitProposalCount: number;
   readonly slotUnlockStrainThresholds: readonly [number, number, number];
   readonly attunementCapCostMultiplier: number;
+  readonly attunementCapGrowthPerStrain: number;
   readonly criticalChance: number;
   readonly criticalMultiplier: number;
   readonly strainPerModification: number;
