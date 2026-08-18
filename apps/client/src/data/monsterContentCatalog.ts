@@ -3,21 +3,11 @@ import type { DamageType, ZoneDefinitionId } from "@game/gameplay";
 import { MONSTER_ABILITY_IDS } from "./monsterAbilityContentCatalog";
 
 export type MonsterCategory = "normal" | "veteran" | "elite" | "boss";
-
 export interface MonsterCombatModifiers { readonly damageType: DamageType; }
 export interface MonsterRewardDefinition { readonly lootTableId: string; }
 export interface MonsterContentDefinition { readonly id: string; readonly name: string; readonly faction: string; readonly category: MonsterCategory; readonly tier: number; readonly visualManifestId: string; readonly combat: MonsterCombatModifiers; readonly rewards: MonsterRewardDefinition; readonly abilityIds: readonly string[]; readonly tags: readonly string[]; }
-export interface FactionEncounterRoster {
-  readonly faction: string;
-  readonly normal: readonly string[];
-  readonly elite: string;
-}
-
-export interface ZoneEncounterPool {
-  readonly dominant: FactionEncounterRoster;
-  readonly secondary: FactionEncounterRoster;
-  readonly biomeBoss: string;
-}
+export interface FactionEncounterRoster { readonly faction: string; readonly normal: readonly string[]; readonly elite: string; }
+export interface ZoneEncounterPool { readonly dominant: FactionEncounterRoster; readonly secondary: FactionEncounterRoster; readonly biomeBoss: string; }
 
 export const MONSTER_IDS = {
   morganaWitch: "monster_morgana_witch", morganaSuppressor: "monster_morgana_suppressor", morganaDarkKnight: "monster_morgana_dark_knight", morganaHighPriestess: "boss_morgana_high_priestess",
@@ -50,7 +40,6 @@ const UNDEAD_PILOT_NORMAL_POOL = [MONSTER_IDS.undeadSkeletonSwordsman, MONSTER_I
 const MORGANA_PILOT_NORMAL_POOL = [MONSTER_IDS.morganaWitch, MONSTER_IDS.morganaSuppressor] as const;
 const KEEPER_PILOT_NORMAL_POOL = [MONSTER_IDS.keeperWarrior, MONSTER_IDS.keeperShaman] as const;
 const HERETIC_PILOT_NORMAL_POOL = [MONSTER_IDS.hereticThug, MONSTER_IDS.hereticFirestarter] as const;
-
 const FACTION_ENCOUNTER_ROSTERS = {
   Undead: { faction: "Undead", normal: UNDEAD_PILOT_NORMAL_POOL, elite: MONSTER_IDS.undeadSpectralKnight },
   Morgana: { faction: "Morgana", normal: MORGANA_PILOT_NORMAL_POOL, elite: MONSTER_IDS.morganaDarkKnight },
@@ -59,24 +48,14 @@ const FACTION_ENCOUNTER_ROSTERS = {
 } as const satisfies Readonly<Record<string, FactionEncounterRoster>>;
 
 type EncounterFactionRole = "dominant" | "secondary";
-
 const NORMAL_FACTION_PATTERN_BY_SEGMENT: readonly (readonly EncounterFactionRole[])[] = [
-  ["dominant", "dominant", "dominant", "dominant"],
-  ["dominant", "dominant", "dominant", "dominant"],
-  ["dominant", "dominant", "dominant", "secondary"],
-  ["dominant", "dominant", "secondary", "dominant"],
-  ["dominant", "secondary", "dominant", "dominant"],
-  ["dominant", "secondary", "dominant", "secondary"],
-  ["secondary", "dominant", "dominant", "secondary"],
-  ["dominant", "secondary", "secondary", "dominant"],
-  ["secondary", "dominant", "secondary", "dominant"],
-  ["dominant", "secondary", "dominant", "secondary"],
+  ["dominant", "dominant", "dominant", "dominant"], ["dominant", "dominant", "dominant", "dominant"],
+  ["dominant", "dominant", "dominant", "secondary"], ["dominant", "dominant", "secondary", "dominant"],
+  ["dominant", "secondary", "dominant", "dominant"], ["dominant", "secondary", "dominant", "secondary"],
+  ["secondary", "dominant", "dominant", "secondary"], ["dominant", "secondary", "secondary", "dominant"],
+  ["secondary", "dominant", "secondary", "dominant"], ["dominant", "secondary", "dominant", "secondary"],
 ] as const;
-
-const ELITE_FACTION_PATTERN_BY_SEGMENT: readonly EncounterFactionRole[] = [
-  "dominant", "dominant", "dominant", "secondary", "dominant",
-  "secondary", "dominant", "secondary", "dominant", "dominant",
-] as const;
+const ELITE_FACTION_PATTERN_BY_SEGMENT: readonly EncounterFactionRole[] = ["dominant", "dominant", "dominant", "secondary", "dominant", "secondary", "dominant", "secondary", "dominant", "dominant"] as const;
 
 export const ZONE_ENCOUNTER_POOLS: Readonly<Record<string, ZoneEncounterPool>> = {
   zone_forest_t3: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Heretic, biomeBoss: MONSTER_IDS.keeperAncient },
@@ -94,38 +73,26 @@ export const ZONE_ENCOUNTER_POOLS: Readonly<Record<string, ZoneEncounterPool>> =
   zone_thundercrag_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Heretic, secondary: FACTION_ENCOUNTER_ROSTERS.Keeper, biomeBoss: MONSTER_IDS.hereticMadmen },
   zone_emberwind_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Heretic, biomeBoss: MONSTER_IDS.morganaHighPriestess },
   zone_ashenpeak_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.keeperAncient },
+  zone_bloodwood_t7: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Keeper, biomeBoss: MONSTER_IDS.morganaHighPriestess },
+  zone_dreadfen_t7: { dominant: FACTION_ENCOUNTER_ROSTERS.Undead, secondary: FACTION_ENCOUNTER_ROSTERS.Morgana, biomeBoss: MONSTER_IDS.undeadLich },
+  zone_redspire_t7: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Heretic, biomeBoss: MONSTER_IDS.keeperAncient },
+  zone_crimson_steppe_t7: { dominant: FACTION_ENCOUNTER_ROSTERS.Heretic, secondary: FACTION_ENCOUNTER_ROSTERS.Morgana, biomeBoss: MONSTER_IDS.hereticMadmen },
+  zone_doompeak_t7: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.morganaHighPriestess },
 };
 
 export function getMonsterDefinition(id: string): MonsterContentDefinition { const definition = MONSTER_DEFINITIONS[id]; if (definition === undefined) throw new Error(`Unknown monster definition: ${id}`); return definition; }
 export function applyMonsterRewardModifiers(baseRewards: { readonly silver: number; readonly fame: number }, _monster: MonsterContentDefinition): { readonly silver: number; readonly fame: number } { return { silver: Math.max(0, Math.round(baseRewards.silver)), fame: Math.max(0, Math.round(baseRewards.fame)) }; }
 export function getZoneEncounterPool(zoneDefId: ZoneDefinitionId): ZoneEncounterPool { const pool = ZONE_ENCOUNTER_POOLS[String(zoneDefId)]; if (pool === undefined) throw new Error(`Missing monster encounter pool for zone: ${String(zoneDefId)}`); return pool; }
 export function resolveEncounterCategory(segmentIndex: number, encounterIndex: number): "normal" | "elite" | "boss" {
-  const safeSegmentIndex = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex));
-  const safeEncounterIndex = Math.max(0, Math.min(ENCOUNTERS_PER_SEGMENT - 1, encounterIndex));
+  const safeSegmentIndex = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex)); const safeEncounterIndex = Math.max(0, Math.min(ENCOUNTERS_PER_SEGMENT - 1, encounterIndex));
   if (safeEncounterIndex !== ENCOUNTERS_PER_SEGMENT - 1) return "normal";
   return safeSegmentIndex === SEGMENTS_PER_ZONE - 1 ? "boss" : "elite";
 }
-
 export function resolveMonsterForEncounter(zoneDefId: ZoneDefinitionId, segmentIndex: number, encounterIndex: number): MonsterContentDefinition {
-  const pool = getZoneEncounterPool(zoneDefId);
-  const safeSegmentIndex = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex));
-  const safeEncounterIndex = Math.max(0, Math.min(ENCOUNTERS_PER_SEGMENT - 1, encounterIndex));
-  const encounterCategory = resolveEncounterCategory(safeSegmentIndex, safeEncounterIndex);
-
+  const pool = getZoneEncounterPool(zoneDefId); const safeSegmentIndex = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex)); const safeEncounterIndex = Math.max(0, Math.min(ENCOUNTERS_PER_SEGMENT - 1, encounterIndex)); const encounterCategory = resolveEncounterCategory(safeSegmentIndex, safeEncounterIndex);
   if (encounterCategory === "boss") return getMonsterDefinition(pool.biomeBoss);
-
-  if (encounterCategory === "elite") {
-    const factionRole = ELITE_FACTION_PATTERN_BY_SEGMENT[safeSegmentIndex] ?? "dominant";
-    const roster = pool[factionRole];
-    return getMonsterDefinition(roster.elite);
-  }
-
-  const segmentPattern = NORMAL_FACTION_PATTERN_BY_SEGMENT[safeSegmentIndex]
-    ?? NORMAL_FACTION_PATTERN_BY_SEGMENT[0];
-  const factionRole = segmentPattern?.[safeEncounterIndex] ?? "dominant";
-  const roster = pool[factionRole];
-  const index = (safeSegmentIndex + safeEncounterIndex) % roster.normal.length;
-  const monsterId = roster.normal[index] ?? roster.normal[0];
+  if (encounterCategory === "elite") { const factionRole = ELITE_FACTION_PATTERN_BY_SEGMENT[safeSegmentIndex] ?? "dominant"; return getMonsterDefinition(pool[factionRole].elite); }
+  const segmentPattern = NORMAL_FACTION_PATTERN_BY_SEGMENT[safeSegmentIndex] ?? NORMAL_FACTION_PATTERN_BY_SEGMENT[0]; const factionRole = segmentPattern?.[safeEncounterIndex] ?? "dominant"; const roster = pool[factionRole]; const index = (safeSegmentIndex + safeEncounterIndex) % roster.normal.length; const monsterId = roster.normal[index] ?? roster.normal[0];
   if (monsterId === undefined) throw new Error(`Zone has no normal monsters: ${String(zoneDefId)}`);
   return getMonsterDefinition(monsterId);
 }
