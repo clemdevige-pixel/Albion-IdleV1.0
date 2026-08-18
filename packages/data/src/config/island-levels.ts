@@ -1,6 +1,6 @@
 import type { IslandBuildingCategory } from "./island.js";
 
-export type IslandLevel = 1 | 2 | 3 | 4;
+export type IslandLevel = 1 | 2 | 3 | 4 | 5;
 
 export interface IslandWorldRequirement {
   readonly zoneDefId: string;
@@ -27,9 +27,6 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
   {
     level: 1,
     label: "Campement",
-    // The first island loop must teach the complete active T3 production chain:
-    // gather -> refine -> craft. Higher island levels gate development and
-    // production tiers, not access to these foundational systems.
     unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
     maxBuildingLevel: 1,
   },
@@ -84,6 +81,24 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       requirements: [
         { itemId: "item_refined_planks_t5", quantity: 40 },
         { itemId: "item_refined_metal_bar_t5", quantity: 40 },
+      ],
+    },
+  },
+  {
+    level: 5,
+    label: "Domaine supérieur",
+    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    maxBuildingLevel: 5,
+    worldRequirementToReach: {
+      zoneDefId: "zone_ashenpeak_t6",
+      minimumCompletedSegments: 10,
+      label: "Terminer Ashenpeak Mountain",
+    },
+    upgradeCost: {
+      silver: 12000,
+      requirements: [
+        { itemId: "item_refined_planks_t6", quantity: 50 },
+        { itemId: "item_refined_metal_bar_t6", quantity: 50 },
       ],
     },
   },
