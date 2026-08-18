@@ -51,22 +51,22 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
 
 /**
  * Orange T6 authored progression envelope.
- * This is the runtime foundation for the T6 loop; exact breakpoints are
- * intentionally benchmarked once T6 equipment stats are authored.
- * Target contract for that calibration:
+ * Runtime-calibrated against the live T6 equipment package.
+ * Target contract:
  * - progression spans T6.0 -> T6.3 across the five Orange zones;
  * - the final Orange boss must NOT be a reliable T6.3 clear without a potion;
  * - the expected final clear is T6.3 + healing potion.
  *
- * The curve starts strictly above Ironveil and remains monotonic so Orange
- * can never silently regress below the validated Yellow endpoint.
+ * Ashenpeak intentionally ramps damage more sharply at the end of the zone:
+ * the final breakpoint is a sustain check, so healing potions matter without
+ * artificially inflating every prior Orange encounter.
  */
 export const ORANGE_WORLD_COMBAT_CURVE = [
   { healthStart: 6.8, healthEnd: 7.15, damageStart: 5.35, damageEnd: 5.6, defenseStart: 3.1, defenseEnd: 3.2 },
   { healthStart: 7.4, healthEnd: 7.8, damageStart: 5.8, damageEnd: 6.05, defenseStart: 3.3, defenseEnd: 3.42 },
   { healthStart: 8.1, healthEnd: 8.55, damageStart: 6.25, damageEnd: 6.5, defenseStart: 3.55, defenseEnd: 3.68 },
   { healthStart: 8.9, healthEnd: 9.45, damageStart: 6.75, damageEnd: 7.05, defenseStart: 3.82, defenseEnd: 3.98 },
-  { healthStart: 9.8, healthEnd: 10.5, damageStart: 7.3, damageEnd: 7.75, defenseStart: 4.1, defenseEnd: 4.35 },
+  { healthStart: 9.8, healthEnd: 10.5, damageStart: 7.3, damageEnd: 8.65, defenseStart: 4.1, defenseEnd: 4.35 },
 ] as const;
 
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
