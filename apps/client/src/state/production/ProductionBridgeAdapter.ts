@@ -12,6 +12,7 @@ import { ALL_CRAFT_RECIPES } from "../../data/specialCraftRecipes";
 import { getItemPower } from "../../data/itemPower";
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
 import {
+  GATHERING_CONTENT_TIERS,
   PRODUCTION_FAMILIES,
   getProductionFamilyByGameplayFamily,
   getProductionFamilyId,
@@ -30,6 +31,12 @@ import {
 } from "../bridgeSync";
 
 export type { ProductionTier, SupportedProductionFamily } from "../../data/productionFamilyCatalog";
+
+type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
+
+function isGatheringContentTier(tier: ProductionTier): tier is GatheringContentTier {
+  return GATHERING_CONTENT_TIERS.includes(tier as GatheringContentTier);
+}
 
 interface ProductionBridgeAdapterDependencies {
   readonly bridge: GameBridge;
@@ -153,13 +160,14 @@ export class ProductionBridgeAdapter {
   }
 
   private getGatheringConfig(family: SupportedProductionFamily, tier: ProductionTier) {
+    if (!isGatheringContentTier(tier)) {
+      throw new Error(`Gathering content missing for ${family} T${String(tier)}`);
+    }
+
     const { bridge } = this.deps;
     const id = getProductionFamilyId(family);
     const definition = getProductionFamilyByGameplayFamily(family);
     const resource = RESOURCE_TIER_CONTENT[id][tier];
-    if (resource === undefined) {
-      throw new Error(`Gathering content missing for ${id} T${String(tier)}`);
-    }
     return {
       masteryId: definition.masteryId,
       resourceName: requireProductionTierPresentation(family, tier).resourceName,
