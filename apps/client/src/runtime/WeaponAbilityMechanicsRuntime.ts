@@ -11,12 +11,15 @@ import {
   snapshotWeaponDotSourceDamage,
 } from "../data/weaponMechanicsContract.js";
 
+const STAT_ABILITY_POWER = "stat_ability_power" as StatId;
+
 interface ActiveDot {
   readonly effectId: string;
   readonly source: EntityId;
   readonly target: EntityId;
   readonly damageType: DamageType;
   readonly sourceDamage: number;
+  readonly abilityPowerMultiplier: number;
   readonly ratio: number;
   intervalRemaining: number;
   readonly interval: number;
@@ -42,16 +45,18 @@ export interface WeaponAbilityMechanicsRuntimeDeps {
 /**
  * DamageManager adds one full source-stat hit to every damage request. For a
  * multi-hit ability we therefore split the authored TOTAL ability budget
- * `(1 + bonusRatio) * sourceDamage` across all hits and subtract the implicit
- * source-stat contribution from each request's baseDamage.
+ * `(1 + bonusRatio) * sourceDamage`, apply Ability Power to that budget, and
+ * subtract the implicit source-stat contribution from each request's baseDamage.
  */
 export function getAbilityHitBaseDamage(
   sourceDamage: number,
   bonusRatio: number,
   hits: number,
+  abilityPowerPercent: number = 0,
 ): number {
   const safeHits = Math.max(1, Math.floor(hits));
-  const intendedDamagePerHit = sourceDamage * (1 + bonusRatio) / safeHits;
+  const abilityPowerMultiplier = 1 + Math.max(0, abilityPowerPercent) / 100;
+  const intendedDamagePerHit = sourceDamage * (1 + bonusRatio) * abilityPowerMultiplier / safeHits;
   return intendedDamagePerHit - sourceDamage;
 }
 
@@ -100,6 +105,8 @@ export class WeaponAbilityMechanicsRuntime {
     const profile = definition.mechanics;
     const sourceStat = (definition.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage") as StatId;
     const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
+    const abilityPowerPercent = this.deps.statsManager.getStat(this.deps.heroId, STAT_ABILITY_POWER).computed;
+    const abilityPowerMultiplier = 1 + Math.max(0, abilityPowerPercent) / 100;
     let dealtDamage = false;
 
     // Mechanics execute strictly in authored array order. This is part of the
@@ -116,7 +123,12 @@ export class WeaponAbilityMechanicsRuntime {
           (effectId) => this.hasEffect(target, effectId),
         );
         const hits = Math.max(1, mechanic.hits ?? 1);
-        const baseDamagePerHit = getAbilityHitBaseDamage(sourceDamage, totalRatio, hits);
+        const baseDamagePerHit = getAbilityHitBaseDamage(
+          sourceDamage,
+          totalRatio,
+          hits,
+          abilityPowerPercent,
+        );
         for (
           let hit = 0;
           hit < hits && canContinueWeaponMultiHit(this.deps.damageManager.isAlive(target));
@@ -151,8 +163,6 @@ export class WeaponAbilityMechanicsRuntime {
         };
         const existing = this.dots.find((dot) => matchesWeaponDotIdentity(dot, incomingIdentity));
         if (existing !== undefined) {
-          // Same-effect DoTs do not stack. Reapplication refreshes their schedule
-          // and tick count while keeping the original source-damage snapshot.
           existing.intervalRemaining = mechanic.interval;
           existing.ticksRemaining = mechanic.ticks;
         } else {
@@ -162,6 +172,7 @@ export class WeaponAbilityMechanicsRuntime {
             target,
             damageType: definition.damageType,
             sourceDamage: snapshotWeaponDotSourceDamage(sourceDamage),
+            abilityPowerMultiplier,
             ratio: mechanic.ratio,
             intervalRemaining: mechanic.interval,
             interval: mechanic.interval,
@@ -210,10 +221,11 @@ export class WeaponAbilityMechanicsRuntime {
       while (dot.intervalRemaining <= 0 && dot.ticksRemaining > 0 && this.deps.damageManager.isAlive(dot.target)) {
         dot.intervalRemaining += dot.interval;
         dot.ticksRemaining -= 1;
+        const baseDamage = dot.sourceDamage * (dot.ratio * dot.abilityPowerMultiplier - 1);
         const result = this.deps.damageManager.processDamage({
           source: dot.source,
           target: dot.target,
-          baseDamage: dot.sourceDamage * (dot.ratio - 1),
+          baseDamage,
           damageType: dot.damageType,
           source_type: "effect",
         });
@@ -242,11 +254,6 @@ export class WeaponAbilityMechanicsRuntime {
     this.modifiers.clear();
   }
 
-  /**
-   * Effect bookkeeping can outlive its ECS target by one presentation/runtime
-   * reconciliation step. Cleanup must therefore be idempotent: if the target's
-   * StatsComponent is already gone, there is nothing left to remove.
-   */
   private removeTrackedModifier(tracked: TrackedModifier): void {
     if (!this.deps.statsManager.hasStats(tracked.target)) return;
     this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
