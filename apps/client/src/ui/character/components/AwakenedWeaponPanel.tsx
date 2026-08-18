@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { AwakenedTraitId, ItemInstanceId } from "@game/gameplay";
+import { isAwakeningEligibleWeapon } from "../../../data/enchantmentItemPolicy.js";
 import { TransactionConfirmModal } from "../../../panels/TransactionConfirmModal";
 import { useGameBridge, useGameServices } from "../../../state/GameContext";
 import "./awakenedWeaponPanel.css";
@@ -62,13 +63,16 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   const [criticalTrait, setCriticalTrait] = useState<AwakenedTraitId | null>(null);
 
   const equippedWeapon = bridge.equipment.slots.find((slot) => slot.slot === "weapon");
+  const awakeningEligible = equippedWeapon !== undefined
+    && equippedWeapon.enchantment === 4
+    && isAwakeningEligibleWeapon(equippedWeapon.itemId);
   const equippedWeaponInstanceId = equippedWeapon?.instanceId as ItemInstanceId | undefined;
-  const state = equippedWeapon?.enchantment === 4 && equippedWeaponInstanceId !== undefined
+  const state = awakeningEligible && equippedWeaponInstanceId !== undefined
     ? services.awakenedWeaponService.getState(equippedWeaponInstanceId)
     : undefined;
-  const derived = equippedWeaponInstanceId === undefined
-    ? undefined
-    : services.awakenedWeaponService.getDerivedState(equippedWeaponInstanceId);
+  const derived = awakeningEligible && equippedWeaponInstanceId !== undefined
+    ? services.awakenedWeaponService.getDerivedState(equippedWeaponInstanceId)
+    : undefined;
   const displayTraitValue = (traitId: AwakenedTraitId, value: number): string =>
     formatTraitValue(
       traitId,
@@ -77,14 +81,14 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
     );
   void refreshKey;
 
-  if (equippedWeapon?.enchantment !== 4) return null;
+  if (!awakeningEligible) return null;
 
   if (state === undefined || derived === undefined || equippedWeaponInstanceId === undefined) {
     return (
       <section className="character-module__awakening" aria-label="Éveil de l'arme">
         <div className="character-module__equipment-heading"><span>Éveil .4</span></div>
         <p className="character-module__awakening-empty">
-          L'arme .4 sera initialisée dès sa première attribution de Fame éligible.
+          L'état d'éveil de cette arme .4 est indisponible. Rééquipe l'arme ou recharge la sauvegarde.
         </p>
       </section>
     );
