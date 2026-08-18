@@ -7,6 +7,7 @@ import {
   getProductionRefiningRecipe,
   getWoodRecipe,
 } from "../../data/refiningRecipes";
+import { RESOURCE_TIER_CONTENT } from "../../data/resourceContentCatalog";
 import { ALL_CRAFT_RECIPES } from "../../data/specialCraftRecipes";
 import { getItemPower } from "../../data/itemPower";
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
@@ -80,14 +81,14 @@ export class ProductionBridgeAdapter {
   syncGathering(family: SupportedProductionFamily): void {
     const { gatheringRuntime, inventoryManager, productionStorageId } = this.deps;
     const tier = this.deps.getGatheringTier();
-    const config = this.getFamilyConfig(family, tier);
+    const config = this.getGatheringConfig(family, tier);
     const session = this.deps.gatheringCoordinators[family].getActiveSession();
     const miniGame = gatheringRuntime.getActiveMiniGameState(family);
     const activeTier = session === undefined ? undefined : miniGame.tier ?? tier;
     const activeResource = activeTier === undefined
       ? undefined
       : {
-          resourceName: this.getFamilyConfig(family, activeTier).resourceName,
+          resourceName: this.getGatheringConfig(family, activeTier).resourceName,
           resourceTier: activeTier,
         };
 
@@ -102,7 +103,7 @@ export class ProductionBridgeAdapter {
       family,
       config.visualManifestId,
       tier,
-      inventoryManager.getTotalQuantity(productionStorageId, config.recipe.rawItemId),
+      inventoryManager.getTotalQuantity(productionStorageId, config.rawItemId),
       miniGame.strikesUsed,
       activeResource,
     );
@@ -115,7 +116,7 @@ export class ProductionBridgeAdapter {
   syncRefining(family: SupportedProductionFamily): void {
     const { inventoryManager, productionStorageId, refiningRuntime } = this.deps;
     const tier = this.deps.getRefiningTier(family);
-    const config = this.getFamilyConfig(family, tier);
+    const config = this.getRefiningConfig(family, tier);
     const activeSession = this.deps.refiningManagers[family].getActiveSession();
     const session = activeSession ?? (
       refiningRuntime.isAutomaticEnabled(family)
@@ -151,16 +152,28 @@ export class ProductionBridgeAdapter {
     );
   }
 
-  private getFamilyConfig(family: SupportedProductionFamily, tier: ProductionTier) {
+  private getGatheringConfig(family: SupportedProductionFamily, tier: ProductionTier) {
     const { bridge } = this.deps;
     const id = getProductionFamilyId(family);
     const definition = getProductionFamilyByGameplayFamily(family);
+    const resource = RESOURCE_TIER_CONTENT[id][tier];
+    if (resource === undefined) {
+      throw new Error(`Gathering content missing for ${id} T${String(tier)}`);
+    }
     return {
       masteryId: definition.masteryId,
       resourceName: requireProductionTierPresentation(family, tier).resourceName,
       visualManifestId: definition.visualManifestId,
-      recipe: getProductionRefiningRecipe(id, tier),
+      rawItemId: resource.rawItemId,
       updateGathering: GATHERING_UPDATERS[id](bridge),
+    };
+  }
+
+  private getRefiningConfig(family: SupportedProductionFamily, tier: ProductionTier) {
+    const { bridge } = this.deps;
+    const id = getProductionFamilyId(family);
+    return {
+      recipe: getProductionRefiningRecipe(id, tier),
       updateRefining: REFINING_UPDATERS[id](bridge),
     };
   }
