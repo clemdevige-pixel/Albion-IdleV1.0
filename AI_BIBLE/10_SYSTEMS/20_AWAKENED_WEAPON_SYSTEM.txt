@@ -283,17 +283,19 @@ Baseline tier costs at Strain 0:
 
 Tier | Base Attunement | Base Silver
 T4.4 | 1,000 | 12,000
-T5.4 | 2,000 | 25,000
-T6.4 | 3,000 | 32,000
-T7.4 | 4,000 | 35,000
-T8.4 | 5,000 | 36,000
+T5.4 | 2,000 | 24,000
+T6.4 | 3,000 | 36,000
+T7.4 | 4,000 | 48,000
+T8.4 | 5,000 | 60,000
+
+Base Silver is intentionally tier-linear at 12,000 Silver per 1,000 base Attunement. This keeps tier progression explicit and avoids the previous near-flat T7/T8 Silver baseline.
 
 Baseline Attunement multiplier:
 
 AttunementMultiplier = 1 + (Strain * 0.01333) + (Strain^2 * 0.001667)
 AttunementCost = BaseAttunement(tier) * AttunementMultiplier
 
-Approximate pacing:
+Approximate Attunement pacing:
 Strain 0 -> x1.00
 Strain 10 -> x1.30
 Strain 20 -> x1.93
@@ -302,13 +304,30 @@ Strain 50 -> x5.83
 Strain 75 -> x11.37
 Strain 100 -> x19.00
 
-The intent is deliberate: early upgrades are frequent and affordable; mature weapons progressively become expensive; very high-Strain weapons naturally approach a reset-or-continue decision without a hard cap.
+Baseline Silver multiplier:
 
-Silver cost curve remains unchanged for the current iteration:
+SilverMultiplier = 1 + (Strain * 0.02) + (Strain^2 * 0.001)
+SilverCost = BaseSilver(tier) * SilverMultiplier
 
-SilverCost = BaseSilver(tier) * (1 + Strain / 18)^2.2
+Approximate Silver pacing:
+Strain 0 -> x1.00
+Strain 10 -> x1.30
+Strain 30 -> x2.50
+Strain 50 -> x4.50
+Strain 75 -> x8.125
+Strain 100 -> x13.00
 
-Silver will be re-evaluated after testing the new Attunement pacing rather than changed simultaneously.
+T8 reference costs:
+Strain 0 -> 60,000 Silver
+Strain 10 -> 78,000 Silver
+Strain 30 -> 150,000 Silver
+Strain 50 -> 270,000 Silver
+Strain 75 -> 487,500 Silver
+Strain 100 -> 780,000 Silver
+
+The intent is deliberate: early upgrades remain affordable, Silver stays a meaningful sink, and mature weapons become expensive without Silver overtaking Attunement as the primary long-term progression wall. Strain and Attunement remain the main soft-cap mechanism at very high investment.
+
+Both Attunement and Silver curve coefficients are authored balance data and may be recalibrated without changing the progression architecture.
 
 ## 15. DESIGN GUARANTEES
 
