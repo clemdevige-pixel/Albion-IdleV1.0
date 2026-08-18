@@ -22,6 +22,11 @@ const SPECIALIZATIONS = [
 describe("weapon content catalog", () => {
   it("keeps authored weapon routing data-driven", () => {
     expect(resolveWeaponTier("item_weapon_sword_t4_broadsword")).toBe(4);
+    expect(resolveWeaponTier("item_weapon_sword_t8_broadsword")).toBe(8);
+    expect(resolveWeaponTier("item_weapon_bow_t8_longbow")).toBe(8);
+    expect(resolveWeaponTier("item_weapon_staff_t8_infernal")).toBe(8);
+    expect(resolveWeaponTier("item_weapon_gloves_t8_spiked_gauntlets")).toBe(8);
+    expect(resolveWeaponTier("item_weapon_dagger_t8_pair")).toBe(8);
     expect(resolveWeaponFamilyId("item_weapon_bow_t4_badon")).toBe("bow");
     expect(resolveWeaponMastery("item_weapon_bow_t4_badon")).toEqual({
       familyId: "mastery_bow",
