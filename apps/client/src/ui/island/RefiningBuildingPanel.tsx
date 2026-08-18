@@ -3,7 +3,7 @@ import {
   getIslandBuildingMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
-import { PRODUCTION_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
+import { REFINING_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
 import { useRefiningActions } from "../production/refining/useRefiningActions";
 import { useRefiningData } from "../production/refining/useRefiningData";
 import "./refiningBuilding.css";
@@ -38,7 +38,7 @@ export function RefiningBuildingPanel({
   return (
     <div className="ui-island-refining-building">
       <div className="ui-island-refining-building__tiers" role="group" aria-label="Tier de raffinage">
-        {PRODUCTION_CONTENT_TIERS.map((tier) => {
+        {REFINING_CONTENT_TIERS.map((tier) => {
           const buildingLocked = tier > maxTier;
           return (
             <button
