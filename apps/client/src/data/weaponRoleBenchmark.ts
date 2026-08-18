@@ -14,6 +14,8 @@ export interface WeaponRoleBenchmarkRow {
   readonly primaryContentRole: WeaponContentRole;
   readonly secondaryContentRole?: WeaponContentRole | undefined;
   readonly sustainedDps: number;
+  readonly opener5Dps: number;
+  readonly opener10Dps: number;
   readonly sustainedIndex: number;
   readonly opener5Index: number;
   readonly opener10Index: number;
@@ -76,6 +78,10 @@ function getUtilityDiagnostics(itemId: string, masteryLevel: number): {
  * does not create a universal role score. It exposes the existing offensive,
  * package and utility signals together with the authored role so balance
  * reviews can read the relevant metrics for each weapon.
+ *
+ * Raw opener DPS is intentionally exposed alongside normalized indices. The
+ * synthetic median can move when one weapon is tuned, so raw values are the
+ * reliable signal for measuring the direct effect of a balance change.
  */
 export function buildWeaponRoleBenchmark(
   itemIds: readonly string[],
@@ -102,6 +108,8 @@ export function buildWeaponRoleBenchmark(
       primaryContentRole: profile.primaryContentRole,
       ...(profile.secondaryContentRole === undefined ? {} : { secondaryContentRole: profile.secondaryContentRole }),
       sustainedDps: offense.sustainedDps,
+      opener5Dps: offense.opener5,
+      opener10Dps: offense.opener10,
       sustainedIndex: offense.offenseIndex,
       opener5Index: offense.opener5Index,
       opener10Index: offense.opener10Index,
