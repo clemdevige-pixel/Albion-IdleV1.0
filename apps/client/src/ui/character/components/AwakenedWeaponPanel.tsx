@@ -15,6 +15,17 @@ const TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
   fame_bonus: "Bonus de Fame",
 };
 
+const TRAIT_IDS: readonly AwakenedTraitId[] = [
+  "item_power",
+  "damage",
+  "ability_power",
+  "cooldown_reduction",
+  "max_health",
+  "armor",
+  "magic_resistance",
+  "fame_bonus",
+];
+
 type PendingConfirmation =
   | { readonly kind: "improve"; readonly traitIndex: number }
   | { readonly kind: "offer"; readonly targetIndex: number }
@@ -47,6 +58,8 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   const services = useGameServices();
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showRollInfo, setShowRollInfo] = useState(false);
+  const [criticalTrait, setCriticalTrait] = useState<AwakenedTraitId | null>(null);
 
   const equippedWeapon = bridge.equipment.slots.find((slot) => slot.slot === "weapon");
   const equippedWeaponInstanceId = equippedWeapon?.instanceId as ItemInstanceId | undefined;
@@ -76,6 +89,24 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
       </section>
     );
   }
+
+  const rollInfo = TRAIT_IDS.map((traitId) => {
+    const range = services.awakenedWeaponService.getTraitRollRange(traitId);
+    const currentValue = state.traits.find((trait) => trait.traitId === traitId)?.value ?? 0;
+    if (traitId === "cooldown_reduction") {
+      const currentDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue);
+      const minDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue + range.min);
+      const maxDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue + range.max);
+      return {
+        traitId,
+        rangeLabel: `+${formatNumber(minDisplayed - currentDisplayed)}% à +${formatNumber(maxDisplayed - currentDisplayed)}%`,
+      };
+    }
+    return {
+      traitId,
+      rangeLabel: `${displayTraitValue(traitId, range.min)} à ${displayTraitValue(traitId, range.max)}`,
+    };
+  });
 
   if (!state.awakened) {
     const awakenWeapon = (): void => {
@@ -141,20 +172,63 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
     let ok = false;
     if (confirmation.kind === "improve") {
       ok = services.improveAwakenedTrait(confirmation.traitIndex);
+      if (ok) {
+        const outcome = services.awakenedWeaponService.getLastImprovementOutcome(equippedWeaponInstanceId);
+        setCriticalTrait(outcome?.roll.critical === true ? outcome.roll.traitId : null);
+      }
     } else if (confirmation.kind === "offer") {
       ok = services.beginAwakenedTraitOffer(confirmation.targetIndex);
+      if (ok) setCriticalTrait(null);
     } else {
       ok = services.resetAwakenedWeapon();
+      if (ok) setCriticalTrait(null);
     }
     if (ok) setConfirmation(null);
   };
 
   return (
     <section className="character-module__awakening" aria-label="Éveil de l'arme">
-      <div className="character-module__equipment-heading">
-        <span>Éveil .4</span>
-        <small>Strain {String(state.strain)}</small>
+      <div className="character-module__awakening-heading-row">
+        <div className="character-module__equipment-heading">
+          <span>Éveil .4</span>
+          <small>Strain {String(state.strain)}</small>
+        </div>
+        <button
+          type="button"
+          className="character-module__awakening-info-button"
+          aria-label="Voir les plages de roll des traits"
+          aria-expanded={showRollInfo}
+          onClick={() => { setShowRollInfo((value) => !value); }}
+        >
+          i
+        </button>
       </div>
+
+      {showRollInfo && (
+        <div className="character-module__awakening-roll-info">
+          <div>
+            <strong>Rolls possibles</strong>
+            <small>
+              Crit amélioration : {formatNumber(services.awakenedWeaponService.getCriticalChance() * 100, 0)}% · ×2. Aucun crit au choix/reroll.
+            </small>
+          </div>
+          <dl>
+            {rollInfo.map((entry) => (
+              <div key={entry.traitId}>
+                <dt>{TRAIT_LABELS[entry.traitId]}</dt>
+                <dd>{entry.rangeLabel}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
+      {criticalTrait !== null && (
+        <div className="character-module__awakening-critical" role="status">
+          <strong>CRITIQUE ×2</strong>
+          <span>{TRAIT_LABELS[criticalTrait]} · amélioration doublée</span>
+        </div>
+      )}
 
       <div className="character-module__awakening-summary">
         <div>
