@@ -1,7 +1,5 @@
 import type { EntityId } from "@game/core";
 import {
-  DEFAULT_AWAKENED_WEAPON_BALANCE,
-  getEffectiveCooldownReductionPercent,
   type AwakenedTraitId,
   type AwakenedWeaponService,
   type EquipmentManager,
@@ -152,10 +150,7 @@ export function recalculateWeaponProgressionStats(
   addAwakenedFlat(statsManager, entityId, "ability_power", STAT_ABILITY_POWER, getTraitValue(traits, "ability_power"));
 
   const cdrProgression = getTraitValue(traits, "cooldown_reduction");
-  const effectiveCdr = getEffectiveCooldownReductionPercent(
-    cdrProgression,
-    DEFAULT_AWAKENED_WEAPON_BALANCE,
-  );
+  const effectiveCdr = awakenedWeaponService?.getDisplayTraitValue("cooldown_reduction", cdrProgression) ?? 0;
   addAwakenedFlat(statsManager, entityId, "cooldown_reduction", STAT_COOLDOWN_REDUCTION, effectiveCdr);
 
   statsManager.calculateStats(entityId);
