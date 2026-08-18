@@ -49,6 +49,13 @@ export const ENCHANTMENT_ITEM_POLICY: Readonly<Record<string, EnchantmentPolicy>
   item_boots_t5_leather: { enabled: true, maximumLevel: 3 },
 };
 
+/** Single authored gate for whether an item may participate in .4 Awakening. */
+export function isAwakeningEligibleWeapon(itemId: string): boolean {
+  const policy = ENCHANTMENT_ITEM_POLICY[itemId];
+  if (policy?.enabled !== true || policy.maximumLevel !== 4) return false;
+  return resolveLegacyEnchantmentItemInfo(itemId)?.slot === "weapon";
+}
+
 export function resolveAuthoredEnchantmentItemInfo(itemId: string) {
   const base = resolveLegacyEnchantmentItemInfo(itemId);
   if (base === undefined) return undefined;
