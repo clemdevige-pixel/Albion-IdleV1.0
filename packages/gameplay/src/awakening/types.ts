@@ -19,6 +19,7 @@ export interface AwakenedTraitRollRange {
 
 export interface AwakenedTierBalance {
   readonly initialAttunementCap: number;
+  readonly awakeningAttunementThreshold: number;
   readonly baseAttunementCost: number;
   readonly baseSilverCost: number;
 }
@@ -27,13 +28,13 @@ export interface AwakenedWeaponBalance {
   readonly tiers: Readonly<Record<AwakenedWeaponTier, AwakenedTierBalance>>;
   readonly traitRolls: Readonly<Record<AwakenedTraitId, AwakenedTraitRollRange>>;
   readonly traitProposalCount: number;
-  readonly slotUnlockMultipliers: readonly [number, number, number];
+  readonly slotUnlockStrainThresholds: readonly [number, number, number];
   readonly attunementCapCostMultiplier: number;
   readonly criticalChance: number;
   readonly criticalMultiplier: number;
   readonly strainPerModification: number;
-  readonly attunementStrainDivisor: number;
-  readonly attunementStrainExponent: number;
+  readonly attunementStrainLinearCoefficient: number;
+  readonly attunementStrainQuadraticCoefficient: number;
   readonly silverStrainDivisor: number;
   readonly silverStrainExponent: number;
   readonly cdrAsymptotePercent: number;
@@ -73,6 +74,8 @@ export interface AwakenedTraitOffer {
 export interface AwakenedWeaponState {
   readonly itemInstanceId: ItemInstanceId;
   readonly tier: AwakenedWeaponTier;
+  /** .4 exists before Awakening; traits and modification actions require this flag. */
+  readonly awakened: boolean;
   readonly storedAttunement: number;
   readonly lifetimeAttunementInvested: number;
   readonly strain: number;
@@ -83,12 +86,17 @@ export interface AwakenedWeaponState {
 export interface AwakenedWeaponDerivedState {
   readonly actionCost: AwakenedActionCost;
   readonly attunementCap: number;
+  readonly awakeningAttunementThreshold: number;
+  readonly canAwaken: boolean;
   readonly unlockedTraitSlots: 1 | 2 | 3;
 }
 
 export type AwakenedFailureReason =
   | "weapon_not_registered"
   | "weapon_already_registered"
+  | "weapon_not_awakened"
+  | "weapon_already_awakened"
+  | "awakening_threshold_not_reached"
   | "invalid_amount"
   | "invalid_trait_index"
   | "trait_slot_locked"
