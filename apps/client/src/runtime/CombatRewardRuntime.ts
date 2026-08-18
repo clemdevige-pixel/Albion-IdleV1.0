@@ -16,6 +16,7 @@ import {
   type CombatDrop,
   type CombatLootContext,
 } from "../data/economyContentCatalog";
+import { isAwakeningEligibleWeapon } from "../data/enchantmentItemPolicy.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 import { getItemTier } from "../data/itemPower.js";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog.js";
@@ -88,6 +89,9 @@ export class CombatRewardRuntime {
     const activeWeaponRoute = equippedWeapon === undefined
       ? undefined
       : resolveWeaponMastery(equippedWeapon.itemId);
+    const awakeningEligible = equippedWeapon !== undefined
+      && equippedWeapon.enchantment === 4
+      && isAwakeningEligibleWeapon(equippedWeapon.itemId);
 
     if (activeWeaponRoute !== undefined) {
       this.progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.familyId);
@@ -95,7 +99,7 @@ export class CombatRewardRuntime {
 
       // Fame Bonus improves progression Fame only. Attunement deliberately uses
       // the raw eligible PvE Fame below so the trait cannot accelerate itself.
-      const fameBonusPercent = equippedWeapon?.enchantment === 4
+      const fameBonusPercent = awakeningEligible
         ? this.awakenedWeaponService.getTraitValue(equippedWeapon.instanceId, "fame_bonus")
         : 0;
       const progressionFame = fameReward + Math.floor(fameReward * fameBonusPercent / 100);
@@ -109,9 +113,11 @@ export class CombatRewardRuntime {
         familyId: activeWeaponRoute.familyId,
       };
 
-      if (equippedWeapon?.enchantment === 4) {
+      if (awakeningEligible) {
         const itemTier = getItemTier(equippedWeapon.itemId);
         if (isAwakenedWeaponTier(itemTier)) {
+          // Compatibility fallback for legacy .4 saves predating immediate
+          // registration on the .3 -> .4 transaction.
           if (!this.awakenedWeaponService.has(equippedWeapon.instanceId)) {
             this.awakenedWeaponService.registerFresh(equippedWeapon.instanceId, itemTier);
           }
