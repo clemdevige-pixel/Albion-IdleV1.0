@@ -52,8 +52,7 @@ export const ENCHANTMENT_ITEM_POLICY: Readonly<Record<string, EnchantmentPolicy>
 /** Single authored gate for whether an item may participate in .4 Awakening. */
 export function isAwakeningEligibleWeapon(itemId: string): boolean {
   const policy = ENCHANTMENT_ITEM_POLICY[itemId];
-  if (policy?.enabled !== true || policy.maximumLevel !== 4) return false;
-  return resolveLegacyEnchantmentItemInfo(itemId)?.slot === "weapon";
+  return policy?.enabled === true && policy.maximumLevel === 4;
 }
 
 export function resolveAuthoredEnchantmentItemInfo(itemId: string) {
