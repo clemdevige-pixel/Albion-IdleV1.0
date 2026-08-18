@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { AwakenedTraitId } from "@game/gameplay";
+import type { AwakenedTraitId, ItemInstanceId } from "@game/gameplay";
 import { TransactionConfirmModal } from "../../../panels/TransactionConfirmModal";
 import { useGameBridge, useGameServices } from "../../../state/GameContext";
 import "./awakenedWeaponPanel.css";
@@ -42,12 +42,13 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(null);
 
   const equippedWeapon = bridge.equipment.slots.find((slot) => slot.slot === "weapon");
-  const state = equippedWeapon?.enchantment === 4 && equippedWeapon.instanceId !== undefined
-    ? services.awakenedWeaponService.getState(equippedWeapon.instanceId)
+  const equippedWeaponInstanceId = equippedWeapon?.instanceId as ItemInstanceId | undefined;
+  const state = equippedWeapon?.enchantment === 4 && equippedWeaponInstanceId !== undefined
+    ? services.awakenedWeaponService.getState(equippedWeaponInstanceId)
     : undefined;
-  const derived = equippedWeapon?.instanceId === undefined
+  const derived = equippedWeaponInstanceId === undefined
     ? undefined
-    : services.awakenedWeaponService.getDerivedState(equippedWeapon.instanceId);
+    : services.awakenedWeaponService.getDerivedState(equippedWeaponInstanceId);
   const displayTraitValue = (traitId: AwakenedTraitId, value: number): string =>
     formatTraitValue(
       traitId,
