@@ -106,6 +106,17 @@ export class AwakenedWeaponService {
     });
   }
 
+  awaken(itemInstanceId: ItemInstanceId): AwakenedResult<AwakenedWeaponState> {
+    const state = this.states.get(itemInstanceId);
+    if (state === undefined) return fail("weapon_not_registered");
+    if (state.awakened) return fail("weapon_already_awakened");
+    const derived = deriveAwakenedWeaponState(state, this.balance);
+    if (!derived.canAwaken) return fail("awakening_threshold_not_reached");
+    const next: AwakenedWeaponState = { ...state, awakened: true };
+    this.states.set(itemInstanceId, next);
+    return ok(next);
+  }
+
   improveTrait(
     itemInstanceId: ItemInstanceId,
     traitIndex: number,
@@ -114,6 +125,7 @@ export class AwakenedWeaponService {
   ): AwakenedResult<AwakenedModificationOutcome> {
     const state = this.states.get(itemInstanceId);
     if (state === undefined) return fail("weapon_not_registered");
+    if (!state.awakened) return fail("weapon_not_awakened");
     if (state.pendingTraitOffer !== undefined) return fail("trait_offer_pending");
     const existing = state.traits[traitIndex];
     if (existing === undefined) return fail("invalid_trait_index");
@@ -137,6 +149,7 @@ export class AwakenedWeaponService {
   ): AwakenedResult<AwakenedTraitOffer> {
     const state = this.states.get(itemInstanceId);
     if (state === undefined) return fail("weapon_not_registered");
+    if (!state.awakened) return fail("weapon_not_awakened");
     if (state.pendingTraitOffer !== undefined) return fail("trait_offer_pending");
 
     const derived = deriveAwakenedWeaponState(state, this.balance);
@@ -172,6 +185,7 @@ export class AwakenedWeaponService {
   ): AwakenedResult<AwakenedWeaponState> {
     const state = this.states.get(itemInstanceId);
     if (state === undefined) return fail("weapon_not_registered");
+    if (!state.awakened) return fail("weapon_not_awakened");
     const offer = state.pendingTraitOffer;
     if (offer === undefined) return fail("no_trait_offer_pending");
     if (selectedTraitId === undefined) {
@@ -218,6 +232,7 @@ export class AwakenedWeaponService {
   }
 
   private spendAction(state: AwakenedWeaponState, walletId: WalletId): AwakenedResult<AwakenedActionCost> {
+    if (!state.awakened) return fail("weapon_not_awakened");
     const cost = deriveAwakenedWeaponState(state, this.balance).actionCost;
     if (state.storedAttunement < cost.attunement) return fail("insufficient_attunement");
     const canSpend = this.currencyService.canSpend(walletId, this.options.silverCurrencyId, cost.silver);
