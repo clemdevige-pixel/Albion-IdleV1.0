@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  GATHERING_CONTENT_TIERS,
   PRODUCTION_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
@@ -12,7 +13,26 @@ import {
 } from "./refiningRecipes.js";
 
 describe("production tier content contract", () => {
-  it("keeps every authored tier complete across gathering and refining", () => {
+  it("keeps every authored gathering tier complete without requiring refining rollout", () => {
+    expect(GATHERING_CONTENT_TIERS).toContain(6);
+    expect(PRODUCTION_CONTENT_TIERS).not.toContain(6);
+
+    for (const familyId of PRODUCTION_FAMILY_IDS) {
+      const family = getProductionFamilyDefinition(familyId);
+
+      for (const tier of GATHERING_CONTENT_TIERS) {
+        const presentation = family.tiers[tier];
+        const resource = RESOURCE_TIER_CONTENT[familyId][tier];
+
+        expect(presentation, `${familyId} T${String(tier)} presentation`).toBeDefined();
+        expect(resource, `${familyId} T${String(tier)} gathering content`).toBeDefined();
+        expect(resource?.rawItemId).toContain(`_t${String(tier)}`);
+        expect(getProductionTierRules(tier).gatheringBaseTicks).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("keeps every complete production tier coherent across gathering and refining", () => {
     expect(PRODUCTION_CONTENT_TIERS).toContain(5);
 
     for (const familyId of PRODUCTION_FAMILY_IDS) {
@@ -27,13 +47,13 @@ describe("production tier content contract", () => {
         expect(resource, `${familyId} T${String(tier)} gathering content`).toBeDefined();
         expect(getProductionTierRules(tier).gatheringBaseTicks).toBeGreaterThan(0);
         expect(refining.tier).toBe(tier);
-        expect(refining.rawItemId).toContain(`_t${String(tier)}`);
+        expect(refining.rawItemId).toBe(resource?.rawItemId);
         expect(refining.outputItemId).toContain(`_t${String(tier)}`);
       }
     }
   });
 
-  it("requires the previous refined tier for every authored tier after T3", () => {
+  it("requires the previous refined tier for every authored complete tier after T3", () => {
     for (const familyId of PRODUCTION_FAMILY_IDS) {
       for (const tier of PRODUCTION_CONTENT_TIERS) {
         if (tier === 3) continue;
@@ -50,7 +70,7 @@ describe("production tier content contract", () => {
     }
   });
 
-  it("exposes standard weapon and armor recipes for the highest authored tier", () => {
+  it("exposes standard weapon and armor recipes for the highest authored complete tier", () => {
     const highestAuthoredTier = Math.max(...PRODUCTION_CONTENT_TIERS);
     const recipes = EQUIPMENT_CRAFT_RECIPES.filter(
       (recipe) => recipe.tier === highestAuthoredTier,
