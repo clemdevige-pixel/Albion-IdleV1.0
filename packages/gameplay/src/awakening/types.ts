@@ -46,15 +46,6 @@ export interface AwakenedTraitState {
   readonly value: number;
 }
 
-export interface AwakenedWeaponState {
-  readonly itemInstanceId: ItemInstanceId;
-  readonly tier: AwakenedWeaponTier;
-  readonly storedAttunement: number;
-  readonly lifetimeAttunementInvested: number;
-  readonly strain: number;
-  readonly traits: readonly AwakenedTraitState[];
-}
-
 export interface AwakenedActionCost {
   readonly attunement: number;
   readonly silver: number;
@@ -67,8 +58,61 @@ export interface AwakenedTraitRollResult {
   readonly finalGain: number;
 }
 
+export type AwakenedTraitOfferKind = "fill" | "reroll";
+
+/**
+ * Paid offer persisted on the weapon so reopening/reloading cannot generate
+ * free alternative proposals. Choosing from an existing offer never pays twice.
+ */
+export interface AwakenedTraitOffer {
+  readonly kind: AwakenedTraitOfferKind;
+  readonly targetIndex: number;
+  readonly proposals: readonly AwakenedTraitRollResult[];
+}
+
+export interface AwakenedWeaponState {
+  readonly itemInstanceId: ItemInstanceId;
+  readonly tier: AwakenedWeaponTier;
+  readonly storedAttunement: number;
+  readonly lifetimeAttunementInvested: number;
+  readonly strain: number;
+  readonly traits: readonly AwakenedTraitState[];
+  readonly pendingTraitOffer?: AwakenedTraitOffer;
+}
+
 export interface AwakenedWeaponDerivedState {
   readonly actionCost: AwakenedActionCost;
   readonly attunementCap: number;
   readonly unlockedTraitSlots: 1 | 2 | 3;
+}
+
+export type AwakenedFailureReason =
+  | "weapon_not_registered"
+  | "weapon_already_registered"
+  | "invalid_amount"
+  | "invalid_trait_index"
+  | "trait_slot_locked"
+  | "trait_offer_pending"
+  | "no_trait_offer_pending"
+  | "invalid_trait_choice"
+  | "choice_required"
+  | "insufficient_attunement"
+  | "insufficient_silver";
+
+export type AwakenedResult<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly reason: AwakenedFailureReason };
+
+export interface AwakenedAttunementGain {
+  readonly requested: number;
+  readonly stored: number;
+  readonly discardedAtCap: number;
+  readonly balance: number;
+  readonly cap: number;
+}
+
+export interface AwakenedModificationOutcome {
+  readonly state: AwakenedWeaponState;
+  readonly roll: AwakenedTraitRollResult;
+  readonly cost: AwakenedActionCost;
 }
