@@ -60,14 +60,6 @@ const FACTION_ENCOUNTER_ROSTERS = {
 
 type EncounterFactionRole = "dominant" | "secondary";
 
-/**
- * Authoritative normal-encounter pattern for every segment.
- *
- * Rows are segments 1..10 and columns are encounters 1..4. Keeping this
- * authored rather than random makes a farming target fully reproducible.
- * The secondary faction is introduced progressively without ever replacing
- * the zone's dominant identity.
- */
 const NORMAL_FACTION_PATTERN_BY_SEGMENT: readonly (readonly EncounterFactionRole[])[] = [
   ["dominant", "dominant", "dominant", "dominant"],
   ["dominant", "dominant", "dominant", "dominant"],
@@ -81,18 +73,9 @@ const NORMAL_FACTION_PATTERN_BY_SEGMENT: readonly (readonly EncounterFactionRole
   ["dominant", "secondary", "dominant", "secondary"],
 ] as const;
 
-/** Encounter five is always an elite before the final zone boss. */
 const ELITE_FACTION_PATTERN_BY_SEGMENT: readonly EncounterFactionRole[] = [
-  "dominant",
-  "dominant",
-  "dominant",
-  "secondary",
-  "dominant",
-  "secondary",
-  "dominant",
-  "secondary",
-  "dominant",
-  "dominant",
+  "dominant", "dominant", "dominant", "secondary", "dominant",
+  "secondary", "dominant", "secondary", "dominant", "dominant",
 ] as const;
 
 export const ZONE_ENCOUNTER_POOLS: Readonly<Record<string, ZoneEncounterPool>> = {
@@ -106,6 +89,11 @@ export const ZONE_ENCOUNTER_POOLS: Readonly<Record<string, ZoneEncounterPool>> =
   zone_stormwatch_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Morgana, biomeBoss: MONSTER_IDS.keeperAncient },
   zone_sunscar_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Heretic, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.hereticMadmen },
   zone_ironveil_t5: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.morganaHighPriestess },
+  zone_cinderwood_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Morgana, biomeBoss: MONSTER_IDS.keeperAncient },
+  zone_rotfen_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Undead, secondary: FACTION_ENCOUNTER_ROSTERS.Morgana, biomeBoss: MONSTER_IDS.undeadLich },
+  zone_thundercrag_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Heretic, secondary: FACTION_ENCOUNTER_ROSTERS.Keeper, biomeBoss: MONSTER_IDS.hereticMadmen },
+  zone_emberwind_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Morgana, secondary: FACTION_ENCOUNTER_ROSTERS.Heretic, biomeBoss: MONSTER_IDS.morganaHighPriestess },
+  zone_ashenpeak_t6: { dominant: FACTION_ENCOUNTER_ROSTERS.Keeper, secondary: FACTION_ENCOUNTER_ROSTERS.Undead, biomeBoss: MONSTER_IDS.keeperAncient },
 };
 
 export function getMonsterDefinition(id: string): MonsterContentDefinition { const definition = MONSTER_DEFINITIONS[id]; if (definition === undefined) throw new Error(`Unknown monster definition: ${id}`); return definition; }
