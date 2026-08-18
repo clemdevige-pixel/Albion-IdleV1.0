@@ -40,6 +40,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   const bridge = useGameBridge();
   const services = useGameServices();
   const [confirmation, setConfirmation] = useState<PendingConfirmation | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const equippedWeapon = bridge.equipment.slots.find((slot) => slot.slot === "weapon");
   const equippedWeaponInstanceId = equippedWeapon?.instanceId as ItemInstanceId | undefined;
@@ -55,16 +56,72 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
       value,
       (id, storedValue) => services.awakenedWeaponService.getDisplayTraitValue(id, storedValue),
     );
+  void refreshKey;
 
   if (equippedWeapon?.enchantment !== 4) return null;
 
-  if (state === undefined || derived === undefined) {
+  if (state === undefined || derived === undefined || equippedWeaponInstanceId === undefined) {
     return (
       <section className="character-module__awakening" aria-label="Éveil de l'arme">
         <div className="character-module__equipment-heading"><span>Éveil .4</span></div>
         <p className="character-module__awakening-empty">
           L'arme .4 sera initialisée dès sa première attribution de Fame éligible.
         </p>
+      </section>
+    );
+  }
+
+  if (!state.awakened) {
+    const awakenWeapon = (): void => {
+      const result = services.awakenedWeaponService.awaken(equippedWeaponInstanceId);
+      if (!result.ok) {
+        services.bridge.addEconomyNotification({
+          id: `notif_awakening_failed_${String(Date.now())}`,
+          type: "error",
+          message: result.reason === "awakening_threshold_not_reached"
+            ? "Attunement insuffisant pour éveiller cette arme."
+            : "Impossible d'éveiller cette arme dans l'état actuel.",
+          timestamp: Date.now(),
+        });
+        return;
+      }
+      services.saveGame();
+      services.bridge.addEconomyNotification({
+        id: `notif_awakened_${String(Date.now())}`,
+        type: "success",
+        message: "Arme éveillée · le premier trait peut maintenant être tiré.",
+        timestamp: Date.now(),
+      });
+      setRefreshKey((value) => value + 1);
+    };
+
+    return (
+      <section className="character-module__awakening" aria-label="Éveil de l'arme">
+        <div className="character-module__equipment-heading">
+          <span>Éveil .4</span>
+          <small>Non éveillée</small>
+        </div>
+        <div className="character-module__awakening-summary">
+          <div>
+            <span>Attunement d'éveil</span>
+            <strong>{formatNumber(state.storedAttunement, 0)} / {formatNumber(derived.awakeningAttunementThreshold, 0)}</strong>
+          </div>
+          <div>
+            <span>Cap actuel</span>
+            <strong>{formatNumber(derived.attunementCap, 0)}</strong>
+          </div>
+        </div>
+        <p className="character-module__awakening-empty">
+          Équipe cette arme .4 et gagne de la Fame PvE éligible pour charger son Attunement, puis éveille-la pour débloquer les traits.
+        </p>
+        <button
+          type="button"
+          className="character-module__awakening-reset"
+          disabled={!derived.canAwaken}
+          onClick={awakenWeapon}
+        >
+          Éveiller l'arme
+        </button>
       </section>
     );
   }
@@ -112,6 +169,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
         {[0, 1, 2].map((index) => {
           const trait = state.traits[index];
           const unlocked = index < derived.unlockedTraitSlots;
+          const unlockAt = index === 1 ? 10 : index === 2 ? 30 : 0;
           return (
             <article key={index} className={`character-module__awakening-trait${!unlocked ? " is-locked" : ""}`}>
               <div>
@@ -124,7 +182,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
                 ) : unlocked ? (
                   <strong>Slot disponible</strong>
                 ) : (
-                  <strong>Verrouillé</strong>
+                  <strong>Verrouillé · Strain {String(unlockAt)}</strong>
                 )}
               </div>
               {offer === undefined && unlocked && (
@@ -203,7 +261,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
         >
           {confirmation.kind === "reset" ? (
             <p>
-              Tous les traits, leur progression, la Strain et l'Attunement investi seront perdus. L'arme restera .4.
+              Tous les traits, leur progression, la Strain et l'Attunement seront perdus. L'arme restera .4 et devra être éveillée à nouveau.
             </p>
           ) : (
             <p>
