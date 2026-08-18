@@ -1,6 +1,6 @@
 import type { IslandBuildingCategory } from "./island.js";
 
-export type IslandLevel = 1 | 2 | 3;
+export type IslandLevel = 1 | 2 | 3 | 4;
 
 export interface IslandWorldRequirement {
   readonly zoneDefId: string;
@@ -66,6 +66,24 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       requirements: [
         { itemId: "item_refined_planks_t4", quantity: 30 },
         { itemId: "item_refined_metal_bar_t4", quantity: 30 },
+      ],
+    },
+  },
+  {
+    level: 4,
+    label: "Domaine avancé",
+    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    maxBuildingLevel: 4,
+    worldRequirementToReach: {
+      zoneDefId: "zone_ironveil_t5",
+      minimumCompletedSegments: 10,
+      label: "Terminer Ironveil Peaks",
+    },
+    upgradeCost: {
+      silver: 6000,
+      requirements: [
+        { itemId: "item_refined_planks_t5", quantity: 40 },
+        { itemId: "item_refined_metal_bar_t5", quantity: 40 },
       ],
     },
   },
