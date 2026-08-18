@@ -1,7 +1,13 @@
 export type {
   AwakenedActionCost,
+  AwakenedAttunementGain,
+  AwakenedFailureReason,
+  AwakenedModificationOutcome,
+  AwakenedResult,
   AwakenedTierBalance,
   AwakenedTraitId,
+  AwakenedTraitOffer,
+  AwakenedTraitOfferKind,
   AwakenedTraitRollRange,
   AwakenedTraitRollResult,
   AwakenedTraitState,
@@ -22,3 +28,6 @@ export {
   rollAwakenedTrait,
 } from "./calculations.js";
 export { createFreshAwakenedWeaponState, resetAwakenedWeaponState } from "./state.js";
+export { AwakenedWeaponService } from "./awakening-service.js";
+export type { AwakenedWeaponServiceOptions } from "./awakening-service.js";
+export { AwakeningSaveProvider } from "./awakening-save-provider.js";
