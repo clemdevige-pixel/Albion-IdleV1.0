@@ -3,7 +3,7 @@ import {
 } from "./nonWeaponEquipmentContentCatalog.js";
 import {
   GATHERING_CONTENT_TIERS,
-  PRODUCTION_CONTENT_TIERS,
+  REFINING_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
 } from "./productionFamilyCatalog.js";
@@ -24,11 +24,6 @@ export interface CatalogResourceVisualDefinition {
   readonly icon: string;
 }
 
-/**
- * Presentation shared by every tier of a conventional non-weapon family.
- * Adding a future tier to the equipment family must not require another
- * ItemVisual routing entry.
- */
 const NON_WEAPON_ICON_BY_FAMILY: Readonly<Record<string, string>> = {
   reinforced_shield: "item-wooden-shield-pixel-v1.png",
   reinforced_helmet: "item-iron-helmet-pixel-v1.png",
@@ -63,7 +58,6 @@ export const PROGRESSION_NON_WEAPON_VISUALS: Readonly<
   Record<string, CatalogItemVisualDefinition>
 > = Object.fromEntries(progressionNonWeaponVisualEntries);
 
-/** Raw resource presentation follows gathering rollout independently of refining. */
 const productionResourceVisualEntries: Array<readonly [string, CatalogResourceVisualDefinition]> = [];
 for (const familyId of PRODUCTION_FAMILY_IDS) {
   const family = getProductionFamilyDefinition(familyId);
@@ -80,7 +74,7 @@ for (const familyId of PRODUCTION_FAMILY_IDS) {
     ]);
   }
 
-  for (const tier of PRODUCTION_CONTENT_TIERS) {
+  for (const tier of REFINING_CONTENT_TIERS) {
     const recipe = getProductionRefiningRecipe(familyId, tier);
     productionResourceVisualEntries.push([
       recipe.outputItemId,
