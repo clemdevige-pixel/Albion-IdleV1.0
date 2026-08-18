@@ -37,6 +37,11 @@ export const WORLD_ZONE_CONTENT = {
   stormwatch: { id: asZoneDefinitionId("zone_stormwatch_t5"), name: "Stormwatch Highlands", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_highland"), spawnGroupPrefix: "grp_stormwatch", respawnDelayTicks: 75, tags: ["highland", "yellow", "tier5"] },
   sunscar: { id: asZoneDefinitionId("zone_sunscar_t5"), name: "Sunscar Steppe", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_steppe"), spawnGroupPrefix: "grp_sunscar", respawnDelayTicks: 80, tags: ["steppe", "yellow", "tier5"] },
   ironveil: { id: asZoneDefinitionId("zone_ironveil_t5"), name: "Ironveil Peaks", bandId: "yellow", tier: 5, biomeId: asBiomeId("biome_mountain"), spawnGroupPrefix: "grp_ironveil", respawnDelayTicks: 85, tags: ["mountain", "yellow", "tier5", "final"] },
+  cinderwood: { id: asZoneDefinitionId("zone_cinderwood_t6"), name: "Cinderwood Forest", bandId: "orange", tier: 6, biomeId: asBiomeId("biome_forest"), spawnGroupPrefix: "grp_cinderwood", respawnDelayTicks: 90, tags: ["forest", "orange", "tier6", "starter"] },
+  rotfen: { id: asZoneDefinitionId("zone_rotfen_t6"), name: "Rotfen Marsh", bandId: "orange", tier: 6, biomeId: asBiomeId("biome_swamp"), spawnGroupPrefix: "grp_rotfen", respawnDelayTicks: 95, tags: ["swamp", "orange", "tier6"] },
+  thundercrag: { id: asZoneDefinitionId("zone_thundercrag_t6"), name: "Thundercrag Highlands", bandId: "orange", tier: 6, biomeId: asBiomeId("biome_highland"), spawnGroupPrefix: "grp_thundercrag", respawnDelayTicks: 100, tags: ["highland", "orange", "tier6"] },
+  emberwind: { id: asZoneDefinitionId("zone_emberwind_t6"), name: "Emberwind Steppe", bandId: "orange", tier: 6, biomeId: asBiomeId("biome_steppe"), spawnGroupPrefix: "grp_emberwind", respawnDelayTicks: 105, tags: ["steppe", "orange", "tier6"] },
+  ashenpeak: { id: asZoneDefinitionId("zone_ashenpeak_t6"), name: "Ashenpeak Mountain", bandId: "orange", tier: 6, biomeId: asBiomeId("biome_mountain"), spawnGroupPrefix: "grp_ashenpeak", respawnDelayTicks: 110, tags: ["mountain", "orange", "tier6", "final"] },
 } as const satisfies Readonly<Record<string, WorldZoneContentDefinition>>;
 
 export type WorldZoneKey = keyof typeof WORLD_ZONE_CONTENT;
