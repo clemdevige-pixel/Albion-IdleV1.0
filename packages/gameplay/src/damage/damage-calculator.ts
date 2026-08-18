@@ -1,16 +1,19 @@
 import type { DamageType } from "./types.js";
 
 /**
- * Damage pipeline per AI_BIBLE 21_DAMAGE_SYSTEM:
+ * Damage pipeline:
  * - Physical damage is reduced by Armor only.
  * - Magical damage is reduced by Magic Resistance only.
  * - True damage ignores every resistance.
- * - Resistances are percentage points (e.g. 40 = 40%) capped at 80%.
+ * - Armor and Magic Resistance are rating values converted through a diminishing-return curve.
  * - Every successful damage request inflicts at least 1 damage (minimum damage rule).
  */
 
-/** Resistance cap: armor and magic resistance can never exceed 80% (Rules 10 & 11). */
-export const RESISTANCE_CAP_PERCENT = 80;
+/**
+ * Resistance rating at which mitigation reaches 50%.
+ * Keep this authored in one place: both Armor and Magic Resistance use the same curve.
+ */
+export const RESISTANCE_SCALING_CONSTANT = 100;
 
 export interface AttackerDamageStats {
   readonly physicalDamage: number;
@@ -27,9 +30,15 @@ export interface DamageCalculation {
   readonly mitigatedDamage: number;
 }
 
-function resistanceRatio(percentPoints: number): number {
-  const clamped = Math.min(Math.max(percentPoints, 0), RESISTANCE_CAP_PERCENT);
-  return clamped / 100;
+/**
+ * Converts a resistance rating into the live mitigation ratio.
+ * Formula: resistance / (resistance + K), K = RESISTANCE_SCALING_CONSTANT.
+ * There is intentionally no hard cap: every additional resistance point keeps value,
+ * while naturally yielding diminishing returns.
+ */
+export function calculateResistanceMitigation(resistance: number): number {
+  const safeResistance = Math.max(0, resistance);
+  return safeResistance / (safeResistance + RESISTANCE_SCALING_CONSTANT);
 }
 
 export function calculateDamage(
@@ -44,11 +53,11 @@ export function calculateDamage(
   switch (damageType) {
     case "physical":
       rawDamage = Math.max(0, baseDamage + attackerStats.physicalDamage);
-      reduction = resistanceRatio(defenderStats.armor);
+      reduction = calculateResistanceMitigation(defenderStats.armor);
       break;
     case "magical":
       rawDamage = Math.max(0, baseDamage + attackerStats.magicalDamage);
-      reduction = resistanceRatio(defenderStats.magicResistance);
+      reduction = calculateResistanceMitigation(defenderStats.magicResistance);
       break;
     case "true":
       rawDamage = Math.max(0, baseDamage);
