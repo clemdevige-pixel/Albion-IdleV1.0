@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   GATHERING_CONTENT_TIERS,
   PRODUCTION_CONTENT_TIERS,
+  REFINING_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
   getProductionTierRules,
@@ -15,7 +16,6 @@ import {
 describe("production tier content contract", () => {
   it("keeps every authored gathering tier complete without requiring refining rollout", () => {
     expect(GATHERING_CONTENT_TIERS).toContain(6);
-    expect(PRODUCTION_CONTENT_TIERS).not.toContain(6);
 
     for (const familyId of PRODUCTION_FAMILY_IDS) {
       const family = getProductionFamilyDefinition(familyId);
@@ -28,6 +28,34 @@ describe("production tier content contract", () => {
         expect(resource, `${familyId} T${String(tier)} gathering content`).toBeDefined();
         expect(resource?.rawItemId).toContain(`_t${String(tier)}`);
         expect(getProductionTierRules(tier).gatheringBaseTicks).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("keeps every authored refining tier complete without requiring craft rollout", () => {
+    expect(REFINING_CONTENT_TIERS).toContain(6);
+    expect(PRODUCTION_CONTENT_TIERS).not.toContain(6);
+
+    for (const familyId of PRODUCTION_FAMILY_IDS) {
+      for (const tier of REFINING_CONTENT_TIERS) {
+        const resource = RESOURCE_TIER_CONTENT[familyId][tier];
+        const refining = getProductionRefiningRecipe(familyId, tier);
+
+        expect(resource, `${familyId} T${String(tier)} gathering content`).toBeDefined();
+        expect(refining.tier).toBe(tier);
+        expect(refining.rawItemId).toBe(resource?.rawItemId);
+        expect(refining.outputItemId).toContain(`_t${String(tier)}`);
+
+        if (tier > 3) {
+          expect(
+            refining.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier - 1)}`)),
+            `${familyId} T${String(tier)} should consume previous refined tier`,
+          ).toBe(true);
+        }
+        expect(
+          refining.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier)}`)),
+          `${familyId} T${String(tier)} should consume current raw tier`,
+        ).toBe(true);
       }
     }
   });
@@ -49,23 +77,6 @@ describe("production tier content contract", () => {
         expect(refining.tier).toBe(tier);
         expect(refining.rawItemId).toBe(resource?.rawItemId);
         expect(refining.outputItemId).toContain(`_t${String(tier)}`);
-      }
-    }
-  });
-
-  it("requires the previous refined tier for every authored complete tier after T3", () => {
-    for (const familyId of PRODUCTION_FAMILY_IDS) {
-      for (const tier of PRODUCTION_CONTENT_TIERS) {
-        if (tier === 3) continue;
-        const recipe = getProductionRefiningRecipe(familyId, tier);
-        expect(
-          recipe.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier - 1)}`)),
-          `${familyId} T${String(tier)} should consume previous refined tier`,
-        ).toBe(true);
-        expect(
-          recipe.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier)}`)),
-          `${familyId} T${String(tier)} should consume current raw tier`,
-        ).toBe(true);
       }
     }
   });
