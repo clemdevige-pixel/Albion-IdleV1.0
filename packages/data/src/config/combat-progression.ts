@@ -5,6 +5,8 @@ export const ENCOUNTERS_PER_SEGMENT = 5;
 export const ENCOUNTER_DIFFICULTY_GROWTH = 0.025;
 export const REWARD_RANKS_PER_ZONE = 5;
 
+export type EnemyDefenseModel = "legacy_flat_magic" | "rank_parity";
+
 export interface ZoneCombatCurve {
   readonly healthStart: number;
   readonly healthEnd: number;
@@ -12,6 +14,13 @@ export interface ZoneCombatCurve {
   readonly damageEnd: number;
   readonly defenseStart: number;
   readonly defenseEnd: number;
+  /**
+   * Defense family authored per zone.
+   * - legacy_flat_magic preserves the calibrated T3 onboarding contract.
+   * - rank_parity gives physical Armor and magical Resistance the same
+   *   normal/elite/boss base before the shared defense curve is applied.
+   */
+  readonly defenseModel: EnemyDefenseModel;
 }
 
 /**
@@ -24,13 +33,17 @@ export interface ZoneCombatCurve {
  * - Highlands: T3 -> first T4 transition.
  * - Steppe: full T4.0 / first enchantments; T4.1 should clear S10 with tension.
  * - Mountain: T4.1 -> T4.2; T4.2 clears S10, T4.3 provides comfort.
+ *
+ * T3 keeps the historical flat magical-defense model because onboarding was
+ * calibrated against it. T4 begins the rank-parity defense contract used by
+ * every later authored tier.
  */
 export const BLUE_WORLD_COMBAT_CURVE = [
-  { healthStart: 0.9, healthEnd: 1.08, damageStart: 0.72, damageEnd: 0.98, defenseStart: 0.9, defenseEnd: 0.98 },
-  { healthStart: 1.15, healthEnd: 1.55, damageStart: 1.18, damageEnd: 1.8, defenseStart: 1.0, defenseEnd: 1.1 },
-  { healthStart: 1.7, healthEnd: 2.3, damageStart: 2.6, damageEnd: 3.0, defenseStart: 1.15, defenseEnd: 1.3 },
-  { healthStart: 2.3, healthEnd: 3.02, damageStart: 3.0, damageEnd: 3.18, defenseStart: 1.3, defenseEnd: 1.46 },
-  { healthStart: 3.1, healthEnd: 4.0, damageStart: 3.3, damageEnd: 3.5, defenseStart: 1.5, defenseEnd: 1.8 },
+  { healthStart: 0.9, healthEnd: 1.08, damageStart: 0.72, damageEnd: 0.98, defenseStart: 0.9, defenseEnd: 0.98, defenseModel: "legacy_flat_magic" },
+  { healthStart: 1.15, healthEnd: 1.55, damageStart: 1.18, damageEnd: 1.8, defenseStart: 1.0, defenseEnd: 1.1, defenseModel: "legacy_flat_magic" },
+  { healthStart: 1.7, healthEnd: 2.3, damageStart: 2.6, damageEnd: 3.0, defenseStart: 1.15, defenseEnd: 1.3, defenseModel: "legacy_flat_magic" },
+  { healthStart: 2.3, healthEnd: 3.02, damageStart: 3.0, damageEnd: 3.18, defenseStart: 1.3, defenseEnd: 1.46, defenseModel: "rank_parity" },
+  { healthStart: 3.1, healthEnd: 4.0, damageStart: 3.3, damageEnd: 3.5, defenseStart: 1.5, defenseEnd: 1.8, defenseModel: "rank_parity" },
 ] as const;
 
 /**
@@ -42,11 +55,11 @@ export const BLUE_WORLD_COMBAT_CURVE = [
  * Ironveil T5.2 + potion / T5.3 as comfort.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
-  { healthStart: 4.3, healthEnd: 4.45, damageStart: 3.55, damageEnd: 3.7, defenseStart: 2.1, defenseEnd: 2.18 },
-  { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.9, damageEnd: 4.0, defenseStart: 2.3, defenseEnd: 2.35 },
-  { healthStart: 5.25, healthEnd: 5.4, damageStart: 4.3, damageEnd: 4.35, defenseStart: 2.5, defenseEnd: 2.56 },
-  { healthStart: 5.85, healthEnd: 6.5, damageStart: 4.7, damageEnd: 5.15, defenseStart: 2.75, defenseEnd: 3 },
-  { healthStart: 6.5, healthEnd: 6.5, damageStart: 5.15, damageEnd: 5.15, defenseStart: 3, defenseEnd: 3 },
+  { healthStart: 4.3, healthEnd: 4.45, damageStart: 3.55, damageEnd: 3.7, defenseStart: 2.1, defenseEnd: 2.18, defenseModel: "rank_parity" },
+  { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.9, damageEnd: 4.0, defenseStart: 2.3, defenseEnd: 2.35, defenseModel: "rank_parity" },
+  { healthStart: 5.25, healthEnd: 5.4, damageStart: 4.3, damageEnd: 4.35, defenseStart: 2.5, defenseEnd: 2.56, defenseModel: "rank_parity" },
+  { healthStart: 5.85, healthEnd: 6.5, damageStart: 4.7, damageEnd: 5.15, defenseStart: 2.75, defenseEnd: 3, defenseModel: "rank_parity" },
+  { healthStart: 6.5, healthEnd: 6.5, damageStart: 5.15, damageEnd: 5.15, defenseStart: 3, defenseEnd: 3, defenseModel: "rank_parity" },
 ] as const;
 
 /**
@@ -62,11 +75,11 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
  * artificially inflating every prior Orange encounter.
  */
 export const ORANGE_WORLD_COMBAT_CURVE = [
-  { healthStart: 6.8, healthEnd: 7.15, damageStart: 5.35, damageEnd: 5.6, defenseStart: 3.1, defenseEnd: 3.2 },
-  { healthStart: 7.4, healthEnd: 7.8, damageStart: 5.8, damageEnd: 6.05, defenseStart: 3.3, defenseEnd: 3.42 },
-  { healthStart: 8.1, healthEnd: 8.55, damageStart: 6.25, damageEnd: 6.5, defenseStart: 3.55, defenseEnd: 3.68 },
-  { healthStart: 8.9, healthEnd: 9.45, damageStart: 6.75, damageEnd: 7.05, defenseStart: 3.82, defenseEnd: 3.98 },
-  { healthStart: 9.8, healthEnd: 10.5, damageStart: 7.3, damageEnd: 8.65, defenseStart: 4.1, defenseEnd: 4.35 },
+  { healthStart: 6.8, healthEnd: 7.15, damageStart: 5.35, damageEnd: 5.6, defenseStart: 3.1, defenseEnd: 3.2, defenseModel: "rank_parity" },
+  { healthStart: 7.4, healthEnd: 7.8, damageStart: 5.8, damageEnd: 6.05, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
+  { healthStart: 8.1, healthEnd: 8.55, damageStart: 6.25, damageEnd: 6.5, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
+  { healthStart: 8.9, healthEnd: 9.45, damageStart: 6.75, damageEnd: 7.05, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
+  { healthStart: 9.8, healthEnd: 10.5, damageStart: 7.3, damageEnd: 8.65, defenseStart: 4.1, defenseEnd: 4.35, defenseModel: "rank_parity" },
 ] as const;
 
 /**
@@ -77,11 +90,11 @@ export const ORANGE_WORLD_COMBAT_CURVE = [
  * will calibrate these values once the complete T7 equipment loop exists.
  */
 export const RED_WORLD_COMBAT_CURVE = [
-  { healthStart: 10.9, healthEnd: 11.5, damageStart: 8.8, damageEnd: 9.15, defenseStart: 4.5, defenseEnd: 4.65 },
-  { healthStart: 11.9, healthEnd: 12.6, damageStart: 9.4, damageEnd: 9.8, defenseStart: 4.8, defenseEnd: 4.95 },
-  { healthStart: 13.0, healthEnd: 13.8, damageStart: 10.05, damageEnd: 10.5, defenseStart: 5.1, defenseEnd: 5.28 },
-  { healthStart: 14.3, healthEnd: 15.2, damageStart: 10.8, damageEnd: 11.3, defenseStart: 5.45, defenseEnd: 5.65 },
-  { healthStart: 15.8, healthEnd: 16.8, damageStart: 11.65, damageEnd: 12.25, defenseStart: 5.85, defenseEnd: 6.1 },
+  { healthStart: 10.9, healthEnd: 11.5, damageStart: 8.8, damageEnd: 9.15, defenseStart: 4.5, defenseEnd: 4.65, defenseModel: "rank_parity" },
+  { healthStart: 11.9, healthEnd: 12.6, damageStart: 9.4, damageEnd: 9.8, defenseStart: 4.8, defenseEnd: 4.95, defenseModel: "rank_parity" },
+  { healthStart: 13.0, healthEnd: 13.8, damageStart: 10.05, damageEnd: 10.5, defenseStart: 5.1, defenseEnd: 5.28, defenseModel: "rank_parity" },
+  { healthStart: 14.3, healthEnd: 15.2, damageStart: 10.8, damageEnd: 11.3, defenseStart: 5.45, defenseEnd: 5.65, defenseModel: "rank_parity" },
+  { healthStart: 15.8, healthEnd: 16.8, damageStart: 11.65, damageEnd: 12.25, defenseStart: 5.85, defenseEnd: 6.1, defenseModel: "rank_parity" },
 ] as const;
 
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
