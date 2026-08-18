@@ -61,8 +61,8 @@ export const BLACK_WORLD_COMBAT_CURVE = [
   { healthStart: 16.9, healthEnd: 17.7, damageStart: 11.7, damageEnd: 12.1, defenseStart: 6.2, defenseEnd: 6.4, defenseModel: "rank_parity" },
   { healthStart: 18.1, healthEnd: 19.0, damageStart: 12.3, damageEnd: 12.75, defenseStart: 6.55, defenseEnd: 6.75, defenseModel: "rank_parity" },
   { healthStart: 19.5, healthEnd: 20.5, damageStart: 13.0, damageEnd: 13.45, defenseStart: 6.9, defenseEnd: 7.1, defenseModel: "rank_parity" },
-  { healthStart: 21.0, healthEnd: 22.1, damageStart: 13.75, damageEnd: 14.25, defenseStart: 7.3, defenseEnd: 7.5, defenseModel: "rank_parity" },
-  { healthStart: 22.7, healthEnd: 24.0, damageStart: 14.6, damageEnd: 15.2, defenseStart: 7.7, defenseEnd: 7.95, defenseModel: "rank_parity" },
+  { healthStart: 20.5, healthEnd: 21.5, damageStart: 13.1, damageEnd: 13.55, defenseStart: 7.2, defenseEnd: 7.4, defenseModel: "rank_parity" },
+  { healthStart: 21.8, healthEnd: 22.8, damageStart: 13.7, damageEnd: 14.2, defenseStart: 7.5, defenseEnd: 7.7, defenseModel: "rank_parity" },
 ] as const;
 
 export const WORLD_ONE_COMBAT_CURVE = BLUE_WORLD_COMBAT_CURVE;
