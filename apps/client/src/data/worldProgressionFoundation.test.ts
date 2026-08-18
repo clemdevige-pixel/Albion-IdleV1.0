@@ -33,7 +33,7 @@ describe("world progression foundation", () => {
     ]);
   });
 
-  it("registers the authored Yellow and Orange worlds without populating later worlds", () => {
+  it("registers the authored Yellow, Orange and Red worlds without populating Black", () => {
     expect(WORLD_ZONE_IDS_BY_BAND.yellow).toEqual([
       WORLD_ZONE_IDS.amberwood,
       WORLD_ZONE_IDS.gloamfen,
@@ -48,7 +48,13 @@ describe("world progression foundation", () => {
       WORLD_ZONE_IDS.emberwind,
       WORLD_ZONE_IDS.ashenpeak,
     ]);
-    expect(WORLD_ZONE_IDS_BY_BAND.red).toEqual([]);
+    expect(WORLD_ZONE_IDS_BY_BAND.red).toEqual([
+      WORLD_ZONE_IDS.bloodwood,
+      WORLD_ZONE_IDS.dreadfen,
+      WORLD_ZONE_IDS.redspire,
+      WORLD_ZONE_IDS.crimsonSteppe,
+      WORLD_ZONE_IDS.doompeak,
+    ]);
     expect(WORLD_ZONE_IDS_BY_BAND.black).toEqual([]);
   });
 
