@@ -45,6 +45,7 @@ const TRAITS = new Set<AwakenedTraitId>([
   "max_health",
   "armor",
   "magic_resistance",
+  "fame_bonus",
 ]);
 
 function isTier(value: number): value is AwakenedWeaponTier {
