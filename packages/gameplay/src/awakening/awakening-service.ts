@@ -17,6 +17,7 @@ import type {
   AwakenedResult,
   AwakenedTraitId,
   AwakenedTraitOffer,
+  AwakenedTraitRollRange,
   AwakenedWeaponBalance,
   AwakenedWeaponDerivedState,
   AwakenedWeaponState,
@@ -44,6 +45,7 @@ export interface AwakenedWeaponServiceOptions {
  */
 export class AwakenedWeaponService {
   private readonly states = new Map<ItemInstanceId, AwakenedWeaponState>();
+  private readonly lastImprovementOutcomes = new Map<ItemInstanceId, AwakenedModificationOutcome>();
   private readonly balance: AwakenedWeaponBalance;
 
   constructor(
@@ -57,6 +59,7 @@ export class AwakenedWeaponService {
     if (this.states.has(itemInstanceId)) return fail("weapon_already_registered");
     const state = createFreshAwakenedWeaponState(itemInstanceId, tier);
     this.states.set(itemInstanceId, state);
+    this.lastImprovementOutcomes.delete(itemInstanceId);
     return ok(state);
   }
 
@@ -78,6 +81,18 @@ export class AwakenedWeaponService {
     const state = this.states.get(itemInstanceId);
     if (state?.awakened !== true) return 0;
     return state.traits.find((trait) => trait.traitId === traitId)?.value ?? 0;
+  }
+
+  getTraitRollRange(traitId: AwakenedTraitId): AwakenedTraitRollRange {
+    return this.balance.traitRolls[traitId];
+  }
+
+  getCriticalChance(): number {
+    return this.balance.criticalChance;
+  }
+
+  getLastImprovementOutcome(itemInstanceId: ItemInstanceId): AwakenedModificationOutcome | undefined {
+    return this.lastImprovementOutcomes.get(itemInstanceId);
   }
 
   /** Returns the player-facing value for a stored trait value. */
@@ -150,8 +165,10 @@ export class AwakenedWeaponService {
       ? { ...trait, value: trait.value + roll.finalGain }
       : trait);
     const next = this.afterPaidModification(state, spent.value.attunement, { traits });
+    const outcome: AwakenedModificationOutcome = { state: next, roll, cost: spent.value };
     this.states.set(itemInstanceId, next);
-    return ok({ state: next, roll, cost: spent.value });
+    this.lastImprovementOutcomes.set(itemInstanceId, outcome);
+    return ok(outcome);
   }
 
   beginTraitOffer(
@@ -239,11 +256,13 @@ export class AwakenedWeaponService {
     if (state === undefined) return fail("weapon_not_registered");
     const next = resetAwakenedWeaponState(state);
     this.states.set(itemInstanceId, next);
+    this.lastImprovementOutcomes.delete(itemInstanceId);
     return ok(next);
   }
 
   _restore(states: readonly AwakenedWeaponState[]): void {
     this.states.clear();
+    this.lastImprovementOutcomes.clear();
     for (const state of states) this.states.set(state.itemInstanceId, state);
   }
 
