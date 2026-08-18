@@ -162,7 +162,8 @@ export class AwakenedWeaponService {
     if (offer === undefined) return fail("no_trait_offer_pending");
     if (selectedTraitId === undefined) {
       if (offer.kind === "fill") return fail("choice_required");
-      const next: AwakenedWeaponState = { ...state, pendingTraitOffer: undefined };
+      const { pendingTraitOffer: _pendingTraitOffer, ...rest } = state;
+      const next: AwakenedWeaponState = rest;
       this.states.set(itemInstanceId, next);
       return ok(next);
     }
@@ -179,7 +180,8 @@ export class AwakenedWeaponService {
       if (traits[offer.targetIndex] === undefined) return fail("invalid_trait_index");
       traits[offer.targetIndex] = replacement;
     }
-    const next: AwakenedWeaponState = { ...state, traits, pendingTraitOffer: undefined };
+    const { pendingTraitOffer: _pendingTraitOffer, ...rest } = state;
+    const next: AwakenedWeaponState = { ...rest, traits };
     this.states.set(itemInstanceId, next);
     return ok(next);
   }
