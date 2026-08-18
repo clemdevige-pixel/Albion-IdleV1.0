@@ -5,7 +5,11 @@ import { asPlayerId, asWalletId } from "../../currency/types.js";
 import type { ItemInstanceId } from "../../inventory/types.js";
 import { AwakenedWeaponService } from "../awakening-service.js";
 import { DEFAULT_AWAKENED_WEAPON_BALANCE } from "../balance.js";
-import { getAwakenedActionCost, getUnlockedAwakenedTraitSlots } from "../calculations.js";
+import {
+  getAwakenedActionCost,
+  getAwakenedAttunementCap,
+  getUnlockedAwakenedTraitSlots,
+} from "../calculations.js";
 import { createFreshAwakenedWeaponState } from "../state.js";
 
 function createAwakeningFixture() {
@@ -30,6 +34,16 @@ describe("awakened weapon progression", () => {
     expect(getAwakenedActionCost({ ...t8, strain: 100 }, balance).attunement).toBeCloseTo(95_000, -1);
   });
 
+  it("grows Attunement storage by 2.5% of initial capacity per Strain", () => {
+    const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
+    const t8 = createFreshAwakenedWeaponState("weapon_t8_cap" as ItemInstanceId, 8);
+
+    expect(getAwakenedAttunementCap(t8, balance)).toBe(40_000);
+    expect(getAwakenedAttunementCap({ ...t8, strain: 1 }, balance)).toBe(41_000);
+    expect(getAwakenedAttunementCap({ ...t8, strain: 10 }, balance)).toBe(50_000);
+    expect(getAwakenedAttunementCap({ ...t8, strain: 30 }, balance)).toBe(70_000);
+  });
+
   it("unlocks trait slots at Strain 0, 10 and 30", () => {
     const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
     expect(getUnlockedAwakenedTraitSlots({ strain: 0 }, balance)).toBe(1);
@@ -39,7 +53,7 @@ describe("awakened weapon progression", () => {
     expect(getUnlockedAwakenedTraitSlots({ strain: 30 }, balance)).toBe(3);
   });
 
-  it("requires tier Attunement before the initial Awakening and does not consume it", () => {
+  it("consumes tier Attunement when the initial Awakening is confirmed", () => {
     const { walletId: _walletId, service } = createAwakeningFixture();
     const instanceId = "weapon_t4" as ItemInstanceId;
 
@@ -51,7 +65,12 @@ describe("awakened weapon progression", () => {
     expect(service.getDerivedState(instanceId)?.canAwaken).toBe(true);
     expect(service.awaken(instanceId).ok).toBe(true);
     expect(service.getState(instanceId)?.awakened).toBe(true);
-    expect(service.getState(instanceId)?.storedAttunement).toBe(5_000);
+    expect(service.getState(instanceId)?.storedAttunement).toBe(0);
+    expect(service.getState(instanceId)?.lifetimeAttunementInvested).toBe(5_000);
+  });
+
+  it("authors Fame Bonus as a 0.5% to 1% trait roll", () => {
+    expect(DEFAULT_AWAKENED_WEAPON_BALANCE.traitRolls.fame_bonus).toEqual({ min: 0.5, max: 1 });
   });
 
   it("never applies Critical Attunement while choosing or rerolling a trait", () => {
