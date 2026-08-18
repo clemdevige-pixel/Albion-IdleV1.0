@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { CurrencyRegistry } from "../../currency/currency-registry.js";
 import { CurrencyService } from "../../currency/currency-service.js";
-import { asWalletId } from "../../currency/types.js";
+import { asPlayerId, asWalletId } from "../../currency/types.js";
 import type { ItemInstanceId } from "../../inventory/types.js";
 import { AwakenedWeaponService } from "../awakening-service.js";
 import { DEFAULT_AWAKENED_WEAPON_BALANCE } from "../balance.js";
@@ -28,9 +29,11 @@ describe("awakened weapon progression", () => {
   });
 
   it("requires tier Attunement before the initial Awakening and does not consume it", () => {
-    const currency = new CurrencyService();
+    const registry = new CurrencyRegistry();
+    registry.register({ id: "currency_silver", enabled: true, minValue: 0, maxValue: null });
+    const currency = new CurrencyService(registry);
     const walletId = asWalletId("wallet_test");
-    currency.createWallet(walletId);
+    currency.createWallet(walletId, asPlayerId("player_test"));
     const service = new AwakenedWeaponService(currency, { silverCurrencyId: "currency_silver" });
     const instanceId = "weapon_t4" as ItemInstanceId;
 
