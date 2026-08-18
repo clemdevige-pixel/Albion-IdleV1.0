@@ -6,11 +6,11 @@ import type { AwakenedWeaponBalance } from "./types.js";
  */
 export const DEFAULT_AWAKENED_WEAPON_BALANCE: AwakenedWeaponBalance = {
   tiers: {
-    4: { initialAttunementCap: 15_000, baseAttunementCost: 10_000, baseSilverCost: 12_000 },
-    5: { initialAttunementCap: 28_000, baseAttunementCost: 19_000, baseSilverCost: 25_000 },
-    6: { initialAttunementCap: 35_000, baseAttunementCost: 23_500, baseSilverCost: 32_000 },
-    7: { initialAttunementCap: 38_000, baseAttunementCost: 25_500, baseSilverCost: 35_000 },
-    8: { initialAttunementCap: 40_000, baseAttunementCost: 26_000, baseSilverCost: 36_000 },
+    4: { initialAttunementCap: 15_000, awakeningAttunementThreshold: 5_000, baseAttunementCost: 1_000, baseSilverCost: 12_000 },
+    5: { initialAttunementCap: 28_000, awakeningAttunementThreshold: 10_000, baseAttunementCost: 2_000, baseSilverCost: 25_000 },
+    6: { initialAttunementCap: 35_000, awakeningAttunementThreshold: 15_000, baseAttunementCost: 3_000, baseSilverCost: 32_000 },
+    7: { initialAttunementCap: 38_000, awakeningAttunementThreshold: 20_000, baseAttunementCost: 4_000, baseSilverCost: 35_000 },
+    8: { initialAttunementCap: 40_000, awakeningAttunementThreshold: 25_000, baseAttunementCost: 5_000, baseSilverCost: 36_000 },
   },
   traitRolls: {
     item_power: { min: 1, max: 3, integer: true },
@@ -22,13 +22,16 @@ export const DEFAULT_AWAKENED_WEAPON_BALANCE: AwakenedWeaponBalance = {
     magic_resistance: { min: 0.5, max: 1 },
   },
   traitProposalCount: 3,
-  slotUnlockMultipliers: [0, 10, 40],
+  slotUnlockStrainThresholds: [0, 10, 30],
   attunementCapCostMultiplier: 1.5,
   criticalChance: 0.15,
   criticalMultiplier: 2,
   strainPerModification: 1,
-  attunementStrainDivisor: 20,
-  attunementStrainExponent: 2,
+  // Cost multiplier = 1 + strain*a + strain^2*b.
+  // Approx.: x1.30 @10, x1.93 @20, x2.90 @30, x5.83 @50, x19 @100.
+  attunementStrainLinearCoefficient: 0.01333,
+  attunementStrainQuadraticCoefficient: 0.001667,
+  // Silver curve is intentionally unchanged until the new Attunement pacing is tested.
   silverStrainDivisor: 18,
   silverStrainExponent: 2.2,
   cdrAsymptotePercent: 50,
