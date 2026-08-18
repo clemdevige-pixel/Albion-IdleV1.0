@@ -4,11 +4,23 @@ import {
   PRODUCTION_FAMILY_IDS,
   PRODUCTION_TIERS,
   getProductionFamilyDefinition,
+  type ProductionTier,
 } from "../../data/productionFamilyCatalog";
 import { RESOURCE_TIER_CONTENT } from "../../data/resourceContentCatalog";
 import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./storagePanel.css";
+
+type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
+type ProductionContentTier = (typeof PRODUCTION_CONTENT_TIERS)[number];
+
+function isGatheringContentTier(tier: ProductionTier): tier is GatheringContentTier {
+  return GATHERING_CONTENT_TIERS.includes(tier as GatheringContentTier);
+}
+
+function isProductionContentTier(tier: ProductionTier): tier is ProductionContentTier {
+  return PRODUCTION_CONTENT_TIERS.includes(tier as ProductionContentTier);
+}
 
 function quantityForItem(
   inventoryManager: ReturnType<typeof useGameServices>["inventoryManager"],
@@ -51,12 +63,8 @@ export function StoragePanel(): JSX.Element {
               </header>
               <div className="ui-island-storage__tiers">
                 {PRODUCTION_TIERS.map((tier) => {
-                  const hasGatheringContent = GATHERING_CONTENT_TIERS.includes(
-                    tier as (typeof GATHERING_CONTENT_TIERS)[number],
-                  );
-                  const hasRefiningContent = PRODUCTION_CONTENT_TIERS.includes(
-                    tier as (typeof PRODUCTION_CONTENT_TIERS)[number],
-                  );
+                  const hasGatheringContent = isGatheringContentTier(tier);
+                  const hasRefiningContent = isProductionContentTier(tier);
 
                   if (!hasGatheringContent && !hasRefiningContent) {
                     return (
@@ -68,7 +76,9 @@ export function StoragePanel(): JSX.Element {
                     );
                   }
 
-                  const rawContent = RESOURCE_TIER_CONTENT[familyId][tier];
+                  const rawContent = hasGatheringContent
+                    ? RESOURCE_TIER_CONTENT[familyId][tier]
+                    : undefined;
                   const rawQuantity = rawContent === undefined
                     ? undefined
                     : quantityForItem(
@@ -78,10 +88,7 @@ export function StoragePanel(): JSX.Element {
                       );
 
                   const refiningRecipe = hasRefiningContent
-                    ? getProductionRefiningRecipe(
-                        familyId,
-                        tier as (typeof PRODUCTION_CONTENT_TIERS)[number],
-                      )
+                    ? getProductionRefiningRecipe(familyId, tier)
                     : undefined;
                   const refinedQuantity = refiningRecipe === undefined
                     ? undefined
