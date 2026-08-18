@@ -21,7 +21,11 @@ import {
   type StatId,
   type ZoneDefinitionId,
 } from "@game/gameplay";
-import { resolveEquipmentInfo, resolveItemStackInfo } from "../data/itemContentCatalog.js";
+import {
+  resolveEnchantmentItemInfo,
+  resolveEquipmentInfo,
+  resolveItemStackInfo,
+} from "../data/itemContentCatalog.js";
 import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "../data/weaponContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import { getDungeonDefinition, resolveDungeonCombatProfile } from "../data/dungeonContentCatalog.js";
@@ -158,6 +162,16 @@ function equipItem(
   const equipped = equipmentManager.equipFromInventory(heroId, position);
   if (!equipped.ok) throw new Error(`Failed to equip ${itemId}: ${equipped.reason}`);
   if (enchantment <= 0) return;
+
+  // Benchmarks bypass the economy transaction on purpose, but must still seed
+  // only states that the live enchantment system can actually produce.
+  const enchantmentInfo = resolveEnchantmentItemInfo(itemId);
+  if (
+    enchantmentInfo === undefined
+    || !enchantmentInfo.enchantable
+    || enchantment > enchantmentInfo.maximumLevel
+  ) return;
+
   const entry = equipmentManager.getEquippedItem(heroId, equipped.value.slot);
   if (entry === undefined) throw new Error(`Missing equipped ${itemId}`);
   if (!equipmentManager.changeEquippedEnchantment(heroId, entry.instanceId, enchantment)) {
