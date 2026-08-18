@@ -37,8 +37,8 @@ describe("enchantment balance", () => {
     expect(ENCHANTMENT_MINIMUM_ITEM_TIER).toBe(4);
   });
 
-  it("uses one shard resource per tier with 10/30/70/100 package costs", () => {
-    expect(ENCHANTMENT_SHARD_COSTS).toEqual({ 1: 10, 2: 30, 3: 70, 4: 100 });
+  it("uses one shard resource per tier with 6/16/30/100 costs", () => {
+    expect(ENCHANTMENT_SHARD_COSTS).toEqual({ 1: 6, 2: 16, 3: 30, 4: 100 });
     expect(getEnchantmentShardItemId(4)).toBe("item_resource_enchantment_shard_t4");
     expect(getEnchantmentShardItemId(5)).toBe("item_resource_enchantment_shard_t5");
 
@@ -54,7 +54,7 @@ describe("enchantment balance", () => {
     );
     expect(scaled.materials).toContainEqual({
       itemId: "item_resource_enchantment_shard_t5",
-      quantity: 30,
+      quantity: 16,
     });
     expect(scaled.materials).toContainEqual({
       itemId: "item_refined_planks_t5",
@@ -63,7 +63,7 @@ describe("enchantment balance", () => {
     expect(scaled.materials.some((material) => material.itemId.includes("essence"))).toBe(false);
   });
 
-  it("makes a 1H plus off-hand weapon package equal one 2H package", () => {
+  it("makes a 1H plus off-hand package equal one 2H package through .3", () => {
     const recipe = getNextEnchantmentRecipe(2);
     expect(recipe).toBeDefined();
     if (recipe === undefined) return;
@@ -78,6 +78,9 @@ describe("enchantment balance", () => {
     const shardId = "item_resource_enchantment_shard_t4";
     const shardQty = (scaled: typeof twoHanded) =>
       scaled.materials.find(({ itemId }) => itemId === shardId)?.quantity ?? 0;
+    expect(shardQty(oneHanded)).toBe(8);
+    expect(shardQty(offHand)).toBe(8);
+    expect(shardQty(twoHanded)).toBe(16);
     expect(shardQty(oneHanded) + shardQty(offHand)).toBe(shardQty(twoHanded));
 
     const materialQty = (scaled: typeof twoHanded) =>
@@ -85,12 +88,12 @@ describe("enchantment balance", () => {
     expect(materialQty(oneHanded) + materialQty(offHand)).toBe(materialQty(twoHanded));
   });
 
-  it("treats .3 -> .4 as the next enchantment step with package-scaled resources", () => {
+  it("charges the same full .4 Awakening cost to 1H and 2H weapons", () => {
     const recipe = getNextEnchantmentRecipe(3);
     expect(recipe).toMatchObject({ fromLevel: 3, toLevel: 4, enabled: true });
     if (recipe === undefined) return;
 
-    const t4OneHanded = scaleEnchantmentRecipe(
+    const oneHanded = scaleEnchantmentRecipe(
       recipe,
       4,
       "one_handed_weapon",
@@ -99,12 +102,24 @@ describe("enchantment balance", () => {
         { itemId: "item_refined_leather_t4", quantity: 2 },
       ],
     );
-    expect(t4OneHanded.silverCost).toBe(28_125);
-    expect(t4OneHanded.materials).toEqual([
-      { itemId: "item_resource_enchantment_shard_t4", quantity: 50 },
-      { itemId: "item_refined_metal_bar_t4", quantity: 24 },
-      { itemId: "item_refined_leather_t4", quantity: 8 },
+    const twoHanded = scaleEnchantmentRecipe(
+      recipe,
+      4,
+      "two_handed_weapon",
+      [
+        { itemId: "item_refined_metal_bar_t4", quantity: 6 },
+        { itemId: "item_refined_leather_t4", quantity: 2 },
+      ],
+    );
+
+    expect(oneHanded.silverCost).toBe(56_250);
+    expect(oneHanded.silverCost).toBe(twoHanded.silverCost);
+    expect(oneHanded.materials).toEqual([
+      { itemId: "item_resource_enchantment_shard_t4", quantity: 100 },
+      { itemId: "item_refined_metal_bar_t4", quantity: 48 },
+      { itemId: "item_refined_leather_t4", quantity: 16 },
     ]);
+    expect(oneHanded.materials).toEqual(twoHanded.materials);
 
     const t8TwoHanded = scaleEnchantmentRecipe(
       recipe,
