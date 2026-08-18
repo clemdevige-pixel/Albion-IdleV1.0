@@ -23,9 +23,11 @@ import {
 import { resolveEquipmentInfo, resolveItemStackInfo } from "../data/itemContentCatalog.js";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
+import { getDungeonDefinition, resolveDungeonCombatProfile } from "../data/dungeonContentCatalog.js";
 import { CombatRuntime } from "./CombatRuntime.js";
+import { CONTINUOUS_COMBAT_FLOW_POLICY } from "./CombatFlowPolicy.js";
 import { ConsumableRuntime } from "./ConsumableRuntime.js";
-import { setupCombatEntity } from "./combatEntityFactory.js";
+import { setupCombatEntity, spawnAuthoredEnemy } from "./combatEntityFactory.js";
 import { createProgressionFoundation } from "./bootstrap/createProgressionFoundation.js";
 import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
 
@@ -48,6 +50,8 @@ export interface CombatRuntimeBenchmarkInput {
   readonly enchantment?: BenchmarkEnchantment;
   readonly masteryLevel?: number;
   readonly useHealthPotions?: boolean;
+  /** Optional authored dungeon. When present, the live runtime uses its five continuous encounters instead of the world segment. */
+  readonly dungeonDefinitionId?: string;
 }
 
 export interface CombatRuntimeBenchmarkResult {
@@ -119,11 +123,12 @@ function seedMasteryLevel(
 
 /**
  * Generic balance harness that runs the exact live CombatRuntime tick by tick.
- * Zone/world-band tuning belongs in authored data, not in this harness.
+ * Zone/world-band/dungeon tuning belongs in authored data, not in this harness.
  * Keep this thin: no alternate DPS/EHP or enemy formulas are allowed here.
  */
 export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): CombatRuntimeBenchmarkResult {
   const placement = getWorldZonePlacement(input.zoneDefId);
+  const dungeon = input.dungeonDefinitionId === undefined ? undefined : getDungeonDefinition(input.dungeonDefinitionId);
 
   const world = new World(createRuntimeServices());
   const statsManager = new StatsManager(world, createDefaultStatRegistry());
@@ -185,11 +190,31 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     equipmentManager,
     masteryService,
     biomeResolver: new BiomeResolver(new BiomeRegistry()),
+    ...(dungeon === undefined ? {} : {
+      spawnEnemyOverride: () => {
+        const encounter = dungeon.encounters[encounterIndex];
+        if (encounter === undefined) return undefined;
+        return spawnAuthoredEnemy(
+          { world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager },
+          {
+            monsterDefinitionId: encounter.monsterDefinitionId,
+            profile: resolveDungeonCombatProfile({
+              dungeonDefinitionId: dungeon.id,
+              encounterIndex,
+              monsterDefinitionId: encounter.monsterDefinitionId,
+            }),
+            contextLabel: `Benchmark ${dungeon.id}`,
+          },
+        );
+      },
+    }),
     ports: {
       isCombatSuspended: () => false,
+      ...(dungeon === undefined ? {} : { flowPolicy: CONTINUOUS_COMBAT_FLOW_POLICY }),
       onDefeat: () => { defeated = true; },
       onVictory: () => {
-        if (encounterIndex >= 4) {
+        const lastEncounterIndex = dungeon?.encounters.length !== undefined ? dungeon.encounters.length - 1 : 4;
+        if (encounterIndex >= lastEncounterIndex) {
           const health = damageManager.getHealth(heroId);
           segmentEndHpPercent = (health.currentHealth / health.maxHealth) * 100;
           finishedSegment = true;
