@@ -18,6 +18,7 @@ describe("dungeonLootContentCatalog", () => {
       4: { normal: { artifactFragmentQuantity: 4, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 10, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 28, artifactDropChance: 0.1 } },
       5: { normal: { artifactFragmentQuantity: 5, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 12, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 34, artifactDropChance: 0.12 } },
       6: { normal: { artifactFragmentQuantity: 6, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 14, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 40, artifactDropChance: 0.14 } },
+      7: { normal: { artifactFragmentQuantity: 7, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 16, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 46, artifactDropChance: 0.16 } },
     } as const;
     for (const dungeon of DUNGEON_DEFINITIONS) {
       const profile = expected[dungeon.tier as keyof typeof expected];
