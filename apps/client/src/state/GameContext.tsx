@@ -12,7 +12,7 @@ import { DungeonRewardRuntime } from "../runtime/DungeonRewardRuntime.js";
 import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
 import { combatStopController } from "../runtime/CombatStopController.js";
-import { recalculateWeaponMasteryStats } from "../runtime/weaponMasteryStatSync.js";
+import { recalculateWeaponProgressionStats } from "../runtime/weaponMasteryStatSync.js";
 import { DungeonCombatEncounterSource } from "../runtime/DungeonCombatEncounterSource.js";
 import { DungeonCombatRuntimeRouter } from "../runtime/DungeonCombatRuntimeRouter.js";
 import {
@@ -94,6 +94,7 @@ export function GameProvider({
     };
     let craftingTier: ProductionTier = 3;
     let workerTier: ProductionTier = 3;
+    let awakenedWeaponServiceRef: ReturnType<typeof createEconomyFoundation>["awakenedWeaponService"] | undefined;
 
     const {
       world,
@@ -125,6 +126,7 @@ export function GameProvider({
       statsManager,
       damageManager,
       masteryService,
+      getAwakenedWeaponService: () => awakenedWeaponServiceRef,
       canMutateEquipment: () => (
         starterSelectionPending
         || (!combatService.isInCombat() && dungeonRuntime.activeRun?.status !== "active")
@@ -147,6 +149,7 @@ export function GameProvider({
       vendorRegistry,
       economyTransactionService,
     } = createEconomyFoundation({ inventoryManager, equipmentManager });
+    awakenedWeaponServiceRef = awakenedWeaponService;
 
     const worldFoundation = createWorldFoundation();
     const {
@@ -264,12 +267,16 @@ export function GameProvider({
       vendorId: "vendor_general",
       getIncomeRate: () => combatRewardAdapter.getIncomeRate(),
       recalculateWeaponMasteryStats: () => {
-        recalculateWeaponMasteryStats(
+        recalculateWeaponProgressionStats(
           statsManager,
           equipmentManager,
           masteryService,
           heroId,
+          awakenedWeaponService,
         );
+        damageManager.syncMaxHealth(heroId);
+        const health = damageManager.getHealth(heroId);
+        bridge.updatePlayerHealth(health.currentHealth, health.maxHealth);
       },
       updateWorldBridge,
     });
@@ -286,7 +293,13 @@ export function GameProvider({
       bridge,
       statsManager,
       heroId,
-      recalculateWeaponMasteryStats: () => recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId),
+      recalculateWeaponMasteryStats: () => recalculateWeaponProgressionStats(
+        statsManager,
+        equipmentManager,
+        masteryService,
+        heroId,
+        awakenedWeaponService,
+      ),
       resyncAll: () => resyncAll(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
     });
@@ -482,7 +495,13 @@ export function GameProvider({
       if (!initialized) return false;
 
       starterSelectionPending = false;
-      recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
+      recalculateWeaponProgressionStats(
+        statsManager,
+        equipmentManager,
+        masteryService,
+        heroId,
+        awakenedWeaponService,
+      );
       resyncAll();
       saveGame();
       return true;
