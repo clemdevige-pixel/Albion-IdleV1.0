@@ -139,6 +139,7 @@ export function GameProvider({
 
     const {
       currencyService,
+      awakenedWeaponService,
       playerId,
       walletId,
       durabilityStore,
@@ -237,6 +238,7 @@ export function GameProvider({
       durabilityStore,
       progressionOrchestrator,
       experienceService,
+      awakenedWeaponService,
       heroId,
     });
     const dungeonRewardRuntime = new DungeonRewardRuntime(
@@ -310,6 +312,7 @@ export function GameProvider({
       productionStorageId,
       equipmentManager,
       currencyService,
+      awakenedWeaponService,
       experienceService,
       masteryService,
       fameService,
