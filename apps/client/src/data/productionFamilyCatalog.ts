@@ -8,7 +8,7 @@ import {
 export const PRODUCTION_TIERS = [3, 4, 5, 6, 7, 8] as const;
 export type ProductionTier = (typeof PRODUCTION_TIERS)[number];
 
-/** Tiers whose complete gathering/refining/crafting content is authored. */
+/** Tiers whose legacy/full production surface (including workers) is authored. */
 export const PRODUCTION_CONTENT_TIERS = [3, 4, 5] as const satisfies readonly ProductionTier[];
 
 /** Tiers whose active hero gathering content is authored. */
@@ -17,27 +17,14 @@ export const GATHERING_CONTENT_TIERS = [3, 4, 5, 6] as const satisfies readonly 
 /** Tiers whose refining recipes are authored. */
 export const REFINING_CONTENT_TIERS = [3, 4, 5, 6] as const satisfies readonly ProductionTier[];
 
-export type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
-export type RefiningContentTier = (typeof REFINING_CONTENT_TIERS)[number];
-export type ProductionContentTier = (typeof PRODUCTION_CONTENT_TIERS)[number];
+/** Tiers whose conventional equipment crafting content is authored. */
+export const CRAFTING_CONTENT_TIERS = [3, 4, 5, 6] as const satisfies readonly ProductionTier[];
 
 export function isProductionTier(value: unknown): value is ProductionTier {
   return (
     typeof value === "number" &&
     PRODUCTION_TIERS.includes(value as ProductionTier)
   );
-}
-
-export function isGatheringContentTier(value: ProductionTier): value is GatheringContentTier {
-  return GATHERING_CONTENT_TIERS.includes(value as GatheringContentTier);
-}
-
-export function isRefiningContentTier(value: ProductionTier): value is RefiningContentTier {
-  return REFINING_CONTENT_TIERS.includes(value as RefiningContentTier);
-}
-
-export function isProductionContentTier(value: ProductionTier): value is ProductionContentTier {
-  return PRODUCTION_CONTENT_TIERS.includes(value as ProductionContentTier);
 }
 
 export interface ProductionTierRules {
