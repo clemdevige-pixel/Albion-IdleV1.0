@@ -1,9 +1,11 @@
 import {
+  GATHERING_CONTENT_TIERS,
   PRODUCTION_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
   PRODUCTION_TIERS,
   getProductionFamilyDefinition,
 } from "../../data/productionFamilyCatalog";
+import { RESOURCE_TIER_CONTENT } from "../../data/resourceContentCatalog";
 import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./storagePanel.css";
@@ -49,11 +51,14 @@ export function StoragePanel(): JSX.Element {
               </header>
               <div className="ui-island-storage__tiers">
                 {PRODUCTION_TIERS.map((tier) => {
-                  const hasContent = PRODUCTION_CONTENT_TIERS.includes(
+                  const hasGatheringContent = GATHERING_CONTENT_TIERS.includes(
+                    tier as (typeof GATHERING_CONTENT_TIERS)[number],
+                  );
+                  const hasRefiningContent = PRODUCTION_CONTENT_TIERS.includes(
                     tier as (typeof PRODUCTION_CONTENT_TIERS)[number],
                   );
 
-                  if (!hasContent) {
+                  if (!hasGatheringContent && !hasRefiningContent) {
                     return (
                       <div key={tier} className="ui-island-storage__tier is-pending">
                         <span>T{String(tier)}</span>
@@ -63,31 +68,39 @@ export function StoragePanel(): JSX.Element {
                     );
                   }
 
-                  const recipe = getProductionRefiningRecipe(
-                    familyId,
-                    tier as (typeof PRODUCTION_CONTENT_TIERS)[number],
-                  );
-                  const rawQuantity = quantityForItem(
-                    inventoryManager,
-                    productionStorageId,
-                    recipe.rawItemId,
-                  );
-                  const refinedQuantity = quantityForItem(
-                    inventoryManager,
-                    productionStorageId,
-                    recipe.outputItemId,
-                  );
+                  const rawContent = RESOURCE_TIER_CONTENT[familyId][tier];
+                  const rawQuantity = rawContent === undefined
+                    ? undefined
+                    : quantityForItem(
+                        inventoryManager,
+                        productionStorageId,
+                        rawContent.rawItemId,
+                      );
+
+                  const refiningRecipe = hasRefiningContent
+                    ? getProductionRefiningRecipe(
+                        familyId,
+                        tier as (typeof PRODUCTION_CONTENT_TIERS)[number],
+                      )
+                    : undefined;
+                  const refinedQuantity = refiningRecipe === undefined
+                    ? undefined
+                    : quantityForItem(
+                        inventoryManager,
+                        productionStorageId,
+                        refiningRecipe.outputItemId,
+                      );
 
                   return (
                     <div key={tier} className="ui-island-storage__tier">
                       <span>T{String(tier)}</span>
                       <div>
                         <small>Brut</small>
-                        <b>{String(rawQuantity)}</b>
+                        <b>{rawQuantity === undefined ? "—" : String(rawQuantity)}</b>
                       </div>
                       <div>
                         <small>Raffiné</small>
-                        <b>{String(refinedQuantity)}</b>
+                        <b>{refinedQuantity === undefined ? "—" : String(refinedQuantity)}</b>
                       </div>
                     </div>
                   );
