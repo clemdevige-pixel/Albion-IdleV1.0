@@ -368,6 +368,86 @@ export function GameProvider({
     const exportSave = (): string => saveGameActions.exportSave();
     const importSave = (raw: string): boolean => saveGameActions.importSave(raw);
 
+    const notifyAwakeningFailure = (reason: string): void => {
+      const message = reason === "insufficient_attunement"
+        ? "Attunement insuffisant pour cette modification."
+        : reason === "insufficient_silver"
+          ? "Silver insuffisant pour cette modification."
+          : reason === "trait_slot_locked"
+            ? "Ce slot de trait n'est pas encore débloqué."
+            : reason === "trait_offer_pending"
+              ? "Choisissez d'abord une proposition de trait en attente."
+              : "Impossible de modifier cette arme éveillée dans l'état actuel.";
+      bridge.addEconomyNotification({
+        id: `notif_awakening_failed_${String(Date.now())}`,
+        type: "error",
+        message,
+        timestamp: Date.now(),
+      });
+    };
+    const getEquippedAwakenedInstanceId = () => {
+      const weapon = equipmentManager.getEquippedItem(heroId, "weapon");
+      return weapon?.enchantment === 4 ? weapon.instanceId : undefined;
+    };
+    const afterAwakeningMutation = (): void => {
+      resyncAll();
+      saveGame();
+    };
+    const improveAwakenedTrait: GameServices["improveAwakenedTrait"] = (traitIndex) => {
+      const instanceId = getEquippedAwakenedInstanceId();
+      if (instanceId === undefined) return false;
+      const result = awakenedWeaponService.improveTrait(
+        instanceId,
+        traitIndex,
+        walletId,
+        () => world.services.rng.nextFloat(),
+      );
+      if (!result.ok) {
+        notifyAwakeningFailure(result.reason);
+        return false;
+      }
+      afterAwakeningMutation();
+      return true;
+    };
+    const beginAwakenedTraitOffer: GameServices["beginAwakenedTraitOffer"] = (targetIndex) => {
+      const instanceId = getEquippedAwakenedInstanceId();
+      if (instanceId === undefined) return false;
+      const result = awakenedWeaponService.beginTraitOffer(
+        instanceId,
+        targetIndex,
+        walletId,
+        () => world.services.rng.nextFloat(),
+      );
+      if (!result.ok) {
+        notifyAwakeningFailure(result.reason);
+        return false;
+      }
+      afterAwakeningMutation();
+      return true;
+    };
+    const resolveAwakenedTraitOffer: GameServices["resolveAwakenedTraitOffer"] = (traitId) => {
+      const instanceId = getEquippedAwakenedInstanceId();
+      if (instanceId === undefined) return false;
+      const result = awakenedWeaponService.resolveTraitOffer(instanceId, traitId);
+      if (!result.ok) {
+        notifyAwakeningFailure(result.reason);
+        return false;
+      }
+      afterAwakeningMutation();
+      return true;
+    };
+    const resetAwakenedWeapon: GameServices["resetAwakenedWeapon"] = () => {
+      const instanceId = getEquippedAwakenedInstanceId();
+      if (instanceId === undefined) return false;
+      const result = awakenedWeaponService.reset(instanceId);
+      if (!result.ok) {
+        notifyAwakeningFailure(result.reason);
+        return false;
+      }
+      afterAwakeningMutation();
+      return true;
+    };
+
     const combatRuntime = new CombatRuntime({
       world,
       heroId,
@@ -591,9 +671,13 @@ export function GameProvider({
 
     return {
       eventBus, bridge, orchestrator, heroId, bankId, productionStorageId, inventoryManager, equipmentManager,
-      enchantmentService,
+      enchantmentService, awakenedWeaponService,
       statsManager, currencyService, economyTransactionService, vendorRegistry,
       walletId, playerId, worldCoordinator,
+      improveAwakenedTrait,
+      beginAwakenedTraitOffer,
+      resolveAwakenedTraitOffer,
+      resetAwakenedWeapon,
       needsStarterSelection: () => starterSelectionPending,
       selectStarterWeapon,
       isWorldRequirementMet,
