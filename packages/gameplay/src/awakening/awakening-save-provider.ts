@@ -25,6 +25,7 @@ interface SavedAwakenedOffer {
 interface SavedAwakenedWeaponState {
   itemInstanceId: string;
   tier: number;
+  awakened?: boolean;
   storedAttunement: number;
   lifetimeAttunementInvested: number;
   strain: number;
@@ -98,6 +99,7 @@ export class AwakeningSaveProvider implements SaveProvider {
     const weapons: SavedAwakenedWeaponState[] = this.service._snapshot().map((state) => ({
       itemInstanceId: String(state.itemInstanceId),
       tier: state.tier,
+      awakened: state.awakened,
       storedAttunement: state.storedAttunement,
       lifetimeAttunementInvested: state.lifetimeAttunementInvested,
       strain: state.strain,
@@ -145,9 +147,16 @@ export class AwakeningSaveProvider implements SaveProvider {
         if (!finiteNonNegative(trait.value)) throw new Error("Invalid awakening save: invalid trait value");
         return { traitId: trait.traitId, value: trait.value };
       });
+      const awakened = saved.awakened === undefined
+        ? traits.length > 0 || saved.strain > 0 || saved.lifetimeAttunementInvested > 0
+        : saved.awakened === true;
+      if (!awakened && (traits.length > 0 || saved.strain > 0 || saved.pendingTraitOffer !== undefined)) {
+        throw new Error("Invalid awakening save: unawakened weapon has awakened progression");
+      }
       return {
         itemInstanceId: saved.itemInstanceId as ItemInstanceId,
         tier: saved.tier,
+        awakened,
         storedAttunement: saved.storedAttunement,
         lifetimeAttunementInvested: saved.lifetimeAttunementInvested,
         strain: saved.strain,
