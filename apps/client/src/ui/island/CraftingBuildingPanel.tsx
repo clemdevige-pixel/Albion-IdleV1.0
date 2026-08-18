@@ -4,7 +4,7 @@ import {
   getIslandBuildingMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
-import { PRODUCTION_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
+import { CRAFTING_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
 import type {
   CraftingCategoryId,
   CraftingFamilyId,
@@ -51,7 +51,7 @@ export function CraftingBuildingPanel({
     <div className="ui-island-crafting-building">
       {!tierIndependent && (
         <div className="ui-island-crafting-building__tiers" role="group" aria-label="Tier de fabrication">
-          {PRODUCTION_CONTENT_TIERS.map((tier) => {
+          {CRAFTING_CONTENT_TIERS.map((tier) => {
             const buildingLocked = tier > maxTier;
             return (
               <button
