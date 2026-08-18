@@ -33,7 +33,7 @@ describe("world progression foundation", () => {
     ]);
   });
 
-  it("registers the authored Yellow world without populating planned worlds", () => {
+  it("registers the authored Yellow and Orange worlds without populating later worlds", () => {
     expect(WORLD_ZONE_IDS_BY_BAND.yellow).toEqual([
       WORLD_ZONE_IDS.amberwood,
       WORLD_ZONE_IDS.gloamfen,
@@ -41,7 +41,13 @@ describe("world progression foundation", () => {
       WORLD_ZONE_IDS.sunscar,
       WORLD_ZONE_IDS.ironveil,
     ]);
-    expect(WORLD_ZONE_IDS_BY_BAND.orange).toEqual([]);
+    expect(WORLD_ZONE_IDS_BY_BAND.orange).toEqual([
+      WORLD_ZONE_IDS.cinderwood,
+      WORLD_ZONE_IDS.rotfen,
+      WORLD_ZONE_IDS.thundercrag,
+      WORLD_ZONE_IDS.emberwind,
+      WORLD_ZONE_IDS.ashenpeak,
+    ]);
     expect(WORLD_ZONE_IDS_BY_BAND.red).toEqual([]);
     expect(WORLD_ZONE_IDS_BY_BAND.black).toEqual([]);
   });
@@ -54,14 +60,10 @@ describe("world progression foundation", () => {
 
     expect(getZoneRecommendedItemPower(1)).toBe(t3);
 
-    // Dark Swamp belongs to the T3 progression: natural mastery can bridge the
-    // small gap, but T4 must never be implicitly required here.
     const darkSwampEnd = getSegmentRecommendedItemPower(2, 10);
     expect(darkSwampEnd).toBeGreaterThanOrEqual(t3);
     expect(darkSwampEnd).toBeLessThan(t4);
 
-    // Mountain S10 is a T4.2 clear target. A small mastery contribution may be
-    // expected, but the recommendation must remain below the T4.3 comfort tier.
     const mountainEnd = getSegmentRecommendedItemPower(5, 10);
     expect(mountainEnd).toBeGreaterThanOrEqual(t4PlusTwo);
     expect(mountainEnd).toBeLessThan(t4PlusThree);
