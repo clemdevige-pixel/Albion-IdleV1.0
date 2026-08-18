@@ -19,6 +19,7 @@ describe("world UI models", () => {
       "yellow",
       "orange",
       "red",
+      "black",
     ]);
   });
 
@@ -37,6 +38,8 @@ describe("world UI models", () => {
     expect(keeperWarrior?.bandIds).toContain("blue");
     expect(keeperWarrior?.bandIds).toContain("yellow");
     expect(keeperWarrior?.bandIds).toContain("orange");
+    expect(keeperWarrior?.bandIds).toContain("red");
+    expect(keeperWarrior?.bandIds).toContain("black");
   });
 
   it("exposes data-driven loot ranges from the same active combat loot rules", () => {
