@@ -24,17 +24,25 @@ function createAwakeningFixture() {
 }
 
 describe("awakened weapon progression", () => {
-  it("uses the validated low initial Attunement costs and quadratic Strain curve", () => {
+  it("uses compounded Attunement growth so every successive Awake costs more", () => {
     const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
     const t8 = createFreshAwakenedWeaponState("weapon_t8" as ItemInstanceId, 8);
 
     expect(getAwakenedActionCost(t8, balance).attunement).toBe(5_000);
-    expect(getAwakenedActionCost({ ...t8, strain: 10 }, balance).attunement).toBeCloseTo(6_500, -1);
-    expect(getAwakenedActionCost({ ...t8, strain: 30 }, balance).attunement).toBeCloseTo(14_500, -1);
-    expect(getAwakenedActionCost({ ...t8, strain: 100 }, balance).attunement).toBeCloseTo(95_000, -1);
+    expect(getAwakenedActionCost({ ...t8, strain: 10 }, balance).attunement).toBe(6_720);
+    expect(getAwakenedActionCost({ ...t8, strain: 30 }, balance).attunement).toBe(12_136);
+    expect(getAwakenedActionCost({ ...t8, strain: 50 }, balance).attunement).toBe(21_920);
+    expect(getAwakenedActionCost({ ...t8, strain: 75 }, balance).attunement).toBe(45_895);
+    expect(getAwakenedActionCost({ ...t8, strain: 100 }, balance).attunement).toBe(96_093);
+
+    for (let strain = 0; strain < 100; strain += 1) {
+      const current = getAwakenedActionCost({ ...t8, strain }, balance).attunement;
+      const next = getAwakenedActionCost({ ...t8, strain: strain + 1 }, balance).attunement;
+      expect(next).toBeGreaterThan(current);
+    }
   });
 
-  it("uses tier-linear base Silver costs and the validated Silver Strain curve", () => {
+  it("uses tier-linear base Silver costs and compounded Silver growth", () => {
     const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
 
     expect(balance.tiers[4].baseSilverCost).toBe(12_000);
@@ -45,11 +53,17 @@ describe("awakened weapon progression", () => {
 
     const t8 = createFreshAwakenedWeaponState("weapon_t8_silver" as ItemInstanceId, 8);
     expect(getAwakenedActionCost(t8, balance).silver).toBe(60_000);
-    expect(getAwakenedActionCost({ ...t8, strain: 10 }, balance).silver).toBe(78_000);
-    expect(getAwakenedActionCost({ ...t8, strain: 30 }, balance).silver).toBe(150_000);
-    expect(getAwakenedActionCost({ ...t8, strain: 50 }, balance).silver).toBe(270_000);
-    expect(getAwakenedActionCost({ ...t8, strain: 75 }, balance).silver).toBe(487_500);
-    expect(getAwakenedActionCost({ ...t8, strain: 100 }, balance).silver).toBe(780_000);
+    expect(getAwakenedActionCost({ ...t8, strain: 10 }, balance).silver).toBe(77_558);
+    expect(getAwakenedActionCost({ ...t8, strain: 30 }, balance).silver).toBe(129_590);
+    expect(getAwakenedActionCost({ ...t8, strain: 50 }, balance).silver).toBe(216_531);
+    expect(getAwakenedActionCost({ ...t8, strain: 75 }, balance).silver).toBe(411_342);
+    expect(getAwakenedActionCost({ ...t8, strain: 100 }, balance).silver).toBe(781_425);
+
+    for (let strain = 0; strain < 100; strain += 1) {
+      const current = getAwakenedActionCost({ ...t8, strain }, balance).silver;
+      const next = getAwakenedActionCost({ ...t8, strain: strain + 1 }, balance).silver;
+      expect(next).toBeGreaterThan(current);
+    }
   });
 
   it("grows Attunement storage by 2.5% of initial capacity per Strain", () => {
