@@ -168,7 +168,12 @@ export class AwakenedWeaponService {
       this.balance,
     );
     const selected = this.pickDistinctTraits(eligible, this.balance.traitProposalCount, roll01);
-    const proposals = selected.map((traitId) => rollAwakenedTrait(traitId, roll01, this.balance));
+    const proposals = selected.map((traitId) => rollAwakenedTrait(
+      traitId,
+      roll01,
+      this.balance,
+      false,
+    ));
     const offer: AwakenedTraitOffer = {
       kind: isFill ? "fill" : "reroll",
       targetIndex,
