@@ -10,11 +10,11 @@ import {
 } from "./weaponContentCatalog.js";
 
 const STANDARD_SPECIALIZATIONS = [
-  ["item_weapon_sword_t3_broadsword", "item_weapon_sword_t4_broadsword", "item_weapon_sword_t5_broadsword", "item_weapon_sword_t6_broadsword"],
-  ["item_weapon_bow_t3_longbow", "item_weapon_bow_t4_longbow", "item_weapon_bow_t5_longbow", "item_weapon_bow_t6_longbow"],
-  ["item_weapon_staff_t3_infernal", "item_weapon_staff_t4_infernal", "item_weapon_staff_t5_infernal", "item_weapon_staff_t6_infernal"],
-  ["item_weapon_gloves_t3_spiked_gauntlets", "item_weapon_gloves_t4_spiked_gauntlets", "item_weapon_gloves_t5_spiked_gauntlets", "item_weapon_gloves_t6_spiked_gauntlets"],
-  ["item_weapon_dagger_t3_pair", "item_weapon_dagger_t4_pair", "item_weapon_dagger_t5_pair", "item_weapon_dagger_t6_pair"],
+  ["item_weapon_sword_t3_broadsword", "item_weapon_sword_t4_broadsword", "item_weapon_sword_t5_broadsword", "item_weapon_sword_t6_broadsword", "item_weapon_sword_t7_broadsword", "item_weapon_sword_t8_broadsword"],
+  ["item_weapon_bow_t3_longbow", "item_weapon_bow_t4_longbow", "item_weapon_bow_t5_longbow", "item_weapon_bow_t6_longbow", "item_weapon_bow_t7_longbow", "item_weapon_bow_t8_longbow"],
+  ["item_weapon_staff_t3_infernal", "item_weapon_staff_t4_infernal", "item_weapon_staff_t5_infernal", "item_weapon_staff_t6_infernal", "item_weapon_staff_t7_infernal", "item_weapon_staff_t8_infernal"],
+  ["item_weapon_gloves_t3_spiked_gauntlets", "item_weapon_gloves_t4_spiked_gauntlets", "item_weapon_gloves_t5_spiked_gauntlets", "item_weapon_gloves_t6_spiked_gauntlets", "item_weapon_gloves_t7_spiked_gauntlets", "item_weapon_gloves_t8_spiked_gauntlets"],
+  ["item_weapon_dagger_t3_pair", "item_weapon_dagger_t4_pair", "item_weapon_dagger_t5_pair", "item_weapon_dagger_t6_pair", "item_weapon_dagger_t7_pair", "item_weapon_dagger_t8_pair"],
 ] as const;
 
 describe("weapon craft pipeline", () => {
