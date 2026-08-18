@@ -18,6 +18,7 @@ describe("world UI models", () => {
       "blue",
       "yellow",
       "orange",
+      "red",
     ]);
   });
 
