@@ -14,11 +14,30 @@ export const PRODUCTION_CONTENT_TIERS = [3, 4, 5] as const satisfies readonly Pr
 /** Tiers whose active hero gathering content is authored. */
 export const GATHERING_CONTENT_TIERS = [3, 4, 5, 6] as const satisfies readonly ProductionTier[];
 
+/** Tiers whose refining recipes are authored. */
+export const REFINING_CONTENT_TIERS = [3, 4, 5, 6] as const satisfies readonly ProductionTier[];
+
+export type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
+export type RefiningContentTier = (typeof REFINING_CONTENT_TIERS)[number];
+export type ProductionContentTier = (typeof PRODUCTION_CONTENT_TIERS)[number];
+
 export function isProductionTier(value: unknown): value is ProductionTier {
   return (
     typeof value === "number" &&
     PRODUCTION_TIERS.includes(value as ProductionTier)
   );
+}
+
+export function isGatheringContentTier(value: ProductionTier): value is GatheringContentTier {
+  return GATHERING_CONTENT_TIERS.includes(value as GatheringContentTier);
+}
+
+export function isRefiningContentTier(value: ProductionTier): value is RefiningContentTier {
+  return REFINING_CONTENT_TIERS.includes(value as RefiningContentTier);
+}
+
+export function isProductionContentTier(value: ProductionTier): value is ProductionContentTier {
+  return PRODUCTION_CONTENT_TIERS.includes(value as ProductionContentTier);
 }
 
 export interface ProductionTierRules {
