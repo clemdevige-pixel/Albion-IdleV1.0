@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { getEncounterRewards } from "@game/gameplay";
+import { getEncounterRewards } from "../packages/gameplay/src/combat/combat-profile.js";
 
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
 import {
