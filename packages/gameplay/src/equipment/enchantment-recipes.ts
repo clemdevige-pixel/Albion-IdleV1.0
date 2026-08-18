@@ -1,6 +1,6 @@
 import type { EnchantmentLevel } from "../inventory/types.js";
 
-export type ActiveEnchantmentLevel = 1 | 2 | 3;
+export type ActiveEnchantmentLevel = 1 | 2 | 3 | 4;
 
 export interface EnchantmentMaterialCost {
   readonly itemId: string;
@@ -18,13 +18,14 @@ export const ENCHANTMENT_MAXIMUM_ITEM_TIER = 8;
 export const ENCHANTMENT_RESOURCE_TIERS = [4, 5, 6, 7, 8] as const;
 
 /**
- * Validated shard baseline. Values are incremental costs for each step, so a
- * .0 -> .3 item consumes 110 shards total (10 + 30 + 70).
+ * Incremental shard costs for each enchantment step.
+ * .4 is the Awakened transition and consumes 100 tier-matching fragments/shards.
  */
 export const ENCHANTMENT_SHARD_COSTS: Readonly<Record<ActiveEnchantmentLevel, number>> = {
   1: 10,
   2: 30,
   3: 70,
+  4: 100,
 };
 
 export function getEnchantmentShardItemId(itemTier: number): string {
@@ -40,6 +41,7 @@ Readonly<Record<ActiveEnchantmentLevel, number>> = {
   1: 1,
   2: 2,
   3: 4,
+  4: 8,
 };
 
 export interface EnchantmentRecipe {
@@ -76,13 +78,12 @@ Readonly<Record<EnchantmentCostCategory, number>> = {
 };
 
 /**
- * Base recipes now contain only the deterministic Silver step. The shard for
- * the item's own tier is injected by scaleEnchantmentRecipe, which prevents a
- * T4 resource from ever paying for a T5+ enchantment. Refined craft materials
- * remain secondary sinks and are also injected there.
+ * Base recipes contain the deterministic Silver step. The tier-matching shard
+ * and refined craft materials are injected by scaleEnchantmentRecipe.
  *
- * Level .4 remains structurally reserved but disabled until its dedicated
- * mechanics are designed.
+ * .4 is not a separate craft: it is the final .3 -> .4 enchantment step.
+ * Its base Silver value intentionally remains authored data and is scaled by
+ * the same tier/category multipliers as .1-.3.
  */
 export const ENCHANTMENT_RECIPES: Readonly<Record<1 | 2 | 3 | 4, EnchantmentRecipe>> = {
   1: {
@@ -109,8 +110,8 @@ export const ENCHANTMENT_RECIPES: Readonly<Record<1 | 2 | 3 | 4, EnchantmentReci
   4: {
     fromLevel: 3,
     toLevel: 4,
-    enabled: false,
-    silverCost: 0,
+    enabled: true,
+    silverCost: 25_000,
     materials: [],
   },
 };
@@ -134,7 +135,7 @@ export function scaleEnchantmentRecipe(
   const multiplier =
     tierMultiplier * ENCHANTMENT_CATEGORY_COST_MULTIPLIERS[category];
   const activeLevel =
-    recipe.toLevel >= 1 && recipe.toLevel <= 3
+    recipe.toLevel >= 1 && recipe.toLevel <= 4
       ? recipe.toLevel as ActiveEnchantmentLevel
       : undefined;
 
@@ -148,9 +149,9 @@ export function scaleEnchantmentRecipe(
         ? []
         : [{
             itemId: getEnchantmentShardItemId(itemTier),
-            // Shards encode combat time. Their 10/30/70 baseline deliberately
-            // does not scale by weapon category or tier; those differences are
-            // already represented by Silver and refined-material sinks.
+            // Tier shards encode combat time and never cross-pay another tier.
+            // Quantity is authored per enchantment step, independently of
+            // weapon category and tier.
             quantity: ENCHANTMENT_SHARD_COSTS[activeLevel],
           }]),
       ...(activeLevel === undefined
