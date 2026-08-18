@@ -173,15 +173,20 @@ describe("monsterContentCatalog", () => {
   it("has an explicit encounter pool for every current world zone", () => {
     expect(Object.keys(ZONE_ENCOUNTER_POOLS).sort()).toEqual([
       "zone_amberwood_t5",
+      "zone_ashenpeak_t6",
+      "zone_cinderwood_t6",
+      "zone_emberwind_t6",
       "zone_forest_t3",
       "zone_gloamfen_t5",
       "zone_highland_t3",
       "zone_ironveil_t5",
       "zone_mountain_t4",
+      "zone_rotfen_t6",
       "zone_steppe_t4",
       "zone_stormwatch_t5",
       "zone_sunscar_t5",
       "zone_swamp_t3",
+      "zone_thundercrag_t6",
     ]);
   });
 });
