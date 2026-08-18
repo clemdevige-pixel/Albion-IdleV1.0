@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PRODUCTION_CONTENT_TIERS } from "../../../data/productionFamilyCatalog";
+import { GATHERING_CONTENT_TIERS } from "../../../data/productionFamilyCatalog";
 import { GatheringResourceCard } from "./GatheringResourceCard";
 import type { GatheringResourceId } from "./gatheringModels";
 import { useGatheringActions } from "./useGatheringActions";
@@ -17,7 +17,7 @@ export function GatheringView(): JSX.Element {
     <div className="ui-gathering">
       <div className="ui-gathering__toolbar">
         <div className="ui-gathering__tiers" role="group" aria-label="Palier de récolte">
-          {PRODUCTION_CONTENT_TIERS.map((tier) => (
+          {GATHERING_CONTENT_TIERS.map((tier) => (
             <button key={tier} type="button" className={model.tier === tier ? "is-active" : ""} aria-pressed={model.tier === tier} onClick={() => { actions.setTier(tier); }}>
               T{String(tier)}
             </button>
