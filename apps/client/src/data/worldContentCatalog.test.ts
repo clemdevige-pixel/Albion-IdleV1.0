@@ -45,54 +45,48 @@ describe("worldContentCatalog", () => {
       ...WORLD_ZONE_IDS_BY_BAND.red,
       ...WORLD_ZONE_IDS_BY_BAND.black,
     ]);
-    expect(getWorldZonePlacement(WORLD_ZONE_IDS.mountain)).toEqual({
-      bandId: "blue",
-      zoneIndexWithinBand: 4,
-      tier: 4,
-    });
-    expect(getWorldZonePlacement(WORLD_ZONE_IDS.amberwood)).toEqual({
-      bandId: "yellow",
-      zoneIndexWithinBand: 0,
-      tier: 5,
-    });
+    expect(getWorldZonePlacement(WORLD_ZONE_IDS.mountain)).toEqual({ bandId: "blue", zoneIndexWithinBand: 4, tier: 4 });
+    expect(getWorldZonePlacement(WORLD_ZONE_IDS.amberwood)).toEqual({ bandId: "yellow", zoneIndexWithinBand: 0, tier: 5 });
+    expect(getWorldZonePlacement(WORLD_ZONE_IDS.cinderwood)).toEqual({ bandId: "orange", zoneIndexWithinBand: 0, tier: 6 });
+    expect(getWorldZonePlacement(WORLD_ZONE_IDS.ashenpeak)).toEqual({ bandId: "orange", zoneIndexWithinBand: 4, tier: 6 });
   });
 
-  it("generates the existing progression chain without special cases", () => {
+  it("generates the complete authored progression chain without special cases", () => {
     expect(ZONE_UNLOCK_DEFINITIONS[0]).toMatchObject({
       zoneDefId: WORLD_ZONE_IDS.forest,
       unlockedByDefault: true,
       conditions: [],
     });
+    expect(ZONE_UNLOCK_DEFINITIONS.at(-1)?.zoneDefId).toBe(WORLD_ZONE_IDS.ashenpeak);
     expect(ZONE_UNLOCK_DEFINITIONS.at(-1)?.conditions).toEqual([
-      { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.sunscar },
+      { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.emberwind },
     ]);
   });
 
-  it("links the first future Yellow zone to the last Blue zone", () => {
-    const firstYellowZone = asZoneDefinitionId("zone_yellow_stage_1_t5");
+  it("links a future band generically to the previous authored zone", () => {
+    const futureZone = asZoneDefinitionId("zone_future_stage_1_t7");
     const definitions = buildZoneUnlockDefinitions([
-      ...WORLD_ZONE_IDS_BY_BAND.blue,
-      firstYellowZone,
+      ...WORLD_ZONE_ORDER,
+      futureZone,
     ]);
 
     expect(definitions.at(-1)).toEqual({
-      zoneDefId: firstYellowZone,
-      conditions: [
-        { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.mountain },
-      ],
+      zoneDefId: futureZone,
+      conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.ashenpeak }],
     });
   });
 
-  it("links the authored first Yellow zone to the final Blue zone", () => {
-    const firstYellowIndex = ZONE_UNLOCK_DEFINITIONS.findIndex(
-      ({ zoneDefId }) => zoneDefId === WORLD_ZONE_IDS.amberwood,
-    );
-
+  it("links Yellow to Blue and Orange to Yellow without special cases", () => {
+    const firstYellowIndex = ZONE_UNLOCK_DEFINITIONS.findIndex(({ zoneDefId }) => zoneDefId === WORLD_ZONE_IDS.amberwood);
     expect(ZONE_UNLOCK_DEFINITIONS[firstYellowIndex]).toEqual({
       zoneDefId: WORLD_ZONE_IDS.amberwood,
-      conditions: [
-        { type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.mountain },
-      ],
+      conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.mountain }],
+    });
+
+    const firstOrangeIndex = ZONE_UNLOCK_DEFINITIONS.findIndex(({ zoneDefId }) => zoneDefId === WORLD_ZONE_IDS.cinderwood);
+    expect(ZONE_UNLOCK_DEFINITIONS[firstOrangeIndex]).toEqual({
+      zoneDefId: WORLD_ZONE_IDS.cinderwood,
+      conditions: [{ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.ironveil }],
     });
   });
 });
