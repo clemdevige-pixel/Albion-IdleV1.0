@@ -20,7 +20,6 @@ describe("production tier content contract", () => {
 
   it("keeps every authored refining tier complete without requiring craft rollout", () => {
     expect(REFINING_CONTENT_TIERS).toContain(7);
-    expect(CRAFTING_CONTENT_TIERS).not.toContain(7);
     for (const familyId of PRODUCTION_FAMILY_IDS) {
       for (const tier of REFINING_CONTENT_TIERS) {
         const resource = RESOURCE_TIER_CONTENT[familyId][tier]; const refining = getProductionRefiningRecipe(familyId, tier);
@@ -35,14 +34,17 @@ describe("production tier content contract", () => {
   it("keeps worker/full production rollout independent from refining and crafting rollout", () => {
     expect(PRODUCTION_CONTENT_TIERS).toEqual([3, 4, 5]);
     expect(REFINING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7]);
-    expect(CRAFTING_CONTENT_TIERS).toEqual([3, 4, 5, 6]);
+    expect(CRAFTING_CONTENT_TIERS).toEqual([3, 4, 5, 6, 7]);
   });
 
-  it("exposes conventional T6 weapon and armor recipes", () => {
+  it("exposes conventional T7 weapon and armor recipes with T6 predecessors", () => {
     const highestCraftingTier = Math.max(...CRAFTING_CONTENT_TIERS);
     const recipes = EQUIPMENT_CRAFT_RECIPES.filter((recipe) => recipe.tier === highestCraftingTier);
-    expect(highestCraftingTier).toBe(6);
-    expect(recipes.map((recipe) => recipe.outputItemId)).toEqual(expect.arrayContaining(["item_weapon_sword_t6_broadsword", "item_weapon_bow_t6_longbow", "item_weapon_staff_t6_infernal", "item_weapon_gloves_t6_spiked_gauntlets", "item_weapon_dagger_t6_pair", "item_shield_t6_reinforced", "item_helmet_t6_reinforced", "item_armor_t6_leather", "item_boots_t6_leather"]));
+    expect(highestCraftingTier).toBe(7);
+    expect(recipes.map((recipe) => recipe.outputItemId)).toEqual(expect.arrayContaining(["item_weapon_sword_t7_broadsword", "item_weapon_bow_t7_longbow", "item_weapon_staff_t7_infernal", "item_weapon_gloves_t7_spiked_gauntlets", "item_weapon_dagger_t7_pair", "item_shield_t7_reinforced", "item_helmet_t7_reinforced", "item_armor_t7_leather", "item_boots_t7_leather"]));
     expect(recipes).toHaveLength(9);
+    for (const recipe of recipes) {
+      expect(recipe.requirements.some((entry) => entry.itemId.includes("_t6_") || entry.itemId.endsWith("_t6")), `${recipe.outputItemId} should consume its T6 predecessor`).toBe(true);
+    }
   });
 });
