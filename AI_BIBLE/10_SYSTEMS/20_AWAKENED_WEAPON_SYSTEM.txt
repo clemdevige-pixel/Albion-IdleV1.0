@@ -138,15 +138,19 @@ All ranges are balance data and may be recalibrated without changing system arch
 
 ## 8. CRITICAL ATTUNEMENT
 
-Every applicable trait roll has a baseline 15% chance to become a Critical Attunement.
+Only IMPROVEMENTS of an already selected trait may critically Attune.
+
+Baseline Critical Attunement chance: 15% per trait improvement.
 
 Critical Attunement:
-- doubles the rolled gain (x2);
+- doubles the rolled improvement gain (x2);
 - does not add extra Strain;
 - does not change the action cost;
 - does not change future roll ranges.
 
-For CDR, the critical doubles the INTERNAL progression gained before effective CDR is recalculated. It must never directly double the displayed effective CDR percentage.
+Critical Attunement NEVER applies while choosing a trait for an empty slot and NEVER applies while choosing a replacement trait during a reroll. Trait-selection proposals always display and grant their normal base roll.
+
+For CDR, a critical improvement doubles the INTERNAL progression gained before effective CDR is recalculated. It must never directly double the displayed effective CDR percentage.
 
 Critical chance and multiplier are data-driven.
 
@@ -161,7 +165,7 @@ Properties:
 - P has no hard cap.
 - Effective CDR approaches 50% asymptotically and never reaches/exceeds it through this curve.
 - UI displays only effective CDR actually applied to abilities.
-- A Critical Attunement doubles internal CDR progression gained, not displayed CDR.
+- A Critical Attunement improvement doubles internal CDR progression gained, not displayed CDR.
 
 ## 10. AWAKE / TRAIT IMPROVEMENT FLOW
 
@@ -186,8 +190,9 @@ When an empty unlocked slot is populated:
 - it adds +1 Strain;
 - traits already used by other slots are excluded;
 - the player receives 3 random eligible trait proposals where the eligible pool size permits;
-- the selected trait begins with its first rolled value;
-- Critical Attunement can apply to this first value;
+- every proposal uses a normal base roll from that trait's authored range;
+- Critical Attunement is disabled during this choice;
+- the selected trait begins with exactly the displayed base-roll value;
 - lifetime Attunement invested increases by the Attunement spent.
 
 No slot grants a free modification.
@@ -204,14 +209,15 @@ Flow:
 5. The traits occupying the other slots are excluded from the pool.
 6. The currently targeted trait may appear again.
 7. Player receives 3 random eligible proposals where pool size permits.
-8. Player may accept a proposed trait or keep the existing trait.
+8. Every proposal uses a normal base roll; Critical Attunement is disabled during reroll selection.
+9. Player may accept a proposed trait or keep the existing trait.
 
 The cost and Strain remain consumed even if the player keeps the existing trait.
 
 If a different trait is accepted:
 - all accumulated progression of the replaced trait is lost;
-- the replacement starts from a fresh first roll;
-- Critical Attunement may apply to that first roll;
+- the replacement starts from exactly the normal base-roll value displayed in the proposal;
+- no Critical Attunement can occur on the replacement selection;
 - no value/progression transfers between trait types.
 
 ## 13. FULL AWAKENING RESET
@@ -292,6 +298,7 @@ The implementation must preserve these invariants:
 - No duplicate traits on one weapon.
 - No free trait modification.
 - Every trait modification attempt adds Strain except the initial Awakening and full reset.
+- Critical Attunement can occur only on improvements of an already selected trait, never during initial trait choice or reroll selection.
 - Critical Attunement rewards luck and never punishes it with extra Strain.
 - Reroll cannot transfer accumulated value to another trait.
 - Full reset returns the weapon to the unawakened .4 state.
