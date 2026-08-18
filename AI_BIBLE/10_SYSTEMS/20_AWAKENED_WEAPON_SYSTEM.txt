@@ -290,44 +290,60 @@ T8.4 | 5,000 | 60,000
 
 Base Silver is intentionally tier-linear at 12,000 Silver per 1,000 base Attunement. This keeps tier progression explicit and avoids the previous near-flat T7/T8 Silver baseline.
 
-Baseline Attunement multiplier:
+Both post-Awakening costs now use compounded per-Strain growth so every successive trait action is strictly more expensive than the previous one.
 
-AttunementMultiplier = 1 + (Strain * 0.01333) + (Strain^2 * 0.001667)
+Baseline Attunement growth:
+
+AttunementGrowthPerStrain = 1.03
+AttunementMultiplier = AttunementGrowthPerStrain ^ Strain
 AttunementCost = BaseAttunement(tier) * AttunementMultiplier
+
+Each +1 Strain therefore increases the next Attunement cost by approximately 3% relative to the previous action.
 
 Approximate Attunement pacing:
 Strain 0 -> x1.00
-Strain 10 -> x1.30
-Strain 20 -> x1.93
-Strain 30 -> x2.90
-Strain 50 -> x5.83
-Strain 75 -> x11.37
-Strain 100 -> x19.00
+Strain 10 -> x1.344
+Strain 20 -> x1.806
+Strain 30 -> x2.427
+Strain 50 -> x4.384
+Strain 75 -> x9.179
+Strain 100 -> x19.219
 
-Baseline Silver multiplier:
+T8 Attunement references:
+Strain 0 -> 5,000 Attunement
+Strain 10 -> 6,720 Attunement
+Strain 30 -> 12,136 Attunement
+Strain 50 -> 21,920 Attunement
+Strain 75 -> 45,895 Attunement
+Strain 100 -> 96,093 Attunement
 
-SilverMultiplier = 1 + (Strain * 0.02) + (Strain^2 * 0.001)
+Baseline Silver growth:
+
+SilverGrowthPerStrain = 1.026
+SilverMultiplier = SilverGrowthPerStrain ^ Strain
 SilverCost = BaseSilver(tier) * SilverMultiplier
+
+Each +1 Strain therefore increases the next Silver cost by approximately 2.6% relative to the previous action.
 
 Approximate Silver pacing:
 Strain 0 -> x1.00
-Strain 10 -> x1.30
-Strain 30 -> x2.50
-Strain 50 -> x4.50
-Strain 75 -> x8.125
-Strain 100 -> x13.00
+Strain 10 -> x1.293
+Strain 30 -> x2.160
+Strain 50 -> x3.609
+Strain 75 -> x6.856
+Strain 100 -> x13.024
 
-T8 reference costs:
+T8 Silver references:
 Strain 0 -> 60,000 Silver
-Strain 10 -> 78,000 Silver
-Strain 30 -> 150,000 Silver
-Strain 50 -> 270,000 Silver
-Strain 75 -> 487,500 Silver
-Strain 100 -> 780,000 Silver
+Strain 10 -> 77,558 Silver
+Strain 30 -> 129,590 Silver
+Strain 50 -> 216,531 Silver
+Strain 75 -> 411,342 Silver
+Strain 100 -> 781,425 Silver
 
-The intent is deliberate: early upgrades remain affordable, Silver stays a meaningful sink, and mature weapons become expensive without Silver overtaking Attunement as the primary long-term progression wall. Strain and Attunement remain the main soft-cap mechanism at very high investment.
+The intent is deliberate: every Awake becomes a little more expensive than the previous one, producing a smooth and readable long-term progression rather than threshold-like jumps. Attunement grows slightly faster than Silver so it remains the primary long-term soft-cap mechanism while Silver stays a meaningful economic sink.
 
-Both Attunement and Silver curve coefficients are authored balance data and may be recalibrated without changing the progression architecture.
+Both growth factors are authored balance data and may be recalibrated without changing the progression architecture.
 
 ## 15. DESIGN GUARANTEES
 
@@ -341,6 +357,7 @@ The implementation must preserve these invariants:
 - No duplicate traits on one weapon.
 - No free trait modification.
 - Every trait modification attempt adds Strain except the initial Awakening and full reset.
+- every +1 Strain increases both the next Attunement and Silver action costs through their authored compounded growth factors.
 - every +1 Strain increases the baseline Attunement storage capacity by 2.5% of the tier initial cap, while next-cost x1.5 remains a minimum-cap safeguard.
 - Critical Attunement can occur only on improvements of an already selected trait, never during initial trait choice or reroll selection.
 - Critical Attunement rewards luck and never punishes it with extra Strain.
