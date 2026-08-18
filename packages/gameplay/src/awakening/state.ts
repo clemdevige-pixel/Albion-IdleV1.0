@@ -12,6 +12,7 @@ export function createFreshAwakenedWeaponState(
     lifetimeAttunementInvested: 0,
     strain: 0,
     traits: [],
+    pendingTraitOffer: undefined,
   };
 }
 
