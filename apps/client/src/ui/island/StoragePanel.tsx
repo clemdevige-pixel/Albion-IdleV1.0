@@ -1,26 +1,14 @@
 import {
-  GATHERING_CONTENT_TIERS,
-  PRODUCTION_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
   PRODUCTION_TIERS,
   getProductionFamilyDefinition,
-  type ProductionTier,
+  isGatheringContentTier,
+  isRefiningContentTier,
 } from "../../data/productionFamilyCatalog";
 import { RESOURCE_TIER_CONTENT } from "../../data/resourceContentCatalog";
 import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./storagePanel.css";
-
-type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
-type ProductionContentTier = (typeof PRODUCTION_CONTENT_TIERS)[number];
-
-function isGatheringContentTier(tier: ProductionTier): tier is GatheringContentTier {
-  return GATHERING_CONTENT_TIERS.includes(tier as GatheringContentTier);
-}
-
-function isProductionContentTier(tier: ProductionTier): tier is ProductionContentTier {
-  return PRODUCTION_CONTENT_TIERS.includes(tier as ProductionContentTier);
-}
 
 function quantityForItem(
   inventoryManager: ReturnType<typeof useGameServices>["inventoryManager"],
@@ -32,8 +20,6 @@ function quantityForItem(
 }
 
 export function StoragePanel(): JSX.Element {
-  // Production operations already update the bridge. Subscribing here keeps
-  // this projection reactive without mirroring the storage in GameBridge.
   useGameBridge();
   const { inventoryManager, productionStorageId } = useGameServices();
   const capacity = inventoryManager.getCapacity(productionStorageId);
@@ -64,7 +50,7 @@ export function StoragePanel(): JSX.Element {
               <div className="ui-island-storage__tiers">
                 {PRODUCTION_TIERS.map((tier) => {
                   const hasGatheringContent = isGatheringContentTier(tier);
-                  const hasRefiningContent = isProductionContentTier(tier);
+                  const hasRefiningContent = isRefiningContentTier(tier);
 
                   if (!hasGatheringContent && !hasRefiningContent) {
                     return (
