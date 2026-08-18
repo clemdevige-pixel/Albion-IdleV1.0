@@ -1,6 +1,7 @@
 import type { EntityId, World } from "@game/core";
 import type { EventBus } from "@game/core";
 import type { StatsManager } from "../stats/index.js";
+import type { StatId } from "../stats/types.js";
 import { HealthComponent } from "../damage/components.js";
 import { AbilitiesComponent } from "./components.js";
 import type { AbilityData } from "./components.js";
@@ -10,15 +11,19 @@ import { CooldownManager } from "./cooldown-manager.js";
 import type { AbilityEventMap } from "./ability-events.js";
 import type { AbilityDefinitionLike, AbilityEntry, AbilityId, AbilityIntent, AbilityExecutionResult } from "./types.js";
 
+const COOLDOWN_REDUCTION_STAT = "stat_cooldown_reduction" as StatId;
+
 export class AbilityManager {
   readonly #world: World;
+  readonly #statsManager: StatsManager;
   readonly #validator: AbilityValidator;
   readonly #castManager = new CastManager();
   readonly #cooldownManager = new CooldownManager();
   #eventBus: EventBus<AbilityEventMap> | undefined;
 
-  constructor(world: World, _statsManager: StatsManager) {
+  constructor(world: World, statsManager: StatsManager) {
     this.#world = world;
+    this.#statsManager = statsManager;
     this.#validator = new AbilityValidator(world);
   }
 
@@ -83,10 +88,8 @@ export class AbilityManager {
 
     if (entry.definition.castTime > 0) {
       this.#castManager.startCast(entry, entry.definition.castTime);
-    } else {
-      if (entry.definition.cooldown > 0) {
-        this.#cooldownManager.startCooldown(entry, entry.definition.cooldown);
-      }
+    } else if (entry.definition.cooldown > 0) {
+      this.#cooldownManager.startCooldown(entry, this.#resolveCooldown(entityId, entry.definition.cooldown));
     }
     return true;
   }
@@ -105,7 +108,7 @@ export class AbilityManager {
         const done = this.#castManager.tickCast(entry, deltaTime);
         if (done) {
           if (entry.definition.cooldown > 0) {
-            this.#cooldownManager.startCooldown(entry, entry.definition.cooldown);
+            this.#cooldownManager.startCooldown(entry, this.#resolveCooldown(entityId, entry.definition.cooldown));
           } else {
             entry.state = "ready";
             entry.castTimeRemaining = 0;
@@ -178,8 +181,9 @@ export class AbilityManager {
     this.#deductCosts(entityId, entry);
 
     if (entry.definition.cooldown > 0) {
-      this.#cooldownManager.startCooldown(entry, entry.definition.cooldown);
-      this.#eventBus?.publish("AbilityCooldownStarted", { entityId, abilityId, duration: entry.definition.cooldown });
+      const cooldown = this.#resolveCooldown(entityId, entry.definition.cooldown);
+      this.#cooldownManager.startCooldown(entry, cooldown);
+      this.#eventBus?.publish("AbilityCooldownStarted", { entityId, abilityId, duration: cooldown });
     }
 
     this.#eventBus?.publish("AbilityExecuted", {
@@ -197,6 +201,13 @@ export class AbilityManager {
 
   #getData(entityId: EntityId): AbilityData {
     return this.#world.getComponent(entityId, AbilitiesComponent);
+  }
+
+  #resolveCooldown(entityId: EntityId, baseCooldown: number): number {
+    if (!this.#statsManager.hasStats(entityId)) return baseCooldown;
+    const reduction = this.#statsManager.getStat(entityId, COOLDOWN_REDUCTION_STAT).computed;
+    const clamped = Math.max(0, Math.min(99.999, reduction));
+    return Math.max(0, baseCooldown) * (1 - clamped / 100);
   }
 
   #deductCosts(entityId: EntityId, entry: AbilityEntry): void {
