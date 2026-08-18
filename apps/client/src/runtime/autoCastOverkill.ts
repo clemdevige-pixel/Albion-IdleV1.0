@@ -12,6 +12,7 @@ import { getAbilityHitBaseDamage, resolveAbilityDamageRatio } from "./WeaponAbil
 
 const PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
 const MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
+const ABILITY_POWER = "stat_ability_power" as StatId;
 const ARMOR = "stat_armor" as StatId;
 const MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 
@@ -32,6 +33,7 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
 
   const physicalDamage = deps.statsManager.getStat(deps.heroId, PHYSICAL_DAMAGE).computed;
   const magicalDamage = deps.statsManager.getStat(deps.heroId, MAGICAL_DAMAGE).computed;
+  const abilityPower = deps.statsManager.getStat(deps.heroId, ABILITY_POWER).computed;
   const armor = deps.statsManager.getStat(deps.targetId, ARMOR).computed;
   const magicResistance = deps.statsManager.getStat(deps.targetId, MAGIC_RESISTANCE).computed;
   const sourceDamage = deps.definition.damageType === "magical" ? magicalDamage : physicalDamage;
@@ -52,7 +54,12 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
       (effectId) => activeEffectIds.has(effectId),
     );
     const hits = Math.max(1, mechanic.hits ?? 1);
-    const baseDamagePerHit = getAbilityHitBaseDamage(sourceDamage, totalRatio, hits);
+    const baseDamagePerHit = getAbilityHitBaseDamage(
+      sourceDamage,
+      totalRatio,
+      hits,
+      abilityPower,
+    );
 
     for (let hit = 0; hit < hits; hit += 1) {
       estimatedImmediateDamage += calculateDamage(
