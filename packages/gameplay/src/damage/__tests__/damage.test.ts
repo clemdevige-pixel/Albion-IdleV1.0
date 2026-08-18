@@ -6,7 +6,7 @@ import { StatsManager } from "../../stats/stats-manager.js";
 import type { StatId } from "../../stats/types.js";
 import { DamageManager } from "../damage-manager.js";
 import { DamageValidator } from "../damage-validator.js";
-import { calculateDamage } from "../damage-calculator.js";
+import { calculateDamage, calculateResistanceMitigation } from "../damage-calculator.js";
 import type { DamageRequest } from "../types.js";
 
 function sid(id: string): StatId {
@@ -74,7 +74,7 @@ describe("Damage Pipeline", () => {
     expect(result!.targetHealthAfter).toBe(70);
   });
 
-  it("processDamage — armor mitigates damage (percentage points)", () => {
+  it("processDamage — armor mitigates damage through diminishing returns", () => {
     damageManager.attachHealth(attacker);
     damageManager.attachHealth(defender);
     statsManager.setBaseStat(defender, sid("stat_armor"), 25);
@@ -83,9 +83,9 @@ describe("Damage Pipeline", () => {
     const result = damageManager.processDamage(makeRequest(attacker, defender, 100));
     expect(result).not.toBeNull();
     expect(result!.rawDamage).toBe(100);
-    expect(result!.mitigatedDamage).toBe(75);
-    expect(result!.finalDamage).toBe(75);
-    expect(result!.targetHealthAfter).toBe(25);
+    expect(result!.mitigatedDamage).toBeCloseTo(80, 10);
+    expect(result!.finalDamage).toBeCloseTo(80, 10);
+    expect(result!.targetHealthAfter).toBeCloseTo(20, 10);
   });
 
   it("processDamage — magical damage mitigated by magic resistance, not armor", () => {
@@ -100,7 +100,7 @@ describe("Damage Pipeline", () => {
     );
     expect(result).not.toBeNull();
     expect(result!.rawDamage).toBe(50);
-    expect(result!.mitigatedDamage).toBe(30);
+    expect(result!.mitigatedDamage).toBeCloseTo(35.7142857143, 10);
   });
 
   it("processDamage — true damage ignores all resistances", () => {
@@ -151,7 +151,7 @@ describe("Damage Pipeline", () => {
     expect(result!.mitigatedDamage).toBe(40);
   });
 
-  it("processDamage — armor capped at 80% reduction", () => {
+  it("processDamage — very high armor keeps gaining mitigation without a hard cap", () => {
     damageManager.attachHealth(attacker);
     damageManager.attachHealth(defender);
     statsManager.setBaseStat(defender, sid("stat_armor"), 900);
@@ -159,7 +159,7 @@ describe("Damage Pipeline", () => {
 
     const result = damageManager.processDamage(makeRequest(attacker, defender, 100));
     expect(result).not.toBeNull();
-    expect(result!.mitigatedDamage).toBeCloseTo(20, 10);
+    expect(result!.mitigatedDamage).toBeCloseTo(10, 10);
   });
 
   it("processDamage — overkill tracked", () => {
@@ -247,7 +247,7 @@ describe("Damage Pipeline", () => {
 
   it("syncMaxHealth — preserves health ratio (11_STAT §12)", () => {
     damageManager.attachHealth(defender);
-    damageManager.applyDamage(defender, 50); // 50/100 = 50%
+    damageManager.applyDamage(defender, 50);
 
     statsManager.setBaseStat(defender, sid("stat_max_health"), 140);
     statsManager.calculateStats(defender);
@@ -259,13 +259,12 @@ describe("Damage Pipeline", () => {
 
   it("syncMaxHealth — standard rounding (11_STAT §13)", () => {
     damageManager.attachHealth(defender);
-    damageManager.applyDamage(defender, 35); // 65/100 = 65%
+    damageManager.applyDamage(defender, 35);
 
     statsManager.setBaseStat(defender, sid("stat_max_health"), 125);
     statsManager.calculateStats(defender);
     damageManager.syncMaxHealth(defender);
 
-    // 125 × 0.65 = 81.25 → 81
     expect(damageManager.getHealth(defender).currentHealth).toBe(81);
   });
 
@@ -294,7 +293,7 @@ describe("calculateDamage (pure)", () => {
   it("magical bypasses armor and uses magic resistance", () => {
     const result = calculateDamage(50, attacker, { armor: 100, magicResistance: 50 }, "magical");
     expect(result.rawDamage).toBe(70);
-    expect(result.mitigatedDamage).toBe(35);
+    expect(result.mitigatedDamage).toBeCloseTo(46.6666666667, 10);
   });
 
   it("true damage ignores every resistance", () => {
@@ -303,15 +302,20 @@ describe("calculateDamage (pure)", () => {
     expect(result.mitigatedDamage).toBe(50);
   });
 
-  it("resistances are capped at 80%", () => {
+  it("resistance curve is asymptotic and has no hard cap", () => {
+    expect(calculateResistanceMitigation(0)).toBe(0);
+    expect(calculateResistanceMitigation(100)).toBeCloseTo(0.5, 10);
+    expect(calculateResistanceMitigation(200)).toBeCloseTo(2 / 3, 10);
+    expect(calculateResistanceMitigation(400)).toBeCloseTo(0.8, 10);
+
     const physical = calculateDamage(90, attacker, { armor: 500, magicResistance: 0 }, "physical");
-    expect(physical.mitigatedDamage).toBeCloseTo(20, 10);
+    expect(physical.mitigatedDamage).toBeCloseTo(100 / 6, 10);
     const magical = calculateDamage(80, attacker, { armor: 0, magicResistance: 200 }, "magical");
-    expect(magical.mitigatedDamage).toBeCloseTo(20, 10);
+    expect(magical.mitigatedDamage).toBeCloseTo(100 / 3, 10);
   });
 
   it("minimum damage rule — a successful attack always deals at least 1", () => {
-    const result = calculateDamage(1, { physicalDamage: 0, magicalDamage: 0 }, { armor: 80, magicResistance: 0 }, "physical");
+    const result = calculateDamage(1, { physicalDamage: 0, magicalDamage: 0 }, { armor: 900, magicResistance: 0 }, "physical");
     expect(result.rawDamage).toBe(1);
     expect(result.mitigatedDamage).toBe(1);
   });
