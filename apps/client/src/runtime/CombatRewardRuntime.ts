@@ -1,5 +1,7 @@
 import type { EntityId } from "@game/core";
 import type {
+  AwakenedWeaponService,
+  AwakenedWeaponTier,
   CurrencyService,
   DurabilityStore,
   EquipmentManager,
@@ -15,7 +17,8 @@ import {
   type CombatLootContext,
 } from "../data/economyContentCatalog";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
-import { resolveWeaponMastery } from "../data/weaponContentCatalog";
+import { getItemTier } from "../data/itemPower.js";
+import { resolveWeaponMastery } from "../data/weaponContentCatalog.js";
 
 export interface EnemyKilledRewardResult {
   readonly silverEarned: number;
@@ -24,6 +27,13 @@ export interface EnemyKilledRewardResult {
     readonly amount: number;
     readonly weaponId: MasteryId;
     readonly familyId: MasteryId;
+  } | undefined;
+  readonly attunementEarned?: {
+    readonly requested: number;
+    readonly stored: number;
+    readonly discardedAtCap: number;
+    readonly balance: number;
+    readonly cap: number;
   } | undefined;
   readonly itemDrops: readonly CombatDrop[];
 }
@@ -36,6 +46,7 @@ export interface CombatRewardRuntimeDependencies {
   readonly durabilityStore: DurabilityStore;
   readonly progressionOrchestrator: ProgressionOrchestrator;
   readonly experienceService: ExperienceService;
+  readonly awakenedWeaponService: AwakenedWeaponService;
   readonly heroId: EntityId;
 }
 
@@ -47,6 +58,7 @@ export class CombatRewardRuntime {
   private readonly durabilityStore: DurabilityStore;
   private readonly progressionOrchestrator: ProgressionOrchestrator;
   private readonly experienceService: ExperienceService;
+  private readonly awakenedWeaponService: AwakenedWeaponService;
   private readonly heroId: EntityId;
 
   constructor(deps: CombatRewardRuntimeDependencies) {
@@ -57,6 +69,7 @@ export class CombatRewardRuntime {
     this.durabilityStore = deps.durabilityStore;
     this.progressionOrchestrator = deps.progressionOrchestrator;
     this.experienceService = deps.experienceService;
+    this.awakenedWeaponService = deps.awakenedWeaponService;
     this.heroId = deps.heroId;
   }
 
@@ -70,6 +83,7 @@ export class CombatRewardRuntime {
     const newBalance = balRes.ok ? balRes.value : 0;
 
     let fameEarned: EnemyKilledRewardResult["fameEarned"];
+    let attunementEarned: EnemyKilledRewardResult["attunementEarned"];
     const equippedWeapon = this.equipmentManager.getEquippedItem(this.heroId, "weapon");
     const activeWeaponRoute = equippedWeapon === undefined
       ? undefined
@@ -87,6 +101,24 @@ export class CombatRewardRuntime {
         weaponId: activeWeaponRoute.weaponId,
         familyId: activeWeaponRoute.familyId,
       };
+
+      if (equippedWeapon?.enchantment === 4) {
+        const itemTier = getItemTier(equippedWeapon.itemId);
+        if (isAwakenedWeaponTier(itemTier)) {
+          if (!this.awakenedWeaponService.has(equippedWeapon.instanceId)) {
+            this.awakenedWeaponService.registerFresh(equippedWeapon.instanceId, itemTier);
+          }
+          if (lootContext.enchantmentTier >= itemTier) {
+            const attunement = this.awakenedWeaponService.addAttunement(
+              equippedWeapon.instanceId,
+              fameReward,
+            );
+            if (attunement.ok) {
+              attunementEarned = attunement.value;
+            }
+          }
+        }
+      }
     }
 
     const itemDrops: CombatDrop[] = [];
@@ -120,7 +152,12 @@ export class CombatRewardRuntime {
       silverEarned: silverReward,
       newBalance,
       fameEarned,
+      attunementEarned,
       itemDrops,
     };
   }
+}
+
+function isAwakenedWeaponTier(value: number | undefined): value is AwakenedWeaponTier {
+  return value === 4 || value === 5 || value === 6 || value === 7 || value === 8;
 }
