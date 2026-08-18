@@ -305,6 +305,173 @@ Two-Handed weapons block the Off-Hand slot.
 
 ---
 
+# Weapon Design Profiles
+
+Weapon balance is defined by intent before raw numbers.
+
+A weapon must not be designed or evaluated only by comparing its total damage with every other weapon in the game. Different weapons are allowed and expected to excel in different situations.
+
+Weapon design uses two complementary profile axes:
+
+1. Gameplay Profile
+2. Content Role
+
+These profiles are DESIGN AND BALANCE INTENT. They do not grant hidden runtime bonuses.
+
+There must never be logic such as:
+
+```
++20% damage versus bosses because role = Boss Killer
+```
+
+The role must emerge naturally from the weapon's authored statistics, attack cadence, abilities, cooldowns, effects and trade-offs.
+
+## Gameplay Profile
+
+The Gameplay Profile describes HOW the weapon creates value in combat.
+
+Examples include, but are not limited to:
+
+- Burst
+- Sustain
+- DoT / Ramp-up
+- Combo
+- Execute
+- Control
+- Bruiser
+
+This vocabulary is intentionally open. New gameplay profiles may be introduced when a weapon fantasy requires them.
+
+The profile should influence the construction of:
+
+- base damage;
+- attack speed;
+- ability ratios;
+- cooldowns;
+- damage distribution between auto-attacks and abilities;
+- DoT, execute, combo or control mechanics;
+- reliability versus setup dependency;
+- offensive versus defensive utility.
+
+## Content Role
+
+The Content Role describes WHERE the weapon is expected to create the most value.
+
+Examples include, but are not limited to:
+
+- Fame Farming / standard monster clearing;
+- Boss killing;
+- Dungeon progression;
+- General progression;
+- future authored content types.
+
+A weapon normally has one Primary Content Role and may have one Secondary Content Role.
+
+Content roles are not a closed enum at design level. As Albion Idle gains new content, new roles may be authored without redesigning the weapon architecture.
+
+Typical expectations:
+
+Fame Farming weapons tend to value short encounter efficiency, low downtime, reliable damage and fast repeated kills.
+
+Boss weapons tend to value sustained single-target performance, setup payoff, execute windows or mechanics that retain value during long encounters.
+
+Dungeon weapons tend to value repeated encounter consistency, versatility, control, survivability and/or the ability to handle different enemy patterns across a run.
+
+These are guidelines, not mandatory templates. The exact mechanical expression must follow the weapon fantasy and existing combat systems.
+
+## AI Weapon Creation Directive
+
+When creating a new weapon, the AI should require only the design information that materially changes the weapon.
+
+The preferred brief is:
+
+```
+Weapon identity / family
+Gameplay profile
+Primary content role
+Optional secondary role or explicit special constraint
+```
+
+From this brief, the AI MUST infer the concrete implementation using the existing Albion Idle architecture and current balance baselines.
+
+It should infer, where possible:
+
+- appropriate attack cadence;
+- relative auto-attack strength;
+- ability structure and mechanical synergy;
+- cooldown philosophy;
+- expected strengths;
+- expected weaknesses;
+- suitable benchmark scenarios;
+- which existing weapons are relevant comparisons.
+
+The AI must NOT respond to every new weapon request with an exhaustive questionnaire.
+
+Ask a clarification only when a missing answer would create a genuine design contradiction, violate an established system rule, or materially change the intended weapon identity.
+
+If the role and gameplay intent are clear, proceed and make expert design decisions.
+
+## Balance Construction Rule
+
+A weapon's profile changes its TARGET DISTRIBUTION OF POWER, not the game's global power budget.
+
+Creating a specialist weapon is not permission to simply increase its total power.
+
+Strength in the primary role must normally be paid for through weaker performance, lower convenience, setup requirements, reduced control, reduced survivability, lower clear speed, lower sustained damage, or another meaningful opportunity cost outside that role.
+
+The exact trade-off is chosen according to the weapon fantasy.
+
+A weapon should have:
+
+- an identifiable reason to equip it;
+- at least one meaningful situation where another weapon is preferable;
+- no expectation of universal parity in every metric;
+- no expectation of universal superiority.
+
+## Balance Evaluation and Benchmarks
+
+Weapon benchmarking happens in two passes.
+
+FIRST: Role validation.
+
+Compare the weapon primarily against weapons that compete for the same content role or solve a similar gameplay problem.
+
+Examples:
+
+- a Boss Killer is evaluated primarily on boss-relevant performance;
+- a Fame Farming weapon is evaluated primarily on repeated standard-monster efficiency;
+- a Dungeon weapon is evaluated primarily across dungeon encounter patterns.
+
+SECOND: Global guardrail validation.
+
+The weapon is then tested outside its preferred role to ensure that specialization has not made it dominant everywhere.
+
+Therefore:
+
+```
+Lower Fame/hour does NOT automatically mean a Boss weapon is underpowered.
+Higher boss DPS does NOT automatically mean a Fame Farming weapon is underpowered.
+```
+
+The question is always:
+
+```
+Does this weapon fulfil its intended role at a healthy power level,
+while preserving meaningful reasons to choose other weapons?
+```
+
+## Existing and Future Weapons
+
+Existing weapons may be assigned profiles retrospectively without automatically changing their numbers.
+
+Profile assignment alone is documentation and balance classification.
+
+Numbers or mechanics are changed only when testing shows that the current weapon does not reflect its intended profile or violates global balance guardrails.
+
+Future weapons should receive their gameplay profile and content role BEFORE detailed numeric tuning.
+
+---
+
 # Equipment Statistics
 
 Equipment contains its base statistics.
@@ -558,6 +725,10 @@ The Equipment Data document is complete when:
 - Repair modifiers are defined.
 - Set membership is optional.
 - Runtime instances remain separate.
+- New weapons have an explicit or inferable Gameplay Profile.
+- New weapons have a Primary Content Role before detailed numeric tuning.
+- Weapon role labels do not create hidden combat bonuses.
+- Balance benchmarks are interpreted according to intended role before global guardrail comparison.
 
 ---
 
@@ -623,11 +794,31 @@ Rule 15
 
 Definitions remain immutable throughout gameplay.
 
+Rule 16
+
+Weapon Gameplay Profile and Content Role describe design intent and benchmark context; they never grant implicit runtime bonuses.
+
+Rule 17
+
+A new weapon is designed from role and gameplay intent before detailed damage numbers are tuned.
+
+Rule 18
+
+The AI must infer concrete weapon construction from clear role/gameplay intent using existing systems, and must not require an exhaustive questionnaire when the intent is sufficient.
+
+Rule 19
+
+Weapon balance is evaluated against role-relevant benchmarks first and global dominance guardrails second.
+
+Rule 20
+
+Weapon profiles and content roles are extensible design vocabulary, not a closed hardcoded runtime taxonomy.
+
 ---
 
 # Summary
 
-The Equipment Data document defines every equippable object in the game independently from inventory data and item identity. By separating gameplay behavior from Item definitions, it provides a scalable and modular architecture where combat statistics, abilities, durability and equipment sets remain entirely data-driven. This separation allows hundreds of weapons and armor pieces to share consistent systems while remaining easy to balance, validate and extend.
+The Equipment Data document defines every equippable object in the game independently from inventory data and item identity. By separating gameplay behavior from Item definitions, it provides a scalable and modular architecture where combat statistics, abilities, durability and equipment sets remain entirely data-driven. Weapon profiles additionally define why and where a weapon should excel, allowing future weapons to be created and balanced from clear gameplay intent without forcing universal parity between fundamentally different roles. This separation allows hundreds of weapons and armor pieces to share consistent systems while remaining easy to balance, validate and extend.
 
 =========================
 DOCUMENT TERMINÉ
