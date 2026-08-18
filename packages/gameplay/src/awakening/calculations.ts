@@ -17,11 +17,11 @@ export function getAwakenedActionCost(
 ): AwakenedActionCost {
   const tier = balance.tiers[state.tier];
   const strain = Math.max(0, state.strain);
+  const attunementMultiplier = 1
+    + strain * balance.attunementStrainLinearCoefficient
+    + strain * strain * balance.attunementStrainQuadraticCoefficient;
   return {
-    attunement: roundCurrency(
-      tier.baseAttunementCost
-        * Math.pow(1 + strain / balance.attunementStrainDivisor, balance.attunementStrainExponent),
-    ),
+    attunement: roundCurrency(tier.baseAttunementCost * attunementMultiplier),
     silver: roundCurrency(
       tier.baseSilverCost
         * Math.pow(1 + strain / balance.silverStrainDivisor, balance.silverStrainExponent),
@@ -39,15 +39,14 @@ export function getAwakenedAttunementCap(
 }
 
 export function getUnlockedAwakenedTraitSlots(
-  state: Pick<AwakenedWeaponState, "tier" | "lifetimeAttunementInvested">,
+  state: Pick<AwakenedWeaponState, "strain">,
   balance: AwakenedWeaponBalance,
 ): 1 | 2 | 3 {
-  const base = balance.tiers[state.tier].baseAttunementCost;
-  const invested = Math.max(0, state.lifetimeAttunementInvested);
-  const secondThreshold = base * balance.slotUnlockMultipliers[1];
-  const thirdThreshold = base * balance.slotUnlockMultipliers[2];
-  if (invested >= thirdThreshold) return 3;
-  if (invested >= secondThreshold) return 2;
+  const strain = Math.max(0, state.strain);
+  const secondThreshold = balance.slotUnlockStrainThresholds[1];
+  const thirdThreshold = balance.slotUnlockStrainThresholds[2];
+  if (strain >= thirdThreshold) return 3;
+  if (strain >= secondThreshold) return 2;
   return 1;
 }
 
@@ -102,9 +101,12 @@ export function deriveAwakenedWeaponState(
   state: AwakenedWeaponState,
   balance: AwakenedWeaponBalance,
 ): AwakenedWeaponDerivedState {
+  const awakeningAttunementThreshold = balance.tiers[state.tier].awakeningAttunementThreshold;
   return {
     actionCost: getAwakenedActionCost(state, balance),
     attunementCap: getAwakenedAttunementCap(state, balance),
+    awakeningAttunementThreshold,
+    canAwaken: !state.awakened && state.storedAttunement >= awakeningAttunementThreshold,
     unlockedTraitSlots: getUnlockedAwakenedTraitSlots(state, balance),
   };
 }
