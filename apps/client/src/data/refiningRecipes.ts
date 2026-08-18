@@ -26,6 +26,10 @@ export const CEDAR_PLANK_RECIPE = { id: "recipe_refine_cedar_planks_t5", name: "
 export const TITANIUM_BAR_RECIPE = { id: "recipe_refine_titanium_bars_t5", name: "Lingots de titane", tier: 5, rawItemId: "item_resource_ore_t5", requirements: [{ itemId: "item_resource_ore_t5", quantity: 2 }, { itemId: "item_refined_metal_bar_t4", quantity: 1 }], outputItemId: "item_refined_metal_bar_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_smelter_t5" } as const;
 export const HEAVY_LEATHER_RECIPE = { id: "recipe_refine_heavy_leather_t5", name: "Cuir lourd", tier: 5, rawItemId: "item_resource_hide_t5", requirements: [{ itemId: "item_resource_hide_t5", quantity: 2 }, { itemId: "item_refined_leather_t4", quantity: 1 }], outputItemId: "item_refined_leather_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_tannery_t5" } as const;
 export const ORNATE_CLOTH_RECIPE = { id: "recipe_refine_ornate_cloth_t5", name: "Tissu orné", tier: 5, rawItemId: "item_resource_fiber_t5", requirements: [{ itemId: "item_resource_fiber_t5", quantity: 2 }, { itemId: "item_refined_cloth_t4", quantity: 1 }], outputItemId: "item_refined_cloth_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_loom_t5" } as const;
+export const BLOODOAK_PLANK_RECIPE = { id: "recipe_refine_bloodoak_planks_t6", name: "Planches de chêne sanglant", tier: 6, rawItemId: "item_resource_wood_t6", requirements: [{ itemId: "item_resource_wood_t6", quantity: 2 }, { itemId: "item_refined_planks_t5", quantity: 1 }], outputItemId: "item_refined_planks_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_lumbermill_t6" } as const;
+export const RUNITE_BAR_RECIPE = { id: "recipe_refine_runite_bars_t6", name: "Lingots de runite", tier: 6, rawItemId: "item_resource_ore_t6", requirements: [{ itemId: "item_resource_ore_t6", quantity: 2 }, { itemId: "item_refined_metal_bar_t5", quantity: 1 }], outputItemId: "item_refined_metal_bar_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_smelter_t6" } as const;
+export const REINFORCED_LEATHER_RECIPE = { id: "recipe_refine_reinforced_leather_t6", name: "Cuir renforcé", tier: 6, rawItemId: "item_resource_hide_t6", requirements: [{ itemId: "item_resource_hide_t6", quantity: 2 }, { itemId: "item_refined_leather_t5", quantity: 1 }], outputItemId: "item_refined_leather_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_tannery_t6" } as const;
+export const SCARLET_CLOTH_RECIPE = { id: "recipe_refine_scarlet_cloth_t6", name: "Tissu écarlate", tier: 6, rawItemId: "item_resource_fiber_t6", requirements: [{ itemId: "item_resource_fiber_t6", quantity: 2 }, { itemId: "item_refined_cloth_t5", quantity: 1 }], outputItemId: "item_refined_cloth_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_loom_t6" } as const;
 
 export interface ProductionRefiningRecipe {
   readonly id: string;
@@ -40,10 +44,10 @@ export interface ProductionRefiningRecipe {
 }
 
 const PRODUCTION_REFINING_RECIPES = {
-  wood: { 3: BIRCH_PLANK_RECIPE, 4: PINE_PLANK_RECIPE, 5: CEDAR_PLANK_RECIPE },
-  ore: { 3: COPPER_BAR_RECIPE, 4: IRON_BAR_RECIPE, 5: TITANIUM_BAR_RECIPE },
-  hide: { 3: STURDY_LEATHER_RECIPE, 4: THICK_LEATHER_RECIPE, 5: HEAVY_LEATHER_RECIPE },
-  fiber: { 3: LINEN_CLOTH_RECIPE, 4: FINE_CLOTH_RECIPE, 5: ORNATE_CLOTH_RECIPE },
+  wood: { 3: BIRCH_PLANK_RECIPE, 4: PINE_PLANK_RECIPE, 5: CEDAR_PLANK_RECIPE, 6: BLOODOAK_PLANK_RECIPE },
+  ore: { 3: COPPER_BAR_RECIPE, 4: IRON_BAR_RECIPE, 5: TITANIUM_BAR_RECIPE, 6: RUNITE_BAR_RECIPE },
+  hide: { 3: STURDY_LEATHER_RECIPE, 4: THICK_LEATHER_RECIPE, 5: HEAVY_LEATHER_RECIPE, 6: REINFORCED_LEATHER_RECIPE },
+  fiber: { 3: LINEN_CLOTH_RECIPE, 4: FINE_CLOTH_RECIPE, 5: ORNATE_CLOTH_RECIPE, 6: SCARLET_CLOTH_RECIPE },
 } as const satisfies Record<
   ProductionFamilyId,
   Partial<Record<ProductionTier, ProductionRefiningRecipe>>
