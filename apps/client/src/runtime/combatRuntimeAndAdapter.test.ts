@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { World, EventBus, createRuntimeServices } from "@game/core";
 import {
+  AwakenedWeaponService,
   CombatService,
   CombatOrchestrator,
   DamageManager,
@@ -84,12 +85,16 @@ function createTestEnvironment() {
   const equipmentManager = new EquipmentManager(world, inventoryManager, resolveEquipmentInfo, equipmentStatSync);
 
   const currencyRegistry = new CurrencyRegistry();
-  currencyRegistry.register({ id: "currency_silver", enabled: true, minValue: 0, maxValue: null, acquisitionSources: ["Loot"], spendingSources: ["Vendor"] });
+  currencyRegistry.register({ id: "currency_silver", enabled: true, minValue: 0, maxValue: null, acquisitionSources: ["Loot"], spendingSources: ["Vendor", "Awakening"] });
   const currencyService = new CurrencyService(currencyRegistry);
   const playerId = asPlayerId("player_1");
   const walletId = asWalletId("wallet_1");
   currencyService.createWallet(walletId, playerId);
   currencyService.credit(walletId, "currency_silver", 1000, "Loot");
+  const awakenedWeaponService = new AwakenedWeaponService(currencyService, {
+    silverCurrencyId: "currency_silver",
+    silverSpendSource: "Awakening",
+  });
 
   const experienceService = new ExperienceService();
   const fameService = new FameService(experienceService);
@@ -121,7 +126,7 @@ function createTestEnvironment() {
 
   const worldRuntime = new WorldRuntime({ zoneManager, progressionManager: worldProgressionManager, worldCoordinator });
 
-  const combatRewardRuntime = new CombatRewardRuntime({ currencyService, walletId, equipmentManager, inventoryManager, durabilityStore, progressionOrchestrator, experienceService, heroId });
+  const combatRewardRuntime = new CombatRewardRuntime({ currencyService, walletId, equipmentManager, inventoryManager, durabilityStore, progressionOrchestrator, experienceService, awakenedWeaponService, heroId });
 
   return { world, bridge, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager, effectManager, combatService, orchestrator, inventoryManager, equipmentManager, currencyService, walletId, masteryService, heroId, worldRuntime, combatRewardRuntime };
 }
