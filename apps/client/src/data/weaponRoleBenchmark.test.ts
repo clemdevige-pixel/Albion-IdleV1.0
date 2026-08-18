@@ -33,6 +33,8 @@ describe("role-aware weapon benchmark diagnostics", () => {
       primaryRole: row.primaryContentRole,
       secondaryRole: row.secondaryContentRole ?? "-",
       sustainedDps: row.sustainedDps,
+      opener5Dps: row.opener5Dps,
+      opener10Dps: row.opener10Dps,
       sustainedIndex: row.sustainedIndex,
       opener5Index: row.opener5Index,
       opener10Index: row.opener10Index,
@@ -46,6 +48,8 @@ describe("role-aware weapon benchmark diagnostics", () => {
     expect(new Set(rows.map((row) => row.itemId)).size).toBe(T4_ROLE_WEAPONS.length);
     expect(rows.every((row) => row.primaryRoleLens.length > 0)).toBe(true);
     expect(rows.every((row) => Number.isFinite(row.sustainedDps))).toBe(true);
+    expect(rows.every((row) => Number.isFinite(row.opener5Dps))).toBe(true);
+    expect(rows.every((row) => Number.isFinite(row.opener10Dps))).toBe(true);
     expect(rows.every((row) => Number.isFinite(row.packageScore))).toBe(true);
   });
 
