@@ -43,10 +43,7 @@ interface ResourceTierContent {
   readonly tags: readonly string[];
 }
 
-/**
- * Authoritative gathering content. Gathering owns its raw output identity so it
- * can be authored independently from refining/crafting rollout.
- */
+/** Authoritative gathering content. */
 export const RESOURCE_TIER_CONTENT = {
   wood: {
     3: { resourceDefinitionId: "resource_birch_wood_t3", runtimeResourceId: "resource_birch_wood_runtime", rawItemId: "item_resource_wood_t3", nodeDefinitionId: "node_birch_tree_t3", nodeName: "Bouleau", toolId: "tool_axe_t3", toolName: "Hache de compagnon", toolType: "axe", tags: ["wood", "birch", "starter"] },
@@ -54,6 +51,7 @@ export const RESOURCE_TIER_CONTENT = {
     5: { resourceDefinitionId: "resource_wood_t5", runtimeResourceId: "resource_cedar_wood_runtime", rawItemId: "item_resource_wood_t5", nodeDefinitionId: "node_cedar_tree_t5", nodeName: "Cèdre ancien", toolId: "tool_axe_t5", toolName: "Hache de maître", toolType: "axe", tags: ["wood", "cedar", "tier5"] },
     6: { resourceDefinitionId: "resource_wood_t6", runtimeResourceId: "resource_bloodoak_wood_runtime", rawItemId: "item_resource_wood_t6", nodeDefinitionId: "node_bloodoak_tree_t6", nodeName: "Chêne sanglant", toolId: "tool_axe_t6", toolName: "Hache de grand maître", toolType: "axe", tags: ["wood", "bloodoak", "tier6"] },
     7: { resourceDefinitionId: "resource_wood_t7", runtimeResourceId: "resource_ashenwood_runtime", rawItemId: "item_resource_wood_t7", nodeDefinitionId: "node_ashen_tree_t7", nodeName: "Arbre cendré", toolId: "tool_axe_t7", toolName: "Hache ancienne", toolType: "axe", tags: ["wood", "ashen", "tier7"] },
+    8: { resourceDefinitionId: "resource_wood_t8", runtimeResourceId: "resource_black_ebony_runtime", rawItemId: "item_resource_wood_t8", nodeDefinitionId: "node_black_ebony_tree_t8", nodeName: "Ébène noir", toolId: "tool_axe_t8", toolName: "Hache ancestrale", toolType: "axe", tags: ["wood", "black_ebony", "tier8"] },
   },
   ore: {
     3: { resourceDefinitionId: "resource_copper_ore_t3", runtimeResourceId: "resource_copper_ore_runtime", rawItemId: "item_resource_copper_ore_t3", nodeDefinitionId: "node_copper_vein_t3", nodeName: "Veine de cuivre", toolId: "tool_pickaxe_t3", toolName: "Pioche de compagnon", toolType: "pickaxe", tags: ["ore", "copper", "starter"] },
@@ -61,6 +59,7 @@ export const RESOURCE_TIER_CONTENT = {
     5: { resourceDefinitionId: "resource_ore_t5", runtimeResourceId: "resource_titanium_ore_runtime", rawItemId: "item_resource_ore_t5", nodeDefinitionId: "node_titanium_vein_t5", nodeName: "Veine de titane", toolId: "tool_pickaxe_t5", toolName: "Pioche de maître", toolType: "pickaxe", tags: ["ore", "titanium", "tier5"] },
     6: { resourceDefinitionId: "resource_ore_t6", runtimeResourceId: "resource_runite_ore_runtime", rawItemId: "item_resource_ore_t6", nodeDefinitionId: "node_runite_vein_t6", nodeName: "Veine de runite", toolId: "tool_pickaxe_t6", toolName: "Pioche de grand maître", toolType: "pickaxe", tags: ["ore", "runite", "tier6"] },
     7: { resourceDefinitionId: "resource_ore_t7", runtimeResourceId: "resource_meteorite_ore_runtime", rawItemId: "item_resource_ore_t7", nodeDefinitionId: "node_meteorite_vein_t7", nodeName: "Veine de météorite", toolId: "tool_pickaxe_t7", toolName: "Pioche ancienne", toolType: "pickaxe", tags: ["ore", "meteorite", "tier7"] },
+    8: { resourceDefinitionId: "resource_ore_t8", runtimeResourceId: "resource_obsidian_ore_runtime", rawItemId: "item_resource_ore_t8", nodeDefinitionId: "node_obsidian_vein_t8", nodeName: "Veine d'obsidienne", toolId: "tool_pickaxe_t8", toolName: "Pioche ancestrale", toolType: "pickaxe", tags: ["ore", "obsidian", "tier8"] },
   },
   hide: {
     3: { resourceDefinitionId: "resource_hide_t3", runtimeResourceId: "resource_hide_t3_runtime", rawItemId: "item_resource_hide_t3", nodeDefinitionId: "node_hide_t3", nodeName: "Peau robuste", toolId: "tool_skinning_knife_t3", toolName: "Couteau de dépeçage", toolType: "skinning_knife", tags: ["hide", "sturdy", "starter"] },
@@ -68,6 +67,7 @@ export const RESOURCE_TIER_CONTENT = {
     5: { resourceDefinitionId: "resource_hide_t5", runtimeResourceId: "resource_hide_t5_runtime", rawItemId: "item_resource_hide_t5", nodeDefinitionId: "node_hide_t5", nodeName: "Peau lourde", toolId: "tool_skinning_knife_t5", toolName: "Couteau de dépeçage de maître", toolType: "skinning_knife", tags: ["hide", "heavy", "tier5"] },
     6: { resourceDefinitionId: "resource_hide_t6", runtimeResourceId: "resource_hide_t6_runtime", rawItemId: "item_resource_hide_t6", nodeDefinitionId: "node_hide_t6", nodeName: "Peau renforcée", toolId: "tool_skinning_knife_t6", toolName: "Couteau de dépeçage de grand maître", toolType: "skinning_knife", tags: ["hide", "reinforced", "tier6"] },
     7: { resourceDefinitionId: "resource_hide_t7", runtimeResourceId: "resource_hide_t7_runtime", rawItemId: "item_resource_hide_t7", nodeDefinitionId: "node_hide_t7", nodeName: "Peau durcie", toolId: "tool_skinning_knife_t7", toolName: "Couteau de dépeçage ancien", toolType: "skinning_knife", tags: ["hide", "hardened", "tier7"] },
+    8: { resourceDefinitionId: "resource_hide_t8", runtimeResourceId: "resource_abyssal_hide_t8_runtime", rawItemId: "item_resource_hide_t8", nodeDefinitionId: "node_abyssal_hide_t8", nodeName: "Peau abyssale", toolId: "tool_skinning_knife_t8", toolName: "Couteau de dépeçage ancestral", toolType: "skinning_knife", tags: ["hide", "abyssal", "tier8"] },
   },
   fiber: {
     3: { resourceDefinitionId: "resource_fiber_t3", runtimeResourceId: "resource_fiber_t3_runtime", rawItemId: "item_resource_fiber_t3", nodeDefinitionId: "node_fiber_t3", nodeName: "Fibre de lin", toolId: "tool_sickle_t3", toolName: "Faucille de compagnon", toolType: "sickle", tags: ["fiber", "linen", "starter"] },
@@ -75,6 +75,7 @@ export const RESOURCE_TIER_CONTENT = {
     5: { resourceDefinitionId: "resource_fiber_t5", runtimeResourceId: "resource_fiber_t5_runtime", rawItemId: "item_resource_fiber_t5", nodeDefinitionId: "node_fiber_t5", nodeName: "Fibre céleste", toolId: "tool_sickle_t5", toolName: "Faucille de maître", toolType: "sickle", tags: ["fiber", "skyflower", "tier5"] },
     6: { resourceDefinitionId: "resource_fiber_t6", runtimeResourceId: "resource_fiber_t6_runtime", rawItemId: "item_resource_fiber_t6", nodeDefinitionId: "node_fiber_t6", nodeName: "Fibre écarlate", toolId: "tool_sickle_t6", toolName: "Faucille de grand maître", toolType: "sickle", tags: ["fiber", "scarlet", "tier6"] },
     7: { resourceDefinitionId: "resource_fiber_t7", runtimeResourceId: "resource_fiber_t7_runtime", rawItemId: "item_resource_fiber_t7", nodeDefinitionId: "node_fiber_t7", nodeName: "Fibre solaire", toolId: "tool_sickle_t7", toolName: "Faucille ancienne", toolType: "sickle", tags: ["fiber", "solar", "tier7"] },
+    8: { resourceDefinitionId: "resource_fiber_t8", runtimeResourceId: "resource_void_fiber_t8_runtime", rawItemId: "item_resource_fiber_t8", nodeDefinitionId: "node_void_fiber_t8", nodeName: "Fibre du Néant", toolId: "tool_sickle_t8", toolName: "Faucille ancestrale", toolType: "sickle", tags: ["fiber", "void", "tier8"] },
   },
 } as const satisfies Record<ProductionFamilyId, Partial<Record<ProductionTier, ResourceTierContent>>>;
 
@@ -84,79 +85,28 @@ export interface GatheringTierRuntimeContent {
   readonly rawItemId: string;
 }
 
-export type ResourceContentCatalogResult = Readonly<
-  Record<
-    SupportedProductionFamily,
-    Readonly<Partial<Record<ProductionTier, GatheringTierRuntimeContent>>>
-  >
->;
+export type ResourceContentCatalogResult = Readonly<Record<SupportedProductionFamily, Readonly<Partial<Record<ProductionTier, GatheringTierRuntimeContent>>>>>;
 
-export function setupResourceContentCatalog(
-  deps: ResourceContentCatalogDependencies,
-): ResourceContentCatalogResult {
-  const result = {} as Record<
-    SupportedProductionFamily,
-    Partial<Record<ProductionTier, GatheringTierRuntimeContent>>
-  >;
-
+export function setupResourceContentCatalog(deps: ResourceContentCatalogDependencies): ResourceContentCatalogResult {
+  const result = {} as Record<SupportedProductionFamily, Partial<Record<ProductionTier, GatheringTierRuntimeContent>>>;
   for (const familyId of PRODUCTION_FAMILY_IDS) {
     const familyDefinition = getProductionFamilyDefinition(familyId);
     const familyContent: Partial<Record<ProductionTier, GatheringTierRuntimeContent>> = {};
-
     for (const tier of GATHERING_CONTENT_TIERS) {
       const content = RESOURCE_TIER_CONTENT[familyId][tier];
       const tierRules = getProductionTierRules(tier);
       const resourceDefinitionId = asResourceDefinitionId(content.resourceDefinitionId);
       const runtimeResourceId = asResourceId(content.runtimeResourceId);
       const nodeDefinitionId = asResourceNodeDefinitionId(content.nodeDefinitionId);
-
-      deps.resourceRegistry.register({
-        id: resourceDefinitionId,
-        name: familyDefinition.tiers[tier]?.resourceName ?? content.nodeName,
-        family: familyDefinition.gameplayFamily,
-        tier,
-        maxCharges: 999,
-        respawnDurationTicks: tierRules.resourceRespawnDurationTicks,
-        baseYield: 1,
-        tags: [...content.tags],
-      });
-      deps.resourceRuntime.add({
-        id: runtimeResourceId,
-        definitionId: resourceDefinitionId,
-        state: "available",
-        currentCharges: 999,
-        maxCharges: 999,
-        tier,
-        family: familyDefinition.gameplayFamily,
-      });
-      deps.resourceNodeRegistry.register({
-        id: nodeDefinitionId,
-        name: content.nodeName,
-        resourceDefinitionId,
-        requiredToolTier: tier,
-        tags: [...content.tags],
-      });
-
-      const tool: GatheringToolDefinition = {
-        id: asGatheringToolId(content.toolId),
-        name: content.toolName,
-        toolType: content.toolType,
-        tier,
-        speedModifier: tierRules.gatheringToolSpeedModifier,
-        yieldModifier: 1,
-        tags: [...content.tags],
-      };
+      deps.resourceRegistry.register({ id: resourceDefinitionId, name: familyDefinition.tiers[tier]?.resourceName ?? content.nodeName, family: familyDefinition.gameplayFamily, tier, maxCharges: 999, respawnDurationTicks: tierRules.resourceRespawnDurationTicks, baseYield: 1, tags: [...content.tags] });
+      deps.resourceRuntime.add({ id: runtimeResourceId, definitionId: resourceDefinitionId, state: "available", currentCharges: 999, maxCharges: 999, tier, family: familyDefinition.gameplayFamily });
+      deps.resourceNodeRegistry.register({ id: nodeDefinitionId, name: content.nodeName, resourceDefinitionId, requiredToolTier: tier, tags: [...content.tags] });
+      const tool: GatheringToolDefinition = { id: asGatheringToolId(content.toolId), name: content.toolName, toolType: content.toolType, tier, speedModifier: tierRules.gatheringToolSpeedModifier, yieldModifier: 1, tags: [...content.tags] };
       deps.gatheringToolRegistry.register(tool);
-      const node = deps.resourceNodeManager.createNode(
-        nodeDefinitionId,
-        deps.forestZoneDefId,
-        runtimeResourceId,
-      );
+      const node = deps.resourceNodeManager.createNode(nodeDefinitionId, deps.forestZoneDefId, runtimeResourceId);
       familyContent[tier] = { nodeId: node.id, tool, rawItemId: content.rawItemId };
     }
-
     result[familyDefinition.gameplayFamily] = familyContent;
   }
-
   return result;
 }
