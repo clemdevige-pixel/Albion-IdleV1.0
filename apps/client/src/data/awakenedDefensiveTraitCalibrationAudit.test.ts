@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RESISTANCE_CAP_PERCENT } from "@game/gameplay";
+import { calculateResistanceMitigation } from "@game/gameplay";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { WORLD_ZONE_IDS, type WorldZoneKey } from "./worldContentCatalog.js";
 
@@ -56,18 +56,16 @@ type Baseline = {
   readonly hp: number;
   readonly armor: number;
   readonly mr: number;
-  readonly effectiveArmor: number;
-  readonly effectiveMr: number;
-  readonly armorHeadroom: number;
-  readonly mrHeadroom: number;
+  readonly armorMitigationPct: number;
+  readonly mrMitigationPct: number;
 };
 
-function effectiveResistance(value: number): number {
-  return Math.min(Math.max(value, 0), RESISTANCE_CAP_PERCENT);
+function mitigationPct(value: number): number {
+  return Number((calculateResistanceMitigation(value) * 100).toFixed(2));
 }
 
 function ehp(hp: number, resistance: number): number {
-  return hp / (1 - effectiveResistance(resistance) / 100);
+  return hp / (1 - calculateResistanceMitigation(resistance));
 }
 
 function pctGain(after: number, before: number): number {
@@ -97,10 +95,8 @@ function readBaseline(tier: Tier, profile: Baseline["profile"]): Baseline {
     hp: result.maxHealth,
     armor: result.armor,
     mr: result.magicResistance,
-    effectiveArmor: effectiveResistance(result.armor),
-    effectiveMr: effectiveResistance(result.magicResistance),
-    armorHeadroom: Math.max(0, RESISTANCE_CAP_PERCENT - effectiveResistance(result.armor)),
-    mrHeadroom: Math.max(0, RESISTANCE_CAP_PERCENT - effectiveResistance(result.magicResistance)),
+    armorMitigationPct: mitigationPct(result.armor),
+    mrMitigationPct: mitigationPct(result.magicResistance),
   };
 }
 
@@ -119,8 +115,8 @@ describe("awakened defensive trait calibration audit", () => {
         hp: base.hp,
         armor: base.armor,
         mr: base.mr,
-        effectiveArmor: base.effectiveArmor,
-        effectiveMr: base.effectiveMr,
+        armorMitigationPct: base.armorMitigationPct,
+        mrMitigationPct: base.mrMitigationPct,
         physicalEhpGainPct: pctGain(ehp(base.hp + delta, base.armor), physicalBefore),
         magicalEhpGainPct: pctGain(ehp(base.hp + delta, base.mr), magicalBefore),
       }));
@@ -132,8 +128,8 @@ describe("awakened defensive trait calibration audit", () => {
         hp: base.hp,
         armor: base.armor,
         mr: base.mr,
-        effectiveArmor: base.effectiveArmor,
-        effectiveMr: base.effectiveMr,
+        armorMitigationPct: base.armorMitigationPct,
+        mrMitigationPct: base.mrMitigationPct,
         physicalEhpGainPct: pctGain(ehp(base.hp, base.armor + delta), physicalBefore),
         magicalEhpGainPct: 0,
       }));
@@ -145,8 +141,8 @@ describe("awakened defensive trait calibration audit", () => {
         hp: base.hp,
         armor: base.armor,
         mr: base.mr,
-        effectiveArmor: base.effectiveArmor,
-        effectiveMr: base.effectiveMr,
+        armorMitigationPct: base.armorMitigationPct,
+        mrMitigationPct: base.mrMitigationPct,
         physicalEhpGainPct: 0,
         magicalEhpGainPct: pctGain(ehp(base.hp, base.mr + delta), magicalBefore),
       }));
@@ -161,5 +157,7 @@ describe("awakened defensive trait calibration audit", () => {
     expect(baselines).toHaveLength(TIERS.length * 2);
     expect(rows).toHaveLength(baselines.length * (HP_PROBES.length + RESISTANCE_PROBES.length * 2));
     expect(rows.every((row) => Number.isFinite(row.physicalEhpGainPct) && Number.isFinite(row.magicalEhpGainPct))).toBe(true);
+    expect(rows.filter((row) => row.trait === "Armor").every((row) => row.physicalEhpGainPct > 0)).toBe(true);
+    expect(rows.filter((row) => row.trait === "MR").every((row) => row.magicalEhpGainPct > 0)).toBe(true);
   });
 });
