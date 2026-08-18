@@ -20,12 +20,12 @@ export function getAwakenedActionCost(
   const attunementMultiplier = 1
     + strain * balance.attunementStrainLinearCoefficient
     + strain * strain * balance.attunementStrainQuadraticCoefficient;
+  const silverMultiplier = 1
+    + strain * balance.silverStrainLinearCoefficient
+    + strain * strain * balance.silverStrainQuadraticCoefficient;
   return {
     attunement: roundCurrency(tier.baseAttunementCost * attunementMultiplier),
-    silver: roundCurrency(
-      tier.baseSilverCost
-        * Math.pow(1 + strain / balance.silverStrainDivisor, balance.silverStrainExponent),
-    ),
+    silver: roundCurrency(tier.baseSilverCost * silverMultiplier),
   };
 }
 
