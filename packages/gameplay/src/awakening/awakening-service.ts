@@ -9,12 +9,13 @@ import {
 } from "./calculations.js";
 import { createFreshAwakenedWeaponState, resetAwakenedWeaponState } from "./state.js";
 import type {
+  AwakenedActionCost,
   AwakenedAttunementGain,
+  AwakenedFailureReason,
   AwakenedModificationOutcome,
   AwakenedResult,
   AwakenedTraitId,
   AwakenedTraitOffer,
-  AwakenedTraitRollResult,
   AwakenedWeaponBalance,
   AwakenedWeaponState,
   AwakenedWeaponTier,
@@ -24,7 +25,7 @@ function ok<T>(value: T): AwakenedResult<T> {
   return { ok: true, value };
 }
 
-function fail<T>(reason: AwakenedResult<T> extends infer _R ? import("./types.js").AwakenedFailureReason : never): AwakenedResult<T> {
+function fail<T>(reason: AwakenedFailureReason): AwakenedResult<T> {
   return { ok: false, reason };
 }
 
@@ -200,7 +201,7 @@ export class AwakenedWeaponService {
     return [...this.states.values()].sort((a, b) => String(a.itemInstanceId).localeCompare(String(b.itemInstanceId)));
   }
 
-  private spendAction(state: AwakenedWeaponState, walletId: WalletId): AwakenedResult<import("./types.js").AwakenedActionCost> {
+  private spendAction(state: AwakenedWeaponState, walletId: WalletId): AwakenedResult<AwakenedActionCost> {
     const cost = deriveAwakenedWeaponState(state, this.balance).actionCost;
     if (state.storedAttunement < cost.attunement) return fail("insufficient_attunement");
     const canSpend = this.currencyService.canSpend(walletId, this.options.silverCurrencyId, cost.silver);
