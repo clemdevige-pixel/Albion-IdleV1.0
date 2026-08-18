@@ -3,7 +3,7 @@ import { useMemo, type ReactNode } from "react";
 import { RuntimePersistence, type RuntimePersistenceDependencies } from "../runtime/RuntimePersistence.js";
 import { EventBus } from "@game/core";
 import { getInitialIslandWorkerHouseLevelDefinition } from "@game/data";
-import { DungeonRuntime, PlayerIslandService, WorldSaveProvider } from "@game/gameplay";
+import { DungeonRuntime, PlayerIslandService, WorldSaveProvider, type AwakenedWeaponTier } from "@game/gameplay";
 import { GameBridge } from "../game/GameBridge";
 import { RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
@@ -19,6 +19,8 @@ import {
   DUNGEON_DEFINITIONS,
   resolveKeeperT4DungeonCombatProfile,
 } from "../data/dungeonContentCatalog.js";
+import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
+import { getItemTier } from "../data/itemPower.js";
 import {
   syncInventoryToBridge,
   syncStatsToBridge,
@@ -61,6 +63,10 @@ export { useGameBridge, useGameServices } from "./GameServicesContext.js";
 export const HERO_BASE_ATTACK_SPEED = 1.2;
 
 const WORKER_HOUSE_BASELINE = getInitialIslandWorkerHouseLevelDefinition();
+
+function isAwakenedWeaponTier(value: number | undefined): value is AwakenedWeaponTier {
+  return value === 4 || value === 5 || value === 6 || value === 7 || value === 8;
+}
 
 export function GameProvider({
   saveSlotId,
@@ -207,6 +213,15 @@ export function GameProvider({
       currencyService,
       walletId,
       canEnchantNow: () => combatStopController.isPaused() && !dungeonCombatRouter.isDungeonActive(),
+      onEnchantmentCommitted: (result) => {
+        if (result.toLevel !== 4) return;
+        const definition = resolveEquipmentInfo(result.itemId);
+        const tier = getItemTier(result.itemId);
+        if (definition?.slot !== "weapon" || !isAwakenedWeaponTier(tier)) return;
+        if (!awakenedWeaponService.has(result.instanceId)) {
+          awakenedWeaponService.registerFresh(result.instanceId, tier);
+        }
+      },
     });
 
     const productionFoundation = createProductionFoundation({
