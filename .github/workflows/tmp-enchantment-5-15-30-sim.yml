@@ -1,0 +1,27 @@
+name: Temporary Enchantment 5-15-30 Simulation
+
+on:
+  pull_request:
+    branches:
+      - agent/albion-idle-development
+
+permissions:
+  contents: read
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build workspace packages
+        run: pnpm exec tsc -b
+      - name: Run pacing simulation
+        run: pnpm --filter @game/client test -- enchantmentPacingCandidate.test.ts --reporter=verbose
