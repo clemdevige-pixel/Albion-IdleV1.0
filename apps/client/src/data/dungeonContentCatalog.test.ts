@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { getDungeonKeyItemId } from "./dungeonKeyContentCatalog.js";
 import {
-  DUNGEON_DEFINITIONS, FACTION_T4_COMBAT_PROFILE_ID, FACTION_T5_COMBAT_PROFILE_ID, FACTION_T6_COMBAT_PROFILE_ID,
-  KEEPER_T4_DUNGEON, KEEPER_T4_DUNGEON_ID, KEEPER_T5_DUNGEON, KEEPER_T6_DUNGEON, resolveDungeonCombatProfile,
+  DUNGEON_DEFINITIONS, FACTION_T4_COMBAT_PROFILE_ID, FACTION_T5_COMBAT_PROFILE_ID, FACTION_T6_COMBAT_PROFILE_ID, FACTION_T7_COMBAT_PROFILE_ID,
+  KEEPER_T4_DUNGEON, KEEPER_T4_DUNGEON_ID, KEEPER_T5_DUNGEON, KEEPER_T6_DUNGEON, KEEPER_T7_DUNGEON, resolveDungeonCombatProfile,
 } from "./dungeonContentCatalog.js";
 
 const EXPECTED_STRUCTURE = ["normal", "normal", "elite", "normal", "boss"];
 const EXPECTED_FACTIONS = ["Keeper", "Heretic", "Undead", "Morgana"];
-const PROFILE_BY_TIER = { 4: FACTION_T4_COMBAT_PROFILE_ID, 5: FACTION_T5_COMBAT_PROFILE_ID, 6: FACTION_T6_COMBAT_PROFILE_ID } as const;
+const PROFILE_BY_TIER = { 4: FACTION_T4_COMBAT_PROFILE_ID, 5: FACTION_T5_COMBAT_PROFILE_ID, 6: FACTION_T6_COMBAT_PROFILE_ID, 7: FACTION_T7_COMBAT_PROFILE_ID } as const;
 
 describe("dungeonContentCatalog", () => {
   it("authors the four faction dungeons for each available tier", () => {
-    for (const tier of [4, 5, 6] as const) {
+    for (const tier of [4, 5, 6, 7] as const) {
       const dungeons = DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === tier);
       expect(dungeons.map(({ faction }) => faction)).toEqual(EXPECTED_FACTIONS);
       for (const dungeon of dungeons) {
@@ -36,15 +36,15 @@ describe("dungeonContentCatalog", () => {
   });
 
   it("scales each tier above the previous tier through its world-band profile", () => {
-    const encounters = [KEEPER_T4_DUNGEON, KEEPER_T5_DUNGEON, KEEPER_T6_DUNGEON].map((dungeon) => {
+    const encounters = [KEEPER_T4_DUNGEON, KEEPER_T5_DUNGEON, KEEPER_T6_DUNGEON, KEEPER_T7_DUNGEON].map((dungeon) => {
       const encounter = dungeon.encounters[0];
       if (encounter === undefined) throw new Error("Expected Keeper dungeon opener");
       return resolveDungeonCombatProfile({ dungeonDefinitionId: dungeon.id, encounterIndex: 0, monsterDefinitionId: encounter.monsterDefinitionId });
     });
-    expect(encounters[1]?.hp).toBeGreaterThan(encounters[0]?.hp ?? 0);
-    expect(encounters[1]?.damage).toBeGreaterThan(encounters[0]?.damage ?? 0);
-    expect(encounters[2]?.hp).toBeGreaterThan(encounters[1]?.hp ?? 0);
-    expect(encounters[2]?.damage).toBeGreaterThan(encounters[1]?.damage ?? 0);
+    for (let index = 1; index < encounters.length; index += 1) {
+      expect(encounters[index]?.hp).toBeGreaterThan(encounters[index - 1]?.hp ?? 0);
+      expect(encounters[index]?.damage).toBeGreaterThan(encounters[index - 1]?.damage ?? 0);
+    }
   });
 
   it("rejects unknown ids, indices and mismatched authored monsters", () => {
@@ -54,6 +54,6 @@ describe("dungeonContentCatalog", () => {
   });
 
   it("keeps Keeper as a normal entry rather than a runtime special case", () => {
-    expect(DUNGEON_DEFINITIONS).toContain(KEEPER_T4_DUNGEON); expect(DUNGEON_DEFINITIONS).toContain(KEEPER_T5_DUNGEON); expect(DUNGEON_DEFINITIONS).toContain(KEEPER_T6_DUNGEON);
+    expect(DUNGEON_DEFINITIONS).toContain(KEEPER_T4_DUNGEON); expect(DUNGEON_DEFINITIONS).toContain(KEEPER_T5_DUNGEON); expect(DUNGEON_DEFINITIONS).toContain(KEEPER_T6_DUNGEON); expect(DUNGEON_DEFINITIONS).toContain(KEEPER_T7_DUNGEON);
   });
 });
