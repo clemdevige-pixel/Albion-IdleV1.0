@@ -2,10 +2,12 @@ import {
   PROGRESSION_EQUIPMENT_CONTENT,
 } from "./nonWeaponEquipmentContentCatalog.js";
 import {
+  GATHERING_CONTENT_TIERS,
   PRODUCTION_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
 } from "./productionFamilyCatalog.js";
+import { RESOURCE_TIER_CONTENT } from "./resourceContentCatalog.js";
 import { getProductionRefiningRecipe } from "./refiningRecipes.js";
 
 export interface CatalogItemVisualDefinition {
@@ -61,30 +63,29 @@ export const PROGRESSION_NON_WEAPON_VISUALS: Readonly<
   Record<string, CatalogItemVisualDefinition>
 > = Object.fromEntries(progressionNonWeaponVisualEntries);
 
-/**
- * Raw/refined resource presentation is projected from the production content
- * itself. T6+ resource visuals therefore arrive automatically when the tier is
- * added to PRODUCTION_CONTENT_TIERS and its family/refining data is authored.
- */
+/** Raw resource presentation follows gathering rollout independently of refining. */
 const productionResourceVisualEntries: Array<readonly [string, CatalogResourceVisualDefinition]> = [];
 for (const familyId of PRODUCTION_FAMILY_IDS) {
   const family = getProductionFamilyDefinition(familyId);
-  for (const tier of PRODUCTION_CONTENT_TIERS) {
+
+  for (const tier of GATHERING_CONTENT_TIERS) {
     const presentation = family.tiers[tier];
-    if (presentation === undefined) {
-      throw new Error(`Missing production presentation for ${familyId} T${String(tier)}`);
+    const resource = RESOURCE_TIER_CONTENT[familyId][tier];
+    if (presentation === undefined || resource === undefined) {
+      throw new Error(`Missing gathering presentation for ${familyId} T${String(tier)}`);
     }
+    productionResourceVisualEntries.push([
+      resource.rawItemId,
+      { name: presentation.resourceName, icon: family.rawIcon },
+    ]);
+  }
+
+  for (const tier of PRODUCTION_CONTENT_TIERS) {
     const recipe = getProductionRefiningRecipe(familyId, tier);
-    productionResourceVisualEntries.push(
-      [
-        recipe.rawItemId,
-        { name: presentation.resourceName, icon: family.rawIcon },
-      ],
-      [
-        recipe.outputItemId,
-        { name: recipe.name, icon: family.refinedIcon },
-      ],
-    );
+    productionResourceVisualEntries.push([
+      recipe.outputItemId,
+      { name: recipe.name, icon: family.refinedIcon },
+    ]);
   }
 }
 
