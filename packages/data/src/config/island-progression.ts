@@ -2,8 +2,8 @@ import type { IslandBuildingId } from "./island.js";
 
 /**
  * Structural production-tier envelope for island operational progression.
- * Content is currently authored through T5, but future T6/T7/T8 building
- * levels must not require changing this type or the consuming runtime/UI.
+ * Future T7/T8 building levels must not require changing this type or the
+ * consuming runtime/UI.
  */
 export type IslandProductionTier = 3 | 4 | 5 | 6 | 7 | 8;
 
@@ -42,6 +42,13 @@ const T4_REFINED = {
   fiber: "item_refined_cloth_t4",
 } as const;
 
+const T5_REFINED = {
+  wood: "item_refined_planks_t5",
+  ore: "item_refined_metal_bar_t5",
+  hide: "item_refined_leather_t5",
+  fiber: "item_refined_cloth_t5",
+} as const;
+
 function singleFamilyProgression(
   buildingId: IslandBuildingId,
   family: keyof typeof T3_REFINED,
@@ -65,7 +72,15 @@ function singleFamilyProgression(
           requirements: [{ itemId: T4_REFINED[family], quantity: 20 }],
         },
       },
-      { level: 3, maxProductionTier: 5 },
+      {
+        level: 3,
+        maxProductionTier: 5,
+        upgradeToNext: {
+          silver: 1500,
+          requirements: [{ itemId: T5_REFINED[family], quantity: 30 }],
+        },
+      },
+      { level: 4, maxProductionTier: 6 },
     ],
   };
 }
@@ -104,7 +119,18 @@ export const ISLAND_OPERATIONAL_BUILDING_PROGRESSIONS: readonly IslandOperationa
           ],
         },
       },
-      { level: 3, maxProductionTier: 5 },
+      {
+        level: 3,
+        maxProductionTier: 5,
+        upgradeToNext: {
+          silver: 2500,
+          requirements: [
+            { itemId: T5_REFINED.wood, quantity: 24 },
+            { itemId: T5_REFINED.ore, quantity: 24 },
+          ],
+        },
+      },
+      { level: 4, maxProductionTier: 6 },
     ],
   },
 ] as const;
