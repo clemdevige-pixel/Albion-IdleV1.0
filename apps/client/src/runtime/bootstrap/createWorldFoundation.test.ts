@@ -45,6 +45,7 @@ describe("createWorldFoundation", () => {
         ...WORLD_ZONE_IDS_BY_BAND.yellow,
         ...WORLD_ZONE_IDS_BY_BAND.orange,
         ...WORLD_ZONE_IDS_BY_BAND.red,
+        ...WORLD_ZONE_IDS_BY_BAND.black,
       ]);
   });
 
