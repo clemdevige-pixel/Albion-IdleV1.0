@@ -7,13 +7,17 @@ export interface TransactionConfirmProps {
   readonly balance: number;
   readonly valueLabel?: string;
   readonly requiresAffordability?: boolean;
+  readonly additionalConfirmCondition?: boolean;
+  readonly blockedMessage?: string;
   readonly confirmLabel?: string;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }
 
 /**
- * Confirmation modal for buy/sell/repair transactions.
+ * Shared confirmation modal for economy-backed actions.
+ * Optional domain gating lets callers reuse the same shell when a transaction
+ * also requires a non-Silver resource (for example awakened Attunement).
  */
 export function TransactionConfirmModal({
   title,
@@ -22,17 +26,20 @@ export function TransactionConfirmModal({
   balance,
   valueLabel = "Coût",
   requiresAffordability = true,
+  additionalConfirmCondition = true,
+  blockedMessage,
   confirmLabel = "Confirmer",
   onConfirm,
   onCancel,
 }: TransactionConfirmProps): JSX.Element {
   const canAfford = !requiresAffordability || balance >= cost;
+  const canConfirm = canAfford && additionalConfirmCondition;
 
   const handleConfirm = useCallback(() => {
-    if (canAfford) {
+    if (canConfirm) {
       onConfirm();
     }
-  }, [canAfford, onConfirm]);
+  }, [canConfirm, onConfirm]);
 
   return (
     <div className="tx-modal-overlay" onClick={onCancel} role="presentation">
@@ -58,6 +65,9 @@ export function TransactionConfirmModal({
           {requiresAffordability && !canAfford && (
             <p className="tx-modal__error">{"Argent insuffisant"}</p>
           )}
+          {canAfford && !additionalConfirmCondition && blockedMessage !== undefined && (
+            <p className="tx-modal__error">{blockedMessage}</p>
+          )}
         </div>
         <div className="tx-modal__actions">
           <button className="tx-modal__btn tx-modal__btn--cancel" onClick={onCancel} type="button">
@@ -66,7 +76,7 @@ export function TransactionConfirmModal({
           <button
             className="tx-modal__btn tx-modal__btn--confirm"
             onClick={handleConfirm}
-            disabled={!canAfford}
+            disabled={!canConfirm}
             type="button"
           >
             {confirmLabel}
