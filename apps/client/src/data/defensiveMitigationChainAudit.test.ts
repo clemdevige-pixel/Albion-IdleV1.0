@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RESISTANCE_CAP_PERCENT, calculateDamage } from "@game/gameplay";
+import { calculateDamage, calculateResistanceMitigation } from "@game/gameplay";
 import { runCombatRuntimeBenchmark, type BenchmarkEnchantment } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { WORLD_ZONE_IDS, type WorldZoneKey } from "./worldContentCatalog.js";
 
@@ -58,14 +58,12 @@ type AuditRow = {
   readonly hp: number;
   readonly rawArmor: number;
   readonly rawMr: number;
-  readonly effectiveArmor: number;
-  readonly effectiveMr: number;
-  readonly wastedArmor: number;
-  readonly wastedMr: number;
-  readonly physicalDamageFrom100: number;
-  readonly magicalDamageFrom100: number;
   readonly physicalMitigationPct: number;
   readonly magicalMitigationPct: number;
+  readonly physicalDamageFrom100: number;
+  readonly magicalDamageFrom100: number;
+  readonly armorPlus10MitigationGainPct: number;
+  readonly mrPlus10MitigationGainPct: number;
 };
 
 function equipmentFor(tier: Tier, profile: Profile): readonly string[] {
@@ -76,6 +74,10 @@ function equipmentFor(tier: Tier, profile: Profile): readonly string[] {
 
 function weaponFor(tier: Tier, profile: Profile): string {
   return profile === "1H+shield" ? ONE_HANDED_WEAPON_BY_TIER[tier] : TWO_HANDED_WEAPON_BY_TIER[tier];
+}
+
+function mitigationPct(resistance: number): number {
+  return Number((calculateResistanceMitigation(resistance) * 100).toFixed(2));
 }
 
 function buildRow(tier: Tier, profile: Profile, enchantment: BenchmarkEnchantment, mastery: number): AuditRow {
@@ -90,21 +92,10 @@ function buildRow(tier: Tier, profile: Profile, enchantment: BenchmarkEnchantmen
     useHealthPotions: false,
   });
 
-  const physical = calculateDamage(
-    100,
-    { physicalDamage: 0, magicalDamage: 0 },
-    { armor: result.armor, magicResistance: result.magicResistance },
-    "physical",
-  );
-  const magical = calculateDamage(
-    100,
-    { physicalDamage: 0, magicalDamage: 0 },
-    { armor: result.armor, magicResistance: result.magicResistance },
-    "magical",
-  );
-
-  const effectiveArmor = Math.min(Math.max(result.armor, 0), RESISTANCE_CAP_PERCENT);
-  const effectiveMr = Math.min(Math.max(result.magicResistance, 0), RESISTANCE_CAP_PERCENT);
+  const physical = calculateDamage(100, { physicalDamage: 0, magicalDamage: 0 }, { armor: result.armor, magicResistance: result.magicResistance }, "physical");
+  const magical = calculateDamage(100, { physicalDamage: 0, magicalDamage: 0 }, { armor: result.armor, magicResistance: result.magicResistance }, "magical");
+  const armorMitigation = mitigationPct(result.armor);
+  const mrMitigation = mitigationPct(result.magicResistance);
 
   return {
     tier,
@@ -114,25 +105,18 @@ function buildRow(tier: Tier, profile: Profile, enchantment: BenchmarkEnchantmen
     hp: result.maxHealth,
     rawArmor: result.armor,
     rawMr: result.magicResistance,
-    effectiveArmor,
-    effectiveMr,
-    wastedArmor: Math.max(0, result.armor - effectiveArmor),
-    wastedMr: Math.max(0, result.magicResistance - effectiveMr),
+    physicalMitigationPct: armorMitigation,
+    magicalMitigationPct: mrMitigation,
     physicalDamageFrom100: Number(physical.mitigatedDamage.toFixed(2)),
     magicalDamageFrom100: Number(magical.mitigatedDamage.toFixed(2)),
-    physicalMitigationPct: Number((100 - physical.mitigatedDamage).toFixed(2)),
-    magicalMitigationPct: Number((100 - magical.mitigatedDamage).toFixed(2)),
+    armorPlus10MitigationGainPct: Number((mitigationPct(result.armor + 10) - armorMitigation).toFixed(2)),
+    mrPlus10MitigationGainPct: Number((mitigationPct(result.magicResistance + 10) - mrMitigation).toFixed(2)),
   };
 }
 
-/**
- * Diagnostic only.
- * Audits the complete defensive chain currently used by live combat:
- * authored equipment + enchantment/mastery -> computed Armor/MR -> mitigation cap.
- * This test must not encode a replacement formula or rebalance values.
- */
+/** Diagnostic only: validates the live authored stats against the diminishing-return mitigation curve. */
 describe("defensive mitigation chain audit", () => {
-  it("prints where Armor/MR progression stops affecting live mitigation across T4-T8", () => {
+  it("prints live mitigation and confirms additional resistance keeps value across T4-T8", () => {
     const rows: AuditRow[] = [];
 
     for (const tier of TIERS) {
@@ -144,44 +128,29 @@ describe("defensive mitigation chain audit", () => {
     }
 
     const summary = TIERS.flatMap((tier) => (["2H", "1H+shield"] as const).map((profile) => {
-      const base = rows.find((row) => row.tier === tier && row.profile === profile && row.enchantment === 0 && row.mastery === 1);
-      const enchanted = rows.find((row) => row.tier === tier && row.profile === profile && row.enchantment === 3 && row.mastery === 1);
       const target = rows.find((row) => row.tier === tier && row.profile === profile && row.enchantment === 3 && row.mastery === TARGET_MASTERY_BY_TIER[tier]);
-      if (base === undefined || enchanted === undefined || target === undefined) throw new Error(`Missing defensive audit row T${tier} ${profile}`);
+      if (target === undefined) throw new Error(`Missing defensive audit row T${tier} ${profile}`);
       return {
         tier,
         profile,
-        baseArmor: base.rawArmor,
-        baseMr: base.rawMr,
-        enchantedArmor: enchanted.rawArmor,
-        enchantedMr: enchanted.rawMr,
-        targetArmor: target.rawArmor,
-        targetMr: target.rawMr,
-        targetEffectiveArmor: target.effectiveArmor,
-        targetEffectiveMr: target.effectiveMr,
-        wastedArmor: target.wastedArmor,
-        wastedMr: target.wastedMr,
-        wastedArmorPct: target.rawArmor > 0 ? Number(((target.wastedArmor / target.rawArmor) * 100).toFixed(1)) : 0,
-        wastedMrPct: target.rawMr > 0 ? Number(((target.wastedMr / target.rawMr) * 100).toFixed(1)) : 0,
+        hp: target.hp,
+        armor: target.rawArmor,
+        mr: target.rawMr,
+        physicalMitigationPct: target.physicalMitigationPct,
+        magicalMitigationPct: target.magicalMitigationPct,
         damageTakenPhysical: target.physicalDamageFrom100,
         damageTakenMagical: target.magicalDamageFrom100,
+        armorPlus10GainPct: target.armorPlus10MitigationGainPct,
+        mrPlus10GainPct: target.mrPlus10MitigationGainPct,
       };
     }));
 
-    const anomalies = summary.flatMap((row) => {
-      const found: string[] = [];
-      if (row.wastedArmor > 0) found.push(`T${row.tier} ${row.profile}: ${row.wastedArmor} Armor (${row.wastedArmorPct}%) has no mitigation value`);
-      if (row.wastedMr > 0) found.push(`T${row.tier} ${row.profile}: ${row.wastedMr} MR (${row.wastedMrPct}%) has no mitigation value`);
-      return found;
-    });
-
     console.table(summary);
     console.table(rows);
-    console.log("[DEFENSIVE_MITIGATION_CHAIN_ANOMALIES]", JSON.stringify(anomalies, null, 2));
     console.log("[DEFENSIVE_MITIGATION_CHAIN_ROWS]", JSON.stringify(rows, null, 2));
 
     expect(rows).toHaveLength(TIERS.length * 2 * 3);
     expect(rows.every((row) => Number.isFinite(row.physicalDamageFrom100) && Number.isFinite(row.magicalDamageFrom100))).toBe(true);
-    expect(rows.every((row) => row.effectiveArmor <= RESISTANCE_CAP_PERCENT && row.effectiveMr <= RESISTANCE_CAP_PERCENT)).toBe(true);
+    expect(rows.every((row) => row.armorPlus10MitigationGainPct > 0 && row.mrPlus10MitigationGainPct > 0)).toBe(true);
   });
 });
