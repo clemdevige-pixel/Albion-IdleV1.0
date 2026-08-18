@@ -204,7 +204,9 @@ export class AwakenedWeaponService {
     const selected = offer.proposals.find((proposal) => proposal.traitId === selectedTraitId);
     if (selected === undefined) return fail("invalid_trait_choice");
 
-    const replacement = { traitId: selected.traitId, value: selected.finalGain };
+    // Trait selection/reroll never benefits from Critical Attunement. Even a
+    // legacy persisted offer carrying critical metadata resolves at baseRoll.
+    const replacement = { traitId: selected.traitId, value: selected.baseRoll };
     const traits = [...state.traits];
     if (offer.kind === "fill") {
       if (offer.targetIndex !== traits.length) return fail("invalid_trait_index");
