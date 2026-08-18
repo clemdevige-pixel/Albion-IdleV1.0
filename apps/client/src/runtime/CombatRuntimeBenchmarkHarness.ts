@@ -71,6 +71,20 @@ export interface CombatRuntimeDamageSourceTelemetry {
   readonly other: number;
 }
 
+export interface CombatRuntimeEncounterTelemetry {
+  readonly encounterIndex: number;
+  readonly cleared: boolean;
+  readonly seconds: number;
+  readonly hpBeforePercent: number;
+  readonly hpAfterPercent: number;
+  readonly potionsUsed: number;
+  readonly damageDealt: number;
+  readonly damageReceived: number;
+  readonly observedDps: number;
+  readonly damageBySource: CombatRuntimeDamageSourceTelemetry;
+  readonly abilities: readonly CombatRuntimeAbilityTelemetry[];
+}
+
 export interface CombatRuntimeBenchmarkResult {
   readonly label: string;
   readonly weaponItemId: string;
@@ -88,6 +102,7 @@ export interface CombatRuntimeBenchmarkResult {
   readonly observedDps: number;
   readonly damageBySource: CombatRuntimeDamageSourceTelemetry;
   readonly abilities: readonly CombatRuntimeAbilityTelemetry[];
+  readonly encounters: readonly CombatRuntimeEncounterTelemetry[];
 }
 
 interface MutableAbilityTelemetry {
@@ -178,6 +193,10 @@ function seedMasteryLevel(
   return seedOneMasteryLevel(route.weaponId, targetLevel, masteryService, experienceService);
 }
 
+function round1(value: number): number {
+  return Number(value.toFixed(1));
+}
+
 export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): CombatRuntimeBenchmarkResult {
   const placement = getWorldZonePlacement(input.zoneDefId);
   const dungeon = input.dungeonDefinitionId === undefined ? undefined : getDungeonDefinition(input.dungeonDefinitionId);
@@ -245,7 +264,69 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   let potionsUsed = 0;
   let segmentEndHpPercent: number | undefined;
   const abilityDefinitions = resolveUnlockedWeaponAbilities(input.weaponItemId, masteryLevel);
+  const abilityIds = abilityDefinitions.map((definition) => String(definition.id));
   const abilityTelemetry = new Map<string, MutableAbilityTelemetry>();
+  const encounterTelemetry: CombatRuntimeEncounterTelemetry[] = [];
+  let ticks = 0;
+  let encounterStartTick = 0;
+  let encounterStartHp = damageManager.getHealth(heroId).currentHealth;
+  let encounterStartDamageDealt = 0;
+  let encounterStartDamageReceived = 0;
+  let encounterStartPotions = 0;
+  let encounterStartDamageBySource = { autoAttack: 0, ability: 0, effect: 0, other: 0 };
+  let encounterStartAbilities = new Map<string, MutableAbilityTelemetry>();
+
+  const copyAbilityTelemetry = (): Map<string, MutableAbilityTelemetry> =>
+    new Map(abilityIds.map((abilityId) => {
+      const current = abilityTelemetry.get(abilityId) ?? { casts: 0, directDamage: 0 };
+      return [abilityId, { ...current }] as const;
+    }));
+
+  const beginEncounter = (): void => {
+    const health = damageManager.getHealth(heroId);
+    encounterStartTick = ticks;
+    encounterStartHp = health.currentHealth;
+    encounterStartDamageDealt = damageDealt;
+    encounterStartDamageReceived = damageReceived;
+    encounterStartPotions = potionsUsed;
+    encounterStartDamageBySource = { ...damageBySource };
+    encounterStartAbilities = copyAbilityTelemetry();
+  };
+
+  const recordEncounter = (cleared: boolean): void => {
+    const health = damageManager.getHealth(heroId);
+    const seconds = (ticks - encounterStartTick) * DT;
+    const dealt = damageDealt - encounterStartDamageDealt;
+    const received = damageReceived - encounterStartDamageReceived;
+    const abilities = abilityIds.map((abilityId) => {
+      const before = encounterStartAbilities.get(abilityId) ?? { casts: 0, directDamage: 0 };
+      const after = abilityTelemetry.get(abilityId) ?? { casts: 0, directDamage: 0 };
+      return {
+        abilityId,
+        casts: after.casts - before.casts,
+        directDamage: round1(after.directDamage - before.directDamage),
+      };
+    });
+    encounterTelemetry.push({
+      encounterIndex: encounterIndex + 1,
+      cleared,
+      seconds: round1(seconds),
+      hpBeforePercent: round1((encounterStartHp / health.maxHealth) * 100),
+      hpAfterPercent: round1((health.currentHealth / health.maxHealth) * 100),
+      potionsUsed: potionsUsed - encounterStartPotions,
+      damageDealt: round1(dealt),
+      damageReceived: round1(received),
+      observedDps: seconds > 0 ? round1(dealt / seconds) : 0,
+      damageBySource: {
+        autoAttack: round1(damageBySource.autoAttack - encounterStartDamageBySource.autoAttack),
+        ability: round1(damageBySource.ability - encounterStartDamageBySource.ability),
+        effect: round1(damageBySource.effect - encounterStartDamageBySource.effect),
+        other: round1(damageBySource.other - encounterStartDamageBySource.other),
+      },
+      abilities,
+    });
+  };
+
   const runtime = new TelemetryCombatRuntime({
     world,
     heroId,
@@ -282,8 +363,12 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     ports: {
       isCombatSuspended: () => false,
       ...(dungeon === undefined ? {} : { flowPolicy: CONTINUOUS_COMBAT_FLOW_POLICY }),
-      onDefeat: () => { defeated = true; },
+      onDefeat: () => {
+        if (!defeated) recordEncounter(false);
+        defeated = true;
+      },
       onVictory: () => {
+        recordEncounter(true);
         if (encounterIndex >= lastEncounterIndex) {
           const health = damageManager.getHealth(heroId);
           segmentEndHpPercent = (health.currentHealth / health.maxHealth) * 100;
@@ -291,6 +376,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
           return { enteredNewSegment: true };
         }
         encounterIndex += 1;
+        beginEncounter();
         return { enteredNewSegment: false };
       },
       getLocationState: () => ({
@@ -303,9 +389,9 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
         farmMode: false,
       }),
     },
-  }, abilityDefinitions.map((definition) => String(definition.id)), abilityTelemetry);
+  }, abilityIds, abilityTelemetry);
 
-  let ticks = 0;
+  beginEncounter();
   while (!finishedSegment && !defeated && ticks < MAX_TICKS) {
     ticks += 1;
     runtime.tick(DT, ticks);
@@ -321,13 +407,13 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   }
 
   const health = damageManager.getHealth(heroId);
-  const seconds = Number((ticks * DT).toFixed(1));
+  const seconds = round1(ticks * DT);
   const abilities = abilityDefinitions.map((definition) => {
     const telemetry = abilityTelemetry.get(String(definition.id)) ?? { casts: 0, directDamage: 0 };
     return {
       abilityId: String(definition.id),
       casts: telemetry.casts,
-      directDamage: Number(telemetry.directDamage.toFixed(1)),
+      directDamage: round1(telemetry.directDamage),
     };
   });
   return {
@@ -335,22 +421,23 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     weaponItemId: input.weaponItemId,
     clear: finishedSegment && !defeated,
     seconds,
-    hpPercent: Number((segmentEndHpPercent ?? ((health.currentHealth / health.maxHealth) * 100)).toFixed(1)),
+    hpPercent: round1(segmentEndHpPercent ?? ((health.currentHealth / health.maxHealth) * 100)),
     encounterReached: encounterIndex + 1,
     maxHealth: health.maxHealth,
     armor: statsManager.getStat(heroId, STAT_ARMOR).computed,
     magicResistance: statsManager.getStat(heroId, STAT_MAGIC_RESISTANCE).computed,
     potionsUsed,
     masteryLevel,
-    damageDealt: Number(damageDealt.toFixed(1)),
-    damageReceived: Number(damageReceived.toFixed(1)),
-    observedDps: seconds > 0 ? Number((damageDealt / seconds).toFixed(1)) : 0,
+    damageDealt: round1(damageDealt),
+    damageReceived: round1(damageReceived),
+    observedDps: seconds > 0 ? round1(damageDealt / seconds) : 0,
     damageBySource: {
-      autoAttack: Number(damageBySource.autoAttack.toFixed(1)),
-      ability: Number(damageBySource.ability.toFixed(1)),
-      effect: Number(damageBySource.effect.toFixed(1)),
-      other: Number(damageBySource.other.toFixed(1)),
+      autoAttack: round1(damageBySource.autoAttack),
+      ability: round1(damageBySource.ability),
+      effect: round1(damageBySource.effect),
+      other: round1(damageBySource.other),
     },
     abilities,
+    encounters: encounterTelemetry,
   };
 }
