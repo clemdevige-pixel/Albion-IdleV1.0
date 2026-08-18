@@ -76,6 +76,18 @@ export const PROGRESSION_EQUIPMENT_CONTENT = [
           { kind: "leather", quantity: 3 },
         ],
       },
+      {
+        itemId: "item_shield_t6_reinforced",
+        recipeId: "CRAFT_REINFORCED_SHIELD_T6_0",
+        name: "Bouclier renforcé T6",
+        tier: 6,
+        stats: { stat_armor: 30, stat_magic_resistance: 18 },
+        craftMaterials: [
+          { kind: "wood", quantity: 6 },
+          { kind: "metal", quantity: 6 },
+          { kind: "leather", quantity: 4 },
+        ],
+      },
     ],
   },
   {
@@ -115,6 +127,17 @@ export const PROGRESSION_EQUIPMENT_CONTENT = [
         craftMaterials: [
           { kind: "metal", quantity: 7 },
           { kind: "leather", quantity: 3 },
+        ],
+      },
+      {
+        itemId: "item_helmet_t6_reinforced",
+        recipeId: "CRAFT_REINFORCED_HELMET_T6_0",
+        name: "Casque renforcé T6",
+        tier: 6,
+        stats: { stat_armor: 21, stat_magic_resistance: 15, stat_max_health: 220 },
+        craftMaterials: [
+          { kind: "metal", quantity: 8 },
+          { kind: "leather", quantity: 4 },
         ],
       },
     ],
@@ -158,6 +181,17 @@ export const PROGRESSION_EQUIPMENT_CONTENT = [
           { kind: "cloth", quantity: 4 },
         ],
       },
+      {
+        itemId: "item_armor_t6_leather",
+        recipeId: "CRAFT_LEATHER_ARMOR_T6_0",
+        name: "Armure de cuir T6",
+        tier: 6,
+        stats: { stat_armor: 35, stat_magic_resistance: 24, stat_max_health: 360 },
+        craftMaterials: [
+          { kind: "leather", quantity: 8 },
+          { kind: "cloth", quantity: 5 },
+        ],
+      },
     ],
   },
   {
@@ -197,6 +231,17 @@ export const PROGRESSION_EQUIPMENT_CONTENT = [
         craftMaterials: [
           { kind: "leather", quantity: 5 },
           { kind: "cloth", quantity: 3 },
+        ],
+      },
+      {
+        itemId: "item_boots_t6_leather",
+        recipeId: "CRAFT_LEATHER_BOOTS_T6_0",
+        name: "Bottes de cuir T6",
+        tier: 6,
+        stats: { stat_armor: 15, stat_magic_resistance: 10 },
+        craftMaterials: [
+          { kind: "leather", quantity: 6 },
+          { kind: "cloth", quantity: 4 },
         ],
       },
     ],
