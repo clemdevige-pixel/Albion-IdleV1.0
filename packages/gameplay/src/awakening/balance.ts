@@ -30,14 +30,9 @@ export const DEFAULT_AWAKENED_WEAPON_BALANCE: AwakenedWeaponBalance = {
   criticalChance: 0.15,
   criticalMultiplier: 2,
   strainPerModification: 1,
-  // Attunement multiplier = 1 + strain*a + strain^2*b.
-  // Approx.: x1.30 @10, x1.93 @20, x2.90 @30, x5.83 @50, x19 @100.
-  attunementStrainLinearCoefficient: 0.01333,
-  attunementStrainQuadraticCoefficient: 0.001667,
-  // Silver multiplier = 1 + strain*a + strain^2*b.
-  // Approx.: x1.30 @10, x2.50 @30, x4.50 @50, x8.125 @75, x13 @100.
-  silverStrainLinearCoefficient: 0.02,
-  silverStrainQuadraticCoefficient: 0.001,
+  // Every +1 Strain compounds the next action cost by these authored factors.
+  attunementGrowthPerStrain: 1.03,
+  silverGrowthPerStrain: 1.026,
   cdrAsymptotePercent: 50,
   cdrCurveConstant: 50,
 };
