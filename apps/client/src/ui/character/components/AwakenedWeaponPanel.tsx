@@ -7,6 +7,7 @@ import {
 } from "@game/gameplay";
 import { TransactionConfirmModal } from "../../../panels/TransactionConfirmModal";
 import { useGameBridge, useGameServices } from "../../../state/GameContext";
+import "./awakenedWeaponPanel.css";
 
 const TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
   item_power: "Item Power",
