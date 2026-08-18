@@ -20,10 +20,13 @@ export const DEFAULT_AWAKENED_WEAPON_BALANCE: AwakenedWeaponBalance = {
     max_health: { min: 3, max: 6 },
     armor: { min: 0.5, max: 1 },
     magic_resistance: { min: 0.5, max: 1 },
+    fame_bonus: { min: 0.5, max: 1 },
   },
   traitProposalCount: 3,
   slotUnlockStrainThresholds: [0, 10, 30],
   attunementCapCostMultiplier: 1.5,
+  // Each modification increases storage by 2.5% of the tier's initial cap.
+  attunementCapGrowthPerStrain: 0.025,
   criticalChance: 0.15,
   criticalMultiplier: 2,
   strainPerModification: 1,
