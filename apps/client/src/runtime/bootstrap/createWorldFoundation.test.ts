@@ -19,7 +19,7 @@ describe("createWorldFoundation", () => {
     expect(viewModel.zones).toHaveLength(foundation.zoneOrder.length);
   });
 
-  it("extends an existing Blue-only location save with default Yellow and Orange memories", () => {
+  it("extends an existing Blue-only location save with every authored later-world memory", () => {
     const foundation = createWorldFoundation();
     const blueMemories = WORLD_ZONE_IDS_BY_BAND.blue.map((zoneDefId) => ({
       zoneDefId,
@@ -36,7 +36,7 @@ describe("createWorldFoundation", () => {
     });
 
     const restored = foundation.worldRuntime.getWorldLocationSaveState();
-    expect(restored.zoneMemories).toHaveLength(15);
+    expect(restored.zoneMemories).toHaveLength(foundation.zoneOrder.length);
     expect(restored.zoneMemories.slice(0, blueMemories.length)).toEqual(
       blueMemories.map((memory) => ({ ...memory, currentEncounter: 0 })),
     );
@@ -44,6 +44,7 @@ describe("createWorldFoundation", () => {
       .toEqual([
         ...WORLD_ZONE_IDS_BY_BAND.yellow,
         ...WORLD_ZONE_IDS_BY_BAND.orange,
+        ...WORLD_ZONE_IDS_BY_BAND.red,
       ]);
   });
 
