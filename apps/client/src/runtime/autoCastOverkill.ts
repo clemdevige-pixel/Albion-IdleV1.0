@@ -6,7 +6,10 @@ import {
   type StatId,
   type StatsManager,
 } from "@game/gameplay";
-import { isExcessiveAutoCastOverkill } from "../data/combatAutomationPolicy.js";
+import {
+  AUTO_CAST_SETUP_PAYOFF_MAX_IMMEDIATE_DAMAGE_TO_REMAINING_HP_RATIO,
+  isExcessiveAutoCastOverkill,
+} from "../data/combatAutomationPolicy.js";
 import type { ClientAbilityDefinition } from "../data/weaponContentCatalog.js";
 import { getAbilityHitBaseDamage, resolveAbilityDamageRatio } from "./WeaponAbilityMechanicsRuntime.js";
 
@@ -30,12 +33,6 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
 
   const health = deps.damageManager.getHealth(deps.targetId);
   if (health.currentHealth <= 0) return true;
-
-  // A setup-gated payoff is only available while its authored effect window is
-  // active. Once that condition is satisfied, preserving the combo contract is
-  // more important than generic overkill conservation. The auto-rule itself
-  // already prevents these abilities from firing outside their setup window.
-  if (deps.definition.mechanics.autoRule?.kind === "target_has_effect") return false;
 
   const physicalDamage = deps.statsManager.getStat(deps.heroId, PHYSICAL_DAMAGE).computed;
   const magicalDamage = deps.statsManager.getStat(deps.heroId, MAGICAL_DAMAGE).computed;
@@ -77,5 +74,13 @@ export function shouldHoldAutoCastForOverkill(deps: AutoCastOverkillDeps): boole
     }
   }
 
-  return isExcessiveAutoCastOverkill(estimatedImmediateDamage, health.currentHealth);
+  const maximumDamageToRemainingHpRatio = deps.definition.mechanics.autoRule?.kind === "target_has_effect"
+    ? AUTO_CAST_SETUP_PAYOFF_MAX_IMMEDIATE_DAMAGE_TO_REMAINING_HP_RATIO
+    : undefined;
+
+  return isExcessiveAutoCastOverkill(
+    estimatedImmediateDamage,
+    health.currentHealth,
+    maximumDamageToRemainingHpRatio,
+  );
 }
