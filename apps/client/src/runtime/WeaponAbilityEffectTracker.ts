@@ -20,7 +20,10 @@ export class WeaponAbilityEffectTracker {
   reconcile(targets: readonly EntityId[]): void {
     const active = new Set(this.snapshot(targets).map((effect) => String(effect.id)));
     const expired = this.before
-      .filter((effect) => !active.has(String(effect.id)))
+      .filter((effect) => (
+        this.world.hasEntity(effect.target)
+        && !active.has(String(effect.id))
+      ))
       .map((effect) => ({ effect }));
     if (expired.length > 0) this.mechanics.handleExpiredEffects(expired);
     this.before = [];
