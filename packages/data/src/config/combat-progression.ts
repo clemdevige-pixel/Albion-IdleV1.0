@@ -14,30 +14,9 @@ export interface ZoneCombatCurve {
   readonly damageEnd: number;
   readonly defenseStart: number;
   readonly defenseEnd: number;
-  /**
-   * Defense family authored per zone.
-   * - legacy_flat_magic preserves the calibrated T3 onboarding contract.
-   * - rank_parity gives physical Armor and magical Resistance the same
-   *   normal/elite/boss base before the shared defense curve is applied.
-   */
   readonly defenseModel: EnemyDefenseModel;
 }
 
-/**
- * Blue progression contract, calibrated against the live CombatRuntime:
- * - Forest: starter-only discovery, no real friction.
- * - Early Swamp: first meaningful starter wall.
- * - Swamp S2-S6: one or two T3 armor crafts buy a few segments.
- * - Swamp S6-S10: quasi/full T3 consolidation.
- * - Swamp S10: full T3 clearable without potion.
- * - Highlands: T3 -> first T4 transition.
- * - Steppe: full T4.0 / first enchantments; T4.1 should clear S10 with tension.
- * - Mountain: T4.1 -> T4.2; T4.2 clears S10, T4.3 provides comfort.
- *
- * T3 keeps the historical flat magical-defense model because onboarding was
- * calibrated against it. T4 begins the rank-parity defense contract used by
- * every later authored tier.
- */
 export const BLUE_WORLD_COMBAT_CURVE = [
   { healthStart: 0.9, healthEnd: 1.08, damageStart: 0.72, damageEnd: 0.98, defenseStart: 0.9, defenseEnd: 0.98, defenseModel: "legacy_flat_magic" },
   { healthStart: 1.15, healthEnd: 1.55, damageStart: 1.18, damageEnd: 1.8, defenseStart: 1.0, defenseEnd: 1.1, defenseModel: "legacy_flat_magic" },
@@ -46,14 +25,6 @@ export const BLUE_WORLD_COMBAT_CURVE = [
   { healthStart: 3.1, healthEnd: 4.0, damageStart: 3.3, damageEnd: 3.5, defenseStart: 1.5, defenseEnd: 1.8, defenseModel: "rank_parity" },
 ] as const;
 
-/**
- * Yellow T5 calibration curve.
- * Final-boss targets are distributed across the T5 ladder:
- * Amberwood T5.0->T5.1, Gloamfen T5.1,
- * Stormwatch T5.1 + potion / T5.2 without,
- * Sunscar T5.2,
- * Ironveil T5.2 + potion / T5.3 as comfort.
- */
 export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 4.3, healthEnd: 4.45, damageStart: 3.55, damageEnd: 3.7, defenseStart: 2.1, defenseEnd: 2.18, defenseModel: "rank_parity" },
   { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.9, damageEnd: 4.0, defenseStart: 2.3, defenseEnd: 2.35, defenseModel: "rank_parity" },
@@ -62,18 +33,6 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 6.5, healthEnd: 6.5, damageStart: 5.15, damageEnd: 5.15, defenseStart: 3, defenseEnd: 3, defenseModel: "rank_parity" },
 ] as const;
 
-/**
- * Orange T6 authored progression envelope.
- * Runtime-calibrated against the live T6 equipment package.
- * Target contract:
- * - progression spans T6.0 -> T6.3 across the five Orange zones;
- * - the final Orange boss must NOT be a reliable T6.3 clear without a potion;
- * - the expected final clear is T6.3 + healing potion.
- *
- * Ashenpeak intentionally ramps damage more sharply at the end of the zone:
- * the final breakpoint is a sustain check, so healing potions matter without
- * artificially inflating every prior Orange encounter.
- */
 export const ORANGE_WORLD_COMBAT_CURVE = [
   { healthStart: 6.8, healthEnd: 7.15, damageStart: 5.35, damageEnd: 5.6, defenseStart: 3.1, defenseEnd: 3.2, defenseModel: "rank_parity" },
   { healthStart: 7.4, healthEnd: 7.8, damageStart: 5.8, damageEnd: 6.05, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
@@ -82,13 +41,6 @@ export const ORANGE_WORLD_COMBAT_CURVE = [
   { healthStart: 9.8, healthEnd: 10.5, damageStart: 7.3, damageEnd: 8.65, defenseStart: 4.1, defenseEnd: 4.35, defenseModel: "rank_parity" },
 ] as const;
 
-/**
- * Red T7 provisional combat envelope.
- * This exists so the authored Red world is fully representable by the live
- * runtime and UI. It deliberately continues the Orange curve monotonically,
- * but it is NOT the final T7 balance contract; the dedicated T7 runtime sweep
- * will calibrate these values once the complete T7 equipment loop exists.
- */
 export const RED_WORLD_COMBAT_CURVE = [
   { healthStart: 10.9, healthEnd: 11.5, damageStart: 8.8, damageEnd: 9.15, defenseStart: 4.5, defenseEnd: 4.65, defenseModel: "rank_parity" },
   { healthStart: 11.9, healthEnd: 12.6, damageStart: 9.4, damageEnd: 9.8, defenseStart: 4.8, defenseEnd: 4.95, defenseModel: "rank_parity" },
@@ -97,7 +49,15 @@ export const RED_WORLD_COMBAT_CURVE = [
   { healthStart: 15.8, healthEnd: 16.8, damageStart: 11.65, damageEnd: 12.25, defenseStart: 5.85, defenseEnd: 6.1, defenseModel: "rank_parity" },
 ] as const;
 
-/** Backwards-compatible name retained while existing Blue-world tests migrate. */
+/** Provisional T8 envelope. Final Black tuning is deferred to the global T4-T8 balance pass. */
+export const BLACK_WORLD_COMBAT_CURVE = [
+  { healthStart: 17.3, healthEnd: 18.3, damageStart: 12.6, damageEnd: 13.1, defenseStart: 6.3, defenseEnd: 6.5, defenseModel: "rank_parity" },
+  { healthStart: 18.9, healthEnd: 20.0, damageStart: 13.45, damageEnd: 14.0, defenseStart: 6.7, defenseEnd: 6.9, defenseModel: "rank_parity" },
+  { healthStart: 20.7, healthEnd: 21.9, damageStart: 14.35, damageEnd: 14.95, defenseStart: 7.1, defenseEnd: 7.35, defenseModel: "rank_parity" },
+  { healthStart: 22.7, healthEnd: 24.0, damageStart: 15.35, damageEnd: 16.0, defenseStart: 7.6, defenseEnd: 7.85, defenseModel: "rank_parity" },
+  { healthStart: 24.9, healthEnd: 26.4, damageStart: 16.45, damageEnd: 17.2, defenseStart: 8.1, defenseEnd: 8.4, defenseModel: "rank_parity" },
+] as const;
+
 export const WORLD_ONE_COMBAT_CURVE = BLUE_WORLD_COMBAT_CURVE;
 
 export interface WorldCombatProgressionDefinition {
@@ -105,12 +65,12 @@ export interface WorldCombatProgressionDefinition {
   readonly rewardRankOffset: number;
 }
 
-/** Only authored combat bands belong here; planned bands have no fallback. */
 export const WORLD_COMBAT_PROGRESSION: Partial<Readonly<Record<WorldBandId, WorldCombatProgressionDefinition>>> = {
   blue: { curve: BLUE_WORLD_COMBAT_CURVE, rewardRankOffset: 0 },
   yellow: { curve: YELLOW_WORLD_COMBAT_CURVE, rewardRankOffset: BLUE_WORLD_COMBAT_CURVE.length * REWARD_RANKS_PER_ZONE },
   orange: { curve: ORANGE_WORLD_COMBAT_CURVE, rewardRankOffset: (BLUE_WORLD_COMBAT_CURVE.length + YELLOW_WORLD_COMBAT_CURVE.length) * REWARD_RANKS_PER_ZONE },
   red: { curve: RED_WORLD_COMBAT_CURVE, rewardRankOffset: (BLUE_WORLD_COMBAT_CURVE.length + YELLOW_WORLD_COMBAT_CURVE.length + ORANGE_WORLD_COMBAT_CURVE.length) * REWARD_RANKS_PER_ZONE },
+  black: { curve: BLACK_WORLD_COMBAT_CURVE, rewardRankOffset: (BLUE_WORLD_COMBAT_CURVE.length + YELLOW_WORLD_COMBAT_CURVE.length + ORANGE_WORLD_COMBAT_CURVE.length + RED_WORLD_COMBAT_CURVE.length) * REWARD_RANKS_PER_ZONE },
 } as const;
 
 export function getWorldCombatProgression(bandId: WorldBandId): WorldCombatProgressionDefinition {
