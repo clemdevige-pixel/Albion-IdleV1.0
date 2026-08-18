@@ -22,7 +22,7 @@ import {
   type ZoneDefinitionId,
 } from "@game/gameplay";
 import { resolveEquipmentInfo, resolveItemStackInfo } from "../data/itemContentCatalog.js";
-import { resolveWeaponMastery } from "../data/weaponContentCatalog.js";
+import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "../data/weaponContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import { getDungeonDefinition, resolveDungeonCombatProfile } from "../data/dungeonContentCatalog.js";
 import { CombatRuntime } from "./CombatRuntime.js";
@@ -55,6 +55,20 @@ export interface CombatRuntimeBenchmarkInput {
   readonly dungeonDefinitionId?: string;
 }
 
+export interface CombatRuntimeAbilityTelemetry {
+  readonly abilityId: string;
+  readonly casts: number;
+  /** Immediate post-mitigation, non-overkill damage dealt during the cast itself. DoT ticks are reported separately as effect damage. */
+  readonly directDamage: number;
+}
+
+export interface CombatRuntimeDamageSourceTelemetry {
+  readonly autoAttack: number;
+  readonly ability: number;
+  readonly effect: number;
+  readonly other: number;
+}
+
 export interface CombatRuntimeBenchmarkResult {
   readonly label: string;
   readonly weaponItemId: string;
@@ -73,6 +87,45 @@ export interface CombatRuntimeBenchmarkResult {
   readonly damageReceived: number;
   /** Observed hero damage per elapsed combat second. Diagnostic only; never used by runtime balance. */
   readonly observedDps: number;
+  /** Benchmark-only breakdown from the live DamageDealt event source type. */
+  readonly damageBySource: CombatRuntimeDamageSourceTelemetry;
+  /** Benchmark-only live cast counts and immediate damage by authored weapon ability. */
+  readonly abilities: readonly CombatRuntimeAbilityTelemetry[];
+}
+
+interface MutableAbilityTelemetry {
+  casts: number;
+  directDamage: number;
+}
+
+class TelemetryCombatRuntime extends CombatRuntime {
+  public constructor(
+    deps: ConstructorParameters<typeof CombatRuntime>[0],
+    private readonly abilityIds: readonly string[],
+    private readonly abilityTelemetry: Map<string, MutableAbilityTelemetry>,
+  ) {
+    super(deps);
+    this.telemetryDamageManager = deps.damageManager;
+  }
+
+  private readonly telemetryDamageManager: DamageManager;
+
+  override useWeaponAbility(slotIndex: number): boolean {
+    const abilityId = this.abilityIds[slotIndex];
+    const targetId = this.getActiveEnemyId();
+    const before = this.telemetryDamageManager.isAlive(targetId)
+      ? this.telemetryDamageManager.getHealth(targetId).currentHealth
+      : 0;
+    const used = super.useWeaponAbility(slotIndex);
+    if (!used || abilityId === undefined) return used;
+
+    const telemetry = this.abilityTelemetry.get(abilityId) ?? { casts: 0, directDamage: 0 };
+    telemetry.casts += 1;
+    const after = this.telemetryDamageManager.getHealth(targetId).currentHealth;
+    telemetry.directDamage += Math.max(0, before - after);
+    this.abilityTelemetry.set(abilityId, telemetry);
+    return used;
+  }
 }
 
 function equipItem(
@@ -168,8 +221,15 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
 
   let damageDealt = 0;
   let damageReceived = 0;
+  const damageBySource = { autoAttack: 0, ability: 0, effect: 0, other: 0 };
   damageEventBus.subscribe("DamageDealt", (event) => {
-    if (event.source === heroId) damageDealt += event.finalDamage;
+    if (event.source === heroId) {
+      damageDealt += event.finalDamage;
+      if (event.sourceType === "auto_attack") damageBySource.autoAttack += event.finalDamage;
+      else if (event.sourceType === "ability") damageBySource.ability += event.finalDamage;
+      else if (event.sourceType === "effect") damageBySource.effect += event.finalDamage;
+      else damageBySource.other += event.finalDamage;
+    }
     if (event.target === heroId) damageReceived += event.finalDamage;
   });
 
@@ -191,7 +251,9 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   let defeated = false;
   let potionsUsed = 0;
   let segmentEndHpPercent: number | undefined;
-  const runtime = new CombatRuntime({
+  const abilityDefinitions = resolveUnlockedWeaponAbilities(input.weaponItemId, masteryLevel);
+  const abilityTelemetry = new Map<string, MutableAbilityTelemetry>();
+  const runtime = new TelemetryCombatRuntime({
     world,
     heroId,
     combatService,
@@ -249,7 +311,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
         farmMode: false,
       }),
     },
-  });
+  }, abilityDefinitions.map((definition) => String(definition.id)), abilityTelemetry);
 
   let ticks = 0;
   while (!finishedSegment && !defeated && ticks < MAX_TICKS) {
@@ -268,6 +330,14 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
 
   const health = damageManager.getHealth(heroId);
   const seconds = Number((ticks * DT).toFixed(1));
+  const abilities = abilityDefinitions.map((definition) => {
+    const telemetry = abilityTelemetry.get(String(definition.id)) ?? { casts: 0, directDamage: 0 };
+    return {
+      abilityId: String(definition.id),
+      casts: telemetry.casts,
+      directDamage: Number(telemetry.directDamage.toFixed(1)),
+    };
+  });
   return {
     label: input.label,
     weaponItemId: input.weaponItemId,
@@ -283,5 +353,12 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     damageDealt: Number(damageDealt.toFixed(1)),
     damageReceived: Number(damageReceived.toFixed(1)),
     observedDps: seconds > 0 ? Number((damageDealt / seconds).toFixed(1)) : 0,
+    damageBySource: {
+      autoAttack: Number(damageBySource.autoAttack.toFixed(1)),
+      ability: Number(damageBySource.ability.toFixed(1)),
+      effect: Number(damageBySource.effect.toFixed(1)),
+      other: Number(damageBySource.other.toFixed(1)),
+    },
+    abilities,
   };
 }
