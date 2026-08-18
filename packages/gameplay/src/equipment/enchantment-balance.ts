@@ -4,16 +4,15 @@ import type { EnchantmentLevel } from "../inventory/types.js";
  * Single balancing source for enchantment Item Power.
  * Saves store only the level, so these values can change without migration.
  *
- * Validated baseline: +50 IP per active enchantment level. This keeps .3 a
- * strong optimization (+150 IP) without letting enchantment replace the next
- * equipment tier.
+ * Validated baseline: +50 IP per enchantment level. Levels .1-.3 are the
+ * conventional enchantment path; .4 is the Awakened weapon transition and
+ * keeps the same +50 IP step before instance-specific Awakening traits apply.
  */
 export const ENCHANTMENT_ITEM_POWER: Readonly<Record<EnchantmentLevel, number>> = {
   0: 0,
   1: 50,
   2: 100,
   3: 150,
-  // .4 is structurally reserved for future endgame design.
   4: 200,
 };
 
