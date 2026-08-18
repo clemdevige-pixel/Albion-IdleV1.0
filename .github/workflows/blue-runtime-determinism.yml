@@ -37,4 +37,4 @@ jobs:
         run: |
           pnpm --filter @game/client test -- t3OnboardingBenchmark.test.ts --reporter=verbose
           pnpm --filter @game/client test -- enchantmentShardTtkBenchmark.test.ts --reporter=verbose
-          pnpm exec tsx scripts/runtime-blue-progression-farm-run.ts
+          pnpm exec tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-farm-run.ts
