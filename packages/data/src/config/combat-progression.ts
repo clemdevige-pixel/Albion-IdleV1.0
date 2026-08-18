@@ -69,6 +69,21 @@ export const ORANGE_WORLD_COMBAT_CURVE = [
   { healthStart: 9.8, healthEnd: 10.5, damageStart: 7.3, damageEnd: 8.65, defenseStart: 4.1, defenseEnd: 4.35 },
 ] as const;
 
+/**
+ * Red T7 provisional combat envelope.
+ * This exists so the authored Red world is fully representable by the live
+ * runtime and UI. It deliberately continues the Orange curve monotonically,
+ * but it is NOT the final T7 balance contract; the dedicated T7 runtime sweep
+ * will calibrate these values once the complete T7 equipment loop exists.
+ */
+export const RED_WORLD_COMBAT_CURVE = [
+  { healthStart: 10.9, healthEnd: 11.5, damageStart: 8.8, damageEnd: 9.15, defenseStart: 4.5, defenseEnd: 4.65 },
+  { healthStart: 11.9, healthEnd: 12.6, damageStart: 9.4, damageEnd: 9.8, defenseStart: 4.8, defenseEnd: 4.95 },
+  { healthStart: 13.0, healthEnd: 13.8, damageStart: 10.05, damageEnd: 10.5, defenseStart: 5.1, defenseEnd: 5.28 },
+  { healthStart: 14.3, healthEnd: 15.2, damageStart: 10.8, damageEnd: 11.3, defenseStart: 5.45, defenseEnd: 5.65 },
+  { healthStart: 15.8, healthEnd: 16.8, damageStart: 11.65, damageEnd: 12.25, defenseStart: 5.85, defenseEnd: 6.1 },
+] as const;
+
 /** Backwards-compatible name retained while existing Blue-world tests migrate. */
 export const WORLD_ONE_COMBAT_CURVE = BLUE_WORLD_COMBAT_CURVE;
 
@@ -82,6 +97,7 @@ export const WORLD_COMBAT_PROGRESSION: Partial<Readonly<Record<WorldBandId, Worl
   blue: { curve: BLUE_WORLD_COMBAT_CURVE, rewardRankOffset: 0 },
   yellow: { curve: YELLOW_WORLD_COMBAT_CURVE, rewardRankOffset: BLUE_WORLD_COMBAT_CURVE.length * REWARD_RANKS_PER_ZONE },
   orange: { curve: ORANGE_WORLD_COMBAT_CURVE, rewardRankOffset: (BLUE_WORLD_COMBAT_CURVE.length + YELLOW_WORLD_COMBAT_CURVE.length) * REWARD_RANKS_PER_ZONE },
+  red: { curve: RED_WORLD_COMBAT_CURVE, rewardRankOffset: (BLUE_WORLD_COMBAT_CURVE.length + YELLOW_WORLD_COMBAT_CURVE.length + ORANGE_WORLD_COMBAT_CURVE.length) * REWARD_RANKS_PER_ZONE },
 } as const;
 
 export function getWorldCombatProgression(bandId: WorldBandId): WorldCombatProgressionDefinition {
