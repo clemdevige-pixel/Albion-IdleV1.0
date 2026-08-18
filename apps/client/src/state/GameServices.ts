@@ -3,6 +3,8 @@ import type { ProductionTier } from "../data/productionFamilyCatalog";
 import type { IslandBuildingId, IslandWorldRequirement } from "@game/data";
 import type { EventBus, EntityId } from "@game/core";
 import type {
+  AwakenedTraitId,
+  AwakenedWeaponService,
   CombatOrchestrator,
   CurrencyService,
   DungeonRunState,
@@ -35,6 +37,7 @@ export interface GameServices {
   readonly inventoryManager: InventoryManager;
   readonly equipmentManager: EquipmentManager;
   readonly enchantmentService: EnchantmentService;
+  readonly awakenedWeaponService: AwakenedWeaponService;
   readonly statsManager: StatsManager;
   readonly currencyService: CurrencyService;
   readonly economyTransactionService: EconomyTransactionService;
@@ -42,6 +45,10 @@ export interface GameServices {
   readonly walletId: WalletId;
   readonly playerId: PlayerId;
   readonly worldCoordinator: WorldCoordinator;
+  readonly improveAwakenedTrait: (traitIndex: number) => boolean;
+  readonly beginAwakenedTraitOffer: (targetIndex: number) => boolean;
+  readonly resolveAwakenedTraitOffer: (traitId?: AwakenedTraitId) => boolean;
+  readonly resetAwakenedWeapon: () => boolean;
   readonly needsStarterSelection: () => boolean;
   readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
