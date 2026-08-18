@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PRODUCTION_CONTENT_TIERS } from "../../../data/productionFamilyCatalog";
+import { CRAFTING_CONTENT_TIERS } from "../../../data/productionFamilyCatalog";
 import type { CraftingCategoryId, CraftingFamilyId } from "./craftingModels";
 import { CraftingRecipeDetails } from "./CraftingRecipeDetails";
 import { useCraftingActions } from "./useCraftingActions";
@@ -30,7 +30,7 @@ export function CraftingView(): JSX.Element {
         <div><span className="ui-production__eyebrow">Forge</span><h2>Fabrication</h2></div>
         {!isTierIndependentCategory && (
           <div className="ui-production__tier-selector" aria-label="Tier de fabrication">
-            {PRODUCTION_CONTENT_TIERS.map((tier) => (
+            {CRAFTING_CONTENT_TIERS.map((tier) => (
               <button type="button" key={tier} className={model.tier === tier ? "is-active" : ""} aria-pressed={model.tier === tier} onClick={() => { actions.setTier(tier); }}>
                 T{tier}
               </button>
