@@ -8,6 +8,7 @@ export function createFreshAwakenedWeaponState(
   return {
     itemInstanceId,
     tier,
+    awakened: false,
     storedAttunement: 0,
     lifetimeAttunementInvested: 0,
     strain: 0,
