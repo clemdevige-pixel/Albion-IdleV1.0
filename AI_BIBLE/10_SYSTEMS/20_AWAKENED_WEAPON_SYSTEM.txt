@@ -10,6 +10,29 @@ A .4 weapon can be Awakened and progressively customized through traits. Progres
 
 All numeric values in this document are authored balance data. System logic must not hardcode tier tables, roll ranges, slot thresholds, cost curves, critical chance, storage multipliers, or CDR curve parameters.
 
+## 1A. .4 ACQUISITION
+
+.4 is NOT a separate crafting recipe. It is the final step of the existing deterministic enchantment path:
+
+.0 -> .1 -> .2 -> .3 -> .4
+
+Only weapons are eligible for .4 Awakening. Conventional armor/off-hand equipment remains capped by its authored enchantment policy.
+
+The .3 -> .4 transaction reuses the existing EnchantmentService and merchant enchantment UI. It consumes, atomically:
+- the same weapon instance currently at .3;
+- 100 tier-matching enchantment fragments/shards;
+- refined craft resources derived from that weapon's existing craft-material definition;
+- Silver through the existing enchantment cost pipeline.
+
+Current V1 data baseline for the .4 transition:
+- tier fragment/shard cost: 100;
+- refined craft-material multiplier: x8 relative to the weapon's authored craft-material quantities;
+- base Silver cost before existing tier/category scaling: 25,000.
+
+These quantities are balance data, not structural rules. They may be recalibrated without changing the .3 -> .4 transaction architecture.
+
+A successful .3 -> .4 commit immediately registers a fresh Awakening state for the resulting ItemInstanceId. It must not wait for the first Fame gain. The item remains the same logical weapon instance except where the existing inventory stack-splitting contract necessarily produces the committed instance id.
+
 ## 2. CORE LOOP
 
 Eligible PvE Fame -> stored Attunement on equipped/eligible awakened weapon -> spend Attunement + Silver -> Awake / improve / reroll -> gain Strain -> future costs rise -> Attunement storage capacity rises.
@@ -246,6 +269,9 @@ All constants/exponents are data-driven.
 ## 14. DESIGN GUARANTEES
 
 The implementation must preserve these invariants:
+- .4 is acquired through the existing .3 -> .4 enchantment transaction, never a parallel craft path.
+- only authored .4-eligible weapons may enter Awakening.
+- the successful .4 transaction registers Awakening immediately for the committed ItemInstanceId.
 - .4 progression is instance-specific.
 - No duplicate traits on one weapon.
 - No free weapon modification.
@@ -278,7 +304,8 @@ Architecture must remain deterministic and data-driven.
 
 Recommended separation of concerns:
 - immutable/authored Awakening balance configuration;
-- per-item-instance Awakening state;
+- existing EnchantmentService owns the .3 -> .4 transaction;
+- per-item-instance Awakening state starts only after committed .4 acquisition;
 - pure cost/cap/CDR/slot-threshold calculations;
 - deterministic RNG integration for trait proposals, rolls and critical resolution;
 - explicit commands/services for Awake, reroll and reset;
