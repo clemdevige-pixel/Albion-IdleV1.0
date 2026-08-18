@@ -28,6 +28,9 @@ jobs:
       - name: Verify realistic benchmark enchantment eligibility
         run: pnpm --filter @game/client test -- CombatRuntimeBenchmarkHarness.test.ts --reporter=verbose
 
+      - name: Build workspace packages for runtime scripts
+        run: pnpm exec tsc -b
+
       - name: Rerun Blue progression contract
         run: pnpm benchmark:blue-contract
 
