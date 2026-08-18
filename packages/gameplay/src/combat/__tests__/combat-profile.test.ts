@@ -9,6 +9,19 @@ describe("combat-profile", () => {
       expect(profile).toEqual({ hp: 270, damage: 10, armor: 4, magicResistance: 2, attackSpeed: 0.8 });
     });
 
+    it("preserves legacy T3 magic defense but uses rank parity from T4 onward", () => {
+      const t3Boss = getEnemyCombatProfile(2, SEGMENTS_PER_ZONE - 1, ENCOUNTERS_PER_SEGMENT - 1, "blue");
+      const t4Boss = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, ENCOUNTERS_PER_SEGMENT - 1, "blue");
+      const t5Boss = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, ENCOUNTERS_PER_SEGMENT - 1, "yellow");
+      const t6Boss = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, ENCOUNTERS_PER_SEGMENT - 1, "orange");
+      const t7Boss = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, ENCOUNTERS_PER_SEGMENT - 1, "red");
+
+      expect(t3Boss.magicResistance).toBeLessThan(t3Boss.armor);
+      for (const profile of [t4Boss, t5Boss, t6Boss, t7Boss]) {
+        expect(profile.magicResistance).toBe(profile.armor);
+      }
+    });
+
     it("treats encounter five as an elite before segment 10", () => {
       const normal = getEnemyCombatProfile(0, 0, 3);
       const elite = getEnemyCombatProfile(0, 0, 4);
@@ -69,20 +82,23 @@ describe("combat-profile", () => {
       expect(boss.damage).toBeGreaterThan(normal.damage);
     });
 
-    it("uses independent Yellow and Orange curves and rejects Red", () => {
+    it("uses independent Blue, Yellow, Orange and Red curves", () => {
       const blueEnd = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 0, "blue");
       const yellowStart = getEnemyCombatProfile(0, 0, 0, "yellow");
       const yellowEnd = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 0, "yellow");
       const orangeStart = getEnemyCombatProfile(0, 0, 0, "orange");
+      const orangeEnd = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 0, "orange");
+      const redStart = getEnemyCombatProfile(0, 0, 0, "red");
 
       expect(yellowStart.hp).toBeGreaterThanOrEqual(blueEnd.hp);
       expect(yellowStart.damage).toBeGreaterThanOrEqual(blueEnd.damage);
       expect(orangeStart.hp).toBeGreaterThanOrEqual(yellowEnd.hp);
       expect(orangeStart.damage).toBeGreaterThanOrEqual(yellowEnd.damage);
-      expect(() => getEnemyCombatProfile(0, 0, 0, "red")).toThrow(/Combat progression is not authored for world band: red/);
+      expect(redStart.hp).toBeGreaterThanOrEqual(orangeEnd.hp);
+      expect(redStart.damage).toBeGreaterThanOrEqual(orangeEnd.damage);
     });
 
-    it.each(["yellow", "orange"] as const)("keeps %s deterministic and monotonic across its five zones", (bandId) => {
+    it.each(["yellow", "orange", "red"] as const)("keeps %s deterministic and monotonic across its five zones", (bandId) => {
       const first = getEnemyCombatProfile(0, 0, 0, bandId);
       let previous = first;
       for (let zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
@@ -135,16 +151,19 @@ describe("combat-profile", () => {
       }
     });
 
-    it("continues reward ranks through Yellow and Orange and rejects Red", () => {
+    it("continues reward ranks through Yellow, Orange and Red", () => {
       const blueEnd = getEncounterRewards(4, SEGMENTS_PER_ZONE - 1, 0, "blue");
       const yellowStart = getEncounterRewards(0, 0, 0, "yellow");
       const yellowEnd = getEncounterRewards(4, SEGMENTS_PER_ZONE - 1, 0, "yellow");
       const orangeStart = getEncounterRewards(0, 0, 0, "orange");
+      const orangeEnd = getEncounterRewards(4, SEGMENTS_PER_ZONE - 1, 0, "orange");
+      const redStart = getEncounterRewards(0, 0, 0, "red");
       expect(yellowStart.silver).toBeGreaterThan(blueEnd.silver);
       expect(yellowStart.fame).toBeGreaterThan(blueEnd.fame);
       expect(orangeStart.silver).toBeGreaterThan(yellowEnd.silver);
       expect(orangeStart.fame).toBeGreaterThan(yellowEnd.fame);
-      expect(() => getEncounterRewards(0, 0, 0, "red")).toThrow(/Combat progression is not authored for world band: red/);
+      expect(redStart.silver).toBeGreaterThan(orangeEnd.silver);
+      expect(redStart.fame).toBeGreaterThan(orangeEnd.fame);
     });
   });
 });
