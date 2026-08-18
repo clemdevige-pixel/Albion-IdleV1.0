@@ -38,3 +38,19 @@ jobs:
           pnpm --filter @game/client test -- t3OnboardingBenchmark.test.ts --reporter=verbose
           pnpm --filter @game/client test -- enchantmentShardTtkBenchmark.test.ts --reporter=verbose
           pnpm exec tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-farm-run.ts
+          python - <<'PY'
+          import csv, collections
+          p='node_modules/.cache/albion-idle/runtime-blue-persistent-progression-farm.csv'
+          totals=collections.defaultdict(float)
+          milestones=collections.defaultdict(dict)
+          with open(p,newline='',encoding='utf-8') as f:
+              for r in csv.DictReader(f):
+                  key=(r['mode'],r['specialization'].replace('mastery_',''))
+                  totals[key]+=float(r['elapsedSeconds'])
+                  z=r['zone']; s=int(r['segment'])
+                  if s==10:
+                      milestones[key][z]=round(totals[key],1)
+          print('[BLUE_COMBAT_ELAPSED_SUMMARY]')
+          for key,total in sorted(totals.items()):
+              print(key, 'totalSeconds=',round(total,1),'milestones=',milestones[key])
+          PY
