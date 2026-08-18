@@ -60,6 +60,20 @@ const FACTION_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.15, defense: 1.1 },
 ];
 
+/**
+ * T6 keeps the same HP/defense optimization wall but trims raw incoming damage.
+ * Ashenpeak already requires T6.3 + sustain, and dungeon HP/cooldowns persist
+ * across all five encounters. The intended boundary is therefore full T6.3 +
+ * meaningful mastery + potions, without changing the validated Orange curve.
+ */
+const FACTION_T6_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
+  { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+  { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+  { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.0, defense: 1.06 },
+  { sourceSegmentIndex: 9, sourceEncounterIndex: 2, hp: 1.12, damage: 1.02, defense: 1.08 },
+  { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.05, defense: 1.1 },
+];
+
 /** Faction dungeons share one pressure shape per tier; the world band owns scale. */
 const FACTION_T4_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
   id: FACTION_T4_COMBAT_PROFILE_ID, bandId: "blue", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS,
@@ -68,7 +82,7 @@ const FACTION_T5_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
   id: FACTION_T5_COMBAT_PROFILE_ID, bandId: "yellow", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS,
 };
 const FACTION_T6_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS,
+  id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4, steps: FACTION_T6_DUNGEON_PRESSURE_STEPS,
 };
 
 const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefinition>> = {
