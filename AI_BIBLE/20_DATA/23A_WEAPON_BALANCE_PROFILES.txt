@@ -1,0 +1,315 @@
+# 23A. WEAPON BALANCE PROFILES
+
+---
+
+# Purpose
+
+Weapon Balance Profiles define what each weapon is intended to do well before numerical balancing begins.
+
+They exist to prevent invalid comparisons between weapons with different purposes.
+
+A weapon designed to kill bosses must not be considered weak simply because it produces less Fame per hour than a dedicated farming weapon.
+
+A weapon designed for dungeon consistency must not be forced toward the same burst or single-target output as a boss killer.
+
+Profiles are design and benchmark metadata only.
+
+They never grant hidden combat bonuses.
+
+---
+
+# Two-Axis Profile
+
+Every weapon specialization is described through two complementary axes.
+
+## Gameplay Profile
+
+Describes how the weapon expresses its power.
+
+Examples include:
+
+- Bruiser / Execute
+- Sustain / Burst
+- Control / DPS
+- DoT / Ramp-up
+- Burst / Control
+- Combo / Execute
+
+This vocabulary is descriptive and extensible.
+
+It is not a closed runtime enum that limits future weapon design.
+
+## Content Role
+
+Describes where the weapon is expected to create the most value.
+
+Current useful roles include:
+
+- General Progression
+- Fame Farm
+- Boss
+- Dungeon
+
+Future content may introduce new roles without changing the underlying principle.
+
+Each weapon has one Primary Content Role and may have one Secondary Content Role.
+
+---
+
+# Core Balance Rule
+
+Profiles describe expected performance; they do not directly modify performance.
+
+There must never be logic such as:
+
+- +X% damage against bosses because primaryRole = Boss
+- +X% Fame because primaryRole = Fame Farm
+- hidden dungeon multipliers derived from the profile
+
+The role must emerge naturally from existing authored weapon data:
+
+- base damage
+- attack speed
+- ability ratios
+- cooldowns
+- damage-over-time
+- execute conditions
+- control effects
+- setup requirements
+- handling and off-hand access
+
+---
+
+# Current Weapon Assignments
+
+## Broadsword
+
+Gameplay Profile:
+
+Bruiser / Execute
+
+Primary Content Role:
+
+General Progression
+
+Secondary Content Role:
+
+Boss
+
+Balance Expectation:
+
+Reliable all-round progression weapon with strong finishing pressure. It should be safe and consistent without becoming the best Fame farmer or the strongest dedicated boss killer.
+
+---
+
+## Longbow
+
+Gameplay Profile:
+
+Sustain / Burst
+
+Primary Content Role:
+
+Fame Farm
+
+Secondary Content Role:
+
+General Progression
+
+Balance Expectation:
+
+Efficient repeatable PvE clear with low downtime. It should convert ordinary world encounters into strong Fame/hour without matching dedicated boss weapons on long single-target fights.
+
+---
+
+## Badon
+
+Gameplay Profile:
+
+Control / DPS
+
+Primary Content Role:
+
+Dungeon
+
+Secondary Content Role:
+
+General Progression
+
+Balance Expectation:
+
+Control-oriented PvE weapon that gains value across chained or dangerous encounters. It should be particularly comfortable in dungeons without leading pure Fame/hour or boss-DPS benchmarks.
+
+---
+
+## Infernal Staff
+
+Gameplay Profile:
+
+DoT / Ramp-up
+
+Primary Content Role:
+
+Boss
+
+Secondary Content Role:
+
+Dungeon
+
+Balance Expectation:
+
+Sustained damage weapon rewarded by targets that live long enough for burns and setup to pay off. Its relative efficiency should improve with encounter duration and fall on very short farming fights.
+
+---
+
+## Spiked Gauntlets
+
+Gameplay Profile:
+
+Burst / Control
+
+Primary Content Role:
+
+Fame Farm
+
+Secondary Content Role:
+
+Dungeon
+
+Balance Expectation:
+
+Fast active-clear weapon combining burst and brief control. It should excel at dispatching ordinary enemies quickly while remaining useful, but not dominant, in longer dungeon or boss encounters.
+
+---
+
+## Dagger Pair
+
+Gameplay Profile:
+
+Combo / Execute
+
+Primary Content Role:
+
+Boss
+
+Secondary Content Role:
+
+Dungeon
+
+Balance Expectation:
+
+Dedicated single-target payoff weapon built around setup into assassination. It should rank among the strongest boss killers while giving up consistency and short-fight farming efficiency.
+
+---
+
+# Benchmark Rules
+
+Weapon benchmarks must use the profile as interpretation context.
+
+A benchmark report should answer two separate questions:
+
+1. Does the weapon perform correctly inside its intended role?
+2. Does it remain within acceptable global bounds outside that role?
+
+Primary-role performance is the main balancing target.
+
+Secondary-role performance is allowed to be competitive but should not usually dominate specialists.
+
+Off-role performance must remain playable unless the weapon concept explicitly requires a sharper weakness.
+
+No weapon should become the best answer to every content type.
+
+---
+
+# New Weapon Authoring Rule
+
+When a new weapon is requested with a gameplay identity and/or content role, the AI must infer a coherent weapon package from that information before asking for additional specifications.
+
+The AI should infer, where possible:
+
+- expected combat cadence
+- damage distribution between attacks and abilities
+- likely cooldown structure
+- setup or payoff mechanics
+- control or sustain needs
+- intended strengths
+- intended weaknesses
+- relevant benchmark scenarios
+
+Questions are required only when an ambiguity would materially change the weapon identity or conflict with an existing game rule.
+
+The default workflow is therefore:
+
+Role and gameplay intent
+
+↓
+
+Infer strengths and weaknesses
+
+↓
+
+Design mechanics and cadence
+
+↓
+
+Author stats and abilities
+
+↓
+
+Benchmark inside intended role
+
+↓
+
+Validate global guardrails
+
+---
+
+# Data Ownership
+
+Runtime combat systems must not depend on balance-profile metadata.
+
+The canonical machine-readable assignments live in:
+
+apps/client/src/data/weaponBalanceProfileCatalog.ts
+
+These values exist for design tools, audits, benchmark selection and reporting.
+
+Combat behavior remains owned by the normal weapon, ability and stat data.
+
+---
+
+# Immutable Design Rules
+
+Rule 01
+
+Every authored weapon specialization must have an explicit gameplay profile and primary content role before final balance validation.
+
+Rule 02
+
+Weapon profiles never grant hidden runtime bonuses.
+
+Rule 03
+
+A weapon is balanced first against the expectations of its primary role, then against global guardrails.
+
+Rule 04
+
+Weapons with different primary roles must not be judged solely by one universal DPS or Fame/hour ranking.
+
+Rule 05
+
+A weapon may be viable outside its primary role without being required to match a specialist there.
+
+Rule 06
+
+Future content roles may be added without changing combat architecture.
+
+Rule 07
+
+New weapon design begins from role and gameplay intent, not from copying another weapon's numbers.
+
+---
+
+=========================
+DOCUMENT TERMINÉ
+=========================
