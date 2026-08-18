@@ -73,6 +73,13 @@ export class AwakenedWeaponService {
     return state === undefined ? undefined : deriveAwakenedWeaponState(state, this.balance);
   }
 
+  /** Raw accumulated trait value. Unawakened/missing weapons resolve to zero. */
+  getTraitValue(itemInstanceId: ItemInstanceId, traitId: AwakenedTraitId): number {
+    const state = this.states.get(itemInstanceId);
+    if (state?.awakened !== true) return 0;
+    return state.traits.find((trait) => trait.traitId === traitId)?.value ?? 0;
+  }
+
   /** Returns the player-facing value for a stored trait value. */
   getDisplayTraitValue(traitId: AwakenedTraitId, value: number): number {
     return traitId === "cooldown_reduction"
@@ -112,7 +119,13 @@ export class AwakenedWeaponService {
     if (state.awakened) return fail("weapon_already_awakened");
     const derived = deriveAwakenedWeaponState(state, this.balance);
     if (!derived.canAwaken) return fail("awakening_threshold_not_reached");
-    const next: AwakenedWeaponState = { ...state, awakened: true };
+    const cost = derived.awakeningAttunementThreshold;
+    const next: AwakenedWeaponState = {
+      ...state,
+      awakened: true,
+      storedAttunement: state.storedAttunement - cost,
+      lifetimeAttunementInvested: state.lifetimeAttunementInvested + cost,
+    };
     this.states.set(itemInstanceId, next);
     return ok(next);
   }
