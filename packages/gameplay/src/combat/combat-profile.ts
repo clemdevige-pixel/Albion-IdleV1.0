@@ -66,12 +66,13 @@ export function getEnemyCombatProfile(
   const baseHp = rank === "boss" ? 520 : rank === "elite" ? 390 : 300;
   const baseDmg = rank === "boss" ? 26 : rank === "elite" ? 19 : 15;
   const baseArmor = rank === "boss" ? 12 : rank === "elite" ? 8 : 5;
+  const baseMagicResistance = curve.defenseModel === "rank_parity" ? baseArmor : 3;
 
   return {
     hp: Math.floor(baseHp * healthScale),
     damage: Math.floor(baseDmg * damageScale),
     armor: Math.floor(baseArmor * defenseScale),
-    magicResistance: Math.floor(3 * defenseScale),
+    magicResistance: Math.floor(baseMagicResistance * defenseScale),
     attackSpeed: 0.8,
   };
 }
