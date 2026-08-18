@@ -12,7 +12,7 @@ export type ProductionTier = (typeof PRODUCTION_TIERS)[number];
 export const PRODUCTION_CONTENT_TIERS = [3, 4, 5] as const satisfies readonly ProductionTier[];
 
 /** Tiers whose active hero gathering content is authored. */
-export const GATHERING_CONTENT_TIERS = [3, 4, 5, 6] as const satisfies readonly ProductionTier[];
+export const GATHERING_CONTENT_TIERS = [3, 4, 5, 6, 7] as const satisfies readonly ProductionTier[];
 export type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
 
 /** Tiers whose refining recipes are authored. */
@@ -134,6 +134,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
       4: { resourceName: "Bois de pin", toolName: "Hache d'expert" },
       5: { resourceName: "Bois de cèdre", toolName: "Hache de maître" },
       6: { resourceName: "Bois de chêne sanglant", toolName: "Hache de grand maître" },
+      7: { resourceName: "Bois cendré", toolName: "Hache ancienne" },
     },
   },
   ore: {
@@ -154,6 +155,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
       4: { resourceName: "Minerai de fer", toolName: "Pioche d'expert" },
       5: { resourceName: "Minerai de titane", toolName: "Pioche de maître" },
       6: { resourceName: "Minerai de runite", toolName: "Pioche de grand maître" },
+      7: { resourceName: "Minerai de météorite", toolName: "Pioche ancienne" },
     },
   },
   hide: {
@@ -174,6 +176,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
       4: { resourceName: "Peau épaisse", toolName: "Couteau de dépeçage d'expert" },
       5: { resourceName: "Peau lourde", toolName: "Couteau de dépeçage de maître" },
       6: { resourceName: "Peau renforcée", toolName: "Couteau de dépeçage de grand maître" },
+      7: { resourceName: "Peau durcie", toolName: "Couteau de dépeçage ancien" },
     },
   },
   fiber: {
@@ -194,6 +197,7 @@ export const PRODUCTION_FAMILY_CATALOG = {
       4: { resourceName: "Fibre fine", toolName: "Faucille d'expert" },
       5: { resourceName: "Fibre céleste", toolName: "Faucille de maître" },
       6: { resourceName: "Fibre écarlate", toolName: "Faucille de grand maître" },
+      7: { resourceName: "Fibre solaire", toolName: "Faucille ancienne" },
     },
   },
 } as const satisfies Record<string, ProductionFamilyDefinition>;
