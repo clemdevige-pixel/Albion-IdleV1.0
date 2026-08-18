@@ -23,6 +23,7 @@
     "benchmark:weapon-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-weapon-role-world-sweep.ts",
     "benchmark:boss-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-role-telemetry.ts",
     "benchmark:boss-only": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-only-role-telemetry.ts",
+    "benchmark:blue-contract": "tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-contract-audit.ts",
     "clean": "tsc -b --clean"
   },
   "devDependencies": {
