@@ -31,6 +31,10 @@ const DEFAULT_STATS: readonly StatDefinition[] = [
   { id: "stat_magic_resistance" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_attack_speed" as StatId, min: 0.1, max: 5.0, defaultBase: 1.0 },
   { id: "stat_move_speed" as StatId, min: 0.1, max: Infinity, defaultBase: 1.0 },
+  // Awakened-weapon runtime stats. They remain regular stats so every consumer
+  // reads one authoritative combat pipeline rather than a .4-specific branch.
+  { id: "stat_ability_power" as StatId, min: 0, max: Infinity, defaultBase: 0 },
+  { id: "stat_cooldown_reduction" as StatId, min: 0, max: 99.999, defaultBase: 0 },
 ];
 
 export function createDefaultStatRegistry(): StatRegistry {
