@@ -46,3 +46,4 @@ export * from "./worker-execution/index.js";
 export * from "./worker-automation/index.js";
 export * from "./worker-integration/index.js";
 export * from "./island/index.js";
+export * from "./awakening/index.js";
