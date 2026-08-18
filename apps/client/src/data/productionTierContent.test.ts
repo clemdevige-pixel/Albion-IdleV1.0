@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CRAFTING_CONTENT_TIERS,
   GATHERING_CONTENT_TIERS,
   PRODUCTION_CONTENT_TIERS,
   REFINING_CONTENT_TIERS,
@@ -60,43 +61,28 @@ describe("production tier content contract", () => {
     }
   });
 
-  it("keeps every complete production tier coherent across gathering and refining", () => {
-    expect(PRODUCTION_CONTENT_TIERS).toContain(5);
-
-    for (const familyId of PRODUCTION_FAMILY_IDS) {
-      const family = getProductionFamilyDefinition(familyId);
-
-      for (const tier of PRODUCTION_CONTENT_TIERS) {
-        const presentation = family.tiers[tier];
-        const resource = RESOURCE_TIER_CONTENT[familyId][tier];
-        const refining = getProductionRefiningRecipe(familyId, tier);
-
-        expect(presentation, `${familyId} T${String(tier)} presentation`).toBeDefined();
-        expect(resource, `${familyId} T${String(tier)} gathering content`).toBeDefined();
-        expect(getProductionTierRules(tier).gatheringBaseTicks).toBeGreaterThan(0);
-        expect(refining.tier).toBe(tier);
-        expect(refining.rawItemId).toBe(resource?.rawItemId);
-        expect(refining.outputItemId).toContain(`_t${String(tier)}`);
-      }
-    }
+  it("keeps worker/full production rollout independent from T6 crafting", () => {
+    expect(PRODUCTION_CONTENT_TIERS).toEqual([3, 4, 5]);
+    expect(CRAFTING_CONTENT_TIERS).toEqual([3, 4, 5, 6]);
   });
 
-  it("exposes standard weapon and armor recipes for the highest authored complete tier", () => {
-    const highestAuthoredTier = Math.max(...PRODUCTION_CONTENT_TIERS);
+  it("exposes conventional T6 weapon and armor recipes", () => {
+    const highestCraftingTier = Math.max(...CRAFTING_CONTENT_TIERS);
     const recipes = EQUIPMENT_CRAFT_RECIPES.filter(
-      (recipe) => recipe.tier === highestAuthoredTier,
+      (recipe) => recipe.tier === highestCraftingTier,
     );
 
+    expect(highestCraftingTier).toBe(6);
     expect(recipes.map((recipe) => recipe.outputItemId)).toEqual(expect.arrayContaining([
-      `item_weapon_sword_t${String(highestAuthoredTier)}_broadsword`,
-      `item_weapon_bow_t${String(highestAuthoredTier)}_longbow`,
-      `item_weapon_staff_t${String(highestAuthoredTier)}_infernal`,
-      `item_weapon_gloves_t${String(highestAuthoredTier)}_spiked_gauntlets`,
-      `item_weapon_dagger_t${String(highestAuthoredTier)}_pair`,
-      `item_shield_t${String(highestAuthoredTier)}_reinforced`,
-      `item_helmet_t${String(highestAuthoredTier)}_reinforced`,
-      `item_armor_t${String(highestAuthoredTier)}_leather`,
-      `item_boots_t${String(highestAuthoredTier)}_leather`,
+      "item_weapon_sword_t6_broadsword",
+      "item_weapon_bow_t6_longbow",
+      "item_weapon_staff_t6_infernal",
+      "item_weapon_gloves_t6_spiked_gauntlets",
+      "item_weapon_dagger_t6_pair",
+      "item_shield_t6_reinforced",
+      "item_helmet_t6_reinforced",
+      "item_armor_t6_leather",
+      "item_boots_t6_leather",
     ]));
     expect(recipes).toHaveLength(9);
   });
