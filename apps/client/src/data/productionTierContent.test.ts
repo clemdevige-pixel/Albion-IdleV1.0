@@ -16,7 +16,8 @@ import {
 
 describe("production tier content contract", () => {
   it("keeps every authored gathering tier complete without requiring refining rollout", () => {
-    expect(GATHERING_CONTENT_TIERS).toContain(6);
+    expect(GATHERING_CONTENT_TIERS).toContain(7);
+    expect(REFINING_CONTENT_TIERS).not.toContain(7);
 
     for (const familyId of PRODUCTION_FAMILY_IDS) {
       const family = getProductionFamilyDefinition(familyId);
