@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   GATHERING_CONTENT_TIERS,
-  PRODUCTION_CONTENT_TIERS,
+  REFINING_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
 } from "./productionFamilyCatalog.js";
@@ -45,10 +45,12 @@ describe("item visual content catalog", () => {
     }
   });
 
-  it("derives refined resource visuals only for complete production tiers", () => {
+  it("derives refined resource visuals for every authored refining tier", () => {
+    expect(REFINING_CONTENT_TIERS).toContain(6);
+
     for (const familyId of PRODUCTION_FAMILY_IDS) {
       const family = getProductionFamilyDefinition(familyId);
-      for (const tier of PRODUCTION_CONTENT_TIERS) {
+      for (const tier of REFINING_CONTENT_TIERS) {
         const recipe = getProductionRefiningRecipe(familyId, tier);
         expect(PRODUCTION_RESOURCE_VISUALS[recipe.outputItemId]).toEqual({
           name: recipe.name,
