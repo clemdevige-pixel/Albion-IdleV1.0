@@ -1,4 +1,4 @@
-import { World, createRuntimeServices } from "@game/core";
+import { EventBus, World, createRuntimeServices } from "@game/core";
 import {
   AbilityManager,
   AutoAttackManager,
@@ -16,6 +16,7 @@ import {
   TargetManager,
   TargetValidator,
   createDefaultStatRegistry,
+  type DamageEventMap,
   type MasteryId,
   type StatId,
   type ZoneDefinitionId,
@@ -66,6 +67,12 @@ export interface CombatRuntimeBenchmarkResult {
   readonly magicResistance: number;
   readonly potionsUsed: number;
   readonly masteryLevel: number;
+  /** Actual post-mitigation, non-overkill damage dealt by the hero during the benchmark. */
+  readonly damageDealt: number;
+  /** Actual post-mitigation, non-overkill damage received by the hero during the benchmark. */
+  readonly damageReceived: number;
+  /** Observed hero damage per elapsed combat second. Diagnostic only; never used by runtime balance. */
+  readonly observedDps: number;
 }
 
 function equipItem(
@@ -133,6 +140,8 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   const world = new World(createRuntimeServices());
   const statsManager = new StatsManager(world, createDefaultStatRegistry());
   const damageManager = new DamageManager(world, statsManager);
+  const damageEventBus = new EventBus<DamageEventMap>();
+  damageManager.setEventBus(damageEventBus);
   const deathManager = new DeathManager(world, damageManager);
   const targetManager = new TargetManager(world, new TargetValidator(world));
   const autoAttackManager = new AutoAttackManager(world, targetManager, statsManager);
@@ -156,6 +165,13 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   );
   inventoryManager.createInventory(heroId, 32);
   equipmentManager.attachEquipment(heroId);
+
+  let damageDealt = 0;
+  let damageReceived = 0;
+  damageEventBus.subscribe("DamageDealt", (event) => {
+    if (event.source === heroId) damageDealt += event.finalDamage;
+    if (event.target === heroId) damageReceived += event.finalDamage;
+  });
 
   const masteryLevel = seedMasteryLevel(input, masteryService, experienceService);
   const enchantment = input.enchantment ?? 0;
@@ -251,11 +267,12 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   }
 
   const health = damageManager.getHealth(heroId);
+  const seconds = Number((ticks * DT).toFixed(1));
   return {
     label: input.label,
     weaponItemId: input.weaponItemId,
     clear: finishedSegment && !defeated,
-    seconds: Number((ticks * DT).toFixed(1)),
+    seconds,
     hpPercent: Number((segmentEndHpPercent ?? ((health.currentHealth / health.maxHealth) * 100)).toFixed(1)),
     encounterReached: encounterIndex + 1,
     maxHealth: health.maxHealth,
@@ -263,5 +280,8 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     magicResistance: statsManager.getStat(heroId, STAT_MAGIC_RESISTANCE).computed,
     potionsUsed,
     masteryLevel,
+    damageDealt: Number(damageDealt.toFixed(1)),
+    damageReceived: Number(damageReceived.toFixed(1)),
+    observedDps: seconds > 0 ? Number((damageDealt / seconds).toFixed(1)) : 0,
   };
 }
