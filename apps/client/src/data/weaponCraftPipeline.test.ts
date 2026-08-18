@@ -10,10 +10,11 @@ import {
 } from "./weaponContentCatalog.js";
 
 const STANDARD_SPECIALIZATIONS = [
-  ["item_weapon_sword_t3_broadsword", "item_weapon_sword_t4_broadsword", "item_weapon_sword_t5_broadsword"],
-  ["item_weapon_bow_t3_longbow", "item_weapon_bow_t4_longbow", "item_weapon_bow_t5_longbow"],
-  ["item_weapon_staff_t3_infernal", "item_weapon_staff_t4_infernal", "item_weapon_staff_t5_infernal"],
-  ["item_weapon_gloves_t3_spiked_gauntlets", "item_weapon_gloves_t4_spiked_gauntlets", "item_weapon_gloves_t5_spiked_gauntlets"],
+  ["item_weapon_sword_t3_broadsword", "item_weapon_sword_t4_broadsword", "item_weapon_sword_t5_broadsword", "item_weapon_sword_t6_broadsword"],
+  ["item_weapon_bow_t3_longbow", "item_weapon_bow_t4_longbow", "item_weapon_bow_t5_longbow", "item_weapon_bow_t6_longbow"],
+  ["item_weapon_staff_t3_infernal", "item_weapon_staff_t4_infernal", "item_weapon_staff_t5_infernal", "item_weapon_staff_t6_infernal"],
+  ["item_weapon_gloves_t3_spiked_gauntlets", "item_weapon_gloves_t4_spiked_gauntlets", "item_weapon_gloves_t5_spiked_gauntlets", "item_weapon_gloves_t6_spiked_gauntlets"],
+  ["item_weapon_dagger_t3_pair", "item_weapon_dagger_t4_pair", "item_weapon_dagger_t5_pair", "item_weapon_dagger_t6_pair"],
 ] as const;
 
 describe("weapon craft pipeline", () => {
@@ -33,42 +34,29 @@ describe("weapon craft pipeline", () => {
     }
   });
 
-  it("requires exactly the same-specialization T3 predecessor for every standard T4", () => {
-    for (const [t3ItemId, t4ItemId] of STANDARD_SPECIALIZATIONS) {
-      expect(resolveWeaponTier(t4ItemId)).toBe(4);
-      expect(resolvePreviousWeaponTierItemId(t4ItemId)).toBe(t3ItemId);
+  it("requires the same-specialization predecessor for every standard tier after T3", () => {
+    for (const specialization of STANDARD_SPECIALIZATIONS) {
+      for (let index = 1; index < specialization.length; index += 1) {
+        const previousItemId = specialization[index - 1];
+        const itemId = specialization[index];
+        const tier = index + 3;
 
-      const recipe = STANDARD_WEAPON_CRAFT_RECIPES.find(
-        (entry) => entry.outputItemId === t4ItemId,
-      );
-      expect(recipe).toBeDefined();
+        expect(resolveWeaponTier(itemId)).toBe(tier);
+        expect(resolvePreviousWeaponTierItemId(itemId)).toBe(previousItemId);
 
-      const equipmentRequirements = recipe?.requirements.filter((entry) =>
-        entry.itemId.startsWith("item_weapon_"),
-      ) ?? [];
-      expect(equipmentRequirements).toEqual([
-        { itemId: t3ItemId, quantity: 1 },
-      ]);
-    }
-  });
+        const recipe = STANDARD_WEAPON_CRAFT_RECIPES.find(
+          (entry) => entry.outputItemId === itemId,
+        );
+        expect(recipe).toBeDefined();
 
-  it("requires exactly the same-specialization T4 predecessor for every standard T5", () => {
-    for (const [, t4ItemId, t5ItemId] of STANDARD_SPECIALIZATIONS) {
-      expect(resolveWeaponTier(t5ItemId)).toBe(5);
-      expect(resolvePreviousWeaponTierItemId(t5ItemId)).toBe(t4ItemId);
-
-      const recipe = STANDARD_WEAPON_CRAFT_RECIPES.find(
-        (entry) => entry.outputItemId === t5ItemId,
-      );
-      expect(recipe).toBeDefined();
-
-      const equipmentRequirements = recipe?.requirements.filter((entry) =>
-        entry.itemId.startsWith("item_weapon_"),
-      ) ?? [];
-      expect(equipmentRequirements).toEqual([
-        { itemId: t4ItemId, quantity: 1 },
-      ]);
-      expect(recipe?.requirements.some((entry) => entry.itemId.endsWith("_t5"))).toBe(true);
+        const equipmentRequirements = recipe?.requirements.filter((entry) =>
+          entry.itemId.startsWith("item_weapon_"),
+        ) ?? [];
+        expect(equipmentRequirements).toEqual([
+          { itemId: previousItemId, quantity: 1 },
+        ]);
+        expect(recipe?.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier)}`))).toBe(true);
+      }
     }
   });
 
