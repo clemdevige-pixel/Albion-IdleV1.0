@@ -18,6 +18,43 @@ They never grant hidden combat bonuses.
 
 ---
 
+# Family-First Constraint
+
+Weapon identity is authored family first, specialization second.
+
+The first two active abilities are shared by every specialization inside a weapon family. Therefore the family carries most of the gameplay identity and usually most of the natural content role.
+
+A specialization signature ability may shift the family's center of gravity, but it should normally remain an adjacent variation rather than a completely different archetype.
+
+Default rule:
+
+Family Profile
+
+↓
+
+Dominant gameplay identity and natural content role
+
+↓
+
+Specialization Signature
+
+↓
+
+Minor or moderate shift in emphasis
+
+A radical role change is allowed only as an explicit transformative exception when the signature ability genuinely changes how the weapon performs in content. It must never be assumed merely to create variety.
+
+Examples:
+
+- Bow family may naturally favor repeatable ranged clearing.
+- Longbow may lean further into Fame farming and burst.
+- Badon may redirect part of that same ranged foundation toward control and Dungeon value.
+- Both must still feel and benchmark like members of the same Bow family.
+
+Benchmarking must therefore check family coherence before treating each specialization as an unrelated archetype.
+
+---
+
 # Two-Axis Profile
 
 Every weapon specialization is described through two complementary axes.
@@ -54,6 +91,8 @@ Future content may introduce new roles without changing the underlying principle
 
 Each weapon has one Primary Content Role and may have one Secondary Content Role.
 
+The specialization role must remain coherent with its family unless a transformative signature exception has been deliberately authored.
+
 ---
 
 # Core Balance Rule
@@ -84,6 +123,14 @@ The role must emerge naturally from existing authored weapon data:
 
 ## Broadsword
 
+Family:
+
+Sword
+
+Specialization Shift:
+
+Moderate
+
 Gameplay Profile:
 
 Bruiser / Execute
@@ -103,6 +150,14 @@ Reliable all-round progression weapon with strong finishing pressure. It should 
 ---
 
 ## Longbow
+
+Family:
+
+Bow
+
+Specialization Shift:
+
+Minor
 
 Gameplay Profile:
 
@@ -124,6 +179,14 @@ Efficient repeatable PvE clear with low downtime. It should convert ordinary wor
 
 ## Badon
 
+Family:
+
+Bow
+
+Specialization Shift:
+
+Moderate
+
 Gameplay Profile:
 
 Control / DPS
@@ -138,11 +201,19 @@ General Progression
 
 Balance Expectation:
 
-Control-oriented PvE weapon that gains value across chained or dangerous encounters. It should be particularly comfortable in dungeons without leading pure Fame/hour or boss-DPS benchmarks.
+Control-oriented Bow specialization that keeps the family's ranged-clear foundation but redirects part of its value toward chained or dangerous dungeon encounters.
 
 ---
 
 ## Infernal Staff
+
+Family:
+
+Fire Staff
+
+Specialization Shift:
+
+Minor
 
 Gameplay Profile:
 
@@ -164,6 +235,14 @@ Sustained damage weapon rewarded by targets that live long enough for burns and 
 
 ## Spiked Gauntlets
 
+Family:
+
+Gloves
+
+Specialization Shift:
+
+Minor
+
 Gameplay Profile:
 
 Burst / Control
@@ -183,6 +262,14 @@ Fast active-clear weapon combining burst and brief control. It should excel at d
 ---
 
 ## Dagger Pair
+
+Family:
+
+Dagger
+
+Specialization Shift:
+
+Minor
 
 Gameplay Profile:
 
@@ -206,12 +293,15 @@ Dedicated single-target payoff weapon built around setup into assassination. It 
 
 Weapon benchmarks must use the profile as interpretation context.
 
-A benchmark report should answer two separate questions:
+A benchmark report should answer three separate questions:
 
-1. Does the weapon perform correctly inside its intended role?
-2. Does it remain within acceptable global bounds outside that role?
+1. Does the specialization remain coherent with its family profile?
+2. Does the weapon perform correctly inside its intended role?
+3. Does it remain within acceptable global bounds outside that role?
 
-Primary-role performance is the main balancing target.
+Family coherence is checked before specialization optimization.
+
+Primary-role performance is the main specialization balancing target.
 
 Secondary-role performance is allowed to be competitive but should not usually dominate specialists.
 
@@ -223,7 +313,7 @@ No weapon should become the best answer to every content type.
 
 # New Weapon Authoring Rule
 
-When a new weapon is requested with a gameplay identity and/or content role, the AI must infer a coherent weapon package from that information before asking for additional specifications.
+When a new weapon is requested with a gameplay identity and/or content role, the AI must first resolve the owning family profile, then infer a coherent specialization package from that family plus the requested signature direction.
 
 The AI should infer, where possible:
 
@@ -236,23 +326,31 @@ The AI should infer, where possible:
 - intended weaknesses
 - relevant benchmark scenarios
 
-Questions are required only when an ambiguity would materially change the weapon identity or conflict with an existing game rule.
+Questions are required only when an ambiguity would materially change the weapon identity, conflict with the family profile, or conflict with an existing game rule.
 
 The default workflow is therefore:
 
-Role and gameplay intent
+Family identity and natural role
 
 ↓
 
-Infer strengths and weaknesses
+Requested specialization intent
 
 ↓
 
-Design mechanics and cadence
+Infer the allowed shift from the family baseline
+
+↓
+
+Design signature mechanics and cadence
 
 ↓
 
 Author stats and abilities
+
+↓
+
+Benchmark family coherence
 
 ↓
 
@@ -290,7 +388,7 @@ Weapon profiles never grant hidden runtime bonuses.
 
 Rule 03
 
-A weapon is balanced first against the expectations of its primary role, then against global guardrails.
+A weapon is balanced first against the expectations of its family and primary role, then against global guardrails.
 
 Rule 04
 
@@ -306,7 +404,15 @@ Future content roles may be added without changing combat architecture.
 
 Rule 07
 
-New weapon design begins from role and gameplay intent, not from copying another weapon's numbers.
+New weapon design begins from family identity plus specialization intent, not from copying another weapon's numbers.
+
+Rule 08
+
+Specializations sharing the same family must not diverge radically by default because their shared abilities carry most of the gameplay identity.
+
+Rule 09
+
+A transformative specialization role shift requires an explicitly authored signature mechanic that genuinely changes content performance.
 
 ---
 
