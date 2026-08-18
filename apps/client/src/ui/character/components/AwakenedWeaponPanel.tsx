@@ -1,10 +1,5 @@
-import { useMemo, useState } from "react";
-import {
-  DEFAULT_AWAKENED_WEAPON_BALANCE,
-  deriveAwakenedWeaponState,
-  getEffectiveCooldownReductionPercent,
-  type AwakenedTraitId,
-} from "@game/gameplay";
+import { useState } from "react";
+import type { AwakenedTraitId } from "@game/gameplay";
 import { TransactionConfirmModal } from "../../../panels/TransactionConfirmModal";
 import { useGameBridge, useGameServices } from "../../../state/GameContext";
 import "./awakenedWeaponPanel.css";
@@ -28,17 +23,17 @@ function formatNumber(value: number, maximumFractionDigits = 2): string {
   return value.toLocaleString("fr-FR", { maximumFractionDigits });
 }
 
-function formatTraitValue(traitId: AwakenedTraitId, value: number): string {
-  if (traitId === "item_power") return `+${formatNumber(value, 0)} IP`;
-  if (traitId === "damage" || traitId === "ability_power") return `+${formatNumber(value)}%`;
-  if (traitId === "cooldown_reduction") {
-    const effective = getEffectiveCooldownReductionPercent(
-      value,
-      DEFAULT_AWAKENED_WEAPON_BALANCE,
-    );
-    return `+${formatNumber(effective)}%`;
+function formatTraitValue(
+  traitId: AwakenedTraitId,
+  value: number,
+  resolveDisplayValue: (traitId: AwakenedTraitId, value: number) => number,
+): string {
+  const displayed = resolveDisplayValue(traitId, value);
+  if (traitId === "item_power") return `+${formatNumber(displayed, 0)} IP`;
+  if (traitId === "damage" || traitId === "ability_power" || traitId === "cooldown_reduction") {
+    return `+${formatNumber(displayed)}%`;
   }
-  return `+${formatNumber(value)}`;
+  return `+${formatNumber(displayed)}`;
 }
 
 export function AwakenedWeaponPanel(): JSX.Element | null {
@@ -50,12 +45,15 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   const state = equippedWeapon?.enchantment === 4 && equippedWeapon.instanceId !== undefined
     ? services.awakenedWeaponService.getState(equippedWeapon.instanceId)
     : undefined;
-  const derived = useMemo(
-    () => state === undefined
-      ? undefined
-      : deriveAwakenedWeaponState(state, DEFAULT_AWAKENED_WEAPON_BALANCE),
-    [state],
-  );
+  const derived = equippedWeapon?.instanceId === undefined
+    ? undefined
+    : services.awakenedWeaponService.getDerivedState(equippedWeapon.instanceId);
+  const displayTraitValue = (traitId: AwakenedTraitId, value: number): string =>
+    formatTraitValue(
+      traitId,
+      value,
+      (id, storedValue) => services.awakenedWeaponService.getDisplayTraitValue(id, storedValue),
+    );
 
   if (equippedWeapon?.enchantment !== 4) return null;
 
@@ -120,7 +118,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
                 {trait !== undefined ? (
                   <>
                     <strong>{TRAIT_LABELS[trait.traitId]}</strong>
-                    <span>{formatTraitValue(trait.traitId, trait.value)}</span>
+                    <span>{displayTraitValue(trait.traitId, trait.value)}</span>
                   </>
                 ) : unlocked ? (
                   <strong>Slot disponible</strong>
@@ -165,7 +163,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
                 onClick={() => { services.resolveAwakenedTraitOffer(proposal.traitId); }}
               >
                 <span>{TRAIT_LABELS[proposal.traitId]}</span>
-                <strong>{formatTraitValue(proposal.traitId, proposal.finalGain)}</strong>
+                <strong>{displayTraitValue(proposal.traitId, proposal.finalGain)}</strong>
                 {proposal.critical && <em>CRIT ×2</em>}
               </button>
             ))}
