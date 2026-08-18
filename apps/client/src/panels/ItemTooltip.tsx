@@ -1,4 +1,4 @@
-import { useGameBridge } from "../state/GameContext";
+import { useGameBridge, useGameServices } from "../state/GameContext";
 import {
   getEnchantmentFrameClass,
   getItemDefinition,
@@ -8,7 +8,9 @@ import {
 import {
   getEnchantmentItemPowerBonus,
   getEnchantmentStatMultiplier,
+  type AwakenedTraitId,
   type EnchantmentLevel,
+  type ItemInstanceId,
 } from "@game/gameplay";
 import {
   getEffectiveItemPower,
@@ -32,9 +34,33 @@ const STAT_LABELS: Readonly<Record<string, string>> = {
   stat_max_health: "Santé maximale",
 };
 
+const AWAKENED_TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
+  item_power: "Item Power",
+  damage: "Dégâts",
+  ability_power: "Puissance des compétences",
+  cooldown_reduction: "Réduction des temps de recharge",
+  max_health: "Points de vie",
+  armor: "Armure",
+  magic_resistance: "Résistance magique",
+  fame_bonus: "Bonus de Fame",
+};
+
 function formatStatValue(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   return rounded.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+}
+
+function formatAwakenedTraitValue(traitId: AwakenedTraitId, value: number): string {
+  if (traitId === "item_power") return `+${formatStatValue(value)} IP`;
+  if (
+    traitId === "damage"
+    || traitId === "ability_power"
+    || traitId === "cooldown_reduction"
+    || traitId === "fame_bonus"
+  ) {
+    return `+${formatStatValue(value)}%`;
+  }
+  return `+${formatStatValue(value)}`;
 }
 
 export interface ItemTooltipProps {
@@ -52,6 +78,7 @@ export function ItemTooltip({
   enchantmentOverride,
 }: ItemTooltipProps): JSX.Element {
   const state = useGameBridge();
+  const services = useGameServices();
   const persistedEnchantment = instanceId === undefined
     ? 0
     : state.inventory.slots.find((slot) => slot.instanceId === instanceId)?.enchantment
@@ -95,6 +122,17 @@ export function ItemTooltip({
   const durability = instanceId === undefined
     ? undefined
     : state.repair.items.find((item) => item.instanceId === instanceId);
+  const awakenedState = enchantment === 4
+    && definition?.slot === "weapon"
+    && instanceId !== undefined
+    ? services.awakenedWeaponService.getState(instanceId as ItemInstanceId)
+    : undefined;
+  const awakenedTraits = awakenedState?.awakened === true
+    ? awakenedState.traits.map((trait) => ({
+      traitId: trait.traitId,
+      value: services.awakenedWeaponService.getDisplayTraitValue(trait.traitId, trait.value),
+    }))
+    : [];
   const consumableDescription = itemId === "item_health_potion"
     ? `Restaure ${String(state.consumables.healthPotionHealPercent)}% des PV maximum. Recharge : ${String(state.consumables.healthPotionCooldown)} s.`
     : undefined;
@@ -191,6 +229,21 @@ export function ItemTooltip({
                 )}
             </div>
           )}
+        </div>
+      )}
+
+      {awakenedState !== undefined && (
+        <div className="item-tooltip__stats">
+          <div>
+            <span>Éveil .4</span>
+            <strong>{awakenedState.awakened ? `Strain ${String(awakenedState.strain)}` : "Non éveillée"}</strong>
+          </div>
+          {awakenedTraits.map((trait) => (
+            <div key={trait.traitId}>
+              <span>{AWAKENED_TRAIT_LABELS[trait.traitId]}</span>
+              <strong>{formatAwakenedTraitValue(trait.traitId, trait.value)}</strong>
+            </div>
+          ))}
         </div>
       )}
 
