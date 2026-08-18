@@ -52,30 +52,34 @@ function equipmentFor(weaponItemId: string): readonly string[] {
 
 describe("T6 dungeon optimization sweep", () => {
   it("prints the T6.3++ optimization boundary across all faction dungeons", () => {
-    const rows = DUNGEONS.flatMap((dungeonDefinitionId) => PROBES.flatMap((probe) => WEAPONS.map((weaponItemId) => {
-      const result = runCombatRuntimeBenchmark({
-        label: `${dungeonDefinitionId}_${probe.id}`,
-        weaponItemId,
-        zoneDefId: WORLD_ZONE_IDS.ashenpeak,
-        segmentIndex: 9,
-        equipmentItemIds: equipmentFor(weaponItemId),
-        enchantment: probe.enchantment,
-        masteryLevel: probe.mastery,
-        useHealthPotions: probe.potions,
-        dungeonDefinitionId,
-      });
-      return {
-        dungeon: dungeonDefinitionId.replace("dungeon_", "").replace("_t6", ""),
-        probe: probe.id,
-        weapon: weaponItemId.replace("item_weapon_", "").replace("_t6_", " "),
-        clear: result.clear,
-        hpPercent: result.hpPercent,
-        seconds: result.seconds,
-        encounters: result.encounterReached,
-        potionsUsed: result.potionsUsed,
-        mastery: result.masteryLevel,
-      };
-    }))));
+    const rows = DUNGEONS.flatMap((dungeonDefinitionId) =>
+      PROBES.flatMap((probe) =>
+        WEAPONS.map((weaponItemId) => {
+          const result = runCombatRuntimeBenchmark({
+            label: `${dungeonDefinitionId}_${probe.id}`,
+            weaponItemId,
+            zoneDefId: WORLD_ZONE_IDS.ashenpeak,
+            segmentIndex: 9,
+            equipmentItemIds: equipmentFor(weaponItemId),
+            enchantment: probe.enchantment,
+            masteryLevel: probe.mastery,
+            useHealthPotions: probe.potions,
+            dungeonDefinitionId,
+          });
+          return {
+            dungeon: dungeonDefinitionId.replace("dungeon_", "").replace("_t6", ""),
+            probe: probe.id,
+            weapon: weaponItemId.replace("item_weapon_", "").replace("_t6_", " "),
+            clear: result.clear,
+            hpPercent: result.hpPercent,
+            seconds: result.seconds,
+            encounters: result.encounterReached,
+            potionsUsed: result.potionsUsed,
+            mastery: result.masteryLevel,
+          };
+        }),
+      ),
+    );
 
     console.table(rows);
     console.log("[T6_DUNGEON_OPTIMIZATION_SWEEP]", JSON.stringify(rows, null, 2));
