@@ -34,6 +34,24 @@ describe("awakened weapon progression", () => {
     expect(getAwakenedActionCost({ ...t8, strain: 100 }, balance).attunement).toBeCloseTo(95_000, -1);
   });
 
+  it("uses tier-linear base Silver costs and the validated Silver Strain curve", () => {
+    const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
+
+    expect(balance.tiers[4].baseSilverCost).toBe(12_000);
+    expect(balance.tiers[5].baseSilverCost).toBe(24_000);
+    expect(balance.tiers[6].baseSilverCost).toBe(36_000);
+    expect(balance.tiers[7].baseSilverCost).toBe(48_000);
+    expect(balance.tiers[8].baseSilverCost).toBe(60_000);
+
+    const t8 = createFreshAwakenedWeaponState("weapon_t8_silver" as ItemInstanceId, 8);
+    expect(getAwakenedActionCost(t8, balance).silver).toBe(60_000);
+    expect(getAwakenedActionCost({ ...t8, strain: 10 }, balance).silver).toBe(78_000);
+    expect(getAwakenedActionCost({ ...t8, strain: 30 }, balance).silver).toBe(150_000);
+    expect(getAwakenedActionCost({ ...t8, strain: 50 }, balance).silver).toBe(270_000);
+    expect(getAwakenedActionCost({ ...t8, strain: 75 }, balance).silver).toBe(487_500);
+    expect(getAwakenedActionCost({ ...t8, strain: 100 }, balance).silver).toBe(780_000);
+  });
+
   it("grows Attunement storage by 2.5% of initial capacity per Strain", () => {
     const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
     const t8 = createFreshAwakenedWeaponState("weapon_t8_cap" as ItemInstanceId, 8);
