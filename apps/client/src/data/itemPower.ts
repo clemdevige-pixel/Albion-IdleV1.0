@@ -79,6 +79,18 @@ export const YELLOW_WORLD_ITEM_POWER_PROGRESSION = {
   zoneEnd: [640, 680, 720, 760, 800],
 } as const satisfies WorldItemPowerProgression;
 
+/**
+ * Provisional Orange/T6 recommendation envelope.
+ * This exists so every implemented world band is fully consumable by the
+ * Dashboard/World UI. Final T6 breakpoints remain authored by the dedicated
+ * runtime balance pass once T6 equipment is present; these recommendations
+ * must not be treated as the final T6.3 + potion calibration.
+ */
+export const ORANGE_WORLD_ITEM_POWER_PROGRESSION = {
+  zoneStart: [800, 840, 880, 920, 960],
+  zoneEnd: [840, 880, 920, 960, 1000],
+} as const satisfies WorldItemPowerProgression;
+
 /** Backwards-compatible export for the existing Blue-world balance tests. */
 export const ZONE_RECOMMENDED_ITEM_POWER =
   BLUE_WORLD_ITEM_POWER_PROGRESSION.zoneStart;
@@ -88,6 +100,7 @@ const WORLD_ITEM_POWER_PROGRESSION: Partial<
 > = {
   blue: BLUE_WORLD_ITEM_POWER_PROGRESSION,
   yellow: YELLOW_WORLD_ITEM_POWER_PROGRESSION,
+  orange: ORANGE_WORLD_ITEM_POWER_PROGRESSION,
 };
 
 function getWorldItemPowerProgression(
