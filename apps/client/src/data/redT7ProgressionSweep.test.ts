@@ -97,6 +97,10 @@ describe("Red T7 runtime progression sweep", () => {
         zone: checkpoint.zone,
         weapon: weaponItemId.replace("item_weapon_", "").replace(`_t${checkpoint.tier}_`, " "),
         clear: result.clear,
+        seconds: result.seconds,
+        damageDealt: result.damageDealt,
+        damageReceived: result.damageReceived,
+        observedDps: result.observedDps,
         hpPercent: result.hpPercent,
         potions: result.potionsUsed,
         encounters: result.encounterReached,
@@ -114,6 +118,9 @@ describe("Red T7 runtime progression sweep", () => {
 
     expect(rows).toHaveLength(CHECKPOINTS.length * 5);
     expect(rows.every((row) => Number.isFinite(row.hpPercent))).toBe(true);
+    expect(rows.every((row) => Number.isFinite(row.damageDealt) && row.damageDealt >= 0)).toBe(true);
+    expect(rows.every((row) => Number.isFinite(row.damageReceived) && row.damageReceived >= 0)).toBe(true);
+    expect(rows.every((row) => Number.isFinite(row.observedDps) && row.observedDps >= 0)).toBe(true);
     expect(rows.every((row) => row.encounters >= 1 && row.encounters <= 5)).toBe(true);
   });
 });
