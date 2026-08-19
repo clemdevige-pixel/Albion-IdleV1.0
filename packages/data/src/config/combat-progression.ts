@@ -41,34 +41,45 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 6.5, healthEnd: 6.5, damageStart: 3.25, damageEnd: 3.3, defenseStart: 3, defenseEnd: 3, defenseModel: "rank_parity" },
 ] as const;
 
+/**
+ * Orange tier-gate pass.
+ * Cinderwood is deliberately separated from T5.3 while the remainder of the
+ * band keeps a monotone rise. Values are authored at world level rather than
+ * compensated per weapon.
+ */
 export const ORANGE_WORLD_COMBAT_CURVE = [
-  { healthStart: 6.8, healthEnd: 7.15, damageStart: 3.35, damageEnd: 3.45, defenseStart: 3.1, defenseEnd: 3.2, defenseModel: "rank_parity" },
-  { healthStart: 7.4, healthEnd: 7.8, damageStart: 3.5, damageEnd: 3.6, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
-  { healthStart: 8.1, healthEnd: 8.55, damageStart: 3.65, damageEnd: 3.75, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
-  { healthStart: 8.9, healthEnd: 9.45, damageStart: 3.8, damageEnd: 3.9, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
-  { healthStart: 9.8, healthEnd: 10.5, damageStart: 3.95, damageEnd: 4.1, defenseStart: 4.1, defenseEnd: 4.35, defenseModel: "rank_parity" },
-] as const;
-
-export const RED_WORLD_COMBAT_CURVE = [
-  { healthStart: 10.9, healthEnd: 11.5, damageStart: 4.15, damageEnd: 4.25, defenseStart: 4.5, defenseEnd: 4.65, defenseModel: "rank_parity" },
-  { healthStart: 11.9, healthEnd: 12.6, damageStart: 4.3, damageEnd: 4.4, defenseStart: 4.8, defenseEnd: 4.95, defenseModel: "rank_parity" },
-  { healthStart: 13.0, healthEnd: 13.8, damageStart: 4.45, damageEnd: 4.55, defenseStart: 5.1, defenseEnd: 5.28, defenseModel: "rank_parity" },
-  { healthStart: 14.3, healthEnd: 15.2, damageStart: 4.6, damageEnd: 4.7, defenseStart: 5.45, defenseEnd: 5.65, defenseModel: "rank_parity" },
-  { healthStart: 15.8, healthEnd: 16.8, damageStart: 4.75, damageEnd: 4.9, defenseStart: 5.85, defenseEnd: 6.1, defenseModel: "rank_parity" },
+  { healthStart: 6.8, healthEnd: 7.15, damageStart: 3.55, damageEnd: 3.7, defenseStart: 3.1, defenseEnd: 3.2, defenseModel: "rank_parity" },
+  { healthStart: 7.4, healthEnd: 7.8, damageStart: 3.7, damageEnd: 3.8, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
+  { healthStart: 8.1, healthEnd: 8.55, damageStart: 3.85, damageEnd: 3.95, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
+  { healthStart: 8.9, healthEnd: 9.45, damageStart: 4.0, damageEnd: 4.1, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
+  { healthStart: 9.8, healthEnd: 10.5, damageStart: 4.15, damageEnd: 4.3, defenseStart: 4.1, defenseEnd: 4.35, defenseModel: "rank_parity" },
 ] as const;
 
 /**
- * Provisional T8 envelope.
- *
- * Black remains provisional until the full T4-T8 runtime wall pass converges.
- * Keep its difficulty authored here rather than compensating per weapon or zone.
+ * Red tier-gate pass.
+ * The T7.1/T7.2 walls are tightened enough to prevent lower enchantment potion
+ * clears while preserving an authored monotone world curve.
+ */
+export const RED_WORLD_COMBAT_CURVE = [
+  { healthStart: 10.9, healthEnd: 11.5, damageStart: 4.35, damageEnd: 4.45, defenseStart: 4.5, defenseEnd: 4.65, defenseModel: "rank_parity" },
+  { healthStart: 11.9, healthEnd: 12.6, damageStart: 4.5, damageEnd: 4.6, defenseStart: 4.8, defenseEnd: 4.95, defenseModel: "rank_parity" },
+  { healthStart: 13.0, healthEnd: 13.8, damageStart: 4.7, damageEnd: 4.85, defenseStart: 5.1, defenseEnd: 5.28, defenseModel: "rank_parity" },
+  { healthStart: 14.3, healthEnd: 15.2, damageStart: 4.95, damageEnd: 5.1, defenseStart: 5.45, defenseEnd: 5.65, defenseModel: "rank_parity" },
+  { healthStart: 15.8, healthEnd: 16.8, damageStart: 5.15, damageEnd: 5.3, defenseStart: 5.85, defenseEnd: 6.1, defenseModel: "rank_parity" },
+] as const;
+
+/**
+ * Black tier-gate pass.
+ * T8 must form a real gear boundary: T7.3 cannot potion-clear Blackwood S10,
+ * and T8.0/T8.1 cannot bypass later authored gates. The whole band therefore
+ * keeps a monotone envelope rather than adding per-zone or per-weapon exceptions.
  */
 export const BLACK_WORLD_COMBAT_CURVE = [
-  { healthStart: 16.9, healthEnd: 17.7, damageStart: 4.95, damageEnd: 5.05, defenseStart: 6.2, defenseEnd: 6.4, defenseModel: "rank_parity" },
-  { healthStart: 18.1, healthEnd: 19.0, damageStart: 5.1, damageEnd: 5.2, defenseStart: 6.55, defenseEnd: 6.75, defenseModel: "rank_parity" },
-  { healthStart: 19.5, healthEnd: 20.5, damageStart: 5.25, damageEnd: 5.35, defenseStart: 6.9, defenseEnd: 7.1, defenseModel: "rank_parity" },
-  { healthStart: 20.5, healthEnd: 21.5, damageStart: 5.4, damageEnd: 5.5, defenseStart: 7.2, defenseEnd: 7.4, defenseModel: "rank_parity" },
-  { healthStart: 21.8, healthEnd: 22.8, damageStart: 5.55, damageEnd: 5.7, defenseStart: 7.5, defenseEnd: 7.7, defenseModel: "rank_parity" },
+  { healthStart: 16.9, healthEnd: 17.7, damageStart: 5.7, damageEnd: 5.85, defenseStart: 6.2, defenseEnd: 6.4, defenseModel: "rank_parity" },
+  { healthStart: 18.1, healthEnd: 19.0, damageStart: 5.9, damageEnd: 6.05, defenseStart: 6.55, defenseEnd: 6.75, defenseModel: "rank_parity" },
+  { healthStart: 19.5, healthEnd: 20.5, damageStart: 6.15, damageEnd: 6.3, defenseStart: 6.9, defenseEnd: 7.1, defenseModel: "rank_parity" },
+  { healthStart: 20.5, healthEnd: 21.5, damageStart: 6.4, damageEnd: 6.55, defenseStart: 7.2, defenseEnd: 7.4, defenseModel: "rank_parity" },
+  { healthStart: 21.8, healthEnd: 22.8, damageStart: 6.65, damageEnd: 6.85, defenseStart: 7.5, defenseEnd: 7.7, defenseModel: "rank_parity" },
 ] as const;
 
 export const WORLD_ONE_COMBAT_CURVE = BLUE_WORLD_COMBAT_CURVE;
