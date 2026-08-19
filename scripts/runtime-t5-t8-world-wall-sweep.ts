@@ -9,7 +9,6 @@ type Tier = 4 | 5 | 6 | 7 | 8;
 type TargetTier = 5 | 6 | 7 | 8;
 type Enchantment = 0 | 1 | 2 | 3;
 type BandId = "yellow" | "orange" | "red" | "black";
-type Contract = "profile_potion_ok" | "potion_bridge" | "afk_clear" | "wall";
 
 const BAND_BY_TIER: Readonly<Record<TargetTier, BandId>> = {
   5: "yellow",
@@ -25,6 +24,8 @@ const WEAPON_FAMILIES = [
   ["gloves", "spiked_gauntlets"],
   ["dagger", "pair"],
 ] as const;
+
+const SEGMENTS_PER_ZONE = 10;
 
 function weaponItemIds(tier: Tier): readonly string[] {
   return WEAPON_FAMILIES.map(([family, specialization]) =>
@@ -57,14 +58,8 @@ function zoneName(zoneDefId: string): string {
   return ZONE_DEFINITIONS.find(({ id }) => String(id) === zoneDefId)?.name ?? zoneDefId;
 }
 
-interface Checkpoint {
-  readonly id: string;
-  readonly zoneIndex: 0 | 1 | 2 | 3 | 4;
-  readonly segmentIndex: number;
-  readonly gearTier: Tier;
-  readonly enchantment: Enchantment;
-  readonly masteryLevel: number;
-  readonly contract: Contract;
+function shortWeaponName(itemId: string): string {
+  return itemId.replace("item_weapon_", "").replace(/_t\d_/, " ");
 }
 
 function masteryBaseForTier(tier: TargetTier): number {
@@ -73,233 +68,219 @@ function masteryBaseForTier(tier: TargetTier): number {
   return 25 + (tier - 5) * 15;
 }
 
-function checkpointsForTier(tier: TargetTier): readonly Checkpoint[] {
+interface ZoneLoadoutExpectation {
+  readonly gearTier: Tier;
+  readonly enchantment: Enchantment;
+  readonly masteryLevel: number;
+}
+
+function expectedLoadoutForZone(tier: TargetTier, zoneIndex: number): ZoneLoadoutExpectation {
   const base = masteryBaseForTier(tier);
-  const previousTier = (tier - 1) as Tier;
-
-  return [
-    {
-      id: `t${tier}_entry_previous_tier_3`,
-      zoneIndex: 0,
-      segmentIndex: 0,
-      gearTier: previousTier,
-      enchantment: 3,
-      masteryLevel: Math.max(0, base - 2),
-      contract: "profile_potion_ok",
-    },
-    {
-      id: `t${tier}_zone1_s10_t${tier}_0`,
-      zoneIndex: 0,
-      segmentIndex: 9,
-      gearTier: tier,
-      enchantment: 0,
-      masteryLevel: base,
-      contract: "profile_potion_ok",
-    },
-    {
-      id: `t${tier}_zone2_s10_t${tier}_0`,
-      zoneIndex: 1,
-      segmentIndex: 9,
-      gearTier: tier,
-      enchantment: 0,
-      masteryLevel: base + 2,
-      contract: "profile_potion_ok",
-    },
-    {
-      id: `t${tier}_zone3_s10_t${tier}_1`,
-      zoneIndex: 2,
-      segmentIndex: 9,
-      gearTier: tier,
-      enchantment: 1,
-      masteryLevel: base + 4,
-      contract: "profile_potion_ok",
-    },
-    {
-      id: `t${tier}_zone4_s10_t${tier}_2`,
-      zoneIndex: 3,
-      segmentIndex: 9,
-      gearTier: tier,
-      enchantment: 2,
-      masteryLevel: base + 7,
-      contract: "profile_potion_ok",
-    },
-    {
-      id: `t${tier}_final_s5_t${tier}_2`,
-      zoneIndex: 4,
-      segmentIndex: 4,
-      gearTier: tier,
-      enchantment: 2,
-      masteryLevel: base + 9,
-      contract: "profile_potion_ok",
-    },
-    {
-      id: `t${tier}_final_s10_t${tier}_2_wall`,
-      zoneIndex: 4,
-      segmentIndex: 9,
-      gearTier: tier,
-      enchantment: 2,
-      masteryLevel: base + 10,
-      contract: "wall",
-    },
-    {
-      id: `t${tier}_final_s10_t${tier}_2_potion`,
-      zoneIndex: 4,
-      segmentIndex: 9,
-      gearTier: tier,
-      enchantment: 2,
-      masteryLevel: base + 10,
-      contract: "potion_bridge",
-    },
-    {
-      id: `t${tier}_final_s10_t${tier}_3_afk`,
-      zoneIndex: 4,
-      segmentIndex: 9,
-      gearTier: tier,
-      enchantment: 3,
-      masteryLevel: base + 10,
-      contract: "afk_clear",
-    },
-  ];
-}
-
-interface WeaponResult {
-  readonly weapon: string;
-  readonly clear: boolean;
-  readonly hp: number;
-  readonly seconds: number;
-  readonly potions: number;
-  readonly encounters: number;
-}
-
-function shortWeaponName(itemId: string): string {
-  return itemId.replace("item_weapon_", "").replace(/_t\d_/, " ");
-}
-
-function runCheckpoint(tier: TargetTier, checkpoint: Checkpoint) {
-  const bandId = BAND_BY_TIER[tier];
-  const zoneDefId = WORLD_ZONE_IDS_BY_BAND[bandId][checkpoint.zoneIndex];
-  if (zoneDefId === undefined) {
-    throw new Error(`Missing zone ${checkpoint.zoneIndex + 1} for ${bandId}`);
+  switch (zoneIndex) {
+    case 0:
+      return { gearTier: tier, enchantment: 0, masteryLevel: base };
+    case 1:
+      return { gearTier: tier, enchantment: 0, masteryLevel: base + 2 };
+    case 2:
+      return { gearTier: tier, enchantment: 1, masteryLevel: base + 4 };
+    case 3:
+      return { gearTier: tier, enchantment: 2, masteryLevel: base + 7 };
+    case 4:
+      return { gearTier: tier, enchantment: 2, masteryLevel: base + 10 };
+    default:
+      throw new Error(`Unexpected zone index ${String(zoneIndex)}`);
   }
+}
 
-  const useHealthPotions = checkpoint.contract === "potion_bridge";
-  const weapons = weaponItemIds(checkpoint.gearTier);
+interface SegmentRun {
+  readonly tier: TargetTier;
+  readonly band: BandId;
+  readonly zoneIndex: number;
+  readonly zone: string;
+  readonly segment: number;
+  readonly weapon: string;
+  readonly gear: string;
+  readonly mastery: number;
+  readonly clearNoPotion: boolean;
+  readonly hpNoPotion: number;
+  readonly secondsNoPotion: number;
+  readonly encountersNoPotion: number;
+  readonly clearPotion: boolean;
+  readonly hpPotion: number;
+  readonly secondsPotion: number;
+  readonly potionsUsed: number;
+  readonly encountersPotion: number;
+}
 
-  const baseline: WeaponResult[] = weapons.map((weaponItemId) => {
-    const result = runCombatRuntimeBenchmark({
-      label: checkpoint.id,
-      weaponItemId,
-      zoneDefId,
-      segmentIndex: checkpoint.segmentIndex,
-      equipmentItemIds: equipmentFor(weaponItemId, checkpoint.gearTier),
-      masteryLevel: checkpoint.masteryLevel,
-      enchantment: checkpoint.enchantment,
-      useHealthPotions,
-    });
+function runSegment(
+  tier: TargetTier,
+  zoneIndex: number,
+  segmentIndex: number,
+  weaponItemId: string,
+): SegmentRun {
+  const band = BAND_BY_TIER[tier];
+  const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
+  if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
 
-    return {
-      weapon: shortWeaponName(weaponItemId),
-      clear: result.clear,
-      hp: result.hpPercent,
-      seconds: result.seconds,
-      potions: result.potionsUsed,
-      encounters: result.encounterReached,
-    };
+  const expected = expectedLoadoutForZone(tier, zoneIndex);
+  const common = {
+    weaponItemId,
+    zoneDefId,
+    segmentIndex,
+    equipmentItemIds: equipmentFor(weaponItemId, expected.gearTier),
+    masteryLevel: expected.masteryLevel,
+    enchantment: expected.enchantment,
+  } as const;
+
+  const noPotion = runCombatRuntimeBenchmark({
+    label: `t${tier}_z${zoneIndex + 1}_s${segmentIndex + 1}_no_potion`,
+    ...common,
+    useHealthPotions: false,
   });
 
-  let potionBridged: string[] = [];
-  let unresolved: string[] = [];
-
-  if (checkpoint.contract === "profile_potion_ok") {
-    const failures = baseline.filter(({ clear }) => !clear);
-    for (const failed of failures) {
-      const weaponItemId = weapons.find((candidate) => shortWeaponName(candidate) === failed.weapon);
-      if (weaponItemId === undefined) continue;
-      const retry = runCombatRuntimeBenchmark({
-        label: `${checkpoint.id}_potion_retry`,
-        weaponItemId,
-        zoneDefId,
-        segmentIndex: checkpoint.segmentIndex,
-        equipmentItemIds: equipmentFor(weaponItemId, checkpoint.gearTier),
-        masteryLevel: checkpoint.masteryLevel,
-        enchantment: checkpoint.enchantment,
-        useHealthPotions: true,
-      });
-      if (retry.clear) potionBridged.push(failed.weapon);
-      else unresolved.push(failed.weapon);
-    }
-  }
-
-  const clears = baseline.filter(({ clear }) => clear).length;
-  const total = baseline.length;
-  let status: "PASS" | "REVIEW";
-
-  switch (checkpoint.contract) {
-    case "profile_potion_ok":
-      status = unresolved.length === 0 ? "PASS" : "REVIEW";
-      break;
-    case "potion_bridge":
-      status = clears === total ? "PASS" : "REVIEW";
-      unresolved = baseline.filter(({ clear }) => !clear).map(({ weapon }) => weapon);
-      break;
-    case "afk_clear":
-      status = clears === total ? "PASS" : "REVIEW";
-      unresolved = baseline.filter(({ clear }) => !clear).map(({ weapon }) => weapon);
-      break;
-    case "wall":
-      status = clears < total ? "PASS" : "REVIEW";
-      break;
-  }
+  const withPotion = runCombatRuntimeBenchmark({
+    label: `t${tier}_z${zoneIndex + 1}_s${segmentIndex + 1}_potion`,
+    ...common,
+    useHealthPotions: true,
+  });
 
   return {
     tier,
-    band: bandId,
-    checkpoint: checkpoint.id,
-    contract: checkpoint.contract,
+    band,
+    zoneIndex: zoneIndex + 1,
     zone: zoneName(String(zoneDefId)),
-    segment: checkpoint.segmentIndex + 1,
-    gear: `T${checkpoint.gearTier}.${checkpoint.enchantment}`,
-    mastery: checkpoint.masteryLevel,
-    baselineClears: `${clears}/${total}`,
-    potionBridged: potionBridged.length === 0 ? "-" : potionBridged.join(", "),
-    unresolved: unresolved.length === 0 ? "-" : unresolved.join(", "),
-    status,
-    weaponResults: baseline,
+    segment: segmentIndex + 1,
+    weapon: shortWeaponName(weaponItemId),
+    gear: `T${expected.gearTier}.${expected.enchantment}`,
+    mastery: expected.masteryLevel,
+    clearNoPotion: noPotion.clear,
+    hpNoPotion: noPotion.hpPercent,
+    secondsNoPotion: noPotion.seconds,
+    encountersNoPotion: noPotion.encounterReached,
+    clearPotion: withPotion.clear,
+    hpPotion: withPotion.hpPercent,
+    secondsPotion: withPotion.seconds,
+    potionsUsed: withPotion.potionsUsed,
+    encountersPotion: withPotion.encounterReached,
   };
 }
 
+function firstWallSegment(rows: readonly SegmentRun[], potion: boolean): number | null {
+  const wall = rows.find((row) => potion ? !row.clearPotion : !row.clearNoPotion);
+  return wall?.segment ?? null;
+}
+
+function lastClearSegment(rows: readonly SegmentRun[], potion: boolean): number | null {
+  const cleared = rows.filter((row) => potion ? row.clearPotion : row.clearNoPotion);
+  return cleared.length === 0 ? null : cleared[cleared.length - 1]?.segment ?? null;
+}
+
+function fmt(segment: number | null): string {
+  return segment === null ? "-" : `S${segment}`;
+}
+
 function main(): void {
-  const rows = ([5, 6, 7, 8] as const).flatMap((tier) =>
-    checkpointsForTier(tier).map((checkpoint) => runCheckpoint(tier, checkpoint)),
-  );
-
-  console.log("[T5_T8_WORLD_WALL_SWEEP_REFERENCE]");
-  console.log({
-    purpose: "diagnostic wall inspection before semantic contracts are frozen",
-    tiers: [5, 6, 7, 8],
-    weaponsPerCheckpoint: 5,
-    profilePotionFallback: true,
-    note: "Mastery references beyond Yellow are diagnostic extrapolations, not design law.",
-  });
-
-  console.log("[T5_T8_WORLD_WALL_SWEEP_SUMMARY]");
-  console.table(rows.map(({ weaponResults: _weaponResults, ...row }) => row));
+  const rows: SegmentRun[] = [];
 
   for (const tier of [5, 6, 7, 8] as const) {
-    const tierRows = rows.filter((row) => row.tier === tier);
-    console.log(`[T${tier}_WORLD_WALL_DETAILS]`);
-    for (const row of tierRows) {
-      console.log(`${row.status} | ${row.checkpoint} | ${row.zone} S${row.segment} | ${row.gear} M${row.mastery} | ${row.contract}`);
-      console.table(row.weaponResults);
+    for (let zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
+      const expected = expectedLoadoutForZone(tier, zoneIndex);
+      for (const weaponItemId of weaponItemIds(expected.gearTier)) {
+        for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
+          rows.push(runSegment(tier, zoneIndex, segmentIndex, weaponItemId));
+        }
+      }
     }
   }
 
-  const reviews = rows.filter(({ status }) => status === "REVIEW");
-  console.log("[T5_T8_WORLD_WALL_SWEEP_RESULT]", {
-    checkpoints: rows.length,
-    pass: rows.length - reviews.length,
-    review: reviews.length,
-    reviewIds: reviews.map(({ checkpoint }) => checkpoint),
+  const locator = ([5, 6, 7, 8] as const).flatMap((tier) =>
+    Array.from({ length: 5 }, (_, zoneIndex) => {
+      const band = BAND_BY_TIER[tier];
+      const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
+      if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
+      const expected = expectedLoadoutForZone(tier, zoneIndex);
+
+      return weaponItemIds(expected.gearTier).map((weaponItemId) => {
+        const weapon = shortWeaponName(weaponItemId);
+        const weaponRows = rows.filter((row) =>
+          row.tier === tier
+          && row.zoneIndex === zoneIndex + 1
+          && row.weapon === weapon,
+        );
+
+        const firstWallNoPotion = firstWallSegment(weaponRows, false);
+        const firstWallPotion = firstWallSegment(weaponRows, true);
+        const lastClearNoPotion = lastClearSegment(weaponRows, false);
+        const lastClearPotion = lastClearSegment(weaponRows, true);
+
+        return {
+          tier,
+          band,
+          zone: zoneName(String(zoneDefId)),
+          weapon,
+          gear: `T${expected.gearTier}.${expected.enchantment}`,
+          mastery: expected.masteryLevel,
+          lastClearNoPotion: fmt(lastClearNoPotion),
+          firstWallNoPotion: fmt(firstWallNoPotion),
+          lastClearPotion: fmt(lastClearPotion),
+          firstWallPotion: fmt(firstWallPotion),
+          potionGain: (lastClearPotion ?? 0) - (lastClearNoPotion ?? 0),
+        };
+      });
+    }).flat(),
+  );
+
+  const zoneSummary = ([5, 6, 7, 8] as const).flatMap((tier) =>
+    Array.from({ length: 5 }, (_, zoneIndex) => {
+      const band = BAND_BY_TIER[tier];
+      const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
+      if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
+      const expected = expectedLoadoutForZone(tier, zoneIndex);
+      const zoneRows = locator.filter((row) => row.tier === tier && row.zone === zoneName(String(zoneDefId)));
+      const noPotionWalls = zoneRows
+        .map((row) => Number(row.firstWallNoPotion.replace("S", "")))
+        .filter(Number.isFinite);
+      const potionWalls = zoneRows
+        .map((row) => Number(row.firstWallPotion.replace("S", "")))
+        .filter(Number.isFinite);
+
+      return {
+        tier,
+        band,
+        zone: zoneName(String(zoneDefId)),
+        gear: `T${expected.gearTier}.${expected.enchantment}`,
+        mastery: expected.masteryLevel,
+        earliestWallNoPotion: noPotionWalls.length === 0 ? "-" : `S${Math.min(...noPotionWalls)}`,
+        latestWallNoPotion: noPotionWalls.length === 0 ? "-" : `S${Math.max(...noPotionWalls)}`,
+        earliestWallPotion: potionWalls.length === 0 ? "-" : `S${Math.min(...potionWalls)}`,
+        latestWallPotion: potionWalls.length === 0 ? "-" : `S${Math.max(...potionWalls)}`,
+      };
+    }),
+  );
+
+  console.log("[T5_T8_EXHAUSTIVE_WALL_SWEEP_REFERENCE]");
+  console.log({
+    tiers: [5, 6, 7, 8],
+    zonesPerTier: 5,
+    segmentsPerZone: SEGMENTS_PER_ZONE,
+    weaponsPerSegment: WEAPON_FAMILIES.length,
+    potionModesPerSegment: 2,
+    totalRuntimeRuns: rows.length * 2,
+    note: "Mastery references beyond Yellow remain diagnostic extrapolations, not frozen design law.",
+  });
+
+  console.log("[T5_T8_EXHAUSTIVE_ZONE_SUMMARY]");
+  console.table(zoneSummary);
+
+  for (const tier of [5, 6, 7, 8] as const) {
+    console.log(`[T${tier}_EXHAUSTIVE_WALL_LOCATOR]`);
+    console.table(locator.filter((row) => row.tier === tier));
+  }
+
+  console.log("[T5_T8_EXHAUSTIVE_WALL_SWEEP_RESULT]", {
+    segmentRows: rows.length,
+    runtimeRuns: rows.length * 2,
+    locatorRows: locator.length,
   });
 }
 
