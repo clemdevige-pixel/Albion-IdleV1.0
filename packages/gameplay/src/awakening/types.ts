@@ -4,12 +4,12 @@ export type AwakenedWeaponTier = 4 | 5 | 6 | 7 | 8;
 
 export type AwakenedTraitId =
   | "item_power"
-  | "damage"
+  | "auto_attack_damage"
   | "ability_power"
   | "cooldown_reduction"
   | "max_health"
-  | "armor"
-  | "magic_resistance"
+  | "defense"
+  | "life_steal"
   | "fame_bonus";
 
 export interface AwakenedTraitRollRange {
@@ -39,11 +39,12 @@ export interface AwakenedWeaponBalance {
   readonly silverGrowthPerStrain: number;
   readonly cdrAsymptotePercent: number;
   readonly cdrCurveConstant: number;
+  readonly lifeStealCapPercent: number;
 }
 
 export interface AwakenedTraitState {
   readonly traitId: AwakenedTraitId;
-  /** Accumulated authored trait value. For CDR this is hidden internal progression P. */
+  /** Accumulated authored trait value. Non-linear/capped traits are resolved at consumption time. */
   readonly value: number;
 }
 
