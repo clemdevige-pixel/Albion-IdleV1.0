@@ -19,28 +19,30 @@ const REFINED_BY_TIER = {
 } as const;
 
 type ProductionFamily = keyof (typeof REFINED_BY_TIER)[3];
-const MONO_COST_BY_SOURCE_TIER = { 3: 15, 4: 40, 5: 70, 6: 110, 7: 160 } as const;
-const SILVER_BY_SOURCE_TIER = { 3: 300, 4: 700, 5: 1500, 6: 3000, 7: 6000 } as const;
-const WORKSHOP_SILVER_BY_SOURCE_TIER = { 3: 500, 4: 1200, 5: 2500, 6: 5000, 7: 10000 } as const;
+type UpgradeSourceTier = 3 | 4 | 5 | 6 | 7;
+const UPGRADE_SOURCE_TIERS = [3, 4, 5, 6, 7] as const satisfies readonly UpgradeSourceTier[];
+const MONO_COST_BY_SOURCE_TIER = { 3: 15, 4: 40, 5: 70, 6: 110, 7: 160 } as const satisfies Record<UpgradeSourceTier, number>;
+const SILVER_BY_SOURCE_TIER = { 3: 300, 4: 700, 5: 1500, 6: 3000, 7: 6000 } as const satisfies Record<UpgradeSourceTier, number>;
+const WORKSHOP_SILVER_BY_SOURCE_TIER = { 3: 500, 4: 1200, 5: 2500, 6: 5000, 7: 10000 } as const satisfies Record<UpgradeSourceTier, number>;
 
-function singleFamilyProgression(buildingId: IslandBuildingId, family: ProductionFamily): IslandOperationalBuildingProgression {
+function singleFamilyUpgrade(sourceTier: UpgradeSourceTier, family: ProductionFamily): IslandBuildingUpgradeCost {
   return {
-    buildingId,
-    levels: [3, 4, 5, 6, 7].map((sourceTier, index) => ({
-      level: index + 1,
-      maxProductionTier: sourceTier,
-      upgradeToNext: {
-        silver: SILVER_BY_SOURCE_TIER[sourceTier as keyof typeof SILVER_BY_SOURCE_TIER],
-        requirements: [{
-          itemId: REFINED_BY_TIER[sourceTier as keyof typeof REFINED_BY_TIER][family],
-          quantity: MONO_COST_BY_SOURCE_TIER[sourceTier as keyof typeof MONO_COST_BY_SOURCE_TIER],
-        }],
-      },
-    })).concat([{ level: 6, maxProductionTier: 8 }]),
+    silver: SILVER_BY_SOURCE_TIER[sourceTier],
+    requirements: [{ itemId: REFINED_BY_TIER[sourceTier][family], quantity: MONO_COST_BY_SOURCE_TIER[sourceTier] }],
   };
 }
 
-function workshopUpgrade(sourceTier: 3 | 4 | 5 | 6 | 7): IslandBuildingUpgradeCost {
+function singleFamilyProgression(buildingId: IslandBuildingId, family: ProductionFamily): IslandOperationalBuildingProgression {
+  const levels: IslandOperationalLevelDefinition[] = UPGRADE_SOURCE_TIERS.map((sourceTier, index) => ({
+    level: index + 1,
+    maxProductionTier: sourceTier,
+    upgradeToNext: singleFamilyUpgrade(sourceTier, family),
+  }));
+  levels.push({ level: 6, maxProductionTier: 8 });
+  return { buildingId, levels };
+}
+
+function workshopUpgrade(sourceTier: UpgradeSourceTier): IslandBuildingUpgradeCost {
   return {
     silver: WORKSHOP_SILVER_BY_SOURCE_TIER[sourceTier],
     requirements: [],
