@@ -87,10 +87,10 @@ export interface EnchantmentShardZoneProgressionWeight {
 }
 
 /**
- * Default five-zone shard curve for a full single-tier world band.
- * T5 established the current economy shape; T6-T8 intentionally reuse it as
- * an initial neutral baseline so runtime TTK, not a hidden tier multiplier,
- * determines how shard acquisition time evolves between tiers.
+ * Reference five-zone shard profile used during economy calibration.
+ * Live world bands below are authored explicitly rather than applying a hidden
+ * runtime tier multiplier, so future balance work can read the actual rates
+ * directly from this catalog.
  */
 export const DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION:
 readonly EnchantmentShardZoneProgressionWeight[] = [
@@ -104,7 +104,7 @@ readonly EnchantmentShardZoneProgressionWeight[] = [
 export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Readonly<
   Record<WorldBandId, readonly EnchantmentShardZoneProgressionWeight[]>
 > = {
-  // Blue is intentionally bespoke because the band mixes T3 and T4 content.
+  // Blue/T4 keeps the validated entry pacing unchanged.
   blue: [
     { start: 0.35, end: 0.5 },
     { start: 0.5, end: 0.9 },
@@ -112,10 +112,38 @@ export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Readonly<
     { start: 3.8, end: 6.5 },
     { start: 6.8, end: 9.5 },
   ],
-  yellow: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
-  orange: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
-  red: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
-  black: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
+  // T5: calibrated to ~x1.05 of the reference profile.
+  yellow: [
+    { start: 3.675, end: 5.775 },
+    { start: 5.04, end: 6.51 },
+    { start: 6.09, end: 7.77 },
+    { start: 7.98, end: 10.71 },
+    { start: 9.45, end: 11.025 },
+  ],
+  // T6: calibrated to ~x1.20 of the reference profile.
+  orange: [
+    { start: 4.2, end: 6.6 },
+    { start: 5.76, end: 7.44 },
+    { start: 6.96, end: 8.88 },
+    { start: 9.12, end: 12.24 },
+    { start: 10.8, end: 12.6 },
+  ],
+  // T7: same combat/gather balance target as T6.
+  red: [
+    { start: 4.2, end: 6.6 },
+    { start: 5.76, end: 7.44 },
+    { start: 6.96, end: 8.88 },
+    { start: 9.12, end: 12.24 },
+    { start: 10.8, end: 12.6 },
+  ],
+  // T8: calibrated to ~x1.30 to prevent shard farming from dominating end-tier pacing.
+  black: [
+    { start: 4.55, end: 7.15 },
+    { start: 6.24, end: 8.06 },
+    { start: 7.54, end: 9.62 },
+    { start: 9.88, end: 13.26 },
+    { start: 11.7, end: 13.65 },
+  ],
 } as const;
 
 export function getEnchantmentShardProgressionWeight(
