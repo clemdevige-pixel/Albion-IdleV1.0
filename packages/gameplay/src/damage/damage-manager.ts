@@ -12,6 +12,8 @@ const PHYSICAL_DAMAGE_STAT = "stat_physical_damage" as StatId;
 const MAGICAL_DAMAGE_STAT = "stat_magical_damage" as StatId;
 const ARMOR_STAT = "stat_armor" as StatId;
 const MAGIC_RESISTANCE_STAT = "stat_magic_resistance" as StatId;
+const AUTO_ATTACK_DAMAGE_BONUS_STAT = "stat_auto_attack_damage_bonus" as StatId;
+const LIFE_STEAL_STAT = "stat_life_steal" as StatId;
 
 export class DamageManager {
   readonly #world: World;
@@ -61,8 +63,18 @@ export class DamageManager {
       magicResistance: this.#statsManager.getStat(request.target, MAGIC_RESISTANCE_STAT).computed,
     };
 
+    const offensiveDamage = request.damageType === "magical"
+      ? attackerStats.magicalDamage
+      : request.damageType === "physical"
+        ? attackerStats.physicalDamage
+        : 0;
+    const autoAttackBonusPercent = request.source_type === "auto_attack"
+      ? this.#statsManager.getStat(request.source, AUTO_ATTACK_DAMAGE_BONUS_STAT).computed
+      : 0;
+    const autoAttackBonusDamage = offensiveDamage * Math.max(0, autoAttackBonusPercent) / 100;
+
     const calc = calculateDamage(
-      request.baseDamage,
+      request.baseDamage + autoAttackBonusDamage,
       attackerStats,
       defenderStats,
       request.damageType,
@@ -114,6 +126,13 @@ export class DamageManager {
           damageType: request.damageType,
           overkill,
         });
+      }
+    }
+
+    if (request.source_type === "auto_attack" && this.isAlive(request.source)) {
+      const lifeStealPercent = this.#statsManager.getStat(request.source, LIFE_STEAL_STAT).computed;
+      if (lifeStealPercent > 0 && finalDamage > 0) {
+        this.healDamage(request.source, finalDamage * lifeStealPercent / 100);
       }
     }
 
