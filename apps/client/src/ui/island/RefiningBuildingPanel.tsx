@@ -65,6 +65,16 @@ export function RefiningBuildingPanel({
       </div>
 
       <div className="ui-island-refining-building__requirements">
+        <div>
+          <img src={`/assets/resources/${family.rawIcon}`} alt="" />
+          <span>Stock brut T{String(family.tier)}</span>
+          <b>{String(family.activity.rawStoredQuantity)}</b>
+        </div>
+        <div>
+          <img src={`/assets/resources/${family.refinedIcon}`} alt="" />
+          <span>Stock raffiné T{String(family.tier)}</span>
+          <b>{String(family.activity.refinedStoredQuantity)}</b>
+        </div>
         {family.requirements.map((requirement) => (
           <div key={requirement.itemId}>
             <img src={`/assets/resources/${requirement.icon}`} alt="" />
