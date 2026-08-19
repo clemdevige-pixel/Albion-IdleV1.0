@@ -112,37 +112,38 @@ export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Readonly<
     { start: 3.8, end: 6.5 },
     { start: 6.8, end: 9.5 },
   ],
-  // T5: calibrated to ~x1.05 of the reference profile.
+  // T5 keeps the reference profile unchanged.
   yellow: [
-    { start: 3.675, end: 5.775 },
-    { start: 5.04, end: 6.51 },
-    { start: 6.09, end: 7.77 },
-    { start: 7.98, end: 10.71 },
-    { start: 9.45, end: 11.025 },
+    { start: 3.5, end: 5.5 },
+    { start: 4.8, end: 6.2 },
+    { start: 5.8, end: 7.4 },
+    { start: 7.6, end: 10.2 },
+    { start: 9.0, end: 10.5 },
   ],
-  // T6: calibrated to ~x1.20 of the reference profile.
+  // T6 keeps the reference profile unchanged; the final craft mix already
+  // creates the intended combat/gather split at this tier.
   orange: [
-    { start: 4.2, end: 6.6 },
-    { start: 5.76, end: 7.44 },
-    { start: 6.96, end: 8.88 },
-    { start: 9.12, end: 12.24 },
-    { start: 10.8, end: 12.6 },
+    { start: 3.5, end: 5.5 },
+    { start: 4.8, end: 6.2 },
+    { start: 5.8, end: 7.4 },
+    { start: 7.6, end: 10.2 },
+    { start: 9.0, end: 10.5 },
   ],
-  // T7: same combat/gather balance target as T6.
+  // T7 uses ~x1.10 to reach the validated ~25% average gathering share.
   red: [
-    { start: 4.2, end: 6.6 },
-    { start: 5.76, end: 7.44 },
-    { start: 6.96, end: 8.88 },
-    { start: 9.12, end: 12.24 },
-    { start: 10.8, end: 12.6 },
+    { start: 3.85, end: 6.05 },
+    { start: 5.28, end: 6.82 },
+    { start: 6.38, end: 8.14 },
+    { start: 8.36, end: 11.22 },
+    { start: 9.9, end: 11.55 },
   ],
-  // T8: calibrated to ~x1.30 to prevent shard farming from dominating end-tier pacing.
+  // T8 uses ~x1.10 for the same high-tier combat/gather balance target.
   black: [
-    { start: 4.55, end: 7.15 },
-    { start: 6.24, end: 8.06 },
-    { start: 7.54, end: 9.62 },
-    { start: 9.88, end: 13.26 },
-    { start: 11.7, end: 13.65 },
+    { start: 3.85, end: 6.05 },
+    { start: 5.28, end: 6.82 },
+    { start: 6.38, end: 8.14 },
+    { start: 8.36, end: 11.22 },
+    { start: 9.9, end: 11.55 },
   ],
 } as const;
 
