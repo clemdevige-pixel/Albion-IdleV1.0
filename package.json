@@ -27,6 +27,7 @@
     "benchmark:t5-t8-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-t5-t8-world-wall-sweep.ts",
     "benchmark:broadsword-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-wall-audit.ts",
     "benchmark:broadsword-vs-dagger": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-vs-dagger-encounters.ts",
+    "benchmark:enchantment-shards": "tsc -b && tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts",
     "clean": "tsc -b --clean"
   },
   "devDependencies": {
