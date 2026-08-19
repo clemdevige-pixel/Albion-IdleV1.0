@@ -91,24 +91,13 @@ export class WeaponAbilityMechanicsRuntime {
     if (rule === undefined || rule.kind === "always") return true;
     if (!this.deps.damageManager.isAlive(target)) return false;
 
-    const health = this.deps.damageManager.getHealth(target);
-    const healthRatio = health.maxHealth > 0 ? health.currentHealth / health.maxHealth : undefined;
-
-    if (
-      rule.kind === "target_health_below"
-      && (healthRatio === undefined || healthRatio > rule.ratio)
-    ) return false;
-    if (rule.kind === "target_has_effect" && !this.hasEffect(target, rule.effectId)) return false;
-
-    for (const mechanic of definition.mechanics.mechanics) {
-      if (mechanic.kind !== "damage") continue;
-      if (
-        mechanic.bonusHealthBelow !== undefined
-        && (healthRatio === undefined || healthRatio > mechanic.bonusHealthBelow.ratio)
-      ) return false;
-      if (mechanic.bonusEffect !== undefined && !this.hasEffect(target, mechanic.bonusEffect.effectId)) return false;
+    if (rule.kind === "target_health_below") {
+      const health = this.deps.damageManager.getHealth(target);
+      return health.maxHealth > 0 && health.currentHealth / health.maxHealth <= rule.ratio;
     }
-
+    if (rule.kind === "target_has_effect") {
+      return this.hasEffect(target, rule.effectId);
+    }
     return true;
   }
 
