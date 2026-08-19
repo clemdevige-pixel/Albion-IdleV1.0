@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ENCOUNTERS_PER_SEGMENT, SEGMENTS_PER_ZONE } from "@game/data";
 import { asZoneDefinitionId } from "@game/gameplay";
 import {
+  MAX_MAGICAL_ENCOUNTERS_PER_SEGMENT,
   MONSTER_DEFINITIONS,
   ZONE_ENCOUNTER_POOLS,
   getMonsterDefinition,
@@ -156,6 +157,21 @@ describe("monsterContentCatalog", () => {
           const repeated = resolveMonsterForEncounter(zone, segmentIndex, encounterIndex);
           expect(repeated.id).toBe(first.id);
         }
+      }
+    }
+  });
+
+  it("caps every segment at two magical encounters", () => {
+    for (const zoneId of Object.keys(ZONE_ENCOUNTER_POOLS)) {
+      const zone = asZoneDefinitionId(zoneId);
+      for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
+        let magicalEncounters = 0;
+        for (let encounterIndex = 0; encounterIndex < ENCOUNTERS_PER_SEGMENT; encounterIndex += 1) {
+          if (resolveMonsterForEncounter(zone, segmentIndex, encounterIndex).combat.damageType === "magical") {
+            magicalEncounters += 1;
+          }
+        }
+        expect(magicalEncounters).toBeLessThanOrEqual(MAX_MAGICAL_ENCOUNTERS_PER_SEGMENT);
       }
     }
   });
