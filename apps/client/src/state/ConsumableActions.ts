@@ -29,6 +29,12 @@ export class ConsumableActions {
           "Action impossible : le héros est vaincu.",
           timestamp,
         );
+      } else if (result.reason === "combat_inactive") {
+        this.notifyError(
+          `notif_consumable_inactive_${String(timestamp)}`,
+          "Potion indisponible hors combat.",
+          timestamp,
+        );
       } else if (result.reason === "cooldown") {
         this.notifyError(
           `notif_consumable_cooldown_${String(timestamp)}`,
