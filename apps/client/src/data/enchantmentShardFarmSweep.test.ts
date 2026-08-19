@@ -3,8 +3,6 @@ import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runEnchantmentShardTtkBenchmark } from "./enchantmentShardTtkBenchmark.js";
 
-const TIER = 4 as const;
-
 const WEAPONS = [
   "item_weapon_sword_t4_broadsword",
   "item_weapon_bow_t4_longbow",
@@ -190,7 +188,7 @@ describe("enchantment shard AFK farm sweep", () => {
         nextFullSetShards: nextFullSetCost,
         deepestCommon: deepestCommon === undefined
           ? null
-          : `${deepestCommon.zone}_s${String(deepestCommon.segment)}`,
+          : `${deepepestCommon.zone}_s${String(deepestCommon.segment)}`,
         bestCommonFarm: bestCommonFarm === undefined
           ? null
           : `${bestCommonFarm.zone}_s${String(bestCommonFarm.segment)}`,
