@@ -31,8 +31,19 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
     ...requirement,
     available: getIslandMaterialQuantity(inventoryManager, productionStorageId, requirement.itemId),
   }));
+  const flexible = cost.flexibleRequirement;
+  const flexibleAvailable = flexible?.itemIds.map((itemId) => ({
+    itemId,
+    available: getIslandMaterialQuantity(inventoryManager, productionStorageId, itemId),
+  })) ?? [];
+  const flexibleDistinct = flexibleAvailable.filter((entry) => entry.available > 0).length;
+  const flexibleTotal = flexibleAvailable.reduce((sum, entry) => sum + entry.available, 0);
+  const flexibleReady = flexible === undefined
+    || (flexibleDistinct >= flexible.minimumDistinctItemIds && flexibleTotal >= flexible.totalQuantity);
   const silverReady = wallet.silver >= cost.silver;
-  const affordable = silverReady && materials.every((requirement) => requirement.available >= requirement.quantity);
+  const affordable = silverReady
+    && materials.every((requirement) => requirement.available >= requirement.quantity)
+    && flexibleReady;
   const canUpgrade = !islandLevelBlocked && affordable;
 
   return (
@@ -76,6 +87,16 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
             </div>
           );
         })}
+
+        {flexible !== undefined ? (
+          <div className={flexibleReady ? "ui-island-upgrade__requirement is-ready" : "ui-island-upgrade__requirement is-missing"}>
+            <span className="ui-island-upgrade__requirement-icon" aria-hidden="true">◇</span>
+            <div>
+              <small>Raffinés flexibles · {String(flexible.minimumDistinctItemIds)} familles min.</small>
+              <strong>{String(flexibleTotal)} / {String(flexible.totalQuantity)} · {String(flexibleDistinct)} familles</strong>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <button type="button" disabled={!canUpgrade} onClick={() => { upgradeIslandBuilding(definitionId); }}>
