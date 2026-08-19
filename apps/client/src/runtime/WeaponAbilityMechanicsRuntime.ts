@@ -108,12 +108,14 @@ export class WeaponAbilityMechanicsRuntime {
     const abilityPowerPercent = this.deps.statsManager.getStat(this.deps.heroId, STAT_ABILITY_POWER).computed;
     const abilityPowerMultiplier = 1 + Math.max(0, abilityPowerPercent) / 100;
     let dealtDamage = false;
+    let lastDamageMechanicFinalDamage = 0;
 
     // Mechanics execute strictly in authored array order. This is part of the
-    // shared weapon mechanics contract and lets damage/status/DoT sequencing be
-    // expressed in data without weapon-specific runtime branches.
+    // shared weapon mechanics contract and lets damage/status/DoT/recovery
+    // sequencing be expressed in data without weapon-specific runtime branches.
     for (const mechanic of profile.mechanics) {
-      if (!this.deps.damageManager.isAlive(target)) break;
+      if (!this.deps.damageManager.isAlive(target) && mechanic.kind !== "heal_from_damage") break;
+
       if (mechanic.kind === "damage") {
         const health = this.deps.damageManager.getHealth(target);
         const healthRatio = health.maxHealth > 0 ? health.currentHealth / health.maxHealth : undefined;
@@ -129,6 +131,7 @@ export class WeaponAbilityMechanicsRuntime {
           hits,
           abilityPowerPercent,
         );
+        let finalDamage = 0;
         for (
           let hit = 0;
           hit < hits && canContinueWeaponMultiHit(this.deps.damageManager.isAlive(target));
@@ -142,8 +145,22 @@ export class WeaponAbilityMechanicsRuntime {
             source_type: "ability",
           });
           dealtDamage = dealtDamage || result !== null;
+          finalDamage += result?.finalDamage ?? 0;
           if (result?.targetDied === true) this.deps.onTargetKilled(tick);
         }
+        lastDamageMechanicFinalDamage = finalDamage;
+        continue;
+      }
+
+      if (mechanic.kind === "heal_from_damage") {
+        if (lastDamageMechanicFinalDamage <= 0 || !this.deps.damageManager.isAlive(this.deps.heroId)) continue;
+        const health = this.deps.damageManager.getHealth(this.deps.heroId);
+        const uncappedHeal = lastDamageMechanicFinalDamage * Math.max(0, mechanic.ratio);
+        const healthCap = mechanic.maxHealthRatio === undefined
+          ? Number.POSITIVE_INFINITY
+          : health.maxHealth * Math.max(0, mechanic.maxHealthRatio);
+        const healAmount = Math.min(uncappedHeal, healthCap);
+        if (healAmount > 0) this.deps.damageManager.healDamage(this.deps.heroId, healAmount);
         continue;
       }
 
