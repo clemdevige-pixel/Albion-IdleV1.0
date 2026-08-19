@@ -31,6 +31,8 @@ interface FamilyState {
   workerXp: number;
   heroRemaining: number;
   workerRemaining: number;
+  heroGatherTier: ProductionTier;
+  workerGatherTier: ProductionTier;
   raw: Record<ProductionTier, number>;
   refined: Record<ProductionTier, number>;
 }
@@ -81,24 +83,73 @@ function createState(): SimulationState {
     workerXp: 0,
     heroRemaining: heroGatherTicks(3, 0),
     workerRemaining: workerGatherTicks(3, 0),
+    heroGatherTier: 3,
+    workerGatherTier: 3,
     raw: emptyTierRecord(),
     refined: emptyTierRecord(),
   }])) as Record<Family, FamilyState>;
   return { tier: 3, ticks: 0, activeFamilyIndex: 0, families };
 }
 
-function tick(state: SimulationState): void {
+/**
+ * Finds the lowest tier whose raw stock blocks production of `amount` refined
+ * units at targetTier. Returning the target tier means only current-tier raw is
+ * missing. This models the real game rule that previous tiers remain farmable.
+ */
+function findBlockingGatherTier(
+  data: FamilyState,
+  targetTier: ProductionTier,
+  amount: number,
+): ProductionTier {
+  const refinedAvailable = data.refined[targetTier];
+  const missing = Math.max(0, amount - refinedAvailable);
+  if (missing <= 0) return targetTier;
+
+  if (targetTier === 3) return 3;
+
+  const previousTier = (targetTier - 1) as ProductionTier;
+  if (!canProduceRefined(data, previousTier, missing)) {
+    return findBlockingGatherTier(data, previousTier, missing);
+  }
+
+  if (data.raw[targetTier] < missing * 2) return targetTier;
+  return targetTier;
+}
+
+function setGatherTier(data: FamilyState, tier: ProductionTier): void {
+  if (data.heroGatherTier !== tier) {
+    data.heroGatherTier = tier;
+    data.heroRemaining = heroGatherTicks(tier, data.heroXp);
+  }
+  if (data.workerGatherTier !== tier) {
+    data.workerGatherTier = tier;
+    data.workerRemaining = workerGatherTicks(tier, data.workerXp);
+  }
+}
+
+function tick(
+  state: SimulationState,
+  demandTier: ProductionTier = state.tier,
+  demandCosts?: Record<Family, number>,
+): void {
   state.ticks += 1;
 
-  // Four workers run in parallel: one per family (current worker-house capacity = 4).
+  // Four workers run in parallel: one per family. When a recursive refining
+  // predecessor is missing, that family temporarily returns to the blocking tier.
   for (const family of FAMILIES) {
     const data = state.families[family];
+    const required = demandCosts?.[family] ?? 0;
+    const gatherTier = required > 0
+      ? findBlockingGatherTier(data, demandTier, required)
+      : state.tier;
+    setGatherTier(data, gatherTier);
+
     data.workerRemaining -= 1;
     if (data.workerRemaining <= 0) {
-      data.raw[state.tier] += 1;
-      data.workerXp += getWorkerGatheringXpForTier(state.tier);
-      data.heroXp += getHeroGatheringXpFromWorkerForTier(state.tier);
-      data.workerRemaining = workerGatherTicks(state.tier, data.workerXp);
+      data.raw[data.workerGatherTier] += 1;
+      data.workerXp += getWorkerGatheringXpForTier(data.workerGatherTier);
+      data.heroXp += getHeroGatheringXpFromWorkerForTier(data.workerGatherTier);
+      data.workerRemaining = workerGatherTicks(data.workerGatherTier, data.workerXp);
     }
   }
 
@@ -107,9 +158,9 @@ function tick(state: SimulationState): void {
   const active = state.families[activeFamily];
   active.heroRemaining -= 1;
   if (active.heroRemaining <= 0) {
-    active.raw[state.tier] += 1;
-    active.heroXp += getHeroGatheringXpForTier(state.tier);
-    active.heroRemaining = heroGatherTicks(state.tier, active.heroXp);
+    active.raw[active.heroGatherTier] += 1;
+    active.heroXp += getHeroGatheringXpForTier(active.heroGatherTier);
+    active.heroRemaining = heroGatherTicks(active.heroGatherTier, active.heroXp);
     state.activeFamilyIndex = (state.activeFamilyIndex + 1) % FAMILIES.length;
   }
 }
@@ -223,15 +274,14 @@ function runSequential(
   for (const tier of [3, 4, 5, 6, 7, 8] as const) {
     state.tier = tier;
     for (const family of FAMILIES) {
-      state.families[family].heroRemaining = heroGatherTicks(tier, state.families[family].heroXp);
-      state.families[family].workerRemaining = workerGatherTicks(tier, state.families[family].workerXp);
+      setGatherTier(state.families[family], tier);
     }
 
     let craftHours: number | null = null;
     if (tier >= 4) {
       const craftCost = representativeSetCost(tier);
       while (!spendRefined(state, tier, craftCost)) {
-        tick(state);
+        tick(state, tier, craftCost);
         if (state.ticks > 10_000_000) throw new Error("sequential diagnostic runaway while crafting");
       }
       craftHours = hours(state);
@@ -279,7 +329,7 @@ function runSequential(
     }
 
     while (!spendRefined(state, tier, buildingCost)) {
-      tick(state);
+      tick(state, tier, buildingCost);
       if (state.ticks > 10_000_000) throw new Error("sequential diagnostic runaway while funding buildings");
     }
     const buildingReadyHours = hours(state);
