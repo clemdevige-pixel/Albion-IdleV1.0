@@ -74,7 +74,7 @@ describe("PlayerIslandService", () => {
     expect(service.getState().level).toBe(2);
   });
 
-  it("supports the authored Lv1 to Lv5 development path without circular gates", () => {
+  it("supports the authored Lv1 to Lv6 development path without circular gates", () => {
     const service = new PlayerIslandService();
     service.placeBuilding("lumber_camp", "plot_03");
     service.placeBuilding("mine", "plot_04");
@@ -102,6 +102,10 @@ describe("PlayerIslandService", () => {
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 5 });
     expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
     expect(service.getBuildingLevel("lumber_camp")).toBe(5);
+
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 6 });
+    expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
+    expect(service.getBuildingLevel("lumber_camp")).toBe(6);
     expect(service.upgradeBuilding("lumber_camp")).toEqual({ ok: false, reason: "max_level" });
     expect(service.upgradeIslandLevel()).toEqual({ ok: false, reason: "max_level" });
   });
@@ -130,12 +134,13 @@ describe("PlayerIslandService", () => {
     source.upgradeIslandLevel();
     source.upgradeIslandLevel();
     source.upgradeIslandLevel();
-    expect(source.getState().level).toBe(5);
+    source.upgradeIslandLevel();
+    expect(source.getState().level).toBe(6);
 
     const restored = new PlayerIslandService();
     restored.load(source.save());
 
-    expect(restored.getState().level).toBe(5);
+    expect(restored.getState().level).toBe(6);
     expect(restored.getState()).toEqual(source.getState());
   });
 
