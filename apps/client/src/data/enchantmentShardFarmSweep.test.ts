@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { ENCHANTMENT_SHARD_COSTS } from "@game/gameplay";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runEnchantmentShardTtkBenchmark } from "./enchantmentShardTtkBenchmark.js";
+
+const FULL_SET_EQUIVALENT_ITEM_COUNT = 5;
 
 const WEAPONS = [
   "item_weapon_sword_t4_broadsword",
@@ -35,12 +38,11 @@ const ENCHANTMENT_STAGES = [
   { enchantment: 3, masteryLevel: 22 },
 ] as const;
 
-const NEXT_FULL_SET_SHARD_COST: Readonly<Record<number, number | null>> = {
-  0: 50,
-  1: 150,
-  2: 300,
-  3: null,
-};
+function nextFullSetShardCost(enchantment: number): number | null {
+  if (enchantment >= 3) return null;
+  const nextLevel = (enchantment + 1) as 1 | 2 | 3;
+  return ENCHANTMENT_SHARD_COSTS[nextLevel] * FULL_SET_EQUIVALENT_ITEM_COUNT;
+}
 
 function equipmentFor(weaponItemId: string): readonly string[] {
   const items: string[] = [...ARMOR];
@@ -96,7 +98,7 @@ describe("enchantment shard AFK farm sweep", () => {
         ).flat(),
       );
 
-      const nextFullSetCost = NEXT_FULL_SET_SHARD_COST[stage.enchantment] ?? null;
+      const nextFullSetCost = nextFullSetShardCost(stage.enchantment);
 
       const bestByWeaponAndZone = WEAPONS.flatMap((weaponItemId) => {
         const weapon = shortName(weaponItemId);
