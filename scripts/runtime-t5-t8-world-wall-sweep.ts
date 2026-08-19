@@ -6,7 +6,7 @@ import {
 } from "../apps/client/src/data/worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
 
-type Tier = 4 | 5 | 6 | 7 | 8;
+type Tier = 3 | 4 | 5 | 6 | 7 | 8;
 type TargetTier = 4 | 5 | 6 | 7 | 8;
 type Enchantment = 0 | 1 | 2 | 3;
 type BandId = "blue" | "yellow" | "orange" | "red" | "black";
@@ -38,6 +38,7 @@ const WEAPON_FAMILIES = [
 ] as const;
 
 const SEGMENTS_PER_ZONE = 10;
+const FINAL_SEGMENT_INDEX = SEGMENTS_PER_ZONE - 1;
 
 function weaponItemIds(tier: Tier): readonly string[] {
   return WEAPON_FAMILIES.map(([family, specialization]) =>
@@ -46,6 +47,15 @@ function weaponItemIds(tier: Tier): readonly string[] {
 }
 
 function armorItemIds(tier: Tier): readonly string[] {
+  if (tier === 3) {
+    return [
+      "item_iron_helmet",
+      "item_leather_armor",
+      "item_leather_boots",
+      "item_traveler_cape",
+    ];
+  }
+
   return [
     `item_helmet_t${String(tier)}_reinforced`,
     `item_armor_t${String(tier)}_leather`,
@@ -358,6 +368,157 @@ function buildZoneSummary(locator: ReturnType<typeof buildLocator>) {
   });
 }
 
+interface GateCandidate {
+  readonly gearTier: Tier;
+  readonly enchantment: Enchantment;
+  readonly expected: boolean;
+}
+
+interface GateRun {
+  readonly tier: TargetTier;
+  readonly band: BandId;
+  readonly zone: string;
+  readonly expectedGear: string;
+  readonly testedGear: string;
+  readonly undergeared: boolean;
+  readonly weapon: string;
+  readonly mastery: number;
+  readonly clearNoPotion: boolean;
+  readonly clearPotion: boolean;
+  readonly hpPotion: number;
+  readonly potionsUsed: number;
+}
+
+function gateCandidatesFor(expected: ZoneLoadoutExpectation): readonly GateCandidate[] {
+  const candidates: GateCandidate[] = [];
+
+  if (expected.gearTier > 3) {
+    candidates.push({
+      gearTier: (expected.gearTier - 1) as Tier,
+      enchantment: 3,
+      expected: false,
+    });
+  }
+
+  for (let enchantment = 0; enchantment <= expected.enchantment; enchantment += 1) {
+    candidates.push({
+      gearTier: expected.gearTier,
+      enchantment: enchantment as Enchantment,
+      expected: enchantment === expected.enchantment,
+    });
+  }
+
+  return candidates;
+}
+
+function buildGateRuns(): readonly GateRun[] {
+  const rows: GateRun[] = [];
+
+  for (const tier of TARGET_TIERS) {
+    const { band, zoneIndices } = TIER_SWEEP_CONFIG[tier];
+    for (const zoneIndex of zoneIndices) {
+      const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
+      if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
+      const expected = expectedLoadoutForZone(tier, zoneIndex);
+      const expectedGear = `T${expected.gearTier}.${expected.enchantment}`;
+
+      for (const candidate of gateCandidatesFor(expected)) {
+        for (const weaponItemId of weaponItemIds(candidate.gearTier)) {
+          const common = {
+            weaponItemId,
+            zoneDefId,
+            segmentIndex: FINAL_SEGMENT_INDEX,
+            equipmentItemIds: equipmentFor(weaponItemId, candidate.gearTier),
+            masteryLevel: expected.masteryLevel,
+            enchantment: candidate.enchantment,
+          } as const;
+
+          const noPotion = runCombatRuntimeBenchmark({
+            label: `tier_gate_t${tier}_z${zoneIndex + 1}_${candidate.gearTier}_${candidate.enchantment}_no_potion`,
+            ...common,
+            useHealthPotions: false,
+          });
+          const withPotion = runCombatRuntimeBenchmark({
+            label: `tier_gate_t${tier}_z${zoneIndex + 1}_${candidate.gearTier}_${candidate.enchantment}_potion`,
+            ...common,
+            useHealthPotions: true,
+          });
+
+          rows.push({
+            tier,
+            band,
+            zone: zoneName(String(zoneDefId)),
+            expectedGear,
+            testedGear: `T${candidate.gearTier}.${candidate.enchantment}`,
+            undergeared: !candidate.expected,
+            weapon: shortWeaponName(weaponItemId),
+            mastery: expected.masteryLevel,
+            clearNoPotion: noPotion.clear,
+            clearPotion: withPotion.clear,
+            hpPotion: withPotion.hpPercent,
+            potionsUsed: withPotion.potionsUsed,
+          });
+        }
+      }
+    }
+  }
+
+  return rows;
+}
+
+function printTierGateValidation(rows: readonly GateRun[]): void {
+  const anomalies = rows.filter((row) => row.undergeared && row.clearPotion);
+  const expectedRows = rows.filter((row) => !row.undergeared);
+  const expectedPasses = expectedRows.filter((row) => row.clearPotion).length;
+
+  console.log("[T4_T8_TIER_GATE_SUMMARY]");
+  console.table(TARGET_TIERS.flatMap((tier) => {
+    const { band, zoneIndices } = TIER_SWEEP_CONFIG[tier];
+    return zoneIndices.map((zoneIndex) => {
+      const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
+      if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
+      const zone = zoneName(String(zoneDefId));
+      const zoneRows = rows.filter((row) => row.tier === tier && row.zone === zone);
+      const expected = expectedLoadoutForZone(tier, zoneIndex);
+      const undergearRows = zoneRows.filter((row) => row.undergeared);
+      const undergearPotionClears = undergearRows.filter((row) => row.clearPotion);
+      const expectedZoneRows = zoneRows.filter((row) => !row.undergeared);
+      const expectedPotionClears = expectedZoneRows.filter((row) => row.clearPotion);
+
+      return {
+        tier,
+        band,
+        zone,
+        expectedGear: `T${expected.gearTier}.${expected.enchantment}`,
+        expectedPotionPass: `${expectedPotionClears.length}/${expectedZoneRows.length}`,
+        undergearPotionLeaks: `${undergearPotionClears.length}/${undergearRows.length}`,
+        gate: undergearPotionClears.length === 0 ? "PASS" : "FAIL",
+      };
+    });
+  }));
+
+  console.log("[T4_T8_TIER_GATE_ANOMALIES]");
+  console.table(anomalies.map((row) => ({
+    tier: row.tier,
+    zone: row.zone,
+    expected: row.expectedGear,
+    leakedGear: row.testedGear,
+    weapon: row.weapon,
+    mastery: row.mastery,
+    potionClear: row.clearPotion,
+    hp: row.hpPotion,
+    potions: row.potionsUsed,
+  })));
+
+  console.log("[T4_T8_TIER_GATE_RESULT]", {
+    gateRuns: rows.length * 2,
+    expectedPotionPasses: `${expectedPasses}/${expectedRows.length}`,
+    undergearedPotionLeaks: anomalies.length,
+    status: anomalies.length === 0 ? "PASS" : "FAIL",
+    rule: "A loadout below the authored zone requirement must not clear S10 even with potions. The authored loadout may clear with or without potions depending on weapon profile.",
+  });
+}
+
 function main(): void {
   const rows: SegmentRun[] = [];
 
@@ -375,6 +536,7 @@ function main(): void {
 
   const locator = buildLocator(rows);
   const zoneSummary = buildZoneSummary(locator);
+  const gateRows = buildGateRuns();
   const zonesInSweep = TARGET_TIERS.reduce(
     (total, tier) => total + TIER_SWEEP_CONFIG[tier].zoneIndices.length,
     0,
@@ -400,11 +562,14 @@ function main(): void {
   }
 
   printDetailedAnomalyTrace(rows);
+  printTierGateValidation(gateRows);
 
   console.log("[T4_T8_EXHAUSTIVE_WALL_SWEEP_RESULT]", {
     segmentRows: rows.length,
     runtimeRuns: rows.length * 2,
     locatorRows: locator.length,
+    tierGateRows: gateRows.length,
+    tierGateRuntimeRuns: gateRows.length * 2,
   });
 }
 
