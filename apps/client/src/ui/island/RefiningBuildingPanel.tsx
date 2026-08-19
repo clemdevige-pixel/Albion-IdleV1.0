@@ -38,7 +38,6 @@ export function RefiningBuildingPanel({
 
   const active = family.activity.status === "refining";
   const recipe = getProductionRefiningRecipe(family.id, family.tier);
-  const rawIconSrc = `/assets/resources/${family.rawIcon}`;
   const refinedIconSrc = `/assets/resources/${family.refinedIcon}`;
   const trackingId = `production:${family.id}:t${String(family.tier)}`;
   const tracked = tracking.isTracked(trackingId);
@@ -90,16 +89,6 @@ export function RefiningBuildingPanel({
       </div>
 
       <div className="ui-island-refining-building__requirements">
-        <div>
-          <img src={rawIconSrc} alt="" />
-          <span>Stock brut T{String(family.tier)}</span>
-          <b>{String(family.activity.rawStoredQuantity)}</b>
-        </div>
-        <div>
-          <img src={refinedIconSrc} alt="" />
-          <span>Stock raffiné T{String(family.tier)}</span>
-          <b>{String(family.activity.refinedStoredQuantity)}</b>
-        </div>
         {family.requirements.map((requirement) => (
           <div key={requirement.itemId}>
             <img src={`/assets/resources/${requirement.icon}`} alt="" />
