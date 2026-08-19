@@ -176,8 +176,6 @@ function tick(state: SimulationState, demandTier = state.tier, demandCosts?: Rec
     const required = demandCosts?.[family] ?? 0;
     const desiredTier = required > 0 ? findBlockingGatherTier(data, demandTier, required) : state.tier;
 
-    // A worker only switches target after finishing its current cycle. This avoids
-    // resetting progress forever if recursive refining demand oscillates by tier.
     data.workerRemaining -= 1;
     if (data.workerRemaining <= 0) {
       data.raw[data.workerGatherTier] += 1;
@@ -215,27 +213,29 @@ function spendRefined(state: SimulationState, tier: ProductionTier, costs: Recor
   return true;
 }
 
-function buildFlexibleWorkshopAllocation(state: SimulationState, tier: ProductionTier, total: number): Record<Family, number> | null {
-  const capacities = Object.fromEntries(
-    FAMILIES.map((family) => [family, maxProducibleRefined(state.families[family], tier)]),
-  ) as Record<Family, number>;
-  const contributors = [...FAMILIES]
-    .filter((family) => capacities[family] > 0)
-    .sort((a, b) => capacities[b] - capacities[a]);
-  if (contributors.length < WORKSHOP_MIN_DISTINCT_FAMILIES) return null;
+function buildFixedFlexibleWorkshopAllocation(
+  state: SimulationState,
+  tier: ProductionTier,
+  total: number,
+): Record<Family, number> {
+  const ranked = [...FAMILIES].sort((a, b) => {
+    const aData = state.families[a];
+    const bData = state.families[b];
+    const aScore = maxProducibleRefined(aData, tier) * 4 + aData.raw[tier] + aData.refined[tier] * 4;
+    const bScore = maxProducibleRefined(bData, tier) * 4 + bData.raw[tier] + bData.refined[tier] * 4;
+    return bScore - aScore;
+  });
 
+  const contributors = ranked.slice(0, WORKSHOP_MIN_DISTINCT_FAMILIES);
   const allocation: Record<Family, number> = { wood: 0, ore: 0, hide: 0, fiber: 0 };
-  for (const family of contributors.slice(0, WORKSHOP_MIN_DISTINCT_FAMILIES)) allocation[family] = 1;
-  let remaining = total - WORKSHOP_MIN_DISTINCT_FAMILIES;
+  const base = Math.floor(total / WORKSHOP_MIN_DISTINCT_FAMILIES);
+  let remainder = total % WORKSHOP_MIN_DISTINCT_FAMILIES;
 
-  while (remaining > 0) {
-    const candidate = [...contributors]
-      .filter((family) => allocation[family] < capacities[family])
-      .sort((a, b) => (capacities[b] - allocation[b]) - (capacities[a] - allocation[a]))[0];
-    if (candidate === undefined) return null;
-    allocation[candidate] += 1;
-    remaining -= 1;
+  for (const family of contributors) {
+    allocation[family] = base + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder -= 1;
   }
+
   return allocation;
 }
 
@@ -316,12 +316,10 @@ function runValidatedModel() {
     }
     const monoBuildingsReadyHours = hours(state);
 
-    let workshopAllocation = buildFlexibleWorkshopAllocation(state, tier, mono);
-    while (workshopAllocation === null || !spendRefined(state, tier, workshopAllocation)) {
-      const demand = workshopAllocation ?? { wood: 1, ore: 1, hide: 1, fiber: 1 };
-      tick(state, tier, demand);
+    const workshopAllocation = buildFixedFlexibleWorkshopAllocation(state, tier, mono);
+    while (!spendRefined(state, tier, workshopAllocation)) {
+      tick(state, tier, workshopAllocation);
       assertNotRunaway(state, `T${tier}->T${targetTier} workshop`);
-      workshopAllocation = buildFlexibleWorkshopAllocation(state, tier, mono);
     }
     const workshopReadyHours = hours(state);
 
@@ -334,7 +332,7 @@ function runValidatedModel() {
       workshopReadyHours,
       transitionHours: workshopReadyHours,
       minHeroLevel: minimumHeroLevel(state),
-      workshopAllocation: FAMILIES.map((family) => `${family}:${workshopAllocation?.[family] ?? 0}`).join(" "),
+      workshopAllocation: FAMILIES.map((family) => `${family}:${workshopAllocation[family]}`).join(" "),
       stocks: snapshotStocks(state, tier),
     });
   }
