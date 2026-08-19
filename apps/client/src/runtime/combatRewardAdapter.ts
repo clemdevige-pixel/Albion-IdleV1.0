@@ -41,37 +41,26 @@ export interface CombatRewardAdapter {
 }
 
 const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
-  animal: "Animal",
-  generic: "Générique",
-  heretic: "Hérétique",
-  keeper: "Keeper",
-  morgana: "Morgana",
-  undead: "Mort-vivant",
+  animal: "Animal", generic: "Générique", heretic: "Hérétique", keeper: "Keeper",
+  morgana: "Morgana", undead: "Mort-vivant",
 };
 
 function formatFactionName(factionId: string): string {
   return FACTION_DISPLAY_NAMES[factionId]
-    ?? factionId
-      .split("_")
-      .filter((part) => part.length > 0)
-      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-      .join(" ");
+    ?? factionId.split("_").filter((part) => part.length > 0)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(" ");
 }
 
 function formatDropName(itemId: string): string {
   const enchantmentName = ENCHANTMENT_MATERIAL_NAMES[itemId];
   if (enchantmentName !== undefined) return enchantmentName;
-
   const factionPrefixes = [
-    "item_resource_artifact_fragment_",
-    "item_resource_artifact_",
-    "item_resource_dungeon_key_",
-    "item_resource_key_fragment_",
+    "item_resource_artifact_fragment_", "item_resource_artifact_",
+    "item_resource_dungeon_key_", "item_resource_key_fragment_",
   ] as const;
   for (const prefix of factionPrefixes) {
     if (itemId.startsWith(prefix)) return formatFactionName(itemId.slice(prefix.length));
   }
-
   if (itemId === "item_health_potion") return "Potion de soin";
   return itemId.replace("item_resource_", "").replace("item_", "").replace(/_/g, " ");
 }
@@ -95,7 +84,6 @@ function publishDungeonDrops(
     const category = formatDropCategory(drop.kind);
     const quantitySuffix = drop.quantity > 1 ? ` ×${String(drop.quantity)}` : "";
     const timestamp = Date.now();
-
     options.bridge.addTransaction({
       id: `loot_item_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
       type: "credit",
@@ -112,9 +100,7 @@ function publishDungeonDrops(
   }
 }
 
-export function setupCombatRewardAdapter(
-  options: CombatRewardAdapterOptions,
-): CombatRewardAdapter {
+export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): CombatRewardAdapter {
   let lastSilver = 1000;
   let incomeRate = 0;
 
@@ -124,14 +110,34 @@ export function setupCombatRewardAdapter(
     if (options.isDungeonActive?.() === true) {
       const reward = options.dungeonRewardRuntime?.processCurrentEncounterVictory();
       clearActiveMonsterIdentity(event.entityId);
-      if (reward !== undefined) publishDungeonDrops(options, reward.drops);
+      if (reward !== undefined) {
+        publishDungeonDrops(options, reward.drops);
+        if (reward.completionSilver > 0) {
+          const previousBalance = lastSilver;
+          const newBalance = options.combatRewardRuntime.creditSilverReward(reward.completionSilver);
+          lastSilver = newBalance;
+          incomeRate = newBalance - previousBalance;
+          const timestamp = Date.now();
+          options.bridge.addTransaction({
+            id: `dungeon_silver_${String(timestamp)}`,
+            type: "credit",
+            description: `Donjon terminé : +${String(reward.completionSilver)} Silver`,
+            amount: reward.completionSilver,
+            timestamp,
+          });
+          options.bridge.addEconomyNotification({
+            id: `notif_dungeon_silver_${String(timestamp)}`,
+            type: "success",
+            message: `Donjon terminé · +${String(reward.completionSilver)} Silver`,
+            timestamp,
+          });
+        }
+      }
       options.resyncAll();
       return;
     }
 
-    const zonePlacement = getWorldZonePlacement(
-      options.worldRuntime.getActiveZoneDef().defId,
-    );
+    const zonePlacement = getWorldZonePlacement(options.worldRuntime.getActiveZoneDef().defId);
     const progressionRewards = getEncounterRewards(
       zonePlacement.zoneIndexWithinBand,
       options.worldRuntime.currentSegment,
@@ -139,32 +145,21 @@ export function setupCombatRewardAdapter(
       zonePlacement.bandId,
     );
     const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
-    const monster = monsterDefinitionId === undefined
-      ? undefined
-      : getMonsterDefinition(monsterDefinitionId);
-    const rewards = progressionRewards;
-
+    const monster = monsterDefinitionId === undefined ? undefined : getMonsterDefinition(monsterDefinitionId);
     const isFinalBoss = monster?.tags.includes("biome_boss") ?? false;
-    const isBoss = isFinalBoss
-      || (monster?.tags.includes("segment_boss") ?? false)
-      || monster?.category === "boss";
+    const isBoss = isFinalBoss || (monster?.tags.includes("segment_boss") ?? false) || monster?.category === "boss";
     const isElite = monster?.category === "elite";
-
     const enchantmentDropWeight = getEnchantmentShardProgressionWeight(
-      zonePlacement.bandId,
-      zonePlacement.zoneIndexWithinBand,
-      options.worldRuntime.currentSegment,
+      zonePlacement.bandId, zonePlacement.zoneIndexWithinBand, options.worldRuntime.currentSegment,
     );
     const dungeonKeyDropWeight = getDungeonKeyProgressionWeight(
-      zonePlacement.bandId,
-      zonePlacement.zoneIndexWithinBand,
-      options.worldRuntime.currentSegment,
+      zonePlacement.bandId, zonePlacement.zoneIndexWithinBand, options.worldRuntime.currentSegment,
     );
     const enchantmentTier = getWorldBandDefinition(zonePlacement.bandId).maximumTier;
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(
-      rewards.silver,
-      rewards.fame,
+      progressionRewards.silver,
+      progressionRewards.fame,
       {
         segmentIndex: options.worldRuntime.currentSegment,
         faction: monster?.faction ?? "generic",
@@ -180,7 +175,6 @@ export function setupCombatRewardAdapter(
 
     incomeRate = rewardResult.newBalance - lastSilver;
     lastSilver = rewardResult.newBalance;
-
     options.bridge.addTransaction({
       id: `loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
       type: "credit",
@@ -198,7 +192,6 @@ export function setupCombatRewardAdapter(
     if (rewardResult.fameEarned !== undefined) {
       options.recalculateWeaponMasteryStats();
       syncStatsToBridge(options.bridge, options.statsManager, options.heroId);
-
       const masteryName = getMasteryDisplayName(rewardResult.fameEarned.weaponId);
       options.bridge.addEconomyNotification({
         id: `notif_fame_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
@@ -213,7 +206,6 @@ export function setupCombatRewardAdapter(
       const category = formatDropCategory(drop.kind);
       const quantitySuffix = drop.quantity > 1 ? ` ×${String(drop.quantity)}` : "";
       const timestamp = Date.now();
-
       options.bridge.addTransaction({
         id: `loot_item_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
         type: "credit",
@@ -221,7 +213,6 @@ export function setupCombatRewardAdapter(
         amount: drop.quantity,
         timestamp,
       });
-
       options.bridge.addEconomyNotification({
         id: `notif_drop_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
         type: "success",
@@ -229,19 +220,13 @@ export function setupCombatRewardAdapter(
         timestamp,
       });
     }
-
     options.resyncAll();
   });
 
   return {
     getIncomeRate: () => incomeRate,
     getLastSilver: () => lastSilver,
-    resetSilverBalance: (newBalance: number) => {
-      lastSilver = newBalance;
-      incomeRate = 0;
-    },
-    dispose: () => {
-      unsubscribe();
-    },
+    resetSilverBalance: (newBalance: number) => { lastSilver = newBalance; incomeRate = 0; },
+    dispose: () => { unsubscribe(); },
   };
 }
