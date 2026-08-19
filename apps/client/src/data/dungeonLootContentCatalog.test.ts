@@ -10,21 +10,52 @@ describe("dungeonLootContentCatalog", () => {
       expect(loot.faction).toBe(dungeon.faction);
       expect(loot.artifactFragmentItemId).toBe(`item_resource_artifact_fragment_${suffix}`);
       expect(loot.artifactItemId).toBe(`item_resource_artifact_${suffix}`);
+      expect(loot.enchantmentShardItemId).toBe(`item_resource_enchantment_shard_t${dungeon.tier}`);
     }
   });
 
-  it("shares one provisional reward profile per dungeon tier", () => {
+  it("shares one reward profile per dungeon tier, including secondary shard bonuses", () => {
     const expected = {
-      4: { normal: { artifactFragmentQuantity: 4, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 10, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 28, artifactDropChance: 0.1 } },
-      5: { normal: { artifactFragmentQuantity: 5, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 12, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 34, artifactDropChance: 0.12 } },
-      6: { normal: { artifactFragmentQuantity: 6, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 14, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 40, artifactDropChance: 0.14 } },
-      7: { normal: { artifactFragmentQuantity: 7, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 16, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 46, artifactDropChance: 0.16 } },
-      8: { normal: { artifactFragmentQuantity: 8, artifactDropChance: 0 }, elite: { artifactFragmentQuantity: 18, artifactDropChance: 0 }, boss: { artifactFragmentQuantity: 52, artifactDropChance: 0.18 } },
+      4: {
+        normal: { artifactFragmentQuantity: 4, artifactDropChance: 0, enchantmentShardQuantity: 0 },
+        elite: { artifactFragmentQuantity: 10, artifactDropChance: 0, enchantmentShardQuantity: 1 },
+        boss: { artifactFragmentQuantity: 28, artifactDropChance: 0.1, enchantmentShardQuantity: 4 },
+      },
+      5: {
+        normal: { artifactFragmentQuantity: 5, artifactDropChance: 0, enchantmentShardQuantity: 0 },
+        elite: { artifactFragmentQuantity: 12, artifactDropChance: 0, enchantmentShardQuantity: 1 },
+        boss: { artifactFragmentQuantity: 34, artifactDropChance: 0.12, enchantmentShardQuantity: 5 },
+      },
+      6: {
+        normal: { artifactFragmentQuantity: 6, artifactDropChance: 0, enchantmentShardQuantity: 0 },
+        elite: { artifactFragmentQuantity: 14, artifactDropChance: 0, enchantmentShardQuantity: 2 },
+        boss: { artifactFragmentQuantity: 40, artifactDropChance: 0.14, enchantmentShardQuantity: 6 },
+      },
+      7: {
+        normal: { artifactFragmentQuantity: 7, artifactDropChance: 0, enchantmentShardQuantity: 1 },
+        elite: { artifactFragmentQuantity: 16, artifactDropChance: 0, enchantmentShardQuantity: 2 },
+        boss: { artifactFragmentQuantity: 46, artifactDropChance: 0.16, enchantmentShardQuantity: 5 },
+      },
+      8: {
+        normal: { artifactFragmentQuantity: 8, artifactDropChance: 0, enchantmentShardQuantity: 1 },
+        elite: { artifactFragmentQuantity: 18, artifactDropChance: 0, enchantmentShardQuantity: 3 },
+        boss: { artifactFragmentQuantity: 52, artifactDropChance: 0.18, enchantmentShardQuantity: 6 },
+      },
     } as const;
+    const expectedFullRunShards = { 4: 5, 5: 6, 6: 8, 7: 10, 8: 12 } as const;
+
     for (const dungeon of DUNGEON_DEFINITIONS) {
-      const profile = expected[dungeon.tier as keyof typeof expected];
+      const tier = dungeon.tier as keyof typeof expected;
+      const profile = expected[tier];
       if (profile === undefined) throw new Error(`Unexpected authored dungeon tier: ${String(dungeon.tier)}`);
-      expect(getDungeonLootDefinition(dungeon.lootTableId).encounters).toEqual(profile);
+      const loot = getDungeonLootDefinition(dungeon.lootTableId);
+      expect(loot.encounters).toEqual(profile);
+
+      const shardTotal = dungeon.encounters.reduce(
+        (sum, encounter) => sum + loot.encounters[encounter.kind].enchantmentShardQuantity,
+        0,
+      );
+      expect(shardTotal).toBe(expectedFullRunShards[tier]);
     }
   });
 
