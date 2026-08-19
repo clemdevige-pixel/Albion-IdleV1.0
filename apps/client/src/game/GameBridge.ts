@@ -26,7 +26,7 @@ import {
 export * from "./bridge/GameBridgeModels";
 
 type BridgeListener = () => void;
-type DamagePresentationSource = "auto_attack" | "ability" | "effect" | "other";
+type DamagePresentationSource = "auto_attack" | "ability" | "effect" | "heal" | "other";
 
 export interface EnemyPresentationSnapshot {
   readonly encounterKey: string;
