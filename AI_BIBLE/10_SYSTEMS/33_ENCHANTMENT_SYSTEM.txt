@@ -15,12 +15,12 @@ V1 uses normal enchantment levels `.0` to `.3`. Eligible weapons can then perfor
 | Level | Display | Cumulative Item Power bonus | Incremental Tier Shard cost |
 |---:|---|---:|---:|
 | 0 | .0 | +0 IP | - |
-| 1 | .1 | +50 IP | 6 |
-| 2 | .2 | +100 IP | 16 |
-| 3 | .3 | +150 IP | 30 |
+| 1 | .1 | +50 IP | 10 |
+| 2 | .2 | +100 IP | 30 |
+| 3 | .3 | +150 IP | 60 |
 | 4 | .4 / Awakened weapon | +200 IP | 100 |
 
-A `.0 -> .3` progression consumes 52 enchantment shards for a full-cost item.
+A `.0 -> .3` progression consumes 100 enchantment shards for a full-cost item.
 
 The `.3 -> .4` Awakening consumes 100 matching Tier shards for the weapon itself and is deliberately not part of the 1H + off-hand package split.
 
@@ -80,11 +80,11 @@ Every active upgrade consumes matching Tier shards, refined craft materials asso
 
 The shard is the primary combat-time limiter. Refined materials preserve interaction with Gathering / Refining / Crafting. Silver provides an economic sink. These three costs should not all be tuned as extreme bottlenecks simultaneously.
 
-Validated incremental shard curve for a full-cost item:
+The authoritative normal incremental shard curve for a full-cost item is:
 
-- `.0 -> .1`: 6 shards
-- `.1 -> .2`: 16 shards
-- `.2 -> .3`: 30 shards
+- `.0 -> .1`: 10 shards
+- `.1 -> .2`: 30 shards
+- `.2 -> .3`: 60 shards
 - `.3 -> .4`: 100 shards, weapon Awakening only
 
 The normal `.1-.3` weapon-package rule is:
@@ -94,16 +94,34 @@ The normal `.1-.3` weapon-package rule is:
 - off-hand = 50% package cost
 - therefore 1H + off-hand = exactly one 2H package
 
-Because 6 / 16 / 30 are even values, the 50/50 split remains exact at every normal enchantment step:
+Because 10 / 30 / 60 are even values, the 50/50 split remains exact at every normal enchantment step:
 
 | Step | 2H | 1H | Off-hand | 1H + Off-hand |
 |---|---:|---:|---:|---:|
-| `.0 -> .1` | 6 | 3 | 3 | 6 |
-| `.1 -> .2` | 16 | 8 | 8 | 16 |
-| `.2 -> .3` | 30 | 15 | 15 | 30 |
-| cumulative `.0 -> .3` | 52 | 26 | 26 | 52 |
+| `.0 -> .1` | 10 | 5 | 5 | 10 |
+| `.1 -> .2` | 30 | 15 | 15 | 30 |
+| `.2 -> .3` | 60 | 30 | 30 | 60 |
+| cumulative `.0 -> .3` | 100 | 50 | 50 | 100 |
 
 This package equivalence applies to shards, refined-material quantities and Silver for `.1-.3`.
+
+## Full-set benchmark convention
+
+Runtime enchantment-farm sweeps express progression time for a standard full set as five equivalent full-cost packages:
+
+- weapon package = 1 full-cost equivalent (`2H`, or `1H + off-hand` together)
+- helmet = 1
+- chest = 1
+- boots = 1
+- cape = 1
+
+Therefore the shard targets used by the full-set benchmarks are derived from the authoritative per-item curve:
+
+- full `.0 -> .1`: 50 shards
+- full `.1 -> .2`: 150 shards
+- full `.2 -> .3`: 300 shards
+
+These values must be derived from `ENCHANTMENT_SHARD_COSTS`; balance tests must not maintain a second hardcoded cost curve.
 
 ## Awakening Cost Rule
 
@@ -117,7 +135,7 @@ Therefore:
 
 A 1H weapon receives no 50% discount on `.4`. Its shard, refined-material and Silver Awakening costs are the same full weapon cost as a 2H weapon of the same Tier/category baseline.
 
-The validated `.4` shard cost is 100, targeting approximately 1h30-2h of additional shard farming at the measured late-Blue/Mountain rates. This pacing target is separate from the `.1-.3` normal enchantment curve.
+The validated `.4` shard cost is 100. Awakening pacing is measured separately from normal full-set `.1-.3` progression because `.4` applies to the weapon itself rather than the five-equivalent-item set.
 
 Current refined-material quantity multipliers are x1 / x2 / x4 / x8 for `.1` / `.2` / `.3` / `.4`. Silver increases with enchantment level and scales with Tier/category through authoritative data.
 
@@ -125,17 +143,40 @@ Current refined-material quantity multipliers are x1 / x2 / x4 / x8 for `.1` / `
 
 # Pacing Baseline
 
-The validated T4 fresh-run pacing target is approximately:
+Shard pacing is validated from real runtime TTK at the best accessible autonomous farm spot, not from a universal theoretical drop rate.
 
-- first T4 craft: ~30 minutes from spawn
-- full `.1`: roughly ~1 hour from spawn
-- full `.2`: roughly ~2 hours from spawn
-- full `.3`: roughly ~4 hours from spawn, with natural variation by weapon profile and autonomous farm depth
-- `.3 -> .4` weapon Awakening: +1h30 to +2h of shard farming at appropriate late-Tier farm rates
+Latest T4 full-set shard-only baseline validated on 2026-08-19 after the current drop calibration and weapon progression tuning:
+
+| Step | Full-set shards | Worst representative weapon | Representative average |
+|---|---:|---:|---:|
+| `.0 -> .1` | 50 | ~1.40 h | ~1.23 h |
+| `.1 -> .2` | 150 | ~3.20 h | ~2.74 h |
+| `.2 -> .3` | 300 | ~5.09 h | ~4.55 h |
+
+These are shard-farming durations from the benchmark checkpoint/loadout, not total account time from spawn. Gathering, refining, crafting, Silver, mastery acquisition and player routing can change total progression time.
+
+T5-T8 pacing is evaluated by the same runtime sweep methodology. The exact best farm spot can differ by weapon profile and enchantment state.
 
 Weapon profiles are allowed to produce meaningful pacing differences because different weapons do not farm every world checkpoint with identical efficiency.
 
 Drop rates are not changed merely to force identical enchantment timing across weapon profiles.
+
+---
+
+# Tier Bridge Contract
+
+The shard resource for a band is determined by the content being farmed, not by the Tier currently equipped.
+
+This allows previous-tier gear to earn the first shards of the next Tier by entering the next world band.
+
+The regression contract is:
+
+- T4.3 must have a viable autonomous farm entry into T5 / Yellow content.
+- T5.3 must have a viable autonomous farm entry into T6 / Orange content.
+- T6.3 must have a viable autonomous farm entry into T7 / Red content.
+- T7.3 must have a viable autonomous farm entry into T8 / Black content.
+
+The bridge does not require every weapon to reach the same segment or shards/hour. It protects access to the next resource tier without erasing weapon identity.
 
 ---
 
@@ -163,7 +204,7 @@ Drop balancing must be evaluated through expected enchantment shards per unit of
 
 Progressing deeper into content of the same Tier must be at least competitive with farming its earliest trivial segment and should generally provide a modestly better expected yield when difficulty increases.
 
-The current implementation uses difficulty weighting based on monster profile/depth with elite and boss modifiers. Runtime shard/TTK benchmarks remain authoritative when recalibrating the economy.
+The current implementation uses authored shard progression weights, depth contribution and elite/boss modifiers. Runtime shard/TTK benchmarks remain authoritative when recalibrating the economy.
 
 ---
 
@@ -312,12 +353,14 @@ Validated on 2026-08-19:
 - +50 IP per active enchantment level.
 - One Tier-specific enchantment shard for each Tier T4-T8.
 - No shard transmutation between Tiers.
-- Normal incremental shard curve: 6 / 16 / 30.
+- Normal incremental shard curve: 10 / 30 / 60.
+- Standard full-set benchmark costs are derived as 50 / 150 / 300 from five full-cost equivalents.
 - Awakening shard cost: 100.
 - Exact 50/50 economic split for 1H + off-hand through `.3`.
 - `.4` ignores the 1H package discount: eligible 1H and 2H weapons pay the same full Awakening cost.
 - Silver and refined materials follow the same package/Awakening distinction.
-- Existing shard drop rates retained after runtime pacing review.
+- Existing shard drop rates retained after runtime T4-T8 pacing review.
+- Previous-tier `.3` entry bridges into the next shard band are protected by runtime regression sweeps.
 - Combat-segment restriction uses authoritative segment state.
 - Old universal resources removed from active gameplay and handled only by legacy-save cleanup.
 - Tier halo and enchantment-label colors separated.
