@@ -33,16 +33,17 @@ export function getEnchantmentItemPowerBonus(level: EnchantmentLevel): number {
  * Validated V1 normal-enchantment curve:
  * .1 = x1.12, .2 = x1.26, .3 = x1.42.
  *
- * .4 remains x1.40 for now because Awakening is a distinct weapon-only system
- * and must be rebalanced independently rather than inferred from the normal
- * full-set enchantment curve.
+ * .4 is a distinct weapon-only Awakening state. Until its dedicated combat
+ * curve is revalidated, it preserves the .3 base-stat multiplier so Awakening
+ * can never reduce equipment stats; Awakening-specific traits provide the
+ * separate progression layer.
  */
 export const ENCHANTMENT_STAT_MULTIPLIER: Readonly<Record<EnchantmentLevel, number>> = {
   0: 1,
   1: 1.12,
   2: 1.26,
   3: 1.42,
-  4: 1.4,
+  4: 1.42,
 };
 
 export function getEnchantmentStatMultiplier(level: EnchantmentLevel): number {
