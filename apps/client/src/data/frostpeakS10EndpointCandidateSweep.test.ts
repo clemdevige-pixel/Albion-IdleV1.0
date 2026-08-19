@@ -33,26 +33,44 @@ type MutableCurve = {
   defenseModel: "legacy_flat_magic" | "rank_parity";
 };
 
+type Candidate = {
+  readonly id: string;
+  readonly healthEnd: number;
+  readonly damageEnd: number;
+  readonly defenseEnd: number;
+};
+
 const liveCurve = BLUE_WORLD_COMBAT_CURVE[FROSTPEAK_INDEX];
 if (liveCurve === undefined) throw new Error("Missing Frostpeak curve");
 const original = { ...liveCurve };
 
-const CANDIDATES = [
+const CANDIDATES: readonly Candidate[] = [
   { id: "live", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.8 },
-  { id: "health_3_95", healthEnd: 3.95, damageEnd: 2.8, defenseEnd: 1.8 },
+
   { id: "health_3_90", healthEnd: 3.9, damageEnd: 2.8, defenseEnd: 1.8 },
-  { id: "damage_2_75", healthEnd: 4.0, damageEnd: 2.75, defenseEnd: 1.8 },
+  { id: "health_3_80", healthEnd: 3.8, damageEnd: 2.8, defenseEnd: 1.8 },
+  { id: "health_3_70", healthEnd: 3.7, damageEnd: 2.8, defenseEnd: 1.8 },
+
   { id: "damage_2_70", healthEnd: 4.0, damageEnd: 2.7, defenseEnd: 1.8 },
-  { id: "defense_1_75", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.75 },
+  { id: "damage_2_60", healthEnd: 4.0, damageEnd: 2.6, defenseEnd: 1.8 },
+  { id: "damage_2_50", healthEnd: 4.0, damageEnd: 2.5, defenseEnd: 1.8 },
+
   { id: "defense_1_70", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.7 },
-  { id: "balanced_small", healthEnd: 3.95, damageEnd: 2.75, defenseEnd: 1.75 },
+  { id: "defense_1_60", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.6 },
+  { id: "defense_1_50", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.5 },
+
+  { id: "balanced_3_90_2_70_1_70", healthEnd: 3.9, damageEnd: 2.7, defenseEnd: 1.7 },
+  { id: "balanced_3_85_2_65_1_65", healthEnd: 3.85, damageEnd: 2.65, defenseEnd: 1.65 },
+  { id: "balanced_3_80_2_60_1_60", healthEnd: 3.8, damageEnd: 2.6, defenseEnd: 1.6 },
+  { id: "balanced_3_75_2_55_1_55", healthEnd: 3.75, damageEnd: 2.55, defenseEnd: 1.55 },
+  { id: "balanced_3_70_2_50_1_50", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.5 },
 ] as const;
 
 function mutableFrostpeak(): MutableCurve {
   return BLUE_WORLD_COMBAT_CURVE[FROSTPEAK_INDEX] as unknown as MutableCurve;
 }
 
-function applyCandidate(candidate: (typeof CANDIDATES)[number]): void {
+function applyCandidate(candidate: Candidate): void {
   const curve = mutableFrostpeak();
   curve.healthEnd = candidate.healthEnd;
   curve.damageEnd = candidate.damageEnd;
@@ -88,6 +106,13 @@ function run(weaponItemId: string, enchantment: 2 | 3, masteryLevel: number, use
   });
 }
 
+function adjustmentScore(candidate: Candidate): number {
+  const healthReduction = (original.healthEnd - candidate.healthEnd) / original.healthEnd;
+  const damageReduction = (original.damageEnd - candidate.damageEnd) / original.damageEnd;
+  const defenseReduction = (original.defenseEnd - candidate.defenseEnd) / original.defenseEnd;
+  return Number((healthReduction + damageReduction + defenseReduction).toFixed(4));
+}
+
 describe("Frostpeak S10 endpoint candidate sweep", () => {
   it("finds the smallest endpoint adjustment that restores the authored T4.3 wall contract", () => {
     const rows = CANDIDATES.map((candidate) => {
@@ -98,30 +123,39 @@ describe("Frostpeak S10 endpoint candidate sweep", () => {
       const t43S9 = WEAPONS.map((weapon) => run(weapon, 3, 22, false, 8));
       const t43S10 = WEAPONS.map((weapon) => run(weapon, 3, 22, false, 9));
 
+      const validContract =
+        t42S10.filter((result) => result.clear).length < WEAPONS.length &&
+        t42PotionS10.every((result) => result.clear) &&
+        t43S9.every((result) => result.clear) &&
+        t43S10.every((result) => result.clear);
+
       const row = {
         candidate: candidate.id,
         healthEnd: candidate.healthEnd,
         damageEnd: candidate.damageEnd,
         defenseEnd: candidate.defenseEnd,
+        adjustmentScore: adjustmentScore(candidate),
         t42S10Clear: t42S10.filter((result) => result.clear).length,
         t42PotionS10Clear: t42PotionS10.filter((result) => result.clear).length,
         t43S9Clear: t43S9.filter((result) => result.clear).length,
         t43S10Clear: t43S10.filter((result) => result.clear).length,
         t43S10MinHp: Number(Math.min(...t43S10.filter((result) => result.clear).map((result) => result.hpPercent), 100).toFixed(1)),
         t43S10AvgHp: Number((t43S10.reduce((sum, result) => sum + result.hpPercent, 0) / t43S10.length).toFixed(1)),
-        validContract:
-          t42S10.filter((result) => result.clear).length < WEAPONS.length &&
-          t42PotionS10.every((result) => result.clear) &&
-          t43S9.every((result) => result.clear) &&
-          t43S10.every((result) => result.clear),
+        validContract,
       };
 
       restore();
       return row;
     });
 
+    const validCandidates = rows
+      .filter((row) => row.validContract)
+      .sort((a, b) => a.adjustmentScore - b.adjustmentScore || a.t43S10AvgHp - b.t43S10AvgHp);
+
     console.log("[FROSTPEAK_S10_ENDPOINT_CANDIDATE_SWEEP]");
     console.table(rows);
+    console.log("[FROSTPEAK_S10_ENDPOINT_VALID_CANDIDATES]");
+    console.table(validCandidates);
     console.log("[FROSTPEAK_S10_ENDPOINT_CANDIDATE_SWEEP_JSON]", JSON.stringify(rows, null, 2));
 
     expect(rows).toHaveLength(CANDIDATES.length);
