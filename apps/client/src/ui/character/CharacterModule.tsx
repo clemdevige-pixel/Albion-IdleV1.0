@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { EquipmentLoadout, EquipmentSlot } from "@game/gameplay";
 import { getItemTier } from "../../data/itemPower";
 import { getItemDefinition } from "../../panels/ItemVisual";
@@ -23,9 +23,7 @@ const LEFT_SLOTS: readonly EquipmentSlot[] = ["head", "chest", "boots"];
 const RIGHT_SLOTS: readonly EquipmentSlot[] = ["weapon", "off_hand", "cape"];
 
 function formatValue(value: number): string {
-  return (Math.round(value * 10) / 10).toLocaleString("fr-FR", {
-    maximumFractionDigits: 1,
-  });
+  return (Math.round(value * 10) / 10).toLocaleString("fr-FR", { maximumFractionDigits: 1 });
 }
 
 function formatWholeValue(value: number): string {
@@ -43,20 +41,34 @@ export function CharacterModule(): JSX.Element {
   const character = useCharacterData();
   const actions = useCharacterActions();
   const [loadoutRevision, setLoadoutRevision] = useState(0);
-  const [pickerSlot, setPickerSlot] = useState<{
-    slot: EquipmentSlot;
-    x: number;
-    y: number;
-  } | null>(null);
+  const [selectedLoadoutId, setSelectedLoadoutId] = useState("");
+  const [editingLoadoutId, setEditingLoadoutId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [pickerSlot, setPickerSlot] = useState<{ slot: EquipmentSlot; x: number; y: number } | null>(null);
 
   const equipmentBySlot = useMemo(
     () => new Map(character.equipment.map((entry) => [entry.slot, entry])),
     [character.equipment],
   );
-  const loadouts = useMemo(
-    () => actions.getLoadouts(),
-    [actions, loadoutRevision],
-  );
+  const loadouts = useMemo(() => actions.getLoadouts(), [actions, loadoutRevision]);
+
+  useEffect(() => {
+    if (loadouts.length === 0) {
+      setSelectedLoadoutId("");
+      setEditingLoadoutId(null);
+      return;
+    }
+    if (!loadouts.some((loadout) => loadout.id === selectedLoadoutId)) {
+      setSelectedLoadoutId(loadouts[0]?.id ?? "");
+    }
+  }, [loadouts, selectedLoadoutId]);
+
+  const selectedLoadout = loadouts.find((loadout) => loadout.id === selectedLoadoutId);
+  const selectedLoadoutActive = selectedLoadout !== undefined
+    && character.equipment.filter((entry) => entry.itemId !== undefined).length === selectedLoadout.slots.length
+    && selectedLoadout.slots.every((slot) => equipmentBySlot.get(slot.slot)?.instanceId === slot.instanceId);
+  const selectedLoadoutTier = selectedLoadout === undefined ? undefined : getLoadoutMaxTier(selectedLoadout);
+
   const equippedWeapon = equipmentBySlot.get("weapon");
   const heroIdle = getEquippedHeroIdlePresentation(equippedWeapon?.itemId);
   const hasTwoHandedWeapon = equippedWeapon?.itemId !== undefined
@@ -66,20 +78,24 @@ export function CharacterModule(): JSX.Element {
     : character.inventory.filter((entry) => entry.itemId !== undefined
       && getItemDefinition(entry.itemId)?.slot === pickerSlot.slot);
 
-  const isActiveLoadout = (loadout: EquipmentLoadout): boolean => {
-    const equipped = character.equipment.filter((entry) => entry.itemId !== undefined);
-    if (equipped.length !== loadout.slots.length) return false;
-    return loadout.slots.every((slot) => (
-      equipmentBySlot.get(slot.slot)?.instanceId === slot.instanceId
-    ));
-  };
-
   const saveNewLoadout = (): void => {
     const ordinal = loadouts.length + 1;
     const id = `loadout_${Date.now().toString(36)}_${String(ordinal)}`;
     if (actions.saveLoadout(id, `Set ${String(ordinal)}`)) {
+      setSelectedLoadoutId(id);
       setLoadoutRevision((revision) => revision + 1);
     }
+  };
+
+  const openLoadoutEditor = (): void => {
+    if (selectedLoadout === undefined) return;
+    setEditingLoadoutId(selectedLoadout.id);
+    setEditingName(selectedLoadout.name);
+  };
+
+  const closeLoadoutEditor = (): void => {
+    setEditingLoadoutId(null);
+    setEditingName("");
   };
 
   const renderSlot = (slot: EquipmentSlot): JSX.Element => {
@@ -101,13 +117,9 @@ export function CharacterModule(): JSX.Element {
             ? null
             : { slot, x: event.clientX, y: event.clientY });
         }}
-        {...(entry?.itemId === undefined
-          ? {}
-          : {
-              onDoubleClick: () => {
-                if (actions.unequip(slot)) setPickerSlot(null);
-              },
-            })}
+        {...(entry?.itemId === undefined ? {} : {
+          onDoubleClick: () => { if (actions.unequip(slot)) setPickerSlot(null); },
+        })}
       />
     );
   };
@@ -115,145 +127,125 @@ export function CharacterModule(): JSX.Element {
   return (
     <div className="character-module">
       <section className="character-module__equipment" aria-label="Équipement actuel">
-        <div className="character-module__equipment-heading">
-          <span>Équipement</span>
-        </div>
+        <div className="character-module__equipment-heading"><span>Équipement</span></div>
 
         <div className="character-module__presets" aria-label="Loadouts d'équipement">
-          <div className="character-module__presets-heading">
-            <small>Loadouts</small>
-            <button type="button" onClick={saveNewLoadout}>+ Enregistrer le set actuel</button>
-          </div>
-          {loadouts.length > 0 ? (
-            <div className="character-module__preset-list">
+          <small className="character-module__presets-label">Loadout</small>
+          <div className="character-module__preset-toolbar">
+            <select
+              aria-label="Loadout sélectionné"
+              value={selectedLoadoutId}
+              disabled={loadouts.length === 0}
+              onChange={(event) => {
+                setSelectedLoadoutId(event.target.value);
+                closeLoadoutEditor();
+              }}
+            >
+              {loadouts.length === 0 && <option value="">Aucun loadout</option>}
               {loadouts.map((loadout) => {
-                const active = isActiveLoadout(loadout);
-                const maxTier = getLoadoutMaxTier(loadout);
+                const tier = getLoadoutMaxTier(loadout);
                 return (
-                  <article
-                    key={loadout.id}
-                    className={`character-module__preset${active ? " is-active" : ""}`}
-                  >
-                    <button
-                      type="button"
-                      className="character-module__preset-main"
-                      disabled={active}
-                      title={active ? "Loadout actuellement équipé" : `Équiper ${loadout.name}`}
-                      onClick={() => {
-                        if (actions.applyLoadout(loadout.id)) {
-                          setPickerSlot(null);
-                          setLoadoutRevision((revision) => revision + 1);
-                        }
-                      }}
-                    >
-                      <strong>{loadout.name}</strong>
-                      <span>
-                        {String(loadout.slots.length)} pièces
-                        {maxTier === undefined ? "" : ` · T${String(maxTier)} max`}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className="character-module__preset-action"
-                      title={`Écraser ${loadout.name} avec le set actuel`}
-                      aria-label={`Écraser ${loadout.name} avec le set actuel`}
-                      onClick={() => {
-                        if (actions.saveLoadout(loadout.id, loadout.name)) {
-                          setLoadoutRevision((revision) => revision + 1);
-                        }
-                      }}
-                    >
-                      ↻
-                    </button>
-                    <button
-                      type="button"
-                      className="character-module__preset-action"
-                      title={`Supprimer ${loadout.name}`}
-                      aria-label={`Supprimer ${loadout.name}`}
-                      onClick={() => {
-                        if (actions.deleteLoadout(loadout.id)) {
-                          setLoadoutRevision((revision) => revision + 1);
-                        }
-                      }}
-                    >
-                      ×
-                    </button>
-                  </article>
+                  <option key={loadout.id} value={loadout.id}>
+                    {loadout.name} · {String(loadout.slots.length)} pièces{tier === undefined ? "" : ` · T${String(tier)} max`}
+                  </option>
                 );
               })}
+            </select>
+            <button
+              type="button"
+              disabled={selectedLoadout === undefined || selectedLoadoutActive}
+              onClick={() => {
+                if (selectedLoadout !== undefined && actions.applyLoadout(selectedLoadout.id)) {
+                  setPickerSlot(null);
+                  setLoadoutRevision((revision) => revision + 1);
+                }
+              }}
+            >{selectedLoadoutActive ? "Équipé" : "Équiper"}</button>
+            <button type="button" disabled={selectedLoadout === undefined} onClick={openLoadoutEditor} title="Gérer le loadout">✎</button>
+            <button type="button" onClick={saveNewLoadout} title="Enregistrer le set actuel">+</button>
+          </div>
+          {selectedLoadout !== undefined && (
+            <div className="character-module__preset-summary">
+              <span>{selectedLoadoutActive ? "Set actuellement équipé" : `${String(selectedLoadout.slots.length)} pièces enregistrées`}</span>
+              {selectedLoadoutTier !== undefined && <span>T{String(selectedLoadoutTier)} max</span>}
             </div>
-          ) : (
-            <p className="character-module__preset-empty">
-              Aucun loadout enregistré. Équipez votre set puis enregistrez-le.
-            </p>
+          )}
+          {editingLoadoutId !== null && selectedLoadout?.id === editingLoadoutId && (
+            <div className="character-module__preset-editor">
+              <input
+                aria-label="Nom du loadout"
+                value={editingName}
+                maxLength={40}
+                onChange={(event) => { setEditingName(event.target.value); }}
+              />
+              <button
+                type="button"
+                disabled={editingName.trim().length === 0}
+                onClick={() => {
+                  if (actions.renameLoadout(selectedLoadout.id, editingName.trim())) {
+                    closeLoadoutEditor();
+                    setLoadoutRevision((revision) => revision + 1);
+                  }
+                }}
+              >Renommer</button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (actions.saveLoadout(selectedLoadout.id, selectedLoadout.name)) {
+                    closeLoadoutEditor();
+                    setLoadoutRevision((revision) => revision + 1);
+                  }
+                }}
+              >Mettre à jour avec le set actuel</button>
+              <button
+                type="button"
+                className="character-module__preset-delete"
+                onClick={() => {
+                  if (actions.deleteLoadout(selectedLoadout.id)) {
+                    closeLoadoutEditor();
+                    setLoadoutRevision((revision) => revision + 1);
+                  }
+                }}
+              >Supprimer</button>
+            </div>
           )}
         </div>
 
         <div className="character-module__loadout">
-          <div className="character-module__slots character-module__slots--left">
-            {LEFT_SLOTS.map(renderSlot)}
-          </div>
-
+          <div className="character-module__slots character-module__slots--left">{LEFT_SLOTS.map(renderSlot)}</div>
           <div className="character-module__hero">
             <div className="character-module__hero-halo" />
             <div
-              className={`character-module__hero-idle${
-                heroIdle.spriteSheet ? " character-module__hero-idle--sheet" : ""
-              }`}
+              className={`character-module__hero-idle${heroIdle.spriteSheet ? " character-module__hero-idle--sheet" : ""}`}
               style={{ backgroundImage: `url("${heroIdle.image}")` }}
               role="img"
               aria-label="Aperçu du héros équipé"
             />
           </div>
-
-          <div className="character-module__slots character-module__slots--right">
-            {RIGHT_SLOTS.map(renderSlot)}
-          </div>
+          <div className="character-module__slots character-module__slots--right">{RIGHT_SLOTS.map(renderSlot)}</div>
         </div>
       </section>
 
       <section className="character-module__stats" aria-label="Statistiques de combat">
         <article className="character-module__stat-card character-module__stat-card--ip">
           <img src="/assets/ui/ip.png" alt="" aria-hidden="true" draggable={false} />
-          <div>
-            <span>Item Power</span>
-            <strong>{formatValue(character.itemPower)}</strong>
-          </div>
+          <div><span>Item Power</span><strong>{formatValue(character.itemPower)}</strong></div>
         </article>
-
         <article className="character-module__stat-card">
           <img src="/assets/ui/health.png" alt="" aria-hidden="true" draggable={false} />
-          <div>
-            <span>Points de vie</span>
-            <strong>{formatWholeValue(character.stats.health)} / {formatWholeValue(character.stats.maxHealth)}</strong>
-          </div>
+          <div><span>Points de vie</span><strong>{formatWholeValue(character.stats.health)} / {formatWholeValue(character.stats.maxHealth)}</strong></div>
         </article>
-
         <article className="character-module__stat-card">
           <img src="/assets/ui/damage.png" alt="" aria-hidden="true" draggable={false} />
-          <div>
-            <span>Dégâts</span>
-            <div className="character-module__stat-values">
-              <span><small>Phys.</small><strong>{formatValue(character.stats.physicalDamage)}</strong></span>
-              <span><small>Mag.</small><strong>{formatValue(character.stats.magicalDamage)}</strong></span>
-            </div>
-          </div>
+          <div><span>Dégâts</span><div className="character-module__stat-values"><span><small>Phys.</small><strong>{formatValue(character.stats.physicalDamage)}</strong></span><span><small>Mag.</small><strong>{formatValue(character.stats.magicalDamage)}</strong></span></div></div>
         </article>
-
         <article className="character-module__stat-card">
           <img src="/assets/ui/armor.png" alt="" aria-hidden="true" draggable={false} />
-          <div>
-            <span>Défense</span>
-            <div className="character-module__stat-values">
-              <span><small>Armure</small><strong>{formatValue(character.stats.armor)}</strong></span>
-              <span><small>Résist.</small><strong>{formatValue(character.stats.magicResistance)}</strong></span>
-            </div>
-          </div>
+          <div><span>Défense</span><div className="character-module__stat-values"><span><small>Armure</small><strong>{formatValue(character.stats.armor)}</strong></span><span><small>Résist.</small><strong>{formatValue(character.stats.magicResistance)}</strong></span></div></div>
         </article>
       </section>
 
       <AwakenedWeaponPanel />
-
       {pickerSlot !== null && (
         <CharacterEquipmentPicker
           label={SLOT_LABELS[pickerSlot.slot]}
@@ -261,9 +253,7 @@ export function CharacterModule(): JSX.Element {
           x={pickerSlot.x}
           y={pickerSlot.y}
           onClose={() => { setPickerSlot(null); }}
-          onEquip={(position) => {
-            if (actions.equip(position)) setPickerSlot(null);
-          }}
+          onEquip={(position) => { if (actions.equip(position)) setPickerSlot(null); }}
         />
       )}
     </div>
