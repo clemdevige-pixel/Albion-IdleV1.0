@@ -74,7 +74,7 @@ describe("PlayerIslandService", () => {
     expect(service.getState().level).toBe(2);
   });
 
-  it("supports the authored Lv1 to Lv3 development path without circular gates", () => {
+  it("supports the authored Lv1 to Lv5 development path without circular gates", () => {
     const service = new PlayerIslandService();
     service.placeBuilding("lumber_camp", "plot_03");
     service.placeBuilding("mine", "plot_04");
@@ -91,10 +91,18 @@ describe("PlayerIslandService", () => {
     service.upgradeBuilding("hunting_camp");
     service.upgradeBuilding("fiber_camp");
 
-    expect(service.canUpgradeIslandLevel()).toEqual({ ok: true, level: 3 });
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 3 });
     expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
     expect(service.getBuildingLevel("lumber_camp")).toBe(3);
+
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 4 });
+    expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
+    expect(service.getBuildingLevel("lumber_camp")).toBe(4);
+
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 5 });
+    expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
+    expect(service.getBuildingLevel("lumber_camp")).toBe(5);
+    expect(service.upgradeBuilding("lumber_camp")).toEqual({ ok: false, reason: "max_level" });
     expect(service.upgradeIslandLevel()).toEqual({ ok: false, reason: "max_level" });
   });
 
@@ -114,6 +122,21 @@ describe("PlayerIslandService", () => {
 
     expect(restored.getState()).toEqual(source.getState());
     expect(restored.getState().level).toBe(2);
+  });
+
+  it("round-trips the highest authored island level", () => {
+    const source = new PlayerIslandService();
+    source.upgradeIslandLevel();
+    source.upgradeIslandLevel();
+    source.upgradeIslandLevel();
+    source.upgradeIslandLevel();
+    expect(source.getState().level).toBe(5);
+
+    const restored = new PlayerIslandService();
+    restored.load(source.save());
+
+    expect(restored.getState().level).toBe(5);
+    expect(restored.getState()).toEqual(source.getState());
   });
 
   it("migrates an older snapshot by defaulting its island level and appending newly authored plots", () => {
