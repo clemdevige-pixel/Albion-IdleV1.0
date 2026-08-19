@@ -4,6 +4,7 @@ import {
   HEALTH_POTION_COOLDOWN_SECONDS,
   HEALTH_POTION_HEAL_RATIO,
 } from "../data/economyContentCatalog";
+import { combatStopController } from "./CombatStopController.js";
 import { getCombatSegmentStartGeneration } from "./CombatSegmentLifecycle.js";
 
 export type UseConsumableResult =
@@ -36,7 +37,7 @@ export interface ConsumableRuntimeDependencies {
   readonly damageManager: DamageManager;
   readonly deathManager: DeathManager;
   readonly heroId: EntityId;
-  /** Runtime-owned combat activity guard. Defaults to true for isolated tests/tools. */
+  /** Optional runtime activity guard for tools/tests. Live runtime defaults to the combat stop controller. */
   readonly isCombatActive?: () => boolean;
 }
 
@@ -55,7 +56,7 @@ export class ConsumableRuntime {
     this.damageManager = deps.damageManager;
     this.deathManager = deps.deathManager;
     this.heroId = deps.heroId;
-    this.isCombatActive = deps.isCombatActive ?? (() => true);
+    this.isCombatActive = deps.isCombatActive ?? (() => !combatStopController.isPaused());
   }
 
   public tick(dt: number): boolean {
