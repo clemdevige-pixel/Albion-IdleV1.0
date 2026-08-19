@@ -6,12 +6,21 @@ import {
 } from "./worldContentCatalog.js";
 
 /**
- * World equipment caps are derived from the authoritative zone tier.
- * Keeping this resolver separate gives us one policy boundary if a future zone
- * needs an explicit override without teaching navigation/UI about zone names.
+ * Equipment caps are authored by world band, not by the individual zone tier.
+ * Blue deliberately allows T4 everywhere, including its T3 progression zones.
+ * Enchantment level never changes this cap: T4.0 through T4.4 are all T4 here.
  */
+const EQUIPMENT_TIER_CAP_BY_WORLD_BAND = {
+  blue: 4,
+  yellow: 5,
+  orange: 6,
+  red: 7,
+  black: 8,
+} as const;
+
 export function getZoneEquipmentTierCap(zoneDefId: ZoneDefinitionId | string): number {
-  return getWorldZonePlacement(zoneDefId).tier;
+  const { bandId } = getWorldZonePlacement(zoneDefId);
+  return EQUIPMENT_TIER_CAP_BY_WORLD_BAND[bandId];
 }
 
 export function getZoneEquipmentTierCapByNumber(zoneNumber: number): number | undefined {
