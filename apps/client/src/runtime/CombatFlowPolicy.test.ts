@@ -5,17 +5,21 @@ import {
 } from "./CombatFlowPolicy.js";
 
 describe("CombatFlowPolicy", () => {
-  it("preserves current World heal behavior", () => {
+  it("keeps world HP continuous inside a segment, including the elite or boss", () => {
     expect(WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
       locationChangedAfterVictory: false,
       enteringBoss: false,
+    })).toBe(false);
+    expect(WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
+      locationChangedAfterVictory: false,
+      enteringBoss: true,
     })).toBe(false);
     expect(WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
       locationChangedAfterVictory: true,
       enteringBoss: false,
     })).toBe(true);
     expect(WORLD_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
-      locationChangedAfterVictory: false,
+      locationChangedAfterVictory: true,
       enteringBoss: true,
     })).toBe(true);
   });
