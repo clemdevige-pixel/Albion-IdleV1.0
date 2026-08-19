@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { World, createRuntimeServices, type EntityId } from "@game/core";
+import { World, createRuntimeServices } from "@game/core";
 import { InventoryManager } from "../../inventory/inventory-manager.js";
 import type { ItemInstanceId } from "../../inventory/types.js";
 import { EquipmentManager } from "../equipment-manager.js";
