@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { ENCHANTMENT_SHARD_COSTS } from "@game/gameplay";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runEnchantmentShardTtkBenchmark } from "./enchantmentShardTtkBenchmark.js";
+
+const FULL_SET_EQUIVALENT_ITEM_COUNT = 5;
+const FIRST_FULL_SET_SHARD_COST = ENCHANTMENT_SHARD_COSTS[1] * FULL_SET_EQUIVALENT_ITEM_COUNT;
 
 const BRIDGES = [
   { fromTier: 4, toTier: 5, mastery: 23, zone: "amberwood" },
@@ -39,7 +43,7 @@ function shortName(itemId: string, tier: number): string {
 }
 
 describe("enchantment tier bridge sweep", () => {
-  it("measures how previous-tier .3 sets farm the first zone of the next band", () => {
+  it("keeps previous-tier .3 sets able to farm the entry zone of the next band", () => {
     const summaries = BRIDGES.map((bridge) => {
       const zoneDefId = WORLD_ZONE_IDS[bridge.zone];
       const rows = WEAPON_FAMILIES.map((family) => {
@@ -83,7 +87,7 @@ describe("enchantment tier bridge sweep", () => {
           hpPercent: best?.hpPercent ?? 0,
           hoursToFirstFullPointOne: best === undefined || best.shardsPerHour <= 0
             ? null
-            : Number((50 / best.shardsPerHour).toFixed(2)),
+            : Number((FIRST_FULL_SET_SHARD_COST / best.shardsPerHour).toFixed(2)),
         };
       });
 
@@ -105,5 +109,6 @@ describe("enchantment tier bridge sweep", () => {
     console.log("[ENCHANTMENT_TIER_BRIDGE_SUMMARY]", JSON.stringify(summaries, null, 2));
     expect(summaries).toHaveLength(BRIDGES.length);
     expect(summaries.every(({ rows }) => rows.length === WEAPON_FAMILIES.length)).toBe(true);
+    expect(summaries.every(({ summary }) => summary.allWeaponsCanFarm)).toBe(true);
   }, 60_000);
 });
