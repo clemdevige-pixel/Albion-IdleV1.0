@@ -5,6 +5,9 @@ export type {
   EquipmentInfoResolver,
   EquipOutcome,
   UnequipOutcome,
+  EquipmentLoadoutSlot,
+  EquipmentLoadout,
+  EquipmentLoadoutApplyOutcome,
   EquipmentFailureReason,
   EquipmentResult,
 } from "./types.js";
