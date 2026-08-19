@@ -32,6 +32,13 @@ const GATHERING_BUILDING_BY_FAMILY: Readonly<Record<string, IslandBuildingId>> =
   fiber: "fiber_camp",
 };
 
+const GATHERING_BUILDING_BY_PROFESSION: Readonly<Partial<Record<string, IslandBuildingId>>> = {
+  woodcutter: "lumber_camp",
+  miner: "mine",
+  skinner: "hunting_camp",
+  fiber_harvester: "fiber_camp",
+};
+
 const REFINING_BUILDING_BY_TASK_SUFFIX: Readonly<Record<string, IslandBuildingId>> = {
   wood: "sawmill",
   metal: "smelter",
@@ -47,13 +54,6 @@ function getTaskIcon(task: DashboardProductionTask): string {
   return resource?.src ?? "/assets/ui/nav-production.png";
 }
 
-function getTaskBuildingId(task: DashboardProductionTask): IslandBuildingId {
-  if (task.kind === "worker") return "worker_house";
-  const suffix = task.id.slice(task.id.indexOf("-") + 1);
-  if (task.kind === "gathering") return GATHERING_BUILDING_BY_FAMILY[suffix] ?? "worker_house";
-  return REFINING_BUILDING_BY_TASK_SUFFIX[suffix] ?? "worker_house";
-}
-
 export function DashboardProductionCard({ production }: DashboardProductionCardProps): JSX.Element {
   const actions = useDashboardGatheringActions();
   const bridge = useGameBridge();
@@ -61,8 +61,20 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
   const islandSelection = useIslandSelection();
   const interaction = production.gatheringInteraction;
 
+  const getTaskBuildingId = (task: DashboardProductionTask): IslandBuildingId | undefined => {
+    if (task.kind === "worker") {
+      const workerId = task.id.startsWith("worker-") ? task.id.slice("worker-".length) : task.id;
+      const worker = bridge.workers.workers.find((candidate) => candidate.id === workerId);
+      return worker === undefined ? undefined : GATHERING_BUILDING_BY_PROFESSION[worker.profession];
+    }
+    const suffix = task.id.slice(task.id.indexOf("-") + 1).toLowerCase();
+    if (task.kind === "gathering") return GATHERING_BUILDING_BY_FAMILY[suffix];
+    return REFINING_BUILDING_BY_TASK_SUFFIX[suffix];
+  };
+
   const openTaskBuilding = (task: DashboardProductionTask): void => {
     const definitionId = getTaskBuildingId(task);
+    if (definitionId === undefined) return;
     const building = bridge.island.buildings.find((candidate) => candidate.definitionId === definitionId);
     if (building === undefined) return;
     islandSelection.selectBuilding(building.plotId, building.instanceId);
@@ -80,28 +92,34 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
         <p className="dashboard-empty">Aucune production active.</p>
       ) : (
         <div className="dashboard-production__list">
-          {production.tasks.map((task) => (
-            <button
-              type="button"
-              key={task.id}
-              className="dashboard-production__task"
-              onClick={() => { openTaskBuilding(task); }}
-              title="Ouvrir le bâtiment concerné"
-            >
-              <span className="dashboard-production__visual" aria-hidden="true">
-                <img src={getTaskIcon(task)} alt="" />
-              </span>
-              <div>
-                <span>{KIND_LABELS[task.kind]}</span>
-                <strong>{task.label}</strong>
-                <small>{task.detail}</small>
-              </div>
-              <b><span>{String(Math.round(task.progress))}</span>%</b>
-              <div className="dashboard-progress">
-                <span style={{ width: `${String(Math.max(0, Math.min(100, task.progress)))}%` }} />
-              </div>
-            </button>
-          ))}
+          {production.tasks.map((task) => {
+            const targetBuildingId = getTaskBuildingId(task);
+            const targetBuildingExists = targetBuildingId !== undefined
+              && bridge.island.buildings.some((candidate) => candidate.definitionId === targetBuildingId);
+            return (
+              <button
+                type="button"
+                key={task.id}
+                className="dashboard-production__task"
+                disabled={!targetBuildingExists}
+                onClick={() => { openTaskBuilding(task); }}
+                title={targetBuildingExists ? "Ouvrir le bâtiment concerné" : undefined}
+              >
+                <span className="dashboard-production__visual" aria-hidden="true">
+                  <img src={getTaskIcon(task)} alt="" />
+                </span>
+                <div>
+                  <span>{KIND_LABELS[task.kind]}</span>
+                  <strong>{task.label}</strong>
+                  <small>{task.detail}</small>
+                </div>
+                <b><span>{String(Math.round(task.progress))}</span>%</b>
+                <div className="dashboard-progress">
+                  <span style={{ width: `${String(Math.max(0, Math.min(100, task.progress)))}%` }} />
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
       {interaction !== undefined && (
