@@ -49,9 +49,9 @@ describe("StatRegistry", () => {
     expect(() => registry.register(TEST_DEF)).toThrow();
   });
 
-  it("createDefaultStatRegistry registers the 9 authoritative combat stats", () => {
+  it("createDefaultStatRegistry registers the 11 authoritative combat stats", () => {
     const registry = createDefaultStatRegistry();
-    expect(registry.getAll()).toHaveLength(9);
+    expect(registry.getAll()).toHaveLength(11);
     expect(registry.has(sid("stat_max_health"))).toBe(true);
     expect(registry.has(sid("stat_physical_damage"))).toBe(true);
     expect(registry.has(sid("stat_magical_damage"))).toBe(true);
@@ -61,6 +61,8 @@ describe("StatRegistry", () => {
     expect(registry.has(sid("stat_move_speed"))).toBe(true);
     expect(registry.has(sid("stat_ability_power"))).toBe(true);
     expect(registry.has(sid("stat_cooldown_reduction"))).toBe(true);
+    expect(registry.has(sid("stat_auto_attack_damage_bonus"))).toBe(true);
+    expect(registry.has(sid("stat_life_steal"))).toBe(true);
   });
 });
 
@@ -164,8 +166,8 @@ describe("StatContainer", () => {
     expect(container.getComputed(TEST_DEF.id)).toBe(150);
     expect(container.hasModifier(mid("f1"))).toBe(true);
     container.removeModifier(mid("f1"));
-    expect(container.getComputed(TEST_DEF.id)).toBe(100);
     expect(container.hasModifier(mid("f1"))).toBe(false);
+    expect(container.getComputed(TEST_DEF.id)).toBe(100);
   });
 
   it("removeModifier returns false for unknown id", () => {
