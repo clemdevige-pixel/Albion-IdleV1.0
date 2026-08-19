@@ -19,6 +19,7 @@ interface WorldNavigationRuntime {
 interface CombatNavigationRuntime {
   interruptEncounter(): void;
   restoreHeroHealth(): void;
+  restorePausedState(): void;
   resumeExploration(): boolean;
   isAwaitingResumeAfterDefeat(): boolean;
   restoreAwaitingResumeAfterDefeat(): void;
@@ -63,6 +64,7 @@ export class WorldNavigationActions {
     const loopState = this.deps.combatRuntime.getLoopState();
     if (this.canTravelImmediately(loopState)) {
       if (!this.deps.worldRuntime.selectSegment(segmentNumber)) return false;
+      if (loopState === "paused") this.deps.combatRuntime.restoreHeroHealth();
       this.deps.updateWorldBridge();
       return true;
     }
@@ -93,6 +95,7 @@ export class WorldNavigationActions {
         // consumes/clears the queued fields while preserving the inactive combat state.
         this.deps.worldRuntime.changeActiveZone(zoneNumber - 1, targetSegment - 1);
       }
+      if (loopState === "paused") this.deps.combatRuntime.restoreHeroHealth();
     }
 
     this.deps.updateWorldBridge();
@@ -109,6 +112,7 @@ export class WorldNavigationActions {
     return {
       ...this.deps.worldRuntime.getWorldLocationSaveState(),
       awaitingResumeAfterDefeat: this.deps.combatRuntime.isAwaitingResumeAfterDefeat(),
+      combatPaused: this.deps.combatRuntime.getLoopState() === "paused",
     };
   }
 
@@ -116,6 +120,7 @@ export class WorldNavigationActions {
     savedLocation: WorldLocationSaveState | undefined,
   ): void {
     const restoreDefeat = savedLocation?.awaitingResumeAfterDefeat === true;
+    const restorePause = savedLocation?.combatPaused === true;
 
     this.interruptEncounterForTravel();
     this.deps.worldRuntime.setWorldLocationSaveState(savedLocation);
@@ -128,6 +133,13 @@ export class WorldNavigationActions {
     }
 
     this.deps.combatRuntime.restoreHeroHealth();
+    if (restorePause) {
+      this.deps.combatRuntime.restorePausedState();
+      this.deps.updateWorldBridge();
+      this.deps.bridge.setCombatState("idle");
+      return;
+    }
+
     this.deps.updateWorldBridge();
     this.deps.bridge.setCombatState("walking");
   }
