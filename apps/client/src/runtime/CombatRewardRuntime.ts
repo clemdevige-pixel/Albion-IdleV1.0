@@ -74,14 +74,23 @@ export class CombatRewardRuntime {
     this.heroId = deps.heroId;
   }
 
+  /** Credits deterministic reward Silver through the existing wallet owner. */
+  public creditSilverReward(silverReward: number): number {
+    if (!Number.isSafeInteger(silverReward) || silverReward <= 0) {
+      const current = this.currencyService.getBalance(this.walletId, "currency_silver");
+      return current.ok ? current.value : 0;
+    }
+    this.currencyService.credit(this.walletId, "currency_silver", silverReward, "Loot");
+    const balance = this.currencyService.getBalance(this.walletId, "currency_silver");
+    return balance.ok ? balance.value : 0;
+  }
+
   public processEnemyKilledReward(
     silverReward: number,
     fameReward: number,
     lootContext: CombatLootContext,
   ): EnemyKilledRewardResult {
-    this.currencyService.credit(this.walletId, "currency_silver", silverReward, "Loot");
-    const balRes = this.currencyService.getBalance(this.walletId, "currency_silver");
-    const newBalance = balRes.ok ? balRes.value : 0;
+    const newBalance = this.creditSilverReward(silverReward);
 
     let fameEarned: EnemyKilledRewardResult["fameEarned"];
     let attunementEarned: EnemyKilledRewardResult["attunementEarned"];
@@ -116,8 +125,6 @@ export class CombatRewardRuntime {
       if (awakeningEligible) {
         const itemTier = getItemTier(equippedWeapon.itemId);
         if (isAwakenedWeaponTier(itemTier)) {
-          // Compatibility fallback for legacy .4 saves predating immediate
-          // registration on the .3 -> .4 transaction.
           if (!this.awakenedWeaponService.has(equippedWeapon.instanceId)) {
             this.awakenedWeaponService.registerFresh(equippedWeapon.instanceId, itemTier);
           }
@@ -126,9 +133,7 @@ export class CombatRewardRuntime {
               equippedWeapon.instanceId,
               fameReward,
             );
-            if (attunement.ok) {
-              attunementEarned = attunement.value;
-            }
+            if (attunement.ok) attunementEarned = attunement.value;
           }
         }
       }
@@ -139,11 +144,7 @@ export class CombatRewardRuntime {
       const addResult = this.inventoryManager.addQuantity(this.heroId, drop.itemId, drop.quantity);
       if (!addResult.ok || addResult.value.added <= 0) continue;
 
-      const acceptedDrop: CombatDrop = {
-        ...drop,
-        quantity: addResult.value.added,
-      };
-
+      const acceptedDrop: CombatDrop = { ...drop, quantity: addResult.value.added };
       const eqInfo = resolveEquipmentInfo(drop.itemId);
       if (eqInfo !== undefined) {
         const position = addResult.value.affectedPositions[0];
@@ -151,23 +152,14 @@ export class CombatRewardRuntime {
           const slot = this.inventoryManager.getSlot(this.heroId, position);
           if (slot.ok && slot.value.entry !== undefined) {
             const existingDurability = this.durabilityStore.get(slot.value.entry.instanceId);
-            if (existingDurability === undefined) {
-              this.durabilityStore.attach(slot.value.entry.instanceId, 100);
-            }
+            if (existingDurability === undefined) this.durabilityStore.attach(slot.value.entry.instanceId, 100);
           }
         }
       }
-
       itemDrops.push(acceptedDrop);
     }
 
-    return {
-      silverEarned: silverReward,
-      newBalance,
-      fameEarned,
-      attunementEarned,
-      itemDrops,
-    };
+    return { silverEarned: silverReward, newBalance, fameEarned, attunementEarned, itemDrops };
   }
 }
 
