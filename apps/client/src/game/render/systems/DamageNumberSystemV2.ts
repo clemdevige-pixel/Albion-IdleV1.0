@@ -5,8 +5,10 @@ import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 
 type PresentedDamageEvent = DamageNumberEvent & {
   readonly targetHealthAfter?: number;
-  readonly sourceType?: "auto_attack" | "ability" | "effect" | "other";
+  readonly sourceType?: "auto_attack" | "ability" | "effect" | "heal" | "other";
 };
+
+const HEAL_TEXT_COLOR = "#69db7c";
 
 export interface DamageNumberAnchor {
   readonly x: number;
@@ -34,7 +36,8 @@ export class DamageNumberSystem {
 
   public present(event: DamageNumberEvent): void {
     const presentedEvent = event as PresentedDamageEvent;
-    if (event.target === "enemy" && presentedEvent.targetHealthAfter !== undefined) {
+    const isHeal = presentedEvent.sourceType === "heal";
+    if (event.target === "enemy" && !isHeal && presentedEvent.targetHealthAfter !== undefined) {
       applyPresentedEnemyImpact(presentedEvent.targetHealthAfter);
     }
 
@@ -48,13 +51,14 @@ export class DamageNumberSystem {
       ? String(Math.trunc(roundedAmount))
       : roundedAmount.toFixed(1);
     const effectPrefix = presentedEvent.sourceType === "effect" ? "• " : "";
+    const sign = isHeal ? "+" : "-";
 
     const damageText = this.scene.add
-      .text(anchor.x + offsetX, anchor.y, `${effectPrefix}-${displayedAmount}`, {
+      .text(anchor.x + offsetX, anchor.y, `${effectPrefix}${sign}${displayedAmount}`, {
         fontFamily: manifest.textStyle.fontFamily,
         fontSize: `${String(manifest.textStyle.fontSize)}px`,
         fontStyle: manifest.textStyle.fontStyle,
-        color: manifest.textStyle.color,
+        color: isHeal ? HEAL_TEXT_COLOR : manifest.textStyle.color,
         stroke: manifest.textStyle.strokeColor,
         strokeThickness: manifest.textStyle.strokeThickness,
       })
