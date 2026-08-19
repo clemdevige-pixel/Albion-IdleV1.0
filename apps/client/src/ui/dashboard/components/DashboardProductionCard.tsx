@@ -1,5 +1,10 @@
+import type { IslandBuildingId } from "@game/data";
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
 import { PRODUCTION_FAMILY_CATALOG } from "../../../data/productionFamilyCatalog";
+import { useGameBridge } from "../../../state/GameContext";
+import { useIslandSelection } from "../../island/IslandSelectionContext";
+import { useNavigation } from "../../navigation";
+import { UI_MODULE_IDS } from "../../navigation/moduleIds";
 import type { DashboardProductionModel, DashboardProductionTask } from "../dashboardModels";
 import { useDashboardGatheringActions } from "../useDashboardData";
 import { DashboardCard } from "./DashboardCard";
@@ -20,6 +25,20 @@ const RESOURCE_ICONS = Object.values(PRODUCTION_FAMILY_CATALOG).map((family) => 
   src: family.professionIcon,
 }));
 
+const GATHERING_BUILDING_BY_FAMILY: Readonly<Record<string, IslandBuildingId>> = {
+  wood: "lumber_camp",
+  ore: "mine",
+  hide: "hunting_camp",
+  fiber: "fiber_camp",
+};
+
+const REFINING_BUILDING_BY_TASK_SUFFIX: Readonly<Record<string, IslandBuildingId>> = {
+  wood: "sawmill",
+  metal: "smelter",
+  leather: "tannery",
+  cloth: "weaver",
+};
+
 function getTaskIcon(task: DashboardProductionTask): string {
   const searchable = `${task.label} ${task.detail}`.toLocaleLowerCase("fr");
   const resource = RESOURCE_ICONS.find(({ terms }) =>
@@ -28,11 +47,27 @@ function getTaskIcon(task: DashboardProductionTask): string {
   return resource?.src ?? "/assets/ui/nav-production.png";
 }
 
-export function DashboardProductionCard({
-  production,
-}: DashboardProductionCardProps): JSX.Element {
+function getTaskBuildingId(task: DashboardProductionTask): IslandBuildingId {
+  if (task.kind === "worker") return "worker_house";
+  const suffix = task.id.slice(task.id.indexOf("-") + 1);
+  if (task.kind === "gathering") return GATHERING_BUILDING_BY_FAMILY[suffix] ?? "worker_house";
+  return REFINING_BUILDING_BY_TASK_SUFFIX[suffix] ?? "worker_house";
+}
+
+export function DashboardProductionCard({ production }: DashboardProductionCardProps): JSX.Element {
   const actions = useDashboardGatheringActions();
+  const bridge = useGameBridge();
+  const navigation = useNavigation();
+  const islandSelection = useIslandSelection();
   const interaction = production.gatheringInteraction;
+
+  const openTaskBuilding = (task: DashboardProductionTask): void => {
+    const definitionId = getTaskBuildingId(task);
+    const building = bridge.island.buildings.find((candidate) => candidate.definitionId === definitionId);
+    if (building === undefined) return;
+    islandSelection.selectBuilding(building.plotId, building.instanceId);
+    navigation.openModule(UI_MODULE_IDS.island);
+  };
 
   return (
     <DashboardCard
@@ -46,7 +81,13 @@ export function DashboardProductionCard({
       ) : (
         <div className="dashboard-production__list">
           {production.tasks.map((task) => (
-            <div key={task.id} className="dashboard-production__task">
+            <button
+              type="button"
+              key={task.id}
+              className="dashboard-production__task"
+              onClick={() => { openTaskBuilding(task); }}
+              title="Ouvrir le bâtiment concerné"
+            >
               <span className="dashboard-production__visual" aria-hidden="true">
                 <img src={getTaskIcon(task)} alt="" />
               </span>
@@ -59,7 +100,7 @@ export function DashboardProductionCard({
               <div className="dashboard-progress">
                 <span style={{ width: `${String(Math.max(0, Math.min(100, task.progress)))}%` }} />
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
