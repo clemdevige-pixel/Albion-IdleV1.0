@@ -20,6 +20,7 @@ export { isValidSlot, validateEquipmentState } from "./equipment-validator.js";
 export { EquipmentSaveProvider } from "./equipment-save-provider.js";
 export {
   ENCHANTMENT_ITEM_POWER,
+  ENCHANTMENT_STAT_MULTIPLIER,
   ITEM_POWER_STAT_GAIN_PER_100,
   getBonusItemPowerStatMultiplier,
   getEnchantmentItemPowerBonus,
