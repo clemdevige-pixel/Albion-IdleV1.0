@@ -19,7 +19,7 @@ const CURVES: readonly Curve[] = [
   { id: "strong_118_138_162", multipliers: { 0: 1, 1: 1.18, 2: 1.38, 3: 1.62 } },
 ] as const;
 
-const ORIGINAL_MULTIPLIERS = { ...ENCHANTMENT_STAT_MULTIPLIER };
+const ORIGINAL_MULTIPLIERS: Record<number, number> = { ...ENCHANTMENT_STAT_MULTIPLIER };
 
 const MASTERY_BY_TIER_AND_ENCHANT: Readonly<Record<Tier, Readonly<Record<Enchantment, number>>>> = {
   4: { 0: 16, 1: 19, 2: 22, 3: 22 },
