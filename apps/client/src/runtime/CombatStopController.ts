@@ -35,6 +35,11 @@ class CombatStopController {
     return true;
   }
 
+  /** Restores an authored paused lifecycle state, e.g. after loading a save. */
+  restorePaused(): void {
+    this.#setState("paused");
+  }
+
   /** @deprecated Use requestStopAfterEncounter(). */
   requestStopAfterSegment(): boolean {
     return this.requestStopAfterEncounter();
@@ -51,7 +56,7 @@ class CombatStopController {
     return true;
   }
 
-  /** New runtime/load boundaries must never inherit a pause request from another session. */
+  /** New runtime/load boundaries clear transient state before saved state is restored. */
   reset(): void {
     this.#setState("running");
   }
