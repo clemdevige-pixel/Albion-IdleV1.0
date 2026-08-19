@@ -10,7 +10,7 @@ import {
 } from "./monsterContentCatalog";
 
 describe("monster reward contract", () => {
-  it("keeps active combat loot projection resolvable from runtime context", () => {
+  it("keeps world-combat loot projection resolvable and excludes dungeon-only artifacts", () => {
     const normalLoot = getCombatLootExpectations({
       segmentIndex: 0,
       faction: "Keeper",
@@ -35,8 +35,9 @@ describe("monster reward contract", () => {
     expect(normalLoot.length).toBeGreaterThan(0);
     expect(normalLoot.some((drop) => drop.kind === "enchantment")).toBe(true);
     expect(normalLoot.some((drop) => drop.itemId === "item_health_potion")).toBe(false);
-    expect(bossLoot.some((drop) => drop.kind === "artifact_fragment")).toBe(true);
-    expect(bossLoot.some((drop) => drop.kind === "artifact")).toBe(true);
+    expect(bossLoot.some((drop) => drop.kind === "artifact_fragment")).toBe(false);
+    expect(bossLoot.some((drop) => drop.kind === "artifact")).toBe(false);
+    expect(bossLoot.some((drop) => drop.kind === "key_fragment" || drop.kind === "key")).toBe(true);
   });
 
   it("never changes canonical zone/segment rewards based on monster identity", () => {
