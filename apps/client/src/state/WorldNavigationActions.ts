@@ -157,7 +157,9 @@ export class WorldNavigationActions {
 
     const violatingTiers = this.deps.combatRuntime.getEquippedItemIds()
       .map((itemId) => getItemTier(itemId))
-      .filter((tier): tier is number => tier !== undefined && tier > cap);
+      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => (
+        tier !== undefined && tier > cap
+      ));
     if (violatingTiers.length === 0) return true;
 
     const highestTier = Math.max(...violatingTiers);
