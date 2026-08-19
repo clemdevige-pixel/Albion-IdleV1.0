@@ -38,11 +38,10 @@ export function RefiningBuildingPanel({
 
   const active = family.activity.status === "refining";
   const recipe = getProductionRefiningRecipe(family.id, family.tier);
-  const rawLabel = family.requirements.find((requirement) => requirement.itemId === recipe.rawItemId)?.label
-    ?? `${family.rawLabel} brut T${String(family.tier)}`;
-  const refinedLabel = family.activity.recipeName;
   const rawIconSrc = `/assets/resources/${family.rawIcon}`;
   const refinedIconSrc = `/assets/resources/${family.refinedIcon}`;
+  const trackingId = `production:${family.id}:t${String(family.tier)}`;
+  const tracked = tracking.isTracked(trackingId);
 
   return (
     <div className="ui-island-refining-building">
@@ -71,6 +70,23 @@ export function RefiningBuildingPanel({
           <strong>{family.activity.recipeName}</strong>
         </div>
         <span>{String(family.availableCycles)} cycles</span>
+        <button
+          type="button"
+          aria-label={`${tracked ? "Ne plus suivre" : "Suivre"} ${family.label} T${String(family.tier)}`}
+          title={tracked ? "Ne plus suivre dans la sidebar" : "Suivre brut + raffiné dans la sidebar"}
+          onClick={() => {
+            tracking.toggleTracked({
+              id: trackingId,
+              label: `${family.label} T${String(family.tier)}`,
+              entries: [
+                { itemId: recipe.rawItemId, label: "Brut", source: "production" },
+                { itemId: recipe.outputItemId, label: "Raffiné", source: "production" },
+              ],
+            });
+          }}
+        >
+          {tracked ? "★" : "☆"}
+        </button>
       </div>
 
       <div className="ui-island-refining-building__requirements">
@@ -78,31 +94,11 @@ export function RefiningBuildingPanel({
           <img src={rawIconSrc} alt="" />
           <span>Stock brut T{String(family.tier)}</span>
           <b>{String(family.activity.rawStoredQuantity)}</b>
-          <button
-            type="button"
-            aria-label={`${tracking.isTracked(recipe.rawItemId) ? "Ne plus suivre" : "Suivre"} ${rawLabel}`}
-            title={tracking.isTracked(recipe.rawItemId) ? "Ne plus suivre dans la sidebar" : "Suivre dans la sidebar"}
-            onClick={() => {
-              tracking.toggleTracked({ itemId: recipe.rawItemId, label: rawLabel, iconSrc: rawIconSrc });
-            }}
-          >
-            {tracking.isTracked(recipe.rawItemId) ? "★" : "☆"}
-          </button>
         </div>
         <div>
           <img src={refinedIconSrc} alt="" />
           <span>Stock raffiné T{String(family.tier)}</span>
           <b>{String(family.activity.refinedStoredQuantity)}</b>
-          <button
-            type="button"
-            aria-label={`${tracking.isTracked(recipe.outputItemId) ? "Ne plus suivre" : "Suivre"} ${refinedLabel}`}
-            title={tracking.isTracked(recipe.outputItemId) ? "Ne plus suivre dans la sidebar" : "Suivre dans la sidebar"}
-            onClick={() => {
-              tracking.toggleTracked({ itemId: recipe.outputItemId, label: refinedLabel, iconSrc: refinedIconSrc });
-            }}
-          >
-            {tracking.isTracked(recipe.outputItemId) ? "★" : "☆"}
-          </button>
         </div>
         {family.requirements.map((requirement) => (
           <div key={requirement.itemId}>
