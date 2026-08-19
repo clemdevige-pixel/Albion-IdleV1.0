@@ -5,6 +5,7 @@ import { DEFAULT_AWAKENED_WEAPON_BALANCE } from "./balance.js";
 import {
   deriveAwakenedWeaponState,
   getEffectiveCooldownReductionPercent,
+  getEffectiveLifeStealPercent,
   getEligibleAwakenedTraits,
   rollAwakenedTrait,
 } from "./calculations.js";
@@ -25,7 +26,7 @@ import type {
 } from "./types.js";
 
 function ok<T>(value: T): AwakenedResult<T> {
-  return { ok: true, value };
+  return { ok: true, value: T } as never;
 }
 
 function fail<T>(reason: AwakenedFailureReason): AwakenedResult<T> {
@@ -60,7 +61,7 @@ export class AwakenedWeaponService {
     const state = createFreshAwakenedWeaponState(itemInstanceId, tier);
     this.states.set(itemInstanceId, state);
     this.lastImprovementOutcomes.delete(itemInstanceId);
-    return ok(state);
+    return { ok: true, value: state };
   }
 
   has(itemInstanceId: ItemInstanceId): boolean {
@@ -97,9 +98,13 @@ export class AwakenedWeaponService {
 
   /** Returns the player-facing value for a stored trait value. */
   getDisplayTraitValue(traitId: AwakenedTraitId, value: number): number {
-    return traitId === "cooldown_reduction"
-      ? getEffectiveCooldownReductionPercent(value, this.balance)
-      : value;
+    if (traitId === "cooldown_reduction") {
+      return getEffectiveCooldownReductionPercent(value, this.balance);
+    }
+    if (traitId === "life_steal") {
+      return getEffectiveLifeStealPercent(value, this.balance);
+    }
+    return value;
   }
 
   listStates(): readonly AwakenedWeaponState[] {
@@ -119,13 +124,13 @@ export class AwakenedWeaponService {
       storedAttunement: state.storedAttunement + stored,
     };
     this.states.set(itemInstanceId, next);
-    return ok({
+    return { ok: true, value: {
       requested: amount,
       stored,
       discardedAtCap: amount - stored,
       balance: next.storedAttunement,
       cap,
-    });
+    } };
   }
 
   awaken(itemInstanceId: ItemInstanceId): AwakenedResult<AwakenedWeaponState> {
@@ -142,7 +147,7 @@ export class AwakenedWeaponService {
       lifetimeAttunementInvested: state.lifetimeAttunementInvested + cost,
     };
     this.states.set(itemInstanceId, next);
-    return ok(next);
+    return { ok: true, value: next };
   }
 
   improveTrait(
@@ -168,7 +173,7 @@ export class AwakenedWeaponService {
     const outcome: AwakenedModificationOutcome = { state: next, roll, cost: spent.value };
     this.states.set(itemInstanceId, next);
     this.lastImprovementOutcomes.set(itemInstanceId, outcome);
-    return ok(outcome);
+    return { ok: true, value: outcome };
   }
 
   beginTraitOffer(
@@ -211,7 +216,7 @@ export class AwakenedWeaponService {
     };
     const next = this.afterPaidModification(state, spent.value.attunement, { pendingTraitOffer: offer });
     this.states.set(itemInstanceId, next);
-    return ok(offer);
+    return { ok: true, value: offer };
   }
 
   resolveTraitOffer(
@@ -228,7 +233,7 @@ export class AwakenedWeaponService {
       const { pendingTraitOffer: _pendingTraitOffer, ...rest } = state;
       const next: AwakenedWeaponState = rest;
       this.states.set(itemInstanceId, next);
-      return ok(next);
+      return { ok: true, value: next };
     }
 
     const selected = offer.proposals.find((proposal) => proposal.traitId === selectedTraitId);
@@ -248,7 +253,7 @@ export class AwakenedWeaponService {
     const { pendingTraitOffer: _pendingTraitOffer, ...rest } = state;
     const next: AwakenedWeaponState = { ...rest, traits };
     this.states.set(itemInstanceId, next);
-    return ok(next);
+    return { ok: true, value: next };
   }
 
   reset(itemInstanceId: ItemInstanceId): AwakenedResult<AwakenedWeaponState> {
@@ -257,7 +262,7 @@ export class AwakenedWeaponService {
     const next = resetAwakenedWeaponState(state);
     this.states.set(itemInstanceId, next);
     this.lastImprovementOutcomes.delete(itemInstanceId);
-    return ok(next);
+    return { ok: true, value: next };
   }
 
   _restore(states: readonly AwakenedWeaponState[]): void {
@@ -283,7 +288,7 @@ export class AwakenedWeaponService {
       this.options.silverSpendSource,
     );
     if (!debited.ok) return fail("insufficient_silver");
-    return ok(cost);
+    return { ok: true, value: cost };
   }
 
   private afterPaidModification(
