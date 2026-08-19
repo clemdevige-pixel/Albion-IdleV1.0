@@ -86,11 +86,22 @@ export class CombatBridgeAdapter {
         encounterKey,
       );
     });
+    const unsubscribeHeal = eventBus.subscribe("HealApplied", (event) => {
+      if (event.entityId !== this.#heroId || event.amount <= 0) return;
+      this.#bridge.addDamageNumber(
+        event.amount,
+        "player",
+        undefined,
+        "heal",
+        event.newHealth,
+      );
+    });
 
     return () => {
       unsubscribeAbility();
       unsubscribeHealth();
       unsubscribeDamage();
+      unsubscribeHeal();
     };
   }
 
