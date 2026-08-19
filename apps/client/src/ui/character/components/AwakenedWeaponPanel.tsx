@@ -7,23 +7,23 @@ import "./awakenedWeaponPanel.css";
 
 const TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
   item_power: "Item Power",
-  damage: "Dégâts",
+  auto_attack_damage: "Dégâts d'auto-attaques",
   ability_power: "Puissance des compétences",
   cooldown_reduction: "Réduction des temps de recharge",
   max_health: "Points de vie",
-  armor: "Armure",
-  magic_resistance: "Résistance magique",
+  defense: "Défense",
+  life_steal: "Vol de vie",
   fame_bonus: "Bonus de Fame",
 };
 
 const TRAIT_IDS: readonly AwakenedTraitId[] = [
   "item_power",
-  "damage",
+  "auto_attack_damage",
   "ability_power",
   "cooldown_reduction",
   "max_health",
-  "armor",
-  "magic_resistance",
+  "defense",
+  "life_steal",
   "fame_bonus",
 ];
 
@@ -44,9 +44,10 @@ function formatTraitValue(
   const displayed = resolveDisplayValue(traitId, value);
   if (traitId === "item_power") return `+${formatNumber(displayed, 0)} IP`;
   if (
-    traitId === "damage"
+    traitId === "auto_attack_damage"
     || traitId === "ability_power"
     || traitId === "cooldown_reduction"
+    || traitId === "life_steal"
     || traitId === "fame_bonus"
   ) {
     return `+${formatNumber(displayed)}%`;
@@ -99,7 +100,7 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   const rollInfo = TRAIT_IDS.map((traitId) => {
     const range = services.awakenedWeaponService.getTraitRollRange(traitId);
     const currentValue = state.traits.find((trait) => trait.traitId === traitId)?.value ?? 0;
-    if (traitId === "cooldown_reduction") {
+    if (traitId === "cooldown_reduction" || traitId === "life_steal") {
       const currentDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue);
       const minDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue + range.min);
       const maxDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue + range.max);
