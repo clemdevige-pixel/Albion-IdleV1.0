@@ -167,20 +167,29 @@ describe("weapon ability live behavior", () => {
     expect(env.getKills()).toBe(1);
   });
 
-  it("Dagger Flurry opens Assassination and its effect-conditioned bonus", () => {
+  it("Dagger Assassination autocasts only with Opening at or below 50% health", () => {
     const env = createBehaviorEnvironment();
     const flurry = requireAbility("ability_dagger_flurry");
     const assassination = requireAbility("ability_dagger_assassination");
+    const health = env.damageManager.getHealth(env.enemyId);
 
+    health.currentHealth = 500;
     expect(env.mechanics.canAutoCast(assassination, env.enemyId)).toBe(false);
+
+    health.currentHealth = 1000;
     expect(env.mechanics.execute(flurry, env.enemyId, 1)).toBe(true);
     expect(activeEffectIds(env.effectManager, env.enemyId)).toContain("effect_dagger_opening");
+
+    health.currentHealth = 501;
+    expect(env.mechanics.canAutoCast(assassination, env.enemyId)).toBe(false);
+
+    health.currentHealth = 500;
     expect(env.mechanics.canAutoCast(assassination, env.enemyId)).toBe(true);
 
-    const before = env.damageManager.getHealth(env.enemyId).currentHealth;
+    const before = health.currentHealth;
     env.mechanics.execute(assassination, env.enemyId, 1);
-    const after = env.damageManager.getHealth(env.enemyId).currentHealth;
-    expect(before - after).toBeCloseTo(280, 5);
+    const after = health.currentHealth;
+    expect(before - after).toBeCloseTo(415, 5);
   });
 
   it("Spiked multi-hit stops cleanly when the target dies during the combo", () => {
