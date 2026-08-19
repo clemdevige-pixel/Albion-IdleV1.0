@@ -5,6 +5,7 @@ import type {
   AwakenedTraitId,
   AwakenedTraitOffer,
   AwakenedTraitRollResult,
+  AwakenedTraitState,
   AwakenedWeaponState,
   AwakenedWeaponTier,
 } from "./types.js";
@@ -39,21 +40,24 @@ interface AwakeningSavePayload {
 
 const TRAITS = new Set<AwakenedTraitId>([
   "item_power",
-  "damage",
+  "auto_attack_damage",
   "ability_power",
   "cooldown_reduction",
   "max_health",
-  "armor",
-  "magic_resistance",
+  "defense",
+  "life_steal",
   "fame_bonus",
 ]);
 
-function isTier(value: number): value is AwakenedWeaponTier {
-  return Number.isInteger(value) && value >= 4 && value <= 8;
+function normalizeTraitId(value: string): AwakenedTraitId | undefined {
+  if (TRAITS.has(value as AwakenedTraitId)) return value as AwakenedTraitId;
+  if (value === "damage") return "auto_attack_damage";
+  if (value === "armor" || value === "magic_resistance") return "defense";
+  return undefined;
 }
 
-function isTrait(value: string): value is AwakenedTraitId {
-  return TRAITS.has(value as AwakenedTraitId);
+function isTier(value: number): value is AwakenedWeaponTier {
+  return Number.isInteger(value) && value >= 4 && value <= 8;
 }
 
 function finiteNonNegative(value: number): boolean {
@@ -61,12 +65,13 @@ function finiteNonNegative(value: number): boolean {
 }
 
 function restoreRoll(saved: SavedAwakenedRoll): AwakenedTraitRollResult {
-  if (!isTrait(saved.traitId)) throw new Error(`Invalid awakening save: trait ${saved.traitId}`);
+  const traitId = normalizeTraitId(saved.traitId);
+  if (traitId === undefined) throw new Error(`Invalid awakening save: trait ${saved.traitId}`);
   if (!finiteNonNegative(saved.baseRoll) || !finiteNonNegative(saved.finalGain)) {
     throw new Error("Invalid awakening save: invalid roll value");
   }
   return {
-    traitId: saved.traitId,
+    traitId,
     baseRoll: saved.baseRoll,
     critical: saved.critical === true,
     finalGain: saved.finalGain,
@@ -83,11 +88,40 @@ function restoreOffer(saved: SavedAwakenedOffer): AwakenedTraitOffer {
   if (!Array.isArray(saved.proposals) || saved.proposals.length === 0) {
     throw new Error("Invalid awakening save: empty offer");
   }
+  const proposalsByTrait = new Map<AwakenedTraitId, AwakenedTraitRollResult>();
+  for (const savedProposal of saved.proposals) {
+    const proposal = restoreRoll(savedProposal);
+    const previous = proposalsByTrait.get(proposal.traitId);
+    if (previous === undefined || proposal.baseRoll > previous.baseRoll) {
+      proposalsByTrait.set(proposal.traitId, proposal);
+    }
+  }
   return {
     kind: saved.kind,
     targetIndex: saved.targetIndex,
-    proposals: saved.proposals.map(restoreRoll),
+    proposals: [...proposalsByTrait.values()],
   };
+}
+
+function restoreTraits(savedTraits: Array<{ traitId: string; value: number }>): AwakenedTraitState[] {
+  const traits: AwakenedTraitState[] = [];
+  const traitIndex = new Map<AwakenedTraitId, number>();
+  for (const saved of savedTraits) {
+    const traitId = normalizeTraitId(saved.traitId);
+    if (traitId === undefined) throw new Error(`Invalid awakening save: trait ${saved.traitId}`);
+    if (!finiteNonNegative(saved.value)) throw new Error("Invalid awakening save: invalid trait value");
+    const existingIndex = traitIndex.get(traitId);
+    if (existingIndex === undefined) {
+      traitIndex.set(traitId, traits.length);
+      traits.push({ traitId, value: saved.value });
+      continue;
+    }
+    if (traitId !== "defense") throw new Error("Invalid awakening save: duplicate trait");
+    const existing = traits[existingIndex];
+    if (existing !== undefined) traits[existingIndex] = { ...existing, value: existing.value + saved.value };
+  }
+  if (traits.length > 3) throw new Error("Invalid awakening save: invalid traits");
+  return traits;
 }
 
 /** Save provider for instance-specific .4 progression, including paid pending offers. */
@@ -137,17 +171,8 @@ export class AwakeningSaveProvider implements SaveProvider {
       if (!Number.isSafeInteger(saved.strain) || saved.strain < 0) {
         throw new Error("Invalid awakening save: invalid Strain");
       }
-      if (!Array.isArray(saved.traits) || saved.traits.length > 3) {
-        throw new Error("Invalid awakening save: invalid traits");
-      }
-      const traitIds = new Set<AwakenedTraitId>();
-      const traits = saved.traits.map((trait) => {
-        if (!isTrait(trait.traitId)) throw new Error(`Invalid awakening save: trait ${trait.traitId}`);
-        if (traitIds.has(trait.traitId)) throw new Error("Invalid awakening save: duplicate trait");
-        traitIds.add(trait.traitId);
-        if (!finiteNonNegative(trait.value)) throw new Error("Invalid awakening save: invalid trait value");
-        return { traitId: trait.traitId, value: trait.value };
-      });
+      if (!Array.isArray(saved.traits)) throw new Error("Invalid awakening save: invalid traits");
+      const traits = restoreTraits(saved.traits);
       const awakened = saved.awakened === undefined
         ? traits.length > 0 || saved.strain > 0 || saved.lifetimeAttunementInvested > 0
         : saved.awakened === true;
