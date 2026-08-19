@@ -30,16 +30,18 @@ export function getEnchantmentItemPowerBonus(level: EnchantmentLevel): number {
 /**
  * Independent combat-stat scaling for enchantment.
  *
- * These initial values preserve the pre-decoupling live combat power exactly:
- * .1/.2/.3/.4 previously mapped to +50/+100/+150/+200 IP at +20% stats per
- * +100 IP, i.e. x1.10/x1.20/x1.30/x1.40. Balance sweeps may now evolve this
- * table without changing displayed Item Power or mastery scaling.
+ * Validated V1 normal-enchantment curve:
+ * .1 = x1.12, .2 = x1.26, .3 = x1.42.
+ *
+ * .4 remains x1.40 for now because Awakening is a distinct weapon-only system
+ * and must be rebalanced independently rather than inferred from the normal
+ * full-set enchantment curve.
  */
 export const ENCHANTMENT_STAT_MULTIPLIER: Readonly<Record<EnchantmentLevel, number>> = {
   0: 1,
-  1: 1.1,
-  2: 1.2,
-  3: 1.3,
+  1: 1.12,
+  2: 1.26,
+  3: 1.42,
   4: 1.4,
 };
 
