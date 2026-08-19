@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
-import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
+import { WORLD_ZONE_IDS_BY_BAND, getWorldZonePlacement } from "./worldContentCatalog.js";
 import {
   BASE_COMBAT_DROP_RATES,
   BOSS_SPECIAL_DROP_MULTIPLIER,
@@ -23,14 +23,6 @@ const BAND_BY_TIER = {
   8: "black",
 } as const;
 
-const FINAL_ZONE_BY_TIER = {
-  4: WORLD_ZONE_IDS.mountain,
-  5: WORLD_ZONE_IDS.ironveil,
-  6: WORLD_ZONE_IDS.ashenpeak,
-  7: WORLD_ZONE_IDS.doompeak,
-  8: WORLD_ZONE_IDS.blackspire,
-} as const;
-
 const TARGET_MASTERY_BY_TIER = {
   4: 25,
   5: 35,
@@ -39,64 +31,29 @@ const TARGET_MASTERY_BY_TIER = {
   8: 65,
 } as const;
 
-const WEAPONS_BY_TIER = {
-  4: [
-    "item_weapon_sword_t4_broadsword",
-    "item_weapon_bow_t4_longbow",
-    "item_weapon_staff_t4_infernal",
-    "item_weapon_gloves_t4_spiked_gauntlets",
-    "item_weapon_dagger_t4_pair",
-  ],
-  5: [
-    "item_weapon_sword_t5_broadsword",
-    "item_weapon_bow_t5_longbow",
-    "item_weapon_staff_t5_infernal",
-    "item_weapon_gloves_t5_spiked_gauntlets",
-    "item_weapon_dagger_t5_pair",
-  ],
-  6: [
-    "item_weapon_sword_t6_broadsword",
-    "item_weapon_bow_t6_longbow",
-    "item_weapon_staff_t6_infernal",
-    "item_weapon_gloves_t6_spiked_gauntlets",
-    "item_weapon_dagger_t6_pair",
-  ],
-  7: [
-    "item_weapon_sword_t7_broadsword",
-    "item_weapon_bow_t7_longbow",
-    "item_weapon_staff_t7_infernal",
-    "item_weapon_gloves_t7_spiked_gauntlets",
-    "item_weapon_dagger_t7_pair",
-  ],
-  8: [
-    "item_weapon_sword_t8_broadsword",
-    "item_weapon_bow_t8_longbow",
-    "item_weapon_staff_t8_infernal",
-    "item_weapon_gloves_t8_spiked_gauntlets",
-    "item_weapon_dagger_t8_pair",
-  ],
-} as const;
+function weaponsFor(tier: Tier): readonly string[] {
+  return [
+    `item_weapon_sword_t${tier}_broadsword`,
+    `item_weapon_bow_t${tier}_longbow`,
+    `item_weapon_staff_t${tier}_infernal`,
+    `item_weapon_gloves_t${tier}_spiked_gauntlets`,
+    `item_weapon_dagger_t${tier}_pair`,
+  ];
+}
 
-const ARMOR_BY_TIER = {
-  4: ["item_helmet_t4_reinforced", "item_armor_t4_leather", "item_boots_t4_leather", "item_traveler_cape"],
-  5: ["item_helmet_t5_reinforced", "item_armor_t5_leather", "item_boots_t5_leather", "item_traveler_cape"],
-  6: ["item_helmet_t6_reinforced", "item_armor_t6_leather", "item_boots_t6_leather", "item_traveler_cape"],
-  7: ["item_helmet_t7_reinforced", "item_armor_t7_leather", "item_boots_t7_leather", "item_traveler_cape"],
-  8: ["item_helmet_t8_reinforced", "item_armor_t8_leather", "item_boots_t8_leather", "item_traveler_cape"],
-} as const;
-
-const SHIELD_BY_TIER = {
-  4: "item_shield_t4_reinforced",
-  5: "item_shield_t5_reinforced",
-  6: "item_shield_t6_reinforced",
-  7: "item_shield_t7_reinforced",
-  8: "item_shield_t8_reinforced",
-} as const;
+function armorFor(tier: Tier): readonly string[] {
+  return [
+    `item_helmet_t${tier}_reinforced`,
+    `item_armor_t${tier}_leather`,
+    `item_boots_t${tier}_leather`,
+    "item_traveler_cape",
+  ];
+}
 
 function equipmentFor(weaponItemId: string, tier: Tier): readonly string[] {
-  const items: string[] = [...ARMOR_BY_TIER[tier]];
+  const items = [...armorFor(tier)];
   if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") {
-    items.push(SHIELD_BY_TIER[tier]);
+    items.push(`item_shield_t${tier}_reinforced`);
   }
   return items;
 }
@@ -118,39 +75,67 @@ function round1(value: number): number {
 }
 
 describe("dungeon shards as a secondary enchantment source", () => {
-  it("compares full key + dungeon cycles against staying in open-world combat", () => {
+  it("compares real key-farm + dungeon cycles against the best real shard-farm alternative", () => {
     const detail = TIERS.flatMap((tier) => {
       const band = BAND_BY_TIER[tier];
-      const finalZone = FINAL_ZONE_BY_TIER[tier];
-      const keyDropWeight = getDungeonKeyProgressionWeight(band, 4, 9);
-      const expectedWorldShardsPerSegment = getExpectedEnchantmentShardsPerSegment(finalZone, 9);
       const dungeons = DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === tier);
+      const zones = WORLD_ZONE_IDS_BY_BAND[band];
 
-      return WEAPONS_BY_TIER[tier].flatMap((weaponItemId) => {
+      return weaponsFor(tier).flatMap((weaponItemId) => {
         const equipmentItemIds = equipmentFor(weaponItemId, tier);
-        const world = runCombatRuntimeBenchmark({
-          label: `dungeon_shard_world_T${tier}_${weaponItemId}`,
-          weaponItemId,
-          zoneDefId: finalZone,
-          segmentIndex: 9,
-          equipmentItemIds,
-          enchantment: 3,
-          masteryLevel: TARGET_MASTERY_BY_TIER[tier],
-          useHealthPotions: false,
+
+        const farmSpots = zones.flatMap((zoneDefId) => {
+          const placement = getWorldZonePlacement(zoneDefId);
+          return Array.from({ length: 10 }, (_, segmentIndex) => {
+            const runtime = runCombatRuntimeBenchmark({
+              label: `dungeon_shard_farm_T${tier}_${weaponItemId}_${String(zoneDefId)}_s${segmentIndex + 1}`,
+              weaponItemId,
+              zoneDefId,
+              segmentIndex,
+              equipmentItemIds,
+              enchantment: 3,
+              masteryLevel: TARGET_MASTERY_BY_TIER[tier],
+              useHealthPotions: false,
+            });
+
+            if (!runtime.clear || runtime.seconds <= 0) return undefined;
+
+            const segmentsPerHour = 3600 / runtime.seconds;
+            const shardPerSegment = getExpectedEnchantmentShardsPerSegment(zoneDefId, segmentIndex);
+            const keyDropWeight = getDungeonKeyProgressionWeight(
+              band,
+              placement.zoneIndexWithinBand,
+              segmentIndex,
+            );
+
+            return {
+              zoneDefId,
+              segmentIndex,
+              shardsPerHour: shardPerSegment * segmentsPerHour,
+              keysPerHour: expectedKeyEquivalentsPerSegment(keyDropWeight) * segmentsPerHour,
+            };
+          }).filter((spot) => spot !== undefined);
         });
-        if (!world.clear || world.seconds <= 0) return [];
 
-        const segmentsPerHour = 3600 / world.seconds;
-        const openWorldShardsPerHour = expectedWorldShardsPerSegment * segmentsPerHour;
-        const keysPerHour = expectedKeyEquivalentsPerSegment(keyDropWeight) * segmentsPerHour;
-        if (openWorldShardsPerHour <= 0 || keysPerHour <= 0) return [];
+        if (farmSpots.length === 0) return [];
 
-        const keyFarmHours = 1 / keysPerHour;
+        const bestShardSpot = farmSpots.reduce((best, spot) =>
+          spot.shardsPerHour > best.shardsPerHour ? spot : best,
+        );
+        const bestKeySpot = farmSpots.reduce((best, spot) =>
+          spot.keysPerHour > best.keysPerHour ? spot : best,
+        );
+
+        if (bestShardSpot.shardsPerHour <= 0 || bestKeySpot.keysPerHour <= 0) return [];
+
+        const keyFarmHours = 1 / bestKeySpot.keysPerHour;
+        const worldShardsDuringKeyFarm = bestKeySpot.shardsPerHour * keyFarmHours;
+
         const dungeonResults = dungeons.map((dungeon) => runCombatRuntimeBenchmark({
           label: `dungeon_shard_T${tier}_${dungeon.faction}_${weaponItemId}`,
           weaponItemId,
-          zoneDefId: finalZone,
-          segmentIndex: 9,
+          zoneDefId: bestKeySpot.zoneDefId,
+          segmentIndex: bestKeySpot.segmentIndex,
           equipmentItemIds,
           enchantment: 3,
           masteryLevel: TARGET_MASTERY_BY_TIER[tier],
@@ -162,25 +147,29 @@ describe("dungeon shards as a secondary enchantment source", () => {
 
         const avgDungeonSeconds = cleared.reduce((sum, result) => sum + result.seconds, 0) / cleared.length;
         const dungeonHours = avgDungeonSeconds / 3600;
-        const breakEvenShardsPerDungeon = openWorldShardsPerHour * dungeonHours;
-        const worldShardsDuringKeyFarm = openWorldShardsPerHour * keyFarmHours;
         const cycleHours = keyFarmHours + dungeonHours;
+        const baselineCycleShards = bestShardSpot.shardsPerHour * cycleHours;
+        const breakEvenReward = baselineCycleShards - worldShardsDuringKeyFarm;
 
         return SHARD_REWARD_CANDIDATES.map((candidateShardsPerDungeon) => {
           const cycleShards = worldShardsDuringKeyFarm + candidateShardsPerDungeon;
           const cycleEffectiveShardsPerHour = cycleShards / cycleHours;
-          const accelerationPct = (cycleEffectiveShardsPerHour / openWorldShardsPerHour - 1) * 100;
+          const accelerationPct = (cycleEffectiveShardsPerHour / bestShardSpot.shardsPerHour - 1) * 100;
+
           return {
             tier: `T${tier}`,
             weapon: weaponItemId,
             candidateShardsPerDungeon,
             dungeonClears: `${cleared.length}/${dungeons.length}`,
-            openWorldShardsPerHour: round2(openWorldShardsPerHour),
-            keysPerHour: round2(keysPerHour),
+            bestShardSpot: `${String(bestShardSpot.zoneDefId)} s${bestShardSpot.segmentIndex + 1}`,
+            bestKeySpot: `${String(bestKeySpot.zoneDefId)} s${bestKeySpot.segmentIndex + 1}`,
+            openWorldShardsPerHour: round2(bestShardSpot.shardsPerHour),
+            keyFarmSpotShardsPerHour: round2(bestKeySpot.shardsPerHour),
+            keysPerHour: round2(bestKeySpot.keysPerHour),
             keyFarmHours: round2(keyFarmHours),
             dungeonMinutes: round2(avgDungeonSeconds / 60),
-            breakEvenShardsPerDungeon: round2(breakEvenShardsPerDungeon),
-            netDungeonBonusShards: round2(candidateShardsPerDungeon - breakEvenShardsPerDungeon),
+            breakEvenShardsPerDungeon: round2(breakEvenReward),
+            netDungeonBonusShards: round2(candidateShardsPerDungeon - breakEvenReward),
             cycleEffectiveShardsPerHour: round2(cycleEffectiveShardsPerHour),
             accelerationPct: round1(accelerationPct),
           };
@@ -191,12 +180,15 @@ describe("dungeon shards as a secondary enchantment source", () => {
     const summary = TIERS.flatMap((tier) => SHARD_REWARD_CANDIDATES.map((candidateShardsPerDungeon) => {
       const rows = detail.filter((row) => row.tier === `T${tier}` && row.candidateShardsPerDungeon === candidateShardsPerDungeon);
       const accelerations = rows.map((row) => row.accelerationPct);
-      const avg = (key: "openWorldShardsPerHour" | "keysPerHour" | "keyFarmHours" | "dungeonMinutes" | "breakEvenShardsPerDungeon" | "cycleEffectiveShardsPerHour") =>
+      const avg = (key: "openWorldShardsPerHour" | "keyFarmSpotShardsPerHour" | "keysPerHour" | "keyFarmHours" | "dungeonMinutes" | "breakEvenShardsPerDungeon" | "cycleEffectiveShardsPerHour") =>
         rows.reduce((sum, row) => sum + row[key], 0) / Math.max(1, rows.length);
+
       return {
         tier: `T${tier}`,
         candidateShardsPerDungeon,
+        profiles: rows.length,
         avgOpenWorldShardsPerHour: round2(avg("openWorldShardsPerHour")),
+        avgKeyFarmSpotShardsPerHour: round2(avg("keyFarmSpotShardsPerHour")),
         avgKeysPerHour: round2(avg("keysPerHour")),
         avgKeyFarmHours: round2(avg("keyFarmHours")),
         avgDungeonMinutes: round2(avg("dungeonMinutes")),
@@ -216,5 +208,6 @@ describe("dungeon shards as a secondary enchantment source", () => {
 
     expect(detail.length).toBeGreaterThan(0);
     expect(summary).toHaveLength(TIERS.length * SHARD_REWARD_CANDIDATES.length);
+    expect(summary.every((row) => row.profiles > 0)).toBe(true);
   });
 });
