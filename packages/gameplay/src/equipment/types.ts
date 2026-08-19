@@ -1,4 +1,8 @@
-import type { EnchantmentLevel, InventoryEntry } from "../inventory/types.js";
+import type {
+  EnchantmentLevel,
+  InventoryEntry,
+  ItemInstanceId,
+} from "../inventory/types.js";
 
 /**
  * V1 equipment slots per AI_BIBLE 31_EQUIPMENT_SYSTEM "Equipment Slots (V1)":
@@ -28,6 +32,8 @@ export interface EquipmentInfoLike {
   readonly itemId: string;
   readonly slot: EquipmentSlot;
   readonly handling: WeaponHandling;
+  /** Base equipment tier. Optional for compatibility with older/custom resolvers. */
+  readonly tier?: number | undefined;
   /** Fixed additive stat bonuses keyed by StatId (11_STAT §6: equipment bonuses are additive). */
   readonly stats?: Readonly<Record<string, number>> | undefined;
   /** Explicit content policy. Missing means not enchantable; callers never infer eligibility from naming/crafting. */
@@ -56,6 +62,26 @@ export interface UnequipOutcome {
   readonly position: number;
 }
 
+/** Stable per-slot reference captured by an equipment loadout. */
+export interface EquipmentLoadoutSlot {
+  readonly slot: EquipmentSlot;
+  readonly instanceId: ItemInstanceId;
+  readonly itemId: string;
+  readonly enchantment: EnchantmentLevel;
+}
+
+/** Player-authored equipment preset. Empty slots are represented by omission. */
+export interface EquipmentLoadout {
+  readonly id: string;
+  readonly name: string;
+  readonly slots: readonly EquipmentLoadoutSlot[];
+}
+
+export interface EquipmentLoadoutApplyOutcome {
+  readonly loadoutId: string;
+  readonly changedSlots: readonly EquipmentSlot[];
+}
+
 export type EquipmentFailureReason =
   | "invalid_position"
   | "entry_not_found"
@@ -64,7 +90,11 @@ export type EquipmentFailureReason =
   | "two_handed_conflict"
   | "slot_empty"
   | "inventory_full"
-  | "equipment_locked";
+  | "equipment_locked"
+  | "loadout_not_found"
+  | "loadout_item_missing"
+  | "loadout_invalid"
+  | "tier_cap_exceeded";
 
 export type EquipmentResult<T> =
   | { readonly ok: true; readonly value: T }
