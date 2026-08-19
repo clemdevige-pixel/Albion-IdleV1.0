@@ -58,6 +58,15 @@ weaponPackageBenchmark separates:
 
 Future off-hands must be passed explicitly through BenchmarkDefensiveLoadout. Do not recreate a rule where every 1H weapon implicitly owns a shield.
 
+ENCHANTMENT ECONOMY BENCHMARKS
+- apps/client/src/data/enchantmentShardTtkBenchmark.ts is the shared runtime helper.
+- apps/client/src/data/enchantmentShardFarmSweep.test.ts covers the full Blue/T4 farm matrix.
+- apps/client/src/data/enchantmentShardWorldFarmSweep.test.ts covers Yellow/T5 through Black/T8.
+- apps/client/src/data/enchantmentTierBridgeSweep.test.ts protects previous-tier `.3` access to the next shard band.
+- apps/client/src/data/enchantmentShardBalance.test.ts protects structural shard-yield progression.
+
+Shard-cost projections inside the sweeps must be derived from the gameplay-owned `ENCHANTMENT_SHARD_COSTS`. Do not duplicate the 10 / 30 / 60 economy curve in benchmark-local constants.
+
 ---
 
 # 3. Player baseline and defensive ladder
@@ -102,8 +111,8 @@ For every new weapon or major rebalance:
 9. Run one or more explicit real loadouts. For 1H weapons, test each relevant off-hand separately when those off-hands exist.
 10. Validate the weapon at real progression checkpoints with CombatRuntimeBenchmarkHarness.
 11. When multiple content archetypes exist, compare the weapon across those archetypes rather than forcing a universal score toward 100.
-12. Tune the smallest authored lever: base damage, attack cadence, ability ratio, cooldown, conditional mechanic, control, or explicit off-hand stats.
-13. Re-run typecheck + weapon diagnostics + affected progression sweeps.
+12. Tune the smallest authored lever: base damage, attack cadence, ability ratio, cooldown, conditional mechanic, control, sustain, or explicit off-hand stats.
+13. Re-run typecheck + weapon diagnostics + affected progression/economy sweeps.
 
 A weapon may be below the offensive center if another part of its explicit build package or content niche compensates. The diagnostic must still report that difference rather than hiding it inside a single score.
 
@@ -126,7 +135,7 @@ The current combat loop is deterministic. If an identical loadout clears an iden
 Therefore "lower yield in exchange for safety" is not automatically a real trade-off in the current system. Once both builds deterministically clear the loop, excess survivability has no direct economic value unless content mechanics make that survivability relevant.
 
 CURRENT ENCHANTMENT-SHARD EXAMPLE
-The TTK economy benchmark shows that faster offensive weapons can produce materially more shards/hour than slower weapons on the same deterministic farm segment. This is accepted: universal resource farming does not need identical throughput across every weapon when weapon specialization is an intended long-term feature.
+The runtime farm sweeps show that faster offensive weapons can produce materially more shards/hour than slower weapons on the same deterministic farm segment. This is accepted: universal resource farming does not need identical throughput across every weapon when weapon specialization is an intended long-term feature.
 
 FUTURE CONTROLLED VARIABILITY — PARKED IDEA
 If combat content later needs less linear repetition, prefer controlled variability in encounter/content composition rather than randomizing the player's core combat math.
@@ -182,6 +191,11 @@ For each new zone or world band:
 
 When adding Yellow/Red/Black content, reuse CombatRuntimeBenchmarkHarness with the new ZoneDefinitionId. Do not create YellowRuntimeBenchmarkHarness, RedRuntimeBenchmarkHarness, etc.
 
+TIER-BRIDGE RULE
+- The previous Tier `.3` state must retain a viable entry farm into the next shard band.
+- A bridge regression is a progression/economy problem and must not be hidden by changing shard drop rates.
+- Different weapons may reach different segments and shards/hour; access is protected, equality is not.
+
 ---
 
 # 6. Potion and AFK semantics
@@ -191,7 +205,7 @@ NO POTION / AFK COMFORT
 - When a checkpoint explicitly defines a potion-free or reliable AFK threshold, every representative weapon covered by that contract must satisfy it.
 
 POTION BRIDGE
-- A previous gear level may use potions to enter or advance into the next progression block.
+- A previous gear level may use potions to enter or advance into the next progression block when the contract allows it.
 - This is valid when the next gear upgrade removes the dependency.
 
 ROLE-AWARE POTION FALLBACK
@@ -251,7 +265,7 @@ Expected: T4.1 -> T4.2, with T4.3 as autonomous comfort.
 Function: final Blue difficulty block.
 T4.1 progresses through early Mountain. Some weapon profiles may require potion support on an early/mid wall; that remains valid progression and is not a reason to make Frostpeak easier than late Steppe.
 T4.2 can push deep and may require potion/optimization at S10; it is intentionally not a guaranteed AFK clear.
-T4.3 clears S10 without potion across the representative weapon set and is the intended reliable AFK/farm threshold.
+T4.3 is the intended late-Blue comfort state and bridge into Yellow. Exact deepest autonomous segment remains weapon-profile dependent and is measured by the runtime sweeps rather than frozen as one universal segment number.
 
 WORLD ORDER INVARIANT
 - Blue progression must remain structurally monotonic across every zone transition.
@@ -274,7 +288,7 @@ The current shard-farming TTK differences are not automatically treated as a def
 
 # 9. Tests and regression policy
 
-CORE BALANCE REGRESSION SET
+CORE COMBAT REGRESSION SET
 - blueRuntimeParity.test.ts
 - blueT3ProgressionSweep.test.ts
 - blueHighlandProgressionSweep.test.ts
@@ -284,7 +298,12 @@ CORE BALANCE REGRESSION SET
 - weaponIdealBenchmark.test.ts
 - weaponPackageScore.test.ts
 - defensiveEquipmentBalance.test.ts
-- enchantmentShardTtkBenchmark.test.ts
+
+ENCHANTMENT ECONOMY REGRESSION SET
+- enchantmentShardBalance.test.ts
+- enchantmentShardFarmSweep.test.ts
+- enchantmentShardWorldFarmSweep.test.ts
+- enchantmentTierBridgeSweep.test.ts
 
 KEEP tests that protect:
 - live runtime parity;
@@ -296,18 +315,28 @@ KEEP tests that protect:
 - potion behavior and role-aware potion fallback semantics;
 - monotonic world-curve ordering;
 - deterministic data integrity;
-- TTK-derived economy measurements when combat throughput affects universal progression resources.
+- TTK-derived economy measurements when combat throughput affects universal progression resources;
+- shard-band entry bridges between adjacent Tiers.
 
-REMOVE tests/tools that only preserve obsolete synthetic hero baselines, historical tuning ratios or old monster ceilings. The retired combatBalanceMatrix synthetic reallocation tool must not be reintroduced; real runtime sweeps replaced it.
+REMOVE tests/tools that only preserve obsolete synthetic hero baselines, historical tuning ratios, one-off diagnostics or old monster ceilings after their finding is covered by a broader regression guard. The retired combatBalanceMatrix synthetic reallocation tool must not be reintroduced; real runtime sweeps replaced it.
+
+A shared benchmark helper is not a test by itself. `enchantmentShardTtkBenchmark.ts` remains because the farm and bridge sweeps consume it; the superseded one-off `enchantmentShardTtkBenchmark.test.ts` was removed.
 
 ---
 
-# 10. Final validation command
+# 10. Validation commands
 
-From the repository root:
+From the repository root, always run typecheck first:
 
 pnpm.cmd --filter @game/client typecheck
-pnpm.cmd --filter @game/client test -- blueRuntimeParity.test.ts blueT3ProgressionSweep.test.ts blueHighlandProgressionSweep.test.ts blueSteppeProgressionSweep.test.ts blueFrostpeakProgressionSweep.test.ts blueRuntimeProgressionMatrix.test.ts weaponIdealBenchmark.test.ts weaponPackageScore.test.ts defensiveEquipmentBalance.test.ts enchantmentShardTtkBenchmark.test.ts --reporter=verbose
+
+Core combat regression:
+
+pnpm.cmd --filter @game/client test -- blueRuntimeParity.test.ts blueT3ProgressionSweep.test.ts blueHighlandProgressionSweep.test.ts blueSteppeProgressionSweep.test.ts blueFrostpeakProgressionSweep.test.ts blueRuntimeProgressionMatrix.test.ts weaponIdealBenchmark.test.ts weaponPackageScore.test.ts defensiveEquipmentBalance.test.ts --reporter=verbose
+
+Enchantment economy / shard pacing regression:
+
+pnpm.cmd --filter @game/client test -- enchantmentShardBalance.test.ts enchantmentShardFarmSweep.test.ts enchantmentShardWorldFarmSweep.test.ts enchantmentTierBridgeSweep.test.ts --reporter=verbose
 
 After targeted balance validation, run the full client suite before merging to main.
 
@@ -316,5 +345,6 @@ After targeted balance validation, run the full client suite before merging to m
 # Source-of-truth rule
 
 Difficulty truth = live CombatRuntime + authored content data.
+Economy cost truth = gameplay-owned enchantment recipe data.
 Weapon diagnostics explain the result; they never override it.
 Documentation stores the intended contract; tests protect the contract.
