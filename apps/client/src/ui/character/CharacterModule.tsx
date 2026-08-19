@@ -35,7 +35,7 @@ function formatWholeValue(value: number): string {
 function getLoadoutMaxTier(loadout: EquipmentLoadout): number | undefined {
   const tiers = loadout.slots
     .map((slot) => getItemTier(slot.itemId))
-    .filter((tier): tier is number => tier !== undefined);
+    .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => tier !== undefined);
   return tiers.length === 0 ? undefined : Math.max(...tiers);
 }
 
