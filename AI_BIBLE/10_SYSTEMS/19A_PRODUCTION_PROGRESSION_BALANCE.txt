@@ -1,0 +1,192 @@
+# 19A. PRODUCTION PROGRESSION BALANCE
+
+Status: AUTHORITATIVE BALANCE CONTRACT
+Date: 2026-08-19
+
+---
+
+# Purpose
+
+This document defines the validated T4-T8 production progression contract for Gathering Mastery, island operational buildings, Workers and the Workshop.
+
+The goal is to keep production progression aligned with the point reached in the combat/world progression while avoiding arbitrary mastery gates or a permanent Wood/Ore bottleneck.
+
+The values below were selected from sequential runtime diagnostics that preserve Hero mastery, Worker mastery, raw/refined stocks, recursive refining requirements and representative equipment crafting between tiers.
+
+---
+
+# Gathering Mastery Tier Gates
+
+Hero active gathering and Worker gathering use the same tier requirement.
+
+T3: mastery 0
+T4: mastery 3
+T5: mastery 7
+T6: mastery 11
+T7: mastery 18
+T8: mastery 25
+
+Workers continue to grant Hero gathering mastery XP on completed cycles.
+
+These gates are progression checks, not standalone grind walls. They are calibrated around mastery naturally accumulated while production resources are being generated and infrastructure is being funded.
+
+Authoritative runtime source:
+apps/client/src/data/progressionContentCatalog.ts
+GATHERING_MASTERY_UNLOCK_BY_TIER
+
+---
+
+# Operational Building Progression
+
+Gathering buildings and their matching refining buildings share the same per-building material curve.
+
+Upgrade unlocking T4: 15 refined T3 materials
+Upgrade unlocking T5: 40 refined T4 materials
+Upgrade unlocking T6: 70 refined T5 materials
+Upgrade unlocking T7: 110 refined T6 materials
+Upgrade unlocking T8: 160 refined T7 materials
+
+A mono-family building always consumes the refined material produced by its own family.
+
+Examples:
+- Lumber Camp / Sawmill -> refined Wood
+- Mine / Smelter -> refined Ore
+- Hunting Camp / Tannery -> refined Hide
+- Fiber Camp / Weaver -> refined Fiber
+
+Operational building levels:
+Level 1 -> production through T3
+Level 2 -> production through T4
+Level 3 -> production through T5
+Level 4 -> production through T6
+Level 5 -> production through T7
+Level 6 -> production through T8
+
+Authoritative runtime source:
+packages/data/src/config/island-progression.ts
+
+---
+
+# Workshop Upgrade Rule
+
+The Workshop must not force Wood and Ore as permanent exclusive bottlenecks.
+
+For every tier upgrade, the Workshop uses a flexible refined-material requirement:
+
+- allowed materials: Wood, Ore, Hide, Fiber refined material of the source tier
+- total quantity: equal to the mono-family building cost for that tier
+- minimum distinct families: 3
+
+Therefore:
+
+Workshop -> T4: 15 total refined T3, minimum 3 families
+Workshop -> T5: 40 total refined T4, minimum 3 families
+Workshop -> T6: 70 total refined T5, minimum 3 families
+Workshop -> T7: 110 total refined T6, minimum 3 families
+Workshop -> T8: 160 total refined T7, minimum 3 families
+
+The transaction layer selects payment from available Shared Storage stocks. It reserves participation from the required number of families before filling the remaining quantity from the largest available stocks.
+
+Authoritative runtime sources:
+packages/data/src/config/island-progression.ts
+apps/client/src/state/IslandActions.ts
+
+---
+
+# Island Level / World Gates
+
+Building level remains capped by Player Island level.
+
+Island 2 / Building 2 -> after Dark Swamp T3
+Island 3 / Building 3 -> after Frostpeak Mountain T4
+Island 4 / Building 4 -> after Ironveil Peaks T5
+Island 5 / Building 5 -> after Ashenpeak Mountain T6
+Island 6 / Building 6 -> after Doompeak Mountain T7
+
+Island level 6 is therefore the infrastructure gate that enables T8 production.
+
+Authoritative runtime source:
+packages/data/src/config/island-levels.ts
+
+---
+
+# Worker Contract
+
+One Worker may operate each supported gathering family under the current Worker House capacity of 4.
+
+Worker production may target T3-T8 when:
+
+1. the corresponding gathering building supports that tier,
+2. the Worker's mastery meets the same gathering mastery tier requirement,
+3. the resource/refining content exists for that tier.
+
+Worker cycles continue to provide:
+- Worker mastery XP,
+- Hero gathering mastery XP,
+- raw resources into Shared Storage.
+
+Hero gathering and Worker gathering remain parallel progression paths.
+
+---
+
+# Validated Sequential Pacing Reference
+
+The final validation model used:
+
+- 4 Workers in parallel, one per family,
+- Hero active gathering distributed across the four families,
+- mastery and stocks preserved across tiers,
+- recursive refining costs preserved,
+- representative equipment set crafted at every tier,
+- validated mastery gates 3 / 7 / 11 / 18 / 25,
+- mono building curve 15 / 40 / 70 / 110 / 160,
+- flexible Workshop with minimum 3 families.
+
+Observed cumulative transition times:
+
+T3 -> T4: ~0.72 h
+T4 -> T5: ~5.18 h
+T5 -> T6: ~13.81 h
+T6 -> T7: ~31.88 h
+T7 -> T8: ~58.27 h
+Representative T8 craft: ~59.85 h
+
+These values are benchmark references, not hard time requirements. Real player behavior may differ by active-gather allocation, Worker uptime, crafting choices and stock management.
+
+---
+
+# Design Rules
+
+Rule 01
+Gathering mastery gates must be derived from actual progression pacing, never chosen independently from resource-generation time.
+
+Rule 02
+Worker-generated Hero mastery XP must always be included when balancing gathering tier access.
+
+Rule 03
+Building material costs are intended to be a major production sink, but must not consume nearly all resources needed for the first equipment set of a tier.
+
+Rule 04
+The Workshop must consume at least three resource families so that Hide/Fiber remain economically relevant and Wood/Ore are not permanent exclusive gates.
+
+Rule 05
+T8 production requires Island level 6 and operational building level 6.
+
+Rule 06
+Balance values must remain data driven. UI and runtime logic consume the same authored definitions.
+
+---
+
+# Regression Coverage
+
+Core regression:
+apps/client/src/data/islandProductionProgressionBalance.test.ts
+
+World/island gate regression:
+apps/client/src/data/worldIslandTierProgression.test.ts
+
+Temporary pacing diagnostics used to derive this contract should not remain part of the permanent test suite after validation.
+
+=========================
+DOCUMENT TERMINÉ
+=========================
