@@ -215,10 +215,6 @@ function buildWorkshop(state: State, tier: ProductionTier, total: number): Recor
 }
 function prepareTransition(state: State, sourceTier: ProductionTier, targetTier: TargetTier): void {
   state.tier = sourceTier; setGatherTier(state, sourceTier);
-  if (sourceTier >= 4) {
-    const craft = refinedCraftCost(sourceTier as TargetTier);
-    while (!spend(state, sourceTier, craft)) tick(state, true, sourceTier, craft);
-  }
   const gate = getRequiredGatheringMasteryForTier(targetTier);
   while (minHeroLevel(state) < gate) tick(state, true);
   const sourceLevel = sourceTier - 2;
@@ -255,8 +251,7 @@ describe("global economy worker production during shard farm diagnostic", () => 
         if (rate <= 0) throw new Error(`No shard farm for T${targetTier}.${level - 1}`);
         const shardHours = cost.shards / rate;
         const workerTicksToRun = Math.ceil(shardHours * 3600 / TICK_SECONDS);
-        const workerStart = state.ticks;
-        for (let i = 0; i < workerTicksToRun; i += 1) tick(state, false);
+        for (let i = 0; i < workerTicksToRun; i += 1) tick(state, false, targetTier, cost.refined);
         const beforeSpend = Object.fromEntries(FAMILIES.map((f) => [f, maxProducible(state.families[f], targetTier)])) as Record<Family, number>;
         const coveredByWorkers = FAMILIES.every((f) => beforeSpend[f] >= cost.refined[f]);
         if (!coveredByWorkers) {
@@ -269,7 +264,7 @@ describe("global economy worker production during shard farm diagnostic", () => 
         rows.push({
           tier: `T${targetTier}`,
           step: `.${level - 1}->.${level}`,
-          shardFarmHours: round2((state.ticks - workerStart) * TICK_SECONDS / 3600 - (coveredByWorkers ? 0 : extraHeroGatherHours)),
+          shardFarmHours: round2(shardHours),
           workerCoverage: coveredByWorkers,
           enchantRefined: FAMILIES.map((f) => `${f}:${cost.refined[f]}`).join(" "),
           producibleBeforeSpend: FAMILIES.map((f) => `${f}:${beforeSpend[f]}`).join(" "),
