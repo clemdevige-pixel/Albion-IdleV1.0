@@ -37,6 +37,13 @@ const ENCHANTMENT_STAGES = [
   { enchantment: 3, masteryLevel: 22 },
 ] as const;
 
+const NEXT_FULL_SET_SHARD_COST: Readonly<Record<number, number | null>> = {
+  0: 50,
+  1: 150,
+  2: 300,
+  3: null,
+};
+
 function equipmentFor(weaponItemId: string): readonly string[] {
   const items: string[] = [...ARMOR];
   if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") items.push(SHIELD);
@@ -51,8 +58,13 @@ function spotDepth(zoneIndex: number, segmentIndex: number): number {
   return zoneIndex * 10 + segmentIndex;
 }
 
+function hoursFor(shards: number | null, shardsPerHour: number): number | null {
+  if (shards === null || shardsPerHour <= 0) return null;
+  return Number((shards / shardsPerHour).toFixed(2));
+}
+
 describe("enchantment shard AFK farm sweep", () => {
-  it("finds the real best Blue farm spots for T4.0 through T4.3", () => {
+  it("finds real Blue farm spots and time-to-next-enchantment by weapon and zone", () => {
     const summaries = ENCHANTMENT_STAGES.map((stage) => {
       const rows = BLUE_ZONES.flatMap((zone, zoneIndex) =>
         Array.from({ length: 10 }, (_, segmentIndex) =>
@@ -86,22 +98,60 @@ describe("enchantment shard AFK farm sweep", () => {
         ).flat(),
       );
 
+      const nextFullSetCost = NEXT_FULL_SET_SHARD_COST[stage.enchantment] ?? null;
+
+      const bestByWeaponAndZone = WEAPONS.flatMap((weaponItemId) => {
+        const weapon = shortName(weaponItemId);
+        return BLUE_ZONES.map((zone) => {
+          const clearRows = rows.filter(
+            (row) => row.weapon === weapon && row.zone === zone.id && row.clear,
+          );
+          const best = clearRows.reduce<(typeof clearRows)[number] | undefined>(
+            (current, row) => current === undefined || row.shardsPerHour > current.shardsPerHour ? row : current,
+            undefined,
+          );
+
+          if (best === undefined) {
+            return {
+              weapon,
+              zone: zone.id,
+              bestSegment: null,
+              shardsPerHour: 0,
+              hpPercent: 0,
+              nextFullSetShards: nextFullSetCost,
+              hoursToNextFullSet: null,
+            };
+          }
+
+          return {
+            weapon,
+            zone: zone.id,
+            bestSegment: best.segment,
+            shardsPerHour: best.shardsPerHour,
+            hpPercent: best.hpPercent,
+            nextFullSetShards: nextFullSetCost,
+            hoursToNextFullSet: hoursFor(nextFullSetCost, best.shardsPerHour),
+          };
+        });
+      });
+
       const bestByWeapon = WEAPONS.map((weaponItemId) => {
         const weapon = shortName(weaponItemId);
-        const clearRows = rows.filter((row) => row.weapon === weapon && row.clear);
-        const best = clearRows.reduce<(typeof clearRows)[number] | undefined>(
+        const weaponZoneRows = bestByWeaponAndZone.filter((row) => row.weapon === weapon);
+        const best = weaponZoneRows.reduce<(typeof weaponZoneRows)[number] | undefined>(
           (current, row) => current === undefined || row.shardsPerHour > current.shardsPerHour ? row : current,
           undefined,
         );
 
         return best === undefined
-          ? { weapon, zone: "none", segment: 0, shardsPerHour: 0, hpPercent: 0 }
+          ? { weapon, zone: "none", segment: 0, shardsPerHour: 0, hpPercent: 0, hoursToNextFullSet: null }
           : {
               weapon,
               zone: best.zone,
-              segment: best.segment,
+              segment: best.bestSegment ?? 0,
               shardsPerHour: best.shardsPerHour,
               hpPercent: best.hpPercent,
+              hoursToNextFullSet: best.hoursToNextFullSet,
             };
       });
 
@@ -137,6 +187,7 @@ describe("enchantment shard AFK farm sweep", () => {
       const summary = {
         gear: `T4.${String(stage.enchantment)}`,
         mastery: stage.masteryLevel,
+        nextFullSetShards: nextFullSetCost,
         deepestCommon: deepestCommon === undefined
           ? null
           : `${deepestCommon.zone}_s${String(deepestCommon.segment)}`,
@@ -145,18 +196,29 @@ describe("enchantment shard AFK farm sweep", () => {
           : `${bestCommonFarm.zone}_s${String(bestCommonFarm.segment)}`,
         bestCommonMinShardsPerHour: bestCommonFarm?.minShardsPerHour ?? 0,
         bestCommonAvgShardsPerHour: bestCommonFarm?.avgShardsPerHour ?? 0,
+        worstCaseHoursToNextFullSet: hoursFor(
+          nextFullSetCost,
+          bestCommonFarm?.minShardsPerHour ?? 0,
+        ),
+        averageHoursToNextFullSet: hoursFor(
+          nextFullSetCost,
+          bestCommonFarm?.avgShardsPerHour ?? 0,
+        ),
       };
 
+      console.log(`[ENCHANTMENT_FARM_BY_ZONE_T4_${String(stage.enchantment)}]`);
+      console.table(bestByWeaponAndZone);
       console.log(`[ENCHANTMENT_FARM_SWEEP_T4_${String(stage.enchantment)}]`);
       console.table(bestByWeapon);
       console.table([summary]);
 
-      return { summary, bestByWeapon };
+      return { summary, bestByWeapon, bestByWeaponAndZone };
     });
 
     console.log("[ENCHANTMENT_FARM_SWEEP_SUMMARY]", JSON.stringify(summaries, null, 2));
 
     expect(summaries).toHaveLength(ENCHANTMENT_STAGES.length);
     expect(summaries.every(({ bestByWeapon }) => bestByWeapon.length === WEAPONS.length)).toBe(true);
+    expect(summaries.every(({ bestByWeaponAndZone }) => bestByWeaponAndZone.length === WEAPONS.length * BLUE_ZONES.length)).toBe(true);
   }, 60_000);
 });
