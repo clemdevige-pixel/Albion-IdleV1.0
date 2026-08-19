@@ -37,7 +37,9 @@ const FAMILIES = ["wood", "ore", "hide", "fiber"] as const;
 type Family = (typeof FAMILIES)[number];
 type TargetTier = 4 | 5 | 6 | 7 | 8;
 type SourceTier = 3 | 4 | 5 | 6 | 7;
+type EquipmentTier = SourceTier | 8;
 type BenchmarkEnchantment = 0 | 1 | 2 | 3;
+type ActiveStep = 1 | 2 | 3;
 
 const WEAPON_SUFFIXES = [
   "sword_broadsword",
@@ -81,6 +83,23 @@ const TRANSITIONS: readonly TransitionDef[] = [
   { label: "T6->T7", sourceTier: 6, targetTier: 7, enchantment: 3, mastery: 46, candidateZones: [WORLD_ZONE_IDS.ashenpeak, WORLD_ZONE_IDS.bloodwood] },
   { label: "T7->T8", sourceTier: 7, targetTier: 8, enchantment: 3, mastery: 56, candidateZones: [WORLD_ZONE_IDS.doompeak, WORLD_ZONE_IDS.blackwood] },
 ] as const;
+
+const ENCHANTMENT_ZONES_BY_TIER: Readonly<Record<TargetTier, readonly string[]>> = {
+  4: [WORLD_ZONE_IDS.steppe, WORLD_ZONE_IDS.mountain],
+  5: [WORLD_ZONE_IDS.amberwood, WORLD_ZONE_IDS.gloamfen, WORLD_ZONE_IDS.stormwatch, WORLD_ZONE_IDS.sunscar, WORLD_ZONE_IDS.ironveil],
+  6: [WORLD_ZONE_IDS.cinderwood, WORLD_ZONE_IDS.rotfen, WORLD_ZONE_IDS.thundercrag, WORLD_ZONE_IDS.emberwind, WORLD_ZONE_IDS.ashenpeak],
+  7: [WORLD_ZONE_IDS.bloodwood, WORLD_ZONE_IDS.dreadfen, WORLD_ZONE_IDS.redspire, WORLD_ZONE_IDS.crimsonSteppe, WORLD_ZONE_IDS.doompeak],
+  8: [WORLD_ZONE_IDS.blackwood, WORLD_ZONE_IDS.shadowfen, WORLD_ZONE_IDS.obsidianHighlands, WORLD_ZONE_IDS.duskfallSteppe, WORLD_ZONE_IDS.blackspire],
+};
+
+/** Entry mastery comes from the previously validated tier-entry / farm sweeps. */
+const ENCHANTMENT_ENTRY_MASTERY_BY_TIER: Readonly<Record<TargetTier, number>> = {
+  4: 16,
+  5: 23,
+  6: 36,
+  7: 46,
+  8: 56,
+};
 
 function emptyTierRecord(): Record<ProductionTier, number> {
   return { 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 };
@@ -308,21 +327,19 @@ function representativeSetCost(tier: ProductionTier): Record<Family, number> {
   return costs;
 }
 
-function enchantmentPackageCost(tier: TargetTier) {
+function enchantmentStepPackageCost(tier: TargetTier, level: ActiveStep) {
   let silver = 0;
   let shards = 0;
   const refined: Record<Family, number> = { wood: 0, ore: 0, hide: 0, fiber: 0 };
   for (const itemId of representativeItemIds(tier)) {
     const info = resolveEnchantmentItemInfo(itemId);
     if (info === undefined || !info.enchantable) continue;
-    for (const level of [1, 2, 3] as const) {
-      const scaled = scaleEnchantmentRecipe(ENCHANTMENT_RECIPES[level], tier, info.costCategory, info.craftMaterials);
-      silver += scaled.silverCost;
-      for (const material of scaled.materials) {
-        if (material.itemId.includes("enchantment_shard")) shards += material.quantity;
-        const family = familyForRefinedItem(material.itemId);
-        if (family !== undefined) refined[family] += material.quantity;
-      }
+    const scaled = scaleEnchantmentRecipe(ENCHANTMENT_RECIPES[level], tier, info.costCategory, info.craftMaterials);
+    silver += scaled.silverCost;
+    for (const material of scaled.materials) {
+      if (material.itemId.includes("enchantment_shard")) shards += material.quantity;
+      const family = familyForRefinedItem(material.itemId);
+      if (family !== undefined) refined[family] += material.quantity;
     }
   }
   return { silver, shards, refined };
@@ -347,7 +364,7 @@ function snapshotStocks(state: SimulationState, tier: ProductionTier): string {
   return FAMILIES.map((family) => `${family}:${state.families[family].raw[tier]}r/${state.families[family].refined[tier]}f`).join(" ");
 }
 
-function weaponItemId(tier: SourceTier, suffix: (typeof WEAPON_SUFFIXES)[number]): string {
+function weaponItemId(tier: EquipmentTier, suffix: (typeof WEAPON_SUFFIXES)[number]): string {
   const [family, specialization] = suffix.split("_");
   if (family === "staff") return `item_weapon_staff_t${String(tier)}_${specialization}`;
   if (family === "gloves") return `item_weapon_gloves_t${String(tier)}_spiked_gauntlets`;
@@ -355,7 +372,7 @@ function weaponItemId(tier: SourceTier, suffix: (typeof WEAPON_SUFFIXES)[number]
   return `item_weapon_${family}_t${String(tier)}_${specialization}`;
 }
 
-function equipmentFor(tier: SourceTier, weaponId: string): readonly string[] {
+function equipmentFor(tier: EquipmentTier, weaponId: string): readonly string[] {
   const items: string[] = tier === 3
     ? ["item_iron_helmet", "item_leather_armor", "item_leather_boots", "item_traveler_cape"]
     : [`item_helmet_t${String(tier)}_reinforced`, `item_armor_t${String(tier)}_leather`, `item_boots_t${String(tier)}_leather`, "item_traveler_cape"];
@@ -372,19 +389,26 @@ function segmentSilver(zoneDefId: string, segmentIndex: number): number {
   return silver;
 }
 
-function bestFarm(transition: TransitionDef, weaponId: string) {
+function bestFarmForGear(
+  label: string,
+  tier: EquipmentTier,
+  enchantment: BenchmarkEnchantment,
+  mastery: number,
+  candidateZones: readonly string[],
+  weaponId: string,
+) {
   let bestSilver = 0;
   let bestShards = 0;
-  for (const zoneDefId of transition.candidateZones) {
+  for (const zoneDefId of candidateZones) {
     for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
       const result = runCombatRuntimeBenchmark({
-        label: `${transition.label}_${weaponId}_${zoneDefId}_${String(segmentIndex + 1)}`,
+        label: `${label}_${weaponId}_${zoneDefId}_${String(segmentIndex + 1)}`,
         weaponItemId: weaponId,
         zoneDefId: zoneDefId as never,
         segmentIndex,
-        equipmentItemIds: equipmentFor(transition.sourceTier, weaponId),
-        masteryLevel: transition.mastery,
-        enchantment: transition.enchantment,
+        equipmentItemIds: equipmentFor(tier, weaponId),
+        masteryLevel: mastery,
+        enchantment,
         useHealthPotions: false,
       });
       if (!result.clear || result.seconds <= 0) continue;
@@ -394,6 +418,80 @@ function bestFarm(transition: TransitionDef, weaponId: string) {
     }
   }
   return { bestSilver, bestShards };
+}
+
+function averageFarmForGear(
+  label: string,
+  tier: EquipmentTier,
+  enchantment: BenchmarkEnchantment,
+  mastery: number,
+  candidateZones: readonly string[],
+) {
+  const farms = WEAPON_SUFFIXES.map((suffix) => bestFarmForGear(
+    label,
+    tier,
+    enchantment,
+    mastery,
+    candidateZones,
+    weaponItemId(tier, suffix),
+  ));
+  const viableSilver = farms.filter((farm) => farm.bestSilver > 0).length;
+  const viableShards = farms.filter((farm) => farm.bestShards > 0).length;
+  return {
+    avgSilverPerHour: farms.reduce((sum, farm) => sum + farm.bestSilver, 0) / farms.length,
+    avgShardsPerHour: farms.reduce((sum, farm) => sum + farm.bestShards, 0) / farms.length,
+    viableSilver,
+    viableShards,
+  };
+}
+
+function sequentialEnchantmentAudit(tier: TargetTier) {
+  const mastery = ENCHANTMENT_ENTRY_MASTERY_BY_TIER[tier];
+  const zones = ENCHANTMENT_ZONES_BY_TIER[tier];
+  let totalSilver = 0;
+  let totalShards = 0;
+  let silverFarmHours = 0;
+  let shardFarmHours = 0;
+  const refined: Record<Family, number> = { wood: 0, ore: 0, hide: 0, fiber: 0 };
+  const steps = ([1, 2, 3] as const).map((level) => {
+    const currentEnchantment = (level - 1) as BenchmarkEnchantment;
+    const cost = enchantmentStepPackageCost(tier, level);
+    const farm = averageFarmForGear(
+      `T${String(tier)}.${String(currentEnchantment)}_enchant_step_${String(level)}`,
+      tier,
+      currentEnchantment,
+      mastery,
+      zones,
+    );
+    const stepSilverHours = farm.avgSilverPerHour > 0 ? cost.silver / farm.avgSilverPerHour : Number.POSITIVE_INFINITY;
+    const stepShardHours = farm.avgShardsPerHour > 0 ? cost.shards / farm.avgShardsPerHour : Number.POSITIVE_INFINITY;
+    totalSilver += cost.silver;
+    totalShards += cost.shards;
+    silverFarmHours += stepSilverHours;
+    shardFarmHours += stepShardHours;
+    for (const family of FAMILIES) refined[family] += cost.refined[family];
+    return {
+      tier: `T${String(tier)}`,
+      step: `.${String(currentEnchantment)}->.${String(level)}`,
+      mastery,
+      shards: cost.shards,
+      avgShardsPerHour: round1(farm.avgShardsPerHour),
+      shardFarmHours: Number.isFinite(stepShardHours) ? round2(stepShardHours) : null,
+      silver: cost.silver,
+      avgSilverPerHour: round1(farm.avgSilverPerHour),
+      silverFarmHours: Number.isFinite(stepSilverHours) ? round2(stepSilverHours) : null,
+      viableWeapons: Math.min(farm.viableSilver, farm.viableShards),
+    };
+  });
+  return {
+    mastery,
+    totalSilver,
+    totalShards,
+    refined,
+    silverFarmHours: Number.isFinite(silverFarmHours) ? silverFarmHours : null,
+    shardFarmHours: Number.isFinite(shardFarmHours) ? shardFarmHours : null,
+    steps,
+  };
 }
 
 function runProductionModel() {
@@ -453,32 +551,42 @@ function round1(value: number): number { return Number(value.toFixed(1)); }
 function round2(value: number): number { return Number(value.toFixed(2)); }
 
 describe("global sequential economy audit", () => {
-  it("combines production, infrastructure, Silver and enchantment costs from live sources", () => {
+  it("combines production, infrastructure, Silver and sequential enchantment costs from live sources", () => {
     const productionRows = runProductionModel();
+    const enchantmentStepRows: Array<ReturnType<typeof sequentialEnchantmentAudit>["steps"][number]> = [];
     const rows = TRANSITIONS.map((transition) => {
       const production = productionRows.find((row) => row.transition === transition.label);
       if (production === undefined) throw new Error(`Missing production row ${transition.label}`);
-      const farms = WEAPON_SUFFIXES.map((suffix) => bestFarm(transition, weaponItemId(transition.sourceTier, suffix)));
-      const avgSilverPerHour = farms.reduce((sum, farm) => sum + farm.bestSilver, 0) / farms.length;
-      const avgShardsPerHour = farms.reduce((sum, farm) => sum + farm.bestShards, 0) / farms.length;
+      const sourceFarm = averageFarmForGear(
+        transition.label,
+        transition.sourceTier,
+        transition.enchantment,
+        transition.mastery,
+        transition.candidateZones,
+      );
       const sourceLevel = transition.sourceTier - 2;
       const islandSilver = getIslandLevelDefinition(sourceLevel + 1)?.upgradeCost?.silver ?? 0;
       const monoSilver = getIslandOperationalLevelDefinition("lumber_camp", sourceLevel)?.upgradeToNext?.silver ?? 0;
       const workshopSilver = getIslandOperationalLevelDefinition("workshop", sourceLevel)?.upgradeToNext?.silver ?? 0;
       const infrastructureSilver = islandSilver + monoSilver * 8 + workshopSilver;
-      const enchant = enchantmentPackageCost(transition.targetTier);
+      const enchant = sequentialEnchantmentAudit(transition.targetTier);
+      enchantmentStepRows.push(...enchant.steps);
+      const effectiveShardRate = enchant.shardFarmHours !== null && enchant.shardFarmHours > 0
+        ? enchant.totalShards / enchant.shardFarmHours
+        : 0;
       return {
         transition: transition.label,
         productionHours: production.economyHours,
         infrastructureSilver,
-        avgSilverPerHour: round1(avgSilverPerHour),
-        infrastructureSilverHours: avgSilverPerHour > 0 ? round2(infrastructureSilver / avgSilverPerHour) : null,
-        enchantToPoint3Silver: enchant.silver,
-        totalSilverWithEnchant: infrastructureSilver + enchant.silver,
-        totalSilverHours: avgSilverPerHour > 0 ? round2((infrastructureSilver + enchant.silver) / avgSilverPerHour) : null,
-        enchantToPoint3Shards: enchant.shards,
-        avgShardsPerHour: round1(avgShardsPerHour),
-        shardFarmHours: avgShardsPerHour > 0 ? round2(enchant.shards / avgShardsPerHour) : null,
+        avgSilverPerHour: round1(sourceFarm.avgSilverPerHour),
+        infrastructureSilverHours: sourceFarm.avgSilverPerHour > 0 ? round2(infrastructureSilver / sourceFarm.avgSilverPerHour) : null,
+        enchantToPoint3Silver: enchant.totalSilver,
+        enchantSilverFarmHours: enchant.silverFarmHours === null ? null : round2(enchant.silverFarmHours),
+        totalSilverWithEnchant: infrastructureSilver + enchant.totalSilver,
+        enchantToPoint3Shards: enchant.totalShards,
+        effectiveShardsPerHour: round1(effectiveShardRate),
+        shardFarmHours: enchant.shardFarmHours === null ? null : round2(enchant.shardFarmHours),
+        enchantStepShardHours: enchant.steps.map((step) => `${step.step}:${step.shardFarmHours ?? "n/a"}h`).join(" | "),
         enchantRefined: FAMILIES.map((family) => `${family}:${enchant.refined[family]}`).join(" "),
         representativeCraft: FAMILIES.map((family) => `${family}:${production.craftCost[family]}`).join(" "),
         sourceTierStocks: production.stocks,
@@ -487,11 +595,16 @@ describe("global sequential economy audit", () => {
 
     console.log("[GLOBAL_ECONOMY_SEQUENTIAL_AUDIT]");
     console.table(rows);
+    console.log("[GLOBAL_ECONOMY_ENCHANTMENT_STEPS]");
+    console.table(enchantmentStepRows);
     console.log("[GLOBAL_ECONOMY_SEQUENTIAL_AUDIT_JSON]", JSON.stringify(rows, null, 2));
+    console.log("[GLOBAL_ECONOMY_ENCHANTMENT_STEPS_JSON]", JSON.stringify(enchantmentStepRows, null, 2));
 
     expect(rows).toHaveLength(TRANSITIONS.length);
+    expect(enchantmentStepRows).toHaveLength(TRANSITIONS.length * 3);
     expect(rows.every((row) => row.infrastructureSilver > 0)).toBe(true);
     expect(rows.every((row) => row.avgSilverPerHour > 0)).toBe(true);
-    expect(rows.every((row) => row.avgShardsPerHour > 0)).toBe(true);
+    expect(rows.every((row) => row.effectiveShardsPerHour > 0)).toBe(true);
+    expect(enchantmentStepRows.every((row) => row.viableWeapons === WEAPON_SUFFIXES.length)).toBe(true);
   });
 });
