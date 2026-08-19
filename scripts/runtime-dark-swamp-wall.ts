@@ -1,6 +1,14 @@
+import { createDefaultStatRegistry, type StatId } from "@game/gameplay";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "../apps/client/src/data/worldContentCatalog.js";
+
+const REQUIRED_GAMEPLAY_STAT = "stat_auto_attack_damage_taken_bonus" as StatId;
+if (!createDefaultStatRegistry().has(REQUIRED_GAMEPLAY_STAT)) {
+  throw new Error(
+    `Gameplay dist is stale: missing ${String(REQUIRED_GAMEPLAY_STAT)}. Run \"pnpm.cmd --filter gameplay build\" before this benchmark.`,
+  );
+}
 
 const T3_WEAPONS = [
   "item_weapon_sword_t3_broadsword",
