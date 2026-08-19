@@ -39,6 +39,8 @@ export function MerchantModule(): JSX.Element {
     if (target !== undefined) setService(target.service);
   }, [target]);
 
+  const targetedEnchantInstanceId = target?.service === "enchant" ? target.instanceId : undefined;
+
   return (
     <div className="ui-merchant">
       <header className="ui-merchant__summary">
@@ -60,7 +62,11 @@ export function MerchantModule(): JSX.Element {
       </nav>
       {service === "buy" && <BuyView />}
       {service === "sell" && <SellView />}
-      {service === "enchant" && <EnchantView initialInstanceId={target?.service === "enchant" ? target.instanceId : undefined} />}
+      {service === "enchant" && (
+        targetedEnchantInstanceId === undefined
+          ? <EnchantView />
+          : <EnchantView initialInstanceId={targetedEnchantInstanceId} />
+      )}
       {service === "repair" && <RepairView />}
     </div>
   );
