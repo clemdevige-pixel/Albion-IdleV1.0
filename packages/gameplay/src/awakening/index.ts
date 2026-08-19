@@ -23,6 +23,7 @@ export {
   getAwakenedActionCost,
   getAwakenedAttunementCap,
   getEffectiveCooldownReductionPercent,
+  getEffectiveLifeStealPercent,
   getEligibleAwakenedTraits,
   getUnlockedAwakenedTraitSlots,
   rollAwakenedTrait,
