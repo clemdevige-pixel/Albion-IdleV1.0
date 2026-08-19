@@ -61,29 +61,33 @@ function round1(value: number): number { return Number(value.toFixed(1)); }
 describe("boots defensive impact sweep", () => {
   it("compares full set, no boots and no head on representative progression walls", () => {
     const variants: readonly Variant[] = ["full", "no_boots", "no_head"];
-    const rows = CHECKPOINTS.flatMap((checkpoint) => WEAPONS_BY_TIER[checkpoint.tier].flatMap((weaponId) => variants.map((variant) => {
-      const result = runCombatRuntimeBenchmark({
-        label: `${checkpoint.label}_${variant}_${weaponId}`,
-        weaponItemId: weaponId,
-        zoneDefId: checkpoint.zoneDefId as never,
-        segmentIndex: checkpoint.segmentIndex,
-        equipmentItemIds: equipmentFor(checkpoint.tier, weaponId, variant),
-        masteryLevel: checkpoint.mastery,
-        enchantment: checkpoint.enchantment,
-        useHealthPotions: false,
-      });
-      return {
-        checkpoint: checkpoint.label,
-        weapon: shortWeaponName(weaponId),
-        variant,
-        clear: result.clear,
-        hpPercent: round1(result.hpPercent),
-        maxHealth: result.maxHealth,
-        armor: result.armor,
-        mr: result.magicResistance,
-        seconds: round1(result.seconds),
-      };
-    }))));
+    const rows = CHECKPOINTS.flatMap((checkpoint) =>
+      WEAPONS_BY_TIER[checkpoint.tier].flatMap((weaponId) =>
+        variants.map((variant) => {
+          const result = runCombatRuntimeBenchmark({
+            label: `${checkpoint.label}_${variant}_${weaponId}`,
+            weaponItemId: weaponId,
+            zoneDefId: checkpoint.zoneDefId as never,
+            segmentIndex: checkpoint.segmentIndex,
+            equipmentItemIds: equipmentFor(checkpoint.tier, weaponId, variant),
+            masteryLevel: checkpoint.mastery,
+            enchantment: checkpoint.enchantment,
+            useHealthPotions: false,
+          });
+          return {
+            checkpoint: checkpoint.label,
+            weapon: shortWeaponName(weaponId),
+            variant,
+            clear: result.clear,
+            hpPercent: round1(result.hpPercent),
+            maxHealth: result.maxHealth,
+            armor: result.armor,
+            mr: result.magicResistance,
+            seconds: round1(result.seconds),
+          };
+        }),
+      ),
+    );
 
     console.log("[BOOTS_DEFENSIVE_IMPACT_SWEEP]");
     console.table(rows);
