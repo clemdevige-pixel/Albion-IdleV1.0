@@ -28,7 +28,6 @@ const STAT_ATTACK_SPEED = "stat_attack_speed" as StatId;
 const STAT_ARMOR = "stat_armor" as StatId;
 const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
-const STAT_ABILITY_POWER = "stat_ability_power" as StatId;
 
 export interface CombatEntityFactoryDependencies {
   readonly world: World;
@@ -105,7 +104,6 @@ export function setupCombatEntity(
     maxHealth: number;
     physDamage: number;
     magDamage?: number;
-    abilityPower?: number;
     attackSpeed: number;
     armor: number;
     magicRes: number;
@@ -131,9 +129,6 @@ export function setupCombatEntity(
   container.setBase(STAT_ARMOR, baseStats.armor);
   container.setBase(STAT_MAGIC_RESISTANCE, baseStats.magicRes);
   container.setBase(STAT_MAGICAL_DAMAGE, baseStats.magDamage ?? 0);
-  // Ability runtime/automation reads this stat directly. Every combat entity
-  // must therefore own a baseline value even when no item/mastery modifies it.
-  container.setBase(STAT_ABILITY_POWER, baseStats.abilityPower ?? 0);
   container.recalculate();
 
   damageManager.attachHealth(id);
