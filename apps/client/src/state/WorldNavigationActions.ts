@@ -1,4 +1,6 @@
 import type { WorldLocationSaveState } from "@game/gameplay";
+import { getItemTier } from "../data/itemPower.js";
+import { getZoneEquipmentTierCapByNumber } from "../data/zoneEquipmentTierCaps.js";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
 
@@ -24,6 +26,7 @@ interface CombatNavigationRuntime {
   isAwaitingResumeAfterDefeat(): boolean;
   restoreAwaitingResumeAfterDefeat(): void;
   getLoopState(): CombatLoopState;
+  getEquippedItemIds(): readonly string[];
 }
 
 interface WorldNavigationActionsDependencies {
@@ -80,6 +83,10 @@ export class WorldNavigationActions {
     const targetSegment = segmentNumber ?? 1;
     const currentZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
     const loopState = this.deps.combatRuntime.getLoopState();
+
+    if (zoneNumber !== currentZoneNumber && !this.canEnterZoneWithCurrentEquipment(zoneNumber)) {
+      return false;
+    }
 
     // WorldRuntime remains the single validation authority for zone unlocks and
     // segment bounds. During active combat it also owns the queued destination.
@@ -142,6 +149,25 @@ export class WorldNavigationActions {
 
     this.deps.updateWorldBridge();
     this.deps.bridge.setCombatState("walking");
+  }
+
+  private canEnterZoneWithCurrentEquipment(zoneNumber: number): boolean {
+    const cap = getZoneEquipmentTierCapByNumber(zoneNumber);
+    if (cap === undefined) return true;
+
+    const violatingTiers = this.deps.combatRuntime.getEquippedItemIds()
+      .map((itemId) => getItemTier(itemId))
+      .filter((tier): tier is number => tier !== undefined && tier > cap);
+    if (violatingTiers.length === 0) return true;
+
+    const highestTier = Math.max(...violatingTiers);
+    this.deps.bridge.addEconomyNotification({
+      id: `notif_zone_tier_cap_${String(Date.now())}`,
+      type: "error",
+      message: `Accès refusé : cette zone est limitée au T${String(cap)} (équipement T${String(highestTier)} détecté).`,
+      timestamp: Date.now(),
+    });
+    return false;
   }
 
   private canTravelImmediately(loopState: CombatLoopState): boolean {
