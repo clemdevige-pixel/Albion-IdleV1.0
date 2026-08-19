@@ -27,7 +27,14 @@ Armor and Magic Resistance stay unchanged. The distribution preserves the previo
 - Boots must materially affect progression while remaining less important than Head and Chest.
 
 ## Runtime validation
-A temporary T3-T7 runtime sweep confirmed that removing Boots now frequently turns representative progression clears into failures, while removing Head remains more punishing. The temporary diagnostic was removed after validation.
+A temporary T3-T7 runtime sweep confirmed that removing Boots now frequently turns representative progression clears into failures, while removing Head remains more punishing.
+
+A second temporary depth sweep validated the progression shape before cleanup:
+- T3 Swamp average deepest clear progressed from 1.4 segments weapon-only to 5.8 with Chest, 8.0 with Chest+Head, and 8.8 with the Core set including Boots.
+- Higher-tier bridge diagnostics confirmed that previous-tier .3 gear increasingly depends on the complete defensive core, while the full package remains the safest universal bridge state.
+- These diagnostics were used for calibration only and were removed after the contract was validated.
+
+The permanent regression source is defensiveEquipmentBalance.test.ts; do not preserve temporary sweep output as a long-term test dependency.
 
 ## Sources
 apps/client/src/data/nonWeaponEquipmentContentCatalog.ts
