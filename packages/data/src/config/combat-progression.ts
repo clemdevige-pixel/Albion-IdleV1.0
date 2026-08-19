@@ -26,50 +26,49 @@ export const BLUE_WORLD_COMBAT_CURVE = [
 ] as const;
 
 /**
- * Post-continuous-segment first pass.
- * Damage is deliberately re-anchored from the validated late-Blue envelope so
- * later bands preserve a monotone world while the exhaustive runtime sweep
- * locates the new walls. HP and defense stay untouched for this pass so the
- * signal remains focused on cumulative survivability after removing the E5 heal.
+ * Continuous-segment damage envelope.
+ *
+ * The E5 heal was removed, so survivability must be budgeted across all five
+ * encounters of a segment. Late Blue is the validated anchor. Later bands keep
+ * HP and defense authored independently while damage grows on a deliberately
+ * shallower monotone slope so potion remains a bridge rather than an S1 gate.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
-  { healthStart: 4.3, healthEnd: 4.45, damageStart: 2.9, damageEnd: 3.0, defenseStart: 2.1, defenseEnd: 2.18, defenseModel: "rank_parity" },
-  { healthStart: 4.75, healthEnd: 4.9, damageStart: 3.1, damageEnd: 3.2, defenseStart: 2.3, defenseEnd: 2.35, defenseModel: "rank_parity" },
-  { healthStart: 5.25, healthEnd: 5.4, damageStart: 3.3, damageEnd: 3.4, defenseStart: 2.5, defenseEnd: 2.56, defenseModel: "rank_parity" },
-  { healthStart: 5.85, healthEnd: 6.5, damageStart: 3.5, damageEnd: 3.7, defenseStart: 2.75, defenseEnd: 3, defenseModel: "rank_parity" },
-  { healthStart: 6.5, healthEnd: 6.5, damageStart: 3.7, damageEnd: 3.7, defenseStart: 3, defenseEnd: 3, defenseModel: "rank_parity" },
+  { healthStart: 4.3, healthEnd: 4.45, damageStart: 2.85, damageEnd: 2.9, defenseStart: 2.1, defenseEnd: 2.18, defenseModel: "rank_parity" },
+  { healthStart: 4.75, healthEnd: 4.9, damageStart: 2.95, damageEnd: 3.0, defenseStart: 2.3, defenseEnd: 2.35, defenseModel: "rank_parity" },
+  { healthStart: 5.25, healthEnd: 5.4, damageStart: 3.05, damageEnd: 3.1, defenseStart: 2.5, defenseEnd: 2.56, defenseModel: "rank_parity" },
+  { healthStart: 5.85, healthEnd: 6.5, damageStart: 3.15, damageEnd: 3.25, defenseStart: 2.75, defenseEnd: 3, defenseModel: "rank_parity" },
+  { healthStart: 6.5, healthEnd: 6.5, damageStart: 3.25, damageEnd: 3.3, defenseStart: 3, defenseEnd: 3, defenseModel: "rank_parity" },
 ] as const;
 
 export const ORANGE_WORLD_COMBAT_CURVE = [
-  { healthStart: 6.8, healthEnd: 7.15, damageStart: 3.8, damageEnd: 3.95, defenseStart: 3.1, defenseEnd: 3.2, defenseModel: "rank_parity" },
-  { healthStart: 7.4, healthEnd: 7.8, damageStart: 4.05, damageEnd: 4.2, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
-  { healthStart: 8.1, healthEnd: 8.55, damageStart: 4.3, damageEnd: 4.45, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
-  { healthStart: 8.9, healthEnd: 9.45, damageStart: 4.55, damageEnd: 4.75, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
-  { healthStart: 9.8, healthEnd: 10.5, damageStart: 4.85, damageEnd: 5.15, defenseStart: 4.1, defenseEnd: 4.35, defenseModel: "rank_parity" },
+  { healthStart: 6.8, healthEnd: 7.15, damageStart: 3.35, damageEnd: 3.45, defenseStart: 3.1, defenseEnd: 3.2, defenseModel: "rank_parity" },
+  { healthStart: 7.4, healthEnd: 7.8, damageStart: 3.5, damageEnd: 3.6, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
+  { healthStart: 8.1, healthEnd: 8.55, damageStart: 3.65, damageEnd: 3.75, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
+  { healthStart: 8.9, healthEnd: 9.45, damageStart: 3.8, damageEnd: 3.9, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
+  { healthStart: 9.8, healthEnd: 10.5, damageStart: 3.95, damageEnd: 4.1, defenseStart: 4.1, defenseEnd: 4.35, defenseModel: "rank_parity" },
 ] as const;
 
 export const RED_WORLD_COMBAT_CURVE = [
-  { healthStart: 10.9, healthEnd: 11.5, damageStart: 5.25, damageEnd: 5.45, defenseStart: 4.5, defenseEnd: 4.65, defenseModel: "rank_parity" },
-  { healthStart: 11.9, healthEnd: 12.6, damageStart: 5.55, damageEnd: 5.75, defenseStart: 4.8, defenseEnd: 4.95, defenseModel: "rank_parity" },
-  { healthStart: 13.0, healthEnd: 13.8, damageStart: 5.85, damageEnd: 6.05, defenseStart: 5.1, defenseEnd: 5.28, defenseModel: "rank_parity" },
-  { healthStart: 14.3, healthEnd: 15.2, damageStart: 6.15, damageEnd: 6.4, defenseStart: 5.45, defenseEnd: 5.65, defenseModel: "rank_parity" },
-  { healthStart: 15.8, healthEnd: 16.8, damageStart: 6.5, damageEnd: 6.8, defenseStart: 5.85, defenseEnd: 6.1, defenseModel: "rank_parity" },
+  { healthStart: 10.9, healthEnd: 11.5, damageStart: 4.15, damageEnd: 4.25, defenseStart: 4.5, defenseEnd: 4.65, defenseModel: "rank_parity" },
+  { healthStart: 11.9, healthEnd: 12.6, damageStart: 4.3, damageEnd: 4.4, defenseStart: 4.8, defenseEnd: 4.95, defenseModel: "rank_parity" },
+  { healthStart: 13.0, healthEnd: 13.8, damageStart: 4.45, damageEnd: 4.55, defenseStart: 5.1, defenseEnd: 5.28, defenseModel: "rank_parity" },
+  { healthStart: 14.3, healthEnd: 15.2, damageStart: 4.6, damageEnd: 4.7, defenseStart: 5.45, defenseEnd: 5.65, defenseModel: "rank_parity" },
+  { healthStart: 15.8, healthEnd: 16.8, damageStart: 4.75, damageEnd: 4.9, defenseStart: 5.85, defenseEnd: 6.1, defenseModel: "rank_parity" },
 ] as const;
 
 /**
  * Provisional T8 envelope.
  *
- * This is intentionally only a minimal playable bridge from Red/T7 into
- * Black/T8. The global T4-T8 balance pass will revisit these values once the
- * remaining progression systems are represented in the runtime benchmarks.
- * Keep the curve authored here rather than compensating per weapon or zone.
+ * Black remains provisional until the full T4-T8 runtime wall pass converges.
+ * Keep its difficulty authored here rather than compensating per weapon or zone.
  */
 export const BLACK_WORLD_COMBAT_CURVE = [
-  { healthStart: 16.9, healthEnd: 17.7, damageStart: 6.9, damageEnd: 7.1, defenseStart: 6.2, defenseEnd: 6.4, defenseModel: "rank_parity" },
-  { healthStart: 18.1, healthEnd: 19.0, damageStart: 7.2, damageEnd: 7.4, defenseStart: 6.55, defenseEnd: 6.75, defenseModel: "rank_parity" },
-  { healthStart: 19.5, healthEnd: 20.5, damageStart: 7.5, damageEnd: 7.75, defenseStart: 6.9, defenseEnd: 7.1, defenseModel: "rank_parity" },
-  { healthStart: 20.5, healthEnd: 21.5, damageStart: 7.85, damageEnd: 8.1, defenseStart: 7.2, defenseEnd: 7.4, defenseModel: "rank_parity" },
-  { healthStart: 21.8, healthEnd: 22.8, damageStart: 8.2, damageEnd: 8.5, defenseStart: 7.5, defenseEnd: 7.7, defenseModel: "rank_parity" },
+  { healthStart: 16.9, healthEnd: 17.7, damageStart: 4.95, damageEnd: 5.05, defenseStart: 6.2, defenseEnd: 6.4, defenseModel: "rank_parity" },
+  { healthStart: 18.1, healthEnd: 19.0, damageStart: 5.1, damageEnd: 5.2, defenseStart: 6.55, defenseEnd: 6.75, defenseModel: "rank_parity" },
+  { healthStart: 19.5, healthEnd: 20.5, damageStart: 5.25, damageEnd: 5.35, defenseStart: 6.9, defenseEnd: 7.1, defenseModel: "rank_parity" },
+  { healthStart: 20.5, healthEnd: 21.5, damageStart: 5.4, damageEnd: 5.5, defenseStart: 7.2, defenseEnd: 7.4, defenseModel: "rank_parity" },
+  { healthStart: 21.8, healthEnd: 22.8, damageStart: 5.55, damageEnd: 5.7, defenseStart: 7.5, defenseEnd: 7.7, defenseModel: "rank_parity" },
 ] as const;
 
 export const WORLD_ONE_COMBAT_CURVE = BLUE_WORLD_COMBAT_CURVE;
