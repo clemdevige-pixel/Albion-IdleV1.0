@@ -1,6 +1,7 @@
 import { RightPanelHost } from "../modules/RightPanelHost";
 import { useNavigation } from "../navigation";
 import { UI_MODULE_IDS } from "../navigation/moduleIds";
+import { ResourceTrackingProvider } from "../dashboard/ResourceTrackingContext";
 import { IslandSelectionProvider } from "../island/IslandSelectionContext";
 import { IslandWorldRegion } from "../island/IslandWorldRegion";
 import { BottomBarRegion } from "./BottomBarRegion";
@@ -12,14 +13,16 @@ export function AppShell(): JSX.Element {
   const isIsland = activeModule === UI_MODULE_IDS.island;
 
   return (
-    <IslandSelectionProvider>
-      <div className="ui-app-shell">
-        <HeaderRegion />
-        <GameWorldRegion hidden={isIsland} />
-        {isIsland && <IslandWorldRegion />}
-        <RightPanelHost />
-        <BottomBarRegion />
-      </div>
-    </IslandSelectionProvider>
+    <ResourceTrackingProvider>
+      <IslandSelectionProvider>
+        <div className="ui-app-shell">
+          <HeaderRegion />
+          <GameWorldRegion hidden={isIsland} />
+          {isIsland && <IslandWorldRegion />}
+          <RightPanelHost />
+          <BottomBarRegion />
+        </div>
+      </IslandSelectionProvider>
+    </ResourceTrackingProvider>
   );
 }
