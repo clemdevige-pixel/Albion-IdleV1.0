@@ -4,7 +4,6 @@ import {
   PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS,
 } from "./nonWeaponEquipmentContentCatalog.js";
 import { getWeaponAttackSpeed, getItemTier } from "./itemPower.js";
-import { getWeaponHandlingOffensiveMultiplier } from "./weaponHandlingBalance.js";
 import {
   EQUIPMENT_CRAFT_RECIPES,
   BIRCH_PLANK_RECIPE,
@@ -70,28 +69,19 @@ export function resolveEquipmentInfo(itemId: string): EquipmentInfoLike | undefi
   const definition = ITEM_DEFINITIONS[itemId];
   if (definition === undefined) return undefined;
 
-  // Attack speed belongs exclusively to the weapon profile. Any attack-speed
-  // bonus accidentally added to equipment data is ignored by this boundary.
+  // Weapon damage is authored directly in weaponContentCatalog. Attack speed
+  // remains an intrinsic weapon-profile property projected as a delta from the
+  // hero baseline so equipment sync stays generic.
   const { stat_attack_speed: _ignoredAttackSpeed, ...stats } = definition.stats ?? {};
   const intrinsicAttackSpeed = getWeaponAttackSpeed(itemId);
   if (definition.slot !== "weapon" || intrinsicAttackSpeed === undefined) {
     return { ...definition, stats };
   }
 
-  const handlingMultiplier = getWeaponHandlingOffensiveMultiplier(definition.handling);
-  const physicalDamage = stats.stat_physical_damage;
-  const magicalDamage = stats.stat_magical_damage;
-
   return {
     ...definition,
     stats: {
       ...stats,
-      ...(physicalDamage === undefined
-        ? {}
-        : { stat_physical_damage: physicalDamage * handlingMultiplier }),
-      ...(magicalDamage === undefined
-        ? {}
-        : { stat_magical_damage: magicalDamage * handlingMultiplier }),
       stat_attack_speed: intrinsicAttackSpeed - HERO_BASE_ATTACK_SPEED,
     },
   };
