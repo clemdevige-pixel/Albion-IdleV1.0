@@ -22,6 +22,8 @@ const STAT_ARMOR = "stat_armor" as StatId;
 const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 const STAT_ABILITY_POWER = "stat_ability_power" as StatId;
 const STAT_COOLDOWN_REDUCTION = "stat_cooldown_reduction" as StatId;
+const STAT_AUTO_ATTACK_DAMAGE_BONUS = "stat_auto_attack_damage_bonus" as StatId;
+const STAT_LIFE_STEAL = "stat_life_steal" as StatId;
 
 function getTraitValue(
   traits: readonly { readonly traitId: AwakenedTraitId; readonly value: number }[],
@@ -58,11 +60,9 @@ function addAwakenedFlat(
 
 /**
  * Rebuild weapon progression modifiers from authoritative mastery + .4 state.
- *
- * Mastery IP and awakened IP share the same IP->weapon-damage conversion.
- * Damage is a percent modifier on the weapon's offensive stat. HP/Armor/MR are
- * flat, Ability Power is consumed by ability mechanics, and hidden CDR
- * progression is converted here to the effective percentage used by AbilityManager.
+ * Mastery/IP keeps using the weapon offensive stat. Awake-specific effects are
+ * regular stats consumed by their owning combat pipeline, avoiding ability or
+ * resistance side effects from UI-level special cases.
  */
 export function recalculateWeaponProgressionStats(
   statsManager: StatsManager,
@@ -120,38 +120,27 @@ export function recalculateWeaponProgressionStats(
     });
   }
 
-  const damagePercent = getTraitValue(traits, "damage");
-  if (damagePercent > 0) {
-    if (physicalDamage > 0) {
-      statsManager.addModifier(entityId, {
-        id: `${AWAKENED_MODIFIER_PREFIX}physical_damage` as ModifierId,
-        statId: STAT_PHYSICAL_DAMAGE,
-        type: "percent",
-        value: damagePercent,
-        priority: 20,
-        source: "awakening:weapon",
-      });
-    }
-    if (magicalDamage > 0) {
-      statsManager.addModifier(entityId, {
-        id: `${AWAKENED_MODIFIER_PREFIX}magical_damage` as ModifierId,
-        statId: STAT_MAGICAL_DAMAGE,
-        type: "percent",
-        value: damagePercent,
-        priority: 20,
-        source: "awakening:weapon",
-      });
-    }
-  }
-
+  addAwakenedFlat(
+    statsManager,
+    entityId,
+    "auto_attack_damage",
+    STAT_AUTO_ATTACK_DAMAGE_BONUS,
+    getTraitValue(traits, "auto_attack_damage"),
+  );
   addAwakenedFlat(statsManager, entityId, "max_health", STAT_MAX_HEALTH, getTraitValue(traits, "max_health"));
-  addAwakenedFlat(statsManager, entityId, "armor", STAT_ARMOR, getTraitValue(traits, "armor"));
-  addAwakenedFlat(statsManager, entityId, "magic_resistance", STAT_MAGIC_RESISTANCE, getTraitValue(traits, "magic_resistance"));
+
+  const defense = getTraitValue(traits, "defense");
+  addAwakenedFlat(statsManager, entityId, "armor", STAT_ARMOR, defense);
+  addAwakenedFlat(statsManager, entityId, "magic_resistance", STAT_MAGIC_RESISTANCE, defense);
   addAwakenedFlat(statsManager, entityId, "ability_power", STAT_ABILITY_POWER, getTraitValue(traits, "ability_power"));
 
   const cdrProgression = getTraitValue(traits, "cooldown_reduction");
   const effectiveCdr = awakenedWeaponService?.getDisplayTraitValue("cooldown_reduction", cdrProgression) ?? 0;
   addAwakenedFlat(statsManager, entityId, "cooldown_reduction", STAT_COOLDOWN_REDUCTION, effectiveCdr);
+
+  const lifeStealProgression = getTraitValue(traits, "life_steal");
+  const effectiveLifeSteal = awakenedWeaponService?.getDisplayTraitValue("life_steal", lifeStealProgression) ?? 0;
+  addAwakenedFlat(statsManager, entityId, "life_steal", STAT_LIFE_STEAL, effectiveLifeSteal);
 
   statsManager.calculateStats(entityId);
 }
