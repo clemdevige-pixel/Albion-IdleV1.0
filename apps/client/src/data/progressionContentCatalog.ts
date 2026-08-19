@@ -50,9 +50,9 @@ export const GATHERING_MASTERY_UNLOCK_BY_TIER = {
   3: 0,
   4: 3,
   5: 7,
-  6: 11,
-  7: 18,
-  8: 25,
+  6: 10,
+  7: 15,
+  8: 23,
 } as const;
 
 export function getRequiredGatheringMasteryForTier(tier: number): number {
