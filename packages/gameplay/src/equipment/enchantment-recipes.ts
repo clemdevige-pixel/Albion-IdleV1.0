@@ -19,12 +19,14 @@ export const ENCHANTMENT_RESOURCE_TIERS = [4, 5, 6, 7, 8] as const;
 
 /**
  * Incremental shard costs for each enchantment step.
- * .4 is the Awakened transition and consumes 100 tier-matching fragments/shards.
+ * .1-.3 use the validated 10/30/60 progression; .4 remains the 100-shard
+ * Awakened transition. The 50/50 resource split keeps 1H + off-hand equal to
+ * one 2H package through .3.
  */
 export const ENCHANTMENT_SHARD_COSTS: Readonly<Record<ActiveEnchantmentLevel, number>> = {
-  1: 6,
-  2: 16,
-  3: 30,
+  1: 10,
+  2: 30,
+  3: 60,
   4: 100,
 };
 
