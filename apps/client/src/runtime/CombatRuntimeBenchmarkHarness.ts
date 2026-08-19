@@ -35,9 +35,10 @@ import { ConsumableRuntime } from "./ConsumableRuntime.js";
 import { setupCombatEntity, spawnAuthoredEnemy } from "./combatEntityFactory.js";
 import { createProgressionFoundation } from "./bootstrap/createProgressionFoundation.js";
 import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
+import { RUNTIME_DELTA_SECONDS } from "./runtimeTiming.js";
 
-const DT = 1 / 20;
-const MAX_TICKS = 20 * 180;
+const DT = RUNTIME_DELTA_SECONDS;
+const MAX_TICKS = Math.ceil(180 / DT);
 const POTION_ITEM_ID = "item_health_potion";
 const STAT_MAX_HEALTH = "stat_max_health" as StatId;
 const STAT_ARMOR = "stat_armor" as StatId;
@@ -163,8 +164,6 @@ function equipItem(
   if (!equipped.ok) throw new Error(`Failed to equip ${itemId}: ${equipped.reason}`);
   if (enchantment <= 0) return;
 
-  // Benchmarks bypass the economy transaction on purpose, but must still seed
-  // only states that the live enchantment system can actually produce.
   const enchantmentInfo = resolveEnchantmentItemInfo(itemId);
   if (
     enchantmentInfo === undefined
@@ -408,7 +407,6 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   beginEncounter();
   while (!finishedSegment && !defeated && ticks < MAX_TICKS) {
     ticks += 1;
-    runtime.tick(DT, ticks);
     consumableRuntime.tick(DT);
     if (useHealthPotions && !deathManager.isDead(heroId)) {
       const health = damageManager.getHealth(heroId);
@@ -418,6 +416,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
         if (used.ok) potionsUsed += 1;
       }
     }
+    runtime.tick(DT, ticks);
   }
 
   const health = damageManager.getHealth(heroId);
