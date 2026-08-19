@@ -43,7 +43,7 @@ export type UpgradeIslandLevelResult =
 const IslandBuildingIdSchema = z.enum(ISLAND_BUILDING_IDS);
 const IslandSnapshotSchema = z.object({
   version: z.literal(1),
-  level: z.number().int().min(1).max(3).optional(),
+  level: z.number().int().min(1).max(5).optional(),
   plots: z.array(z.object({ id: z.string().min(1), buildingInstanceId: z.string().min(1).nullable() })),
   buildings: z.array(z.object({
     instanceId: z.string().min(1),
@@ -129,8 +129,6 @@ export class PlayerIslandService implements SaveProvider {
   canUpgradeIslandLevel(): UpgradeIslandLevelResult {
     const next = getNextIslandLevelDefinition(this.#state.level);
     if (next === undefined) return { ok: false, reason: "max_level" };
-    // World progression and economy are application-layer requirements because
-    // this domain service owns neither the world state nor player resources.
     return { ok: true, level: next.level };
   }
 
@@ -154,8 +152,6 @@ export class PlayerIslandService implements SaveProvider {
     this.#state = {
       level: islandLevel,
       plots: this.#config.plots.map((plot) => ({ id: plot.id, buildingInstanceId: savedPlotById.get(plot.id)?.buildingInstanceId ?? null })),
-      // Migration guard: snapshots created before island-level gating may contain
-      // buildings above the island's authored building-level cap.
       buildings: parsed.data.buildings.map((building) => ({
         ...building,
         level: Math.min(building.level, maxBuildingLevel),
