@@ -12,9 +12,11 @@ export interface DungeonEncounterRewardResult {
   readonly dungeonDefinitionId: string;
   readonly encounterId: string;
   readonly drops: readonly DungeonRewardDrop[];
+  /** Granted once, on the final authored encounter victory. */
+  readonly completionSilver: number;
 }
 
-/** Resolves only dungeon-specific inventory rewards. */
+/** Resolves only dungeon-specific rewards; wallet credit remains owned by CombatRewardRuntime. */
 export class DungeonRewardRuntime {
   constructor(
     private readonly dungeonRuntime: DungeonRuntime,
@@ -59,10 +61,12 @@ export class DungeonRewardRuntime {
       }
     }
 
+    const finalEncounter = dungeonDefinition.encounters[dungeonDefinition.encounters.length - 1];
     return {
       dungeonDefinitionId: run.definitionId,
       encounterId: encounter.id,
       drops,
+      completionSilver: finalEncounter?.id === encounter.id ? lootDefinition.completionSilver : 0,
     };
   }
 }
