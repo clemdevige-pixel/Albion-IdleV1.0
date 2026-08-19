@@ -284,7 +284,7 @@ export class WeaponAbilityMechanicsRuntime {
 
   private removeTrackedModifier(tracked: TrackedModifier): void {
     if (!this.deps.statsManager.hasStats(tracked.target)) return;
-    this.deps.statsManager.removeModifier(target, tracked.modifierId);
+    this.deps.statsManager.removeModifier(tracked.target, tracked.modifierId);
     this.deps.statsManager.calculateStats(tracked.target);
   }
 
