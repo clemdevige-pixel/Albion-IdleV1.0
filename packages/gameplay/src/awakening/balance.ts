@@ -14,12 +14,12 @@ export const DEFAULT_AWAKENED_WEAPON_BALANCE: AwakenedWeaponBalance = {
   },
   traitRolls: {
     item_power: { min: 1, max: 3, integer: true },
-    damage: { min: 0.2, max: 0.4 },
+    auto_attack_damage: { min: 0.2, max: 0.4 },
     ability_power: { min: 0.2, max: 0.4 },
     cooldown_reduction: { min: 0.5, max: 1 },
     max_health: { min: 3, max: 6 },
-    armor: { min: 0.5, max: 1 },
-    magic_resistance: { min: 0.5, max: 1 },
+    defense: { min: 0.5, max: 1 },
+    life_steal: { min: 0.2, max: 0.4 },
     fame_bonus: { min: 0.5, max: 1 },
   },
   traitProposalCount: 3,
@@ -35,4 +35,6 @@ export const DEFAULT_AWAKENED_WEAPON_BALANCE: AwakenedWeaponBalance = {
   silverGrowthPerStrain: 1.026,
   cdrAsymptotePercent: 50,
   cdrCurveConstant: 50,
+  // Life steal applies to post-mitigation auto-attack damage only.
+  lifeStealCapPercent: 5,
 };
