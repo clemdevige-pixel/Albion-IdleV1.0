@@ -86,9 +86,25 @@ export interface EnchantmentShardZoneProgressionWeight {
   readonly end: number;
 }
 
-export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Partial<
-  Readonly<Record<WorldBandId, readonly EnchantmentShardZoneProgressionWeight[]>>
+/**
+ * Default five-zone shard curve for a full single-tier world band.
+ * T5 established the current economy shape; T6-T8 intentionally reuse it as
+ * an initial neutral baseline so runtime TTK, not a hidden tier multiplier,
+ * determines how shard acquisition time evolves between tiers.
+ */
+export const DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION:
+readonly EnchantmentShardZoneProgressionWeight[] = [
+  { start: 3.5, end: 5.5 },
+  { start: 4.8, end: 6.2 },
+  { start: 5.8, end: 7.4 },
+  { start: 7.6, end: 10.2 },
+  { start: 9.0, end: 10.5 },
+] as const;
+
+export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Readonly<
+  Record<WorldBandId, readonly EnchantmentShardZoneProgressionWeight[]>
 > = {
+  // Blue is intentionally bespoke because the band mixes T3 and T4 content.
   blue: [
     { start: 0.35, end: 0.5 },
     { start: 0.5, end: 0.9 },
@@ -96,13 +112,10 @@ export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Partial<
     { start: 3.8, end: 6.5 },
     { start: 6.8, end: 9.5 },
   ],
-  yellow: [
-    { start: 3.5, end: 5.5 },
-    { start: 4.8, end: 6.2 },
-    { start: 5.8, end: 7.4 },
-    { start: 7.6, end: 10.2 },
-    { start: 9.0, end: 10.5 },
-  ],
+  yellow: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
+  orange: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
+  red: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
+  black: DEFAULT_ENCHANTMENT_SHARD_BAND_PROGRESSION,
 } as const;
 
 export function getEnchantmentShardProgressionWeight(
@@ -110,8 +123,7 @@ export function getEnchantmentShardProgressionWeight(
   zoneIndexWithinBand: number,
   segmentIndex: number,
 ): number {
-  const bandWeights = ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS[bandId];
-  const zone = bandWeights?.[zoneIndexWithinBand];
+  const zone = ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS[bandId][zoneIndexWithinBand];
   if (zone === undefined) return 0;
   const clampedSegment = Math.max(0, Math.min(9, Math.floor(segmentIndex)));
   const progress = clampedSegment / 9;
