@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatCompactNumber } from "../shared";
+import { useNavigation } from "../navigation";
 import { BuyView } from "./buy/BuyView";
 import { EnchantView } from "./enchant/EnchantView";
 import type { MerchantServiceId } from "./merchantModels";
@@ -15,9 +16,28 @@ const SERVICES: readonly { readonly id: MerchantServiceId; readonly label: strin
   { id: "repair", label: "Réparer" },
 ];
 
+function parseMerchantView(view: string | null): {
+  readonly service: MerchantServiceId;
+  readonly instanceId?: string;
+} | undefined {
+  if (view === null) return undefined;
+  const [service, instanceId] = view.split(":", 2);
+  if (!SERVICES.some((entry) => entry.id === service)) return undefined;
+  return {
+    service: service as MerchantServiceId,
+    ...(instanceId === undefined || instanceId.length === 0 ? {} : { instanceId }),
+  };
+}
+
 export function MerchantModule(): JSX.Element {
-  const [service, setService] = useState<MerchantServiceId>("buy");
+  const { activeView } = useNavigation();
+  const target = useMemo(() => parseMerchantView(activeView), [activeView]);
+  const [service, setService] = useState<MerchantServiceId>(target?.service ?? "buy");
   const { wallet } = useMerchantData();
+
+  useEffect(() => {
+    if (target !== undefined) setService(target.service);
+  }, [target]);
 
   return (
     <div className="ui-merchant">
@@ -40,7 +60,7 @@ export function MerchantModule(): JSX.Element {
       </nav>
       {service === "buy" && <BuyView />}
       {service === "sell" && <SellView />}
-      {service === "enchant" && <EnchantView />}
+      {service === "enchant" && <EnchantView initialInstanceId={target?.service === "enchant" ? target.instanceId : undefined} />}
       {service === "repair" && <RepairView />}
     </div>
   );
