@@ -34,10 +34,10 @@ const ResourceTrackingContext = createContext<ResourceTrackingState | null>(null
 /**
  * Generic resource contract used by UI tracking surfaces.
  * No resource family is whitelisted here: current and future resource items
- * participate automatically through the shared item-id convention.
+ * participate automatically through the shared resource item-id conventions.
  */
 export function isTrackableResourceItem(itemId: string): boolean {
-  return itemId.startsWith("item_resource_");
+  return itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_");
 }
 
 export function createTrackedItemResource(itemId: string, label: string): TrackedResource {
