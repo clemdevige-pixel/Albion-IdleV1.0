@@ -76,7 +76,7 @@ export function getDungeonKeyProgressionWeight(
  * shard income follows actual enchantment walls while preserving an incentive
  * to farm deeper accessible segments.
  */
-export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.011;
+export const ENCHANTMENT_SHARD_BASE_EXPECTED_PER_KILL = 0.0055;
 export const ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT = 0.015;
 export const ENCHANTMENT_SHARD_ELITE_MULTIPLIER = 1.2;
 export const ENCHANTMENT_SHARD_BOSS_MULTIPLIER = 1.35;
