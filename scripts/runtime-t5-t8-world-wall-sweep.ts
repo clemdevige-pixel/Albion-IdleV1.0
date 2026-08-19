@@ -7,17 +7,27 @@ import {
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
 
 type Tier = 4 | 5 | 6 | 7 | 8;
-type TargetTier = 5 | 6 | 7 | 8;
+type TargetTier = 4 | 5 | 6 | 7 | 8;
 type Enchantment = 0 | 1 | 2 | 3;
-type BandId = "yellow" | "orange" | "red" | "black";
+type BandId = "blue" | "yellow" | "orange" | "red" | "black";
 type EncounterTelemetry = ReturnType<typeof runCombatRuntimeBenchmark>["encounters"];
 
-const BAND_BY_TIER: Readonly<Record<TargetTier, BandId>> = {
-  5: "yellow",
-  6: "orange",
-  7: "red",
-  8: "black",
+interface TierSweepConfig {
+  readonly band: BandId;
+  readonly zoneIndices: readonly number[];
+}
+
+const TIER_SWEEP_CONFIG: Readonly<Record<TargetTier, TierSweepConfig>> = {
+  // Blue contains T3 and T4 progression. The broad benchmark adds the two T4 zones
+  // without duplicating the separate early-Blue/T3 progression diagnostics.
+  4: { band: "blue", zoneIndices: [3, 4] },
+  5: { band: "yellow", zoneIndices: [0, 1, 2, 3, 4] },
+  6: { band: "orange", zoneIndices: [0, 1, 2, 3, 4] },
+  7: { band: "red", zoneIndices: [0, 1, 2, 3, 4] },
+  8: { band: "black", zoneIndices: [0, 1, 2, 3, 4] },
 };
+
+const TARGET_TIERS = [4, 5, 6, 7, 8] as const satisfies readonly TargetTier[];
 
 const WEAPON_FAMILIES = [
   ["sword", "broadsword"],
@@ -64,7 +74,7 @@ function shortWeaponName(itemId: string): string {
   return itemId.replace("item_weapon_", "").replace(/_t\d_/, " ");
 }
 
-function masteryBaseForTier(tier: TargetTier): number {
+function masteryBaseForTier(tier: Exclude<TargetTier, 4>): number {
   return 25 + (tier - 5) * 15;
 }
 
@@ -75,6 +85,15 @@ interface ZoneLoadoutExpectation {
 }
 
 function expectedLoadoutForZone(tier: TargetTier, zoneIndex: number): ZoneLoadoutExpectation {
+  if (tier === 4) {
+    // Validated Blue late-band references:
+    // Golden Steppe => T4.1 late-zone target.
+    // Frostpeak => T4.2 final-wall reference; T4.3 remains the reliable AFK threshold.
+    if (zoneIndex === 3) return { gearTier: 4, enchantment: 1, masteryLevel: 25 };
+    if (zoneIndex === 4) return { gearTier: 4, enchantment: 2, masteryLevel: 30 };
+    throw new Error(`Unexpected Blue T4 zone index ${String(zoneIndex)}`);
+  }
+
   const base = masteryBaseForTier(tier);
   switch (zoneIndex) {
     case 0:
@@ -122,7 +141,7 @@ function runSegment(
   segmentIndex: number,
   weaponItemId: string,
 ): SegmentRun {
-  const band = BAND_BY_TIER[tier];
+  const band = TIER_SWEEP_CONFIG[tier].band;
   const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
   if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
 
@@ -245,7 +264,7 @@ function printDetailedAnomalyTrace(rows: readonly SegmentRun[]): void {
     ...nonMonotonicPairs(rows, true),
   ];
 
-  console.log("[T5_T8_NON_MONOTONIC_RUNTIME_ANOMALIES]");
+  console.log("[T4_T8_NON_MONOTONIC_RUNTIME_ANOMALIES]");
   console.table(anomalies.map(({ wall, laterClear, potion }) => ({
     tier: wall.tier,
     zone: wall.zone,
@@ -269,23 +288,10 @@ function printDetailedAnomalyTrace(rows: readonly SegmentRun[]): void {
   }
 }
 
-function main(): void {
-  const rows: SegmentRun[] = [];
-
-  for (const tier of [5, 6, 7, 8] as const) {
-    for (let zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
-      const expected = expectedLoadoutForZone(tier, zoneIndex);
-      for (const weaponItemId of weaponItemIds(expected.gearTier)) {
-        for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
-          rows.push(runSegment(tier, zoneIndex, segmentIndex, weaponItemId));
-        }
-      }
-    }
-  }
-
-  const locator = ([5, 6, 7, 8] as const).flatMap((tier) =>
-    Array.from({ length: 5 }, (_, zoneIndex) => {
-      const band = BAND_BY_TIER[tier];
+function buildLocator(rows: readonly SegmentRun[]) {
+  return TARGET_TIERS.flatMap((tier) => {
+    const { band, zoneIndices } = TIER_SWEEP_CONFIG[tier];
+    return zoneIndices.flatMap((zoneIndex) => {
       const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
       if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
       const expected = expectedLoadoutForZone(tier, zoneIndex);
@@ -317,16 +323,19 @@ function main(): void {
           potionGain: (lastClearPotion ?? 0) - (lastClearNoPotion ?? 0),
         };
       });
-    }).flat(),
-  );
+    });
+  });
+}
 
-  const zoneSummary = ([5, 6, 7, 8] as const).flatMap((tier) =>
-    Array.from({ length: 5 }, (_, zoneIndex) => {
-      const band = BAND_BY_TIER[tier];
+function buildZoneSummary(locator: ReturnType<typeof buildLocator>) {
+  return TARGET_TIERS.flatMap((tier) => {
+    const { band, zoneIndices } = TIER_SWEEP_CONFIG[tier];
+    return zoneIndices.map((zoneIndex) => {
       const zoneDefId = WORLD_ZONE_IDS_BY_BAND[band][zoneIndex];
       if (zoneDefId === undefined) throw new Error(`Missing zone ${zoneIndex + 1} for ${band}`);
       const expected = expectedLoadoutForZone(tier, zoneIndex);
-      const zoneRows = locator.filter((row) => row.tier === tier && row.zone === zoneName(String(zoneDefId)));
+      const zone = zoneName(String(zoneDefId));
+      const zoneRows = locator.filter((row) => row.tier === tier && row.zone === zone);
       const noPotionWalls = zoneRows
         .map((row) => Number(row.firstWallNoPotion.replace("S", "")))
         .filter(Number.isFinite);
@@ -337,7 +346,7 @@ function main(): void {
       return {
         tier,
         band,
-        zone: zoneName(String(zoneDefId)),
+        zone,
         gear: `T${expected.gearTier}.${expected.enchantment}`,
         mastery: expected.masteryLevel,
         earliestWallNoPotion: noPotionWalls.length === 0 ? "-" : `S${Math.min(...noPotionWalls)}`,
@@ -345,31 +354,54 @@ function main(): void {
         earliestWallPotion: potionWalls.length === 0 ? "-" : `S${Math.min(...potionWalls)}`,
         latestWallPotion: potionWalls.length === 0 ? "-" : `S${Math.max(...potionWalls)}`,
       };
-    }),
+    });
+  });
+}
+
+function main(): void {
+  const rows: SegmentRun[] = [];
+
+  for (const tier of TARGET_TIERS) {
+    const { zoneIndices } = TIER_SWEEP_CONFIG[tier];
+    for (const zoneIndex of zoneIndices) {
+      const expected = expectedLoadoutForZone(tier, zoneIndex);
+      for (const weaponItemId of weaponItemIds(expected.gearTier)) {
+        for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
+          rows.push(runSegment(tier, zoneIndex, segmentIndex, weaponItemId));
+        }
+      }
+    }
+  }
+
+  const locator = buildLocator(rows);
+  const zoneSummary = buildZoneSummary(locator);
+  const zonesInSweep = TARGET_TIERS.reduce(
+    (total, tier) => total + TIER_SWEEP_CONFIG[tier].zoneIndices.length,
+    0,
   );
 
-  console.log("[T5_T8_EXHAUSTIVE_WALL_SWEEP_REFERENCE]");
+  console.log("[T4_T8_EXHAUSTIVE_WALL_SWEEP_REFERENCE]");
   console.log({
-    tiers: [5, 6, 7, 8],
-    zonesPerTier: 5,
+    tiers: TARGET_TIERS,
+    zonesInSweep,
     segmentsPerZone: SEGMENTS_PER_ZONE,
     weaponsPerSegment: WEAPON_FAMILIES.length,
     potionModesPerSegment: 2,
     totalRuntimeRuns: rows.length * 2,
-    note: "Mastery references beyond Yellow remain diagnostic extrapolations, not frozen design law.",
+    note: "Blue T4 uses validated late-zone reference loadouts; mastery references beyond Yellow remain diagnostic extrapolations, not frozen design law.",
   });
 
-  console.log("[T5_T8_EXHAUSTIVE_ZONE_SUMMARY]");
+  console.log("[T4_T8_EXHAUSTIVE_ZONE_SUMMARY]");
   console.table(zoneSummary);
 
-  for (const tier of [5, 6, 7, 8] as const) {
+  for (const tier of TARGET_TIERS) {
     console.log(`[T${tier}_EXHAUSTIVE_WALL_LOCATOR]`);
     console.table(locator.filter((row) => row.tier === tier));
   }
 
   printDetailedAnomalyTrace(rows);
 
-  console.log("[T5_T8_EXHAUSTIVE_WALL_SWEEP_RESULT]", {
+  console.log("[T4_T8_EXHAUSTIVE_WALL_SWEEP_RESULT]", {
     segmentRows: rows.length,
     runtimeRuns: rows.length * 2,
     locatorRows: locator.length,
