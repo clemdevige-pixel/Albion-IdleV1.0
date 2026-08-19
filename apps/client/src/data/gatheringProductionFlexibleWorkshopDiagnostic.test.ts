@@ -11,6 +11,7 @@ import {
 } from "./productionFamilyCatalog.js";
 
 const TICK_SECONDS = 0.5;
+const MAX_TICKS = 10_000_000;
 const FAMILIES = ["wood", "ore", "hide", "fiber"] as const;
 type Family = (typeof FAMILIES)[number];
 type TargetTier = 4 | 5 | 6 | 7 | 8;
@@ -84,6 +85,10 @@ function createState(): SimulationState {
   return { tier: 3, ticks: 0, activeFamilyIndex: 0, families };
 }
 
+function assertNotRunaway(state: SimulationState, phase: string): void {
+  if (state.ticks > MAX_TICKS) throw new Error(`flexible workshop diagnostic runaway during ${phase}`);
+}
+
 function canProduceRefined(data: FamilyState, tier: ProductionTier, amount: number): boolean {
   const raw = { ...data.raw };
   const refined = { ...data.refined };
@@ -151,38 +156,50 @@ function findBlockingGatherTier(data: FamilyState, targetTier: ProductionTier, a
   return targetTier;
 }
 
-function setGatherTier(data: FamilyState, tier: ProductionTier): void {
-  if (data.heroGatherTier !== tier) {
-    data.heroGatherTier = tier;
-    data.heroRemaining = heroGatherTicks(tier, data.heroXp);
-  }
-  if (data.workerGatherTier !== tier) {
-    data.workerGatherTier = tier;
-    data.workerRemaining = workerGatherTicks(tier, data.workerXp);
-  }
+function switchHeroGatherTier(data: FamilyState, tier: ProductionTier): void {
+  if (data.heroGatherTier === tier) return;
+  data.heroGatherTier = tier;
+  data.heroRemaining = heroGatherTicks(tier, data.heroXp);
+}
+
+function switchWorkerGatherTier(data: FamilyState, tier: ProductionTier): void {
+  if (data.workerGatherTier === tier) return;
+  data.workerGatherTier = tier;
+  data.workerRemaining = workerGatherTicks(tier, data.workerXp);
 }
 
 function tick(state: SimulationState, demandTier = state.tier, demandCosts?: Record<Family, number>): void {
   state.ticks += 1;
+
   for (const family of FAMILIES) {
     const data = state.families[family];
     const required = demandCosts?.[family] ?? 0;
-    setGatherTier(data, required > 0 ? findBlockingGatherTier(data, demandTier, required) : state.tier);
+    const desiredTier = required > 0 ? findBlockingGatherTier(data, demandTier, required) : state.tier;
+
+    // A worker only switches target after finishing its current cycle. This avoids
+    // resetting progress forever if recursive refining demand oscillates by tier.
     data.workerRemaining -= 1;
     if (data.workerRemaining <= 0) {
       data.raw[data.workerGatherTier] += 1;
       data.workerXp += getWorkerGatheringXpForTier(data.workerGatherTier);
       data.heroXp += getHeroGatheringXpFromWorkerForTier(data.workerGatherTier);
+      switchWorkerGatherTier(data, desiredTier);
       data.workerRemaining = workerGatherTicks(data.workerGatherTier, data.workerXp);
     }
   }
 
   const activeFamily = FAMILIES[state.activeFamilyIndex] ?? "wood";
   const active = state.families[activeFamily];
+  const activeRequired = demandCosts?.[activeFamily] ?? 0;
+  const activeDesiredTier = activeRequired > 0
+    ? findBlockingGatherTier(active, demandTier, activeRequired)
+    : state.tier;
+
   active.heroRemaining -= 1;
   if (active.heroRemaining <= 0) {
     active.raw[active.heroGatherTier] += 1;
     active.heroXp += getHeroGatheringXpForTier(active.heroGatherTier);
+    switchHeroGatherTier(active, activeDesiredTier);
     active.heroRemaining = heroGatherTicks(active.heroGatherTier, active.heroXp);
     state.activeFamilyIndex = (state.activeFamilyIndex + 1) % FAMILIES.length;
   }
@@ -199,7 +216,9 @@ function spendRefined(state: SimulationState, tier: ProductionTier, costs: Recor
 }
 
 function buildFlexibleWorkshopAllocation(state: SimulationState, tier: ProductionTier, total: number): Record<Family, number> | null {
-  const capacities = Object.fromEntries(FAMILIES.map((family) => [family, maxProducibleRefined(state.families[family], tier)])) as Record<Family, number>;
+  const capacities = Object.fromEntries(
+    FAMILIES.map((family) => [family, maxProducibleRefined(state.families[family], tier)]),
+  ) as Record<Family, number>;
   const contributors = [...FAMILIES]
     .filter((family) => capacities[family] > 0)
     .sort((a, b) => capacities[b] - capacities[a]);
@@ -234,8 +253,17 @@ function minimumHeroLevel(state: SimulationState): number {
   return Math.min(...FAMILIES.map((family) => masteryLevelFromXp(state.families[family].heroXp)));
 }
 
+function setAllGatherTiers(state: SimulationState, tier: ProductionTier): void {
+  for (const family of FAMILIES) {
+    switchHeroGatherTier(state.families[family], tier);
+    switchWorkerGatherTier(state.families[family], tier);
+  }
+}
+
 function snapshotStocks(state: SimulationState, tier: ProductionTier): string {
-  return FAMILIES.map((family) => `${family}:${state.families[family].raw[tier]}r/${state.families[family].refined[tier]}f`).join(" ");
+  return FAMILIES
+    .map((family) => `${family}:${state.families[family].raw[tier]}r/${state.families[family].refined[tier]}f`)
+    .join(" ");
 }
 
 function runValidatedModel() {
@@ -244,34 +272,55 @@ function runValidatedModel() {
 
   for (const tier of [3, 4, 5, 6, 7, 8] as const) {
     state.tier = tier;
-    for (const family of FAMILIES) setGatherTier(state.families[family], tier);
+    setAllGatherTiers(state, tier);
 
     let craftHours: number | null = null;
     if (tier >= 4) {
       const craftCost = representativeSetCost(tier);
-      while (!spendRefined(state, tier, craftCost)) tick(state, tier, craftCost);
+      while (!spendRefined(state, tier, craftCost)) {
+        tick(state, tier, craftCost);
+        assertNotRunaway(state, `T${tier} craft`);
+      }
       craftHours = hours(state);
     }
 
     if (tier === 8) {
-      rows.push({ tier: "T8", craftHours, gateLevel: null, masteryGateHours: null, monoBuildingsReadyHours: null, workshopReadyHours: null, transitionHours: hours(state), minHeroLevel: minimumHeroLevel(state), workshopAllocation: "-", stocks: snapshotStocks(state, tier) });
+      rows.push({
+        tier: "T8",
+        craftHours,
+        gateLevel: null,
+        masteryGateHours: null,
+        monoBuildingsReadyHours: null,
+        workshopReadyHours: null,
+        transitionHours: hours(state),
+        minHeroLevel: minimumHeroLevel(state),
+        workshopAllocation: "-",
+        stocks: snapshotStocks(state, tier),
+      });
       break;
     }
 
     const targetTier = (tier + 1) as TargetTier;
     const gateLevel = GATHERING_UNLOCK_LEVEL[targetTier];
-    while (minimumHeroLevel(state) < gateLevel) tick(state);
+    while (minimumHeroLevel(state) < gateLevel) {
+      tick(state);
+      assertNotRunaway(state, `T${tier}->T${targetTier} mastery gate`);
+    }
     const masteryGateHours = hours(state);
 
     const mono = MONO_BUILDING_COST[targetTier];
     const monoCosts: Record<Family, number> = { wood: mono * 2, ore: mono * 2, hide: mono * 2, fiber: mono * 2 };
-    while (!spendRefined(state, tier, monoCosts)) tick(state, tier, monoCosts);
+    while (!spendRefined(state, tier, monoCosts)) {
+      tick(state, tier, monoCosts);
+      assertNotRunaway(state, `T${tier}->T${targetTier} mono buildings`);
+    }
     const monoBuildingsReadyHours = hours(state);
 
     let workshopAllocation = buildFlexibleWorkshopAllocation(state, tier, mono);
     while (workshopAllocation === null || !spendRefined(state, tier, workshopAllocation)) {
       const demand = workshopAllocation ?? { wood: 1, ore: 1, hide: 1, fiber: 1 };
       tick(state, tier, demand);
+      assertNotRunaway(state, `T${tier}->T${targetTier} workshop`);
       workshopAllocation = buildFlexibleWorkshopAllocation(state, tier, mono);
     }
     const workshopReadyHours = hours(state);
