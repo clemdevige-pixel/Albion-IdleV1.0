@@ -7,11 +7,11 @@ Date: 2026-08-19
 
 # Purpose
 
-This document defines the validated T4-T8 production progression contract for Gathering Mastery, island operational buildings, Workers and the Workshop.
+This document defines the validated T4-T8 production progression contract for Gathering Mastery, island operational buildings, Workers, Workshop and Silver sinks.
 
-The goal is to keep production progression aligned with the point reached in the combat/world progression while avoiding arbitrary mastery gates or a permanent Wood/Ore bottleneck.
+The goal is to keep production progression aligned with combat/world progression while avoiding arbitrary mastery gates, permanent Wood/Ore bottlenecks or Silver costs that are economically irrelevant.
 
-The values below were selected from sequential runtime diagnostics that preserve Hero mastery, Worker mastery, raw/refined stocks, recursive refining requirements and representative equipment crafting between tiers.
+The values below were selected from sequential runtime diagnostics that preserve Hero mastery, Worker mastery, raw/refined stocks, recursive refining requirements and representative equipment crafting between tiers, plus combat runtime Silver/hour benchmarks on the best viable farm spots available at each transition.
 
 ---
 
@@ -93,6 +93,81 @@ apps/client/src/state/IslandActions.ts
 
 ---
 
+# Silver Sink Contract
+
+Silver is a secondary progression sink. It must matter, but it must not replace material/mastery/world gates as the primary progression structure.
+
+Calibration target:
+- T3 -> T4 keeps the already healthy early-game ratio.
+- T4 -> T8 target roughly 25% of the incremental production time of the tier when farming Silver on the average best viable combat spot across the current weapon set.
+
+Validated total Silver sink per transition:
+
+T3 -> T4: 3,900 Silver
+T4 -> T5: 60,000 Silver
+T5 -> T6: 200,000 Silver
+T6 -> T7: 525,000 Silver
+T7 -> T8: 900,000 Silver
+
+Each total includes:
+- Player Island level upgrade,
+- 8 mono-family operational building upgrades,
+- 1 Workshop upgrade.
+
+Validated distribution:
+
+T3 -> T4
+- Island: 1,000
+- Each mono building: 300 x8
+- Workshop: 500
+- Total: 3,900
+
+T4 -> T5
+- Island: 18,000
+- Each mono building: 4,500 x8
+- Workshop: 6,000
+- Total: 60,000
+
+T5 -> T6
+- Island: 60,000
+- Each mono building: 14,500 x8
+- Workshop: 24,000
+- Total: 200,000
+
+T6 -> T7
+- Island: 155,000
+- Each mono building: 38,000 x8
+- Workshop: 66,000
+- Total: 525,000
+
+T7 -> T8
+- Island: 270,000
+- Each mono building: 65,000 x8
+- Workshop: 110,000
+- Total: 900,000
+
+Reference average best-farm Silver/hour observed during calibration:
+- T3.0 transition: ~23.3k/h
+- T4.3 transition: ~54.3k/h
+- T5.3 transition: ~88.5k/h
+- T6.3 transition: ~116.9k/h
+- T7.3 transition: ~135.5k/h
+
+Approximate average Silver farm time represented by the validated total sink:
+- T3 -> T4: ~0.17 h
+- T4 -> T5: ~1.11 h
+- T5 -> T6: ~2.26 h
+- T6 -> T7: ~4.49 h
+- T7 -> T8: ~6.64 h
+
+These values are balance references, not mandatory dedicated grind sessions. Silver earned naturally while progressing combat contributes to the same wallet and reduces explicit Silver farming.
+
+Authoritative runtime sources:
+packages/data/src/config/island-levels.ts
+packages/data/src/config/island-progression.ts
+
+---
+
 # Island Level / World Gates
 
 Building level remains capped by Player Island level.
@@ -131,7 +206,7 @@ Hero gathering and Worker gathering remain parallel progression paths.
 
 # Validated Sequential Pacing Reference
 
-The final validation model used:
+The final production validation model used:
 
 - 4 Workers in parallel, one per family,
 - Hero active gathering distributed across the four families,
@@ -151,7 +226,14 @@ T6 -> T7: ~31.88 h
 T7 -> T8: ~58.27 h
 Representative T8 craft: ~59.85 h
 
-These values are benchmark references, not hard time requirements. Real player behavior may differ by active-gather allocation, Worker uptime, crafting choices and stock management.
+Incremental production time by transition used for Silver calibration:
+- T3 -> T4: ~0.72 h
+- T4 -> T5: ~4.46 h
+- T5 -> T6: ~8.63 h
+- T6 -> T7: ~18.07 h
+- T7 -> T8: ~26.39 h
+
+These values are benchmark references, not hard time requirements. Real player behavior may differ by active-gather allocation, Worker uptime, crafting choices, stock management and combat farming choices.
 
 ---
 
@@ -173,6 +255,12 @@ Rule 05
 T8 production requires Island level 6 and operational building level 6.
 
 Rule 06
+Silver is a meaningful secondary sink and should remain materially below the production-time gate under the validated baseline.
+
+Rule 07
+Silver balance must be evaluated from real combat Silver/hour at viable farm spots, not from isolated nominal reward values.
+
+Rule 08
 Balance values must remain data driven. UI and runtime logic consume the same authored definitions.
 
 ---
