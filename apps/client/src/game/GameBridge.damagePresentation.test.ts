@@ -22,4 +22,20 @@ describe("GameBridge damage presentation identity", () => {
     expect(event.encounterKey).toBe("zone_amberwood_t5:3:2");
     expect(event.targetHealthAfter).toBe(58);
   });
+
+  it("preserves heal presentation source and healed health", () => {
+    const bridge = new GameBridge();
+
+    bridge.addDamageNumber(25, "player", undefined, "heal", 75);
+
+    const event = bridge.damageNumbers.at(-1) as (typeof bridge.damageNumbers)[number] & {
+      readonly sourceType?: string;
+      readonly targetHealthAfter?: number;
+    };
+
+    expect(event.amount).toBe(25);
+    expect(event.target).toBe("player");
+    expect(event.sourceType).toBe("heal");
+    expect(event.targetHealthAfter).toBe(75);
+  });
 });
