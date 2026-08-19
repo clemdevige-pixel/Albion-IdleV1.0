@@ -1,4 +1,5 @@
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
+import { resolveMonsterForEncounter } from "../apps/client/src/data/monsterContentCatalog.js";
 import {
   WORLD_ZONE_IDS_BY_BAND,
   ZONE_DEFINITIONS,
@@ -9,6 +10,7 @@ type Tier = 4 | 5 | 6 | 7 | 8;
 type TargetTier = 5 | 6 | 7 | 8;
 type Enchantment = 0 | 1 | 2 | 3;
 type BandId = "yellow" | "orange" | "red" | "black";
+type EncounterTelemetry = ReturnType<typeof runCombatRuntimeBenchmark>["encounters"];
 
 const BAND_BY_TIER: Readonly<Record<TargetTier, BandId>> = {
   5: "yellow",
@@ -63,8 +65,6 @@ function shortWeaponName(itemId: string): string {
 }
 
 function masteryBaseForTier(tier: TargetTier): number {
-  // Diagnostic reference only. Yellow already uses roughly M25-M35; later bands
-  // advance by 15 mastery levels so the sweep compares like-for-like progression.
   return 25 + (tier - 5) * 15;
 }
 
@@ -96,8 +96,10 @@ interface SegmentRun {
   readonly tier: TargetTier;
   readonly band: BandId;
   readonly zoneIndex: number;
+  readonly zoneDefId: NonNullable<(typeof WORLD_ZONE_IDS_BY_BAND)[BandId][number]>;
   readonly zone: string;
   readonly segment: number;
+  readonly weaponItemId: string;
   readonly weapon: string;
   readonly gear: string;
   readonly mastery: number;
@@ -105,11 +107,13 @@ interface SegmentRun {
   readonly hpNoPotion: number;
   readonly secondsNoPotion: number;
   readonly encountersNoPotion: number;
+  readonly telemetryNoPotion: EncounterTelemetry;
   readonly clearPotion: boolean;
   readonly hpPotion: number;
   readonly secondsPotion: number;
   readonly potionsUsed: number;
   readonly encountersPotion: number;
+  readonly telemetryPotion: EncounterTelemetry;
 }
 
 function runSegment(
@@ -148,8 +152,10 @@ function runSegment(
     tier,
     band,
     zoneIndex: zoneIndex + 1,
+    zoneDefId,
     zone: zoneName(String(zoneDefId)),
     segment: segmentIndex + 1,
+    weaponItemId,
     weapon: shortWeaponName(weaponItemId),
     gear: `T${expected.gearTier}.${expected.enchantment}`,
     mastery: expected.masteryLevel,
@@ -157,11 +163,13 @@ function runSegment(
     hpNoPotion: noPotion.hpPercent,
     secondsNoPotion: noPotion.seconds,
     encountersNoPotion: noPotion.encounterReached,
+    telemetryNoPotion: noPotion.encounters,
     clearPotion: withPotion.clear,
     hpPotion: withPotion.hpPercent,
     secondsPotion: withPotion.seconds,
     potionsUsed: withPotion.potionsUsed,
     encountersPotion: withPotion.encounterReached,
+    telemetryPotion: withPotion.encounters,
   };
 }
 
@@ -177,6 +185,88 @@ function lastClearSegment(rows: readonly SegmentRun[], potion: boolean): number 
 
 function fmt(segment: number | null): string {
   return segment === null ? "-" : `S${segment}`;
+}
+
+function nonMonotonicPairs(rows: readonly SegmentRun[], potion: boolean) {
+  const pairs: Array<{ wall: SegmentRun; laterClear: SegmentRun; potion: boolean }> = [];
+  const keys = new Map<string, SegmentRun[]>();
+
+  for (const row of rows) {
+    const key = `${row.tier}|${row.zoneIndex}|${row.weapon}`;
+    const current = keys.get(key) ?? [];
+    current.push(row);
+    keys.set(key, current);
+  }
+
+  for (const group of keys.values()) {
+    group.sort((a, b) => a.segment - b.segment);
+    const firstWall = group.find((row) => potion ? !row.clearPotion : !row.clearNoPotion);
+    if (firstWall === undefined) continue;
+    const laterClears = group.filter((row) =>
+      row.segment > firstWall.segment && (potion ? row.clearPotion : row.clearNoPotion),
+    );
+    const laterClear = laterClears[laterClears.length - 1];
+    if (laterClear !== undefined) pairs.push({ wall: firstWall, laterClear, potion });
+  }
+
+  return pairs;
+}
+
+function traceEncounterRows(row: SegmentRun, potion: boolean) {
+  const telemetry = potion ? row.telemetryPotion : row.telemetryNoPotion;
+  return telemetry.map((encounter) => {
+    const monster = resolveMonsterForEncounter(
+      row.zoneDefId,
+      row.segment - 1,
+      encounter.encounterIndex - 1,
+    );
+    return {
+      encounter: encounter.encounterIndex,
+      monster: monster.name,
+      faction: monster.faction,
+      category: monster.category,
+      damageType: monster.combat.damageType,
+      monsterAbilities: monster.abilityIds.join(" + ") || "-",
+      cleared: encounter.cleared,
+      seconds: encounter.seconds,
+      hpBefore: encounter.hpBeforePercent,
+      hpAfter: encounter.hpAfterPercent,
+      damageReceived: encounter.damageReceived,
+      damageDealt: encounter.damageDealt,
+      heroDps: encounter.observedDps,
+      potions: encounter.potionsUsed,
+    };
+  });
+}
+
+function printDetailedAnomalyTrace(rows: readonly SegmentRun[]): void {
+  const anomalies = [
+    ...nonMonotonicPairs(rows, false),
+    ...nonMonotonicPairs(rows, true),
+  ];
+
+  console.log("[T5_T8_NON_MONOTONIC_RUNTIME_ANOMALIES]");
+  console.table(anomalies.map(({ wall, laterClear, potion }) => ({
+    tier: wall.tier,
+    zone: wall.zone,
+    weapon: wall.weapon,
+    mode: potion ? "potion" : "no_potion",
+    wall: `S${wall.segment}`,
+    laterClear: `S${laterClear.segment}`,
+    wallEncountersReached: potion ? wall.encountersPotion : wall.encountersNoPotion,
+    laterClearHp: potion ? laterClear.hpPotion : laterClear.hpNoPotion,
+  })));
+
+  for (const { wall, laterClear, potion } of anomalies) {
+    const mode = potion ? "POTION" : "NO_POTION";
+    console.log(
+      `[NON_MONOTONIC_TRACE] T${wall.tier} | ${wall.zone} | ${wall.weapon} | ${mode} | S${wall.segment} WALL -> S${laterClear.segment} CLEAR`,
+    );
+    console.log("[WALL_SEGMENT_ENCOUNTERS]");
+    console.table(traceEncounterRows(wall, potion));
+    console.log("[LATER_CLEAR_SEGMENT_ENCOUNTERS]");
+    console.table(traceEncounterRows(laterClear, potion));
+  }
 }
 
 function main(): void {
@@ -276,6 +366,8 @@ function main(): void {
     console.log(`[T${tier}_EXHAUSTIVE_WALL_LOCATOR]`);
     console.table(locator.filter((row) => row.tier === tier));
   }
+
+  printDetailedAnomalyTrace(rows);
 
   console.log("[T5_T8_EXHAUSTIVE_WALL_SWEEP_RESULT]", {
     segmentRows: rows.length,
