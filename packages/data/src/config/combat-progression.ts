@@ -34,7 +34,7 @@ export const BLUE_WORLD_COMBAT_CURVE = [
  * while the unchanged late edge still forms the new-tier progression wall.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
-  { healthStart: 3.45, healthEnd: 4.45, damageStart: 2.62, damageEnd: 2.9, defenseStart: 1.62, defenseEnd: 2.18, defenseModel: "rank_parity" },
+  { healthStart: 3.4, healthEnd: 4.45, damageStart: 2.6, damageEnd: 2.9, defenseStart: 1.6, defenseEnd: 2.18, defenseModel: "rank_parity" },
   { healthStart: 4.75, healthEnd: 4.9, damageStart: 2.95, damageEnd: 3.0, defenseStart: 2.3, defenseEnd: 2.35, defenseModel: "rank_parity" },
   { healthStart: 5.25, healthEnd: 5.4, damageStart: 3.05, damageEnd: 3.1, defenseStart: 2.5, defenseEnd: 2.56, defenseModel: "rank_parity" },
   { healthStart: 5.85, healthEnd: 6.5, damageStart: 3.15, damageEnd: 3.25, defenseStart: 2.75, defenseEnd: 3, defenseModel: "rank_parity" },
