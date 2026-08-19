@@ -1,22 +1,21 @@
 import type { EnchantmentLevel } from "../inventory/types.js";
 
 /**
- * Single balancing source for enchantment Item Power.
- * Saves store only the level, so these values can change without migration.
+ * Display / progression Item Power carried by enchantment.
  *
- * Validated baseline: +50 IP per enchantment level. Levels .1-.3 are the
- * conventional enchantment path; .4 is the Awakened weapon transition and
- * keeps the same +50 IP step before instance-specific Awakening traits apply.
+ * Enchantment IP is intentionally capped at +100 for .4 so a fully enchanted
+ * item never exceeds the base IP of the next equipment tier. Combat power is
+ * resolved independently through ENCHANTMENT_STAT_MULTIPLIER below.
  */
 export const ENCHANTMENT_ITEM_POWER: Readonly<Record<EnchantmentLevel, number>> = {
   0: 0,
-  1: 50,
-  2: 100,
-  3: 150,
-  4: 200,
+  1: 25,
+  2: 50,
+  3: 75,
+  4: 100,
 };
 
-/** Shared conversion rule for every bonus Item Power source. */
+/** Shared conversion rule for bonus Item Power sources such as masteries. */
 export const ITEM_POWER_STAT_GAIN_PER_100 = 0.2;
 
 export function getBonusItemPowerStatMultiplier(bonusItemPower: number): number {
@@ -29,9 +28,21 @@ export function getEnchantmentItemPowerBonus(level: EnchantmentLevel): number {
 }
 
 /**
- * The current IP curve grants +20% equipment stats per +100 bonus IP.
- * Weapon attack speed is an identity property and is excluded by stat sync.
+ * Independent combat-stat scaling for enchantment.
+ *
+ * These initial values preserve the pre-decoupling live combat power exactly:
+ * .1/.2/.3/.4 previously mapped to +50/+100/+150/+200 IP at +20% stats per
+ * +100 IP, i.e. x1.10/x1.20/x1.30/x1.40. Balance sweeps may now evolve this
+ * table without changing displayed Item Power or mastery scaling.
  */
+export const ENCHANTMENT_STAT_MULTIPLIER: Readonly<Record<EnchantmentLevel, number>> = {
+  0: 1,
+  1: 1.1,
+  2: 1.2,
+  3: 1.3,
+  4: 1.4,
+};
+
 export function getEnchantmentStatMultiplier(level: EnchantmentLevel): number {
-  return getBonusItemPowerStatMultiplier(getEnchantmentItemPowerBonus(level));
+  return ENCHANTMENT_STAT_MULTIPLIER[level];
 }
