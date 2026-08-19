@@ -14,6 +14,13 @@ describe("CombatStopController", () => {
     expect(combatStopController.getState()).toBe("paused");
   });
 
+  it("restores a saved paused lifecycle directly", () => {
+    combatStopController.restorePaused();
+
+    expect(combatStopController.getState()).toBe("paused");
+    expect(combatStopController.isPaused()).toBe(true);
+  });
+
   it("resets a paused combat lifecycle back to running", () => {
     expect(combatStopController.requestStopAfterEncounter()).toBe(true);
     expect(combatStopController.pauseAfterEncounter()).toBe(true);
