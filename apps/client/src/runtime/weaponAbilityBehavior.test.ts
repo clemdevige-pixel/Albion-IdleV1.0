@@ -167,29 +167,31 @@ describe("weapon ability live behavior", () => {
     expect(env.getKills()).toBe(1);
   });
 
-  it("Dagger Assassination autocasts only with Opening at or below 50% health", () => {
-    const env = createBehaviorEnvironment();
-    const flurry = requireAbility("ability_dagger_flurry");
+  it("Dagger Assassination autocasts below 50% while Opening remains an optional damage bonus", () => {
     const assassination = requireAbility("ability_dagger_assassination");
-    const health = env.damageManager.getHealth(env.enemyId);
 
-    health.currentHealth = 500;
-    expect(env.mechanics.canAutoCast(assassination, env.enemyId)).toBe(false);
+    const noOpening = createBehaviorEnvironment();
+    const noOpeningHealth = noOpening.damageManager.getHealth(noOpening.enemyId);
+    noOpeningHealth.currentHealth = 501;
+    expect(noOpening.mechanics.canAutoCast(assassination, noOpening.enemyId)).toBe(false);
 
-    health.currentHealth = 1000;
-    expect(env.mechanics.execute(flurry, env.enemyId, 1)).toBe(true);
-    expect(activeEffectIds(env.effectManager, env.enemyId)).toContain("effect_dagger_opening");
+    noOpeningHealth.currentHealth = 500;
+    expect(noOpening.mechanics.canAutoCast(assassination, noOpening.enemyId)).toBe(true);
+    const beforeNoOpening = noOpeningHealth.currentHealth;
+    noOpening.mechanics.execute(assassination, noOpening.enemyId, 1);
+    expect(beforeNoOpening - noOpeningHealth.currentHealth).toBeCloseTo(350, 5);
 
-    health.currentHealth = 501;
-    expect(env.mechanics.canAutoCast(assassination, env.enemyId)).toBe(false);
+    const withOpening = createBehaviorEnvironment();
+    const flurry = requireAbility("ability_dagger_flurry");
+    const withOpeningHealth = withOpening.damageManager.getHealth(withOpening.enemyId);
+    expect(withOpening.mechanics.execute(flurry, withOpening.enemyId, 1)).toBe(true);
+    expect(activeEffectIds(withOpening.effectManager, withOpening.enemyId)).toContain("effect_dagger_opening");
 
-    health.currentHealth = 500;
-    expect(env.mechanics.canAutoCast(assassination, env.enemyId)).toBe(true);
-
-    const before = health.currentHealth;
-    env.mechanics.execute(assassination, env.enemyId, 1);
-    const after = health.currentHealth;
-    expect(before - after).toBeCloseTo(415, 5);
+    withOpeningHealth.currentHealth = 500;
+    expect(withOpening.mechanics.canAutoCast(assassination, withOpening.enemyId)).toBe(true);
+    const beforeOpening = withOpeningHealth.currentHealth;
+    withOpening.mechanics.execute(assassination, withOpening.enemyId, 1);
+    expect(beforeOpening - withOpeningHealth.currentHealth).toBeCloseTo(415, 5);
   });
 
   it("Spiked multi-hit stops cleanly when the target dies during the combo", () => {
