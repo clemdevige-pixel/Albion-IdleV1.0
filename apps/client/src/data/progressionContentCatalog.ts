@@ -46,9 +46,16 @@ export function getHeroGatheringXpFromWorkerForTier(tier: number): number {
   return Math.max(1, Math.round(2 * (1.5 ** Math.max(0, tier - 3))));
 }
 
+export const GATHERING_MASTERY_UNLOCK_BY_TIER = {
+  3: 0,
+  4: 3,
+  5: 7,
+  6: 11,
+  7: 18,
+  8: 25,
+} as const;
+
 export function getRequiredGatheringMasteryForTier(tier: number): number {
-  // Local QA escape hatch: enables production-pipeline testing without
-  // changing progression balance or affecting deployed builds.
   if (
     import.meta.env.DEV
     && typeof window !== "undefined"
@@ -56,7 +63,7 @@ export function getRequiredGatheringMasteryForTier(tier: number): number {
   ) {
     return 0;
   }
-  return Math.max(0, tier - 3) * 3;
+  return GATHERING_MASTERY_UNLOCK_BY_TIER[tier as keyof typeof GATHERING_MASTERY_UNLOCK_BY_TIER] ?? 0;
 }
 
 /**
