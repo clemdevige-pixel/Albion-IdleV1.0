@@ -25,4 +25,11 @@ describe("world/island tier progression", () => {
     expect(getIslandLevelDefinition(5)?.worldRequirementToReach).toEqual({ zoneDefId: WORLD_ZONE_IDS.ashenpeak, minimumCompletedSegments: 10, label: "Terminer Ashenpeak Mountain" });
     expect(getIslandLevelDefinition(5)?.maxBuildingLevel).toBe(5);
   });
+
+  it("uses Doompeak completion for both Black access and island level 6", () => {
+    const blackwoodUnlock = ZONE_UNLOCK_DEFINITIONS.find((definition) => definition.zoneDefId === WORLD_ZONE_IDS.blackwood);
+    expect(blackwoodUnlock?.conditions).toContainEqual({ type: "zone_completed", targetZoneDefId: WORLD_ZONE_IDS.doompeak });
+    expect(getIslandLevelDefinition(6)?.worldRequirementToReach).toEqual({ zoneDefId: WORLD_ZONE_IDS.doompeak, minimumCompletedSegments: 10, label: "Terminer Doompeak Mountain" });
+    expect(getIslandLevelDefinition(6)?.maxBuildingLevel).toBe(6);
+  });
 });
