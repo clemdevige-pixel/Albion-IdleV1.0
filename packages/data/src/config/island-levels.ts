@@ -1,6 +1,6 @@
 import type { IslandBuildingCategory } from "./island.js";
 
-export type IslandLevel = 1 | 2 | 3 | 4 | 5;
+export type IslandLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface IslandWorldRequirement {
   readonly zoneDefId: string;
@@ -99,6 +99,24 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       requirements: [
         { itemId: "item_refined_planks_t6", quantity: 50 },
         { itemId: "item_refined_metal_bar_t6", quantity: 50 },
+      ],
+    },
+  },
+  {
+    level: 6,
+    label: "Domaine ancestral",
+    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    maxBuildingLevel: 6,
+    worldRequirementToReach: {
+      zoneDefId: "zone_doompeak_t7",
+      minimumCompletedSegments: 10,
+      label: "Terminer Doompeak Mountain",
+    },
+    upgradeCost: {
+      silver: 24000,
+      requirements: [
+        { itemId: "item_refined_planks_t7", quantity: 60 },
+        { itemId: "item_refined_metal_bar_t7", quantity: 60 },
       ],
     },
   },
