@@ -5,7 +5,7 @@ import {
   type IslandBuildingId,
 } from "@game/data";
 import {
-  PRODUCTION_CONTENT_TIERS,
+  GATHERING_CONTENT_TIERS,
   PRODUCTION_TIERS,
   getProductionFamilyDefinition,
   type ProductionTier,
@@ -38,10 +38,10 @@ export function GatheringBuildingPanel({
   } = useGameServices();
   const family = getProductionFamilyDefinition(service.productionFamily);
   const worker = workers.workers.find((candidate) => candidate.profession === service.workerProfession);
-  const workerTier = worker?.productionTier ?? PRODUCTION_CONTENT_TIERS[0];
+  const workerTier = worker?.productionTier ?? GATHERING_CONTENT_TIERS[0];
   const initialTier = workerTier > maxTier ? maxTier : workerTier;
   const [selectedTier, setSelectedTier] = useState<ProductionTier>(initialTier);
-  const selectedTierIsAuthored = PRODUCTION_CONTENT_TIERS.some((tier) => tier === selectedTier);
+  const selectedTierIsAuthored = GATHERING_CONTENT_TIERS.some((tier) => tier === selectedTier);
   const requiredMastery = selectedTierIsAuthored ? getRequiredGatheringMasteryForTier(selectedTier) : Number.POSITIVE_INFINITY;
   const masteryBlocked = worker !== undefined && worker.mastery < requiredMastery;
   const progress = worker === undefined ? 0 : Math.max(0, Math.min(100, worker.progress));
@@ -96,7 +96,7 @@ export function GatheringBuildingPanel({
 
           <div className="ui-island-gathering-building__tiers" role="group" aria-label="Tier de production du worker">
             {PRODUCTION_TIERS.map((tier) => {
-              const authored = PRODUCTION_CONTENT_TIERS.some((contentTier) => contentTier === tier);
+              const authored = GATHERING_CONTENT_TIERS.some((contentTier) => contentTier === tier);
               const masteryLocked = authored && worker.mastery < getRequiredGatheringMasteryForTier(tier);
               const buildingLocked = tier > maxTier;
               const unavailable = !authored || masteryLocked || buildingLocked;
