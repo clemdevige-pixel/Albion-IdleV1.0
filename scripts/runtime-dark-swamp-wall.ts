@@ -105,11 +105,38 @@ const summary = T3_WEAPONS.flatMap((weaponItemId) => SETUPS.map((setup) => {
   };
 }));
 
+const fullT3 = SETUPS.find((setup) => setup.id === "full_t3");
+if (fullT3 === undefined) throw new Error("Missing full T3 setup");
+
+const potionS10 = T3_WEAPONS.map((weaponItemId) => {
+  const result = runCombatRuntimeBenchmark({
+    label: "dark_swamp_full_t3_s10_potion",
+    weaponItemId,
+    zoneDefId: WORLD_ZONE_IDS.swamp,
+    segmentIndex: 9,
+    masteryLevel: fullT3.masteryLevel,
+    equipmentItemIds: equipmentFor(weaponItemId, fullT3),
+    useHealthPotions: true,
+  });
+
+  return {
+    weapon: shortWeaponName(weaponItemId),
+    clear: result.clear,
+    hpPercent: result.hpPercent,
+    seconds: result.seconds,
+    encounters: result.encounterReached,
+    potionsUsed: result.potionsUsed,
+  };
+});
+
 console.log("\n[DARK_SWAMP_WALL_SUMMARY]");
 console.table(summary);
+
+console.log("\n[DARK_SWAMP_S10_POTION]");
+console.table(potionS10);
 
 console.log("\n[DARK_SWAMP_SEGMENT_DETAILS]");
 console.table(rows);
 
 console.log("\n[DARK_SWAMP_WALL_JSON]");
-console.log(JSON.stringify({ summary, rows }, null, 2));
+console.log(JSON.stringify({ summary, potionS10, rows }, null, 2));
