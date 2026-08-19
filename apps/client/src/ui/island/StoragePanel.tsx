@@ -70,53 +70,50 @@ export function StoragePanel(): JSX.Element {
                   const rawQuantity = rawContent === undefined
                     ? undefined
                     : quantityForItem(inventoryManager, productionStorageId, rawContent.rawItemId);
-
                   const refiningRecipe = hasRefiningContent
                     ? getProductionRefiningRecipe(familyId, tier)
                     : undefined;
                   const refinedQuantity = refiningRecipe === undefined
                     ? undefined
                     : quantityForItem(inventoryManager, productionStorageId, refiningRecipe.outputItemId);
-                  const rawLabel = family.tiers[tier]?.resourceName ?? `${family.rawMaterialLabel} T${String(tier)}`;
-                  const refinedLabel = refiningRecipe?.name ?? `${family.label} raffiné T${String(tier)}`;
-                  const rawIconSrc = `/assets/resources/${family.rawIcon}`;
-                  const refinedIconSrc = `/assets/resources/${family.refinedIcon}`;
+                  const trackingId = `production:${familyId}:t${String(tier)}`;
+                  const entries = [
+                    ...(rawContent === undefined ? [] : [{
+                      itemId: rawContent.rawItemId,
+                      label: "Brut",
+                      source: "production" as const,
+                    }]),
+                    ...(refiningRecipe === undefined ? [] : [{
+                      itemId: refiningRecipe.outputItemId,
+                      label: "Raffiné",
+                      source: "production" as const,
+                    }]),
+                  ];
+                  const tracked = tracking.isTracked(trackingId);
 
                   return (
                     <div key={tier} className="ui-island-storage__tier">
-                      <span>T{String(tier)}</span>
-                      <div>
-                        <small>Brut</small>
-                        <b>{rawQuantity === undefined ? "—" : String(rawQuantity)}</b>
-                        {rawContent !== undefined && (
+                      <span>
+                        T{String(tier)}
+                        {entries.length > 0 && (
                           <button
                             type="button"
-                            title={tracking.isTracked(rawContent.rawItemId) ? "Ne plus suivre" : "Suivre dans la sidebar"}
-                            aria-label={`${tracking.isTracked(rawContent.rawItemId) ? "Ne plus suivre" : "Suivre"} ${rawLabel}`}
+                            title={tracked ? "Ne plus suivre" : "Suivre ce tier dans la sidebar"}
+                            aria-label={`${tracked ? "Ne plus suivre" : "Suivre"} ${family.label} T${String(tier)}`}
                             onClick={() => {
-                              tracking.toggleTracked({ itemId: rawContent.rawItemId, label: rawLabel, iconSrc: rawIconSrc });
+                              tracking.toggleTracked({
+                                id: trackingId,
+                                label: `${family.label} T${String(tier)}`,
+                                entries,
+                              });
                             }}
                           >
-                            {tracking.isTracked(rawContent.rawItemId) ? "★" : "☆"}
+                            {tracked ? "★" : "☆"}
                           </button>
                         )}
-                      </div>
-                      <div>
-                        <small>Raffiné</small>
-                        <b>{refinedQuantity === undefined ? "—" : String(refinedQuantity)}</b>
-                        {refiningRecipe !== undefined && (
-                          <button
-                            type="button"
-                            title={tracking.isTracked(refiningRecipe.outputItemId) ? "Ne plus suivre" : "Suivre dans la sidebar"}
-                            aria-label={`${tracking.isTracked(refiningRecipe.outputItemId) ? "Ne plus suivre" : "Suivre"} ${refinedLabel}`}
-                            onClick={() => {
-                              tracking.toggleTracked({ itemId: refiningRecipe.outputItemId, label: refinedLabel, iconSrc: refinedIconSrc });
-                            }}
-                          >
-                            {tracking.isTracked(refiningRecipe.outputItemId) ? "★" : "☆"}
-                          </button>
-                        )}
-                      </div>
+                      </span>
+                      <div><small>Brut</small><b>{rawQuantity === undefined ? "—" : String(rawQuantity)}</b></div>
+                      <div><small>Raffiné</small><b>{refinedQuantity === undefined ? "—" : String(refinedQuantity)}</b></div>
                     </div>
                   );
                 })}
