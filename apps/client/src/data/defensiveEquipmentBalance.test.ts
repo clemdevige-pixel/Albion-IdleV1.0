@@ -18,6 +18,18 @@ const CORE_BY_TIER = {
   3: ["item_iron_helmet", "item_leather_armor", "item_leather_boots"],
   4: ["item_helmet_t4_reinforced", "item_armor_t4_leather", "item_boots_t4_leather"],
   5: ["item_helmet_t5_reinforced", "item_armor_t5_leather", "item_boots_t5_leather"],
+  6: ["item_helmet_t6_reinforced", "item_armor_t6_leather", "item_boots_t6_leather"],
+  7: ["item_helmet_t7_reinforced", "item_armor_t7_leather", "item_boots_t7_leather"],
+  8: ["item_helmet_t8_reinforced", "item_armor_t8_leather", "item_boots_t8_leather"],
+} as const;
+
+const BOOTS_HP_BY_TIER = {
+  3: 35,
+  4: 50,
+  5: 60,
+  6: 100,
+  7: 125,
+  8: 155,
 } as const;
 
 function authoredStat(itemId: string, statId: StatId): number {
@@ -50,6 +62,10 @@ function fullTwoHandedDefense(tier: keyof typeof CORE_BY_TIER, enchantment: Ench
   return { hp, armor, mr };
 }
 
+function bootsItemId(tier: keyof typeof CORE_BY_TIER): string {
+  return tier === 3 ? "item_leather_boots" : `item_boots_t${String(tier)}_leather`;
+}
+
 describe("validated defensive equipment balance", () => {
   it.each([
     [3, 0, { hp: 530, armor: 21, mr: 19 }],
@@ -61,8 +77,32 @@ describe("validated defensive equipment balance", () => {
     [5, 1, { hp: 760, armor: 58, mr: 44 }],
     [5, 2, { hp: 800, armor: 62, mr: 47 }],
     [5, 3, { hp: 850, armor: 68, mr: 50 }],
+    [6, 0, { hp: 880, armor: 71, mr: 53 }],
+    [6, 1, { hp: 935, armor: 79, mr: 58 }],
+    [6, 2, { hp: 995, armor: 85, mr: 63 }],
+    [6, 3, { hp: 1055, armor: 93, mr: 68 }],
+    [7, 0, { hp: 1080, armor: 93, mr: 70 }],
+    [7, 1, { hp: 1160, armor: 103, mr: 76 }],
+    [7, 2, { hp: 1235, armor: 112, mr: 83 }],
+    [7, 3, { hp: 1315, armor: 121, mr: 90 }],
+    [8, 0, { hp: 1320, armor: 118, mr: 89 }],
+    [8, 1, { hp: 1425, armor: 131, mr: 98 }],
+    [8, 2, { hp: 1520, armor: 141, mr: 106 }],
+    [8, 3, { hp: 1625, armor: 154, mr: 115 }],
   ] as const)("keeps the full 2H defensive ladder at T%s.%s", (tier, enchantment, expected) => {
     expect(fullTwoHandedDefense(tier, enchantment)).toEqual(expected);
+  });
+
+  it("gives boots a meaningful HP budget while keeping chest > head > boots", () => {
+    for (const tier of Object.keys(CORE_BY_TIER).map(Number) as Array<keyof typeof CORE_BY_TIER>) {
+      const [head, chest, boots] = CORE_BY_TIER[tier];
+      const headHp = authoredStat(head, STAT_MAX_HEALTH);
+      const chestHp = authoredStat(chest, STAT_MAX_HEALTH);
+      const bootsHp = authoredStat(boots, STAT_MAX_HEALTH);
+      expect(bootsHp).toBe(BOOTS_HP_BY_TIER[tier]);
+      expect(chestHp).toBeGreaterThan(headHp);
+      expect(headHp).toBeGreaterThan(bootsHp);
+    }
   });
 
   it("keeps one-handed shield defense separate from the 2H ladder", () => {
