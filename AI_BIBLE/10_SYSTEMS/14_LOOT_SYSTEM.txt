@@ -1,7 +1,7 @@
 ## ALBION IDLE — LOOT SYSTEM
 
 **Document type:** System Specification
-**Version:** 1.0
+**Version:** 1.1
 **Status:** LOCKED
 **Authority level:** Core Gameplay System
 **Parent authority:** `000_PROJECT_BIBLE.txt`
@@ -41,10 +41,12 @@ Loot generation must never depend on UI.
 
 # 3. LOOT SOURCES
 
-The Vertical Slice supports:
+The implemented game supports:
 
 * Monster kill
 * Boss kill
+* Dungeon encounter
+* Dungeon completion
 * Offline progression
 
 Future sources may include:
@@ -251,6 +253,8 @@ Merge Results
 Inventory / Wallet
 ```
 
+Dungeon-specific rewards use their dedicated authored encounter loot table and are committed after each cleared encounter.
+
 ---
 
 # 16. INVENTORY INTEGRATION
@@ -279,6 +283,7 @@ External balancing data defines:
 * weights;
 * quantity ranges;
 * boss rewards;
+* dungeon encounter rewards;
 * exclusive drops;
 * offline multipliers;
 * quality chances;
@@ -333,23 +338,56 @@ Required tests:
 * verify no guaranteed drops exist;
 * verify boss-exclusive items never drop from normal monsters;
 * verify boss materials drop correctly;
+* verify dungeon encounter rewards are committed immediately;
+* verify authored dungeon shard totals are credited correctly;
 * verify offline rewards use the same rules;
 * verify Inventory overflow transfers rewards to Bank;
 * save and reload generated rewards.
 
 ---
 
-# 21. OUT OF SCOPE
+# 21. DUNGEON REWARD ROLE
+
+Dungeons are parallel return-content, independent from the linear world progression path.
+
+Their primary economic purpose is faction progression:
+
+* artifact fragments;
+* complete artifacts;
+* faction-weapon crafting progression;
+* completion Silver.
+
+Enchantment shards are a collateral reward of this faction farm. They must not become the optimal dedicated shard-farming route and must not replace open-world shard progression.
+
+Current authored full-run shard totals are:
+
+```text
+T4 = 5
+T5 = 6
+T6 = 8
+T7 = 10
+T8 = 12
+```
+
+The reward is distributed by encounter type through the dungeon loot tables, with elite and boss encounters carrying most of the shard value.
+
+Open-world combat remains the primary, predictable source of enchantment shards for linear equipment progression.
+
+Dungeon difficulty is intentionally above the normal linear world progression expectation. A player is expected to return later with stronger progression in order to farm faction content efficiently.
+
+---
+
+# 22. OUT OF SCOPE
 
 This document intentionally excludes:
 
 * crafting recipes;
 * gathering nodes;
-* economy balancing;
+* economy balancing outside the locked dungeon reward role above;
 * Item Power balancing;
 * vendor inventories;
 * market prices;
-* drop percentages.
+* general drop percentages.
 
 These elements belong to dedicated balancing or gameplay documents.
 
