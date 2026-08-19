@@ -9,6 +9,8 @@ export interface MonsterContentDefinition { readonly id: string; readonly name: 
 export interface FactionEncounterRoster { readonly faction: string; readonly normal: readonly string[]; readonly elite: string; }
 export interface ZoneEncounterPool { readonly dominant: FactionEncounterRoster; readonly secondary: FactionEncounterRoster; readonly biomeBoss: string; }
 
+export const MAX_MAGICAL_ENCOUNTERS_PER_SEGMENT = 2;
+
 export const MONSTER_IDS = {
   morganaWitch: "monster_morgana_witch", morganaSuppressor: "monster_morgana_suppressor", morganaDarkKnight: "monster_morgana_dark_knight", morganaHighPriestess: "boss_morgana_high_priestess",
   undeadWarrior: "monster_undead_warrior", undeadSkeletonSwordsman: "monster_undead_skeleton_swordsman", undeadSkeletonArcher: "monster_undead_skeleton_archer", undeadSpectralKnight: "monster_undead_spectral_knight", undeadLich: "boss_undead_lich",
@@ -93,11 +95,56 @@ export function resolveEncounterCategory(segmentIndex: number, encounterIndex: n
   if (safeEncounterIndex !== ENCOUNTERS_PER_SEGMENT - 1) return "normal";
   return safeSegmentIndex === SEGMENTS_PER_ZONE - 1 ? "boss" : "elite";
 }
+
+function resolveNormalCandidate(pool: ZoneEncounterPool, segmentIndex: number, encounterIndex: number): MonsterContentDefinition {
+  const segmentPattern = NORMAL_FACTION_PATTERN_BY_SEGMENT[segmentIndex] ?? NORMAL_FACTION_PATTERN_BY_SEGMENT[0];
+  const factionRole = segmentPattern?.[encounterIndex] ?? "dominant";
+  const roster = pool[factionRole];
+  const index = (segmentIndex + encounterIndex) % roster.normal.length;
+  const monsterId = roster.normal[index] ?? roster.normal[0];
+  if (monsterId === undefined) throw new Error(`Zone faction ${roster.faction} has no normal monsters`);
+  return getMonsterDefinition(monsterId);
+}
+
+function resolveTerminalMonster(pool: ZoneEncounterPool, segmentIndex: number): MonsterContentDefinition {
+  if (segmentIndex === SEGMENTS_PER_ZONE - 1) return getMonsterDefinition(pool.biomeBoss);
+  const factionRole = ELITE_FACTION_PATTERN_BY_SEGMENT[segmentIndex] ?? "dominant";
+  return getMonsterDefinition(pool[factionRole].elite);
+}
+
+function resolvePhysicalFallback(pool: ZoneEncounterPool, segmentIndex: number, encounterIndex: number): MonsterContentDefinition {
+  const segmentPattern = NORMAL_FACTION_PATTERN_BY_SEGMENT[segmentIndex] ?? NORMAL_FACTION_PATTERN_BY_SEGMENT[0];
+  const factionRole = segmentPattern?.[encounterIndex] ?? "dominant";
+  const roster = pool[factionRole];
+  const physicalId = roster.normal.find((monsterId) => getMonsterDefinition(monsterId).combat.damageType === "physical");
+  if (physicalId === undefined) {
+    throw new Error(`Zone faction ${roster.faction} needs a physical normal monster to enforce the magical encounter cap`);
+  }
+  return getMonsterDefinition(physicalId);
+}
+
+function resolveCappedNormalMonster(pool: ZoneEncounterPool, segmentIndex: number, encounterIndex: number): MonsterContentDefinition {
+  const candidate = resolveNormalCandidate(pool, segmentIndex, encounterIndex);
+  if (candidate.combat.damageType !== "magical") return candidate;
+
+  const terminalMagic = resolveTerminalMonster(pool, segmentIndex).combat.damageType === "magical" ? 1 : 0;
+  const normalMagicBudget = Math.max(0, MAX_MAGICAL_ENCOUNTERS_PER_SEGMENT - terminalMagic);
+  let usedMagic = 0;
+
+  for (let priorIndex = 0; priorIndex < encounterIndex; priorIndex += 1) {
+    const priorCandidate = resolveNormalCandidate(pool, segmentIndex, priorIndex);
+    if (priorCandidate.combat.damageType !== "magical") continue;
+    if (usedMagic < normalMagicBudget) usedMagic += 1;
+  }
+
+  return usedMagic < normalMagicBudget
+    ? candidate
+    : resolvePhysicalFallback(pool, segmentIndex, encounterIndex);
+}
+
 export function resolveMonsterForEncounter(zoneDefId: ZoneDefinitionId, segmentIndex: number, encounterIndex: number): MonsterContentDefinition {
   const pool = getZoneEncounterPool(zoneDefId); const safeSegmentIndex = Math.max(0, Math.min(SEGMENTS_PER_ZONE - 1, segmentIndex)); const safeEncounterIndex = Math.max(0, Math.min(ENCOUNTERS_PER_SEGMENT - 1, encounterIndex)); const encounterCategory = resolveEncounterCategory(safeSegmentIndex, safeEncounterIndex);
   if (encounterCategory === "boss") return getMonsterDefinition(pool.biomeBoss);
   if (encounterCategory === "elite") { const factionRole = ELITE_FACTION_PATTERN_BY_SEGMENT[safeSegmentIndex] ?? "dominant"; return getMonsterDefinition(pool[factionRole].elite); }
-  const segmentPattern = NORMAL_FACTION_PATTERN_BY_SEGMENT[safeSegmentIndex] ?? NORMAL_FACTION_PATTERN_BY_SEGMENT[0]; const factionRole = segmentPattern?.[safeEncounterIndex] ?? "dominant"; const roster = pool[factionRole]; const index = (safeSegmentIndex + safeEncounterIndex) % roster.normal.length; const monsterId = roster.normal[index] ?? roster.normal[0];
-  if (monsterId === undefined) throw new Error(`Zone has no normal monsters: ${String(zoneDefId)}`);
-  return getMonsterDefinition(monsterId);
+  return resolveCappedNormalMonster(pool, safeSegmentIndex, safeEncounterIndex);
 }
