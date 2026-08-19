@@ -60,6 +60,13 @@ export function getEffectiveCooldownReductionPercent(
   return balance.cdrAsymptotePercent * p / (p + balance.cdrCurveConstant);
 }
 
+export function getEffectiveLifeStealPercent(
+  progression: number,
+  balance: AwakenedWeaponBalance,
+): number {
+  return Math.min(balance.lifeStealCapPercent, Math.max(0, progression));
+}
+
 export function applyCooldownReduction(
   baseCooldownSeconds: number,
   progression: number,
