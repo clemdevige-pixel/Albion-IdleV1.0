@@ -67,6 +67,22 @@ describe("EquipmentManager loadouts", () => {
     expect(env.equipmentManager.getEquippedItem(env.heroId, "weapon")?.instanceId).toBe(t4Sword);
   });
 
+  it("accepts an enchanted item when its base tier matches the zone cap", () => {
+    const awakenedT4 = addAndEquip(env, "item_t4_sword");
+    expect(env.equipmentManager.changeEquippedEnchantment(env.heroId, awakenedT4, 4)).toBe(true);
+    expect(env.equipmentManager.saveCurrentLoadout(env.heroId, "t4_4", "T4.4").ok).toBe(true);
+
+    addAndEquip(env, "item_t5_sword");
+
+    const result = env.equipmentManager.applyLoadout(env.heroId, "t4_4", 4);
+    expect(result.ok).toBe(true);
+    expect(env.equipmentManager.getEquippedItem(env.heroId, "weapon")).toMatchObject({
+      instanceId: awakenedT4,
+      itemId: "item_t4_sword",
+      enchantment: 4,
+    });
+  });
+
   it("refuses the whole loadout before mutation when one piece exceeds the zone cap", () => {
     addAndEquip(env, "item_t4_helmet");
     const currentWeapon = addAndEquip(env, "item_t4_sword");
