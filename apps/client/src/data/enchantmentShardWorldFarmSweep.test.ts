@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { ENCHANTMENT_SHARD_COSTS } from "@game/gameplay";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runEnchantmentShardTtkBenchmark } from "./enchantmentShardTtkBenchmark.js";
 
 type Enchantment = 0 | 1 | 2 | 3;
 type Tier = 5 | 6 | 7 | 8;
+
+const FULL_SET_EQUIVALENT_ITEM_COUNT = 5;
 
 type TierConfig = {
   readonly tier: Tier;
@@ -66,12 +69,11 @@ const TIER_CONFIGS: readonly TierConfig[] = [
   },
 ] as const;
 
-const NEXT_FULL_SET_SHARD_COST: Readonly<Record<Enchantment, number | null>> = {
-  0: 50,
-  1: 150,
-  2: 300,
-  3: null,
-};
+function nextFullSetShardCost(enchantment: Enchantment): number | null {
+  if (enchantment >= 3) return null;
+  const nextLevel = (enchantment + 1) as 1 | 2 | 3;
+  return ENCHANTMENT_SHARD_COSTS[nextLevel] * FULL_SET_EQUIVALENT_ITEM_COUNT;
+}
 
 function weaponsFor(tier: Tier): readonly string[] {
   return [
@@ -121,7 +123,7 @@ describe("enchantment shard world AFK farm sweep", () => {
       const weapons = weaponsFor(config.tier);
       const summaries = ([0, 1, 2, 3] as const).map((enchantment) => {
         const mastery = config.masteryByEnchantment[enchantment];
-        const nextFullSetShards = NEXT_FULL_SET_SHARD_COST[enchantment];
+        const nextFullSetShards = nextFullSetShardCost(enchantment);
 
         const rows = config.zones.flatMap((zone, zoneIndex) =>
           Array.from({ length: 10 }, (_, segmentIndex) =>
