@@ -17,16 +17,14 @@ describe("world band definitions", () => {
     });
   });
 
-  it("marks Blue, Yellow and Orange implemented while reserving later worlds", () => {
+  it("marks every authored world band as implemented", () => {
     expect(WORLD_BAND_DEFINITIONS.map(({ id }) => id)).toEqual(WORLD_BAND_IDS);
-    expect(getWorldBandDefinition("yellow").contentStatus).toBe("implemented");
-    expect(getWorldBandDefinition("orange").contentStatus).toBe("implemented");
-    expect(WORLD_BAND_DEFINITIONS.slice(3).every(
-      ({ contentStatus }) => contentStatus === "planned",
+    expect(WORLD_BAND_DEFINITIONS.every(
+      ({ contentStatus }) => contentStatus === "implemented",
     )).toBe(true);
   });
 
-  it("routes the endgame bands directly to T6, T7 and T8", () => {
+  it("routes the progression bands directly to T6, T7 and T8", () => {
     expect(getWorldBandDefinition("orange")).toMatchObject({
       progressionOrder: 2,
       minimumTier: 6,
@@ -37,13 +35,13 @@ describe("world band definitions", () => {
       progressionOrder: 3,
       minimumTier: 7,
       maximumTier: 7,
-      contentStatus: "planned",
+      contentStatus: "implemented",
     });
     expect(getWorldBandDefinition("black")).toMatchObject({
       progressionOrder: 4,
       minimumTier: 8,
       maximumTier: 8,
-      contentStatus: "planned",
+      contentStatus: "implemented",
     });
   });
 });
