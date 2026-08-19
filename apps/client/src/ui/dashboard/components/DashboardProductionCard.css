@@ -7,6 +7,11 @@
   gap: 3px 8px;
   min-height: 50px;
   padding: 6px 7px;
+  cursor: pointer;
+}
+
+.dashboard-card--production .dashboard-production__task:disabled {
+  cursor: default;
 }
 
 .dashboard-production__visual {
