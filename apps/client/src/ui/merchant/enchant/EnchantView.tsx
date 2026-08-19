@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import {
   getEnchantmentTextClass,
@@ -43,11 +43,23 @@ function EnchantmentScale({ level }: { readonly level: number }): JSX.Element {
   );
 }
 
-export function EnchantView(): JSX.Element {
-  const [requestedInstanceId, setRequestedInstanceId] = useState<string | null>(null);
+export function EnchantView({
+  initialInstanceId,
+}: {
+  readonly initialInstanceId?: string;
+}): JSX.Element {
+  const [requestedInstanceId, setRequestedInstanceId] = useState<string | null>(initialInstanceId ?? null);
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const model = useEnchantData(requestedInstanceId, selectedTier);
   const actions = useEnchantActions();
+
+  useEffect(() => {
+    if (initialInstanceId !== undefined) {
+      setSelectedTier(null);
+      setRequestedInstanceId(initialInstanceId);
+    }
+  }, [initialInstanceId]);
+
   return (
     <div className="ui-merchant-service ui-merchant-enchant">
       <section className="ui-merchant-enchant__stocks" aria-label="Stocks d’enchantement">
