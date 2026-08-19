@@ -108,6 +108,7 @@ const summary = T3_WEAPONS.flatMap((weaponItemId) => SETUPS.map((setup) => {
 const fullT3 = SETUPS.find((setup) => setup.id === "full_t3");
 if (fullT3 === undefined) throw new Error("Missing full T3 setup");
 
+let daggerPotionEncounters: readonly ReturnType<typeof runCombatRuntimeBenchmark>["encounters"] = [];
 const potionS10 = T3_WEAPONS.map((weaponItemId) => {
   const result = runCombatRuntimeBenchmark({
     label: "dark_swamp_full_t3_s10_potion",
@@ -118,6 +119,10 @@ const potionS10 = T3_WEAPONS.map((weaponItemId) => {
     equipmentItemIds: equipmentFor(weaponItemId, fullT3),
     useHealthPotions: true,
   });
+
+  if (weaponItemId === "item_weapon_dagger_t3_pair") {
+    daggerPotionEncounters = result.encounters;
+  }
 
   return {
     weapon: shortWeaponName(weaponItemId),
@@ -135,8 +140,23 @@ console.table(summary);
 console.log("\n[DARK_SWAMP_S10_POTION]");
 console.table(potionS10);
 
+console.log("\n[DARK_SWAMP_DAGGER_S10_POTION_ENCOUNTERS]");
+console.table(daggerPotionEncounters.map((encounter) => ({
+  encounter: encounter.encounterIndex,
+  clear: encounter.cleared,
+  seconds: encounter.seconds,
+  hpBefore: encounter.hpBeforePercent,
+  hpAfter: encounter.hpAfterPercent,
+  potions: encounter.potionsUsed,
+  damageDealt: encounter.damageDealt,
+  damageReceived: encounter.damageReceived,
+  autoAttackDamage: encounter.damageBySource.autoAttack,
+  abilityDamage: encounter.damageBySource.ability,
+  effectDamage: encounter.damageBySource.effect,
+})));
+
 console.log("\n[DARK_SWAMP_SEGMENT_DETAILS]");
 console.table(rows);
 
 console.log("\n[DARK_SWAMP_WALL_JSON]");
-console.log(JSON.stringify({ summary, potionS10, rows }, null, 2));
+console.log(JSON.stringify({ summary, potionS10, daggerPotionEncounters, rows }, null, 2));
