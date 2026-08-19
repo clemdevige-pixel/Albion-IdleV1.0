@@ -21,6 +21,8 @@ export interface WorldLocationSaveState {
   readonly zoneMemories: readonly SavedZoneMemory[];
   /** Exploration remains blocked after defeat until the player explicitly resumes. */
   readonly awaitingResumeAfterDefeat?: boolean;
+  /** Optional for backward compatibility with saves authored before combat-pause persistence. */
+  readonly combatPaused?: boolean;
 }
 
 export interface WorldSavePayload {
