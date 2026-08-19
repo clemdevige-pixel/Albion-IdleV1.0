@@ -1,6 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type MouseEvent } from "react";
 import type { InventorySlotVM } from "../../game/GameBridge";
+import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDefinition, getItemDisplayName, ItemVisual } from "../../panels/ItemVisual";
+import {
+  createTrackedItemResource,
+  isTrackableResourceItem,
+  useResourceTracking,
+} from "../dashboard/ResourceTrackingContext";
 import { ItemGrid } from "../shared";
 import { useBankData } from "./useBankData";
 import "../shared/storageModule.css";
@@ -9,6 +15,12 @@ interface BankModuleProps {
   readonly onMove?: (from: number, to: number) => void;
   readonly onTransferToInventory?: (position: number) => void;
   readonly onSort?: () => void;
+}
+
+interface ContextMenuState {
+  readonly position: number;
+  readonly x: number;
+  readonly y: number;
 }
 
 type BankFilter = "all" | "equipment" | "resources" | "special";
@@ -37,8 +49,10 @@ function matchesBankFilter(slot: InventorySlotVM, filter: BankFilter): boolean {
 
 export function BankModule({ onMove, onTransferToInventory, onSort }: BankModuleProps): JSX.Element {
   const bank = useBankData();
+  const tracking = useResourceTracking();
   const [activeFilter, setActiveFilter] = useState<BankFilter>("all");
   const [selectedPosition, setSelectedPosition] = useState<number | undefined>(undefined);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const capacityRatio = bank.capacity === 0
     ? 0
     : Math.min(100, (bank.occupied / bank.capacity) * 100);
@@ -48,10 +62,19 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
     : bank.slots.find((slot) => slot.position === selectedPosition && slot.itemId !== undefined);
   const selectedItemId = selectedSlot?.itemId;
   const selectedDefinition = selectedItemId === undefined ? undefined : getItemDefinition(selectedItemId);
+  const contextItemId = contextMenu === null
+    ? undefined
+    : bank.slots.find((slot) => slot.position === contextMenu.position)?.itemId;
 
   const handleFilterChange = useCallback((filter: BankFilter) => {
     setActiveFilter(filter);
     setSelectedPosition(undefined);
+    setContextMenu(null);
+  }, []);
+
+  const handleContextMenu = useCallback((event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => {
+    event.preventDefault();
+    setContextMenu({ position: slot.position, x: event.clientX, y: event.clientY });
   }, []);
 
   return (
@@ -102,6 +125,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
             onItemDoubleClick={(_event, slot) => {
               if (slot.itemId !== undefined) onTransferToInventory?.(slot.position);
             }}
+            onItemContextMenu={handleContextMenu}
           />
         ) : (
           <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>
@@ -122,6 +146,20 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
         </section>
       ) : (
         <p className="storage-module__hint">Cliquez un objet pour afficher ses détails · glissez-déposez pour organiser.</p>
+      )}
+
+      {contextMenu !== null && contextItemId !== undefined && isTrackableResourceItem(contextItemId) && (
+        <ItemContextMenu
+          position={contextMenu.position}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          itemId={contextItemId}
+          isTracked={tracking.isTracked(contextItemId)}
+          onClose={() => { setContextMenu(null); }}
+          onToggleTrack={(itemId) => {
+            tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
+          }}
+        />
       )}
     </div>
   );
