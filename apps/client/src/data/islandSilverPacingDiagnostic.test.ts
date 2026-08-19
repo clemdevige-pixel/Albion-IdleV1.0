@@ -8,25 +8,83 @@ const WEAPON_SUFFIXES = ["sword_broadsword", "bow_longbow", "staff_infernal", "g
 
 type Tier = 3 | 4 | 5 | 6 | 7;
 type BenchmarkEnchantment = 0 | 1 | 2 | 3;
+type CurveName = "soft_15" | "medium_25" | "hard_35";
 
 type Transition = {
   readonly label: string;
   readonly gearTier: Tier;
   readonly enchantment: BenchmarkEnchantment;
   readonly mastery: number;
-  readonly currentFinalZone: string;
-  readonly nextEntryZone: string;
+  readonly candidateZones: readonly string[];
   readonly islandSilver: number;
   readonly monoBuildingSilver: number;
   readonly workshopSilver: number;
+  /** Incremental production-economy time spent since the previous transition. */
+  readonly economyHours: number;
 };
 
 const TRANSITIONS: readonly Transition[] = [
-  { label: "T3->T4", gearTier: 3, enchantment: 0, mastery: 10, currentFinalZone: WORLD_ZONE_IDS.highland, nextEntryZone: WORLD_ZONE_IDS.steppe, islandSilver: 1000, monoBuildingSilver: 300, workshopSilver: 500 },
-  { label: "T4->T5", gearTier: 4, enchantment: 3, mastery: 23, currentFinalZone: WORLD_ZONE_IDS.mountain, nextEntryZone: WORLD_ZONE_IDS.amberwood, islandSilver: 2500, monoBuildingSilver: 700, workshopSilver: 1200 },
-  { label: "T5->T6", gearTier: 5, enchantment: 3, mastery: 36, currentFinalZone: WORLD_ZONE_IDS.ironveil, nextEntryZone: WORLD_ZONE_IDS.cinderwood, islandSilver: 6000, monoBuildingSilver: 1500, workshopSilver: 2500 },
-  { label: "T6->T7", gearTier: 6, enchantment: 3, mastery: 46, currentFinalZone: WORLD_ZONE_IDS.ashenpeak, nextEntryZone: WORLD_ZONE_IDS.bloodwood, islandSilver: 12000, monoBuildingSilver: 3000, workshopSilver: 5000 },
-  { label: "T7->T8", gearTier: 7, enchantment: 3, mastery: 56, currentFinalZone: WORLD_ZONE_IDS.doompeak, nextEntryZone: WORLD_ZONE_IDS.blackwood, islandSilver: 24000, monoBuildingSilver: 6000, workshopSilver: 10000 },
+  {
+    label: "T3->T4",
+    gearTier: 3,
+    enchantment: 0,
+    mastery: 10,
+    candidateZones: [WORLD_ZONE_IDS.forest, WORLD_ZONE_IDS.swamp, WORLD_ZONE_IDS.highland, WORLD_ZONE_IDS.steppe],
+    islandSilver: 1000,
+    monoBuildingSilver: 300,
+    workshopSilver: 500,
+    economyHours: 0.72,
+  },
+  {
+    label: "T4->T5",
+    gearTier: 4,
+    enchantment: 3,
+    mastery: 23,
+    candidateZones: [WORLD_ZONE_IDS.mountain, WORLD_ZONE_IDS.amberwood],
+    islandSilver: 2500,
+    monoBuildingSilver: 700,
+    workshopSilver: 1200,
+    economyHours: 5.18 - 0.72,
+  },
+  {
+    label: "T5->T6",
+    gearTier: 5,
+    enchantment: 3,
+    mastery: 36,
+    candidateZones: [WORLD_ZONE_IDS.ironveil, WORLD_ZONE_IDS.cinderwood],
+    islandSilver: 6000,
+    monoBuildingSilver: 1500,
+    workshopSilver: 2500,
+    economyHours: 13.81 - 5.18,
+  },
+  {
+    label: "T6->T7",
+    gearTier: 6,
+    enchantment: 3,
+    mastery: 46,
+    candidateZones: [WORLD_ZONE_IDS.ashenpeak, WORLD_ZONE_IDS.bloodwood],
+    islandSilver: 12000,
+    monoBuildingSilver: 3000,
+    workshopSilver: 5000,
+    economyHours: 31.88 - 13.81,
+  },
+  {
+    label: "T7->T8",
+    gearTier: 7,
+    enchantment: 3,
+    mastery: 56,
+    candidateZones: [WORLD_ZONE_IDS.doompeak, WORLD_ZONE_IDS.blackwood],
+    islandSilver: 24000,
+    monoBuildingSilver: 6000,
+    workshopSilver: 10000,
+    economyHours: 58.27 - 31.88,
+  },
+] as const;
+
+const CURVES: readonly { readonly name: CurveName; readonly share: number }[] = [
+  { name: "soft_15", share: 0.15 },
+  { name: "medium_25", share: 0.25 },
+  { name: "hard_35", share: 0.35 },
 ] as const;
 
 function weaponItemId(tier: Tier, suffix: (typeof WEAPON_SUFFIXES)[number]): string {
@@ -58,12 +116,12 @@ function segmentSilver(zoneDefId: string, segmentIndex: number): number {
 
 function round1(value: number): number { return Number(value.toFixed(1)); }
 function round2(value: number): number { return Number(value.toFixed(2)); }
+function roundToNearest(value: number, step: number): number { return Math.max(step, Math.round(value / step) * step); }
 
 function bestFarmFor(transition: Transition, weaponId: string) {
-  const candidates = [transition.currentFinalZone, transition.nextEntryZone];
   let best: { zone: string; segment: number; silverPerHour: number; hpPercent: number } | undefined;
 
-  for (const zoneDefId of candidates) {
+  for (const zoneDefId of transition.candidateZones) {
     for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
       const result = runCombatRuntimeBenchmark({
         label: `${transition.label}_${weaponId}_${zoneDefId}_s${String(segmentIndex + 1)}`,
@@ -87,7 +145,7 @@ function bestFarmFor(transition: Transition, weaponId: string) {
 }
 
 describe("island Silver pacing diagnostic", () => {
-  it("measures current island + building Silver sinks against real best available combat farms", () => {
+  it("measures current sinks and compares 15/25/35 percent candidate curves", () => {
     const detailRows = TRANSITIONS.flatMap((transition) => WEAPON_SUFFIXES.map((suffix) => {
       const weaponId = weaponItemId(transition.gearTier, suffix);
       const best = bestFarmFor(transition, weaponId);
@@ -112,24 +170,42 @@ describe("island Silver pacing diagnostic", () => {
       const maxRate = viable.length === 0 ? 0 : Math.max(...viable.map((row) => row.silverPerHour));
       return {
         transition: transition.label,
+        economyHours: round2(transition.economyHours),
         totalSilverSink,
         allWeaponsViable: viable.length === WEAPON_SUFFIXES.length,
         minSilverPerHour: round1(minRate),
         avgSilverPerHour: round1(avgRate),
         maxSilverPerHour: round1(maxRate),
-        hoursAtMinRate: minRate <= 0 ? null : round2(totalSilverSink / minRate),
-        hoursAtAvgRate: avgRate <= 0 ? null : round2(totalSilverSink / avgRate),
-        hoursAtMaxRate: maxRate <= 0 ? null : round2(totalSilverSink / maxRate),
+        currentHoursAtAvgRate: avgRate <= 0 ? null : round2(totalSilverSink / avgRate),
+        currentShareOfEconomyTime: avgRate <= 0 ? null : round1((totalSilverSink / avgRate) / transition.economyHours * 100),
       };
     });
+
+    const curveRows = summaryRows.flatMap((summary) => CURVES.map((curve) => {
+      const targetHours = summary.economyHours * curve.share;
+      const rawTargetSilver = summary.avgSilverPerHour * targetHours;
+      const targetSilver = summary.avgSilverPerHour <= 0 ? 0 : roundToNearest(rawTargetSilver, rawTargetSilver < 100_000 ? 5_000 : 25_000);
+      return {
+        transition: summary.transition,
+        curve: curve.name,
+        economyHours: summary.economyHours,
+        avgSilverPerHour: summary.avgSilverPerHour,
+        targetFarmHours: round2(targetHours),
+        targetSilverSink: targetSilver,
+        actualFarmHoursAfterRounding: summary.avgSilverPerHour <= 0 ? null : round2(targetSilver / summary.avgSilverPerHour),
+      };
+    }));
 
     console.log("[ISLAND_SILVER_PACING_DETAIL]");
     console.table(detailRows);
     console.log("[ISLAND_SILVER_PACING_SUMMARY]");
     console.table(summaryRows);
-    console.log("[ISLAND_SILVER_PACING_SUMMARY_JSON]", JSON.stringify(summaryRows, null, 2));
+    console.log("[ISLAND_SILVER_CANDIDATE_CURVES]");
+    console.table(curveRows);
+    console.log("[ISLAND_SILVER_CANDIDATE_CURVES_JSON]", JSON.stringify(curveRows, null, 2));
 
     expect(detailRows).toHaveLength(TRANSITIONS.length * WEAPON_SUFFIXES.length);
     expect(summaryRows).toHaveLength(TRANSITIONS.length);
+    expect(curveRows).toHaveLength(TRANSITIONS.length * CURVES.length);
   });
 });
