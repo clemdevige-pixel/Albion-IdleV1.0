@@ -6,7 +6,9 @@ import {
   useDashboardZoneActions,
 } from "./useDashboardData";
 import { DashboardCombatCard } from "./components/DashboardCombatCard";
+import { DashboardEnchantReadyCard } from "./components/DashboardEnchantReadyCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
+import { DashboardTrackedResourcesCard } from "./components/DashboardTrackedResourcesCard";
 import { DashboardYieldCard } from "./components/DashboardYieldCard";
 
 export function DashboardModule(): JSX.Element {
@@ -22,6 +24,8 @@ export function DashboardModule(): JSX.Element {
         onSetFarmMode={zoneActions.setFarmMode}
       />
       <DashboardYieldCard yieldData={yieldData} />
+      <DashboardEnchantReadyCard />
+      <DashboardTrackedResourcesCard />
       <DashboardProductionCard production={production} />
     </div>
   );
