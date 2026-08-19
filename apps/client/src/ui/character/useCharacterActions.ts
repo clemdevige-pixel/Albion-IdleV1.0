@@ -3,11 +3,7 @@ import type { EquipmentLoadout, EquipmentSlot } from "@game/gameplay";
 import { getItemTier } from "../../data/itemPower";
 import { getZoneEquipmentTierCap } from "../../data/zoneEquipmentTierCaps";
 import { useGameServices } from "../../state/GameContext";
-import {
-  syncEquipmentToBridge,
-  syncInventoryToBridge,
-  syncStatsToBridge,
-} from "../../state/bridgeSync";
+import { syncEquipmentToBridge, syncInventoryToBridge, syncStatsToBridge } from "../../state/bridgeSync";
 import { syncCraftingProjection } from "../../state/production/ProductionBridgeAdapter";
 
 interface CharacterActions {
@@ -15,27 +11,18 @@ interface CharacterActions {
   readonly unequip: (slot: EquipmentSlot) => boolean;
   readonly getLoadouts: () => readonly EquipmentLoadout[];
   readonly saveLoadout: (loadoutId: string, name: string) => boolean;
+  readonly renameLoadout: (loadoutId: string, name: string) => boolean;
   readonly deleteLoadout: (loadoutId: string) => boolean;
   readonly applyLoadout: (loadoutId: string) => boolean;
 }
 
-function getActiveEquipmentTierCap(
-  services: ReturnType<typeof useGameServices>,
-): number | undefined {
+function getActiveEquipmentTierCap(services: ReturnType<typeof useGameServices>): number | undefined {
   const zoneDefId = services.bridge.world.zoneDefId;
   if (zoneDefId.length === 0) return undefined;
-  try {
-    return getZoneEquipmentTierCap(zoneDefId);
-  } catch {
-    return undefined;
-  }
+  try { return getZoneEquipmentTierCap(zoneDefId); } catch { return undefined; }
 }
 
-function notifyEquipmentFailure(
-  services: ReturnType<typeof useGameServices>,
-  reason: string,
-  tierCap?: number,
-): void {
+function notifyEquipmentFailure(services: ReturnType<typeof useGameServices>, reason: string, tierCap?: number): void {
   const message = reason === "equipment_locked"
     ? "Impossible de changer d'équipement pendant le combat. Utilisez « Arrêter le combat » : l'arrêt aura lieu à la fin du segment en cours."
     : reason === "two_handed_conflict"
@@ -51,43 +38,21 @@ function notifyEquipmentFailure(
               : reason === "loadout_invalid"
                 ? "Loadout refusé : son équipement ne correspond plus aux pièces enregistrées."
                 : "Impossible de modifier cet équipement dans l'état actuel.";
-
-  services.bridge.addEconomyNotification({
-    id: `notif_equipment_failed_${String(Date.now())}`,
-    type: "error",
-    message,
-    timestamp: Date.now(),
-  });
+  services.bridge.addEconomyNotification({ id: `notif_equipment_failed_${String(Date.now())}`, type: "error", message, timestamp: Date.now() });
 }
 
-function notifyLoadoutApplied(
-  services: ReturnType<typeof useGameServices>,
-  name: string,
-): void {
-  services.bridge.addEconomyNotification({
-    id: `notif_loadout_applied_${String(Date.now())}`,
-    type: "success",
-    message: `${name} équipé.`,
-    timestamp: Date.now(),
-  });
+function notifyLoadoutApplied(services: ReturnType<typeof useGameServices>, name: string): void {
+  services.bridge.addEconomyNotification({ id: `notif_loadout_applied_${String(Date.now())}`, type: "success", message: `${name} équipé.`, timestamp: Date.now() });
 }
 
-/** Compatibility adapter for the current gameplay services. */
 export function useCharacterActions(): CharacterActions {
   const services = useGameServices();
-
   const refreshCharacterState = useCallback(() => {
     const { bridge, equipmentManager, inventoryManager, statsManager, heroId, productionStorageId } = services;
     syncInventoryToBridge(bridge, inventoryManager, heroId);
     syncEquipmentToBridge(bridge, equipmentManager, heroId);
     syncStatsToBridge(bridge, statsManager, heroId);
-    syncCraftingProjection(
-      bridge,
-      inventoryManager,
-      heroId,
-      productionStorageId,
-      bridge.crafting.productionTier,
-    );
+    syncCraftingProjection(bridge, inventoryManager, heroId, productionStorageId, bridge.crafting.productionTier);
   }, [services]);
 
   const equip = useCallback((inventoryPosition: number): boolean => {
@@ -96,30 +61,20 @@ export function useCharacterActions(): CharacterActions {
     const tierCap = getActiveEquipmentTierCap(services);
     const itemTier = itemId === undefined ? undefined : getItemTier(itemId);
     if (tierCap !== undefined && itemTier !== undefined && itemTier > tierCap) {
-      notifyEquipmentFailure(services, "tier_cap_exceeded", tierCap);
-      return false;
+      notifyEquipmentFailure(services, "tier_cap_exceeded", tierCap); return false;
     }
-
-    const result = services.equipmentManager.equipFromInventory(
-      services.heroId,
-      inventoryPosition,
-    );
-    if (result.ok) refreshCharacterState();
-    else notifyEquipmentFailure(services, result.reason, tierCap);
+    const result = services.equipmentManager.equipFromInventory(services.heroId, inventoryPosition);
+    if (result.ok) refreshCharacterState(); else notifyEquipmentFailure(services, result.reason, tierCap);
     return result.ok;
   }, [refreshCharacterState, services]);
 
   const unequip = useCallback((slot: EquipmentSlot): boolean => {
     const result = services.equipmentManager.unequipToInventory(services.heroId, slot);
-    if (result.ok) refreshCharacterState();
-    else notifyEquipmentFailure(services, result.reason, getActiveEquipmentTierCap(services));
+    if (result.ok) refreshCharacterState(); else notifyEquipmentFailure(services, result.reason, getActiveEquipmentTierCap(services));
     return result.ok;
   }, [refreshCharacterState, services]);
 
-  const getLoadouts = useCallback(
-    (): readonly EquipmentLoadout[] => services.equipmentManager.getLoadouts(services.heroId),
-    [services],
-  );
+  const getLoadouts = useCallback((): readonly EquipmentLoadout[] => services.equipmentManager.getLoadouts(services.heroId), [services]);
 
   const saveLoadout = useCallback((loadoutId: string, name: string): boolean => {
     const result = services.equipmentManager.saveCurrentLoadout(services.heroId, loadoutId, name);
@@ -127,53 +82,27 @@ export function useCharacterActions(): CharacterActions {
     return result.ok;
   }, [services]);
 
-  const deleteLoadout = useCallback(
-    (loadoutId: string): boolean => services.equipmentManager.deleteLoadout(services.heroId, loadoutId),
-    [services],
-  );
+  const renameLoadout = useCallback((loadoutId: string, name: string): boolean => {
+    const loadout = services.equipmentManager.getLoadouts(services.heroId).find((candidate) => candidate.id === loadoutId);
+    if (loadout === undefined) { notifyEquipmentFailure(services, "loadout_not_found"); return false; }
+    const result = services.equipmentManager.replaceLoadout(services.heroId, { ...loadout, name: name.trim() });
+    if (!result.ok) notifyEquipmentFailure(services, result.reason);
+    return result.ok;
+  }, [services]);
+
+  const deleteLoadout = useCallback((loadoutId: string): boolean => services.equipmentManager.deleteLoadout(services.heroId, loadoutId), [services]);
 
   const applyLoadout = useCallback((loadoutId: string): boolean => {
-    const loadout = services.equipmentManager
-      .getLoadouts(services.heroId)
-      .find((candidate) => candidate.id === loadoutId);
-    if (loadout === undefined) {
-      notifyEquipmentFailure(services, "loadout_not_found");
-      return false;
-    }
-
+    const loadout = services.equipmentManager.getLoadouts(services.heroId).find((candidate) => candidate.id === loadoutId);
+    if (loadout === undefined) { notifyEquipmentFailure(services, "loadout_not_found"); return false; }
     const tierCap = getActiveEquipmentTierCap(services);
-    if (
-      tierCap !== undefined
-      && loadout.slots.some((slot) => {
-        const tier = getItemTier(slot.itemId);
-        return tier !== undefined && tier > tierCap;
-      })
-    ) {
-      notifyEquipmentFailure(services, "tier_cap_exceeded", tierCap);
-      return false;
+    if (tierCap !== undefined && loadout.slots.some((slot) => { const tier = getItemTier(slot.itemId); return tier !== undefined && tier > tierCap; })) {
+      notifyEquipmentFailure(services, "tier_cap_exceeded", tierCap); return false;
     }
-
-    const result = services.equipmentManager.applyLoadout(
-      services.heroId,
-      loadoutId,
-      tierCap,
-    );
-    if (!result.ok) {
-      notifyEquipmentFailure(services, result.reason, tierCap);
-      return false;
-    }
-
-    refreshCharacterState();
-    notifyLoadoutApplied(services, loadout.name);
-    return true;
+    const result = services.equipmentManager.applyLoadout(services.heroId, loadoutId, tierCap);
+    if (!result.ok) { notifyEquipmentFailure(services, result.reason, tierCap); return false; }
+    refreshCharacterState(); notifyLoadoutApplied(services, loadout.name); return true;
   }, [refreshCharacterState, services]);
 
-  return {
-    equip,
-    unequip,
-    getLoadouts,
-    saveLoadout,
-    deleteLoadout,
-    applyLoadout,
-  };
+  return { equip, unequip, getLoadouts, saveLoadout, renameLoadout, deleteLoadout, applyLoadout };
 }
