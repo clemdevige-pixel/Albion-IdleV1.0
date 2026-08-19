@@ -188,7 +188,7 @@ describe("enchantment shard AFK farm sweep", () => {
         nextFullSetShards: nextFullSetCost,
         deepestCommon: deepestCommon === undefined
           ? null
-          : `${deepepestCommon.zone}_s${String(deepestCommon.segment)}`,
+          : `${deepestCommon.zone}_s${String(deepestCommon.segment)}`,
         bestCommonFarm: bestCommonFarm === undefined
           ? null
           : `${bestCommonFarm.zone}_s${String(bestCommonFarm.segment)}`,
