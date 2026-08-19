@@ -36,12 +36,12 @@ const STAT_LABELS: Readonly<Record<string, string>> = {
 
 const AWAKENED_TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
   item_power: "Item Power",
-  damage: "Dégâts",
+  auto_attack_damage: "Dégâts d’auto-attaques",
   ability_power: "Puissance des compétences",
   cooldown_reduction: "Réduction des temps de recharge",
   max_health: "Points de vie",
-  armor: "Armure",
-  magic_resistance: "Résistance magique",
+  defense: "Défense",
+  life_steal: "Vol de vie",
   fame_bonus: "Bonus de Fame",
 };
 
@@ -53,9 +53,10 @@ function formatStatValue(value: number): string {
 function formatAwakenedTraitValue(traitId: AwakenedTraitId, value: number): string {
   if (traitId === "item_power") return `+${formatStatValue(value)} IP`;
   if (
-    traitId === "damage"
+    traitId === "auto_attack_damage"
     || traitId === "ability_power"
     || traitId === "cooldown_reduction"
+    || traitId === "life_steal"
     || traitId === "fame_bonus"
   ) {
     return `+${formatStatValue(value)}%`;
