@@ -68,6 +68,12 @@ export class CombatRuntime extends LegacyCombatRuntime {
     return "idle";
   }
 
+  public restorePausedState(): void {
+    combatStopController.restorePaused();
+    this.mechanics.clear();
+    this.lastEnemySnapshot = undefined;
+  }
+
   override initialize(): CombatDomainTickResult {
     if (!this.hasEquippedWeapon()) return { combatState: "idle" };
     this.initialized = true;
