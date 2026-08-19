@@ -43,7 +43,7 @@ export type UpgradeIslandLevelResult =
 const IslandBuildingIdSchema = z.enum(ISLAND_BUILDING_IDS);
 const IslandSnapshotSchema = z.object({
   version: z.literal(1),
-  level: z.number().int().min(1).max(5).optional(),
+  level: z.number().int().min(1).max(6).optional(),
   plots: z.array(z.object({ id: z.string().min(1), buildingInstanceId: z.string().min(1).nullable() })),
   buildings: z.array(z.object({
     instanceId: z.string().min(1),
