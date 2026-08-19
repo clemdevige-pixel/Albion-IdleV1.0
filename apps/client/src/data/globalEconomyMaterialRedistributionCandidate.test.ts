@@ -110,16 +110,21 @@ function candidateCraftCost(tier: TargetTier, profile: WeaponProfile): Record<Fa
   for (const itemId of profileItemIds(tier, profile)) { const slot = slotForCommon(itemId); if (slot !== undefined) addCosts(out, CANDIDATE_COMMON_ARMOR[tier][slot]); else addCosts(out, liveRecipeCosts(itemId)); }
   return out;
 }
-function craftMaterialsFromCosts(costs: Readonly<Record<Family, number>>) {
-  const map = { wood: "wood", ore: "metal", hide: "leather", fiber: "cloth" } as const;
-  return FAMILIES.filter((f) => costs[f] > 0).map((f) => ({ kind: map[f], quantity: costs[f] }));
+function craftMaterialsFromCosts(tier: TargetTier, costs: Readonly<Record<Family, number>>) {
+  const itemIds: Readonly<Record<Family, string>> = {
+    wood: `item_refined_planks_t${tier}`,
+    ore: `item_refined_metal_bar_t${tier}`,
+    hide: `item_refined_leather_t${tier}`,
+    fiber: `item_refined_cloth_t${tier}`,
+  };
+  return FAMILIES.filter((f) => costs[f] > 0).map((f) => ({ itemId: itemIds[f], quantity: costs[f] }));
 }
 function candidateEnchantCost(tier: TargetTier, profile: WeaponProfile, level: 1 | 2 | 3): { shards: number; refined: Record<Family, number> } {
   let shards = 0; const refined = emptyCosts();
   for (const itemId of profileItemIds(tier, profile)) {
     const info = resolveEnchantmentItemInfo(itemId); if (info === undefined || !info.enchantable) continue;
     const slot = slotForCommon(itemId);
-    const craftMaterials = slot === undefined ? info.craftMaterials : craftMaterialsFromCosts(CANDIDATE_COMMON_ARMOR[tier][slot]);
+    const craftMaterials = slot === undefined ? info.craftMaterials : craftMaterialsFromCosts(tier, CANDIDATE_COMMON_ARMOR[tier][slot]);
     const scaled = scaleEnchantmentRecipe(ENCHANTMENT_RECIPES[level], tier, info.costCategory, craftMaterials);
     for (const material of scaled.materials) { if (material.itemId.includes("enchantment_shard")) shards += material.quantity; const family = familyFor(material.itemId); if (family !== undefined) refined[family] += material.quantity; }
   }
