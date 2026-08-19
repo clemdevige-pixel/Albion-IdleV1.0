@@ -40,8 +40,9 @@ export class IslandActions {
   upgradeBuilding(definitionId: IslandBuildingId): boolean {
     const preview = this.#deps.islandService.canUpgradeBuilding(definitionId); if (!preview.ok) return false;
     const currentDefinition = getIslandOperationalLevelDefinition(definitionId, preview.building.level - 1);
-    const cost = currentDefinition?.upgradeToNext; if (cost === undefined || !this.#canAfford(cost.silver, cost.requirements)) return false;
-    const paid = this.#pay(cost.silver, cost.requirements); if (paid === undefined) return false;
+    const cost = currentDefinition?.upgradeToNext;
+    if (cost === undefined || !this.#canAfford(cost.silver, cost.requirements, cost.flexibleRequirement)) return false;
+    const paid = this.#pay(cost.silver, cost.requirements, cost.flexibleRequirement); if (paid === undefined) return false;
     const upgraded = this.#deps.islandService.upgradeBuilding(definitionId);
     if (!upgraded.ok) { this.#refund(cost.silver, paid); return false; }
     this.#deps.resyncAll(); const definition = getIslandBuildingDefinition(definitionId);
@@ -63,12 +64,14 @@ export class IslandActions {
   #notify(id: string, message: string): void { this.#deps.bridge.addEconomyNotification({ id: `${id}_${String(Date.now())}`, type: "success", message, timestamp: Date.now() }); }
 
   #getFlexiblePayment(requirement: IslandFlexibleConstructionRequirement): PaidMaterial[] | undefined {
-    const available = requirement.itemIds.map((itemId) => ({ itemId, quantity: this.#deps.inventoryManager.getTotalQuantity(this.#deps.productionStorageId, itemId) })).filter((entry) => entry.quantity > 0);
+    const available = requirement.itemIds
+      .map((itemId) => ({ itemId, quantity: this.#deps.inventoryManager.getTotalQuantity(this.#deps.productionStorageId, itemId) }))
+      .filter((entry) => entry.quantity > 0)
+      .sort((a, b) => b.quantity - a.quantity);
     if (available.length < requirement.minimumDistinctItemIds) return undefined;
     if (available.reduce((sum, entry) => sum + entry.quantity, 0) < requirement.totalQuantity) return undefined;
     const paid: PaidMaterial[] = [];
     let remaining = requirement.totalQuantity;
-    // Reserve one unit from the required number of distinct families first, then fill from available stock.
     for (const entry of available.slice(0, requirement.minimumDistinctItemIds)) { paid.push({ itemId: entry.itemId, quantity: 1 }); remaining -= 1; entry.quantity -= 1; }
     for (const entry of available) {
       if (remaining <= 0) break;
