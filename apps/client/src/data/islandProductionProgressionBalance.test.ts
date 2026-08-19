@@ -9,11 +9,11 @@ import {
 } from "./progressionContentCatalog.js";
 
 const UPGRADE_CASES = [
-  { sourceLevel: 1, sourceTier: 3, targetTier: 4, cost: 15 },
-  { sourceLevel: 2, sourceTier: 4, targetTier: 5, cost: 40 },
-  { sourceLevel: 3, sourceTier: 5, targetTier: 6, cost: 70 },
-  { sourceLevel: 4, sourceTier: 6, targetTier: 7, cost: 110 },
-  { sourceLevel: 5, sourceTier: 7, targetTier: 8, cost: 160 },
+  { sourceLevel: 1, sourceTier: 3, targetTier: 4, cost: 15, islandSilver: 1000, monoSilver: 300, workshopSilver: 500, totalSilver: 3900 },
+  { sourceLevel: 2, sourceTier: 4, targetTier: 5, cost: 40, islandSilver: 18000, monoSilver: 4500, workshopSilver: 6000, totalSilver: 60000 },
+  { sourceLevel: 3, sourceTier: 5, targetTier: 6, cost: 70, islandSilver: 60000, monoSilver: 14500, workshopSilver: 24000, totalSilver: 200000 },
+  { sourceLevel: 4, sourceTier: 6, targetTier: 7, cost: 110, islandSilver: 155000, monoSilver: 38000, workshopSilver: 66000, totalSilver: 525000 },
+  { sourceLevel: 5, sourceTier: 7, targetTier: 8, cost: 160, islandSilver: 270000, monoSilver: 65000, workshopSilver: 110000, totalSilver: 900000 },
 ] as const;
 
 describe("island production progression balance contract", () => {
@@ -44,6 +44,20 @@ describe("island production progression balance contract", () => {
       expect(flexible?.itemIds).toHaveLength(4);
     }
     expect(getIslandOperationalLevelDefinition("workshop", 6)?.maxProductionTier).toBe(8);
+  });
+
+  it("uses the validated Silver sink curve", () => {
+    for (const { sourceLevel, islandSilver, monoSilver, workshopSilver, totalSilver } of UPGRADE_CASES) {
+      const islandTargetLevel = sourceLevel + 1;
+      const island = getIslandLevelDefinition(islandTargetLevel);
+      const mono = getIslandOperationalLevelDefinition("lumber_camp", sourceLevel);
+      const workshop = getIslandOperationalLevelDefinition("workshop", sourceLevel);
+
+      expect(island?.upgradeCost?.silver).toBe(islandSilver);
+      expect(mono?.upgradeToNext?.silver).toBe(monoSilver);
+      expect(workshop?.upgradeToNext?.silver).toBe(workshopSilver);
+      expect(islandSilver + monoSilver * 8 + workshopSilver).toBe(totalSilver);
+    }
   });
 
   it("allows building level 6 after the T7 final world gate", () => {
