@@ -130,13 +130,6 @@ export function getEnchantmentShardProgressionWeight(
   return zone.start + (zone.end - zone.start) * progress;
 }
 
-export const BOSS_DROP_RATES = {
-  segmentBossArtifactFragment: 0.2,
-  segmentBossArtifact: 0.005,
-  finalBossArtifactFragment: 0.4,
-  finalBossArtifact: 0.015,
-} as const;
-
 export const KEY_FRAGMENTS_PER_KEY = 50;
 export const ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE = 200;
 export const BOSS_SPECIAL_DROP_MULTIPLIER = 2;
@@ -181,18 +174,12 @@ type CombatLootItemSource =
   | { readonly type: "fixed"; readonly itemId: string }
   | { readonly type: "enchantment_shard" }
   | { readonly type: "dungeon_key_fragment" }
-  | { readonly type: "dungeon_key" }
-  | {
-      readonly type: "faction";
-      readonly prefix: string;
-    };
+  | { readonly type: "dungeon_key" };
 
 type CombatLootRateModel =
   | { readonly type: "segment_scaled"; readonly baseRate: number; readonly bossMultiplier: boolean }
   | { readonly type: "dungeon_key"; readonly baseRate: number; readonly bossMultiplier: boolean }
-  | { readonly type: "enchantment" }
-  | { readonly type: "artifact_fragment" }
-  | { readonly type: "artifact" };
+  | { readonly type: "enchantment" };
 
 export interface CombatLootRuleDefinition {
   readonly kind: CombatDropKind;
@@ -201,14 +188,11 @@ export interface CombatLootRuleDefinition {
 }
 
 /**
- * Authoritative active combat-loot definitions.
+ * Authoritative world-combat loot definitions.
  *
- * Adding a simple droppable item should normally be a data addition here, not
- * a new Bestiary/UI special case. Dynamic faction/tier identities are resolved
- * generically by the item source.
- *
- * Health potions are intentionally vendor-only and are therefore absent from
- * active combat loot.
+ * Artifact fragments and complete artifacts are intentionally absent here:
+ * they are dungeon-only rewards and are authored in dungeonLootContentCatalog.
+ * Health potions remain vendor-only.
  */
 export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
   {
@@ -226,21 +210,7 @@ export const COMBAT_LOOT_RULES: readonly CombatLootRuleDefinition[] = [
     item: { type: "dungeon_key" },
     rate: { type: "dungeon_key", baseRate: BASE_COMBAT_DROP_RATES.completeKey, bossMultiplier: true },
   },
-  {
-    kind: "artifact_fragment",
-    item: { type: "faction", prefix: "item_resource_artifact_fragment_" },
-    rate: { type: "artifact_fragment" },
-  },
-  {
-    kind: "artifact",
-    item: { type: "faction", prefix: "item_resource_artifact_" },
-    rate: { type: "artifact" },
-  },
 ] as const;
-
-function normalizeFactionId(faction: string): string {
-  return faction.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
-}
 
 /** Supports expected values above 1 without probability-cap distortion. */
 function rollExpectedQuantity(expected: number, random: () => number): number {
@@ -288,10 +258,7 @@ function resolveCombatLootItemId(
   if (source.type === "dungeon_key_fragment") {
     return getDungeonKeyFragmentItemId(context.enchantmentTier);
   }
-  if (source.type === "dungeon_key") {
-    return getDungeonKeyItemId(context.enchantmentTier);
-  }
-  return `${source.prefix}${normalizeFactionId(context.faction)}`;
+  return getDungeonKeyItemId(context.enchantmentTier);
 }
 
 function resolveCombatLootExpectedQuantity(
@@ -307,28 +274,16 @@ function resolveCombatLootExpectedQuantity(
     return rate.baseRate * Math.max(0, context.dungeonKeyDropWeight) * bossMultiplier;
   }
 
-  if (rate.type === "segment_scaled") {
-    const bossMultiplier = rate.bossMultiplier && context.isBoss
-      ? BOSS_SPECIAL_DROP_MULTIPLIER
-      : 1;
-    return rate.baseRate * getSegmentLootMultiplier(context.segmentIndex) * bossMultiplier;
-  }
-
-  if (!context.isBoss) return 0;
-  if (rate.type === "artifact_fragment") {
-    return context.isFinalBoss
-      ? BOSS_DROP_RATES.finalBossArtifactFragment
-      : BOSS_DROP_RATES.segmentBossArtifactFragment;
-  }
-  return context.isFinalBoss
-    ? BOSS_DROP_RATES.finalBossArtifact
-    : BOSS_DROP_RATES.segmentBossArtifact;
+  const bossMultiplier = rate.bossMultiplier && context.isBoss
+    ? BOSS_SPECIAL_DROP_MULTIPLIER
+    : 1;
+  return rate.baseRate * getSegmentLootMultiplier(context.segmentIndex) * bossMultiplier;
 }
 
 /**
  * Deterministic projection consumed by both runtime rolls and Bestiary display.
- * This is the single source of truth for which active combat drops exist and
- * their context-dependent probabilities/yields.
+ * This is the single source of truth for which active world-combat drops exist
+ * and their context-dependent probabilities/yields.
  */
 export function getCombatLootExpectations(
   context: CombatLootContext,
