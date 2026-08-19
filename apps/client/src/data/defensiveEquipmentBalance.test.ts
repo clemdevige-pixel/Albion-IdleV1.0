@@ -62,10 +62,6 @@ function fullTwoHandedDefense(tier: keyof typeof CORE_BY_TIER, enchantment: Ench
   return { hp, armor, mr };
 }
 
-function bootsItemId(tier: keyof typeof CORE_BY_TIER): string {
-  return tier === 3 ? "item_leather_boots" : `item_boots_t${String(tier)}_leather`;
-}
-
 describe("validated defensive equipment balance", () => {
   it.each([
     [3, 0, { hp: 530, armor: 21, mr: 19 }],
