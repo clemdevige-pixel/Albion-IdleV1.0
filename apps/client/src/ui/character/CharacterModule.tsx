@@ -133,6 +133,7 @@ export function CharacterModule(): JSX.Element {
           <small className="character-module__presets-label">Loadout</small>
           <div className="character-module__preset-toolbar">
             <select
+              className="character-module__preset-select"
               aria-label="Loadout sélectionné"
               value={selectedLoadoutId}
               disabled={loadouts.length === 0}
@@ -142,14 +143,9 @@ export function CharacterModule(): JSX.Element {
               }}
             >
               {loadouts.length === 0 && <option value="">Aucun loadout</option>}
-              {loadouts.map((loadout) => {
-                const tier = getLoadoutMaxTier(loadout);
-                return (
-                  <option key={loadout.id} value={loadout.id}>
-                    {loadout.name} · {String(loadout.slots.length)} pièces{tier === undefined ? "" : ` · T${String(tier)} max`}
-                  </option>
-                );
-              })}
+              {loadouts.map((loadout) => (
+                <option key={loadout.id} value={loadout.id}>{loadout.name}</option>
+              ))}
             </select>
             <button
               type="button"
