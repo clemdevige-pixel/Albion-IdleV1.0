@@ -4,6 +4,8 @@ import {
   type IslandBuildingId,
 } from "@game/data";
 import { REFINING_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
+import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
+import { useResourceTracking } from "../dashboard/ResourceTrackingContext";
 import { useRefiningActions } from "../production/refining/useRefiningActions";
 import { useRefiningData } from "../production/refining/useRefiningData";
 import "./refiningBuilding.css";
@@ -28,12 +30,19 @@ export function RefiningBuildingPanel({
 
   const model = useRefiningData();
   const actions = useRefiningActions();
+  const tracking = useResourceTracking();
   const family = model.families.find((candidate) => candidate.id === service.productionFamily);
   if (family === undefined) {
     throw new Error(`Missing refining model for ${service.productionFamily}`);
   }
 
   const active = family.activity.status === "refining";
+  const recipe = getProductionRefiningRecipe(family.id, family.tier);
+  const rawLabel = family.requirements.find((requirement) => requirement.itemId === recipe.rawItemId)?.label
+    ?? `${family.rawLabel} brut T${String(family.tier)}`;
+  const refinedLabel = family.activity.recipeName;
+  const rawIconSrc = `/assets/resources/${family.rawIcon}`;
+  const refinedIconSrc = `/assets/resources/${family.refinedIcon}`;
 
   return (
     <div className="ui-island-refining-building">
@@ -56,7 +65,7 @@ export function RefiningBuildingPanel({
       </div>
 
       <div className="ui-island-refining-building__recipe">
-        <img src={`/assets/resources/${family.refinedIcon}`} alt="" />
+        <img src={refinedIconSrc} alt="" />
         <div>
           <small>Recette active</small>
           <strong>{family.activity.recipeName}</strong>
@@ -66,14 +75,34 @@ export function RefiningBuildingPanel({
 
       <div className="ui-island-refining-building__requirements">
         <div>
-          <img src={`/assets/resources/${family.rawIcon}`} alt="" />
+          <img src={rawIconSrc} alt="" />
           <span>Stock brut T{String(family.tier)}</span>
           <b>{String(family.activity.rawStoredQuantity)}</b>
+          <button
+            type="button"
+            aria-label={`${tracking.isTracked(recipe.rawItemId) ? "Ne plus suivre" : "Suivre"} ${rawLabel}`}
+            title={tracking.isTracked(recipe.rawItemId) ? "Ne plus suivre dans la sidebar" : "Suivre dans la sidebar"}
+            onClick={() => {
+              tracking.toggleTracked({ itemId: recipe.rawItemId, label: rawLabel, iconSrc: rawIconSrc });
+            }}
+          >
+            {tracking.isTracked(recipe.rawItemId) ? "★" : "☆"}
+          </button>
         </div>
         <div>
-          <img src={`/assets/resources/${family.refinedIcon}`} alt="" />
+          <img src={refinedIconSrc} alt="" />
           <span>Stock raffiné T{String(family.tier)}</span>
           <b>{String(family.activity.refinedStoredQuantity)}</b>
+          <button
+            type="button"
+            aria-label={`${tracking.isTracked(recipe.outputItemId) ? "Ne plus suivre" : "Suivre"} ${refinedLabel}`}
+            title={tracking.isTracked(recipe.outputItemId) ? "Ne plus suivre dans la sidebar" : "Suivre dans la sidebar"}
+            onClick={() => {
+              tracking.toggleTracked({ itemId: recipe.outputItemId, label: refinedLabel, iconSrc: refinedIconSrc });
+            }}
+          >
+            {tracking.isTracked(recipe.outputItemId) ? "★" : "☆"}
+          </button>
         </div>
         {family.requirements.map((requirement) => (
           <div key={requirement.itemId}>
