@@ -23,6 +23,8 @@ type EquipmentTier = 3 | TargetTier;
 type Enchantment = 0 | 1 | 2 | 3;
 
 const WEAPONS = ["sword_broadsword", "bow_longbow", "staff_infernal", "gloves_spiked_gauntlets", "dagger_pair"] as const;
+type WeaponProfile = (typeof WEAPONS)[number];
+
 const ZONES: Readonly<Record<TargetTier, readonly string[]>> = {
   4: [WORLD_ZONE_IDS.steppe, WORLD_ZONE_IDS.mountain],
   5: [WORLD_ZONE_IDS.amberwood, WORLD_ZONE_IDS.gloamfen, WORLD_ZONE_IDS.stormwatch, WORLD_ZONE_IDS.sunscar, WORLD_ZONE_IDS.ironveil],
@@ -50,6 +52,11 @@ interface State {
 }
 
 function emptyTiers(): Record<ProductionTier, number> { return { 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 }; }
+function emptyFamilyCosts(): Record<Family, number> { return { wood: 0, ore: 0, hide: 0, fiber: 0 }; }
+function addFamilyCosts(target: Record<Family, number>, source: Record<Family, number>): void {
+  for (const family of FAMILIES) target[family] += source[family];
+}
+function formatCosts(costs: Record<Family, number>): string { return FAMILIES.map((f) => `${f}:${costs[f]}`).join(" "); }
 function masteryLevel(xp: number): number {
   let remaining = Math.max(0, xp);
   let level = 0;
@@ -80,8 +87,10 @@ function canProduce(data: FamilyState, tier: ProductionTier, amount: number): bo
     if (t === 3) { const rawNeed = missing * 4; if (raw[3] < rawNeed) return false; raw[3] -= rawNeed; refined[3] += missing; return true; }
     const prev = (t - 1) as ProductionTier;
     if (!ensure(prev, missing)) return false;
-    const rawNeed = missing * 2; if (raw[t] < rawNeed) return false;
-    raw[t] -= rawNeed; refined[prev] -= missing; refined[t] += missing; return true;
+    const rawNeed = missing * 2;
+    if (raw[t] < rawNeed) return false;
+    raw[t] -= rawNeed; refined[prev] -= missing; refined[t] += missing;
+    return true;
   };
   return ensure(tier, amount);
 }
@@ -91,8 +100,10 @@ function produce(data: FamilyState, tier: ProductionTier, amount: number): boole
   if (tier === 3) { const rawNeed = missing * 4; if (data.raw[3] < rawNeed) return false; data.raw[3] -= rawNeed; data.refined[3] += missing; return true; }
   const prev = (tier - 1) as ProductionTier;
   if (!produce(data, prev, missing)) return false;
-  const rawNeed = missing * 2; if (data.raw[tier] < rawNeed) return false;
-  data.raw[tier] -= rawNeed; data.refined[prev] -= missing; data.refined[tier] += missing; return true;
+  const rawNeed = missing * 2;
+  if (data.raw[tier] < rawNeed) return false;
+  data.raw[tier] -= rawNeed; data.refined[prev] -= missing; data.refined[tier] += missing;
+  return true;
 }
 function maxProducible(data: FamilyState, tier: ProductionTier): number {
   let low = 0; let high = 1;
@@ -142,57 +153,81 @@ function spend(state: State, tier: ProductionTier, costs: Record<Family, number>
   return true;
 }
 function familyFor(itemId: string): Family | undefined {
-  if (itemId.includes("plank")) return "wood"; if (itemId.includes("bar")) return "ore";
-  if (itemId.includes("leather")) return "hide"; if (itemId.includes("cloth")) return "fiber"; return undefined;
+  if (itemId.includes("plank")) return "wood";
+  if (itemId.includes("bar")) return "ore";
+  if (itemId.includes("leather")) return "hide";
+  if (itemId.includes("cloth")) return "fiber";
+  return undefined;
 }
-function itemIds(tier: EquipmentTier): readonly string[] {
-  if (tier === 3) return ["item_weapon_bow_t3_longbow", "item_iron_helmet", "item_leather_armor", "item_leather_boots"];
-  return [`item_weapon_bow_t${tier}_longbow`, `item_helmet_t${tier}_reinforced`, `item_armor_t${tier}_leather`, `item_boots_t${tier}_leather`];
-}
-function refinedCraftCost(tier: TargetTier): Record<Family, number> {
-  const costs: Record<Family, number> = { wood: 0, ore: 0, hide: 0, fiber: 0 };
-  for (const itemId of itemIds(tier)) {
-    const recipe = EQUIPMENT_CRAFT_RECIPES.find((r) => r.outputItemId === itemId);
-    if (recipe === undefined) throw new Error(`Missing recipe ${itemId}`);
-    for (const req of recipe.requirements) { const family = familyFor(req.itemId); if (family !== undefined) costs[family] += req.quantity; }
-  }
-  return costs;
-}
-function enchantCost(tier: TargetTier, level: 1 | 2 | 3): { shards: number; refined: Record<Family, number> } {
-  let shards = 0; const refined: Record<Family, number> = { wood: 0, ore: 0, hide: 0, fiber: 0 };
-  for (const itemId of itemIds(tier)) {
-    const info = resolveEnchantmentItemInfo(itemId); if (info === undefined || !info.enchantable) continue;
-    const scaled = scaleEnchantmentRecipe(ENCHANTMENT_RECIPES[level], tier, info.costCategory, info.craftMaterials);
-    for (const material of scaled.materials) {
-      if (material.itemId.includes("enchantment_shard")) shards += material.quantity;
-      const family = familyFor(material.itemId); if (family !== undefined) refined[family] += material.quantity;
-    }
-  }
-  return { shards, refined };
-}
-function weaponId(tier: TargetTier, suffix: (typeof WEAPONS)[number]): string {
-  const [family, spec] = suffix.split("_");
+function weaponId(tier: EquipmentTier, profile: WeaponProfile): string {
+  const [family, spec] = profile.split("_");
   if (family === "gloves") return `item_weapon_gloves_t${tier}_spiked_gauntlets`;
   if (family === "dagger") return `item_weapon_dagger_t${tier}_pair`;
   return `item_weapon_${family}_t${tier}_${spec}`;
 }
-function equipment(tier: TargetTier, weapon: string): readonly string[] {
+function profileItemIds(tier: TargetTier, profile: WeaponProfile): readonly string[] {
+  const weapon = weaponId(tier, profile);
+  const items = [
+    weapon,
+    `item_helmet_t${tier}_reinforced`,
+    `item_armor_t${tier}_leather`,
+    `item_boots_t${tier}_leather`,
+  ];
+  if (resolveEquipmentInfo(weapon)?.handling === "one_handed") items.push(`item_shield_t${tier}_reinforced`);
+  return items;
+}
+function refinedCraftCost(tier: TargetTier, profile: WeaponProfile): Record<Family, number> {
+  const costs = emptyFamilyCosts();
+  for (const itemId of profileItemIds(tier, profile)) {
+    const recipe = EQUIPMENT_CRAFT_RECIPES.find((r) => r.outputItemId === itemId);
+    if (recipe === undefined) throw new Error(`Missing recipe ${itemId}`);
+    for (const req of recipe.requirements) {
+      const family = familyFor(req.itemId);
+      if (family !== undefined) costs[family] += req.quantity;
+    }
+  }
+  return costs;
+}
+function enchantCost(tier: TargetTier, profile: WeaponProfile, level: 1 | 2 | 3): { shards: number; refined: Record<Family, number> } {
+  let shards = 0; const refined = emptyFamilyCosts();
+  for (const itemId of profileItemIds(tier, profile)) {
+    const info = resolveEnchantmentItemInfo(itemId);
+    if (info === undefined || !info.enchantable) continue;
+    const scaled = scaleEnchantmentRecipe(ENCHANTMENT_RECIPES[level], tier, info.costCategory, info.craftMaterials);
+    for (const material of scaled.materials) {
+      if (material.itemId.includes("enchantment_shard")) shards += material.quantity;
+      const family = familyFor(material.itemId);
+      if (family !== undefined) refined[family] += material.quantity;
+    }
+  }
+  return { shards, refined };
+}
+function combatEquipment(tier: TargetTier, weapon: string): readonly string[] {
   const items = [`item_helmet_t${tier}_reinforced`, `item_armor_t${tier}_leather`, `item_boots_t${tier}_leather`, "item_traveler_cape"];
   if (resolveEquipmentInfo(weapon)?.handling === "one_handed") items.push(`item_shield_t${tier}_reinforced`);
   return items;
 }
-function averageShardRate(tier: TargetTier, enchantment: Enchantment): number {
+function shardRate(tier: TargetTier, profile: WeaponProfile, enchantment: Enchantment): number {
   const mastery = ENTRY_MASTERY[tier];
-  const rates = WEAPONS.map((suffix) => {
-    const weapon = weaponId(tier, suffix); let best = 0;
-    for (const zone of ZONES[tier]) for (let segment = 0; segment < 10; segment += 1) {
-      const result = runCombatRuntimeBenchmark({ label: `worker_shard_T${tier}.${enchantment}_${suffix}_${zone}_${segment}`, weaponItemId: weapon, zoneDefId: zone as never, segmentIndex: segment, equipmentItemIds: equipment(tier, weapon), masteryLevel: mastery, enchantment, useHealthPotions: false });
+  const weapon = weaponId(tier, profile);
+  let best = 0;
+  for (const zone of ZONES[tier]) {
+    for (let segment = 0; segment < 10; segment += 1) {
+      const result = runCombatRuntimeBenchmark({
+        label: `worker_shard_${profile}_T${tier}.${enchantment}_${zone}_${segment}`,
+        weaponItemId: weapon,
+        zoneDefId: zone as never,
+        segmentIndex: segment,
+        equipmentItemIds: combatEquipment(tier, weapon),
+        masteryLevel: mastery,
+        enchantment,
+        useHealthPotions: false,
+      });
       if (!result.clear || result.seconds <= 0) continue;
       best = Math.max(best, getExpectedEnchantmentShardsPerSegment(zone as never, segment) * 3600 / result.seconds);
     }
-    return best;
-  });
-  return rates.reduce((sum, rate) => sum + rate, 0) / rates.length;
+  }
+  return best;
 }
 function minHeroLevel(state: State): number { return Math.min(...FAMILIES.map((f) => masteryLevel(state.families[f].heroXp))); }
 function setGatherTier(state: State, tier: ProductionTier): void { for (const f of FAMILIES) { switchHero(state.families[f], tier); switchWorker(state.families[f], tier); } }
@@ -204,12 +239,13 @@ function buildWorkshop(state: State, tier: ProductionTier, total: number): Recor
   const cap = Object.fromEntries(FAMILIES.map((f) => [f, maxProducible(state.families[f], tier)])) as Record<Family, number>;
   const contributors = [...FAMILIES].filter((f) => cap[f] > 0).sort((a, b) => cap[b] - cap[a]);
   if (contributors.length < 3) return null;
-  const out: Record<Family, number> = { wood: 0, ore: 0, hide: 0, fiber: 0 };
+  const out = emptyFamilyCosts();
   for (const f of contributors.slice(0, 3)) out[f] = 1;
   let remaining = total - 3;
   while (remaining > 0) {
     const f = contributors.filter((x) => out[x] < cap[x]).sort((a, b) => (cap[b] - out[b]) - (cap[a] - out[a]))[0];
-    if (f === undefined) return null; out[f] += 1; remaining -= 1;
+    if (f === undefined) return null;
+    out[f] += 1; remaining -= 1;
   }
   return out;
 }
@@ -231,51 +267,102 @@ function prepareTransition(state: State, sourceTier: ProductionTier, targetTier:
   }
 }
 function snapshot(state: State, tier: ProductionTier): string { return FAMILIES.map((f) => `${f}:${state.families[f].raw[tier]}r/${state.families[f].refined[tier]}f`).join(" "); }
+function round1(x: number): number { return Number(x.toFixed(1)); }
 function round2(x: number): number { return Number(x.toFixed(2)); }
 
-describe("global economy worker production during shard farm diagnostic", () => {
-  it("measures whether workers cover enchantment materials while the hero farms shards", () => {
-    const state = createState();
-    const rows: object[] = [];
-    for (const targetTier of [4, 5, 6, 7, 8] as const) {
-      const sourceTier = (targetTier - 1) as ProductionTier;
-      prepareTransition(state, sourceTier, targetTier);
-      state.tier = targetTier; setGatherTier(state, targetTier);
-      const craft = refinedCraftCost(targetTier);
-      while (!spend(state, targetTier, craft)) tick(state, true, targetTier, craft);
+function runWeaponProfile(profile: WeaponProfile) {
+  const state = createState();
+  const stepRows: object[] = [];
+  const summaryRows: object[] = [];
+  for (const targetTier of [4, 5, 6, 7, 8] as const) {
+    const sourceTier = (targetTier - 1) as ProductionTier;
+    prepareTransition(state, sourceTier, targetTier);
+    state.tier = targetTier; setGatherTier(state, targetTier);
 
-      let extraHeroGatherHours = 0;
-      for (const level of [1, 2, 3] as const) {
-        const cost = enchantCost(targetTier, level);
-        const rate = averageShardRate(targetTier, (level - 1) as Enchantment);
-        if (rate <= 0) throw new Error(`No shard farm for T${targetTier}.${level - 1}`);
-        const shardHours = cost.shards / rate;
-        const workerTicksToRun = Math.ceil(shardHours * 3600 / TICK_SECONDS);
-        for (let i = 0; i < workerTicksToRun; i += 1) tick(state, false, targetTier, cost.refined);
-        const beforeSpend = Object.fromEntries(FAMILIES.map((f) => [f, maxProducible(state.families[f], targetTier)])) as Record<Family, number>;
-        const coveredByWorkers = FAMILIES.every((f) => beforeSpend[f] >= cost.refined[f]);
-        if (!coveredByWorkers) {
-          const start = state.ticks;
-          while (!spend(state, targetTier, cost.refined)) tick(state, true, targetTier, cost.refined);
-          extraHeroGatherHours += (state.ticks - start) * TICK_SECONDS / 3600;
-        } else {
-          spend(state, targetTier, cost.refined);
-        }
-        rows.push({
-          tier: `T${targetTier}`,
-          step: `.${level - 1}->.${level}`,
-          shardFarmHours: round2(shardHours),
-          workerCoverage: coveredByWorkers,
-          enchantRefined: FAMILIES.map((f) => `${f}:${cost.refined[f]}`).join(" "),
-          producibleBeforeSpend: FAMILIES.map((f) => `${f}:${beforeSpend[f]}`).join(" "),
-          cumulativeExtraHeroGatherHours: round2(extraHeroGatherHours),
-          stocksAfterStep: snapshot(state, targetTier),
-        });
+    const craft = refinedCraftCost(targetTier, profile);
+    while (!spend(state, targetTier, craft)) tick(state, true, targetTier, craft);
+
+    let totalShardHours = 0;
+    let totalExtraHeroGatherHours = 0;
+    let totalShards = 0;
+    const totalEnchantRefined = emptyFamilyCosts();
+    const uncoveredFamilies = new Set<Family>();
+
+    for (const level of [1, 2, 3] as const) {
+      const cost = enchantCost(targetTier, profile, level);
+      addFamilyCosts(totalEnchantRefined, cost.refined);
+      totalShards += cost.shards;
+      const rate = shardRate(targetTier, profile, (level - 1) as Enchantment);
+      if (rate <= 0) throw new Error(`No shard farm for ${profile} T${targetTier}.${level - 1}`);
+      const shardHours = cost.shards / rate;
+      totalShardHours += shardHours;
+      const workerTicksToRun = Math.ceil(shardHours * 3600 / TICK_SECONDS);
+      for (let i = 0; i < workerTicksToRun; i += 1) tick(state, false, targetTier, cost.refined);
+
+      const beforeSpend = Object.fromEntries(FAMILIES.map((f) => [f, maxProducible(state.families[f], targetTier)])) as Record<Family, number>;
+      for (const family of FAMILIES) if (beforeSpend[family] < cost.refined[family]) uncoveredFamilies.add(family);
+      const coveredByWorkers = FAMILIES.every((f) => beforeSpend[f] >= cost.refined[f]);
+      let stepExtraHeroGatherHours = 0;
+      if (!coveredByWorkers) {
+        const start = state.ticks;
+        while (!spend(state, targetTier, cost.refined)) tick(state, true, targetTier, cost.refined);
+        stepExtraHeroGatherHours = (state.ticks - start) * TICK_SECONDS / 3600;
+        totalExtraHeroGatherHours += stepExtraHeroGatherHours;
+      } else {
+        spend(state, targetTier, cost.refined);
       }
+
+      stepRows.push({
+        weapon: profile,
+        tier: `T${targetTier}`,
+        step: `.${level - 1}->.${level}`,
+        shards: cost.shards,
+        shardsPerHour: round1(rate),
+        shardFarmHours: round2(shardHours),
+        workerCoverage: coveredByWorkers,
+        extraHeroGatherHours: round2(stepExtraHeroGatherHours),
+        enchantRefined: formatCosts(cost.refined),
+        producibleBeforeSpend: formatCosts(beforeSpend),
+        stocksAfterStep: snapshot(state, targetTier),
+      });
     }
-    console.log("[GLOBAL_ECONOMY_WORKER_DURING_SHARD_FARM]");
-    console.table(rows);
-    console.log("[GLOBAL_ECONOMY_WORKER_DURING_SHARD_FARM_JSON]", JSON.stringify(rows, null, 2));
-    expect(rows).toHaveLength(15);
+
+    const combinedHours = totalShardHours + totalExtraHeroGatherHours;
+    summaryRows.push({
+      weapon: profile,
+      tier: `T${targetTier}`,
+      loadoutPieces: profileItemIds(targetTier, profile).length,
+      craftRefined: formatCosts(craft),
+      enchantRefined: formatCosts(totalEnchantRefined),
+      totalShards,
+      shardFarmHours: round2(totalShardHours),
+      extraHeroGatherHours: round2(totalExtraHeroGatherHours),
+      combinedHours: round2(combinedHours),
+      gatherSharePct: combinedHours > 0 ? round1(totalExtraHeroGatherHours / combinedHours * 100) : 0,
+      bottlenecks: [...uncoveredFamilies].join(",") || "none",
+    });
+  }
+  return { stepRows, summaryRows };
+}
+
+describe("global economy worker production during shard farm diagnostic", () => {
+  it("measures material pressure and combat/gather pacing for every weapon profile", () => {
+    const stepRows: object[] = [];
+    const summaryRows: object[] = [];
+    for (const profile of WEAPONS) {
+      const result = runWeaponProfile(profile);
+      stepRows.push(...result.stepRows);
+      summaryRows.push(...result.summaryRows);
+    }
+
+    console.log("[GLOBAL_ECONOMY_WEAPON_PROFILE_SUMMARY]");
+    console.table(summaryRows);
+    console.log("[GLOBAL_ECONOMY_WEAPON_PROFILE_STEPS]");
+    console.table(stepRows);
+    console.log("[GLOBAL_ECONOMY_WEAPON_PROFILE_SUMMARY_JSON]", JSON.stringify(summaryRows, null, 2));
+    console.log("[GLOBAL_ECONOMY_WEAPON_PROFILE_STEPS_JSON]", JSON.stringify(stepRows, null, 2));
+
+    expect(summaryRows).toHaveLength(WEAPONS.length * 5);
+    expect(stepRows).toHaveLength(WEAPONS.length * 5 * 3);
   });
 });
