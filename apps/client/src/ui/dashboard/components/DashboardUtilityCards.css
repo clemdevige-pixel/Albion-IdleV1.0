@@ -36,6 +36,14 @@
   white-space: nowrap;
 }
 
+.dashboard-card--tracked-resources .dashboard-production__task > div > small {
+  overflow: hidden;
+  color: var(--ui-color-accent);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dashboard-card--tracked-resources .dashboard-production__task > b {
   color: var(--ui-color-accent-hover);
   font-size: 12px;
@@ -82,8 +90,8 @@
   font-size: 9px;
 }
 
-.ui-island-refining-building__requirements > div > button,
-.ui-island-storage__tier > div > button {
+.ui-island-refining-building__recipe > button,
+.ui-island-storage__tier > span > button {
   min-width: 20px;
   padding: 0 3px;
   border: 0;
@@ -94,10 +102,9 @@
   cursor: pointer;
 }
 
-.ui-island-storage__tier > div {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.ui-island-storage__tier > div > small {
-  grid-column: 1 / -1;
+.ui-island-storage__tier > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
 }
