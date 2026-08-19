@@ -22,7 +22,7 @@ export const BLUE_WORLD_COMBAT_CURVE = [
   { healthStart: 1.15, healthEnd: 1.55, damageStart: 1.18, damageEnd: 1.8, defenseStart: 1.0, defenseEnd: 1.1, defenseModel: "legacy_flat_magic" },
   { healthStart: 1.7, healthEnd: 2.3, damageStart: 2.0, damageEnd: 2.3, defenseStart: 1.15, defenseEnd: 1.3, defenseModel: "legacy_flat_magic" },
   { healthStart: 2.3, healthEnd: 3.02, damageStart: 2.3, damageEnd: 2.5, defenseStart: 1.3, defenseEnd: 1.46, defenseModel: "rank_parity" },
-  { healthStart: 3.1, healthEnd: 4.0, damageStart: 2.5, damageEnd: 2.8, defenseStart: 1.5, defenseEnd: 1.8, defenseModel: "rank_parity" },
+  { healthStart: 3.1, healthEnd: 3.7, damageStart: 2.5, damageEnd: 2.5, defenseStart: 1.5, defenseEnd: 1.5, defenseModel: "rank_parity" },
 ] as const;
 
 /**
