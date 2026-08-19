@@ -1,0 +1,36 @@
+# 20B. DEFENSIVE EQUIPMENT BALANCE
+
+Status: AUTHORITATIVE BALANCE CONTRACT
+Date: 2026-08-19
+
+## Slot roles
+Chest = primary survivability piece.
+Head = secondary survivability piece.
+Boots = tertiary but meaningful survivability piece.
+Validated ordering: CHEST > HEAD > BOOTS.
+
+## Authored Max Health distribution
+T3: Head 70 / Chest 125 / Boots 35 / Total 230
+T4: Head 90 / Chest 160 / Boots 50 / Total 300
+T5: Head 150 / Chest 210 / Boots 60 / Total 420
+T6: Head 170 / Chest 310 / Boots 100 / Total 580
+T7: Head 235 / Chest 420 / Boots 125 / Total 780
+T8: Head 330 / Chest 535 / Boots 155 / Total 1020
+
+Armor and Magic Resistance stay unchanged. The distribution preserves the previously validated full-set HP totals after per-item enchantment scaling and 5-HP rounding.
+
+## Design rules
+- Do not add generic Attack Speed to Boots; attack cadence belongs to weapon identity.
+- Do not add generic Cooldown Reduction without a weapon-wide rebalance.
+- Do not add sustain or out-of-combat regeneration solely to make Boots relevant.
+- Full-set survivability is the invariant: redistribution must not silently buff the complete set.
+- Boots must materially affect progression while remaining less important than Head and Chest.
+
+## Runtime validation
+A temporary T3-T7 runtime sweep confirmed that removing Boots now frequently turns representative progression clears into failures, while removing Head remains more punishing. The temporary diagnostic was removed after validation.
+
+## Sources
+apps/client/src/data/nonWeaponEquipmentContentCatalog.ts
+apps/client/src/data/defensiveEquipmentBalance.test.ts
+packages/gameplay/src/equipment/equipment-stat-rounding.ts
+packages/gameplay/src/equipment/enchantment-balance.ts
