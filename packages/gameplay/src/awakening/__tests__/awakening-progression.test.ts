@@ -8,6 +8,7 @@ import { DEFAULT_AWAKENED_WEAPON_BALANCE } from "../balance.js";
 import {
   getAwakenedActionCost,
   getAwakenedAttunementCap,
+  getEffectiveLifeStealPercent,
   getUnlockedAwakenedTraitSlots,
 } from "../calculations.js";
 import { createFreshAwakenedWeaponState } from "../state.js";
@@ -99,6 +100,15 @@ describe("awakened weapon progression", () => {
     expect(service.getState(instanceId)?.awakened).toBe(true);
     expect(service.getState(instanceId)?.storedAttunement).toBe(0);
     expect(service.getState(instanceId)?.lifetimeAttunementInvested).toBe(5_000);
+  });
+
+  it("authors the merged Defense trait and caps displayed Life Steal at 5%", () => {
+    const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
+    expect(balance.traitRolls.defense).toEqual({ min: 0.5, max: 1 });
+    expect(balance.traitRolls.auto_attack_damage).toEqual({ min: 0.2, max: 0.4 });
+    expect(balance.lifeStealCapPercent).toBe(5);
+    expect(getEffectiveLifeStealPercent(3.25, balance)).toBe(3.25);
+    expect(getEffectiveLifeStealPercent(50, balance)).toBe(5);
   });
 
   it("authors Fame Bonus as a 0.5% to 1% trait roll", () => {
