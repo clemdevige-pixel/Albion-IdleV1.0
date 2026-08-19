@@ -49,14 +49,18 @@ describe("StatRegistry", () => {
     expect(() => registry.register(TEST_DEF)).toThrow();
   });
 
-  it("createDefaultStatRegistry registers 7 stats", () => {
+  it("createDefaultStatRegistry registers the 9 authoritative combat stats", () => {
     const registry = createDefaultStatRegistry();
-    expect(registry.getAll()).toHaveLength(7);
+    expect(registry.getAll()).toHaveLength(9);
     expect(registry.has(sid("stat_max_health"))).toBe(true);
     expect(registry.has(sid("stat_physical_damage"))).toBe(true);
+    expect(registry.has(sid("stat_magical_damage"))).toBe(true);
     expect(registry.has(sid("stat_armor"))).toBe(true);
+    expect(registry.has(sid("stat_magic_resistance"))).toBe(true);
     expect(registry.has(sid("stat_attack_speed"))).toBe(true);
     expect(registry.has(sid("stat_move_speed"))).toBe(true);
+    expect(registry.has(sid("stat_ability_power"))).toBe(true);
+    expect(registry.has(sid("stat_cooldown_reduction"))).toBe(true);
   });
 });
 
@@ -86,7 +90,6 @@ describe("calculateStat", () => {
       mod({ id: "f1", type: "flat", value: 50 }),
       mod({ id: "p1", type: "percent", value: 50 }),
     ];
-    // base=100, +50flat=150, *1.5=225
     expect(calculateStat(100, mods, TEST_DEF)).toBe(225);
   });
 
@@ -95,7 +98,6 @@ describe("calculateStat", () => {
       mod({ id: "p1", type: "percent", value: 20 }),
       mod({ id: "p2", type: "percent", value: 30 }),
     ];
-    // 100 * (1 + 50/100) = 150
     expect(calculateStat(100, mods, TEST_DEF)).toBe(150);
   });
 
@@ -104,7 +106,6 @@ describe("calculateStat", () => {
       mod({ id: "m1", type: "multiplier", value: 2, priority: 0 }),
       mod({ id: "m2", type: "multiplier", value: 1.5, priority: 1 }),
     ];
-    // 100 * 2 * 1.5 = 300
     expect(calculateStat(100, mods, TEST_DEF)).toBe(300);
   });
 
@@ -114,13 +115,11 @@ describe("calculateStat", () => {
       mod({ id: "p1", type: "percent", value: 50 }),
       mod({ id: "m1", type: "multiplier", value: 2 }),
     ];
-    // base=100, +20=120, *1.5=180, *2=360
     expect(calculateStat(100, mods, TEST_DEF)).toBe(360);
   });
 
   it("clamps final result to min/max", () => {
     const mods = [mod({ id: "m1", type: "multiplier", value: 100 })];
-    // 100 * 100 = 10000, clamped to 1000
     expect(calculateStat(100, mods, TEST_DEF)).toBe(1000);
   });
 
@@ -164,7 +163,6 @@ describe("StatContainer", () => {
     container.addModifier(m);
     expect(container.getComputed(TEST_DEF.id)).toBe(150);
     expect(container.hasModifier(mid("f1"))).toBe(true);
-
     container.removeModifier(mid("f1"));
     expect(container.getComputed(TEST_DEF.id)).toBe(100);
     expect(container.hasModifier(mid("f1"))).toBe(false);
@@ -237,7 +235,6 @@ describe("StatsManager", () => {
     manager.attachStats(e);
     const stat = manager.getStat(e, sid("stat_max_health"));
     expect(stat.base).toBe(100);
-
     manager.setBaseStat(e, sid("stat_max_health"), 200);
     expect(manager.getStat(e, sid("stat_max_health")).base).toBe(200);
     expect(manager.getStat(e, sid("stat_max_health")).computed).toBe(200);
@@ -256,7 +253,6 @@ describe("StatsManager", () => {
     };
     manager.addModifier(e, m);
     expect(manager.getStat(e, sid("stat_max_health")).computed).toBe(150);
-
     manager.removeModifier(e, mid("buff1"));
     expect(manager.getStat(e, sid("stat_max_health")).computed).toBe(100);
   });
