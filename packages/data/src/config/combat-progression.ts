@@ -44,11 +44,11 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
 /**
  * Orange tier-gate pass.
  * Cinderwood is deliberately separated from T5.3 while the remainder of the
- * band keeps a monotone rise. Values are authored at world level rather than
- * compensated per weapon.
+ * band keeps a monotone rise. The late-zone HP/defense edge is tightened rather
+ * than lifting the whole Orange damage envelope.
  */
 export const ORANGE_WORLD_COMBAT_CURVE = [
-  { healthStart: 6.8, healthEnd: 7.15, damageStart: 3.55, damageEnd: 3.7, defenseStart: 3.1, defenseEnd: 3.2, defenseModel: "rank_parity" },
+  { healthStart: 6.8, healthEnd: 7.3, damageStart: 3.55, damageEnd: 3.7, defenseStart: 3.1, defenseEnd: 3.28, defenseModel: "rank_parity" },
   { healthStart: 7.4, healthEnd: 7.8, damageStart: 3.7, damageEnd: 3.8, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
   { healthStart: 8.1, healthEnd: 8.55, damageStart: 3.85, damageEnd: 3.95, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
   { healthStart: 8.9, healthEnd: 9.45, damageStart: 4.0, damageEnd: 4.1, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
@@ -71,11 +71,11 @@ export const RED_WORLD_COMBAT_CURVE = [
 /**
  * Black tier-gate pass.
  * T8 must form a real gear boundary: T7.3 cannot potion-clear Blackwood S10,
- * and T8.0/T8.1 cannot bypass later authored gates. The whole band therefore
- * keeps a monotone envelope rather than adding per-zone or per-weapon exceptions.
+ * and T8.0/T8.1 cannot bypass later authored gates. Blackwood's late edge is
+ * tightened locally while preserving strict monotonicity into Shadowfen.
  */
 export const BLACK_WORLD_COMBAT_CURVE = [
-  { healthStart: 16.9, healthEnd: 17.7, damageStart: 5.7, damageEnd: 5.85, defenseStart: 6.2, defenseEnd: 6.4, defenseModel: "rank_parity" },
+  { healthStart: 16.9, healthEnd: 18.0, damageStart: 5.7, damageEnd: 5.89, defenseStart: 6.2, defenseEnd: 6.5, defenseModel: "rank_parity" },
   { healthStart: 18.1, healthEnd: 19.0, damageStart: 5.9, damageEnd: 6.05, defenseStart: 6.55, defenseEnd: 6.75, defenseModel: "rank_parity" },
   { healthStart: 19.5, healthEnd: 20.5, damageStart: 6.15, damageEnd: 6.3, defenseStart: 6.9, defenseEnd: 7.1, defenseModel: "rank_parity" },
   { healthStart: 20.5, healthEnd: 21.5, damageStart: 6.4, damageEnd: 6.55, defenseStart: 7.2, defenseEnd: 7.4, defenseModel: "rank_parity" },
