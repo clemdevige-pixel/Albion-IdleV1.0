@@ -14,27 +14,16 @@ export type UseConsumableResult =
       readonly currentHealth?: number;
       readonly maxHealth?: number;
     }
-  | {
-      readonly ok: false;
-      readonly reason: "hero_dead";
-    }
+  | { readonly ok: false; readonly reason: "hero_dead" }
+  | { readonly ok: false; readonly reason: "combat_inactive" }
   | {
       readonly ok: false;
       readonly reason: "cooldown";
       readonly remainingSeconds: number;
     }
-  | {
-      readonly ok: false;
-      readonly reason: "resource_full";
-    }
-  | {
-      readonly ok: false;
-      readonly reason: "not_in_inventory";
-    }
-  | {
-      readonly ok: false;
-      readonly reason: "unknown_item";
-    };
+  | { readonly ok: false; readonly reason: "resource_full" }
+  | { readonly ok: false; readonly reason: "not_in_inventory" }
+  | { readonly ok: false; readonly reason: "unknown_item" };
 
 export interface ConsumableRuntimeState {
   readonly healthPotionCooldown: number;
@@ -47,6 +36,8 @@ export interface ConsumableRuntimeDependencies {
   readonly damageManager: DamageManager;
   readonly deathManager: DeathManager;
   readonly heroId: EntityId;
+  /** Runtime-owned combat activity guard. Defaults to true for isolated tests/tools. */
+  readonly isCombatActive?: () => boolean;
 }
 
 export class ConsumableRuntime {
@@ -54,6 +45,7 @@ export class ConsumableRuntime {
   private readonly damageManager: DamageManager;
   private readonly deathManager: DeathManager;
   private readonly heroId: EntityId;
+  private readonly isCombatActive: () => boolean;
 
   private healthPotionCooldownRemaining = 0;
   private lastSegmentStartGeneration = getCombatSegmentStartGeneration();
@@ -63,6 +55,7 @@ export class ConsumableRuntime {
     this.damageManager = deps.damageManager;
     this.deathManager = deps.deathManager;
     this.heroId = deps.heroId;
+    this.isCombatActive = deps.isCombatActive ?? (() => true);
   }
 
   public tick(dt: number): boolean {
@@ -91,6 +84,9 @@ export class ConsumableRuntime {
 
     if (this.deathManager.isDead(this.heroId)) {
       return { ok: false, reason: "hero_dead" };
+    }
+    if (!this.isCombatActive()) {
+      return { ok: false, reason: "combat_inactive" };
     }
 
     let availableRestore = 0;
