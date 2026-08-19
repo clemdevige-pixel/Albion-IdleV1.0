@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { ProductionTier } from "./productionFamilyCatalog.js";
 import { EQUIPMENT_CRAFT_RECIPES } from "./refiningRecipes.js";
 
 const TIERS = [4, 5, 6, 7, 8] as const;
