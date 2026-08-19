@@ -45,25 +45,32 @@ if (liveCurve === undefined) throw new Error("Missing Frostpeak curve");
 const original = { ...liveCurve };
 
 const CANDIDATES: readonly Candidate[] = [
-  { id: "live", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.8 },
+  { id: "live_3_70_2_50_1_50", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.5 },
 
-  { id: "health_3_90", healthEnd: 3.9, damageEnd: 2.8, defenseEnd: 1.8 },
-  { id: "health_3_80", healthEnd: 3.8, damageEnd: 2.8, defenseEnd: 1.8 },
-  { id: "health_3_70", healthEnd: 3.7, damageEnd: 2.8, defenseEnd: 1.8 },
+  { id: "health_3_72", healthEnd: 3.72, damageEnd: 2.5, defenseEnd: 1.5 },
+  { id: "health_3_74", healthEnd: 3.74, damageEnd: 2.5, defenseEnd: 1.5 },
+  { id: "health_3_76", healthEnd: 3.76, damageEnd: 2.5, defenseEnd: 1.5 },
+  { id: "health_3_78", healthEnd: 3.78, damageEnd: 2.5, defenseEnd: 1.5 },
+  { id: "health_3_80", healthEnd: 3.8, damageEnd: 2.5, defenseEnd: 1.5 },
 
-  { id: "damage_2_70", healthEnd: 4.0, damageEnd: 2.7, defenseEnd: 1.8 },
-  { id: "damage_2_60", healthEnd: 4.0, damageEnd: 2.6, defenseEnd: 1.8 },
-  { id: "damage_2_50", healthEnd: 4.0, damageEnd: 2.5, defenseEnd: 1.8 },
+  { id: "defense_1_52", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.52 },
+  { id: "defense_1_54", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.54 },
+  { id: "defense_1_56", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.56 },
+  { id: "defense_1_58", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.58 },
+  { id: "defense_1_60", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.6 },
 
-  { id: "defense_1_70", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.7 },
-  { id: "defense_1_60", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.6 },
-  { id: "defense_1_50", healthEnd: 4.0, damageEnd: 2.8, defenseEnd: 1.5 },
+  { id: "damage_2_52", healthEnd: 3.7, damageEnd: 2.52, defenseEnd: 1.5 },
+  { id: "damage_2_54", healthEnd: 3.7, damageEnd: 2.54, defenseEnd: 1.5 },
+  { id: "damage_2_56", healthEnd: 3.7, damageEnd: 2.56, defenseEnd: 1.5 },
 
-  { id: "balanced_3_90_2_70_1_70", healthEnd: 3.9, damageEnd: 2.7, defenseEnd: 1.7 },
-  { id: "balanced_3_85_2_65_1_65", healthEnd: 3.85, damageEnd: 2.65, defenseEnd: 1.65 },
-  { id: "balanced_3_80_2_60_1_60", healthEnd: 3.8, damageEnd: 2.6, defenseEnd: 1.6 },
-  { id: "balanced_3_75_2_55_1_55", healthEnd: 3.75, damageEnd: 2.55, defenseEnd: 1.55 },
-  { id: "balanced_3_70_2_50_1_50", healthEnd: 3.7, damageEnd: 2.5, defenseEnd: 1.5 },
+  { id: "hp_def_3_72_1_52", healthEnd: 3.72, damageEnd: 2.5, defenseEnd: 1.52 },
+  { id: "hp_def_3_74_1_52", healthEnd: 3.74, damageEnd: 2.5, defenseEnd: 1.52 },
+  { id: "hp_def_3_72_1_54", healthEnd: 3.72, damageEnd: 2.5, defenseEnd: 1.54 },
+  { id: "hp_def_3_74_1_54", healthEnd: 3.74, damageEnd: 2.5, defenseEnd: 1.54 },
+  { id: "hp_def_3_76_1_52", healthEnd: 3.76, damageEnd: 2.5, defenseEnd: 1.52 },
+
+  { id: "hp_dmg_3_72_2_52", healthEnd: 3.72, damageEnd: 2.52, defenseEnd: 1.5 },
+  { id: "def_dmg_1_52_2_52", healthEnd: 3.7, damageEnd: 2.52, defenseEnd: 1.52 },
 ] as const;
 
 function mutableFrostpeak(): MutableCurve {
@@ -93,7 +100,13 @@ function shortName(itemId: string): string {
   return itemId.replace("item_weapon_", "").replace("_t4_", " ");
 }
 
-function run(weaponItemId: string, enchantment: 2 | 3, masteryLevel: number, useHealthPotions: boolean, segmentIndex: number) {
+function run(
+  weaponItemId: string,
+  enchantment: 1 | 2 | 3,
+  masteryLevel: number,
+  useHealthPotions: boolean,
+  segmentIndex: number,
+) {
   return runCombatRuntimeBenchmark({
     label: `frostpeak_candidate_${shortName(weaponItemId)}_${enchantment}_${segmentIndex + 1}`,
     weaponItemId,
@@ -107,39 +120,49 @@ function run(weaponItemId: string, enchantment: 2 | 3, masteryLevel: number, use
 }
 
 function adjustmentScore(candidate: Candidate): number {
-  const healthReduction = (original.healthEnd - candidate.healthEnd) / original.healthEnd;
-  const damageReduction = (original.damageEnd - candidate.damageEnd) / original.damageEnd;
-  const defenseReduction = (original.defenseEnd - candidate.defenseEnd) / original.defenseEnd;
-  return Number((healthReduction + damageReduction + defenseReduction).toFixed(4));
+  const healthIncrease = Math.abs(candidate.healthEnd - original.healthEnd) / original.healthEnd;
+  const damageIncrease = Math.abs(candidate.damageEnd - original.damageEnd) / original.damageEnd;
+  const defenseIncrease = Math.abs(candidate.defenseEnd - original.defenseEnd) / original.defenseEnd;
+  return Number((healthIncrease + damageIncrease + defenseIncrease).toFixed(4));
 }
 
 describe("Frostpeak S10 endpoint candidate sweep", () => {
-  it("finds the smallest endpoint adjustment that restores the authored T4.3 wall contract", () => {
+  it("finds the smallest endpoint adjustment that preserves the full authored potion and T4.3 wall contract", () => {
     const rows = CANDIDATES.map((candidate) => {
       applyCandidate(candidate);
 
+      const t41PotionS10 = WEAPONS.map((weapon) => run(weapon, 1, 22, true, 9));
       const t42S10 = WEAPONS.map((weapon) => run(weapon, 2, 22, false, 9));
       const t42PotionS10 = WEAPONS.map((weapon) => run(weapon, 2, 22, true, 9));
       const t43S9 = WEAPONS.map((weapon) => run(weapon, 3, 22, false, 8));
       const t43S10 = WEAPONS.map((weapon) => run(weapon, 3, 22, false, 9));
 
-      const validContract =
-        t42S10.filter((result) => result.clear).length < WEAPONS.length &&
-        t42PotionS10.every((result) => result.clear) &&
-        t43S9.every((result) => result.clear) &&
-        t43S10.every((result) => result.clear);
+      const t41PotionClear = t41PotionS10.filter((result) => result.clear).length;
+      const t42Clear = t42S10.filter((result) => result.clear).length;
+      const t42PotionClear = t42PotionS10.filter((result) => result.clear).length;
+      const t43S9Clear = t43S9.filter((result) => result.clear).length;
+      const t43S10Clear = t43S10.filter((result) => result.clear).length;
 
+      const validContract =
+        t41PotionClear < WEAPONS.length &&
+        t42Clear < WEAPONS.length &&
+        t42PotionClear === WEAPONS.length &&
+        t43S9Clear === WEAPONS.length &&
+        t43S10Clear === WEAPONS.length;
+
+      const clearedT43 = t43S10.filter((result) => result.clear);
       const row = {
         candidate: candidate.id,
         healthEnd: candidate.healthEnd,
         damageEnd: candidate.damageEnd,
         defenseEnd: candidate.defenseEnd,
         adjustmentScore: adjustmentScore(candidate),
-        t42S10Clear: t42S10.filter((result) => result.clear).length,
-        t42PotionS10Clear: t42PotionS10.filter((result) => result.clear).length,
-        t43S9Clear: t43S9.filter((result) => result.clear).length,
-        t43S10Clear: t43S10.filter((result) => result.clear).length,
-        t43S10MinHp: Number(Math.min(...t43S10.filter((result) => result.clear).map((result) => result.hpPercent), 100).toFixed(1)),
+        t41PotionS10Clear: t41PotionClear,
+        t42S10Clear: t42Clear,
+        t42PotionS10Clear: t42PotionClear,
+        t43S9Clear,
+        t43S10Clear,
+        t43S10MinHp: Number(Math.min(...clearedT43.map((result) => result.hpPercent), 100).toFixed(1)),
         t43S10AvgHp: Number((t43S10.reduce((sum, result) => sum + result.hpPercent, 0) / t43S10.length).toFixed(1)),
         validContract,
       };
