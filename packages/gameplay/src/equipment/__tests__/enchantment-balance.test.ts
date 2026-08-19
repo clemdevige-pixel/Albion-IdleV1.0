@@ -37,8 +37,8 @@ describe("enchantment balance", () => {
     expect(ENCHANTMENT_MINIMUM_ITEM_TIER).toBe(4);
   });
 
-  it("uses one shard resource per tier with 6/16/30/100 costs", () => {
-    expect(ENCHANTMENT_SHARD_COSTS).toEqual({ 1: 6, 2: 16, 3: 30, 4: 100 });
+  it("uses one shard resource per tier with 10/30/60/100 costs", () => {
+    expect(ENCHANTMENT_SHARD_COSTS).toEqual({ 1: 10, 2: 30, 3: 60, 4: 100 });
     expect(getEnchantmentShardItemId(4)).toBe("item_resource_enchantment_shard_t4");
     expect(getEnchantmentShardItemId(5)).toBe("item_resource_enchantment_shard_t5");
 
@@ -54,7 +54,7 @@ describe("enchantment balance", () => {
     );
     expect(scaled.materials).toContainEqual({
       itemId: "item_resource_enchantment_shard_t5",
-      quantity: 16,
+      quantity: 30,
     });
     expect(scaled.materials).toContainEqual({
       itemId: "item_refined_planks_t5",
@@ -78,9 +78,9 @@ describe("enchantment balance", () => {
     const shardId = "item_resource_enchantment_shard_t4";
     const shardQty = (scaled: typeof twoHanded) =>
       scaled.materials.find(({ itemId }) => itemId === shardId)?.quantity ?? 0;
-    expect(shardQty(oneHanded)).toBe(8);
-    expect(shardQty(offHand)).toBe(8);
-    expect(shardQty(twoHanded)).toBe(16);
+    expect(shardQty(oneHanded)).toBe(30);
+    expect(shardQty(offHand)).toBe(30);
+    expect(shardQty(twoHanded)).toBe(60);
     expect(shardQty(oneHanded) + shardQty(offHand)).toBe(shardQty(twoHanded));
 
     const materialQty = (scaled: typeof twoHanded) =>
