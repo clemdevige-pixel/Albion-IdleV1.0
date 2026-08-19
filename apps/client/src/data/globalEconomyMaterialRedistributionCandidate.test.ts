@@ -32,8 +32,14 @@ const ZONES: Readonly<Record<TargetTier, readonly string[]>> = {
   8: [WORLD_ZONE_IDS.blackwood, WORLD_ZONE_IDS.shadowfen, WORLD_ZONE_IDS.obsidianHighlands, WORLD_ZONE_IDS.duskfallSteppe, WORLD_ZONE_IDS.blackspire],
 };
 const ENTRY_MASTERY: Readonly<Record<TargetTier, number>> = { 4: 16, 5: 23, 6: 36, 7: 46, 8: 56 };
+const SCALE_CANDIDATES = [
+  { label: "x1.00", factor: 1 },
+  { label: "x1.25", factor: 1.25 },
+  { label: "x1.50", factor: 1.5 },
+  { label: "x1.75", factor: 1.75 },
+] as const;
 
-// Diagnostic-only candidate. Total material count per armor piece is kept identical to live.
+// Diagnostic-only material distribution. Only the base craft quantities are swept.
 const CANDIDATE_COMMON_ARMOR: Readonly<Record<TargetTier, Readonly<Record<"head" | "chest" | "boots", Readonly<Record<Family, number>>>>>> = {
   4: { head: { wood: 1, ore: 4, hide: 2, fiber: 1 }, chest: { wood: 2, ore: 1, hide: 3, fiber: 3 }, boots: { wood: 2, ore: 1, hide: 2, fiber: 1 } },
   5: { head: { wood: 2, ore: 5, hide: 2, fiber: 1 }, chest: { wood: 2, ore: 2, hide: 4, fiber: 3 }, boots: { wood: 2, ore: 1, hide: 3, fiber: 2 } },
@@ -53,6 +59,9 @@ function emptyTiers(): Record<ProductionTier, number> { return { 3: 0, 4: 0, 5: 
 function emptyCosts(): Record<Family, number> { return { wood: 0, ore: 0, hide: 0, fiber: 0 }; }
 function addCosts(target: Record<Family, number>, source: Readonly<Record<Family, number>>): void { for (const f of FAMILIES) target[f] += source[f]; }
 function formatCosts(costs: Readonly<Record<Family, number>>): string { return FAMILIES.map((f) => `${f}:${costs[f]}`).join(" "); }
+function scaleCosts(costs: Readonly<Record<Family, number>>, factor: number): Record<Family, number> {
+  return Object.fromEntries(FAMILIES.map((family) => [family, costs[family] <= 0 ? 0 : Math.max(1, Math.round(costs[family] * factor))])) as Record<Family, number>;
+}
 function masteryLevel(xp: number): number { let r = Math.max(0, xp); let level = 0; for (const cost of GATHERING_MASTERY_XP) { if (r < cost) break; r -= cost; level += 1; } return Math.min(100, level); }
 function workerLevel(xp: number): number { return Math.min(100, Math.floor(Math.sqrt(Math.max(0, xp) / 100))); }
 function heroTicks(tier: ProductionTier, xp: number): number { const rules = getProductionTierRules(tier); return Math.max(1, Math.ceil(rules.gatheringBaseTicks * rules.gatheringToolSpeedModifier * Math.max(0.5, 1 - masteryLevel(xp) * 0.005))); }
@@ -101,13 +110,14 @@ function weaponId(tier: EquipmentTier, profile: WeaponProfile): string { const [
 function commonItemIds(tier: TargetTier): readonly string[] { return [`item_helmet_t${tier}_reinforced`, `item_armor_t${tier}_leather`, `item_boots_t${tier}_leather`]; }
 function profileItemIds(tier: TargetTier, profile: WeaponProfile): readonly string[] { const weapon = weaponId(tier, profile); const items = [weapon, ...commonItemIds(tier)]; if (resolveEquipmentInfo(weapon)?.handling === "one_handed") items.push(`item_shield_t${tier}_reinforced`); return items; }
 function slotForCommon(itemId: string): "head" | "chest" | "boots" | undefined { if (itemId.includes("helmet")) return "head"; if (itemId.includes("armor_t")) return "chest"; if (itemId.includes("boots")) return "boots"; return undefined; }
+function commonSlotCosts(tier: TargetTier, slot: "head" | "chest" | "boots", factor: number): Record<Family, number> { return scaleCosts(CANDIDATE_COMMON_ARMOR[tier][slot], factor); }
 function liveRecipeCosts(itemId: string): Record<Family, number> {
   const recipe = EQUIPMENT_CRAFT_RECIPES.find((r) => r.outputItemId === itemId); if (recipe === undefined) throw new Error(`Missing recipe ${itemId}`);
   const out = emptyCosts(); for (const req of recipe.requirements) { const family = familyFor(req.itemId); if (family !== undefined) out[family] += req.quantity; } return out;
 }
-function candidateCraftCost(tier: TargetTier, profile: WeaponProfile): Record<Family, number> {
+function candidateCraftCost(tier: TargetTier, profile: WeaponProfile, factor: number): Record<Family, number> {
   const out = emptyCosts();
-  for (const itemId of profileItemIds(tier, profile)) { const slot = slotForCommon(itemId); if (slot !== undefined) addCosts(out, CANDIDATE_COMMON_ARMOR[tier][slot]); else addCosts(out, liveRecipeCosts(itemId)); }
+  for (const itemId of profileItemIds(tier, profile)) { const slot = slotForCommon(itemId); if (slot !== undefined) addCosts(out, commonSlotCosts(tier, slot, factor)); else addCosts(out, liveRecipeCosts(itemId)); }
   return out;
 }
 function craftMaterialsFromCosts(tier: TargetTier, costs: Readonly<Record<Family, number>>) {
@@ -119,12 +129,12 @@ function craftMaterialsFromCosts(tier: TargetTier, costs: Readonly<Record<Family
   };
   return FAMILIES.filter((f) => costs[f] > 0).map((f) => ({ itemId: itemIds[f], quantity: costs[f] }));
 }
-function candidateEnchantCost(tier: TargetTier, profile: WeaponProfile, level: 1 | 2 | 3): { shards: number; refined: Record<Family, number> } {
+function candidateEnchantCost(tier: TargetTier, profile: WeaponProfile, level: 1 | 2 | 3, factor: number): { shards: number; refined: Record<Family, number> } {
   let shards = 0; const refined = emptyCosts();
   for (const itemId of profileItemIds(tier, profile)) {
     const info = resolveEnchantmentItemInfo(itemId); if (info === undefined || !info.enchantable) continue;
     const slot = slotForCommon(itemId);
-    const craftMaterials = slot === undefined ? info.craftMaterials : craftMaterialsFromCosts(tier, CANDIDATE_COMMON_ARMOR[tier][slot]);
+    const craftMaterials = slot === undefined ? info.craftMaterials : craftMaterialsFromCosts(tier, commonSlotCosts(tier, slot, factor));
     const scaled = scaleEnchantmentRecipe(ENCHANTMENT_RECIPES[level], tier, info.costCategory, craftMaterials);
     for (const material of scaled.materials) { if (material.itemId.includes("enchantment_shard")) shards += material.quantity; const family = familyFor(material.itemId); if (family !== undefined) refined[family] += material.quantity; }
   }
@@ -150,31 +160,59 @@ function prepareTransition(state: State, sourceTier: ProductionTier, targetTier:
 function round1(x: number): number { return Number(x.toFixed(1)); }
 function round2(x: number): number { return Number(x.toFixed(2)); }
 
-function runProfile(profile: WeaponProfile) {
-  const state = createState(); const rows: object[] = [];
+interface ProfileRow {
+  curve: string;
+  weapon: WeaponProfile;
+  tier: string;
+  craftRefined: string;
+  enchantRefined: string;
+  totalShards: number;
+  shardFarmHours: number;
+  extraHeroGatherHours: number;
+  combinedHours: number;
+  gatherSharePct: number;
+  bottlenecks: string;
+}
+
+function runProfile(profile: WeaponProfile, curve: string, factor: number): ProfileRow[] {
+  const state = createState(); const rows: ProfileRow[] = [];
   for (const tier of [4, 5, 6, 7, 8] as const) {
     prepareTransition(state, (tier - 1) as ProductionTier, tier); state.tier = tier; setGatherTier(state, tier);
-    const craft = candidateCraftCost(tier, profile); while (!spend(state, tier, craft)) tick(state, true, tier, craft);
+    const craft = candidateCraftCost(tier, profile, factor); while (!spend(state, tier, craft)) tick(state, true, tier, craft);
     let shardHours = 0; let gatherHours = 0; let shards = 0; const enchant = emptyCosts(); const bottlenecks = new Set<Family>();
     for (const level of [1, 2, 3] as const) {
-      const cost = candidateEnchantCost(tier, profile, level); addCosts(enchant, cost.refined); shards += cost.shards;
+      const cost = candidateEnchantCost(tier, profile, level, factor); addCosts(enchant, cost.refined); shards += cost.shards;
       const rate = shardRate(tier, profile, (level - 1) as Enchantment); if (rate <= 0) throw new Error(`No shard farm ${profile} T${tier}.${level - 1}`);
       const hours = cost.shards / rate; shardHours += hours; const workerTicksToRun = Math.ceil(hours * 3600 / TICK_SECONDS); for (let i = 0; i < workerTicksToRun; i += 1) tick(state, false, tier, cost.refined);
       const before = Object.fromEntries(FAMILIES.map((f) => [f, maxProducible(state.families[f], tier)])) as Record<Family, number>; for (const f of FAMILIES) if (before[f] < cost.refined[f]) bottlenecks.add(f);
       if (!FAMILIES.every((f) => before[f] >= cost.refined[f])) { const start = state.ticks; while (!spend(state, tier, cost.refined)) tick(state, true, tier, cost.refined); gatherHours += (state.ticks - start) * TICK_SECONDS / 3600; } else spend(state, tier, cost.refined);
     }
     const combined = shardHours + gatherHours;
-    rows.push({ weapon: profile, tier: `T${tier}`, craftRefined: formatCosts(craft), enchantRefined: formatCosts(enchant), totalShards: shards, shardFarmHours: round2(shardHours), extraHeroGatherHours: round2(gatherHours), combinedHours: round2(combined), gatherSharePct: combined > 0 ? round1(gatherHours / combined * 100) : 0, bottlenecks: [...bottlenecks].join(",") || "none" });
+    rows.push({ curve, weapon: profile, tier: `T${tier}`, craftRefined: formatCosts(craft), enchantRefined: formatCosts(enchant), totalShards: shards, shardFarmHours: round2(shardHours), extraHeroGatherHours: round2(gatherHours), combinedHours: round2(combined), gatherSharePct: combined > 0 ? round1(gatherHours / combined * 100) : 0, bottlenecks: [...bottlenecks].join(",") || "none" });
   }
   return rows;
 }
 
 describe("global economy candidate material redistribution", () => {
-  it("benchmarks a balanced common-armor material candidate without touching live recipes", () => {
-    const rows = WEAPONS.flatMap((profile) => runProfile(profile));
-    console.log("[GLOBAL_ECONOMY_MATERIAL_REDISTRIBUTION_CANDIDATE]");
+  it("sweeps common armor base craft quantities and lets enchantment scale naturally", () => {
+    const rows = SCALE_CANDIDATES.flatMap(({ label, factor }) => WEAPONS.flatMap((profile) => runProfile(profile, label, factor)));
+    const summary = SCALE_CANDIDATES.flatMap(({ label }) => [4, 5, 6, 7, 8].map((tier) => {
+      const tierRows = rows.filter((row) => row.curve === label && row.tier === `T${tier}`);
+      const avgCombined = tierRows.reduce((sum, row) => sum + row.combinedHours, 0) / tierRows.length;
+      const avgGatherShare = tierRows.reduce((sum, row) => sum + row.gatherSharePct, 0) / tierRows.length;
+      const minGatherShare = Math.min(...tierRows.map((row) => row.gatherSharePct));
+      const maxGatherShare = Math.max(...tierRows.map((row) => row.gatherSharePct));
+      const bottlenecks = [...new Set(tierRows.flatMap((row) => row.bottlenecks === "none" ? [] : row.bottlenecks.split(",")))].join(",") || "none";
+      return { curve: label, tier: `T${tier}`, avgCombinedHours: round2(avgCombined), avgGatherSharePct: round1(avgGatherShare), minGatherSharePct: round1(minGatherShare), maxGatherSharePct: round1(maxGatherShare), bottlenecks };
+    }));
+
+    console.log("[GLOBAL_ECONOMY_CRAFT_BASE_SCALE_SWEEP_SUMMARY]");
+    console.table(summary);
+    console.log("[GLOBAL_ECONOMY_CRAFT_BASE_SCALE_SWEEP_DETAIL]");
     console.table(rows);
-    console.log("[GLOBAL_ECONOMY_MATERIAL_REDISTRIBUTION_CANDIDATE_JSON]", JSON.stringify(rows, null, 2));
-    expect(rows).toHaveLength(WEAPONS.length * 5);
+    console.log("[GLOBAL_ECONOMY_CRAFT_BASE_SCALE_SWEEP_SUMMARY_JSON]", JSON.stringify(summary, null, 2));
+
+    expect(rows).toHaveLength(SCALE_CANDIDATES.length * WEAPONS.length * 5);
+    expect(summary).toHaveLength(SCALE_CANDIDATES.length * 5);
   });
 });
