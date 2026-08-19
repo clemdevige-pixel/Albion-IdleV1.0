@@ -68,6 +68,7 @@ function progressFor(tier: Tier, enchantment: Enchantment, weaponItemId: string)
   let progress = 0;
   for (let zoneIndex = 0; zoneIndex < zones.length; zoneIndex += 1) {
     const zone = zones[zoneIndex];
+    if (zone === undefined) continue;
     for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
       const result = runCombatRuntimeBenchmark({
         label: `enchant_sensitivity_t${String(tier)}_${String(enchantment)}_${weaponName(weaponItemId)}_${String(zone.id)}_s${String(segmentIndex + 1)}`,
