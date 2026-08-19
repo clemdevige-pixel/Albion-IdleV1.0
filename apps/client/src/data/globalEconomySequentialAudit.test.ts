@@ -266,6 +266,16 @@ function buildFlexibleWorkshopAllocation(state: SimulationState, tier: Productio
   return allocation;
 }
 
+function workshopFallbackDemand(total: number): Record<Family, number> {
+  const base = Math.floor(total / FAMILIES.length);
+  let remainder = total % FAMILIES.length;
+  return Object.fromEntries(FAMILIES.map((family) => {
+    const quantity = base + (remainder > 0 ? 1 : 0);
+    remainder = Math.max(0, remainder - 1);
+    return [family, quantity];
+  })) as Record<Family, number>;
+}
+
 function familyForRefinedItem(itemId: string): Family | undefined {
   if (itemId.includes("plank")) return "wood";
   if (itemId.includes("bar")) return "ore";
@@ -420,7 +430,7 @@ function runProductionModel() {
     if (workshopTotal === undefined) throw new Error(`Missing workshop material cost for ${transition.label}`);
     let allocation = buildFlexibleWorkshopAllocation(state, tier, workshopTotal);
     while (allocation === null || !spendRefined(state, tier, allocation)) {
-      const demand = allocation ?? { wood: 1, ore: 1, hide: 1, fiber: 1 };
+      const demand = allocation ?? workshopFallbackDemand(workshopTotal);
       tick(state, tier, demand);
       assertNotRunaway(state, `${transition.label} workshop`);
       allocation = buildFlexibleWorkshopAllocation(state, tier, workshopTotal);
