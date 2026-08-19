@@ -22,8 +22,8 @@ type ProductionFamily = keyof (typeof REFINED_BY_TIER)[3];
 type UpgradeSourceTier = 3 | 4 | 5 | 6 | 7;
 const UPGRADE_SOURCE_TIERS = [3, 4, 5, 6, 7] as const satisfies readonly UpgradeSourceTier[];
 const MONO_COST_BY_SOURCE_TIER = { 3: 15, 4: 40, 5: 70, 6: 110, 7: 160 } as const satisfies Record<UpgradeSourceTier, number>;
-const SILVER_BY_SOURCE_TIER = { 3: 300, 4: 700, 5: 1500, 6: 3000, 7: 6000 } as const satisfies Record<UpgradeSourceTier, number>;
-const WORKSHOP_SILVER_BY_SOURCE_TIER = { 3: 500, 4: 1200, 5: 2500, 6: 5000, 7: 10000 } as const satisfies Record<UpgradeSourceTier, number>;
+const SILVER_BY_SOURCE_TIER = { 3: 300, 4: 4500, 5: 14500, 6: 38000, 7: 65000 } as const satisfies Record<UpgradeSourceTier, number>;
+const WORKSHOP_SILVER_BY_SOURCE_TIER = { 3: 500, 4: 6000, 5: 24000, 6: 66000, 7: 110000 } as const satisfies Record<UpgradeSourceTier, number>;
 
 function singleFamilyUpgrade(sourceTier: UpgradeSourceTier, family: ProductionFamily): IslandBuildingUpgradeCost {
   return {
