@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import { DungeonRuntime, InventoryManager } from "@game/gameplay";
 import { KEEPER_T4_DUNGEON } from "../data/dungeonContentCatalog.js";
+import { DUNGEON_COMPLETION_SILVER_BY_TIER } from "../data/dungeonLootContentCatalog.js";
 import { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
 
 function setup(random = () => 1) {
@@ -27,14 +28,16 @@ describe("DungeonRewardRuntime", () => {
     expect(result?.drops).toEqual([
       { itemId: "item_resource_artifact_fragment_keeper", kind: "artifact_fragment", quantity: 4 },
     ]);
+    expect(result?.completionSilver).toBe(0);
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_fragment_keeper")).toBe(4);
   });
 
-  it("only rolls a complete artifact on the boss definition", () => {
+  it("only rolls a complete artifact on the boss definition and exposes completion Silver once", () => {
     const { heroId, inventory, dungeon, rewards } = setup(() => 0);
 
     for (const encounter of KEEPER_T4_DUNGEON.encounters.slice(0, -1)) {
-      rewards.processCurrentEncounterVictory();
+      const reward = rewards.processCurrentEncounterVictory();
+      expect(reward?.completionSilver).toBe(0);
       dungeon.completeEncounter(encounter.id);
     }
 
@@ -45,6 +48,7 @@ describe("DungeonRewardRuntime", () => {
       kind: "artifact",
       quantity: 1,
     });
+    expect(bossReward?.completionSilver).toBe(DUNGEON_COMPLETION_SILVER_BY_TIER[4]);
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_keeper")).toBe(1);
   });
 });
