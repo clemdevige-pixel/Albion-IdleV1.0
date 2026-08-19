@@ -120,30 +120,29 @@ export const ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS: Readonly<
     { start: 7.6, end: 10.2 },
     { start: 9.0, end: 10.5 },
   ],
-  // T6 keeps the reference profile unchanged; the final craft mix already
-  // creates the intended combat/gather split at this tier.
+  // T6-T8 use ~x1.20 of the reference profile. With the final common-equipment
+  // craft mix this yields the validated high-tier combat/gather split while
+  // keeping total .0->.3 pacing near the target curve.
   orange: [
-    { start: 3.5, end: 5.5 },
-    { start: 4.8, end: 6.2 },
-    { start: 5.8, end: 7.4 },
-    { start: 7.6, end: 10.2 },
-    { start: 9.0, end: 10.5 },
+    { start: 4.2, end: 6.6 },
+    { start: 5.76, end: 7.44 },
+    { start: 6.96, end: 8.88 },
+    { start: 9.12, end: 12.24 },
+    { start: 10.8, end: 12.6 },
   ],
-  // T7 uses ~x1.10 to reach the validated ~25% average gathering share.
   red: [
-    { start: 3.85, end: 6.05 },
-    { start: 5.28, end: 6.82 },
-    { start: 6.38, end: 8.14 },
-    { start: 8.36, end: 11.22 },
-    { start: 9.9, end: 11.55 },
+    { start: 4.2, end: 6.6 },
+    { start: 5.76, end: 7.44 },
+    { start: 6.96, end: 8.88 },
+    { start: 9.12, end: 12.24 },
+    { start: 10.8, end: 12.6 },
   ],
-  // T8 uses ~x1.10 for the same high-tier combat/gather balance target.
   black: [
-    { start: 3.85, end: 6.05 },
-    { start: 5.28, end: 6.82 },
-    { start: 6.38, end: 8.14 },
-    { start: 8.36, end: 11.22 },
-    { start: 9.9, end: 11.55 },
+    { start: 4.2, end: 6.6 },
+    { start: 5.76, end: 7.44 },
+    { start: 6.96, end: 8.88 },
+    { start: 9.12, end: 12.24 },
+    { start: 10.8, end: 12.6 },
   ],
 } as const;
 
