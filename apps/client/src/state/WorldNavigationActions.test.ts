@@ -12,6 +12,7 @@ function createHarness(options?: {
   readonly awaitingResumeAfterDefeat?: boolean;
   readonly savedDefeat?: boolean;
   readonly savedPaused?: boolean;
+  readonly equippedItemIds?: readonly string[];
 }) {
   const savedLocation = {
     activeZoneDefId: "zone_forest",
@@ -43,10 +44,12 @@ function createHarness(options?: {
     isAwaitingResumeAfterDefeat: vi.fn(() => options?.awaitingResumeAfterDefeat ?? false),
     restoreAwaitingResumeAfterDefeat: vi.fn(),
     getLoopState: vi.fn((): CombatLoopState => options?.loopState ?? "combat"),
+    getEquippedItemIds: vi.fn(() => options?.equippedItemIds ?? []),
   };
   const bridge = {
     setCombatState: vi.fn(),
     clearEnemyPresentation: vi.fn(),
+    addEconomyNotification: vi.fn(),
   };
   const updateWorldBridge = vi.fn();
   const actions = new WorldNavigationActions({
@@ -131,6 +134,31 @@ describe("WorldNavigationActions", () => {
     expect(harness.worldRuntime.changeActiveZone).toHaveBeenCalledWith(2, 1);
     expect(harness.combatRuntime.restoreHeroHealth).toHaveBeenCalledOnce();
     expect(harness.updateWorldBridge).toHaveBeenCalledOnce();
+  });
+
+  it("refuses cross-zone travel when any equipped item exceeds the target zone tier cap", () => {
+    const harness = createHarness({
+      loopState: "paused",
+      equippedItemIds: ["item_weapon_sword_t5_broadsword"],
+    });
+
+    // Zone 4 is Golden Steppe (T4): a T5 item invalidates the whole travel request.
+    expect(harness.actions.selectZone(4, 1)).toBe(false);
+    expect(harness.worldRuntime.selectZone).not.toHaveBeenCalled();
+    expect(harness.worldRuntime.changeActiveZone).not.toHaveBeenCalled();
+    expect(harness.bridge.addEconomyNotification).toHaveBeenCalledOnce();
+  });
+
+  it("accepts cross-zone travel when every equipped item respects the target zone tier cap", () => {
+    const harness = createHarness({
+      loopState: "paused",
+      equippedItemIds: ["item_weapon_sword_t4_broadsword"],
+    });
+
+    expect(harness.actions.selectZone(4, 1)).toBe(true);
+    expect(harness.worldRuntime.selectZone).toHaveBeenCalledWith(4, 1);
+    expect(harness.worldRuntime.changeActiveZone).toHaveBeenCalledWith(3, 0);
+    expect(harness.bridge.addEconomyNotification).not.toHaveBeenCalled();
   });
 
   it("does not alter combat when a manual segment destination is rejected", () => {
