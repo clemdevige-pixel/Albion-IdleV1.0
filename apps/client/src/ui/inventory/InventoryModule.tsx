@@ -3,6 +3,11 @@ import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDefinition, getItemDisplayName, ItemVisual } from "../../panels/ItemVisual";
 import { BankModule } from "../bank";
+import {
+  createTrackedItemResource,
+  isTrackableResourceItem,
+  useResourceTracking,
+} from "../dashboard/ResourceTrackingContext";
 import { ItemGrid } from "../shared";
 import { useInventoryActions } from "./useInventoryActions";
 import { useInventoryData } from "./useInventoryData";
@@ -42,6 +47,7 @@ function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter):
 export function InventoryModule(): JSX.Element {
   const inventory = useInventoryData();
   const actions = useInventoryActions();
+  const tracking = useResourceTracking();
   const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
   const [activeFilter, setActiveFilter] = useState<InventoryFilter>("all");
   const [selectedPosition, setSelectedPosition] = useState<number | undefined>(undefined);
@@ -82,6 +88,12 @@ export function InventoryModule(): JSX.Element {
     setSelectedPosition(undefined);
     setContextMenu(null);
   }, []);
+
+  const contextItemId = contextMenu === null
+    ? undefined
+    : inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId;
+  const contextIsEquipment = contextItemId !== undefined && getItemDefinition(contextItemId) !== undefined;
+  const contextIsResource = contextItemId !== undefined && isTrackableResourceItem(contextItemId);
 
   return (
     <div className="storage-module">
@@ -166,14 +178,22 @@ export function InventoryModule(): JSX.Element {
             <p className="storage-module__hint">Cliquez un objet pour afficher ses détails · glissez-déposez pour organiser.</p>
           )}
 
-          {contextMenu !== null && (
+          {contextMenu !== null && contextItemId !== undefined && (
             <ItemContextMenu
               position={contextMenu.position}
               x={contextMenu.x}
               y={contextMenu.y}
-              itemId={inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId ?? ""}
+              itemId={contextItemId}
               onClose={() => { setContextMenu(null); }}
-              onEquip={(position) => { actions.equip(position); setContextMenu(null); }}
+              {...(contextIsEquipment ? {
+                onEquip: (position: number) => { actions.equip(position); setContextMenu(null); },
+              } : {})}
+              {...(contextIsResource ? {
+                isTracked: tracking.isTracked(contextItemId),
+                onToggleTrack: (itemId: string) => {
+                  tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
+                },
+              } : {})}
             />
           )}
         </>
