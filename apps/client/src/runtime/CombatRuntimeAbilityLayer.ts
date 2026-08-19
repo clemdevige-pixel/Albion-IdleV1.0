@@ -68,6 +68,14 @@ export class CombatRuntime extends LegacyCombatRuntime {
     return "idle";
   }
 
+  /** Navigation reads the authoritative equipment holder, never bridge presentation state. */
+  public getEquippedItemIds(): readonly string[] {
+    return [...this.runtimeDeps.equipmentManager
+      .getEquipped(this.runtimeDeps.heroId)
+      .values()]
+      .map((entry) => entry.itemId);
+  }
+
   public restorePausedState(): void {
     combatStopController.restorePaused();
     this.mechanics.clear();
