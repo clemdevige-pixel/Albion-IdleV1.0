@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
-import { DungeonRuntime, InventoryManager } from "@game/gameplay";
+import { DungeonRuntime, InventoryManager, getEnchantmentShardItemId } from "@game/gameplay";
 import { KEEPER_T4_DUNGEON } from "../data/dungeonContentCatalog.js";
 import { DUNGEON_COMPLETION_SILVER_BY_TIER } from "../data/dungeonLootContentCatalog.js";
 import { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
@@ -30,10 +30,12 @@ describe("DungeonRewardRuntime", () => {
     ]);
     expect(result?.completionSilver).toBe(0);
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_fragment_keeper")).toBe(4);
+    expect(inventory.getTotalQuantity(heroId, getEnchantmentShardItemId(4))).toBe(0);
   });
 
-  it("only rolls a complete artifact on the boss definition and exposes completion Silver once", () => {
+  it("grants the authored shard total across the full run and completion Silver only on the boss", () => {
     const { heroId, inventory, dungeon, rewards } = setup(() => 0);
+    const shardItemId = getEnchantmentShardItemId(4);
 
     for (const encounter of KEEPER_T4_DUNGEON.encounters.slice(0, -1)) {
       const reward = rewards.processCurrentEncounterVictory();
@@ -48,7 +50,13 @@ describe("DungeonRewardRuntime", () => {
       kind: "artifact",
       quantity: 1,
     });
+    expect(bossReward?.drops).toContainEqual({
+      itemId: shardItemId,
+      kind: "enchantment_shard",
+      quantity: 4,
+    });
     expect(bossReward?.completionSilver).toBe(DUNGEON_COMPLETION_SILVER_BY_TIER[4]);
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_keeper")).toBe(1);
+    expect(inventory.getTotalQuantity(heroId, shardItemId)).toBe(5);
   });
 });
