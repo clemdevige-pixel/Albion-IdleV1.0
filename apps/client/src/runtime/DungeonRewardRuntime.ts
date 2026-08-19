@@ -4,7 +4,7 @@ import { getDungeonLootDefinition } from "../data/dungeonLootContentCatalog.js";
 
 export interface DungeonRewardDrop {
   readonly itemId: string;
-  readonly kind: "artifact_fragment" | "artifact";
+  readonly kind: "artifact_fragment" | "artifact" | "enchantment_shard";
   readonly quantity: number;
 }
 
@@ -49,6 +49,21 @@ export class DungeonRewardRuntime {
         drops.push({
           itemId: lootDefinition.artifactFragmentItemId,
           kind: "artifact_fragment",
+          quantity: added.value.added,
+        });
+      }
+    }
+
+    if (encounterLoot.enchantmentShardQuantity > 0) {
+      const added = this.inventoryManager.addQuantity(
+        this.heroId,
+        lootDefinition.enchantmentShardItemId,
+        encounterLoot.enchantmentShardQuantity,
+      );
+      if (added.ok && added.value.added > 0) {
+        drops.push({
+          itemId: lootDefinition.enchantmentShardItemId,
+          kind: "enchantment_shard",
           quantity: added.value.added,
         });
       }
