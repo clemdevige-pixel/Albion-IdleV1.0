@@ -1,5 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
 import heroManifest from "./manifests/hero-broadsword.render.json";
+import fireStaffManifest from "./manifests/hero-fire-staff.render.json";
 import longbowManifest from "./manifests/hero-longbow.render.json";
 import spikedGauntletsManifest from "./manifests/hero-spiked-gauntlets.render.json";
 import monsterManifest from "./manifests/monster-stonefang-wolf.render.json";
@@ -104,6 +105,38 @@ describe("Spiked Gauntlets normalized animation parsing", () => {
         width: 228.5714285714,
         height: 228.5714285714,
       },
+    });
+  });
+});
+
+describe("Infernal Staff normalized animation parsing", () => {
+  it("uses the Dual Dagger frame and display reference for every animation", () => {
+    const parsed = parseRenderManifest(fireStaffManifest);
+
+    if (parsed.kind !== "actor") {
+      throw new Error("Expected actor manifest");
+    }
+
+    expect(parsed.offset).toEqual({ x: 30, y: 58 });
+
+    for (const animation of Object.values(parsed.animations)) {
+      expect(animation.frameWidth).toBe(512);
+      expect(animation.frameHeight).toBe(512);
+      expect(animation.startFrame).toBe(0);
+      expect(animation.endFrame).toBe(5);
+      expect(animation.display).toEqual({
+        width: 228.5714285714,
+        height: 228.5714285714,
+      });
+    }
+
+    expect(parsed.poses.death).toMatchObject({
+      frameWidth: 512,
+      frameHeight: 512,
+      startFrame: 0,
+      endFrame: 5,
+      frameRate: 8,
+      repeat: 0,
     });
   });
 });
