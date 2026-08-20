@@ -67,8 +67,8 @@ describe("world progression foundation", () => {
   it("keeps the validated Blue progression inside its equipment checkpoints", () => {
     const t3 = 300;
     const t4 = 400;
-    const t4PlusTwo = 500;
-    const t4PlusThree = 550;
+    const t4PlusTwo = 450;
+    const t4PlusThree = 475;
 
     expect(getZoneRecommendedItemPower(1)).toBe(t3);
 
@@ -78,19 +78,20 @@ describe("world progression foundation", () => {
 
     const mountainEnd = getSegmentRecommendedItemPower(5, 10);
     expect(mountainEnd).toBeGreaterThanOrEqual(t4PlusTwo);
-    expect(mountainEnd).toBeLessThan(t4PlusThree);
+    expect(mountainEnd).toBeGreaterThan(t4PlusThree);
   });
 
-  it("keeps enchantment IP milestones coherent with +50 IP per level", () => {
+  it("keeps enchantment IP milestones coherent with +25 IP per level", () => {
     const noMastery: readonly MasteryLevel[] = [];
 
     expect(getEffectiveItemPower("item_weapon_sword_t3_broadsword", noMastery, 0)).toBe(300);
     expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 0)).toBe(400);
-    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 1)).toBe(450);
-    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 2)).toBe(500);
-    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 3)).toBe(550);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 1)).toBe(425);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 2)).toBe(450);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 3)).toBe(475);
+    expect(getEffectiveItemPower("item_weapon_sword_t4_broadsword", noMastery, 4)).toBe(500);
     expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 0)).toBe(500);
-    expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 3)).toBe(650);
+    expect(getEffectiveItemPower("item_weapon_sword_t5_broadsword", noMastery, 3)).toBe(575);
   });
 
   it("keeps every provisional Yellow recommendation monotonic", () => {
