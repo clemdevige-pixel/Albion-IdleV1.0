@@ -41,12 +41,27 @@ export const ENCHANTMENT_ITEM_POLICY: Readonly<Record<string, EnchantmentPolicy>
 
   item_shield_t4_reinforced: { enabled: true, maximumLevel: 3 },
   item_shield_t5_reinforced: { enabled: true, maximumLevel: 3 },
+  item_shield_t6_reinforced: { enabled: true, maximumLevel: 3 },
+  item_shield_t7_reinforced: { enabled: true, maximumLevel: 3 },
+  item_shield_t8_reinforced: { enabled: true, maximumLevel: 3 },
+
   item_helmet_t4_reinforced: { enabled: true, maximumLevel: 3 },
   item_helmet_t5_reinforced: { enabled: true, maximumLevel: 3 },
+  item_helmet_t6_reinforced: { enabled: true, maximumLevel: 3 },
+  item_helmet_t7_reinforced: { enabled: true, maximumLevel: 3 },
+  item_helmet_t8_reinforced: { enabled: true, maximumLevel: 3 },
+
   item_armor_t4_leather: { enabled: true, maximumLevel: 3 },
   item_armor_t5_leather: { enabled: true, maximumLevel: 3 },
+  item_armor_t6_leather: { enabled: true, maximumLevel: 3 },
+  item_armor_t7_leather: { enabled: true, maximumLevel: 3 },
+  item_armor_t8_leather: { enabled: true, maximumLevel: 3 },
+
   item_boots_t4_leather: { enabled: true, maximumLevel: 3 },
   item_boots_t5_leather: { enabled: true, maximumLevel: 3 },
+  item_boots_t6_leather: { enabled: true, maximumLevel: 3 },
+  item_boots_t7_leather: { enabled: true, maximumLevel: 3 },
+  item_boots_t8_leather: { enabled: true, maximumLevel: 3 },
 };
 
 /** Single authored gate for whether an item may participate in .4 Awakening. */
