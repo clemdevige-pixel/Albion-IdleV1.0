@@ -107,7 +107,12 @@ describe("weapon content catalog", () => {
     });
     expect(CLIENT_ABILITIES["ability_dagger_double_slash"]).toMatchObject({
       cooldown: 4,
-      mechanics: { mechanics: [{ kind: "damage", ratio: 0.45, hits: 2 }] },
+      mechanics: {
+        mechanics: [
+          { kind: "damage", ratio: 0.45, hits: 2 },
+          { kind: "heal_from_damage", ratio: 0.12, maxHealthRatio: 0.015 },
+        ],
+      },
     });
   });
 
