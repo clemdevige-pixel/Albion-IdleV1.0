@@ -35,7 +35,7 @@ export type { ProductionTier, SupportedProductionFamily } from "../../data/produ
 type GatheringContentTier = (typeof GATHERING_CONTENT_TIERS)[number];
 
 function isGatheringContentTier(tier: ProductionTier): tier is GatheringContentTier {
-  return GATHERING_CONTENT_TIERS.includes(tier as GatheringContentTier);
+  return GATHERING_CONTENT_TIERS.some((authoredTier) => authoredTier === tier);
 }
 
 interface ProductionBridgeAdapterDependencies {
