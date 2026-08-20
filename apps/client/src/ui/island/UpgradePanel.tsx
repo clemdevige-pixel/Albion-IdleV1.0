@@ -1,50 +1,44 @@
-import {
-  getIslandBuildingDefinition,
-  getIslandLevelDefinition,
-  getIslandOperationalLevelDefinition,
-  type IslandBuildingId,
-} from "@game/data";
+import { type IslandBuildingId } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
-import { getIslandMaterialLabel, getIslandMaterialQuantity } from "./islandMaterialPresentation";
+import { getIslandMaterialLabel } from "./islandMaterialPresentation";
+import { getIslandBuildingUpgradeState } from "./islandBuildingUpgradeState";
 
 export function UpgradePanel({ definitionId, level }: { readonly definitionId: IslandBuildingId; readonly level: number }): JSX.Element | null {
-  const current = getIslandOperationalLevelDefinition(definitionId, level);
-  if (current === undefined) return null;
-
   const { wallet } = useGameBridge();
   const { inventoryManager, productionStorageId, upgradeIslandBuilding, getIslandLevel } = useGameServices();
-  const definition = getIslandBuildingDefinition(definitionId);
-  const cost = current.upgradeToNext;
+  const state = getIslandBuildingUpgradeState({
+    definitionId,
+    level,
+    islandLevel: getIslandLevel(),
+    silver: wallet.silver,
+    inventoryManager,
+    productionStorageId,
+  });
+
+  const {
+    definition,
+    current,
+    next,
+    cost,
+    maxBuildingLevel,
+    islandLevelBlocked,
+    materials,
+    flexible,
+    flexibleDistinct,
+    flexibleTotal,
+    flexibleReady,
+    silverReady,
+    affordable,
+    canUpgrade,
+  } = state;
+
+  if (current === undefined) return null;
 
   if (cost === undefined) {
     return <div className="ui-island__selection-status">{definition.label} au niveau maximum · T{String(current.maxProductionTier)} débloqué</div>;
   }
 
-  const next = getIslandOperationalLevelDefinition(definitionId, level + 1);
   if (next === undefined) return null;
-
-  const islandLevel = getIslandLevel();
-  const islandDefinition = getIslandLevelDefinition(islandLevel);
-  const maxBuildingLevel = islandDefinition?.maxBuildingLevel ?? islandLevel;
-  const islandLevelBlocked = next.level > maxBuildingLevel;
-  const materials = cost.requirements.map((requirement) => ({
-    ...requirement,
-    available: getIslandMaterialQuantity(inventoryManager, productionStorageId, requirement.itemId),
-  }));
-  const flexible = cost.flexibleRequirement;
-  const flexibleAvailable = flexible?.itemIds.map((itemId) => ({
-    itemId,
-    available: getIslandMaterialQuantity(inventoryManager, productionStorageId, itemId),
-  })) ?? [];
-  const flexibleDistinct = flexibleAvailable.filter((entry) => entry.available > 0).length;
-  const flexibleTotal = flexibleAvailable.reduce((sum, entry) => sum + entry.available, 0);
-  const flexibleReady = flexible === undefined
-    || (flexibleDistinct >= flexible.minimumDistinctItemIds && flexibleTotal >= flexible.totalQuantity);
-  const silverReady = wallet.silver >= cost.silver;
-  const affordable = silverReady
-    && materials.every((requirement) => requirement.available >= requirement.quantity)
-    && flexibleReady;
-  const canUpgrade = !islandLevelBlocked && affordable;
 
   return (
     <section className="ui-island-upgrade">
