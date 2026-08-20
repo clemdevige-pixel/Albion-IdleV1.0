@@ -62,17 +62,22 @@ export class CombatPresentationController {
     this.playerHomeX = width * 0.32;
     this.enemyHomeX = width * 0.68;
 
-    const heroManifest = renderManifestRegistry.requireDefaultActor();
+    const defaultHeroManifest = renderManifestRegistry.requireDefaultActor();
+    this.defaultHeroManifestId = defaultHeroManifest.id;
+
+    const initialWeapon = selectWeaponPresentation(this.getBridge());
+    const initialHeroManifest = renderManifestRegistry.requireActor(
+      initialWeapon.visualManifestId ?? this.defaultHeroManifestId,
+    );
     const enemyManifest = renderManifestRegistry.requireDefaultStaticActor();
-    this.defaultHeroManifestId = heroManifest.id;
-    const playerSprite = createActorSprite(scene, heroManifest);
+    const playerSprite = createActorSprite(scene, initialHeroManifest);
     this.playerBody = scene.add.container(this.playerHomeX, this.entityY, [playerSprite]).setDepth(5);
     this.enemySystem = new EnemyPresentationSystem(scene, this.enemyHomeX, this.entityY, enemyManifest);
     this.enemyBody = this.enemySystem.body;
 
-    this.heroSystem = new HeroPresentationSystem(playerSprite, heroManifest.id);
+    this.heroSystem = new HeroPresentationSystem(playerSprite, this.defaultHeroManifestId);
     this.actorSystem = new ActorSystem(scene);
-    this.actorSystem.register(this.playerBody, this.playerHomeX, heroManifest.ambientMotion);
+    this.actorSystem.register(this.playerBody, this.playerHomeX, initialHeroManifest.ambientMotion);
     this.actorSystem.register(this.enemyBody, this.enemyHomeX, enemyManifest.ambientMotion);
 
     this.damageNumberSystem = new DamageNumberSystem(
