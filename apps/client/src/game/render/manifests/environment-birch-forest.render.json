@@ -4,10 +4,22 @@
   "kind": "environment",
   "layers": [
     {
-      "textureKey": "birch-forest-background",
-      "assetPath": "/assets/birch-forest-combat-background-pixel-v1.png",
+      "textureKey": "birch-forest-parallax-background-v2",
+      "assetPath": "/assets/environments/birch-forest-parallax-background-v2.png",
+      "depth": -30,
+      "scrollFactor": 0.08
+    },
+    {
+      "textureKey": "birch-forest-parallax-vegetation-v2",
+      "assetPath": "/assets/environments/birch-forest-parallax-vegetation-v2.png",
       "depth": -20,
-      "scrollFactor": 0
+      "scrollFactor": 0.36
+    },
+    {
+      "textureKey": "birch-forest-parallax-ground-v2",
+      "assetPath": "/assets/environments/birch-forest-parallax-ground-v2.png",
+      "depth": -10,
+      "scrollFactor": 1
     }
   ],
   "pixelArt": true,
