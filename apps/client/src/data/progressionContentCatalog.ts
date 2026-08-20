@@ -88,9 +88,22 @@ export const DESTINY_NODES = [
     category: "weapon",
     prerequisites: [] as ReturnType<typeof asDestinyNodeId>[],
     requirements: [{
-      kind: "mastery_level" as const,
-      masteryId: asMasteryId("mastery_weapon_sword"),
-      level: 10,
+      type: "mastery_level" as const,
+      masteryId: asMasteryId("mastery_sword"),
+      level: 1,
     }],
+    rewards: [{ type: "equipment_tier_unlock" as const, tier: 2 }],
+  },
+  {
+    id: asDestinyNodeId("node_sword_2"),
+    displayName: "Adepte de l'épée",
+    category: "weapon",
+    prerequisites: [asDestinyNodeId("node_sword_1")],
+    requirements: [{
+      type: "mastery_level" as const,
+      masteryId: asMasteryId("mastery_sword"),
+      level: 3,
+    }],
+    rewards: [{ type: "equipment_tier_unlock" as const, tier: 3 }],
   },
 ];
