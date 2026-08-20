@@ -46,18 +46,40 @@ const SHIELD_BY_TIER = {
 } as const;
 
 const TIER_CONFIG = [
-  { tier: 5, label: "T5_to_T6", mastery: 35, zoneDefId: WORLD_ZONE_IDS.ironveil, curve: YELLOW_WORLD_COMBAT_CURVE },
-  { tier: 6, label: "T6_to_T7", mastery: 45, zoneDefId: WORLD_ZONE_IDS.ashenpeak, curve: ORANGE_WORLD_COMBAT_CURVE },
-  { tier: 7, label: "T7_to_T8", mastery: 55, zoneDefId: WORLD_ZONE_IDS.doompeak, curve: RED_WORLD_COMBAT_CURVE },
+  {
+    tier: 5,
+    label: "T5_to_T6",
+    mastery: 35,
+    zoneDefId: WORLD_ZONE_IDS.ironveil,
+    curve: YELLOW_WORLD_COMBAT_CURVE,
+    healthMultipliers: [1, 1.05, 1.1, 1.15] as const,
+    damageMultipliers: [1.3, 1.325, 1.35, 1.375, 1.4] as const,
+    defenseMultipliers: [1, 1.05, 1.1] as const,
+  },
+  {
+    tier: 6,
+    label: "T6_to_T7",
+    mastery: 45,
+    zoneDefId: WORLD_ZONE_IDS.ashenpeak,
+    curve: ORANGE_WORLD_COMBAT_CURVE,
+    healthMultipliers: [1] as const,
+    damageMultipliers: [1.325, 1.35, 1.375, 1.4] as const,
+    defenseMultipliers: [1, 1.05] as const,
+  },
+  {
+    tier: 7,
+    label: "T7_to_T8",
+    mastery: 55,
+    zoneDefId: WORLD_ZONE_IDS.doompeak,
+    curve: RED_WORLD_COMBAT_CURVE,
+    healthMultipliers: [1] as const,
+    damageMultipliers: [1.1, 1.125, 1.15, 1.175, 1.2] as const,
+    defenseMultipliers: [1, 1.05, 1.1] as const,
+  },
 ] as const;
 
-// Coarse discovery grid only. Once each tier exposes its first valid frontier,
-// refine locally instead of promoting these coarse values directly to live.
-const HEALTH_MULTIPLIERS = [1, 1.2, 1.4, 1.6, 1.8] as const;
-const DAMAGE_MULTIPLIERS = [1, 1.1, 1.2, 1.3, 1.4, 1.5] as const;
-const DEFENSE_MULTIPLIERS = [1, 1.1] as const;
-
 type Tier = keyof typeof WEAPONS_BY_TIER;
+type ZoneDefId = (typeof TIER_CONFIG)[number]["zoneDefId"];
 type MutableBossGate = {
   progressionRole: "boss_gate";
   healthMultiplier: number;
@@ -74,7 +96,7 @@ function equipmentFor(weaponItemId: string, tier: Tier): readonly string[] {
 function run(
   tier: Tier,
   mastery: number,
-  zoneDefId: string,
+  zoneDefId: ZoneDefId,
   weaponItemId: string,
   enchantment: 2 | 3,
 ) {
@@ -91,19 +113,21 @@ function run(
 }
 
 describe("later-tier boss gate candidate sweep", () => {
-  it("discovers the T5/T6/T7 boss-gate frontiers with one reusable sweep", () => {
+  it("refines the T5/T6/T7 boss-gate frontiers with one reusable sweep", () => {
     const allRows: Array<Record<string, number | boolean | string>> = [];
+    let expectedRowCount = 0;
 
     for (const config of TIER_CONFIG) {
       const tier = config.tier as Tier;
       const finalCurve = config.curve[config.curve.length - 1] as unknown as { bossGate: MutableBossGate };
       const original: BossGateCombatProfile = { ...finalCurve.bossGate };
       const tierRows: Array<Record<string, number | boolean | string>> = [];
+      expectedRowCount += config.healthMultipliers.length * config.damageMultipliers.length * config.defenseMultipliers.length;
 
       try {
-        for (const healthMultiplier of HEALTH_MULTIPLIERS) {
-          for (const damageMultiplier of DAMAGE_MULTIPLIERS) {
-            for (const defenseMultiplier of DEFENSE_MULTIPLIERS) {
+        for (const healthMultiplier of config.healthMultipliers) {
+          for (const damageMultiplier of config.damageMultipliers) {
+            for (const defenseMultiplier of config.defenseMultipliers) {
               finalCurve.bossGate.healthMultiplier = healthMultiplier;
               finalCurve.bossGate.damageMultiplier = damageMultiplier;
               finalCurve.bossGate.defenseMultiplier = defenseMultiplier;
@@ -160,10 +184,6 @@ describe("later-tier boss gate candidate sweep", () => {
       allRows.push(...tierRows);
     }
 
-    console.log("[LATER_TIER_BOSS_GATE_ALL_CANDIDATES_JSON]", JSON.stringify(allRows, null, 2));
-
-    expect(allRows).toHaveLength(
-      TIER_CONFIG.length * HEALTH_MULTIPLIERS.length * DAMAGE_MULTIPLIERS.length * DEFENSE_MULTIPLIERS.length,
-    );
+    expect(allRows).toHaveLength(expectedRowCount);
   });
 });
