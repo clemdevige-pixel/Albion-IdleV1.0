@@ -37,6 +37,10 @@ type MutableBossGate = {
   defenseMultiplier: number;
 };
 
+type MutableEquipmentDefinition = {
+  stats?: Record<string, number>;
+};
+
 function equipmentFor(weaponItemId: string): readonly string[] {
   const items: string[] = [...ARMOR];
   if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") items.push(SHIELD);
@@ -64,8 +68,9 @@ function run(weaponItemId: string, enchantment: 2 | 3) {
 
 describe("T5 Broadsword offense candidate sweep", () => {
   it("finds the smallest Broadsword offense increase that restores the strict T5 boss-gate contract", () => {
-    const definition = ITEM_DEFINITIONS[BROADSWORD];
-    if (definition === undefined) throw new Error("Missing T5 Broadsword definition");
+    const authoredDefinition = ITEM_DEFINITIONS[BROADSWORD];
+    if (authoredDefinition === undefined) throw new Error("Missing T5 Broadsword definition");
+    const definition = authoredDefinition as unknown as MutableEquipmentDefinition;
     const originalDamage = Number(definition.stats?.stat_physical_damage ?? 0);
     const finalCurve = YELLOW_WORLD_COMBAT_CURVE[YELLOW_WORLD_COMBAT_CURVE.length - 1] as unknown as { bossGate: MutableBossGate };
     const originalGate: BossGateCombatProfile = { ...finalCurve.bossGate };
