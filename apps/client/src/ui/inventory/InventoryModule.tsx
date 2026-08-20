@@ -1,7 +1,7 @@
 import { useCallback, useState, type MouseEvent } from "react";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
-import { getItemDefinition, getItemDisplayName, ItemVisual } from "../../panels/ItemVisual";
+import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
 import { BankModule } from "../bank";
 import {
   createTrackedItemResource,
@@ -50,17 +50,11 @@ export function InventoryModule(): JSX.Element {
   const tracking = useResourceTracking();
   const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
   const [activeFilter, setActiveFilter] = useState<InventoryFilter>("all");
-  const [selectedPosition, setSelectedPosition] = useState<number | undefined>(undefined);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const capacityRatio = inventory.capacity === 0
     ? 0
     : Math.min(100, (inventory.occupied / inventory.capacity) * 100);
   const filteredSlots = inventory.slots.filter((slot) => matchesInventoryFilter(slot, activeFilter));
-  const selectedSlot = selectedPosition === undefined
-    ? undefined
-    : inventory.slots.find((slot) => slot.position === selectedPosition && slot.itemId !== undefined);
-  const selectedItemId = selectedSlot?.itemId;
-  const selectedDefinition = selectedItemId === undefined ? undefined : getItemDefinition(selectedItemId);
 
   const handleDoubleClick = useCallback((
     event: MouseEvent<HTMLButtonElement>,
@@ -80,12 +74,15 @@ export function InventoryModule(): JSX.Element {
     slot: InventorySlotVM,
   ) => {
     event.preventDefault();
+    if (slot.itemId === undefined || getItemDefinition(slot.itemId) === undefined) {
+      setContextMenu(null);
+      return;
+    }
     setContextMenu({ position: slot.position, x: event.clientX, y: event.clientY });
   }, []);
 
   const handleFilterChange = useCallback((filter: InventoryFilter) => {
     setActiveFilter(filter);
-    setSelectedPosition(undefined);
     setContextMenu(null);
   }, []);
 
@@ -93,7 +90,6 @@ export function InventoryModule(): JSX.Element {
     ? undefined
     : inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId;
   const contextIsEquipment = contextItemId !== undefined && getItemDefinition(contextItemId) !== undefined;
-  const contextIsResource = contextItemId !== undefined && isTrackableResourceItem(contextItemId);
 
   return (
     <div className="storage-module">
@@ -151,49 +147,30 @@ export function InventoryModule(): JSX.Element {
                 label={`Objets dans l’inventaire · filtre ${INVENTORY_FILTERS.find((filter) => filter.id === activeFilter)?.label ?? "Tous"}`}
                 interactive
                 draggable
-                selectedPosition={selectedPosition}
-                onItemClick={(slot) => { setSelectedPosition(slot.position); }}
                 onItemDrop={(from, to) => { actions.move("inventory", from, to); }}
                 onItemDoubleClick={handleDoubleClick}
                 onItemContextMenu={handleContextMenu}
+                canFavoriteItem={isTrackableResourceItem}
+                isItemFavorite={tracking.isTracked}
+                onToggleItemFavorite={(itemId) => {
+                  tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
+                }}
               />
             ) : (
               <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>
             )}
           </section>
 
-          {selectedSlot !== undefined && selectedItemId !== undefined ? (
-            <section className="storage-module__selection" aria-label="Objet sélectionné">
-              <span className="storage-module__selection-visual"><ItemVisual itemId={selectedItemId} /></span>
-              <div className="storage-module__selection-copy">
-                <strong>{getItemDisplayName(selectedItemId)}</strong>
-                <span>
-                  {selectedDefinition !== undefined ? `T${String(selectedDefinition.tier)}.${String(selectedSlot.enchantment)}` : "Objet"}
-                  {selectedSlot.quantity > 1 ? ` · ×${String(selectedSlot.quantity)}` : ""}
-                </span>
-              </div>
-              <span className="storage-module__selection-action">Double-clic : utiliser / équiper</span>
-            </section>
-          ) : (
-            <p className="storage-module__hint">Cliquez un objet pour afficher ses détails · glissez-déposez pour organiser.</p>
-          )}
+          <p className="storage-module__hint">Double-clic : utiliser / équiper · glissez-déposez pour organiser · étoile : suivre une ressource.</p>
 
-          {contextMenu !== null && contextItemId !== undefined && (
+          {contextMenu !== null && contextItemId !== undefined && contextIsEquipment && (
             <ItemContextMenu
               position={contextMenu.position}
               x={contextMenu.x}
               y={contextMenu.y}
               itemId={contextItemId}
               onClose={() => { setContextMenu(null); }}
-              {...(contextIsEquipment ? {
-                onEquip: (position: number) => { actions.equip(position); setContextMenu(null); },
-              } : {})}
-              {...(contextIsResource ? {
-                isTracked: tracking.isTracked(contextItemId),
-                onToggleTrack: (itemId: string) => {
-                  tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
-                },
-              } : {})}
+              onEquip={(position: number) => { actions.equip(position); setContextMenu(null); }}
             />
           )}
         </>
