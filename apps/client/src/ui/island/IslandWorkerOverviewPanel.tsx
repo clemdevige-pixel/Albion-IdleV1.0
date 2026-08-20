@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { getProductionFamilyDefinition } from "../../data/productionFamilyCatalog";
 import { useGameBridge } from "../../state/GameContext";
 import { useIslandSelection } from "./IslandSelectionContext";
+import "./islandWorkerOverview.css";
 
 export function IslandWorkerOverviewPanel(): JSX.Element | null {
   const { island, workers } = useGameBridge();
