@@ -1,0 +1,522 @@
+# 38. ONLINE PLAYER MARKET ARCHITECTURE
+
+---
+
+# 1. Purpose
+
+This document records the validated future direction for asynchronous player-to-player online interactions, with the Player Market / Auction House (HDV) as the primary target.
+
+This is a FUTURE ARCHITECTURE document.
+
+It does not mean that the current runtime already implements a server-authoritative shared economy.
+
+The purpose is to preserve the architectural decision now so the feature can be resumed later without redesigning it from scratch.
+
+---
+
+# 2. Validated Product Direction
+
+Albion Idle may support online player interaction without becoming a real-time MMO.
+
+The preferred first major player-to-player system is an asynchronous market / auction house.
+
+The market should be implemented before considering real-time shared-world multiplayer because it provides significant social and economic value with much lower networking and synchronization complexity.
+
+Possible future online layers are:
+
+```text
+Level 1
+Social asynchronous features
+Profiles
+Leaderboards
+Guilds
+Build sharing
+Chat
+
+Level 2
+Shared asynchronous economy
+Player Market / HDV
+Crafting contracts
+Orders
+Deferred player trading
+
+Level 3
+Real-time shared world
+Shared zones
+Presence synchronization
+Real-time multiplayer interactions
+```
+
+Level 3 is NOT required for the Player Market.
+
+---
+
+# 3. Existing Production Infrastructure
+
+The project already has the infrastructure foundations required to host future shared online systems.
+
+Current deployment architecture:
+
+```text
+React / Vite Client
+Vercel
+
+↓ HTTP
+
+Fastify API
+Render
+
+↓
+
+PostgreSQL
+```
+
+Existing backend capabilities include:
+
+- Discord OAuth authentication
+- Server-side authentication repositories
+- PostgreSQL persistence
+- PostgreSQL OAuth flow storage
+- Cloud save API
+- Authenticated cloud save synchronization
+- Production API deployment on Render
+- Client deployment on Vercel
+
+Therefore the future Player Market does NOT require a new hosting architecture or a real-time game server stack.
+
+It extends the existing Fastify + PostgreSQL backend.
+
+---
+
+# 4. Important Current Implementation Gap
+
+The historical technical Bible defines the server as authoritative for persistent gameplay state.
+
+The current implementation has not yet completed that full migration.
+
+At present, much of the gameplay simulation and inventory/economy state is still produced by the client runtime and synchronized through save snapshots.
+
+A synchronized cloud save is NOT sufficient security for a player-to-player economy.
+
+A client-controlled save must never be allowed to directly create tradable value in a shared market.
+
+Example forbidden future flow:
+
+```text
+Client edits local save
+↓
+Client creates 1,000,000 resources
+↓
+Cloud save accepts snapshot
+↓
+Resources are listed on the market
+```
+
+This would destroy the shared economy.
+
+The Player Market must therefore not be implemented as a simple market API layered on top of the current save blob.
+
+---
+
+# 5. Authority Boundary
+
+For any shared economy feature, the server becomes the only authority for value that can affect another player.
+
+The server must own at minimum:
+
+- Player identity
+- Tradable item ownership
+- Tradable resource quantities
+- Silver used by the market
+- Market listings
+- Market escrow
+- Purchases
+- Sales
+- Transaction history
+
+The client may display, predict and request actions.
+
+The client must not decide whether an item exists, who owns it, how much Silver exists, or whether a transaction succeeded.
+
+---
+
+# 6. What Does NOT Need To Move Server-Side Immediately
+
+The Player Market does not require an immediate migration of the complete game runtime.
+
+The following systems may remain client-side initially while the shared economy architecture is introduced progressively:
+
+- Phaser rendering
+- Combat presentation
+- World rendering
+- Local visual simulation
+- UI state
+- Non-shared presentation state
+
+Do NOT migrate the entire game to a real-time authoritative server solely to support the HDV.
+
+The migration must focus first on persistent shared economic value.
+
+---
+
+# 7. Target Ownership Model
+
+Tradable possessions must eventually be represented as structured server-side ownership records rather than existing only inside a complete save snapshot.
+
+Conceptual model:
+
+```text
+OwnedItem
+
+id
+ownerPlayerId
+itemDefinitionId
+quantity or unique instance identity
+quality
+enchantment
+durability
+tradability state
+location
+version
+```
+
+Possible locations:
+
+```text
+inventory
+equipped
+bank
+market_escrow
+```
+
+Do NOT create a second independent inventory specifically for the market.
+
+The market must reuse the canonical ownership model.
+
+Inventory, equipment, bank and market escrow are different locations/states of the same owned value.
+
+---
+
+# 8. Market Domain
+
+The market must be implemented as an independent domain module.
+
+Conceptual domain objects:
+
+```text
+MarketListing
+MarketOrder
+MarketTransaction
+MarketPolicy
+MarketEscrow
+```
+
+The domain must remain independent from React and Fastify.
+
+Preferred separation:
+
+```text
+Shared / Gameplay Domain
+market/
+    MarketListing
+    MarketTransaction
+    MarketPolicy
+
+Server
+market/
+    application
+    repositories
+    routes
+    transaction service
+```
+
+Fastify routes remain transport adapters only.
+
+---
+
+# 9. Market API Responsibilities
+
+The client sends intentions such as:
+
+```text
+Browse listings
+Create listing
+Cancel listing
+Purchase listing
+Claim proceeds
+```
+
+The server validates and executes them.
+
+Example future endpoints may include:
+
+```text
+GET  /api/v1/market/listings
+POST /api/v1/market/listings
+POST /api/v1/market/listings/:id/purchase
+POST /api/v1/market/listings/:id/cancel
+```
+
+Exact API contracts are NOT locked by this document and must be designed when implementation begins.
+
+---
+
+# 10. Atomic Transactions
+
+Every market mutation must be atomic in PostgreSQL.
+
+Creating a listing:
+
+```text
+Authenticate seller
+↓
+Validate ownership
+↓
+Validate tradability
+↓
+Move item/value to market escrow
+↓
+Create listing
+↓
+Commit
+```
+
+Purchasing a listing:
+
+```text
+Authenticate buyer
+↓
+Lock or otherwise concurrency-protect listing
+↓
+Verify listing is active
+↓
+Verify buyer Silver
+↓
+Debit buyer
+↓
+Credit seller
+↓
+Transfer item ownership
+↓
+Close listing
+↓
+Record transaction
+↓
+Commit
+```
+
+Any failure rolls back the complete operation.
+
+A market purchase must never be implemented as several independent client/server mutations.
+
+---
+
+# 11. Concurrency And Idempotency
+
+The market must protect against:
+
+- Two players buying the same listing
+- Duplicate client requests
+- Retry after network timeout
+- Double spending
+- Item duplication
+- Listing cancellation racing with purchase
+
+Required principles:
+
+- Database transaction boundaries
+- Row/version concurrency protection
+- Idempotency for sensitive mutations
+- Stable transaction identifiers
+- Server-generated authoritative timestamps
+
+---
+
+# 12. Game Design Protection
+
+A free player market can bypass the intended Albion Idle progression loop.
+
+The market must therefore respect progression constraints.
+
+Validated direction:
+
+- A player should not be able to use the market to bypass Tier progression.
+- Buying an item should require the relevant Tier to already be unlocked for that player.
+- Additional equip/craft/mastery requirements may be considered later if needed.
+- Some items/resources may remain bound or non-tradable.
+- Listing fees and transaction taxes are recommended Silver sinks.
+- Listings should have finite duration.
+
+Exact tax values, binding rules and unlock requirements are GAME DESIGN BALANCE and are not locked by this technical document.
+
+---
+
+# 13. Migration Strategy
+
+The shared economy should be introduced progressively.
+
+Recommended sequence:
+
+```text
+Phase A
+Audit current InventoryManager, EquipmentManager, CurrencyService,
+RuntimePersistence and CloudSave synchronization.
+
+Phase B
+Introduce structured server ownership for market-relevant value.
+
+Phase C
+Make shared-market Silver authoritative server-side.
+
+Phase D
+Introduce market escrow and transaction primitives.
+
+Phase E
+Implement market API and client UI.
+
+Phase F
+Expand server authority to additional reward sources as required
+by anti-cheat and economy integrity.
+```
+
+Do NOT rewrite the complete runtime in one migration.
+
+Do NOT create parallel duplicate inventory or wallet systems as a shortcut.
+
+The migration must progressively move the existing canonical domains toward server authority.
+
+---
+
+# 14. Reward Provenance Requirement
+
+Before a client-generated reward can become tradable, the server must be able to trust its provenance.
+
+A future implementation must choose a validated authority strategy for tradable rewards.
+
+Preferred long-term direction:
+
+```text
+Gameplay action/result
+↓
+Server-validated reward command
+↓
+Authoritative server economy mutation
+↓
+Client inventory projection
+```
+
+The server should progressively become authoritative for all reward sources that create tradable value.
+
+A pure client snapshot reconciliation mechanism must not be treated as equivalent security without a dedicated anti-cheat design and proof of correctness.
+
+---
+
+# 15. Target Architecture
+
+```text
+CLIENT
+React / Phaser
+Gameplay Runtime
+Presentation
+
+        ↓ authenticated commands
+
+FASTIFY API — existing Render service
+Auth
+Player Economy Application Layer
+Market Application Layer
+Transaction Services
+
+        ↓
+
+POSTGRESQL — existing database architecture
+Players
+Wallets
+Owned Items / Resources
+Market Listings
+Market Transactions
+Audit Records
+```
+
+The Player Market remains asynchronous HTTP-based.
+
+WebSockets are not required for the first version.
+
+Polling, refresh-on-action or later lightweight push updates are sufficient initially.
+
+---
+
+# 16. Future Systems Enabled By This Foundation
+
+Once ownership and transactions are server-authoritative, the same architecture can support:
+
+- Player Market / HDV
+- Guild bank
+- Direct asynchronous trading
+- Mail attachments
+- Crafting contracts
+- Buy orders
+- Sell orders
+- Economic analytics
+- Market history
+
+These systems must reuse the same ownership and transaction primitives instead of creating independent economies.
+
+---
+
+# 17. Explicit Non-Goals For Now
+
+This document does NOT schedule implementation.
+
+The following are not current tasks:
+
+- Building the HDV UI
+- Migrating all combat to the server
+- Adding a real-time multiplayer world
+- Adding WebSockets solely for the market
+- Replacing the existing Render/Vercel/PostgreSQL deployment
+- Creating a second economy alongside the existing one
+
+The decision is documented now for future architectural continuity.
+
+---
+
+# 18. Resume Checklist
+
+When this topic is resumed, begin with an audit of the CURRENT branch and specifically inspect:
+
+```text
+InventoryManager
+EquipmentManager
+CurrencyService
+RuntimePersistence
+CloudSaveClient
+CloudSaveSynchronizer
+PostgresCloudSaveRepository
+AuthService / authenticated player identity
+Database schema / migration tooling actually in use at that date
+```
+
+Do not assume the implementation still matches this document.
+
+Code remains the source of truth for current implementation state.
+
+Then define the smallest safe migration path from current state to structured server-authoritative tradable ownership.
+
+---
+
+# 19. Final Decision
+
+The Player Market / HDV is technically feasible and aligned with Albion Idle.
+
+It should be implemented as an asynchronous shared economy on top of the existing Fastify + PostgreSQL + authenticated backend infrastructure.
+
+The blocker is NOT hosting infrastructure.
+
+The blocker is establishing server-authoritative ownership and transaction integrity for tradable value.
+
+The project must solve that authority boundary before exposing player-to-player economic exchange.
+
+=========================
+DOCUMENT TERMINÉ
+=========================
