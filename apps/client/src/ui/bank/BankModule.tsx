@@ -95,6 +95,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
             onItemDoubleClick={(_event, slot) => {
               if (slot.itemId !== undefined) onTransferToInventory?.(slot.position);
             }}
+            onItemContextMenu={(event) => { event.preventDefault(); }}
             canFavoriteItem={isTrackableResourceItem}
             isItemFavorite={tracking.isTracked}
             onToggleItemFavorite={(itemId) => {
