@@ -40,3 +40,26 @@
 .ui-island-level button { min-height: 28px; border: 1px solid rgba(208, 157, 52, 0.45); border-radius: var(--ui-radius-sm); background: rgba(177, 127, 37, 0.15); color: var(--ui-color-accent); padding: 4px 8px; font: inherit; font-size: var(--ui-text-xs); font-weight: 700; cursor: pointer; transition: border-color var(--ui-duration-fast), background var(--ui-duration-fast); }
 .ui-island-level button:hover:not(:disabled) { border-color: rgba(208, 157, 52, 0.72); background: rgba(177, 127, 37, 0.22); }
 .ui-island-level button:disabled { border-color: var(--ui-color-border-subtle); background: rgba(15, 19, 27, 0.48); color: var(--ui-color-text-muted); cursor: default; opacity: 0.55; }
+
+.ui-island-building-progress { gap: 7px; }
+.ui-island-building-progress__list { display: grid; gap: 5px; }
+.ui-island-building-progress__item {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px 7px;
+  border: 1px solid rgba(208, 157, 52, 0.13);
+  border-radius: var(--ui-radius-sm);
+  background: rgba(11, 14, 19, 0.46);
+}
+.ui-island-building-progress__heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.ui-island-building-progress__heading > div { display: grid; gap: 1px; min-width: 0; }
+.ui-island-building-progress__icon { display: grid; place-items: center; width: 22px; height: 22px; font-size: 13px; }
+.ui-island-building-progress__heading strong { font-size: var(--ui-text-xs); }
+.ui-island-building-progress__heading small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
