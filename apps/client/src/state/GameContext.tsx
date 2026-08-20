@@ -521,6 +521,7 @@ export function GameProvider({
       heroId,
       combatRuntime,
       stopController: combatStopController,
+      bridge,
       isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
       onStateChanged: resyncAll,
     });
