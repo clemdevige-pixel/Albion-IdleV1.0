@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -29,6 +30,7 @@ interface ResourceTrackingState {
   readonly untrack: (id: string) => void;
 }
 
+const RESOURCE_TRACKING_STORAGE_KEY = "albion-idle:tracked-resources:v1";
 const ResourceTrackingContext = createContext<ResourceTrackingState | null>(null);
 
 /**
@@ -48,8 +50,45 @@ export function createTrackedItemResource(itemId: string, label: string): Tracke
   };
 }
 
+function isTrackedResourceEntry(value: unknown): value is TrackedResourceEntry {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<TrackedResourceEntry>;
+  return typeof candidate.itemId === "string"
+    && typeof candidate.label === "string"
+    && (candidate.source === "player" || candidate.source === "production");
+}
+
+function isTrackedResource(value: unknown): value is TrackedResource {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Partial<TrackedResource>;
+  return typeof candidate.id === "string"
+    && typeof candidate.label === "string"
+    && Array.isArray(candidate.entries)
+    && candidate.entries.every(isTrackedResourceEntry);
+}
+
+function loadPersistedResources(): readonly TrackedResource[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RESOURCE_TRACKING_STORAGE_KEY);
+    if (raw === null) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(isTrackedResource) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function ResourceTrackingProvider({ children }: { readonly children: ReactNode }): JSX.Element {
-  const [resources, setResources] = useState<readonly TrackedResource[]>([]);
+  const [resources, setResources] = useState<readonly TrackedResource[]>(loadPersistedResources);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(RESOURCE_TRACKING_STORAGE_KEY, JSON.stringify(resources));
+    } catch {
+      // UI preferences must never block the game if browser storage is unavailable.
+    }
+  }, [resources]);
 
   const isTracked = useCallback(
     (id: string) => resources.some((resource) => resource.id === id),
