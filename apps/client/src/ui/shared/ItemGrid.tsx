@@ -14,6 +14,7 @@ interface ItemGridProps {
   readonly onItemDoubleClick?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
   readonly onItemContextMenu?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
   readonly onItemDrop?: (from: number, to: number) => void;
+  readonly canFavoriteItem?: (itemId: string) => boolean;
   readonly isItemFavorite?: (itemId: string) => boolean;
   readonly onToggleItemFavorite?: (itemId: string) => void;
 }
@@ -28,6 +29,7 @@ export function ItemGrid({
   onItemDoubleClick,
   onItemContextMenu,
   onItemDrop,
+  canFavoriteItem,
   isItemFavorite,
   onToggleItemFavorite,
 }: ItemGridProps): JSX.Element {
@@ -43,7 +45,10 @@ export function ItemGrid({
         const definition = itemId === undefined ? undefined : getItemDefinition(itemId);
         const isSelected = itemId !== undefined && selectedPosition === slot.position;
         const favorite = itemId !== undefined && isItemFavorite?.(itemId) === true;
-        const canFavorite = itemId !== undefined && onToggleItemFavorite !== undefined && isItemFavorite !== undefined;
+        const canFavorite = itemId !== undefined
+          && canFavoriteItem?.(itemId) === true
+          && onToggleItemFavorite !== undefined
+          && isItemFavorite !== undefined;
         const slotButton = (
           <button
             type="button"
