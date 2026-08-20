@@ -21,12 +21,13 @@ const T4_ARMOR = [
 ] as const;
 const T4_SHIELD = "item_shield_t4_reinforced";
 
-// The first sweep proved that the whole <= h1.30 / d1.15 / def1.10 envelope
-// leaves T4.2 + potion at 6/6 clear. Continue from that measured frontier
-// rather than re-running the already-rejected low-pressure space.
-const HEALTH_MULTIPLIERS = [1.3, 1.35, 1.4, 1.45, 1.5] as const;
-const DAMAGE_MULTIPLIERS = [1.15, 1.2, 1.25, 1.3, 1.35] as const;
-const DEFENSE_MULTIPLIERS = [1, 1.05, 1.1, 1.15] as const;
+// The second sweep reached 2/6 T4.2+potion clears at h1.50 while preserving
+// 6/6 T4.3+potion clears. Refine only the measured frontier now. Defense had
+// little leverage, so keep a small sample to catch rounding thresholds without
+// spending most of the sweep on a weak axis.
+const HEALTH_MULTIPLIERS = [1.5, 1.525, 1.55, 1.575, 1.6] as const;
+const DAMAGE_MULTIPLIERS = [1.35, 1.375, 1.4, 1.425, 1.45] as const;
+const DEFENSE_MULTIPLIERS = [1, 1.05, 1.1] as const;
 
 function equipmentFor(weaponItemId: string): readonly string[] {
   const items: string[] = [...T4_ARMOR];
