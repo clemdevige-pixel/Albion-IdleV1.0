@@ -113,7 +113,7 @@ describe("global live weapon zone clear benchmark", () => {
     }> = [];
 
     for (const zone of Object.values(WORLD_ZONE_CONTENT)) {
-      const tier = zone.tier as Tier;
+      const tier = zone.tier;
       const profile = TIER_PROFILE[tier];
       for (const weaponItemId of WEAPON_BY_TIER[tier]) {
         let maxClearSegment = 0;
