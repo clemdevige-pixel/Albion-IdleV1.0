@@ -1,6 +1,10 @@
 import type { IslandBuildingId } from "@game/data";
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
-import { PRODUCTION_FAMILY_CATALOG } from "../../../data/productionFamilyCatalog";
+import {
+  PRODUCTION_FAMILY_CATALOG,
+  PRODUCTION_TIERS,
+  getProductionTierPresentation,
+} from "../../../data/productionFamilyCatalog";
 import { useGameBridge } from "../../../state/GameContext";
 import { useIslandSelection } from "../../island/IslandSelectionContext";
 import { useNavigation } from "../../navigation";
@@ -22,7 +26,13 @@ const KIND_LABELS = {
 } as const;
 
 const RESOURCE_ICONS = Object.values(PRODUCTION_FAMILY_CATALOG).map((family) => ({
-  terms: [family.label, family.rawMaterialLabel, ...Object.values(family.tiers).map((tier) => tier.resourceName)],
+  terms: [
+    family.label,
+    family.rawMaterialLabel,
+    ...PRODUCTION_TIERS
+      .map((tier) => getProductionTierPresentation(family.gameplayFamily, tier)?.resourceName)
+      .filter((resourceName): resourceName is string => resourceName !== undefined),
+  ],
   src: family.professionIcon,
 }));
 
