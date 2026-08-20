@@ -67,10 +67,11 @@ describe("synthetic ideal weapon benchmark", () => {
     expect(withSignature.openerDps5s / beforeSignature.openerDps5s).toBeLessThan(1.01);
   });
 
-  it("allows an effect-gated signature to participate once its prerequisite is unlocked", () => {
+  it("treats Dagger Assassination as a target-health finisher rather than fresh-target opener", () => {
     const beforeSignature = getWeaponBenchmarkProfile("item_weapon_dagger_t4_pair", 29, 2);
     const withSignature = getWeaponBenchmarkProfile("item_weapon_dagger_t4_pair", 30, 2);
-    expect(withSignature.openerDps5s).toBeGreaterThan(beforeSignature.openerDps5s * 1.15);
+    expect(withSignature.sustainedDps).toBeGreaterThan(beforeSignature.sustainedDps);
+    expect(withSignature.openerDps5s / beforeSignature.openerDps5s).toBeLessThan(1.01);
   });
 
   it("matches the live full-T3 2H defensive character sheet", () => {
@@ -84,9 +85,9 @@ describe("synthetic ideal weapon benchmark", () => {
     for (const itemId of T4_STANDARD) {
       const base = getWeaponBenchmarkProfile(itemId, 30, 0);
       const plusTwo = getWeaponBenchmarkProfile(itemId, 30, 2);
-      expect(plusTwo.sustainedDps / base.sustainedDps).toBeCloseTo(1.2, 8);
-      expect(plusTwo.openerDps5s / base.openerDps5s).toBeCloseTo(1.2, 8);
-      expect(plusTwo.openerDps10s / base.openerDps10s).toBeCloseTo(1.2, 8);
+      expect(plusTwo.sustainedDps / base.sustainedDps).toBeCloseTo(1.26, 8);
+      expect(plusTwo.openerDps5s / base.openerDps5s).toBeCloseTo(1.26, 8);
+      expect(plusTwo.openerDps10s / base.openerDps10s).toBeCloseTo(1.26, 8);
     }
   });
 
