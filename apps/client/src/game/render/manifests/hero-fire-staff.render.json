@@ -6,7 +6,7 @@
   "offset": { "x": 30, "y": 58 },
   "animations": {
     "idle": {
-      "textureKey": "hero-fire-staff-idle-sheet-v4",
+      "textureKey": "hero-fire-staff-idle-sheet-v5",
       "assetPath": "/assets/characters/hero-fire-staff-idle-sheet-v1.png",
       "frameWidth": 512,
       "frameHeight": 512,
