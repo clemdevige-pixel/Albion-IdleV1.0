@@ -29,6 +29,7 @@ WORLD DIFFICULTY
 - Segment position.
 - Encounter position/content.
 - Authored health/damage/defense curve.
+- Optional authored final-boss gate pressure.
 - Enemy family/category/content modifiers already used by the live pipeline.
 
 These layers remain independent and data-driven.
@@ -46,7 +47,7 @@ WORLD_COMBAT_PROGRESSION maps an authored world band to:
 
 A world band without authored combat progression must fail explicitly. It must never silently reuse Blue balance.
 
-When Yellow/Red/Black are balanced, author their own curve data and validate them with the same generic runtime benchmark.
+When later bands are balanced, author their own curve data and validate them with the same generic runtime benchmark.
 
 ---
 
@@ -55,7 +56,8 @@ When Yellow/Red/Black are balanced, author their own curve data and validate the
 Each zone owns:
 - healthStart / healthEnd;
 - damageStart / damageEnd;
-- defenseStart / defenseEnd.
+- defenseStart / defenseEnd;
+- optional bossGate for the final zone boss.
 
 Difficulty interpolates through the existing progression/runtime pipeline across the zone's segments/encounters.
 
@@ -66,7 +68,10 @@ The curve defines shape, not design meaning. The design meaning is established b
 - full-tier clear;
 - potion-assisted bridge;
 - enchantment wall;
-- AFK/farm threshold.
+- AFK/farm threshold;
+- final Tier boss gate.
+
+A bossGate is data-driven and applies only to the final boss encounter. It may increase HP, damage and defense independently without changing the normal segment curve.
 
 ---
 
@@ -96,10 +101,13 @@ GOLDEN STEPPE
 
 FROSTPEAK / MOUNTAIN
 - T4.1 enters/progresses.
-- T4.2 reaches the final wall and may need potion/optimization.
-- T4.3 is the reliable potion-free S10 / AFK threshold.
+- T4.2 reaches late Frostpeak but must not defeat the final Tier boss, even with potion.
+- The final boss is an explicit T4.3 gear gate.
+- Full T4.3 + potion must clear across the representative weapon roster.
+- T4.3 without potion is not guaranteed and may vary by weapon profile.
+- The validated Frostpeak bossGate is HP x1.575, damage x1.40, defense x1.10.
 
-This sequence is the current Blue reference model for designing later bands: upgrades must create visible progression rather than a flat gear check.
+This sequence is the current Blue reference model for designing later bands: upgrades must create visible progression, and the final Tier boss certifies completion of the current equipment Tier.
 
 ---
 
@@ -112,31 +120,38 @@ Valid next actions include:
 - upgrade weapon/equipment tier;
 - enchant equipment;
 - improve mastery;
-- use a potion as a temporary bridge;
+- use a potion when the checkpoint contract allows it;
 - optimize a legitimate build/off-hand choice.
 
 A wall is unhealthy when:
 - every available upgrade gives negligible progress;
 - one mandatory item is hidden from the player;
-- the previous zone is trivial but the next is impossible;
 - the wall exists because a benchmark or runtime is using incorrect player stats;
 - the global zone is changed to compensate for one weapon outlier.
 
+Normal progression remains monotonic by default.
+
+Final zone bosses are an explicit exception: a bossGate may create a local difficulty spike above the normal segment envelope. The following zone is compared to the preceding normal progression, not to the exceptional boss spike. Therefore a next-zone entry may legitimately be easier than the previous zone's final boss.
+
+The boss gate must remain a combat check, not an artificial inventory rule. The game must not require a hardcoded count of Tn.3 items; the authored combat pressure should make optimized Tn.3 the natural requirement.
+
 ---
 
-# 6. Potion bridge versus AFK threshold
+# 6. Potion bridge, AFK threshold and boss gate
 
 POTION BRIDGE
-A build below the autonomous baseline may use live potions to cross a transition temporarily.
+A build below an autonomous baseline may use live potions to cross a normal transition temporarily when the authored checkpoint allows it.
 
 AFK THRESHOLD
-The intended farm profile must clear without potion dependency.
+The intended farm profile clears normal farm content without potion dependency.
 
-Example already validated:
-- Highlands entrance: full T3 + potion can bridge into T4 production/progression.
-- Frostpeak S10: T4.2 is difficult and may need support; T4.3 is the autonomous threshold.
+BOSS GATE
+A final Tier boss validates completion of the current Tier. For the current Frostpeak contract:
+- T4.2 + potion must fail across the representative roster.
+- T4.3 + potion must clear across the representative roster.
+- T4.3 without potion may pass or fail depending on weapon identity.
 
-This distinction is deliberate and should be reused in future bands.
+Boss-gate potion semantics are separate from normal AFK farming semantics. A player may farm the late zone autonomously while still needing a potion for the one-time/progression boss check.
 
 ---
 
@@ -155,20 +170,23 @@ If one weapon fails while the rest meet a checkpoint:
 
 Do not flatten weapon identities to make every checkpoint produce identical HP percentages.
 
+Boss gates are validated against the full representative roster. The contract protects access for every representative weapon at the intended optimized loadout, not identical remaining HP.
+
 ---
 
 # 8. Future band workflow
 
 For each future band:
 1. Define the expected tier/enchantment journey before numbers.
-2. Define entry, mid, late and S10 checkpoints per zone.
+2. Define entry, mid, late and final-boss checkpoints per zone.
 3. State potion semantics for each wall.
-4. Author the band's combat curve in combat-progression.ts.
-5. Use CombatRuntimeBenchmarkHarness against the representative weapon set.
-6. Use weaponPackageBenchmark diagnostics for outliers.
-7. Iterate data only.
-8. Validate the entire previous band to prevent regression at the boundary.
-9. Freeze the semantic contract in tests/documentation.
+4. Decide whether the final boss is a Tier boss gate.
+5. Author the band's normal combat curve and optional bossGate in combat-progression.ts.
+6. Use CombatRuntimeBenchmarkHarness against the representative weapon set.
+7. Use weaponPackageBenchmark diagnostics for outliers.
+8. Iterate data only.
+9. Validate the entire previous band to prevent regression at the boundary.
+10. Freeze the semantic contract in tests/documentation.
 
 Do not create a region-specific combat simulation or duplicate formulas.
 
@@ -182,6 +200,8 @@ Mastery remains an independent progression axis.
 
 The relative importance of tier, enchantment and mastery can differ by world band, but each must remain visible and testable.
 
+For Tier-transition bosses, optimized Tn.3 is the expected completion state before the player reliably moves into Tn+1 production/progression.
+
 A later band may require T5/T6/etc.; this does not alter the architecture. Add the authored content and checkpoints, then reuse the same tools.
 
 ---
@@ -191,7 +211,7 @@ A later band may require T5/T6/etc.; this does not alter the architecture. Add t
 DESIGN INTENT
 - AI_BIBLE/10_SYSTEMS/20A_COMBAT_BALANCING_PROCESS.txt
 
-NUMERICAL WORLD CURVES
+NUMERICAL WORLD CURVES / BOSS GATES
 - packages/data/src/config/combat-progression.ts
 
 LIVE DIFFICULTY VALIDATION
@@ -207,4 +227,4 @@ A future progression system must integrate with these layers rather than bypass 
 
 # Summary
 
-Current Albion Idle scaling is region/zone/segment based, with gear tiers, enchantments, mastery and consumables forming the player response. Progression walls are authored as explicit contracts and validated through the exact live runtime. The architecture is reusable across future world bands without a new simulation layer.
+Current Albion Idle scaling is world/zone/segment based, with gear tiers, enchantments, mastery and consumables forming the player response. Normal progression remains monotonic, while authored final-boss gates may deliberately create local difficulty spikes that certify completion of the current Tier. These gates are data-driven and validated through the exact live runtime across the representative weapon roster.
