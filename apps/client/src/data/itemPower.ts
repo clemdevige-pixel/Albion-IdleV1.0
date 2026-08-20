@@ -50,10 +50,6 @@ function parseTierFromItemId(itemId: string): ProductionTier | undefined {
 export function getItemTier(itemId: string): ProductionTier | undefined { return resolveWeaponTier(itemId) ?? parseTierFromItemId(itemId) ?? LEGACY_NON_WEAPON_ITEM_TIERS[itemId]; }
 export function getItemPower(itemId: string): number | undefined { const tier = getItemTier(itemId); return tier === undefined ? undefined : ITEM_POWER_BY_TIER[tier]; }
 export function getWeaponMasteryIds(itemId: string): WeaponMasteryIds | undefined {
-  const route = getWeaponMasteryIdsFromContent(itemId);
-  return route;
-}
-function getWeaponMasteryIdsFromContent(itemId: string): WeaponMasteryIds | undefined {
   const route = resolveWeaponMastery(itemId);
   return route === undefined ? undefined : { familyId: route.familyId, specializationId: route.weaponId };
 }
