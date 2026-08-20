@@ -14,9 +14,23 @@ interface ItemGridProps {
   readonly onItemDoubleClick?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
   readonly onItemContextMenu?: (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM) => void;
   readonly onItemDrop?: (from: number, to: number) => void;
+  readonly isItemFavorite?: (itemId: string) => boolean;
+  readonly onToggleItemFavorite?: (itemId: string) => void;
 }
 
-export function ItemGrid({ slots, label, interactive = false, draggable = false, selectedPosition, onItemClick, onItemDoubleClick, onItemContextMenu, onItemDrop }: ItemGridProps): JSX.Element {
+export function ItemGrid({
+  slots,
+  label,
+  interactive = false,
+  draggable = false,
+  selectedPosition,
+  onItemClick,
+  onItemDoubleClick,
+  onItemContextMenu,
+  onItemDrop,
+  isItemFavorite,
+  onToggleItemFavorite,
+}: ItemGridProps): JSX.Element {
   const readSource = (event: DragEvent<HTMLButtonElement>): number | undefined => {
     const parsed = Number(event.dataTransfer.getData("text/plain"));
     return Number.isInteger(parsed) ? parsed : undefined;
@@ -28,9 +42,10 @@ export function ItemGrid({ slots, label, interactive = false, draggable = false,
         const itemId = slot.itemId;
         const definition = itemId === undefined ? undefined : getItemDefinition(itemId);
         const isSelected = itemId !== undefined && selectedPosition === slot.position;
+        const favorite = itemId !== undefined && isItemFavorite?.(itemId) === true;
+        const canFavorite = itemId !== undefined && onToggleItemFavorite !== undefined && isItemFavorite !== undefined;
         const slotButton = (
           <button
-            key={slot.position}
             type="button"
             role="gridcell"
             aria-selected={isSelected || undefined}
@@ -57,10 +72,43 @@ export function ItemGrid({ slots, label, interactive = false, draggable = false,
             )}
           </button>
         );
-        if (itemId === undefined) return slotButton;
-        return <ItemHoverTooltip key={slot.position} itemId={itemId} quantity={slot.quantity} instanceId={slot.instanceId}>{slotButton}</ItemHoverTooltip>;
+
+        if (itemId === undefined) return <span key={slot.position} className="ui-item-grid__entry">{slotButton}</span>;
+
+        return (
+          <ItemHoverTooltip key={slot.position} itemId={itemId} quantity={slot.quantity} instanceId={slot.instanceId}>
+            <span className="ui-item-grid__entry">
+              {slotButton}
+              {canFavorite && (
+                <button
+                  type="button"
+                  className={`ui-item-grid__favorite${favorite ? " is-active" : ""}`}
+                  aria-pressed={favorite}
+                  aria-label={favorite ? "Ne plus suivre cette ressource" : "Suivre cette ressource"}
+                  title={favorite ? "Ne plus suivre" : "Suivre la ressource"}
+                  draggable={false}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onToggleItemFavorite(itemId);
+                  }}
+                  onDoubleClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                >
+                  ★
+                </button>
+              )}
+            </span>
+          </ItemHoverTooltip>
+        );
       })}
-      {interactive && <span className="sr-only">Cliquez pour sélectionner. Double-cliquez pour utiliser ou équiper. Glissez-déposez pour déplacer.</span>}
+      {interactive && <span className="sr-only">Double-cliquez pour utiliser ou équiper. Glissez-déposez pour déplacer. Utilisez l’étoile pour suivre une ressource.</span>}
     </div>
   );
 }
