@@ -5,11 +5,11 @@ Branch: `agent/albion-idle-development`
 
 ## Purpose
 
-This document records the current validated balance state after the 2026-08-19/20 global progression/economy pass.
+This document records the current validated balance state after the 2026-08-19/20 global progression/economy/combat-gate pass.
 
 It is an INDEX/SNAPSHOT, not a second gameplay configuration source. Numeric authority remains in the relevant data/runtime files and system documents linked below.
 
-Use this snapshot to understand how World progression, Island production, Silver, crafting/refining, enchantment shards, Awakening and dungeons currently fit together.
+Use this snapshot to understand how World progression, Island production, Silver, crafting/refining, enchantment shards, Awakening, weapons and dungeons currently fit together.
 
 ---
 
@@ -24,7 +24,14 @@ The linear world remains:
 - Red = T7
 - Black = T8
 
-World progression is monotonic. Later zones/segments must not structurally regress below earlier content.
+NORMAL world progression is monotonic. Normal zones/segments must not structurally regress below earlier normal content.
+
+Validated exception:
+- an authored end-of-Tier `bossGate` may intentionally exceed the surrounding normal progression envelope;
+- the following zone entry does not need to exceed that boss spike;
+- it remains compared against the previous normal progression envelope.
+
+This exception is data-driven through `progressionRole: "boss_gate"`, not hardcoded from segment index or zone name.
 
 ## 1.2 Recommended IP — UX marker
 
@@ -48,35 +55,64 @@ IMPORTANT: recommended IP is a readable progression marker, not a direct combat-
 
 Authority: `apps/client/src/data/itemPower.ts`.
 
-## 1.3 Frostpeak final Blue wall
+## 1.3 End-of-Tier boss-gate contract
 
-Final validated endpoint pressure:
-- healthEnd = 3.72
-- damageEnd = 2.50
-- defenseEnd = 1.50
+Bosses that unlock the next production Tier are now explicit gear checks.
 
-Validated S10 contract:
-- T4.1 + potion: NOT universal; 5/6 representative profiles clear
-- T4.2 without potion: NOT universal; 2/6 clear
-- T4.2 + potion: 6/6 clear
-- T4.3 without potion: 6/6 clear
+Validated semantic contract for the representative normal weapon set:
+- full `Tn.2 + potion`: must NOT universally clear;
+- full `Tn.3 + potion`: MUST universally clear;
+- `Tn.3` without potion: not required to be universal unless separately authored.
 
-Design meaning:
-- `.1` = entry/progression
-- `.2` = deep push / potion bridge
-- `.3` = autonomous late-Blue comfort and S10 clear
+The wall comes from combat pressure, not from an artificial equipment-slot lock.
 
-The Frostpeak adjustment is localized to the late endpoint; it must not be generalized into a global world nerf.
+The boss is allowed to be harder than the following zone entry. This is the approved exception to normal progression monotonicity.
 
-## 1.4 Tier bridges
+## 1.4 Validated live boss gates
 
-All bridges were revalidated after the new enchantment curve:
+Frostpeak T4 -> T5:
+- HP x1.575
+- damage x1.40
+- defense x1.10
+- T4.2 + potion: blocked across the validated representative set
+- T4.3 + potion: universal clear
+
+Ironveil T5 -> T6:
+- HP x1.15
+- damage x1.325
+- defense x1.05
+- T5.2 + potion: 0/5 clear
+- T5.3 + potion: 5/5 clear
+
+Ashenpeak T6 -> T7:
+- HP x1.00
+- damage x1.375
+- defense x1.00
+- T6.2 + potion: 0/5 clear
+- T6.3 + potion: 5/5 clear
+
+Doompeak T7 -> T8:
+- HP x1.00
+- damage x1.175
+- defense x1.00
+- T7.2 + potion: 0/5 clear
+- T7.3 + potion: 5/5 clear
+
+Authority:
+- `packages/data/src/config/combat-progression.ts`
+- `AI_BIBLE/10_SYSTEMS/20A_COMBAT_BALANCING_PROCESS.txt`
+
+## 1.5 Tier bridges
+
+All bridges were revalidated after the new enchantment curve and boss-gate model:
 - T4.3 -> T5 / Yellow: VALID
 - T5.3 -> T6 / Orange: VALID
 - T6.3 -> T7 / Red: VALID
 - T7.3 -> T8 / Black: VALID
 
-Bridge access is protected. Different weapons do NOT need identical deepest segments or shard/hour throughput.
+The boss gate certifies completion of the current Tier; after that clear, previous-tier `.3` must still retain viable entry access to the next normal band/shard economy.
+
+Different weapons do NOT need identical deepest segments or shard/hour throughput.
 
 ---
 
@@ -104,22 +140,45 @@ The shield therefore retains meaningful value at high Tier.
 
 ## 2.3 Current cross-tier weapon package balance
 
-Corrected neutral/package benchmark average scores:
+Corrected neutral/package benchmark average scores before the latest localized T5 Broadsword correction:
 - Longbow: ~103.2
 - Infernal Staff: ~102.5
 - Broadsword package: ~100.4
 - Spiked Gauntlets: 100 reference
 - Dual Dagger: ~97.6
 
-This dispersion is currently accepted as healthy. Equal DPS/performance is NOT the goal.
+This dispersion remains accepted as healthy. Equal DPS/performance is NOT the goal.
 
-Weapons may meet walls at different times. A balance problem exists when an archetype persistently over- or under-performs across relevant content, not merely because one enchant breakpoint differs.
+Weapons may meet ordinary walls at different times. A balance problem exists when an archetype persistently over- or under-performs across relevant content, or when one profile makes an explicit global progression contract impossible to satisfy.
+
+## 2.4 Broadsword T5 correction
+
+Ironveil diagnostics showed a real overlap:
+- Longbow T5.2 remained ahead of Broadsword T5.3 in the boss-gate context;
+- therefore no global Ironveil boss multiplier could produce `T5.2 + potion = 0/5` and `T5.3 + potion = 5/5` without breaking Broadsword.
+
+The Broadsword T5 authored base damage was corrected:
+- T4: 86
+- T5: 120 (was 110)
+- T6: 155
+- T7: 210
+- T8: 275
+
+The 120 candidate was the smallest validated correction:
+- +9.1% base damage versus the previous T5 value;
+- T5.3 offense index moved from ~77.2 to ~84.2;
+- explicit shield-package score ~99.7;
+- Ironveil T5.2 + potion remained 0/5;
+- Ironveil T5.3 + potion became 5/5;
+- Broadsword T5.3 retained ~12.4% HP in the candidate sweep.
+
+This remains data-driven: the value is authored in `weaponContentCatalog.ts`; no tier-specific runtime override exists.
 
 ---
 
 # 3. ENCHANTMENT POWER / IP
 
-Enchant combat power is now independent from enchantment display IP.
+Enchant combat power is independent from enchantment display IP.
 
 | Enchant | Display IP bonus | Combat stat multiplier |
 |---:|---:|---:|
@@ -157,7 +216,7 @@ Full normal `.0 -> .3` item cost = 100 shards.
 - off-hand = 50%
 - 1H + off-hand = one full 2H package
 
-Full-set benchmark convention = five full-cost equivalents, therefore:
+Full-set benchmark convention = five full-cost equivalents:
 - `.0 -> .1`: 50 shards
 - `.1 -> .2`: 150 shards
 - `.2 -> .3`: 300 shards
@@ -202,8 +261,6 @@ Critical global-economy rule:
 
 Economy projections must not treat hero combat and hero gathering as simultaneous resource streams.
 
-This was explicitly included when redistributing crafting/enchantment material pressure.
-
 ---
 
 # 5. CRAFTING / REFINING / PREDECESSOR CHAIN
@@ -217,13 +274,11 @@ The representative sequential set-chain regression validates:
 - T6 -> T7 consumes the T6 set
 - T7 -> T8 consumes the T7 set
 
-Representative set test uses four produced/consumed equipment items per transition and verifies the predecessor requirement explicitly.
-
-This predecessor consumption is a structural economy rule and must be included in any total progression-time/material calculation.
+This predecessor consumption is a structural economy rule and must be included in progression-time/material calculations.
 
 Enchant material requirements are derived by scaling the BASE CRAFT materials of the item. Do not maintain a separate unrelated enchantment material recipe.
 
-Refining remains part of the recursive production chain: higher-tier refined resources depend on lower-tier production according to authored recipes.
+Refining remains part of the recursive production chain.
 
 Regression source:
 - `apps/client/src/data/globalEconomySequentialSetChain.test.ts`
@@ -243,8 +298,6 @@ Authority: `AI_BIBLE/10_SYSTEMS/19A_PRODUCTION_PROGRESSION_BALANCE.txt`.
 - T7: 18
 - T8: 25
 
-These were recalculated against the current global material/gather pacing.
-
 ## 6.2 Operational building material upgrades
 
 Refined previous-Tier material requirement:
@@ -259,12 +312,12 @@ Workshop uses the same total requirement but allows a flexible family mix; curre
 ## 6.3 World / Island gates
 
 - after Dark Swamp / T3: Island 2 -> T4 production step
-- after Frostpeak / T4: Island 3 -> T5 production
-- after Ironveil / T5: Island 4 -> T6 production
-- after Ashenpeak / T6: Island 5 -> T7 production
-- after Doompeak / T7: Island 6 -> T8 production
+- after Frostpeak boss gate / T4: Island 3 -> T5 production
+- after Ironveil boss gate / T5: Island 4 -> T6 production
+- after Ashenpeak boss gate / T6: Island 5 -> T7 production
+- after Doompeak boss gate / T7: Island 6 -> T8 production
 
-Island/world gating must remain synchronized with actual production access.
+Island/world gating must remain synchronized with actual production access. The new boss-gate contract intentionally prevents production progression from opening while the player is still materially under-geared for the previous Tier.
 
 ## 6.4 Sequential production pacing reference
 
@@ -282,8 +335,6 @@ Incremental block references:
 - T5 -> T6: ~8.63 h
 - T6 -> T7: ~18.07 h
 - T7 -> T8: ~26.39 h
-
-These projections include the authored worker parallelism, hero active gather requirements, recursive refining and predecessor-equipment crafting chain defined by the balance test.
 
 ---
 
@@ -332,14 +383,12 @@ Representative best-farm Silver/hour references used for calibration:
 - T6: ~116.9k/h
 - T7: ~135.5k/h
 
-Approximate dedicated Silver-farm equivalents for the production sink:
+Approximate dedicated Silver-farm equivalents:
 - ~0.17 h
 - ~1.11 h
 - ~2.26 h
 - ~4.49 h
 - ~6.64 h
-
-Authority remains `19A_PRODUCTION_PROGRESSION_BALANCE.txt` and the live economy data, not this snapshot.
 
 ---
 
@@ -385,7 +434,7 @@ Validated compounded growth:
 - Attunement: `1.03 ^ Strain`
 - Silver: `1.026 ^ Strain`
 
-Every Awake/trait modification therefore becomes incrementally more expensive than the previous one. This replaced threshold-like cost jumps.
+Every Awake/trait modification becomes incrementally more expensive than the previous one.
 
 ---
 
@@ -417,7 +466,7 @@ All 20 faction dungeons x 5 normal weapon profiles were tested at same-tier `.3`
 - T7: 0/20
 - T8: 0/20
 
-Most profiles still reach encounter 5. This confirms that `.3` alone is below the intended comfortable dungeon-farm threshold rather than the entire dungeon being inaccessible from the start.
+Most profiles still reach encounter 5. `.3` alone is below the intended dungeon-farm threshold rather than the entire dungeon being inaccessible from the start.
 
 ## 9.2 `.3 + potion` / current `Tn.3++` entry signal
 
@@ -445,7 +494,7 @@ PLANNED / NOT LIVE:
 - exact faction-damage relationships and values are NOT yet authored and must be balanced when those weapons are created.
 
 INVALID DATA EXCLUDED:
-- the temporary `tn4_base` benchmark is NOT balance evidence. The diagnostic forced `.4` through a harness typed only for `.0-.3`; observed power regressed below `.3`, proving the scenario did not represent a valid live `.4` loadout. Do not cite or balance from those results.
+- the temporary `tn4_base` benchmark is NOT balance evidence. It did not represent a valid live `.4` loadout.
 
 ---
 
@@ -454,15 +503,18 @@ INVALID DATA EXCLUDED:
 The current validated global rules are:
 
 1. Data/runtime is authoritative; UI labels and synthetic diagnostics are secondary.
-2. Recommended IP is an UX marker, not direct enchant combat power.
+2. Recommended IP is a UX marker, not direct enchant combat power.
 3. Enchantment must produce a meaningful power gain, but `.3` must remain below the next Tier's identity.
-4. Previous-tier `.3` must preserve entry access to next-Tier shard farming.
-5. Weapon walls do not need to align; persistent global outliers are the concern.
-6. Approximately 5-10% differences between broadly comparable weapon packages are acceptable when identity justifies them.
-7. Active hero gathering competes with combat time; workers are the parallel gather channel.
-8. Higher-Tier crafting consumes predecessor equipment and must be modeled sequentially.
-9. Silver, materials and shards are complementary sinks; do not tune all three as extreme simultaneous bottlenecks.
-10. Dungeons are return-content and future horizontal faction progression, not another copy of the linear-world wall structure.
+4. Normal world progression remains monotonic.
+5. Explicit end-of-Tier `bossGate` encounters may create local spikes above the following zone entry.
+6. `Tn.2 + potion` must not universally bypass an end-of-Tier boss gate; `Tn.3 + potion` must universally clear it for the representative normal weapon set.
+7. Previous-tier `.3` must preserve entry access to next-Tier shard farming after the gate is cleared.
+8. Weapon walls do not need to align; persistent global outliers are the concern.
+9. When one weapon makes a global gate contract impossible, diagnose the weapon/package before distorting the whole zone.
+10. Active hero gathering competes with combat time; workers are the parallel gather channel.
+11. Higher-Tier crafting consumes predecessor equipment and must be modeled sequentially.
+12. Silver, materials and shards are complementary sinks; do not tune all three as extreme simultaneous bottlenecks.
+13. Dungeons are return-content and future horizontal faction progression, not another copy of the linear-world wall structure.
 
 ---
 
@@ -475,10 +527,12 @@ System docs:
 - `AI_BIBLE/10_SYSTEMS/33_ENCHANTMENT_SYSTEM.txt`
 - `AI_BIBLE/10_SYSTEMS/14_LOOT_SYSTEM.txt`
 - `AI_BIBLE/10_SYSTEMS/35_CURRENCY_SYSTEM.txt`
+- `AI_BIBLE/20_DATA/42_BALANCING_TABLES.txt`
 
 Key live/diagnostic tests:
 - `worldProgressionFoundation.test.ts`
 - `blueFrostpeakProgressionSweep.test.ts`
+- `laterTierBossGateRegression.test.ts`
 - `enchantmentProgressionLadderSweep.test.ts`
 - `enchantmentTierBridgeSweep.test.ts`
 - `weaponCrossTierNeutralBenchmark.test.ts`
@@ -487,5 +541,7 @@ Key live/diagnostic tests:
 - `islandProductionProgressionBalance.test.ts`
 - `dungeonTn3AllWeaponsBenchmark.test.ts`
 - `dungeonTn3PlusThresholdBenchmark.test.ts` — only `tn3_potion` scenario currently valid evidence
+
+One-off boss-gate candidate/diagnostic sweeps are discovery tools. The durable live contract is protected by the regression tests above.
 
 When a future balance pass changes an authoritative value, update the relevant system document first and then refresh this dated snapshot if the global relationship between systems changed.
