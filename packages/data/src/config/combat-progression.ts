@@ -7,6 +7,13 @@ export const REWARD_RANKS_PER_ZONE = 5;
 
 export type EnemyDefenseModel = "legacy_flat_magic" | "rank_parity";
 
+export interface BossGateCombatProfile {
+  readonly progressionRole: "boss_gate";
+  readonly healthMultiplier: number;
+  readonly damageMultiplier: number;
+  readonly defenseMultiplier: number;
+}
+
 export interface ZoneCombatCurve {
   readonly healthStart: number;
   readonly healthEnd: number;
@@ -15,6 +22,14 @@ export interface ZoneCombatCurve {
   readonly defenseStart: number;
   readonly defenseEnd: number;
   readonly defenseModel: EnemyDefenseModel;
+  /**
+   * Optional pressure override for the final zone boss only.
+   *
+   * A boss gate is allowed to be a deliberate local difficulty spike. The
+   * following zone therefore does not have to exceed this boss envelope; its
+   * normal entry curve is compared against normal progression instead.
+   */
+  readonly bossGate?: BossGateCombatProfile;
 }
 
 export const BLUE_WORLD_COMBAT_CURVE = [
@@ -22,7 +37,17 @@ export const BLUE_WORLD_COMBAT_CURVE = [
   { healthStart: 1.15, healthEnd: 1.55, damageStart: 1.18, damageEnd: 1.8, defenseStart: 1.0, defenseEnd: 1.1, defenseModel: "legacy_flat_magic" },
   { healthStart: 1.7, healthEnd: 2.3, damageStart: 2.0, damageEnd: 2.3, defenseStart: 1.15, defenseEnd: 1.3, defenseModel: "legacy_flat_magic" },
   { healthStart: 2.3, healthEnd: 3.02, damageStart: 2.3, damageEnd: 2.5, defenseStart: 1.3, defenseEnd: 1.46, defenseModel: "rank_parity" },
-  { healthStart: 3.1, healthEnd: 3.72, damageStart: 2.5, damageEnd: 2.5, defenseStart: 1.5, defenseEnd: 1.5, defenseModel: "rank_parity" },
+  {
+    healthStart: 3.1,
+    healthEnd: 3.72,
+    damageStart: 2.5,
+    damageEnd: 2.5,
+    defenseStart: 1.5,
+    defenseEnd: 1.5,
+    defenseModel: "rank_parity",
+    // Neutral until the Frostpeak boss-gate runtime sweep is validated.
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1, defenseMultiplier: 1 },
+  },
 ] as const;
 
 /**
