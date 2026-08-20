@@ -67,12 +67,18 @@ export function getEnemyCombatProfile(
   const baseDmg = rank === "boss" ? 26 : rank === "elite" ? 19 : 15;
   const baseArmor = rank === "boss" ? 12 : rank === "elite" ? 8 : 5;
   const baseMagicResistance = curve.defenseModel === "rank_parity" ? baseArmor : 3;
+  const bossGate = rank === "boss" && curve.bossGate?.progressionRole === "boss_gate"
+    ? curve.bossGate
+    : undefined;
+  const bossHealthMultiplier = bossGate?.healthMultiplier ?? 1;
+  const bossDamageMultiplier = bossGate?.damageMultiplier ?? 1;
+  const bossDefenseMultiplier = bossGate?.defenseMultiplier ?? 1;
 
   return {
-    hp: Math.floor(baseHp * healthScale),
-    damage: Math.floor(baseDmg * damageScale),
-    armor: Math.floor(baseArmor * defenseScale),
-    magicResistance: Math.floor(baseMagicResistance * defenseScale),
+    hp: Math.floor(baseHp * healthScale * bossHealthMultiplier),
+    damage: Math.floor(baseDmg * damageScale * bossDamageMultiplier),
+    armor: Math.floor(baseArmor * defenseScale * bossDefenseMultiplier),
+    magicResistance: Math.floor(baseMagicResistance * defenseScale * bossDefenseMultiplier),
     attackSpeed: 0.8,
   };
 }
