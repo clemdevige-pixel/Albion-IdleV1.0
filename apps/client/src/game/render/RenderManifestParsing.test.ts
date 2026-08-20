@@ -1,5 +1,6 @@
 ﻿import { describe, expect, it } from "vitest";
 import heroManifest from "./manifests/hero-broadsword.render.json";
+import spikedGauntletsManifest from "./manifests/hero-spiked-gauntlets.render.json";
 import monsterManifest from "./manifests/monster-stonefang-wolf.render.json";
 import projectileManifest from "./manifests/projectile-arrow.render.json";
 import { parseRenderManifest } from "./RenderManifestParsing";
@@ -37,5 +38,39 @@ describe("Dagger Pair death pose parsing", () => {
     expect(parsed.poses.death.endFrame).toBe(5);
     expect(parsed.poses.death.frameRate).toBe(8);
     expect(parsed.poses.death.repeat).toBe(0);
+  });
+});
+
+describe("Spiked Gauntlets normalized animation parsing", () => {
+  it("uses the Dual Dagger frame and display reference for every animation", () => {
+    const parsed = parseRenderManifest(spikedGauntletsManifest);
+
+    if (parsed.kind !== "actor") {
+      throw new Error("Expected actor manifest");
+    }
+
+    for (const animation of Object.values(parsed.animations)) {
+      expect(animation.frameWidth).toBe(512);
+      expect(animation.frameHeight).toBe(512);
+      expect(animation.startFrame).toBe(0);
+      expect(animation.endFrame).toBe(5);
+      expect(animation.display).toEqual({
+        width: 228.5714285714,
+        height: 228.5714285714,
+      });
+    }
+
+    expect(parsed.poses.death).toMatchObject({
+      frameWidth: 512,
+      frameHeight: 512,
+      startFrame: 0,
+      endFrame: 5,
+      frameRate: 8,
+      repeat: 0,
+      display: {
+        width: 228.5714285714,
+        height: 228.5714285714,
+      },
+    });
   });
 });

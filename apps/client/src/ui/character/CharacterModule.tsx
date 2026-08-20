@@ -213,7 +213,15 @@ export function CharacterModule(): JSX.Element {
             <div className="character-module__hero-halo" />
             <div
               className={`character-module__hero-idle${heroIdle.spriteSheet ? " character-module__hero-idle--sheet" : ""}`}
-              style={{ backgroundImage: `url("${heroIdle.image}")` }}
+              style={{
+                backgroundImage: `url("${heroIdle.image}")`,
+                ...(heroIdle.spriteSheet
+                  ? {
+                      aspectRatio: `${heroIdle.frameWidth} / ${heroIdle.frameHeight}`,
+                      backgroundSize: `${heroIdle.frameCount * 100}% 100%`,
+                    }
+                  : {}),
+              }}
               role="img"
               aria-label="Aperçu du héros équipé"
             />
