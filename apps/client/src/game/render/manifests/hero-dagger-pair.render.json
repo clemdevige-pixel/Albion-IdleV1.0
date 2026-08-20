@@ -14,7 +14,7 @@
       "endFrame": 5,
       "frameRate": 6,
       "repeat": -1,
-      "display": { "width": 210, "height": 210 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "walk": {
       "textureKey": "hero-dagger-pair-walk",
@@ -25,7 +25,7 @@
       "endFrame": 5,
       "frameRate": 10,
       "repeat": -1,
-      "display": { "width": 210, "height": 210 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "attack": {
       "textureKey": "hero-dagger-pair-attack",
@@ -36,7 +36,7 @@
       "endFrame": 5,
       "frameRate": 16,
       "repeat": 0,
-      "display": { "width": 210, "height": 210 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     }
   },
   "poses": {
@@ -49,7 +49,7 @@
       "endFrame": 5,
       "frameRate": 8,
       "repeat": 0,
-      "display": { "width": 210, "height": 210 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     }
   },
   "visualProfile": "melee",
