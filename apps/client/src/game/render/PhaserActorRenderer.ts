@@ -58,7 +58,15 @@ export function registerActorAnimations(
   for (const state of ACTOR_ANIMATION_STATES) {
     const animation = manifest.animations[state];
     const animationKey = getActorAnimationKey(manifest, state);
-    if (scene.anims.exists(animationKey) || !hasTexture(scene, animation.textureKey)) continue;
+    if (!hasTexture(scene, animation.textureKey)) continue;
+
+    // Animation keys are stable while texture keys may evolve with asset revisions.
+    // Rebuild during scene preparation so a stale global Phaser animation can never
+    // keep pointing at a texture that is no longer loaded.
+    if (scene.anims.exists(animationKey)) {
+      scene.anims.remove(animationKey);
+    }
+
     const frames = scene.anims.generateFrameNumbers(animation.textureKey, {
       start: animation.startFrame,
       end: animation.endFrame,
@@ -75,7 +83,11 @@ export function registerActorAnimations(
   if (hasAnimatedDeath(manifest)) {
     const death = manifest.poses.death;
     const animationKey = getActorDeathAnimationKey(manifest);
-    if (!scene.anims.exists(animationKey) && hasTexture(scene, death.textureKey)) {
+    if (hasTexture(scene, death.textureKey)) {
+      if (scene.anims.exists(animationKey)) {
+        scene.anims.remove(animationKey);
+      }
+
       const frames = scene.anims.generateFrameNumbers(death.textureKey, {
         start: death.startFrame,
         end: death.endFrame,
