@@ -70,7 +70,7 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
     defenseStart: 3,
     defenseEnd: 3,
     defenseModel: "rank_parity",
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1, defenseMultiplier: 1 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.15, damageMultiplier: 1.325, defenseMultiplier: 1.05 },
   },
 ] as const;
 
@@ -87,7 +87,7 @@ export const ORANGE_WORLD_COMBAT_CURVE = [
     defenseStart: 4.1,
     defenseEnd: 4.35,
     defenseModel: "rank_parity",
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1, defenseMultiplier: 1 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1.375, defenseMultiplier: 1 },
   },
 ] as const;
 
@@ -104,7 +104,7 @@ export const RED_WORLD_COMBAT_CURVE = [
     defenseStart: 5.85,
     defenseEnd: 6.1,
     defenseModel: "rank_parity",
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1, defenseMultiplier: 1 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1.175, defenseMultiplier: 1 },
   },
 ] as const;
 
