@@ -21,7 +21,7 @@ const T4_ARMOR = [
 const T4_SHIELD = "item_shield_t4_reinforced";
 
 type Enchantment = 1 | 2 | 3;
-type Expectation = "diagnostic" | "all_clear" | "not_all_clear" | "profile_potion_ok";
+type Expectation = "diagnostic" | "all_clear" | "none_clear" | "not_all_clear" | "profile_potion_ok";
 type Checkpoint = {
   readonly id: string;
   readonly segmentIndex: number;
@@ -36,10 +36,11 @@ const CHECKPOINTS: readonly Checkpoint[] = [
   { id: "frostpeak_s4_full_t4_1", segmentIndex: 3, mastery: 19, enchantment: 1, useHealthPotions: false, expectation: "profile_potion_ok" },
   { id: "frostpeak_s6_full_t4_2", segmentIndex: 5, mastery: 20, enchantment: 2, useHealthPotions: false, expectation: "diagnostic" },
   { id: "frostpeak_s8_full_t4_2", segmentIndex: 7, mastery: 21, enchantment: 2, useHealthPotions: false, expectation: "diagnostic" },
-  { id: "frostpeak_s10_full_t4_2", segmentIndex: 9, mastery: 22, enchantment: 2, useHealthPotions: false, expectation: "not_all_clear" },
-  { id: "frostpeak_s10_full_t4_2_potion", segmentIndex: 9, mastery: 22, enchantment: 2, useHealthPotions: true, expectation: "all_clear" },
-  { id: "frostpeak_s10_full_t4_3", segmentIndex: 9, mastery: 22, enchantment: 3, useHealthPotions: false, expectation: "all_clear" },
-  { id: "frostpeak_s10_full_t4_1_potion", segmentIndex: 9, mastery: 22, enchantment: 1, useHealthPotions: true, expectation: "not_all_clear" },
+  { id: "frostpeak_s10_full_t4_2", segmentIndex: 9, mastery: 22, enchantment: 2, useHealthPotions: false, expectation: "none_clear" },
+  { id: "frostpeak_s10_full_t4_2_potion", segmentIndex: 9, mastery: 22, enchantment: 2, useHealthPotions: true, expectation: "none_clear" },
+  { id: "frostpeak_s10_full_t4_3", segmentIndex: 9, mastery: 22, enchantment: 3, useHealthPotions: false, expectation: "not_all_clear" },
+  { id: "frostpeak_s10_full_t4_3_potion", segmentIndex: 9, mastery: 22, enchantment: 3, useHealthPotions: true, expectation: "all_clear" },
+  { id: "frostpeak_s10_full_t4_1_potion", segmentIndex: 9, mastery: 22, enchantment: 1, useHealthPotions: true, expectation: "none_clear" },
 ];
 
 function shortWeaponName(itemId: string): string {
@@ -66,7 +67,7 @@ function runCheckpoint(checkpoint: Checkpoint, weaponItemId: string, forcePotion
 }
 
 describe("Blue Frostpeak runtime progression sweep", () => {
-  it("protects the role-aware potion progression contract", () => {
+  it("protects the T4.3 final boss gate contract", () => {
     const rows: Array<Record<string, unknown>> = [];
 
     for (const checkpoint of CHECKPOINTS) {
@@ -96,6 +97,8 @@ describe("Blue Frostpeak runtime progression sweep", () => {
 
       if (checkpoint.expectation === "all_clear") {
         expect(clearCount, checkpoint.id).toBe(T4_WEAPONS.length);
+      } else if (checkpoint.expectation === "none_clear") {
+        expect(clearCount, checkpoint.id).toBe(0);
       } else if (checkpoint.expectation === "not_all_clear") {
         expect(clearCount, checkpoint.id).toBeLessThan(T4_WEAPONS.length);
       } else if (checkpoint.expectation === "profile_potion_ok") {
