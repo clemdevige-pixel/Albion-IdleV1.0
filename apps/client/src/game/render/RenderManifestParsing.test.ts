@@ -117,7 +117,7 @@ describe("Infernal Staff normalized animation parsing", () => {
       throw new Error("Expected actor manifest");
     }
 
-    expect(parsed.offset).toEqual({ x: 27, y: 58 });
+    expect(parsed.offset).toEqual({ x: 30, y: 58 });
 
     for (const animation of Object.values(parsed.animations)) {
       expect(animation.frameWidth).toBe(512);

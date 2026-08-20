@@ -3,10 +3,10 @@
   "id": "hero_fire_staff",
   "kind": "actor",
   "origin": { "x": 0.5, "y": 1 },
-  "offset": { "x": 27, "y": 58 },
+  "offset": { "x": 30, "y": 58 },
   "animations": {
     "idle": {
-      "textureKey": "hero-fire-staff-idle-sheet-v3",
+      "textureKey": "hero-fire-staff-idle-sheet-v4",
       "assetPath": "/assets/characters/hero-fire-staff-idle-sheet-v1.png",
       "frameWidth": 512,
       "frameHeight": 512,
@@ -17,7 +17,7 @@
       "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "walk": {
-      "textureKey": "hero-fire-staff-walk-sheet-v3",
+      "textureKey": "hero-fire-staff-walk-sheet-v4",
       "assetPath": "/assets/characters/hero-fire-staff-walk-sheet-v1.png",
       "frameWidth": 512,
       "frameHeight": 512,
@@ -28,7 +28,7 @@
       "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "attack": {
-      "textureKey": "hero-fire-staff-attack-sheet-v3",
+      "textureKey": "hero-fire-staff-attack-sheet-v4",
       "assetPath": "/assets/characters/hero-fire-staff-attack-sheet-v1.png",
       "frameWidth": 512,
       "frameHeight": 512,
@@ -41,7 +41,7 @@
   },
   "poses": {
     "death": {
-      "textureKey": "hero-fire-staff-death-sheet-v3",
+      "textureKey": "hero-fire-staff-death-sheet-v4",
       "assetPath": "/assets/characters/hero-fire-staff-death-v2.png",
       "frameWidth": 512,
       "frameHeight": 512,
