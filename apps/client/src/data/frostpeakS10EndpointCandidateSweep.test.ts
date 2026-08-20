@@ -74,7 +74,7 @@ const CANDIDATES: readonly Candidate[] = [
 ] as const;
 
 function mutableFrostpeak(): MutableCurve {
-  return BLUE_WORLD_COMBAT_CURVE[FROSTPEAK_INDEX] as unknown as MutableCurve;
+  return BLUE_WORLD_COMBAT_CURVE[FROSTPEAK_INDEX];
 }
 
 function applyCandidate(candidate: Candidate): void {
