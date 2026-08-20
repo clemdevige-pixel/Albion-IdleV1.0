@@ -78,6 +78,13 @@ const TIER_CONFIG = [
   },
 ] as const;
 
+const T5_DIAGNOSTIC_CANDIDATES = new Set([
+  "h1_d1.375_def1",
+  "h1_d1.4_def1",
+  "h1.05_d1.3_def1.1",
+  "h1.15_d1.325_def1.05",
+]);
+
 type Tier = keyof typeof WEAPONS_BY_TIER;
 type ZoneDefId = (typeof TIER_CONFIG)[number]["zoneDefId"];
 type MutableBossGate = {
@@ -91,6 +98,10 @@ function equipmentFor(weaponItemId: string, tier: Tier): readonly string[] {
   const items: string[] = [...ARMOR_BY_TIER[tier]];
   if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") items.push(SHIELD_BY_TIER[tier]);
   return items;
+}
+
+function shortWeaponName(itemId: string, tier: Tier): string {
+  return itemId.replace("item_weapon_", "").replace(`_t${tier}_`, " ");
 }
 
 function run(
@@ -115,6 +126,7 @@ function run(
 describe("later-tier boss gate candidate sweep", () => {
   it("refines the T5/T6/T7 boss-gate frontiers with one reusable sweep", () => {
     const allRows: Array<Record<string, number | boolean | string>> = [];
+    const t5DiagnosticRows: Array<Record<string, number | boolean | string>> = [];
     let expectedRowCount = 0;
 
     for (const config of TIER_CONFIG) {
@@ -132,15 +144,18 @@ describe("later-tier boss gate candidate sweep", () => {
               finalCurve.bossGate.damageMultiplier = damageMultiplier;
               finalCurve.bossGate.defenseMultiplier = defenseMultiplier;
 
-              const tN2Potion = WEAPONS_BY_TIER[tier].map((weaponItemId) =>
-                run(tier, config.mastery, config.zoneDefId, weaponItemId, 2),
-              );
-              const tN3Potion = WEAPONS_BY_TIER[tier].map((weaponItemId) =>
-                run(tier, config.mastery, config.zoneDefId, weaponItemId, 3),
-              );
+              const candidate = `h${healthMultiplier}_d${damageMultiplier}_def${defenseMultiplier}`;
+              const tN2Potion = WEAPONS_BY_TIER[tier].map((weaponItemId) => ({
+                weaponItemId,
+                result: run(tier, config.mastery, config.zoneDefId, weaponItemId, 2),
+              }));
+              const tN3Potion = WEAPONS_BY_TIER[tier].map((weaponItemId) => ({
+                weaponItemId,
+                result: run(tier, config.mastery, config.zoneDefId, weaponItemId, 3),
+              }));
 
-              const tN2PotionClear = tN2Potion.filter((result) => result.clear).length;
-              const tN3PotionClear = tN3Potion.filter((result) => result.clear).length;
+              const tN2PotionClear = tN2Potion.filter(({ result }) => result.clear).length;
+              const tN3PotionClear = tN3Potion.filter(({ result }) => result.clear).length;
               const validContract = tN2PotionClear === 0 && tN3PotionClear === WEAPONS_BY_TIER[tier].length;
               const adjustmentScore = Number(
                 ((healthMultiplier - 1) + (damageMultiplier - 1) + (defenseMultiplier - 1)).toFixed(4),
@@ -148,16 +163,33 @@ describe("later-tier boss gate candidate sweep", () => {
 
               tierRows.push({
                 transition: config.label,
-                candidate: `h${healthMultiplier}_d${damageMultiplier}_def${defenseMultiplier}`,
+                candidate,
                 healthMultiplier,
                 damageMultiplier,
                 defenseMultiplier,
                 adjustmentScore,
                 tN2PotionClear,
                 tN3PotionClear,
-                tN3PotionMinHp: Math.min(...tN3Potion.map((result) => result.hpPercent)),
+                tN3PotionMinHp: Math.min(...tN3Potion.map(({ result }) => result.hpPercent)),
                 validContract,
               });
+
+              if (tier === 5 && T5_DIAGNOSTIC_CANDIDATES.has(candidate)) {
+                for (const enchantment of [2, 3] as const) {
+                  const results = enchantment === 2 ? tN2Potion : tN3Potion;
+                  for (const { weaponItemId, result } of results) {
+                    t5DiagnosticRows.push({
+                      candidate,
+                      enchantment,
+                      weapon: shortWeaponName(weaponItemId, tier),
+                      clear: result.clear,
+                      hpPercent: result.hpPercent,
+                      potions: result.potionsUsed,
+                      encounters: result.encounterReached,
+                    });
+                  }
+                }
+              }
             }
           }
         }
@@ -184,6 +216,11 @@ describe("later-tier boss gate candidate sweep", () => {
       allRows.push(...tierRows);
     }
 
+    console.log("[T5_BOSS_GATE_WEAPON_OVERLAP_DIAGNOSTIC]");
+    console.table(t5DiagnosticRows);
+    console.log("[T5_BOSS_GATE_WEAPON_OVERLAP_DIAGNOSTIC_JSON]", JSON.stringify(t5DiagnosticRows, null, 2));
+
     expect(allRows).toHaveLength(expectedRowCount);
+    expect(t5DiagnosticRows).toHaveLength(T5_DIAGNOSTIC_CANDIDATES.size * WEAPONS_BY_TIER[5].length * 2);
   });
 });
