@@ -85,8 +85,8 @@ describe("weapon content catalog", () => {
 
   it("keeps current live M1 mechanics", () => {
     expect(CLIENT_ABILITIES["ability_sword_heroic_strike"]).toMatchObject({
-      cooldown: 8,
-      mechanics: { mechanics: [{ kind: "damage", ratio: 0.75 }] },
+      cooldown: 6,
+      mechanics: { mechanics: [{ kind: "damage", ratio: 0.9 }] },
     });
     expect(CLIENT_ABILITIES["ability_bow_aimed_shot"]).toMatchObject({
       cooldown: 5,
