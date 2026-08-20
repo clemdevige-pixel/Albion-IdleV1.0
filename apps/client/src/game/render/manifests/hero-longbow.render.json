@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "hero_longbow",
+  "kind": "actor",
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 58 },
+  "animations": {
+    "idle": {
+      "textureKey": "hero-longbow-idle-sheet-v1",
+      "assetPath": "/assets/characters/hero-longbow-idle-sheet-v1.png",
+      "frameWidth": 512,
+      "frameHeight": 512,
+      "startFrame": 0,
+      "endFrame": 5,
+      "frameRate": 6,
+      "repeat": -1,
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
+    },
+    "walk": {
+      "textureKey": "hero-longbow-walk-sheet-v1",
+      "assetPath": "/assets/characters/hero-longbow-walk-sheet-v1.png",
+      "frameWidth": 512,
+      "frameHeight": 512,
+      "startFrame": 0,
+      "endFrame": 5,
+      "frameRate": 10,
+      "repeat": 0,
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
+    },
+    "attack": {
+      "textureKey": "hero-longbow-attack-sheet-v1",
+      "assetPath": "/assets/characters/hero-longbow-attack-sheet-v1.png",
+      "frameWidth": 512,
+      "frameHeight": 512,
+      "startFrame": 0,
+      "endFrame": 5,
+      "frameRate": 13,
+      "repeat": 0,
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
+    }
+  },
+  "poses": {
+    "death": {
+      "textureKey": "hero-longbow-death-sheet-v1",
+      "assetPath": "/assets/characters/hero-longbow-death-sheet-v1.png",
+      "frameWidth": 512,
+      "frameHeight": 512,
+      "startFrame": 0,
+      "endFrame": 5,
+      "frameRate": 8,
+      "repeat": 0,
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
+    }
+  },
+  "visualProfile": "projectile",
+  "visualParameters": {
+    "approachDistance": 0,
+    "motionDurationMs": 0,
+    "impactDelayMs": 355
+  },
+  "ambientMotion": { "distance": 4, "durationMs": 900, "delayMs": 0 }
+}
