@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { getWeaponDefensiveBenchmarkProfile, type BenchmarkDefensiveLoadout } from "./weaponIdealBenchmark.js";
 
 type Tier = 4 | 5 | 6 | 7 | 8;
-type Enchantment = 0 | 3;
 
 function weaponId(tier: Tier): string {
   return `item_weapon_sword_t${tier}_broadsword`;
