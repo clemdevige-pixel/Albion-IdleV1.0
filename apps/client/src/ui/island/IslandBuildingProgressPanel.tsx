@@ -74,13 +74,29 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
                 }
               }}
             >
+              <div className="ui-island-building-progress__heading">
+                <span className="ui-island-building-progress__icon" aria-hidden="true">{definition.icon}</span>
+                <div>
+                  <strong>{definition.label}</strong>
+                  <small>Niv. {String(building.level)} → objectif Niv. {String(maxBuildingLevel)} · prochaine amélioration Niv. {String(next.level)}</small>
+                </div>
+              </div>
+
               <div className="ui-island-building-progress__row">
-                <div className="ui-island-building-progress__heading">
-                  <span className="ui-island-building-progress__icon" aria-hidden="true">{definition.icon}</span>
-                  <div>
-                    <strong>{definition.label}</strong>
-                    <small>Niv. {String(building.level)} → objectif Niv. {String(maxBuildingLevel)} · prochaine amélioration Niv. {String(next.level)}</small>
-                  </div>
+                <div className="ui-island-construction__costs">
+                  <span className={silverReady ? "is-ready" : "is-missing"}>
+                    {String(wallet.silver)} / {String(cost.silver)} Silver
+                  </span>
+                  {materials.map((requirement) => (
+                    <span key={requirement.itemId} className={requirement.available >= requirement.quantity ? "is-ready" : "is-missing"}>
+                      {getIslandMaterialLabel(requirement.itemId)} {String(requirement.available)} / {String(requirement.quantity)}
+                    </span>
+                  ))}
+                  {flexible !== undefined ? (
+                    <span className={flexibleReady ? "is-ready" : "is-missing"}>
+                      Raffinés flexibles {String(flexibleTotal)} / {String(flexible.totalQuantity)} · {String(flexibleDistinct)} / {String(flexible.minimumDistinctItemIds)} familles
+                    </span>
+                  ) : null}
                 </div>
 
                 <button
@@ -94,22 +110,6 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
                 >
                   {canUpgrade ? `Mettre à niveau · Niv. ${String(next.level)}` : "Ressources insuffisantes"}
                 </button>
-              </div>
-
-              <div className="ui-island-construction__costs">
-                <span className={silverReady ? "is-ready" : "is-missing"}>
-                  {String(wallet.silver)} / {String(cost.silver)} Silver
-                </span>
-                {materials.map((requirement) => (
-                  <span key={requirement.itemId} className={requirement.available >= requirement.quantity ? "is-ready" : "is-missing"}>
-                    {getIslandMaterialLabel(requirement.itemId)} {String(requirement.available)} / {String(requirement.quantity)}
-                  </span>
-                ))}
-                {flexible !== undefined ? (
-                  <span className={flexibleReady ? "is-ready" : "is-missing"}>
-                    Raffinés flexibles {String(flexibleTotal)} / {String(flexible.totalQuantity)} · {String(flexibleDistinct)} / {String(flexible.minimumDistinctItemIds)} familles
-                  </span>
-                ) : null}
               </div>
             </div>
           );
