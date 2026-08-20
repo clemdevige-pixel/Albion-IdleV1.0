@@ -42,6 +42,38 @@ describe("Dagger Pair death pose parsing", () => {
   });
 });
 
+describe("Broadsword normalized animation parsing", () => {
+  it("uses the Dual Dagger frame and display reference for every animation", () => {
+    const parsed = parseRenderManifest(heroManifest);
+
+    if (parsed.kind !== "actor") {
+      throw new Error("Expected actor manifest");
+    }
+
+    expect(parsed.offset).toEqual({ x: -5, y: 58 });
+
+    for (const animation of Object.values(parsed.animations)) {
+      expect(animation.frameWidth).toBe(512);
+      expect(animation.frameHeight).toBe(512);
+      expect(animation.startFrame).toBe(0);
+      expect(animation.endFrame).toBe(5);
+      expect(animation.display).toEqual({
+        width: 228.5714285714,
+        height: 228.5714285714,
+      });
+    }
+
+    expect(parsed.poses.death).toMatchObject({
+      frameWidth: 512,
+      frameHeight: 512,
+      startFrame: 0,
+      endFrame: 5,
+      frameRate: 8,
+      repeat: 0,
+    });
+  });
+});
+
 describe("Spiked Gauntlets normalized animation parsing", () => {
   it("uses the Dual Dagger frame and display reference for every animation", () => {
     const parsed = parseRenderManifest(spikedGauntletsManifest);

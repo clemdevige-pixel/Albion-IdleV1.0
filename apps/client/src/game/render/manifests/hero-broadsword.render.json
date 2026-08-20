@@ -3,47 +3,53 @@
   "id": "hero_broadsword",
   "kind": "actor",
   "origin": { "x": 0.5, "y": 1 },
-  "offset": { "x": 0, "y": 58 },
+  "offset": { "x": -5, "y": 58 },
   "animations": {
     "idle": {
-      "textureKey": "hero-broadsword-idle-sheet",
+      "textureKey": "hero-broadsword-idle-sheet-v2",
       "assetPath": "/assets/characters/hero-broadsword-idle-sheet-v1.png",
-      "frameWidth": 420,
-      "frameHeight": 330,
+      "frameWidth": 512,
+      "frameHeight": 512,
       "startFrame": 0,
-      "endFrame": 6,
+      "endFrame": 5,
       "frameRate": 6,
       "repeat": -1,
-      "display": { "width": 220, "height": 200 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "walk": {
-      "textureKey": "hero-broadsword-walk-sheet",
+      "textureKey": "hero-broadsword-walk-sheet-v2",
       "assetPath": "/assets/characters/hero-broadsword-walk-sheet-v1.png",
-      "frameWidth": 420,
-      "frameHeight": 330,
+      "frameWidth": 512,
+      "frameHeight": 512,
       "startFrame": 0,
-      "endFrame": 6,
+      "endFrame": 5,
       "frameRate": 10,
       "repeat": 0,
-      "display": { "width": 220, "height": 200 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "attack": {
-      "textureKey": "hero-broadsword-attack-sheet",
+      "textureKey": "hero-broadsword-attack-sheet-v2",
       "assetPath": "/assets/characters/hero-broadsword-attack-sheet-v1.png",
-      "frameWidth": 420,
-      "frameHeight": 330,
+      "frameWidth": 512,
+      "frameHeight": 512,
       "startFrame": 0,
-      "endFrame": 6,
+      "endFrame": 5,
       "frameRate": 16,
       "repeat": 0,
-      "display": { "width": 282.8571428571, "height": 257.1428571429 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     }
   },
   "poses": {
     "death": {
-      "textureKey": "hero-broadsword-death",
+      "textureKey": "hero-broadsword-death-sheet-v2",
       "assetPath": "/assets/characters/hero-broadsword-death-v2.png",
-      "display": { "width": 220, "height": 200 }
+      "frameWidth": 512,
+      "frameHeight": 512,
+      "startFrame": 0,
+      "endFrame": 5,
+      "frameRate": 8,
+      "repeat": 0,
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     }
   },
   "visualProfile": "melee",
