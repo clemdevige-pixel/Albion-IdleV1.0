@@ -51,6 +51,21 @@
   border: 1px solid rgba(208, 157, 52, 0.13);
   border-radius: var(--ui-radius-sm);
   background: rgba(11, 14, 19, 0.46);
+  transition: border-color var(--ui-duration-fast), background var(--ui-duration-fast);
+}
+.ui-island-building-progress__item[role="button"] { cursor: pointer; }
+.ui-island-building-progress__item[role="button"]:hover,
+.ui-island-building-progress__item[role="button"]:focus-visible {
+  border-color: rgba(208, 157, 52, 0.4);
+  background: rgba(177, 127, 37, 0.08);
+  outline: none;
+}
+.ui-island-building-progress__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 .ui-island-building-progress__heading {
   display: grid;
@@ -63,3 +78,4 @@
 .ui-island-building-progress__icon { display: grid; place-items: center; width: 22px; height: 22px; font-size: 13px; }
 .ui-island-building-progress__heading strong { font-size: var(--ui-text-xs); }
 .ui-island-building-progress__heading small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui-island-building-progress__upgrade { white-space: nowrap; }
