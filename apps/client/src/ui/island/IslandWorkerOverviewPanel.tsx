@@ -2,6 +2,7 @@ import { getIslandBuildingDefinition } from "@game/data";
 import { useMemo } from "react";
 import { getProductionFamilyDefinition } from "../../data/productionFamilyCatalog";
 import { useGameBridge } from "../../state/GameContext";
+import { findWorkerGatheringBuilding } from "../shared/findWorkerGatheringBuilding";
 import { useIslandSelection } from "./IslandSelectionContext";
 import "./islandWorkerOverview.css";
 
@@ -10,13 +11,7 @@ export function IslandWorkerOverviewPanel(): JSX.Element | null {
   const { selectBuilding } = useIslandSelection();
 
   const workerRows = useMemo(() => workers.workers.map((worker) => {
-    const building = island.buildings.find((candidate) => {
-      const definition = getIslandBuildingDefinition(candidate.definitionId);
-      return definition.gatheringService?.workerProfession === worker.profession;
-    });
-    const plot = building === undefined
-      ? undefined
-      : island.plots.find((candidate) => candidate.buildingInstanceId === building.instanceId);
+    const building = findWorkerGatheringBuilding(island.buildings, worker.profession);
     const family = building === undefined
       ? undefined
       : getIslandBuildingDefinition(building.definitionId).gatheringService?.productionFamily;
@@ -24,10 +19,9 @@ export function IslandWorkerOverviewPanel(): JSX.Element | null {
     return {
       worker,
       building,
-      plot,
       family: family === undefined ? undefined : getProductionFamilyDefinition(family),
     };
-  }), [island.buildings, island.plots, workers.workers]);
+  }), [island.buildings, workers.workers]);
 
   if (workerRows.length === 0) return null;
 
@@ -42,21 +36,20 @@ export function IslandWorkerOverviewPanel(): JSX.Element | null {
       </div>
 
       <div className="ui-island-workers-overview__list">
-        {workerRows.map(({ worker, building, plot, family }) => {
-          const canOpenBuilding = building !== undefined && plot !== undefined;
+        {workerRows.map(({ worker, building, family }) => {
           const openBuilding = () => {
-            if (!canOpenBuilding) return;
-            selectBuilding(plot.id, building.instanceId);
+            if (building === undefined) return;
+            selectBuilding(building.plotId, building.instanceId);
           };
 
           return (
             <div
               key={worker.id}
-              className={`ui-island-workers-overview__row${canOpenBuilding ? " is-clickable" : ""}`}
-              role={canOpenBuilding ? "button" : undefined}
-              tabIndex={canOpenBuilding ? 0 : undefined}
-              onClick={canOpenBuilding ? openBuilding : undefined}
-              onKeyDown={canOpenBuilding ? (event) => {
+              className={`ui-island-workers-overview__row${building !== undefined ? " is-clickable" : ""}`}
+              role={building !== undefined ? "button" : undefined}
+              tabIndex={building !== undefined ? 0 : undefined}
+              onClick={building !== undefined ? openBuilding : undefined}
+              onKeyDown={building !== undefined ? (event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   openBuilding();
@@ -86,7 +79,7 @@ export function IslandWorkerOverviewPanel(): JSX.Element | null {
                     : "Disponible"}
               </span>
 
-              {canOpenBuilding ? <span className="ui-island-workers-overview__open" aria-hidden="true">›</span> : null}
+              {building !== undefined ? <span className="ui-island-workers-overview__open" aria-hidden="true">›</span> : null}
             </div>
           );
         })}
