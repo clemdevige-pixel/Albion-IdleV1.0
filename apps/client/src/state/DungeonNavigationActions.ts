@@ -5,6 +5,7 @@ import type {
   EquipmentManager,
   InventoryManager,
 } from "@game/gameplay";
+import { getItemTier } from "../data/itemPower.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
 
 interface DungeonCombatRuntime {
@@ -59,6 +60,7 @@ export class DungeonNavigationActions {
       || this.deps.dungeonRuntime.activeRun?.status === "active"
       || this.pendingDefinitionId !== null
       || this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") === undefined
+      || !this.canEnterDungeonWithCurrentEquipment(definitionId)
       || !this.canConsumeDungeonKey(definitionId)
     ) return false;
 
@@ -95,6 +97,14 @@ export class DungeonNavigationActions {
   }
 
   private startNow(definitionId: string): boolean {
+    // Revalidate at the execution boundary as pending dungeon starts are deferred
+    // until the current world encounter has fully reached the paused state.
+    if (!this.canEnterDungeonWithCurrentEquipment(definitionId)) {
+      this.pendingDefinitionId = null;
+      this.deps.onStateChanged();
+      return false;
+    }
+
     this.deps.combatRuntime.interruptEncounter();
     const started = this.deps.dungeonRuntime.start(
       definitionId,
@@ -108,6 +118,15 @@ export class DungeonNavigationActions {
     this.deps.stopController.reset();
     this.deps.onStateChanged();
     return started.ok;
+  }
+
+  private canEnterDungeonWithCurrentEquipment(definitionId: string): boolean {
+    const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
+    if (definition === undefined) return false;
+
+    return [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()]
+      .map((entry) => getItemTier(entry.itemId))
+      .every((tier) => tier === undefined || tier <= definition.tier);
   }
 
   private canConsumeDungeonKey(definitionId: string): boolean {
