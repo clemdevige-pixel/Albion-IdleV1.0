@@ -6,7 +6,7 @@
   "offset": { "x": 0, "y": 58 },
   "animations": {
     "idle": {
-      "textureKey": "hero-dagger-pair-idle-sheet-v5",
+      "textureKey": "hero-dagger-pair-idle-sheet-v2",
       "assetPath": "/assets/characters/hero_dual_dagger_idle.png",
       "frameWidth": 352,
       "frameHeight": 448,
@@ -17,7 +17,7 @@
       "display": { "width": 157.1428571429, "height": 200 }
     },
     "walk": {
-      "textureKey": "hero-dagger-pair-walk-sheet-v5",
+      "textureKey": "hero-dagger-pair-walk-sheet-v3",
       "assetPath": "/assets/characters/dual_daggers_walk.png",
       "frameWidth": 341,
       "frameHeight": 484,
@@ -28,7 +28,7 @@
       "display": { "width": 152.2321428571, "height": 216.0714285714 }
     },
     "attack": {
-      "textureKey": "hero-dagger-pair-attack-sheet-v5",
+      "textureKey": "hero-dagger-pair-attack-sheet-v2",
       "assetPath": "/assets/characters/hero_dual_dagger_attack.png",
       "frameWidth": 467,
       "frameHeight": 448,
@@ -41,7 +41,7 @@
   },
   "poses": {
     "death": {
-      "textureKey": "hero-dagger-pair-death-sheet-v5",
+      "textureKey": "hero-dagger-pair-death-sheet-v3",
       "assetPath": "/assets/characters/dual_daggers_death.png",
       "frameWidth": 331,
       "frameHeight": 368,
