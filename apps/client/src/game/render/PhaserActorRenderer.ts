@@ -83,13 +83,14 @@ export function preloadActorManifest(
     });
   }
 
-  const death = manifest.poses.death;
   if (hasAnimatedDeath(manifest)) {
+    const death = manifest.poses.death;
     scene.load.spritesheet(death.textureKey, death.assetPath, {
       frameWidth: death.frameWidth,
       frameHeight: death.frameHeight,
     });
   } else {
+    const death = manifest.poses.death;
     scene.load.image(death.textureKey, death.assetPath);
   }
 }
