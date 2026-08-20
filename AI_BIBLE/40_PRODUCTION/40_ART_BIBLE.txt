@@ -106,6 +106,32 @@ Characteristics:
 
 Players should instantly recognize a character's build and specialization without zooming in.
 
+## 5.1 Canonical Male Hero Identity — Locked
+
+The existing Broadsword hero is the absolute visual reference for the playable male character across every current and future weapon family.
+
+Canonical in-game assets:
+
+- `apps/client/public/assets/characters/hero-broadsword-idle-sheet-v1.png`
+- `apps/client/public/assets/characters/hero-broadsword-walk-sheet-v1.png`
+- `apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png`
+- `apps/client/public/assets/characters/hero-broadsword-death-v2.png`
+
+Every equipped variant must preserve the Broadsword hero's:
+
+- facial structure, facial features, eyes, and skin tone;
+- hairstyle, hair silhouette, hair volume, and hair colors;
+- head-to-body ratio, neck, body shape, and limb proportions;
+- recognizable identity throughout every animation frame.
+
+Only the weapon, appropriate armor or clothing, and movement required by the animation may change. Plate, leather, cloth, weapon specialization, animation pose, or equipment tier must never produce a different face, hairstyle, or body morphology.
+
+This rule applies to Broadsword, Spiked Gauntlets, Longbow, Dual Daggers, Infernal Staff, and every future weapon family. The Infernal Staff currently uses the `hero_fire_staff` visual profile.
+
+The Broadsword sprites already integrated into the game take precedence over presentation boards or newly interpreted concept art whenever the male hero's appearance is in question.
+
+Validated production decision: 2026-08-20.
+
 ---
 
 # 6. Equipment
