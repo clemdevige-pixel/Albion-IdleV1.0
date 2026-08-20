@@ -64,8 +64,10 @@ describe("non-weapon equipment content catalog", () => {
       { itemId: "item_shield_t4_reinforced", quantity: 1 },
     ]);
     expect(byOutput.get("item_armor_t5_leather")?.requirements).toEqual([
-      { itemId: "item_refined_leather_t5", quantity: 7 },
-      { itemId: "item_refined_cloth_t5", quantity: 4 },
+      { itemId: "item_refined_planks_t5", quantity: 2 },
+      { itemId: "item_refined_metal_bar_t5", quantity: 2 },
+      { itemId: "item_refined_leather_t5", quantity: 4 },
+      { itemId: "item_refined_cloth_t5", quantity: 3 },
       { itemId: "item_armor_t4_leather", quantity: 1 },
     ]);
   });
