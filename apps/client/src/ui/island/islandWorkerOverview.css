@@ -44,7 +44,7 @@
 
 .ui-island-workers-overview__row {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 54px auto 16px;
+  grid-template-columns: 34px minmax(0, 1fr) 54px 88px 16px;
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -113,7 +113,9 @@
 .ui-island-workers-overview__state {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
+  width: 88px;
   color: var(--ui-color-text-secondary);
   font-size: 9px;
   font-weight: 700;
@@ -121,6 +123,7 @@
 }
 
 .ui-island-workers-overview__state i {
+  flex: none;
   width: 6px;
   height: 6px;
   border-radius: 999px;
@@ -144,6 +147,8 @@
 
   .ui-island-workers-overview__state {
     grid-column: 2 / 5;
+    justify-content: flex-start;
+    width: auto;
   }
 
   .ui-island-workers-overview__avatar {
