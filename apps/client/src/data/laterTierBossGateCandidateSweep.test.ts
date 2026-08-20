@@ -130,7 +130,7 @@ describe("later-tier boss gate candidate sweep", () => {
     let expectedRowCount = 0;
 
     for (const config of TIER_CONFIG) {
-      const tier = config.tier as Tier;
+      const tier = config.tier;
       const finalCurve = config.curve[config.curve.length - 1] as unknown as { bossGate: MutableBossGate };
       const original: BossGateCombatProfile = { ...finalCurve.bossGate };
       const tierRows: Array<Record<string, number | boolean | string>> = [];
