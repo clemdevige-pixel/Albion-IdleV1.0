@@ -6,7 +6,7 @@ import { WORLD_ZONE_IDS } from "../apps/client/src/data/worldContentCatalog.js";
 const REQUIRED_GAMEPLAY_STAT = "stat_auto_attack_damage_taken_bonus" as StatId;
 if (!createDefaultStatRegistry().has(REQUIRED_GAMEPLAY_STAT)) {
   throw new Error(
-    `Gameplay dist is stale: missing ${String(REQUIRED_GAMEPLAY_STAT)}. Run \"pnpm.cmd --filter gameplay build\" before this benchmark.`,
+    `Gameplay dist is stale: missing ${String(REQUIRED_GAMEPLAY_STAT)}. Run "pnpm.cmd --filter gameplay build" before this benchmark.`,
   );
 }
 
