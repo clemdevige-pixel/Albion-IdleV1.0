@@ -18,19 +18,19 @@ describe("awakening enchantment policy", () => {
   });
 
   it("keeps every conventional T4-T8 progression equipment item enchantable through .3", () => {
-    const progressionItems = PROGRESSION_EQUIPMENT_CONTENT
-      .flatMap((family) => family.items)
-      .filter((item) => item.tier >= 4 && item.tier <= 8);
+    for (const family of PROGRESSION_EQUIPMENT_CONTENT) {
+      for (const item of family.items) {
+        if (item.tier < 4 || item.tier > 8) continue;
 
-    for (const item of progressionItems) {
-      expect(ENCHANTMENT_ITEM_POLICY[item.itemId]).toEqual({
-        enabled: true,
-        maximumLevel: 3,
-      });
+        expect(ENCHANTMENT_ITEM_POLICY[item.itemId]).toEqual({
+          enabled: true,
+          maximumLevel: 3,
+        });
 
-      const resolved = resolveAuthoredEnchantmentItemInfo(item.itemId);
-      expect(resolved?.enchantable).toBe(true);
-      expect(resolved?.maximumLevel).toBe(3);
+        const resolved = resolveAuthoredEnchantmentItemInfo(item.itemId);
+        expect(resolved?.enchantable).toBe(true);
+        expect(resolved?.maximumLevel).toBe(3);
+      }
     }
   });
 
