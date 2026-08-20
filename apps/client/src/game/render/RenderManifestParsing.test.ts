@@ -85,6 +85,7 @@ describe("Longbow normalized animation parsing", () => {
     }
 
     expect(parsed.id).toBe("hero_longbow");
+    expect(parsed.offset).toEqual({ x: 11, y: 58 });
 
     for (const animation of Object.values(parsed.animations)) {
       expect(animation.frameWidth).toBe(512);
