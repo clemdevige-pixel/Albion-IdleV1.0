@@ -8,6 +8,7 @@ import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { ConstructionPanel } from "./ConstructionPanel";
 import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
+import { IslandBuildingProgressPanel } from "./IslandBuildingProgressPanel";
 import { IslandLevelPanel } from "./IslandLevelPanel";
 import { IslandOnboardingGuide } from "./IslandOnboardingGuide";
 import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
@@ -85,6 +86,7 @@ export function IslandModule(): JSX.Element {
         <span className="ui-island__count">{String(island.buildings.length)} bâtiments</span>
       </section>
       <IslandLevelPanel />
+      <IslandBuildingProgressPanel />
       <IslandOnboardingGuide />
       <div className="ui-island__overview-hint">
         <span aria-hidden="true">◆</span>
