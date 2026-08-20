@@ -24,6 +24,10 @@ function hasAnimatedDeath(
     && death.frameRate !== undefined;
 }
 
+function hasTexture(scene: Phaser.Scene, textureKey: string): boolean {
+  return scene.textures.exists(textureKey);
+}
+
 export function preloadActorManifest(
   scene: Phaser.Scene,
   manifest: ActorRenderManifest,
@@ -54,13 +58,15 @@ export function registerActorAnimations(
   for (const state of ACTOR_ANIMATION_STATES) {
     const animation = manifest.animations[state];
     const animationKey = getActorAnimationKey(manifest, state);
-    if (scene.anims.exists(animationKey)) continue;
+    if (scene.anims.exists(animationKey) || !hasTexture(scene, animation.textureKey)) continue;
+    const frames = scene.anims.generateFrameNumbers(animation.textureKey, {
+      start: animation.startFrame,
+      end: animation.endFrame,
+    });
+    if (frames.length === 0) continue;
     scene.anims.create({
       key: animationKey,
-      frames: scene.anims.generateFrameNumbers(animation.textureKey, {
-        start: animation.startFrame,
-        end: animation.endFrame,
-      }),
+      frames,
       frameRate: animation.frameRate,
       repeat: animation.repeat,
     });
@@ -69,16 +75,19 @@ export function registerActorAnimations(
   if (hasAnimatedDeath(manifest)) {
     const death = manifest.poses.death;
     const animationKey = getActorDeathAnimationKey(manifest);
-    if (!scene.anims.exists(animationKey)) {
-      scene.anims.create({
-        key: animationKey,
-        frames: scene.anims.generateFrameNumbers(death.textureKey, {
-          start: death.startFrame,
-          end: death.endFrame,
-        }),
-        frameRate: death.frameRate,
-        repeat: death.repeat ?? 0,
+    if (!scene.anims.exists(animationKey) && hasTexture(scene, death.textureKey)) {
+      const frames = scene.anims.generateFrameNumbers(death.textureKey, {
+        start: death.startFrame,
+        end: death.endFrame,
       });
+      if (frames.length > 0) {
+        scene.anims.create({
+          key: animationKey,
+          frames,
+          frameRate: death.frameRate,
+          repeat: death.repeat ?? 0,
+        });
+      }
     }
   }
 }
@@ -88,13 +97,18 @@ export function configureActorTextures(
   manifest: ActorRenderManifest,
 ): void {
   for (const state of ACTOR_ANIMATION_STATES) {
+    const textureKey = manifest.animations[state].textureKey;
+    if (!hasTexture(scene, textureKey)) continue;
     scene.textures
-      .get(manifest.animations[state].textureKey)
+      .get(textureKey)
       .setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
-  scene.textures
-    .get(manifest.poses.death.textureKey)
-    .setFilter(Phaser.Textures.FilterMode.NEAREST);
+  const deathTextureKey = manifest.poses.death.textureKey;
+  if (hasTexture(scene, deathTextureKey)) {
+    scene.textures
+      .get(deathTextureKey)
+      .setFilter(Phaser.Textures.FilterMode.NEAREST);
+  }
 }
 
 export function createActorSprite(
@@ -130,6 +144,10 @@ export function applyActorAnimation(
   state: ActorAnimationState,
 ): void {
   const animation = manifest.animations[state];
+  const animationKey = getActorAnimationKey(manifest, state);
+  if (!hasTexture(sprite.scene, animation.textureKey) || !sprite.scene.anims.exists(animationKey)) {
+    return;
+  }
   sprite
     .stop()
     .setTexture(animation.textureKey, 0)
@@ -137,7 +155,7 @@ export function applyActorAnimation(
     .setPosition(manifest.offset.x, manifest.offset.y)
     .setDisplaySize(animation.display.width, animation.display.height)
     .setVisible(true)
-    .play(getActorAnimationKey(manifest, state));
+    .play(animationKey);
 }
 
 export function applyActorDeathPose(
@@ -145,6 +163,8 @@ export function applyActorDeathPose(
   manifest: ActorRenderManifest,
 ): void {
   const death = manifest.poses.death;
+  if (!hasTexture(sprite.scene, death.textureKey)) return;
+
   sprite
     .stop()
     .setTexture(death.textureKey, 0)
@@ -153,7 +173,8 @@ export function applyActorDeathPose(
     .setDisplaySize(death.display.width, death.display.height)
     .setVisible(true);
 
-  if (hasAnimatedDeath(manifest)) {
-    sprite.play(getActorDeathAnimationKey(manifest));
+  const animationKey = getActorDeathAnimationKey(manifest);
+  if (hasAnimatedDeath(manifest) && sprite.scene.anims.exists(animationKey)) {
+    sprite.play(animationKey);
   }
 }
