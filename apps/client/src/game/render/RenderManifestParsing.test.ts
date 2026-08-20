@@ -209,6 +209,17 @@ describe("Environment traversal manifest parsing", () => {
     ]);
   });
 
+  it("anchors actor shadows to the authored combat ground line", () => {
+    const parsed = parseRenderManifest(environmentManifest);
+
+    if (parsed.kind !== "environment") {
+      throw new Error("Expected environment manifest");
+    }
+
+    expect(parsed.layout.groundLineYRatio).toBe(0.8);
+    expect(parsed.layout.actorShadowYRatio).toBe(parsed.layout.groundLineYRatio);
+  });
+
   it("rejects an environment without parallax layers", () => {
     expect(() =>
       parseRenderManifest({

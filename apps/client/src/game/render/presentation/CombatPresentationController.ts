@@ -58,7 +58,6 @@ export class CombatPresentationController {
     private readonly getBridge: () => GameBridge | undefined,
   ) {
     const { width, height } = scene.scale;
-    this.entityY = height * 0.61;
     this.playerHomeX = width * 0.32;
     this.enemyHomeX = width * 0.68;
 
@@ -69,6 +68,12 @@ export class CombatPresentationController {
     const initialHeroManifest = renderManifestRegistry.requireActor(
       initialWeapon.visualManifestId ?? this.defaultHeroManifestId,
     );
+    const environmentManifest = renderManifestRegistry.requireEnvironment(
+      this.getBridge()?.world.environmentVisualManifestId
+        ?? renderManifestRegistry.requireDefaultEnvironment().id,
+    );
+    this.entityY = height * environmentManifest.layout.groundLineYRatio
+      - initialHeroManifest.offset.y;
     const enemyManifest = renderManifestRegistry.requireDefaultStaticActor();
     const playerSprite = createActorSprite(scene, initialHeroManifest);
     this.playerBody = scene.add.container(this.playerHomeX, this.entityY, [playerSprite]).setDepth(5);
