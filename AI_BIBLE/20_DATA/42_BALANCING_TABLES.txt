@@ -34,16 +34,30 @@ Responsibilities:
 - encounter growth;
 - per-world-band zone combat curves;
 - health / damage / defense start and end multipliers;
+- optional final-boss `bossGate` pressure profiles;
 - reward-rank offsets.
 
-Current authored Blue curve:
-- Birch Forest: health 0.90 -> 1.08; damage 0.72 -> 0.98; defense 0.90 -> 0.98
-- Dark Swamp: health 1.15 -> 1.55; damage 1.18 -> 1.80; defense 1.00 -> 1.10
-- Stone Highlands: health 1.70 -> 2.30; damage 2.60 -> 3.00; defense 1.15 -> 1.30
-- Golden Steppe: health 2.30 -> 3.02; damage 3.00 -> 3.18; defense 1.30 -> 1.46
-- Frostpeak / Mountain: health 3.10 -> 4.00; damage 3.30 -> 3.50; defense 1.50 -> 1.80
+`bossGate` is authored data, not a runtime special case. It contains:
+- `progressionRole: "boss_gate"`
+- `healthMultiplier`
+- `damageMultiplier`
+- `defenseMultiplier`
 
-These numbers are tuning data. The intended difficulty meaning is defined in 20A_COMBAT_BALANCING_PROCESS.txt.
+The runtime applies this profile only to the final boss encounter of the authored zone. Normal segment interpolation remains unchanged.
+
+Validated live end-of-Tier boss gates:
+- Frostpeak T4 -> T5: HP x1.575 / damage x1.40 / defense x1.10
+- Ironveil T5 -> T6: HP x1.15 / damage x1.325 / defense x1.05
+- Ashenpeak T6 -> T7: HP x1.00 / damage x1.375 / defense x1.00
+- Doompeak T7 -> T8: HP x1.00 / damage x1.175 / defense x1.00
+
+These numbers are tuning data. The intended difficulty meaning is defined in `20A_COMBAT_BALANCING_PROCESS.txt`.
+
+IMPORTANT MONOTONICITY SEMANTICS
+- Normal world segments/zones remain structurally monotonic.
+- A final boss authored with `bossGate` is an explicit local difficulty spike and is exempt from the rule that the following normal segment must be harder than that boss.
+- The next zone entry is compared to the previous NORMAL progression envelope, not to the boss-gate spike.
+- Do not implement this through `segmentIndex === 9/10` or zone-name conditions in runtime code.
 
 ---
 
@@ -58,6 +72,17 @@ Authoritative client content access:
 - apps/client/src/data/weaponContentCatalog.ts
 - apps/client/src/data/weaponAbilityMechanics.ts
 - apps/client/src/data/itemPower.ts
+
+Weapon tier values remain authored per item/tier. Data-driven does not require a single formula to generate every tier value; it requires that the values live in the authoritative catalog and are consumed generically by runtime systems.
+
+Current T5 Broadsword correction:
+- T4: 86 base physical damage
+- T5: 120 base physical damage
+- T6: 155 base physical damage
+- T7: 210 base physical damage
+- T8: 275 base physical damage
+
+The T5 value was raised from 110 to 120 after runtime and package diagnostics showed an artificial T5 offensive trough. The revised ladder is smoother while remaining authored in the same weapon catalog; no T5-specific runtime override exists.
 
 ENCHANTMENT SCALING
 Authoritative gameplay functions are consumed directly by equipment/runtime and benchmark code. Do not duplicate enchantment multipliers inside tests.
@@ -88,6 +113,11 @@ The benchmark architecture separates:
 
 This separation is mandatory for future 1H/off-hand balancing.
 
+BOSS-GATE REGRESSION
+- apps/client/src/data/laterTierBossGateRegression.test.ts
+
+This regression protects the validated later-Tier contract and the T5 Broadsword authored correction.
+
 ---
 
 # 5. How to add a future zone
@@ -96,14 +126,15 @@ Do NOT create a new region-specific runtime harness.
 
 Procedure:
 1. Author the zone and its placement in the existing world content data.
-2. Author/extend its world-band combat curve in combat-progression.ts.
+2. Author/extend its world-band combat curve in `combat-progression.ts`.
 3. Define the expected gear/mastery/potion checkpoints in a zone progression sweep.
-4. Call runCombatRuntimeBenchmark with the new ZoneDefinitionId.
+4. Call `runCombatRuntimeBenchmark` with the new ZoneDefinitionId.
 5. Compare representative weapons/loadouts.
 6. Tune the authored curve only after checking whether an isolated failure is actually a weapon-package issue.
-7. Add semantic regression assertions/checkpoints once the contract is validated.
+7. If the final boss is a deliberate Tier gate, author `bossGate` on the zone curve rather than distorting the normal segment curve.
+8. Add semantic regression assertions/checkpoints once the contract is validated.
 
-The same process applies to Yellow, Red, Black and future bands.
+The same process applies to Yellow, Orange, Red, Black and future bands.
 
 ---
 
@@ -111,12 +142,13 @@ The same process applies to Yellow, Red, Black and future bands.
 
 Procedure:
 1. Author item stats, handling, attack speed, abilities and mastery route in existing catalogs/data.
-2. Run buildWeaponOnlyBenchmark(...) against the intended comparison set.
-3. Run buildWeaponPackageBenchmark(...) with a neutral armor loadout.
-4. Run buildWeaponPackageBenchmark(...) again for explicit real loadouts.
+2. Run `buildWeaponOnlyBenchmark(...)` against the intended comparison set.
+3. Run `buildWeaponPackageBenchmark(...)` with a neutral armor loadout.
+4. Run `buildWeaponPackageBenchmark(...)` again for explicit real loadouts.
 5. If the weapon is 1H, test the relevant off-hand combinations explicitly. Never assume that 1H means Reinforced Shield.
 6. Validate real progression checkpoints through CombatRuntimeBenchmarkHarness.
-7. Accept identity-driven variation when same-class performance remains roughly within the agreed 5-10% envelope or when a larger difference is justified by an explicit package tradeoff.
+7. Accept identity-driven variation when same-class performance remains roughly within the agreed envelope or when a larger difference is justified by an explicit package tradeoff.
+8. When one weapon prevents a global progression contract from being satisfiable, diagnose the weapon/package before compensating through a zone-wide multiplier.
 
 ---
 
@@ -124,6 +156,7 @@ Procedure:
 
 Examples:
 - enemy health/damage/defense curves;
+- boss-gate pressure multipliers;
 - equipment base stats;
 - weapon base damage and cadence;
 - ability ratios, cooldowns and conditions;
@@ -137,6 +170,7 @@ What does NOT belong in balance data:
 - temporary benchmark compensation;
 - renderer-only multipliers;
 - weapon-name conditions inside CombatRuntime;
+- segment-index-specific boss hacks;
 - ACTIVE-only/AFK-only stat hacks;
 - duplicated copies of live formulas in tests.
 
@@ -144,9 +178,11 @@ What does NOT belong in balance data:
 
 # 8. Interpolation and curve semantics
 
-Combat zone curves currently use authored start/end values and the existing progression interpolation/runtime pipeline.
+Combat zone curves use authored start/end values and the existing progression interpolation/runtime pipeline.
 
 Do not create bespoke per-segment values unless a real design need cannot be represented by the existing curve architecture. Prefer the smallest data-driven curve change that achieves the progression contract.
+
+`bossGate` is the approved exception for a final boss that intentionally exceeds the surrounding normal progression envelope. It must remain a semantic authored role, not an accidental consequence of segment position.
 
 A structural monotonic curve does not prove good balance. Runtime checkpoint results are the authority for player-facing difficulty.
 
@@ -161,7 +197,7 @@ For a meaningful balance change:
 4. run regression tests;
 5. update 20A when the progression contract changes;
 6. update this document only when the balancing architecture/source-of-truth layout changes;
-7. append the decision log for durable design changes.
+7. refresh the global balance snapshot when cross-system relationships changed.
 
 Do not turn every temporary tuning iteration into a permanent design rule.
 
@@ -173,8 +209,14 @@ The old synthetic combatBalanceMatrix reallocation tool is obsolete and has been
 
 The old Blue-specific runtime harness is obsolete and has been replaced by CombatRuntimeBenchmarkHarness so future world bands reuse the exact same tool.
 
+One-off boss-gate candidate sweeps are diagnostic artifacts. Once a candidate is live and protected by semantic regression, the regression test is the durable contract.
+
 ---
 
 # Summary
 
-Albion Idle balance is data-driven through domain-owned catalogs/configuration, validated by a generic live-runtime benchmark and generic weapon-package diagnostics. Future zones and weapons extend these existing sources and tools rather than creating new special-case systems.
+Albion Idle balance is data-driven through domain-owned catalogs/configuration, validated by a generic live-runtime benchmark and generic weapon-package diagnostics.
+
+Normal progression remains monotonic. End-of-Tier boss gates are explicit authored difficulty spikes through `bossGate`, allowing the boss to certify full Tn.3 progression without forcing the following zone entry to inherit the same spike.
+
+Future zones and weapons extend these existing sources and tools rather than creating new special-case systems.
