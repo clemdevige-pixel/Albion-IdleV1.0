@@ -14,7 +14,8 @@ export function preloadEnvironmentManifest(
 /** Owns world background layers and biome atmosphere. */
 export class EnvironmentSystem {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
-  private background!: Phaser.GameObjects.Image;
+  private background!: Phaser.GameObjects.TileSprite;
+  private groundDetail!: Phaser.GameObjects.Graphics;
   private skyTint!: Phaser.GameObjects.Rectangle;
   private groundTint!: Phaser.GameObjects.Rectangle;
   private groundLine!: Phaser.GameObjects.Rectangle;
@@ -22,6 +23,9 @@ export class EnvironmentSystem {
   private enemyShadow!: Phaser.GameObjects.Ellipse;
   private currentBiomeTheme = "";
   private currentManifestId = "";
+  private groundDetailColor = 0;
+  private travelOffset = 0;
+  private traversalTween: Phaser.Tweens.Tween | undefined;
   private manifest!: EnvironmentRenderManifest;
 
   public constructor(private readonly scene: Phaser.Scene) {}
@@ -38,15 +42,10 @@ export class EnvironmentSystem {
     }
 
     this.background = this.scene.add
-      .image(width / 2, height / 2, manifest.textureKey)
+      .tileSprite(width / 2, height / 2, width, height, manifest.textureKey)
       .setOrigin(0.5)
       .setDepth(-20);
-    this.background.setScale(
-      Math.max(
-        width / this.background.width,
-        height / this.background.height,
-      ),
-    );
+    this.fitBackground(width, height);
 
     const defaultColors = this.parsePalette(manifest.defaultPalette);
     const { layout } = manifest;
@@ -80,6 +79,9 @@ export class EnvironmentSystem {
         0.35,
       )
       .setDepth(-5);
+    this.groundDetail = this.scene.add.graphics().setDepth(-4);
+    this.groundDetailColor = defaultColors.groundLine;
+    this.drawGroundDetails(width, height);
     this.playerShadow = this.scene.add
       .ellipse(
         width * 0.32,
@@ -106,6 +108,7 @@ export class EnvironmentSystem {
       this.skyTint,
       this.groundTint,
       this.groundLine,
+      this.groundDetail,
       this.playerShadow,
       this.enemyShadow,
     );
@@ -119,6 +122,8 @@ export class EnvironmentSystem {
     height: number,
   ): void {
     if (manifest.id !== this.currentManifestId) {
+      this.stopTraversal();
+      this.travelOffset = 0;
       this.manifest = manifest;
       const texture = this.scene.textures.get(manifest.textureKey);
       texture.setFilter(
@@ -129,13 +134,8 @@ export class EnvironmentSystem {
       this.background
         .setTexture(manifest.textureKey)
         .setPosition(width / 2, height / 2)
-        .setScale(1);
-      this.background.setScale(
-        Math.max(
-          width / this.background.width,
-          height / this.background.height,
-        ),
-      );
+        .setSize(width, height);
+      this.fitBackground(width, height);
       const { layout } = manifest;
       this.skyTint
         .setPosition(width / 2, height * layout.skyYRatio)
@@ -159,6 +159,31 @@ export class EnvironmentSystem {
     this.setBiomeTheme(biomeTheme);
   }
 
+  public presentTraversal(): void {
+    this.stopTraversal();
+
+    const origin = this.travelOffset;
+    const { distance, durationMs } = this.manifest.traversal;
+    this.traversalTween = this.scene.tweens.addCounter({
+      from: 0,
+      to: distance,
+      duration: durationMs,
+      ease: "Sine.InOut",
+      onUpdate: (tween: Phaser.Tweens.Tween) => {
+        const value = tween.getValue();
+        if (value === null) return;
+
+        this.travelOffset = origin + value;
+        this.updateTraversalLayers();
+      },
+      onComplete: () => {
+        this.travelOffset = origin + distance;
+        this.updateTraversalLayers();
+        this.traversalTween = undefined;
+      },
+    });
+  }
+
   public setBiomeTheme(biomeTheme: string): void {
     if (biomeTheme === this.currentBiomeTheme) return;
 
@@ -170,15 +195,64 @@ export class EnvironmentSystem {
     this.skyTint.setFillStyle(colors.sky, 0.08);
     this.groundTint.setFillStyle(colors.ground, 0.08);
     this.groundLine.setFillStyle(colors.groundLine, 0.35);
+    this.groundDetailColor = colors.groundLine;
+    this.drawGroundDetails(this.scene.scale.width, this.scene.scale.height);
   }
 
   public clear(): void {
+    this.stopTraversal();
     for (const gameObject of this.objects) {
       gameObject.destroy();
     }
     this.objects.length = 0;
     this.currentBiomeTheme = "";
     this.currentManifestId = "";
+    this.travelOffset = 0;
+  }
+
+  private fitBackground(width: number, height: number): void {
+    const frame = this.scene.textures.get(this.manifest.textureKey).get();
+    const scale = Math.max(width / frame.width, height / frame.height);
+    this.background.setTileScale(scale, scale);
+    this.background.setTilePosition(
+      this.travelOffset * this.manifest.traversal.backgroundScrollFactor,
+      Math.max(0, (frame.height - height / scale) / 2),
+    );
+  }
+
+  private updateTraversalLayers(): void {
+    this.background.tilePositionX =
+      this.travelOffset * this.manifest.traversal.backgroundScrollFactor;
+    this.drawGroundDetails(this.scene.scale.width, this.scene.scale.height);
+  }
+
+  private drawGroundDetails(width: number, height: number): void {
+    const { groundDetailSpacing, groundScrollFactor } = this.manifest.traversal;
+    const offset = (this.travelOffset * groundScrollFactor) % groundDetailSpacing;
+    const nearGroundY = height * this.manifest.layout.groundLineYRatio + 14;
+    const farGroundY = nearGroundY + 16;
+
+    this.groundDetail.clear();
+    this.groundDetail.fillStyle(this.groundDetailColor, 0.36);
+
+    for (
+      let x = -groundDetailSpacing - offset;
+      x <= width + groundDetailSpacing;
+      x += groundDetailSpacing
+    ) {
+      this.groundDetail.fillEllipse(x, nearGroundY, 9, 3);
+      this.groundDetail.fillEllipse(
+        x + groundDetailSpacing * 0.48,
+        farGroundY,
+        6,
+        2,
+      );
+    }
+  }
+
+  private stopTraversal(): void {
+    this.traversalTween?.stop();
+    this.traversalTween = undefined;
   }
 
   private parsePalette(palette: EnvironmentPaletteManifest): {

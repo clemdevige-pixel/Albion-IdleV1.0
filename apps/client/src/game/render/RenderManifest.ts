@@ -225,6 +225,14 @@ export interface EnvironmentPaletteManifest {
   readonly groundLine: string;
 }
 
+export interface EnvironmentTraversalManifest {
+  readonly distance: number;
+  readonly durationMs: number;
+  readonly backgroundScrollFactor: number;
+  readonly groundScrollFactor: number;
+  readonly groundDetailSpacing: number;
+}
+
 export interface EnvironmentRenderManifest {
   readonly schemaVersion: 1;
   readonly id: string;
@@ -234,6 +242,7 @@ export interface EnvironmentRenderManifest {
   readonly pixelArt: boolean;
   readonly defaultPalette: EnvironmentPaletteManifest;
   readonly biomePalettes: Readonly<Record<string, EnvironmentPaletteManifest>>;
+  readonly traversal: EnvironmentTraversalManifest;
   readonly layout: {
     readonly skyHeightRatio: number;
     readonly skyYRatio: number;

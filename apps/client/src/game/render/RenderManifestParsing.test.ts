@@ -4,6 +4,7 @@ import fireStaffManifest from "./manifests/hero-fire-staff.render.json";
 import longbowManifest from "./manifests/hero-longbow.render.json";
 import spikedGauntletsManifest from "./manifests/hero-spiked-gauntlets.render.json";
 import monsterManifest from "./manifests/monster-stonefang-wolf.render.json";
+import environmentManifest from "./manifests/environment-birch-forest.render.json";
 import projectileManifest from "./manifests/projectile-arrow.render.json";
 import { parseRenderManifest } from "./RenderManifestParsing";
 
@@ -12,6 +13,7 @@ describe("parseRenderManifest", () => {
     expect(parseRenderManifest(heroManifest).kind).toBe("actor");
     expect(parseRenderManifest(monsterManifest).kind).toBe("static_actor");
     expect(parseRenderManifest(projectileManifest).kind).toBe("projectile");
+    expect(parseRenderManifest(environmentManifest).kind).toBe("environment");
   });
 
   it("rejects an unsupported manifest kind", () => {
@@ -171,5 +173,35 @@ describe("Longbow normalized animation parsing", () => {
       frameRate: 8,
       repeat: 0,
     });
+  });
+});
+
+describe("Environment traversal manifest parsing", () => {
+  it("preserves the configured side-scroller movement", () => {
+    const parsed = parseRenderManifest(environmentManifest);
+
+    if (parsed.kind !== "environment") {
+      throw new Error("Expected environment manifest");
+    }
+
+    expect(parsed.traversal).toEqual({
+      distance: 220,
+      durationMs: 650,
+      backgroundScrollFactor: 0.32,
+      groundScrollFactor: 1,
+      groundDetailSpacing: 58,
+    });
+  });
+
+  it("rejects invalid traversal timing", () => {
+    expect(() =>
+      parseRenderManifest({
+        ...environmentManifest,
+        traversal: {
+          ...environmentManifest.traversal,
+          durationMs: 0,
+        },
+      }),
+    ).toThrow("traversal doit définir un déplacement valide");
   });
 });

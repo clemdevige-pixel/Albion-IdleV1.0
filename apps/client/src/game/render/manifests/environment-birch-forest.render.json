@@ -37,6 +37,13 @@
       "groundLine": "#40402a"
     }
   },
+  "traversal": {
+    "distance": 220,
+    "durationMs": 650,
+    "backgroundScrollFactor": 0.32,
+    "groundScrollFactor": 1,
+    "groundDetailSpacing": 58
+  },
   "layout": {
     "skyHeightRatio": 0.6,
     "skyYRatio": 0.3,

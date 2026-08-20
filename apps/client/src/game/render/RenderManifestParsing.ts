@@ -1050,6 +1050,7 @@ export function parseEnvironmentRenderManifest(
   const layout = value["layout"];
   const defaultPalette = value["defaultPalette"];
   const biomePalettes = value["biomePalettes"];
+  const traversal = value["traversal"];
 
   if (!isRecord(layout) || !isRecord(defaultPalette)) {
     throw new Error(
@@ -1061,6 +1062,38 @@ export function parseEnvironmentRenderManifest(
     throw new Error(
       "biomePalettes doit être un objet",
     );
+  }
+
+  if (!isRecord(traversal)) {
+    throw new Error("traversal doit être un objet");
+  }
+
+  const traversalDistance = requireNumber(traversal, "distance", "traversal");
+  const traversalDurationMs = requireNumber(traversal, "durationMs", "traversal");
+  const backgroundScrollFactor = requireNumber(
+    traversal,
+    "backgroundScrollFactor",
+    "traversal",
+  );
+  const groundScrollFactor = requireNumber(
+    traversal,
+    "groundScrollFactor",
+    "traversal",
+  );
+  const groundDetailSpacing = requireNumber(
+    traversal,
+    "groundDetailSpacing",
+    "traversal",
+  );
+
+  if (
+    traversalDistance <= 0
+    || traversalDurationMs <= 0
+    || backgroundScrollFactor < 0
+    || groundScrollFactor < 0
+    || groundDetailSpacing <= 0
+  ) {
+    throw new Error("traversal doit définir un déplacement valide");
   }
 
   return {
@@ -1098,6 +1131,14 @@ export function parseEnvironmentRenderManifest(
         ],
       ),
     ),
+
+    traversal: {
+      distance: traversalDistance,
+      durationMs: traversalDurationMs,
+      backgroundScrollFactor,
+      groundScrollFactor,
+      groundDetailSpacing,
+    },
 
     layout: {
       skyHeightRatio: requireNumber(
