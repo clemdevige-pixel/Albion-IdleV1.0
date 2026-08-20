@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
   ACTOR_ANIMATION_STATES,
+  type ActorAnimationManifest,
   type ActorAnimationState,
   type ActorPoseManifest,
   type ActorRenderManifest,
@@ -10,6 +11,11 @@ type AnimatedActorPoseManifest = ActorPoseManifest & Required<Pick<
   ActorPoseManifest,
   "frameWidth" | "frameHeight" | "startFrame" | "endFrame" | "frameRate"
 >>;
+
+type AnimationSource = Pick<
+  ActorAnimationManifest,
+  "textureKey" | "startFrame" | "endFrame" | "frameRate" | "repeat"
+>;
 
 function hasAnimatedDeath(
   manifest: ActorRenderManifest,
@@ -28,6 +34,43 @@ function hasTexture(scene: Phaser.Scene, textureKey: string): boolean {
   return scene.textures.exists(textureKey);
 }
 
+function registerAnimation(
+  scene: Phaser.Scene,
+  animationKey: string,
+  source: AnimationSource,
+): void {
+  if (scene.anims.exists(animationKey)) {
+    scene.anims.remove(animationKey);
+  }
+
+  if (!hasTexture(scene, source.textureKey)) {
+    console.error(
+      `[Render] Cannot register animation "${animationKey}": texture "${source.textureKey}" is missing.`,
+    );
+    return;
+  }
+
+  const frames = scene.anims.generateFrameNumbers(source.textureKey, {
+    start: source.startFrame,
+    end: source.endFrame,
+  });
+  const expectedFrameCount = source.endFrame - source.startFrame + 1;
+
+  if (frames.length !== expectedFrameCount) {
+    console.error(
+      `[Render] Cannot register animation "${animationKey}": expected ${expectedFrameCount} frames from texture "${source.textureKey}", got ${frames.length}.`,
+    );
+    return;
+  }
+
+  scene.anims.create({
+    key: animationKey,
+    frames,
+    frameRate: source.frameRate,
+    repeat: source.repeat,
+  });
+}
+
 export function preloadActorManifest(
   scene: Phaser.Scene,
   manifest: ActorRenderManifest,
@@ -39,14 +82,14 @@ export function preloadActorManifest(
       frameHeight: animation.frameHeight,
     });
   }
+
+  const death = manifest.poses.death;
   if (hasAnimatedDeath(manifest)) {
-    const death = manifest.poses.death;
     scene.load.spritesheet(death.textureKey, death.assetPath, {
       frameWidth: death.frameWidth,
       frameHeight: death.frameHeight,
     });
   } else {
-    const death = manifest.poses.death;
     scene.load.image(death.textureKey, death.assetPath);
   }
 }
@@ -56,51 +99,26 @@ export function registerActorAnimations(
   manifest: ActorRenderManifest,
 ): void {
   for (const state of ACTOR_ANIMATION_STATES) {
-    const animation = manifest.animations[state];
-    const animationKey = getActorAnimationKey(manifest, state);
-    if (!hasTexture(scene, animation.textureKey)) continue;
-
-    // Animation keys are stable while texture keys may evolve with asset revisions.
-    // Rebuild during scene preparation so a stale global Phaser animation can never
-    // keep pointing at a texture that is no longer loaded.
-    if (scene.anims.exists(animationKey)) {
-      scene.anims.remove(animationKey);
-    }
-
-    const frames = scene.anims.generateFrameNumbers(animation.textureKey, {
-      start: animation.startFrame,
-      end: animation.endFrame,
-    });
-    if (frames.length === 0) continue;
-    scene.anims.create({
-      key: animationKey,
-      frames,
-      frameRate: animation.frameRate,
-      repeat: animation.repeat,
-    });
+    registerAnimation(
+      scene,
+      getActorAnimationKey(manifest, state),
+      manifest.animations[state],
+    );
   }
 
   if (hasAnimatedDeath(manifest)) {
     const death = manifest.poses.death;
-    const animationKey = getActorDeathAnimationKey(manifest);
-    if (hasTexture(scene, death.textureKey)) {
-      if (scene.anims.exists(animationKey)) {
-        scene.anims.remove(animationKey);
-      }
-
-      const frames = scene.anims.generateFrameNumbers(death.textureKey, {
-        start: death.startFrame,
-        end: death.endFrame,
-      });
-      if (frames.length > 0) {
-        scene.anims.create({
-          key: animationKey,
-          frames,
-          frameRate: death.frameRate,
-          repeat: death.repeat ?? 0,
-        });
-      }
-    }
+    registerAnimation(
+      scene,
+      getActorDeathAnimationKey(manifest),
+      {
+        textureKey: death.textureKey,
+        startFrame: death.startFrame,
+        endFrame: death.endFrame,
+        frameRate: death.frameRate,
+        repeat: death.repeat ?? 0,
+      },
+    );
   }
 }
 
@@ -115,6 +133,7 @@ export function configureActorTextures(
       .get(textureKey)
       .setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
+
   const deathTextureKey = manifest.poses.death.textureKey;
   if (hasTexture(scene, deathTextureKey)) {
     scene.textures
@@ -157,12 +176,24 @@ export function applyActorAnimation(
 ): void {
   const animation = manifest.animations[state];
   const animationKey = getActorAnimationKey(manifest, state);
-  if (!hasTexture(sprite.scene, animation.textureKey) || !sprite.scene.anims.exists(animationKey)) {
+
+  if (!hasTexture(sprite.scene, animation.textureKey)) {
+    console.error(
+      `[Render] Cannot play animation "${animationKey}": texture "${animation.textureKey}" is missing.`,
+    );
     return;
   }
+
+  if (!sprite.scene.anims.exists(animationKey)) {
+    console.error(
+      `[Render] Cannot play animation "${animationKey}": animation is not registered.`,
+    );
+    return;
+  }
+
   sprite
     .stop()
-    .setTexture(animation.textureKey, 0)
+    .setTexture(animation.textureKey, animation.startFrame)
     .setOrigin(manifest.origin.x, manifest.origin.y)
     .setPosition(manifest.offset.x, manifest.offset.y)
     .setDisplaySize(animation.display.width, animation.display.height)
@@ -175,18 +206,29 @@ export function applyActorDeathPose(
   manifest: ActorRenderManifest,
 ): void {
   const death = manifest.poses.death;
-  if (!hasTexture(sprite.scene, death.textureKey)) return;
+  if (!hasTexture(sprite.scene, death.textureKey)) {
+    console.error(
+      `[Render] Cannot apply death pose for "${manifest.id}": texture "${death.textureKey}" is missing.`,
+    );
+    return;
+  }
 
   sprite
     .stop()
-    .setTexture(death.textureKey, 0)
+    .setTexture(death.textureKey, death.startFrame ?? 0)
     .setOrigin(manifest.origin.x, manifest.origin.y)
     .setPosition(manifest.offset.x, manifest.offset.y)
     .setDisplaySize(death.display.width, death.display.height)
     .setVisible(true);
 
   const animationKey = getActorDeathAnimationKey(manifest);
-  if (hasAnimatedDeath(manifest) && sprite.scene.anims.exists(animationKey)) {
+  if (hasAnimatedDeath(manifest)) {
+    if (!sprite.scene.anims.exists(animationKey)) {
+      console.error(
+        `[Render] Cannot play animation "${animationKey}": animation is not registered.`,
+      );
+      return;
+    }
     sprite.play(animationKey);
   }
 }
