@@ -216,7 +216,7 @@ describe("Environment traversal manifest parsing", () => {
       throw new Error("Expected environment manifest");
     }
 
-    expect(parsed.layout.groundLineYRatio).toBe(0.8);
+    expect(parsed.layout.groundLineYRatio).toBe(0.85);
     expect(parsed.layout.actorShadowYRatio).toBe(parsed.layout.groundLineYRatio);
   });
 

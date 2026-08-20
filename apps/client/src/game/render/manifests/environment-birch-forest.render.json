@@ -64,9 +64,9 @@
     "skyYRatio": 0.3,
     "groundHeightRatio": 0.52,
     "groundYRatio": 0.76,
-    "groundLineYRatio": 0.8,
+    "groundLineYRatio": 0.85,
     "actorShadowWidth": 190,
     "actorShadowHeight": 30,
-    "actorShadowYRatio": 0.8
+    "actorShadowYRatio": 0.85
   }
 }
