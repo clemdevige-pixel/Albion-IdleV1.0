@@ -168,7 +168,6 @@ export function InventoryModule(): JSX.Element {
               position={contextMenu.position}
               x={contextMenu.x}
               y={contextMenu.y}
-              itemId={contextItemId}
               onClose={() => { setContextMenu(null); }}
               onEquip={(position: number) => { actions.equip(position); setContextMenu(null); }}
             />
