@@ -6,6 +6,7 @@ import type {
   InventoryManager,
 } from "@game/gameplay";
 import { getItemTier } from "../data/itemPower.js";
+import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
 
 interface DungeonCombatRuntime {
@@ -26,6 +27,7 @@ interface DungeonNavigationActionsDependencies {
   readonly heroId: EntityId;
   readonly combatRuntime: DungeonCombatRuntime;
   readonly stopController: DungeonStopController;
+  readonly bridge: GameBridge;
   readonly isCombatSuspended: () => boolean;
   readonly onStateChanged: () => void;
 }
@@ -124,9 +126,21 @@ export class DungeonNavigationActions {
     const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
     if (definition === undefined) return false;
 
-    return [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()]
+    const violatingTiers = [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()]
       .map((entry) => getItemTier(entry.itemId))
-      .every((tier) => tier === undefined || tier <= definition.tier);
+      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => (
+        tier !== undefined && tier > definition.tier
+      ));
+    if (violatingTiers.length === 0) return true;
+
+    const highestTier = Math.max(...violatingTiers);
+    this.deps.bridge.addEconomyNotification({
+      id: `notif_dungeon_tier_cap_${String(Date.now())}`,
+      type: "error",
+      message: `Accès refusé : ce donjon T${String(definition.tier)} n'accepte pas d'équipement supérieur au T${String(definition.tier)} (équipement T${String(highestTier)} détecté).`,
+      timestamp: Date.now(),
+    });
+    return false;
   }
 
   private canConsumeDungeonKey(definitionId: string): boolean {
