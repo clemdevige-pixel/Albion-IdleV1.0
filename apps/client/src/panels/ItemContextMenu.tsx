@@ -4,25 +4,19 @@ export interface ItemContextMenuProps {
   readonly position: number;
   readonly x: number;
   readonly y: number;
-  readonly itemId: string;
   readonly onClose: () => void;
   readonly onEquip?: ((position: number) => void) | undefined;
-  readonly onToggleTrack?: ((itemId: string) => void) | undefined;
-  readonly isTracked?: boolean | undefined;
 }
 
 /**
- * Right-click context menu for storage items.
+ * Right-click context menu for storage equipment actions.
  */
 export function ItemContextMenu({
   position,
   x,
   y,
-  itemId,
   onClose,
   onEquip,
-  onToggleTrack,
-  isTracked = false,
 }: ItemContextMenuProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -40,7 +34,7 @@ export function ItemContextMenu({
     <div
       ref={ref}
       className="context-menu"
-      style={{ left: `${String(x)}px`, top: `${String(y)}px` }}
+      style={{ left: `${String(x + 12)}px`, top: `${String(y + 12)}px` }}
     >
       {onEquip !== undefined && (
         <button
@@ -49,15 +43,6 @@ export function ItemContextMenu({
           onClick={() => { onEquip(position); }}
         >
           Equiper
-        </button>
-      )}
-      {onToggleTrack !== undefined && (
-        <button
-          type="button"
-          className="context-menu__item"
-          onClick={() => { onToggleTrack(itemId); onClose(); }}
-        >
-          {isTracked ? "Ne plus suivre" : "Suivre la ressource"}
         </button>
       )}
       <button
