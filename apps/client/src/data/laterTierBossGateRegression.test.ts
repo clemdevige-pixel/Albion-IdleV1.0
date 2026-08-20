@@ -88,7 +88,7 @@ describe("validated later-tier boss gates", () => {
 
   it("requires .3 plus potion at every T5-T8 tier transition", () => {
     for (const transition of TRANSITIONS) {
-      const tier = transition.tier as Tier;
+      const tier = transition.tier;
       const gate = getFinalBossGate(transition.curve);
       expect(gate).toMatchObject({ progressionRole: "boss_gate", ...transition.expectedGate });
 
