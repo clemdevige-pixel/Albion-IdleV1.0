@@ -45,8 +45,7 @@ export const BLUE_WORLD_COMBAT_CURVE = [
     defenseStart: 1.5,
     defenseEnd: 1.5,
     defenseModel: "rank_parity",
-    // Neutral until the Frostpeak boss-gate runtime sweep is validated.
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1, defenseMultiplier: 1 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.575, damageMultiplier: 1.4, defenseMultiplier: 1.1 },
   },
 ] as const;
 
