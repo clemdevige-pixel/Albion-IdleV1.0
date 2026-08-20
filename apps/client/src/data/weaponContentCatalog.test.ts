@@ -103,11 +103,11 @@ describe("weapon content catalog", () => {
     });
     expect(CLIENT_ABILITIES["ability_gloves_shockwave"]).toMatchObject({
       cooldown: 6,
-      mechanics: { mechanics: [{ kind: "damage", ratio: 1.08 }] },
+      mechanics: { mechanics: [{ kind: "damage", ratio: 1.18 }] },
     });
     expect(CLIENT_ABILITIES["ability_dagger_double_slash"]).toMatchObject({
       cooldown: 4,
-      mechanics: { mechanics: [{ kind: "damage", ratio: 0.5, hits: 2 }] },
+      mechanics: { mechanics: [{ kind: "damage", ratio: 0.45, hits: 2 }] },
     });
   });
 
