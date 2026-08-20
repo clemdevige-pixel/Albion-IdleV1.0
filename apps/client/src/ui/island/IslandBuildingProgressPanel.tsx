@@ -2,10 +2,17 @@ import { getIslandLevelDefinition } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { getIslandMaterialLabel } from "./islandMaterialPresentation";
 import { getIslandBuildingUpgradeState } from "./islandBuildingUpgradeState";
+import { useIslandSelection } from "./IslandSelectionContext";
 
 export function IslandBuildingProgressPanel(): JSX.Element | null {
   const { island, wallet } = useGameBridge();
-  const { getIslandLevel, inventoryManager, productionStorageId } = useGameServices();
+  const {
+    getIslandLevel,
+    inventoryManager,
+    productionStorageId,
+    upgradeIslandBuilding,
+  } = useGameServices();
+  const { selectBuilding } = useIslandSelection();
   const islandLevel = getIslandLevel();
   const maxBuildingLevel = getIslandLevelDefinition(islandLevel)?.maxBuildingLevel ?? islandLevel;
   const laggingBuildings = island.buildings.filter((building) => building.level < maxBuildingLevel);
@@ -33,18 +40,60 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
             inventoryManager,
             productionStorageId,
           });
-          const { definition, next, cost, materials, flexible, flexibleDistinct, flexibleTotal, flexibleReady, silverReady } = state;
+          const {
+            definition,
+            next,
+            cost,
+            materials,
+            flexible,
+            flexibleDistinct,
+            flexibleTotal,
+            flexibleReady,
+            silverReady,
+            canUpgrade,
+          } = state;
 
           if (next === undefined || cost === undefined) return null;
 
+          const plot = island.plots.find((candidate) => candidate.buildingInstanceId === building.instanceId);
+          const openBuilding = () => {
+            if (plot !== undefined) selectBuilding(plot.id, building.instanceId);
+          };
+
           return (
-            <div key={building.instanceId} className="ui-island-building-progress__item">
-              <div className="ui-island-building-progress__heading">
-                <span className="ui-island-building-progress__icon" aria-hidden="true">{definition.icon}</span>
-                <div>
-                  <strong>{definition.label}</strong>
-                  <small>Niv. {String(building.level)} → objectif Niv. {String(maxBuildingLevel)} · prochaine amélioration Niv. {String(next.level)}</small>
+            <div
+              key={building.instanceId}
+              className="ui-island-building-progress__item"
+              role={plot === undefined ? undefined : "button"}
+              tabIndex={plot === undefined ? undefined : 0}
+              onClick={plot === undefined ? undefined : openBuilding}
+              onKeyDown={plot === undefined ? undefined : (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openBuilding();
+                }
+              }}
+            >
+              <div className="ui-island-building-progress__row">
+                <div className="ui-island-building-progress__heading">
+                  <span className="ui-island-building-progress__icon" aria-hidden="true">{definition.icon}</span>
+                  <div>
+                    <strong>{definition.label}</strong>
+                    <small>Niv. {String(building.level)} → objectif Niv. {String(maxBuildingLevel)} · prochaine amélioration Niv. {String(next.level)}</small>
+                  </div>
                 </div>
+
+                <button
+                  type="button"
+                  className="ui-island-building-progress__upgrade"
+                  disabled={!canUpgrade}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    upgradeIslandBuilding(building.definitionId);
+                  }}
+                >
+                  {canUpgrade ? `Mettre à niveau · Niv. ${String(next.level)}` : "Ressources insuffisantes"}
+                </button>
               </div>
 
               <div className="ui-island-construction__costs">
