@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { ORANGE_WORLD_COMBAT_CURVE, RED_WORLD_COMBAT_CURVE, YELLOW_WORLD_COMBAT_CURVE } from "@game/data";
+import {
+  ORANGE_WORLD_COMBAT_CURVE,
+  RED_WORLD_COMBAT_CURVE,
+  YELLOW_WORLD_COMBAT_CURVE,
+  type ZoneCombatCurve,
+} from "@game/data";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
@@ -72,6 +77,10 @@ function equipmentFor(weaponItemId: string, tier: Tier): readonly string[] {
   return items;
 }
 
+function getFinalBossGate(curve: readonly ZoneCombatCurve[]) {
+  return curve[curve.length - 1]?.bossGate;
+}
+
 describe("validated later-tier boss gates", () => {
   it("keeps the T5 Broadsword correction authored at 120 base damage", () => {
     expect(resolveEquipmentInfo("item_weapon_sword_t5_broadsword")?.stats?.stat_physical_damage).toBe(120);
@@ -80,7 +89,7 @@ describe("validated later-tier boss gates", () => {
   it("requires .3 plus potion at every T5-T8 tier transition", () => {
     for (const transition of TRANSITIONS) {
       const tier = transition.tier as Tier;
-      const gate = transition.curve[transition.curve.length - 1]?.bossGate;
+      const gate = getFinalBossGate(transition.curve);
       expect(gate).toMatchObject({ progressionRole: "boss_gate", ...transition.expectedGate });
 
       const tN2 = WEAPONS_BY_TIER[tier].map((weaponItemId) => runCombatRuntimeBenchmark({
