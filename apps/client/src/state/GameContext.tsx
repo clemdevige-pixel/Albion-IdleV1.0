@@ -100,7 +100,9 @@ export function GameProvider({
     };
     let craftingTier: ProductionTier = 3;
     let workerTier: ProductionTier = 3;
-    let awakenedWeaponServiceRef: ReturnType<typeof createEconomyFoundation>["awakenedWeaponService"] | undefined;
+    const awakenedWeaponServiceRef: {
+      current: ReturnType<typeof createEconomyFoundation>["awakenedWeaponService"] | undefined;
+    } = { current: undefined };
 
     const {
       world,
@@ -132,7 +134,7 @@ export function GameProvider({
       statsManager,
       damageManager,
       masteryService,
-      getAwakenedWeaponService: () => awakenedWeaponServiceRef,
+      getAwakenedWeaponService: () => awakenedWeaponServiceRef.current,
       canMutateEquipment: () => (
         starterSelectionPending
         || (!combatService.isInCombat() && dungeonRuntime.activeRun?.status !== "active")
@@ -155,7 +157,7 @@ export function GameProvider({
       vendorRegistry,
       economyTransactionService,
     } = createEconomyFoundation({ inventoryManager, equipmentManager });
-    awakenedWeaponServiceRef = awakenedWeaponService;
+    awakenedWeaponServiceRef.current = awakenedWeaponService;
 
     const worldFoundation = createWorldFoundation();
     const {
@@ -657,7 +659,6 @@ export function GameProvider({
         dungeonNavigationActions.flushPendingStart();
       },
     });
-
     registerGameRuntimeLifecycle(bridge, {
       tick: () => { runtimeTickController.tick(); },
       tickIntervalMs: TICK_INTERVAL,
