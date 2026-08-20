@@ -6,50 +6,50 @@
   "offset": { "x": 0, "y": 58 },
   "animations": {
     "idle": {
-      "textureKey": "hero-dagger-pair-idle-sheet-v2",
+      "textureKey": "hero-dagger-pair-idle",
       "assetPath": "/assets/characters/hero_dual_dagger_idle.png",
-      "frameWidth": 352,
-      "frameHeight": 448,
+      "frameWidth": 512,
+      "frameHeight": 512,
       "startFrame": 0,
       "endFrame": 5,
       "frameRate": 6,
       "repeat": -1,
-      "display": { "width": 157.1428571429, "height": 200 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "walk": {
-      "textureKey": "hero-dagger-pair-walk-sheet-v3",
+      "textureKey": "hero-dagger-pair-walk",
       "assetPath": "/assets/characters/dual_daggers_walk.png",
-      "frameWidth": 341,
-      "frameHeight": 484,
+      "frameWidth": 512,
+      "frameHeight": 512,
       "startFrame": 0,
       "endFrame": 5,
       "frameRate": 10,
       "repeat": -1,
-      "display": { "width": 152.2321428571, "height": 216.0714285714 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "attack": {
-      "textureKey": "hero-dagger-pair-attack-sheet-v2",
+      "textureKey": "hero-dagger-pair-attack",
       "assetPath": "/assets/characters/hero_dual_dagger_attack.png",
-      "frameWidth": 467,
-      "frameHeight": 448,
+      "frameWidth": 512,
+      "frameHeight": 512,
       "startFrame": 0,
       "endFrame": 5,
       "frameRate": 16,
       "repeat": 0,
-      "display": { "width": 208.4821428571, "height": 200 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     }
   },
   "poses": {
     "death": {
-      "textureKey": "hero-dagger-pair-death-sheet-v3",
+      "textureKey": "hero-dagger-pair-death",
       "assetPath": "/assets/characters/dual_daggers_death.png",
-      "frameWidth": 331,
-      "frameHeight": 368,
+      "frameWidth": 512,
+      "frameHeight": 512,
       "startFrame": 0,
       "endFrame": 5,
       "frameRate": 8,
       "repeat": 0,
-      "display": { "width": 147.7678571429, "height": 164.2857142857 }
+      "display": { "width": 228.5714285714, "height": 228.5714285714 }
     }
   },
   "visualProfile": "melee",
