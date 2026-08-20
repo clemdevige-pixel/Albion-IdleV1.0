@@ -198,14 +198,10 @@ describe("Environment traversal manifest parsing", () => {
     }
 
     expect(parsed.layers.map((layer) => layer.scrollFactor)).toEqual([
-      0.08,
-      0.45,
-      1,
+      0,
     ]);
     expect(parsed.layers.map((layer) => layer.depth)).toEqual([
-      -30,
       -20,
-      -10,
     ]);
   });
 

@@ -174,7 +174,10 @@ export class WorldRuntime {
           const nextIndex = this.worldTick.currentZoneIndex + 1;
           const nextDefId = ZONE_ORDER[nextIndex];
           if (nextDefId !== undefined && this.progressionManager.isUnlocked(nextDefId)) {
-            this.changeActiveZone(nextIndex);
+            // Linear progression always enters a newly reached zone at S1.
+            // A stale/persisted memory for that zone must not skip the player
+            // ahead of the progression frontier shown by the world timeline.
+            this.changeActiveZone(nextIndex, 0);
             this.worldTick.farmMode = false;
           }
         }

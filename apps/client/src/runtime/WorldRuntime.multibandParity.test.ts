@@ -63,6 +63,41 @@ describe.each([
   });
 });
 
+describe("WorldRuntime cross-band frontier", () => {
+  it("enters Amberwood S1 even when a stale save remembers Amberwood S2", () => {
+    const foundation = createWorldFoundation();
+    unlockThrough(foundation.progressionManager, WORLD_ZONE_IDS.mountain);
+    foundation.worldRuntime.setWorldLocationSaveState({
+      activeZoneDefId: WORLD_ZONE_IDS.mountain,
+      activeSegment: 9,
+      activeEncounter: 4,
+      farmMode: false,
+      zoneMemories: [
+        {
+          zoneDefId: WORLD_ZONE_IDS.mountain,
+          currentSegment: 9,
+          currentEncounter: 4,
+          highestUnlockedSegment: 9,
+          completedSegments: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        },
+        {
+          zoneDefId: WORLD_ZONE_IDS.amberwood,
+          currentSegment: 1,
+          currentEncounter: 0,
+          highestUnlockedSegment: 1,
+          completedSegments: [0],
+        },
+      ],
+    });
+
+    foundation.worldRuntime.advanceVictory();
+
+    expect(foundation.worldRuntime.getActiveZoneDef().defId).toBe(WORLD_ZONE_IDS.amberwood);
+    expect(foundation.worldRuntime.currentSegment).toBe(0);
+    expect(foundation.worldRuntime.currentEncounter).toBe(0);
+  });
+});
+
 describe.each([
   ["Blue -> Yellow", WORLD_ZONE_IDS.mountain, WORLD_ZONE_IDS.amberwood],
   ["Yellow -> Yellow", WORLD_ZONE_IDS.amberwood, WORLD_ZONE_IDS.gloamfen],
