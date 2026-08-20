@@ -139,17 +139,7 @@ describe("combat loot", () => {
       .toBe("item_resource_dungeon_key_t5");
   });
 
-  it("never drops artifacts from normal monsters", () => {
-    const drops = rollCombatDrops(
-      { ...BASE_CONTEXT, segmentIndex: 9, faction: "Undead" },
-      () => 0,
-    );
-
-    expect(drops.some((drop) => drop.kind === "artifact_fragment")).toBe(false);
-    expect(drops.some((drop) => drop.kind === "artifact")).toBe(false);
-  });
-
-  it("keeps artifacts faction-specific for bosses", () => {
+  it("keeps artifacts out of world combat, including bosses", () => {
     const drops = rollCombatDrops(
       {
         ...BASE_CONTEXT,
@@ -161,10 +151,8 @@ describe("combat loot", () => {
       () => 0,
     );
 
-    expect(drops.find((drop) => drop.kind === "artifact_fragment")?.itemId)
-      .toBe("item_resource_artifact_fragment_keeper");
-    expect(drops.find((drop) => drop.kind === "artifact")?.itemId)
-      .toBe("item_resource_artifact_keeper");
+    expect(drops.some((drop) => drop.kind === "artifact_fragment")).toBe(false);
+    expect(drops.some((drop) => drop.kind === "artifact")).toBe(false);
   });
 });
 
