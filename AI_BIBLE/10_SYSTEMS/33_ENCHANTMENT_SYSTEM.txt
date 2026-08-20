@@ -1,371 +1,211 @@
 # 33. ENCHANTMENT SYSTEM
 
+Status: AUTHORITATIVE LIVE BALANCE CONTRACT
+Updated: 2026-08-20
+
 ## Purpose
 
-The Enchantment System upgrades an existing equipment instance beyond its base Tier while preserving Tier identity.
+The Enchantment System upgrades an existing equipment instance while preserving its base Tier. Normal enchantment uses `.0 -> .1 -> .2 -> .3`. Eligible weapons may then use the distinct `.3 -> .4` Awakening transition.
 
-Enchantments are permanent, item-specific, guaranteed, sequential, resource-intensive and data-driven.
-
-V1 uses normal enchantment levels `.0` to `.3`. Eligible weapons can then perform the distinct `.3 -> .4` Awakening transition.
+Enchantments are deterministic, permanent, item-specific, sequential and data-driven.
 
 ---
 
-# Validated V1 Rules
+## 1. Validated live curve
 
-| Level | Display | Cumulative Item Power bonus | Incremental Tier Shard cost |
-|---:|---|---:|---:|
-| 0 | .0 | +0 IP | - |
-| 1 | .1 | +50 IP | 10 |
-| 2 | .2 | +100 IP | 30 |
-| 3 | .3 | +150 IP | 60 |
-| 4 | .4 / Awakened weapon | +200 IP | 100 |
+Enchantment display IP and enchantment combat power are intentionally DECOUPLED.
 
-A `.0 -> .3` progression consumes 100 enchantment shards for a full-cost item.
+| Level | Display IP bonus | Combat stat multiplier | Incremental Tier shard cost |
+|---:|---:|---:|---:|
+| `.0` | +0 | x1.00 | - |
+| `.1` | +25 | x1.12 | 10 |
+| `.2` | +50 | x1.26 | 30 |
+| `.3` | +75 | x1.42 | 60 |
+| `.4` | +100 | x1.42 base | 100, weapon Awakening only |
 
-The `.3 -> .4` Awakening consumes 100 matching Tier shards for the weapon itself and is deliberately not part of the 1H + off-hand package split.
+The `.4` base multiplier currently preserves `.3` combat stats. Awakening traits are the separate long-term power layer; Awakening must never reduce base equipment stats.
 
-The validated baseline is +50 Item Power per active enchantment level. With the current conversion this corresponds approximately to +10% / +20% / +30% / +40% cumulative numerical power at `.1` / `.2` / `.3` / `.4`.
+Display IP is a progression/UX marker. It is not the formula that determines enchantment combat power.
 
-Enchanting strongly optimizes equipment inside its Tier without replacing Tier progression. `.3` must not be required to unlock the next Tier; it remains an optimization goal. `.4` is a major weapon progression milestone rather than a normal package enchantment.
+Mastery remains independent: mastery-derived bonus IP still uses the shared bonus-IP stat conversion and is NOT replaced or reduced by the enchantment curve.
 
----
+A fully enchanted `.4` item displays at most +100 IP over its base Tier so it does not display above the base IP of the next Tier.
 
-# Tier Eligibility
-
-V1 enchantment starts at Tier 4 and supports T4 through T8 resources.
-
-Equipment definitions remain authoritative for whether a specific item/category is enchantable and for its maximum enchantment level.
-
-Normal equipment can be authored up to `.3`. Only explicitly eligible weapons may reach `.4` through Awakening. Off-hands do not Awaken.
+Authoritative gameplay source:
+- `packages/gameplay/src/equipment/enchantment-balance.ts`
 
 ---
 
-# Sequential Progression
+## 2. Tier eligibility and sequence
 
-Valid normal transitions are `.0 -> .1`, `.1 -> .2` and `.2 -> .3`.
-
-For an explicitly Awakening-eligible weapon, `.3 -> .4` is the next transition. Levels cannot be skipped.
-
-Enchanting does not change the item's base Tier, quality, identity or equipment category.
-
----
-
-# Guaranteed Success
-
-Every valid enchantment succeeds. There is no failure chance, critical failure, downgrade, item destruction, fail stack, pity system, random material loss or regression.
-
-Difficulty comes from obtaining the required resources, materials and Silver, not from gambling the item.
+- Enchantment starts at T4 and supports T4-T8.
+- Normal equipment may be authored through `.3`.
+- Only explicitly eligible weapons may reach `.4`.
+- Off-hands do not Awaken.
+- Levels cannot be skipped.
+- Enchanting never changes base Tier, quality or item identity.
+- Every valid enchantment succeeds; there is no failure/downgrade/destruction RNG.
 
 ---
 
-# Tier-Specific Enchantment Resource
+## 3. Tier shards and package costs
 
-V1 uses exactly one dedicated combat-earned enchantment resource per Tier:
+One combat-earned shard resource exists per Tier: T4, T5, T6, T7, T8. Shards cannot be converted between Tiers.
 
-- Enchantment Shard T4
-- Enchantment Shard T5
-- Enchantment Shard T6
-- Enchantment Shard T7
-- Enchantment Shard T8
+Normal full-cost incremental shard curve:
+- `.0 -> .1`: 10
+- `.1 -> .2`: 30
+- `.2 -> .3`: 60
 
-A shard can only pay for equipment of its own Tier. There is no transmutation or conversion between shard Tiers.
+Cumulative `.0 -> .3`: 100 shards for one full-cost item.
 
-The former universal Essence / Crystal / Catalyst model is obsolete and must not be used by active gameplay. Legacy copies may only exist transiently for save migration and are removed when old saves are loaded/imported.
+Weapon package rule through `.3`:
+- 2H weapon = 100%
+- 1H weapon = 50%
+- off-hand = 50%
+- 1H + off-hand = exactly one 2H package
 
----
+This 50/50 equivalence applies to shards, refined-material quantities and Silver for normal `.1-.3` enchantment.
 
-# Enchantment Costs
-
-Every active upgrade consumes matching Tier shards, refined craft materials associated with the equipment, and Silver.
-
-The shard is the primary combat-time limiter. Refined materials preserve interaction with Gathering / Refining / Crafting. Silver provides an economic sink. These three costs should not all be tuned as extreme bottlenecks simultaneously.
-
-The authoritative normal incremental shard curve for a full-cost item is:
-
-- `.0 -> .1`: 10 shards
-- `.1 -> .2`: 30 shards
-- `.2 -> .3`: 60 shards
-- `.3 -> .4`: 100 shards, weapon Awakening only
-
-The normal `.1-.3` weapon-package rule is:
-
-- 2H weapon = 100% package cost
-- 1H weapon = 50% package cost
-- off-hand = 50% package cost
-- therefore 1H + off-hand = exactly one 2H package
-
-Because 10 / 30 / 60 are even values, the 50/50 split remains exact at every normal enchantment step:
-
-| Step | 2H | 1H | Off-hand | 1H + Off-hand |
-|---|---:|---:|---:|---:|
-| `.0 -> .1` | 10 | 5 | 5 | 10 |
-| `.1 -> .2` | 30 | 15 | 15 | 30 |
-| `.2 -> .3` | 60 | 30 | 30 | 60 |
-| cumulative `.0 -> .3` | 100 | 50 | 50 | 100 |
-
-This package equivalence applies to shards, refined-material quantities and Silver for `.1-.3`.
-
-## Full-set benchmark convention
-
-Runtime enchantment-farm sweeps express progression time for a standard full set as five equivalent full-cost packages:
-
-- weapon package = 1 full-cost equivalent (`2H`, or `1H + off-hand` together)
+Full-set benchmark convention = five full-cost equivalents:
+- weapon package = 1
 - helmet = 1
 - chest = 1
 - boots = 1
 - cape = 1
 
-Therefore the shard targets used by the full-set benchmarks are derived from the authoritative per-item curve:
+Therefore full-set shard requirements are derived from the authoritative curve:
+- `.0 -> .1`: 50
+- `.1 -> .2`: 150
+- `.2 -> .3`: 300
 
-- full `.0 -> .1`: 50 shards
-- full `.1 -> .2`: 150 shards
-- full `.2 -> .3`: 300 shards
-
-These values must be derived from `ENCHANTMENT_SHARD_COSTS`; balance tests must not maintain a second hardcoded cost curve.
-
-## Awakening Cost Rule
-
-`.3 -> .4` is the Awakening of the weapon itself, not another package enchantment.
-
-Therefore:
-
-- eligible 2H weapon = 100% Awakening cost
-- eligible 1H weapon = 100% Awakening cost
-- off-hand = not eligible for Awakening
-
-A 1H weapon receives no 50% discount on `.4`. Its shard, refined-material and Silver Awakening costs are the same full weapon cost as a 2H weapon of the same Tier/category baseline.
-
-The validated `.4` shard cost is 100. Awakening pacing is measured separately from normal full-set `.1-.3` progression because `.4` applies to the weapon itself rather than the five-equivalent-item set.
-
-Current refined-material quantity multipliers are x1 / x2 / x4 / x8 for `.1` / `.2` / `.3` / `.4`. Silver increases with enchantment level and scales with Tier/category through authoritative data.
+Do not duplicate these costs in benchmark-local balance tables.
 
 ---
 
-# Pacing Baseline
+## 4. Refined materials and Silver
 
-Shard pacing is validated from real runtime TTK at the best accessible autonomous farm spot, not from a universal theoretical drop rate.
+Enchanting consumes:
+- matching Tier shards;
+- refined materials derived from the item's BASE CRAFT recipe;
+- Silver.
 
-Latest T4 full-set shard-only baseline validated on 2026-08-19 after the current drop calibration and weapon progression tuning:
+There is no parallel hand-authored enchantment material recipe. Enchantment material requirements scale from the base craft materials.
 
-| Step | Full-set shards | Worst representative weapon | Representative average |
-|---|---:|---:|---:|
-| `.0 -> .1` | 50 | ~1.40 h | ~1.23 h |
-| `.1 -> .2` | 150 | ~3.20 h | ~2.74 h |
-| `.2 -> .3` | 300 | ~5.09 h | ~4.55 h |
+Validated refined-material quantity multipliers:
+- `.1`: x1
+- `.2`: x2
+- `.3`: x4
+- `.4`: x8
 
-These are shard-farming durations from the benchmark checkpoint/loadout, not total account time from spawn. Gathering, refining, crafting, Silver, mastery acquisition and player routing can change total progression time.
+This preserves the global economy rule that base crafting remains the source of material identity.
 
-T5-T8 pacing is evaluated by the same runtime sweep methodology. The exact best farm spot can differ by weapon profile and enchantment state.
-
-Weapon profiles are allowed to produce meaningful pacing differences because different weapons do not farm every world checkpoint with identical efficiency.
-
-Drop rates are not changed merely to force identical enchantment timing across weapon profiles.
-
----
-
-# Tier Bridge Contract
-
-The shard resource for a band is determined by the content being farmed, not by the Tier currently equipped.
-
-This allows previous-tier gear to earn the first shards of the next Tier by entering the next world band.
-
-The regression contract is:
-
-- T4.3 must have a viable autonomous farm entry into T5 / Yellow content.
-- T5.3 must have a viable autonomous farm entry into T6 / Orange content.
-- T6.3 must have a viable autonomous farm entry into T7 / Red content.
-- T7.3 must have a viable autonomous farm entry into T8 / Black content.
-
-The bridge does not require every weapon to reach the same segment or shards/hour. It protects access to the next resource tier without erasing weapon identity.
+Silver scales through authoritative Tier/category/enchantment data and remains an economic sink, not the sole progression limiter.
 
 ---
 
-# Resource Acquisition
+## 5. Awakening `.3 -> .4`
 
-Enchantment shards are combat loot from content corresponding to their Tier:
+`.4` is the Awakening transition of the weapon itself, not another normal package enchantment.
 
-- T4 content / Blue progression -> T4 shards
-- T5 content / Yellow progression -> T5 shards
-- T6 content -> T6 shards
-- T7 content -> T7 shards
-- T8 content -> T8 shards
-
-Normal monsters may drop shards. Elite enemies and bosses should provide better expected enchantment-resource yield than ordinary enemies.
-
-Enchantment shards are NOT awarded simply for completing a segment.
-
----
-
-# Anti-Trivial-Farm Rule
-
-A universal fixed drop chance per monster is forbidden because it would make the weakest / fastest-killed monster the optimal enchantment farm.
-
-Drop balancing must be evaluated through expected enchantment shards per unit of time using actual monster difficulty / TTK and spawn cadence.
-
-Progressing deeper into content of the same Tier must be at least competitive with farming its earliest trivial segment and should generally provide a modestly better expected yield when difficulty increases.
-
-The current implementation uses authored shard progression weights, depth contribution and elite/boss modifiers. Runtime shard/TTK benchmarks remain authoritative when recalibrating the economy.
+Rules:
+- shard cost: 100 matching Tier shards;
+- eligible 1H and 2H weapons both pay the full weapon Awakening cost;
+- 1H receives no 50% discount on `.4`;
+- off-hand is not Awakened;
+- refined-material multiplier: x8;
+- base `.4` combat-stat multiplier currently remains x1.42;
+- post-acquisition Attunement/traits/Strain are defined in `20_AWAKENED_WEAPON_SYSTEM.txt`.
 
 ---
 
-# Item Power and Stat Interaction
+## 6. Shard acquisition and open-world pacing
 
-Each active enchantment level adds +50 Item Power:
+Shard Tier comes from the content being farmed:
+- Blue/T4 -> T4 shards
+- Yellow/T5 -> T5 shards
+- Orange/T6 -> T6 shards
+- Red/T7 -> T7 shards
+- Black/T8 -> T8 shards
 
-- `.0`: +0 IP
-- `.1`: +50 IP
-- `.2`: +100 IP
-- `.3`: +150 IP
-- `.4`: +200 IP
+Current open-world authored economy uses:
+- base expected shard/kill: 0.0165
+- depth bonus per segment: 0.015
+- elite multiplier: x1.20
+- boss multiplier: x1.35
+- authored per-band depth/zone weights in `apps/client/src/data/economyContentCatalog.ts`.
 
-The Stat System remains authoritative for converting Item Power into final numerical statistics.
+A universal fixed drop chance per monster is forbidden. Shards/hour must be validated using live TTK and encounter cadence so trivial monsters do not become the universal optimum.
 
-Enchantments do not automatically unlock abilities, change ability identity/slots, grant Mastery XP, change Tier or change Quality. Mastery, Tier, Quality and Enchantment remain independent progression dimensions.
+Weapon profiles are allowed to produce different shards/hour. Access and progression pacing are protected; identical throughput is not required.
 
----
-
-# Item-Specific State
-
-Enchantments belong to the exact equipment instance. They cannot be transferred, extracted, copied, duplicated, moved to another item or inherited by a replacement item.
-
-A superior replacement item must be enchanted independently.
-
-Enchantable equipment uses persistent instance identity; item type, Tier, quality or inventory position alone are not authoritative identities.
-
----
-
-# Upgrade Validation
-
-Before an upgrade commits, V1 validates at minimum:
-
-- Item instance exists.
-- Item is enchantable.
-- Next level is valid and enabled.
-- Item has not reached its configured cap.
-- `.4` is only allowed for an explicitly Awakening-eligible weapon.
-- Player owns enough matching Tier shards.
-- Player owns required refined materials.
-- Player owns enough Silver.
-- Required inventory capacity exists when necessary.
-- Enchantment is currently permitted by combat state.
-- Transaction has not already been processed.
-
-Future systems may add reservation, inventory-lock, server/save-transaction or other restrictions without changing the core enchantment rules.
+IMPORTANT ACTIVITY TRADEOFF:
+- when the HERO gathers, the hero is not fighting and therefore stops personal shard farming;
+- workers may gather in parallel;
+- global economy projections must account for this combat-vs-active-gather tradeoff rather than treating every resource stream as fully parallel.
 
 ---
 
-# Combat Restriction
+## 7. Tier bridge contract
 
-Enchanting is forbidden for the entire duration of an active combat segment, including transitions between monsters.
+Previous-tier `.3` gear must retain viable autonomous access to the first shard farm of the next world band:
+- T4.3 -> T5 / Yellow
+- T5.3 -> T6 / Orange
+- T6.3 -> T7 / Red
+- T7.3 -> T8 / Black
 
-The rule uses authoritative combat stop/segment state rather than a transient presentation state such as whether an enemy is visible on the current frame.
+All four bridges were revalidated after the 2026-08-20 enchantment-power recalibration.
 
-- Segment `running` -> forbidden.
-- `stop_requested` -> forbidden.
-- Segment fully `paused` / stopped -> allowed, subject to other validations.
-
-This prevents enchanting during the transition window between two monsters.
-
----
-
-# Equipped Items
-
-The current architecture may enchant an equipped item when it can safely resolve/update its persistent instance and the player is outside an active combat segment.
-
-Unequipping is not an intrinsic V1 design requirement.
+Different weapons may reach different segments and shards/hour. The bridge protects ACCESS, not equality.
 
 ---
 
-# Transaction Safety
+## 8. Item state and restrictions
 
-Enchanting is intended to behave as one deterministic transaction: upgrade exactly one item by one level, consume exactly the required materials and Silver, and never process the same transaction identifier twice.
+Enchantments belong to the exact equipment instance. They cannot be transferred to another item.
 
-Transaction identifiers protect against duplicate requests/double clicks.
+Enchanting is forbidden while the combat segment is running or stop-requested. It is allowed only after combat is authoritatively stopped/paused and all other transaction requirements pass.
 
-The implementation must continue moving toward strict atomic commit/rollback guarantees. A failure during the commit sequence must never become an accepted gameplay state where only part of the transaction has persisted.
+A transaction validates at minimum:
+- instance exists;
+- level transition is valid;
+- item is eligible;
+- enough Tier shards;
+- enough refined materials;
+- enough Silver;
+- combat restriction satisfied.
+
+The result is deterministic and must commit as one coherent transaction.
 
 ---
 
-# Upgrade Interface
+## 9. Presentation
 
-The interface should expose selected equipment, current `Tn.x`, next `Tn.x`, current/projected stats, required/owned/missing materials, Silver cost, blocking reason and confirmation action.
+Tier halo/frame represents BASE TIER and never changes from enchanting.
 
-The result must be predictable before confirmation. Technical failure keys must not be exposed directly to the player; UI-facing reasons use readable/localized messages.
-
-`.4` should be presented as weapon Awakening rather than as an ordinary fourth package enchantment.
-
----
-
-# Visual Language
-
-Tier and Enchantment use two independent visual channels.
-
-## Equipment Halo / Frame = Base Tier
-
-- T3: green
-- T4: blue
-- T5: red
-- T6: orange
-- T7: yellow
-- T8: white
-
-Enchanting an item must never change its Tier halo/frame.
-
-## `Tn.x` Text Color = Enchantment Level
-
-- `.0`: white / grey
+`Tn.x` label color represents enchantment:
+- `.0`: white/grey
 - `.1`: green
 - `.2`: blue
 - `.3`: purple
 - `.4`: yellow
 
-Example: a T4.3 item keeps the T4 blue halo while its `T4.3` label uses the `.3` purple enchantment color.
-
-These presentation rules are shared across equipment UI surfaces.
+Recommended world IP is also an UX/progression marker. Because enchantment power is decoupled from IP, recommended IP must be authored from validated world walls/bridges rather than inferred from enchantment stat multipliers.
 
 ---
 
-# Persistence and Legacy Migration
+## 10. Regression sources
 
-Enchantment level is persistent item-instance state. Current saves persist enchantment level rather than baked Item Power, so changing the global IP baseline does not require rewriting each enchanted item instance.
+Primary guards:
+- `enchantmentShardBalance.test.ts`
+- `enchantmentShardFarmSweep.test.ts`
+- `enchantmentShardWorldFarmSweep.test.ts`
+- `enchantmentTierBridgeSweep.test.ts`
+- `enchantmentProgressionLadderSweep.test.ts`
+- `enchantmentStatMultiplierSweep.test.ts`
+- `worldProgressionFoundation.test.ts`
 
-Legacy universal resources (Essence / Crystal / Catalyst) are removed from old player storage rather than converted into new Tier shards. There is intentionally no legacy-resource-to-shard conversion.
+Global balance snapshot:
+- `AI_BIBLE/05_BALANCE/2026-08-20_GLOBAL_BALANCE_BASELINE.md`
 
----
-
-# Repair / Salvage / Reversal
-
-Enchanting must not act as a free repair mechanic. Unless a future rule changes this, durability semantics are preserved.
-
-If Salvaging later returns enchantment resources, recovered value must remain below total invested value and must not create a closed generation loop.
-
-V1 does not support lowering an item's enchantment level.
-
----
-
-# Current Closure Status
-
-Validated on 2026-08-19:
-
-- Deterministic guaranteed upgrades.
-- Sequential `.0 -> .1 -> .2 -> .3` normal enchantment progression.
-- Eligible weapons may transition `.3 -> .4` through Awakening.
-- +50 IP per active enchantment level.
-- One Tier-specific enchantment shard for each Tier T4-T8.
-- No shard transmutation between Tiers.
-- Normal incremental shard curve: 10 / 30 / 60.
-- Standard full-set benchmark costs are derived as 50 / 150 / 300 from five full-cost equivalents.
-- Awakening shard cost: 100.
-- Exact 50/50 economic split for 1H + off-hand through `.3`.
-- `.4` ignores the 1H package discount: eligible 1H and 2H weapons pay the same full Awakening cost.
-- Silver and refined materials follow the same package/Awakening distinction.
-- Existing shard drop rates retained after runtime T4-T8 pacing review.
-- Previous-tier `.3` entry bridges into the next shard band are protected by runtime regression sweeps.
-- Combat-segment restriction uses authoritative segment state.
-- Old universal resources removed from active gameplay and handled only by legacy-save cleanup.
-- Tier halo and enchantment-label colors separated.
-
-Intentionally deferred:
-
-- Future market/salvage integrations.
-- Stronger transactional rollback/atomicity hardening if required by persistence/server evolution.
+This document supersedes all older references to `+50 IP per enchantment level` or enchantment combat power being derived directly from Item Power.
