@@ -50,9 +50,9 @@ export const GATHERING_MASTERY_UNLOCK_BY_TIER = {
   3: 0,
   4: 3,
   5: 7,
-  6: 10,
-  7: 15,
-  8: 23,
+  6: 11,
+  7: 18,
+  8: 25,
 } as const;
 
 export function getRequiredGatheringMasteryForTier(tier: number): number {
@@ -88,22 +88,9 @@ export const DESTINY_NODES = [
     category: "weapon",
     prerequisites: [] as ReturnType<typeof asDestinyNodeId>[],
     requirements: [{
-      type: "mastery_level" as const,
-      masteryId: asMasteryId("mastery_sword"),
-      level: 1,
+      kind: "mastery_level" as const,
+      masteryId: asMasteryId("mastery_weapon_sword"),
+      level: 10,
     }],
-    rewards: [{ type: "equipment_tier_unlock" as const, tier: 2 }],
-  },
-  {
-    id: asDestinyNodeId("node_sword_2"),
-    displayName: "Adepte de l'épée",
-    category: "weapon",
-    prerequisites: [asDestinyNodeId("node_sword_1")],
-    requirements: [{
-      type: "mastery_level" as const,
-      masteryId: asMasteryId("mastery_sword"),
-      level: 3,
-    }],
-    rewards: [{ type: "equipment_tier_unlock" as const, tier: 3 }],
   },
 ];
