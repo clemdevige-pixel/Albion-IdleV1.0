@@ -21,51 +21,47 @@ The live CombatRuntime is the source of truth for player-vs-zone difficulty. Syn
 7. A one-handed weapon and its off-hand are separate balance objects. Never attribute off-hand power to the intrinsic weapon score.
 8. Potions are a progression tool, not part of an AFK baseline unless the contract explicitly says otherwise.
 9. Raw tuning values are data. The progression contract is design law.
-10. Long-term weapon balance targets viability across the game, not equivalence in every activity. Different weapons should become genuinely better or worse depending on content type.
-11. World difficulty is monotonic. A later zone or segment must never be structurally easier than the previous progression point. Zone starts must not regress below the previous zone end, and intra-zone curves must not decrease.
-12. Representative weapons are not required to clear every normal progression wall with identical ease. When a checkpoint is not explicitly defined as potion-free/AFK, a weapon that fails without potion but clears with the expected gear/mastery plus potion remains progression-valid when that difference is coherent with its weapon profile.
+10. Long-term weapon balance targets viability across the game, not equivalence in every activity.
+11. NORMAL world progression is structurally monotonic: normal zone starts must not regress below the previous normal zone end, and normal intra-zone curves must not decrease.
+12. A final boss explicitly authored with `progressionRole: "boss_gate"` is an approved exception to normal monotonicity. It may create a local difficulty spike above the following zone entry.
+13. The following zone is compared to the previous NORMAL progression envelope, not to the boss-gate spike.
+14. Representative weapons are not required to clear ordinary progression walls with identical ease. End-of-Tier boss gates are stricter: their explicit contract must be satisfied by the full representative weapon set.
 
 ---
 
 # 2. Live benchmark architecture
 
 PRIMARY RUNTIME TOOL
-- apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts
-- Entry point: runCombatRuntimeBenchmark(...)
-- Accepts any authored ZoneDefinitionId; it is not Blue-specific.
+- `apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts`
+- Entry point: `runCombatRuntimeBenchmark(...)`
+- Accepts any authored ZoneDefinitionId; it is not world-band specific.
 - Runs the exact live CombatRuntime tick by tick.
 - Uses live equipment, mastery, ability, damage, death, consumable and zone-placement systems.
-- Max-health synchronization must remain identical to live character equipment behavior.
 - No alternate combat formula may be implemented inside this harness.
 
 PRIMARY WEAPON DIAGNOSTICS
-- apps/client/src/data/weaponIdealBenchmark.ts
-- apps/client/src/data/weaponPackageBenchmark.ts
+- `apps/client/src/data/weaponIdealBenchmark.ts`
+- `apps/client/src/data/weaponPackageBenchmark.ts`
 
-weaponIdealBenchmark provides:
-- sustained DPS;
-- opener DPS at 5 s and 10 s;
-- AA DPS and ability DPS;
-- mastery unlock-aware ability contribution;
-- HP / Armor / MR;
-- physical, magical and average effective health;
-- median synthetic ideal profiles.
+weaponIdealBenchmark provides sustained DPS, opener DPS, AA/ability contribution and defensive metrics.
 
 weaponPackageBenchmark separates:
 - WEAPON ONLY: intrinsic offensive identity;
-- NEUTRAL PACKAGE: identical armor and no off-hand, useful for comparable weapon checks;
-- EXPLICIT LOADOUT: weapon + explicitly selected armor/off-hand, useful for real build power.
+- NEUTRAL PACKAGE: identical armor and no off-hand;
+- EXPLICIT LOADOUT: weapon + explicitly selected armor/off-hand.
 
-Future off-hands must be passed explicitly through BenchmarkDefensiveLoadout. Do not recreate a rule where every 1H weapon implicitly owns a shield.
+Future off-hands must be passed explicitly. Do not recreate a rule where every 1H weapon implicitly owns a shield.
 
 ENCHANTMENT ECONOMY BENCHMARKS
-- apps/client/src/data/enchantmentShardTtkBenchmark.ts is the shared runtime helper.
-- apps/client/src/data/enchantmentShardFarmSweep.test.ts covers the full Blue/T4 farm matrix.
-- apps/client/src/data/enchantmentShardWorldFarmSweep.test.ts covers Yellow/T5 through Black/T8.
-- apps/client/src/data/enchantmentTierBridgeSweep.test.ts protects previous-tier `.3` access to the next shard band.
-- apps/client/src/data/enchantmentShardBalance.test.ts protects structural shard-yield progression.
+- `enchantmentShardTtkBenchmark.ts`
+- `enchantmentShardFarmSweep.test.ts`
+- `enchantmentShardWorldFarmSweep.test.ts`
+- `enchantmentTierBridgeSweep.test.ts`
+- `enchantmentShardBalance.test.ts`
 
-Shard-cost projections inside the sweeps must be derived from the gameplay-owned `ENCHANTMENT_SHARD_COSTS`. Do not duplicate the 10 / 30 / 60 economy curve in benchmark-local constants.
+BOSS-GATE REGRESSION
+- `blueFrostpeakProgressionSweep.test.ts`
+- `laterTierBossGateRegression.test.ts`
 
 ---
 
@@ -87,12 +83,7 @@ Validated full 2H defensive reference (head + chest + boots + Traveler Cape, no 
 - T5.2: 800 HP / 62 Armor / 47 MR
 - T5.3: 850 HP / 68 Armor / 50 MR
 
-Reinforced Shield remains a separate off-hand contribution:
-- T3: +9 Armor / +5 MR
-- T4: +15 Armor / +9 MR
-- T5: +22 Armor / +13 MR
-
-These values are protected by defensiveEquipmentBalance.test.ts and must remain data-driven.
+Reinforced Shield remains a separate off-hand contribution.
 
 ---
 
@@ -100,71 +91,37 @@ These values are protected by defensiveEquipmentBalance.test.ts and must remain 
 
 For every new weapon or major rebalance:
 
-1. Define the intended identity: sustained, burst, DoT, execute, control, defensive, hybrid, etc.
-2. Define handling: 1H or 2H. Handling alone does not define the off-hand.
-3. Define the content niches the weapon is expected to excel in, remain viable in, and struggle in when enough differentiated content exists.
-4. Run weapon-only diagnostics at representative mastery/enchantment checkpoints.
-5. Compare sustained DPS to the median synthetic ideal.
-6. Inspect opener 5 s / 10 s to understand burst/timing identity.
-7. For weapons intended to fill the same role, treat roughly +/-5-10% as an acceptable design envelope unless runtime behavior reveals a real outlier. Do not apply this envelope blindly across intentionally different niches.
-8. Run a neutral package with the same armor and no off-hand.
-9. Run one or more explicit real loadouts. For 1H weapons, test each relevant off-hand separately when those off-hands exist.
-10. Validate the weapon at real progression checkpoints with CombatRuntimeBenchmarkHarness.
-11. When multiple content archetypes exist, compare the weapon across those archetypes rather than forcing a universal score toward 100.
-12. Tune the smallest authored lever: base damage, attack cadence, ability ratio, cooldown, conditional mechanic, control, sustain, or explicit off-hand stats.
-13. Re-run typecheck + weapon diagnostics + affected progression/economy sweeps.
+1. Define intended identity and handling.
+2. Define the content niches where the weapon should excel, remain viable or struggle.
+3. Run weapon-only diagnostics at representative mastery/enchantment checkpoints.
+4. Inspect sustained DPS and opener 5 s / 10 s.
+5. Run neutral package comparisons.
+6. Run explicit real loadouts; test relevant off-hands separately for 1H weapons.
+7. Validate real progression checkpoints through CombatRuntimeBenchmarkHarness.
+8. When one weapon alone breaks a global progression contract, diagnose that weapon/package before changing the zone.
+9. Tune the smallest authored lever: base damage, cadence, ability ratio, cooldown, conditional mechanic, control, sustain or off-hand stats.
+10. Re-run typecheck + weapon diagnostics + affected progression/economy sweeps.
 
-A weapon may be below the offensive center if another part of its explicit build package or content niche compensates. The diagnostic must still report that difference rather than hiding it inside a single score.
+A weapon may be below the offensive center if another part of its explicit build package compensates. The diagnostic must still report that difference rather than hiding it inside one score.
 
----
+## 4.1 T5 Broadsword correction — validated 2026-08-20
 
-# 4A. Future weapon specialization philosophy — PARKED / NOT FOR CURRENT BLUE IMPLEMENTATION
+Ironveil boss-gate diagnostics exposed a real T5 overlap:
+- Longbow T5.2 could remain above Broadsword T5.3 in the same boss-gate context.
+- A global boss multiplier could not enforce `T5.2 + potion = blocked` and `T5.3 + potion = all weapons pass` without breaking Broadsword.
 
-This section records an approved long-term direction. It is intentionally NOT a request to retrofit or destabilize the currently validated Blue progression.
+Weapon/package diagnostics showed the Broadsword T5 authored value created an artificial offensive trough.
 
-TARGET
-- Weapons should be viable across the game without being equally good everywhere.
-- A richer game should reward choosing equipment for the activity being attempted.
-- Examples of useful niches include fast farming, single-target/boss pressure, multi-target/AoE encounters, burst/push progression, long encounters, control-heavy encounters, execution mechanics and other future content-specific interactions.
-- A weapon being clearly best for one activity is acceptable when other weapons have meaningful activities where the ranking changes.
-- Avoid artificial per-content damage bonuses when the same differentiation can emerge naturally from weapon mechanics interacting with encounter design.
+Validated correction:
+- T4 Broadsword base damage: 86
+- T5: 120 (was 110)
+- T6: 155
+- T7: 210
+- T8: 275
 
-DETERMINISTIC COMBAT CONSEQUENCE
-The current combat loop is deterministic. If an identical loadout clears an identical segment once, repeating that exact segment does not create additional failure risk merely because one build ends with less HP.
+The T5 correction is data-driven in `weaponContentCatalog.ts`; there is no T5-specific runtime override.
 
-Therefore "lower yield in exchange for safety" is not automatically a real trade-off in the current system. Once both builds deterministically clear the loop, excess survivability has no direct economic value unless content mechanics make that survivability relevant.
-
-CURRENT ENCHANTMENT-SHARD EXAMPLE
-The runtime farm sweeps show that faster offensive weapons can produce materially more shards/hour than slower weapons on the same deterministic farm segment. This is accepted: universal resource farming does not need identical throughput across every weapon when weapon specialization is an intended long-term feature.
-
-FUTURE CONTROLLED VARIABILITY — PARKED IDEA
-If combat content later needs less linear repetition, prefer controlled variability in encounter/content composition rather than randomizing the player's core combat math.
-
-Preferred future levers:
-- alternate authored encounter compositions;
-- elite/special encounters;
-- enemy ability/pattern variants;
-- content modifiers/affixes;
-- different encounter archetypes that naturally favor different weapon kits.
-
-Avoid by default:
-- random damage variance solely for uncertainty;
-- random hit/miss systems;
-- generic crit/dodge RNG added only to make AFK outcomes unpredictable.
-
-The intended principle is:
-
-PLAYER COMBAT MATH REMAINS HIGHLY DETERMINISTIC
-+
-CONTENT MAY EVENTUALLY INTRODUCE CONTROLLED VARIABILITY
-
-If this direction is implemented later, balance tooling must distinguish at minimum:
-- nominal clear;
-- content-archetype performance;
-- reliable AFK clear against the authored variability envelope;
-- farming throughput.
-
-Do not implement this future variability during the current Blue balancing baseline without a separate design validation.
+At T5.3 with the explicit shield package, the 120 candidate produced a package score around 99.7 and restored the strict Ironveil boss-gate contract. Larger candidates were unnecessary.
 
 ---
 
@@ -174,27 +131,79 @@ For each new zone or world band:
 
 1. Write the progression contract before editing enemy numbers.
 2. Define checkpoints covering entry, middle, late zone and final wall.
-3. For every checkpoint define:
-   - expected weapon/equipment tier;
-   - expected enchantment;
-   - expected mastery range;
-   - potion expectation: none / useful / required;
-   - expected state: comfortable / progression / wall / AFK farm.
-4. Validate structural monotonicity before runtime tuning: every zone curve must rise internally and every later zone start must remain at least as difficult as the previous zone end on authored HP / damage / defense pressure.
+3. For every checkpoint define expected tier, enchantment, mastery, potion expectation and intended state.
+4. Validate structural monotonicity for NORMAL progression.
 5. Run the exact live runtime across the representative weapon set.
 6. Read clear/fail, remaining HP, encounter reached, duration and potion usage together.
-7. On a non-AFK progression checkpoint, rerun failed representative weapons with live potion behavior before declaring the world curve invalid. A potion-assisted clear can be valid profile-driven progression.
-8. Check weapon-only/package diagnostics before changing the zone when only one weapon is failing.
-9. Tune only the smallest relevant authored zone curve endpoint or content stat.
-10. Re-run earlier checkpoints to protect the shape of the curve.
-11. Freeze the contract semantically; do not freeze accidental historical tuning values.
+7. Check weapon-only/package diagnostics before changing the zone when only one weapon is failing.
+8. Tune the smallest relevant authored zone curve endpoint or content stat.
+9. Re-run earlier checkpoints to protect the normal curve shape.
+10. Freeze the contract semantically; do not freeze accidental historical tuning values.
 
-When adding Yellow/Red/Black content, reuse CombatRuntimeBenchmarkHarness with the new ZoneDefinitionId. Do not create YellowRuntimeBenchmarkHarness, RedRuntimeBenchmarkHarness, etc.
+When adding later-band content, reuse CombatRuntimeBenchmarkHarness. Do not create band-specific harnesses.
+
+## 5.1 Normal monotonicity rule
+
+Normal world difficulty remains monotonic.
+
+A normal segment or normal zone entry must not become easier than the previous normal progression point simply to solve a local balance issue.
+
+## 5.2 End-of-Tier boss-gate exception
+
+A final boss may intentionally be harder than the next zone entry when it has an authored `bossGate` profile.
+
+Design purpose:
+- the boss certifies completion of the current Tier;
+- the player should not enter the next production Tier while still materially under-geared for the previous one;
+- the next zone can return to the normal progression envelope instead of inheriting an artificially extreme entry difficulty.
+
+Implementation rule:
+- author `bossGate` in `packages/data/src/config/combat-progression.ts`;
+- do NOT key behavior from segment index, zone name or renderer state;
+- boss pressure remains HP / damage / defense multipliers applied only to the final boss encounter.
+
+STRICT END-OF-TIER CONTRACT
+For the representative normal weapon set at end-of-tier mastery:
+- full `Tn.2 + potion` = 0 universal clears;
+- full `Tn.3 + potion` = all representative weapons clear;
+- `Tn.3` without potion is not required to be universal unless separately authored.
+
+The wall is produced by combat pressure, not by an artificial equipment-slot lock.
+
+## 5.3 Validated live boss gates — 2026-08-20
+
+Frostpeak T4 -> T5
+- HP x1.575
+- damage x1.40
+- defense x1.10
+- T4.2 + potion: blocked across the validated representative set
+- T4.3 + potion: universal clear
+
+Ironveil T5 -> T6
+- HP x1.15
+- damage x1.325
+- defense x1.05
+- T5.2 + potion: 0/5
+- T5.3 + potion: 5/5
+
+Ashenpeak T6 -> T7
+- HP x1.00
+- damage x1.375
+- defense x1.00
+- T6.2 + potion: 0/5
+- T6.3 + potion: 5/5
+
+Doompeak T7 -> T8
+- HP x1.00
+- damage x1.175
+- defense x1.00
+- T7.2 + potion: 0/5
+- T7.3 + potion: 5/5
 
 TIER-BRIDGE RULE
-- The previous Tier `.3` state must retain a viable entry farm into the next shard band.
-- A bridge regression is a progression/economy problem and must not be hidden by changing shard drop rates.
-- Different weapons may reach different segments and shards/hour; access is protected, equality is not.
+- The previous Tier `.3` state must retain viable entry access into the next world/shard band after the boss has been defeated.
+- A boss gate may be harder than the next zone entry without violating progression structure.
+- Different weapons may reach different normal farm depths and shards/hour; access is protected, equality is not.
 
 ---
 
@@ -202,108 +211,83 @@ TIER-BRIDGE RULE
 
 NO POTION / AFK COMFORT
 - A stable farm profile should clear without potion dependency.
-- When a checkpoint explicitly defines a potion-free or reliable AFK threshold, every representative weapon covered by that contract must satisfy it.
 
 POTION BRIDGE
 - A previous gear level may use potions to enter or advance into the next progression block when the contract allows it.
-- This is valid when the next gear upgrade removes the dependency.
 
 ROLE-AWARE POTION FALLBACK
-- On an ordinary progression wall where potion-free play is not an explicit requirement, representative weapons do not need identical clear comfort.
-- If an expected-gear weapon fails without potion but clears with the live potion system, the checkpoint may remain VALID when the need is consistent with the weapon's authored gameplay/content profile.
-- This is not permission to hide a broken weapon or broken world curve: failure even with potion, repeated broad failure across unrelated profiles, or violation of the monotonic world rule still requires investigation.
+- On ordinary progression walls, representative weapons do not need identical clear comfort.
 
-DIFFICULT CLEAR
-- Recommended gear may require potion support or optimization on a final wall.
+END-OF-TIER BOSS GATE
+- Potion support is part of the validated gate contract.
+- `Tn.3 + potion` is the universal reference state.
+- `Tn.2 + potion` must not provide a universal bypass.
 
-AFK THRESHOLD
-- The next meaningful upgrade should turn a difficult/potion-assisted wall into reliable potion-free farming.
-
-The benchmark uses the live health potion behavior and cooldown. Never model a free heal per encounter.
+The benchmark uses live health potion behavior and cooldown. Never model a free heal per encounter.
 
 ---
 
-# 7. Validated Blue progression contract — 2026-08-19
+# 7. Validated Blue progression contract — updated 2026-08-20
 
 BIRCH FOREST
 Expected: starter weapon only.
 Function: discovery, no real friction.
-Validated runtime result: all five starter weapons can clear S10 without potion.
 
-DARK SWAMP — EARLY
-Expected: starter weapon.
-Function: first real progression wall.
-The exact segment reached may vary by weapon identity; this variation is acceptable.
-
-DARK SWAMP S2 -> S6
-Expected: one to two T3 armor crafts.
-Function: each craft should visibly buy several more segments.
-Validated runtime checkpoints show meaningful recovery from chest and two-piece T3 upgrades.
-
-DARK SWAMP S6 -> S10
-Expected: quasi-full to full T3.
-Function: consolidation.
-Full T3 is the intended progression level. Role-dependent potion support is acceptable if a representative weapon needs it; this is not an AFK threshold.
-
-AFTER DARK SWAMP
-Progression pivot: Island level 2 enables the T4 production step according to the island/world progression contract.
+DARK SWAMP
+Expected: starter -> full T3.
+Function: first equipment-driven progression block.
 
 STONE HIGHLANDS
 Expected: full T3 -> first T4 pieces.
 Function: T3/T4 transition.
-Full T3 is not expected to be an autonomous farm baseline at the entrance. Potion support can bridge the first step; T4 pieces then remove that dependency progressively.
-Full T4.0 is the intended zone-clear progression level; role-dependent potion support remains acceptable unless a stricter checkpoint is authored.
 
 GOLDEN STEPPE
 Expected: full T4.0 -> first enchantments.
 Function: T4 consolidation.
-T4.0 handles early/mid Steppe; T4.1 is the intended late-zone progression tool.
-A weapon-specific potion dependency at the expected progression level is acceptable when coherent with its profile. A single failure must still be checked against its package before changing the global curve.
 
 FROSTPEAK / MOUNTAIN
-Expected: T4.1 -> T4.2, with T4.3 as autonomous comfort.
-Function: final Blue difficulty block.
-T4.1 progresses through early Mountain. Some weapon profiles may require potion support on an early/mid wall; that remains valid progression and is not a reason to make Frostpeak easier than late Steppe.
-T4.2 can push deep and may require potion/optimization at S10; it is intentionally not a guaranteed AFK clear.
-T4.3 is the intended late-Blue comfort state and bridge into Yellow. Exact deepest autonomous segment remains weapon-profile dependent and is measured by the runtime sweeps rather than frozen as one universal segment number.
+Expected normal progression: T4.1 -> T4.2 -> T4.3.
+Function: final Blue progression block plus explicit end-of-Tier boss certification.
 
-WORLD ORDER INVARIANT
-- Blue progression must remain structurally monotonic across every zone transition.
-- In particular, Frostpeak S1 must remain harder than Golden Steppe S10 in the authored curve; solving a Frostpeak checkpoint by lowering its start below Steppe S10 is invalid.
+Normal Frostpeak segments may be pushed before full T4.3 according to weapon profile. The final boss is different: it is an authored `boss_gate` and is intended to require optimized T4.3 + potion across the representative set.
+
+This intentionally supersedes the older contract where T4.2 + potion universally cleared the final boss.
+
+After the boss is defeated, Yellow/T5 entry does NOT need to exceed the Frostpeak boss spike. Yellow entry follows the normal bridge envelope.
 
 ---
 
 # 8. Current representative weapon interpretation
 
-At T4.1/T4.2 before later mastery unlocks:
-- Dagger Pair and Spiked Gauntlets sit close to the 2H offensive median.
-- Longbow and Infernal Staff sit roughly around +10% sustained offense versus the median; this is near the accepted high side of the same-class envelope.
-- Broadsword is substantially below the 2H offensive median, but the current reference Broadsword + Reinforced Shield loadout gains materially more EHP.
+Weapon identity remains intentionally asymmetric.
 
-Important: this does NOT mean Broadsword inherently owns that defensive score. Future off-hands will produce different 1H packages. Always report weapon-only and explicit-loadout results separately.
+Longbow and Infernal tend toward higher offense; Broadsword trades offense for explicit shield-package defense; Spiked and Dual Dagger carry their own cadence/mechanics profiles.
 
-The current shard-farming TTK differences are not automatically treated as a defect. Higher throughput from weapons better suited to deterministic farming is compatible with the long-term specialization philosophy, provided future content creates meaningful niches for other weapons.
+Do not treat a faster deterministic farm weapon as automatically broken. Investigate persistent global outliers and progression-contract failures.
+
+The T5 Broadsword correction is the model for this process: diagnose the weapon/package when a single profile prevents a valid global gate before distorting the whole zone.
 
 ---
 
 # 9. Tests and regression policy
 
 CORE COMBAT REGRESSION SET
-- blueRuntimeParity.test.ts
-- blueT3ProgressionSweep.test.ts
-- blueHighlandProgressionSweep.test.ts
-- blueSteppeProgressionSweep.test.ts
-- blueFrostpeakProgressionSweep.test.ts
-- blueRuntimeProgressionMatrix.test.ts
-- weaponIdealBenchmark.test.ts
-- weaponPackageScore.test.ts
-- defensiveEquipmentBalance.test.ts
+- `blueRuntimeParity.test.ts`
+- `blueT3ProgressionSweep.test.ts`
+- `blueHighlandProgressionSweep.test.ts`
+- `blueSteppeProgressionSweep.test.ts`
+- `blueFrostpeakProgressionSweep.test.ts`
+- `blueRuntimeProgressionMatrix.test.ts`
+- `weaponIdealBenchmark.test.ts`
+- `weaponPackageScore.test.ts`
+- `defensiveEquipmentBalance.test.ts`
+- `laterTierBossGateRegression.test.ts`
 
 ENCHANTMENT ECONOMY REGRESSION SET
-- enchantmentShardBalance.test.ts
-- enchantmentShardFarmSweep.test.ts
-- enchantmentShardWorldFarmSweep.test.ts
-- enchantmentTierBridgeSweep.test.ts
+- `enchantmentShardBalance.test.ts`
+- `enchantmentShardFarmSweep.test.ts`
+- `enchantmentShardWorldFarmSweep.test.ts`
+- `enchantmentTierBridgeSweep.test.ts`
 
 KEEP tests that protect:
 - live runtime parity;
@@ -312,31 +296,25 @@ KEEP tests that protect:
 - weapon diagnostic construction;
 - explicit off-hand separation;
 - validated progression checkpoints;
-- potion behavior and role-aware potion fallback semantics;
-- monotonic world-curve ordering;
+- potion behavior;
+- normal world-curve ordering;
+- authored boss-gate semantics;
 - deterministic data integrity;
-- TTK-derived economy measurements when combat throughput affects universal progression resources;
 - shard-band entry bridges between adjacent Tiers.
 
-REMOVE tests/tools that only preserve obsolete synthetic hero baselines, historical tuning ratios, one-off diagnostics or old monster ceilings after their finding is covered by a broader regression guard. The retired combatBalanceMatrix synthetic reallocation tool must not be reintroduced; real runtime sweeps replaced it.
-
-A shared benchmark helper is not a test by itself. `enchantmentShardTtkBenchmark.ts` remains because the farm and bridge sweeps consume it; the superseded one-off `enchantmentShardTtkBenchmark.test.ts` was removed.
+One-off candidate sweeps are diagnostics. Once a candidate is live and covered by a semantic regression, the regression test is the durable guard.
 
 ---
 
 # 10. Validation commands
 
-From the repository root, always run typecheck first:
+From repository root:
 
-pnpm.cmd --filter @game/client typecheck
+`pnpm.cmd --filter @game/client typecheck`
 
-Core combat regression:
+Boss-gate regression:
 
-pnpm.cmd --filter @game/client test -- blueRuntimeParity.test.ts blueT3ProgressionSweep.test.ts blueHighlandProgressionSweep.test.ts blueSteppeProgressionSweep.test.ts blueFrostpeakProgressionSweep.test.ts blueRuntimeProgressionMatrix.test.ts weaponIdealBenchmark.test.ts weaponPackageScore.test.ts defensiveEquipmentBalance.test.ts --reporter=verbose
-
-Enchantment economy / shard pacing regression:
-
-pnpm.cmd --filter @game/client test -- enchantmentShardBalance.test.ts enchantmentShardFarmSweep.test.ts enchantmentShardWorldFarmSweep.test.ts enchantmentTierBridgeSweep.test.ts --reporter=verbose
+`pnpm.cmd --filter @game/client test -- blueFrostpeakProgressionSweep.test.ts laterTierBossGateRegression.test.ts --reporter=verbose`
 
 After targeted balance validation, run the full client suite before merging to main.
 
@@ -345,6 +323,6 @@ After targeted balance validation, run the full client suite before merging to m
 # Source-of-truth rule
 
 Difficulty truth = live CombatRuntime + authored content data.
-Economy cost truth = gameplay-owned enchantment recipe data.
+Weapon/equipment truth = authoritative catalogs.
 Weapon diagnostics explain the result; they never override it.
 Documentation stores the intended contract; tests protect the contract.
