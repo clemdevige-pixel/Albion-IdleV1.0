@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type {
+  EnvironmentLayerManifest,
   EnvironmentPaletteManifest,
   EnvironmentRenderManifest,
 } from "../RenderManifest";
@@ -8,14 +9,21 @@ export function preloadEnvironmentManifest(
   scene: Phaser.Scene,
   manifest: EnvironmentRenderManifest,
 ): void {
-  scene.load.image(manifest.textureKey, manifest.assetPath);
+  for (const layer of manifest.layers) {
+    scene.load.image(layer.textureKey, layer.assetPath);
+  }
 }
 
-/** Owns world background layers and biome atmosphere. */
+interface EnvironmentLayer {
+  readonly manifest: EnvironmentLayerManifest;
+  readonly sprite: Phaser.GameObjects.TileSprite;
+  readonly textureScale: number;
+}
+
+/** Owns manifest-driven parallax layers and biome atmosphere. */
 export class EnvironmentSystem {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
-  private background!: Phaser.GameObjects.TileSprite;
-  private groundDetail!: Phaser.GameObjects.Graphics;
+  private readonly layers: EnvironmentLayer[] = [];
   private skyTint!: Phaser.GameObjects.Rectangle;
   private groundTint!: Phaser.GameObjects.Rectangle;
   private groundLine!: Phaser.GameObjects.Rectangle;
@@ -23,7 +31,6 @@ export class EnvironmentSystem {
   private enemyShadow!: Phaser.GameObjects.Ellipse;
   private currentBiomeTheme = "";
   private currentManifestId = "";
-  private groundDetailColor = 0;
   private travelOffset = 0;
   private traversalTween: Phaser.Tweens.Tween | undefined;
   private manifest!: EnvironmentRenderManifest;
@@ -36,16 +43,7 @@ export class EnvironmentSystem {
     height: number,
   ): void {
     this.manifest = manifest;
-    const texture = this.scene.textures.get(manifest.textureKey);
-    if (manifest.pixelArt) {
-      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-    }
-
-    this.background = this.scene.add
-      .tileSprite(width / 2, height / 2, width, height, manifest.textureKey)
-      .setOrigin(0.5)
-      .setDepth(-20);
-    this.fitBackground(width, height);
+    this.createLayers(manifest, width, height);
 
     const defaultColors = this.parsePalette(manifest.defaultPalette);
     const { layout } = manifest;
@@ -58,7 +56,7 @@ export class EnvironmentSystem {
         defaultColors.sky,
         0.08,
       )
-      .setDepth(-19);
+      .setDepth(-29);
     this.groundTint = this.scene.add
       .rectangle(
         width / 2,
@@ -68,7 +66,7 @@ export class EnvironmentSystem {
         defaultColors.ground,
         0.08,
       )
-      .setDepth(-18);
+      .setDepth(-9);
     this.groundLine = this.scene.add
       .rectangle(
         width / 2,
@@ -79,9 +77,6 @@ export class EnvironmentSystem {
         0.35,
       )
       .setDepth(-5);
-    this.groundDetail = this.scene.add.graphics().setDepth(-4);
-    this.groundDetailColor = defaultColors.groundLine;
-    this.drawGroundDetails(width, height);
     this.playerShadow = this.scene.add
       .ellipse(
         width * 0.32,
@@ -104,11 +99,9 @@ export class EnvironmentSystem {
       .setDepth(1);
 
     this.objects.push(
-      this.background,
       this.skyTint,
       this.groundTint,
       this.groundLine,
-      this.groundDetail,
       this.playerShadow,
       this.enemyShadow,
     );
@@ -125,17 +118,9 @@ export class EnvironmentSystem {
       this.stopTraversal();
       this.travelOffset = 0;
       this.manifest = manifest;
-      const texture = this.scene.textures.get(manifest.textureKey);
-      texture.setFilter(
-        manifest.pixelArt
-          ? Phaser.Textures.FilterMode.NEAREST
-          : Phaser.Textures.FilterMode.LINEAR,
-      );
-      this.background
-        .setTexture(manifest.textureKey)
-        .setPosition(width / 2, height / 2)
-        .setSize(width, height);
-      this.fitBackground(width, height);
+      this.clearLayers();
+      this.createLayers(manifest, width, height);
+
       const { layout } = manifest;
       this.skyTint
         .setPosition(width / 2, height * layout.skyYRatio)
@@ -195,8 +180,6 @@ export class EnvironmentSystem {
     this.skyTint.setFillStyle(colors.sky, 0.08);
     this.groundTint.setFillStyle(colors.ground, 0.08);
     this.groundLine.setFillStyle(colors.groundLine, 0.35);
-    this.groundDetailColor = colors.groundLine;
-    this.drawGroundDetails(this.scene.scale.width, this.scene.scale.height);
   }
 
   public clear(): void {
@@ -205,48 +188,59 @@ export class EnvironmentSystem {
       gameObject.destroy();
     }
     this.objects.length = 0;
+    this.layers.length = 0;
     this.currentBiomeTheme = "";
     this.currentManifestId = "";
     this.travelOffset = 0;
   }
 
-  private fitBackground(width: number, height: number): void {
-    const frame = this.scene.textures.get(this.manifest.textureKey).get();
-    const scale = Math.max(width / frame.width, height / frame.height);
-    this.background.setTileScale(scale, scale);
-    this.background.setTilePosition(
-      this.travelOffset * this.manifest.traversal.backgroundScrollFactor,
-      Math.max(0, (frame.height - height / scale) / 2),
-    );
+  private createLayers(
+    manifest: EnvironmentRenderManifest,
+    width: number,
+    height: number,
+  ): void {
+    for (const layerManifest of manifest.layers) {
+      const texture = this.scene.textures.get(layerManifest.textureKey);
+      texture.setFilter(
+        manifest.pixelArt
+          ? Phaser.Textures.FilterMode.NEAREST
+          : Phaser.Textures.FilterMode.LINEAR,
+      );
+
+      const frame = texture.get();
+      const textureScale = Math.max(width / frame.width, height / frame.height);
+      const sprite = this.scene.add
+        .tileSprite(width / 2, height / 2, width, height, layerManifest.textureKey)
+        .setOrigin(0.5)
+        .setDepth(layerManifest.depth)
+        .setTileScale(textureScale, textureScale)
+        .setTilePosition(
+          this.travelOffset * layerManifest.scrollFactor / textureScale,
+          Math.max(0, (frame.height - height / textureScale) / 2),
+        );
+
+      this.layers.push({
+        manifest: layerManifest,
+        sprite,
+        textureScale,
+      });
+      this.objects.push(sprite);
+    }
+  }
+
+  private clearLayers(): void {
+    for (const layer of this.layers) {
+      const objectIndex = this.objects.indexOf(layer.sprite);
+      if (objectIndex >= 0) this.objects.splice(objectIndex, 1);
+      layer.sprite.destroy();
+    }
+    this.layers.length = 0;
   }
 
   private updateTraversalLayers(): void {
-    this.background.tilePositionX =
-      this.travelOffset * this.manifest.traversal.backgroundScrollFactor;
-    this.drawGroundDetails(this.scene.scale.width, this.scene.scale.height);
-  }
-
-  private drawGroundDetails(width: number, height: number): void {
-    const { groundDetailSpacing, groundScrollFactor } = this.manifest.traversal;
-    const offset = (this.travelOffset * groundScrollFactor) % groundDetailSpacing;
-    const nearGroundY = height * this.manifest.layout.groundLineYRatio + 14;
-    const farGroundY = nearGroundY + 16;
-
-    this.groundDetail.clear();
-    this.groundDetail.fillStyle(this.groundDetailColor, 0.36);
-
-    for (
-      let x = -groundDetailSpacing - offset;
-      x <= width + groundDetailSpacing;
-      x += groundDetailSpacing
-    ) {
-      this.groundDetail.fillEllipse(x, nearGroundY, 9, 3);
-      this.groundDetail.fillEllipse(
-        x + groundDetailSpacing * 0.48,
-        farGroundY,
-        6,
-        2,
-      );
+    for (const layer of this.layers) {
+      layer.sprite.tilePositionX =
+        this.travelOffset * layer.manifest.scrollFactor / layer.textureScale;
     }
   }
 

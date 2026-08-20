@@ -187,10 +187,46 @@ describe("Environment traversal manifest parsing", () => {
     expect(parsed.traversal).toEqual({
       distance: 220,
       durationMs: 650,
-      backgroundScrollFactor: 0.32,
-      groundScrollFactor: 1,
-      groundDetailSpacing: 58,
     });
+  });
+
+  it("preserves every independently configured parallax layer", () => {
+    const parsed = parseRenderManifest(environmentManifest);
+
+    if (parsed.kind !== "environment") {
+      throw new Error("Expected environment manifest");
+    }
+
+    expect(parsed.layers.map((layer) => layer.scrollFactor)).toEqual([
+      0.08,
+      0.45,
+      1,
+    ]);
+    expect(parsed.layers.map((layer) => layer.depth)).toEqual([
+      -30,
+      -20,
+      -10,
+    ]);
+  });
+
+  it("rejects an environment without parallax layers", () => {
+    expect(() =>
+      parseRenderManifest({
+        ...environmentManifest,
+        layers: [],
+      }),
+    ).toThrow("layers doit définir au moins un plan de décor");
+  });
+
+  it("rejects a negative parallax scroll factor", () => {
+    expect(() =>
+      parseRenderManifest({
+        ...environmentManifest,
+        layers: environmentManifest.layers.map((layer, index) =>
+          index === 0 ? { ...layer, scrollFactor: -1 } : layer,
+        ),
+      }),
+    ).toThrow("layers.0.scrollFactor doit être positif ou nul");
   });
 
   it("rejects invalid traversal timing", () => {

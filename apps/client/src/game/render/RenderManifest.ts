@@ -225,20 +225,23 @@ export interface EnvironmentPaletteManifest {
   readonly groundLine: string;
 }
 
+export interface EnvironmentLayerManifest {
+  readonly textureKey: string;
+  readonly assetPath: string;
+  readonly depth: number;
+  readonly scrollFactor: number;
+}
+
 export interface EnvironmentTraversalManifest {
   readonly distance: number;
   readonly durationMs: number;
-  readonly backgroundScrollFactor: number;
-  readonly groundScrollFactor: number;
-  readonly groundDetailSpacing: number;
 }
 
 export interface EnvironmentRenderManifest {
   readonly schemaVersion: 1;
   readonly id: string;
   readonly kind: "environment";
-  readonly textureKey: string;
-  readonly assetPath: string;
+  readonly layers: readonly EnvironmentLayerManifest[];
   readonly pixelArt: boolean;
   readonly defaultPalette: EnvironmentPaletteManifest;
   readonly biomePalettes: Readonly<Record<string, EnvironmentPaletteManifest>>;

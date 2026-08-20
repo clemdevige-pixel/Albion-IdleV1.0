@@ -1051,6 +1051,7 @@ export function parseEnvironmentRenderManifest(
   const defaultPalette = value["defaultPalette"];
   const biomePalettes = value["biomePalettes"];
   const traversal = value["traversal"];
+  const layers = value["layers"];
 
   if (!isRecord(layout) || !isRecord(defaultPalette)) {
     throw new Error(
@@ -1068,30 +1069,40 @@ export function parseEnvironmentRenderManifest(
     throw new Error("traversal doit être un objet");
   }
 
+  if (!Array.isArray(layers) || layers.length === 0) {
+    throw new Error("layers doit définir au moins un plan de décor");
+  }
+
+  const parsedLayers = layers.map((layer: unknown, index: number) => {
+    const context = `layers.${index}`;
+
+    if (!isRecord(layer)) {
+      throw new Error(`${context} doit être un objet`);
+    }
+
+    const scrollFactor = requireNumber(layer, "scrollFactor", context);
+    if (scrollFactor < 0) {
+      throw new Error(`${context}.scrollFactor doit être positif ou nul`);
+    }
+
+    return {
+      textureKey: requireString(layer, "textureKey", context),
+      assetPath: requireString(layer, "assetPath", context),
+      depth: requireNumber(layer, "depth", context),
+      scrollFactor,
+    };
+  });
+
+  const textureKeys = new Set(parsedLayers.map((layer) => layer.textureKey));
+  if (textureKeys.size !== parsedLayers.length) {
+    throw new Error("layers ne peut pas dupliquer une texture");
+  }
+
   const traversalDistance = requireNumber(traversal, "distance", "traversal");
   const traversalDurationMs = requireNumber(traversal, "durationMs", "traversal");
-  const backgroundScrollFactor = requireNumber(
-    traversal,
-    "backgroundScrollFactor",
-    "traversal",
-  );
-  const groundScrollFactor = requireNumber(
-    traversal,
-    "groundScrollFactor",
-    "traversal",
-  );
-  const groundDetailSpacing = requireNumber(
-    traversal,
-    "groundDetailSpacing",
-    "traversal",
-  );
-
   if (
     traversalDistance <= 0
     || traversalDurationMs <= 0
-    || backgroundScrollFactor < 0
-    || groundScrollFactor < 0
-    || groundDetailSpacing <= 0
   ) {
     throw new Error("traversal doit définir un déplacement valide");
   }
@@ -1101,17 +1112,7 @@ export function parseEnvironmentRenderManifest(
     id: requireString(value, "id", "manifest"),
     kind: "environment",
 
-    textureKey: requireString(
-      value,
-      "textureKey",
-      "manifest",
-    ),
-
-    assetPath: requireString(
-      value,
-      "assetPath",
-      "manifest",
-    ),
+    layers: parsedLayers,
 
     pixelArt: value["pixelArt"] === true,
 
@@ -1135,9 +1136,6 @@ export function parseEnvironmentRenderManifest(
     traversal: {
       distance: traversalDistance,
       durationMs: traversalDurationMs,
-      backgroundScrollFactor,
-      groundScrollFactor,
-      groundDetailSpacing,
     },
 
     layout: {
