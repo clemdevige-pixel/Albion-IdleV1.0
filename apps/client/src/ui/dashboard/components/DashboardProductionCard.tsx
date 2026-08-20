@@ -5,6 +5,7 @@ import { useGameBridge } from "../../../state/GameContext";
 import { useIslandSelection } from "../../island/IslandSelectionContext";
 import { useNavigation } from "../../navigation";
 import { UI_MODULE_IDS } from "../../navigation/moduleIds";
+import { findWorkerGatheringBuilding } from "../../shared/findWorkerGatheringBuilding";
 import type { DashboardProductionModel, DashboardProductionTask } from "../dashboardModels";
 import { useDashboardGatheringActions } from "../useDashboardData";
 import { DashboardCard } from "./DashboardCard";
@@ -32,13 +33,6 @@ const GATHERING_BUILDING_BY_FAMILY: Readonly<Record<string, IslandBuildingId>> =
   fiber: "fiber_camp",
 };
 
-const GATHERING_BUILDING_BY_PROFESSION: Readonly<Partial<Record<string, IslandBuildingId>>> = {
-  woodcutter: "lumber_camp",
-  miner: "mine",
-  skinner: "hunting_camp",
-  fiber_harvester: "fiber_camp",
-};
-
 const REFINING_BUILDING_BY_TASK_SUFFIX: Readonly<Record<string, IslandBuildingId>> = {
   wood: "sawmill",
   metal: "smelter",
@@ -61,21 +55,27 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
   const islandSelection = useIslandSelection();
   const interaction = production.gatheringInteraction;
 
-  const getTaskBuildingId = (task: DashboardProductionTask): IslandBuildingId | undefined => {
+  const getTaskBuilding = (task: DashboardProductionTask) => {
     if (task.kind === "worker") {
       const workerId = task.id.startsWith("worker-") ? task.id.slice("worker-".length) : task.id;
       const worker = bridge.workers.workers.find((candidate) => candidate.id === workerId);
-      return worker === undefined ? undefined : GATHERING_BUILDING_BY_PROFESSION[worker.profession];
+      return worker === undefined
+        ? undefined
+        : findWorkerGatheringBuilding(bridge.island.buildings, worker.profession);
     }
+
     const suffix = task.id.slice(task.id.indexOf("-") + 1).toLowerCase();
-    if (task.kind === "gathering") return GATHERING_BUILDING_BY_FAMILY[suffix];
-    return REFINING_BUILDING_BY_TASK_SUFFIX[suffix];
+    const definitionId = task.kind === "gathering"
+      ? GATHERING_BUILDING_BY_FAMILY[suffix]
+      : REFINING_BUILDING_BY_TASK_SUFFIX[suffix];
+
+    return definitionId === undefined
+      ? undefined
+      : bridge.island.buildings.find((candidate) => candidate.definitionId === definitionId);
   };
 
   const openTaskBuilding = (task: DashboardProductionTask): void => {
-    const definitionId = getTaskBuildingId(task);
-    if (definitionId === undefined) return;
-    const building = bridge.island.buildings.find((candidate) => candidate.definitionId === definitionId);
+    const building = getTaskBuilding(task);
     if (building === undefined) return;
     islandSelection.selectBuilding(building.plotId, building.instanceId);
     navigation.openModule(UI_MODULE_IDS.island);
@@ -93,17 +93,15 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
       ) : (
         <div className="dashboard-production__list">
           {production.tasks.map((task) => {
-            const targetBuildingId = getTaskBuildingId(task);
-            const targetBuildingExists = targetBuildingId !== undefined
-              && bridge.island.buildings.some((candidate) => candidate.definitionId === targetBuildingId);
+            const targetBuilding = getTaskBuilding(task);
             return (
               <button
                 type="button"
                 key={task.id}
                 className="dashboard-production__task"
-                disabled={!targetBuildingExists}
+                disabled={targetBuilding === undefined}
                 onClick={() => { openTaskBuilding(task); }}
-                title={targetBuildingExists ? "Ouvrir le bâtiment concerné" : undefined}
+                title={targetBuilding === undefined ? undefined : "Ouvrir le bâtiment concerné"}
               >
                 <span className="dashboard-production__visual" aria-hidden="true">
                   <img src={getTaskIcon(task)} alt="" />
