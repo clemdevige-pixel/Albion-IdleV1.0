@@ -3,7 +3,7 @@ import { WORLD_ZONE_IDS } from "../../../data/worldContentCatalog";
 import type { DashboardZoneModel, DashboardZoneOptionModel } from "../../dashboard/dashboardModels";
 import { CombatStopButton } from "../../combat-hud/CombatStopButton";
 import { WORLD_BANDS, type WorldBandId } from "../worldModels";
-import "../../dashboard/dashboard.css";
+import "../../dashboard/components/DashboardCombatCard.css";
 import "./WorldZoneTimeline.css";
 
 interface WorldZonesViewProps {
@@ -138,16 +138,8 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               <div className="world-zone-detail__encounter">Segment {zone.segmentIndex}/{zone.segmentCount} · Rencontre {zone.encounterIndex}/{zone.encounterCount}</div>
             ) : null}
 
-            <div
-              className="dashboard-zone__controls"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr) auto",
-                gap: 7,
-                alignItems: "center",
-              }}
-            >
-              <div className="dashboard-zone__modes" aria-label="Mode de progression" style={{ marginTop: 0 }}>
+            <div className="dashboard-combat__control-bar">
+              <div className="dashboard-combat__modes" aria-label="Mode de combat">
                 <button
                   type="button"
                   className={zone.farmMode ? "" : "is-active"}
@@ -165,7 +157,9 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
                   Farm
                 </button>
               </div>
-              <CombatStopButton persistent compact />
+              <div className="dashboard-combat__stop">
+                <CombatStopButton persistent compact />
+              </div>
             </div>
             <p className="world-zone-detail__hint">Sélectionner une zone affiche ses segments. Le voyage ne démarre qu’en cliquant sur un segment accessible.</p>
           </section>
