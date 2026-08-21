@@ -82,8 +82,8 @@ function getFinalBossGate(curve: readonly ZoneCombatCurve[]) {
 }
 
 describe("validated later-tier boss gates", () => {
-  it("keeps the T5 Broadsword correction authored at 120 base damage", () => {
-    expect(resolveEquipmentInfo("item_weapon_sword_t5_broadsword")?.stats?.stat_physical_damage).toBe(120);
+  it("keeps the T5 Broadsword tier-transition correction authored at 125 base damage", () => {
+    expect(resolveEquipmentInfo("item_weapon_sword_t5_broadsword")?.stats?.stat_physical_damage).toBe(125);
   });
 
   it("requires .3 plus potion at every T5-T8 tier transition", () => {
@@ -113,8 +113,8 @@ describe("validated later-tier boss gates", () => {
         useHealthPotions: true,
       }));
 
-      expect(tN2.filter((result) => result.clear)).toHaveLength(0);
-      expect(tN3.filter((result) => result.clear)).toHaveLength(WEAPONS_BY_TIER[tier].length);
+      expect(tN2.filter((result) => result.clear), `T${String(tier)}.2 + potion must not clear the boss gate`).toHaveLength(0);
+      expect(tN3.filter((result) => result.clear), `T${String(tier)}.3 + potion must universally clear the boss gate`).toHaveLength(WEAPONS_BY_TIER[tier].length);
     }
   });
 });
