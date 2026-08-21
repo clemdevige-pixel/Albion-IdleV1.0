@@ -22,6 +22,7 @@ import {
 } from "../data/dungeonContentCatalog.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
+import { RESEARCH_UNLOCK_IDS } from "../data/researchContentCatalog.js";
 import {
   syncInventoryToBridge,
   syncStatsToBridge,
@@ -184,6 +185,7 @@ export function GameProvider({
         .zoneMemories.find((entry) => entry.zoneDefId === requirement.zoneDefId);
       return (memory?.completedSegments.length ?? 0) >= requirement.minimumCompletedSegments;
     };
+    let hasResearchUnlock: (unlockId: string) => boolean = () => false;
     const factionResearchFoundation = createFactionResearchFoundation({
       getCompletedSegmentCount: (zoneDefId) => {
         const memory = worldRuntime
@@ -191,6 +193,7 @@ export function GameProvider({
           .zoneMemories.find((entry) => String(entry.zoneDefId) === zoneDefId);
         return memory?.completedSegments.length ?? 0;
       },
+      canReconstructRelics: () => hasResearchUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction),
     });
 
     const combatEntityFactoryDeps = {
@@ -248,6 +251,7 @@ export function GameProvider({
       inventoryManager,
       productionStorageId,
     });
+    hasResearchUnlock = (unlockId) => researchService.hasUnlock(unlockId);
     const { expeditionService } = createExpeditionFoundation({
       researchService,
       currencyService,
@@ -694,7 +698,10 @@ export function GameProvider({
         productionController.syncActiveProduction();
       },
       tickParallelProgression: (elapsedMs) => {
-        researchService.advance(elapsedMs);
+        const researchAdvance = researchService.advance(elapsedMs);
+        if (researchAdvance.completedResearchId !== undefined) {
+          factionResearchFoundation.resolveWorldProgress();
+        }
         const expeditionAdvance = expeditionService.advance(elapsedMs);
         if (expeditionAdvance.completed.length > 0) resyncAll();
       },
