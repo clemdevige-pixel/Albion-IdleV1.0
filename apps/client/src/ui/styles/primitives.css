@@ -5,11 +5,6 @@
   border-radius: var(--ui-radius-md);
 }
 
-.ui-panel-surface--elevated {
-  background: var(--ui-color-surface-raised);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
-}
-
 .ui-module-header {
   display: flex;
   align-items: flex-start;
