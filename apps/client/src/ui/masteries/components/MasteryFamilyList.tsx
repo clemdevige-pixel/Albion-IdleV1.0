@@ -71,15 +71,19 @@ export function MasteryFamilyList({ category, families, selectedId, onSelect }: 
                 <div className="ui-mastery-family__bonus-row">
                   <BonusList bonuses={family.bonuses} />
                 </div>
-                <div className="ui-mastery-family__section-title">
-                  {family.specializations.length > 0 ? childLabel : emptyChildLabel}
-                </div>
-                {family.specializations.length > 0 && (
-                  <div className="ui-mastery-specializations" aria-label={childLabel}>
-                    {family.specializations.map((entry) => (
-                      <ChildMasteryRow key={entry.id} mastery={entry} />
-                    ))}
-                  </div>
+                {category !== "faction" && (
+                  <>
+                    <div className="ui-mastery-family__section-title">
+                      {family.specializations.length > 0 ? childLabel : emptyChildLabel}
+                    </div>
+                    {family.specializations.length > 0 && (
+                      <div className="ui-mastery-specializations" aria-label={childLabel}>
+                        {family.specializations.map((entry) => (
+                          <ChildMasteryRow key={entry.id} mastery={entry} />
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
