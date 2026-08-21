@@ -12,9 +12,7 @@ export function DashboardPlayerCard({ player }: DashboardPlayerCardProps): JSX.E
 
   return (
     <DashboardCard
-      title="Personnage"
-      iconSrc="/assets/ui/nav-character.png"
-      className="dashboard-card--player"
+      sectionId="player"
       meta={<span className="dashboard-status-badge">Actif</span>}
     >
       <div className="dashboard-player">
