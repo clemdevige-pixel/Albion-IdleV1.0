@@ -24,13 +24,10 @@ export interface WorldProgressionTierContract {
 
 /**
  * Shared contract for normal progression zones.
- * AFK (no potion) is the progression reference; potions are an active-push tool.
+ * AFK (no potion) walls are the progression reference.
+ * Potion performance is telemetry only outside final tier gates.
  */
-export interface WorldActivePushContract {
-  /** Minimum extra segments an under-step loadout should gain by actively using potions. */
-  readonly minPotionPushSegments: number;
-  /** Maximum extra segments potions may grant before they erase the next gear step. */
-  readonly maxPotionPushSegments: number;
+export interface WorldEnchantmentProgressionContract {
   /** Minimum AFK segment gain expected when moving from the previous authored gear step to the authored step. */
   readonly minAfkUpgradeGainSegments: number;
 }
@@ -48,9 +45,7 @@ export interface WorldTierTransitionContract {
   readonly plateauMaxSegmentWithPotion: number;
 }
 
-export const WORLD_ACTIVE_PUSH_CONTRACT: WorldActivePushContract = {
-  minPotionPushSegments: 1,
-  maxPotionPushSegments: 3,
+export const WORLD_ENCHANTMENT_PROGRESSION_CONTRACT: WorldEnchantmentProgressionContract = {
   minAfkUpgradeGainSegments: 1,
 } as const;
 
