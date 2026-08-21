@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import "./dashboard.css";
 import "./components/DashboardUtilityCards.css";
 import {
@@ -38,9 +39,7 @@ export function DashboardModule(): JSX.Element {
   return (
     <div className="dashboard-module">
       {DASHBOARD_SECTION_ORDER.map((sectionId) => (
-        <div key={sectionId} className="dashboard-module__section">
-          {sections[sectionId]}
-        </div>
+        <Fragment key={sectionId}>{sections[sectionId]}</Fragment>
       ))}
     </div>
   );
