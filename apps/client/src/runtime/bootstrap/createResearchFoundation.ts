@@ -67,12 +67,14 @@ function tryConsumeResearchCost(
     ) return false;
   }
 
-  const debit = dependencies.currencyService.debit(
-    dependencies.walletId,
-    "currency_silver",
-    cost.silver,
-  );
-  if (!debit.ok) return false;
+  if (cost.silver > 0) {
+    const debit = dependencies.currencyService.debit(
+      dependencies.walletId,
+      "currency_silver",
+      cost.silver,
+    );
+    if (!debit.ok) return false;
+  }
 
   const paidMaterials: ResearchCostDefinition["materials"][number][] = [];
   for (const material of cost.materials) {
