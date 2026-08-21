@@ -1,12 +1,12 @@
 .dashboard-card--tracked-resources .dashboard-card__body,
 .dashboard-card--enchant-ready .dashboard-card__body {
-  padding: 8px 10px;
+  padding: 7px 10px 8px;
 }
 
 .dashboard-card--tracked-resources .dashboard-production__list,
 .dashboard-card--enchant-ready .dashboard-production__list {
   display: grid;
-  gap: 5px;
+  gap: 0;
 }
 
 .dashboard-card--tracked-resources .dashboard-production__task,
@@ -16,9 +16,17 @@
   align-items: center;
   gap: 7px;
   min-width: 0;
-  padding: 6px 7px;
-  border: 1px solid rgb(97 70 31 / 62%);
-  background: rgb(10 14 19 / 76%);
+  min-height: 46px;
+  padding: 6px 3px;
+  border: 0;
+  border-bottom: 1px solid rgb(73 58 36 / 52%);
+  border-radius: 0;
+  background: transparent;
+}
+
+.dashboard-card--tracked-resources .dashboard-production__task:last-child,
+.dashboard-card--enchant-ready .dashboard-production__task:last-child {
+  border-bottom: 0;
 }
 
 .dashboard-card--tracked-resources .dashboard-production__task > div {
@@ -38,7 +46,7 @@
 
 .dashboard-card--tracked-resources .dashboard-production__task > div > small {
   overflow: hidden;
-  color: var(--ui-color-accent);
+  color: #a4874c;
   font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -51,11 +59,16 @@
 
 .dashboard-card--tracked-resources .dashboard-production__task > button,
 .dashboard-card--enchant-ready .dashboard-production__task > button {
-  padding: 1px 5px;
+  padding: 2px 5px;
   border: 0;
   background: transparent;
-  color: var(--ui-color-text-muted);
+  color: #746f66;
   cursor: pointer;
+}
+
+.dashboard-card--tracked-resources .dashboard-production__task > button:hover,
+.dashboard-card--enchant-ready .dashboard-production__task > button:hover {
+  color: #d6b866;
 }
 
 .dashboard-production__task-main {
@@ -86,7 +99,7 @@
 }
 
 .dashboard-production__task-main small {
-  color: var(--ui-color-accent);
+  color: #b49450;
   font-size: 9px;
 }
 
