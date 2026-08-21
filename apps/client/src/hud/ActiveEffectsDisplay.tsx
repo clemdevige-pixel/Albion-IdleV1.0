@@ -174,9 +174,9 @@ export function ActiveEffectsDisplay(): JSX.Element {
   const effects = useActiveEffectsUiModel();
   const stats = useGameUiSelector((state) => state.stats);
   const anchors = useSyncExternalStore(
-    worldHudAnchorStore.subscribe,
-    worldHudAnchorStore.getSnapshot,
-    worldHudAnchorStore.getSnapshot,
+    (onStoreChange) => worldHudAnchorStore.subscribe(onStoreChange),
+    () => worldHudAnchorStore.getSnapshot(),
+    () => worldHudAnchorStore.getSnapshot(),
   );
   const positions = useEffectAnchorPositions(anchors);
 
