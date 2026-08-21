@@ -52,9 +52,7 @@ export function DashboardZoneCard({
 
   return (
     <DashboardCard
-      title="Zone actuelle"
-      iconSrc="/assets/ui/nav-world.png"
-      className="dashboard-card--zone"
+      sectionId="zone"
       meta={<span className="dashboard-zone__ip">IP conseillé · {String(displayedRecommendedItemPower)}</span>}
     >
       <div className="dashboard-zone__browser">
