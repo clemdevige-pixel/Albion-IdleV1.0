@@ -45,7 +45,7 @@ export const BLUE_WORLD_COMBAT_CURVE = [
     defenseStart: 1.5,
     defenseEnd: 1.5,
     defenseModel: "rank_parity",
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.575, damageMultiplier: 1.4, defenseMultiplier: 1.1 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.9, damageMultiplier: 1.3, defenseMultiplier: 1 },
   },
 ] as const;
 
@@ -58,7 +58,7 @@ export const BLUE_WORLD_COMBAT_CURVE = [
  * while the unchanged late edge still forms the new-tier progression wall.
  */
 export const YELLOW_WORLD_COMBAT_CURVE = [
-  { healthStart: 3.4, healthEnd: 4.45, damageStart: 2.6, damageEnd: 2.9, defenseStart: 1.6, defenseEnd: 2.18, defenseModel: "rank_parity" },
+  { healthStart: 3.4, healthEnd: 5.34, damageStart: 2.6, damageEnd: 3.19, defenseStart: 1.6, defenseEnd: 2.289, defenseModel: "rank_parity" },
   { healthStart: 4.75, healthEnd: 4.9, damageStart: 2.95, damageEnd: 3.0, defenseStart: 2.3, defenseEnd: 2.35, defenseModel: "rank_parity" },
   { healthStart: 5.25, healthEnd: 5.4, damageStart: 3.05, damageEnd: 3.1, defenseStart: 2.5, defenseEnd: 2.56, defenseModel: "rank_parity" },
   { healthStart: 5.85, healthEnd: 6.5, damageStart: 3.15, damageEnd: 3.25, defenseStart: 2.75, defenseEnd: 3, defenseModel: "rank_parity" },
@@ -70,12 +70,12 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
     defenseStart: 3,
     defenseEnd: 3,
     defenseModel: "rank_parity",
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.15, damageMultiplier: 1.325, defenseMultiplier: 1.05 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.1, damageMultiplier: 1.5, defenseMultiplier: 1 },
   },
 ] as const;
 
 export const ORANGE_WORLD_COMBAT_CURVE = [
-  { healthStart: 6.3, healthEnd: 7.3, damageStart: 3.22, damageEnd: 3.7, defenseStart: 2.92, defenseEnd: 3.28, defenseModel: "rank_parity" },
+  { healthStart: 6.3, healthEnd: 8.03, damageStart: 3.22, damageEnd: 5.18, defenseStart: 2.92, defenseEnd: 3.28, defenseModel: "rank_parity" },
   { healthStart: 7.4, healthEnd: 7.8, damageStart: 3.7, damageEnd: 3.8, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
   { healthStart: 8.1, healthEnd: 8.55, damageStart: 3.85, damageEnd: 3.95, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
   { healthStart: 8.9, healthEnd: 9.45, damageStart: 4.0, damageEnd: 4.1, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
@@ -87,12 +87,12 @@ export const ORANGE_WORLD_COMBAT_CURVE = [
     defenseStart: 4.1,
     defenseEnd: 4.35,
     defenseModel: "rank_parity",
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1.375, defenseMultiplier: 1 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.4, damageMultiplier: 1.4, defenseMultiplier: 1 },
   },
 ] as const;
 
 export const RED_WORLD_COMBAT_CURVE = [
-  { healthStart: 9.4, healthEnd: 11.5, damageStart: 4.09, damageEnd: 4.45, defenseStart: 3.96, defenseEnd: 4.65, defenseModel: "rank_parity" },
+  { healthStart: 9.4, healthEnd: 11.5, damageStart: 4.09, damageEnd: 6.675, defenseStart: 3.96, defenseEnd: 4.65, defenseModel: "rank_parity" },
   { healthStart: 11.9, healthEnd: 12.6, damageStart: 4.5, damageEnd: 4.6, defenseStart: 4.8, defenseEnd: 4.95, defenseModel: "rank_parity" },
   { healthStart: 13.0, healthEnd: 13.8, damageStart: 4.7, damageEnd: 4.85, defenseStart: 5.1, defenseEnd: 5.28, defenseModel: "rank_parity" },
   { healthStart: 14.3, healthEnd: 15.2, damageStart: 4.95, damageEnd: 5.1, defenseStart: 5.45, defenseEnd: 5.65, defenseModel: "rank_parity" },
@@ -104,12 +104,12 @@ export const RED_WORLD_COMBAT_CURVE = [
     defenseStart: 5.85,
     defenseEnd: 6.1,
     defenseModel: "rank_parity",
-    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1.175, defenseMultiplier: 1 },
+    bossGate: { progressionRole: "boss_gate", healthMultiplier: 1, damageMultiplier: 1.75, defenseMultiplier: 1 },
   },
 ] as const;
 
 export const BLACK_WORLD_COMBAT_CURVE = [
-  { healthStart: 13.75, healthEnd: 18.0, damageStart: 4.84, damageEnd: 5.89, defenseStart: 5.26, defenseEnd: 6.5, defenseModel: "rank_parity" },
+  { healthStart: 13.75, healthEnd: 18.0, damageStart: 4.84, damageEnd: 11.191, defenseStart: 5.26, defenseEnd: 6.5, defenseModel: "rank_parity" },
   { healthStart: 18.1, healthEnd: 19.0, damageStart: 5.9, damageEnd: 6.05, defenseStart: 6.55, defenseEnd: 6.75, defenseModel: "rank_parity" },
   { healthStart: 19.5, healthEnd: 20.5, damageStart: 6.15, damageEnd: 6.3, defenseStart: 6.9, defenseEnd: 7.1, defenseModel: "rank_parity" },
   { healthStart: 20.5, healthEnd: 21.5, damageStart: 6.4, damageEnd: 6.55, defenseStart: 7.2, defenseEnd: 7.4, defenseModel: "rank_parity" },
