@@ -1,4 +1,5 @@
 import {
+  BLACK_WORLD_COMBAT_CURVE,
   ORANGE_WORLD_COMBAT_CURVE,
   YELLOW_WORLD_COMBAT_CURVE,
   type ZoneCombatCurve,
@@ -7,7 +8,7 @@ import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog
 import { WORLD_ZONE_IDS } from "../apps/client/src/data/worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
 
-type Tier = 5 | 6;
+type Tier = 5 | 6 | 8;
 type Enchantment = 0 | 1 | 2 | 3;
 type MutableZoneCombatCurve = {
   healthStart: number;
@@ -90,6 +91,22 @@ const targets: readonly Target[] = [
     tier: 6,
     enchantment: 0,
     masteryLevel: 42,
+  },
+  {
+    label: "Obsidian Highlands",
+    zoneDefId: String(WORLD_ZONE_IDS.obsidianHighlands),
+    zone: BLACK_WORLD_COMBAT_CURVE[2] as MutableZoneCombatCurve,
+    tier: 8,
+    enchantment: 1,
+    masteryLevel: 74,
+  },
+  {
+    label: "Duskfall Steppe",
+    zoneDefId: String(WORLD_ZONE_IDS.duskfallSteppe),
+    zone: BLACK_WORLD_COMBAT_CURVE[3] as MutableZoneCombatCurve,
+    tier: 8,
+    enchantment: 2,
+    masteryLevel: 77,
   },
 ];
 
