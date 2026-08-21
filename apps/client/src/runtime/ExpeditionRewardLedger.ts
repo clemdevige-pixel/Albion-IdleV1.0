@@ -1,12 +1,19 @@
 import type { SaveProvider } from "@game/persistence";
-import { z } from "zod";
 
-const ExpeditionRewardLedgerSnapshotSchema = z.object({
-  version: z.literal(1),
-  lifetimeSilverCredited: z.number().int().nonnegative(),
-});
+interface ExpeditionRewardLedgerSnapshot {
+  readonly version: 1;
+  readonly lifetimeSilverCredited: number;
+}
 
-type ExpeditionRewardLedgerSnapshot = z.infer<typeof ExpeditionRewardLedgerSnapshotSchema>;
+function isExpeditionRewardLedgerSnapshot(
+  data: unknown,
+): data is ExpeditionRewardLedgerSnapshot {
+  if (data === null || typeof data !== "object") return false;
+  const snapshot = data as Record<string, unknown>;
+  return snapshot.version === 1
+    && Number.isSafeInteger(snapshot.lifetimeSilverCredited)
+    && Number(snapshot.lifetimeSilverCredited) >= 0;
+}
 
 /**
  * Persists reward totals that cannot be reconstructed from current balance
@@ -37,9 +44,8 @@ export class ExpeditionRewardLedger implements SaveProvider {
   }
 
   load(data: unknown): void {
-    const parsed = ExpeditionRewardLedgerSnapshotSchema.safeParse(data);
-    this.#lifetimeSilverCredited = parsed.success
-      ? parsed.data.lifetimeSilverCredited
+    this.#lifetimeSilverCredited = isExpeditionRewardLedgerSnapshot(data)
+      ? data.lifetimeSilverCredited
       : 0;
   }
 }
