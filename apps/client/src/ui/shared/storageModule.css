@@ -50,6 +50,7 @@
   align-items: center;
   gap: 7px;
   min-height: 38px;
+  padding-inline: 8px;
 }
 
 .storage-module__toolbar button {
@@ -149,7 +150,7 @@
 .storage-module__summary {
   display: grid;
   gap: 5px;
-  padding: 3px 2px;
+  padding: 3px 10px;
 }
 
 .storage-module__summary-row {
@@ -205,7 +206,7 @@
   box-shadow: none;
 }
 
-.storage-module__surface { padding: 2px 0; box-shadow: none; }
+.storage-module__surface { padding: 2px 10px; box-shadow: none; }
 
 .storage-module__empty-filter {
   display: grid;
@@ -222,7 +223,7 @@
   grid-template-columns: 46px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
-  padding: 5px 2px;
+  padding: 5px 10px;
 }
 
 .storage-module__selection-visual {
@@ -261,10 +262,12 @@
   line-height: 1.45;
 }
 
-.storage-module__hint { min-height: 24px; padding: 4px 2px 0; text-align: center; }
-.storage-module__notice { padding: 7px 2px; background: transparent; border: 0; }
+.storage-module__hint { min-height: 24px; padding: 4px 10px 0; text-align: center; }
+.storage-module__notice { padding: 7px 10px; background: transparent; border: 0; }
 
 @media (max-width: 1100px) {
-  .storage-module__toolbar { grid-template-columns: 38px minmax(0, 1fr); }
+  .storage-module__toolbar { grid-template-columns: 38px minmax(0, 1fr); padding-inline: 6px; }
+  .storage-module__summary { padding-inline: 8px; }
+  .storage-module__surface { padding-inline: 8px; }
   .storage-module__shortcut { grid-column: 1 / -1; text-align: right; }
 }
