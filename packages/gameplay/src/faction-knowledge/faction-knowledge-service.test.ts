@@ -49,7 +49,7 @@ describe("FactionKnowledgeService", () => {
     const service = createService();
     service.recordKill("keeper_warrior");
     service.recordKill("keeper_champion");
-    const snapshot = service.save() as { version: 1; killsByMonster: Record<string, number> };
+    const snapshot = service.save();
     snapshot.killsByMonster.obsolete = 99;
 
     const restored = createService();
