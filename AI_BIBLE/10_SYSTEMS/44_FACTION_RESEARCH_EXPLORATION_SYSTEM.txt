@@ -43,11 +43,11 @@ Examples of appropriate Research rewards:
 
 Research should not primarily consist of generic stat bonuses such as +5% damage.
 
-## 2.2 Faction Mastery owns yield
+## 2.2 Faction Mastery owns faction-wide yield
 
 Faction Mastery represents familiarity and operational efficiency with a faction.
 
-Its validated role is YIELD ONLY.
+Its validated role is to increase GLOBAL YIELD on activities/rewards tied to that faction.
 
 It must not gate:
 
@@ -58,11 +58,19 @@ It must not gate:
 - recipes;
 - core world progression.
 
-Example validated direction:
+Validated direction:
 
-Higher Keeper Mastery -> higher yield from Keeper Expeditions -> more Keeper faction crafting resource per expedition.
+Higher Keeper Mastery may improve Keeper-related yields such as:
 
-Exact curves are OPEN and require balance work before implementation.
+- faction-resource quantity from Keeper Expeditions;
+- Keeper loot/drop yield or drop-rate modifiers;
+- Silver earned from Keeper content;
+- Fame earned from Keeper content;
+- other future Keeper-specific economic yields if explicitly authored.
+
+Faction Mastery is therefore a family-wide efficiency progression, not an unlock authority.
+
+Exact curves, affected reward channels and caps are OPEN and require balance work before implementation.
 
 ## 2.3 Existing Bestiary becomes the Codex surface
 
@@ -137,18 +145,19 @@ Result:
 
 Important integration rule:
 
-Research unlock does NOT replace the existing dungeon-key entry cost.
+Research unlock does NOT modify, replace or reinterpret the existing dungeon-key system.
 
-The current dungeon key contract is tier-based and faction-independent:
+The current dungeon key contract remains unchanged and authoritative:
+
+- keys are tier-based;
+- keys are faction-independent;
+- a matching tier key is consumed/required according to the current dungeon-entry rules.
+
+Reference:
 
 - `apps/client/src/data/dungeonKeyContentCatalog.ts`
 
-A future model should therefore distinguish:
-
-- PERMANENT ACCESS: unlocked by Research / faction knowledge;
-- RUN ENTRY COST: existing dungeon key of the matching tier.
-
-This preserves the existing key economy instead of replacing it.
+The future Research layer only adds a permanent CONTENT ACCESS prerequisite before a faction dungeon can be selected/entered. Once access is unlocked, the existing key behavior continues exactly as today.
 
 ---
 
@@ -262,11 +271,13 @@ Potential costs may reuse existing Silver and/or existing production materials i
 
 ## Faction Mastery interaction
 
-Faction Mastery increases expedition yield for that same faction.
+Faction Mastery improves faction-wide yield, including Expedition output for the same faction.
 
 Example direction:
 
 Keeper Mastery -> +X% Keeper Expedition faction-resource yield.
+
+This Expedition bonus is only one application of the wider faction-yield model.
 
 Exact formula and cap are OPEN.
 
@@ -320,9 +331,9 @@ Faction content
 -> meet authored Research prerequisites
 -> complete faction dungeon-access Research
 -> faction dungeon becomes permanently available
--> each dungeon run still consumes the existing tier key
+-> existing dungeon-key behavior remains unchanged for each run
 
-This avoids replacing the existing dungeon-key system while giving Manuscripts a concrete purpose.
+This gives Manuscripts a concrete purpose without altering the existing key economy.
 
 ## Existing dungeon structure to preserve
 
@@ -342,6 +353,8 @@ Dungeon entry currently uses tier keys rather than faction keys.
 Reference:
 
 - `apps/client/src/data/dungeonKeyContentCatalog.ts`
+
+This key system must remain unchanged unless a separate future design decision explicitly supersedes it.
 
 ## Open design questions
 
@@ -386,15 +399,24 @@ Exact XP weights are OPEN.
 
 ## Validated reward model
 
-YIELD ONLY.
+GLOBAL FACTION YIELD ONLY.
 
-Primary validated example:
+Faction Mastery increases rewards generated from content tied to the matching faction.
 
-Faction Mastery increases the yield of the matching faction Expedition.
+Validated categories of possible affected yield include:
 
-No other mastery reward is currently validated.
+- faction Expedition resource yield;
+- faction loot/drop yield or drop rate;
+- Silver earned from faction content;
+- Fame earned from faction content.
 
-Do not add hidden combat damage, Research gates, dungeon gates or recipe gates without a new explicit design decision.
+Additional faction-specific yield channels may be added later only if they fit the same efficiency role and are explicitly authored.
+
+Faction Mastery must NOT grant functional unlocks or become a second progression gate.
+
+Do not use it to gate Research, dungeon access, Relics, Expeditions, recipes or world progression.
+
+Exact formulas, stacking rules, caps and per-channel coefficients are OPEN.
 
 ---
 
@@ -446,7 +468,7 @@ Faction Expedition
 -> produces faction crafting resource
 
 Faction Mastery
--> improves matching Expedition yield
+-> improves global yield from matching faction content (Expedition resources, drops, Silver, Fame, etc.)
 
 Faction crafting resource
 -> consumed in faction Cape crafting
@@ -458,7 +480,7 @@ Advanced faction Research
 -> permanently unlocks faction Dungeon access
 
 Dungeon access
--> existing tier key is still required for each run
+-> existing tier-key behavior remains unchanged
 
 All major milestones
 -> represented in existing World > Achievements
@@ -474,9 +496,9 @@ To avoid overlapping progression systems:
 - Relic = permanent faction Expedition unlock.
 - Expedition = parallel source of faction crafting resource.
 - Manuscript = advanced Research requirement.
-- Faction Mastery = faction Expedition yield progression only.
+- Faction Mastery = global faction-yield progression only.
 - Achievements = accomplishment presentation/objectives.
-- Dungeon keys = existing per-run dungeon entry currency.
+- Dungeon keys = existing dungeon-entry system, unchanged.
 - Crafting = authoritative consumer/recipe system for faction capes.
 
 No system should silently take ownership from another.
@@ -527,7 +549,9 @@ The following are deliberately OPEN:
 - Manuscript consumption model;
 - faction-dungeon Research structure by tier;
 - Faction Mastery XP formula;
-- Faction Mastery yield curve/cap;
+- Faction Mastery global-yield formula;
+- which faction reward channels are affected beyond Expedition resources, drops, Silver and Fame;
+- per-channel coefficients, stacking rules and caps;
 - Achievement thresholds and rewards.
 
 These values must be designed and balanced before implementation. They must not be guessed by an implementation agent.
@@ -544,7 +568,7 @@ Before coding begins, the design pass must provide at minimum:
 4. exact Expedition input/output model;
 5. exact faction-resource cape recipe integration;
 6. exact Manuscript -> Research -> dungeon access contract;
-7. exact Faction Mastery yield formula;
+7. exact Faction Mastery global-yield formula and affected reward channels;
 8. exact Bestiary progression fields;
 9. exact Achievement definitions/rewards;
 10. persistence/offline rules for Research and Expeditions.
