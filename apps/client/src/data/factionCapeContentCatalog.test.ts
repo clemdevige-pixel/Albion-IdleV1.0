@@ -3,6 +3,7 @@ import { getNextEnchantmentRecipe, scaleEnchantmentRecipe } from "@game/gameplay
 import {
   FACTION_CAPE_CRAFT_RECIPES,
   KEEPER_CAPE_CONTENT,
+  resolveFactionCapeDungeonDamageReductionPercent,
 } from "./factionCapeContentCatalog.js";
 import {
   resolveEnchantmentItemInfo,
@@ -74,7 +75,7 @@ describe("factionCapeContentCatalog", () => {
       quantity: 3,
     });
 
-    const runeQuantities = [0, 1, 2].map((index) => {
+    const runeQuantities = ([0, 1, 2] as const).map((index) => {
       const recipe = getNextEnchantmentRecipe(index);
       if (recipe === undefined || info === undefined) return undefined;
       const scaled = scaleEnchantmentRecipe(
@@ -89,5 +90,28 @@ describe("factionCapeContentCatalog", () => {
     });
 
     expect(runeQuantities).toEqual([3, 6, 12]);
+  });
+
+  it("activates the passive only for matching faction dungeons at the cape tier or above", () => {
+    expect(resolveFactionCapeDungeonDamageReductionPercent(
+      "item_cape_t4_keeper",
+      { factionId: "Keeper", tier: 4 },
+    )).toBe(6);
+    expect(resolveFactionCapeDungeonDamageReductionPercent(
+      "item_cape_t4_keeper",
+      { factionId: "Keeper", tier: 8 },
+    )).toBe(6);
+    expect(resolveFactionCapeDungeonDamageReductionPercent(
+      "item_cape_t6_keeper",
+      { factionId: "Keeper", tier: 5 },
+    )).toBe(0);
+    expect(resolveFactionCapeDungeonDamageReductionPercent(
+      "item_cape_t6_keeper",
+      { factionId: "Keeper", tier: 6 },
+    )).toBe(11);
+    expect(resolveFactionCapeDungeonDamageReductionPercent(
+      "item_cape_t8_keeper",
+      { factionId: "Heretic", tier: 8 },
+    )).toBe(0);
   });
 });
