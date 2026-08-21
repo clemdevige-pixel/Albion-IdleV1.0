@@ -26,6 +26,15 @@ export interface SegmentRun {
   readonly segment: number;
   readonly clearNoPotion: boolean;
   readonly clearPotion: boolean;
+  readonly afkSeconds: number;
+  readonly afkHpPercent: number;
+  readonly afkEncounterReached: number;
+  readonly afkDamageDealt: number;
+  readonly potionSeconds: number;
+  readonly potionHpPercent: number;
+  readonly potionPotionsUsed: number;
+  readonly potionEncounterReached: number;
+  readonly potionDamageDealt: number;
 }
 
 export const TARGET_TIERS = [4, 5, 6, 7, 8] as const satisfies readonly WorldProgressionTier[];
@@ -127,6 +136,15 @@ export function runLoadoutAcrossZone(
         segment: segmentIndex + 1,
         clearNoPotion: noPotion.clear,
         clearPotion: withPotion.clear,
+        afkSeconds: noPotion.seconds,
+        afkHpPercent: noPotion.hpPercent,
+        afkEncounterReached: noPotion.encounterReached,
+        afkDamageDealt: noPotion.damageDealt,
+        potionSeconds: withPotion.seconds,
+        potionHpPercent: withPotion.hpPercent,
+        potionPotionsUsed: withPotion.potionsUsed,
+        potionEncounterReached: withPotion.encounterReached,
+        potionDamageDealt: withPotion.damageDealt,
       });
     }
   }
