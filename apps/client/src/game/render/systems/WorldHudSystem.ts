@@ -73,16 +73,24 @@ export class WorldHudSystem {
     );
   }
 
+  public setPlayerVisible(visible: boolean): void {
+    this.setActorVisible(this.player, visible);
+  }
+
   public setEnemyVisible(visible: boolean): void {
-    this.enemy.background.setVisible(visible);
-    this.enemy.fill.setVisible(visible);
-    this.enemy.value.setVisible(visible);
-    this.enemy.label.setVisible(visible);
+    this.setActorVisible(this.enemy, visible);
   }
 
   public clear(): void {
     for (const gameObject of this.objects) gameObject.destroy();
     this.objects.length = 0;
+  }
+
+  private setActorVisible(actor: ActorHealthHud, visible: boolean): void {
+    actor.background.setVisible(visible);
+    actor.fill.setVisible(visible);
+    actor.value.setVisible(visible);
+    actor.label.setVisible(visible);
   }
 
   private createActorHud(
