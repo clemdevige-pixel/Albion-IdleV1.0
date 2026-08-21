@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from "react";
 import { resolveStatusEffectIconPath } from "../data/abilityIconPresentation";
 import { resolveStatusEffectDotDetails } from "../data/statusEffectDotPresentation";
 import {
@@ -7,7 +12,10 @@ import {
   type StatusEffectAnchor,
 } from "../data/statusEffectPresentationCatalog";
 import type { ActiveEffectDisplay, StatsVM } from "../game/GameBridge";
-import { renderManifestRegistry } from "../game/render/defaultRenderManifestRegistry";
+import {
+  worldHudAnchorStore,
+  type WorldHudAnchorSnapshot,
+} from "../game/render/presentation/WorldHudAnchorStore";
 import { useActiveEffectsUiModel } from "../ui/combat-hud/combatHudSelectors";
 import { useGameUiSelector } from "../ui/state";
 import "./activeEffectsWorld.css";
@@ -15,12 +23,19 @@ import "./activeEffectsWorld.css";
 interface EffectAnchorPosition {
   readonly left: number;
   readonly top: number;
+  readonly visible: boolean;
 }
 
 interface EffectAnchorPositions {
   readonly player: EffectAnchorPosition;
   readonly enemy: EffectAnchorPosition;
 }
+
+const HIDDEN_POSITION: EffectAnchorPosition = {
+  left: 0,
+  top: 0,
+  visible: false,
+};
 
 function formatDamage(value: number): string {
   const rounded = Math.round(value * 10) / 10;
@@ -55,7 +70,7 @@ function EffectGroup({
   const anchored = effects.filter(
     (effect) => resolveStatusEffectAnchor(effect.name, effect.type) === anchor,
   );
-  if (anchored.length === 0) return null;
+  if (!position.visible || anchored.length === 0) return null;
 
   const style: CSSProperties = { left: position.left, top: position.top };
   return (
@@ -89,40 +104,55 @@ function EffectGroup({
   );
 }
 
-function useEffectAnchorPositions(enemyHealthBarOffsetY: number): EffectAnchorPositions {
-  const worldHud = renderManifestRegistry.requireDefaultWorldHud();
-  const [positions, setPositions] = useState<EffectAnchorPositions>({
-    player: { left: 0, top: 0 },
-    enemy: { left: 0, top: 0 },
+function mapAnchorSnapshotToHud(
+  anchors: WorldHudAnchorSnapshot,
+): EffectAnchorPositions {
+  const canvas = document.querySelector("canvas");
+  const hudRoot = document.querySelector(".hud-root");
+  if (!(canvas instanceof HTMLCanvasElement) || !(hudRoot instanceof HTMLElement)) {
+    return { player: HIDDEN_POSITION, enemy: HIDDEN_POSITION };
+  }
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const hudRect = hudRoot.getBoundingClientRect();
+  if (
+    canvas.width <= 0
+    || canvas.height <= 0
+    || canvasRect.width <= 0
+    || canvasRect.height <= 0
+  ) {
+    return { player: HIDDEN_POSITION, enemy: HIDDEN_POSITION };
+  }
+
+  const scaleX = canvasRect.width / canvas.width;
+  const scaleY = canvasRect.height / canvas.height;
+  const canvasLeft = canvasRect.left - hudRect.left;
+  const canvasTop = canvasRect.top - hudRect.top;
+
+  const mapAnchor = (anchor: WorldHudAnchorSnapshot["player"]): EffectAnchorPosition => ({
+    left: canvasLeft + anchor.x * scaleX,
+    top: canvasTop + anchor.y * scaleY,
+    visible: anchor.visible,
   });
+
+  return {
+    player: mapAnchor(anchors.player),
+    enemy: mapAnchor(anchors.enemy),
+  };
+}
+
+function useEffectAnchorPositions(
+  anchors: WorldHudAnchorSnapshot,
+): EffectAnchorPositions {
+  const [positions, setPositions] = useState<EffectAnchorPositions>(() => (
+    typeof document === "undefined"
+      ? { player: HIDDEN_POSITION, enemy: HIDDEN_POSITION }
+      : mapAnchorSnapshotToHud(anchors)
+  ));
 
   useEffect(() => {
     const updatePositions = (): void => {
-      const canvas = document.querySelector("canvas");
-      const hudRoot = document.querySelector(".hud-root");
-      if (!(canvas instanceof HTMLCanvasElement) || !(hudRoot instanceof HTMLElement)) return;
-
-      const canvasRect = canvas.getBoundingClientRect();
-      const hudRect = hudRoot.getBoundingClientRect();
-      if (canvas.width <= 0 || canvas.height <= 0 || canvasRect.width <= 0 || canvasRect.height <= 0) return;
-
-      const scaleX = canvasRect.width / canvas.width;
-      const scaleY = canvasRect.height / canvas.height;
-      const canvasLeft = canvasRect.left - hudRect.left;
-      const canvasTop = canvasRect.top - hudRect.top;
-      const entityY = canvas.height * 0.61;
-      const gapBelowBar = 18;
-
-      setPositions({
-        player: {
-          left: canvasLeft + canvas.width * 0.32 * scaleX,
-          top: canvasTop + (entityY - worldHud.healthBar.offsetY) * scaleY + gapBelowBar,
-        },
-        enemy: {
-          left: canvasLeft + canvas.width * 0.68 * scaleX,
-          top: canvasTop + (entityY - enemyHealthBarOffsetY) * scaleY + gapBelowBar,
-        },
-      });
+      setPositions(mapAnchorSnapshotToHud(worldHudAnchorStore.getSnapshot()));
     };
 
     updatePositions();
@@ -134,21 +164,21 @@ function useEffectAnchorPositions(enemyHealthBarOffsetY: number): EffectAnchorPo
       window.removeEventListener("resize", updatePositions);
       observer.disconnect();
     };
-  }, [enemyHealthBarOffsetY, worldHud.healthBar.offsetY]);
+  }, [anchors]);
 
   return positions;
 }
 
-/** Generic actor-anchored status effects for current and future buffs/debuffs. */
+/** Generic actor-anchored status effects bound to the authoritative Phaser health-bar layout. */
 export function ActiveEffectsDisplay(): JSX.Element {
   const effects = useActiveEffectsUiModel();
-  const enemyVisualManifestId = useGameUiSelector((state) => state.enemyVisualManifestId);
   const stats = useGameUiSelector((state) => state.stats);
-  const enemyManifest = useMemo(
-    () => renderManifestRegistry.requireStaticActor(enemyVisualManifestId),
-    [enemyVisualManifestId],
+  const anchors = useSyncExternalStore(
+    worldHudAnchorStore.subscribe,
+    worldHudAnchorStore.getSnapshot,
+    worldHudAnchorStore.getSnapshot,
   );
-  const positions = useEffectAnchorPositions(enemyManifest.hud.healthBarOffsetY);
+  const positions = useEffectAnchorPositions(anchors);
 
   return (
     <>
