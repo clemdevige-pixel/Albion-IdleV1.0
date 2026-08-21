@@ -263,25 +263,28 @@ Economy projections must not treat hero combat and hero gathering as simultaneou
 
 ---
 
-# 5. CRAFTING / REFINING / PREDECESSOR CHAIN
+# 5. CRAFTING / REFINING
 
-Higher-tier normal equipment recipes consume the previous-tier equipment instance in addition to the new Tier refined-material cost.
+Normal equipment recipes do **not** consume the previous-tier equipment instance.
 
-The representative sequential set-chain regression validates:
-- T3 -> T4 consumes the T3 set
-- T4 -> T5 consumes the T4 set
-- T5 -> T6 consumes the T5 set
-- T6 -> T7 consumes the T6 set
-- T7 -> T8 consumes the T7 set
+Current equipment-crafting contract:
+- T3 equipment uses its authored T3 refined-material requirements;
+- T4-T8 equipment uses its authored refined materials for the target Tier;
+- owning or sacrificing the same equipment specialization from Tn-1 is not a craft requirement;
+- previously crafted or enchanted equipment remains in the player's inventory unless the player explicitly removes or replaces it through another system.
 
-This predecessor consumption is a structural economy rule and must be included in progression-time/material calculations.
+The representative equipment-crafting regressions validate that higher-tier recipes contain refined-material requirements only and no equipment predecessor requirement.
 
-Enchant material requirements are derived by scaling the BASE CRAFT materials of the item. Do not maintain a separate unrelated enchantment material recipe.
+Enchant material requirements remain derived by scaling the BASE CRAFT materials of the item. Do not maintain a separate unrelated enchantment material recipe.
 
-Refining remains part of the recursive production chain.
+Refining remains part of the recursive production chain and is intentionally unchanged by this crafting rule:
+- T3 refining uses its authored base raw-resource recipe;
+- T4-T8 refining continues to consume current-tier raw resources plus the previous-tier refined material where authored.
 
-Regression source:
+Regression sources:
 - `apps/client/src/data/globalEconomySequentialSetChain.test.ts`
+- `apps/client/src/data/weaponCraftPipeline.test.ts`
+- `apps/client/src/data/nonWeaponEquipmentContentCatalog.test.ts`
 
 ---
 
@@ -512,36 +515,8 @@ The current validated global rules are:
 8. Weapon walls do not need to align; persistent global outliers are the concern.
 9. When one weapon makes a global gate contract impossible, diagnose the weapon/package before distorting the whole zone.
 10. Active hero gathering competes with combat time; workers are the parallel gather channel.
-11. Higher-Tier crafting consumes predecessor equipment and must be modeled sequentially.
+11. Higher-Tier equipment crafting uses target-tier refined materials and does not consume predecessor equipment.
 12. Silver, materials and shards are complementary sinks; do not tune all three as extreme simultaneous bottlenecks.
 13. Dungeons are return-content and future horizontal faction progression, not another copy of the linear-world wall structure.
 
 ---
-
-# 11. AUTHORITATIVE DOCUMENTS / REGRESSION SOURCES
-
-System docs:
-- `AI_BIBLE/10_SYSTEMS/19A_PRODUCTION_PROGRESSION_BALANCE.txt`
-- `AI_BIBLE/10_SYSTEMS/20_AWAKENED_WEAPON_SYSTEM.txt`
-- `AI_BIBLE/10_SYSTEMS/20A_COMBAT_BALANCING_PROCESS.txt`
-- `AI_BIBLE/10_SYSTEMS/33_ENCHANTMENT_SYSTEM.txt`
-- `AI_BIBLE/10_SYSTEMS/14_LOOT_SYSTEM.txt`
-- `AI_BIBLE/10_SYSTEMS/35_CURRENCY_SYSTEM.txt`
-- `AI_BIBLE/20_DATA/42_BALANCING_TABLES.txt`
-
-Key live/diagnostic tests:
-- `worldProgressionFoundation.test.ts`
-- `blueFrostpeakProgressionSweep.test.ts`
-- `laterTierBossGateRegression.test.ts`
-- `enchantmentProgressionLadderSweep.test.ts`
-- `enchantmentTierBridgeSweep.test.ts`
-- `weaponCrossTierNeutralBenchmark.test.ts`
-- `defensiveMitigationCrossTierAudit.test.ts`
-- `globalEconomySequentialSetChain.test.ts`
-- `islandProductionProgressionBalance.test.ts`
-- `dungeonTn3AllWeaponsBenchmark.test.ts`
-- `dungeonTn3PlusThresholdBenchmark.test.ts` — only `tn3_potion` scenario currently valid evidence
-
-One-off boss-gate candidate/diagnostic sweeps are discovery tools. The durable live contract is protected by the regression tests above.
-
-When a future balance pass changes an authoritative value, update the relevant system document first and then refresh this dated snapshot if the global relationship between systems changed.
