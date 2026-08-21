@@ -138,7 +138,10 @@ export function GameProvider({
       getAwakenedWeaponService: () => awakenedWeaponServiceRef.current,
       canMutateEquipment: () => (
         starterSelectionPending
-        || (!combatService.isInCombat() && dungeonRuntime.activeRun?.status !== "active")
+        || (
+          dungeonRuntime.activeRun?.status !== "active"
+          && (combatStopController.isPaused() || !combatService.isInCombat())
+        )
       ),
       onPlayerHealthChanged: (currentHealth, maxHealth) => {
         bridge.updatePlayerHealth(currentHealth, maxHealth);
@@ -258,214 +261,20 @@ export function GameProvider({
       inventoryManager,
       durabilityStore,
       progressionOrchestrator,
-      experienceService,
-      awakenedWeaponService,
-      heroId,
+      masteryService,
+      eventBus,
     });
-    const dungeonRewardRuntime = new DungeonRewardRuntime(
+
+    const dungeonRewardRuntime = new DungeonRewardRuntime({
       dungeonRuntime,
       inventoryManager,
       heroId,
-    );
-
-    const bridgeSyncCoordinator = new GameBridgeSyncCoordinator({
       bridge,
-      inventoryManager,
-      equipmentManager,
-      statsManager,
-      damageManager,
-      currencyService,
-      progressionOrchestrator,
-      durabilityStore,
-      repairCostResolver,
-      vendorRegistry,
-      heroId,
-      bankId,
-      walletId,
-      vendorId: "vendor_general",
-      getIncomeRate: () => combatRewardAdapter.getIncomeRate(),
-      recalculateWeaponMasteryStats: () => {
-        recalculateWeaponProgressionStats(
-          statsManager,
-          equipmentManager,
-          masteryService,
-          heroId,
-          awakenedWeaponService,
-        );
-        damageManager.syncMaxHealth(heroId);
-        const health = damageManager.getHealth(heroId);
-        bridge.updatePlayerHealth(health.currentHealth, health.maxHealth);
-      },
-      updateWorldBridge,
-    });
-    const resyncAll = (): void => {
-      bridgeSyncCoordinator.syncAll();
-      syncIslandToBridge();
-    };
-
-    const combatRewardAdapter = setupCombatRewardAdapter({
-      combatService,
-      combatRewardRuntime,
-      dungeonRewardRuntime,
-      worldRuntime,
-      bridge,
-      statsManager,
-      heroId,
-      recalculateWeaponMasteryStats: () => recalculateWeaponProgressionStats(
-        statsManager,
-        equipmentManager,
-        masteryService,
-        heroId,
-        awakenedWeaponService,
-      ),
-      resyncAll: () => resyncAll(),
-      isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
-    });
-    bridgeSyncCoordinator.syncInitialState();
-    syncIslandToBridge();
-
-    const islandActions = new IslandActions({
-      islandService,
-      inventoryManager,
-      productionStorageId,
-      currencyService,
-      walletId,
-      bridge,
-      isWorldRequirementMet,
-      resyncAll,
     });
 
-    const persistence = new RuntimePersistence({
-      inventoryManager,
-      world,
-      heroId,
-      bankId,
-      productionStorageId,
-      equipmentManager,
-      currencyService,
-      awakenedWeaponService,
-      experienceService,
-      masteryService,
-      fameService,
-      destinyBoardService,
-      durabilityStore,
-      saveSlotId,
-      ...(onLocalSave === undefined ? {} : { onLocalSave }),
-    });
-    persistence.registerProvider(islandService);
-    persistence.registerProvider(new DungeonProgressionSaveProvider(dungeonRuntime));
-
-    const refiningSaveProvider = new RefiningSaveProvider(
-      refiningRuntime,
-      inventoryManager,
-      () => productionStorageId,
-    );
-    persistence.registerProvider(refiningSaveProvider);
-    starterSelectionPending = !persistence.hasSave();
-
-    const saveGameActions = new SaveGameActions({
-      bridge,
-      persistence,
-      inventoryManager,
-      currencyService,
-      walletId,
-      heroId,
-      bankId,
-      productionStorageId,
-      getCurrentTick: () => tickCounter,
-      resetSilverBalance: (balance) => { combatRewardAdapter.resetSilverBalance(balance); },
-      syncPlayerHealth: () => {
-        const health = damageManager.getHealth(heroId);
-        bridge.updatePlayerHealth(health.currentHealth, health.maxHealth);
-      },
-      resyncAll,
-    });
-
-    const saveGame = (): void => { saveGameActions.save(); };
-    const loadGame = (): boolean => saveGameActions.load();
-    const hasSave = (): boolean => saveGameActions.hasSave();
-    const exportSave = (): string => saveGameActions.exportSave();
-    const importSave = (raw: string): boolean => saveGameActions.importSave(raw);
-
-    const notifyAwakeningFailure = (reason: string): void => {
-      const message = reason === "insufficient_attunement"
-        ? "Attunement insuffisant pour cette modification."
-        : reason === "insufficient_silver"
-          ? "Silver insuffisant pour cette modification."
-          : reason === "trait_slot_locked"
-            ? "Ce slot de trait n'est pas encore débloqué."
-            : reason === "trait_offer_pending"
-              ? "Choisissez d'abord une proposition de trait en attente."
-              : "Impossible de modifier cette arme éveillée dans l'état actuel.";
-      bridge.addEconomyNotification({
-        id: `notif_awakening_failed_${String(Date.now())}`,
-        type: "error",
-        message,
-        timestamp: Date.now(),
-      });
-    };
-    const getEquippedAwakenedInstanceId = () => {
-      const weapon = equipmentManager.getEquippedItem(heroId, "weapon");
-      return weapon?.enchantment === 4 ? weapon.instanceId : undefined;
-    };
-    const afterAwakeningMutation = (): void => {
-      resyncAll();
-      saveGame();
-    };
-    const improveAwakenedTrait: GameServices["improveAwakenedTrait"] = (traitIndex) => {
-      const instanceId = getEquippedAwakenedInstanceId();
-      if (instanceId === undefined) return false;
-      const result = awakenedWeaponService.improveTrait(
-        instanceId,
-        traitIndex,
-        walletId,
-        () => world.services.rng.nextFloat(),
-      );
-      if (!result.ok) {
-        notifyAwakeningFailure(result.reason);
-        return false;
-      }
-      afterAwakeningMutation();
-      return true;
-    };
-    const beginAwakenedTraitOffer: GameServices["beginAwakenedTraitOffer"] = (targetIndex) => {
-      const instanceId = getEquippedAwakenedInstanceId();
-      if (instanceId === undefined) return false;
-      const result = awakenedWeaponService.beginTraitOffer(
-        instanceId,
-        targetIndex,
-        walletId,
-        () => world.services.rng.nextFloat(),
-      );
-      if (!result.ok) {
-        notifyAwakeningFailure(result.reason);
-        return false;
-      }
-      afterAwakeningMutation();
-      return true;
-    };
-    const resolveAwakenedTraitOffer: GameServices["resolveAwakenedTraitOffer"] = (traitId) => {
-      const instanceId = getEquippedAwakenedInstanceId();
-      if (instanceId === undefined) return false;
-      const result = awakenedWeaponService.resolveTraitOffer(instanceId, traitId);
-      if (!result.ok) {
-        notifyAwakeningFailure(result.reason);
-        return false;
-      }
-      afterAwakeningMutation();
-      return true;
-    };
-    const resetAwakenedWeapon: GameServices["resetAwakenedWeapon"] = () => {
-      const instanceId = getEquippedAwakenedInstanceId();
-      if (instanceId === undefined) return false;
-      const result = awakenedWeaponService.reset(instanceId);
-      if (!result.ok) {
-        notifyAwakeningFailure(result.reason);
-        return false;
-      }
-      afterAwakeningMutation();
-      return true;
-    };
+    const {
+      biomeResolver: dungeonBiomeResolver,
+    } = createWorldFoundation();
 
     const combatRuntime = new CombatRuntime({
       world,
@@ -482,33 +291,58 @@ export function GameProvider({
       equipmentManager,
       masteryService,
       biomeResolver,
-      spawnEnemyOverride: () => dungeonCombatRouter.spawnEnemyOverride(combatEntityFactoryDeps),
+      spawnEnemyOverride: () => dungeonCombatRouter.spawnEnemyOverride(),
       ports: {
-        onVictory: () => dungeonCombatRouter.onVictory(() => {
-          const res = worldRuntime.advanceVictory();
-          updateWorldBridge();
-          return res;
-        }),
-        onDefeat: () => dungeonCombatRouter.onDefeat(() => {
-          worldRuntime.advanceDefeat();
-          updateWorldBridge();
-          bridge.setCombatState("defeat");
-        }),
+        onVictory: () => {
+          const dungeonResult = dungeonCombatRouter.onVictory();
+          if (dungeonResult !== undefined) return dungeonResult;
+          return worldRuntime.onVictory();
+        },
+        onDefeat: () => {
+          if (dungeonCombatRouter.onDefeat()) return;
+          worldRuntime.onDefeat();
+        },
         getLocationState: () => {
-          const zone = getActiveZoneDef();
+          const dungeonLocation = dungeonCombatRouter.getLocationState();
+          if (dungeonLocation !== undefined) return dungeonLocation;
+          const activeZone = getActiveZoneDef();
           return {
             zoneIndex: worldRuntime.currentZoneIndex,
             segmentIndex: worldRuntime.currentSegment,
-            encounterIndex: dungeonCombatRouter.getEncounterIndex(worldRuntime.currentEncounter),
-            zoneDefId: zone.defId,
-            zoneName: zone.name,
+            encounterIndex: worldRuntime.currentEncounter,
+            zoneDefId: activeZone.id,
+            zoneName: activeZone.name,
             highestUnlockedSegment: worldRuntime.highestUnlockedSegment,
             farmMode: worldRuntime.farmMode,
           };
         },
-        isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
-        flowPolicy: dungeonCombatRouter.flowPolicy,
+        isCombatSuspended: () => productionFoundation.isCombatSuspended(),
       },
+    });
+
+    const combatBridgeAdapter = new CombatBridgeAdapter(bridge, combatRuntime);
+    const bridgeSyncCoordinator = new GameBridgeSyncCoordinator({
+      bridge,
+      worldRuntime,
+      inventoryManager,
+      equipmentManager,
+      statsManager,
+      currencyService,
+      walletId,
+      heroId,
+      bankId,
+      productionStorageId,
+      durabilityStore,
+      masteryService,
+      destinyBoardService,
+      awakenedWeaponService,
+      combatStopController,
+      dungeonRuntime,
+      islandService,
+      craftingTier: () => craftingTier,
+      gatheringTier: () => gatheringTier,
+      workerTier: () => workerTier,
+      refiningTier: (family) => refiningTiers[family],
     });
 
     const worldNavigationActions = new WorldNavigationActions({
@@ -517,230 +351,193 @@ export function GameProvider({
       bridge,
       updateWorldBridge,
     });
-
     const dungeonNavigationActions = new DungeonNavigationActions({
       dungeonRuntime,
-      inventoryManager,
-      equipmentManager,
-      heroId,
-      combatRuntime,
-      stopController: combatStopController,
-      bridge,
-      isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
-      onStateChanged: resyncAll,
-    });
-
-    const productionController = new ProductionRuntimeController({
-      bridge,
-      foundation: productionFoundation,
-      inventoryManager,
-      heroId,
-      productionStorageId,
-      currencyService,
-      walletId,
-      progressionOrchestrator,
-      getCurrentTick: () => tickCounter,
-      getCombatLoopState: () => combatRuntime.getLoopState(),
-      getGatheringTier: () => gatheringTier,
-      setGatheringTier: (tier) => { gatheringTier = tier; },
-      getRefiningTier: (family) => refiningTiers[family],
-      setRefiningTier: (family, tier) => { refiningTiers[family] = tier; },
-      getCraftingTier: () => craftingTier,
-      setCraftingTier: (tier) => { craftingTier = tier; },
-      setWorkerTier: (tier) => { workerTier = tier; },
-      prepareCombatResumeAfterGathering: () => {
-        worldNavigationActions.prepareCombatResumeAfterGathering();
-      },
-      workerCapacity: WORKER_HOUSE_BASELINE.workerCapacity,
-      workerRecruitmentCost: WORKER_HOUSE_BASELINE.recruitmentCost,
-    });
-    persistence.registerProvider(productionController.createWorkerSaveProvider());
-
-    const worldSaveProvider = new WorldSaveProvider(
-      worldCoordinator,
-      () => worldNavigationActions.getWorldLocationSaveState(),
-      (savedLocation) => {
-        worldNavigationActions.setWorldLocationSaveState(savedLocation);
-      },
-    );
-    persistence.registerProvider(worldSaveProvider);
-
-    const combatBridgeAdapter = new CombatBridgeAdapter({
-      bridge,
-      heroId,
-      abilityManager,
-      damageManager,
-      statsManager,
       combatRuntime,
       worldRuntime,
+      bridge,
       updateWorldBridge,
     });
-    const unsubscribeDamageEvents = combatBridgeAdapter.bindDamageEvents(
-      damageEventBus,
-    );
-
-    const initialCombat = combatRuntime.initialize();
-    combatBridgeAdapter.presentInitialCombat(initialCombat);
-
-    const selectStarterWeapon = (itemId: string): boolean => {
-      if (!starterSelectionPending) return false;
-      const initialized = initializeStarterLoadout({
-        heroId,
-        inventoryManager,
-        equipmentManager,
-        durabilityStore,
-        masteryService,
-        weaponItemId: itemId,
-      });
-      if (!initialized) return false;
-
-      starterSelectionPending = false;
-      recalculateWeaponProgressionStats(
-        statsManager,
-        equipmentManager,
-        masteryService,
-        heroId,
-        awakenedWeaponService,
-      );
-      resyncAll();
-      saveGame();
-      return true;
-    };
-
-    const useWeaponAbility = (slotIndex: number): boolean =>
-      combatBridgeAdapter.useWeaponAbility(slotIndex);
-    const usePrimaryAbility = (): boolean => useWeaponAbility(0);
-    const setPrimaryAbilityAutoCast = (enabled: boolean): void => {
-      combatBridgeAdapter.setPrimaryAbilityAutoCast(enabled);
-    };
 
     const consumableRuntime = new ConsumableRuntime({
       inventoryManager,
+      heroId,
       damageManager,
       deathManager,
-      heroId,
+      bridge,
     });
-
-    const TICK_INTERVAL = 500;
-    const DT = 0.5;
-    const syncConsumables = (): void => {
-      bridge.updateConsumables(consumableRuntime.getState());
-    };
-    syncConsumables();
 
     const consumableActions = new ConsumableActions({
-      runtime: consumableRuntime,
+      consumableRuntime,
+      combatRuntime,
+    });
+    const repairActions = new RepairActions({
+      equipmentManager,
+      inventoryManager,
+      durabilityStore,
+      repairCostResolver,
+      economyTransactionService,
+      walletId,
+      heroId,
       bridge,
-      syncConsumables,
-      syncInventory: () => {
+      combatRuntime,
+    });
+
+    const islandActions = new IslandActions({
+      islandService,
+      bridge,
+      syncIslandToBridge,
+    });
+
+    const runtimePersistence = new RuntimePersistence({
+      saveSlotId,
+      world,
+      worldRuntime,
+      inventoryManager,
+      equipmentManager,
+      statsManager,
+      currencyService,
+      walletId,
+      bankId,
+      productionStorageId,
+      durabilityStore,
+      masteryService,
+      destinyBoardService,
+      awakenedWeaponService,
+      refiningRuntime,
+      dungeonProgressionSaveProvider: new DungeonProgressionSaveProvider(dungeonRuntime),
+      worldSaveProvider: new WorldSaveProvider(),
+      refiningSaveProvider: new RefiningSaveProvider(refiningRuntime),
+      islandService,
+      bridge,
+      combatRuntime,
+      combatStopController,
+    });
+
+    const saveGameActions = new SaveGameActions({
+      runtimePersistence,
+      bridge,
+    });
+
+    const productionRuntimeController = new ProductionRuntimeController({
+      productionFoundation,
+      worldNavigationActions,
+      bridge,
+    });
+
+    const gameRuntimeTickController = new GameRuntimeTickController({
+      combatRuntime,
+      combatBridgeAdapter,
+      bridgeSyncCoordinator,
+      productionRuntimeController,
+      combatRewardRuntime,
+      dungeonRewardRuntime,
+    });
+
+    const teardownCombatRewards = setupCombatRewardAdapter({
+      combatService,
+      combatRewardRuntime,
+      eventBus,
+    });
+
+    const unregisterRuntimeLifecycle = registerGameRuntimeLifecycle({
+      runtimePersistence,
+      gameRuntimeTickController,
+      teardownCombatRewards,
+    });
+
+    const starterLoadoutInitialized = initializeStarterLoadout({
+      heroId,
+      inventoryManager,
+      equipmentManager,
+      durabilityStore,
+      masteryService,
+    });
+    starterSelectionPending = !starterLoadoutInitialized;
+
+    const servicesValue: GameServices = {
+      world,
+      statsManager,
+      damageManager,
+      damageEventBus,
+      deathManager,
+      targetManager,
+      autoAttackManager,
+      abilityManager,
+      effectManager,
+      combatService,
+      orchestrator,
+      inventoryManager,
+      equipmentManager,
+      masteryService,
+      destinyBoardService,
+      progressionOrchestrator,
+      experienceService,
+      fameService,
+      currencyService,
+      awakenedWeaponService,
+      playerId,
+      walletId,
+      durabilityStore,
+      repairCostResolver,
+      vendorRegistry,
+      economyTransactionService,
+      islandService,
+      dungeonRuntime,
+      worldRuntime,
+      gatheringRuntime,
+      refiningRuntime,
+      gatheringCoordinator,
+      oreGatheringCoordinator,
+      hideGatheringCoordinator,
+      fiberGatheringCoordinator,
+      combatRuntime,
+      combatRewardRuntime,
+      dungeonRewardRuntime,
+      productionStorageId,
+      bankId,
+      heroId,
+      bridge,
+      eventBus,
+      worldNavigationActions,
+      dungeonNavigationActions,
+      consumableActions,
+      repairActions,
+      islandActions,
+      runtimePersistence,
+      saveGameActions,
+      productionRuntimeController,
+      gameRuntimeTickController,
+      isWorldRequirementMet,
+      getCraftingTier: () => craftingTier,
+      setCraftingTier: (tier) => { craftingTier = tier; },
+      getGatheringTier: () => gatheringTier,
+      setGatheringTier: (tier) => { gatheringTier = tier; },
+      getWorkerTier: () => workerTier,
+      setWorkerTier: (tier) => { workerTier = tier; },
+      getRefiningTier: (family) => refiningTiers[family],
+      setRefiningTier: (family, tier) => { refiningTiers[family] = tier; },
+      recalculateWeaponProgressionStats: () => {
+        recalculateWeaponProgressionStats(
+          statsManager,
+          equipmentManager,
+          masteryService,
+          heroId,
+          awakenedWeaponService,
+        );
+      },
+      syncInventoryToBridge: () => {
         syncInventoryToBridge(bridge, inventoryManager, heroId);
       },
-    });
-
-    const runtimeTickController = new GameRuntimeTickController({
-      tickIntervalMs: TICK_INTERVAL,
-      deltaSeconds: DT,
-      advanceTick: () => {
-        tickCounter += 1;
-        return tickCounter;
-      },
-      tickConsumables: (deltaSeconds) => consumableRuntime.tick(deltaSeconds),
-      syncConsumables,
-      tickProduction: (tick) => { productionController.tick(tick); },
-      syncActiveProduction: () => {
-        productionController.syncActiveProduction();
-      },
-      isHeroGathering: () => gatheringRuntime.isHeroGathering(),
-      presentGatheringState: () => { bridge.setCombatState("idle"); },
-      syncProjectedSegmentRates: () => {
-        combatBridgeAdapter.syncProjectedSegmentRates();
-      },
-      updateZoneElapsed: (seconds) => { bridge.updateZoneElapsed(seconds); },
-      tickCombat: (deltaSeconds, tick) => {
-        combatBridgeAdapter.presentTick(combatRuntime.tick(deltaSeconds, tick));
-        dungeonNavigationActions.flushPendingStart();
-      },
-    });
-    registerGameRuntimeLifecycle(bridge, {
-      tick: () => { runtimeTickController.tick(); },
-      tickIntervalMs: TICK_INTERVAL,
-      persistence,
-      dispose: () => {
-        unsubscribeDamageEvents();
-        combatRewardAdapter.dispose();
-        productionController.dispose();
-        orchestrator.dispose();
-        progressionOrchestrator.dispose();
-        worldCoordinator.dispose();
-        gatheringCoordinator.dispose();
-        oreGatheringCoordinator.dispose();
-        hideGatheringCoordinator.dispose();
-        fiberGatheringCoordinator.dispose();
-      },
-    });
-
-    const repairActions = new RepairActions({
-      economyTransactionService,
-      bridge,
-      playerId,
-      heroId,
-      walletId,
-      resyncAll,
-    });
-
-    return {
-      eventBus, bridge, orchestrator, heroId, bankId, productionStorageId, inventoryManager, equipmentManager,
-      enchantmentService, awakenedWeaponService,
-      statsManager, currencyService, economyTransactionService, vendorRegistry,
-      walletId, playerId, worldCoordinator,
-      improveAwakenedTrait,
-      beginAwakenedTraitOffer,
-      resolveAwakenedTraitOffer,
-      resetAwakenedWeapon,
-      needsStarterSelection: () => starterSelectionPending,
-      selectStarterWeapon,
-      isWorldRequirementMet,
-      startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
-      abandonDungeon: () => dungeonNavigationActions.abandon(),
-      isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
-      getDungeonState: () => dungeonNavigationActions.getState(),
-      useConsumable: (itemId) => consumableActions.use(itemId),
-      useWeaponAbility,
-      usePrimaryAbility,
-      setPrimaryAbilityAutoCast,
-      resumeExploration: () => worldNavigationActions.resumeExploration(),
-      selectSegment: (segmentNumber) => worldNavigationActions.selectSegment(segmentNumber),
-      setSegmentFarmMode: (enabled) => worldNavigationActions.setSegmentFarmMode(enabled),
-      selectZone: (zoneNumber, segmentNumber) => (
-        worldNavigationActions.selectZone(zoneNumber, segmentNumber)
-      ),
-      returnToCombat: () => productionController.returnToCombat(),
-      toggleGathering: (family) => productionController.toggleGathering(family),
-      performGatheringStrike: (resourceFamily, quality) => (
-        productionController.performGatheringStrike(resourceFamily, quality)
-      ),
-      toggleRefining: (family) => productionController.toggleRefining(family),
-      setGatheringTier: (tier) => productionController.setGatheringTier(tier),
-      setRefiningTier: (family, tier) => productionController.setRefiningTier(family, tier),
-      setCraftingTier: (tier) => productionController.setCraftingTier(tier),
-      craftEquipment: (outputItemId) => productionController.craftEquipment(outputItemId),
-      recruitWorker: (profession) => productionController.recruitWorker(profession),
-      toggleWorker: (profession, tier) => productionController.toggleWorker(profession, tier),
-      constructIslandBuilding: (definitionId, plotId) => (
-        islandActions.constructBuilding(definitionId, plotId)
-      ),
-      upgradeIslandBuilding: (definitionId) => islandActions.upgradeBuilding(definitionId),
-      getIslandLevel: () => islandService.getState().level,
-      upgradeIslandLevel: () => islandActions.upgradeIslandLevel(),
-      repairAll: () => repairActions.repairAll(),
-      saveGame, loadGame, hasSave, exportSave, importSave,
     };
+
+    return servicesValue;
   }, [saveSlotId, onLocalSave]);
 
   useGameRuntimeLifecycle(services);
 
   return (
-    <GameServicesContextProvider services={services}>
+    <GameServicesContextProvider value={services}>
       <StarterSelectionGate>{children}</StarterSelectionGate>
     </GameServicesContextProvider>
   );
