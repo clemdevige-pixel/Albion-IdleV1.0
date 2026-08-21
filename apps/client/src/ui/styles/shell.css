@@ -20,9 +20,9 @@
   min-width: 0;
   z-index: var(--ui-z-modal);
   overflow: visible;
-  border-bottom: 1px solid rgb(133 94 38 / 30%);
+  border-bottom: var(--ui-border-width) solid var(--ui-color-border-strong);
   background: #0b0e12;
-  box-shadow: 0 3px 14px rgb(0 0 0 / 30%);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 42%);
 }
 
 .ui-shell__header .topbar {
@@ -44,13 +44,31 @@
   min-height: 0;
   overflow: hidden;
   background: #080b10;
-  border-right: 0;
-  box-shadow: none;
+  border-right: 1px solid rgb(133 94 38 / 36%);
+  box-shadow: inset 0 0 0 1px rgb(231 182 76 / 4%);
 }
 
 .ui-shell__world[hidden] { display: none; }
+
 .ui-shell__world::before,
-.ui-shell__world::after { content: none; }
+.ui-shell__world::after {
+  position: absolute;
+  z-index: 15;
+  pointer-events: none;
+  content: "";
+}
+
+.ui-shell__world::before {
+  inset: 0;
+  border: 1px solid rgb(176 127 49 / 19%);
+  box-shadow: inset 0 0 34px rgb(0 0 0 / 24%);
+}
+
+.ui-shell__world::after {
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 3%, rgb(183 132 47 / 36%) 34%, rgb(183 132 47 / 36%) 66%, transparent 97%);
+}
 
 .ui-shell__combat-surface {
   position: relative;
@@ -76,9 +94,9 @@
   grid-area: bottom;
   min-width: 0;
   z-index: var(--ui-z-navigation);
-  border-top: 1px solid rgb(133 94 38 / 28%);
+  border-top: var(--ui-border-width) solid var(--ui-color-frame);
   background: #090c10;
-  box-shadow: 0 -5px 18px rgb(0 0 0 / 24%);
+  box-shadow: 0 -8px 24px rgb(0 0 0 / 36%);
 }
 
 .ui-shell__bottom .bottomnav {
@@ -91,7 +109,7 @@
   overflow-y: hidden;
   border: 0;
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: inset 0 1px rgb(225 174 73 / 8%);
   transform: none;
 }
 
@@ -124,18 +142,22 @@
 .ui-shell__bottom .permanent-bottom-nav__item::before { border-color: transparent; }
 
 .ui-shell__bottom .permanent-bottom-nav__item:hover {
-  background: transparent;
-  border-color: transparent;
-  box-shadow: inset 0 -1px rgb(205 153 56 / 24%);
+  background: rgb(90 65 28 / 10%);
+  border-color: rgb(117 84 34 / 20%);
+  box-shadow: inset 0 -1px rgb(205 153 56 / 18%);
 }
 
 .ui-shell__bottom .permanent-bottom-nav__item.is-active {
-  background: transparent;
+  background: linear-gradient(180deg, rgb(68 49 21 / 18%), rgb(34 25 13 / 8%));
   border-color: transparent;
-  box-shadow: inset 0 -3px #c79432;
+  box-shadow:
+    inset 0 -3px #c79432,
+    inset 0 0 16px rgb(209 157 55 / 7%);
 }
 
-.ui-shell__bottom .permanent-bottom-nav__item.is-active::before { border-color: transparent; }
+.ui-shell__bottom .permanent-bottom-nav__item.is-active::before {
+  border-color: transparent;
+}
 
 .ui-shell__bottom .permanent-bottom-nav__icon,
 .ui-shell__bottom .permanent-bottom-nav__icon img {
@@ -168,19 +190,28 @@
   z-index: var(--ui-z-panel);
   overflow: hidden;
   background: #0a0d11;
-  border-left: 1px solid rgb(133 94 38 / 28%);
-  box-shadow: none;
+  border-left: var(--ui-border-width) solid var(--ui-color-frame);
+  box-shadow: -12px 0 30px rgb(0 0 0 / 32%), inset 1px 0 rgb(228 176 73 / 5%);
 }
 
 .ui-right-panel__header {
   position: relative;
   padding: 10px 14px 9px;
-  background: #0e1014;
-  border-bottom: 0;
-  box-shadow: none;
+  background: #111217;
+  border-bottom: var(--ui-border-width) solid var(--ui-color-frame);
+  box-shadow: inset 0 -1px rgb(0 0 0 / 70%);
 }
 
-.ui-right-panel__header::after { content: none; }
+.ui-right-panel__header::after {
+  position: absolute;
+  right: 14px;
+  bottom: -1px;
+  left: 14px;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgb(211 163 64 / 46%), transparent);
+}
+
 .ui-right-panel__header .ui-module-header { align-items: center; padding: 0; border: 0; }
 .ui-right-panel__header .ui-module-header__title { color: var(--ui-color-accent); font-size: var(--ui-text-lg); }
 
@@ -207,7 +238,7 @@
   overflow: auto;
   scrollbar-color: #76561f #0c1016;
   scrollbar-width: thin;
-  background: #090c10;
+  background: linear-gradient(90deg, rgb(102 72 31 / 4%), transparent 18px), #090c10;
 }
 
 .ui-right-panel__content::-webkit-scrollbar { width: 7px; }
