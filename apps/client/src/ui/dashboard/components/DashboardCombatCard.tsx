@@ -16,9 +16,7 @@ export function DashboardCombatCard({
 
   return (
     <DashboardCard
-      title="Combat"
-      iconSrc="/assets/ui/nav-world.png"
-      className="dashboard-card--combat"
+      sectionId="combat"
       meta={<span className="dashboard-combat__encounter">Rencontre {String(zone.encounterIndex)} / {String(zone.encounterCount)}</span>}
     >
       <div className="dashboard-combat">
