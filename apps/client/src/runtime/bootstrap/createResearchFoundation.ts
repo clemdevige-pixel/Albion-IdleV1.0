@@ -9,6 +9,7 @@ import {
 } from "@game/gameplay";
 import {
   RESEARCH_DEFINITIONS,
+  RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
 
@@ -45,7 +46,10 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
     }
   }
 
-  return { researchService };
+  return {
+    researchService,
+    canReconstructRelics: () => researchService.hasUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction),
+  };
 }
 
 function tryConsumeResearchCost(
