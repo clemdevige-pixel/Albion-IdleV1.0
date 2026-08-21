@@ -22,7 +22,7 @@ describe("weapon equipment presentation", () => {
 
     expect(resolveEquipmentPresentation("item_weapon_bow_t4_longbow")).toEqual({
       itemIcon: "item-longbow-pixel-v1.png",
-      actorManifestId: "hero_bow",
+      actorManifestId: "hero_longbow",
       combatProfileId: "projectile",
       combatPresentation: {
         kind: "projectile",
