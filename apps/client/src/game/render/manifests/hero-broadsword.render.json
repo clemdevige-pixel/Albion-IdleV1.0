@@ -24,7 +24,7 @@
       "startFrame": 0,
       "endFrame": 5,
       "frameRate": 10,
-      "repeat": 0,
+      "repeat": -1,
       "display": { "width": 228.5714285714, "height": 228.5714285714 }
     },
     "attack": {
