@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { StaticActorRenderManifest } from "./RenderManifest";
+import { scaleCombatActorDisplay } from "./actorPresentationScale";
 import { resolveAspectPreservingDisplaySize } from "./aspectRatio";
 
 export function preloadStaticActorManifest(
@@ -23,9 +24,10 @@ export function applyStaticActorManifest(
     image.height,
     manifest.display.height,
   );
+  const scaledDisplay = scaleCombatActorDisplay(display.width, display.height);
 
   image
-    .setDisplaySize(display.width, display.height)
+    .setDisplaySize(scaledDisplay.width, scaledDisplay.height)
     .setVisible(true);
 }
 
