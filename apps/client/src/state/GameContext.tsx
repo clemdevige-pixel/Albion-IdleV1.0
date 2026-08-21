@@ -49,6 +49,8 @@ import {
 } from "../runtime/bootstrap/createWorldFoundation.js";
 import { createProductionFoundation } from "../runtime/bootstrap/createProductionFoundation.js";
 import { createFactionResearchFoundation } from "../runtime/bootstrap/createFactionResearchFoundation.js";
+import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
+import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import {
   createCharacterEquipmentFoundation,
   createCharacterStorageFoundation,
@@ -239,6 +241,19 @@ export function GameProvider({
       },
     });
 
+    const { researchService } = createResearchFoundation({
+      relicService: factionResearchFoundation.relicService,
+      currencyService,
+      walletId,
+      inventoryManager,
+      productionStorageId,
+    });
+    const { expeditionService } = createExpeditionFoundation({
+      researchService,
+      currencyService,
+      walletId,
+    });
+
     const productionFoundation = createProductionFoundation({
       inventoryManager,
       masteryService,
@@ -370,6 +385,8 @@ export function GameProvider({
     persistence.registerProvider(islandService);
     persistence.registerProvider(factionResearchFoundation.factionKnowledgeService);
     persistence.registerProvider(factionResearchFoundation.relicService);
+    persistence.registerProvider(researchService);
+    persistence.registerProvider(expeditionService);
     persistence.registerProvider(new DungeonProgressionSaveProvider(dungeonRuntime));
 
     const refiningSaveProvider = new RefiningSaveProvider(
@@ -675,6 +692,11 @@ export function GameProvider({
       tickProduction: (tick) => { productionController.tick(tick); },
       syncActiveProduction: () => {
         productionController.syncActiveProduction();
+      },
+      tickParallelProgression: (elapsedMs) => {
+        researchService.advance(elapsedMs);
+        const expeditionAdvance = expeditionService.advance(elapsedMs);
+        if (expeditionAdvance.completed.length > 0) resyncAll();
       },
       isHeroGathering: () => gatheringRuntime.isHeroGathering(),
       presentGatheringState: () => { bridge.setCombatState("idle"); },
