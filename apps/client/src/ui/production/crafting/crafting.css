@@ -1,37 +1,96 @@
-.ui-crafting { gap: var(--ui-space-3); }
+.ui-crafting { gap: var(--ui-space-4); }
 .ui-production-view { display: grid; min-width: 0; }
-.ui-production-view__header { display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-2); }
+.ui-production-view__header { display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-3); }
 .ui-production-view__header h2 { margin: 0; color: var(--ui-color-text-primary); font-family: var(--ui-font-display); font-size: var(--ui-text-xl); }
 .ui-production__eyebrow { color: var(--ui-color-accent); font-size: .58rem; font-weight: var(--ui-weight-bold); letter-spacing: .1em; text-transform: uppercase; }
+
 .ui-production__tier-selector,
-.ui-crafting__categories { display: flex; gap: var(--ui-space-1); }
+.ui-crafting__categories {
+  display: flex;
+  gap: 0;
+}
+
 .ui-production__tier-selector button,
-.ui-crafting__categories button { min-width: 2.75rem; padding: var(--ui-space-2); border: var(--ui-border-width) solid var(--ui-color-border-subtle); border-radius: var(--ui-radius-sm); color: var(--ui-color-text-secondary); background: #121923; font: inherit; cursor: pointer; }
+.ui-crafting__categories button {
+  min-width: 2.75rem;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 0;
+  border-radius: 0;
+  color: var(--ui-color-text-muted);
+  background: transparent;
+  box-shadow: inset 0 -1px rgb(123 91 42 / 22%);
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--ui-duration-fast), background var(--ui-duration-fast), box-shadow var(--ui-duration-fast);
+}
+
+.ui-production__tier-selector button:hover,
+.ui-crafting__categories button:hover { color: var(--ui-color-text-primary); }
 .ui-production__tier-selector button.is-active,
-.ui-crafting__categories button.is-active { border-color: var(--ui-color-accent); color: var(--ui-color-accent-hover); background: #241d10; }
-.ui-crafting__categories button { flex: 1; min-height: 2.25rem; font-weight: var(--ui-weight-bold); text-transform: uppercase; }
+.ui-crafting__categories button.is-active {
+  color: var(--ui-color-accent-hover);
+  background: linear-gradient(180deg, transparent, rgb(120 82 31 / 7%));
+  box-shadow: inset 0 -2px var(--ui-color-accent);
+}
+.ui-crafting__categories button { flex: 1; min-height: 2.4rem; font-weight: var(--ui-weight-bold); text-transform: uppercase; }
 .ui-production__empty { margin: 0; padding: var(--ui-space-4); color: var(--ui-color-text-muted); text-align: center; }
-.ui-crafting__selectors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ui-space-2); padding: var(--ui-space-2); border: var(--ui-border-width) solid var(--ui-color-border-subtle); border-radius: var(--ui-radius-sm); background: #0c1119; }
+
+.ui-crafting__selectors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-2) 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 .ui-crafting__selectors label { display: grid; gap: 4px; min-width: 0; color: var(--ui-color-accent); font-size: .58rem; font-weight: var(--ui-weight-bold); letter-spacing: .08em; text-transform: uppercase; }
-.ui-crafting__selectors select { width: 100%; min-width: 0; padding: var(--ui-space-2); border: var(--ui-border-width) solid var(--ui-color-border-subtle); border-radius: var(--ui-radius-sm); color: var(--ui-color-text-primary); background: #151c28; font: inherit; text-overflow: ellipsis; }
-.ui-crafting-detail { display: grid; gap: var(--ui-space-3); padding: var(--ui-space-3); border: var(--ui-border-width) solid var(--ui-color-border-strong); border-radius: var(--ui-radius-md); background: linear-gradient(145deg, #15150f, #0c1119); }
+.ui-crafting__selectors select { width: 100%; min-width: 0; padding: var(--ui-space-2) 0; border: 0; border-bottom: 1px solid rgb(123 91 42 / 42%); border-radius: 0; color: var(--ui-color-text-primary); background: #0e141d; font: inherit; text-overflow: ellipsis; }
+.ui-crafting__selectors select:focus { outline: none; border-bottom-color: var(--ui-color-accent); }
+
+.ui-crafting-detail {
+  display: grid;
+  gap: var(--ui-space-4);
+  padding: var(--ui-space-2) 0 var(--ui-space-3);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .ui-crafting-detail__result { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: var(--ui-space-3); }
 .ui-crafting-detail__visual,
 .ui-crafting-requirement__icon { display: grid; place-items: center; overflow: hidden; }
 .ui-crafting-detail__result > .item-hover-target { display: block; width: 84px; height: 84px; }
-.ui-crafting-detail__visual { width: 84px; height: 84px; border: var(--ui-border-width) solid var(--ui-color-border-subtle); border-radius: var(--ui-radius-sm); background: #0a1018; }
+
+/* Crafted item/result keeps a slot-like frame because it represents an item object. */
+.ui-crafting-detail__visual {
+  width: 84px;
+  height: 84px;
+  border: var(--ui-border-width) solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-sm);
+  background: #0a1018;
+}
 .ui-crafting-detail__visual .item-visual__image { max-width: 88%; max-height: 88%; object-fit: contain; }
 .ui-crafting-detail h3 { margin: 3px 0; color: var(--ui-color-accent-hover); font-family: var(--ui-font-display); font-size: var(--ui-text-lg); }
 .ui-crafting-detail p { margin: var(--ui-space-1) 0 0; color: var(--ui-color-text-muted); font-size: var(--ui-text-xs); }
-.ui-crafting-detail__identity dl { display: grid; gap: 2px; margin: var(--ui-space-2) 0 0; }
+.ui-crafting-detail__identity dl { display: grid; gap: var(--ui-space-1); margin: var(--ui-space-2) 0 0; padding-left: var(--ui-space-3); }
 .ui-crafting-detail__identity dl div { display: flex; justify-content: space-between; gap: var(--ui-space-2); }
 .ui-crafting-detail__identity dt { color: var(--ui-color-text-muted); }
 .ui-crafting-detail__identity dd { margin: 0; color: var(--ui-color-text-primary); font-weight: var(--ui-weight-bold); }
-.ui-crafting-detail__requirements { display: grid; gap: var(--ui-space-1); }
+
+.ui-crafting-detail__requirements { display: grid; gap: var(--ui-space-2); padding-left: var(--ui-space-3); }
 .ui-crafting-detail__requirements h4 { display: flex; justify-content: space-between; gap: var(--ui-space-2); margin: 0; color: var(--ui-color-accent); font-size: var(--ui-text-xs); letter-spacing: .08em; text-transform: uppercase; }
 .ui-crafting-detail__requirements h4 span { color: var(--ui-color-text-muted); font-size: .52rem; }
-.ui-crafting-detail__requirements.is-predecessor { padding-top: var(--ui-space-2); border-top: var(--ui-border-width) solid var(--ui-color-border-strong); }
-.ui-crafting-requirement { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: var(--ui-space-2); padding: var(--ui-space-2); border-top: var(--ui-border-width) solid var(--ui-color-border-subtle); }
+.ui-crafting-detail__requirements.is-predecessor { padding-top: var(--ui-space-2); border: 0; }
+
+.ui-crafting-requirement {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-1) 0;
+  border: 0;
+}
 .ui-crafting-requirement__icon { width: 28px; height: 28px; }
 .ui-crafting-requirement__icon img { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
 .ui-crafting-requirement__name { min-width: 0; overflow: hidden; color: var(--ui-color-text-secondary); text-overflow: ellipsis; white-space: nowrap; }
@@ -40,10 +99,14 @@
 .ui-crafting-requirement__name small { display: block; color: var(--ui-color-text-muted); font-size: .55rem; }
 .ui-crafting-requirement strong { color: var(--ui-color-negative); font-size: var(--ui-text-xs); }
 .ui-crafting-requirement.is-ready strong { color: var(--ui-color-positive); }
+
 .ui-crafting-detail .ui-production__primary-action { min-height: 2.35rem; border: var(--ui-border-width) solid #8b6a27; border-radius: var(--ui-radius-sm); color: #171107; background: linear-gradient(#e4bc51, #a97918); font: inherit; font-weight: var(--ui-weight-bold); cursor: pointer; }
 .ui-crafting-detail .ui-production__primary-action:disabled { opacity: .45; cursor: not-allowed; }
+
 @media (max-width: 34rem) {
   .ui-crafting__selectors { grid-template-columns: 1fr; }
   .ui-crafting-detail__result { grid-template-columns: 64px minmax(0, 1fr); }
   .ui-crafting-detail__visual { width: 64px; height: 64px; }
+  .ui-crafting-detail__identity dl,
+  .ui-crafting-detail__requirements { padding-left: 0; }
 }
