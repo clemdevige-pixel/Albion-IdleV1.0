@@ -1,25 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { parseRenderManifest } from "./RenderManifestParsing";
-
-const rawHeroManifests = import.meta.glob(
-  "./manifests/hero-*.render.json",
-  {
-    eager: true,
-    import: "default",
-  },
-);
+import { HERO_RENDER_MANIFESTS } from "./HeroRenderCatalog";
 
 describe("hero walk render contract", () => {
-  it("requires every hero walk animation to loop continuously", () => {
-    const entries = Object.entries(rawHeroManifests);
-    expect(entries.length).toBeGreaterThan(0);
+  it("builds every hero walk animation as a continuous loop", () => {
+    expect(HERO_RENDER_MANIFESTS.length).toBeGreaterThan(0);
 
-    for (const [path, rawManifest] of entries) {
-      const manifest = parseRenderManifest(rawManifest);
-      expect(manifest.kind, path).toBe("actor");
-      if (manifest.kind !== "actor") continue;
-
-      expect(manifest.animations.walk.repeat, path).toBe(-1);
+    for (const manifest of HERO_RENDER_MANIFESTS) {
+      expect(manifest.animations.walk.repeat, manifest.id).toBe(-1);
     }
   });
 });
