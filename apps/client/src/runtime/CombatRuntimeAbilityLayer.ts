@@ -12,6 +12,7 @@ import { combatStopController } from "./CombatStopController.js";
 import { canUseActiveAbility } from "./combatActionControl.js";
 import { shouldHoldAutoCastForOverkill } from "./autoCastOverkill.js";
 import { WORLD_COMBAT_FLOW_POLICY } from "./CombatFlowPolicy.js";
+import { worldTravelTransition } from "./WorldTravelTransition.js";
 
 type EnemySnapshot = NonNullable<CombatDomainTickResult["activeEnemy"]>;
 
@@ -59,6 +60,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
   }
 
   public getLoopState(): CombatLoopState {
+    if (worldTravelTransition.isActive()) return "suspended";
     if (this.isAwaitingResumeAfterDefeat()) return "defeat";
     if (combatStopController.isPaused()) return "paused";
     if (this.runtimeDeps.ports.isCombatSuspended()) return "suspended";
@@ -141,6 +143,13 @@ export class CombatRuntime extends LegacyCombatRuntime {
 
   override tick(dt: number, tickCounter: number): CombatDomainTickResult {
     this.abilityTick = tickCounter;
+
+    if (worldTravelTransition.isActive()) {
+      worldTravelTransition.advance(dt * 1000);
+      this.mechanics.clear();
+      this.lastEnemySnapshot = undefined;
+      return { combatState: "walking" };
+    }
 
     if (this.runtimeDeps.ports.isCombatSuspended()) {
       return super.tick(dt, tickCounter);
