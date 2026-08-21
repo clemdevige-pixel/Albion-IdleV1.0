@@ -6,6 +6,7 @@ import {
   type ActorPoseManifest,
   type ActorRenderManifest,
 } from "./RenderManifest";
+import { scaleCombatActorDisplay } from "./actorPresentationScale";
 
 type AnimatedActorPoseManifest = ActorPoseManifest & Required<Pick<
   ActorPoseManifest,
@@ -148,6 +149,7 @@ export function createActorSprite(
   manifest: ActorRenderManifest,
 ): Phaser.GameObjects.Sprite {
   const idle = manifest.animations.idle;
+  const display = scaleCombatActorDisplay(idle.display.width, idle.display.height);
   return scene.add
     .sprite(
       manifest.offset.x,
@@ -156,7 +158,7 @@ export function createActorSprite(
       idle.startFrame,
     )
     .setOrigin(manifest.origin.x, manifest.origin.y)
-    .setDisplaySize(idle.display.width, idle.display.height);
+    .setDisplaySize(display.width, display.height);
 }
 
 export function getActorAnimationKey(
@@ -192,12 +194,16 @@ export function applyActorAnimation(
     return;
   }
 
+  const display = scaleCombatActorDisplay(
+    animation.display.width,
+    animation.display.height,
+  );
   sprite
     .stop()
     .setTexture(animation.textureKey, animation.startFrame)
     .setOrigin(manifest.origin.x, manifest.origin.y)
     .setPosition(manifest.offset.x, manifest.offset.y)
-    .setDisplaySize(animation.display.width, animation.display.height)
+    .setDisplaySize(display.width, display.height)
     .setVisible(true)
     .play(animationKey);
 }
@@ -214,12 +220,13 @@ export function applyActorDeathPose(
     return;
   }
 
+  const display = scaleCombatActorDisplay(death.display.width, death.display.height);
   sprite
     .stop()
     .setTexture(death.textureKey, death.startFrame ?? 0)
     .setOrigin(manifest.origin.x, manifest.origin.y)
     .setPosition(manifest.offset.x, manifest.offset.y)
-    .setDisplaySize(death.display.width, death.display.height)
+    .setDisplaySize(display.width, display.height)
     .setVisible(true);
 
   const animationKey = getActorDeathAnimationKey(manifest);
