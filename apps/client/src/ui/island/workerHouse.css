@@ -1,29 +1,24 @@
 .ui-island-worker-house {
+  display: grid;
+  gap: 12px;
   margin-top: 8px;
 }
 
 .ui-island-worker-house__stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-}
-
-.ui-island-worker-house__stats > div,
-.ui-island-worker-house__worker,
-.ui-island-worker-house__recruit-grid button {
-  border: 1px solid var(--ui-color-border-subtle);
-  border-radius: var(--ui-radius-md);
-  background: linear-gradient(145deg, rgba(35, 26, 18, 0.42), rgba(11, 14, 19, 0.9));
+  gap: 18px;
 }
 
 .ui-island-worker-house__stats > div {
   display: flex;
-  flex-direction: row;
   align-items: baseline;
   justify-content: space-between;
   gap: 6px;
   min-width: 0;
-  padding: 6px 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .ui-island-worker-house__stats small,
@@ -44,14 +39,13 @@
 .ui-island-worker-house__stats strong {
   flex: none;
   color: var(--ui-color-accent);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .ui-island-worker-house__list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 8px;
+  gap: 2px;
 }
 
 .ui-island-worker-house__worker {
@@ -59,7 +53,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 7px 8px;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
 }
 
 .ui-island-worker-house__worker > div {
@@ -80,15 +76,17 @@
 
 .ui-island-worker-house__empty {
   margin: 0;
-  padding: 7px 2px;
+  padding: 5px 0;
   color: var(--ui-color-text-muted);
   font-size: 10px;
 }
 
 .ui-island-worker-house__recruitment {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(208, 157, 52, 0.13);
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+  padding-top: 0;
+  border: 0;
 }
 
 .ui-island-worker-house__recruitment > .ui-island__eyebrow {
@@ -100,31 +98,32 @@
 .ui-island-worker-house__recruit-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  margin-top: 6px;
+  gap: 2px 16px;
+  margin-top: 0;
 }
 
 .ui-island-worker-house__recruit-grid button {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
   gap: 7px;
-  min-height: 48px;
-  padding: 7px 8px;
+  min-height: 42px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.ui-island-worker-house__recruit-grid button:not(:disabled):hover {
-  border-color: rgba(208, 157, 52, 0.46);
-  background: linear-gradient(145deg, rgba(47, 35, 20, 0.5), rgba(12, 16, 21, 0.72));
+.ui-island-worker-house__recruit-grid button:not(:disabled):hover strong {
+  color: var(--ui-color-accent);
 }
 
 .ui-island-worker-house__recruit-grid button:disabled {
   cursor: default;
-  opacity: 0.44;
+  opacity: .44;
 }
 
 .ui-island-worker-house__recruit-grid img {
@@ -142,9 +141,9 @@
 }
 
 .ui-island-worker-house .ui-island__selection-status {
-  margin-top: 9px;
-  padding: 7px 2px 0;
-  border-top: 1px solid rgba(208, 157, 52, 0.13);
+  margin-top: 0;
+  padding: 0;
+  border: 0;
   color: var(--ui-color-text-muted);
   font-size: 9px;
   line-height: 1.4;
@@ -154,5 +153,6 @@
   .ui-island-worker-house__stats,
   .ui-island-worker-house__recruit-grid {
     grid-template-columns: 1fr;
+    gap: 6px;
   }
 }
