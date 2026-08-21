@@ -60,9 +60,9 @@ export class CombatRuntime extends LegacyCombatRuntime {
   }
 
   public getLoopState(): CombatLoopState {
-    if (worldTravelTransition.isActive()) return "suspended";
     if (this.isAwaitingResumeAfterDefeat()) return "defeat";
     if (combatStopController.isPaused()) return "paused";
+    if (worldTravelTransition.isActive()) return "suspended";
     if (this.runtimeDeps.ports.isCombatSuspended()) return "suspended";
     if (this.runtimeDeps.combatService.isInCombat()) {
       return combatStopController.isStopRequested() ? "stop_requested" : "combat";
@@ -146,6 +146,9 @@ export class CombatRuntime extends LegacyCombatRuntime {
 
     if (worldTravelTransition.isActive()) {
       worldTravelTransition.advance(dt * 1000);
+      if (!worldTravelTransition.isActive() && combatStopController.isStopRequested()) {
+        combatStopController.restorePaused();
+      }
       this.mechanics.clear();
       this.lastEnemySnapshot = undefined;
       return { combatState: "walking" };
