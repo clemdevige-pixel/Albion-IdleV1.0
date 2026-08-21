@@ -1,14 +1,5 @@
-import type {
-  DungeonRuntime,
-  ExpeditionRequirementDefinition,
-  ExpeditionService,
-  FactionKnowledgeService,
-  MasteryService,
-  RelicService,
-} from "@game/gameplay";
-import {
-  DUNGEON_DEFINITIONS,
-} from "../../data/dungeonContentCatalog.js";
+import type { MasteryId } from "@game/gameplay";
+import { DUNGEON_DEFINITIONS } from "../../data/dungeonContentCatalog.js";
 import {
   FACTION_ACHIEVEMENT_DEFINITIONS,
   type FactionAchievementCondition,
@@ -19,7 +10,6 @@ import {
   SILVER_EXPEDITION_TYPE_ID,
 } from "../../data/expeditionContentCatalog.js";
 import { resolveFactionMasteryId } from "../../data/factionMasteryContentCatalog.js";
-import type { ExpeditionRewardLedger } from "../ExpeditionRewardLedger.js";
 
 export interface FactionAchievementProgress {
   readonly definition: FactionAchievementDefinition;
@@ -28,13 +18,40 @@ export interface FactionAchievementProgress {
   readonly completed: boolean;
 }
 
+interface FactionKnowledgeProgressSource {
+  isMonsterDiscovered(monsterId: string): boolean;
+  getFactionKillCount(factionId: string): number;
+  getFactionEliteKillCount(factionId: string): number;
+}
+
+interface RelicProgressSource {
+  isReconstructed(relicId: string): boolean;
+}
+
+interface ExpeditionProgressSource {
+  getCompletedCount(typeId: string): number;
+  getTotalCompletedCount(): number;
+}
+
+interface ExpeditionRewardProgressSource {
+  getLifetimeSilverCredited(): number;
+}
+
+interface DungeonProgressSource {
+  getCompletedDefinitionCount(definitionId: string): number;
+}
+
+interface MasteryProgressSource {
+  getMasteryState(masteryId: MasteryId): { readonly level: number } | undefined;
+}
+
 export interface FactionAchievementFoundationDependencies {
-  readonly factionKnowledgeService: FactionKnowledgeService;
-  readonly relicService: RelicService;
-  readonly expeditionService: ExpeditionService<ExpeditionRequirementDefinition, unknown>;
-  readonly expeditionRewardLedger: ExpeditionRewardLedger;
-  readonly dungeonRuntime: DungeonRuntime;
-  readonly masteryService: MasteryService;
+  readonly factionKnowledgeService: FactionKnowledgeProgressSource;
+  readonly relicService: RelicProgressSource;
+  readonly expeditionService: ExpeditionProgressSource;
+  readonly expeditionRewardLedger: ExpeditionRewardProgressSource;
+  readonly dungeonRuntime: DungeonProgressSource;
+  readonly masteryService: MasteryProgressSource;
 }
 
 function normalizeFactionId(value: string): string {
