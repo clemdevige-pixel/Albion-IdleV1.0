@@ -6,20 +6,17 @@
     {
       "textureKey": "birch-forest-parallax-background-v2",
       "assetPath": "/assets/environments/birch-forest-parallax-background-v2.png",
-      "depth": -30,
-      "scrollFactor": 0.08
+      "depth": -30
     },
     {
       "textureKey": "birch-forest-parallax-vegetation-v2",
       "assetPath": "/assets/environments/birch-forest-parallax-vegetation-v2.png",
-      "depth": -20,
-      "scrollFactor": 0.36
+      "depth": -20
     },
     {
       "textureKey": "birch-forest-parallax-ground-v2",
       "assetPath": "/assets/environments/birch-forest-parallax-ground-v2.png",
-      "depth": -10,
-      "scrollFactor": 1
+      "depth": -10
     }
   ],
   "pixelArt": true,
@@ -54,10 +51,6 @@
       "ground": "#16160a",
       "groundLine": "#40402a"
     }
-  },
-  "traversal": {
-    "distance": 220,
-    "durationMs": 650
   },
   "layout": {
     "skyHeightRatio": 0.6,

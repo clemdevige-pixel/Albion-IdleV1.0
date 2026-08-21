@@ -176,32 +176,14 @@ describe("Longbow normalized animation parsing", () => {
   });
 });
 
-describe("Environment traversal manifest parsing", () => {
-  it("preserves the configured side-scroller movement", () => {
+describe("Static environment manifest parsing", () => {
+  it("preserves every independently configured background layer", () => {
     const parsed = parseRenderManifest(environmentManifest);
 
     if (parsed.kind !== "environment") {
       throw new Error("Expected environment manifest");
     }
 
-    expect(parsed.traversal).toEqual({
-      distance: 220,
-      durationMs: 650,
-    });
-  });
-
-  it("preserves every independently configured parallax layer", () => {
-    const parsed = parseRenderManifest(environmentManifest);
-
-    if (parsed.kind !== "environment") {
-      throw new Error("Expected environment manifest");
-    }
-
-    expect(parsed.layers.map((layer) => layer.scrollFactor)).toEqual([
-      0.08,
-      0.36,
-      1,
-    ]);
     expect(parsed.layers.map((layer) => layer.depth)).toEqual([
       -30,
       -20,
@@ -220,35 +202,12 @@ describe("Environment traversal manifest parsing", () => {
     expect(parsed.layout.actorShadowYRatio).toBe(parsed.layout.groundLineYRatio);
   });
 
-  it("rejects an environment without parallax layers", () => {
+  it("rejects an environment without background layers", () => {
     expect(() =>
       parseRenderManifest({
         ...environmentManifest,
         layers: [],
       }),
     ).toThrow("layers doit définir au moins un plan de décor");
-  });
-
-  it("rejects a negative parallax scroll factor", () => {
-    expect(() =>
-      parseRenderManifest({
-        ...environmentManifest,
-        layers: environmentManifest.layers.map((layer, index) =>
-          index === 0 ? { ...layer, scrollFactor: -1 } : layer,
-        ),
-      }),
-    ).toThrow("layers.0.scrollFactor doit être positif ou nul");
-  });
-
-  it("rejects invalid traversal timing", () => {
-    expect(() =>
-      parseRenderManifest({
-        ...environmentManifest,
-        traversal: {
-          ...environmentManifest.traversal,
-          durationMs: 0,
-        },
-      }),
-    ).toThrow("traversal doit définir un déplacement valide");
   });
 });

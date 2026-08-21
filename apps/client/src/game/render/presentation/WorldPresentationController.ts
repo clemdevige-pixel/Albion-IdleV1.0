@@ -8,7 +8,6 @@ import { WorldStatusSystem } from "../systems/WorldStatusSystem";
 export class WorldPresentationController {
   private readonly environmentSystem: EnvironmentSystem;
   private readonly statusSystem: WorldStatusSystem;
-  private lastLocationKey: string | undefined;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -21,9 +20,6 @@ export class WorldPresentationController {
         ?? renderManifestRegistry.requireDefaultEnvironment().id,
     );
     this.environmentSystem.create(initialEnvironment, width, height);
-    this.lastLocationKey = bridge === undefined
-      ? undefined
-      : `${bridge.world.zoneIndex}:${bridge.world.segmentIndex}`;
     this.statusSystem = new WorldStatusSystem(
       scene,
       width,
@@ -56,14 +52,6 @@ export class WorldPresentationController {
       this.scene.scale.height,
     );
 
-    const locationKey = `${world.zoneIndex}:${world.segmentIndex}`;
-    if (
-      this.lastLocationKey !== undefined
-      && locationKey !== this.lastLocationKey
-    ) {
-      this.environmentSystem.presentTraversal();
-    }
-    this.lastLocationKey = locationKey;
   }
 
   public clear(): void {

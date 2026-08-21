@@ -1050,7 +1050,6 @@ export function parseEnvironmentRenderManifest(
   const layout = value["layout"];
   const defaultPalette = value["defaultPalette"];
   const biomePalettes = value["biomePalettes"];
-  const traversal = value["traversal"];
   const layers = value["layers"];
 
   if (!isRecord(layout) || !isRecord(defaultPalette)) {
@@ -1065,10 +1064,6 @@ export function parseEnvironmentRenderManifest(
     );
   }
 
-  if (!isRecord(traversal)) {
-    throw new Error("traversal doit être un objet");
-  }
-
   if (!Array.isArray(layers) || layers.length === 0) {
     throw new Error("layers doit définir au moins un plan de décor");
   }
@@ -1080,31 +1075,16 @@ export function parseEnvironmentRenderManifest(
       throw new Error(`${context} doit être un objet`);
     }
 
-    const scrollFactor = requireNumber(layer, "scrollFactor", context);
-    if (scrollFactor < 0) {
-      throw new Error(`${context}.scrollFactor doit être positif ou nul`);
-    }
-
     return {
       textureKey: requireString(layer, "textureKey", context),
       assetPath: requireString(layer, "assetPath", context),
       depth: requireNumber(layer, "depth", context),
-      scrollFactor,
     };
   });
 
   const textureKeys = new Set(parsedLayers.map((layer) => layer.textureKey));
   if (textureKeys.size !== parsedLayers.length) {
     throw new Error("layers ne peut pas dupliquer une texture");
-  }
-
-  const traversalDistance = requireNumber(traversal, "distance", "traversal");
-  const traversalDurationMs = requireNumber(traversal, "durationMs", "traversal");
-  if (
-    traversalDistance <= 0
-    || traversalDurationMs <= 0
-  ) {
-    throw new Error("traversal doit définir un déplacement valide");
   }
 
   return {
@@ -1132,11 +1112,6 @@ export function parseEnvironmentRenderManifest(
         ],
       ),
     ),
-
-    traversal: {
-      distance: traversalDistance,
-      durationMs: traversalDurationMs,
-    },
 
     layout: {
       skyHeightRatio: requireNumber(

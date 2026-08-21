@@ -1,6 +1,5 @@
 import Phaser from "phaser";
 import type {
-  EnvironmentLayerManifest,
   EnvironmentPaletteManifest,
   EnvironmentRenderManifest,
 } from "../RenderManifest";
@@ -15,12 +14,10 @@ export function preloadEnvironmentManifest(
 }
 
 interface EnvironmentLayer {
-  readonly manifest: EnvironmentLayerManifest;
   readonly sprite: Phaser.GameObjects.TileSprite;
-  readonly textureScale: number;
 }
 
-/** Owns manifest-driven parallax layers and biome atmosphere. */
+/** Owns manifest-driven static background layers and biome atmosphere. */
 export class EnvironmentSystem {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
   private readonly layers: EnvironmentLayer[] = [];
@@ -31,8 +28,6 @@ export class EnvironmentSystem {
   private enemyShadow!: Phaser.GameObjects.Ellipse;
   private currentBiomeTheme = "";
   private currentManifestId = "";
-  private travelOffset = 0;
-  private traversalTween: Phaser.Tweens.Tween | undefined;
   private manifest!: EnvironmentRenderManifest;
 
   public constructor(private readonly scene: Phaser.Scene) {}
@@ -115,8 +110,6 @@ export class EnvironmentSystem {
     height: number,
   ): void {
     if (manifest.id !== this.currentManifestId) {
-      this.stopTraversal();
-      this.travelOffset = 0;
       this.manifest = manifest;
       this.clearLayers();
       this.createLayers(manifest, width, height);
@@ -144,31 +137,6 @@ export class EnvironmentSystem {
     this.setBiomeTheme(biomeTheme);
   }
 
-  public presentTraversal(): void {
-    this.stopTraversal();
-
-    const origin = this.travelOffset;
-    const { distance, durationMs } = this.manifest.traversal;
-    this.traversalTween = this.scene.tweens.addCounter({
-      from: 0,
-      to: distance,
-      duration: durationMs,
-      ease: "Sine.InOut",
-      onUpdate: (tween: Phaser.Tweens.Tween) => {
-        const value = tween.getValue();
-        if (value === null) return;
-
-        this.travelOffset = origin + value;
-        this.updateTraversalLayers();
-      },
-      onComplete: () => {
-        this.travelOffset = origin + distance;
-        this.updateTraversalLayers();
-        this.traversalTween = undefined;
-      },
-    });
-  }
-
   public setBiomeTheme(biomeTheme: string): void {
     if (biomeTheme === this.currentBiomeTheme) return;
 
@@ -183,7 +151,6 @@ export class EnvironmentSystem {
   }
 
   public clear(): void {
-    this.stopTraversal();
     for (const gameObject of this.objects) {
       gameObject.destroy();
     }
@@ -191,7 +158,6 @@ export class EnvironmentSystem {
     this.layers.length = 0;
     this.currentBiomeTheme = "";
     this.currentManifestId = "";
-    this.travelOffset = 0;
   }
 
   private createLayers(
@@ -215,15 +181,11 @@ export class EnvironmentSystem {
         .setDepth(layerManifest.depth)
         .setTileScale(textureScale, textureScale)
         .setTilePosition(
-          this.travelOffset * layerManifest.scrollFactor / textureScale,
+          0,
           Math.max(0, (frame.height - height / textureScale) / 2),
         );
 
-      this.layers.push({
-        manifest: layerManifest,
-        sprite,
-        textureScale,
-      });
+      this.layers.push({ sprite });
       this.objects.push(sprite);
     }
   }
@@ -235,18 +197,6 @@ export class EnvironmentSystem {
       layer.sprite.destroy();
     }
     this.layers.length = 0;
-  }
-
-  private updateTraversalLayers(): void {
-    for (const layer of this.layers) {
-      layer.sprite.tilePositionX =
-        this.travelOffset * layer.manifest.scrollFactor / layer.textureScale;
-    }
-  }
-
-  private stopTraversal(): void {
-    this.traversalTween?.stop();
-    this.traversalTween = undefined;
   }
 
   private parsePalette(palette: EnvironmentPaletteManifest): {

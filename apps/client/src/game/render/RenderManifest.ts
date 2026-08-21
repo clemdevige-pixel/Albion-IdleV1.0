@@ -229,12 +229,6 @@ export interface EnvironmentLayerManifest {
   readonly textureKey: string;
   readonly assetPath: string;
   readonly depth: number;
-  readonly scrollFactor: number;
-}
-
-export interface EnvironmentTraversalManifest {
-  readonly distance: number;
-  readonly durationMs: number;
 }
 
 export interface EnvironmentRenderManifest {
@@ -245,7 +239,6 @@ export interface EnvironmentRenderManifest {
   readonly pixelArt: boolean;
   readonly defaultPalette: EnvironmentPaletteManifest;
   readonly biomePalettes: Readonly<Record<string, EnvironmentPaletteManifest>>;
-  readonly traversal: EnvironmentTraversalManifest;
   readonly layout: {
     readonly skyHeightRatio: number;
     readonly skyYRatio: number;
