@@ -141,8 +141,8 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               <button type="button" className={!zone.farmMode ? "is-active" : ""} onClick={() => { onSetFarmMode(false); }}>Progression</button>
               <button type="button" className={zone.farmMode ? "is-active" : ""} onClick={() => { onSetFarmMode(true); }}>Farm</button>
             </div>
+            <CombatStopButton persistent fullWidth />
             <p className="world-zone-detail__hint">Sélectionner une zone affiche ses segments. Le voyage ne démarre qu’en cliquant sur un segment accessible.</p>
-            <CombatStopButton fullWidth />
           </section>
         </>
       )}
