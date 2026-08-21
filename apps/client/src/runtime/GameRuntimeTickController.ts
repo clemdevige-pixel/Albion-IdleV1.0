@@ -6,6 +6,7 @@ export interface GameRuntimeTickControllerDependencies {
   readonly syncConsumables: () => void;
   readonly tickProduction: (tick: number) => void;
   readonly syncActiveProduction: () => void;
+  readonly tickParallelProgression: (elapsedMs: number) => void;
   readonly isHeroGathering: () => boolean;
   readonly presentGatheringState: () => void;
   readonly syncProjectedSegmentRates: () => void;
@@ -29,6 +30,7 @@ export class GameRuntimeTickController {
     }
     this.#dependencies.tickProduction(tick);
     this.#dependencies.syncActiveProduction();
+    this.#dependencies.tickParallelProgression(this.#dependencies.tickIntervalMs);
 
     if (this.#dependencies.isHeroGathering()) {
       this.#dependencies.presentGatheringState();
