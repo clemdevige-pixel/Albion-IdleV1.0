@@ -1,26 +1,37 @@
 .dashboard-yield {
   display: grid;
-  grid-template-columns: 1.08fr 1.08fr .92fr .92fr;
-  gap: 5px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
   margin: 0;
 }
 
 .dashboard-yield__metric {
+  position: relative;
   display: grid;
   align-content: center;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
-  min-height: 52px;
-  padding: 7px 8px;
-  background: #0b0f14;
-  border: 1px solid #302c25;
-  border-radius: var(--ui-radius-sm);
+  min-height: 50px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+}
+
+.dashboard-yield__metric:not(:last-child)::after {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  bottom: 8px;
+  width: 1px;
+  content: "";
+  background: linear-gradient(180deg, transparent, rgb(111 82 37 / 56%), transparent);
 }
 
 .dashboard-yield__metric dt {
-  color: #a2adbb;
+  color: #8e99a7;
   font-size: 8px;
   line-height: 1.2;
+  letter-spacing: .02em;
   white-space: normal;
 }
 
@@ -28,25 +39,31 @@
   margin: 0;
   color: #d8dce4;
   font-family: var(--ui-font-display);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: var(--ui-weight-bold);
-  line-height: 1.1;
-}
-
-.dashboard-yield__metric--silver,
-.dashboard-yield__metric--fame {
-  border-color: #4a3b24;
-  background: linear-gradient(180deg, rgb(49 40 23 / 48%), #0b0f14);
+  line-height: 1.05;
 }
 
 .dashboard-yield__metric--silver dd,
 .dashboard-yield__metric--fame dd {
-  font-size: 15px;
+  font-size: 16px;
 }
 
-.dashboard-yield__metric--silver dd { color: #d8dce4; }
+.dashboard-yield__metric--silver dd { color: #e0e3e9; }
 .dashboard-yield__metric--fame dd { color: var(--ui-color-accent-hover); }
+.dashboard-yield__metric--enchantment-shard dd,
+.dashboard-yield__metric--key-fragment dd { color: #c8ced7; }
 
 @media (max-width: 1220px) {
-  .dashboard-yield { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-yield {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-yield__metric:nth-child(2)::after {
+    display: none;
+  }
+
+  .dashboard-yield__metric:nth-child(-n + 2) {
+    border-bottom: 1px solid rgb(88 68 38 / 34%);
+  }
 }
