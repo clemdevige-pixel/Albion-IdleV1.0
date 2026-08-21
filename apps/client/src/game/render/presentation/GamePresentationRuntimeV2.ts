@@ -49,6 +49,22 @@ export class GamePresentationRuntime {
     const bridge = this.getBridge();
     if (bridge === undefined) return;
 
+    const gathering = selectActiveGathering(bridge);
+    const zoneIndex = bridge.world.zoneIndex;
+    const travelGeneration = worldTravelTransition.getGeneration();
+    const authoritativeTravelStarted = travelGeneration !== this.lastTravelGeneration
+      && worldTravelTransition.isActive();
+    if (
+      authoritativeTravelStarted
+      && this.lastWorldZoneIndex !== undefined
+      && zoneIndex !== this.lastWorldZoneIndex
+      && gathering === undefined
+    ) {
+      this.travel?.start();
+    }
+    this.lastTravelGeneration = travelGeneration;
+    this.lastWorldZoneIndex = zoneIndex;
+
     const encounterPresentationKey = bridge.enemyEncounterKey;
     const transition = resolveCombatPresentationTransition({
       previousCombatState: this.lastCombatState,
@@ -72,7 +88,12 @@ export class GamePresentationRuntime {
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
       this.combat?.invalidateEncounterPresentation();
-      if (bridge.combatState === "combat" && this.hasAuthoritativeEnemySnapshot(bridge)) {
+      if (
+        !worldTravelTransition.isActive()
+        && this.travel?.isActive() !== true
+        && bridge.combatState === "combat"
+        && this.hasAuthoritativeEnemySnapshot(bridge)
+      ) {
         resetPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
       }
       this.lastEncounterPresentationKey = encounterPresentationKey;
@@ -83,25 +104,10 @@ export class GamePresentationRuntime {
       this.lastEncounterPresentationKey = encounterPresentationKey;
     }
 
-    const gathering = selectActiveGathering(bridge);
-    this.combat?.update(bridge);
+    const travelActive = worldTravelTransition.isActive()
+      || this.travel?.isActive() === true;
+    if (!travelActive) this.combat?.update(bridge);
     this.activity?.update(gathering);
-
-    const zoneIndex = bridge.world.zoneIndex;
-    const travelGeneration = worldTravelTransition.getGeneration();
-    const authoritativeTravelStarted = travelGeneration !== this.lastTravelGeneration
-      && worldTravelTransition.isActive();
-    if (
-      authoritativeTravelStarted
-      && this.lastWorldZoneIndex !== undefined
-      && zoneIndex !== this.lastWorldZoneIndex
-      && gathering === undefined
-    ) {
-      this.travel?.start();
-    }
-    this.lastTravelGeneration = travelGeneration;
-    this.lastWorldZoneIndex = zoneIndex;
-
     this.world?.update(bridge, gathering);
     this.lastCombatState = bridge.combatState;
   }
