@@ -32,6 +32,7 @@
     "benchmark:tier-transition-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-tier-transition-candidate-sweep.ts",
     "benchmark:t4-frostpeak-gate-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-t4-frostpeak-gate-candidate-sweep.ts",
     "benchmark:equipment-progression-scaling": "tsx --tsconfig tsconfig.base.json scripts/runtime-equipment-progression-scaling-candidate-sweep.ts",
+    "benchmark:equipment-power-curve": "tsx --tsconfig tsconfig.base.json scripts/runtime-equipment-power-curve-model.ts",
     "benchmark:broadsword-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-wall-audit.ts",
     "benchmark:broadsword-vs-dagger": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-vs-dagger-encounters.ts",
     "benchmark:enchantment-shards": "tsc -b && tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts",
