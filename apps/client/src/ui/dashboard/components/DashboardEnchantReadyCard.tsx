@@ -52,9 +52,7 @@ export function DashboardEnchantReadyCard(): JSX.Element | null {
 
   return (
     <DashboardCard
-      title="Enchantement prêt"
-      iconSrc="/assets/ui/nav-merchant.png"
-      className="dashboard-card--enchant-ready"
+      sectionId="enchant-ready"
       meta={visible.length > 1 ? `${String(visible.length)} objets` : undefined}
     >
       <div className="dashboard-production__list">
