@@ -2,6 +2,7 @@ import {
   ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
   KEY_FRAGMENTS_PER_KEY,
 } from "./economyContentCatalog.js";
+import { FACTION_CAPE_CRAFT_RECIPES } from "./factionCapeContentCatalog.js";
 import { EQUIPMENT_CRAFT_RECIPES } from "./refiningRecipes.js";
 
 export interface ClientCraftRecipe {
@@ -55,5 +56,6 @@ export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = BLUE_ZONE_FAC
 
 export const ALL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
   ...EQUIPMENT_CRAFT_RECIPES,
+  ...FACTION_CAPE_CRAFT_RECIPES,
   ...SPECIAL_CRAFT_RECIPES,
 ];
