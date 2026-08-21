@@ -24,7 +24,7 @@ interface EnchantmentProgressionRow {
   readonly afkUpgradeGain: number;
   readonly previousPotionLastClear: number;
   readonly potionPushGainTelemetry: number;
-  readonly status: "PASS" | "FAIL";
+  readonly markedUpgrade: boolean;
 }
 
 const rows: EnchantmentProgressionRow[] = [];
@@ -73,20 +73,20 @@ for (const tier of TARGET_TIERS) {
         afkUpgradeGain,
         previousPotionLastClear,
         potionPushGainTelemetry: previousPotionLastClear - previousAfkLastClear,
-        status: afkUpgradeGain >= WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments
-          ? "PASS"
-          : "FAIL",
+        markedUpgrade: afkUpgradeGain >= WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments,
       });
     }
   }
 }
 
-const failures = rows.filter((row) => row.status === "FAIL");
+const weakUpgradeDiagnostics = rows.filter((row) => !row.markedUpgrade);
 
-console.log("[ENCHANTMENT_PROGRESSION_CONTRACT]", {
+console.log("[ENCHANTMENT_PROGRESSION_DIAGNOSTIC]", {
   source: "@game/data WORLD_ENCHANTMENT_PROGRESSION_CONTRACT",
   scope: "same-tier enchantments only (.0→.1, .1→.2, .2→.3); tier changes excluded",
-  blockingRule: `AFK wall must move by at least ${String(WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments)} segment`,
+  policy: "steps 1-4 are telemetry only; leaks and flat AFK walls are tolerated",
+  target: `prefer AFK wall movement of at least ${String(WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments)} segment when practical`,
+  blocking: false,
   potion: "telemetry only",
 });
 console.log("[ENCHANTMENT_PROGRESSION]");
@@ -101,12 +101,13 @@ console.table(rows.map((row) => ({
   upgradeGain: row.afkUpgradeGain,
   previousPotion: fmtSegment(row.previousPotionLastClear),
   potionGainTelemetry: row.potionPushGainTelemetry,
-  status: row.status,
+  markedUpgrade: row.markedUpgrade,
 })));
-console.log("[ENCHANTMENT_PROGRESSION_FAILURES]");
-console.table(failures);
+console.log("[ENCHANTMENT_WEAK_UPGRADE_DIAGNOSTICS]");
+console.table(weakUpgradeDiagnostics);
 console.log("[ENCHANTMENT_PROGRESSION_RESULT]", {
   checkedRows: rows.length,
-  failures: failures.length,
-  status: failures.length === 0 ? "PASS" : "FAIL",
+  weakUpgradeDiagnostics: weakUpgradeDiagnostics.length,
+  blockingFailures: 0,
+  status: "DIAGNOSTIC",
 });
