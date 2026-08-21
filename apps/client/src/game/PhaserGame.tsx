@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type Phaser from "phaser";
 import { createGame } from "./createGame";
 import { useGameServices } from "../state/GameContext";
+import { useAuthSession } from "../auth/AuthSessionContext";
 
 /**
  * React <-> Phaser bridge.
@@ -14,6 +15,7 @@ export function PhaserGame(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const { bridge } = useGameServices();
+  const { account } = useAuthSession();
 
   useEffect(() => {
     if (containerRef.current === null) {
@@ -21,7 +23,7 @@ export function PhaserGame(): JSX.Element {
     }
 
     const container = containerRef.current;
-    const game = createGame(container, bridge);
+    const game = createGame(container, bridge, account.displayName);
     gameRef.current = game;
 
     return () => {
@@ -29,7 +31,7 @@ export function PhaserGame(): JSX.Element {
       gameRef.current = null;
       container.replaceChildren();
     };
-  }, [bridge]);
+  }, [bridge, account.displayName]);
 
   return <div className="phaser-container" ref={containerRef} />;
 }
