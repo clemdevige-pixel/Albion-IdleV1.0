@@ -35,6 +35,7 @@ interface DungeonNavigationActionsDependencies {
 export interface DungeonNavigationState {
   readonly activeRun: DungeonRunState | undefined;
   readonly pendingDefinitionId: string | null;
+  readonly clearedTiers: readonly number[];
 }
 
 /**
@@ -53,6 +54,7 @@ export class DungeonNavigationActions {
     return {
       activeRun: this.deps.dungeonRuntime.activeRun,
       pendingDefinitionId: this.pendingDefinitionId,
+      clearedTiers: this.deps.dungeonRuntime.getClearedTiers(),
     };
   }
 
@@ -62,6 +64,7 @@ export class DungeonNavigationActions {
       || this.deps.dungeonRuntime.activeRun?.status === "active"
       || this.pendingDefinitionId !== null
       || this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") === undefined
+      || !this.canAccessDungeonTier(definitionId)
       || !this.canEnterDungeonWithCurrentEquipment(definitionId)
       || !this.canConsumeDungeonKey(definitionId)
     ) return false;
@@ -99,9 +102,7 @@ export class DungeonNavigationActions {
   }
 
   private startNow(definitionId: string): boolean {
-    // Revalidate at the execution boundary as pending dungeon starts are deferred
-    // until the current world encounter has fully reached the paused state.
-    if (!this.canEnterDungeonWithCurrentEquipment(definitionId)) {
+    if (!this.canAccessDungeonTier(definitionId) || !this.canEnterDungeonWithCurrentEquipment(definitionId)) {
       this.pendingDefinitionId = null;
       this.deps.onStateChanged();
       return false;
@@ -115,11 +116,23 @@ export class DungeonNavigationActions {
     );
 
     this.pendingDefinitionId = null;
-    // The pause belongs to the completed world encounter. The dungeon starts as
-    // a fresh combat session and must not inherit the world pause state.
     this.deps.stopController.reset();
     this.deps.onStateChanged();
     return started.ok;
+  }
+
+  private canAccessDungeonTier(definitionId: string): boolean {
+    const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
+    if (definition === undefined) return false;
+    if (definition.tier <= 4 || this.deps.dungeonRuntime.hasClearedTier(definition.tier - 1)) return true;
+
+    this.deps.bridge.addEconomyNotification({
+      id: `notif_dungeon_progression_gate_${String(Date.now())}`,
+      type: "error",
+      message: `Accès refusé : validez d'abord un donjon T${String(definition.tier - 1)}.`,
+      timestamp: Date.now(),
+    });
+    return false;
   }
 
   private canEnterDungeonWithCurrentEquipment(definitionId: string): boolean {
