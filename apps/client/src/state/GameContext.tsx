@@ -22,7 +22,6 @@ import {
 } from "../data/dungeonContentCatalog.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
-import { RESEARCH_UNLOCK_IDS } from "../data/researchContentCatalog.js";
 import {
   syncInventoryToBridge,
   syncStatsToBridge,
@@ -50,8 +49,10 @@ import {
 } from "../runtime/bootstrap/createWorldFoundation.js";
 import { createProductionFoundation } from "../runtime/bootstrap/createProductionFoundation.js";
 import { createFactionResearchFoundation } from "../runtime/bootstrap/createFactionResearchFoundation.js";
+import { createFactionMasteryFoundation } from "../runtime/bootstrap/createFactionMasteryFoundation.js";
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
+import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
 import {
   createCharacterEquipmentFoundation,
   createCharacterStorageFoundation,
@@ -130,6 +131,10 @@ export function GameProvider({
       destinyBoardService,
       progressionOrchestrator,
     } = createProgressionFoundation();
+    const factionMasteryFoundation = createFactionMasteryFoundation({
+      masteryService,
+      experienceService,
+    });
 
     const {
       inventoryManager,
@@ -185,7 +190,6 @@ export function GameProvider({
         .zoneMemories.find((entry) => entry.zoneDefId === requirement.zoneDefId);
       return (memory?.completedSegments.length ?? 0) >= requirement.minimumCompletedSegments;
     };
-    let hasResearchUnlock: (unlockId: string) => boolean = () => false;
     const factionResearchFoundation = createFactionResearchFoundation({
       getCompletedSegmentCount: (zoneDefId) => {
         const memory = worldRuntime
@@ -193,7 +197,6 @@ export function GameProvider({
           .zoneMemories.find((entry) => String(entry.zoneDefId) === zoneDefId);
         return memory?.completedSegments.length ?? 0;
       },
-      canReconstructRelics: () => hasResearchUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction),
     });
 
     const combatEntityFactoryDeps = {
@@ -244,14 +247,15 @@ export function GameProvider({
       },
     });
 
-    const { researchService } = createResearchFoundation({
+    const researchFoundation = createResearchFoundation({
       relicService: factionResearchFoundation.relicService,
       currencyService,
       walletId,
       inventoryManager,
       productionStorageId,
     });
-    hasResearchUnlock = (unlockId) => researchService.hasUnlock(unlockId);
+    const { researchService } = researchFoundation;
+    factionResearchFoundation.bindReconstructionGate(researchFoundation.canReconstructRelics);
     const { expeditionService } = createExpeditionFoundation({
       researchService,
       currencyService,
@@ -292,6 +296,7 @@ export function GameProvider({
       experienceService,
       awakenedWeaponService,
       heroId,
+      onRawFactionFame: factionMasteryFoundation.awardRawFactionFame,
     });
     const dungeonRewardRuntime = new DungeonRewardRuntime(
       dungeonRuntime,
@@ -333,6 +338,12 @@ export function GameProvider({
       bridgeSyncCoordinator.syncAll();
       syncIslandToBridge();
     };
+    const factionProgressionCoordinator = createFactionProgressionCoordinator({
+      factionResearchFoundation,
+      researchService,
+      expeditionService,
+      onExpeditionCompletion: resyncAll,
+    });
 
     const combatRewardAdapter = setupCombatRewardAdapter({
       combatService,
@@ -351,9 +362,7 @@ export function GameProvider({
       ),
       resyncAll: () => resyncAll(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
-      onMonsterKilled: (monsterId) => {
-        factionResearchFoundation.recordMonsterKill(monsterId);
-      },
+      onMonsterKilled: factionProgressionCoordinator.recordMonsterKill,
     });
     bridgeSyncCoordinator.syncInitialState();
     syncIslandToBridge();
@@ -422,14 +431,14 @@ export function GameProvider({
     const saveGame = (): void => { saveGameActions.save(); };
     const loadGame = (): boolean => {
       const loaded = saveGameActions.load();
-      if (loaded) factionResearchFoundation.resolveWorldProgress();
+      if (loaded) factionProgressionCoordinator.reconcile();
       return loaded;
     };
     const hasSave = (): boolean => saveGameActions.hasSave();
     const exportSave = (): string => saveGameActions.exportSave();
     const importSave = (raw: string): boolean => {
       const imported = saveGameActions.importSave(raw);
-      if (imported) factionResearchFoundation.resolveWorldProgress();
+      if (imported) factionProgressionCoordinator.reconcile();
       return imported;
     };
 
@@ -532,7 +541,7 @@ export function GameProvider({
       ports: {
         onVictory: () => dungeonCombatRouter.onVictory(() => {
           const res = worldRuntime.advanceVictory();
-          factionResearchFoundation.resolveWorldProgress();
+          factionProgressionCoordinator.onWorldProgress();
           updateWorldBridge();
           return res;
         }),
@@ -697,14 +706,7 @@ export function GameProvider({
       syncActiveProduction: () => {
         productionController.syncActiveProduction();
       },
-      tickParallelProgression: (elapsedMs) => {
-        const researchAdvance = researchService.advance(elapsedMs);
-        if (researchAdvance.completedResearchId !== undefined) {
-          factionResearchFoundation.resolveWorldProgress();
-        }
-        const expeditionAdvance = expeditionService.advance(elapsedMs);
-        if (expeditionAdvance.completed.length > 0) resyncAll();
-      },
+      tickParallelProgression: factionProgressionCoordinator.advance,
       isHeroGathering: () => gatheringRuntime.isHeroGathering(),
       presentGatheringState: () => { bridge.setCombatState("idle"); },
       syncProjectedSegmentRates: () => {
