@@ -1,22 +1,15 @@
 .world-achievements-progress {
   display: grid;
-  gap: 8px;
+  gap: 18px;
   min-width: 0;
-}
-
-.world-achievements-progress__header,
-.world-achievements-progress__group {
-  border: 1px solid var(--ui-color-border-subtle);
-  border-radius: var(--ui-radius-md);
-  background: linear-gradient(145deg, rgba(35, 26, 18, 0.3), rgba(11, 14, 19, 0.92));
 }
 
 .world-achievements-progress__header {
   display: flex;
-  align-items: center;
+  align-items: end;
   justify-content: space-between;
-  gap: 10px;
-  padding: 9px 10px;
+  gap: 12px;
+  padding: 2px 2px 0;
 }
 
 .world-achievements-progress__header small,
@@ -40,15 +33,22 @@
   font: 700 14px var(--ui-font-display);
 }
 
-.world-achievements-progress__group { overflow: hidden; }
+.world-achievements-progress__group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+}
+
 .world-achievements-progress__group-heading {
   display: flex;
   align-items: end;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 10px;
-  border-bottom: 1px solid rgba(208, 157, 52, 0.16);
+  padding: 0 2px;
 }
+
 .world-achievements-progress__group-heading h3 { font-size: 12px; }
 .world-achievements-progress__group-heading > span {
   color: #958c7d;
@@ -56,30 +56,38 @@
   white-space: nowrap;
 }
 
-.world-achievements-progress__list { display: grid; }
+.world-achievements-progress__list {
+  display: grid;
+  gap: 3px;
+}
+
 .world-achievement {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  min-height: 48px;
-  padding: 7px 10px;
-  border-bottom: 1px solid rgba(73, 67, 57, 0.42);
+  gap: 9px;
+  min-height: 43px;
+  padding: 5px 2px;
+  border: 0;
+  background: transparent;
 }
-.world-achievement:last-child { border-bottom: 0; }
+
 .world-achievement__mark {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   place-items: center;
-  border: 1px solid #4b453a;
-  border-radius: 50%;
   color: #9d9381;
-  background: #11151a;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
-.world-achievement__copy { display: grid; gap: 2px; min-width: 0; }
+
+.world-achievement__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
 .world-achievement__copy strong {
   overflow: hidden;
   color: #d8d1c4;
@@ -87,11 +95,13 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.world-achievement__copy small { color: #878e97; font-size: 8px; }
+
+.world-achievement__copy small {
+  color: #878e97;
+  font-size: 8px;
+}
+
 .world-achievement__state {
-  padding: 3px 5px;
-  border: 1px solid #343a41;
-  border-radius: 4px;
   color: #8d949c;
   font-size: 8px;
   font-weight: 700;
@@ -99,28 +109,32 @@
   white-space: nowrap;
 }
 
-.world-achievement.is-complete {
-  background: linear-gradient(90deg, rgba(63, 92, 52, 0.18), transparent 68%);
-}
-.world-achievement.is-complete .world-achievement__mark {
-  color: #dceccf;
-  border-color: #527246;
-  background: #24351f;
-}
-.world-achievement.is-complete .world-achievement__copy strong { color: #dfe7d9; }
+.world-achievement.is-complete .world-achievement__mark,
 .world-achievement.is-complete .world-achievement__state {
   color: #9ccb83;
-  border-color: #47633e;
+}
+
+.world-achievement.is-complete .world-achievement__copy strong {
+  color: #dfe7d9;
 }
 
 .world-achievement.is-locked {
-  filter: grayscale(.75) brightness(.72);
-  background: rgba(7, 9, 12, 0.35);
+  opacity: .46;
+  filter: grayscale(.65);
 }
-.world-achievement.is-locked .world-achievement__state { color: #777d84; }
 
 @media (max-width: 720px) {
-  .world-achievements-progress__group-heading { align-items: start; flex-direction: column; }
-  .world-achievement { grid-template-columns: 28px minmax(0, 1fr); }
-  .world-achievement__state { grid-column: 2; justify-self: start; }
+  .world-achievements-progress__group-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .world-achievement {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  .world-achievement__state {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
