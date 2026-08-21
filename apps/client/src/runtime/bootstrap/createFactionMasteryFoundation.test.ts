@@ -11,9 +11,9 @@ describe("createFactionMasteryFoundation", () => {
     foundation.awardRawFactionFame("keeper", 150_000);
 
     const masteryId = resolveFactionMasteryId("keeper");
-    expect(masteryId).toBeDefined();
-    expect(progression.masteryService.getMasteryState(masteryId!)?.totalLifetimeXp).toBe(150_000);
-    expect(progression.masteryService.getMasteryState(masteryId!)?.level).toBe(10);
+    if (masteryId === undefined) throw new Error("Keeper faction mastery must be authored");
+    expect(progression.masteryService.getMasteryState(masteryId)?.totalLifetimeXp).toBe(150_000);
+    expect(progression.masteryService.getMasteryState(masteryId)?.level).toBe(10);
     expect(foundation.getYieldBonusPercent("keeper")).toBe(5);
   });
 
