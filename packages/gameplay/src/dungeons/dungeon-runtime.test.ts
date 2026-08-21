@@ -19,13 +19,23 @@ const T4_DUNGEON: DungeonDefinition = {
   ],
 };
 
+const T5_DUNGEON: DungeonDefinition = {
+  ...T4_DUNGEON,
+  id: "dungeon_t5_test",
+  tier: 5,
+  keyItemId: "item_resource_dungeon_key_t5_test",
+  combatProfileId: "combat_profile_test_t5",
+  lootTableId: "loot_test_t5",
+  encounters: T4_DUNGEON.encounters.map((encounter) => ({ ...encounter, id: `t5_${encounter.id}` })),
+};
+
 function setup(keyQuantity = 1) {
   const world = new World(createRuntimeServices());
   const heroId = world.createEntity();
   const inventory = new InventoryManager(world, (itemId) => ({ itemId, stackable: true, maxStack: 999 }));
   inventory.createInventory(heroId, 12);
   if (keyQuantity > 0) inventory.addQuantity(heroId, T4_DUNGEON.keyItemId, keyQuantity);
-  return { heroId, inventory, runtime: new DungeonRuntime([T4_DUNGEON]) };
+  return { heroId, inventory, runtime: new DungeonRuntime([T4_DUNGEON, T5_DUNGEON]) };
 }
 
 describe("DungeonRuntime", () => {
@@ -43,7 +53,7 @@ describe("DungeonRuntime", () => {
     expect(runtime.activeRun).toBeUndefined();
   });
 
-  it("advances only after the current encounter and clears on the boss", () => {
+  it("advances only after the current encounter and records the tier when the boss is cleared", () => {
     const { heroId, inventory, runtime } = setup();
     runtime.start(T4_DUNGEON.id, heroId, inventory);
     expect(runtime.completeEncounter("normal_2")).toEqual({ ok: false, reason: "encounter_mismatch" });
@@ -54,6 +64,16 @@ describe("DungeonRuntime", () => {
     expect(runtime.activeRun?.status).toBe("cleared");
     expect(runtime.activeRun?.completedEncounterIds).toEqual(T4_DUNGEON.encounters.map(({ id }) => id));
     expect(runtime.getActiveEncounter()).toBeUndefined();
+    expect(runtime.hasClearedTier(4)).toBe(true);
+    expect(runtime.getClearedTiers()).toEqual([4]);
+    expect(runtime.getClearedDefinitionIds()).toEqual([T4_DUNGEON.id]);
+  });
+
+  it("restores only known cleared dungeon definitions", () => {
+    const { runtime } = setup();
+    runtime.restoreClearedDefinitionIds([T4_DUNGEON.id, "unknown_dungeon"]);
+    expect(runtime.getClearedDefinitionIds()).toEqual([T4_DUNGEON.id]);
+    expect(runtime.getClearedTiers()).toEqual([4]);
   });
 
   it("keeps completed encounter progress when the run fails", () => {
@@ -64,6 +84,7 @@ describe("DungeonRuntime", () => {
     runtime.fail();
     expect(runtime.activeRun).toMatchObject({ status: "failed", completedEncounterIds: ["normal_1", "normal_2"] });
     expect(inventory.getTotalQuantity(heroId, T4_DUNGEON.keyItemId)).toBe(0);
+    expect(runtime.hasClearedTier(4)).toBe(false);
   });
 
   it("does not refund the key when abandoning", () => {
