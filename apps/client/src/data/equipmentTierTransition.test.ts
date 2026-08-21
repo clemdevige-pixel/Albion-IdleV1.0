@@ -24,7 +24,7 @@ function assertNextTierBeatsPreviousTierThree(previousItemId: string, nextItemId
 
   for (const [rawStatId, previousBase] of Object.entries(previous.stats)) {
     if (previousBase === undefined || previousBase <= 0 || rawStatId === "stat_attack_speed") continue;
-    const nextBase = next.stats[rawStatId as keyof typeof next.stats];
+    const nextBase = next.stats[rawStatId];
     expect(nextBase, `${nextItemId} ${rawStatId}`).toBeDefined();
     if (nextBase === undefined) continue;
 
