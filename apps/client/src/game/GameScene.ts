@@ -12,14 +12,16 @@ export class GameScene extends Phaser.Scene {
   public static readonly KEY = "GameScene";
 
   private bridge: GameBridge | undefined;
+  private playerDisplayName = "";
   private runtime: GamePresentationRuntime | undefined;
 
   public constructor() {
     super(GameScene.KEY);
   }
 
-  public init(data: { bridge?: GameBridge }): void {
+  public init(data: { bridge?: GameBridge; playerDisplayName?: string }): void {
     this.bridge = data.bridge;
+    this.playerDisplayName = data.playerDisplayName ?? "";
   }
 
   public preload(): void {
@@ -28,7 +30,11 @@ export class GameScene extends Phaser.Scene {
 
   public create(): void {
     prepareRegisteredRenderAssets(this, renderManifestRegistry);
-    this.runtime = new GamePresentationRuntime(this, () => this.bridge);
+    this.runtime = new GamePresentationRuntime(
+      this,
+      () => this.bridge,
+      this.playerDisplayName,
+    );
     this.runtime.create();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.runtime?.clear();
