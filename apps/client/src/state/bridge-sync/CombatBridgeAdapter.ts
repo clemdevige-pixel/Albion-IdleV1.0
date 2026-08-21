@@ -176,11 +176,11 @@ export class CombatBridgeAdapter {
       this.#updateWorldBridge();
     } else if (result.activeEnemy !== undefined && result.activeEnemy.id !== 0) {
       this.#bridge.updateEnemyHealth(result.activeEnemy.currentHealth, result.activeEnemy.maxHealth);
-    } else if (result.combatState === "defeat") {
-      // Defeat is an authoritative encounter boundary: CombatRuntime has already
-      // destroyed the active enemy. The bridge must drop the matching snapshot
-      // in the same tick so presentation cannot re-adopt a dead encounter during
-      // defeat -> walking -> combat resume.
+    } else if (result.combatState === "defeat" || result.combatState === "walking") {
+      // Defeat and explicit travel are authoritative encounter boundaries.
+      // The runtime has no active enemy during either state, so keeping the old
+      // bridge snapshot would let presentation re-adopt the defeated encounter
+      // before the next authoritative spawn is published.
       this.#bridge.clearEnemyPresentation();
     }
 
