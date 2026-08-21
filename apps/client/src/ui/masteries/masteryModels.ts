@@ -4,9 +4,14 @@ import {
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
 } from "../../data/productionFamilyCatalog";
+import {
+  FACTION_MASTERY_IDS,
+  getFactionMasteryDisplayName,
+  getFactionMasteryYieldBonusPercent,
+} from "../../data/factionMasteryContentCatalog";
 import { masteryProgressPercent } from "../shared/masteryProgress";
 
-export type MasteryCategoryId = "combat" | "gathering";
+export type MasteryCategoryId = "combat" | "gathering" | "faction";
 
 const COMBAT_MASTERY_ICON_ASSETS: Readonly<Record<WeaponFamilyId, string>> = {
   sword: "/assets/ui/masteries/epee.png",
@@ -84,6 +89,23 @@ function workerProgress(worker: WorkerVM): MasteryProgressModel {
   };
 }
 
+function factionProgress(mastery: MasteryVM): MasteryFamilyModel {
+  const yieldBonusPercent = getFactionMasteryYieldBonusPercent(mastery.level);
+  return {
+    id: mastery.id,
+    name: getFactionMasteryDisplayName(mastery.id) ?? mastery.displayName,
+    level: mastery.level,
+    currentXp: mastery.currentXp,
+    xpToNextLevel: mastery.xpToNextLevel,
+    progressPercent: masteryProgressPercent(mastery),
+    isUnlocked: mastery.isUnlocked,
+    bonuses: [`+${String(yieldBonusPercent)}% rendement de faction`],
+    subtitle: "Maîtrise de faction",
+    icon: "◆",
+    specializations: [],
+  };
+}
+
 export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
   const masteryById = new Map(source.progression.masteries.map((mastery) => [mastery.id, mastery]));
 
@@ -126,9 +148,14 @@ export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
     }];
   });
 
+  const faction = Object.values(FACTION_MASTERY_IDS).flatMap((masteryId): readonly MasteryFamilyModel[] => {
+    const mastery = masteryById.get(masteryId);
+    return mastery === undefined ? [] : [factionProgress(mastery)];
+  });
+
   return {
     totalFame: source.progression.totalFame,
     overflowPool: source.progression.overflowPool,
-    categories: { combat, gathering },
+    categories: { combat, gathering, faction },
   };
 }
