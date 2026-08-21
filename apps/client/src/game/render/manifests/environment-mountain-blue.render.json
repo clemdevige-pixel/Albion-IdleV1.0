@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "mountain_blue",
+  "kind": "environment",
+  "layers": [
+    {
+      "textureKey": "mountain-blue",
+      "assetPath": "/assets/environments/mountain blue.png",
+      "depth": -30
+    }
+  ],
+  "pixelArt": true,
+  "defaultPalette": {
+    "sky": "#0a0e16",
+    "ground": "#12161f",
+    "groundLine": "#2a3040"
+  },
+  "biomePalettes": {
+    "Frozen": {
+      "sky": "#0a1a2a",
+      "ground": "#0a1620",
+      "groundLine": "#2a3a50"
+    }
+  },
+  "layout": {
+    "skyHeightRatio": 0.6,
+    "skyYRatio": 0.3,
+    "groundHeightRatio": 0.52,
+    "groundYRatio": 0.76,
+    "groundLineYRatio": 0.85,
+    "actorShadowWidth": 190,
+    "actorShadowHeight": 30,
+    "actorShadowYRatio": 0.85
+  }
+}
