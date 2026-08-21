@@ -17,6 +17,7 @@ function createDependencies(overrides: {
     syncConsumables: vi.fn(),
     tickProduction: vi.fn(),
     syncActiveProduction: vi.fn(),
+    tickParallelProgression: vi.fn(),
     isHeroGathering: vi.fn(() => overrides.gathering ?? false),
     presentGatheringState: vi.fn(),
     syncProjectedSegmentRates: vi.fn(),
@@ -26,7 +27,7 @@ function createDependencies(overrides: {
 }
 
 describe("GameRuntimeTickController", () => {
-  it("keeps production running but suspends combat while the hero gathers", () => {
+  it("keeps production and parallel progression running but suspends combat while the hero gathers", () => {
     const dependencies = createDependencies({ gathering: true });
     const controller = new GameRuntimeTickController(dependencies);
 
@@ -34,12 +35,13 @@ describe("GameRuntimeTickController", () => {
 
     expect(dependencies.tickProduction).toHaveBeenCalledWith(1);
     expect(dependencies.syncActiveProduction).toHaveBeenCalledOnce();
+    expect(dependencies.tickParallelProgression).toHaveBeenCalledWith(500);
     expect(dependencies.presentGatheringState).toHaveBeenCalledOnce();
     expect(dependencies.tickCombat).not.toHaveBeenCalled();
     expect(dependencies.updateZoneElapsed).not.toHaveBeenCalled();
   });
 
-  it("advances elapsed time and combat when gathering is inactive", () => {
+  it("advances parallel progression, elapsed time and combat when gathering is inactive", () => {
     const dependencies = createDependencies({ consumableChanged: true });
     const controller = new GameRuntimeTickController(dependencies);
 
@@ -47,6 +49,9 @@ describe("GameRuntimeTickController", () => {
     controller.tick();
 
     expect(dependencies.syncConsumables).toHaveBeenCalledTimes(2);
+    expect(dependencies.tickParallelProgression).toHaveBeenCalledTimes(2);
+    expect(dependencies.tickParallelProgression).toHaveBeenNthCalledWith(1, 500);
+    expect(dependencies.tickParallelProgression).toHaveBeenNthCalledWith(2, 500);
     expect(dependencies.syncProjectedSegmentRates).toHaveBeenCalledTimes(2);
     expect(dependencies.updateZoneElapsed).toHaveBeenNthCalledWith(1, 0.5);
     expect(dependencies.updateZoneElapsed).toHaveBeenNthCalledWith(2, 1);
