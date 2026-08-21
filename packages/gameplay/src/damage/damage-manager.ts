@@ -5,7 +5,11 @@ import { HealthComponent, type HealthData } from "./components.js";
 import { calculateDamage } from "./damage-calculator.js";
 import type { DamageEventMap } from "./damage-events.js";
 import { DamageValidator } from "./damage-validator.js";
-import type { DamageRequest, DamageResult } from "./types.js";
+import type {
+  DamageRequest,
+  DamageResult,
+  PostMitigationDamageResolver,
+} from "./types.js";
 
 const MAX_HEALTH_STAT = "stat_max_health" as StatId;
 const PHYSICAL_DAMAGE_STAT = "stat_physical_damage" as StatId;
@@ -21,6 +25,7 @@ export class DamageManager {
   readonly #statsManager: StatsManager;
   readonly #validator: DamageValidator;
   #eventBus: EventBus<DamageEventMap> | undefined;
+  #postMitigationResolver: PostMitigationDamageResolver | undefined;
 
   constructor(world: World, statsManager: StatsManager) {
     this.#world = world;
@@ -30,6 +35,10 @@ export class DamageManager {
 
   setEventBus(bus: EventBus<DamageEventMap>): void {
     this.#eventBus = bus;
+  }
+
+  setPostMitigationDamageResolver(resolver: PostMitigationDamageResolver | undefined): void {
+    this.#postMitigationResolver = resolver;
   }
 
   attachHealth(entityId: EntityId): void {
@@ -92,12 +101,18 @@ export class DamageManager {
 
     if (calc.rawDamage <= 0) return null;
 
+    const resolvedDamage = this.#postMitigationResolver?.(request, calc.mitigatedDamage)
+      ?? calc.mitigatedDamage;
+    if (!Number.isFinite(resolvedDamage) || resolvedDamage < 0) {
+      throw new Error("Post-mitigation damage resolver must return a finite non-negative value");
+    }
+
     const health = this.getHealth(request.target);
     const healthBefore = health.currentHealth;
-    const finalDamage = Math.min(calc.mitigatedDamage, healthBefore);
-    const overkill = Math.max(0, calc.mitigatedDamage - healthBefore);
+    const finalDamage = Math.min(resolvedDamage, healthBefore);
+    const overkill = Math.max(0, resolvedDamage - healthBefore);
 
-    health.currentHealth = Math.max(0, healthBefore - calc.mitigatedDamage);
+    health.currentHealth = Math.max(0, healthBefore - resolvedDamage);
 
     const targetDied = health.currentHealth <= 0;
 
