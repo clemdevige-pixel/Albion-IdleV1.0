@@ -20,6 +20,7 @@ export class GamePresentationRuntime {
   public constructor(
     private readonly scene: Phaser.Scene,
     private readonly getBridge: () => GameBridge | undefined,
+    private readonly playerDisplayName = "",
   ) {}
 
   public create(): void {
@@ -30,6 +31,7 @@ export class GamePresentationRuntime {
     this.combat = new CombatPresentationController(
       this.scene,
       this.getBridge,
+      this.playerDisplayName,
     );
     this.activity = new ActivityPresentationController(
       this.scene,
