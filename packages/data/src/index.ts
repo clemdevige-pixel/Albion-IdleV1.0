@@ -62,8 +62,9 @@ export * from "./assets/index.js";
 // Combat progression config
 export * from "./config/combat-progression.js";
 
-// World progression bands
+// World progression bands and authored progression contract
 export * from "./config/world-bands.js";
+export * from "./config/world-progression-contract.js";
 
 // Player Island configuration
 export * from "./config/island.js";
