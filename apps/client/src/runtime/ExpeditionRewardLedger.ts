@@ -10,9 +10,11 @@ function isExpeditionRewardLedgerSnapshot(
 ): data is ExpeditionRewardLedgerSnapshot {
   if (data === null || typeof data !== "object") return false;
   const snapshot = data as Record<string, unknown>;
+  const lifetimeSilverCredited = snapshot.lifetimeSilverCredited;
   return snapshot.version === 1
-    && Number.isSafeInteger(snapshot.lifetimeSilverCredited)
-    && Number(snapshot.lifetimeSilverCredited) >= 0;
+    && typeof lifetimeSilverCredited === "number"
+    && Number.isSafeInteger(lifetimeSilverCredited)
+    && lifetimeSilverCredited >= 0;
 }
 
 /**
