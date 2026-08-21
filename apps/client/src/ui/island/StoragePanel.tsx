@@ -24,22 +24,9 @@ export function StoragePanel(): JSX.Element {
   useGameBridge();
   const { inventoryManager, productionStorageId } = useGameServices();
   const tracking = useResourceTracking();
-  const capacity = inventoryManager.getCapacity(productionStorageId);
-  const occupied = inventoryManager.getOccupiedCount(productionStorageId);
 
   return (
     <div className="ui-island-storage">
-      <div className="ui-island-storage__summary">
-        <div>
-          <small>Emplacements utilisés</small>
-          <strong>{String(occupied)} / {String(capacity)}</strong>
-        </div>
-        <div>
-          <small>Fonction</small>
-          <strong>Stockage partagé</strong>
-        </div>
-      </div>
-
       <div className="ui-island-storage__families">
         {PRODUCTION_FAMILY_IDS.map((familyId) => {
           const family = getProductionFamilyDefinition(familyId);
