@@ -14,17 +14,23 @@ const keeperRelic: RelicDefinition = {
   ],
 };
 
-function createFixture() {
+function createFixture(options?: { readonly canReconstruct?: boolean }) {
   const monsterKills = new Map<string, number>();
   let factionKills = 0;
   let eliteKills = 0;
   let completedSegments = 0;
-  const service = new RelicService({
-    getMonsterKillCount: (id) => monsterKills.get(id) ?? 0,
-    getFactionKillCount: () => factionKills,
-    getFactionEliteKillCount: () => eliteKills,
-    getCompletedSegmentCount: () => completedSegments,
-  });
+  let canReconstruct = options?.canReconstruct ?? true;
+  const service = new RelicService(
+    {
+      getMonsterKillCount: (id) => monsterKills.get(id) ?? 0,
+      getFactionKillCount: () => factionKills,
+      getFactionEliteKillCount: () => eliteKills,
+      getCompletedSegmentCount: () => completedSegments,
+    },
+    {
+      canReconstructRelic: () => canReconstruct,
+    },
+  );
   service.registerRelic(keeperRelic);
   return {
     service,
@@ -32,18 +38,23 @@ function createFixture() {
     setFactionKills(value: number) { factionKills = value; },
     setEliteKills(value: number) { eliteKills = value; },
     setCompletedSegments(value: number) { completedSegments = value; },
+    setCanReconstruct(value: boolean) { canReconstruct = value; },
   };
+}
+
+function completeKeeperObjectives(fixture: ReturnType<typeof createFixture>): void {
+  fixture.monsterKills.set("keeper_warrior", 1);
+  fixture.monsterKills.set("keeper_shaman", 1);
+  fixture.monsterKills.set("keeper_champion", 3);
+  fixture.setFactionKills(100);
+  fixture.setEliteKills(3);
+  fixture.setCompletedSegments(5);
 }
 
 describe("RelicService", () => {
   it("derives fragment progress from authoritative sources and reconstructs automatically", () => {
     const fixture = createFixture();
-    fixture.monsterKills.set("keeper_warrior", 1);
-    fixture.monsterKills.set("keeper_shaman", 1);
-    fixture.monsterKills.set("keeper_champion", 3);
-    fixture.setFactionKills(100);
-    fixture.setEliteKills(3);
-    fixture.setCompletedSegments(5);
+    completeKeeperObjectives(fixture);
 
     expect(fixture.service.getProgress("relic_keeper")?.fragmentCount).toBe(5);
     expect(fixture.service.resolveCompletedRelics()).toEqual(["relic_keeper"]);
@@ -51,13 +62,21 @@ describe("RelicService", () => {
     expect(fixture.service.resolveCompletedRelics()).toEqual([]);
   });
 
+  it("keeps historical objective progress while reconstruction authority is locked", () => {
+    const fixture = createFixture({ canReconstruct: false });
+    completeKeeperObjectives(fixture);
+
+    expect(fixture.service.getProgress("relic_keeper")?.fragmentCount).toBe(5);
+    expect(fixture.service.resolveCompletedRelics()).toEqual([]);
+    expect(fixture.service.isReconstructed("relic_keeper")).toBe(false);
+
+    fixture.setCanReconstruct(true);
+    expect(fixture.service.resolveCompletedRelics()).toEqual(["relic_keeper"]);
+  });
+
   it("persists only permanent reconstruction, not duplicated objective counters", () => {
     const fixture = createFixture();
-    fixture.monsterKills.set("keeper_warrior", 1);
-    fixture.monsterKills.set("keeper_shaman", 1);
-    fixture.monsterKills.set("keeper_champion", 3);
-    fixture.setFactionKills(100);
-    fixture.setCompletedSegments(5);
+    completeKeeperObjectives(fixture);
     fixture.service.resolveCompletedRelics();
 
     const restored = createFixture();
