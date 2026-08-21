@@ -19,6 +19,7 @@ import {
   RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
+import { ExpeditionRewardLedger } from "../ExpeditionRewardLedger.js";
 
 export interface SilverExpeditionRewardSummary {
   readonly kind: "silver";
@@ -48,6 +49,7 @@ export interface ExpeditionFoundationDependencies {
 }
 
 export function createExpeditionFoundation(dependencies: ExpeditionFoundationDependencies) {
+  const rewardLedger = new ExpeditionRewardLedger();
   const expeditionService = new ExpeditionService<
     ExpeditionContentRequirement,
     ExpeditionRewardSummary
@@ -95,6 +97,7 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
           if (!credited.ok) {
             throw new Error(`Silver Expedition credit failed: ${definition.id}`);
           }
+          rewardLedger.recordSilverCredited(silver);
           return { kind: "silver", silverCredited: silver };
         }
 
@@ -157,7 +160,7 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
     }
   }
 
-  return { expeditionService };
+  return { expeditionService, rewardLedger };
 }
 
 export type ExpeditionFoundation = ReturnType<typeof createExpeditionFoundation>;
