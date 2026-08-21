@@ -151,7 +151,9 @@ export class CombatRuntime extends LegacyCombatRuntime {
       }
       this.mechanics.clear();
       this.lastEnemySnapshot = undefined;
-      return { combatState: "walking" };
+      return {
+        combatState: this.isAwaitingResumeAfterDefeat() ? "defeat" : "walking",
+      };
     }
 
     if (this.runtimeDeps.ports.isCombatSuspended()) {
