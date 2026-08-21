@@ -42,10 +42,9 @@
   --ui-radius-lg: 12px;
   --ui-radius-pill: 999px;
 
-  /* Permanent shell dimensions.
-   * Keep permanent chrome compact so the world remains the dominant surface. */
+  /* Permanent shell dimensions. */
   --ui-shell-header-height: 56px;
-  --ui-shell-bottom-height: 82px;
+  --ui-shell-bottom-height: 88px;
   --ui-shell-panel-width: clamp(360px, 28vw, 470px);
 
   /* Typography */
