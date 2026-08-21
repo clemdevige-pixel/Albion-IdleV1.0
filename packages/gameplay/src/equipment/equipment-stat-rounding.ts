@@ -13,9 +13,14 @@ const EQUIPMENT_STAT_ROUNDING_STEP: Readonly<Record<string, number>> = {
   stat_magical_damage: 1,
 };
 
-export function roundEquipmentStatValue(statId: StatId, value: number): number {
+export function getEquipmentStatRoundingStep(statId: StatId): number {
   const step = EQUIPMENT_STAT_ROUNDING_STEP[String(statId)];
-  if (step === undefined || step <= 0) return value;
+  return step !== undefined && step > 0 ? step : 0;
+}
+
+export function roundEquipmentStatValue(statId: StatId, value: number): number {
+  const step = getEquipmentStatRoundingStep(statId);
+  if (step <= 0) return value;
   if (value <= 0) return 0;
 
   // Stats are non-negative. Math.floor(x + 0.5) gives nearest-value rounding
