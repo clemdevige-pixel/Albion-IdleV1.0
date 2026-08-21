@@ -39,7 +39,6 @@ export class DungeonCombatEncounterSource {
     return spawnAuthoredEnemy(deps, {
       monsterDefinitionId: encounter.monsterDefinitionId,
       profile,
-      contextLabel: `Dungeon ${run.definitionId}`,
     });
   }
 }
