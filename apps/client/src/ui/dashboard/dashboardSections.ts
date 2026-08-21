@@ -4,6 +4,10 @@ export const DASHBOARD_SECTION_IDS = [
   "enchant-ready",
   "tracked-resources",
   "production",
+  "player",
+  "zone",
+  "activity",
+  "session",
 ] as const;
 
 export type DashboardSectionId = (typeof DASHBOARD_SECTION_IDS)[number];
@@ -46,9 +50,39 @@ export const DASHBOARD_SECTION_DEFINITIONS: Readonly<Record<DashboardSectionId, 
     iconSrc: "/assets/ui/nav-production.png",
     className: "dashboard-card--production",
   },
+  player: {
+    id: "player",
+    title: "Personnage",
+    iconSrc: "/assets/ui/nav-character.png",
+    className: "dashboard-card--player",
+  },
+  zone: {
+    id: "zone",
+    title: "Zone actuelle",
+    iconSrc: "/assets/ui/nav-world.png",
+    className: "dashboard-card--zone",
+  },
+  activity: {
+    id: "activity",
+    title: "Activité récente",
+    iconSrc: "/assets/ui/nav-inventory.png",
+    className: "dashboard-card--activity",
+  },
+  session: {
+    id: "session",
+    title: "Session",
+    iconSrc: "/assets/ui/nav-masteries.png",
+    className: "dashboard-card--session",
+  },
 };
 
-export const DASHBOARD_SECTION_ORDER: readonly DashboardSectionId[] = DASHBOARD_SECTION_IDS;
+export const DASHBOARD_SECTION_ORDER = [
+  "combat",
+  "yield",
+  "enchant-ready",
+  "tracked-resources",
+  "production",
+] as const satisfies readonly DashboardSectionId[];
 
 export function getDashboardSectionDefinition(sectionId: DashboardSectionId): DashboardSectionDefinition {
   return DASHBOARD_SECTION_DEFINITIONS[sectionId];
