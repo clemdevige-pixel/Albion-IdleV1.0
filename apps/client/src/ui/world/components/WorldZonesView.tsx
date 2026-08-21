@@ -3,6 +3,7 @@ import { WORLD_ZONE_IDS } from "../../../data/worldContentCatalog";
 import type { DashboardZoneModel, DashboardZoneOptionModel } from "../../dashboard/dashboardModels";
 import { CombatStopButton } from "../../combat-hud/CombatStopButton";
 import { WORLD_BANDS, type WorldBandId } from "../worldModels";
+import "../../dashboard/dashboard.css";
 import "./WorldZoneTimeline.css";
 
 interface WorldZonesViewProps {
@@ -137,11 +138,30 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               <div className="world-zone-detail__encounter">Segment {zone.segmentIndex}/{zone.segmentCount} · Rencontre {zone.encounterIndex}/{zone.encounterCount}</div>
             ) : null}
 
-            <div className="world-zone-detail__modes" aria-label="Mode de combat">
-              <button type="button" className={!zone.farmMode ? "is-active" : ""} onClick={() => { onSetFarmMode(false); }}>Progression</button>
-              <button type="button" className={zone.farmMode ? "is-active" : ""} onClick={() => { onSetFarmMode(true); }}>Farm</button>
+            <div className="dashboard-zone__modes" aria-label="Mode de progression">
+              <button
+                type="button"
+                className={zone.farmMode ? "" : "is-active"}
+                aria-pressed={!zone.farmMode}
+                onClick={() => { onSetFarmMode(false); }}
+              >
+                Progression
+              </button>
+              <button
+                type="button"
+                className={zone.farmMode ? "is-active" : ""}
+                aria-pressed={zone.farmMode}
+                onClick={() => { onSetFarmMode(true); }}
+              >
+                Farm
+              </button>
             </div>
-            <CombatStopButton persistent fullWidth />
+            <div
+              className="dashboard-zone__combat-stop"
+              style={{ display: "flex", justifyContent: "center", marginTop: 8 }}
+            >
+              <CombatStopButton persistent />
+            </div>
             <p className="world-zone-detail__hint">Sélectionner une zone affiche ses segments. Le voyage ne démarre qu’en cliquant sur un segment accessible.</p>
           </section>
         </>
