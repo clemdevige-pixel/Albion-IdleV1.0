@@ -9,6 +9,7 @@ import { RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
 import { DungeonRewardRuntime } from "../runtime/DungeonRewardRuntime.js";
+import { DungeonProgressionSaveProvider } from "../runtime/DungeonProgressionSaveProvider.js";
 import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
 import { combatStopController } from "../runtime/CombatStopController.js";
@@ -352,6 +353,7 @@ export function GameProvider({
       ...(onLocalSave === undefined ? {} : { onLocalSave }),
     });
     persistence.registerProvider(islandService);
+    persistence.registerProvider(new DungeonProgressionSaveProvider(dungeonRuntime));
 
     const refiningSaveProvider = new RefiningSaveProvider(
       refiningRuntime,
