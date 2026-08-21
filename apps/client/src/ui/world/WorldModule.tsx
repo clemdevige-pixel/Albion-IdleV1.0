@@ -28,7 +28,6 @@ export function WorldModule(): JSX.Element {
         {TABS.map((tab) => (
           <button key={tab.id} type="button" className={activeTab === tab.id ? "is-active" : ""} aria-pressed={activeTab === tab.id} onClick={() => { setActiveTab(tab.id); }}>
             {tab.label}
-            {tab.id === "achievements" ? <small>À venir</small> : null}
           </button>
         ))}
       </nav>
