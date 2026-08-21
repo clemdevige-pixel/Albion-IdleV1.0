@@ -93,9 +93,7 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
 
   return (
     <DashboardCard
-      title="Production"
-      iconSrc="/assets/ui/nav-production.png"
-      className="dashboard-card--production"
+      sectionId="production"
       meta={production.hiddenTaskCount > 0 ? `+${String(production.hiddenTaskCount)} autre${production.hiddenTaskCount > 1 ? "s" : ""}` : undefined}
     >
       {production.tasks.length === 0 ? (
