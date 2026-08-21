@@ -12,7 +12,8 @@ export function isVisibleInventoryResource(itemId: string): boolean {
     || itemId.startsWith("item_resource_key_fragment_")
     || itemId.startsWith("item_resource_dungeon_key_")
     || itemId.startsWith("item_resource_artifact_fragment_")
-    || itemId.startsWith("item_resource_artifact_");
+    || itemId.startsWith("item_resource_artifact_")
+    || itemId.startsWith("item_resource_rune_");
 }
 
 /** Raw and refined production materials never occupy the hero item inventory. */
