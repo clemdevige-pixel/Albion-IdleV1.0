@@ -30,9 +30,10 @@ export function createGame(
     backgroundColor: "#161b26",
     pixelArt: true,
     roundPixels: true,
+    canvasStyle: "position:absolute;left:50%;bottom:0;transform:translateX(-50%);",
     scale: {
       mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      autoCenter: Phaser.Scale.NO_CENTER,
     },
     scene: [],
   });
