@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { WORLD_ZONE_IDS } from "../../../data/worldContentCatalog";
 import type { DashboardZoneModel, DashboardZoneOptionModel } from "../../dashboard/dashboardModels";
+import { CombatStopButton } from "../../combat-hud/CombatStopButton";
 import { WORLD_BANDS, type WorldBandId } from "../worldModels";
 import "./WorldZoneTimeline.css";
 
@@ -141,6 +142,7 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               <button type="button" className={zone.farmMode ? "is-active" : ""} onClick={() => { onSetFarmMode(true); }}>Farm</button>
             </div>
             <p className="world-zone-detail__hint">Sélectionner une zone affiche ses segments. Le voyage ne démarre qu’en cliquant sur un segment accessible.</p>
+            <CombatStopButton fullWidth />
           </section>
         </>
       )}
