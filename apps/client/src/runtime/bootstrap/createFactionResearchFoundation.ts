@@ -1,7 +1,6 @@
 import {
   FactionKnowledgeService,
   RelicService,
-  type FactionId,
   type RelicDefinition,
 } from "@game/gameplay";
 import { getMonsterDefinition } from "../../data/monsterContentCatalog.js";
@@ -27,7 +26,8 @@ export function createFactionResearchFoundation(
       const monster = getMonsterDefinition(monsterId);
       if (monster === undefined) return undefined;
       return {
-        factionId: monster.faction.toLowerCase() as FactionId,
+        monsterId,
+        factionId: monster.faction.toLowerCase(),
         isElite: monster.category === "elite",
       };
     },
