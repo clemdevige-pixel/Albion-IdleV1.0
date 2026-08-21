@@ -3,6 +3,10 @@ import { WEAPON_ITEM_DEFINITIONS } from "./weaponContentCatalog.js";
 import {
   PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS,
 } from "./nonWeaponEquipmentContentCatalog.js";
+import {
+  FACTION_CAPE_CRAFT_RECIPES,
+  FACTION_CAPE_ITEM_DEFINITIONS,
+} from "./factionCapeContentCatalog.js";
 import { getWeaponAttackSpeed, getItemTier } from "./itemPower.js";
 import {
   EQUIPMENT_CRAFT_RECIPES,
@@ -13,16 +17,21 @@ import {
 } from "./refiningRecipes.js";
 
 const HERO_BASE_ATTACK_SPEED = 1.2;
+const ALL_EQUIPMENT_CRAFT_RECIPES = [
+  ...EQUIPMENT_CRAFT_RECIPES,
+  ...FACTION_CAPE_CRAFT_RECIPES,
+] as const;
 
 /**
  * Non-weapon equipment content. Conventional tier-progressing equipment is
- * derived from nonWeaponEquipmentContentCatalog; only standalone exceptions
- * live directly here.
+ * derived from nonWeaponEquipmentContentCatalog; standalone/specialized
+ * equipment is composed from its own authoritative catalogs.
  */
 export const NON_WEAPON_ITEM_DEFINITIONS: Readonly<
   Record<string, EquipmentInfoLike>
 > = {
   ...PROGRESSION_NON_WEAPON_ITEM_DEFINITIONS,
+  ...FACTION_CAPE_ITEM_DEFINITIONS,
   item_wooden_shield: {
     itemId: "item_wooden_shield",
     slot: "off_hand",
@@ -103,7 +112,7 @@ export function resolveEnchantmentItemInfo(itemId: string) {
         : definition.slot === "cape"
           ? "cape" as const
           : "armor" as const;
-  const craftRecipe = EQUIPMENT_CRAFT_RECIPES.find(
+  const craftRecipe = ALL_EQUIPMENT_CRAFT_RECIPES.find(
     (recipe) => recipe.outputItemId === itemId,
   );
   return {
@@ -115,7 +124,10 @@ export function resolveEnchantmentItemInfo(itemId: string) {
     costCategory,
     craftMaterials:
       craftRecipe?.requirements
-        .filter((requirement) => requirement.itemId.startsWith("item_refined_"))
+        .filter((requirement) => (
+          requirement.itemId.startsWith("item_refined_")
+          || requirement.itemId.startsWith("item_resource_rune_")
+        ))
         .map((requirement) => ({
           itemId: requirement.itemId,
           quantity: requirement.quantity,
@@ -146,8 +158,6 @@ export function resolveItemStackInfo(itemId: string) {
     itemId === COPPER_BAR_RECIPE.rawItemId ||
     itemId === COPPER_BAR_RECIPE.outputItemId ||
     itemId === PINE_PLANK_RECIPE.rawItemId ||
-    itemId === PINE_PLANK_RECIPE.outputItemId ||
-    itemId === IRON_BAR_RECIPE.rawItemId ||
     itemId === IRON_BAR_RECIPE.outputItemId
   ) {
     return { itemId, stackable: true, maxStack: 999 };
