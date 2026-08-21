@@ -1,11 +1,16 @@
+import type { EntityId } from "@game/core";
 import {
   ExpeditionService,
   type CurrencyService,
+  type InventoryManager,
   type ResearchService,
   type WalletId,
 } from "@game/gameplay";
 import {
-  SILVER_EXPEDITION_DEFINITIONS,
+  EXPEDITION_DEFINITIONS,
+  getExpeditionDefinition,
+  getFactionExpeditionBaseRuneReward,
+  getFactionExpeditionRuneReward,
   getSilverExpeditionReward,
   type ExpeditionContentRequirement,
 } from "../../data/expeditionContentCatalog.js";
@@ -19,16 +24,32 @@ export interface SilverExpeditionRewardSummary {
   readonly silverCredited: number;
 }
 
+export interface FactionRuneExpeditionRewardSummary {
+  readonly kind: "faction_rune";
+  readonly factionId: string;
+  readonly itemId: string;
+  readonly baseRunes: number;
+  readonly masteryBonusPercent: number;
+  readonly finalRunes: number;
+}
+
+export type ExpeditionRewardSummary =
+  | SilverExpeditionRewardSummary
+  | FactionRuneExpeditionRewardSummary;
+
 export interface ExpeditionFoundationDependencies {
   readonly researchService: ResearchService<ResearchContentRequirement>;
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
+  readonly inventoryManager: InventoryManager;
+  readonly heroId: EntityId;
+  readonly getFactionYieldBonusPercent: (factionId: string) => number;
 }
 
 export function createExpeditionFoundation(dependencies: ExpeditionFoundationDependencies) {
   const expeditionService = new ExpeditionService<
     ExpeditionContentRequirement,
-    SilverExpeditionRewardSummary
+    ExpeditionRewardSummary
   >({
     requirementPort: {
       isRequirementMet(requirement) {
@@ -55,24 +76,80 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
     },
     rewardPort: {
       grantCompletionReward(definition, durationMs) {
-        const silver = getSilverExpeditionReward(definition.id, durationMs);
-        if (silver === undefined || !Number.isSafeInteger(silver) || silver <= 0) {
-          throw new Error(`Invalid Silver Expedition reward: ${definition.id}`);
+        const contentDefinition = getExpeditionDefinition(definition.id);
+        if (contentDefinition === undefined) {
+          throw new Error(`Unknown authored Expedition definition: ${definition.id}`);
         }
-        const credited = dependencies.currencyService.credit(
-          dependencies.walletId,
-          "currency_silver",
-          silver,
+
+        if (contentDefinition.reward.kind === "silver") {
+          const silver = getSilverExpeditionReward(definition.id, durationMs);
+          if (silver === undefined || !Number.isSafeInteger(silver) || silver <= 0) {
+            throw new Error(`Invalid Silver Expedition reward: ${definition.id}`);
+          }
+          const credited = dependencies.currencyService.credit(
+            dependencies.walletId,
+            "currency_silver",
+            silver,
+          );
+          if (!credited.ok) {
+            throw new Error(`Silver Expedition credit failed: ${definition.id}`);
+          }
+          return { kind: "silver", silverCredited: silver };
+        }
+
+        const baseRunes = getFactionExpeditionBaseRuneReward(definition.id, durationMs);
+        const masteryBonusPercent = dependencies.getFactionYieldBonusPercent(
+          contentDefinition.factionId,
         );
-        if (!credited.ok) {
-          throw new Error(`Silver Expedition credit failed: ${definition.id}`);
+        const finalRunes = getFactionExpeditionRuneReward(
+          definition.id,
+          durationMs,
+          masteryBonusPercent,
+        );
+        if (
+          baseRunes === undefined
+          || finalRunes === undefined
+          || !Number.isSafeInteger(finalRunes)
+          || finalRunes <= 0
+        ) {
+          throw new Error(`Invalid Faction Expedition reward: ${definition.id}`);
         }
-        return { kind: "silver", silverCredited: silver };
+
+        // Runes are player inventory items, never Production Storage resources.
+        // Preflight keeps reward credit all-or-nothing if the inventory is full.
+        if (!dependencies.inventoryManager.canAcceptQuantity(
+          dependencies.heroId,
+          contentDefinition.reward.itemId,
+          finalRunes,
+        )) {
+          throw new Error(`Faction Expedition inventory capacity exceeded: ${definition.id}`);
+        }
+        const added = dependencies.inventoryManager.addQuantity(
+          dependencies.heroId,
+          contentDefinition.reward.itemId,
+          finalRunes,
+        );
+        if (
+          !added.ok
+          || added.value.added !== finalRunes
+          || added.value.remainder !== 0
+        ) {
+          throw new Error(`Faction Expedition Rune credit failed: ${definition.id}`);
+        }
+
+        return {
+          kind: "faction_rune",
+          factionId: contentDefinition.factionId,
+          itemId: contentDefinition.reward.itemId,
+          baseRunes,
+          masteryBonusPercent,
+          finalRunes,
+        };
       },
     },
   });
 
-  for (const definition of SILVER_EXPEDITION_DEFINITIONS) {
+  for (const definition of EXPEDITION_DEFINITIONS) {
     const result = expeditionService.registerExpedition(definition);
     if (!result.ok) {
       throw new Error(`Invalid authored Expedition definition: ${definition.id} (${result.reason})`);
