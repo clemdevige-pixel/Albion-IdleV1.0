@@ -20,7 +20,7 @@ export function createFactionMasteryFoundation(
   dependencies: FactionMasteryFoundationDependencies,
 ) {
   return {
-    awardRawFactionFame(factionId: string, rawFame: number): void {
+    awardRawFactionFame(this: void, factionId: string, rawFame: number): void {
       if (!Number.isInteger(rawFame) || rawFame <= 0) return;
       const masteryId = resolveFactionMasteryId(factionId);
       if (masteryId === undefined) return;
@@ -31,7 +31,7 @@ export function createFactionMasteryFoundation(
       dependencies.experienceService.addExperience(masteryId, rawFame, "combat");
     },
 
-    getYieldBonusPercent(factionId: string): number {
+    getYieldBonusPercent(this: void, factionId: string): number {
       const masteryId = resolveFactionMasteryId(factionId);
       if (masteryId === undefined) return 0;
       const level = dependencies.masteryService.getMasteryState(masteryId)?.level ?? 0;
