@@ -122,9 +122,9 @@ export class DungeonNavigationActions {
   }
 
   private canAccessDungeonTier(definitionId: string): boolean {
+    if (this.deps.dungeonRuntime.canAccessDefinition(definitionId)) return true;
     const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
     if (definition === undefined) return false;
-    if (definition.tier <= 4 || this.deps.dungeonRuntime.hasClearedTier(definition.tier - 1)) return true;
 
     this.deps.bridge.addEconomyNotification({
       id: `notif_dungeon_progression_gate_${String(Date.now())}`,
