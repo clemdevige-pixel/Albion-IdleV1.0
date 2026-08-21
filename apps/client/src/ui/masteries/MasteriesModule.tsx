@@ -9,6 +9,7 @@ import "./masteries.css";
 const CATEGORY_LABELS: Readonly<Record<MasteryCategoryId, string>> = {
   combat: "Combat",
   gathering: "Récolte",
+  faction: "Factions",
 };
 
 export function MasteriesModule(): JSX.Element {
@@ -17,6 +18,7 @@ export function MasteriesModule(): JSX.Element {
   const [expandedFamilies, setExpandedFamilies] = useState<Readonly<Record<MasteryCategoryId, string | undefined>>>({
     combat: undefined,
     gathering: undefined,
+    faction: undefined,
   });
   const families = model.categories[category];
   const expandedId = expandedFamilies[category];
