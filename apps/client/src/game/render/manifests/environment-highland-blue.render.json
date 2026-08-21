@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "highland_blue",
+  "kind": "environment",
+  "layers": [
+    {
+      "textureKey": "highlands-blue",
+      "assetPath": "/assets/environments/highlands blue.png",
+      "depth": -30
+    }
+  ],
+  "pixelArt": true,
+  "defaultPalette": {
+    "sky": "#0a0e16",
+    "ground": "#12161f",
+    "groundLine": "#2a3040"
+  },
+  "biomePalettes": {
+    "Royal": {
+      "sky": "#1a1a0a",
+      "ground": "#16160a",
+      "groundLine": "#40402a"
+    }
+  },
+  "layout": {
+    "skyHeightRatio": 0.6,
+    "skyYRatio": 0.3,
+    "groundHeightRatio": 0.52,
+    "groundYRatio": 0.76,
+    "groundLineYRatio": 0.85,
+    "actorShadowWidth": 190,
+    "actorShadowHeight": 30,
+    "actorShadowYRatio": 0.85
+  }
+}
