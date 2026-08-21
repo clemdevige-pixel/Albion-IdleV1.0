@@ -9,9 +9,12 @@ import {
   fmtSegment,
   lastClearSegment,
   runLoadoutAcrossZone,
+  type SegmentRun,
   zoneIdFor,
   zoneName,
 } from "./lib/world-progression-benchmark.js";
+
+type ProgressionSignal = "wall" | "afk_quality" | "active_quality" | "none";
 
 interface EnchantmentProgressionRow {
   readonly tier: number;
@@ -22,9 +25,40 @@ interface EnchantmentProgressionRow {
   readonly previousAfkLastClear: number;
   readonly expectedAfkLastClear: number;
   readonly afkUpgradeGain: number;
-  readonly previousPotionLastClear: number;
-  readonly potionPushGainTelemetry: number;
-  readonly markedUpgrade: boolean;
+  readonly probeSegment: number;
+  readonly afkQualityImproved: boolean;
+  readonly activeQualityImproved: boolean;
+  readonly progressionSignal: ProgressionSignal;
+  readonly status: "PASS" | "FAIL";
+}
+
+function rowAt(rows: readonly SegmentRun[], segment: number): SegmentRun {
+  const row = rows.find((candidate) => candidate.segment === segment);
+  if (row === undefined) throw new Error(`Missing benchmark row for S${String(segment)}`);
+  return row;
+}
+
+function afkQualityImproved(previous: SegmentRun, expected: SegmentRun): boolean {
+  if (previous.clearNoPotion !== expected.clearNoPotion) return expected.clearNoPotion;
+  if (expected.clearNoPotion) {
+    return expected.afkSeconds < previous.afkSeconds
+      || expected.afkHpPercent > previous.afkHpPercent;
+  }
+  return expected.afkEncounterReached > previous.afkEncounterReached
+    || expected.afkDamageDealt > previous.afkDamageDealt
+    || expected.afkSeconds > previous.afkSeconds;
+}
+
+function activeQualityImproved(previous: SegmentRun, expected: SegmentRun): boolean {
+  if (previous.clearPotion !== expected.clearPotion) return expected.clearPotion;
+  if (expected.clearPotion) {
+    return expected.potionPotionsUsed < previous.potionPotionsUsed
+      || expected.potionSeconds < previous.potionSeconds
+      || expected.potionHpPercent > previous.potionHpPercent;
+  }
+  return expected.potionEncounterReached > previous.potionEncounterReached
+    || expected.potionDamageDealt > previous.potionDamageDealt
+    || expected.potionSeconds > previous.potionSeconds;
 }
 
 const rows: EnchantmentProgressionRow[] = [];
@@ -59,8 +93,20 @@ for (const tier of TARGET_TIERS) {
       const expectedWeaponRows = expectedRows.filter((row) => row.weapon === weapon);
       const previousAfkLastClear = lastClearSegment(previousWeaponRows, false);
       const expectedAfkLastClear = lastClearSegment(expectedWeaponRows, false);
-      const previousPotionLastClear = lastClearSegment(previousWeaponRows, true);
       const afkUpgradeGain = expectedAfkLastClear - previousAfkLastClear;
+      const probeSegment = Math.max(1, previousAfkLastClear);
+      const previousProbe = rowAt(previousWeaponRows, probeSegment);
+      const expectedProbe = rowAt(expectedWeaponRows, probeSegment);
+      const afkQuality = afkQualityImproved(previousProbe, expectedProbe);
+      const activeQuality = activeQualityImproved(previousProbe, expectedProbe);
+      const wallImproved = afkUpgradeGain >= WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments;
+      const progressionSignal: ProgressionSignal = wallImproved
+        ? "wall"
+        : afkQuality
+          ? "afk_quality"
+          : activeQuality
+            ? "active_quality"
+            : "none";
 
       rows.push({
         tier,
@@ -71,23 +117,33 @@ for (const tier of TARGET_TIERS) {
         previousAfkLastClear,
         expectedAfkLastClear,
         afkUpgradeGain,
-        previousPotionLastClear,
-        potionPushGainTelemetry: previousPotionLastClear - previousAfkLastClear,
-        markedUpgrade: afkUpgradeGain >= WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments,
+        probeSegment,
+        afkQualityImproved: afkQuality,
+        activeQualityImproved: activeQuality,
+        progressionSignal,
+        status: progressionSignal === "none" ? "FAIL" : "PASS",
       });
     }
   }
 }
 
-const weakUpgradeDiagnostics = rows.filter((row) => !row.markedUpgrade);
+const failures = rows.filter((row) => row.status === "FAIL");
 
-console.log("[ENCHANTMENT_PROGRESSION_DIAGNOSTIC]", {
-  source: "@game/data WORLD_ENCHANTMENT_PROGRESSION_CONTRACT",
+console.log("[ENCHANTMENT_PROGRESSION_CONTRACT]", {
+  source: "@game/data WORLD_ENCHANTMENT_PROGRESSION_CONTRACT + live combat telemetry",
   scope: "same-tier enchantments only (.0→.1, .1→.2, .2→.3); tier changes excluded",
-  policy: "steps 1-4 are telemetry only; leaks and flat AFK walls are tolerated",
-  target: `prefer AFK wall movement of at least ${String(WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments)} segment when practical`,
-  blocking: false,
-  potion: "telemetry only",
+  blockingRule: "every enchantment must create a visible combat gain",
+  signalPriority: [
+    `AFK wall +${String(WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments)} segment or more`,
+    "otherwise better AFK quality on the same probe segment",
+    "otherwise better active/potion quality on the same probe segment",
+  ],
+  qualityMetrics: {
+    clear: "faster clear or more HP remaining",
+    activeClear: "fewer potions, faster clear or more HP remaining",
+    failedRun: "further encounter, more damage dealt or longer survival",
+  },
+  finalGate: "not evaluated here; benchmark:final-gates remains authoritative for step 5 S10",
 });
 console.log("[ENCHANTMENT_PROGRESSION]");
 console.table(rows.map((row) => ({
@@ -99,15 +155,17 @@ console.table(rows.map((row) => ({
   previousAfk: fmtSegment(row.previousAfkLastClear),
   expectedAfk: fmtSegment(row.expectedAfkLastClear),
   upgradeGain: row.afkUpgradeGain,
-  previousPotion: fmtSegment(row.previousPotionLastClear),
-  potionGainTelemetry: row.potionPushGainTelemetry,
-  markedUpgrade: row.markedUpgrade,
+  probe: `S${String(row.probeSegment)}`,
+  afkQuality: row.afkQualityImproved,
+  activeQuality: row.activeQualityImproved,
+  signal: row.progressionSignal,
+  status: row.status,
 })));
-console.log("[ENCHANTMENT_WEAK_UPGRADE_DIAGNOSTICS]");
-console.table(weakUpgradeDiagnostics);
+console.log("[ENCHANTMENT_PROGRESSION_FAILURES]");
+console.table(failures);
 console.log("[ENCHANTMENT_PROGRESSION_RESULT]", {
   checkedRows: rows.length,
-  weakUpgradeDiagnostics: weakUpgradeDiagnostics.length,
-  blockingFailures: 0,
-  status: "DIAGNOSTIC",
+  visibleProgression: rows.length - failures.length,
+  invisibleEnchantments: failures.length,
+  status: failures.length === 0 ? "PASS" : "FAIL",
 });
