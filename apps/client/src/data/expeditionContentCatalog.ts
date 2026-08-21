@@ -133,6 +133,22 @@ export function getFactionExpeditionBaseRuneReward(
   return getHourlyReward(definition.reward.runesPerHour, durationMs);
 }
 
+/**
+ * Faction Mastery modifies the base Rune yield, then the final player-facing
+ * quantity is rounded to the nearest whole Rune. JavaScript Math.round gives
+ * the validated nearest-integer behavior, with exact .5 ties rounding upward.
+ */
+export function getFactionExpeditionRuneReward(
+  expeditionId: string,
+  durationMs: number,
+  masteryBonusPercent: number,
+): number | undefined {
+  const baseReward = getFactionExpeditionBaseRuneReward(expeditionId, durationMs);
+  if (baseReward === undefined) return undefined;
+  if (!Number.isFinite(masteryBonusPercent) || masteryBonusPercent < 0) return undefined;
+  return Math.round(baseReward * (1 + masteryBonusPercent / 100));
+}
+
 function getHourlyReward(ratePerHour: number, durationMs: number): number | undefined {
   const hours = durationMs / (60 * 60 * 1000);
   if (!Number.isFinite(hours) || hours <= 0) return undefined;
