@@ -36,13 +36,13 @@
 .character-module__slots { display: grid; gap: 11px; align-content: center; }
 .character-module__slots .ui-item-slot { width: 84px; min-width: 84px; }
 .character-module__slots .ui-item-slot__label { max-width: 100%; overflow: visible; font-size: 8px; text-overflow: clip; white-space: nowrap; }
-.character-module__hero { position: relative; display: flex; min-width: 0; min-height: 292px; align-items: center; justify-content: center; overflow: hidden; }
+.character-module__hero { position: relative; display: flex; min-width: 0; min-height: 272px; align-items: center; justify-content: center; overflow: hidden; }
 .character-module__hero::after { position: absolute; right: 8%; bottom: 8px; left: 8%; height: 18px; border-radius: 50%; content: ""; background: rgb(0 0 0 / 44%); filter: blur(7px); }
 .character-module__hero-halo { position: absolute; inset: 3% 0 1%; border-radius: 50%; background: radial-gradient(circle at 50% 46%, rgb(174 126 49 / 18%), transparent 42%), radial-gradient(circle, rgb(80 111 157 / 14%), transparent 70%); filter: blur(3px); }
 .character-module__hero-idle { position: relative; z-index: 1; width: min(108%, 306px); aspect-ratio: 420 / 330; background-repeat: no-repeat; background-position: center bottom; background-size: contain; image-rendering: pixelated; filter: drop-shadow(0 15px 12px rgb(0 0 0 / 64%)); }
 .character-module__hero-idle--sheet { background-position: left bottom; }
 
-.character-module__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 26px; padding: 0 4px 4px; align-items: start; transform: translateY(-20px); margin-bottom: -20px; }
+.character-module__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 26px; padding: 0 4px 4px; align-items: start; }
 .character-module__stat-card { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 11px; align-items: center; min-width: 0; min-height: 56px; padding: 0; border: 0; border-radius: 0; background: transparent; }
 .character-module__stat-card--ip { border: 0; background: transparent; }
 .character-module__stat-card > img { display: block; width: 44px; height: 44px; object-fit: contain; image-rendering: pixelated; }
@@ -75,9 +75,9 @@
   .character-module__preset-editor { grid-template-columns: 1fr 1fr; }
   .character-module__loadout { grid-template-columns: 70px minmax(136px, 1fr) 70px; gap: 8px; }
   .character-module__slots .ui-item-slot { width: 70px; min-width: 70px; }
-  .character-module__hero { min-height: 250px; }
+  .character-module__hero { min-height: 236px; }
   .character-module__hero-idle { width: min(104%, 252px); }
-  .character-module__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 16px; transform: translateY(-16px); margin-bottom: -16px; }
+  .character-module__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 16px; }
   .character-module__stat-card { grid-template-columns: 40px minmax(0, 1fr); gap: 8px; min-height: 52px; }
   .character-module__stat-card > img { width: 38px; height: 38px; }
   .character-module__stat-card > div > strong { font-size: 17px; }
