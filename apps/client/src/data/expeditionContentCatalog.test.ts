@@ -3,6 +3,7 @@ import {
   KEEPER_EXPEDITION_DEFINITIONS,
   SILVER_EXPEDITION_DEFINITIONS,
   getFactionExpeditionBaseRuneReward,
+  getFactionExpeditionRuneReward,
   getSilverExpeditionReward,
 } from "./expeditionContentCatalog.js";
 
@@ -66,5 +67,13 @@ describe("expeditionContentCatalog", () => {
     expect(getFactionExpeditionBaseRuneReward("expedition_keeper_t4", 2 * HOUR_MS)).toBe(2);
     expect(getFactionExpeditionBaseRuneReward("expedition_keeper_t4", 6 * HOUR_MS)).toBe(6);
     expect(getFactionExpeditionBaseRuneReward("expedition_keeper_t4", 12 * HOUR_MS)).toBe(12);
+  });
+
+  it("rounds the final Mastery-modified Rune quantity to the nearest whole Rune", () => {
+    expect(getFactionExpeditionRuneReward("expedition_keeper_t4", 2 * HOUR_MS, 5)).toBe(2);
+    expect(getFactionExpeditionRuneReward("expedition_keeper_t4", 2 * HOUR_MS, 25)).toBe(3);
+    expect(getFactionExpeditionRuneReward("expedition_keeper_t4", 6 * HOUR_MS, 25)).toBe(8);
+    expect(getFactionExpeditionRuneReward("expedition_keeper_t4", 12 * HOUR_MS, 25)).toBe(15);
+    expect(getFactionExpeditionRuneReward("expedition_keeper_t4", 12 * HOUR_MS, 50)).toBe(18);
   });
 });
