@@ -19,11 +19,7 @@ export function DashboardTrackedResourcesCard(): JSX.Element | null {
   };
 
   return (
-    <DashboardCard
-      title="Ressources suivies"
-      iconSrc="/assets/ui/nav-production.png"
-      className="dashboard-card--tracked-resources"
-    >
+    <DashboardCard sectionId="tracked-resources">
       <div className="dashboard-production__list">
         {tracking.resources.map((resource) => {
           const firstEntry = resource.entries[0];
