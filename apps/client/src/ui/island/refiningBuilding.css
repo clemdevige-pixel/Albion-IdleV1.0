@@ -1,21 +1,22 @@
 .ui-island-refining-building {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
   margin-top: 8px;
 }
 
 .ui-island-refining-building__tiers {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 5px;
+  gap: 0;
+  border-bottom: 1px solid rgba(190, 159, 105, 0.16);
 }
 
 .ui-island-refining-building__tiers button {
   min-height: 30px;
-  border: 1px solid var(--ui-color-border-subtle);
-  border-radius: 6px;
-  background: rgba(12, 16, 21, 0.68);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
   color: var(--ui-color-text-secondary);
   padding: 4px 6px;
   font: inherit;
@@ -25,8 +26,7 @@
 }
 
 .ui-island-refining-building__tiers button.is-active {
-  border-color: rgba(208, 157, 52, 0.62);
-  background: linear-gradient(145deg, rgba(75, 53, 26, 0.68), rgba(35, 26, 18, 0.78));
+  border-bottom-color: var(--ui-color-accent);
   color: var(--ui-color-accent);
 }
 
@@ -37,10 +37,7 @@
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  padding: 7px 8px;
-  border: 1px solid var(--ui-color-border-subtle);
-  border-radius: var(--ui-radius-md);
-  background: linear-gradient(145deg, rgba(35, 26, 18, 0.42), rgba(11, 14, 19, 0.9));
+  padding: 4px 2px;
 }
 
 .ui-island-refining-building__recipe img {
@@ -71,8 +68,6 @@
 }
 
 .ui-island-refining-building__recipe > span {
-  padding-left: 8px;
-  border-left: 1px solid rgba(208, 157, 52, 0.13);
   color: var(--ui-color-accent);
   font-size: 9px;
   white-space: nowrap;
@@ -80,7 +75,7 @@
 
 .ui-island-refining-building__requirements {
   display: grid;
-  gap: 5px;
+  gap: 0;
 }
 
 .ui-island-refining-building__requirements > div {
@@ -88,11 +83,12 @@
   grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
   gap: 7px;
-  min-height: 39px;
-  padding: 5px 7px;
-  border: 1px solid var(--ui-color-border-subtle);
-  border-radius: 7px;
-  background: rgba(12, 16, 21, 0.68);
+  min-height: 37px;
+  padding: 5px 2px;
+}
+
+.ui-island-refining-building__requirements > div + div {
+  border-top: 1px solid rgba(190, 159, 105, 0.08);
 }
 
 .ui-island-refining-building__requirements img {
