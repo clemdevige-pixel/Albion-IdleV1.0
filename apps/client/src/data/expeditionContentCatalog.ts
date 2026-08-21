@@ -32,7 +32,7 @@ export type ExpeditionContentDefinition =
   | SilverExpeditionContentDefinition
   | FactionExpeditionContentDefinition;
 
-const SILVER_EXPEDITION_TYPE_ID = "silver";
+export const SILVER_EXPEDITION_TYPE_ID = "silver";
 const KEEPER_EXPEDITION_TYPE_ID = "keeper";
 const BASE_FACTION_RUNES_PER_HOUR = 1;
 
@@ -121,6 +121,13 @@ export function getExpeditionDefinition(
   return EXPEDITION_DEFINITIONS.find((definition) => definition.id === expeditionId);
 }
 
+export function getFactionExpeditionTypeId(factionId: string): string | undefined {
+  return EXPEDITION_DEFINITIONS.find((definition) => (
+    isFactionExpeditionDefinition(definition)
+    && definition.factionId === factionId
+  ))?.typeId;
+}
+
 export function getSilverExpeditionReward(
   expeditionId: string,
   durationMs: number,
@@ -134,8 +141,8 @@ export function getFactionExpeditionBaseRuneReward(
   expeditionId: string,
   durationMs: number,
 ): number | undefined {
-  const definition = KEEPER_EXPEDITION_DEFINITIONS.find((entry) => entry.id === expeditionId);
-  if (definition === undefined) return undefined;
+  const definition = getExpeditionDefinition(expeditionId);
+  if (definition === undefined || !isFactionExpeditionDefinition(definition)) return undefined;
   return getHourlyReward(definition.reward.runesPerHour, durationMs);
 }
 
