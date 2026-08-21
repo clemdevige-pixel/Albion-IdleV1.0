@@ -1,7 +1,12 @@
 import Phaser from "phaser";
 import type { WorldHudRenderManifest } from "../RenderManifest";
+import {
+  worldHudAnchorStore,
+  type WorldHudActorId,
+} from "../presentation/WorldHudAnchorStore";
 
 interface ActorHealthHud {
+  readonly actorId: WorldHudActorId;
   readonly background: Phaser.GameObjects.Rectangle;
   readonly fill: Phaser.GameObjects.Rectangle;
   readonly value: Phaser.GameObjects.Text;
@@ -22,8 +27,10 @@ export class WorldHudSystem {
 
   public createPlayer(x: number, y: number, playerDisplayName: string): void {
     this.player = this.createActorHud(
+      "player",
       x,
-      y,
+      y - this.manifest.healthBar.offsetY,
+      this.manifest.healthBar.defaultWidth,
       playerDisplayName,
       this.manifest.actorLabel.playerColor,
       this.colorToNumber(this.manifest.healthBar.upperGradient[1]),
@@ -33,8 +40,10 @@ export class WorldHudSystem {
 
   public createEnemy(x: number, y: number): void {
     this.enemy = this.createActorHud(
+      "enemy",
       x,
-      y,
+      y - this.manifest.healthBar.offsetY,
+      this.manifest.healthBar.defaultWidth,
       "",
       this.manifest.actorLabel.enemyColor,
       this.colorToNumber(this.manifest.healthBar.lowerGradient[0]),
@@ -60,16 +69,11 @@ export class WorldHudSystem {
       readonly healthBarOffsetY: number;
     },
   ): void {
-    const width = layout.healthBarWidth;
-    const barY = bodyY - layout.healthBarOffsetY;
-    this.enemy.width = width;
-    this.enemy.background
-      .setPosition(homeX, barY)
-      .setSize(width, this.manifest.healthBar.height);
-    this.enemy.fill.setPosition(homeX - width / 2, barY);
-    this.enemy.value.setPosition(
+    this.layoutActorHud(
+      this.enemy,
       homeX,
-      barY - this.manifest.valueText.offsetY,
+      bodyY - layout.healthBarOffsetY,
+      layout.healthBarWidth,
     );
   }
 
@@ -84,6 +88,7 @@ export class WorldHudSystem {
   public clear(): void {
     for (const gameObject of this.objects) gameObject.destroy();
     this.objects.length = 0;
+    worldHudAnchorStore.reset();
   }
 
   private setActorVisible(actor: ActorHealthHud, visible: boolean): void {
@@ -91,23 +96,25 @@ export class WorldHudSystem {
     actor.fill.setVisible(visible);
     actor.value.setVisible(visible);
     actor.label.setVisible(visible);
+    worldHudAnchorStore.setVisible(actor.actorId, visible);
   }
 
   private createActorHud(
+    actorId: WorldHudActorId,
     x: number,
-    y: number,
+    barY: number,
+    width: number,
     label: string,
     labelColor: string,
     fillColor: number,
     initialValue: string,
   ): ActorHealthHud {
     const { healthBar, valueText, actorLabel } = this.manifest;
-    const hpY = y - healthBar.offsetY;
     const background = this.scene.add
       .rectangle(
         x,
-        hpY,
-        healthBar.defaultWidth,
+        barY,
+        width,
         healthBar.height,
         this.colorToNumber(healthBar.backgroundColor),
       )
@@ -118,16 +125,16 @@ export class WorldHudSystem {
       .setDepth(healthBar.backgroundDepth);
     const fill = this.scene.add
       .rectangle(
-        x - healthBar.defaultWidth / 2,
-        hpY,
-        healthBar.defaultWidth,
+        x - width / 2,
+        barY,
+        width,
         healthBar.height,
         fillColor,
       )
       .setOrigin(0, 0.5)
       .setDepth(healthBar.fillDepth);
     const value = this.scene.add
-      .text(x, hpY - valueText.offsetY, initialValue, {
+      .text(x, barY - valueText.offsetY, initialValue, {
         fontFamily: valueText.fontFamily,
         fontSize: `${String(valueText.fontSize)}px`,
         fontStyle: valueText.fontStyle,
@@ -138,7 +145,7 @@ export class WorldHudSystem {
       .setOrigin(0.5)
       .setDepth(valueText.depth);
     const labelText = this.scene.add
-      .text(x, y + actorLabel.offsetY, label, {
+      .text(x, barY - actorLabel.offsetY, label, {
         fontFamily: actorLabel.fontFamily,
         fontSize: `${String(actorLabel.fontSize)}px`,
         fontStyle: actorLabel.fontStyle,
@@ -149,13 +156,38 @@ export class WorldHudSystem {
       .setDepth(actorLabel.depth);
 
     this.objects.push(background, fill, value, labelText);
-    return {
+    const hud: ActorHealthHud = {
+      actorId,
       background,
       fill,
       value,
       label: labelText,
-      width: healthBar.defaultWidth,
+      width,
     };
+    this.layoutActorHud(hud, x, barY, width);
+    return hud;
+  }
+
+  private layoutActorHud(
+    hud: ActorHealthHud,
+    x: number,
+    barY: number,
+    width: number,
+  ): void {
+    const { healthBar, valueText, actorLabel } = this.manifest;
+    hud.width = width;
+    hud.background
+      .setPosition(x, barY)
+      .setSize(width, healthBar.height);
+    hud.fill.setPosition(x - width / 2, barY);
+    hud.value.setPosition(x, barY - valueText.offsetY);
+    hud.label.setPosition(x, barY - actorLabel.offsetY);
+
+    worldHudAnchorStore.setAnchor(hud.actorId, {
+      x,
+      y: barY + healthBar.height / 2 + 8,
+      visible: hud.background.visible,
+    });
   }
 
   private updateActor(
