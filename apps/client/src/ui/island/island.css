@@ -88,31 +88,48 @@
 .ui-island__catalog-item small { color: rgba(216, 202, 177, 0.48); font-size: 9px; }
 .ui-island__transition-note { padding: 9px 11px; color: rgba(218, 198, 163, 0.7); font-size: 10px; line-height: 1.4; }
 
-.ui-island__overview-button { width: 100%; min-height: 36px; display: grid; grid-template-columns: 28px 1fr 28px; align-items: center; gap: 6px; border: 1px solid rgba(204, 160, 79, 0.42); border-radius: 8px; background: linear-gradient(180deg, rgba(67, 49, 29, 0.72), rgba(35, 31, 27, 0.82)); color: #f2dfb8; padding: 6px 9px; font: inherit; cursor: pointer; }
-.ui-island__overview-button:hover { border-color: rgba(225, 177, 87, 0.7); filter: brightness(1.04); }
-.ui-island__overview-button strong { font-size: 11px; font-weight: 700; text-align: center; }
-.ui-island__overview-button-icon { color: #e2b65e; font-size: 16px; text-align: left; }
-.ui-island__overview-button-mark { color: rgba(208, 170, 104, 0.5); font-size: 9px; text-align: right; }
+.ui-island__overview-button {
+  width: auto;
+  min-height: 26px;
+  display: inline-grid;
+  grid-template-columns: 16px auto;
+  align-items: center;
+  align-self: flex-start;
+  gap: 5px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ui-color-text-secondary);
+  padding: 2px 1px;
+  font: inherit;
+  cursor: pointer;
+}
+.ui-island__overview-button:hover { border-bottom-color: rgba(208, 157, 52, 0.52); color: var(--ui-color-accent); }
+.ui-island__overview-button strong { font-size: 10px; font-weight: 700; text-align: left; }
+.ui-island__overview-button-icon { color: var(--ui-color-accent); font-size: 13px; text-align: left; }
+.ui-island__overview-button-mark { display: none; }
 
-.ui-island-upgrade { display: flex; flex-direction: column; gap: 13px; margin-top: 2px; padding-top: 15px; border-top: 1px solid rgba(190, 159, 105, 0.18); }
+.ui-island-upgrade { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding-top: 4px; border-top: 0; }
 .ui-island-upgrade__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ui-island-upgrade__heading > div { display: flex; flex-direction: column; gap: 3px; }
 .ui-island-upgrade__heading strong { font-size: 18px; line-height: 1.1; }
-.ui-island-upgrade__unlock { display: inline-flex; align-items: center; min-height: 28px; border: 1px solid rgba(171, 92, 220, 0.42); border-radius: 8px; padding: 5px 9px; color: #cc8cf4; background: rgba(93, 43, 130, 0.3); font-size: 9px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
-.ui-island-upgrade__unlock.is-locked { color: rgba(215, 193, 163, .58); border-color: rgba(123, 103, 78, .24); background: rgba(65, 60, 55, .34); }
-.ui-island-upgrade__requirements { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.ui-island-upgrade__requirement { min-width: 0; display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 8px; padding: 10px; border: 1px solid rgba(183, 157, 111, 0.18); border-radius: 9px; background: rgba(8, 13, 17, .62); }
-.ui-island-upgrade__requirement-icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid rgba(190, 159, 105, .18); border-radius: 50%; color: #d5b170; background: rgba(6, 10, 13, .72); font-size: 15px; }
-.ui-island-upgrade__requirement > div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.ui-island-upgrade__requirement small { overflow: hidden; color: rgba(222, 207, 183, .72); font-size: 10px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-.ui-island-upgrade__requirement strong { font-size: 12px; line-height: 1.1; }
+.ui-island-upgrade__unlock { display: inline-flex; align-items: center; min-height: 0; border: 0; border-radius: 0; padding: 0; color: #cc8cf4; background: transparent; font-size: 8px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
+.ui-island-upgrade__unlock.is-locked { color: rgba(215, 193, 163, .58); border: 0; background: transparent; }
+.ui-island-upgrade__requirements { display: grid; grid-template-columns: 1fr; gap: 0; }
+.ui-island-upgrade__requirement { min-width: 0; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 5px 0; border: 0; border-radius: 0; background: transparent; }
+.ui-island-upgrade__requirement + .ui-island-upgrade__requirement { border-top: 0; }
+.ui-island-upgrade__requirement-icon { display: grid; place-items: center; width: 14px; height: 14px; border: 0; border-radius: 0; color: #d5b170; background: transparent; font-size: 9px; }
+.ui-island-upgrade__requirement > div { min-width: 0; display: contents; }
+.ui-island-upgrade__requirement small { overflow: hidden; color: rgba(222, 207, 183, .72); font-size: 9px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.ui-island-upgrade__requirement strong { justify-self: end; font-size: 10px; line-height: 1.1; white-space: nowrap; }
 .ui-island-upgrade__requirement.is-ready strong { color: #8ee37d; }
 .ui-island-upgrade__requirement.is-missing strong { color: #ee766f; }
-.ui-island-upgrade > button { min-height: 50px; border: 1px solid rgba(218, 174, 92, 0.68); border-radius: 9px; background: linear-gradient(180deg, rgba(116, 82, 40, .82), rgba(76, 55, 31, .86)); color: #f4dfb5; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 225, 171, 0.05); }
-.ui-island-upgrade > button:hover:not(:disabled) { border-color: rgba(238, 187, 92, .92); filter: brightness(1.04); }
-.ui-island-upgrade > button:disabled { border-color: rgba(130, 109, 81, .22); background: linear-gradient(180deg, rgba(63, 54, 44, .6), rgba(45, 40, 34, .64)); color: rgba(206, 193, 172, .42); cursor: default; }
+.ui-island-upgrade > button { align-self: flex-start; min-height: 28px; border: 1px solid rgba(218, 174, 92, 0.42); border-radius: 6px; background: rgba(76, 55, 31, .58); color: #f4dfb5; padding: 4px 9px; font: inherit; font-size: 9px; font-weight: 700; cursor: pointer; box-shadow: none; }
+.ui-island-upgrade > button:hover:not(:disabled) { border-color: rgba(238, 187, 92, .72); filter: brightness(1.04); }
+.ui-island-upgrade > button:disabled { border-color: rgba(130, 109, 81, .22); background: rgba(45, 40, 34, .64); color: rgba(206, 193, 172, .42); cursor: default; }
 
-.ui-island--detail { gap: 7px; }
+.ui-island--detail { gap: 8px; }
 .ui-island--detail .ui-island__selection { padding: 11px 12px; border-radius: 10px; }
 .ui-island--detail .ui-island__selection--flat { padding: 0 8px 8px; border-radius: 0; }
 .ui-island--detail .ui-island__selection-heading { gap: 8px; }
@@ -121,16 +138,16 @@
 .ui-island--detail .ui-island__eyebrow { font-size: 8px; }
 .ui-island--detail .ui-island__level { padding: 4px 7px; font-size: 9px; }
 .ui-island--detail .ui-island__selection > p { margin-top: 7px; font-size: 9px; line-height: 1.35; }
-.ui-island--detail .ui-island-upgrade { gap: 7px; padding-top: 9px; }
+.ui-island--detail .ui-island-upgrade { gap: 8px; padding-top: 4px; }
 .ui-island--detail .ui-island-upgrade__heading { gap: 8px; }
 .ui-island--detail .ui-island-upgrade__heading strong { font-size: 15px; }
-.ui-island--detail .ui-island-upgrade__unlock { min-height: 25px; padding: 4px 7px; font-size: 9px; }
-.ui-island--detail .ui-island-upgrade__requirements { gap: 6px; }
-.ui-island--detail .ui-island-upgrade__requirement { grid-template-columns: 30px 1fr; gap: 6px; padding: 7px; border-radius: 7px; }
-.ui-island--detail .ui-island-upgrade__requirement-icon { width: 30px; height: 30px; font-size: 12px; }
+.ui-island--detail .ui-island-upgrade__unlock { min-height: 0; padding: 0; font-size: 8px; }
+.ui-island--detail .ui-island-upgrade__requirements { gap: 0; }
+.ui-island--detail .ui-island-upgrade__requirement { grid-template-columns: 14px minmax(0, 1fr) auto; gap: 7px; padding: 5px 0; }
+.ui-island--detail .ui-island-upgrade__requirement-icon { width: 14px; height: 14px; font-size: 9px; }
 .ui-island--detail .ui-island-upgrade__requirement small { font-size: 9px; }
-.ui-island--detail .ui-island-upgrade__requirement strong { font-size: 11px; }
-.ui-island--detail .ui-island-upgrade > button { min-height: 36px; font-size: 10px; border-radius: 7px; }
+.ui-island--detail .ui-island-upgrade__requirement strong { font-size: 10px; }
+.ui-island--detail .ui-island-upgrade > button { min-height: 28px; font-size: 9px; border-radius: 6px; }
 
 @media (max-width: 1100px) {
   .ui-island__plots, .ui-island-construction__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
