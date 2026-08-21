@@ -1,87 +1,129 @@
 # Combat zone balancing workflow
 
-This document records the workflow validated while calibrating the Yellow T5 band. Future agents should reuse this process for Red/Black/new world bands instead of inventing a parallel balancing layer.
+This document records the current combat-zone balancing workflow. Future agents should reuse this process instead of inventing parallel tuning layers.
+
+Latest validated combat-progression snapshot:
+`AI_BIBLE/05_BALANCE/2026-08-21_COMBAT_PROGRESSION_BASELINE.md`
 
 ## Source of truth
 
 - Author zone combat curves in `packages/data/src/config/combat-progression.ts`.
-- Keep each authored world band independent in `WORLD_COMBAT_PROGRESSION`; never silently reuse another band's curve.
-- Validate against the real `CombatRuntime` through `CombatRuntimeBenchmarkHarness`, not only spreadsheet/theoretical DPS.
-- Existing progression, equipment, weapon and potion systems must remain the inputs. Do not add zone-specific player buffs to force a target.
+- Keep each authored world band independent in `WORLD_COMBAT_PROGRESSION`.
+- Validate against the real `CombatRuntime` through `CombatRuntimeBenchmarkHarness`.
+- Existing progression, equipment, weapon and potion systems remain the inputs.
+- Never add zone-specific player buffs or runtime/UI exceptions to force a target.
 
-## 1. Define the progression contract before tuning numbers
+## 1. Separate the three progression questions
 
-For every zone in the band, write the expected player state at entry and at S10:
+Do not collapse every wall into one PASS/FAIL rule.
 
-- equipment tier and enchantment;
-- representative mastery level;
-- whether potion use is optional, acceptable, or should not be required;
-- intended wall/comfort point.
+### A. Enchantment progression
 
-The Yellow pass used a T5 enchantment ladder across five zones rather than requiring the same enchantment for most bosses. The important rule is distribution: a new enchantment must buy meaningful progression, not become a repeated mandatory tax across several consecutive bosses.
+Every same-tier enchantment `.0 -> .1 -> .2 -> .3` must create a visible combat improvement.
 
-## 2. Start broad, then narrow
+Preferred signal is a deeper AFK wall. If the wall is unchanged, improved combat quality is valid evidence: faster clear, more HP remaining, fewer potions, further encounter reached, more damage dealt or longer survival.
 
-Use a broad progression sweep first to locate walls across the full band. Once the intended ladder is visible, stop changing the whole curve and use boundary probes around the failing S10 bosses.
+A completely invisible enchantment is not acceptable.
 
-Tune zone endpoints independently where possible. Preserve already validated starts/early segments unless evidence says they are wrong. A late boss problem should not automatically cause an entire zone to be flattened.
+Canonical command:
+`pnpm.cmd benchmark:enchantment-walls`
+
+### B. Intermediate zones / steps 1-4
+
+These are progression and farm space, not universal gear gates.
+
+Different weapons may reach different depths. Potion may push farther than AFK. Some local `wall -> later clear` anomalies are tolerated as diagnostic debt.
+
+Do not weaken or strengthen a whole band merely to force identical segment walls between weapons.
+
+Canonical exhaustive telemetry:
+`pnpm.cmd benchmark:global-enchantment-walls`
+
+### C. Final step-5 S10 gate
+
+This is strict.
+
+For each representative weapon at the end of T4/T5/T6/T7:
+- `Tn.2 + potion` must fail;
+- `Tn.3` without potion must fail;
+- `Tn.3 + potion` must clear.
+
+Canonical command:
+`pnpm.cmd benchmark:final-gates`
+
+The final gate is allowed to spike above the following zone entry. The next band returns to the normal progression envelope.
+
+## 2. Tier-transition plateau
+
+After the final gate is cleared, the previous tier `.3` state must retain useful entry access to the next band.
+
+Exact equal depth across weapons is not required. Treat this as transition telemetry unless a specific authored contract promotes it to a blocker.
+
+Canonical command:
+`pnpm.cmd benchmark:tier-transitions`
 
 ## 3. Test a representative weapon set
 
-Do not balance a zone around one weapon. Use several weapon archetypes and compare clear count, time, remaining HP and potion use.
+Current representative set:
+- Broadsword + explicit Reinforced Shield package;
+- Longbow;
+- Infernal Staff;
+- Spiked Gauntlets;
+- Dagger Pair.
 
-A practical target used during Yellow was roughly 4/5 representative weapons clearing an intended boundary when the loadout is considered appropriate. This is a calibration heuristic, not a permanent universal invariant: weapon roster growth may change the sample and target.
+Do not balance a zone around one weapon. Weapon identity is intentionally asymmetric.
 
-Do not force 5/5 by weakening the zone if one or two weapons are globally underperforming.
+When only one profile breaks a strict contract, diagnose that weapon/package before changing the zone.
 
-## 4. Separate zone balance from weapon balance
+## 4. Runtime telemetry beats theoretical DPS
 
-When a minority of weapons fails a boundary:
+Use theoretical DPS/EHP tools to explain runtime results, not replace them.
 
-1. compare them with the weapon theoretical/ideal benchmark;
-2. inspect real CombatRuntime output;
-3. use a previously validated band (Blue) as a control group;
-4. only modify the zone if the problem is genuinely zone-specific.
+Useful runtime telemetry includes:
+- clear/fail;
+- last clear / first wall;
+- encounter reached;
+- time;
+- HP remaining;
+- potion use;
+- damage dealt/received;
+- AA / ability / effect contributions when diagnosing weapon identity.
 
-The Yellow investigation demonstrated why this matters: Spiked Gauntlets and Dagger Pair also trailed in the Blue control. Lowering Yellow further would have hidden a cross-weapon balance issue.
+## 5. Potion semantics
 
-## 5. Runtime telemetry beats damage-per-cast
+Potion is a progression variable, not a patch.
 
-Cooldown-heavy and multi-hit weapons cannot be judged from damage per cast alone. Compare actual DPS contribution over combat duration:
+- AFK/no-potion remains the farm baseline.
+- Potion may legitimately extend intermediate push depth.
+- Potion is mandatory in the strict final-gate reference state `Tn.3 + potion`.
+- Never excuse a completely invisible enchantment or a broken final gate by saying potion exists.
 
-- AA DPS;
-- Q DPS;
-- W DPS;
-- ultimate DPS;
-- effect/DoT DPS;
-- successful casts and hit counts;
-- actual attack cadence when needed.
+## 6. Calibration loop
 
-Use AA-only isolation when kit synergies (armor shred, DoT, buffs/debuffs) make AA totals misleading.
+Recommended loop:
 
-Do not assume multi-hit is penalized by resistance without checking the damage formula. The current mitigation model is proportional, so hit count by itself is not evidence of a resistance problem.
+1. Define which of the three contracts is being tested: enchantment visibility, intermediate telemetry, or final gate.
+2. Run the broad global wall matrix when locating the problem.
+3. Use the semantic enchantment benchmark for same-tier upgrades.
+4. Use the final-gate benchmark for step-5 S10 only.
+5. Diagnose weapon/package differences before changing the whole zone when the failure is isolated.
+6. Tune the smallest authored data lever.
+7. Re-run the relevant semantic benchmark plus neighboring telemetry.
+8. Run typecheck and the durable regression suite.
+9. Document the final contract, not the rejected candidate history.
 
-## 6. Potion is a progression variable, not a patch
+## 7. Keep vs temporary diagnostics
 
-Potion/no-potion probes are useful around intended boundaries. A potion may legitimately convert a near-clear into a clear when the design contract allows it. It should not be used to excuse a badly placed wall or a globally weak weapon.
+Permanent tools/tests protect semantics:
+- live runtime parity;
+- visible enchantment progression;
+- strict final S10 gates;
+- tier bridge/plateau behavior;
+- equipment-stat application/rounding;
+- weapon/package construction;
+- potion behavior;
+- deterministic authored data integrity.
 
-## 7. Calibration loop
+Candidate sweeps, sensitivity tables, one-weapon wall probes and rejected formula experiments are temporary diagnostics. Delete them once a live semantic regression replaces them.
 
-Recommended loop for a new band:
-
-1. Author progression contract.
-2. Add the band's curve and content through existing data-driven structures.
-3. Run broad runtime progression sweep.
-4. Identify S10/enchantment boundaries.
-5. Run targeted boundary probes with representative weapons and potion variants.
-6. Make the smallest curve change possible, preferably endpoint-only.
-7. Re-run the affected boundary plus neighboring validated checkpoints.
-8. If only specific weapons remain outliers, stop zone tuning and run weapon diagnostics/control-band comparison.
-9. Validate runtime parity/contracts and the relevant regression suite.
-10. Document the final intended progression contract next to the curve.
-
-## Keep vs temporary diagnostics
-
-Permanent tests should protect authored progression contracts, runtime parity and meaningful boundary behavior. Large console-table exploration tests are diagnostic tools: keep them only while actively balancing, or recreate/extend them from the existing benchmark harness when the next large balance pass begins.
-
-The goal is a small durable regression suite, not a historical archive of every exploratory sweep.
+The goal is a small durable regression suite, not an archive of every tuning experiment.
