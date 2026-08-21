@@ -28,6 +28,7 @@
     "benchmark:enchantment-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-progression-audit.ts",
     "benchmark:final-gates": "tsx --tsconfig tsconfig.base.json scripts/runtime-final-gate-audit.ts",
     "benchmark:tier-transitions": "tsx --tsconfig tsconfig.base.json scripts/runtime-tier-plateau-audit.ts",
+    "benchmark:global-enchantment-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-global-enchantment-wall-matrix.ts",
     "benchmark:t5-t8-wall-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-t5-t8-world-wall-candidate-sweep.ts",
     "benchmark:t8-late-wall-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-t8-late-wall-candidate-sweep.ts",
     "benchmark:non-monotonic-start-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-non-monotonic-start-candidate-sweep.ts",
