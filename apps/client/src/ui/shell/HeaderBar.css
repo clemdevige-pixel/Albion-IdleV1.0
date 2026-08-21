@@ -4,6 +4,14 @@
   justify-content: center;
 }
 
+/* Permanent-header sections are grouped by spacing and typography, not divider bars. */
+.permanent-header__brand,
+.permanent-header__player,
+.permanent-header__location,
+.permanent-header__resource {
+  border-right: 0;
+}
+
 .permanent-header__brand-logo {
   display: block;
   width: 148px;
