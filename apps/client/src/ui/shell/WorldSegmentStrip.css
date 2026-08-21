@@ -1,28 +1,26 @@
 .ui-shell__world {
-  --ui-world-strip-height: 68px;
+  --ui-world-strip-height: 62px;
 }
 
 .world-segment-strip {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 26px minmax(0, 1fr);
+  grid-template-rows: 24px minmax(0, 1fr);
   align-content: center;
-  gap: 3px;
-  padding: 4px clamp(18px, 2vw, 32px) 5px;
-  border-bottom: 2px solid rgb(151 106 37 / 62%);
-  box-shadow:
-    inset 0 -1px rgb(0 0 0 / 88%),
-    0 5px 14px rgb(0 0 0 / 24%);
+  gap: 2px;
+  padding: 3px clamp(18px, 2vw, 32px) 4px;
+  border-bottom: 1px solid rgb(151 106 37 / 46%);
+  box-shadow: none;
 }
 
 .world-segment-strip__zone-browser {
   display: grid;
-  grid-template-columns: 30px auto 30px;
+  grid-template-columns: 28px auto 28px;
   align-items: center;
   justify-content: center;
   justify-self: center;
   width: 100%;
-  gap: 9px;
+  gap: 8px;
 }
 
 .world-segment-strip__zone-heading {
@@ -74,30 +72,16 @@
   box-shadow: 0 0 6px currentColor;
 }
 
-.world-segment-strip__zone-band--blue {
-  color: #4f8ee8 !important;
-}
-
-.world-segment-strip__zone-band--yellow {
-  color: #e2b23f !important;
-}
-
-.world-segment-strip__zone-band--orange {
-  color: #df7f32 !important;
-}
-
-.world-segment-strip__zone-band--red {
-  color: #d94b4b !important;
-}
-
-.world-segment-strip__zone-band--black {
-  color: #a8adb5 !important;
-}
+.world-segment-strip__zone-band--blue { color: #4f8ee8 !important; }
+.world-segment-strip__zone-band--yellow { color: #e2b23f !important; }
+.world-segment-strip__zone-band--orange { color: #df7f32 !important; }
+.world-segment-strip__zone-band--red { color: #d94b4b !important; }
+.world-segment-strip__zone-band--black { color: #a8adb5 !important; }
 
 .world-segment-strip__zone-arrow {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   place-items: center;
   justify-self: center;
@@ -112,28 +96,11 @@
   transition: filter 120ms ease, transform 120ms ease, opacity 120ms ease;
 }
 
-.world-segment-strip__zone-arrow--previous {
-  background-image: url("/assets/ui/timeline/timeline_arrow_left.png");
-}
-
-.world-segment-strip__zone-arrow--next {
-  background-image: url("/assets/ui/timeline/timeline_arrow_right.png");
-}
-
-.world-segment-strip__zone-arrow > span {
-  visibility: hidden;
-}
-
-.world-segment-strip__zone-arrow:hover:not(:disabled) {
-  filter: drop-shadow(0 0 7px rgb(226 176 67 / 52%));
-  transform: scale(1.06);
-}
-
-.world-segment-strip__zone-arrow:disabled {
-  cursor: default;
-  filter: grayscale(.55) brightness(.55);
-  opacity: .5;
-}
+.world-segment-strip__zone-arrow--previous { background-image: url("/assets/ui/timeline/timeline_arrow_left.png"); }
+.world-segment-strip__zone-arrow--next { background-image: url("/assets/ui/timeline/timeline_arrow_right.png"); }
+.world-segment-strip__zone-arrow > span { visibility: hidden; }
+.world-segment-strip__zone-arrow:hover:not(:disabled) { filter: drop-shadow(0 0 7px rgb(226 176 67 / 52%)); transform: scale(1.06); }
+.world-segment-strip__zone-arrow:disabled { cursor: default; filter: grayscale(.55) brightness(.55); opacity: .5; }
 
 .world-segment-strip__timeline {
   position: relative;
@@ -144,8 +111,7 @@
   justify-self: center;
 }
 
-/* The connector stays deliberately substantial after compaction: its fine
-   pixel-art strokes must remain legible against every world backdrop. */
+/* Keep the connector visually substantial: its fine pixel-art strokes must remain legible. */
 .world-segment-strip__rail {
   position: absolute;
   z-index: 0;
@@ -177,10 +143,10 @@
   position: relative;
   z-index: 1;
   display: grid;
-  flex: 0 0 38px;
-  width: 38px;
-  min-width: 38px;
-  height: 38px;
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
   padding: 0;
   place-items: center;
   color: #e9d49d;
@@ -196,13 +162,8 @@
   transition: filter 120ms ease, transform 120ms ease;
 }
 
-.world-segment-strip__segment > span {
-  visibility: hidden;
-}
-
-.world-segment-strip__segment--current > span {
-  visibility: visible;
-}
+.world-segment-strip__segment > span { visibility: hidden; }
+.world-segment-strip__segment--current > span { visibility: visible; }
 
 .world-segment-strip__segment:hover:not(:disabled),
 .world-segment-strip__segment:focus,
@@ -238,10 +199,10 @@
 }
 
 .world-segment-strip__segment--current {
-  flex-basis: 46px;
-  width: 46px;
-  min-width: 46px;
-  height: 46px;
+  flex-basis: 44px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   color: #241606;
   font-size: 12px;
   text-shadow: 0 1px 0 rgb(255 232 159 / 55%);
@@ -253,27 +214,19 @@
 .world-segment-strip__segment--boss:disabled,
 .world-segment-strip__segment--boss.world-segment-strip__segment--complete,
 .world-segment-strip__segment--boss.world-segment-strip__segment--current {
-  flex-basis: 43px;
-  width: 43px;
-  min-width: 43px;
-  height: 43px;
+  flex-basis: 41px;
+  width: 41px;
+  min-width: 41px;
+  height: 41px;
   background-color: transparent !important;
   background-image: url("/assets/ui/timeline/timeline_node_boss.png") !important;
   border: 0 !important;
   box-shadow: none !important;
 }
 
-.world-segment-strip__segment--boss:disabled {
-  filter: grayscale(.55) brightness(.62) drop-shadow(0 2px 3px rgb(0 0 0 / 62%));
-}
+.world-segment-strip__segment--boss:disabled { filter: grayscale(.55) brightness(.62) drop-shadow(0 2px 3px rgb(0 0 0 / 62%)); }
+.world-segment-strip__segment.is-pending { outline: 1px dashed var(--ui-color-accent); outline-offset: 3px; }
 
-.world-segment-strip__segment.is-pending {
-  outline: 1px dashed var(--ui-color-accent);
-  outline-offset: 3px;
-}
-
-/* Tooltip presentation is owned by the strip itself. It is portaled to body, so
-   keeping these styles here avoids relying on an unrelated dashboard component. */
 .world-segment-strip__tooltip {
   position: fixed;
   z-index: 10000;
@@ -289,130 +242,31 @@
   box-shadow: 0 14px 30px rgb(0 0 0 / 58%), inset 0 0 0 1px rgb(255 218 126 / 5%);
 }
 
-.world-segment-strip__tooltip-title {
-  color: #efb640;
-  font-family: var(--ui-font-display);
-  font-size: var(--ui-text-lg);
-  line-height: 1.1;
-}
-
-.world-segment-strip__tooltip-ip {
-  color: #d9d4c9;
-  font-size: var(--ui-text-xs);
-  font-weight: var(--ui-weight-bold);
-  letter-spacing: .04em;
-}
-
-.world-segment-strip__tooltip-divider {
-  display: block;
-  width: 100%;
-  height: 1px;
-  margin: 1px 0;
-  background: linear-gradient(90deg, rgb(196 142 45 / 78%), rgb(196 142 45 / 8%));
-}
-
-.world-segment-strip__tooltip-rate {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  font-size: var(--ui-text-sm);
-}
-
-.world-segment-strip__tooltip-icon {
-  color: #d7dadd;
-  font-size: 14px;
-  text-align: center;
-}
-
-.world-segment-strip__tooltip-icon--fame {
-  color: #e0b44b;
-}
-
-.world-segment-strip__tooltip-value {
-  font-size: var(--ui-text-sm);
-}
-
-.world-segment-strip__tooltip-value--silver {
-  color: #76c957;
-}
-
-.world-segment-strip__tooltip-value--fame {
-  color: #9d78f1;
-}
-
-.world-segment-strip__tooltip-action {
-  color: #c7c2b8;
-  font-size: 10px;
-}
+.world-segment-strip__tooltip-title { color: #efb640; font-family: var(--ui-font-display); font-size: var(--ui-text-lg); line-height: 1.1; }
+.world-segment-strip__tooltip-ip { color: #d9d4c9; font-size: var(--ui-text-xs); font-weight: var(--ui-weight-bold); letter-spacing: .04em; }
+.world-segment-strip__tooltip-divider { display: block; width: 100%; height: 1px; margin: 1px 0; background: linear-gradient(90deg, rgb(196 142 45 / 78%), rgb(196 142 45 / 8%)); }
+.world-segment-strip__tooltip-rate { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: var(--ui-text-sm); }
+.world-segment-strip__tooltip-icon { color: #d7dadd; font-size: 14px; text-align: center; }
+.world-segment-strip__tooltip-icon--fame { color: #e0b44b; }
+.world-segment-strip__tooltip-value { font-size: var(--ui-text-sm); }
+.world-segment-strip__tooltip-value--silver { color: #76c957; }
+.world-segment-strip__tooltip-value--fame { color: #9d78f1; }
+.world-segment-strip__tooltip-action { color: #c7c2b8; font-size: 10px; }
 
 @media (max-width: 1100px) {
-  .ui-shell__world {
-    --ui-world-strip-height: 64px;
-  }
-
-  .world-segment-strip {
-    grid-template-columns: 1fr;
-    grid-template-rows: 24px minmax(0, 1fr);
-    gap: 2px;
-    padding: 4px 10px 5px;
-  }
-
-  .world-segment-strip__zone-browser {
-    grid-template-columns: 28px auto 28px;
-    width: 100%;
-    gap: 6px;
-  }
-
-  .world-segment-strip__zone-heading {
-    min-width: 190px;
-  }
-
-  .world-segment-strip__timeline {
-    width: min(790px, 97%);
-  }
-
-  .world-segment-strip__zone-heading strong {
-    font-size: 13px;
-  }
-
-  .world-segment-strip__zone-arrow {
-    width: 28px;
-    height: 28px;
-  }
-
-  .world-segment-strip__rail {
-    right: 17px;
-    left: 17px;
-    height: 9px;
-    background-size: auto 9px;
-  }
-
-  .world-segment-strip__rail-progress {
-    background-size: auto 9px;
-  }
-
-  .world-segment-strip__segment {
-    flex-basis: 34px;
-    width: 34px;
-    min-width: 34px;
-    height: 34px;
-  }
-
-  .world-segment-strip__segment--current {
-    flex-basis: 41px;
-    width: 41px;
-    min-width: 41px;
-    height: 41px;
-  }
-
+  .ui-shell__world { --ui-world-strip-height: 58px; }
+  .world-segment-strip { grid-template-columns: 1fr; grid-template-rows: 22px minmax(0, 1fr); gap: 2px; padding: 3px 10px 4px; }
+  .world-segment-strip__zone-browser { grid-template-columns: 26px auto 26px; width: 100%; gap: 6px; }
+  .world-segment-strip__zone-heading { min-width: 190px; }
+  .world-segment-strip__timeline { width: min(790px, 97%); }
+  .world-segment-strip__zone-heading strong { font-size: 13px; }
+  .world-segment-strip__zone-arrow { width: 26px; height: 26px; }
+  .world-segment-strip__rail { right: 17px; left: 17px; height: 9px; background-size: auto 9px; }
+  .world-segment-strip__rail-progress { background-size: auto 9px; }
+  .world-segment-strip__segment { flex-basis: 33px; width: 33px; min-width: 33px; height: 33px; }
+  .world-segment-strip__segment--current { flex-basis: 40px; width: 40px; min-width: 40px; height: 40px; }
   .world-segment-strip__segment--boss,
   .world-segment-strip__segment--boss:disabled,
   .world-segment-strip__segment--boss.world-segment-strip__segment--complete,
-  .world-segment-strip__segment--boss.world-segment-strip__segment--current {
-    flex-basis: 38px;
-    width: 38px;
-    min-width: 38px;
-    height: 38px;
-  }
+  .world-segment-strip__segment--boss.world-segment-strip__segment--current { flex-basis: 37px; width: 37px; min-width: 37px; height: 37px; }
 }
