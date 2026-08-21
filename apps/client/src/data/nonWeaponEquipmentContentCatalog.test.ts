@@ -32,22 +32,24 @@ describe("non-weapon equipment content catalog", () => {
     }
   });
 
-  it("derives Tn predecessor requirements from equipment families", () => {
+  it("keeps equipment tier topology without adding predecessors to craft requirements", () => {
     for (const family of PROGRESSION_EQUIPMENT_CONTENT) {
       for (const item of family.items) {
         const recipe = STANDARD_NON_WEAPON_CRAFT_RECIPES.find(
           (candidate) => candidate.outputItemId === item.itemId,
         );
         expect(recipe).toBeDefined();
+        expect(recipe?.requirements.every((requirement) =>
+          requirement.itemId.startsWith("item_refined_"),
+        )).toBe(true);
 
         const predecessor = resolvePreviousProgressionEquipmentItemId(item.itemId);
         if (item.tier === 3) {
           expect(predecessor).toBeUndefined();
-          continue;
+        } else {
+          expect(predecessor).toBeDefined();
+          expect(recipe?.requirements.some((requirement) => requirement.itemId === predecessor)).toBe(false);
         }
-
-        expect(predecessor).toBeDefined();
-        expect(recipe?.requirements).toContainEqual({ itemId: predecessor, quantity: 1 });
       }
     }
   });
@@ -61,14 +63,12 @@ describe("non-weapon equipment content catalog", () => {
       { itemId: "item_refined_planks_t5", quantity: 5 },
       { itemId: "item_refined_metal_bar_t5", quantity: 5 },
       { itemId: "item_refined_leather_t5", quantity: 3 },
-      { itemId: "item_shield_t4_reinforced", quantity: 1 },
     ]);
     expect(byOutput.get("item_armor_t5_leather")?.requirements).toEqual([
       { itemId: "item_refined_planks_t5", quantity: 2 },
       { itemId: "item_refined_metal_bar_t5", quantity: 2 },
       { itemId: "item_refined_leather_t5", quantity: 4 },
       { itemId: "item_refined_cloth_t5", quantity: 3 },
-      { itemId: "item_armor_t4_leather", quantity: 1 },
     ]);
   });
 });
