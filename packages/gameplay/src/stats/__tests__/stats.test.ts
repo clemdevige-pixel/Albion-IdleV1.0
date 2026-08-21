@@ -49,9 +49,9 @@ describe("StatRegistry", () => {
     expect(() => registry.register(TEST_DEF)).toThrow();
   });
 
-  it("createDefaultStatRegistry registers the 11 authoritative combat stats", () => {
+  it("createDefaultStatRegistry registers the 12 authoritative combat stats", () => {
     const registry = createDefaultStatRegistry();
-    expect(registry.getAll()).toHaveLength(11);
+    expect(registry.getAll()).toHaveLength(12);
     expect(registry.has(sid("stat_max_health"))).toBe(true);
     expect(registry.has(sid("stat_physical_damage"))).toBe(true);
     expect(registry.has(sid("stat_magical_damage"))).toBe(true);
@@ -62,6 +62,7 @@ describe("StatRegistry", () => {
     expect(registry.has(sid("stat_ability_power"))).toBe(true);
     expect(registry.has(sid("stat_cooldown_reduction"))).toBe(true);
     expect(registry.has(sid("stat_auto_attack_damage_bonus"))).toBe(true);
+    expect(registry.has(sid("stat_auto_attack_damage_taken_bonus"))).toBe(true);
     expect(registry.has(sid("stat_life_steal"))).toBe(true);
   });
 });
