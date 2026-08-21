@@ -8,6 +8,7 @@ import { RELIC_DEFINITIONS } from "../../data/relicContentCatalog.js";
 
 export interface FactionResearchFoundationDependencies {
   readonly getCompletedSegmentCount: (zoneDefId: string) => number;
+  readonly canReconstructRelics?: () => boolean;
   readonly relicDefinitions?: readonly RelicDefinition[];
 }
 
@@ -33,12 +34,17 @@ export function createFactionResearchFoundation(
     },
   });
 
-  const relicService = new RelicService({
-    getMonsterKillCount: (monsterId) => factionKnowledgeService.getMonsterKillCount(monsterId),
-    getFactionKillCount: (factionId) => factionKnowledgeService.getFactionKillCount(factionId),
-    getFactionEliteKillCount: (factionId) => factionKnowledgeService.getFactionEliteKillCount(factionId),
-    getCompletedSegmentCount: dependencies.getCompletedSegmentCount,
-  });
+  const relicService = new RelicService(
+    {
+      getMonsterKillCount: (monsterId) => factionKnowledgeService.getMonsterKillCount(monsterId),
+      getFactionKillCount: (factionId) => factionKnowledgeService.getFactionKillCount(factionId),
+      getFactionEliteKillCount: (factionId) => factionKnowledgeService.getFactionEliteKillCount(factionId),
+      getCompletedSegmentCount: dependencies.getCompletedSegmentCount,
+    },
+    {
+      canReconstructRelic: () => dependencies.canReconstructRelics?.() ?? true,
+    },
+  );
 
   for (const definition of dependencies.relicDefinitions ?? RELIC_DEFINITIONS) {
     const result = relicService.registerRelic(definition);
