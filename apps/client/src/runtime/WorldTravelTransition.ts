@@ -6,22 +6,26 @@ export const WORLD_TRAVEL_TIMING = {
   enterWalkMs: 1300,
 } as const;
 
+export type WorldTravelPresentationMode = "walk" | "blackout";
+
 export const WORLD_TRAVEL_TOTAL_MS = Object.values(WORLD_TRAVEL_TIMING)
   .reduce((total, duration) => total + duration, 0);
 
-/**
- * Runtime-side gate for cross-zone travel.
- *
- * WorldRuntime starts the gate exactly when the authoritative active zone changes.
- * CombatRuntime consumes it using simulation delta time so no encounter can start
- * while the presentation is playing the exit/blackout/entry sequence.
- */
+export const WORLD_TRAVEL_BLACKOUT_TOTAL_MS = WORLD_TRAVEL_TIMING.fadeToBlackMs
+  + WORLD_TRAVEL_TIMING.blackHoldMs
+  + WORLD_TRAVEL_TIMING.fadeFromBlackMs;
+
+/** Runtime-side gate for authored navigation transitions. */
 export class WorldTravelTransitionController {
   private remainingMs = 0;
   private generation = 0;
+  private mode: WorldTravelPresentationMode = "walk";
 
-  public start(): void {
-    this.remainingMs = WORLD_TRAVEL_TOTAL_MS;
+  public start(mode: WorldTravelPresentationMode = "walk"): void {
+    this.mode = mode;
+    this.remainingMs = mode === "blackout"
+      ? WORLD_TRAVEL_BLACKOUT_TOTAL_MS
+      : WORLD_TRAVEL_TOTAL_MS;
     this.generation += 1;
   }
 
@@ -39,8 +43,13 @@ export class WorldTravelTransitionController {
     return this.generation;
   }
 
+  public getMode(): WorldTravelPresentationMode {
+    return this.mode;
+  }
+
   public reset(): void {
     this.remainingMs = 0;
+    this.mode = "walk";
   }
 }
 
