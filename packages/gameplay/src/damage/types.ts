@@ -13,6 +13,16 @@ export interface DamageRequest {
   readonly context?: DamageContext | undefined;
 }
 
+/**
+ * Optional contextual post-mitigation hook. Gameplay damage stays ignorant of
+ * the owning feature: callers may reduce/increase the already resistance-
+ * mitigated value based on external authoritative context.
+ */
+export type PostMitigationDamageResolver = (
+  request: DamageRequest,
+  mitigatedDamage: number,
+) => number;
+
 export interface DamageResult {
   readonly source: EntityId;
   readonly target: EntityId;
