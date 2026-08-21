@@ -5,7 +5,7 @@
   top: auto;
   bottom: 0;
   left: 0;
-  width: 25%;
+  width: 30%;
   height: var(--ui-combat-dock-height, 118px);
   padding: 6px;
   box-sizing: border-box;
@@ -155,16 +155,16 @@
   top: auto;
   right: 0;
   bottom: 0;
-  left: 25%;
+  left: 30%;
   height: var(--ui-combat-dock-height, 118px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 14px;
+  padding: 7px 18px;
   box-sizing: border-box;
   transform: none;
   background:
-    linear-gradient(90deg, rgb(112 75 27 / 5%), transparent 18%, transparent 82%, rgb(112 75 27 / 5%)),
+    radial-gradient(ellipse at 50% 100%, rgb(128 87 31 / 9%), transparent 62%),
     rgb(7 10 14 / 94%);
   border-top: 1px solid rgb(145 99 34 / 62%);
   border-left: 1px solid rgb(112 79 34 / 32%);
@@ -264,7 +264,7 @@
 
 @media (max-width: 1100px) {
   .combat-hud-journal {
-    width: 28%;
+    width: 32%;
   }
 
   .combat-hud-journal .activity-journal__title {
@@ -295,7 +295,7 @@
   }
 
   .combat-hud-actions {
-    left: 28%;
+    left: 32%;
     padding: 7px 9px;
   }
 
