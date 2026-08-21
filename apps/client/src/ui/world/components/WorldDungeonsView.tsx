@@ -11,6 +11,7 @@ interface DungeonPresentationModel {
   readonly activeDefinitionId: string | null;
   readonly activeEncounterIndex: number | null;
   readonly pendingDefinitionId: string | null;
+  readonly clearedTiers: readonly number[];
   readonly enemyName: string;
   readonly combatState: string;
 }
@@ -35,8 +36,19 @@ function inventoryQuantities(slots: readonly { readonly itemId: string | undefin
   return quantities;
 }
 
+function sameNumberArray(previous: readonly number[], next: readonly number[]): boolean {
+  return previous.length === next.length && previous.every((value, index) => value === next[index]);
+}
+
 function sameDungeonPresentation(previous: DungeonPresentationModel, next: DungeonPresentationModel): boolean {
-  if (previous.activeDefinitionId !== next.activeDefinitionId || previous.activeEncounterIndex !== next.activeEncounterIndex || previous.pendingDefinitionId !== next.pendingDefinitionId || previous.enemyName !== next.enemyName || previous.combatState !== next.combatState) return false;
+  if (
+    previous.activeDefinitionId !== next.activeDefinitionId
+    || previous.activeEncounterIndex !== next.activeEncounterIndex
+    || previous.pendingDefinitionId !== next.pendingDefinitionId
+    || previous.enemyName !== next.enemyName
+    || previous.combatState !== next.combatState
+    || !sameNumberArray(previous.clearedTiers, next.clearedTiers)
+  ) return false;
   const previousKeys = Object.keys(previous.inventory);
   const nextKeys = Object.keys(next.inventory);
   return previousKeys.length === nextKeys.length && previousKeys.every((key) => previous.inventory[key] === next.inventory[key]);
@@ -49,9 +61,13 @@ export function WorldDungeonsView(): JSX.Element {
     const dungeonState = getDungeonState();
     const activeRun = dungeonState.activeRun?.status === "active" ? dungeonState.activeRun : undefined;
     return {
-      inventory: inventoryQuantities(state.inventory.slots), activeDefinitionId: activeRun?.definitionId ?? null,
-      activeEncounterIndex: activeRun?.encounterIndex ?? null, pendingDefinitionId: dungeonState.pendingDefinitionId,
-      enemyName: state.enemyName, combatState: state.combatState,
+      inventory: inventoryQuantities(state.inventory.slots),
+      activeDefinitionId: activeRun?.definitionId ?? null,
+      activeEncounterIndex: activeRun?.encounterIndex ?? null,
+      pendingDefinitionId: dungeonState.pendingDefinitionId,
+      clearedTiers: dungeonState.clearedTiers,
+      enemyName: state.enemyName,
+      combatState: state.combatState,
     };
   }, [getDungeonState]);
   const presentation = useGameUiSelector(selectDungeonPresentation, sameDungeonPresentation);
@@ -68,16 +84,24 @@ export function WorldDungeonsView(): JSX.Element {
           const keyCount = presentation.inventory[dungeon.keyItemId] ?? 0;
           const isActiveDungeon = presentation.activeDefinitionId === dungeon.id;
           const isPendingDungeon = presentation.pendingDefinitionId === dungeon.id;
-          const canEnter = presentation.activeDefinitionId === null && presentation.pendingDefinitionId === null && keyCount > 0;
+          const previousTier = dungeon.tier - 1;
+          const progressionUnlocked = dungeon.tier <= 4 || presentation.clearedTiers.includes(previousTier);
+          const lockMessage = progressionUnlocked ? undefined : `Validez d'abord un donjon T${String(previousTier)} pour débloquer les donjons T${String(dungeon.tier)}.`;
+          const canEnter = progressionUnlocked && presentation.activeDefinitionId === null && presentation.pendingDefinitionId === null && keyCount > 0;
           const progressedEncounterCount = isActiveDungeon && presentation.activeEncounterIndex !== null ? presentation.activeEncounterIndex : 0;
           const routeProgress = dungeon.encounters.length <= 1 ? 100 : Math.max(0, Math.min(100, (progressedEncounterCount / (dungeon.encounters.length - 1)) * 100));
           const visual = dungeonVisual(dungeon.faction, dungeon.tier);
           return (
-            <article key={dungeon.id} className={`world-dungeon-card${isActiveDungeon ? " is-active" : ""}${isPendingDungeon ? " is-pending" : ""}`}>
+            <article
+              key={dungeon.id}
+              className={`world-dungeon-card${isActiveDungeon ? " is-active" : ""}${isPendingDungeon ? " is-pending" : ""}${progressionUnlocked ? "" : " is-locked"}`}
+              title={lockMessage}
+              aria-disabled={!progressionUnlocked || undefined}
+            >
               <header className="world-dungeon-card__header">
                 <span className="world-dungeon-card__visual" data-tier={dungeon.tier} aria-hidden="true">{visual !== undefined ? <img src={visual} alt="" /> : null}</span>
                 <div className="world-dungeon-card__identity"><small>Donjon T{dungeon.tier}</small><h3>{dungeon.faction}</h3></div>
-                <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : ""}>{isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : "Disponible"}</span>
+                <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : !progressionUnlocked ? "is-locked" : ""}>{isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : !progressionUnlocked ? "Verrouillé" : "Disponible"}</span>
               </header>
               <div className="world-dungeon-card__stats"><span><small>Difficulté</small><strong>T{dungeon.tier}.3+</strong></span><span><small>Rencontres</small><strong>{dungeon.encounters.length}</strong></span><span><small>Clés</small><strong>{keyCount}</strong></span></div>
               <div className="world-dungeon-card__route" aria-label="Structure du donjon">
@@ -90,8 +114,8 @@ export function WorldDungeonsView(): JSX.Element {
               </div>
               {isActiveDungeon ? <div className="world-dungeon-card__current"><small>Combat actuel · Rencontre {(presentation.activeEncounterIndex ?? 0) + 1}/{dungeon.encounters.length}</small><strong>{presentation.enemyName || "Préparation de la rencontre…"}</strong></div> : isPendingDungeon ? <div className="world-dungeon-card__current is-pending"><small>Entrée en attente</small><strong>Le donjon commencera dès que l’ennemi actuel sera vaincu.</strong></div> : null}
               <footer className="world-dungeon-card__footer">
-                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{isActiveDungeon ? "Abandonner termine définitivement cette tentative." : keyCount > 0 ? "En combat, l’entrée attendra la fin de l’ennemi actuel." : `Clé T${dungeon.tier} requise.`}</p>}
-                {isActiveDungeon ? <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>Abandonner</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} onClick={() => { startDungeon(dungeon.id); }}>{keyCount > 0 ? "Entrer" : "Clé requise"}</button> : null}
+                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{isActiveDungeon ? "Abandonner termine définitivement cette tentative." : !progressionUnlocked ? lockMessage : keyCount > 0 ? "En combat, l’entrée attendra la fin de l’ennemi actuel." : `Clé T${dungeon.tier} requise.`}</p>}
+                {isActiveDungeon ? <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>Abandonner</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} title={lockMessage} onClick={() => { startDungeon(dungeon.id); }}>{!progressionUnlocked ? "Verrouillé" : keyCount > 0 ? "Entrer" : "Clé requise"}</button> : null}
               </footer>
             </article>
           );
