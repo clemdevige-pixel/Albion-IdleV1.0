@@ -134,6 +134,29 @@ export class CombatPresentationController {
     this.hudSystem.setEnemyVisible(visible);
   }
 
+  public beginWorldTravel(): void {
+    this.invalidateEncounterPresentation();
+    this.scene.tweens.killTweensOf(this.playerBody);
+    this.playerBody.setVisible(true);
+    this.hudSystem.setPlayerVisible(false);
+    this.heroSystem.play("walk");
+  }
+
+  public placePlayerAtTravelEntry(x: number): void {
+    this.scene.tweens.killTweensOf(this.playerBody);
+    this.playerBody.x = x;
+    this.playerBody.setVisible(true);
+    this.heroSystem.play("walk");
+  }
+
+  public finishWorldTravel(): void {
+    this.scene.tweens.killTweensOf(this.playerBody);
+    this.playerBody.x = this.playerHomeX;
+    this.playerBody.setVisible(true);
+    this.heroSystem.play("idle");
+    this.hudSystem.setPlayerVisible(true);
+  }
+
   /**
    * Invalidates one encounter presentation without destroying the scene actors.
    * Used for non-victory lifecycle boundaries (defeat/resume, pause/resume,
