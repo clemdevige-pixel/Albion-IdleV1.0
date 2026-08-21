@@ -20,10 +20,18 @@ export class WorldTravelTransitionController {
   private remainingMs = 0;
   private generation = 0;
   private mode: WorldTravelPresentationMode = "walk";
+  private nextMode: WorldTravelPresentationMode | undefined;
 
-  public start(mode: WorldTravelPresentationMode = "walk"): void {
-    this.mode = mode;
-    this.remainingMs = mode === "blackout"
+  /** Declares how the next authoritative travel should be presented. */
+  public requestNextMode(mode: WorldTravelPresentationMode): void {
+    this.nextMode = mode;
+  }
+
+  /** Started by the authoritative location/context owner once travel is committed. */
+  public start(mode?: WorldTravelPresentationMode): void {
+    this.mode = mode ?? this.nextMode ?? "walk";
+    this.nextMode = undefined;
+    this.remainingMs = this.mode === "blackout"
       ? WORLD_TRAVEL_BLACKOUT_TOTAL_MS
       : WORLD_TRAVEL_TOTAL_MS;
     this.generation += 1;
@@ -50,6 +58,7 @@ export class WorldTravelTransitionController {
   public reset(): void {
     this.remainingMs = 0;
     this.mode = "walk";
+    this.nextMode = undefined;
   }
 }
 
