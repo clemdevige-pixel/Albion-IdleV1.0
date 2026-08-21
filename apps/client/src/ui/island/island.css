@@ -97,7 +97,6 @@
   align-self: flex-start;
   gap: 5px;
   border: 0;
-  border-bottom: 1px solid transparent;
   border-radius: 0;
   background: transparent;
   color: var(--ui-color-text-secondary);
@@ -105,7 +104,7 @@
   font: inherit;
   cursor: pointer;
 }
-.ui-island__overview-button:hover { border-bottom-color: rgba(208, 157, 52, 0.52); color: var(--ui-color-accent); }
+.ui-island__overview-button:hover { color: var(--ui-color-accent); }
 .ui-island__overview-button strong { font-size: 10px; font-weight: 700; text-align: left; }
 .ui-island__overview-button-icon { color: var(--ui-color-accent); font-size: 13px; text-align: left; }
 .ui-island__overview-button-mark { display: none; }
@@ -118,7 +117,7 @@
 .ui-island-upgrade__unlock.is-locked { color: rgba(215, 193, 163, .58); border: 0; background: transparent; }
 .ui-island-upgrade__requirements { display: grid; grid-template-columns: 1fr; gap: 0; }
 .ui-island-upgrade__requirement { min-width: 0; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 5px 0; border: 0; border-radius: 0; background: transparent; }
-.ui-island-upgrade__requirement + .ui-island-upgrade__requirement { border-top: 0; }
+.ui-island-upgrade__requirement + .ui-island-upgrade__requirement { border: 0; }
 .ui-island-upgrade__requirement-icon { display: grid; place-items: center; width: 14px; height: 14px; border: 0; border-radius: 0; color: #d5b170; background: transparent; font-size: 9px; }
 .ui-island-upgrade__requirement > div { min-width: 0; display: contents; }
 .ui-island-upgrade__requirement small { overflow: hidden; color: rgba(222, 207, 183, .72); font-size: 9px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
