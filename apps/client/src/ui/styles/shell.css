@@ -76,7 +76,7 @@
   grid-area: bottom;
   min-width: 0;
   z-index: var(--ui-z-navigation);
-  border-top: 1px solid rgb(133 94 38 / 38%);
+  border-top: 0;
   background: #090c10;
   box-shadow: none;
 }
