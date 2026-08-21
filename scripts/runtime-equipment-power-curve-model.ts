@@ -15,6 +15,7 @@ type EquipmentFamily = {
 };
 
 const TIERS = [4, 5, 6, 7, 8] as const satisfies readonly Tier[];
+const SOURCE_TIERS = [4, 5, 6, 7] as const;
 const MODELED_STATS = new Set([
   "stat_physical_damage",
   "stat_magical_damage",
@@ -94,6 +95,55 @@ function theoreticalBase(anchorT4: number, tier: Tier, tierGrowthFactor: number,
   return roundModeledStat(statId, anchorT4 * Math.pow(tierGrowthFactor, tier - 4));
 }
 
+function evaluateFactor(tierGrowthFactor: number): {
+  readonly transitionFailures: number;
+  readonly meanAbsoluteDeviationPercent: number;
+  readonly maxAbsoluteDeviationPercent: number;
+  readonly minimumTransitionMargin: number;
+} {
+  const deviations: number[] = [];
+  let transitionFailures = 0;
+  let minimumTransitionMargin = Number.POSITIVE_INFINITY;
+
+  for (const family of EQUIPMENT_FAMILIES) {
+    const anchor = statsFor(family.itemIdForTier(4));
+    for (const [statId, t4Value] of Object.entries(anchor)) {
+      for (const tier of TIERS) {
+        const live = statsFor(family.itemIdForTier(tier))[statId];
+        if (live === undefined) continue;
+        const theoretical = theoreticalBase(t4Value, tier, tierGrowthFactor, statId);
+        const deviation = theoretical === 0 ? 0 : Math.abs((live / theoretical - 1) * 100);
+        deviations.push(deviation);
+      }
+
+      for (const sourceTier of SOURCE_TIERS) {
+        const nextTier = (sourceTier + 1) as Tier;
+        const sourceBase = theoreticalBase(t4Value, sourceTier, tierGrowthFactor, statId);
+        const sourceTierThree = roundModeledStat(statId, sourceBase * ENCHANTMENT_STAT_MULTIPLIER[3]);
+        const nextBase = theoreticalBase(t4Value, nextTier, tierGrowthFactor, statId);
+        const margin = nextBase - sourceTierThree;
+        minimumTransitionMargin = Math.min(minimumTransitionMargin, margin);
+        if (margin <= 0) transitionFailures += 1;
+      }
+    }
+  }
+
+  return {
+    transitionFailures,
+    meanAbsoluteDeviationPercent: deviations.reduce((sum, value) => sum + value, 0) / Math.max(1, deviations.length),
+    maxAbsoluteDeviationPercent: Math.max(...deviations),
+    minimumTransitionMargin,
+  };
+}
+
+function buildFactorCandidates(start: number): readonly number[] {
+  const step = 0.0025;
+  const firstGrid = Math.ceil(start / step) * step;
+  const values = new Set<number>([round4(start)]);
+  for (let factor = firstGrid; factor <= 1.55 + 1e-9; factor += step) values.add(round4(factor));
+  return [...values].sort((a, b) => a - b);
+}
+
 function main(): void {
   const familyGrowth = EQUIPMENT_FAMILIES.map(familyImpliedGrowth);
   const tierGrowthFactor = median(familyGrowth.map((entry) => entry.familyFactor));
@@ -104,6 +154,7 @@ function main(): void {
     anchor: "all live T4 base stats",
     tierFactorDerivation: "median of per-family implied T4→T8 CAGR; each equipment family has equal weight",
     formula: "base(Tn) = round(base(T4) * G^(n-4)); enchanted(Tn.e) = round(base(Tn) * enchantmentMultiplier[e])",
+    structuralInvariant: "after real stat rounding, every Tn+1.0 stat must be strictly greater than Tn.3",
     enchantmentCurve: {
       e0: ENCHANTMENT_STAT_MULTIPLIER[0],
       e1: ENCHANTMENT_STAT_MULTIPLIER[1],
@@ -123,7 +174,7 @@ function main(): void {
     tierGrowthFactor: round4(tierGrowthFactor),
     enchantment3Multiplier: round4(requiredFloor),
     rawMarginOverPreviousTier3Percent: round2((tierGrowthFactor / requiredFloor - 1) * 100),
-    structurallyAbovePreviousTier3: tierGrowthFactor > requiredFloor,
+    structurallyAbovePreviousTier3BeforeRounding: tierGrowthFactor > requiredFloor,
   });
 
   const comparisonRows: Array<Record<string, string | number>> = [];
@@ -148,7 +199,7 @@ function main(): void {
         });
       }
 
-      for (const sourceTier of [4, 5, 6, 7] as const) {
+      for (const sourceTier of SOURCE_TIERS) {
         const nextTier = (sourceTier + 1) as Tier;
         const sourceBase = theoreticalBase(t4Value, sourceTier, tierGrowthFactor, statId);
         const sourceTierThree = roundModeledStat(statId, sourceBase * ENCHANTMENT_STAT_MULTIPLIER[3]);
@@ -182,6 +233,23 @@ function main(): void {
   console.log("[EQUIPMENT_POWER_CURVE_LARGEST_LIVE_DEVIATIONS]");
   console.table(sortedByDeviation.slice(0, 25));
 
+  const factorRows = buildFactorCandidates(tierGrowthFactor).map((factor) => {
+    const result = evaluateFactor(factor);
+    return {
+      factor,
+      transitionFailures: result.transitionFailures,
+      minimumTransitionMargin: result.minimumTransitionMargin,
+      meanAbsoluteDeviationPercent: round2(result.meanAbsoluteDeviationPercent),
+      maxAbsoluteDeviationPercent: round2(result.maxAbsoluteDeviationPercent),
+      structuralPass: result.transitionFailures === 0,
+    };
+  });
+  const firstStructuralPass = factorRows.find((row) => row.structuralPass);
+
+  console.log("[EQUIPMENT_POWER_CURVE_FACTOR_CANDIDATES]");
+  console.table(factorRows);
+  console.log("[EQUIPMENT_POWER_CURVE_FIRST_STRUCTURAL_PASS]", firstStructuralPass ?? null);
+
   console.log("[EQUIPMENT_POWER_CURVE_MODEL_RESULT]", {
     tierGrowthFactor: round4(tierGrowthFactor),
     familyCount: EQUIPMENT_FAMILIES.length,
@@ -190,6 +258,7 @@ function main(): void {
     maxAbsoluteDeviationPercent: round2(Math.max(...deviations)),
     tierTransitionFailures: transitionFailures.length,
     structuralContract: transitionFailures.length === 0 ? "PASS" : "FAIL",
+    firstStructuralPassFactor: firstStructuralPass?.factor ?? null,
   });
 }
 
