@@ -63,11 +63,11 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
   { healthStart: 5.25, healthEnd: 5.4, damageStart: 3.05, damageEnd: 3.1, defenseStart: 2.5, defenseEnd: 2.56, defenseModel: "rank_parity" },
   { healthStart: 5.85, healthEnd: 6.5, damageStart: 3.15, damageEnd: 3.25, defenseStart: 2.75, defenseEnd: 3, defenseModel: "rank_parity" },
   {
-    healthStart: 6.5,
+    healthStart: 6.24,
     healthEnd: 6.5,
-    damageStart: 3.25,
+    damageStart: 3.12,
     damageEnd: 3.3,
-    defenseStart: 3,
+    defenseStart: 2.88,
     defenseEnd: 3,
     defenseModel: "rank_parity",
     bossGate: { progressionRole: "boss_gate", healthMultiplier: 1.1, damageMultiplier: 1.5, defenseMultiplier: 1 },
@@ -76,7 +76,7 @@ export const YELLOW_WORLD_COMBAT_CURVE = [
 
 export const ORANGE_WORLD_COMBAT_CURVE = [
   { healthStart: 6.3, healthEnd: 8.03, damageStart: 3.22, damageEnd: 5.18, defenseStart: 2.92, defenseEnd: 3.28, defenseModel: "rank_parity" },
-  { healthStart: 7.4, healthEnd: 7.8, damageStart: 3.7, damageEnd: 3.8, defenseStart: 3.3, defenseEnd: 3.42, defenseModel: "rank_parity" },
+  { healthStart: 7.252, healthEnd: 7.8, damageStart: 3.626, damageEnd: 3.8, defenseStart: 3.234, defenseEnd: 3.42, defenseModel: "rank_parity" },
   { healthStart: 8.1, healthEnd: 8.55, damageStart: 3.85, damageEnd: 3.95, defenseStart: 3.55, defenseEnd: 3.68, defenseModel: "rank_parity" },
   { healthStart: 8.9, healthEnd: 9.45, damageStart: 4.0, damageEnd: 4.1, defenseStart: 3.82, defenseEnd: 3.98, defenseModel: "rank_parity" },
   {
