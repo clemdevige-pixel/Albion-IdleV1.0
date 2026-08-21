@@ -167,7 +167,7 @@ export class ExpeditionService<
   save(): ExpeditionSnapshot {
     return {
       version: 1,
-      activeExpeditions: this.getActiveExpeditions(),
+      activeExpeditions: [...this.getActiveExpeditions()],
     };
   }
 
@@ -229,7 +229,7 @@ export class ExpeditionService<
     durationMs: number,
   ): durationMs is ExpeditionDurationMs {
     const durations = definition.supportedDurationsMs ?? EXPEDITION_DURATION_OPTIONS_MS;
-    return durations.includes(durationMs as ExpeditionDurationMs);
+    return durations.some((duration) => duration === durationMs);
   }
 
   #isValidDefinition(definition: ExpeditionDefinition<TRequirement>): boolean {
