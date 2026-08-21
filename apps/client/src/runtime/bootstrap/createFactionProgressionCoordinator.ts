@@ -1,15 +1,21 @@
-import type {
-  ExpeditionService,
-  ResearchService,
-} from "@game/gameplay";
-import type { ExpeditionContentRequirement } from "../../data/expeditionContentCatalog.js";
-import type { ResearchContentRequirement } from "../../data/researchContentCatalog.js";
 import type { FactionResearchFoundation } from "./createFactionResearchFoundation.js";
+
+interface ResearchAdvancePort {
+  advance(elapsedMs: number): {
+    readonly completedResearchId: string | undefined;
+  };
+}
+
+interface ExpeditionAdvancePort {
+  advance(elapsedMs: number): {
+    readonly completed: readonly unknown[];
+  };
+}
 
 export interface FactionProgressionCoordinatorDependencies {
   readonly factionResearchFoundation: FactionResearchFoundation;
-  readonly researchService: ResearchService<ResearchContentRequirement>;
-  readonly expeditionService: ExpeditionService<ExpeditionContentRequirement, unknown>;
+  readonly researchService: ResearchAdvancePort;
+  readonly expeditionService: ExpeditionAdvancePort;
   readonly onExpeditionCompletion: () => void;
 }
 
