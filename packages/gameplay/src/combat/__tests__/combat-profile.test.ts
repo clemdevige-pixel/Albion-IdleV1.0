@@ -82,27 +82,22 @@ describe("combat-profile", () => {
       expect(boss.damage).toBeGreaterThan(normal.damage);
     });
 
-    it("uses independent Blue, Yellow, Orange and Red curves", () => {
-      const blueEnd = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 0, "blue");
-      const yellowStart = getEnemyCombatProfile(0, 0, 0, "yellow");
-      const yellowEnd = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 0, "yellow");
-      const orangeStart = getEnemyCombatProfile(0, 0, 0, "orange");
-      const orangeEnd = getEnemyCombatProfile(4, SEGMENTS_PER_ZONE - 1, 0, "orange");
-      const redStart = getEnemyCombatProfile(0, 0, 0, "red");
+    it("uses independent deterministic curves for every authored world band", () => {
+      const bandIds = ["blue", "yellow", "orange", "red", "black"] as const;
+      const starts = bandIds.map((bandId) => getEnemyCombatProfile(0, 0, 0, bandId));
 
-      expect(yellowStart.hp).toBeGreaterThanOrEqual(blueEnd.hp);
-      expect(yellowStart.damage).toBeGreaterThanOrEqual(blueEnd.damage);
-      expect(orangeStart.hp).toBeGreaterThanOrEqual(yellowEnd.hp);
-      expect(orangeStart.damage).toBeGreaterThanOrEqual(yellowEnd.damage);
-      expect(redStart.hp).toBeGreaterThanOrEqual(orangeEnd.hp);
-      expect(redStart.damage).toBeGreaterThanOrEqual(orangeEnd.damage);
+      for (const [index, bandId] of bandIds.entries()) {
+        expect(getEnemyCombatProfile(0, 0, 0, bandId)).toEqual(starts[index]);
+      }
+
+      expect(new Set(starts.map((profile) => `${profile.hp}:${profile.damage}:${profile.armor}`)).size).toBe(bandIds.length);
     });
 
-    it.each(["yellow", "orange", "red"] as const)("keeps %s deterministic and monotonic across its five zones", (bandId) => {
-      const first = getEnemyCombatProfile(0, 0, 0, bandId);
-      let previous = first;
+    it.each(["yellow", "orange", "red", "black"] as const)("keeps every %s zone internally deterministic and monotonic", (bandId) => {
       for (let zoneIndex = 0; zoneIndex < 5; zoneIndex += 1) {
-        for (let segmentIndex = 0; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
+        let previous = getEnemyCombatProfile(zoneIndex, 0, 0, bandId);
+        expect(getEnemyCombatProfile(zoneIndex, 0, 0, bandId)).toEqual(previous);
+        for (let segmentIndex = 1; segmentIndex < SEGMENTS_PER_ZONE; segmentIndex += 1) {
           const current = getEnemyCombatProfile(zoneIndex, segmentIndex, 0, bandId);
           expect(current.hp).toBeGreaterThanOrEqual(previous.hp);
           expect(current.damage).toBeGreaterThanOrEqual(previous.damage);
