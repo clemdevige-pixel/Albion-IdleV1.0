@@ -20,11 +20,9 @@
   min-width: 0;
   height: 100%;
   box-sizing: border-box;
-  border-color: rgb(128 91 36 / 72%);
-  background: rgb(6 9 12 / 90%);
-  box-shadow:
-    0 8px 24px rgb(0 0 0 / 34%),
-    inset 0 0 0 1px rgb(232 186 88 / 3%);
+  border: 0;
+  background: linear-gradient(180deg, rgb(6 9 12 / 88%), rgb(6 9 12 / 78%));
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
   backdrop-filter: blur(2px);
 }
 
@@ -34,7 +32,7 @@
   align-items: stretch;
   min-width: 0;
   height: 28px;
-  border-bottom: 1px solid rgb(112 82 34 / 62%);
+  border-bottom: 0;
 }
 
 .combat-hud-journal .activity-journal__title {
@@ -53,11 +51,11 @@
 
 .combat-hud-journal .activity-journal__title small {
   min-width: 20px;
-  padding: 1px 4px;
+  padding: 0;
   color: #8f8067;
-  background: rgb(255 255 255 / 3%);
-  border: 1px solid rgb(126 94 43 / 38%);
-  border-radius: 2px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   font-family: var(--ui-font-sans);
   font-size: 8px;
   line-height: 1.15;
@@ -78,11 +76,12 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: transparent;
 }
 
 .combat-hud-journal .activity-journal__tabs button.is-active {
   color: #f0c75d;
-  background: linear-gradient(180deg, rgb(66 49 22 / 72%), rgb(37 30 18 / 48%));
+  background: transparent;
   box-shadow: inset 0 -2px #d1a339;
 }
 
@@ -95,18 +94,9 @@
   scrollbar-width: thin;
 }
 
-.combat-hud-journal .activity-journal__history::-webkit-scrollbar {
-  width: 5px;
-}
-
-.combat-hud-journal .activity-journal__history::-webkit-scrollbar-track {
-  background: #090c10;
-}
-
-.combat-hud-journal .activity-journal__history::-webkit-scrollbar-thumb {
-  background: #6d5024;
-  border-radius: 2px;
-}
+.combat-hud-journal .activity-journal__history::-webkit-scrollbar { width: 5px; }
+.combat-hud-journal .activity-journal__history::-webkit-scrollbar-track { background: #090c10; }
+.combat-hud-journal .activity-journal__history::-webkit-scrollbar-thumb { background: #6d5024; border-radius: 2px; }
 
 .combat-hud-journal .activity-journal__entry {
   grid-template-columns: 6px 58px minmax(0, 1fr);
@@ -126,33 +116,11 @@
   background: #78746c;
   border-radius: 50%;
 }
-
-.combat-hud-journal .activity-journal__entry--positive i {
-  background: #65c878;
-  box-shadow: 0 0 5px rgb(101 200 120 / 35%);
-}
-
-.combat-hud-journal .activity-journal__entry--negative i {
-  background: #d66b62;
-  box-shadow: 0 0 5px rgb(214 107 98 / 30%);
-}
-
-.combat-hud-journal .activity-journal__entry time {
-  color: #6f747d;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.combat-hud-journal .activity-journal__entry span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.combat-hud-journal .activity-journal__empty {
-  padding-top: 12px;
-  color: #73767d;
-  font-size: 10px;
-}
+.combat-hud-journal .activity-journal__entry--positive i { background: #65c878; box-shadow: 0 0 5px rgb(101 200 120 / 35%); }
+.combat-hud-journal .activity-journal__entry--negative i { background: #d66b62; box-shadow: 0 0 5px rgb(214 107 98 / 30%); }
+.combat-hud-journal .activity-journal__entry time { color: #6f747d; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.combat-hud-journal .activity-journal__entry span { min-width: 0; overflow-wrap: anywhere; }
+.combat-hud-journal .activity-journal__empty { padding-top: 12px; color: #73767d; font-size: 10px; }
 
 .combat-hud-actions {
   top: auto;
@@ -172,10 +140,7 @@
   pointer-events: none;
 }
 
-.combat-hud-actions .combat-action-bar {
-  pointer-events: auto;
-  box-shadow: none;
-}
+.combat-hud-actions .combat-action-bar { pointer-events: auto; box-shadow: none; }
 
 .combat-hud-actions .combat-controls {
   width: auto;
@@ -188,18 +153,12 @@
   gap: 8px;
   padding: 6px 10px;
   box-sizing: border-box;
-  background:
-    linear-gradient(180deg, rgb(24 27 31 / 90%), rgb(9 12 16 / 96%));
-  border: 1px solid rgb(126 89 34 / 62%);
-  box-shadow:
-    inset 0 0 0 1px rgb(230 184 83 / 5%),
-    inset 0 0 20px rgb(0 0 0 / 24%),
-    0 4px 16px rgb(0 0 0 / 20%);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
-.combat-hud-actions .combat-controls__label {
-  display: none;
-}
+.combat-hud-actions .combat-controls__label { display: none; }
 
 .combat-hud-actions .combat-controls__abilities,
 .combat-hud-actions .combat-controls__utility,
@@ -214,36 +173,12 @@
 }
 
 .combat-hud-actions .combat-controls__utility,
-.combat-hud-actions .combat-controls__consumable {
-  margin-left: 2px;
-}
-
-.combat-hud-actions .ability-bar__skills {
-  display: flex;
-  flex-flow: row nowrap;
-  align-items: center;
-  gap: 7px;
-}
-
-.combat-hud-actions .ability-bar__slot {
-  width: 80px;
-  min-width: 80px;
-  height: 80px;
-}
-
+.combat-hud-actions .combat-controls__consumable { margin-left: 2px; }
+.combat-hud-actions .ability-bar__skills { display: flex; flex-flow: row nowrap; align-items: center; gap: 7px; }
+.combat-hud-actions .ability-bar__slot { width: 80px; min-width: 80px; height: 80px; }
 .combat-hud-actions .ability-bar__ability-icon,
-.combat-hud-actions .ability-bar__potion-visual {
-  width: 64px;
-  height: 64px;
-  font-size: 35px;
-}
-
-.combat-hud-actions .ability-bar__auto {
-  min-width: 88px;
-  height: 80px;
-  padding-inline: 12px;
-  font-size: 12px;
-}
+.combat-hud-actions .ability-bar__potion-visual { width: 64px; height: 64px; font-size: 35px; }
+.combat-hud-actions .ability-bar__auto { min-width: 88px; height: 80px; padding-inline: 12px; font-size: 12px; }
 
 .combat-hud-actions .ability-bar__potion-wrapper {
   position: relative;
@@ -269,76 +204,21 @@
 }
 
 @media (max-width: 1100px) {
-  .combat-hud-journal {
-    width: min(320px, 31%);
-    height: 96px;
-  }
-
-  .combat-hud-journal .activity-journal__title {
-    min-width: 94px;
-    padding-inline: 6px;
-    font-size: 9px;
-  }
-
-  .combat-hud-journal .activity-journal__title small {
-    min-width: 18px;
-    font-size: 7px;
-  }
-
+  .combat-hud-journal { width: min(320px, 31%); height: 96px; }
+  .combat-hud-journal .activity-journal__title { min-width: 94px; padding-inline: 6px; font-size: 9px; }
+  .combat-hud-journal .activity-journal__title small { min-width: 18px; font-size: 7px; }
   .combat-hud-journal .activity-journal__tabs button,
   .combat-hud-journal .activity-journal__entry,
-  .combat-hud-journal .activity-journal__empty {
-    font-size: 9px;
-  }
-
-  .combat-hud-journal .activity-journal__history {
-    padding: 5px 7px;
-  }
-
-  .combat-hud-journal .activity-journal__entry {
-    grid-template-columns: 5px 52px minmax(0, 1fr);
-    gap: 5px;
-    padding-block: 1px;
-  }
-
-  .combat-hud-actions {
-    bottom: 6px;
-    height: 82px;
-    padding-inline: 9px;
-  }
-
-  .combat-hud-actions .combat-controls {
-    min-height: 72px;
-    gap: 7px;
-    padding-inline: 6px;
-  }
-
-  .combat-hud-actions .ability-bar__skills {
-    gap: 6px;
-  }
-
+  .combat-hud-journal .activity-journal__empty { font-size: 9px; }
+  .combat-hud-journal .activity-journal__history { padding: 5px 7px; }
+  .combat-hud-journal .activity-journal__entry { grid-template-columns: 5px 52px minmax(0, 1fr); gap: 5px; padding-block: 1px; }
+  .combat-hud-actions { bottom: 6px; height: 82px; padding-inline: 9px; }
+  .combat-hud-actions .combat-controls { min-height: 72px; gap: 7px; padding-inline: 6px; }
+  .combat-hud-actions .ability-bar__skills { gap: 6px; }
   .combat-hud-actions .ability-bar__slot,
-  .combat-hud-actions .ability-bar__slot--potion {
-    width: 60px;
-    min-width: 60px;
-    height: 60px;
-    flex-basis: 60px;
-  }
-
-  .combat-hud-actions .ability-bar__potion-wrapper {
-    width: 60px;
-    height: 60px;
-    flex-basis: 60px;
-  }
-
+  .combat-hud-actions .ability-bar__slot--potion { width: 60px; min-width: 60px; height: 60px; flex-basis: 60px; }
+  .combat-hud-actions .ability-bar__potion-wrapper { width: 60px; height: 60px; flex-basis: 60px; }
   .combat-hud-actions .ability-bar__ability-icon,
-  .combat-hud-actions .ability-bar__potion-visual {
-    width: 47px;
-    height: 47px;
-  }
-
-  .combat-hud-actions .ability-bar__auto {
-    min-width: 76px;
-    height: 60px;
-  }
+  .combat-hud-actions .ability-bar__potion-visual { width: 47px; height: 47px; }
+  .combat-hud-actions .ability-bar__auto { min-width: 76px; height: 60px; }
 }
