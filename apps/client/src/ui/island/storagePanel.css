@@ -4,32 +4,6 @@
   margin-top: 8px;
 }
 
-.ui-island-storage__summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.ui-island-storage__summary > div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.ui-island-storage__summary small {
-  color: #8fa0b5;
-  font-size: 9px;
-}
-
-.ui-island-storage__summary strong {
-  color: #eee1c7;
-  font-size: 15px;
-  line-height: 1.1;
-}
-
 .ui-island-storage__families {
   display: grid;
   gap: 14px;
@@ -144,11 +118,6 @@
 }
 
 @media (max-width: 1100px) {
-  .ui-island-storage__summary {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
   .ui-island-storage__matrix {
     grid-template-columns: 50px repeat(6, minmax(38px, 1fr));
     overflow-x: auto;
