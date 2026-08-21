@@ -9,7 +9,7 @@
   align-content: center;
   gap: 2px;
   padding: 3px clamp(18px, 2vw, 32px) 4px;
-  border-bottom: 1px solid rgb(151 106 37 / 46%);
+  border-bottom: 0;
   box-shadow: none;
 }
 
