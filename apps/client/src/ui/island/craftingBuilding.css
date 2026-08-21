@@ -54,7 +54,7 @@
   min-width: 0;
   min-height: 28px;
   border: 0;
-  border-bottom: 1px solid rgba(190, 159, 105, 0.24);
+  border-bottom: 1px solid rgba(190, 159, 105, 0.12);
   border-radius: 0;
   background: transparent;
   color: var(--ui-color-text-primary);
@@ -65,7 +65,7 @@
 
 .ui-island-crafting-building__selectors select:hover,
 .ui-island-crafting-building__selectors select:focus {
-  border-bottom-color: rgba(208, 157, 52, 0.62);
+  border-bottom-color: rgba(208, 157, 52, 0.38);
   outline: 0;
 }
 
