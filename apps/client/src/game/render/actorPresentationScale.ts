@@ -1,4 +1,4 @@
-export const COMBAT_ACTOR_PRESENTATION_SCALE = 0.94;
+export const COMBAT_ACTOR_PRESENTATION_SCALE = 0.90;
 
 export function scaleCombatActorDisplay(
   width: number,
