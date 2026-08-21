@@ -30,6 +30,10 @@ export interface RelicProgressPort {
   getCompletedSegmentCount(zoneDefId: string): number;
 }
 
+export interface RelicReconstructionPort {
+  canReconstructRelic(definition: RelicDefinition): boolean;
+}
+
 export interface RelicProgressView {
   readonly relicId: RelicId;
   readonly completedObjectiveIds: readonly RelicObjectiveId[];
