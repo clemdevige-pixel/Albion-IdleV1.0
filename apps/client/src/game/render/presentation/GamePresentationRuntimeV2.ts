@@ -53,8 +53,9 @@ export class GamePresentationRuntime {
     const authoritativeTravelStarted = travelGeneration !== this.lastTravelGeneration
       && worldTravelTransition.isActive();
     if (authoritativeTravelStarted && gathering === undefined) {
-      this.awaitingCombatAfterTravel = true;
-      this.travel?.start();
+      const travelMode = worldTravelTransition.getMode();
+      this.awaitingCombatAfterTravel = travelMode === "walk";
+      this.travel?.start(travelMode);
     }
     this.lastTravelGeneration = travelGeneration;
 
