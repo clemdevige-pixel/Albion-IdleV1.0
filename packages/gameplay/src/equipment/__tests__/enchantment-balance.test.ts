@@ -14,22 +14,23 @@ import {
 } from "../enchantment-recipes.js";
 
 describe("enchantment balance", () => {
-  it("uses the validated 50 IP per level curve", () => {
+  it("uses the validated display IP curve", () => {
     expect(ENCHANTMENT_ITEM_POWER).toEqual({
       0: 0,
-      1: 50,
-      2: 100,
-      3: 150,
-      4: 200,
+      1: 25,
+      2: 50,
+      3: 75,
+      4: 100,
     });
-    expect(getEnchantmentItemPowerBonus(3)).toBe(150);
+    expect(getEnchantmentItemPowerBonus(3)).toBe(75);
   });
 
-  it("converts bonus IP into deterministic equipment stat scaling", () => {
+  it("uses the validated independent combat-stat curve", () => {
     expect(getEnchantmentStatMultiplier(0)).toBe(1);
-    expect(getEnchantmentStatMultiplier(1)).toBe(1.1);
-    expect(getEnchantmentStatMultiplier(3)).toBe(1.3);
-    expect(getEnchantmentStatMultiplier(4)).toBe(1.4);
+    expect(getEnchantmentStatMultiplier(1)).toBe(1.12);
+    expect(getEnchantmentStatMultiplier(2)).toBe(1.26);
+    expect(getEnchantmentStatMultiplier(3)).toBe(1.42);
+    expect(getEnchantmentStatMultiplier(4)).toBe(1.42);
     expect(getBonusItemPowerStatMultiplier(50)).toBe(1.1);
   });
 
