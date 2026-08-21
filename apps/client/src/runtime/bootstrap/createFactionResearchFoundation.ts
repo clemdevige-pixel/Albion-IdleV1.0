@@ -8,7 +8,6 @@ import { RELIC_DEFINITIONS } from "../../data/relicContentCatalog.js";
 
 export interface FactionResearchFoundationDependencies {
   readonly getCompletedSegmentCount: (zoneDefId: string) => number;
-  readonly canReconstructRelics?: () => boolean;
   readonly relicDefinitions?: readonly RelicDefinition[];
 }
 
@@ -22,6 +21,8 @@ export interface FactionResearchFoundationDependencies {
 export function createFactionResearchFoundation(
   dependencies: FactionResearchFoundationDependencies,
 ) {
+  let canReconstructRelics = (): boolean => false;
+
   const factionKnowledgeService = new FactionKnowledgeService({
     resolveMonster(monsterId) {
       const monster = getMonsterDefinition(monsterId);
@@ -42,7 +43,7 @@ export function createFactionResearchFoundation(
       getCompletedSegmentCount: dependencies.getCompletedSegmentCount,
     },
     {
-      canReconstructRelic: () => dependencies.canReconstructRelics?.() ?? true,
+      canReconstructRelic: () => canReconstructRelics(),
     },
   );
 
@@ -56,6 +57,9 @@ export function createFactionResearchFoundation(
   return {
     factionKnowledgeService,
     relicService,
+    bindReconstructionGate(gate: () => boolean): void {
+      canReconstructRelics = gate;
+    },
     recordMonsterKill(monsterId: string): readonly string[] {
       const result = factionKnowledgeService.recordKill(monsterId);
       if (!result.ok) return [];
