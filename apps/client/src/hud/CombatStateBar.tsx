@@ -10,10 +10,9 @@ export function CombatStateBar(): JSX.Element | null {
   return (
     <div className="combat-state-group combat-state-group--defeat">
       <div className="combat-defeat-actions">
-        <span className="combat-defeat-actions__crest" aria-hidden="true">☠</span>
         <div className="combat-defeat-actions__copy">
-          <strong>Expédition interrompue</strong>
-          <span>La progression est arrêtée. Modifiez votre équipement si nécessaire.</span>
+          <strong>Exploration interrompue</strong>
+          <span>La progression est en pause.</span>
         </div>
         <button type="button" onClick={() => { actions.resumeExploration(); }}>
           Reprendre l’exploration
