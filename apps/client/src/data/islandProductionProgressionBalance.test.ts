@@ -9,11 +9,11 @@ import {
 } from "./progressionContentCatalog.js";
 
 const UPGRADE_CASES = [
-  { sourceLevel: 1, sourceTier: 3, targetTier: 4, cost: 15, islandSilver: 1000, monoSilver: 300, workshopSilver: 500, totalSilver: 3900 },
-  { sourceLevel: 2, sourceTier: 4, targetTier: 5, cost: 40, islandSilver: 18000, monoSilver: 4500, workshopSilver: 6000, totalSilver: 60000 },
-  { sourceLevel: 3, sourceTier: 5, targetTier: 6, cost: 70, islandSilver: 60000, monoSilver: 14500, workshopSilver: 24000, totalSilver: 200000 },
-  { sourceLevel: 4, sourceTier: 6, targetTier: 7, cost: 110, islandSilver: 155000, monoSilver: 38000, workshopSilver: 66000, totalSilver: 525000 },
-  { sourceLevel: 5, sourceTier: 7, targetTier: 8, cost: 160, islandSilver: 270000, monoSilver: 65000, workshopSilver: 110000, totalSilver: 900000 },
+  { sourceLevel: 1, sourceTier: 3, targetTier: 4, monoCost: 15, workshopFamilyCost: 4, workshopTotalCost: 16, islandSilver: 1000, monoSilver: 300, workshopSilver: 500, totalSilver: 3900 },
+  { sourceLevel: 2, sourceTier: 4, targetTier: 5, monoCost: 40, workshopFamilyCost: 10, workshopTotalCost: 40, islandSilver: 18000, monoSilver: 4500, workshopSilver: 6000, totalSilver: 60000 },
+  { sourceLevel: 3, sourceTier: 5, targetTier: 6, monoCost: 70, workshopFamilyCost: 18, workshopTotalCost: 72, islandSilver: 60000, monoSilver: 14500, workshopSilver: 24000, totalSilver: 200000 },
+  { sourceLevel: 4, sourceTier: 6, targetTier: 7, monoCost: 110, workshopFamilyCost: 28, workshopTotalCost: 112, islandSilver: 155000, monoSilver: 38000, workshopSilver: 66000, totalSilver: 525000 },
+  { sourceLevel: 5, sourceTier: 7, targetTier: 8, monoCost: 160, workshopFamilyCost: 40, workshopTotalCost: 160, islandSilver: 270000, monoSilver: 65000, workshopSilver: 110000, totalSilver: 900000 },
 ] as const;
 
 describe("island production progression balance contract", () => {
@@ -23,25 +23,25 @@ describe("island production progression balance contract", () => {
   });
 
   it("uses the validated mono-family building costs through T8", () => {
-    for (const { sourceLevel, sourceTier, cost } of UPGRADE_CASES) {
+    for (const { sourceLevel, sourceTier, monoCost } of UPGRADE_CASES) {
       const definition = getIslandOperationalLevelDefinition("lumber_camp", sourceLevel);
       expect(definition?.maxProductionTier).toBe(sourceTier);
       expect(definition?.upgradeToNext?.requirements).toEqual([
-        expect.objectContaining({ quantity: cost }),
+        expect.objectContaining({ quantity: monoCost }),
       ]);
     }
     expect(getIslandOperationalLevelDefinition("lumber_camp", 6)?.maxProductionTier).toBe(8);
   });
 
-  it("uses a flexible three-family workshop cost matching the mono cost", () => {
-    for (const { sourceLevel, sourceTier, cost } of UPGRADE_CASES) {
+  it("requires all four refined families for every workshop upgrade", () => {
+    for (const { sourceLevel, sourceTier, workshopFamilyCost, workshopTotalCost } of UPGRADE_CASES) {
       const definition = getIslandOperationalLevelDefinition("workshop", sourceLevel);
-      const flexible = definition?.upgradeToNext?.flexibleRequirement;
+      const requirements = definition?.upgradeToNext?.requirements ?? [];
       expect(definition?.maxProductionTier).toBe(sourceTier);
-      expect(definition?.upgradeToNext?.requirements).toEqual([]);
-      expect(flexible?.totalQuantity).toBe(cost);
-      expect(flexible?.minimumDistinctItemIds).toBe(3);
-      expect(flexible?.itemIds).toHaveLength(4);
+      expect(definition?.upgradeToNext?.flexibleRequirement).toBeUndefined();
+      expect(requirements).toHaveLength(4);
+      expect(requirements.every((requirement) => requirement.quantity === workshopFamilyCost)).toBe(true);
+      expect(requirements.reduce((sum, requirement) => sum + requirement.quantity, 0)).toBe(workshopTotalCost);
     }
     expect(getIslandOperationalLevelDefinition("workshop", 6)?.maxProductionTier).toBe(8);
   });
