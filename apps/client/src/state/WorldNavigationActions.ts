@@ -3,6 +3,7 @@ import { getItemTier } from "../data/itemPower.js";
 import { getZoneEquipmentTierCapByNumber } from "../data/zoneEquipmentTierCaps.js";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
+import { worldTravelTransition } from "../runtime/WorldTravelTransition.js";
 
 interface WorldNavigationRuntime {
   readonly currentZoneIndex: number;
@@ -64,6 +65,7 @@ export class WorldNavigationActions {
   }
 
   public selectSegment(segmentNumber: number): boolean {
+    if (worldTravelTransition.isActive()) return false;
     const loopState = this.deps.combatRuntime.getLoopState();
     if (this.canTravelImmediately(loopState)) {
       if (!this.deps.worldRuntime.selectSegment(segmentNumber)) return false;
@@ -80,6 +82,7 @@ export class WorldNavigationActions {
   }
 
   public selectZone(zoneNumber: number, segmentNumber?: number): boolean {
+    if (worldTravelTransition.isActive()) return false;
     const targetSegment = segmentNumber ?? 1;
     const currentZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
     const loopState = this.deps.combatRuntime.getLoopState();
@@ -101,6 +104,7 @@ export class WorldNavigationActions {
         // Cross-zone travel uses the already validated destination. changeActiveZone
         // consumes/clears the queued fields while preserving the inactive combat state.
         this.deps.worldRuntime.changeActiveZone(zoneNumber - 1, targetSegment - 1);
+        this.deps.bridge.setCombatState("walking");
       }
       if (loopState === "paused") this.deps.combatRuntime.restoreHeroHealth();
     }
