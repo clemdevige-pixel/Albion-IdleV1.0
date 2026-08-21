@@ -1,31 +1,34 @@
 import type { ReactNode } from "react";
 import { PanelSurface } from "../../shared";
+import {
+  getDashboardSectionDefinition,
+  type DashboardSectionId,
+} from "../dashboardSections";
 
 interface DashboardCardProps {
-  readonly title: string;
-  readonly iconSrc?: string;
+  readonly sectionId: DashboardSectionId;
   readonly meta?: ReactNode;
-  readonly className?: string;
   readonly children: ReactNode;
 }
 
 export function DashboardCard({
-  title,
-  iconSrc,
+  sectionId,
   meta,
-  className = "",
   children,
 }: DashboardCardProps): JSX.Element {
+  const definition = getDashboardSectionDefinition(sectionId);
+
   return (
-    <PanelSurface className={`dashboard-card ${className}`.trim()}>
+    <PanelSurface
+      className={`dashboard-card ${definition.className}`}
+      data-dashboard-section={definition.id}
+    >
       <header className="dashboard-card__header">
         <h2>
-          {iconSrc !== undefined && (
-            <span className="dashboard-card__icon" aria-hidden="true">
-              <img src={iconSrc} alt="" draggable={false} />
-            </span>
-          )}
-          {title}
+          <span className="dashboard-card__icon" aria-hidden="true">
+            <img src={definition.iconSrc} alt="" draggable={false} />
+          </span>
+          {definition.title}
         </h2>
         {meta !== undefined && <div className="dashboard-card__meta">{meta}</div>}
       </header>
