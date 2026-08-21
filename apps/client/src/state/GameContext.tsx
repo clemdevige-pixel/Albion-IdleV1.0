@@ -420,9 +420,26 @@ export function GameProvider({
     });
 
     const productionRuntimeController = new ProductionRuntimeController({
-      productionFoundation,
-      worldNavigationActions,
       bridge,
+      foundation: productionFoundation,
+      inventoryManager,
+      heroId,
+      productionStorageId,
+      currencyService,
+      walletId,
+      progressionOrchestrator,
+      getCurrentTick: () => tickCounter,
+      getCombatLoopState: () => combatRuntime.getLoopState(),
+      getGatheringTier: () => gatheringTier,
+      setGatheringTier: (tier) => { gatheringTier = tier; },
+      getRefiningTier: (family) => refiningTiers[family],
+      setRefiningTier: (family, tier) => { refiningTiers[family] = tier; },
+      getCraftingTier: () => craftingTier,
+      setCraftingTier: (tier) => { craftingTier = tier; },
+      setWorkerTier: (tier) => { workerTier = tier; },
+      prepareCombatResumeAfterGathering: () => worldNavigationActions.prepareCombatResumeAfterGathering(),
+      workerCapacity: WORKER_HOUSE_BASELINE.workerCapacity,
+      workerRecruitmentCost: WORKER_HOUSE_BASELINE.recruitmentCost,
     });
 
     const gameRuntimeTickController = new GameRuntimeTickController({
