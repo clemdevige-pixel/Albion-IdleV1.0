@@ -51,6 +51,7 @@ import { createProductionFoundation } from "../runtime/bootstrap/createProductio
 import { createFactionResearchFoundation } from "../runtime/bootstrap/createFactionResearchFoundation.js";
 import { createFactionMasteryFoundation } from "../runtime/bootstrap/createFactionMasteryFoundation.js";
 import { createFactionCapeFoundation } from "../runtime/bootstrap/createFactionCapeFoundation.js";
+import { createFactionAchievementFoundation } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
@@ -263,13 +264,21 @@ export function GameProvider({
     });
     const { researchService } = researchFoundation;
     factionResearchFoundation.bindReconstructionGate(researchFoundation.canReconstructRelics);
-    const { expeditionService } = createExpeditionFoundation({
+    const { expeditionService, rewardLedger } = createExpeditionFoundation({
       researchService,
       currencyService,
       walletId,
       inventoryManager,
       heroId,
       getFactionYieldBonusPercent: factionMasteryFoundation.getYieldBonusPercent,
+    });
+    const factionAchievementFoundation = createFactionAchievementFoundation({
+      factionKnowledgeService: factionResearchFoundation.factionKnowledgeService,
+      relicService: factionResearchFoundation.relicService,
+      expeditionService,
+      expeditionRewardLedger: rewardLedger,
+      dungeonRuntime,
+      masteryService,
     });
 
     const productionFoundation = createProductionFoundation({
@@ -410,6 +419,7 @@ export function GameProvider({
     persistence.registerProvider(factionResearchFoundation.relicService);
     persistence.registerProvider(researchService);
     persistence.registerProvider(expeditionService);
+    persistence.registerProvider(rewardLedger);
     persistence.registerProvider(new DungeonProgressionSaveProvider(dungeonRuntime));
 
     const refiningSaveProvider = new RefiningSaveProvider(
@@ -437,7 +447,6 @@ export function GameProvider({
       },
       resyncAll,
     });
-
     const saveGame = (): void => { saveGameActions.save(); };
     const loadGame = (): boolean => {
       const loaded = saveGameActions.load();
@@ -768,6 +777,7 @@ export function GameProvider({
       needsStarterSelection: () => starterSelectionPending,
       selectStarterWeapon,
       isWorldRequirementMet,
+      getFactionAchievements: factionAchievementFoundation.getAllProgress,
       startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
       abandonDungeon: () => dungeonNavigationActions.abandon(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
