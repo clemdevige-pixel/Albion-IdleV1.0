@@ -5,52 +5,10 @@
   "origin": { "x": 0.5, "y": 1 },
   "offset": { "x": 0, "y": 58 },
   "animations": {
-    "idle": {
-      "textureKey": "hero-badon-idle-sheet",
-      "assetPath": "/assets/characters/hero-badon-idle-sheet-v1.png",
-      "frameWidth": 420,
-      "frameHeight": 330,
-      "startFrame": 0,
-      "endFrame": 6,
-      "frameRate": 6,
-      "repeat": -1,
-      "display": { "width": 220, "height": 200 }
-    },
-    "walk": {
-      "textureKey": "hero-badon-walk-sheet",
-      "assetPath": "/assets/characters/hero-badon-walk-sheet-v1.png",
-      "frameWidth": 420,
-      "frameHeight": 330,
-      "startFrame": 0,
-      "endFrame": 6,
-      "frameRate": 10,
-      "repeat": 0,
-      "display": { "width": 220, "height": 200 }
-    },
-    "attack": {
-      "textureKey": "hero-badon-attack-sheet",
-      "assetPath": "/assets/characters/hero-badon-attack-sheet-v1.png",
-      "frameWidth": 420,
-      "frameHeight": 330,
-      "startFrame": 0,
-      "endFrame": 6,
-      "frameRate": 13,
-      "repeat": 0,
-      "display": { "width": 220, "height": 200 }
-    }
+    "idle": {"textureKey":"hero-badon-idle-sheet","assetPath":"/assets/characters/hero-badon-idle-sheet-v1.png","frameWidth":420,"frameHeight":330,"startFrame":0,"endFrame":6,"frameRate":6,"repeat":-1,"display":{"width":220,"height":200}},
+    "walk": {"textureKey":"hero-badon-walk-sheet","assetPath":"/assets/characters/hero-badon-walk-sheet-v1.png","frameWidth":420,"frameHeight":330,"startFrame":0,"endFrame":6,"frameRate":10,"repeat":-1,"display":{"width":220,"height":200}},
+    "attack": {"textureKey":"hero-badon-attack-sheet","assetPath":"/assets/characters/hero-badon-attack-sheet-v1.png","frameWidth":420,"frameHeight":330,"startFrame":0,"endFrame":6,"frameRate":13,"repeat":0,"display":{"width":220,"height":200}}
   },
-  "poses": {
-    "death": {
-      "textureKey": "hero-badon-death",
-      "assetPath": "/assets/characters/hero-badon-death-v2.png",
-      "display": { "width": 220, "height": 200 }
-    }
-  },
-  "visualProfile": "projectile",
-  "visualParameters": {
-    "approachDistance": 0,
-    "motionDurationMs": 0,
-    "impactDelayMs": 355
-  },
-  "ambientMotion": { "distance": 4, "durationMs": 900, "delayMs": 0 }
+  "poses":{"death":{"textureKey":"hero-badon-death","assetPath":"/assets/characters/hero-badon-death-v2.png","display":{"width":220,"height":200}}},
+  "visualProfile":"projectile","visualParameters":{"approachDistance":0,"motionDurationMs":0,"impactDelayMs":355},"ambientMotion":{"distance":4,"durationMs":900,"delayMs":0}
 }
