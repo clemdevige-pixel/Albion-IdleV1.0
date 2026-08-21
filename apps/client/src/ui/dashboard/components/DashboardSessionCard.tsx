@@ -8,11 +8,7 @@ interface DashboardSessionCardProps {
 
 export function DashboardSessionCard({ session }: DashboardSessionCardProps): JSX.Element {
   return (
-    <DashboardCard
-      title="Session"
-      iconSrc="/assets/ui/nav-masteries.png"
-      className="dashboard-card--session"
-    >
+    <DashboardCard sectionId="session">
       <dl className="dashboard-session">
         <div className="dashboard-session__metric dashboard-session__metric--time"><dt>Temps de zone</dt><dd>{formatDuration(session.elapsedSeconds)}</dd></div>
         <div className="dashboard-session__metric dashboard-session__metric--kills"><dt>Ennemis vaincus</dt><dd>{String(session.enemiesKilled)}</dd></div>
