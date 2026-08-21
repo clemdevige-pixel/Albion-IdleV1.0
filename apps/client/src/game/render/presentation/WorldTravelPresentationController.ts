@@ -1,16 +1,20 @@
 import type Phaser from "phaser";
-import { WORLD_TRAVEL_TIMING } from "../../../runtime/WorldTravelTransition";
+import {
+  WORLD_TRAVEL_TIMING,
+  type WorldTravelPresentationMode,
+} from "../../../runtime/WorldTravelTransition";
 import type { CombatPresentationController } from "./CombatPresentationController";
 import type { WorldPresentationController } from "./WorldPresentationController";
 
 const TRAVEL_EDGE_PADDING = 140;
 const BLACKOUT_DEPTH = 1000;
 
-/** Presents the visual half of one authoritative cross-zone travel boundary. */
+/** Presents the visual half of one authoritative travel boundary. */
 export class WorldTravelPresentationController {
   private readonly blackout: Phaser.GameObjects.Rectangle;
   private blackHoldTimer: Phaser.Time.TimerEvent | undefined;
   private active = false;
+  private mode: WorldTravelPresentationMode = "walk";
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -29,12 +33,20 @@ export class WorldTravelPresentationController {
     return this.active;
   }
 
-  public start(): void {
+  public start(mode: WorldTravelPresentationMode = "walk"): void {
     if (this.active) return;
     this.active = true;
+    this.mode = mode;
     this.world.beginEnvironmentHold();
-    this.combat.beginWorldTravel();
     this.scene.tweens.killTweensOf(this.combat.playerBody);
+
+    if (mode === "blackout") {
+      this.combat.invalidateEncounterPresentation();
+      this.fadeToBlack();
+      return;
+    }
+
+    this.combat.beginWorldTravel();
     this.scene.tweens.add({
       targets: this.combat.playerBody,
       x: this.scene.scale.width + TRAVEL_EDGE_PADDING,
@@ -50,9 +62,10 @@ export class WorldTravelPresentationController {
     this.blackHoldTimer?.remove(false);
     this.blackHoldTimer = undefined;
     this.world.endEnvironmentHold();
-    this.combat.finishWorldTravel();
+    if (this.mode === "walk") this.combat.finishWorldTravel();
     this.blackout.destroy();
     this.active = false;
+    this.mode = "walk";
   }
 
   private fadeToBlack(): void {
@@ -70,7 +83,7 @@ export class WorldTravelPresentationController {
   private holdBlack(): void {
     if (!this.active) return;
     this.world.commitHeldEnvironment();
-    this.combat.placePlayerAtTravelEntry(-TRAVEL_EDGE_PADDING);
+    if (this.mode === "walk") this.combat.placePlayerAtTravelEntry(-TRAVEL_EDGE_PADDING);
     this.blackHoldTimer = this.scene.time.delayedCall(
       WORLD_TRAVEL_TIMING.blackHoldMs,
       () => {
@@ -89,6 +102,10 @@ export class WorldTravelPresentationController {
       ease: "Linear",
       onComplete: () => {
         this.blackout.setVisible(false);
+        if (this.mode === "blackout") {
+          this.finish();
+          return;
+        }
         this.enterScene();
       },
     });
@@ -108,7 +125,8 @@ export class WorldTravelPresentationController {
   private finish(): void {
     if (!this.active) return;
     this.world.endEnvironmentHold();
-    this.combat.finishWorldTravel();
+    if (this.mode === "walk") this.combat.finishWorldTravel();
     this.active = false;
+    this.mode = "walk";
   }
 }
