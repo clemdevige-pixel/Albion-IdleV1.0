@@ -19,6 +19,11 @@ export interface FactionCapeContentDefinition {
   readonly dungeonDamageReductionPercent: number;
 }
 
+export interface FactionDungeonContext {
+  readonly factionId: string;
+  readonly tier: number;
+}
+
 const KEEPER_CAPE_BALANCE = [
   { tier: 4, armor: 3, magicResistance: 5, cloth: 3, leather: 1, runes: 3, reduction: 6 },
   { tier: 5, armor: 4, magicResistance: 7, cloth: 4, leather: 2, runes: 4, reduction: 8 },
@@ -84,4 +89,15 @@ export const FACTION_CAPE_CRAFT_RECIPES: readonly ClientCraftRecipe[] = KEEPER_C
 
 export function getFactionCapeDefinition(itemId: string): FactionCapeContentDefinition | undefined {
   return KEEPER_CAPE_CONTENT.find((cape) => cape.itemId === itemId);
+}
+
+export function resolveFactionCapeDungeonDamageReductionPercent(
+  capeItemId: string,
+  dungeon: FactionDungeonContext,
+): number {
+  const cape = getFactionCapeDefinition(capeItemId);
+  if (cape === undefined) return 0;
+  if (cape.factionId !== dungeon.factionId.toLowerCase()) return 0;
+  if (cape.tier > dungeon.tier) return 0;
+  return cape.dungeonDamageReductionPercent;
 }
