@@ -159,7 +159,7 @@ export class ResearchService<
   save(): ResearchSnapshot {
     return {
       version: 1,
-      completedResearchIds: this.getCompletedResearchIds(),
+      completedResearchIds: [...this.getCompletedResearchIds()],
       activeResearch: this.#activeResearch === undefined ? null : { ...this.#activeResearch },
     };
   }
