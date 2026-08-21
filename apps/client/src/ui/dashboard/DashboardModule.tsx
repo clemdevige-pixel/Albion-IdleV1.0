@@ -7,15 +7,14 @@ import {
   useDashboardZone,
   useDashboardZoneActions,
 } from "./useDashboardData";
-import {
-  DASHBOARD_SECTION_ORDER,
-  type DashboardSectionId,
-} from "./dashboardSections";
+import { DASHBOARD_SECTION_ORDER } from "./dashboardSections";
 import { DashboardCombatCard } from "./components/DashboardCombatCard";
 import { DashboardEnchantReadyCard } from "./components/DashboardEnchantReadyCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
 import { DashboardTrackedResourcesCard } from "./components/DashboardTrackedResourcesCard";
 import { DashboardYieldCard } from "./components/DashboardYieldCard";
+
+type DashboardMountedSectionId = (typeof DASHBOARD_SECTION_ORDER)[number];
 
 export function DashboardModule(): JSX.Element {
   const zone = useDashboardZone();
@@ -23,7 +22,7 @@ export function DashboardModule(): JSX.Element {
   const production = useDashboardProduction();
   const yieldData = useDashboardYield();
 
-  const sections: Readonly<Record<DashboardSectionId, JSX.Element | null>> = {
+  const sections: Readonly<Record<DashboardMountedSectionId, JSX.Element | null>> = {
     combat: (
       <DashboardCombatCard
         zone={zone}
