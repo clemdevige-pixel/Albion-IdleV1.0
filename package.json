@@ -26,6 +26,7 @@
     "benchmark:blue-contract": "tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-contract-audit.ts",
     "benchmark:t5-t8-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-t5-t8-world-wall-sweep.ts",
     "benchmark:t5-t8-wall-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-t5-t8-world-wall-candidate-sweep.ts",
+    "benchmark:tier-transitions": "tsx --tsconfig tsconfig.base.json scripts/runtime-tier-transition-contract-audit.ts",
     "benchmark:broadsword-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-wall-audit.ts",
     "benchmark:broadsword-vs-dagger": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-vs-dagger-encounters.ts",
     "benchmark:enchantment-shards": "tsc -b && tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts",
@@ -34,9 +35,6 @@
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.5",
-    "eslint": "^9.17.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.19.1",
