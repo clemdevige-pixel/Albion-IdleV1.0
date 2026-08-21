@@ -109,6 +109,12 @@ export const EXPEDITION_DEFINITIONS: readonly ExpeditionContentDefinition[] = [
   ...KEEPER_EXPEDITION_DEFINITIONS,
 ];
 
+export function isFactionExpeditionDefinition(
+  definition: ExpeditionContentDefinition,
+): definition is FactionExpeditionContentDefinition {
+  return definition.reward.kind === "faction_rune";
+}
+
 export function getExpeditionDefinition(
   expeditionId: string,
 ): ExpeditionContentDefinition | undefined {
