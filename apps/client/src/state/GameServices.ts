@@ -20,6 +20,7 @@ import type {
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
+import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 
 export type UIEventMap = Record<string, unknown>;
 
@@ -55,6 +56,7 @@ export interface GameServices {
   readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
   readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
+  readonly getBestiaryKnowledge: (monsterId: string) => BestiaryKnowledgeModel;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
