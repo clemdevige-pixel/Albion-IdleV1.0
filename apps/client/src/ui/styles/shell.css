@@ -25,17 +25,8 @@
   box-shadow: none;
 }
 
-.ui-shell__header .topbar {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  border: 0;
-  background: transparent;
-}
-
 .ui-shell__world {
   --ui-world-strip-height: 84px;
-  --ui-combat-dock-height: 118px;
   position: relative;
   display: grid;
   grid-area: world;
@@ -79,20 +70,6 @@
   border-top: 0;
   background: #090c10;
   box-shadow: none;
-}
-
-.ui-shell__bottom .bottomnav {
-  position: static;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  padding: 0 var(--ui-space-3);
-  overflow-x: auto;
-  overflow-y: hidden;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  transform: none;
 }
 
 .ui-shell__bottom .permanent-bottom-nav {
@@ -255,10 +232,7 @@
 
   .ui-shell__world {
     --ui-world-strip-height: 76px;
-    --ui-combat-dock-height: 108px;
   }
-
-  .ui-shell__header .topbar__logo { font-size: var(--ui-text-lg); }
 
   .ui-shell__bottom .permanent-bottom-nav {
     display: flex;
