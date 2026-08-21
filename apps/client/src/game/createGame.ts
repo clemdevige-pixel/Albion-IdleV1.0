@@ -8,7 +8,11 @@ import type { GameBridge } from "./GameBridge";
  * The combat world uses a wide 960x400 logical viewport so the persistent scene
  * reads as a cinematic idle-combat band without shrinking actors horizontally.
  */
-export function createGame(parent: HTMLElement, bridge: GameBridge): Phaser.Game {
+export function createGame(
+  parent: HTMLElement,
+  bridge: GameBridge,
+  playerDisplayName: string,
+): Phaser.Game {
   /**
    * Wrapper scene class that injects the bridge via init data.
    */
@@ -33,8 +37,7 @@ export function createGame(parent: HTMLElement, bridge: GameBridge): Phaser.Game
     scene: [],
   });
 
-  // Start the scene with bridge data
-  game.scene.add(GameScene.KEY, BridgedGameScene, true, { bridge });
+  game.scene.add(GameScene.KEY, BridgedGameScene, true, { bridge, playerDisplayName });
 
   return game;
 }
