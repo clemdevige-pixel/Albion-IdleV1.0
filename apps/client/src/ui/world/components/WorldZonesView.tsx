@@ -138,29 +138,34 @@ export function WorldZonesView({ zone, onTravel, onSetFarmMode }: WorldZonesView
               <div className="world-zone-detail__encounter">Segment {zone.segmentIndex}/{zone.segmentCount} · Rencontre {zone.encounterIndex}/{zone.encounterCount}</div>
             ) : null}
 
-            <div className="dashboard-zone__modes" aria-label="Mode de progression">
-              <button
-                type="button"
-                className={zone.farmMode ? "" : "is-active"}
-                aria-pressed={!zone.farmMode}
-                onClick={() => { onSetFarmMode(false); }}
-              >
-                Progression
-              </button>
-              <button
-                type="button"
-                className={zone.farmMode ? "is-active" : ""}
-                aria-pressed={zone.farmMode}
-                onClick={() => { onSetFarmMode(true); }}
-              >
-                Farm
-              </button>
-            </div>
             <div
-              className="dashboard-zone__combat-stop"
-              style={{ display: "flex", justifyContent: "center", marginTop: 8 }}
+              className="dashboard-zone__controls"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto",
+                gap: 7,
+                alignItems: "center",
+              }}
             >
-              <CombatStopButton persistent />
+              <div className="dashboard-zone__modes" aria-label="Mode de progression" style={{ marginTop: 0 }}>
+                <button
+                  type="button"
+                  className={zone.farmMode ? "" : "is-active"}
+                  aria-pressed={!zone.farmMode}
+                  onClick={() => { onSetFarmMode(false); }}
+                >
+                  Progression
+                </button>
+                <button
+                  type="button"
+                  className={zone.farmMode ? "is-active" : ""}
+                  aria-pressed={zone.farmMode}
+                  onClick={() => { onSetFarmMode(true); }}
+                >
+                  Farm
+                </button>
+              </div>
+              <CombatStopButton persistent compact />
             </div>
             <p className="world-zone-detail__hint">Sélectionner une zone affiche ses segments. Le voyage ne démarre qu’en cliquant sur un segment accessible.</p>
           </section>
