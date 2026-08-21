@@ -72,18 +72,15 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  transition: background var(--ui-duration-fast);
 }
 
 .ui-mastery-family-group.is-expanded {
   border: 0;
-  background: rgba(208, 157, 52, 0.035);
+  background: transparent;
   box-shadow: none;
 }
 
-.ui-mastery-family-group.is-locked {
-  opacity: 0.46;
-}
+.ui-mastery-family-group.is-locked { opacity: 0.46; }
 
 .ui-mastery-family {
   display: grid;
@@ -136,10 +133,7 @@
   align-items: baseline;
 }
 
-.ui-mastery-family__heading {
-  font-size: var(--ui-text-sm);
-}
-
+.ui-mastery-family__heading { font-size: var(--ui-text-sm); }
 .ui-mastery-family__heading strong {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -198,15 +192,13 @@
 
 .ui-mastery-family__expanded {
   display: grid;
-  gap: 7px;
-  padding: 2px 2px 10px 42px;
+  gap: 8px;
+  padding: 2px 2px 11px 42px;
   border: 0;
+  background: transparent;
 }
 
-.ui-mastery-family__bonus-row {
-  padding-top: 3px;
-}
-
+.ui-mastery-family__bonus-row { padding-top: 3px; }
 .ui-mastery-family__section-title {
   padding-top: 5px;
   border: 0;
@@ -217,11 +209,7 @@
   text-transform: uppercase;
 }
 
-.ui-mastery-progress {
-  display: grid;
-  gap: 4px;
-}
-
+.ui-mastery-progress { display: grid; gap: 4px; }
 .ui-mastery-progress__meta {
   display: flex;
   justify-content: space-between;
@@ -248,7 +236,7 @@
 
 .ui-mastery-specializations {
   display: grid;
-  gap: 7px;
+  gap: 8px;
 }
 
 .ui-mastery-specialization {
@@ -260,10 +248,7 @@
   background: transparent;
 }
 
-.ui-mastery-specialization.is-locked {
-  opacity: 0.46;
-}
-
+.ui-mastery-specialization.is-locked { opacity: 0.46; }
 .ui-mastery-specialization__heading > div {
   display: grid;
   gap: 1px;
@@ -275,9 +260,7 @@
   font-size: var(--ui-text-sm);
 }
 
-.ui-mastery-specialization__heading > strong {
-  font-size: var(--ui-text-sm);
-}
+.ui-mastery-specialization__heading > strong { font-size: var(--ui-text-sm); }
 
 .ui-mastery-tree-entry {
   display: grid;
@@ -299,10 +282,7 @@
   gap: 0;
 }
 
-.ui-mastery-tree-entry small {
-  font-size: 8px;
-}
-
+.ui-mastery-tree-entry small { font-size: 8px; }
 .ui-masteries__empty {
   margin: 0;
   padding: 10px 0;
@@ -312,7 +292,5 @@
 }
 
 @media (max-width: 720px) {
-  .ui-mastery-family__expanded {
-    padding-left: 2px;
-  }
+  .ui-mastery-family__expanded { padding-left: 2px; }
 }
