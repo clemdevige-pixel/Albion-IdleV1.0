@@ -25,6 +25,7 @@
     "benchmark:boss-only": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-only-role-telemetry.ts",
     "benchmark:blue-contract": "tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-contract-audit.ts",
     "benchmark:t5-t8-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-t5-t8-world-wall-sweep.ts",
+    "benchmark:t5-t8-wall-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-t5-t8-world-wall-candidate-sweep.ts",
     "benchmark:broadsword-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-wall-audit.ts",
     "benchmark:broadsword-vs-dagger": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-vs-dagger-encounters.ts",
     "benchmark:enchantment-shards": "tsc -b && tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts",
