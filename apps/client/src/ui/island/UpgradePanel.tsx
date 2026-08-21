@@ -2,6 +2,7 @@ import { type IslandBuildingId } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { getIslandMaterialLabel } from "./islandMaterialPresentation";
 import { getIslandBuildingUpgradeState } from "./islandBuildingUpgradeState";
+import "./upgradePanel.css";
 
 export function UpgradePanel({ definitionId, level }: { readonly definitionId: IslandBuildingId; readonly level: number }): JSX.Element | null {
   const { wallet } = useGameBridge();
@@ -41,7 +42,7 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
   if (next === undefined) return null;
 
   return (
-    <section className="ui-island-upgrade">
+    <section className="ui-island-upgrade ui-island-upgrade--flat">
       <div className="ui-island-upgrade__heading">
         <div>
           <span className="ui-island__eyebrow">Amélioration</span>
