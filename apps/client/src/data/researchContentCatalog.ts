@@ -9,6 +9,7 @@ export type ResearchContentRequirement = ResearchRequirementDefinition & {
 };
 
 export const RESEARCH_UNLOCK_IDS = {
+  relicReconstruction: "relic_reconstruction",
   expeditionTier4: "expedition_tier:4",
   expeditionTier5: "expedition_tier:5",
   expeditionTier6: "expedition_tier:6",
