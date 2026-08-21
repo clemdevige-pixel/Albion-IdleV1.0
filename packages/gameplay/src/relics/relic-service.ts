@@ -8,6 +8,7 @@ import {
   type RelicObjectiveRequirement,
   type RelicProgressPort,
   type RelicProgressView,
+  type RelicReconstructionPort,
 } from "./types.js";
 
 const RelicSnapshotSchema = z.object({
@@ -16,6 +17,10 @@ const RelicSnapshotSchema = z.object({
 });
 
 type RelicSnapshot = z.infer<typeof RelicSnapshotSchema>;
+
+const DEFAULT_RECONSTRUCTION_PORT: RelicReconstructionPort = {
+  canReconstructRelic: () => true,
+};
 
 /**
  * Deterministic Relic reconstruction domain.
@@ -29,9 +34,14 @@ export class RelicService implements SaveProvider {
   readonly #definitions = new Map<RelicId, RelicDefinition>();
   readonly #reconstructedRelicIds = new Set<RelicId>();
   readonly #progressPort: RelicProgressPort;
+  readonly #reconstructionPort: RelicReconstructionPort;
 
-  constructor(progressPort: RelicProgressPort) {
+  constructor(
+    progressPort: RelicProgressPort,
+    reconstructionPort: RelicReconstructionPort = DEFAULT_RECONSTRUCTION_PORT,
+  ) {
     this.#progressPort = progressPort;
+    this.#reconstructionPort = reconstructionPort;
   }
 
   registerRelic(definition: RelicDefinition): RegisterRelicResult {
@@ -65,12 +75,14 @@ export class RelicService implements SaveProvider {
 
   /**
    * Resolves all newly completed Relics automatically after authoritative
-   * progression changes. Callers may use the returned IDs for presentation only.
+   * progression changes. Objective history can complete before reconstruction
+   * is enabled; permanent reconstruction waits for its owning authority.
    */
   resolveCompletedRelics(): readonly RelicId[] {
     const newlyReconstructed: RelicId[] = [];
     for (const definition of this.#definitions.values()) {
       if (this.#reconstructedRelicIds.has(definition.id)) continue;
+      if (!this.#reconstructionPort.canReconstructRelic(definition)) continue;
       const complete = definition.objectives.every((objective) => (
         this.#isRequirementMet(objective.requirement)
       ));
