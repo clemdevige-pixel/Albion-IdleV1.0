@@ -30,13 +30,18 @@ export class GamePresentationRuntime {
   public constructor(
     private readonly scene: Phaser.Scene,
     private readonly getBridge: () => GameBridge | undefined,
+    private readonly playerDisplayName: string,
   ) {}
 
   public create(): void {
     const bridge = this.getBridge();
     resetCombatPresentationSession(bridge?.damageNumbers.at(-1)?.id ?? 0);
     const world = new WorldPresentationController(this.scene, bridge);
-    const combat = new CombatPresentationController(this.scene, this.getBridge);
+    const combat = new CombatPresentationController(
+      this.scene,
+      this.getBridge,
+      this.playerDisplayName,
+    );
     this.world = world;
     this.combat = combat;
     this.activity = new ActivityPresentationController(this.scene, combat);
