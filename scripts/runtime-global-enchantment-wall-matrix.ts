@@ -136,7 +136,7 @@ for (const tier of TARGET_TIERS) {
 
 console.log("[GLOBAL_ENCHANTMENT_WALL_MATRIX_CONTRACT]", {
   tiers: "T4-T8",
-  zones: "all five authored world steps in every tier band",
+  zones: "all zones authored in each tier progression contract; Blue/T4 currently covers Golden Steppe + Frostpeak because earlier Blue steps belong to the T3 progression block",
   weapons: WEAPON_FAMILIES.length,
   enchantments: ENCHANTMENTS,
   mastery: "authored expected mastery for the zone, held constant across .0/.1/.2/.3",
