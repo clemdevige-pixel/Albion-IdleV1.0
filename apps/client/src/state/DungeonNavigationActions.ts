@@ -8,6 +8,7 @@ import type {
 import { getItemTier } from "../data/itemPower.js";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
+import { worldTravelTransition } from "../runtime/WorldTravelTransition.js";
 
 interface DungeonCombatRuntime {
   getLoopState(): CombatLoopState;
@@ -44,6 +45,7 @@ export interface DungeonNavigationState {
  * Entering a dungeon follows the same combat boundary as other deferred actions:
  * the active encounter is allowed to finish, CombatStopController reaches paused,
  * then the world encounter is replaced by the dungeon run and combat resumes.
+ * Cross-context presentation is delegated to the shared travel transition.
  */
 export class DungeonNavigationActions {
   private pendingDefinitionId: string | null = null;
@@ -97,6 +99,7 @@ export class DungeonNavigationActions {
     this.deps.dungeonRuntime.abandon();
     this.deps.combatRuntime.interruptEncounter();
     this.deps.stopController.reset();
+    worldTravelTransition.start();
     this.deps.onStateChanged();
     return true;
   }
@@ -117,6 +120,7 @@ export class DungeonNavigationActions {
 
     this.pendingDefinitionId = null;
     this.deps.stopController.reset();
+    if (started.ok) worldTravelTransition.start();
     this.deps.onStateChanged();
     return started.ok;
   }
