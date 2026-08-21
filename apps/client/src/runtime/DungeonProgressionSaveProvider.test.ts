@@ -27,9 +27,10 @@ const T5_DUNGEON: DungeonDefinition = {
 };
 
 describe("DungeonProgressionSaveProvider", () => {
-  it("saves and restores cleared dungeon progression", () => {
+  it("saves and restores cleared dungeon progression and lifetime counts", () => {
     const sourceRuntime = new DungeonRuntime([T4_DUNGEON, T5_DUNGEON]);
     sourceRuntime.restoreClearedDefinitionIds([T4_DUNGEON.id]);
+    sourceRuntime.restoreCompletedDefinitionCounts({ [T4_DUNGEON.id]: 4 });
     const payload = new DungeonProgressionSaveProvider(sourceRuntime).save();
 
     const restoredRuntime = new DungeonRuntime([T4_DUNGEON, T5_DUNGEON]);
@@ -37,6 +38,7 @@ describe("DungeonProgressionSaveProvider", () => {
 
     expect(restoredRuntime.getClearedDefinitionIds()).toEqual([T4_DUNGEON.id]);
     expect(restoredRuntime.getClearedTiers()).toEqual([4]);
+    expect(restoredRuntime.getCompletedDefinitionCounts()).toEqual({ [T4_DUNGEON.id]: 4 });
     expect(restoredRuntime.canAccessDefinition(T5_DUNGEON.id)).toBe(true);
   });
 
@@ -46,20 +48,38 @@ describe("DungeonProgressionSaveProvider", () => {
 
     provider.load({
       clearedDefinitionIds: [T4_DUNGEON.id, "unknown_dungeon", 5, null],
+      completedDefinitionCounts: {
+        [T4_DUNGEON.id]: 3,
+        unknown_dungeon: 8,
+        invalid: -2,
+      },
     });
 
     expect(runtime.getClearedDefinitionIds()).toEqual([T4_DUNGEON.id]);
     expect(runtime.getClearedTiers()).toEqual([4]);
+    expect(runtime.getCompletedDefinitionCounts()).toEqual({ [T4_DUNGEON.id]: 3 });
+  });
+
+  it("loads legacy payloads without lifetime counts", () => {
+    const runtime = new DungeonRuntime([T4_DUNGEON, T5_DUNGEON]);
+    const provider = new DungeonProgressionSaveProvider(runtime);
+
+    provider.load({ clearedDefinitionIds: [T4_DUNGEON.id] });
+
+    expect(runtime.getClearedDefinitionIds()).toEqual([T4_DUNGEON.id]);
+    expect(runtime.getCompletedDefinitionCounts()).toEqual({});
   });
 
   it("resets progression when the provider payload is absent", () => {
     const runtime = new DungeonRuntime([T4_DUNGEON, T5_DUNGEON]);
     runtime.restoreClearedDefinitionIds([T4_DUNGEON.id]);
+    runtime.restoreCompletedDefinitionCounts({ [T4_DUNGEON.id]: 2 });
 
     new DungeonProgressionSaveProvider(runtime).load(undefined);
 
     expect(runtime.getClearedDefinitionIds()).toEqual([]);
     expect(runtime.getClearedTiers()).toEqual([]);
+    expect(runtime.getCompletedDefinitionCounts()).toEqual({});
     expect(runtime.canAccessDefinition(T5_DUNGEON.id)).toBe(false);
   });
 });
