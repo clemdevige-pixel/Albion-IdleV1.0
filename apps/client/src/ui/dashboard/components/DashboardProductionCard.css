@@ -3,18 +3,18 @@
 }
 
 .dashboard-card--production .dashboard-production__list {
-  gap: 0;
+  gap: 1px;
 }
 
 .dashboard-card--production .dashboard-production__task {
   position: relative;
   grid-template-columns: 34px minmax(0, 1fr) auto;
-  gap: 3px 8px;
-  min-height: 50px;
-  padding: 7px 3px;
+  gap: 4px 8px;
+  min-height: 52px;
+  padding: 8px 3px;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid rgb(73 58 36 / 52%);
+  border-bottom: 1px solid rgb(73 58 36 / 44%);
   border-radius: 0;
   cursor: pointer;
 }
@@ -39,7 +39,7 @@
   place-items: center;
   align-self: center;
   background: radial-gradient(circle, rgb(45 43 32 / 72%), rgb(9 13 18 / 36%) 74%);
-  border: 1px solid rgb(103 77 34 / 62%);
+  border: 1px solid rgb(103 77 34 / 54%);
   border-radius: 50%;
 }
 
@@ -86,6 +86,6 @@
 
 .dashboard-card--production .dashboard-production__task .dashboard-progress {
   height: 3px;
-  border-color: rgb(57 54 46 / 72%);
+  border-color: rgb(57 54 46 / 64%);
   background: #080b0f;
 }
