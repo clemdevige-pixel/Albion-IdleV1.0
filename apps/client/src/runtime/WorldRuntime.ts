@@ -8,6 +8,7 @@ import type {
 import type { WorldCoordinator } from "@game/gameplay";
 import { SEGMENTS_PER_ZONE, ENCOUNTERS_PER_SEGMENT } from "@game/data";
 import { WORLD_ZONE_ORDER } from "../data/worldContentCatalog.js";
+import { worldTravelTransition } from "./WorldTravelTransition.js";
 
 const FOREST_ZONE_DEF_ID = WORLD_ZONE_ORDER[0]!;
 const ZONE_ORDER: readonly ZoneDefinitionId[] = WORLD_ZONE_ORDER;
@@ -81,6 +82,7 @@ export class WorldRuntime {
   }
 
   public changeActiveZone(nextIndex: number, targetSegment?: number, tickCounter: number = 0): void {
+    const previousZoneIndex = this.worldTick.currentZoneIndex;
     this.saveCurrentZoneProgress();
     this.worldTick.currentZoneIndex = nextIndex;
     const memory = this.zoneMemories[nextIndex]!;
@@ -97,6 +99,7 @@ export class WorldRuntime {
     this.worldTick.pendingZoneSegment = null;
     const nextDefId = ZONE_ORDER[nextIndex]!;
     this.worldCoordinator.changeZone(nextDefId, tickCounter);
+    if (nextIndex !== previousZoneIndex) worldTravelTransition.start();
   }
 
   public getActiveZoneDef(): { defId: ZoneDefinitionId; tier: number; name: string } {
@@ -309,6 +312,7 @@ export class WorldRuntime {
     this.worldTick.pendingSegment = null;
     this.worldTick.pendingZone = null;
     this.worldTick.pendingZoneSegment = null;
+    worldTravelTransition.reset();
 
     const activeZoneDefId = ZONE_ORDER[this.worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
     this.zoneManager.changeZone(activeZoneDefId);
