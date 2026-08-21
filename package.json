@@ -28,6 +28,7 @@
     "benchmark:t5-t8-wall-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-t5-t8-world-wall-candidate-sweep.ts",
     "benchmark:tier-transitions": "tsx --tsconfig tsconfig.base.json scripts/runtime-tier-transition-contract-audit.ts",
     "benchmark:tier-transition-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-tier-transition-candidate-sweep.ts",
+    "benchmark:t4-frostpeak-gate-candidates": "tsx --tsconfig tsconfig.base.json scripts/runtime-t4-frostpeak-gate-candidate-sweep.ts",
     "benchmark:broadsword-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-wall-audit.ts",
     "benchmark:broadsword-vs-dagger": "tsx --tsconfig tsconfig.base.json scripts/runtime-broadsword-vs-dagger-encounters.ts",
     "benchmark:enchantment-shards": "tsc -b && tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts",
