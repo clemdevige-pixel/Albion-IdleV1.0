@@ -135,6 +135,9 @@ export class CombatPresentationController {
   }
 
   public beginWorldTravel(): void {
+    const bridge = this.getBridge();
+    const latestDamageEventId = bridge?.damageNumbers.at(-1)?.id ?? this.lastDamageEventId;
+    this.lastDamageEventId = Math.max(this.lastDamageEventId, latestDamageEventId);
     this.invalidateEncounterPresentation();
     this.scene.tweens.killTweensOf(this.playerBody);
     this.playerBody.setVisible(true);
