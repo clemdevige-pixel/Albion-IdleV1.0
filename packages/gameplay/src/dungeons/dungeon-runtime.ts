@@ -45,9 +45,10 @@ export type DungeonAdvanceResult =
   | { readonly ok: true; readonly state: DungeonRunState }
   | { readonly ok: false; readonly reason: DungeonAdvanceFailureReason };
 
-/** Owns only the deterministic lifecycle of a dungeon attempt. */
+/** Owns only the deterministic lifecycle and permanent clear progression of dungeon attempts. */
 export class DungeonRuntime {
   readonly #definitions = new Map<string, DungeonDefinition>();
+  readonly #clearedDefinitionIds = new Set<string>();
   #activeRun: DungeonRunState | undefined;
 
   constructor(definitions: readonly DungeonDefinition[] = []) {
@@ -82,6 +83,29 @@ export class DungeonRuntime {
 
   get activeRun(): DungeonRunState | undefined {
     return this.#activeRun;
+  }
+
+  getClearedDefinitionIds(): readonly string[] {
+    return [...this.#clearedDefinitionIds];
+  }
+
+  getClearedTiers(): readonly number[] {
+    return [...new Set(
+      [...this.#clearedDefinitionIds]
+        .map((definitionId) => this.#definitions.get(definitionId)?.tier)
+        .filter((tier): tier is number => tier !== undefined),
+    )].sort((a, b) => a - b);
+  }
+
+  hasClearedTier(tier: number): boolean {
+    return this.getClearedTiers().includes(tier);
+  }
+
+  restoreClearedDefinitionIds(definitionIds: readonly string[]): void {
+    this.#clearedDefinitionIds.clear();
+    for (const definitionId of definitionIds) {
+      if (this.#definitions.has(definitionId)) this.#clearedDefinitionIds.add(definitionId);
+    }
   }
 
   getActiveEncounter(): DungeonEncounterDefinition | undefined {
@@ -123,6 +147,7 @@ export class DungeonRuntime {
       ? { ...run, status: "cleared", completedEncounterIds }
       : { ...run, encounterIndex: run.encounterIndex + 1, completedEncounterIds };
     this.#activeRun = state;
+    if (cleared) this.#clearedDefinitionIds.add(run.definitionId);
     return { ok: true, state };
   }
 
