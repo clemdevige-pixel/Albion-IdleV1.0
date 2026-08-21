@@ -16,9 +16,7 @@ function formatActivityTime(timestamp: number): string {
 export function DashboardActivityCard({ entries }: DashboardActivityCardProps): JSX.Element {
   return (
     <DashboardCard
-      title="Activité récente"
-      iconSrc="/assets/ui/nav-inventory.png"
-      className="dashboard-card--activity"
+      sectionId="activity"
       meta={entries.length > 0 ? `${String(entries.length)} événements` : undefined}
     >
       {entries.length === 0 ? (
