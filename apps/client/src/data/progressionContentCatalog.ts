@@ -8,6 +8,10 @@ import {
   WEAPON_MASTERY_DEFINITIONS,
   getWeaponMasteryDisplayName,
 } from "./weaponContentCatalog.js";
+import {
+  FACTION_MASTERY_DEFINITIONS,
+  getFactionMasteryDisplayName,
+} from "./factionMasteryContentCatalog.js";
 
 export const WOOD_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_wood");
 export const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");
@@ -67,17 +71,19 @@ export function getRequiredGatheringMasteryForTier(tier: number): number {
 }
 
 /**
- * Weapon mastery definitions are authored by weaponContentCatalog.
- * This catalog only composes weapon and non-weapon progression domains.
+ * Each progression domain authors its own definitions; this catalog only
+ * composes them for the generic MasteryService.
  */
 export const MASTERY_DEFINITIONS = [
   ...WEAPON_MASTERY_DEFINITIONS,
   ...GATHERING_MASTERY_DEFINITIONS,
+  ...FACTION_MASTERY_DEFINITIONS,
 ];
 
 export function getMasteryDisplayName(masteryId: string): string {
   return getWeaponMasteryDisplayName(masteryId)
     ?? getGatheringMasteryDisplayName(masteryId)
+    ?? getFactionMasteryDisplayName(masteryId)
     ?? masteryId;
 }
 
