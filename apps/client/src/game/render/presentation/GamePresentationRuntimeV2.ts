@@ -13,14 +13,17 @@ import {
 } from "./CombatPresentedHealth";
 import { resolveCombatPresentationTransition } from "./CombatPresentationTransition";
 import { WorldPresentationController } from "./WorldPresentationController";
+import { WorldTravelPresentationController } from "./WorldTravelPresentationController";
 
 /** Thin coordinator for the specialized presentation controllers. */
 export class GamePresentationRuntime {
   private combat: CombatPresentationController | undefined;
   private activity: ActivityPresentationController | undefined;
   private world: WorldPresentationController | undefined;
+  private travel: WorldTravelPresentationController | undefined;
   private lastEncounterPresentationKey: string | undefined;
   private lastCombatState: GameBridge["combatState"] | undefined;
+  private lastWorldZoneIndex: number | undefined;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -30,9 +33,13 @@ export class GamePresentationRuntime {
   public create(): void {
     const bridge = this.getBridge();
     resetCombatPresentationSession(bridge?.damageNumbers.at(-1)?.id ?? 0);
-    this.world = new WorldPresentationController(this.scene, bridge);
-    this.combat = new CombatPresentationController(this.scene, this.getBridge);
-    this.activity = new ActivityPresentationController(this.scene, this.combat);
+    const world = new WorldPresentationController(this.scene, bridge);
+    const combat = new CombatPresentationController(this.scene, this.getBridge);
+    this.world = world;
+    this.combat = combat;
+    this.activity = new ActivityPresentationController(this.scene, combat);
+    this.travel = new WorldTravelPresentationController(this.scene, combat, world);
+    this.lastWorldZoneIndex = bridge?.world.zoneIndex;
   }
 
   public update(): void {
@@ -76,20 +83,34 @@ export class GamePresentationRuntime {
     const gathering = selectActiveGathering(bridge);
     this.combat?.update(bridge);
     this.activity?.update(gathering);
+
+    const zoneIndex = bridge.world.zoneIndex;
+    if (
+      this.lastWorldZoneIndex !== undefined
+      && zoneIndex !== this.lastWorldZoneIndex
+      && gathering === undefined
+    ) {
+      this.travel?.start();
+    }
+    this.lastWorldZoneIndex = zoneIndex;
+
     this.world?.update(bridge, gathering);
     this.lastCombatState = bridge.combatState;
   }
 
   public clear(): void {
+    this.travel?.clear();
     this.activity?.clear();
     this.combat?.clear();
     this.world?.clear();
     clearPresentedEnemyHealth();
+    this.travel = undefined;
     this.activity = undefined;
     this.combat = undefined;
     this.world = undefined;
     this.lastEncounterPresentationKey = undefined;
     this.lastCombatState = undefined;
+    this.lastWorldZoneIndex = undefined;
   }
 
   private hasAuthoritativeEnemySnapshot(bridge: GameBridge): boolean {
