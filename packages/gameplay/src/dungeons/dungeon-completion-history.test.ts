@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
-import { InventoryManager } from "../inventory/inventory-manager.js";
+import { InventoryManager } from "../inventory/index.js";
 import { DungeonRuntime, type DungeonDefinition } from "./dungeon-runtime.js";
 
 const DEFINITION: DungeonDefinition = {
@@ -19,9 +19,12 @@ const DEFINITION: DungeonDefinition = {
 
 function createRuntime() {
   const world = new World(createRuntimeServices());
-  const inventory = new InventoryManager(world);
+  const inventory = new InventoryManager(
+    world,
+    (itemId) => ({ itemId, stackable: true, maxStack: 999 }),
+  );
   const heroId = world.createEntity();
-  inventory.attachInventory(heroId, { maxSlots: 10 });
+  inventory.createInventory(heroId, 10);
   inventory.addQuantity(heroId, DEFINITION.keyItemId, 10);
   return { runtime: new DungeonRuntime([DEFINITION]), inventory, heroId };
 }
