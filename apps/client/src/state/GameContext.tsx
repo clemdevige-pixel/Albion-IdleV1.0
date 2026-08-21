@@ -138,7 +138,10 @@ export function GameProvider({
       getAwakenedWeaponService: () => awakenedWeaponServiceRef.current,
       canMutateEquipment: () => (
         starterSelectionPending
-        || (!combatService.isInCombat() && dungeonRuntime.activeRun?.status !== "active")
+        || (
+          dungeonRuntime.activeRun?.status !== "active"
+          && (combatStopController.isPaused() || !combatService.isInCombat())
+        )
       ),
       onPlayerHealthChanged: (currentHealth, maxHealth) => {
         bridge.updatePlayerHealth(currentHealth, maxHealth);
