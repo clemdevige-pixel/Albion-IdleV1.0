@@ -4,10 +4,19 @@ import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 import { EnvironmentSystem } from "../systems/EnvironmentSystem";
 import { WorldStatusSystem } from "../systems/WorldStatusSystem";
 
+interface PendingEnvironmentPresentation {
+  readonly manifestId: string;
+  readonly biomeTheme: string;
+  readonly width: number;
+  readonly height: number;
+}
+
 /** Coordinates the environment and world-status presentation. */
 export class WorldPresentationController {
   private readonly environmentSystem: EnvironmentSystem;
   private readonly statusSystem: WorldStatusSystem;
+  private holdEnvironment = false;
+  private pendingEnvironment: PendingEnvironmentPresentation | undefined;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -43,19 +52,51 @@ export class WorldPresentationController {
       segmentCount: world.segmentCount,
       zoneProgress: world.zoneProgress,
     });
-    this.environmentSystem.setEnvironment(
-      renderManifestRegistry.requireEnvironment(
-        world.environmentVisualManifestId,
-      ),
-      world.biomeTheme,
-      this.scene.scale.width,
-      this.scene.scale.height,
-    );
 
+    const environment = {
+      manifestId: world.environmentVisualManifestId,
+      biomeTheme: world.biomeTheme,
+      width: this.scene.scale.width,
+      height: this.scene.scale.height,
+    } satisfies PendingEnvironmentPresentation;
+
+    if (this.holdEnvironment) {
+      this.pendingEnvironment = environment;
+      return;
+    }
+
+    this.applyEnvironment(environment);
+  }
+
+  public beginEnvironmentHold(): void {
+    this.holdEnvironment = true;
+    this.pendingEnvironment = undefined;
+  }
+
+  public commitHeldEnvironment(): void {
+    if (this.pendingEnvironment === undefined) return;
+    this.applyEnvironment(this.pendingEnvironment);
+    this.pendingEnvironment = undefined;
+  }
+
+  public endEnvironmentHold(): void {
+    this.commitHeldEnvironment();
+    this.holdEnvironment = false;
   }
 
   public clear(): void {
+    this.pendingEnvironment = undefined;
+    this.holdEnvironment = false;
     this.environmentSystem.clear();
     this.statusSystem.clear();
+  }
+
+  private applyEnvironment(environment: PendingEnvironmentPresentation): void {
+    this.environmentSystem.setEnvironment(
+      renderManifestRegistry.requireEnvironment(environment.manifestId),
+      environment.biomeTheme,
+      environment.width,
+      environment.height,
+    );
   }
 }
