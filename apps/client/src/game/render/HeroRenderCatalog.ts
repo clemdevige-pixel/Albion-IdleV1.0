@@ -73,8 +73,6 @@ function buildAnimation(
 export function createHeroRenderManifest(
   definition: HeroRenderDefinition,
 ): ActorRenderManifest {
-  const animatedDeath = definition.death.frameRate !== undefined;
-
   return {
     schemaVersion: 1,
     id: definition.id,
@@ -103,16 +101,16 @@ export function createHeroRenderManifest(
         textureKey: definition.death.textureKey,
         assetPath: definition.death.assetPath,
         display: definition.sheet.display,
-        ...(animatedDeath
-          ? {
+        ...(definition.death.frameRate === undefined
+          ? {}
+          : {
               frameWidth: definition.sheet.frameWidth,
               frameHeight: definition.sheet.frameHeight,
               startFrame: definition.sheet.startFrame,
               endFrame: definition.sheet.endFrame,
               frameRate: definition.death.frameRate,
               repeat: HERO_DEATH_REPEAT,
-            }
-          : {}),
+            }),
       },
     },
     visualProfile: definition.visualProfile,
