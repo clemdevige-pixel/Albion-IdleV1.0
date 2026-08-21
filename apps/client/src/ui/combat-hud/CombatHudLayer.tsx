@@ -4,6 +4,7 @@ import { HudRoot } from "../../hud/HudRoot";
 import { EconomyNotifications } from "../../panels/EconomyNotifications";
 import { EnemyStatusVfxOverlay } from "./EnemyStatusVfxOverlay";
 import "./combatHud.css";
+import "./combatState.css";
 import "./combatDock.css";
 
 /**
