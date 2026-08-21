@@ -1,5 +1,6 @@
 import {
   ENCHANTMENT_STAT_MULTIPLIER,
+  getEquipmentStatRoundingStep,
   roundEquipmentStatValue,
   type StatId,
 } from "@game/gameplay";
@@ -8,11 +9,7 @@ import { PROGRESSION_EQUIPMENT_CONTENT } from "../apps/client/src/data/nonWeapon
 
 type Tier = 4 | 5 | 6 | 7 | 8;
 type StatMap = Readonly<Record<string, number>>;
-
-type EquipmentFamily = {
-  readonly familyId: string;
-  readonly itemIdForTier: (tier: Tier) => string;
-};
+type EquipmentFamily = { readonly familyId: string; readonly itemIdForTier: (tier: Tier) => string };
 
 const TIERS = [4, 5, 6, 7, 8] as const satisfies readonly Tier[];
 const SOURCE_TIERS = [4, 5, 6, 7] as const;
@@ -46,9 +43,7 @@ const EQUIPMENT_FAMILIES = [...WEAPON_FAMILIES, ...NON_WEAPON_FAMILIES] as const
 function statsFor(itemId: string): StatMap {
   const stats = resolveEquipmentInfo(itemId)?.stats;
   if (stats === undefined) throw new Error(`Missing equipment stats for ${itemId}`);
-  return Object.fromEntries(
-    Object.entries(stats).filter(([statId, value]) => MODELED_STATS.has(statId) && value > 0),
-  );
+  return Object.fromEntries(Object.entries(stats).filter(([statId, value]) => MODELED_STATS.has(statId) && value > 0));
 }
 
 function median(values: readonly number[]): number {
@@ -59,51 +54,48 @@ function median(values: readonly number[]): number {
   return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 }
 
-function round4(value: number): number {
-  return Number(value.toFixed(4));
-}
+const round4 = (value: number) => Number(value.toFixed(4));
+const round2 = (value: number) => Number(value.toFixed(2));
+const asStatId = (statId: string) => statId as StatId;
+const roundModeledStat = (statId: string, value: number) => roundEquipmentStatValue(asStatId(statId), value);
 
-function round2(value: number): number {
-  return Number(value.toFixed(2));
-}
-
-function roundModeledStat(statId: string, value: number): number {
-  return roundEquipmentStatValue(statId as StatId, value);
-}
-
-function familyImpliedGrowth(family: EquipmentFamily): {
-  readonly familyId: string;
-  readonly statFactors: readonly number[];
-  readonly familyFactor: number;
-} {
+function familyImpliedGrowth(family: EquipmentFamily) {
   const t4 = statsFor(family.itemIdForTier(4));
   const t8 = statsFor(family.itemIdForTier(8));
   const statFactors = Object.entries(t4).flatMap(([statId, t4Value]) => {
     const t8Value = t8[statId];
-    if (t8Value === undefined || t4Value <= 0 || t8Value <= 0) return [];
-    return [Math.pow(t8Value / t4Value, 1 / 4)];
+    return t8Value === undefined || t4Value <= 0 || t8Value <= 0 ? [] : [Math.pow(t8Value / t4Value, 1 / 4)];
   });
   if (statFactors.length === 0) throw new Error(`No comparable T4/T8 stats for ${family.familyId}`);
-  return {
-    familyId: family.familyId,
-    statFactors,
-    familyFactor: median(statFactors),
-  };
+  return { familyId: family.familyId, statFactors, familyFactor: median(statFactors) };
 }
 
-function theoreticalBase(anchorT4: number, tier: Tier, tierGrowthFactor: number, statId: string): number {
-  return roundModeledStat(statId, anchorT4 * Math.pow(tierGrowthFactor, tier - 4));
+function pureBase(anchorT4: number, tier: Tier, factor: number, statId: string): number {
+  return roundModeledStat(statId, anchorT4 * Math.pow(factor, tier - 4));
 }
 
-function evaluateFactor(tierGrowthFactor: number): {
-  readonly transitionFailures: number;
-  readonly meanAbsoluteDeviationPercent: number;
-  readonly maxAbsoluteDeviationPercent: number;
-  readonly minimumTransitionMargin: number;
-} {
+function constrainedBase(anchorT4: number, tier: Tier, factor: number, statId: string): number {
+  let base = roundModeledStat(statId, anchorT4);
+  if (tier === 4) return base;
+  const quantum = getEquipmentStatRoundingStep(asStatId(statId));
+  if (quantum <= 0) throw new Error(`Missing rounding quantum for ${statId}`);
+
+  for (let current = 5 as Tier; current <= tier; current = (current + 1) as Tier) {
+    const theoretical = pureBase(anchorT4, current, factor, statId);
+    const previousTierThree = roundModeledStat(statId, base * ENCHANTMENT_STAT_MULTIPLIER[3]);
+    base = Math.max(theoretical, previousTierThree + quantum);
+  }
+  return base;
+}
+
+function evaluateCurve(
+  factor: number,
+  baseResolver: (anchorT4: number, tier: Tier, factor: number, statId: string) => number,
+) {
   const deviations: number[] = [];
   let transitionFailures = 0;
   let minimumTransitionMargin = Number.POSITIVE_INFINITY;
+  let floorApplications = 0;
 
   for (const family of EQUIPMENT_FAMILIES) {
     const anchor = statsFor(family.itemIdForTier(4));
@@ -111,16 +103,15 @@ function evaluateFactor(tierGrowthFactor: number): {
       for (const tier of TIERS) {
         const live = statsFor(family.itemIdForTier(tier))[statId];
         if (live === undefined) continue;
-        const theoretical = theoreticalBase(t4Value, tier, tierGrowthFactor, statId);
-        const deviation = theoretical === 0 ? 0 : Math.abs((live / theoretical - 1) * 100);
-        deviations.push(deviation);
+        const modeled = baseResolver(t4Value, tier, factor, statId);
+        deviations.push(modeled === 0 ? 0 : Math.abs((live / modeled - 1) * 100));
+        if (tier > 4 && baseResolver === constrainedBase && modeled > pureBase(t4Value, tier, factor, statId)) floorApplications += 1;
       }
-
       for (const sourceTier of SOURCE_TIERS) {
         const nextTier = (sourceTier + 1) as Tier;
-        const sourceBase = theoreticalBase(t4Value, sourceTier, tierGrowthFactor, statId);
+        const sourceBase = baseResolver(t4Value, sourceTier, factor, statId);
         const sourceTierThree = roundModeledStat(statId, sourceBase * ENCHANTMENT_STAT_MULTIPLIER[3]);
-        const nextBase = theoreticalBase(t4Value, nextTier, tierGrowthFactor, statId);
+        const nextBase = baseResolver(t4Value, nextTier, factor, statId);
         const margin = nextBase - sourceTierThree;
         minimumTransitionMargin = Math.min(minimumTransitionMargin, margin);
         if (margin <= 0) transitionFailures += 1;
@@ -130,37 +121,27 @@ function evaluateFactor(tierGrowthFactor: number): {
 
   return {
     transitionFailures,
+    minimumTransitionMargin,
+    floorApplications,
     meanAbsoluteDeviationPercent: deviations.reduce((sum, value) => sum + value, 0) / Math.max(1, deviations.length),
     maxAbsoluteDeviationPercent: Math.max(...deviations),
-    minimumTransitionMargin,
   };
-}
-
-function buildFactorCandidates(start: number): readonly number[] {
-  const step = 0.0025;
-  const firstGrid = Math.ceil(start / step) * step;
-  const values = new Set<number>([round4(start)]);
-  for (let factor = firstGrid; factor <= 1.55 + 1e-9; factor += step) values.add(round4(factor));
-  return [...values].sort((a, b) => a - b);
 }
 
 function main(): void {
   const familyGrowth = EQUIPMENT_FAMILIES.map(familyImpliedGrowth);
   const tierGrowthFactor = median(familyGrowth.map((entry) => entry.familyFactor));
-  const requiredFloor = ENCHANTMENT_STAT_MULTIPLIER[3];
+  const pure = evaluateCurve(tierGrowthFactor, pureBase);
+  const constrained = evaluateCurve(tierGrowthFactor, constrainedBase);
 
-  console.log("[EQUIPMENT_POWER_CURVE_MODEL_CONTRACT]", {
+  console.log("[EQUIPMENT_POWER_CURVE_MONOTONIC_MODEL_CONTRACT]", {
     liveMutation: "none",
     anchor: "all live T4 base stats",
-    tierFactorDerivation: "median of per-family implied T4→T8 CAGR; each equipment family has equal weight",
-    formula: "base(Tn) = round(base(T4) * G^(n-4)); enchanted(Tn.e) = round(base(Tn) * enchantmentMultiplier[e])",
-    structuralInvariant: "after real stat rounding, every Tn+1.0 stat must be strictly greater than Tn.3",
-    enchantmentCurve: {
-      e0: ENCHANTMENT_STAT_MULTIPLIER[0],
-      e1: ENCHANTMENT_STAT_MULTIPLIER[1],
-      e2: ENCHANTMENT_STAT_MULTIPLIER[2],
-      e3: ENCHANTMENT_STAT_MULTIPLIER[3],
-    },
+    factor: round4(tierGrowthFactor),
+    pureFormula: "round(T4 * G^(tier-4))",
+    constrainedFormula: "max(pureFormula, round(previousBase * e3) + statRoundingQuantum)",
+    roundingQuantumSource: "@game/gameplay getEquipmentStatRoundingStep",
+    invariant: "every Tn+1.0 stat is strictly greater than Tn.3 after real gameplay rounding",
   });
 
   console.log("[EQUIPMENT_POWER_CURVE_IMPLIED_FAMILY_GROWTH]");
@@ -170,95 +151,48 @@ function main(): void {
     statFactors: entry.statFactors.map(round4).join(","),
   })));
 
-  console.log("[EQUIPMENT_POWER_CURVE_GLOBAL_FACTOR]", {
-    tierGrowthFactor: round4(tierGrowthFactor),
-    enchantment3Multiplier: round4(requiredFloor),
-    rawMarginOverPreviousTier3Percent: round2((tierGrowthFactor / requiredFloor - 1) * 100),
-    structurallyAbovePreviousTier3BeforeRounding: tierGrowthFactor > requiredFloor,
-  });
-
-  const comparisonRows: Array<Record<string, string | number>> = [];
-  const transitionRows: Array<Record<string, string | number | boolean>> = [];
-
+  const comparisonRows: Array<Record<string, string | number | boolean>> = [];
   for (const family of EQUIPMENT_FAMILIES) {
     const anchor = statsFor(family.itemIdForTier(4));
     for (const [statId, t4Value] of Object.entries(anchor)) {
       for (const tier of TIERS) {
         const live = statsFor(family.itemIdForTier(tier))[statId];
         if (live === undefined) continue;
-        const theoretical = theoreticalBase(t4Value, tier, tierGrowthFactor, statId);
+        const pureValue = pureBase(t4Value, tier, tierGrowthFactor, statId);
+        const constrainedValue = constrainedBase(t4Value, tier, tierGrowthFactor, statId);
         comparisonRows.push({
           family: family.familyId,
           stat: statId,
           tier,
-          t4Anchor: t4Value,
           live,
-          theoretical,
-          delta: live - theoretical,
-          deltaPercent: theoretical === 0 ? 0 : round2((live / theoretical - 1) * 100),
-        });
-      }
-
-      for (const sourceTier of SOURCE_TIERS) {
-        const nextTier = (sourceTier + 1) as Tier;
-        const sourceBase = theoreticalBase(t4Value, sourceTier, tierGrowthFactor, statId);
-        const sourceTierThree = roundModeledStat(statId, sourceBase * ENCHANTMENT_STAT_MULTIPLIER[3]);
-        const nextBase = theoreticalBase(t4Value, nextTier, tierGrowthFactor, statId);
-        transitionRows.push({
-          family: family.familyId,
-          stat: statId,
-          transition: `T${String(sourceTier)}.3→T${String(nextTier)}.0`,
-          previousTier3: sourceTierThree,
-          nextTier0: nextBase,
-          margin: nextBase - sourceTierThree,
-          marginPercent: sourceTierThree === 0 ? 0 : round2((nextBase / sourceTierThree - 1) * 100),
-          pass: nextBase > sourceTierThree,
+          pure: pureValue,
+          constrained: constrainedValue,
+          floorApplied: constrainedValue > pureValue,
+          constrainedDeltaPercent: constrainedValue === 0 ? 0 : round2((live / constrainedValue - 1) * 100),
         });
       }
     }
   }
 
-  console.log("[EQUIPMENT_POWER_CURVE_THEORETICAL_VS_LIVE]");
+  console.log("[EQUIPMENT_POWER_CURVE_CONSTRAINED_VS_LIVE]");
   console.table(comparisonRows);
-
-  console.log("[EQUIPMENT_POWER_CURVE_TIER_TRANSITIONS]");
-  console.table(transitionRows);
-
-  const transitionFailures = transitionRows.filter((row) => row.pass === false);
-  const deviations = comparisonRows.map((row) => Math.abs(Number(row.deltaPercent)));
-  const sortedByDeviation = [...comparisonRows].sort(
-    (a, b) => Math.abs(Number(b.deltaPercent)) - Math.abs(Number(a.deltaPercent)),
-  );
-
-  console.log("[EQUIPMENT_POWER_CURVE_LARGEST_LIVE_DEVIATIONS]");
-  console.table(sortedByDeviation.slice(0, 25));
-
-  const factorRows = buildFactorCandidates(tierGrowthFactor).map((factor) => {
-    const result = evaluateFactor(factor);
-    return {
-      factor,
-      transitionFailures: result.transitionFailures,
-      minimumTransitionMargin: result.minimumTransitionMargin,
-      meanAbsoluteDeviationPercent: round2(result.meanAbsoluteDeviationPercent),
-      maxAbsoluteDeviationPercent: round2(result.maxAbsoluteDeviationPercent),
-      structuralPass: result.transitionFailures === 0,
-    };
-  });
-  const firstStructuralPass = factorRows.find((row) => row.structuralPass);
-
-  console.log("[EQUIPMENT_POWER_CURVE_FACTOR_CANDIDATES]");
-  console.table(factorRows);
-  console.log("[EQUIPMENT_POWER_CURVE_FIRST_STRUCTURAL_PASS]", firstStructuralPass ?? null);
-
-  console.log("[EQUIPMENT_POWER_CURVE_MODEL_RESULT]", {
-    tierGrowthFactor: round4(tierGrowthFactor),
-    familyCount: EQUIPMENT_FAMILIES.length,
-    modeledStatRows: comparisonRows.length,
-    meanAbsoluteDeviationPercent: round2(deviations.reduce((sum, value) => sum + value, 0) / Math.max(1, deviations.length)),
-    maxAbsoluteDeviationPercent: round2(Math.max(...deviations)),
-    tierTransitionFailures: transitionFailures.length,
-    structuralContract: transitionFailures.length === 0 ? "PASS" : "FAIL",
-    firstStructuralPassFactor: firstStructuralPass?.factor ?? null,
+  console.log("[EQUIPMENT_POWER_CURVE_FLOOR_APPLICATIONS]");
+  console.table(comparisonRows.filter((row) => row.floorApplied === true));
+  console.log("[EQUIPMENT_POWER_CURVE_MODEL_COMPARISON]", {
+    pure: {
+      transitionFailures: pure.transitionFailures,
+      minimumTransitionMargin: pure.minimumTransitionMargin,
+      meanAbsoluteDeviationPercent: round2(pure.meanAbsoluteDeviationPercent),
+      maxAbsoluteDeviationPercent: round2(pure.maxAbsoluteDeviationPercent),
+    },
+    constrained: {
+      transitionFailures: constrained.transitionFailures,
+      minimumTransitionMargin: constrained.minimumTransitionMargin,
+      floorApplications: constrained.floorApplications,
+      meanAbsoluteDeviationPercent: round2(constrained.meanAbsoluteDeviationPercent),
+      maxAbsoluteDeviationPercent: round2(constrained.maxAbsoluteDeviationPercent),
+      structuralPass: constrained.transitionFailures === 0,
+    },
   });
 }
 
