@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { ExpeditionService } from "./expedition-service.js";
-import type {
-  ExpeditionDefinition,
-  ExpeditionRequirementDefinition,
+import {
+  EXPEDITION_DURATION_OPTIONS_MS,
+  type ExpeditionDefinition,
+  type ExpeditionRequirementDefinition,
 } from "./types.js";
 
-const HOUR_MS = 60 * 60 * 1000;
+const [DURATION_2H, DURATION_6H, DURATION_12H] = EXPEDITION_DURATION_OPTIONS_MS;
 
 type TestRequirement = ExpeditionRequirementDefinition & {
   readonly type: "flag";
@@ -72,15 +73,15 @@ describe("ExpeditionService", () => {
     const { service } = createService();
     service.registerExpedition(createDefinition());
 
-    expect(service.startExpedition("expedition_silver_t4", 2 * HOUR_MS).ok).toBe(true);
+    expect(service.startExpedition("expedition_silver_t4", DURATION_2H).ok).toBe(true);
 
     const second = createService().service;
     second.registerExpedition(createDefinition());
-    expect(second.startExpedition("expedition_silver_t4", 6 * HOUR_MS).ok).toBe(true);
+    expect(second.startExpedition("expedition_silver_t4", DURATION_6H).ok).toBe(true);
 
     const third = createService().service;
     third.registerExpedition(createDefinition());
-    expect(third.startExpedition("expedition_silver_t4", 12 * HOUR_MS).ok).toBe(true);
+    expect(third.startExpedition("expedition_silver_t4", DURATION_12H).ok).toBe(true);
   });
 
   it("blocks an expedition until its authored requirements are satisfied", () => {
@@ -88,7 +89,7 @@ describe("ExpeditionService", () => {
     service.registerExpedition(createDefinition({
       requirements: [{ type: "flag", flagId: "cartography_1" }],
     }));
-    expect(service.startExpedition("expedition_silver_t4", 2 * HOUR_MS)).toEqual({
+    expect(service.startExpedition("expedition_silver_t4", DURATION_2H)).toEqual({
       ok: false,
       reason: "requirements_not_met",
     });
@@ -103,8 +104,8 @@ describe("ExpeditionService", () => {
       displayName: "Keeper Expedition T4",
     }));
 
-    expect(service.startExpedition("expedition_silver_t4", 2 * HOUR_MS).ok).toBe(true);
-    expect(service.startExpedition("expedition_keeper_t4", 2 * HOUR_MS)).toEqual({
+    expect(service.startExpedition("expedition_silver_t4", DURATION_2H).ok).toBe(true);
+    expect(service.startExpedition("expedition_keeper_t4", DURATION_2H)).toEqual({
       ok: false,
       reason: "no_available_slot",
     });
@@ -124,12 +125,12 @@ describe("ExpeditionService", () => {
       displayName: "Keeper Expedition T4",
     }));
 
-    expect(service.startExpedition("expedition_silver_t4", 2 * HOUR_MS).ok).toBe(true);
-    expect(service.startExpedition("expedition_silver_t5", 2 * HOUR_MS)).toEqual({
+    expect(service.startExpedition("expedition_silver_t4", DURATION_2H).ok).toBe(true);
+    expect(service.startExpedition("expedition_silver_t5", DURATION_2H)).toEqual({
       ok: false,
       reason: "type_already_active",
     });
-    expect(service.startExpedition("expedition_keeper_t4", 2 * HOUR_MS).ok).toBe(true);
+    expect(service.startExpedition("expedition_keeper_t4", DURATION_2H).ok).toBe(true);
   });
 
   it("advances all active slots from the same authoritative elapsed time", () => {
@@ -140,22 +141,22 @@ describe("ExpeditionService", () => {
       typeId: "keeper",
       displayName: "Keeper Expedition T4",
     }));
-    service.startExpedition("expedition_silver_t4", 2 * HOUR_MS);
-    service.startExpedition("expedition_keeper_t4", 6 * HOUR_MS);
+    service.startExpedition("expedition_silver_t4", DURATION_2H);
+    service.startExpedition("expedition_keeper_t4", DURATION_6H);
 
-    const firstAdvance = service.advance(2 * HOUR_MS);
+    const firstAdvance = service.advance(DURATION_2H);
     expect(firstAdvance.completed).toHaveLength(1);
     expect(firstAdvance.completed[0]?.expeditionId).toBe("expedition_silver_t4");
     expect(firstAdvance.activeExpeditions).toEqual([{
       slotIndex: 1,
       expeditionId: "expedition_keeper_t4",
       typeId: "keeper",
-      durationMs: 6 * HOUR_MS,
-      remainingDurationMs: 4 * HOUR_MS,
+      durationMs: DURATION_6H,
+      remainingDurationMs: DURATION_6H - DURATION_2H,
     }]);
     expect(reward).toHaveBeenCalledTimes(1);
 
-    const secondAdvance = service.advance(4 * HOUR_MS);
+    const secondAdvance = service.advance(DURATION_6H - DURATION_2H);
     expect(secondAdvance.completed[0]?.expeditionId).toBe("expedition_keeper_t4");
     expect(secondAdvance.activeExpeditions).toEqual([]);
     expect(reward).toHaveBeenCalledTimes(2);
@@ -164,13 +165,13 @@ describe("ExpeditionService", () => {
   it("credits completion automatically and frees the completed slot", () => {
     const { service, reward } = createService();
     service.registerExpedition(createDefinition());
-    service.startExpedition("expedition_silver_t4", 2 * HOUR_MS);
+    service.startExpedition("expedition_silver_t4", DURATION_2H);
 
-    const result = service.advance(2 * HOUR_MS);
+    const result = service.advance(DURATION_2H);
     expect(reward).toHaveBeenCalledOnce();
     expect(result.completed[0]?.rewardSummary).toEqual({
       expeditionId: "expedition_silver_t4",
-      durationMs: 2 * HOUR_MS,
+      durationMs: DURATION_2H,
     });
     expect(service.getActiveExpeditions()).toEqual([]);
   });
@@ -178,8 +179,8 @@ describe("ExpeditionService", () => {
   it("persists partial progress without granting or rerolling rewards on load", () => {
     const first = createService();
     first.service.registerExpedition(createDefinition());
-    first.service.startExpedition("expedition_silver_t4", 6 * HOUR_MS);
-    first.service.advance(2 * HOUR_MS);
+    first.service.startExpedition("expedition_silver_t4", DURATION_6H);
+    first.service.advance(DURATION_2H);
     const snapshot = first.service.save();
 
     const restored = createService();
@@ -187,15 +188,17 @@ describe("ExpeditionService", () => {
     restored.service.load(snapshot);
 
     expect(restored.reward).not.toHaveBeenCalled();
-    expect(restored.service.getActiveExpeditions()[0]?.remainingDurationMs).toBe(4 * HOUR_MS);
-    restored.service.advance(4 * HOUR_MS);
+    expect(restored.service.getActiveExpeditions()[0]?.remainingDurationMs).toBe(
+      DURATION_6H - DURATION_2H,
+    );
+    restored.service.advance(DURATION_6H - DURATION_2H);
     expect(restored.reward).toHaveBeenCalledOnce();
   });
 
   it("rejects invalid elapsed time instead of consulting a local clock", () => {
     const { service } = createService();
     service.registerExpedition(createDefinition());
-    service.startExpedition("expedition_silver_t4", 2 * HOUR_MS);
+    service.startExpedition("expedition_silver_t4", DURATION_2H);
     expect(() => service.advance(-1)).toThrow(
       "Expedition elapsed time must be a finite non-negative number",
     );
