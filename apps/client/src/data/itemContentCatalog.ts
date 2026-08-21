@@ -78,9 +78,6 @@ export function resolveEquipmentInfo(itemId: string): EquipmentInfoLike | undefi
   const definition = ITEM_DEFINITIONS[itemId];
   if (definition === undefined) return undefined;
 
-  // Weapon damage is authored directly in weaponContentCatalog. Attack speed
-  // remains an intrinsic weapon-profile property projected as a delta from the
-  // hero baseline so equipment sync stays generic.
   const { stat_attack_speed: _ignoredAttackSpeed, ...stats } = definition.stats ?? {};
   const intrinsicAttackSpeed = getWeaponAttackSpeed(itemId);
   if (definition.slot !== "weapon" || intrinsicAttackSpeed === undefined) {
@@ -158,6 +155,8 @@ export function resolveItemStackInfo(itemId: string) {
     itemId === COPPER_BAR_RECIPE.rawItemId ||
     itemId === COPPER_BAR_RECIPE.outputItemId ||
     itemId === PINE_PLANK_RECIPE.rawItemId ||
+    itemId === PINE_PLANK_RECIPE.outputItemId ||
+    itemId === IRON_BAR_RECIPE.rawItemId ||
     itemId === IRON_BAR_RECIPE.outputItemId
   ) {
     return { itemId, stackable: true, maxStack: 999 };
