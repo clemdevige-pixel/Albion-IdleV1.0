@@ -17,9 +17,6 @@ export class HeroPresentationSystem {
   private weaponInitialized = false;
   private currentCombatState = "";
   private defeatPresented = false;
-  private lastZoneIndex = -1;
-  private lastSegmentIndex = -1;
-  private pendingTraversal = false;
 
   public constructor(
     sprite: Phaser.GameObjects.Sprite,
@@ -37,7 +34,6 @@ export class HeroPresentationSystem {
       this.currentVisualManifestId =
         state.visualManifestId ?? this.fallbackVisualManifestId;
       this.weaponInitialized = true;
-      this.pendingTraversal = false;
       const deathTexture = this.animationSystem.getDeathTexture(actorVisual);
 
       if (
@@ -62,28 +58,6 @@ export class HeroPresentationSystem {
       this.weaponInitialized = true;
       this.animationSystem.stop();
       this.presentIdle();
-    }
-
-    const hasPreviousLocation =
-      this.lastZoneIndex >= 0 && this.lastSegmentIndex >= 0;
-    const locationChanged =
-      state.zoneIndex !== this.lastZoneIndex
-      || state.segmentIndex !== this.lastSegmentIndex;
-    if (hasPreviousLocation && locationChanged) this.pendingTraversal = true;
-    this.lastZoneIndex = state.zoneIndex;
-    this.lastSegmentIndex = state.segmentIndex;
-
-    if (state.visualManifestId !== undefined && this.pendingTraversal) {
-      const attackKey = this.animationSystem.getAnimationKey(
-        actorVisual,
-        "attack",
-      );
-      if (this.animationSystem.currentAnimationKey !== attackKey) {
-        this.play("walk");
-        this.pendingTraversal = false;
-      }
-    } else if (state.visualManifestId === undefined) {
-      this.pendingTraversal = false;
     }
   }
 
