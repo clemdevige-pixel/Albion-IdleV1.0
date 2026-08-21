@@ -1,4 +1,5 @@
 import type { ExpeditionDefinition, ExpeditionRequirementDefinition } from "@game/gameplay";
+import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 
 export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & {
   readonly type: "research_unlock";
@@ -21,7 +22,7 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
     typeId: SILVER_EXPEDITION_TYPE_ID,
     displayName: "Expédition d'argent T4",
     tier: 4,
-    requirements: [{ type: "research_unlock", unlockId: "expedition_tier:4" }],
+    requirements: [{ type: "research_unlock", unlockId: RESEARCH_UNLOCK_IDS.expeditionTier4 }],
     reward: { kind: "silver", silverPerHour: 15_000 },
   },
   {
@@ -29,7 +30,7 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
     typeId: SILVER_EXPEDITION_TYPE_ID,
     displayName: "Expédition d'argent T5",
     tier: 5,
-    requirements: [{ type: "research_unlock", unlockId: "expedition_tier:5" }],
+    requirements: [{ type: "research_unlock", unlockId: RESEARCH_UNLOCK_IDS.expeditionTier5 }],
     reward: { kind: "silver", silverPerHour: 25_000 },
   },
   {
@@ -37,7 +38,7 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
     typeId: SILVER_EXPEDITION_TYPE_ID,
     displayName: "Expédition d'argent T6",
     tier: 6,
-    requirements: [{ type: "research_unlock", unlockId: "expedition_tier:6" }],
+    requirements: [{ type: "research_unlock", unlockId: RESEARCH_UNLOCK_IDS.expeditionTier6 }],
     reward: { kind: "silver", silverPerHour: 35_000 },
   },
   {
@@ -45,7 +46,7 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
     typeId: SILVER_EXPEDITION_TYPE_ID,
     displayName: "Expédition d'argent T7",
     tier: 7,
-    requirements: [{ type: "research_unlock", unlockId: "expedition_tier:7" }],
+    requirements: [{ type: "research_unlock", unlockId: RESEARCH_UNLOCK_IDS.expeditionTier7 }],
     reward: { kind: "silver", silverPerHour: 40_000 },
   },
   {
@@ -53,7 +54,7 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
     typeId: SILVER_EXPEDITION_TYPE_ID,
     displayName: "Expédition d'argent T8",
     tier: 8,
-    requirements: [{ type: "research_unlock", unlockId: "expedition_tier:8" }],
+    requirements: [{ type: "research_unlock", unlockId: RESEARCH_UNLOCK_IDS.expeditionTier8 }],
     reward: { kind: "silver", silverPerHour: 50_000 },
   },
 ] as const satisfies readonly SilverExpeditionContentDefinition[];
