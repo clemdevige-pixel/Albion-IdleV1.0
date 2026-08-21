@@ -49,7 +49,7 @@ describe("production storage migration", () => {
     }
   });
 
-  it("keeps faction key and artifact loot in the hero inventory during load migration", () => {
+  it("keeps faction loot and Runes in the hero inventory during load migration", () => {
     const factionLoot = [
       "item_resource_key_fragment_morgana",
       "item_resource_dungeon_key_morgana",
@@ -57,6 +57,8 @@ describe("production storage migration", () => {
       "item_resource_artifact_morgana",
       "item_resource_key_fragment_undead",
       "item_resource_artifact_fragment_keeper",
+      "item_resource_rune_keeper_t4",
+      "item_resource_rune_keeper_t8",
     ];
 
     for (const itemId of factionLoot) {
@@ -73,6 +75,7 @@ describe("production storage migration", () => {
 
     inventoryManager.addQuantity(heroId, "item_resource_key_fragment_morgana", 17);
     inventoryManager.addQuantity(heroId, "item_resource_artifact_fragment_morgana", 9);
+    inventoryManager.addQuantity(heroId, "item_resource_rune_keeper_t4", 6);
 
     expect(migrateLegacyProductionMaterials(
       inventoryManager,
@@ -81,6 +84,8 @@ describe("production storage migration", () => {
     )).toBe(0);
     expect(inventoryManager.getTotalQuantity(heroId, "item_resource_key_fragment_morgana")).toBe(17);
     expect(inventoryManager.getTotalQuantity(heroId, "item_resource_artifact_fragment_morgana")).toBe(9);
+    expect(inventoryManager.getTotalQuantity(heroId, "item_resource_rune_keeper_t4")).toBe(6);
     expect(inventoryManager.getTotalQuantity(productionStorageId, "item_resource_key_fragment_morgana")).toBe(0);
+    expect(inventoryManager.getTotalQuantity(productionStorageId, "item_resource_rune_keeper_t4")).toBe(0);
   });
 });
