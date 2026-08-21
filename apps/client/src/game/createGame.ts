@@ -7,6 +7,8 @@ import type { GameBridge } from "./GameBridge";
  *
  * The combat world uses a wide 960x400 logical viewport so the persistent scene
  * reads as a cinematic idle-combat band without shrinking actors horizontally.
+ * ENVELOP keeps that logical ratio while filling the whole combat surface; any
+ * excess is cropped symmetrically instead of exposing empty bands around it.
  */
 export function createGame(
   parent: HTMLElement,
@@ -30,10 +32,9 @@ export function createGame(
     backgroundColor: "#161b26",
     pixelArt: true,
     roundPixels: true,
-    canvasStyle: "position:absolute;left:50%;bottom:0;transform:translateX(-50%);",
     scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.NO_CENTER,
+      mode: Phaser.Scale.ENVELOP,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: [],
   });
