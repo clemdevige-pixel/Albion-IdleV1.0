@@ -19,12 +19,18 @@
 
 .dashboard-yield__metric:not(:last-child)::after {
   position: absolute;
-  top: 8px;
+  top: 9px;
   right: 0;
-  bottom: 8px;
+  bottom: 9px;
   width: 1px;
   content: "";
-  background: linear-gradient(180deg, transparent, rgb(111 82 37 / 56%), transparent);
+  background: linear-gradient(180deg, transparent, rgb(111 82 37 / 44%), transparent);
+}
+
+.dashboard-yield__metric:nth-child(2)::after {
+  top: 6px;
+  bottom: 6px;
+  background: linear-gradient(180deg, transparent, rgb(168 119 43 / 74%), transparent);
 }
 
 .dashboard-yield__metric dt {
