@@ -18,51 +18,50 @@ const STANDARD_SPECIALIZATIONS = [
 ] as const;
 
 describe("weapon craft pipeline", () => {
-  it("keeps T3 standard recipes resource-only", () => {
-    for (const [t3ItemId] of STANDARD_SPECIALIZATIONS) {
-      expect(resolveWeaponTier(t3ItemId)).toBe(3);
-      expect(resolveWeaponCraftRule(t3ItemId)?.kind).toBe("standard");
-      expect(resolvePreviousWeaponTierItemId(t3ItemId)).toBeUndefined();
+  it("keeps every standard weapon recipe resource-only", () => {
+    for (const specialization of STANDARD_SPECIALIZATIONS) {
+      for (const itemId of specialization) {
+        const tier = resolveWeaponTier(itemId);
+        expect(tier).toBeDefined();
+        expect(resolveWeaponCraftRule(itemId)?.kind).toBe("standard");
 
-      const recipe = STANDARD_WEAPON_CRAFT_RECIPES.find(
-        (entry) => entry.outputItemId === t3ItemId,
-      );
-      expect(recipe).toBeDefined();
-      expect(recipe?.requirements.every((entry) =>
-        entry.itemId.startsWith("item_refined_"),
-      )).toBe(true);
+        const recipe = STANDARD_WEAPON_CRAFT_RECIPES.find(
+          (entry) => entry.outputItemId === itemId,
+        );
+        expect(recipe).toBeDefined();
+        expect(recipe?.requirements.every((entry) =>
+          entry.itemId.startsWith("item_refined_"),
+        )).toBe(true);
+        expect(recipe?.requirements.some((entry) =>
+          entry.itemId.startsWith("item_weapon_"),
+        )).toBe(false);
+        expect(recipe?.requirements.some((entry) =>
+          entry.itemId.endsWith(`_t${String(tier)}`),
+        )).toBe(true);
+      }
     }
   });
 
-  it("requires the same-specialization predecessor for every standard tier after T3", () => {
+  it("keeps tier topology resolvable without consuming predecessors in recipes", () => {
     for (const specialization of STANDARD_SPECIALIZATIONS) {
       for (const [offset, itemId] of specialization.slice(1).entries()) {
         const previousItemId = specialization[offset];
         if (previousItemId === undefined) {
-          throw new Error(`Missing predecessor for ${itemId}`);
+          throw new Error(`Missing predecessor topology for ${itemId}`);
         }
-        const tier = offset + 4;
 
-        expect(resolveWeaponTier(itemId)).toBe(tier);
         expect(resolvePreviousWeaponTierItemId(itemId)).toBe(previousItemId);
 
         const recipe = STANDARD_WEAPON_CRAFT_RECIPES.find(
           (entry) => entry.outputItemId === itemId,
         );
         expect(recipe).toBeDefined();
-
-        const equipmentRequirements = recipe?.requirements.filter((entry) =>
-          entry.itemId.startsWith("item_weapon_"),
-        ) ?? [];
-        expect(equipmentRequirements).toEqual([
-          { itemId: previousItemId, quantity: 1 },
-        ]);
-        expect(recipe?.requirements.some((entry) => entry.itemId.endsWith(`_t${String(tier)}`))).toBe(true);
+        expect(recipe?.requirements.some((entry) => entry.itemId === previousItemId)).toBe(false);
       }
     }
   });
 
-  it("keeps Badon outside the standard predecessor generator", () => {
+  it("keeps Badon outside the standard generator", () => {
     const badonId = "item_weapon_bow_t4_badon";
     expect(resolveWeaponCraftRule(badonId)?.kind).toBe("artifact_pending");
     expect(resolvePreviousWeaponTierItemId(badonId)).toBeUndefined();
