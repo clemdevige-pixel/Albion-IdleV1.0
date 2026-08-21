@@ -28,19 +28,19 @@ export function createFactionProgressionCoordinator(
   dependencies: FactionProgressionCoordinatorDependencies,
 ) {
   return {
-    recordMonsterKill(monsterId: string): void {
+    recordMonsterKill(this: void, monsterId: string): void {
       dependencies.factionResearchFoundation.recordMonsterKill(monsterId);
     },
 
-    onWorldProgress(): void {
+    onWorldProgress(this: void): void {
       dependencies.factionResearchFoundation.resolveWorldProgress();
     },
 
-    reconcile(): void {
+    reconcile(this: void): void {
       dependencies.factionResearchFoundation.resolveWorldProgress();
     },
 
-    advance(elapsedMs: number): void {
+    advance(this: void, elapsedMs: number): void {
       const researchAdvance = dependencies.researchService.advance(elapsedMs);
       if (researchAdvance.completedResearchId !== undefined) {
         dependencies.factionResearchFoundation.resolveWorldProgress();
