@@ -52,6 +52,7 @@ import { createFactionResearchFoundation } from "../runtime/bootstrap/createFact
 import { createFactionMasteryFoundation } from "../runtime/bootstrap/createFactionMasteryFoundation.js";
 import { createFactionCapeFoundation } from "../runtime/bootstrap/createFactionCapeFoundation.js";
 import { createFactionAchievementFoundation } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
+import { createFactionBestiaryFoundation } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
@@ -279,6 +280,10 @@ export function GameProvider({
       expeditionRewardLedger: rewardLedger,
       dungeonRuntime,
       masteryService,
+    });
+    const factionBestiaryFoundation = createFactionBestiaryFoundation({
+      factionKnowledgeService: factionResearchFoundation.factionKnowledgeService,
+      relicService: factionResearchFoundation.relicService,
     });
 
     const productionFoundation = createProductionFoundation({
@@ -778,6 +783,7 @@ export function GameProvider({
       selectStarterWeapon,
       isWorldRequirementMet,
       getFactionAchievements: factionAchievementFoundation.getAllProgress,
+      getBestiaryKnowledge: factionBestiaryFoundation.getKnowledge,
       startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
       abandonDungeon: () => dungeonNavigationActions.abandon(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
