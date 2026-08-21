@@ -56,6 +56,7 @@ export class CombatPresentationController {
   public constructor(
     private readonly scene: Phaser.Scene,
     private readonly getBridge: () => GameBridge | undefined,
+    playerDisplayName: string,
   ) {
     const { width, height } = scene.scale;
     this.playerHomeX = width * 0.32;
@@ -118,7 +119,7 @@ export class CombatPresentationController {
     });
 
     this.hudSystem = new WorldHudSystem(scene, renderManifestRegistry.requireDefaultWorldHud());
-    this.hudSystem.createPlayer(this.playerHomeX, this.entityY);
+    this.hudSystem.createPlayer(this.playerHomeX, this.entityY, playerDisplayName);
     this.hudSystem.createEnemy(this.enemyHomeX, this.entityY);
   }
 
@@ -160,11 +161,6 @@ export class CombatPresentationController {
     this.hudSystem.setPlayerVisible(true);
   }
 
-  /**
-   * Invalidates one encounter presentation without destroying the scene actors.
-   * Used for non-victory lifecycle boundaries (defeat/resume, pause/resume,
-   * explicit travel) where the previous enemy must never gate the next spawn.
-   */
   public invalidateEncounterPresentation(): void {
     this.director.clear();
     this.damageNumberSystem.clear();
