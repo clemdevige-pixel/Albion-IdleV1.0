@@ -50,6 +50,7 @@ import {
 import { createProductionFoundation } from "../runtime/bootstrap/createProductionFoundation.js";
 import { createFactionResearchFoundation } from "../runtime/bootstrap/createFactionResearchFoundation.js";
 import { createFactionMasteryFoundation } from "../runtime/bootstrap/createFactionMasteryFoundation.js";
+import { createFactionCapeFoundation } from "../runtime/bootstrap/createFactionCapeFoundation.js";
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
@@ -223,6 +224,12 @@ export function GameProvider({
       { maxHealth: 300, physDamage: 0, attackSpeed: 1.2, armor: 0, magicRes: 0 },
       { x: 0, y: 0 },
     );
+    const factionCapeFoundation = createFactionCapeFoundation({
+      damageManager,
+      dungeonRuntime,
+      equipmentManager,
+      heroId,
+    });
 
     const {
       bankId,
@@ -727,6 +734,7 @@ export function GameProvider({
       persistence,
       dispose: () => {
         unsubscribeDamageEvents();
+        factionCapeFoundation.dispose();
         combatRewardAdapter.dispose();
         productionController.dispose();
         orchestrator.dispose();
