@@ -19,6 +19,7 @@ import type {
   WorldCoordinator,
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
+import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 
 export type UIEventMap = Record<string, unknown>;
 
@@ -53,6 +54,7 @@ export interface GameServices {
   readonly needsStarterSelection: () => boolean;
   readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
+  readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
