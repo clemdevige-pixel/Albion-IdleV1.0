@@ -1,4 +1,4 @@
-import { asMasteryId, type FactionId, type MasteryDefinitionLike, type MasteryId } from "@game/gameplay";
+import { asMasteryId, type MasteryDefinitionLike, type MasteryId } from "@game/gameplay";
 
 export const FACTION_MASTERY_MAX_LEVEL = 100;
 export const FACTION_MASTERY_YIELD_PERCENT_PER_LEVEL = 0.5;
@@ -39,7 +39,8 @@ export const FACTION_MASTERY_DEFINITIONS: readonly MasteryDefinitionLike[] = SUP
   }),
 );
 
-export function resolveFactionMasteryId(factionId: FactionId): MasteryId | undefined {
+export function resolveFactionMasteryId(factionId: string): MasteryId | undefined {
+  if (!SUPPORTED_FACTIONS.some((supported) => supported === factionId)) return undefined;
   return FACTION_MASTERY_IDS[factionId as SupportedFactionId];
 }
 
