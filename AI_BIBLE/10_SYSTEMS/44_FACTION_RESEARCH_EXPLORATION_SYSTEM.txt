@@ -13,6 +13,7 @@ This document records the validated design direction for a future secondary prog
 - Research / Academy;
 - the existing Bestiary;
 - faction Expeditions;
+- generic Expeditions;
 - Relics;
 - Manuscripts;
 - Faction Mastery;
@@ -126,7 +127,7 @@ These names and numbers are placeholders until a full progression pass is author
 ### Cartography
 
 Result:
-- unlocks faction Expeditions.
+- unlocks Expeditions.
 
 ### Archaeology
 
@@ -230,17 +231,24 @@ A completed Relic is a permanent account discovery and should not be consumed wh
 
 ---
 
-# 3.4 FACTION EXPEDITIONS
+# 3.4 EXPEDITIONS
 
 ## Role
 
-Expeditions are a parallel activity that runs independently while the hero continues combat, gathering or production.
+Expeditions are parallel activities that run independently while the hero continues combat, gathering or production.
 
-Their V1 purpose is NOT generic resource farming.
+They are divided into two validated families:
 
-Their first validated purpose is to provide FACTION CRAFTING RESOURCES used for faction capes.
+1. FACTION EXPEDITIONS;
+2. GENERIC EXPEDITIONS.
 
-## Core loop
+They must not all share the same reward purpose.
+
+## 3.4.1 Faction Expeditions
+
+Their validated V1 purpose is to provide FACTION CRAFTING RESOURCES used for faction capes.
+
+Core loop:
 
 Relic acquired
 -> faction Expedition unlocked
@@ -255,11 +263,48 @@ Keeper Relic
 -> Keeper faction resource
 -> Keeper Cape recipe
 
-## Why this resource exists
+Faction Mastery improves faction-wide yield, including Expedition output for the same faction.
 
-The faction resource is justified because it feeds a distinct equipment/content family rather than artificially increasing ordinary weapon/armor material requirements.
+Example direction:
 
-It must not be inserted into standard gathering/refining equipment recipes simply to increase grind duration.
+Keeper Mastery -> +X% Keeper Expedition faction-resource yield.
+
+Exact formula and cap are OPEN.
+
+## 3.4.2 Generic Silver Expedition
+
+A dedicated Silver-oriented Expedition is validated as a GENERIC expedition, not tied to any faction.
+
+Its purpose is to provide a comfortable parallel source of Silver, particularly useful when the player reaches large long-term Silver sinks such as Awakened weapon progression / Attunement.
+
+Example presentation direction:
+
+`Caravane marchande`
+-> runs in parallel for an authored duration
+-> returns primarily Silver
+
+This expedition must NOT:
+
+- require a faction Relic;
+- belong to Keeper/Heretic/Undead/Morgana;
+- receive bonuses from Faction Mastery;
+- replace the main active Silver economy by default.
+
+Balance direction:
+
+- active combat may remain the strongest direct Silver/hour source;
+- the Silver Expedition should be attractive because it runs in parallel;
+- its exact Silver/hour value must be calibrated against existing Island, crafting, Awakening and Attunement Silver sinks.
+
+Exact duration, unlock research, input cost, Silver yield and scaling model are OPEN.
+
+## Why Expedition rewards exist
+
+Faction resources are justified because they feed a distinct equipment/content family rather than artificially increasing ordinary weapon/armor material requirements.
+
+The generic Silver Expedition is justified because Silver already has major existing sinks and becomes increasingly constrained during Awakened weapon progression.
+
+Neither reward family should be inserted into unrelated systems simply to create grind.
 
 ## Expedition cost
 
@@ -268,18 +313,6 @@ NOT YET VALIDATED.
 Do not introduce a dedicated `Provision` currency by default.
 
 Potential costs may reuse existing Silver and/or existing production materials if a meaningful sink is needed, but this requires balance work.
-
-## Faction Mastery interaction
-
-Faction Mastery improves faction-wide yield, including Expedition output for the same faction.
-
-Example direction:
-
-Keeper Mastery -> +X% Keeper Expedition faction-resource yield.
-
-This Expedition bonus is only one application of the wider faction-yield model.
-
-Exact formula and cap are OPEN.
 
 ---
 
@@ -412,6 +445,8 @@ Validated categories of possible affected yield include:
 
 Additional faction-specific yield channels may be added later only if they fit the same efficiency role and are explicitly authored.
 
+Faction Mastery must NOT affect generic Expeditions such as the Silver Expedition.
+
 Faction Mastery must NOT grant functional unlocks or become a second progression gate.
 
 Do not use it to gate Research, dungeon access, Relics, Expeditions, recipes or world progression.
@@ -440,6 +475,8 @@ Examples for Keeper:
 - obtain the relevant Manuscript;
 - unlock/complete a Keeper dungeon;
 - reach authored Keeper Mastery milestones.
+
+Generic Expedition milestones may also appear here later if explicitly authored.
 
 These examples describe categories only. Exact thresholds/rewards are OPEN.
 
@@ -482,6 +519,10 @@ Advanced faction Research
 Dungeon access
 -> existing tier-key behavior remains unchanged
 
+Generic Silver Expedition
+-> runs independently of faction systems
+-> provides a comfortable parallel Silver source for existing long-term Silver sinks
+
 All major milestones
 -> represented in existing World > Achievements
 
@@ -494,7 +535,8 @@ To avoid overlapping progression systems:
 - Research = functional unlock authority.
 - Bestiary = knowledge/progression presentation.
 - Relic = permanent faction Expedition unlock.
-- Expedition = parallel source of faction crafting resource.
+- Faction Expedition = parallel source of faction crafting resource.
+- Generic Silver Expedition = parallel Silver source, faction-independent.
 - Manuscript = advanced Research requirement.
 - Faction Mastery = global faction-yield progression only.
 - Achievements = accomplishment presentation/objectives.
@@ -525,6 +567,8 @@ Expected future definition families may include:
 - `ManuscriptDefinition`;
 - `AchievementDefinition`.
 
+`ExpeditionDefinition` must support both faction-bound and faction-independent expedition content without requiring separate runtime systems.
+
 A faction definition should reference its related content IDs rather than duplicate monster/dungeon/crafting data.
 
 Existing catalogs remain authoritative for existing content until deliberately refactored.
@@ -545,6 +589,10 @@ The following are deliberately OPEN:
 - exact faction resource names;
 - faction resource tiering;
 - cape recipes and faction-resource quantities;
+- Generic Silver Expedition unlock point;
+- Generic Silver Expedition duration(s);
+- Generic Silver Expedition cost/input model;
+- Generic Silver Expedition Silver/hour target and scaling;
 - Manuscript acquisition rules;
 - Manuscript consumption model;
 - faction-dungeon Research structure by tier;
@@ -567,11 +615,12 @@ Before coding begins, the design pass must provide at minimum:
 3. exact Relic acquisition rule;
 4. exact Expedition input/output model;
 5. exact faction-resource cape recipe integration;
-6. exact Manuscript -> Research -> dungeon access contract;
-7. exact Faction Mastery global-yield formula and affected reward channels;
-8. exact Bestiary progression fields;
-9. exact Achievement definitions/rewards;
-10. persistence/offline rules for Research and Expeditions.
+6. exact Generic Silver Expedition economy contract;
+7. exact Manuscript -> Research -> dungeon access contract;
+8. exact Faction Mastery global-yield formula and affected reward channels;
+9. exact Bestiary progression fields;
+10. exact Achievement definitions/rewards;
+11. persistence/offline rules for Research and Expeditions.
 
 Only after this contract is explicit should technical architecture and implementation be authored.
 
