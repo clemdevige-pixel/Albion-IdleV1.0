@@ -101,10 +101,12 @@ export class WorldNavigationActions {
         // because no encounter is active to wait for.
         this.deps.worldRuntime.selectSegment(targetSegment);
       } else {
-        // Cross-zone travel uses the already validated destination. changeActiveZone
-        // consumes/clears the queued fields while preserving the inactive combat state.
+        // A defeated hero cannot walk. Navigation declares a blackout-only
+        // presentation intent; WorldRuntime remains the authority that commits
+        // the zone change and starts the travel gate.
+        if (loopState === "defeat") worldTravelTransition.requestNextMode("blackout");
         this.deps.worldRuntime.changeActiveZone(zoneNumber - 1, targetSegment - 1);
-        this.deps.bridge.setCombatState("walking");
+        this.deps.bridge.setCombatState(loopState === "defeat" ? "defeat" : "walking");
       }
       if (loopState === "paused") this.deps.combatRuntime.restoreHeroHealth();
     }
