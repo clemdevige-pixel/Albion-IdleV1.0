@@ -49,6 +49,7 @@ export interface CombatRewardRuntimeDependencies {
   readonly experienceService: ExperienceService;
   readonly awakenedWeaponService: AwakenedWeaponService;
   readonly heroId: EntityId;
+  readonly onRawFactionFame?: (factionId: string, rawFame: number) => void;
 }
 
 export class CombatRewardRuntime {
@@ -61,6 +62,7 @@ export class CombatRewardRuntime {
   private readonly experienceService: ExperienceService;
   private readonly awakenedWeaponService: AwakenedWeaponService;
   private readonly heroId: EntityId;
+  private readonly onRawFactionFame: ((factionId: string, rawFame: number) => void) | undefined;
 
   constructor(deps: CombatRewardRuntimeDependencies) {
     this.currencyService = deps.currencyService;
@@ -72,6 +74,7 @@ export class CombatRewardRuntime {
     this.experienceService = deps.experienceService;
     this.awakenedWeaponService = deps.awakenedWeaponService;
     this.heroId = deps.heroId;
+    this.onRawFactionFame = deps.onRawFactionFame;
   }
 
   /** Credits deterministic reward Silver through the existing wallet owner. */
@@ -91,6 +94,13 @@ export class CombatRewardRuntime {
     lootContext: CombatLootContext,
   ): EnemyKilledRewardResult {
     const newBalance = this.creditSilverReward(silverReward);
+
+    // Faction Mastery consumes raw/base faction Fame only. This happens before
+    // weapon/Awakening Fame bonuses so its own Fame yield can never feed back
+    // into Faction Mastery XP generation.
+    if (Number.isInteger(fameReward) && fameReward > 0) {
+      this.onRawFactionFame?.(lootContext.faction, fameReward);
+    }
 
     let fameEarned: EnemyKilledRewardResult["fameEarned"];
     let attunementEarned: EnemyKilledRewardResult["attunementEarned"];
