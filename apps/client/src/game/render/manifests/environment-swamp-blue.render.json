@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "swamp_blue",
+  "kind": "environment",
+  "layers": [
+    {
+      "textureKey": "swamp-blue",
+      "assetPath": "/assets/environments/swamp blue.png",
+      "depth": -30
+    }
+  ],
+  "pixelArt": true,
+  "defaultPalette": {
+    "sky": "#0a0e16",
+    "ground": "#12161f",
+    "groundLine": "#2a3040"
+  },
+  "biomePalettes": {
+    "Undead": {
+      "sky": "#1a0e1a",
+      "ground": "#120a16",
+      "groundLine": "#3a2a40"
+    }
+  },
+  "layout": {
+    "skyHeightRatio": 0.6,
+    "skyYRatio": 0.3,
+    "groundHeightRatio": 0.52,
+    "groundYRatio": 0.76,
+    "groundLineYRatio": 0.85,
+    "actorShadowWidth": 190,
+    "actorShadowHeight": 30,
+    "actorShadowYRatio": 0.85
+  }
+}
