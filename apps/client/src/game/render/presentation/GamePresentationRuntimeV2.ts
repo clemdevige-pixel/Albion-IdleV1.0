@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { GameBridge } from "../../GameBridge";
+import { worldTravelTransition } from "../../../runtime/WorldTravelTransition";
 import { selectActiveGathering } from "./GamePresentationState";
 import { ActivityPresentationController } from "./ActivityPresentationController";
 import { CombatPresentationController } from "./CombatPresentationController";
@@ -24,6 +25,7 @@ export class GamePresentationRuntime {
   private lastEncounterPresentationKey: string | undefined;
   private lastCombatState: GameBridge["combatState"] | undefined;
   private lastWorldZoneIndex: number | undefined;
+  private lastTravelGeneration = 0;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -40,6 +42,7 @@ export class GamePresentationRuntime {
     this.activity = new ActivityPresentationController(this.scene, combat);
     this.travel = new WorldTravelPresentationController(this.scene, combat, world);
     this.lastWorldZoneIndex = bridge?.world.zoneIndex;
+    this.lastTravelGeneration = worldTravelTransition.getGeneration();
   }
 
   public update(): void {
@@ -85,13 +88,18 @@ export class GamePresentationRuntime {
     this.activity?.update(gathering);
 
     const zoneIndex = bridge.world.zoneIndex;
+    const travelGeneration = worldTravelTransition.getGeneration();
+    const authoritativeTravelStarted = travelGeneration !== this.lastTravelGeneration
+      && worldTravelTransition.isActive();
     if (
-      this.lastWorldZoneIndex !== undefined
+      authoritativeTravelStarted
+      && this.lastWorldZoneIndex !== undefined
       && zoneIndex !== this.lastWorldZoneIndex
       && gathering === undefined
     ) {
       this.travel?.start();
     }
+    this.lastTravelGeneration = travelGeneration;
     this.lastWorldZoneIndex = zoneIndex;
 
     this.world?.update(bridge, gathering);
@@ -111,6 +119,7 @@ export class GamePresentationRuntime {
     this.lastEncounterPresentationKey = undefined;
     this.lastCombatState = undefined;
     this.lastWorldZoneIndex = undefined;
+    this.lastTravelGeneration = worldTravelTransition.getGeneration();
   }
 
   private hasAuthoritativeEnemySnapshot(bridge: GameBridge): boolean {
