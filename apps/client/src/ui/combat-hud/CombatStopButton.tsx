@@ -7,11 +7,14 @@ interface CombatStopButtonProps {
   readonly persistent?: boolean;
   /** Compact visual variant for dense HUD/dashboard layouts. */
   readonly compact?: boolean;
+  /** Expands the shared control to the full width of its parent layout. */
+  readonly fullWidth?: boolean;
 }
 
 export function CombatStopButton({
   persistent = false,
   compact = false,
+  fullWidth = false,
 }: CombatStopButtonProps): JSX.Element | null {
   const bridge = useGameBridge();
   const { bridge: gameBridge } = useGameServices();
@@ -60,6 +63,7 @@ export function CombatStopButton({
         ? "Le combat s'arrêtera après l'ennemi en cours."
         : undefined}
       style={{
+        width: fullWidth ? "100%" : undefined,
         minWidth: compact ? 96 : 154,
         height: compact ? 27 : 34,
         padding: compact ? "0 8px" : "0 14px",
