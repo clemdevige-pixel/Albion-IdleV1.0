@@ -25,6 +25,7 @@ export type UIEventMap = Record<string, unknown>;
 export interface DungeonNavigationVM {
   readonly activeRun: DungeonRunState | undefined;
   readonly pendingDefinitionId: string | null;
+  readonly clearedTiers: readonly number[];
 }
 
 export interface GameServices {
