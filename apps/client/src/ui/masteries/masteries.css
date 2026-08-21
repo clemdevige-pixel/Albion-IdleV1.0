@@ -192,15 +192,15 @@
 
 .ui-mastery-family__expanded {
   display: grid;
-  gap: 8px;
-  padding: 2px 2px 11px 42px;
+  gap: 10px;
+  padding: 4px 2px 13px 50px;
   border: 0;
   background: transparent;
 }
 
-.ui-mastery-family__bonus-row { padding-top: 3px; }
+.ui-mastery-family__bonus-row { padding-top: 2px; }
 .ui-mastery-family__section-title {
-  padding-top: 5px;
+  padding-top: 4px;
   border: 0;
   color: var(--ui-color-accent);
   font-size: 8px;
@@ -220,7 +220,7 @@
 
 .ui-mastery-bonuses {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -236,13 +236,13 @@
 
 .ui-mastery-specializations {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .ui-mastery-specialization {
   display: grid;
   gap: 5px;
-  padding: 5px 0;
+  padding: 5px 0 7px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -292,5 +292,5 @@
 }
 
 @media (max-width: 720px) {
-  .ui-mastery-family__expanded { padding-left: 2px; }
+  .ui-mastery-family__expanded { padding-left: 8px; }
 }
