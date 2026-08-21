@@ -26,6 +26,7 @@ export class GamePresentationRuntime {
   private lastCombatState: GameBridge["combatState"] | undefined;
   private lastWorldZoneIndex: number | undefined;
   private lastTravelGeneration = 0;
+  private awaitingCombatAfterTravel = false;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -60,6 +61,7 @@ export class GamePresentationRuntime {
       && zoneIndex !== this.lastWorldZoneIndex
       && gathering === undefined
     ) {
+      this.awaitingCombatAfterTravel = true;
       this.travel?.start();
     }
     this.lastTravelGeneration = travelGeneration;
@@ -106,7 +108,15 @@ export class GamePresentationRuntime {
 
     const travelActive = worldTravelTransition.isActive()
       || this.travel?.isActive() === true;
-    if (!travelActive) this.combat?.update(bridge);
+    const arrivalHold = this.awaitingCombatAfterTravel
+      && !travelActive
+      && bridge.combatState === "walking";
+
+    if (this.awaitingCombatAfterTravel && bridge.combatState !== "walking") {
+      this.awaitingCombatAfterTravel = false;
+    }
+
+    if (!travelActive && !arrivalHold) this.combat?.update(bridge);
     this.activity?.update(gathering);
     this.world?.update(bridge, gathering);
     this.lastCombatState = bridge.combatState;
@@ -126,6 +136,7 @@ export class GamePresentationRuntime {
     this.lastCombatState = undefined;
     this.lastWorldZoneIndex = undefined;
     this.lastTravelGeneration = worldTravelTransition.getGeneration();
+    this.awaitingCombatAfterTravel = false;
   }
 
   private hasAuthoritativeEnemySnapshot(bridge: GameBridge): boolean {
