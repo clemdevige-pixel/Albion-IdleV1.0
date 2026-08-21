@@ -1,7 +1,7 @@
 # 19A. PRODUCTION PROGRESSION BALANCE
 
 Status: AUTHORITATIVE BALANCE CONTRACT
-Date: 2026-08-19
+Date: 2026-08-21
 
 ---
 
@@ -69,27 +69,28 @@ packages/data/src/config/island-progression.ts
 
 # Workshop Upgrade Rule
 
-The Workshop must not force Wood and Ore as permanent exclusive bottlenecks.
+The Workshop represents mastery of the complete equipment production chain. Every upgrade therefore requires all four refined resource families of the source tier in fixed quantities.
 
-For every tier upgrade, the Workshop uses a flexible refined-material requirement:
+Required families:
+- refined Wood
+- refined Ore
+- refined Hide
+- refined Fiber
 
-- allowed materials: Wood, Ore, Hide, Fiber refined material of the source tier
-- total quantity: equal to the mono-family building cost for that tier
-- minimum distinct families: 3
+Validated Workshop material curve:
 
-Therefore:
+Workshop -> T4: 4 refined T3 of each family = 16 total
+Workshop -> T5: 10 refined T4 of each family = 40 total
+Workshop -> T6: 18 refined T5 of each family = 72 total
+Workshop -> T7: 28 refined T6 of each family = 112 total
+Workshop -> T8: 40 refined T7 of each family = 160 total
 
-Workshop -> T4: 15 total refined T3, minimum 3 families
-Workshop -> T5: 40 total refined T4, minimum 3 families
-Workshop -> T6: 70 total refined T5, minimum 3 families
-Workshop -> T7: 110 total refined T6, minimum 3 families
-Workshop -> T8: 160 total refined T7, minimum 3 families
+The small total adjustments at T4, T6 and T7 preserve the existing material curve while keeping the four-family requirement perfectly symmetrical and readable.
 
-The transaction layer selects payment from available Shared Storage stocks. It reserves participation from the required number of families before filling the remaining quantity from the largest available stocks.
+Workshop upgrades use the same standard authored requirements array as other building upgrades. No flexible material-payment rule is used for the Workshop.
 
-Authoritative runtime sources:
+Authoritative runtime source:
 packages/data/src/config/island-progression.ts
-apps/client/src/state/IslandActions.ts
 
 ---
 
@@ -215,9 +216,9 @@ The final production validation model used:
 - representative equipment set crafted at every tier,
 - validated mastery gates 3 / 7 / 11 / 18 / 25,
 - mono building curve 15 / 40 / 70 / 110 / 160,
-- flexible Workshop with minimum 3 families.
+- Workshop requiring all four refined families with per-family costs 4 / 10 / 18 / 28 / 40.
 
-Observed cumulative transition times:
+Observed cumulative transition times from the previous calibration remain reference values and must be revalidated if production pacing is audited again after this Workshop material-rule change:
 
 T3 -> T4: ~0.72 h
 T4 -> T5: ~5.18 h
@@ -226,7 +227,7 @@ T6 -> T7: ~31.88 h
 T7 -> T8: ~58.27 h
 Representative T8 craft: ~59.85 h
 
-Incremental production time by transition used for Silver calibration:
+Incremental production time by transition used for the current Silver calibration:
 - T3 -> T4: ~0.72 h
 - T4 -> T5: ~4.46 h
 - T5 -> T6: ~8.63 h
@@ -249,7 +250,7 @@ Rule 03
 Building material costs are intended to be a major production sink, but must not consume nearly all resources needed for the first equipment set of a tier.
 
 Rule 04
-The Workshop must consume at least three resource families so that Hide/Fiber remain economically relevant and Wood/Ore are not permanent exclusive gates.
+The Workshop must require all four refined resource families of the source tier in equal quantities. No single production family may substitute for another in Workshop upgrades.
 
 Rule 05
 T8 production requires Island level 6 and operational building level 6.
