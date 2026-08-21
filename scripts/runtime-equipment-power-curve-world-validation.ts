@@ -146,12 +146,13 @@ async function main(): Promise<void> {
     liveMutation: "temporary in-process benchmark mutation only; restored in finally",
     factor: Number(tierGrowthFactor.toFixed(4)),
     formula: "max(round(T4 * G^(tier-4)), round(previousBase * e3) + gameplay rounding quantum)",
-    validation: "existing world progression benchmark under constrained equipment stats",
+    validation: "focused same-tier enchantment audit + focused final-gate audit",
   });
 
   try {
     applyConstrainedModel(tierGrowthFactor);
-    await import("./runtime-t5-t8-world-wall-sweep.js");
+    await import("./runtime-enchantment-progression-audit.js");
+    await import("./runtime-final-gate-audit.js");
   } finally {
     restoreDefinitions(snapshot);
   }
