@@ -48,6 +48,7 @@ import {
   createWorldFoundation,
 } from "../runtime/bootstrap/createWorldFoundation.js";
 import { createProductionFoundation } from "../runtime/bootstrap/createProductionFoundation.js";
+import { createFactionResearchFoundation } from "../runtime/bootstrap/createFactionResearchFoundation.js";
 import {
   createCharacterEquipmentFoundation,
   createCharacterStorageFoundation,
@@ -181,6 +182,14 @@ export function GameProvider({
         .zoneMemories.find((entry) => entry.zoneDefId === requirement.zoneDefId);
       return (memory?.completedSegments.length ?? 0) >= requirement.minimumCompletedSegments;
     };
+    const factionResearchFoundation = createFactionResearchFoundation({
+      getCompletedSegmentCount: (zoneDefId) => {
+        const memory = worldRuntime
+          .getWorldLocationSaveState()
+          .zoneMemories.find((entry) => String(entry.zoneDefId) === zoneDefId);
+        return memory?.completedSegments.length ?? 0;
+      },
+    });
 
     const combatEntityFactoryDeps = {
       world,
@@ -323,6 +332,9 @@ export function GameProvider({
       ),
       resyncAll: () => resyncAll(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
+      onMonsterKilled: (monsterId) => {
+        factionResearchFoundation.recordMonsterKill(monsterId);
+      },
     });
     bridgeSyncCoordinator.syncInitialState();
     syncIslandToBridge();
@@ -356,6 +368,8 @@ export function GameProvider({
       ...(onLocalSave === undefined ? {} : { onLocalSave }),
     });
     persistence.registerProvider(islandService);
+    persistence.registerProvider(factionResearchFoundation.factionKnowledgeService);
+    persistence.registerProvider(factionResearchFoundation.relicService);
     persistence.registerProvider(new DungeonProgressionSaveProvider(dungeonRuntime));
 
     const refiningSaveProvider = new RefiningSaveProvider(
@@ -385,10 +399,18 @@ export function GameProvider({
     });
 
     const saveGame = (): void => { saveGameActions.save(); };
-    const loadGame = (): boolean => saveGameActions.load();
+    const loadGame = (): boolean => {
+      const loaded = saveGameActions.load();
+      if (loaded) factionResearchFoundation.resolveWorldProgress();
+      return loaded;
+    };
     const hasSave = (): boolean => saveGameActions.hasSave();
     const exportSave = (): string => saveGameActions.exportSave();
-    const importSave = (raw: string): boolean => saveGameActions.importSave(raw);
+    const importSave = (raw: string): boolean => {
+      const imported = saveGameActions.importSave(raw);
+      if (imported) factionResearchFoundation.resolveWorldProgress();
+      return imported;
+    };
 
     const notifyAwakeningFailure = (reason: string): void => {
       const message = reason === "insufficient_attunement"
@@ -489,6 +511,7 @@ export function GameProvider({
       ports: {
         onVictory: () => dungeonCombatRouter.onVictory(() => {
           const res = worldRuntime.advanceVictory();
+          factionResearchFoundation.resolveWorldProgress();
           updateWorldBridge();
           return res;
         }),
