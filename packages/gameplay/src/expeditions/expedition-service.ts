@@ -4,6 +4,7 @@ import {
   EXPEDITION_DURATION_OPTIONS_MS,
   type ActiveExpeditionState,
   type ExpeditionAdvanceResult,
+  type ExpeditionCompletion,
   type ExpeditionDefinition,
   type ExpeditionDurationMs,
   type ExpeditionId,
@@ -133,7 +134,7 @@ export class ExpeditionService<
     }
 
     const remaining: ActiveExpeditionState[] = [];
-    const completed: ExpeditionAdvanceResult<TRewardSummary>["completed"] = [];
+    const completed: ExpeditionCompletion<TRewardSummary>[] = [];
 
     for (const active of this.#activeExpeditions) {
       if (elapsedMs < active.remainingDurationMs) {
