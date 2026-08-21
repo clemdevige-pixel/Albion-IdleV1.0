@@ -33,6 +33,7 @@ export interface DungeonRunState {
 export type DungeonStartFailureReason =
   | "run_already_active"
   | "missing_key"
+  | "progression_locked"
   | "invalid_definition";
 
 export type DungeonStartResult =
@@ -101,6 +102,12 @@ export class DungeonRuntime {
     return this.getClearedTiers().includes(tier);
   }
 
+  canAccessDefinition(definitionId: string): boolean {
+    const definition = this.#definitions.get(definitionId);
+    if (definition === undefined) return false;
+    return definition.tier <= 4 || this.hasClearedTier(definition.tier - 1);
+  }
+
   restoreClearedDefinitionIds(definitionIds: readonly string[]): void {
     this.#clearedDefinitionIds.clear();
     for (const definitionId of definitionIds) {
@@ -118,6 +125,7 @@ export class DungeonRuntime {
     if (this.#activeRun?.status === "active") return { ok: false, reason: "run_already_active" };
     const definition = this.#definitions.get(definitionId);
     if (definition === undefined) return { ok: false, reason: "invalid_definition" };
+    if (!this.canAccessDefinition(definitionId)) return { ok: false, reason: "progression_locked" };
 
     const consumed = inventory.removeQuantity(heroId, definition.keyItemId, 1);
     if (!consumed.ok) return { ok: false, reason: "missing_key" };
