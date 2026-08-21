@@ -5,58 +5,10 @@
   "origin": { "x": 0.5, "y": 1 },
   "offset": { "x": 0, "y": 58 },
   "animations": {
-    "idle": {
-      "textureKey": "hero-spiked-gauntlets-idle-sheet-v2",
-      "assetPath": "/assets/characters/hero-spiked-gauntlets-idle-sheet-v1.png",
-      "frameWidth": 512,
-      "frameHeight": 512,
-      "startFrame": 0,
-      "endFrame": 5,
-      "frameRate": 6,
-      "repeat": -1,
-      "display": { "width": 228.5714285714, "height": 228.5714285714 }
-    },
-    "walk": {
-      "textureKey": "hero-spiked-gauntlets-walk-sheet-v2",
-      "assetPath": "/assets/characters/hero-spiked-gauntlets-walk-sheet-v1.png",
-      "frameWidth": 512,
-      "frameHeight": 512,
-      "startFrame": 0,
-      "endFrame": 5,
-      "frameRate": 10,
-      "repeat": 0,
-      "display": { "width": 228.5714285714, "height": 228.5714285714 }
-    },
-    "attack": {
-      "textureKey": "hero-spiked-gauntlets-attack-sheet-v2",
-      "assetPath": "/assets/characters/hero-spiked-gauntlets-attack-sheet-v1.png",
-      "frameWidth": 512,
-      "frameHeight": 512,
-      "startFrame": 0,
-      "endFrame": 5,
-      "frameRate": 16,
-      "repeat": 0,
-      "display": { "width": 228.5714285714, "height": 228.5714285714 }
-    }
+    "idle": {"textureKey":"hero-spiked-gauntlets-idle-sheet-v2","assetPath":"/assets/characters/hero-spiked-gauntlets-idle-sheet-v1.png","frameWidth":512,"frameHeight":512,"startFrame":0,"endFrame":5,"frameRate":6,"repeat":-1,"display":{"width":228.5714285714,"height":228.5714285714}},
+    "walk": {"textureKey":"hero-spiked-gauntlets-walk-sheet-v2","assetPath":"/assets/characters/hero-spiked-gauntlets-walk-sheet-v1.png","frameWidth":512,"frameHeight":512,"startFrame":0,"endFrame":5,"frameRate":10,"repeat":-1,"display":{"width":228.5714285714,"height":228.5714285714}},
+    "attack": {"textureKey":"hero-spiked-gauntlets-attack-sheet-v2","assetPath":"/assets/characters/hero-spiked-gauntlets-attack-sheet-v1.png","frameWidth":512,"frameHeight":512,"startFrame":0,"endFrame":5,"frameRate":16,"repeat":0,"display":{"width":228.5714285714,"height":228.5714285714}}
   },
-  "poses": {
-    "death": {
-      "textureKey": "hero-spiked-gauntlets-death-sheet-v2",
-      "assetPath": "/assets/characters/hero-spiked-gauntlets-death-v1.png",
-      "frameWidth": 512,
-      "frameHeight": 512,
-      "startFrame": 0,
-      "endFrame": 5,
-      "frameRate": 8,
-      "repeat": 0,
-      "display": { "width": 228.5714285714, "height": 228.5714285714 }
-    }
-  },
-  "visualProfile": "melee",
-  "visualParameters": {
-    "approachDistance": 48,
-    "motionDurationMs": 150,
-    "impactDelayMs": 235
-  },
-  "ambientMotion": { "distance": 4, "durationMs": 850, "delayMs": 0 }
+  "poses":{"death":{"textureKey":"hero-spiked-gauntlets-death-sheet-v2","assetPath":"/assets/characters/hero-spiked-gauntlets-death-v1.png","frameWidth":512,"frameHeight":512,"startFrame":0,"endFrame":5,"frameRate":8,"repeat":0,"display":{"width":228.5714285714,"height":228.5714285714}}},
+  "visualProfile":"melee","visualParameters":{"approachDistance":48,"motionDurationMs":150,"impactDelayMs":235},"ambientMotion":{"distance":4,"durationMs":850,"delayMs":0}
 }
