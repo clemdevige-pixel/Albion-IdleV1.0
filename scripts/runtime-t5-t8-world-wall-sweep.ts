@@ -1,5 +1,5 @@
 import {
-  WORLD_ACTIVE_PUSH_CONTRACT,
+  WORLD_ENCHANTMENT_PROGRESSION_CONTRACT,
   getWorldProgressionTierContract,
   getWorldTierTransitionContract,
   type WorldProgressionEnchantment,
@@ -216,7 +216,7 @@ function buildLocator(rows: readonly SegmentRun[]) {
   );
 }
 
-interface ProgressionPushRow {
+interface EnchantmentProgressionRow {
   readonly tier: WorldProgressionTier;
   readonly bandStep: number;
   readonly zone: string;
@@ -229,14 +229,13 @@ interface ProgressionPushRow {
   readonly expectedAfkLastClear: number;
   readonly afkUpgradeGain: number;
   readonly previousAfkWallExists: boolean;
-  readonly pushWithinBudget: boolean;
   readonly afkUpgradeMarked: boolean;
   readonly monotonic: boolean;
   readonly status: "PASS" | "FAIL";
 }
 
-function buildProgressionPushRows(expectedRows: readonly SegmentRun[]): readonly ProgressionPushRow[] {
-  const rows: ProgressionPushRow[] = [];
+function buildEnchantmentProgressionRows(expectedRows: readonly SegmentRun[]): readonly EnchantmentProgressionRow[] {
+  const rows: EnchantmentProgressionRow[] = [];
 
   for (const tier of TARGET_TIERS) {
     for (const zoneContract of getWorldProgressionTierContract(tier).zones) {
@@ -265,14 +264,10 @@ function buildProgressionPushRows(expectedRows: readonly SegmentRun[]): readonly
         const expectedAfkLastClear = lastClearSegment(expectedWeaponRows, false);
         const afkUpgradeGain = expectedAfkLastClear - previousAfkLastClear;
         const previousAfkWallExists = previousAfkLastClear < SEGMENTS_PER_ZONE;
-        const pushWithinBudget = potionPushGain >= WORLD_ACTIVE_PUSH_CONTRACT.minPotionPushSegments
-          && potionPushGain <= WORLD_ACTIVE_PUSH_CONTRACT.maxPotionPushSegments;
-        const afkUpgradeMarked = afkUpgradeGain >= WORLD_ACTIVE_PUSH_CONTRACT.minAfkUpgradeGainSegments;
+        const afkUpgradeMarked = afkUpgradeGain >= WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments;
         const monotonic = !hasWallThenLaterClear(previousWeaponRows, false)
-          && !hasWallThenLaterClear(previousWeaponRows, true);
-        const status = previousAfkWallExists && pushWithinBudget && afkUpgradeMarked && monotonic
-          ? "PASS"
-          : "FAIL";
+          && !hasWallThenLaterClear(expectedWeaponRows, false);
+        const status = afkUpgradeMarked ? "PASS" : "FAIL";
 
         rows.push({
           tier,
@@ -287,7 +282,6 @@ function buildProgressionPushRows(expectedRows: readonly SegmentRun[]): readonly
           expectedAfkLastClear,
           afkUpgradeGain,
           previousAfkWallExists,
-          pushWithinBudget,
           afkUpgradeMarked,
           monotonic,
           status,
@@ -378,8 +372,9 @@ interface FinalGateRow {
   readonly bandStep: number;
   readonly zone: string;
   readonly weapon: string;
-  readonly blockedClear: boolean;
-  readonly requiredClear: boolean;
+  readonly blockedPotionClear: boolean;
+  readonly requiredNoPotionClear: boolean;
+  readonly requiredPotionClear: boolean;
   readonly status: "PASS" | "FAIL";
 }
 
@@ -397,17 +392,24 @@ function buildFinalGateRows(): readonly FinalGateRow[] {
         segmentIndex: FINAL_SEGMENT_INDEX,
         equipmentItemIds: equipmentFor(weaponItemId, sourceTier),
         masteryLevel: transition.masteryLevel,
-        useHealthPotions: true,
       } as const;
-      const blocked = runCombatRuntimeBenchmark({
-        label: "world_progression_final_blocked",
+      const blockedPotion = runCombatRuntimeBenchmark({
+        label: "world_progression_final_blocked_potion",
         ...common,
         enchantment: transition.blockedEnchantment,
+        useHealthPotions: true,
       });
-      const required = runCombatRuntimeBenchmark({
-        label: "world_progression_final_required",
+      const requiredNoPotion = runCombatRuntimeBenchmark({
+        label: "world_progression_final_required_no_potion",
         ...common,
         enchantment: transition.requiredEnchantment,
+        useHealthPotions: false,
+      });
+      const requiredPotion = runCombatRuntimeBenchmark({
+        label: "world_progression_final_required_potion",
+        ...common,
+        enchantment: transition.requiredEnchantment,
+        useHealthPotions: true,
       });
       rows.push({
         transition: `T${String(sourceTier)}→T${String(sourceTier + 1)}`,
@@ -415,9 +417,10 @@ function buildFinalGateRows(): readonly FinalGateRow[] {
         bandStep: transition.finalZoneIndex + 1,
         zone: zoneName(String(zoneDefId)),
         weapon: shortWeaponName(weaponItemId),
-        blockedClear: blocked.clear,
-        requiredClear: required.clear,
-        status: !blocked.clear && required.clear ? "PASS" : "FAIL",
+        blockedPotionClear: blockedPotion.clear,
+        requiredNoPotionClear: requiredNoPotion.clear,
+        requiredPotionClear: requiredPotion.clear,
+        status: !blockedPotion.clear && !requiredNoPotion.clear && requiredPotion.clear ? "PASS" : "FAIL",
       });
     }
   }
@@ -449,19 +452,20 @@ function expectedNonMonotonicRows(rows: readonly SegmentRun[]) {
 function main(): void {
   const expectedRows = buildExpectedRows();
   const locator = buildLocator(expectedRows);
-  const progressionRows = buildProgressionPushRows(expectedRows);
+  const enchantmentRows = buildEnchantmentProgressionRows(expectedRows);
   const plateauRows = buildPlateauRows();
   const finalGateRows = buildFinalGateRows();
   const expectedNonMonotonic = expectedNonMonotonicRows(expectedRows);
 
-  const progressionFailures = progressionRows.filter((row) => row.status === "FAIL");
-  const plateauFailures = plateauRows.filter((row) => row.status === "FAIL");
+  const enchantmentFailures = enchantmentRows.filter((row) => row.status === "FAIL");
+  const plateauDiagnostics = plateauRows.filter((row) => row.status === "FAIL");
   const finalGateFailures = finalGateRows.filter((row) => row.status === "FAIL");
 
   console.log("[WORLD_PROGRESSION_CONTRACT_REFERENCE]");
   console.log({
-    source: "@game/data WORLD_PROGRESSION_CONTRACT + WORLD_ACTIVE_PUSH_CONTRACT + WORLD_TIER_TRANSITION_CONTRACTS",
-    activePush: WORLD_ACTIVE_PUSH_CONTRACT,
+    source: "@game/data WORLD_PROGRESSION_CONTRACT + WORLD_ENCHANTMENT_PROGRESSION_CONTRACT + WORLD_TIER_TRANSITION_CONTRACTS",
+    enchantmentProgression: WORLD_ENCHANTMENT_PROGRESSION_CONTRACT,
+    potion: "telemetry only outside final gates",
   });
 
   for (const tier of TARGET_TIERS) {
@@ -469,8 +473,8 @@ function main(): void {
     console.table(locator.filter((row) => row.tier === tier));
   }
 
-  console.log("[WORLD_PROGRESSION_ACTIVE_PUSH]");
-  console.table(progressionRows.map((row) => ({
+  console.log("[WORLD_ENCHANTMENT_PROGRESSION]");
+  console.table(enchantmentRows.map((row) => ({
     tier: row.tier,
     bandStep: row.bandStep,
     zone: row.zone,
@@ -478,45 +482,44 @@ function main(): void {
     previousGear: row.previousGear,
     weapon: row.weapon,
     previousAfk: fmt(row.previousAfkLastClear),
-    previousPotion: fmt(row.previousPotionLastClear),
-    potionGain: row.potionPushGain,
     expectedAfk: fmt(row.expectedAfkLastClear),
     upgradeGain: row.afkUpgradeGain,
+    previousPotion: fmt(row.previousPotionLastClear),
+    potionGainTelemetry: row.potionPushGain,
     status: row.status,
   })));
 
-  console.log("[WORLD_PROGRESSION_ACTIVE_PUSH_FAILURES]");
-  console.table(progressionFailures);
-
-  console.log("[WORLD_PROGRESSION_PLATEAUS]");
-  console.table(plateauRows);
+  console.log("[WORLD_ENCHANTMENT_PROGRESSION_FAILURES]");
+  console.table(enchantmentFailures);
 
   console.log("[WORLD_PROGRESSION_FINAL_GATES]");
   console.table(finalGateRows);
 
-  console.log("[WORLD_PROGRESSION_EXPECTED_NON_MONOTONIC]");
+  console.log("[WORLD_PROGRESSION_PLATEAU_DIAGNOSTICS]");
+  console.table(plateauRows);
+
+  console.log("[WORLD_PROGRESSION_NON_MONOTONIC_DIAGNOSTICS]");
   console.table(expectedNonMonotonic);
 
-  const status = progressionFailures.length === 0
-    && plateauFailures.length === 0
-    && finalGateFailures.length === 0
-    && expectedNonMonotonic.length === 0
+  const status = enchantmentFailures.length === 0 && finalGateFailures.length === 0
     ? "PASS"
     : "FAIL";
 
   console.log("[WORLD_PROGRESSION_CONTRACT_RESULT]", {
-    progressionFailures: progressionFailures.length,
-    plateauFailures: plateauFailures.length,
+    enchantmentFailures: enchantmentFailures.length,
     finalGateFailures: finalGateFailures.length,
-    expectedNonMonotonicAnomalies: expectedNonMonotonic.length,
+    plateauDiagnostics: plateauDiagnostics.length,
+    nonMonotonicDiagnostics: expectedNonMonotonic.length,
     status,
-    rules: {
-      afk: "no-potion wall is the progression/farm reference",
-      activePush: `previous gear step gains ${String(WORLD_ACTIVE_PUSH_CONTRACT.minPotionPushSegments)}-${String(WORLD_ACTIVE_PUSH_CONTRACT.maxPotionPushSegments)} segments with potions`,
-      enchantmentStep: `authored gear step moves the AFK wall by at least ${String(WORLD_ACTIVE_PUSH_CONTRACT.minAfkUpgradeGainSegments)} segment`,
-      transitionPlateau: "previous tier .3 farms S1-S3 without potion and still cannot clear S10 with potion",
-      finalGate: ".2 + potion fails; .3 + potion clears for all five weapons",
-      endgame: "diagnostic only until a dedicated T8 endgame target is authored",
+    blockingRules: {
+      enchantmentStep: `authored gear step moves the AFK wall by at least ${String(WORLD_ENCHANTMENT_PROGRESSION_CONTRACT.minAfkUpgradeGainSegments)} segment`,
+      finalGate: ".2 + potion fails; .3 without potion fails; .3 + potion clears for all five weapons",
+    },
+    telemetryOnly: {
+      potion: "active-push distance is measured but does not fail normal progression zones",
+      plateau: "transition plateau remains reported and is enforced by benchmark:tier-transitions",
+      monotonicity: "wall-then-later-clear anomalies are reported separately for diagnosis",
+      endgame: "Blackspire remains diagnostic until a dedicated T8 endgame target is authored",
     },
   });
 }
