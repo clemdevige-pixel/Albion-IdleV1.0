@@ -26,10 +26,10 @@ const CORE_BY_TIER = {
 const BOOTS_HP_BY_TIER = {
   3: 35,
   4: 50,
-  5: 60,
-  6: 100,
-  7: 125,
-  8: 155,
+  5: 73,
+  6: 108,
+  7: 158,
+  8: 229,
 } as const;
 
 function authoredStat(itemId: string, statId: StatId): number {
@@ -69,22 +69,22 @@ describe("validated defensive equipment balance", () => {
     [4, 1, { hp: 635, armor: 40, mr: 31 }],
     [4, 2, { hp: 680, armor: 46, mr: 34 }],
     [4, 3, { hp: 725, armor: 51, mr: 38 }],
-    [5, 0, { hp: 720, armor: 52, mr: 40 }],
-    [5, 1, { hp: 770, armor: 58, mr: 44 }],
-    [5, 2, { hp: 830, armor: 66, mr: 50 }],
-    [5, 3, { hp: 900, armor: 74, mr: 56 }],
-    [6, 0, { hp: 880, armor: 71, mr: 53 }],
-    [6, 1, { hp: 945, armor: 80, mr: 59 }],
-    [6, 2, { hp: 1030, armor: 89, mr: 66 }],
-    [6, 3, { hp: 1120, armor: 101, mr: 73 }],
-    [7, 0, { hp: 1080, armor: 93, mr: 70 }],
-    [7, 1, { hp: 1175, armor: 103, mr: 78 }],
-    [7, 2, { hp: 1285, armor: 117, mr: 87 }],
-    [7, 3, { hp: 1410, armor: 132, mr: 97 }],
-    [8, 0, { hp: 1320, armor: 118, mr: 89 }],
-    [8, 1, { hp: 1445, armor: 132, mr: 99 }],
-    [8, 2, { hp: 1585, armor: 149, mr: 111 }],
-    [8, 3, { hp: 1750, armor: 168, mr: 125 }],
+    [5, 0, { hp: 755, armor: 54, mr: 41 }],
+    [5, 1, { hp: 810, armor: 60, mr: 45 }],
+    [5, 2, { hp: 870, armor: 68, mr: 51 }],
+    [5, 3, { hp: 950, armor: 76, mr: 57 }],
+    [6, 0, { hp: 965, armor: 79, mr: 60 }],
+    [6, 1, { hp: 1040, armor: 89, mr: 66 }],
+    [6, 2, { hp: 1135, armor: 100, mr: 74 }],
+    [6, 3, { hp: 1240, armor: 112, mr: 83 }],
+    [7, 0, { hp: 1260, armor: 116, mr: 86 }],
+    [7, 1, { hp: 1375, armor: 130, mr: 96 }],
+    [7, 2, { hp: 1515, armor: 146, mr: 108 }],
+    [7, 3, { hp: 1665, armor: 164, mr: 121 }],
+    [8, 0, { hp: 1695, armor: 168, mr: 125 }],
+    [8, 1, { hp: 1860, armor: 189, mr: 139 }],
+    [8, 2, { hp: 2055, armor: 212, mr: 157 }],
+    [8, 3, { hp: 2280, armor: 238, mr: 176 }],
   ] as const)("keeps the full 2H defensive ladder at T%s.%s", (tier, enchantment, expected) => {
     expect(fullTwoHandedDefense(tier, enchantment)).toEqual(expected);
   });
@@ -112,7 +112,7 @@ describe("validated defensive equipment balance", () => {
     });
     expect(resolveEquipmentInfo("item_shield_t5_reinforced")?.stats).toMatchObject({
       stat_armor: 22,
-      stat_magic_resistance: 13,
+      stat_magic_resistance: 14,
     });
   });
 });
