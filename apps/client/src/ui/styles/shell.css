@@ -77,11 +77,12 @@
   overflow: hidden;
 }
 
+/* The Phaser world owns the full combat surface. Journal and action bar are overlays. */
 .ui-shell__world .game-viewport {
   position: absolute;
-  inset: 0 0 var(--ui-combat-dock-height);
+  inset: 0;
   width: 100%;
-  height: auto;
+  height: 100%;
   max-height: none;
   aspect-ratio: auto;
   overflow: hidden;
