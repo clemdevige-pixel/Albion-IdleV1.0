@@ -22,6 +22,19 @@ export interface WorldProgressionTierContract {
   readonly zones: readonly WorldProgressionZoneContract[];
 }
 
+/**
+ * Shared contract for normal progression zones.
+ * AFK (no potion) is the progression reference; potions are an active-push tool.
+ */
+export interface WorldActivePushContract {
+  /** Minimum extra segments an under-step loadout should gain by actively using potions. */
+  readonly minPotionPushSegments: number;
+  /** Maximum extra segments potions may grant before they erase the next gear step. */
+  readonly maxPotionPushSegments: number;
+  /** Minimum AFK segment gain expected when moving from the previous authored gear step to the authored step. */
+  readonly minAfkUpgradeGainSegments: number;
+}
+
 export interface WorldTierTransitionContract {
   readonly sourceTier: WorldProgressionSourceTier;
   readonly finalZoneIndex: number;
@@ -29,9 +42,17 @@ export interface WorldTierTransitionContract {
   readonly masteryLevel: number;
   readonly blockedEnchantment: 2;
   readonly requiredEnchantment: 3;
+  /** Previous-tier .3 must farm at least this many opening segments without potions. */
   readonly plateauMinSegments: number;
+  /** Previous-tier .3 may push actively, but must not clear this zero-based late segment with potions. */
   readonly plateauMaxSegmentWithPotion: number;
 }
+
+export const WORLD_ACTIVE_PUSH_CONTRACT: WorldActivePushContract = {
+  minPotionPushSegments: 1,
+  maxPotionPushSegments: 3,
+  minAfkUpgradeGainSegments: 1,
+} as const;
 
 const makeTierZones = (
   tier: WorldProgressionTier,
