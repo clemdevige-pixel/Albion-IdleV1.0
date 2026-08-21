@@ -12,6 +12,7 @@ import {
   getFactionExpeditionBaseRuneReward,
   getFactionExpeditionRuneReward,
   getSilverExpeditionReward,
+  isFactionExpeditionDefinition,
   type ExpeditionContentRequirement,
 } from "../../data/expeditionContentCatalog.js";
 import {
@@ -81,7 +82,7 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
           throw new Error(`Unknown authored Expedition definition: ${definition.id}`);
         }
 
-        if (contentDefinition.reward.kind === "silver") {
+        if (!isFactionExpeditionDefinition(contentDefinition)) {
           const silver = getSilverExpeditionReward(definition.id, durationMs);
           if (silver === undefined || !Number.isSafeInteger(silver) || silver <= 0) {
             throw new Error(`Invalid Silver Expedition reward: ${definition.id}`);
