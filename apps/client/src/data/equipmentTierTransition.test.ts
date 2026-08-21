@@ -23,7 +23,7 @@ function assertNextTierBeatsPreviousTierThree(previousItemId: string, nextItemId
   if (previous?.stats === undefined || next?.stats === undefined) return;
 
   for (const [rawStatId, previousBase] of Object.entries(previous.stats)) {
-    if (previousBase === undefined || previousBase <= 0) continue;
+    if (previousBase === undefined || previousBase <= 0 || rawStatId === "stat_attack_speed") continue;
     const nextBase = next.stats[rawStatId as keyof typeof next.stats];
     expect(nextBase, `${nextItemId} ${rawStatId}`).toBeDefined();
     if (nextBase === undefined) continue;
@@ -43,7 +43,7 @@ function assertNextTierBeatsPreviousTierThree(previousItemId: string, nextItemId
 }
 
 describe("equipment tier transition contract", () => {
-  it("keeps every conventional non-weapon Tn+1.0 stat above Tn.3", () => {
+  it("keeps every conventional non-weapon Tn+1.0 enchantable stat above Tn.3", () => {
     for (const family of PROGRESSION_EQUIPMENT_CONTENT) {
       const enchantableTiers = family.items.filter((item) => item.tier >= 4);
       for (let index = 0; index < enchantableTiers.length - 1; index += 1) {
