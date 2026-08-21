@@ -1,25 +1,25 @@
 .permanent-header__brand {
-  min-width: 184px;
-  padding: 0 8px;
+  min-width: 168px;
+  padding: 0 6px;
   justify-content: center;
 }
 
 .permanent-header__brand-logo {
   display: block;
-  width: 164px;
-  height: 60px;
+  width: 148px;
+  height: 50px;
   object-fit: contain;
   image-rendering: pixelated;
 }
 
 .permanent-header__location {
-  width: min(100%, 360px);
+  width: min(100%, 340px);
   justify-self: start;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto auto auto auto;
   align-content: center;
-  column-gap: 10px;
-  row-gap: 1px;
+  column-gap: 9px;
+  row-gap: 0;
 }
 
 .permanent-header__eyebrow,
@@ -47,8 +47,8 @@
 .permanent-header__progress {
   display: block;
   width: 100%;
-  height: 6px;
-  margin-top: 2px;
+  height: 5px;
+  margin-top: 1px;
   overflow: hidden;
   background: #171b20;
   border: 1px solid rgb(104 82 42 / 72%);
@@ -67,15 +67,15 @@
 
 /* Player identity: authenticated display name + portrait cropped from the active hero render manifest. */
 .permanent-header__player {
-  gap: 9px;
-  padding-block: 4px;
+  gap: 8px;
+  padding-block: 3px;
 }
 
 .permanent-header__portrait {
   display: block;
-  flex: 0 0 52px;
-  width: 52px;
-  height: 52px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   overflow: hidden;
   background: radial-gradient(circle at 50% 35%, #252b32, #0c1015 72%);
   border: 1px solid #a7772a;
@@ -88,13 +88,13 @@
 
 .permanent-header__portrait-sprite {
   display: block;
-  width: 50px;
-  height: 50px;
+  width: 42px;
+  height: 42px;
   image-rendering: pixelated;
 }
 
 .permanent-header__player-copy strong {
-  max-width: 150px;
+  max-width: 145px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -103,21 +103,21 @@
 .permanent-header__economy {
   align-self: stretch;
   align-items: center;
-  margin-right: 48px;
+  margin-right: 42px;
 }
 
 .permanent-header__resource {
-  min-width: 142px;
+  min-width: 128px;
   height: 100%;
-  gap: 10px;
-  padding: 0 14px;
+  gap: 8px;
+  padding: 0 11px;
 }
 
 .permanent-header__resource-icon {
   display: grid;
-  flex: 0 0 52px;
-  width: 52px;
-  height: 52px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   place-items: center;
   overflow: visible;
   background: transparent;
@@ -128,23 +128,23 @@
 
 .permanent-header__resource-icon img {
   display: block;
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
 }
 
 .permanent-header__resource-copy {
   display: grid;
-  min-width: 72px;
-  gap: 3px;
+  min-width: 68px;
+  gap: 2px;
   align-content: center;
   line-height: 1;
 }
 
 .permanent-header__resource-copy small {
   color: var(--ui-color-text-muted);
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -153,30 +153,30 @@
 .permanent-header__resource-copy strong {
   margin: 0;
   color: #efe4cb;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.05;
   white-space: nowrap;
 }
 
 @media (max-width: 1250px) {
   .permanent-header__brand {
-    min-width: 144px;
-    padding-inline: 6px;
+    min-width: 136px;
+    padding-inline: 5px;
   }
 
   .permanent-header__brand-logo {
-    width: 132px;
-    height: 54px;
+    width: 124px;
+    height: 48px;
   }
 }
 
 @media (max-width: 680px) {
   .permanent-header__brand {
-    min-width: 76px;
+    min-width: 72px;
   }
 
   .permanent-header__brand-logo {
-    width: 70px;
-    height: 48px;
+    width: 66px;
+    height: 44px;
   }
 }
