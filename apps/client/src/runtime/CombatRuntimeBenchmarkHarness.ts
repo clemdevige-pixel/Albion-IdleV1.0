@@ -368,7 +368,6 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
               encounterIndex,
               monsterDefinitionId: encounter.monsterDefinitionId,
             }),
-            contextLabel: `Benchmark ${dungeon.id}`,
           },
         );
       },
