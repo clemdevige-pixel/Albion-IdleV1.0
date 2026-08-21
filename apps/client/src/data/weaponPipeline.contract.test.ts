@@ -8,7 +8,6 @@ import {
   getWeaponMasteryDisplayName,
   getWeaponMasteryFamilyDefinitions,
   resolvePrimaryAbilityId,
-  resolvePreviousWeaponTierItemId,
   resolveWeaponAttackSpeed,
   resolveWeaponCombatProfile,
   resolveWeaponCraftRule,
@@ -113,16 +112,7 @@ describe("weapon pipeline contract", () => {
         const weaponRequirements = recipes[0]?.requirements.filter((requirement) =>
           requirement.itemId.startsWith("item_weapon_"),
         ) ?? [];
-
-        if (tier === 3) {
-          expect(weaponRequirements, `${itemId}: T3 predecessor requirements`).toHaveLength(0);
-        } else {
-          const predecessor = resolvePreviousWeaponTierItemId(itemId);
-          expect(predecessor, `${itemId}: T${String(tier)} predecessor route`).toBeDefined();
-          expect(weaponRequirements, `${itemId}: T${String(tier)} predecessor requirement count`).toEqual([
-            { itemId: predecessor, quantity: 1 },
-          ]);
-        }
+        expect(weaponRequirements, `${itemId}: no equipment predecessor requirement`).toHaveLength(0);
       } else if (craftRule?.kind === "artifact_pending") {
         expect(
           STANDARD_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === itemId),
