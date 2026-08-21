@@ -22,6 +22,7 @@ type ProductionFamily = keyof (typeof REFINED_BY_TIER)[3];
 type UpgradeSourceTier = 3 | 4 | 5 | 6 | 7;
 const UPGRADE_SOURCE_TIERS = [3, 4, 5, 6, 7] as const satisfies readonly UpgradeSourceTier[];
 const MONO_COST_BY_SOURCE_TIER = { 3: 15, 4: 40, 5: 70, 6: 110, 7: 160 } as const satisfies Record<UpgradeSourceTier, number>;
+const WORKSHOP_FAMILY_COST_BY_SOURCE_TIER = { 3: 4, 4: 10, 5: 18, 6: 28, 7: 40 } as const satisfies Record<UpgradeSourceTier, number>;
 const SILVER_BY_SOURCE_TIER = { 3: 300, 4: 4500, 5: 14500, 6: 38000, 7: 65000 } as const satisfies Record<UpgradeSourceTier, number>;
 const WORKSHOP_SILVER_BY_SOURCE_TIER = { 3: 500, 4: 6000, 5: 24000, 6: 66000, 7: 110000 } as const satisfies Record<UpgradeSourceTier, number>;
 
@@ -43,14 +44,10 @@ function singleFamilyProgression(buildingId: IslandBuildingId, family: Productio
 }
 
 function workshopUpgrade(sourceTier: UpgradeSourceTier): IslandBuildingUpgradeCost {
+  const quantityPerFamily = WORKSHOP_FAMILY_COST_BY_SOURCE_TIER[sourceTier];
   return {
     silver: WORKSHOP_SILVER_BY_SOURCE_TIER[sourceTier],
-    requirements: [],
-    flexibleRequirement: {
-      itemIds: Object.values(REFINED_BY_TIER[sourceTier]),
-      totalQuantity: MONO_COST_BY_SOURCE_TIER[sourceTier],
-      minimumDistinctItemIds: 3,
-    },
+    requirements: Object.values(REFINED_BY_TIER[sourceTier]).map((itemId) => ({ itemId, quantity: quantityPerFamily })),
   };
 }
 
