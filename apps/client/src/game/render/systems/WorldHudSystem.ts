@@ -20,11 +20,11 @@ export class WorldHudSystem {
     private readonly manifest: WorldHudRenderManifest,
   ) {}
 
-  public createPlayer(x: number, y: number): void {
+  public createPlayer(x: number, y: number, playerDisplayName: string): void {
     this.player = this.createActorHud(
       x,
       y,
-      "HÉROS",
+      playerDisplayName,
       this.manifest.actorLabel.playerColor,
       this.colorToNumber(this.manifest.healthBar.upperGradient[1]),
       "500/500",
