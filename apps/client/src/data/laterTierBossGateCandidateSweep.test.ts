@@ -52,8 +52,8 @@ const TIER_CONFIG = [
     mastery: 35,
     zoneDefId: WORLD_ZONE_IDS.ironveil,
     curve: YELLOW_WORLD_COMBAT_CURVE,
-    healthMultipliers: [1, 1.05, 1.1, 1.15] as const,
-    damageMultipliers: [1.3, 1.325, 1.35, 1.375, 1.4] as const,
+    healthMultipliers: [1, 1.05, 1.1, 1.15, 1.2] as const,
+    damageMultipliers: [1.325, 1.375, 1.425, 1.475, 1.525, 1.575] as const,
     defenseMultipliers: [1, 1.05, 1.1] as const,
   },
   {
@@ -62,9 +62,9 @@ const TIER_CONFIG = [
     mastery: 45,
     zoneDefId: WORLD_ZONE_IDS.ashenpeak,
     curve: ORANGE_WORLD_COMBAT_CURVE,
-    healthMultipliers: [1] as const,
-    damageMultipliers: [1.325, 1.35, 1.375, 1.4] as const,
-    defenseMultipliers: [1, 1.05] as const,
+    healthMultipliers: [1, 1.05, 1.1] as const,
+    damageMultipliers: [1.375, 1.425, 1.475, 1.525, 1.575] as const,
+    defenseMultipliers: [1, 1.05, 1.1] as const,
   },
   {
     tier: 7,
@@ -72,18 +72,11 @@ const TIER_CONFIG = [
     mastery: 55,
     zoneDefId: WORLD_ZONE_IDS.doompeak,
     curve: RED_WORLD_COMBAT_CURVE,
-    healthMultipliers: [1] as const,
-    damageMultipliers: [1.1, 1.125, 1.15, 1.175, 1.2] as const,
+    healthMultipliers: [1, 1.05, 1.1] as const,
+    damageMultipliers: [1.175, 1.225, 1.275, 1.325, 1.375] as const,
     defenseMultipliers: [1, 1.05, 1.1] as const,
   },
 ] as const;
-
-const T5_DIAGNOSTIC_CANDIDATES = new Set([
-  "h1_d1.375_def1",
-  "h1_d1.4_def1",
-  "h1.05_d1.3_def1.1",
-  "h1.15_d1.325_def1.05",
-]);
 
 type Tier = keyof typeof WEAPONS_BY_TIER;
 type ZoneDefId = (typeof TIER_CONFIG)[number]["zoneDefId"];
@@ -98,10 +91,6 @@ function equipmentFor(weaponItemId: string, tier: Tier): readonly string[] {
   const items: string[] = [...ARMOR_BY_TIER[tier]];
   if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") items.push(SHIELD_BY_TIER[tier]);
   return items;
-}
-
-function shortWeaponName(itemId: string, tier: Tier): string {
-  return itemId.replace("item_weapon_", "").replace(`_t${tier}_`, " ");
 }
 
 function run(
@@ -126,7 +115,6 @@ function run(
 describe("later-tier boss gate candidate sweep", () => {
   it("refines the T5/T6/T7 boss-gate frontiers with one reusable sweep", () => {
     const allRows: Array<Record<string, number | boolean | string>> = [];
-    const t5DiagnosticRows: Array<Record<string, number | boolean | string>> = [];
     let expectedRowCount = 0;
 
     for (const config of TIER_CONFIG) {
@@ -173,23 +161,6 @@ describe("later-tier boss gate candidate sweep", () => {
                 tN3PotionMinHp: Math.min(...tN3Potion.map(({ result }) => result.hpPercent)),
                 validContract,
               });
-
-              if (tier === 5 && T5_DIAGNOSTIC_CANDIDATES.has(candidate)) {
-                for (const enchantment of [2, 3] as const) {
-                  const results = enchantment === 2 ? tN2Potion : tN3Potion;
-                  for (const { weaponItemId, result } of results) {
-                    t5DiagnosticRows.push({
-                      candidate,
-                      enchantment,
-                      weapon: shortWeaponName(weaponItemId, tier),
-                      clear: result.clear,
-                      hpPercent: result.hpPercent,
-                      potions: result.potionsUsed,
-                      encounters: result.encounterReached,
-                    });
-                  }
-                }
-              }
             }
           }
         }
@@ -204,23 +175,10 @@ describe("later-tier boss gate candidate sweep", () => {
         .filter((row) => row.validContract === true)
         .sort((a, b) => Number(a.adjustmentScore) - Number(b.adjustmentScore));
 
-      console.log(`[LATER_TIER_BOSS_GATE_${config.label}_CANDIDATE_SWEEP]`);
-      console.table(tierRows);
-      console.log(`[LATER_TIER_BOSS_GATE_${config.label}_VALID_CANDIDATES]`);
-      console.table(valid);
-      console.log(
-        `[LATER_TIER_BOSS_GATE_${config.label}_VALID_CANDIDATES_JSON]`,
-        JSON.stringify(valid, null, 2),
-      );
-
+      console.log(`[LATER_TIER_BOSS_GATE_${config.label}_VALID_CANDIDATES_JSON]`, JSON.stringify(valid, null, 2));
       allRows.push(...tierRows);
     }
 
-    console.log("[T5_BOSS_GATE_WEAPON_OVERLAP_DIAGNOSTIC]");
-    console.table(t5DiagnosticRows);
-    console.log("[T5_BOSS_GATE_WEAPON_OVERLAP_DIAGNOSTIC_JSON]", JSON.stringify(t5DiagnosticRows, null, 2));
-
     expect(allRows).toHaveLength(expectedRowCount);
-    expect(t5DiagnosticRows).toHaveLength(T5_DIAGNOSTIC_CANDIDATES.size * WEAPONS_BY_TIER[5].length * 2);
   });
 });
