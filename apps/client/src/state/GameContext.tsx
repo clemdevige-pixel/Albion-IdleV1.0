@@ -260,6 +260,9 @@ export function GameProvider({
       researchService,
       currencyService,
       walletId,
+      inventoryManager,
+      heroId,
+      getFactionYieldBonusPercent: factionMasteryFoundation.getYieldBonusPercent,
     });
 
     const productionFoundation = createProductionFoundation({
