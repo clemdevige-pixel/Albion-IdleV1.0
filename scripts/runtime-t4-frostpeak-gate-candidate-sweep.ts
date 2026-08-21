@@ -14,18 +14,18 @@ const WEAPONS = [
   "item_weapon_gloves_t4_spiked_gauntlets",
   "item_weapon_dagger_t4_pair",
 ] as const;
-const DAGGER_ID = "item_weapon_dagger_t4_pair";
+const LONGBOW_ID = "item_weapon_bow_t4_longbow";
 const zone = BLUE_WORLD_COMBAT_CURVE[4] as MutableZone;
 const zoneDefId = WORLD_ZONE_IDS_BY_BAND.blue[4];
 if (zoneDefId === undefined) throw new Error("Missing Frostpeak zone");
-const dagger = WEAPON_ITEM_DEFINITIONS[DAGGER_ID];
-if (dagger?.stats === undefined) throw new Error("Missing T4 dagger stats");
-const daggerStats = dagger.stats as MutableStats;
-const originalDamage = daggerStats.stat_physical_damage;
-if (originalDamage === undefined) throw new Error("Missing T4 dagger damage");
+const longbow = WEAPON_ITEM_DEFINITIONS[LONGBOW_ID];
+if (longbow?.stats === undefined) throw new Error("Missing T4 Longbow stats");
+const longbowStats = longbow.stats as MutableStats;
+const originalDamage = longbowStats.stat_physical_damage;
+if (originalDamage === undefined) throw new Error("Missing T4 Longbow damage");
 const originalBoss = zone.bossGate;
 
-const DAGGER_SCALES = [1, 1.025, 1.05, 1.075, 1.1, 1.125, 1.15, 1.175, 1.2, 1.25, 1.3] as const;
+const LONGBOW_SCALES = [1, 0.995, 0.99, 0.985, 0.98, 0.975, 0.97, 0.965, 0.96, 0.95, 0.94, 0.93, 0.92, 0.9] as const;
 const BOSS_HEALTH = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.75, 1.9, 2.1, 2.3, 2.5] as const;
 const BOSS_DAMAGE = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.75, 1.9, 2.1] as const;
 const BOSS_DEFENSE = [1, 1.05, 1.1, 1.15, 1.2, 1.3, 1.4, 1.5] as const;
@@ -42,26 +42,26 @@ function shortWeaponName(itemId: string): string {
   return itemId.replace("item_weapon_", "").replace(/_t4_/, " ");
 }
 
-const candidates = DAGGER_SCALES.flatMap((daggerScale) =>
+const candidates = LONGBOW_SCALES.flatMap((longbowScale) =>
   BOSS_HEALTH.flatMap((health) =>
     BOSS_DAMAGE.flatMap((damage) =>
       BOSS_DEFENSE.map((defense) => ({
-        daggerScale,
-        daggerDamage: Number((originalDamage * daggerScale).toFixed(2)),
+        longbowScale,
+        longbowDamage: Number((originalDamage * longbowScale).toFixed(2)),
         health,
         damage,
         defense,
-        score: Number(((daggerScale - 1) + (health - 1) + (damage - 1) + (defense - 1)).toFixed(4)),
+        score: Number(((1 - longbowScale) + (health - 1) + (damage - 1) + (defense - 1)).toFixed(4)),
       })),
     ),
   ),
-).sort((a, b) => a.score - b.score || a.daggerScale - b.daggerScale || a.health - b.health || a.damage - b.damage || a.defense - b.defense);
+).sort((a, b) => a.score - b.score || b.longbowScale - a.longbowScale || a.health - b.health || a.damage - b.damage || a.defense - b.defense);
 
 const valid: Array<Record<string, unknown>> = [];
 const nearMisses: Array<Record<string, unknown> & { contractMisses: number; score: number }> = [];
 try {
   for (const candidate of candidates) {
-    daggerStats.stat_physical_damage = candidate.daggerDamage;
+    longbowStats.stat_physical_damage = candidate.longbowDamage;
     zone.bossGate = {
       progressionRole: "boss_gate",
       healthMultiplier: candidate.health,
@@ -125,7 +125,7 @@ try {
     }
   }
 } finally {
-  daggerStats.stat_physical_damage = originalDamage;
+  longbowStats.stat_physical_damage = originalDamage;
   zone.bossGate = originalBoss;
 }
 
@@ -139,8 +139,9 @@ console.log("[T4_FROSTPEAK_GATE_NEAR_MISSES]");
 console.table(bestNearMisses);
 console.log("[T4_FROSTPEAK_GATE_NEAR_MISSES_JSON]", JSON.stringify(bestNearMisses, null, 2));
 console.log("[T4_FROSTPEAK_GATE_SWEEP_CONTRACT]", {
-  unchangedWeapons: "Broadsword, Longbow, Infernal, Spiked",
-  tunedWeapon: "T4 Dagger Pair only",
+  unchangedWeapons: "Broadsword, Infernal, Spiked, Dagger",
+  tunedWeapon: "T4 Longbow only",
   target: "T4.2 + potion = 0/5; T4.3 + potion = 5/5; T4.3 no potion = 0/5",
+  preference: "Smallest Longbow nerf first, then smallest boss-gate adjustment",
   nearMissPenalty: "n2 potion leaks + n3 potion failures + n3 no-potion leaks",
 });
