@@ -1,12 +1,15 @@
 ﻿import { describe, expect, it } from "vitest";
-import heroManifest from "./manifests/hero-broadsword.render.json";
-import fireStaffManifest from "./manifests/hero-fire-staff.render.json";
-import longbowManifest from "./manifests/hero-longbow.render.json";
-import spikedGauntletsManifest from "./manifests/hero-spiked-gauntlets.render.json";
 import monsterManifest from "./manifests/monster-stonefang-wolf.render.json";
 import environmentManifest from "./manifests/environment-birch-forest.render.json";
 import projectileManifest from "./manifests/projectile-arrow.render.json";
+import { requireHeroRenderManifest } from "./HeroRenderCatalog";
 import { parseRenderManifest } from "./RenderManifestParsing";
+
+const heroManifest = requireHeroRenderManifest("hero_broadsword");
+const fireStaffManifest = requireHeroRenderManifest("hero_fire_staff");
+const longbowManifest = requireHeroRenderManifest("hero_longbow");
+const spikedGauntletsManifest = requireHeroRenderManifest("hero_spiked_gauntlets");
+const daggerPairManifest = requireHeroRenderManifest("hero_dagger_pair");
 
 describe("parseRenderManifest", () => {
   it("dispatches manifests according to their kind", () => {
@@ -26,8 +29,6 @@ describe("parseRenderManifest", () => {
   });
 });
 
-import daggerPairManifest from "./manifests/hero-dagger-pair.render.json";
-
 describe("Dagger Pair death pose parsing", () => {
   it("preserves animated death metadata from the manifest", () => {
     const parsed = parseRenderManifest(daggerPairManifest);
@@ -46,7 +47,7 @@ describe("Dagger Pair death pose parsing", () => {
 });
 
 describe("Broadsword normalized animation parsing", () => {
-  it("uses the Dual Dagger frame and display reference for every animation", () => {
+  it("uses the canonical frame and display reference for every animation", () => {
     const parsed = parseRenderManifest(heroManifest);
 
     if (parsed.kind !== "actor") {
@@ -78,7 +79,7 @@ describe("Broadsword normalized animation parsing", () => {
 });
 
 describe("Spiked Gauntlets normalized animation parsing", () => {
-  it("uses the Dual Dagger frame and display reference for every animation", () => {
+  it("uses the canonical frame and display reference for every animation", () => {
     const parsed = parseRenderManifest(spikedGauntletsManifest);
 
     if (parsed.kind !== "actor") {
@@ -112,7 +113,7 @@ describe("Spiked Gauntlets normalized animation parsing", () => {
 });
 
 describe("Infernal Staff normalized animation parsing", () => {
-  it("uses the Dual Dagger frame and display reference for every animation", () => {
+  it("uses the canonical frame and display reference for every animation", () => {
     const parsed = parseRenderManifest(fireStaffManifest);
 
     if (parsed.kind !== "actor") {
@@ -144,7 +145,7 @@ describe("Infernal Staff normalized animation parsing", () => {
 });
 
 describe("Longbow normalized animation parsing", () => {
-  it("uses a dedicated manifest with the Dual Dagger frame and display reference", () => {
+  it("uses a dedicated definition with the canonical frame and display reference", () => {
     const parsed = parseRenderManifest(longbowManifest);
 
     if (parsed.kind !== "actor") {
