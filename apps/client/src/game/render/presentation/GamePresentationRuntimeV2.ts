@@ -24,7 +24,6 @@ export class GamePresentationRuntime {
   private travel: WorldTravelPresentationController | undefined;
   private lastEncounterPresentationKey: string | undefined;
   private lastCombatState: GameBridge["combatState"] | undefined;
-  private lastWorldZoneIndex: number | undefined;
   private lastTravelGeneration = 0;
   private awaitingCombatAfterTravel = false;
 
@@ -42,7 +41,6 @@ export class GamePresentationRuntime {
     this.combat = combat;
     this.activity = new ActivityPresentationController(this.scene, combat);
     this.travel = new WorldTravelPresentationController(this.scene, combat, world);
-    this.lastWorldZoneIndex = bridge?.world.zoneIndex;
     this.lastTravelGeneration = worldTravelTransition.getGeneration();
   }
 
@@ -51,21 +49,14 @@ export class GamePresentationRuntime {
     if (bridge === undefined) return;
 
     const gathering = selectActiveGathering(bridge);
-    const zoneIndex = bridge.world.zoneIndex;
     const travelGeneration = worldTravelTransition.getGeneration();
     const authoritativeTravelStarted = travelGeneration !== this.lastTravelGeneration
       && worldTravelTransition.isActive();
-    if (
-      authoritativeTravelStarted
-      && this.lastWorldZoneIndex !== undefined
-      && zoneIndex !== this.lastWorldZoneIndex
-      && gathering === undefined
-    ) {
+    if (authoritativeTravelStarted && gathering === undefined) {
       this.awaitingCombatAfterTravel = true;
       this.travel?.start();
     }
     this.lastTravelGeneration = travelGeneration;
-    this.lastWorldZoneIndex = zoneIndex;
 
     const encounterPresentationKey = bridge.enemyEncounterKey;
     const transition = resolveCombatPresentationTransition({
@@ -83,10 +74,6 @@ export class GamePresentationRuntime {
       }
       this.lastEncounterPresentationKey = encounterPresentationKey;
     } else if (transition === "hard_reset") {
-      // Defeat/resume, pause/resume and explicit travel are hard encounter
-      // boundaries. Clear the old encounter immediately, but never seed the
-      // next health bar from stale bridge values while no new combat snapshot
-      // has been published yet.
       const latestDamageEventId = bridge.damageNumbers.at(-1)?.id ?? 0;
       invalidateCombatPresentation(latestDamageEventId);
       this.combat?.invalidateEncounterPresentation();
@@ -100,9 +87,6 @@ export class GamePresentationRuntime {
       }
       this.lastEncounterPresentationKey = encounterPresentationKey;
     } else if (transition === "victory_handoff") {
-      // Victory progression is presentation-asynchronous. The new enemy snapshot
-      // is already atomic, but the controller intentionally keeps presenting the
-      // defeated enemy until its killing impact has finished.
       this.lastEncounterPresentationKey = encounterPresentationKey;
     }
 
@@ -134,7 +118,6 @@ export class GamePresentationRuntime {
     this.world = undefined;
     this.lastEncounterPresentationKey = undefined;
     this.lastCombatState = undefined;
-    this.lastWorldZoneIndex = undefined;
     this.lastTravelGeneration = worldTravelTransition.getGeneration();
     this.awaitingCombatAfterTravel = false;
   }
