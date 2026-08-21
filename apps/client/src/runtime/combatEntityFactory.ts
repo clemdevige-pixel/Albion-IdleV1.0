@@ -58,7 +58,6 @@ export interface AuthoredEnemyCombatProfile {
 export interface AuthoredEnemySpawnInput {
   readonly monsterDefinitionId: string;
   readonly profile: AuthoredEnemyCombatProfile;
-  readonly contextLabel?: string;
 }
 
 export interface SpawnedEnemyResult {
@@ -146,7 +145,6 @@ function spawnMonsterWithProfile(
   deps: CombatEntityFactoryDependencies,
   monster: MonsterContentDefinition,
   profile: AuthoredEnemyCombatProfile,
-  contextLabel?: string,
 ): SpawnedEnemyResult {
   const runtimeAbilities = buildMonsterRuntimeAbilities(monster.category, monster.abilityIds);
   const damage = calculateAbilityBudgetedEnemyDamage(
@@ -173,17 +171,10 @@ function spawnMonsterWithProfile(
 
   for (const ability of runtimeAbilities) deps.abilityManager.learnAbility(enemyId, ability);
 
-  const prefix = monster.category === "boss"
-    ? "[BIOME BOSS] "
-    : monster.category === "elite"
-      ? "[ELITE] "
-      : "";
-  const suffix = contextLabel === undefined || contextLabel.length === 0 ? "" : ` - ${contextLabel}`;
-
   return {
     id: enemyId,
     maxHealth: profile.hp,
-    name: `${prefix}${monster.name}${suffix}`,
+    name: monster.name,
     visualManifestId: monster.visualManifestId,
     monsterDefinitionId: monster.id,
   };
@@ -202,7 +193,6 @@ export function spawnAuthoredEnemy(
     deps,
     getMonsterDefinition(input.monsterDefinitionId),
     input.profile,
-    input.contextLabel,
   );
 }
 
@@ -223,5 +213,5 @@ export function spawnEnemyForSegment(
     ctx.encounterIndex,
     placement.bandId,
   );
-  return spawnMonsterWithProfile(deps, monster, profile, ctx.zoneName);
+  return spawnMonsterWithProfile(deps, monster, profile);
 }
