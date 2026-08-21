@@ -50,6 +50,7 @@ export type DungeonAdvanceResult =
 export class DungeonRuntime {
   readonly #definitions = new Map<string, DungeonDefinition>();
   readonly #clearedDefinitionIds = new Set<string>();
+  readonly #completedDefinitionCounts = new Map<string, number>();
   #activeRun: DungeonRunState | undefined;
 
   constructor(definitions: readonly DungeonDefinition[] = []) {
@@ -90,6 +91,14 @@ export class DungeonRuntime {
     return [...this.#clearedDefinitionIds];
   }
 
+  getCompletedDefinitionCount(definitionId: string): number {
+    return this.#completedDefinitionCounts.get(definitionId) ?? 0;
+  }
+
+  getCompletedDefinitionCounts(): Readonly<Record<string, number>> {
+    return Object.fromEntries(this.#completedDefinitionCounts);
+  }
+
   getClearedTiers(): readonly number[] {
     return [...new Set(
       [...this.#clearedDefinitionIds]
@@ -112,6 +121,19 @@ export class DungeonRuntime {
     this.#clearedDefinitionIds.clear();
     for (const definitionId of definitionIds) {
       if (this.#definitions.has(definitionId)) this.#clearedDefinitionIds.add(definitionId);
+    }
+  }
+
+  restoreCompletedDefinitionCounts(counts: Readonly<Record<string, number>>): void {
+    this.#completedDefinitionCounts.clear();
+    for (const [definitionId, count] of Object.entries(counts)) {
+      if (
+        this.#definitions.has(definitionId)
+        && Number.isSafeInteger(count)
+        && count > 0
+      ) {
+        this.#completedDefinitionCounts.set(definitionId, count);
+      }
     }
   }
 
@@ -155,7 +177,13 @@ export class DungeonRuntime {
       ? { ...run, status: "cleared", completedEncounterIds }
       : { ...run, encounterIndex: run.encounterIndex + 1, completedEncounterIds };
     this.#activeRun = state;
-    if (cleared) this.#clearedDefinitionIds.add(run.definitionId);
+    if (cleared) {
+      this.#clearedDefinitionIds.add(run.definitionId);
+      this.#completedDefinitionCounts.set(
+        run.definitionId,
+        this.getCompletedDefinitionCount(run.definitionId) + 1,
+      );
+    }
     return { ok: true, state };
   }
 
