@@ -1,9 +1,9 @@
 export const WORLD_TRAVEL_TIMING = {
-  exitWalkMs: 650,
+  exitWalkMs: 1300,
   fadeToBlackMs: 120,
   blackHoldMs: 260,
   fadeFromBlackMs: 120,
-  enterWalkMs: 650,
+  enterWalkMs: 1300,
 } as const;
 
 export const WORLD_TRAVEL_TOTAL_MS = Object.values(WORLD_TRAVEL_TIMING)
