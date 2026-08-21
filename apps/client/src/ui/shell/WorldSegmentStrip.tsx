@@ -50,6 +50,7 @@ export function WorldSegmentStrip(): JSX.Element {
   const railProgress = viewedZone.segments.length <= 1
     ? 100
     : Math.max(0, Math.min(100, ((progressedSegmentCount - 1) / (viewedZone.segments.length - 1)) * 100));
+  const zoneBandLabel = `${viewedZone.worldBandId.toUpperCase()} ZONE`;
 
   return (
     <div className="world-segment-strip" aria-label="Navigation des zones et segments">
@@ -65,7 +66,12 @@ export function WorldSegmentStrip(): JSX.Element {
         </button>
         <div className="world-segment-strip__zone-heading">
           <strong>{viewedZone.biomeName} — {viewedZone.zoneName}</strong>
-          <span>{viewedZone.isActive ? "Zone actuelle" : viewedZone.isUnlocked ? "Zone accessible" : "Zone verrouillée"}</span>
+          <span
+            className={`world-segment-strip__zone-band world-segment-strip__zone-band--${viewedZone.worldBandId}`}
+          >
+            <i className="world-segment-strip__zone-band-dot" aria-hidden="true" />
+            {zoneBandLabel}
+          </span>
         </div>
         <button
           type="button"
