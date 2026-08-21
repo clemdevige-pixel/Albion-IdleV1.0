@@ -2,32 +2,51 @@
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 28px;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(93, 119, 76, .2), transparent 38%),
-    linear-gradient(180deg, #162326, #101719 72%);
+  padding: clamp(24px, 5vw, 64px);
   color: #eadfc8;
+  background:
+    linear-gradient(rgb(5 8 11 / 78%), rgb(5 8 11 / 92%)),
+    url("/assets/birch-forest-combat-background-pixel-v1.png") center / cover no-repeat,
+    #070a0e;
 }
 
 .ui-starter__panel {
   width: min(920px, 100%);
-  padding: 24px;
-  border: 1px solid rgba(193, 158, 102, .32);
-  border-radius: 10px;
-  background: rgba(18, 24, 24, .94);
-  box-shadow: 0 18px 55px rgba(0, 0, 0, .42);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .ui-starter__header { text-align: center; }
-.ui-starter__header > span { color: #b99761; font-size: 10px; letter-spacing: .16em; }
-.ui-starter__header h1 { margin: 6px 0 8px; font-size: 25px; color: #f3e3c0; }
-.ui-starter__header p { max-width: 660px; margin: 0 auto; color: rgba(234, 223, 200, .66); font-size: 12px; line-height: 1.55; }
+.ui-starter__header > span {
+  color: #b99761;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.ui-starter__header h1 {
+  margin: 6px 0 8px;
+  color: #f0cf79;
+  font-family: var(--ui-font-display);
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 600;
+}
+.ui-starter__header p {
+  max-width: 660px;
+  margin: 0 auto;
+  color: #a9a18f;
+  font-size: 12px;
+  line-height: 1.55;
+}
 
 .ui-starter__weapons {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
-  margin-top: 22px;
+  margin-top: 28px;
 }
 
 .ui-starter__weapon {
@@ -38,23 +57,27 @@
   justify-content: center;
   gap: 7px;
   padding: 15px 10px;
-  border: 1px solid rgba(193, 158, 102, .24);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(64, 76, 60, .33), rgba(37, 42, 38, .52));
   color: #eadfc8;
+  background: rgb(10 14 18 / 72%);
+  border: 1px solid rgb(130 101 52 / 48%);
+  border-radius: 3px;
   cursor: pointer;
   transition: transform .12s ease, border-color .12s ease, background .12s ease;
 }
 .ui-starter__weapon:hover {
-  transform: translateY(-3px);
-  border-color: rgba(222, 181, 106, .75);
-  background: linear-gradient(180deg, rgba(77, 92, 68, .45), rgba(43, 48, 42, .62));
+  transform: translateY(-2px);
+  border-color: #c59638;
+  background: rgb(18 20 20 / 86%);
 }
 .ui-starter__weapon-icon { width: 70px; height: 70px; display: grid; place-items: center; }
 .ui-starter__weapon-icon img { max-width: 64px; max-height: 64px; image-rendering: pixelated; }
 .ui-starter__weapon-icon > span { font-size: 32px; color: #c7a467; }
-.ui-starter__weapon strong { font-size: 12px; }
-.ui-starter__weapon small { font-size: 9px; color: rgba(234, 223, 200, .58); }
+.ui-starter__weapon strong {
+  color: #eee1c3;
+  font-family: var(--ui-font-display);
+  font-size: 14px;
+}
+.ui-starter__weapon small { color: #8d8a82; font-size: 10px; }
 
 .ui-starter__footer {
   min-height: 28px;
@@ -62,7 +85,7 @@
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  color: rgba(234, 223, 200, .58);
+  color: #85817a;
   font-size: 10px;
 }
 .ui-starter__footer strong { color: #d98d79; font-weight: 600; }
