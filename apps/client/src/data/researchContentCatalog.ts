@@ -9,6 +9,12 @@ export type ResearchContentRequirement = ResearchRequirementDefinition & {
 };
 
 export const RESEARCH_UNLOCK_IDS = {
+  expeditionTier4: "expedition_tier:4",
+  expeditionTier5: "expedition_tier:5",
+  expeditionTier6: "expedition_tier:6",
+  expeditionTier7: "expedition_tier:7",
+  expeditionTier8: "expedition_tier:8",
+  secondExpeditionSlot: "expedition_slot:2",
   keeperExpeditionFamily: "expedition_family:keeper",
   keeperDungeonFamily: "dungeon_family:keeper",
 } as const;
