@@ -31,6 +31,7 @@ export interface CombatRewardAdapterOptions {
   readonly recalculateWeaponMasteryStats: () => void;
   readonly resyncAll: () => void;
   readonly isDungeonActive?: () => boolean;
+  readonly onMonsterKilled?: (monsterId: string) => void;
 }
 
 export interface CombatRewardAdapter {
@@ -106,9 +107,11 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
 
   const unsubscribe = options.combatService.events.subscribe("enemyKilled", (event) => {
     options.bridge.incrementEnemiesKilled();
+    const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
 
     if (options.isDungeonActive?.() === true) {
       const reward = options.dungeonRewardRuntime?.processCurrentEncounterVictory();
+      if (monsterDefinitionId !== undefined) options.onMonsterKilled?.(monsterDefinitionId);
       clearActiveMonsterIdentity(event.entityId);
       if (reward !== undefined) {
         publishDungeonDrops(options, reward.drops);
@@ -144,7 +147,6 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
       options.worldRuntime.currentEncounter,
       zonePlacement.bandId,
     );
-    const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
     const monster = monsterDefinitionId === undefined ? undefined : getMonsterDefinition(monsterDefinitionId);
     const isFinalBoss = monster?.tags.includes("biome_boss") ?? false;
     const isBoss = isFinalBoss || (monster?.tags.includes("segment_boss") ?? false) || monster?.category === "boss";
@@ -171,6 +173,7 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
         dungeonKeyDropWeight,
       },
     );
+    if (monsterDefinitionId !== undefined) options.onMonsterKilled?.(monsterDefinitionId);
     clearActiveMonsterIdentity(event.entityId);
 
     incomeRate = rewardResult.newBalance - lastSilver;
