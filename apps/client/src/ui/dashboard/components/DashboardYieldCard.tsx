@@ -20,11 +20,7 @@ const YIELD_METRICS = [
 
 export function DashboardYieldCard({ yieldData }: DashboardYieldCardProps): JSX.Element {
   return (
-    <DashboardCard
-      title="Rendement"
-      iconSrc="/assets/ui/nav-masteries.png"
-      className="dashboard-card--yield"
-    >
+    <DashboardCard sectionId="yield">
       <dl className="dashboard-yield">
         {YIELD_METRICS.map((metric) => (
           <div key={metric.id} className={`dashboard-yield__metric dashboard-yield__metric--${metric.id}`}>
