@@ -45,7 +45,7 @@
   /* Permanent shell dimensions.
    * Keep permanent chrome compact so the world remains the dominant surface. */
   --ui-shell-header-height: 56px;
-  --ui-shell-bottom-height: 92px;
+  --ui-shell-bottom-height: 82px;
   --ui-shell-panel-width: clamp(360px, 28vw, 470px);
 
   /* Typography */
