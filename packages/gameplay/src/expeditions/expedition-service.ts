@@ -16,18 +16,31 @@ import {
   type StartExpeditionResult,
 } from "./types.js";
 
-const ExpeditionSnapshotSchema = z.object({
-  version: z.literal(1),
-  activeExpeditions: z.array(z.object({
-    slotIndex: z.number().int().nonnegative(),
-    expeditionId: z.string().min(1),
-    typeId: z.string().min(1),
-    durationMs: z.number().int().positive(),
-    remainingDurationMs: z.number().finite().positive(),
-  })),
+const ActiveExpeditionSnapshotSchema = z.object({
+  slotIndex: z.number().int().nonnegative(),
+  expeditionId: z.string().min(1),
+  typeId: z.string().min(1),
+  durationMs: z.number().int().positive(),
+  remainingDurationMs: z.number().finite().positive(),
 });
 
-type ExpeditionSnapshot = z.infer<typeof ExpeditionSnapshotSchema>;
+const ExpeditionSnapshotV1Schema = z.object({
+  version: z.literal(1),
+  activeExpeditions: z.array(ActiveExpeditionSnapshotSchema),
+});
+
+const ExpeditionSnapshotV2Schema = z.object({
+  version: z.literal(2),
+  activeExpeditions: z.array(ActiveExpeditionSnapshotSchema),
+  completedByType: z.record(z.string().min(1), z.number().int().nonnegative()),
+});
+
+const ExpeditionSnapshotSchema = z.union([
+  ExpeditionSnapshotV1Schema,
+  ExpeditionSnapshotV2Schema,
+]);
+
+type ExpeditionSnapshot = z.infer<typeof ExpeditionSnapshotV2Schema>;
 
 export interface ExpeditionServiceDependencies<
   TRequirement extends ExpeditionRequirementDefinition,
@@ -41,10 +54,10 @@ export interface ExpeditionServiceDependencies<
 /**
  * Authoritative passive Expedition runtime.
  *
- * Definitions are data-driven. The service owns active slots/timers only;
- * economy and Faction Mastery effects are delegated to the reward port.
- * Callers provide authoritative elapsed time for both online and offline
- * progression, so no local clock is consulted here.
+ * Definitions are data-driven. The service owns active slots/timers and its
+ * lifetime completion counts; economy and Faction Mastery effects remain
+ * delegated to the reward port. Callers provide authoritative elapsed time for
+ * both online and offline progression, so no local clock is consulted here.
  */
 export class ExpeditionService<
   TRequirement extends ExpeditionRequirementDefinition = ExpeditionRequirementDefinition,
@@ -57,6 +70,7 @@ export class ExpeditionService<
   readonly #slotCapacityPort: ExpeditionSlotCapacityPort;
   readonly #rewardPort: ExpeditionRewardPort<TRequirement, TRewardSummary>;
   #activeExpeditions: ActiveExpeditionState[] = [];
+  #completedByType = new Map<string, number>();
 
   constructor(dependencies: ExpeditionServiceDependencies<TRequirement, TRewardSummary>) {
     this.#requirementPort = dependencies.requirementPort;
@@ -92,6 +106,16 @@ export class ExpeditionService<
       .slice()
       .sort((a, b) => a.slotIndex - b.slotIndex)
       .map((entry) => ({ ...entry }));
+  }
+
+  getCompletedCount(typeId: string): number {
+    return this.#completedByType.get(typeId) ?? 0;
+  }
+
+  getTotalCompletedCount(): number {
+    let total = 0;
+    for (const count of this.#completedByType.values()) total += count;
+    return total;
   }
 
   startExpedition(
@@ -151,6 +175,10 @@ export class ExpeditionService<
         definition,
         active.durationMs,
       );
+      this.#completedByType.set(
+        active.typeId,
+        this.getCompletedCount(active.typeId) + 1,
+      );
       completed.push({
         slotIndex: active.slotIndex,
         expeditionId: active.expeditionId,
@@ -166,8 +194,9 @@ export class ExpeditionService<
 
   save(): ExpeditionSnapshot {
     return {
-      version: 1,
+      version: 2,
       activeExpeditions: [...this.getActiveExpeditions()],
+      completedByType: Object.fromEntries(this.#completedByType),
     };
   }
 
@@ -200,6 +229,12 @@ export class ExpeditionService<
     }
 
     this.#activeExpeditions = restored;
+    this.#completedByType.clear();
+    if (parsed.data.version === 2) {
+      for (const [typeId, count] of Object.entries(parsed.data.completedByType)) {
+        if (count > 0) this.#completedByType.set(typeId, count);
+      }
+    }
   }
 
   #areRequirementsMet(definition: ExpeditionDefinition<TRequirement>): boolean {
