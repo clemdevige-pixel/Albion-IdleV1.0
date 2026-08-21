@@ -1,3 +1,4 @@
+import { HERO_RENDER_MANIFESTS } from "./HeroRenderCatalog";
 import { RenderManifestRegistry } from "./RenderManifestRegistry";
 import { parseRenderManifest } from "./RenderManifestParsing";
 
@@ -47,6 +48,10 @@ for (const rawManifest of Object.values(rawManifestModules)) {
       renderManifestRegistry.registerWorldStatus(manifest);
       break;
   }
+}
+
+for (const heroManifest of HERO_RENDER_MANIFESTS) {
+  renderManifestRegistry.registerActor(heroManifest);
 }
 
 renderManifestRegistry.setDefaultActor("hero_broadsword");
