@@ -19,7 +19,9 @@ const SOURCE_TIERS = [4, 5, 6, 7] as const satisfies readonly WorldProgressionSo
 const FINAL_SEGMENT_INDEX = 9;
 
 function weaponItemIds(tier: WorldProgressionTier): readonly string[] {
-  return WEAPON_FAMILIES.map(([family, specialization]) => `item_weapon_${family}_t${String(tier)}_${specialization}`);
+  return WEAPON_FAMILIES.map(([family, specialization]) =>
+    `item_weapon_${family}_t${String(tier)}_${specialization}`,
+  );
 }
 
 function armorItemIds(tier: WorldProgressionTier): readonly string[] {
@@ -33,7 +35,9 @@ function armorItemIds(tier: WorldProgressionTier): readonly string[] {
 
 function equipmentFor(weaponItemId: string, tier: WorldProgressionTier): readonly string[] {
   const items = [...armorItemIds(tier)];
-  if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") items.push(`item_shield_t${String(tier)}_reinforced`);
+  if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") {
+    items.push(`item_shield_t${String(tier)}_reinforced`);
+  }
   return items;
 }
 
@@ -74,8 +78,8 @@ interface PlateauRow {
   readonly lastClearNoPotion: string;
   readonly firstWallPotion: string;
   readonly lastClearPotion: string;
-  readonly clearsRequiredPlateau: boolean;
-  readonly clearsForbiddenLateSegment: boolean;
+  readonly clearsRequiredAfkPlateau: boolean;
+  readonly clearsForbiddenLateSegmentWithPotion: boolean;
 }
 
 function runFinalGate(sourceTier: WorldProgressionSourceTier): readonly FinalGateRow[] {
@@ -89,9 +93,24 @@ function runFinalGate(sourceTier: WorldProgressionSourceTier): readonly FinalGat
       equipmentItemIds: equipmentFor(weaponItemId, sourceTier),
       masteryLevel: contract.masteryLevel,
     } as const;
-    const tN2Potion = runCombatRuntimeBenchmark({ label: "tier_transition_blocked", ...common, enchantment: contract.blockedEnchantment, useHealthPotions: true });
-    const tN3NoPotion = runCombatRuntimeBenchmark({ label: "tier_transition_required_no_potion", ...common, enchantment: contract.requiredEnchantment, useHealthPotions: false });
-    const tN3Potion = runCombatRuntimeBenchmark({ label: "tier_transition_required_potion", ...common, enchantment: contract.requiredEnchantment, useHealthPotions: true });
+    const tN2Potion = runCombatRuntimeBenchmark({
+      label: "tier_transition_blocked",
+      ...common,
+      enchantment: contract.blockedEnchantment,
+      useHealthPotions: true,
+    });
+    const tN3NoPotion = runCombatRuntimeBenchmark({
+      label: "tier_transition_required_no_potion",
+      ...common,
+      enchantment: contract.requiredEnchantment,
+      useHealthPotions: false,
+    });
+    const tN3Potion = runCombatRuntimeBenchmark({
+      label: "tier_transition_required_potion",
+      ...common,
+      enchantment: contract.requiredEnchantment,
+      useHealthPotions: true,
+    });
     return {
       transition: `T${String(sourceTier)}→T${String(sourceTier + 1)}`,
       zone: zoneName(String(zoneDefId)),
@@ -111,6 +130,7 @@ function runPlateau(sourceTier: WorldProgressionSourceTier): readonly PlateauRow
   const contract = getWorldTierTransitionContract(sourceTier);
   const nextTier = (sourceTier + 1) as WorldProgressionTier;
   const zoneDefId = zoneIdFor(nextTier, contract.nextTierFirstZoneIndex);
+
   return weaponItemIds(sourceTier).map((weaponItemId) => {
     const noPotionClears: boolean[] = [];
     const potionClears: boolean[] = [];
@@ -123,9 +143,18 @@ function runPlateau(sourceTier: WorldProgressionSourceTier): readonly PlateauRow
         masteryLevel: contract.masteryLevel,
         enchantment: contract.requiredEnchantment,
       } as const;
-      noPotionClears.push(runCombatRuntimeBenchmark({ label: "tier_transition_plateau_no_potion", ...common, useHealthPotions: false }).clear);
-      potionClears.push(runCombatRuntimeBenchmark({ label: "tier_transition_plateau_potion", ...common, useHealthPotions: true }).clear);
+      noPotionClears.push(runCombatRuntimeBenchmark({
+        label: "tier_transition_plateau_no_potion",
+        ...common,
+        useHealthPotions: false,
+      }).clear);
+      potionClears.push(runCombatRuntimeBenchmark({
+        label: "tier_transition_plateau_potion",
+        ...common,
+        useHealthPotions: true,
+      }).clear);
     }
+
     const firstWall = (rows: readonly boolean[]) => {
       const index = rows.findIndex((clear) => !clear);
       return index < 0 ? "-" : `S${String(index + 1)}`;
@@ -135,6 +164,7 @@ function runPlateau(sourceTier: WorldProgressionSourceTier): readonly PlateauRow
       rows.forEach((clear, current) => { if (clear) index = current; });
       return index < 0 ? "-" : `S${String(index + 1)}`;
     };
+
     return {
       transition: `T${String(sourceTier)}→T${String(sourceTier + 1)}`,
       zone: zoneName(String(zoneDefId)),
@@ -144,14 +174,15 @@ function runPlateau(sourceTier: WorldProgressionSourceTier): readonly PlateauRow
       lastClearNoPotion: lastClear(noPotionClears),
       firstWallPotion: firstWall(potionClears),
       lastClearPotion: lastClear(potionClears),
-      clearsRequiredPlateau: potionClears.slice(0, contract.plateauMinSegments).every(Boolean),
-      clearsForbiddenLateSegment: potionClears[contract.plateauMaxSegmentWithPotion] ?? false,
+      clearsRequiredAfkPlateau: noPotionClears.slice(0, contract.plateauMinSegments).every(Boolean),
+      clearsForbiddenLateSegmentWithPotion: potionClears[contract.plateauMaxSegmentWithPotion] ?? false,
     };
   });
 }
 
 const finalGateRows = SOURCE_TIERS.flatMap(runFinalGate);
 const plateauRows = SOURCE_TIERS.flatMap(runPlateau);
+
 console.log("[TIER_TRANSITION_FINAL_GATE]");
 console.table(finalGateRows);
 console.log("[TIER_TRANSITION_FARM_PLATEAU]");
@@ -163,20 +194,31 @@ const summary = SOURCE_TIERS.map((sourceTier) => {
   const farmRows = plateauRows.filter((row) => row.transition === transition);
   const tN2PotionClears = gateRows.filter((row) => row.tN2PotionClear).length;
   const tN3PotionClears = gateRows.filter((row) => row.tN3PotionClear).length;
-  const plateauPasses = farmRows.filter((row) => row.clearsRequiredPlateau).length;
-  const plateauLateLeaks = farmRows.filter((row) => row.clearsForbiddenLateSegment).length;
+  const plateauPasses = farmRows.filter((row) => row.clearsRequiredAfkPlateau).length;
+  const plateauLateLeaks = farmRows.filter((row) => row.clearsForbiddenLateSegmentWithPotion).length;
+
   return {
     transition,
     finalZone: gateRows[0]?.zone ?? "-",
     tN2PotionClears: `${String(tN2PotionClears)}/5`,
     tN3PotionClears: `${String(tN3PotionClears)}/5`,
     nextZone: farmRows[0]?.zone ?? "-",
-    plateauPasses: `${String(plateauPasses)}/5`,
-    plateauLateLeaks: `${String(plateauLateLeaks)}/5`,
-    status: tN2PotionClears === 0 && tN3PotionClears === 5 && plateauPasses === 5 && plateauLateLeaks === 0 ? "PASS" : "FAIL",
+    plateauAfkPasses: `${String(plateauPasses)}/5`,
+    plateauPotionLateLeaks: `${String(plateauLateLeaks)}/5`,
+    status: tN2PotionClears === 0
+      && tN3PotionClears === 5
+      && plateauPasses === 5
+      && plateauLateLeaks === 0
+      ? "PASS"
+      : "FAIL",
   };
 });
+
 console.log("[TIER_TRANSITION_CONTRACT_SUMMARY]");
 console.table(summary);
 console.log("[TIER_TRANSITION_CONTRACT_JSON]", JSON.stringify({ finalGateRows, plateauRows, summary }, null, 2));
 console.log("[TIER_TRANSITION_CONTRACT_SOURCE] @game/data WORLD_TIER_TRANSITION_CONTRACTS");
+console.log("[TIER_TRANSITION_CONTRACT_RULES]", {
+  finalGate: ".2 + potion fails; .3 + potion clears",
+  plateau: "previous tier .3 farms S1-S3 without potion but cannot clear S10 even with potion",
+});
