@@ -11,11 +11,10 @@ Last update: 2026-08-21
 This document records the validated design direction for a future secondary progression layer built around:
 
 - Research / Academy;
-- the existing Bestiary;
+- the existing Bestiary as Codex surface;
+- Relic quests;
 - faction Expeditions;
-- generic Expeditions;
-- Relics;
-- Manuscripts;
+- a generic Silver Expedition;
 - Faction Mastery;
 - the existing World > Achievements tab.
 
@@ -29,49 +28,46 @@ This document does NOT describe an implemented system yet.
 
 # 2. DESIGN PRINCIPLES
 
-## 2.1 Research owns unlocks
+## 2.1 Research owns functional unlocks
 
 Research is the authoritative system for permanent functional unlocks introduced by this feature.
 
 Faction Mastery must not become a second unlock tree.
 
-Examples of appropriate Research rewards:
+Research rewards should unlock concrete functions/content, not generic stat bonuses.
 
-- unlock Cartography / Expeditions;
-- unlock Archaeology / Relic reconstruction;
-- unlock a faction-specific advanced research;
-- permanently unlock access to a faction dungeon after its knowledge requirements are met.
+Examples:
 
-Research should not primarily consist of generic stat bonuses such as +5% damage.
+- unlock Expeditions;
+- unlock Relic reconstruction;
+- unlock a faction Expedition;
+- unlock permanent access to a faction dungeon family.
 
 ## 2.2 Faction Mastery owns faction-wide yield
 
-Faction Mastery represents familiarity and operational efficiency with a faction.
+Faction Mastery represents familiarity and efficiency with a faction.
 
-Its validated role is to increase GLOBAL YIELD on activities/rewards tied to that faction.
+Its validated role is GLOBAL FACTION YIELD ONLY.
 
-It must not gate:
+Possible affected channels include:
+
+- faction Expedition resource yield;
+- faction loot/drop yield or drop-rate modifiers;
+- Silver earned from faction content;
+- Fame earned from faction content.
+
+Faction Mastery must NOT gate:
 
 - Research;
-- faction dungeon access;
+- dungeon access;
 - Relics;
 - Expeditions;
 - recipes;
-- core world progression.
+- world progression.
 
-Validated direction:
+Faction Mastery must NOT affect generic Expeditions such as the Silver Expedition.
 
-Higher Keeper Mastery may improve Keeper-related yields such as:
-
-- faction-resource quantity from Keeper Expeditions;
-- Keeper loot/drop yield or drop-rate modifiers;
-- Silver earned from Keeper content;
-- Fame earned from Keeper content;
-- other future Keeper-specific economic yields if explicitly authored.
-
-Faction Mastery is therefore a family-wide efficiency progression, not an unlock authority.
-
-Exact curves, affected reward channels and caps are OPEN and require balance work before implementation.
+Exact formulas, coefficients and caps remain OPEN.
 
 ## 2.3 Existing Bestiary becomes the Codex surface
 
@@ -79,244 +75,467 @@ Do NOT create a second Codex module.
 
 The existing World Bestiary is the player-facing knowledge surface and should be extended when this feature is implemented.
 
-Existing reference:
+Existing references:
 
 - `apps/client/src/ui/world/components/WorldBestiaryView.tsx`
 - `apps/client/src/ui/world/worldModels.ts`
 
-Current Bestiary already exposes faction, tier/category, damage type, abilities and loot information. Future progression data should extend this existing surface rather than duplicate it.
+Future progression fields may include:
 
-## 2.4 Achievements reuse the existing World tab
+- discovered / undiscovered;
+- kill count;
+- elite/boss victories;
+- faction;
+- existing combat information;
+- existing loot information;
+- Relic-quest progression;
+- faction-mastery progression;
+- related achievements.
+
+## 2.4 Existing World Achievements surface is reused
 
 Do NOT create a second achievement system solely for this feature.
 
-The existing World > Achievements view is the presentation surface for completion objectives.
+The existing World > Achievements view remains the presentation surface for completion objectives.
 
 Existing reference:
 
 - `apps/client/src/ui/world/components/WorldAchievementsView.tsx`
 
-Current achievements already track dungeon-tier conquest. Future faction objectives can extend the same data-driven achievement model.
-
 ---
 
-# 3. FEATURE COMPONENTS
+# 3. ACADEMY / RESEARCH
 
-# 3.1 ACADEMY / RESEARCH
+## 3.1 Placement and unlock
 
-## Role
+The Academy is a UNIQUE island utility building.
 
-The Academy provides timed parallel research while the hero continues normal gameplay.
+Validated unlock timing:
 
-Research is the main FUNCTIONAL UNLOCK layer for this feature.
+- becomes available at Island Level 2;
+- therefore after the early T3 loop is understood and Dark Swamp progression has been completed according to the current Island progression contract.
 
-## Player interaction
+The Academy belongs to the Player Island architecture rather than being an abstract standalone menu.
 
-Future player flow:
+## 3.2 Construction
 
-1. Open Academy / Research.
-2. Select an available research.
-3. Pay its authored requirements.
-4. Research progresses with real/offline time.
-5. Completion permanently unlocks its authored result.
+Construction uses the EXISTING economy only:
 
-## Initial research examples
+- Silver;
+- existing authored resources/materials.
 
-These names and numbers are placeholders until a full progression pass is authored.
+Do not create a generic Research Point / Science currency by default.
 
-### Cartography
+Exact construction cost remains OPEN for balance.
 
-Result:
-- unlocks Expeditions.
+## 3.3 Research slot count
 
-### Archaeology
+Validated V1:
 
-Result:
-- unlocks Relic fragment tracking and Relic reconstruction.
+- one active Research slot.
 
-### Faction Studies
+Do not add a second slot by default.
 
-Result:
-- enables advanced faction knowledge/research chains.
+A future additional slot requires separate design validation.
 
-### Faction Dungeon Research
+## 3.4 Research lifecycle
 
-Result:
-- permanently unlocks the corresponding faction dungeon family when the authored Manuscript/knowledge requirements are satisfied.
+1. Player opens Academy.
+2. Player selects an available Research.
+3. Authored costs/prerequisites are validated.
+4. Costs are consumed.
+5. Research timer starts.
+6. Research progresses online and offline.
+7. On completion, the authored unlock becomes permanent.
 
-Important integration rule:
+Research completion must not require manual reward collection.
 
-Research unlock does NOT modify, replace or reinterpret the existing dungeon-key system.
+## 3.5 Offline/background progression
 
-The current dungeon key contract remains unchanged and authoritative:
+Research is a passive activity and must integrate with the existing Background Progression model.
 
-- keys are tier-based;
-- keys are faction-independent;
-- a matching tier key is consumed/required according to the current dungeon-entry rules.
+Rules:
+
+- server-authoritative time;
+- elapsed-time resolution;
+- no client clock authority;
+- no tick-by-tick offline simulation;
+- same authored duration online/offline.
 
 Reference:
 
-- `apps/client/src/data/dungeonKeyContentCatalog.ts`
+- `AI_BIBLE/10_SYSTEMS/39_BACKGROUND_PROGRESSION_SYSTEM.txt`
 
-The future Research layer only adds a permanent CONTENT ACCESS prerequisite before a faction dungeon can be selected/entered. Once access is unlocked, the existing key behavior continues exactly as today.
+## 3.6 Academy tier behavior
 
----
+The Academy follows world/island tier progression.
 
-# 3.2 BESTIARY / CODEX PROGRESSION
+Validated rule:
 
-## Role
+- Academy T4 exposes T4 Research;
+- Academy T5 exposes T5 Research;
+- Academy T6 exposes T6 Research;
+- Academy T7 exposes T7 Research;
+- Academy T8 exposes T8 Research.
 
-The Bestiary becomes the knowledge and progression surface for encountered creatures and factions.
+Increasing Academy tier does NOT grant generic Research-speed bonuses.
 
-It is NOT a separate currency and does not need a new standalone module.
+Its tier exists to make the Research of the associated tier available.
 
-## Future data displayed per creature
+## 3.7 Research structure
 
-Potential progression fields:
+Do NOT force an arbitrary fixed number of Research entries per tier.
 
-- discovered / undiscovered;
-- kill count;
-- boss defeated state;
-- faction;
-- existing combat information;
-- existing loot information;
-- faction-mastery contribution;
-- related achievements.
+Validated model:
 
-## Function
+- a small set of SOCLE Research;
+- contextual Research appears only when its authored prerequisites become true.
 
-The Bestiary should show the player's accumulated knowledge and make faction progression understandable.
+Examples of contextual triggers:
 
-It may provide authored prerequisites for Research, but it must not create a dense independent unlock tree.
-
-Example:
-
-Keeper creature kills and boss victories are visible in Bestiary and contribute to Keeper Mastery / faction achievements.
+- faction Relic reconstructed;
+- relevant world/tier reached;
+- other explicitly authored content prerequisite.
 
 ---
 
-# 3.3 RELICS
+# 4. SOCLE RESEARCH
 
-## Definition
+## 4.1 Cartography I — T4
 
-A Relic is a permanent faction discovery.
+Validated effect:
+
+- unlocks the Expedition system;
+- unlocks the generic Silver Expedition at T4;
+- enables T4 Expedition definitions whose own prerequisites are satisfied.
+
+## 4.2 Archaeology I — T4
+
+Validated effect:
+
+- enables faction Relic-quest progression;
+- enables Relic Fragment tracking;
+- enables Relic reconstruction once all authored objectives are complete.
+
+Archæology is a capability acquired once.
+
+Do NOT create Archaeology II/III/IV/V only to mirror tier progression unless a future mechanic genuinely requires it.
+
+## 4.3 Cartography progression T5-T8
+
+Cartography continues because Expedition capability genuinely expands with world tier.
+
+Validated current V1 direction:
+
+- Cartography II / T5: enables T5 Expedition definitions;
+- Cartography III / T6: enables T6 Expedition definitions and unlocks a second simultaneous Expedition slot;
+- Cartography IV / T7: enables T7 Expedition definitions;
+- Cartography V / T8: enables T8 Expedition definitions.
+
+Do not invent extra special route mechanics for V1.
+
+Future expedition routes/events/specializations may extend this later.
+
+---
+
+# 5. FACTION RELICS
+
+## 5.1 Definition
+
+A Relic is a permanent faction discovery reconstructed through a deterministic mini-quest.
 
 It is NOT:
 
 - equipment;
 - a generic currency;
 - a passive-stat item;
+- an RNG farm item;
 - a replacement for Mastery.
 
-## Validated V1 purpose
-
-Relics unlock the corresponding FACTION EXPEDITION.
+There is ONE Relic per faction across the whole game, not one Relic per tier.
 
 Example:
 
-`Keeper Relic`
--> permanently unlocks the Keeper Expedition.
+- one Keeper Relic for T4-T8;
+- one Heretic Relic for T4-T8;
+- one Undead Relic for T4-T8;
+- one Morgana Relic for T4-T8.
 
-## Acquisition direction
+The Relic represents discovery/understanding of the faction, not a tiered material.
 
-Relics are expected to be reconstructed from faction-specific Relic Fragments after Archaeology is unlocked.
+## 5.2 Fragment count
 
-Exact fragment sources, quantities and tiers are OPEN.
+Validated V1:
 
-Possible future sources may include existing combat, bosses, dungeons, achievements or exploration, but no source is validated yet.
+- 5 fragments complete one faction Relic.
 
-## Persistence
+Fragments are awarded by deterministic objectives, not random monster drops.
 
-A completed Relic is a permanent account discovery and should not be consumed when launching Expeditions.
+Once the Relic is reconstructed:
+
+- it is permanently acquired;
+- its fragment progression is complete;
+- no further fragments of that Relic are generated.
+
+## 5.3 Universal Relic-quest template
+
+Every faction uses the SAME runtime quest structure.
+
+Only authored data changes.
+
+Five fragment objectives:
+
+1. DISCOVERY
+   - discover/defeat the two main normal units of the faction.
+
+2. FAMILIARIZATION
+   - reach a first authored faction kill threshold.
+
+3. DEEP STUDY
+   - reach a second authored faction kill threshold.
+
+4. ELITE STUDY
+   - defeat an authored number of the faction's elite unit.
+
+5. TERRITORY PROGRESSION
+   - reach an authored progression milestone inside a zone where that faction is dominant.
+
+Important:
+
+- no final biome boss is required by default;
+- the Relic should be obtainable before the end of the relevant chapter so that faction-content preparation can begin before the chapter ends;
+- exact thresholds and zone milestone are authored per faction but resolved by one generic data-driven system.
+
+## 5.4 Historical progress
+
+Where existing persistent data allows it, Relic objectives should recognize progress already completed before Archaeology is unlocked.
+
+The player should not be forced to repeat old content purely because the feature became visible later.
+
+Exact migration/backfill behavior requires technical design at implementation time.
 
 ---
 
-# 3.4 EXPEDITIONS
+# 6. CONTEXTUAL FACTION RESEARCH
 
-## Role
+Reconstructing a faction Relic makes TWO independent contextual Research entries available.
 
-Expeditions are parallel activities that run independently while the hero continues combat, gathering or production.
+This creates two branches from the same faction discovery.
 
-They are divided into two validated families:
+## 6.1 Faction Expedition Research
 
-1. FACTION EXPEDITIONS;
-2. GENERIC EXPEDITIONS.
+Example Keeper naming direction:
 
-They must not all share the same reward purpose.
+`Étude des Keeper`
 
-## 3.4.1 Faction Expeditions
+Prerequisite:
 
-Their validated V1 purpose is to provide FACTION CRAFTING RESOURCES used for faction capes.
+- Keeper Relic reconstructed.
 
-Core loop:
+Validated reward:
 
-Relic acquired
--> faction Expedition unlocked
--> Expedition runs in parallel
--> faction crafting resource is returned
--> faction resource is consumed by faction cape crafting
+- permanently unlocks the Keeper Expedition family.
+
+Cartography controls which tier of that Expedition family is currently available.
 
 Example:
 
-Keeper Relic
--> Keeper Expedition
--> Keeper faction resource
--> Keeper Cape recipe
+- Keeper Relic + Keeper Expedition Research + Cartography I -> Keeper T4 Expedition;
+- Cartography II -> Keeper T5 Expedition;
+- etc.
 
-Faction Mastery improves faction-wide yield, including Expedition output for the same faction.
+Do NOT create `Keeper Study I/II/III/IV/V` purely to mirror tiers.
 
-Example direction:
+## 6.2 Faction Dungeon Research
 
-Keeper Mastery -> +X% Keeper Expedition faction-resource yield.
+Example Keeper naming direction:
 
-Exact formula and cap are OPEN.
+`Localiser les Sanctuaires Keeper`
 
-## 3.4.2 Generic Silver Expedition
+Prerequisite:
 
-A dedicated Silver-oriented Expedition is validated as a GENERIC expedition, not tied to any faction.
+- Keeper Relic reconstructed.
 
-Its purpose is to provide a comfortable parallel source of Silver, particularly useful when the player reaches large long-term Silver sinks such as Awakened weapon progression / Attunement.
+Validated reward:
 
-Example presentation direction:
+- permanently unlocks the Keeper dungeon family as selectable content.
 
-`Caravane marchande`
--> runs in parallel for an authored duration
--> returns primarily Silver
+Equivalent Research exists for each supported faction.
 
-This expedition must NOT:
+Current target families:
 
-- require a faction Relic;
-- belong to Keeper/Heretic/Undead/Morgana;
-- receive bonuses from Faction Mastery;
-- replace the main active Silver economy by default.
+- Keeper;
+- Heretic;
+- Undead;
+- Morgana.
 
-Balance direction:
+The four dungeon-unlock Research entries are separate Research choices.
 
-- active combat may remain the strongest direct Silver/hour source;
-- the Silver Expedition should be attractive because it runs in parallel;
-- its exact Silver/hour value must be calibrated against existing Island, crafting, Awakening and Attunement Silver sinks.
+## 6.3 Dungeon key system remains unchanged
 
-Exact duration, unlock research, input cost, Silver yield and scaling model are OPEN.
+Faction Dungeon Research does NOT modify, replace or reinterpret dungeon keys.
 
-## Why Expedition rewards exist
+The current key contract remains authoritative:
 
-Faction resources are justified because they feed a distinct equipment/content family rather than artificially increasing ordinary weapon/armor material requirements.
+- keys are tier-based;
+- keys are faction-independent;
+- current per-run entry behavior remains unchanged.
 
-The generic Silver Expedition is justified because Silver already has major existing sinks and becomes increasingly constrained during Awakened weapon progression.
+Reference:
 
-Neither reward family should be inserted into unrelated systems simply to create grind.
+- `apps/client/src/data/dungeonKeyContentCatalog.ts`
 
-## Expedition cost
+Research only controls permanent CONTENT ACCESS.
 
-NOT YET VALIDATED.
+Keys continue to control dungeon run entry exactly as they do today.
 
-Do not introduce a dedicated `Provision` currency by default.
+## 6.4 Manuscripts removed from current scope
 
-Potential costs may reuse existing Silver and/or existing production materials if a meaningful sink is needed, but this requires balance work.
+Manuscripts are NOT part of the currently validated V1 design.
+
+They were explored conceptually but did not have a sufficiently distinct justified role.
+
+Do not implement Manuscripts unless a future design decision reintroduces them with a concrete purpose.
 
 ---
 
-# 3.5 FACTION CRAFTING RESOURCE
+# 7. EXPEDITIONS — V1 CONTRACT
+
+## 7.1 Core identity
+
+Expeditions are passive parallel activities that run independently while the hero continues:
+
+- combat;
+- gathering;
+- refining;
+- crafting;
+- other normal gameplay.
+
+They also progress through the authoritative offline/background model.
+
+## 7.2 Expedition families
+
+Validated V1 contains two families:
+
+### Generic Silver Expedition
+
+Purpose:
+
+- comfortable parallel Silver generation;
+- particularly useful against existing large Silver sinks such as Awakened weapon progression / Attunement.
+
+Rules:
+
+- faction-independent;
+- requires no faction Relic;
+- not affected by Faction Mastery;
+- does not replace active combat as the default strongest direct Silver/hour source unless later balance explicitly decides otherwise.
+
+### Faction Expedition
+
+Purpose:
+
+- generate the matching faction crafting resource;
+- first validated sink is faction cape crafting.
+
+Rules:
+
+- faction-specific;
+- requires the faction Relic and completed faction Expedition Research;
+- available tiers are controlled by Cartography/current progression;
+- affected by the matching Faction Mastery yield bonus.
+
+## 7.3 Expedition slots
+
+Validated V1:
+
+- T4: 1 simultaneous Expedition slot;
+- T5: 1 simultaneous Expedition slot;
+- T6: 2 simultaneous Expedition slots;
+- T7: 2 simultaneous Expedition slots;
+- T8: 2 simultaneous Expedition slots.
+
+The second slot is unlocked by Cartography III / T6.
+
+This intentionally creates an early allocation decision between Silver generation and faction-resource generation.
+
+## 7.4 Expedition durations
+
+Validated V1 formats:
+
+- 2 hours;
+- 6 hours;
+- 12 hours.
+
+Base reward/hour should be equivalent or near-equivalent between durations.
+
+Duration choice is primarily a convenience/availability choice, not a mandatory optimization puzzle.
+
+Exact reward values remain OPEN for balance.
+
+## 7.5 Launch cost
+
+Validated V1:
+
+- no Expedition launch cost.
+
+Do NOT add:
+
+- Provisions;
+- generic Expedition currency;
+- arbitrary Silver/material cost.
+
+A cost may be reconsidered only if future economy analysis demonstrates a concrete need.
+
+## 7.6 Completion and reward delivery
+
+When an Expedition completes:
+
+- reward is credited automatically;
+- no manual `Collect` action is required;
+- the completed Expedition releases its slot according to the runtime completion contract.
+
+The Expedition UI must make completion state clear.
+
+## 7.7 Completion recap popup
+
+A completion recap popup is REQUIRED for readability.
+
+The popup is informational only; rewards are already credited.
+
+For a faction Expedition, recap should expose at minimum:
+
+- Expedition name;
+- duration completed;
+- base faction-resource reward;
+- applied Faction Mastery bonus if applicable;
+- final total credited.
+
+For a Silver Expedition, recap should expose at minimum:
+
+- Expedition name;
+- duration completed;
+- final Silver credited.
+
+Example presentation:
+
+`Expédition terminée — Keeper T4`
+
+- Durée: 6h
+- Ressource Keeper de base: 120
+- Bonus Maîtrise Keeper: +18
+- Total: 138
+
+Offline/multi-completion rule:
+
+- if multiple Expeditions completed while the player was away, show ONE grouped recap;
+- do NOT chain multiple blocking popups one after another.
+
+The grouped recap lists each completed Expedition and its credited reward.
+
+---
+
+# 8. FACTION CRAFTING RESOURCE
 
 ## Definition
 
@@ -324,304 +543,237 @@ A faction crafting resource is a material produced primarily by that faction's E
 
 ## Validated first use
 
-Faction cape crafting.
+Faction cape crafting from T4 onward.
+
+This is important because faction capes participate in the preparation loop before the first faction dungeons.
 
 Example structure:
 
 `Keeper Cape Tx`
 requires:
-- authored normal cape materials;
-- Keeper faction resource of the relevant authored tier/grade if applicable.
 
-Exact cape recipes are NOT defined in this document and must be authored in the existing equipment/crafting data source when implemented.
+- existing authored cape materials;
+- Keeper faction resource at the relevant authored tier/grade if applicable.
+
+Exact resource names, tiering and cape quantities are OPEN and must be authored in existing crafting/equipment data when balanced.
 
 ## Guardrail
 
-Do not create faction resources unless they have a concrete sink.
+Do not insert faction resources into ordinary weapon/armor recipes merely to increase grind duration.
 
-For V1, the accepted sink is faction cape crafting.
-
-Future sinks require separate validation.
+For V1, faction cape crafting is the validated sink.
 
 ---
 
-# 3.6 MANUSCRIPTS
+# 9. FACTION MASTERY
 
 ## Definition
 
-A Manuscript is a rare knowledge item used as a requirement for ADVANCED RESEARCH.
+Each supported faction has its own mastery progression.
 
-It is not a generic research-point currency.
-
-## Validated integration direction
-
-Manuscripts should integrate with the existing faction dungeon system.
-
-Example future flow:
-
-Faction content
--> obtain faction Manuscript
--> meet authored Research prerequisites
--> complete faction dungeon-access Research
--> faction dungeon becomes permanently available
--> existing dungeon-key behavior remains unchanged for each run
-
-This gives Manuscripts a concrete purpose without altering the existing key economy.
-
-## Existing dungeon structure to preserve
-
-Faction dungeons already exist across T4-T8 for:
-
-- Keeper;
-- Heretic;
-- Undead;
-- Morgana.
-
-Reference:
-
-- `apps/client/src/data/dungeonContentCatalog.ts`
-
-Dungeon entry currently uses tier keys rather than faction keys.
-
-Reference:
-
-- `apps/client/src/data/dungeonKeyContentCatalog.ts`
-
-This key system must remain unchanged unless a separate future design decision explicitly supersedes it.
-
-## Open design questions
-
-Still to define:
-
-- Manuscript source(s);
-- faction-specific vs generic Manuscripts;
-- whether Manuscripts are consumed by Research or act as permanent discoveries;
-- quantities required per faction/tier;
-- exact relationship between one faction Research and multiple dungeon tiers.
-
-Do not implement these details until explicitly validated.
-
----
-
-# 3.7 FACTION MASTERY
-
-## Definition
-
-Each supported faction may have its own mastery progression.
-
-Initial candidates based on current authored dungeons/content:
+Initial supported target:
 
 - Keeper Mastery;
 - Heretic Mastery;
 - Undead Mastery;
 - Morgana Mastery.
 
-Future factions may join through data, not faction-specific runtime branches.
+Future factions must be added through data rather than runtime faction-specific branches.
 
 ## Sources of mastery XP
 
-Potential sources include:
+Potential sources currently accepted for future balancing include:
 
 - faction kills;
-- faction boss victories;
+- faction elite/boss victories;
 - faction dungeon completions;
-- faction expedition completions;
+- faction Expedition completions;
 - faction achievements.
 
-Exact XP weights are OPEN.
+Exact XP weights remain OPEN.
 
-## Validated reward model
+## Validated reward role
 
-GLOBAL FACTION YIELD ONLY.
+Faction-wide yield only.
 
-Faction Mastery increases rewards generated from content tied to the matching faction.
-
-Validated categories of possible affected yield include:
+Potential affected channels:
 
 - faction Expedition resource yield;
 - faction loot/drop yield or drop rate;
 - Silver earned from faction content;
 - Fame earned from faction content.
 
-Additional faction-specific yield channels may be added later only if they fit the same efficiency role and are explicitly authored.
-
-Faction Mastery must NOT affect generic Expeditions such as the Silver Expedition.
-
-Faction Mastery must NOT grant functional unlocks or become a second progression gate.
-
-Do not use it to gate Research, dungeon access, Relics, Expeditions, recipes or world progression.
-
-Exact formulas, stacking rules, caps and per-channel coefficients are OPEN.
+No unlock/gate authority.
 
 ---
 
-# 3.8 WORLD ACHIEVEMENTS
+# 10. WORLD ACHIEVEMENTS
 
-## Role
+The existing World > Achievements tab should surface major milestones from this system.
 
-The existing World > Achievements tab becomes the completion/progression surface for this feature.
+Candidate categories include:
 
-It should expose concrete faction accomplishments without creating another currency or progression tree by default.
+- faction discovery;
+- faction kill milestones;
+- elite milestones;
+- Relic quest fragments;
+- Relic completion;
+- faction Expedition unlock/completions;
+- faction dungeon Research completion;
+- faction dungeon completion;
+- Faction Mastery milestones;
+- generic Expedition milestones if later authored.
 
-## Candidate achievement categories
+Achievements are primarily completion/progression presentation.
 
-Examples for Keeper:
-
-- discover Keeper creatures;
-- reach authored Keeper kill milestones;
-- defeat a Keeper boss;
-- reconstruct the Keeper Relic;
-- complete Keeper Expeditions;
-- obtain the relevant Manuscript;
-- unlock/complete a Keeper dungeon;
-- reach authored Keeper Mastery milestones.
-
-Generic Expedition milestones may also appear here later if explicitly authored.
-
-These examples describe categories only. Exact thresholds/rewards are OPEN.
-
-Achievements may contribute Faction Mastery XP if later validated, but should not become a second unlock authority competing with Research.
+Do not make Achievements a competing unlock authority by default.
 
 ---
 
-# 4. COMPLETE TARGET LOOP
+# 11. COMPLETE TARGET LOOP
 
-The intended systemic relationship is:
+Validated target relationship:
 
-Faction Combat
--> Bestiary progression
--> Faction Mastery XP
+World/Faction Combat
+-> Bestiary knowledge + Faction Mastery progress
 
-Research
--> unlocks Cartography / Archaeology / faction knowledge functions
+Island Level 2
+-> Academy available
 
-Archaeology
--> reconstructs faction Relic
+Cartography I
+-> Expedition system + Silver Expedition
+
+Archaeology I
+-> Relic quests enabled
+
+Faction Relic quest
+-> 5 deterministic fragments
+-> Relic reconstructed
 
 Faction Relic
--> permanently unlocks faction Expedition
+-> contextual faction Expedition Research appears
+-> contextual faction Dungeon Research appears
+
+Faction Expedition Research
+-> faction Expedition family unlocked
+
+Cartography tier
+-> controls available faction Expedition tier
 
 Faction Expedition
--> produces faction crafting resource
-
-Faction Mastery
--> improves global yield from matching faction content (Expedition resources, drops, Silver, Fame, etc.)
+-> faction crafting resource
 
 Faction crafting resource
--> consumed in faction Cape crafting
+-> faction Cape craft from T4 onward
 
-Faction Manuscript
--> requirement for advanced faction Research
+Faction Dungeon Research
+-> permanent faction dungeon-family access
 
-Advanced faction Research
--> permanently unlocks faction Dungeon access
+Dungeon run
+-> existing key system remains unchanged
 
-Dungeon access
--> existing tier-key behavior remains unchanged
+Faction Mastery
+-> improves matching faction yields
 
 Generic Silver Expedition
--> runs independently of faction systems
--> provides a comfortable parallel Silver source for existing long-term Silver sinks
+-> parallel Silver source independent of faction systems
 
 All major milestones
--> represented in existing World > Achievements
+-> surfaced through Bestiary / World Achievements
 
 ---
 
-# 5. SYSTEM OWNERSHIP / NO-DUPLICATION RULES
+# 12. SYSTEM OWNERSHIP / NO-DUPLICATION RULES
 
-To avoid overlapping progression systems:
-
-- Research = functional unlock authority.
+- Academy/Research = functional unlock authority.
+- Cartography = Expedition tier/capability progression.
+- Archaeology = Relic reconstruction capability.
 - Bestiary = knowledge/progression presentation.
-- Relic = permanent faction Expedition unlock.
+- Relic = permanent faction-discovery prerequisite for contextual faction Research.
+- Faction Expedition Research = permanent faction Expedition unlock.
+- Faction Dungeon Research = permanent faction dungeon-content unlock.
 - Faction Expedition = parallel source of faction crafting resource.
 - Generic Silver Expedition = parallel Silver source, faction-independent.
-- Manuscript = advanced Research requirement.
-- Faction Mastery = global faction-yield progression only.
+- Faction Mastery = faction-wide yield progression only.
 - Achievements = accomplishment presentation/objectives.
-- Dungeon keys = existing dungeon-entry system, unchanged.
+- Dungeon keys = existing per-run dungeon-entry system, unchanged.
 - Crafting = authoritative consumer/recipe system for faction capes.
 
 No system should silently take ownership from another.
 
 ---
 
-# 6. DATA-DRIVEN IMPLEMENTATION REQUIREMENTS
+# 13. DATA-DRIVEN IMPLEMENTATION REQUIREMENTS
 
 Future implementation must be definition-driven.
 
-Do not create faction-specific conditionals such as:
+Do not create faction-specific runtime conditionals such as:
 
 `if faction === "Keeper" ...`
 
 outside generic authored-data resolution.
 
-Expected future definition families may include:
+Expected definition families may include:
 
 - `ResearchDefinition`;
 - `FactionDefinition`;
 - `FactionMasteryDefinition`;
 - `RelicDefinition`;
+- `RelicObjectiveDefinition`;
 - `ExpeditionDefinition`;
-- `ManuscriptDefinition`;
 - `AchievementDefinition`.
 
-`ExpeditionDefinition` must support both faction-bound and faction-independent expedition content without requiring separate runtime systems.
+`ExpeditionDefinition` must support both faction-bound and generic Expeditions without separate runtime systems.
 
-A faction definition should reference its related content IDs rather than duplicate monster/dungeon/crafting data.
+A `RelicDefinition` should author its five objectives through generic objective types rather than custom code.
+
+Faction definitions should reference existing monster/zone/dungeon/crafting IDs rather than duplicate their content data.
 
 Existing catalogs remain authoritative for existing content until deliberately refactored.
 
 ---
 
-# 7. NOT VALIDATED / DO NOT INVENT DURING IMPLEMENTATION
+# 14. STILL OPEN / DO NOT INVENT DURING IMPLEMENTATION
 
-The following are deliberately OPEN:
+The following are NOT yet balanced/fully validated:
 
-- exact Academy unlock timing;
-- number of Research slots;
-- Research durations;
-- Research Silver/material costs;
-- Relic fragment drop sources;
-- Relic fragment quantities;
-- Expedition duration/cost model;
+- exact Academy construction cost;
+- exact Research durations;
+- exact Research Silver/material costs;
+- exact Cartography II/IV/V functional additions beyond tier availability;
+- exact Relic kill thresholds per faction;
+- exact elite-count threshold per faction;
+- exact territory-progression milestone per faction;
 - exact faction resource names;
-- faction resource tiering;
-- cape recipes and faction-resource quantities;
-- Generic Silver Expedition unlock point;
-- Generic Silver Expedition duration(s);
-- Generic Silver Expedition cost/input model;
-- Generic Silver Expedition Silver/hour target and scaling;
-- Manuscript acquisition rules;
-- Manuscript consumption model;
-- faction-dungeon Research structure by tier;
+- exact faction-resource tiering model;
+- faction Cape recipes and resource quantities;
+- exact Silver Expedition Silver/hour by tier;
+- exact faction Expedition resource/hour by tier;
 - Faction Mastery XP formula;
 - Faction Mastery global-yield formula;
-- which faction reward channels are affected beyond Expedition resources, drops, Silver and Fame;
-- per-channel coefficients, stacking rules and caps;
-- Achievement thresholds and rewards.
+- per-channel mastery coefficients/caps;
+- exact Achievement thresholds/rewards;
+- exact persistence/backfill strategy for historical Relic objectives;
+- exact implementation behavior for Expedition slot release timing after completion;
+- visual/UI composition of Academy and Expedition screens beyond the validated recap behavior.
 
-These values must be designed and balanced before implementation. They must not be guessed by an implementation agent.
+These values must be designed before implementation. They must not be guessed by an implementation agent.
 
 ---
 
-# 8. ACCEPTANCE CRITERIA FOR FUTURE DESIGN PASS
+# 15. NEXT DESIGN PASS
 
-Before coding begins, the design pass must provide at minimum:
+The next recommended design pass is one complete pilot faction, starting with Keeper:
 
-1. the exact supported faction list for V1;
-2. one complete faction flow from first encounter to cape craft and dungeon access;
-3. exact Relic acquisition rule;
-4. exact Expedition input/output model;
-5. exact faction-resource cape recipe integration;
-6. exact Generic Silver Expedition economy contract;
-7. exact Manuscript -> Research -> dungeon access contract;
-8. exact Faction Mastery global-yield formula and affected reward channels;
-9. exact Bestiary progression fields;
-10. exact Achievement definitions/rewards;
-11. persistence/offline rules for Research and Expeditions.
+1. exact five Keeper Relic objectives;
+2. exact Keeper Expedition Research cost/duration;
+3. exact Keeper Dungeon Research cost/duration;
+4. exact Keeper faction resource identity;
+5. exact Keeper Expedition yields T4-T8;
+6. exact Keeper Cape resource requirements T4-T8;
+7. exact Keeper Mastery XP/yield curve;
+8. associated Bestiary/Achievement presentation.
 
-Only after this contract is explicit should technical architecture and implementation be authored.
+Once the Keeper contract is validated, Heretic / Undead / Morgana should be authored as data-driven variants of the same systems rather than redesigned individually.
 
 DOCUMENT TERMINÉ
