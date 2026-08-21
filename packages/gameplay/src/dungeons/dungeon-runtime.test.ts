@@ -53,6 +53,22 @@ describe("DungeonRuntime", () => {
     expect(runtime.activeRun).toBeUndefined();
   });
 
+  it("blocks a higher tier until the previous tier has been cleared", () => {
+    const { heroId, inventory, runtime } = setup();
+    inventory.addQuantity(heroId, T5_DUNGEON.keyItemId, 1);
+
+    expect(runtime.canAccessDefinition(T5_DUNGEON.id)).toBe(false);
+    expect(runtime.start(T5_DUNGEON.id, heroId, inventory)).toEqual({ ok: false, reason: "progression_locked" });
+    expect(inventory.getTotalQuantity(heroId, T5_DUNGEON.keyItemId)).toBe(1);
+
+    runtime.start(T4_DUNGEON.id, heroId, inventory);
+    for (const encounter of T4_DUNGEON.encounters) runtime.completeEncounter(encounter.id);
+
+    expect(runtime.canAccessDefinition(T5_DUNGEON.id)).toBe(true);
+    expect(runtime.start(T5_DUNGEON.id, heroId, inventory).ok).toBe(true);
+    expect(inventory.getTotalQuantity(heroId, T5_DUNGEON.keyItemId)).toBe(0);
+  });
+
   it("advances only after the current encounter and records the tier when the boss is cleared", () => {
     const { heroId, inventory, runtime } = setup();
     runtime.start(T4_DUNGEON.id, heroId, inventory);
