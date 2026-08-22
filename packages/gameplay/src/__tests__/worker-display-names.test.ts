@@ -30,7 +30,7 @@ describe("worker authored display names", () => {
     expect(first.worker.displayName).not.toBe(second.worker.displayName);
   });
 
-  it("preserves an explicit saved display name on restore-style creation", () => {
+  it("preserves a unique explicit saved display name on restore-style creation", () => {
     _resetWorkerCounter();
     const registry = new WorkerRegistry();
     const definition: WorkerDefinition = {
@@ -49,5 +49,30 @@ describe("worker authored display names", () => {
     expect(restored.ok).toBe(true);
     if (!restored.ok) return;
     expect(restored.worker.displayName).toBe("Ancien nom sauvegardé");
+  });
+
+  it("repairs duplicate saved names with the next authored name", () => {
+    _resetWorkerCounter();
+    const registry = new WorkerRegistry();
+    const definition: WorkerDefinition = {
+      id: asWorkerDefinitionId("worker_test_skinner"),
+      displayName: "Mira",
+      displayNames: ["Mira", "Sela"],
+      profession: "skinner",
+      baseMasteryGainRate: 1,
+      tags: ["gathering", "hide"],
+    };
+    registry.register(definition);
+    const manager = new WorkerManager(registry);
+
+    const first = manager.createWorker(definition.id, "Mira");
+    const second = manager.createWorker(definition.id, "Mira");
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+
+    expect(first.worker.displayName).toBe("Mira");
+    expect(second.worker.displayName).toBe("Sela");
   });
 });
