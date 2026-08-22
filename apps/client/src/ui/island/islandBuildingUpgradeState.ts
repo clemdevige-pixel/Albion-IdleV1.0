@@ -1,7 +1,7 @@
 import {
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
-  getIslandOperationalLevelDefinition,
+  getIslandUpgradeableLevelDefinition,
   type IslandBuildingId,
 } from "@game/data";
 import { getIslandMaterialQuantity } from "./islandMaterialPresentation";
@@ -25,7 +25,7 @@ export function getIslandBuildingUpgradeState({
   readonly productionStorageId: ProductionStorageId;
 }) {
   const definition = getIslandBuildingDefinition(definitionId);
-  const current = getIslandOperationalLevelDefinition(definitionId, level);
+  const current = getIslandUpgradeableLevelDefinition(definitionId, level);
   const islandDefinition = getIslandLevelDefinition(islandLevel);
   const maxBuildingLevel = islandDefinition?.maxBuildingLevel ?? islandLevel;
 
@@ -51,7 +51,7 @@ export function getIslandBuildingUpgradeState({
   const cost = current.upgradeToNext;
   const next = cost === undefined
     ? undefined
-    : getIslandOperationalLevelDefinition(definitionId, level + 1);
+    : getIslandUpgradeableLevelDefinition(definitionId, level + 1);
 
   if (cost === undefined || next === undefined) {
     return {
@@ -72,7 +72,8 @@ export function getIslandBuildingUpgradeState({
     } as const;
   }
 
-  const islandLevelBlocked = next.level > maxBuildingLevel;
+  const requiredIslandLevel = next.minimumIslandLevel ?? next.level;
+  const islandLevelBlocked = requiredIslandLevel > islandLevel || next.level > maxBuildingLevel;
   const materials = cost.requirements.map((requirement) => ({
     ...requirement,
     available: getIslandMaterialQuantity(inventoryManager, productionStorageId, requirement.itemId),
