@@ -9,7 +9,7 @@ import {
  * Increment only when the persisted payload shape changes incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 3;
+export const CURRENT_RUNTIME_SAVE_VERSION = 4;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
 const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
@@ -17,6 +17,13 @@ const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
   item_weapon_staff_t3_fire: "item_weapon_staff_t3_infernal",
   item_weapon_staff_t4_fire: "item_weapon_staff_t4_infernal",
 };
+
+const LEGACY_FACTION_RELIC_ITEM_IDS = new Set([
+  "item_relic_keeper",
+  "item_relic_heretic",
+  "item_relic_undead",
+  "item_relic_morgana",
+]);
 
 function migrateLegacyIds(value: unknown): unknown {
   if (typeof value === "string") {
@@ -65,6 +72,38 @@ function migrateLegacyDungeonKeys(value: unknown): unknown {
   return value;
 }
 
+function removeLegacyFactionRelicItems(payload: Record<string, unknown>): Record<string, unknown> {
+  const inventoryPayload = payload.inventory;
+  if (inventoryPayload === null || typeof inventoryPayload !== "object") return payload;
+
+  const inventories = (inventoryPayload as { inventories?: unknown }).inventories;
+  if (!Array.isArray(inventories)) return payload;
+
+  const migratedInventories = inventories.map((inventory) => {
+    if (inventory === null || typeof inventory !== "object") return inventory;
+    const savedInventory = inventory as Record<string, unknown>;
+    const slots = savedInventory.slots;
+    if (!Array.isArray(slots)) return inventory;
+
+    return {
+      ...savedInventory,
+      slots: slots.filter((slot) => {
+        if (slot === null || typeof slot !== "object") return true;
+        const itemId = (slot as { itemId?: unknown }).itemId;
+        return typeof itemId !== "string" || !LEGACY_FACTION_RELIC_ITEM_IDS.has(itemId);
+      }),
+    };
+  });
+
+  return {
+    ...payload,
+    inventory: {
+      ...(inventoryPayload as Record<string, unknown>),
+      inventories: migratedInventories,
+    },
+  };
+}
+
 const migrateV1ToV2: SaveMigration = {
   fromVersion: 1,
   toVersion: 2,
@@ -103,10 +142,27 @@ const migrateV2ToV3: SaveMigration = {
   },
 };
 
+const migrateV3ToV4: SaveMigration = {
+  fromVersion: 3,
+  toVersion: 4,
+
+  migrate(save: SaveFormat): SaveFormat {
+    const payload = removeLegacyFactionRelicItems(save.payload);
+    return {
+      ...save,
+      version: 4,
+      metadata: { ...save.metadata, version: 4 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+  },
+};
+
 /** Ordered, explicit registry for runtime save migrations. */
 export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV1ToV2,
   migrateV2ToV3,
+  migrateV3ToV4,
 ];
 
 export interface RuntimeMigrationPipelineOptions {
