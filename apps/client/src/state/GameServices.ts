@@ -11,14 +11,18 @@ import type {
   EconomyTransactionService,
   EnchantmentService,
   EquipmentManager,
+  ExpeditionDurationMs,
   InventoryManager,
   PlayerId,
+  StartExpeditionResult,
+  StartResearchResult,
   StatsManager,
   VendorRegistry,
   WalletId,
   WorldCoordinator,
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
+import type { AcademyPresentationModel } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 
@@ -55,6 +59,12 @@ export interface GameServices {
   readonly needsStarterSelection: () => boolean;
   readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
+  readonly getAcademyModel: () => AcademyPresentationModel;
+  readonly startAcademyResearch: (researchId: string) => StartResearchResult;
+  readonly startAcademyExpedition: (
+    expeditionId: string,
+    durationMs: ExpeditionDurationMs,
+  ) => StartExpeditionResult;
   readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
   readonly getBestiaryKnowledge: (monsterId: string) => BestiaryKnowledgeModel;
   readonly useConsumable: (itemId: string) => boolean;
