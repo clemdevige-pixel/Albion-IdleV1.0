@@ -3,12 +3,7 @@ import type { DungeonDefinition } from "@game/gameplay";
 import { RESEARCH_UNLOCK_IDS } from "../../data/researchContentCatalog.js";
 import { createDungeonResearchAccessFoundation } from "./createDungeonResearchAccessFoundation.js";
 
-const FACTION_UNLOCKS = [
-  ["Keeper", RESEARCH_UNLOCK_IDS.keeperDungeonFamily],
-  ["Heretic", RESEARCH_UNLOCK_IDS.hereticDungeonFamily],
-  ["Undead", RESEARCH_UNLOCK_IDS.undeadDungeonFamily],
-  ["Morgana", RESEARCH_UNLOCK_IDS.morganaDungeonFamily],
-] as const;
+const FACTIONS = ["Keeper", "Heretic", "Undead", "Morgana"] as const;
 
 function createDungeon(faction: string): DungeonDefinition {
   return {
@@ -23,20 +18,21 @@ function createDungeon(faction: string): DungeonDefinition {
 }
 
 describe("createDungeonResearchAccessFoundation", () => {
-  it("gates every authored faction family until its matching Research unlock is completed", () => {
+  it("gates every authored dungeon behind the single Sanctuary discovery unlock", () => {
     const completedUnlocks = new Set<string>();
-    const dungeons = FACTION_UNLOCKS.map(([faction]) => createDungeon(faction));
+    const dungeons = FACTIONS.map(createDungeon);
     const definitions = new Map(dungeons.map((definition) => [definition.id, definition] as const));
     const foundation = createDungeonResearchAccessFoundation({
       dungeonRuntime: { getDefinition: (definitionId) => definitions.get(definitionId) },
       researchService: { hasUnlock: (unlockId) => completedUnlocks.has(unlockId) },
     });
 
-    for (const [faction, unlockId] of FACTION_UNLOCKS) {
-      const dungeonId = `dungeon_${faction.toLowerCase()}_test`;
-      expect(foundation.canAccessDefinition(dungeonId)).toBe(false);
-      completedUnlocks.add(unlockId);
-      expect(foundation.canAccessDefinition(dungeonId)).toBe(true);
-    }
+    expect(foundation.isDungeonSystemUnlocked()).toBe(false);
+    for (const dungeon of dungeons) expect(foundation.canAccessDefinition(dungeon.id)).toBe(false);
+
+    completedUnlocks.add(RESEARCH_UNLOCK_IDS.dungeonSystem);
+    expect(foundation.isDungeonSystemUnlocked()).toBe(true);
+    for (const dungeon of dungeons) expect(foundation.canAccessDefinition(dungeon.id)).toBe(true);
+    expect(foundation.canAccessDefinition("unknown_dungeon")).toBe(false);
   });
 });
