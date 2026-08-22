@@ -1,6 +1,6 @@
 import type { IslandBuildingId } from "./island.js";
 import { getAcademyLevelDefinition } from "./academy-progression.js";
-import { getIslandOperationalLevelDefinition, type IslandBuildingUpgradeCost } from "./island-progression.js";
+import type { IslandBuildingUpgradeCost } from "./island-progression.js";
 
 export interface IslandUpgradeableLevelDefinition {
   readonly level: number;
@@ -11,28 +11,22 @@ export interface IslandUpgradeableLevelDefinition {
 
 /**
  * Generic mutation/presentation-facing building progression lookup.
- * Domain-specific progression fields stay in their owning catalogs.
+ * Only buildings with meaningful authored level progression belong here.
+ * Gathering, refining and crafting buildings are construction-only and inherit
+ * their maximum production tier from the global island level.
  */
 export function getIslandUpgradeableLevelDefinition(
   buildingId: IslandBuildingId,
   level: number,
 ): IslandUpgradeableLevelDefinition | undefined {
-  if (buildingId === "academy") {
-    const academy = getAcademyLevelDefinition(level);
-    if (academy === undefined) return undefined;
-    return {
-      level: academy.level,
-      displayTier: academy.researchTier,
-      minimumIslandLevel: academy.minimumIslandLevel,
-      ...(academy.upgradeToNext === undefined ? {} : { upgradeToNext: academy.upgradeToNext }),
-    };
-  }
+  if (buildingId !== "academy") return undefined;
 
-  const operational = getIslandOperationalLevelDefinition(buildingId, level);
-  if (operational === undefined) return undefined;
+  const academy = getAcademyLevelDefinition(level);
+  if (academy === undefined) return undefined;
   return {
-    level: operational.level,
-    displayTier: operational.maxProductionTier,
-    ...(operational.upgradeToNext === undefined ? {} : { upgradeToNext: operational.upgradeToNext }),
+    level: academy.level,
+    displayTier: academy.researchTier,
+    minimumIslandLevel: academy.minimumIslandLevel,
+    ...(academy.upgradeToNext === undefined ? {} : { upgradeToNext: academy.upgradeToNext }),
   };
 }
