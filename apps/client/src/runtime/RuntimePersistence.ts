@@ -39,6 +39,7 @@ import {
 } from "./saveMigrations";
 import { LEGACY_SAVE_SLOT_ID, getSaveBackupSlotId } from "./saveSlots";
 import { resolveTrustedOfflineElapsedMs } from "./trustedOfflineElapsed.js";
+import { dashboardLayoutSaveProvider } from "./DashboardLayoutSaveProvider";
 import type { SaveFormat } from "@game/persistence";
 
 export const DEFAULT_SAVE_SLOT_ID = LEGACY_SAVE_SLOT_ID;
@@ -91,6 +92,8 @@ export class RuntimePersistence {
       seed: 42,
     });
 
+    dashboardLayoutSaveProvider.reset();
+
     const inventorySaveProvider = new InventorySaveProvider(
       deps.inventoryManager,
       deps.world,
@@ -129,6 +132,7 @@ export class RuntimePersistence {
     this.saveManager.registerProvider(masterySaveProvider);
     this.saveManager.registerProvider(destinyBoardSaveProvider);
     this.saveManager.registerProvider(durabilitySaveProvider);
+    this.saveManager.registerProvider(dashboardLayoutSaveProvider);
   }
 
   public registerProvider(provider: SaveProvider): void {
