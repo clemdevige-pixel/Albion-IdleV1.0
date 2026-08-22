@@ -98,14 +98,15 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     }
     cancelDeferredRuntimeDisposal(services.bridge);
 
-    const lifecycle = new RuntimeLifecycle();
-    lifecycle.start(handle.tick, handle.tickIntervalMs);
-
+    // Save load (and any background resolution delegated by loadGame) must
+    // finish before the first gameplay tick starts.
     if (loadedRuntimeRef.current !== services.bridge) {
       loadedRuntimeRef.current = services.bridge;
       loadInitialRuntimeSave(services, handle.persistence);
     }
 
+    const lifecycle = new RuntimeLifecycle();
+    lifecycle.start(handle.tick, handle.tickIntervalMs);
     const stopAutosave = handle.persistence.startAutosave(() => services.saveGame());
 
     return () => {
