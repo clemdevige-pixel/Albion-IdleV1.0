@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   getIslandBuildingDefinition,
-  getIslandBuildingMaxProductionTier,
+  getIslandMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
 import { CRAFTING_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
@@ -18,10 +18,10 @@ import "./craftingBuilding.css";
 
 export function CraftingBuildingPanel({
   definitionId,
-  level,
+  islandLevel,
 }: {
   readonly definitionId: IslandBuildingId;
-  readonly level: number;
+  readonly islandLevel: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const service = definition.craftingService;
@@ -29,9 +29,9 @@ export function CraftingBuildingPanel({
     throw new Error(`Crafting building ${definitionId} has no crafting service data`);
   }
 
-  const maxTier = getIslandBuildingMaxProductionTier(definitionId, level);
+  const maxTier = getIslandMaxProductionTier(islandLevel);
   if (maxTier === undefined) {
-    throw new Error(`Crafting building ${definitionId} level ${String(level)} has no progression data`);
+    throw new Error(`Island level ${String(islandLevel)} has no production tier data`);
   }
 
   const model = useCraftingData();
@@ -53,20 +53,20 @@ export function CraftingBuildingPanel({
       {!tierIndependent && (
         <div className="ui-island-crafting-building__tiers" role="group" aria-label="Tier de fabrication">
           {CRAFTING_CONTENT_TIERS.map((tier) => {
-            const buildingLocked = tier > maxTier;
+            const islandLocked = tier > maxTier;
             return (
               <button
                 key={tier}
                 type="button"
                 className={model.tier === tier ? "is-active" : ""}
-                disabled={buildingLocked}
-                title={buildingLocked ? `Améliorez l’atelier pour débloquer T${String(tier)}` : undefined}
+                disabled={islandLocked}
+                title={islandLocked ? `Améliorez l’île pour débloquer T${String(tier)}` : undefined}
                 onClick={() => {
                   actions.setTier(tier);
                   setRequestedRecipeId(undefined);
                 }}
               >
-                T{String(tier)}{buildingLocked ? " 🔒" : ""}
+                T{String(tier)}{islandLocked ? " 🔒" : ""}
               </button>
             );
           })}
@@ -94,7 +94,7 @@ export function CraftingBuildingPanel({
         <div className="ui-island__selection-status">Aucune recette disponible pour cette sélection.</div>
       ) : model.tier > maxTier && !tierIndependent ? (
         <div className="ui-island__selection-status">
-          Atelier niveau {String(level)} : fabrication limitée au T{String(maxTier)}.
+          Île niveau {String(islandLevel)} : fabrication disponible jusqu’au T{String(maxTier)}.
         </div>
       ) : (
         <>
