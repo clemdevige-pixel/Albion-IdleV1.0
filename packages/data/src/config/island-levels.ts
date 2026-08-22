@@ -23,17 +23,20 @@ export interface IslandLevelDefinition {
   readonly upgradeCost?: IslandLevelUpgradeCost;
 }
 
+const BASE_CATEGORIES = ["workers", "storage", "gathering", "refining", "crafting"] as const satisfies readonly IslandBuildingCategory[];
+const DEVELOPED_CATEGORIES = [...BASE_CATEGORIES, "utility"] as const satisfies readonly IslandBuildingCategory[];
+
 export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
   {
     level: 1,
     label: "Campement",
-    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    unlockedCategories: BASE_CATEGORIES,
     maxBuildingLevel: 1,
   },
   {
     level: 2,
     label: "Domaine artisanal",
-    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    unlockedCategories: DEVELOPED_CATEGORIES,
     maxBuildingLevel: 2,
     worldRequirementToReach: {
       zoneDefId: "zone_swamp_t3",
@@ -51,7 +54,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
   {
     level: 3,
     label: "Domaine développé",
-    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    unlockedCategories: DEVELOPED_CATEGORIES,
     maxBuildingLevel: 3,
     worldRequirementToReach: {
       zoneDefId: "zone_mountain_t4",
@@ -69,7 +72,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
   {
     level: 4,
     label: "Domaine avancé",
-    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    unlockedCategories: DEVELOPED_CATEGORIES,
     maxBuildingLevel: 4,
     worldRequirementToReach: {
       zoneDefId: "zone_ironveil_t5",
@@ -87,7 +90,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
   {
     level: 5,
     label: "Domaine supérieur",
-    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    unlockedCategories: DEVELOPED_CATEGORIES,
     maxBuildingLevel: 5,
     worldRequirementToReach: {
       zoneDefId: "zone_ashenpeak_t6",
@@ -105,7 +108,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
   {
     level: 6,
     label: "Domaine ancestral",
-    unlockedCategories: ["workers", "storage", "gathering", "refining", "crafting"],
+    unlockedCategories: DEVELOPED_CATEGORIES,
     maxBuildingLevel: 6,
     worldRequirementToReach: {
       zoneDefId: "zone_doompeak_t7",
