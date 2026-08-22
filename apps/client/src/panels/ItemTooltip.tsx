@@ -20,6 +20,7 @@ import {
   getWeaponAttackSpeed,
 } from "../data/itemPower";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
+import { getRelicDefinitionByInventoryItemId } from "../data/relicContentCatalog";
 
 const SLOT_LABELS: Readonly<Record<string, string>> = {
   head: "Tête", chest: "Torse", boots: "Bottes", weapon: "Arme", off_hand: "Main gauche", cape: "Cape",
@@ -68,7 +69,6 @@ export interface ItemTooltipProps {
   readonly itemId: string;
   readonly quantity: number;
   readonly instanceId: string | undefined;
-  /** Optional projected state used by deterministic previews such as enchanting. */
   readonly enchantmentOverride?: EnchantmentLevel | undefined;
 }
 
@@ -88,6 +88,10 @@ export function ItemTooltip({
   const enchantment = enchantmentOverride ?? persistedEnchantment;
   const definition = getItemDefinition(itemId);
   const effectiveDefinition = resolveEquipmentInfo(itemId) ?? definition;
+  const relicDefinition = getRelicDefinitionByInventoryItemId(itemId);
+  const relicProgress = relicDefinition === undefined
+    ? undefined
+    : services.getRelicProgress(relicDefinition.id);
   const itemPower = getItemPower(itemId);
   const masteryItemPowerBonus = getMasteryItemPowerBonus(
     itemId,
@@ -154,6 +158,29 @@ export function ItemTooltip({
           )}
         </div>
       </div>
+
+      {relicProgress !== undefined && (
+        <div className="item-tooltip__stats">
+          <div>
+            <span>État</span>
+            <strong>
+              {relicProgress.state === "broken"
+                ? "Brisée"
+                : relicProgress.state === "charged"
+                  ? "Chargée"
+                  : relicProgress.state === "examined"
+                    ? "Examinée"
+                    : "Non obtenue"}
+            </strong>
+          </div>
+          {(relicProgress.state === "broken" || relicProgress.state === "charged") && (
+            <div>
+              <span>Charge</span>
+              <strong>{String(relicProgress.chargeKills)} / {String(relicProgress.requiredChargeKills)}</strong>
+            </div>
+          )}
+        </div>
+      )}
 
       {definition !== undefined && (
         <div className="item-tooltip__stats">
