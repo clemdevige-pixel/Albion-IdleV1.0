@@ -16,6 +16,7 @@ import {
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
 import { DUNGEON_RELIC_ID } from "../../data/relicContentCatalog.js";
+import { isDevSandboxMode } from "../devSandbox.js";
 
 export interface ResearchFoundationDependencies {
   readonly relicService: RelicService;
@@ -61,6 +62,14 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
     if (!result.ok) {
       throw new Error(`Invalid authored Research definition: ${definition.id} (${result.reason})`);
     }
+  }
+
+  if (isDevSandboxMode()) {
+    researchService.load({
+      version: 1,
+      completedResearchIds: RESEARCH_DEFINITIONS.map((definition) => definition.id),
+      activeResearch: null,
+    });
   }
 
   const reconcileResearchEffects = (): void => {
