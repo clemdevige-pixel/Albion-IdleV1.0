@@ -103,6 +103,7 @@ export interface GameServices {
     quality: "miss" | "correct" | "perfect",
   ) => boolean;
   readonly toggleRefining: (family: SupportedProductionFamily) => boolean;
+  readonly isInstantRefiningUnlocked: () => boolean;
   readonly setGatheringTier: (tier: ProductionTier) => boolean;
   readonly setRefiningTier: (family: SupportedProductionFamily, tier: ProductionTier) => boolean;
   readonly setCraftingTier: (tier: ProductionTier) => boolean;
