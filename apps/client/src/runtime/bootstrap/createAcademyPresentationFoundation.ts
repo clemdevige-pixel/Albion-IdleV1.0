@@ -14,7 +14,7 @@ export interface AcademyResearchEntryModel {
   readonly displayName: string;
   readonly tier: number;
   readonly state: "locked" | "available" | "active" | "completed";
-  readonly waitingForRelic: boolean;
+  readonly relicGateState: "none" | "waiting" | "ready" | "examined";
   readonly durationMs: number;
   readonly remainingDurationMs: number | undefined;
   readonly silverCost: number;
@@ -44,7 +44,10 @@ export interface AcademyPresentationFoundationDependencies<
 > {
   readonly researchService: ResearchService<TResearchRequirement>;
   readonly expeditionService: ExpeditionService<TExpeditionRequirement, TExpeditionRewardSummary>;
-  readonly isWaitingForRelic?: (researchId: string) => boolean;
+  readonly getRelicGateState?: (
+    researchId: string,
+  ) => "none" | "waiting" | "ready" | "examined";
+  readonly examineRelicForResearch?: (researchId: string) => boolean;
   readonly onMutation?: () => void;
 }
 
@@ -69,7 +72,7 @@ export function createAcademyPresentationFoundation<
         displayName: definition.displayName,
         tier: definition.tier,
         state: dependencies.researchService.getEntryState(definition.id) ?? "locked",
-        waitingForRelic: dependencies.isWaitingForRelic?.(definition.id) ?? false,
+        relicGateState: dependencies.getRelicGateState?.(definition.id) ?? "none",
         durationMs: definition.durationMs,
         remainingDurationMs: activeResearch?.researchId === definition.id
           ? activeResearch.remainingDurationMs
@@ -95,6 +98,11 @@ export function createAcademyPresentationFoundation<
 
   return {
     getModel,
+    examineRelic(this: void, researchId: string): boolean {
+      const examined = dependencies.examineRelicForResearch?.(researchId) ?? false;
+      if (examined) dependencies.onMutation?.();
+      return examined;
+    },
     startResearch(this: void, researchId: string): StartResearchResult {
       const result = dependencies.researchService.startResearch(researchId);
       if (result.ok) dependencies.onMutation?.();
