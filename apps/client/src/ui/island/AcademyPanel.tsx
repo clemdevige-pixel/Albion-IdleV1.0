@@ -2,6 +2,9 @@ import { useState } from "react";
 import { getAcademyResearchTier } from "@game/data";
 import type { ExpeditionDurationMs } from "@game/gameplay";
 import {
+  SILVER_EXPEDITION_TYPE_ID,
+} from "../../data/expeditionContentCatalog";
+import {
   getResearchPresentationGroup,
   type ResearchPresentationGroup,
 } from "../../data/researchContentCatalog";
@@ -60,6 +63,20 @@ function researchStatusLabel(research: AcademyResearchEntryModel): string {
   if (research.relicGateState === "ready") return "Relique prête à examiner";
   if (research.relicGateState === "waiting") return "En attente de la relique";
   return "Verrouillée";
+}
+
+function expeditionStatusLabel(expedition: AcademyExpeditionEntryModel): string {
+  if (expedition.active) return `Slot ${String((expedition.activeSlotIndex ?? 0) + 1)}`;
+  switch (expedition.startState) {
+    case "available": return "Disponible";
+    case "requirements_locked": return "Verrouillée";
+    case "type_active": return "Type déjà actif";
+    case "no_available_slot": return "Slots occupés";
+  }
+}
+
+function expeditionKindLabel(expedition: AcademyExpeditionEntryModel): string {
+  return expedition.typeId === SILVER_EXPEDITION_TYPE_ID ? "Silver" : "Faction";
 }
 
 function ResearchCard({
@@ -125,17 +142,18 @@ function ExpeditionCard({
     durationMs: ExpeditionDurationMs,
   ) => void;
 }): JSX.Element {
+  const canStart = expedition.startState === "available";
+  const statusClass = expedition.active ? "active" : expedition.startState;
+
   return (
-    <article className={`ui-academy__card${expedition.active ? " is-active" : ""}`}>
+    <article className={`ui-academy__card ui-academy__expedition-card is-${statusClass}`}>
       <div className="ui-academy__card-title">
         <div>
-          <small>T{String(expedition.tier)}</small>
+          <small>{expeditionKindLabel(expedition)} · T{String(expedition.tier)}</small>
           <strong>{expedition.displayName}</strong>
         </div>
-        <span className={`ui-academy__status${expedition.active ? " is-active" : ""}`}>
-          {expedition.active
-            ? `Slot ${String((expedition.activeSlotIndex ?? 0) + 1)}`
-            : "Disponible si prérequis"}
+        <span className={`ui-academy__status is-${statusClass}`}>
+          {expeditionStatusLabel(expedition)}
         </span>
       </div>
 
@@ -147,6 +165,7 @@ function ExpeditionCard({
             <button
               key={durationMs}
               type="button"
+              disabled={!canStart}
               onClick={() => { onStart(expedition, durationMs); }}
             >
               {formatDuration(durationMs)}
@@ -252,8 +271,25 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
             <strong>Expéditions</strong>
             <small>Activités passives parallèles, y compris hors ligne.</small>
           </div>
-          <span>{String(activeExpeditions.length)} active{activeExpeditions.length > 1 ? "s" : ""}</span>
+          <span>{String(activeExpeditions.length)} / {String(model.expeditionSlotCapacity)} actif</span>
         </header>
+
+        <div className="ui-academy__slots" aria-label="Slots d’expédition">
+          {model.expeditionSlotCapacity === 0 ? (
+            <div className="ui-academy__slot is-locked">
+              <strong>Slots verrouillés</strong>
+              <small>Cartographie I requise</small>
+            </div>
+          ) : Array.from({ length: model.expeditionSlotCapacity }, (_, slotIndex) => {
+            const active = activeExpeditions.find((entry) => entry.activeSlotIndex === slotIndex);
+            return (
+              <div key={slotIndex} className={`ui-academy__slot${active === undefined ? " is-empty" : " is-active"}`}>
+                <strong>Slot {String(slotIndex + 1)}</strong>
+                <small>{active?.displayName ?? "Libre"}</small>
+              </div>
+            );
+          })}
+        </div>
 
         {activeExpeditions.length > 0 && (
           <div className="ui-academy__active-expeditions">
