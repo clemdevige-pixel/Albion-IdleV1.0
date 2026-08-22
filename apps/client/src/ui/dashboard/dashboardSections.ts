@@ -1,5 +1,6 @@
 export const DASHBOARD_SECTION_IDS = [
   "combat",
+  "research",
   "yield",
   "enchant-ready",
   "tracked-resources",
@@ -25,6 +26,12 @@ export const DASHBOARD_SECTION_DEFINITIONS: Readonly<Record<DashboardSectionId, 
     title: "Combat",
     iconSrc: "/assets/ui/nav-world.png",
     className: "dashboard-card--combat",
+  },
+  research: {
+    id: "research",
+    title: "Recherche",
+    iconSrc: "/assets/ui/nav-island.png",
+    className: "dashboard-card--research",
   },
   yield: {
     id: "yield",
@@ -78,6 +85,7 @@ export const DASHBOARD_SECTION_DEFINITIONS: Readonly<Record<DashboardSectionId, 
 
 export const DASHBOARD_SECTION_ORDER = [
   "combat",
+  "research",
   "yield",
   "enchant-ready",
   "tracked-resources",
