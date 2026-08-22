@@ -26,6 +26,7 @@ import type { AcademyPresentationModel } from "../runtime/bootstrap/createAcadem
 import type { ExpeditionRecapModel } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
+import type { DungeonAccessState } from "./DungeonNavigationActions.js";
 
 export type UIEventMap = Record<string, unknown>;
 
@@ -33,6 +34,7 @@ export interface DungeonNavigationVM {
   readonly activeRun: DungeonRunState | undefined;
   readonly pendingDefinitionId: string | null;
   readonly clearedTiers: readonly number[];
+  readonly getAccess: (definitionId: string) => DungeonAccessState;
 }
 
 export interface GameServices {
