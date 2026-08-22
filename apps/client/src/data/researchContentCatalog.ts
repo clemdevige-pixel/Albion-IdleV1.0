@@ -3,10 +3,16 @@ import type { ResearchDefinition, ResearchRequirementDefinition } from "@game/ga
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 
-export type ResearchContentRequirement = ResearchRequirementDefinition & {
-  readonly type: "relic_reconstructed";
-  readonly relicId: string;
-};
+export type ResearchContentRequirement = ResearchRequirementDefinition & (
+  | {
+    readonly type: "relic_reconstructed";
+    readonly relicId: string;
+  }
+  | {
+    readonly type: "academy_tier";
+    readonly minimumTier: number;
+  }
+);
 
 export const RESEARCH_UNLOCK_IDS = {
   relicReconstruction: "relic_reconstruction",
@@ -16,15 +22,15 @@ export const RESEARCH_UNLOCK_IDS = {
   expeditionTier7: "expedition_tier:7",
   expeditionTier8: "expedition_tier:8",
   secondExpeditionSlot: "expedition_slot:2",
-  equipmentPresets: "equipment_presets",
   keeperExpeditionFamily: "expedition_family:keeper",
   keeperDungeonFamily: "dungeon_family:keeper",
+  equipmentPresets: "equipment_presets",
 } as const;
 
 /**
  * Only researches whose tuning is explicitly validated are authored here.
- * Cartography / Archaeology / Doctrine d'equipement costs and durations remain
- * OPEN and must not receive placeholder values.
+ * Cartography / Archaeology and Equipment Doctrine costs/durations remain OPEN
+ * and must not receive placeholder values.
  */
 export const RESEARCH_DEFINITIONS = [
   {
@@ -33,7 +39,10 @@ export const RESEARCH_DEFINITIONS = [
     tier: 4,
     durationMs: 30 * MINUTE_MS,
     cost: { silver: 5_000, materials: [] },
-    requirements: [{ type: "relic_reconstructed", relicId: "relic_keeper" }],
+    requirements: [
+      { type: "academy_tier", minimumTier: 4 },
+      { type: "relic_reconstructed", relicId: "relic_keeper" },
+    ],
     unlockIds: [RESEARCH_UNLOCK_IDS.keeperExpeditionFamily],
   },
   {
@@ -42,7 +51,10 @@ export const RESEARCH_DEFINITIONS = [
     tier: 4,
     durationMs: HOUR_MS,
     cost: { silver: 10_000, materials: [] },
-    requirements: [{ type: "relic_reconstructed", relicId: "relic_keeper" }],
+    requirements: [
+      { type: "academy_tier", minimumTier: 4 },
+      { type: "relic_reconstructed", relicId: "relic_keeper" },
+    ],
     unlockIds: [RESEARCH_UNLOCK_IDS.keeperDungeonFamily],
   },
 ] as const satisfies readonly ResearchDefinition<ResearchContentRequirement>[];
