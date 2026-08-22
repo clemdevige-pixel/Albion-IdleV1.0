@@ -23,6 +23,7 @@ import type {
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
 import type { AcademyPresentationModel } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
+import type { ExpeditionRecapModel } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 
@@ -65,6 +66,9 @@ export interface GameServices {
     expeditionId: string,
     durationMs: ExpeditionDurationMs,
   ) => StartExpeditionResult;
+  readonly subscribeExpeditionRecap: (listener: () => void) => () => void;
+  readonly getExpeditionRecap: () => ExpeditionRecapModel | null;
+  readonly dismissExpeditionRecap: () => void;
   readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
   readonly getBestiaryKnowledge: (monsterId: string) => BestiaryKnowledgeModel;
   readonly useConsumable: (itemId: string) => boolean;
