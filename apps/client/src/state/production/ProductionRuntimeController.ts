@@ -42,9 +42,10 @@ interface ProductionRuntimeControllerDependencies {
   readonly setRefiningTier: (family: ProductionFamily, tier: ProductionTier) => void;
   readonly getCraftingTier: () => ProductionTier;
   readonly setCraftingTier: (tier: ProductionTier) => void;
+  readonly setWorkerTier: (tier: ProductionTier) => void;
   readonly prepareCombatResumeAfterGathering: () => void;
-  readonly getWorkerCapacity: () => number;
-  readonly getWorkerProfessionCapacity: () => number;
+  readonly workerCapacity: number;
+  readonly workerProfessionCapacity?: number;
   readonly workerRecruitmentCost: number;
 }
 
@@ -176,8 +177,8 @@ export class ProductionRuntimeController {
       (workerId) => runtime.getWorkerSession(workerId),
       (workerId) => runtime.getAssignedTier(workerId),
       (xp, tier) => runtime.getWorkerMasteryDetails(xp, tier),
-      this.#dependencies.getWorkerCapacity(),
-      this.#dependencies.getWorkerProfessionCapacity(),
+      this.#dependencies.workerCapacity,
+      this.#dependencies.workerProfessionCapacity ?? 1,
       this.#dependencies.workerRecruitmentCost,
     );
   }
