@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CRAFTING_CONTENT_TIERS } from "../../../data/productionFamilyCatalog";
 import type { CraftingCategoryId, CraftingFamilyId } from "./craftingModels";
 import { CraftingRecipeDetails } from "./CraftingRecipeDetails";
+import { CraftingSelect } from "./CraftingSelect";
 import { useCraftingActions } from "./useCraftingActions";
 import { useCraftingData } from "./useCraftingData";
 import "./crafting.css";
@@ -11,17 +12,17 @@ export function CraftingView(): JSX.Element {
   const actions = useCraftingActions();
   const [requestedCategory, setRequestedCategory] = useState<CraftingCategoryId | undefined>();
   const [requestedFamily, setRequestedFamily] = useState<CraftingFamilyId | undefined>();
-  const [requestedRecipeId, setRequestedRecipeId] = useState<string | undefined>();
+  const [requestedRecipeKey, setRequestedRecipeKey] = useState<string | undefined>();
 
   const category = model.categories.find((entry) => entry.id === requestedCategory) ?? model.categories[0];
   const family = category?.families.find((entry) => entry.id === requestedFamily) ?? category?.families[0];
-  const recipe = family?.recipes.find((entry) => entry.outputItemId === requestedRecipeId) ?? family?.recipes[0];
+  const recipe = family?.recipes.find((entry) => entry.selectionKey === requestedRecipeKey) ?? family?.recipes[0];
   const isTierIndependentCategory = category?.id === "other";
 
   const selectCategory = (categoryId: CraftingCategoryId): void => {
     setRequestedCategory(categoryId);
     setRequestedFamily(undefined);
-    setRequestedRecipeId(undefined);
+    setRequestedRecipeKey(undefined);
   };
 
   return (
@@ -52,18 +53,21 @@ export function CraftingView(): JSX.Element {
       ) : (
         <>
           <div className="ui-crafting__selectors">
-            <label>
-              <span>Famille</span>
-              <select value={family.id} onChange={(event) => { setRequestedFamily(event.target.value); setRequestedRecipeId(undefined); }}>
-                {category.families.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>Objet</span>
-              <select value={recipe.outputItemId} onChange={(event) => { setRequestedRecipeId(event.target.value); }}>
-                {family.recipes.map((entry) => <option key={entry.outputItemId} value={entry.outputItemId}>{entry.recipeName}</option>)}
-              </select>
-            </label>
+            <CraftingSelect
+              label="Famille"
+              value={family.id}
+              options={category.families.map((entry) => ({ value: entry.id, label: entry.label }))}
+              onChange={(familyId) => {
+                setRequestedFamily(familyId);
+                setRequestedRecipeKey(undefined);
+              }}
+            />
+            <CraftingSelect
+              label="Objet"
+              value={recipe.selectionKey}
+              options={family.recipes.map((entry) => ({ value: entry.selectionKey, label: entry.recipeName }))}
+              onChange={setRequestedRecipeKey}
+            />
           </div>
           <CraftingRecipeDetails recipe={recipe} onCraft={() => { actions.craft(recipe.outputItemId); }} />
         </>
