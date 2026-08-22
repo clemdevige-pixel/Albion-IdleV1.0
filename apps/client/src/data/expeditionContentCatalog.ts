@@ -32,6 +32,12 @@ export type ExpeditionContentDefinition =
   | SilverExpeditionContentDefinition
   | FactionExpeditionContentDefinition;
 
+export interface ExpeditionPresentationInfo {
+  readonly categoryLabel: "Silver" | "Faction";
+  readonly description: string;
+  readonly rewardSummary: string;
+}
+
 export const SILVER_EXPEDITION_TYPE_ID = "silver";
 const BASE_FACTION_RUNES_PER_HOUR = 1;
 const EXPEDITION_TIERS = [4, 5, 6, 7, 8] as const;
@@ -110,6 +116,26 @@ export function getExpeditionDefinition(
   expeditionId: string,
 ): ExpeditionContentDefinition | undefined {
   return EXPEDITION_DEFINITIONS.find((definition) => definition.id === expeditionId);
+}
+
+export function getExpeditionPresentationInfo(
+  expeditionId: string,
+): ExpeditionPresentationInfo | undefined {
+  const definition = getExpeditionDefinition(expeditionId);
+  if (definition === undefined) return undefined;
+  if (isFactionExpeditionDefinition(definition)) {
+    const faction = FACTION_EXPEDITION_AUTHORING.find((entry) => entry.factionId === definition.factionId);
+    return {
+      categoryLabel: "Faction",
+      description: `Expédition passive ${faction?.displayName ?? definition.factionId}. Elle peut progresser pendant les autres activités et hors ligne.`,
+      rewardSummary: `Produit ${String(definition.reward.runesPerHour)} Rune ${faction?.displayName ?? definition.factionId}/h de base, avant bonus de Faction Mastery.`,
+    };
+  }
+  return {
+    categoryLabel: "Silver",
+    description: "Expédition passive dédiée au Silver. Elle peut progresser pendant les autres activités et hors ligne.",
+    rewardSummary: `Produit ${String(definition.reward.silverPerHour)} Silver/h. La Faction Mastery ne modifie pas ce rendement.`,
+  };
 }
 
 export function getFactionExpeditionTypeId(factionId: string): string | undefined {
