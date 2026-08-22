@@ -3,7 +3,6 @@ import {
   ExpeditionService,
   type CurrencyService,
   type InventoryManager,
-  type RelicService,
   type ResearchService,
   type WalletId,
 } from "@game/gameplay";
@@ -40,9 +39,12 @@ export type ExpeditionRewardSummary =
   | SilverExpeditionRewardSummary
   | FactionRuneExpeditionRewardSummary;
 
+type ExpeditionResearchPort = ResearchService<ResearchContentRequirement> & {
+  isRelicExamined(relicId: string): boolean;
+};
+
 export interface ExpeditionFoundationDependencies {
-  readonly researchService: ResearchService<ResearchContentRequirement>;
-  readonly relicService: Pick<RelicService, "isExamined">;
+  readonly researchService: ExpeditionResearchPort;
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly inventoryManager: InventoryManager;
@@ -62,7 +64,7 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
           case "research_unlock":
             return dependencies.researchService.hasUnlock(requirement.unlockId);
           case "relic_examined":
-            return dependencies.relicService.isExamined(requirement.relicId);
+            return dependencies.researchService.isRelicExamined(requirement.relicId);
         }
       },
     },
