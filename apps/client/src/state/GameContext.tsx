@@ -53,6 +53,8 @@ import { createFactionMasteryFoundation } from "../runtime/bootstrap/createFacti
 import { createFactionCapeFoundation } from "../runtime/bootstrap/createFactionCapeFoundation.js";
 import { createFactionAchievementFoundation } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import { createFactionBestiaryFoundation } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
+import { createAcademyRuntimeFoundation } from "../runtime/bootstrap/createAcademyRuntimeFoundation.js";
+import { createAcademyPresentationFoundation } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
@@ -90,6 +92,7 @@ export function GameProvider({
     const eventBus = new EventBus<UIEventMap>();
     const bridge = new GameBridge();
     const islandService = new PlayerIslandService();
+    const academyRuntimeFoundation = createAcademyRuntimeFoundation({ islandService });
     const dungeonRuntime = new DungeonRuntime(DUNGEON_DEFINITIONS);
     const syncIslandToBridge = (): void => {
       const island = islandService.getState();
@@ -262,6 +265,7 @@ export function GameProvider({
       walletId,
       inventoryManager,
       productionStorageId,
+      getAcademyTier: academyRuntimeFoundation.getResearchTier,
     });
     const { researchService } = researchFoundation;
     factionResearchFoundation.bindReconstructionGate(researchFoundation.canReconstructRelics);
@@ -362,6 +366,11 @@ export function GameProvider({
       bridgeSyncCoordinator.syncAll();
       syncIslandToBridge();
     };
+    const academyPresentationFoundation = createAcademyPresentationFoundation({
+      researchService,
+      expeditionService,
+      onMutation: resyncAll,
+    });
     const factionProgressionCoordinator = createFactionProgressionCoordinator({
       factionResearchFoundation,
       researchService,
@@ -782,6 +791,9 @@ export function GameProvider({
       needsStarterSelection: () => starterSelectionPending,
       selectStarterWeapon,
       isWorldRequirementMet,
+      getAcademyModel: academyPresentationFoundation.getModel,
+      startAcademyResearch: academyPresentationFoundation.startResearch,
+      startAcademyExpedition: academyPresentationFoundation.startExpedition,
       getFactionAchievements: factionAchievementFoundation.getAllProgress,
       getBestiaryKnowledge: factionBestiaryFoundation.getKnowledge,
       startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
