@@ -52,6 +52,10 @@ export class WorkerManager {
     }
 
     const def = resolved.definition;
+    const sameDefinitionCount = [...this.#workers.values()].filter(
+      (worker) => worker.definitionId === definitionId,
+    ).length;
+    const authoredDisplayName = def.displayNames?.[sameDefinitionCount] ?? def.displayName;
     workerCounter += 1;
     const id = asWorkerId(`worker-${workerCounter}`);
 
@@ -59,7 +63,7 @@ export class WorkerManager {
       id,
       definitionId: def.id,
       profession: def.profession,
-      displayName: displayName ?? def.displayName,
+      displayName: displayName ?? authoredDisplayName,
       mastery: 0,
       state: "idle",
       assignedBuildingId: undefined,
