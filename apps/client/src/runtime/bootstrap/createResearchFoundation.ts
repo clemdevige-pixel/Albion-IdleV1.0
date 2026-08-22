@@ -56,18 +56,20 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
     }
   }
 
+  const isWaitingForRelic = (researchId: string): boolean => {
+    const definition = RESEARCH_DEFINITIONS.find((candidate) => candidate.id === researchId);
+    if (definition === undefined) return false;
+    const relicRequirement = definition.requirements.find(
+      (requirement) => requirement.type === "relic_reconstructed",
+    );
+    if (relicRequirement?.type !== "relic_reconstructed") return false;
+    return !dependencies.relicService.isReconstructed(relicRequirement.relicId);
+  };
+
   return {
     researchService,
     canReconstructRelics: () => researchService.hasUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction),
-    isWaitingForRelic(researchId: string): boolean {
-      const definition = RESEARCH_DEFINITIONS.find((candidate) => candidate.id === researchId);
-      if (definition === undefined) return false;
-      const relicRequirement = definition.requirements.find(
-        (requirement) => requirement.type === "relic_reconstructed",
-      );
-      if (relicRequirement?.type !== "relic_reconstructed") return false;
-      return !dependencies.relicService.isReconstructed(relicRequirement.relicId);
-    },
+    isWaitingForRelic,
   };
 }
 
