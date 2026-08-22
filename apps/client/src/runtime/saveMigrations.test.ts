@@ -39,11 +39,11 @@ function makeMigration(fromVersion: number): SaveMigration {
 }
 
 describe("runtime save migration registry", () => {
-  it("keeps the current live format at version 3", () => {
-    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(3);
+  it("keeps the current live format at version 4", () => {
+    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(4);
     const pipeline = createRuntimeMigrationPipeline();
-    const save = makeSave(3);
-    expect(pipeline.migrate(save, 3)).toBe(save);
+    const save = makeSave(4);
+    expect(pipeline.migrate(save, 4)).toBe(save);
   });
 
   it("migrates legacy Fire Staff mastery and item ids from v1 to v2", () => {
@@ -199,7 +199,7 @@ describe("runtime save migration registry", () => {
       checksum: computeChecksum(payload),
     };
 
-    const migrated = createRuntimeMigrationPipeline().migrate(save, 3);
+    const migrated = createRuntimeMigrationPipeline({ currentVersion: 3 }).migrate(save, 3);
     const slots = ((migrated.payload.inventory as { inventories: Array<{ slots: Array<{ itemId: string }> }> }).inventories[0]?.slots ?? []);
 
     expect(slots.map(({ itemId }) => itemId)).toEqual([
@@ -213,22 +213,65 @@ describe("runtime save migration registry", () => {
     expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
   });
 
+  it("removes obsolete faction Relic inventory objects from v3 saves", () => {
+    const payload = {
+      inventory: {
+        inventories: [
+          {
+            capacity: 24,
+            nextInstanceCounter: 8,
+            slots: [
+              { position: 0, instanceId: "0", itemId: "item_relic_keeper", quantity: 1 },
+              { position: 1, instanceId: "1", itemId: "item_relic_heretic", quantity: 1 },
+              { position: 2, instanceId: "2", itemId: "item_relic_undead", quantity: 1 },
+              { position: 3, instanceId: "3", itemId: "item_relic_morgana", quantity: 1 },
+              { position: 4, instanceId: "4", itemId: "item_relic_dungeon", quantity: 1 },
+              { position: 5, instanceId: "5", itemId: "item_resource_wood_t3", quantity: 7 },
+            ],
+            activeBag: null,
+          },
+        ],
+      },
+      unrelated: {
+        oldRelicReference: "item_relic_keeper",
+      },
+    };
+    const save: SaveFormat = {
+      version: 3,
+      metadata: { version: 3, createdAt: 0, updatedAt: 0, buildVersion: "test", seed: 42 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+
+    const migrated = createRuntimeMigrationPipeline().migrate(save, 4);
+    const slots = ((migrated.payload.inventory as { inventories: Array<{ slots: Array<{ itemId: string }> }> }).inventories[0]?.slots ?? []);
+
+    expect(slots.map(({ itemId }) => itemId)).toEqual([
+      "item_relic_dungeon",
+      "item_resource_wood_t3",
+    ]);
+    expect((migrated.payload.unrelated as { oldRelicReference: string }).oldRelicReference)
+      .toBe("item_relic_keeper");
+    expect(migrated.version).toBe(4);
+    expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
+  });
+
   it("builds a complete contiguous migration path", () => {
     const pipeline = createRuntimeMigrationPipeline({
-      currentVersion: 3,
+      currentVersion: 4,
       earliestSupportedVersion: 1,
-      migrations: [makeMigration(1), makeMigration(2)],
+      migrations: [makeMigration(1), makeMigration(2), makeMigration(3)],
     });
 
-    expect(pipeline.migrate(makeSave(1), 3).version).toBe(3);
+    expect(pipeline.migrate(makeSave(1), 4).version).toBe(4);
   });
 
   it("rejects a version bump with a missing migration", () => {
     expect(() => createRuntimeMigrationPipeline({
-      currentVersion: 3,
+      currentVersion: 4,
       earliestSupportedVersion: 1,
-      migrations: [makeMigration(1)],
-    })).toThrow("Missing runtime save migration v2 -> v3");
+      migrations: [makeMigration(1), makeMigration(2)],
+    })).toThrow("Missing runtime save migration v3 -> v4");
   });
 
   it("rejects migrations that skip versions", () => {
@@ -239,7 +282,7 @@ describe("runtime save migration registry", () => {
     };
 
     expect(() => createRuntimeMigrationPipeline({
-      currentVersion: 3,
+      currentVersion: 4,
       earliestSupportedVersion: 1,
       migrations: [invalid],
     })).toThrow("must target the next version");
