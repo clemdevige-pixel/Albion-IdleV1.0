@@ -38,6 +38,7 @@ import {
   createRuntimeMigrationPipeline,
 } from "./saveMigrations";
 import { LEGACY_SAVE_SLOT_ID, getSaveBackupSlotId } from "./saveSlots";
+import { resolveTrustedOfflineElapsedMs } from "./trustedOfflineElapsed.js";
 import type { SaveFormat } from "@game/persistence";
 
 export const DEFAULT_SAVE_SLOT_ID = LEGACY_SAVE_SLOT_ID;
@@ -155,6 +156,15 @@ export class RuntimePersistence {
       this.backupSlotId,
       (slotId) => { this.saveManager.load(slotId); },
     );
+  }
+
+  public getTrustedOfflineElapsedMs(): number {
+    if (this.lastLoadSource === undefined) return 0;
+    const slotId = this.lastLoadSource === "primary"
+      ? this.saveSlotId
+      : this.backupSlotId;
+    if (!this.saveRepository.has(slotId)) return 0;
+    return resolveTrustedOfflineElapsedMs(this.saveRepository.get(slotId));
   }
 
   /** Creates a validated portable backup of the latest primary save. */
