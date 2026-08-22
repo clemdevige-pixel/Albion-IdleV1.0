@@ -1,6 +1,6 @@
 import type { EntityId } from "@game/core";
 import { getWorldBandDefinition } from "@game/data";
-import type { CombatService, StatsManager } from "@game/gameplay";
+import type { CombatService, RelicKillEvent, StatsManager } from "@game/gameplay";
 import { getEncounterRewards } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
@@ -31,7 +31,7 @@ export interface CombatRewardAdapterOptions {
   readonly recalculateWeaponMasteryStats: () => void;
   readonly resyncAll: () => void;
   readonly isDungeonActive?: () => boolean;
-  readonly onMonsterKilled?: (monsterId: string) => void;
+  readonly onMonsterKilled?: (kill: RelicKillEvent) => void;
 }
 
 export interface CombatRewardAdapter {
@@ -111,7 +111,9 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
 
     if (options.isDungeonActive?.() === true) {
       const reward = options.dungeonRewardRuntime?.processCurrentEncounterVictory();
-      if (monsterDefinitionId !== undefined) options.onMonsterKilled?.(monsterDefinitionId);
+      if (monsterDefinitionId !== undefined) {
+        options.onMonsterKilled?.({ monsterId: monsterDefinitionId, contextId: "dungeon" });
+      }
       clearActiveMonsterIdentity(event.entityId);
       if (reward !== undefined) {
         publishDungeonDrops(options, reward.drops);
@@ -140,7 +142,8 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
       return;
     }
 
-    const zonePlacement = getWorldZonePlacement(options.worldRuntime.getActiveZoneDef().defId);
+    const activeZoneDef = options.worldRuntime.getActiveZoneDef();
+    const zonePlacement = getWorldZonePlacement(activeZoneDef.defId);
     const progressionRewards = getEncounterRewards(
       zonePlacement.zoneIndexWithinBand,
       options.worldRuntime.currentSegment,
@@ -173,7 +176,13 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
         dungeonKeyDropWeight,
       },
     );
-    if (monsterDefinitionId !== undefined) options.onMonsterKilled?.(monsterDefinitionId);
+    if (monsterDefinitionId !== undefined) {
+      options.onMonsterKilled?.({
+        monsterId: monsterDefinitionId,
+        contextId: String(activeZoneDef.defId),
+        segmentIndex: options.worldRuntime.currentSegment,
+      });
+    }
     clearActiveMonsterIdentity(event.entityId);
 
     incomeRate = rewardResult.newBalance - lastSilver;
