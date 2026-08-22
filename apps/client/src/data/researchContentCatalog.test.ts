@@ -100,6 +100,15 @@ describe("Academy research content", () => {
       .toContain(RESEARCH_UNLOCK_IDS.secondExpeditionSlot);
   });
 
+  it("authors the T6 advanced worker organization unlock", () => {
+    const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.workerOrganization);
+    expect(definition?.tier).toBe(6);
+    expect(definition?.durationMs).toBe(150 * 60 * 1000);
+    expect(definition?.cost).toEqual({ silver: 60_000, materials: [] });
+    expect(definition?.requirements).toContainEqual({ type: "academy_tier", minimumTier: 6 });
+    expect(definition?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.advancedWorkerOrganization]);
+  });
+
   it("authors the charged Relic -> analysis -> sanctuary discovery chain", () => {
     const analysis = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.dungeonRelicAnalysis);
     expect(analysis?.tier).toBe(4);
