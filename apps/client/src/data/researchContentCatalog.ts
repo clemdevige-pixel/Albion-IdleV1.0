@@ -29,10 +29,28 @@ export const RESEARCH_UNLOCK_IDS = {
 
 /**
  * Only researches whose tuning is explicitly validated are authored here.
- * Cartography / Archaeology and Equipment Doctrine costs/durations remain OPEN
- * and must not receive placeholder values.
+ * Cartography I and Archaeology I are validated T4 foundations.
+ * Later Cartography tiers and Equipment Doctrine costs/durations remain OPEN.
  */
 export const RESEARCH_DEFINITIONS = [
+  {
+    id: "research_cartography_1",
+    displayName: "Cartographie I",
+    tier: 4,
+    durationMs: 30 * MINUTE_MS,
+    cost: { silver: 5_000, materials: [] },
+    requirements: [{ type: "academy_tier", minimumTier: 4 }],
+    unlockIds: [RESEARCH_UNLOCK_IDS.expeditionTier4],
+  },
+  {
+    id: "research_archaeology_1",
+    displayName: "Archéologie I",
+    tier: 4,
+    durationMs: 20 * MINUTE_MS,
+    cost: { silver: 2_500, materials: [] },
+    requirements: [{ type: "academy_tier", minimumTier: 4 }],
+    unlockIds: [RESEARCH_UNLOCK_IDS.relicReconstruction],
+  },
   {
     id: "research_keeper_expedition_study",
     displayName: "Étude des Keeper",
