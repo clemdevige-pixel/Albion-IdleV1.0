@@ -59,6 +59,7 @@ import { createResearchFoundation } from "../runtime/bootstrap/createResearchFou
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import { createExpeditionRecapFoundation } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
+import { createDungeonResearchAccessFoundation } from "../runtime/bootstrap/createDungeonResearchAccessFoundation.js";
 import {
   createCharacterEquipmentFoundation,
   createCharacterStorageFoundation,
@@ -269,6 +270,10 @@ export function GameProvider({
       getAcademyTier: academyRuntimeFoundation.getResearchTier,
     });
     const { researchService } = researchFoundation;
+    const dungeonResearchAccessFoundation = createDungeonResearchAccessFoundation({
+      dungeonRuntime,
+      researchService,
+    });
     factionResearchFoundation.bindReconstructionGate(researchFoundation.canReconstructRelics);
     const { expeditionService, rewardLedger } = createExpeditionFoundation({
       researchService,
@@ -621,6 +626,7 @@ export function GameProvider({
       stopController: combatStopController,
       bridge,
       isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
+      canAccessDungeonContent: dungeonResearchAccessFoundation.canAccessDefinition,
       onStateChanged: resyncAll,
     });
 
