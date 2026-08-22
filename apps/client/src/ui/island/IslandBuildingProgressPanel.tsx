@@ -44,6 +44,7 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
             definition,
             next,
             cost,
+            islandLevelBlocked,
             materials,
             flexible,
             flexibleDistinct,
@@ -54,6 +55,7 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
           } = state;
 
           if (next === undefined || cost === undefined) return null;
+          const requiredIslandLevel = next.minimumIslandLevel ?? next.level;
 
           const plot = island.plots.find((candidate) => candidate.buildingInstanceId === building.instanceId);
           const openBuilding = () => {
@@ -108,7 +110,11 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
                     upgradeIslandBuilding(building.definitionId);
                   }}
                 >
-                  {canUpgrade ? `Mettre à niveau · Niv. ${String(next.level)}` : "Ressources insuffisantes"}
+                  {islandLevelBlocked
+                    ? `Île niv. ${String(requiredIslandLevel)} requise`
+                    : canUpgrade
+                      ? `Mettre à niveau · Niv. ${String(next.level)}`
+                      : "Ressources insuffisantes"}
                 </button>
               </div>
             </div>
