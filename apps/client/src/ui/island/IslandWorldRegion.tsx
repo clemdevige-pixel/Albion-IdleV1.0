@@ -36,7 +36,8 @@ const PLOT_VISUALS: readonly IslandPlotVisual[] = [
   { left: 79.0, top: 75.9, scale: 0.94 },
 ] as const;
 
-const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", string>> = {
+const CONSTRUCTIBLE_ASSET_PATH = "/assets/constructible.png";
+const BUILDING_ASSET_PATHS: Readonly<Partial<Record<IslandBuildingId, string>>> = {
   worker_house: "/assets/worker_house.png",
   storage: "/assets/storage.png",
   lumber_camp: "/assets/lumber_camp.png",
@@ -48,12 +49,14 @@ const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId | "constructible", 
   tannery: "/assets/tannery.png",
   weaver: "/assets/weaver.png",
   workshop: "/assets/workshop.png",
-  constructible: "/assets/constructible.png",
 };
 
 function assetStyle(assetId: IslandBuildingId | "constructible", scale: number): CSSProperties {
+  const assetPath = assetId === "constructible"
+    ? CONSTRUCTIBLE_ASSET_PATH
+    : BUILDING_ASSET_PATHS[assetId] ?? CONSTRUCTIBLE_ASSET_PATH;
   return {
-    "--island-building-image": `url("${BUILDING_ASSET_PATHS[assetId]}")`,
+    "--island-building-image": `url("${assetPath}")`,
     "--island-building-scale": String(scale),
   } as CSSProperties;
 }
