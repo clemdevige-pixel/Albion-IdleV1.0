@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   getIslandBuildingDefinition,
-  getIslandBuildingMaxProductionTier,
+  getIslandMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
 import {
@@ -18,17 +18,17 @@ import "./gatheringBuilding.css";
 
 export function GatheringBuildingPanel({
   definitionId,
-  level,
+  islandLevel,
 }: {
   readonly definitionId: IslandBuildingId;
-  readonly level: number;
+  readonly islandLevel: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const service = definition.gatheringService;
   if (service === undefined) throw new Error(`Gathering building ${definitionId} has no gathering service data`);
 
-  const maxTier = getIslandBuildingMaxProductionTier(definitionId, level);
-  if (maxTier === undefined) throw new Error(`Gathering building ${definitionId} level ${String(level)} has no progression data`);
+  const maxTier = getIslandMaxProductionTier(islandLevel);
+  if (maxTier === undefined) throw new Error(`Island level ${String(islandLevel)} has no production tier data`);
 
   const { workers } = useGameBridge();
   const {
@@ -98,12 +98,12 @@ export function GatheringBuildingPanel({
             {PRODUCTION_TIERS.map((tier) => {
               const authored = GATHERING_CONTENT_TIERS.some((contentTier) => contentTier === tier);
               const masteryLocked = authored && worker.mastery < getRequiredGatheringMasteryForTier(tier);
-              const buildingLocked = tier > maxTier;
-              const unavailable = !authored || masteryLocked || buildingLocked;
+              const islandLocked = tier > maxTier;
+              const unavailable = !authored || masteryLocked || islandLocked;
               const title = !authored
                 ? `T${String(tier)} prévu pour le futur contenu`
-                : buildingLocked
-                  ? `Améliorez le bâtiment pour débloquer T${String(tier)}`
+                : islandLocked
+                  ? `Améliorez l’île pour débloquer T${String(tier)}`
                   : masteryLocked
                     ? `Maîtrise ${String(getRequiredGatheringMasteryForTier(tier))} requise`
                     : undefined;
