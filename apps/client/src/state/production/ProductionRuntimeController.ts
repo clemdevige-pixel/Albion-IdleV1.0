@@ -6,6 +6,7 @@ import type {
   ProgressionOrchestrator,
   ResourceFamily,
   WalletId,
+  WorkerId,
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../../game/GameBridge";
 import type { ProductionFoundation } from "../../runtime/bootstrap/createProductionFoundation";
@@ -41,9 +42,9 @@ interface ProductionRuntimeControllerDependencies {
   readonly setRefiningTier: (family: ProductionFamily, tier: ProductionTier) => void;
   readonly getCraftingTier: () => ProductionTier;
   readonly setCraftingTier: (tier: ProductionTier) => void;
-  readonly setWorkerTier: (tier: ProductionTier) => void;
   readonly prepareCombatResumeAfterGathering: () => void;
-  readonly workerCapacity: number;
+  readonly getWorkerCapacity: () => number;
+  readonly getWorkerProfessionCapacity: () => number;
   readonly workerRecruitmentCost: number;
 }
 
@@ -91,8 +92,7 @@ export class ProductionRuntimeController {
       productionBridge: this.#bridgeAdapter,
       getCurrentTick: dependencies.getCurrentTick,
       getCombatLoopState: dependencies.getCombatLoopState,
-      prepareCombatResumeAfterGathering:
-        dependencies.prepareCombatResumeAfterGathering,
+      prepareCombatResumeAfterGathering: dependencies.prepareCombatResumeAfterGathering,
     });
 
     this.#bindEvents();
@@ -161,9 +161,8 @@ export class ProductionRuntimeController {
     return this.#dependencies.foundation.workerRuntime.recruitWorker(profession).ok;
   }
 
-  toggleWorker(profession: WorkerProfessionVM, tier: ProductionTier): boolean {
-    this.#dependencies.setWorkerTier(tier);
-    const result = this.#dependencies.foundation.workerRuntime.toggleWorker(profession);
+  toggleWorker(workerId: WorkerId, tier: ProductionTier): boolean {
+    const result = this.#dependencies.foundation.workerRuntime.toggleWorker(workerId, tier);
     this.syncWorkers();
     return result.ok;
   }
@@ -177,7 +176,8 @@ export class ProductionRuntimeController {
       (workerId) => runtime.getWorkerSession(workerId),
       (workerId) => runtime.getAssignedTier(workerId),
       (xp, tier) => runtime.getWorkerMasteryDetails(xp, tier),
-      this.#dependencies.workerCapacity,
+      this.#dependencies.getWorkerCapacity(),
+      this.#dependencies.getWorkerProfessionCapacity(),
       this.#dependencies.workerRecruitmentCost,
     );
   }
