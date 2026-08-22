@@ -5,6 +5,7 @@ import {
   type IslandBuildingId,
 } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import { AcademyPanel } from "./AcademyPanel";
 import { ConstructionPanel } from "./ConstructionPanel";
 import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
@@ -119,6 +120,7 @@ function BuildingSummary({
   const definition = getIslandBuildingDefinition(definitionId);
   const flatSelection = definitionId === "worker_house"
     || definitionId === "storage"
+    || definitionId === "academy"
     || definition.gatheringService !== undefined
     || definition.refiningService !== undefined
     || definition.craftingService !== undefined;
@@ -141,6 +143,8 @@ function BuildingSummary({
         <WorkerHousePanel level={level} />
       ) : definitionId === "storage" ? (
         <StoragePanel />
+      ) : definitionId === "academy" ? (
+        <AcademyPanel level={level} />
       ) : definition.gatheringService !== undefined ? (
         <GatheringBuildingPanel definitionId={definitionId} level={level} />
       ) : definition.refiningService !== undefined ? (
