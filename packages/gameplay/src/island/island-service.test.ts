@@ -38,32 +38,38 @@ describe("PlayerIslandService", () => {
     expect(service.placeBuilding("lumber_camp", "plot_03")).toEqual({ ok: false, reason: "plot_occupied" });
   });
 
-  it("caps building upgrades at the current island level", () => {
+  it("keeps standard production buildings construction-only at every island level", () => {
     const service = new PlayerIslandService();
-    service.placeBuilding("lumber_camp", "plot_03");
-    service.placeBuilding("mine", "plot_04");
-    service.placeBuilding("hunting_camp", "plot_05");
-    service.placeBuilding("fiber_camp", "plot_06");
+    service.placeBuilding("mine", "plot_03");
 
-    expect(service.upgradeBuilding("mine")).toEqual({ ok: false, reason: "island_level_required" });
-
+    expect(service.upgradeBuilding("mine")).toEqual({ ok: false, reason: "unauthored_level" });
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 2 });
-    expect(service.upgradeBuilding("mine")).toEqual({
-      ok: true,
-      building: {
-        instanceId: "island_mine",
-        definitionId: "mine",
-        plotId: "plot_04",
-        level: 2,
-      },
-    });
-    expect(service.upgradeBuilding("mine")).toEqual({ ok: false, reason: "island_level_required" });
+    expect(service.upgradeBuilding("mine")).toEqual({ ok: false, reason: "unauthored_level" });
+    expect(service.getBuildingLevel("mine")).toBe(1);
   });
 
   it("does not create upgrades for utility buildings without authored progression", () => {
     const service = new PlayerIslandService();
     expect(service.upgradeBuilding("worker_house")).toEqual({ ok: false, reason: "unauthored_level" });
     expect(service.upgradeBuilding("storage")).toEqual({ ok: false, reason: "unauthored_level" });
+  });
+
+  it("keeps Academy as an independently gated upgradeable building", () => {
+    const service = new PlayerIslandService();
+    service.upgradeIslandLevel();
+    expect(service.placeBuilding("academy", "plot_03").ok).toBe(true);
+
+    expect(service.upgradeBuilding("academy")).toEqual({ ok: false, reason: "island_level_required" });
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 3 });
+    expect(service.upgradeBuilding("academy")).toEqual({
+      ok: true,
+      building: {
+        instanceId: "island_academy",
+        definitionId: "academy",
+        plotId: "plot_03",
+        level: 2,
+      },
+    });
   });
 
   it("leaves world progression gating to the island action layer", () => {
@@ -74,51 +80,46 @@ describe("PlayerIslandService", () => {
     expect(service.getState().level).toBe(2);
   });
 
-  it("supports the authored Lv1 to Lv6 development path without circular gates", () => {
+  it("supports the authored Lv1 to Lv6 island path without production-building upgrades", () => {
     const service = new PlayerIslandService();
     service.placeBuilding("lumber_camp", "plot_03");
     service.placeBuilding("mine", "plot_04");
     service.placeBuilding("hunting_camp", "plot_05");
     service.placeBuilding("fiber_camp", "plot_06");
-    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 2 });
-
     service.placeBuilding("sawmill", "plot_07");
     service.placeBuilding("smelter", "plot_08");
     service.placeBuilding("tannery", "plot_09");
     service.placeBuilding("weaver", "plot_10");
-    service.upgradeBuilding("lumber_camp");
-    service.upgradeBuilding("mine");
-    service.upgradeBuilding("hunting_camp");
-    service.upgradeBuilding("fiber_camp");
+    service.placeBuilding("workshop", "plot_11");
 
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 2 });
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 3 });
-    expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
-    expect(service.getBuildingLevel("lumber_camp")).toBe(3);
-
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 4 });
-    expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
-    expect(service.getBuildingLevel("lumber_camp")).toBe(4);
-
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 5 });
-    expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
-    expect(service.getBuildingLevel("lumber_camp")).toBe(5);
-
     expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 6 });
-    expect(service.upgradeBuilding("lumber_camp").ok).toBe(true);
-    expect(service.getBuildingLevel("lumber_camp")).toBe(6);
-    expect(service.upgradeBuilding("lumber_camp")).toEqual({ ok: false, reason: "max_level" });
+
+    for (const buildingId of [
+      "lumber_camp",
+      "mine",
+      "hunting_camp",
+      "fiber_camp",
+      "sawmill",
+      "smelter",
+      "tannery",
+      "weaver",
+      "workshop",
+    ] as const) {
+      expect(service.getBuildingLevel(buildingId)).toBe(1);
+      expect(service.upgradeBuilding(buildingId)).toEqual({ ok: false, reason: "unauthored_level" });
+    }
     expect(service.upgradeIslandLevel()).toEqual({ ok: false, reason: "max_level" });
   });
 
-  it("round-trips persisted island state after construction, building upgrade and island upgrade", () => {
+  it("round-trips persisted island state after construction and island upgrade", () => {
     const source = new PlayerIslandService();
     source.placeBuilding("lumber_camp", "plot_03");
     source.placeBuilding("mine", "plot_04");
-    source.placeBuilding("hunting_camp", "plot_05");
-    source.placeBuilding("fiber_camp", "plot_06");
     source.upgradeIslandLevel();
-    source.upgradeBuilding("lumber_camp");
-    source.upgradeBuilding("mine");
     const snapshot = source.save();
     const restored = new PlayerIslandService();
 
@@ -171,11 +172,11 @@ describe("PlayerIslandService", () => {
     expect(service.getState().plots.find((plot) => plot.id === "plot_09")?.buildingInstanceId).toBeNull();
   });
 
-  it("clamps pre-gate snapshots whose building level exceeds the island level", () => {
+  it("collapses legacy production-building levels while preserving the island level", () => {
     const service = new PlayerIslandService();
     service.load({
       version: 1,
-      level: 1,
+      level: 4,
       plots: [
         { id: "plot_01", buildingInstanceId: "island_worker_house" },
         { id: "plot_02", buildingInstanceId: "island_storage" },
@@ -184,11 +185,11 @@ describe("PlayerIslandService", () => {
       buildings: [
         { instanceId: "island_worker_house", definitionId: "worker_house", plotId: "plot_01", level: 1 },
         { instanceId: "island_storage", definitionId: "storage", plotId: "plot_02", level: 1 },
-        { instanceId: "island_lumber_camp", definitionId: "lumber_camp", plotId: "plot_03", level: 3 },
+        { instanceId: "island_lumber_camp", definitionId: "lumber_camp", plotId: "plot_03", level: 4 },
       ],
     });
 
-    expect(service.getState().level).toBe(1);
+    expect(service.getState().level).toBe(4);
     expect(service.getBuildingLevel("lumber_camp")).toBe(1);
   });
 
