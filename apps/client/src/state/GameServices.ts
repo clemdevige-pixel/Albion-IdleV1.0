@@ -11,7 +11,6 @@ import type {
   EconomyTransactionService,
   EnchantmentService,
   EquipmentManager,
-  ExamineRelicResult,
   ExpeditionDurationMs,
   InventoryManager,
   PlayerId,
@@ -64,7 +63,6 @@ export interface GameServices {
   readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
   readonly getAcademyModel: () => AcademyPresentationModel;
-  readonly examineAcademyRelic: (relicId: string) => ExamineRelicResult;
   readonly startAcademyResearch: (researchId: string) => StartResearchResult;
   readonly startAcademyExpedition: (
     expeditionId: string,
