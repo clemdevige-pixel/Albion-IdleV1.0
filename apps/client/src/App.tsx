@@ -1,6 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
 import type { SaveFormat } from "@game/persistence";
 import { CloudSaveClient } from "./runtime/CloudSaveClient";
+import {
+  DEV_SANDBOX_SAVE_SLOT_ID,
+  isDevSandboxMode,
+} from "./runtime/devSandbox";
 import { getAccountSaveSlotId, type PlayerSaveSlotId } from "./runtime/saveSlots";
 import { GameProvider } from "./state/GameContext";
 import { SaveSlotSessionProvider } from "./state/SaveSlotSessionContext";
@@ -12,18 +16,24 @@ import { useAuthSession } from "./auth/AuthSessionContext";
 
 function AuthenticatedApp(): JSX.Element {
   const { account, token, logout } = useAuthSession();
-  const [activeSlotId, setActiveSlotId] = useState<PlayerSaveSlotId | null>(null);
+  const devSandbox = isDevSandboxMode();
+  const [activeSlotId, setActiveSlotId] = useState<PlayerSaveSlotId | null>(
+    () => devSandbox ? "player_slot_1" : null,
+  );
   const cloudSaveClient = useMemo(() => new CloudSaveClient(token), [token]);
   const uploadLocalSave = useCallback((save: SaveFormat): void => {
-    if (activeSlotId !== null) void cloudSaveClient.upload(activeSlotId, save).catch(() => undefined);
-  }, [activeSlotId, cloudSaveClient]);
+    if (devSandbox || activeSlotId === null) return;
+    void cloudSaveClient.upload(activeSlotId, save).catch(() => undefined);
+  }, [activeSlotId, cloudSaveClient, devSandbox]);
   const slotSession = useMemo(() => activeSlotId === null ? null : ({
     activeSlotId,
     returnToSlotSelection: () => { setActiveSlotId(null); },
   }), [activeSlotId]);
-  const persistenceSlotId = activeSlotId === null
-    ? null
-    : getAccountSaveSlotId(account.id, activeSlotId);
+  const persistenceSlotId = devSandbox
+    ? DEV_SANDBOX_SAVE_SLOT_ID
+    : activeSlotId === null
+      ? null
+      : getAccountSaveSlotId(account.id, activeSlotId);
 
   if (activeSlotId === null || slotSession === null || persistenceSlotId === null) {
     return <SaveSlotSelectionScreen accountId={account.id} accountName={account.displayName} authToken={token} onLogout={() => { void logout(); }} onSelectSlot={setActiveSlotId} />;
@@ -31,7 +41,11 @@ function AuthenticatedApp(): JSX.Element {
 
   return (
     <SaveSlotSessionProvider session={slotSession}>
-      <GameProvider key={persistenceSlotId} saveSlotId={persistenceSlotId} onLocalSave={uploadLocalSave}>
+      <GameProvider
+        key={persistenceSlotId}
+        saveSlotId={persistenceSlotId}
+        {...(devSandbox ? {} : { onLocalSave: uploadLocalSave })}
+      >
         <NavigationProvider>
           <AppShell />
         </NavigationProvider>
