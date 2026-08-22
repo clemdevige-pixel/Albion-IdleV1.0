@@ -5,6 +5,8 @@ import {
   type InventoryManager,
   type RelicService,
   type ResearchCostDefinition,
+  type ResearchPaymentPort,
+  type ResearchRequirementPort,
   type WalletId,
 } from "@game/gameplay";
 import {
@@ -22,7 +24,7 @@ export interface ResearchFoundationDependencies {
   readonly getAcademyTier: () => number;
 }
 
-type RelicGateState = "none" | "waiting" | "ready" | "examined";
+export type RelicGateState = "none" | "waiting" | "ready" | "examined";
 
 function getRelicRequirement(researchId: string) {
   const definition = RESEARCH_DEFINITIONS.find((candidate) => candidate.id === researchId);
@@ -33,31 +35,62 @@ function getRelicRequirement(researchId: string) {
   return requirement?.type === "relic_reconstructed" ? requirement : undefined;
 }
 
+export class AcademyResearchService extends ResearchService<ResearchContentRequirement> {
+  readonly #relicService: RelicService;
+
+  constructor(
+    requirementPort: ResearchRequirementPort<ResearchContentRequirement>,
+    paymentPort: ResearchPaymentPort,
+    relicService: RelicService,
+  ) {
+    super({ requirementPort, paymentPort });
+    this.#relicService = relicService;
+  }
+
+  getRelicGateState(researchId: string): RelicGateState {
+    const requirement = getRelicRequirement(researchId);
+    if (requirement === undefined) return "none";
+    const progress = this.#relicService.getProgress(requirement.relicId);
+    if (progress?.state === "examined") return "examined";
+    if (progress?.state === "charged") return "ready";
+    return "waiting";
+  }
+
+  examineRelicForResearch(researchId: string): boolean {
+    const requirement = getRelicRequirement(researchId);
+    if (requirement === undefined) return false;
+    return this.#relicService.examineRelic(requirement.relicId).ok;
+  }
+}
+
 /** Client composition only. Research domain stays economy/content agnostic. */
 export function createResearchFoundation(dependencies: ResearchFoundationDependencies) {
   const researchServiceRef: {
-    current: ResearchService<ResearchContentRequirement> | undefined;
+    current: AcademyResearchService | undefined;
   } = { current: undefined };
 
-  const researchService = new ResearchService<ResearchContentRequirement>({
-    requirementPort: {
-      isRequirementMet(requirement) {
-        switch (requirement.type) {
-          case "relic_reconstructed":
-            return dependencies.relicService.isReconstructed(requirement.relicId);
-          case "academy_tier":
-            return dependencies.getAcademyTier() >= requirement.minimumTier;
-          case "research_unlock":
-            return researchServiceRef.current?.hasUnlock(requirement.unlockId) ?? false;
-        }
-      },
+  const requirementPort: ResearchRequirementPort<ResearchContentRequirement> = {
+    isRequirementMet(requirement) {
+      switch (requirement.type) {
+        case "relic_reconstructed":
+          return dependencies.relicService.isReconstructed(requirement.relicId);
+        case "academy_tier":
+          return dependencies.getAcademyTier() >= requirement.minimumTier;
+        case "research_unlock":
+          return researchServiceRef.current?.hasUnlock(requirement.unlockId) ?? false;
+      }
     },
-    paymentPort: {
-      tryConsumeResearchCost(cost) {
-        return tryConsumeResearchCost(dependencies, cost);
-      },
+  };
+  const paymentPort: ResearchPaymentPort = {
+    tryConsumeResearchCost(cost) {
+      return tryConsumeResearchCost(dependencies, cost);
     },
-  });
+  };
+  const researchService = new AcademyResearchService(
+    requirementPort,
+    paymentPort,
+    dependencies.relicService,
+  );
   researchServiceRef.current = researchService;
 
   for (const definition of RESEARCH_DEFINITIONS) {
@@ -67,26 +100,14 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
     }
   }
 
-  const getRelicGateState = (researchId: string): RelicGateState => {
-    const requirement = getRelicRequirement(researchId);
-    if (requirement === undefined) return "none";
-    const progress = dependencies.relicService.getProgress(requirement.relicId);
-    if (progress?.state === "examined") return "examined";
-    if (progress?.state === "charged") return "ready";
-    return "waiting";
-  };
-
-  const examineRelicForResearch = (researchId: string): boolean => {
-    const requirement = getRelicRequirement(researchId);
-    if (requirement === undefined) return false;
-    return dependencies.relicService.examineRelic(requirement.relicId).ok;
-  };
-
   return {
     researchService,
     canReconstructRelics: () => researchService.hasUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction),
-    getRelicGateState,
-    examineRelicForResearch,
+    // Compatibility adapter for the current composition root; presentation uses
+    // the richer service-level gate state when available.
+    isWaitingForRelic: (researchId: string): boolean => (
+      researchService.getRelicGateState(researchId) === "waiting"
+    ),
   };
 }
 
