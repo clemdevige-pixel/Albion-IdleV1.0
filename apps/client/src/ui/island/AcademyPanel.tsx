@@ -217,14 +217,43 @@ function ExpeditionTooltip({ expedition }: { readonly expedition: AcademyExpedit
 }
 
 function ActiveExpeditionRow({ expedition }: { readonly expedition: AcademyExpeditionEntryModel }): JSX.Element {
+  const info = getExpeditionPresentationInfo(expedition.id);
+  const progress = expedition.activeDurationMs === undefined || expedition.remainingDurationMs === undefined
+    ? undefined
+    : expedition.activeDurationMs <= 0
+      ? 100
+      : Math.max(
+        0,
+        Math.min(
+          100,
+          100 * (1 - expedition.remainingDurationMs / expedition.activeDurationMs),
+        ),
+      );
+
   return (
-    <div className="ui-academy__active-row">
-      <div>
-        <small>Slot {String((expedition.activeSlotIndex ?? 0) + 1)} · {expeditionKindLabel(expedition)}</small>
+    <article className="ui-academy__research-row ui-academy__active-expedition-row is-active">
+      <div className="ui-academy__research-main">
+        <small>
+          T{String(expedition.tier)}
+          {expedition.activeDurationMs === undefined ? "" : ` · ${formatDuration(expedition.activeDurationMs)}`}
+        </small>
         <strong>{expedition.displayName}</strong>
+        {info !== undefined && <span>{info.rewardSummary}</span>}
       </div>
-      <b>{expedition.remainingDurationMs === undefined ? "Active" : formatDuration(expedition.remainingDurationMs)}</b>
-    </div>
+      <div className="ui-academy__research-side">
+        <b className="ui-academy__status is-active">En cours</b>
+        <small>Slot {String((expedition.activeSlotIndex ?? 0) + 1)} · {expeditionKindLabel(expedition)}</small>
+      </div>
+
+      {progress !== undefined && expedition.remainingDurationMs !== undefined && (
+        <div className="ui-academy__research-progress">
+          <div className="ui-academy__progress" aria-hidden="true">
+            <span style={{ width: `${String(progress)}%` }} />
+          </div>
+          <small>Reste {formatDuration(expedition.remainingDurationMs)}</small>
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -374,16 +403,19 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
             <span>{String(activeExpeditions.length)} / {String(model.expeditionSlotCapacity)} actifs</span>
           </header>
 
-          <div className="ui-academy__expedition-stage">
-            <span className="ui-island__eyebrow">En cours</span>
-            {activeExpeditions.length === 0 ? (
+          {activeExpeditions.length === 0 ? (
+            <div className="ui-academy__expedition-stage">
+              <span className="ui-island__eyebrow">En cours</span>
               <div className="ui-academy__empty-row">Aucune expédition active.</div>
-            ) : (
+            </div>
+          ) : (
+            <div className="ui-academy__active-research ui-academy__active-expeditions-block">
+              <span className="ui-island__eyebrow">En cours</span>
               <div className="ui-academy__active-expeditions">
                 {activeExpeditions.map((entry) => <ActiveExpeditionRow key={entry.id} expedition={entry} />)}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="ui-academy__expedition-stage">
             <span className="ui-island__eyebrow">Tier</span>
