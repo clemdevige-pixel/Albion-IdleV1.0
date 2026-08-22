@@ -25,6 +25,10 @@ const LEGACY_FACTION_RELIC_ITEM_IDS = new Set([
   "item_relic_morgana",
 ]);
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function migrateLegacyIds(value: unknown): unknown {
   if (typeof value === "string") {
     return LEGACY_ID_RENAMES[value] ?? value;
@@ -34,12 +38,10 @@ function migrateLegacyIds(value: unknown): unknown {
     return value.map(migrateLegacyIds);
   }
 
-  if (value !== null && typeof value === "object") {
+  if (isRecord(value)) {
     const migrated: Record<string, unknown> = {};
 
-    for (const [key, child] of Object.entries(
-      value as Record<string, unknown>,
-    )) {
+    for (const [key, child] of Object.entries(value)) {
       migrated[key] = migrateLegacyIds(child);
     }
 
@@ -62,9 +64,9 @@ function migrateLegacyDungeonKeyId(value: string): string {
 function migrateLegacyDungeonKeys(value: unknown): unknown {
   if (typeof value === "string") return migrateLegacyDungeonKeyId(value);
   if (Array.isArray(value)) return value.map(migrateLegacyDungeonKeys);
-  if (value !== null && typeof value === "object") {
+  if (isRecord(value)) {
     const migrated: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    for (const [key, child] of Object.entries(value)) {
       migrated[key] = migrateLegacyDungeonKeys(child);
     }
     return migrated;
@@ -74,22 +76,23 @@ function migrateLegacyDungeonKeys(value: unknown): unknown {
 
 function removeLegacyFactionRelicItems(payload: Record<string, unknown>): Record<string, unknown> {
   const inventoryPayload = payload.inventory;
-  if (inventoryPayload === null || typeof inventoryPayload !== "object") return payload;
+  if (!isRecord(inventoryPayload)) return payload;
 
-  const inventories = (inventoryPayload as { inventories?: unknown }).inventories;
+  const inventories = inventoryPayload.inventories;
   if (!Array.isArray(inventories)) return payload;
+  const savedInventories: readonly unknown[] = inventories;
 
-  const migratedInventories = inventories.map((inventory) => {
-    if (inventory === null || typeof inventory !== "object") return inventory;
-    const savedInventory = inventory as Record<string, unknown>;
-    const slots = savedInventory.slots;
+  const migratedInventories = savedInventories.map((inventory): unknown => {
+    if (!isRecord(inventory)) return inventory;
+    const slots = inventory.slots;
     if (!Array.isArray(slots)) return inventory;
+    const savedSlots: readonly unknown[] = slots;
 
     return {
-      ...savedInventory,
-      slots: slots.filter((slot) => {
-        if (slot === null || typeof slot !== "object") return true;
-        const itemId = (slot as { itemId?: unknown }).itemId;
+      ...inventory,
+      slots: savedSlots.filter((slot) => {
+        if (!isRecord(slot)) return true;
+        const itemId = slot.itemId;
         return typeof itemId !== "string" || !LEGACY_FACTION_RELIC_ITEM_IDS.has(itemId);
       }),
     };
@@ -98,7 +101,7 @@ function removeLegacyFactionRelicItems(payload: Record<string, unknown>): Record
   return {
     ...payload,
     inventory: {
-      ...(inventoryPayload as Record<string, unknown>),
+      ...inventoryPayload,
       inventories: migratedInventories,
     },
   };
