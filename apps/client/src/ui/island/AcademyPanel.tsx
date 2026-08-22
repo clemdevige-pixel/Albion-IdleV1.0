@@ -279,13 +279,15 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
   const selectedExpeditionTier = requestedExpeditionTier ?? availableTiers.at(-1) ?? 4;
   const completedResearch = model.research.filter((entry) => entry.state === "completed");
   const activeResearch = model.research.find((entry) => entry.state === "active");
-  const availableResearch = model.research.filter((entry) => (
-    entry.state !== "completed"
-    && entry.state !== "active"
-    && researchTier !== undefined
-    && entry.tier <= researchTier
-    && getResearchPresentationGroup(entry.id) === researchScope
-  ));
+  const availableResearch = model.research.filter((entry) => {
+    const info = getResearchPresentationInfo(entry.id);
+    return entry.state !== "completed"
+      && entry.state !== "active"
+      && researchTier !== undefined
+      && entry.tier <= researchTier
+      && getResearchPresentationGroup(entry.id) === researchScope
+      && !(entry.state === "locked" && info?.hiddenWhileLocked === true);
+  });
   availableResearch.sort((left, right) => researchPriority(left) - researchPriority(right));
 
   const activeExpeditions = model.expeditions.filter((entry) => entry.active);
