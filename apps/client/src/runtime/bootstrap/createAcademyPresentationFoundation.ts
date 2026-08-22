@@ -4,6 +4,7 @@ import {
   type ExpeditionDurationMs,
   type ExpeditionRequirementDefinition,
   type ExpeditionService,
+  type ExpeditionStartState,
   type ResearchRequirementDefinition,
   type ResearchService,
   type StartExpeditionResult,
@@ -28,6 +29,7 @@ export interface AcademyExpeditionEntryModel {
   readonly displayName: string;
   readonly tier: number;
   readonly active: boolean;
+  readonly startState: ExpeditionStartState;
   readonly activeSlotIndex: number | undefined;
   readonly remainingDurationMs: number | undefined;
   readonly supportedDurationsMs: readonly ExpeditionDurationMs[];
@@ -36,6 +38,7 @@ export interface AcademyExpeditionEntryModel {
 export interface AcademyPresentationModel {
   readonly research: readonly AcademyResearchEntryModel[];
   readonly expeditions: readonly AcademyExpeditionEntryModel[];
+  readonly expeditionSlotCapacity: number;
 }
 
 export type AcademyResearchActionResult =
@@ -101,11 +104,13 @@ export function createAcademyPresentationFoundation<
           displayName: definition.displayName,
           tier: definition.tier,
           active: active !== undefined,
+          startState: dependencies.expeditionService.getStartState(definition.id) ?? "requirements_locked",
           activeSlotIndex: active?.slotIndex,
           remainingDurationMs: active?.remainingDurationMs,
           supportedDurationsMs: definition.supportedDurationsMs ?? EXPEDITION_DURATION_OPTIONS_MS,
         };
       }),
+      expeditionSlotCapacity: dependencies.expeditionService.getSlotCapacity(),
     };
   };
 
