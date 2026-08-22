@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  ORANGE_WORLD_COMBAT_CURVE,
-  RED_WORLD_COMBAT_CURVE,
-  YELLOW_WORLD_COMBAT_CURVE,
-  type ZoneCombatCurve,
-} from "@game/data";
+import { getWorldTierTransitionContract } from "@game/data";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
@@ -46,27 +41,9 @@ const SHIELD_BY_TIER = {
 } as const;
 
 const TRANSITIONS = [
-  {
-    tier: 5,
-    mastery: 35,
-    zoneDefId: WORLD_ZONE_IDS.ironveil,
-    curve: YELLOW_WORLD_COMBAT_CURVE,
-    expectedGate: { healthMultiplier: 1.15, damageMultiplier: 1.325, defenseMultiplier: 1.05 },
-  },
-  {
-    tier: 6,
-    mastery: 45,
-    zoneDefId: WORLD_ZONE_IDS.ashenpeak,
-    curve: ORANGE_WORLD_COMBAT_CURVE,
-    expectedGate: { healthMultiplier: 1, damageMultiplier: 1.375, defenseMultiplier: 1 },
-  },
-  {
-    tier: 7,
-    mastery: 55,
-    zoneDefId: WORLD_ZONE_IDS.doompeak,
-    curve: RED_WORLD_COMBAT_CURVE,
-    expectedGate: { healthMultiplier: 1, damageMultiplier: 1.175, defenseMultiplier: 1 },
-  },
+  { tier: 5, zoneDefId: WORLD_ZONE_IDS.ironveil },
+  { tier: 6, zoneDefId: WORLD_ZONE_IDS.ashenpeak },
+  { tier: 7, zoneDefId: WORLD_ZONE_IDS.doompeak },
 ] as const;
 
 type Tier = keyof typeof WEAPONS_BY_TIER;
@@ -77,44 +54,49 @@ function equipmentFor(weaponItemId: string, tier: Tier): readonly string[] {
   return items;
 }
 
-function getFinalBossGate(curve: readonly ZoneCombatCurve[]) {
-  return curve[curve.length - 1]?.bossGate;
-}
-
 describe("validated later-tier boss gates", () => {
   it("keeps the T5 Broadsword tier-transition correction authored at 125 base damage", () => {
     expect(resolveEquipmentInfo("item_weapon_sword_t5_broadsword")?.stats?.stat_physical_damage).toBe(125);
   });
 
-  it("requires .3 plus potion at every T5-T8 tier transition", () => {
+  it("requires the canonical .3 plus potion contract at every T5-T8 tier transition", () => {
     for (const transition of TRANSITIONS) {
       const tier = transition.tier;
-      const gate = getFinalBossGate(transition.curve);
-      expect(gate).toMatchObject({ progressionRole: "boss_gate", ...transition.expectedGate });
-
+      const contract = getWorldTierTransitionContract(tier);
       const tN2 = WEAPONS_BY_TIER[tier].map((weaponItemId) => runCombatRuntimeBenchmark({
         label: `boss_gate_regression_t${tier}_2`,
         weaponItemId,
         zoneDefId: transition.zoneDefId,
         segmentIndex: 9,
         equipmentItemIds: equipmentFor(weaponItemId, tier),
-        masteryLevel: transition.mastery,
-        enchantment: 2,
+        masteryLevel: contract.masteryLevel,
+        enchantment: contract.blockedEnchantment,
         useHealthPotions: true,
       }));
-      const tN3 = WEAPONS_BY_TIER[tier].map((weaponItemId) => runCombatRuntimeBenchmark({
-        label: `boss_gate_regression_t${tier}_3`,
+      const tN3NoPotion = WEAPONS_BY_TIER[tier].map((weaponItemId) => runCombatRuntimeBenchmark({
+        label: `boss_gate_regression_t${tier}_3_no_potion`,
         weaponItemId,
         zoneDefId: transition.zoneDefId,
         segmentIndex: 9,
         equipmentItemIds: equipmentFor(weaponItemId, tier),
-        masteryLevel: transition.mastery,
-        enchantment: 3,
+        masteryLevel: contract.masteryLevel,
+        enchantment: contract.requiredEnchantment,
+        useHealthPotions: false,
+      }));
+      const tN3Potion = WEAPONS_BY_TIER[tier].map((weaponItemId) => runCombatRuntimeBenchmark({
+        label: `boss_gate_regression_t${tier}_3_potion`,
+        weaponItemId,
+        zoneDefId: transition.zoneDefId,
+        segmentIndex: 9,
+        equipmentItemIds: equipmentFor(weaponItemId, tier),
+        masteryLevel: contract.masteryLevel,
+        enchantment: contract.requiredEnchantment,
         useHealthPotions: true,
       }));
 
       expect(tN2.filter((result) => result.clear), `T${String(tier)}.2 + potion must not clear the boss gate`).toHaveLength(0);
-      expect(tN3.filter((result) => result.clear), `T${String(tier)}.3 + potion must universally clear the boss gate`).toHaveLength(WEAPONS_BY_TIER[tier].length);
+      expect(tN3NoPotion.filter((result) => result.clear), `T${String(tier)}.3 without potion must not clear the boss gate`).toHaveLength(0);
+      expect(tN3Potion.filter((result) => result.clear), `T${String(tier)}.3 + potion must universally clear the boss gate`).toHaveLength(WEAPONS_BY_TIER[tier].length);
     }
   });
 });
