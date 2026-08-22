@@ -17,6 +17,9 @@ export type ResearchContentRequirement = ResearchRequirementDefinition & (
     readonly type: "research_unlock";
     readonly unlockId: string;
   }
+  | {
+    readonly type: "enchantment_shard_discovered";
+  }
 );
 
 export type ResearchPresentationGroup = "core" | "faction";
@@ -27,6 +30,8 @@ export interface ResearchPresentationInfo {
   readonly effectSummary: string;
   /** Player-facing list used by the generic Research completion recap. */
   readonly unlockedContent: readonly string[];
+  /** Discovery-driven Research stays absent from the list until its authored requirement is met. */
+  readonly hiddenWhileLocked?: boolean;
 }
 
 export const RESEARCH_IDS = {
@@ -40,6 +45,7 @@ export const RESEARCH_IDS = {
   archaeology3: "research_archaeology_3",
   archaeology4: "research_archaeology_4",
   archaeology5: "research_archaeology_5",
+  enchantmentStudy: "research_enchantment_study",
   workerOrganization: "research_worker_organization",
   instantRefining: "research_instant_refining",
   dungeonRelicAnalysis: "research_dungeon_relic_analysis",
@@ -58,6 +64,7 @@ export const RESEARCH_UNLOCK_IDS = {
   factionExpeditionTier7: "expedition_faction_tier:7",
   factionExpeditionTier8: "expedition_faction_tier:8",
   secondExpeditionSlot: "expedition_slot:2",
+  enchantmentService: "enchantment:service",
   advancedWorkerOrganization: "workers:advanced_organization",
   instantRefining: "refining:instant_batch",
   dungeonRelicAnalyzed: "dungeon_relic:analyzed",
@@ -187,6 +194,18 @@ const ARCHAEOLOGY_RESEARCH = [
 
 const ECONOMY_RESEARCH = [
   {
+    id: RESEARCH_IDS.enchantmentStudy,
+    displayName: "Étude des enchantements",
+    tier: 4,
+    durationMs: 30 * MINUTE_MS,
+    cost: { silver: 5_000, materials: [] },
+    requirements: [
+      { type: "academy_tier", minimumTier: 4 },
+      { type: "enchantment_shard_discovered" },
+    ],
+    unlockIds: [RESEARCH_UNLOCK_IDS.enchantmentService],
+  },
+  {
     id: RESEARCH_IDS.workerOrganization,
     displayName: "Organisation avancée des ouvriers",
     tier: 6,
@@ -300,6 +319,13 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
     description: "Étend les expéditions de faction au T8.",
     effectSummary: "Débloque les expéditions de faction T8.",
     unlockedContent: ["Expéditions de faction T8"],
+  }],
+  [RESEARCH_IDS.enchantmentStudy, {
+    group: "core",
+    description: "Étudie les éclats d’enchantement découverts dans le monde afin d’en comprendre l’usage.",
+    effectSummary: "Débloque le service Enchanter chez le Marchand.",
+    unlockedContent: ["Service marchand : Enchanter", "Utilisation des éclats d’enchantement"],
+    hiddenWhileLocked: true,
   }],
   [RESEARCH_IDS.workerOrganization, {
     group: "core",
