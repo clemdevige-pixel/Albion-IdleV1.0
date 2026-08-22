@@ -2,10 +2,8 @@ import type { EntityId } from "@game/core";
 import type {
   EquipmentLoadout,
   EquipmentLoadoutApplyOutcome,
-  EquipmentManager,
   EquipmentResult,
   ResearchRequirementDefinition,
-  ResearchService,
 } from "@game/gameplay";
 import { RESEARCH_UNLOCK_IDS } from "../../data/researchContentCatalog.js";
 
@@ -17,11 +15,29 @@ export type EquipmentPresetMutationResult<T> =
   | { readonly ok: false; readonly reason: "presets_locked" | "invalid_preset" }
   | EquipmentResult<T>;
 
+interface EquipmentPresetPort {
+  getLoadouts(entityId: EntityId): readonly EquipmentLoadout[];
+  saveCurrentLoadout(
+    entityId: EntityId,
+    loadoutId: string,
+    name: string,
+  ): EquipmentResult<EquipmentLoadout>;
+  applyLoadout(
+    entityId: EntityId,
+    loadoutId: string,
+  ): EquipmentResult<EquipmentLoadoutApplyOutcome>;
+  deleteLoadout(entityId: EntityId, loadoutId: string): boolean;
+}
+
+interface ResearchUnlockPort<TRequirement extends ResearchRequirementDefinition> {
+  hasUnlock(unlockId: string): boolean;
+}
+
 export interface EquipmentPresetFoundationDependencies<
   TRequirement extends ResearchRequirementDefinition,
 > {
-  readonly equipmentManager: EquipmentManager;
-  readonly researchService: ResearchService<TRequirement>;
+  readonly equipmentManager: EquipmentPresetPort;
+  readonly researchService: ResearchUnlockPort<TRequirement>;
   readonly heroId: EntityId;
 }
 
