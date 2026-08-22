@@ -52,7 +52,9 @@ export class AcademyResearchService extends ResearchService<ResearchContentRequi
     if (requirement === undefined) return "none";
     const progress = this.#relicService.getProgress(requirement.relicId);
     if (progress?.state === "examined") return "examined";
-    if (progress?.state === "charged") return "ready";
+    if (progress?.state === "charged") {
+      return this.hasUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction) ? "ready" : "none";
+    }
     return "waiting";
   }
 
