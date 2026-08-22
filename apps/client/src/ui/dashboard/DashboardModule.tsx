@@ -11,6 +11,7 @@ import { DASHBOARD_SECTION_ORDER } from "./dashboardSections";
 import { DashboardCombatCard } from "./components/DashboardCombatCard";
 import { DashboardEnchantReadyCard } from "./components/DashboardEnchantReadyCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
+import { DashboardResearchCard } from "./components/DashboardResearchCard";
 import { DashboardTrackedResourcesCard } from "./components/DashboardTrackedResourcesCard";
 import { DashboardYieldCard } from "./components/DashboardYieldCard";
 
@@ -29,6 +30,7 @@ export function DashboardModule(): JSX.Element {
         onSetFarmMode={zoneActions.setFarmMode}
       />
     ),
+    research: <DashboardResearchCard />,
     yield: <DashboardYieldCard yieldData={yieldData} />,
     "enchant-ready": <DashboardEnchantReadyCard />,
     "tracked-resources": <DashboardTrackedResourcesCard />,
