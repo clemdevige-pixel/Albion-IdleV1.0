@@ -41,6 +41,7 @@ export const RESEARCH_IDS = {
   archaeology4: "research_archaeology_4",
   archaeology5: "research_archaeology_5",
   workerOrganization: "research_worker_organization",
+  instantRefining: "research_instant_refining",
   dungeonRelicAnalysis: "research_dungeon_relic_analysis",
   dungeonSanctuaryLocation: "research_dungeon_sanctuary_location",
 } as const;
@@ -58,6 +59,7 @@ export const RESEARCH_UNLOCK_IDS = {
   factionExpeditionTier8: "expedition_faction_tier:8",
   secondExpeditionSlot: "expedition_slot:2",
   advancedWorkerOrganization: "workers:advanced_organization",
+  instantRefining: "refining:instant_batch",
   dungeonRelicAnalyzed: "dungeon_relic:analyzed",
   dungeonSystem: "dungeon_system:unlocked",
   equipmentPresets: "equipment_presets",
@@ -193,6 +195,15 @@ const ECONOMY_RESEARCH = [
     requirements: [{ type: "academy_tier", minimumTier: 6 }],
     unlockIds: [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization],
   },
+  {
+    id: RESEARCH_IDS.instantRefining,
+    displayName: "Procédés de raffinage avancés",
+    tier: 7,
+    durationMs: 3 * HOUR_MS,
+    cost: { silver: 80_000, materials: [] },
+    requirements: [{ type: "academy_tier", minimumTier: 7 }],
+    unlockIds: [RESEARCH_UNLOCK_IDS.instantRefining],
+  },
 ] as const satisfies readonly ResearchDefinition<ResearchContentRequirement>[];
 
 const DUNGEON_DISCOVERY_RESEARCH = [
@@ -295,6 +306,12 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
     description: "Étend l’organisation de la production passive de l’île avec un second ouvrier par métier.",
     effectSummary: "Porte la capacité à 8 ouvriers, avec 2 ouvriers maximum par profession.",
     unlockedContent: ["8 ouvriers maximum", "2 ouvriers par profession", "Recrutement avancé à 5 000 Silver"],
+  }],
+  [RESEARCH_IDS.instantRefining, {
+    group: "core",
+    description: "Automatise la transformation des stocks raffinables sans modifier les recettes ni les rendements.",
+    effectSummary: "Débloque le raffinage instantané par lot dans les bâtiments de raffinage.",
+    unlockedContent: ["Raffinage instantané par lot", "Recettes et rendements inchangés"],
   }],
   [RESEARCH_IDS.dungeonRelicAnalysis, {
     group: "core",
