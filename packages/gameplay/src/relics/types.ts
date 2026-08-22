@@ -7,6 +7,7 @@ export interface RelicDefinition {
   readonly id: RelicId;
   readonly factionId: FactionId;
   readonly sourceBossMonsterId: string;
+  readonly inventoryItemId: string;
   readonly chargeKillCount: number;
 }
 
