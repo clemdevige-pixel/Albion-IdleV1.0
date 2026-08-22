@@ -19,6 +19,7 @@ import type {
   StatsManager,
   VendorRegistry,
   WalletId,
+  WorkerId,
   WorldCoordinator,
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
@@ -107,7 +108,7 @@ export interface GameServices {
   readonly setCraftingTier: (tier: ProductionTier) => boolean;
   readonly craftEquipment: (outputItemId: string) => boolean;
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
-  readonly toggleWorker: (profession: WorkerProfessionVM, tier: ProductionTier) => boolean;
+  readonly toggleWorker: (workerId: WorkerId, tier: ProductionTier) => boolean;
   readonly constructIslandBuilding: (definitionId: IslandBuildingId, plotId: string) => boolean;
   readonly upgradeIslandBuilding: (definitionId: IslandBuildingId) => boolean;
   readonly getIslandLevel: () => number;
