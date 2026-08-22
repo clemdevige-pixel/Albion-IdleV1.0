@@ -2,131 +2,170 @@ import { describe, expect, it } from "vitest";
 import { RelicService } from "./relic-service.js";
 import type { RelicDefinition } from "./types.js";
 
-const keeperRelic: RelicDefinition = {
-  id: "relic_keeper",
-  factionId: "keeper",
-  sourceBossMonsterId: "boss_keeper_ancient",
-  inventoryItemId: "item_relic_keeper",
-  chargeKillCount: 50,
+const dungeonRelic: RelicDefinition = {
+  id: "relic_dungeon",
+  source: {
+    monsterId: "boss_keeper_ancient",
+    contextId: "zone_mountain_t4",
+    segmentIndex: 9,
+  },
+  inventoryItemId: "item_relic_dungeon",
+  chargeRequirements: [
+    { factionId: "keeper", killCount: 50 },
+    { factionId: "heretic", killCount: 50 },
+    { factionId: "undead", killCount: 50 },
+    { factionId: "morgana", killCount: 50 },
+  ],
 };
 
-function createFixture(options?: { readonly canExamine?: boolean }) {
-  let factionKills = 0;
-  let canExamine = options?.canExamine ?? true;
-  const service = new RelicService(
-    {
-      getFactionKillCount: () => factionKills,
-    },
-    {
-      canReconstructRelic: () => canExamine,
-    },
-  );
-  service.registerRelic(keeperRelic);
+function createFixture() {
+  const factionKills = new Map<string, number>();
+  const service = new RelicService({
+    getFactionKillCount: (factionId) => factionKills.get(factionId) ?? 0,
+  });
+  service.registerRelic(dungeonRelic);
   return {
     service,
-    setFactionKills(value: number) { factionKills = value; },
-    setCanExamine(value: boolean) { canExamine = value; },
+    setFactionKills(factionId: string, value: number) { factionKills.set(factionId, value); },
   };
 }
 
 describe("RelicService", () => {
-  it("drops the broken Relic on its authored boss and counts only later faction kills", () => {
+  it("acquires only from the exact authored contextual source", () => {
     const fixture = createFixture();
-    fixture.setFactionKills(120);
 
-    expect(fixture.service.recordMonsterKill("boss_keeper_ancient")).toEqual(["relic_keeper"]);
-    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
-      state: "broken",
-      chargeKills: 0,
-      requiredChargeKills: 50,
+    expect(fixture.service.recordMonsterKill("boss_keeper_ancient")).toEqual([]);
+    expect(fixture.service.recordMonsterKill({
+      monsterId: "boss_keeper_ancient",
+      contextId: "zone_forest_t3",
+      segmentIndex: 9,
+    })).toEqual([]);
+    expect(fixture.service.recordMonsterKill({
+      monsterId: "boss_keeper_ancient",
+      contextId: "zone_mountain_t4",
+      segmentIndex: 8,
+    })).toEqual([]);
+
+    expect(fixture.service.recordMonsterKill({
+      monsterId: "boss_keeper_ancient",
+      contextId: "zone_mountain_t4",
+      segmentIndex: 9,
+    })).toEqual(["relic_dungeon"]);
+  });
+
+  it("charges independently from 50 post-acquisition kills of every authored faction", () => {
+    const fixture = createFixture();
+    fixture.setFactionKills("keeper", 100);
+    fixture.setFactionKills("heretic", 200);
+    fixture.setFactionKills("undead", 300);
+    fixture.setFactionKills("morgana", 400);
+    fixture.service.recordMonsterKill({
+      monsterId: "boss_keeper_ancient",
+      contextId: "zone_mountain_t4",
+      segmentIndex: 9,
     });
 
-    fixture.setFactionKills(169);
-    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({ state: "broken", chargeKills: 49 });
-    fixture.setFactionKills(170);
-    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({ state: "charged", chargeKills: 50 });
-  });
-
-  it("does not acquire a Relic when its inventory object cannot be granted", () => {
-    const fixture = createFixture();
-    fixture.setFactionKills(20);
-
-    expect(fixture.service.recordMonsterKill("boss_keeper_ancient", () => false)).toEqual([]);
-    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("unobtained");
-
-    expect(fixture.service.recordMonsterKill("boss_keeper_ancient", () => true))
-      .toEqual(["relic_keeper"]);
-    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
+    fixture.setFactionKills("keeper", 150);
+    fixture.setFactionKills("heretic", 250);
+    fixture.setFactionKills("undead", 350);
+    fixture.setFactionKills("morgana", 449);
+    expect(fixture.service.getProgress("relic_dungeon")).toMatchObject({
       state: "broken",
-      chargeKills: 0,
+      chargeKills: 199,
+      requiredChargeKills: 200,
+    });
+
+    fixture.setFactionKills("morgana", 450);
+    expect(fixture.service.getProgress("relic_dungeon")).toMatchObject({
+      state: "charged",
+      chargeKills: 200,
+      requiredChargeKills: 200,
+      chargeObjectives: [
+        { factionId: "keeper", chargeKills: 50, requiredChargeKills: 50 },
+        { factionId: "heretic", chargeKills: 50, requiredChargeKills: 50 },
+        { factionId: "undead", chargeKills: 50, requiredChargeKills: 50 },
+        { factionId: "morgana", chargeKills: 50, requiredChargeKills: 50 },
+      ],
     });
   });
 
-  it("stays charged until an explicit Academy examination succeeds", () => {
-    const fixture = createFixture({ canExamine: false });
-    fixture.setFactionKills(10);
-    fixture.service.recordMonsterKill("boss_keeper_ancient");
-    fixture.setFactionKills(60);
+  it("does not acquire when the inventory object cannot be granted", () => {
+    const fixture = createFixture();
+    const source = {
+      monsterId: "boss_keeper_ancient",
+      contextId: "zone_mountain_t4",
+      segmentIndex: 9,
+    } as const;
 
-    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("charged");
-    expect(fixture.service.isReconstructed("relic_keeper")).toBe(false);
-    expect(fixture.service.examineRelic("relic_keeper"))
-      .toEqual({ ok: false, reason: "examination_locked" });
-    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("charged");
-
-    fixture.setCanExamine(true);
-    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("charged");
-    expect(fixture.service.examineRelic("relic_keeper")).toEqual({ ok: true });
-    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("examined");
-    expect(fixture.service.isReconstructed("relic_keeper")).toBe(true);
+    expect(fixture.service.recordMonsterKill(source, () => false)).toEqual([]);
+    expect(fixture.service.getProgress("relic_dungeon")?.state).toBe("unobtained");
+    expect(fixture.service.recordMonsterKill(source, () => true)).toEqual(["relic_dungeon"]);
   });
 
-  it("persists acquisition baseline and explicitly examined state in V3", () => {
+  it("stays charged until the owning Research flow marks examination complete", () => {
     const fixture = createFixture();
-    fixture.setFactionKills(25);
-    fixture.service.recordMonsterKill("boss_keeper_ancient");
-    fixture.setFactionKills(75);
-    fixture.service.examineRelic("relic_keeper");
+    fixture.service.recordMonsterKill({
+      monsterId: "boss_keeper_ancient",
+      contextId: "zone_mountain_t4",
+      segmentIndex: 9,
+    });
+    for (const factionId of ["keeper", "heretic", "undead", "morgana"] as const) {
+      fixture.setFactionKills(factionId, 50);
+    }
+
+    expect(fixture.service.getProgress("relic_dungeon")?.state).toBe("charged");
+    expect(fixture.service.examineRelic("relic_dungeon")).toEqual({ ok: true });
+    expect(fixture.service.getProgress("relic_dungeon")?.state).toBe("examined");
+  });
+
+  it("persists every faction baseline and examined state in V4", () => {
+    const fixture = createFixture();
+    fixture.setFactionKills("keeper", 10);
+    fixture.setFactionKills("heretic", 20);
+    fixture.setFactionKills("undead", 30);
+    fixture.setFactionKills("morgana", 40);
+    fixture.service.recordMonsterKill({
+      monsterId: "boss_keeper_ancient",
+      contextId: "zone_mountain_t4",
+      segmentIndex: 9,
+    });
+    fixture.setFactionKills("keeper", 60);
+    fixture.setFactionKills("heretic", 70);
+    fixture.setFactionKills("undead", 80);
+    fixture.setFactionKills("morgana", 90);
+    fixture.service.examineRelic("relic_dungeon");
 
     const restored = createFixture();
-    restored.setFactionKills(75);
+    restored.setFactionKills("keeper", 60);
+    restored.setFactionKills("heretic", 70);
+    restored.setFactionKills("undead", 80);
+    restored.setFactionKills("morgana", 90);
     restored.service.load(fixture.service.save());
-    expect(restored.service.getProgress("relic_keeper")?.state).toBe("examined");
+    expect(restored.service.getProgress("relic_dungeon")?.state).toBe("examined");
   });
 
-  it("migrates V1 auto-reconstructed Relics to broken 0/50 from the current kill count", () => {
+  it("does not map obsolete faction Relic snapshots onto the new global Relic", () => {
     const fixture = createFixture();
-    fixture.setFactionKills(137);
-    fixture.service.load({ version: 1, reconstructedRelicIds: ["relic_keeper"] });
-
-    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
-      state: "broken",
-      chargeKills: 0,
-      reconstructed: false,
-    });
-    fixture.setFactionKills(138);
-    expect(fixture.service.getProgress("relic_keeper")?.chargeKills).toBe(1);
+    fixture.service.load({ version: 3, acquiredRelics: [
+      { relicId: "relic_keeper", acquiredAtFactionKillCount: 10 },
+    ], examinedRelicIds: ["relic_keeper"] });
+    expect(fixture.service.getProgress("relic_dungeon")?.state).toBe("unobtained");
   });
 
-  it("migrates V2 auto-examined Relics without inheriting historical kills", () => {
-    const fixture = createFixture();
-    fixture.setFactionKills(240);
-    fixture.service.load({
-      version: 2,
-      acquiredRelics: [{ relicId: "relic_keeper", acquiredAtFactionKillCount: 10 }],
-      examinedRelicIds: ["relic_keeper"],
-    });
-
-    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
-      state: "broken",
-      chargeKills: 0,
-      reconstructed: false,
-    });
-  });
-
-  it("rejects invalid authored charge contracts", () => {
-    const fixture = createFixture();
-    expect(fixture.service.registerRelic({ ...keeperRelic, id: "invalid", chargeKillCount: 0 }))
-      .toEqual({ ok: false, reason: "invalid_definition" });
+  it("rejects invalid duplicate or zero-count charge objectives", () => {
+    const service = new RelicService({ getFactionKillCount: () => 0 });
+    expect(service.registerRelic({
+      ...dungeonRelic,
+      id: "invalid_zero",
+      chargeRequirements: [{ factionId: "keeper", killCount: 0 }],
+    })).toEqual({ ok: false, reason: "invalid_definition" });
+    expect(service.registerRelic({
+      ...dungeonRelic,
+      id: "invalid_duplicate",
+      chargeRequirements: [
+        { factionId: "keeper", killCount: 50 },
+        { factionId: "keeper", killCount: 50 },
+      ],
+    })).toEqual({ ok: false, reason: "invalid_definition" });
   });
 });
