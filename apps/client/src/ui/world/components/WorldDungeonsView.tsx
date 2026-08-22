@@ -2,16 +2,17 @@ import { useCallback, useMemo, useState } from "react";
 import type { GameBridgeState } from "../../../game/GameBridge.js";
 import { DUNGEON_DEFINITIONS } from "../../../data/dungeonContentCatalog.js";
 import type { DungeonKeyTier } from "../../../data/dungeonKeyContentCatalog.js";
+import type { DungeonAccessState } from "../../../state/DungeonNavigationActions.js";
 import { useGameServices } from "../../../state/GameContext.js";
 import { useGameUiSelector } from "../../state/useGameUiSelector.js";
 import "./WorldDungeonsView.css";
 
 interface DungeonPresentationModel {
   readonly inventory: Readonly<Record<string, number>>;
+  readonly accessByDefinitionId: Readonly<Record<string, DungeonAccessState>>;
   readonly activeDefinitionId: string | null;
   readonly activeEncounterIndex: number | null;
   readonly pendingDefinitionId: string | null;
-  readonly clearedTiers: readonly number[];
   readonly enemyName: string;
   readonly combatState: string;
 }
@@ -19,6 +20,7 @@ interface DungeonPresentationModel {
 const DUNGEON_TIERS: readonly DungeonKeyTier[] = [4, 5, 6, 7, 8];
 const DUNGEON_VISUAL_SLUGS = { keeper: "keeper", heretic: "heretic", undead: "undead", morgana: "morgana" } as const;
 const AUTHORED_DUNGEON_VISUAL_TIERS = new Set<number>([4, 5, 6, 7]);
+const INVALID_ACCESS: DungeonAccessState = { canEnter: false, reason: "invalid_definition" };
 
 function dungeonVisual(faction: string, tier: number): string | undefined {
   if (!AUTHORED_DUNGEON_VISUAL_TIERS.has(tier)) return undefined;
@@ -36,8 +38,11 @@ function inventoryQuantities(slots: readonly { readonly itemId: string | undefin
   return quantities;
 }
 
-function sameNumberArray(previous: readonly number[], next: readonly number[]): boolean {
-  return previous.length === next.length && previous.every((value, index) => value === next[index]);
+function sameAccess(previous: DungeonAccessState | undefined, next: DungeonAccessState | undefined): boolean {
+  return previous?.canEnter === next?.canEnter
+    && previous?.reason === next?.reason
+    && previous?.previousTier === next?.previousTier
+    && previous?.highestEquippedTier === next?.highestEquippedTier;
 }
 
 function sameDungeonPresentation(previous: DungeonPresentationModel, next: DungeonPresentationModel): boolean {
@@ -47,11 +52,48 @@ function sameDungeonPresentation(previous: DungeonPresentationModel, next: Dunge
     || previous.pendingDefinitionId !== next.pendingDefinitionId
     || previous.enemyName !== next.enemyName
     || previous.combatState !== next.combatState
-    || !sameNumberArray(previous.clearedTiers, next.clearedTiers)
   ) return false;
-  const previousKeys = Object.keys(previous.inventory);
-  const nextKeys = Object.keys(next.inventory);
-  return previousKeys.length === nextKeys.length && previousKeys.every((key) => previous.inventory[key] === next.inventory[key]);
+  const previousInventoryKeys = Object.keys(previous.inventory);
+  const nextInventoryKeys = Object.keys(next.inventory);
+  if (
+    previousInventoryKeys.length !== nextInventoryKeys.length
+    || !previousInventoryKeys.every((key) => previous.inventory[key] === next.inventory[key])
+  ) return false;
+  const previousAccessKeys = Object.keys(previous.accessByDefinitionId);
+  const nextAccessKeys = Object.keys(next.accessByDefinitionId);
+  return previousAccessKeys.length === nextAccessKeys.length
+    && previousAccessKeys.every((key) => sameAccess(
+      previous.accessByDefinitionId[key],
+      next.accessByDefinitionId[key],
+    ));
+}
+
+function getAccessMessage(access: DungeonAccessState, dungeonTier: number): string | undefined {
+  if (access.reason === "research_locked") {
+    return "Recherche de cette famille de donjons requise.";
+  }
+  if (access.reason === "progression_locked") {
+    return `Validez d'abord un donjon T${String(access.previousTier ?? dungeonTier - 1)} pour débloquer les donjons T${String(dungeonTier)}.`;
+  }
+  if (access.reason === "equipment_tier_locked") {
+    return `Ce donjon T${String(dungeonTier)} n'accepte pas d'équipement supérieur au T${String(dungeonTier)} (équipement T${String(access.highestEquippedTier ?? dungeonTier + 1)} détecté).`;
+  }
+  if (access.reason === "weapon_required") return "Arme équipée requise.";
+  if (access.reason === "missing_key") return `Clé T${String(dungeonTier)} requise.`;
+  return undefined;
+}
+
+function isHardLocked(access: DungeonAccessState): boolean {
+  return access.reason === "research_locked"
+    || access.reason === "progression_locked"
+    || access.reason === "equipment_tier_locked";
+}
+
+function getEnterLabel(access: DungeonAccessState): string {
+  if (isHardLocked(access)) return "Verrouillé";
+  if (access.reason === "missing_key") return "Clé requise";
+  if (access.reason === "weapon_required") return "Arme requise";
+  return "Entrer";
 }
 
 export function WorldDungeonsView(): JSX.Element {
@@ -62,10 +104,12 @@ export function WorldDungeonsView(): JSX.Element {
     const activeRun = dungeonState.activeRun?.status === "active" ? dungeonState.activeRun : undefined;
     return {
       inventory: inventoryQuantities(state.inventory.slots),
+      accessByDefinitionId: Object.fromEntries(
+        DUNGEON_DEFINITIONS.map((dungeon) => [dungeon.id, dungeonState.getAccess(dungeon.id)]),
+      ),
       activeDefinitionId: activeRun?.definitionId ?? null,
       activeEncounterIndex: activeRun?.encounterIndex ?? null,
       pendingDefinitionId: dungeonState.pendingDefinitionId,
-      clearedTiers: dungeonState.clearedTiers,
       enemyName: state.enemyName,
       combatState: state.combatState,
     };
@@ -82,26 +126,28 @@ export function WorldDungeonsView(): JSX.Element {
       <div className="world-dungeons__list">
         {visibleDungeons.length === 0 ? <div className="world-dungeons__empty"><strong>Aucun donjon T{selectedTier} disponible.</strong><span>Ce palier sera ajouté à la progression des donjons.</span></div> : visibleDungeons.map((dungeon) => {
           const keyCount = presentation.inventory[dungeon.keyItemId] ?? 0;
+          const access = presentation.accessByDefinitionId[dungeon.id] ?? INVALID_ACCESS;
           const isActiveDungeon = presentation.activeDefinitionId === dungeon.id;
           const isPendingDungeon = presentation.pendingDefinitionId === dungeon.id;
-          const previousTier = dungeon.tier - 1;
-          const progressionUnlocked = dungeon.tier <= 4 || presentation.clearedTiers.includes(previousTier);
-          const lockMessage = progressionUnlocked ? undefined : `Validez d'abord un donjon T${String(previousTier)} pour débloquer les donjons T${String(dungeon.tier)}.`;
-          const canEnter = progressionUnlocked && presentation.activeDefinitionId === null && presentation.pendingDefinitionId === null && keyCount > 0;
+          const hardLocked = isHardLocked(access);
+          const lockMessage = getAccessMessage(access, dungeon.tier);
+          const canEnter = access.canEnter
+            && presentation.activeDefinitionId === null
+            && presentation.pendingDefinitionId === null;
           const progressedEncounterCount = isActiveDungeon && presentation.activeEncounterIndex !== null ? presentation.activeEncounterIndex : 0;
           const routeProgress = dungeon.encounters.length <= 1 ? 100 : Math.max(0, Math.min(100, (progressedEncounterCount / (dungeon.encounters.length - 1)) * 100));
           const visual = dungeonVisual(dungeon.faction, dungeon.tier);
           return (
             <article
               key={dungeon.id}
-              className={`world-dungeon-card${isActiveDungeon ? " is-active" : ""}${isPendingDungeon ? " is-pending" : ""}${progressionUnlocked ? "" : " is-locked"}`}
+              className={`world-dungeon-card${isActiveDungeon ? " is-active" : ""}${isPendingDungeon ? " is-pending" : ""}${hardLocked ? " is-locked" : ""}`}
               title={lockMessage}
-              aria-disabled={!progressionUnlocked || undefined}
+              aria-disabled={!canEnter || undefined}
             >
               <header className="world-dungeon-card__header">
                 <span className="world-dungeon-card__visual" data-tier={dungeon.tier} aria-hidden="true">{visual !== undefined ? <img src={visual} alt="" /> : null}</span>
                 <div className="world-dungeon-card__identity"><small>Donjon T{dungeon.tier}</small><h3>{dungeon.faction}</h3></div>
-                <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : !progressionUnlocked ? "is-locked" : ""}>{isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : !progressionUnlocked ? "Verrouillé" : "Disponible"}</span>
+                <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : hardLocked ? "is-locked" : ""}>{isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : hardLocked ? "Verrouillé" : "Disponible"}</span>
               </header>
               <div className="world-dungeon-card__stats"><span><small>Difficulté</small><strong>T{dungeon.tier}.3+</strong></span><span><small>Rencontres</small><strong>{dungeon.encounters.length}</strong></span><span><small>Clés</small><strong>{keyCount}</strong></span></div>
               <div className="world-dungeon-card__route" aria-label="Structure du donjon">
@@ -114,8 +160,8 @@ export function WorldDungeonsView(): JSX.Element {
               </div>
               {isActiveDungeon ? <div className="world-dungeon-card__current"><small>Combat actuel · Rencontre {(presentation.activeEncounterIndex ?? 0) + 1}/{dungeon.encounters.length}</small><strong>{presentation.enemyName || "Préparation de la rencontre…"}</strong></div> : isPendingDungeon ? <div className="world-dungeon-card__current is-pending"><small>Entrée en attente</small><strong>Le donjon commencera dès que l’ennemi actuel sera vaincu.</strong></div> : null}
               <footer className="world-dungeon-card__footer">
-                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{isActiveDungeon ? "Abandonner termine définitivement cette tentative." : !progressionUnlocked ? lockMessage : keyCount > 0 ? "En combat, l’entrée attendra la fin de l’ennemi actuel." : `Clé T${dungeon.tier} requise.`}</p>}
-                {isActiveDungeon ? <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>Abandonner</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} title={lockMessage} onClick={() => { startDungeon(dungeon.id); }}>{!progressionUnlocked ? "Verrouillé" : keyCount > 0 ? "Entrer" : "Clé requise"}</button> : null}
+                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{isActiveDungeon ? "Abandonner termine définitivement cette tentative." : lockMessage ?? "En combat, l’entrée attendra la fin de l’ennemi actuel."}</p>}
+                {isActiveDungeon ? <button type="button" className="is-danger" onClick={() => { abandonDungeon(); }}>Abandonner</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} title={lockMessage} onClick={() => { startDungeon(dungeon.id); }}>{getEnterLabel(access)}</button> : null}
               </footer>
             </article>
           );
