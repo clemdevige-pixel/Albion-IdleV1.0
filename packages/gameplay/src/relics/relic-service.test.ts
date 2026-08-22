@@ -5,88 +5,84 @@ import type { RelicDefinition } from "./types.js";
 const keeperRelic: RelicDefinition = {
   id: "relic_keeper",
   factionId: "keeper",
-  objectives: [
-    { id: "discovery", requirement: { type: "all_monsters_killed", monsterIds: ["keeper_warrior", "keeper_shaman"], minimumEach: 1 } },
-    { id: "familiarization", requirement: { type: "faction_kill_count", factionId: "keeper", minimum: 25 } },
-    { id: "deep_study", requirement: { type: "faction_kill_count", factionId: "keeper", minimum: 100 } },
-    { id: "elite_study", requirement: { type: "monster_kill_count", monsterId: "keeper_champion", minimum: 3 } },
-    { id: "territory", requirement: { type: "world_segment_progress", zoneDefId: "zone_frostpeak", minimumCompletedSegments: 5 } },
-  ],
+  sourceBossMonsterId: "boss_keeper_ancient",
+  chargeKillCount: 50,
 };
 
-function createFixture(options?: { readonly canReconstruct?: boolean }) {
-  const monsterKills = new Map<string, number>();
+function createFixture(options?: { readonly canExamine?: boolean }) {
   let factionKills = 0;
-  let eliteKills = 0;
-  let completedSegments = 0;
-  let canReconstruct = options?.canReconstruct ?? true;
+  let canExamine = options?.canExamine ?? true;
   const service = new RelicService(
     {
-      getMonsterKillCount: (id) => monsterKills.get(id) ?? 0,
       getFactionKillCount: () => factionKills,
-      getFactionEliteKillCount: () => eliteKills,
-      getCompletedSegmentCount: () => completedSegments,
     },
     {
-      canReconstructRelic: () => canReconstruct,
+      canReconstructRelic: () => canExamine,
     },
   );
   service.registerRelic(keeperRelic);
   return {
     service,
-    monsterKills,
     setFactionKills(value: number) { factionKills = value; },
-    setEliteKills(value: number) { eliteKills = value; },
-    setCompletedSegments(value: number) { completedSegments = value; },
-    setCanReconstruct(value: boolean) { canReconstruct = value; },
+    setCanExamine(value: boolean) { canExamine = value; },
   };
 }
 
-function completeKeeperObjectives(fixture: ReturnType<typeof createFixture>): void {
-  fixture.monsterKills.set("keeper_warrior", 1);
-  fixture.monsterKills.set("keeper_shaman", 1);
-  fixture.monsterKills.set("keeper_champion", 3);
-  fixture.setFactionKills(100);
-  fixture.setEliteKills(3);
-  fixture.setCompletedSegments(5);
-}
-
 describe("RelicService", () => {
-  it("derives fragment progress from authoritative sources and reconstructs automatically", () => {
+  it("drops the broken Relic on its authored boss and counts only later faction kills", () => {
     const fixture = createFixture();
-    completeKeeperObjectives(fixture);
+    fixture.setFactionKills(120);
 
-    expect(fixture.service.getProgress("relic_keeper")?.fragmentCount).toBe(5);
-    expect(fixture.service.resolveCompletedRelics()).toEqual(["relic_keeper"]);
-    expect(fixture.service.isReconstructed("relic_keeper")).toBe(true);
-    expect(fixture.service.resolveCompletedRelics()).toEqual([]);
+    expect(fixture.service.recordMonsterKill("boss_keeper_ancient")).toEqual(["relic_keeper"]);
+    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
+      state: "broken",
+      chargeKills: 0,
+      requiredChargeKills: 50,
+    });
+
+    fixture.setFactionKills(169);
+    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({ state: "broken", chargeKills: 49 });
+    fixture.setFactionKills(170);
+    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({ state: "charged", chargeKills: 50 });
   });
 
-  it("keeps historical objective progress while reconstruction authority is locked", () => {
-    const fixture = createFixture({ canReconstruct: false });
-    completeKeeperObjectives(fixture);
+  it("examines a charged Relic only when the Academy authority allows it", () => {
+    const fixture = createFixture({ canExamine: false });
+    fixture.setFactionKills(10);
+    fixture.service.recordMonsterKill("boss_keeper_ancient");
+    fixture.setFactionKills(60);
 
-    expect(fixture.service.getProgress("relic_keeper")?.fragmentCount).toBe(5);
-    expect(fixture.service.resolveCompletedRelics()).toEqual([]);
+    expect(fixture.service.examineRelic("relic_keeper"))
+      .toEqual({ ok: false, reason: "examination_locked" });
     expect(fixture.service.isReconstructed("relic_keeper")).toBe(false);
 
-    fixture.setCanReconstruct(true);
-    expect(fixture.service.resolveCompletedRelics()).toEqual(["relic_keeper"]);
+    fixture.setCanExamine(true);
+    expect(fixture.service.examineRelic("relic_keeper")).toEqual({ ok: true });
+    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("examined");
+    expect(fixture.service.isReconstructed("relic_keeper")).toBe(true);
   });
 
-  it("persists only permanent reconstruction, not duplicated objective counters", () => {
+  it("persists acquisition baseline and examined state", () => {
     const fixture = createFixture();
-    completeKeeperObjectives(fixture);
-    fixture.service.resolveCompletedRelics();
+    fixture.setFactionKills(25);
+    fixture.service.recordMonsterKill("boss_keeper_ancient");
+    fixture.setFactionKills(75);
+    fixture.service.examineRelic("relic_keeper");
 
     const restored = createFixture();
     restored.service.load(fixture.service.save());
-    expect(restored.service.isReconstructed("relic_keeper")).toBe(true);
+    expect(restored.service.getProgress("relic_keeper")?.state).toBe("examined");
   });
 
-  it("requires exactly five authored objectives in V1", () => {
+  it("migrates old reconstructed Relics to examined state", () => {
     const fixture = createFixture();
-    expect(fixture.service.registerRelic({ ...keeperRelic, id: "invalid", objectives: keeperRelic.objectives.slice(0, 4) }))
+    fixture.service.load({ version: 1, reconstructedRelicIds: ["relic_keeper"] });
+    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("examined");
+  });
+
+  it("rejects invalid authored charge contracts", () => {
+    const fixture = createFixture();
+    expect(fixture.service.registerRelic({ ...keeperRelic, id: "invalid", chargeKillCount: 0 }))
       .toEqual({ ok: false, reason: "invalid_definition" });
   });
 });
