@@ -109,6 +109,15 @@ describe("Academy research content", () => {
     expect(definition?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.advancedWorkerOrganization]);
   });
 
+  it("authors the T7 instant refining unlock", () => {
+    const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.instantRefining);
+    expect(definition?.tier).toBe(7);
+    expect(definition?.durationMs).toBe(3 * 60 * 60 * 1000);
+    expect(definition?.cost).toEqual({ silver: 80_000, materials: [] });
+    expect(definition?.requirements).toContainEqual({ type: "academy_tier", minimumTier: 7 });
+    expect(definition?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.instantRefining]);
+  });
+
   it("authors the charged Relic -> analysis -> sanctuary discovery chain", () => {
     const analysis = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.dungeonRelicAnalysis);
     expect(analysis?.tier).toBe(4);
