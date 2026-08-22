@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACADEMY_LEVELS,
   getAcademyResearchTier,
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
+  getIslandUpgradeableLevelDefinition,
 } from "../index.js";
 
 describe("Academy island contract", () => {
@@ -24,8 +26,31 @@ describe("Academy island contract", () => {
     });
   });
 
-  it("starts as a T4 academy without authoring future upgrade costs", () => {
-    expect(getAcademyResearchTier(1)).toBe(4);
-    expect(getAcademyResearchTier(2)).toBeUndefined();
+  it("authors one academy level per Research tier T4-T8", () => {
+    expect(ACADEMY_LEVELS.map(({ level, researchTier }) => [level, researchTier])).toEqual([
+      [1, 4],
+      [2, 5],
+      [3, 6],
+      [4, 7],
+      [5, 8],
+    ]);
+    for (const level of ACADEMY_LEVELS) {
+      expect(getAcademyResearchTier(level.level)).toBe(level.researchTier);
+      expect(getIslandUpgradeableLevelDefinition("academy", level.level)?.level).toBe(level.level);
+    }
+  });
+
+  it("keeps academy upgrade materials at half the Workshop per-family curve", () => {
+    expect(ACADEMY_LEVELS.map(({ researchTier, upgradeToNext }) => [
+      researchTier,
+      upgradeToNext?.silver,
+      upgradeToNext?.requirements.map(({ quantity }) => quantity),
+    ])).toEqual([
+      [4, 5_000, [5, 5, 5, 5]],
+      [5, 18_000, [9, 9, 9, 9]],
+      [6, 50_000, [14, 14, 14, 14]],
+      [7, 85_000, [20, 20, 20, 20]],
+      [8, undefined, undefined],
+    ]);
   });
 });
