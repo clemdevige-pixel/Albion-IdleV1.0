@@ -1,3 +1,4 @@
+import type { RelicKillEvent } from "@game/gameplay";
 import type { FactionResearchFoundation } from "./createFactionResearchFoundation.js";
 
 interface ResearchProgressionPort {
@@ -14,6 +15,8 @@ export interface FactionProgressionCoordinatorDependencies<TCompletion> {
   readonly factionResearchFoundation: FactionResearchFoundation;
   readonly researchService: ResearchProgressionPort;
   readonly expeditionService: ExpeditionProgressionPort<TCompletion>;
+  readonly reconcileResearchEffects?: () => void;
+  readonly onResearchCompletion?: (researchId: string) => void;
   readonly onExpeditionCompletion: (completed: readonly TCompletion[]) => void;
 }
 
@@ -25,23 +28,27 @@ export interface FactionProgressionCoordinatorDependencies<TCompletion> {
 export function createFactionProgressionCoordinator<TCompletion>(
   dependencies: FactionProgressionCoordinatorDependencies<TCompletion>,
 ) {
-  dependencies.researchService.onCompleted(() => {
+  dependencies.researchService.onCompleted((researchId) => {
+    dependencies.reconcileResearchEffects?.();
     dependencies.factionResearchFoundation.resolveWorldProgress();
+    dependencies.onResearchCompletion?.(researchId);
   });
   dependencies.expeditionService.onCompleted((completed) => {
     dependencies.onExpeditionCompletion(completed);
   });
 
   return {
-    recordMonsterKill(this: void, monsterId: string): void {
-      dependencies.factionResearchFoundation.recordMonsterKill(monsterId);
+    recordMonsterKill(this: void, kill: RelicKillEvent): void {
+      dependencies.factionResearchFoundation.recordMonsterKill(kill);
     },
 
     onWorldProgress(this: void): void {
+      dependencies.reconcileResearchEffects?.();
       dependencies.factionResearchFoundation.resolveWorldProgress();
     },
 
     reconcile(this: void): void {
+      dependencies.reconcileResearchEffects?.();
       dependencies.factionResearchFoundation.resolveWorldProgress();
     },
 
