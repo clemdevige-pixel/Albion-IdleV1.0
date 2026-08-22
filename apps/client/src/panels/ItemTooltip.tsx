@@ -189,10 +189,18 @@ export function ItemTooltip({
             </strong>
           </div>
           {(relicProgress.state === "broken" || relicProgress.state === "charged") && (
-            <div>
-              <span>Charge</span>
-              <strong>{String(relicProgress.chargeKills)} / {String(relicProgress.requiredChargeKills)}</strong>
-            </div>
+            <>
+              <div>
+                <span>Charge totale</span>
+                <strong>{String(relicProgress.chargeKills)} / {String(relicProgress.requiredChargeKills)}</strong>
+              </div>
+              {relicProgress.chargeObjectives.map((objective) => (
+                <div key={objective.factionId}>
+                  <span>{FACTION_LABELS[objective.factionId] ?? objective.factionId}</span>
+                  <strong>{String(objective.chargeKills)} / {String(objective.requiredChargeKills)}</strong>
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}
