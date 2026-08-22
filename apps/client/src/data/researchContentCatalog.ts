@@ -16,14 +16,15 @@ export const RESEARCH_UNLOCK_IDS = {
   expeditionTier7: "expedition_tier:7",
   expeditionTier8: "expedition_tier:8",
   secondExpeditionSlot: "expedition_slot:2",
+  equipmentPresets: "equipment_presets",
   keeperExpeditionFamily: "expedition_family:keeper",
   keeperDungeonFamily: "dungeon_family:keeper",
 } as const;
 
 /**
  * Only researches whose tuning is explicitly validated are authored here.
- * Cartography / Archaeology costs and durations remain OPEN in system 44 and
- * must not receive placeholder values.
+ * Cartography / Archaeology / Doctrine d'equipement costs and durations remain
+ * OPEN and must not receive placeholder values.
  */
 export const RESEARCH_DEFINITIONS = [
   {
