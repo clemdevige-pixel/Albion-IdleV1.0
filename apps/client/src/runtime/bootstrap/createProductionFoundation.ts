@@ -30,6 +30,7 @@ import { GatheringRuntime } from "../GatheringRuntime.js";
 import { RefiningRuntime } from "../RefiningRuntime.js";
 import { WorkerRuntime } from "../WorkerRuntime.js";
 import { createAtomicProductionInventoryManager } from "../AtomicProductionInventory.js";
+import { isDevSandboxMode } from "../devSandbox.js";
 
 interface ProductionFoundationDependencies {
   readonly inventoryManager: InventoryManager;
@@ -182,6 +183,23 @@ export function createProductionFoundation({
     ...(getWorkerProfessionCapacity === undefined ? {} : { getWorkerProfessionCapacity }),
     ...(getWorkerRecruitmentCost === undefined ? {} : { getWorkerRecruitmentCost }),
   });
+
+  if (isDevSandboxMode()) {
+    const professions = [
+      "woodcutter",
+      "miner",
+      "skinner",
+      "fiber_harvester",
+    ] as const satisfies readonly WorkerProfession[];
+    for (const profession of professions) {
+      while (workerRuntime.getWorkersByProfession(profession).length < 2) {
+        const recruited = workerRuntime.recruitWorker(profession);
+        if (!recruited.ok) {
+          throw new Error(`Dev sandbox failed to recruit ${profession}: ${recruited.reason}`);
+        }
+      }
+    }
+  }
 
   workerRuntime.subscribeDomainEvent((event) => {
     if (event.type === "storage_full") {
