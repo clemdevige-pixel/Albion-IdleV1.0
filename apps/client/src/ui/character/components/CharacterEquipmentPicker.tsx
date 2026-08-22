@@ -1,10 +1,10 @@
 import { createPortal } from "react-dom";
 import type { InventorySlotVM } from "../../../game/GameBridge";
+import { getItemTier } from "../../../data/itemPower";
 import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import {
   getEnchantmentTextClass,
   getEquipmentTierFrameClass,
-  getItemDefinition,
   getItemDisplayName,
   ItemVisual,
 } from "../../../panels/ItemVisual";
@@ -29,16 +29,16 @@ export function CharacterEquipmentPicker({ label, candidates, x, y, onClose, onE
         <div className="character-picker__grid">
           {candidates.map((candidate) => {
             if (candidate.itemId === undefined) return null;
-            const definition = getItemDefinition(candidate.itemId);
+            const tier = getItemTier(candidate.itemId);
             return (
               <ItemHoverTooltip key={candidate.position} itemId={candidate.itemId} quantity={candidate.quantity} instanceId={candidate.instanceId}>
-                <button type="button" className={`character-picker__item${getEquipmentTierFrameClass(definition?.tier)}`} onClick={() => { onEquip(candidate.position); }}>
+                <button type="button" className={`character-picker__item${getEquipmentTierFrameClass(tier)}`} onClick={() => { onEquip(candidate.position); }}>
                   <span className="character-picker__icon">
                     <ItemVisual itemId={candidate.itemId} />
                     {candidate.quantity > 1 && <small>{String(candidate.quantity)}</small>}
                   </span>
                   <span>{getItemDisplayName(candidate.itemId)}</span>
-                  {definition !== undefined && <strong className={getEnchantmentTextClass(candidate.enchantment).trim()}>T{String(definition.tier)}.{String(candidate.enchantment)}</strong>}
+                  {tier !== undefined && <strong className={getEnchantmentTextClass(candidate.enchantment).trim()}>T{String(tier)}.{String(candidate.enchantment)}</strong>}
                 </button>
               </ItemHoverTooltip>
             );
