@@ -1,9 +1,7 @@
 import {
   ISLAND_BUILDING_IDS,
   PLAYER_ISLAND_CONFIG,
-  getIslandBuildingDefinition,
   getIslandLevelDefinition,
-  getIslandOperationalLevelDefinition,
   getIslandUpgradeableLevelDefinition,
   getNextIslandLevelDefinition,
   type IslandBuildingId,
@@ -177,6 +175,8 @@ export class PlayerIslandService implements SaveProvider {
       plots: this.#config.plots.map((plot) => ({ id: plot.id, buildingInstanceId: savedPlotById.get(plot.id)?.buildingInstanceId ?? null })),
       buildings: parsed.data.buildings.map((building) => ({
         ...building,
+        // Legacy production-building levels are intentionally collapsed to level 1.
+        // Authored special buildings (currently Academy) keep their valid progression.
         level: clampBuildingLevelToIsland(
           building.definitionId,
           building.level,
@@ -196,14 +196,6 @@ export class PlayerIslandService implements SaveProvider {
     if (snapshotPlotIds.size !== snapshot.plots.length || snapshot.plots.some((plot) => !validPlotIds.has(plot.id))) return false;
     if (buildingInstanceIds.size !== snapshot.buildings.length || buildingDefinitionIds.size !== snapshot.buildings.length) return false;
     if (snapshot.buildings.some((building) => !validPlotIds.has(building.plotId) || !validBuildingIds.has(building.definitionId))) return false;
-    for (const building of snapshot.buildings) {
-      const definition = getIslandBuildingDefinition(building.definitionId);
-      const progression = getIslandOperationalLevelDefinition(building.definitionId, building.level);
-      const progressionOptional = definition.category === "utility"
-        || definition.category === "workers"
-        || definition.category === "storage";
-      if (!progressionOptional && progression === undefined) return false;
-    }
     for (const plot of snapshot.plots) if (plot.buildingInstanceId !== null && !buildingInstanceIds.has(plot.buildingInstanceId)) return false;
     for (const building of snapshot.buildings) {
       const plot = snapshot.plots.find((candidate) => candidate.id === building.plotId);
