@@ -47,6 +47,10 @@ export class AcademyResearchService extends ResearchService<ResearchContentRequi
     this.#relicService = relicService;
   }
 
+  isRelicExamined(relicId: string): boolean {
+    return this.#relicService.isExamined(relicId);
+  }
+
   getRelicGateState(researchId: string): RelicGateState {
     const requirement = getRelicRequirement(researchId);
     if (requirement === undefined) return "none";
