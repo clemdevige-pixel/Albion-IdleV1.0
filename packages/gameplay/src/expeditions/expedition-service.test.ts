@@ -84,6 +84,31 @@ describe("ExpeditionService", () => {
     expect(third.startExpedition("expedition_silver_t4", DURATION_12H).ok).toBe(true);
   });
 
+  it("projects requirements, active type and slot blockers without mutating state", () => {
+    const locked = createService({ capacity: 1 });
+    locked.service.registerExpedition(createDefinition({
+      requirements: [{ type: "flag", flagId: "cartography_1" }],
+    }));
+    expect(locked.service.getSlotCapacity()).toBe(1);
+    expect(locked.service.getStartState("expedition_silver_t4")).toBe("requirements_locked");
+
+    const service = createService({ capacity: 1 }).service;
+    service.registerExpedition(createDefinition());
+    service.registerExpedition(createDefinition({
+      id: "expedition_silver_t5",
+      tier: 5,
+    }));
+    service.registerExpedition(createDefinition({
+      id: "expedition_keeper_t4",
+      typeId: "keeper",
+      displayName: "Keeper Expedition T4",
+    }));
+    expect(service.getStartState("expedition_silver_t4")).toBe("available");
+    service.startExpedition("expedition_silver_t4", DURATION_2H);
+    expect(service.getStartState("expedition_silver_t5")).toBe("type_active");
+    expect(service.getStartState("expedition_keeper_t4")).toBe("no_available_slot");
+  });
+
   it("blocks an expedition until its authored requirements are satisfied", () => {
     const { service } = createService();
     service.registerExpedition(createDefinition({
