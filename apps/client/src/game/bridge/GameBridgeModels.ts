@@ -4,7 +4,7 @@ import {
   type IslandBuildingId,
   type WorldBandId,
 } from "@game/data";
-import type { CombatState, EquipmentSlot, VendorRole, WorkerProfession } from "@game/gameplay";
+import type { CombatState, EquipmentSlot, VendorRole, WorkerId, WorkerProfession } from "@game/gameplay";
 
 export interface DamageNumberEvent {
   readonly id: number;
@@ -137,12 +137,7 @@ export interface RepairVM {
   readonly totalCost: number;
 }
 
-export type TransactionEntryType =
-  | "purchase"
-  | "sale"
-  | "repair"
-  | "credit"
-  | "debit";
+export type TransactionEntryType = "purchase" | "sale" | "repair" | "credit" | "debit";
 
 export interface TransactionEntryVM {
   readonly id: string;
@@ -223,10 +218,7 @@ export interface GatheringVM {
     readonly cycleId: string;
     readonly strikesUsed: number;
   } | undefined;
-  readonly activeMiniGame?: {
-    readonly cycleId: string;
-    readonly strikesUsed: number;
-  } | undefined;
+  readonly activeMiniGame?: { readonly cycleId: string; readonly strikesUsed: number } | undefined;
 }
 
 export interface RefiningRequirementVM {
@@ -285,7 +277,7 @@ export interface CraftingVM {
 export type WorkerProfessionVM = WorkerProfession;
 
 export interface WorkerVM {
-  readonly id: string;
+  readonly id: WorkerId;
   readonly displayName: string;
   readonly profession: WorkerProfessionVM;
   readonly professionName: string;
@@ -302,26 +294,14 @@ export interface WorkerVM {
 
 export interface WorkersVM {
   readonly capacity: number;
+  readonly professionCapacity: number;
   readonly recruitmentCost: number;
   readonly workers: readonly WorkerVM[];
 }
 
-export interface IslandPlotVM {
-  readonly id: string;
-  readonly buildingInstanceId: string | null;
-}
-
-export interface IslandBuildingVM {
-  readonly instanceId: string;
-  readonly definitionId: IslandBuildingId;
-  readonly plotId: string;
-  readonly level: number;
-}
-
-export interface IslandVM {
-  readonly plots: readonly IslandPlotVM[];
-  readonly buildings: readonly IslandBuildingVM[];
-}
+export interface IslandPlotVM { readonly id: string; readonly buildingInstanceId: string | null; }
+export interface IslandBuildingVM { readonly instanceId: string; readonly definitionId: IslandBuildingId; readonly plotId: string; readonly level: number; }
+export interface IslandVM { readonly plots: readonly IslandPlotVM[]; readonly buildings: readonly IslandBuildingVM[]; }
 
 export interface GameBridgeState {
   readonly playerHealth: number;
@@ -402,9 +382,6 @@ export function createInitialGameBridgeState(): GameBridgeState {
     enemyMaxHealth: 0,
     combatState: "idle",
     enemyName: "",
-    // Technical fallback only: enemyMaxHealth === 0 means there is no
-    // authoritative enemy. Keeping a valid manifest prevents bootstrap-only
-    // presentation helpers from resolving an empty manifest id.
     enemyVisualManifestId: TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
     enemiesKilled: 0,
     zoneElapsed: 0,
@@ -413,11 +390,7 @@ export function createInitialGameBridgeState(): GameBridgeState {
     damageNumbers: [],
     activeEffects: [],
     abilities: { primary: null, secondary: null, ultimate: null },
-    consumables: {
-      healthPotionCooldown: 20,
-      healthPotionCooldownRemaining: 0,
-      healthPotionHealPercent: 30,
-    },
+    consumables: { healthPotionCooldown: 20, healthPotionCooldownRemaining: 0, healthPotionHealPercent: 30 },
     inventory: EMPTY_INVENTORY,
     bank: EMPTY_INVENTORY,
     equipment: { slots: [] },
@@ -456,41 +429,17 @@ export function createInitialGameBridgeState(): GameBridgeState {
     },
     queuedGatheringFamily: null,
     gathering: EMPTY_GATHERING,
-    oreGathering: {
-      ...EMPTY_GATHERING,
-      resourceName: "Minerai de cuivre",
-      resourceFamily: "Ore",
-      resourceTier: 3,
-      visualManifestId: "resource_ore",
-    },
-    hideGathering: {
-      ...EMPTY_GATHERING,
-      resourceName: "Peau robuste",
-      resourceFamily: "Hide",
-      resourceTier: 3,
-      visualManifestId: "resource_hide",
-    },
-    fiberGathering: {
-      ...EMPTY_GATHERING,
-      resourceName: "Fibre de lin",
-      resourceFamily: "Fiber",
-      resourceTier: 3,
-      visualManifestId: "resource_fiber",
-    },
+    oreGathering: { ...EMPTY_GATHERING, resourceName: "Minerai de cuivre", resourceFamily: "Ore", resourceTier: 3, visualManifestId: "resource_ore" },
+    hideGathering: { ...EMPTY_GATHERING, resourceName: "Peau robuste", resourceFamily: "Hide", resourceTier: 3, visualManifestId: "resource_hide" },
+    fiberGathering: { ...EMPTY_GATHERING, resourceName: "Fibre de lin", resourceFamily: "Fiber", resourceTier: 3, visualManifestId: "resource_fiber" },
     refining: EMPTY_REFINING,
     metalRefining: { ...EMPTY_REFINING, recipeName: "Lingots de cuivre" },
     leatherRefining: { ...EMPTY_REFINING, recipeName: "Cuir robuste" },
     clothRefining: { ...EMPTY_REFINING, recipeName: "Tissu de lin" },
-    crafting: {
-      productionTier: 3,
-      plankQuantity: 0,
-      barQuantity: 0,
-      leatherQuantity: 0,
-      clothQuantity: 0,
-      recipes: [],
-    },
+    crafting: { productionTier: 3, plankQuantity: 0, barQuantity: 0, leatherQuantity: 0, clothQuantity: 0, recipes: [] },
     workers: {
       capacity: INITIAL_WORKER_HOUSE.workerCapacity,
+      professionCapacity: 1,
       recruitmentCost: INITIAL_WORKER_HOUSE.recruitmentCost,
       workers: [],
     },
