@@ -49,10 +49,12 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       label: "Terminer Dark Swamp",
     },
     upgradeCost: {
-      silver: 1000,
+      silver: 2_000,
       requirements: [
-        { itemId: "item_resource_wood_t3", quantity: 40 },
-        { itemId: "item_resource_copper_ore_t3", quantity: 40 },
+        { itemId: "item_refined_planks_t3", quantity: 8 },
+        { itemId: "item_refined_copper_bar_t3", quantity: 8 },
+        { itemId: "item_refined_leather_t3", quantity: 8 },
+        { itemId: "item_refined_cloth_t3", quantity: 8 },
       ],
     },
   },
@@ -68,10 +70,12 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       label: "Terminer Frostpeak Mountain",
     },
     upgradeCost: {
-      silver: 18000,
+      silver: 30_000,
       requirements: [
-        { itemId: "item_refined_planks_t4", quantity: 30 },
-        { itemId: "item_refined_metal_bar_t4", quantity: 30 },
+        { itemId: "item_refined_planks_t4", quantity: 20 },
+        { itemId: "item_refined_metal_bar_t4", quantity: 20 },
+        { itemId: "item_refined_leather_t4", quantity: 20 },
+        { itemId: "item_refined_cloth_t4", quantity: 20 },
       ],
     },
   },
@@ -87,10 +91,12 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       label: "Terminer Ironveil Peaks",
     },
     upgradeCost: {
-      silver: 60000,
+      silver: 100_000,
       requirements: [
         { itemId: "item_refined_planks_t5", quantity: 40 },
         { itemId: "item_refined_metal_bar_t5", quantity: 40 },
+        { itemId: "item_refined_leather_t5", quantity: 40 },
+        { itemId: "item_refined_cloth_t5", quantity: 40 },
       ],
     },
   },
@@ -106,10 +112,12 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       label: "Terminer Ashenpeak Mountain",
     },
     upgradeCost: {
-      silver: 155000,
+      silver: 265_000,
       requirements: [
-        { itemId: "item_refined_planks_t6", quantity: 50 },
-        { itemId: "item_refined_metal_bar_t6", quantity: 50 },
+        { itemId: "item_refined_planks_t6", quantity: 60 },
+        { itemId: "item_refined_metal_bar_t6", quantity: 60 },
+        { itemId: "item_refined_leather_t6", quantity: 60 },
+        { itemId: "item_refined_cloth_t6", quantity: 60 },
       ],
     },
   },
@@ -125,10 +133,12 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
       label: "Terminer Doompeak Mountain",
     },
     upgradeCost: {
-      silver: 270000,
+      silver: 450_000,
       requirements: [
-        { itemId: "item_refined_planks_t7", quantity: 60 },
-        { itemId: "item_refined_metal_bar_t7", quantity: 60 },
+        { itemId: "item_refined_planks_t7", quantity: 90 },
+        { itemId: "item_refined_metal_bar_t7", quantity: 90 },
+        { itemId: "item_refined_leather_t7", quantity: 90 },
+        { itemId: "item_refined_cloth_t7", quantity: 90 },
       ],
     },
   },
