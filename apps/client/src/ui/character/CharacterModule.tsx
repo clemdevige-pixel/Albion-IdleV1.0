@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { EquipmentLoadout, EquipmentSlot } from "@game/gameplay";
 import { getItemTier } from "../../data/itemPower";
-import { getItemDefinition } from "../../panels/ItemVisual";
+import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { ItemSlot } from "../shared/ItemSlot";
 import { getEquippedHeroIdlePresentation } from "./characterPresentation";
 import { AwakenedWeaponPanel } from "./components/AwakenedWeaponPanel";
@@ -72,11 +72,11 @@ export function CharacterModule(): JSX.Element {
   const equippedWeapon = equipmentBySlot.get("weapon");
   const heroIdle = getEquippedHeroIdlePresentation(equippedWeapon?.itemId);
   const hasTwoHandedWeapon = equippedWeapon?.itemId !== undefined
-    && getItemDefinition(equippedWeapon.itemId)?.handling === "two_handed";
+    && resolveEquipmentInfo(equippedWeapon.itemId)?.handling === "two_handed";
   const candidates = pickerSlot === null
     ? []
     : character.inventory.filter((entry) => entry.itemId !== undefined
-      && getItemDefinition(entry.itemId)?.slot === pickerSlot.slot);
+      && resolveEquipmentInfo(entry.itemId)?.slot === pickerSlot.slot);
 
   const saveNewLoadout = (): void => {
     const ordinal = loadouts.length + 1;
