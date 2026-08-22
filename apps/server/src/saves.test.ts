@@ -4,6 +4,7 @@ import {
   AUTH_REGISTER_ROUTE,
   CLOUD_SAVES_ROUTE,
   AuthSessionSchema,
+  CloudSaveDocumentSchema,
   type CloudSaveDocument,
 } from "@game/shared";
 import { buildServer } from "./app.js";
@@ -45,7 +46,7 @@ describe("authenticated cloud saves", () => {
 
     const stored = await app.inject({ method: "PUT", url: `${CLOUD_SAVES_ROUTE}/player_slot_1`, headers, payload: save });
     expect(stored.statusCode).toBe(200);
-    const storedBody = stored.json() as { accepted: boolean; updatedAt: number; serverSavedAt: number };
+    const storedBody: { accepted: boolean; updatedAt: number; serverSavedAt: number } = stored.json();
     expect(storedBody.accepted).toBe(true);
     expect(storedBody.updatedAt).toBe(200);
     expect(Number.isSafeInteger(storedBody.serverSavedAt)).toBe(true);
@@ -54,7 +55,7 @@ describe("authenticated cloud saves", () => {
     expect(list.json()).toEqual({ saves: [{ slotId: "player_slot_1", updatedAt: 200 }] });
 
     const restored = await app.inject({ method: "GET", url: `${CLOUD_SAVES_ROUTE}/player_slot_1`, headers });
-    const restoredBody = restored.json() as CloudSaveDocument;
+    const restoredBody = CloudSaveDocumentSchema.parse(restored.json());
     expect(restoredBody.payload).toEqual(save.payload);
     expect(restoredBody.metadata.updatedAt).toBe(200);
     expect(restoredBody.metadata.extra?.serverSavedAt).toBe(storedBody.serverSavedAt);
