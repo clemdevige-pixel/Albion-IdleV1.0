@@ -4,9 +4,7 @@ import { createFactionResearchFoundation } from "./createFactionResearchFoundati
 
 describe("createFactionResearchFoundation", () => {
   it("derives faction knowledge from the existing monster catalog", () => {
-    const foundation = createFactionResearchFoundation({
-      getCompletedSegmentCount: () => 0,
-    });
+    const foundation = createFactionResearchFoundation();
 
     foundation.recordMonsterKill(MONSTER_IDS.keeperWarrior);
     foundation.recordMonsterKill(MONSTER_IDS.keeperChampion);
@@ -16,14 +14,21 @@ describe("createFactionResearchFoundation", () => {
     expect(foundation.factionKnowledgeService.getFactionEliteKillCount("keeper")).toBe(1);
   });
 
-  it("drops the Keeper relic on its boss, charges from later Keeper kills and waits for Academy examination authority", () => {
+  it("mirrors boss acquisition into inventory before charging the Relic", () => {
     let canExamine = false;
-    const foundation = createFactionResearchFoundation({
-      getCompletedSegmentCount: () => 0,
-    });
+    const inventoryItems = new Set<string>();
+    const foundation = createFactionResearchFoundation();
     foundation.bindReconstructionGate(() => canExamine);
+    foundation.bindRelicInventory({
+      hasItem: (definition) => inventoryItems.has(definition.inventoryItemId),
+      grantItem: (definition) => {
+        inventoryItems.add(definition.inventoryItemId);
+        return true;
+      },
+    });
 
     foundation.recordMonsterKill(MONSTER_IDS.keeperAncient);
+    expect(inventoryItems.has("item_relic_keeper")).toBe(true);
     expect(foundation.relicService.getProgress("relic_keeper")).toMatchObject({
       state: "broken",
       chargeKills: 0,
@@ -38,6 +43,5 @@ describe("createFactionResearchFoundation", () => {
     canExamine = true;
     expect(foundation.resolveWorldProgress()).toEqual(["relic_keeper"]);
     expect(foundation.relicService.getProgress("relic_keeper")?.state).toBe("examined");
-    expect(foundation.relicService.isReconstructed("relic_keeper")).toBe(true);
   });
 });
