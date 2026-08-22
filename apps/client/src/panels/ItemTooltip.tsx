@@ -22,6 +22,7 @@ import {
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 import { getFactionCapeDefinition } from "../data/factionCapeContentCatalog";
 import { getRelicDefinitionByInventoryItemId } from "../data/relicContentCatalog";
+import { RESEARCH_IDS } from "../data/researchContentCatalog";
 
 const SLOT_LABELS: Readonly<Record<string, string>> = {
   head: "Tête", chest: "Torse", boots: "Bottes", weapon: "Arme", off_hand: "Main gauche", cape: "Cape",
@@ -152,6 +153,15 @@ export function ItemTooltip({
     : [];
   const consumableDescription = itemId === "item_health_potion"
     ? `Restaure ${String(state.consumables.healthPotionHealPercent)}% des PV maximum. Recharge : ${String(state.consumables.healthPotionCooldown)} s.`
+    : undefined;
+  const isEnchantmentShard = /^item_resource_enchantment_shard_t[4-8]$/.test(itemId);
+  const enchantmentResearchCompleted = services.getAcademyModel().research.some((entry) => (
+    entry.id === RESEARCH_IDS.enchantmentStudy && entry.state === "completed"
+  ));
+  const enchantmentShardDescription = isEnchantmentShard
+    ? enchantmentResearchCompleted
+      ? "Permet d’enchanter les équipements T4+ auprès du Marchand."
+      : "Un éclat chargé d’une énergie inconnue. L’Académie pourrait permettre d’en comprendre l’usage."
     : undefined;
   const displayName = factionCapeDefinition?.name ?? getItemDisplayName(itemId);
   const displayTier = visualDefinition?.tier ?? factionCapeDefinition?.tier;
@@ -321,6 +331,9 @@ export function ItemTooltip({
 
       {consumableDescription !== undefined && (
         <p className="item-tooltip__description">{consumableDescription}</p>
+      )}
+      {enchantmentShardDescription !== undefined && (
+        <p className="item-tooltip__description">{enchantmentShardDescription}</p>
       )}
 
       {durability !== undefined && (
