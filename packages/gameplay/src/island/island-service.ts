@@ -67,6 +67,24 @@ function createInitialState(config: PlayerIslandConfig): PlayerIslandState {
   };
 }
 
+function clampBuildingLevelToIsland(
+  definitionId: IslandBuildingId,
+  savedLevel: number,
+  islandLevel: number,
+  maxBuildingLevel: number,
+): number {
+  let candidateLevel = Math.min(savedLevel, maxBuildingLevel);
+  while (candidateLevel > 1) {
+    const definition = getIslandUpgradeableLevelDefinition(definitionId, candidateLevel);
+    if (
+      definition !== undefined
+      && (definition.minimumIslandLevel ?? definition.level) <= islandLevel
+    ) return candidateLevel;
+    candidateLevel -= 1;
+  }
+  return 1;
+}
+
 /** Authoritative Player Island state. Economy, workers and production remain owned by their existing domains. */
 export class PlayerIslandService implements SaveProvider {
   readonly providerId = "player_island";
@@ -159,7 +177,12 @@ export class PlayerIslandService implements SaveProvider {
       plots: this.#config.plots.map((plot) => ({ id: plot.id, buildingInstanceId: savedPlotById.get(plot.id)?.buildingInstanceId ?? null })),
       buildings: parsed.data.buildings.map((building) => ({
         ...building,
-        level: Math.min(building.level, maxBuildingLevel),
+        level: clampBuildingLevelToIsland(
+          building.definitionId,
+          building.level,
+          islandLevel,
+          maxBuildingLevel,
+        ),
       })),
     };
   }
