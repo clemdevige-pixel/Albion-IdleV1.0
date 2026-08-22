@@ -14,6 +14,7 @@ import type {
   ExpeditionDurationMs,
   InventoryManager,
   PlayerId,
+  RelicProgressView,
   StartExpeditionResult,
   StartResearchResult,
   StatsManager,
@@ -73,6 +74,7 @@ export interface GameServices {
   readonly dismissExpeditionRecap: () => void;
   readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
   readonly getBestiaryKnowledge: (monsterId: string) => BestiaryKnowledgeModel;
+  readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
