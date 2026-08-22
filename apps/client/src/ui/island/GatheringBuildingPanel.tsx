@@ -62,6 +62,7 @@ export function GatheringBuildingPanel({
         <GatheringWorkerControl
           key={worker.id}
           worker={worker}
+          professionWorkers={professionWorkers}
           workerIndex={index}
           maxTier={maxTier}
           productionFamily={service.productionFamily}
@@ -73,11 +74,13 @@ export function GatheringBuildingPanel({
 
 function GatheringWorkerControl({
   worker,
+  professionWorkers,
   workerIndex,
   maxTier,
   productionFamily,
 }: {
   readonly worker: WorkerVM;
+  readonly professionWorkers: readonly WorkerVM[];
   readonly workerIndex: number;
   readonly maxTier: ProductionTier;
   readonly productionFamily: "wood" | "ore" | "hide" | "fiber";
@@ -95,6 +98,11 @@ function GatheringWorkerControl({
     ? getRequiredGatheringMasteryForTier(selectedTier)
     : Number.POSITIVE_INFINITY;
   const masteryBlocked = worker.mastery < requiredMastery;
+  const selectedTierOccupied = professionWorkers.some((candidate) => (
+    candidate.id !== worker.id
+    && candidate.state === "working"
+    && candidate.productionTier === selectedTier
+  ));
   const progress = Math.max(0, Math.min(100, worker.progress));
   const selectedRawItemId = selectedTierIsAuthored
     ? getProductionRefiningRecipe(productionFamily, selectedTier).rawItemId
@@ -121,7 +129,9 @@ function GatheringWorkerControl({
       <div className="ui-island-gathering-building__hint">
         {worker.state === "working"
           ? `Production automatique active en T${String(worker.productionTier)}.`
-          : `Sélectionnez T${String(selectedTier)} puis lancez la production.`}
+          : selectedTierOccupied
+            ? `T${String(selectedTier)} déjà occupé par l’autre ${family.professionName.toLocaleLowerCase("fr-FR")}.`
+            : `Sélectionnez T${String(selectedTier)} puis lancez la production.`}
       </div>
 
       <div className="ui-island-gathering-building__tiers" role="group" aria-label={`Tier de production de ${worker.displayName}`}>
@@ -129,14 +139,21 @@ function GatheringWorkerControl({
           const authored = GATHERING_CONTENT_TIERS.some((contentTier) => contentTier === tier);
           const masteryLocked = authored && worker.mastery < getRequiredGatheringMasteryForTier(tier);
           const islandLocked = tier > maxTier;
-          const unavailable = !authored || masteryLocked || islandLocked;
+          const tierOccupied = professionWorkers.some((candidate) => (
+            candidate.id !== worker.id
+            && candidate.state === "working"
+            && candidate.productionTier === tier
+          ));
+          const unavailable = !authored || masteryLocked || islandLocked || tierOccupied;
           const title = !authored
             ? `T${String(tier)} prévu pour le futur contenu`
             : islandLocked
               ? `Améliorez l’île pour débloquer T${String(tier)}`
               : masteryLocked
                 ? `Maîtrise ${String(getRequiredGatheringMasteryForTier(tier))} requise`
-                : undefined;
+                : tierOccupied
+                  ? `Un autre ${family.professionName.toLocaleLowerCase("fr-FR")} travaille déjà en T${String(tier)}`
+                  : undefined;
           return (
             <button
               key={tier}
@@ -166,16 +183,18 @@ function GatheringWorkerControl({
       <button
         className="ui-island-gathering-building__action"
         type="button"
-        disabled={masteryBlocked || selectedTier > maxTier || !selectedTierIsAuthored}
+        disabled={masteryBlocked || selectedTierOccupied || selectedTier > maxTier || !selectedTierIsAuthored}
         onClick={() => { toggleWorker(worker.id, selectedTier); }}
       >
         {masteryBlocked
           ? `Maîtrise ${String(requiredMastery)} requise`
-          : worker.state === "working" && worker.productionTier === selectedTier
-            ? "Ⅱ  Mettre en pause"
-            : worker.productionTier !== selectedTier
-              ? `Affecter au T${String(selectedTier)}`
-              : worker.state === "paused" ? "▶  Reprendre la production" : "▶  Lancer la production"}
+          : selectedTierOccupied
+            ? `T${String(selectedTier)} déjà occupé`
+            : worker.state === "working" && worker.productionTier === selectedTier
+              ? "Ⅱ  Mettre en pause"
+              : worker.productionTier !== selectedTier
+                ? `Affecter au T${String(selectedTier)}`
+                : worker.state === "paused" ? "▶  Reprendre la production" : "▶  Lancer la production"}
       </button>
     </section>
   );
