@@ -14,31 +14,23 @@ interface IslandPlotVisual {
   readonly top: number;
 }
 
-/**
- * Fixed bottom-center anchors measured against island_background.png.
- * They intentionally follow the visual 4x3 layout of the new island rather than
- * the logical row/column metadata: a building may be moved between plots without
- * changing its visual size or anchor contract.
- */
+/** Fixed bottom-center anchors measured against the previous island-background.webp. */
 const PLOT_VISUALS: Readonly<Record<string, IslandPlotVisual>> = {
-  plot_01: { left: 24.40, top: 34.22 },
-  plot_02: { left: 41.03, top: 34.22 },
-  plot_03: { left: 57.95, top: 34.22 },
-  plot_04: { left: 75.42, top: 34.22 },
-  plot_05: { left: 23.39, top: 51.54 },
-  plot_06: { left: 40.85, top: 51.54 },
-  plot_07: { left: 58.25, top: 51.54 },
-  plot_08: { left: 74.64, top: 51.54 },
-  plot_09: { left: 24.34, top: 69.08 },
-  plot_10: { left: 41.45, top: 69.08 },
-  plot_11: { left: 58.25, top: 69.08 },
-  plot_12: { left: 75.78, top: 69.08 },
+  plot_01: { left: 28.2, top: 28.1 },
+  plot_02: { left: 48.0, top: 25.3 },
+  plot_03: { left: 70.8, top: 30.9 },
+  plot_04: { left: 17.9, top: 43.7 },
+  plot_05: { left: 37.9, top: 44.3 },
+  plot_06: { left: 57.1, top: 41.8 },
+  plot_07: { left: 81.8, top: 48.4 },
+  plot_08: { left: 66.2, top: 59.6 },
+  plot_09: { left: 19.8, top: 68.6 },
+  plot_10: { left: 37.3, top: 74.6 },
+  plot_11: { left: 55.9, top: 78.1 },
+  plot_12: { left: 79.0, top: 75.9 },
 };
 
-/**
- * Asset-specific normalization. Scale belongs to the building, never to the plot,
- * so the same building keeps the same footprint wherever the player constructs it.
- */
+/** Asset-specific normalization: scale belongs to the building, not to the plot. */
 const BUILDING_VISUAL_SCALES: Readonly<Record<IslandBuildingId, number>> = {
   worker_house: 0.88,
   storage: 0.86,
@@ -54,6 +46,7 @@ const BUILDING_VISUAL_SCALES: Readonly<Record<IslandBuildingId, number>> = {
   academy: 0.94,
 };
 
+const CONSTRUCTIBLE_ASSET_PATH = "/assets/constructible.png";
 const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId, string>> = {
   worker_house: "/assets/worker_house.png",
   storage: "/assets/storage.png",
@@ -78,7 +71,7 @@ function getPlotVisual(plotId: string): IslandPlotVisual {
 function assetStyle(assetId: IslandBuildingId | "constructible"): CSSProperties {
   if (assetId === "constructible") {
     return {
-      "--island-building-image": "none",
+      "--island-building-image": `url("${CONSTRUCTIBLE_ASSET_PATH}")`,
       "--island-building-scale": "1",
     } as CSSProperties;
   }
