@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { getAcademyResearchTier } from "@game/data";
-import type { ExpeditionDurationMs } from "@game/gameplay";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./academy.css";
 
@@ -124,10 +123,7 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
                       key={durationMs}
                       type="button"
                       onClick={() => {
-                        const result = startAcademyExpedition(
-                          expedition.id,
-                          durationMs as ExpeditionDurationMs,
-                        );
+                        const result = startAcademyExpedition(expedition.id, durationMs);
                         setFeedback(result.ok ? `${expedition.displayName} lancée.` : expeditionFailureMessage(result.reason));
                       }}
                     >
