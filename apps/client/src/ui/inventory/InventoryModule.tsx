@@ -1,8 +1,9 @@
 import { useCallback, useState, type MouseEvent } from "react";
+import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
-import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
+import { getItemDisplayName } from "../../panels/ItemVisual";
 import { BankModule } from "../bank";
 import {
   createTrackedItemResource,
@@ -37,13 +38,17 @@ function isSpecialInventoryItem(itemId: string): boolean {
     || itemId.startsWith("item_resource_key_fragment_");
 }
 
+function isEquipmentInventoryItem(itemId: string): boolean {
+  return resolveEquipmentInfo(itemId) !== undefined;
+}
+
 function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter): boolean {
   if (filter === "all") return true;
   const itemId = slot.itemId;
   if (itemId === undefined) return false;
-  if (filter === "equipment") return getItemDefinition(itemId) !== undefined;
+  if (filter === "equipment") return isEquipmentInventoryItem(itemId);
   if (filter === "special") return isSpecialInventoryItem(itemId);
-  return getItemDefinition(itemId) === undefined && !isSpecialInventoryItem(itemId);
+  return !isEquipmentInventoryItem(itemId) && !isSpecialInventoryItem(itemId);
 }
 
 export function InventoryModule(): JSX.Element {
@@ -67,7 +72,7 @@ export function InventoryModule(): JSX.Element {
       actions.transfer("inventory", slot.position, "bank");
       return;
     }
-    if (getItemDefinition(slot.itemId) !== undefined) actions.equip(slot.position);
+    if (isEquipmentInventoryItem(slot.itemId)) actions.equip(slot.position);
     else actions.useConsumable(slot.itemId);
   }, [actions]);
 
@@ -76,7 +81,7 @@ export function InventoryModule(): JSX.Element {
     slot: InventorySlotVM,
   ) => {
     event.preventDefault();
-    if (slot.itemId === undefined || getItemDefinition(slot.itemId) === undefined) {
+    if (slot.itemId === undefined || !isEquipmentInventoryItem(slot.itemId)) {
       setContextMenu(null);
       return;
     }
@@ -91,7 +96,7 @@ export function InventoryModule(): JSX.Element {
   const contextItemId = contextMenu === null
     ? undefined
     : inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId;
-  const contextIsEquipment = contextItemId !== undefined && getItemDefinition(contextItemId) !== undefined;
+  const contextIsEquipment = contextItemId !== undefined && isEquipmentInventoryItem(contextItemId);
 
   return (
     <div className="storage-module">
