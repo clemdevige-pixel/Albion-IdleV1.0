@@ -25,6 +25,7 @@ const CATEGORY_LABELS = {
   refining: "Raffinage",
   crafting: "Fabrication",
   storage: "Stockage",
+  utility: "Utilitaire",
 } as const;
 
 export function IslandModule(): JSX.Element {
