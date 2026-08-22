@@ -1,17 +1,27 @@
 import type { ProductionTier } from "../../../data/productionFamilyCatalog";
 import type { CraftingRecipeVM, GameBridgeState } from "../../../game/GameBridge";
+import { getFactionCapeDefinition } from "../../../data/factionCapeContentCatalog";
 import { resolveEquipmentInfo } from "../../../data/itemContentCatalog";
+import { resolveProgressionEquipmentRoute } from "../../../data/nonWeaponEquipmentContentCatalog";
+import {
+  getWeaponSpecializationName,
+  resolveWeaponFamilyId,
+} from "../../../data/weaponContentCatalog";
 import { resolveWeaponFamilyCraftPresentation } from "../../../data/equipmentPresentation";
 
 export type CraftingArmorFamilyId = "armor_head" | "armor_chest" | "armor_boots" | "armor_cape";
 export type CraftingFamilyId = string;
 export type CraftingCategoryId = "weapons" | "armors" | "other";
 
+export interface CraftingRecipeModel extends CraftingRecipeVM {
+  readonly selectionKey: string;
+}
+
 export interface CraftingFamilyModel {
   readonly id: CraftingFamilyId;
   readonly label: string;
   readonly symbol: string;
-  readonly recipes: readonly CraftingRecipeVM[];
+  readonly recipes: readonly CraftingRecipeModel[];
 }
 
 export interface CraftingCategoryModel {
@@ -38,6 +48,13 @@ const ARMOR_FAMILY_PRESENTATION: Readonly<Record<CraftingArmorFamilyId, { readon
   armor_cape: { label: "Cape", symbol: "♜" },
 };
 
+const ARMOR_FAMILY_ORDER: readonly CraftingArmorFamilyId[] = [
+  "armor_head",
+  "armor_chest",
+  "armor_boots",
+  "armor_cape",
+];
+
 function resolveArmorFamilyId(recipe: CraftingRecipeVM): CraftingArmorFamilyId | undefined {
   switch (resolveEquipmentInfo(recipe.outputItemId)?.slot) {
     case "head": return "armor_head";
@@ -52,6 +69,37 @@ function resolveCraftingFamilyPresentation(familyId: string) {
   return NON_WEAPON_FAMILY_PRESENTATION[familyId]
     ?? resolveWeaponFamilyCraftPresentation(familyId)
     ?? { label: familyId, symbol: "◆" };
+}
+
+/** Stable identity of one craft progression across T3-T8. */
+export function resolveCraftingSelectionKey(recipe: CraftingRecipeVM): string {
+  const weaponFamilyId = resolveWeaponFamilyId(recipe.outputItemId);
+  const weaponSpecializationName = getWeaponSpecializationName(recipe.outputItemId);
+  if (weaponFamilyId !== undefined && weaponSpecializationName !== undefined) {
+    return `weapon:${weaponFamilyId}:${weaponSpecializationName}`;
+  }
+
+  const progressionRoute = resolveProgressionEquipmentRoute(recipe.outputItemId);
+  if (progressionRoute !== undefined) {
+    return `equipment:${progressionRoute.family.familyId}`;
+  }
+
+  const cape = getFactionCapeDefinition(recipe.outputItemId);
+  if (cape !== undefined) {
+    return `cape:${cape.factionId}`;
+  }
+
+  // Tier-independent conversions and future standalone recipes keep their
+  // authored item identity until a progression identity exists in content.
+  return `item:${recipe.outputItemId}`;
+}
+
+function toRecipeModel(recipe: CraftingRecipeVM): CraftingRecipeModel {
+  return { ...recipe, selectionKey: resolveCraftingSelectionKey(recipe) };
+}
+
+function compareRecipes(left: CraftingRecipeModel, right: CraftingRecipeModel): number {
+  return left.selectionKey.localeCompare(right.selectionKey, "fr");
 }
 
 interface CraftingSource {
@@ -83,24 +131,32 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
               return armorFamilyId === undefined && !recipe.family.startsWith("other_");
             });
         const familyIds: readonly CraftingFamilyId[] = category.id === "armors"
-          ? (["armor_head", "armor_chest", "armor_boots", "armor_cape"] as const).filter((id) =>
+          ? ARMOR_FAMILY_ORDER.filter((id) =>
               categoryRecipes.some((recipe) => resolveArmorFamilyId(recipe) === id),
             )
-          : [...new Set(categoryRecipes.map((recipe) => recipe.family))];
+          : [...new Set(categoryRecipes.map((recipe) => recipe.family))].sort((left, right) => {
+              const leftLabel = resolveCraftingFamilyPresentation(left).label;
+              const rightLabel = resolveCraftingFamilyPresentation(right).label;
+              return leftLabel.localeCompare(rightLabel, "fr");
+            });
         return {
           ...category,
           families: familyIds.map((id) => {
             const isArmorFamily = id.startsWith("armor_");
+            const recipes = categoryRecipes
+              .filter((recipe) =>
+                isArmorFamily
+                  ? resolveArmorFamilyId(recipe) === id
+                  : recipe.family === id,
+              )
+              .map(toRecipeModel)
+              .sort(compareRecipes);
             return {
               id,
               ...(isArmorFamily
                 ? ARMOR_FAMILY_PRESENTATION[id as CraftingArmorFamilyId]
                 : resolveCraftingFamilyPresentation(id)),
-              recipes: categoryRecipes.filter((recipe) =>
-                isArmorFamily
-                  ? resolveArmorFamilyId(recipe) === id
-                  : recipe.family === id,
-              ),
+              recipes,
             };
           }),
         };
