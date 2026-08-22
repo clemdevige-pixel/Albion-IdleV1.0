@@ -44,15 +44,6 @@ function formatDropRange(minimum: number, maximum: number): string {
   return `${formatDropPercent(minimum)} – ${formatDropPercent(maximum)}`;
 }
 
-function formatRelicState(relic: NonNullable<ReturnType<ReturnType<typeof useGameServices>["getBestiaryKnowledge"]>["relic"]>): string {
-  switch (relic.state) {
-    case "unobtained": return "Non obtenue";
-    case "broken": return `Brisée · ${String(relic.chargeKills)}/${String(relic.requiredChargeKills)}`;
-    case "charged": return "Chargée · examen en attente";
-    case "examined": return "Examinée";
-  }
-}
-
 export function WorldBestiaryView(): JSX.Element {
   const { getBestiaryKnowledge } = useGameServices();
   useGameUiSelector(selectBestiaryRevision);
@@ -180,10 +171,6 @@ export function WorldBestiaryView(): JSX.Element {
                       <div><dt>Victoires</dt><dd>{knowledge.killCount}</dd></div>
                       <div><dt>Faction</dt><dd>{knowledge.factionKillCount}</dd></div>
                       <div><dt>Élites</dt><dd>{knowledge.factionEliteKillCount}</dd></div>
-                      <div>
-                        <dt>Relique</dt>
-                        <dd>{knowledge.relic === undefined ? "—" : formatRelicState(knowledge.relic)}</dd>
-                      </div>
                     </dl>
                   </section>
 
