@@ -31,6 +31,7 @@ export interface ReservedRefiningRequirement {
 export type ToggleRefiningResult =
   | { readonly action: "started"; readonly family: ResourceFamily }
   | { readonly action: "stopped"; readonly family: ResourceFamily }
+  | { readonly action: "completed"; readonly family: ResourceFamily; readonly cycles: number }
   | { readonly action: "failed"; readonly family: ResourceFamily };
 
 const SUPPORTED_REFINING_FAMILIES: readonly SupportedRefiningFamily[] =
@@ -52,6 +53,7 @@ export interface RefiningRuntimeDependencies {
   readonly heroId?: EntityId;
   readonly productionStorageId?: EntityId;
   readonly getProductionTier: (family: SupportedRefiningFamily) => ProductionTier;
+  readonly isInstantRefiningUnlocked?: () => boolean;
 }
 
 interface RefiningFamilyRuntimeDefinition {
@@ -77,6 +79,7 @@ export class RefiningRuntime {
   private readonly inventoryManager: InventoryManager;
   private readonly productionStorageId: EntityId;
   private readonly getProductionTier: (family: SupportedRefiningFamily) => ProductionTier;
+  private readonly isInstantRefiningUnlocked: () => boolean;
   private readonly families: Readonly<
     Record<SupportedRefiningFamily, RefiningFamilyRuntimeDefinition>
   >;
@@ -92,6 +95,7 @@ export class RefiningRuntime {
   public constructor(deps: RefiningRuntimeDependencies) {
     this.inventoryManager = deps.inventoryManager;
     this.getProductionTier = deps.getProductionTier;
+    this.isInstantRefiningUnlocked = deps.isInstantRefiningUnlocked ?? (() => false);
 
     const storageId = deps.productionStorageId ?? deps.heroId;
     if (storageId === undefined) {
@@ -177,6 +181,10 @@ export class RefiningRuntime {
     return this.states[family].automatic;
   }
 
+  public isInstantModeEnabled(): boolean {
+    return this.isInstantRefiningUnlocked();
+  }
+
   /**
    * Persistence load replaces the authoritative production-storage snapshot.
    * Any live sessions belong to the pre-load timeline and must therefore be
@@ -246,6 +254,55 @@ export class RefiningRuntime {
         },
       );
     }
+  }
+
+  private getAvailableCycles(recipe: ProductionRefiningRecipe): number {
+    return recipe.requirements.reduce((availableCycles, requirement) => {
+      const available = this.inventoryManager.getTotalQuantity(
+        this.productionStorageId,
+        requirement.itemId,
+      );
+      return Math.min(availableCycles, Math.floor(available / requirement.quantity));
+    }, Number.POSITIVE_INFINITY);
+  }
+
+  private refineInstantly(family: SupportedRefiningFamily): ToggleRefiningResult {
+    const recipe = this.getRecipe(family);
+    const cycles = this.getAvailableCycles(recipe);
+    if (!Number.isFinite(cycles) || cycles <= 0) {
+      return { action: "failed", family };
+    }
+
+    const batchRequirements = recipe.requirements.map((requirement) => ({
+      itemId: requirement.itemId,
+      quantity: requirement.quantity * cycles,
+    }));
+    const reserved = this.reserveRefiningRequirements(batchRequirements);
+    if (reserved === undefined) return { action: "failed", family };
+
+    const outputQuantity = recipe.outputQuantity * cycles;
+    const added = this.inventoryManager.addQuantity(
+      this.productionStorageId,
+      recipe.outputItemId,
+      outputQuantity,
+      {
+        itemId: recipe.outputItemId,
+        stackable: true,
+        maxStack: 999,
+      },
+    );
+    if (!added.ok) {
+      this.refundRefiningRequirements(reserved);
+      return { action: "failed", family };
+    }
+
+    this.notifyRefineCompleted({
+      family,
+      added: true,
+      outputItemId: recipe.outputItemId,
+      outputQuantity,
+    });
+    return { action: "completed", family, cycles };
   }
 
   private startRefiningCycle(
@@ -367,6 +424,10 @@ export class RefiningRuntime {
     if (state.automatic) {
       this.stopRefiningFamily(family);
       return { action: "stopped", family };
+    }
+
+    if (this.isInstantRefiningUnlocked()) {
+      return this.refineInstantly(family);
     }
 
     state.automatic = true;
