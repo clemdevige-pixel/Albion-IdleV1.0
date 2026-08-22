@@ -35,9 +35,9 @@ const DEFAULT_RECONSTRUCTION_PORT: RelicReconstructionPort = {
  * Persistent faction Relic domain.
  *
  * A Relic is dropped once by its authored faction boss, then charged by faction
- * kills performed after acquisition. Once charged, the Academy may examine it
- * when the owning Research authority allows examination. No fragment items or
- * duplicate objective counters are stored.
+ * kills performed after acquisition. Once charged, the Academy examines it
+ * automatically as soon as the owning Research authority allows examination.
+ * No fragment items or duplicate objective counters are stored.
  */
 export class RelicService implements SaveProvider {
   readonly providerId = "relics";
@@ -155,6 +155,22 @@ export class RelicService implements SaveProvider {
 
     this.#examinedRelicIds.add(relicId);
     return { ok: true };
+  }
+
+  /**
+   * Resolves every charged Relic whose Academy examination gate is available.
+   * Used after kills and after Research completion so either ordering is valid.
+   */
+  resolveCompletedRelics(): readonly RelicId[] {
+    const examined: RelicId[] = [];
+    for (const definition of this.#definitions.values()) {
+      if (this.#examinedRelicIds.has(definition.id)) continue;
+      if (this.getProgress(definition.id)?.state !== "charged") continue;
+      if (!this.#reconstructionPort.canReconstructRelic(definition)) continue;
+      this.#examinedRelicIds.add(definition.id);
+      examined.push(definition.id);
+    }
+    return examined;
   }
 
   save(): RelicSnapshot {
