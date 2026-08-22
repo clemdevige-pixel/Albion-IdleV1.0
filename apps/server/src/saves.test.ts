@@ -36,7 +36,7 @@ describe("authenticated cloud saves", () => {
   const apps: FastifyInstance[] = [];
   afterEach(async () => { await Promise.all(apps.splice(0).map((app) => app.close())); });
 
-  it("stores, lists, restores and deletes one account-owned slot", async () => {
+  it("stores, lists, restores and deletes one account-owned slot with server-authoritative timing", async () => {
     const app = buildServer({ logLevel: "fatal" });
     apps.push(app);
     const token = await register(app, "cloud@example.com");
@@ -45,13 +45,21 @@ describe("authenticated cloud saves", () => {
 
     const stored = await app.inject({ method: "PUT", url: `${CLOUD_SAVES_ROUTE}/player_slot_1`, headers, payload: save });
     expect(stored.statusCode).toBe(200);
-    expect(stored.json()).toMatchObject({ accepted: true, updatedAt: 200 });
+    const storedBody = stored.json() as { accepted: boolean; updatedAt: number; serverSavedAt: number };
+    expect(storedBody.accepted).toBe(true);
+    expect(storedBody.updatedAt).toBe(200);
+    expect(Number.isSafeInteger(storedBody.serverSavedAt)).toBe(true);
 
     const list = await app.inject({ method: "GET", url: CLOUD_SAVES_ROUTE, headers });
     expect(list.json()).toEqual({ saves: [{ slotId: "player_slot_1", updatedAt: 200 }] });
 
     const restored = await app.inject({ method: "GET", url: `${CLOUD_SAVES_ROUTE}/player_slot_1`, headers });
-    expect(restored.json()).toEqual(save);
+    const restoredBody = restored.json() as CloudSaveDocument;
+    expect(restoredBody.payload).toEqual(save.payload);
+    expect(restoredBody.metadata.updatedAt).toBe(200);
+    expect(restoredBody.metadata.extra?.serverSavedAt).toBe(storedBody.serverSavedAt);
+    expect(typeof restoredBody.metadata.extra?.serverNow).toBe("number");
+    expect(Number(restoredBody.metadata.extra?.serverNow)).toBeGreaterThanOrEqual(storedBody.serverSavedAt);
 
     const deleted = await app.inject({ method: "DELETE", url: `${CLOUD_SAVES_ROUTE}/player_slot_1`, headers });
     expect(deleted.statusCode).toBe(204);
