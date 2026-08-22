@@ -2,8 +2,9 @@
 
 # Albion Idle — Dashboard
 
-Version: 1.0
+Version: 1.1
 Status: VALIDATED
+Last update: 2026-08-22
 
 ---
 
@@ -82,7 +83,31 @@ Detailed information belongs inside the corresponding modules.
 +--------------------------------+
 ```
 
-The exact card order may be adjusted during mockup testing.
+The default card order is authored by the Dashboard section catalogue.
+
+The player may reorder visible Dashboard cards vertically.
+
+---
+
+# Custom Card Order
+
+Dashboard card order is a player preference attached to the save slot.
+
+Validated behavior:
+
+- the full card header is the drag handle;
+- dragging reorders cards vertically;
+- keyboard reordering remains available through the focused header using Up/Down actions;
+- internal buttons and controls remain interactive and are not drag handles;
+- the new order is persisted immediately after a completed reorder;
+- reloading/importing the save restores the same order;
+- cards that are temporarily hidden keep their relative saved position and return there when visible again.
+
+The saved layout stores stable `DashboardSectionId` values, never component names, localized labels or rendered positions.
+
+When a future Dashboard section is added, old saves must remain valid. Unknown/new sections are merged into the saved order according to the current authored default order without erasing the player's existing customization.
+
+Dashboard layout persistence is presentation state only. It must not contain gameplay rules or duplicate the data displayed by cards.
 
 ---
 
@@ -120,29 +145,48 @@ Completed objectives should disappear or transition into the next relevant objec
 
 ---
 
-# Active Production
+# Active Activities
 
 Provides a consolidated view of ongoing background activities.
 
-Possible entries:
+Possible entries include:
 
 - Crafting
 - Refining
 - Gathering
 - Workers
 - Island production
+- Academy Research
+- Academy Expeditions
 
 Each entry displays only essential information.
 
 Example:
 
 ```text
-Birch Planks
-18 / 30
-00:24
+Cartography II
+██████████░░
+43m remaining
+
+Keeper Expedition T5
+████████░░░░
+2h 18m remaining
 ```
 
 Selecting an entry opens its corresponding Right Panel module.
+
+## Academy card
+
+The Academy Dashboard card is visible whenever at least one Academy long-running activity is active.
+
+It may display simultaneously:
+
+- the active Research with progress and remaining time;
+- one or more active Expeditions with slot/tier context, progress and remaining time.
+
+The card consumes the same Academy presentation model as the Academy panel. It must not recalculate Research or Expedition progress independently.
+
+If there is no active Research but an Expedition is running, the Academy card remains visible.
 
 ---
 
@@ -220,7 +264,7 @@ Recent Rewards
 Statistics
 ```
 
-Important information may temporarily move upward in priority.
+Important information may temporarily move upward in priority inside a card, but the player's explicitly saved card order is not silently rewritten by runtime priority changes.
 
 ---
 
@@ -236,6 +280,8 @@ Examples:
 - Boss available
 - Mastery milestone reached
 - Production blocked
+- Research completed
+- Expedition completed
 
 Attention states must be meaningful.
 
@@ -259,11 +305,16 @@ Craft Card
 Worker Card
 → Workers
 
+Academy Card
+→ Island / Academy
+
 Recent Loot
 → Inventory
 ```
 
 The Dashboard therefore provides both information and navigation.
+
+Dragging a card header only changes Dashboard presentation order and must never trigger the card shortcut.
 
 ---
 
@@ -296,6 +347,8 @@ Continue zone progression →
 
 Empty states should provide a useful next action when appropriate.
 
+Cards whose contract is strictly "active activity only" may be hidden instead of rendering dead space.
+
 ---
 
 # Visual Rules
@@ -307,6 +360,8 @@ It should feel like an overview, not a collection of competing widgets.
 Cards use the shared Design System.
 
 Strong colors, glow and animations are reserved for information that genuinely requires attention.
+
+A draggable card header uses subtle `grab` / `grabbing` feedback. A permanent drag button is not required when the shared card header is already a safe drag surface.
 
 ---
 
@@ -320,6 +375,9 @@ MUST
 - Display recent loot.
 - Provide useful shortcuts to corresponding modules.
 - Keep statistics secondary.
+- Allow the player to reorder Dashboard cards vertically.
+- Persist the customized card order in the save slot.
+- Use stable section IDs and normalize old saved layouts when sections evolve.
 
 MUST NOT
 
@@ -328,6 +386,8 @@ MUST NOT
 - Display every available statistic.
 - Generate unnecessary alerts.
 - Overload the player with simultaneous objectives.
+- Store gameplay state inside Dashboard layout persistence.
+- Let a card reorder interfere with controls inside the card body.
 
 SHOULD
 
