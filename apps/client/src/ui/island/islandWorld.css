@@ -48,7 +48,7 @@
   width: 100%;
   height: 100%;
   min-height: 0;
-  background: url("/assets/island_background.png") center / cover no-repeat;
+  background: url("/assets/island-background.webp") center / cover no-repeat;
   filter: drop-shadow(0 14px 22px rgba(0,0,0,.28));
 }
 
@@ -101,7 +101,9 @@
     drop-shadow(0 0 7px rgba(231,185,82,.9));
 }
 
-.ui-island-world__plot.is-empty .ui-island-world__asset { opacity: 0; }
+.ui-island-world__plot.is-empty .ui-island-world__asset { opacity: .82; }
+.ui-island-world__plot.is-empty:hover .ui-island-world__asset,
+.ui-island-world__plot.is-empty.is-selected .ui-island-world__asset { opacity: 1; }
 
 .ui-island-world__hover-label {
   position: absolute;
