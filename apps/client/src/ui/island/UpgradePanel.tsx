@@ -6,10 +6,11 @@ import { getIslandBuildingUpgradeState } from "./islandBuildingUpgradeState";
 export function UpgradePanel({ definitionId, level }: { readonly definitionId: IslandBuildingId; readonly level: number }): JSX.Element | null {
   const { wallet } = useGameBridge();
   const { inventoryManager, productionStorageId, upgradeIslandBuilding, getIslandLevel } = useGameServices();
+  const islandLevel = getIslandLevel();
   const state = getIslandBuildingUpgradeState({
     definitionId,
     level,
-    islandLevel: getIslandLevel(),
+    islandLevel,
     silver: wallet.silver,
     inventoryManager,
     productionStorageId,
@@ -20,7 +21,6 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
     current,
     next,
     cost,
-    maxBuildingLevel,
     islandLevelBlocked,
     materials,
     flexible,
@@ -58,7 +58,7 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
           <span className="ui-island-upgrade__requirement-icon" aria-hidden="true">⌂</span>
           <div>
             <small>Niveau d’île requis</small>
-            <strong>{String(getIslandLevel())} / {String(requiredIslandLevel)}</strong>
+            <strong>{String(islandLevel)} / {String(requiredIslandLevel)}</strong>
           </div>
         </div>
 
