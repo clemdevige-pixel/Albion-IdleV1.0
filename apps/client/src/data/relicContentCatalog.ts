@@ -2,55 +2,89 @@ import type { RelicDefinition } from "@game/gameplay";
 import { MONSTER_IDS } from "./monsterContentCatalog.js";
 import { WORLD_ZONE_CONTENT } from "./worldContentCatalog.js";
 
-/**
- * Authored Relic content only. Runtime evaluation lives in @game/gameplay and
- * must remain faction-agnostic.
- */
-export const RELIC_DEFINITIONS = [
+interface FactionRelicAuthoring {
+  readonly factionId: string;
+  readonly normalMonsterIds: readonly [string, string];
+  readonly eliteMonsterId: string;
+  readonly territoryZoneDefId: string;
+}
+
+const FACTION_RELIC_AUTHORING: readonly FactionRelicAuthoring[] = [
   {
-    id: "relic_keeper",
     factionId: "keeper",
+    normalMonsterIds: [MONSTER_IDS.keeperWarrior, MONSTER_IDS.keeperShaman],
+    eliteMonsterId: MONSTER_IDS.keeperChampion,
+    territoryZoneDefId: WORLD_ZONE_CONTENT.mountain.id,
+  },
+  {
+    factionId: "heretic",
+    normalMonsterIds: [MONSTER_IDS.hereticThug, MONSTER_IDS.hereticFirestarter],
+    eliteMonsterId: MONSTER_IDS.hereticEnforcer,
+    territoryZoneDefId: WORLD_ZONE_CONTENT.highland.id,
+  },
+  {
+    factionId: "undead",
+    normalMonsterIds: [MONSTER_IDS.undeadSkeletonSwordsman, MONSTER_IDS.undeadSkeletonArcher],
+    eliteMonsterId: MONSTER_IDS.undeadSpectralKnight,
+    territoryZoneDefId: WORLD_ZONE_CONTENT.swamp.id,
+  },
+  {
+    factionId: "morgana",
+    normalMonsterIds: [MONSTER_IDS.morganaWitch, MONSTER_IDS.morganaSuppressor],
+    eliteMonsterId: MONSTER_IDS.morganaDarkKnight,
+    territoryZoneDefId: WORLD_ZONE_CONTENT.steppe.id,
+  },
+];
+
+function createFactionRelic(authoring: FactionRelicAuthoring): RelicDefinition {
+  const { factionId, normalMonsterIds, eliteMonsterId, territoryZoneDefId } = authoring;
+  return {
+    id: `relic_${factionId}`,
+    factionId,
     objectives: [
       {
-        id: "keeper_discovery",
+        id: `${factionId}_discovery`,
         requirement: {
           type: "all_monsters_killed",
-          monsterIds: [MONSTER_IDS.keeperWarrior, MONSTER_IDS.keeperShaman],
+          monsterIds: normalMonsterIds,
           minimumEach: 1,
         },
       },
       {
-        id: "keeper_familiarization",
+        id: `${factionId}_familiarization`,
         requirement: {
           type: "faction_kill_count",
-          factionId: "keeper",
+          factionId,
           minimum: 25,
         },
       },
       {
-        id: "keeper_deep_study",
+        id: `${factionId}_deep_study`,
         requirement: {
           type: "faction_kill_count",
-          factionId: "keeper",
+          factionId,
           minimum: 100,
         },
       },
       {
-        id: "keeper_elite_study",
+        id: `${factionId}_elite_study`,
         requirement: {
           type: "monster_kill_count",
-          monsterId: MONSTER_IDS.keeperChampion,
+          monsterId: eliteMonsterId,
           minimum: 3,
         },
       },
       {
-        id: "keeper_territory_progression",
+        id: `${factionId}_territory_progression`,
         requirement: {
           type: "world_segment_progress",
-          zoneDefId: WORLD_ZONE_CONTENT.mountain.id,
+          zoneDefId: territoryZoneDefId,
           minimumCompletedSegments: 5,
         },
       },
     ],
-  },
-] as const satisfies readonly RelicDefinition[];
+  };
+}
+
+/** Authored Relic data. Runtime evaluation remains faction-agnostic. */
+export const RELIC_DEFINITIONS: readonly RelicDefinition[] = FACTION_RELIC_AUTHORING.map(createFactionRelic);
