@@ -42,6 +42,7 @@ export interface AcademyPresentationFoundationDependencies<
 > {
   readonly researchService: ResearchService<TResearchRequirement>;
   readonly expeditionService: ExpeditionService<TExpeditionRequirement, unknown>;
+  readonly onMutation?: () => void;
 }
 
 export function createAcademyPresentationFoundation<
@@ -86,14 +87,18 @@ export function createAcademyPresentationFoundation<
   return {
     getModel,
     startResearch(this: void, researchId: string): StartResearchResult {
-      return dependencies.researchService.startResearch(researchId);
+      const result = dependencies.researchService.startResearch(researchId);
+      if (result.ok) dependencies.onMutation?.();
+      return result;
     },
     startExpedition(
       this: void,
       expeditionId: string,
       durationMs: ExpeditionDurationMs,
     ): StartExpeditionResult {
-      return dependencies.expeditionService.startExpedition(expeditionId, durationMs);
+      const result = dependencies.expeditionService.startExpedition(expeditionId, durationMs);
+      if (result.ok) dependencies.onMutation?.();
+      return result;
     },
   };
 }
