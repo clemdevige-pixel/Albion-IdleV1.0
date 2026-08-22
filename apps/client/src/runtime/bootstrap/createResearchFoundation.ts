@@ -19,6 +19,7 @@ export interface ResearchFoundationDependencies {
   readonly walletId: WalletId;
   readonly inventoryManager: InventoryManager;
   readonly productionStorageId: EntityId;
+  readonly getAcademyTier: () => number;
 }
 
 /** Client composition only. Research domain stays economy/content agnostic. */
@@ -29,6 +30,8 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
         switch (requirement.type) {
           case "relic_reconstructed":
             return dependencies.relicService.isReconstructed(requirement.relicId);
+          case "academy_tier":
+            return dependencies.getAcademyTier() >= requirement.minimumTier;
         }
       },
     },
