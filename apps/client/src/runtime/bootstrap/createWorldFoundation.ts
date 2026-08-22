@@ -24,6 +24,7 @@ import {
   ZONE_UNLOCK_DEFINITIONS,
 } from "../../data/worldContentCatalog.js";
 import { WorldRuntime } from "../WorldRuntime.js";
+import { isDevSandboxMode } from "../devSandbox.js";
 
 /** Framework-agnostic world registries, progression and runtime assembly. */
 export function createWorldFoundation() {
@@ -47,6 +48,12 @@ export function createWorldFoundation() {
   for (const definition of ZONE_UNLOCK_DEFINITIONS) {
     progressionManager.registerUnlockDefinition(definition);
   }
+  if (isDevSandboxMode()) {
+    progressionManager.loadState({
+      unlockedZones: [...WORLD_ZONE_ORDER],
+      completedZones: [],
+    });
+  }
 
   const explorationManager = new ExplorationManager();
   const worldEventBus = new EventBus<WorldIntegrationEventMap>();
@@ -67,6 +74,21 @@ export function createWorldFoundation() {
     progressionManager,
     worldCoordinator,
   });
+  if (isDevSandboxMode()) {
+    worldRuntime.setWorldLocationSaveState({
+      activeZoneDefId: WORLD_ZONE_IDS.forest,
+      activeSegment: 0,
+      activeEncounter: 0,
+      farmMode: false,
+      zoneMemories: WORLD_ZONE_ORDER.map((zoneDefId) => ({
+        zoneDefId,
+        currentSegment: 0,
+        currentEncounter: 0,
+        highestUnlockedSegment: SEGMENTS_PER_ZONE - 1,
+        completedSegments: [],
+      })),
+    });
+  }
 
   return {
     biomeRegistry,
