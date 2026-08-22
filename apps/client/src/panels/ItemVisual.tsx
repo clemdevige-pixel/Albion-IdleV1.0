@@ -115,7 +115,7 @@ function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition
   const relic = getRelicDefinitionByInventoryItemId(itemId);
   if (relic !== undefined) {
     return {
-      name: `Relique ${formatFactionName(relic.factionId)}`,
+      name: "Relique des Sanctuaires",
       className: "relic",
       symbol: "R",
     };
