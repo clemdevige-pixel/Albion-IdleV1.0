@@ -10,6 +10,7 @@ import type {
   CraftingFamilyId,
 } from "../production/crafting/craftingModels";
 import { CraftingRecipeDetails } from "../production/crafting/CraftingRecipeDetails";
+import { CraftingSelect } from "../production/crafting/CraftingSelect";
 import { useCraftingActions } from "../production/crafting/useCraftingActions";
 import { useCraftingData } from "../production/crafting/useCraftingData";
 import "../production/crafting/crafting.css";
@@ -99,31 +100,21 @@ export function CraftingBuildingPanel({
       ) : (
         <>
           <div className="ui-island-crafting-building__selectors">
-            <label>
-              <span>Famille</span>
-              <select
-                value={family.id}
-                onChange={(event) => {
-                  setRequestedFamily(event.target.value);
-                  setRequestedRecipeId(undefined);
-                }}
-              >
-                {category.families.map((entry) => (
-                  <option key={entry.id} value={entry.id}>{entry.label}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Objet</span>
-              <select
-                value={recipe.outputItemId}
-                onChange={(event) => { setRequestedRecipeId(event.target.value); }}
-              >
-                {family.recipes.map((entry) => (
-                  <option key={entry.outputItemId} value={entry.outputItemId}>{entry.recipeName}</option>
-                ))}
-              </select>
-            </label>
+            <CraftingSelect
+              label="Famille"
+              value={family.id}
+              options={category.families.map((entry) => ({ value: entry.id, label: entry.label }))}
+              onChange={(familyId) => {
+                setRequestedFamily(familyId);
+                setRequestedRecipeId(undefined);
+              }}
+            />
+            <CraftingSelect
+              label="Objet"
+              value={recipe.outputItemId}
+              options={family.recipes.map((entry) => ({ value: entry.outputItemId, label: entry.recipeName }))}
+              onChange={setRequestedRecipeId}
+            />
           </div>
           <CraftingRecipeDetails
             recipe={recipe}
