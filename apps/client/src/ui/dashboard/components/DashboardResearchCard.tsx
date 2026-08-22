@@ -20,15 +20,14 @@ export function DashboardResearchCard(): JSX.Element | null {
   const { getAcademyModel } = useGameServices();
   const navigation = useNavigation();
   const islandSelection = useIslandSelection();
-  const activeResearch = getAcademyModel().research.find((entry) => entry.state === "active");
+  const academyModel = getAcademyModel();
+  const activeResearch = academyModel.research.find((entry) => entry.state === "active");
+  const activeExpeditions = academyModel.expeditions.filter((entry) => entry.active);
 
-  if (activeResearch === undefined || activeResearch.remainingDurationMs === undefined) return null;
+  if (activeResearch === undefined && activeExpeditions.length === 0) return null;
 
-  const elapsedMs = Math.max(0, activeResearch.durationMs - activeResearch.remainingDurationMs);
-  const progress = activeResearch.durationMs <= 0
-    ? 100
-    : Math.max(0, Math.min(100, (elapsedMs / activeResearch.durationMs) * 100));
   const academy = bridge.island.buildings.find((building) => building.definitionId === "academy");
+  const activityCount = (activeResearch === undefined ? 0 : 1) + activeExpeditions.length;
 
   const openAcademy = (): void => {
     if (academy === undefined) return;
@@ -36,10 +35,22 @@ export function DashboardResearchCard(): JSX.Element | null {
     navigation.openModule(UI_MODULE_IDS.island);
   };
 
+  const researchProgress = activeResearch === undefined || activeResearch.remainingDurationMs === undefined
+    ? undefined
+    : activeResearch.durationMs <= 0
+      ? 100
+      : Math.max(
+        0,
+        Math.min(
+          100,
+          ((activeResearch.durationMs - activeResearch.remainingDurationMs) / activeResearch.durationMs) * 100,
+        ),
+      );
+
   return (
     <DashboardCard
       sectionId="research"
-      meta={formatRemainingDuration(activeResearch.remainingDurationMs)}
+      meta={`${String(activityCount)} en cours`}
     >
       <button
         type="button"
@@ -48,17 +59,42 @@ export function DashboardResearchCard(): JSX.Element | null {
         onClick={openAcademy}
         title={academy === undefined ? undefined : "Ouvrir l’Académie"}
       >
-        <div className="dashboard-research__summary">
-          <div>
-            <span>Recherche T{String(activeResearch.tier)}</span>
-            <strong>{activeResearch.displayName}</strong>
-            <small>Terminaison automatique à la fin du timer</small>
+        {activeResearch !== undefined && (
+          <div className="dashboard-research__activity">
+            <div className="dashboard-research__summary">
+              <div>
+                <span>Recherche T{String(activeResearch.tier)}</span>
+                <strong>{activeResearch.displayName}</strong>
+              </div>
+              <b>
+                {activeResearch.remainingDurationMs === undefined
+                  ? "En cours"
+                  : formatRemainingDuration(activeResearch.remainingDurationMs)}
+              </b>
+            </div>
+            {researchProgress !== undefined && (
+              <div className="dashboard-progress" aria-label={`Progression ${String(Math.round(researchProgress))}%`}>
+                <span style={{ width: `${String(researchProgress)}%` }} />
+              </div>
+            )}
           </div>
-          <b>{String(Math.round(progress))}%</b>
-        </div>
-        <div className="dashboard-progress" aria-label={`Progression ${String(Math.round(progress))}%`}>
-          <span style={{ width: `${String(progress)}%` }} />
-        </div>
+        )}
+
+        {activeExpeditions.map((expedition) => (
+          <div key={expedition.id} className="dashboard-research__activity dashboard-research__activity--expedition">
+            <div className="dashboard-research__summary">
+              <div>
+                <span>Expédition · Slot {String((expedition.activeSlotIndex ?? 0) + 1)}</span>
+                <strong>{expedition.displayName}</strong>
+              </div>
+              <b>
+                {expedition.remainingDurationMs === undefined
+                  ? "En cours"
+                  : formatRemainingDuration(expedition.remainingDurationMs)}
+              </b>
+            </div>
+          </div>
+        ))}
       </button>
     </DashboardCard>
   );
