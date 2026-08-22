@@ -1,4 +1,4 @@
-import { getIslandLevelDefinition } from "@game/data";
+import { getIslandUpgradeableLevelDefinition } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { getIslandMaterialLabel } from "./islandMaterialPresentation";
 import { getIslandBuildingUpgradeState } from "./islandBuildingUpgradeState";
@@ -14,8 +14,9 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
   } = useGameServices();
   const { selectBuilding } = useIslandSelection();
   const islandLevel = getIslandLevel();
-  const maxBuildingLevel = getIslandLevelDefinition(islandLevel)?.maxBuildingLevel ?? islandLevel;
-  const laggingBuildings = island.buildings.filter((building) => building.level < maxBuildingLevel);
+  const laggingBuildings = island.buildings.filter((building) => (
+    getIslandUpgradeableLevelDefinition(building.definitionId, building.level)?.upgradeToNext !== undefined
+  ));
 
   if (laggingBuildings.length === 0) return null;
 
@@ -25,9 +26,8 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
         <div>
           <span className="ui-island__eyebrow">Progression des bâtiments</span>
           <strong>{String(laggingBuildings.length)} bâtiment{laggingBuildings.length > 1 ? "s" : ""} à mettre à niveau</strong>
-          <small>Objectif actuel : niveau {String(maxBuildingLevel)}</small>
+          <small>Améliorations encore disponibles</small>
         </div>
-        <span className="ui-island__level">Niv. {String(maxBuildingLevel)}</span>
       </div>
 
       <div className="ui-island-building-progress__list">
@@ -80,7 +80,7 @@ export function IslandBuildingProgressPanel(): JSX.Element | null {
                 <span className="ui-island-building-progress__icon" aria-hidden="true">{definition.icon}</span>
                 <div>
                   <strong>{definition.label}</strong>
-                  <small>Niv. {String(building.level)} → objectif Niv. {String(maxBuildingLevel)} · prochaine amélioration Niv. {String(next.level)}</small>
+                  <small>Niv. {String(building.level)} → Niv. {String(next.level)} · T{String(next.displayTier)}</small>
                 </div>
               </div>
 
