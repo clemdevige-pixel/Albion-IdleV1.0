@@ -11,8 +11,8 @@ Last update: 2026-08-22
 This document records the validated design and implementation contract for a secondary progression layer built around:
 
 - Academy / Research;
-- the existing Bestiary as Codex surface;
-- deterministic faction Relic quests;
+- the existing Bestiary as monster knowledge surface;
+- deterministic faction Relics;
 - faction Expeditions;
 - a generic Silver Expedition;
 - faction crafting resources (Runes);
@@ -35,7 +35,7 @@ Research is the authority for permanent functional unlocks introduced by this fe
 It may unlock:
 
 - Expeditions;
-- Relic reconstruction capability;
+- Relic examination capability;
 - faction Expedition families;
 - faction dungeon families.
 
@@ -63,32 +63,32 @@ It does NOT gate:
 
 It does NOT affect the generic Silver Expedition.
 
-## 2.3 Bestiary / Codex
+## 2.3 Bestiary
 
 Do NOT create a second Codex module.
 
-The existing World Bestiary is the player-facing faction knowledge surface.
+The existing World Bestiary remains the player-facing monster knowledge surface.
 
 Existing references:
 
 - `apps/client/src/ui/world/components/WorldBestiaryView.tsx`
 - `apps/client/src/ui/world/worldModels.ts`
 
-It may surface:
+Its responsibility is monster information, including:
 
 - discovered / undiscovered state;
-- kill counts;
-- elite/boss victories;
+- kill count per monster;
 - faction identity;
-- combat/loot information already present;
-- Relic quest progression;
-- Faction Mastery progression;
-- related Achievements.
+- combat/loot information already present.
+
+The Bestiary does NOT own or display faction Relic state or Relic charge progression.
+
+Relic state belongs to the Relic item in the player Inventory.
 
 Implementation status:
 
-- faction discovery / kill counters / elite counters: IMPLEMENTED;
-- Relic progression/reconstruction projection: IMPLEMENTED;
+- monster discovery / kill counters: IMPLEMENTED;
+- Relic projection removed from Bestiary by design;
 - final UX polish/composition: still open.
 
 ## 2.4 Achievements
@@ -180,6 +180,8 @@ No second Research slot by default.
 
 No manual reward collection.
 
+Relic examination is a separate Academy action and does NOT consume the Research slot.
+
 ## 3.5 Offline model
 
 Research integrates with the existing Background Progression model:
@@ -233,11 +235,13 @@ Validated tuning:
 
 Effects:
 
-- enables faction Relic quests;
-- enables Relic Fragment tracking;
-- enables Relic reconstruction when all objectives are complete.
+- enables the Academy to examine a CHARGED faction Relic;
+- examination converts the Relic state from CHARGED to EXAMINED;
+- EXAMINED Relics satisfy the faction Research prerequisite.
 
 Archaeology is acquired once.
+
+Archaeology does NOT control the boss drop or the 50-kill charging phase: a Relic may be obtained and charged before Archaeology is completed, but it cannot be examined until Archaeology I is complete.
 
 Do NOT create Archaeology II/III/IV/V unless a future mechanic genuinely requires it.
 
@@ -263,7 +267,7 @@ No extra route/event mechanics in V1.
 
 ## 5.1 Definition
 
-A Relic is a permanent faction discovery reconstructed through a deterministic mini-quest.
+A faction Relic is a unique deterministic progression item tied to one faction.
 
 It is NOT:
 
@@ -271,7 +275,8 @@ It is NOT:
 - currency;
 - a passive-stat item;
 - an RNG drop grind;
-- a replacement for Mastery.
+- a replacement for Mastery;
+- a fragment checklist or separate quest system.
 
 There is exactly ONE Relic per faction across T4-T8.
 
@@ -282,76 +287,141 @@ Initial factions:
 - Undead;
 - Morgana.
 
-## 5.2 Fragment structure
+The runtime is entirely data-driven through `RelicDefinition`. No faction-specific runtime branch is allowed.
 
-Validated V1:
+## 5.2 Validated lifecycle
 
-- 5 fragments complete one faction Relic;
-- fragments come from deterministic objectives;
-- once the Relic is reconstructed, fragment generation for that Relic ends permanently.
+A Relic follows exactly this state machine:
 
-## 5.3 Universal objective template
+`UNOBTAINED -> BROKEN -> CHARGED -> EXAMINED`
 
-All factions use the same runtime structure; only authored data changes.
+Validated flow:
 
-1. DISCOVERY
-   - defeat the two main normal units of the faction once each.
-2. FAMILIARIZATION
-   - defeat 25 members of the faction total.
-3. DEEP STUDY
-   - defeat 100 members of the faction total.
-4. ELITE STUDY
-   - defeat the authored elite 3 times.
-5. TERRITORY PROGRESSION
-   - complete Segment 5 of the authored faction-dominant zone.
+1. The authored faction boss drops the BROKEN Relic once, guaranteed.
+2. Acquisition starts its charge at `0 / 50` faction kills.
+3. Only matching-faction kills performed AFTER acquisition count toward charge.
+4. At `50 / 50`, the Relic becomes CHARGED.
+5. A CHARGED Relic remains CHARGED until the player explicitly sends it to the Academy.
+6. If Archaeology I is complete, the Academy may examine it.
+7. Examination changes the Relic to EXAMINED and satisfies the faction Research prerequisite.
 
-No final biome boss is required by default.
+No automatic examination is allowed.
 
-The Relic must be obtainable before the end of the relevant chapter so dungeon preparation can begin before chapter completion.
+The boss kill that grants the Relic establishes the acquisition baseline and does not count as charge progress.
 
-## 5.4 Authored faction Relics
+Kills performed before the Relic is acquired must never contribute to its 50-kill charge.
 
-### Keeper
+## 5.3 Boss acquisition — authored data
 
-- normals: Keeper Warrior + Keeper Shaman;
-- elite: Keeper Champion;
-- territory: Frostpeak Mountain Segment 5.
+Each faction Relic is guaranteed by its authored S10 faction boss:
 
-### Heretic
+| Faction | Source boss |
+|---|---|
+| Keeper | Ancient Keeper |
+| Heretic | Heretic Madmen |
+| Undead | Lich |
+| Morgana | High Priestess |
 
-- normals: Heretic Thug + Heretic Firestarter;
-- elite: Heretic Enforcer;
-- territory: Stone Highlands Segment 5.
+The boss-to-Relic relationship is authored data, never inferred from names or implemented with faction-specific conditionals.
 
-### Undead
+The Relic drops only once.
 
-- normals: Skeleton Swordsman + Skeleton Archer;
-- elite: Spectral Knight;
-- territory: Dark Swamp Segment 5.
+Acquisition is committed only when the unique Relic object can actually be granted to the player Inventory. The domain must not create a hidden acquired state without the corresponding Inventory object.
 
-### Morgana
+## 5.4 Inventory ownership and presentation
 
-- normals: Morgana Witch + Morgana Suppressor;
-- elite: Morgana Dark Knight;
-- territory: Golden Steppe Segment 5.
+The Relic is a real unique player Inventory item.
 
-Completing all five objectives reconstructs the matching faction Relic permanently once Archaeology has unlocked reconstruction.
+Rules:
 
-## 5.5 Historical progress
+- quantity 1;
+- non-stackable unique entry;
+- category: Special;
+- cannot be used as a consumable;
+- cannot be transferred to the Bank;
+- no equipment slot;
+- no passive stats.
 
-Where persistent data allows it, Relic objectives recognize progress completed before Archaeology becomes available.
+The Relic tooltip is the authoritative player-facing state display.
 
-Current implementation records faction/monster/world progress historically and gates only reconstruction behind Archaeology.
+It shows:
 
-Exact migration/backfill behavior for older save formats remains an implementation design task where historical data did not previously exist.
+- BROKEN: charge progress `X / 50`;
+- CHARGED: ready for Academy examination;
+- EXAMINED: examination completed.
+
+The Bestiary does not display this state.
+
+No final Relic visual asset is invented until separately validated.
+
+## 5.5 Charge rules
+
+Validated charge requirement:
+
+- 50 kills of the matching faction after Relic acquisition.
+
+The charge uses the existing authoritative faction kill stream; it does not create a duplicate combat simulation or independent kill source.
+
+The stored acquisition baseline makes charge equivalent to:
+
+`current_faction_kills - faction_kills_at_relic_acquisition`
+
+clamped to `[0, 50]`.
+
+Historical kills before acquisition are explicitly excluded.
+
+The charge phase is normal active gameplay; it has no separate offline-combat simulation.
+
+## 5.6 Academy examination
+
+A CHARGED Relic is NOT automatically examined.
+
+Before examination, faction Research remains gated and the Academy indicates that it is waiting for the Relic or that the Relic is ready to examine, according to its state.
+
+When both conditions are true:
+
+- Relic state = CHARGED;
+- Archaeology I completed;
+
+the Academy exposes an explicit action:
+
+`Send Relic to Academy`
+
+This action:
+
+- has no Silver cost;
+- has no material cost;
+- has no timer;
+- does not consume the Research slot;
+- does not automatically start either contextual faction Research;
+- changes the Relic state to EXAMINED.
+
+After examination, the two contextual faction Research entries may become available according to their remaining prerequisites.
+
+## 5.7 Persistence and migration
+
+Relic acquisition baseline and EXAMINED state are persistent.
+
+Current persistence contract is versioned.
+
+Migration rule for saves produced by older Relic implementations:
+
+- previous fragment/reconstructed or auto-examined states are NOT allowed to import historical kills as current charge;
+- migrated Relics restart as BROKEN at `0 / 50` using the faction kill count at migration/load as their new acquisition baseline;
+- a migrated Relic therefore requires 50 new matching-faction kills before it can become CHARGED;
+- examination remains an explicit Academy action under the current contract.
+
+This deliberately favors correctness of the validated new loop over preserving obsolete automatic reconstruction semantics.
 
 ---
 
 # 6. CONTEXTUAL FACTION RESEARCH
 
-Reconstructing a faction Relic makes TWO independent Research entries appear simultaneously.
+An EXAMINED faction Relic satisfies the Relic prerequisite for TWO independent Research entries.
 
 The same validated tuning applies to Keeper, Heretic, Undead and Morgana.
+
+Before examination, the Academy displays the Relic gate rather than pretending the Research itself is available.
 
 ## 6.1 Faction Expedition Research
 
@@ -359,7 +429,7 @@ For each faction:
 
 `Étude des <Faction>`
 
-- prerequisite: matching faction Relic reconstructed;
+- prerequisite: matching faction Relic EXAMINED;
 - Academy tier: T4;
 - Silver cost: 5,000;
 - duration: 30 minutes;
@@ -375,7 +445,7 @@ For each faction:
 
 `Localisation des Sanctuaires <Faction>`
 
-- prerequisite: matching faction Relic reconstructed;
+- prerequisite: matching faction Relic EXAMINED;
 - Academy tier: T4;
 - Silver cost: 10,000;
 - duration: 1 hour;
@@ -442,7 +512,7 @@ Validated V1 contains:
 ### Faction Expedition
 
 - faction-specific;
-- requires the faction Relic;
+- requires the faction Relic to have been EXAMINED;
 - requires the faction Expedition Research;
 - tier availability controlled by Cartography;
 - produces the matching faction Rune;
@@ -814,11 +884,13 @@ An Expedition completed while offline still resolves its Expedition rewards norm
 
 # 12. WORLD ACHIEVEMENTS / BESTIARY PRESENTATION
 
-The existing surfaces expose major milestones from this feature.
+The existing surfaces expose major milestones from this feature without duplicating ownership.
 
 Validated Achievement definitions and thresholds live in:
 
 - `AI_BIBLE/10_SYSTEMS/44A_FACTION_ACHIEVEMENT_MILESTONES.md`
+
+Bestiary responsibility remains monster discovery/information and per-monster kill counts. Relic state is intentionally excluded from Bestiary presentation and lives on the Inventory item tooltip.
 
 Implementation status:
 
@@ -832,9 +904,17 @@ Implementation status:
 # 13. COMPLETE VALIDATED LOOP
 
 World/Faction Combat
--> Bestiary knowledge
+-> Bestiary monster knowledge / per-monster kill counts
 -> raw faction Fame
 -> Faction Mastery XP
+
+Faction S10 boss victory
+-> guaranteed matching BROKEN Relic drop into player Inventory
+-> Relic charge starts at 0/50
+
+Post-drop faction combat
+-> 50 new matching-faction kills
+-> Relic becomes CHARGED
 
 Island Level 2
 -> Academy available
@@ -857,11 +937,15 @@ Cartography II-V
 
 Archaeology I
 -> 2,500 Silver / 20 min
--> deterministic Relic reconstruction capability
+-> enables Academy examination of CHARGED Relics
 
-Faction Relic 5/5
--> Relic permanently reconstructed
--> two contextual faction Research entries appear
+Charged faction Relic
+-> explicit Send Relic to Academy action
+-> no cost / no timer / no Research slot
+-> Relic becomes EXAMINED
+
+EXAMINED faction Relic
+-> two contextual faction Research entries satisfy their Relic prerequisite
 
 Faction Expedition Research
 -> faction Expedition family unlocked
@@ -895,7 +979,7 @@ Generic Silver Expedition
 -> independent from factions/Mastery
 
 Major milestones
--> Bestiary + World Achievements presentation
+-> World Achievements presentation
 
 ---
 
@@ -915,7 +999,6 @@ Expected definition families include:
 - `FactionDefinition`;
 - `FactionMasteryDefinition`;
 - `RelicDefinition`;
-- `RelicObjectiveDefinition`;
 - `ExpeditionDefinition`;
 - faction Cape/passive definitions;
 - `AchievementDefinition`.
@@ -924,7 +1007,11 @@ Required single-source-of-truth rules:
 
 - Expedition family/type determines same-type concurrency validation;
 - Expedition definitions author duration/reward/tier/faction;
-- Relic objectives are generic objective definitions;
+- Relic definitions author faction, source boss, Inventory item and charge kill count;
+- Relic charge is derived from the authoritative faction kill stream after the stored acquisition baseline;
+- Relic state is owned by `RelicService`, while physical presence is mirrored by the existing Inventory system;
+- Bestiary never becomes a second Relic state owner;
+- Academy examination is an explicit generic action over the Relic requirement already authored on faction Research;
 - faction definitions reference existing monster/zone/dungeon IDs;
 - Cape recipes use the existing Crafting system;
 - Cape enchantments reuse the existing generic enchantment material scaling;
@@ -943,10 +1030,9 @@ The following remain intentionally OPEN and must not be invented during implemen
 2. Final player-facing names/visual identities of faction Runes.
 3. Exact faction item/weapon recipes and Artifact drop rates when those items are designed.
 4. Final Bestiary/Academy/Expedition visual composition and polish beyond validated behavior.
-5. Persistence/backfill details for historical Relic objectives where older saves contain insufficient historical data.
-6. Exact V1 application of the Faction Mastery loot channel (drop-rate versus quantity/yield) remains OPEN.
+5. Exact V1 application of the Faction Mastery loot channel (drop-rate versus quantity/yield) remains OPEN.
 
-Academy T4-T8 progression, Cartography I-V tuning, all four faction Relics, contextual Research, T4-T8 faction Expeditions and matching faction Capes are now validated and implemented as data-driven content.
+Academy T4-T8 progression, Cartography I-V tuning, the four faction Relic lifecycles, contextual Research, T4-T8 faction Expeditions and matching faction Capes are now validated and implemented as data-driven content.
 
 ---
 
@@ -959,8 +1045,12 @@ Design status:
 - Academy T5-T8 upgrade costs: VALIDATED / IMPLEMENTED
 - Cartography I-V: VALIDATED / IMPLEMENTED
 - Archaeology I: VALIDATED / IMPLEMENTED
-- Relic system: VALIDATED / IMPLEMENTED
-- Keeper / Heretic / Undead / Morgana Relic objectives: VALIDATED / IMPLEMENTED
+- Relic boss-drop system: VALIDATED / IMPLEMENTED
+- Relic BROKEN -> CHARGED 50 post-drop kill contract: VALIDATED / IMPLEMENTED
+- Relic Inventory ownership/state tooltip: VALIDATED / IMPLEMENTED
+- Relic explicit Academy examination: VALIDATED / IMPLEMENTED
+- Relic legacy save migration to fresh BROKEN baseline: VALIDATED / IMPLEMENTED
+- Keeper / Heretic / Undead / Morgana Relic data: VALIDATED / IMPLEMENTED
 - Keeper / Heretic / Undead / Morgana contextual Research: VALIDATED / IMPLEMENTED
 - Dungeon family Research gates: VALIDATED / IMPLEMENTED FOR ALL FOUR FACTIONS
 - Dungeon key interaction: VALIDATED / UNCHANGED
@@ -980,7 +1070,7 @@ Design status:
 - Faction Mastery Rune yield bonus: VALIDATED / IMPLEMENTED
 - Faction Mastery Silver/Fame yield bonus: VALIDATED / IMPLEMENTED
 - Faction Mastery loot channel: DESIGN OPEN
-- Bestiary projection: IMPLEMENTED / POLISH OPEN
+- Bestiary monster projection: IMPLEMENTED / RELIC STATE EXCLUDED BY DESIGN / POLISH OPEN
 - Achievement definitions/projection: VALIDATED / IMPLEMENTED / POLISH OPEN
 - Research Dashboard tracking: IMPLEMENTED
 
