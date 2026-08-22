@@ -4,13 +4,43 @@ import {
   CloudSaveDocumentSchema,
   CloudSaveListSchema,
   CloudSaveSlotIdSchema,
+  type CloudSaveDocument,
 } from "@game/shared";
 import { AuthFailure, type AuthService } from "../auth/AuthService.js";
 import type { CloudSaveRepository } from "../saves/CloudSaveRepository.js";
 
+const SERVER_SAVED_AT_KEY = "serverSavedAt";
+const SERVER_NOW_KEY = "serverNow";
+
 function getBearerToken(request: FastifyRequest): string | undefined {
   const value = request.headers.authorization;
   return value?.startsWith("Bearer ") ? value.slice(7).trim() || undefined : undefined;
+}
+
+function withServerSavedAt(document: CloudSaveDocument, serverSavedAt: number): CloudSaveDocument {
+  return {
+    ...document,
+    metadata: {
+      ...document.metadata,
+      extra: {
+        ...document.metadata.extra,
+        [SERVER_SAVED_AT_KEY]: serverSavedAt,
+      },
+    },
+  };
+}
+
+function withServerNow(document: CloudSaveDocument, serverNow: number): CloudSaveDocument {
+  return {
+    ...document,
+    metadata: {
+      ...document.metadata,
+      extra: {
+        ...document.metadata.extra,
+        [SERVER_NOW_KEY]: serverNow,
+      },
+    },
+  };
 }
 
 async function requireAccountId(request: FastifyRequest, reply: FastifyReply, auth: AuthService): Promise<string | undefined> {
@@ -35,7 +65,9 @@ export function registerSaveRoutes(app: FastifyInstance, auth: AuthService, save
     if (accountId === undefined) return reply;
     if (!slot.success) return reply.status(400).send({ code: "INVALID_REQUEST", message: "Emplacement invalide." });
     const document = await saves.get(accountId, slot.data);
-    return document === undefined ? reply.status(404).send({ code: "INVALID_REQUEST", message: "Sauvegarde introuvable." }) : document;
+    return document === undefined
+      ? reply.status(404).send({ code: "INVALID_REQUEST", message: "Sauvegarde introuvable." })
+      : withServerNow(document, Date.now());
   });
   app.put(`${CLOUD_SAVES_ROUTE}/:slotId`, async (request, reply) => {
     const accountId = await requireAccountId(request, reply, auth);
@@ -43,8 +75,13 @@ export function registerSaveRoutes(app: FastifyInstance, auth: AuthService, save
     const document = CloudSaveDocumentSchema.safeParse(request.body);
     if (accountId === undefined) return reply;
     if (!slot.success || !document.success) return reply.status(400).send({ code: "INVALID_REQUEST", message: "Sauvegarde invalide." });
-    const accepted = await saves.save(accountId, slot.data, document.data);
-    return { accepted, updatedAt: document.data.metadata.updatedAt };
+    const serverSavedAt = Date.now();
+    const accepted = await saves.save(
+      accountId,
+      slot.data,
+      withServerSavedAt(document.data, serverSavedAt),
+    );
+    return { accepted, updatedAt: document.data.metadata.updatedAt, serverSavedAt };
   });
   app.delete(`${CLOUD_SAVES_ROUTE}/:slotId`, async (request, reply) => {
     const accountId = await requireAccountId(request, reply, auth);
