@@ -22,6 +22,17 @@ export interface ResearchFoundationDependencies {
   readonly getAcademyTier: () => number;
 }
 
+type RelicGateState = "none" | "waiting" | "ready" | "examined";
+
+function getRelicRequirement(researchId: string) {
+  const definition = RESEARCH_DEFINITIONS.find((candidate) => candidate.id === researchId);
+  if (definition === undefined) return undefined;
+  const requirement = definition.requirements.find(
+    (candidate) => candidate.type === "relic_reconstructed",
+  );
+  return requirement?.type === "relic_reconstructed" ? requirement : undefined;
+}
+
 /** Client composition only. Research domain stays economy/content agnostic. */
 export function createResearchFoundation(dependencies: ResearchFoundationDependencies) {
   const researchServiceRef: {
@@ -56,20 +67,26 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
     }
   }
 
-  const isWaitingForRelic = (researchId: string): boolean => {
-    const definition = RESEARCH_DEFINITIONS.find((candidate) => candidate.id === researchId);
-    if (definition === undefined) return false;
-    const relicRequirement = definition.requirements.find(
-      (requirement) => requirement.type === "relic_reconstructed",
-    );
-    if (relicRequirement?.type !== "relic_reconstructed") return false;
-    return !dependencies.relicService.isReconstructed(relicRequirement.relicId);
+  const getRelicGateState = (researchId: string): RelicGateState => {
+    const requirement = getRelicRequirement(researchId);
+    if (requirement === undefined) return "none";
+    const progress = dependencies.relicService.getProgress(requirement.relicId);
+    if (progress?.state === "examined") return "examined";
+    if (progress?.state === "charged") return "ready";
+    return "waiting";
+  };
+
+  const examineRelicForResearch = (researchId: string): boolean => {
+    const requirement = getRelicRequirement(researchId);
+    if (requirement === undefined) return false;
+    return dependencies.relicService.examineRelic(requirement.relicId).ok;
   };
 
   return {
     researchService,
     canReconstructRelics: () => researchService.hasUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction),
-    isWaitingForRelic,
+    getRelicGateState,
+    examineRelicForResearch,
   };
 }
 
