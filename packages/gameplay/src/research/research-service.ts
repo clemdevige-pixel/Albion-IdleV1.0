@@ -24,6 +24,7 @@ const ResearchSnapshotSchema = z.object({
 });
 
 type ResearchSnapshot = z.infer<typeof ResearchSnapshotSchema>;
+type ResearchCompletionListener = (researchId: ResearchId) => void;
 
 export interface ResearchServiceDependencies<
   TRequirement extends ResearchRequirementDefinition,
@@ -51,6 +52,7 @@ export class ResearchService<
   readonly #completedResearchIds = new Set<ResearchId>();
   readonly #requirementPort: ResearchRequirementPort<TRequirement>;
   readonly #paymentPort: ResearchPaymentPort;
+  readonly #completionListeners = new Set<ResearchCompletionListener>();
   #activeResearch: ActiveResearchState | undefined;
 
   constructor(dependencies: ResearchServiceDependencies<TRequirement>) {
@@ -105,6 +107,11 @@ export class ResearchService<
     return this.#areRequirementsMet(definition) ? "available" : "locked";
   }
 
+  onCompleted(listener: ResearchCompletionListener): () => void {
+    this.#completionListeners.add(listener);
+    return () => { this.#completionListeners.delete(listener); };
+  }
+
   startResearch(researchId: ResearchId): StartResearchResult {
     const definition = this.#definitions.get(researchId);
     if (definition === undefined) return { ok: false, reason: "research_not_found" };
@@ -153,7 +160,12 @@ export class ResearchService<
     const completedResearchId = this.#activeResearch.researchId;
     this.#completedResearchIds.add(completedResearchId);
     this.#activeResearch = undefined;
+    for (const listener of this.#completionListeners) listener(completedResearchId);
     return { completedResearchId, activeResearch: undefined };
+  }
+
+  resolveBackground(elapsedMs: number): void {
+    this.advance(elapsedMs);
   }
 
   save(): ResearchSnapshot {
