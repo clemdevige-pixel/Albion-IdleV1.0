@@ -41,6 +41,9 @@ const ExpeditionSnapshotSchema = z.union([
 ]);
 
 type ExpeditionSnapshot = z.infer<typeof ExpeditionSnapshotV2Schema>;
+type ExpeditionCompletionListener<TRewardSummary> = (
+  completed: readonly ExpeditionCompletion<TRewardSummary>[],
+) => void;
 
 export interface ExpeditionServiceDependencies<
   TRequirement extends ExpeditionRequirementDefinition,
@@ -69,6 +72,7 @@ export class ExpeditionService<
   readonly #requirementPort: ExpeditionRequirementPort<TRequirement>;
   readonly #slotCapacityPort: ExpeditionSlotCapacityPort;
   readonly #rewardPort: ExpeditionRewardPort<TRequirement, TRewardSummary>;
+  readonly #completionListeners = new Set<ExpeditionCompletionListener<TRewardSummary>>();
   #activeExpeditions: ActiveExpeditionState[] = [];
   #completedByType = new Map<string, number>();
 
@@ -116,6 +120,11 @@ export class ExpeditionService<
     let total = 0;
     for (const count of this.#completedByType.values()) total += count;
     return total;
+  }
+
+  onCompleted(listener: ExpeditionCompletionListener<TRewardSummary>): () => void {
+    this.#completionListeners.add(listener);
+    return () => { this.#completionListeners.delete(listener); };
   }
 
   startExpedition(
@@ -189,7 +198,14 @@ export class ExpeditionService<
     }
 
     this.#activeExpeditions = remaining;
+    if (completed.length > 0) {
+      for (const listener of this.#completionListeners) listener(completed);
+    }
     return { completed, activeExpeditions: this.getActiveExpeditions() };
+  }
+
+  resolveBackground(elapsedMs: number): void {
+    this.advance(elapsedMs);
   }
 
   save(): ExpeditionSnapshot {
