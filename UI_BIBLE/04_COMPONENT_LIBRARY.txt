@@ -2,8 +2,9 @@
 
 # Albion Idle — Component Library
 
-Version: 1.0
+Version: 1.1
 Status: VALIDATED
+Last update: 2026-08-22
 
 ---
 
@@ -91,6 +92,8 @@ Used for:
 - Gathering
 - Workers
 - Zone Progression
+- Research
+- Expeditions
 
 Progress Bars always share the same visual language.
 
@@ -126,11 +129,19 @@ Examples:
 
 ## Tooltip
 
-Provides detailed information.
+Provides contextual detailed information.
 
-Appears on hover.
+Appears on hover/focus and disappears automatically.
 
-Never required to understand the interface.
+A Tooltip must explain useful context, not simply repeat the visible label.
+
+The base interface must remain understandable without the Tooltip.
+
+Item Tooltips read item/equipment gameplay definitions as their source of truth. Missing or pending visual assets must never suppress authored stats, effects, tier or other item information.
+
+For dense action lists, prefer attaching explanatory Tooltips to the relevant action control rather than making the entire row/card a hover target when doing so would hurt readability.
+
+Tooltip behavior/positioning should be shared rather than recreated per module.
 
 ---
 
@@ -157,14 +168,33 @@ Supports:
 
 ## Dropdown
 
-Shared filtering component.
+Shared selection/filtering component.
 
 Supports:
 
 - sorting
 - categories
+- families
+- recipes
 - rarity
 - tiers
+
+When an operating-system-native popup is visually inconsistent or unreadable inside the game panel, use the shared game-styled dropdown presentation.
+
+A game-styled Dropdown must provide:
+
+- opaque surface/background;
+- sufficient text contrast;
+- clearly visible selected state;
+- distinct hover and keyboard-focus states;
+- readable option spacing;
+- vertical scrolling for long option sets;
+- no horizontal scrolling;
+- correct overlay/z-index above the surrounding panel;
+- keyboard accessible selection;
+- data-driven option order supplied by the owning presentation model.
+
+The Dropdown must not invent sorting, filtering or gameplay relationships. It renders the options and order supplied by its model.
 
 ---
 
@@ -189,6 +219,8 @@ Examples:
 - Craft
 - Workers
 - Island
+- Research
+- Expeditions
 - Buffs
 
 ---
@@ -288,12 +320,14 @@ MUST
 - Maintain identical spacing.
 - Maintain identical typography.
 - Maintain identical interaction patterns.
+- Keep reusable presentation components free of gameplay-specific branching.
 
 MUST NOT
 
 - Create duplicate components.
 - Introduce isolated visual styles.
 - Duplicate existing functionality.
+- Hide gameplay data because a final visual asset does not yet exist.
 
 ---
 
