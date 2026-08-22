@@ -37,7 +37,8 @@ const DEFAULT_RECONSTRUCTION_PORT: RelicReconstructionPort = {
  * A Relic is dropped once by its authored faction boss, then charged by faction
  * kills performed after acquisition. Once charged, the Academy examines it
  * automatically as soon as the owning Research authority allows examination.
- * No fragment items or duplicate objective counters are stored.
+ * Inventory ownership is delegated through the acquisition callback; this domain
+ * never owns inventory rules or storage.
  */
 export class RelicService implements SaveProvider {
   readonly providerId = "relics";
@@ -122,15 +123,19 @@ export class RelicService implements SaveProvider {
 
   /**
    * Called after the authoritative faction-knowledge kill counter has advanced.
-   * The matching boss drops its Relic exactly once. Its own kill is used as the
-   * baseline, so charging starts at 0/required and only later faction kills count.
+   * The matching boss drops its Relic exactly once. Acquisition is committed only
+   * if the external owner accepts the unique inventory object.
    */
-  recordMonsterKill(monsterId: string): readonly RelicId[] {
+  recordMonsterKill(
+    monsterId: string,
+    tryAcquire: (definition: RelicDefinition) => boolean = () => true,
+  ): readonly RelicId[] {
     const newlyAcquired: RelicId[] = [];
     for (const definition of this.#definitions.values()) {
       if (definition.sourceBossMonsterId !== monsterId) continue;
       if (this.#examinedRelicIds.has(definition.id)) continue;
       if (this.#acquiredAtFactionKillCount.has(definition.id)) continue;
+      if (!tryAcquire(definition)) continue;
 
       this.#acquiredAtFactionKillCount.set(
         definition.id,
@@ -157,10 +162,7 @@ export class RelicService implements SaveProvider {
     return { ok: true };
   }
 
-  /**
-   * Resolves every charged Relic whose Academy examination gate is available.
-   * Used after kills and after Research completion so either ordering is valid.
-   */
+  /** Resolves charged Relics whose Academy examination gate is available. */
   resolveCompletedRelics(): readonly RelicId[] {
     const examined: RelicId[] = [];
     for (const definition of this.#definitions.values()) {
@@ -214,6 +216,7 @@ export class RelicService implements SaveProvider {
     return definition.id.trim() !== ""
       && definition.factionId.trim() !== ""
       && definition.sourceBossMonsterId.trim() !== ""
+      && definition.inventoryItemId.trim() !== ""
       && Number.isInteger(definition.chargeKillCount)
       && definition.chargeKillCount > 0;
   }
