@@ -2,8 +2,9 @@
 
 # Albion Idle — Craft Panel
 
-Version: 1.0
+Version: 1.1
 Status: VALIDATED
+Last update: 2026-08-22
 
 ---
 
@@ -162,6 +163,61 @@ T3 → T8
 Unavailable tiers remain visually understandable.
 
 The interface must explain why a tier cannot currently be crafted.
+
+## Selection continuity across tiers
+
+Changing tier must preserve the player's selected craft progression whenever the equivalent recipe exists at the destination tier.
+
+Examples:
+
+```text
+Dagger T3 selected
+→ switch to T4
+→ Dagger T4 selected
+
+Keeper Cape T5 selected
+→ switch to T6
+→ Keeper Cape T6 selected
+```
+
+The UI must track a stable authored craft identity rather than the tier-specific output item ID.
+
+Stable identities are resolved from existing content ownership:
+
+- weapon specialization for weapons;
+- progression equipment family for conventional armor/accessories;
+- faction identity for faction capes;
+- authored item identity for tier-independent conversions or standalone recipes.
+
+No UI-only T3→T4 mapping table and no item-ID parsing may be used to maintain this continuity.
+
+## Canonical ordering
+
+Family and recipe ordering must remain strictly consistent across tiers.
+
+The canonical order comes from authored content/catalog order, not from the incidental order of runtime recipe arrays and not from an alphabetical UI sort.
+
+A tier may omit an unavailable recipe, but recipes shared by multiple tiers retain the same relative order.
+
+---
+
+# Selection Controls
+
+Family and recipe selection use Albion Idle-styled controls rather than operating-system-native `<select>` rendering when the native popup would break readability or visual consistency.
+
+Dropdown requirements:
+
+- opaque game-surface background;
+- strong text/background contrast;
+- selected state clearly identifiable;
+- distinct hover/focus state;
+- readable spacing per option;
+- vertical scrolling for long lists;
+- no horizontal scrolling;
+- correct overlay/z-index behavior above surrounding panel content;
+- keyboard accessible interaction.
+
+The control is a presentation component only. It consumes the ordered model and stable selection keys supplied by the Craft presentation layer.
 
 ---
 
@@ -352,6 +408,8 @@ Relevant information may include:
 
 Detailed information uses the shared Tooltip or contextual detail components.
 
+Item inspection must remain functional even when a final visual asset is not yet available. Gameplay/item definitions remain the authority for stats and effects; the visual layer may use a temporary fallback without hiding those data.
+
 ---
 
 # Cross-System Navigation
@@ -474,6 +532,8 @@ MUST
 - Explain locked or unavailable recipes.
 - Use gameplay data as the source of truth.
 - Support tiers and enchantments.
+- Preserve equivalent craft selection when changing tiers.
+- Keep common recipes in the same authored relative order across tiers.
 - Keep the Game World visible.
 - Update inventory and requirements immediately after crafting.
 
@@ -481,6 +541,8 @@ MUST NOT
 
 - Display every recipe in one massive grid.
 - Hardcode individual weapon layouts.
+- Hardcode cross-tier recipe mappings in React/UI code.
+- Derive craft identity from localized labels.
 - Invent recipe requirements.
 - Hide missing materials.
 - Create full-screen crafting interfaces.
