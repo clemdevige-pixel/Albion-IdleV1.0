@@ -24,9 +24,6 @@ describe("createFactionAchievementFoundation", () => {
         getFactionKillCount: (factionId) => factionId === "keeper" ? 100 : 0,
         getFactionEliteKillCount: (factionId) => factionId === "keeper" ? 3 : 0,
       },
-      relicService: {
-        isReconstructed: (relicId) => relicId === "relic_keeper",
-      },
       expeditionService: {
         getCompletedCount: (typeId) => typeId === "keeper" ? 10 : typeId === "silver" ? 1 : 0,
         getTotalCompletedCount: () => 10,
@@ -53,7 +50,6 @@ describe("createFactionAchievementFoundation", () => {
 
     expect(foundation.getProgress(definition("keeper_hunter_2")).completed).toBe(true);
     expect(foundation.getProgress(definition("keeper_elite_hunter")).completed).toBe(true);
-    expect(foundation.getProgress(definition("keeper_relic_reconstructed")).completed).toBe(true);
     expect(foundation.getProgress(definition("keeper_expeditionary")).completed).toBe(true);
     expect(foundation.getProgress(definition("keeper_conqueror")).completed).toBe(true);
     expect(foundation.getProgress(definition("keeper_mastery_2")).completed).toBe(true);
@@ -69,7 +65,6 @@ describe("createFactionAchievementFoundation", () => {
         getFactionKillCount: () => 0,
         getFactionEliteKillCount: () => 0,
       },
-      relicService: { isReconstructed: () => false },
       expeditionService: {
         getCompletedCount: (typeId) => typeId === "heretic" ? 99 : 0,
         getTotalCompletedCount: () => 99,
