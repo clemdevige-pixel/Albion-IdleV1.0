@@ -5,8 +5,8 @@
 .dashboard-research__active {
   width: 100%;
   display: grid;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 0;
+  padding: 4px 12px 8px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -16,6 +16,20 @@
 
 .dashboard-research__active:disabled {
   cursor: default;
+}
+
+.dashboard-research__activity {
+  display: grid;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.dashboard-research__activity + .dashboard-research__activity {
+  border-top: 1px solid rgba(190, 159, 105, 0.12);
+}
+
+.dashboard-research__activity--expedition {
+  gap: 0;
 }
 
 .dashboard-research__summary {
@@ -31,8 +45,7 @@
   gap: 2px;
 }
 
-.dashboard-research__summary span,
-.dashboard-research__summary small {
+.dashboard-research__summary span {
   opacity: 0.72;
 }
 
@@ -44,5 +57,7 @@
 
 .dashboard-research__summary b {
   flex: 0 0 auto;
-  font-size: 0.95rem;
+  color: var(--ui-color-accent);
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
