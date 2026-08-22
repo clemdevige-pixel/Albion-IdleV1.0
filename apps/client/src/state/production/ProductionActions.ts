@@ -107,7 +107,7 @@ export class ProductionActions {
     );
     this.deps.productionBridge.syncGathering(family);
     this.deps.productionBridge.syncRefining(family);
-    return result.action === "started" || result.action === "stopped";
+    return result.action === "started" || result.action === "stopped" || result.action === "completed";
   }
 
   craftEquipment(outputItemId: string): boolean {
