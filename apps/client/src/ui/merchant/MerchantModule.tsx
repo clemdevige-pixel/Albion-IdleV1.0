@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { RESEARCH_IDS } from "../../data/researchContentCatalog";
+import { useGameServices } from "../../state/GameContext";
 import { formatCompactNumber } from "../shared";
 import { useNavigation } from "../navigation";
 import { BuyView } from "./buy/BuyView";
@@ -31,15 +33,29 @@ function parseMerchantView(view: string | null): {
 
 export function MerchantModule(): JSX.Element {
   const { activeView } = useNavigation();
+  const services = useGameServices();
+  const enchantmentUnlocked = services.getAcademyModel().research.some((entry) => (
+    entry.id === RESEARCH_IDS.enchantmentStudy && entry.state === "completed"
+  ));
+  const availableServices = SERVICES.filter((entry) => entry.id !== "enchant" || enchantmentUnlocked);
   const target = useMemo(() => parseMerchantView(activeView), [activeView]);
-  const [service, setService] = useState<MerchantServiceId>(target?.service ?? "buy");
+  const targetService = target?.service === "enchant" && !enchantmentUnlocked
+    ? "buy"
+    : target?.service;
+  const [service, setService] = useState<MerchantServiceId>(targetService ?? "buy");
   const { wallet } = useMerchantData();
 
   useEffect(() => {
-    if (target !== undefined) setService(target.service);
-  }, [target]);
+    if (targetService !== undefined) setService(targetService);
+  }, [targetService]);
 
-  const targetedEnchantInstanceId = target?.service === "enchant" ? target.instanceId : undefined;
+  useEffect(() => {
+    if (service === "enchant" && !enchantmentUnlocked) setService("buy");
+  }, [enchantmentUnlocked, service]);
+
+  const targetedEnchantInstanceId = target?.service === "enchant" && enchantmentUnlocked
+    ? target.instanceId
+    : undefined;
 
   return (
     <div className="ui-merchant">
@@ -48,7 +64,7 @@ export function MerchantModule(): JSX.Element {
         <div><span>Solde</span><strong>{formatCompactNumber(wallet.silver, "0")} Silver</strong></div>
       </header>
       <nav className="ui-merchant__tabs" aria-label="Services du marchand">
-        {SERVICES.map((entry) => (
+        {availableServices.map((entry) => (
           <button
             type="button"
             key={entry.id}
@@ -62,7 +78,7 @@ export function MerchantModule(): JSX.Element {
       </nav>
       {service === "buy" && <BuyView />}
       {service === "sell" && <SellView />}
-      {service === "enchant" && (
+      {service === "enchant" && enchantmentUnlocked && (
         targetedEnchantInstanceId === undefined
           ? <EnchantView />
           : <EnchantView initialInstanceId={targetedEnchantInstanceId} />
