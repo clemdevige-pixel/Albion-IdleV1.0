@@ -1,14 +1,14 @@
 # 44_FACTION_RESEARCH_EXPLORATION_SYSTEM
 
-Status: FUTURE DESIGN / NOT IMPLEMENTED
-Authority: design reference for future integration only
-Last update: 2026-08-21
+Status: IMPLEMENTATION IN PROGRESS / KEEPER T4 PILOT PLAYABLE
+Authority: validated design + implementation contract
+Last update: 2026-08-22
 
 ---
 
 # 1. PURPOSE
 
-This document records the validated design for a future secondary progression layer built around:
+This document records the validated design and implementation contract for a secondary progression layer built around:
 
 - Academy / Research;
 - the existing Bestiary as Codex surface;
@@ -22,7 +22,7 @@ This document records the validated design for a future secondary progression la
 
 The system must create meaningful parallel progression while the hero continues normal Albion Idle activities, without adding arbitrary resources that only lengthen existing loops.
 
-This document describes design only. The feature is NOT implemented yet.
+The Keeper T4 pilot foundations are implemented. Later-tier/faction content remains data-authoring work where explicitly marked OPEN.
 
 ---
 
@@ -85,6 +85,12 @@ It may surface:
 - Faction Mastery progression;
 - related Achievements.
 
+Implementation status:
+
+- faction discovery / kill counters / elite counters: IMPLEMENTED;
+- Relic progression/reconstruction projection: IMPLEMENTED;
+- final UX polish/composition: still open.
+
 ## 2.4 Achievements
 
 Do NOT create a second Achievement system.
@@ -96,6 +102,17 @@ Existing reference:
 - `apps/client/src/ui/world/components/WorldAchievementsView.tsx`
 
 Achievements are presentation/completion objectives, not an unlock authority.
+
+The validated milestone definitions are authoritative in:
+
+- `AI_BIBLE/10_SYSTEMS/44A_FACTION_ACHIEVEMENT_MILESTONES.md`
+
+Implementation status:
+
+- 65 validated milestones authored as data-driven definitions;
+- progress resolved from owning systems rather than duplicated Achievement state;
+- World > Achievements projection implemented;
+- final visual polish remains open.
 
 ---
 
@@ -112,14 +129,20 @@ Validated unlock timing:
 
 ## 3.2 Construction
 
-Construction uses only the existing economy:
+Construction uses only the existing economy.
 
-- Silver;
-- existing authored materials/resources.
+Validated Academy construction cost:
+
+- 500 Silver;
+- 12 T3 Planks;
+- 8 T3 Bars;
+- 4 T3 Cloth.
 
 Do NOT create a Research Point / Science currency.
 
-Exact Academy construction cost remains OPEN.
+The initial constructed Academy is operationally T4.
+
+Academy upgrade costs for T5-T8 remain OPEN.
 
 ## 3.3 Research slots
 
@@ -171,6 +194,12 @@ Its tier controls which tier-associated Research entries can appear.
 
 ## 4.1 Cartography I — T4
 
+Validated tuning:
+
+- cost: 5,000 Silver;
+- duration: 30 minutes;
+- no material cost.
+
 Effects:
 
 - unlocks the Expedition system;
@@ -178,6 +207,12 @@ Effects:
 - enables T4 faction Expedition definitions whose faction prerequisites are satisfied.
 
 ## 4.2 Archaeology I — T4
+
+Validated tuning:
+
+- cost: 2,500 Silver;
+- duration: 20 minutes;
+- no material cost.
 
 Effects:
 
@@ -195,6 +230,8 @@ Do NOT create Archaeology II/III/IV/V unless a future mechanic genuinely require
 - Cartography III / T6: enables T6 Expeditions + unlocks the second simultaneous Expedition slot;
 - Cartography IV / T7: enables T7 Expeditions;
 - Cartography V / T8: enables T8 Expeditions.
+
+Exact Silver/material costs and durations for Cartography II-V remain OPEN.
 
 No extra route/event mechanics in V1.
 
@@ -266,17 +303,17 @@ Exact Keeper objectives:
 5. TERRITORY PROGRESSION
    - complete Frostpeak Segment 5.
 
-Completing all five objectives reconstructs the Keeper Relic permanently.
+Completing all five objectives reconstructs the Keeper Relic permanently once Archaeology has unlocked reconstruction.
 
 This is the pilot template to transpose to other factions through data.
 
 ## 5.5 Historical progress
 
-Where persistent data allows it, Relic objectives should recognize progress completed before Archaeology becomes visible.
+Where persistent data allows it, Relic objectives recognize progress completed before Archaeology becomes available.
 
-Do not force replay purely because the system unlocked later.
+Current implementation records faction/monster/world progress historically and gates only reconstruction behind Archaeology.
 
-Exact migration/backfill behavior remains an implementation design task.
+Exact migration/backfill behavior for older save formats remains an implementation design task where historical data did not previously exist.
 
 ---
 
@@ -310,7 +347,7 @@ Keeper pilot:
 - duration: 1 hour;
 - reward: permanently unlocks the Keeper dungeon family as selectable content.
 
-Equivalent independent Research exists for Heretic, Undead and Morgana.
+Equivalent independent Research exists for Heretic, Undead and Morgana when their authored content is added.
 
 ## 6.3 Dungeon keys
 
@@ -418,9 +455,11 @@ Validated V1 formats:
 - 6 hours;
 - 12 hours.
 
-Reward/hour is equivalent between these durations.
+Reward/hour is equivalent between these durations before whole-Rune rounding.
 
 Duration is a convenience choice, not an optimization trap.
+
+Faction Rune rewards are rounded to the nearest whole Rune after Faction Mastery is applied (`Math.round`, exact `.5` rounds upward).
 
 ## 7.6 Launch cost
 
@@ -459,10 +498,12 @@ Silver Expedition recap shows at minimum:
 - duration;
 - final Silver credited.
 
-If multiple Expeditions complete while offline:
+If multiple Expeditions complete together (including offline resolution):
 
 - show ONE grouped recap;
 - do NOT chain multiple blocking popups.
+
+Implementation status: IMPLEMENTED for online completion batches; offline resolution must feed the same recap pipeline.
 
 ---
 
@@ -497,6 +538,8 @@ Validated sinks:
 1. faction Cape crafting/enchantment;
 2. future faction item/weapon crafting.
 
+Runes are player Inventory items, not Production Storage materials.
+
 Do NOT inject Runes into ordinary generic gear recipes just to increase grind.
 
 ## 9.2 Future faction item recipe contract
@@ -527,7 +570,7 @@ Therefore:
 - 6h = 6 Runes;
 - 12h = 12 Runes.
 
-Faction Mastery modifies the resulting yield.
+Faction Mastery modifies the resulting yield, then the final quantity is rounded to the nearest whole Rune.
 
 ---
 
@@ -727,23 +770,18 @@ An Expedition completed while offline still resolves its Expedition rewards norm
 
 # 12. WORLD ACHIEVEMENTS / BESTIARY PRESENTATION
 
-The existing surfaces should expose major milestones from this feature.
+The existing surfaces expose major milestones from this feature.
 
-Candidate milestones:
+Validated Achievement definitions and thresholds live in:
 
-- faction discovery;
-- faction kill thresholds;
-- elite thresholds;
-- each Relic Fragment;
-- Relic reconstruction;
-- faction Expedition Research completion;
-- faction Dungeon Research completion;
-- faction Expedition completions;
-- dungeon completions;
-- Faction Mastery milestones;
-- generic Expedition milestones.
+- `AI_BIBLE/10_SYSTEMS/44A_FACTION_ACHIEVEMENT_MILESTONES.md`
 
-Exact Achievement thresholds/rewards remain OPEN.
+Implementation status:
+
+- 60 faction milestones + 5 global Expedition milestones authored;
+- progress resolved from faction knowledge, Relics, Expedition history/rewards, Dungeon history and Faction Mastery;
+- World > Achievements projection implemented;
+- final visual composition/polish may still evolve.
 
 ---
 
@@ -757,11 +795,17 @@ World/Faction Combat
 Island Level 2
 -> Academy available
 
+Academy construction
+-> 500 Silver + 12 T3 Planks + 8 T3 Bars + 4 T3 Cloth
+-> Academy T4 operational
+
 Cartography I
+-> 5,000 Silver / 30 min
 -> Expeditions + Silver Expedition T4
 
 Archaeology I
--> deterministic Relic quests
+-> 2,500 Silver / 20 min
+-> deterministic Relic reconstruction capability
 
 Faction Relic 5/5
 -> Relic permanently reconstructed
@@ -774,7 +818,7 @@ Cartography tier
 -> controls available Expedition tier
 
 Faction Expedition
--> matching faction Runes
+-> matching faction Runes in player Inventory
 
 Faction Runes
 -> faction Cape craft + Cape enchantments
@@ -833,7 +877,7 @@ Required single-source-of-truth rules:
 - Cape recipes use the existing Crafting system;
 - Cape enchantments reuse the existing generic enchantment material scaling;
 - dungeon passive uses generic faction + minimum-tier matching;
-- no duplicated Keeper-specific logic.
+- no duplicated Keeper-specific runtime logic.
 
 Existing catalogs remain authoritative for existing content until deliberately refactored.
 
@@ -841,22 +885,20 @@ Existing catalogs remain authoritative for existing content until deliberately r
 
 # 15. STILL OPEN / NEXT DESIGN WORK
 
-The following are still intentionally OPEN and must not be invented during implementation:
+The following remain intentionally OPEN and must not be invented during implementation:
 
-1. Academy construction cost/material requirements.
-2. Exact Silver/material costs and durations for Cartography / Archaeology Research.
+1. Academy upgrade costs/material requirements for T5-T8.
+2. Exact Silver/material costs and durations for Cartography II-V.
 3. Exact Relic objectives for Heretic / Undead / Morgana (Keeper pilot is locked).
 4. Exact names/visual identities of each faction Relic.
-5. Final player-facing names of faction Runes.
+5. Final player-facing names/visual identities of faction Runes.
 6. Exact Cape stat profiles/recipes for Heretic / Undead / Morgana where they differ from Keeper; architecture is shared.
 7. Exact faction item/weapon recipes and Artifact drop rates when those items are designed.
-8. Bestiary UX extension for Relic + Mastery information.
-9. World Achievement thresholds/rewards.
-10. Academy / Expedition screen UX composition beyond validated behavior.
-11. Persistence/backfill details for historical Relic objectives.
-12. Exact runtime slot-release edge behavior at completion if implementation needs an explicit event-order contract.
+8. Final Bestiary/Academy/Expedition visual composition and polish beyond validated behavior.
+9. Persistence/backfill details for historical Relic objectives where older saves contain insufficient historical data.
+10. Later-tier/faction content authoring not otherwise validated in this document.
 
-The core Keeper pilot economy, Faction Mastery curve, Rune economy, faction Cape passive, generic Expedition rules and Silver Expedition balance are now validated.
+The core Keeper pilot economy, Faction Mastery curve, Rune economy, faction Cape passive, generic Expedition rules, Silver Expedition balance, Academy construction cost, Cartography I and Archaeology I tuning are validated.
 
 ---
 
@@ -864,24 +906,32 @@ The core Keeper pilot economy, Faction Mastery curve, Rune economy, faction Cape
 
 Design status:
 
-- Academy architecture: VALIDATED
-- Cartography/Archaeology structure: VALIDATED
-- Relic system: VALIDATED
-- Keeper Relic objectives: VALIDATED
-- Keeper contextual Research: VALIDATED
+- Academy architecture: VALIDATED / IMPLEMENTED T4
+- Academy construction cost: VALIDATED / IMPLEMENTED
+- Cartography I: VALIDATED / IMPLEMENTED
+- Archaeology I: VALIDATED / IMPLEMENTED
+- Cartography II-V tuning: OPEN
+- Relic system: VALIDATED / IMPLEMENTED
+- Keeper Relic objectives: VALIDATED / IMPLEMENTED
+- Keeper contextual Research: VALIDATED / IMPLEMENTED
 - Dungeon key interaction: VALIDATED / UNCHANGED
-- Expedition slots/durations/offline behavior: VALIDATED
-- Same-type Expedition concurrency: VALIDATED
-- Generic Silver Expedition yields T4-T8: VALIDATED
-- Faction Rune generation: VALIDATED
+- Expedition slots/durations/concurrency: VALIDATED / IMPLEMENTED
+- Expedition online progression: IMPLEMENTED
+- Expedition offline progression: IMPLEMENTATION TO VERIFY/COMPLETE
+- Completion recap popup: IMPLEMENTED FOR COMPLETION BATCHES
+- Generic Silver Expedition yields T4-T8: VALIDATED / AUTHORED
+- Faction Rune generation + Inventory credit: VALIDATED / IMPLEMENTED
 - Rune sinks: VALIDATED
-- Keeper Cape base stats/recipes: VALIDATED PILOT
-- Cape enchantment integration: VALIDATED
-- Faction-dungeon Cape passive curve: VALIDATED
-- Cape tier compatibility: VALIDATED
-- Faction Mastery XP curve: VALIDATED
-- Faction Mastery yield curve: VALIDATED
-- Bestiary/Achievement detailed UX/content: OPEN
-- Feature implementation: NOT STARTED
+- Keeper Cape base stats/recipes T4-T8: VALIDATED / IMPLEMENTED
+- Cape enchantment integration: VALIDATED / IMPLEMENTED
+- Faction-dungeon Cape passive curve: VALIDATED / IMPLEMENTED
+- Cape tier compatibility: VALIDATED / IMPLEMENTED
+- Faction Mastery XP curve: VALIDATED / IMPLEMENTED
+- Faction Mastery Rune yield bonus: VALIDATED / IMPLEMENTED
+- Other Faction Mastery yield channels: NOT YET IMPLEMENTED UNLESS EXISTING CONTENT PATH SUPPORTS THEM
+- Bestiary projection: IMPLEMENTED / POLISH OPEN
+- Achievement definitions/projection: VALIDATED / IMPLEMENTED / POLISH OPEN
+- Research Dashboard tracking: IMPLEMENTED
+- Equipment preset capability: FOUNDATION IMPLEMENTED / RESEARCH TUNING OPEN
 
 DOCUMENT TERMINÉ
