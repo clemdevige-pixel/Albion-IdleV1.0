@@ -60,11 +60,12 @@ export function createFactionResearchFoundation(
     recordMonsterKill(monsterId: string): readonly string[] {
       const result = factionKnowledgeService.recordKill(monsterId);
       if (!result.ok) return [];
-      return relicService.recordMonsterKill(monsterId);
+      const acquired = relicService.recordMonsterKill(monsterId);
+      const examined = relicService.resolveCompletedRelics();
+      return [...acquired, ...examined];
     },
-    /** Legacy no-op retained for callers that reconcile world progression. */
     resolveWorldProgress(): readonly string[] {
-      return [];
+      return relicService.resolveCompletedRelics();
     },
   };
 }
