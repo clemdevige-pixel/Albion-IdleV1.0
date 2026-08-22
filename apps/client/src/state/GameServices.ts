@@ -27,6 +27,7 @@ import type {
   AcademyResearchActionResult,
 } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
 import type { ExpeditionRecapModel } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
+import type { ResearchRecapModel } from "../runtime/bootstrap/createResearchRecapFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 import type { DungeonAccessState } from "./DungeonNavigationActions.js";
@@ -71,12 +72,16 @@ export interface GameServices {
     expeditionId: string,
     durationMs: ExpeditionDurationMs,
   ) => StartExpeditionResult;
+  readonly subscribeResearchRecap: (listener: () => void) => () => void;
+  readonly getResearchRecap: () => ResearchRecapModel | null;
+  readonly dismissResearchRecap: () => void;
   readonly subscribeExpeditionRecap: (listener: () => void) => () => void;
   readonly getExpeditionRecap: () => ExpeditionRecapModel | null;
   readonly dismissExpeditionRecap: () => void;
   readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
   readonly getBestiaryKnowledge: (monsterId: string) => BestiaryKnowledgeModel;
   readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
+  readonly isDungeonSystemUnlocked: () => boolean;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
