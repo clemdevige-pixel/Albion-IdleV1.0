@@ -1,9 +1,20 @@
 import type { EntityId } from "@game/core";
 import type { CurrencyService, InventoryManager, WalletId } from "@game/gameplay";
-import { ITEM_DEFINITIONS, resolveItemStackInfo } from "../data/itemContentCatalog.js";
+import {
+  ITEM_DEFINITIONS,
+  resolveEnchantmentItemInfo,
+  resolveItemStackInfo,
+} from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
-import { PRODUCTION_FAMILIES, type ProductionTier } from "../data/productionFamilyCatalog.js";
-import { getProductionRefiningRecipe } from "../data/refiningRecipes.js";
+import {
+  PRODUCTION_FAMILIES,
+  type ProductionTier,
+} from "../data/productionFamilyCatalog.js";
+import {
+  EQUIPMENT_CRAFT_RECIPES,
+  getProductionRefiningRecipe,
+} from "../data/refiningRecipes.js";
+import { FACTION_CAPE_CRAFT_RECIPES } from "../data/factionCapeContentCatalog.js";
 
 export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v1";
 const DEV_SANDBOX_SILVER = 10_000_000;
@@ -68,6 +79,26 @@ function ensureEquipmentVariant(
   }
 }
 
+function seedAuthoredCraftingMaterials(
+  inventoryManager: InventoryManager,
+  productionStorageId: EntityId,
+): void {
+  for (const recipe of [...EQUIPMENT_CRAFT_RECIPES, ...FACTION_CAPE_CRAFT_RECIPES]) {
+    for (const requirement of recipe.requirements) {
+      if (
+        !requirement.itemId.startsWith("item_resource_")
+        && !requirement.itemId.startsWith("item_refined_")
+      ) continue;
+      ensureQuantity(
+        inventoryManager,
+        productionStorageId,
+        requirement.itemId,
+        DEV_SANDBOX_RESOURCE_STACK,
+      );
+    }
+  }
+}
+
 export function seedDevSandboxEconomy(dependencies: {
   readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
@@ -111,6 +142,10 @@ export function seedDevSandboxEconomy(dependencies: {
       );
     }
   }
+  seedAuthoredCraftingMaterials(
+    dependencies.inventoryManager,
+    dependencies.productionStorageId,
+  );
 
   ensureQuantity(dependencies.inventoryManager, dependencies.heroId, "item_health_potion", 99);
 
@@ -118,7 +153,7 @@ export function seedDevSandboxEconomy(dependencies: {
     const tier = getItemTier(itemId);
     if (tier === undefined || tier < 3 || tier > 8) continue;
     ensureEquipmentVariant(dependencies.inventoryManager, dependencies.bankId, itemId, 0);
-    if (tier >= 4) {
+    if (tier >= 4 && resolveEnchantmentItemInfo(itemId)?.enchantable === true) {
       ensureEquipmentVariant(dependencies.inventoryManager, dependencies.bankId, itemId, 3);
     }
   }
