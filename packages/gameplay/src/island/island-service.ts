@@ -1,6 +1,7 @@
 import {
   ISLAND_BUILDING_IDS,
   PLAYER_ISLAND_CONFIG,
+  getIslandBuildingDefinition,
   getIslandLevelDefinition,
   getIslandOperationalLevelDefinition,
   getNextIslandLevelDefinition,
@@ -169,9 +170,12 @@ export class PlayerIslandService implements SaveProvider {
     if (buildingInstanceIds.size !== snapshot.buildings.length || buildingDefinitionIds.size !== snapshot.buildings.length) return false;
     if (snapshot.buildings.some((building) => !validPlotIds.has(building.plotId) || !validBuildingIds.has(building.definitionId))) return false;
     for (const building of snapshot.buildings) {
+      const definition = getIslandBuildingDefinition(building.definitionId);
       const progression = getIslandOperationalLevelDefinition(building.definitionId, building.level);
-      const isUtilityBuilding = building.definitionId === "worker_house" || building.definitionId === "storage";
-      if (!isUtilityBuilding && progression === undefined) return false;
+      const progressionOptional = definition.category === "utility"
+        || definition.category === "workers"
+        || definition.category === "storage";
+      if (!progressionOptional && progression === undefined) return false;
     }
     for (const plot of snapshot.plots) if (plot.buildingInstanceId !== null && !buildingInstanceIds.has(plot.buildingInstanceId)) return false;
     for (const building of snapshot.buildings) {
