@@ -2,6 +2,7 @@ import {
   FactionKnowledgeService,
   RelicService,
   type RelicDefinition,
+  type RelicKillEvent,
 } from "@game/gameplay";
 import { getMonsterDefinition } from "../../data/monsterContentCatalog.js";
 import { RELIC_DEFINITIONS } from "../../data/relicContentCatalog.js";
@@ -27,7 +28,6 @@ const DEFAULT_RELIC_INVENTORY_PORT: RelicInventoryPort = {
 export function createFactionResearchFoundation(
   dependencies: FactionResearchFoundationDependencies = {},
 ) {
-  let canExamineRelics = (): boolean => false;
   let relicInventoryPort: RelicInventoryPort = DEFAULT_RELIC_INVENTORY_PORT;
 
   const factionKnowledgeService = new FactionKnowledgeService({
@@ -42,14 +42,9 @@ export function createFactionResearchFoundation(
     },
   });
 
-  const relicService = new RelicService(
-    {
-      getFactionKillCount: (factionId) => factionKnowledgeService.getFactionKillCount(factionId),
-    },
-    {
-      canReconstructRelic: () => canExamineRelics(),
-    },
-  );
+  const relicService = new RelicService({
+    getFactionKillCount: (factionId) => factionKnowledgeService.getFactionKillCount(factionId),
+  });
 
   for (const definition of dependencies.relicDefinitions ?? RELIC_DEFINITIONS) {
     const result = relicService.registerRelic(definition);
@@ -69,18 +64,15 @@ export function createFactionResearchFoundation(
   return {
     factionKnowledgeService,
     relicService,
-    bindReconstructionGate(gate: () => boolean): void {
-      canExamineRelics = gate;
-    },
     bindRelicInventory(port: RelicInventoryPort): void {
       relicInventoryPort = port;
       ensureInventoryMirror();
     },
-    recordMonsterKill(monsterId: string): readonly string[] {
-      const result = factionKnowledgeService.recordKill(monsterId);
+    recordMonsterKill(kill: RelicKillEvent): readonly string[] {
+      const result = factionKnowledgeService.recordKill(kill.monsterId);
       if (!result.ok) return [];
       return relicService.recordMonsterKill(
-        monsterId,
+        kill,
         (definition) => relicInventoryPort.hasItem(definition) || relicInventoryPort.grantItem(definition),
       );
     },
