@@ -34,13 +34,9 @@ export const RESEARCH_UNLOCK_IDS = {
   expeditionTier7: "expedition_tier:7",
   expeditionTier8: "expedition_tier:8",
   secondExpeditionSlot: "expedition_slot:2",
-  keeperExpeditionFamily: "expedition_family:keeper",
   keeperDungeonFamily: "dungeon_family:keeper",
-  hereticExpeditionFamily: "expedition_family:heretic",
   hereticDungeonFamily: "dungeon_family:heretic",
-  undeadExpeditionFamily: "expedition_family:undead",
   undeadDungeonFamily: "dungeon_family:undead",
-  morganaExpeditionFamily: "expedition_family:morgana",
   morganaDungeonFamily: "dungeon_family:morgana",
   equipmentPresets: "equipment_presets",
 } as const;
@@ -120,58 +116,40 @@ const FACTION_RESEARCH = [
     factionId: "keeper",
     displayName: "Keeper",
     relicId: "relic_keeper",
-    expeditionUnlockId: RESEARCH_UNLOCK_IDS.keeperExpeditionFamily,
     dungeonUnlockId: RESEARCH_UNLOCK_IDS.keeperDungeonFamily,
   },
   {
     factionId: "heretic",
     displayName: "Heretic",
     relicId: "relic_heretic",
-    expeditionUnlockId: RESEARCH_UNLOCK_IDS.hereticExpeditionFamily,
     dungeonUnlockId: RESEARCH_UNLOCK_IDS.hereticDungeonFamily,
   },
   {
     factionId: "undead",
     displayName: "Undead",
     relicId: "relic_undead",
-    expeditionUnlockId: RESEARCH_UNLOCK_IDS.undeadExpeditionFamily,
     dungeonUnlockId: RESEARCH_UNLOCK_IDS.undeadDungeonFamily,
   },
   {
     factionId: "morgana",
     displayName: "Morgana",
     relicId: "relic_morgana",
-    expeditionUnlockId: RESEARCH_UNLOCK_IDS.morganaExpeditionFamily,
     dungeonUnlockId: RESEARCH_UNLOCK_IDS.morganaDungeonFamily,
   },
 ] as const;
 
-const CONTEXTUAL_FACTION_RESEARCH: readonly ResearchDefinition<ResearchContentRequirement>[] = FACTION_RESEARCH.flatMap((faction) => [
-  {
-    id: `research_${faction.factionId}_expedition_study`,
-    displayName: `Étude des ${faction.displayName}`,
-    tier: 4,
-    durationMs: 30 * MINUTE_MS,
-    cost: { silver: 5_000, materials: [] },
-    requirements: [
-      { type: "academy_tier", minimumTier: 4 },
-      { type: "relic_reconstructed", relicId: faction.relicId },
-    ],
-    unlockIds: [faction.expeditionUnlockId],
-  },
-  {
-    id: `research_${faction.factionId}_dungeon_location`,
-    displayName: `Localisation des Sanctuaires ${faction.displayName}`,
-    tier: 4,
-    durationMs: HOUR_MS,
-    cost: { silver: 10_000, materials: [] },
-    requirements: [
-      { type: "academy_tier", minimumTier: 4 },
-      { type: "relic_reconstructed", relicId: faction.relicId },
-    ],
-    unlockIds: [faction.dungeonUnlockId],
-  },
-]);
+const CONTEXTUAL_FACTION_RESEARCH: readonly ResearchDefinition<ResearchContentRequirement>[] = FACTION_RESEARCH.map((faction) => ({
+  id: `research_${faction.factionId}_dungeon_location`,
+  displayName: `Localisation des Sanctuaires ${faction.displayName}`,
+  tier: 4,
+  durationMs: HOUR_MS,
+  cost: { silver: 10_000, materials: [] },
+  requirements: [
+    { type: "academy_tier", minimumTier: 4 },
+    { type: "relic_reconstructed", relicId: faction.relicId },
+  ],
+  unlockIds: [faction.dungeonUnlockId],
+}));
 
 export const RESEARCH_DEFINITIONS: readonly ResearchDefinition<ResearchContentRequirement>[] = [
   ...CARTOGRAPHY_RESEARCH,
@@ -208,19 +186,15 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
   [ARCHAEOLOGY_RESEARCH.id, {
     group: "core",
     description: "Donne à l’Académie la capacité d’examiner une Relique de faction chargée.",
-    effectSummary: "Permet l’examen des Reliques chargées à l’Académie.",
+    effectSummary: "Permet l’examen des Reliques chargées. Une Relique examinée débloque directement sa famille d’expéditions.",
   }],
-  ...FACTION_RESEARCH.flatMap((faction): readonly [string, ResearchPresentationInfo][] => [
-    [`research_${faction.factionId}_expedition_study`, {
+  ...FACTION_RESEARCH.map((faction): [string, ResearchPresentationInfo] => [
+    `research_${faction.factionId}_dungeon_location`,
+    {
       group: "faction",
-      description: `Étudie les connaissances tirées de la Relique ${faction.displayName} pour ouvrir leurs expéditions. Cette recherche est indépendante de la localisation des sanctuaires.`,
-      effectSummary: `Débloque la famille d’expéditions ${faction.displayName}.`,
-    }],
-    [`research_${faction.factionId}_dungeon_location`, {
-      group: "faction",
-      description: `Recherche l’emplacement des sanctuaires ${faction.displayName}. Cette recherche est indépendante de l’étude des expéditions.`,
+      description: `Recherche l’emplacement des sanctuaires ${faction.displayName}.`,
       effectSummary: `Débloque l’accès permanent aux donjons ${faction.displayName}.`,
-    }],
+    },
   ]),
 ]);
 
