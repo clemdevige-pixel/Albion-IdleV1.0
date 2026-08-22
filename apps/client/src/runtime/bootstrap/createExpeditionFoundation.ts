@@ -39,18 +39,27 @@ export type ExpeditionRewardSummary =
   | SilverExpeditionRewardSummary
   | FactionRuneExpeditionRewardSummary;
 
-type ExpeditionResearchPort = ResearchService<ResearchContentRequirement> & {
-  isRelicExamined(relicId: string): boolean;
-};
-
 export interface ExpeditionFoundationDependencies {
-  readonly researchService: ExpeditionResearchPort;
+  readonly researchService: ResearchService<ResearchContentRequirement>;
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
   readonly getFactionYieldBonusPercent: (factionId: string) => number;
 }
+
+const FIRST_SLOT_UNLOCKS = [
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier4,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier5,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier6,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier7,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier8,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier4,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier5,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier6,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier7,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier8,
+] as const;
 
 export function createExpeditionFoundation(dependencies: ExpeditionFoundationDependencies) {
   const rewardLedger = new ExpeditionRewardLedger();
@@ -60,12 +69,7 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
   >({
     requirementPort: {
       isRequirementMet(requirement) {
-        switch (requirement.type) {
-          case "research_unlock":
-            return dependencies.researchService.hasUnlock(requirement.unlockId);
-          case "relic_examined":
-            return dependencies.researchService.isRelicExamined(requirement.relicId);
-        }
+        return dependencies.researchService.hasUnlock(requirement.unlockId);
       },
     },
     slotCapacityPort: {
@@ -73,13 +77,9 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
         if (dependencies.researchService.hasUnlock(RESEARCH_UNLOCK_IDS.secondExpeditionSlot)) {
           return 2;
         }
-        const hasFirstSlot = [
-          RESEARCH_UNLOCK_IDS.expeditionTier4,
-          RESEARCH_UNLOCK_IDS.expeditionTier5,
-          RESEARCH_UNLOCK_IDS.expeditionTier6,
-          RESEARCH_UNLOCK_IDS.expeditionTier7,
-          RESEARCH_UNLOCK_IDS.expeditionTier8,
-        ].some((unlockId) => dependencies.researchService.hasUnlock(unlockId));
+        const hasFirstSlot = FIRST_SLOT_UNLOCKS.some((unlockId) => (
+          dependencies.researchService.hasUnlock(unlockId)
+        ));
         return hasFirstSlot ? 1 : 0;
       },
     },
@@ -125,8 +125,6 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
           throw new Error(`Invalid Faction Expedition reward: ${definition.id}`);
         }
 
-        // Runes are player inventory items, never Production Storage resources.
-        // Preflight keeps reward credit all-or-nothing if the inventory is full.
         if (!dependencies.inventoryManager.canAcceptQuantity(
           dependencies.heroId,
           contentDefinition.reward.itemId,
