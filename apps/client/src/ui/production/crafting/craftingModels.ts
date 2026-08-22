@@ -3,7 +3,7 @@ import type { CraftingRecipeVM, GameBridgeState } from "../../../game/GameBridge
 import { resolveEquipmentInfo } from "../../../data/itemContentCatalog";
 import { resolveWeaponFamilyCraftPresentation } from "../../../data/equipmentPresentation";
 
-export type CraftingArmorFamilyId = "armor_head" | "armor_chest" | "armor_boots";
+export type CraftingArmorFamilyId = "armor_head" | "armor_chest" | "armor_boots" | "armor_cape";
 export type CraftingFamilyId = string;
 export type CraftingCategoryId = "weapons" | "armors" | "other";
 
@@ -35,6 +35,7 @@ const ARMOR_FAMILY_PRESENTATION: Readonly<Record<CraftingArmorFamilyId, { readon
   armor_head: { label: "Tête", symbol: "♜" },
   armor_chest: { label: "Torse", symbol: "♜" },
   armor_boots: { label: "Pied", symbol: "♜" },
+  armor_cape: { label: "Cape", symbol: "♜" },
 };
 
 function resolveArmorFamilyId(recipe: CraftingRecipeVM): CraftingArmorFamilyId | undefined {
@@ -42,6 +43,7 @@ function resolveArmorFamilyId(recipe: CraftingRecipeVM): CraftingArmorFamilyId |
     case "head": return "armor_head";
     case "chest": return "armor_chest";
     case "boots": return "armor_boots";
+    case "cape": return "armor_cape";
     default: return undefined;
   }
 }
@@ -76,11 +78,12 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
         const categoryRecipes = category.id === "other"
           ? source.recipes.filter((recipe) => recipe.family.startsWith("other_"))
           : recipesForTier.filter((recipe) => {
-              if (category.id === "armors") return recipe.family === "armor";
-              return recipe.family !== "armor" && !recipe.family.startsWith("other_");
+              const armorFamilyId = resolveArmorFamilyId(recipe);
+              if (category.id === "armors") return armorFamilyId !== undefined;
+              return armorFamilyId === undefined && !recipe.family.startsWith("other_");
             });
         const familyIds: readonly CraftingFamilyId[] = category.id === "armors"
-          ? (["armor_head", "armor_chest", "armor_boots"] as const).filter((id) =>
+          ? (["armor_head", "armor_chest", "armor_boots", "armor_cape"] as const).filter((id) =>
               categoryRecipes.some((recipe) => resolveArmorFamilyId(recipe) === id),
             )
           : [...new Set(categoryRecipes.map((recipe) => recipe.family))];
