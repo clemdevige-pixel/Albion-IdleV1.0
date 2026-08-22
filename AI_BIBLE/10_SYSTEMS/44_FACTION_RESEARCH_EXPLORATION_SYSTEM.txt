@@ -1,6 +1,6 @@
 # 44_FACTION_RESEARCH_EXPLORATION_SYSTEM
 
-Status: IMPLEMENTATION IN PROGRESS / KEEPER T4 PILOT PLAYABLE
+Status: KEEPER T4 PILOT IMPLEMENTED / LATER CONTENT OPEN
 Authority: validated design + implementation contract
 Last update: 2026-08-22
 
@@ -938,6 +938,5 @@ Design status:
 - Bestiary projection: IMPLEMENTED / POLISH OPEN
 - Achievement definitions/projection: VALIDATED / IMPLEMENTED / POLISH OPEN
 - Research Dashboard tracking: IMPLEMENTED
-- Equipment preset capability: FOUNDATION IMPLEMENTED / RESEARCH TUNING OPEN
 
 DOCUMENT TERMINÉ
