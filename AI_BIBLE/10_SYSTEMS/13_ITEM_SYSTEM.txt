@@ -1,11 +1,12 @@
 ## ALBION IDLE — ITEM SYSTEM
 
 **Document type:** System Specification
-**Version:** 1.0
+**Version:** 1.1
 **Status:** LOCKED
 **Authority level:** Core Gameplay System
 **Parent authority:** `000_PROJECT_BIBLE.txt`
 **Dependencies:** `06_GLOSSARY.txt`, `10_CHARACTER_SYSTEM.txt`, `11_STAT_SYSTEM.txt`, `12_INVENTORY_SYSTEM.txt`
+**Last update:** 2026-08-22
 
 ---
 
@@ -84,6 +85,8 @@ ItemDefinition
 * safe to reference from balancing data.
 
 Display names must never be used as persistent identifiers.
+
+The gameplay validity of an item definition must not depend on whether its final visual asset has already been produced. During production, the presentation layer may resolve an authored fallback visual while the item's gameplay data remains fully inspectable and usable.
 
 ---
 
@@ -553,16 +556,31 @@ The following values must remain externalized:
 * item definitions;
 * display names;
 * descriptions;
-* icons;
+* icons / visual presentation references;
 * stack limits;
 * equipment base Item Power;
 * tier Item Power bonuses;
 * quality Item Power bonuses;
 * enchantment Item Power bonuses;
 * Item Power stat scaling;
-* equipment base statistics.
+* equipment base statistics;
+* authored item-specific passive/effect metadata owned by the relevant content system.
 
 Gameplay code must not hard-code individual item values.
+
+## 20.1 Presentation independence
+
+Gameplay/equipment data is authoritative independently of final art production.
+
+Rules:
+
+* a final icon/sprite is presentation data, not the authority for whether an item exists;
+* item stats and authored effects must remain available to shared inspection/tooltip UI even when the final visual asset is pending;
+* UI code must resolve item/equipment data directly from authoritative content definitions rather than requiring a visual-definition entry first;
+* a temporary/fallback visual may be used until an asset is validated;
+* adding/replacing an asset must not change gameplay stats or item identity.
+
+Faction Capes are a current concrete example: their Armor, Magic Resistance and authored matching-faction dungeon passive exist in data and must be inspectable before final Cape assets are produced.
 
 ---
 
@@ -597,6 +615,8 @@ quantity
 
 Display names, icons and descriptions should be reloaded from item definitions rather than duplicated in save data.
 
+Visual asset changes must not require save migration when the stable item identity and gameplay definition are unchanged.
+
 ---
 
 # 22. VALIDATION RULES
@@ -613,6 +633,7 @@ The following conditions must always remain true:
 * currencies never use fractional quantities;
 * Item Power is deterministic;
 * Item Power balancing values are externalized;
+* gameplay item validity does not depend on final visual-asset availability;
 * individual equipment instance data does not exist.
 
 ---
@@ -656,7 +677,8 @@ Required Item System tests:
 * add and remove currency;
 * reject fractional currency;
 * save and reload all item categories;
-* change balancing data without invalidating saved item identities.
+* change balancing data without invalidating saved item identities;
+* expose authored equipment stats/effects to inspection even when final visual assets are unavailable.
 
 ---
 
