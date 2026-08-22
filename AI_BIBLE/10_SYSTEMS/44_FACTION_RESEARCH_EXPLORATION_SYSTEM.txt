@@ -1,148 +1,51 @@
 # 44_FACTION_RESEARCH_EXPLORATION_SYSTEM
 
-Status: T4-T8 FOUR-FACTION LOOP IMPLEMENTED / POLISH & LOOT CHANNEL OPEN
-Authority: validated design + implementation contract
+Status: VALIDATED / IMPLEMENTED CONTRACT
+Authority: canonical Academy / Research / Expedition / Dungeon discovery contract
 Last update: 2026-08-22
 
 ---
 
 # 1. PURPOSE
 
-This document records the validated design and implementation contract for a secondary progression layer built around:
+The Academy is the permanent functional-unlock system for secondary progression.
 
-- Academy / Research;
-- the existing Bestiary as monster knowledge surface;
-- deterministic faction Relics;
-- faction Expeditions;
-- a generic Silver Expedition;
-- faction crafting resources (Runes);
-- faction Capes;
-- Faction Mastery;
-- the existing World > Achievements surface.
-
-The system must create meaningful parallel progression while the hero continues normal Albion Idle activities, without adding arbitrary resources that only lengthen existing loops.
-
-The complete T4-T8 loop is authored for Keeper, Heretic, Undead and Morgana through shared data-driven systems. Remaining OPEN work is limited to explicitly listed tuning/presentation/future-content points.
-
----
-
-# 2. SYSTEM OWNERSHIP
-
-## 2.1 Research
-
-Research is the authority for permanent functional unlocks introduced by this feature.
-
-It may unlock:
-
-- Expeditions;
-- Relic examination capability;
-- faction Expedition families;
-- faction dungeon families.
-
-Faction Mastery must never become a second unlock tree.
-
-## 2.2 Faction Mastery
-
-Faction Mastery owns faction-wide yield only.
-
-It affects the matching faction's:
-
-- Expedition Rune yield;
-- loot/drop yield or drop-rate channel;
-- Silver earned from faction content;
-- Fame earned from faction content.
-
-It does NOT gate:
+V1 currently owns:
 
 - Research;
-- Relics;
-- Expeditions;
-- dungeons;
-- recipes;
-- world progression.
+- Silver Expeditions;
+- faction Expeditions;
+- Dungeon discovery;
+- the global Dungeon Relic discovery chain;
+- Research completion recaps.
 
-It does NOT affect the generic Silver Expedition.
+The system must remain data-driven. Runtime code must not branch specifically for Keeper / Heretic / Undead / Morgana.
 
-## 2.3 Bestiary
-
-Do NOT create a second Codex module.
-
-The existing World Bestiary remains the player-facing monster knowledge surface.
-
-Existing references:
-
-- `apps/client/src/ui/world/components/WorldBestiaryView.tsx`
-- `apps/client/src/ui/world/worldModels.ts`
-
-Its responsibility is monster information, including:
-
-- discovered / undiscovered state;
-- kill count per monster;
-- faction identity;
-- combat/loot information already present.
-
-The Bestiary does NOT own or display faction Relic state or Relic charge progression.
-
-Relic state belongs to the Relic item in the player Inventory.
-
-Implementation status:
-
-- monster discovery / kill counters: IMPLEMENTED;
-- Relic projection removed from Bestiary by design;
-- final UX polish/composition: still open.
-
-## 2.4 Achievements
-
-Do NOT create a second Achievement system.
-
-Reuse World > Achievements as the presentation surface for major milestones.
-
-Existing reference:
-
-- `apps/client/src/ui/world/components/WorldAchievementsView.tsx`
-
-Achievements are presentation/completion objectives, not an unlock authority.
-
-The validated milestone definitions are authoritative in:
-
-- `AI_BIBLE/10_SYSTEMS/44A_FACTION_ACHIEVEMENT_MILESTONES.md`
-
-Implementation status:
-
-- 65 validated milestones authored as data-driven definitions;
-- progress resolved from owning systems rather than duplicated Achievement state;
-- World > Achievements projection implemented;
-- final visual polish remains open.
+Research unlocks capabilities/content. Faction Mastery improves faction yield only and is never a second unlock tree.
 
 ---
 
-# 3. ACADEMY / RESEARCH
+# 2. ACADEMY
 
-## 3.1 Placement and unlock
+The Academy is a UNIQUE Player Island building.
 
-The Academy is a UNIQUE Player Island utility building.
-
-Validated unlock timing:
+Construction:
 
 - available at Island Level 2;
-- therefore after the early T3 loop / Dark Swamp progression according to the existing Island contract.
-
-## 3.2 Construction and upgrades
-
-Construction uses only the existing economy.
-
-Validated Academy construction cost:
-
 - 500 Silver;
 - 12 T3 Planks;
 - 8 T3 Bars;
 - 4 T3 Cloth.
 
-Do NOT create a Research Point / Science currency.
+Operational tier mapping:
 
-The initial constructed Academy is operationally T4.
+- Academy level 1 -> T4 Research;
+- level 2 -> T5;
+- level 3 -> T6;
+- level 4 -> T7;
+- level 5 -> T8.
 
-Validated upgrade curve:
+Upgrade curve remains:
 
 | Upgrade | Island level required | Silver | Refined materials |
 |---|---:|---:|---|
@@ -151,927 +54,400 @@ Validated upgrade curve:
 | T6 -> T7 | 5 | 50,000 | 14 of each T6 refined family |
 | T7 -> T8 | 6 | 85,000 | 20 of each T7 refined family |
 
-The four refined families are Planks, Bars, Leather and Cloth at the matching source tier.
+The four refined families are Planks, Bars, Leather and Cloth.
 
-Academy progression remains separate from production-building progression. Its building levels map to Research tiers as follows:
-
-- Academy level 1 / Island level 2 -> T4;
-- Academy level 2 / Island level 3 -> T5;
-- Academy level 3 / Island level 4 -> T6;
-- Academy level 4 / Island level 5 -> T7;
-- Academy level 5 / Island level 6 -> T8.
-
-## 3.3 Research slots
-
-Validated V1:
+V1 Research capacity:
 
 - 1 active Research slot.
 
-No second Research slot by default.
+Research progresses online and through the authoritative Background Progression system.
 
-## 3.4 Research lifecycle
-
-1. Player selects an available Research.
-2. Costs/prerequisites are validated.
-3. Costs are consumed.
-4. Timer starts.
-5. Research progresses online and offline.
-6. Completion grants the permanent authored unlock automatically.
-
-No manual reward collection.
-
-Relic examination is a separate Academy action and does NOT consume the Research slot.
-
-## 3.5 Offline model
-
-Research integrates with the existing Background Progression model:
-
-- authoritative elapsed time;
-- no client-clock authority;
-- no tick-by-tick offline simulation;
-- same authored duration online/offline.
-
-Reference:
-
-- `AI_BIBLE/10_SYSTEMS/39_BACKGROUND_PROGRESSION_SYSTEM.txt`
-
-## 3.6 Academy tier behavior
-
-- Academy T4 exposes T4 Research;
-- Academy T5 exposes T5 Research;
-- Academy T6 exposes T6 Research;
-- Academy T7 exposes T7 Research;
-- Academy T8 exposes T8 Research.
-
-Increasing Academy tier does NOT grant a generic Research-speed bonus.
-
-Its tier controls which tier-associated Research entries can appear.
+Research from Academy tiers above the current Academy tier must NOT be displayed to the player.
 
 ---
 
-# 4. SOCLE RESEARCH
+# 3. RESEARCH LIFECYCLE
 
-## 4.1 Cartography I — T4
+1. A Research definition becomes visible when its Academy tier is reachable.
+2. Its authored prerequisites determine whether it is locked or available.
+3. Starting it atomically consumes its authored cost.
+4. It occupies the single Research slot for its authored duration.
+5. Completion automatically commits its authored unlock IDs.
+6. Completion displays a generic Research recap.
 
-Validated tuning:
+No manual reward collection is used.
 
-- cost: 5,000 Silver;
-- duration: 30 minutes;
-- no material cost.
+Every Research completion recap must be data-driven and may show:
 
-Effects:
+- Research completed;
+- effect applied;
+- newly unlocked content/capabilities.
 
-- unlocks the Expedition system;
-- unlocks the generic Silver Expedition T4;
-- enables T4 faction Expedition definitions whose faction prerequisites are satisfied.
+Unlock-specific popups must not be hand-authored as isolated one-off systems when the generic recap model can represent them.
 
-## 4.2 Archaeology I — T4
+---
 
-Validated tuning:
+# 4. EXPEDITION RESEARCH TRACKS
 
-- cost: 2,500 Silver;
-- duration: 20 minutes;
-- no material cost.
+Silver Expeditions and faction Expeditions intentionally use two independent Research tracks.
 
-Effects:
+## 4.1 Cartography = Silver Expeditions
 
-- enables the Academy to examine a CHARGED faction Relic;
-- examination converts the Relic state from CHARGED to EXAMINED;
-- EXAMINED Relics satisfy the faction Research prerequisite.
+Cartography controls only the generic Silver Expedition tier.
 
-Archaeology is acquired once.
-
-Archaeology does NOT control the boss drop or the 50-kill charging phase: a Relic may be obtained and charged before Archaeology is completed, but it cannot be examined until Archaeology I is complete.
-
-Do NOT create Archaeology II/III/IV/V unless a future mechanic genuinely requires it.
-
-## 4.3 Cartography progression
-
-Cartography is sequential: each tier after I requires the previous Cartography unlock in addition to the matching Academy tier.
-
-| Research | Tier | Silver | Duration | Effect |
+| Research | Tier | Silver | Duration | Unlock |
 |---|---:|---:|---:|---|
-| Cartography I | T4 | 5,000 | 30 min | T4 Expeditions |
-| Cartography II | T5 | 15,000 | 1 h | T5 Expeditions |
-| Cartography III | T6 | 40,000 | 2 h | T6 Expeditions + second simultaneous Expedition slot |
-| Cartography IV | T7 | 70,000 | 3 h | T7 Expeditions |
-| Cartography V | T8 | 110,000 | 4 h | T8 Expeditions |
+| Cartography I | T4 | 5,000 | 30 min | Silver Expedition T4 |
+| Cartography II | T5 | 15,000 | 1 h | Silver Expedition T5 |
+| Cartography III | T6 | 40,000 | 2 h | Silver Expedition T6 + second Expedition slot |
+| Cartography IV | T7 | 70,000 | 3 h | Silver Expedition T7 |
+| Cartography V | T8 | 110,000 | 4 h | Silver Expedition T8 |
 
-No material cost is added to these Research entries.
+Cartography II-V require the previous Cartography unlock plus the matching Academy tier.
 
-No extra route/event mechanics in V1.
+No material cost.
 
----
+## 4.2 Archaeology = faction Expeditions
 
-# 5. FACTION RELICS
+Archaeology controls only faction Expedition tiers.
 
-## 5.1 Definition
+It uses EXACTLY the same validated cost/duration curve as Cartography.
 
-A faction Relic is a unique deterministic progression item tied to one faction.
+| Research | Tier | Silver | Duration | Unlock |
+|---|---:|---:|---:|---|
+| Archéologie I | T4 | 5,000 | 30 min | faction Expeditions T4 |
+| Archéologie II | T5 | 15,000 | 1 h | faction Expeditions T5 |
+| Archéologie III | T6 | 40,000 | 2 h | faction Expeditions T6 |
+| Archéologie IV | T7 | 70,000 | 3 h | faction Expeditions T7 |
+| Archéologie V | T8 | 110,000 | 4 h | faction Expeditions T8 |
 
-It is NOT:
+Archéologie II-V require the previous Archaeology unlock plus the matching Academy tier.
 
-- equipment;
-- currency;
-- a passive-stat item;
-- an RNG drop grind;
-- a replacement for Mastery;
-- a fragment checklist or separate quest system.
+No material cost.
 
-There is exactly ONE Relic per faction across T4-T8.
-
-Initial factions:
-
-- Keeper;
-- Heretic;
-- Undead;
-- Morgana.
-
-The runtime is entirely data-driven through `RelicDefinition`. No faction-specific runtime branch is allowed.
-
-## 5.2 Validated lifecycle
-
-A Relic follows exactly this state machine:
-
-`UNOBTAINED -> BROKEN -> CHARGED -> EXAMINED`
-
-Validated flow:
-
-1. The authored faction boss drops the BROKEN Relic once, guaranteed.
-2. Acquisition starts its charge at `0 / 50` faction kills.
-3. Only matching-faction kills performed AFTER acquisition count toward charge.
-4. At `50 / 50`, the Relic becomes CHARGED.
-5. A CHARGED Relic remains CHARGED until the player explicitly sends it to the Academy.
-6. If Archaeology I is complete, the Academy may examine it.
-7. Examination changes the Relic to EXAMINED and satisfies the faction Research prerequisite.
-
-No automatic examination is allowed.
-
-The boss kill that grants the Relic establishes the acquisition baseline and does not count as charge progress.
-
-Kills performed before the Relic is acquired must never contribute to its 50-kill charge.
-
-## 5.3 Boss acquisition — authored data
-
-Each faction Relic is guaranteed by its authored S10 faction boss:
-
-| Faction | Source boss |
-|---|---|
-| Keeper | Ancient Keeper |
-| Heretic | Heretic Madmen |
-| Undead | Lich |
-| Morgana | High Priestess |
-
-The boss-to-Relic relationship is authored data, never inferred from names or implemented with faction-specific conditionals.
-
-The Relic drops only once.
-
-Acquisition is committed only when the unique Relic object can actually be granted to the player Inventory. The domain must not create a hidden acquired state without the corresponding Inventory object.
-
-## 5.4 Inventory ownership and presentation
-
-The Relic is a real unique player Inventory item.
-
-Rules:
-
-- quantity 1;
-- non-stackable unique entry;
-- category: Special;
-- cannot be used as a consumable;
-- cannot be transferred to the Bank;
-- no equipment slot;
-- no passive stats.
-
-The Relic tooltip is the authoritative player-facing state display.
-
-It shows:
-
-- BROKEN: charge progress `X / 50`;
-- CHARGED: ready for Academy examination;
-- EXAMINED: examination completed.
-
-The Bestiary does not display this state.
-
-No final Relic visual asset is invented until separately validated.
-
-## 5.5 Charge rules
-
-Validated charge requirement:
-
-- 50 kills of the matching faction after Relic acquisition.
-
-The charge uses the existing authoritative faction kill stream; it does not create a duplicate combat simulation or independent kill source.
-
-The stored acquisition baseline makes charge equivalent to:
-
-`current_faction_kills - faction_kills_at_relic_acquisition`
-
-clamped to `[0, 50]`.
-
-Historical kills before acquisition are explicitly excluded.
-
-The charge phase is normal active gameplay; it has no separate offline-combat simulation.
-
-## 5.6 Academy examination
-
-A CHARGED Relic is NOT automatically examined.
-
-Before examination, faction Research remains gated and the Academy indicates that it is waiting for the Relic or that the Relic is ready to examine, according to its state.
-
-When both conditions are true:
-
-- Relic state = CHARGED;
-- Archaeology I completed;
-
-the Academy exposes an explicit action:
-
-`Send Relic to Academy`
-
-This action:
-
-- has no Silver cost;
-- has no material cost;
-- has no timer;
-- does not consume the Research slot;
-- does not automatically start either contextual faction Research;
-- changes the Relic state to EXAMINED.
-
-After examination, the two contextual faction Research entries may become available according to their remaining prerequisites.
-
-## 5.7 Persistence and migration
-
-Relic acquisition baseline and EXAMINED state are persistent.
-
-Current persistence contract is versioned.
-
-Migration rule for saves produced by older Relic implementations:
-
-- previous fragment/reconstructed or auto-examined states are NOT allowed to import historical kills as current charge;
-- migrated Relics restart as BROKEN at `0 / 50` using the faction kill count at migration/load as their new acquisition baseline;
-- a migrated Relic therefore requires 50 new matching-faction kills before it can become CHARGED;
-- examination remains an explicit Academy action under the current contract.
-
-This deliberately favors correctness of the validated new loop over preserving obsolete automatic reconstruction semantics.
+Archaeology no longer owns Relic examination.
 
 ---
 
-# 6. CONTEXTUAL FACTION RESEARCH
+# 5. EXPEDITIONS
 
-An EXAMINED faction Relic satisfies the Relic prerequisite for TWO independent Research entries.
+Expeditions are passive parallel activities and continue offline through the Background Progression model.
 
-The same validated tuning applies to Keeper, Heretic, Undead and Morgana.
+V1 families:
 
-Before examination, the Academy displays the Relic gate rather than pretending the Research itself is available.
+1. Generic Silver Expedition.
+2. Keeper Expedition.
+3. Heretic Expedition.
+4. Undead Expedition.
+5. Morgana Expedition.
 
-## 6.1 Faction Expedition Research
+Silver Expedition requirement:
 
-For each faction:
+- matching Cartography tier unlock.
 
-`Étude des <Faction>`
+Faction Expedition requirement:
 
-- prerequisite: matching faction Relic EXAMINED;
-- Academy tier: T4;
-- Silver cost: 5,000;
-- duration: 30 minutes;
-- reward: permanently unlocks that faction Expedition family.
+- matching Archaeology tier unlock.
 
-Cartography determines which tier of that family is available.
+There is NO Relic prerequisite for faction Expeditions.
 
-There is no tiered Study II/III/IV/V chain.
+Faction Expedition reward:
 
-## 6.2 Faction Dungeon Research
+- matching faction Rune;
+- affected by matching Faction Mastery yield.
 
-For each faction:
+Generic Silver Expedition:
 
-`Localisation des Sanctuaires <Faction>`
+- unaffected by Faction Mastery.
 
-- prerequisite: matching faction Relic EXAMINED;
-- Academy tier: T4;
-- Silver cost: 10,000;
-- duration: 1 hour;
-- reward: permanently unlocks that faction dungeon family as selectable content.
+Slots:
 
-All four dungeon families are authored through the same generic access contract.
+- before an Expedition tier Research: 0 slots;
+- T4/T5: 1 slot;
+- Cartography III / T6 unlocks slot 2;
+- T6-T8: maximum 2 slots.
 
-## 6.3 Dungeon keys
+Same-type concurrency rule remains:
 
-Faction Dungeon Research does NOT modify dungeon keys.
+- two Expeditions of the same type may not run simultaneously.
 
-Existing key behavior remains authoritative:
+Durations remain:
+
+- 2 h;
+- 6 h;
+- 12 h.
+
+Reward/hour is equivalent across duration choices before whole-Rune rounding.
+
+Expedition tiers above the current Academy tier must NOT be presented to the player.
+
+---
+
+# 6. GLOBAL DUNGEON RELIC
+
+Dungeon discovery uses ONE global Relic.
+
+It is not faction-specific equipment and does not unlock faction Expeditions.
+
+Canonical IDs:
+
+- Relic definition: `relic_dungeon`;
+- inventory item: `item_relic_dungeon`.
+
+## 6.1 Acquisition
+
+The Relic drops once, guaranteed, from:
+
+- Blue world band;
+- Frostpeak Mountain / `zone_mountain_t4`;
+- Segment 10 (zero-based runtime segment index 9);
+- final boss encounter (Ancient Keeper monster definition).
+
+IMPORTANT:
+
+The Ancient Keeper monster definition is reused in other contexts. Relic acquisition MUST therefore validate the authored world context and segment, not only the monster ID.
+
+No other Ancient Keeper encounter may grant this Relic.
+
+Acquisition is committed only if the unique inventory object can actually be granted.
+
+## 6.2 Charge
+
+Acquisition records the authoritative faction-kill baseline for all four factions.
+
+The Relic then requires NEW kills performed after acquisition:
+
+- 50 Keeper;
+- 50 Heretic;
+- 50 Undead;
+- 50 Morgana.
+
+Total displayed aggregate target: 200 kills.
+
+Each faction objective progresses independently.
+
+Historical kills before Relic acquisition never count.
+
+State flow before Research analysis:
+
+`UNOBTAINED -> BROKEN -> CHARGED`
+
+At 50/50 in all four objectives, the Relic remains CHARGED until its analysis Research completes.
+
+The Relic is a unique Special inventory item and cannot be banked/consumed/equipped.
+
+---
+
+# 7. DUNGEON DISCOVERY RESEARCH CHAIN
+
+The Relic does not use a manual "send to Academy" button anymore.
+
+Its analysis is a real Research and therefore uses the standard Research slot/lifecycle/recap.
+
+## 7.1 Analyse de la Relique
+
+Tier:
+
+- T4.
+
+Prerequisites:
+
+- Academy T4;
+- global Dungeon Relic state = CHARGED.
+
+Cost:
+
+- 0 Silver;
+- no materials.
+
+Duration:
+
+- 10 minutes.
+
+Completion:
+
+- marks the global Relic as EXAMINED;
+- permanently unlocks the next Research: `Localisation des Sanctuaires`;
+- displays the generic Research completion recap.
+
+The 200-kill Relic charge is the gameplay cost of this analysis stage; no extra currency tax is added.
+
+## 7.2 Localisation des Sanctuaires
+
+Tier:
+
+- T4.
+
+Prerequisites:
+
+- Academy T4;
+- Analyse de la Relique completed.
+
+Cost:
+
+- 10,000 Silver;
+- no materials.
+
+Duration:
+
+- 1 hour.
+
+Completion permanently unlocks the Dungeon system.
+
+Its generic completion recap announces:
+
+- World > Donjons tab unlocked;
+- Dungeon key fragment drops unlocked;
+- complete Dungeon key drops unlocked.
+
+---
+
+# 8. DUNGEON VISIBILITY AND KEY DROP GATE
+
+Before `Localisation des Sanctuaires` is complete:
+
+- the World > Donjons tab is NOT displayed;
+- faction Dungeon definitions are not enterable;
+- world combat cannot grant Dungeon key fragments;
+- world combat cannot grant complete Dungeon keys.
+
+After completion:
+
+- the World > Donjons tab appears;
+- authored Dungeon content becomes accessible subject to its normal tier/key/run rules;
+- Dungeon key fragments and complete keys enter the normal world-combat loot channel.
+
+Dungeon keys remain:
 
 - tier-based;
 - faction-independent;
-- current per-run entry behavior unchanged.
+- consumed according to the existing Dungeon entry contract.
 
-Research controls permanent CONTENT ACCESS only.
+The Research gate activates the loot channel; it does not replace key-tier progression or Dungeon entry rules.
+
+---
+
+# 9. DUNGEON CONTENT OWNERSHIP
+
+There is one global Research unlock for Dungeon discovery.
+
+Do NOT create separate permanent `dungeon_family:<faction>` Research gates for Keeper / Heretic / Undead / Morgana.
+
+Faction identity remains authored on Dungeon definitions and may still drive:
+
+- encounter composition;
+- artifacts;
+- faction cape effects;
+- Faction Mastery yield/progression;
+- Achievements.
+
+The Academy answers "have Dungeons been discovered?", not "has every faction been separately rediscovered?".
+
+---
+
+# 10. FACTION MASTERY
+
+Faction Mastery remains yield/progression only.
+
+It may affect matching-faction:
+
+- Expedition Rune yield;
+- faction combat Silver/Fame yield channels;
+- authored faction loot channels.
+
+It does NOT gate:
+
+- Research;
+- Expeditions;
+- Relic acquisition/charge;
+- Dungeon discovery;
+- recipes;
+- world progression.
+
+Generic Silver Expeditions are unaffected by Faction Mastery.
+
+---
+
+# 11. BESTIARY AND ACHIEVEMENTS
+
+Bestiary remains the monster-knowledge surface.
+
+It owns/displays monster discovery and kill knowledge, not the Dungeon Relic progression UI.
+
+The old four faction-Relic Achievement milestones are obsolete because faction Relics no longer exist in the canonical loop. They are removed rather than silently repointed to the global Dungeon Relic.
+
+Achievements remain feedback only and never own functional unlocks.
 
 Reference:
-
-- `apps/client/src/data/dungeonKeyContentCatalog.ts`
-
-## 6.4 Manuscripts
-
-Manuscripts are removed from the validated V1 scope.
-
-Do not implement them unless a future design gives them a distinct concrete purpose.
-
----
-
-# 7. EXPEDITIONS — V1 CONTRACT
-
-## 7.1 Core identity
-
-Expeditions are passive parallel activities.
-
-They can run while the hero continues:
-
-- combat;
-- gathering;
-- refining;
-- crafting;
-- other normal gameplay.
-
-Expeditions continue while the player is offline.
-
-## 7.2 Families
-
-Validated V1 contains:
-
-1. Generic Silver Expedition
-2. Faction Expeditions
-
-### Generic Silver Expedition
-
-- faction-independent;
-- requires Cartography;
-- no Relic requirement;
-- unaffected by Faction Mastery;
-- intended as a comfortable parallel Silver source, especially for Awake/Attunement Silver pressure;
-- active combat remains the stronger direct Silver/hour source.
-
-### Faction Expedition
-
-- faction-specific;
-- requires the faction Relic to have been EXAMINED;
-- requires the faction Expedition Research;
-- tier availability controlled by Cartography;
-- produces the matching faction Rune;
-- affected by matching Faction Mastery yield.
-
-All four faction families are authored for T4-T8: Keeper, Heretic, Undead and Morgana.
-
-## 7.3 Slots
-
-Validated V1:
-
-- T4: 1 slot;
-- T5: 1 slot;
-- T6: 2 slots;
-- T7: 2 slots;
-- T8: 2 slots.
-
-Second slot unlock: Cartography III / T6.
-
-## 7.4 Same-type concurrency rule
-
-Validated:
-
-> Two Expeditions of the same type may NOT run simultaneously.
-
-Examples with 2 slots:
-
-Allowed:
-
-- Silver + Keeper;
-- Keeper + Morgana;
-- Keeper + Heretic.
-
-Forbidden:
-
-- Silver + Silver;
-- Keeper + Keeper.
-
-This rule preserves allocation choice and prevents the second slot from simply doubling the strongest selected stream.
-
-## 7.5 Durations
-
-Validated V1 formats:
-
-- 2 hours;
-- 6 hours;
-- 12 hours.
-
-Reward/hour is equivalent between these durations before whole-Rune rounding.
-
-Duration is a convenience choice, not an optimization trap.
-
-Faction Rune rewards are rounded to the nearest whole Rune after Faction Mastery is applied (`Math.round`, exact `.5` rounds upward).
-
-## 7.6 Launch cost
-
-Validated V1:
-
-- no launch cost.
-
-Do NOT add Provisions, Expedition currency, Silver fees or arbitrary material costs.
-
-## 7.7 Completion
-
-On completion:
-
-- rewards are credited automatically;
-- no manual Collect action;
-- Expedition completion is resolved from authoritative elapsed time online/offline;
-- completed Expedition frees its slot through the runtime completion contract.
-
-## 7.8 Completion recap popup
-
-A completion recap popup is REQUIRED.
-
-The popup is informational only; rewards are already credited.
-
-Faction Expedition recap shows at minimum:
-
-- Expedition name;
-- duration;
-- base Rune reward;
-- Faction Mastery bonus;
-- final Rune total.
-
-Silver Expedition recap shows at minimum:
-
-- Expedition name;
-- duration;
-- final Silver credited.
-
-If multiple Expeditions complete together (including offline resolution):
-
-- show ONE grouped recap;
-- do NOT chain multiple blocking popups.
-
-Implementation status: IMPLEMENTED for both online and offline completion batches through the same recap pipeline.
-
----
-
-# 8. GENERIC SILVER EXPEDITION — VALIDATED BALANCE
-
-Validated base Silver/hour:
-
-| Tier | Silver/hour | 2h | 6h | 12h |
-|---|---:|---:|---:|---:|
-| T4 | 15,000 | 30,000 | 90,000 | 180,000 |
-| T5 | 25,000 | 50,000 | 150,000 | 300,000 |
-| T6 | 35,000 | 70,000 | 210,000 | 420,000 |
-| T7 | 40,000 | 80,000 | 240,000 | 480,000 |
-| T8 | 50,000 | 100,000 | 300,000 | 600,000 |
-
-These values are intentionally below representative best active-combat Silver/hour rates while remaining a meaningful parallel economy source.
-
-Faction Mastery never modifies these rewards.
-
----
-
-# 9. FACTION RUNES
-
-## 9.1 Role
-
-A faction Rune is the durable faction crafting resource produced by that faction's Expedition.
-
-Rune purpose is intentionally limited to meaningful faction content.
-
-Validated sinks:
-
-1. faction Cape crafting/enchantment;
-2. future faction item/weapon crafting.
-
-Runes are player Inventory items, not Production Storage materials.
-
-Do NOT inject Runes into ordinary generic gear recipes just to increase grind.
-
-## 9.2 Future faction item recipe contract
-
-A future major faction item/weapon recipe combines three acquisition channels:
-
-- existing Gather/Refining materials;
-- faction Artifact from the faction dungeon;
-- faction Rune from the faction Expedition.
-
-Conceptual contract:
-
-`Faction Item Tx = Refined Materials + Faction Artifact Tx + Faction Rune Tx`
-
-Artifacts remain dungeon-sourced; Runes remain Expedition-sourced.
-
-## 9.3 Rune tiering and generation
-
-Runes are tiered by faction/content tier.
-
-Validated base faction Expedition generation:
-
-- 1 Rune/hour at Mastery level 0.
-
-Therefore:
-
-- 2h = 2 Runes;
-- 6h = 6 Runes;
-- 12h = 12 Runes.
-
-Faction Mastery modifies the resulting yield, then the final quantity is rounded to the nearest whole Rune.
-
----
-
-# 10. FACTION CAPES
-
-## 10.1 General role
-
-Faction Capes are craftable faction preparation equipment from T4 onward.
-
-They combine:
-
-- normal defensive stats;
-- a faction-dungeon-only passive;
-- faction Runes as an Expedition-driven progression sink.
-
-They have NO HP stat in the validated design.
-
-## 10.2 Defensive stats — all four factions
-
-Keeper, Heretic, Undead and Morgana use the same validated defensive stat curve:
-
-| Tier | Armor | Magic Resistance |
-|---|---:|---:|
-| T4 | 3 | 5 |
-| T5 | 4 | 7 |
-| T6 | 6 | 10 |
-| T7 | 9 | 14 |
-| T8 | 13 | 20 |
-
-Faction identity changes the matching-faction dungeon resistance target, not these base defensive stats.
-
-## 10.3 Base recipes — all four factions
-
-No predecessor equipment is consumed.
-
-| Tier | Cloth | Leather | Matching faction Runes |
-|---|---:|---:|---:|
-| T4 | 3 | 1 | 3 |
-| T5 | 4 | 2 | 4 |
-| T6 | 5 | 2 | 5 |
-| T7 | 6 | 3 | 6 |
-| T8 | 8 | 4 | 8 |
-
-All materials are the matching target tier.
-
-Each Cape uses only its own faction Rune family.
-
-Normal equipment crafting remains predecessor-free according to the current live crafting contract.
-
-## 10.4 Rune costs by tier
-
-Validated base Rune quantities:
-
-- T4: 3;
-- T5: 4;
-- T6: 5;
-- T7: 6;
-- T8: 8.
-
-## 10.5 Enchantment integration
-
-Faction Runes are normal base craft materials for the Cape and therefore reuse the EXISTING generic enchantment material multiplier.
-
-No faction-specific enchantment formula.
-
-Current generic material multipliers:
-
-- `.0 -> .1`: x1;
-- `.1 -> .2`: x2;
-- `.2 -> .3`: x4.
-
-Capes are capped at `.3`.
-
-`.4` remains weapon Awakening only.
-
-Example T4 Rune path:
-
-- craft Cape: 3 Runes;
-- `.0 -> .1`: 3 Runes;
-- `.1 -> .2`: 6 Runes;
-- `.2 -> .3`: 12 Runes;
-- total from nothing to T4.3: 24 Runes = 24 hours of base Expedition time at Mastery 0.
-
-This must reuse the single authoritative enchantment recipe scaling pipeline.
-
-Reference:
-
-- `packages/gameplay/src/equipment/enchantment-recipes.ts`
-
-## 10.6 Dungeon-only faction passive
-
-Each faction Cape has a passive that reduces damage received ONLY inside dungeons of its matching faction.
-
-Validated reduction curve:
-
-| Cape Tier | Damage reduction in matching faction dungeon |
-|---|---:|
-| T4 | 6% |
-| T5 | 8% |
-| T6 | 11% |
-| T7 | 14% |
-| T8 | 18% |
-
-Rules:
-
-- no effect in open world;
-- no effect in another faction's dungeon;
-- enchantment `.1/.2/.3` does NOT increase this passive percentage;
-- the Cape tier itself determines the passive value.
-
-## 10.7 Tier compatibility rule
-
-A faction Cape may be used in its own dungeon tier and all HIGHER dungeon tiers, but never in a lower tier.
-
-Examples:
-
-- Keeper Cape T4: active in Keeper dungeons T4-T8;
-- Heretic Cape T6: active in Heretic dungeons T6-T8;
-- Morgana Cape T8: active only in Morgana dungeon T8.
-
-This prevents high-tier Capes from trivializing old dungeon tiers while preserving long-term usefulness of lower-tier Capes.
-
-Implementation resolves this through generic authored faction/tier data, not faction-specific runtime code.
-
----
-
-# 11. FACTION MASTERY
-
-## 11.1 Structure
-
-Each supported faction has its own Mastery:
-
-- Keeper Mastery;
-- Heretic Mastery;
-- Undead Mastery;
-- Morgana Mastery.
-
-Maximum validated level:
-
-- 100.
-
-## 11.2 XP source
-
-Validated core rule:
-
-> 1 raw faction Fame = 1 Faction Mastery XP.
-
-Only raw/base faction Fame is used.
-
-Faction Fame bonuses must NOT feed back into Mastery XP generation.
-
-This prevents the Mastery Fame bonus from accelerating its own progression.
-
-## 11.3 XP curve
-
-Validated cumulative curve:
-
-`XP_required_for_level_L = 1,500 × L²`
-
-Reference cumulative values:
-
-- Level 10: 150,000 XP;
-- Level 25: 937,500 XP;
-- Level 50: 3,750,000 XP;
-- Level 75: 8,437,500 XP;
-- Level 100: 15,000,000 XP.
-
-This is intentionally a long-term progression layer calibrated against current Fame/hour scale.
-
-## 11.4 Yield bonus
-
-Validated:
-
-- +0.5% faction yield per Mastery level;
-- Level 100 cap = +50%.
-
-Affected matching-faction channels:
-
-- faction Rune Expedition yield;
-- faction drops/drop rates;
-- faction Silver;
-- faction Fame.
-
-For integer combat rewards (Silver and Fame), apply the matching-faction Mastery bonus to the raw/base reward, then round to the nearest whole unit with `Math.round` (exact `.5` rounds upward), matching the Rune rounding rule.
-
-Faction Mastery XP itself still consumes raw/base faction Fame before this yield bonus is applied, so the Fame bonus never accelerates its own Mastery progression.
-
-Generic Silver Expedition is excluded.
-
-## 11.5 Offline progression rule
-
-There is NO general offline Faction Mastery progression in the current design.
-
-Do not simulate combat/Fame/Mastery while offline.
-
-The important distinction is:
-
-- Expeditions continue offline;
-- Research continues offline;
-- Faction Mastery does not independently progress offline.
-
-An Expedition completed while offline still resolves its Expedition rewards normally, but no separate offline-combat Mastery simulation is introduced.
-
----
-
-# 12. WORLD ACHIEVEMENTS / BESTIARY PRESENTATION
-
-The existing surfaces expose major milestones from this feature without duplicating ownership.
-
-Validated Achievement definitions and thresholds live in:
 
 - `AI_BIBLE/10_SYSTEMS/44A_FACTION_ACHIEVEMENT_MILESTONES.md`
 
-Bestiary responsibility remains monster discovery/information and per-monster kill counts. Relic state is intentionally excluded from Bestiary presentation and lives on the Inventory item tooltip.
+---
 
-Implementation status:
+# 12. PERSISTENCE / MIGRATION
 
-- 60 faction milestones + 5 global Expedition milestones authored;
-- progress resolved from faction knowledge, Relics, Expedition history/rewards, Dungeon history and Faction Mastery;
-- World > Achievements projection implemented;
-- final visual composition/polish may still evolve.
+Research, Expeditions, faction knowledge and Relic state remain persistent providers.
+
+Global Dungeon Relic persistence stores:
+
+- acquisition state;
+- per-faction kill baselines;
+- EXAMINED state.
+
+Legacy saves with old faction Relic IDs are NOT implicitly converted into the new global Dungeon Relic.
+
+Reason:
+
+- the source and charge contract changed fundamentally;
+- silently mapping historical faction Relics would bypass the new Mountain S10 + 50x4 progression contract.
+
+The new global Relic must therefore be discovered through its canonical source unless a future explicit migration decision says otherwise.
+
+After loading Research state, derived Research effects (including completed Relic analysis) must be reconciled from authoritative completed unlocks rather than duplicated save flags.
 
 ---
 
-# 13. COMPLETE VALIDATED LOOP
+# 13. DATA-DRIVEN RULES
 
-World/Faction Combat
--> Bestiary monster knowledge / per-monster kill counts
--> raw faction Fame
--> Faction Mastery XP
+Required architecture:
 
-Faction S10 boss victory
--> guaranteed matching BROKEN Relic drop into player Inventory
--> Relic charge starts at 0/50
+- Research definitions own tier/cost/duration/prerequisites/unlock IDs;
+- Expedition definitions consume Research unlock IDs;
+- Relic definitions own contextual source + charge objectives;
+- Dungeon navigation consumes one global Research unlock;
+- combat reward code asks whether the Dungeon key loot channel is unlocked;
+- Research recap presentation consumes authored Research presentation metadata.
 
-Post-drop faction combat
--> 50 new matching-faction kills
--> Relic becomes CHARGED
+Forbidden:
 
-Island Level 2
--> Academy available
-
-Academy construction
--> 500 Silver + 12 T3 Planks + 8 T3 Bars + 4 T3 Cloth
--> Academy T4 operational
-
-Academy upgrades
--> Island 3/4/5/6 gates Academy T5/T6/T7/T8
--> matching refined-material + Silver costs
-
-Cartography I
--> 5,000 Silver / 30 min
--> Expeditions + Silver Expedition T4
-
-Cartography II-V
--> sequential T5-T8 Expedition unlocks
--> Cartography III unlocks second slot
-
-Archaeology I
--> 2,500 Silver / 20 min
--> enables Academy examination of CHARGED Relics
-
-Charged faction Relic
--> explicit Send Relic to Academy action
--> no cost / no timer / no Research slot
--> Relic becomes EXAMINED
-
-EXAMINED faction Relic
--> two contextual faction Research entries satisfy their Relic prerequisite
-
-Faction Expedition Research
--> faction Expedition family unlocked
-
-Cartography tier
--> controls available Expedition tier
-
-Faction Expedition
--> matching faction Runes in player Inventory
-
-Faction Runes
--> faction Cape craft + Cape enchantments
--> future faction item/weapon crafts
-
-Faction Dungeon Research
--> permanent access to matching dungeon family
-
-Dungeon run
--> existing tier-based key system unchanged
--> future faction Artifacts for faction item/weapon crafting
-
-Faction Cape
--> shared defensive stat curve
--> matching faction-dungeon-only damage reduction passive
-
-Faction Mastery
--> matching faction yield increases up to +50%
-
-Generic Silver Expedition
--> comfortable parallel Silver source
--> independent from factions/Mastery
-
-Major milestones
--> World Achievements presentation
+- Keeper/Heretic/Undead/Morgana runtime branches for shared mechanics;
+- duplicate unlock booleans saved outside owning systems;
+- UI reconstructing gameplay authority independently from Research/Relic data;
+- automatic Relic acquisition based only on monster name/ID when context is required.
 
 ---
 
-# 14. DATA-DRIVEN IMPLEMENTATION REQUIREMENTS
+# 14. CANONICAL LOOP SUMMARY
 
-Implementation must be definition-driven.
+## Expeditions
 
-Do not create faction-specific runtime conditionals such as:
+`Academy tier -> Cartography I-V -> Silver Expeditions T4-T8`
 
-`if faction === "Keeper" ...`
+`Academy tier -> Archaeology I-V -> faction Expeditions T4-T8`
 
-outside generic authored-data resolution.
+## Dungeons
 
-Expected definition families include:
+`Blue Frostpeak Mountain S10 boss`
+`-> global Dungeon Relic`
+`-> 50 Keeper + 50 Heretic + 50 Undead + 50 Morgana`
+`-> Relic CHARGED`
+`-> Analyse de la Relique (10 min / 0 Silver)`
+`-> Research recap`
+`-> Localisation des Sanctuaires (1 h / 10,000 Silver)`
+`-> Research recap`
+`-> World > Donjons visible`
+`-> Dungeon key + key-fragment drops active`
 
-- `ResearchDefinition`;
-- `FactionDefinition`;
-- `FactionMasteryDefinition`;
-- `RelicDefinition`;
-- `ExpeditionDefinition`;
-- faction Cape/passive definitions;
-- `AchievementDefinition`.
+This is the canonical V1 contract.
 
-Required single-source-of-truth rules:
-
-- Expedition family/type determines same-type concurrency validation;
-- Expedition definitions author duration/reward/tier/faction;
-- Relic definitions author faction, source boss, Inventory item and charge kill count;
-- Relic charge is derived from the authoritative faction kill stream after the stored acquisition baseline;
-- Relic state is owned by `RelicService`, while physical presence is mirrored by the existing Inventory system;
-- Bestiary never becomes a second Relic state owner;
-- Academy examination is an explicit generic action over the Relic requirement already authored on faction Research;
-- faction definitions reference existing monster/zone/dungeon IDs;
-- Cape recipes use the existing Crafting system;
-- Cape enchantments reuse the existing generic enchantment material scaling;
-- dungeon passive uses generic faction + minimum-tier matching;
-- no duplicated Keeper-specific runtime logic.
-
-Existing catalogs remain authoritative for existing content until deliberately refactored.
-
----
-
-# 15. STILL OPEN / NEXT DESIGN WORK
-
-The following remain intentionally OPEN and must not be invented during implementation:
-
-1. Exact names/visual identities of each faction Relic.
-2. Final player-facing names/visual identities of faction Runes.
-3. Exact faction item/weapon recipes and Artifact drop rates when those items are designed.
-4. Final Bestiary/Academy/Expedition visual composition and polish beyond validated behavior.
-5. Exact V1 application of the Faction Mastery loot channel (drop-rate versus quantity/yield) remains OPEN.
-
-Academy T4-T8 progression, Cartography I-V tuning, the four faction Relic lifecycles, contextual Research, T4-T8 faction Expeditions and matching faction Capes are now validated and implemented as data-driven content.
-
----
-
-# 16. IMPLEMENTATION STATUS
-
-Design status:
-
-- Academy architecture: VALIDATED / IMPLEMENTED T4-T8
-- Academy construction cost: VALIDATED / IMPLEMENTED
-- Academy T5-T8 upgrade costs: VALIDATED / IMPLEMENTED
-- Cartography I-V: VALIDATED / IMPLEMENTED
-- Archaeology I: VALIDATED / IMPLEMENTED
-- Relic boss-drop system: VALIDATED / IMPLEMENTED
-- Relic BROKEN -> CHARGED 50 post-drop kill contract: VALIDATED / IMPLEMENTED
-- Relic Inventory ownership/state tooltip: VALIDATED / IMPLEMENTED
-- Relic explicit Academy examination: VALIDATED / IMPLEMENTED
-- Relic legacy save migration to fresh BROKEN baseline: VALIDATED / IMPLEMENTED
-- Keeper / Heretic / Undead / Morgana Relic data: VALIDATED / IMPLEMENTED
-- Keeper / Heretic / Undead / Morgana contextual Research: VALIDATED / IMPLEMENTED
-- Dungeon family Research gates: VALIDATED / IMPLEMENTED FOR ALL FOUR FACTIONS
-- Dungeon key interaction: VALIDATED / UNCHANGED
-- Expedition slots/durations/concurrency: VALIDATED / IMPLEMENTED
-- Expedition online progression: IMPLEMENTED
-- Expedition offline progression: VALIDATED / IMPLEMENTED
-- Completion recap popup: IMPLEMENTED FOR ONLINE/OFFLINE COMPLETION BATCHES
-- Generic Silver Expedition yields T4-T8: VALIDATED / AUTHORED
-- Faction Expeditions T4-T8 for all four factions: VALIDATED / IMPLEMENTED
-- Faction Rune generation + Inventory credit: VALIDATED / IMPLEMENTED
-- Rune sinks: VALIDATED
-- Faction Cape base stats/recipes T4-T8 for all four factions: VALIDATED / IMPLEMENTED
-- Cape enchantment integration: VALIDATED / IMPLEMENTED
-- Faction-dungeon Cape passive curve: VALIDATED / IMPLEMENTED
-- Cape tier compatibility: VALIDATED / IMPLEMENTED
-- Faction Mastery XP curve: VALIDATED / IMPLEMENTED
-- Faction Mastery Rune yield bonus: VALIDATED / IMPLEMENTED
-- Faction Mastery Silver/Fame yield bonus: VALIDATED / IMPLEMENTED
-- Faction Mastery loot channel: DESIGN OPEN
-- Bestiary monster projection: IMPLEMENTED / RELIC STATE EXCLUDED BY DESIGN / POLISH OPEN
-- Achievement definitions/projection: VALIDATED / IMPLEMENTED / POLISH OPEN
-- Research Dashboard tracking: IMPLEMENTED
-
-DOCUMENT TERMINÉ
+DOCUMENT TERMINE
