@@ -30,10 +30,38 @@ export const ADVANCED_WORKER_ORGANIZATION = {
 } as const;
 
 export const WORKER_DEFINITIONS: readonly WorkerDefinition[] = [
-  { id: WORKER_DEFINITION_IDS.woodcutter, displayName: "Edda", profession: "woodcutter", baseMasteryGainRate: 1, tags: ["gathering", "wood"] },
-  { id: WORKER_DEFINITION_IDS.miner, displayName: "Borin", profession: "miner", baseMasteryGainRate: 1, tags: ["gathering", "ore"] },
-  { id: WORKER_DEFINITION_IDS.skinner, displayName: "Mira", profession: "skinner", baseMasteryGainRate: 1, tags: ["gathering", "hide"] },
-  { id: WORKER_DEFINITION_IDS.fiberHarvester, displayName: "Lina", profession: "fiber_harvester", baseMasteryGainRate: 1, tags: ["gathering", "fiber"] },
+  {
+    id: WORKER_DEFINITION_IDS.woodcutter,
+    displayName: "Edda",
+    displayNames: ["Edda", "Toren"],
+    profession: "woodcutter",
+    baseMasteryGainRate: 1,
+    tags: ["gathering", "wood"],
+  },
+  {
+    id: WORKER_DEFINITION_IDS.miner,
+    displayName: "Borin",
+    displayNames: ["Borin", "Dagr"],
+    profession: "miner",
+    baseMasteryGainRate: 1,
+    tags: ["gathering", "ore"],
+  },
+  {
+    id: WORKER_DEFINITION_IDS.skinner,
+    displayName: "Mira",
+    displayNames: ["Mira", "Sela"],
+    profession: "skinner",
+    baseMasteryGainRate: 1,
+    tags: ["gathering", "hide"],
+  },
+  {
+    id: WORKER_DEFINITION_IDS.fiberHarvester,
+    displayName: "Lina",
+    displayNames: ["Lina", "Neris"],
+    profession: "fiber_harvester",
+    baseMasteryGainRate: 1,
+    tags: ["gathering", "fiber"],
+  },
 ];
 
 export const WORKER_TASK_DEFINITIONS: readonly WorkerTaskDefinition[] = [
