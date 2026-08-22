@@ -1,46 +1,40 @@
 import type { FactionId } from "../faction-knowledge/types.js";
 
-export const RELIC_OBJECTIVE_COUNT = 5;
-
 export type RelicId = string;
-export type RelicObjectiveId = string;
-
-export type RelicObjectiveRequirement =
-  | { readonly type: "all_monsters_killed"; readonly monsterIds: readonly string[]; readonly minimumEach: number }
-  | { readonly type: "monster_kill_count"; readonly monsterId: string; readonly minimum: number }
-  | { readonly type: "faction_kill_count"; readonly factionId: FactionId; readonly minimum: number }
-  | { readonly type: "faction_elite_kill_count"; readonly factionId: FactionId; readonly minimum: number }
-  | { readonly type: "world_segment_progress"; readonly zoneDefId: string; readonly minimumCompletedSegments: number };
-
-export interface RelicObjectiveDefinition {
-  readonly id: RelicObjectiveId;
-  readonly requirement: RelicObjectiveRequirement;
-}
+export type RelicState = "unobtained" | "broken" | "charged" | "examined";
 
 export interface RelicDefinition {
   readonly id: RelicId;
   readonly factionId: FactionId;
-  readonly objectives: readonly RelicObjectiveDefinition[];
+  readonly sourceBossMonsterId: string;
+  readonly chargeKillCount: number;
 }
 
 export interface RelicProgressPort {
-  getMonsterKillCount(monsterId: string): number;
   getFactionKillCount(factionId: FactionId): number;
-  getFactionEliteKillCount(factionId: FactionId): number;
-  getCompletedSegmentCount(zoneDefId: string): number;
 }
 
 export interface RelicReconstructionPort {
+  /** Compatibility name: reconstruction now means Academy examination. */
   canReconstructRelic(definition: RelicDefinition): boolean;
 }
 
 export interface RelicProgressView {
   readonly relicId: RelicId;
-  readonly completedObjectiveIds: readonly RelicObjectiveId[];
-  readonly fragmentCount: number;
+  readonly state: RelicState;
+  readonly chargeKills: number;
+  readonly requiredChargeKills: number;
+  /** Compatibility alias for downstream Research/Achievement contracts. */
   readonly reconstructed: boolean;
 }
 
 export type RegisterRelicResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: "invalid_definition" | "duplicate_relic" };
+
+export type ExamineRelicResult =
+  | { readonly ok: true }
+  | {
+    readonly ok: false;
+    readonly reason: "unknown_relic" | "not_acquired" | "not_charged" | "examination_locked" | "already_examined";
+  };
