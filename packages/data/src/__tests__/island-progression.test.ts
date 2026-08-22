@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
   ISLAND_LEVELS,
+  getIslandLevelDefinition,
   getIslandMaxProductionTier,
 } from "../config/island-levels.js";
 import { getIslandUpgradeableLevelDefinition } from "../config/island-building-progression.js";
+
+const UPGRADE_CASES = [
+  { targetLevel: 2, sourceTier: 3, silver: 2_000, quantityPerFamily: 8 },
+  { targetLevel: 3, sourceTier: 4, silver: 30_000, quantityPerFamily: 20 },
+  { targetLevel: 4, sourceTier: 5, silver: 100_000, quantityPerFamily: 40 },
+  { targetLevel: 5, sourceTier: 6, silver: 265_000, quantityPerFamily: 60 },
+  { targetLevel: 6, sourceTier: 7, silver: 450_000, quantityPerFamily: 90 },
+] as const;
 
 describe("island production progression", () => {
   it("maps island levels 1-6 to production tiers T3-T8", () => {
@@ -15,6 +24,16 @@ describe("island production progression", () => {
     expect(getIslandMaxProductionTier(4)).toBe(6);
     expect(getIslandMaxProductionTier(5)).toBe(7);
     expect(getIslandMaxProductionTier(6)).toBe(8);
+  });
+
+  it("centralizes tier transition costs on island levels", () => {
+    for (const { targetLevel, sourceTier, silver, quantityPerFamily } of UPGRADE_CASES) {
+      const upgrade = getIslandLevelDefinition(targetLevel)?.upgradeCost;
+      expect(upgrade?.silver).toBe(silver);
+      expect(upgrade?.requirements).toHaveLength(4);
+      expect(upgrade?.requirements.every((entry) => entry.quantity === quantityPerFamily)).toBe(true);
+      expect(upgrade?.requirements.every((entry) => entry.itemId.endsWith(`_t${String(sourceTier)}`))).toBe(true);
+    }
   });
 
   it("keeps standard production buildings construction-only", () => {
