@@ -41,6 +41,12 @@ export interface ExpeditionCompletion<
   readonly rewardSummary: TRewardSummary;
 }
 
+export type ExpeditionStartState =
+  | "available"
+  | "requirements_locked"
+  | "type_active"
+  | "no_available_slot";
+
 export type RegisterExpeditionResult =
   | { readonly ok: true }
   | { readonly ok: false; readonly reason: "invalid_definition" | "duplicate_expedition" };
