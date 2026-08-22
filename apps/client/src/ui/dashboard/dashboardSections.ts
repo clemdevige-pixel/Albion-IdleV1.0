@@ -1,5 +1,4 @@
 import {
-  DASHBOARD_SECTION_IDS,
   DEFAULT_DASHBOARD_SECTION_ORDER,
   type DashboardSectionId,
 } from "../../data/dashboardLayoutCatalog";
