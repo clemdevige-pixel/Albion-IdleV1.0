@@ -27,6 +27,17 @@ export interface ResearchFoundationDependencies {
   readonly getAcademyTier: () => number;
 }
 
+function hasDiscoveredEnchantmentShard(inventoryManager: InventoryManager): boolean {
+  for (const inventoryId of inventoryManager.listInventories()) {
+    if (
+      inventoryManager.listSlots(inventoryId).some((slot) => (
+        slot.entry?.itemId.startsWith("item_resource_enchantment_shard_t") === true
+      ))
+    ) return true;
+  }
+  return false;
+}
+
 /** Client composition only. Research domain stays economy/content agnostic. */
 export function createResearchFoundation(dependencies: ResearchFoundationDependencies) {
   const researchServiceRef: {
@@ -43,6 +54,8 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
           return dependencies.getAcademyTier() >= requirement.minimumTier;
         case "research_unlock":
           return researchServiceRef.current?.hasUnlock(requirement.unlockId) ?? false;
+        case "enchantment_shard_discovered":
+          return hasDiscoveredEnchantmentShard(dependencies.inventoryManager);
       }
     },
   };
