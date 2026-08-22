@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import type { GameBridgeState } from "../../../game/GameBridge.js";
+import { useGameServices } from "../../../state/GameContext.js";
+import { useGameUiSelector } from "../../state/useGameUiSelector.js";
 import { ItemVisual, getItemDisplayName } from "../../../panels/ItemVisual";
 import {
   BESTIARY_FACTIONS,
@@ -24,6 +27,10 @@ interface LootTooltipState {
   readonly top: number;
 }
 
+function selectBestiaryRevision(state: GameBridgeState): number {
+  return state.enemiesKilled;
+}
+
 function formatDropPercent(value: number): string {
   const percent = value * 100;
   return `${percent.toLocaleString("fr-FR", {
@@ -38,6 +45,8 @@ function formatDropRange(minimum: number, maximum: number): string {
 }
 
 export function WorldBestiaryView(): JSX.Element {
+  const { getBestiaryKnowledge } = useGameServices();
+  useGameUiSelector(selectBestiaryRevision);
   const [faction, setFaction] = useState("Toutes");
   const [bandId, setBandId] = useState<WorldBandId | "all">("all");
   const [selectedMonsterId, setSelectedMonsterId] = useState<string | undefined>();
@@ -112,6 +121,7 @@ export function WorldBestiaryView(): JSX.Element {
         {entries.map((entry) => {
           const isSelected = selectedMonsterId === entry.id;
           const loot = getBestiaryLoot(entry, bandId);
+          const knowledge = getBestiaryKnowledge(entry.id);
           return (
             <article
               key={entry.id}
@@ -134,7 +144,9 @@ export function WorldBestiaryView(): JSX.Element {
                 <div className="world-creature__identity">
                   <small>{entry.faction}</small>
                   <strong>{entry.name}</strong>
-                  <span>T{entry.tier} · {CATEGORY_LABELS[entry.category]}</span>
+                  <span>
+                    T{entry.tier} · {CATEGORY_LABELS[entry.category]} · {knowledge.discovered ? "Découvert" : "Non découvert"}
+                  </span>
                 </div>
                 <dl>
                   <div>
@@ -149,43 +161,67 @@ export function WorldBestiaryView(): JSX.Element {
               </button>
 
               {isSelected && (
-                <section className="world-creature__loot" aria-label={`Table de loot de ${entry.name}`}>
-                  <header>
-                    <small>Table de loot</small>
-                    <span>{bandId === "all" ? "Toutes zones" : WORLD_BANDS.find((band) => band.id === bandId)?.label}</span>
-                  </header>
-                  {loot.length === 0
-                    ? <p>Aucun drop référencé dans cette zone.</p>
-                    : (
-                      <div className="world-creature__loot-grid">
-                        {loot.map((drop) => {
-                          const itemName = getItemDisplayName(drop.itemId);
-                          const rate = formatDropRange(
-                            drop.minimumExpectedQuantity,
-                            drop.maximumExpectedQuantity,
-                          );
-                          return (
-                            <div
-                              key={`${drop.kind}:${drop.itemId}`}
-                              className="world-creature__loot-item"
-                              tabIndex={0}
-                              aria-label={`${itemName} · ${rate}`}
-                              onMouseEnter={(event) => {
-                                showLootTooltip(event.currentTarget, itemName, rate);
-                              }}
-                              onMouseLeave={() => { setLootTooltip(undefined); }}
-                              onFocus={(event) => {
-                                showLootTooltip(event.currentTarget, itemName, rate);
-                              }}
-                              onBlur={() => { setLootTooltip(undefined); }}
-                            >
-                              <ItemVisual itemId={drop.itemId} />
-                            </div>
-                          );
-                        })}
+                <>
+                  <section className="world-creature__knowledge" aria-label={`Connaissance de ${entry.name}`}>
+                    <header>
+                      <small>Connaissance</small>
+                      <span>{knowledge.discovered ? "Découvert" : "À découvrir"}</span>
+                    </header>
+                    <dl>
+                      <div><dt>Victoires</dt><dd>{knowledge.killCount}</dd></div>
+                      <div><dt>Faction</dt><dd>{knowledge.factionKillCount}</dd></div>
+                      <div><dt>Élites</dt><dd>{knowledge.factionEliteKillCount}</dd></div>
+                      <div>
+                        <dt>Relique</dt>
+                        <dd>
+                          {knowledge.relic === undefined
+                            ? "—"
+                            : knowledge.relic.reconstructed
+                              ? "Reconstruite"
+                              : `${knowledge.relic.fragmentCount}/${knowledge.relic.objectiveCount}`}
+                        </dd>
                       </div>
-                    )}
-                </section>
+                    </dl>
+                  </section>
+
+                  <section className="world-creature__loot" aria-label={`Table de loot de ${entry.name}`}>
+                    <header>
+                      <small>Table de loot</small>
+                      <span>{bandId === "all" ? "Toutes zones" : WORLD_BANDS.find((band) => band.id === bandId)?.label}</span>
+                    </header>
+                    {loot.length === 0
+                      ? <p>Aucun drop référencé dans cette zone.</p>
+                      : (
+                        <div className="world-creature__loot-grid">
+                          {loot.map((drop) => {
+                            const itemName = getItemDisplayName(drop.itemId);
+                            const rate = formatDropRange(
+                              drop.minimumExpectedQuantity,
+                              drop.maximumExpectedQuantity,
+                            );
+                            return (
+                              <div
+                                key={`${drop.kind}:${drop.itemId}`}
+                                className="world-creature__loot-item"
+                                tabIndex={0}
+                                aria-label={`${itemName} · ${rate}`}
+                                onMouseEnter={(event) => {
+                                  showLootTooltip(event.currentTarget, itemName, rate);
+                                }}
+                                onMouseLeave={() => { setLootTooltip(undefined); }}
+                                onFocus={(event) => {
+                                  showLootTooltip(event.currentTarget, itemName, rate);
+                                }}
+                                onBlur={() => { setLootTooltip(undefined); }}
+                              >
+                                <ItemVisual itemId={drop.itemId} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                  </section>
+                </>
               )}
             </article>
           );
