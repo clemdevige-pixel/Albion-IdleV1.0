@@ -1,29 +1,10 @@
-import type { RelicDefinition, RelicState } from "@game/gameplay";
 import { getMonsterDefinition } from "../../data/monsterContentCatalog.js";
-import { RELIC_DEFINITIONS } from "../../data/relicContentCatalog.js";
 
 interface FactionKnowledgeSource {
   isMonsterDiscovered(monsterId: string): boolean;
   getMonsterKillCount(monsterId: string): number;
   getFactionKillCount(factionId: string): number;
   getFactionEliteKillCount(factionId: string): number;
-}
-
-interface RelicProgressSource {
-  getProgress(relicId: string): {
-    readonly state: RelicState;
-    readonly chargeKills: number;
-    readonly requiredChargeKills: number;
-    readonly reconstructed: boolean;
-  } | undefined;
-}
-
-export interface BestiaryRelicProgressModel {
-  readonly relicId: string;
-  readonly state: RelicState;
-  readonly chargeKills: number;
-  readonly requiredChargeKills: number;
-  readonly reconstructed: boolean;
 }
 
 export interface BestiaryKnowledgeModel {
@@ -33,22 +14,15 @@ export interface BestiaryKnowledgeModel {
   readonly killCount: number;
   readonly factionKillCount: number;
   readonly factionEliteKillCount: number;
-  readonly relic: BestiaryRelicProgressModel | undefined;
 }
 
 export interface FactionBestiaryFoundationDependencies {
   readonly factionKnowledgeService: FactionKnowledgeSource;
-  readonly relicService: RelicProgressSource;
 }
 
 function normalizeFactionId(value: string): string | undefined {
   const normalized = value.trim().toLowerCase();
   return normalized === "" || normalized === "none" ? undefined : normalized;
-}
-
-function getRelicDefinitionForFaction(factionId: string | undefined): RelicDefinition | undefined {
-  if (factionId === undefined) return undefined;
-  return RELIC_DEFINITIONS.find((definition) => definition.factionId === factionId);
 }
 
 export function createFactionBestiaryFoundation(
@@ -57,10 +31,6 @@ export function createFactionBestiaryFoundation(
   const getKnowledge = (monsterId: string): BestiaryKnowledgeModel => {
     const monster = getMonsterDefinition(monsterId);
     const factionId = normalizeFactionId(monster.faction);
-    const relicDefinition = getRelicDefinitionForFaction(factionId);
-    const relicProgress = relicDefinition === undefined
-      ? undefined
-      : dependencies.relicService.getProgress(relicDefinition.id);
 
     return {
       monsterId,
@@ -73,15 +43,6 @@ export function createFactionBestiaryFoundation(
       factionEliteKillCount: factionId === undefined
         ? 0
         : dependencies.factionKnowledgeService.getFactionEliteKillCount(factionId),
-      relic: relicDefinition === undefined || relicProgress === undefined
-        ? undefined
-        : {
-          relicId: relicDefinition.id,
-          state: relicProgress.state,
-          chargeKills: relicProgress.chargeKills,
-          requiredChargeKills: relicProgress.requiredChargeKills,
-          reconstructed: relicProgress.reconstructed,
-        },
     };
   };
 
