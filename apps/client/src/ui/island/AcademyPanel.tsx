@@ -121,6 +121,24 @@ function ResearchTooltip({ research }: { readonly research: AcademyResearchEntry
   );
 }
 
+function ResearchAction({
+  research,
+  label,
+  onAction,
+}: {
+  readonly research: AcademyResearchEntryModel;
+  readonly label: string;
+  readonly onAction: (research: AcademyResearchEntryModel) => void;
+}): JSX.Element {
+  return (
+    <ContextHoverTooltip tooltip={<ResearchTooltip research={research} />}>
+      <button className="ui-academy__action" type="button" onClick={() => { onAction(research); }}>
+        {label}
+      </button>
+    </ContextHoverTooltip>
+  );
+}
+
 function ResearchRow({
   research,
   onAction,
@@ -136,39 +154,33 @@ function ResearchRow({
     : Math.max(0, Math.min(100, 100 * (1 - research.remainingDurationMs / research.durationMs)));
 
   return (
-    <ContextHoverTooltip tooltip={<ResearchTooltip research={research} />}>
-      <article className={`ui-academy__research-row is-${research.state}${compact ? " is-compact" : ""}`}>
-        <div className="ui-academy__research-main">
-          <small>T{String(research.tier)} · {formatDuration(research.durationMs)}</small>
-          <strong>{research.displayName}</strong>
-          {!compact && info !== undefined && <span>{info.effectSummary}</span>}
-        </div>
-        <div className="ui-academy__research-side">
-          <b className={`ui-academy__status is-${research.state}`}>{researchStatusLabel(research)}</b>
-          {!compact && <small>{formatResearchCost(research)}</small>}
-        </div>
+    <article className={`ui-academy__research-row is-${research.state}${compact ? " is-compact" : ""}`}>
+      <div className="ui-academy__research-main">
+        <small>T{String(research.tier)} · {formatDuration(research.durationMs)}</small>
+        <strong>{research.displayName}</strong>
+        {!compact && info !== undefined && <span>{info.effectSummary}</span>}
+      </div>
+      <div className="ui-academy__research-side">
+        <b className={`ui-academy__status is-${research.state}`}>{researchStatusLabel(research)}</b>
+        {!compact && <small>{formatResearchCost(research)}</small>}
+      </div>
 
-        {research.remainingDurationMs !== undefined && (
-          <div className="ui-academy__research-progress">
-            <div className="ui-academy__progress" aria-hidden="true">
-              <span style={{ width: `${String(progress)}%` }} />
-            </div>
-            <small>Reste {formatDuration(research.remainingDurationMs)}</small>
+      {research.remainingDurationMs !== undefined && (
+        <div className="ui-academy__research-progress">
+          <div className="ui-academy__progress" aria-hidden="true">
+            <span style={{ width: `${String(progress)}%` }} />
           </div>
-        )}
+          <small>Reste {formatDuration(research.remainingDurationMs)}</small>
+        </div>
+      )}
 
-        {!compact && research.relicGateState === "ready" && research.state === "locked" && onAction !== undefined && (
-          <button className="ui-academy__action" type="button" onClick={() => { onAction(research); }}>
-            Envoyer la relique
-          </button>
-        )}
-        {!compact && research.state === "available" && onAction !== undefined && (
-          <button className="ui-academy__action" type="button" onClick={() => { onAction(research); }}>
-            Lancer
-          </button>
-        )}
-      </article>
-    </ContextHoverTooltip>
+      {!compact && research.relicGateState === "ready" && research.state === "locked" && onAction !== undefined && (
+        <ResearchAction research={research} label="Envoyer la relique" onAction={onAction} />
+      )}
+      {!compact && research.state === "available" && onAction !== undefined && (
+        <ResearchAction research={research} label="Lancer" onAction={onAction} />
+      )}
+    </article>
   );
 }
 
@@ -205,20 +217,14 @@ function ExpeditionTooltip({ expedition }: { readonly expedition: AcademyExpedit
 }
 
 function ActiveExpeditionRow({ expedition }: { readonly expedition: AcademyExpeditionEntryModel }): JSX.Element {
-  const info = getExpeditionPresentationInfo(expedition.id);
   return (
-    <ContextHoverTooltip tooltip={<ExpeditionTooltip expedition={expedition} />}>
-      <div className="ui-academy__active-row">
-        <div>
-          <small>Slot {String((expedition.activeSlotIndex ?? 0) + 1)} · {expeditionKindLabel(expedition)}</small>
-          <strong>{expedition.displayName}</strong>
-        </div>
-        <div>
-          <b>{expedition.remainingDurationMs === undefined ? "Active" : formatDuration(expedition.remainingDurationMs)}</b>
-          {info !== undefined && <small>{info.rewardSummary}</small>}
-        </div>
+    <div className="ui-academy__active-row">
+      <div>
+        <small>Slot {String((expedition.activeSlotIndex ?? 0) + 1)} · {expeditionKindLabel(expedition)}</small>
+        <strong>{expedition.displayName}</strong>
       </div>
-    </ContextHoverTooltip>
+      <b>{expedition.remainingDurationMs === undefined ? "Active" : formatDuration(expedition.remainingDurationMs)}</b>
+    </div>
   );
 }
 
@@ -361,124 +367,129 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
           )}
         </section>
       ) : (
-        <section className="ui-academy__section">
+        <section className="ui-academy__section ui-academy__section--expeditions">
           <header>
             <div>
               <strong>Expéditions</strong>
-              <small>Choisissez un tier, une expédition et une durée avant de lancer.</small>
+              <small>Configurez une expédition passive puis affectez-la à un slot libre.</small>
             </div>
             <span>{String(activeExpeditions.length)} / {String(model.expeditionSlotCapacity)} actifs</span>
           </header>
 
-          <div className="ui-academy__slots" aria-label="Slots d’expédition">
-            {model.expeditionSlotCapacity === 0 ? (
-              <div className="ui-academy__slot is-locked">
-                <strong>Slots verrouillés</strong>
-                <small>Cartographie I requise</small>
-              </div>
-            ) : Array.from({ length: model.expeditionSlotCapacity }, (_, slotIndex) => {
-              const active = activeExpeditions.find((entry) => entry.activeSlotIndex === slotIndex);
-              return (
-                <div key={slotIndex} className={`ui-academy__slot${active === undefined ? " is-empty" : " is-active"}`}>
-                  <strong>Slot {String(slotIndex + 1)}</strong>
-                  <small>{active?.displayName ?? "Libre"}</small>
+          <div className="ui-academy__expedition-stage">
+            <span className="ui-island__eyebrow">En cours</span>
+            <div className="ui-academy__slots" aria-label="Slots d’expédition">
+              {model.expeditionSlotCapacity === 0 ? (
+                <div className="ui-academy__slot is-locked">
+                  <strong>Slots verrouillés</strong>
+                  <small>Cartographie I requise</small>
                 </div>
-              );
-            })}
-          </div>
-
-          {activeExpeditions.length > 0 && (
-            <div className="ui-academy__active-expeditions">
-              {activeExpeditions.map((entry) => <ActiveExpeditionRow key={entry.id} expedition={entry} />)}
-            </div>
-          )}
-
-          <nav className="ui-academy__tier-tabs" aria-label="Tier d’expédition">
-            {ACADEMY_TIERS.map((tier) => {
-              const locked = !availableTiers.includes(tier);
-              return (
-                <button
-                  key={tier}
-                  type="button"
-                  className={selectedExpeditionTier === tier ? "is-active" : ""}
-                  disabled={locked}
-                  title={locked ? `Académie T${String(tier)} requise` : undefined}
-                  onClick={() => {
-                    setRequestedExpeditionTier(tier);
-                    setRequestedExpeditionId(undefined);
-                    setRequestedDuration(undefined);
-                  }}
-                >
-                  T{String(tier)}{locked ? " 🔒" : ""}
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="ui-academy__expedition-browser">
-            <div className="ui-academy__expedition-list" role="listbox" aria-label="Expédition">
-              {tierExpeditions.map((entry) => {
-                const info = getExpeditionPresentationInfo(entry.id);
-                const selected = entry.id === selectedExpedition?.id;
+              ) : Array.from({ length: model.expeditionSlotCapacity }, (_, slotIndex) => {
+                const active = activeExpeditions.find((entry) => entry.activeSlotIndex === slotIndex);
                 return (
-                  <ContextHoverTooltip key={entry.id} tooltip={<ExpeditionTooltip expedition={entry} />}>
-                    <button
-                      type="button"
-                      className={`ui-academy__expedition-option${selected ? " is-selected" : ""}`}
-                      onClick={() => {
-                        setRequestedExpeditionId(entry.id);
-                        setRequestedDuration(undefined);
-                      }}
-                    >
-                      <span>
-                        <small>{expeditionKindLabel(entry)}</small>
-                        <strong>{entry.displayName}</strong>
-                      </span>
-                      <span>
-                        <b>{info?.rewardSummary ?? "Récompense non renseignée"}</b>
-                        <small>{expeditionStatusLabel(entry)}</small>
-                      </span>
-                    </button>
-                  </ContextHoverTooltip>
+                  <div key={slotIndex} className={`ui-academy__slot${active === undefined ? " is-empty" : " is-active"}`}>
+                    <strong>Slot {String(slotIndex + 1)}</strong>
+                    <small>{active?.displayName ?? "Libre"}</small>
+                  </div>
                 );
               })}
             </div>
+            {activeExpeditions.length > 0 && (
+              <div className="ui-academy__active-expeditions">
+                {activeExpeditions.map((entry) => <ActiveExpeditionRow key={entry.id} expedition={entry} />)}
+              </div>
+            )}
+          </div>
 
-            {selectedExpedition !== undefined && (
-              <div className="ui-academy__expedition-launcher">
-                <div className="ui-academy__launcher-summary">
-                  <span className="ui-island__eyebrow">Sélection</span>
+          <div className="ui-academy__expedition-stage">
+            <span className="ui-island__eyebrow">1 · Tier</span>
+            <nav className="ui-academy__tier-tabs" aria-label="Tier d’expédition">
+              {ACADEMY_TIERS.map((tier) => {
+                const locked = !availableTiers.includes(tier);
+                return (
+                  <button
+                    key={tier}
+                    type="button"
+                    className={selectedExpeditionTier === tier ? "is-active" : ""}
+                    disabled={locked}
+                    title={locked ? `Académie T${String(tier)} requise` : undefined}
+                    onClick={() => {
+                      setRequestedExpeditionTier(tier);
+                      setRequestedExpeditionId(undefined);
+                      setRequestedDuration(undefined);
+                    }}
+                  >
+                    T{String(tier)}{locked ? " 🔒" : ""}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="ui-academy__expedition-stage">
+            <span className="ui-island__eyebrow">2 · Expédition</span>
+            <div className="ui-academy__expedition-list" role="listbox" aria-label="Expédition">
+              {tierExpeditions.map((entry) => {
+                const selected = entry.id === selectedExpedition?.id;
+                return (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className={`ui-academy__expedition-option${selected ? " is-selected" : ""}`}
+                    onClick={() => {
+                      setRequestedExpeditionId(entry.id);
+                      setRequestedDuration(undefined);
+                    }}
+                  >
+                    <span>
+                      <strong>{entry.typeId === SILVER_EXPEDITION_TYPE_ID ? "Silver" : entry.typeId}</strong>
+                      <small>{expeditionStatusLabel(entry)}</small>
+                    </span>
+                    <b>{entry.startState === "requirements_locked" ? "🔒" : selected ? "✓" : ""}</b>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {selectedExpedition !== undefined && (
+            <div className="ui-academy__expedition-stage ui-academy__expedition-config">
+              <span className="ui-island__eyebrow">3 · Configuration</span>
+              <div className="ui-academy__launcher-summary">
+                <div>
                   <strong>{selectedExpedition.displayName}</strong>
-                  <small>{selectedExpeditionInfo?.rewardSummary ?? "Récompense non renseignée"}</small>
+                  <small>{expeditionKindLabel(selectedExpedition)} · T{String(selectedExpedition.tier)}</small>
                 </div>
+                <b>{selectedExpeditionInfo?.rewardSummary ?? "Récompense non renseignée"}</b>
+              </div>
 
-                <div className="ui-academy__duration-picker" role="group" aria-label="Durée">
-                  {selectedExpedition.supportedDurationsMs.map((durationMs) => (
-                    <button
-                      key={durationMs}
-                      type="button"
-                      className={durationMs === selectedDuration ? "is-active" : ""}
-                      onClick={() => { setRequestedDuration(durationMs); }}
-                    >
-                      {formatDuration(durationMs)}
-                    </button>
-                  ))}
-                </div>
+              <div className="ui-academy__duration-picker" role="group" aria-label="Durée">
+                {selectedExpedition.supportedDurationsMs.map((durationMs) => (
+                  <button
+                    key={durationMs}
+                    type="button"
+                    className={durationMs === selectedDuration ? "is-active" : ""}
+                    onClick={() => { setRequestedDuration(durationMs); }}
+                  >
+                    {formatDuration(durationMs)}
+                  </button>
+                ))}
+              </div>
 
+              <ContextHoverTooltip tooltip={<ExpeditionTooltip expedition={selectedExpedition} />}>
                 <button
                   className="ui-academy__launch-button"
                   type="button"
                   disabled={selectedExpedition.startState !== "available" || selectedDuration === undefined}
-                  title={selectedExpedition.startState === "available" ? undefined : expeditionStatusLabel(selectedExpedition)}
                   onClick={handleExpeditionStart}
                 >
                   {selectedExpedition.startState === "available"
                     ? "Lancer l’expédition"
                     : expeditionStatusLabel(selectedExpedition)}
                 </button>
-              </div>
-            )}
-          </div>
+              </ContextHoverTooltip>
+            </div>
+          )}
         </section>
       )}
     </div>
