@@ -16,25 +16,28 @@ describe("createFactionResearchFoundation", () => {
     expect(foundation.factionKnowledgeService.getFactionEliteKillCount("keeper")).toBe(1);
   });
 
-  it("reconstructs the Keeper relic from authored objectives without Keeper runtime branches", () => {
-    let completedSegments = 5;
+  it("drops the Keeper relic on its boss, charges from later Keeper kills and waits for Academy examination authority", () => {
+    let canExamine = false;
     const foundation = createFactionResearchFoundation({
-      getCompletedSegmentCount: () => completedSegments,
+      getCompletedSegmentCount: () => 0,
+    });
+    foundation.bindReconstructionGate(() => canExamine);
+
+    foundation.recordMonsterKill(MONSTER_IDS.keeperAncient);
+    expect(foundation.relicService.getProgress("relic_keeper")).toMatchObject({
+      state: "broken",
+      chargeKills: 0,
     });
 
-    foundation.recordMonsterKill(MONSTER_IDS.keeperWarrior);
-    foundation.recordMonsterKill(MONSTER_IDS.keeperShaman);
-    for (let index = 0; index < 95; index += 1) {
+    for (let index = 0; index < 50; index += 1) {
       foundation.recordMonsterKill(MONSTER_IDS.keeperWarrior);
     }
-    for (let index = 0; index < 3; index += 1) {
-      foundation.recordMonsterKill(MONSTER_IDS.keeperChampion);
-    }
+    expect(foundation.relicService.getProgress("relic_keeper")?.state).toBe("charged");
+    expect(foundation.relicService.isReconstructed("relic_keeper")).toBe(false);
 
-    expect(foundation.factionKnowledgeService.getFactionKillCount("keeper")).toBe(100);
-    expect(foundation.relicService.isReconstructed("relic_keeper")).toBe(true);
-
-    completedSegments = 0;
+    canExamine = true;
+    expect(foundation.resolveWorldProgress()).toEqual(["relic_keeper"]);
+    expect(foundation.relicService.getProgress("relic_keeper")?.state).toBe("examined");
     expect(foundation.relicService.isReconstructed("relic_keeper")).toBe(true);
   });
 });
