@@ -5,10 +5,16 @@ import type {
 } from "@game/gameplay";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 
-export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & {
-  readonly type: "research_unlock";
-  readonly unlockId: string;
-};
+export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & (
+  | {
+    readonly type: "research_unlock";
+    readonly unlockId: string;
+  }
+  | {
+    readonly type: "relic_examined";
+    readonly relicId: string;
+  }
+);
 
 export interface SilverExpeditionContentDefinition
   extends ExpeditionDefinition<ExpeditionContentRequirement> {
@@ -53,14 +59,14 @@ const TIER_UNLOCKS: Readonly<Record<ExpeditionTier, string>> = {
 };
 
 const FACTION_EXPEDITION_AUTHORING = [
-  { factionId: "keeper", displayName: "Keeper", familyUnlockId: RESEARCH_UNLOCK_IDS.keeperExpeditionFamily },
-  { factionId: "heretic", displayName: "Heretic", familyUnlockId: RESEARCH_UNLOCK_IDS.hereticExpeditionFamily },
-  { factionId: "undead", displayName: "Undead", familyUnlockId: RESEARCH_UNLOCK_IDS.undeadExpeditionFamily },
-  { factionId: "morgana", displayName: "Morgana", familyUnlockId: RESEARCH_UNLOCK_IDS.morganaExpeditionFamily },
+  { factionId: "keeper", displayName: "Keeper", relicId: "relic_keeper" },
+  { factionId: "heretic", displayName: "Heretic", relicId: "relic_heretic" },
+  { factionId: "undead", displayName: "Undead", relicId: "relic_undead" },
+  { factionId: "morgana", displayName: "Morgana", relicId: "relic_morgana" },
 ] as const satisfies readonly {
   readonly factionId: FactionId;
   readonly displayName: string;
-  readonly familyUnlockId: string;
+  readonly relicId: string;
 }[];
 
 export const SILVER_EXPEDITION_DEFINITIONS = [
@@ -86,7 +92,7 @@ export const FACTION_EXPEDITION_DEFINITIONS: readonly FactionExpeditionContentDe
     tier,
     factionId: faction.factionId,
     requirements: [
-      { type: "research_unlock", unlockId: faction.familyUnlockId },
+      { type: "relic_examined", relicId: faction.relicId },
       { type: "research_unlock", unlockId: TIER_UNLOCKS[tier] },
     ],
     reward: {
