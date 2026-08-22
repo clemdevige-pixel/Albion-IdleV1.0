@@ -62,23 +62,26 @@ describe("RelicService", () => {
     });
   });
 
-  it("examines a charged Relic only when the Academy authority allows it", () => {
+  it("stays charged until an explicit Academy examination succeeds", () => {
     const fixture = createFixture({ canExamine: false });
     fixture.setFactionKills(10);
     fixture.service.recordMonsterKill("boss_keeper_ancient");
     fixture.setFactionKills(60);
 
+    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("charged");
+    expect(fixture.service.isReconstructed("relic_keeper")).toBe(false);
     expect(fixture.service.examineRelic("relic_keeper"))
       .toEqual({ ok: false, reason: "examination_locked" });
-    expect(fixture.service.isReconstructed("relic_keeper")).toBe(false);
+    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("charged");
 
     fixture.setCanExamine(true);
+    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("charged");
     expect(fixture.service.examineRelic("relic_keeper")).toEqual({ ok: true });
     expect(fixture.service.getProgress("relic_keeper")?.state).toBe("examined");
     expect(fixture.service.isReconstructed("relic_keeper")).toBe(true);
   });
 
-  it("persists acquisition baseline and examined state", () => {
+  it("persists acquisition baseline and explicitly examined state in V3", () => {
     const fixture = createFixture();
     fixture.setFactionKills(25);
     fixture.service.recordMonsterKill("boss_keeper_ancient");
@@ -86,14 +89,39 @@ describe("RelicService", () => {
     fixture.service.examineRelic("relic_keeper");
 
     const restored = createFixture();
+    restored.setFactionKills(75);
     restored.service.load(fixture.service.save());
     expect(restored.service.getProgress("relic_keeper")?.state).toBe("examined");
   });
 
-  it("migrates old reconstructed Relics to examined state", () => {
+  it("migrates V1 auto-reconstructed Relics to broken 0/50 from the current kill count", () => {
     const fixture = createFixture();
+    fixture.setFactionKills(137);
     fixture.service.load({ version: 1, reconstructedRelicIds: ["relic_keeper"] });
-    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("examined");
+
+    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
+      state: "broken",
+      chargeKills: 0,
+      reconstructed: false,
+    });
+    fixture.setFactionKills(138);
+    expect(fixture.service.getProgress("relic_keeper")?.chargeKills).toBe(1);
+  });
+
+  it("migrates V2 auto-examined Relics without inheriting historical kills", () => {
+    const fixture = createFixture();
+    fixture.setFactionKills(240);
+    fixture.service.load({
+      version: 2,
+      acquiredRelics: [{ relicId: "relic_keeper", acquiredAtFactionKillCount: 10 }],
+      examinedRelicIds: ["relic_keeper"],
+    });
+
+    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
+      state: "broken",
+      chargeKills: 0,
+      reconstructed: false,
+    });
   });
 
   it("rejects invalid authored charge contracts", () => {
