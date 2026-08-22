@@ -154,6 +154,7 @@
 .world-creature__summary dt { color: #8fa0b5; font-size: 8px; text-transform: uppercase; }
 .world-creature__summary dd { margin: 0; color: #d4dbe5; font-size: 9px; font-weight: 700; }
 
+.world-creature__knowledge,
 .world-creature__loot {
   display: grid;
   gap: 6px;
@@ -165,6 +166,7 @@
   border-radius: 5px;
 }
 
+.world-creature__knowledge > header,
 .world-creature__loot > header {
   display: flex;
   align-items: center;
@@ -172,6 +174,7 @@
   gap: 8px;
 }
 
+.world-creature__knowledge > header small,
 .world-creature__loot > header small {
   color: #d0ad5b;
   font-size: 9px;
@@ -180,12 +183,45 @@
   text-transform: uppercase;
 }
 
+.world-creature__knowledge > header span,
 .world-creature__loot > header span,
 .world-creature__loot > p {
   margin: 0;
   color: #aab5c4;
   font-size: 8px;
   text-transform: uppercase;
+}
+
+.world-creature__knowledge dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+}
+
+.world-creature__knowledge dl > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 5px;
+  border: 1px solid #28303a;
+  text-align: center;
+}
+
+.world-creature__knowledge dt {
+  color: #8fa0b5;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.world-creature__knowledge dd {
+  overflow: hidden;
+  margin: 0;
+  color: #d4dbe5;
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .world-creature__loot-grid {
@@ -260,4 +296,5 @@
   .world-creature__summary { grid-template-columns: 54px minmax(0, 1fr); }
   .world-creature__summary .world-creature__portrait { width: 52px; height: 52px; }
   .world-creature__summary dl { grid-column: 2; }
+  .world-creature__knowledge dl { grid-template-columns: 1fr 1fr; }
 }
