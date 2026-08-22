@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { getEquipmentTierCapViolation } from "../../data/zoneEquipmentTierCaps";
 import { StorageRuntime, type StorageKind } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
@@ -89,10 +90,16 @@ export function useInventoryActions(): InventoryActions {
   }, [storage, syncStorage]);
 
   const transfer = useCallback((fromKind: StorageKind, from: number, toKind: StorageKind, to?: number): boolean => {
+    if (fromKind === "inventory" && toKind === "bank") {
+      const slot = services.inventoryManager.getSlot(services.heroId, from);
+      if (slot.ok && slot.value.entry !== undefined && isRelicInventoryItem(slot.value.entry.itemId)) {
+        return false;
+      }
+    }
     const result = storage.transfer(fromKind, from, toKind, to);
     if (result.ok) syncStorage();
     return result.ok;
-  }, [storage, syncStorage]);
+  }, [services, storage, syncStorage]);
 
   const sort = useCallback((kind: StorageKind): boolean => {
     const result = storage.sort(kind);
