@@ -65,6 +65,12 @@ export const ISLAND_OPERATIONAL_BUILDING_PROGRESSIONS: readonly IslandOperationa
       { level: 6, maxProductionTier: 8 },
     ],
   },
+  {
+    buildingId: "academy",
+    levels: [
+      { level: 1, maxProductionTier: 4 },
+    ],
+  },
 ] as const;
 
 const PROGRESSION_BY_BUILDING = new Map<IslandBuildingId, IslandOperationalBuildingProgression>(ISLAND_OPERATIONAL_BUILDING_PROGRESSIONS.map((entry) => [entry.buildingId, entry] as const));
