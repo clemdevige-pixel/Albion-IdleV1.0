@@ -11,9 +11,11 @@ import {
 } from "@game/gameplay";
 import {
   RESEARCH_DEFINITIONS,
+  RESEARCH_IDS,
   RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
+import { DUNGEON_RELIC_ID } from "../../data/relicContentCatalog.js";
 
 export interface ResearchFoundationDependencies {
   readonly relicService: RelicService;
@@ -24,62 +26,18 @@ export interface ResearchFoundationDependencies {
   readonly getAcademyTier: () => number;
 }
 
-export type RelicGateState = "none" | "waiting" | "ready" | "examined";
-
-function getRelicRequirement(researchId: string) {
-  const definition = RESEARCH_DEFINITIONS.find((candidate) => candidate.id === researchId);
-  if (definition === undefined) return undefined;
-  const requirement = definition.requirements.find(
-    (candidate) => candidate.type === "relic_examined",
-  );
-  return requirement?.type === "relic_examined" ? requirement : undefined;
-}
-
-export class AcademyResearchService extends ResearchService<ResearchContentRequirement> {
-  readonly #relicService: RelicService;
-
-  constructor(
-    requirementPort: ResearchRequirementPort<ResearchContentRequirement>,
-    paymentPort: ResearchPaymentPort,
-    relicService: RelicService,
-  ) {
-    super({ requirementPort, paymentPort });
-    this.#relicService = relicService;
-  }
-
-  isRelicExamined(relicId: string): boolean {
-    return this.#relicService.isExamined(relicId);
-  }
-
-  getRelicGateState(researchId: string): RelicGateState {
-    const requirement = getRelicRequirement(researchId);
-    if (requirement === undefined) return "none";
-    const progress = this.#relicService.getProgress(requirement.relicId);
-    if (progress?.state === "examined") return "examined";
-    if (progress?.state === "charged") {
-      return this.hasUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction) ? "ready" : "none";
-    }
-    return "waiting";
-  }
-
-  examineRelicForResearch(researchId: string): boolean {
-    const requirement = getRelicRequirement(researchId);
-    if (requirement === undefined) return false;
-    return this.#relicService.examineRelic(requirement.relicId).ok;
-  }
-}
-
 /** Client composition only. Research domain stays economy/content agnostic. */
 export function createResearchFoundation(dependencies: ResearchFoundationDependencies) {
   const researchServiceRef: {
-    current: AcademyResearchService | undefined;
+    current: ResearchService<ResearchContentRequirement> | undefined;
   } = { current: undefined };
 
   const requirementPort: ResearchRequirementPort<ResearchContentRequirement> = {
     isRequirementMet(requirement) {
       switch (requirement.type) {
-        case "relic_examined":
-          return dependencies.relicService.isExamined(requirement.relicId);
+        case "relic_charged":
+          return dependencies.relicService.getProgress(requirement.relicId)?.state === "charged"
+            || dependencies.relicService.isExamined(requirement.relicId);
         case "academy_tier":
           return dependencies.getAcademyTier() >= requirement.minimumTier;
         case "research_unlock":
@@ -92,11 +50,10 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
       return tryConsumeResearchCost(dependencies, cost);
     },
   };
-  const researchService = new AcademyResearchService(
+  const researchService = new ResearchService<ResearchContentRequirement>({
     requirementPort,
     paymentPort,
-    dependencies.relicService,
-  );
+  });
   researchServiceRef.current = researchService;
 
   for (const definition of RESEARCH_DEFINITIONS) {
@@ -106,14 +63,21 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
     }
   }
 
+  const reconcileResearchEffects = (): void => {
+    if (!researchService.hasUnlock(RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed)) return;
+    if (dependencies.relicService.isExamined(DUNGEON_RELIC_ID)) return;
+    const progress = dependencies.relicService.getProgress(DUNGEON_RELIC_ID);
+    if (progress?.state !== "charged") return;
+    dependencies.relicService.examineRelic(DUNGEON_RELIC_ID);
+  };
+
+  researchService.onCompleted((researchId) => {
+    if (researchId === RESEARCH_IDS.dungeonRelicAnalysis) reconcileResearchEffects();
+  });
+
   return {
     researchService,
-    canReconstructRelics: () => researchService.hasUnlock(RESEARCH_UNLOCK_IDS.relicReconstruction),
-    // Compatibility adapter for the current composition root; presentation uses
-    // the richer service-level gate state when available.
-    isWaitingForRelic: (researchId: string): boolean => (
-      researchService.getRelicGateState(researchId) === "waiting"
-    ),
+    reconcileResearchEffects,
   };
 }
 
