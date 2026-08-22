@@ -1,280 +1,172 @@
 # Albion Idle — Faction Achievement Milestones
 
-Status: VALIDATED FUTURE DESIGN / NOT IMPLEMENTED
+Status: VALIDATED / IMPLEMENTED
 Parent design: `AI_BIBLE/10_SYSTEMS/44_FACTION_RESEARCH_EXPLORATION_SYSTEM.txt`
-Last update: 2026-08-21
+Last update: 2026-08-22
 
 ---
 
 # 1. PURPOSE
 
-This document locks the validated Achievement milestone set for the future Faction Research / Expedition feature.
+This document locks the Achievement milestone set associated with Faction / Expedition progression.
 
-It complements the parent system document without creating a new Achievement system.
+The existing `World > Achievements` surface remains authoritative.
 
-The existing `World > Achievements` surface remains authoritative for Achievement presentation.
+Achievements are feedback only. They MUST NOT unlock Research, Expeditions, Dungeons, combat power or faction yield.
 
-Achievements are completion/progression feedback only in V1.
+Functional unlock authority belongs to Academy / Research. Faction-yield progression belongs to Faction Mastery.
 
-They MUST NOT:
-
-- grant combat power;
-- grant faction-yield bonuses;
-- unlock Research;
-- unlock Expeditions;
-- unlock dungeons;
-- replace Faction Mastery progression.
-
-Functional unlock authority remains in Academy / Research.
-Faction-yield progression remains in Faction Mastery.
+The previous one-Relic-per-faction design has been removed. Therefore the old `Relic Reconstructed · <Faction>` milestones are removed rather than repointed to the new global Dungeon Relic.
 
 ---
 
 # 2. FACTION ACHIEVEMENT TEMPLATE
 
-The same Achievement structure is reused for Keeper, Heretic, Undead and Morgana.
+The same structure is reused for Keeper, Heretic, Undead and Morgana.
 
-Only authored faction references/names change.
+Per faction:
 
-Each faction uses the following milestones.
-
-## 2.1 Discovery
+## Discovery
 
 ### Discovery
-Condition:
 - discover / defeat the two main normal units of the faction.
 
-Purpose:
-- confirms basic faction discovery;
-- naturally overlaps with the first deterministic Relic objective without becoming an unlock authority.
-
-## 2.2 Faction kills
+## Faction kills
 
 ### Hunter I
-Condition:
-- 25 faction kills.
+- 25 lifetime faction kills.
 
 ### Hunter II
-Condition:
-- 100 faction kills.
+- 100 lifetime faction kills.
 
 ### Hunter III
-Condition:
-- 500 faction kills.
+- 500 lifetime faction kills.
 
-These thresholds track lifetime faction kills.
-
-## 2.3 Elite kills
+## Elite kills
 
 ### Elite Hunter
-Condition:
-- defeat 3 faction elites.
+- 3 faction elite kills.
 
 ### Veteran Hunter
-Condition:
-- defeat 25 faction elites.
+- 25 faction elite kills.
 
-These thresholds track lifetime faction elite kills.
-
-## 2.4 Relic
-
-### Relic Reconstructed
-Condition:
-- reconstruct the faction Relic.
-
-The Relic remains a Research prerequisite / faction-discovery system object.
-The Achievement only records completion.
-
-## 2.5 Faction Expeditions
+## Faction Expeditions
 
 ### Explorer
-Condition:
 - complete 1 Expedition of the faction.
 
 ### Expeditionary
-Condition:
 - complete 10 Expeditions of the faction.
 
-These count completed Expeditions, including Expeditions resolved while the player was offline.
+Offline-resolved Expeditions count normally.
 
-## 2.6 Faction dungeons
+## Faction Dungeons
 
 ### Conqueror
-Condition:
-- complete 1 dungeon of the faction.
+- complete 1 Dungeon of the faction.
 
 ### Veteran Conqueror
-Condition:
-- complete 10 dungeons of the faction.
+- complete 10 Dungeons of the faction.
 
-Dungeon entry/key rules remain unchanged and are not owned by Achievements.
-
-## 2.7 Faction Mastery milestones
+## Faction Mastery
 
 ### Mastery I
-Condition:
-- reach Faction Mastery level 25.
+- reach Faction Mastery 25.
 
 ### Mastery II
-Condition:
-- reach Faction Mastery level 50.
+- reach Faction Mastery 50.
 
 ### Mastery III
-Condition:
-- reach Faction Mastery level 75.
+- reach Faction Mastery 75.
 
 ### Mastery IV
-Condition:
-- reach Faction Mastery level 100.
-
-Faction Mastery itself is displayed primarily in the existing Masteries module, under a dedicated faction family/category.
-
-The Achievement view only records these milestone completions.
+- reach Faction Mastery 100.
 
 ---
 
 # 3. GLOBAL EXPEDITION ACHIEVEMENTS
 
-These milestones are faction-independent and track the Expedition system globally.
-
 ### First Expedition
-Condition:
 - complete any Expedition once.
 
 ### Regular Expeditionary
-Condition:
 - complete 10 Expeditions total.
 
 ### Veteran Expeditionary
-Condition:
 - complete 50 Expeditions total.
 
 ### First Silver Expedition
-Condition:
 - complete one generic Silver Expedition.
 
 ### Expedition Fortune
-Condition:
-- earn 1,000,000 cumulative Silver from generic Silver Expeditions.
-
-Cumulative Silver means the lifetime total actually credited by the Silver Expedition system.
-
-Faction Mastery does not affect this source.
+- earn 1,000,000 cumulative Silver actually credited by generic Silver Expeditions.
 
 ---
 
 # 4. CONTENT VOLUME
 
-Validated target per faction:
+Per faction:
 
-- 1 Discovery milestone;
+- 1 Discovery;
 - 3 faction-kill milestones;
 - 2 elite-kill milestones;
-- 1 Relic milestone;
 - 2 faction-Expedition milestones;
-- 2 faction-dungeon milestones;
+- 2 faction-Dungeon milestones;
 - 4 Faction Mastery milestones.
 
 Total:
 
-- 15 Achievements per faction;
-- 60 faction Achievements across the initial four factions;
-- 5 validated global Expedition Achievements.
+- 14 Achievements per faction;
+- 56 faction Achievements across four factions;
+- 5 global Expedition Achievements;
+- 61 Achievements for this feature set.
 
-Initial validated system total from this feature:
-
-- 65 Achievements.
-
-Existing World/dungeon Achievements remain separate and continue to coexist in the same Achievement surface.
+No Achievement is currently authored specifically for the global Dungeon Relic discovery chain. Adding one later requires a separate design decision; it must not be inferred from the removed faction-Relic milestones.
 
 ---
 
-# 5. PRESENTATION / VISIBILITY
+# 5. PRESENTATION
 
-Reuse the existing `World > Achievements` view.
+Reuse `World > Achievements`.
 
-Recommended grouping:
+Preferred grouping:
 
 1. World
 2. Factions
 3. Expeditions
 
-Faction Achievements should be grouped/filterable by faction where needed to avoid presenting all 60 faction entries as one undifferentiated list.
+Faction entries should remain filterable/grouped by faction.
 
-Progressive presentation is preferred:
-
-- do not dump every distant milestone into the player's first view;
-- the UI may prioritize the next incomplete milestone in a chain;
-- completed milestones remain reviewable;
-- hidden/locked presentation must not conceal information required to understand a currently actionable objective.
-
-Exact final UI composition remains a future UX implementation task.
+Progressive presentation is preferred over dumping distant milestones into the first view.
 
 ---
 
-# 6. BESTIARY / MASTERY OWNERSHIP
+# 6. OWNERSHIP
 
-The Bestiary remains the faction knowledge / Relic progression surface.
+Bestiary owns monster knowledge/discovery.
 
-It may expose:
+Masteries owns Faction Mastery progression.
 
-- faction identity;
-- monster discovery;
-- kill counts;
-- elite/boss victories;
-- Relic objective contribution/progress;
-- Expedition unlock state;
-- dungeon unlock state.
+Academy / Research owns functional content unlocks.
 
-Faction Mastery progression is NOT primarily owned by the Bestiary.
-
-Faction Masteries must appear in the existing Masteries module as a faction mastery family/category, with at minimum:
-
-- faction name;
-- level 0-100;
-- current XP / next-level XP;
-- current faction-yield bonus.
-
-The Achievement view may reference Mastery milestone completion but does not replace the Masteries UI.
+Achievements only read authoritative state from those systems.
 
 ---
 
-# 7. DATA-DRIVEN REQUIREMENTS
+# 7. DATA-DRIVEN CONDITIONS
 
-Achievement implementation must remain definition-driven.
+Current reusable conditions:
 
-Do not create duplicated Keeper/Heretic/Undead/Morgana runtime branches.
+- `faction_unit_discovery`;
+- `faction_kill_count`;
+- `faction_elite_kill_count`;
+- `faction_expedition_completed_count`;
+- `faction_dungeon_completed_count`;
+- `faction_mastery_level`;
+- `expedition_completed_count`;
+- `silver_expedition_completed_count`;
+- `silver_expedition_lifetime_silver`.
 
-Expected reusable condition types include:
+Do not create faction-specific runtime branches.
 
-- faction_unit_discovery;
-- faction_kill_count;
-- faction_elite_kill_count;
-- faction_relic_reconstructed;
-- faction_expedition_completed_count;
-- faction_dungeon_completed_count;
-- faction_mastery_level;
-- expedition_completed_count;
-- silver_expedition_completed_count;
-- silver_expedition_lifetime_silver.
-
-Faction-specific Achievement definitions should reference faction IDs and thresholds as authored data.
-
----
-
-# 8. VALIDATED V1 REWARD RULE
-
-Achievement reward baseline for this feature:
-
-- no power reward;
-- no yield modifier;
-- no functional unlock;
-- no mandatory currency/material reward.
-
-The Achievement itself is the completion marker in V1.
-
-Any future cosmetic/title/badge/reward layer requires a separate design validation and must not be silently added during implementation.
-
----
-
-DOCUMENT TERMINÉ
+DOCUMENT TERMINE
