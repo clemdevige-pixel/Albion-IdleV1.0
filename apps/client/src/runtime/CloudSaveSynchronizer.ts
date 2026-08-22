@@ -27,14 +27,36 @@ export class CloudSaveSynchronizer {
     const local = latestLocal(this.repository, primaryId);
     const cloud = await this.client.get(slotId);
     if (cloud === undefined) {
-      if (local !== undefined) await this.client.upload(slotId, local);
+      if (local !== undefined) {
+        await this.uploadAndRefresh(slotId, primaryId, local);
+      }
       return;
     }
-    if (local === undefined || cloud.metadata.updatedAt > local.metadata.updatedAt) {
-      if (local !== undefined) this.repository.save(getSaveBackupSlotId(primaryId), local);
+
+    // Equal revisions deliberately prefer the cloud copy because it carries
+    // server-authoritative timing metadata used by Background Progression.
+    if (local === undefined || cloud.metadata.updatedAt >= local.metadata.updatedAt) {
+      if (local !== undefined && cloud.metadata.updatedAt > local.metadata.updatedAt) {
+        this.repository.save(getSaveBackupSlotId(primaryId), local);
+      }
       this.repository.save(primaryId, cloud);
       return;
     }
+
+    // A newer local revision cannot safely claim offline time. Upload it, then
+    // refresh from the server so the next load starts from a trusted timestamp.
+    await this.uploadAndRefresh(slotId, primaryId, local);
+  }
+
+  private async uploadAndRefresh(
+    slotId: CloudSaveSlotId,
+    primaryId: string,
+    local: SaveFormat,
+  ): Promise<void> {
     await this.client.upload(slotId, local);
+    const authoritative = await this.client.get(slotId);
+    if (authoritative !== undefined) {
+      this.repository.save(primaryId, authoritative);
+    }
   }
 }
