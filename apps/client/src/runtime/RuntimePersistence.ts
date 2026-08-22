@@ -66,6 +66,7 @@ export class RuntimePersistence {
   private readonly saveRepository: SaveRepository;
   private readonly saveSlotId: string;
   private readonly backupSlotId: string;
+  private readonly backgroundProviders: SaveProvider[] = [];
   private lastLoadSource: SaveLoadSource | undefined = undefined;
   private loadFailed: boolean = false;
   private isAutosaving: boolean = false;
@@ -132,6 +133,9 @@ export class RuntimePersistence {
 
   public registerProvider(provider: SaveProvider): void {
     this.saveManager.registerProvider(provider);
+    if (provider.resolveBackground !== undefined) {
+      this.backgroundProviders.push(provider);
+    }
   }
 
   public hasSave(): boolean {
@@ -156,6 +160,17 @@ export class RuntimePersistence {
       this.backupSlotId,
       (slotId) => { this.saveManager.load(slotId); },
     );
+
+    const elapsedMs = this.getTrustedOfflineElapsedMs();
+    if (elapsedMs <= 0) return;
+
+    for (const provider of this.backgroundProviders) {
+      provider.resolveBackground?.(elapsedMs);
+    }
+
+    // Consume the trusted elapsed window immediately so a second manual load
+    // cannot replay the same offline rewards before the next cloud sync.
+    this.save();
   }
 
   public getTrustedOfflineElapsedMs(): number {
