@@ -15,13 +15,13 @@ export interface FactionResearchFoundationDependencies {
  * Composition root for faction knowledge + Relics.
  *
  * The gameplay domains remain independent from client content catalogs. This
- * adapter resolves authored monster metadata and world progression into the
- * generic ports consumed by those domains.
+ * adapter resolves authored monster metadata into the generic ports consumed by
+ * those domains.
  */
 export function createFactionResearchFoundation(
   dependencies: FactionResearchFoundationDependencies,
 ) {
-  let canReconstructRelics = (): boolean => false;
+  let canExamineRelics = (): boolean => false;
 
   const factionKnowledgeService = new FactionKnowledgeService({
     resolveMonster(monsterId) {
@@ -37,13 +37,10 @@ export function createFactionResearchFoundation(
 
   const relicService = new RelicService(
     {
-      getMonsterKillCount: (monsterId) => factionKnowledgeService.getMonsterKillCount(monsterId),
       getFactionKillCount: (factionId) => factionKnowledgeService.getFactionKillCount(factionId),
-      getFactionEliteKillCount: (factionId) => factionKnowledgeService.getFactionEliteKillCount(factionId),
-      getCompletedSegmentCount: dependencies.getCompletedSegmentCount,
     },
     {
-      canReconstructRelic: () => canReconstructRelics(),
+      canReconstructRelic: () => canExamineRelics(),
     },
   );
 
@@ -58,15 +55,16 @@ export function createFactionResearchFoundation(
     factionKnowledgeService,
     relicService,
     bindReconstructionGate(gate: () => boolean): void {
-      canReconstructRelics = gate;
+      canExamineRelics = gate;
     },
     recordMonsterKill(monsterId: string): readonly string[] {
       const result = factionKnowledgeService.recordKill(monsterId);
       if (!result.ok) return [];
-      return relicService.resolveCompletedRelics();
+      return relicService.recordMonsterKill(monsterId);
     },
+    /** Legacy no-op retained for callers that reconcile world progression. */
     resolveWorldProgress(): readonly string[] {
-      return relicService.resolveCompletedRelics();
+      return [];
     },
   };
 }
