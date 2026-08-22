@@ -1,0 +1,89 @@
+.expedition-recap-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgb(7 10 14 / 62%);
+  pointer-events: auto;
+}
+
+.expedition-recap {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100% - 48px);
+  overflow: auto;
+  border: 1px solid var(--ui-border-strong, #6e6657);
+  border-radius: 10px;
+  background: var(--ui-panel-bg, #171b20);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 45%);
+  padding: 16px;
+}
+
+.expedition-recap__header,
+.expedition-recap__title-row,
+.expedition-recap__reward,
+.expedition-recap__runes > div,
+.expedition-recap__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.expedition-recap__header span {
+  font-size: 11px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.expedition-recap__header h2 {
+  margin: 2px 0 0;
+  font-size: 18px;
+}
+
+.expedition-recap__header button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.expedition-recap__list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.expedition-recap__item {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--ui-border, #454b52);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 3%);
+}
+
+.expedition-recap__title-row span,
+.expedition-recap__reward span,
+.expedition-recap__runes span {
+  font-size: 12px;
+  opacity: 0.78;
+}
+
+.expedition-recap__runes {
+  display: grid;
+  gap: 6px;
+}
+
+.expedition-recap__runes .is-total {
+  padding-top: 7px;
+  border-top: 1px solid var(--ui-border, #454b52);
+}
+
+.expedition-recap__footer {
+  margin-top: 14px;
+}
+
+.expedition-recap__footer small {
+  max-width: 280px;
+  opacity: 0.7;
+}
