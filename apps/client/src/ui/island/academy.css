@@ -262,8 +262,11 @@
 }
 
 .ui-academy__section--expeditions > header + .ui-academy__expedition-stage {
-  border-top: 0;
-  padding-top: 2px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid rgba(208, 157, 52, 0.24);
+  border-radius: 6px;
+  background: rgba(52, 39, 23, 0.28);
 }
 
 .ui-academy__expedition-stage > .ui-island__eyebrow {
