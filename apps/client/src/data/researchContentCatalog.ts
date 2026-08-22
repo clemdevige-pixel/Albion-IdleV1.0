@@ -40,6 +40,7 @@ export const RESEARCH_IDS = {
   archaeology3: "research_archaeology_3",
   archaeology4: "research_archaeology_4",
   archaeology5: "research_archaeology_5",
+  workerOrganization: "research_worker_organization",
   dungeonRelicAnalysis: "research_dungeon_relic_analysis",
   dungeonSanctuaryLocation: "research_dungeon_sanctuary_location",
 } as const;
@@ -56,6 +57,7 @@ export const RESEARCH_UNLOCK_IDS = {
   factionExpeditionTier7: "expedition_faction_tier:7",
   factionExpeditionTier8: "expedition_faction_tier:8",
   secondExpeditionSlot: "expedition_slot:2",
+  advancedWorkerOrganization: "workers:advanced_organization",
   dungeonRelicAnalyzed: "dungeon_relic:analyzed",
   dungeonSystem: "dungeon_system:unlocked",
   equipmentPresets: "equipment_presets",
@@ -181,6 +183,18 @@ const ARCHAEOLOGY_RESEARCH = [
   },
 ] as const satisfies readonly ResearchDefinition<ResearchContentRequirement>[];
 
+const ECONOMY_RESEARCH = [
+  {
+    id: RESEARCH_IDS.workerOrganization,
+    displayName: "Organisation avancée des ouvriers",
+    tier: 6,
+    durationMs: 150 * MINUTE_MS,
+    cost: { silver: 60_000, materials: [] },
+    requirements: [{ type: "academy_tier", minimumTier: 6 }],
+    unlockIds: [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization],
+  },
+] as const satisfies readonly ResearchDefinition<ResearchContentRequirement>[];
+
 const DUNGEON_DISCOVERY_RESEARCH = [
   {
     id: RESEARCH_IDS.dungeonRelicAnalysis,
@@ -211,6 +225,7 @@ const DUNGEON_DISCOVERY_RESEARCH = [
 export const RESEARCH_DEFINITIONS: readonly ResearchDefinition<ResearchContentRequirement>[] = [
   ...CARTOGRAPHY_RESEARCH,
   ...ARCHAEOLOGY_RESEARCH,
+  ...ECONOMY_RESEARCH,
   ...DUNGEON_DISCOVERY_RESEARCH,
 ];
 
@@ -274,6 +289,12 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
     description: "Étend les expéditions de faction au T8.",
     effectSummary: "Débloque les expéditions de faction T8.",
     unlockedContent: ["Expéditions de faction T8"],
+  }],
+  [RESEARCH_IDS.workerOrganization, {
+    group: "core",
+    description: "Étend l’organisation de la production passive de l’île avec un second ouvrier par métier.",
+    effectSummary: "Porte la capacité à 8 ouvriers, avec 2 ouvriers maximum par profession.",
+    unlockedContent: ["8 ouvriers maximum", "2 ouvriers par profession", "Recrutement avancé à 5 000 Silver"],
   }],
   [RESEARCH_IDS.dungeonRelicAnalysis, {
     group: "core",
