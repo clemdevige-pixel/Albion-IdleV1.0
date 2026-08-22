@@ -2,7 +2,7 @@ import type { EntityId } from "@game/core";
 import {
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
-  getIslandOperationalLevelDefinition,
+  getIslandUpgradeableLevelDefinition,
   getNextIslandLevelDefinition,
   type IslandBuildingId,
   type IslandFlexibleConstructionRequirement,
@@ -39,7 +39,7 @@ export class IslandActions {
 
   upgradeBuilding(definitionId: IslandBuildingId): boolean {
     const preview = this.#deps.islandService.canUpgradeBuilding(definitionId); if (!preview.ok) return false;
-    const currentDefinition = getIslandOperationalLevelDefinition(definitionId, preview.building.level - 1);
+    const currentDefinition = getIslandUpgradeableLevelDefinition(definitionId, preview.building.level - 1);
     const cost = currentDefinition?.upgradeToNext;
     if (cost === undefined || !this.#canAfford(cost.silver, cost.requirements, cost.flexibleRequirement)) return false;
     const paid = this.#pay(cost.silver, cost.requirements, cost.flexibleRequirement); if (paid === undefined) return false;
