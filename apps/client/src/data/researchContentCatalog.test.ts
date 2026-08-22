@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { RESEARCH_DEFINITIONS, RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
+import type { ResearchDefinition } from "@game/gameplay";
+import {
+  RESEARCH_DEFINITIONS,
+  RESEARCH_UNLOCK_IDS,
+  type ResearchContentRequirement,
+} from "./researchContentCatalog.js";
+
+function hasAcademyTierRequirement(
+  definition: ResearchDefinition<ResearchContentRequirement>,
+): boolean {
+  return definition.requirements.some((requirement) => (
+    requirement.type === "academy_tier"
+    && requirement.minimumTier <= definition.tier
+  ));
+}
 
 describe("T4 Academy foundational research", () => {
   it("authors validated Cartography I tuning and unlock", () => {
@@ -24,9 +38,7 @@ describe("T4 Academy foundational research", () => {
 
   it("keeps every authored research gated by the Academy tier", () => {
     for (const definition of RESEARCH_DEFINITIONS) {
-      expect(definition.requirements.some((requirement) => (
-        requirement.type === "academy_tier" && requirement.minimumTier <= definition.tier
-      ))).toBe(true);
+      expect(hasAcademyTierRequirement(definition)).toBe(true);
     }
   });
 });
