@@ -1,4 +1,5 @@
 import { useCallback, useState, type MouseEvent } from "react";
+import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
@@ -30,7 +31,8 @@ const INVENTORY_FILTERS: readonly { readonly id: InventoryFilter; readonly label
 ];
 
 function isSpecialInventoryItem(itemId: string): boolean {
-  return itemId.startsWith("item_resource_dungeon_key_")
+  return isRelicInventoryItem(itemId)
+    || itemId.startsWith("item_resource_dungeon_key_")
     || itemId.startsWith("item_resource_artifact_")
     || itemId.startsWith("item_resource_key_fragment_");
 }
@@ -60,7 +62,7 @@ export function InventoryModule(): JSX.Element {
     event: MouseEvent<HTMLButtonElement>,
     slot: InventorySlotVM,
   ) => {
-    if (slot.itemId === undefined) return;
+    if (slot.itemId === undefined || isRelicInventoryItem(slot.itemId)) return;
     if (event.shiftKey) {
       actions.transfer("inventory", slot.position, "bank");
       return;
