@@ -39,17 +39,23 @@ export interface AcademyPresentationModel {
 export interface AcademyPresentationFoundationDependencies<
   TResearchRequirement extends ResearchRequirementDefinition,
   TExpeditionRequirement extends ExpeditionRequirementDefinition,
+  TExpeditionRewardSummary,
 > {
   readonly researchService: ResearchService<TResearchRequirement>;
-  readonly expeditionService: ExpeditionService<TExpeditionRequirement, unknown>;
+  readonly expeditionService: ExpeditionService<TExpeditionRequirement, TExpeditionRewardSummary>;
   readonly onMutation?: () => void;
 }
 
 export function createAcademyPresentationFoundation<
   TResearchRequirement extends ResearchRequirementDefinition,
   TExpeditionRequirement extends ExpeditionRequirementDefinition,
+  TExpeditionRewardSummary,
 >(
-  dependencies: AcademyPresentationFoundationDependencies<TResearchRequirement, TExpeditionRequirement>,
+  dependencies: AcademyPresentationFoundationDependencies<
+    TResearchRequirement,
+    TExpeditionRequirement,
+    TExpeditionRewardSummary
+  >,
 ) {
   const getModel = (): AcademyPresentationModel => {
     const activeResearch = dependencies.researchService.getActiveResearch();
