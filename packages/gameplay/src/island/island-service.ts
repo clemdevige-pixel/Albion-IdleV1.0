@@ -114,7 +114,10 @@ export class PlayerIslandService implements SaveProvider {
     if (nextLevel === undefined) return { ok: false, reason: "unauthored_level" };
     const islandDefinition = getIslandLevelDefinition(this.#state.level);
     const maxBuildingLevel = islandDefinition?.maxBuildingLevel ?? this.#state.level;
-    if (nextLevel.level > maxBuildingLevel) return { ok: false, reason: "island_level_required" };
+    const requiredIslandLevel = nextLevel.minimumIslandLevel ?? nextLevel.level;
+    if (requiredIslandLevel > this.#state.level || nextLevel.level > maxBuildingLevel) {
+      return { ok: false, reason: "island_level_required" };
+    }
     return { ok: true, building: { ...building, level: nextLevel.level } };
   }
 
