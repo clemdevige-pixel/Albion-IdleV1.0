@@ -1,6 +1,5 @@
 import type { SupportedProductionFamily } from "../data/productionFamilyCatalog";
 import type { ProductionTier } from "../data/productionFamilyCatalog";
-import type { DashboardSectionId } from "../data/dashboardLayoutCatalog";
 import type { IslandBuildingId, IslandWorldRequirement } from "@game/data";
 import type { EventBus, EntityId } from "@game/core";
 import type {
@@ -78,8 +77,6 @@ export interface GameServices {
   readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
   readonly getBestiaryKnowledge: (monsterId: string) => BestiaryKnowledgeModel;
   readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
-  readonly getDashboardSectionOrder: () => readonly DashboardSectionId[];
-  readonly setDashboardSectionOrder: (order: readonly DashboardSectionId[]) => void;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
