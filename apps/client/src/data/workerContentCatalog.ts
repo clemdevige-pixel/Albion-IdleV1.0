@@ -19,6 +19,16 @@ export const WORKER_TASK_IDS = {
   fiber: asWorkerTaskDefinitionId("worker_gather_fiber_t3"),
 } as const;
 
+/**
+ * Authored post-Research worker roster rules.
+ * Baseline capacity/recruitment remain owned by the Island worker-house config.
+ */
+export const ADVANCED_WORKER_ORGANIZATION = {
+  workerCapacity: 8,
+  professionCapacity: 2,
+  recruitmentCost: 5_000,
+} as const;
+
 export const WORKER_DEFINITIONS: readonly WorkerDefinition[] = [
   { id: WORKER_DEFINITION_IDS.woodcutter, displayName: "Edda", profession: "woodcutter", baseMasteryGainRate: 1, tags: ["gathering", "wood"] },
   { id: WORKER_DEFINITION_IDS.miner, displayName: "Borin", profession: "miner", baseMasteryGainRate: 1, tags: ["gathering", "ore"] },
