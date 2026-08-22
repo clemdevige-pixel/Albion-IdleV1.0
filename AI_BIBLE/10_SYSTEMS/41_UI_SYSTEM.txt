@@ -1,5 +1,7 @@
 # 41_UI_SYSTEM
 
+Last update: 2026-08-22
+
 ## Purpose
 
 The UI System provides a scalable, modular, and highly responsive user interface architecture for the entire game.
@@ -87,6 +89,8 @@ UI Root
 Each module is isolated.
 
 No module directly depends on another whenever event-driven communication is possible.
+
+Presentation modules consume owning-system projections/view models. They must not recreate gameplay rules, unlock logic, timers, reward formulas or item effects in React.
 
 ---
 
@@ -209,6 +213,8 @@ Windows are:
 Internal scrolling is used when necessary.
 
 No window position is remembered between sessions.
+
+This rule applies to management-window positioning. It does not prohibit reordering Dashboard cards inside the Dashboard content flow.
 
 ---
 
@@ -334,16 +340,19 @@ No code changes required.
 
 # Tooltip System
 
-Hovering an element displays a lightweight tooltip.
+Hovering or focusing a supported element may display a lightweight tooltip.
 
-Tooltips contain:
+Tooltips provide contextual information and disappear automatically.
 
-- Name
-- Icon
-- Quality
-- Short Description
+The tooltip must add meaning rather than merely repeat the visible label.
 
-They disappear automatically.
+The interface must remain understandable without relying on tooltip-only critical information.
+
+Item tooltips consume authored Item/Equipment data as their source of truth. A missing or not-yet-produced visual asset must never prevent the UI from showing existing item stats, tier, effects, durability or other available authored information.
+
+Dense list screens should avoid turning entire rows/cards into tooltip targets when this harms scanning. Prefer the relevant action or item target where appropriate.
+
+Tooltip positioning and interaction behavior are shared infrastructure and must not be reimplemented per screen.
 
 ---
 
@@ -383,6 +392,26 @@ Craft
 Refine
 
 Sell (future)
+
+---
+
+# Selection / Dropdown Controls
+
+Selection controls are presentation components only.
+
+When a native operating-system `<select>` popup is not readable or visually coherent with the game UI, use the shared game-styled dropdown pattern.
+
+A game-styled dropdown must provide:
+
+- opaque surface;
+- readable contrast;
+- clear selected state;
+- clear hover and keyboard focus;
+- vertical scrolling for long option lists;
+- correct overlay/z-index above surrounding panel content;
+- no gameplay-specific sorting or relationship logic inside the component.
+
+Ordering and stable selection identity are supplied by the owning presentation model.
 
 ---
 
@@ -493,7 +522,9 @@ The Dashboard is modular.
 
 It displays information only.
 
-No gameplay logic exists inside widgets.
+No gameplay logic exists inside widgets/cards.
+
+Active long-running systems such as Academy Research and Expeditions must be projected from their owning presentation model rather than recomputed by Dashboard code.
 
 ---
 
@@ -513,6 +544,8 @@ Workers
 
 Island
 
+Academy
+
 Economy
 
 Notifications
@@ -523,31 +556,32 @@ Future systems
 
 ---
 
-# Dashboard Profiles
+# Dashboard Layout
 
-The player may save multiple dashboard layouts.
+The Dashboard has an authored default order, but the player may customize the vertical order of Dashboard sections/cards.
 
-Examples:
+Validated current behavior:
 
-Combat
+- the shared card header is the drag surface;
+- card bodies retain normal interaction;
+- keyboard Up/Down reordering is supported on the focused header;
+- reorder is presentation-only;
+- customized order is persisted with the save slot;
+- stable Dashboard section IDs are stored, not localized names or component names;
+- temporarily hidden sections retain their saved relative position;
+- newly introduced sections are merged into old saved layouts according to the current authored default order without deleting existing customization.
 
-Crafting
-
-Economy
-
-Island
-
-Custom 1
-
-Custom 2
-
-Profiles switch instantly.
+The Dashboard must never store gameplay state in its layout persistence.
 
 ---
 
-The dashboard layout remains fixed.
+# Dashboard Profiles
 
-Only widget selection changes.
+Multiple named Dashboard profiles remain a future-compatible extension.
+
+If/when profiles are implemented, each profile may own its own section selection/order while retaining the same stable section-ID contract.
+
+The currently implemented baseline is one persisted customizable Dashboard order per save slot.
 
 ---
 
@@ -841,9 +875,11 @@ No global failure is triggered.
 
 # UI State Persistence
 
-The following settings persist:
+Persistent UI state may include:
 
-Dashboard Profiles
+Dashboard Section Order
+
+Dashboard Profiles (future)
 
 Favorites
 
@@ -854,6 +890,8 @@ UI Scale
 Feedback Level
 
 Animation Profile
+
+Presentation persistence must use stable IDs and remain independent from gameplay definitions.
 
 Window positions are never saved.
 
@@ -1000,6 +1038,7 @@ The UI System is responsible for:
 - Managing windows
 - Managing navigation
 - Managing dashboard widgets
+- Managing presentation-only Dashboard layout state
 - Displaying notifications
 - Showing feedback
 - Managing loading states
@@ -1009,7 +1048,7 @@ The UI System is NOT responsible for:
 
 - Gameplay rules
 - Combat logic
-- Saving
+- Gameplay save orchestration
 - Progression calculations
 - Inventory calculations
 - Crafting calculations
