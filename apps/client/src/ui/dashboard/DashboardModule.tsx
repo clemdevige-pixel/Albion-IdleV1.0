@@ -20,7 +20,7 @@ import {
   useDashboardZone,
   useDashboardZoneActions,
 } from "./useDashboardData";
-import { getDashboardSectionDefinition } from "./dashboardSections";
+import { DashboardSortProvider } from "./DashboardSortContext";
 import { DashboardCombatCard } from "./components/DashboardCombatCard";
 import { DashboardEnchantReadyCard } from "./components/DashboardEnchantReadyCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
@@ -71,7 +71,7 @@ export function DashboardModule(): JSX.Element {
   };
 
   const handleDragStart = (
-    event: DragEvent<HTMLButtonElement>,
+    event: DragEvent<HTMLElement>,
     sectionId: DashboardSectionId,
   ): void => {
     setDraggedSectionId(sectionId);
@@ -89,8 +89,8 @@ export function DashboardModule(): JSX.Element {
     moveSection(sourceId, targetId);
   };
 
-  const handleHandleKeyDown = (
-    event: KeyboardEvent<HTMLButtonElement>,
+  const handleHeaderKeyDown = (
+    event: KeyboardEvent<HTMLElement>,
     sectionId: DashboardSectionId,
   ): void => {
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
@@ -104,37 +104,32 @@ export function DashboardModule(): JSX.Element {
   };
 
   return (
-    <div className="dashboard-module">
-      {sectionOrder.map((sectionId) => {
-        const section = sections[sectionId];
-        if (section === undefined || section === null) return null;
-        const definition = getDashboardSectionDefinition(sectionId);
-        return (
-          <div
-            key={sectionId}
-            className={`dashboard-sortable-section${draggedSectionId === sectionId ? " is-dragging" : ""}`}
-            onDragOver={(event) => {
-              event.preventDefault();
-              event.dataTransfer.dropEffect = "move";
-            }}
-            onDrop={(event) => { handleDrop(event, sectionId); }}
-          >
-            <button
-              type="button"
-              className="dashboard-sortable-section__handle"
-              draggable
-              aria-label={`Déplacer ${definition.title}`}
-              title="Glisser pour déplacer · flèches haut/bas au clavier"
-              onDragStart={(event) => { handleDragStart(event, sectionId); }}
-              onDragEnd={() => { setDraggedSectionId(null); }}
-              onKeyDown={(event) => { handleHandleKeyDown(event, sectionId); }}
+    <DashboardSortProvider
+      value={{
+        beginDrag: handleDragStart,
+        endDrag: () => { setDraggedSectionId(null); },
+        handleKeyDown: handleHeaderKeyDown,
+      }}
+    >
+      <div className="dashboard-module">
+        {sectionOrder.map((sectionId) => {
+          const section = sections[sectionId];
+          if (section === undefined || section === null) return null;
+          return (
+            <div
+              key={sectionId}
+              className={`dashboard-sortable-section${draggedSectionId === sectionId ? " is-dragging" : ""}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(event) => { handleDrop(event, sectionId); }}
             >
-              ⠿
-            </button>
-            {section}
-          </div>
-        );
-      })}
-    </div>
+              {section}
+            </div>
+          );
+        })}
+      </div>
+    </DashboardSortProvider>
   );
 }
