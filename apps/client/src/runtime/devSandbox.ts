@@ -8,6 +8,7 @@ import {
 import { getItemTier } from "../data/itemPower.js";
 import {
   PRODUCTION_FAMILIES,
+  getProductionFamilyId,
   type ProductionTier,
 } from "../data/productionFamilyCatalog.js";
 import {
@@ -59,7 +60,7 @@ function hasEquipmentVariant(
 ): boolean {
   return inventoryManager
     .findEntriesByItemId(ownerId, itemId)
-    .some((entry) => entry.enchantment === enchantment);
+    .some((slot) => slot.entry?.enchantment === enchantment);
 }
 
 function ensureEquipmentVariant(
@@ -129,7 +130,7 @@ export function seedDevSandboxEconomy(dependencies: {
   }
 
   for (const family of PRODUCTION_FAMILIES) {
-    const familyId = family.toLowerCase() as "wood" | "ore" | "hide" | "fiber";
+    const familyId = getProductionFamilyId(family);
     for (const tier of [3, 4, 5, 6, 7, 8] as const satisfies readonly ProductionTier[]) {
       const recipe = getProductionRefiningRecipe(familyId, tier);
       ensureQuantity(
