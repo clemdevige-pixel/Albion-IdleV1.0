@@ -17,7 +17,7 @@ import {
   type CombatLootContext,
 } from "../data/economyContentCatalog";
 import { isAwakeningEligibleWeapon } from "../data/enchantmentItemPolicy.js";
-import { resolveEquipmentInfo } from "../data/itemContentCatalog";
+import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog.js";
 
@@ -50,6 +50,7 @@ export interface CombatRewardRuntimeDependencies {
   readonly awakenedWeaponService: AwakenedWeaponService;
   readonly heroId: EntityId;
   readonly onRawFactionFame?: (factionId: string, rawFame: number) => void;
+  readonly getFactionYieldBonusPercent?: (factionId: string) => number;
 }
 
 export class CombatRewardRuntime {
@@ -63,6 +64,7 @@ export class CombatRewardRuntime {
   private readonly awakenedWeaponService: AwakenedWeaponService;
   private readonly heroId: EntityId;
   private readonly onRawFactionFame: ((factionId: string, rawFame: number) => void) | undefined;
+  private readonly getFactionYieldBonusPercent: ((factionId: string) => number) | undefined;
 
   constructor(deps: CombatRewardRuntimeDependencies) {
     this.currencyService = deps.currencyService;
@@ -75,6 +77,7 @@ export class CombatRewardRuntime {
     this.awakenedWeaponService = deps.awakenedWeaponService;
     this.heroId = deps.heroId;
     this.onRawFactionFame = deps.onRawFactionFame;
+    this.getFactionYieldBonusPercent = deps.getFactionYieldBonusPercent;
   }
 
   /** Credits deterministic reward Silver through the existing wallet owner. */
@@ -93,10 +96,13 @@ export class CombatRewardRuntime {
     fameReward: number,
     lootContext: CombatLootContext,
   ): EnemyKilledRewardResult {
-    const newBalance = this.creditSilverReward(silverReward);
+    const factionYieldBonusPercent = this.getFactionYieldBonusPercent?.(lootContext.faction) ?? 0;
+    const finalSilverReward = applyPercentBonusRounded(silverReward, factionYieldBonusPercent);
+    const factionAdjustedFame = applyPercentBonusRounded(fameReward, factionYieldBonusPercent);
+    const newBalance = this.creditSilverReward(finalSilverReward);
 
     // Faction Mastery consumes raw/base faction Fame only. This happens before
-    // weapon/Awakening Fame bonuses so its own Fame yield can never feed back
+    // faction/Awakening Fame bonuses so its own Fame yield can never feed back
     // into Faction Mastery XP generation.
     if (Number.isInteger(fameReward) && fameReward > 0) {
       this.onRawFactionFame?.(lootContext.faction, fameReward);
@@ -116,12 +122,14 @@ export class CombatRewardRuntime {
       this.progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.familyId);
       this.progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.weaponId);
 
-      // Fame Bonus improves progression Fame only. Attunement deliberately uses
-      // the raw eligible PvE Fame below so the trait cannot accelerate itself.
+      // Awakening Fame Bonus keeps its existing raw-Fame basis. Faction Mastery
+      // adds its separately rounded yield so neither bonus silently changes the
+      // other's scaling contract.
       const fameBonusPercent = awakeningEligible
         ? this.awakenedWeaponService.getTraitValue(equippedWeapon.instanceId, "fame_bonus")
         : 0;
-      const progressionFame = fameReward + Math.floor(fameReward * fameBonusPercent / 100);
+      const awakeningFameBonus = Math.floor(fameReward * fameBonusPercent / 100);
+      const progressionFame = factionAdjustedFame + awakeningFameBonus;
 
       this.progressionOrchestrator.onFameEarned(activeWeaponRoute.weaponId, progressionFame, "combat");
       this.experienceService.addExperience(activeWeaponRoute.familyId, progressionFame, "combat");
@@ -169,8 +177,20 @@ export class CombatRewardRuntime {
       itemDrops.push(acceptedDrop);
     }
 
-    return { silverEarned: silverReward, newBalance, fameEarned, attunementEarned, itemDrops };
+    return {
+      silverEarned: finalSilverReward,
+      newBalance,
+      fameEarned,
+      attunementEarned,
+      itemDrops,
+    };
   }
+}
+
+export function applyPercentBonusRounded(baseValue: number, bonusPercent: number): number {
+  if (!Number.isFinite(baseValue) || baseValue <= 0) return 0;
+  if (!Number.isFinite(bonusPercent) || bonusPercent <= 0) return Math.round(baseValue);
+  return Math.round(baseValue * (1 + bonusPercent / 100));
 }
 
 function isAwakenedWeaponTier(value: number | undefined): value is AwakenedWeaponTier {
