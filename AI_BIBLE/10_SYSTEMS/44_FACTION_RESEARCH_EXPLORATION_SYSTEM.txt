@@ -503,7 +503,7 @@ If multiple Expeditions complete together (including offline resolution):
 - show ONE grouped recap;
 - do NOT chain multiple blocking popups.
 
-Implementation status: IMPLEMENTED for online completion batches; offline resolution must feed the same recap pipeline.
+Implementation status: IMPLEMENTED for both online and offline completion batches through the same recap pipeline.
 
 ---
 
@@ -750,6 +750,10 @@ Affected matching-faction channels:
 - faction Silver;
 - faction Fame.
 
+For integer combat rewards (Silver and Fame), apply the matching-faction Mastery bonus to the raw/base reward, then round to the nearest whole unit with `Math.round` (exact `.5` rounds upward), matching the Rune rounding rule.
+
+Faction Mastery XP itself still consumes raw/base faction Fame before this yield bonus is applied, so the Fame bonus never accelerates its own Mastery progression.
+
 Generic Silver Expedition is excluded.
 
 ## 11.5 Offline progression rule
@@ -896,7 +900,8 @@ The following remain intentionally OPEN and must not be invented during implemen
 7. Exact faction item/weapon recipes and Artifact drop rates when those items are designed.
 8. Final Bestiary/Academy/Expedition visual composition and polish beyond validated behavior.
 9. Persistence/backfill details for historical Relic objectives where older saves contain insufficient historical data.
-10. Later-tier/faction content authoring not otherwise validated in this document.
+10. Exact V1 application of the Faction Mastery loot channel (drop-rate versus quantity/yield) remains OPEN.
+11. Later-tier/faction content authoring not otherwise validated in this document.
 
 The core Keeper pilot economy, Faction Mastery curve, Rune economy, faction Cape passive, generic Expedition rules, Silver Expedition balance, Academy construction cost, Cartography I and Archaeology I tuning are validated.
 
@@ -917,8 +922,8 @@ Design status:
 - Dungeon key interaction: VALIDATED / UNCHANGED
 - Expedition slots/durations/concurrency: VALIDATED / IMPLEMENTED
 - Expedition online progression: IMPLEMENTED
-- Expedition offline progression: IMPLEMENTATION TO VERIFY/COMPLETE
-- Completion recap popup: IMPLEMENTED FOR COMPLETION BATCHES
+- Expedition offline progression: VALIDATED / IMPLEMENTED
+- Completion recap popup: IMPLEMENTED FOR ONLINE/OFFLINE COMPLETION BATCHES
 - Generic Silver Expedition yields T4-T8: VALIDATED / AUTHORED
 - Faction Rune generation + Inventory credit: VALIDATED / IMPLEMENTED
 - Rune sinks: VALIDATED
@@ -928,7 +933,8 @@ Design status:
 - Cape tier compatibility: VALIDATED / IMPLEMENTED
 - Faction Mastery XP curve: VALIDATED / IMPLEMENTED
 - Faction Mastery Rune yield bonus: VALIDATED / IMPLEMENTED
-- Other Faction Mastery yield channels: NOT YET IMPLEMENTED UNLESS EXISTING CONTENT PATH SUPPORTS THEM
+- Faction Mastery Silver/Fame yield bonus: VALIDATED / IMPLEMENTED
+- Faction Mastery loot channel: DESIGN OPEN
 - Bestiary projection: IMPLEMENTED / POLISH OPEN
 - Achievement definitions/projection: VALIDATED / IMPLEMENTED / POLISH OPEN
 - Research Dashboard tracking: IMPLEMENTED
