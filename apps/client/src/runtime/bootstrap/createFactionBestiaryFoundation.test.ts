@@ -13,7 +13,13 @@ describe("createFactionBestiaryFoundation", () => {
       },
       relicService: {
         getProgress: (relicId) => relicId === "relic_keeper"
-          ? { fragmentCount: 3, completedObjectiveIds: ["a", "b", "c"], reconstructed: false }
+          ? {
+            relicId,
+            state: "broken" as const,
+            chargeKills: 17,
+            requiredChargeKills: 50,
+            reconstructed: false,
+          }
           : undefined,
       },
     });
@@ -27,8 +33,9 @@ describe("createFactionBestiaryFoundation", () => {
       factionEliteKillCount: 3,
       relic: {
         relicId: "relic_keeper",
-        fragmentCount: 3,
-        objectiveCount: 5,
+        state: "broken",
+        chargeKills: 17,
+        requiredChargeKills: 50,
         reconstructed: false,
       },
     });
