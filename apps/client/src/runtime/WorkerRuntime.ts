@@ -150,6 +150,7 @@ export interface WorkerRuntimeDependencies {
   readonly getRequiredGatheringMasteryForTier: (tier: number) => number;
   readonly getWorkerCapacity?: () => number;
   readonly getWorkerProfessionCapacity?: (profession: WorkerProfession) => number;
+  readonly getWorkerRecruitmentCost?: () => number;
 }
 
 export class WorkerRuntime {
@@ -162,6 +163,7 @@ export class WorkerRuntime {
   private readonly getRequiredGatheringMasteryForTier: (tier: number) => number;
   private readonly getWorkerCapacity: () => number;
   private readonly getWorkerProfessionCapacity: (profession: WorkerProfession) => number;
+  private readonly getWorkerRecruitmentCost: () => number;
 
   private readonly workerRegistry: WorkerRegistry;
   private readonly workerManager: WorkerManager;
@@ -188,6 +190,7 @@ export class WorkerRuntime {
     this.getRequiredGatheringMasteryForTier = deps.getRequiredGatheringMasteryForTier;
     this.getWorkerCapacity = deps.getWorkerCapacity ?? (() => WORKER_HOUSE_BASELINE.workerCapacity);
     this.getWorkerProfessionCapacity = deps.getWorkerProfessionCapacity ?? (() => 1);
+    this.getWorkerRecruitmentCost = deps.getWorkerRecruitmentCost ?? (() => WORKER_HOUSE_BASELINE.recruitmentCost);
 
     this.workerRegistry = new WorkerRegistry();
     for (const definition of WORKER_DEFINITIONS) {
@@ -294,6 +297,18 @@ export class WorkerRuntime {
     return this.workerManager.getWorkersByProfession(profession);
   }
 
+  public getCapacity(): number {
+    return this.getWorkerCapacity();
+  }
+
+  public getProfessionCapacity(profession: WorkerProfession): number {
+    return this.getWorkerProfessionCapacity(profession);
+  }
+
+  public getRecruitmentCost(): number {
+    return this.getWorkerRecruitmentCost();
+  }
+
   public getWorkerSession(workerId: WorkerId): WorkerSessionSnapshot | undefined {
     return this.workerScheduler.getSession(workerId);
   }
@@ -352,10 +367,11 @@ export class WorkerRuntime {
       return { ok: false, reason: "capacity_reached", profession };
     }
 
+    const recruitmentCost = this.getWorkerRecruitmentCost();
     const payment = this.currencyService.debit(
       this.walletId,
       "currency_silver",
-      WORKER_HOUSE_BASELINE.recruitmentCost,
+      recruitmentCost,
       "Worker",
     );
     if (!payment.ok) {
@@ -365,7 +381,7 @@ export class WorkerRuntime {
 
     const created = this.workerManager.createWorker(this.workerDefinitionForProfession(profession));
     if (!created.ok) {
-      this.currencyService.credit(this.walletId, "currency_silver", WORKER_HOUSE_BASELINE.recruitmentCost);
+      this.currencyService.credit(this.walletId, "currency_silver", recruitmentCost);
       return { ok: false, reason: "creation_failed", profession };
     }
 
@@ -373,7 +389,7 @@ export class WorkerRuntime {
     const assigned = this.workerAssignmentManager.assign(created.worker.id, taskId);
     if (!assigned.ok) {
       this.workerManager.removeWorker(created.worker.id);
-      this.currencyService.credit(this.walletId, "currency_silver", WORKER_HOUSE_BASELINE.recruitmentCost);
+      this.currencyService.credit(this.walletId, "currency_silver", recruitmentCost);
       return { ok: false, reason: "assignment_failed", profession };
     }
 
