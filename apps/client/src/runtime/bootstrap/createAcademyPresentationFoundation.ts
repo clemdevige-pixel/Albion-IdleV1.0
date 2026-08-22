@@ -1,11 +1,12 @@
-import type {
-  ExpeditionDurationMs,
-  ExpeditionRequirementDefinition,
-  ExpeditionService,
-  ResearchRequirementDefinition,
-  ResearchService,
-  StartExpeditionResult,
-  StartResearchResult,
+import {
+  EXPEDITION_DURATION_OPTIONS_MS,
+  type ExpeditionDurationMs,
+  type ExpeditionRequirementDefinition,
+  type ExpeditionService,
+  type ResearchRequirementDefinition,
+  type ResearchService,
+  type StartExpeditionResult,
+  type StartResearchResult,
 } from "@game/gameplay";
 
 export interface AcademyResearchEntryModel {
@@ -76,11 +77,7 @@ export function createAcademyPresentationFoundation<
           active: active !== undefined,
           activeSlotIndex: active?.slotIndex,
           remainingDurationMs: active?.remainingDurationMs,
-          supportedDurationsMs: definition.supportedDurationsMs ?? [
-            2 * 60 * 60 * 1000,
-            6 * 60 * 60 * 1000,
-            12 * 60 * 60 * 1000,
-          ],
+          supportedDurationsMs: definition.supportedDurationsMs ?? EXPEDITION_DURATION_OPTIONS_MS,
         };
       }),
     };
