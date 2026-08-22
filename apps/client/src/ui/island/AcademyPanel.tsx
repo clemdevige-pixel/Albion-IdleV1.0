@@ -2,10 +2,12 @@ import { useState } from "react";
 import { getAcademyResearchTier } from "@game/data";
 import type { ExpeditionDurationMs } from "@game/gameplay";
 import {
+  getExpeditionPresentationInfo,
   SILVER_EXPEDITION_TYPE_ID,
 } from "../../data/expeditionContentCatalog";
 import {
   getResearchPresentationGroup,
+  getResearchPresentationInfo,
   type ResearchPresentationGroup,
 } from "../../data/researchContentCatalog";
 import type {
@@ -13,6 +15,7 @@ import type {
   AcademyResearchEntryModel,
 } from "../../runtime/bootstrap/createAcademyPresentationFoundation";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import { ContextHoverTooltip } from "../shared/ContextHoverTooltip";
 import "./academy.css";
 
 const ACADEMY_TIERS = [4, 5, 6, 7, 8] as const;
@@ -79,6 +82,44 @@ function expeditionKindLabel(expedition: AcademyExpeditionEntryModel): string {
   return expedition.typeId === SILVER_EXPEDITION_TYPE_ID ? "Silver" : "Faction";
 }
 
+function formatResearchCost(research: AcademyResearchEntryModel): string {
+  const parts: string[] = [];
+  if (research.silverCost > 0) parts.push(`${String(research.silverCost)} Silver`);
+  for (const material of research.materials) {
+    parts.push(`${material.itemId} ×${String(material.quantity)}`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : "Aucun coût";
+}
+
+function ResearchTooltip({ research }: { readonly research: AcademyResearchEntryModel }): JSX.Element {
+  const info = getResearchPresentationInfo(research.id);
+  return (
+    <div className="context-tooltip-content">
+      <div className="context-tooltip-content__header">
+        <strong>{research.displayName}</strong>
+        <small>Recherche T{String(research.tier)} · {formatDuration(research.durationMs)}</small>
+      </div>
+      {info !== undefined && <div className="context-tooltip-content__body">{info.description}</div>}
+      <div className="context-tooltip-content__rows">
+        {info !== undefined && (
+          <div className="context-tooltip-content__row is-accent">
+            <span>Effet</span>
+            <b>{info.effectSummary}</b>
+          </div>
+        )}
+        <div className="context-tooltip-content__row">
+          <span>Coût</span>
+          <b>{formatResearchCost(research)}</b>
+        </div>
+        <div className="context-tooltip-content__row">
+          <span>État</span>
+          <b>{researchStatusLabel(research)}</b>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResearchCard({
   research,
   onAction,
@@ -91,44 +132,82 @@ function ResearchCard({
     : Math.max(0, Math.min(100, 100 * (1 - research.remainingDurationMs / research.durationMs)));
 
   return (
-    <article className={`ui-academy__card is-${research.state}`}>
-      <div className="ui-academy__card-title">
-        <div>
-          <small>T{String(research.tier)} · {formatDuration(research.durationMs)}</small>
-          <strong>{research.displayName}</strong>
-        </div>
-        <span className={`ui-academy__status is-${research.state}`}>
-          {researchStatusLabel(research)}
-        </span>
-      </div>
-
-      <div className="ui-academy__meta">
-        <span>{research.silverCost > 0 ? `${String(research.silverCost)} Silver` : "Sans coût Silver"}</span>
-        {research.materials.map((material) => (
-          <span key={material.itemId}>{material.itemId} ×{String(material.quantity)}</span>
-        ))}
-      </div>
-
-      {research.remainingDurationMs !== undefined && (
-        <>
-          <div className="ui-academy__progress" aria-hidden="true">
-            <span style={{ width: `${String(progress)}%` }} />
+    <ContextHoverTooltip tooltip={<ResearchTooltip research={research} />}>
+      <article className={`ui-academy__card is-${research.state}`}>
+        <div className="ui-academy__card-title">
+          <div>
+            <small>T{String(research.tier)} · {formatDuration(research.durationMs)}</small>
+            <strong>{research.displayName}</strong>
           </div>
-          <div className="ui-academy__timer">Reste {formatDuration(research.remainingDurationMs)}</div>
-        </>
-      )}
+          <span className={`ui-academy__status is-${research.state}`}>
+            {researchStatusLabel(research)}
+          </span>
+        </div>
 
-      {research.relicGateState === "ready" && research.state === "locked" && (
-        <button className="ui-academy__action" type="button" onClick={() => { onAction(research); }}>
-          Envoyer la relique à l’Académie
-        </button>
-      )}
-      {research.state === "available" && (
-        <button className="ui-academy__action" type="button" onClick={() => { onAction(research); }}>
-          Lancer la recherche
-        </button>
-      )}
-    </article>
+        <div className="ui-academy__meta">
+          <span>{research.silverCost > 0 ? `${String(research.silverCost)} Silver` : "Sans coût Silver"}</span>
+          {research.materials.map((material) => (
+            <span key={material.itemId}>{material.itemId} ×{String(material.quantity)}</span>
+          ))}
+        </div>
+
+        {research.remainingDurationMs !== undefined && (
+          <>
+            <div className="ui-academy__progress" aria-hidden="true">
+              <span style={{ width: `${String(progress)}%` }} />
+            </div>
+            <div className="ui-academy__timer">Reste {formatDuration(research.remainingDurationMs)}</div>
+          </>
+        )}
+
+        {research.relicGateState === "ready" && research.state === "locked" && (
+          <button className="ui-academy__action" type="button" onClick={() => { onAction(research); }}>
+            Envoyer la relique à l’Académie
+          </button>
+        )}
+        {research.state === "available" && (
+          <button className="ui-academy__action" type="button" onClick={() => { onAction(research); }}>
+            Lancer la recherche
+          </button>
+        )}
+      </article>
+    </ContextHoverTooltip>
+  );
+}
+
+function ExpeditionTooltip({ expedition }: { readonly expedition: AcademyExpeditionEntryModel }): JSX.Element {
+  const info = getExpeditionPresentationInfo(expedition.id);
+  const requirement = expedition.typeId === SILVER_EXPEDITION_TYPE_ID
+    ? `Cartographie T${String(expedition.tier)}`
+    : `Étude de faction + Cartographie T${String(expedition.tier)}`;
+  return (
+    <div className="context-tooltip-content">
+      <div className="context-tooltip-content__header">
+        <strong>{expedition.displayName}</strong>
+        <small>{expeditionKindLabel(expedition)} · T{String(expedition.tier)}</small>
+      </div>
+      {info !== undefined && <div className="context-tooltip-content__body">{info.description}</div>}
+      <div className="context-tooltip-content__rows">
+        {info !== undefined && (
+          <div className="context-tooltip-content__row is-accent">
+            <span>Récompense</span>
+            <b>{info.rewardSummary}</b>
+          </div>
+        )}
+        <div className="context-tooltip-content__row">
+          <span>Durées</span>
+          <b>{expedition.supportedDurationsMs.map(formatDuration).join(" · ")}</b>
+        </div>
+        <div className="context-tooltip-content__row">
+          <span>Prérequis</span>
+          <b>{requirement}</b>
+        </div>
+        <div className="context-tooltip-content__row">
+          <span>État</span>
+          <b>{expeditionStatusLabel(expedition)}</b>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -146,34 +225,36 @@ function ExpeditionCard({
   const statusClass = expedition.active ? "active" : expedition.startState;
 
   return (
-    <article className={`ui-academy__card ui-academy__expedition-card is-${statusClass}`}>
-      <div className="ui-academy__card-title">
-        <div>
-          <small>{expeditionKindLabel(expedition)} · T{String(expedition.tier)}</small>
-          <strong>{expedition.displayName}</strong>
+    <ContextHoverTooltip tooltip={<ExpeditionTooltip expedition={expedition} />}>
+      <article className={`ui-academy__card ui-academy__expedition-card is-${statusClass}`}>
+        <div className="ui-academy__card-title">
+          <div>
+            <small>{expeditionKindLabel(expedition)} · T{String(expedition.tier)}</small>
+            <strong>{expedition.displayName}</strong>
+          </div>
+          <span className={`ui-academy__status is-${statusClass}`}>
+            {expeditionStatusLabel(expedition)}
+          </span>
         </div>
-        <span className={`ui-academy__status is-${statusClass}`}>
-          {expeditionStatusLabel(expedition)}
-        </span>
-      </div>
 
-      {expedition.remainingDurationMs !== undefined ? (
-        <div className="ui-academy__timer">Reste {formatDuration(expedition.remainingDurationMs)}</div>
-      ) : (
-        <div className="ui-academy__durations" role="group" aria-label={`Durée · ${expedition.displayName}`}>
-          {expedition.supportedDurationsMs.map((durationMs) => (
-            <button
-              key={durationMs}
-              type="button"
-              disabled={!canStart}
-              onClick={() => { onStart(expedition, durationMs); }}
-            >
-              {formatDuration(durationMs)}
-            </button>
-          ))}
-        </div>
-      )}
-    </article>
+        {expedition.remainingDurationMs !== undefined ? (
+          <div className="ui-academy__timer">Reste {formatDuration(expedition.remainingDurationMs)}</div>
+        ) : (
+          <div className="ui-academy__durations" role="group" aria-label={`Durée · ${expedition.displayName}`}>
+            {expedition.supportedDurationsMs.map((durationMs) => (
+              <button
+                key={durationMs}
+                type="button"
+                disabled={!canStart}
+                onClick={() => { onStart(expedition, durationMs); }}
+              >
+                {formatDuration(durationMs)}
+              </button>
+            ))}
+          </div>
+        )}
+      </article>
+    </ContextHoverTooltip>
   );
 }
 
