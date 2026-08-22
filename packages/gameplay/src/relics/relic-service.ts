@@ -24,8 +24,21 @@ const RelicSnapshotV2Schema = z.object({
   examinedRelicIds: z.array(z.string().min(1)),
 });
 
-const RelicSnapshotSchema = z.union([RelicSnapshotV1Schema, RelicSnapshotV2Schema]);
-type RelicSnapshot = z.infer<typeof RelicSnapshotV2Schema>;
+const RelicSnapshotV3Schema = z.object({
+  version: z.literal(3),
+  acquiredRelics: z.array(z.object({
+    relicId: z.string().min(1),
+    acquiredAtFactionKillCount: z.number().int().nonnegative(),
+  })),
+  examinedRelicIds: z.array(z.string().min(1)),
+});
+
+const RelicSnapshotSchema = z.union([
+  RelicSnapshotV1Schema,
+  RelicSnapshotV2Schema,
+  RelicSnapshotV3Schema,
+]);
+type RelicSnapshot = z.infer<typeof RelicSnapshotV3Schema>;
 
 const DEFAULT_RECONSTRUCTION_PORT: RelicReconstructionPort = {
   canReconstructRelic: () => true,
@@ -35,8 +48,8 @@ const DEFAULT_RECONSTRUCTION_PORT: RelicReconstructionPort = {
  * Persistent faction Relic domain.
  *
  * A Relic is dropped once by its authored faction boss, then charged by faction
- * kills performed after acquisition. Once charged, the Academy examines it
- * automatically as soon as the owning Research authority allows examination.
+ * kills performed after acquisition. Once charged it remains charged until an
+ * explicit Academy examination action is performed.
  * Inventory ownership is delegated through the acquisition callback; this domain
  * never owns inventory rules or storage.
  */
@@ -162,22 +175,9 @@ export class RelicService implements SaveProvider {
     return { ok: true };
   }
 
-  /** Resolves charged Relics whose Academy examination gate is available. */
-  resolveCompletedRelics(): readonly RelicId[] {
-    const examined: RelicId[] = [];
-    for (const definition of this.#definitions.values()) {
-      if (this.#examinedRelicIds.has(definition.id)) continue;
-      if (this.getProgress(definition.id)?.state !== "charged") continue;
-      if (!this.#reconstructionPort.canReconstructRelic(definition)) continue;
-      this.#examinedRelicIds.add(definition.id);
-      examined.push(definition.id);
-    }
-    return examined;
-  }
-
   save(): RelicSnapshot {
     return {
-      version: 2,
+      version: 3,
       acquiredRelics: [...this.#acquiredAtFactionKillCount].map(([
         relicId,
         acquiredAtFactionKillCount,
@@ -193,22 +193,35 @@ export class RelicService implements SaveProvider {
     this.#acquiredAtFactionKillCount.clear();
     this.#examinedRelicIds.clear();
 
-    if (parsed.data.version === 1) {
-      for (const relicId of new Set(parsed.data.reconstructedRelicIds)) {
+    if (parsed.data.version === 3) {
+      for (const entry of parsed.data.acquiredRelics) {
+        if (!this.#definitions.has(entry.relicId)) continue;
+        this.#acquiredAtFactionKillCount.set(entry.relicId, entry.acquiredAtFactionKillCount);
+      }
+      for (const relicId of new Set(parsed.data.examinedRelicIds)) {
         if (!this.#definitions.has(relicId)) continue;
-        this.#acquiredAtFactionKillCount.set(relicId, 0);
         this.#examinedRelicIds.add(relicId);
       }
       return;
     }
 
-    for (const entry of parsed.data.acquiredRelics) {
-      if (!this.#definitions.has(entry.relicId)) continue;
-      this.#acquiredAtFactionKillCount.set(entry.relicId, entry.acquiredAtFactionKillCount);
-    }
-    for (const relicId of new Set(parsed.data.examinedRelicIds)) {
-      if (!this.#definitions.has(relicId)) continue;
-      this.#examinedRelicIds.add(relicId);
+    // V1/V2 belonged to the previous automatic reconstruction/examination model.
+    // Preserve ownership, but restart charge at 0 from the current faction kill
+    // total so historical kills can never satisfy the new 50-kill charge contract.
+    const legacyRelicIds = parsed.data.version === 1
+      ? parsed.data.reconstructedRelicIds
+      : [
+        ...parsed.data.acquiredRelics.map((entry) => entry.relicId),
+        ...parsed.data.examinedRelicIds,
+      ];
+
+    for (const relicId of new Set(legacyRelicIds)) {
+      const definition = this.#definitions.get(relicId);
+      if (definition === undefined) continue;
+      this.#acquiredAtFactionKillCount.set(
+        relicId,
+        this.#progressPort.getFactionKillCount(definition.factionId),
+      );
     }
   }
 
