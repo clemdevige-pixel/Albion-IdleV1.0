@@ -57,6 +57,7 @@ import { createAcademyRuntimeFoundation } from "../runtime/bootstrap/createAcade
 import { createAcademyPresentationFoundation } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
+import { createExpeditionRecapFoundation } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
 import {
   createCharacterEquipmentFoundation,
@@ -371,11 +372,15 @@ export function GameProvider({
       expeditionService,
       onMutation: resyncAll,
     });
+    const expeditionRecapFoundation = createExpeditionRecapFoundation();
     const factionProgressionCoordinator = createFactionProgressionCoordinator({
       factionResearchFoundation,
       researchService,
       expeditionService,
-      onExpeditionCompletion: resyncAll,
+      onExpeditionCompletion: (completed) => {
+        expeditionRecapFoundation.present(completed);
+        resyncAll();
+      },
     });
 
     const combatRewardAdapter = setupCombatRewardAdapter({
@@ -794,6 +799,9 @@ export function GameProvider({
       getAcademyModel: academyPresentationFoundation.getModel,
       startAcademyResearch: academyPresentationFoundation.startResearch,
       startAcademyExpedition: academyPresentationFoundation.startExpedition,
+      subscribeExpeditionRecap: expeditionRecapFoundation.subscribe,
+      getExpeditionRecap: expeditionRecapFoundation.getSnapshot,
+      dismissExpeditionRecap: expeditionRecapFoundation.dismiss,
       getFactionAchievements: factionAchievementFoundation.getAllProgress,
       getBestiaryKnowledge: factionBestiaryFoundation.getKnowledge,
       startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
