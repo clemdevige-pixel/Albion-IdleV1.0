@@ -3,24 +3,13 @@ import { MONSTER_IDS } from "../../data/monsterContentCatalog.js";
 import { createFactionBestiaryFoundation } from "./createFactionBestiaryFoundation.js";
 
 describe("createFactionBestiaryFoundation", () => {
-  it("derives monster, faction and relic knowledge without duplicating state", () => {
+  it("derives monster and faction kill knowledge without Relic state", () => {
     const foundation = createFactionBestiaryFoundation({
       factionKnowledgeService: {
         isMonsterDiscovered: (monsterId) => monsterId === MONSTER_IDS.keeperWarrior,
         getMonsterKillCount: (monsterId) => monsterId === MONSTER_IDS.keeperWarrior ? 7 : 0,
         getFactionKillCount: (factionId) => factionId === "keeper" ? 42 : 0,
         getFactionEliteKillCount: (factionId) => factionId === "keeper" ? 3 : 0,
-      },
-      relicService: {
-        getProgress: (relicId) => relicId === "relic_keeper"
-          ? {
-            relicId,
-            state: "broken",
-            chargeKills: 17,
-            requiredChargeKills: 50,
-            reconstructed: false,
-          }
-          : undefined,
       },
     });
 
@@ -31,13 +20,6 @@ describe("createFactionBestiaryFoundation", () => {
       killCount: 7,
       factionKillCount: 42,
       factionEliteKillCount: 3,
-      relic: {
-        relicId: "relic_keeper",
-        state: "broken",
-        chargeKills: 17,
-        requiredChargeKills: 50,
-        reconstructed: false,
-      },
     });
   });
 });
