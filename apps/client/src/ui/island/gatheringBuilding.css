@@ -5,6 +5,18 @@
   margin-top: 8px;
 }
 
+.ui-island-gathering-building__worker-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 10px;
+  border-top: 1px solid rgba(190, 159, 105, 0.16);
+}
+
+.ui-island-gathering-building__worker-control:first-of-type {
+  border-top-color: rgba(190, 159, 105, 0.24);
+}
+
 .ui-island-gathering-building__resource,
 .ui-island-gathering-building__worker {
   display: flex;
