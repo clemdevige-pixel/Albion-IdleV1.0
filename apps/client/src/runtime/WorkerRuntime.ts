@@ -118,8 +118,8 @@ export type RecruitWorkerResult =
   | { readonly ok: false; readonly reason: "unsupported_profession" | "already_recruited" | "capacity_reached" | "insufficient_funds" | "creation_failed" | "assignment_failed"; readonly profession: WorkerProfession };
 
 export type ToggleWorkerResult =
-  | { readonly ok: true; readonly action: "started" | "paused" | "resumed" | "restarted"; readonly profession: WorkerProfession }
-  | { readonly ok: false; readonly reason: "not_found" | "mastery_locked" | "execution_failed"; readonly profession: WorkerProfession };
+  | { readonly ok: true; readonly action: "started" | "paused" | "resumed" | "restarted"; readonly workerId: WorkerId; readonly profession: WorkerProfession }
+  | { readonly ok: false; readonly reason: "not_found" | "mastery_locked" | "execution_failed"; readonly workerId: WorkerId };
 
 export interface WorkerCycleCompletionEvent {
   readonly workerId: WorkerId;
@@ -148,6 +148,8 @@ export interface WorkerRuntimeDependencies {
   readonly experienceService: ExperienceService;
   readonly getProductionTier: () => ProductionTier;
   readonly getRequiredGatheringMasteryForTier: (tier: number) => number;
+  readonly getWorkerCapacity?: () => number;
+  readonly getWorkerProfessionCapacity?: (profession: WorkerProfession) => number;
 }
 
 export class WorkerRuntime {
@@ -158,6 +160,8 @@ export class WorkerRuntime {
   private readonly experienceService: ExperienceService;
   private readonly getProductionTier: () => ProductionTier;
   private readonly getRequiredGatheringMasteryForTier: (tier: number) => number;
+  private readonly getWorkerCapacity: () => number;
+  private readonly getWorkerProfessionCapacity: (profession: WorkerProfession) => number;
 
   private readonly workerRegistry: WorkerRegistry;
   private readonly workerManager: WorkerManager;
@@ -167,7 +171,6 @@ export class WorkerRuntime {
   private readonly workerExecutor: WorkerExecutor;
   private readonly workerScheduler: WorkerScheduler;
 
-  private readonly workerByProfession = new Map<WorkerProfession, WorkerId>();
   private readonly workerProductionTier = new Map<WorkerId, ProductionTier>();
 
   private readonly cycleCompletionListeners = new Set<(evt: WorkerCycleCompletionEvent) => void>();
@@ -183,6 +186,8 @@ export class WorkerRuntime {
     this.experienceService = deps.experienceService;
     this.getProductionTier = deps.getProductionTier;
     this.getRequiredGatheringMasteryForTier = deps.getRequiredGatheringMasteryForTier;
+    this.getWorkerCapacity = deps.getWorkerCapacity ?? (() => WORKER_HOUSE_BASELINE.workerCapacity);
+    this.getWorkerProfessionCapacity = deps.getWorkerProfessionCapacity ?? (() => 1);
 
     this.workerRegistry = new WorkerRegistry();
     for (const definition of WORKER_DEFINITIONS) {
@@ -224,70 +229,46 @@ export class WorkerRuntime {
   }
 
   private notifyCycleCompleted(evt: WorkerCycleCompletionEvent): void {
-    for (const listener of this.cycleCompletionListeners) {
-      listener(evt);
-    }
+    for (const listener of this.cycleCompletionListeners) listener(evt);
   }
 
   private notifyDomainEvent(evt: WorkerDomainEvent): void {
-    for (const listener of this.domainEventListeners) {
-      listener(evt);
-    }
+    for (const listener of this.domainEventListeners) listener(evt);
   }
 
-  public isSupportedWorkerProfession(
-    profession: string,
-  ): profession is SupportedWorkerProfession {
+  public isSupportedWorkerProfession(profession: string): profession is SupportedWorkerProfession {
     return SUPPORTED_WORKER_PROFESSIONS.has(profession);
   }
 
-  private getWorkerProfessionDefinition(
-    profession: SupportedWorkerProfession,
-  ): WorkerProfessionRuntimeDefinition {
+  private getWorkerProfessionDefinition(profession: SupportedWorkerProfession): WorkerProfessionRuntimeDefinition {
     return WORKER_PROFESSION_RUNTIME_DEFINITIONS[profession];
   }
 
-  private getWorkerProductionFamily(
-    profession: SupportedWorkerProfession,
-  ) {
+  private getWorkerProductionFamily(profession: SupportedWorkerProfession) {
     const definition = getProductionFamilyByProfession(profession);
-
     if (definition === undefined) {
-      throw new Error(
-        `Missing production family for supported worker profession: ${profession}`,
-      );
+      throw new Error(`Missing production family for supported worker profession: ${profession}`);
     }
-
     return definition;
   }
 
-  private workerRawItemId(
-    profession: SupportedWorkerProfession,
-    tier: ProductionTier,
-  ): string {
+  private workerRawItemId(profession: SupportedWorkerProfession, tier: ProductionTier): string {
     const definition = this.getWorkerProductionFamily(profession);
-
     return getProductionRefiningRecipe(
       getProductionFamilyId(definition.gameplayFamily),
       tier,
     ).rawItemId;
   }
 
-  private workerMasteryId(
-    profession: SupportedWorkerProfession,
-  ): MasteryId {
+  private workerMasteryId(profession: SupportedWorkerProfession): MasteryId {
     return this.getWorkerProductionFamily(profession).masteryId;
   }
 
-  private workerTaskForProfession(
-    profession: SupportedWorkerProfession,
-  ): WorkerTaskDefinitionId {
+  private workerTaskForProfession(profession: SupportedWorkerProfession): WorkerTaskDefinitionId {
     return this.getWorkerProfessionDefinition(profession).taskId;
   }
 
-  private workerDefinitionForProfession(
-    profession: SupportedWorkerProfession,
-  ): WorkerDefinitionId {
+  private workerDefinitionForProfession(profession: SupportedWorkerProfession): WorkerDefinitionId {
     return this.getWorkerProfessionDefinition(profession).definitionId;
   }
 
@@ -309,15 +290,16 @@ export class WorkerRuntime {
     return this.workerManager.getAllWorkers();
   }
 
+  public getWorkersByProfession(profession: WorkerProfession): readonly WorkerSnapshot[] {
+    return this.workerManager.getWorkersByProfession(profession);
+  }
+
   public getWorkerSession(workerId: WorkerId): WorkerSessionSnapshot | undefined {
     return this.workerScheduler.getSession(workerId);
   }
 
   public hasActiveWorkerSession(): boolean {
-    for (const session of this.workerScheduler.getAllSessions()) {
-      if (session.state === "executing") return true;
-    }
-    return false;
+    return this.workerScheduler.getAllSessions().some((session) => session.state === "executing");
   }
 
   public getAssignedTier(workerId: WorkerId): ProductionTier {
@@ -342,8 +324,7 @@ export class WorkerRuntime {
     if (
       worker === undefined
       || !this.isSupportedWorkerProfession(worker.profession)
-      || this.getWorkerMasteryLevel(worker.mastery)
-        < this.getRequiredGatheringMasteryForTier(assignedTier)
+      || this.getWorkerMasteryLevel(worker.mastery) < this.getRequiredGatheringMasteryForTier(assignedTier)
     ) {
       return false;
     }
@@ -360,10 +341,13 @@ export class WorkerRuntime {
   }
 
   public recruitWorker(profession: WorkerProfession): RecruitWorkerResult {
+    if (!this.isSupportedWorkerProfession(profession)) {
+      return { ok: false, reason: "unsupported_profession", profession };
+    }
+    const professionCount = this.workerManager.getWorkersByProfession(profession).length;
     if (
-      !this.isSupportedWorkerProfession(profession)
-      || this.workerByProfession.has(profession)
-      || this.workerManager.getAllWorkers().length >= WORKER_HOUSE_BASELINE.workerCapacity
+      this.workerManager.getAllWorkers().length >= this.getWorkerCapacity()
+      || professionCount >= this.getWorkerProfessionCapacity(profession)
     ) {
       return { ok: false, reason: "capacity_reached", profession };
     }
@@ -375,22 +359,13 @@ export class WorkerRuntime {
       "Worker",
     );
     if (!payment.ok) {
-      this.notifyDomainEvent({
-        type: "recruit_insufficient_funds",
-        profession,
-      });
+      this.notifyDomainEvent({ type: "recruit_insufficient_funds", profession });
       return { ok: false, reason: "insufficient_funds", profession };
     }
 
-    const created = this.workerManager.createWorker(
-      this.workerDefinitionForProfession(profession),
-    );
+    const created = this.workerManager.createWorker(this.workerDefinitionForProfession(profession));
     if (!created.ok) {
-      this.currencyService.credit(
-        this.walletId,
-        "currency_silver",
-        WORKER_HOUSE_BASELINE.recruitmentCost,
-      );
+      this.currencyService.credit(this.walletId, "currency_silver", WORKER_HOUSE_BASELINE.recruitmentCost);
       return { ok: false, reason: "creation_failed", profession };
     }
 
@@ -398,17 +373,11 @@ export class WorkerRuntime {
     const assigned = this.workerAssignmentManager.assign(created.worker.id, taskId);
     if (!assigned.ok) {
       this.workerManager.removeWorker(created.worker.id);
-      this.currencyService.credit(
-        this.walletId,
-        "currency_silver",
-        WORKER_HOUSE_BASELINE.recruitmentCost,
-      );
+      this.currencyService.credit(this.walletId, "currency_silver", WORKER_HOUSE_BASELINE.recruitmentCost);
       return { ok: false, reason: "assignment_failed", profession };
     }
 
-    this.workerByProfession.set(profession, created.worker.id);
     this.workerManager.updateState(created.worker.id, "assigned");
-
     this.notifyDomainEvent({
       type: "recruit_success",
       workerId: created.worker.id,
@@ -431,57 +400,54 @@ export class WorkerRuntime {
   ): ToggleWorkerResult {
     this.workerScheduler.removeSession(workerId);
     this.workerManager.updateState(workerId, "assigned");
-
     return this.startWorkerCycle(workerId, tier)
-      ? { ok: true, action: "restarted", profession }
-      : { ok: false, reason: "execution_failed", profession };
+      ? { ok: true, action: "restarted", workerId, profession }
+      : { ok: false, reason: "execution_failed", workerId };
   }
 
-  public toggleWorker(profession: WorkerProfession): ToggleWorkerResult {
-    if (!this.isSupportedWorkerProfession(profession)) {
-      return { ok: false, reason: "not_found", profession };
+  public toggleWorker(
+    workerId: WorkerId,
+    tier: ProductionTier = this.getProductionTier(),
+  ): ToggleWorkerResult {
+    const worker = this.workerManager.getWorker(workerId);
+    if (worker === undefined || !this.isSupportedWorkerProfession(worker.profession)) {
+      return { ok: false, reason: "not_found", workerId };
     }
-    const workerId = this.workerByProfession.get(profession);
-    if (workerId === undefined) {
-      return { ok: false, reason: "not_found", profession };
+    const profession = worker.profession;
+    if (this.getWorkerMasteryLevel(worker.mastery) < this.getRequiredGatheringMasteryForTier(tier)) {
+      return { ok: false, reason: "mastery_locked", workerId };
     }
     const session = this.workerScheduler.getSession(workerId);
-    const currentGlobalTier = this.getProductionTier();
 
     if (session?.state === "executing") {
-      const assignedTier = this.workerProductionTier.get(workerId) ?? currentGlobalTier;
-      if (assignedTier !== currentGlobalTier) {
-        return this.restartWorkerForTier(workerId, profession, currentGlobalTier);
-      }
+      const assignedTier = this.workerProductionTier.get(workerId) ?? tier;
+      if (assignedTier !== tier) return this.restartWorkerForTier(workerId, profession, tier);
       session.pause();
       this.workerManager.updateState(workerId, "assigned");
-      return { ok: true, action: "paused", profession };
+      return { ok: true, action: "paused", workerId, profession };
     }
 
     if (session?.state === "paused") {
-      const assignedTier = this.workerProductionTier.get(workerId) ?? currentGlobalTier;
-      if (assignedTier !== currentGlobalTier) {
-        return this.restartWorkerForTier(workerId, profession, currentGlobalTier);
-      }
+      const assignedTier = this.workerProductionTier.get(workerId) ?? tier;
+      if (assignedTier !== tier) return this.restartWorkerForTier(workerId, profession, tier);
       session.resume();
       this.workerManager.updateState(workerId, "working");
-      return { ok: true, action: "resumed", profession };
+      return { ok: true, action: "resumed", workerId, profession };
     }
 
-    const started = this.startWorkerCycle(workerId);
+    const started = this.startWorkerCycle(workerId, tier);
     return started
-      ? { ok: true, action: "started", profession }
-      : { ok: false, reason: "execution_failed", profession };
+      ? { ok: true, action: "started", workerId, profession }
+      : { ok: false, reason: "execution_failed", workerId };
   }
 
   public getSaveState(): readonly WorkerClientSaveData[] {
     return this.workerManager.getAllWorkers()
       .filter((worker) => this.isSupportedWorkerProfession(worker.profession))
       .map((worker) => {
-        const profession = worker.profession;
         const session = this.workerScheduler.getSession(worker.id);
         return {
-          profession,
+          profession: worker.profession,
           displayName: worker.displayName,
           mastery: worker.mastery,
           productionTier: this.workerProductionTier.get(worker.id) ?? this.getProductionTier(),
@@ -503,13 +469,18 @@ export class WorkerRuntime {
       }
       this.workerManager.removeWorker(worker.id);
     }
-    this.workerByProfession.clear();
     this.workerProductionTier.clear();
 
     if (!Array.isArray(data)) return;
 
     for (const raw of data as WorkerClientSaveData[]) {
       if (!this.isSupportedWorkerProfession(raw.profession)) continue;
+      if (this.workerManager.getAllWorkers().length >= this.getWorkerCapacity()) break;
+      if (
+        this.workerManager.getWorkersByProfession(raw.profession).length
+        >= this.getWorkerProfessionCapacity(raw.profession)
+      ) continue;
+
       const created = this.workerManager.createWorker(
         this.workerDefinitionForProfession(raw.profession),
         raw.displayName,
@@ -520,8 +491,10 @@ export class WorkerRuntime {
         created.worker.id,
         this.workerTaskForProfession(raw.profession),
       );
-      if (!assigned.ok) continue;
-      this.workerByProfession.set(raw.profession, created.worker.id);
+      if (!assigned.ok) {
+        this.workerManager.removeWorker(created.worker.id);
+        continue;
+      }
       const savedTier = isProductionTier(raw.productionTier)
         ? raw.productionTier
         : this.getProductionTier();
@@ -534,9 +507,7 @@ export class WorkerRuntime {
           Math.max(0, raw.elapsedTicks),
           Math.max(0, (session?.totalTicks ?? 1) - 1),
         );
-        for (let index = 0; index < elapsed; index += 1) {
-          session?.tick();
-        }
+        for (let index = 0; index < elapsed; index += 1) session?.tick();
         if (raw.state === "paused") {
           session?.pause();
           this.workerManager.updateState(created.worker.id, "assigned");
@@ -599,11 +570,7 @@ export class WorkerRuntime {
 
       const heroMasteryId = this.workerMasteryId(profession);
       const heroMasteryXpGained = result.masteryGained * getHeroGatheringXpFromWorkerForTier(assignedTier);
-      this.experienceService.addExperience(
-        heroMasteryId,
-        heroMasteryXpGained,
-        "gathering",
-      );
+      this.experienceService.addExperience(heroMasteryId, heroMasteryXpGained, "gathering");
 
       this.startWorkerCycle(worker.id, assignedTier);
 
