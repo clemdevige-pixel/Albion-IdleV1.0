@@ -35,38 +35,61 @@
 .ui-island-crafting-building__tiers button:disabled { opacity: 0.3; cursor: default; }
 
 .ui-island-crafting-building__selectors {
+  position: relative;
+  z-index: 5;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-top: 1px;
 }
 
-.ui-island-crafting-building__selectors label {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
+.ui-island-crafting-building__selectors .ui-crafting-select {
   gap: 3px;
+}
+
+.ui-island-crafting-building__selectors .ui-crafting-select__label {
   color: var(--ui-color-text-muted);
   font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
-.ui-island-crafting-building__selectors select {
-  min-width: 0;
+.ui-island-crafting-building__selectors .ui-crafting-select__trigger {
   min-height: 28px;
+  padding: 4px 7px;
   border: 0;
-  border-bottom: 1px solid rgba(190, 159, 105, 0.12);
+  border-bottom: 1px solid rgba(190, 159, 105, 0.18);
   border-radius: 0;
   background: transparent;
+  box-shadow: none;
   color: var(--ui-color-text-primary);
-  padding: 4px 20px 4px 2px;
-  font: inherit;
   font-size: 9px;
+  font-weight: 400;
 }
 
-.ui-island-crafting-building__selectors select:hover,
-.ui-island-crafting-building__selectors select:focus {
-  border-bottom-color: rgba(208, 157, 52, 0.38);
-  outline: 0;
+.ui-island-crafting-building__selectors .ui-crafting-select__trigger:hover,
+.ui-island-crafting-building__selectors .ui-crafting-select__trigger.is-open,
+.ui-island-crafting-building__selectors .ui-crafting-select__trigger:focus-visible {
+  border-bottom-color: rgba(208, 157, 52, 0.48);
+  background: rgba(16, 24, 33, 0.56);
+}
+
+.ui-island-crafting-building__selectors .ui-crafting-select__trigger > b {
+  font-size: 0.85rem;
+}
+
+.ui-island-crafting-building__selectors .ui-crafting-select__menu {
+  top: calc(100% + 3px);
+  max-height: 15rem;
+  padding: 3px;
+  border-color: rgba(139, 106, 39, 0.72);
+}
+
+.ui-island-crafting-building__selectors .ui-crafting-select__menu button {
+  min-height: 28px;
+  padding: 5px 7px;
+  font-size: 9px;
 }
 
 .ui-island-crafting-building .ui-crafting-detail {
