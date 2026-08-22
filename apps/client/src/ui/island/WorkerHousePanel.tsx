@@ -1,4 +1,3 @@
-import { getIslandWorkerHouseLevelDefinition } from "@game/data";
 import {
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
@@ -6,10 +5,9 @@ import {
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./workerHouse.css";
 
-export function WorkerHousePanel({ level }: { readonly level: number }): JSX.Element {
+export function WorkerHousePanel({ level: _level }: { readonly level: number }): JSX.Element {
   const { workers } = useGameBridge();
   const { recruitWorker } = useGameServices();
-  const levelDefinition = getIslandWorkerHouseLevelDefinition(level);
 
   return (
     <div className="ui-island-worker-house">
@@ -20,7 +18,7 @@ export function WorkerHousePanel({ level }: { readonly level: number }): JSX.Ele
         </div>
         <div>
           <small>Coût de recrutement</small>
-          <strong>{String(levelDefinition.recruitmentCost)} Silver</strong>
+          <strong>{String(workers.recruitmentCost)} Silver</strong>
         </div>
       </div>
 
@@ -66,7 +64,7 @@ export function WorkerHousePanel({ level }: { readonly level: number }): JSX.Ele
                       ? "Capacité du métier atteinte"
                       : capacityReached
                         ? "Capacité totale atteinte"
-                        : `${String(levelDefinition.recruitmentCost)} S`}
+                        : `${String(workers.recruitmentCost)} S`}
                   </small>
                 </span>
               </button>
