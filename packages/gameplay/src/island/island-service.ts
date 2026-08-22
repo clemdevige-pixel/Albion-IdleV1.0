@@ -4,6 +4,7 @@ import {
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
   getIslandOperationalLevelDefinition,
+  getIslandUpgradeableLevelDefinition,
   getNextIslandLevelDefinition,
   type IslandBuildingId,
   type PlayerIslandConfig,
@@ -106,10 +107,10 @@ export class PlayerIslandService implements SaveProvider {
   canUpgradeBuilding(definitionId: IslandBuildingId): UpgradeIslandBuildingResult {
     const building = this.#state.buildings.find((candidate) => candidate.definitionId === definitionId);
     if (building === undefined) return { ok: false, reason: "not_built" };
-    const currentLevel = getIslandOperationalLevelDefinition(definitionId, building.level);
+    const currentLevel = getIslandUpgradeableLevelDefinition(definitionId, building.level);
     if (currentLevel === undefined) return { ok: false, reason: "unauthored_level" };
     if (currentLevel.upgradeToNext === undefined) return { ok: false, reason: "max_level" };
-    const nextLevel = getIslandOperationalLevelDefinition(definitionId, building.level + 1);
+    const nextLevel = getIslandUpgradeableLevelDefinition(definitionId, building.level + 1);
     if (nextLevel === undefined) return { ok: false, reason: "unauthored_level" };
     const islandDefinition = getIslandLevelDefinition(this.#state.level);
     const maxBuildingLevel = islandDefinition?.maxBuildingLevel ?? this.#state.level;
