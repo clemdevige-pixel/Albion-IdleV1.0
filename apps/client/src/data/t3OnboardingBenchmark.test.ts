@@ -94,7 +94,10 @@ function buildScenario(targetItemId: string): T3OnboardingRow {
 }
 
 function getFullT3InfrastructureSilverCost(): number {
-  const constructibleProductionBuildings = PLAYER_ISLAND_CONFIG.buildings.filter((definition) => definition.construction !== undefined);
+  const constructibleProductionBuildings = PLAYER_ISLAND_CONFIG.buildings.filter((definition) => (
+    definition.construction !== undefined
+    && (definition.category === "gathering" || definition.category === "refining" || definition.category === "crafting")
+  ));
   const buildingCost = constructibleProductionBuildings.reduce((sum, definition) => sum + (definition.construction?.silver ?? 0), 0);
   const workerHouse = getInitialIslandWorkerHouseLevelDefinition();
   return buildingCost + workerHouse.workerCapacity * workerHouse.recruitmentCost;
