@@ -30,9 +30,9 @@ function getRelicRequirement(researchId: string) {
   const definition = RESEARCH_DEFINITIONS.find((candidate) => candidate.id === researchId);
   if (definition === undefined) return undefined;
   const requirement = definition.requirements.find(
-    (candidate) => candidate.type === "relic_reconstructed",
+    (candidate) => candidate.type === "relic_examined",
   );
-  return requirement?.type === "relic_reconstructed" ? requirement : undefined;
+  return requirement?.type === "relic_examined" ? requirement : undefined;
 }
 
 export class AcademyResearchService extends ResearchService<ResearchContentRequirement> {
@@ -78,8 +78,8 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
   const requirementPort: ResearchRequirementPort<ResearchContentRequirement> = {
     isRequirementMet(requirement) {
       switch (requirement.type) {
-        case "relic_reconstructed":
-          return dependencies.relicService.isReconstructed(requirement.relicId);
+        case "relic_examined":
+          return dependencies.relicService.isExamined(requirement.relicId);
         case "academy_tier":
           return dependencies.getAcademyTier() >= requirement.minimumTier;
         case "research_unlock":
