@@ -52,10 +52,16 @@ export class WorkerManager {
     }
 
     const def = resolved.definition;
-    const sameDefinitionCount = [...this.#workers.values()].filter(
+    const sameDefinitionWorkers = [...this.#workers.values()].filter(
       (worker) => worker.definitionId === definitionId,
-    ).length;
-    const authoredDisplayName = def.displayNames?.[sameDefinitionCount] ?? def.displayName;
+    );
+    const authoredDisplayName = def.displayNames?.[sameDefinitionWorkers.length] ?? def.displayName;
+    const requestedDisplayNameAlreadyUsed = displayName !== undefined
+      && sameDefinitionWorkers.some((worker) => worker.displayName === displayName);
+    const resolvedDisplayName = displayName === undefined || requestedDisplayNameAlreadyUsed
+      ? authoredDisplayName
+      : displayName;
+
     workerCounter += 1;
     const id = asWorkerId(`worker-${workerCounter}`);
 
@@ -63,7 +69,7 @@ export class WorkerManager {
       id,
       definitionId: def.id,
       profession: def.profession,
-      displayName: displayName ?? authoredDisplayName,
+      displayName: resolvedDisplayName,
       mastery: 0,
       state: "idle",
       assignedBuildingId: undefined,
