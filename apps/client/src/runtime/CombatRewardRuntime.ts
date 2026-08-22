@@ -184,8 +184,9 @@ export class CombatRewardRuntime {
 
 export function applyPercentBonusRounded(baseValue: number, bonusPercent: number): number {
   if (!Number.isFinite(baseValue) || baseValue <= 0) return 0;
-  if (!Number.isFinite(bonusPercent) || bonusPercent <= 0) return Math.round(baseValue);
-  return Math.round(baseValue * (1 + bonusPercent / 100));
+  const roundedBase = Math.round(baseValue);
+  if (!Number.isFinite(bonusPercent) || bonusPercent <= 0) return roundedBase;
+  return roundedBase + Math.round(baseValue * bonusPercent / 100);
 }
 
 function isAwakenedWeaponTier(value: number | undefined): value is AwakenedWeaponTier {
