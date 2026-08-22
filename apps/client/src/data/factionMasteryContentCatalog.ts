@@ -39,9 +39,14 @@ export const FACTION_MASTERY_DEFINITIONS: readonly MasteryDefinitionLike[] = SUP
   }),
 );
 
+export function normalizeFactionId(factionId: string): SupportedFactionId | undefined {
+  const normalized = factionId.trim().toLowerCase();
+  return SUPPORTED_FACTIONS.find((supported) => supported === normalized);
+}
+
 export function resolveFactionMasteryId(factionId: string): MasteryId | undefined {
-  if (!SUPPORTED_FACTIONS.some((supported) => supported === factionId)) return undefined;
-  return FACTION_MASTERY_IDS[factionId as SupportedFactionId];
+  const normalized = normalizeFactionId(factionId);
+  return normalized === undefined ? undefined : FACTION_MASTERY_IDS[normalized];
 }
 
 export function getFactionMasteryYieldBonusPercent(level: number): number {
