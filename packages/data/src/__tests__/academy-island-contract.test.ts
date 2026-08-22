@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  getAcademyResearchTier,
   getIslandBuildingDefinition,
-  getIslandBuildingMaxProductionTier,
   getIslandLevelDefinition,
 } from "../index.js";
 
@@ -25,7 +25,7 @@ describe("Academy island contract", () => {
   });
 
   it("starts as a T4 academy without authoring future upgrade costs", () => {
-    expect(getIslandBuildingMaxProductionTier("academy", 1)).toBe(4);
-    expect(getIslandBuildingMaxProductionTier("academy", 2)).toBeUndefined();
+    expect(getAcademyResearchTier(1)).toBe(4);
+    expect(getAcademyResearchTier(2)).toBeUndefined();
   });
 });
