@@ -30,6 +30,7 @@ interface DungeonNavigationActionsDependencies {
   readonly stopController: DungeonStopController;
   readonly bridge: GameBridge;
   readonly isCombatSuspended: () => boolean;
+  readonly canAccessDungeonContent: (definitionId: string) => boolean;
   readonly onStateChanged: () => void;
 }
 
@@ -66,6 +67,7 @@ export class DungeonNavigationActions {
       || this.deps.dungeonRuntime.activeRun?.status === "active"
       || this.pendingDefinitionId !== null
       || this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") === undefined
+      || !this.canAccessDungeonResearch(definitionId)
       || !this.canAccessDungeonTier(definitionId)
       || !this.canEnterDungeonWithCurrentEquipment(definitionId)
       || !this.canConsumeDungeonKey(definitionId)
@@ -105,7 +107,11 @@ export class DungeonNavigationActions {
   }
 
   private startNow(definitionId: string): boolean {
-    if (!this.canAccessDungeonTier(definitionId) || !this.canEnterDungeonWithCurrentEquipment(definitionId)) {
+    if (
+      !this.canAccessDungeonResearch(definitionId)
+      || !this.canAccessDungeonTier(definitionId)
+      || !this.canEnterDungeonWithCurrentEquipment(definitionId)
+    ) {
       this.pendingDefinitionId = null;
       this.deps.onStateChanged();
       return false;
@@ -123,6 +129,18 @@ export class DungeonNavigationActions {
     if (started.ok) worldTravelTransition.start();
     this.deps.onStateChanged();
     return started.ok;
+  }
+
+  private canAccessDungeonResearch(definitionId: string): boolean {
+    if (this.deps.canAccessDungeonContent(definitionId)) return true;
+
+    this.deps.bridge.addEconomyNotification({
+      id: `notif_dungeon_research_gate_${String(Date.now())}`,
+      type: "error",
+      message: "Accès refusé : recherche de cette famille de donjons requise.",
+      timestamp: Date.now(),
+    });
+    return false;
   }
 
   private canAccessDungeonTier(definitionId: string): boolean {
