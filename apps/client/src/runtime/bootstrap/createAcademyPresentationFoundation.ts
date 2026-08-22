@@ -14,6 +14,7 @@ export interface AcademyResearchEntryModel {
   readonly displayName: string;
   readonly tier: number;
   readonly state: "locked" | "available" | "active" | "completed";
+  readonly waitingForRelic: boolean;
   readonly durationMs: number;
   readonly remainingDurationMs: number | undefined;
   readonly silverCost: number;
@@ -43,6 +44,7 @@ export interface AcademyPresentationFoundationDependencies<
 > {
   readonly researchService: ResearchService<TResearchRequirement>;
   readonly expeditionService: ExpeditionService<TExpeditionRequirement, TExpeditionRewardSummary>;
+  readonly isWaitingForRelic?: (researchId: string) => boolean;
   readonly onMutation?: () => void;
 }
 
@@ -67,6 +69,7 @@ export function createAcademyPresentationFoundation<
         displayName: definition.displayName,
         tier: definition.tier,
         state: dependencies.researchService.getEntryState(definition.id) ?? "locked",
+        waitingForRelic: dependencies.isWaitingForRelic?.(definition.id) ?? false,
         durationMs: definition.durationMs,
         remainingDurationMs: activeResearch?.researchId === definition.id
           ? activeResearch.remainingDurationMs
