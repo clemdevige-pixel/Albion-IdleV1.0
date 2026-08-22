@@ -1,6 +1,6 @@
 import {
   getIslandBuildingDefinition,
-  getIslandBuildingMaxProductionTier,
+  getIslandMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
 import { REFINING_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
@@ -12,10 +12,10 @@ import "./refiningBuilding.css";
 
 export function RefiningBuildingPanel({
   definitionId,
-  level,
+  islandLevel,
 }: {
   readonly definitionId: IslandBuildingId;
-  readonly level: number;
+  readonly islandLevel: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const service = definition.refiningService;
@@ -23,9 +23,9 @@ export function RefiningBuildingPanel({
     throw new Error(`Refining building ${definitionId} has no refining service data`);
   }
 
-  const maxTier = getIslandBuildingMaxProductionTier(definitionId, level);
+  const maxTier = getIslandMaxProductionTier(islandLevel);
   if (maxTier === undefined) {
-    throw new Error(`Refining building ${definitionId} level ${String(level)} has no progression data`);
+    throw new Error(`Island level ${String(islandLevel)} has no production tier data`);
   }
 
   const model = useRefiningData();
@@ -46,17 +46,17 @@ export function RefiningBuildingPanel({
     <div className="ui-island-refining-building">
       <div className="ui-island-refining-building__tiers" role="group" aria-label="Tier de raffinage">
         {REFINING_CONTENT_TIERS.map((tier) => {
-          const buildingLocked = tier > maxTier;
+          const islandLocked = tier > maxTier;
           return (
             <button
               key={tier}
               type="button"
               className={family.tier === tier ? "is-active" : ""}
-              disabled={buildingLocked || active}
-              title={buildingLocked ? `Améliorez le bâtiment pour débloquer T${String(tier)}` : undefined}
+              disabled={islandLocked || active}
+              title={islandLocked ? `Améliorez l’île pour débloquer T${String(tier)}` : undefined}
               onClick={() => { actions.setTier(family.id, tier); }}
             >
-              T{String(tier)}{buildingLocked ? " 🔒" : ""}
+              T{String(tier)}{islandLocked ? " 🔒" : ""}
             </button>
           );
         })}
