@@ -22,6 +22,8 @@ import {
 } from "../data/dungeonContentCatalog.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
+import { RESEARCH_UNLOCK_IDS } from "../data/researchContentCatalog.js";
+import { ADVANCED_WORKER_ORGANIZATION } from "../data/workerContentCatalog.js";
 import {
   syncInventoryToBridge,
   syncStatsToBridge,
@@ -270,6 +272,9 @@ export function GameProvider({
       getAcademyTier: academyRuntimeFoundation.getResearchTier,
     });
     const { researchService } = researchFoundation;
+    const hasAdvancedWorkerOrganization = (): boolean => (
+      researchService.hasUnlock(RESEARCH_UNLOCK_IDS.advancedWorkerOrganization)
+    );
     const dungeonResearchAccessFoundation = createDungeonResearchAccessFoundation({
       dungeonRuntime,
       researchService,
@@ -308,6 +313,21 @@ export function GameProvider({
       getGatheringTier: () => gatheringTier,
       getRefiningTier: (family) => refiningTiers[family],
       getWorkerTier: () => workerTier,
+      getWorkerCapacity: () => (
+        hasAdvancedWorkerOrganization()
+          ? ADVANCED_WORKER_ORGANIZATION.workerCapacity
+          : WORKER_HOUSE_BASELINE.workerCapacity
+      ),
+      getWorkerProfessionCapacity: () => (
+        hasAdvancedWorkerOrganization()
+          ? ADVANCED_WORKER_ORGANIZATION.professionCapacity
+          : 1
+      ),
+      getWorkerRecruitmentCost: () => (
+        hasAdvancedWorkerOrganization()
+          ? ADVANCED_WORKER_ORGANIZATION.recruitmentCost
+          : WORKER_HOUSE_BASELINE.recruitmentCost
+      ),
     });
     const {
       gatheringRuntime,
@@ -317,7 +337,6 @@ export function GameProvider({
       hideGatheringCoordinator,
       fiberGatheringCoordinator,
     } = productionFoundation;
-
     const combatRewardRuntime = new CombatRewardRuntime({
       currencyService,
       walletId,
@@ -367,9 +386,11 @@ export function GameProvider({
       },
       updateWorldBridge,
     });
+    let syncProduction = (): void => {};
     const resyncAll = (): void => {
       bridgeSyncCoordinator.syncAll();
       syncIslandToBridge();
+      syncProduction();
     };
     const academyPresentationFoundation = createAcademyPresentationFoundation({
       researchService,
@@ -656,9 +677,8 @@ export function GameProvider({
       prepareCombatResumeAfterGathering: () => {
         worldNavigationActions.prepareCombatResumeAfterGathering();
       },
-      workerCapacity: WORKER_HOUSE_BASELINE.workerCapacity,
-      workerRecruitmentCost: WORKER_HOUSE_BASELINE.recruitmentCost,
     });
+    syncProduction = () => { productionController.syncAll(); };
     persistence.registerProvider(productionController.createWorkerSaveProvider());
 
     const worldSaveProvider = new WorldSaveProvider(
