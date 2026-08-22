@@ -3,6 +3,7 @@ import {
   ExpeditionService,
   type CurrencyService,
   type InventoryManager,
+  type RelicService,
   type ResearchService,
   type WalletId,
 } from "@game/gameplay";
@@ -41,6 +42,7 @@ export type ExpeditionRewardSummary =
 
 export interface ExpeditionFoundationDependencies {
   readonly researchService: ResearchService<ResearchContentRequirement>;
+  readonly relicService: Pick<RelicService, "isExamined">;
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly inventoryManager: InventoryManager;
@@ -59,6 +61,8 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
         switch (requirement.type) {
           case "research_unlock":
             return dependencies.researchService.hasUnlock(requirement.unlockId);
+          case "relic_examined":
+            return dependencies.relicService.isExamined(requirement.relicId);
         }
       },
     },
