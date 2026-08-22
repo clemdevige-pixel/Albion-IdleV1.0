@@ -15,6 +15,12 @@ function formatRemainingDuration(durationMs: number): string {
   return `${String(seconds)}s`;
 }
 
+function getProgress(durationMs: number | undefined, remainingDurationMs: number | undefined): number | undefined {
+  if (durationMs === undefined || remainingDurationMs === undefined) return undefined;
+  if (durationMs <= 0) return 100;
+  return Math.max(0, Math.min(100, ((durationMs - remainingDurationMs) / durationMs) * 100));
+}
+
 export function DashboardResearchCard(): JSX.Element | null {
   const bridge = useGameBridge();
   const { getAcademyModel } = useGameServices();
@@ -35,17 +41,7 @@ export function DashboardResearchCard(): JSX.Element | null {
     navigation.openModule(UI_MODULE_IDS.island);
   };
 
-  const researchProgress = activeResearch === undefined || activeResearch.remainingDurationMs === undefined
-    ? undefined
-    : activeResearch.durationMs <= 0
-      ? 100
-      : Math.max(
-        0,
-        Math.min(
-          100,
-          ((activeResearch.durationMs - activeResearch.remainingDurationMs) / activeResearch.durationMs) * 100,
-        ),
-      );
+  const researchProgress = getProgress(activeResearch?.durationMs, activeResearch?.remainingDurationMs);
 
   return (
     <DashboardCard
@@ -80,21 +76,29 @@ export function DashboardResearchCard(): JSX.Element | null {
           </div>
         )}
 
-        {activeExpeditions.map((expedition) => (
-          <div key={expedition.id} className="dashboard-research__activity dashboard-research__activity--expedition">
-            <div className="dashboard-research__summary">
-              <div>
-                <span>Expédition · Slot {String((expedition.activeSlotIndex ?? 0) + 1)}</span>
-                <strong>{expedition.displayName}</strong>
+        {activeExpeditions.map((expedition) => {
+          const progress = getProgress(expedition.activeDurationMs, expedition.remainingDurationMs);
+          return (
+            <div key={expedition.id} className="dashboard-research__activity dashboard-research__activity--expedition">
+              <div className="dashboard-research__summary">
+                <div>
+                  <span>Expédition T{String(expedition.tier)} · Slot {String((expedition.activeSlotIndex ?? 0) + 1)}</span>
+                  <strong>{expedition.displayName}</strong>
+                </div>
+                <b>
+                  {expedition.remainingDurationMs === undefined
+                    ? "En cours"
+                    : formatRemainingDuration(expedition.remainingDurationMs)}
+                </b>
               </div>
-              <b>
-                {expedition.remainingDurationMs === undefined
-                  ? "En cours"
-                  : formatRemainingDuration(expedition.remainingDurationMs)}
-              </b>
+              {progress !== undefined && (
+                <div className="dashboard-progress" aria-label={`Progression ${String(Math.round(progress))}%`}>
+                  <span style={{ width: `${String(progress)}%` }} />
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </button>
     </DashboardCard>
   );
