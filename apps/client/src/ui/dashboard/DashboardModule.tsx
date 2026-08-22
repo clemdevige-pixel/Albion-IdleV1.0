@@ -55,7 +55,10 @@ export function DashboardModule(): JSX.Element {
     production: <DashboardProductionCard production={production} />,
   };
 
-  const visibleOrder = sectionOrder.filter((sectionId) => sections[sectionId] != null);
+  const visibleOrder = sectionOrder.filter((sectionId) => {
+    const section = sections[sectionId];
+    return section !== undefined && section !== null;
+  });
 
   const persistOrder = (nextOrder: readonly DashboardSectionId[]): void => {
     dashboardLayoutSaveProvider.setOrder(nextOrder);
@@ -104,7 +107,7 @@ export function DashboardModule(): JSX.Element {
     <div className="dashboard-module">
       {sectionOrder.map((sectionId) => {
         const section = sections[sectionId];
-        if (section == null) return null;
+        if (section === undefined || section === null) return null;
         const definition = getDashboardSectionDefinition(sectionId);
         return (
           <div
