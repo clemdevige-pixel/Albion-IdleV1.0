@@ -55,8 +55,8 @@ function researchPriority(research: AcademyResearchEntryModel): number {
   switch (research.state) {
     case "active": return 0;
     case "available": return 1;
-    case "locked": return research.relicGateState === "ready" ? 2 : 3;
-    case "completed": return 4;
+    case "locked": return 2;
+    case "completed": return 3;
   }
 }
 
@@ -64,8 +64,6 @@ function researchStatusLabel(research: AcademyResearchEntryModel): string {
   if (research.state === "completed") return "Terminée";
   if (research.state === "active") return "En cours";
   if (research.state === "available") return "Disponible";
-  if (research.relicGateState === "ready") return "Relique prête à examiner";
-  if (research.relicGateState === "waiting") return "En attente de la relique";
   return "Verrouillée";
 }
 
@@ -174,9 +172,6 @@ function ResearchRow({
         </div>
       )}
 
-      {!compact && research.relicGateState === "ready" && research.state === "locked" && onAction !== undefined && (
-        <ResearchAction research={research} label="Envoyer la relique" onAction={onAction} />
-      )}
       {!compact && research.state === "available" && onAction !== undefined && (
         <ResearchAction research={research} label="Lancer" onAction={onAction} />
       )}
@@ -188,7 +183,7 @@ function ExpeditionTooltip({ expedition }: { readonly expedition: AcademyExpedit
   const info = getExpeditionPresentationInfo(expedition.id);
   const requirement = expedition.typeId === SILVER_EXPEDITION_TYPE_ID
     ? `Cartographie T${String(expedition.tier)}`
-    : `Relique examinée + Cartographie T${String(expedition.tier)}`;
+    : `Archéologie T${String(expedition.tier)}`;
   return (
     <div className="context-tooltip-content">
       <div className="context-tooltip-content__header">
@@ -307,13 +302,7 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
 
   const handleResearchAction = (entry: AcademyResearchEntryModel): void => {
     const result = startAcademyResearch(entry.id);
-    setFeedback(
-      result.ok && result.action === "relic_examined"
-        ? "Relique examinée. Expéditions de faction débloquées pour les tiers cartographiés."
-        : result.ok
-          ? `${entry.displayName} lancée.`
-          : researchFailureMessage(result.reason),
-    );
+    setFeedback(result.ok ? `${entry.displayName} lancée.` : researchFailureMessage(result.reason));
   };
 
   const handleExpeditionStart = (): void => {
