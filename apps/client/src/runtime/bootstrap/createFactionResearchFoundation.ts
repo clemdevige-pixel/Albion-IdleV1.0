@@ -79,16 +79,13 @@ export function createFactionResearchFoundation(
     recordMonsterKill(monsterId: string): readonly string[] {
       const result = factionKnowledgeService.recordKill(monsterId);
       if (!result.ok) return [];
-      const acquired = relicService.recordMonsterKill(
+      return relicService.recordMonsterKill(
         monsterId,
         (definition) => relicInventoryPort.hasItem(definition) || relicInventoryPort.grantItem(definition),
       );
-      const examined = relicService.resolveCompletedRelics();
-      return [...acquired, ...examined];
     },
-    resolveWorldProgress(): readonly string[] {
+    resolveWorldProgress(): void {
       ensureInventoryMirror();
-      return relicService.resolveCompletedRelics();
     },
   };
 }
