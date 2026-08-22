@@ -14,7 +14,7 @@ describe("createFactionResearchFoundation", () => {
     expect(foundation.factionKnowledgeService.getFactionEliteKillCount("keeper")).toBe(1);
   });
 
-  it("mirrors boss acquisition into inventory before charging the Relic", () => {
+  it("mirrors boss acquisition into inventory and never auto-examines a charged Relic", () => {
     let canExamine = false;
     const inventoryItems = new Set<string>();
     const foundation = createFactionResearchFoundation();
@@ -38,10 +38,13 @@ describe("createFactionResearchFoundation", () => {
       foundation.recordMonsterKill(MONSTER_IDS.keeperWarrior);
     }
     expect(foundation.relicService.getProgress("relic_keeper")?.state).toBe("charged");
-    expect(foundation.relicService.isReconstructed("relic_keeper")).toBe(false);
 
     canExamine = true;
-    expect(foundation.resolveWorldProgress()).toEqual(["relic_keeper"]);
+    foundation.resolveWorldProgress();
+    expect(foundation.relicService.getProgress("relic_keeper")?.state).toBe("charged");
+    expect(foundation.relicService.isReconstructed("relic_keeper")).toBe(false);
+
+    expect(foundation.relicService.examineRelic("relic_keeper")).toEqual({ ok: true });
     expect(foundation.relicService.getProgress("relic_keeper")?.state).toBe("examined");
   });
 });
