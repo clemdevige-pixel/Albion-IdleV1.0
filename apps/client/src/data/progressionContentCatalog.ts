@@ -60,12 +60,11 @@ export const GATHERING_MASTERY_UNLOCK_BY_TIER = {
 } as const;
 
 export function getRequiredGatheringMasteryForTier(tier: number): number {
-  if (
-    import.meta.env.DEV
-    && typeof window !== "undefined"
-    && new URLSearchParams(window.location.search).get("productionTest") === "1"
-  ) {
-    return 0;
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("productionTest") === "1" || params.get("devTest") === "1") {
+      return 0;
+    }
   }
   return GATHERING_MASTERY_UNLOCK_BY_TIER[tier as keyof typeof GATHERING_MASTERY_UNLOCK_BY_TIER] ?? 0;
 }
