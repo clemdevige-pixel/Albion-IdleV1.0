@@ -1,5 +1,5 @@
 import type { DungeonDefinition } from "@game/gameplay";
-import { getDungeonFamilyResearchUnlockId } from "../../data/dungeonResearchAccessCatalog.js";
+import { getDungeonResearchUnlockId } from "../../data/dungeonResearchAccessCatalog.js";
 
 interface DungeonDefinitionReadPort {
   getDefinition(definitionId: string): DungeonDefinition | undefined;
@@ -14,19 +14,17 @@ export interface DungeonResearchAccessFoundationDependencies {
   readonly researchService: ResearchUnlockReadPort;
 }
 
-/**
- * Resolves authored Research access requirements for dungeon families.
- * Navigation remains ignorant of faction identities and Research unlock IDs.
- */
+/** Navigation remains ignorant of Academy Research IDs and content semantics. */
 export function createDungeonResearchAccessFoundation(
   dependencies: DungeonResearchAccessFoundationDependencies,
 ) {
   return {
+    isDungeonSystemUnlocked(this: void): boolean {
+      return dependencies.researchService.hasUnlock(getDungeonResearchUnlockId());
+    },
     canAccessDefinition(this: void, definitionId: string): boolean {
-      const definition = dependencies.dungeonRuntime.getDefinition(definitionId);
-      if (definition === undefined) return false;
-      const requiredUnlockId = getDungeonFamilyResearchUnlockId(definition.faction);
-      return requiredUnlockId === undefined || dependencies.researchService.hasUnlock(requiredUnlockId);
+      if (dependencies.dungeonRuntime.getDefinition(definitionId) === undefined) return false;
+      return dependencies.researchService.hasUnlock(getDungeonResearchUnlockId());
     },
   };
 }
