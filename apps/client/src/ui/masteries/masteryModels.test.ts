@@ -24,7 +24,7 @@ describe("masteryModels", () => {
           mastery("mastery_dagger_pair", "Paire de dagues", "weapon_specialization"),
         ],
       },
-      workers: { capacity: 0, recruitmentCost: 0, workers: [] },
+      workers: { capacity: 0, professionCapacity: 0, recruitmentCost: 0, workers: [] },
     });
 
     const daggers = model.categories.combat.find((family) => family.id === "mastery_dagger");
@@ -42,7 +42,7 @@ describe("masteryModels", () => {
           mastery("mastery_faction_heretic", "Maîtrise Heretic", "faction", 0),
         ],
       },
-      workers: { capacity: 0, recruitmentCost: 0, workers: [] },
+      workers: { capacity: 0, professionCapacity: 0, recruitmentCost: 0, workers: [] },
     });
 
     const keeper = model.categories.faction.find((family) => family.id === "mastery_faction_keeper");
