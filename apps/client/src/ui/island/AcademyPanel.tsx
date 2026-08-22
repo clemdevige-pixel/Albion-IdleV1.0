@@ -78,9 +78,11 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
                       ? "En cours"
                       : research.state === "available"
                         ? "Disponible"
-                        : research.waitingForRelic
-                          ? "En attente de la relique"
-                          : "Verrouillée"}
+                        : research.relicGateState === "ready"
+                          ? "Relique prête à examiner"
+                          : research.relicGateState === "waiting"
+                            ? "En attente de la relique"
+                            : "Verrouillée"}
                 </span>
               </div>
               <div className="ui-academy__meta">
@@ -92,12 +94,35 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
               {research.remainingDurationMs !== undefined && (
                 <div className="ui-academy__timer">Reste {formatDuration(research.remainingDurationMs)}</div>
               )}
+              {research.relicGateState === "ready" && research.state === "locked" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const result = startAcademyResearch(research.id);
+                    setFeedback(
+                      result.ok && result.action === "relic_examined"
+                        ? "Relique envoyée à l’Académie et examinée."
+                        : result.ok
+                          ? `${research.displayName} lancée.`
+                          : researchFailureMessage(result.reason),
+                    );
+                  }}
+                >
+                  Envoyer la relique à l’Académie
+                </button>
+              )}
               {research.state === "available" && (
                 <button
                   type="button"
                   onClick={() => {
                     const result = startAcademyResearch(research.id);
-                    setFeedback(result.ok ? `${research.displayName} lancée.` : researchFailureMessage(result.reason));
+                    setFeedback(
+                      result.ok && result.action === "research_started"
+                        ? `${research.displayName} lancée.`
+                        : result.ok
+                          ? "Relique examinée."
+                          : researchFailureMessage(result.reason),
+                    );
                   }}
                 >
                   Lancer la recherche
