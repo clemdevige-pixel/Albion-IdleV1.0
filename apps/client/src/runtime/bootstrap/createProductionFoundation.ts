@@ -48,6 +48,7 @@ interface ProductionFoundationDependencies {
   readonly getWorkerCapacity?: () => number;
   readonly getWorkerProfessionCapacity?: (profession: WorkerProfession) => number;
   readonly getWorkerRecruitmentCost?: () => number;
+  readonly isInstantRefiningUnlocked?: () => boolean;
 }
 
 /**
@@ -71,6 +72,7 @@ export function createProductionFoundation({
   getWorkerCapacity,
   getWorkerProfessionCapacity,
   getWorkerRecruitmentCost,
+  isInstantRefiningUnlocked,
 }: ProductionFoundationDependencies) {
   const productionInventoryManager = createAtomicProductionInventoryManager(inventoryManager);
   const resourceRegistry = new ResourceRegistry();
@@ -156,6 +158,7 @@ export function createProductionFoundation({
     inventoryManager: productionInventoryManager,
     productionStorageId,
     getProductionTier: getRefiningTier,
+    ...(isInstantRefiningUnlocked === undefined ? {} : { isInstantRefiningUnlocked }),
   });
 
   const craftingRuntime = new CraftingRuntime({
