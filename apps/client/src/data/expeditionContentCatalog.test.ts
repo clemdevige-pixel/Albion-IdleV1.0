@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 import {
   FACTION_EXPEDITION_DEFINITIONS,
   SILVER_EXPEDITION_DEFINITIONS,
@@ -10,6 +11,20 @@ import {
 const HOUR_MS = 60 * 60 * 1000;
 const FACTIONS = ["keeper", "heretic", "undead", "morgana"] as const;
 const TIERS = [4, 5, 6, 7, 8] as const;
+const SILVER_UNLOCKS = {
+  4: RESEARCH_UNLOCK_IDS.silverExpeditionTier4,
+  5: RESEARCH_UNLOCK_IDS.silverExpeditionTier5,
+  6: RESEARCH_UNLOCK_IDS.silverExpeditionTier6,
+  7: RESEARCH_UNLOCK_IDS.silverExpeditionTier7,
+  8: RESEARCH_UNLOCK_IDS.silverExpeditionTier8,
+} as const;
+const FACTION_UNLOCKS = {
+  4: RESEARCH_UNLOCK_IDS.factionExpeditionTier4,
+  5: RESEARCH_UNLOCK_IDS.factionExpeditionTier5,
+  6: RESEARCH_UNLOCK_IDS.factionExpeditionTier6,
+  7: RESEARCH_UNLOCK_IDS.factionExpeditionTier7,
+  8: RESEARCH_UNLOCK_IDS.factionExpeditionTier8,
+} as const;
 
 describe("expeditionContentCatalog", () => {
   it("authors the validated T4-T8 Silver/hour curve", () => {
@@ -21,7 +36,7 @@ describe("expeditionContentCatalog", () => {
     for (const definition of SILVER_EXPEDITION_DEFINITIONS) {
       expect(definition.typeId).toBe("silver");
       expect(definition.requirements).toEqual([
-        { type: "research_unlock", unlockId: `expedition_tier:${String(definition.tier)}` },
+        { type: "research_unlock", unlockId: SILVER_UNLOCKS[definition.tier as keyof typeof SILVER_UNLOCKS] },
       ]);
     }
   });
@@ -32,7 +47,7 @@ describe("expeditionContentCatalog", () => {
     expect(getSilverExpeditionReward("expedition_silver_t8", 12 * HOUR_MS)).toBe(600_000);
   });
 
-  it("authors every faction across T4-T8 with examined Relic plus tier gates", () => {
+  it("authors every faction across T4-T8 with only the matching Archaeology tier gate", () => {
     expect(FACTION_EXPEDITION_DEFINITIONS).toHaveLength(FACTIONS.length * TIERS.length);
     for (const factionId of FACTIONS) {
       const definitions = FACTION_EXPEDITION_DEFINITIONS.filter((entry) => entry.factionId === factionId);
@@ -40,8 +55,7 @@ describe("expeditionContentCatalog", () => {
       expect(new Set(definitions.map(({ typeId }) => typeId))).toEqual(new Set([factionId]));
       for (const definition of definitions) {
         expect(definition.requirements).toEqual([
-          { type: "relic_examined", relicId: `relic_${factionId}` },
-          { type: "research_unlock", unlockId: `expedition_tier:${String(definition.tier)}` },
+          { type: "research_unlock", unlockId: FACTION_UNLOCKS[definition.tier as keyof typeof FACTION_UNLOCKS] },
         ]);
         expect(definition.reward).toEqual({
           kind: "faction_rune",
