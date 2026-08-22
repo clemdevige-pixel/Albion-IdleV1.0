@@ -238,7 +238,57 @@ Research unlocks capacity only. It does NOT grant generic worker yield/speed bon
 
 ---
 
-# 7. DEFERRED — FABRICATION SPECIALISEE
+# 7. VALIDATED / IMPLEMENTED — PROCEDES DE RAFFINAGE AVANCES
+
+Status: VALIDATED CONTRACT / IMPLEMENTED
+
+## 7.1 Research contract
+
+Research:
+
+- id: `research_instant_refining`;
+- display name: `Procédés de raffinage avancés`;
+- Academy tier: T7;
+- cost: 80,000 Silver;
+- material cost: none;
+- duration: 3h;
+- unlock id: `refining:instant_batch`.
+
+## 7.2 Gameplay effect
+
+Before this Research, refining uses the normal timed automatic cycle system.
+
+After completion, each refining building exposes instant batch refining for the selected family/tier:
+
+- one action converts every currently payable cycle for that recipe;
+- no timed refining session is started for that batch;
+- input requirements remain exactly those of the authored recipe;
+- Tn recipes still consume the authored Tn-1 refined prerequisite;
+- output quantity and yield remain unchanged;
+- no bonus resource, speed multiplier or altered refining ratio is granted.
+
+Example:
+
+- 80 T7 raw ore + 40 T6 refined bars;
+- T7 recipe requires 2 raw ore + 1 T6 refined bar per cycle;
+- instant batch executes 40 cycles;
+- result is exactly 40 T7 refined bars.
+
+## 7.3 Architecture rules
+
+- `ResearchService` unlock state is the authority for availability;
+- recipe definitions remain the authority for costs and outputs;
+- do NOT implement the unlock by authoring `durationTicks = 0` variants;
+- do NOT duplicate refining recipes or create a second refining economy;
+- instant conversion must consume the maximum payable batch atomically;
+- if output cannot be stored atomically, inputs must not be lost;
+- the original timed refining path remains unchanged while the Research is locked.
+
+The purpose is late-game QoL only. It removes repetitive waiting after the player has already mastered the production loop; it does not increase economic efficiency.
+
+---
+
+# 8. DEFERRED — FABRICATION SPECIALISEE
 
 Status: DEFERRED / DO NOT IMPLEMENT YET
 
@@ -254,7 +304,7 @@ Revisit only when Quality is actually integrated and balanced in live gameplay.
 
 ---
 
-# 8. DEFERRED — DONJON PREPARATIONS
+# 9. DEFERRED — DONJON PREPARATIONS
 
 Status: DEFERRED / FUTURE DUNGEON DIFFICULTY SYSTEM
 
@@ -278,7 +328,7 @@ Revisit when additional dungeon difficulties, challenge modes or modifiers are i
 
 ---
 
-# 9. REJECTED / LOW-VALUE IDEAS
+# 10. REJECTED / LOW-VALUE IDEAS
 
 ## Equipment dismantling / material recovery
 
@@ -298,16 +348,17 @@ Rejected because the proposed functionality substantially duplicated Equipment P
 
 ---
 
-# 10. CURRENT SHORTLIST
+# 11. CURRENT SHORTLIST
 
 Current Academy expansion state beyond factions:
 
 1. Organisation avancée des ouvriers — VALIDATED / IMPLEMENTED at T6
-2. Doctrine d'equipement — VALIDATED DIRECTION
-3. Tactiques de combat — STRONG CANDIDATE
-4. Consignes d'exploration — STRONG CANDIDATE
-5. Analyse tactique — CANDIDATE, presentation unresolved
-6. Protocoles de combat avances — CONDITIONAL extension only
+2. Procédés de raffinage avancés — VALIDATED / IMPLEMENTED at T7
+3. Doctrine d'equipement — VALIDATED DIRECTION
+4. Tactiques de combat — STRONG CANDIDATE
+5. Consignes d'exploration — STRONG CANDIDATE
+6. Analyse tactique — CANDIDATE, presentation unresolved
+7. Protocoles de combat avances — CONDITIONAL extension only
 
 Deferred:
 
