@@ -9,13 +9,16 @@ import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./world.css";
 
 type WorldModuleTabId = "zones" | "dungeons" | "gathering" | "bestiary" | "achievements";
+type WorldModuleTab = { readonly id: WorldModuleTabId; readonly label: string };
 
-const BASE_TABS: readonly { readonly id: WorldModuleTabId; readonly label: string }[] = [
+const BASE_TABS: readonly WorldModuleTab[] = [
   { id: "zones", label: "Zones" },
   { id: "gathering", label: "Récolte" },
   { id: "bestiary", label: "Bestiaire" },
   { id: "achievements", label: "Succès" },
 ];
+
+const DUNGEON_TAB: WorldModuleTab = { id: "dungeons", label: "Donjons" };
 
 export function WorldModule(): JSX.Element {
   useGameBridge();
@@ -25,7 +28,7 @@ export function WorldModule(): JSX.Element {
   const actions = useWorldActions();
   const dungeonsUnlocked = isDungeonSystemUnlocked();
   const tabs = dungeonsUnlocked
-    ? [BASE_TABS[0], { id: "dungeons" as const, label: "Donjons" }, ...BASE_TABS.slice(1)]
+    ? BASE_TABS.flatMap((tab) => tab.id === "zones" ? [tab, DUNGEON_TAB] : [tab])
     : BASE_TABS;
   const effectiveTab = activeTab === "dungeons" && !dungeonsUnlocked ? "zones" : activeTab;
 
