@@ -18,13 +18,15 @@ const ISLAND_TIER_CASES = [
   { islandLevel: 6, productionTier: 8 },
 ] as const;
 
-const CURRENT_ISLAND_SILVER_COSTS = [
-  { targetLevel: 2, silver: 1_000 },
-  { targetLevel: 3, silver: 18_000 },
-  { targetLevel: 4, silver: 60_000 },
-  { targetLevel: 5, silver: 155_000 },
-  { targetLevel: 6, silver: 270_000 },
+const ISLAND_UPGRADE_CASES = [
+  { targetLevel: 2, sourceTier: 3, silver: 2_000, quantityPerFamily: 8 },
+  { targetLevel: 3, sourceTier: 4, silver: 30_000, quantityPerFamily: 20 },
+  { targetLevel: 4, sourceTier: 5, silver: 100_000, quantityPerFamily: 40 },
+  { targetLevel: 5, sourceTier: 6, silver: 265_000, quantityPerFamily: 60 },
+  { targetLevel: 6, sourceTier: 7, silver: 450_000, quantityPerFamily: 90 },
 ] as const;
+
+const REFINED_FAMILY_TOKEN = ["planks", "bar", "leather", "cloth"] as const;
 
 describe("island production progression balance contract", () => {
   it("uses the validated gathering mastery gates", () => {
@@ -56,9 +58,21 @@ describe("island production progression balance contract", () => {
     }
   });
 
-  it("keeps current island Silver costs until the dedicated economy retuning pass", () => {
-    for (const { targetLevel, silver } of CURRENT_ISLAND_SILVER_COSTS) {
+  it("uses the centralized island Silver curve", () => {
+    for (const { targetLevel, silver } of ISLAND_UPGRADE_CASES) {
       expect(getIslandLevelDefinition(targetLevel)?.upgradeCost?.silver).toBe(silver);
+    }
+  });
+
+  it("requires all four refined families equally at every island tier transition", () => {
+    for (const { targetLevel, sourceTier, quantityPerFamily } of ISLAND_UPGRADE_CASES) {
+      const requirements = getIslandLevelDefinition(targetLevel)?.upgradeCost?.requirements ?? [];
+      expect(requirements).toHaveLength(4);
+      expect(requirements.every((requirement) => requirement.quantity === quantityPerFamily)).toBe(true);
+      expect(requirements.every((requirement) => requirement.itemId.endsWith(`_t${String(sourceTier)}`))).toBe(true);
+      for (const token of REFINED_FAMILY_TOKEN) {
+        expect(requirements.some((requirement) => requirement.itemId.includes(token))).toBe(true);
+      }
     }
   });
 
