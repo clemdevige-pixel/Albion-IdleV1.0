@@ -4,6 +4,7 @@ import { getIslandOperationalLevelDefinition, type IslandBuildingUpgradeCost } f
 
 export interface IslandUpgradeableLevelDefinition {
   readonly level: number;
+  readonly minimumIslandLevel?: number;
   readonly upgradeToNext?: IslandBuildingUpgradeCost;
 }
 
