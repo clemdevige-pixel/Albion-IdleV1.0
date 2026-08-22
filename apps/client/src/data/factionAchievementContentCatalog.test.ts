@@ -5,7 +5,7 @@ import {
 } from "./factionAchievementContentCatalog.js";
 
 describe("factionAchievementContentCatalog", () => {
-  it("authors exactly 15 milestones per faction plus 5 global Expedition milestones", () => {
+  it("authors exactly 14 milestones per faction plus 5 global Expedition milestones", () => {
     expect(FACTION_ACHIEVEMENT_FACTIONS.map((entry) => entry.id)).toEqual([
       "keeper",
       "heretic",
@@ -15,12 +15,12 @@ describe("factionAchievementContentCatalog", () => {
     for (const faction of FACTION_ACHIEVEMENT_FACTIONS) {
       expect(FACTION_ACHIEVEMENT_DEFINITIONS.filter(
         (definition) => definition.factionId === faction.id,
-      )).toHaveLength(15);
+      )).toHaveLength(14);
     }
     expect(FACTION_ACHIEVEMENT_DEFINITIONS.filter(
       (definition) => definition.group === "expedition",
     )).toHaveLength(5);
-    expect(FACTION_ACHIEVEMENT_DEFINITIONS).toHaveLength(65);
+    expect(FACTION_ACHIEVEMENT_DEFINITIONS).toHaveLength(61);
   });
 
   it("locks the validated kill, elite, expedition, dungeon and mastery thresholds", () => {
