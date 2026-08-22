@@ -34,19 +34,34 @@ interface DungeonNavigationActionsDependencies {
   readonly onStateChanged: () => void;
 }
 
+export type DungeonAccessReason =
+  | "available"
+  | "invalid_definition"
+  | "research_locked"
+  | "progression_locked"
+  | "equipment_tier_locked"
+  | "weapon_required"
+  | "missing_key";
+
+export interface DungeonAccessState {
+  readonly canEnter: boolean;
+  readonly reason: DungeonAccessReason;
+  readonly previousTier?: number;
+  readonly highestEquippedTier?: number;
+}
+
 export interface DungeonNavigationState {
   readonly activeRun: DungeonRunState | undefined;
   readonly pendingDefinitionId: string | null;
   readonly clearedTiers: readonly number[];
+  readonly getAccess: (definitionId: string) => DungeonAccessState;
 }
 
 /**
- * Application-level dungeon navigation.
+ * Application-level dungeon navigation and access authority.
  *
- * Entering a dungeon follows the same combat boundary as other deferred actions:
- * the active encounter is allowed to finish, CombatStopController reaches paused,
- * then the world encounter is replaced by the dungeon run and combat resumes.
- * Cross-context presentation is delegated to the shared travel transition.
+ * All entry requirements are resolved once here so callers and UI cannot drift:
+ * authored Research access, tier progression, equipment cap, weapon requirement and key.
  */
 export class DungeonNavigationActions {
   private pendingDefinitionId: string | null = null;
@@ -58,6 +73,7 @@ export class DungeonNavigationActions {
       activeRun: this.deps.dungeonRuntime.activeRun,
       pendingDefinitionId: this.pendingDefinitionId,
       clearedTiers: this.deps.dungeonRuntime.getClearedTiers(),
+      getAccess: (definitionId) => this.getAccess(definitionId),
     };
   }
 
@@ -66,12 +82,13 @@ export class DungeonNavigationActions {
       this.deps.isCombatSuspended()
       || this.deps.dungeonRuntime.activeRun?.status === "active"
       || this.pendingDefinitionId !== null
-      || this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") === undefined
-      || !this.canAccessDungeonResearch(definitionId)
-      || !this.canAccessDungeonTier(definitionId)
-      || !this.canEnterDungeonWithCurrentEquipment(definitionId)
-      || !this.canConsumeDungeonKey(definitionId)
     ) return false;
+
+    const access = this.getAccess(definitionId);
+    if (!access.canEnter) {
+      this.notifyAccessFailure(definitionId, access);
+      return false;
+    }
 
     const loopState = this.deps.combatRuntime.getLoopState();
     if (loopState === "suspended") return false;
@@ -106,13 +123,52 @@ export class DungeonNavigationActions {
     return true;
   }
 
+  private getAccess(definitionId: string): DungeonAccessState {
+    const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
+    if (definition === undefined) return { canEnter: false, reason: "invalid_definition" };
+
+    if (!this.deps.canAccessDungeonContent(definitionId)) {
+      return { canEnter: false, reason: "research_locked" };
+    }
+
+    if (!this.deps.dungeonRuntime.canAccessDefinition(definitionId)) {
+      return {
+        canEnter: false,
+        reason: "progression_locked",
+        previousTier: definition.tier - 1,
+      };
+    }
+
+    if (this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") === undefined) {
+      return { canEnter: false, reason: "weapon_required" };
+    }
+
+    const violatingTiers = [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()]
+      .map((entry) => getItemTier(entry.itemId))
+      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => (
+        tier !== undefined && tier > definition.tier
+      ));
+    if (violatingTiers.length > 0) {
+      return {
+        canEnter: false,
+        reason: "equipment_tier_locked",
+        highestEquippedTier: Math.max(...violatingTiers),
+      };
+    }
+
+    const hasKey = this.deps.inventoryManager.listSlots(this.deps.heroId).some(
+      (slot) => slot.entry?.itemId === definition.keyItemId && slot.entry.quantity > 0,
+    );
+    if (!hasKey) return { canEnter: false, reason: "missing_key" };
+
+    return { canEnter: true, reason: "available" };
+  }
+
   private startNow(definitionId: string): boolean {
-    if (
-      !this.canAccessDungeonResearch(definitionId)
-      || !this.canAccessDungeonTier(definitionId)
-      || !this.canEnterDungeonWithCurrentEquipment(definitionId)
-    ) {
+    const access = this.getAccess(definitionId);
+    if (!access.canEnter) {
       this.pendingDefinitionId = null;
+      this.notifyAccessFailure(definitionId, access);
       this.deps.onStateChanged();
       return false;
     }
@@ -131,58 +187,25 @@ export class DungeonNavigationActions {
     return started.ok;
   }
 
-  private canAccessDungeonResearch(definitionId: string): boolean {
-    if (this.deps.canAccessDungeonContent(definitionId)) return true;
+  private notifyAccessFailure(definitionId: string, access: DungeonAccessState): void {
+    const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
+    if (definition === undefined) return;
+
+    let message: string | undefined;
+    if (access.reason === "research_locked") {
+      message = "Accès refusé : recherche de cette famille de donjons requise.";
+    } else if (access.reason === "progression_locked") {
+      message = `Accès refusé : validez d'abord un donjon T${String(access.previousTier ?? definition.tier - 1)}.`;
+    } else if (access.reason === "equipment_tier_locked") {
+      message = `Accès refusé : ce donjon T${String(definition.tier)} n'accepte pas d'équipement supérieur au T${String(definition.tier)} (équipement T${String(access.highestEquippedTier ?? definition.tier + 1)} détecté).`;
+    }
+    if (message === undefined) return;
 
     this.deps.bridge.addEconomyNotification({
-      id: `notif_dungeon_research_gate_${String(Date.now())}`,
+      id: `notif_dungeon_access_${access.reason}_${String(Date.now())}`,
       type: "error",
-      message: "Accès refusé : recherche de cette famille de donjons requise.",
+      message,
       timestamp: Date.now(),
     });
-    return false;
-  }
-
-  private canAccessDungeonTier(definitionId: string): boolean {
-    if (this.deps.dungeonRuntime.canAccessDefinition(definitionId)) return true;
-    const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
-    if (definition === undefined) return false;
-
-    this.deps.bridge.addEconomyNotification({
-      id: `notif_dungeon_progression_gate_${String(Date.now())}`,
-      type: "error",
-      message: `Accès refusé : validez d'abord un donjon T${String(definition.tier - 1)}.`,
-      timestamp: Date.now(),
-    });
-    return false;
-  }
-
-  private canEnterDungeonWithCurrentEquipment(definitionId: string): boolean {
-    const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
-    if (definition === undefined) return false;
-
-    const violatingTiers = [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()]
-      .map((entry) => getItemTier(entry.itemId))
-      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => (
-        tier !== undefined && tier > definition.tier
-      ));
-    if (violatingTiers.length === 0) return true;
-
-    const highestTier = Math.max(...violatingTiers);
-    this.deps.bridge.addEconomyNotification({
-      id: `notif_dungeon_tier_cap_${String(Date.now())}`,
-      type: "error",
-      message: `Accès refusé : ce donjon T${String(definition.tier)} n'accepte pas d'équipement supérieur au T${String(definition.tier)} (équipement T${String(highestTier)} détecté).`,
-      timestamp: Date.now(),
-    });
-    return false;
-  }
-
-  private canConsumeDungeonKey(definitionId: string): boolean {
-    const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
-    if (definition === undefined) return false;
-    return this.deps.inventoryManager.listSlots(this.deps.heroId).some(
-      (slot) => slot.entry?.itemId === definition.keyItemId && slot.entry.quantity > 0,
-    );
   }
 }
