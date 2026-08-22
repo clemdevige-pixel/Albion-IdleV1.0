@@ -5,16 +5,10 @@ import type {
 } from "@game/gameplay";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 
-export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & (
-  | {
-    readonly type: "research_unlock";
-    readonly unlockId: string;
-  }
-  | {
-    readonly type: "relic_examined";
-    readonly relicId: string;
-  }
-);
+export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & {
+  readonly type: "research_unlock";
+  readonly unlockId: string;
+};
 
 export interface SilverExpeditionContentDefinition
   extends ExpeditionDefinition<ExpeditionContentRequirement> {
@@ -47,26 +41,32 @@ export interface ExpeditionPresentationInfo {
 export const SILVER_EXPEDITION_TYPE_ID = "silver";
 const BASE_FACTION_RUNES_PER_HOUR = 1;
 const EXPEDITION_TIERS = [4, 5, 6, 7, 8] as const;
-
 type ExpeditionTier = (typeof EXPEDITION_TIERS)[number];
 
-const TIER_UNLOCKS: Readonly<Record<ExpeditionTier, string>> = {
-  4: RESEARCH_UNLOCK_IDS.expeditionTier4,
-  5: RESEARCH_UNLOCK_IDS.expeditionTier5,
-  6: RESEARCH_UNLOCK_IDS.expeditionTier6,
-  7: RESEARCH_UNLOCK_IDS.expeditionTier7,
-  8: RESEARCH_UNLOCK_IDS.expeditionTier8,
+const SILVER_TIER_UNLOCKS: Readonly<Record<ExpeditionTier, string>> = {
+  4: RESEARCH_UNLOCK_IDS.silverExpeditionTier4,
+  5: RESEARCH_UNLOCK_IDS.silverExpeditionTier5,
+  6: RESEARCH_UNLOCK_IDS.silverExpeditionTier6,
+  7: RESEARCH_UNLOCK_IDS.silverExpeditionTier7,
+  8: RESEARCH_UNLOCK_IDS.silverExpeditionTier8,
+};
+
+const FACTION_TIER_UNLOCKS: Readonly<Record<ExpeditionTier, string>> = {
+  4: RESEARCH_UNLOCK_IDS.factionExpeditionTier4,
+  5: RESEARCH_UNLOCK_IDS.factionExpeditionTier5,
+  6: RESEARCH_UNLOCK_IDS.factionExpeditionTier6,
+  7: RESEARCH_UNLOCK_IDS.factionExpeditionTier7,
+  8: RESEARCH_UNLOCK_IDS.factionExpeditionTier8,
 };
 
 const FACTION_EXPEDITION_AUTHORING = [
-  { factionId: "keeper", displayName: "Keeper", relicId: "relic_keeper" },
-  { factionId: "heretic", displayName: "Heretic", relicId: "relic_heretic" },
-  { factionId: "undead", displayName: "Undead", relicId: "relic_undead" },
-  { factionId: "morgana", displayName: "Morgana", relicId: "relic_morgana" },
+  { factionId: "keeper", displayName: "Keeper" },
+  { factionId: "heretic", displayName: "Heretic" },
+  { factionId: "undead", displayName: "Undead" },
+  { factionId: "morgana", displayName: "Morgana" },
 ] as const satisfies readonly {
   readonly factionId: FactionId;
   readonly displayName: string;
-  readonly relicId: string;
 }[];
 
 export const SILVER_EXPEDITION_DEFINITIONS = [
@@ -80,7 +80,7 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
   typeId: SILVER_EXPEDITION_TYPE_ID,
   displayName: `Expédition d'argent T${String(tier)}`,
   tier,
-  requirements: [{ type: "research_unlock", unlockId: TIER_UNLOCKS[tier as ExpeditionTier] }],
+  requirements: [{ type: "research_unlock", unlockId: SILVER_TIER_UNLOCKS[tier as ExpeditionTier] }],
   reward: { kind: "silver", silverPerHour },
 })) satisfies readonly SilverExpeditionContentDefinition[];
 
@@ -92,8 +92,7 @@ export const FACTION_EXPEDITION_DEFINITIONS: readonly FactionExpeditionContentDe
     tier,
     factionId: faction.factionId,
     requirements: [
-      { type: "relic_examined", relicId: faction.relicId },
-      { type: "research_unlock", unlockId: TIER_UNLOCKS[tier] },
+      { type: "research_unlock", unlockId: FACTION_TIER_UNLOCKS[tier] },
     ],
     reward: {
       kind: "faction_rune",
@@ -169,11 +168,6 @@ export function getFactionExpeditionBaseRuneReward(
   return getHourlyReward(definition.reward.runesPerHour, durationMs);
 }
 
-/**
- * Faction Mastery modifies the base Rune yield, then the final player-facing
- * quantity is rounded to the nearest whole Rune. JavaScript Math.round gives
- * the validated nearest-integer behavior, with exact .5 ties rounding upward.
- */
 export function getFactionExpeditionRuneReward(
   expeditionId: string,
   durationMs: number,
