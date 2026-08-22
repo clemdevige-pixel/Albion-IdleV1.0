@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { ResearchDefinition } from "@game/gameplay";
+import { DUNGEON_RELIC_ID } from "./relicContentCatalog.js";
 import {
   RESEARCH_DEFINITIONS,
+  RESEARCH_IDS,
   RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
 } from "./researchContentCatalog.js";
@@ -15,69 +17,106 @@ function hasAcademyTierRequirement(
   ));
 }
 
-const CARTOGRAPHY = [
-  ["research_cartography_1", 4, 5_000, 30, RESEARCH_UNLOCK_IDS.expeditionTier4],
-  ["research_cartography_2", 5, 15_000, 60, RESEARCH_UNLOCK_IDS.expeditionTier5],
-  ["research_cartography_3", 6, 40_000, 120, RESEARCH_UNLOCK_IDS.expeditionTier6],
-  ["research_cartography_4", 7, 70_000, 180, RESEARCH_UNLOCK_IDS.expeditionTier7],
-  ["research_cartography_5", 8, 110_000, 240, RESEARCH_UNLOCK_IDS.expeditionTier8],
+const CURVE = [
+  [4, 5_000, 30],
+  [5, 15_000, 60],
+  [6, 40_000, 120],
+  [7, 70_000, 180],
+  [8, 110_000, 240],
 ] as const;
 
-const FACTIONS = ["keeper", "heretic", "undead", "morgana"] as const;
+const CARTOGRAPHY_IDS = [
+  RESEARCH_IDS.cartography1,
+  RESEARCH_IDS.cartography2,
+  RESEARCH_IDS.cartography3,
+  RESEARCH_IDS.cartography4,
+  RESEARCH_IDS.cartography5,
+] as const;
+const CARTOGRAPHY_UNLOCKS = [
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier4,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier5,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier6,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier7,
+  RESEARCH_UNLOCK_IDS.silverExpeditionTier8,
+] as const;
+const ARCHAEOLOGY_IDS = [
+  RESEARCH_IDS.archaeology1,
+  RESEARCH_IDS.archaeology2,
+  RESEARCH_IDS.archaeology3,
+  RESEARCH_IDS.archaeology4,
+  RESEARCH_IDS.archaeology5,
+] as const;
+const ARCHAEOLOGY_UNLOCKS = [
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier4,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier5,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier6,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier7,
+  RESEARCH_UNLOCK_IDS.factionExpeditionTier8,
+] as const;
 
 describe("Academy research content", () => {
-  it("authors the validated Cartography T4-T8 progression", () => {
-    for (const [id, tier, silver, minutes, unlockId] of CARTOGRAPHY) {
-      const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === id);
-      expect(definition).toBeDefined();
-      expect(definition?.tier).toBe(tier);
-      expect(definition?.durationMs).toBe(minutes * 60 * 1000);
-      expect(definition?.cost).toEqual({ silver, materials: [] });
-      expect(definition?.unlockIds).toContain(unlockId);
+  it("uses the same validated T4-T8 cost/duration curve for Cartography and Archaeology", () => {
+    for (let index = 0; index < CURVE.length; index += 1) {
+      const curve = CURVE[index];
+      const cartographyId = CARTOGRAPHY_IDS[index];
+      const archaeologyId = ARCHAEOLOGY_IDS[index];
+      const cartographyUnlock = CARTOGRAPHY_UNLOCKS[index];
+      const archaeologyUnlock = ARCHAEOLOGY_UNLOCKS[index];
+      if (
+        curve === undefined
+        || cartographyId === undefined
+        || archaeologyId === undefined
+        || cartographyUnlock === undefined
+        || archaeologyUnlock === undefined
+      ) continue;
+      const [tier, silver, minutes] = curve;
+      for (const [id, unlockId] of [
+        [cartographyId, cartographyUnlock],
+        [archaeologyId, archaeologyUnlock],
+      ] as const) {
+        const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === id);
+        expect(definition?.tier).toBe(tier);
+        expect(definition?.durationMs).toBe(minutes * 60 * 1000);
+        expect(definition?.cost).toEqual({ silver, materials: [] });
+        expect(definition?.unlockIds).toContain(unlockId);
+      }
     }
-    expect(RESEARCH_DEFINITIONS.find((entry) => entry.id === "research_cartography_3")?.unlockIds)
+  });
+
+  it("chains Cartography and Archaeology independently tier by tier", () => {
+    for (let index = 1; index < CARTOGRAPHY_IDS.length; index += 1) {
+      const cartography = RESEARCH_DEFINITIONS.find((entry) => entry.id === CARTOGRAPHY_IDS[index]);
+      const archaeology = RESEARCH_DEFINITIONS.find((entry) => entry.id === ARCHAEOLOGY_IDS[index]);
+      expect(cartography?.requirements).toContainEqual({
+        type: "research_unlock",
+        unlockId: CARTOGRAPHY_UNLOCKS[index - 1],
+      });
+      expect(archaeology?.requirements).toContainEqual({
+        type: "research_unlock",
+        unlockId: ARCHAEOLOGY_UNLOCKS[index - 1],
+      });
+    }
+    expect(RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.cartography3)?.unlockIds)
       .toContain(RESEARCH_UNLOCK_IDS.secondExpeditionSlot);
   });
 
-  it("chains every Cartography tier after the previous unlock", () => {
-    for (let index = 1; index < CARTOGRAPHY.length; index += 1) {
-      const current = CARTOGRAPHY[index];
-      const previous = CARTOGRAPHY[index - 1];
-      if (current === undefined || previous === undefined) continue;
-      const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === current[0]);
-      expect(definition?.requirements).toContainEqual({
-        type: "research_unlock",
-        unlockId: previous[4],
-      });
-    }
-  });
+  it("authors the charged Relic -> analysis -> sanctuary discovery chain", () => {
+    const analysis = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.dungeonRelicAnalysis);
+    expect(analysis?.tier).toBe(4);
+    expect(analysis?.durationMs).toBe(10 * 60 * 1000);
+    expect(analysis?.cost).toEqual({ silver: 0, materials: [] });
+    expect(analysis?.requirements).toContainEqual({ type: "relic_charged", relicId: DUNGEON_RELIC_ID });
+    expect(analysis?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed]);
 
-  it("keeps Archaeology I as the single T4 relic examination unlock", () => {
-    const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === "research_archaeology_1");
-    expect(definition?.tier).toBe(4);
-    expect(definition?.durationMs).toBe(20 * 60 * 1000);
-    expect(definition?.cost).toEqual({ silver: 2_500, materials: [] });
-    expect(definition?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.relicReconstruction]);
-  });
-
-  it("keeps only faction Dungeon location Research after Relic examination", () => {
-    for (const factionId of FACTIONS) {
-      const expeditionStudy = RESEARCH_DEFINITIONS.find((entry) => (
-        entry.id === `research_${factionId}_expedition_study`
-      ));
-      const dungeon = RESEARCH_DEFINITIONS.find((entry) => (
-        entry.id === `research_${factionId}_dungeon_location`
-      ));
-
-      expect(expeditionStudy).toBeUndefined();
-      expect(dungeon?.cost).toEqual({ silver: 10_000, materials: [] });
-      expect(dungeon?.durationMs).toBe(60 * 60 * 1000);
-      expect(dungeon?.requirements).toContainEqual({
-        type: "relic_examined",
-        relicId: `relic_${factionId}`,
-      });
-      expect(dungeon?.unlockIds).toEqual([`dungeon_family:${factionId}`]);
-    }
+    const sanctuary = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.dungeonSanctuaryLocation);
+    expect(sanctuary?.tier).toBe(4);
+    expect(sanctuary?.durationMs).toBe(60 * 60 * 1000);
+    expect(sanctuary?.cost).toEqual({ silver: 10_000, materials: [] });
+    expect(sanctuary?.requirements).toContainEqual({
+      type: "research_unlock",
+      unlockId: RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed,
+    });
+    expect(sanctuary?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.dungeonSystem]);
   });
 
   it("keeps every authored Research gated by its Academy tier", () => {
