@@ -1,0 +1,97 @@
+.ui-academy {
+  display: grid;
+  gap: 14px;
+}
+
+.ui-academy__summary,
+.ui-academy__section,
+.ui-academy__card,
+.ui-academy__feedback {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 18, 24, 0.72);
+}
+
+.ui-academy__summary,
+.ui-academy__feedback,
+.ui-academy__section {
+  padding: 12px;
+}
+
+.ui-academy__summary,
+.ui-academy__card-title,
+.ui-academy__section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ui-academy__summary > div,
+.ui-academy__card-title > div,
+.ui-academy__section > header {
+  min-width: 0;
+}
+
+.ui-academy__summary strong,
+.ui-academy__card-title strong,
+.ui-academy__section > header strong {
+  display: block;
+}
+
+.ui-academy__summary span,
+.ui-academy__card-title span,
+.ui-academy__card-title small,
+.ui-academy__section > header small,
+.ui-academy__meta,
+.ui-academy__timer {
+  font-size: 12px;
+  opacity: 0.78;
+}
+
+.ui-academy__section > header {
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.ui-academy__section > header small {
+  max-width: 55%;
+  text-align: right;
+}
+
+.ui-academy__list {
+  display: grid;
+  gap: 8px;
+}
+
+.ui-academy__card {
+  padding: 10px;
+}
+
+.ui-academy__card.is-active,
+.ui-academy__card.is-available {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.ui-academy__card.is-completed {
+  opacity: 0.72;
+}
+
+.ui-academy__meta,
+.ui-academy__durations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ui-academy__timer {
+  margin-top: 8px;
+}
+
+.ui-academy button {
+  margin-top: 8px;
+}
+
+.ui-academy__durations button {
+  margin-top: 0;
+}
