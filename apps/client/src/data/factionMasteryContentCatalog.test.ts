@@ -4,6 +4,7 @@ import {
   FACTION_MASTERY_MAX_LEVEL,
   FACTION_MASTERY_XP_PER_LEVEL,
   getFactionMasteryYieldBonusPercent,
+  normalizeFactionId,
   resolveFactionMasteryId,
 } from "./factionMasteryContentCatalog.js";
 
@@ -40,8 +41,18 @@ describe("factionMasteryContentCatalog", () => {
     expect(getFactionMasteryYieldBonusPercent(999)).toBe(50);
   });
 
-  it("resolves only supported faction mastery ids", () => {
+  it("normalizes authored faction labels to canonical ids", () => {
+    expect(normalizeFactionId("Keeper")).toBe("keeper");
+    expect(normalizeFactionId(" HERETIC ")).toBe("heretic");
+    expect(normalizeFactionId("Undead")).toBe("undead");
+    expect(normalizeFactionId("Morgana")).toBe("morgana");
+    expect(normalizeFactionId("animal")).toBeUndefined();
+  });
+
+  it("resolves supported faction mastery ids from canonical ids or authored labels", () => {
     expect(resolveFactionMasteryId("keeper")).toBe("mastery_faction_keeper");
+    expect(resolveFactionMasteryId("Keeper")).toBe("mastery_faction_keeper");
+    expect(resolveFactionMasteryId("HERETIC")).toBe("mastery_faction_heretic");
     expect(resolveFactionMasteryId("animal")).toBeUndefined();
   });
 });
