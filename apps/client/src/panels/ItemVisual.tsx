@@ -6,6 +6,7 @@ import {
 } from "../data/weaponContentCatalog";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
+import { getRelicDefinitionByInventoryItemId } from "../data/relicContentCatalog";
 import {
   PRODUCTION_RESOURCE_VISUALS,
   PROGRESSION_NON_WEAPON_VISUALS,
@@ -23,7 +24,6 @@ interface SpecialLootVisualDefinition {
   readonly symbol?: string;
 }
 
-/** Non-progression equipment that intentionally sits outside the tier families. */
 const LEGACY_NON_WEAPON_ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = {
   item_wooden_shield: {
     name: "Bouclier en bois",
@@ -112,6 +112,15 @@ function getTieredDungeonKeyVisual(itemId: string): SpecialLootVisualDefinition 
 }
 
 function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition | undefined {
+  const relic = getRelicDefinitionByInventoryItemId(itemId);
+  if (relic !== undefined) {
+    return {
+      name: `Relique ${formatFactionName(relic.factionId)}`,
+      className: "relic",
+      symbol: "R",
+    };
+  }
+
   const tieredDungeonKey = getTieredDungeonKeyVisual(itemId);
   if (tieredDungeonKey !== undefined) return tieredDungeonKey;
 
