@@ -2,7 +2,7 @@
 
 Status: DESIGN BACKLOG / PARTIALLY VALIDATED
 Authority: idea backlog for future Academy expansion
-Last update: 2026-08-21
+Last update: 2026-08-22
 
 ---
 
@@ -163,41 +163,78 @@ The exact presentation model is NOT validated yet.
 
 ---
 
-# 6. VALIDATED DIRECTION — WORKER ORGANISATION / MULTIPLE WORKERS
+# 6. VALIDATED / IMPLEMENTED — ORGANISATION AVANCEE DES OUVRIERS
 
-Status: VALIDATED DESIGN DIRECTION, NUMBERS OPEN
+Status: VALIDATED CONTRACT / IMPLEMENTED
 
-Current worker constraints remain authoritative:
+## 6.1 Baseline worker contract
 
-- workers are permanent;
-- each worker has one permanent gathering profession;
-- workers support passive production;
-- the Hero remains the best active gatherer.
+Before this Research, the Player Island supports exactly:
 
-Research opportunity:
+- 4 workers maximum;
+- 1 Woodcutter;
+- 1 Miner;
+- 1 Skinner;
+- 1 Fiber Harvester;
+- all four workers may operate simultaneously;
+- each worker has a permanent gathering profession;
+- each worker owns independent mastery, assigned production tier and production session.
 
-- increase the number of workers that may operate simultaneously;
-- permit limited additional workers in the same profession over progression;
-- never allow uncapped stacking such as 10-15 workers on one resource family.
+The Research MUST NOT nerf or remove this baseline capacity.
 
-Required structure:
+## 6.2 Research contract
 
-1. GLOBAL ACTIVE-WORKER CAP
-   - limits total simultaneous worker assignments across all professions.
+Research:
 
-2. PER-PROFESSION CAP
-   - limits how many workers of the same gathering profession may exist/be active according to the final Worker contract.
+- id: `research_worker_organization`;
+- display name: `Organisation avancée des ouvriers`;
+- Academy tier: T6;
+- cost: 60,000 Silver;
+- material cost: none;
+- duration: 2h30;
+- unlock id: `workers:advanced_organization`.
 
-Candidate progression shape only:
+Completion immediately changes the worker roster policy to:
 
-- baseline: 1 worker max per profession;
-- Research I: +1 global active-worker slot;
-- later Research: selected/all profession caps may reach 2;
-- later Research: another +1 global active-worker slot.
+- 8 workers maximum;
+- 2 workers maximum per gathering profession;
+- all workers may operate simultaneously;
+- recruitment cost after the Research: 5,000 Silver per worker.
 
-Exact numbers, tiers, recruitment interaction and worker-economy balance MUST be audited at implementation time.
+The expected fully expanded roster is therefore:
 
-Research should unlock capacity, NOT provide a generic worker-yield percentage bonus.
+- 2 Woodcutters;
+- 2 Miners;
+- 2 Skinners;
+- 2 Fiber Harvesters.
+
+## 6.3 Progression reason
+
+This unlock is intentionally placed at T6 rather than T7.
+
+Newly recruited workers start with their own mastery at level 0 and therefore begin on T3 gathering content. They remain subject to the normal worker gathering mastery gates:
+
+- T3 -> mastery 0;
+- T4 -> mastery 3;
+- T5 -> mastery 7;
+- T6 -> mastery 11;
+- T7 -> mastery 18;
+- T8 -> mastery 25.
+
+Giving access at T6 gives the second generation of workers time to progress before the largest T7/T8 resource requirements.
+
+## 6.4 Architecture rules
+
+The implementation is WorkerId-first:
+
+- profession is a worker property, not worker identity;
+- multiple workers of one profession must coexist independently;
+- mastery, tier, session, pause/resume and save state remain per WorkerId;
+- the ResearchService unlock is the authority for advanced roster capacity;
+- no duplicated boolean or worker-specific Research branch may become a second authority;
+- UI must expose each worker independently inside its gathering building.
+
+Research unlocks capacity only. It does NOT grant generic worker yield/speed bonuses.
 
 ---
 
@@ -263,10 +300,10 @@ Rejected because the proposed functionality substantially duplicated Equipment P
 
 # 10. CURRENT SHORTLIST
 
-Best current Academy expansion candidates beyond factions:
+Current Academy expansion state beyond factions:
 
-1. Doctrine d'equipement — VALIDATED DIRECTION
-2. Worker Organisation / Multiple Workers — VALIDATED DIRECTION, balance open
+1. Organisation avancée des ouvriers — VALIDATED / IMPLEMENTED at T6
+2. Doctrine d'equipement — VALIDATED DIRECTION
 3. Tactiques de combat — STRONG CANDIDATE
 4. Consignes d'exploration — STRONG CANDIDATE
 5. Analyse tactique — CANDIDATE, presentation unresolved
