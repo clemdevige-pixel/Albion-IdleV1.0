@@ -18,6 +18,8 @@ export type ResearchContentRequirement = ResearchRequirementDefinition & (
   }
 );
 
+export type ResearchPresentationGroup = "core" | "faction";
+
 export const RESEARCH_UNLOCK_IDS = {
   relicReconstruction: "relic_reconstruction",
   expeditionTier4: "expedition_tier:4",
@@ -97,6 +99,16 @@ const CARTOGRAPHY_RESEARCH = [
   },
 ] as const satisfies readonly ResearchDefinition<ResearchContentRequirement>[];
 
+const ARCHAEOLOGY_RESEARCH = {
+  id: "research_archaeology_1",
+  displayName: "Archéologie I",
+  tier: 4,
+  durationMs: 20 * MINUTE_MS,
+  cost: { silver: 2_500, materials: [] },
+  requirements: [{ type: "academy_tier", minimumTier: 4 }],
+  unlockIds: [RESEARCH_UNLOCK_IDS.relicReconstruction],
+} as const satisfies ResearchDefinition<ResearchContentRequirement>;
+
 const FACTION_RESEARCH = [
   {
     factionId: "keeper",
@@ -157,14 +169,18 @@ const CONTEXTUAL_FACTION_RESEARCH: readonly ResearchDefinition<ResearchContentRe
 
 export const RESEARCH_DEFINITIONS: readonly ResearchDefinition<ResearchContentRequirement>[] = [
   ...CARTOGRAPHY_RESEARCH,
-  {
-    id: "research_archaeology_1",
-    displayName: "Archéologie I",
-    tier: 4,
-    durationMs: 20 * MINUTE_MS,
-    cost: { silver: 2_500, materials: [] },
-    requirements: [{ type: "academy_tier", minimumTier: 4 }],
-    unlockIds: [RESEARCH_UNLOCK_IDS.relicReconstruction],
-  },
+  ARCHAEOLOGY_RESEARCH,
   ...CONTEXTUAL_FACTION_RESEARCH,
 ];
+
+const RESEARCH_PRESENTATION_GROUPS = new Map<string, ResearchPresentationGroup>([
+  ...CARTOGRAPHY_RESEARCH.map((definition) => [definition.id, "core"] as const),
+  [ARCHAEOLOGY_RESEARCH.id, "core"],
+  ...CONTEXTUAL_FACTION_RESEARCH.map((definition) => [definition.id, "faction"] as const),
+]);
+
+export function getResearchPresentationGroup(
+  researchId: string,
+): ResearchPresentationGroup | undefined {
+  return RESEARCH_PRESENTATION_GROUPS.get(researchId);
+}
