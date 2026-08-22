@@ -31,6 +31,7 @@ export interface AcademyExpeditionEntryModel {
   readonly active: boolean;
   readonly startState: ExpeditionStartState;
   readonly activeSlotIndex: number | undefined;
+  readonly activeDurationMs: ExpeditionDurationMs | undefined;
   readonly remainingDurationMs: number | undefined;
   readonly supportedDurationsMs: readonly ExpeditionDurationMs[];
 }
@@ -106,6 +107,7 @@ export function createAcademyPresentationFoundation<
           active: active !== undefined,
           startState: dependencies.expeditionService.getStartState(definition.id) ?? "requirements_locked",
           activeSlotIndex: active?.slotIndex,
+          activeDurationMs: active?.durationMs,
           remainingDurationMs: active?.remainingDurationMs,
           supportedDurationsMs: definition.supportedDurationsMs ?? EXPEDITION_DURATION_OPTIONS_MS,
         };
