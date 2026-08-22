@@ -5,6 +5,7 @@ export type AcademyResearchTier = 4 | 5 | 6 | 7 | 8;
 export interface AcademyLevelDefinition {
   readonly level: number;
   readonly researchTier: AcademyResearchTier;
+  readonly minimumIslandLevel: number;
   readonly upgradeToNext?: IslandBuildingUpgradeCost;
 }
 
@@ -37,14 +38,14 @@ function academyUpgrade(sourceTier: AcademyUpgradeSourceTier): IslandBuildingUpg
 
 /**
  * Academy progression remains separate from production-building progression.
- * Its level controls Research tier only; it never exposes production capacity.
+ * Academy T4 starts at Island Level 2, then advances one tier per Island Level.
  */
 export const ACADEMY_LEVELS = [
-  { level: 1, researchTier: 4, upgradeToNext: academyUpgrade(4) },
-  { level: 2, researchTier: 5, upgradeToNext: academyUpgrade(5) },
-  { level: 3, researchTier: 6, upgradeToNext: academyUpgrade(6) },
-  { level: 4, researchTier: 7, upgradeToNext: academyUpgrade(7) },
-  { level: 5, researchTier: 8 },
+  { level: 1, researchTier: 4, minimumIslandLevel: 2, upgradeToNext: academyUpgrade(4) },
+  { level: 2, researchTier: 5, minimumIslandLevel: 3, upgradeToNext: academyUpgrade(5) },
+  { level: 3, researchTier: 6, minimumIslandLevel: 4, upgradeToNext: academyUpgrade(6) },
+  { level: 4, researchTier: 7, minimumIslandLevel: 5, upgradeToNext: academyUpgrade(7) },
+  { level: 5, researchTier: 8, minimumIslandLevel: 6 },
 ] as const satisfies readonly AcademyLevelDefinition[];
 
 export function getAcademyLevelDefinition(level: number): AcademyLevelDefinition | undefined {
