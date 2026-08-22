@@ -1,0 +1,48 @@
+.dashboard-card--research .dashboard-card__body {
+  padding-top: 0;
+}
+
+.dashboard-research__active {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-research__active:disabled {
+  cursor: default;
+}
+
+.dashboard-research__summary {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-research__summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.dashboard-research__summary span,
+.dashboard-research__summary small {
+  opacity: 0.72;
+}
+
+.dashboard-research__summary strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-research__summary b {
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+}
