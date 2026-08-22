@@ -70,3 +70,4 @@ export * from "./config/world-progression-contract.js";
 export * from "./config/island.js";
 export * from "./config/island-progression.js";
 export * from "./config/island-levels.js";
+export * from "./config/academy-progression.js";
