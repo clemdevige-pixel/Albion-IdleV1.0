@@ -63,7 +63,6 @@ export function CraftingBuildingPanel({
                 title={buildingLocked ? `Améliorez l’atelier pour débloquer T${String(tier)}` : undefined}
                 onClick={() => {
                   actions.setTier(tier);
-                  setRequestedFamily(undefined);
                   setRequestedRecipeId(undefined);
                 }}
               >
