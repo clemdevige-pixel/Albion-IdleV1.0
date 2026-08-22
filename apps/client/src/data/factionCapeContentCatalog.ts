@@ -24,7 +24,7 @@ export interface FactionDungeonContext {
   readonly tier: number;
 }
 
-const KEEPER_CAPE_BALANCE = [
+const FACTION_CAPE_BALANCE = [
   { tier: 4, armor: 3, magicResistance: 5, cloth: 3, leather: 1, runes: 3, reduction: 6 },
   { tier: 5, armor: 4, magicResistance: 7, cloth: 4, leather: 2, runes: 4, reduction: 8 },
   { tier: 6, armor: 6, magicResistance: 10, cloth: 5, leather: 2, runes: 5, reduction: 11 },
@@ -40,27 +40,38 @@ const KEEPER_CAPE_BALANCE = [
   readonly reduction: number;
 }[];
 
-export const KEEPER_CAPE_CONTENT: readonly FactionCapeContentDefinition[] = KEEPER_CAPE_BALANCE.map(
-  (entry) => ({
-    factionId: "keeper",
+const FACTION_CAPE_AUTHORING = [
+  { factionId: "keeper", displayName: "Keeper" },
+  { factionId: "heretic", displayName: "Heretic" },
+  { factionId: "undead", displayName: "Undead" },
+  { factionId: "morgana", displayName: "Morgana" },
+] as const;
+
+export const FACTION_CAPE_CONTENT: readonly FactionCapeContentDefinition[] = FACTION_CAPE_AUTHORING.flatMap(
+  (faction) => FACTION_CAPE_BALANCE.map((entry) => ({
+    factionId: faction.factionId,
     tier: entry.tier,
-    itemId: `item_cape_t${String(entry.tier)}_keeper`,
-    recipeId: `CRAFT_KEEPER_CAPE_T${String(entry.tier)}_0`,
-    name: `Cape Keeper T${String(entry.tier)}`,
+    itemId: `item_cape_t${String(entry.tier)}_${faction.factionId}`,
+    recipeId: `CRAFT_${faction.factionId.toUpperCase()}_CAPE_T${String(entry.tier)}_0`,
+    name: `Cape ${faction.displayName} T${String(entry.tier)}`,
     stats: {
       stat_armor: entry.armor,
       stat_magic_resistance: entry.magicResistance,
     },
-    runeItemId: `item_resource_rune_keeper_t${String(entry.tier)}`,
+    runeItemId: `item_resource_rune_${faction.factionId}_t${String(entry.tier)}`,
     runeQuantity: entry.runes,
     clothQuantity: entry.cloth,
     leatherQuantity: entry.leather,
     dungeonDamageReductionPercent: entry.reduction,
-  }),
+  })),
+);
+
+export const KEEPER_CAPE_CONTENT = FACTION_CAPE_CONTENT.filter(
+  (cape) => cape.factionId === "keeper",
 );
 
 export const FACTION_CAPE_ITEM_DEFINITIONS: Readonly<Record<string, EquipmentInfoLike>> = Object.fromEntries(
-  KEEPER_CAPE_CONTENT.map((cape) => [
+  FACTION_CAPE_CONTENT.map((cape) => [
     cape.itemId,
     {
       itemId: cape.itemId,
@@ -71,7 +82,7 @@ export const FACTION_CAPE_ITEM_DEFINITIONS: Readonly<Record<string, EquipmentInf
   ]),
 );
 
-export const FACTION_CAPE_CRAFT_RECIPES: readonly ClientCraftRecipe[] = KEEPER_CAPE_CONTENT.map(
+export const FACTION_CAPE_CRAFT_RECIPES: readonly ClientCraftRecipe[] = FACTION_CAPE_CONTENT.map(
   (cape) => ({
     id: cape.recipeId,
     family: "cape",
@@ -88,7 +99,7 @@ export const FACTION_CAPE_CRAFT_RECIPES: readonly ClientCraftRecipe[] = KEEPER_C
 );
 
 export function getFactionCapeDefinition(itemId: string): FactionCapeContentDefinition | undefined {
-  return KEEPER_CAPE_CONTENT.find((cape) => cape.itemId === itemId);
+  return FACTION_CAPE_CONTENT.find((cape) => cape.itemId === itemId);
 }
 
 export function resolveFactionCapeDungeonDamageReductionPercent(
