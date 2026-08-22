@@ -47,6 +47,7 @@ interface ProductionFoundationDependencies {
   readonly getWorkerTier: () => ProductionTier;
   readonly getWorkerCapacity?: () => number;
   readonly getWorkerProfessionCapacity?: (profession: WorkerProfession) => number;
+  readonly getWorkerRecruitmentCost?: () => number;
 }
 
 /**
@@ -69,6 +70,7 @@ export function createProductionFoundation({
   getWorkerTier,
   getWorkerCapacity,
   getWorkerProfessionCapacity,
+  getWorkerRecruitmentCost,
 }: ProductionFoundationDependencies) {
   const productionInventoryManager = createAtomicProductionInventoryManager(inventoryManager);
   const resourceRegistry = new ResourceRegistry();
@@ -175,6 +177,7 @@ export function createProductionFoundation({
     getRequiredGatheringMasteryForTier,
     ...(getWorkerCapacity === undefined ? {} : { getWorkerCapacity }),
     ...(getWorkerProfessionCapacity === undefined ? {} : { getWorkerProfessionCapacity }),
+    ...(getWorkerRecruitmentCost === undefined ? {} : { getWorkerRecruitmentCost }),
   });
 
   workerRuntime.subscribeDomainEvent((event) => {
