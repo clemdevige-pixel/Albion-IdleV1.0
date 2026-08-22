@@ -24,7 +24,8 @@ export interface ResearchFoundationDependencies {
 
 /** Client composition only. Research domain stays economy/content agnostic. */
 export function createResearchFoundation(dependencies: ResearchFoundationDependencies) {
-  const researchService = new ResearchService<ResearchContentRequirement>({
+  let researchService: ResearchService<ResearchContentRequirement>;
+  researchService = new ResearchService<ResearchContentRequirement>({
     requirementPort: {
       isRequirementMet(requirement) {
         switch (requirement.type) {
@@ -32,6 +33,8 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
             return dependencies.relicService.isReconstructed(requirement.relicId);
           case "academy_tier":
             return dependencies.getAcademyTier() >= requirement.minimumTier;
+          case "research_unlock":
+            return researchService.hasUnlock(requirement.unlockId);
         }
       },
     },
