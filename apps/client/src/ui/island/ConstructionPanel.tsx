@@ -15,6 +15,7 @@ const CATEGORY_LABELS: Record<IslandBuildingDefinition["category"], string> = {
   refining: "Raffinage",
   crafting: "Fabrication",
   storage: "Stockage",
+  utility: "Utilitaire",
 };
 
 export function ConstructionPanel({ plotId, islandLevel, builtDefinitionIds, onBuilt }: { readonly plotId: string; readonly islandLevel: number; readonly builtDefinitionIds: ReadonlySet<IslandBuildingId>; readonly onBuilt: (definitionId: IslandBuildingId) => void; }): JSX.Element {
