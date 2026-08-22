@@ -6,6 +6,7 @@ const keeperRelic: RelicDefinition = {
   id: "relic_keeper",
   factionId: "keeper",
   sourceBossMonsterId: "boss_keeper_ancient",
+  inventoryItemId: "item_relic_keeper",
   chargeKillCount: 50,
 };
 
@@ -44,6 +45,21 @@ describe("RelicService", () => {
     expect(fixture.service.getProgress("relic_keeper")).toMatchObject({ state: "broken", chargeKills: 49 });
     fixture.setFactionKills(170);
     expect(fixture.service.getProgress("relic_keeper")).toMatchObject({ state: "charged", chargeKills: 50 });
+  });
+
+  it("does not acquire a Relic when its inventory object cannot be granted", () => {
+    const fixture = createFixture();
+    fixture.setFactionKills(20);
+
+    expect(fixture.service.recordMonsterKill("boss_keeper_ancient", () => false)).toEqual([]);
+    expect(fixture.service.getProgress("relic_keeper")?.state).toBe("unobtained");
+
+    expect(fixture.service.recordMonsterKill("boss_keeper_ancient", () => true))
+      .toEqual(["relic_keeper"]);
+    expect(fixture.service.getProgress("relic_keeper")).toMatchObject({
+      state: "broken",
+      chargeKills: 0,
+    });
   });
 
   it("examines a charged Relic only when the Academy authority allows it", () => {
