@@ -19,23 +19,29 @@ export interface FactionMasteryFoundationDependencies {
 export function createFactionMasteryFoundation(
   dependencies: FactionMasteryFoundationDependencies,
 ) {
+  const getYieldBonusPercent = (factionId: string): number => {
+    const masteryId = resolveFactionMasteryId(factionId);
+    if (masteryId === undefined) return 0;
+    const level = dependencies.masteryService.getMasteryState(masteryId)?.level ?? 0;
+    return getFactionMasteryYieldBonusPercent(level);
+  };
+
   return {
-    awardRawFactionFame(this: void, factionId: string, rawFame: number): void {
-      if (!Number.isInteger(rawFame) || rawFame <= 0) return;
+    awardRawFactionFame(this: void, factionId: string, rawFame: number): number {
+      const currentYieldBonusPercent = getYieldBonusPercent(factionId);
+      if (!Number.isInteger(rawFame) || rawFame <= 0) return currentYieldBonusPercent;
       const masteryId = resolveFactionMasteryId(factionId);
-      if (masteryId === undefined) return;
+      if (masteryId === undefined) return 0;
 
       if (!dependencies.masteryService.isMasteryUnlocked(masteryId)) {
         dependencies.masteryService.discoverMastery(masteryId);
       }
       dependencies.experienceService.addExperience(masteryId, rawFame, "combat");
+      return currentYieldBonusPercent;
     },
 
     getYieldBonusPercent(this: void, factionId: string): number {
-      const masteryId = resolveFactionMasteryId(factionId);
-      if (masteryId === undefined) return 0;
-      const level = dependencies.masteryService.getMasteryState(masteryId)?.level ?? 0;
-      return getFactionMasteryYieldBonusPercent(level);
+      return getYieldBonusPercent(factionId);
     },
   };
 }
