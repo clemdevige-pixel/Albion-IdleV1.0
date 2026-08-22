@@ -35,10 +35,11 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
   if (current === undefined) return null;
 
   if (cost === undefined) {
-    return <div className="ui-island__selection-status">{definition.label} au niveau maximum · T{String(current.maxProductionTier)} débloqué</div>;
+    return <div className="ui-island__selection-status">{definition.label} au niveau maximum · T{String(current.displayTier)} débloqué</div>;
   }
 
   if (next === undefined) return null;
+  const requiredIslandLevel = next.minimumIslandLevel ?? next.level;
 
   return (
     <section className="ui-island-upgrade">
@@ -48,7 +49,7 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
           <strong>Niv. {String(level)} → Niv. {String(next.level)}</strong>
         </div>
         <span className={islandLevelBlocked ? "ui-island-upgrade__unlock is-locked" : "ui-island-upgrade__unlock"}>
-          {islandLevelBlocked ? `Île niv. ${String(next.level)} requise` : `T${String(next.maxProductionTier)} débloqué`}
+          {islandLevelBlocked ? `Île niv. ${String(requiredIslandLevel)} requise` : `T${String(next.displayTier)} débloqué`}
         </span>
       </div>
 
@@ -56,8 +57,8 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
         <div className={islandLevelBlocked ? "ui-island-upgrade__requirement is-missing" : "ui-island-upgrade__requirement is-ready"}>
           <span className="ui-island-upgrade__requirement-icon" aria-hidden="true">⌂</span>
           <div>
-            <small>Bâtiments max niv. {String(maxBuildingLevel)}</small>
-            <strong>{String(maxBuildingLevel)} / {String(next.level)}</strong>
+            <small>Niveau d’île requis</small>
+            <strong>{String(getIslandLevel())} / {String(requiredIslandLevel)}</strong>
           </div>
         </div>
 
@@ -95,7 +96,7 @@ export function UpgradePanel({ definitionId, level }: { readonly definitionId: I
 
       <button type="button" disabled={!canUpgrade} onClick={() => { upgradeIslandBuilding(definitionId); }}>
         {islandLevelBlocked
-          ? `🔒  Débloquez bâtiments niv. ${String(next.level)}`
+          ? `🔒  Île niv. ${String(requiredIslandLevel)} requise`
           : affordable
             ? `⬆  Améliorer au niveau ${String(next.level)}`
             : "Ressources insuffisantes"}
