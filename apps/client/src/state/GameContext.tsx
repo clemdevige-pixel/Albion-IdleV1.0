@@ -275,6 +275,9 @@ export function GameProvider({
     const hasAdvancedWorkerOrganization = (): boolean => (
       researchService.hasUnlock(RESEARCH_UNLOCK_IDS.advancedWorkerOrganization)
     );
+    const isInstantRefiningUnlocked = (): boolean => (
+      researchService.hasUnlock(RESEARCH_UNLOCK_IDS.instantRefining)
+    );
     const dungeonResearchAccessFoundation = createDungeonResearchAccessFoundation({
       dungeonRuntime,
       researchService,
@@ -328,6 +331,7 @@ export function GameProvider({
           ? ADVANCED_WORKER_ORGANIZATION.recruitmentCost
           : WORKER_HOUSE_BASELINE.recruitmentCost
       ),
+      isInstantRefiningUnlocked,
     });
     const {
       gatheringRuntime,
@@ -860,6 +864,7 @@ export function GameProvider({
         productionController.performGatheringStrike(resourceFamily, quality)
       ),
       toggleRefining: (family) => productionController.toggleRefining(family),
+      isInstantRefiningUnlocked,
       setGatheringTier: (tier) => productionController.setGatheringTier(tier),
       setRefiningTier: (family, tier) => productionController.setRefiningTier(family, tier),
       setCraftingTier: (tier) => productionController.setCraftingTier(tier),
