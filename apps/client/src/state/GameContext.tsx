@@ -58,6 +58,7 @@ import { createAcademyPresentationFoundation } from "../runtime/bootstrap/create
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import { createExpeditionRecapFoundation } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
+import { createResearchRecapFoundation } from "../runtime/bootstrap/createResearchRecapFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
 import { createDungeonResearchAccessFoundation } from "../runtime/bootstrap/createDungeonResearchAccessFoundation.js";
 import {
@@ -273,7 +274,6 @@ export function GameProvider({
       dungeonRuntime,
       researchService,
     });
-    factionResearchFoundation.bindReconstructionGate(researchFoundation.canReconstructRelics);
     const { expeditionService, rewardLedger } = createExpeditionFoundation({
       researchService,
       currencyService,
@@ -329,6 +329,7 @@ export function GameProvider({
       awakenedWeaponService,
       heroId,
       onRawFactionFame: factionMasteryFoundation.awardRawFactionFame,
+      isDungeonKeyLootUnlocked: dungeonResearchAccessFoundation.isDungeonSystemUnlocked,
     });
     const dungeonRewardRuntime = new DungeonRewardRuntime(
       dungeonRuntime,
@@ -373,14 +374,19 @@ export function GameProvider({
     const academyPresentationFoundation = createAcademyPresentationFoundation({
       researchService,
       expeditionService,
-      isWaitingForRelic: researchFoundation.isWaitingForRelic,
       onMutation: resyncAll,
     });
+    const researchRecapFoundation = createResearchRecapFoundation();
     const expeditionRecapFoundation = createExpeditionRecapFoundation();
     const factionProgressionCoordinator = createFactionProgressionCoordinator({
       factionResearchFoundation,
       researchService,
       expeditionService,
+      reconcileResearchEffects: researchFoundation.reconcileResearchEffects,
+      onResearchCompletion: (researchId) => {
+        researchRecapFoundation.present(researchId);
+        resyncAll();
+      },
       onExpeditionCompletion: (completed) => {
         expeditionRecapFoundation.present(completed);
         resyncAll();
@@ -804,12 +810,16 @@ export function GameProvider({
       getAcademyModel: academyPresentationFoundation.getModel,
       startAcademyResearch: academyPresentationFoundation.startResearch,
       startAcademyExpedition: academyPresentationFoundation.startExpedition,
+      subscribeResearchRecap: researchRecapFoundation.subscribe,
+      getResearchRecap: researchRecapFoundation.getSnapshot,
+      dismissResearchRecap: researchRecapFoundation.dismiss,
       subscribeExpeditionRecap: expeditionRecapFoundation.subscribe,
       getExpeditionRecap: expeditionRecapFoundation.getSnapshot,
       dismissExpeditionRecap: expeditionRecapFoundation.dismiss,
       getFactionAchievements: factionAchievementFoundation.getAllProgress,
       getBestiaryKnowledge: factionBestiaryFoundation.getKnowledge,
       getRelicProgress: (relicId) => factionResearchFoundation.relicService.getProgress(relicId),
+      isDungeonSystemUnlocked: dungeonResearchAccessFoundation.isDungeonSystemUnlocked,
       startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
       abandonDungeon: () => dungeonNavigationActions.abandon(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
