@@ -34,7 +34,6 @@ function expeditionFailureMessage(reason: string): string {
 }
 
 export function AcademyPanel({ level }: { readonly level: number }): JSX.Element {
-  // Subscription to the authoritative bridge keeps timers/progression reactive.
   useGameBridge();
   const {
     getAcademyModel,
@@ -72,7 +71,17 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
                   <strong>{research.displayName}</strong>
                   <small>T{String(research.tier)} · {formatDuration(research.durationMs)}</small>
                 </div>
-                <span>{research.state === "completed" ? "Terminée" : research.state === "active" ? "En cours" : research.state === "available" ? "Disponible" : "Verrouillée"}</span>
+                <span>
+                  {research.state === "completed"
+                    ? "Terminée"
+                    : research.state === "active"
+                      ? "En cours"
+                      : research.state === "available"
+                        ? "Disponible"
+                        : research.waitingForRelic
+                          ? "En attente de la relique"
+                          : "Verrouillée"}
+                </span>
               </div>
               <div className="ui-academy__meta">
                 <span>{String(research.silverCost)} Silver</span>
