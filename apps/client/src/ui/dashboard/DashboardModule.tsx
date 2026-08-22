@@ -5,6 +5,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import "./dashboard.css";
+import "./DashboardSortable.css";
 import "./components/DashboardUtilityCards.css";
 import {
   isDashboardSectionId,
