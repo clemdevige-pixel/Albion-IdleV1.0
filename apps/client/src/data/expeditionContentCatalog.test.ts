@@ -32,7 +32,7 @@ describe("expeditionContentCatalog", () => {
     expect(getSilverExpeditionReward("expedition_silver_t8", 12 * HOUR_MS)).toBe(600_000);
   });
 
-  it("authors every faction across T4-T8 with family plus tier gates", () => {
+  it("authors every faction across T4-T8 with examined Relic plus tier gates", () => {
     expect(FACTION_EXPEDITION_DEFINITIONS).toHaveLength(FACTIONS.length * TIERS.length);
     for (const factionId of FACTIONS) {
       const definitions = FACTION_EXPEDITION_DEFINITIONS.filter((entry) => entry.factionId === factionId);
@@ -40,7 +40,7 @@ describe("expeditionContentCatalog", () => {
       expect(new Set(definitions.map(({ typeId }) => typeId))).toEqual(new Set([factionId]));
       for (const definition of definitions) {
         expect(definition.requirements).toEqual([
-          { type: "research_unlock", unlockId: `expedition_family:${factionId}` },
+          { type: "relic_examined", relicId: `relic_${factionId}` },
           { type: "research_unlock", unlockId: `expedition_tier:${String(definition.tier)}` },
         ]);
         expect(definition.reward).toEqual({
