@@ -16,14 +16,16 @@ import type {
   PlayerId,
   RelicProgressView,
   StartExpeditionResult,
-  StartResearchResult,
   StatsManager,
   VendorRegistry,
   WalletId,
   WorldCoordinator,
 } from "@game/gameplay";
 import type { GameBridge, WorkerProfessionVM } from "../game/GameBridge.js";
-import type { AcademyPresentationModel } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
+import type {
+  AcademyPresentationModel,
+  AcademyResearchActionResult,
+} from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
 import type { ExpeditionRecapModel } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
@@ -64,8 +66,7 @@ export interface GameServices {
   readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
   readonly getAcademyModel: () => AcademyPresentationModel;
-  readonly examineAcademyRelic: (researchId: string) => boolean;
-  readonly startAcademyResearch: (researchId: string) => StartResearchResult;
+  readonly startAcademyResearch: (researchId: string) => AcademyResearchActionResult;
   readonly startAcademyExpedition: (
     expeditionId: string,
     durationMs: ExpeditionDurationMs,
