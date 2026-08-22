@@ -47,6 +47,8 @@ export interface FactionAchievementFoundationDependencies {
   readonly expeditionRewardLedger: ExpeditionRewardProgressSource;
   readonly dungeonRuntime: DungeonProgressSource;
   readonly masteryService: MasteryProgressSource;
+  /** @deprecated Ignored. Kept temporarily so the composition root can migrate atomically. */
+  readonly relicService?: unknown;
 }
 
 function normalizeFactionId(value: string): string {
