@@ -12,32 +12,49 @@ import "./islandWorld.css";
 interface IslandPlotVisual {
   readonly left: number;
   readonly top: number;
-  readonly scale?: number;
 }
 
 /**
- * Ground anchors measured from the player's annotated in-game screenshot.
- * Percentages target the rendered surface because the background uses `cover`.
- * Each `top` is the usable lower area of the matching red-outlined parcel, not
- * its geometric centre: building assets are bottom-anchored by CSS.
+ * Fixed bottom-center anchors measured against island_background.png.
+ * They intentionally follow the visual 4x3 layout of the new island rather than
+ * the logical row/column metadata: a building may be moved between plots without
+ * changing its visual size or anchor contract.
  */
-const PLOT_VISUALS: readonly IslandPlotVisual[] = [
-  { left: 28.2, top: 28.1, scale: 1.05 },
-  { left: 48.0, top: 25.3, scale: 1.02 },
-  { left: 70.8, top: 30.9, scale: 0.96 },
-  { left: 17.9, top: 43.7, scale: 0.94 },
-  { left: 37.9, top: 44.3, scale: 0.98 },
-  { left: 57.1, top: 41.8, scale: 0.98 },
-  { left: 81.8, top: 48.4, scale: 0.94 },
-  { left: 66.2, top: 59.6, scale: 0.96 },
-  { left: 19.8, top: 68.6, scale: 0.94 },
-  { left: 37.3, top: 74.6, scale: 0.98 },
-  { left: 55.9, top: 78.1, scale: 0.98 },
-  { left: 79.0, top: 75.9, scale: 0.94 },
-] as const;
+const PLOT_VISUALS: Readonly<Record<string, IslandPlotVisual>> = {
+  plot_01: { left: 24.40, top: 34.22 },
+  plot_02: { left: 41.03, top: 34.22 },
+  plot_03: { left: 57.95, top: 34.22 },
+  plot_04: { left: 75.42, top: 34.22 },
+  plot_05: { left: 23.39, top: 51.54 },
+  plot_06: { left: 40.85, top: 51.54 },
+  plot_07: { left: 58.25, top: 51.54 },
+  plot_08: { left: 74.64, top: 51.54 },
+  plot_09: { left: 24.34, top: 69.08 },
+  plot_10: { left: 41.45, top: 69.08 },
+  plot_11: { left: 58.25, top: 69.08 },
+  plot_12: { left: 75.78, top: 69.08 },
+};
 
-const CONSTRUCTIBLE_ASSET_PATH = "/assets/constructible.png";
-const BUILDING_ASSET_PATHS: Readonly<Partial<Record<IslandBuildingId, string>>> = {
+/**
+ * Asset-specific normalization. Scale belongs to the building, never to the plot,
+ * so the same building keeps the same footprint wherever the player constructs it.
+ */
+const BUILDING_VISUAL_SCALES: Readonly<Record<IslandBuildingId, number>> = {
+  worker_house: 0.88,
+  storage: 0.86,
+  lumber_camp: 0.82,
+  mine: 0.78,
+  hunting_camp: 0.82,
+  fiber_camp: 0.82,
+  sawmill: 0.86,
+  smelter: 0.84,
+  tannery: 0.84,
+  weaver: 0.84,
+  workshop: 0.94,
+  academy: 0.94,
+};
+
+const BUILDING_ASSET_PATHS: Readonly<Record<IslandBuildingId, string>> = {
   worker_house: "/assets/worker_house.png",
   storage: "/assets/storage.png",
   lumber_camp: "/assets/lumber_camp.png",
@@ -49,15 +66,26 @@ const BUILDING_ASSET_PATHS: Readonly<Partial<Record<IslandBuildingId, string>>> 
   tannery: "/assets/tannery.png",
   weaver: "/assets/weaver.png",
   workshop: "/assets/workshop.png",
+  academy: "/assets/academy.png",
 };
 
-function assetStyle(assetId: IslandBuildingId | "constructible", scale: number): CSSProperties {
-  const assetPath = assetId === "constructible"
-    ? CONSTRUCTIBLE_ASSET_PATH
-    : BUILDING_ASSET_PATHS[assetId] ?? CONSTRUCTIBLE_ASSET_PATH;
+function getPlotVisual(plotId: string): IslandPlotVisual {
+  const visual = PLOT_VISUALS[plotId];
+  if (visual === undefined) throw new Error(`Missing island visual anchor for ${plotId}`);
+  return visual;
+}
+
+function assetStyle(assetId: IslandBuildingId | "constructible"): CSSProperties {
+  if (assetId === "constructible") {
+    return {
+      "--island-building-image": "none",
+      "--island-building-scale": "1",
+    } as CSSProperties;
+  }
+
   return {
-    "--island-building-image": `url("${assetPath}")`,
-    "--island-building-scale": String(scale),
+    "--island-building-image": `url("${BUILDING_ASSET_PATHS[assetId]}")`,
+    "--island-building-scale": String(BUILDING_VISUAL_SCALES[assetId]),
   } as CSSProperties;
 }
 
@@ -97,7 +125,7 @@ export function IslandWorldRegion(): JSX.Element {
             const worker = definition?.gatheringService === undefined
               ? undefined
               : workers.workers.find((candidate) => candidate.profession === definition.gatheringService?.workerProfession);
-            const position = PLOT_VISUALS[index] ?? { left: 50, top: 50, scale: 1 };
+            const position = getPlotVisual(plotDefinition.id);
             const assetId = definition?.id ?? "constructible";
             const accessibleLabel = building === undefined
               ? `Emplacement constructible ${String(index + 1)}`
@@ -110,7 +138,7 @@ export function IslandWorldRegion(): JSX.Element {
                 aria-label={accessibleLabel}
                 title={accessibleLabel}
                 className={`ui-island-world__plot${building === undefined ? " is-empty" : " is-built"}${selected ? " is-selected" : ""}`}
-                style={{ left: `${String(position.left)}%`, top: `${String(position.top)}%`, ...assetStyle(assetId, position.scale ?? 1) }}
+                style={{ left: `${String(position.left)}%`, top: `${String(position.top)}%`, ...assetStyle(assetId) }}
                 onClick={() => {
                   if (building === undefined) selectPlot(plotDefinition.id);
                   else selectBuilding(plotDefinition.id, building.instanceId);
