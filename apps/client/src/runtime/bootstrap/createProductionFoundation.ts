@@ -16,6 +16,7 @@ import {
   type MasteryService,
   type ProgressionOrchestrator,
   type WalletId,
+  type WorkerProfession,
   type ZoneDefinitionId,
 } from "@game/gameplay";
 import { EQUIPMENT_CRAFT_RECIPES } from "../../data/refiningRecipes.js";
@@ -44,6 +45,8 @@ interface ProductionFoundationDependencies {
   readonly getGatheringTier: () => ProductionTier;
   readonly getRefiningTier: (family: SupportedProductionFamily) => ProductionTier;
   readonly getWorkerTier: () => ProductionTier;
+  readonly getWorkerCapacity?: () => number;
+  readonly getWorkerProfessionCapacity?: (profession: WorkerProfession) => number;
 }
 
 /**
@@ -64,10 +67,10 @@ export function createProductionFoundation({
   getGatheringTier,
   getRefiningTier,
   getWorkerTier,
+  getWorkerCapacity,
+  getWorkerProfessionCapacity,
 }: ProductionFoundationDependencies) {
-  const productionInventoryManager = createAtomicProductionInventoryManager(
-    inventoryManager,
-  );
+  const productionInventoryManager = createAtomicProductionInventoryManager(inventoryManager);
   const resourceRegistry = new ResourceRegistry();
   const resourceRuntime = new ResourceRuntime();
   const resourceNodeRegistry = new ResourceNodeRegistry();
@@ -158,10 +161,7 @@ export function createProductionFoundation({
     heroId,
     productionStorageId,
     durabilityStore,
-    recipes: [
-      ...EQUIPMENT_CRAFT_RECIPES,
-      ...FACTION_CAPE_CRAFT_RECIPES,
-    ],
+    recipes: [...EQUIPMENT_CRAFT_RECIPES, ...FACTION_CAPE_CRAFT_RECIPES],
     getItemPower,
   });
 
@@ -173,11 +173,13 @@ export function createProductionFoundation({
     experienceService,
     getProductionTier: getWorkerTier,
     getRequiredGatheringMasteryForTier,
+    ...(getWorkerCapacity === undefined ? {} : { getWorkerCapacity }),
+    ...(getWorkerProfessionCapacity === undefined ? {} : { getWorkerProfessionCapacity }),
   });
 
   workerRuntime.subscribeDomainEvent((event) => {
     if (event.type === "storage_full") {
-      workerRuntime.toggleWorker(event.profession);
+      workerRuntime.toggleWorker(event.workerId, event.assignedTier);
     }
   });
 
