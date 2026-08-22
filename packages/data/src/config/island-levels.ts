@@ -1,6 +1,7 @@
 import type { IslandBuildingCategory } from "./island.js";
 
 export type IslandLevel = 1 | 2 | 3 | 4 | 5 | 6;
+export type IslandProductionTier = 3 | 4 | 5 | 6 | 7 | 8;
 
 export interface IslandWorldRequirement {
   readonly zoneDefId: string;
@@ -17,7 +18,9 @@ export interface IslandLevelDefinition {
   readonly level: IslandLevel;
   readonly label: string;
   readonly unlockedCategories: readonly IslandBuildingCategory[];
-  /** Buildings may never be upgraded above the current island level. */
+  /** Highest production tier available to constructed gathering/refining/crafting buildings. */
+  readonly maxProductionTier: IslandProductionTier;
+  /** Upgradeable special-purpose buildings may never exceed this level. */
   readonly maxBuildingLevel: number;
   readonly worldRequirementToReach?: IslandWorldRequirement;
   readonly upgradeCost?: IslandLevelUpgradeCost;
@@ -31,12 +34,14 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 1,
     label: "Campement",
     unlockedCategories: BASE_CATEGORIES,
+    maxProductionTier: 3,
     maxBuildingLevel: 1,
   },
   {
     level: 2,
     label: "Domaine artisanal",
     unlockedCategories: DEVELOPED_CATEGORIES,
+    maxProductionTier: 4,
     maxBuildingLevel: 2,
     worldRequirementToReach: {
       zoneDefId: "zone_swamp_t3",
@@ -55,6 +60,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 3,
     label: "Domaine développé",
     unlockedCategories: DEVELOPED_CATEGORIES,
+    maxProductionTier: 5,
     maxBuildingLevel: 3,
     worldRequirementToReach: {
       zoneDefId: "zone_mountain_t4",
@@ -73,6 +79,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 4,
     label: "Domaine avancé",
     unlockedCategories: DEVELOPED_CATEGORIES,
+    maxProductionTier: 6,
     maxBuildingLevel: 4,
     worldRequirementToReach: {
       zoneDefId: "zone_ironveil_t5",
@@ -91,6 +98,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 5,
     label: "Domaine supérieur",
     unlockedCategories: DEVELOPED_CATEGORIES,
+    maxProductionTier: 7,
     maxBuildingLevel: 5,
     worldRequirementToReach: {
       zoneDefId: "zone_ashenpeak_t6",
@@ -109,6 +117,7 @@ export const ISLAND_LEVELS: readonly IslandLevelDefinition[] = [
     level: 6,
     label: "Domaine ancestral",
     unlockedCategories: DEVELOPED_CATEGORIES,
+    maxProductionTier: 8,
     maxBuildingLevel: 6,
     worldRequirementToReach: {
       zoneDefId: "zone_doompeak_t7",
@@ -131,4 +140,8 @@ export function getIslandLevelDefinition(level: number): IslandLevelDefinition |
 
 export function getNextIslandLevelDefinition(level: number): IslandLevelDefinition | undefined {
   return getIslandLevelDefinition(level + 1);
+}
+
+export function getIslandMaxProductionTier(level: number): IslandProductionTier | undefined {
+  return getIslandLevelDefinition(level)?.maxProductionTier;
 }
