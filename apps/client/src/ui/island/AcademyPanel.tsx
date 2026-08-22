@@ -188,7 +188,7 @@ function ExpeditionTooltip({ expedition }: { readonly expedition: AcademyExpedit
   const info = getExpeditionPresentationInfo(expedition.id);
   const requirement = expedition.typeId === SILVER_EXPEDITION_TYPE_ID
     ? `Cartographie T${String(expedition.tier)}`
-    : `Étude de faction + Cartographie T${String(expedition.tier)}`;
+    : `Relique examinée + Cartographie T${String(expedition.tier)}`;
   return (
     <div className="context-tooltip-content">
       <div className="context-tooltip-content__header">
@@ -280,13 +280,15 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
 
   const model = getAcademyModel();
   const researchTier = getAcademyResearchTier(level);
-  const selectedExpeditionTier = requestedExpeditionTier ?? researchTier ?? 4;
   const availableTiers = ACADEMY_TIERS.filter((tier) => researchTier !== undefined && tier <= researchTier);
+  const selectedExpeditionTier = requestedExpeditionTier ?? availableTiers.at(-1) ?? 4;
   const completedResearch = model.research.filter((entry) => entry.state === "completed");
   const activeResearch = model.research.find((entry) => entry.state === "active");
   const availableResearch = model.research.filter((entry) => (
     entry.state !== "completed"
     && entry.state !== "active"
+    && researchTier !== undefined
+    && entry.tier <= researchTier
     && getResearchPresentationGroup(entry.id) === researchScope
   ));
   availableResearch.sort((left, right) => researchPriority(left) - researchPriority(right));
@@ -307,7 +309,7 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
     const result = startAcademyResearch(entry.id);
     setFeedback(
       result.ok && result.action === "relic_examined"
-        ? "Relique examinée."
+        ? "Relique examinée. Expéditions de faction débloquées pour les tiers cartographiés."
         : result.ok
           ? `${entry.displayName} lancée.`
           : researchFailureMessage(result.reason),
@@ -420,25 +422,20 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
           <div className="ui-academy__expedition-stage">
             <span className="ui-island__eyebrow">Tier</span>
             <nav className="ui-academy__tier-tabs" aria-label="Tier d’expédition">
-              {ACADEMY_TIERS.map((tier) => {
-                const locked = !availableTiers.includes(tier);
-                return (
-                  <button
-                    key={tier}
-                    type="button"
-                    className={selectedExpeditionTier === tier ? "is-active" : ""}
-                    disabled={locked}
-                    title={locked ? `Académie T${String(tier)} requise` : undefined}
-                    onClick={() => {
-                      setRequestedExpeditionTier(tier);
-                      setRequestedExpeditionId(undefined);
-                      setRequestedDuration(undefined);
-                    }}
-                  >
-                    T{String(tier)}{locked ? " 🔒" : ""}
-                  </button>
-                );
-              })}
+              {availableTiers.map((tier) => (
+                <button
+                  key={tier}
+                  type="button"
+                  className={selectedExpeditionTier === tier ? "is-active" : ""}
+                  onClick={() => {
+                    setRequestedExpeditionTier(tier);
+                    setRequestedExpeditionId(undefined);
+                    setRequestedDuration(undefined);
+                  }}
+                >
+                  T{String(tier)}
+                </button>
+              ))}
             </nav>
           </div>
 
