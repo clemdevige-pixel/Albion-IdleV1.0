@@ -20,9 +20,18 @@ function createFactionRelic(authoring: FactionRelicAuthoring): RelicDefinition {
     id: `relic_${authoring.factionId}`,
     factionId: authoring.factionId,
     sourceBossMonsterId: authoring.sourceBossMonsterId,
+    inventoryItemId: `item_relic_${authoring.factionId}`,
     chargeKillCount: RELIC_CHARGE_KILL_COUNT,
   };
 }
 
 /** Authored Relic data. Runtime acquisition/charge remains faction-agnostic. */
 export const RELIC_DEFINITIONS: readonly RelicDefinition[] = FACTION_RELIC_AUTHORING.map(createFactionRelic);
+
+export function getRelicDefinitionByInventoryItemId(itemId: string): RelicDefinition | undefined {
+  return RELIC_DEFINITIONS.find((definition) => definition.inventoryItemId === itemId);
+}
+
+export function isRelicInventoryItem(itemId: string): boolean {
+  return getRelicDefinitionByInventoryItemId(itemId) !== undefined;
+}
