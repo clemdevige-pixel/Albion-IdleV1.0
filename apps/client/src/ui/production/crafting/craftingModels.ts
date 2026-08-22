@@ -98,8 +98,12 @@ function toRecipeModel(recipe: CraftingRecipeVM): CraftingRecipeModel {
   return { ...recipe, selectionKey: resolveCraftingSelectionKey(recipe) };
 }
 
-function compareRecipes(left: CraftingRecipeModel, right: CraftingRecipeModel): number {
-  return left.selectionKey.localeCompare(right.selectionKey, "fr");
+function buildFirstOccurrenceOrder(values: readonly string[]): ReadonlyMap<string, number> {
+  const order = new Map<string, number>();
+  for (const value of values) {
+    if (!order.has(value)) order.set(value, order.size);
+  }
+  return order;
 }
 
 interface CraftingSource {
@@ -113,6 +117,8 @@ export function selectCraftingSource(state: GameBridgeState): CraftingSource {
 
 export function buildCraftingModel(source: CraftingSource): CraftingModel {
   const recipesForTier = source.recipes.filter((recipe) => recipe.tier === source.tier);
+  const canonicalFamilyOrder = buildFirstOccurrenceOrder(source.recipes.map((recipe) => recipe.family));
+  const canonicalRecipeOrder = buildFirstOccurrenceOrder(source.recipes.map(resolveCraftingSelectionKey));
   const categories: readonly { readonly id: CraftingCategoryId; readonly label: string }[] = [
     { id: "weapons", label: "Armes" },
     { id: "armors", label: "Armures" },
@@ -134,11 +140,10 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
           ? ARMOR_FAMILY_ORDER.filter((id) =>
               categoryRecipes.some((recipe) => resolveArmorFamilyId(recipe) === id),
             )
-          : [...new Set(categoryRecipes.map((recipe) => recipe.family))].sort((left, right) => {
-              const leftLabel = resolveCraftingFamilyPresentation(left).label;
-              const rightLabel = resolveCraftingFamilyPresentation(right).label;
-              return leftLabel.localeCompare(rightLabel, "fr");
-            });
+          : [...new Set(categoryRecipes.map((recipe) => recipe.family))].sort(
+              (left, right) => (canonicalFamilyOrder.get(left) ?? Number.MAX_SAFE_INTEGER)
+                - (canonicalFamilyOrder.get(right) ?? Number.MAX_SAFE_INTEGER),
+            );
         return {
           ...category,
           families: familyIds.map((id) => {
@@ -150,7 +155,10 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
                   : recipe.family === id,
               )
               .map(toRecipeModel)
-              .sort(compareRecipes);
+              .sort(
+                (left, right) => (canonicalRecipeOrder.get(left.selectionKey) ?? Number.MAX_SAFE_INTEGER)
+                  - (canonicalRecipeOrder.get(right.selectionKey) ?? Number.MAX_SAFE_INTEGER),
+              );
             return {
               id,
               ...(isArmorFamily
