@@ -1,7 +1,7 @@
 # 33. ENCHANTMENT SYSTEM
 
 Status: AUTHORITATIVE LIVE BALANCE CONTRACT
-Updated: 2026-08-20
+Updated: 2026-08-23
 
 ## Purpose
 
@@ -45,6 +45,25 @@ Authoritative gameplay source:
 - Levels cannot be skipped.
 - Enchanting never changes base Tier, quality or item identity.
 - Every valid enchantment succeeds; there is no failure/downgrade/destruction RNG.
+
+### 2A. Academy discovery gate
+
+The Enchantment service is discovered through gameplay rather than being exposed from the start.
+
+Canonical loop:
+
+1. Enchantment shards may drop normally before the service is unlocked.
+2. The first owned shard makes the T4 Academy Research `Étude des enchantements` available.
+3. Before discovery, that Research is not displayed in the Academy Research list.
+4. Research cost: 5,000 Silver, no materials.
+5. Research duration: 30 minutes.
+6. Completion unlocks `enchantment:service`.
+7. Before completion, the Merchant does not display the `Enchanter` service.
+8. After completion, the Merchant displays `Enchanter` and the existing EnchantmentService becomes accessible normally.
+
+Shard tooltips before Research completion explicitly point the player toward the Academy. Shard drop rates and the existing shard economy are unchanged by this gate.
+
+The Academy unlock controls access to the service only. It does NOT alter enchantment recipes, shard requirements, Silver costs, refined-material costs, power curves or eligibility.
 
 ---
 
