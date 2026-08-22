@@ -49,8 +49,7 @@ export interface CombatRewardRuntimeDependencies {
   readonly experienceService: ExperienceService;
   readonly awakenedWeaponService: AwakenedWeaponService;
   readonly heroId: EntityId;
-  readonly onRawFactionFame?: (factionId: string, rawFame: number) => void;
-  readonly getFactionYieldBonusPercent?: (factionId: string) => number;
+  readonly onRawFactionFame?: (factionId: string, rawFame: number) => number;
 }
 
 export class CombatRewardRuntime {
@@ -63,8 +62,7 @@ export class CombatRewardRuntime {
   private readonly experienceService: ExperienceService;
   private readonly awakenedWeaponService: AwakenedWeaponService;
   private readonly heroId: EntityId;
-  private readonly onRawFactionFame: ((factionId: string, rawFame: number) => void) | undefined;
-  private readonly getFactionYieldBonusPercent: ((factionId: string) => number) | undefined;
+  private readonly onRawFactionFame: ((factionId: string, rawFame: number) => number) | undefined;
 
   constructor(deps: CombatRewardRuntimeDependencies) {
     this.currencyService = deps.currencyService;
@@ -77,7 +75,6 @@ export class CombatRewardRuntime {
     this.awakenedWeaponService = deps.awakenedWeaponService;
     this.heroId = deps.heroId;
     this.onRawFactionFame = deps.onRawFactionFame;
-    this.getFactionYieldBonusPercent = deps.getFactionYieldBonusPercent;
   }
 
   /** Credits deterministic reward Silver through the existing wallet owner. */
@@ -96,17 +93,15 @@ export class CombatRewardRuntime {
     fameReward: number,
     lootContext: CombatLootContext,
   ): EnemyKilledRewardResult {
-    const factionYieldBonusPercent = this.getFactionYieldBonusPercent?.(lootContext.faction) ?? 0;
+    // Faction Mastery consumes raw/base faction Fame only and returns the yield
+    // bonus that was active before this kill. A level-up caused by the kill can
+    // therefore never retroactively improve that same kill's rewards.
+    const factionYieldBonusPercent = Number.isInteger(fameReward) && fameReward > 0
+      ? this.onRawFactionFame?.(lootContext.faction, fameReward) ?? 0
+      : 0;
     const finalSilverReward = applyPercentBonusRounded(silverReward, factionYieldBonusPercent);
     const factionAdjustedFame = applyPercentBonusRounded(fameReward, factionYieldBonusPercent);
     const newBalance = this.creditSilverReward(finalSilverReward);
-
-    // Faction Mastery consumes raw/base faction Fame only. This happens before
-    // faction/Awakening Fame bonuses so its own Fame yield can never feed back
-    // into Faction Mastery XP generation.
-    if (Number.isInteger(fameReward) && fameReward > 0) {
-      this.onRawFactionFame?.(lootContext.faction, fameReward);
-    }
 
     let fameEarned: EnemyKilledRewardResult["fameEarned"];
     let attunementEarned: EnemyKilledRewardResult["attunementEarned"];
