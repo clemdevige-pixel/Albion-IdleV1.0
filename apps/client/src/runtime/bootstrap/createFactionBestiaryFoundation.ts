@@ -1,4 +1,4 @@
-import type { RelicDefinition } from "@game/gameplay";
+import type { RelicDefinition, RelicState } from "@game/gameplay";
 import { getMonsterDefinition } from "../../data/monsterContentCatalog.js";
 import { RELIC_DEFINITIONS } from "../../data/relicContentCatalog.js";
 
@@ -11,16 +11,18 @@ interface FactionKnowledgeSource {
 
 interface RelicProgressSource {
   getProgress(relicId: string): {
-    readonly fragmentCount: number;
-    readonly completedObjectiveIds: readonly string[];
+    readonly state: RelicState;
+    readonly chargeKills: number;
+    readonly requiredChargeKills: number;
     readonly reconstructed: boolean;
   } | undefined;
 }
 
 export interface BestiaryRelicProgressModel {
   readonly relicId: string;
-  readonly fragmentCount: number;
-  readonly objectiveCount: number;
+  readonly state: RelicState;
+  readonly chargeKills: number;
+  readonly requiredChargeKills: number;
   readonly reconstructed: boolean;
 }
 
@@ -75,8 +77,9 @@ export function createFactionBestiaryFoundation(
         ? undefined
         : {
           relicId: relicDefinition.id,
-          fragmentCount: relicProgress.fragmentCount,
-          objectiveCount: relicDefinition.objectives.length,
+          state: relicProgress.state,
+          chargeKills: relicProgress.chargeKills,
+          requiredChargeKills: relicProgress.requiredChargeKills,
           reconstructed: relicProgress.reconstructed,
         },
     };
