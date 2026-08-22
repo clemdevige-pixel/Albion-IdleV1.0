@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
+  getIslandMaxProductionTier,
   type IslandBuildingId,
 } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
@@ -57,7 +58,11 @@ export function IslandModule(): JSX.Element {
     return (
       <div className="ui-island ui-island--detail">
         <IslandOverviewButton onClick={clearSelection} />
-        <BuildingSummary definitionId={selectedBuilding.definitionId} level={selectedBuilding.level} />
+        <BuildingSummary
+          definitionId={selectedBuilding.definitionId}
+          level={selectedBuilding.level}
+          islandLevel={islandLevel}
+        />
       </div>
     );
   }
@@ -113,17 +118,21 @@ function IslandOverviewButton({ onClick }: { readonly onClick: () => void }): JS
 function BuildingSummary({
   definitionId,
   level,
+  islandLevel,
 }: {
   readonly definitionId: IslandBuildingId;
   readonly level: number;
+  readonly islandLevel: number;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
+  const maxProductionTier = getIslandMaxProductionTier(islandLevel);
+  const operational = definition.gatheringService !== undefined
+    || definition.refiningService !== undefined
+    || definition.craftingService !== undefined;
   const flatSelection = definitionId === "worker_house"
     || definitionId === "storage"
     || definitionId === "academy"
-    || definition.gatheringService !== undefined
-    || definition.refiningService !== undefined
-    || definition.craftingService !== undefined;
+    || operational;
   const selectionClassName = flatSelection
     ? "ui-island__selection ui-island__selection--flat"
     : "ui-island__selection";
@@ -136,7 +145,11 @@ function BuildingSummary({
           <span className="ui-island__eyebrow">{CATEGORY_LABELS[definition.category]}</span>
           <strong>{definition.label}</strong>
         </div>
-        <span className="ui-island__level">Niv. {String(level)}</span>
+        <span className="ui-island__level">
+          {operational && maxProductionTier !== undefined
+            ? `Jusqu’au T${String(maxProductionTier)}`
+            : `Niv. ${String(level)}`}
+        </span>
       </div>
       <p>{definition.description}</p>
       {definitionId === "worker_house" ? (
@@ -146,11 +159,11 @@ function BuildingSummary({
       ) : definitionId === "academy" ? (
         <AcademyPanel level={level} />
       ) : definition.gatheringService !== undefined ? (
-        <GatheringBuildingPanel definitionId={definitionId} level={level} />
+        <GatheringBuildingPanel definitionId={definitionId} islandLevel={islandLevel} />
       ) : definition.refiningService !== undefined ? (
-        <RefiningBuildingPanel definitionId={definitionId} level={level} />
+        <RefiningBuildingPanel definitionId={definitionId} islandLevel={islandLevel} />
       ) : definition.craftingService !== undefined ? (
-        <CraftingBuildingPanel definitionId={definitionId} level={level} />
+        <CraftingBuildingPanel definitionId={definitionId} islandLevel={islandLevel} />
       ) : (
         <div className="ui-island__selection-status">Bâtiment construit</div>
       )}
