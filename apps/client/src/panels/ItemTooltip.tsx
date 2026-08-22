@@ -20,6 +20,7 @@ import {
   getWeaponAttackSpeed,
 } from "../data/itemPower";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
+import { getFactionCapeDefinition } from "../data/factionCapeContentCatalog";
 import { getRelicDefinitionByInventoryItemId } from "../data/relicContentCatalog";
 
 const SLOT_LABELS: Readonly<Record<string, string>> = {
@@ -33,6 +34,13 @@ const STAT_LABELS: Readonly<Record<string, string>> = {
   stat_armor: "Armure",
   stat_magic_resistance: "Résistance magique",
   stat_max_health: "Santé maximale",
+};
+
+const FACTION_LABELS: Readonly<Record<string, string>> = {
+  keeper: "Keeper",
+  heretic: "Hérétiques",
+  undead: "Morts-vivants",
+  morgana: "Morgana",
 };
 
 const AWAKENED_TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
@@ -86,8 +94,10 @@ export function ItemTooltip({
       ?? state.equipment.slots.find((slot) => slot.instanceId === instanceId)?.enchantment
       ?? 0;
   const enchantment = enchantmentOverride ?? persistedEnchantment;
-  const definition = getItemDefinition(itemId);
-  const effectiveDefinition = resolveEquipmentInfo(itemId) ?? definition;
+  const visualDefinition = getItemDefinition(itemId);
+  const equipmentDefinition = resolveEquipmentInfo(itemId);
+  const effectiveDefinition = equipmentDefinition ?? visualDefinition;
+  const factionCapeDefinition = getFactionCapeDefinition(itemId);
   const relicDefinition = getRelicDefinitionByInventoryItemId(itemId);
   const relicProgress = relicDefinition === undefined
     ? undefined
@@ -108,13 +118,15 @@ export function ItemTooltip({
     itemId,
     state.progression.masteries,
   );
-  const equipped = definition === undefined
+  const equipped = effectiveDefinition === undefined
     ? undefined
-    : state.equipment.slots.find((slot) => slot.slot === definition.slot);
-  const equippedDefinition = equipped?.itemId === undefined ? undefined : getItemDefinition(equipped.itemId);
+    : state.equipment.slots.find((slot) => slot.slot === effectiveDefinition.slot);
+  const equippedVisualDefinition = equipped?.itemId === undefined
+    ? undefined
+    : getItemDefinition(equipped.itemId);
   const equippedEffectiveDefinition = equipped?.itemId === undefined
     ? undefined
-    : resolveEquipmentInfo(equipped.itemId) ?? equippedDefinition;
+    : resolveEquipmentInfo(equipped.itemId) ?? equippedVisualDefinition;
   const equippedEnchantment = equipped?.enchantment ?? 0;
   const equippedEnchantmentStatMultiplier = getEnchantmentStatMultiplier(equippedEnchantment);
   const equippedMasteryDamageMultiplier = equipped?.itemId === undefined
@@ -128,7 +140,7 @@ export function ItemTooltip({
     ? undefined
     : state.repair.items.find((item) => item.instanceId === instanceId);
   const awakenedState = enchantment === 4
-    && definition?.slot === "weapon"
+    && effectiveDefinition?.slot === "weapon"
     && instanceId !== undefined
     ? services.awakenedWeaponService.getState(instanceId as ItemInstanceId)
     : undefined;
@@ -141,6 +153,9 @@ export function ItemTooltip({
   const consumableDescription = itemId === "item_health_potion"
     ? `Restaure ${String(state.consumables.healthPotionHealPercent)}% des PV maximum. Recharge : ${String(state.consumables.healthPotionCooldown)} s.`
     : undefined;
+  const displayName = factionCapeDefinition?.name ?? getItemDisplayName(itemId);
+  const displayTier = visualDefinition?.tier ?? factionCapeDefinition?.tier;
+  const displaySlot = visualDefinition?.slot ?? effectiveDefinition?.slot;
 
   return (
     <div className={`item-tooltip${getEnchantmentFrameClass(enchantment)}`}>
@@ -148,12 +163,12 @@ export function ItemTooltip({
         <div className="item-tooltip__preview"><ItemVisual itemId={itemId} /></div>
         <div>
           <div className="item-tooltip__name">
-            {getItemDisplayName(itemId)}{enchantment > 0 ? ` .${String(enchantment)}` : ""}
+            {displayName}{enchantment > 0 ? ` .${String(enchantment)}` : ""}
           </div>
-          {definition !== undefined && (
+          {displayTier !== undefined && displaySlot !== undefined && (
             <div className="item-tooltip__meta">
-              Tier {String(definition.tier)} · {SLOT_LABELS[definition.slot]}
-              {definition.handling !== undefined ? ` · ${definition.handling === "two_handed" ? "Deux mains" : "Une main"}` : ""}
+              Tier {String(displayTier)} · {SLOT_LABELS[displaySlot] ?? displaySlot}
+              {visualDefinition?.handling !== undefined ? ` · ${visualDefinition.handling === "two_handed" ? "Deux mains" : "Une main"}` : ""}
             </div>
           )}
         </div>
@@ -182,7 +197,7 @@ export function ItemTooltip({
         </div>
       )}
 
-      {definition !== undefined && (
+      {effectiveDefinition !== undefined && (
         <div className="item-tooltip__stats">
           {itemPower !== undefined && (
             <>
@@ -208,7 +223,7 @@ export function ItemTooltip({
               </div>
             </>
           )}
-          {Object.entries(effectiveDefinition?.stats ?? definition.stats)
+          {Object.entries(effectiveDefinition.stats ?? {})
             .filter(([statId]) => statId !== "stat_attack_speed")
             .map(([statId, value]) => {
               const effectiveValue = getEffectiveEquipmentStat(
@@ -217,7 +232,9 @@ export function ItemTooltip({
                 enchantmentStatMultiplier,
                 masteryDamageMultiplier,
               );
-              const authoredBaseValue = definition.stats[statId] ?? value;
+              const authoredBaseValue = equipmentDefinition?.stats?.[statId]
+                ?? visualDefinition?.stats?.[statId]
+                ?? value;
               const ipBonus = effectiveValue - authoredBaseValue;
               const equippedBaseValue = equippedEffectiveDefinition?.stats?.[statId] ?? 0;
               const equippedValue = getEffectiveEquipmentStat(
@@ -227,7 +244,7 @@ export function ItemTooltip({
                 equippedMasteryDamageMultiplier,
               );
               const delta = effectiveValue - equippedValue;
-              const showDelta = equippedDefinition !== undefined && equipped?.itemId !== itemId;
+              const showDelta = equippedEffectiveDefinition !== undefined && equipped?.itemId !== itemId;
               return (
                 <div key={statId}>
                   <span>{STAT_LABELS[statId] ?? statId}</span>
@@ -260,6 +277,25 @@ export function ItemTooltip({
         </div>
       )}
 
+      {factionCapeDefinition !== undefined && (
+        <div className="item-tooltip__stats">
+          <div>
+            <span>Faction</span>
+            <strong>{FACTION_LABELS[factionCapeDefinition.factionId] ?? factionCapeDefinition.factionId}</strong>
+          </div>
+          <div>
+            <span>Protection de faction</span>
+            <strong>-{formatStatValue(factionCapeDefinition.dungeonDamageReductionPercent)}% dégâts</strong>
+          </div>
+          <div>
+            <span>Condition</span>
+            <strong>
+              Donjons {FACTION_LABELS[factionCapeDefinition.factionId] ?? factionCapeDefinition.factionId} T{String(factionCapeDefinition.tier)}+
+            </strong>
+          </div>
+        </div>
+      )}
+
       {awakenedState !== undefined && (
         <div className="item-tooltip__stats">
           <div>
@@ -285,7 +321,7 @@ export function ItemTooltip({
         </div>
       )}
       {quantity > 1 && <div className="item-tooltip__quantity">Quantité : {String(quantity)}</div>}
-      {definition !== undefined && (
+      {effectiveDefinition !== undefined && (
         <div className="item-tooltip__hint">Clic droit pour les actions</div>
       )}
     </div>
