@@ -56,6 +56,29 @@
   white-space: nowrap;
 }
 
+.world-achievements-progress__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.world-achievements-progress__filters button {
+  min-height: 27px;
+  padding: 4px 8px;
+  border: 1px solid #303844;
+  border-radius: 0;
+  color: #8fa0b5;
+  background: #0b0f14;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.world-achievements-progress__filters button.is-active {
+  border-color: #9d711d;
+  color: #f0cb6d;
+  background: #21180c;
+}
+
 .world-achievements-progress__list {
   display: grid;
   gap: 4px;
