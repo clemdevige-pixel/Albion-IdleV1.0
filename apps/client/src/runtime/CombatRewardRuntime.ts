@@ -50,6 +50,8 @@ export interface CombatRewardRuntimeDependencies {
   readonly awakenedWeaponService: AwakenedWeaponService;
   readonly heroId: EntityId;
   readonly onRawFactionFame?: (factionId: string, rawFame: number) => number;
+  /** Dungeon keys/fragments are a discovered content channel, not baseline world loot. */
+  readonly isDungeonKeyLootUnlocked?: () => boolean;
 }
 
 export class CombatRewardRuntime {
@@ -63,6 +65,7 @@ export class CombatRewardRuntime {
   private readonly awakenedWeaponService: AwakenedWeaponService;
   private readonly heroId: EntityId;
   private readonly onRawFactionFame: ((factionId: string, rawFame: number) => number) | undefined;
+  private readonly isDungeonKeyLootUnlocked: () => boolean;
 
   constructor(deps: CombatRewardRuntimeDependencies) {
     this.currencyService = deps.currencyService;
@@ -75,6 +78,7 @@ export class CombatRewardRuntime {
     this.awakenedWeaponService = deps.awakenedWeaponService;
     this.heroId = deps.heroId;
     this.onRawFactionFame = deps.onRawFactionFame;
+    this.isDungeonKeyLootUnlocked = deps.isDungeonKeyLootUnlocked ?? (() => true);
   }
 
   /** Credits deterministic reward Silver through the existing wallet owner. */
@@ -93,9 +97,6 @@ export class CombatRewardRuntime {
     fameReward: number,
     lootContext: CombatLootContext,
   ): EnemyKilledRewardResult {
-    // Faction Mastery consumes raw/base faction Fame only and returns the yield
-    // bonus that was active before this kill. A level-up caused by the kill can
-    // therefore never retroactively improve that same kill's rewards.
     const factionYieldBonusPercent = Number.isInteger(fameReward) && fameReward > 0
       ? this.onRawFactionFame?.(lootContext.faction, fameReward) ?? 0
       : 0;
@@ -117,9 +118,6 @@ export class CombatRewardRuntime {
       this.progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.familyId);
       this.progressionOrchestrator.onEquipmentAcquired(activeWeaponRoute.weaponId);
 
-      // Awakening Fame Bonus keeps its existing raw-Fame basis. Faction Mastery
-      // adds its separately rounded yield so neither bonus silently changes the
-      // other's scaling contract.
       const fameBonusPercent = awakeningEligible
         ? this.awakenedWeaponService.getTraitValue(equippedWeapon.instanceId, "fame_bonus")
         : 0;
@@ -153,7 +151,13 @@ export class CombatRewardRuntime {
     }
 
     const itemDrops: CombatDrop[] = [];
+    const dungeonKeyLootUnlocked = this.isDungeonKeyLootUnlocked();
     for (const drop of rollCombatDrops(lootContext)) {
+      if (
+        !dungeonKeyLootUnlocked
+        && (drop.kind === "key" || drop.kind === "key_fragment")
+      ) continue;
+
       const addResult = this.inventoryManager.addQuantity(this.heroId, drop.itemId, drop.quantity);
       if (!addResult.ok || addResult.value.added <= 0) continue;
 
