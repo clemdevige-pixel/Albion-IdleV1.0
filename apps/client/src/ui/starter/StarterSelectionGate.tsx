@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { getStarterWeaponOptions } from "../../data/starterLoadoutCatalog.js";
 import { combatStopController } from "../../runtime/CombatStopController.js";
+import { isDevSandboxMode } from "../../runtime/devSandbox.js";
 import { useGameServices } from "../../state/GameServicesContext.js";
 import "./starterSelection.css";
 
@@ -10,8 +11,16 @@ export function StarterSelectionGate({ children }: { readonly children: ReactNod
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (pending) combatStopController.reset();
-  }, [pending]);
+    if (!pending) return;
+    if (isDevSandboxMode()) {
+      const starter = getStarterWeaponOptions()[0];
+      if (starter !== undefined && services.selectStarterWeapon(starter.itemId)) {
+        setPending(false);
+        return;
+      }
+    }
+    combatStopController.reset();
+  }, [pending, services]);
 
   if (!pending) return <>{children}</>;
 
