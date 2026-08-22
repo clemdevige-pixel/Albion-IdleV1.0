@@ -3,7 +3,6 @@ import type {
   EquipmentLoadout,
   EquipmentLoadoutApplyOutcome,
   EquipmentResult,
-  ResearchRequirementDefinition,
 } from "@game/gameplay";
 import { RESEARCH_UNLOCK_IDS } from "../../data/researchContentCatalog.js";
 
@@ -29,15 +28,13 @@ interface EquipmentPresetPort {
   deleteLoadout(entityId: EntityId, loadoutId: string): boolean;
 }
 
-interface ResearchUnlockPort<TRequirement extends ResearchRequirementDefinition> {
+interface ResearchUnlockPort {
   hasUnlock(unlockId: string): boolean;
 }
 
-export interface EquipmentPresetFoundationDependencies<
-  TRequirement extends ResearchRequirementDefinition,
-> {
+export interface EquipmentPresetFoundationDependencies {
   readonly equipmentManager: EquipmentPresetPort;
-  readonly researchService: ResearchUnlockPort<TRequirement>;
+  readonly researchService: ResearchUnlockPort;
   readonly heroId: EntityId;
 }
 
@@ -49,9 +46,9 @@ function isPresetIndex(index: number): index is EquipmentPresetIndex {
   return Number.isInteger(index) && index >= 1 && index <= EQUIPMENT_PRESET_CAPACITY;
 }
 
-export function createEquipmentPresetFoundation<
-  TRequirement extends ResearchRequirementDefinition,
->(dependencies: EquipmentPresetFoundationDependencies<TRequirement>) {
+export function createEquipmentPresetFoundation(
+  dependencies: EquipmentPresetFoundationDependencies,
+) {
   const isUnlocked = (): boolean => dependencies.researchService.hasUnlock(
     RESEARCH_UNLOCK_IDS.equipmentPresets,
   );
