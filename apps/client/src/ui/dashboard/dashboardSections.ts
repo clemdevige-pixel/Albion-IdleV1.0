@@ -1,17 +1,10 @@
-export const DASHBOARD_SECTION_IDS = [
-  "combat",
-  "research",
-  "yield",
-  "enchant-ready",
-  "tracked-resources",
-  "production",
-  "player",
-  "zone",
-  "activity",
-  "session",
-] as const;
+import {
+  DASHBOARD_SECTION_IDS,
+  DEFAULT_DASHBOARD_SECTION_ORDER,
+  type DashboardSectionId,
+} from "../../data/dashboardLayoutCatalog";
 
-export type DashboardSectionId = (typeof DASHBOARD_SECTION_IDS)[number];
+export { DASHBOARD_SECTION_IDS, type DashboardSectionId } from "../../data/dashboardLayoutCatalog";
 
 export interface DashboardSectionDefinition {
   readonly id: DashboardSectionId;
@@ -83,14 +76,7 @@ export const DASHBOARD_SECTION_DEFINITIONS: Readonly<Record<DashboardSectionId, 
   },
 };
 
-export const DASHBOARD_SECTION_ORDER = [
-  "combat",
-  "research",
-  "yield",
-  "enchant-ready",
-  "tracked-resources",
-  "production",
-] as const satisfies readonly DashboardSectionId[];
+export const DASHBOARD_SECTION_ORDER = DEFAULT_DASHBOARD_SECTION_ORDER;
 
 export function getDashboardSectionDefinition(sectionId: DashboardSectionId): DashboardSectionDefinition {
   return DASHBOARD_SECTION_DEFINITIONS[sectionId];
