@@ -16,7 +16,7 @@ export function WorkerHousePanel({ level }: { readonly level: number }): JSX.Ele
       <div className="ui-island-worker-house__stats">
         <div>
           <small>Ouvriers recrutés</small>
-          <strong>{String(workers.workers.length)} / {String(levelDefinition.workerCapacity)}</strong>
+          <strong>{String(workers.workers.length)} / {String(workers.capacity)}</strong>
         </div>
         <div>
           <small>Coût de recrutement</small>
@@ -45,24 +45,27 @@ export function WorkerHousePanel({ level }: { readonly level: number }): JSX.Ele
         <div className="ui-island-worker-house__recruit-grid">
           {PRODUCTION_FAMILY_IDS.map((familyId) => {
             const family = getProductionFamilyDefinition(familyId);
-            const recruited = workers.workers.some((worker) => worker.profession === family.profession);
-            const capacityReached = workers.workers.length >= levelDefinition.workerCapacity;
+            const professionCount = workers.workers.filter(
+              (worker) => worker.profession === family.profession,
+            ).length;
+            const professionCapacityReached = professionCount >= workers.professionCapacity;
+            const capacityReached = workers.workers.length >= workers.capacity;
 
             return (
               <button
                 key={familyId}
                 type="button"
-                disabled={recruited || capacityReached}
+                disabled={professionCapacityReached || capacityReached}
                 onClick={() => { recruitWorker(family.profession); }}
               >
                 <img src={family.professionIcon} alt="" />
                 <span>
-                  <strong>{family.professionName}</strong>
+                  <strong>{family.professionName} · {String(professionCount)}/{String(workers.professionCapacity)}</strong>
                   <small>
-                    {recruited
-                      ? "Déjà recruté"
+                    {professionCapacityReached
+                      ? "Capacité du métier atteinte"
                       : capacityReached
-                        ? "Capacité atteinte"
+                        ? "Capacité totale atteinte"
                         : `${String(levelDefinition.recruitmentCost)} S`}
                   </small>
                 </span>
