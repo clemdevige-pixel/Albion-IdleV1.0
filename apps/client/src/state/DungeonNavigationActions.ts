@@ -161,7 +161,6 @@ export class DungeonNavigationActions {
     const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
     if (definition === undefined) {
       return resolveDungeonAccessState({
-        definitionTier: undefined,
         researchUnlocked: false,
         progressionUnlocked: false,
         hasWeapon: false,
