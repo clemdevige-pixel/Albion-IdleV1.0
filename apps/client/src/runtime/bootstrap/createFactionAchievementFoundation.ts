@@ -24,10 +24,6 @@ interface FactionKnowledgeProgressSource {
   getFactionEliteKillCount(factionId: string): number;
 }
 
-interface RelicProgressSource {
-  isReconstructed(relicId: string): boolean;
-}
-
 interface ExpeditionProgressSource {
   getCompletedCount(typeId: string): number;
   getTotalCompletedCount(): number;
@@ -47,7 +43,6 @@ interface MasteryProgressSource {
 
 export interface FactionAchievementFoundationDependencies {
   readonly factionKnowledgeService: FactionKnowledgeProgressSource;
-  readonly relicService: RelicProgressSource;
   readonly expeditionService: ExpeditionProgressSource;
   readonly expeditionRewardLedger: ExpeditionRewardProgressSource;
   readonly dungeonRuntime: DungeonProgressSource;
@@ -90,11 +85,6 @@ export function createFactionAchievementFoundation(
         return {
           current: dependencies.factionKnowledgeService.getFactionEliteKillCount(condition.factionId),
           target: condition.minimum,
-        };
-      case "faction_relic_reconstructed":
-        return {
-          current: dependencies.relicService.isReconstructed(condition.relicId) ? 1 : 0,
-          target: 1,
         };
       case "faction_expedition_completed_count": {
         const typeId = getFactionExpeditionTypeId(condition.factionId);
