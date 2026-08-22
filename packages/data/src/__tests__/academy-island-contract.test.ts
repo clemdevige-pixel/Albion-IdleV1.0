@@ -26,17 +26,25 @@ describe("Academy island contract", () => {
     });
   });
 
-  it("authors one academy level per Research tier T4-T8", () => {
-    expect(ACADEMY_LEVELS.map(({ level, researchTier }) => [level, researchTier])).toEqual([
-      [1, 4],
-      [2, 5],
-      [3, 6],
-      [4, 7],
-      [5, 8],
+  it("authors one academy level per Research tier T4-T8 and offsets it from Island Level", () => {
+    expect(ACADEMY_LEVELS.map(({ level, researchTier, minimumIslandLevel }) => [
+      level,
+      researchTier,
+      minimumIslandLevel,
+    ])).toEqual([
+      [1, 4, 2],
+      [2, 5, 3],
+      [3, 6, 4],
+      [4, 7, 5],
+      [5, 8, 6],
     ]);
     for (const level of ACADEMY_LEVELS) {
       expect(getAcademyResearchTier(level.level)).toBe(level.researchTier);
-      expect(getIslandUpgradeableLevelDefinition("academy", level.level)?.level).toBe(level.level);
+      expect(getIslandUpgradeableLevelDefinition("academy", level.level)).toMatchObject({
+        level: level.level,
+        displayTier: level.researchTier,
+        minimumIslandLevel: level.minimumIslandLevel,
+      });
     }
   });
 
