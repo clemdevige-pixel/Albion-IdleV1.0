@@ -12,6 +12,7 @@ import {
   type ExpeditionRequirementPort,
   type ExpeditionRewardPort,
   type ExpeditionSlotCapacityPort,
+  type ExpeditionStartState,
   type RegisterExpeditionResult,
   type StartExpeditionResult,
 } from "./types.js";
@@ -110,6 +111,23 @@ export class ExpeditionService<
       .slice()
       .sort((a, b) => a.slotIndex - b.slotIndex)
       .map((entry) => ({ ...entry }));
+  }
+
+  getSlotCapacity(): number {
+    return this.#getValidatedSlotCapacity();
+  }
+
+  getStartState(expeditionId: ExpeditionId): ExpeditionStartState | undefined {
+    const definition = this.#definitions.get(expeditionId);
+    if (definition === undefined) return undefined;
+    if (!this.#areRequirementsMet(definition)) return "requirements_locked";
+    if (this.#activeExpeditions.some((entry) => entry.typeId === definition.typeId)) {
+      return "type_active";
+    }
+    if (this.#findAvailableSlot(this.#getValidatedSlotCapacity()) === undefined) {
+      return "no_available_slot";
+    }
+    return "available";
   }
 
   getCompletedCount(typeId: string): number {
