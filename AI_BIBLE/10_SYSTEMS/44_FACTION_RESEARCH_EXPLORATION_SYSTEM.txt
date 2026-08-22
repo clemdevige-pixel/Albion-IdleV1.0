@@ -1,6 +1,6 @@
 # 44_FACTION_RESEARCH_EXPLORATION_SYSTEM
 
-Status: KEEPER T4 PILOT IMPLEMENTED / LATER CONTENT OPEN
+Status: T4-T8 FOUR-FACTION LOOP IMPLEMENTED / POLISH & LOOT CHANNEL OPEN
 Authority: validated design + implementation contract
 Last update: 2026-08-22
 
@@ -22,7 +22,7 @@ This document records the validated design and implementation contract for a sec
 
 The system must create meaningful parallel progression while the hero continues normal Albion Idle activities, without adding arbitrary resources that only lengthen existing loops.
 
-The Keeper T4 pilot foundations are implemented. Later-tier/faction content remains data-authoring work where explicitly marked OPEN.
+The complete T4-T8 loop is authored for Keeper, Heretic, Undead and Morgana through shared data-driven systems. Remaining OPEN work is limited to explicitly listed tuning/presentation/future-content points.
 
 ---
 
@@ -127,7 +127,7 @@ Validated unlock timing:
 - available at Island Level 2;
 - therefore after the early T3 loop / Dark Swamp progression according to the existing Island contract.
 
-## 3.2 Construction
+## 3.2 Construction and upgrades
 
 Construction uses only the existing economy.
 
@@ -142,7 +142,24 @@ Do NOT create a Research Point / Science currency.
 
 The initial constructed Academy is operationally T4.
 
-Academy upgrade costs for T5-T8 remain OPEN.
+Validated upgrade curve:
+
+| Upgrade | Island level required | Silver | Refined materials |
+|---|---:|---:|---|
+| T4 -> T5 | 3 | 5,000 | 5 of each T4 refined family |
+| T5 -> T6 | 4 | 18,000 | 9 of each T5 refined family |
+| T6 -> T7 | 5 | 50,000 | 14 of each T6 refined family |
+| T7 -> T8 | 6 | 85,000 | 20 of each T7 refined family |
+
+The four refined families are Planks, Bars, Leather and Cloth at the matching source tier.
+
+Academy progression remains separate from production-building progression. Its building levels map to Research tiers as follows:
+
+- Academy level 1 / Island level 2 -> T4;
+- Academy level 2 / Island level 3 -> T5;
+- Academy level 3 / Island level 4 -> T6;
+- Academy level 4 / Island level 5 -> T7;
+- Academy level 5 / Island level 6 -> T8.
 
 ## 3.3 Research slots
 
@@ -226,12 +243,17 @@ Do NOT create Archaeology II/III/IV/V unless a future mechanic genuinely require
 
 ## 4.3 Cartography progression
 
-- Cartography II / T5: enables T5 Expeditions;
-- Cartography III / T6: enables T6 Expeditions + unlocks the second simultaneous Expedition slot;
-- Cartography IV / T7: enables T7 Expeditions;
-- Cartography V / T8: enables T8 Expeditions.
+Cartography is sequential: each tier after I requires the previous Cartography unlock in addition to the matching Academy tier.
 
-Exact Silver/material costs and durations for Cartography II-V remain OPEN.
+| Research | Tier | Silver | Duration | Effect |
+|---|---:|---:|---:|---|
+| Cartography I | T4 | 5,000 | 30 min | T4 Expeditions |
+| Cartography II | T5 | 15,000 | 1 h | T5 Expeditions |
+| Cartography III | T6 | 40,000 | 2 h | T6 Expeditions + second simultaneous Expedition slot |
+| Cartography IV | T7 | 70,000 | 3 h | T7 Expeditions |
+| Cartography V | T8 | 110,000 | 4 h | T8 Expeditions |
+
+No material cost is added to these Research entries.
 
 No extra route/event mechanics in V1.
 
@@ -273,39 +295,47 @@ Validated V1:
 All factions use the same runtime structure; only authored data changes.
 
 1. DISCOVERY
-   - defeat the two main normal units of the faction.
+   - defeat the two main normal units of the faction once each.
 2. FAMILIARIZATION
-   - first faction kill threshold.
+   - defeat 25 members of the faction total.
 3. DEEP STUDY
-   - second faction kill threshold.
+   - defeat 100 members of the faction total.
 4. ELITE STUDY
-   - authored elite kill threshold.
+   - defeat the authored elite 3 times.
 5. TERRITORY PROGRESSION
-   - authored segment milestone in a faction-dominant zone.
+   - complete Segment 5 of the authored faction-dominant zone.
 
 No final biome boss is required by default.
 
 The Relic must be obtainable before the end of the relevant chapter so dungeon preparation can begin before chapter completion.
 
-## 5.4 Keeper Relic — validated pilot
+## 5.4 Authored faction Relics
 
-Exact Keeper objectives:
+### Keeper
 
-1. DISCOVERY
-   - defeat 1 Keeper Warrior;
-   - defeat 1 Keeper Shaman.
-2. FAMILIARIZATION
-   - defeat 25 Keepers total.
-3. DEEP STUDY
-   - defeat 100 Keepers total.
-4. ELITE STUDY
-   - defeat 3 Keeper Champions.
-5. TERRITORY PROGRESSION
-   - complete Frostpeak Segment 5.
+- normals: Keeper Warrior + Keeper Shaman;
+- elite: Keeper Champion;
+- territory: Frostpeak Mountain Segment 5.
 
-Completing all five objectives reconstructs the Keeper Relic permanently once Archaeology has unlocked reconstruction.
+### Heretic
 
-This is the pilot template to transpose to other factions through data.
+- normals: Heretic Thug + Heretic Firestarter;
+- elite: Heretic Enforcer;
+- territory: Stone Highlands Segment 5.
+
+### Undead
+
+- normals: Skeleton Swordsman + Skeleton Archer;
+- elite: Spectral Knight;
+- territory: Dark Swamp Segment 5.
+
+### Morgana
+
+- normals: Morgana Witch + Morgana Suppressor;
+- elite: Morgana Dark Knight;
+- territory: Golden Steppe Segment 5.
+
+Completing all five objectives reconstructs the matching faction Relic permanently once Archaeology has unlocked reconstruction.
 
 ## 5.5 Historical progress
 
@@ -321,33 +351,37 @@ Exact migration/backfill behavior for older save formats remains an implementati
 
 Reconstructing a faction Relic makes TWO independent Research entries appear simultaneously.
 
+The same validated tuning applies to Keeper, Heretic, Undead and Morgana.
+
 ## 6.1 Faction Expedition Research
 
-Keeper pilot:
+For each faction:
 
-`Étude des Keeper`
+`Étude des <Faction>`
 
-- prerequisite: Keeper Relic reconstructed;
+- prerequisite: matching faction Relic reconstructed;
+- Academy tier: T4;
 - Silver cost: 5,000;
 - duration: 30 minutes;
-- reward: permanently unlocks the Keeper Expedition family.
+- reward: permanently unlocks that faction Expedition family.
 
 Cartography determines which tier of that family is available.
 
-No `Keeper Study II/III/IV/V`.
+There is no tiered Study II/III/IV/V chain.
 
 ## 6.2 Faction Dungeon Research
 
-Keeper pilot:
+For each faction:
 
-`Localisation des Sanctuaires Keeper`
+`Localisation des Sanctuaires <Faction>`
 
-- prerequisite: Keeper Relic reconstructed;
+- prerequisite: matching faction Relic reconstructed;
+- Academy tier: T4;
 - Silver cost: 10,000;
 - duration: 1 hour;
-- reward: permanently unlocks the Keeper dungeon family as selectable content.
+- reward: permanently unlocks that faction dungeon family as selectable content.
 
-Equivalent independent Research exists for Heretic, Undead and Morgana when their authored content is added.
+All four dungeon families are authored through the same generic access contract.
 
 ## 6.3 Dungeon keys
 
@@ -413,6 +447,8 @@ Validated V1 contains:
 - tier availability controlled by Cartography;
 - produces the matching faction Rune;
 - affected by matching Faction Mastery yield.
+
+All four faction families are authored for T4-T8: Keeper, Heretic, Undead and Morgana.
 
 ## 7.3 Slots
 
@@ -588,7 +624,9 @@ They combine:
 
 They have NO HP stat in the validated design.
 
-## 10.2 Keeper Cape defensive stats — pilot
+## 10.2 Defensive stats — all four factions
+
+Keeper, Heretic, Undead and Morgana use the same validated defensive stat curve:
 
 | Tier | Armor | Magic Resistance |
 |---|---:|---:|
@@ -598,13 +636,13 @@ They have NO HP stat in the validated design.
 | T7 | 9 | 14 |
 | T8 | 13 | 20 |
 
-Other faction Cape stat profiles may vary naturally by faction identity but must reuse the same generic Cape/passive architecture.
+Faction identity changes the matching-faction dungeon resistance target, not these base defensive stats.
 
-## 10.3 Keeper Cape base recipes — pilot
+## 10.3 Base recipes — all four factions
 
 No predecessor equipment is consumed.
 
-| Tier | Cloth | Leather | Keeper Runes |
+| Tier | Cloth | Leather | Matching faction Runes |
 |---|---:|---:|---:|
 | T4 | 3 | 1 | 3 |
 | T5 | 4 | 2 | 4 |
@@ -613,6 +651,8 @@ No predecessor equipment is consumed.
 | T8 | 8 | 4 | 8 |
 
 All materials are the matching target tier.
+
+Each Cape uses only its own faction Rune family.
 
 Normal equipment crafting remains predecessor-free according to the current live crafting contract.
 
@@ -684,12 +724,12 @@ A faction Cape may be used in its own dungeon tier and all HIGHER dungeon tiers,
 Examples:
 
 - Keeper Cape T4: active in Keeper dungeons T4-T8;
-- Keeper Cape T6: active in Keeper dungeons T6-T8;
-- Keeper Cape T8: active only in Keeper dungeon T8.
+- Heretic Cape T6: active in Heretic dungeons T6-T8;
+- Morgana Cape T8: active only in Morgana dungeon T8.
 
 This prevents high-tier Capes from trivializing old dungeon tiers while preserving long-term usefulness of lower-tier Capes.
 
-Implementation must resolve this through generic authored faction/tier data, not Keeper-specific code.
+Implementation resolves this through generic authored faction/tier data, not faction-specific runtime code.
 
 ---
 
@@ -803,9 +843,17 @@ Academy construction
 -> 500 Silver + 12 T3 Planks + 8 T3 Bars + 4 T3 Cloth
 -> Academy T4 operational
 
+Academy upgrades
+-> Island 3/4/5/6 gates Academy T5/T6/T7/T8
+-> matching refined-material + Silver costs
+
 Cartography I
 -> 5,000 Silver / 30 min
 -> Expeditions + Silver Expedition T4
+
+Cartography II-V
+-> sequential T5-T8 Expedition unlocks
+-> Cartography III unlocks second slot
 
 Archaeology I
 -> 2,500 Silver / 20 min
@@ -836,7 +884,7 @@ Dungeon run
 -> future faction Artifacts for faction item/weapon crafting
 
 Faction Cape
--> defensive stats
+-> shared defensive stat curve
 -> matching faction-dungeon-only damage reduction passive
 
 Faction Mastery
@@ -891,19 +939,14 @@ Existing catalogs remain authoritative for existing content until deliberately r
 
 The following remain intentionally OPEN and must not be invented during implementation:
 
-1. Academy upgrade costs/material requirements for T5-T8.
-2. Exact Silver/material costs and durations for Cartography II-V.
-3. Exact Relic objectives for Heretic / Undead / Morgana (Keeper pilot is locked).
-4. Exact names/visual identities of each faction Relic.
-5. Final player-facing names/visual identities of faction Runes.
-6. Exact Cape stat profiles/recipes for Heretic / Undead / Morgana where they differ from Keeper; architecture is shared.
-7. Exact faction item/weapon recipes and Artifact drop rates when those items are designed.
-8. Final Bestiary/Academy/Expedition visual composition and polish beyond validated behavior.
-9. Persistence/backfill details for historical Relic objectives where older saves contain insufficient historical data.
-10. Exact V1 application of the Faction Mastery loot channel (drop-rate versus quantity/yield) remains OPEN.
-11. Later-tier/faction content authoring not otherwise validated in this document.
+1. Exact names/visual identities of each faction Relic.
+2. Final player-facing names/visual identities of faction Runes.
+3. Exact faction item/weapon recipes and Artifact drop rates when those items are designed.
+4. Final Bestiary/Academy/Expedition visual composition and polish beyond validated behavior.
+5. Persistence/backfill details for historical Relic objectives where older saves contain insufficient historical data.
+6. Exact V1 application of the Faction Mastery loot channel (drop-rate versus quantity/yield) remains OPEN.
 
-The core Keeper pilot economy, Faction Mastery curve, Rune economy, faction Cape passive, generic Expedition rules, Silver Expedition balance, Academy construction cost, Cartography I and Archaeology I tuning are validated.
+Academy T4-T8 progression, Cartography I-V tuning, all four faction Relics, contextual Research, T4-T8 faction Expeditions and matching faction Capes are now validated and implemented as data-driven content.
 
 ---
 
@@ -911,23 +954,25 @@ The core Keeper pilot economy, Faction Mastery curve, Rune economy, faction Cape
 
 Design status:
 
-- Academy architecture: VALIDATED / IMPLEMENTED T4
+- Academy architecture: VALIDATED / IMPLEMENTED T4-T8
 - Academy construction cost: VALIDATED / IMPLEMENTED
-- Cartography I: VALIDATED / IMPLEMENTED
+- Academy T5-T8 upgrade costs: VALIDATED / IMPLEMENTED
+- Cartography I-V: VALIDATED / IMPLEMENTED
 - Archaeology I: VALIDATED / IMPLEMENTED
-- Cartography II-V tuning: OPEN
 - Relic system: VALIDATED / IMPLEMENTED
-- Keeper Relic objectives: VALIDATED / IMPLEMENTED
-- Keeper contextual Research: VALIDATED / IMPLEMENTED
+- Keeper / Heretic / Undead / Morgana Relic objectives: VALIDATED / IMPLEMENTED
+- Keeper / Heretic / Undead / Morgana contextual Research: VALIDATED / IMPLEMENTED
+- Dungeon family Research gates: VALIDATED / IMPLEMENTED FOR ALL FOUR FACTIONS
 - Dungeon key interaction: VALIDATED / UNCHANGED
 - Expedition slots/durations/concurrency: VALIDATED / IMPLEMENTED
 - Expedition online progression: IMPLEMENTED
 - Expedition offline progression: VALIDATED / IMPLEMENTED
 - Completion recap popup: IMPLEMENTED FOR ONLINE/OFFLINE COMPLETION BATCHES
 - Generic Silver Expedition yields T4-T8: VALIDATED / AUTHORED
+- Faction Expeditions T4-T8 for all four factions: VALIDATED / IMPLEMENTED
 - Faction Rune generation + Inventory credit: VALIDATED / IMPLEMENTED
 - Rune sinks: VALIDATED
-- Keeper Cape base stats/recipes T4-T8: VALIDATED / IMPLEMENTED
+- Faction Cape base stats/recipes T4-T8 for all four factions: VALIDATED / IMPLEMENTED
 - Cape enchantment integration: VALIDATED / IMPLEMENTED
 - Faction-dungeon Cape passive curve: VALIDATED / IMPLEMENTED
 - Cape tier compatibility: VALIDATED / IMPLEMENTED
