@@ -1,17 +1,19 @@
 # 19A. PRODUCTION PROGRESSION BALANCE
 
 Status: AUTHORITATIVE BALANCE CONTRACT
-Date: 2026-08-21
+Date: 2026-08-22
 
 ---
 
 # Purpose
 
-This document defines the validated T4-T8 production progression contract for Gathering Mastery, island operational buildings, Workers, Workshop and Silver sinks.
+This document defines the production progression contract for Player Island levels, Gathering Mastery, Workers, standard production buildings and Silver/material sinks.
 
-The goal is to keep production progression aligned with combat/world progression while avoiding arbitrary mastery gates, permanent Wood/Ore bottlenecks or Silver costs that are economically irrelevant.
+The Player Island is the single infrastructure authority for production tier access.
 
-The values below were selected from sequential runtime diagnostics that preserve Hero mastery, Worker mastery, raw/refined stocks, recursive refining requirements and representative equipment crafting between tiers, plus combat runtime Silver/hour benchmarks on the best viable farm spots available at each transition.
+Standard gathering, refining and crafting buildings are permanent services constructed once. They do not level from T3 to T8 individually.
+
+Special-purpose buildings may retain authored levels when those levels unlock meaningful capabilities. The Academy remains independently upgradeable.
 
 ---
 
@@ -28,161 +30,144 @@ T8: mastery 25
 
 Workers continue to grant Hero gathering mastery XP on completed cycles.
 
-These gates are progression checks, not standalone grind walls. They are calibrated around mastery naturally accumulated while production resources are being generated and infrastructure is being funded.
-
 Authoritative runtime source:
 apps/client/src/data/progressionContentCatalog.ts
 GATHERING_MASTERY_UNLOCK_BY_TIER
 
 ---
 
-# Operational Building Progression
+# Island Production Tier Authority
 
-Gathering buildings and their matching refining buildings share the same per-building material curve.
+The Player Island level defines the maximum production tier available to every constructed standard production building.
 
-Upgrade unlocking T4: 15 refined T3 materials
-Upgrade unlocking T5: 40 refined T4 materials
-Upgrade unlocking T6: 70 refined T5 materials
-Upgrade unlocking T7: 110 refined T6 materials
-Upgrade unlocking T8: 160 refined T7 materials
+Island Level 1 -> production through T3
+Island Level 2 -> production through T4
+Island Level 3 -> production through T5
+Island Level 4 -> production through T6
+Island Level 5 -> production through T7
+Island Level 6 -> production through T8
 
-A mono-family building always consumes the refined material produced by its own family.
+This applies to:
+- Lumber Camp
+- Mine
+- Hunting Camp
+- Fiber Camp
+- Sawmill
+- Smelter
+- Tannery
+- Weaver
+- Workshop
 
-Examples:
-- Lumber Camp / Sawmill -> refined Wood
-- Mine / Smelter -> refined Ore
-- Hunting Camp / Tannery -> refined Hide
-- Fiber Camp / Weaver -> refined Fiber
+These buildings are construction-only in the current production contract.
 
-Operational building levels:
-Level 1 -> production through T3
-Level 2 -> production through T4
-Level 3 -> production through T5
-Level 4 -> production through T6
-Level 5 -> production through T7
-Level 6 -> production through T8
+They do not require separate tier upgrades after construction.
 
 Authoritative runtime source:
-packages/data/src/config/island-progression.ts
+packages/data/src/config/island-levels.ts
 
 ---
 
-# Workshop Upgrade Rule
+# Island Level / World Gates
 
-The Workshop represents mastery of the complete equipment production chain. Every upgrade therefore requires all four refined resource families of the source tier in fixed quantities.
+Each island tier transition remains gated by world progression.
 
-Required families:
+Island 2 / T4 -> after Dark Swamp T3
+Island 3 / T5 -> after Frostpeak Mountain T4
+Island 4 / T6 -> after Ironveil Peaks T5
+Island 5 / T7 -> after Ashenpeak Mountain T6
+Island 6 / T8 -> after Doompeak Mountain T7
+
+Island Level 6 is therefore the infrastructure gate that enables T8 production.
+
+Authoritative runtime source:
+packages/data/src/config/island-levels.ts
+
+---
+
+# Centralized Island Upgrade Material Curve
+
+Because standard production buildings no longer consume individual upgrade costs, the island upgrade itself carries the shared infrastructure material sink.
+
+Every island upgrade requires all four refined resource families from the source tier in equal quantities:
+
 - refined Wood
-- refined Ore
-- refined Hide
-- refined Fiber
+- refined Ore / Metal
+- refined Hide / Leather
+- refined Fiber / Cloth
 
-Validated Workshop material curve:
+Validated curve:
 
-Workshop -> T4: 4 refined T3 of each family = 16 total
-Workshop -> T5: 10 refined T4 of each family = 40 total
-Workshop -> T6: 18 refined T5 of each family = 72 total
-Workshop -> T7: 28 refined T6 of each family = 112 total
-Workshop -> T8: 40 refined T7 of each family = 160 total
+T3 -> T4 / Island 1 -> 2:
+8 refined T3 of each family = 32 total
 
-The small total adjustments at T4, T6 and T7 preserve the existing material curve while keeping the four-family requirement perfectly symmetrical and readable.
+T4 -> T5 / Island 2 -> 3:
+20 refined T4 of each family = 80 total
 
-Workshop upgrades use the same standard authored requirements array as other building upgrades. No flexible material-payment rule is used for the Workshop.
+T5 -> T6 / Island 3 -> 4:
+40 refined T5 of each family = 160 total
+
+T6 -> T7 / Island 4 -> 5:
+60 refined T6 of each family = 240 total
+
+T7 -> T8 / Island 5 -> 6:
+90 refined T7 of each family = 360 total
+
+No family may substitute for another.
+
+The equal four-family requirement prevents Wood/Ore-only bottlenecks and makes the island upgrade represent the whole production network.
 
 Authoritative runtime source:
-packages/data/src/config/island-progression.ts
+packages/data/src/config/island-levels.ts
 
 ---
 
-# Silver Sink Contract
+# Centralized Island Silver Sink
 
-Silver is a secondary progression sink. It must matter, but it must not replace material/mastery/world gates as the primary progression structure.
+Silver remains a secondary progression sink. It must matter without recreating the former repetitive tax of upgrading nine standard production buildings independently.
 
-Calibration target:
-- T3 -> T4 keeps the already healthy early-game ratio.
-- T4 -> T8 target roughly 25% of the incremental production time of the tier when farming Silver on the average best viable combat spot across the current weapon set.
+Validated island Silver curve:
 
-Validated total Silver sink per transition:
+T3 -> T4: 2,000 Silver
+T4 -> T5: 30,000 Silver
+T5 -> T6: 100,000 Silver
+T6 -> T7: 265,000 Silver
+T7 -> T8: 450,000 Silver
 
-T3 -> T4: 3,900 Silver
-T4 -> T5: 60,000 Silver
-T5 -> T6: 200,000 Silver
-T6 -> T7: 525,000 Silver
-T7 -> T8: 900,000 Silver
+This replaces the former Player Island + 8 mono-family building + Workshop Silver distribution.
 
-Each total includes:
-- Player Island level upgrade,
-- 8 mono-family operational building upgrades,
-- 1 Workshop upgrade.
+The Academy remains a separate Silver/material sink because its levels unlock actual research content rather than duplicating production-tier access.
 
-Validated distribution:
-
-T3 -> T4
-- Island: 1,000
-- Each mono building: 300 x8
-- Workshop: 500
-- Total: 3,900
-
-T4 -> T5
-- Island: 18,000
-- Each mono building: 4,500 x8
-- Workshop: 6,000
-- Total: 60,000
-
-T5 -> T6
-- Island: 60,000
-- Each mono building: 14,500 x8
-- Workshop: 24,000
-- Total: 200,000
-
-T6 -> T7
-- Island: 155,000
-- Each mono building: 38,000 x8
-- Workshop: 66,000
-- Total: 525,000
-
-T7 -> T8
-- Island: 270,000
-- Each mono building: 65,000 x8
-- Workshop: 110,000
-- Total: 900,000
-
-Reference average best-farm Silver/hour observed during calibration:
+Reference average best-farm Silver/hour from the previous calibration remains useful as a pacing reference:
 - T3.0 transition: ~23.3k/h
 - T4.3 transition: ~54.3k/h
 - T5.3 transition: ~88.5k/h
 - T6.3 transition: ~116.9k/h
 - T7.3 transition: ~135.5k/h
 
-Approximate average Silver farm time represented by the validated total sink:
-- T3 -> T4: ~0.17 h
-- T4 -> T5: ~1.11 h
-- T5 -> T6: ~2.26 h
-- T6 -> T7: ~4.49 h
-- T7 -> T8: ~6.64 h
+Approximate dedicated Silver farm time represented by the new island-only curve at those reference rates:
+- T3 -> T4: ~0.09 h
+- T4 -> T5: ~0.55 h
+- T5 -> T6: ~1.13 h
+- T6 -> T7: ~2.27 h
+- T7 -> T8: ~3.32 h
 
-These values are balance references, not mandatory dedicated grind sessions. Silver earned naturally while progressing combat contributes to the same wallet and reduces explicit Silver farming.
-
-Authoritative runtime sources:
-packages/data/src/config/island-levels.ts
-packages/data/src/config/island-progression.ts
-
----
-
-# Island Level / World Gates
-
-Building level remains capped by Player Island level.
-
-Island 2 / Building 2 -> after Dark Swamp T3
-Island 3 / Building 3 -> after Frostpeak Mountain T4
-Island 4 / Building 4 -> after Ironveil Peaks T5
-Island 5 / Building 5 -> after Ashenpeak Mountain T6
-Island 6 / Building 6 -> after Doompeak Mountain T7
-
-Island level 6 is therefore the infrastructure gate that enables T8 production.
+These are references, not mandatory dedicated grind sessions. Silver earned naturally during combat progression contributes to the same wallet.
 
 Authoritative runtime source:
 packages/data/src/config/island-levels.ts
+
+---
+
+# Academy Separation
+
+The Academy is not part of the standard production-building tier progression.
+
+It retains authored building levels because each level increases the available research tier and unlocks meaningful research content.
+
+Academy upgrade costs remain defined independently from island production costs.
+
+Authoritative runtime source:
+packages/data/src/config/academy-progression.ts
 
 ---
 
@@ -192,8 +177,8 @@ One Worker may operate each supported gathering family under the current Worker 
 
 Worker production may target T3-T8 when:
 
-1. the corresponding gathering building supports that tier,
-2. the Worker's mastery meets the same gathering mastery tier requirement,
+1. the Player Island supports that production tier,
+2. the Worker's mastery meets the gathering mastery tier requirement,
 3. the resource/refining content exists for that tier.
 
 Worker cycles continue to provide:
@@ -205,76 +190,63 @@ Hero gathering and Worker gathering remain parallel progression paths.
 
 ---
 
-# Validated Sequential Pacing Reference
+# Migration Rule
 
-The final production validation model used:
+Legacy saved levels on standard gathering, refining and Workshop buildings no longer represent production progression.
 
-- 4 Workers in parallel, one per family,
-- Hero active gathering distributed across the four families,
-- mastery and stocks preserved across tiers,
-- recursive refining costs preserved,
-- representative equipment set crafted at every tier,
-- validated mastery gates 3 / 7 / 11 / 18 / 25,
-- mono building curve 15 / 40 / 70 / 110 / 160,
-- Workshop requiring all four refined families with per-family costs 4 / 10 / 18 / 28 / 40.
+When old saves are loaded, those standard buildings are normalized to level 1 while the Player Island level remains authoritative for production tier access.
 
-Observed cumulative transition times from the previous calibration remain reference values and must be revalidated if production pacing is audited again after this Workshop material-rule change:
+Special-purpose authored progression such as the Academy remains preserved.
 
-T3 -> T4: ~0.72 h
-T4 -> T5: ~5.18 h
-T5 -> T6: ~13.81 h
-T6 -> T7: ~31.88 h
-T7 -> T8: ~58.27 h
-Representative T8 craft: ~59.85 h
-
-Incremental production time by transition used for the current Silver calibration:
-- T3 -> T4: ~0.72 h
-- T4 -> T5: ~4.46 h
-- T5 -> T6: ~8.63 h
-- T6 -> T7: ~18.07 h
-- T7 -> T8: ~26.39 h
-
-These values are benchmark references, not hard time requirements. Real player behavior may differ by active-gather allocation, Worker uptime, crafting choices, stock management and combat farming choices.
+Authoritative runtime source:
+packages/gameplay/src/island/island-service.ts
 
 ---
 
 # Design Rules
 
 Rule 01
-Gathering mastery gates must be derived from actual progression pacing, never chosen independently from resource-generation time.
+Player Island level is the single authority for standard production tier access.
 
 Rule 02
-Worker-generated Hero mastery XP must always be included when balancing gathering tier access.
+Gathering, refining and Workshop buildings are constructed once and do not level merely to unlock the next production tier.
 
 Rule 03
-Building material costs are intended to be a major production sink, but must not consume nearly all resources needed for the first equipment set of a tier.
+Building levels are reserved for meaningful functional progression, not duplicate tier gates.
 
 Rule 04
-The Workshop must require all four refined resource families of the source tier in equal quantities. No single production family may substitute for another in Workshop upgrades.
+Every island tier upgrade requires all four refined production families in equal quantities.
 
 Rule 05
-T8 production requires Island level 6 and operational building level 6.
+T8 production requires Player Island Level 6.
 
 Rule 06
-Silver is a meaningful secondary sink and should remain materially below the production-time gate under the validated baseline.
+Silver is a meaningful secondary sink but must not recreate the former multi-building upgrade tax.
 
 Rule 07
-Silver balance must be evaluated from real combat Silver/hour at viable farm spots, not from isolated nominal reward values.
+The Academy remains independently upgradeable because its levels unlock research content.
 
 Rule 08
-Balance values must remain data driven. UI and runtime logic consume the same authored definitions.
+Gathering mastery gates remain 0 / 3 / 7 / 11 / 18 / 25 for T3-T8.
+
+Rule 09
+Balance values remain data driven. UI and runtime logic consume the same authored definitions.
 
 ---
 
 # Regression Coverage
 
-Core regression:
+Core data regression:
+packages/data/src/__tests__/island-progression.test.ts
+
+Client balance regression:
 apps/client/src/data/islandProductionProgressionBalance.test.ts
 
 World/island gate regression:
 apps/client/src/data/worldIslandTierProgression.test.ts
 
-Temporary pacing diagnostics used to derive this contract should not remain part of the permanent test suite after validation.
+Gameplay save/migration regression:
+packages/gameplay/src/island/island-service.test.ts
 
 =========================
 DOCUMENT TERMINÉ
