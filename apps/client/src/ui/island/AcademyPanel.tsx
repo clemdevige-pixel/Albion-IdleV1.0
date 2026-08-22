@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { getAcademyResearchTier } from "@game/data";
 import type { ExpeditionDurationMs } from "@game/gameplay";
+import {
+  getResearchPresentationGroup,
+  type ResearchPresentationGroup,
+} from "../../data/researchContentCatalog";
 import type {
   AcademyExpeditionEntryModel,
   AcademyResearchEntryModel,
@@ -9,7 +13,6 @@ import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./academy.css";
 
 const ACADEMY_TIERS = [4, 5, 6, 7, 8] as const;
-type ResearchScope = "core" | "faction";
 
 function formatDuration(durationMs: number): string {
   const totalSeconds = Math.max(0, Math.ceil(durationMs / 1000));
@@ -39,11 +42,6 @@ function expeditionFailureMessage(reason: string): string {
     case "invalid_duration": return "Cette durée n’est pas disponible pour cette expédition.";
     default: return "Impossible de lancer cette expédition.";
   }
-}
-
-function isCoreResearch(research: AcademyResearchEntryModel): boolean {
-  return research.id.startsWith("research_cartography_")
-    || research.id.startsWith("research_archaeology_");
 }
 
 function researchPriority(research: AcademyResearchEntryModel): number {
@@ -168,14 +166,15 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
     startAcademyExpedition,
   } = useGameServices();
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [researchScope, setResearchScope] = useState<ResearchScope>("core");
+  const [researchScope, setResearchScope] = useState<ResearchPresentationGroup>("core");
   const [requestedExpeditionTier, setRequestedExpeditionTier] = useState<number | undefined>();
   const model = getAcademyModel();
   const researchTier = getAcademyResearchTier(level);
   const selectedExpeditionTier = requestedExpeditionTier ?? researchTier ?? 4;
   const availableTiers = ACADEMY_TIERS.filter((tier) => researchTier !== undefined && tier <= researchTier);
-  const research = model.research
-    .filter((entry) => researchScope === "core" ? isCoreResearch(entry) : !isCoreResearch(entry));
+  const research = model.research.filter((entry) => (
+    getResearchPresentationGroup(entry.id) === researchScope
+  ));
   research.sort((left, right) => researchPriority(left) - researchPriority(right));
   const activeExpeditions = model.expeditions.filter((entry) => entry.active);
   const tierExpeditions = model.expeditions.filter((entry) => (
