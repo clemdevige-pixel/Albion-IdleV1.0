@@ -1,38 +1,50 @@
 import type { SaveProvider } from "@game/persistence";
 import { z } from "zod";
 import {
-  RELIC_OBJECTIVE_COUNT,
+  type ExamineRelicResult,
   type RegisterRelicResult,
   type RelicDefinition,
   type RelicId,
-  type RelicObjectiveRequirement,
   type RelicProgressPort,
   type RelicProgressView,
   type RelicReconstructionPort,
 } from "./types.js";
 
-const RelicSnapshotSchema = z.object({
+const RelicSnapshotV1Schema = z.object({
   version: z.literal(1),
   reconstructedRelicIds: z.array(z.string().min(1)),
 });
 
-type RelicSnapshot = z.infer<typeof RelicSnapshotSchema>;
+const RelicSnapshotV2Schema = z.object({
+  version: z.literal(2),
+  acquiredRelics: z.array(z.object({
+    relicId: z.string().min(1),
+    acquiredAtFactionKillCount: z.number().int().nonnegative(),
+  })),
+  examinedRelicIds: z.array(z.string().min(1)),
+});
+
+const RelicSnapshotSchema = z.union([RelicSnapshotV1Schema, RelicSnapshotV2Schema]);
+type RelicSnapshot = z.infer<typeof RelicSnapshotV2Schema>;
 
 const DEFAULT_RECONSTRUCTION_PORT: RelicReconstructionPort = {
   canReconstructRelic: () => true,
 };
 
 /**
- * Deterministic Relic reconstruction domain.
- * Objective progress is always derived from existing authoritative progression
- * sources. Only permanent reconstruction is persisted; fragments are not items
- * or a second currency and are never stored separately.
+ * Persistent faction Relic domain.
+ *
+ * A Relic is dropped once by its authored faction boss, then charged by faction
+ * kills performed after acquisition. Once charged, the Academy may examine it
+ * when the owning Research authority allows examination. No fragment items or
+ * duplicate objective counters are stored.
  */
 export class RelicService implements SaveProvider {
   readonly providerId = "relics";
 
   readonly #definitions = new Map<RelicId, RelicDefinition>();
-  readonly #reconstructedRelicIds = new Set<RelicId>();
+  readonly #acquiredAtFactionKillCount = new Map<RelicId, number>();
+  readonly #examinedRelicIds = new Set<RelicId>();
   readonly #progressPort: RelicProgressPort;
   readonly #reconstructionPort: RelicReconstructionPort;
 
@@ -51,111 +63,142 @@ export class RelicService implements SaveProvider {
     return { ok: true };
   }
 
+  getDefinitions(): readonly RelicDefinition[] {
+    return [...this.#definitions.values()];
+  }
+
   getDefinition(relicId: RelicId): RelicDefinition | undefined {
     return this.#definitions.get(relicId);
   }
 
+  /** Compatibility alias: an examined Relic fulfills old reconstructed gates. */
   isReconstructed(relicId: RelicId): boolean {
-    return this.#reconstructedRelicIds.has(relicId);
+    return this.#examinedRelicIds.has(relicId);
+  }
+
+  isExamined(relicId: RelicId): boolean {
+    return this.#examinedRelicIds.has(relicId);
   }
 
   getProgress(relicId: RelicId): RelicProgressView | undefined {
     const definition = this.#definitions.get(relicId);
     if (definition === undefined) return undefined;
-    const completedObjectiveIds = definition.objectives
-      .filter((objective) => this.#isRequirementMet(objective.requirement))
-      .map((objective) => objective.id);
+
+    if (this.#examinedRelicIds.has(relicId)) {
+      return {
+        relicId,
+        state: "examined",
+        chargeKills: definition.chargeKillCount,
+        requiredChargeKills: definition.chargeKillCount,
+        reconstructed: true,
+      };
+    }
+
+    const acquiredAt = this.#acquiredAtFactionKillCount.get(relicId);
+    if (acquiredAt === undefined) {
+      return {
+        relicId,
+        state: "unobtained",
+        chargeKills: 0,
+        requiredChargeKills: definition.chargeKillCount,
+        reconstructed: false,
+      };
+    }
+
+    const currentFactionKills = this.#progressPort.getFactionKillCount(definition.factionId);
+    const chargeKills = Math.min(
+      definition.chargeKillCount,
+      Math.max(0, currentFactionKills - acquiredAt),
+    );
+
     return {
       relicId,
-      completedObjectiveIds,
-      fragmentCount: completedObjectiveIds.length,
-      reconstructed: this.#reconstructedRelicIds.has(relicId),
+      state: chargeKills >= definition.chargeKillCount ? "charged" : "broken",
+      chargeKills,
+      requiredChargeKills: definition.chargeKillCount,
+      reconstructed: false,
     };
   }
 
   /**
-   * Resolves all newly completed Relics automatically after authoritative
-   * progression changes. Objective history can complete before reconstruction
-   * is enabled; permanent reconstruction waits for its owning authority.
+   * Called after the authoritative faction-knowledge kill counter has advanced.
+   * The matching boss drops its Relic exactly once. Its own kill is used as the
+   * baseline, so charging starts at 0/required and only later faction kills count.
    */
-  resolveCompletedRelics(): readonly RelicId[] {
-    const newlyReconstructed: RelicId[] = [];
+  recordMonsterKill(monsterId: string): readonly RelicId[] {
+    const newlyAcquired: RelicId[] = [];
     for (const definition of this.#definitions.values()) {
-      if (this.#reconstructedRelicIds.has(definition.id)) continue;
-      if (!this.#reconstructionPort.canReconstructRelic(definition)) continue;
-      const complete = definition.objectives.every((objective) => (
-        this.#isRequirementMet(objective.requirement)
-      ));
-      if (!complete) continue;
-      this.#reconstructedRelicIds.add(definition.id);
-      newlyReconstructed.push(definition.id);
+      if (definition.sourceBossMonsterId !== monsterId) continue;
+      if (this.#examinedRelicIds.has(definition.id)) continue;
+      if (this.#acquiredAtFactionKillCount.has(definition.id)) continue;
+
+      this.#acquiredAtFactionKillCount.set(
+        definition.id,
+        this.#progressPort.getFactionKillCount(definition.factionId),
+      );
+      newlyAcquired.push(definition.id);
     }
-    return newlyReconstructed;
+    return newlyAcquired;
+  }
+
+  examineRelic(relicId: RelicId): ExamineRelicResult {
+    const definition = this.#definitions.get(relicId);
+    if (definition === undefined) return { ok: false, reason: "unknown_relic" };
+    if (this.#examinedRelicIds.has(relicId)) return { ok: false, reason: "already_examined" };
+
+    const progress = this.getProgress(relicId);
+    if (progress?.state === "unobtained") return { ok: false, reason: "not_acquired" };
+    if (progress?.state !== "charged") return { ok: false, reason: "not_charged" };
+    if (!this.#reconstructionPort.canReconstructRelic(definition)) {
+      return { ok: false, reason: "examination_locked" };
+    }
+
+    this.#examinedRelicIds.add(relicId);
+    return { ok: true };
   }
 
   save(): RelicSnapshot {
     return {
-      version: 1,
-      reconstructedRelicIds: [...this.#reconstructedRelicIds],
+      version: 2,
+      acquiredRelics: [...this.#acquiredAtFactionKillCount].map(([
+        relicId,
+        acquiredAtFactionKillCount,
+      ]) => ({ relicId, acquiredAtFactionKillCount })),
+      examinedRelicIds: [...this.#examinedRelicIds],
     };
   }
 
   load(data: unknown): void {
     const parsed = RelicSnapshotSchema.safeParse(data);
     if (!parsed.success) return;
-    this.#reconstructedRelicIds.clear();
-    for (const relicId of new Set(parsed.data.reconstructedRelicIds)) {
-      if (this.#definitions.has(relicId)) this.#reconstructedRelicIds.add(relicId);
-    }
-  }
 
-  #isRequirementMet(requirement: RelicObjectiveRequirement): boolean {
-    switch (requirement.type) {
-      case "all_monsters_killed":
-        return requirement.monsterIds.every((monsterId) => (
-          this.#progressPort.getMonsterKillCount(monsterId) >= requirement.minimumEach
-        ));
-      case "monster_kill_count":
-        return this.#progressPort.getMonsterKillCount(requirement.monsterId) >= requirement.minimum;
-      case "faction_kill_count":
-        return this.#progressPort.getFactionKillCount(requirement.factionId) >= requirement.minimum;
-      case "faction_elite_kill_count":
-        return this.#progressPort.getFactionEliteKillCount(requirement.factionId) >= requirement.minimum;
-      case "world_segment_progress":
-        return this.#progressPort.getCompletedSegmentCount(requirement.zoneDefId)
-          >= requirement.minimumCompletedSegments;
+    this.#acquiredAtFactionKillCount.clear();
+    this.#examinedRelicIds.clear();
+
+    if (parsed.data.version === 1) {
+      for (const relicId of new Set(parsed.data.reconstructedRelicIds)) {
+        if (!this.#definitions.has(relicId)) continue;
+        this.#acquiredAtFactionKillCount.set(relicId, 0);
+        this.#examinedRelicIds.add(relicId);
+      }
+      return;
+    }
+
+    for (const entry of parsed.data.acquiredRelics) {
+      if (!this.#definitions.has(entry.relicId)) continue;
+      this.#acquiredAtFactionKillCount.set(entry.relicId, entry.acquiredAtFactionKillCount);
+    }
+    for (const relicId of new Set(parsed.data.examinedRelicIds)) {
+      if (!this.#definitions.has(relicId)) continue;
+      this.#examinedRelicIds.add(relicId);
     }
   }
 
   #isValidDefinition(definition: RelicDefinition): boolean {
-    if (definition.id.trim() === "" || definition.factionId.trim() === "") return false;
-    if (definition.objectives.length !== RELIC_OBJECTIVE_COUNT) return false;
-    const objectiveIds = definition.objectives.map((objective) => objective.id);
-    if (objectiveIds.some((id) => id.trim() === "")) return false;
-    if (new Set(objectiveIds).size !== objectiveIds.length) return false;
-
-    return definition.objectives.every((objective) => {
-      const requirement = objective.requirement;
-      switch (requirement.type) {
-        case "all_monsters_killed":
-          return requirement.monsterIds.length > 0
-            && requirement.monsterIds.every((id) => id.trim() !== "")
-            && Number.isInteger(requirement.minimumEach)
-            && requirement.minimumEach > 0;
-        case "monster_kill_count":
-          return requirement.monsterId.trim() !== ""
-            && Number.isInteger(requirement.minimum)
-            && requirement.minimum > 0;
-        case "faction_kill_count":
-        case "faction_elite_kill_count":
-          return requirement.factionId.trim() !== ""
-            && Number.isInteger(requirement.minimum)
-            && requirement.minimum > 0;
-        case "world_segment_progress":
-          return requirement.zoneDefId.trim() !== ""
-            && Number.isInteger(requirement.minimumCompletedSegments)
-            && requirement.minimumCompletedSegments > 0;
-      }
-    });
+    return definition.id.trim() !== ""
+      && definition.factionId.trim() !== ""
+      && definition.sourceBossMonsterId.trim() !== ""
+      && Number.isInteger(definition.chargeKillCount)
+      && definition.chargeKillCount > 0;
   }
 }
