@@ -1,5 +1,6 @@
 import {
   EXPEDITION_DURATION_OPTIONS_MS,
+  type ActiveResearchState,
   type ExpeditionDurationMs,
   type ExpeditionRequirementDefinition,
   type ExpeditionService,
@@ -37,17 +38,24 @@ export interface AcademyPresentationModel {
   readonly expeditions: readonly AcademyExpeditionEntryModel[];
 }
 
+export type AcademyResearchActionResult =
+  | { readonly ok: true; readonly action: "relic_examined" }
+  | { readonly ok: true; readonly action: "research_started"; readonly activeResearch: ActiveResearchState }
+  | Extract<StartResearchResult, { readonly ok: false }>;
+
+interface RelicAwareResearchService {
+  getRelicGateState?(researchId: string): "none" | "waiting" | "ready" | "examined";
+  examineRelicForResearch?(researchId: string): boolean;
+}
+
 export interface AcademyPresentationFoundationDependencies<
   TResearchRequirement extends ResearchRequirementDefinition,
   TExpeditionRequirement extends ExpeditionRequirementDefinition,
   TExpeditionRewardSummary,
 > {
-  readonly researchService: ResearchService<TResearchRequirement>;
+  readonly researchService: ResearchService<TResearchRequirement> & RelicAwareResearchService;
   readonly expeditionService: ExpeditionService<TExpeditionRequirement, TExpeditionRewardSummary>;
-  readonly getRelicGateState?: (
-    researchId: string,
-  ) => "none" | "waiting" | "ready" | "examined";
-  readonly examineRelicForResearch?: (researchId: string) => boolean;
+  readonly isWaitingForRelic?: (researchId: string) => boolean;
   readonly onMutation?: () => void;
 }
 
@@ -62,6 +70,11 @@ export function createAcademyPresentationFoundation<
     TExpeditionRewardSummary
   >,
 ) {
+  const getRelicGateState = (researchId: string) => (
+    dependencies.researchService.getRelicGateState?.(researchId)
+      ?? (dependencies.isWaitingForRelic?.(researchId) === true ? "waiting" : "none")
+  );
+
   const getModel = (): AcademyPresentationModel => {
     const activeResearch = dependencies.researchService.getActiveResearch();
     const activeExpeditions = dependencies.expeditionService.getActiveExpeditions();
@@ -72,7 +85,7 @@ export function createAcademyPresentationFoundation<
         displayName: definition.displayName,
         tier: definition.tier,
         state: dependencies.researchService.getEntryState(definition.id) ?? "locked",
-        relicGateState: dependencies.getRelicGateState?.(definition.id) ?? "none",
+        relicGateState: getRelicGateState(definition.id),
         durationMs: definition.durationMs,
         remainingDurationMs: activeResearch?.researchId === definition.id
           ? activeResearch.remainingDurationMs
@@ -98,15 +111,20 @@ export function createAcademyPresentationFoundation<
 
   return {
     getModel,
-    examineRelic(this: void, researchId: string): boolean {
-      const examined = dependencies.examineRelicForResearch?.(researchId) ?? false;
-      if (examined) dependencies.onMutation?.();
-      return examined;
-    },
-    startResearch(this: void, researchId: string): StartResearchResult {
+    startResearch(this: void, researchId: string): AcademyResearchActionResult {
+      if (getRelicGateState(researchId) === "ready") {
+        const examined = dependencies.researchService.examineRelicForResearch?.(researchId) ?? false;
+        if (examined) {
+          dependencies.onMutation?.();
+          return { ok: true, action: "relic_examined" };
+        }
+        return { ok: false, reason: "requirements_not_met" };
+      }
+
       const result = dependencies.researchService.startResearch(researchId);
-      if (result.ok) dependencies.onMutation?.();
-      return result;
+      if (!result.ok) return result;
+      dependencies.onMutation?.();
+      return { ok: true, action: "research_started", activeResearch: result.activeResearch };
     },
     startExpedition(
       this: void,
