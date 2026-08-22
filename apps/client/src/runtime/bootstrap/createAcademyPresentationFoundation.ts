@@ -1,24 +1,13 @@
 import {
   EXPEDITION_DURATION_OPTIONS_MS,
-  type ExamineRelicResult,
   type ExpeditionDurationMs,
   type ExpeditionRequirementDefinition,
   type ExpeditionService,
-  type RelicService,
-  type RelicState,
   type ResearchRequirementDefinition,
   type ResearchService,
   type StartExpeditionResult,
   type StartResearchResult,
 } from "@game/gameplay";
-
-export interface AcademyRelicEntryModel {
-  readonly id: string;
-  readonly factionId: string;
-  readonly state: RelicState;
-  readonly chargeKills: number;
-  readonly requiredChargeKills: number;
-}
 
 export interface AcademyResearchEntryModel {
   readonly id: string;
@@ -43,7 +32,6 @@ export interface AcademyExpeditionEntryModel {
 }
 
 export interface AcademyPresentationModel {
-  readonly relics: readonly AcademyRelicEntryModel[];
   readonly research: readonly AcademyResearchEntryModel[];
   readonly expeditions: readonly AcademyExpeditionEntryModel[];
 }
@@ -53,7 +41,6 @@ export interface AcademyPresentationFoundationDependencies<
   TExpeditionRequirement extends ExpeditionRequirementDefinition,
   TExpeditionRewardSummary,
 > {
-  readonly relicService: RelicService;
   readonly researchService: ResearchService<TResearchRequirement>;
   readonly expeditionService: ExpeditionService<TExpeditionRequirement, TExpeditionRewardSummary>;
   readonly onMutation?: () => void;
@@ -75,16 +62,6 @@ export function createAcademyPresentationFoundation<
     const activeExpeditions = dependencies.expeditionService.getActiveExpeditions();
 
     return {
-      relics: dependencies.relicService.getDefinitions().map((definition) => {
-        const progress = dependencies.relicService.getProgress(definition.id);
-        return {
-          id: definition.id,
-          factionId: definition.factionId,
-          state: progress?.state ?? "unobtained",
-          chargeKills: progress?.chargeKills ?? 0,
-          requiredChargeKills: progress?.requiredChargeKills ?? definition.chargeKillCount,
-        };
-      }),
       research: dependencies.researchService.getDefinitions().map((definition) => ({
         id: definition.id,
         displayName: definition.displayName,
@@ -115,11 +92,6 @@ export function createAcademyPresentationFoundation<
 
   return {
     getModel,
-    examineRelic(this: void, relicId: string): ExamineRelicResult {
-      const result = dependencies.relicService.examineRelic(relicId);
-      if (result.ok) dependencies.onMutation?.();
-      return result;
-    },
     startResearch(this: void, researchId: string): StartResearchResult {
       const result = dependencies.researchService.startResearch(researchId);
       if (result.ok) dependencies.onMutation?.();
