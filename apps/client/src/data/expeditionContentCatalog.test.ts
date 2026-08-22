@@ -37,7 +37,7 @@ describe("expeditionContentCatalog", () => {
     for (const factionId of FACTIONS) {
       const definitions = FACTION_EXPEDITION_DEFINITIONS.filter((entry) => entry.factionId === factionId);
       expect(definitions.map(({ tier }) => tier)).toEqual(TIERS);
-      expect(new Set(definitions.map(({ typeId }) => typeId)).toEqual(new Set([factionId]));
+      expect(new Set(definitions.map(({ typeId }) => typeId))).toEqual(new Set([factionId]));
       for (const definition of definitions) {
         expect(definition.requirements).toEqual([
           { type: "research_unlock", unlockId: `expedition_family:${factionId}` },
