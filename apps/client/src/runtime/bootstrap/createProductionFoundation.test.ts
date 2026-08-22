@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EquipmentManager, InventoryManager } from "@game/gameplay";
 import { resolveEquipmentInfo, resolveItemStackInfo } from "../../data/itemContentCatalog";
+import { ADVANCED_WORKER_ORGANIZATION } from "../../data/workerContentCatalog";
 import { createCombatFoundation } from "./createCombatFoundation";
 import { createEconomyFoundation } from "./createEconomyFoundation";
 import { createProductionFoundation } from "./createProductionFoundation";
@@ -51,22 +52,18 @@ describe("createProductionFoundation", () => {
     combat.orchestrator.dispose();
   });
 
-  it("supports two independent workers in the same profession when capacity allows it", () => {
+  it("reads worker capacity and recruitment cost from the injected live policy", () => {
     const combat = createCombatFoundation();
     const progression = createProgressionFoundation();
     const world = createWorldFoundation();
     const inventoryManager = new InventoryManager(combat.world, resolveItemStackInfo);
-    const equipmentManager = new EquipmentManager(
-      combat.world,
-      inventoryManager,
-      resolveEquipmentInfo,
-    );
+    const equipmentManager = new EquipmentManager(combat.world, inventoryManager, resolveEquipmentInfo);
     const economy = createEconomyFoundation({ inventoryManager, equipmentManager });
     const heroId = combat.world.createEntity();
     const productionStorageId = combat.world.createEntity();
     inventoryManager.createInventory(heroId, 24);
     inventoryManager.createInventory(productionStorageId, 256);
-    economy.currencyService.credit(economy.walletId, "currency_silver", 10_000);
+    let advanced = false;
 
     const production = createProductionFoundation({
       inventoryManager,
@@ -82,22 +79,20 @@ describe("createProductionFoundation", () => {
       getGatheringTier: () => 3,
       getRefiningTier: () => 3,
       getWorkerTier: () => 3,
-      getWorkerCapacity: () => 8,
-      getWorkerProfessionCapacity: () => 2,
+      getWorkerCapacity: () => advanced ? ADVANCED_WORKER_ORGANIZATION.workerCapacity : 4,
+      getWorkerProfessionCapacity: () => advanced ? ADVANCED_WORKER_ORGANIZATION.professionCapacity : 1,
+      getWorkerRecruitmentCost: () => advanced ? ADVANCED_WORKER_ORGANIZATION.recruitmentCost : 250,
     });
 
-    const first = production.workerRuntime.recruitWorker("woodcutter");
-    const second = production.workerRuntime.recruitWorker("woodcutter");
-    expect(first.ok).toBe(true);
-    expect(second.ok).toBe(true);
-    if (!first.ok || !second.ok) throw new Error("Expected both workers to be recruited");
-    expect(first.workerId).not.toBe(second.workerId);
-    expect(production.workerRuntime.getWorkersByProfession("woodcutter")).toHaveLength(2);
+    expect(production.workerRuntime.getCapacity()).toBe(4);
+    expect(production.workerRuntime.getProfessionCapacity("woodcutter")).toBe(1);
+    expect(production.workerRuntime.getRecruitmentCost()).toBe(250);
 
-    expect(production.workerRuntime.toggleWorker(first.workerId, 3).ok).toBe(true);
-    expect(production.workerRuntime.toggleWorker(second.workerId, 3).ok).toBe(true);
-    expect(production.workerRuntime.getWorkerSession(first.workerId)?.state).toBe("executing");
-    expect(production.workerRuntime.getWorkerSession(second.workerId)?.state).toBe("executing");
+    advanced = true;
+
+    expect(production.workerRuntime.getCapacity()).toBe(8);
+    expect(production.workerRuntime.getProfessionCapacity("woodcutter")).toBe(2);
+    expect(production.workerRuntime.getRecruitmentCost()).toBe(5_000);
 
     production.gatheringCoordinator.dispose();
     production.oreGatheringCoordinator.dispose();
