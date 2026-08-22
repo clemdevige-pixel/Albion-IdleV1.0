@@ -15,6 +15,10 @@ import {
   getProductionRefiningRecipe,
 } from "../data/refiningRecipes.js";
 import { FACTION_CAPE_CRAFT_RECIPES } from "../data/factionCapeContentCatalog.js";
+import {
+  getDungeonKeyFragmentItemId,
+  getDungeonKeyItemId,
+} from "../data/dungeonKeyContentCatalog.js";
 
 export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v1";
 const DEV_SANDBOX_SILVER = 10_000_000;
@@ -148,6 +152,20 @@ export function seedDevSandboxEconomy(dependencies: {
   );
 
   ensureQuantity(dependencies.inventoryManager, dependencies.heroId, "item_health_potion", 99);
+  for (const tier of [4, 5, 6, 7, 8] as const) {
+    ensureQuantity(
+      dependencies.inventoryManager,
+      dependencies.heroId,
+      getDungeonKeyItemId(tier),
+      20,
+    );
+    ensureQuantity(
+      dependencies.inventoryManager,
+      dependencies.heroId,
+      getDungeonKeyFragmentItemId(tier),
+      500,
+    );
+  }
 
   for (const itemId of Object.keys(ITEM_DEFINITIONS)) {
     const tier = getItemTier(itemId);
