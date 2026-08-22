@@ -198,14 +198,7 @@ export function GameProvider({
         .zoneMemories.find((entry) => entry.zoneDefId === requirement.zoneDefId);
       return (memory?.completedSegments.length ?? 0) >= requirement.minimumCompletedSegments;
     };
-    const factionResearchFoundation = createFactionResearchFoundation({
-      getCompletedSegmentCount: (zoneDefId) => {
-        const memory = worldRuntime
-          .getWorldLocationSaveState()
-          .zoneMemories.find((entry) => String(entry.zoneDefId) === zoneDefId);
-        return memory?.completedSegments.length ?? 0;
-      },
-    });
+    const factionResearchFoundation = createFactionResearchFoundation();
 
     const combatEntityFactoryDeps = {
       world,
@@ -231,6 +224,12 @@ export function GameProvider({
       { maxHealth: 300, physDamage: 0, attackSpeed: 1.2, armor: 0, magicRes: 0 },
       { x: 0, y: 0 },
     );
+    factionResearchFoundation.bindRelicInventory({
+      hasItem: (definition) => (
+        inventoryManager.findEntriesByItemId(heroId, definition.inventoryItemId).length > 0
+      ),
+      grantItem: (definition) => inventoryManager.addEntry(heroId, definition.inventoryItemId).ok,
+    });
     const factionCapeFoundation = createFactionCapeFoundation({
       damageManager,
       dungeonRuntime,
@@ -293,7 +292,6 @@ export function GameProvider({
     });
     const factionBestiaryFoundation = createFactionBestiaryFoundation({
       factionKnowledgeService: factionResearchFoundation.factionKnowledgeService,
-      relicService: factionResearchFoundation.relicService,
     });
 
     const productionFoundation = createProductionFoundation({
@@ -375,6 +373,7 @@ export function GameProvider({
     const academyPresentationFoundation = createAcademyPresentationFoundation({
       researchService,
       expeditionService,
+      isWaitingForRelic: researchFoundation.isWaitingForRelic,
       onMutation: resyncAll,
     });
     const expeditionRecapFoundation = createExpeditionRecapFoundation();
@@ -810,6 +809,7 @@ export function GameProvider({
       dismissExpeditionRecap: expeditionRecapFoundation.dismiss,
       getFactionAchievements: factionAchievementFoundation.getAllProgress,
       getBestiaryKnowledge: factionBestiaryFoundation.getKnowledge,
+      getRelicProgress: (relicId) => factionResearchFoundation.relicService.getProgress(relicId),
       startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
       abandonDungeon: () => dungeonNavigationActions.abandon(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
