@@ -20,6 +20,12 @@ export type ResearchContentRequirement = ResearchRequirementDefinition & (
 
 export type ResearchPresentationGroup = "core" | "faction";
 
+export interface ResearchPresentationInfo {
+  readonly group: ResearchPresentationGroup;
+  readonly description: string;
+  readonly effectSummary: string;
+}
+
 export const RESEARCH_UNLOCK_IDS = {
   relicReconstruction: "relic_reconstruction",
   expeditionTier4: "expedition_tier:4",
@@ -173,14 +179,59 @@ export const RESEARCH_DEFINITIONS: readonly ResearchDefinition<ResearchContentRe
   ...CONTEXTUAL_FACTION_RESEARCH,
 ];
 
-const RESEARCH_PRESENTATION_GROUPS = new Map<string, ResearchPresentationGroup>([
-  ...CARTOGRAPHY_RESEARCH.map((definition) => [definition.id, "core"] as const),
-  [ARCHAEOLOGY_RESEARCH.id, "core"],
-  ...CONTEXTUAL_FACTION_RESEARCH.map((definition) => [definition.id, "faction"] as const),
+const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
+  ["research_cartography_1", {
+    group: "core",
+    description: "Ouvre le système d’expéditions et donne accès aux expéditions T4.",
+    effectSummary: "Débloque les expéditions T4 et l’expédition Silver T4.",
+  }],
+  ["research_cartography_2", {
+    group: "core",
+    description: "Étend la cartographie aux contenus d’expédition T5.",
+    effectSummary: "Débloque les expéditions T5.",
+  }],
+  ["research_cartography_3", {
+    group: "core",
+    description: "Étend la cartographie aux contenus T6 et augmente la capacité d’expédition.",
+    effectSummary: "Débloque les expéditions T6 et un second slot d’expédition.",
+  }],
+  ["research_cartography_4", {
+    group: "core",
+    description: "Étend la cartographie aux contenus d’expédition T7.",
+    effectSummary: "Débloque les expéditions T7.",
+  }],
+  ["research_cartography_5", {
+    group: "core",
+    description: "Étend la cartographie aux contenus d’expédition T8.",
+    effectSummary: "Débloque les expéditions T8.",
+  }],
+  [ARCHAEOLOGY_RESEARCH.id, {
+    group: "core",
+    description: "Donne à l’Académie la capacité d’examiner une Relique de faction chargée.",
+    effectSummary: "Permet l’examen des Reliques chargées à l’Académie.",
+  }],
+  ...FACTION_RESEARCH.flatMap((faction): readonly [string, ResearchPresentationInfo][] => [
+    [`research_${faction.factionId}_expedition_study`, {
+      group: "faction",
+      description: `Étudie les connaissances tirées de la Relique ${faction.displayName} pour ouvrir leurs expéditions. Cette recherche est indépendante de la localisation des sanctuaires.`,
+      effectSummary: `Débloque la famille d’expéditions ${faction.displayName}.`,
+    }],
+    [`research_${faction.factionId}_dungeon_location`, {
+      group: "faction",
+      description: `Recherche l’emplacement des sanctuaires ${faction.displayName}. Cette recherche est indépendante de l’étude des expéditions.`,
+      effectSummary: `Débloque l’accès permanent aux donjons ${faction.displayName}.`,
+    }],
+  ]),
 ]);
 
 export function getResearchPresentationGroup(
   researchId: string,
 ): ResearchPresentationGroup | undefined {
-  return RESEARCH_PRESENTATION_GROUPS.get(researchId);
+  return RESEARCH_PRESENTATION.get(researchId)?.group;
+}
+
+export function getResearchPresentationInfo(
+  researchId: string,
+): ResearchPresentationInfo | undefined {
+  return RESEARCH_PRESENTATION.get(researchId);
 }
