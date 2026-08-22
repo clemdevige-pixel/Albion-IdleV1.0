@@ -64,6 +64,7 @@ export interface GameServices {
   readonly selectStarterWeapon: (itemId: string) => boolean;
   readonly isWorldRequirementMet: (requirement: IslandWorldRequirement) => boolean;
   readonly getAcademyModel: () => AcademyPresentationModel;
+  readonly examineAcademyRelic: (researchId: string) => boolean;
   readonly startAcademyResearch: (researchId: string) => StartResearchResult;
   readonly startAcademyExpedition: (
     expeditionId: string,
