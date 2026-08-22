@@ -35,6 +35,7 @@ export function syncWorkersToBridge(
     speedModifier: number;
   },
   capacity: number,
+  professionCapacity: number,
   recruitmentCost: number,
 ): void {
   const workerVMs: WorkerVM[] = workers
@@ -65,5 +66,5 @@ export function syncWorkersToBridge(
         yieldPerCycle: 1,
       };
     });
-  bridge.updateWorkers({ capacity, recruitmentCost, workers: workerVMs });
+  bridge.updateWorkers({ capacity, professionCapacity, recruitmentCost, workers: workerVMs });
 }
