@@ -50,6 +50,40 @@ export interface DungeonAccessState {
   readonly highestEquippedTier?: number;
 }
 
+export interface DungeonAccessFacts {
+  readonly definitionTier?: number;
+  readonly researchUnlocked: boolean;
+  readonly progressionUnlocked: boolean;
+  readonly hasWeapon: boolean;
+  readonly highestEquippedTier?: number;
+  readonly hasKey: boolean;
+}
+
+export function resolveDungeonAccessState(facts: DungeonAccessFacts): DungeonAccessState {
+  if (facts.definitionTier === undefined) return { canEnter: false, reason: "invalid_definition" };
+  if (!facts.researchUnlocked) return { canEnter: false, reason: "research_locked" };
+  if (!facts.progressionUnlocked) {
+    return {
+      canEnter: false,
+      reason: "progression_locked",
+      previousTier: facts.definitionTier - 1,
+    };
+  }
+  if (!facts.hasWeapon) return { canEnter: false, reason: "weapon_required" };
+  if (
+    facts.highestEquippedTier !== undefined
+    && facts.highestEquippedTier > facts.definitionTier
+  ) {
+    return {
+      canEnter: false,
+      reason: "equipment_tier_locked",
+      highestEquippedTier: facts.highestEquippedTier,
+    };
+  }
+  if (!facts.hasKey) return { canEnter: false, reason: "missing_key" };
+  return { canEnter: true, reason: "available" };
+}
+
 export interface DungeonNavigationState {
   readonly activeRun: DungeonRunState | undefined;
   readonly pendingDefinitionId: string | null;
@@ -125,43 +159,33 @@ export class DungeonNavigationActions {
 
   private getAccess(definitionId: string): DungeonAccessState {
     const definition = this.deps.dungeonRuntime.getDefinition(definitionId);
-    if (definition === undefined) return { canEnter: false, reason: "invalid_definition" };
-
-    if (!this.deps.canAccessDungeonContent(definitionId)) {
-      return { canEnter: false, reason: "research_locked" };
+    if (definition === undefined) {
+      return resolveDungeonAccessState({
+        definitionTier: undefined,
+        researchUnlocked: false,
+        progressionUnlocked: false,
+        hasWeapon: false,
+        hasKey: false,
+      });
     }
 
-    if (!this.deps.dungeonRuntime.canAccessDefinition(definitionId)) {
-      return {
-        canEnter: false,
-        reason: "progression_locked",
-        previousTier: definition.tier - 1,
-      };
-    }
-
-    if (this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") === undefined) {
-      return { canEnter: false, reason: "weapon_required" };
-    }
-
-    const violatingTiers = [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()]
+    const equipped = [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()];
+    const equippedTiers = equipped
       .map((entry) => getItemTier(entry.itemId))
-      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => (
-        tier !== undefined && tier > definition.tier
-      ));
-    if (violatingTiers.length > 0) {
-      return {
-        canEnter: false,
-        reason: "equipment_tier_locked",
-        highestEquippedTier: Math.max(...violatingTiers),
-      };
-    }
-
+      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => tier !== undefined);
+    const highestEquippedTier = equippedTiers.length === 0 ? undefined : Math.max(...equippedTiers);
     const hasKey = this.deps.inventoryManager.listSlots(this.deps.heroId).some(
       (slot) => slot.entry?.itemId === definition.keyItemId && slot.entry.quantity > 0,
     );
-    if (!hasKey) return { canEnter: false, reason: "missing_key" };
 
-    return { canEnter: true, reason: "available" };
+    return resolveDungeonAccessState({
+      definitionTier: definition.tier,
+      researchUnlocked: this.deps.canAccessDungeonContent(definitionId),
+      progressionUnlocked: this.deps.dungeonRuntime.canAccessDefinition(definitionId),
+      hasWeapon: this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") !== undefined,
+      ...(highestEquippedTier === undefined ? {} : { highestEquippedTier }),
+      hasKey,
+    });
   }
 
   private startNow(definitionId: string): boolean {
