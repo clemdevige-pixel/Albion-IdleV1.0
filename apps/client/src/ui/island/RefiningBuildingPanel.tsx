@@ -5,6 +5,7 @@ import {
 } from "@game/data";
 import { REFINING_CONTENT_TIERS } from "../../data/productionFamilyCatalog";
 import { getProductionRefiningRecipe } from "../../data/refiningRecipes";
+import { useGameServices } from "../../state/GameContext";
 import { useResourceTracking } from "../dashboard/ResourceTrackingContext";
 import { useRefiningActions } from "../production/refining/useRefiningActions";
 import { useRefiningData } from "../production/refining/useRefiningData";
@@ -30,6 +31,7 @@ export function RefiningBuildingPanel({
 
   const model = useRefiningData();
   const actions = useRefiningActions();
+  const { isInstantRefiningUnlocked } = useGameServices();
   const tracking = useResourceTracking();
   const family = model.families.find((candidate) => candidate.id === service.productionFamily);
   if (family === undefined) {
@@ -37,6 +39,7 @@ export function RefiningBuildingPanel({
   }
 
   const active = family.activity.status === "refining";
+  const instantRefining = isInstantRefiningUnlocked();
   const recipe = getProductionRefiningRecipe(family.id, family.tier);
   const refinedIconSrc = `/assets/resources/${family.refinedIcon}`;
   const trackingId = `production:${family.id}:t${String(family.tier)}`;
@@ -110,7 +113,13 @@ export function RefiningBuildingPanel({
         disabled={!active && (!family.canStart || family.tier > maxTier)}
         onClick={() => { actions.toggle(family.id); }}
       >
-        {active ? "Arrêter le raffinage" : family.canStart ? "Lancer le raffinage" : "Matériaux insuffisants"}
+        {active
+          ? "Arrêter le raffinage"
+          : family.canStart
+            ? instantRefining
+              ? `Raffiner instantanément (${String(family.availableCycles)})`
+              : "Lancer le raffinage"
+            : "Matériaux insuffisants"}
       </button>
     </div>
   );
