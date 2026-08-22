@@ -29,7 +29,7 @@ export const DASHBOARD_SECTION_DEFINITIONS: Readonly<Record<DashboardSectionId, 
   },
   research: {
     id: "research",
-    title: "Recherche",
+    title: "Académie",
     iconSrc: "/assets/ui/nav-island.png",
     className: "dashboard-card--research",
   },
