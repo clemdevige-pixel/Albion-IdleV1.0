@@ -36,6 +36,8 @@ export type WorkerState = "idle" | "assigned" | "working" | "inactive";
 export interface WorkerDefinition {
   readonly id: WorkerDefinitionId;
   readonly displayName: string;
+  /** Optional authored names used in order for multiple instances of the same definition. */
+  readonly displayNames?: readonly string[];
   readonly profession: WorkerProfession;
   readonly baseMasteryGainRate: number;
   readonly tags: readonly string[];
