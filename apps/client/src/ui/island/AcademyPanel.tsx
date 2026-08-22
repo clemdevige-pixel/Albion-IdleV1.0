@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getAcademyResearchTier } from "@game/data";
+import type { ExpeditionDurationMs } from "@game/gameplay";
 import type {
   AcademyExpeditionEntryModel,
   AcademyResearchEntryModel,
@@ -121,7 +122,10 @@ function ExpeditionCard({
   onStart,
 }: {
   readonly expedition: AcademyExpeditionEntryModel;
-  readonly onStart: (expedition: AcademyExpeditionEntryModel, durationMs: number) => void;
+  readonly onStart: (
+    expedition: AcademyExpeditionEntryModel,
+    durationMs: ExpeditionDurationMs,
+  ) => void;
 }): JSX.Element {
   return (
     <article className={`ui-academy__card${expedition.active ? " is-active" : ""}`}>
@@ -171,8 +175,8 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
   const selectedExpeditionTier = requestedExpeditionTier ?? researchTier ?? 4;
   const availableTiers = ACADEMY_TIERS.filter((tier) => researchTier !== undefined && tier <= researchTier);
   const research = model.research
-    .filter((entry) => researchScope === "core" ? isCoreResearch(entry) : !isCoreResearch(entry))
-    .toSorted((left, right) => researchPriority(left) - researchPriority(right));
+    .filter((entry) => researchScope === "core" ? isCoreResearch(entry) : !isCoreResearch(entry));
+  research.sort((left, right) => researchPriority(left) - researchPriority(right));
   const activeExpeditions = model.expeditions.filter((entry) => entry.active);
   const tierExpeditions = model.expeditions.filter((entry) => (
     entry.tier === selectedExpeditionTier && !entry.active
@@ -191,9 +195,9 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
 
   const handleExpeditionStart = (
     expedition: AcademyExpeditionEntryModel,
-    durationMs: number,
+    durationMs: ExpeditionDurationMs,
   ): void => {
-    const result = startAcademyExpedition(expedition.id, durationMs as AcademyExpeditionEntryModel["supportedDurationsMs"][number]);
+    const result = startAcademyExpedition(expedition.id, durationMs);
     setFeedback(result.ok ? `${expedition.displayName} lancée.` : expeditionFailureMessage(result.reason));
   };
 
