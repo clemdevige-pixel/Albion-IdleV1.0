@@ -6,35 +6,16 @@
   opacity: 0.55;
 }
 
-.dashboard-sortable-section__handle {
-  position: absolute;
-  z-index: 3;
-  top: 7px;
-  right: 8px;
-  width: 22px;
-  height: 22px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--ui-color-text-muted);
-  padding: 0;
-  font: inherit;
-  font-size: 13px;
-  line-height: 20px;
-  text-align: center;
+.dashboard-card__header.is-draggable {
   cursor: grab;
-  opacity: 0.42;
+  user-select: none;
 }
 
-.dashboard-sortable-section__handle:hover,
-.dashboard-sortable-section__handle:focus-visible {
-  border-color: rgba(208, 157, 52, 0.34);
-  background: rgba(52, 39, 23, 0.46);
-  color: var(--ui-color-accent);
-  opacity: 1;
-  outline: none;
-}
-
-.dashboard-sortable-section__handle:active {
+.dashboard-card__header.is-draggable:active {
   cursor: grabbing;
+}
+
+.dashboard-card__header.is-draggable:focus-visible {
+  outline: 1px solid rgba(208, 157, 52, 0.55);
+  outline-offset: -1px;
 }
