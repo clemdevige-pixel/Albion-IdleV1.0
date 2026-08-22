@@ -5,7 +5,7 @@ const HOUR_MS = 60 * MINUTE_MS;
 
 export type ResearchContentRequirement = ResearchRequirementDefinition & (
   | {
-    readonly type: "relic_reconstructed";
+    readonly type: "relic_examined";
     readonly relicId: string;
   }
   | {
@@ -146,7 +146,7 @@ const CONTEXTUAL_FACTION_RESEARCH: readonly ResearchDefinition<ResearchContentRe
   cost: { silver: 10_000, materials: [] },
   requirements: [
     { type: "academy_tier", minimumTier: 4 },
-    { type: "relic_reconstructed", relicId: faction.relicId },
+    { type: "relic_examined", relicId: faction.relicId },
   ],
   unlockIds: [faction.dungeonUnlockId],
 }));
