@@ -44,9 +44,6 @@ interface ProductionRuntimeControllerDependencies {
   readonly setCraftingTier: (tier: ProductionTier) => void;
   readonly setWorkerTier: (tier: ProductionTier) => void;
   readonly prepareCombatResumeAfterGathering: () => void;
-  readonly workerCapacity: number;
-  readonly workerProfessionCapacity?: number;
-  readonly workerRecruitmentCost: number;
 }
 
 /** Owns Production-to-UI synchronization and runtime event bindings. */
@@ -170,6 +167,7 @@ export class ProductionRuntimeController {
 
   syncWorkers(): void {
     const runtime = this.#dependencies.foundation.workerRuntime;
+    const professionCapacity = runtime.getProfessionCapacity("woodcutter");
     syncWorkersToBridge(
       this.#dependencies.bridge,
       runtime.getAllWorkers(),
@@ -177,9 +175,9 @@ export class ProductionRuntimeController {
       (workerId) => runtime.getWorkerSession(workerId),
       (workerId) => runtime.getAssignedTier(workerId),
       (xp, tier) => runtime.getWorkerMasteryDetails(xp, tier),
-      this.#dependencies.workerCapacity,
-      this.#dependencies.workerProfessionCapacity ?? 1,
-      this.#dependencies.workerRecruitmentCost,
+      runtime.getCapacity(),
+      professionCapacity,
+      runtime.getRecruitmentCost(),
     );
   }
 
