@@ -1,21 +1,19 @@
 import type { FactionResearchFoundation } from "./createFactionResearchFoundation.js";
 
-interface ResearchAdvancePort {
-  advance(elapsedMs: number): {
-    readonly completedResearchId: string | undefined;
-  };
+interface ResearchProgressionPort {
+  advance(elapsedMs: number): unknown;
+  onCompleted(listener: (researchId: string) => void): () => void;
 }
 
-interface ExpeditionAdvancePort<TCompletion> {
-  advance(elapsedMs: number): {
-    readonly completed: readonly TCompletion[];
-  };
+interface ExpeditionProgressionPort<TCompletion> {
+  advance(elapsedMs: number): unknown;
+  onCompleted(listener: (completed: readonly TCompletion[]) => void): () => void;
 }
 
 export interface FactionProgressionCoordinatorDependencies<TCompletion> {
   readonly factionResearchFoundation: FactionResearchFoundation;
-  readonly researchService: ResearchAdvancePort;
-  readonly expeditionService: ExpeditionAdvancePort<TCompletion>;
+  readonly researchService: ResearchProgressionPort;
+  readonly expeditionService: ExpeditionProgressionPort<TCompletion>;
   readonly onExpeditionCompletion: (completed: readonly TCompletion[]) => void;
 }
 
@@ -27,6 +25,13 @@ export interface FactionProgressionCoordinatorDependencies<TCompletion> {
 export function createFactionProgressionCoordinator<TCompletion>(
   dependencies: FactionProgressionCoordinatorDependencies<TCompletion>,
 ) {
+  dependencies.researchService.onCompleted(() => {
+    dependencies.factionResearchFoundation.resolveWorldProgress();
+  });
+  dependencies.expeditionService.onCompleted((completed) => {
+    dependencies.onExpeditionCompletion(completed);
+  });
+
   return {
     recordMonsterKill(this: void, monsterId: string): void {
       dependencies.factionResearchFoundation.recordMonsterKill(monsterId);
@@ -41,15 +46,8 @@ export function createFactionProgressionCoordinator<TCompletion>(
     },
 
     advance(this: void, elapsedMs: number): void {
-      const researchAdvance = dependencies.researchService.advance(elapsedMs);
-      if (researchAdvance.completedResearchId !== undefined) {
-        dependencies.factionResearchFoundation.resolveWorldProgress();
-      }
-
-      const expeditionAdvance = dependencies.expeditionService.advance(elapsedMs);
-      if (expeditionAdvance.completed.length > 0) {
-        dependencies.onExpeditionCompletion(expeditionAdvance.completed);
-      }
+      dependencies.researchService.advance(elapsedMs);
+      dependencies.expeditionService.advance(elapsedMs);
     },
   };
 }
