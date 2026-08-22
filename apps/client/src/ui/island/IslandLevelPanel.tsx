@@ -30,7 +30,7 @@ export function IslandLevelPanel(): JSX.Element {
     return (
       <div className="ui-island-level ui-island-level--max">
         <span>Progression de l'île</span>
-        <strong>Niveau maximum actuel atteint</strong>
+        <strong>Niveau maximum actuel atteint · production T{String(current.maxProductionTier)}</strong>
         <b aria-label="Terminé">✓</b>
       </div>
     );
@@ -56,7 +56,7 @@ export function IslandLevelPanel(): JSX.Element {
           <strong>Île niveau {String(level)} · {current.label}</strong>
           <small>Prochain palier : niveau {String(next.level)} · {next.label}</small>
         </div>
-        <span className="ui-island__level">Niv. {String(level)}</span>
+        <span className="ui-island__level">T{String(current.maxProductionTier)}</span>
       </div>
 
       {worldRequirement !== undefined && (
@@ -81,7 +81,7 @@ export function IslandLevelPanel(): JSX.Element {
       )}
 
       <div className="ui-island-level__unlocks">
-        Débloque : amélioration des bâtiments jusqu'au niveau {String(next.maxBuildingLevel)}
+        Débloque : récolte, raffinage et fabrication jusqu’au T{String(next.maxProductionTier)} · bâtiments spéciaux jusqu’au niveau {String(next.maxBuildingLevel)}
       </div>
 
       <button type="button" disabled={!canUpgrade} onClick={() => { upgradeIslandLevel(); }}>
