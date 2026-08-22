@@ -119,7 +119,7 @@ export type RecruitWorkerResult =
 
 export type ToggleWorkerResult =
   | { readonly ok: true; readonly action: "started" | "paused" | "resumed" | "restarted"; readonly workerId: WorkerId; readonly profession: WorkerProfession }
-  | { readonly ok: false; readonly reason: "not_found" | "mastery_locked" | "execution_failed"; readonly workerId: WorkerId };
+  | { readonly ok: false; readonly reason: "not_found" | "mastery_locked" | "tier_occupied" | "execution_failed"; readonly workerId: WorkerId };
 
 export interface WorkerCycleCompletionEvent {
   readonly workerId: WorkerId;
@@ -321,6 +321,19 @@ export class WorkerRuntime {
     return this.workerProductionTier.get(workerId) ?? this.getProductionTier();
   }
 
+  private isTierOccupiedByOtherWorker(
+    workerId: WorkerId,
+    profession: SupportedWorkerProfession,
+    tier: ProductionTier,
+  ): boolean {
+    return this.workerManager.getWorkersByProfession(profession).some((candidate) => {
+      if (candidate.id === workerId) return false;
+      const session = this.workerScheduler.getSession(candidate.id);
+      return session?.state === "executing"
+        && this.workerProductionTier.get(candidate.id) === tier;
+    });
+  }
+
   public getWorkerMasteryDetails(masteryXp: number, tier: ProductionTier): WorkerMasteryDetails {
     const masteryLevel = this.getWorkerMasteryLevel(masteryXp);
     return {
@@ -340,6 +353,7 @@ export class WorkerRuntime {
       worker === undefined
       || !this.isSupportedWorkerProfession(worker.profession)
       || this.getWorkerMasteryLevel(worker.mastery) < this.getRequiredGatheringMasteryForTier(assignedTier)
+      || this.isTierOccupiedByOtherWorker(workerId, worker.profession, assignedTier)
     ) {
       return false;
     }
@@ -414,6 +428,9 @@ export class WorkerRuntime {
     profession: SupportedWorkerProfession,
     tier: ProductionTier,
   ): ToggleWorkerResult {
+    if (this.isTierOccupiedByOtherWorker(workerId, profession, tier)) {
+      return { ok: false, reason: "tier_occupied", workerId };
+    }
     this.workerScheduler.removeSession(workerId);
     this.workerManager.updateState(workerId, "assigned");
     return this.startWorkerCycle(workerId, tier)
@@ -446,11 +463,17 @@ export class WorkerRuntime {
     if (session?.state === "paused") {
       const assignedTier = this.workerProductionTier.get(workerId) ?? tier;
       if (assignedTier !== tier) return this.restartWorkerForTier(workerId, profession, tier);
+      if (this.isTierOccupiedByOtherWorker(workerId, profession, tier)) {
+        return { ok: false, reason: "tier_occupied", workerId };
+      }
       session.resume();
       this.workerManager.updateState(workerId, "working");
       return { ok: true, action: "resumed", workerId, profession };
     }
 
+    if (this.isTierOccupiedByOtherWorker(workerId, profession, tier)) {
+      return { ok: false, reason: "tier_occupied", workerId };
+    }
     const started = this.startWorkerCycle(workerId, tier);
     return started
       ? { ok: true, action: "started", workerId, profession }
