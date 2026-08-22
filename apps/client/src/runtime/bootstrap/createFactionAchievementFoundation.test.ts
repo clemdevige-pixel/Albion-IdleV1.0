@@ -62,7 +62,7 @@ describe("createFactionAchievementFoundation", () => {
     expect(foundation.getProgress(definition("expedition_fortune")).completed).toBe(true);
   });
 
-  it("keeps unauthored faction Expedition content at zero without special-case branches", () => {
+  it("tracks authored Heretic Expedition content through the generic faction mapping", () => {
     const foundation = createFactionAchievementFoundation({
       factionKnowledgeService: {
         isMonsterDiscovered: () => false,
@@ -71,7 +71,7 @@ describe("createFactionAchievementFoundation", () => {
       },
       relicService: { isReconstructed: () => false },
       expeditionService: {
-        getCompletedCount: () => 99,
+        getCompletedCount: (typeId) => typeId === "heretic" ? 99 : 0,
         getTotalCompletedCount: () => 99,
       },
       expeditionRewardLedger: { getLifetimeSilverCredited: () => 0 },
@@ -80,9 +80,9 @@ describe("createFactionAchievementFoundation", () => {
     });
 
     expect(foundation.getProgress(definition("heretic_explorer"))).toMatchObject({
-      current: 0,
+      current: 99,
       target: 1,
-      completed: false,
+      completed: true,
     });
   });
 });
