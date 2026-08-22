@@ -6,17 +6,17 @@ interface ResearchAdvancePort {
   };
 }
 
-interface ExpeditionAdvancePort {
+interface ExpeditionAdvancePort<TCompletion> {
   advance(elapsedMs: number): {
-    readonly completed: readonly unknown[];
+    readonly completed: readonly TCompletion[];
   };
 }
 
-export interface FactionProgressionCoordinatorDependencies {
+export interface FactionProgressionCoordinatorDependencies<TCompletion> {
   readonly factionResearchFoundation: FactionResearchFoundation;
   readonly researchService: ResearchAdvancePort;
-  readonly expeditionService: ExpeditionAdvancePort;
-  readonly onExpeditionCompletion: () => void;
+  readonly expeditionService: ExpeditionAdvancePort<TCompletion>;
+  readonly onExpeditionCompletion: (completed: readonly TCompletion[]) => void;
 }
 
 /**
@@ -24,8 +24,8 @@ export interface FactionProgressionCoordinatorDependencies {
  * Individual domains keep their own state and rules; this coordinator only
  * defines event ordering so GameContext remains a pure composition root.
  */
-export function createFactionProgressionCoordinator(
-  dependencies: FactionProgressionCoordinatorDependencies,
+export function createFactionProgressionCoordinator<TCompletion>(
+  dependencies: FactionProgressionCoordinatorDependencies<TCompletion>,
 ) {
   return {
     recordMonsterKill(this: void, monsterId: string): void {
@@ -48,7 +48,7 @@ export function createFactionProgressionCoordinator(
 
       const expeditionAdvance = dependencies.expeditionService.advance(elapsedMs);
       if (expeditionAdvance.completed.length > 0) {
-        dependencies.onExpeditionCompletion();
+        dependencies.onExpeditionCompletion(expeditionAdvance.completed);
       }
     },
   };
