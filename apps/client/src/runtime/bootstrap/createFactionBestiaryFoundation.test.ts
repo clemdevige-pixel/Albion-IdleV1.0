@@ -15,7 +15,7 @@ describe("createFactionBestiaryFoundation", () => {
         getProgress: (relicId) => relicId === "relic_keeper"
           ? {
             relicId,
-            state: "broken" as const,
+            state: "broken",
             chargeKills: 17,
             requiredChargeKills: 50,
             reconstructed: false,
