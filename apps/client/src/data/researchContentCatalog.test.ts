@@ -52,7 +52,7 @@ describe("Academy research content", () => {
     }
   });
 
-  it("keeps Archaeology I as the single T4 relic reconstruction unlock", () => {
+  it("keeps Archaeology I as the single T4 relic examination unlock", () => {
     const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === "research_archaeology_1");
     expect(definition?.tier).toBe(4);
     expect(definition?.durationMs).toBe(20 * 60 * 1000);
@@ -60,17 +60,22 @@ describe("Academy research content", () => {
     expect(definition?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.relicReconstruction]);
   });
 
-  it("authors two equivalent contextual Research entries for every faction", () => {
+  it("keeps only faction Dungeon location Research after Relic examination", () => {
     for (const factionId of FACTIONS) {
-      const expedition = RESEARCH_DEFINITIONS.find((entry) => entry.id === `research_${factionId}_expedition_study`);
-      const dungeon = RESEARCH_DEFINITIONS.find((entry) => entry.id === `research_${factionId}_dungeon_location`);
-      expect(expedition?.cost).toEqual({ silver: 5_000, materials: [] });
-      expect(expedition?.durationMs).toBe(30 * 60 * 1000);
-      expect(expedition?.requirements).toContainEqual({ type: "relic_reconstructed", relicId: `relic_${factionId}` });
-      expect(expedition?.unlockIds).toEqual([`expedition_family:${factionId}`]);
+      const expeditionStudy = RESEARCH_DEFINITIONS.find((entry) => (
+        entry.id === `research_${factionId}_expedition_study`
+      ));
+      const dungeon = RESEARCH_DEFINITIONS.find((entry) => (
+        entry.id === `research_${factionId}_dungeon_location`
+      ));
+
+      expect(expeditionStudy).toBeUndefined();
       expect(dungeon?.cost).toEqual({ silver: 10_000, materials: [] });
       expect(dungeon?.durationMs).toBe(60 * 60 * 1000);
-      expect(dungeon?.requirements).toContainEqual({ type: "relic_reconstructed", relicId: `relic_${factionId}` });
+      expect(dungeon?.requirements).toContainEqual({
+        type: "relic_examined",
+        relicId: `relic_${factionId}`,
+      });
       expect(dungeon?.unlockIds).toEqual([`dungeon_family:${factionId}`]);
     }
   });
