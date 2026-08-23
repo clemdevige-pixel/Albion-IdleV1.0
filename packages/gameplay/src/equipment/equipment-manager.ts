@@ -6,7 +6,12 @@ import type { EquipmentStatSync } from "./equipment-stat-sync.js";
 import { EQUIPMENT_SLOTS, equipmentFail, equipmentOk, type EquipOutcome, type EquipmentInfoLike, type EquipmentInfoResolver, type EquipmentLoadout, type EquipmentLoadoutApplyOutcome, type EquipmentLoadoutSlot, type EquipmentResult, type EquipmentSlot, type UnequipOutcome, type WeaponHandling } from "./types.js";
 
 export type EquipmentMutationGuard = (entityId: EntityId) => boolean;
-interface ResolvedLoadoutEntry { readonly slot: EquipmentSlot; readonly entry: InventoryEntry; readonly source: "equipped" | "inventory"; readonly inventoryPosition?: number | undefined; }
+interface ResolvedLoadoutEntry {
+  readonly slot: EquipmentSlot;
+  readonly entry: InventoryEntry;
+  readonly source: "equipped" | "inventory" | "bank";
+  readonly storagePosition?: number | undefined;
+}
 
 export class EquipmentManager {
   readonly #world: World; readonly #inventoryManager: InventoryManager; readonly #resolveEquipmentInfo: EquipmentInfoResolver; readonly #statSync: EquipmentStatSync | undefined; readonly #canMutate: EquipmentMutationGuard | undefined; readonly #equipped = new Set<EntityId>(); readonly #loadouts = new Map<EntityId, Map<string, EquipmentLoadout>>();
@@ -22,13 +27,63 @@ export class EquipmentManager {
   saveCurrentLoadout(entityId: EntityId, loadoutId: string, name: string): EquipmentResult<EquipmentLoadout> { if (loadoutId.trim().length === 0 || name.trim().length === 0) return equipmentFail("loadout_invalid"); const data = this.#getData(entityId); const slots: EquipmentLoadoutSlot[] = []; for (const slot of EQUIPMENT_SLOTS) { const entry = data.slots.get(slot); if (entry === undefined) continue; slots.push({ slot, instanceId: entry.instanceId, itemId: entry.itemId, enchantment: getEnchantmentLevel(entry) }); } const loadout: EquipmentLoadout = { id: loadoutId.trim(), name: name.trim(), slots }; this.#getLoadoutMap(entityId).set(loadout.id, loadout); return equipmentOk(this.#cloneLoadout(loadout)); }
   renameLoadout(entityId: EntityId, loadoutId: string, name: string): EquipmentResult<EquipmentLoadout> { const trimmedName = name.trim(); if (trimmedName.length === 0) return equipmentFail("loadout_invalid"); const loadout = this.#loadouts.get(entityId)?.get(loadoutId); if (loadout === undefined) return equipmentFail("loadout_not_found"); const renamed = { ...loadout, name: trimmedName }; this.#getLoadoutMap(entityId).set(loadoutId, renamed); return equipmentOk(this.#cloneLoadout(renamed)); }
   deleteLoadout(entityId: EntityId, loadoutId: string): boolean { return this.#loadouts.get(entityId)?.delete(loadoutId) ?? false; }
-  applyLoadout(entityId: EntityId, loadoutId: string, maxTier?: number): EquipmentResult<EquipmentLoadoutApplyOutcome> {
+  applyLoadout(entityId: EntityId, loadoutId: string, maxTier?: number, bankId?: EntityId): EquipmentResult<EquipmentLoadoutApplyOutcome> {
     if (!this.#isMutationAllowed(entityId)) return equipmentFail("equipment_locked"); const loadout = this.#loadouts.get(entityId)?.get(loadoutId); if (loadout === undefined) return equipmentFail("loadout_not_found"); const data = this.#getData(entityId); const targetBySlot = new Map<EquipmentSlot, ResolvedLoadoutEntry>(); const seenInstances = new Set<ItemInstanceId>();
-    for (const reference of loadout.slots) { if (targetBySlot.has(reference.slot) || seenInstances.has(reference.instanceId)) return equipmentFail("loadout_invalid"); seenInstances.add(reference.instanceId); const equippedMatch = [...data.slots.entries()].find(([, entry]) => entry.instanceId === reference.instanceId); const inventoryMatch = equippedMatch === undefined ? this.#inventoryManager.findEntryByInstanceId(entityId, reference.instanceId) : undefined; const entry = equippedMatch?.[1] ?? inventoryMatch?.entry; if (entry === undefined) return equipmentFail("loadout_item_missing"); if (entry.itemId !== reference.itemId || getEnchantmentLevel(entry) !== reference.enchantment) return equipmentFail("loadout_invalid"); const info = this.#resolveEquipmentInfo(entry.itemId); if (info === undefined || info.slot !== reference.slot) return equipmentFail("loadout_invalid"); if (maxTier !== undefined && info.tier !== undefined && info.tier > maxTier) return equipmentFail("tier_cap_exceeded"); targetBySlot.set(reference.slot, { slot: reference.slot, entry, source: equippedMatch === undefined ? "inventory" : "equipped", ...(inventoryMatch === undefined ? {} : { inventoryPosition: inventoryMatch.position }) }); }
+    for (const reference of loadout.slots) {
+      if (targetBySlot.has(reference.slot) || seenInstances.has(reference.instanceId)) return equipmentFail("loadout_invalid");
+      seenInstances.add(reference.instanceId);
+      const equippedMatch = [...data.slots.entries()].find(([, entry]) => entry.instanceId === reference.instanceId);
+      const inventoryMatch = equippedMatch === undefined ? this.#inventoryManager.findEntryByInstanceId(entityId, reference.instanceId) : undefined;
+      const bankMatch = equippedMatch === undefined && inventoryMatch === undefined && bankId !== undefined
+        ? this.#inventoryManager.findEntryByInstanceId(bankId, reference.instanceId)
+        : undefined;
+      const entry = equippedMatch?.[1] ?? inventoryMatch?.entry ?? bankMatch?.entry;
+      if (entry === undefined) return equipmentFail("loadout_item_missing");
+      if (entry.itemId !== reference.itemId || getEnchantmentLevel(entry) !== reference.enchantment) return equipmentFail("loadout_invalid");
+      const info = this.#resolveEquipmentInfo(entry.itemId);
+      if (info === undefined || info.slot !== reference.slot) return equipmentFail("loadout_invalid");
+      if (maxTier !== undefined && info.tier !== undefined && info.tier > maxTier) return equipmentFail("tier_cap_exceeded");
+      targetBySlot.set(reference.slot, {
+        slot: reference.slot,
+        entry,
+        source: equippedMatch !== undefined ? "equipped" : inventoryMatch !== undefined ? "inventory" : "bank",
+        ...(inventoryMatch !== undefined ? { storagePosition: inventoryMatch.position } : {}),
+        ...(bankMatch !== undefined ? { storagePosition: bankMatch.position } : {}),
+      });
+    }
     const targetWeapon = targetBySlot.get("weapon"); if (targetWeapon !== undefined && this.#resolveEquipmentInfo(targetWeapon.entry.itemId)?.handling === "two_handed" && targetBySlot.has("off_hand")) return equipmentFail("two_handed_conflict");
-    const targetInstances = new Set([...targetBySlot.values()].map(({ entry }) => entry.instanceId)); const returningEntries = [...data.slots.values()].filter((entry) => !targetInstances.has(entry.instanceId)); const inventoryTargets = [...targetBySlot.values()].filter((resolved) => resolved.source === "inventory"); const vacatedPositions = new Set(inventoryTargets.flatMap((resolved) => resolved.entry.quantity === 1 && resolved.inventoryPosition !== undefined ? [resolved.inventoryPosition] : [])); const availableDestinations = this.#inventoryManager.findFreeSlots(entityId).length + vacatedPositions.size; if (availableDestinations < returningEntries.length) return equipmentFail("inventory_full");
-    const extractedByInstance = new Map<ItemInstanceId, InventoryEntry>(); for (const resolved of inventoryTargets) { const position = resolved.inventoryPosition; if (position === undefined) return equipmentFail("loadout_invalid"); const extracted = this.#inventoryManager.takeOneAt(entityId, position); if (!extracted.ok || extracted.value.instanceId !== resolved.entry.instanceId) throw new Error("Equipment loadout prevalidation drifted during atomic apply"); extractedByInstance.set(extracted.value.instanceId, extracted.value); }
-    for (const entry of returningEntries) { const inserted = this.#inventoryManager.insertEntry(entityId, entry, undefined, false); if (!inserted.ok) throw new Error("Equipment loadout capacity prevalidation drifted during atomic apply"); }
+    const targetInstances = new Set([...targetBySlot.values()].map(({ entry }) => entry.instanceId));
+    const returningEntries = [...data.slots.values()].filter((entry) => !targetInstances.has(entry.instanceId));
+    const inventoryTargets = [...targetBySlot.values()].filter((resolved) => resolved.source === "inventory");
+    const bankTargets = [...targetBySlot.values()].filter((resolved) => resolved.source === "bank");
+    const vacatedInventoryPositions = new Set(inventoryTargets.flatMap((resolved) => resolved.entry.quantity === 1 && resolved.storagePosition !== undefined ? [resolved.storagePosition] : []));
+    const vacatedBankPositions = new Set(bankTargets.flatMap((resolved) => resolved.entry.quantity === 1 && resolved.storagePosition !== undefined ? [resolved.storagePosition] : []));
+    const inventoryCapacity = this.#inventoryManager.findFreeSlots(entityId).length + vacatedInventoryPositions.size;
+    const bankCapacity = bankId === undefined ? 0 : this.#inventoryManager.findFreeSlots(bankId).length + vacatedBankPositions.size;
+    const preferBankForReturns = bankId !== undefined && bankTargets.length > 0;
+    const bankReturnCount = preferBankForReturns ? Math.min(returningEntries.length, bankCapacity) : 0;
+    const inventoryReturnCount = returningEntries.length - bankReturnCount;
+    if (inventoryReturnCount > inventoryCapacity) return equipmentFail("inventory_full");
+
+    const extractedByInstance = new Map<ItemInstanceId, InventoryEntry>();
+    for (const resolved of [...inventoryTargets, ...bankTargets]) {
+      const position = resolved.storagePosition;
+      if (position === undefined) return equipmentFail("loadout_invalid");
+      const ownerId = resolved.source === "bank" ? bankId : entityId;
+      if (ownerId === undefined) return equipmentFail("loadout_invalid");
+      const extracted = this.#inventoryManager.takeOneAt(ownerId, position);
+      if (!extracted.ok || extracted.value.instanceId !== resolved.entry.instanceId) throw new Error("Equipment loadout prevalidation drifted during atomic apply");
+      extractedByInstance.set(extracted.value.instanceId, extracted.value);
+    }
+
+    for (let index = 0; index < returningEntries.length; index += 1) {
+      const entry = returningEntries[index];
+      if (entry === undefined) continue;
+      const destinationId = index < bankReturnCount && bankId !== undefined ? bankId : entityId;
+      const inserted = this.#inventoryManager.insertEntry(destinationId, entry, undefined, false);
+      if (!inserted.ok) throw new Error("Equipment loadout capacity prevalidation drifted during atomic apply");
+    }
+
     const changedSlots: EquipmentSlot[] = []; for (const slot of EQUIPMENT_SLOTS) { const previous = data.slots.get(slot); const target = targetBySlot.get(slot); const targetEntry = target === undefined ? undefined : extractedByInstance.get(target.entry.instanceId) ?? target.entry; if (previous?.instanceId !== targetEntry?.instanceId) changedSlots.push(slot); }
     data.slots.clear(); for (const [slot, target] of targetBySlot) data.slots.set(slot, extractedByInstance.get(target.entry.instanceId) ?? target.entry); this.syncStats(entityId); return equipmentOk({ loadoutId, changedSlots });
   }
