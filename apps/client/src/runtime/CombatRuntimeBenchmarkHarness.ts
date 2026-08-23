@@ -47,6 +47,15 @@ const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 
 export type BenchmarkEnchantment = 0 | 1 | 2 | 3;
 
+export interface CombatRuntimeBenchmarkDamageTuning {
+  /** Benchmark-only multiplier applied to hero auto-attacks after mitigation. */
+  readonly autoAttackMultiplier?: number;
+  /** Benchmark-only multiplier applied to direct damage from the currently executing ability. */
+  readonly directAbilityMultiplierById?: Readonly<Record<string, number>>;
+  /** Benchmark-only multiplier applied to hero effect damage (weapon DoTs in the current roster). */
+  readonly effectDamageMultiplier?: number;
+}
+
 export interface CombatRuntimeBenchmarkInput {
   readonly label: string;
   readonly weaponItemId: string;
@@ -61,6 +70,8 @@ export interface CombatRuntimeBenchmarkInput {
   readonly useHealthPotions?: boolean;
   /** Benchmark-only outgoing hero damage multiplier. Defaults to 1 and never changes authored weapon data. */
   readonly heroDamageMultiplier?: number;
+  /** Optional benchmark-only targeted tuning. Authored weapon data and live runtime balance remain unchanged. */
+  readonly damageTuning?: CombatRuntimeBenchmarkDamageTuning;
   /** Optional authored dungeon. When present, the live runtime uses its continuous authored encounters instead of the world segment. */
   readonly dungeonDefinitionId?: string;
 }
@@ -135,18 +146,26 @@ class TelemetryCombatRuntime extends CombatRuntime {
     deps: ConstructorParameters<typeof CombatRuntime>[0],
     private readonly abilityIds: readonly string[],
     private readonly abilityTelemetry: Map<string, MutableAbilityTelemetry>,
+    private readonly setActiveAbilityId: (abilityId: string | undefined) => void,
   ) {
     super(deps);
   }
 
   override useWeaponAbility(slotIndex: number): boolean {
     const abilityId = this.abilityIds[slotIndex];
-    const used = super.useWeaponAbility(slotIndex);
-    if (!used || abilityId === undefined) return used;
-    const telemetry = this.abilityTelemetry.get(abilityId) ?? emptyAbilityTelemetry();
-    telemetry.casts += 1;
-    this.abilityTelemetry.set(abilityId, telemetry);
-    return used;
+    if (abilityId === undefined) return super.useWeaponAbility(slotIndex);
+
+    this.setActiveAbilityId(abilityId);
+    try {
+      const used = super.useWeaponAbility(slotIndex);
+      if (!used) return used;
+      const telemetry = this.abilityTelemetry.get(abilityId) ?? emptyAbilityTelemetry();
+      telemetry.casts += 1;
+      this.abilityTelemetry.set(abilityId, telemetry);
+      return used;
+    } finally {
+      this.setActiveAbilityId(undefined);
+    }
   }
 }
 
@@ -276,10 +295,28 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
         { factionId: dungeon.faction, tier: dungeon.tier },
       );
   const heroDamageMultiplier = input.heroDamageMultiplier ?? 1;
-  if (dungeonDamageReductionPercent > 0 || heroDamageMultiplier !== 1) {
+  const autoAttackMultiplier = input.damageTuning?.autoAttackMultiplier ?? 1;
+  const effectDamageMultiplier = input.damageTuning?.effectDamageMultiplier ?? 1;
+  const directAbilityMultiplierById = input.damageTuning?.directAbilityMultiplierById ?? {};
+  let activeAbilityId: string | undefined;
+
+  if (
+    dungeonDamageReductionPercent > 0
+    || heroDamageMultiplier !== 1
+    || autoAttackMultiplier !== 1
+    || effectDamageMultiplier !== 1
+    || Object.keys(directAbilityMultiplierById).length > 0
+  ) {
     damageManager.setPostMitigationDamageResolver((request, mitigatedDamage) => {
       let resolvedDamage = mitigatedDamage;
-      if (request.source === heroId) resolvedDamage *= heroDamageMultiplier;
+      if (request.source === heroId) {
+        resolvedDamage *= heroDamageMultiplier;
+        if (request.source_type === "auto_attack") resolvedDamage *= autoAttackMultiplier;
+        else if (request.source_type === "effect") resolvedDamage *= effectDamageMultiplier;
+        else if (request.source_type === "ability" && activeAbilityId !== undefined) {
+          resolvedDamage *= directAbilityMultiplierById[activeAbilityId] ?? 1;
+        }
+      }
       if (request.target === heroId && dungeonDamageReductionPercent > 0) {
         resolvedDamage *= 1 - dungeonDamageReductionPercent / 100;
       }
@@ -450,7 +487,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
         farmMode: false,
       }),
     },
-  }, abilityIds, abilityTelemetry);
+  }, abilityIds, abilityTelemetry, (abilityId) => { activeAbilityId = abilityId; });
 
   beginEncounter();
   while (!finishedSegment && !defeated && ticks < MAX_TICKS) {
