@@ -91,7 +91,7 @@ describe("ResearchService", () => {
     expect(tryConsumeResearchCost).not.toHaveBeenCalled();
   });
 
-  it("starts only one research at a time and delegates payment atomically", () => {
+  it("starts independent researches simultaneously and delegates every payment atomically", () => {
     const { service, tryConsumeResearchCost } = createService();
     const first = createDefinition();
     const second = createDefinition({
@@ -106,12 +106,13 @@ describe("ResearchService", () => {
       ok: true,
       activeResearch: { researchId: first.id, remainingDurationMs: first.durationMs },
     });
-    expect(tryConsumeResearchCost).toHaveBeenCalledWith(first.cost);
     expect(service.startResearch(second.id)).toEqual({
-      ok: false,
-      reason: "research_slot_occupied",
+      ok: true,
+      activeResearch: { researchId: second.id, remainingDurationMs: second.durationMs },
     });
-    expect(tryConsumeResearchCost).toHaveBeenCalledTimes(1);
+    expect(service.getActiveResearches()).toHaveLength(2);
+    expect(tryConsumeResearchCost).toHaveBeenCalledTimes(2);
+    expect(service.startResearch(second.id)).toEqual({ ok: false, reason: "already_active" });
   });
 
   it("does not start a research when the atomic payment port rejects the cost", () => {
@@ -122,27 +123,37 @@ describe("ResearchService", () => {
       ok: false,
       reason: "payment_failed",
     });
-    expect(service.getActiveResearch()).toBeUndefined();
+    expect(service.getActiveResearches()).toEqual([]);
   });
 
-  it("advances from authoritative elapsed time and grants completion automatically", () => {
+  it("advances all active researches from the same authoritative elapsed time", () => {
     const { service } = createService();
     service.registerResearch(createDefinition());
+    service.registerResearch(createDefinition({
+      id: "research_archaeology_1",
+      durationMs: 40_000,
+      unlockIds: ["relic_tracking"],
+    }));
     service.startResearch("research_cartography_1");
+    service.startResearch("research_archaeology_1");
 
     expect(service.advance(20_000)).toEqual({
-      completedResearchId: undefined,
-      activeResearch: {
-        researchId: "research_cartography_1",
-        remainingDurationMs: 40_000,
-      },
+      completedResearchIds: [],
+      activeResearches: [
+        { researchId: "research_cartography_1", remainingDurationMs: 40_000 },
+        { researchId: "research_archaeology_1", remainingDurationMs: 20_000 },
+      ],
     });
-    expect(service.advance(40_000)).toEqual({
-      completedResearchId: "research_cartography_1",
-      activeResearch: undefined,
+    expect(service.advance(20_000)).toEqual({
+      completedResearchIds: ["research_archaeology_1"],
+      activeResearches: [
+        { researchId: "research_cartography_1", remainingDurationMs: 20_000 },
+      ],
     });
-    expect(service.hasCompleted("research_cartography_1")).toBe(true);
-    expect(service.getEntryState("research_cartography_1")).toBe("completed");
+    expect(service.advance(20_000)).toEqual({
+      completedResearchIds: ["research_cartography_1"],
+      activeResearches: [],
+    });
   });
 
   it("derives functional unlocks from completed research definitions", () => {
@@ -158,27 +169,38 @@ describe("ResearchService", () => {
     expect(service.hasUnlock("expedition_tier:4")).toBe(true);
   });
 
-  it("persists active/completed state while ignoring definitions no longer authored", () => {
+  it("persists parallel active state and migrates the legacy single-active snapshot", () => {
     const first = createService().service;
-    first.registerResearch(createDefinition());
-    first.startResearch("research_cartography_1");
+    const cartography = createDefinition();
+    const archaeology = createDefinition({
+      id: "research_archaeology_1",
+      unlockIds: ["relic_tracking"],
+    });
+    first.registerResearch(cartography);
+    first.registerResearch(archaeology);
+    first.startResearch(cartography.id);
+    first.startResearch(archaeology.id);
     first.advance(15_000);
-    const activeSnapshot = first.save();
 
     const restored = createService().service;
-    restored.registerResearch(createDefinition());
-    restored.load(activeSnapshot);
-    expect(restored.getActiveResearch()).toEqual({
-      researchId: "research_cartography_1",
-      remainingDurationMs: 45_000,
-    });
+    restored.registerResearch(cartography);
+    restored.registerResearch(archaeology);
+    restored.load(first.save());
+    expect(restored.getActiveResearches()).toEqual([
+      { researchId: cartography.id, remainingDurationMs: 45_000 },
+      { researchId: archaeology.id, remainingDurationMs: 45_000 },
+    ]);
 
-    restored.advance(45_000);
-    const completedSnapshot = restored.save();
-    const withoutDefinition = createService().service;
-    withoutDefinition.load(completedSnapshot);
-    expect(withoutDefinition.getCompletedResearchIds()).toEqual([]);
-    expect(withoutDefinition.getActiveResearch()).toBeUndefined();
+    const legacy = createService().service;
+    legacy.registerResearch(cartography);
+    legacy.load({
+      version: 1,
+      completedResearchIds: [],
+      activeResearch: { researchId: cartography.id, remainingDurationMs: 30_000 },
+    });
+    expect(legacy.getActiveResearches()).toEqual([
+      { researchId: cartography.id, remainingDurationMs: 30_000 },
+    ]);
   });
 
   it("rejects invalid elapsed time instead of using a local clock fallback", () => {
