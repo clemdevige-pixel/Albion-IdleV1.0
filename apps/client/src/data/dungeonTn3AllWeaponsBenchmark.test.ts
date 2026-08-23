@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
-import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
+import {
+  runCombatRuntimeBenchmark,
+  type CombatRuntimeAbilityTelemetry,
+  type CombatRuntimeDamageSourceTelemetry,
+} from "../runtime/CombatRuntimeBenchmarkHarness.js";
 
 type Tier = 4 | 5 | 6 | 7 | 8;
 type WeaponFamily = "broadsword" | "longbow" | "infernal" | "spiked" | "dual_dagger";
@@ -20,15 +24,6 @@ const BENCHMARK_MODES: readonly BenchmarkMode[] = [
   { cape: "faction", potion: false },
   { cape: "faction", potion: true },
 ];
-
-/** Temporary benchmark-only candidates. Authored weapon data is unchanged. */
-const DAMAGE_MULTIPLIER_BY_FAMILY: Readonly<Record<WeaponFamily, number>> = {
-  broadsword: 1,
-  longbow: 0.9,
-  infernal: 1.12,
-  spiked: 1,
-  dual_dagger: 1.06,
-};
 
 const EXPECTED_CAPE_REDUCTION_BY_TIER: Readonly<Record<Tier, number>> = {
   4: 6,
@@ -84,39 +79,63 @@ function armorIds(
 const round1 = (value: number): number => Number(value.toFixed(1));
 const modeLabel = (mode: BenchmarkMode): string => `${mode.cape}:${mode.potion ? "potion" : "no-potion"}`;
 
+type BenchmarkRow = {
+  tier: Tier;
+  faction: string;
+  dungeon: string;
+  weapon: WeaponFamily;
+  cape: CapeMode;
+  potion: boolean;
+  mastery: number;
+  capeReductionPct: number;
+  armor: number;
+  magicResistance: number;
+  clear: boolean;
+  encounterReached: number;
+  encounterProgressPct: number;
+  bossProgressPct: number;
+  enemyHpRemainingPct: number;
+  seconds: number;
+  hpPercent: number;
+  potionsUsed: number;
+  observedDps: number;
+  incomingDps: number;
+  damageDealt: number;
+  damageReceived: number;
+  damageBySource: CombatRuntimeDamageSourceTelemetry;
+  abilities: readonly CombatRuntimeAbilityTelemetry[];
+};
+
+function aggregateAbility(rows: readonly BenchmarkRow[], slotIndex: number): {
+  readonly abilityId: string;
+  readonly damage: number;
+  readonly dotDamage: number;
+  readonly casts: number;
+} {
+  let abilityId = "-";
+  let damage = 0;
+  let dotDamage = 0;
+  let casts = 0;
+  for (const row of rows) {
+    const ability = row.abilities[slotIndex];
+    if (ability === undefined) continue;
+    abilityId = ability.abilityId;
+    damage += ability.totalDamage;
+    dotDamage += ability.dotDamage;
+    casts += ability.casts;
+  }
+  return { abilityId, damage, dotDamage, casts };
+}
+
 describe("same-tier .3 dungeon benchmark across all weapons, faction capes and potions", () => {
   it("compares no cape and matching faction cape with and without health potions", () => {
-    const rows: Array<{
-      tier: Tier;
-      faction: string;
-      dungeon: string;
-      weapon: WeaponFamily;
-      damageMultiplier: number;
-      cape: CapeMode;
-      potion: boolean;
-      mastery: number;
-      capeReductionPct: number;
-      armor: number;
-      magicResistance: number;
-      clear: boolean;
-      encounterReached: number;
-      encounterProgressPct: number;
-      bossProgressPct: number;
-      enemyHpRemainingPct: number;
-      seconds: number;
-      hpPercent: number;
-      potionsUsed: number;
-      observedDps: number;
-      incomingDps: number;
-      damageReceived: number;
-    }> = [];
+    const rows: BenchmarkRow[] = [];
 
     for (const tier of TIERS) {
       const dungeons = DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === tier);
       for (const dungeon of dungeons) {
         for (const family of FAMILIES) {
           for (const mode of BENCHMARK_MODES) {
-            const damageMultiplier = DAMAGE_MULTIPLIER_BY_FAMILY[family];
             const result = runCombatRuntimeBenchmark({
               label: `${dungeon.id}:${family}:${modeLabel(mode)}:t${tier}.3`,
               weaponItemId: weaponId(tier, family),
@@ -127,7 +146,6 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
               enchantment: 3,
               masteryLevel: MASTERY_BY_TIER[tier],
               useHealthPotions: mode.potion,
-              heroDamageMultiplier: damageMultiplier,
             });
 
             rows.push({
@@ -135,7 +153,6 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
               faction: dungeon.faction,
               dungeon: dungeon.id,
               weapon: family,
-              damageMultiplier,
               cape: mode.cape,
               potion: mode.potion,
               mastery: MASTERY_BY_TIER[tier],
@@ -152,7 +169,10 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
               potionsUsed: result.potionsUsed,
               observedDps: result.observedDps,
               incomingDps: result.incomingDps,
+              damageDealt: result.damageDealt,
               damageReceived: result.damageReceived,
+              damageBySource: result.damageBySource,
+              abilities: result.abilities,
             });
           }
         }
@@ -226,60 +246,74 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       };
     }));
 
-    const weaponModeSummary = FAMILIES.flatMap((weapon) => TIERS.flatMap((tier) => BENCHMARK_MODES.map((mode) => {
+    const damageBreakdown = TIERS.flatMap((tier) => FAMILIES.map((weapon) => {
       const weaponRows = rows.filter((row) => (
-        row.weapon === weapon
-        && row.tier === tier
-        && row.cape === mode.cape
-        && row.potion === mode.potion
+        row.tier === tier
+        && row.weapon === weapon
+        && row.cape === "faction"
+        && row.potion
       ));
-      const cleared = weaponRows.filter((row) => row.clear);
+      const totalSeconds = weaponRows.reduce((sum, row) => sum + row.seconds, 0);
+      const totalDamage = weaponRows.reduce((sum, row) => sum + row.damageDealt, 0);
+      const aaDamage = weaponRows.reduce((sum, row) => sum + row.damageBySource.autoAttack, 0);
+      const s1 = aggregateAbility(weaponRows, 0);
+      const s2 = aggregateAbility(weaponRows, 1);
+      const s3 = aggregateAbility(weaponRows, 2);
+      const dps = (damage: number): number => totalSeconds > 0 ? round1(damage / totalSeconds) : 0;
+      const share = (damage: number): number => totalDamage > 0 ? round1((damage / totalDamage) * 100) : 0;
+      const perCast = (damage: number, casts: number): number => casts > 0 ? round1(damage / casts) : 0;
+      const dotShare = (ability: typeof s1): number => ability.damage > 0
+        ? round1((ability.dotDamage / ability.damage) * 100)
+        : 0;
       return {
         tier,
         weapon,
-        damageAdjustPct: round1((DAMAGE_MULTIPLIER_BY_FAMILY[weapon] - 1) * 100),
-        cape: mode.cape,
-        potion: mode.potion,
-        clears: `${cleared.length}/${weaponRows.length}`,
-        avgIncomingDps: round1(
-          weaponRows.reduce((sum, row) => sum + row.incomingDps, 0) / weaponRows.length,
-        ),
-        avgBossProgressPct: round1(
-          weaponRows.reduce((sum, row) => sum + row.bossProgressPct, 0) / weaponRows.length,
-        ),
-        avgEncounterProgressPct: round1(
-          weaponRows.reduce((sum, row) => sum + row.encounterProgressPct, 0) / weaponRows.length,
-        ),
-        avgPotionsUsed: round1(
-          weaponRows.reduce((sum, row) => sum + row.potionsUsed, 0) / weaponRows.length,
-        ),
-        avgDps: round1(
-          weaponRows.reduce((sum, row) => sum + row.observedDps, 0) / weaponRows.length,
-        ),
-        avgEncounterReached: round1(
-          weaponRows.reduce((sum, row) => sum + row.encounterReached, 0) / weaponRows.length,
-        ),
+        clears: `${weaponRows.filter((row) => row.clear).length}/${weaponRows.length}`,
+        totalDps: dps(totalDamage),
+        aaDps: dps(aaDamage),
+        aaPct: share(aaDamage),
+        s1: s1.abilityId,
+        s1Dps: dps(s1.damage),
+        s1Pct: share(s1.damage),
+        s1DotPct: dotShare(s1),
+        s1Casts: s1.casts,
+        s1DmgCast: perCast(s1.damage, s1.casts),
+        s2: s2.abilityId,
+        s2Dps: dps(s2.damage),
+        s2Pct: share(s2.damage),
+        s2DotPct: dotShare(s2),
+        s2Casts: s2.casts,
+        s2DmgCast: perCast(s2.damage, s2.casts),
+        s3: s3.abilityId,
+        s3Dps: dps(s3.damage),
+        s3Pct: share(s3.damage),
+        s3DotPct: dotShare(s3),
+        s3Casts: s3.casts,
+        s3DmgCast: perCast(s3.damage, s3.casts),
       };
-    })));
+    }));
 
     console.log("[DUNGEON_TN3_TIER_MODE_SUMMARY]");
     console.table(tierModeSummary);
     console.log("[DUNGEON_TN3_FACTION_CAPE_IMPACT]");
     console.table(capeImpact);
-    console.log("[DUNGEON_TN3_WEAPON_MODE_SUMMARY]");
-    console.table(weaponModeSummary);
+    console.log("[DUNGEON_TN3_DAMAGE_BREAKDOWN]");
+    console.table(damageBreakdown);
 
     expect(rows).toHaveLength(DUNGEON_DEFINITIONS.length * FAMILIES.length * BENCHMARK_MODES.length);
     expect(rows.every((row) => (
       Number.isFinite(row.seconds)
       && Number.isFinite(row.observedDps)
       && Number.isFinite(row.incomingDps)
-      && Number.isFinite(row.damageMultiplier)
-      && row.damageMultiplier > 0
       && row.encounterProgressPct >= 0
       && row.encounterProgressPct <= 100
       && row.bossProgressPct >= 0
       && row.bossProgressPct <= 100
+      && row.abilities.every((ability) => (
+        ability.directDamage >= 0
+        && ability.dotDamage >= 0
+        && ability.totalDamage === round1(ability.directDamage + ability.dotDamage)
+      ))
     ))).toBe(true);
 
     expect(rows.filter((row) => row.cape === "none").every((row) => row.capeReductionPct === 0)).toBe(true);
