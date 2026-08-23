@@ -25,7 +25,12 @@ describe("Expedition recap presentation", () => {
         rewardSummary: {
           kind: "faction_rune",
           itemId: "item_resource_rune_faction_t4",
-          runesCredited: 2,
+          runesCredited: 16,
+          fragmentItemId: "item_resource_dungeon_key_fragment_t4",
+          fragmentsCredited: 48,
+          keyItemId: "item_resource_dungeon_key_t4",
+          completeKeysCredited: 2,
+          quality: "reussie",
         },
       },
     ]);
@@ -46,7 +51,12 @@ describe("Expedition recap presentation", () => {
           reward: {
             kind: "faction_rune",
             itemId: "item_resource_rune_faction_t4",
-            runesCredited: 2,
+            runesCredited: 16,
+            fragmentItemId: "item_resource_dungeon_key_fragment_t4",
+            fragmentsCredited: 48,
+            keyItemId: "item_resource_dungeon_key_t4",
+            completeKeysCredited: 2,
+            quality: "reussie",
           },
         },
       ],
