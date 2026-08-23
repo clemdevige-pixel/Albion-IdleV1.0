@@ -46,10 +46,27 @@ function hoursFromDuration(durationMs: number): number {
   return hours;
 }
 
-/** Symmetric triangular roll: bounded variance, centered on the authored EV. */
-function rollCenteredInteger(mean: number, variance: number, random: () => number): number {
-  const centered = random() + random() - 1;
-  return Math.max(1, Math.round(mean * (1 + centered * variance)));
+function centeredFactor(variance: number, random: () => number): number {
+  return 1 + (random() + random() - 1) * variance;
+}
+
+/** Independent hourly triangular draws preserve EV/h while making longer Expeditions relatively more stable. */
+function rollCenteredDurationTotal(
+  ratePerHour: number,
+  hours: number,
+  variance: number,
+  random: () => number,
+): number {
+  const fullHours = Math.floor(hours);
+  const remainderHours = hours - fullHours;
+  let total = 0;
+  for (let index = 0; index < fullHours; index += 1) {
+    total += ratePerHour * centeredFactor(variance, random);
+  }
+  if (remainderHours > 0) {
+    total += ratePerHour * remainderHours * centeredFactor(variance, random);
+  }
+  return Math.max(1, Math.round(total));
 }
 
 /** Integer-only Poisson draw. Mean and variance both equal lambda; no fractional key can ever be credited. */
@@ -90,8 +107,8 @@ export function rollFactionExpeditionReward(
   const fragmentMean = profile.fragmentsPerHour * hours;
   const keyMean = profile.completeKeysPerHourEv * hours;
 
-  const runes = rollCenteredInteger(runeMean, profile.runeVariance, random);
-  const fragments = rollCenteredInteger(fragmentMean, profile.fragmentVariance, random);
+  const runes = rollCenteredDurationTotal(profile.runesPerHour, hours, profile.runeVariance, random);
+  const fragments = rollCenteredDurationTotal(profile.fragmentsPerHour, hours, profile.fragmentVariance, random);
   const completeKeys = rollPoisson(keyMean, random);
 
   return {
