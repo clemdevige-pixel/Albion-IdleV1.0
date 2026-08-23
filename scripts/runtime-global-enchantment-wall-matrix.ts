@@ -141,7 +141,7 @@ console.log("[GLOBAL_ENCHANTMENT_WALL_MATRIX_CONTRACT]", {
   enchantments: ENCHANTMENTS,
   mastery: "authored expected mastery for the zone, held constant across .0/.1/.2/.3",
   modes: ["AFK", "potion"],
-  output: "last clear + first wall per weapon/zone/enchantment, plus consecutive enchantment deltas",
+  output: "deepest clear + first failed segment per weapon/zone/enchantment, with explicit non-monotonic flags; first failure is not a hard wall when a later segment clears",
   finalGate: "benchmark:final-gates remains authoritative for step 5 S10 contract",
 });
 
@@ -154,10 +154,12 @@ for (const tier of TARGET_TIERS) {
     gear: row.gear,
     weapon: row.weapon,
     mastery: row.mastery,
-    afkLastClear: fmtSegment(row.afkLastClear),
-    afkFirstWall: row.afkFirstWall === null ? "-" : `S${String(row.afkFirstWall)}`,
-    potionLastClear: fmtSegment(row.potionLastClear),
-    potionFirstWall: row.potionFirstWall === null ? "-" : `S${String(row.potionFirstWall)}`,
+    afkDeepestClear: fmtSegment(row.afkLastClear),
+    afkFirstFailure: row.afkFirstWall === null ? "-" : `S${String(row.afkFirstWall)}`,
+    afkNonMonotonic: row.afkNonMonotonic,
+    potionDeepestClear: fmtSegment(row.potionLastClear),
+    potionFirstFailure: row.potionFirstWall === null ? "-" : `S${String(row.potionFirstWall)}`,
+    potionNonMonotonic: row.potionNonMonotonic,
     afkS10: row.afkS10Clear,
     potionS10: row.potionS10Clear,
   })));
@@ -170,15 +172,27 @@ console.table(progressionRows.map((row) => ({
   zone: row.zone,
   transition: row.transition,
   weapon: row.weapon,
-  afk: `${fmtSegment(row.afkLastClearBefore)}→${fmtSegment(row.afkLastClearAfter)}`,
+  afkDeepest: `${fmtSegment(row.afkLastClearBefore)}→${fmtSegment(row.afkLastClearAfter)}`,
   afkGain: row.afkGain,
-  potion: `${fmtSegment(row.potionLastClearBefore)}→${fmtSegment(row.potionLastClearAfter)}`,
+  potionDeepest: `${fmtSegment(row.potionLastClearBefore)}→${fmtSegment(row.potionLastClearAfter)}`,
   potionGain: row.potionGain,
 })));
 
 const nonMonotonic = wallRows.filter((row) => row.afkNonMonotonic || row.potionNonMonotonic);
 console.log("[GLOBAL_ENCHANTMENT_NON_MONOTONIC_DIAGNOSTICS]");
-console.table(nonMonotonic);
+console.table(nonMonotonic.map((row) => ({
+  tier: row.tier,
+  step: row.bandStep,
+  zone: row.zone,
+  gear: row.gear,
+  weapon: row.weapon,
+  afkDeepestClear: fmtSegment(row.afkLastClear),
+  afkFirstFailure: row.afkFirstWall === null ? "-" : `S${String(row.afkFirstWall)}`,
+  afkNonMonotonic: row.afkNonMonotonic,
+  potionDeepestClear: fmtSegment(row.potionLastClear),
+  potionFirstFailure: row.potionFirstWall === null ? "-" : `S${String(row.potionFirstWall)}`,
+  potionNonMonotonic: row.potionNonMonotonic,
+})));
 
 console.log("[GLOBAL_ENCHANTMENT_WALL_MATRIX_RESULT]", {
   wallRows: wallRows.length,
