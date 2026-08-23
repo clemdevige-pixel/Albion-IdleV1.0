@@ -64,7 +64,14 @@ const FINAL_ZONE_BY_TIER = {
 } as const satisfies Readonly<Record<Tier, WorldZoneKey>>;
 
 // T4 uses M30 so every specialization signature is actually part of the probe.
+// The same authored level is seeded on family, equipped specialization and sibling
+// specializations so the cross-specialization IP rule is represented symmetrically.
 const MASTERY_BY_TIER = { 4: 30, 5: 36, 6: 46, 7: 56, 8: 65 } as const satisfies Readonly<Record<Tier, number>>;
+const masteryProfileForTier = (tier: Tier) => ({
+  familyMasteryLevel: MASTERY_BY_TIER[tier],
+  specializationMasteryLevel: MASTERY_BY_TIER[tier],
+  siblingSpecializationMasteryLevel: MASTERY_BY_TIER[tier],
+} as const);
 
 const ARMOR_BY_TIER: Readonly<Record<Tier, readonly string[]>> = {
   4: ["item_helmet_t4_reinforced", "item_armor_t4_leather", "item_boots_t4_leather", "item_traveler_cape"],
@@ -128,7 +135,7 @@ describe("faction artifact weapon balance benchmark", () => {
             zoneDefId,
             segmentIndex,
             equipmentItemIds: equipmentFor(itemId, tier),
-            masteryLevel: MASTERY_BY_TIER[tier],
+            ...masteryProfileForTier(tier),
             enchantment: 3,
             useHealthPotions: false,
           });
@@ -158,7 +165,7 @@ describe("faction artifact weapon balance benchmark", () => {
           zoneDefId,
           segmentIndex: 9,
           equipmentItemIds: equipmentFor(itemId, tier),
-          masteryLevel: MASTERY_BY_TIER[tier],
+          ...masteryProfileForTier(tier),
           enchantment: 3,
           useHealthPotions: true,
         });
@@ -259,7 +266,7 @@ describe("faction artifact weapon balance benchmark", () => {
         segmentIndex: 9,
         dungeonDefinitionId: dungeon.id,
         enchantment: 3,
-        masteryLevel: 30,
+        ...masteryProfileForTier(4),
         useHealthPotions: true,
         // The benchmark harness owns its diagnostic resolver. Derive the
         // equivalent multiplier from the same canonical matrix used live.
