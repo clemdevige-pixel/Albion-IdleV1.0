@@ -110,7 +110,9 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
     const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
 
     if (options.isDungeonActive?.() === true) {
-      const reward = options.dungeonRewardRuntime?.processCurrentEncounterVictory();
+      const reward = options.dungeonRewardRuntime?.processCurrentEncounterVictory(
+        (factionId) => options.combatRewardRuntime.getFactionYieldBonusPercent(factionId),
+      );
       if (monsterDefinitionId !== undefined) {
         options.onMonsterKilled?.({ monsterId: monsterDefinitionId, contextId: "dungeon" });
       }
