@@ -142,8 +142,8 @@ const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, R
   4: { Keeper: 1, Heretic: 0.72, Undead: 0.67, Morgana: 0.62 },
   5: { Keeper: 1, Heretic: 1.12, Undead: 1.08, Morgana: 1 },
   6: { Keeper: 1, Heretic: 1.18, Undead: 1.14, Morgana: 1.12 },
-  7: { Keeper: 1, Heretic: 1.25, Undead: 1.22, Morgana: 1.2 },
-  8: { Keeper: 1, Heretic: 1.3, Undead: 1.27, Morgana: 1.25 },
+  7: { Keeper: 1, Heretic: 1.35, Undead: 1.32, Morgana: 1.3 },
+  8: { Keeper: 1, Heretic: 1.42, Undead: 1.38, Morgana: 1.36 },
 };
 
 function createFactionDungeon(input: {
