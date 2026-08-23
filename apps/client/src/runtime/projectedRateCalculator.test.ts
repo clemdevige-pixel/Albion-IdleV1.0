@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ZoneDefinitionId } from "@game/gameplay";
 import { FACTION_MASTERY_IDS } from "../data/factionMasteryContentCatalog.js";
 import { calculateProjectedSegmentRates } from "./projectedRateCalculator.js";
 
@@ -9,9 +10,10 @@ const BASE_INPUT = {
   equippedWeaponId: "item_weapon_sword_t3_broadsword",
   primaryAbilityAutoCast: false,
   currentZoneIndex: 0,
-  currentZoneDefId: "zone_forest_t3" as never,
+  currentZoneDefId: "zone_forest_t3" as ZoneDefinitionId,
   currentWorldBandId: "blue" as const,
   currentSegment: 0,
+  masteries: [],
 };
 
 describe("calculateProjectedSegmentRates faction yield", () => {
