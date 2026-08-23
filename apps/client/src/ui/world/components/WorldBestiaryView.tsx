@@ -8,6 +8,7 @@ import {
   BESTIARY_FACTIONS,
   WORLD_BANDS,
   WORLD_BESTIARY,
+  getBestiaryContextIds,
   getBestiaryLoot,
   type WorldBandId,
 } from "../worldModels";
@@ -60,6 +61,7 @@ export function WorldBestiaryView(): JSX.Element {
     }),
     [bandId, faction],
   );
+  const bestiaryContextIds = getBestiaryContextIds(bandId);
 
   const showLootTooltip = (
     element: HTMLElement,
@@ -121,7 +123,7 @@ export function WorldBestiaryView(): JSX.Element {
         {entries.map((entry) => {
           const isSelected = selectedMonsterId === entry.id;
           const loot = getBestiaryLoot(entry, bandId);
-          const knowledge = getBestiaryKnowledge(entry.id);
+          const knowledge = getBestiaryKnowledge(entry.id, bestiaryContextIds);
           return (
             <article
               key={entry.id}
@@ -169,8 +171,6 @@ export function WorldBestiaryView(): JSX.Element {
                     </header>
                     <dl>
                       <div><dt>Victoires</dt><dd>{knowledge.killCount}</dd></div>
-                      <div><dt>Faction</dt><dd>{knowledge.factionKillCount}</dd></div>
-                      <div><dt>Élites</dt><dd>{knowledge.factionEliteKillCount}</dd></div>
                     </dl>
                   </section>
 
