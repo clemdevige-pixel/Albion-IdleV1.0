@@ -13,8 +13,15 @@ import {
 
 const STAT_ABILITY_POWER = "stat_ability_power" as StatId;
 
+export interface WeaponAbilityDamageTelemetryEvent {
+  readonly abilityId: string;
+  readonly kind: "direct" | "dot";
+  readonly finalDamage: number;
+}
+
 interface ActiveDot {
   readonly effectId: string;
+  readonly abilityId: string;
   readonly source: EntityId;
   readonly target: EntityId;
   readonly damageType: DamageType;
@@ -40,6 +47,8 @@ export interface WeaponAbilityMechanicsRuntimeDeps {
   readonly statsManager: StatsManager;
   readonly autoAttackManager: AutoAttackManager;
   readonly onTargetKilled: (tick: number) => void;
+  /** Optional diagnostics hook. Combat behavior never depends on this callback. */
+  readonly onAbilityDamage?: (event: WeaponAbilityDamageTelemetryEvent) => void;
 }
 
 /**
@@ -103,6 +112,7 @@ export class WeaponAbilityMechanicsRuntime {
 
   public execute(definition: ClientAbilityDefinition, target: EntityId, tick: number): boolean {
     const profile = definition.mechanics;
+    const abilityId = String(definition.id);
     const sourceStat = (definition.damageType === "magical" ? "stat_magical_damage" : "stat_physical_damage") as StatId;
     const sourceDamage = this.deps.statsManager.getStat(this.deps.heroId, sourceStat).computed;
     const abilityPowerPercent = this.deps.statsManager.getStat(this.deps.heroId, STAT_ABILITY_POWER).computed;
@@ -145,7 +155,9 @@ export class WeaponAbilityMechanicsRuntime {
             source_type: "ability",
           });
           dealtDamage = dealtDamage || result !== null;
-          finalDamage += result?.finalDamage ?? 0;
+          const hitDamage = result?.finalDamage ?? 0;
+          finalDamage += hitDamage;
+          if (hitDamage > 0) this.deps.onAbilityDamage?.({ abilityId, kind: "direct", finalDamage: hitDamage });
           if (result?.targetDied === true) this.deps.onTargetKilled(tick);
         }
         lastDamageMechanicFinalDamage = finalDamage;
@@ -185,6 +197,7 @@ export class WeaponAbilityMechanicsRuntime {
         } else {
           this.dots.push({
             effectId: mechanic.effectId,
+            abilityId,
             source: this.deps.heroId,
             target,
             damageType: definition.damageType,
@@ -246,6 +259,8 @@ export class WeaponAbilityMechanicsRuntime {
           damageType: dot.damageType,
           source_type: "effect",
         });
+        const tickDamage = result?.finalDamage ?? 0;
+        if (tickDamage > 0) this.deps.onAbilityDamage?.({ abilityId: dot.abilityId, kind: "dot", finalDamage: tickDamage });
         if (result?.targetDied === true) this.deps.onTargetKilled(tick);
       }
       if (dot.ticksRemaining <= 0) this.dots.splice(index, 1);
