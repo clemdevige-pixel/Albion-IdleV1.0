@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
+import {
+  getDungeonArtifactFragmentItemId,
+  getDungeonArtifactItemId,
+} from "./dungeonArtifactContentCatalog.js";
 import { getDungeonLootDefinition } from "./dungeonLootContentCatalog.js";
 
 describe("dungeonLootContentCatalog", () => {
-  it("provides one dedicated loot table for every authored faction dungeon", () => {
+  it("provides one dedicated tiered loot table for every authored faction dungeon", () => {
     for (const dungeon of DUNGEON_DEFINITIONS) {
       const loot = getDungeonLootDefinition(dungeon.lootTableId);
       const suffix = dungeon.faction.toLowerCase();
       expect(loot.faction).toBe(dungeon.faction);
-      expect(loot.artifactFragmentItemId).toBe(`item_resource_artifact_fragment_${suffix}`);
-      expect(loot.artifactItemId).toBe(`item_resource_artifact_${suffix}`);
+      expect(loot.artifactFragmentItemId).toBe(
+        getDungeonArtifactFragmentItemId(suffix, dungeon.tier),
+      );
+      expect(loot.artifactItemId).toBe(getDungeonArtifactItemId(suffix, dungeon.tier));
       expect(loot.enchantmentShardItemId).toBe(`item_resource_enchantment_shard_t${dungeon.tier}`);
     }
   });
