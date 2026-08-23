@@ -1,17 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getSegmentRecommendedItemPower } from "../../data/itemPower";
-import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalculator";
+import { resolveProjectedSegmentRates } from "../../runtime/projectedRateResolver";
 import { useGameBridge } from "../../state/GameContext";
 import { useDashboardZone, useDashboardZoneActions } from "../dashboard/useDashboardData";
 import "./WorldSegmentStrip.css";
-
-function readComputedStat(
-  stats: ReturnType<typeof useGameBridge>["stats"],
-  id: string,
-): number {
-  return stats.stats.find((entry) => entry.id === id)?.computed ?? 0;
-}
 
 function formatRate(value: number): string {
   return Math.round(value).toLocaleString("fr-FR");
@@ -19,7 +12,7 @@ function formatRate(value: number): string {
 
 /**
  * Single permanent world browser for zones and segments.
- * Reuses the dashboard zone model and keeps projected-rate hover information in one place.
+ * Reuses the dashboard zone model and the shared projected-rate authority.
  */
 export function WorldSegmentStrip(): JSX.Element {
   const bridge = useGameBridge();
@@ -41,11 +34,6 @@ export function WorldSegmentStrip(): JSX.Element {
     return <div className="world-segment-strip" aria-label="Navigation des zones et segments" />;
   }
 
-  const equippedWeaponId = bridge.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId;
-  const physicalDamage = readComputedStat(bridge.stats, "stat_physical_damage");
-  const magicalDamage = readComputedStat(bridge.stats, "stat_magical_damage");
-  const attackSpeed = readComputedStat(bridge.stats, "stat_attack_speed");
-  const primaryAbilityAutoCast = bridge.abilities.primary?.autoCast ?? false;
   const progressedSegmentCount = viewedZone.segments.filter((segment) => segment.state !== "locked").length;
   const railProgress = viewedZone.segments.length <= 1
     ? 100
@@ -100,15 +88,9 @@ export function WorldSegmentStrip(): JSX.Element {
             segment.index,
             viewedZone.worldBandId,
           );
-          const rates = locked ? undefined : calculateProjectedSegmentRates({
-            physicalDamage,
-            magicalDamage,
-            attackSpeed,
-            equippedWeaponId,
-            primaryAbilityAutoCast,
-            currentZoneIndex: viewedZone.zoneIndexWithinBand,
-            currentWorldBandId: viewedZone.worldBandId,
-            currentSegment: segment.index - 1,
+          const rates = locked ? undefined : resolveProjectedSegmentRates(bridge, {
+            zoneDefId: viewedZone.zoneDefId,
+            segmentIndex: segment.index - 1,
           });
           const showTooltip = !locked
             && rates !== undefined
