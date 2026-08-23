@@ -188,7 +188,7 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
           weaponRows.reduce((sum, row) => sum + row.encounterReached, 0) / weaponRows.length,
         ),
       };
-    }))));
+    })));
 
     console.log("[DUNGEON_TN3_CAPE_BENCHMARK]");
     console.table(rows);
