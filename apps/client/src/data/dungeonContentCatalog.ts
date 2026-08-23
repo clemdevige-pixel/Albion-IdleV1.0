@@ -138,7 +138,7 @@ const FACTION_DUNGEON_ROSTERS = {
 const T4_FACTION_BOSS_HP_MULTIPLIER: Readonly<Record<string, number>> = {
   Keeper: 1,
   Heretic: 0.72,
-  Undead: 0.64,
+  Undead: 0.67,
   Morgana: 0.62,
 };
 
