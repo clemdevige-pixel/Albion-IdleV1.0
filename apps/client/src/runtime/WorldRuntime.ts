@@ -157,13 +157,13 @@ export class WorldRuntime {
       this.worldTick.completedSegments.add(this.worldTick.currentSegment);
       enteredNewSegment = true;
 
-      if (!this.worldTick.farmMode) {
-        if (this.worldTick.currentSegment < SEGMENTS_PER_ZONE - 1 && this.worldTick.currentSegment === this.worldTick.highestUnlockedSegment) {
-          this.worldTick.highestUnlockedSegment += 1;
-        } else if (this.worldTick.currentSegment === SEGMENTS_PER_ZONE - 1) {
-          const currentDefId = ZONE_ORDER[this.worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
-          this.progressionManager.markCompleted(currentDefId);
-        }
+      // Farm mode controls navigation only. Completing the progression frontier
+      // must still unlock the next segment / zone while the player stays put.
+      if (this.worldTick.currentSegment < SEGMENTS_PER_ZONE - 1 && this.worldTick.currentSegment === this.worldTick.highestUnlockedSegment) {
+        this.worldTick.highestUnlockedSegment += 1;
+      } else if (this.worldTick.currentSegment === SEGMENTS_PER_ZONE - 1) {
+        const currentDefId = ZONE_ORDER[this.worldTick.currentZoneIndex] ?? FOREST_ZONE_DEF_ID;
+        this.progressionManager.markCompleted(currentDefId);
       }
 
       if (this.worldTick.pendingZone !== null) {
