@@ -1,5 +1,5 @@
 import { ENCOUNTERS_PER_SEGMENT, type WorldBandId } from "@game/data";
-import { getEnemyCombatProfile, getEncounterRewards } from "@game/gameplay";
+import { getEnemyCombatProfile, getEncounterRewards, type ZoneDefinitionId } from "@game/gameplay";
 import {
   BASE_COMBAT_DROP_RATES,
   BOSS_SPECIAL_DROP_MULTIPLIER,
@@ -8,10 +8,21 @@ import {
   getEnchantmentShardProgressionWeight,
 } from "../data/economyContentCatalog.js";
 import {
+  getFactionMasteryYieldBonusPercent,
+  resolveFactionMasteryId,
+} from "../data/factionMasteryContentCatalog.js";
+import { resolveMonsterForEncounter } from "../data/monsterContentCatalog.js";
+import {
   CLIENT_ABILITIES,
   resolvePrimaryAbilityId,
   resolveWeaponMastery,
 } from "../data/weaponContentCatalog.js";
+import { applyPercentBonusRounded } from "./CombatRewardRuntime.js";
+
+export interface ProjectedMasteryEntry {
+  readonly id: string;
+  readonly level: number;
+}
 
 export interface CalculateProjectedRateInput {
   readonly physicalDamage: number;
@@ -20,8 +31,10 @@ export interface CalculateProjectedRateInput {
   readonly equippedWeaponId?: string | undefined;
   readonly primaryAbilityAutoCast: boolean;
   readonly currentZoneIndex: number;
+  readonly currentZoneDefId?: ZoneDefinitionId | undefined;
   readonly currentWorldBandId?: WorldBandId | undefined;
   readonly currentSegment: number;
+  readonly masteries?: readonly ProjectedMasteryEntry[] | undefined;
 }
 
 export interface ProjectedSegmentRates {
@@ -41,8 +54,10 @@ export function calculateProjectedSegmentRates(
     equippedWeaponId,
     primaryAbilityAutoCast,
     currentZoneIndex,
+    currentZoneDefId,
     currentWorldBandId = "blue",
     currentSegment,
+    masteries = [],
   } = input;
 
   const attackSpeed = Math.max(0.001, rawAttackSpeed);
@@ -109,14 +124,25 @@ export function calculateProjectedSegmentRates(
     projectedSeconds += enemy.hp / Math.max(1, projectedDps);
     projectedSeconds += 1;
 
+    const factionYieldBonusPercent = currentZoneDefId === undefined
+      ? 0
+      : getProjectedFactionYieldBonusPercent(
+          currentZoneDefId,
+          currentSegment,
+          encounterIndex,
+          masteries,
+        );
+    const yieldMultiplier = 1 + factionYieldBonusPercent / 100;
     const rewards = getEncounterRewards(
       currentZoneIndex,
       currentSegment,
       encounterIndex,
       currentWorldBandId,
     );
-    projectedSilver += rewards.silver;
-    if (canEarnFame) projectedFame += rewards.fame;
+    projectedSilver += applyPercentBonusRounded(rewards.silver, factionYieldBonusPercent);
+    if (canEarnFame) {
+      projectedFame += applyPercentBonusRounded(rewards.fame, factionYieldBonusPercent);
+    }
 
     const isSpecialEncounter = encounterIndex === ENCOUNTERS_PER_SEGMENT - 1;
     const isBoss = isSpecialEncounter && currentSegment === 9;
@@ -127,10 +153,11 @@ export function calculateProjectedSegmentRates(
       isElite,
       isBoss,
       enchantmentDropWeight,
-    });
+    }) * yieldMultiplier;
     projectedKeyFragments += BASE_COMBAT_DROP_RATES.keyFragment
       * dungeonKeyDropWeight
-      * (isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1);
+      * (isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1)
+      * yieldMultiplier;
   }
 
   const cyclesPerHour = 3600 / Math.max(1, projectedSeconds);
@@ -141,4 +168,17 @@ export function calculateProjectedSegmentRates(
     enchantmentShardsPerHour: projectedEnchantmentShards * cyclesPerHour,
     keyFragmentsPerHour: projectedKeyFragments * cyclesPerHour,
   };
+}
+
+function getProjectedFactionYieldBonusPercent(
+  zoneDefId: ZoneDefinitionId,
+  segmentIndex: number,
+  encounterIndex: number,
+  masteries: readonly ProjectedMasteryEntry[],
+): number {
+  const monster = resolveMonsterForEncounter(zoneDefId, segmentIndex, encounterIndex);
+  const masteryId = resolveFactionMasteryId(monster.faction);
+  if (masteryId === undefined) return 0;
+  const level = masteries.find((mastery) => mastery.id === masteryId)?.level ?? 0;
+  return getFactionMasteryYieldBonusPercent(level);
 }
