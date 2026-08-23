@@ -2,7 +2,7 @@
 
 Status: VALIDATED / IMPLEMENTED
 Parent design: `AI_BIBLE/10_SYSTEMS/44_FACTION_RESEARCH_EXPLORATION_SYSTEM.txt`
-Last update: 2026-08-22
+Last update: 2026-08-24
 
 ---
 
@@ -17,6 +17,8 @@ Achievements are feedback only. They MUST NOT unlock Research, Expeditions, Dung
 Functional unlock authority belongs to Academy / Research. Faction-yield progression belongs to Faction Mastery.
 
 The previous one-Relic-per-faction design has been removed. Therefore the old `Relic Reconstructed · <Faction>` milestones are removed rather than repointed to the new global Dungeon Relic.
+
+Faction Expeditions are now shared rather than Keeper / Heretic / Undead / Morgana-specific. Therefore faction-specific Expedition milestones are removed rather than repointed to the shared Expedition counter, because doing so would incorrectly progress every faction at once.
 
 ---
 
@@ -49,16 +51,6 @@ Per faction:
 
 ### Veteran Hunter
 - 25 faction elite kills.
-
-## Faction Expeditions
-
-### Explorer
-- complete 1 Expedition of the faction.
-
-### Expeditionary
-- complete 10 Expeditions of the faction.
-
-Offline-resolved Expeditions count normally.
 
 ## Faction Dungeons
 
@@ -101,6 +93,8 @@ Offline-resolved Expeditions count normally.
 ### Expedition Fortune
 - earn 1,000,000 cumulative Silver actually credited by generic Silver Expeditions.
 
+Shared Faction Expeditions contribute normally to the generic total Expedition milestones.
+
 ---
 
 # 4. CONTENT VOLUME
@@ -110,18 +104,19 @@ Per faction:
 - 1 Discovery;
 - 3 faction-kill milestones;
 - 2 elite-kill milestones;
-- 2 faction-Expedition milestones;
 - 2 faction-Dungeon milestones;
 - 4 Faction Mastery milestones.
 
 Total:
 
-- 14 Achievements per faction;
-- 56 faction Achievements across four factions;
+- 12 Achievements per faction;
+- 48 faction Achievements across four factions;
 - 5 global Expedition Achievements;
-- 61 Achievements for this feature set.
+- 53 Achievements for this feature set.
 
 No Achievement is currently authored specifically for the global Dungeon Relic discovery chain. Adding one later requires a separate design decision; it must not be inferred from the removed faction-Relic milestones.
+
+No Achievement is currently authored specifically for shared Faction Expeditions beyond the generic Expedition totals. Adding dedicated shared-Faction-Expedition milestones later requires a separate design decision.
 
 ---
 
@@ -160,7 +155,6 @@ Current reusable conditions:
 - `faction_unit_discovery`;
 - `faction_kill_count`;
 - `faction_elite_kill_count`;
-- `faction_expedition_completed_count`;
 - `faction_dungeon_completed_count`;
 - `faction_mastery_level`;
 - `expedition_completed_count`;
