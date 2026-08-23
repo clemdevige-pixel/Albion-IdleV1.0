@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { FACTION_EXPEDITION_REWARD_PROFILES } from "./factionExpeditionRewardContentCatalog.js";
 import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 import {
   FACTION_EXPEDITION_DEFINITIONS,
   FACTION_EXPEDITION_TYPE_ID,
   SILVER_EXPEDITION_DEFINITIONS,
-  getFactionExpeditionBaseRuneReward,
   getSilverExpeditionReward,
 } from "./expeditionContentCatalog.js";
 
@@ -54,20 +54,20 @@ describe("expeditionContentCatalog", () => {
       .toEqual(new Set([FACTION_EXPEDITION_TYPE_ID]));
 
     for (const definition of FACTION_EXPEDITION_DEFINITIONS) {
+      const tier = definition.tier as 4 | 5 | 6 | 7 | 8;
       expect(definition.requirements).toEqual([
-        { type: "research_unlock", unlockId: FACTION_UNLOCKS[definition.tier as keyof typeof FACTION_UNLOCKS] },
+        { type: "research_unlock", unlockId: FACTION_UNLOCKS[tier] },
       ]);
       expect(definition.reward).toEqual({
         kind: "faction_rune",
-        itemId: getFactionRuneItemId(definition.tier as 4 | 5 | 6 | 7 | 8),
-        runesPerHour: 1,
+        itemId: getFactionRuneItemId(tier),
+        runesPerHour: FACTION_EXPEDITION_REWARD_PROFILES[tier].runesPerHour,
       });
     }
   });
 
-  it("keeps the existing guaranteed Rune/hour baseline until the reward-table balance pass", () => {
-    expect(getFactionExpeditionBaseRuneReward("expedition_faction_t4", 2 * HOUR_MS)).toBe(2);
-    expect(getFactionExpeditionBaseRuneReward("expedition_faction_t4", 6 * HOUR_MS)).toBe(6);
-    expect(getFactionExpeditionBaseRuneReward("expedition_faction_t8", 12 * HOUR_MS)).toBe(12);
+  it("uses the validated Faction Rune/hour baseline from the reward profile", () => {
+    expect(FACTION_EXPEDITION_DEFINITIONS.map(({ tier, reward }) => [tier, reward.runesPerHour]))
+      .toEqual([[4, 8], [5, 14], [6, 25], [7, 40], [8, 60]]);
   });
 });
