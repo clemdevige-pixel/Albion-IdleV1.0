@@ -198,7 +198,7 @@ export class CombatBridgeAdapter {
         name: effect.definitionId,
         type: effect.effectType,
         remainingDuration: effect.remainingDuration,
-      }));
+      })));
     }
     this.#syncCombatStartBlockNotification();
     this.syncAbilities();
