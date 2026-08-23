@@ -41,6 +41,8 @@ export interface ExpeditionFoundationDependencies {
   readonly walletId: WalletId;
   readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
+  /** @deprecated Ignored since Faction Expeditions no longer use faction Mastery yield. */
+  readonly getFactionYieldBonusPercent?: (factionId: string) => number;
 }
 
 const FIRST_SLOT_UNLOCKS = [
