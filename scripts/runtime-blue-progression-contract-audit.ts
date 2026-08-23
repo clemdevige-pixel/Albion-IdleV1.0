@@ -1,4 +1,4 @@
-import { getWorldCombatProgression } from "@game/data";
+import { getWorldCombatProgression, getWorldProgressionZoneContract } from "@game/data";
 import type { ZoneDefinitionId } from "@game/gameplay";
 
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
@@ -94,6 +94,17 @@ function equipmentFor(
   return items;
 }
 
+function masteryForCheckpoint(checkpoint: RuntimeCheckpoint): number {
+  if (checkpoint.tier !== 4) return checkpoint.mastery;
+  if (checkpoint.zoneDefId === WORLD_ZONE_IDS.steppe) {
+    return getWorldProgressionZoneContract(4, 3).expected.masteryLevel;
+  }
+  if (checkpoint.zoneDefId === WORLD_ZONE_IDS.mountain) {
+    return getWorldProgressionZoneContract(4, 4).expected.masteryLevel;
+  }
+  return checkpoint.mastery;
+}
+
 const BROADSWORD_CHECKPOINTS: readonly RuntimeCheckpoint[] = [
   { id: "forest_s10_starter", zoneDefId: WORLD_ZONE_IDS.forest, segmentIndex: 9, tier: 3, mastery: 1, enchantment: 0, gearMode: "none", useHealthPotions: false },
   { id: "swamp_s1_starter", zoneDefId: WORLD_ZONE_IDS.swamp, segmentIndex: 0, tier: 3, mastery: 1, enchantment: 0, gearMode: "none", useHealthPotions: false },
@@ -140,7 +151,7 @@ function runCheckpoint(checkpoint: RuntimeCheckpoint, weaponItemId: string, forc
     zoneDefId: checkpoint.zoneDefId,
     segmentIndex: checkpoint.segmentIndex,
     equipmentItemIds: equipmentFor(weaponItemId, checkpoint.tier, checkpoint.gearMode),
-    masteryLevel: checkpoint.mastery,
+    masteryLevel: masteryForCheckpoint(checkpoint),
     enchantment: checkpoint.enchantment,
     useHealthPotions: forcePotions ?? checkpoint.useHealthPotions,
   });
@@ -173,7 +184,7 @@ function runBroadswordAudit(): void {
       segment: checkpoint.segmentIndex + 1,
       tier: checkpoint.tier,
       enchantment: checkpoint.enchantment,
-      mastery: checkpoint.mastery,
+      mastery: masteryForCheckpoint(checkpoint),
       gear: checkpoint.gearMode,
       potionMode: checkpoint.useHealthPotions,
       clear: result.clear,
@@ -196,6 +207,7 @@ function runGlobalContractAudit(): void {
   const detailRows: Array<Record<string, unknown>> = [];
   const summaryRows = BLUE_CONTRACT_CHECKPOINTS.map((checkpoint) => {
     const weapons = checkpoint.tier === 3 ? T3_WEAPONS : T4_WEAPONS;
+    const mastery = masteryForCheckpoint(checkpoint);
     const baselineResults = weapons.map((weaponItemId) => ({
       weaponItemId,
       result: runCheckpoint(checkpoint, weaponItemId),
@@ -204,6 +216,7 @@ function runGlobalContractAudit(): void {
     for (const { weaponItemId, result } of baselineResults) {
       detailRows.push({
         checkpoint: checkpoint.id,
+        mastery,
         mode: checkpoint.useHealthPotions ? "required_potion" : "baseline",
         weapon: shortWeaponName(weaponItemId),
         clear: result.clear,
@@ -228,6 +241,7 @@ function runGlobalContractAudit(): void {
       for (const { weaponItemId, result } of potionResults) {
         detailRows.push({
           checkpoint: checkpoint.id,
+          mastery,
           mode: "profile_potion_fallback",
           weapon: shortWeaponName(weaponItemId),
           clear: result.clear,
@@ -254,6 +268,7 @@ function runGlobalContractAudit(): void {
 
     return {
       checkpoint: checkpoint.id,
+      mastery,
       contract: checkpoint.contract,
       expected: checkpoint.expectation,
       baselineClears: `${baselineClearCount}/${baselineResults.length}`,
@@ -275,7 +290,7 @@ function runGlobalContractAudit(): void {
 
 assertMonotonicBlueCurve();
 console.log("[BLUE_BALANCE_AUDIT_REFERENCE]", {
-  sourceOfTruth: "live CombatRuntime",
+  sourceOfTruth: "live CombatRuntime + WORLD_PROGRESSION_CONTRACT mastery",
   monotonicWorldCurve: true,
   profilePotionFallback: true,
   broadswordFirst: true,
