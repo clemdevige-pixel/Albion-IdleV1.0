@@ -15,6 +15,7 @@ import {
   StatsManager,
   TargetManager,
   TargetValidator,
+  asMasteryId,
   createDefaultStatRegistry,
   type DamageEventMap,
   type MasteryId,
@@ -26,7 +27,11 @@ import {
   resolveEquipmentInfo,
   resolveItemStackInfo,
 } from "../data/itemContentCatalog.js";
-import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "../data/weaponContentCatalog.js";
+import {
+  getWeaponMasteryFamilyDefinitions,
+  resolveUnlockedWeaponAbilities,
+  resolveWeaponMastery,
+} from "../data/weaponContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import { getDungeonDefinition, resolveDungeonCombatProfile } from "../data/dungeonContentCatalog.js";
 import { resolveFactionCapeDungeonDamageReductionPercent } from "../data/factionCapeContentCatalog.js";
@@ -66,7 +71,14 @@ export interface CombatRuntimeBenchmarkInput {
   readonly startingEncounterIndex?: number;
   readonly equipmentItemIds?: readonly string[];
   readonly enchantment?: BenchmarkEnchantment;
+  /** Legacy shorthand: seeds both family and equipped specialization to the same level. */
   readonly masteryLevel?: number;
+  /** Explicit family mastery level. Falls back to masteryLevel. */
+  readonly familyMasteryLevel?: number;
+  /** Explicit equipped specialization mastery level. Falls back to masteryLevel. */
+  readonly specializationMasteryLevel?: number;
+  /** Optional level seeded on every other specialization in the equipped weapon family. */
+  readonly siblingSpecializationMasteryLevel?: number;
   readonly useHealthPotions?: boolean;
   /** Benchmark-only outgoing hero damage multiplier. Defaults to 1 and never changes authored weapon data. */
   readonly heroDamageMultiplier?: number;
@@ -223,11 +235,29 @@ function seedMasteryLevel(
 ): number {
   const route = resolveWeaponMastery(input.weaponItemId);
   if (route === undefined) return 0;
+
+  const fallbackLevel = Math.max(1, Math.floor(input.masteryLevel ?? 1));
+  const familyTargetLevel = Math.max(0, Math.floor(input.familyMasteryLevel ?? fallbackLevel));
+  const specializationTargetLevel = Math.max(0, Math.floor(input.specializationMasteryLevel ?? fallbackLevel));
+  const siblingTargetLevel = Math.max(0, Math.floor(input.siblingSpecializationMasteryLevel ?? 0));
+
   masteryService.discoverMastery(route.familyId);
   masteryService.discoverMastery(route.weaponId);
-  const targetLevel = Math.max(1, Math.floor(input.masteryLevel ?? 1));
-  seedOneMasteryLevel(route.familyId, targetLevel, masteryService, experienceService);
-  return seedOneMasteryLevel(route.weaponId, targetLevel, masteryService, experienceService);
+  seedOneMasteryLevel(route.familyId, familyTargetLevel, masteryService, experienceService);
+
+  if (siblingTargetLevel > 0) {
+    const family = getWeaponMasteryFamilyDefinitions().find(
+      (definition) => definition.masteryId === String(route.familyId),
+    );
+    for (const specializationId of family?.specializationMasteryIds ?? []) {
+      if (specializationId === String(route.weaponId)) continue;
+      const masteryId = asMasteryId(specializationId);
+      masteryService.discoverMastery(masteryId);
+      seedOneMasteryLevel(masteryId, siblingTargetLevel, masteryService, experienceService);
+    }
+  }
+
+  return seedOneMasteryLevel(route.weaponId, specializationTargetLevel, masteryService, experienceService);
 }
 
 function round1(value: number): number {
