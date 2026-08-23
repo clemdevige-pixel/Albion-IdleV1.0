@@ -42,12 +42,10 @@ const MASTERY_LEVEL = 22;
 const FACTION_WEAPON_BONUS = 1.2;
 const FAMILIES: readonly WeaponFamily[] = ["broadsword", "longbow", "infernal", "spiked", "dual_dagger"];
 const PROFILE_CANDIDATES: readonly ProfileCandidate[] = [
-  { id: "p95_d95_def100", hp: 0.95, damage: 0.95, defense: 1 },
-  { id: "p90_d95_def98", hp: 0.9, damage: 0.95, defense: 0.98 },
-  { id: "p90_d90_def98", hp: 0.9, damage: 0.9, defense: 0.98 },
-  { id: "p85_d90_def95", hp: 0.85, damage: 0.9, defense: 0.95 },
-  { id: "p85_d85_def95", hp: 0.85, damage: 0.85, defense: 0.95 },
-  { id: "p80_d85_def95", hp: 0.8, damage: 0.85, defense: 0.95 },
+  { id: "p90_d95_def98_reference", hp: 0.9, damage: 0.95, defense: 0.98 },
+  { id: "p89_d95_def98", hp: 0.89, damage: 0.95, defense: 0.98 },
+  { id: "p90_d95_def97", hp: 0.9, damage: 0.95, defense: 0.97 },
+  { id: "p89_d95_def97", hp: 0.89, damage: 0.95, defense: 0.97 },
 ];
 
 function weaponId(family: WeaponFamily): string {
