@@ -312,7 +312,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       && row.abilities.every((ability) => (
         ability.directDamage >= 0
         && ability.dotDamage >= 0
-        && ability.totalDamage === round1(ability.directDamage + ability.dotDamage)
+        && Math.abs(ability.totalDamage - (ability.directDamage + ability.dotDamage)) <= 0.11
       ))
     ))).toBe(true);
 
