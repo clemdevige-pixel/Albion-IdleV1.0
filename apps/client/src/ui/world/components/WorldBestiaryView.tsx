@@ -47,7 +47,9 @@ function formatDropRange(minimum: number, maximum: number): string {
 }
 
 function formatDamageType(damageType: string): string {
-  return damageType === "magical" ? "Magiques" : "Physiques";
+  if (damageType === "magical") return "Magiques";
+  if (damageType === "true") return "Bruts";
+  return "Physiques";
 }
 
 function getAbilityTooltipLines(ability: BestiaryAbilityModel): readonly string[] {
