@@ -60,6 +60,19 @@ const round1 = (value: number): number => Number(value.toFixed(1));
 
 describe("T4 faction-weapon bonus sweep against the next dungeon", () => {
   it("finds the minimum Heretic damage bonus that makes all simulated Keeper weapons clear", () => {
+    const encounterRows: Array<{
+      bonusPct: number;
+      weapon: WeaponFamily;
+      encounter: number;
+      cleared: boolean;
+      seconds: number;
+      hpBeforePct: number;
+      hpAfterPct: number;
+      potions: number;
+      enemyHpRemainingPct: number;
+      encounterProgressPct: number;
+    }> = [];
+
     const rows = BONUS_PCTS.flatMap((bonusPct) => FAMILIES.map((family) => {
       const damageTuning = benchmarkDamageTuning(family);
       const result = runCombatRuntimeBenchmark({
@@ -75,6 +88,21 @@ describe("T4 faction-weapon bonus sweep against the next dungeon", () => {
         heroDamageMultiplier: 1 + bonusPct / 100,
         ...(damageTuning === undefined ? {} : { damageTuning }),
       });
+
+      for (const encounter of result.encounters) {
+        encounterRows.push({
+          bonusPct,
+          weapon: family,
+          encounter: encounter.encounterIndex,
+          cleared: encounter.cleared,
+          seconds: encounter.seconds,
+          hpBeforePct: encounter.hpBeforePercent,
+          hpAfterPct: encounter.hpAfterPercent,
+          potions: encounter.potionsUsed,
+          enemyHpRemainingPct: encounter.enemyHpRemainingPercent,
+          encounterProgressPct: encounter.encounterProgressPercent,
+        });
+      }
 
       return {
         bonusPct,
@@ -113,8 +141,11 @@ describe("T4 faction-weapon bonus sweep against the next dungeon", () => {
     console.table(summary);
     console.log("[DUNGEON_T4_FACTION_WEAPON_BONUS_SWEEP_DETAIL]");
     console.table(rows);
+    console.log("[DUNGEON_T4_FACTION_WEAPON_ENCOUNTER_SUSTAIN]");
+    console.table(encounterRows);
 
     expect(rows).toHaveLength(BONUS_PCTS.length * FAMILIES.length);
     expect(rows.every((row) => row.potions > 0)).toBe(true);
+    expect(encounterRows.length).toBeGreaterThan(rows.length);
   });
 });
