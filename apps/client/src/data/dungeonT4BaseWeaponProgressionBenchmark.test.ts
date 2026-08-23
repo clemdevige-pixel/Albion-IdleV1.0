@@ -1,12 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
+import type { AuthoredEnemyCombatProfile } from "../runtime/combatEntityFactory.js";
+
+type DungeonCombatProfileInput = {
+  readonly dungeonDefinitionId: string;
+  readonly encounterIndex: number;
+  readonly monsterDefinitionId: string;
+};
+
+type DungeonContentCatalogMockModule = Readonly<Record<string, unknown>> & {
+  readonly resolveDungeonCombatProfile: (input: DungeonCombatProfileInput) => AuthoredEnemyCombatProfile;
+};
 
 vi.mock("./dungeonContentCatalog.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./dungeonContentCatalog.js")>();
+  const actual = await importOriginal<DungeonContentCatalogMockModule>();
   return {
     ...actual,
-    resolveDungeonCombatProfile: (
-      input: Parameters<typeof actual.resolveDungeonCombatProfile>[0],
-    ): ReturnType<typeof actual.resolveDungeonCombatProfile> => {
+    resolveDungeonCombatProfile: (input: DungeonCombatProfileInput): AuthoredEnemyCombatProfile => {
       const profile = actual.resolveDungeonCombatProfile(input);
       if (input.dungeonDefinitionId !== "dungeon_keeper_t4") return profile;
       return {
