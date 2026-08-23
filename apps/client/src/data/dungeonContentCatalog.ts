@@ -129,20 +129,22 @@ const FACTION_DUNGEON_ROSTERS = {
   morgana: { faction: "Morgana", normalA: MONSTER_IDS.morganaWitch, normalB: MONSTER_IDS.morganaSuppressor, elite: MONSTER_IDS.morganaDarkKnight, boss: MONSTER_IDS.morganaHighPriestess },
 } as const satisfies Readonly<Record<string, FactionDungeonRoster>>;
 
-/**
- * T4 Keeper is the entry dungeon and stays on the shared baseline. The three
- * progression factions only trim boss HP so the canonical +20% artifact bonus
- * can push a correctly prepared T4.3 build across the clear threshold without
- * weakening their trash/elite pressure or changing world monsters.
- */
-const T4_FACTION_BOSS_HP_MULTIPLIER: Readonly<Record<string, number>> = {
-  Keeper: 1,
-  Heretic: 0.72,
-  Undead: 0.67,
-  Morgana: 0.62,
-};
-
 type AuthoredDungeonTier = 4 | 5 | 6 | 7 | 8;
+
+/**
+ * Keeper stays the same-tier entry dungeon. Progression factions become
+ * increasingly explicit DPS gates as tiers rise so the canonical +20% artifact
+ * matchup remains meaningful even after branch/cross-specialization mastery IP.
+ * Only boss HP is tuned here; trash, elite pressure, damage and world monsters
+ * remain untouched.
+ */
+const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, Readonly<Record<string, number>>>> = {
+  4: { Keeper: 1, Heretic: 0.72, Undead: 0.67, Morgana: 0.62 },
+  5: { Keeper: 1, Heretic: 1.12, Undead: 1.08, Morgana: 1 },
+  6: { Keeper: 1, Heretic: 1.18, Undead: 1.14, Morgana: 1.12 },
+  7: { Keeper: 1, Heretic: 1.25, Undead: 1.22, Morgana: 1.2 },
+  8: { Keeper: 1, Heretic: 1.3, Undead: 1.27, Morgana: 1.25 },
+};
 
 function createFactionDungeon(input: {
   readonly id: string;
@@ -210,11 +212,11 @@ export function resolveDungeonCombatProfile(input: { readonly dungeonDefinitionI
   const authoredEncounter = dungeon.encounters[input.encounterIndex];
   if (authoredEncounter?.monsterDefinitionId !== input.monsterDefinitionId) throw new Error(`Dungeon encounter monster mismatch for ${dungeon.id} at ${String(input.encounterIndex)}`);
   const base = getEnemyCombatProfile(profile.sourceZoneIndexWithinBand, step.sourceSegmentIndex, step.sourceEncounterIndex, profile.bandId);
-  const t4BossHpMultiplier = dungeon.tier === 4 && authoredEncounter.kind === "boss"
-    ? (T4_FACTION_BOSS_HP_MULTIPLIER[dungeon.faction] ?? 1)
+  const bossHpMultiplier = authoredEncounter.kind === "boss"
+    ? (FACTION_BOSS_HP_MULTIPLIER_BY_TIER[dungeon.tier as AuthoredDungeonTier]?.[dungeon.faction] ?? 1)
     : 1;
   return {
-    hp: Math.round(base.hp * step.hp * t4BossHpMultiplier), damage: Math.round(base.damage * step.damage), attackSpeed: base.attackSpeed,
+    hp: Math.round(base.hp * step.hp * bossHpMultiplier), damage: Math.round(base.damage * step.damage), attackSpeed: base.attackSpeed,
     armor: Math.round(base.armor * step.defense), magicResistance: Math.round(base.magicResistance * step.defense),
   };
 }
