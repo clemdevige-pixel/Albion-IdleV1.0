@@ -218,10 +218,11 @@ Canonical bonus:
 - no penalty is applied when fighting the weapon's own faction;
 - base/non-artifact weapons do not receive this bonus.
 
-Canonical rivalries are symmetric:
+Canonical directed advantage loop:
 
-- Keeper <-> Morgana
-- Undead <-> Heretic
+`Keeper -> Morgana -> Undead -> Heretic -> Keeper`
+
+There are no symmetric rivalries. Each artifact faction has exactly one faction it counters and exactly one faction that counters it.
 
 ### Advantage matrix
 
@@ -230,9 +231,9 @@ Rows = equipped artifact weapon faction. Columns = enemy Dungeon faction.
 | Artifact faction | Keeper enemies | Morgana enemies | Undead enemies | Heretic enemies |
 |---|---:|---:|---:|---:|
 | Keeper | +0% | **+20%** | +0% | +0% |
-| Morgana | **+20%** | +0% | +0% | +0% |
+| Morgana | +0% | +0% | **+20%** | +0% |
 | Undead | +0% | +0% | +0% | **+20%** |
-| Heretic | +0% | +0% | **+20%** | +0% |
+| Heretic | **+20%** | +0% | +0% | +0% |
 
 This matrix is global to artifact weapons and must be authored as faction relationship data, not duplicated per weapon definition.
 
@@ -271,7 +272,7 @@ Bow family:
 
 Faction advantage:
 - +20% dungeon damage bonus: VALIDATED DESIGN;
-- rivalries: Keeper <-> Morgana and Undead <-> Heretic;
+- directed loop: Keeper -> Morgana -> Undead -> Heretic -> Keeper;
 - implementation must be shared/data-driven, not weapon-specific.
 
 Fire Staff, War Gloves and Dagger artifact abilities/stats remain to be designed.
