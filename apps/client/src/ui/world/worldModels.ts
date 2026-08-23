@@ -24,7 +24,7 @@ import {
   getWorldBandDefinition,
   type WorldBandId,
 } from "@game/data";
-import { getEnemyCombatProfile } from "@game/gameplay";
+import { getEnemyCombatProfile, type DamageType } from "@game/gameplay";
 
 export type WorldTabId = "zones" | "gathering" | "bestiary" | "achievements";
 export type { WorldBandId } from "@game/data";
@@ -47,7 +47,7 @@ export interface BestiaryAbilityModel {
   readonly id: string;
   readonly name: string;
   readonly cooldown: number;
-  readonly damageType: "physical" | "magical";
+  readonly damageType: DamageType;
   readonly damageMultiplier: number;
   readonly interruptible: boolean;
 }
@@ -58,7 +58,7 @@ export interface BestiaryEntryModel {
   readonly faction: string;
   readonly category: MonsterCategory;
   readonly tier: number;
-  readonly damageType: string;
+  readonly damageType: DamageType;
   readonly abilities: readonly BestiaryAbilityModel[];
   readonly imageSrc: string | undefined;
   readonly bandIds: readonly WorldBandId[];
