@@ -20,6 +20,7 @@ const AUTO_ATTACK_DAMAGE_BONUS_STAT = "stat_auto_attack_damage_bonus" as StatId;
 const AUTO_ATTACK_DAMAGE_TAKEN_BONUS_STAT = "stat_auto_attack_damage_taken_bonus" as StatId;
 const DAMAGE_TAKEN_BONUS_STAT = "stat_damage_taken_bonus" as StatId;
 const LIFE_STEAL_STAT = "stat_life_steal" as StatId;
+const DAMAGE_TAKEN_BASELINE = 100;
 
 export class DamageManager {
   readonly #world: World;
@@ -34,33 +35,17 @@ export class DamageManager {
     this.#validator = new DamageValidator(world);
   }
 
-  setEventBus(bus: EventBus<DamageEventMap>): void {
-    this.#eventBus = bus;
-  }
-
-  setPostMitigationDamageResolver(resolver: PostMitigationDamageResolver | undefined): void {
-    this.#postMitigationResolver = resolver;
-  }
+  setEventBus(bus: EventBus<DamageEventMap>): void { this.#eventBus = bus; }
+  setPostMitigationDamageResolver(resolver: PostMitigationDamageResolver | undefined): void { this.#postMitigationResolver = resolver; }
 
   attachHealth(entityId: EntityId): void {
     const maxHealth = this.#statsManager.getStat(entityId, MAX_HEALTH_STAT).computed;
-    this.#world.addComponent(entityId, HealthComponent, {
-      currentHealth: maxHealth,
-      maxHealth,
-    });
+    this.#world.addComponent(entityId, HealthComponent, { currentHealth: maxHealth, maxHealth });
   }
 
-  detachHealth(entityId: EntityId): void {
-    this.#world.removeComponent(entityId, HealthComponent);
-  }
-
-  getHealth(entityId: EntityId): HealthData {
-    return this.#world.getComponent(entityId, HealthComponent);
-  }
-
-  isAlive(entityId: EntityId): boolean {
-    return this.#world.getComponent(entityId, HealthComponent).currentHealth > 0;
-  }
+  detachHealth(entityId: EntityId): void { this.#world.removeComponent(entityId, HealthComponent); }
+  getHealth(entityId: EntityId): HealthData { return this.#world.getComponent(entityId, HealthComponent); }
+  isAlive(entityId: EntityId): boolean { return this.#world.getComponent(entityId, HealthComponent).currentHealth > 0; }
 
   processDamage(request: DamageRequest): DamageResult | null {
     if (!this.#validator.validate(request)) return null;
@@ -88,23 +73,19 @@ export class DamageManager {
       ? this.#statsManager.getStat(request.target, AUTO_ATTACK_DAMAGE_TAKEN_BONUS_STAT).computed
       : 0;
     const autoAttackTakenMultiplier = 1 + Math.max(0, autoAttackTakenBonusPercent) / 100;
-    const damageTakenBonusPercent = this.#statsManager.getStat(request.target, DAMAGE_TAKEN_BONUS_STAT).computed;
-    const damageTakenMultiplier = 1 + Math.max(0, damageTakenBonusPercent) / 100;
+    const damageTakenBonusPercent = Math.max(
+      0,
+      this.#statsManager.getStat(request.target, DAMAGE_TAKEN_BONUS_STAT).computed - DAMAGE_TAKEN_BASELINE,
+    );
+    const damageTakenMultiplier = 1 + damageTakenBonusPercent / 100;
     const rawDamageBeforeTargetBonuses = request.baseDamage + autoAttackBonusDamage + offensiveDamage;
     const adjustedRawDamage = rawDamageBeforeTargetBonuses * autoAttackTakenMultiplier * damageTakenMultiplier;
     const baseDamage = adjustedRawDamage - offensiveDamage;
 
-    const calc = calculateDamage(
-      baseDamage,
-      attackerStats,
-      defenderStats,
-      request.damageType,
-    );
-
+    const calc = calculateDamage(baseDamage, attackerStats, defenderStats, request.damageType);
     if (calc.rawDamage <= 0) return null;
 
-    const resolvedDamage = this.#postMitigationResolver?.(request, calc.mitigatedDamage)
-      ?? calc.mitigatedDamage;
+    const resolvedDamage = this.#postMitigationResolver?.(request, calc.mitigatedDamage) ?? calc.mitigatedDamage;
     if (!Number.isFinite(resolvedDamage) || resolvedDamage < 0) {
       throw new Error("Post-mitigation damage resolver must return a finite non-negative value");
     }
@@ -113,9 +94,7 @@ export class DamageManager {
     const healthBefore = health.currentHealth;
     const finalDamage = Math.min(resolvedDamage, healthBefore);
     const overkill = Math.max(0, resolvedDamage - healthBefore);
-
     health.currentHealth = Math.max(0, healthBefore - resolvedDamage);
-
     const targetDied = health.currentHealth <= 0;
 
     const result: DamageResult = {
@@ -131,38 +110,15 @@ export class DamageManager {
     };
 
     if (this.#eventBus !== undefined) {
-      this.#eventBus.publish("HealthChanged", {
-        entityId: request.target,
-        previousHealth: healthBefore,
-        newHealth: health.currentHealth,
-        maxHealth: health.maxHealth,
-      });
-      this.#eventBus.publish("DamageDealt", {
-        source: request.source,
-        target: request.target,
-        damageType: request.damageType,
-        sourceType: request.source_type,
-        rawDamage: calc.rawDamage,
-        finalDamage,
-        targetHealthAfter: health.currentHealth,
-      });
-      if (targetDied) {
-        this.#eventBus.publish("EntityKilled", {
-          source: request.source,
-          target: request.target,
-          damageType: request.damageType,
-          overkill,
-        });
-      }
+      this.#eventBus.publish("HealthChanged", { entityId: request.target, previousHealth: healthBefore, newHealth: health.currentHealth, maxHealth: health.maxHealth });
+      this.#eventBus.publish("DamageDealt", { source: request.source, target: request.target, damageType: request.damageType, sourceType: request.source_type, rawDamage: calc.rawDamage, finalDamage, targetHealthAfter: health.currentHealth });
+      if (targetDied) this.#eventBus.publish("EntityKilled", { source: request.source, target: request.target, damageType: request.damageType, overkill });
     }
 
     if (request.source_type === "auto_attack" && this.isAlive(request.source)) {
       const lifeStealPercent = this.#statsManager.getStat(request.source, LIFE_STEAL_STAT).computed;
-      if (lifeStealPercent > 0 && finalDamage > 0) {
-        this.healDamage(request.source, finalDamage * lifeStealPercent / 100);
-      }
+      if (lifeStealPercent > 0 && finalDamage > 0) this.healDamage(request.source, finalDamage * lifeStealPercent / 100);
     }
-
     return result;
   }
 
@@ -171,16 +127,7 @@ export class DamageManager {
     const previousHealth = health.currentHealth;
     const actual = Math.min(amount, health.currentHealth);
     health.currentHealth = Math.max(0, health.currentHealth - amount);
-
-    if (this.#eventBus !== undefined) {
-      this.#eventBus.publish("HealthChanged", {
-        entityId,
-        previousHealth,
-        newHealth: health.currentHealth,
-        maxHealth: health.maxHealth,
-      });
-    }
-
+    if (this.#eventBus !== undefined) this.#eventBus.publish("HealthChanged", { entityId, previousHealth, newHealth: health.currentHealth, maxHealth: health.maxHealth });
     return actual;
   }
 
@@ -189,21 +136,10 @@ export class DamageManager {
     const previousHealth = health.currentHealth;
     const actual = Math.min(amount, health.maxHealth - health.currentHealth);
     health.currentHealth = Math.min(health.maxHealth, health.currentHealth + amount);
-
     if (this.#eventBus !== undefined) {
-      this.#eventBus.publish("HealthChanged", {
-        entityId,
-        previousHealth,
-        newHealth: health.currentHealth,
-        maxHealth: health.maxHealth,
-      });
-      this.#eventBus.publish("HealApplied", {
-        entityId,
-        amount: actual,
-        newHealth: health.currentHealth,
-      });
+      this.#eventBus.publish("HealthChanged", { entityId, previousHealth, newHealth: health.currentHealth, maxHealth: health.maxHealth });
+      this.#eventBus.publish("HealApplied", { entityId, amount: actual, newHealth: health.currentHealth });
     }
-
     return actual;
   }
 
@@ -212,18 +148,9 @@ export class DamageManager {
     const previousMax = health.maxHealth;
     const previousCurrent = health.currentHealth;
     const newMax = this.#statsManager.getStat(entityId, MAX_HEALTH_STAT).computed;
-
     health.maxHealth = newMax;
-
-    if (previousCurrent <= 0) {
-      health.currentHealth = 0;
-      return;
-    }
-    if (previousMax <= 0) {
-      health.currentHealth = Math.min(previousCurrent, newMax);
-      return;
-    }
-
+    if (previousCurrent <= 0) { health.currentHealth = 0; return; }
+    if (previousMax <= 0) { health.currentHealth = Math.min(previousCurrent, newMax); return; }
     const ratio = previousCurrent / previousMax;
     const recalculated = Math.round(newMax * ratio);
     health.currentHealth = Math.min(Math.max(recalculated, 0), newMax);
