@@ -4,6 +4,7 @@ import {
   resolveMonsterForEncounter,
   type MonsterCategory,
 } from "../../data/monsterContentCatalog";
+import { buildMonsterRuntimeAbilities } from "../../data/monsterAbilityContentCatalog";
 import {
   getCombatLootExpectations,
   getDungeonKeyProgressionWeight,
@@ -42,6 +43,15 @@ export interface BestiaryLootRangeModel {
   readonly maximumExpectedQuantity: number;
 }
 
+export interface BestiaryAbilityModel {
+  readonly id: string;
+  readonly name: string;
+  readonly cooldown: number;
+  readonly damageType: "physical" | "magical";
+  readonly damageMultiplier: number;
+  readonly interruptible: boolean;
+}
+
 export interface BestiaryEntryModel {
   readonly id: string;
   readonly name: string;
@@ -49,7 +59,7 @@ export interface BestiaryEntryModel {
   readonly category: MonsterCategory;
   readonly tier: number;
   readonly damageType: string;
-  readonly abilityCount: number;
+  readonly abilities: readonly BestiaryAbilityModel[];
   readonly imageSrc: string | undefined;
   readonly bandIds: readonly WorldBandId[];
   readonly lootByBand: Readonly<Partial<Record<WorldBandId, readonly BestiaryLootRangeModel[]>>>;
@@ -185,6 +195,14 @@ export const WORLD_BESTIARY: readonly BestiaryEntryModel[] = ACTIVE_MONSTER_IDS.
   );
   const bandIds = [...new Set(monsterContexts.map(({ bandId }) => bandId))];
   const lootByBand: Partial<Record<WorldBandId, readonly BestiaryLootRangeModel[]>> = {};
+  const abilities = buildMonsterRuntimeAbilities(monster.category, monster.abilityIds).map((ability) => ({
+    id: ability.id,
+    name: ability.name,
+    cooldown: ability.cooldown,
+    damageType: ability.damageType,
+    damageMultiplier: ability.damageMultiplier,
+    interruptible: ability.interruptible,
+  }));
 
   for (const bandId of bandIds) {
     lootByBand[bandId] = aggregateLootRanges(
@@ -199,7 +217,7 @@ export const WORLD_BESTIARY: readonly BestiaryEntryModel[] = ACTIVE_MONSTER_IDS.
     category: monster.category,
     tier: monster.tier,
     damageType: monster.combat.damageType,
-    abilityCount: monster.abilityIds.length,
+    abilities,
     imageSrc: renderManifestRegistry.getStaticActor(monster.visualManifestId)?.assetPath,
     bandIds,
     lootByBand,
