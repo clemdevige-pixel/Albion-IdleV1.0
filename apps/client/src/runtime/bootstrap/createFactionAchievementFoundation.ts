@@ -5,10 +5,7 @@ import {
   type FactionAchievementCondition,
   type FactionAchievementDefinition,
 } from "../../data/factionAchievementContentCatalog.js";
-import {
-  getFactionExpeditionTypeId,
-  SILVER_EXPEDITION_TYPE_ID,
-} from "../../data/expeditionContentCatalog.js";
+import { SILVER_EXPEDITION_TYPE_ID } from "../../data/expeditionContentCatalog.js";
 import { resolveFactionMasteryId } from "../../data/factionMasteryContentCatalog.js";
 
 export interface FactionAchievementProgress {
@@ -88,13 +85,6 @@ export function createFactionAchievementFoundation(
           current: dependencies.factionKnowledgeService.getFactionEliteKillCount(condition.factionId),
           target: condition.minimum,
         };
-      case "faction_expedition_completed_count": {
-        const typeId = getFactionExpeditionTypeId(condition.factionId);
-        return {
-          current: typeId === undefined ? 0 : dependencies.expeditionService.getCompletedCount(typeId),
-          target: condition.minimum,
-        };
-      }
       case "faction_dungeon_completed_count":
         return {
           current: getFactionDungeonCompletedCount(condition.factionId),
