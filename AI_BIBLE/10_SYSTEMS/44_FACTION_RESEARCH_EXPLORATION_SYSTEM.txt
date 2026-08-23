@@ -1,8 +1,8 @@
 # 44_FACTION_RESEARCH_EXPLORATION_SYSTEM
 
-Status: VALIDATED / IMPLEMENTED CONTRACT + BALANCE FOLLOW-UP REQUIRED
-Authority: canonical Academy / Research / Expedition / Dungeon discovery contract
-Last update: 2026-08-23
+Status: VALIDATED / IMPLEMENTED CONTRACT + EXPEDITION REWARD BALANCE FOLLOW-UP REQUIRED
+Authority: canonical Academy / Research / Expedition / Dungeon discovery / Faction Rune contract
+Last update: 2026-08-24
 
 ---
 
@@ -17,9 +17,10 @@ V1 owns:
 - one generic Faction Expedition track;
 - Dungeon discovery;
 - the global Dungeon Relic discovery chain;
+- common Faction Rune acquisition;
 - Research completion recaps.
 
-The system must remain data-driven. Runtime code must not branch specifically for Keeper / Heretic / Undead / Morgana for shared mechanics.
+The system is data-driven. Shared runtime mechanics must not branch specifically for Keeper / Heretic / Undead / Morgana.
 
 Research unlocks capabilities/content. Faction Mastery remains faction-specific progression/yield and is never a second unlock tree.
 
@@ -63,41 +64,31 @@ Research capacity:
 - the same Research may not be started twice;
 - every started Research owns its own timer and consumes its own authored cost atomically.
 
-Research progresses online and through the authoritative Background Progression system.
+Research progresses online and through authoritative Background Progression.
 
-Research from Academy tiers above the current Academy tier must NOT be displayed to the player.
+Research above the current Academy tier must NOT be displayed.
 
 ---
 
 # 3. RESEARCH LIFECYCLE
 
 1. A Research definition becomes visible when its Academy tier is reachable.
-2. Its authored prerequisites determine whether it is locked or available.
-3. Starting it atomically consumes its authored cost.
-4. It receives an independent active timer.
-5. Multiple independent Researches may progress from the same authoritative elapsed time.
-6. Completion automatically commits its authored unlock IDs.
-7. Completion displays a generic Research recap.
+2. Authored prerequisites determine locked/available state.
+3. Starting consumes the authored cost atomically.
+4. Each Research receives an independent timer.
+5. Multiple Researches progress from the same authoritative elapsed time.
+6. Completion commits authored unlock IDs automatically.
+7. Completion displays the generic Research recap.
 
 No manual reward collection is used.
-
-Every Research completion recap is data-driven and may show:
-
-- Research completed;
-- effect applied;
-- newly unlocked content/capabilities.
-
-Unlock-specific popups must not be hand-authored as isolated one-off systems when the generic recap model can represent them.
 
 ---
 
 # 4. EXPEDITION RESEARCH TRACKS
 
-Silver Expeditions and Faction Expeditions use two independent Research tracks.
+Silver and Faction Expeditions use independent Research tracks.
 
 ## 4.1 Cartography = Silver Expeditions
-
-Cartography controls only the generic Silver Expedition tier.
 
 | Research | Tier | Silver | Duration | Unlock |
 |---|---:|---:|---:|---|
@@ -107,15 +98,13 @@ Cartography controls only the generic Silver Expedition tier.
 | Cartography IV | T7 | 70,000 | 3 h | Silver Expedition T7 |
 | Cartography V | T8 | 110,000 | 4 h | Silver Expedition T8 |
 
-Cartography II-V require the previous Cartography unlock plus the matching Academy tier.
+Cartography II-V require the previous Cartography unlock plus matching Academy tier.
 
 No material cost.
 
 ## 4.2 Archaeology = generic Faction Expedition
 
-Archaeology controls the generic Faction Expedition tier.
-
-There is no longer one Expedition family per Keeper / Heretic / Undead / Morgana faction.
+There is one generic Faction Expedition family, not one Expedition family per faction.
 
 | Research | Tier | Silver | Duration | Unlock |
 |---|---:|---:|---:|---|
@@ -125,13 +114,11 @@ There is no longer one Expedition family per Keeper / Heretic / Undead / Morgana
 | Archéologie IV | T7 | 70,000 | 3 h | Faction Expedition T7 |
 | Archéologie V | T8 | 110,000 | 4 h | Faction Expedition T8 |
 
-Archéologie II-V require the previous Archaeology unlock plus the matching Academy tier.
+Archéologie II-V require the previous Archaeology unlock plus matching Academy tier.
 
 No material cost.
 
 Archaeology does not own Dungeon Relic examination.
-
-The Cartography/Archaeology cost and duration curves remain the current authored baseline. Their future content/balance may be revisited without changing the Research runtime architecture.
 
 ---
 
@@ -139,82 +126,74 @@ The Cartography/Archaeology cost and duration curves remain the current authored
 
 Expeditions are passive parallel activities and continue offline through Background Progression.
 
-V1 Expedition families are now:
+V1 families:
 
 1. Generic Silver Expedition.
 2. Generic Faction Expedition.
 
-Silver Expedition requirement:
+Requirements:
 
-- matching Cartography tier unlock.
-
-Faction Expedition requirement:
-
-- matching Archaeology tier unlock.
-
-There is NO Relic prerequisite for Faction Expeditions.
+- Silver Expedition -> matching Cartography tier unlock;
+- Faction Expedition -> matching Archaeology tier unlock;
+- no Relic prerequisite for Faction Expeditions.
 
 Slots:
 
-- before any Expedition Research unlock: 0 slots;
-- T4/T5: 1 slot;
+- before any Expedition Research unlock: 0;
+- T4/T5: 1;
 - Cartography III / T6 unlocks slot 2;
-- T6-T8: maximum 2 slots.
+- T6-T8: maximum 2.
 
-Same-type concurrency remains:
+Two Expeditions of the same type may not run simultaneously.
 
-- two Expeditions of the same type may not run simultaneously.
-
-Durations remain:
+Durations:
 
 - 2 h;
 - 6 h;
 - 12 h.
 
-Reward/hour is equivalent across duration choices before whole-item rounding unless a future authored reward explicitly states otherwise.
-
-Expedition tiers above the current Academy tier must NOT be presented to the player.
+Reward/hour remains equivalent across durations before whole-item rounding unless explicitly authored otherwise.
 
 ## 5.1 Silver Expedition
 
-The existing Silver/hour curve remains authored independently from Faction Expedition rewards.
+Silver/hour is authored independently.
 
 Faction Mastery does not modify Silver Expedition output.
 
 ## 5.2 Faction Expedition
 
-The Faction Expedition is the PRIMARY and most reliable source of the common Faction Rune.
+The Faction Expedition is the primary passive/predictable source of common Faction Runes.
 
-Canonical guaranteed baseline currently preserved pending the dedicated reward-balance pass:
+The structural migration currently preserves the temporary live baseline of 1 matching-tier Rune/hour until the dedicated multi-reward pass is implemented.
 
-- 1 matching-tier Faction Rune per hour.
+Validated target direction discussed for the next reward pass:
 
-This baseline is intentionally temporary for balance purposes; it prevents inventing unvalidated values during the structural migration.
+| Tier | Target Rune/h |
+|---|---:|
+| T4 | 8 |
+| T5 | 14 |
+| T6 | 25 |
+| T7 | 40 |
+| T8 | 60 |
 
-Validated reward direction for the Faction Expedition:
+Future secondary rewards may include:
 
-- guaranteed/predictable Faction Rune output remains the signature reward;
-- future authored secondary rewards may include Silver;
+- Silver;
 - enchantment shards;
 - Dungeon key fragments;
-- complete Dungeon keys;
-- potentially increased Rune yield at higher tiers.
+- complete Dungeon keys.
 
-IMPORTANT:
+Exact quantities/probabilities for those secondary rewards remain pending and must be authored through reward tables, not ad-hoc runtime cases.
 
-- exact quantities, probabilities and tier curves for secondary rewards are NOT yet validated;
-- they must be implemented through a data-driven reward table after a dedicated balance pass;
-- runtime code must not inject ad-hoc reward cases.
-
-Because the Expedition is now generic rather than Keeper/Heretic/Undead/Morgana-specific, no individual Faction Mastery boosts its Rune output.
+The generic Faction Expedition is not modified by an individual Faction Mastery because it carries no Keeper/Heretic/Undead/Morgana identity.
 
 ---
 
 # 6. COMMON FACTION RUNE
 
-The four old faction-specific Rune families are replaced by ONE shared tiered Faction Rune family.
+The four old faction-specific Rune families are replaced by ONE shared tiered family.
 
-Canonical runtime IDs:
+Canonical IDs:
 
 - `item_resource_rune_faction_t4`;
 - `item_resource_rune_faction_t5`;
@@ -222,38 +201,23 @@ Canonical runtime IDs:
 - `item_resource_rune_faction_t7`;
 - `item_resource_rune_faction_t8`.
 
-The tier dimension remains authoritative.
-
-The Rune no longer carries Keeper / Heretic / Undead / Morgana identity.
-
-Faction identity remains carried by:
-
-- Dungeon definitions;
-- faction monsters;
-- faction artifacts;
-- artifact weapons;
-- faction capes;
-- faction matchup bonuses;
-- Faction Mastery;
-- Achievements / Bestiary where applicable.
-
-This prevents four inventories of functionally identical crafting currency while preserving faction-specific content through the artifact and Dungeon layers.
+Faction identity remains carried by Dungeons, monsters, artifacts, artifact weapons, faction capes, matchups, Faction Mastery and Achievements/Bestiary.
 
 ---
 
-# 7. ARTIFACT WEAPON CRAFT
+# 7. RUNE CONSUMPTION
 
-Artifact weapon crafting uses:
+## 7.1 Artifact weapons
 
-- authored refined base resources for the weapon family/tier;
+Artifact weapon craft requires:
+
+- authored refined base resources;
 - exactly 1 matching faction Dungeon artifact;
 - matching-tier common Faction Runes.
 
 No predecessor weapon is consumed.
 
-Current validated Rune cost curve remains:
-
-| Tier | Common Faction Runes |
+| Tier | Rune craft cost |
 |---|---:|
 | T4 | 5 |
 | T5 | 10 |
@@ -261,7 +225,19 @@ Current validated Rune cost curve remains:
 | T7 | 35 |
 | T8 | 55 |
 
-The faction-specific artifact is the faction identity gate of the craft. The Rune is a common secondary currency.
+## 7.2 Faction capes
+
+All Keeper / Heretic / Undead / Morgana capes consume the same matching-tier common Faction Rune.
+
+| Tier | Cape Rune craft cost |
+|---|---:|
+| T4 | 3 |
+| T5 | 4 |
+| T6 | 5 |
+| T7 | 6 |
+| T8 | 8 |
+
+Enchanting reuses authored craft materials through the generic enchantment system. Rune demand therefore scales beyond initial craft cost.
 
 ---
 
@@ -274,20 +250,14 @@ Canonical IDs:
 - Relic definition: `relic_dungeon`;
 - inventory item: `item_relic_dungeon`.
 
-## 8.1 Acquisition
+Acquisition:
 
-The Relic drops once, guaranteed, from:
-
-- Blue world band;
+- Blue band;
 - Frostpeak Mountain / `zone_mountain_t4`;
-- Segment 10 (zero-based runtime segment index 9);
-- final boss encounter (Ancient Keeper monster definition).
+- Segment 10 (runtime index 9);
+- final boss encounter.
 
-Acquisition MUST validate authored world context and segment, not only monster ID.
-
-## 8.2 Charge
-
-Acquisition records the authoritative faction-kill baseline for all four factions.
+Acquisition records authoritative faction-kill baselines.
 
 The Relic then requires NEW kills after acquisition:
 
@@ -296,13 +266,11 @@ The Relic then requires NEW kills after acquisition:
 - 50 Undead;
 - 50 Morgana.
 
-Historical kills before Relic acquisition never count.
-
 State before Research analysis:
 
 `UNOBTAINED -> BROKEN -> CHARGED`
 
-At 50/50 in all four objectives, the Relic remains CHARGED until its analysis Research completes.
+Historical kills before acquisition never count.
 
 ---
 
@@ -310,109 +278,127 @@ At 50/50 in all four objectives, the Relic remains CHARGED until its analysis Re
 
 ## 9.1 Analyse de la Relique
 
-Tier: T4.
+Tier T4.
 
 Prerequisites:
 
 - Academy T4;
-- global Dungeon Relic = CHARGED.
+- global Relic CHARGED.
 
-Cost:
-
-- 0 Silver;
-- no materials.
-
-Duration:
-
-- 10 minutes.
+Cost: 0 Silver / no materials.
+Duration: 10 minutes.
 
 Completion:
 
-- marks the global Relic as EXAMINED;
-- permanently unlocks `Localisation des Sanctuaires`;
-- displays the generic Research completion recap.
+- marks the Relic EXAMINED;
+- unlocks `Localisation des Sanctuaires`;
+- displays generic Research completion recap.
 
 ## 9.2 Localisation des Sanctuaires
 
-Tier: T4.
+Tier T4.
 
 Prerequisites:
 
 - Academy T4;
 - Analyse de la Relique completed.
 
-Cost:
-
-- 10,000 Silver;
-- no materials.
-
-Duration:
-
-- 1 hour.
+Cost: 10,000 Silver / no materials.
+Duration: 1 hour.
 
 Completion permanently unlocks:
 
 - World > Donjons;
 - Dungeon key-fragment world drops;
 - complete Dungeon-key world drops;
-- the rare common Faction Rune world-drop channel on faction monsters.
+- common Faction Rune world-drop channel on eligible faction monsters.
 
-Canonical Rune-world capability ID:
+Canonical Rune capability:
 
 - `faction_rune:world_drop`.
-
-This is intentionally the same progression moment as Dungeon discovery because the Rune becomes part of the Dungeon -> artifact -> craft loop.
 
 ---
 
 # 10. FACTION RUNE WORLD DROP
 
-Before `Localisation des Sanctuaires` completes:
+Before `Localisation des Sanctuaires`:
 
-- faction monsters cannot grant common Faction Runes through the world Rune-drop channel.
+- world combat cannot grant common Faction Runes through this channel.
 
 After completion:
 
-- faction monsters may grant matching-tier common Faction Runes through that channel.
+- Keeper / Heretic / Undead / Morgana monsters may grant the matching-tier common Faction Rune;
+- each successful proc grants exactly 1 Rune;
+- Animal/generic monsters are not eligible;
+- Blue T3 zones remain at 0% and do not produce T4 Runes.
 
-Design contract:
+The world channel is an active complement to Expedition income.
 
-- world Rune drops are RARE and SECONDARY;
-- the Faction Expedition must remain the best/main Rune acquisition source in expected Rune/hour;
-- world combat supplements normal play and must not replace deliberate Expedition farming.
+Tester-baseline active-farm target at Faction Mastery 0 on the deepest currently farmable reference:
 
-IMPORTANT BALANCE HOLD:
+| Tier | Target Rune/h |
+|---|---:|
+| T4 | ~6 |
+| T5 | ~10 |
+| T6 | ~18 |
+| T7 | ~30 |
+| T8 | ~45 |
 
-- exact drop probability;
-- quantity per proc;
-- tier mapping edge cases;
-- interaction with authored faction loot multipliers
+## 10.1 Displayed rate anchors
 
-are NOT yet validated.
+Rates are FINAL per-kill probabilities, not hidden runtime multipliers.
 
-The unlock capability is implemented, but final numeric world-drop authoring must wait for the dedicated balance pass rather than receiving invented placeholder values.
+Each zone authors a final S1 and S10 rate; intermediate segments interpolate between those two final values.
+
+Summary tester anchors:
+
+| Tier | Entry rate | Mid reference | Deep rate |
+|---|---:|---:|---:|
+| T4 | 0.50% | 0.85% | 1.15% |
+| T5 | 0.75% | 1.50% | 2.10% |
+| T6 | 1.80% | 2.90% | 4.30% |
+| T7 | 3.00% | 5.60% | 8.30% |
+| T8 | 4.75% | 7.80% | 13.60% |
+
+Full zone-by-zone authoring is canonical in:
+
+`AI_BIBLE/05_BALANCE/2026-08-24_FACTION_RUNE_WORLD_DROP_BASELINE.md`
+
+and runtime data:
+
+`apps/client/src/data/factionRuneWorldDropContentCatalog.ts`.
+
+## 10.2 Bestiary
+
+The Bestiary consumes the same authored Rune probability source as live world combat.
+
+Rune entries appear in the existing monster `Table de loot` alongside other loot.
+
+If a monster occurs at several depths, the Bestiary shows the real minimum-maximum base-rate range for the selected band.
+
+The tooltip labels this value `Taux de base` because Faction Mastery can increase expected Rune yield.
+
+## 10.3 Tester status
+
+These rates are a V1 tester baseline and may be retuned after real player feedback.
+
+Numeric retuning must remain data-only and require no runtime architecture changes.
 
 ---
 
-# 11. DUNGEON VISIBILITY AND KEY DROP GATE
+# 11. DUNGEON VISIBILITY AND DROP GATES
 
-Before `Localisation des Sanctuaires` is complete:
+Before `Localisation des Sanctuaires`:
 
-- World > Donjons is not displayed;
+- World > Donjons is hidden;
 - Dungeon definitions are not enterable;
-- world combat cannot grant Dungeon key fragments;
-- world combat cannot grant complete Dungeon keys;
-- world combat cannot grant common Faction Runes through the rare Rune channel.
+- world key fragments do not drop;
+- world complete keys do not drop;
+- world common Faction Runes do not drop through the Rune channel.
 
-After completion, those channels become available subject to their normal authored rules.
+After completion, those channels become available subject to their authored rules.
 
-Dungeon keys remain:
-
-- tier-based;
-- faction-independent;
-- consumed according to the existing Dungeon entry contract.
-
-Research activates the channels; it does not replace tier progression or Dungeon entry rules.
+Dungeon keys remain tier-based, faction-independent and consumed by existing Dungeon entry rules.
 
 ---
 
@@ -420,95 +406,93 @@ Research activates the channels; it does not replace tier progression or Dungeon
 
 Faction Mastery remains faction-specific yield/progression only.
 
+Current yield rule:
+
+- +0.5% per level;
+- max 100;
+- +50% at level 100.
+
 It may affect matching-faction authored channels such as:
 
 - faction combat Silver/Fame yield;
-- authored faction loot channels.
+- authored faction loot channels;
+- common Faction Rune world-drop expected yield when killing that faction.
 
-It does NOT gate:
+For Rune world drops, mastery increases expected yield on top of the displayed base rate.
 
-- Research;
-- Expeditions;
-- Relic acquisition/charge;
-- Dungeon discovery;
-- recipes;
-- world progression.
+It does NOT gate Research, Expeditions, Relic progression, Dungeon discovery, recipes or world progression.
 
-The generic Silver Expedition is unaffected by Faction Mastery.
-
-The generic Faction Expedition is also unaffected by an individual Faction Mastery because it has no Keeper/Heretic/Undead/Morgana identity.
+Generic Silver/Faction Expeditions are unaffected by an individual Faction Mastery.
 
 ---
 
 # 13. PERSISTENCE / MIGRATION
 
-Research, Expeditions, faction knowledge and Relic state remain persistent providers.
+Research persistence stores a collection of active Research timers.
 
-Research persistence now stores a collection of active Research timers.
+Research snapshot V1 with one `activeResearch` remains load-compatible.
 
-Research snapshot v1 with one `activeResearch` remains load-compatible and migrates naturally into the parallel active collection.
-
-Runtime save format v5 migrates all legacy faction-specific Rune IDs to the matching common tiered Rune ID:
+Runtime save V5 migrates all legacy faction-specific Rune IDs to the matching common tiered Rune ID:
 
 - Keeper Tn -> Faction Rune Tn;
 - Heretic Tn -> Faction Rune Tn;
 - Undead Tn -> Faction Rune Tn;
 - Morgana Tn -> Faction Rune Tn.
 
-Existing quantities are preserved. If several legacy Rune stacks of the same tier coexist, they now resolve to the same common item ID and normal inventory stacking rules may consolidate them through subsequent inventory operations.
+Quantities are preserved.
 
-Legacy faction Relics remain non-convertible to the global Dungeon Relic, as previously validated.
+Legacy faction Relics remain non-convertible to the global Dungeon Relic.
 
 ---
 
 # 14. DATA-DRIVEN RULES
 
-Required architecture:
+Required:
 
 - Research definitions own tier/cost/duration/prerequisites/unlock IDs;
-- ResearchService owns a collection of active timers, not one hard-coded slot;
+- ResearchService owns parallel active timers;
 - Expedition definitions consume Research unlock IDs;
 - one generic Faction Expedition definition exists per tier;
 - Faction Rune identity is common by tier;
-- artifact recipes consume one faction artifact plus common tiered Runes;
-- Dungeon navigation consumes one global Research unlock;
-- the Rune world-drop channel consumes the `faction_rune:world_drop` Research capability;
-- future Expedition secondary rewards must use authored reward tables;
-- Research recap presentation consumes authored metadata.
+- artifact weapons and faction capes consume common tiered Runes;
+- Rune world drops consume the Research capability;
+- Rune world numeric rates live in one authored data table;
+- Bestiary reads the same Rune probability source as runtime combat;
+- future Expedition secondary rewards use authored reward tables.
 
 Forbidden:
 
-- Keeper/Heretic/Undead/Morgana runtime branches for shared mechanics;
-- duplicate unlock booleans saved outside owning systems;
-- a second Research scheduler layered over ResearchService;
-- UI reconstructing gameplay authority independently from Research/Expedition data;
-- separate faction Rune currencies reintroduced for equivalent craft purposes;
-- hard-coded Expedition secondary reward cases when a data table can own them;
-- enabling world Rune drops before the Research capability;
-- tuning world Rune drops so strongly that world farming overtakes Faction Expedition as the main Rune source.
+- faction-specific runtime branches for shared mechanics;
+- duplicate unlock booleans outside owning systems;
+- second Research scheduler;
+- UI reconstruction of gameplay authority;
+- reintroducing separate faction Rune currencies;
+- hidden Rune depth multipliers that make displayed rates differ from runtime rates;
+- world Rune drops before the Research capability;
+- manual per-monster Rune rates duplicated outside the progression table.
 
 ---
 
 # 15. CANONICAL LOOP SUMMARY
 
-## Research / Expeditions
+Research / Expeditions:
 
 `Academy tier`
 `-> parallel Researches`
 `-> Cartography I-V -> Silver Expedition T4-T8`
 `-> Archaeology I-V -> generic Faction Expedition T4-T8`
-`-> common tiered Faction Runes (primary source)`
+`-> common tiered Faction Runes`
 
-## Dungeons / Rune secondary source
+Dungeon / active Rune channel:
 
-`Blue Frostpeak Mountain S10 boss`
+`Frostpeak Mountain S10 boss`
 `-> global Dungeon Relic`
 `-> 50 Keeper + 50 Heretic + 50 Undead + 50 Morgana`
 `-> Analyse de la Relique`
 `-> Localisation des Sanctuaires`
-`-> Donjons + keys/fragments + rare world Faction Rune channel`
+`-> Donjons + keys/fragments + world Faction Rune channel`
 
-## Artifact craft
+Artifact craft:
 
 `Dungeon key`
 `-> faction Dungeon`
@@ -517,13 +501,10 @@ Forbidden:
 `+ common Faction Runes`
 `-> artifact weapon`
 
-This is the canonical structural contract as of 2026-08-23.
+Pending balance work:
 
-Pending dedicated balance work:
-
-1. Faction Expedition multi-reward tables by tier.
-2. Rune/hour progression by Expedition tier if the 1/h baseline is changed.
-3. Rare world Faction Rune drop rate/quantity by tier.
-4. Validation that Expedition remains the dominant Rune source.
+1. Implement/tune Faction Expedition Rune/hour target curve.
+2. Author Faction Expedition multi-reward tables.
+3. Revalidate Rune world rates from tester telemetry and real progression behavior.
 
 DOCUMENT TERMINE
