@@ -85,6 +85,17 @@ function formatFactionName(factionId: string): string {
     .join(" ");
 }
 
+function getTieredFactionRuneVisual(itemId: string): SpecialLootVisualDefinition | undefined {
+  const match = itemId.match(/^item_resource_rune_faction_t([4-8])$/);
+  if (match === null) return undefined;
+  const tier = Number(match[1]);
+  return {
+    name: `Rune de faction T${String(tier)}`,
+    className: "faction-rune",
+    symbol: "R",
+  };
+}
+
 function getTieredDungeonKeyVisual(itemId: string): SpecialLootVisualDefinition | undefined {
   const fragmentMatch = itemId.match(/^item_resource_dungeon_key_fragment_t([4-8])$/);
   if (fragmentMatch !== null) {
@@ -148,6 +159,9 @@ function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition
       symbol: "R",
     };
   }
+
+  const factionRune = getTieredFactionRuneVisual(itemId);
+  if (factionRune !== undefined) return factionRune;
 
   const tieredDungeonKey = getTieredDungeonKeyVisual(itemId);
   if (tieredDungeonKey !== undefined) return tieredDungeonKey;
