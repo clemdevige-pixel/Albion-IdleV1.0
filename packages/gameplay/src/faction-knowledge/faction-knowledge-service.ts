@@ -107,12 +107,18 @@ export class FactionKnowledgeService implements SaveProvider {
   load(data: unknown): void {
     const current = FactionKnowledgeSnapshotSchema.safeParse(data);
     const legacy = current.success ? undefined : LegacyFactionKnowledgeSnapshotSchema.safeParse(data);
-    if (!current.success && (legacy === undefined || !legacy.success)) return;
+
+    let killsByMonster: Record<string, number>;
+    if (current.success) {
+      killsByMonster = current.data.killsByMonster;
+    } else {
+      if (legacy === undefined || !legacy.success) return;
+      killsByMonster = legacy.data.killsByMonster;
+    }
 
     this.#killsByMonster.clear();
     this.#killsByMonsterByContext.clear();
 
-    const killsByMonster = current.success ? current.data.killsByMonster : legacy!.data.killsByMonster;
     for (const [monsterId, kills] of Object.entries(killsByMonster)) {
       if (kills <= 0 || this.#resolver.resolveMonster(monsterId) === undefined) continue;
       this.#killsByMonster.set(monsterId, kills);
