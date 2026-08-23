@@ -4,7 +4,6 @@ export type FactionAchievementCondition =
   | { readonly type: "faction_unit_discovery"; readonly monsterIds: readonly string[] }
   | { readonly type: "faction_kill_count"; readonly factionId: string; readonly minimum: number }
   | { readonly type: "faction_elite_kill_count"; readonly factionId: string; readonly minimum: number }
-  | { readonly type: "faction_expedition_completed_count"; readonly factionId: string; readonly minimum: number }
   | { readonly type: "faction_dungeon_completed_count"; readonly factionId: string; readonly minimum: number }
   | { readonly type: "faction_mastery_level"; readonly factionId: string; readonly minimum: number }
   | { readonly type: "expedition_completed_count"; readonly minimum: number }
@@ -76,18 +75,6 @@ function createFactionAchievements(
       id: `${faction.id}_veteran_hunter`,
       title: `Veteran Hunter · ${faction.label}`,
       condition: { type: "faction_elite_kill_count", factionId: faction.id, minimum: 25 },
-    },
-    {
-      ...base,
-      id: `${faction.id}_explorer`,
-      title: `Explorer · ${faction.label}`,
-      condition: { type: "faction_expedition_completed_count", factionId: faction.id, minimum: 1 },
-    },
-    {
-      ...base,
-      id: `${faction.id}_expeditionary`,
-      title: `Expeditionary · ${faction.label}`,
-      condition: { type: "faction_expedition_completed_count", factionId: faction.id, minimum: 10 },
     },
     {
       ...base,
