@@ -14,6 +14,10 @@ import {
 } from "./dungeonKeyContentCatalog.js";
 import { FACTION_CAPE_CRAFT_RECIPES } from "./factionCapeContentCatalog.js";
 import { EQUIPMENT_CRAFT_RECIPES } from "./refiningRecipes.js";
+import {
+  ARTIFACT_WEAPON_CRAFT_RECIPES,
+  isArtifactWeaponCraftOutput,
+} from "./artifactWeaponCraftRecipes.js";
 
 export interface ClientCraftRecipe {
   readonly id: string;
@@ -69,8 +73,13 @@ export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
   ...DUNGEON_ARTIFACT_CRAFT_RECIPES,
 ];
 
+const CONVENTIONAL_EQUIPMENT_CRAFT_RECIPES = EQUIPMENT_CRAFT_RECIPES.filter(
+  (recipe) => !isArtifactWeaponCraftOutput(recipe.outputItemId),
+);
+
 export const ALL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
-  ...EQUIPMENT_CRAFT_RECIPES,
+  ...CONVENTIONAL_EQUIPMENT_CRAFT_RECIPES,
+  ...ARTIFACT_WEAPON_CRAFT_RECIPES,
   ...FACTION_CAPE_CRAFT_RECIPES,
   ...SPECIAL_CRAFT_RECIPES,
 ];
