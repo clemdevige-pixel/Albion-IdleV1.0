@@ -6,13 +6,7 @@ export interface ExpeditionRecapItemModel {
   readonly expeditionId: string;
   readonly displayName: string;
   readonly durationMs: number;
-  readonly reward:
-    | { readonly kind: "silver"; readonly silverCredited: number }
-    | {
-      readonly kind: "faction_rune";
-      readonly itemId: string;
-      readonly runesCredited: number;
-    };
+  readonly reward: ExpeditionRewardSummary;
 }
 
 export interface ExpeditionRecapModel {
