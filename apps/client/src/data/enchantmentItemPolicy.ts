@@ -1,11 +1,19 @@
 import type { EnchantmentLevel } from "@game/gameplay";
+import { FACTION_CAPE_CONTENT } from "./factionCapeContentCatalog.js";
 import { resolveEnchantmentItemInfo as resolveLegacyEnchantmentItemInfo } from "./itemContentCatalog.js";
 
 interface EnchantmentPolicy { readonly enabled: boolean; readonly maximumLevel: EnchantmentLevel; }
 
+const FACTION_CAPE_ENCHANTMENT_POLICY: Readonly<Record<string, EnchantmentPolicy>> = Object.fromEntries(
+  FACTION_CAPE_CONTENT.map((cape) => [
+    cape.itemId,
+    { enabled: true, maximumLevel: 3 as const },
+  ]),
+);
+
 /**
  * Explicit authored eligibility. Weapons can reach .4 (Awakened); conventional
- * armor/off-hand equipment remains capped at .3.
+ * armor/off-hand/cape equipment remains capped at .3.
  */
 export const ENCHANTMENT_ITEM_POLICY: Readonly<Record<string, EnchantmentPolicy>> = {
   item_weapon_sword_t4_broadsword: { enabled: true, maximumLevel: 4 },
@@ -62,6 +70,8 @@ export const ENCHANTMENT_ITEM_POLICY: Readonly<Record<string, EnchantmentPolicy>
   item_boots_t6_leather: { enabled: true, maximumLevel: 3 },
   item_boots_t7_leather: { enabled: true, maximumLevel: 3 },
   item_boots_t8_leather: { enabled: true, maximumLevel: 3 },
+
+  ...FACTION_CAPE_ENCHANTMENT_POLICY,
 };
 
 /** Single authored gate for whether an item may participate in .4 Awakening. */
