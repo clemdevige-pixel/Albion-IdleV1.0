@@ -15,10 +15,17 @@ import {
   PINE_PLANK_RECIPE,
   IRON_BAR_RECIPE,
 } from "./refiningRecipes.js";
+import {
+  ARTIFACT_WEAPON_CRAFT_RECIPES,
+  isArtifactWeaponCraftOutput,
+} from "./artifactWeaponCraftRecipes.js";
 
 const HERO_BASE_ATTACK_SPEED = 1.2;
 const ALL_EQUIPMENT_CRAFT_RECIPES = [
-  ...EQUIPMENT_CRAFT_RECIPES,
+  ...EQUIPMENT_CRAFT_RECIPES.filter(
+    (recipe) => !isArtifactWeaponCraftOutput(recipe.outputItemId),
+  ),
+  ...ARTIFACT_WEAPON_CRAFT_RECIPES,
   ...FACTION_CAPE_CRAFT_RECIPES,
 ] as const;
 
