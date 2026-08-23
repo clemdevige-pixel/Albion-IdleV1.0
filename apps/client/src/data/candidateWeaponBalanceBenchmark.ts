@@ -36,7 +36,7 @@ function isDualDagger(itemId: string): boolean {
   return itemId.includes("_dagger_") && itemId.includes("_pair");
 }
 
-export function resolveCandidateRuntimeDamageTuning(itemId: string): CombatRuntimeBenchmarkDamageTuning | undefined {
+export function resolveCandidateRuntimeDamageTuning(itemId: string): CombatRuntimeBenchmarkDamageTuning {
   if (isLongbow(itemId)) {
     return { autoAttackMultiplier: LONGBOW_AUTO_ATTACK_MULTIPLIER };
   }
@@ -57,7 +57,7 @@ export function resolveCandidateRuntimeDamageTuning(itemId: string): CombatRunti
       },
     };
   }
-  return undefined;
+  return {};
 }
 
 function hasUnlockedEffect(itemId: string, masteryLevel: number, effectId: string): boolean {
