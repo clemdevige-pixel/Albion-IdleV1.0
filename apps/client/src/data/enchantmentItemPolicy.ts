@@ -1,51 +1,32 @@
 import type { EnchantmentLevel } from "@game/gameplay";
 import { FACTION_CAPE_CONTENT } from "./factionCapeContentCatalog.js";
 import { resolveEnchantmentItemInfo as resolveLegacyEnchantmentItemInfo } from "./itemContentCatalog.js";
+import { WEAPON_ITEM_DEFINITIONS, resolveWeaponTier } from "./weaponContentCatalog.js";
 
 interface EnchantmentPolicy { readonly enabled: boolean; readonly maximumLevel: EnchantmentLevel; }
 
+const WEAPON_ENCHANTMENT_POLICY: Readonly<Record<string, EnchantmentPolicy>> = Object.fromEntries(
+  Object.keys(WEAPON_ITEM_DEFINITIONS).flatMap((itemId) => {
+    const tier = resolveWeaponTier(itemId);
+    return tier !== undefined && tier >= 4
+      ? [[itemId, { enabled: true, maximumLevel: 4 as const }] as const]
+      : [];
+  }),
+);
+
 const FACTION_CAPE_ENCHANTMENT_POLICY: Readonly<Record<string, EnchantmentPolicy>> = Object.fromEntries(
-  FACTION_CAPE_CONTENT.map((cape) => [
-    cape.itemId,
-    { enabled: true, maximumLevel: 3 as const },
-  ]),
+  FACTION_CAPE_CONTENT.map((cape) => [cape.itemId, { enabled: true, maximumLevel: 3 as const }]),
 );
 
 /**
- * Explicit authored eligibility. Weapons can reach .4 (Awakened); conventional
- * armor/off-hand/cape equipment remains capped at .3.
+ * Explicit authored eligibility by equipment category.
+ *
+ * Weapon eligibility is derived from the authoritative weapon catalog: every
+ * authored T4-T8 weapon can reach .4 (Awakened). Conventional armor, off-hand
+ * and faction capes remain capped at .3.
  */
 export const ENCHANTMENT_ITEM_POLICY: Readonly<Record<string, EnchantmentPolicy>> = {
-  item_weapon_sword_t4_broadsword: { enabled: true, maximumLevel: 4 },
-  item_weapon_sword_t5_broadsword: { enabled: true, maximumLevel: 4 },
-  item_weapon_sword_t6_broadsword: { enabled: true, maximumLevel: 4 },
-  item_weapon_sword_t7_broadsword: { enabled: true, maximumLevel: 4 },
-  item_weapon_sword_t8_broadsword: { enabled: true, maximumLevel: 4 },
-
-  item_weapon_bow_t4_longbow: { enabled: true, maximumLevel: 4 },
-  item_weapon_bow_t5_longbow: { enabled: true, maximumLevel: 4 },
-  item_weapon_bow_t6_longbow: { enabled: true, maximumLevel: 4 },
-  item_weapon_bow_t7_longbow: { enabled: true, maximumLevel: 4 },
-  item_weapon_bow_t8_longbow: { enabled: true, maximumLevel: 4 },
-  item_weapon_bow_t4_badon: { enabled: true, maximumLevel: 4 },
-
-  item_weapon_staff_t4_infernal: { enabled: true, maximumLevel: 4 },
-  item_weapon_staff_t5_infernal: { enabled: true, maximumLevel: 4 },
-  item_weapon_staff_t6_infernal: { enabled: true, maximumLevel: 4 },
-  item_weapon_staff_t7_infernal: { enabled: true, maximumLevel: 4 },
-  item_weapon_staff_t8_infernal: { enabled: true, maximumLevel: 4 },
-
-  item_weapon_gloves_t4_spiked_gauntlets: { enabled: true, maximumLevel: 4 },
-  item_weapon_gloves_t5_spiked_gauntlets: { enabled: true, maximumLevel: 4 },
-  item_weapon_gloves_t6_spiked_gauntlets: { enabled: true, maximumLevel: 4 },
-  item_weapon_gloves_t7_spiked_gauntlets: { enabled: true, maximumLevel: 4 },
-  item_weapon_gloves_t8_spiked_gauntlets: { enabled: true, maximumLevel: 4 },
-
-  item_weapon_dagger_t4_pair: { enabled: true, maximumLevel: 4 },
-  item_weapon_dagger_t5_pair: { enabled: true, maximumLevel: 4 },
-  item_weapon_dagger_t6_pair: { enabled: true, maximumLevel: 4 },
-  item_weapon_dagger_t7_pair: { enabled: true, maximumLevel: 4 },
-  item_weapon_dagger_t8_pair: { enabled: true, maximumLevel: 4 },
+  ...WEAPON_ENCHANTMENT_POLICY,
 
   item_shield_t4_reinforced: { enabled: true, maximumLevel: 3 },
   item_shield_t5_reinforced: { enabled: true, maximumLevel: 3 },
