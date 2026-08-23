@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FACTION_CAPE_CONTENT } from "./factionCapeContentCatalog.js";
 import { PROGRESSION_EQUIPMENT_CONTENT } from "./nonWeaponEquipmentContentCatalog.js";
 import {
   ENCHANTMENT_ITEM_POLICY,
@@ -34,9 +35,23 @@ describe("awakening enchantment policy", () => {
     }
   });
 
+  it("derives every faction cape as enchantable through .3 from faction cape content", () => {
+    for (const cape of FACTION_CAPE_CONTENT) {
+      expect(ENCHANTMENT_ITEM_POLICY[cape.itemId]).toEqual({
+        enabled: true,
+        maximumLevel: 3,
+      });
+
+      const resolved = resolveAuthoredEnchantmentItemInfo(cape.itemId);
+      expect(resolved?.enchantable).toBe(true);
+      expect(resolved?.maximumLevel).toBe(3);
+    }
+  });
+
   it("keeps Awakening reserved to authored weapons", () => {
     expect(resolveAuthoredEnchantmentItemInfo("item_shield_t8_reinforced")?.maximumLevel).toBe(3);
     expect(resolveAuthoredEnchantmentItemInfo("item_armor_t8_leather")?.maximumLevel).toBe(3);
+    expect(resolveAuthoredEnchantmentItemInfo("item_cape_t8_keeper")?.maximumLevel).toBe(3);
     expect(resolveAuthoredEnchantmentItemInfo("item_weapon_sword_t8_broadsword")?.maximumLevel).toBe(4);
   });
 });
