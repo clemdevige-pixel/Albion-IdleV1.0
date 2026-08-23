@@ -16,10 +16,6 @@ export function WorkerHousePanel({ level: _level }: { readonly level: number }):
           <small>Ouvriers recrutés</small>
           <strong>{String(workers.workers.length)} / {String(workers.capacity)}</strong>
         </div>
-        <div>
-          <small>Coût de recrutement</small>
-          <strong>{String(workers.recruitmentCost)} Silver</strong>
-        </div>
       </div>
 
       <div className="ui-island-worker-house__list">
