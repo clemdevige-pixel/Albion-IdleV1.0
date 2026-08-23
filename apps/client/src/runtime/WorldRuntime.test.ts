@@ -98,7 +98,7 @@ describe("WorldRuntime combat navigation rules", () => {
     expect(worldRuntime.getWorldLocationSaveState().activeEncounter).toBe(3);
   });
 
-  it("does not unlock the next segment when the progression frontier is farmed", () => {
+  it("unlocks the next segment when the progression frontier is farmed while staying on the current segment", () => {
     const foundation = createWorldFoundation();
     const savedLocation = {
       activeZoneDefId: WORLD_ZONE_IDS.forest,
@@ -121,10 +121,10 @@ describe("WorldRuntime combat navigation rules", () => {
 
     expect(foundation.worldRuntime.currentSegment).toBe(5);
     expect(foundation.worldRuntime.currentEncounter).toBe(0);
-    expect(foundation.worldRuntime.highestUnlockedSegment).toBe(5);
+    expect(foundation.worldRuntime.highestUnlockedSegment).toBe(6);
   });
 
-  it("does not complete a zone when its final segment is farmed", () => {
+  it("completes a zone when its final segment is farmed while staying on that segment", () => {
     const foundation = createWorldFoundation();
     const savedLocation = {
       activeZoneDefId: WORLD_ZONE_IDS.forest,
@@ -148,6 +148,6 @@ describe("WorldRuntime combat navigation rules", () => {
     foundation.worldRuntime.advanceVictory();
 
     expect(foundation.worldRuntime.currentSegment).toBe(9);
-    expect(foundation.progressionManager.isUnlocked(WORLD_ZONE_IDS.swamp)).toBe(false);
+    expect(foundation.progressionManager.isUnlocked(WORLD_ZONE_IDS.swamp)).toBe(true);
   });
 });
