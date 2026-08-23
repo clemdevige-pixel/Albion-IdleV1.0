@@ -33,7 +33,7 @@ function formatDuration(durationMs: number): string {
 
 function researchFailureMessage(reason: string): string {
   switch (reason) {
-    case "research_slot_occupied": return "Le slot de recherche est déjà occupé.";
+    case "already_active": return "Cette recherche est déjà en cours.";
     case "requirements_not_met": return "Les prérequis de cette recherche ne sont pas remplis.";
     case "payment_failed": return "Les ressources nécessaires ne sont pas disponibles.";
     case "already_completed": return "Cette recherche est déjà terminée.";
@@ -278,7 +278,7 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
   const availableTiers = ACADEMY_TIERS.filter((tier) => researchTier !== undefined && tier <= researchTier);
   const selectedExpeditionTier = requestedExpeditionTier ?? availableTiers.at(-1) ?? 4;
   const completedResearch = model.research.filter((entry) => entry.state === "completed");
-  const activeResearch = model.research.find((entry) => entry.state === "active");
+  const activeResearches = model.research.filter((entry) => entry.state === "active");
   const availableResearch = model.research.filter((entry) => {
     const info = getResearchPresentationInfo(entry.id);
     return entry.state !== "completed"
@@ -331,7 +331,7 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
           <header>
             <div>
               <strong>Recherches</strong>
-              <small>La liste principale montre uniquement ce qu’il reste à accomplir.</small>
+              <small>Les recherches indépendantes peuvent progresser simultanément.</small>
             </div>
             <button
               className={`ui-academy__history-toggle${showResearchHistory ? " is-active" : ""}`}
@@ -352,10 +352,12 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
             </div>
           ) : (
             <>
-              {activeResearch !== undefined && (
+              {activeResearches.length > 0 && (
                 <div className="ui-academy__active-research">
-                  <span className="ui-island__eyebrow">En cours</span>
-                  <ResearchRow research={activeResearch} />
+                  <span className="ui-island__eyebrow">En cours ({String(activeResearches.length)})</span>
+                  {activeResearches.map((entry) => (
+                    <ResearchRow key={entry.id} research={entry} />
+                  ))}
                 </div>
               )}
 
@@ -445,7 +447,7 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
                       setRequestedDuration(undefined);
                     }}
                   >
-                    <strong>{entry.typeId === SILVER_EXPEDITION_TYPE_ID ? "Silver" : entry.typeId}</strong>
+                    <strong>{expeditionKindLabel(entry)}</strong>
                     <small>{expeditionStatusLabel(entry)}</small>
                   </button>
                 );
