@@ -183,6 +183,52 @@ Faction artifacts:
 - Undead: Brimstone Staff
 - Heretic: Great Fire Staff
 
+#### Shared Fire Staff abilities
+
+All Fire Staff specializations keep the two existing shared family abilities:
+
+1. Boule de feu
+2. Explosion infernale
+
+Only the third active ability is specialization-specific.
+
+#### Fire Staff artifact signature abilities
+
+| Weapon | Faction | Signature ability | Effect | Cooldown |
+|---|---|---|---|---:|
+| Wildfire Staff | Keeper | Magma Sphere | 1.30x magical damage + DoT 0.20x x4 | 24 s |
+| Blazing Staff | Morgana | Flame Tornado | 0.75x magical damage x3 hits | 27 s |
+| Brimstone Staff | Undead | Meteor | 2.75x magical damage | 30 s |
+| Great Fire Staff | Heretic | Pyroblast | 1.85x magical damage + Silence for 1.5 s | 24 s |
+
+#### Fire Staff artifact handling / attack speed
+
+All four Fire Staff artifact variants are 2H.
+
+| Weapon | Attack speed |
+|---|---:|
+| Wildfire Staff | 0.95 |
+| Blazing Staff | 1.00 |
+| Brimstone Staff | 0.80 |
+| Great Fire Staff | 0.90 |
+
+#### Fire Staff artifact flat magical damage — T4 to T8
+
+| Weapon | T4 | T5 | T6 | T7 | T8 |
+|---|---:|---:|---:|---:|---:|
+| Wildfire Staff | 118 | 171 | 248 | 360 | 522 |
+| Blazing Staff | 111 | 161 | 233 | 338 | 490 |
+| Brimstone Staff | 140 | 203 | 294 | 426 | 618 |
+| Great Fire Staff | 124 | 180 | 261 | 378 | 548 |
+
+Approximate raw T4 auto-attack DPS anchors before signature ability effects:
+- Wildfire Staff: `118 x 0.95 = 112.1`
+- Blazing Staff: `111 x 1.00 = 111.0`
+- Brimstone Staff: `140 x 0.80 = 112.0`
+- Great Fire Staff: `124 x 0.90 = 111.6`
+
+Infernal Staff remains the live family reference at `126 x 0.90 = 113.4` raw T4 AA DPS. Artifact variants intentionally stay in the same baseline corridor before signature-ability and faction-advantage effects.
+
 ### War Gloves
 
 Base:
@@ -270,12 +316,20 @@ Bow family:
 - T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
 - runtime implementation / benchmark: pending.
 
+Fire Staff family:
+- artifact roster: VALIDATED;
+- shared abilities: existing / retained;
+- artifact signature abilities: VALIDATED DESIGN;
+- handling / attack speed: VALIDATED DESIGN;
+- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
+- runtime implementation / benchmark: pending.
+
 Faction advantage:
 - +20% dungeon damage bonus: VALIDATED DESIGN;
 - directed loop: Keeper -> Morgana -> Undead -> Heretic -> Keeper;
 - implementation must be shared/data-driven, not weapon-specific.
 
-Fire Staff, War Gloves and Dagger artifact abilities/stats remain to be designed.
+War Gloves and Dagger artifact abilities/stats remain to be designed.
 
 ---
 
