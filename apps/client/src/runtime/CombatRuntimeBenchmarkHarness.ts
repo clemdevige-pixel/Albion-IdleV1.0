@@ -29,6 +29,7 @@ import {
 import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "../data/weaponContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import { getDungeonDefinition, resolveDungeonCombatProfile } from "../data/dungeonContentCatalog.js";
+import { resolveFactionCapeDungeonDamageReductionPercent } from "../data/factionCapeContentCatalog.js";
 import { CombatRuntime } from "./CombatRuntime.js";
 import { CONTINUOUS_COMBAT_FLOW_POLICY } from "./CombatFlowPolicy.js";
 import { ConsumableRuntime } from "./ConsumableRuntime.js";
@@ -100,6 +101,7 @@ export interface CombatRuntimeBenchmarkResult {
   readonly maxHealth: number;
   readonly armor: number;
   readonly magicResistance: number;
+  readonly dungeonDamageReductionPercent: number;
   readonly potionsUsed: number;
   readonly masteryLevel: number;
   readonly damageDealt: number;
@@ -262,6 +264,21 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   equipItem(inventoryManager, equipmentManager, heroId, input.weaponItemId, enchantment);
   for (const itemId of input.equipmentItemIds ?? []) equipItem(inventoryManager, equipmentManager, heroId, itemId, enchantment);
   recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
+
+  const equippedCape = equipmentManager.getEquippedItem(heroId, "cape");
+  const dungeonDamageReductionPercent = dungeon === undefined || equippedCape === undefined
+    ? 0
+    : resolveFactionCapeDungeonDamageReductionPercent(
+        equippedCape.itemId,
+        { factionId: dungeon.faction, tier: dungeon.tier },
+      );
+  if (dungeonDamageReductionPercent > 0) {
+    damageManager.setPostMitigationDamageResolver((request, mitigatedDamage) => (
+      request.target === heroId
+        ? mitigatedDamage * (1 - dungeonDamageReductionPercent / 100)
+        : mitigatedDamage
+    ));
+  }
 
   const useHealthPotions = input.useHealthPotions === true;
   if (useHealthPotions) {
@@ -438,6 +455,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     maxHealth: health.maxHealth,
     armor: statsManager.getStat(heroId, STAT_ARMOR).computed,
     magicResistance: statsManager.getStat(heroId, STAT_MAGIC_RESISTANCE).computed,
+    dungeonDamageReductionPercent,
     potionsUsed,
     masteryLevel,
     damageDealt: round1(damageDealt),
