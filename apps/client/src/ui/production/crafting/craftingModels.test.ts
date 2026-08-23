@@ -63,11 +63,11 @@ describe("buildCraftingModel", () => {
 
   it("splits Autre into Clé and Artefact families", () => {
     const model = buildCraftingModel({
-      tier: 3,
+      tier: 4,
       recipes: [
-        recipe("item_resource_dungeon_key_morgana", 3, "other_key"),
-        recipe("item_resource_dungeon_key_undead", 3, "other_key"),
-        recipe("item_resource_artifact_morgana", 3, "other_artifact"),
+        recipe("item_resource_dungeon_key_t4", 4, "other_key"),
+        recipe("item_resource_artifact_morgana", 4, "other_artifact"),
+        recipe("item_resource_artifact_keeper", 4, "other_artifact"),
       ],
     });
 
@@ -77,43 +77,39 @@ describe("buildCraftingModel", () => {
       ["other_key", "Clé"],
       ["other_artifact", "Artefact"],
     ]);
-    expect(other?.families[0]?.recipes).toHaveLength(2);
-    expect(other?.families[1]?.recipes).toHaveLength(1);
+    expect(other?.families[0]?.recipes).toHaveLength(1);
+    expect(other?.families[1]?.recipes).toHaveLength(2);
   });
 
-  it("keeps key and artifact conversions available regardless of selected production tier", () => {
+  it("filters key and artifact conversions by selected production tier", () => {
     const recipes = [
-      recipe("item_resource_dungeon_key_morgana", 3, "other_key"),
-      recipe("item_resource_dungeon_key_keeper", 4, "other_key"),
-      recipe("item_resource_artifact_morgana", 3, "other_artifact"),
+      recipe("item_resource_dungeon_key_t4", 4, "other_key"),
+      recipe("item_resource_dungeon_key_t5", 5, "other_key"),
       recipe("item_resource_artifact_keeper", 4, "other_artifact"),
-      recipe("item_weapon_sword_t3_broadsword", 3, "sword"),
+      recipe("item_resource_artifact_keeper_t5", 5, "other_artifact"),
       recipe("item_weapon_sword_t4_broadsword", 4, "sword"),
+      recipe("item_weapon_sword_t5_broadsword", 5, "sword"),
     ];
 
-    const t3Model = buildCraftingModel({ tier: 3, recipes });
     const t4Model = buildCraftingModel({ tier: 4, recipes });
-    const t3Other = t3Model.categories.find((category) => category.id === "other");
+    const t5Model = buildCraftingModel({ tier: 5, recipes });
     const t4Other = t4Model.categories.find((category) => category.id === "other");
+    const t5Other = t5Model.categories.find((category) => category.id === "other");
 
-    expect(t3Other?.families.flatMap((family) => family.recipes.map((entry) => entry.outputItemId))).toEqual([
-      "item_resource_dungeon_key_morgana",
-      "item_resource_dungeon_key_keeper",
-      "item_resource_artifact_morgana",
-      "item_resource_artifact_keeper",
-    ]);
     expect(t4Other?.families.flatMap((family) => family.recipes.map((entry) => entry.outputItemId))).toEqual([
-      "item_resource_dungeon_key_morgana",
-      "item_resource_dungeon_key_keeper",
-      "item_resource_artifact_morgana",
+      "item_resource_dungeon_key_t4",
       "item_resource_artifact_keeper",
     ]);
-
-    expect(t3Model.categories.find((category) => category.id === "weapons")?.families[0]?.recipes.map((entry) => entry.outputItemId)).toEqual([
-      "item_weapon_sword_t3_broadsword",
+    expect(t5Other?.families.flatMap((family) => family.recipes.map((entry) => entry.outputItemId))).toEqual([
+      "item_resource_dungeon_key_t5",
+      "item_resource_artifact_keeper_t5",
     ]);
+
     expect(t4Model.categories.find((category) => category.id === "weapons")?.families[0]?.recipes.map((entry) => entry.outputItemId)).toEqual([
       "item_weapon_sword_t4_broadsword",
+    ]);
+    expect(t5Model.categories.find((category) => category.id === "weapons")?.families[0]?.recipes.map((entry) => entry.outputItemId)).toEqual([
+      "item_weapon_sword_t5_broadsword",
     ]);
   });
 
