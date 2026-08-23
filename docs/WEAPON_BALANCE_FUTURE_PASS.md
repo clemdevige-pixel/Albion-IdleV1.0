@@ -1,53 +1,65 @@
-# Future weapon balance pass
+# Weapon balance pass — CLOSED 2026-08-23
 
-Deferred intentionally until the weapon roster is larger.
+Status: CLOSED / HISTORICAL POINTER
 
-## Current known debt
+The roster-wide weapon balance pass that this document previously deferred has now been completed.
 
-The Yellow investigation found that Spiked Gauntlets and Dagger Pair underperform Longbow/Infernal in real CombatRuntime output. A Blue Frostpeak control showed that the gap already exists before Yellow, so it must not be compensated by weakening future zone curves.
+Current authoritative balance index:
 
-A small global Q correction was already made during this investigation:
+`AI_BIBLE/05_BALANCE/2026-08-23_GLOBAL_BALANCE_BASELINE.md`
 
-- Spiked Q coefficient: `0.776 -> 1.08`.
-- Dagger Q coefficient: `0.435 -> 0.50`.
+Current faction-dungeon authority:
 
-Do not continue micro-tuning these weapons in isolation unless a gameplay-breaking regression appears. Revisit them in the roster-wide pass.
+`AI_BIBLE/05_BALANCE/2026-08-23_FACTION_DUNGEON_BALANCE_BASELINE.md`
 
-## What the future pass must compare
+## Final base-weapon role read
 
-For every weapon and relevant tier/mastery breakpoint, compare the complete package rather than one headline DPS number:
+The live base roster is now interpreted by role rather than by one universal DPS ranking:
 
-- AA damage/hit and real attacks/second;
-- Q/W/ultimate DPS over actual combat duration;
-- cooldowns and successful casts;
-- multi-hit hit counts;
-- DoT/effect contribution;
-- buffs/debuffs and indirect value (for example armor shred);
-- opener/burst windows and sustained DPS;
-- survivability/utility where the weapon identity provides it;
-- performance across representative enemy resistance/HP profiles;
-- progression across tier, enchantment and mastery unlocks.
+- Broadsword: General Progression / Boss secondary;
+- Longbow: Fame Farm / General Progression secondary;
+- Infernal Staff: Boss / Dungeon secondary;
+- Spiked Gauntlets: Fame Farm / Dungeon secondary;
+- Dagger Pair: Boss / Dungeon secondary.
 
-## Existing tools to reuse
+The Dagger Pair received the final targeted correction on its specialization signature only:
 
-Prefer the existing architecture and extend it rather than adding new simulators:
+- `Assaut croisé` direct ratio: `1.45 -> 1.85`;
+- `Opening` conditional bonus ratio: `0.55 -> 0.95`;
+- cooldown unchanged at `15s`;
+- shared Dagger abilities, attack speed and flat weapon damage unchanged.
 
-- `apps/client/src/data/weaponIdealBenchmark.ts` for theoretical/ideal weapon package analysis;
-- `apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts` for real runtime combat;
-- weapon package/contract tests for structural invariants;
-- validated world-band checkpoints as control groups.
+Final post-change boss-only control on Frostpeak Mountain:
 
-For detailed investigations, telemetry can split actual runtime damage into AA/Q/W/ULT/effect and compare AA-only versus full-kit behavior. Keep such telemetry as an on-demand diagnostic rather than permanent duplicated production logic.
+- Dagger Pair: `192.5 DPS`, `21.0s`, `22.1% HP` remaining;
+- Infernal Staff: `192.5 DPS`, `21.0s`, `14.6% HP` remaining;
+- Longbow: `188.0 DPS`, `21.5s`, `14.6% HP` remaining.
 
-## Important lessons
+The world wall benchmark remained stable at `2/9` clears for Dagger Pair after the correction. The change therefore restores its intended boss/combo identity without creating a new world progression leak.
 
-- Damage per cast is not a balance metric when cooldowns differ; use DPS over real combat time.
-- Total AA damage can mislead when fight durations differ; compare DPS and cadence.
-- Multi-hit is not inherently disadvantaged by the current proportional mitigation formula.
-- Kit synergies can change apparent AA performance; isolate AA-only when needed.
-- A theoretical benchmark is a screening tool, not proof of runtime parity.
-- Never fix an outlier weapon by weakening a world band before checking a validated control band.
+## Permanent authoring rule
 
-## Exit criteria for the future pass
+Do not restart isolated weapon micro-tuning from one headline DPS value.
 
-The pass should happen when the roster is broad enough to define archetype targets. Establish acceptable bands for sustained DPS, burst, utility and survivability, then calibrate weapons horizontally. After weapon changes, re-run representative Blue/Yellow/future-band progression checkpoints to ensure world balance still holds.
+Future weapon changes must be evaluated against:
+
+1. the weapon's authored role in `AI_BIBLE/20_DATA/23A_WEAPON_BALANCE_PROFILES.txt`;
+2. real runtime boss/role telemetry;
+3. world progression guardrails;
+4. faction-dungeon favorable/leak guardrails when the changed weapon participates in dungeon balance.
+
+Temporary calibration sweeps used to derive the 2026-08-23 baseline have been removed once superseded by the canonical global-balance suite.
+
+## Re-open criteria
+
+Re-open weapon balance only when a dependent system materially changes, including:
+
+- weapon roster or shared family abilities;
+- Mastery/IP scaling;
+- enchantment scaling;
+- armor/defensive scaling;
+- potion/cape behavior;
+- world boss-gate curves;
+- dungeon faction matchup rules.
+
+Until then, the 2026-08-23 state is the live baseline.
