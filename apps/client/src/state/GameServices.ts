@@ -80,7 +80,10 @@ export interface GameServices {
   readonly getExpeditionRecap: () => ExpeditionRecapModel | null;
   readonly dismissExpeditionRecap: () => void;
   readonly getFactionAchievements: () => readonly FactionAchievementProgress[];
-  readonly getBestiaryKnowledge: (monsterId: string) => BestiaryKnowledgeModel;
+  readonly getBestiaryKnowledge: (
+    monsterId: string,
+    contextIds?: readonly string[],
+  ) => BestiaryKnowledgeModel;
   readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
   readonly isDungeonSystemUnlocked: () => boolean;
   readonly useConsumable: (itemId: string) => boolean;
