@@ -1,38 +1,37 @@
 # 44C — FACTION ARTIFACT WEAPON ROSTER
 
 Status: VALIDATED DESIGN BASELINE
-Authority: canonical roster for faction artifact weapon variants
+Authority: canonical roster, combat design and initial balance targets for faction artifact weapons
 Last update: 2026-08-23
 
 ---
 
 ## 1. PURPOSE
 
-This document defines the canonical Albion Idle roster of faction artifact weapon variants.
+This document defines the canonical Albion Idle faction artifact weapon roster and its combat-design baseline.
 
-It is the design baseline for the future signature-ability design of each artifact weapon.
-
-The roster intentionally adapts Albion Online weapon families to Albion Idle rather than reproducing Albion Online faction attribution one-to-one.
+The roster adapts Albion Online weapon families to Albion Idle rather than reproducing Albion Online faction attribution one-to-one.
 
 ---
 
 ## 2. CANONICAL RULES
 
-- Albion Idle currently uses five weapon families in this scope: Sword, Bow, Fire Staff, War Gloves and Dagger.
+- Scope: Sword, Bow, Fire Staff, War Gloves and Dagger.
 - Each family keeps its existing Albion Idle base weapon.
 - Each family receives exactly four faction artifact variants: Keeper, Morgana, Undead and Heretic.
-- A weapon already used as the Albion Idle base weapon cannot also be used as an artifact variant in that family.
-- Avalonian weapons are completely excluded from this roster.
-- When Albion Online does not provide a suitable historical faction-artifact weapon for a slot, a non-Avalonian weapon from the same Albion Online family may be reassigned to the missing Albion Idle faction slot.
-- Faction attribution in this document is therefore an Albion Idle gameplay/content attribution, not necessarily the original Albion Online attribution.
-- No new weapon name is invented for this roster.
-- Every faction artifact weapon carries its faction affinity and receives the canonical dungeon faction-advantage bonus defined in section 5.
+- A base weapon cannot also occupy an artifact slot in the same family.
+- Avalonian weapons are categorically excluded from this roster.
+- When no suitable historical faction-artifact weapon exists for a slot, a non-Avalonian Albion Online weapon from the same family may be reassigned.
+- No new weapon name is invented.
+- The first two active abilities remain shared at family level; only the third active/signature ability is specialization-specific.
+- Artifact weapons use the same weapon/content/runtime architecture as base weapons. No faction-specific combat subsystem is allowed.
+- Every artifact weapon declares only its faction affinity; dungeon advantage is resolved from the global faction matrix in section 8.
 
 ---
 
 ## 3. CANONICAL ROSTER
 
-| Albion Idle family | Base weapon | Keeper artifact | Morgana artifact | Undead artifact | Heretic artifact |
+| Family | Base weapon | Keeper | Morgana | Undead | Heretic |
 |---|---|---|---|---|---|
 | Sword | Broadsword | Clarent Blade | Carving Sword | Galatine Pair | Claymore |
 | Bow | Longbow | Bow of Badon | Wailing Bow | Whispering Bow | Warbow |
@@ -40,285 +39,133 @@ The roster intentionally adapts Albion Online weapon families to Albion Idle rat
 | War Gloves | Spiked Gauntlets | Ursine Maulers | Ravenstrike Cestus | Hellfire Hands | Battle Bracers |
 | Dagger | Dagger Pair | Bloodletter | Demonfang | Deathgivers | Claws |
 
-Total artifact weapon variants in this baseline: **20**.
+Total: **20 faction artifact variants**.
 
 ---
 
-## 4. FAMILY BREAKDOWN
+## 4. SWORD
 
-### Sword
-
-Base:
-- Broadsword
-
-Faction artifacts:
-- Keeper: Clarent Blade
-- Morgana: Carving Sword
-- Undead: Galatine Pair
-- Heretic: Claymore
-
-#### Shared Sword abilities
-
-All Sword specializations keep the two existing shared family abilities:
-
+Shared abilities:
 1. Frappe héroïque
 2. Brise-garde
 
-Only the third active ability is specialization-specific.
+| Weapon | Faction | Signature | Effect | CD | Hand | AS | T4 | T5 | T6 | T7 | T8 |
+|---|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|
+| Clarent Blade | Keeper | Crescent Slash | 2.00x physical | 24s | 1H | 1.25 | 89 | 129 | 187 | 271 | 393 |
+| Carving Sword | Morgana | Fearless Strike | 1.45x physical + -20 Armor 6s | 28s | 2H | 1.10 | 102 | 148 | 215 | 312 | 452 |
+| Galatine Pair | Undead | Soulless Stream | 2.60x physical | 30s | 2H | 0.95 | 118 | 171 | 248 | 360 | 522 |
+| Claymore | Heretic | Charge | 1.65x physical + Stun 1s | 25s | 2H | 1.10 | 102 | 148 | 215 | 312 | 452 |
 
-#### Sword artifact signature abilities
+Carving rule:
+- Fearless Strike `-20 Armor / 6s` is independent from Brise-garde `-12 Armor / 5s`.
+- Both may coexist for a raw `-32 Armor` overlap.
+- They do not merge, refresh or replace each other.
 
-| Weapon | Faction | Signature ability | Effect | Cooldown |
-|---|---|---|---|---:|
-| Clarent Blade | Keeper | Crescent Slash | 2.00x physical damage | 24 s |
-| Carving Sword | Morgana | Fearless Strike | 1.45x physical damage + -20 Armor for 6 s | 28 s |
-| Galatine Pair | Undead | Soulless Stream | 2.60x physical damage | 30 s |
-| Claymore | Heretic | Charge | 1.65x physical damage + Stun for 1 s | 25 s |
-
-Carving Sword rule:
-- Fearless Strike's `-20 Armor / 6 s` debuff is independent from Brise-garde's existing `-12 Armor / 5 s` debuff.
-- Both may coexist and therefore produce a raw combined `-32 Armor` while their durations overlap.
-- Neither effect refreshes, replaces or merges the other.
-
-#### Sword artifact handling / attack speed
-
-| Weapon | Handling | Attack speed |
-|---|---|---:|
-| Clarent Blade | 1H | 1.25 |
-| Carving Sword | 2H | 1.10 |
-| Galatine Pair | 2H | 0.95 |
-| Claymore | 2H | 1.10 |
-
-Attack speeds are intentionally authored in 0.05 increments.
-
-#### Sword artifact flat physical damage — T4 to T8
-
-The live weapon model has no hidden 1H/2H multiplier. Flat damage and attack speed are authored explicitly per weapon.
-
-| Weapon | T4 | T5 | T6 | T7 | T8 |
-|---|---:|---:|---:|---:|---:|
-| Clarent Blade | 89 | 129 | 187 | 271 | 393 |
-| Carving Sword | 102 | 148 | 215 | 312 | 452 |
-| Galatine Pair | 118 | 171 | 248 | 360 | 522 |
-| Claymore | 102 | 148 | 215 | 312 | 452 |
-
-Approximate raw T4 auto-attack DPS anchors:
-- Clarent Blade: `89 x 1.25 = 111.25`
-- Carving Sword: `102 x 1.10 = 112.20`
-- Galatine Pair: `118 x 0.95 = 112.10`
-- Claymore: `102 x 1.10 = 112.20`
-
-These values are initial validated design targets. Runtime benchmarking remains authoritative before implementation values are considered final balance locks.
-
-### Bow
-
-Base:
-- Longbow
-
-Faction artifacts:
-- Keeper: Bow of Badon
-- Morgana: Wailing Bow
-- Undead: Whispering Bow
-- Heretic: Warbow
-
-#### Shared Bow abilities
-
-All Bow specializations keep the two existing shared family abilities:
-
-1. Tir ajusté
-2. Flèche perforante
-
-Only the third active ability is specialization-specific.
-
-#### Bow artifact signature abilities
-
-| Weapon | Faction | Signature ability | Effect | Cooldown |
-|---|---|---|---|---:|
-| Bow of Badon | Keeper | Tempête déchaînée | 1.35x physical damage + Stun for 1.25 s | 28 s |
-| Wailing Bow | Morgana | Demon Arrow | 2.20x physical damage | 26 s |
-| Whispering Bow | Undead | Undead Arrows | For 6 s: +20% attack speed, +0.35x magical bonus damage on each auto-attack, +15% damage received | 22 s |
-| Warbow | Heretic | Magic Arrow | 2.00x magical damage | 20 s |
-
-Whispering Bow rule:
-- the `+0.35x` component is a separate additional damage instance on each auto-attack;
-- it is not a multiplier applied to the base auto-attack damage;
-- the +15% damage received penalty applies for the same 6 s duration.
-
-#### Bow artifact handling / attack speed
-
-All four Bow artifact variants are 2H.
-
-| Weapon | Attack speed |
-|---|---:|
-| Bow of Badon | 1.00 |
-| Wailing Bow | 0.95 |
-| Whispering Bow | 1.15 |
-| Warbow | 1.10 |
-
-#### Bow artifact flat physical damage — T4 to T8
-
-| Weapon | T4 | T5 | T6 | T7 | T8 |
-|---|---:|---:|---:|---:|---:|
-| Bow of Badon | 121.8 | 177 | 257 | 373 | 541 |
-| Wailing Bow | 116 | 168 | 244 | 354 | 513 |
-| Whispering Bow | 94 | 136 | 197 | 286 | 415 |
-| Warbow | 100 | 145 | 210 | 305 | 442 |
-
-Approximate raw T4 auto-attack DPS anchors before signature ability effects:
-- Bow of Badon: `121.8 x 1.00 = 121.8`
-- Wailing Bow: `116 x 0.95 = 110.2`
-- Whispering Bow: `94 x 1.15 = 108.1`
-- Warbow: `100 x 1.10 = 110.0`
-
-Badon intentionally keeps the highest raw AA anchor because its signature ability is utility-heavy. Whispering and Warbow are held lower because their signature abilities add strong sustained/frequent damage.
-
-### Fire Staff
-
-Base:
-- Infernal Staff
-
-Faction artifacts:
-- Keeper: Wildfire Staff
-- Morgana: Blazing Staff
-- Undead: Brimstone Staff
-- Heretic: Great Fire Staff
-
-#### Shared Fire Staff abilities
-
-All Fire Staff specializations keep the two existing shared family abilities:
-
-1. Boule de feu
-2. Explosion infernale
-
-Only the third active ability is specialization-specific.
-
-#### Fire Staff artifact signature abilities
-
-| Weapon | Faction | Signature ability | Effect | Cooldown |
-|---|---|---|---|---:|
-| Wildfire Staff | Keeper | Magma Sphere | 1.30x magical damage + DoT 0.20x x4 | 24 s |
-| Blazing Staff | Morgana | Flame Tornado | 0.75x magical damage x3 hits | 27 s |
-| Brimstone Staff | Undead | Meteor | 2.75x magical damage | 30 s |
-| Great Fire Staff | Heretic | Pyroblast | 1.85x magical damage + Silence for 1.5 s | 24 s |
-
-#### Fire Staff artifact handling / attack speed
-
-All four Fire Staff artifact variants are 2H.
-
-| Weapon | Attack speed |
-|---|---:|
-| Wildfire Staff | 0.95 |
-| Blazing Staff | 1.00 |
-| Brimstone Staff | 0.80 |
-| Great Fire Staff | 0.90 |
-
-#### Fire Staff artifact flat magical damage — T4 to T8
-
-| Weapon | T4 | T5 | T6 | T7 | T8 |
-|---|---:|---:|---:|---:|---:|
-| Wildfire Staff | 118 | 171 | 248 | 360 | 522 |
-| Blazing Staff | 111 | 161 | 233 | 338 | 490 |
-| Brimstone Staff | 140 | 203 | 294 | 426 | 618 |
-| Great Fire Staff | 124 | 180 | 261 | 378 | 548 |
-
-Approximate raw T4 auto-attack DPS anchors before signature ability effects:
-- Wildfire Staff: `118 x 0.95 = 112.1`
-- Blazing Staff: `111 x 1.00 = 111.0`
-- Brimstone Staff: `140 x 0.80 = 112.0`
-- Great Fire Staff: `124 x 0.90 = 111.6`
-
-Infernal Staff remains the live family reference at `126 x 0.90 = 113.4` raw T4 AA DPS. Artifact variants intentionally stay in the same baseline corridor before signature-ability and faction-advantage effects.
-
-### War Gloves
-
-Base:
-- Spiked Gauntlets
-
-Faction artifacts:
-- Keeper: Ursine Maulers
-- Morgana: Ravenstrike Cestus
-- Undead: Hellfire Hands
-- Heretic: Battle Bracers
-
-#### Shared War Gloves abilities
-
-All War Gloves specializations keep the two existing shared family abilities:
-
-1. Onde percutante
-2. Combo fracassant
-
-Only the third active ability is specialization-specific.
-
-#### War Gloves artifact signature abilities
-
-| Weapon | Faction | Signature ability | Effect | Cooldown |
-|---|---|---|---|---:|
-| Ursine Maulers | Keeper | Hundred Striking Fists | 0.28x physical damage x6 hits + 0.70x magical final hit | 22 s |
-| Ravenstrike Cestus | Morgana | Earth Crusher | 2.10x magical damage + Stun for 1 s | 28 s |
-| Hellfire Hands | Undead | Infernal Boulder | 0.90x physical damage + DoT 0.16x x4 | 20 s |
-| Battle Bracers | Heretic | Falcon Smash | 2.35x physical damage | 26 s |
-
-#### War Gloves artifact handling / attack speed
-
-All four War Gloves artifact variants are 2H.
-
-| Weapon | Attack speed |
-|---|---:|
-| Ursine Maulers | 1.30 |
-| Ravenstrike Cestus | 1.00 |
-| Hellfire Hands | 1.15 |
-| Battle Bracers | 1.25 |
-
-#### War Gloves artifact flat physical damage — T4 to T8
-
-| Weapon | T4 | T5 | T6 | T7 | T8 |
-|---|---:|---:|---:|---:|---:|
-| Ursine Maulers | 84 | 122 | 177 | 257 | 373 |
-| Ravenstrike Cestus | 110 | 160 | 232 | 336 | 487 |
-| Hellfire Hands | 98 | 142 | 206 | 299 | 434 |
-| Battle Bracers | 88 | 128 | 186 | 270 | 392 |
-
-Approximate raw T4 auto-attack DPS anchors before signature ability effects:
-- Ursine Maulers: `84 x 1.30 = 109.2`
-- Ravenstrike Cestus: `110 x 1.00 = 110.0`
-- Hellfire Hands: `98 x 1.15 = 112.7`
-- Battle Bracers: `88 x 1.25 = 110.0`
-
-Spiked Gauntlets remain the live family reference at approximately `92.4 x 1.204 = 111.2` raw T4 AA DPS. The artifact variants deliberately stay close to that baseline, with lower raw AA where their signature ability is more explosive or utility-heavy.
-
-### Dagger
-
-Base:
-- Dagger Pair
-
-Faction artifacts:
-- Keeper: Bloodletter
-- Morgana: Demonfang
-- Undead: Deathgivers
-- Heretic: Claws
+Approximate raw T4 AA anchors: Clarent 111.25, Carving 112.20, Galatine 112.10, Claymore 112.20.
 
 ---
 
-## 5. DUNGEON FACTION ADVANTAGE
+## 5. BOW
 
-Faction artifact weapons receive a dungeon-only damage bonus against their designated adverse faction.
+Shared abilities:
+1. Tir ajusté
+2. Flèche perforante
 
-Canonical bonus:
-- `+20% damage dealt` against the adverse faction;
-- applies to all damage dealt by the equipped artifact weapon loadout while fighting enemies of that faction in faction Dungeons;
-- no bonus against the weapon's own faction or either neutral/non-adverse faction;
-- no penalty is applied when fighting the weapon's own faction;
-- base/non-artifact weapons do not receive this bonus.
+| Weapon | Faction | Signature | Effect | CD | Hand | AS | T4 | T5 | T6 | T7 | T8 |
+|---|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|
+| Bow of Badon | Keeper | Tempête déchaînée | 1.35x physical + Stun 1.25s | 28s | 2H | 1.00 | 121.8 | 177 | 257 | 373 | 541 |
+| Wailing Bow | Morgana | Demon Arrow | 2.20x physical | 26s | 2H | 0.95 | 116 | 168 | 244 | 354 | 513 |
+| Whispering Bow | Undead | Undead Arrows | 6s: +20% AS, +0.35x magical bonus per AA, +15% damage received | 22s | 2H | 1.15 | 94 | 136 | 197 | 286 | 415 |
+| Warbow | Heretic | Magic Arrow | 2.00x magical, scaling from weapon physical damage | 20s | 2H | 1.10 | 100 | 145 | 210 | 305 | 442 |
 
-Canonical directed advantage loop:
+Whispering rule:
+- the `+0.35x` component is a separate magical bonus-damage instance on auto-attacks;
+- it is not a multiplier on the base auto-attack;
+- attack-speed bonus and vulnerability last the same 6 seconds.
+
+Badon already existed before this expansion and remains the Keeper artifact reference.
+
+Approximate raw T4 AA anchors before signature effects: Badon 121.8, Wailing 110.2, Whispering 108.1, Warbow 110.0.
+
+---
+
+## 6. FIRE STAFF
+
+Shared abilities:
+1. Boule de feu
+2. Explosion infernale
+
+| Weapon | Faction | Signature | Effect | CD | Hand | AS | T4 | T5 | T6 | T7 | T8 |
+|---|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|
+| Wildfire Staff | Keeper | Magma Sphere | 1.30x magical + DoT 0.20x x4 | 24s | 2H | 0.95 | 118 | 171 | 248 | 360 | 522 |
+| Blazing Staff | Morgana | Flame Tornado | 0.75x magical x3 hits | 27s | 2H | 1.00 | 111 | 161 | 233 | 338 | 490 |
+| Brimstone Staff | Undead | Meteor | 2.75x magical | 30s | 2H | 0.80 | 140 | 203 | 294 | 426 | 618 |
+| Great Fire Staff | Heretic | Pyroblast | 1.85x magical + Silence 1.5s | 24s | 2H | 0.90 | 124 | 180 | 261 | 378 | 548 |
+
+Infernal Staff remains the base-family reference at `126 x 0.90 = 113.4` raw T4 AA DPS.
+Approximate artifact T4 anchors: Wildfire 112.1, Blazing 111.0, Brimstone 112.0, Great Fire 111.6.
+
+---
+
+## 7. WAR GLOVES
+
+Shared abilities:
+1. Onde percutante
+2. Combo fracassant
+
+| Weapon | Faction | Signature | Effect | CD | Hand | AS | T4 | T5 | T6 | T7 | T8 |
+|---|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|
+| Ursine Maulers | Keeper | Hundred Striking Fists | 0.28x physical x6 + 0.70x magical final component | 22s | 2H | 1.30 | 84 | 122 | 177 | 257 | 373 |
+| Ravenstrike Cestus | Morgana | Earth Crusher | 2.10x magical + Stun 1s, scaling from weapon physical damage | 28s | 2H | 1.00 | 110 | 160 | 232 | 336 | 487 |
+| Hellfire Hands | Undead | Infernal Boulder | 0.90x physical + DoT 0.16x x4 | 20s | 2H | 1.15 | 98 | 142 | 206 | 299 | 434 |
+| Battle Bracers | Heretic | Falcon Smash | 2.35x physical | 26s | 2H | 1.25 | 88 | 128 | 186 | 270 | 392 |
+
+Spiked Gauntlets remain the base-family reference at approximately `92.4 x 1.204 = 111.2` raw T4 AA DPS.
+Approximate artifact T4 anchors: Ursine 109.2, Ravenstrike 110.0, Hellfire 112.7, Battle Bracers 110.0.
+
+---
+
+## 8. DAGGER
+
+Shared abilities:
+1. Double entaille
+2. Rafale de lames
+
+### Base specialization correction
+
+Dagger Pair no longer owns the family execute identity.
+
+Its signature becomes **Assaut croisé**:
+- `1.35x physical x2 hits`;
+- `+0.45x` total bonus when `effect_dagger_opening` from Rafale de lames is active;
+- cooldown `15s`;
+- no target-health threshold.
+
+The execute identity moves to Bloodletter, where it is more coherent with the Albion weapon identity.
+
+### Artifact variants
+
+| Weapon | Faction | Signature | Effect | CD | Hand | AS | T4 | T5 | T6 | T7 | T8 |
+|---|---|---|---|---:|---|---:|---:|---:|---:|---:|---:|
+| Bloodletter | Keeper | Lunging Stabs | 1.30x physical; +1.30x below 40% target HP | 24s | 1H | 1.45 | 75 | 109 | 158 | 229 | 332 |
+| Demonfang | Morgana | Blood Ritual | 0.72x magical x3 hits, scaling from weapon physical damage | 24s | 1H | 1.25 | 87 | 126 | 183 | 265 | 384 |
+| Deathgivers | Undead | Ghost Strike | 1.65x magical +0.90x if `effect_dagger_opening`, scaling from weapon physical damage | 22s | 2H | 1.35 | 81 | 117 | 170 | 247 | 358 |
+| Claws | Heretic | Disembowel | 0.32x physical x4 + Stun 1.25s + DoT 0.15x x3 | 26s | 2H | 1.15 | 95 | 138 | 200 | 290 | 421 |
+
+Dagger Pair remains the base stat reference at `81.2 x 1.392 ≈ 113.0` raw T4 AA DPS.
+Approximate artifact T4 anchors: Bloodletter 108.8, Demonfang 108.8, Deathgivers 109.4, Claws 109.3.
+
+---
+
+## 9. DUNGEON FACTION ADVANTAGE
+
+Faction artifact weapons receive a dungeon-only bonus:
+
+`+20% damage dealt` against their designated countered faction.
+
+Canonical directed loop:
 
 `Keeper -> Morgana -> Undead -> Heretic -> Keeper`
-
-There are no symmetric rivalries. Each artifact faction has exactly one faction it counters and exactly one faction that counters it.
-
-### Advantage matrix
-
-Rows = equipped artifact weapon faction. Columns = enemy Dungeon faction.
 
 | Artifact faction | Keeper enemies | Morgana enemies | Undead enemies | Heretic enemies |
 |---|---:|---:|---:|---:|
@@ -327,63 +174,59 @@ Rows = equipped artifact weapon faction. Columns = enemy Dungeon faction.
 | Undead | +0% | +0% | +0% | **+20%** |
 | Heretic | **+20%** | +0% | +0% | +0% |
 
-This matrix is global to artifact weapons and must be authored as faction relationship data, not duplicated per weapon definition.
-
-Weapon definitions only need to declare their artifact faction affinity. Dungeon combat then resolves the faction-advantage modifier from the shared matrix.
-
----
-
-## 6. EXPLICIT EXCLUSION — AVALONIAN WEAPONS
-
-Avalonian weapons are outside this artifact roster and must not be used as substitutes for missing faction slots.
-
-This rule includes, among others, the Avalon weapon variants that could otherwise belong to these five families.
-
-The exclusion is categorical for this roster; future Avalon content, if ever designed, must be handled as a separate content family/system decision rather than folded into Keeper / Morgana / Undead / Heretic artifact slots.
+Rules:
+- applies only during faction Dungeon combat;
+- applies to all damage generated by the equipped artifact weapon loadout: auto-attacks, abilities, DoTs and authored bonus-damage components;
+- no bonus against own faction or the two non-countered factions;
+- no penalty against any faction;
+- base/non-artifact weapons receive no faction damage bonus;
+- the matrix is global relationship data, never duplicated in individual weapon logic.
 
 ---
 
-## 7. DESIGN STATUS
+## 10. ACQUISITION AND BENCHMARK POLICY
 
-Sword family:
-- artifact roster: VALIDATED;
-- shared abilities: existing / retained;
-- artifact signature abilities: VALIDATED DESIGN;
-- handling / attack speed: VALIDATED DESIGN;
-- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
-- runtime implementation / benchmark: pending.
+Faction artifact weapons are intended to be obtained **after the corresponding world-zone clear** that unlocks/accesses their acquisition path.
 
-Bow family:
-- artifact roster: VALIDATED;
-- shared abilities: existing / retained;
-- Badon: existing implementation retained;
-- Wailing / Whispering / Warbow signature abilities: VALIDATED DESIGN;
-- handling / attack speed: VALIDATED DESIGN;
-- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
-- runtime implementation / benchmark: pending.
+Balance consequence:
+- they are post-clear rewards, not tools required to beat the wall that grants access to them;
+- benchmark interpretation is therefore more permissive than for base weapons;
+- a faction artifact may clear a wall slightly earlier or more comfortably than a base weapon without being classified as a balance leak;
+- this intentional reward power does **not** authorize major progression skips, multi-tier bypasses or a weapon that invalidates later progression walls;
+- faction matchup `+20%` results must be measured separately from neutral-matchup weapon power.
 
-Fire Staff family:
-- artifact roster: VALIDATED;
-- shared abilities: existing / retained;
-- artifact signature abilities: VALIDATED DESIGN;
-- handling / attack speed: VALIDATED DESIGN;
-- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
-- runtime implementation / benchmark: pending.
+Benchmark priority:
+1. no catastrophic progression skip;
+2. healthy intra-family spread outside the favorable faction matchup;
+3. visible but controlled advantage in the favorable dungeon matchup;
+4. 1H variants must be evaluated with their legal offhand context;
+5. acquisition timing remains part of leak severity assessment.
 
-War Gloves family:
-- artifact roster: VALIDATED;
-- shared abilities: existing / retained;
-- artifact signature abilities: VALIDATED DESIGN;
-- handling / attack speed: VALIDATED DESIGN;
-- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
-- runtime implementation / benchmark: pending.
+---
 
-Faction advantage:
-- +20% dungeon damage bonus: VALIDATED DESIGN;
-- directed loop: Keeper -> Morgana -> Undead -> Heretic -> Keeper;
-- implementation must be shared/data-driven, not weapon-specific.
+## 11. IMPLEMENTATION CONTRACT
 
-Dagger artifact abilities/stats remain to be designed.
+- Artifact variants are regular weapon specializations in the authoritative weapon content catalog.
+- No Keeper/Morgana/Undead/Heretic branches are allowed in the combat loop.
+- Cross-type ability damage must remain data-authored: output damage type and scaling damage type are separate generic concepts.
+- Temporary self buffs/debuffs use the existing effect/stat modifier pipeline.
+- Additional auto-attack damage uses generic temporary auto-attack bonus-damage stats, not weapon-name checks.
+- The dungeon faction bonus composes with the existing faction-cape post-mitigation resolver; resolvers must not overwrite one another.
+- Presentation assets are not invented. Missing artifact presentation remains undefined until real assets are supplied.
+
+---
+
+## 12. DESIGN STATUS
+
+Sword: VALIDATED DESIGN / runtime integration in progress.
+Bow: VALIDATED DESIGN / runtime integration in progress; Badon pre-existed.
+Fire Staff: VALIDATED DESIGN / runtime integration in progress.
+War Gloves: VALIDATED DESIGN / runtime integration in progress.
+Dagger: VALIDATED DESIGN, including Dagger Pair signature correction / runtime integration in progress.
+Faction directed advantage: VALIDATED DESIGN / runtime integration in progress.
+Benchmark leak policy: VALIDATED.
+
+Runtime benchmarks remain authoritative before final balance lock.
 
 ---
 
