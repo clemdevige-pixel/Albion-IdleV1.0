@@ -1,9 +1,19 @@
 import type { WorldBandId } from "@game/data";
 import { getBonusItemPowerStatMultiplier, getEnchantmentItemPowerBonus, type EnchantmentLevel } from "@game/gameplay";
-import { resolveWeaponAttackSpeed, resolveWeaponCombatProfile, resolveWeaponMastery, resolveWeaponTier, type WeaponCombatProfile } from "./weaponContentCatalog.js";
+import {
+  getWeaponMasteryFamilyDefinitions,
+  resolveWeaponAttackSpeed,
+  resolveWeaponCombatProfile,
+  resolveWeaponMastery,
+  resolveWeaponTier,
+  type WeaponCombatProfile,
+} from "./weaponContentCatalog.js";
 import type { ProductionTier } from "./productionFamilyCatalog.js";
 
 export const ITEM_POWER_BY_TIER = { 3: 300, 4: 400, 5: 500, 6: 600, 7: 700, 8: 800 } as const;
+export const WEAPON_FAMILY_IP_PER_LEVEL = 0.5;
+export const WEAPON_SPECIALIZATION_IP_PER_LEVEL = 1;
+export const WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL = 0.2;
 
 const LEGACY_NON_WEAPON_ITEM_TIERS: Readonly<Record<string, ProductionTier>> = {
   item_leather_armor: 3, item_wooden_shield: 3, item_iron_helmet: 3, item_leather_boots: 3, item_traveler_cape: 3,
@@ -58,7 +68,14 @@ export function getWeaponAttackSpeed(itemId: string): number | undefined { retur
 export function getMasteryItemPowerBonus(itemId: string, masteries: readonly MasteryLevel[]): number {
   const route = getWeaponMasteryIds(itemId); if (route === undefined) return 0;
   const levels = new Map(masteries.map((mastery) => [mastery.id, mastery.level]));
-  return (levels.get(route.familyId) ?? 0) * 0.5 + (levels.get(route.specializationId) ?? 0);
+  const family = getWeaponMasteryFamilyDefinitions().find((definition) => definition.masteryId === route.familyId);
+  const crossSpecializationLevels = family?.specializationMasteryIds.reduce(
+    (sum, specializationId) => specializationId === route.specializationId ? sum : sum + (levels.get(specializationId) ?? 0),
+    0,
+  ) ?? 0;
+  return (levels.get(route.familyId) ?? 0) * WEAPON_FAMILY_IP_PER_LEVEL
+    + (levels.get(route.specializationId) ?? 0) * WEAPON_SPECIALIZATION_IP_PER_LEVEL
+    + crossSpecializationLevels * WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL;
 }
 export function getEffectiveItemPower(itemId: string, masteries: readonly MasteryLevel[], enchantment: EnchantmentLevel = 0): number | undefined {
   const baseItemPower = getItemPower(itemId);
