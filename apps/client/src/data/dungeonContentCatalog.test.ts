@@ -5,7 +5,7 @@ import {
   KEEPER_T4_DUNGEON, KEEPER_T4_DUNGEON_ID, KEEPER_T5_DUNGEON, KEEPER_T6_DUNGEON, KEEPER_T7_DUNGEON, KEEPER_T8_DUNGEON, resolveDungeonCombatProfile,
 } from "./dungeonContentCatalog.js";
 
-const EXPECTED_STRUCTURE = ["normal", "normal", "elite", "normal", "boss"];
+const EXPECTED_STRUCTURE = ["normal", "normal", "elite", "boss"];
 const EXPECTED_FACTIONS = ["Keeper", "Heretic", "Undead", "Morgana"];
 const PROFILE_BY_TIER = { 4: FACTION_T4_COMBAT_PROFILE_ID, 5: FACTION_T5_COMBAT_PROFILE_ID, 6: FACTION_T6_COMBAT_PROFILE_ID, 7: FACTION_T7_COMBAT_PROFILE_ID, 8: FACTION_T8_COMBAT_PROFILE_ID } as const;
 
