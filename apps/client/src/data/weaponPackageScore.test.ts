@@ -30,12 +30,9 @@ function printCheckpoint(label: string, masteryLevel: number, enchantment: Bench
   const neutral = buildWeaponPackageBenchmark(T4_WEAPONS, masteryLevel, enchantment, neutralLoadout);
   const loadout = buildWeaponPackageBenchmark(T4_WEAPONS, masteryLevel, enchantment, referenceLoadout);
 
-  console.log(`[WEAPON_ONLY_SCORE_${label}]`);
-  console.table(weaponOnly.map((row) => ({ ...row, weapon: shortName(row.itemId) })));
-  console.log(`[WEAPON_NEUTRAL_PACKAGE_${label}]`);
-  console.table(neutral.map((row) => ({ ...row, weapon: shortName(row.itemId) })));
-  console.log(`[WEAPON_LOADOUT_SCORE_${label}]`);
-  console.table(loadout.map((row) => ({ ...row, weapon: shortName(row.itemId) })));
+  console.table(weaponOnly.map((row) => ({ checkpoint: label, ...row, weapon: shortName(row.itemId) })));
+  console.table(neutral.map((row) => ({ checkpoint: label, ...row, weapon: shortName(row.itemId) })));
+  console.table(loadout.map((row) => ({ checkpoint: label, ...row, weapon: shortName(row.itemId) })));
   return { weaponOnly, neutral, loadout };
 }
 
