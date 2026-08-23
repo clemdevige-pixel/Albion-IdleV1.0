@@ -186,11 +186,8 @@ describe("global live weapon zone clear benchmark", () => {
       };
     }).sort((a, b) => b.totalSegmentsCleared - a.totalSegmentsCleared);
 
-    console.log("[GLOBAL_WEAPON_ZONE_CLEAR_SUMMARY]");
     console.table(summary);
-    console.log("[GLOBAL_WEAPON_ZONE_CLEAR_WEAPON_SUMMARY]");
     console.table(weaponSummary);
-    console.log("[GLOBAL_WEAPON_ZONE_CLEAR_DETAIL_JSON]", JSON.stringify(detail, null, 2));
 
     expect(detail).toHaveLength(Object.values(WORLD_ZONE_CONTENT).length * 5);
     expect(summary).toHaveLength(Object.values(WORLD_ZONE_CONTENT).length);
