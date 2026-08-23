@@ -98,7 +98,7 @@ function creditFactionRewards(
       credited.push(reward);
     }
   } catch (error) {
-    for (const reward of credited.toReversed()) {
+    for (const reward of [...credited].reverse()) {
       inventoryManager.removeQuantity(heroId, reward.itemId, reward.quantity);
     }
     throw error;
