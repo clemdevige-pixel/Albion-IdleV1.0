@@ -46,32 +46,29 @@ export function CraftingBuildingPanel({
   const category = categories.find((entry) => entry.id === requestedCategory) ?? categories[0];
   const family = category?.families.find((entry) => entry.id === requestedFamily) ?? category?.families[0];
   const recipe = family?.recipes.find((entry) => entry.outputItemId === requestedRecipeId) ?? family?.recipes[0];
-  const tierIndependent = category?.id === "other";
 
   return (
     <div className="ui-island-crafting-building">
-      {!tierIndependent && (
-        <div className="ui-island-crafting-building__tiers" role="group" aria-label="Tier de fabrication">
-          {CRAFTING_CONTENT_TIERS.map((tier) => {
-            const islandLocked = tier > maxTier;
-            return (
-              <button
-                key={tier}
-                type="button"
-                className={model.tier === tier ? "is-active" : ""}
-                disabled={islandLocked}
-                title={islandLocked ? `Améliorez l’île pour débloquer T${String(tier)}` : undefined}
-                onClick={() => {
-                  actions.setTier(tier);
-                  setRequestedRecipeId(undefined);
-                }}
-              >
-                T{String(tier)}{islandLocked ? " 🔒" : ""}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div className="ui-island-crafting-building__tiers" role="group" aria-label="Tier de fabrication">
+        {CRAFTING_CONTENT_TIERS.map((tier) => {
+          const islandLocked = tier > maxTier;
+          return (
+            <button
+              key={tier}
+              type="button"
+              className={model.tier === tier ? "is-active" : ""}
+              disabled={islandLocked}
+              title={islandLocked ? `Améliorez l’île pour débloquer T${String(tier)}` : undefined}
+              onClick={() => {
+                actions.setTier(tier);
+                setRequestedRecipeId(undefined);
+              }}
+            >
+              T{String(tier)}{islandLocked ? " 🔒" : ""}
+            </button>
+          );
+        })}
+      </div>
 
       <nav className="ui-island-crafting-building__categories" aria-label="Catégorie de fabrication">
         {categories.map((entry) => (
@@ -92,7 +89,7 @@ export function CraftingBuildingPanel({
 
       {category === undefined || family === undefined || recipe === undefined ? (
         <div className="ui-island__selection-status">Aucune recette disponible pour cette sélection.</div>
-      ) : model.tier > maxTier && !tierIndependent ? (
+      ) : model.tier > maxTier ? (
         <div className="ui-island__selection-status">
           Île niveau {String(islandLevel)} : fabrication disponible jusqu’au T{String(maxTier)}.
         </div>
