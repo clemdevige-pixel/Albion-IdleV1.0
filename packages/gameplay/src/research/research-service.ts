@@ -14,16 +14,26 @@ import type {
   StartResearchResult,
 } from "./types.js";
 
-const ResearchSnapshotSchema = z.object({
-  version: z.literal(1),
-  completedResearchIds: z.array(z.string().min(1)),
-  activeResearch: z.object({
-    researchId: z.string().min(1),
-    remainingDurationMs: z.number().finite().positive(),
-  }).nullable(),
+const ActiveResearchSchema = z.object({
+  researchId: z.string().min(1),
+  remainingDurationMs: z.number().finite().positive(),
 });
 
-type ResearchSnapshot = z.infer<typeof ResearchSnapshotSchema>;
+const ResearchSnapshotV1Schema = z.object({
+  version: z.literal(1),
+  completedResearchIds: z.array(z.string().min(1)),
+  activeResearch: ActiveResearchSchema.nullable(),
+});
+
+const ResearchSnapshotV2Schema = z.object({
+  version: z.literal(2),
+  completedResearchIds: z.array(z.string().min(1)),
+  activeResearches: z.array(ActiveResearchSchema),
+});
+
+const ResearchSnapshotSchema = z.union([ResearchSnapshotV2Schema, ResearchSnapshotV1Schema]);
+
+type ResearchSnapshot = z.infer<typeof ResearchSnapshotV2Schema>;
 type ResearchCompletionListener = (researchId: ResearchId) => void;
 
 export interface ResearchServiceDependencies<
@@ -36,9 +46,10 @@ export interface ResearchServiceDependencies<
 /**
  * Authoritative Academy Research state.
  *
- * Research definitions are data-driven and registered once. The service owns
- * only the active timer and permanent completion state. Functional unlocks are
- * derived from completed definitions instead of being duplicated in save data.
+ * Research definitions are data-driven and registered once. Independent
+ * researches may run simultaneously; the service owns their timers and the
+ * permanent completion set. Functional unlocks are derived from completed
+ * definitions instead of being duplicated in save data.
  *
  * Time never comes from the client clock: callers provide elapsed time from the
  * authoritative runtime/background-progression layer.
@@ -50,10 +61,10 @@ export class ResearchService<
 
   readonly #definitions = new Map<ResearchId, ResearchDefinition<TRequirement>>();
   readonly #completedResearchIds = new Set<ResearchId>();
+  readonly #activeResearches = new Map<ResearchId, ActiveResearchState>();
   readonly #requirementPort: ResearchRequirementPort<TRequirement>;
   readonly #paymentPort: ResearchPaymentPort;
   readonly #completionListeners = new Set<ResearchCompletionListener>();
-  #activeResearch: ActiveResearchState | undefined;
 
   constructor(dependencies: ResearchServiceDependencies<TRequirement>) {
     this.#requirementPort = dependencies.requirementPort;
@@ -83,8 +94,14 @@ export class ResearchService<
     return [...this.#completedResearchIds];
   }
 
+  getActiveResearches(): readonly ActiveResearchState[] {
+    return [...this.#activeResearches.values()].map((entry) => ({ ...entry }));
+  }
+
+  /** Compatibility read for callers that only need to know whether anything is active. */
   getActiveResearch(): ActiveResearchState | undefined {
-    return this.#activeResearch === undefined ? undefined : { ...this.#activeResearch };
+    const first = this.#activeResearches.values().next().value as ActiveResearchState | undefined;
+    return first === undefined ? undefined : { ...first };
   }
 
   hasCompleted(researchId: ResearchId): boolean {
@@ -103,7 +120,7 @@ export class ResearchService<
     const definition = this.#definitions.get(researchId);
     if (definition === undefined) return undefined;
     if (this.#completedResearchIds.has(researchId)) return "completed";
-    if (this.#activeResearch?.researchId === researchId) return "active";
+    if (this.#activeResearches.has(researchId)) return "active";
     return this.#areRequirementsMet(definition) ? "available" : "locked";
   }
 
@@ -118,8 +135,8 @@ export class ResearchService<
     if (this.#completedResearchIds.has(researchId)) {
       return { ok: false, reason: "already_completed" };
     }
-    if (this.#activeResearch !== undefined) {
-      return { ok: false, reason: "research_slot_occupied" };
+    if (this.#activeResearches.has(researchId)) {
+      return { ok: false, reason: "already_active" };
     }
     if (!this.#areRequirementsMet(definition)) {
       return { ok: false, reason: "requirements_not_met" };
@@ -128,40 +145,45 @@ export class ResearchService<
       return { ok: false, reason: "payment_failed" };
     }
 
-    this.#activeResearch = {
+    const activeResearch: ActiveResearchState = {
       researchId: definition.id,
       remainingDurationMs: definition.durationMs,
     };
-    return { ok: true, activeResearch: { ...this.#activeResearch } };
+    this.#activeResearches.set(definition.id, activeResearch);
+    return { ok: true, activeResearch: { ...activeResearch } };
   }
 
   advance(elapsedMs: number): ResearchAdvanceResult {
     if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
       throw new Error("Research elapsed time must be a finite non-negative number");
     }
-    if (this.#activeResearch === undefined || elapsedMs === 0) {
+    if (this.#activeResearches.size === 0 || elapsedMs === 0) {
       return {
-        completedResearchId: undefined,
-        activeResearch: this.getActiveResearch(),
+        completedResearchIds: [],
+        activeResearches: this.getActiveResearches(),
       };
     }
 
-    if (elapsedMs < this.#activeResearch.remainingDurationMs) {
-      this.#activeResearch = {
-        ...this.#activeResearch,
-        remainingDurationMs: this.#activeResearch.remainingDurationMs - elapsedMs,
-      };
-      return {
-        completedResearchId: undefined,
-        activeResearch: this.getActiveResearch(),
-      };
+    const completedResearchIds: ResearchId[] = [];
+    for (const [researchId, activeResearch] of [...this.#activeResearches.entries()]) {
+      if (elapsedMs < activeResearch.remainingDurationMs) {
+        this.#activeResearches.set(researchId, {
+          ...activeResearch,
+          remainingDurationMs: activeResearch.remainingDurationMs - elapsedMs,
+        });
+        continue;
+      }
+
+      this.#activeResearches.delete(researchId);
+      this.#completedResearchIds.add(researchId);
+      completedResearchIds.push(researchId);
+      for (const listener of this.#completionListeners) listener(researchId);
     }
 
-    const completedResearchId = this.#activeResearch.researchId;
-    this.#completedResearchIds.add(completedResearchId);
-    this.#activeResearch = undefined;
-    for (const listener of this.#completionListeners) listener(completedResearchId);
-    return { completedResearchId, activeResearch: undefined };
+    return {
+      completedResearchIds,
+      activeResearches: this.getActiveResearches(),
+    };
   }
 
   resolveBackground(elapsedMs: number): void {
@@ -170,9 +192,9 @@ export class ResearchService<
 
   save(): ResearchSnapshot {
     return {
-      version: 1,
+      version: 2,
       completedResearchIds: [...this.getCompletedResearchIds()],
-      activeResearch: this.#activeResearch === undefined ? null : { ...this.#activeResearch },
+      activeResearches: this.getActiveResearches(),
     };
   }
 
@@ -181,24 +203,23 @@ export class ResearchService<
     if (!parsed.success) return;
 
     this.#completedResearchIds.clear();
+    this.#activeResearches.clear();
     for (const researchId of new Set(parsed.data.completedResearchIds)) {
       if (this.#definitions.has(researchId)) this.#completedResearchIds.add(researchId);
     }
 
-    const active = parsed.data.activeResearch;
-    if (
-      active === null
-      || !this.#definitions.has(active.researchId)
-      || this.#completedResearchIds.has(active.researchId)
-    ) {
-      this.#activeResearch = undefined;
-      return;
-    }
+    const activeResearches = parsed.data.version === 1
+      ? (parsed.data.activeResearch === null ? [] : [parsed.data.activeResearch])
+      : parsed.data.activeResearches;
 
-    this.#activeResearch = {
-      researchId: active.researchId,
-      remainingDurationMs: active.remainingDurationMs,
-    };
+    for (const active of activeResearches) {
+      if (
+        !this.#definitions.has(active.researchId)
+        || this.#completedResearchIds.has(active.researchId)
+        || this.#activeResearches.has(active.researchId)
+      ) continue;
+      this.#activeResearches.set(active.researchId, { ...active });
+    }
   }
 
   #areRequirementsMet(definition: ResearchDefinition<TRequirement>): boolean {
