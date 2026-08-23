@@ -240,6 +240,52 @@ Faction artifacts:
 - Undead: Hellfire Hands
 - Heretic: Battle Bracers
 
+#### Shared War Gloves abilities
+
+All War Gloves specializations keep the two existing shared family abilities:
+
+1. Onde percutante
+2. Combo fracassant
+
+Only the third active ability is specialization-specific.
+
+#### War Gloves artifact signature abilities
+
+| Weapon | Faction | Signature ability | Effect | Cooldown |
+|---|---|---|---|---:|
+| Ursine Maulers | Keeper | Hundred Striking Fists | 0.28x physical damage x6 hits + 0.70x magical final hit | 22 s |
+| Ravenstrike Cestus | Morgana | Earth Crusher | 2.10x magical damage + Stun for 1 s | 28 s |
+| Hellfire Hands | Undead | Infernal Boulder | 0.90x physical damage + DoT 0.16x x4 | 20 s |
+| Battle Bracers | Heretic | Falcon Smash | 2.35x physical damage | 26 s |
+
+#### War Gloves artifact handling / attack speed
+
+All four War Gloves artifact variants are 2H.
+
+| Weapon | Attack speed |
+|---|---:|
+| Ursine Maulers | 1.30 |
+| Ravenstrike Cestus | 1.00 |
+| Hellfire Hands | 1.15 |
+| Battle Bracers | 1.25 |
+
+#### War Gloves artifact flat physical damage — T4 to T8
+
+| Weapon | T4 | T5 | T6 | T7 | T8 |
+|---|---:|---:|---:|---:|---:|
+| Ursine Maulers | 84 | 122 | 177 | 257 | 373 |
+| Ravenstrike Cestus | 110 | 160 | 232 | 336 | 487 |
+| Hellfire Hands | 98 | 142 | 206 | 299 | 434 |
+| Battle Bracers | 88 | 128 | 186 | 270 | 392 |
+
+Approximate raw T4 auto-attack DPS anchors before signature ability effects:
+- Ursine Maulers: `84 x 1.30 = 109.2`
+- Ravenstrike Cestus: `110 x 1.00 = 110.0`
+- Hellfire Hands: `98 x 1.15 = 112.7`
+- Battle Bracers: `88 x 1.25 = 110.0`
+
+Spiked Gauntlets remain the live family reference at approximately `92.4 x 1.204 = 111.2` raw T4 AA DPS. The artifact variants deliberately stay close to that baseline, with lower raw AA where their signature ability is more explosive or utility-heavy.
+
 ### Dagger
 
 Base:
@@ -324,12 +370,20 @@ Fire Staff family:
 - T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
 - runtime implementation / benchmark: pending.
 
+War Gloves family:
+- artifact roster: VALIDATED;
+- shared abilities: existing / retained;
+- artifact signature abilities: VALIDATED DESIGN;
+- handling / attack speed: VALIDATED DESIGN;
+- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
+- runtime implementation / benchmark: pending.
+
 Faction advantage:
 - +20% dungeon damage bonus: VALIDATED DESIGN;
 - directed loop: Keeper -> Morgana -> Undead -> Heretic -> Keeper;
 - implementation must be shared/data-driven, not weapon-specific.
 
-War Gloves and Dagger artifact abilities/stats remain to be designed.
+Dagger artifact abilities/stats remain to be designed.
 
 ---
 
