@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ENCHANTMENT_SHARD_COSTS } from "@game/gameplay";
+import { resolveCandidateRuntimeDamageTuning } from "./candidateWeaponBalanceBenchmark.js";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runEnchantmentShardTtkBenchmark } from "./enchantmentShardTtkBenchmark.js";
@@ -42,8 +43,8 @@ function shortName(itemId: string, tier: number): string {
   return itemId.replace("item_weapon_", "").replace(`_t${String(tier)}_`, " ");
 }
 
-describe("enchantment tier bridge sweep", () => {
-  it("keeps previous-tier .3 sets able to farm the entry zone of the next band", () => {
+describe("candidate enchantment tier bridge sweep", () => {
+  it("keeps previous-tier .3 sets able to farm the entry zone of the next band with candidate weapon tuning", () => {
     const summaries = BRIDGES.map((bridge) => {
       const zoneDefId = WORLD_ZONE_IDS[bridge.zone];
       const rows = WEAPON_FAMILIES.map((family) => {
@@ -58,6 +59,7 @@ describe("enchantment tier bridge sweep", () => {
             masteryLevel: bridge.mastery,
             enchantment: 3,
             useHealthPotions: false,
+            damageTuning: resolveCandidateRuntimeDamageTuning(weaponItemId),
           });
           return {
             segment: segmentIndex + 1,
