@@ -28,6 +28,18 @@ describe("FactionKnowledgeService", () => {
     expect(service.isMonsterDiscovered("keeper_warrior")).toBe(true);
   });
 
+  it("tracks contextual monster kills without changing lifetime totals", () => {
+    const service = createService();
+    service.recordKill("keeper_warrior", "zone_forest_t3");
+    service.recordKill("keeper_warrior", "zone_forest_t3");
+    service.recordKill("keeper_warrior", "zone_yellow_t5");
+
+    expect(service.getMonsterKillCount("keeper_warrior")).toBe(3);
+    expect(service.getMonsterKillCount("keeper_warrior", "zone_forest_t3")).toBe(2);
+    expect(service.getMonsterKillCount("keeper_warrior", "zone_yellow_t5")).toBe(1);
+    expect(service.getMonsterKillCount("keeper_warrior", "zone_black_t8")).toBe(0);
+  });
+
   it("derives faction and elite totals instead of storing duplicate counters", () => {
     const service = createService();
     service.recordKill("keeper_warrior");
@@ -45,17 +57,30 @@ describe("FactionKnowledgeService", () => {
     expect(service.recordKill("unknown")).toEqual({ ok: false, reason: "unknown_monster" });
   });
 
-  it("persists known counters and ignores obsolete monster ids on restore", () => {
+  it("persists lifetime and contextual counters", () => {
     const service = createService();
-    service.recordKill("keeper_warrior");
-    service.recordKill("keeper_champion");
+    service.recordKill("keeper_warrior", "zone_forest_t3");
+    service.recordKill("keeper_champion", "zone_yellow_t5");
     const snapshot = service.save();
     snapshot.killsByMonster.obsolete = 99;
+    snapshot.killsByMonsterByContext.obsolete = { zone_forest_t3: 99 };
 
     const restored = createService();
     restored.load(snapshot);
     expect(restored.getMonsterKillCount("keeper_warrior")).toBe(1);
-    expect(restored.getMonsterKillCount("keeper_champion")).toBe(1);
+    expect(restored.getMonsterKillCount("keeper_warrior", "zone_forest_t3")).toBe(1);
+    expect(restored.getMonsterKillCount("keeper_champion", "zone_yellow_t5")).toBe(1);
     expect(restored.getMonsterKillCount("obsolete")).toBe(0);
+  });
+
+  it("loads legacy lifetime counters without inventing a world context", () => {
+    const restored = createService();
+    restored.load({
+      version: 1,
+      killsByMonster: { keeper_warrior: 4 },
+    });
+
+    expect(restored.getMonsterKillCount("keeper_warrior")).toBe(4);
+    expect(restored.getMonsterKillCount("keeper_warrior", "zone_forest_t3")).toBe(0);
   });
 });
