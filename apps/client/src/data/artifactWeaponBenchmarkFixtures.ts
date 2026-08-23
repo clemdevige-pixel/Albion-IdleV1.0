@@ -8,6 +8,12 @@ export interface T4ArtifactWeaponBenchmarkSpec {
   readonly itemId: string;
 }
 
+export const ARTIFACT_BENCHMARK_MASTERY_PROFILE = {
+  familyMasteryLevel: 30,
+  specializationMasteryLevel: 30,
+  siblingSpecializationMasteryLevel: 30,
+} as const;
+
 export const T4_ARTIFACT_WEAPONS: readonly T4ArtifactWeaponBenchmarkSpec[] = [
   { family: "sword", label: "Clarent Blade", itemId: "item_weapon_sword_clarent_t4" },
   { family: "sword", label: "Carving Sword", itemId: "item_weapon_sword_carving_t4" },
