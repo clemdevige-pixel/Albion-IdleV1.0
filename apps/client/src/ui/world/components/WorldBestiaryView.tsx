@@ -235,18 +235,21 @@ export function WorldBestiaryView(): JSX.Element {
                               drop.minimumExpectedQuantity,
                               drop.maximumExpectedQuantity,
                             );
+                            const rateLabel = drop.kind === "faction_rune"
+                              ? `Taux de base : ${rate}`
+                              : `Taux : ${rate}`;
                             return (
                               <div
                                 key={`${drop.kind}:${drop.itemId}`}
                                 className="world-creature__loot-item"
                                 tabIndex={0}
-                                aria-label={`${itemName} · ${rate}`}
+                                aria-label={`${itemName} · ${rateLabel}`}
                                 onMouseEnter={(event) => {
-                                  showTooltip(event.currentTarget, itemName, [`Taux : ${rate}`]);
+                                  showTooltip(event.currentTarget, itemName, [rateLabel]);
                                 }}
                                 onMouseLeave={() => { setTooltip(undefined); }}
                                 onFocus={(event) => {
-                                  showTooltip(event.currentTarget, itemName, [`Taux : ${rate}`]);
+                                  showTooltip(event.currentTarget, itemName, [rateLabel]);
                                 }}
                                 onBlur={() => { setTooltip(undefined); }}
                               >
