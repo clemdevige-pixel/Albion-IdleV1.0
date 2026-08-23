@@ -76,9 +76,8 @@ describe("enchantment tier bridge sweep", () => {
           undefined,
         );
         return {
+          bridge: `T${String(bridge.fromTier)}.3->T${String(bridge.toTier)}.1`,
           weapon: shortName(weaponItemId, bridge.fromTier),
-          fromGear: `T${String(bridge.fromTier)}.3`,
-          targetShards: `T${String(bridge.toTier)}`,
           zone: bridge.zone,
           mastery: bridge.mastery,
           deepestSegment: deepest?.segment ?? null,
@@ -92,7 +91,7 @@ describe("enchantment tier bridge sweep", () => {
       });
 
       const summary = {
-        bridge: `T${String(bridge.fromTier)}.3->T${String(bridge.toTier)}.1 shards`,
+        bridge: `T${String(bridge.fromTier)}.3->T${String(bridge.toTier)}.1`,
         zone: bridge.zone,
         mastery: bridge.mastery,
         allWeaponsCanFarm: rows.every((row) => row.bestFarmSegment !== null),
@@ -100,13 +99,11 @@ describe("enchantment tier bridge sweep", () => {
         avgShardsPerHour: Number((rows.reduce((sum, row) => sum + row.shardsPerHour, 0) / rows.length).toFixed(1)),
       };
 
-      console.log(`[ENCHANTMENT_TIER_BRIDGE_T${String(bridge.fromTier)}_TO_T${String(bridge.toTier)}]`);
       console.table(rows);
       console.table([summary]);
       return { summary, rows };
     });
 
-    console.log("[ENCHANTMENT_TIER_BRIDGE_SUMMARY]", JSON.stringify(summaries, null, 2));
     expect(summaries).toHaveLength(BRIDGES.length);
     expect(summaries.every(({ rows }) => rows.length === WEAPON_FAMILIES.length)).toBe(true);
     expect(summaries.every(({ summary }) => summary.allWeaponsCanFarm)).toBe(true);
