@@ -1,16 +1,9 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getSegmentRecommendedItemPower } from "../data/itemPower";
-import { calculateProjectedSegmentRates } from "../runtime/projectedRateCalculator";
+import { resolveProjectedSegmentRates } from "../runtime/projectedRateResolver";
 import { useGameBridge, useGameServices } from "../state/GameContext";
 import "./SegmentTimeline.css";
-
-function readComputedStat(
-  stats: ReturnType<typeof useGameBridge>["stats"],
-  id: string,
-): number {
-  return stats.stats.find((entry) => entry.id === id)?.computed ?? 0;
-}
 
 function formatRate(value: number): string {
   return Math.round(value).toLocaleString("fr-FR");
@@ -55,12 +48,6 @@ export function SegmentTimeline(): JSX.Element {
   if (isGathering) {
     return <div className="segment-timeline segment-timeline--hidden" />;
   }
-
-  const equippedWeaponId = state.equipment.slots.find((slot) => slot.slot === "weapon")?.itemId;
-  const physicalDamage = readComputedStat(state.stats, "stat_physical_damage");
-  const magicalDamage = readComputedStat(state.stats, "stat_magical_damage");
-  const attackSpeed = readComputedStat(state.stats, "stat_attack_speed");
-  const primaryAbilityAutoCast = state.abilities.primary?.autoCast ?? false;
 
   return (
     <section className="segment-timeline segment-timeline--sidebar">
@@ -110,15 +97,9 @@ export function SegmentTimeline(): JSX.Element {
             pending ? "segment-timeline__node--pending" : "",
             current ? "segment-timeline__node--marker" : "",
           ].filter(Boolean).join(" ");
-          const rates = locked ? undefined : calculateProjectedSegmentRates({
-            physicalDamage,
-            magicalDamage,
-            attackSpeed,
-            equippedWeaponId,
-            primaryAbilityAutoCast,
-            currentZoneIndex: viewedZone.zoneIndexWithinBand,
-            currentWorldBandId: viewedZone.worldBandId,
-            currentSegment: segment - 1,
+          const rates = locked ? undefined : resolveProjectedSegmentRates(state, {
+            zoneDefId: viewedZone.zoneDefId,
+            segmentIndex: segment - 1,
           });
           const recommendedIp = getSegmentRecommendedItemPower(
             viewedZone.zoneIndexWithinBand + 1,
