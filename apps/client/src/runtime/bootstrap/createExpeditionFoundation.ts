@@ -9,7 +9,6 @@ import {
 import {
   EXPEDITION_DEFINITIONS,
   getExpeditionDefinition,
-  getSilverExpeditionReward,
   isFactionExpeditionDefinition,
   type ExpeditionContentRequirement,
 } from "../../data/expeditionContentCatalog.js";
@@ -18,14 +17,21 @@ import {
   type FactionExpeditionResultQuality,
 } from "../../data/factionExpeditionRewardContentCatalog.js";
 import {
+  rollGeneralistExpeditionReward,
+  type GeneralistExpeditionResultQuality,
+} from "../../data/generalistExpeditionRewardContentCatalog.js";
+import {
   RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
 import { ExpeditionRewardLedger } from "../ExpeditionRewardLedger.js";
 
-export interface SilverExpeditionRewardSummary {
+export interface GeneralistExpeditionRewardSummary {
   readonly kind: "silver";
   readonly silverCredited: number;
+  readonly shardItemId: string;
+  readonly shardsCredited: number;
+  readonly quality: GeneralistExpeditionResultQuality;
 }
 
 export interface FactionRuneExpeditionRewardSummary {
@@ -40,7 +46,7 @@ export interface FactionRuneExpeditionRewardSummary {
 }
 
 export type ExpeditionRewardSummary =
-  | SilverExpeditionRewardSummary
+  | GeneralistExpeditionRewardSummary
   | FactionRuneExpeditionRewardSummary;
 
 export interface ExpeditionFoundationDependencies {
@@ -72,7 +78,7 @@ interface QuantityReward {
   readonly quantity: number;
 }
 
-function creditFactionRewards(
+function creditInventoryRewards(
   inventoryManager: InventoryManager,
   heroId: EntityId,
   rewards: readonly QuantityReward[],
@@ -81,10 +87,10 @@ function creditFactionRewards(
   const positiveRewards = rewards.filter(({ quantity }) => quantity > 0);
   for (const reward of positiveRewards) {
     if (!Number.isSafeInteger(reward.quantity)) {
-      throw new Error(`Faction Expedition produced a non-integer reward: ${expeditionId}`);
+      throw new Error(`Expedition produced a non-integer inventory reward: ${expeditionId}`);
     }
     if (!inventoryManager.canAcceptQuantity(heroId, reward.itemId, reward.quantity)) {
-      throw new Error(`Faction Expedition inventory capacity exceeded: ${expeditionId}`);
+      throw new Error(`Expedition inventory capacity exceeded: ${expeditionId}`);
     }
   }
 
@@ -93,7 +99,7 @@ function creditFactionRewards(
     for (const reward of positiveRewards) {
       const added = inventoryManager.addQuantity(heroId, reward.itemId, reward.quantity);
       if (!added.ok || added.value.added !== reward.quantity || added.value.remainder !== 0) {
-        throw new Error(`Faction Expedition reward credit failed: ${expeditionId}`);
+        throw new Error(`Expedition reward credit failed: ${expeditionId}`);
       }
       credited.push(reward);
     }
@@ -135,20 +141,44 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
         }
 
         if (!isFactionExpeditionDefinition(contentDefinition)) {
-          const silver = getSilverExpeditionReward(definition.id, durationMs);
-          if (silver === undefined || !Number.isSafeInteger(silver) || silver <= 0) {
-            throw new Error(`Invalid Silver Expedition reward: ${definition.id}`);
+          const reward = rollGeneralistExpeditionReward(
+            contentDefinition.tier,
+            durationMs,
+            dependencies.random ?? Math.random,
+          );
+          if (!Number.isSafeInteger(reward.silver) || reward.silver <= 0) {
+            throw new Error(`Invalid Generalist Expedition Silver reward: ${definition.id}`);
           }
+
+          creditInventoryRewards(
+            dependencies.inventoryManager,
+            dependencies.heroId,
+            [{ itemId: reward.shardItemId, quantity: reward.shards }],
+            definition.id,
+          );
+
           const credited = dependencies.currencyService.credit(
             dependencies.walletId,
             "currency_silver",
-            silver,
+            reward.silver,
           );
           if (!credited.ok) {
-            throw new Error(`Silver Expedition credit failed: ${definition.id}`);
+            dependencies.inventoryManager.removeQuantity(
+              dependencies.heroId,
+              reward.shardItemId,
+              reward.shards,
+            );
+            throw new Error(`Generalist Expedition Silver credit failed: ${definition.id}`);
           }
-          rewardLedger.recordSilverCredited(silver);
-          return { kind: "silver", silverCredited: silver };
+
+          rewardLedger.recordSilverCredited(reward.silver);
+          return {
+            kind: "silver",
+            silverCredited: reward.silver,
+            shardItemId: reward.shardItemId,
+            shardsCredited: reward.shards,
+            quality: reward.quality,
+          };
         }
 
         const reward = rollFactionExpeditionReward(
@@ -156,7 +186,7 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
           durationMs,
           dependencies.random ?? Math.random,
         );
-        creditFactionRewards(
+        creditInventoryRewards(
           dependencies.inventoryManager,
           dependencies.heroId,
           [
