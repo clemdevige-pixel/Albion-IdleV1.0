@@ -106,7 +106,8 @@ export class CombatBridgeAdapter {
   }
 
   syncProjectedSegmentRates(): void {
-    const placement = getWorldZonePlacement(this.#worldRuntime.getActiveZoneDef().defId);
+    const activeZoneDef = this.#worldRuntime.getActiveZoneDef();
+    const placement = getWorldZonePlacement(activeZoneDef.defId);
     const rates = calculateProjectedSegmentRates({
       physicalDamage: this.#statsManager.getStat(this.#heroId, STAT_PHYSICAL_DAMAGE).computed,
       magicalDamage: this.#statsManager.getStat(this.#heroId, STAT_MAGICAL_DAMAGE).computed,
@@ -114,8 +115,10 @@ export class CombatBridgeAdapter {
       equippedWeaponId: this.#getEquippedWeaponId(),
       primaryAbilityAutoCast: this.#combatRuntime.isAutoCastEnabled(),
       currentZoneIndex: placement.zoneIndexWithinBand,
+      currentZoneDefId: activeZoneDef.defId,
       currentWorldBandId: placement.bandId,
       currentSegment: this.#worldRuntime.currentSegment,
+      masteries: this.#bridge.progression.masteries,
     });
     this.#bridge.updateSegmentRates(rates.silverPerHour, rates.famePerHour);
   }
@@ -195,7 +198,7 @@ export class CombatBridgeAdapter {
         name: effect.definitionId,
         type: effect.effectType,
         remainingDuration: effect.remainingDuration,
-      })));
+      }));
     }
     this.#syncCombatStartBlockNotification();
     this.syncAbilities();
