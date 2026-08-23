@@ -12,6 +12,10 @@ import {
   type CombatLootContext,
 } from "../../data/economyContentCatalog";
 import {
+  getFactionRuneWorldDropChance,
+  getFactionRuneWorldDropExpectation,
+} from "../../data/factionRuneWorldDropContentCatalog.js";
+import {
   ZONE_DEFINITIONS,
   getWorldZonePlacement,
 } from "../../data/worldContentCatalog";
@@ -38,7 +42,7 @@ export interface WorldBandModel {
 
 export interface BestiaryLootRangeModel {
   readonly itemId: string;
-  readonly kind: CombatDropKind;
+  readonly kind: CombatDropKind | "faction_rune";
   readonly minimumExpectedQuantity: number;
   readonly maximumExpectedQuantity: number;
 }
@@ -69,6 +73,7 @@ interface BestiaryEncounterContext {
   readonly monsterId: string;
   readonly bandId: WorldBandId;
   readonly lootContext: CombatLootContext;
+  readonly factionRuneDropChance: number;
 }
 
 export const WORLD_BANDS: readonly WorldBandModel[] = WORLD_BAND_DEFINITIONS.map(
@@ -116,6 +121,11 @@ function buildEncounterContexts(): readonly BestiaryEncounterContext[] {
         contexts.push({
           monsterId: monster.id,
           bandId: placement.bandId,
+          factionRuneDropChance: getFactionRuneWorldDropChance(
+            placement.bandId,
+            placement.zoneIndexWithinBand,
+            segmentIndex,
+          ),
           lootContext: {
             segmentIndex,
             faction: monster.faction,
@@ -172,14 +182,32 @@ function aggregateLootRanges(
   contexts: readonly BestiaryEncounterContext[],
 ): readonly BestiaryLootRangeModel[] {
   return mergeLootRanges(
-    contexts.flatMap((context) => getCombatLootExpectations(context.lootContext).map(
-      (expectation): BestiaryLootRangeModel => ({
-        itemId: expectation.itemId,
-        kind: expectation.kind,
-        minimumExpectedQuantity: expectation.expectedQuantity,
-        maximumExpectedQuantity: expectation.expectedQuantity,
-      }),
-    )),
+    contexts.flatMap((context) => {
+      const combatLoot = getCombatLootExpectations(context.lootContext).map(
+        (expectation): BestiaryLootRangeModel => ({
+          itemId: expectation.itemId,
+          kind: expectation.kind,
+          minimumExpectedQuantity: expectation.expectedQuantity,
+          maximumExpectedQuantity: expectation.expectedQuantity,
+        }),
+      );
+      const runeExpectation = getFactionRuneWorldDropExpectation(
+        context.lootContext.faction,
+        context.lootContext.enchantmentTier,
+        context.factionRuneDropChance,
+      );
+      return runeExpectation === undefined
+        ? combatLoot
+        : [
+          ...combatLoot,
+          {
+            itemId: runeExpectation.itemId,
+            kind: "faction_rune" as const,
+            minimumExpectedQuantity: runeExpectation.expectedQuantity,
+            maximumExpectedQuantity: runeExpectation.expectedQuantity,
+          },
+        ];
+    }),
   );
 }
 
