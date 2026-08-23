@@ -26,6 +26,7 @@ The roster intentionally adapts Albion Online weapon families to Albion Idle rat
 - When Albion Online does not provide a suitable historical faction-artifact weapon for a slot, a non-Avalonian weapon from the same Albion Online family may be reassigned to the missing Albion Idle faction slot.
 - Faction attribution in this document is therefore an Albion Idle gameplay/content attribution, not necessarily the original Albion Online attribution.
 - No new weapon name is invented for this roster.
+- Every faction artifact weapon carries its faction affinity and receives the canonical dungeon faction-advantage bonus defined in section 5.
 
 ---
 
@@ -94,8 +95,6 @@ Attack speeds are intentionally authored in 0.05 increments.
 
 The live weapon model has no hidden 1H/2H multiplier. Flat damage and attack speed are authored explicitly per weapon.
 
-The artifact Sword curves below preserve the current live weapon AA-DPS corridor at T4, then follow approximately the existing ~1.45 damage growth per tier.
-
 | Weapon | T4 | T5 | T6 | T7 | T8 |
 |---|---:|---:|---:|---:|---:|
 | Clarent Blade | 89 | 129 | 187 | 271 | 393 |
@@ -121,6 +120,57 @@ Faction artifacts:
 - Morgana: Wailing Bow
 - Undead: Whispering Bow
 - Heretic: Warbow
+
+#### Shared Bow abilities
+
+All Bow specializations keep the two existing shared family abilities:
+
+1. Tir ajusté
+2. Flèche perforante
+
+Only the third active ability is specialization-specific.
+
+#### Bow artifact signature abilities
+
+| Weapon | Faction | Signature ability | Effect | Cooldown |
+|---|---|---|---|---:|
+| Bow of Badon | Keeper | Tempête déchaînée | 1.35x physical damage + Stun for 1.25 s | 28 s |
+| Wailing Bow | Morgana | Demon Arrow | 2.20x physical damage | 26 s |
+| Whispering Bow | Undead | Undead Arrows | For 6 s: +20% attack speed, +0.35x magical bonus damage on each auto-attack, +15% damage received | 22 s |
+| Warbow | Heretic | Magic Arrow | 2.00x magical damage | 20 s |
+
+Whispering Bow rule:
+- the `+0.35x` component is a separate additional damage instance on each auto-attack;
+- it is not a multiplier applied to the base auto-attack damage;
+- the +15% damage received penalty applies for the same 6 s duration.
+
+#### Bow artifact handling / attack speed
+
+All four Bow artifact variants are 2H.
+
+| Weapon | Attack speed |
+|---|---:|
+| Bow of Badon | 1.00 |
+| Wailing Bow | 0.95 |
+| Whispering Bow | 1.15 |
+| Warbow | 1.10 |
+
+#### Bow artifact flat physical damage — T4 to T8
+
+| Weapon | T4 | T5 | T6 | T7 | T8 |
+|---|---:|---:|---:|---:|---:|
+| Bow of Badon | 121.8 | 177 | 257 | 373 | 541 |
+| Wailing Bow | 116 | 168 | 244 | 354 | 513 |
+| Whispering Bow | 94 | 136 | 197 | 286 | 415 |
+| Warbow | 100 | 145 | 210 | 305 | 442 |
+
+Approximate raw T4 auto-attack DPS anchors before signature ability effects:
+- Bow of Badon: `121.8 x 1.00 = 121.8`
+- Wailing Bow: `116 x 0.95 = 110.2`
+- Whispering Bow: `94 x 1.15 = 108.1`
+- Warbow: `100 x 1.10 = 110.0`
+
+Badon intentionally keeps the highest raw AA anchor because its signature ability is utility-heavy. Whispering and Warbow are held lower because their signature abilities add strong sustained/frequent damage.
 
 ### Fire Staff
 
@@ -157,7 +207,40 @@ Faction artifacts:
 
 ---
 
-## 5. EXPLICIT EXCLUSION — AVALONIAN WEAPONS
+## 5. DUNGEON FACTION ADVANTAGE
+
+Faction artifact weapons receive a dungeon-only damage bonus against their designated adverse faction.
+
+Canonical bonus:
+- `+20% damage dealt` against the adverse faction;
+- applies to all damage dealt by the equipped artifact weapon loadout while fighting enemies of that faction in faction Dungeons;
+- no bonus against the weapon's own faction or either neutral/non-adverse faction;
+- no penalty is applied when fighting the weapon's own faction;
+- base/non-artifact weapons do not receive this bonus.
+
+Canonical rivalries are symmetric:
+
+- Keeper <-> Morgana
+- Undead <-> Heretic
+
+### Advantage matrix
+
+Rows = equipped artifact weapon faction. Columns = enemy Dungeon faction.
+
+| Artifact faction | Keeper enemies | Morgana enemies | Undead enemies | Heretic enemies |
+|---|---:|---:|---:|---:|
+| Keeper | +0% | **+20%** | +0% | +0% |
+| Morgana | **+20%** | +0% | +0% | +0% |
+| Undead | +0% | +0% | +0% | **+20%** |
+| Heretic | +0% | +0% | **+20%** | +0% |
+
+This matrix is global to artifact weapons and must be authored as faction relationship data, not duplicated per weapon definition.
+
+Weapon definitions only need to declare their artifact faction affinity. Dungeon combat then resolves the faction-advantage modifier from the shared matrix.
+
+---
+
+## 6. EXPLICIT EXCLUSION — AVALONIAN WEAPONS
 
 Avalonian weapons are outside this artifact roster and must not be used as substitutes for missing faction slots.
 
@@ -167,7 +250,7 @@ The exclusion is categorical for this roster; future Avalon content, if ever des
 
 ---
 
-## 6. DESIGN STATUS
+## 7. DESIGN STATUS
 
 Sword family:
 - artifact roster: VALIDATED;
@@ -177,7 +260,21 @@ Sword family:
 - T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
 - runtime implementation / benchmark: pending.
 
-Bow, Fire Staff, War Gloves and Dagger artifact abilities/stats remain to be designed.
+Bow family:
+- artifact roster: VALIDATED;
+- shared abilities: existing / retained;
+- Badon: existing implementation retained;
+- Wailing / Whispering / Warbow signature abilities: VALIDATED DESIGN;
+- handling / attack speed: VALIDATED DESIGN;
+- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
+- runtime implementation / benchmark: pending.
+
+Faction advantage:
+- +20% dungeon damage bonus: VALIDATED DESIGN;
+- rivalries: Keeper <-> Morgana and Undead <-> Heretic;
+- implementation must be shared/data-driven, not weapon-specific.
+
+Fire Staff, War Gloves and Dagger artifact abilities/stats remain to be designed.
 
 ---
 
