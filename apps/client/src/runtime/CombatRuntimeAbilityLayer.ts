@@ -2,7 +2,10 @@ import type { AbilityId } from "@game/gameplay";
 import { resolveUnlockedWeaponAbilities, resolveWeaponMastery } from "../data/weaponContentCatalog.js";
 import { getWeaponAbilityMechanics } from "../data/weaponAbilityMechanics.js";
 import { WeaponAbilityEffectTracker } from "./WeaponAbilityEffectTracker.js";
-import { WeaponAbilityMechanicsRuntime } from "./WeaponAbilityMechanicsRuntime.js";
+import {
+  WeaponAbilityMechanicsRuntime,
+  type WeaponAbilityDamageTelemetryEvent,
+} from "./WeaponAbilityMechanicsRuntime.js";
 import { CombatRuntime as LegacyCombatRuntime } from "./CombatRuntimeLegacy.js";
 import type { CombatDomainTickResult, CombatRuntimeDependencies } from "./CombatRuntimeLegacy.js";
 import type { SpawnedEnemyResult } from "./combatEntityFactory.js";
@@ -31,6 +34,8 @@ export interface CombatRuntimeAbilityDependencies extends CombatRuntimeDependenc
    * runtime without creating a parallel combat loop.
    */
   readonly spawnEnemyOverride?: () => SpawnedEnemyResult | undefined;
+  /** Optional diagnostics hook; runtime combat never depends on it. */
+  readonly onWeaponAbilityDamage?: (event: WeaponAbilityDamageTelemetryEvent) => void;
 }
 
 export class CombatRuntime extends LegacyCombatRuntime {
@@ -51,6 +56,9 @@ export class CombatRuntime extends LegacyCombatRuntime {
       statsManager: runtimeDeps.statsManager,
       autoAttackManager: runtimeDeps.autoAttackManager,
       onTargetKilled: (tick) => { this.finalizeActiveEnemyDeath(tick); },
+      ...(runtimeDeps.onWeaponAbilityDamage === undefined
+        ? {}
+        : { onAbilityDamage: runtimeDeps.onWeaponAbilityDamage }),
     });
     this.effects = new WeaponAbilityEffectTracker(runtimeDeps.world, runtimeDeps.effectManager, this.mechanics);
   }
