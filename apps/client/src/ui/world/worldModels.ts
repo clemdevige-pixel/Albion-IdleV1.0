@@ -72,19 +72,13 @@ export const WORLD_BANDS: readonly WorldBandModel[] = WORLD_BAND_DEFINITIONS.map
   }),
 );
 
-const BESTIARY_CONTEXT_IDS_BY_BAND = Object.fromEntries(
-  WORLD_BAND_DEFINITIONS.map((band) => [
-    band.id,
-    ZONE_DEFINITIONS
-      .filter((zone) => getWorldZonePlacement(zone.id).bandId === band.id)
-      .map((zone) => String(zone.id)),
-  ]),
-) as Readonly<Record<WorldBandId, readonly string[]>>;
-
 export function getBestiaryContextIds(
   bandId: WorldBandId | "all",
 ): readonly string[] | undefined {
-  return bandId === "all" ? undefined : BESTIARY_CONTEXT_IDS_BY_BAND[bandId];
+  if (bandId === "all") return undefined;
+  return ZONE_DEFINITIONS
+    .filter((zone) => getWorldZonePlacement(zone.id).bandId === bandId)
+    .map((zone) => String(zone.id));
 }
 
 function buildEncounterContexts(): readonly BestiaryEncounterContext[] {
