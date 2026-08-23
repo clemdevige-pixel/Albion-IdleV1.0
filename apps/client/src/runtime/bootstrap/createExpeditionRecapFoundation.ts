@@ -10,9 +10,8 @@ export interface ExpeditionRecapItemModel {
     | { readonly kind: "silver"; readonly silverCredited: number }
     | {
       readonly kind: "faction_rune";
-      readonly baseRunes: number;
-      readonly masteryBonusPercent: number;
-      readonly finalRunes: number;
+      readonly itemId: string;
+      readonly runesCredited: number;
     };
 }
 
