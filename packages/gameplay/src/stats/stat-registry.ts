@@ -10,17 +10,9 @@ export class StatRegistry {
     this.#definitions.set(definition.id, definition);
   }
 
-  get(id: StatId): StatDefinition | undefined {
-    return this.#definitions.get(id);
-  }
-
-  has(id: StatId): boolean {
-    return this.#definitions.has(id);
-  }
-
-  getAll(): readonly StatDefinition[] {
-    return [...this.#definitions.values()];
-  }
+  get(id: StatId): StatDefinition | undefined { return this.#definitions.get(id); }
+  has(id: StatId): boolean { return this.#definitions.has(id); }
+  getAll(): readonly StatDefinition[] { return [...this.#definitions.values()]; }
 }
 
 const DEFAULT_STATS: readonly StatDefinition[] = [
@@ -39,7 +31,9 @@ const DEFAULT_STATS: readonly StatDefinition[] = [
   { id: "stat_auto_attack_damage_taken_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_auto_attack_bonus_physical_damage" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_auto_attack_bonus_magical_damage" as StatId, min: 0, max: Infinity, defaultBase: 0 },
-  { id: "stat_damage_taken_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
+  // Baseline 100 lets regular percent modifiers express +15% damage taken
+  // without a bespoke calculator path. DamageManager reads the delta from 100.
+  { id: "stat_damage_taken_bonus" as StatId, min: 0, max: Infinity, defaultBase: 100 },
   { id: "stat_life_steal" as StatId, min: 0, max: 5, defaultBase: 0 },
 ];
 
