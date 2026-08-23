@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import {
+  ARTIFACT_BENCHMARK_MASTERY_PROFILE,
   T4_ARTIFACT_WEAPONS,
   t4ArtifactDungeonEquipment,
 } from "./artifactWeaponBenchmarkFixtures.js";
@@ -14,7 +15,7 @@ import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 const round1 = (value: number): number => Number(value.toFixed(1));
 
 describe("T4 artifact favorable dungeon clear benchmark", () => {
-  it("measures the player-facing favorable matchup with cape and health potions", () => {
+  it("measures the player-facing favorable matchup with cape, health potions and branch mastery IP", () => {
     const t4Dungeons = DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === 4);
 
     const rows = T4_ARTIFACT_WEAPONS.map((weapon) => {
@@ -36,7 +37,7 @@ describe("T4 artifact favorable dungeon clear benchmark", () => {
         segmentIndex: 9,
         dungeonDefinitionId: favorableDungeon.id,
         enchantment: 3,
-        masteryLevel: 30,
+        ...ARTIFACT_BENCHMARK_MASTERY_PROFILE,
         useHealthPotions: true,
         heroDamageMultiplier: 1 + bonusPct / 100,
       });
@@ -49,6 +50,9 @@ describe("T4 artifact favorable dungeon clear benchmark", () => {
         dungeon: favorableDungeon.id,
         enemyFaction: favorableDungeon.faction,
         bonusPct,
+        familyMastery: ARTIFACT_BENCHMARK_MASTERY_PROFILE.familyMasteryLevel,
+        specMastery: ARTIFACT_BENCHMARK_MASTERY_PROFILE.specializationMasteryLevel,
+        siblingMastery: ARTIFACT_BENCHMARK_MASTERY_PROFILE.siblingSpecializationMasteryLevel,
         clear: result.clear,
         encounterReached: result.encounterReached,
         bossProgressPct: round1(result.bossProgressPercent),
