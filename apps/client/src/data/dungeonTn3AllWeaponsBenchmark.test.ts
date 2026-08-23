@@ -5,11 +5,29 @@ import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarn
 
 type Tier = 4 | 5 | 6 | 7 | 8;
 type WeaponFamily = "broadsword" | "longbow" | "infernal" | "spiked" | "dual_dagger";
-type CapeMode = "traveler" | "faction";
+type CapeMode = "none" | "faction";
+
+type BenchmarkMode = {
+  readonly cape: CapeMode;
+  readonly potion: boolean;
+};
 
 const TIERS: readonly Tier[] = [4, 5, 6, 7, 8];
 const FAMILIES: readonly WeaponFamily[] = ["broadsword", "longbow", "infernal", "spiked", "dual_dagger"];
-const CAPE_MODES: readonly CapeMode[] = ["traveler", "faction"];
+const BENCHMARK_MODES: readonly BenchmarkMode[] = [
+  { cape: "none", potion: false },
+  { cape: "none", potion: true },
+  { cape: "faction", potion: false },
+  { cape: "faction", potion: true },
+];
+
+const EXPECTED_CAPE_REDUCTION_BY_TIER: Readonly<Record<Tier, number>> = {
+  4: 6,
+  5: 8,
+  6: 11,
+  7: 14,
+  8: 18,
+};
 
 const MASTERY_BY_TIER: Readonly<Record<Tier, number>> = {
   4: 22,
@@ -35,12 +53,6 @@ function weaponId(tier: Tier, family: WeaponFamily): string {
   return `item_weapon_dagger_t${tier}_pair`;
 }
 
-function capeId(tier: Tier, faction: string, mode: CapeMode): string {
-  return mode === "traveler"
-    ? "item_traveler_cape"
-    : `item_cape_t${tier}_${faction.toLowerCase()}`;
-}
-
 function armorIds(
   tier: Tier,
   family: WeaponFamily,
@@ -51,23 +63,27 @@ function armorIds(
     `item_helmet_t${tier}_reinforced`,
     `item_armor_t${tier}_leather`,
     `item_boots_t${tier}_leather`,
-    capeId(tier, faction, capeMode),
   ];
-  return family === "broadsword"
-    ? [...base, `item_shield_t${tier}_reinforced`]
+  const withCape = capeMode === "faction"
+    ? [...base, `item_cape_t${tier}_${faction.toLowerCase()}`]
     : base;
+  return family === "broadsword"
+    ? [...withCape, `item_shield_t${tier}_reinforced`]
+    : withCape;
 }
 
 const round1 = (value: number): number => Number(value.toFixed(1));
+const modeLabel = (mode: BenchmarkMode): string => `${mode.cape}:${mode.potion ? "potion" : "no-potion"}`;
 
-describe("same-tier .3 dungeon benchmark across all weapons and faction capes", () => {
-  it("compares traveler cape against the matching same-tier faction cape", () => {
+describe("same-tier .3 dungeon benchmark across all weapons, faction capes and potions", () => {
+  it("compares no cape and matching faction cape with and without health potions", () => {
     const rows: Array<{
       tier: Tier;
       faction: string;
       dungeon: string;
       weapon: WeaponFamily;
       cape: CapeMode;
+      potion: boolean;
       mastery: number;
       capeReductionPct: number;
       armor: number;
@@ -79,6 +95,7 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       enemyHpRemainingPct: number;
       seconds: number;
       hpPercent: number;
+      potionsUsed: number;
       observedDps: number;
       incomingDps: number;
       damageReceived: number;
@@ -88,17 +105,17 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       const dungeons = DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === tier);
       for (const dungeon of dungeons) {
         for (const family of FAMILIES) {
-          for (const capeMode of CAPE_MODES) {
+          for (const mode of BENCHMARK_MODES) {
             const result = runCombatRuntimeBenchmark({
-              label: `${dungeon.id}:${family}:${capeMode}:t${tier}.3`,
+              label: `${dungeon.id}:${family}:${modeLabel(mode)}:t${tier}.3`,
               weaponItemId: weaponId(tier, family),
-              equipmentItemIds: armorIds(tier, family, dungeon.faction, capeMode),
+              equipmentItemIds: armorIds(tier, family, dungeon.faction, mode.cape),
               zoneDefId: ZONE_BY_TIER[tier],
               segmentIndex: 9,
               dungeonDefinitionId: dungeon.id,
               enchantment: 3,
               masteryLevel: MASTERY_BY_TIER[tier],
-              useHealthPotions: false,
+              useHealthPotions: mode.potion,
             });
 
             rows.push({
@@ -106,7 +123,8 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
               faction: dungeon.faction,
               dungeon: dungeon.id,
               weapon: family,
-              cape: capeMode,
+              cape: mode.cape,
+              potion: mode.potion,
               mastery: MASTERY_BY_TIER[tier],
               capeReductionPct: result.dungeonDamageReductionPercent,
               armor: result.armor,
@@ -118,6 +136,7 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
               enemyHpRemainingPct: result.enemyHpRemainingPercent,
               seconds: result.seconds,
               hpPercent: result.hpPercent,
+              potionsUsed: result.potionsUsed,
               observedDps: result.observedDps,
               incomingDps: result.incomingDps,
               damageReceived: result.damageReceived,
@@ -127,12 +146,15 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       }
     }
 
-    const tierCapeSummary = TIERS.flatMap((tier) => CAPE_MODES.map((cape) => {
-      const tierRows = rows.filter((row) => row.tier === tier && row.cape === cape);
+    const tierModeSummary = TIERS.flatMap((tier) => BENCHMARK_MODES.map((mode) => {
+      const tierRows = rows.filter((row) => (
+        row.tier === tier && row.cape === mode.cape && row.potion === mode.potion
+      ));
       const cleared = tierRows.filter((row) => row.clear);
       return {
         tier,
-        cape,
+        cape: mode.cape,
+        potion: mode.potion,
         runs: tierRows.length,
         clears: cleared.length,
         clearRatePct: round1((cleared.length / tierRows.length) * 100),
@@ -148,6 +170,9 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
         avgIncomingDps: round1(
           tierRows.reduce((sum, row) => sum + row.incomingDps, 0) / tierRows.length,
         ),
+        avgPotionsUsed: round1(
+          tierRows.reduce((sum, row) => sum + row.potionsUsed, 0) / tierRows.length,
+        ),
         avgClearSeconds: cleared.length > 0
           ? round1(cleared.reduce((sum, row) => sum + row.seconds, 0) / cleared.length)
           : 0,
@@ -160,42 +185,47 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       };
     }));
 
-    const capeImpact = TIERS.map((tier) => {
-      const traveler = rows.filter((row) => row.tier === tier && row.cape === "traveler");
-      const faction = rows.filter((row) => row.tier === tier && row.cape === "faction");
-      const travelerClears = traveler.filter((row) => row.clear);
+    const capeImpact = TIERS.flatMap((tier) => [false, true].map((potion) => {
+      const noCape = rows.filter((row) => row.tier === tier && row.cape === "none" && row.potion === potion);
+      const faction = rows.filter((row) => row.tier === tier && row.cape === "faction" && row.potion === potion);
+      const noCapeClears = noCape.filter((row) => row.clear);
       const factionClears = faction.filter((row) => row.clear);
-      const avgTravelerIncomingDps = traveler.reduce((sum, row) => sum + row.incomingDps, 0) / traveler.length;
+      const avgNoCapeIncomingDps = noCape.reduce((sum, row) => sum + row.incomingDps, 0) / noCape.length;
       const avgFactionIncomingDps = faction.reduce((sum, row) => sum + row.incomingDps, 0) / faction.length;
-      const avgTravelerBossProgress = traveler.reduce((sum, row) => sum + row.bossProgressPct, 0) / traveler.length;
+      const avgNoCapeBossProgress = noCape.reduce((sum, row) => sum + row.bossProgressPct, 0) / noCape.length;
       const avgFactionBossProgress = faction.reduce((sum, row) => sum + row.bossProgressPct, 0) / faction.length;
       return {
         tier,
-        travelerClears: `${travelerClears.length}/${traveler.length}`,
+        potion,
+        noCapeClears: `${noCapeClears.length}/${noCape.length}`,
         factionClears: `${factionClears.length}/${faction.length}`,
         clearRateDeltaPct: round1(
-          ((factionClears.length / faction.length) - (travelerClears.length / traveler.length)) * 100,
+          ((factionClears.length / faction.length) - (noCapeClears.length / noCape.length)) * 100,
         ),
-        avgIncomingDpsTraveler: round1(avgTravelerIncomingDps),
+        avgIncomingDpsNoCape: round1(avgNoCapeIncomingDps),
         avgIncomingDpsFaction: round1(avgFactionIncomingDps),
-        incomingDpsReductionPct: avgTravelerIncomingDps > 0
-          ? round1((1 - avgFactionIncomingDps / avgTravelerIncomingDps) * 100)
+        incomingDpsReductionPct: avgNoCapeIncomingDps > 0
+          ? round1((1 - avgFactionIncomingDps / avgNoCapeIncomingDps) * 100)
           : 0,
-        avgBossProgressTraveler: round1(avgTravelerBossProgress),
+        avgBossProgressNoCape: round1(avgNoCapeBossProgress),
         avgBossProgressFaction: round1(avgFactionBossProgress),
-        bossProgressDeltaPct: round1(avgFactionBossProgress - avgTravelerBossProgress),
+        bossProgressDeltaPct: round1(avgFactionBossProgress - avgNoCapeBossProgress),
       };
-    });
+    }));
 
-    const weaponCapeSummary = FAMILIES.flatMap((weapon) => TIERS.flatMap((tier) => CAPE_MODES.map((cape) => {
-      const weaponRows = rows.filter(
-        (row) => row.weapon === weapon && row.tier === tier && row.cape === cape,
-      );
+    const weaponModeSummary = FAMILIES.flatMap((weapon) => TIERS.flatMap((tier) => BENCHMARK_MODES.map((mode) => {
+      const weaponRows = rows.filter((row) => (
+        row.weapon === weapon
+        && row.tier === tier
+        && row.cape === mode.cape
+        && row.potion === mode.potion
+      ));
       const cleared = weaponRows.filter((row) => row.clear);
       return {
         tier,
         weapon,
-        cape,
+        cape: mode.cape,
+        potion: mode.potion,
         clears: `${cleared.length}/${weaponRows.length}`,
         avgIncomingDps: round1(
           weaponRows.reduce((sum, row) => sum + row.incomingDps, 0) / weaponRows.length,
@@ -206,6 +236,9 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
         avgEncounterProgressPct: round1(
           weaponRows.reduce((sum, row) => sum + row.encounterProgressPct, 0) / weaponRows.length,
         ),
+        avgPotionsUsed: round1(
+          weaponRows.reduce((sum, row) => sum + row.potionsUsed, 0) / weaponRows.length,
+        ),
         avgDps: round1(
           weaponRows.reduce((sum, row) => sum + row.observedDps, 0) / weaponRows.length,
         ),
@@ -215,17 +248,17 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       };
     })));
 
-    console.log("[DUNGEON_TN3_CAPE_BENCHMARK]");
+    console.log("[DUNGEON_TN3_FACTION_CAPE_POTION_BENCHMARK]");
     console.table(rows);
-    console.log("[DUNGEON_TN3_TIER_CAPE_SUMMARY]");
-    console.table(tierCapeSummary);
-    console.log("[DUNGEON_TN3_CAPE_IMPACT]");
+    console.log("[DUNGEON_TN3_TIER_MODE_SUMMARY]");
+    console.table(tierModeSummary);
+    console.log("[DUNGEON_TN3_FACTION_CAPE_IMPACT]");
     console.table(capeImpact);
-    console.log("[DUNGEON_TN3_WEAPON_CAPE_SUMMARY]");
-    console.table(weaponCapeSummary);
-    console.log("[DUNGEON_TN3_CAPE_JSON]", JSON.stringify(rows, null, 2));
+    console.log("[DUNGEON_TN3_WEAPON_MODE_SUMMARY]");
+    console.table(weaponModeSummary);
+    console.log("[DUNGEON_TN3_FACTION_CAPE_POTION_JSON]", JSON.stringify(rows, null, 2));
 
-    expect(rows).toHaveLength(DUNGEON_DEFINITIONS.length * FAMILIES.length * CAPE_MODES.length);
+    expect(rows).toHaveLength(DUNGEON_DEFINITIONS.length * FAMILIES.length * BENCHMARK_MODES.length);
     expect(rows.every((row) => (
       Number.isFinite(row.seconds)
       && Number.isFinite(row.observedDps)
@@ -235,7 +268,15 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       && row.bossProgressPct >= 0
       && row.bossProgressPct <= 100
     ))).toBe(true);
-    expect(rows.filter((row) => row.cape === "traveler").every((row) => row.capeReductionPct === 0)).toBe(true);
-    expect(rows.filter((row) => row.cape === "faction").every((row) => row.capeReductionPct > 0)).toBe(true);
+
+    expect(rows.filter((row) => row.cape === "none").every((row) => row.capeReductionPct === 0)).toBe(true);
+    for (const tier of TIERS) {
+      expect(
+        rows
+          .filter((row) => row.tier === tier && row.cape === "faction")
+          .every((row) => row.capeReductionPct === EXPECTED_CAPE_REDUCTION_BY_TIER[tier]),
+      ).toBe(true);
+    }
+    expect(rows.filter((row) => !row.potion).every((row) => row.potionsUsed === 0)).toBe(true);
   });
 });
