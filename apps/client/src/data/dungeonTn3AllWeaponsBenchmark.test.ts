@@ -248,15 +248,12 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       };
     })));
 
-    console.log("[DUNGEON_TN3_FACTION_CAPE_POTION_BENCHMARK]");
-    console.table(rows);
     console.log("[DUNGEON_TN3_TIER_MODE_SUMMARY]");
     console.table(tierModeSummary);
     console.log("[DUNGEON_TN3_FACTION_CAPE_IMPACT]");
     console.table(capeImpact);
     console.log("[DUNGEON_TN3_WEAPON_MODE_SUMMARY]");
     console.table(weaponModeSummary);
-    console.log("[DUNGEON_TN3_FACTION_CAPE_POTION_JSON]", JSON.stringify(rows, null, 2));
 
     expect(rows).toHaveLength(DUNGEON_DEFINITIONS.length * FAMILIES.length * BENCHMARK_MODES.length);
     expect(rows.every((row) => (
