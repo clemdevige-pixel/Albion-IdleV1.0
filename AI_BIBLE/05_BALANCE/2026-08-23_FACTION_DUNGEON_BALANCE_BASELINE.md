@@ -1,6 +1,6 @@
 # Albion Idle — Faction Dungeon Balance Baseline — 2026-08-23
 
-Status: VALIDATED LIVE BASELINE
+Status: VALIDATED LIVE DUNGEON CURVE / POST-DAGGER GLOBAL RECHECK REQUIRED
 Branch: `agent/albion-idle-development`
 
 ## Purpose
@@ -8,6 +8,8 @@ Branch: `agent/albion-idle-development`
 This document freezes the validated faction-dungeon balance state after the artifact-weapon, faction-matchup and cross-specialization Mastery pass.
 
 It is a balance snapshot, not a second runtime configuration source. Numeric authority remains in the live data/runtime files and benchmarks referenced below.
+
+The final Dagger Pair specialization-only buff was applied after the dungeon curve itself was frozen. Therefore boss-HP multipliers remain authoritative and unchanged, while exact base-weapon leak counts below are the last pre-Dagger snapshot until the final `pnpm benchmark:global-balance` refreshes them.
 
 ---
 
@@ -70,7 +72,7 @@ The higher T7/T8 Heretic multipliers are deliberate DPS gates created after cros
 
 ---
 
-# 4. FAVORABLE ARTIFACT BENCHMARK — FINAL READ
+# 4. FAVORABLE ARTIFACT BENCHMARK — LAST FULL SNAPSHOT
 
 Benchmark conditions:
 - same-tier artifact weapon;
@@ -83,7 +85,7 @@ Benchmark conditions:
 Authority benchmark:
 `apps/client/src/data/factionArtifactDungeonT5ToT8FavorableClearBenchmark.test.ts`
 
-Final aggregate result:
+Last full snapshot:
 - T5: `16/20` = 80%; average boss progress 99.6%; minimum 96.8%;
 - T6: `20/20` = 100%;
 - T7: `20/20` = 100%;
@@ -98,16 +100,20 @@ Observed accepted near-clears:
 - T5 Demonfang -> Undead: 99.2%;
 - T8 Ursine -> Morgana: 97.0%.
 
+The final Dagger Pair buff does not modify artifact weapons, so this favorable-artifact interpretation remains valid unless the final global rerun exposes an unrelated regression.
+
 Do NOT buff those weapons or weaken those dungeons solely to force the harness to print 100% when the failure is compatible with potion timing.
 
 ---
 
-# 5. BASE-WEAPON LEAK — FINAL READ
+# 5. BASE-WEAPON LEAK — PRE-FINAL-DAGGER SNAPSHOT
 
 Authority benchmark:
 `apps/client/src/data/factionArtifactDungeonT5ToT8LeakBenchmark.test.ts`
 
 Same-tier `.3`, faction cape, health potions, explicit Mastery profile.
+
+The following counts were measured immediately before the final Dagger Pair `Assaut croisé` correction. They remain historical evidence for the dungeon curve, but the final global rerun is authoritative for any changed Dagger Pair row.
 
 ## T5
 - Keeper: `5/5` base clears;
@@ -162,6 +168,8 @@ By faction:
 
 This dispersion is accepted.
 
+The Dagger Pair correction is a base-weapon-only change and therefore does not alter this neutral-artifact set directly.
+
 Design rule:
 - favorable artifact matchup should be the reliable/optimal route;
 - neutral artifact success is allowed;
@@ -190,6 +198,8 @@ This rule is especially important for fast weapons that can reach the boss or a 
 Artifact dungeon tuning must always be cross-checked against:
 `apps/client/src/data/factionArtifactWeaponBenchmark.test.ts`
 
+Base-weapon changes must also be cross-checked against the global World wall benchmark and role/boss telemetry.
+
 Dungeon fixes must not create an obvious World progression outlier.
 
 Current accepted philosophy:
@@ -201,7 +211,7 @@ Current accepted philosophy:
 
 # 9. CHANGE CONTROL
 
-This T4-T8 dungeon state is FROZEN as the current live baseline.
+This T4-T8 dungeon curve is FROZEN as the current live baseline.
 
 Do not change dungeon multipliers because of a single synthetic run.
 
@@ -218,6 +228,9 @@ Re-open dungeon balance only when at least one of these changes materially:
 When reopened, rerun together:
 1. favorable artifact dungeon benchmark;
 2. base + neutral artifact leak benchmark;
-3. artifact World benchmark.
+3. artifact World benchmark;
+4. base World wall benchmark if a base weapon changed.
 
 Do not tune against one benchmark in isolation.
+
+The post-Dagger global rerun is a regression confirmation pass. It is not a request to reopen dungeon tuning unless it reveals a material new failure.
