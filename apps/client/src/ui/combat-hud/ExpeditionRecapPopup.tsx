@@ -49,10 +49,9 @@ export function ExpeditionRecapPopup({
                   <strong>{formatNumber(item.reward.silverCredited)}</strong>
                 </div>
               ) : (
-                <div className="expedition-recap__runes">
-                  <div><span>Runes de base</span><strong>{String(item.reward.baseRunes)}</strong></div>
-                  <div><span>Bonus maîtrise de faction</span><strong>+{String(item.reward.masteryBonusPercent)}%</strong></div>
-                  <div className="is-total"><span>Runes créditées</span><strong>{String(item.reward.finalRunes)}</strong></div>
+                <div className="expedition-recap__reward">
+                  <span>Runes de faction créditées</span>
+                  <strong>{formatNumber(item.reward.runesCredited)}</strong>
                 </div>
               )}
             </article>
