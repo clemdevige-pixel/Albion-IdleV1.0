@@ -1,6 +1,7 @@
 import type { EntityId } from "@game/core";
 import type { DungeonRuntime, InventoryManager } from "@game/gameplay";
 import { getDungeonLootDefinition } from "../data/dungeonLootContentCatalog.js";
+import { applyPercentBonusRounded } from "./CombatRewardRuntime.js";
 
 export interface DungeonRewardDrop {
   readonly itemId: string;
@@ -25,7 +26,9 @@ export class DungeonRewardRuntime {
     private readonly random: () => number = Math.random,
   ) {}
 
-  processCurrentEncounterVictory(): DungeonEncounterRewardResult | undefined {
+  processCurrentEncounterVictory(
+    getFactionYieldBonusPercent: (factionId: string) => number = () => 0,
+  ): DungeonEncounterRewardResult | undefined {
     const run = this.dungeonRuntime.activeRun;
     const encounter = this.dungeonRuntime.getActiveEncounter();
     if (run === undefined || run.status !== "active" || encounter === undefined) return undefined;
@@ -36,14 +39,19 @@ export class DungeonRewardRuntime {
     }
 
     const lootDefinition = getDungeonLootDefinition(dungeonDefinition.lootTableId);
+    const factionYieldBonusPercent = getFactionYieldBonusPercent(lootDefinition.faction);
     const encounterLoot = lootDefinition.encounters[encounter.kind];
     const drops: DungeonRewardDrop[] = [];
 
-    if (encounterLoot.artifactFragmentQuantity > 0) {
+    const artifactFragmentQuantity = applyPercentBonusRounded(
+      encounterLoot.artifactFragmentQuantity,
+      factionYieldBonusPercent,
+    );
+    if (artifactFragmentQuantity > 0) {
       const added = this.inventoryManager.addQuantity(
         this.heroId,
         lootDefinition.artifactFragmentItemId,
-        encounterLoot.artifactFragmentQuantity,
+        artifactFragmentQuantity,
       );
       if (added.ok && added.value.added > 0) {
         drops.push({
@@ -54,11 +62,15 @@ export class DungeonRewardRuntime {
       }
     }
 
-    if (encounterLoot.enchantmentShardQuantity > 0) {
+    const enchantmentShardQuantity = applyPercentBonusRounded(
+      encounterLoot.enchantmentShardQuantity,
+      factionYieldBonusPercent,
+    );
+    if (enchantmentShardQuantity > 0) {
       const added = this.inventoryManager.addQuantity(
         this.heroId,
         lootDefinition.enchantmentShardItemId,
-        encounterLoot.enchantmentShardQuantity,
+        enchantmentShardQuantity,
       );
       if (added.ok && added.value.added > 0) {
         drops.push({
@@ -69,7 +81,9 @@ export class DungeonRewardRuntime {
       }
     }
 
-    if (encounterLoot.artifactDropChance > 0 && this.random() < encounterLoot.artifactDropChance) {
+    const artifactDropChance = encounterLoot.artifactDropChance
+      * (1 + Math.max(0, factionYieldBonusPercent) / 100);
+    if (artifactDropChance > 0 && this.random() < Math.min(1, artifactDropChance)) {
       const added = this.inventoryManager.addQuantity(this.heroId, lootDefinition.artifactItemId, 1);
       if (added.ok && added.value.added > 0) {
         drops.push({ itemId: lootDefinition.artifactItemId, kind: "artifact", quantity: added.value.added });
@@ -81,7 +95,9 @@ export class DungeonRewardRuntime {
       dungeonDefinitionId: run.definitionId,
       encounterId: encounter.id,
       drops,
-      completionSilver: finalEncounter?.id === encounter.id ? lootDefinition.completionSilver : 0,
+      completionSilver: finalEncounter?.id === encounter.id
+        ? applyPercentBonusRounded(lootDefinition.completionSilver, factionYieldBonusPercent)
+        : 0,
     };
   }
 }
