@@ -24,6 +24,10 @@ export interface ProjectedMasteryEntry {
   readonly level: number;
 }
 
+/**
+ * Low-level deterministic calculator. Presentation/runtime callers should use
+ * projectedRateResolver so this complete context is authored in one place.
+ */
 export interface CalculateProjectedRateInput {
   readonly physicalDamage: number;
   readonly magicalDamage: number;
@@ -31,10 +35,10 @@ export interface CalculateProjectedRateInput {
   readonly equippedWeaponId?: string | undefined;
   readonly primaryAbilityAutoCast: boolean;
   readonly currentZoneIndex: number;
-  readonly currentZoneDefId?: ZoneDefinitionId | undefined;
-  readonly currentWorldBandId?: WorldBandId | undefined;
+  readonly currentZoneDefId: ZoneDefinitionId;
+  readonly currentWorldBandId: WorldBandId;
   readonly currentSegment: number;
-  readonly masteries?: readonly ProjectedMasteryEntry[] | undefined;
+  readonly masteries: readonly ProjectedMasteryEntry[];
 }
 
 export interface ProjectedSegmentRates {
@@ -55,9 +59,9 @@ export function calculateProjectedSegmentRates(
     primaryAbilityAutoCast,
     currentZoneIndex,
     currentZoneDefId,
-    currentWorldBandId = "blue",
+    currentWorldBandId,
     currentSegment,
-    masteries = [],
+    masteries,
   } = input;
 
   const attackSpeed = Math.max(0.001, rawAttackSpeed);
@@ -124,14 +128,12 @@ export function calculateProjectedSegmentRates(
     projectedSeconds += enemy.hp / Math.max(1, projectedDps);
     projectedSeconds += 1;
 
-    const factionYieldBonusPercent = currentZoneDefId === undefined
-      ? 0
-      : getProjectedFactionYieldBonusPercent(
-          currentZoneDefId,
-          currentSegment,
-          encounterIndex,
-          masteries,
-        );
+    const factionYieldBonusPercent = getProjectedFactionYieldBonusPercent(
+      currentZoneDefId,
+      currentSegment,
+      encounterIndex,
+      masteries,
+    );
     const yieldMultiplier = 1 + factionYieldBonusPercent / 100;
     const rewards = getEncounterRewards(
       currentZoneIndex,
