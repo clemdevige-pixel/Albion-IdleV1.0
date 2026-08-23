@@ -6,6 +6,7 @@ import type {
   PostMitigationDamageResolver,
 } from "@game/gameplay";
 import { resolveFactionCapeDungeonDamageReductionPercent } from "../../data/factionCapeContentCatalog.js";
+import { resolveArtifactDungeonDamageBonusPercent } from "../../data/weaponContentCatalog.js";
 
 export interface FactionCapeFoundationDependencies {
   readonly damageManager: DamageManager;
@@ -14,6 +15,11 @@ export interface FactionCapeFoundationDependencies {
   readonly heroId: EntityId;
 }
 
+/**
+ * Single faction-dungeon damage resolver. It composes all authored faction
+ * modifiers that operate after mitigation so no feature can overwrite another
+ * DamageManager resolver.
+ */
 export function createFactionCapeFoundation(
   dependencies: FactionCapeFoundationDependencies,
 ) {
@@ -21,27 +27,42 @@ export function createFactionCapeFoundation(
     request,
     mitigatedDamage,
   ) => {
-    if (request.target !== dependencies.heroId) return mitigatedDamage;
-
     const run = dependencies.dungeonRuntime.activeRun;
     if (run?.status !== "active") return mitigatedDamage;
-
     const dungeon = dependencies.dungeonRuntime.getDefinition(run.definitionId);
     if (dungeon === undefined) return mitigatedDamage;
 
-    const equippedCape = dependencies.equipmentManager.getEquippedItem(
-      dependencies.heroId,
-      "cape",
-    );
-    if (equippedCape === undefined) return mitigatedDamage;
+    let resolvedDamage = mitigatedDamage;
 
-    const reductionPercent = resolveFactionCapeDungeonDamageReductionPercent(
-      equippedCape.itemId,
-      { factionId: dungeon.faction, tier: dungeon.tier },
-    );
-    if (reductionPercent <= 0) return mitigatedDamage;
+    if (request.source === dependencies.heroId) {
+      const equippedWeapon = dependencies.equipmentManager.getEquippedItem(
+        dependencies.heroId,
+        "weapon",
+      );
+      if (equippedWeapon !== undefined) {
+        const bonusPercent = resolveArtifactDungeonDamageBonusPercent(
+          equippedWeapon.itemId,
+          dungeon.faction,
+        );
+        if (bonusPercent > 0) resolvedDamage *= 1 + bonusPercent / 100;
+      }
+    }
 
-    return mitigatedDamage * (1 - reductionPercent / 100);
+    if (request.target === dependencies.heroId) {
+      const equippedCape = dependencies.equipmentManager.getEquippedItem(
+        dependencies.heroId,
+        "cape",
+      );
+      if (equippedCape !== undefined) {
+        const reductionPercent = resolveFactionCapeDungeonDamageReductionPercent(
+          equippedCape.itemId,
+          { factionId: dungeon.faction, tier: dungeon.tier },
+        );
+        if (reductionPercent > 0) resolvedDamage *= 1 - reductionPercent / 100;
+      }
+    }
+
+    return resolvedDamage;
   };
 
   dependencies.damageManager.setPostMitigationDamageResolver(resolvePostMitigationDamage);
