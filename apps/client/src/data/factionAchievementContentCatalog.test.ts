@@ -5,7 +5,7 @@ import {
 } from "./factionAchievementContentCatalog.js";
 
 describe("factionAchievementContentCatalog", () => {
-  it("authors exactly 14 milestones per faction plus 5 global Expedition milestones", () => {
+  it("authors exactly 12 milestones per faction plus 5 global Expedition milestones", () => {
     expect(FACTION_ACHIEVEMENT_FACTIONS.map((entry) => entry.id)).toEqual([
       "keeper",
       "heretic",
@@ -15,15 +15,15 @@ describe("factionAchievementContentCatalog", () => {
     for (const faction of FACTION_ACHIEVEMENT_FACTIONS) {
       expect(FACTION_ACHIEVEMENT_DEFINITIONS.filter(
         (definition) => definition.factionId === faction.id,
-      )).toHaveLength(14);
+      )).toHaveLength(12);
     }
     expect(FACTION_ACHIEVEMENT_DEFINITIONS.filter(
       (definition) => definition.group === "expedition",
     )).toHaveLength(5);
-    expect(FACTION_ACHIEVEMENT_DEFINITIONS).toHaveLength(61);
+    expect(FACTION_ACHIEVEMENT_DEFINITIONS).toHaveLength(53);
   });
 
-  it("locks the validated kill, elite, expedition, dungeon and mastery thresholds", () => {
+  it("locks the validated kill, elite, dungeon and mastery thresholds", () => {
     const keeper = FACTION_ACHIEVEMENT_DEFINITIONS.filter(
       (definition) => definition.factionId === "keeper",
     );
@@ -35,10 +35,6 @@ describe("factionAchievementContentCatalog", () => {
       .map((definition) => definition.condition.type === "faction_elite_kill_count"
         ? definition.condition.minimum
         : undefined)).toEqual([3, 25]);
-    expect(keeper.filter((definition) => definition.condition.type === "faction_expedition_completed_count")
-      .map((definition) => definition.condition.type === "faction_expedition_completed_count"
-        ? definition.condition.minimum
-        : undefined)).toEqual([1, 10]);
     expect(keeper.filter((definition) => definition.condition.type === "faction_dungeon_completed_count")
       .map((definition) => definition.condition.type === "faction_dungeon_completed_count"
         ? definition.condition.minimum
@@ -47,6 +43,12 @@ describe("factionAchievementContentCatalog", () => {
       .map((definition) => definition.condition.type === "faction_mastery_level"
         ? definition.condition.minimum
         : undefined)).toEqual([25, 50, 75, 100]);
+  });
+
+  it("does not author faction-specific Expedition milestones now that Expeditions are shared", () => {
+    expect(FACTION_ACHIEVEMENT_DEFINITIONS.some(
+      (definition) => definition.id.endsWith("_explorer") || definition.id.endsWith("_expeditionary"),
+    )).toBe(false);
   });
 
   it("locks the 5 validated global Expedition conditions", () => {
