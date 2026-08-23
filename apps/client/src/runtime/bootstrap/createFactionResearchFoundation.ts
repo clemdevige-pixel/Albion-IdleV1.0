@@ -69,7 +69,7 @@ export function createFactionResearchFoundation(
       ensureInventoryMirror();
     },
     recordMonsterKill(kill: RelicKillEvent): readonly string[] {
-      const result = factionKnowledgeService.recordKill(kill.monsterId);
+      const result = factionKnowledgeService.recordKill(kill.monsterId, kill.contextId);
       if (!result.ok) return [];
       return relicService.recordMonsterKill(
         kill,
