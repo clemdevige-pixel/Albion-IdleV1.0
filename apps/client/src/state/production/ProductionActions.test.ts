@@ -34,6 +34,7 @@ function createHarness(loopState: CombatLoopState = "combat") {
     productionBridge: productionBridge as never,
     getCurrentTick: () => 42,
     getCombatLoopState: () => loopState,
+    getGatheringTier: () => 3,
     prepareCombatResumeAfterGathering,
   });
 
