@@ -1,6 +1,7 @@
 import type { EquipmentInfoLike } from "@game/gameplay";
 import type { ClientCraftRecipe } from "./specialCraftRecipes.js";
 import type { ProductionTier } from "./productionFamilyCatalog.js";
+import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { getClothRecipe, getLeatherRecipe } from "./refiningRecipes.js";
 
 type FactionCapeTier = Exclude<ProductionTier, 3>;
@@ -58,7 +59,7 @@ export const FACTION_CAPE_CONTENT: readonly FactionCapeContentDefinition[] = FAC
       stat_armor: entry.armor,
       stat_magic_resistance: entry.magicResistance,
     },
-    runeItemId: `item_resource_rune_${faction.factionId}_t${String(entry.tier)}`,
+    runeItemId: getFactionRuneItemId(entry.tier),
     runeQuantity: entry.runes,
     clothQuantity: entry.cloth,
     leatherQuantity: entry.leather,
