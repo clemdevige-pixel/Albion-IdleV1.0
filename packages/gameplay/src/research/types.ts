@@ -45,14 +45,14 @@ export type StartResearchResult =
     readonly reason:
       | "research_not_found"
       | "already_completed"
-      | "research_slot_occupied"
+      | "already_active"
       | "requirements_not_met"
       | "payment_failed";
   };
 
 export interface ResearchAdvanceResult {
-  readonly completedResearchId: ResearchId | undefined;
-  readonly activeResearch: ActiveResearchState | undefined;
+  readonly completedResearchIds: readonly ResearchId[];
+  readonly activeResearches: readonly ActiveResearchState[];
 }
 
 export interface ResearchRequirementPort<
