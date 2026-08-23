@@ -37,6 +37,7 @@ const DEFAULT_STATS: readonly StatDefinition[] = [
   { id: "stat_cooldown_reduction" as StatId, min: 0, max: 99.999, defaultBase: 0 },
   { id: "stat_auto_attack_damage_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_auto_attack_damage_taken_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
+  { id: "stat_damage_taken_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_life_steal" as StatId, min: 0, max: 5, defaultBase: 0 },
 ];
 
