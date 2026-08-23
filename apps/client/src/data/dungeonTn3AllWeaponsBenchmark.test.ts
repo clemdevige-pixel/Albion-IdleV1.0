@@ -21,6 +21,15 @@ const BENCHMARK_MODES: readonly BenchmarkMode[] = [
   { cape: "faction", potion: true },
 ];
 
+/** Temporary benchmark-only candidates. Authored weapon data is unchanged. */
+const DAMAGE_MULTIPLIER_BY_FAMILY: Readonly<Record<WeaponFamily, number>> = {
+  broadsword: 1,
+  longbow: 0.93,
+  infernal: 1.08,
+  spiked: 1,
+  dual_dagger: 1.05,
+};
+
 const EXPECTED_CAPE_REDUCTION_BY_TIER: Readonly<Record<Tier, number>> = {
   4: 6,
   5: 8,
@@ -82,6 +91,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       faction: string;
       dungeon: string;
       weapon: WeaponFamily;
+      damageMultiplier: number;
       cape: CapeMode;
       potion: boolean;
       mastery: number;
@@ -106,6 +116,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       for (const dungeon of dungeons) {
         for (const family of FAMILIES) {
           for (const mode of BENCHMARK_MODES) {
+            const damageMultiplier = DAMAGE_MULTIPLIER_BY_FAMILY[family];
             const result = runCombatRuntimeBenchmark({
               label: `${dungeon.id}:${family}:${modeLabel(mode)}:t${tier}.3`,
               weaponItemId: weaponId(tier, family),
@@ -116,6 +127,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
               enchantment: 3,
               masteryLevel: MASTERY_BY_TIER[tier],
               useHealthPotions: mode.potion,
+              heroDamageMultiplier: damageMultiplier,
             });
 
             rows.push({
@@ -123,6 +135,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
               faction: dungeon.faction,
               dungeon: dungeon.id,
               weapon: family,
+              damageMultiplier,
               cape: mode.cape,
               potion: mode.potion,
               mastery: MASTERY_BY_TIER[tier],
@@ -224,6 +237,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       return {
         tier,
         weapon,
+        damageAdjustPct: round1((DAMAGE_MULTIPLIER_BY_FAMILY[weapon] - 1) * 100),
         cape: mode.cape,
         potion: mode.potion,
         clears: `${cleared.length}/${weaponRows.length}`,
@@ -260,6 +274,8 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       Number.isFinite(row.seconds)
       && Number.isFinite(row.observedDps)
       && Number.isFinite(row.incomingDps)
+      && Number.isFinite(row.damageMultiplier)
+      && row.damageMultiplier > 0
       && row.encounterProgressPct >= 0
       && row.encounterProgressPct <= 100
       && row.bossProgressPct >= 0
