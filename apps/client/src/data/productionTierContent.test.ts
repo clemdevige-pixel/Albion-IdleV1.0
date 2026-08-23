@@ -18,6 +18,23 @@ describe("production tier content contract", () => {
     }
   });
 
+  it("keeps the validated mastery-0 worker cycle curve from T3 to T8", () => {
+    const workerTaskBaseTicks = 60;
+    const expectedDurations = new Map<number, number>([
+      [3, 60],
+      [4, 72],
+      [5, 84],
+      [6, 96],
+      [7, 108],
+      [8, 120],
+    ]);
+
+    for (const [tier, expectedDuration] of expectedDurations) {
+      const rules = getProductionTierRules(tier as 3 | 4 | 5 | 6 | 7 | 8);
+      expect(Math.ceil(workerTaskBaseTicks / rules.workerSpeedModifier)).toBe(expectedDuration);
+    }
+  });
+
   it("keeps every authored refining tier complete without requiring craft rollout", () => {
     expect(REFINING_CONTENT_TIERS).toContain(8);
     for (const familyId of PRODUCTION_FAMILY_IDS) {
