@@ -2,6 +2,16 @@ import {
   ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
   KEY_FRAGMENTS_PER_KEY,
 } from "./economyContentCatalog.js";
+import {
+  DUNGEON_ARTIFACT_FACTIONS,
+  DUNGEON_ARTIFACT_TIERS,
+  getDungeonArtifactFragmentItemId,
+  getDungeonArtifactItemId,
+} from "./dungeonArtifactContentCatalog.js";
+import {
+  getDungeonKeyFragmentItemId,
+  getDungeonKeyItemId,
+} from "./dungeonKeyContentCatalog.js";
 import { FACTION_CAPE_CRAFT_RECIPES } from "./factionCapeContentCatalog.js";
 import { EQUIPMENT_CRAFT_RECIPES } from "./refiningRecipes.js";
 
@@ -15,44 +25,49 @@ export interface ClientCraftRecipe {
   readonly requirements: readonly { itemId: string; quantity: number }[];
 }
 
-const BLUE_ZONE_FACTION_CRAFTING = [
-  { id: "animal", name: "Animal", tier: 3 },
-  { id: "undead", name: "Undead", tier: 3 },
-  { id: "morgana", name: "Morgana", tier: 3 },
-  { id: "keeper", name: "Keeper", tier: 4 },
-  { id: "heretic", name: "Heretic", tier: 4 },
-] as const;
+const FACTION_DISPLAY_NAMES = {
+  keeper: "Keeper",
+  heretic: "Hérétique",
+  undead: "Mort-vivant",
+  morgana: "Morgana",
+} as const;
 
-export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = BLUE_ZONE_FACTION_CRAFTING.flatMap((faction) => [
-  {
-    id: `CRAFT_DUNGEON_KEY_${faction.id.toUpperCase()}`,
-    family: "other_key",
-    name: `Clé de donjon · ${faction.name}`,
-    tier: faction.tier,
-    outputItemId: `item_resource_dungeon_key_${faction.id}`,
-    durationTicks: 0,
-    requirements: [
-      {
-        itemId: `item_resource_key_fragment_${faction.id}`,
-        quantity: KEY_FRAGMENTS_PER_KEY,
-      },
-    ],
-  },
-  {
-    id: `CRAFT_ARTIFACT_${faction.id.toUpperCase()}`,
+const DUNGEON_KEY_CRAFT_RECIPES: readonly ClientCraftRecipe[] = DUNGEON_ARTIFACT_TIERS.map((tier) => ({
+  id: `CRAFT_DUNGEON_KEY_T${String(tier)}`,
+  family: "other_key",
+  name: `Clé de donjon T${String(tier)}`,
+  tier,
+  outputItemId: getDungeonKeyItemId(tier),
+  durationTicks: 0,
+  requirements: [
+    {
+      itemId: getDungeonKeyFragmentItemId(tier),
+      quantity: KEY_FRAGMENTS_PER_KEY,
+    },
+  ],
+}));
+
+const DUNGEON_ARTIFACT_CRAFT_RECIPES: readonly ClientCraftRecipe[] = DUNGEON_ARTIFACT_TIERS.flatMap((tier) => (
+  DUNGEON_ARTIFACT_FACTIONS.map((faction) => ({
+    id: `CRAFT_ARTIFACT_${faction.toUpperCase()}_T${String(tier)}`,
     family: "other_artifact",
-    name: `Artefact · ${faction.name}`,
-    tier: faction.tier,
-    outputItemId: `item_resource_artifact_${faction.id}`,
+    name: `Artefact ${FACTION_DISPLAY_NAMES[faction]} T${String(tier)}`,
+    tier,
+    outputItemId: getDungeonArtifactItemId(faction, tier),
     durationTicks: 0,
     requirements: [
       {
-        itemId: `item_resource_artifact_fragment_${faction.id}`,
+        itemId: getDungeonArtifactFragmentItemId(faction, tier),
         quantity: ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
       },
     ],
-  },
-]);
+  }))
+));
+
+export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
+  ...DUNGEON_KEY_CRAFT_RECIPES,
+  ...DUNGEON_ARTIFACT_CRAFT_RECIPES,
+];
 
 export const ALL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
   ...EQUIPMENT_CRAFT_RECIPES,
