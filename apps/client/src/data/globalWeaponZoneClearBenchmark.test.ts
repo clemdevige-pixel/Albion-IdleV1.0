@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
+import { resolveCandidateRuntimeDamageTuning } from "./candidateWeaponBalanceBenchmark.js";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_CONTENT } from "./worldContentCatalog.js";
 
@@ -98,8 +99,8 @@ function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
-describe("global live weapon zone clear benchmark", () => {
-  it("reuses the live runtime benchmark to compare Dual Dagger against every baseline weapon in every world zone", () => {
+describe("global candidate weapon zone clear benchmark", () => {
+  it("reuses the live runtime benchmark with benchmark-only candidate tuning across every world zone", () => {
     const detail: Array<{
       zone: string;
       band: string;
@@ -131,6 +132,7 @@ describe("global live weapon zone clear benchmark", () => {
             masteryLevel: profile.mastery,
             enchantment: profile.enchantment,
             useHealthPotions: false,
+            damageTuning: resolveCandidateRuntimeDamageTuning(weaponItemId),
           });
 
           if (!result.clear) break;
