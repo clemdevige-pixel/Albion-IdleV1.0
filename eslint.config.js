@@ -32,6 +32,11 @@ export default tseslint.config(
       "**/vitest.workspace.ts",
       "scripts/**/*.{js,mjs,cjs,ts}",
     ],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+      },
+    },
     ...tseslint.configs.disableTypeChecked,
   },
   prettier,
