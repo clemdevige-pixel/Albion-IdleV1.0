@@ -52,8 +52,9 @@ export function ExpeditionRecapPopup({
 
               {item.reward.kind === "silver" ? (
                 <div className="expedition-recap__reward">
-                  <span>Silver crédité</span>
-                  <strong>{formatNumber(item.reward.silverCredited)}</strong>
+                  <div><span>Résultat</span><strong>{QUALITY_LABELS[item.reward.quality]}</strong></div>
+                  <div><span>Silver</span><strong>{formatNumber(item.reward.silverCredited)}</strong></div>
+                  <div><span>Éclats d’enchantement</span><strong>{formatNumber(item.reward.shardsCredited)}</strong></div>
                 </div>
               ) : (
                 <div className="expedition-recap__reward">
