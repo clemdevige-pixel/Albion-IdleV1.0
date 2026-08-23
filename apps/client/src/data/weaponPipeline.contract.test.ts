@@ -45,7 +45,7 @@ function makeMasteryVm(definition: (typeof WEAPON_MASTERY_DEFINITIONS)[number]) 
 }
 
 describe("weapon pipeline contract", () => {
-  it("keeps every declared weapon connected to all generic runtime/content boundaries", () => {
+  it("keeps every declared weapon connected to its required generic runtime/content boundaries", () => {
     expect(WEAPON_ITEM_IDS.length).toBeGreaterThan(0);
 
     for (const itemId of WEAPON_ITEM_IDS) {
@@ -63,88 +63,64 @@ describe("weapon pipeline contract", () => {
 
       expect(tier, `${itemId}: tier`).toBeDefined();
       expect(getItemPower(itemId), `${itemId}: item power`).toBeDefined();
-
       expect(equipment, `${itemId}: equipment`).toBeDefined();
       expect(equipment?.slot, `${itemId}: weapon slot`).toBe("weapon");
-
       expect(familyId, `${itemId}: family`).toBeDefined();
       expect(familyId === undefined ? undefined : WEAPON_FAMILIES[familyId], `${itemId}: family definition`).toBeDefined();
       expect(mastery, `${itemId}: mastery route`).toBeDefined();
-      expect(
-        WEAPON_MASTERY_DEFINITIONS.some((definition) => definition.id === mastery?.familyId),
-        `${itemId}: family mastery definition`,
-      ).toBe(true);
-      expect(
-        WEAPON_MASTERY_DEFINITIONS.some((definition) => definition.id === mastery?.weaponId),
-        `${itemId}: specialization mastery definition`,
-      ).toBe(true);
-
+      expect(WEAPON_MASTERY_DEFINITIONS.some((definition) => definition.id === mastery?.familyId), `${itemId}: family mastery definition`).toBe(true);
+      expect(WEAPON_MASTERY_DEFINITIONS.some((definition) => definition.id === mastery?.weaponId), `${itemId}: specialization mastery definition`).toBe(true);
       expect(resolveWeaponCombatProfile(itemId), `${itemId}: combat profile`).toBeDefined();
       expect(resolveWeaponAttackSpeed(itemId), `${itemId}: attack speed`).toBeGreaterThan(0);
       expect(abilityId, `${itemId}: primary ability route`).toBeDefined();
       expect(abilityId === undefined ? undefined : CLIENT_ABILITIES[abilityId], `${itemId}: primary ability definition`).toBeDefined();
-
       expect(vendorOffers, `${itemId}: vendor offer count`).toHaveLength(1);
-      expect(recipes, `${itemId}: craft recipe count`).toHaveLength(1);
       expect(craftRule, `${itemId}: craft rule`).toBeDefined();
 
-      expect(presentation, `${itemId}: equipment presentation`).toBeDefined();
-      expect(presentation?.itemIcon.length ?? 0, `${itemId}: item icon`).toBeGreaterThan(0);
-      expect(presentation?.actorManifestId.length ?? 0, `${itemId}: actor manifest`).toBeGreaterThan(0);
-      expect(presentation?.combatProfileId.length ?? 0, `${itemId}: presentation combat profile`).toBeGreaterThan(0);
+      if (craftRule?.kind === "standard") {
+        expect(recipes, `${itemId}: standard craft recipe count`).toHaveLength(1);
+        expect(STANDARD_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === itemId), `${itemId}: standard generator membership`).toBe(true);
+        const weaponRequirements = recipes[0]?.requirements.filter((requirement) => requirement.itemId.startsWith("item_weapon_")) ?? [];
+        expect(weaponRequirements, `${itemId}: no equipment predecessor requirement`).toHaveLength(0);
+      } else if (craftRule?.kind === "artifact_pending") {
+        // Artifact acquisition/crafting is intentionally authored later from the
+        // faction-research contract. Existing temporary recipes (Badon T4) may
+        // remain, but new combat content must not be forced into fake recipes.
+        expect(recipes.length, `${itemId}: pending artifact recipe count`).toBeLessThanOrEqual(1);
+        expect(STANDARD_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === itemId), `${itemId}: artifact weapon must stay outside standard generator`).toBe(false);
+      }
+
+      // Combat content may land before its final art asset. Never invent a
+      // placeholder presentation merely to satisfy a data contract.
+      if (presentation !== undefined) {
+        expect(presentation.itemIcon.length, `${itemId}: item icon`).toBeGreaterThan(0);
+        expect(presentation.actorManifestId.length, `${itemId}: actor manifest`).toBeGreaterThan(0);
+        expect(presentation.combatProfileId.length, `${itemId}: presentation combat profile`).toBeGreaterThan(0);
+      } else {
+        expect(craftRule?.kind, `${itemId}: only pending artifacts may lack presentation`).toBe("artifact_pending");
+      }
 
       expect(repairable?.equipmentCategory, `${itemId}: repair recognition`).toBe("weapon");
       expect(repairable?.itemTier, `${itemId}: repair tier`).toBe(tier);
-
       expect(enchantment?.itemTier, `${itemId}: enchantment tier`).toBe(tier);
-      if (tier === 3) {
-        expect(enchantment?.enchantable, `${itemId}: T3 must not be enchantable`).toBe(false);
-      } else {
-        expect(enchantment?.enchantable, `${itemId}: T${String(tier)} must be enchantable`).toBe(true);
-      }
-
-      if (craftRule?.kind === "standard") {
-        expect(
-          STANDARD_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === itemId),
-          `${itemId}: standard generator membership`,
-        ).toBe(true);
-
-        const weaponRequirements = recipes[0]?.requirements.filter((requirement) =>
-          requirement.itemId.startsWith("item_weapon_"),
-        ) ?? [];
-        expect(weaponRequirements, `${itemId}: no equipment predecessor requirement`).toHaveLength(0);
-      } else if (craftRule?.kind === "artifact_pending") {
-        expect(
-          STANDARD_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === itemId),
-          `${itemId}: artifact weapon must stay outside standard generator`,
-        ).toBe(false);
-      }
+      if (tier === 3) expect(enchantment?.enchantable, `${itemId}: T3 must not be enchantable`).toBe(false);
+      else expect(enchantment?.enchantable, `${itemId}: T${String(tier)} must be enchantable`).toBe(true);
     }
   });
 
   it("keeps every weapon family and specialization representable in the Masteries UI model", () => {
     const model = buildMasteriesModel({
-      progression: {
-        totalFame: 0,
-        overflowPool: 0,
-        masteries: WEAPON_MASTERY_DEFINITIONS.map(makeMasteryVm),
-      },
+      progression: { totalFame: 0, overflowPool: 0, masteries: WEAPON_MASTERY_DEFINITIONS.map(makeMasteryVm) },
       workers: { capacity: 0, professionCapacity: 0, recruitmentCost: 0, workers: [] },
     });
-
     const combatById = new Map(model.categories.combat.map((family) => [family.id, family]));
-
     for (const definition of getWeaponMasteryFamilyDefinitions()) {
       const family = combatById.get(definition.masteryId);
-
       expect(family, `${definition.familyId}: Masteries family`).toBeDefined();
       expect(family?.name, `${definition.familyId}: family display name`).toBe(WEAPON_FAMILIES[definition.familyId].name);
       expect(family?.iconAsset, `${definition.familyId}: family icon asset`).toBeDefined();
       expect(family?.iconAsset?.length ?? 0, `${definition.familyId}: family icon asset path`).toBeGreaterThan(0);
-      expect(
-        family?.specializations.map((specialization) => specialization.id).sort(),
-        `${definition.familyId}: specialization topology`,
-      ).toEqual([...definition.specializationMasteryIds].sort());
+      expect(family?.specializations.map((specialization) => specialization.id).sort(), `${definition.familyId}: specialization topology`).toEqual([...definition.specializationMasteryIds].sort());
     }
   });
 });
