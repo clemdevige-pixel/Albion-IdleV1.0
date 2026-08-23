@@ -3,6 +3,13 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import prettier from "eslint-config-prettier";
 
+const standaloneFiles = [
+  "**/*.config.{js,ts}",
+  "**/*.config.*.{js,ts}",
+  "**/vitest.workspace.ts",
+  "scripts/**/*.{js,mjs,cjs,ts}",
+];
+
 export default tseslint.config(
   {
     ignores: ["**/dist/**", "**/node_modules/**", "**/*.tsbuildinfo", "AI_BIBLE/**", "coverage/**"],
@@ -26,18 +33,16 @@ export default tseslint.config(
   },
   {
     // Config and standalone script files are not part of the typed project graph.
-    files: [
-      "**/*.config.{js,ts}",
-      "**/*.config.*.{js,ts}",
-      "**/vitest.workspace.ts",
-      "scripts/**/*.{js,mjs,cjs,ts}",
-    ],
+    files: standaloneFiles,
+    ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ["scripts/**/*.{js,mjs,cjs,ts}"],
     languageOptions: {
       globals: {
         process: "readonly",
       },
     },
-    ...tseslint.configs.disableTypeChecked,
   },
   prettier,
 );
