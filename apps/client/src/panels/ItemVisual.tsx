@@ -111,6 +111,34 @@ function getTieredDungeonKeyVisual(itemId: string): SpecialLootVisualDefinition 
   return undefined;
 }
 
+function getTieredArtifactVisual(itemId: string): SpecialLootVisualDefinition | undefined {
+  const fragmentMatch = itemId.match(/^item_resource_artifact_fragment_(heretic|keeper|morgana|undead)(?:_t([5-8]))?$/);
+  if (fragmentMatch !== null) {
+    const factionId = fragmentMatch[1];
+    if (factionId === undefined) return undefined;
+    const tier = fragmentMatch[2] === undefined ? 4 : Number(fragmentMatch[2]);
+    return {
+      name: `Fragment d’artefact ${formatFactionName(factionId)} T${String(tier)}`,
+      className: "artifact-fragment",
+      icon: `artifact-fragment-${factionId}.png`,
+    };
+  }
+
+  const artifactMatch = itemId.match(/^item_resource_artifact_(heretic|keeper|morgana|undead)(?:_t([5-8]))?$/);
+  if (artifactMatch !== null) {
+    const factionId = artifactMatch[1];
+    if (factionId === undefined) return undefined;
+    const tier = artifactMatch[2] === undefined ? 4 : Number(artifactMatch[2]);
+    return {
+      name: `Artefact ${formatFactionName(factionId)} T${String(tier)}`,
+      className: "artifact",
+      icon: `artifact-${factionId}.png`,
+    };
+  }
+
+  return undefined;
+}
+
 function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition | undefined {
   const relic = getRelicDefinitionByInventoryItemId(itemId);
   if (relic !== undefined) {
@@ -123,6 +151,9 @@ function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition
 
   const tieredDungeonKey = getTieredDungeonKeyVisual(itemId);
   if (tieredDungeonKey !== undefined) return tieredDungeonKey;
+
+  const tieredArtifact = getTieredArtifactVisual(itemId);
+  if (tieredArtifact !== undefined) return tieredArtifact;
 
   const artifactFragmentPrefix = "item_resource_artifact_fragment_";
   if (itemId.startsWith(artifactFragmentPrefix)) {
