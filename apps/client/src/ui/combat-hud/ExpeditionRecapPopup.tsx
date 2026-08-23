@@ -10,6 +10,13 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat("fr-FR").format(value);
 }
 
+const QUALITY_LABELS = {
+  difficile: "Difficile",
+  reussie: "Réussie",
+  fructueuse: "Fructueuse",
+  exceptionnelle: "Exceptionnelle",
+} as const;
+
 export function ExpeditionRecapPopup({
   recap,
   onDismiss,
@@ -50,8 +57,10 @@ export function ExpeditionRecapPopup({
                 </div>
               ) : (
                 <div className="expedition-recap__reward">
-                  <span>Runes de faction créditées</span>
-                  <strong>{formatNumber(item.reward.runesCredited)}</strong>
+                  <div><span>Résultat</span><strong>{QUALITY_LABELS[item.reward.quality]}</strong></div>
+                  <div><span>Runes de faction</span><strong>{formatNumber(item.reward.runesCredited)}</strong></div>
+                  <div><span>Fragments de clé</span><strong>{formatNumber(item.reward.fragmentsCredited)}</strong></div>
+                  <div><span>Clés complètes</span><strong>{formatNumber(item.reward.completeKeysCredited)}</strong></div>
                 </div>
               )}
             </article>
