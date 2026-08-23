@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import { resolveEquipmentInfo } from "./itemContentCatalog.js";
-import { WORLD_ZONE_CONTENT } from "./worldContentCatalog.js";
+import { WORLD_ZONE_CONTENT, getWorldZonePlacement } from "./worldContentCatalog.js";
 import {
   BASE_COMBAT_DROP_RATES,
   BOSS_SPECIAL_DROP_MULTIPLIER,
@@ -118,14 +118,15 @@ describe("Dungeon key world-drop calibration benchmark", () => {
       const profile = TIER_PROFILE[tier];
       const zones = zonesForTier(tier);
 
-      zones.forEach((zone, zoneIndex) => {
+      zones.forEach((zone) => {
+        const placement = getWorldZonePlacement(zone.id);
         for (const segmentIndex of SEGMENT_SAMPLES) {
           const fragmentYields: number[] = [];
           const completeKeyYields: number[] = [];
           const killsPerHour: number[] = [];
           const keyDropWeight = getDungeonKeyProgressionWeight(
-            zone.bandId,
-            zoneIndex,
+            placement.bandId,
+            placement.zoneIndexWithinBand,
             segmentIndex,
           );
           const expectedFragmentsPerSegment = expectedDropsPerSegment(
@@ -165,7 +166,7 @@ describe("Dungeon key world-drop calibration benchmark", () => {
 
           rows.push({
             tier: `T${String(tier)}`,
-            zoneIndex: zoneIndex + 1,
+            zoneIndex: placement.zoneIndexWithinBand + 1,
             zone: zone.name,
             segment: segmentIndex + 1,
             clearWeapons: fragmentYields.length,
