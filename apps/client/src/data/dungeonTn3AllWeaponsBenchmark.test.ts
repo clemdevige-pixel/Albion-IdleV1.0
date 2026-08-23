@@ -79,19 +79,22 @@ function armorIds(
 
 function benchmarkDamageTuning(family: WeaponFamily): CombatRuntimeBenchmarkDamageTuning | undefined {
   if (family === "longbow") {
-    return { autoAttackMultiplier: 0.89 };
+    return { autoAttackMultiplier: 0.84 };
   }
   if (family === "infernal") {
     return {
-      directAbilityMultiplierById: { ability_fire_cataclysm: 1.1 },
+      directAbilityMultiplierById: {
+        ability_fire_fireball: 1.05,
+        ability_fire_cataclysm: 1.1,
+      },
       effectDamageMultiplier: 1.5,
     };
   }
   if (family === "dual_dagger") {
     return {
       directAbilityMultiplierById: {
-        ability_dagger_double_slash: 1.08,
-        ability_dagger_flurry: 1.08,
+        ability_dagger_double_slash: 1.1,
+        ability_dagger_flurry: 1.1,
       },
     };
   }
