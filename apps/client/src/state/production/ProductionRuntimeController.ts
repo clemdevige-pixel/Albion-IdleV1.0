@@ -138,7 +138,46 @@ export class ProductionRuntimeController {
   craftEquipment(outputItemId: string): boolean { return this.#actions.craftEquipment(outputItemId); }
 
   setGatheringTier(tier: ProductionTier): boolean {
+    const previousTier = this.#dependencies.getGatheringTier();
+    if (tier === previousTier) {
+      this.#bridgeAdapter.syncAllGathering();
+      return true;
+    }
+
+    const foundation = this.#dependencies.foundation;
+    const activeFamily = this.#families().find((family) => {
+      switch (family) {
+        case "Wood": return foundation.gatheringCoordinator.getActiveSession() !== undefined;
+        case "Ore": return foundation.oreGatheringCoordinator.getActiveSession() !== undefined;
+        case "Hide": return foundation.hideGatheringCoordinator.getActiveSession() !== undefined;
+        case "Fiber": return foundation.fiberGatheringCoordinator.getActiveSession() !== undefined;
+      }
+    });
+
+    if (activeFamily === undefined) {
+      this.#dependencies.setGatheringTier(tier);
+      this.#bridgeAdapter.syncAllGathering();
+      return true;
+    }
+
+    foundation.gatheringRuntime.stopAllGathering();
     this.#dependencies.setGatheringTier(tier);
+
+    const switched = foundation.gatheringRuntime.toggleGatheringFamily(
+      activeFamily,
+      this.#dependencies.getCurrentTick(),
+    );
+
+    if (switched.action !== "started") {
+      this.#dependencies.setGatheringTier(previousTier);
+      foundation.gatheringRuntime.toggleGatheringFamily(
+        activeFamily,
+        this.#dependencies.getCurrentTick(),
+      );
+      this.#bridgeAdapter.syncAllGathering();
+      return false;
+    }
+
     this.#bridgeAdapter.syncAllGathering();
     return true;
   }
