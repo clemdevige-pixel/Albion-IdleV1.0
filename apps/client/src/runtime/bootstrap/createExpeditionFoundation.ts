@@ -10,7 +10,6 @@ import {
   EXPEDITION_DEFINITIONS,
   getExpeditionDefinition,
   getFactionExpeditionBaseRuneReward,
-  getFactionExpeditionRuneReward,
   getSilverExpeditionReward,
   isFactionExpeditionDefinition,
   type ExpeditionContentRequirement,
@@ -28,11 +27,8 @@ export interface SilverExpeditionRewardSummary {
 
 export interface FactionRuneExpeditionRewardSummary {
   readonly kind: "faction_rune";
-  readonly factionId: string;
   readonly itemId: string;
-  readonly baseRunes: number;
-  readonly masteryBonusPercent: number;
-  readonly finalRunes: number;
+  readonly runesCredited: number;
 }
 
 export type ExpeditionRewardSummary =
@@ -45,7 +41,6 @@ export interface ExpeditionFoundationDependencies {
   readonly walletId: WalletId;
   readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
-  readonly getFactionYieldBonusPercent: (factionId: string) => number;
 }
 
 const FIRST_SLOT_UNLOCKS = [
@@ -107,51 +102,31 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
           return { kind: "silver", silverCredited: silver };
         }
 
-        const baseRunes = getFactionExpeditionBaseRuneReward(definition.id, durationMs);
-        const masteryBonusPercent = dependencies.getFactionYieldBonusPercent(
-          contentDefinition.factionId,
-        );
-        const finalRunes = getFactionExpeditionRuneReward(
-          definition.id,
-          durationMs,
-          masteryBonusPercent,
-        );
-        if (
-          baseRunes === undefined
-          || finalRunes === undefined
-          || !Number.isSafeInteger(finalRunes)
-          || finalRunes <= 0
-        ) {
+        const runes = getFactionExpeditionBaseRuneReward(definition.id, durationMs);
+        if (runes === undefined || !Number.isSafeInteger(runes) || runes <= 0) {
           throw new Error(`Invalid Faction Expedition reward: ${definition.id}`);
         }
 
         if (!dependencies.inventoryManager.canAcceptQuantity(
           dependencies.heroId,
           contentDefinition.reward.itemId,
-          finalRunes,
+          runes,
         )) {
           throw new Error(`Faction Expedition inventory capacity exceeded: ${definition.id}`);
         }
         const added = dependencies.inventoryManager.addQuantity(
           dependencies.heroId,
           contentDefinition.reward.itemId,
-          finalRunes,
+          runes,
         );
-        if (
-          !added.ok
-          || added.value.added !== finalRunes
-          || added.value.remainder !== 0
-        ) {
+        if (!added.ok || added.value.added !== runes || added.value.remainder !== 0) {
           throw new Error(`Faction Expedition Rune credit failed: ${definition.id}`);
         }
 
         return {
           kind: "faction_rune",
-          factionId: contentDefinition.factionId,
           itemId: contentDefinition.reward.itemId,
-          baseRunes,
-          masteryBonusPercent,
-          finalRunes,
+          runesCredited: runes,
         };
       },
     },
