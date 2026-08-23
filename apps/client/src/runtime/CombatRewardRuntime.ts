@@ -114,7 +114,7 @@ export class CombatRewardRuntime {
 
     let fameEarned: EnemyKilledRewardResult["fameEarned"];
     let attunementEarned: EnemyKilledRewardResult["attunementEarned"];
-    let finalCombatFame = factionAdjustedFame;
+    let finalCombatFame = 0;
     const equippedWeapon = this.equipmentManager.getEquippedItem(this.heroId, "weapon");
     const activeWeaponRoute = equippedWeapon === undefined
       ? undefined
@@ -233,7 +233,7 @@ export function rollFactionYieldBonusDrops(
   });
 }
 
-function rollExpectedQuantity(expectedQuantity: number, random: () => number): number {
+export function rollExpectedQuantity(expectedQuantity: number, random: () => number): number {
   const safeExpected = Math.max(0, expectedQuantity);
   const guaranteed = Math.floor(safeExpected);
   const fractional = safeExpected - guaranteed;
