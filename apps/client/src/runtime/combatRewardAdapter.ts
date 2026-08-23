@@ -12,6 +12,7 @@ import {
   getDungeonKeyProgressionWeight,
   getEnchantmentShardProgressionWeight,
 } from "../data/economyContentCatalog.js";
+import { getFactionRuneWorldDropChance } from "../data/factionRuneWorldDropContentCatalog.js";
 import { getMonsterDefinition } from "../data/monsterContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import {
@@ -55,6 +56,8 @@ function formatFactionName(factionId: string): string {
 function formatDropName(itemId: string): string {
   const enchantmentName = ENCHANTMENT_MATERIAL_NAMES[itemId];
   if (enchantmentName !== undefined) return enchantmentName;
+  const factionRuneMatch = itemId.match(/^item_resource_rune_faction_t(\d+)$/);
+  if (factionRuneMatch?.[1] !== undefined) return `Rune de faction T${factionRuneMatch[1]}`;
   const factionPrefixes = [
     "item_resource_artifact_fragment_", "item_resource_artifact_",
     "item_resource_dungeon_key_", "item_resource_key_fragment_",
@@ -72,6 +75,7 @@ function formatDropCategory(kind: string): string {
   if (kind === "key") return "Clé de donjon";
   if (kind === "key_fragment") return "Fragment de clé";
   if (kind === "enchantment") return "Enchantement";
+  if (kind === "faction_rune") return "Rune de faction";
   if (kind === "consumable") return "Consommable";
   return "Loot";
 }
@@ -162,6 +166,9 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
     const dungeonKeyDropWeight = getDungeonKeyProgressionWeight(
       zonePlacement.bandId, zonePlacement.zoneIndexWithinBand, options.worldRuntime.currentSegment,
     );
+    const factionRuneDropChance = getFactionRuneWorldDropChance(
+      zonePlacement.bandId, zonePlacement.zoneIndexWithinBand, options.worldRuntime.currentSegment,
+    );
     const enchantmentTier = getWorldBandDefinition(zonePlacement.bandId).maximumTier;
 
     const rewardResult = options.combatRewardRuntime.processEnemyKilledReward(
@@ -177,6 +184,7 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
         enchantmentDropWeight,
         dungeonKeyDropWeight,
       },
+      factionRuneDropChance,
     );
     if (monsterDefinitionId !== undefined) {
       options.onMonsterKilled?.({
