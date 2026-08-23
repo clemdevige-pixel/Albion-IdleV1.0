@@ -3,7 +3,6 @@ import type {
   AbilityManager,
   DamageEventMap,
   DamageManager,
-  StatId,
   StatsManager,
 } from "@game/gameplay";
 import type { GameBridge } from "../../game/GameBridge";
@@ -11,8 +10,7 @@ import type {
   CombatDomainTickResult,
   CombatRuntime,
 } from "../../runtime/CombatRuntime";
-import { calculateProjectedSegmentRates } from "../../runtime/projectedRateCalculator";
-import { getWorldZonePlacement } from "../../data/worldContentCatalog";
+import { resolveProjectedSegmentRates } from "../../runtime/projectedRateResolver";
 import type { WorldRuntime } from "../../runtime/WorldRuntime";
 import { syncAbilitiesToBridge } from "../bridgeSync";
 import {
@@ -20,15 +18,12 @@ import {
   getCombatStartBlockReason,
 } from "../../runtime/CombatStartGuard.js";
 
-const STAT_PHYSICAL_DAMAGE = "stat_physical_damage" as StatId;
-const STAT_MAGICAL_DAMAGE = "stat_magical_damage" as StatId;
-const STAT_ATTACK_SPEED = "stat_attack_speed" as StatId;
-
 interface CombatBridgeAdapterDependencies {
   readonly bridge: GameBridge;
   readonly heroId: EntityId;
   readonly abilityManager: AbilityManager;
   readonly damageManager: DamageManager;
+  /** Kept in the adapter contract because existing construction owns this service. */
   readonly statsManager: StatsManager;
   readonly combatRuntime: CombatRuntime;
   readonly worldRuntime: WorldRuntime;
@@ -40,7 +35,6 @@ export class CombatBridgeAdapter {
   readonly #heroId: EntityId;
   readonly #abilityManager: AbilityManager;
   readonly #damageManager: DamageManager;
-  readonly #statsManager: StatsManager;
   readonly #combatRuntime: CombatRuntime;
   readonly #worldRuntime: WorldRuntime;
   readonly #updateWorldBridge: () => void;
@@ -52,7 +46,6 @@ export class CombatBridgeAdapter {
     this.#heroId = dependencies.heroId;
     this.#abilityManager = dependencies.abilityManager;
     this.#damageManager = dependencies.damageManager;
-    this.#statsManager = dependencies.statsManager;
     this.#combatRuntime = dependencies.combatRuntime;
     this.#worldRuntime = dependencies.worldRuntime;
     this.#updateWorldBridge = dependencies.updateWorldBridge;
@@ -106,19 +99,9 @@ export class CombatBridgeAdapter {
   }
 
   syncProjectedSegmentRates(): void {
-    const activeZoneDef = this.#worldRuntime.getActiveZoneDef();
-    const placement = getWorldZonePlacement(activeZoneDef.defId);
-    const rates = calculateProjectedSegmentRates({
-      physicalDamage: this.#statsManager.getStat(this.#heroId, STAT_PHYSICAL_DAMAGE).computed,
-      magicalDamage: this.#statsManager.getStat(this.#heroId, STAT_MAGICAL_DAMAGE).computed,
-      attackSpeed: this.#statsManager.getStat(this.#heroId, STAT_ATTACK_SPEED).computed,
-      equippedWeaponId: this.#getEquippedWeaponId(),
-      primaryAbilityAutoCast: this.#combatRuntime.isAutoCastEnabled(),
-      currentZoneIndex: placement.zoneIndexWithinBand,
-      currentZoneDefId: activeZoneDef.defId,
-      currentWorldBandId: placement.bandId,
-      currentSegment: this.#worldRuntime.currentSegment,
-      masteries: this.#bridge.progression.masteries,
+    const rates = resolveProjectedSegmentRates(this.#bridge.getSnapshot(), {
+      zoneDefId: String(this.#worldRuntime.getActiveZoneDef().defId),
+      segmentIndex: this.#worldRuntime.currentSegment,
     });
     this.#bridge.updateSegmentRates(rates.silverPerHour, rates.famePerHour);
   }
