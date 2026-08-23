@@ -1,5 +1,9 @@
 import { getEnchantmentShardItemId, type DungeonEncounterKind } from "@game/gameplay";
 import {
+  getDungeonArtifactFragmentItemId,
+  getDungeonArtifactItemId,
+} from "./dungeonArtifactContentCatalog.js";
+import {
   HERETIC_T4_LOOT_TABLE_ID, HERETIC_T5_LOOT_TABLE_ID, HERETIC_T6_LOOT_TABLE_ID, HERETIC_T7_LOOT_TABLE_ID, HERETIC_T8_LOOT_TABLE_ID,
   KEEPER_T4_LOOT_TABLE_ID, KEEPER_T5_LOOT_TABLE_ID, KEEPER_T6_LOOT_TABLE_ID, KEEPER_T7_LOOT_TABLE_ID, KEEPER_T8_LOOT_TABLE_ID,
   MORGANA_T4_LOOT_TABLE_ID, MORGANA_T5_LOOT_TABLE_ID, MORGANA_T6_LOOT_TABLE_ID, MORGANA_T7_LOOT_TABLE_ID, MORGANA_T8_LOOT_TABLE_ID,
@@ -71,8 +75,8 @@ function createFactionLootDefinition(
   return {
     id,
     faction,
-    artifactFragmentItemId: `item_resource_artifact_fragment_${itemSuffix}`,
-    artifactItemId: `item_resource_artifact_${itemSuffix}`,
+    artifactFragmentItemId: getDungeonArtifactFragmentItemId(itemSuffix, tier),
+    artifactItemId: getDungeonArtifactItemId(itemSuffix, tier),
     enchantmentShardItemId: getEnchantmentShardItemId(tier),
     completionSilver,
     encounters,
