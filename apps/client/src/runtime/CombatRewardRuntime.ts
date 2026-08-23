@@ -17,10 +17,16 @@ import {
   type CombatDrop,
   type CombatLootContext,
 } from "../data/economyContentCatalog";
+import {
+  rollFactionRuneWorldDrop,
+  type FactionRuneWorldDrop,
+} from "../data/factionRuneWorldDropContentCatalog.js";
 import { isAwakeningEligibleWeapon } from "../data/enchantmentItemPolicy.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog.js";
+
+export type WorldCombatDrop = CombatDrop | FactionRuneWorldDrop;
 
 export interface EnemyKilledRewardResult {
   readonly silverEarned: number;
@@ -37,7 +43,7 @@ export interface EnemyKilledRewardResult {
     readonly balance: number;
     readonly cap: number;
   } | undefined;
-  readonly itemDrops: readonly CombatDrop[];
+  readonly itemDrops: readonly WorldCombatDrop[];
 }
 
 export interface CombatRewardRuntimeDependencies {
@@ -53,6 +59,8 @@ export interface CombatRewardRuntimeDependencies {
   readonly onRawFactionFame?: (factionId: string, rawFame: number) => number;
   /** Dungeon keys/fragments are a discovered content channel, not baseline world loot. */
   readonly isDungeonKeyLootUnlocked?: () => boolean;
+  /** Faction Rune world drops are unlocked by Localisation des Sanctuaires. */
+  readonly isFactionRuneLootUnlocked?: () => boolean;
   readonly random?: () => number;
 }
 
@@ -68,6 +76,7 @@ export class CombatRewardRuntime {
   private readonly heroId: EntityId;
   private readonly onRawFactionFame: ((factionId: string, rawFame: number) => number) | undefined;
   private readonly isDungeonKeyLootUnlocked: () => boolean;
+  private readonly isFactionRuneLootUnlocked: () => boolean;
   private readonly random: () => number;
 
   constructor(deps: CombatRewardRuntimeDependencies) {
@@ -82,6 +91,11 @@ export class CombatRewardRuntime {
     this.heroId = deps.heroId;
     this.onRawFactionFame = deps.onRawFactionFame;
     this.isDungeonKeyLootUnlocked = deps.isDungeonKeyLootUnlocked ?? (() => true);
+    // Compatibility default is safe because both channels are currently unlocked
+    // by the same Research completion; composition roots can still bind the
+    // dedicated capability explicitly.
+    this.isFactionRuneLootUnlocked = deps.isFactionRuneLootUnlocked
+      ?? this.isDungeonKeyLootUnlocked;
     this.random = deps.random ?? Math.random;
   }
 
@@ -105,6 +119,7 @@ export class CombatRewardRuntime {
     silverReward: number,
     fameReward: number,
     lootContext: CombatLootContext,
+    factionRuneDropChance = 0,
   ): EnemyKilledRewardResult {
     // Snapshot before this kill awards faction Fame so a kill never increases its own multiplier.
     const factionYieldBonusPercent = this.getFactionYieldBonusPercent(lootContext.faction);
@@ -164,7 +179,7 @@ export class CombatRewardRuntime {
       this.onRawFactionFame?.(lootContext.faction, finalCombatFame);
     }
 
-    const itemDrops: CombatDrop[] = [];
+    const itemDrops: WorldCombatDrop[] = [];
     const dungeonKeyLootUnlocked = this.isDungeonKeyLootUnlocked();
     const rolledDrops = mergeCombatDrops([
       ...rollCombatDrops(lootContext, this.random),
@@ -196,6 +211,26 @@ export class CombatRewardRuntime {
         }
       }
       itemDrops.push(acceptedDrop);
+    }
+
+    if (this.isFactionRuneLootUnlocked()) {
+      const runeDrop = rollFactionRuneWorldDrop(
+        lootContext.faction,
+        lootContext.enchantmentTier,
+        factionRuneDropChance,
+        factionYieldBonusPercent,
+        this.random,
+      );
+      if (runeDrop !== undefined) {
+        const addResult = this.inventoryManager.addQuantity(
+          this.heroId,
+          runeDrop.itemId,
+          runeDrop.quantity,
+        );
+        if (addResult.ok && addResult.value.added > 0) {
+          itemDrops.push({ ...runeDrop, quantity: 1 });
+        }
+      }
     }
 
     return {
