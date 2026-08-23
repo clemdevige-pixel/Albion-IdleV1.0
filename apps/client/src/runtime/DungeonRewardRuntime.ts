@@ -1,7 +1,7 @@
 import type { EntityId } from "@game/core";
 import type { DungeonRuntime, InventoryManager } from "@game/gameplay";
 import { getDungeonLootDefinition } from "../data/dungeonLootContentCatalog.js";
-import { applyPercentBonusRounded } from "./CombatRewardRuntime.js";
+import { applyPercentBonusRounded, rollExpectedQuantity } from "./CombatRewardRuntime.js";
 
 export interface DungeonRewardDrop {
   readonly itemId: string;
@@ -43,9 +43,10 @@ export class DungeonRewardRuntime {
     const encounterLoot = lootDefinition.encounters[encounter.kind];
     const drops: DungeonRewardDrop[] = [];
 
-    const artifactFragmentQuantity = applyPercentBonusRounded(
+    const artifactFragmentQuantity = applyExpectedLootYield(
       encounterLoot.artifactFragmentQuantity,
       factionYieldBonusPercent,
+      this.random,
     );
     if (artifactFragmentQuantity > 0) {
       const added = this.inventoryManager.addQuantity(
@@ -62,9 +63,10 @@ export class DungeonRewardRuntime {
       }
     }
 
-    const enchantmentShardQuantity = applyPercentBonusRounded(
+    const enchantmentShardQuantity = applyExpectedLootYield(
       encounterLoot.enchantmentShardQuantity,
       factionYieldBonusPercent,
+      this.random,
     );
     if (enchantmentShardQuantity > 0) {
       const added = this.inventoryManager.addQuantity(
@@ -100,4 +102,15 @@ export class DungeonRewardRuntime {
         : 0,
     };
   }
+}
+
+function applyExpectedLootYield(
+  baseQuantity: number,
+  bonusPercent: number,
+  random: () => number,
+): number {
+  if (!Number.isFinite(baseQuantity) || baseQuantity <= 0) return 0;
+  const base = Math.max(0, Math.round(baseQuantity));
+  if (!Number.isFinite(bonusPercent) || bonusPercent <= 0) return base;
+  return base + rollExpectedQuantity(baseQuantity * bonusPercent / 100, random);
 }
