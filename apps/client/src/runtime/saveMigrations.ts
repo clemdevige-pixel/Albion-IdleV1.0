@@ -4,12 +4,13 @@ import {
   type SaveFormat,
   type SaveMigration,
 } from "@game/persistence";
+import { LEGACY_FACTION_RUNE_MIGRATIONS } from "../data/factionRuneContentCatalog.js";
 
 /**
  * Increment only when the persisted payload shape changes incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 4;
+export const CURRENT_RUNTIME_SAVE_VERSION = 5;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
 const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
@@ -29,26 +30,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function migrateLegacyIds(value: unknown): unknown {
-  if (typeof value === "string") {
-    return LEGACY_ID_RENAMES[value] ?? value;
-  }
-
-  if (Array.isArray(value)) {
-    return value.map(migrateLegacyIds);
-  }
-
+function migrateStringIds(value: unknown, migrations: Readonly<Record<string, string>>): unknown {
+  if (typeof value === "string") return migrations[value] ?? value;
+  if (Array.isArray(value)) return value.map((entry) => migrateStringIds(entry, migrations));
   if (isRecord(value)) {
     const migrated: Record<string, unknown> = {};
-
     for (const [key, child] of Object.entries(value)) {
-      migrated[key] = migrateLegacyIds(child);
+      migrated[key] = migrateStringIds(child, migrations);
     }
-
     return migrated;
   }
-
   return value;
+}
+
+function migrateLegacyIds(value: unknown): unknown {
+  return migrateStringIds(value, LEGACY_ID_RENAMES);
 }
 
 function migrateLegacyDungeonKeyId(value: string): string {
@@ -110,19 +106,12 @@ function removeLegacyFactionRelicItems(payload: Record<string, unknown>): Record
 const migrateV1ToV2: SaveMigration = {
   fromVersion: 1,
   toVersion: 2,
-
   migrate(save: SaveFormat): SaveFormat {
-    const payload = migrateLegacyIds(
-      save.payload,
-    ) as Record<string, unknown>;
-
+    const payload = migrateLegacyIds(save.payload) as Record<string, unknown>;
     return {
       ...save,
       version: 2,
-      metadata: {
-        ...save.metadata,
-        version: 2,
-      },
+      metadata: { ...save.metadata, version: 2 },
       payload,
       checksum: computeChecksum(payload),
     };
@@ -132,7 +121,6 @@ const migrateV1ToV2: SaveMigration = {
 const migrateV2ToV3: SaveMigration = {
   fromVersion: 2,
   toVersion: 3,
-
   migrate(save: SaveFormat): SaveFormat {
     const payload = migrateLegacyDungeonKeys(save.payload) as Record<string, unknown>;
     return {
@@ -148,7 +136,6 @@ const migrateV2ToV3: SaveMigration = {
 const migrateV3ToV4: SaveMigration = {
   fromVersion: 3,
   toVersion: 4,
-
   migrate(save: SaveFormat): SaveFormat {
     const payload = removeLegacyFactionRelicItems(save.payload);
     return {
@@ -161,11 +148,30 @@ const migrateV3ToV4: SaveMigration = {
   },
 };
 
+const migrateV4ToV5: SaveMigration = {
+  fromVersion: 4,
+  toVersion: 5,
+  migrate(save: SaveFormat): SaveFormat {
+    const payload = migrateStringIds(
+      save.payload,
+      LEGACY_FACTION_RUNE_MIGRATIONS,
+    ) as Record<string, unknown>;
+    return {
+      ...save,
+      version: 5,
+      metadata: { ...save.metadata, version: 5 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+  },
+};
+
 /** Ordered, explicit registry for runtime save migrations. */
 export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV1ToV2,
   migrateV2ToV3,
   migrateV3ToV4,
+  migrateV4ToV5,
 ];
 
 export interface RuntimeMigrationPipelineOptions {
@@ -182,8 +188,7 @@ export interface RuntimeMigrationPipelineOptions {
 export function createRuntimeMigrationPipeline(
   options?: RuntimeMigrationPipelineOptions,
 ): MigrationPipeline {
-  const currentVersion = options?.currentVersion
-    ?? CURRENT_RUNTIME_SAVE_VERSION;
+  const currentVersion = options?.currentVersion ?? CURRENT_RUNTIME_SAVE_VERSION;
   const earliestSupportedVersion = options?.earliestSupportedVersion
     ?? EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION;
   const migrations = options?.migrations ?? RUNTIME_SAVE_MIGRATIONS;
