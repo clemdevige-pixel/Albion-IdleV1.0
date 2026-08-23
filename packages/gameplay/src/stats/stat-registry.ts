@@ -31,20 +31,20 @@ const DEFAULT_STATS: readonly StatDefinition[] = [
   { id: "stat_magic_resistance" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_attack_speed" as StatId, min: 0.1, max: 5.0, defaultBase: 1.0 },
   { id: "stat_move_speed" as StatId, min: 0.1, max: Infinity, defaultBase: 1.0 },
-  // Awakened-weapon runtime stats. They remain regular stats so every consumer
-  // reads one authoritative combat pipeline rather than a .4-specific branch.
+  // Awakened-weapon and authored combat-effect runtime stats remain regular stats
+  // so every consumer reads one authoritative combat pipeline.
   { id: "stat_ability_power" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_cooldown_reduction" as StatId, min: 0, max: 99.999, defaultBase: 0 },
   { id: "stat_auto_attack_damage_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_auto_attack_damage_taken_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
+  { id: "stat_auto_attack_bonus_physical_damage" as StatId, min: 0, max: Infinity, defaultBase: 0 },
+  { id: "stat_auto_attack_bonus_magical_damage" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_damage_taken_bonus" as StatId, min: 0, max: Infinity, defaultBase: 0 },
   { id: "stat_life_steal" as StatId, min: 0, max: 5, defaultBase: 0 },
 ];
 
 export function createDefaultStatRegistry(): StatRegistry {
   const registry = new StatRegistry();
-  for (const stat of DEFAULT_STATS) {
-    registry.register(stat);
-  }
+  for (const stat of DEFAULT_STATS) registry.register(stat);
   return registry;
 }
