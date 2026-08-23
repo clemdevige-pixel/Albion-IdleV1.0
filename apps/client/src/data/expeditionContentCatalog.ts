@@ -1,8 +1,8 @@
 import type {
   ExpeditionDefinition,
   ExpeditionRequirementDefinition,
-  FactionId,
 } from "@game/gameplay";
+import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 
 export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & {
@@ -20,7 +20,6 @@ export interface SilverExpeditionContentDefinition
 
 export interface FactionExpeditionContentDefinition
   extends ExpeditionDefinition<ExpeditionContentRequirement> {
-  readonly factionId: FactionId;
   readonly reward: {
     readonly kind: "faction_rune";
     readonly itemId: string;
@@ -39,6 +38,13 @@ export interface ExpeditionPresentationInfo {
 }
 
 export const SILVER_EXPEDITION_TYPE_ID = "silver";
+export const FACTION_EXPEDITION_TYPE_ID = "faction";
+
+/**
+ * Preserves the previously validated guaranteed Rune baseline until the new
+ * multi-reward Expedition table is balanced. Extra rewards must be authored
+ * here later rather than injected by runtime branches.
+ */
 const BASE_FACTION_RUNES_PER_HOUR = 1;
 const EXPEDITION_TIERS = [4, 5, 6, 7, 8] as const;
 type ExpeditionTier = (typeof EXPEDITION_TIERS)[number];
@@ -59,16 +65,6 @@ const FACTION_TIER_UNLOCKS: Readonly<Record<ExpeditionTier, string>> = {
   8: RESEARCH_UNLOCK_IDS.factionExpeditionTier8,
 };
 
-const FACTION_EXPEDITION_AUTHORING = [
-  { factionId: "keeper", displayName: "Keeper" },
-  { factionId: "heretic", displayName: "Heretic" },
-  { factionId: "undead", displayName: "Undead" },
-  { factionId: "morgana", displayName: "Morgana" },
-] as const satisfies readonly {
-  readonly factionId: FactionId;
-  readonly displayName: string;
-}[];
-
 export const SILVER_EXPEDITION_DEFINITIONS = [
   { tier: 4, silverPerHour: 15_000 },
   { tier: 5, silverPerHour: 25_000 },
@@ -84,26 +80,22 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
   reward: { kind: "silver", silverPerHour },
 })) satisfies readonly SilverExpeditionContentDefinition[];
 
+/** One generic Faction Expedition per tier. Faction identity no longer selects a Rune stack. */
 export const FACTION_EXPEDITION_DEFINITIONS: readonly FactionExpeditionContentDefinition[] = (
-  FACTION_EXPEDITION_AUTHORING.flatMap((faction) => EXPEDITION_TIERS.map((tier) => ({
-    id: `expedition_${faction.factionId}_t${String(tier)}`,
-    typeId: faction.factionId,
-    displayName: `Expédition ${faction.displayName} T${String(tier)}`,
+  EXPEDITION_TIERS.map((tier) => ({
+    id: `expedition_faction_t${String(tier)}`,
+    typeId: FACTION_EXPEDITION_TYPE_ID,
+    displayName: `Expédition de faction T${String(tier)}`,
     tier,
-    factionId: faction.factionId,
     requirements: [
       { type: "research_unlock", unlockId: FACTION_TIER_UNLOCKS[tier] },
     ],
     reward: {
       kind: "faction_rune",
-      itemId: `item_resource_rune_${faction.factionId}_t${String(tier)}`,
+      itemId: getFactionRuneItemId(tier),
       runesPerHour: BASE_FACTION_RUNES_PER_HOUR,
     },
-  })))
-);
-
-export const KEEPER_EXPEDITION_DEFINITIONS = FACTION_EXPEDITION_DEFINITIONS.filter(
-  (definition) => definition.factionId === "keeper",
+  }))
 );
 
 export const EXPEDITION_DEFINITIONS: readonly ExpeditionContentDefinition[] = [
@@ -129,34 +121,17 @@ export function getExpeditionPresentationInfo(
   const definition = getExpeditionDefinition(expeditionId);
   if (definition === undefined) return undefined;
   if (isFactionExpeditionDefinition(definition)) {
-    const faction = FACTION_EXPEDITION_AUTHORING.find((entry) => entry.factionId === definition.factionId);
     return {
       categoryLabel: "Faction",
-      description: `Expédition passive ${faction?.displayName ?? definition.factionId}. Elle peut progresser pendant les autres activités et hors ligne.`,
-      rewardSummary: `Produit ${String(definition.reward.runesPerHour)} Rune ${faction?.displayName ?? definition.factionId}/h de base, avant bonus de Faction Mastery.`,
+      description: "Expédition passive de faction. Elle peut progresser pendant les autres activités et hors ligne.",
+      rewardSummary: `Produit ${String(definition.reward.runesPerHour)} Rune de faction T${String(definition.tier)}/h garantie. Les récompenses secondaires restent à calibrer.`,
     };
   }
   return {
     categoryLabel: "Silver",
     description: "Expédition passive dédiée au Silver. Elle peut progresser pendant les autres activités et hors ligne.",
-    rewardSummary: `Produit ${String(definition.reward.silverPerHour)} Silver/h. La Faction Mastery ne modifie pas ce rendement.`,
+    rewardSummary: `Produit ${String(definition.reward.silverPerHour)} Silver/h.`,
   };
-}
-
-export function getFactionExpeditionTypeId(factionId: string): string | undefined {
-  return EXPEDITION_DEFINITIONS.find((definition) => (
-    isFactionExpeditionDefinition(definition)
-    && definition.factionId === factionId
-  ))?.typeId;
-}
-
-export function getSilverExpeditionReward(
-  expeditionId: string,
-  durationMs: number,
-): number | undefined {
-  const definition = SILVER_EXPEDITION_DEFINITIONS.find((entry) => entry.id === expeditionId);
-  if (definition === undefined) return undefined;
-  return getHourlyReward(definition.reward.silverPerHour, durationMs);
 }
 
 export function getFactionExpeditionBaseRuneReward(
@@ -168,15 +143,13 @@ export function getFactionExpeditionBaseRuneReward(
   return getHourlyReward(definition.reward.runesPerHour, durationMs);
 }
 
-export function getFactionExpeditionRuneReward(
+export function getSilverExpeditionReward(
   expeditionId: string,
   durationMs: number,
-  masteryBonusPercent: number,
 ): number | undefined {
-  const baseReward = getFactionExpeditionBaseRuneReward(expeditionId, durationMs);
-  if (baseReward === undefined) return undefined;
-  if (!Number.isFinite(masteryBonusPercent) || masteryBonusPercent < 0) return undefined;
-  return Math.round(baseReward * (1 + masteryBonusPercent / 100));
+  const definition = SILVER_EXPEDITION_DEFINITIONS.find((entry) => entry.id === expeditionId);
+  if (definition === undefined) return undefined;
+  return getHourlyReward(definition.reward.silverPerHour, durationMs);
 }
 
 function getHourlyReward(ratePerHour: number, durationMs: number): number | undefined {
