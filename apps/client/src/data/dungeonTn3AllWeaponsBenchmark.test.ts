@@ -4,6 +4,7 @@ import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import {
   runCombatRuntimeBenchmark,
   type CombatRuntimeAbilityTelemetry,
+  type CombatRuntimeBenchmarkDamageTuning,
   type CombatRuntimeDamageSourceTelemetry,
 } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 
@@ -76,6 +77,27 @@ function armorIds(
     : withCape;
 }
 
+function benchmarkDamageTuning(family: WeaponFamily): CombatRuntimeBenchmarkDamageTuning | undefined {
+  if (family === "longbow") {
+    return { autoAttackMultiplier: 0.89 };
+  }
+  if (family === "infernal") {
+    return {
+      directAbilityMultiplierById: { ability_fire_cataclysm: 1.1 },
+      effectDamageMultiplier: 1.5,
+    };
+  }
+  if (family === "dual_dagger") {
+    return {
+      directAbilityMultiplierById: {
+        ability_dagger_double_slash: 1.08,
+        ability_dagger_flurry: 1.08,
+      },
+    };
+  }
+  return undefined;
+}
+
 const round1 = (value: number): number => Number(value.toFixed(1));
 const modeLabel = (mode: BenchmarkMode): string => `${mode.cape}:${mode.potion ? "potion" : "no-potion"}`;
 
@@ -146,6 +168,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
               enchantment: 3,
               masteryLevel: MASTERY_BY_TIER[tier],
               useHealthPotions: mode.potion,
+              damageTuning: benchmarkDamageTuning(family),
             });
 
             rows.push({
