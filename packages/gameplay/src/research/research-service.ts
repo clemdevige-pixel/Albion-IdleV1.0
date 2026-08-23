@@ -100,7 +100,7 @@ export class ResearchService<
 
   /** Compatibility read for callers that only need to know whether anything is active. */
   getActiveResearch(): ActiveResearchState | undefined {
-    const first = this.#activeResearches.values().next().value as ActiveResearchState | undefined;
+    const first = this.#activeResearches.values().next().value;
     return first === undefined ? undefined : { ...first };
   }
 
@@ -194,7 +194,7 @@ export class ResearchService<
     return {
       version: 2,
       completedResearchIds: [...this.getCompletedResearchIds()],
-      activeResearches: this.getActiveResearches().map((entry) => ({ ...entry })),
+      activeResearches: [...this.getActiveResearches()],
     };
   }
 
@@ -240,7 +240,9 @@ export class ResearchService<
         || material.quantity <= 0
       ))
     ) return false;
+    if (definition.requirements.some((requirement) => requirement.type.trim() === "")) return false;
     if (definition.unlockIds.some((unlockId) => unlockId.trim() === "")) return false;
+    if (new Set(definition.unlockIds).size !== definition.unlockIds.length) return false;
     return true;
   }
 }
