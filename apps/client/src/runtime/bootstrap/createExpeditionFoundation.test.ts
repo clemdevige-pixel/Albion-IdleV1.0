@@ -9,6 +9,7 @@ import {
   asPlayerId,
   asWalletId,
 } from "@game/gameplay";
+import { getFactionRuneItemId } from "../../data/factionRuneContentCatalog.js";
 import { resolveItemStackInfo } from "../../data/itemContentCatalog.js";
 import {
   RESEARCH_UNLOCK_IDS,
@@ -64,25 +65,23 @@ function createFoundation(unlocks: readonly string[]) {
     walletId,
     inventoryManager,
     heroId,
-    getFactionYieldBonusPercent: () => 25,
   });
 
   return { ...foundation, heroId, unrelatedStorageId, inventoryManager };
 }
 
 describe("createExpeditionFoundation", () => {
-  it("separates Cartography Silver access from Archaeology faction access", () => {
+  it("separates Cartography Silver access from Archaeology Faction access", () => {
     const silverOnly = createFoundation([RESEARCH_UNLOCK_IDS.silverExpeditionTier4]);
     expect(silverOnly.expeditionService.getStartState("expedition_silver_t4")).toBe("available");
-    expect(silverOnly.expeditionService.getStartState("expedition_keeper_t4")).toBe("requirements_locked");
+    expect(silverOnly.expeditionService.getStartState("expedition_faction_t4")).toBe("requirements_locked");
 
     const factionOnly = createFoundation([RESEARCH_UNLOCK_IDS.factionExpeditionTier4]);
     expect(factionOnly.expeditionService.getStartState("expedition_silver_t4")).toBe("requirements_locked");
-    expect(factionOnly.expeditionService.getStartState("expedition_keeper_t4")).toBe("available");
-    expect(factionOnly.expeditionService.getStartState("expedition_heretic_t4")).toBe("available");
+    expect(factionOnly.expeditionService.getStartState("expedition_faction_t4")).toBe("available");
   });
 
-  it("credits rounded Faction Runes to the hero inventory and returns the recap data", () => {
+  it("credits common Faction Runes to the hero inventory and returns recap data", () => {
     const {
       expeditionService,
       heroId,
@@ -91,23 +90,18 @@ describe("createExpeditionFoundation", () => {
     } = createFoundation([RESEARCH_UNLOCK_IDS.factionExpeditionTier4]);
 
     const durationMs = EXPEDITION_DURATION_OPTIONS_MS[0];
-    expect(expeditionService.startExpedition("expedition_keeper_t4", durationMs).ok).toBe(true);
+    const runeItemId = getFactionRuneItemId(4);
+    expect(expeditionService.startExpedition("expedition_faction_t4", durationMs).ok).toBe(true);
 
     const advance = expeditionService.advance(durationMs);
 
-    expect(inventoryManager.getTotalQuantity(heroId, "item_resource_rune_keeper_t4")).toBe(3);
-    expect(inventoryManager.getTotalQuantity(
-      unrelatedStorageId,
-      "item_resource_rune_keeper_t4",
-    )).toBe(0);
+    expect(inventoryManager.getTotalQuantity(heroId, runeItemId)).toBe(2);
+    expect(inventoryManager.getTotalQuantity(unrelatedStorageId, runeItemId)).toBe(0);
     expect(advance.completed).toHaveLength(1);
     expect(advance.completed[0]?.rewardSummary).toEqual({
       kind: "faction_rune",
-      factionId: "keeper",
-      itemId: "item_resource_rune_keeper_t4",
-      baseRunes: 2,
-      masteryBonusPercent: 25,
-      finalRunes: 3,
+      itemId: runeItemId,
+      runesCredited: 2,
     });
   });
 });
