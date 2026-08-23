@@ -24,10 +24,10 @@ const BENCHMARK_MODES: readonly BenchmarkMode[] = [
 /** Temporary benchmark-only candidates. Authored weapon data is unchanged. */
 const DAMAGE_MULTIPLIER_BY_FAMILY: Readonly<Record<WeaponFamily, number>> = {
   broadsword: 1,
-  longbow: 0.93,
-  infernal: 1.08,
+  longbow: 0.9,
+  infernal: 1.12,
   spiked: 1,
-  dual_dagger: 1.05,
+  dual_dagger: 1.06,
 };
 
 const EXPECTED_CAPE_REDUCTION_BY_TIER: Readonly<Record<Tier, number>> = {
