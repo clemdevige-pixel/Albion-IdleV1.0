@@ -59,7 +59,9 @@ export interface CombatRuntimeBenchmarkInput {
   readonly enchantment?: BenchmarkEnchantment;
   readonly masteryLevel?: number;
   readonly useHealthPotions?: boolean;
-  /** Optional authored dungeon. When present, the live runtime uses its five continuous encounters instead of the world segment. */
+  /** Benchmark-only outgoing hero damage multiplier. Defaults to 1 and never changes authored weapon data. */
+  readonly heroDamageMultiplier?: number;
+  /** Optional authored dungeon. When present, the live runtime uses its continuous authored encounters instead of the world segment. */
   readonly dungeonDefinitionId?: string;
 }
 
@@ -279,12 +281,16 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
         equippedCape.itemId,
         { factionId: dungeon.faction, tier: dungeon.tier },
       );
-  if (dungeonDamageReductionPercent > 0) {
-    damageManager.setPostMitigationDamageResolver((request, mitigatedDamage) => (
-      request.target === heroId
-        ? mitigatedDamage * (1 - dungeonDamageReductionPercent / 100)
-        : mitigatedDamage
-    ));
+  const heroDamageMultiplier = input.heroDamageMultiplier ?? 1;
+  if (dungeonDamageReductionPercent > 0 || heroDamageMultiplier !== 1) {
+    damageManager.setPostMitigationDamageResolver((request, mitigatedDamage) => {
+      let resolvedDamage = mitigatedDamage;
+      if (request.source === heroId) resolvedDamage *= heroDamageMultiplier;
+      if (request.target === heroId && dungeonDamageReductionPercent > 0) {
+        resolvedDamage *= 1 - dungeonDamageReductionPercent / 100;
+      }
+      return resolvedDamage;
+    });
   }
 
   const useHealthPotions = input.useHealthPotions === true;
