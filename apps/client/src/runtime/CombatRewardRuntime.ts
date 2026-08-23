@@ -12,6 +12,7 @@ import type {
   WalletId,
 } from "@game/gameplay";
 import {
+  getCombatLootExpectations,
   rollCombatDrops,
   type CombatDrop,
   type CombatLootContext,
@@ -52,6 +53,7 @@ export interface CombatRewardRuntimeDependencies {
   readonly onRawFactionFame?: (factionId: string, rawFame: number) => number;
   /** Dungeon keys/fragments are a discovered content channel, not baseline world loot. */
   readonly isDungeonKeyLootUnlocked?: () => boolean;
+  readonly random?: () => number;
 }
 
 export class CombatRewardRuntime {
@@ -66,6 +68,7 @@ export class CombatRewardRuntime {
   private readonly heroId: EntityId;
   private readonly onRawFactionFame: ((factionId: string, rawFame: number) => number) | undefined;
   private readonly isDungeonKeyLootUnlocked: () => boolean;
+  private readonly random: () => number;
 
   constructor(deps: CombatRewardRuntimeDependencies) {
     this.currencyService = deps.currencyService;
@@ -79,6 +82,12 @@ export class CombatRewardRuntime {
     this.heroId = deps.heroId;
     this.onRawFactionFame = deps.onRawFactionFame;
     this.isDungeonKeyLootUnlocked = deps.isDungeonKeyLootUnlocked ?? (() => true);
+    this.random = deps.random ?? Math.random;
+  }
+
+  /** Reads the pre-reward faction yield bonus without awarding faction Fame. */
+  public getFactionYieldBonusPercent(factionId: string): number {
+    return this.onRawFactionFame?.(factionId, 0) ?? 0;
   }
 
   /** Credits deterministic reward Silver through the existing wallet owner. */
@@ -97,15 +106,15 @@ export class CombatRewardRuntime {
     fameReward: number,
     lootContext: CombatLootContext,
   ): EnemyKilledRewardResult {
-    const factionYieldBonusPercent = Number.isInteger(fameReward) && fameReward > 0
-      ? this.onRawFactionFame?.(lootContext.faction, fameReward) ?? 0
-      : 0;
+    // Snapshot before this kill awards faction Fame so a kill never increases its own multiplier.
+    const factionYieldBonusPercent = this.getFactionYieldBonusPercent(lootContext.faction);
     const finalSilverReward = applyPercentBonusRounded(silverReward, factionYieldBonusPercent);
     const factionAdjustedFame = applyPercentBonusRounded(fameReward, factionYieldBonusPercent);
     const newBalance = this.creditSilverReward(finalSilverReward);
 
     let fameEarned: EnemyKilledRewardResult["fameEarned"];
     let attunementEarned: EnemyKilledRewardResult["attunementEarned"];
+    let finalCombatFame = factionAdjustedFame;
     const equippedWeapon = this.equipmentManager.getEquippedItem(this.heroId, "weapon");
     const activeWeaponRoute = equippedWeapon === undefined
       ? undefined
@@ -122,13 +131,13 @@ export class CombatRewardRuntime {
         ? this.awakenedWeaponService.getTraitValue(equippedWeapon.instanceId, "fame_bonus")
         : 0;
       const awakeningFameBonus = Math.floor(fameReward * fameBonusPercent / 100);
-      const progressionFame = factionAdjustedFame + awakeningFameBonus;
+      finalCombatFame = factionAdjustedFame + awakeningFameBonus;
 
-      this.progressionOrchestrator.onFameEarned(activeWeaponRoute.weaponId, progressionFame, "combat");
-      this.experienceService.addExperience(activeWeaponRoute.familyId, progressionFame, "combat");
+      this.progressionOrchestrator.onFameEarned(activeWeaponRoute.weaponId, finalCombatFame, "combat");
+      this.experienceService.addExperience(activeWeaponRoute.familyId, finalCombatFame, "combat");
 
       fameEarned = {
-        amount: progressionFame,
+        amount: finalCombatFame,
         weaponId: activeWeaponRoute.weaponId,
         familyId: activeWeaponRoute.familyId,
       };
@@ -142,7 +151,7 @@ export class CombatRewardRuntime {
           if (lootContext.enchantmentTier >= itemTier) {
             const attunement = this.awakenedWeaponService.addAttunement(
               equippedWeapon.instanceId,
-              fameReward,
+              finalCombatFame,
             );
             if (attunement.ok) attunementEarned = attunement.value;
           }
@@ -150,9 +159,22 @@ export class CombatRewardRuntime {
       }
     }
 
+    // Faction Mastery follows the exact Fame actually earned by the kill (1 Fame = 1 faction Fame).
+    if (Number.isSafeInteger(finalCombatFame) && finalCombatFame > 0) {
+      this.onRawFactionFame?.(lootContext.faction, finalCombatFame);
+    }
+
     const itemDrops: CombatDrop[] = [];
     const dungeonKeyLootUnlocked = this.isDungeonKeyLootUnlocked();
-    for (const drop of rollCombatDrops(lootContext)) {
+    const rolledDrops = mergeCombatDrops([
+      ...rollCombatDrops(lootContext, this.random),
+      ...rollFactionYieldBonusDrops(
+        lootContext,
+        factionYieldBonusPercent,
+        this.random,
+      ),
+    ]);
+    for (const drop of rolledDrops) {
       if (
         !dungeonKeyLootUnlocked
         && (drop.kind === "key" || drop.kind === "key_fragment")
@@ -191,6 +213,43 @@ export function applyPercentBonusRounded(baseValue: number, bonusPercent: number
   const roundedBase = Math.round(baseValue);
   if (!Number.isFinite(bonusPercent) || bonusPercent <= 0) return roundedBase;
   return roundedBase + Math.round(baseValue * bonusPercent / 100);
+}
+
+/** Rolls only the extra expected quantity supplied by Faction Mastery. */
+export function rollFactionYieldBonusDrops(
+  lootContext: CombatLootContext,
+  bonusPercent: number,
+  random: () => number = Math.random,
+): readonly CombatDrop[] {
+  if (!Number.isFinite(bonusPercent) || bonusPercent <= 0) return [];
+  return getCombatLootExpectations(lootContext).flatMap((expectation) => {
+    const quantity = rollExpectedQuantity(
+      expectation.expectedQuantity * bonusPercent / 100,
+      random,
+    );
+    return quantity <= 0
+      ? []
+      : [{ itemId: expectation.itemId, kind: expectation.kind, quantity }];
+  });
+}
+
+function rollExpectedQuantity(expectedQuantity: number, random: () => number): number {
+  const safeExpected = Math.max(0, expectedQuantity);
+  const guaranteed = Math.floor(safeExpected);
+  const fractional = safeExpected - guaranteed;
+  return guaranteed + (fractional > 0 && random() < fractional ? 1 : 0);
+}
+
+function mergeCombatDrops(drops: readonly CombatDrop[]): readonly CombatDrop[] {
+  const merged = new Map<string, CombatDrop>();
+  for (const drop of drops) {
+    const key = `${drop.kind}:${drop.itemId}`;
+    const existing = merged.get(key);
+    merged.set(key, existing === undefined
+      ? drop
+      : { ...existing, quantity: existing.quantity + drop.quantity });
+  }
+  return [...merged.values()];
 }
 
 function isAwakenedWeaponTier(value: number | undefined): value is AwakenedWeaponTier {
