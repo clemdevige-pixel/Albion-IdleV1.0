@@ -25,7 +25,7 @@ The roster adapts Albion Online weapon families to Albion Idle rather than repro
 - No new weapon name is invented.
 - The first two active abilities remain shared at family level; only the third active/signature ability is specialization-specific.
 - Artifact weapons use the same weapon/content/runtime architecture as base weapons. No faction-specific combat subsystem is allowed.
-- Every artifact weapon declares only its faction affinity; dungeon advantage is resolved from the global faction matrix in section 8.
+- Every artifact weapon declares only its faction affinity; dungeon advantage is resolved from the global faction matrix in section 9.
 
 ---
 
@@ -184,7 +184,38 @@ Rules:
 
 ---
 
-## 10. ACQUISITION AND BENCHMARK POLICY
+## 10. ARTIFACT WEAPON CRAFTING
+
+Validated initial recipe contract:
+
+`artifact weapon Tn = standard refined-material recipe of the matching weapon family at Tn + 1 matching faction artifact Tn + matching faction runes Tn`
+
+There is **no predecessor weapon requirement**.
+
+The faction artifact quantity is fixed permanently at **1 artifact per weapon craft** for this baseline.
+
+Initial Rune cost curve:
+
+| Weapon tier | Matching faction artifact | Matching faction runes |
+|---|---:|---:|
+| T4 | 1 | 5 |
+| T5 | 1 | 10 |
+| T6 | 1 | 20 |
+| T7 | 1 | 35 |
+| T8 | 1 | 55 |
+
+Rules:
+- refined materials are derived from the existing standard base-weapon recipe of the same family and target Tier; they are not duplicated as a second authored material table;
+- artifact and Rune faction must match the artifact weapon faction;
+- artifact and Rune Tier must match the crafted weapon Tier;
+- artifact quantity is always exactly 1;
+- Rune quantities are an initial economy baseline and may be tuned later without changing recipe architecture;
+- no Tn-1 weapon is owned, consumed or required by this craft;
+- the old temporary Badon craft must not coexist as a second authoritative recipe once the generic artifact weapon recipe is available.
+
+---
+
+## 11. ACQUISITION AND BENCHMARK POLICY
 
 Faction artifact weapons are intended to be obtained **after the corresponding world-zone clear** that unlocks/accesses their acquisition path.
 
@@ -204,7 +235,7 @@ Benchmark priority:
 
 ---
 
-## 11. IMPLEMENTATION CONTRACT
+## 12. IMPLEMENTATION CONTRACT
 
 - Artifact variants are regular weapon specializations in the authoritative weapon content catalog.
 - No Keeper/Morgana/Undead/Heretic branches are allowed in the combat loop.
@@ -212,11 +243,12 @@ Benchmark priority:
 - Temporary self buffs/debuffs use the existing effect/stat modifier pipeline.
 - Additional auto-attack damage uses generic temporary auto-attack bonus-damage stats, not weapon-name checks.
 - The dungeon faction bonus composes with the existing faction-cape post-mitigation resolver; resolvers must not overwrite one another.
+- Artifact weapon recipes derive standard refined-material requirements from the existing family recipe and add matching artifact/Rune requirements generically.
 - Presentation assets are not invented. Missing artifact presentation remains undefined until real assets are supplied.
 
 ---
 
-## 12. DESIGN STATUS
+## 13. DESIGN STATUS
 
 Sword: VALIDATED DESIGN / runtime integration in progress.
 Bow: VALIDATED DESIGN / runtime integration in progress; Badon pre-existed.
@@ -224,6 +256,7 @@ Fire Staff: VALIDATED DESIGN / runtime integration in progress.
 War Gloves: VALIDATED DESIGN / runtime integration in progress.
 Dagger: VALIDATED DESIGN, including Dagger Pair signature correction / runtime integration in progress.
 Faction directed advantage: VALIDATED DESIGN / runtime integration in progress.
+Artifact weapon craft baseline: VALIDATED / runtime integration in progress.
 Benchmark leak policy: VALIDATED.
 
 Runtime benchmarks remain authoritative before final balance lock.
