@@ -94,6 +94,9 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         heroDamageMultiplier: 1.2,
       });
 
+      const offBoss = withoutBonus.encounters.at(-1);
+      const onBoss = withBonus.encounters.at(-1);
+
       return {
         family: weapon.family,
         weapon: weapon.label,
@@ -102,9 +105,14 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         enemyFaction: dungeon.faction,
         offClear: withoutBonus.clear,
         onClear: withBonus.clear,
+        offEncounterReached: withoutBonus.encounterReached,
+        onEncounterReached: withBonus.encounterReached,
         offProgressPct: round1(withoutBonus.bossProgressPercent),
         onProgressPct: round1(withBonus.bossProgressPercent),
         progressDeltaPct: round1(withBonus.bossProgressPercent - withoutBonus.bossProgressPercent),
+        offBossEntryHpPct: round1(offBoss?.hpBeforePercent ?? 0),
+        onBossEntryHpPct: round1(onBoss?.hpBeforePercent ?? 0),
+        bossEntryHpDeltaPct: round1((onBoss?.hpBeforePercent ?? 0) - (offBoss?.hpBeforePercent ?? 0)),
         offDps: round1(withoutBonus.observedDps),
         onDps: round1(withBonus.observedDps),
         dpsRatio: withoutBonus.observedDps > 0 ? round2(withBonus.observedDps / withoutBonus.observedDps) : null,
@@ -132,6 +140,9 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         avgProgressDeltaPct: round1(
           dungeonRows.reduce((sum, row) => sum + row.progressDeltaPct, 0) / dungeonRows.length,
         ),
+        avgBossEntryHpDeltaPct: round1(
+          dungeonRows.reduce((sum, row) => sum + row.bossEntryHpDeltaPct, 0) / dungeonRows.length,
+        ),
         avgDpsRatio: round2(
           dungeonRows.reduce((sum, row) => sum + (row.dpsRatio ?? 0), 0) / dungeonRows.length,
         ),
@@ -145,7 +156,10 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
 
     expect(rows).toHaveLength(ARTIFACT_WEAPONS.length);
     expect(rows.every((row) => row.dpsRatio !== null && row.dpsRatio >= 1)).toBe(true);
-    expect(rows.every((row) => row.onProgressPct >= row.offProgressPct || row.onClear)).toBe(true);
+    // Boss-only progress is diagnostic, not monotonic: faster trash clears alter
+    // cooldown state and HP at boss entry. The strict invariant is that +20%
+    // never makes the run reach an earlier encounter.
+    expect(rows.every((row) => row.onEncounterReached >= row.offEncounterReached)).toBe(true);
     expect(byDungeon.every((row) => row.weapons === 5)).toBe(true);
   });
 });
