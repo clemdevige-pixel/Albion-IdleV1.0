@@ -56,6 +56,61 @@ Faction artifacts:
 - Undead: Galatine Pair
 - Heretic: Claymore
 
+#### Shared Sword abilities
+
+All Sword specializations keep the two existing shared family abilities:
+
+1. Frappe héroïque
+2. Brise-garde
+
+Only the third active ability is specialization-specific.
+
+#### Sword artifact signature abilities
+
+| Weapon | Faction | Signature ability | Effect | Cooldown |
+|---|---|---|---|---:|
+| Clarent Blade | Keeper | Crescent Slash | 2.00x physical damage | 24 s |
+| Carving Sword | Morgana | Fearless Strike | 1.45x physical damage + -20 Armor for 6 s | 28 s |
+| Galatine Pair | Undead | Soulless Stream | 2.60x physical damage | 30 s |
+| Claymore | Heretic | Charge | 1.65x physical damage + Stun for 1 s | 25 s |
+
+Carving Sword rule:
+- Fearless Strike's `-20 Armor / 6 s` debuff is independent from Brise-garde's existing `-12 Armor / 5 s` debuff.
+- Both may coexist and therefore produce a raw combined `-32 Armor` while their durations overlap.
+- Neither effect refreshes, replaces or merges the other.
+
+#### Sword artifact handling / attack speed
+
+| Weapon | Handling | Attack speed |
+|---|---|---:|
+| Clarent Blade | 1H | 1.25 |
+| Carving Sword | 2H | 1.10 |
+| Galatine Pair | 2H | 0.95 |
+| Claymore | 2H | 1.10 |
+
+Attack speeds are intentionally authored in 0.05 increments.
+
+#### Sword artifact flat physical damage — T4 to T8
+
+The live weapon model has no hidden 1H/2H multiplier. Flat damage and attack speed are authored explicitly per weapon.
+
+The artifact Sword curves below preserve the current live weapon AA-DPS corridor at T4, then follow approximately the existing ~1.45 damage growth per tier.
+
+| Weapon | T4 | T5 | T6 | T7 | T8 |
+|---|---:|---:|---:|---:|---:|
+| Clarent Blade | 89 | 129 | 187 | 271 | 393 |
+| Carving Sword | 102 | 148 | 215 | 312 | 452 |
+| Galatine Pair | 118 | 171 | 248 | 360 | 522 |
+| Claymore | 102 | 148 | 215 | 312 | 452 |
+
+Approximate raw T4 auto-attack DPS anchors:
+- Clarent Blade: `89 x 1.25 = 111.25`
+- Carving Sword: `102 x 1.10 = 112.20`
+- Galatine Pair: `118 x 0.95 = 112.10`
+- Claymore: `102 x 1.10 = 112.20`
+
+These values are initial validated design targets. Runtime benchmarking remains authoritative before implementation values are considered final balance locks.
+
 ### Bow
 
 Base:
@@ -112,19 +167,17 @@ The exclusion is categorical for this roster; future Avalon content, if ever des
 
 ---
 
-## 6. NEXT DESIGN STEP
+## 6. DESIGN STATUS
 
-Each of the 20 artifact weapons will receive a signature ability designed for Albion Idle.
+Sword family:
+- artifact roster: VALIDATED;
+- shared abilities: existing / retained;
+- artifact signature abilities: VALIDATED DESIGN;
+- handling / attack speed: VALIDATED DESIGN;
+- T4-T8 flat damage curves: VALIDATED DESIGN TARGETS;
+- runtime implementation / benchmark: pending.
 
-Ability design must:
-- preserve the recognizable identity of the weapon where useful;
-- fit Albion Idle's deterministic/automatic combat model;
-- use the existing weapon-family ability architecture rather than introducing weapon-specific runtime systems;
-- remain data-driven;
-- avoid PvP-only or manual-targeting mechanics that do not translate to Albion Idle;
-- be balanced against the corresponding family base weapon and the other artifact variants.
-
-Ability values and exact mechanics are NOT defined by this document yet.
+Bow, Fire Staff, War Gloves and Dagger artifact abilities/stats remain to be designed.
 
 ---
 
