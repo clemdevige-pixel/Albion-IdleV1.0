@@ -29,6 +29,7 @@
     "benchmark:final-gates": "tsx --tsconfig tsconfig.base.json scripts/runtime-final-gate-audit.ts",
     "benchmark:tier-transitions": "tsx --tsconfig tsconfig.base.json scripts/runtime-tier-plateau-audit.ts",
     "benchmark:enchantment-shards": "tsc -b && tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts",
+    "benchmark:global-balance": "pnpm typecheck && pnpm validate:data && pnpm benchmark:weapon-roles && pnpm benchmark:boss-only && pnpm benchmark:blue-contract && pnpm benchmark:global-enchantment-walls && pnpm benchmark:enchantment-walls && pnpm benchmark:final-gates && pnpm benchmark:tier-transitions && pnpm benchmark:enchantment-shards && pnpm --filter @game/client test -- src/data/globalWeaponZoneClearBenchmark.test.ts src/data/itemPowerCrossSpecialization.test.ts src/data/factionArtifactWeaponBenchmark.test.ts src/data/factionArtifactDungeonBonusABBenchmark.test.ts src/data/factionArtifactDungeonFavorableClearBenchmark.test.ts src/data/factionArtifactDungeonT5ToT8FavorableClearBenchmark.test.ts src/data/factionArtifactDungeonT5ToT8LeakBenchmark.test.ts src/data/dungeonT4BaseWeaponProgressionBenchmark.test.ts src/data/artifactWeaponCraftRecipes.test.ts src/data/artifactWeaponEnchantmentContract.test.ts src/data/awakenedDefensiveTraitCalibrationAudit.test.ts src/data/globalEconomySequentialSetChain.test.ts",
     "clean": "tsc -b --clean"
   },
   "devDependencies": {
