@@ -18,6 +18,7 @@ const ARMOR_STAT = "stat_armor" as StatId;
 const MAGIC_RESISTANCE_STAT = "stat_magic_resistance" as StatId;
 const AUTO_ATTACK_DAMAGE_BONUS_STAT = "stat_auto_attack_damage_bonus" as StatId;
 const AUTO_ATTACK_DAMAGE_TAKEN_BONUS_STAT = "stat_auto_attack_damage_taken_bonus" as StatId;
+const DAMAGE_TAKEN_BONUS_STAT = "stat_damage_taken_bonus" as StatId;
 const LIFE_STEAL_STAT = "stat_life_steal" as StatId;
 
 export class DamageManager {
@@ -87,10 +88,11 @@ export class DamageManager {
       ? this.#statsManager.getStat(request.target, AUTO_ATTACK_DAMAGE_TAKEN_BONUS_STAT).computed
       : 0;
     const autoAttackTakenMultiplier = 1 + Math.max(0, autoAttackTakenBonusPercent) / 100;
-    const rawDamageBeforeTargetBonus = request.baseDamage + autoAttackBonusDamage + offensiveDamage;
-    const baseDamage = isAutoAttack
-      ? rawDamageBeforeTargetBonus * autoAttackTakenMultiplier - offensiveDamage
-      : request.baseDamage + autoAttackBonusDamage;
+    const damageTakenBonusPercent = this.#statsManager.getStat(request.target, DAMAGE_TAKEN_BONUS_STAT).computed;
+    const damageTakenMultiplier = 1 + Math.max(0, damageTakenBonusPercent) / 100;
+    const rawDamageBeforeTargetBonuses = request.baseDamage + autoAttackBonusDamage + offensiveDamage;
+    const adjustedRawDamage = rawDamageBeforeTargetBonuses * autoAttackTakenMultiplier * damageTakenMultiplier;
+    const baseDamage = adjustedRawDamage - offensiveDamage;
 
     const calc = calculateDamage(
       baseDamage,
