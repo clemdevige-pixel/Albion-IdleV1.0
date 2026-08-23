@@ -9,6 +9,10 @@ import {
   asPlayerId,
   asWalletId,
 } from "@game/gameplay";
+import {
+  getDungeonKeyFragmentItemId,
+  getDungeonKeyItemId,
+} from "../../data/dungeonKeyContentCatalog.js";
 import { getFactionRuneItemId } from "../../data/factionRuneContentCatalog.js";
 import { resolveItemStackInfo } from "../../data/itemContentCatalog.js";
 import {
@@ -40,7 +44,7 @@ function createResearchService(unlocks: readonly string[]) {
   return researchService;
 }
 
-function createFoundation(unlocks: readonly string[]) {
+function createFoundation(unlocks: readonly string[], random: () => number = () => 0.5) {
   const world = new World(createRuntimeServices());
   const heroId = world.createEntity();
   const unrelatedStorageId = world.createEntity();
@@ -65,6 +69,7 @@ function createFoundation(unlocks: readonly string[]) {
     walletId,
     inventoryManager,
     heroId,
+    random,
   });
 
   return { ...foundation, heroId, unrelatedStorageId, inventoryManager };
@@ -81,7 +86,7 @@ describe("createExpeditionFoundation", () => {
     expect(factionOnly.expeditionService.getStartState("expedition_faction_t4")).toBe("available");
   });
 
-  it("credits common Faction Runes to the hero inventory and returns recap data", () => {
+  it("credits integer Runes, fragments and complete keys and returns recap data", () => {
     const {
       expeditionService,
       heroId,
@@ -91,17 +96,29 @@ describe("createExpeditionFoundation", () => {
 
     const durationMs = EXPEDITION_DURATION_OPTIONS_MS[0];
     const runeItemId = getFactionRuneItemId(4);
+    const fragmentItemId = getDungeonKeyFragmentItemId(4);
+    const keyItemId = getDungeonKeyItemId(4);
     expect(expeditionService.startExpedition("expedition_faction_t4", durationMs).ok).toBe(true);
 
     const advance = expeditionService.advance(durationMs);
 
-    expect(inventoryManager.getTotalQuantity(heroId, runeItemId)).toBe(2);
+    expect(inventoryManager.getTotalQuantity(heroId, runeItemId)).toBe(16);
+    expect(inventoryManager.getTotalQuantity(heroId, fragmentItemId)).toBe(48);
+    expect(inventoryManager.getTotalQuantity(heroId, keyItemId)).toBe(3);
     expect(inventoryManager.getTotalQuantity(unrelatedStorageId, runeItemId)).toBe(0);
     expect(advance.completed).toHaveLength(1);
     expect(advance.completed[0]?.rewardSummary).toEqual({
       kind: "faction_rune",
       itemId: runeItemId,
-      runesCredited: 2,
+      runesCredited: 16,
+      fragmentItemId,
+      fragmentsCredited: 48,
+      keyItemId,
+      completeKeysCredited: 3,
+      quality: "reussie",
     });
+    expect(Number.isInteger(advance.completed[0]?.rewardSummary.kind === "faction_rune"
+      ? advance.completed[0].rewardSummary.completeKeysCredited
+      : NaN)).toBe(true);
   });
 });
