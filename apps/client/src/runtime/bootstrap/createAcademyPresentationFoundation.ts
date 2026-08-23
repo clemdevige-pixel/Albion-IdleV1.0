@@ -67,22 +67,24 @@ export function createAcademyPresentationFoundation<
   >,
 ) {
   const getModel = (): AcademyPresentationModel => {
-    const activeResearch = dependencies.researchService.getActiveResearch();
+    const activeResearches = dependencies.researchService.getActiveResearches();
+    const activeById = new Map(activeResearches.map((entry) => [entry.researchId, entry]));
     const activeExpeditions = dependencies.expeditionService.getActiveExpeditions();
 
     return {
-      research: dependencies.researchService.getDefinitions().map((definition) => ({
-        id: definition.id,
-        displayName: definition.displayName,
-        tier: definition.tier,
-        state: dependencies.researchService.getEntryState(definition.id) ?? "locked",
-        durationMs: definition.durationMs,
-        remainingDurationMs: activeResearch?.researchId === definition.id
-          ? activeResearch.remainingDurationMs
-          : undefined,
-        silverCost: definition.cost.silver,
-        materials: definition.cost.materials.map((material) => ({ ...material })),
-      })),
+      research: dependencies.researchService.getDefinitions().map((definition) => {
+        const active = activeById.get(definition.id);
+        return {
+          id: definition.id,
+          displayName: definition.displayName,
+          tier: definition.tier,
+          state: dependencies.researchService.getEntryState(definition.id) ?? "locked",
+          durationMs: definition.durationMs,
+          remainingDurationMs: active?.remainingDurationMs,
+          silverCost: definition.cost.silver,
+          materials: definition.cost.materials.map((material) => ({ ...material })),
+        };
+      }),
       expeditions: dependencies.expeditionService.getDefinitions().map((definition) => {
         const active = activeExpeditions.find((entry) => entry.expeditionId === definition.id);
         return {
