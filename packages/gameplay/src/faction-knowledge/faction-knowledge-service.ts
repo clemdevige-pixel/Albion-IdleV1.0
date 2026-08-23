@@ -6,40 +6,62 @@ import type {
   RecordFactionKnowledgeKillResult,
 } from "./types.js";
 
-const FactionKnowledgeSnapshotSchema = z.object({
+const LegacyFactionKnowledgeSnapshotSchema = z.object({
   version: z.literal(1),
   killsByMonster: z.record(z.string().min(1), z.number().int().nonnegative()),
+});
+
+const FactionKnowledgeSnapshotSchema = z.object({
+  version: z.literal(2),
+  killsByMonster: z.record(z.string().min(1), z.number().int().nonnegative()),
+  killsByMonsterByContext: z.record(
+    z.string().min(1),
+    z.record(z.string().min(1), z.number().int().nonnegative()),
+  ),
 });
 
 type FactionKnowledgeSnapshot = z.infer<typeof FactionKnowledgeSnapshotSchema>;
 
 /**
  * Canonical persistent combat-knowledge ledger used by Bestiary, Relics and
- * Achievements. Only per-monster lifetime kills are stored; faction and elite
- * totals are derived through the authored monster resolver to avoid duplicated
- * counters drifting apart.
+ * Achievements. Lifetime per-monster totals remain authoritative for global
+ * progression, while contextual counters let presentation query kills for a
+ * specific authored world context without duplicating faction/elite totals.
  */
 export class FactionKnowledgeService implements SaveProvider {
   readonly providerId = "faction_knowledge";
 
   readonly #resolver: FactionKnowledgeMonsterResolver;
   readonly #killsByMonster = new Map<string, number>();
+  readonly #killsByMonsterByContext = new Map<string, Map<string, number>>();
 
   constructor(resolver: FactionKnowledgeMonsterResolver) {
     this.#resolver = resolver;
   }
 
-  recordKill(monsterId: string): RecordFactionKnowledgeKillResult {
+  recordKill(monsterId: string, contextId?: string): RecordFactionKnowledgeKillResult {
     if (this.#resolver.resolveMonster(monsterId) === undefined) {
       return { ok: false, reason: "unknown_monster" };
     }
     const totalKills = (this.#killsByMonster.get(monsterId) ?? 0) + 1;
     this.#killsByMonster.set(monsterId, totalKills);
+
+    const normalizedContextId = contextId?.trim();
+    if (normalizedContextId !== undefined && normalizedContextId !== "") {
+      let contextKills = this.#killsByMonsterByContext.get(monsterId);
+      if (contextKills === undefined) {
+        contextKills = new Map<string, number>();
+        this.#killsByMonsterByContext.set(monsterId, contextKills);
+      }
+      contextKills.set(normalizedContextId, (contextKills.get(normalizedContextId) ?? 0) + 1);
+    }
+
     return { ok: true, monsterId, totalKills };
   }
 
-  getMonsterKillCount(monsterId: string): number {
-    return this.#killsByMonster.get(monsterId) ?? 0;
+  getMonsterKillCount(monsterId: string, contextId?: string): number {
+    if (contextId === undefined) return this.#killsByMonster.get(monsterId) ?? 0;
+    return this.#killsByMonsterByContext.get(monsterId)?.get(contextId) ?? 0;
   }
 
   isMonsterDiscovered(monsterId: string): boolean {
@@ -70,20 +92,40 @@ export class FactionKnowledgeService implements SaveProvider {
   }
 
   save(): FactionKnowledgeSnapshot {
+    const killsByMonsterByContext: Record<string, Record<string, number>> = {};
+    for (const [monsterId, contextKills] of this.#killsByMonsterByContext) {
+      killsByMonsterByContext[monsterId] = Object.fromEntries(contextKills);
+    }
+
     return {
-      version: 1,
+      version: 2,
       killsByMonster: Object.fromEntries(this.#killsByMonster),
+      killsByMonsterByContext,
     };
   }
 
   load(data: unknown): void {
-    const parsed = FactionKnowledgeSnapshotSchema.safeParse(data);
-    if (!parsed.success) return;
+    const current = FactionKnowledgeSnapshotSchema.safeParse(data);
+    const legacy = current.success ? undefined : LegacyFactionKnowledgeSnapshotSchema.safeParse(data);
+    if (!current.success && (legacy === undefined || !legacy.success)) return;
 
     this.#killsByMonster.clear();
-    for (const [monsterId, kills] of Object.entries(parsed.data.killsByMonster)) {
+    this.#killsByMonsterByContext.clear();
+
+    const killsByMonster = current.success ? current.data.killsByMonster : legacy!.data.killsByMonster;
+    for (const [monsterId, kills] of Object.entries(killsByMonster)) {
       if (kills <= 0 || this.#resolver.resolveMonster(monsterId) === undefined) continue;
       this.#killsByMonster.set(monsterId, kills);
+    }
+
+    if (!current.success) return;
+    for (const [monsterId, contextRecord] of Object.entries(current.data.killsByMonsterByContext)) {
+      if (this.#resolver.resolveMonster(monsterId) === undefined) continue;
+      const contextKills = new Map<string, number>();
+      for (const [contextId, kills] of Object.entries(contextRecord)) {
+        if (kills > 0) contextKills.set(contextId, kills);
+      }
+      if (contextKills.size > 0) this.#killsByMonsterByContext.set(monsterId, contextKills);
     }
   }
 }
