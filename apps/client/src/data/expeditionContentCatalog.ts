@@ -2,6 +2,7 @@ import type {
   ExpeditionDefinition,
   ExpeditionRequirementDefinition,
 } from "@game/gameplay";
+import { getFactionExpeditionRewardProfile } from "./factionExpeditionRewardContentCatalog.js";
 import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 
@@ -39,13 +40,6 @@ export interface ExpeditionPresentationInfo {
 
 export const SILVER_EXPEDITION_TYPE_ID = "silver";
 export const FACTION_EXPEDITION_TYPE_ID = "faction";
-
-/**
- * Preserves the previously validated guaranteed Rune baseline until the new
- * multi-reward Expedition table is balanced. Extra rewards must be authored
- * here later rather than injected by runtime branches.
- */
-const BASE_FACTION_RUNES_PER_HOUR = 1;
 const EXPEDITION_TIERS = [4, 5, 6, 7, 8] as const;
 type ExpeditionTier = (typeof EXPEDITION_TIERS)[number];
 
@@ -80,7 +74,7 @@ export const SILVER_EXPEDITION_DEFINITIONS = [
   reward: { kind: "silver", silverPerHour },
 })) satisfies readonly SilverExpeditionContentDefinition[];
 
-/** One generic Faction Expedition per tier. Faction identity no longer selects a Rune stack. */
+/** One generic Faction Expedition per tier. Reward tuning is owned by the dedicated reward catalog. */
 export const FACTION_EXPEDITION_DEFINITIONS: readonly FactionExpeditionContentDefinition[] = (
   EXPEDITION_TIERS.map((tier) => ({
     id: `expedition_faction_t${String(tier)}`,
@@ -93,7 +87,7 @@ export const FACTION_EXPEDITION_DEFINITIONS: readonly FactionExpeditionContentDe
     reward: {
       kind: "faction_rune",
       itemId: getFactionRuneItemId(tier),
-      runesPerHour: BASE_FACTION_RUNES_PER_HOUR,
+      runesPerHour: getFactionExpeditionRewardProfile(tier).runesPerHour,
     },
   }))
 );
@@ -121,10 +115,11 @@ export function getExpeditionPresentationInfo(
   const definition = getExpeditionDefinition(expeditionId);
   if (definition === undefined) return undefined;
   if (isFactionExpeditionDefinition(definition)) {
+    const profile = getFactionExpeditionRewardProfile(definition.tier);
     return {
       categoryLabel: "Faction",
       description: "Expédition passive de faction. Elle peut progresser pendant les autres activités et hors ligne.",
-      rewardSummary: `Produit ${String(definition.reward.runesPerHour)} Rune de faction T${String(definition.tier)}/h garantie. Les récompenses secondaires restent à calibrer.`,
+      rewardSummary: `Moyenne : ${String(profile.runesPerHour)} runes/h, ${String(profile.fragmentsPerHour)} fragments/h et ${String(profile.completeKeysPerHourEv)} clé/h (EV). Chaque retour est variable.`,
     };
   }
   return {
@@ -132,15 +127,6 @@ export function getExpeditionPresentationInfo(
     description: "Expédition passive dédiée au Silver. Elle peut progresser pendant les autres activités et hors ligne.",
     rewardSummary: `Produit ${String(definition.reward.silverPerHour)} Silver/h.`,
   };
-}
-
-export function getFactionExpeditionBaseRuneReward(
-  expeditionId: string,
-  durationMs: number,
-): number | undefined {
-  const definition = getExpeditionDefinition(expeditionId);
-  if (definition === undefined || !isFactionExpeditionDefinition(definition)) return undefined;
-  return getHourlyReward(definition.reward.runesPerHour, durationMs);
 }
 
 export function getSilverExpeditionReward(
