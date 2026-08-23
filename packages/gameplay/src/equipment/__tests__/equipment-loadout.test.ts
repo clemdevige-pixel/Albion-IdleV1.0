@@ -19,14 +19,16 @@ const EQUIPMENT: Record<string, EquipmentInfoLike> = {
 
 const resolveInfo: EquipmentInfoResolver = (itemId) => EQUIPMENT[itemId];
 
-function setup(capacity = 12) {
+function setup(capacity = 12, bankCapacity = 12) {
   const world = new World(createRuntimeServices());
   const inventoryManager = new InventoryManager(world);
   const equipmentManager = new EquipmentManager(world, inventoryManager, resolveInfo);
   const heroId = world.createEntity();
+  const bankId = world.createEntity();
   inventoryManager.createInventory(heroId, capacity);
+  inventoryManager.createInventory(bankId, bankCapacity);
   equipmentManager.attachEquipment(heroId);
-  return { world, inventoryManager, equipmentManager, heroId };
+  return { world, inventoryManager, equipmentManager, heroId, bankId };
 }
 
 function addAndEquip(
@@ -40,6 +42,15 @@ function addAndEquip(
   const equipped = env.equipmentManager.equipFromInventory(env.heroId, slot.position);
   if (!equipped.ok) throw new Error(equipped.reason);
   return added.value.instanceId;
+}
+
+function moveInstanceToBank(env: ReturnType<typeof setup>, instanceId: ItemInstanceId): void {
+  const source = env.inventoryManager.findEntryByInstanceId(env.heroId, instanceId);
+  if (source === undefined) throw new Error("missing inventory item");
+  const removed = env.inventoryManager.removeEntryAt(env.heroId, source.position);
+  if (!removed.ok) throw new Error(removed.reason);
+  const inserted = env.inventoryManager.insertEntry(env.bankId, removed.value);
+  if (!inserted.ok) throw new Error(inserted.reason);
 }
 
 describe("EquipmentManager loadouts", () => {
@@ -65,6 +76,34 @@ describe("EquipmentManager loadouts", () => {
     expect(env.equipmentManager.getEquippedItem(env.heroId, "head")?.instanceId).toBe(t4Helmet);
     expect(env.equipmentManager.getEquippedItem(env.heroId, "chest")?.instanceId).toBe(t4Chest);
     expect(env.equipmentManager.getEquippedItem(env.heroId, "weapon")?.instanceId).toBe(t4Sword);
+  });
+
+  it("restores saved pieces directly from bank and returns displaced gear to bank", () => {
+    const t4Helmet = addAndEquip(env, "item_t4_helmet");
+    const t4Chest = addAndEquip(env, "item_t4_chest");
+    const t4Sword = addAndEquip(env, "item_t4_sword");
+    expect(env.equipmentManager.saveCurrentLoadout(env.heroId, "t4", "Set T4").ok).toBe(true);
+
+    const t5Helmet = addAndEquip(env, "item_t5_helmet");
+    const t5Chest = addAndEquip(env, "item_t5_chest");
+    const t5Sword = addAndEquip(env, "item_t5_sword");
+
+    moveInstanceToBank(env, t4Helmet);
+    moveInstanceToBank(env, t4Chest);
+    moveInstanceToBank(env, t4Sword);
+
+    const result = env.equipmentManager.applyLoadout(env.heroId, "t4", 4, env.bankId);
+
+    expect(result.ok).toBe(true);
+    expect(env.equipmentManager.getEquippedItem(env.heroId, "head")?.instanceId).toBe(t4Helmet);
+    expect(env.equipmentManager.getEquippedItem(env.heroId, "chest")?.instanceId).toBe(t4Chest);
+    expect(env.equipmentManager.getEquippedItem(env.heroId, "weapon")?.instanceId).toBe(t4Sword);
+    expect(env.inventoryManager.findEntryByInstanceId(env.bankId, t5Helmet)).toBeDefined();
+    expect(env.inventoryManager.findEntryByInstanceId(env.bankId, t5Chest)).toBeDefined();
+    expect(env.inventoryManager.findEntryByInstanceId(env.bankId, t5Sword)).toBeDefined();
+    expect(env.inventoryManager.findEntryByInstanceId(env.bankId, t4Helmet)).toBeUndefined();
+    expect(env.inventoryManager.findEntryByInstanceId(env.bankId, t4Chest)).toBeUndefined();
+    expect(env.inventoryManager.findEntryByInstanceId(env.bankId, t4Sword)).toBeUndefined();
   });
 
   it("accepts an enchanted item when its base tier matches the zone cap", () => {
