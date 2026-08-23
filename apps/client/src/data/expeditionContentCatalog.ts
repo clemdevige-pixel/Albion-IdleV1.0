@@ -4,6 +4,7 @@ import type {
 } from "@game/gameplay";
 import { getFactionExpeditionRewardProfile } from "./factionExpeditionRewardContentCatalog.js";
 import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
+import { getGeneralistExpeditionRewardProfile } from "./generalistExpeditionRewardContentCatalog.js";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 
 export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & {
@@ -11,11 +12,13 @@ export type ExpeditionContentRequirement = ExpeditionRequirementDefinition & {
   readonly unlockId: string;
 };
 
-export interface SilverExpeditionContentDefinition
+/** Internal IDs retain the historical `silver` name for save/unlock compatibility. */
+export interface GeneralistExpeditionContentDefinition
   extends ExpeditionDefinition<ExpeditionContentRequirement> {
   readonly reward: {
     readonly kind: "silver";
     readonly silverPerHour: number;
+    readonly shardsPerHour: number;
   };
 }
 
@@ -29,15 +32,16 @@ export interface FactionExpeditionContentDefinition
 }
 
 export type ExpeditionContentDefinition =
-  | SilverExpeditionContentDefinition
+  | GeneralistExpeditionContentDefinition
   | FactionExpeditionContentDefinition;
 
 export interface ExpeditionPresentationInfo {
-  readonly categoryLabel: "Silver" | "Faction";
+  readonly categoryLabel: "Généraliste" | "Faction";
   readonly description: string;
   readonly rewardSummary: string;
 }
 
+/** Compatibility IDs: do not rename without a save migration. */
 export const SILVER_EXPEDITION_TYPE_ID = "silver";
 export const FACTION_EXPEDITION_TYPE_ID = "faction";
 const EXPEDITION_TIERS = [4, 5, 6, 7, 8] as const;
@@ -59,20 +63,27 @@ const FACTION_TIER_UNLOCKS: Readonly<Record<ExpeditionTier, string>> = {
   8: RESEARCH_UNLOCK_IDS.factionExpeditionTier8,
 };
 
-export const SILVER_EXPEDITION_DEFINITIONS = [
-  { tier: 4, silverPerHour: 15_000 },
-  { tier: 5, silverPerHour: 25_000 },
-  { tier: 6, silverPerHour: 35_000 },
-  { tier: 7, silverPerHour: 40_000 },
-  { tier: 8, silverPerHour: 50_000 },
-].map(({ tier, silverPerHour }) => ({
-  id: `expedition_silver_t${String(tier)}`,
-  typeId: SILVER_EXPEDITION_TYPE_ID,
-  displayName: `Expédition d'argent T${String(tier)}`,
-  tier,
-  requirements: [{ type: "research_unlock", unlockId: SILVER_TIER_UNLOCKS[tier as ExpeditionTier] }],
-  reward: { kind: "silver", silverPerHour },
-})) satisfies readonly SilverExpeditionContentDefinition[];
+/**
+ * Player-facing Generalist Expedition. Historical silver IDs are intentionally
+ * preserved so existing saves and Research unlocks remain valid.
+ */
+export const SILVER_EXPEDITION_DEFINITIONS: readonly GeneralistExpeditionContentDefinition[] = (
+  EXPEDITION_TIERS.map((tier) => {
+    const profile = getGeneralistExpeditionRewardProfile(tier);
+    return {
+      id: `expedition_silver_t${String(tier)}`,
+      typeId: SILVER_EXPEDITION_TYPE_ID,
+      displayName: `Expédition généraliste T${String(tier)}`,
+      tier,
+      requirements: [{ type: "research_unlock", unlockId: SILVER_TIER_UNLOCKS[tier] }],
+      reward: {
+        kind: "silver",
+        silverPerHour: profile.silverPerHour,
+        shardsPerHour: profile.shardsPerHour,
+      },
+    };
+  })
+);
 
 /** One generic Faction Expedition per tier. Reward tuning is owned by the dedicated reward catalog. */
 export const FACTION_EXPEDITION_DEFINITIONS: readonly FactionExpeditionContentDefinition[] = (
@@ -122,24 +133,11 @@ export function getExpeditionPresentationInfo(
       rewardSummary: `Moyenne : ${String(profile.runesPerHour)} runes/h, ${String(profile.fragmentsPerHour)} fragments/h et ${String(profile.completeKeysPerHourEv)} clé/h (EV). Chaque retour est variable.`,
     };
   }
+
+  const profile = getGeneralistExpeditionRewardProfile(definition.tier);
   return {
-    categoryLabel: "Silver",
-    description: "Expédition passive dédiée au Silver. Elle peut progresser pendant les autres activités et hors ligne.",
-    rewardSummary: `Produit ${String(definition.reward.silverPerHour)} Silver/h.`,
+    categoryLabel: "Généraliste",
+    description: "Expédition passive généraliste dédiée au Silver et aux éclats d’enchantement. Elle progresse pendant les autres activités et hors ligne.",
+    rewardSummary: `Moyenne : ${String(profile.silverPerHour)} Silver/h et ${String(profile.shardsPerHour)} éclats T${String(definition.tier)}/h. Chaque retour est variable.`,
   };
-}
-
-export function getSilverExpeditionReward(
-  expeditionId: string,
-  durationMs: number,
-): number | undefined {
-  const definition = SILVER_EXPEDITION_DEFINITIONS.find((entry) => entry.id === expeditionId);
-  if (definition === undefined) return undefined;
-  return getHourlyReward(definition.reward.silverPerHour, durationMs);
-}
-
-function getHourlyReward(ratePerHour: number, durationMs: number): number | undefined {
-  const hours = durationMs / (60 * 60 * 1000);
-  if (!Number.isFinite(hours) || hours <= 0) return undefined;
-  return ratePerHour * hours;
 }
