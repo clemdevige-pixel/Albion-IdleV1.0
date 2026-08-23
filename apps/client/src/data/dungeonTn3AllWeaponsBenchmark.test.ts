@@ -74,9 +74,13 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       magicResistance: number;
       clear: boolean;
       encounterReached: number;
+      encounterProgressPct: number;
+      bossProgressPct: number;
+      enemyHpRemainingPct: number;
       seconds: number;
       hpPercent: number;
       observedDps: number;
+      incomingDps: number;
       damageReceived: number;
     }> = [];
 
@@ -109,9 +113,13 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
               magicResistance: result.magicResistance,
               clear: result.clear,
               encounterReached: result.encounterReached,
+              encounterProgressPct: result.encounterProgressPercent,
+              bossProgressPct: result.bossProgressPercent,
+              enemyHpRemainingPct: result.enemyHpRemainingPercent,
               seconds: result.seconds,
               hpPercent: result.hpPercent,
               observedDps: result.observedDps,
+              incomingDps: result.incomingDps,
               damageReceived: result.damageReceived,
             });
           }
@@ -128,15 +136,24 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
         runs: tierRows.length,
         clears: cleared.length,
         clearRatePct: round1((cleared.length / tierRows.length) * 100),
+        avgEncounterReached: round1(
+          tierRows.reduce((sum, row) => sum + row.encounterReached, 0) / tierRows.length,
+        ),
+        avgEncounterProgressPct: round1(
+          tierRows.reduce((sum, row) => sum + row.encounterProgressPct, 0) / tierRows.length,
+        ),
+        avgBossProgressPct: round1(
+          tierRows.reduce((sum, row) => sum + row.bossProgressPct, 0) / tierRows.length,
+        ),
+        avgIncomingDps: round1(
+          tierRows.reduce((sum, row) => sum + row.incomingDps, 0) / tierRows.length,
+        ),
         avgClearSeconds: cleared.length > 0
           ? round1(cleared.reduce((sum, row) => sum + row.seconds, 0) / cleared.length)
           : 0,
         avgClearHpPct: cleared.length > 0
           ? round1(cleared.reduce((sum, row) => sum + row.hpPercent, 0) / cleared.length)
           : 0,
-        avgDamageReceived: round1(
-          tierRows.reduce((sum, row) => sum + row.damageReceived, 0) / tierRows.length,
-        ),
         capeReductionPct: round1(
           tierRows.reduce((sum, row) => sum + row.capeReductionPct, 0) / tierRows.length,
         ),
@@ -148,8 +165,10 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
       const faction = rows.filter((row) => row.tier === tier && row.cape === "faction");
       const travelerClears = traveler.filter((row) => row.clear);
       const factionClears = faction.filter((row) => row.clear);
-      const avgTravelerDamage = traveler.reduce((sum, row) => sum + row.damageReceived, 0) / traveler.length;
-      const avgFactionDamage = faction.reduce((sum, row) => sum + row.damageReceived, 0) / faction.length;
+      const avgTravelerIncomingDps = traveler.reduce((sum, row) => sum + row.incomingDps, 0) / traveler.length;
+      const avgFactionIncomingDps = faction.reduce((sum, row) => sum + row.incomingDps, 0) / faction.length;
+      const avgTravelerBossProgress = traveler.reduce((sum, row) => sum + row.bossProgressPct, 0) / traveler.length;
+      const avgFactionBossProgress = faction.reduce((sum, row) => sum + row.bossProgressPct, 0) / faction.length;
       return {
         tier,
         travelerClears: `${travelerClears.length}/${traveler.length}`,
@@ -157,11 +176,14 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
         clearRateDeltaPct: round1(
           ((factionClears.length / faction.length) - (travelerClears.length / traveler.length)) * 100,
         ),
-        avgDamageTraveler: round1(avgTravelerDamage),
-        avgDamageFaction: round1(avgFactionDamage),
-        avgDamageReductionPct: avgTravelerDamage > 0
-          ? round1((1 - avgFactionDamage / avgTravelerDamage) * 100)
+        avgIncomingDpsTraveler: round1(avgTravelerIncomingDps),
+        avgIncomingDpsFaction: round1(avgFactionIncomingDps),
+        incomingDpsReductionPct: avgTravelerIncomingDps > 0
+          ? round1((1 - avgFactionIncomingDps / avgTravelerIncomingDps) * 100)
           : 0,
+        avgBossProgressTraveler: round1(avgTravelerBossProgress),
+        avgBossProgressFaction: round1(avgFactionBossProgress),
+        bossProgressDeltaPct: round1(avgFactionBossProgress - avgTravelerBossProgress),
       };
     });
 
@@ -175,12 +197,15 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
         weapon,
         cape,
         clears: `${cleared.length}/${weaponRows.length}`,
-        avgSeconds: cleared.length > 0
-          ? round1(cleared.reduce((sum, row) => sum + row.seconds, 0) / cleared.length)
-          : 0,
-        avgHpPct: cleared.length > 0
-          ? round1(cleared.reduce((sum, row) => sum + row.hpPercent, 0) / cleared.length)
-          : 0,
+        avgIncomingDps: round1(
+          weaponRows.reduce((sum, row) => sum + row.incomingDps, 0) / weaponRows.length,
+        ),
+        avgBossProgressPct: round1(
+          weaponRows.reduce((sum, row) => sum + row.bossProgressPct, 0) / weaponRows.length,
+        ),
+        avgEncounterProgressPct: round1(
+          weaponRows.reduce((sum, row) => sum + row.encounterProgressPct, 0) / weaponRows.length,
+        ),
         avgDps: round1(
           weaponRows.reduce((sum, row) => sum + row.observedDps, 0) / weaponRows.length,
         ),
@@ -201,7 +226,15 @@ describe("same-tier .3 dungeon benchmark across all weapons and faction capes", 
     console.log("[DUNGEON_TN3_CAPE_JSON]", JSON.stringify(rows, null, 2));
 
     expect(rows).toHaveLength(DUNGEON_DEFINITIONS.length * FAMILIES.length * CAPE_MODES.length);
-    expect(rows.every((row) => Number.isFinite(row.seconds) && Number.isFinite(row.observedDps))).toBe(true);
+    expect(rows.every((row) => (
+      Number.isFinite(row.seconds)
+      && Number.isFinite(row.observedDps)
+      && Number.isFinite(row.incomingDps)
+      && row.encounterProgressPct >= 0
+      && row.encounterProgressPct <= 100
+      && row.bossProgressPct >= 0
+      && row.bossProgressPct <= 100
+    ))).toBe(true);
     expect(rows.filter((row) => row.cape === "traveler").every((row) => row.capeReductionPct === 0)).toBe(true);
     expect(rows.filter((row) => row.cape === "faction").every((row) => row.capeReductionPct > 0)).toBe(true);
   });
