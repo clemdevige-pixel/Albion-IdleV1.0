@@ -9,11 +9,14 @@ import {
 import {
   EXPEDITION_DEFINITIONS,
   getExpeditionDefinition,
-  getFactionExpeditionBaseRuneReward,
   getSilverExpeditionReward,
   isFactionExpeditionDefinition,
   type ExpeditionContentRequirement,
 } from "../../data/expeditionContentCatalog.js";
+import {
+  rollFactionExpeditionReward,
+  type FactionExpeditionResultQuality,
+} from "../../data/factionExpeditionRewardContentCatalog.js";
 import {
   RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
@@ -29,6 +32,11 @@ export interface FactionRuneExpeditionRewardSummary {
   readonly kind: "faction_rune";
   readonly itemId: string;
   readonly runesCredited: number;
+  readonly fragmentItemId: string;
+  readonly fragmentsCredited: number;
+  readonly keyItemId: string;
+  readonly completeKeysCredited: number;
+  readonly quality: FactionExpeditionResultQuality;
 }
 
 export type ExpeditionRewardSummary =
@@ -41,6 +49,7 @@ export interface ExpeditionFoundationDependencies {
   readonly walletId: WalletId;
   readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
+  readonly random?: () => number;
   /** @deprecated Ignored since Faction Expeditions no longer use faction Mastery yield. */
   readonly getFactionYieldBonusPercent?: (factionId: string) => number;
 }
@@ -57,6 +66,44 @@ const FIRST_SLOT_UNLOCKS = [
   RESEARCH_UNLOCK_IDS.factionExpeditionTier7,
   RESEARCH_UNLOCK_IDS.factionExpeditionTier8,
 ] as const;
+
+interface QuantityReward {
+  readonly itemId: string;
+  readonly quantity: number;
+}
+
+function creditFactionRewards(
+  inventoryManager: InventoryManager,
+  heroId: EntityId,
+  rewards: readonly QuantityReward[],
+  expeditionId: string,
+): void {
+  const positiveRewards = rewards.filter(({ quantity }) => quantity > 0);
+  for (const reward of positiveRewards) {
+    if (!Number.isSafeInteger(reward.quantity)) {
+      throw new Error(`Faction Expedition produced a non-integer reward: ${expeditionId}`);
+    }
+    if (!inventoryManager.canAcceptQuantity(heroId, reward.itemId, reward.quantity)) {
+      throw new Error(`Faction Expedition inventory capacity exceeded: ${expeditionId}`);
+    }
+  }
+
+  const credited: QuantityReward[] = [];
+  try {
+    for (const reward of positiveRewards) {
+      const added = inventoryManager.addQuantity(heroId, reward.itemId, reward.quantity);
+      if (!added.ok || added.value.added !== reward.quantity || added.value.remainder !== 0) {
+        throw new Error(`Faction Expedition reward credit failed: ${expeditionId}`);
+      }
+      credited.push(reward);
+    }
+  } catch (error) {
+    for (const reward of credited.toReversed()) {
+      inventoryManager.removeQuantity(heroId, reward.itemId, reward.quantity);
+    }
+    throw error;
+  }
+}
 
 export function createExpeditionFoundation(dependencies: ExpeditionFoundationDependencies) {
   const rewardLedger = new ExpeditionRewardLedger();
@@ -104,31 +151,31 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
           return { kind: "silver", silverCredited: silver };
         }
 
-        const runes = getFactionExpeditionBaseRuneReward(definition.id, durationMs);
-        if (runes === undefined || !Number.isSafeInteger(runes) || runes <= 0) {
-          throw new Error(`Invalid Faction Expedition reward: ${definition.id}`);
-        }
-
-        if (!dependencies.inventoryManager.canAcceptQuantity(
-          dependencies.heroId,
-          contentDefinition.reward.itemId,
-          runes,
-        )) {
-          throw new Error(`Faction Expedition inventory capacity exceeded: ${definition.id}`);
-        }
-        const added = dependencies.inventoryManager.addQuantity(
-          dependencies.heroId,
-          contentDefinition.reward.itemId,
-          runes,
+        const reward = rollFactionExpeditionReward(
+          contentDefinition.tier,
+          durationMs,
+          dependencies.random ?? Math.random,
         );
-        if (!added.ok || added.value.added !== runes || added.value.remainder !== 0) {
-          throw new Error(`Faction Expedition Rune credit failed: ${definition.id}`);
-        }
+        creditFactionRewards(
+          dependencies.inventoryManager,
+          dependencies.heroId,
+          [
+            { itemId: reward.runeItemId, quantity: reward.runes },
+            { itemId: reward.fragmentItemId, quantity: reward.fragments },
+            { itemId: reward.keyItemId, quantity: reward.completeKeys },
+          ],
+          definition.id,
+        );
 
         return {
           kind: "faction_rune",
-          itemId: contentDefinition.reward.itemId,
-          runesCredited: runes,
+          itemId: reward.runeItemId,
+          runesCredited: reward.runes,
+          fragmentItemId: reward.fragmentItemId,
+          fragmentsCredited: reward.fragments,
+          keyItemId: reward.keyItemId,
+          completeKeysCredited: reward.completeKeys,
+          quality: reward.quality,
         };
       },
     },
