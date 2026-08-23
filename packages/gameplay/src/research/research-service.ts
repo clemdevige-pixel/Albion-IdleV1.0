@@ -194,7 +194,7 @@ export class ResearchService<
     return {
       version: 2,
       completedResearchIds: [...this.getCompletedResearchIds()],
-      activeResearches: this.getActiveResearches(),
+      activeResearches: this.getActiveResearches().map((entry) => ({ ...entry })),
     };
   }
 
@@ -240,10 +240,7 @@ export class ResearchService<
         || material.quantity <= 0
       ))
     ) return false;
-    if (definition.requirements.some((requirement) => requirement.type.trim() === "")) return false;
-    if (definition.unlockIds.length === 0) return false;
     if (definition.unlockIds.some((unlockId) => unlockId.trim() === "")) return false;
-    if (new Set(definition.unlockIds).size !== definition.unlockIds.length) return false;
     return true;
   }
 }
