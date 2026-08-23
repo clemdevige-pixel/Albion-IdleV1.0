@@ -117,7 +117,7 @@ const BROADSWORD_CHECKPOINTS: readonly RuntimeCheckpoint[] = [
 ];
 
 const BLUE_CONTRACT_CHECKPOINTS: readonly ContractCheckpoint[] = [
-  { id: "forest_s10_starter", zoneDefId: WORLD_ZONE_IDS.forest, segmentIndex: 9, tier: 3, mastery: 1, enchantment: 0, gearMode: "none", useHealthPotions: false, expectation: "all_clear", contract: "starter weapon clears Forest S10 without potion" },
+  { id: "forest_s10_starter", zoneDefId: WORLD_ZONE_IDS.forest, segmentIndex: 9, tier: 3, mastery: 1, enchantment: 0, gearMode: "none", useHealthPotions: false, expectation: "not_all_clear", contract: "Forest S10 is not required to be a universal starter clear; weapon-dependent early reach is acceptable" },
   { id: "swamp_s10_starter", zoneDefId: WORLD_ZONE_IDS.swamp, segmentIndex: 9, tier: 3, mastery: 1, enchantment: 0, gearMode: "none", useHealthPotions: false, expectation: "not_all_clear", contract: "Swamp remains a real T3 progression wall" },
   { id: "swamp_s10_full_t3", zoneDefId: WORLD_ZONE_IDS.swamp, segmentIndex: 9, tier: 3, mastery: 10, enchantment: 0, gearMode: "full_t3", useHealthPotions: false, expectation: "profile_potion_ok", contract: "full T3 clears Swamp S10; role-dependent potion support is acceptable" },
   { id: "highland_s1_full_t3", zoneDefId: WORLD_ZONE_IDS.highland, segmentIndex: 0, tier: 3, mastery: 10, enchantment: 0, gearMode: "full_t3", useHealthPotions: false, expectation: "not_all_clear", contract: "full T3 is not autonomous Highlands entry farm" },
@@ -128,8 +128,9 @@ const BLUE_CONTRACT_CHECKPOINTS: readonly ContractCheckpoint[] = [
   { id: "steppe_s10_full_t4_1", zoneDefId: WORLD_ZONE_IDS.steppe, segmentIndex: 9, tier: 4, mastery: 18, enchantment: 1, gearMode: "full_t4", useHealthPotions: false, expectation: "profile_potion_ok", contract: "T4.1 is the intended late-Steppe progression tool; role-dependent potion support is acceptable" },
   { id: "frostpeak_s4_full_t4_1", zoneDefId: WORLD_ZONE_IDS.mountain, segmentIndex: 3, tier: 4, mastery: 19, enchantment: 1, gearMode: "full_t4", useHealthPotions: false, expectation: "profile_potion_ok", contract: "T4.1 progresses through early Frostpeak; role-dependent potion support is acceptable" },
   { id: "frostpeak_s10_full_t4_2", zoneDefId: WORLD_ZONE_IDS.mountain, segmentIndex: 9, tier: 4, mastery: 22, enchantment: 2, gearMode: "full_t4", useHealthPotions: false, expectation: "not_all_clear", contract: "T4.2 S10 is a difficult wall, not guaranteed AFK" },
-  { id: "frostpeak_s10_full_t4_2_potion", zoneDefId: WORLD_ZONE_IDS.mountain, segmentIndex: 9, tier: 4, mastery: 22, enchantment: 2, gearMode: "full_t4", useHealthPotions: true, expectation: "all_clear", contract: "potion/optimization can bridge T4.2 S10" },
-  { id: "frostpeak_s10_full_t4_3", zoneDefId: WORLD_ZONE_IDS.mountain, segmentIndex: 9, tier: 4, mastery: 22, enchantment: 3, gearMode: "full_t4", useHealthPotions: false, expectation: "all_clear", contract: "T4.3 is the reliable potion-free Blue S10 threshold" },
+  { id: "frostpeak_s10_full_t4_2_potion", zoneDefId: WORLD_ZONE_IDS.mountain, segmentIndex: 9, tier: 4, mastery: 22, enchantment: 2, gearMode: "full_t4", useHealthPotions: true, expectation: "not_all_clear", contract: "T4.2 + potion must not universally bypass the end-of-tier boss gate" },
+  { id: "frostpeak_s10_full_t4_3", zoneDefId: WORLD_ZONE_IDS.mountain, segmentIndex: 9, tier: 4, mastery: 22, enchantment: 3, gearMode: "full_t4", useHealthPotions: false, expectation: "not_all_clear", contract: "T4.3 without potion is not required to universally clear the end-of-tier boss gate" },
+  { id: "frostpeak_s10_full_t4_3_potion", zoneDefId: WORLD_ZONE_IDS.mountain, segmentIndex: 9, tier: 4, mastery: 22, enchantment: 3, gearMode: "full_t4", useHealthPotions: true, expectation: "all_clear", contract: "T4.3 + potion universally clears the end-of-tier boss gate" },
 ];
 
 function runCheckpoint(checkpoint: RuntimeCheckpoint, weaponItemId: string, forcePotions?: boolean) {
