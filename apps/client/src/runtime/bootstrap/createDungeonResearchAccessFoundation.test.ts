@@ -18,7 +18,7 @@ function createDungeon(faction: string): DungeonDefinition {
 }
 
 describe("createDungeonResearchAccessFoundation", () => {
-  it("gates every authored dungeon behind the single Sanctuary discovery unlock", () => {
+  it("gates dungeons and the rare Faction Rune world channel behind authored unlocks", () => {
     const completedUnlocks = new Set<string>();
     const dungeons = FACTIONS.map(createDungeon);
     const definitions = new Map(dungeons.map((definition) => [definition.id, definition] as const));
@@ -28,11 +28,16 @@ describe("createDungeonResearchAccessFoundation", () => {
     });
 
     expect(foundation.isDungeonSystemUnlocked()).toBe(false);
+    expect(foundation.isFactionRuneWorldDropUnlocked()).toBe(false);
     for (const dungeon of dungeons) expect(foundation.canAccessDefinition(dungeon.id)).toBe(false);
 
     completedUnlocks.add(RESEARCH_UNLOCK_IDS.dungeonSystem);
     expect(foundation.isDungeonSystemUnlocked()).toBe(true);
+    expect(foundation.isFactionRuneWorldDropUnlocked()).toBe(false);
     for (const dungeon of dungeons) expect(foundation.canAccessDefinition(dungeon.id)).toBe(true);
+
+    completedUnlocks.add(RESEARCH_UNLOCK_IDS.factionRuneWorldDrop);
+    expect(foundation.isFactionRuneWorldDropUnlocked()).toBe(true);
     expect(foundation.canAccessDefinition("unknown_dungeon")).toBe(false);
   });
 });
