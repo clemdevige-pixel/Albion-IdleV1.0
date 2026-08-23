@@ -33,7 +33,7 @@ import { resolveFactionCapeDungeonDamageReductionPercent } from "../data/faction
 import { CombatRuntime } from "./CombatRuntime.js";
 import { CONTINUOUS_COMBAT_FLOW_POLICY } from "./CombatFlowPolicy.js";
 import { ConsumableRuntime } from "./ConsumableRuntime.js";
-import { setupCombatEntity, spawnAuthoredEnemy } from "./combatEntityFactory.js";
+import { setupCombatEntity, spawnAuthoredEnemy, type SpawnedEnemyResult } from "./combatEntityFactory.js";
 import { createProgressionFoundation } from "./bootstrap/createProgressionFoundation.js";
 import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
 import { RUNTIME_DELTA_SECONDS } from "./runtimeTiming.js";
@@ -83,10 +83,13 @@ export interface CombatRuntimeEncounterTelemetry {
   readonly seconds: number;
   readonly hpBeforePercent: number;
   readonly hpAfterPercent: number;
+  readonly enemyHpRemainingPercent: number;
+  readonly encounterProgressPercent: number;
   readonly potionsUsed: number;
   readonly damageDealt: number;
   readonly damageReceived: number;
   readonly observedDps: number;
+  readonly incomingDps: number;
   readonly damageBySource: CombatRuntimeDamageSourceTelemetry;
   readonly abilities: readonly CombatRuntimeAbilityTelemetry[];
 }
@@ -98,6 +101,9 @@ export interface CombatRuntimeBenchmarkResult {
   readonly seconds: number;
   readonly hpPercent: number;
   readonly encounterReached: number;
+  readonly encounterProgressPercent: number;
+  readonly bossProgressPercent: number;
+  readonly enemyHpRemainingPercent: number;
   readonly maxHealth: number;
   readonly armor: number;
   readonly magicResistance: number;
@@ -107,6 +113,7 @@ export interface CombatRuntimeBenchmarkResult {
   readonly damageDealt: number;
   readonly damageReceived: number;
   readonly observedDps: number;
+  readonly incomingDps: number;
   readonly damageBySource: CombatRuntimeDamageSourceTelemetry;
   readonly abilities: readonly CombatRuntimeAbilityTelemetry[];
   readonly encounters: readonly CombatRuntimeEncounterTelemetry[];
@@ -293,6 +300,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   let defeated = false;
   let potionsUsed = 0;
   let segmentEndHpPercent: number | undefined;
+  let activeEnemy: SpawnedEnemyResult | undefined;
   const abilityDefinitions = resolveUnlockedWeaponAbilities(input.weaponItemId, masteryLevel);
   const abilityIds = abilityDefinitions.map((definition) => String(definition.id));
   const abilityTelemetry = new Map<string, MutableAbilityTelemetry>();
@@ -323,11 +331,20 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     encounterStartAbilities = copyAbilityTelemetry();
   };
 
+  const resolveEnemyHpRemainingPercent = (cleared: boolean): number => {
+    if (cleared) return 0;
+    if (activeEnemy === undefined || !damageManager.isAlive(activeEnemy.id)) return 0;
+    const enemyHealth = damageManager.getHealth(activeEnemy.id);
+    return Math.max(0, Math.min(100, (enemyHealth.currentHealth / enemyHealth.maxHealth) * 100));
+  };
+
   const recordEncounter = (cleared: boolean): void => {
     const health = damageManager.getHealth(heroId);
     const seconds = (ticks - encounterStartTick) * DT;
     const dealt = damageDealt - encounterStartDamageDealt;
     const received = damageReceived - encounterStartDamageReceived;
+    const enemyHpRemainingPercent = resolveEnemyHpRemainingPercent(cleared);
+    const encounterProgressPercent = Math.max(0, Math.min(100, 100 - enemyHpRemainingPercent));
     const abilities = abilityIds.map((abilityId) => {
       const before = encounterStartAbilities.get(abilityId) ?? { casts: 0, directDamage: 0 };
       const after = abilityTelemetry.get(abilityId) ?? { casts: 0, directDamage: 0 };
@@ -343,10 +360,13 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
       seconds: round1(seconds),
       hpBeforePercent: round1((encounterStartHp / health.maxHealth) * 100),
       hpAfterPercent: round1((health.currentHealth / health.maxHealth) * 100),
+      enemyHpRemainingPercent: round1(enemyHpRemainingPercent),
+      encounterProgressPercent: round1(encounterProgressPercent),
       potionsUsed: potionsUsed - encounterStartPotions,
       damageDealt: round1(dealt),
       damageReceived: round1(received),
       observedDps: seconds > 0 ? round1(dealt / seconds) : 0,
+      incomingDps: seconds > 0 ? round1(received / seconds) : 0,
       damageBySource: {
         autoAttack: round1(damageBySource.autoAttack - encounterStartDamageBySource.autoAttack),
         ability: round1(damageBySource.ability - encounterStartDamageBySource.ability),
@@ -376,7 +396,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
       spawnEnemyOverride: () => {
         const encounter = dungeon.encounters[encounterIndex];
         if (encounter === undefined) return undefined;
-        return spawnAuthoredEnemy(
+        activeEnemy = spawnAuthoredEnemy(
           { world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager },
           {
             monsterDefinitionId: encounter.monsterDefinitionId,
@@ -387,6 +407,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
             }),
           },
         );
+        return activeEnemy;
       },
     }),
     ports: {
@@ -405,6 +426,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
           return { enteredNewSegment: true };
         }
         encounterIndex += 1;
+        activeEnemy = undefined;
         beginEncounter();
         return { enteredNewSegment: false };
       },
@@ -445,6 +467,10 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
       directDamage: round1(telemetry.directDamage),
     };
   });
+  const finalEncounter = encounterTelemetry.at(-1);
+  const encounterProgressPercent = finalEncounter?.encounterProgressPercent ?? 0;
+  const enemyHpRemainingPercent = finalEncounter?.enemyHpRemainingPercent ?? 0;
+  const bossProgressPercent = encounterIndex >= lastEncounterIndex ? encounterProgressPercent : 0;
   return {
     label: input.label,
     weaponItemId: input.weaponItemId,
@@ -452,6 +478,9 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     seconds,
     hpPercent: round1(segmentEndHpPercent ?? ((health.currentHealth / health.maxHealth) * 100)),
     encounterReached: encounterIndex + 1,
+    encounterProgressPercent,
+    bossProgressPercent,
+    enemyHpRemainingPercent,
     maxHealth: health.maxHealth,
     armor: statsManager.getStat(heroId, STAT_ARMOR).computed,
     magicResistance: statsManager.getStat(heroId, STAT_MAGIC_RESISTANCE).computed,
@@ -461,6 +490,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     damageDealt: round1(damageDealt),
     damageReceived: round1(damageReceived),
     observedDps: seconds > 0 ? round1(damageDealt / seconds) : 0,
+    incomingDps: seconds > 0 ? round1(damageReceived / seconds) : 0,
     damageBySource: {
       autoAttack: round1(damageBySource.autoAttack),
       ability: round1(damageBySource.ability),
