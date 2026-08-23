@@ -11,7 +11,8 @@ interface GatheringResourceCardProps {
 
 export function GatheringResourceCard({ resource, tier, actions }: GatheringResourceCardProps): JSX.Element {
   const { activity, heroMastery } = resource;
-  const heroActive = activity.status === "gathering";
+  const heroActive = activity.status === "gathering"
+    && activity.activeCycle?.resourceTier === tier;
   const otherTierActive = activity.activeCycle !== undefined && !heroActive;
 
   return (
@@ -55,18 +56,14 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
                 : activity.isMasteryUnlocked ? "Disponible" : "Bloqué"}
           </b>
         </header>
-        <ProgressBar value={activity.progress} />
+        <ProgressBar value={heroActive ? activity.progress : 0} />
         <button
-          className={`ui-gathering-card__hero-action${heroActive || otherTierActive ? " is-stop" : ""}`}
+          className={`ui-gathering-card__hero-action${heroActive ? " is-stop" : ""}`}
           type="button"
-          disabled={!heroActive && !otherTierActive && !activity.isMasteryUnlocked}
+          disabled={!heroActive && !activity.isMasteryUnlocked}
           onClick={() => { actions.toggleHero(resource.id); }}
         >
-          {heroActive
-            ? "Arrêter la récolte"
-            : otherTierActive
-              ? `Arrêter la récolte T${String(activity.activeCycle?.resourceTier)}`
-              : "Récolter avec le héros"}
+          {heroActive ? "Arrêter la récolte" : "Récolter avec le héros"}
         </button>
 
         {heroActive && activity.activeMiniGame !== undefined && (
