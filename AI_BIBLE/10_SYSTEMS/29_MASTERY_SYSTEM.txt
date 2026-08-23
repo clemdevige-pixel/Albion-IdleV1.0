@@ -101,7 +101,9 @@ Each Mastery has its own:
 - Experience
 - Reward Table
 
-Progression earned on one Mastery never affects another.
+Progression earned on one Mastery never increases the Level or Experience of another Mastery.
+
+A weapon specialization may however contribute Item Power to other weapon specializations of the same family through the cross-specialization IP rule defined below.
 
 Example:
 
@@ -110,6 +112,112 @@ Broadsword Mastery Level 82
 does not increase
 
 Claymore Mastery Level 15
+
+but Broadsword Mastery contributes cross-specialization IP while a different Sword specialization is equipped.
+
+---
+
+# Weapon Mastery Item Power
+
+Weapon Mastery Item Power is calculated from three independent contributions.
+
+## Family Mastery
+
+Each Family Mastery level grants:
+
++0.5 IP
+
+to every weapon specialization inside that family.
+
+Example:
+
+Sword Family Mastery Level 50
+
+=
+
++25 IP to every Sword weapon.
+
+---
+
+## Equipped Specialization Mastery
+
+Each level of the currently equipped weapon specialization grants:
+
++1 IP
+
+to that equipped specialization.
+
+Example:
+
+Carving Sword Mastery Level 40
+
+=
+
++40 IP while Carving Sword is equipped.
+
+---
+
+## Cross-Specialization Mastery
+
+Each level earned on a weapon specialization also grants:
+
++0.2 IP
+
+to every OTHER weapon specialization belonging to the same weapon family.
+
+The currently equipped specialization does not also receive its own +0.2 IP contribution.
+
+Cross-specialization IP never crosses weapon-family boundaries.
+
+Example:
+
+Equipped weapon:
+
+Carving Sword
+
+Masteries:
+
+Sword Family 50
+
+Carving Sword 40
+
+Broadsword 30
+
+Clarent Blade 20
+
+Galatine Pair 10
+
+Claymore 5
+
+Result:
+
+Family contribution
+
+50 × 0.5 = 25 IP
+
+Equipped specialization contribution
+
+40 × 1 = 40 IP
+
+Other Sword specialization contribution
+
+(30 + 20 + 10 + 5) × 0.2 = 13 IP
+
+Total Mastery IP
+
+78 IP
+
+Formula:
+
+Mastery IP = Family Level × 0.5
+
++ Equipped Specialization Level × 1.0
+
++ Sum of Other Specialization Levels in Same Family × 0.2
+
+This rule intentionally rewards players for developing the entire weapon branch while preserving the equipped specialization as the strongest individual progression source.
+
+The rule is data-driven from weapon-family membership. Adding a new specialization to an existing family automatically makes it participate in cross-specialization IP.
 
 ---
 
@@ -159,7 +267,7 @@ Multiple level-ups may occur simultaneously.
 
 Rewards are milestone-based.
 
-Masteries never grant automatic stat increases every level.
+Masteries never grant automatic stat increases every level outside the Weapon Mastery Item Power formula defined above.
 
 Each reward is explicitly defined inside a Reward Table.
 
@@ -243,9 +351,11 @@ Bow Mastery
 
 Level 8
 
-Changing weapons immediately switches to the corresponding Mastery.
+Changing weapons immediately switches to the corresponding equipped Specialization Mastery.
 
-No progression is shared between weapons.
+Mastery Levels and Experience are never shared between weapons.
+
+Only the cross-specialization IP contribution is shared between different specializations of the same family.
 
 ---
 
@@ -427,9 +537,11 @@ Provides data to:
 
 # Data Driven Design
 
-No progression values are hardcoded.
+No weapon-family-specific IP logic is hardcoded.
 
-Every progression rule is configurable through data tables.
+Weapon-family membership is resolved from authored weapon content.
+
+Mastery contribution rates are centralized balance constants consumed by runtime and UI.
 
 ---
 
