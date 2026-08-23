@@ -8,7 +8,14 @@ import {
   resolveWeaponTier,
 } from "./weaponContentCatalog.js";
 
-const ARTIFACTS = [
+type ArtifactFixture = {
+  readonly family: "sword" | "bow" | "fire_staff" | "gloves" | "dagger";
+  readonly faction: "Keeper" | "Morgana" | "Undead" | "Heretic";
+  readonly slug: string;
+  readonly existingBadon?: boolean;
+};
+
+const ARTIFACTS: readonly ArtifactFixture[] = [
   { family: "sword", faction: "Keeper", slug: "sword_clarent" },
   { family: "sword", faction: "Morgana", slug: "sword_carving" },
   { family: "sword", faction: "Undead", slug: "sword_galatine" },
@@ -29,9 +36,9 @@ const ARTIFACTS = [
   { family: "dagger", faction: "Morgana", slug: "dagger_demonfang" },
   { family: "dagger", faction: "Undead", slug: "dagger_deathgivers" },
   { family: "dagger", faction: "Heretic", slug: "dagger_claws" },
-] as const;
+];
 
-function itemIdFor(entry: (typeof ARTIFACTS)[number], tier: 4 | 5 | 6 | 7 | 8): string {
+function itemIdFor(entry: ArtifactFixture, tier: 4 | 5 | 6 | 7 | 8): string {
   if (entry.existingBadon === true) return `item_weapon_bow_t${String(tier)}_badon`;
   return `item_weapon_${entry.slug}_t${String(tier)}`;
 }
@@ -43,7 +50,6 @@ describe("faction artifact weapon content", () => {
       const definition = definitions.find((entry) => entry.familyId === family);
       expect(definition).toBeDefined();
       const expectedArtifactMasteries = ARTIFACTS.filter((entry) => entry.family === family).length;
-      // one base specialization + four artifact specializations
       expect(definition?.specializationMasteryIds).toHaveLength(expectedArtifactMasteries + 1);
     }
   });
@@ -60,16 +66,15 @@ describe("faction artifact weapon content", () => {
   });
 
   it("uses the directed Keeper -> Morgana -> Undead -> Heretic -> Keeper advantage loop", () => {
-    const keeper = itemIdFor(ARTIFACTS[0], 4);
-    const morgana = itemIdFor(ARTIFACTS[1], 4);
-    const undead = itemIdFor(ARTIFACTS[2], 4);
-    const heretic = itemIdFor(ARTIFACTS[3], 4);
+    const keeper = itemIdFor(ARTIFACTS[0]!, 4);
+    const morgana = itemIdFor(ARTIFACTS[1]!, 4);
+    const undead = itemIdFor(ARTIFACTS[2]!, 4);
+    const heretic = itemIdFor(ARTIFACTS[3]!, 4);
 
     expect(resolveArtifactDungeonDamageBonusPercent(keeper, "Morgana")).toBe(20);
     expect(resolveArtifactDungeonDamageBonusPercent(morgana, "Undead")).toBe(20);
     expect(resolveArtifactDungeonDamageBonusPercent(undead, "Heretic")).toBe(20);
     expect(resolveArtifactDungeonDamageBonusPercent(heretic, "Keeper")).toBe(20);
-
     expect(resolveArtifactDungeonDamageBonusPercent(keeper, "Keeper")).toBe(0);
     expect(resolveArtifactDungeonDamageBonusPercent("item_weapon_sword_t4_broadsword", "Morgana")).toBe(0);
   });
