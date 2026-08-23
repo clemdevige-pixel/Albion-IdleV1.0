@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 import {
+  ARTIFACT_BENCHMARK_MASTERY_PROFILE,
   T4_ARTIFACT_WEAPONS,
   t4ArtifactDungeonEquipment,
 } from "./artifactWeaponBenchmarkFixtures.js";
@@ -35,7 +36,7 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         segmentIndex: 9,
         dungeonDefinitionId: dungeon.id,
         enchantment: 3,
-        masteryLevel: 30,
+        ...ARTIFACT_BENCHMARK_MASTERY_PROFILE,
         // Potions are intentionally disabled here. Their cooldown/threshold timing
         // can change when a +20% damage run shortens combat, which would mix
         // survivability cadence into what must be a strict damage-bonus A/B probe.
@@ -62,6 +63,9 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         artifactFaction,
         dungeon: dungeon.id,
         enemyFaction: dungeon.faction,
+        familyMastery: ARTIFACT_BENCHMARK_MASTERY_PROFILE.familyMasteryLevel,
+        specMastery: ARTIFACT_BENCHMARK_MASTERY_PROFILE.specializationMasteryLevel,
+        siblingMastery: ARTIFACT_BENCHMARK_MASTERY_PROFILE.siblingSpecializationMasteryLevel,
         offClear: withoutBonus.clear,
         onClear: withBonus.clear,
         offEncounterReached: withoutBonus.encounterReached,
