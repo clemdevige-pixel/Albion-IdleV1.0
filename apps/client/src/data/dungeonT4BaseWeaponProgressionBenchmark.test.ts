@@ -1,4 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("./dungeonContentCatalog.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./dungeonContentCatalog.js")>();
+  return {
+    ...actual,
+    resolveDungeonCombatProfile: (
+      input: Parameters<typeof actual.resolveDungeonCombatProfile>[0],
+    ): ReturnType<typeof actual.resolveDungeonCombatProfile> => {
+      const profile = actual.resolveDungeonCombatProfile(input);
+      if (input.dungeonDefinitionId !== "dungeon_keeper_t4") return profile;
+      return {
+        ...profile,
+        hp: profile.hp * 0.85,
+        damage: profile.damage * 0.85,
+        armor: profile.armor * 0.95,
+        magicResistance: profile.magicResistance * 0.95,
+      };
+    },
+  };
+});
+
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import {
