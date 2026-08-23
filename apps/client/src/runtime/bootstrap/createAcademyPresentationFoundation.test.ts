@@ -25,6 +25,15 @@ function createFoundation() {
     requirements: [],
     unlockIds: ["unlock_test"],
   });
+  researchService.registerResearch({
+    id: "research_parallel",
+    displayName: "Parallel Research",
+    tier: 4,
+    durationMs: 30_000,
+    cost: { silver: 0, materials: [] },
+    requirements: [],
+    unlockIds: ["unlock_parallel"],
+  });
 
   const expeditionService = new ExpeditionService<ExpeditionRequirement, unknown>({
     requirementPort: { isRequirementMet: () => true },
@@ -47,7 +56,7 @@ function createFoundation() {
 }
 
 describe("createAcademyPresentationFoundation", () => {
-  it("projects research and expedition state without duplicating domain state", () => {
+  it("projects parallel research and expedition state without duplicating domain state", () => {
     const { foundation } = createFoundation();
     const initial = foundation.getModel();
 
@@ -60,10 +69,14 @@ describe("createAcademyPresentationFoundation", () => {
     expect(initial.expeditions[0]?.supportedDurationsMs).toEqual(EXPEDITION_DURATION_OPTIONS_MS);
 
     expect(foundation.startResearch("research_test").ok).toBe(true);
+    expect(foundation.startResearch("research_parallel").ok).toBe(true);
     expect(foundation.startExpedition("expedition_test", EXPEDITION_DURATION_OPTIONS_MS[0]).ok).toBe(true);
 
     const active = foundation.getModel();
-    expect(active.research[0]).toMatchObject({ state: "active", remainingDurationMs: 60_000 });
+    expect(active.research.filter((entry) => entry.state === "active")).toEqual([
+      expect.objectContaining({ id: "research_test", remainingDurationMs: 60_000 }),
+      expect.objectContaining({ id: "research_parallel", remainingDurationMs: 30_000 }),
+    ]);
     expect(active.expeditions[0]).toMatchObject({ active: true, activeSlotIndex: 0 });
   });
 });
