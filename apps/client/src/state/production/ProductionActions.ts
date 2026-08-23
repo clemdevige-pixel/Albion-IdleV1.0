@@ -11,7 +11,10 @@ import type {
   ProductionBridgeAdapter,
   SupportedProductionFamily,
 } from "./ProductionBridgeAdapter";
-import { isSupportedProductionFamily } from "../../data/productionFamilyCatalog";
+import {
+  isSupportedProductionFamily,
+  type ProductionTier,
+} from "../../data/productionFamilyCatalog";
 
 interface ProductionActionsDependencies {
   readonly bridge: GameBridge;
@@ -23,6 +26,7 @@ interface ProductionActionsDependencies {
   readonly productionBridge: ProductionBridgeAdapter;
   readonly getCurrentTick: () => number;
   readonly getCombatLoopState: () => CombatLoopState;
+  readonly getGatheringTier: () => ProductionTier;
   readonly prepareCombatResumeAfterGathering: () => void;
 }
 
@@ -38,6 +42,17 @@ export class ProductionActions {
   toggleGathering(family: SupportedProductionFamily): boolean {
     if (this.deps.gatheringRuntime.isHeroGathering()) {
       this.setQueuedGatheringFamily(null);
+
+      const activeMiniGame = this.deps.gatheringRuntime.getActiveMiniGameState(family);
+      const selectedTier = this.deps.getGatheringTier();
+      const switchingTier = activeMiniGame.sessionId !== null
+        && activeMiniGame.tier !== null
+        && activeMiniGame.tier !== selectedTier;
+
+      if (switchingTier) {
+        this.deps.gatheringRuntime.stopAllGathering();
+      }
+
       return this.applyGatheringToggle(family);
     }
 
