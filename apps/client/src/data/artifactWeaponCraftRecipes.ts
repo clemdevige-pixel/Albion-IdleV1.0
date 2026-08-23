@@ -11,6 +11,7 @@ import {
   type DungeonArtifactFactionId,
   type DungeonArtifactTier,
 } from "./dungeonArtifactContentCatalog.js";
+import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { STANDARD_WEAPON_CRAFT_RECIPES } from "./refiningRecipes.js";
 
 export const ARTIFACT_WEAPON_RUNE_COST_BY_TIER = {
@@ -77,7 +78,7 @@ function createArtifactWeaponCraftRecipe(itemId: string): ArtifactWeaponCraftRec
       ...baseRecipe.requirements,
       { itemId: getDungeonArtifactItemId(factionId, tier), quantity: 1 },
       {
-        itemId: `item_resource_rune_${factionId}_t${String(tier)}`,
+        itemId: getFactionRuneItemId(tier),
         quantity: ARTIFACT_WEAPON_RUNE_COST_BY_TIER[tier],
       },
     ],
