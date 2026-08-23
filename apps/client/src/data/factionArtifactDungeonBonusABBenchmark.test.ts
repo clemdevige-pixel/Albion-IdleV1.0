@@ -77,7 +77,10 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         dungeonDefinitionId: dungeon.id,
         enchantment: 3,
         masteryLevel: 30,
-        useHealthPotions: true,
+        // Potions are intentionally disabled here. Their cooldown/threshold timing
+        // can change when a +20% damage run shortens combat, which would mix
+        // survivability cadence into what must be a strict damage-bonus A/B probe.
+        useHealthPotions: false,
       } as const;
 
       const withoutBonus = runCombatRuntimeBenchmark({
@@ -109,12 +112,10 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         onSeconds: round1(withBonus.seconds),
         offHpPct: round1(withoutBonus.hpPercent),
         onHpPct: round1(withBonus.hpPercent),
-        offPotions: withoutBonus.potionsUsed,
-        onPotions: withBonus.potionsUsed,
       };
     });
 
-    const byDungeon = DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === 4).map((dungeon) => {
+    const byDungeon = t4Dungeons.map((dungeon) => {
       const dungeonRows = rows.filter((row) => row.dungeon === dungeon.id);
       return {
         dungeon: dungeon.id,
