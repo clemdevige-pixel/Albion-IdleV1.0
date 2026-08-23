@@ -89,8 +89,8 @@ export function resolveCraftingSelectionKey(recipe: CraftingRecipeVM): string {
     return `cape:${cape.factionId}`;
   }
 
-  // Tier-independent conversions and future standalone recipes keep their
-  // authored item identity until a progression identity exists in content.
+  // Utility conversions are filtered by selected tier, so their authored item
+  // identity remains sufficient and avoids introducing a parallel progression map.
   return `item:${recipe.outputItemId}`;
 }
 
@@ -129,13 +129,12 @@ export function buildCraftingModel(source: CraftingSource): CraftingModel {
     tier: source.tier,
     categories: categories
       .map((category) => {
-        const categoryRecipes = category.id === "other"
-          ? source.recipes.filter((recipe) => recipe.family.startsWith("other_"))
-          : recipesForTier.filter((recipe) => {
-              const armorFamilyId = resolveArmorFamilyId(recipe);
-              if (category.id === "armors") return armorFamilyId !== undefined;
-              return armorFamilyId === undefined && !recipe.family.startsWith("other_");
-            });
+        const categoryRecipes = recipesForTier.filter((recipe) => {
+          if (category.id === "other") return recipe.family.startsWith("other_");
+          const armorFamilyId = resolveArmorFamilyId(recipe);
+          if (category.id === "armors") return armorFamilyId !== undefined;
+          return armorFamilyId === undefined && !recipe.family.startsWith("other_");
+        });
         const familyIds: readonly CraftingFamilyId[] = category.id === "armors"
           ? ARMOR_FAMILY_ORDER.filter((id) =>
               categoryRecipes.some((recipe) => resolveArmorFamilyId(recipe) === id),
