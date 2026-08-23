@@ -59,4 +59,41 @@ describe("DungeonRewardRuntime", () => {
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_keeper")).toBe(1);
     expect(inventory.getTotalQuantity(heroId, shardItemId)).toBe(5);
   });
+
+  it("applies faction mastery to dungeon quantities, drop chance and completion Silver", () => {
+    const { heroId, inventory, dungeon, rewards } = setup(() => 0.12);
+    const shardItemId = getEnchantmentShardItemId(4);
+    const getFactionYieldBonusPercent = () => 50;
+
+    const firstReward = rewards.processCurrentEncounterVictory(getFactionYieldBonusPercent);
+    expect(firstReward?.drops).toContainEqual({
+      itemId: "item_resource_artifact_fragment_keeper",
+      kind: "artifact_fragment",
+      quantity: 6,
+    });
+
+    for (const encounter of KEEPER_T4_DUNGEON.encounters.slice(0, -1)) {
+      if (encounter.id !== KEEPER_T4_DUNGEON.encounters[0]?.id) {
+        rewards.processCurrentEncounterVictory(getFactionYieldBonusPercent);
+      }
+      dungeon.completeEncounter(encounter.id);
+    }
+
+    const bossReward = rewards.processCurrentEncounterVictory(getFactionYieldBonusPercent);
+
+    expect(bossReward?.drops).toContainEqual({
+      itemId: "item_resource_artifact_keeper",
+      kind: "artifact",
+      quantity: 1,
+    });
+    expect(bossReward?.drops).toContainEqual({
+      itemId: shardItemId,
+      kind: "enchantment_shard",
+      quantity: 6,
+    });
+    expect(bossReward?.completionSilver).toBe(
+      DUNGEON_COMPLETION_SILVER_BY_TIER[4] * 1.5,
+    );
+    expect(inventory.getTotalQuantity(heroId, shardItemId)).toBe(8);
+  });
 });
