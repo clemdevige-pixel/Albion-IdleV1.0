@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import { DurabilityStore, InventoryManager } from "@game/gameplay";
 import { KEY_FRAGMENTS_PER_KEY, ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE } from "../data/economyContentCatalog.js";
+import {
+  getDungeonArtifactFragmentItemId,
+  getDungeonArtifactItemId,
+} from "../data/dungeonArtifactContentCatalog.js";
+import {
+  getDungeonKeyFragmentItemId,
+  getDungeonKeyItemId,
+} from "../data/dungeonKeyContentCatalog.js";
 import { EQUIPMENT_CRAFT_RECIPES } from "../data/refiningRecipes.js";
 import { getItemPower } from "../data/itemPower.js";
 import { resolveItemStackInfo } from "../data/itemContentCatalog.js";
@@ -22,11 +30,11 @@ function createRuntime() {
   return { heroId, inventoryManager, runtime };
 }
 
-describe("Blue Zone fragment conversions", () => {
-  it("converts 50 Morgana key fragments into one dungeon key", () => {
+describe("Dungeon fragment conversions", () => {
+  it("converts 50 T5 key fragments into one T5 dungeon key", () => {
     const env = createRuntime();
-    const fragmentId = "item_resource_key_fragment_morgana";
-    const keyId = "item_resource_dungeon_key_morgana";
+    const fragmentId = getDungeonKeyFragmentItemId(5);
+    const keyId = getDungeonKeyItemId(5);
 
     env.inventoryManager.addQuantity(env.heroId, fragmentId, KEY_FRAGMENTS_PER_KEY);
     expect(env.runtime.craftEquipment(keyId).ok).toBe(true);
@@ -34,10 +42,10 @@ describe("Blue Zone fragment conversions", () => {
     expect(env.inventoryManager.getTotalQuantity(env.heroId, keyId)).toBe(1);
   });
 
-  it("converts 200 Keeper artifact fragments into one artifact", () => {
+  it("converts 200 T7 Keeper artifact fragments into one T7 Keeper artifact", () => {
     const env = createRuntime();
-    const fragmentId = "item_resource_artifact_fragment_keeper";
-    const artifactId = "item_resource_artifact_keeper";
+    const fragmentId = getDungeonArtifactFragmentItemId("keeper", 7);
+    const artifactId = getDungeonArtifactItemId("keeper", 7);
 
     env.inventoryManager.addQuantity(
       env.heroId,
@@ -49,10 +57,10 @@ describe("Blue Zone fragment conversions", () => {
     expect(env.inventoryManager.getTotalQuantity(env.heroId, artifactId)).toBe(1);
   });
 
-  it("rejects conversion when fragments are insufficient", () => {
+  it("rejects conversion when tier-matched fragments are insufficient", () => {
     const env = createRuntime();
-    const fragmentId = "item_resource_key_fragment_undead";
-    const keyId = "item_resource_dungeon_key_undead";
+    const fragmentId = getDungeonKeyFragmentItemId(8);
+    const keyId = getDungeonKeyItemId(8);
 
     env.inventoryManager.addQuantity(env.heroId, fragmentId, KEY_FRAGMENTS_PER_KEY - 1);
     expect(env.runtime.craftEquipment(keyId).ok).toBe(false);
