@@ -68,8 +68,9 @@ export interface CombatRuntimeBenchmarkInput {
 export interface CombatRuntimeAbilityTelemetry {
   readonly abilityId: string;
   readonly casts: number;
-  /** Immediate post-mitigation, non-overkill damage dealt during the cast itself. DoT ticks are reported separately as effect damage. */
   readonly directDamage: number;
+  readonly dotDamage: number;
+  readonly totalDamage: number;
 }
 
 export interface CombatRuntimeDamageSourceTelemetry {
@@ -124,7 +125,10 @@ export interface CombatRuntimeBenchmarkResult {
 interface MutableAbilityTelemetry {
   casts: number;
   directDamage: number;
+  dotDamage: number;
 }
+
+const emptyAbilityTelemetry = (): MutableAbilityTelemetry => ({ casts: 0, directDamage: 0, dotDamage: 0 });
 
 class TelemetryCombatRuntime extends CombatRuntime {
   public constructor(
@@ -133,24 +137,14 @@ class TelemetryCombatRuntime extends CombatRuntime {
     private readonly abilityTelemetry: Map<string, MutableAbilityTelemetry>,
   ) {
     super(deps);
-    this.telemetryDamageManager = deps.damageManager;
   }
-
-  private readonly telemetryDamageManager: DamageManager;
 
   override useWeaponAbility(slotIndex: number): boolean {
     const abilityId = this.abilityIds[slotIndex];
-    const targetId = this.getActiveEnemyId();
-    const before = this.telemetryDamageManager.isAlive(targetId)
-      ? this.telemetryDamageManager.getHealth(targetId).currentHealth
-      : 0;
     const used = super.useWeaponAbility(slotIndex);
     if (!used || abilityId === undefined) return used;
-
-    const telemetry = this.abilityTelemetry.get(abilityId) ?? { casts: 0, directDamage: 0 };
+    const telemetry = this.abilityTelemetry.get(abilityId) ?? emptyAbilityTelemetry();
     telemetry.casts += 1;
-    const after = this.telemetryDamageManager.getHealth(targetId).currentHealth;
-    telemetry.directDamage += Math.max(0, before - after);
     this.abilityTelemetry.set(abilityId, telemetry);
     return used;
   }
@@ -322,7 +316,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
 
   const copyAbilityTelemetry = (): Map<string, MutableAbilityTelemetry> =>
     new Map(abilityIds.map((abilityId) => {
-      const current = abilityTelemetry.get(abilityId) ?? { casts: 0, directDamage: 0 };
+      const current = abilityTelemetry.get(abilityId) ?? emptyAbilityTelemetry();
       return [abilityId, { ...current }] as const;
     }));
 
@@ -352,12 +346,16 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     const enemyHpRemainingPercent = resolveEnemyHpRemainingPercent(cleared);
     const encounterProgressPercent = Math.max(0, Math.min(100, 100 - enemyHpRemainingPercent));
     const abilities = abilityIds.map((abilityId) => {
-      const before = encounterStartAbilities.get(abilityId) ?? { casts: 0, directDamage: 0 };
-      const after = abilityTelemetry.get(abilityId) ?? { casts: 0, directDamage: 0 };
+      const before = encounterStartAbilities.get(abilityId) ?? emptyAbilityTelemetry();
+      const after = abilityTelemetry.get(abilityId) ?? emptyAbilityTelemetry();
+      const directDamage = after.directDamage - before.directDamage;
+      const dotDamage = after.dotDamage - before.dotDamage;
       return {
         abilityId,
         casts: after.casts - before.casts,
-        directDamage: round1(after.directDamage - before.directDamage),
+        directDamage: round1(directDamage),
+        dotDamage: round1(dotDamage),
+        totalDamage: round1(directDamage + dotDamage),
       };
     });
     encounterTelemetry.push({
@@ -398,6 +396,12 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     equipmentManager,
     masteryService,
     biomeResolver: new BiomeResolver(new BiomeRegistry()),
+    onWeaponAbilityDamage: (event) => {
+      const telemetry = abilityTelemetry.get(event.abilityId) ?? emptyAbilityTelemetry();
+      if (event.kind === "direct") telemetry.directDamage += event.finalDamage;
+      else telemetry.dotDamage += event.finalDamage;
+      abilityTelemetry.set(event.abilityId, telemetry);
+    },
     ...(dungeon === undefined ? {} : {
       spawnEnemyOverride: () => {
         const encounter = dungeon.encounters[encounterIndex];
@@ -466,11 +470,13 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   const health = damageManager.getHealth(heroId);
   const seconds = round1(ticks * DT);
   const abilities = abilityDefinitions.map((definition) => {
-    const telemetry = abilityTelemetry.get(String(definition.id)) ?? { casts: 0, directDamage: 0 };
+    const telemetry = abilityTelemetry.get(String(definition.id)) ?? emptyAbilityTelemetry();
     return {
       abilityId: String(definition.id),
       casts: telemetry.casts,
       directDamage: round1(telemetry.directDamage),
+      dotDamage: round1(telemetry.dotDamage),
+      totalDamage: round1(telemetry.directDamage + telemetry.dotDamage),
     };
   });
   const finalEncounter = encounterTelemetry.at(-1);
