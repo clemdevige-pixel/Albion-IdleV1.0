@@ -3,23 +3,32 @@ import { MONSTER_IDS } from "../../data/monsterContentCatalog.js";
 import { createFactionBestiaryFoundation } from "./createFactionBestiaryFoundation.js";
 
 describe("createFactionBestiaryFoundation", () => {
-  it("derives monster and faction kill knowledge without Relic state", () => {
+  it("returns monster kill knowledge for the requested contexts", () => {
     const foundation = createFactionBestiaryFoundation({
       factionKnowledgeService: {
         isMonsterDiscovered: (monsterId) => monsterId === MONSTER_IDS.keeperWarrior,
-        getMonsterKillCount: (monsterId) => monsterId === MONSTER_IDS.keeperWarrior ? 7 : 0,
-        getFactionKillCount: (factionId) => factionId === "keeper" ? 42 : 0,
-        getFactionEliteKillCount: (factionId) => factionId === "keeper" ? 3 : 0,
+        getMonsterKillCount: (monsterId, contextId) => {
+          if (monsterId !== MONSTER_IDS.keeperWarrior) return 0;
+          if (contextId === undefined) return 7;
+          if (contextId === "zone_forest_t3") return 2;
+          if (contextId === "zone_swamp_t3") return 3;
+          return 0;
+        },
       },
     });
 
     expect(foundation.getKnowledge(MONSTER_IDS.keeperWarrior)).toEqual({
       monsterId: MONSTER_IDS.keeperWarrior,
-      factionId: "keeper",
       discovered: true,
       killCount: 7,
-      factionKillCount: 42,
-      factionEliteKillCount: 3,
+    });
+    expect(foundation.getKnowledge(
+      MONSTER_IDS.keeperWarrior,
+      ["zone_forest_t3", "zone_swamp_t3"],
+    )).toEqual({
+      monsterId: MONSTER_IDS.keeperWarrior,
+      discovered: true,
+      killCount: 5,
     });
   });
 });
