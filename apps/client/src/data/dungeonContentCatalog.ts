@@ -74,20 +74,18 @@ const FACTION_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
   { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
   { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 2, hp: 1.12, damage: 1.12, defense: 1.08 },
   { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.15, defense: 1.1 },
 ];
 
 /**
  * High-tier faction dungeons keep the optimization wall while trimming raw
  * incoming damage because world-end bosses are already sustain checks and the
- * dungeon runtime persists HP/cooldowns across all five encounters.
+ * dungeon runtime persists HP/cooldowns across all four encounters.
  */
 const HIGH_TIER_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
   { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
   { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.0, defense: 1.06 },
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 2, hp: 1.12, damage: 1.02, defense: 1.08 },
   { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.05, defense: 1.1 },
 ];
 
@@ -148,7 +146,6 @@ function createFactionDungeon(input: {
       { id: `${slug}_t${tier}_normal_1`, kind: "normal", monsterDefinitionId: roster.normalA },
       { id: `${slug}_t${tier}_normal_2`, kind: "normal", monsterDefinitionId: roster.normalB },
       { id: `${slug}_t${tier}_elite`, kind: "elite", monsterDefinitionId: roster.elite },
-      { id: `${slug}_t${tier}_normal_3`, kind: "normal", monsterDefinitionId: roster.normalA },
       { id: `${slug}_t${tier}_boss`, kind: "boss", monsterDefinitionId: roster.boss },
     ],
   };
