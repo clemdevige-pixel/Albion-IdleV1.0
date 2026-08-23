@@ -1,6 +1,11 @@
 import type { GameBridgeState, MasteryVM, WorkerVM } from "../../game/GameBridge";
 import { getWeaponMasteryFamilyDefinitions, type WeaponFamilyId } from "../../data/weaponContentCatalog";
 import {
+  WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL,
+  WEAPON_FAMILY_IP_PER_LEVEL,
+  WEAPON_SPECIALIZATION_IP_PER_LEVEL,
+} from "../../data/itemPower";
+import {
   PRODUCTION_FAMILY_IDS,
   getProductionFamilyDefinition,
 } from "../../data/productionFamilyCatalog";
@@ -55,7 +60,23 @@ export function selectMasteriesSource(state: GameBridgeState): MasteriesSource {
 }
 
 function combatProgress(mastery: MasteryVM, family: boolean): MasteryProgressModel {
-  const perLevel = family ? 0.5 : 1;
+  if (family) {
+    return {
+      id: mastery.id,
+      name: mastery.displayName,
+      level: mastery.level,
+      currentXp: mastery.currentXp,
+      xpToNextLevel: mastery.xpToNextLevel,
+      progressPercent: masteryProgressPercent(mastery),
+      isUnlocked: mastery.isUnlocked,
+      bonuses: [
+        `+${String(mastery.level * WEAPON_FAMILY_IP_PER_LEVEL)} IP`,
+        `+${String(WEAPON_FAMILY_IP_PER_LEVEL)} IP par niveau`,
+      ],
+      subtitle: "Bonus pour toute la famille",
+    };
+  }
+
   return {
     id: mastery.id,
     name: mastery.displayName,
@@ -64,8 +85,12 @@ function combatProgress(mastery: MasteryVM, family: boolean): MasteryProgressMod
     xpToNextLevel: mastery.xpToNextLevel,
     progressPercent: masteryProgressPercent(mastery),
     isUnlocked: mastery.isUnlocked,
-    bonuses: [`+${String(mastery.level * perLevel)} IP`, `+${String(perLevel)} IP par niveau`],
-    subtitle: family ? "Bonus pour toute la famille" : "Bonus pour cette arme",
+    bonuses: [
+      `+${String(mastery.level * WEAPON_SPECIALIZATION_IP_PER_LEVEL)} IP sur cette arme`,
+      `+${String(mastery.level * WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP aux autres armes de la famille`,
+      `+${String(WEAPON_SPECIALIZATION_IP_PER_LEVEL)} / +${String(WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP par niveau`,
+    ],
+    subtitle: "Bonus principal + synergie de famille",
   };
 }
 
