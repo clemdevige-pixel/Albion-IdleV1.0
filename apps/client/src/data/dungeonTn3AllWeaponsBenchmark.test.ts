@@ -158,6 +158,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
       for (const dungeon of dungeons) {
         for (const family of FAMILIES) {
           for (const mode of BENCHMARK_MODES) {
+            const damageTuning = benchmarkDamageTuning(family);
             const result = runCombatRuntimeBenchmark({
               label: `${dungeon.id}:${family}:${modeLabel(mode)}:t${tier}.3`,
               weaponItemId: weaponId(tier, family),
@@ -168,7 +169,7 @@ describe("same-tier .3 dungeon benchmark across all weapons, faction capes and p
               enchantment: 3,
               masteryLevel: MASTERY_BY_TIER[tier],
               useHealthPotions: mode.potion,
-              damageTuning: benchmarkDamageTuning(family),
+              ...(damageTuning === undefined ? {} : { damageTuning }),
             });
 
             rows.push({
