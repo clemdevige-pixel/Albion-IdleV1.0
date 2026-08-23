@@ -142,7 +142,7 @@ const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, R
   4: { Keeper: 1, Heretic: 0.72, Undead: 0.67, Morgana: 0.62 },
   5: { Keeper: 1, Heretic: 1.12, Undead: 1.08, Morgana: 1 },
   6: { Keeper: 1, Heretic: 1.18, Undead: 1.14, Morgana: 1.12 },
-  7: { Keeper: 1, Heretic: 1.72, Undead: 1.42, Morgana: 1.4 },
+  7: { Keeper: 1, Heretic: 1.82, Undead: 1.42, Morgana: 1.4 },
   8: { Keeper: 1, Heretic: 1.82, Undead: 1.44, Morgana: 1.36 },
 };
 
