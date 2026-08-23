@@ -28,9 +28,7 @@ export interface ResearchPresentationInfo {
   readonly group: ResearchPresentationGroup;
   readonly description: string;
   readonly effectSummary: string;
-  /** Player-facing list used by the generic Research completion recap. */
   readonly unlockedContent: readonly string[];
-  /** Discovery-driven Research stays absent from the list until its authored requirement is met. */
   readonly hiddenWhileLocked?: boolean;
 }
 
@@ -69,6 +67,7 @@ export const RESEARCH_UNLOCK_IDS = {
   instantRefining: "refining:instant_batch",
   dungeonRelicAnalyzed: "dungeon_relic:analyzed",
   dungeonSystem: "dungeon_system:unlocked",
+  factionRuneWorldDrop: "faction_rune:world_drop",
   equipmentPresets: "equipment_presets",
 } as const;
 
@@ -248,7 +247,10 @@ const DUNGEON_DISCOVERY_RESEARCH = [
       { type: "academy_tier", minimumTier: 4 },
       { type: "research_unlock", unlockId: RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed },
     ],
-    unlockIds: [RESEARCH_UNLOCK_IDS.dungeonSystem],
+    unlockIds: [
+      RESEARCH_UNLOCK_IDS.dungeonSystem,
+      RESEARCH_UNLOCK_IDS.factionRuneWorldDrop,
+    ],
   },
 ] as const satisfies readonly ResearchDefinition<ResearchContentRequirement>[];
 
@@ -260,66 +262,16 @@ export const RESEARCH_DEFINITIONS: readonly ResearchDefinition<ResearchContentRe
 ];
 
 const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
-  [RESEARCH_IDS.cartography1, {
-    group: "core",
-    description: "Ouvre les expéditions Silver T4.",
-    effectSummary: "Débloque les expéditions Silver T4.",
-    unlockedContent: ["Expéditions Silver T4"],
-  }],
-  [RESEARCH_IDS.cartography2, {
-    group: "core",
-    description: "Étend les expéditions Silver au T5.",
-    effectSummary: "Débloque les expéditions Silver T5.",
-    unlockedContent: ["Expéditions Silver T5"],
-  }],
-  [RESEARCH_IDS.cartography3, {
-    group: "core",
-    description: "Étend les expéditions Silver au T6 et augmente la capacité d’expédition.",
-    effectSummary: "Débloque les expéditions Silver T6 et un second slot d’expédition.",
-    unlockedContent: ["Expéditions Silver T6", "Second slot d’expédition"],
-  }],
-  [RESEARCH_IDS.cartography4, {
-    group: "core",
-    description: "Étend les expéditions Silver au T7.",
-    effectSummary: "Débloque les expéditions Silver T7.",
-    unlockedContent: ["Expéditions Silver T7"],
-  }],
-  [RESEARCH_IDS.cartography5, {
-    group: "core",
-    description: "Étend les expéditions Silver au T8.",
-    effectSummary: "Débloque les expéditions Silver T8.",
-    unlockedContent: ["Expéditions Silver T8"],
-  }],
-  [RESEARCH_IDS.archaeology1, {
-    group: "faction",
-    description: "Ouvre les expéditions de faction T4.",
-    effectSummary: "Débloque les expéditions de faction T4.",
-    unlockedContent: ["Expéditions de faction T4"],
-  }],
-  [RESEARCH_IDS.archaeology2, {
-    group: "faction",
-    description: "Étend les expéditions de faction au T5.",
-    effectSummary: "Débloque les expéditions de faction T5.",
-    unlockedContent: ["Expéditions de faction T5"],
-  }],
-  [RESEARCH_IDS.archaeology3, {
-    group: "faction",
-    description: "Étend les expéditions de faction au T6.",
-    effectSummary: "Débloque les expéditions de faction T6.",
-    unlockedContent: ["Expéditions de faction T6"],
-  }],
-  [RESEARCH_IDS.archaeology4, {
-    group: "faction",
-    description: "Étend les expéditions de faction au T7.",
-    effectSummary: "Débloque les expéditions de faction T7.",
-    unlockedContent: ["Expéditions de faction T7"],
-  }],
-  [RESEARCH_IDS.archaeology5, {
-    group: "faction",
-    description: "Étend les expéditions de faction au T8.",
-    effectSummary: "Débloque les expéditions de faction T8.",
-    unlockedContent: ["Expéditions de faction T8"],
-  }],
+  [RESEARCH_IDS.cartography1, { group: "core", description: "Ouvre les expéditions Silver T4.", effectSummary: "Débloque les expéditions Silver T4.", unlockedContent: ["Expéditions Silver T4"] }],
+  [RESEARCH_IDS.cartography2, { group: "core", description: "Étend les expéditions Silver au T5.", effectSummary: "Débloque les expéditions Silver T5.", unlockedContent: ["Expéditions Silver T5"] }],
+  [RESEARCH_IDS.cartography3, { group: "core", description: "Étend les expéditions Silver au T6 et augmente la capacité d’expédition.", effectSummary: "Débloque les expéditions Silver T6 et un second slot d’expédition.", unlockedContent: ["Expéditions Silver T6", "Second slot d’expédition"] }],
+  [RESEARCH_IDS.cartography4, { group: "core", description: "Étend les expéditions Silver au T7.", effectSummary: "Débloque les expéditions Silver T7.", unlockedContent: ["Expéditions Silver T7"] }],
+  [RESEARCH_IDS.cartography5, { group: "core", description: "Étend les expéditions Silver au T8.", effectSummary: "Débloque les expéditions Silver T8.", unlockedContent: ["Expéditions Silver T8"] }],
+  [RESEARCH_IDS.archaeology1, { group: "faction", description: "Ouvre l’expédition Faction T4.", effectSummary: "Débloque l’expédition Faction T4.", unlockedContent: ["Expédition Faction T4"] }],
+  [RESEARCH_IDS.archaeology2, { group: "faction", description: "Étend l’expédition Faction au T5.", effectSummary: "Débloque l’expédition Faction T5.", unlockedContent: ["Expédition Faction T5"] }],
+  [RESEARCH_IDS.archaeology3, { group: "faction", description: "Étend l’expédition Faction au T6.", effectSummary: "Débloque l’expédition Faction T6.", unlockedContent: ["Expédition Faction T6"] }],
+  [RESEARCH_IDS.archaeology4, { group: "faction", description: "Étend l’expédition Faction au T7.", effectSummary: "Débloque l’expédition Faction T7.", unlockedContent: ["Expédition Faction T7"] }],
+  [RESEARCH_IDS.archaeology5, { group: "faction", description: "Étend l’expédition Faction au T8.", effectSummary: "Débloque l’expédition Faction T8.", unlockedContent: ["Expédition Faction T8"] }],
   [RESEARCH_IDS.enchantmentStudy, {
     group: "core",
     description: "Étudie les éclats d’enchantement découverts dans le monde afin d’en comprendre l’usage.",
@@ -347,9 +299,14 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
   }],
   [RESEARCH_IDS.dungeonSanctuaryLocation, {
     group: "core",
-    description: "Localise les sanctuaires et ouvre le système de Donjons.",
-    effectSummary: "Débloque les Donjons et active les drops de clés et fragments de clé.",
-    unlockedContent: ["Onglet Donjons", "Drops de fragments de clé", "Drops de clés de donjon"],
+    description: "Localise les sanctuaires et ouvre la boucle Donjons ainsi que le canal secondaire de Runes de faction dans le monde.",
+    effectSummary: "Débloque les Donjons, les drops de clés/fragments et le drop rare de Runes de faction sur les monstres de faction.",
+    unlockedContent: [
+      "World > Donjons",
+      "Drops de fragments de clé",
+      "Drops de clés complètes",
+      "Drop rare de Runes de faction dans le monde",
+    ],
   }],
 ]);
 
