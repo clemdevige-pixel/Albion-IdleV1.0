@@ -100,7 +100,7 @@ function round1(value: number): number {
 }
 
 describe("global candidate weapon zone clear benchmark", () => {
-  it("reuses the live runtime benchmark with benchmark-only candidate tuning across every world zone", () => {
+  it("compares candidate weapon tuning at each world progression breakpoint", () => {
     const detail: Array<{
       zone: string;
       band: string;
@@ -111,6 +111,11 @@ describe("global candidate weapon zone clear benchmark", () => {
       secondsAtMaxClear: number | null;
       hpPercentAtMaxClear: number | null;
       observedDpsAtMaxClear: number | null;
+      firstFailSegment: number | null;
+      firstFailProgressPercent: number | null;
+      firstFailEnemyHpRemainingPercent: number | null;
+      firstFailSeconds: number | null;
+      firstFailObservedDps: number | null;
     }> = [];
 
     for (const zone of Object.values(WORLD_ZONE_CONTENT)) {
@@ -121,6 +126,11 @@ describe("global candidate weapon zone clear benchmark", () => {
         let secondsAtMaxClear: number | null = null;
         let hpPercentAtMaxClear: number | null = null;
         let observedDpsAtMaxClear: number | null = null;
+        let firstFailSegment: number | null = null;
+        let firstFailProgressPercent: number | null = null;
+        let firstFailEnemyHpRemainingPercent: number | null = null;
+        let firstFailSeconds: number | null = null;
+        let firstFailObservedDps: number | null = null;
 
         for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
           const result = runCombatRuntimeBenchmark({
@@ -135,7 +145,15 @@ describe("global candidate weapon zone clear benchmark", () => {
             damageTuning: resolveCandidateRuntimeDamageTuning(weaponItemId),
           });
 
-          if (!result.clear) break;
+          if (!result.clear) {
+            firstFailSegment = segmentIndex + 1;
+            firstFailProgressPercent = round1(result.encounterProgressPercent);
+            firstFailEnemyHpRemainingPercent = round1(result.enemyHpRemainingPercent);
+            firstFailSeconds = round1(result.seconds);
+            firstFailObservedDps = round1(result.observedDps);
+            break;
+          }
+
           maxClearSegment = segmentIndex + 1;
           secondsAtMaxClear = round1(result.seconds);
           hpPercentAtMaxClear = round1(result.hpPercent);
@@ -152,48 +170,59 @@ describe("global candidate weapon zone clear benchmark", () => {
           secondsAtMaxClear,
           hpPercentAtMaxClear,
           observedDpsAtMaxClear,
+          firstFailSegment,
+          firstFailProgressPercent,
+          firstFailEnemyHpRemainingPercent,
+          firstFailSeconds,
+          firstFailObservedDps,
         });
       }
     }
 
-    const summary = Object.values(WORLD_ZONE_CONTENT).map((zone) => {
-      const rows = detail.filter((row) => row.zone === zone.name);
-      const dagger = rows.find((row) => row.weapon === "dual_dagger");
-      const bestClear = Math.max(...rows.map((row) => row.maxClearSegment));
-      const worstClear = Math.min(...rows.map((row) => row.maxClearSegment));
-      const daggerRank = dagger === undefined
-        ? null
-        : 1 + rows.filter((row) => row.maxClearSegment > dagger.maxClearSegment).length;
-      return {
-        zone: zone.name,
-        band: zone.bandId,
-        tier: zone.tier,
-        daggerClear: dagger?.maxClearSegment ?? null,
-        daggerRank,
-        bestClear,
-        worstClear,
-        spread: bestClear - worstClear,
-        fullClearWeapons: rows.filter((row) => row.fullClear).length,
-      };
-    });
+    const breakpointRows = detail.map((row) => ({
+      zone: row.zone,
+      band: row.band,
+      tier: row.tier,
+      weapon: row.weapon,
+      lastClear: row.maxClearSegment,
+      lastClearHpPct: row.hpPercentAtMaxClear,
+      lastClearSeconds: row.secondsAtMaxClear,
+      lastClearDps: row.observedDpsAtMaxClear,
+      firstFail: row.firstFailSegment,
+      failProgressPct: row.firstFailProgressPercent,
+      failEnemyHpPct: row.firstFailEnemyHpRemainingPercent,
+      failSeconds: row.firstFailSeconds,
+      failDps: row.firstFailObservedDps,
+    }));
 
     const weaponSummary = [...new Set(detail.map((row) => row.weapon))].map((weapon) => {
       const rows = detail.filter((row) => row.weapon === weapon);
+      const lastClearRows = rows.filter((row) => row.observedDpsAtMaxClear !== null);
+      const failRows = rows.filter((row) => row.firstFailProgressPercent !== null);
       return {
         weapon,
         zones: rows.length,
         fullClears: rows.filter((row) => row.fullClear).length,
         totalSegmentsCleared: rows.reduce((sum, row) => sum + row.maxClearSegment, 0),
         avgSegmentsCleared: round1(rows.reduce((sum, row) => sum + row.maxClearSegment, 0) / rows.length),
+        avgLastClearHpPct: lastClearRows.length === 0
+          ? null
+          : round1(lastClearRows.reduce((sum, row) => sum + (row.hpPercentAtMaxClear ?? 0), 0) / lastClearRows.length),
+        avgLastClearDps: lastClearRows.length === 0
+          ? null
+          : round1(lastClearRows.reduce((sum, row) => sum + (row.observedDpsAtMaxClear ?? 0), 0) / lastClearRows.length),
+        avgFailProgressPct: failRows.length === 0
+          ? null
+          : round1(failRows.reduce((sum, row) => sum + (row.firstFailProgressPercent ?? 0), 0) / failRows.length),
       };
     }).sort((a, b) => b.totalSegmentsCleared - a.totalSegmentsCleared);
 
-    console.table(summary);
+    console.table(breakpointRows);
     console.table(weaponSummary);
 
     expect(detail).toHaveLength(Object.values(WORLD_ZONE_CONTENT).length * 5);
-    expect(summary).toHaveLength(Object.values(WORLD_ZONE_CONTENT).length);
     expect(detail.every((row) => row.maxClearSegment >= 0 && row.maxClearSegment <= 10)).toBe(true);
     expect(detail.filter((row) => row.weapon === "dual_dagger")).toHaveLength(Object.values(WORLD_ZONE_CONTENT).length);
+    expect(detail.every((row) => row.fullClear === (row.maxClearSegment === 10))).toBe(true);
   });
 });
