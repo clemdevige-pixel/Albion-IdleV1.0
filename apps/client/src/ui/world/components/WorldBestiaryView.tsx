@@ -10,6 +10,7 @@ import {
   WORLD_BESTIARY,
   getBestiaryContextIds,
   getBestiaryLoot,
+  type BestiaryAbilityModel,
   type WorldBandId,
 } from "../worldModels";
 import "./WorldBestiaryView.css";
@@ -21,9 +22,9 @@ const CATEGORY_LABELS = {
   boss: "Boss",
 } as const;
 
-interface LootTooltipState {
-  readonly itemName: string;
-  readonly rate: string;
+interface TooltipState {
+  readonly title: string;
+  readonly lines: readonly string[];
   readonly left: number;
   readonly top: number;
 }
@@ -45,13 +46,26 @@ function formatDropRange(minimum: number, maximum: number): string {
   return `${formatDropPercent(minimum)} – ${formatDropPercent(maximum)}`;
 }
 
+function formatDamageType(damageType: string): string {
+  return damageType === "magical" ? "Magiques" : "Physiques";
+}
+
+function getAbilityTooltipLines(ability: BestiaryAbilityModel): readonly string[] {
+  return [
+    `Dégâts : ${formatDamageType(ability.damageType)}`,
+    `Puissance : ${String(Math.round(ability.damageMultiplier * 100))} %`,
+    `Recharge : ${ability.cooldown.toLocaleString("fr-FR")} s`,
+    `Interruptible : ${ability.interruptible ? "Oui" : "Non"}`,
+  ];
+}
+
 export function WorldBestiaryView(): JSX.Element {
   const { getBestiaryKnowledge } = useGameServices();
   useGameUiSelector(selectBestiaryRevision);
   const [faction, setFaction] = useState("Toutes");
   const [bandId, setBandId] = useState<WorldBandId | "all">("all");
   const [selectedMonsterId, setSelectedMonsterId] = useState<string | undefined>();
-  const [lootTooltip, setLootTooltip] = useState<LootTooltipState | undefined>();
+  const [tooltip, setTooltip] = useState<TooltipState | undefined>();
 
   const entries = useMemo(
     () => WORLD_BESTIARY.filter((entry) => {
@@ -63,15 +77,15 @@ export function WorldBestiaryView(): JSX.Element {
   );
   const bestiaryContextIds = getBestiaryContextIds(bandId);
 
-  const showLootTooltip = (
+  const showTooltip = (
     element: HTMLElement,
-    itemName: string,
-    rate: string,
+    title: string,
+    lines: readonly string[],
   ): void => {
     const rect = element.getBoundingClientRect();
-    setLootTooltip({
-      itemName,
-      rate,
+    setTooltip({
+      title,
+      lines,
       left: rect.left + rect.width / 2,
       top: rect.top - 7,
     });
@@ -135,7 +149,7 @@ export function WorldBestiaryView(): JSX.Element {
                 aria-expanded={isSelected}
                 onClick={() => {
                   setSelectedMonsterId(isSelected ? undefined : entry.id);
-                  setLootTooltip(undefined);
+                  setTooltip(undefined);
                 }}
               >
                 <div className="world-creature__portrait">
@@ -146,33 +160,63 @@ export function WorldBestiaryView(): JSX.Element {
                 <div className="world-creature__identity">
                   <small>{entry.faction}</small>
                   <strong>{entry.name}</strong>
-                  <span>
-                    T{entry.tier} · {CATEGORY_LABELS[entry.category]} · {knowledge.discovered ? "Découvert" : "Non découvert"}
-                  </span>
+                  <span>T{entry.tier} · {CATEGORY_LABELS[entry.category]}</span>
                 </div>
-                <dl>
+                <dl className="world-creature__victories">
                   <div>
-                    <dt>Dégâts</dt>
-                    <dd>{entry.damageType === "magical" ? "Magiques" : "Physiques"}</dd>
-                  </div>
-                  <div>
-                    <dt>Compétences</dt>
-                    <dd>{entry.abilityCount}</dd>
+                    <dt>Victoires</dt>
+                    <dd>{knowledge.killCount}</dd>
                   </div>
                 </dl>
               </button>
 
               {isSelected && (
                 <>
-                  <section className="world-creature__knowledge" aria-label={`Connaissance de ${entry.name}`}>
-                    <header>
-                      <small>Connaissance</small>
-                      <span>{knowledge.discovered ? "Découvert" : "À découvrir"}</span>
-                    </header>
-                    <dl>
-                      <div><dt>Victoires</dt><dd>{knowledge.killCount}</dd></div>
-                    </dl>
-                  </section>
+                  {knowledge.discovered && (
+                    <section className="world-creature__combat" aria-label={`Combat contre ${entry.name}`}>
+                      <header><small>Combat</small></header>
+                      <div className="world-creature__combat-content">
+                        <div className="world-creature__combat-stat">
+                          <span>Type de dégâts</span>
+                          <strong>{formatDamageType(entry.damageType)}</strong>
+                        </div>
+                        <div className="world-creature__abilities">
+                          <span>Compétences</span>
+                          {entry.abilities.length === 0
+                            ? <strong>Aucune</strong>
+                            : (
+                              <div className="world-creature__ability-list">
+                                {entry.abilities.map((ability) => (
+                                  <button
+                                    key={ability.id}
+                                    type="button"
+                                    className="world-creature__ability"
+                                    onMouseEnter={(event) => {
+                                      showTooltip(
+                                        event.currentTarget,
+                                        ability.name,
+                                        getAbilityTooltipLines(ability),
+                                      );
+                                    }}
+                                    onMouseLeave={() => { setTooltip(undefined); }}
+                                    onFocus={(event) => {
+                                      showTooltip(
+                                        event.currentTarget,
+                                        ability.name,
+                                        getAbilityTooltipLines(ability),
+                                      );
+                                    }}
+                                    onBlur={() => { setTooltip(undefined); }}
+                                  >
+                                    {ability.name} ⓘ
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </section>
+                  )}
 
                   <section className="world-creature__loot" aria-label={`Table de loot de ${entry.name}`}>
                     <header>
@@ -196,13 +240,13 @@ export function WorldBestiaryView(): JSX.Element {
                                 tabIndex={0}
                                 aria-label={`${itemName} · ${rate}`}
                                 onMouseEnter={(event) => {
-                                  showLootTooltip(event.currentTarget, itemName, rate);
+                                  showTooltip(event.currentTarget, itemName, [`Taux : ${rate}`]);
                                 }}
-                                onMouseLeave={() => { setLootTooltip(undefined); }}
+                                onMouseLeave={() => { setTooltip(undefined); }}
                                 onFocus={(event) => {
-                                  showLootTooltip(event.currentTarget, itemName, rate);
+                                  showTooltip(event.currentTarget, itemName, [`Taux : ${rate}`]);
                                 }}
-                                onBlur={() => { setLootTooltip(undefined); }}
+                                onBlur={() => { setTooltip(undefined); }}
                               >
                                 <ItemVisual itemId={drop.itemId} />
                               </div>
@@ -218,14 +262,14 @@ export function WorldBestiaryView(): JSX.Element {
         })}
       </div>
 
-      {lootTooltip !== undefined && createPortal(
+      {tooltip !== undefined && createPortal(
         <div
-          className="world-creature__loot-tooltip--portal"
+          className="world-creature__tooltip--portal"
           role="tooltip"
-          style={{ left: lootTooltip.left, top: lootTooltip.top }}
+          style={{ left: tooltip.left, top: tooltip.top }}
         >
-          <strong>{lootTooltip.itemName}</strong>
-          <span>Taux : {lootTooltip.rate}</span>
+          <strong>{tooltip.title}</strong>
+          {tooltip.lines.map((line) => <span key={line}>{line}</span>)}
         </div>,
         document.body,
       )}
