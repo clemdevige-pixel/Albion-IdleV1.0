@@ -63,6 +63,10 @@ export type StartExpeditionResult =
       | "type_already_active";
   };
 
+export type CancelExpeditionResult =
+  | { readonly ok: true; readonly cancelledExpedition: ActiveExpeditionState }
+  | { readonly ok: false; readonly reason: "active_expedition_not_found" };
+
 export interface ExpeditionAdvanceResult<TRewardSummary = unknown> {
   readonly completed: readonly ExpeditionCompletion<TRewardSummary>[];
   readonly activeExpeditions: readonly ActiveExpeditionState[];
