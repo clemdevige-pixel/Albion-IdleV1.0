@@ -10,7 +10,6 @@ describe("DashboardLayoutSaveProvider", () => {
       "research",
       "yield",
       "enchant-ready",
-      "tracked-resources",
     ]);
 
     const restored = new DashboardLayoutSaveProvider();
@@ -22,7 +21,6 @@ describe("DashboardLayoutSaveProvider", () => {
       "research",
       "yield",
       "enchant-ready",
-      "tracked-resources",
     ]);
   });
 
@@ -34,7 +32,6 @@ describe("DashboardLayoutSaveProvider", () => {
       "research",
       "yield",
       "enchant-ready",
-      "tracked-resources",
     ]);
 
     provider.load(undefined);
@@ -44,7 +41,6 @@ describe("DashboardLayoutSaveProvider", () => {
       "research",
       "yield",
       "enchant-ready",
-      "tracked-resources",
       "production",
     ]);
   });
