@@ -153,7 +153,7 @@ export const ABILITY_VFX_CATALOG: Readonly<Record<string, AbilityVfxDefinition>>
     strokeWidth: 4,
     layers: 4,
   },
-  ability_dagger_assassination: {
+  ability_dagger_pair_cross_assault: {
     kind: "pierce",
     color: 0xf1d7ff,
     scale: 1.45,
