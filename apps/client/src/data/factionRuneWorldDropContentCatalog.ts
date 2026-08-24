@@ -1,5 +1,8 @@
-import type { WorldBandId } from "@game/data";
-import { getFactionRuneItemId, isFactionRuneTier } from "./factionRuneContentCatalog.js";
+import {
+  getFactionRuneItemId,
+  isFactionRuneTier,
+  type WorldBandId,
+} from "@game/data";
 
 export interface FactionRuneWorldDropZoneRate {
   readonly start: number;
