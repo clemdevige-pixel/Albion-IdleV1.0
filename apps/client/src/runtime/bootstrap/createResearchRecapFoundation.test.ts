@@ -14,9 +14,10 @@ describe("createResearchRecapFoundation", () => {
       researchId: RESEARCH_IDS.dungeonSanctuaryLocation,
       displayName: "Localisation des Sanctuaires",
       unlockedContent: [
-        "Onglet Donjons",
+        "World > Donjons",
         "Drops de fragments de clé",
-        "Drops de clés de donjon",
+        "Drops de clés complètes",
+        "Drop rare de Runes de faction dans le monde",
       ],
     });
     expect(listener).toHaveBeenCalledTimes(1);
