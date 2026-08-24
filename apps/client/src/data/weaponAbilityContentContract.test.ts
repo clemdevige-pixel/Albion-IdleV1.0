@@ -36,15 +36,15 @@ describe("weapon ability content contract", () => {
 
   it("keeps conditional weapon behavior fully described by its own ability data", () => {
     const infernalBurst = CLIENT_ABILITIES["ability_fire_infernal_burst"];
-    const assassination = CLIENT_ABILITIES["ability_dagger_assassination"];
+    const crossAssault = CLIENT_ABILITIES["ability_dagger_pair_cross_assault"];
 
     expect(infernalBurst?.mechanics.autoRule).toEqual({
       kind: "target_has_effect",
       effectId: "effect_fire_burn",
     });
-    expect(assassination?.mechanics.autoRule).toEqual({
-      kind: "target_health_below",
-      ratio: 0.5,
+    expect(crossAssault?.mechanics.autoRule).toEqual({
+      kind: "target_has_effect",
+      effectId: "effect_dagger_opening",
     });
   });
 });
