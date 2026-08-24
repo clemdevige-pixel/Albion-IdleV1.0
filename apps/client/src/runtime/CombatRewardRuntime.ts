@@ -1,4 +1,5 @@
 import type { EntityId } from "@game/core";
+import { rollFactionRuneWorldDrop, type FactionRuneWorldDrop } from "@game/data";
 import type {
   AwakenedWeaponService,
   AwakenedWeaponTier,
@@ -17,10 +18,6 @@ import {
   type CombatDrop,
   type CombatLootContext,
 } from "../data/economyContentCatalog";
-import {
-  rollFactionRuneWorldDrop,
-  type FactionRuneWorldDrop,
-} from "../data/factionRuneWorldDropContentCatalog.js";
 import { isAwakeningEligibleWeapon } from "../data/enchantmentItemPolicy.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
