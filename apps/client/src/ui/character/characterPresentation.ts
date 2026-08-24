@@ -16,7 +16,7 @@ export function getEquippedHeroIdlePresentation(
   weaponId: string | undefined,
 ): HeroIdlePresentation {
   const presentation = resolveEquipmentPresentation(weaponId);
-  if (presentation !== undefined) {
+  if (presentation?.actorManifestId !== undefined) {
     const actorManifest = renderManifestRegistry.getActor(presentation.actorManifestId);
     if (actorManifest !== undefined) {
       const idle = actorManifest.animations.idle;
