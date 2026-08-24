@@ -3,7 +3,7 @@
   --combat-action-gap: 9px;
   --combat-auto-width: 92px;
   --combat-ability-frame-image: url("/assets/abilities/bordure%20skill.png");
-  --combat-ability-art-inset: 9%;
+  --combat-ability-content-inset: 12.5%;
 
   display: flex;
   align-items: center;
@@ -54,9 +54,10 @@
 .combat-action-bar__slot--ability::before {
   position: absolute;
   z-index: 0;
-  inset: var(--combat-ability-art-inset);
+  inset: var(--combat-ability-content-inset);
   content: "";
   background: #080c12;
+  clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%);
   pointer-events: none;
 }
 
@@ -82,6 +83,17 @@
   outline: none;
 }
 
+.combat-action-bar__ability-viewport {
+  position: absolute;
+  z-index: 1;
+  inset: var(--combat-ability-content-inset);
+  display: block;
+  overflow: hidden;
+  clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%);
+  background: #080c12;
+  pointer-events: none;
+}
+
 .combat-action-bar__slot--ability:hover .combat-action-bar__ability-image,
 .combat-action-bar__slot--ability:focus-visible .combat-action-bar__ability-image {
   filter: brightness(1.08);
@@ -94,10 +106,10 @@
 .combat-action-bar__ability-image {
   position: absolute;
   z-index: 1;
-  inset: var(--combat-ability-art-inset);
+  inset: 0;
   display: block;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 0;
   image-rendering: pixelated;
@@ -121,9 +133,9 @@
 .combat-action-bar__cooldown {
   position: absolute;
   z-index: 2;
-  right: var(--combat-ability-art-inset);
-  bottom: var(--combat-ability-art-inset);
-  left: var(--combat-ability-art-inset);
+  right: 0;
+  bottom: 0;
+  left: 0;
   background: rgba(4, 7, 11, 0.72);
   pointer-events: none;
   transition: height 120ms linear;
@@ -282,11 +294,12 @@
 .ability-tooltip__icon:not(.ability-tooltip__icon--item) img {
   position: absolute;
   z-index: 1;
-  inset: var(--combat-ability-art-inset);
+  inset: var(--combat-ability-content-inset);
   display: block;
   width: auto;
   height: auto;
   object-fit: cover;
+  clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%);
   image-rendering: pixelated;
   pointer-events: none;
 }
