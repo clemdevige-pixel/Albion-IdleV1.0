@@ -5,7 +5,7 @@ import type { RefiningFamilyId } from "./refiningModels";
 
 export interface RefiningActions {
   readonly setTier: (family: RefiningFamilyId, tier: ProductionTier) => boolean;
-  readonly toggle: (family: RefiningFamilyId) => boolean;
+  readonly toggle: (family: RefiningFamilyId, cycles?: number) => boolean;
 }
 
 function toGameplayFamily(family: RefiningFamilyId): SupportedProductionFamily {
@@ -22,9 +22,12 @@ export function useRefiningActions(): RefiningActions {
     setRefiningTier(toGameplayFamily(family), tier)
   ), [setRefiningTier]);
 
-  const toggle = useCallback((family: RefiningFamilyId): boolean => (
-    toggleRefining(toGameplayFamily(family))
-  ), [toggleRefining]);
+  const toggle = useCallback((family: RefiningFamilyId, cycles?: number): boolean => {
+    const gameplayFamily = toGameplayFamily(family);
+    return cycles === undefined
+      ? toggleRefining(gameplayFamily)
+      : toggleRefining({ family: gameplayFamily, cycles });
+  }, [toggleRefining]);
 
   return { setTier, toggle };
 }
