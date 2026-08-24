@@ -1,5 +1,5 @@
+import { getFactionRuneItemId } from "@game/data";
 import { getDungeonKeyFragmentItemId, getDungeonKeyItemId } from "./dungeonKeyContentCatalog.js";
-import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 
 export type FactionExpeditionTier = 4 | 5 | 6 | 7 | 8;
 export type FactionExpeditionResultQuality = "difficile" | "reussie" | "fructueuse" | "exceptionnelle";
