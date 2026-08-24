@@ -46,6 +46,8 @@ export type DungeonAdvanceResult =
   | { readonly ok: true; readonly state: DungeonRunState }
   | { readonly ok: false; readonly reason: DungeonAdvanceFailureReason };
 
+export type DungeonRequiredItemConsumer = (itemId: string, quantity: number) => boolean;
+
 /** Owns only the deterministic lifecycle and permanent clear progression of dungeon attempts. */
 export class DungeonRuntime {
   readonly #definitions = new Map<string, DungeonDefinition>();
@@ -143,14 +145,21 @@ export class DungeonRuntime {
     return this.#definitions.get(run.definitionId)?.encounters[run.encounterIndex];
   }
 
-  start(definitionId: string, heroId: EntityId, inventory: InventoryManager): DungeonStartResult {
+  start(
+    definitionId: string,
+    heroId: EntityId,
+    inventory: InventoryManager,
+    consumeRequiredItem?: DungeonRequiredItemConsumer,
+  ): DungeonStartResult {
     if (this.#activeRun?.status === "active") return { ok: false, reason: "run_already_active" };
     const definition = this.#definitions.get(definitionId);
     if (definition === undefined) return { ok: false, reason: "invalid_definition" };
     if (!this.canAccessDefinition(definitionId)) return { ok: false, reason: "progression_locked" };
 
-    const consumed = inventory.removeQuantity(heroId, definition.keyItemId, 1);
-    if (!consumed.ok) return { ok: false, reason: "missing_key" };
+    const consumed = consumeRequiredItem === undefined
+      ? inventory.removeQuantity(heroId, definition.keyItemId, 1).ok
+      : consumeRequiredItem(definition.keyItemId, 1);
+    if (!consumed) return { ok: false, reason: "missing_key" };
 
     const state: DungeonRunState = {
       definitionId,
