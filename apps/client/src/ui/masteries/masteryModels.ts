@@ -26,6 +26,15 @@ const COMBAT_MASTERY_ICON_ASSETS: Readonly<Record<WeaponFamilyId, string>> = {
   dagger: "/assets/ui/masteries/dagues.png",
 };
 
+const ITEM_POWER_FORMATTER = new Intl.NumberFormat("fr-FR", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 1,
+});
+
+function formatItemPower(value: number): string {
+  return ITEM_POWER_FORMATTER.format(value);
+}
+
 export interface MasteryProgressModel {
   readonly id: string;
   readonly name: string;
@@ -70,8 +79,8 @@ function combatProgress(mastery: MasteryVM, family: boolean): MasteryProgressMod
       progressPercent: masteryProgressPercent(mastery),
       isUnlocked: mastery.isUnlocked,
       bonuses: [
-        `+${String(mastery.level * WEAPON_FAMILY_IP_PER_LEVEL)} IP`,
-        `+${String(WEAPON_FAMILY_IP_PER_LEVEL)} IP par niveau`,
+        `+${formatItemPower(mastery.level * WEAPON_FAMILY_IP_PER_LEVEL)} IP`,
+        `+${formatItemPower(WEAPON_FAMILY_IP_PER_LEVEL)} IP par niveau`,
       ],
       subtitle: "Bonus pour toute la famille",
     };
@@ -86,9 +95,9 @@ function combatProgress(mastery: MasteryVM, family: boolean): MasteryProgressMod
     progressPercent: masteryProgressPercent(mastery),
     isUnlocked: mastery.isUnlocked,
     bonuses: [
-      `+${String(mastery.level * WEAPON_SPECIALIZATION_IP_PER_LEVEL)} IP sur cette arme`,
-      `+${String(mastery.level * WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP aux autres armes de la famille`,
-      `+${String(WEAPON_SPECIALIZATION_IP_PER_LEVEL)} / +${String(WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP par niveau`,
+      `+${formatItemPower(mastery.level * WEAPON_SPECIALIZATION_IP_PER_LEVEL)} IP sur cette arme`,
+      `+${formatItemPower(mastery.level * WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP aux autres armes de la famille`,
+      `+${formatItemPower(WEAPON_SPECIALIZATION_IP_PER_LEVEL)} / +${formatItemPower(WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP par niveau`,
     ],
     subtitle: "Bonus principal + synergie de famille",
   };
