@@ -266,13 +266,25 @@ export class RefiningRuntime {
     }, Number.POSITIVE_INFINITY);
   }
 
-  private refineInstantly(family: SupportedRefiningFamily): ToggleRefiningResult {
+  private refineInstantly(
+    family: SupportedRefiningFamily,
+    requestedCycles?: number,
+  ): ToggleRefiningResult {
     const recipe = this.getRecipe(family);
-    const cycles = this.getAvailableCycles(recipe);
-    if (!Number.isFinite(cycles) || cycles <= 0) {
+    const availableCycles = this.getAvailableCycles(recipe);
+    if (!Number.isFinite(availableCycles) || availableCycles <= 0) {
+      return { action: "failed", family };
+    }
+    if (
+      requestedCycles !== undefined
+      && (!Number.isInteger(requestedCycles) || requestedCycles <= 0)
+    ) {
       return { action: "failed", family };
     }
 
+    const cycles = requestedCycles === undefined
+      ? availableCycles
+      : Math.min(requestedCycles, availableCycles);
     const batchRequirements = recipe.requirements.map((requirement) => ({
       itemId: requirement.itemId,
       quantity: requirement.quantity * cycles,
@@ -419,6 +431,7 @@ export class RefiningRuntime {
   public toggleRefiningFamily(
     family: SupportedRefiningFamily,
     tickCounter: number = 0,
+    requestedCycles?: number,
   ): ToggleRefiningResult {
     const state = this.states[family];
     if (state.automatic) {
@@ -427,7 +440,7 @@ export class RefiningRuntime {
     }
 
     if (this.isInstantRefiningUnlocked()) {
-      return this.refineInstantly(family);
+      return this.refineInstantly(family, requestedCycles);
     }
 
     state.automatic = true;
