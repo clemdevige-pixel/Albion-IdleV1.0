@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { SaveFormat } from "@game/persistence";
-import { resolveTrustedOfflineElapsedMs } from "./trustedOfflineElapsed.js";
+import {
+  TRUSTED_OFFLINE_RESOLVED_THROUGH_KEY,
+  resolveTrustedOfflineElapsedMs,
+  resolveTrustedOfflineWindow,
+} from "./trustedOfflineElapsed.js";
 
 function makeSave(extra?: Record<string, unknown>): SaveFormat {
   return {
@@ -21,6 +25,28 @@ function makeSave(extra?: Record<string, unknown>): SaveFormat {
 describe("trusted offline elapsed", () => {
   it("uses only server-authored timestamps", () => {
     expect(resolveTrustedOfflineElapsedMs(makeSave({ serverSavedAt: 1_000, serverNow: 4_500 }))).toBe(3_500);
+  });
+
+  it("subtracts time already resolved from the same trusted server window", () => {
+    const save = makeSave({
+      serverSavedAt: 1_000,
+      serverNow: 12_000,
+      [TRUSTED_OFFLINE_RESOLVED_THROUGH_KEY]: 11_000,
+    });
+
+    expect(resolveTrustedOfflineElapsedMs(save)).toBe(1_000);
+    expect(resolveTrustedOfflineWindow(save)).toEqual({
+      elapsedMs: 1_000,
+      serverNow: 12_000,
+    });
+  });
+
+  it("does not replay an already consumed trusted server window", () => {
+    expect(resolveTrustedOfflineElapsedMs(makeSave({
+      serverSavedAt: 1_000,
+      serverNow: 11_000,
+      [TRUSTED_OFFLINE_RESOLVED_THROUGH_KEY]: 11_000,
+    }))).toBe(0);
   });
 
   it("fails closed when trusted timestamps are absent or invalid", () => {
