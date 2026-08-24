@@ -1,9 +1,11 @@
 import { useCallback, useState, type MouseEvent } from "react";
 import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
+import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDisplayName } from "../../panels/ItemVisual";
+import { useGameServices } from "../../state/GameContext";
 import { BankModule } from "../bank";
 import {
   createTrackedItemResource,
@@ -54,7 +56,11 @@ function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter):
 export function InventoryModule(): JSX.Element {
   const inventory = useInventoryData();
   const actions = useInventoryActions();
+  const services = useGameServices();
   const tracking = useResourceTracking();
+  const yieldTrackingUnlocked = services.getAcademyModel().research.some(
+    (research) => research.id === RESEARCH_IDS.yieldAnalysis && research.state === "completed",
+  );
   const [activeTab, setActiveTab] = useState<StorageTab>("inventory");
   const [activeFilter, setActiveFilter] = useState<InventoryFilter>("all");
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -157,18 +163,23 @@ export function InventoryModule(): JSX.Element {
                 onItemDrop={(from, to) => { actions.move("inventory", from, to); }}
                 onItemDoubleClick={handleDoubleClick}
                 onItemContextMenu={handleContextMenu}
-                canFavoriteItem={isTrackableResourceItem}
-                isItemFavorite={tracking.isTracked}
-                onToggleItemFavorite={(itemId) => {
-                  tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
-                }}
+                {...(yieldTrackingUnlocked ? {
+                  canFavoriteItem: isTrackableResourceItem,
+                  isItemFavorite: tracking.isTracked,
+                  onToggleItemFavorite: (itemId: string) => {
+                    tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
+                  },
+                } : {})}
               />
             ) : (
               <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>
             )}
           </section>
 
-          <p className="storage-module__hint">Double-clic : utiliser / équiper · glissez-déposez pour organiser · étoile : suivre une ressource.</p>
+          <p className="storage-module__hint">
+            Double-clic : utiliser / équiper · glissez-déposez pour organiser
+            {yieldTrackingUnlocked ? " · étoile : suivre une ressource." : "."}
+          </p>
 
           {contextMenu !== null && contextItemId !== undefined && contextIsEquipment && (
             <ItemContextMenu
