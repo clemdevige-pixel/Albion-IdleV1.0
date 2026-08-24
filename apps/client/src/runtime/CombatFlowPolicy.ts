@@ -28,10 +28,11 @@ export const WORLD_COMBAT_FLOW_POLICY: CombatFlowPolicy = {
 };
 
 /**
- * Dungeon V1 contract: one continuous expedition. HP and cooldowns persist
- * between every encounter, including the boss transition.
+ * Dungeon V1 contract: HP persists through the full dungeon endurance sequence,
+ * but ability cooldowns reset at the start of every encounter so each combat
+ * begins with the authored weapon rotation available.
  */
 export const CONTINUOUS_COMBAT_FLOW_POLICY: CombatFlowPolicy = {
   shouldRestoreHeroHealthBeforeEncounter: () => false,
-  shouldResetHeroCooldownsOnEncounterStart: () => false,
+  shouldResetHeroCooldownsOnEncounterStart: () => true,
 };
