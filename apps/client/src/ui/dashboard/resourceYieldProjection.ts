@@ -1,6 +1,5 @@
 import type { GameBridgeState, GatheringVM, RefiningVM } from "../../game/GameBridge.js";
 import {
-  PRODUCTION_FAMILY_IDS,
   REFINING_CONTENT_TIERS,
   isProductionTier,
   type ProductionFamilyId,
@@ -70,5 +69,3 @@ function getRefiningEntries(
 function addRate(target: Record<string, number>, itemId: string, rate: number): void {
   target[itemId] = (target[itemId] ?? 0) + Math.max(0, rate);
 }
-
-void PRODUCTION_FAMILY_IDS;
