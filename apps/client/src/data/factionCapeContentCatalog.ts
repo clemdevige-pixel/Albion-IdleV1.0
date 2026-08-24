@@ -1,7 +1,7 @@
+import { getFactionRuneItemId } from "@game/data";
 import type { EquipmentInfoLike } from "@game/gameplay";
 import type { ClientCraftRecipe } from "./specialCraftRecipes.js";
 import type { ProductionTier } from "./productionFamilyCatalog.js";
-import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { getClothRecipe, getLeatherRecipe } from "./refiningRecipes.js";
 
 type FactionCapeTier = Exclude<ProductionTier, 3>;
