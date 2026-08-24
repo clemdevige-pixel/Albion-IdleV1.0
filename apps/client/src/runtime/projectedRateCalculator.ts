@@ -3,9 +3,11 @@ import { getEnemyCombatProfile, getEncounterRewards, type ZoneDefinitionId } fro
 import {
   BASE_COMBAT_DROP_RATES,
   BOSS_SPECIAL_DROP_MULTIPLIER,
+  getCombatLootExpectations,
   getDungeonKeyProgressionWeight,
   getEnchantmentShardExpectedDrop,
   getEnchantmentShardProgressionWeight,
+  type CombatLootContext,
 } from "../data/economyContentCatalog.js";
 import {
   getFactionMasteryYieldBonusPercent,
@@ -46,6 +48,8 @@ export interface ProjectedSegmentRates {
   readonly famePerHour: number;
   readonly enchantmentShardsPerHour: number;
   readonly keyFragmentsPerHour: number;
+  /** Expected combat-loot quantity per hour keyed by authoritative item id. */
+  readonly itemPerHour: Readonly<Record<string, number>>;
 }
 
 export function calculateProjectedSegmentRates(
@@ -87,6 +91,7 @@ export function calculateProjectedSegmentRates(
   let projectedFame = 0;
   let projectedEnchantmentShards = 0;
   let projectedKeyFragments = 0;
+  const projectedItems = new Map<string, number>();
 
   for (
     let encounterIndex = 0;
@@ -160,15 +165,39 @@ export function calculateProjectedSegmentRates(
       * dungeonKeyDropWeight
       * (isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1)
       * yieldMultiplier;
+
+    const monster = resolveMonsterForEncounter(currentZoneDefId, currentSegment, encounterIndex);
+    const lootContext: CombatLootContext = {
+      segmentIndex: currentSegment,
+      faction: monster.faction,
+      isElite,
+      isBoss,
+      isFinalBoss: isBoss,
+      enchantmentTier: getBandTier(currentWorldBandId),
+      enchantmentDropWeight,
+      dungeonKeyDropWeight,
+    };
+    for (const expectation of getCombatLootExpectations(lootContext)) {
+      projectedItems.set(
+        expectation.itemId,
+        (projectedItems.get(expectation.itemId) ?? 0)
+          + expectation.expectedQuantity * yieldMultiplier,
+      );
+    }
   }
 
   const cyclesPerHour = 3600 / Math.max(1, projectedSeconds);
+  const itemPerHour: Record<string, number> = {};
+  for (const [itemId, expectedPerCycle] of projectedItems) {
+    itemPerHour[itemId] = expectedPerCycle * cyclesPerHour;
+  }
 
   return {
     silverPerHour: projectedSilver * cyclesPerHour,
     famePerHour: projectedFame * cyclesPerHour,
     enchantmentShardsPerHour: projectedEnchantmentShards * cyclesPerHour,
     keyFragmentsPerHour: projectedKeyFragments * cyclesPerHour,
+    itemPerHour,
   };
 }
 
@@ -183,4 +212,14 @@ function getProjectedFactionYieldBonusPercent(
   if (masteryId === undefined) return 0;
   const level = masteries.find((mastery) => mastery.id === masteryId)?.level ?? 0;
   return getFactionMasteryYieldBonusPercent(level);
+}
+
+function getBandTier(bandId: WorldBandId): number {
+  switch (bandId) {
+    case "blue": return 4;
+    case "yellow": return 5;
+    case "orange": return 6;
+    case "red": return 7;
+    case "black": return 8;
+  }
 }
