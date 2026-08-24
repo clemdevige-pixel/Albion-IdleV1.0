@@ -1,6 +1,7 @@
 import {
   EXPEDITION_DURATION_OPTIONS_MS,
   type ActiveResearchState,
+  type CancelExpeditionResult,
   type ExpeditionDurationMs,
   type ExpeditionRequirementDefinition,
   type ExpeditionService,
@@ -39,6 +40,7 @@ export interface AcademyPresentationModel {
   readonly research: readonly AcademyResearchEntryModel[];
   readonly expeditions: readonly AcademyExpeditionEntryModel[];
   readonly expeditionSlotCapacity: number;
+  readonly cancelExpedition: (slotIndex: number) => CancelExpeditionResult;
 }
 
 export type AcademyResearchActionResult =
@@ -66,6 +68,12 @@ export function createAcademyPresentationFoundation<
     TExpeditionRewardSummary
   >,
 ) {
+  const cancelExpedition = (slotIndex: number): CancelExpeditionResult => {
+    const result = dependencies.expeditionService.cancelExpedition(slotIndex);
+    if (result.ok) dependencies.onMutation?.();
+    return result;
+  };
+
   const getModel = (): AcademyPresentationModel => {
     const activeResearches = dependencies.researchService.getActiveResearches();
     const activeById = new Map(activeResearches.map((entry) => [entry.researchId, entry]));
@@ -101,6 +109,7 @@ export function createAcademyPresentationFoundation<
         };
       }),
       expeditionSlotCapacity: dependencies.expeditionService.getSlotCapacity(),
+      cancelExpedition,
     };
   };
 
