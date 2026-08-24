@@ -2,6 +2,7 @@ import { useCallback, useState, type MouseEvent } from "react";
 import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
+import { getFragmentAssemblyRecipe } from "../../data/specialCraftRecipes.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDisplayName } from "../../panels/ItemVisual";
@@ -76,6 +77,10 @@ export function InventoryModule(): JSX.Element {
     if (slot.itemId === undefined || isRelicInventoryItem(slot.itemId)) return;
     if (event.shiftKey) {
       actions.transfer("inventory", slot.position, "bank");
+      return;
+    }
+    if (getFragmentAssemblyRecipe(slot.itemId) !== undefined) {
+      actions.assembleFragments(slot.itemId);
       return;
     }
     if (isEquipmentInventoryItem(slot.itemId)) actions.equip(slot.position);
@@ -177,7 +182,7 @@ export function InventoryModule(): JSX.Element {
           </section>
 
           <p className="storage-module__hint">
-            Double-clic : utiliser / équiper · glissez-déposez pour organiser
+            Double-clic : utiliser / équiper / assembler les fragments · glissez-déposez pour organiser
             {yieldTrackingUnlocked ? " · étoile : suivre une ressource." : "."}
           </p>
 
