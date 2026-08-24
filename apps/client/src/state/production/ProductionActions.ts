@@ -6,6 +6,7 @@ import type { CombatLoopState } from "../../runtime/CombatRuntime";
 import { combatStopController } from "../../runtime/CombatStopController";
 import type { GatheringRuntime } from "../../runtime/GatheringRuntime";
 import type { RefiningRuntime } from "../../runtime/RefiningRuntime";
+import { SPECIAL_CRAFT_RECIPES } from "../../data/specialCraftRecipes.js";
 import { syncInventoryToBridge } from "../bridgeSync";
 import type {
   ProductionBridgeAdapter,
@@ -136,10 +137,15 @@ export class ProductionActions {
     );
     this.deps.productionBridge.syncAllRefining();
     this.deps.productionBridge.syncCrafting();
+    const isFragmentAssembly = SPECIAL_CRAFT_RECIPES.some(
+      (recipe) => recipe.outputItemId === result.outputItemId,
+    );
     this.deps.bridge.addEconomyNotification({
       id: `notif_craft_${String(Date.now())}`,
       type: "success",
-      message: `Fabriqué : ${result.recipeName} · ${String(result.itemPower)} IP`,
+      message: isFragmentAssembly
+        ? `Assemblé : ${result.recipeName}`
+        : `Fabriqué : ${result.recipeName} · ${String(result.itemPower)} IP`,
       timestamp: Date.now(),
     });
     return true;
