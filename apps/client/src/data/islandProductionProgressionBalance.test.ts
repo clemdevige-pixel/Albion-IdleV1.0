@@ -20,10 +20,10 @@ const ISLAND_TIER_CASES = [
 
 const ISLAND_UPGRADE_CASES = [
   { targetLevel: 2, sourceTier: 3, silver: 2_000, quantityPerFamily: 8 },
-  { targetLevel: 3, sourceTier: 4, silver: 30_000, quantityPerFamily: 20 },
-  { targetLevel: 4, sourceTier: 5, silver: 100_000, quantityPerFamily: 40 },
-  { targetLevel: 5, sourceTier: 6, silver: 265_000, quantityPerFamily: 60 },
-  { targetLevel: 6, sourceTier: 7, silver: 450_000, quantityPerFamily: 90 },
+  { targetLevel: 3, sourceTier: 4, silver: 35_000, quantityPerFamily: 25 },
+  { targetLevel: 4, sourceTier: 5, silver: 120_000, quantityPerFamily: 50 },
+  { targetLevel: 5, sourceTier: 6, silver: 315_000, quantityPerFamily: 75 },
+  { targetLevel: 6, sourceTier: 7, silver: 535_000, quantityPerFamily: 110 },
 ] as const;
 
 const REFINED_FAMILY_TOKEN = ["planks", "bar", "leather", "cloth"] as const;
@@ -58,7 +58,7 @@ describe("island production progression balance contract", () => {
     }
   });
 
-  it("uses the centralized island Silver curve", () => {
+  it("uses the centralized island Silver curve including Academy progression", () => {
     for (const { targetLevel, silver } of ISLAND_UPGRADE_CASES) {
       expect(getIslandLevelDefinition(targetLevel)?.upgradeCost?.silver).toBe(silver);
     }
