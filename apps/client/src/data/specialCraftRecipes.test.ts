@@ -3,7 +3,10 @@ import {
   ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
   KEY_FRAGMENTS_PER_KEY,
 } from "./economyContentCatalog";
-import { SPECIAL_CRAFT_RECIPES } from "./specialCraftRecipes";
+import {
+  getFragmentAssemblyRecipe,
+  SPECIAL_CRAFT_RECIPES,
+} from "./specialCraftRecipes";
 
 describe("special crafting conversions", () => {
   it("creates key conversions at the approved 50 fragment cost", () => {
@@ -33,6 +36,15 @@ describe("special crafting conversions", () => {
       expect(recipe.requirements[0]?.quantity).toBe(ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE);
       expect(recipe.requirements[0]?.itemId).toContain("artifact_fragment");
     }
+  });
+
+  it("resolves assembly directly from the authored fragment requirement", () => {
+    for (const recipe of SPECIAL_CRAFT_RECIPES) {
+      const fragmentId = recipe.requirements[0]?.itemId;
+      expect(fragmentId).toBeDefined();
+      expect(getFragmentAssemblyRecipe(fragmentId ?? "")).toBe(recipe);
+    }
+    expect(getFragmentAssemblyRecipe("item_resource_wood_t4")).toBeUndefined();
   });
 
   it("keeps conversions aligned with Blue Zone faction tiers", () => {
