@@ -32,6 +32,7 @@ import type { ResearchRecapModel } from "../runtime/bootstrap/createResearchReca
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 import type { DungeonAccessState } from "./DungeonNavigationActions.js";
+import type { RefiningToggleTarget } from "./production/ProductionActions.js";
 
 export type UIEventMap = Record<string, unknown>;
 
@@ -105,7 +106,7 @@ export interface GameServices {
     resourceFamily: string,
     quality: "miss" | "correct" | "perfect",
   ) => boolean;
-  readonly toggleRefining: (family: SupportedProductionFamily) => boolean;
+  readonly toggleRefining: (target: RefiningToggleTarget) => boolean;
   readonly isInstantRefiningUnlocked: () => boolean;
   readonly setGatheringTier: (tier: ProductionTier) => boolean;
   readonly setRefiningTier: (family: SupportedProductionFamily, tier: ProductionTier) => boolean;
