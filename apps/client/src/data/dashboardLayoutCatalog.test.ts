@@ -12,7 +12,6 @@ describe("dashboard layout catalog", () => {
       "combat",
       "research",
       "enchant-ready",
-      "tracked-resources",
       "production",
     ]);
   });
@@ -30,7 +29,6 @@ describe("dashboard layout catalog", () => {
       "research",
       "yield",
       "enchant-ready",
-      "tracked-resources",
     ]);
   });
 });
