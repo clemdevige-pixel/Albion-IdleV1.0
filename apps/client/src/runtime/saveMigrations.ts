@@ -1,10 +1,10 @@
+import { LEGACY_FACTION_RUNE_MIGRATIONS } from "@game/data";
 import {
   computeChecksum,
   MigrationPipeline,
   type SaveFormat,
   type SaveMigration,
 } from "@game/persistence";
-import { LEGACY_FACTION_RUNE_MIGRATIONS } from "../data/factionRuneContentCatalog.js";
 
 /**
  * Increment only when the persisted payload shape changes incompatibly.
