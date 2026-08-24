@@ -2,7 +2,7 @@
 
 Status: DESIGN BACKLOG / PARTIALLY VALIDATED
 Authority: idea backlog for future Academy expansion
-Last update: 2026-08-22
+Last update: 2026-08-24
 
 ---
 
@@ -21,41 +21,19 @@ Avoid generic Research bonuses such as `+X% damage`, `+X% craft speed` or `+X% w
 
 ---
 
-# 1. VALIDATED CANDIDATE — DOCTRINE D'EQUIPEMENT
+# 1. ABANDONED — DOCTRINE D'EQUIPEMENT
 
-Status: VALIDATED DESIGN DIRECTION
+Status: ABANDONED / DO NOT IMPLEMENT AS ACADEMY RESEARCH
 
-Purpose:
+Equipment loadouts/presets are part of the baseline Character equipment UX and must remain available independently of Academy progression.
 
-- unlock equipment presets;
-- reduce friction when switching between open-world farming, progression and faction dungeons;
-- support future build specialization without adding direct power.
+The former proposal to gate equipment presets behind Research was explicitly abandoned.
 
-Candidate V1 behavior:
+Do not:
 
-- unlock 3 equipment presets;
-- each preset stores references to the player's real equipped items;
-- no item duplication;
-- no stat bonus;
-- one-click equip if referenced items are still available under the inventory/equipment rules.
-
-A preset may include:
-
-- weapon;
-- off-hand where applicable;
-- head;
-- torso;
-- boots;
-- cape;
-- consumable/potion.
-
-Examples:
-
-- Farm monde;
-- Progression;
-- Donjon Keeper.
-
-Final UX, tier, Research cost and duration remain OPEN until implementation.
+- create a Doctrine d'equipement Research;
+- hide existing loadout controls behind an Academy unlock;
+- add a Research prerequisite to save/apply/rename/delete equipment loadouts.
 
 ---
 
@@ -97,12 +75,9 @@ Candidate behavior:
 
 - save multiple combat-priority profiles;
 - examples: Farm / Progression / Boss-Donjon;
-- each profile stores ability priorities only;
-- may later integrate with equipment presets if there is a clear UX need.
+- each profile stores ability priorities only.
 
-Do NOT implement this as a duplicate of equipment presets.
-
-It is only justified if combat-priority configuration itself becomes deep enough to warrant multiple saved profiles.
+This is only justified if combat-priority configuration itself becomes deep enough to warrant multiple saved profiles.
 
 ---
 
@@ -344,7 +319,7 @@ Rejected for current gameplay because there is no meaningful need to mass-craft 
 
 ## Advanced Armory as separate Research
 
-Rejected because the proposed functionality substantially duplicated Equipment Presets.
+Rejected because the proposed functionality substantially duplicated the baseline equipment-loadout system.
 
 ---
 
@@ -354,11 +329,14 @@ Current Academy expansion state beyond factions:
 
 1. Organisation avancée des ouvriers — VALIDATED / IMPLEMENTED at T6
 2. Procédés de raffinage avancés — VALIDATED / IMPLEMENTED at T7
-3. Doctrine d'equipement — VALIDATED DIRECTION
-4. Tactiques de combat — STRONG CANDIDATE
-5. Consignes d'exploration — STRONG CANDIDATE
-6. Analyse tactique — CANDIDATE, presentation unresolved
-7. Protocoles de combat avances — CONDITIONAL extension only
+3. Tactiques de combat — STRONG CANDIDATE
+4. Consignes d'exploration — STRONG CANDIDATE
+5. Analyse tactique — CANDIDATE, presentation unresolved
+6. Protocoles de combat avances — CONDITIONAL extension only
+
+Abandoned:
+
+- Doctrine d'equipement -> loadouts are baseline Character functionality and are not Academy-gated.
 
 Deferred:
 
