@@ -20,7 +20,10 @@ import {
   syncWorkersToBridge,
   WORKER_PROFESSION_LABELS,
 } from "../bridgeSync";
-import { ProductionActions } from "./ProductionActions";
+import {
+  ProductionActions,
+  type RefiningToggleTarget,
+} from "./ProductionActions";
 import { ProductionBridgeAdapter } from "./ProductionBridgeAdapter";
 
 type ProductionFamily = "Wood" | "Ore" | "Hide" | "Fiber";
@@ -135,7 +138,7 @@ export class ProductionRuntimeController {
     return this.#actions.performGatheringStrike(family, quality);
   }
 
-  toggleRefining(family: ProductionFamily): boolean { return this.#actions.toggleRefining(family); }
+  toggleRefining(target: RefiningToggleTarget): boolean { return this.#actions.toggleRefining(target); }
   craftEquipment(outputItemId: string): boolean { return this.#actions.craftEquipment(outputItemId); }
 
   setGatheringTier(tier: ProductionTier): boolean {
