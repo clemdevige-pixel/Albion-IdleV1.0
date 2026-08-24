@@ -19,50 +19,16 @@ export interface WeaponFamilyCraftPresentation {
   readonly symbol: string;
 }
 
-interface WeaponFamilyCombatPresentation {
-  readonly actorManifestId: string;
-  readonly combatProfileId: string;
-  readonly combatPresentation?: WeaponProjectilePresentation;
-}
-
 /**
- * Temporary family combat art fallback. Specializations with authored combat
- * presentation always win; specializations without dedicated sheets reuse the
- * canonical family actor until their own presentation is authored.
+ * Family fallbacks reference the already-authored canonical weapon presentation
+ * instead of duplicating actor/profile/projectile data here.
  */
-const COMBAT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
-  Record<WeaponFamilyId, WeaponFamilyCombatPresentation>
-> = {
-  sword: {
-    actorManifestId: "hero_broadsword",
-    combatProfileId: "melee",
-  },
-  bow: {
-    actorManifestId: "hero_longbow",
-    combatProfileId: "projectile",
-    combatPresentation: {
-      kind: "projectile",
-      projectileId: "arrow",
-      releaseDelayMs: 355,
-    },
-  },
-  fire_staff: {
-    actorManifestId: "hero_fire_staff",
-    combatProfileId: "projectile",
-    combatPresentation: {
-      kind: "projectile",
-      projectileId: "fireball",
-      releaseDelayMs: 355,
-    },
-  },
-  gloves: {
-    actorManifestId: "hero_spiked_gauntlets",
-    combatProfileId: "melee",
-  },
-  dagger: {
-    actorManifestId: "hero_dagger_pair",
-    combatProfileId: "melee",
-  },
+const FALLBACK_PRESENTATION_ITEM_BY_WEAPON_FAMILY: Readonly<Record<WeaponFamilyId, string>> = {
+  sword: "item_weapon_sword_t4_broadsword",
+  bow: "item_weapon_bow_t4_longbow",
+  fire_staff: "item_weapon_staff_t4_infernal",
+  gloves: "item_weapon_gloves_t4_spiked_gauntlets",
+  dagger: "item_weapon_dagger_t4_pair",
 };
 
 /**
@@ -79,18 +45,19 @@ const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
   dagger: { label: WEAPON_FAMILIES.dagger.name, symbol: "††" },
 };
 
-function resolveCombatPresentation(itemId: string): WeaponFamilyCombatPresentation | undefined {
+function resolveCombatPresentation(itemId: string) {
   const specializationPresentation = resolveWeaponPresentation(itemId);
   if (specializationPresentation !== undefined) return specializationPresentation;
 
   const familyId = resolveWeaponFamilyId(itemId);
-  return familyId === undefined ? undefined : COMBAT_PRESENTATION_BY_WEAPON_FAMILY[familyId];
+  if (familyId === undefined) return undefined;
+  return resolveWeaponPresentation(FALLBACK_PRESENTATION_ITEM_BY_WEAPON_FAMILY[familyId]);
 }
 
 /**
  * Inventory icon presentation is authored per specialization. Combat actor art
- * resolves per specialization when available, otherwise through the family
- * fallback above.
+ * resolves per specialization when available; otherwise it reuses the canonical
+ * presentation of that weapon family until dedicated sheets are authored.
  */
 export function resolveEquipmentPresentation(
   itemId: string | undefined,
