@@ -10,10 +10,9 @@ export interface IslandUpgradeableLevelDefinition {
 }
 
 /**
- * Generic mutation/presentation-facing building progression lookup.
- * Only buildings with meaningful authored level progression belong here.
- * Gathering, refining and crafting buildings are construction-only and inherit
- * their maximum production tier from the global island level.
+ * Generic presentation-facing building progression lookup.
+ * Standard production buildings remain construction-only. The Academy keeps
+ * authored tier metadata but its level is synchronized by Island Level.
  */
 export function getIslandUpgradeableLevelDefinition(
   buildingId: IslandBuildingId,
@@ -27,6 +26,20 @@ export function getIslandUpgradeableLevelDefinition(
     level: academy.level,
     displayTier: academy.researchTier,
     minimumIslandLevel: academy.minimumIslandLevel,
-    ...(academy.upgradeToNext === undefined ? {} : { upgradeToNext: academy.upgradeToNext }),
   };
+}
+
+export function getIslandSynchronizedBuildingLevel(
+  buildingId: IslandBuildingId,
+  islandLevel: number,
+): number | undefined {
+  let synchronizedLevel: number | undefined;
+  for (let level = 1; ; level += 1) {
+    const definition = getIslandUpgradeableLevelDefinition(buildingId, level);
+    if (definition === undefined) break;
+    const requiredIslandLevel = definition.minimumIslandLevel ?? definition.level;
+    if (requiredIslandLevel > islandLevel) break;
+    synchronizedLevel = definition.level;
+  }
+  return synchronizedLevel;
 }
