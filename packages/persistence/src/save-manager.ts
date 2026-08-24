@@ -43,7 +43,7 @@ export class SaveManager {
     this.loader.register(provider);
   }
 
-  save(id: string, _tick: number): void {
+  save(id: string, _tick: number, extra?: Readonly<Record<string, unknown>>): void {
     const payload = this.builder.build();
     const checksum = computeChecksum(payload);
 
@@ -64,6 +64,7 @@ export class SaveManager {
       updatedAt: now,
       buildVersion: this.buildVersion,
       seed: this.seed,
+      ...(extra === undefined ? {} : { extra: { ...extra } }),
     };
 
     const saveData: SaveFormat = {
@@ -88,7 +89,7 @@ export class SaveManager {
     return serialize(this.prepareSave(this.repository.get(id)));
   }
 
-  /** Validates a portable save completely before replacing the target slot. */
+  /** Validates an imported save completely before replacing the target slot. */
   importSave(id: string, raw: string): void {
     const save = this.prepareSave(deserialize(raw));
     this.repository.save(id, save);
