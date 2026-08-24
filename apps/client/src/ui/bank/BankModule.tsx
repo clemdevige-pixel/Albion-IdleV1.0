@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
+import { useGameServices } from "../../state/GameContext";
 import {
   createTrackedItemResource,
   isTrackableResourceItem,
@@ -42,7 +44,11 @@ function matchesBankFilter(slot: InventorySlotVM, filter: BankFilter): boolean {
 
 export function BankModule({ onMove, onTransferToInventory, onSort }: BankModuleProps): JSX.Element {
   const bank = useBankData();
+  const services = useGameServices();
   const tracking = useResourceTracking();
+  const yieldTrackingUnlocked = services.getAcademyModel().research.some(
+    (research) => research.id === RESEARCH_IDS.yieldAnalysis && research.state === "completed",
+  );
   const [activeFilter, setActiveFilter] = useState<BankFilter>("all");
   const capacityRatio = bank.capacity === 0
     ? 0
@@ -96,18 +102,23 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
               if (slot.itemId !== undefined) onTransferToInventory?.(slot.position);
             }}
             onItemContextMenu={(event) => { event.preventDefault(); }}
-            canFavoriteItem={isTrackableResourceItem}
-            isItemFavorite={tracking.isTracked}
-            onToggleItemFavorite={(itemId) => {
-              tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
-            }}
+            {...(yieldTrackingUnlocked ? {
+              canFavoriteItem: isTrackableResourceItem,
+              isItemFavorite: tracking.isTracked,
+              onToggleItemFavorite: (itemId: string) => {
+                tracking.toggleTracked(createTrackedItemResource(itemId, getItemDisplayName(itemId)));
+              },
+            } : {})}
           />
         ) : (
           <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>
         )}
       </section>
 
-      <p className="storage-module__hint">Double-clic : vers inventaire · glissez-déposez pour organiser · étoile : suivre une ressource.</p>
+      <p className="storage-module__hint">
+        Double-clic : vers inventaire · glissez-déposez pour organiser
+        {yieldTrackingUnlocked ? " · étoile : suivre une ressource." : "."}
+      </p>
     </div>
   );
 }
