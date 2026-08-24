@@ -1,6 +1,6 @@
 .dashboard-yield {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 0;
   margin: 0;
 }
@@ -57,8 +57,41 @@
 
 .dashboard-yield__metric--silver dd { color: #e0e3e9; }
 .dashboard-yield__metric--fame dd { color: var(--ui-color-accent-hover); }
-.dashboard-yield__metric--enchantment-shard dd,
-.dashboard-yield__metric--key-fragment dd { color: #c8ced7; }
+
+.dashboard-yield__metric--tracked-resource dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dashboard-yield__tracked-visual {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+}
+
+.dashboard-yield__tracked-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.dashboard-yield__metric--tracked-resource dd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dashboard-yield__metric--tracked-resource dd small {
+  color: #8e99a7;
+  font-family: var(--ui-font-body);
+  font-size: 8px;
+  font-weight: var(--ui-weight-regular);
+  white-space: nowrap;
+}
 
 @media (max-width: 1220px) {
   .dashboard-yield {
@@ -67,9 +100,5 @@
 
   .dashboard-yield__metric:nth-child(2)::after {
     display: none;
-  }
-
-  .dashboard-yield__metric:nth-child(-n + 2) {
-    border-bottom: 1px solid rgb(88 68 38 / 34%);
   }
 }
