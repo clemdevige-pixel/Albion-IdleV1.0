@@ -20,6 +20,7 @@
     "format:check": "prettier --check .",
     "validate:data": "tsx packages/tooling/src/bin/validate-data.ts",
     "validate:assets": "tsx packages/tooling/src/bin/validate-assets.ts",
+    "generate:item-icons": "tsx packages/tooling/src/bin/generate-item-icons.ts",
     "benchmark:weapon-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-weapon-role-world-sweep.ts",
     "benchmark:boss-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-role-telemetry.ts",
     "benchmark:boss-only": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-only-role-telemetry.ts",
