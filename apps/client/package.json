@@ -1,12 +1,12 @@
 {
   "name": "@game/client",
-  "version": "0.1.0",
+  "version": "0.10.5",
   "private": true,
   "type": "module",
   "description": "React + Vite + Phaser client. Phase 01: bootstrap shell only, no gameplay.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "build": "tsc --noEmit -p tsconfig.build.json && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
