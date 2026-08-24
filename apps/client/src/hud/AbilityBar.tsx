@@ -86,22 +86,23 @@ export function AbilityBar(): JSX.Element {
               aria-label={ability.name}
               onClick={() => { useWeaponAbility(slotIndex); }}
             >
-              <img
-                className="combat-action-bar__ability-image"
-                src={iconPath}
-                alt=""
-                aria-hidden="true"
-              />
+              <span className="combat-action-bar__ability-viewport" aria-hidden="true">
+                <img
+                  className="combat-action-bar__ability-image"
+                  src={iconPath}
+                  alt=""
+                />
+                <span
+                  className="combat-action-bar__cooldown"
+                  style={{ height: `${String(Math.round(cooldownRatio * 100))}%` }}
+                />
+              </span>
               <span className="combat-action-bar__key">{shortcut}</span>
               {ability.cooldownRemaining > 0 && (
                 <span className="combat-action-bar__cooldown-number">
                   {ability.cooldownRemaining.toFixed(1)}
                 </span>
               )}
-              <span
-                className="combat-action-bar__cooldown"
-                style={{ height: `${String(Math.round(cooldownRatio * 100))}%` }}
-              />
               <div className="ability-tooltip" role="tooltip">
                 <div className="ability-tooltip__header">
                   <span className="ability-tooltip__icon">
