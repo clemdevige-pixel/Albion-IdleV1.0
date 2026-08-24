@@ -7,6 +7,6 @@
   "origin": { "x": 0.5, "y": 1 },
   "offset": { "x": 0, "y": 58 },
   "display": { "width": 349, "height": 235 },
-  "hud": { "healthBarWidth": 165, "healthBarOffsetY": 190 },
+  "hud": { "healthBarWidth": 140, "healthBarOffsetY": 170 },
   "ambientMotion": { "distance": 4, "durationMs": 850, "delayMs": 300 }
 }
