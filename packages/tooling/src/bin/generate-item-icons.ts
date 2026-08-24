@@ -1,5 +1,5 @@
-import { mkdirSync, readdirSync, existsSync, readFileSync, rmSync } from "node:fs";
-import { basename, extname, join, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { inflateSync } from "node:zlib";
 
@@ -9,7 +9,6 @@ const LEGACY_MASTER_ROOT = join(REPO_ROOT, "apps/client/public/assets/items");
 const ICON_ROOT = join(REPO_ROOT, "apps/client/public/assets/items/icons");
 const TEMP_ROOT = join(REPO_ROOT, ".tmp/item-icon-generator");
 const SHARP_CLI = "sharp-cli@6.0.0";
-const CATEGORIES = ["armes", "equipements"] as const;
 const ICON_SIZE = 128;
 const MAX_VISIBLE_EXTENT = 120;
 const MIN_VISIBLE_EXTENT = 88;
@@ -24,7 +23,30 @@ interface AlphaMetrics {
   readonly centroidY: number;
 }
 
-function listPngFiles(directory: string): string[] {
+interface SourceEntry {
+  readonly source: string;
+  readonly outputDir: string;
+  readonly outputFile: string;
+}
+
+function listPngFilesRecursive(directory: string): string[] {
+  if (!existsSync(directory)) return [];
+
+  const files: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listPngFilesRecursive(path));
+      continue;
+    }
+    if (entry.isFile() && extname(entry.name).toLowerCase() === ".png") {
+      files.push(path);
+    }
+  }
+  return files.sort((a, b) => a.localeCompare(b));
+}
+
+function listFlatPngFiles(directory: string): string[] {
   if (!existsSync(directory)) return [];
   return readdirSync(directory, { withFileTypes: true })
     .filter((entry) => entry.isFile() && extname(entry.name).toLowerCase() === ".png")
@@ -32,26 +54,46 @@ function listPngFiles(directory: string): string[] {
     .sort((a, b) => a.localeCompare(b));
 }
 
-function resolveSources(category: (typeof CATEGORIES)[number]): Array<{ source: string; outputDir: string }> {
-  const canonicalDir = join(MASTER_ROOT, category);
-  const canonical = listPngFiles(canonicalDir);
-  const outputDir = join(ICON_ROOT, category);
+function resolveCanonicalSources(): SourceEntry[] {
+  return listPngFilesRecursive(MASTER_ROOT).map((source) => {
+    const relativePath = relative(MASTER_ROOT, source);
+    const outputFile = join(ICON_ROOT, relativePath);
+    return {
+      source,
+      outputDir: dirname(outputFile),
+      outputFile,
+    };
+  });
+}
 
-  if (canonical.length > 0) {
-    return canonical.map((source) => ({ source, outputDir }));
+function resolveLegacyFallbackSources(canonical: readonly SourceEntry[]): SourceEntry[] {
+  // Transitional only: while old flat public masters still exist, keep regenerating
+  // already-versioned icons that do not yet have a canonical master. New assets must
+  // always be placed under MASTER_ROOT and never rely on this fallback.
+  const canonicalOutputs = new Set(canonical.map((entry) => entry.outputFile));
+  const legacyByFilename = new Map(
+    listFlatPngFiles(LEGACY_MASTER_ROOT).map((source) => [basename(source), source] as const),
+  );
+
+  const fallback: SourceEntry[] = [];
+  for (const existingIcon of listPngFilesRecursive(ICON_ROOT)) {
+    if (canonicalOutputs.has(existingIcon)) continue;
+    const source = legacyByFilename.get(basename(existingIcon));
+    if (source === undefined) continue;
+    fallback.push({
+      source,
+      outputDir: dirname(existingIcon),
+      outputFile: existingIcon,
+    });
   }
-
-  // Transitional fallback for the current repository state: existing public masters
-  // are accepted only when an icon with the same filename already exists.
-  const existingIcons = new Set(listPngFiles(outputDir).map((file) => basename(file)));
-  return listPngFiles(LEGACY_MASTER_ROOT)
-    .filter((source) => existingIcons.has(basename(source)))
-    .map((source) => ({ source, outputDir }));
+  return fallback;
 }
 
 function runSharp(args: readonly string[], context: string): void {
   const npmExecPath = process.env.npm_execpath;
-  const command = npmExecPath === undefined ? (process.platform === "win32" ? "pnpm.cmd" : "pnpm") : process.execPath;
+  const command = npmExecPath === undefined
+    ? (process.platform === "win32" ? "pnpm.cmd" : "pnpm")
+    : process.execPath;
   const commandArgs = npmExecPath === undefined
     ? ["dlx", SHARP_CLI, ...args]
     : [npmExecPath, "dlx", SHARP_CLI, ...args];
@@ -189,8 +231,6 @@ function generateIcon(source: string, outputDir: string): void {
   const trimmed = join(tempDir, basename(source));
   const metrics = readRgbaAlphaMetrics(trimmed);
 
-  // Low-density/slender art gets the full envelope. Dense art is reduced so its
-  // perceived visual mass stays comparable without ever cropping the source.
   const densityScale = Math.sqrt(TARGET_ALPHA_DENSITY / Math.max(metrics.density, 0.01));
   const targetExtent = clamp(
     Math.round(MAX_VISIBLE_EXTENT * Math.min(1, densityScale)),
@@ -206,8 +246,16 @@ function generateIcon(source: string, outputDir: string): void {
   const centroidY = metrics.centroidY * scale;
   const maxLeft = ICON_SIZE - MIN_EDGE_MARGIN - resizedWidth;
   const maxTop = ICON_SIZE - MIN_EDGE_MARGIN - resizedHeight;
-  const left = clamp(Math.round((ICON_SIZE / 2) - centroidX), MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxLeft));
-  const top = clamp(Math.round((ICON_SIZE / 2) - centroidY), MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxTop));
+  const left = clamp(
+    Math.round((ICON_SIZE / 2) - centroidX),
+    MIN_EDGE_MARGIN,
+    Math.max(MIN_EDGE_MARGIN, maxLeft),
+  );
+  const top = clamp(
+    Math.round((ICON_SIZE / 2) - centroidY),
+    MIN_EDGE_MARGIN,
+    Math.max(MIN_EDGE_MARGIN, maxTop),
+  );
   const right = ICON_SIZE - resizedWidth - left;
   const bottom = ICON_SIZE - resizedHeight - top;
 
@@ -226,16 +274,19 @@ function generateIcon(source: string, outputDir: string): void {
   rmSync(tempDir, { recursive: true, force: true });
 }
 
-const sources = CATEGORIES.flatMap(resolveSources);
+const canonicalSources = resolveCanonicalSources();
+const sources = [
+  ...canonicalSources,
+  ...resolveLegacyFallbackSources(canonicalSources),
+].sort((a, b) => a.outputFile.localeCompare(b.outputFile));
+
 if (sources.length === 0) {
-  throw new Error(
-    `No item masters found. Drop PNG masters in ${MASTER_ROOT}/armes or ${MASTER_ROOT}/equipements.`,
-  );
+  throw new Error(`No item masters found. Drop PNG masters anywhere under ${MASTER_ROOT}.`);
 }
 
-for (const { source, outputDir } of sources) {
+for (const { source, outputDir, outputFile } of sources) {
   generateIcon(source, outputDir);
-  console.log(`generated ${basename(source)}`);
+  console.log(`generated ${relative(ICON_ROOT, outputFile)}`);
 }
 
 rmSync(TEMP_ROOT, { recursive: true, force: true });
