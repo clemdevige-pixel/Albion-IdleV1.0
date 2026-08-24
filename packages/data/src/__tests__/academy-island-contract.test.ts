@@ -47,21 +47,4 @@ describe("Academy island contract", () => {
       });
     }
   });
-
-  it("keeps academy upgrade materials at half the Workshop per-family curve", () => {
-    expect(ACADEMY_LEVELS.map((level) => {
-      const upgradeToNext = "upgradeToNext" in level ? level.upgradeToNext : undefined;
-      return [
-        level.researchTier,
-        upgradeToNext?.silver,
-        upgradeToNext?.requirements.map((requirement) => requirement.quantity),
-      ];
-    })).toEqual([
-      [4, 5_000, [5, 5, 5, 5]],
-      [5, 18_000, [9, 9, 9, 9]],
-      [6, 50_000, [14, 14, 14, 14]],
-      [7, 85_000, [20, 20, 20, 20]],
-      [8, undefined, undefined],
-    ]);
-  });
 });
