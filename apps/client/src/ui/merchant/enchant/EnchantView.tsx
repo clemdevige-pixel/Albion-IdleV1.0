@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import {
   getEnchantmentTextClass,
-  getItemDefinition,
   getItemDisplayName,
   ItemVisual,
 } from "../../../panels/ItemVisual";
+import { getItemTier } from "../../../data/itemPower";
 import { useEnchantActions } from "./useEnchantActions";
 import { useEnchantData } from "./useEnchantData";
 
@@ -76,13 +76,13 @@ export function EnchantView({
           <section className="ui-merchant-list" aria-label="Équipements à enchanter">
             <div className="ui-merchant-section-title"><span>Équipements</span><small>Inventaire, banque et équipés</small></div>
             {model.items.map((item) => {
-              const definition = getItemDefinition(item.itemId);
+              const tier = getItemTier(item.itemId);
               return (
                 <button type="button" key={item.instanceId} className={`ui-merchant-item-row ui-merchant-enchant__item-row${item.instanceId === model.selectedInstanceId ? " is-selected" : ""}`} onClick={() => { setRequestedInstanceId(item.instanceId); }}>
                   <ItemHoverTooltip itemId={item.itemId} quantity={1} instanceId={item.instanceId}><span className="ui-merchant-item-row__visual"><ItemVisual itemId={item.itemId} /></span></ItemHoverTooltip>
                   <span className="ui-merchant-item-row__identity">
                     <strong>{getItemDisplayName(item.itemId)}</strong>
-                    <small className={getEnchantmentTextClass(item.enchantment).trim()}>T{String(definition?.tier ?? "?")}.{String(item.enchantment)} · {SOURCE_LABELS[item.source]}</small>
+                    <small className={getEnchantmentTextClass(item.enchantment).trim()}>T{String(tier ?? "?")}.{String(item.enchantment)} · {SOURCE_LABELS[item.source]}</small>
                   </span>
                   <EnchantmentScale level={item.enchantment} />
                 </button>
