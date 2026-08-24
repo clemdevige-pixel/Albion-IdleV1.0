@@ -4,6 +4,12 @@ import {
   KEY_FRAGMENTS_PER_KEY,
 } from "./economyContentCatalog";
 import {
+  DUNGEON_ARTIFACT_FACTIONS,
+  DUNGEON_ARTIFACT_TIERS,
+  getDungeonArtifactFragmentItemId,
+  getDungeonArtifactItemId,
+} from "./dungeonArtifactContentCatalog";
+import {
   getFragmentAssemblyRecipe,
   SPECIAL_CRAFT_RECIPES,
 } from "./specialCraftRecipes";
@@ -25,13 +31,13 @@ describe("special crafting conversions", () => {
 
   it("creates artifact conversions at the approved 200 fragment cost", () => {
     const artifactRecipes = SPECIAL_CRAFT_RECIPES.filter((recipe) =>
-      recipe.outputItemId.includes("artifact_")
-      && !recipe.outputItemId.includes("fragment"),
+      recipe.family === "other_artifact",
     );
 
-    expect(artifactRecipes).toHaveLength(5);
+    expect(artifactRecipes).toHaveLength(
+      DUNGEON_ARTIFACT_TIERS.length * DUNGEON_ARTIFACT_FACTIONS.length,
+    );
     for (const recipe of artifactRecipes) {
-      expect(recipe.family).toBe("other_artifact");
       expect(recipe.requirements).toHaveLength(1);
       expect(recipe.requirements[0]?.quantity).toBe(ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE);
       expect(recipe.requirements[0]?.itemId).toContain("artifact_fragment");
@@ -47,17 +53,24 @@ describe("special crafting conversions", () => {
     expect(getFragmentAssemblyRecipe("item_resource_wood_t4")).toBeUndefined();
   });
 
-  it("keeps conversions aligned with Blue Zone faction tiers", () => {
-    const tier3Outputs = SPECIAL_CRAFT_RECIPES
-      .filter((recipe) => recipe.tier === 3)
-      .map((recipe) => recipe.outputItemId);
-    const tier4Outputs = SPECIAL_CRAFT_RECIPES
-      .filter((recipe) => recipe.tier === 4)
-      .map((recipe) => recipe.outputItemId);
+  it("covers every authored faction artifact conversion from T4 to T8", () => {
+    for (const tier of DUNGEON_ARTIFACT_TIERS) {
+      for (const faction of DUNGEON_ARTIFACT_FACTIONS) {
+        const fragmentItemId = getDungeonArtifactFragmentItemId(faction, tier);
+        const outputItemId = getDungeonArtifactItemId(faction, tier);
+        const recipe = getFragmentAssemblyRecipe(fragmentItemId);
 
-    expect(tier3Outputs.some((id) => id.endsWith("morgana"))).toBe(true);
-    expect(tier3Outputs.some((id) => id.endsWith("undead"))).toBe(true);
-    expect(tier4Outputs.some((id) => id.endsWith("keeper"))).toBe(true);
-    expect(tier4Outputs.some((id) => id.endsWith("heretic"))).toBe(true);
+        expect(recipe).toBeDefined();
+        expect(recipe?.family).toBe("other_artifact");
+        expect(recipe?.tier).toBe(tier);
+        expect(recipe?.outputItemId).toBe(outputItemId);
+        expect(recipe?.requirements).toEqual([
+          {
+            itemId: fragmentItemId,
+            quantity: ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
+          },
+        ]);
+      }
+    }
   });
 });
