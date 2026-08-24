@@ -1,5 +1,5 @@
 import type { EntityId } from "@game/core";
-import { getWorldBandDefinition } from "@game/data";
+import { getFactionRuneWorldDropChance, getWorldBandDefinition } from "@game/data";
 import type { CombatService, RelicKillEvent, StatsManager } from "@game/gameplay";
 import { getEncounterRewards } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
@@ -12,7 +12,6 @@ import {
   getDungeonKeyProgressionWeight,
   getEnchantmentShardProgressionWeight,
 } from "../data/economyContentCatalog.js";
-import { getFactionRuneWorldDropChance } from "../data/factionRuneWorldDropContentCatalog.js";
 import { getMonsterDefinition } from "../data/monsterContentCatalog.js";
 import { getWorldZonePlacement } from "../data/worldContentCatalog.js";
 import {
