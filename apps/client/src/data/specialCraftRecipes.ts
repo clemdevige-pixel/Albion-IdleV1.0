@@ -73,6 +73,18 @@ export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
   ...DUNGEON_ARTIFACT_CRAFT_RECIPES,
 ];
 
+/**
+ * Fragment assembly stays authored by the existing special-craft recipes.
+ * UI surfaces resolve from the fragment item id instead of duplicating
+ * key/artifact thresholds or output routes.
+ */
+export function getFragmentAssemblyRecipe(itemId: string): ClientCraftRecipe | undefined {
+  return SPECIAL_CRAFT_RECIPES.find((recipe) => (
+    recipe.requirements.length === 1
+    && recipe.requirements[0]?.itemId === itemId
+  ));
+}
+
 const CONVENTIONAL_EQUIPMENT_CRAFT_RECIPES = EQUIPMENT_CRAFT_RECIPES.filter(
   (recipe) => !isArtifactWeaponCraftOutput(recipe.outputItemId),
 );
