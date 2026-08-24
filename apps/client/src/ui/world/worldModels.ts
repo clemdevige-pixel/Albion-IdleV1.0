@@ -12,10 +12,6 @@ import {
   type CombatLootContext,
 } from "../../data/economyContentCatalog";
 import {
-  getFactionRuneWorldDropChance,
-  getFactionRuneWorldDropExpectation,
-} from "../../data/factionRuneWorldDropContentCatalog.js";
-import {
   ZONE_DEFINITIONS,
   getWorldZonePlacement,
 } from "../../data/worldContentCatalog";
@@ -25,6 +21,8 @@ import {
   ENCOUNTERS_PER_SEGMENT,
   SEGMENTS_PER_ZONE,
   WORLD_BAND_DEFINITIONS,
+  getFactionRuneWorldDropChance,
+  getFactionRuneWorldDropExpectation,
   getWorldBandDefinition,
   type WorldBandId,
 } from "@game/data";
