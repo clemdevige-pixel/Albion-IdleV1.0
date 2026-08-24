@@ -134,13 +134,39 @@
   line-height: 1.2;
 }
 
-.dashboard-yield__tracked-row > b {
+.dashboard-yield__tracked-actions {
+  display: flex;
   flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.dashboard-yield__tracked-actions > b {
   color: #c8ced7;
   font-family: var(--ui-font-display);
   font-size: 13px;
   font-weight: var(--ui-weight-bold);
   white-space: nowrap;
+}
+
+.dashboard-yield__untrack {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #7f8996;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dashboard-yield__untrack:hover,
+.dashboard-yield__untrack:focus-visible {
+  color: #d8dce4;
 }
 
 @media (max-width: 1220px) {
