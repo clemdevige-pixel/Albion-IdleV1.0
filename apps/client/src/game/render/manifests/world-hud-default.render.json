@@ -5,7 +5,7 @@
   "healthBar": {
     "defaultWidth": 110,
     "height": 8,
-    "offsetY": 132,
+    "offsetY": 96,
     "backgroundColor": "#0d1119",
     "borderColor": "#687386",
     "borderWidth": 1,
