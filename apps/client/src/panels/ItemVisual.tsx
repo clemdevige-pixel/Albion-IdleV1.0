@@ -85,6 +85,7 @@ const FACTION_RUNE_ICON_BY_TIER: Readonly<Record<number, string>> = {
 };
 
 const SANCTUARY_RELIC_ICON = "icons/speciaux/sanctuary-relic-pixel-v1.png";
+const SPECIAL_LOOT_ICON_ROOT = "icons/speciaux/";
 const ARTIFACT_ASSET_FACTIONS = new Set(["heretic", "keeper", "morgana", "undead"]);
 
 function formatFactionName(factionId: string): string {
@@ -93,6 +94,10 @@ function formatFactionName(factionId: string): string {
     .filter((part) => part.length > 0)
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(" ");
+}
+
+function resolveSpecialLootIcon(icon: string): string {
+  return icon.startsWith("icons/") ? icon : `${SPECIAL_LOOT_ICON_ROOT}${icon}`;
 }
 
 function getTieredFactionRuneVisual(itemId: string): SpecialLootVisualDefinition | undefined {
@@ -309,7 +314,7 @@ export function ItemVisual({ itemId }: { readonly itemId: string }): JSX.Element
       return (
         <img
           className={`item-visual__image item-visual__image--special item-visual__image--${specialLoot.className}`}
-          src={`/assets/items/${specialLoot.icon}`}
+          src={`/assets/items/${resolveSpecialLootIcon(specialLoot.icon)}`}
           alt={specialLoot.name}
           draggable={false}
         />
