@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { inflateSync } from "node:zlib";
@@ -8,6 +8,7 @@ const MASTER_ROOT = join(REPO_ROOT, "apps/client/assets/items/masters");
 const LEGACY_MASTER_ROOT = join(REPO_ROOT, "apps/client/public/assets/items");
 const ICON_ROOT = join(REPO_ROOT, "apps/client/public/assets/items/icons");
 const TEMP_ROOT = join(REPO_ROOT, ".tmp/item-icon-generator");
+const GENERATOR_FILE = resolve(import.meta.dirname, "generate-item-icons.ts");
 const SHARP_CLI = "sharp-cli@6.0.0";
 const ICON_SIZE = 128;
 const MAX_VISIBLE_EXTENT = 120;
@@ -87,6 +88,15 @@ function resolveLegacyFallbackSources(canonical: readonly SourceEntry[]): Source
     });
   }
   return fallback;
+}
+
+function needsGeneration(source: string, outputFile: string): boolean {
+  if (!existsSync(outputFile)) return true;
+
+  const outputModifiedAt = statSync(outputFile).mtimeMs;
+  const sourceModifiedAt = statSync(source).mtimeMs;
+  const generatorModifiedAt = statSync(GENERATOR_FILE).mtimeMs;
+  return outputModifiedAt < Math.max(sourceModifiedAt, generatorModifiedAt);
 }
 
 function runSharp(args: readonly string[], context: string): void {
@@ -284,10 +294,19 @@ if (sources.length === 0) {
   throw new Error(`No item masters found. Drop PNG masters anywhere under ${MASTER_ROOT}.`);
 }
 
+let generatedCount = 0;
+let skippedCount = 0;
 for (const { source, outputDir, outputFile } of sources) {
+  if (!needsGeneration(source, outputFile)) {
+    skippedCount += 1;
+    console.log(`skipped ${relative(ICON_ROOT, outputFile)}`);
+    continue;
+  }
+
   generateIcon(source, outputDir);
+  generatedCount += 1;
   console.log(`generated ${relative(ICON_ROOT, outputFile)}`);
 }
 
 rmSync(TEMP_ROOT, { recursive: true, force: true });
-console.log(`Generated ${String(sources.length)} inventory icons.`);
+console.log(`Generated ${String(generatedCount)} inventory icons; skipped ${String(skippedCount)} unchanged.`);
