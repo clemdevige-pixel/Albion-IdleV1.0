@@ -15,7 +15,13 @@ describe("Expedition recap presentation", () => {
         expeditionId: "expedition_silver_t4",
         typeId: "silver",
         durationMs: TWO_HOURS_MS,
-        rewardSummary: { kind: "silver", silverCredited: 30_000 },
+        rewardSummary: {
+          kind: "silver",
+          silverCredited: 60_000,
+          shardItemId: "item_resource_enchantment_shard_t4",
+          shardsCredited: 92,
+          quality: "reussie",
+        },
       },
       {
         slotIndex: 1,
@@ -40,9 +46,15 @@ describe("Expedition recap presentation", () => {
       items: [
         {
           expeditionId: "expedition_silver_t4",
-          displayName: "Expédition d'argent T4",
+          displayName: "Expédition généraliste T4",
           durationMs: TWO_HOURS_MS,
-          reward: { kind: "silver", silverCredited: 30_000 },
+          reward: {
+            kind: "silver",
+            silverCredited: 60_000,
+            shardItemId: "item_resource_enchantment_shard_t4",
+            shardsCredited: 92,
+            quality: "reussie",
+          },
         },
         {
           expeditionId: "expedition_faction_t4",
