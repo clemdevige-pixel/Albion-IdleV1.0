@@ -2,6 +2,7 @@
   --combat-action-slot-size: 72px;
   --combat-action-gap: 9px;
   --combat-auto-width: 92px;
+  --combat-ability-frame-image: url("/assets/abilities/bordure%20skill.png");
 
   display: flex;
   align-items: center;
@@ -49,6 +50,19 @@
   cursor: pointer;
 }
 
+.combat-action-bar__slot--ability::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  content: "";
+  background-image: var(--combat-ability-frame-image);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 .combat-action-bar__slot--ability:hover,
 .combat-action-bar__slot--ability:focus-visible,
 .combat-action-bar__slot--ability.combat-action-bar__slot--ready {
@@ -69,6 +83,7 @@
 
 .combat-action-bar__ability-image {
   position: absolute;
+  z-index: 1;
   inset: 0;
   display: block;
   width: 100%;
@@ -236,11 +251,31 @@
   pointer-events: none;
 }
 
+.ability-tooltip__icon {
+  position: relative;
+  overflow: hidden;
+}
+
+.ability-tooltip__icon:not(.ability-tooltip__icon--item)::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  content: "";
+  background-image: var(--combat-ability-frame-image);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 .ability-tooltip__icon img {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   image-rendering: pixelated;
   pointer-events: none;
 }
