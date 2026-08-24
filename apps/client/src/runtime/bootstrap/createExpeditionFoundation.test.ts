@@ -8,6 +8,7 @@ import {
   ResearchService,
   asPlayerId,
   asWalletId,
+  getEnchantmentShardItemId,
 } from "@game/gameplay";
 import {
   getDungeonKeyFragmentItemId,
@@ -76,14 +77,40 @@ function createFoundation(unlocks: readonly string[], random: () => number = () 
 }
 
 describe("createExpeditionFoundation", () => {
-  it("separates Cartography Silver access from Archaeology Faction access", () => {
-    const silverOnly = createFoundation([RESEARCH_UNLOCK_IDS.silverExpeditionTier4]);
-    expect(silverOnly.expeditionService.getStartState("expedition_silver_t4")).toBe("available");
-    expect(silverOnly.expeditionService.getStartState("expedition_faction_t4")).toBe("requirements_locked");
+  it("separates Cartography Generalist access from Archaeology Faction access", () => {
+    const generalistOnly = createFoundation([RESEARCH_UNLOCK_IDS.silverExpeditionTier4]);
+    expect(generalistOnly.expeditionService.getStartState("expedition_silver_t4")).toBe("available");
+    expect(generalistOnly.expeditionService.getStartState("expedition_faction_t4")).toBe("requirements_locked");
 
     const factionOnly = createFoundation([RESEARCH_UNLOCK_IDS.factionExpeditionTier4]);
     expect(factionOnly.expeditionService.getStartState("expedition_silver_t4")).toBe("requirements_locked");
     expect(factionOnly.expeditionService.getStartState("expedition_faction_t4")).toBe("available");
+  });
+
+  it("credits centered Generalist Silver and matching-tier enchantment shards", () => {
+    const {
+      expeditionService,
+      heroId,
+      unrelatedStorageId,
+      inventoryManager,
+    } = createFoundation([RESEARCH_UNLOCK_IDS.silverExpeditionTier4]);
+
+    const durationMs = EXPEDITION_DURATION_OPTIONS_MS[0];
+    const shardItemId = getEnchantmentShardItemId(4);
+    expect(expeditionService.startExpedition("expedition_silver_t4", durationMs).ok).toBe(true);
+
+    const advance = expeditionService.advance(durationMs);
+
+    expect(inventoryManager.getTotalQuantity(heroId, shardItemId)).toBe(92);
+    expect(inventoryManager.getTotalQuantity(unrelatedStorageId, shardItemId)).toBe(0);
+    expect(advance.completed).toHaveLength(1);
+    expect(advance.completed[0]?.rewardSummary).toEqual({
+      kind: "silver",
+      silverCredited: 60_000,
+      shardItemId,
+      shardsCredited: 92,
+      quality: "reussie",
+    });
   });
 
   it("credits integer Runes, fragments and complete keys and returns recap data", () => {
