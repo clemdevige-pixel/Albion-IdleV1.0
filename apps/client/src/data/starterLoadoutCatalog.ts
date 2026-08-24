@@ -1,5 +1,6 @@
 import type { EquipmentInfoLike } from "@game/gameplay";
-import { getWeaponSpecializationName, resolveWeaponPresentation, resolveWeaponTier, WEAPON_ITEM_DEFINITIONS } from "./weaponContentCatalog.js";
+import { getWeaponSpecializationName, resolveWeaponTier, WEAPON_ITEM_DEFINITIONS } from "./weaponContentCatalog.js";
+import { resolveWeaponItemIcon } from "./weaponItemVisualCatalog.js";
 
 export const STARTER_TIER = 3 as const;
 
@@ -22,7 +23,7 @@ export function getStarterWeaponOptions(): readonly StarterWeaponOption[] {
       itemId: definition.itemId,
       label: getWeaponSpecializationName(definition.itemId) ?? definition.itemId,
       handling: definition.handling,
-      itemIcon: resolveWeaponPresentation(definition.itemId)?.itemIcon,
+      itemIcon: resolveWeaponItemIcon(definition.itemId),
     }))
     .sort((a, b) => a.label.localeCompare(b.label, "fr"));
 }
