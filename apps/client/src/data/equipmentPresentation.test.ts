@@ -54,12 +54,45 @@ describe("weapon equipment presentation", () => {
     });
   });
 
-  it("exposes artifact item icons without inventing combat actor art", () => {
+  it("falls back to family combat art until specialization sheets exist", () => {
     expect(resolveEquipmentPresentation("item_weapon_sword_clarent_t4")).toEqual({
       itemIcon: "icons/armes/clarent blade.png",
+      actorManifestId: "hero_broadsword",
+      combatProfileId: "melee",
     });
+
+    expect(resolveEquipmentPresentation("item_weapon_bow_wailing_t4")).toEqual({
+      itemIcon: "icons/armes/wailing bow.png",
+      actorManifestId: "hero_longbow",
+      combatProfileId: "projectile",
+      combatPresentation: {
+        kind: "projectile",
+        projectileId: "arrow",
+        releaseDelayMs: 355,
+      },
+    });
+
+    expect(resolveEquipmentPresentation("item_weapon_staff_wildfire_t4")).toEqual({
+      itemIcon: "icons/armes/wildfire staff.png",
+      actorManifestId: "hero_fire_staff",
+      combatProfileId: "projectile",
+      combatPresentation: {
+        kind: "projectile",
+        projectileId: "fireball",
+        releaseDelayMs: 355,
+      },
+    });
+
+    expect(resolveEquipmentPresentation("item_weapon_gloves_ursine_t4")).toEqual({
+      itemIcon: "icons/armes/ursine maulers.png",
+      actorManifestId: "hero_spiked_gauntlets",
+      combatProfileId: "melee",
+    });
+
     expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t8")).toEqual({
       itemIcon: "icons/armes/deathgivers.png",
+      actorManifestId: "hero_dagger_pair",
+      combatProfileId: "melee",
     });
   });
 
