@@ -210,23 +210,29 @@ function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition
   return undefined;
 }
 
+function getWeaponDisplayName(itemId: string): string | undefined {
+  const tier = resolveWeaponTier(itemId);
+  const mastery = resolveWeaponMastery(itemId);
+  if (tier === undefined || mastery === undefined) return undefined;
+  const specializationName = getWeaponMasteryDisplayName(mastery.weaponId);
+  return specializationName === undefined ? undefined : `${specializationName} T${String(tier)}`;
+}
+
 function getWeaponItemDefinition(itemId: string): ItemVisualDefinition | undefined {
   const equipment = WEAPON_ITEM_DEFINITIONS[itemId];
   const tier = resolveWeaponTier(itemId);
-  const mastery = resolveWeaponMastery(itemId);
   const presentation = resolveEquipmentPresentation(itemId);
+  const name = getWeaponDisplayName(itemId);
   if (
     equipment === undefined
     || tier === undefined
-    || mastery === undefined
     || presentation === undefined
+    || name === undefined
   ) {
     return undefined;
   }
-  const specializationName = getWeaponMasteryDisplayName(mastery.weaponId);
-  if (specializationName === undefined) return undefined;
   return {
-    name: `${specializationName} T${String(tier)}`,
+    name,
     icon: presentation.itemIcon,
     tier,
     slot: "weapon",
@@ -245,7 +251,8 @@ export function getItemDefinition(itemId: string): ItemVisualDefinition | undefi
 }
 
 export function getItemDisplayName(itemId: string): string {
-  return getItemDefinition(itemId)?.name
+  return getWeaponDisplayName(itemId)
+    ?? getItemDefinition(itemId)?.name
     ?? getFactionCapeDefinition(itemId)?.name
     ?? CONSUMABLE_VISUALS[itemId]?.name
     ?? PRODUCTION_RESOURCE_VISUALS[itemId]?.name
