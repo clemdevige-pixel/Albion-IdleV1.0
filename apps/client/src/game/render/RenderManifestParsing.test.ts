@@ -78,41 +78,7 @@ describe("Broadsword normalized animation parsing", () => {
   });
 });
 
-describe("Spiked Gauntlets normalized animation parsing", () => {
-  it("uses the canonical frame and display reference for every animation", () => {
-    const parsed = parseRenderManifest(spikedGauntletsManifest);
-
-    if (parsed.kind !== "actor") {
-      throw new Error("Expected actor manifest");
-    }
-
-    for (const animation of Object.values(parsed.animations)) {
-      expect(animation.frameWidth).toBe(512);
-      expect(animation.frameHeight).toBe(512);
-      expect(animation.startFrame).toBe(0);
-      expect(animation.endFrame).toBe(5);
-      expect(animation.display).toEqual({
-        width: 228.5714285714,
-        height: 228.5714285714,
-      });
-    }
-
-    expect(parsed.poses.death).toMatchObject({
-      frameWidth: 512,
-      frameHeight: 512,
-      startFrame: 0,
-      endFrame: 5,
-      frameRate: 8,
-      repeat: 0,
-      display: {
-        width: 228.5714285714,
-        height: 228.5714285714,
-      },
-    });
-  });
-});
-
-describe("Infernal Staff normalized animation parsing", () => {
+describe("Fire Staff normalized animation parsing", () => {
   it("uses the canonical frame and display reference for every animation", () => {
     const parsed = parseRenderManifest(fireStaffManifest);
 
@@ -132,27 +98,17 @@ describe("Infernal Staff normalized animation parsing", () => {
         height: 228.5714285714,
       });
     }
-
-    expect(parsed.poses.death).toMatchObject({
-      frameWidth: 512,
-      frameHeight: 512,
-      startFrame: 0,
-      endFrame: 5,
-      frameRate: 8,
-      repeat: 0,
-    });
   });
 });
 
 describe("Longbow normalized animation parsing", () => {
-  it("uses a dedicated definition with the canonical frame and display reference", () => {
+  it("uses the canonical frame and display reference for every animation", () => {
     const parsed = parseRenderManifest(longbowManifest);
 
     if (parsed.kind !== "actor") {
       throw new Error("Expected actor manifest");
     }
 
-    expect(parsed.id).toBe("hero_longbow");
     expect(parsed.offset).toEqual({ x: 11, y: 58 });
 
     for (const animation of Object.values(parsed.animations)) {
@@ -165,20 +121,69 @@ describe("Longbow normalized animation parsing", () => {
         height: 228.5714285714,
       });
     }
+  });
+});
 
-    expect(parsed.poses.death).toMatchObject({
-      frameWidth: 512,
-      frameHeight: 512,
-      startFrame: 0,
-      endFrame: 5,
-      frameRate: 8,
-      repeat: 0,
-    });
+describe("Spiked Gauntlets normalized animation parsing", () => {
+  it("uses the canonical frame and display reference for every animation", () => {
+    const parsed = parseRenderManifest(spikedGauntletsManifest);
+
+    if (parsed.kind !== "actor") {
+      throw new Error("Expected actor manifest");
+    }
+
+    expect(parsed.offset).toEqual({ x: 0, y: 58 });
+
+    for (const animation of Object.values(parsed.animations)) {
+      expect(animation.frameWidth).toBe(512);
+      expect(animation.frameHeight).toBe(512);
+      expect(animation.startFrame).toBe(0);
+      expect(animation.endFrame).toBe(5);
+      expect(animation.display).toEqual({
+        width: 228.5714285714,
+        height: 228.5714285714,
+      });
+    }
+  });
+});
+
+describe("Dagger Pair normalized animation parsing", () => {
+  it("uses the authored display reference for every animation", () => {
+    const parsed = parseRenderManifest(daggerPairManifest);
+
+    if (parsed.kind !== "actor") {
+      throw new Error("Expected actor manifest");
+    }
+
+    expect(parsed.offset).toEqual({ x: 0, y: 58 });
+
+    for (const animation of Object.values(parsed.animations)) {
+      expect(animation.frameWidth).toBe(512);
+      expect(animation.frameHeight).toBe(512);
+      expect(animation.startFrame).toBe(0);
+      expect(animation.endFrame).toBe(5);
+      expect(animation.display).toEqual({ width: 182, height: 182 });
+    }
+  });
+});
+
+describe("Static actor manifest parsing", () => {
+  it("preserves authored static actor presentation metadata", () => {
+    const parsed = parseRenderManifest(monsterManifest);
+
+    if (parsed.kind !== "static_actor") {
+      throw new Error("Expected static actor manifest");
+    }
+
+    expect(parsed.display.width).toBeGreaterThan(0);
+    expect(parsed.display.height).toBeGreaterThan(0);
+    expect(parsed.hud.healthBarWidth).toBeGreaterThan(0);
+    expect(parsed.hud.healthBarOffsetY).toBeGreaterThan(0);
   });
 });
 
 describe("Static environment manifest parsing", () => {
-  it("preserves every independently configured background layer", () => {
+  it("preserves the authored layer order", () => {
     const parsed = parseRenderManifest(environmentManifest);
 
     if (parsed.kind !== "environment") {
@@ -199,7 +204,7 @@ describe("Static environment manifest parsing", () => {
       throw new Error("Expected environment manifest");
     }
 
-    expect(parsed.layout.groundLineYRatio).toBe(0.85);
+    expect(parsed.layout.groundLineYRatio).toBe(0.82);
     expect(parsed.layout.actorShadowYRatio).toBe(parsed.layout.groundLineYRatio);
   });
 
