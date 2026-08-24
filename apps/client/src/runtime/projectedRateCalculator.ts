@@ -13,6 +13,10 @@ import {
   getFactionMasteryYieldBonusPercent,
   resolveFactionMasteryId,
 } from "../data/factionMasteryContentCatalog.js";
+import {
+  getFactionRuneWorldDropChance,
+  getFactionRuneWorldDropExpectation,
+} from "../data/factionRuneWorldDropContentCatalog.js";
 import { resolveMonsterForEncounter } from "../data/monsterContentCatalog.js";
 import {
   CLIENT_ABILITIES,
@@ -167,13 +171,14 @@ export function calculateProjectedSegmentRates(
       * yieldMultiplier;
 
     const monster = resolveMonsterForEncounter(currentZoneDefId, currentSegment, encounterIndex);
+    const bandTier = getBandTier(currentWorldBandId);
     const lootContext: CombatLootContext = {
       segmentIndex: currentSegment,
       faction: monster.faction,
       isElite,
       isBoss,
       isFinalBoss: isBoss,
-      enchantmentTier: getBandTier(currentWorldBandId),
+      enchantmentTier: bandTier,
       enchantmentDropWeight,
       dungeonKeyDropWeight,
     };
@@ -182,6 +187,19 @@ export function calculateProjectedSegmentRates(
         expectation.itemId,
         (projectedItems.get(expectation.itemId) ?? 0)
           + expectation.expectedQuantity * yieldMultiplier,
+      );
+    }
+
+    const runeExpectation = getFactionRuneWorldDropExpectation(
+      monster.faction,
+      bandTier,
+      getFactionRuneWorldDropChance(currentWorldBandId, currentZoneIndex, currentSegment),
+    );
+    if (runeExpectation !== undefined) {
+      projectedItems.set(
+        runeExpectation.itemId,
+        (projectedItems.get(runeExpectation.itemId) ?? 0)
+          + runeExpectation.expectedQuantity * yieldMultiplier,
       );
     }
   }
