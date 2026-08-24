@@ -13,9 +13,9 @@
     }
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b tsconfig.build.json",
     "typecheck": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean && tsc -b tsconfig.build.json --clean"
   },
   "dependencies": {
     "@game/core": "workspace:*",
