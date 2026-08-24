@@ -2,6 +2,10 @@
 
 This directory is the canonical source for inventory item art. Store original PNG masters here, never pre-resized UI derivatives.
 
+Authoritative project contract:
+
+`AI_BIBLE/30_TECHNICAL/32A_ITEM_INVENTORY_ICON_PIPELINE.md`
+
 Recommended organization:
 
 - `armes/`
@@ -31,3 +35,5 @@ pnpm.cmd generate:item-icons
 ```
 
 The generator trims transparent margins, preserves aspect ratio, applies the shared inventory framing rule, and writes centered 128x128 PNG icons. Generated icons are versioned outputs: do not edit them by hand. If a result is wrong, fix the master or the generator.
+
+After local generation, commit and push both the canonical masters and the generated runtime icons. Remote agents do not automatically receive files generated on the developer's local machine.
