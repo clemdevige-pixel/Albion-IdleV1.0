@@ -118,16 +118,16 @@ No resource favorite control is available before the Research completes.
 After completion:
 
 - trackable resource items expose the favorite/star control in Inventory and Bank;
-- exactly ONE resource may be followed at a time in V1;
-- selecting another resource replaces the previous tracked resource;
+- there is no gameplay cap on the number of tracked resources;
+- toggling a resource favorite adds/removes it independently without replacing other tracked resources;
 - the old standalone `tracked-resources` Dashboard card is removed from the active layout;
-- the tracked resource is presented directly inside the existing `Rendement` module.
+- tracked resources are presented directly inside the existing `Rendement` module, below the unchanged Silver/Fame metrics.
 
-The tracked row displays:
+Each tracked-resource row displays:
 
-- resource identity;
-- total current stock;
-- projected/current production rate per hour.
+- resource icon and name on the left;
+- total current stock under/alongside the resource identity;
+- projected/current production rate per hour aligned on the right.
 
 Stock combines the authoritative quantities held in:
 
@@ -135,7 +135,7 @@ Stock combines the authoritative quantities held in:
 - bank;
 - production storage.
 
-The persisted favorite remains a UI preference and must never become a second gameplay authority.
+The persisted favorites remain UI preferences and must never become a second gameplay authority.
 
 ## 4.4 Yield-source rules
 
@@ -168,7 +168,8 @@ The Dashboard must not maintain a second loot/gather/refining balance table.
 - the Dashboard consumes existing gameplay catalogs/resolvers instead of duplicating source rates;
 - resource tracking is generic by item id, not hardcoded by resource family;
 - adding future authored monster resource drops should automatically make them projectable through the combat-loot expectation path;
-- one tracked resource is a presentation choice only and does not alter loot, gathering, refining or inventory behavior.
+- the tracked-resource collection is a presentation choice only and does not alter loot, gathering, refining or inventory behavior;
+- no arbitrary favorite-count cap may be introduced at gameplay level; overflow/scroll behavior, if needed, is presentation-only.
 
 ---
 
