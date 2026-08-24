@@ -1,4 +1,9 @@
-import { ENCOUNTERS_PER_SEGMENT, type WorldBandId } from "@game/data";
+import {
+  ENCOUNTERS_PER_SEGMENT,
+  getFactionRuneWorldDropChance,
+  getFactionRuneWorldDropExpectation,
+  type WorldBandId,
+} from "@game/data";
 import { getEnemyCombatProfile, getEncounterRewards, type ZoneDefinitionId } from "@game/gameplay";
 import {
   BASE_COMBAT_DROP_RATES,
@@ -13,10 +18,6 @@ import {
   getFactionMasteryYieldBonusPercent,
   resolveFactionMasteryId,
 } from "../data/factionMasteryContentCatalog.js";
-import {
-  getFactionRuneWorldDropChance,
-  getFactionRuneWorldDropExpectation,
-} from "../data/factionRuneWorldDropContentCatalog.js";
 import { resolveMonsterForEncounter } from "../data/monsterContentCatalog.js";
 import {
   CLIENT_ABILITIES,
