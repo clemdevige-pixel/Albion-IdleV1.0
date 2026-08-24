@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, agent/albion-idle-development]
   pull_request:
 
 jobs:
