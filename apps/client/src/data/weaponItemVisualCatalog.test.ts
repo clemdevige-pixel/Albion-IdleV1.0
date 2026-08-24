@@ -25,10 +25,14 @@ describe("weapon item visual catalog", () => {
     expect(new Set(iconByMastery.values()).size).toBe(25);
   });
 
-  it("uses the newly authored filenames", () => {
-    expect(resolveWeaponItemIcon("item_weapon_sword_t4_broadsword")).toBe("broadsword.png");
-    expect(resolveWeaponItemIcon("item_weapon_bow_t4_badon")).toBe("badon bow.png");
-    expect(resolveWeaponItemIcon("item_weapon_staff_brimstone_t8")).toBe("brimestone staff.png");
-    expect(resolveWeaponItemIcon("item_weapon_dagger_deathgivers_t8")).toBe("deathgivers.png");
+  it("uses the normalized UI icon paths", () => {
+    expect(resolveWeaponItemIcon("item_weapon_sword_t4_broadsword"))
+      .toBe("icons/armes/broadsword.png");
+    expect(resolveWeaponItemIcon("item_weapon_bow_t4_badon"))
+      .toBe("icons/armes/badon bow.png");
+    expect(resolveWeaponItemIcon("item_weapon_staff_brimstone_t8"))
+      .toBe("icons/armes/brimestone staff.png");
+    expect(resolveWeaponItemIcon("item_weapon_dagger_deathgivers_t8"))
+      .toBe("icons/armes/deathgivers.png");
   });
 });
