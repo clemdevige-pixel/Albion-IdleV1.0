@@ -86,7 +86,6 @@ export interface GameServices {
   ) => BestiaryKnowledgeModel;
   readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
   readonly isDungeonSystemUnlocked: () => boolean;
-  readonly isResourceYieldTrackingUnlocked: () => boolean;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
