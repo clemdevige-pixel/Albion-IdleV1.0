@@ -42,6 +42,50 @@ describe("instant refining research", () => {
     expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t3")).toBe(3);
   });
 
+  it("refines only the requested number of payable cycles", () => {
+    const env = setupInstantRefining(3);
+    env.inventoryManager.addQuantity(env.storageId, "item_resource_wood_t3", 12, {
+      itemId: "item_resource_wood_t3",
+      stackable: true,
+      maxStack: 999,
+    });
+
+    const result = env.runtime.toggleRefiningFamily("Wood", 0, 1);
+
+    expect(result).toMatchObject({ action: "completed", cycles: 1 });
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_resource_wood_t3")).toBe(8);
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t3")).toBe(1);
+  });
+
+  it("clamps a requested instant batch to the cycles actually payable", () => {
+    const env = setupInstantRefining(3);
+    env.inventoryManager.addQuantity(env.storageId, "item_resource_wood_t3", 8, {
+      itemId: "item_resource_wood_t3",
+      stackable: true,
+      maxStack: 999,
+    });
+
+    const result = env.runtime.toggleRefiningFamily("Wood", 0, 99);
+
+    expect(result).toMatchObject({ action: "completed", cycles: 2 });
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_resource_wood_t3")).toBe(0);
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t3")).toBe(2);
+  });
+
+  it("rejects invalid instant cycle quotas without consuming resources", () => {
+    const env = setupInstantRefining(3);
+    env.inventoryManager.addQuantity(env.storageId, "item_resource_wood_t3", 8, {
+      itemId: "item_resource_wood_t3",
+      stackable: true,
+      maxStack: 999,
+    });
+
+    expect(env.runtime.toggleRefiningFamily("Wood", 0, 0).action).toBe("failed");
+    expect(env.runtime.toggleRefiningFamily("Wood", 0, 1.5).action).toBe("failed");
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_resource_wood_t3")).toBe(8);
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t3")).toBe(0);
+  });
+
   it("preserves the Tn-1 prerequisite ratio when refining T4 instantly", () => {
     const env = setupInstantRefining(4);
     env.inventoryManager.addQuantity(env.storageId, "item_resource_wood_t4", 10, {
@@ -61,6 +105,27 @@ describe("instant refining research", () => {
     expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_resource_wood_t4")).toBe(4);
     expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t3")).toBe(0);
     expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t4")).toBe(3);
+  });
+
+  it("applies a T4 quota to both raw and predecessor requirements", () => {
+    const env = setupInstantRefining(4);
+    env.inventoryManager.addQuantity(env.storageId, "item_resource_wood_t4", 10, {
+      itemId: "item_resource_wood_t4",
+      stackable: true,
+      maxStack: 999,
+    });
+    env.inventoryManager.addQuantity(env.storageId, "item_refined_planks_t3", 3, {
+      itemId: "item_refined_planks_t3",
+      stackable: true,
+      maxStack: 999,
+    });
+
+    const result = env.runtime.toggleRefiningFamily("Wood", 0, 2);
+
+    expect(result).toMatchObject({ action: "completed", cycles: 2 });
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_resource_wood_t4")).toBe(6);
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t3")).toBe(1);
+    expect(env.inventoryManager.getTotalQuantity(env.storageId, "item_refined_planks_t4")).toBe(2);
   });
 
   it("keeps the timed refining behavior while the research is locked", () => {
@@ -86,7 +151,7 @@ describe("instant refining research", () => {
       maxStack: 999,
     });
 
-    expect(runtime.toggleRefiningFamily("Wood", 0).action).toBe("started");
+    expect(runtime.toggleRefiningFamily("Wood", 0, 1).action).toBe("started");
     expect(runtime.isRefiningActive("Wood")).toBe(true);
   });
 });
