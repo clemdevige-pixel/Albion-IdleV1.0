@@ -90,14 +90,13 @@ describe("weapon pipeline contract", () => {
         expect(STANDARD_WEAPON_CRAFT_RECIPES.some((recipe) => recipe.outputItemId === itemId), `${itemId}: artifact weapon must stay outside standard generator`).toBe(false);
       }
 
-      // Combat content may land before its final art asset. Never invent a
-      // placeholder presentation merely to satisfy a data contract.
-      if (presentation !== undefined) {
-        expect(presentation.itemIcon.length, `${itemId}: item icon`).toBeGreaterThan(0);
+      // Every authored weapon now has item art. Combat actor presentation stays
+      // optional until a matching animated actor asset is actually authored.
+      expect(presentation, `${itemId}: item presentation`).toBeDefined();
+      expect(presentation?.itemIcon.length ?? 0, `${itemId}: item icon`).toBeGreaterThan(0);
+      if (presentation?.actorManifestId !== undefined) {
         expect(presentation.actorManifestId.length, `${itemId}: actor manifest`).toBeGreaterThan(0);
-        expect(presentation.combatProfileId.length, `${itemId}: presentation combat profile`).toBeGreaterThan(0);
-      } else {
-        expect(craftRule?.kind, `${itemId}: only pending artifacts may lack presentation`).toBe("artifact_pending");
+        expect(presentation.combatProfileId?.length ?? 0, `${itemId}: presentation combat profile`).toBeGreaterThan(0);
       }
 
       expect(repairable?.equipmentCategory, `${itemId}: repair recognition`).toBe("weapon");
