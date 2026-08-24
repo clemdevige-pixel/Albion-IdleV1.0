@@ -18,7 +18,6 @@ export const DEFAULT_DASHBOARD_SECTION_ORDER = [
   "research",
   "yield",
   "enchant-ready",
-  "tracked-resources",
   "production",
 ] as const satisfies readonly DashboardSectionId[];
 
