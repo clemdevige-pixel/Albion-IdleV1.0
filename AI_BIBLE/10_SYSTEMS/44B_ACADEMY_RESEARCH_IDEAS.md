@@ -8,9 +8,7 @@ Last update: 2026-08-24
 
 # PURPOSE
 
-This document records candidate Academy Research ideas beyond the already validated faction / Cartography / Archaeology loop.
-
-These entries are NOT automatically implementation requirements.
+This document records Academy Research ideas beyond the faction / Cartography / Archaeology loop.
 
 Rule of ownership:
 
@@ -37,29 +35,21 @@ Do not:
 
 ---
 
-# 2. STRONG CANDIDATE — CONSIGNES D'EXPLORATION
+# 2. NOT RETAINED — CONSIGNES D'EXPLORATION
 
-Status: IDEA / PROMISING / NOT YET VALIDATED
+Status: NOT RETAINED FOR CURRENT IMPLEMENTATION
 
-Purpose:
+The idea was to add configurable safety/automation rules to the existing Farm/Progression loop.
 
-- give the player configurable safety/automation rules for the existing Farm/Progression loop;
-- improve idle control without adding power.
-
-Candidate examples:
+Examples considered:
 
 - after X deaths on the current progression target -> switch back to Farm;
 - after X failed attempts -> return to the last sustainable farming point;
-- if healing consumable availability reaches zero -> stop Progression or switch to Farm.
+- if healing consumables reach zero -> stop Progression or switch to Farm.
 
-Guardrails:
+The current death flow explicitly waits for the player to press `Reprendre l'exploration`. Making these rules useful would therefore require an Academy unlock to alter the death/resume loop itself.
 
-- conditions must use existing authoritative game state;
-- avoid creating a general-purpose scripting engine;
-- rules should remain a small authored set of deterministic conditions/actions;
-- no offline combat simulation is introduced by this Research.
-
-Exact conditions/actions remain OPEN.
+This is too invasive for a QoL Research whose main purpose was idle convenience. Do not implement it unless the global death/resume philosophy is redesigned separately.
 
 ---
 
@@ -94,11 +84,99 @@ The exact presentation model is NOT validated yet.
 
 ---
 
-# 4. VALIDATED / IMPLEMENTED — ORGANISATION AVANCEE DES OUVRIERS
+# 4. VALIDATED / IMPLEMENTED — ANALYSE DES RENDEMENTS
 
 Status: VALIDATED CONTRACT / IMPLEMENTED
 
-## 4.1 Baseline worker contract
+## 4.1 Research contract
+
+Research:
+
+- id: `research_yield_analysis`;
+- display name: `Analyse des rendements`;
+- Academy tier: T5;
+- cost: 15,000 Silver;
+- material cost: none;
+- duration: 1h;
+- unlock id: `dashboard:resource_yield_tracking`.
+
+The cost/duration reuse the existing T5 Academy baseline already used by Cartography II and Archéologie II.
+
+## 4.2 Dashboard contract before Research
+
+The Dashboard `Rendement` module remains baseline functionality and displays only:
+
+- Silver / heure;
+- Fame / heure.
+
+These are projected values for the active world segment using the existing authoritative projected-rate resolver.
+
+No resource favorite control is available before the Research completes.
+
+## 4.3 Unlock behavior
+
+After completion:
+
+- trackable resource items expose the favorite/star control in Inventory and Bank;
+- exactly ONE resource may be followed at a time in V1;
+- selecting another resource replaces the previous tracked resource;
+- the old standalone `tracked-resources` Dashboard card is removed from the active layout;
+- the tracked resource is presented directly inside the existing `Rendement` module.
+
+The tracked row displays:
+
+- resource identity;
+- total current stock;
+- projected/current production rate per hour.
+
+Stock combines the authoritative quantities held in:
+
+- hero inventory;
+- bank;
+- production storage.
+
+The persisted favorite remains a UI preference and must never become a second gameplay authority.
+
+## 4.4 Yield-source rules
+
+The item-rate resolver is source-driven and keyed by authoritative `itemId`.
+
+World combat / monster loot:
+
+- projected from the same authored combat loot expectations used by runtime combat;
+- Faction Mastery yield modifiers remain part of the projection when applicable;
+- a resource not produced by the current segment resolves to `0/h`.
+
+Gathering:
+
+- active hero gathering contributes the matching raw resource output rate;
+- rate derives from the active gathering cycle duration and authored base yield;
+- no fabricated zone-wide gathering rate is shown when the corresponding gathering activity is not active.
+
+Refining:
+
+- refined resources remain trackable even when idle;
+- idle refining contributes `0/h`;
+- while the matching refining recipe is active, the tracked output shows `outputQuantity / cycleDuration` converted to `/h`;
+- recipe definitions remain authoritative for output and duration.
+
+The Dashboard must not maintain a second loot/gather/refining balance table.
+
+## 4.5 Architecture rules
+
+- `ResearchService` unlock state remains the authority for availability of resource favorites;
+- the Dashboard consumes existing gameplay catalogs/resolvers instead of duplicating source rates;
+- resource tracking is generic by item id, not hardcoded by resource family;
+- adding future authored monster resource drops should automatically make them projectable through the combat-loot expectation path;
+- one tracked resource is a presentation choice only and does not alter loot, gathering, refining or inventory behavior.
+
+---
+
+# 5. VALIDATED / IMPLEMENTED — ORGANISATION AVANCEE DES OUVRIERS
+
+Status: VALIDATED CONTRACT / IMPLEMENTED
+
+## 5.1 Baseline worker contract
 
 Before this Research, the Player Island supports exactly:
 
@@ -113,7 +191,7 @@ Before this Research, the Player Island supports exactly:
 
 The Research MUST NOT nerf or remove this baseline capacity.
 
-## 4.2 Research contract
+## 5.2 Research contract
 
 Research:
 
@@ -139,7 +217,7 @@ The expected fully expanded roster is therefore:
 - 2 Skinners;
 - 2 Fiber Harvesters.
 
-## 4.3 Progression reason
+## 5.3 Progression reason
 
 This unlock is intentionally placed at T6 rather than T7.
 
@@ -154,7 +232,7 @@ Newly recruited workers start with their own mastery at level 0 and therefore be
 
 Giving access at T6 gives the second generation of workers time to progress before the largest T7/T8 resource requirements.
 
-## 4.4 Architecture rules
+## 5.4 Architecture rules
 
 The implementation is WorkerId-first:
 
@@ -169,11 +247,11 @@ Research unlocks capacity only. It does NOT grant generic worker yield/speed bon
 
 ---
 
-# 5. VALIDATED / IMPLEMENTED — PROCEDES DE RAFFINAGE AVANCES
+# 6. VALIDATED / IMPLEMENTED — PROCEDES DE RAFFINAGE AVANCES
 
 Status: VALIDATED CONTRACT / IMPLEMENTED
 
-## 5.1 Research contract
+## 6.1 Research contract
 
 Research:
 
@@ -185,7 +263,7 @@ Research:
 - duration: 3h;
 - unlock id: `refining:instant_batch`.
 
-## 5.2 Gameplay effect
+## 6.2 Gameplay effect
 
 Before this Research, refining uses the normal timed automatic cycle system.
 
@@ -198,14 +276,7 @@ After completion, each refining building exposes instant batch refining for the 
 - output quantity and yield remain unchanged;
 - no bonus resource, speed multiplier or altered refining ratio is granted.
 
-Example:
-
-- 80 T7 raw ore + 40 T6 refined bars;
-- T7 recipe requires 2 raw ore + 1 T6 refined bar per cycle;
-- instant batch executes 40 cycles;
-- result is exactly 40 T7 refined bars.
-
-## 5.3 Architecture rules
+## 6.3 Architecture rules
 
 - `ResearchService` unlock state is the authority for availability;
 - recipe definitions remain the authority for costs and outputs;
@@ -215,11 +286,9 @@ Example:
 - if output cannot be stored atomically, inputs must not be lost;
 - the original timed refining path remains unchanged while the Research is locked.
 
-The purpose is late-game QoL only. It removes repetitive waiting after the player has already mastered the production loop; it does not increase economic efficiency.
-
 ---
 
-# 6. DEFERRED — FABRICATION SPECIALISEE
+# 7. DEFERRED — FABRICATION SPECIALISEE
 
 Status: DEFERRED / DO NOT IMPLEMENT YET
 
@@ -235,19 +304,13 @@ Revisit only when Quality is actually integrated and balanced in live gameplay.
 
 ---
 
-# 7. DEFERRED — DONJON PREPARATIONS
+# 8. DEFERRED — DONJON PREPARATIONS
 
 Status: DEFERRED / FUTURE DUNGEON DIFFICULTY SYSTEM
 
 Idea:
 
 - unlock pre-run preparation items/choices consumed for one dungeon run.
-
-Potential examples previously discussed:
-
-- repair support;
-- healing-oriented preparation;
-- specific resistance/utility preparation.
 
 Reason for deferral:
 
@@ -259,7 +322,7 @@ Revisit when additional dungeon difficulties, challenge modes or modifiers are i
 
 ---
 
-# 8. REJECTED / LOW-VALUE IDEAS
+# 9. REJECTED / LOW-VALUE IDEAS
 
 ## Equipment dismantling / material recovery
 
@@ -283,18 +346,19 @@ Rejected as Academy Research directions. The player should not need Academy prog
 
 ---
 
-# 9. CURRENT SHORTLIST
+# 10. CURRENT SHORTLIST
 
 Current Academy expansion state beyond factions:
 
-1. Organisation avancée des ouvriers — VALIDATED / IMPLEMENTED at T6
-2. Procédés de raffinage avancés — VALIDATED / IMPLEMENTED at T7
-3. Consignes d'exploration — STRONG CANDIDATE
+1. Analyse des rendements — VALIDATED / IMPLEMENTED at T5
+2. Organisation avancée des ouvriers — VALIDATED / IMPLEMENTED at T6
+3. Procédés de raffinage avancés — VALIDATED / IMPLEMENTED at T7
 4. Analyse tactique — CANDIDATE, presentation unresolved
 
-Abandoned / rejected:
+Not retained / rejected:
 
 - Doctrine d'equipement -> loadouts are baseline Character functionality and are not Academy-gated.
+- Consignes d'exploration -> not retained while death requires explicit manual resume.
 - Tactiques de combat -> rejected as an Academy Research direction.
 - Protocoles de combat avances -> rejected with Tactiques de combat.
 
