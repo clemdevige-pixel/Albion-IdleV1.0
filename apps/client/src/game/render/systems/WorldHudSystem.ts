@@ -14,6 +14,10 @@ interface ActorHealthHud {
   width: number;
 }
 
+const ACTOR_HUD_HEAD_GAP = 10;
+
+type HudAnchorActor = Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
+
 /** Owns health bars and actor labels rendered inside the Phaser world. */
 export class WorldHudSystem {
   private readonly objects: Phaser.GameObjects.GameObject[] = [];
@@ -61,18 +65,31 @@ export class WorldHudSystem {
     this.enemy.label.setText(name);
   }
 
+  public layoutPlayer(
+    homeX: number,
+    bodyY: number,
+    actor: HudAnchorActor,
+  ): void {
+    this.layoutActorHud(
+      this.player,
+      homeX,
+      this.resolveActorHudY(bodyY, actor),
+      this.manifest.healthBar.defaultWidth,
+    );
+  }
+
   public layoutEnemy(
     homeX: number,
     bodyY: number,
+    actor: HudAnchorActor,
     layout: {
       readonly healthBarWidth: number;
-      readonly healthBarOffsetY: number;
     },
   ): void {
     this.layoutActorHud(
       this.enemy,
       homeX,
-      bodyY - layout.healthBarOffsetY,
+      this.resolveActorHudY(bodyY, actor),
       layout.healthBarWidth,
     );
   }
@@ -97,6 +114,11 @@ export class WorldHudSystem {
     actor.value.setVisible(visible);
     actor.label.setVisible(visible);
     worldHudAnchorStore.setVisible(actor.actorId, visible);
+  }
+
+  private resolveActorHudY(bodyY: number, actor: HudAnchorActor): number {
+    const actorTopY = bodyY + actor.y - actor.displayHeight * actor.originY;
+    return actorTopY - ACTOR_HUD_HEAD_GAP;
   }
 
   private createActorHud(
