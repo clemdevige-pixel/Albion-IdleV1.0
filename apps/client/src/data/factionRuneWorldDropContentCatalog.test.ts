@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   getFactionRuneWorldDropChance,
   getFactionRuneWorldDropExpectation,
   isFactionRuneWorldDropEligibleFaction,
   rollFactionRuneWorldDrop,
-} from "./factionRuneWorldDropContentCatalog.js";
+} from "@game/data";
+import { describe, expect, it } from "vitest";
 
 describe("Faction Rune world drop content", () => {
   it("locks the tester baseline anchors", () => {
