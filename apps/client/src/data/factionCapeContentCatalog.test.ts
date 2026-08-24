@@ -5,6 +5,7 @@ import {
   FACTION_CAPE_CRAFT_RECIPES,
   resolveFactionCapeDungeonDamageReductionPercent,
 } from "./factionCapeContentCatalog.js";
+import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import {
   resolveEnchantmentItemInfo,
   resolveEquipmentInfo,
@@ -37,12 +38,12 @@ describe("factionCapeContentCatalog", () => {
     }
   });
 
-  it("uses the matching faction Rune in every authored Cape recipe", () => {
+  it("uses the shared tiered faction Rune in every authored Cape recipe", () => {
     expect(FACTION_CAPE_CRAFT_RECIPES).toHaveLength(20);
     for (const cape of FACTION_CAPE_CONTENT) {
       const recipe = FACTION_CAPE_CRAFT_RECIPES.find((entry) => entry.outputItemId === cape.itemId);
       expect(recipe?.requirements).toContainEqual({ itemId: cape.runeItemId, quantity: cape.runeQuantity });
-      expect(cape.runeItemId).toBe(`item_resource_rune_${cape.factionId}_t${String(cape.tier)}`);
+      expect(cape.runeItemId).toBe(getFactionRuneItemId(cape.tier));
     }
   });
 
@@ -58,7 +59,7 @@ describe("factionCapeContentCatalog", () => {
 
   it("reuses generic enchantment scaling for faction Runes", () => {
     for (const factionId of FACTIONS) {
-      const runeId = `item_resource_rune_${factionId}_t4`;
+      const runeId = getFactionRuneItemId(4);
       const info = resolveEnchantmentItemInfo(`item_cape_t4_${factionId}`);
       expect(info?.maximumLevel).toBe(3);
       expect(info?.craftMaterials).toContainEqual({ itemId: runeId, quantity: 3 });
