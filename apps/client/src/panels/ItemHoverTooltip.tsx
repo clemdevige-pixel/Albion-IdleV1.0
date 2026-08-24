@@ -52,7 +52,7 @@ export function ItemHoverTooltip({
           />
           {assemblyRecipe !== undefined && requiredFragments !== undefined && (
             <div className="item-tooltip__hint">
-              Double-clic dans l’inventaire : assembler {String(requiredFragments)} fragments en 1 {assemblyRecipe.name}. Stock : {String(quantity)} / {String(requiredFragments)}.
+              Double-clic dans l’inventaire : assembler {String(requiredFragments)} fragments en 1 {assemblyRecipe.name}.
             </div>
           )}
         </div>,
