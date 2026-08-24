@@ -1,9 +1,5 @@
-import type { EntityId, World } from "@game/core";
-import {
-  InventoryManager,
-  type BagInfoResolver,
-  type StackInfoResolver,
-} from "@game/gameplay";
+import type { EntityId } from "@game/core";
+import { InventoryManager } from "@game/gameplay";
 
 /**
  * Player-facing inventory manager with an explicit accessible-storage graph.
@@ -13,10 +9,6 @@ import {
  */
 export class PlayerInventoryManager extends InventoryManager {
   readonly #accessibleOwners = new Map<EntityId, readonly EntityId[]>();
-
-  constructor(world: World, resolveStackInfo?: StackInfoResolver, resolveBagInfo?: BagInfoResolver) {
-    super(world, resolveStackInfo, resolveBagInfo);
-  }
 
   public setAccessibleStorageOwners(ownerId: EntityId, ownerIds: readonly EntityId[]): void {
     const uniqueOwners = [...new Set(ownerIds)];
