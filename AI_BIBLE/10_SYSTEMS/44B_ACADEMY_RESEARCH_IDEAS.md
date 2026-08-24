@@ -37,51 +37,7 @@ Do not:
 
 ---
 
-# 2. STRONG CANDIDATE — TACTIQUES DE COMBAT
-
-Status: IDEA / PROMISING / NOT YET VALIDATED
-
-Purpose:
-
-- give the player more strategic control over automated combat;
-- reuse the existing deterministic AI/ability-priority architecture;
-- preserve the game's preparation-over-execution identity.
-
-Candidate behavior:
-
-- unlock player-authored priority ordering for the 3 active abilities;
-- example: Priority 1 -> Priority 2 -> Priority 3;
-- AI remains responsible for actual legal execution according to cooldowns and combat rules;
-- no manual combat execution is introduced.
-
-Guardrails:
-
-- no scripting language in V1;
-- no arbitrary conditions until separately designed;
-- no bypass of Ability System legality/cooldowns;
-- must remain deterministic and data-driven.
-
-Final scope remains OPEN.
-
----
-
-# 3. CANDIDATE — PROTOCOLES DE COMBAT AVANCES
-
-Status: IDEA / NOT VALIDATED
-
-Potentially extends Tactiques de combat rather than existing as an independent system.
-
-Candidate behavior:
-
-- save multiple combat-priority profiles;
-- examples: Farm / Progression / Boss-Donjon;
-- each profile stores ability priorities only.
-
-This is only justified if combat-priority configuration itself becomes deep enough to warrant multiple saved profiles.
-
----
-
-# 4. STRONG CANDIDATE — CONSIGNES D'EXPLORATION
+# 2. STRONG CANDIDATE — CONSIGNES D'EXPLORATION
 
 Status: IDEA / PROMISING / NOT YET VALIDATED
 
@@ -107,7 +63,7 @@ Exact conditions/actions remain OPEN.
 
 ---
 
-# 5. CANDIDATE — ANALYSE TACTIQUE
+# 3. CANDIDATE — ANALYSE TACTIQUE
 
 Status: IDEA / INTERESTING BUT PRESENTATION UNSOLVED
 
@@ -138,11 +94,11 @@ The exact presentation model is NOT validated yet.
 
 ---
 
-# 6. VALIDATED / IMPLEMENTED — ORGANISATION AVANCEE DES OUVRIERS
+# 4. VALIDATED / IMPLEMENTED — ORGANISATION AVANCEE DES OUVRIERS
 
 Status: VALIDATED CONTRACT / IMPLEMENTED
 
-## 6.1 Baseline worker contract
+## 4.1 Baseline worker contract
 
 Before this Research, the Player Island supports exactly:
 
@@ -157,7 +113,7 @@ Before this Research, the Player Island supports exactly:
 
 The Research MUST NOT nerf or remove this baseline capacity.
 
-## 6.2 Research contract
+## 4.2 Research contract
 
 Research:
 
@@ -183,7 +139,7 @@ The expected fully expanded roster is therefore:
 - 2 Skinners;
 - 2 Fiber Harvesters.
 
-## 6.3 Progression reason
+## 4.3 Progression reason
 
 This unlock is intentionally placed at T6 rather than T7.
 
@@ -198,7 +154,7 @@ Newly recruited workers start with their own mastery at level 0 and therefore be
 
 Giving access at T6 gives the second generation of workers time to progress before the largest T7/T8 resource requirements.
 
-## 6.4 Architecture rules
+## 4.4 Architecture rules
 
 The implementation is WorkerId-first:
 
@@ -213,11 +169,11 @@ Research unlocks capacity only. It does NOT grant generic worker yield/speed bon
 
 ---
 
-# 7. VALIDATED / IMPLEMENTED — PROCEDES DE RAFFINAGE AVANCES
+# 5. VALIDATED / IMPLEMENTED — PROCEDES DE RAFFINAGE AVANCES
 
 Status: VALIDATED CONTRACT / IMPLEMENTED
 
-## 7.1 Research contract
+## 5.1 Research contract
 
 Research:
 
@@ -229,7 +185,7 @@ Research:
 - duration: 3h;
 - unlock id: `refining:instant_batch`.
 
-## 7.2 Gameplay effect
+## 5.2 Gameplay effect
 
 Before this Research, refining uses the normal timed automatic cycle system.
 
@@ -249,7 +205,7 @@ Example:
 - instant batch executes 40 cycles;
 - result is exactly 40 T7 refined bars.
 
-## 7.3 Architecture rules
+## 5.3 Architecture rules
 
 - `ResearchService` unlock state is the authority for availability;
 - recipe definitions remain the authority for costs and outputs;
@@ -263,7 +219,7 @@ The purpose is late-game QoL only. It removes repetitive waiting after the playe
 
 ---
 
-# 8. DEFERRED — FABRICATION SPECIALISEE
+# 6. DEFERRED — FABRICATION SPECIALISEE
 
 Status: DEFERRED / DO NOT IMPLEMENT YET
 
@@ -279,7 +235,7 @@ Revisit only when Quality is actually integrated and balanced in live gameplay.
 
 ---
 
-# 9. DEFERRED — DONJON PREPARATIONS
+# 7. DEFERRED — DONJON PREPARATIONS
 
 Status: DEFERRED / FUTURE DUNGEON DIFFICULTY SYSTEM
 
@@ -303,7 +259,7 @@ Revisit when additional dungeon difficulties, challenge modes or modifiers are i
 
 ---
 
-# 10. REJECTED / LOW-VALUE IDEAS
+# 8. REJECTED / LOW-VALUE IDEAS
 
 ## Equipment dismantling / material recovery
 
@@ -321,22 +277,26 @@ Rejected for current gameplay because there is no meaningful need to mass-craft 
 
 Rejected because the proposed functionality substantially duplicated the baseline equipment-loadout system.
 
+## Tactiques de combat / Protocoles de combat avances
+
+Rejected as Academy Research directions. The player should not need Academy progression to author combat-ability priorities or combat-priority profiles.
+
 ---
 
-# 11. CURRENT SHORTLIST
+# 9. CURRENT SHORTLIST
 
 Current Academy expansion state beyond factions:
 
 1. Organisation avancée des ouvriers — VALIDATED / IMPLEMENTED at T6
 2. Procédés de raffinage avancés — VALIDATED / IMPLEMENTED at T7
-3. Tactiques de combat — STRONG CANDIDATE
-4. Consignes d'exploration — STRONG CANDIDATE
-5. Analyse tactique — CANDIDATE, presentation unresolved
-6. Protocoles de combat avances — CONDITIONAL extension only
+3. Consignes d'exploration — STRONG CANDIDATE
+4. Analyse tactique — CANDIDATE, presentation unresolved
 
-Abandoned:
+Abandoned / rejected:
 
 - Doctrine d'equipement -> loadouts are baseline Character functionality and are not Academy-gated.
+- Tactiques de combat -> rejected as an Academy Research direction.
+- Protocoles de combat avances -> rejected with Tactiques de combat.
 
 Deferred:
 
