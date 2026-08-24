@@ -8,9 +8,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "build": "tsc -b",
+    "build": "tsc -b tsconfig.build.json",
     "typecheck": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean && tsc -b tsconfig.build.json --clean"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
