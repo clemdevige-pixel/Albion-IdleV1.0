@@ -1,9 +1,9 @@
+import { getFactionRuneItemId } from "@game/data";
 import type {
   ExpeditionDefinition,
   ExpeditionRequirementDefinition,
 } from "@game/gameplay";
 import { getFactionExpeditionRewardProfile } from "./factionExpeditionRewardContentCatalog.js";
-import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { getGeneralistExpeditionRewardProfile } from "./generalistExpeditionRewardContentCatalog.js";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 
