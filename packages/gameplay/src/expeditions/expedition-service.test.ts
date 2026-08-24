@@ -201,6 +201,29 @@ describe("ExpeditionService", () => {
     expect(service.getActiveExpeditions()).toEqual([]);
   });
 
+  it("cancels partial progress without reward or completion credit and frees the slot", () => {
+    const { service, reward } = createService();
+    service.registerExpedition(createDefinition());
+    service.startExpedition("expedition_silver_t4", DURATION_6H);
+    service.advance(DURATION_2H);
+
+    const result = service.cancelExpedition(0);
+    expect(result).toMatchObject({
+      ok: true,
+      cancelledExpedition: {
+        expeditionId: "expedition_silver_t4",
+        remainingDurationMs: DURATION_6H - DURATION_2H,
+      },
+    });
+    expect(service.getActiveExpeditions()).toEqual([]);
+    expect(service.getCompletedCount("silver")).toBe(0);
+    expect(service.getStartState("expedition_silver_t4")).toBe("available");
+
+    service.advance(DURATION_12H);
+    expect(reward).not.toHaveBeenCalled();
+    expect(service.getCompletedCount("silver")).toBe(0);
+  });
+
   it("persists partial progress without granting or rerolling rewards on load", () => {
     const first = createService();
     first.service.registerExpedition(createDefinition());
