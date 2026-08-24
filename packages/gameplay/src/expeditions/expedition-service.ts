@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   EXPEDITION_DURATION_OPTIONS_MS,
   type ActiveExpeditionState,
+  type CancelExpeditionResult,
   type ExpeditionAdvanceResult,
   type ExpeditionCompletion,
   type ExpeditionDefinition,
@@ -174,6 +175,18 @@ export class ExpeditionService<
     };
     this.#activeExpeditions = [...this.#activeExpeditions, activeExpedition];
     return { ok: true, activeExpedition: { ...activeExpedition } };
+  }
+
+  cancelExpedition(slotIndex: number): CancelExpeditionResult {
+    const cancelled = this.#activeExpeditions.find((entry) => entry.slotIndex === slotIndex);
+    if (cancelled === undefined) {
+      return { ok: false, reason: "active_expedition_not_found" };
+    }
+
+    this.#activeExpeditions = this.#activeExpeditions.filter(
+      (entry) => entry.slotIndex !== slotIndex,
+    );
+    return { ok: true, cancelledExpedition: { ...cancelled } };
   }
 
   advance(elapsedMs: number): ExpeditionAdvanceResult<TRewardSummary> {
