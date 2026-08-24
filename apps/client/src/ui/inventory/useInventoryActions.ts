@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
+import { getFragmentAssemblyRecipe } from "../../data/specialCraftRecipes.js";
 import { getEquipmentTierCapViolation } from "../../data/zoneEquipmentTierCaps";
 import { StorageRuntime, type StorageKind } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
@@ -13,6 +14,7 @@ import {
 interface InventoryActions {
   readonly equip: (position: number) => boolean;
   readonly useConsumable: (itemId: string) => boolean;
+  readonly assembleFragments: (itemId: string) => boolean;
   readonly move: (storage: StorageKind, from: number, to: number) => boolean;
   readonly transfer: (fromStorage: StorageKind, from: number, toStorage: StorageKind, to?: number) => boolean;
   readonly sort: (storage: StorageKind) => boolean;
@@ -83,6 +85,12 @@ export function useInventoryActions(): InventoryActions {
     [services],
   );
 
+  const assembleFragments = useCallback((itemId: string): boolean => {
+    const recipe = getFragmentAssemblyRecipe(itemId);
+    if (recipe === undefined) return false;
+    return services.craftEquipment(recipe.outputItemId);
+  }, [services]);
+
   const move = useCallback((kind: StorageKind, from: number, to: number): boolean => {
     const result = storage.moveWithin(kind, from, to);
     if (result.ok) syncStorage();
@@ -107,5 +115,5 @@ export function useInventoryActions(): InventoryActions {
     return result.ok;
   }, [storage, syncStorage]);
 
-  return { equip, useConsumable, move, transfer, sort };
+  return { equip, useConsumable, assembleFragments, move, transfer, sort };
 }
