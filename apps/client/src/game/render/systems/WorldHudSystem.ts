@@ -15,6 +15,7 @@ interface ActorHealthHud {
 }
 
 const ACTOR_HUD_HEAD_GAP = 10;
+const STATUS_EFFECT_CLEARANCE = 6;
 
 type HudAnchorActor = Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
 
@@ -33,7 +34,7 @@ export class WorldHudSystem {
     this.player = this.createActorHud(
       "player",
       x,
-      y - this.manifest.healthBar.offsetY,
+      this.resolvePlayerHudY(y),
       this.manifest.healthBar.defaultWidth,
       playerDisplayName,
       this.manifest.actorLabel.playerColor,
@@ -68,12 +69,12 @@ export class WorldHudSystem {
   public layoutPlayer(
     homeX: number,
     bodyY: number,
-    actor: HudAnchorActor,
+    _actor: HudAnchorActor,
   ): void {
     this.layoutActorHud(
       this.player,
       homeX,
-      this.resolveActorHudY(bodyY, actor),
+      this.resolvePlayerHudY(bodyY),
       this.manifest.healthBar.defaultWidth,
     );
   }
@@ -89,7 +90,7 @@ export class WorldHudSystem {
     this.layoutActorHud(
       this.enemy,
       homeX,
-      this.resolveActorHudY(bodyY, actor),
+      this.resolveEnemyHudY(bodyY, actor),
       layout.healthBarWidth,
     );
   }
@@ -116,9 +117,13 @@ export class WorldHudSystem {
     worldHudAnchorStore.setVisible(actor.actorId, visible);
   }
 
-  private resolveActorHudY(bodyY: number, actor: HudAnchorActor): number {
+  private resolvePlayerHudY(bodyY: number): number {
+    return bodyY - this.manifest.healthBar.offsetY - STATUS_EFFECT_CLEARANCE;
+  }
+
+  private resolveEnemyHudY(bodyY: number, actor: HudAnchorActor): number {
     const actorTopY = bodyY + actor.y - actor.displayHeight * actor.originY;
-    return actorTopY - ACTOR_HUD_HEAD_GAP;
+    return actorTopY - ACTOR_HUD_HEAD_GAP - STATUS_EFFECT_CLEARANCE;
   }
 
   private createActorHud(
