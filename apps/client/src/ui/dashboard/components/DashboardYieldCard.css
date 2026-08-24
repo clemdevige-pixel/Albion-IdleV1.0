@@ -69,7 +69,7 @@
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
-  padding: 7px 10px;
+  padding: 4px 10px;
 }
 
 .dashboard-yield__tracked-row + .dashboard-yield__tracked-row {
@@ -95,7 +95,21 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
   image-rendering: pixelated;
+}
+
+/* Reuse the same special-loot normalization already used by ItemGrid. */
+.dashboard-yield__tracked-visual > .item-visual__image--dungeon-key {
+  width: 68%;
+  height: 68%;
+  object-position: center;
+  transform: translateY(-30%);
+}
+
+.dashboard-yield__tracked-visual > .item-visual__image--key-fragment {
+  width: 64%;
+  height: 64%;
 }
 
 .dashboard-yield__tracked-copy {
