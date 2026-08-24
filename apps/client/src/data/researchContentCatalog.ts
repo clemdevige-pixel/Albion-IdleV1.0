@@ -262,11 +262,11 @@ export const RESEARCH_DEFINITIONS: readonly ResearchDefinition<ResearchContentRe
 ];
 
 const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
-  [RESEARCH_IDS.cartography1, { group: "core", description: "Ouvre les expéditions Silver T4.", effectSummary: "Débloque les expéditions Silver T4.", unlockedContent: ["Expéditions Silver T4"] }],
-  [RESEARCH_IDS.cartography2, { group: "core", description: "Étend les expéditions Silver au T5.", effectSummary: "Débloque les expéditions Silver T5.", unlockedContent: ["Expéditions Silver T5"] }],
-  [RESEARCH_IDS.cartography3, { group: "core", description: "Étend les expéditions Silver au T6 et augmente la capacité d’expédition.", effectSummary: "Débloque les expéditions Silver T6 et un second slot d’expédition.", unlockedContent: ["Expéditions Silver T6", "Second slot d’expédition"] }],
-  [RESEARCH_IDS.cartography4, { group: "core", description: "Étend les expéditions Silver au T7.", effectSummary: "Débloque les expéditions Silver T7.", unlockedContent: ["Expéditions Silver T7"] }],
-  [RESEARCH_IDS.cartography5, { group: "core", description: "Étend les expéditions Silver au T8.", effectSummary: "Débloque les expéditions Silver T8.", unlockedContent: ["Expéditions Silver T8"] }],
+  [RESEARCH_IDS.cartography1, { group: "core", description: "Ouvre les expéditions généralistes T4.", effectSummary: "Débloque les expéditions généralistes T4.", unlockedContent: ["Expéditions généralistes T4"] }],
+  [RESEARCH_IDS.cartography2, { group: "core", description: "Étend les expéditions généralistes au T5.", effectSummary: "Débloque les expéditions généralistes T5.", unlockedContent: ["Expéditions généralistes T5"] }],
+  [RESEARCH_IDS.cartography3, { group: "core", description: "Étend les expéditions généralistes au T6 et augmente la capacité d’expédition.", effectSummary: "Débloque les expéditions généralistes T6 et un second slot d’expédition.", unlockedContent: ["Expéditions généralistes T6", "Second slot d’expédition"] }],
+  [RESEARCH_IDS.cartography4, { group: "core", description: "Étend les expéditions généralistes au T7.", effectSummary: "Débloque les expéditions généralistes T7.", unlockedContent: ["Expéditions généralistes T7"] }],
+  [RESEARCH_IDS.cartography5, { group: "core", description: "Étend les expéditions généralistes au T8.", effectSummary: "Débloque les expéditions généralistes T8.", unlockedContent: ["Expéditions généralistes T8"] }],
   [RESEARCH_IDS.archaeology1, { group: "faction", description: "Ouvre l’expédition Faction T4.", effectSummary: "Débloque l’expédition Faction T4.", unlockedContent: ["Expédition Faction T4"] }],
   [RESEARCH_IDS.archaeology2, { group: "faction", description: "Étend l’expédition Faction au T5.", effectSummary: "Débloque l’expédition Faction T5.", unlockedContent: ["Expédition Faction T5"] }],
   [RESEARCH_IDS.archaeology3, { group: "faction", description: "Étend l’expédition Faction au T6.", effectSummary: "Débloque l’expédition Faction T6.", unlockedContent: ["Expédition Faction T6"] }],
