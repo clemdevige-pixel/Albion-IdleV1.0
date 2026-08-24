@@ -76,6 +76,15 @@ const DUNGEON_KEY_ASSET_COLOR_BY_TIER: Readonly<Record<number, string>> = {
   8: "white",
 };
 
+const FACTION_RUNE_ICON_BY_TIER: Readonly<Record<number, string>> = {
+  4: "icons/speciaux/rune-t4-blue-pixel-v1.png",
+  5: "icons/speciaux/rune-t5-red-pixel-v1.png",
+  6: "icons/speciaux/rune-t6-orange-pixel-v1.png",
+  7: "icons/speciaux/rune-t7-yellow-pixel-v1.png",
+  8: "icons/speciaux/rune-t8-white-pixel-v1.png",
+};
+
+const SANCTUARY_RELIC_ICON = "icons/speciaux/sanctuary-relic-pixel-v1.png";
 const ARTIFACT_ASSET_FACTIONS = new Set(["heretic", "keeper", "morgana", "undead"]);
 
 function formatFactionName(factionId: string): string {
@@ -90,10 +99,11 @@ function getTieredFactionRuneVisual(itemId: string): SpecialLootVisualDefinition
   const match = itemId.match(/^item_resource_rune_faction_t([4-8])$/);
   if (match === null) return undefined;
   const tier = Number(match[1]);
+  const icon = FACTION_RUNE_ICON_BY_TIER[tier];
   return {
     name: `Rune de faction T${String(tier)}`,
     className: "faction-rune",
-    symbol: "R",
+    ...(icon === undefined ? { symbol: "R" } : { icon }),
   };
 }
 
@@ -157,7 +167,7 @@ function getCombatSpecialLootVisual(itemId: string): SpecialLootVisualDefinition
     return {
       name: "Relique des Sanctuaires",
       className: "relic",
-      symbol: "R",
+      icon: SANCTUARY_RELIC_ICON,
     };
   }
 
