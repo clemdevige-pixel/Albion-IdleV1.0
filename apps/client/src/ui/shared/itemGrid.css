@@ -89,19 +89,6 @@
   object-position: center;
 }
 
-/* Special-loot sizing is presentation-only: keep source assets untouched. */
-.ui-item-grid__visual > .item-visual__image--dungeon-key {
-  width: 68%;
-  height: 68%;
-  object-position: center;
-  transform: translateY(-30%);
-}
-
-.ui-item-grid__visual > .item-visual__image--key-fragment {
-  width: 64%;
-  height: 64%;
-}
-
 .ui-item-grid__visual > .item-visual__image--artifact {
   width: 100%;
   height: 100%;
