@@ -250,6 +250,25 @@
   background: rgba(73, 52, 26, 0.7);
 }
 
+.ui-academy__cancel-expedition {
+  min-height: 26px;
+  border: 1px solid rgba(176, 94, 79, 0.34);
+  border-radius: 6px;
+  background: rgba(73, 38, 32, 0.32);
+  color: #cda098;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ui-academy__cancel-expedition:hover,
+.ui-academy__cancel-expedition:focus-visible {
+  border-color: rgba(205, 112, 95, 0.62);
+  color: #e2b2aa;
+}
+
 .ui-academy__section--expeditions {
   display: flex;
   flex-direction: column;
@@ -418,7 +437,8 @@
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .ui-academy__research-row .context-hover-target {
+  .ui-academy__research-row .context-hover-target,
+  .ui-academy__active-expedition-row .ui-academy__cancel-expedition {
     grid-column: 1 / -1;
     justify-self: start;
   }
