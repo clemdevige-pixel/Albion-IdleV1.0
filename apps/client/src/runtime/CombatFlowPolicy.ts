@@ -28,11 +28,11 @@ export const WORLD_COMBAT_FLOW_POLICY: CombatFlowPolicy = {
 };
 
 /**
- * Dungeon V1 contract: HP persists through the full dungeon endurance sequence,
- * but ability cooldowns reset at the start of every encounter so each combat
- * begins with the authored weapon rotation available.
+ * Dungeon V1 contract: HP and cooldowns persist through the full dungeon endurance
+ * sequence after the run starts. Cooldowns reset only for the first encounter so
+ * entering a dungeon always begins with the authored weapon rotation available.
  */
 export const CONTINUOUS_COMBAT_FLOW_POLICY: CombatFlowPolicy = {
   shouldRestoreHeroHealthBeforeEncounter: () => false,
-  shouldResetHeroCooldownsOnEncounterStart: () => true,
+  shouldResetHeroCooldownsOnEncounterStart: ({ encounterIndex }) => encounterIndex === 0,
 };
