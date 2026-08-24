@@ -120,6 +120,47 @@
   background: linear-gradient(90deg, rgba(174, 125, 38, 0.92), var(--ui-color-accent));
 }
 
+.ui-island-refining-building__batch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-island-refining-building__batch label {
+  color: var(--ui-color-text-muted);
+  font-size: 9px;
+}
+
+.ui-island-refining-building__batch input {
+  width: 58px;
+  min-height: 26px;
+  border: 1px solid rgba(190, 159, 105, 0.28);
+  border-radius: 5px;
+  background: rgba(25, 22, 18, 0.72);
+  color: var(--ui-color-text-primary);
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 9px;
+}
+
+.ui-island-refining-building__batch button {
+  min-height: 26px;
+  border: 1px solid rgba(190, 159, 105, 0.24);
+  border-radius: 5px;
+  background: rgba(45, 38, 28, 0.5);
+  color: var(--ui-color-text-secondary);
+  padding: 3px 7px;
+  font: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.ui-island-refining-building__batch input:disabled,
+.ui-island-refining-building__batch button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .ui-island-refining-building__action {
   align-self: flex-start;
   min-height: 28px;
