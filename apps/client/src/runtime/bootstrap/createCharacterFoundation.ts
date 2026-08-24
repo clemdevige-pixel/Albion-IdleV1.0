@@ -22,6 +22,7 @@ import { resolveEquipmentInfo, resolveItemStackInfo } from "../../data/itemConte
 import { resolveAuthoredEnchantmentItemInfo } from "../../data/enchantmentItemPolicy.js";
 import { getStarterLoadoutItemIds, getStarterWeaponOptions } from "../../data/starterLoadoutCatalog.js";
 import { resolveWeaponMastery } from "../../data/weaponContentCatalog.js";
+import { PlayerInventoryManager } from "../PlayerInventoryManager.js";
 import { isProductionMaterial } from "../ProductionStorage.js";
 import {
   isDevSandboxMode,
@@ -53,7 +54,7 @@ export function createCharacterEquipmentFoundation({
   onPlayerHealthChanged,
   onStatsChanged,
 }: CharacterEquipmentFoundationDependencies) {
-  const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
+  const inventoryManager = new PlayerInventoryManager(world, resolveItemStackInfo);
   const syncWeaponProgressionStats = (entityId: EntityId): void => {
     recalculateWeaponProgressionStats(
       statsManager,
@@ -95,7 +96,7 @@ export function createCharacterEquipmentFoundation({
 interface CharacterStorageFoundationDependencies {
   readonly world: World;
   readonly heroId: EntityId;
-  readonly inventoryManager: InventoryManager;
+  readonly inventoryManager: PlayerInventoryManager;
   readonly equipmentManager: EquipmentManager;
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
@@ -117,6 +118,7 @@ export function createCharacterStorageFoundation({
   inventoryManager.createInventory(heroId, devSandbox ? 96 : 24);
   const bankId = world.createEntity();
   inventoryManager.createInventory(bankId, devSandbox ? 512 : 64);
+  inventoryManager.setAccessibleStorageOwners(heroId, [heroId, bankId]);
   const productionStorageId = world.createEntity();
   inventoryManager.createInventory(
     productionStorageId,
