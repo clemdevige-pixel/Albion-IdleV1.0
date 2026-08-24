@@ -54,22 +54,17 @@ describe("PlayerIslandService", () => {
     expect(service.upgradeBuilding("storage")).toEqual({ ok: false, reason: "unauthored_level" });
   });
 
-  it("keeps Academy as an independently gated upgradeable building", () => {
+  it("synchronizes Academy progression through Island Level instead of manual upgrades", () => {
     const service = new PlayerIslandService();
     service.upgradeIslandLevel();
-    expect(service.placeBuilding("academy", "plot_03").ok).toBe(true);
-
-    expect(service.upgradeBuilding("academy")).toEqual({ ok: false, reason: "island_level_required" });
-    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 3 });
-    expect(service.upgradeBuilding("academy")).toEqual({
+    expect(service.placeBuilding("academy", "plot_03")).toMatchObject({
       ok: true,
-      building: {
-        instanceId: "island_academy",
-        definitionId: "academy",
-        plotId: "plot_03",
-        level: 2,
-      },
+      building: { level: 1 },
     });
+
+    expect(service.upgradeBuilding("academy")).toEqual({ ok: false, reason: "max_level" });
+    expect(service.upgradeIslandLevel()).toEqual({ ok: true, level: 3 });
+    expect(service.getBuildingLevel("academy")).toBe(2);
   });
 
   it("leaves world progression gating to the island action layer", () => {
