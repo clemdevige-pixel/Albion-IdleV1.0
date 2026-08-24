@@ -1,3 +1,4 @@
+import { FACTION_CAPE_CONTENT } from "./factionCapeContentCatalog.js";
 import {
   PROGRESSION_EQUIPMENT_CONTENT,
 } from "./nonWeaponEquipmentContentCatalog.js";
@@ -26,9 +27,16 @@ export interface CatalogResourceVisualDefinition {
 
 const NON_WEAPON_ICON_BY_FAMILY: Readonly<Record<string, string>> = {
   reinforced_shield: "item-wooden-shield-pixel-v1.png",
-  reinforced_helmet: "item-iron-helmet-pixel-v1.png",
-  leather_armor: "item-leather-armor-pixel-v1.png",
-  leather_boots: "item-leather-boots-pixel-v1.png",
+  reinforced_helmet: "item-iron-helmet-pixel-v2.png",
+  leather_armor: "item-leather-armor-pixel-v2.png",
+  leather_boots: "item-leather-boots-pixel-v2.png",
+};
+
+const FACTION_CAPE_ICON_BY_FACTION: Readonly<Record<string, string>> = {
+  keeper: "CAPE_KEEPER.png",
+  heretic: "CAPE_HERETIC.png",
+  undead: "CAPE_UNDEAD.png",
+  morgana: "CAPE_MORGANA.png",
 };
 
 const progressionNonWeaponVisualEntries: Array<readonly [string, CatalogItemVisualDefinition]> = [];
@@ -52,6 +60,24 @@ for (const family of PROGRESSION_EQUIPMENT_CONTENT) {
       },
     ]);
   }
+}
+
+for (const cape of FACTION_CAPE_CONTENT) {
+  const icon = FACTION_CAPE_ICON_BY_FACTION[cape.factionId];
+  if (icon === undefined) {
+    throw new Error(`Missing faction cape icon for: ${cape.factionId}`);
+  }
+  progressionNonWeaponVisualEntries.push([
+    cape.itemId,
+    {
+      name: cape.name,
+      icon,
+      tier: cape.tier,
+      slot: "cape",
+      handling: "one_handed",
+      stats: cape.stats,
+    },
+  ]);
 }
 
 export const PROGRESSION_NON_WEAPON_VISUALS: Readonly<
