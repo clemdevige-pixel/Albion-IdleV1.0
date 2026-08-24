@@ -21,6 +21,11 @@ import {
 } from "../data/itemPower";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 import { getFactionCapeDefinition } from "../data/factionCapeContentCatalog";
+import {
+  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,
+  getArtifactAdvantageTarget,
+} from "../data/factionArtifactWeaponContent";
+import { resolveWeaponArtifactFaction } from "../data/weaponContentCatalog";
 import { getRelicDefinitionByInventoryItemId } from "../data/relicContentCatalog";
 import { RESEARCH_IDS } from "../data/researchContentCatalog";
 
@@ -58,6 +63,10 @@ const AWAKENED_TRAIT_LABELS: Readonly<Record<AwakenedTraitId, string>> = {
 function formatStatValue(value: number): string {
   const rounded = Math.round(value * 10) / 10;
   return rounded.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+}
+
+function formatFactionLabel(factionId: string): string {
+  return FACTION_LABELS[factionId.toLowerCase()] ?? factionId;
 }
 
 function formatAwakenedTraitValue(traitId: AwakenedTraitId, value: number): string {
@@ -99,6 +108,10 @@ export function ItemTooltip({
   const equipmentDefinition = resolveEquipmentInfo(itemId);
   const effectiveDefinition = equipmentDefinition ?? visualDefinition;
   const factionCapeDefinition = getFactionCapeDefinition(itemId);
+  const artifactFaction = resolveWeaponArtifactFaction(itemId);
+  const artifactAdvantageTarget = artifactFaction === undefined
+    ? undefined
+    : getArtifactAdvantageTarget(artifactFaction);
   const relicDefinition = getRelicDefinitionByInventoryItemId(itemId);
   const relicProgress = relicDefinition === undefined
     ? undefined
@@ -206,7 +219,7 @@ export function ItemTooltip({
               </div>
               {relicProgress.chargeObjectives.map((objective) => (
                 <div key={objective.factionId}>
-                  <span>{FACTION_LABELS[objective.factionId] ?? objective.factionId}</span>
+                  <span>{formatFactionLabel(objective.factionId)}</span>
                   <strong>{String(objective.chargeKills)} / {String(objective.requiredChargeKills)}</strong>
                 </div>
               ))}
@@ -298,17 +311,20 @@ export function ItemTooltip({
       {factionCapeDefinition !== undefined && (
         <div className="item-tooltip__stats">
           <div>
-            <span>Faction</span>
-            <strong>{FACTION_LABELS[factionCapeDefinition.factionId] ?? factionCapeDefinition.factionId}</strong>
-          </div>
-          <div>
-            <span>Protection de faction</span>
-            <strong>-{formatStatValue(factionCapeDefinition.dungeonDamageReductionPercent)}% dégâts</strong>
-          </div>
-          <div>
-            <span>Condition</span>
+            <span>Passif de faction</span>
             <strong>
-              Donjons {FACTION_LABELS[factionCapeDefinition.factionId] ?? factionCapeDefinition.factionId} T{String(factionCapeDefinition.tier)}+
+              -{formatStatValue(factionCapeDefinition.dungeonDamageReductionPercent)}% dégâts subis dans les donjons {formatFactionLabel(factionCapeDefinition.factionId)}
+            </strong>
+          </div>
+        </div>
+      )}
+
+      {artifactAdvantageTarget !== undefined && (
+        <div className="item-tooltip__stats">
+          <div>
+            <span>Passif de faction</span>
+            <strong>
+              +{formatStatValue(FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT)}% dégâts infligés dans les donjons {formatFactionLabel(artifactAdvantageTarget)}
             </strong>
           </div>
         </div>
