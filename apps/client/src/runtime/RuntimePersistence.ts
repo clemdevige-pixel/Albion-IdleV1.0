@@ -1,3 +1,4 @@
+import clientPackage from "../../package.json";
 import type {
   AwakenedWeaponService,
   DurabilityStore,
@@ -94,7 +95,7 @@ export class RuntimePersistence {
       repository: this.saveRepository,
       versionManager,
       migrationPipeline,
-      buildVersion: "0.10.5",
+      buildVersion: clientPackage.version,
       seed: 42,
     });
 
