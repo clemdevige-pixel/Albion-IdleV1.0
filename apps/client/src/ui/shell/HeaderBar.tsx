@@ -16,6 +16,12 @@ function formatCompact(value: number): string {
   }).format(value);
 }
 
+function formatExact(value: number): string {
+  return Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 function resolveHeroPortraitStyle(weaponItemId: string | null): CSSProperties {
   const actorManifestId = weaponItemId === null
     ? undefined
@@ -112,7 +118,7 @@ export function HeaderBar(): JSX.Element {
       </button>
 
       <div className="permanent-header__economy" aria-label="Économie et progression">
-        <div className="permanent-header__resource">
+        <div className="permanent-header__resource" tabIndex={0} aria-describedby="header-silver-details">
           <span className="permanent-header__resource-icon" aria-hidden="true">
             <img src="/assets/ui/ui-silver.png" alt="" draggable={false} />
           </span>
@@ -120,14 +126,26 @@ export function HeaderBar(): JSX.Element {
             <small>Silver</small>
             <strong>{formatCompact(header.silver)}</strong>
           </span>
+          <span className="permanent-header__resource-tooltip" id="header-silver-details" role="tooltip">
+            <span><small>Total</small><strong>{formatExact(header.silver)}</strong></span>
+            <span><small>Segment actuel</small><strong>{formatExact(header.segmentSilverPerHour)} / h</strong></span>
+          </span>
         </div>
-        <div className="permanent-header__resource permanent-header__resource--fame">
+        <div
+          className="permanent-header__resource permanent-header__resource--fame"
+          tabIndex={0}
+          aria-describedby="header-fame-details"
+        >
           <span className="permanent-header__resource-icon" aria-hidden="true">
             <img src="/assets/ui/ui-fame.png" alt="" draggable={false} />
           </span>
           <span className="permanent-header__resource-copy">
             <small>Fame</small>
             <strong>{formatCompact(header.totalFame)}</strong>
+          </span>
+          <span className="permanent-header__resource-tooltip" id="header-fame-details" role="tooltip">
+            <span><small>Total</small><strong>{formatExact(header.totalFame)}</strong></span>
+            <span><small>Segment actuel</small><strong>{formatExact(header.segmentFamePerHour)} / h</strong></span>
           </span>
         </div>
       </div>
