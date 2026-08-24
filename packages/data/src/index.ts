@@ -66,8 +66,9 @@ export * from "./config/combat-progression.js";
 export * from "./config/world-bands.js";
 export * from "./config/world-progression-contract.js";
 
-// Shared faction resource identifiers
+// Shared faction resource identifiers and world drop rules
 export * from "./config/faction-runes.js";
+export * from "./config/faction-rune-world-drops.js";
 
 // Player Island configuration
 export * from "./config/island.js";
