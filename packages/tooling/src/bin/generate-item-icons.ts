@@ -8,13 +8,13 @@ const MASTER_ROOT = join(REPO_ROOT, "apps/client/assets/items/masters");
 const LEGACY_MASTER_ROOT = join(REPO_ROOT, "apps/client/public/assets/items");
 const ICON_ROOT = join(REPO_ROOT, "apps/client/public/assets/items/icons");
 const TEMP_ROOT = join(REPO_ROOT, ".tmp/item-icon-generator");
-const GENERATOR_FILE = resolve(import.meta.dirname, "generate-item-icons.ts");
 const SHARP_CLI = "sharp-cli@6.0.0";
 const ICON_SIZE = 128;
 const MAX_VISIBLE_EXTENT = 120;
 const MIN_VISIBLE_EXTENT = 88;
 const TARGET_ALPHA_DENSITY = 0.28;
 const MIN_EDGE_MARGIN = 2;
+const MAX_CENTROID_CORRECTION_RATIO = 0.08;
 
 interface AlphaMetrics {
   readonly width: number;
@@ -32,17 +32,11 @@ interface SourceEntry {
 
 function listPngFilesRecursive(directory: string): string[] {
   if (!existsSync(directory)) return [];
-
   const files: string[] = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...listPngFilesRecursive(path));
-      continue;
-    }
-    if (entry.isFile() && extname(entry.name).toLowerCase() === ".png") {
-      files.push(path);
-    }
+    if (entry.isDirectory()) files.push(...listPngFilesRecursive(path));
+    else if (entry.isFile() && extname(entry.name).toLowerCase() === ".png") files.push(path);
   }
   return files.sort((a, b) => a.localeCompare(b));
 }
@@ -57,63 +51,52 @@ function listFlatPngFiles(directory: string): string[] {
 
 function resolveCanonicalSources(): SourceEntry[] {
   return listPngFilesRecursive(MASTER_ROOT).map((source) => {
-    const relativePath = relative(MASTER_ROOT, source);
-    const outputFile = join(ICON_ROOT, relativePath);
-    return {
-      source,
-      outputDir: dirname(outputFile),
-      outputFile,
-    };
+    const outputFile = join(ICON_ROOT, relative(MASTER_ROOT, source));
+    return { source, outputDir: dirname(outputFile), outputFile };
   });
 }
 
 function resolveLegacyFallbackSources(canonical: readonly SourceEntry[]): SourceEntry[] {
-  // Transitional only: while old flat public masters still exist, keep regenerating
-  // already-versioned icons that do not yet have a canonical master. New assets must
-  // always be placed under MASTER_ROOT and never rely on this fallback.
   const canonicalOutputs = new Set(canonical.map((entry) => entry.outputFile));
   const legacyByFilename = new Map(
     listFlatPngFiles(LEGACY_MASTER_ROOT).map((source) => [basename(source), source] as const),
   );
-
   const fallback: SourceEntry[] = [];
   for (const existingIcon of listPngFilesRecursive(ICON_ROOT)) {
     if (canonicalOutputs.has(existingIcon)) continue;
     const source = legacyByFilename.get(basename(existingIcon));
-    if (source === undefined) continue;
-    fallback.push({
-      source,
-      outputDir: dirname(existingIcon),
-      outputFile: existingIcon,
-    });
+    if (source !== undefined) fallback.push({ source, outputDir: dirname(existingIcon), outputFile: existingIcon });
   }
   return fallback;
 }
 
-function needsGeneration(source: string, outputFile: string): boolean {
-  if (!existsSync(outputFile)) return true;
+function getArgValue(name: string): string | undefined {
+  const exact = process.argv.find((arg) => arg.startsWith(`${name}=`));
+  if (exact !== undefined) return exact.slice(name.length + 1);
+  const index = process.argv.indexOf(name);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+}
 
-  const outputModifiedAt = statSync(outputFile).mtimeMs;
-  const sourceModifiedAt = statSync(source).mtimeMs;
-  const generatorModifiedAt = statSync(GENERATOR_FILE).mtimeMs;
-  return outputModifiedAt < Math.max(sourceModifiedAt, generatorModifiedAt);
+const force = process.argv.includes("--force");
+const only = getArgValue("--only")?.trim().toLowerCase();
+
+function matchesOnly(entry: SourceEntry): boolean {
+  if (only === undefined || only.length === 0) return true;
+  const sourceRelative = relative(MASTER_ROOT, entry.source).replaceAll("\\", "/").toLowerCase();
+  const outputRelative = relative(ICON_ROOT, entry.outputFile).replaceAll("\\", "/").toLowerCase();
+  return sourceRelative.includes(only) || outputRelative.includes(only) || basename(entry.source).toLowerCase().includes(only);
+}
+
+function needsGeneration(source: string, outputFile: string): boolean {
+  if (force || !existsSync(outputFile)) return true;
+  return statSync(outputFile).mtimeMs < statSync(source).mtimeMs;
 }
 
 function runSharp(args: readonly string[], context: string): void {
   const npmExecPath = process.env.npm_execpath;
-  const command = npmExecPath === undefined
-    ? (process.platform === "win32" ? "pnpm.cmd" : "pnpm")
-    : process.execPath;
-  const commandArgs = npmExecPath === undefined
-    ? ["dlx", SHARP_CLI, ...args]
-    : [npmExecPath, "dlx", SHARP_CLI, ...args];
-
-  const result = spawnSync(command, commandArgs, {
-    cwd: REPO_ROOT,
-    encoding: "utf-8",
-    stdio: "pipe",
-  });
-
+  const command = npmExecPath === undefined ? (process.platform === "win32" ? "pnpm.cmd" : "pnpm") : process.execPath;
+  const commandArgs = npmExecPath === undefined ? ["dlx", SHARP_CLI, ...args] : [npmExecPath, "dlx", SHARP_CLI, ...args];
+  const result = spawnSync(command, commandArgs, { cwd: REPO_ROOT, encoding: "utf-8", stdio: "pipe" });
   if (result.status !== 0) {
     const systemError = result.error === undefined ? "" : String(result.error);
     const details = [systemError, result.stdout, result.stderr].filter(Boolean).join("\n").trim();
@@ -133,9 +116,8 @@ function paethPredictor(a: number, b: number, c: number): number {
 
 function readRgbaAlphaMetrics(file: string): AlphaMetrics {
   const png = readFileSync(file);
-  const signature = png.subarray(0, 8);
   const expected = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  if (!signature.equals(expected)) throw new Error(`Generated intermediate is not a PNG: ${file}`);
+  if (!png.subarray(0, 8).equals(expected)) throw new Error(`Generated intermediate is not a PNG: ${file}`);
 
   let offset = 8;
   let width = 0;
@@ -144,7 +126,6 @@ function readRgbaAlphaMetrics(file: string): AlphaMetrics {
   let colorType = 0;
   let interlace = 0;
   const idat: Buffer[] = [];
-
   while (offset + 12 <= png.length) {
     const length = png.readUInt32BE(offset);
     const type = png.toString("ascii", offset + 4, offset + 8);
@@ -156,11 +137,8 @@ function readRgbaAlphaMetrics(file: string): AlphaMetrics {
       bitDepth = png[dataStart + 8] ?? 0;
       colorType = png[dataStart + 9] ?? 0;
       interlace = png[dataStart + 12] ?? 0;
-    } else if (type === "IDAT") {
-      idat.push(png.subarray(dataStart, dataEnd));
-    } else if (type === "IEND") {
-      break;
-    }
+    } else if (type === "IDAT") idat.push(png.subarray(dataStart, dataEnd));
+    else if (type === "IEND") break;
     offset = dataEnd + 4;
   }
 
@@ -197,7 +175,6 @@ function readRgbaAlphaMetrics(file: string): AlphaMetrics {
       row[x] = value;
     }
     rawOffset += stride;
-
     for (let px = 0; px < width; px += 1) {
       const alpha = row[(px * bytesPerPixel) + 3] ?? 0;
       if (alpha > 0) opaqueCount += 1;
@@ -229,43 +206,36 @@ function generateIcon(source: string, outputDir: string): void {
   rmSync(tempDir, { recursive: true, force: true });
   mkdirSync(tempDir, { recursive: true });
 
-  runSharp([
-    "-i", source,
-    "-o", tempDir,
-    "-f", "png",
-    "trim", "0",
-    "--",
-    "ensureAlpha", "1",
-  ], `prepare ${basename(source)}`);
-
+  runSharp(["-i", source, "-o", tempDir, "-f", "png", "trim", "0", "--", "ensureAlpha", "1"], `prepare ${basename(source)}`);
   const trimmed = join(tempDir, basename(source));
   const metrics = readRgbaAlphaMetrics(trimmed);
 
   const densityScale = Math.sqrt(TARGET_ALPHA_DENSITY / Math.max(metrics.density, 0.01));
-  const targetExtent = clamp(
-    Math.round(MAX_VISIBLE_EXTENT * Math.min(1, densityScale)),
-    MIN_VISIBLE_EXTENT,
-    MAX_VISIBLE_EXTENT,
-  );
+  const targetExtent = clamp(Math.round(MAX_VISIBLE_EXTENT * Math.min(1, densityScale)), MIN_VISIBLE_EXTENT, MAX_VISIBLE_EXTENT);
   const longest = Math.max(metrics.width, metrics.height);
   const scale = targetExtent / longest;
   const resizedWidth = Math.max(1, Math.round(metrics.width * scale));
   const resizedHeight = Math.max(1, Math.round(metrics.height * scale));
 
-  const centroidX = metrics.centroidX * scale;
-  const centroidY = metrics.centroidY * scale;
+  const geometricCenterX = resizedWidth / 2;
+  const geometricCenterY = resizedHeight / 2;
+  const centroidOffsetX = ((metrics.centroidX - (metrics.width / 2)) * scale);
+  const centroidOffsetY = ((metrics.centroidY - (metrics.height / 2)) * scale);
+  const correctedCenterX = geometricCenterX + clamp(
+    centroidOffsetX,
+    -resizedWidth * MAX_CENTROID_CORRECTION_RATIO,
+    resizedWidth * MAX_CENTROID_CORRECTION_RATIO,
+  );
+  const correctedCenterY = geometricCenterY + clamp(
+    centroidOffsetY,
+    -resizedHeight * MAX_CENTROID_CORRECTION_RATIO,
+    resizedHeight * MAX_CENTROID_CORRECTION_RATIO,
+  );
+
   const maxLeft = ICON_SIZE - MIN_EDGE_MARGIN - resizedWidth;
   const maxTop = ICON_SIZE - MIN_EDGE_MARGIN - resizedHeight;
-  const left = clamp(
-    Math.round((ICON_SIZE / 2) - centroidX),
-    MIN_EDGE_MARGIN,
-    Math.max(MIN_EDGE_MARGIN, maxLeft),
-  );
-  const top = clamp(
-    Math.round((ICON_SIZE / 2) - centroidY),
-    MIN_EDGE_MARGIN,
-    Math.max(MIN_EDGE_MARGIN, maxTop),
-  );
+  const left = clamp(Math.round((ICON_SIZE / 2) - correctedCenterX), MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxLeft));
+  const top = clamp(Math.round((ICON_SIZE / 2) - correctedCenterY), MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxTop));
   const right = ICON_SIZE - resizedWidth - left;
   const bottom = ICON_SIZE - resizedHeight - top;
 
@@ -288,10 +258,12 @@ const canonicalSources = resolveCanonicalSources();
 const sources = [
   ...canonicalSources,
   ...resolveLegacyFallbackSources(canonicalSources),
-].sort((a, b) => a.outputFile.localeCompare(b.outputFile));
+].sort((a, b) => a.outputFile.localeCompare(b.outputFile)).filter(matchesOnly);
 
 if (sources.length === 0) {
-  throw new Error(`No item masters found. Drop PNG masters anywhere under ${MASTER_ROOT}.`);
+  throw new Error(only === undefined
+    ? `No item masters found. Drop PNG masters anywhere under ${MASTER_ROOT}.`
+    : `No item master matched --only=${only}.`);
 }
 
 let generatedCount = 0;
@@ -302,7 +274,6 @@ for (const { source, outputDir, outputFile } of sources) {
     console.log(`skipped ${relative(ICON_ROOT, outputFile)}`);
     continue;
   }
-
   generateIcon(source, outputDir);
   generatedCount += 1;
   console.log(`generated ${relative(ICON_ROOT, outputFile)}`);
