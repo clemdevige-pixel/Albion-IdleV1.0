@@ -122,15 +122,16 @@ export class ProductionActions {
   }
 
   toggleRefining(target: RefiningToggleTarget): boolean {
-    const request = typeof target === "string" ? { family: target } : target;
-    const result = this.toggleRefiningRuntime(request.family, request.cycles);
+    const family = typeof target === "string" ? target : target.family;
+    const cycles = typeof target === "string" ? undefined : target.cycles;
+    const result = this.toggleRefiningRuntime(family, cycles);
     syncInventoryToBridge(
       this.deps.bridge,
       this.deps.inventoryManager,
       this.deps.heroId,
     );
-    this.deps.productionBridge.syncGathering(request.family);
-    this.deps.productionBridge.syncRefining(request.family);
+    this.deps.productionBridge.syncGathering(family);
+    this.deps.productionBridge.syncRefining(family);
     return result.action === "started" || result.action === "stopped" || result.action === "completed";
   }
 
