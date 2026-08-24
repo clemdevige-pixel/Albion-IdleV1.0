@@ -33,9 +33,9 @@ describe("CloudSaveSynchronizer", () => {
       serverSavedAt: 1_000,
       serverNow: 11_000,
     });
-    const upload = vi.fn(async () => undefined);
+    const upload = vi.fn(() => Promise.resolve());
     const client = {
-      get: vi.fn(async () => cloud),
+      get: vi.fn(() => Promise.resolve(cloud)),
       upload,
     } as unknown as CloudSaveClient;
 
