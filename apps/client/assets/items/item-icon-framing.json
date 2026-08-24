@@ -1,7 +1,7 @@
 {
   "armes/bloodletter.png": {
     "offsetX": 8,
-    "offsetY": -4,
-    "scale": 1
+    "offsetY": -6,
+    "scale": 0.9
   }
 }
