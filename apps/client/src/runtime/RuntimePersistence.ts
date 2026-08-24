@@ -38,7 +38,12 @@ import {
   createRuntimeMigrationPipeline,
 } from "./saveMigrations";
 import { LEGACY_SAVE_SLOT_ID, getSaveBackupSlotId } from "./saveSlots";
-import { resolveTrustedOfflineElapsedMs } from "./trustedOfflineElapsed.js";
+import {
+  TRUSTED_OFFLINE_RESOLVED_THROUGH_KEY,
+  resolveTrustedOfflineElapsedMs,
+  resolveTrustedOfflineResolvedThrough,
+  resolveTrustedOfflineWindow,
+} from "./trustedOfflineElapsed.js";
 import { dashboardLayoutSaveProvider } from "./DashboardLayoutSaveProvider";
 import type { SaveFormat } from "@game/persistence";
 
@@ -69,6 +74,7 @@ export class RuntimePersistence {
   private readonly backupSlotId: string;
   private readonly backgroundProviders: SaveProvider[] = [];
   private lastLoadSource: SaveLoadSource | undefined = undefined;
+  private trustedOfflineResolvedThrough: number | undefined = undefined;
   private loadFailed: boolean = false;
   private isAutosaving: boolean = false;
   private autoSaveIntervalId: number | undefined = undefined;
@@ -153,7 +159,12 @@ export class RuntimePersistence {
       this.saveSlotId,
       this.backupSlotId,
     );
-    this.saveManager.save(this.saveSlotId, tickCounter);
+    const extra = this.trustedOfflineResolvedThrough === undefined
+      ? undefined
+      : {
+          [TRUSTED_OFFLINE_RESOLVED_THROUGH_KEY]: this.trustedOfflineResolvedThrough,
+        };
+    this.saveManager.save(this.saveSlotId, tickCounter, extra);
     this.onLocalSave?.(this.saveRepository.get(this.saveSlotId));
   }
 
@@ -165,25 +176,47 @@ export class RuntimePersistence {
       (slotId) => { this.saveManager.load(slotId); },
     );
 
-    const elapsedMs = this.getTrustedOfflineElapsedMs();
-    if (elapsedMs <= 0) return;
+    const loadedSave = this.getLastLoadedSave();
+    if (loadedSave === undefined) return;
 
-    for (const provider of this.backgroundProviders) {
-      provider.resolveBackground?.(elapsedMs);
+    const existingResolvedThrough = resolveTrustedOfflineResolvedThrough(loadedSave);
+    if (existingResolvedThrough !== undefined) {
+      this.trustedOfflineResolvedThrough = Math.max(
+        this.trustedOfflineResolvedThrough ?? 0,
+        existingResolvedThrough,
+      );
     }
 
-    // Consume the trusted elapsed window immediately so a second manual load
-    // cannot replay the same offline rewards before the next cloud sync.
+    const window = resolveTrustedOfflineWindow(loadedSave);
+    if (window === undefined || window.elapsedMs <= 0) return;
+
+    for (const provider of this.backgroundProviders) {
+      provider.resolveBackground?.(window.elapsedMs);
+    }
+
+    this.trustedOfflineResolvedThrough = Math.max(
+      this.trustedOfflineResolvedThrough ?? 0,
+      window.serverNow,
+    );
+
+    // Persist both the resolved gameplay state and the trusted server cursor.
+    // Cloud reconciliation may attach the same server window again on reload;
+    // the cursor makes only the previously unseen suffix eligible next time.
     this.save();
   }
 
   public getTrustedOfflineElapsedMs(): number {
-    if (this.lastLoadSource === undefined) return 0;
+    const save = this.getLastLoadedSave();
+    return save === undefined ? 0 : resolveTrustedOfflineElapsedMs(save);
+  }
+
+  private getLastLoadedSave(): SaveFormat | undefined {
+    if (this.lastLoadSource === undefined) return undefined;
     const slotId = this.lastLoadSource === "primary"
       ? this.saveSlotId
       : this.backupSlotId;
-    if (!this.saveRepository.has(slotId)) return 0;
-    return resolveTrustedOfflineElapsedMs(this.saveRepository.get(slotId));
+    if (!this.saveRepository.has(slotId)) return undefined;
+    return this.saveRepository.get(slotId);
   }
 
   /** Creates a validated portable backup of the latest primary save. */
