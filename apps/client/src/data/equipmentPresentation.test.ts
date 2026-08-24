@@ -15,13 +15,13 @@ describe("weapon equipment presentation", () => {
 
   it("keeps specialization-specific actor/profile/icon choices explicit", () => {
     expect(resolveEquipmentPresentation("item_weapon_sword_t4_broadsword")).toEqual({
-      itemIcon: "item-broadsword-pixel-v1.png",
+      itemIcon: "broadsword.png",
       actorManifestId: "hero_broadsword",
       combatProfileId: "melee",
     });
 
     expect(resolveEquipmentPresentation("item_weapon_bow_t4_longbow")).toEqual({
-      itemIcon: "item-longbow-pixel-v1.png",
+      itemIcon: "longbow.png",
       actorManifestId: "hero_longbow",
       combatProfileId: "projectile",
       combatPresentation: {
@@ -32,7 +32,7 @@ describe("weapon equipment presentation", () => {
     });
 
     expect(resolveEquipmentPresentation("item_weapon_bow_t4_badon")).toEqual({
-      itemIcon: "item-badon-pixel-v1.png",
+      itemIcon: "badon bow.png",
       actorManifestId: "hero_bow",
       combatProfileId: "projectile",
       combatPresentation: {
@@ -43,7 +43,7 @@ describe("weapon equipment presentation", () => {
     });
 
     expect(resolveEquipmentPresentation("item_weapon_staff_t4_infernal")).toEqual({
-      itemIcon: "item-fire-staff-pixel-v1.png",
+      itemIcon: "infernal staff.png",
       actorManifestId: "hero_fire_staff",
       combatProfileId: "projectile",
       combatPresentation: {
@@ -51,6 +51,15 @@ describe("weapon equipment presentation", () => {
         projectileId: "fireball",
         releaseDelayMs: 355,
       },
+    });
+  });
+
+  it("exposes artifact item icons without inventing combat actor art", () => {
+    expect(resolveEquipmentPresentation("item_weapon_sword_clarent_t4")).toEqual({
+      itemIcon: "clarent blade.png",
+    });
+    expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t8")).toEqual({
+      itemIcon: "deathgivers.png",
     });
   });
 
