@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { EnchantmentLevel } from "@game/gameplay";
+import { getFragmentAssemblyRecipe } from "../data/specialCraftRecipes.js";
 import { ItemTooltip } from "./ItemTooltip";
 
 interface ItemHoverTooltipProps {
@@ -19,6 +20,8 @@ export function ItemHoverTooltip({
   children,
 }: ItemHoverTooltipProps): JSX.Element {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const assemblyRecipe = getFragmentAssemblyRecipe(itemId);
+  const requiredFragments = assemblyRecipe?.requirements[0]?.quantity;
 
   return (
     <span
@@ -47,6 +50,11 @@ export function ItemHoverTooltip({
             instanceId={instanceId}
             enchantmentOverride={enchantmentOverride}
           />
+          {assemblyRecipe !== undefined && requiredFragments !== undefined && (
+            <div className="item-tooltip__hint">
+              Double-clic dans l’inventaire : assembler {String(requiredFragments)} fragments en 1 {assemblyRecipe.name}. Stock : {String(quantity)} / {String(requiredFragments)}.
+            </div>
+          )}
         </div>,
         document.body,
       )}
