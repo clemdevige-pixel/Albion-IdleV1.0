@@ -144,7 +144,10 @@ describe("Academy research content", () => {
       type: "research_unlock",
       unlockId: RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed,
     });
-    expect(sanctuary?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.dungeonSystem]);
+    expect(sanctuary?.unlockIds).toEqual([
+      RESEARCH_UNLOCK_IDS.dungeonSystem,
+      RESEARCH_UNLOCK_IDS.factionRuneWorldDrop,
+    ]);
   });
 
   it("keeps every authored Research gated by its Academy tier", () => {
