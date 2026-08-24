@@ -6,6 +6,8 @@ export interface HeaderUiModel {
   readonly silver: number;
   readonly incomeRate: number;
   readonly totalFame: number;
+  readonly segmentSilverPerHour: number;
+  readonly segmentFamePerHour: number;
   readonly itemPower: number;
   readonly weaponItemId: string | null;
   readonly biomeName: string;
@@ -20,6 +22,8 @@ function selectHeaderUiModel(state: GameBridgeState): HeaderUiModel {
     silver: state.wallet.silver,
     incomeRate: state.wallet.incomeRate,
     totalFame: state.progression.totalFame,
+    segmentSilverPerHour: state.segmentSilverPerHour,
+    segmentFamePerHour: state.segmentFamePerHour,
     itemPower: calculateAverageEquippedItemPower(
       state.equipment,
       state.progression.masteries,
