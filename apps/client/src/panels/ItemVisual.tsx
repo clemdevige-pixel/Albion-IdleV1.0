@@ -48,15 +48,33 @@ const NON_WEAPON_ITEM_VISUALS: Readonly<Record<string, ItemVisualDefinition>> = 
 };
 
 const CONSUMABLE_VISUALS: Readonly<Record<string, ConsumableVisualDefinition>> = {
-  item_health_potion: { name: "Potion de soin", icon: "item-health-potion-pixel-v1.png" },
+  item_health_potion: {
+    name: "Potion de soin",
+    icon: "icons/consommables/item-health-potion-pixel-v1.png",
+  },
 };
 
 const ENCHANTMENT_RESOURCE_VISUALS: Readonly<Record<string, EnchantmentResourceVisualDefinition>> = {
-  item_resource_enchantment_shard_t4: { name: "Éclat d’enchantement T4", icon: "eclat_enchantement_t4_bleu.png" },
-  item_resource_enchantment_shard_t5: { name: "Éclat d’enchantement T5", icon: "eclat_enchantement_t5_rouge.png" },
-  item_resource_enchantment_shard_t6: { name: "Éclat d’enchantement T6", icon: "eclat_enchantement_t6_orange.png" },
-  item_resource_enchantment_shard_t7: { name: "Éclat d’enchantement T7", icon: "eclat_enchantement_t7_jaune.png" },
-  item_resource_enchantment_shard_t8: { name: "Éclat d’enchantement T8", icon: "eclat_enchantement_t8_blanc.png" },
+  item_resource_enchantment_shard_t4: {
+    name: "Éclat d’enchantement T4",
+    icon: "icons/speciaux/eclat_enchantement_t4_bleu.png",
+  },
+  item_resource_enchantment_shard_t5: {
+    name: "Éclat d’enchantement T5",
+    icon: "icons/speciaux/eclat_enchantement_t5_rouge.png",
+  },
+  item_resource_enchantment_shard_t6: {
+    name: "Éclat d’enchantement T6",
+    icon: "icons/speciaux/eclat_enchantement_t6_orange.png",
+  },
+  item_resource_enchantment_shard_t7: {
+    name: "Éclat d’enchantement T7",
+    icon: "icons/speciaux/eclat_enchantement_t7_jaune.png",
+  },
+  item_resource_enchantment_shard_t8: {
+    name: "Éclat d’enchantement T8",
+    icon: "icons/speciaux/eclat_enchantement_t8_blanc.png",
+  },
 };
 
 const FACTION_DISPLAY_NAMES: Readonly<Record<string, string>> = {
