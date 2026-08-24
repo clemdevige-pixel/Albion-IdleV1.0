@@ -25,7 +25,6 @@ function setup(active = true) {
   inventory.addQuantity(heroId, DEFINITION.keyItemId, 1);
   const dungeonRuntime = new DungeonRuntime([DEFINITION]);
   if (active) dungeonRuntime.start(DEFINITION.id, heroId, inventory);
-
   const encounterSource = { spawnCurrentEncounter: () => undefined } as unknown as DungeonCombatEncounterSource;
   return { dungeonRuntime, router: new DungeonCombatRuntimeRouter(dungeonRuntime, encounterSource) };
 }
@@ -34,16 +33,14 @@ describe("DungeonCombatRuntimeRouter", () => {
   it("uses continuous HP/cooldown policy while a dungeon run is active", () => {
     const { router } = setup(true);
     expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({ locationChangedAfterVictory: true, enteringBoss: true })).toBe(false);
-    expect(router.flowPolicy.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 0 })).toBe(false);
+    expect(router.flowPolicy.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 0 })).toBe(true);
+    expect(router.flowPolicy.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 1 })).toBe(false);
   });
 
   it("routes victories into DungeonRuntime and advances the authored encounter", () => {
     const { dungeonRuntime, router } = setup(true);
     let worldVictories = 0;
-    expect(router.onVictory(() => {
-      worldVictories += 1;
-      return { enteredNewSegment: true };
-    })).toEqual({ enteredNewSegment: false });
+    expect(router.onVictory(() => { worldVictories += 1; return { enteredNewSegment: true }; })).toEqual({ enteredNewSegment: false });
     expect(worldVictories).toBe(0);
     expect(dungeonRuntime.activeRun?.encounterIndex).toBe(1);
     expect(dungeonRuntime.getActiveEncounter()?.id).toBe("boss");
@@ -53,26 +50,15 @@ describe("DungeonCombatRuntimeRouter", () => {
     const { router } = setup(true);
     router.onVictory(() => ({ enteredNewSegment: false }));
     router.onVictory(() => ({ enteredNewSegment: false }));
-
     expect(router.isDungeonActive()).toBe(false);
-    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({
-      locationChangedAfterVictory: false,
-      enteringBoss: false,
-    })).toBe(true);
-    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({
-      locationChangedAfterVictory: false,
-      enteringBoss: false,
-    })).toBe(false);
+    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({ locationChangedAfterVictory: false, enteringBoss: false })).toBe(true);
+    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({ locationChangedAfterVictory: false, enteringBoss: false })).toBe(false);
   });
 
   it("heals after every completed world segment, including farm-mode repeats", () => {
     const { router } = setup(false);
     router.onVictory(() => ({ enteredNewSegment: true }));
-
-    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({
-      locationChangedAfterVictory: false,
-      enteringBoss: false,
-    })).toBe(true);
+    expect(router.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({ locationChangedAfterVictory: false, enteringBoss: false })).toBe(true);
   });
 
   it("routes defeat into DungeonRuntime without advancing world progression", () => {
@@ -87,10 +73,7 @@ describe("DungeonCombatRuntimeRouter", () => {
     const { router } = setup(false);
     let worldVictories = 0;
     let worldDefeats = 0;
-    expect(router.onVictory(() => {
-      worldVictories += 1;
-      return { enteredNewSegment: false };
-    })).toEqual({ enteredNewSegment: false });
+    expect(router.onVictory(() => { worldVictories += 1; return { enteredNewSegment: false }; })).toEqual({ enteredNewSegment: false });
     router.onDefeat(() => { worldDefeats += 1; });
     expect(worldVictories).toBe(1);
     expect(worldDefeats).toBe(1);
