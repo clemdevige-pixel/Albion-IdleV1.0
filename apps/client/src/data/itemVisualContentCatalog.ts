@@ -27,16 +27,16 @@ export interface CatalogResourceVisualDefinition {
 
 const NON_WEAPON_ICON_BY_FAMILY: Readonly<Record<string, string>> = {
   reinforced_shield: "item-wooden-shield-pixel-v1.png",
-  reinforced_helmet: "item-iron-helmet-pixel-v2.png",
-  leather_armor: "item-leather-armor-pixel-v2.png",
-  leather_boots: "item-leather-boots-pixel-v2.png",
+  reinforced_helmet: "icons/equipements/item-iron-helmet-pixel-v2.png",
+  leather_armor: "icons/equipements/item-leather-armor-pixel-v2.png",
+  leather_boots: "icons/equipements/item-leather-boots-pixel-v2.png",
 };
 
 const FACTION_CAPE_ICON_BY_FACTION: Readonly<Record<string, string>> = {
-  keeper: "CAPE_KEEPER.png",
-  heretic: "CAPE_HERETIC.png",
-  undead: "CAPE_UNDEAD.png",
-  morgana: "CAPE_MORGANA.png",
+  keeper: "icons/equipements/CAPE_KEEPER.png",
+  heretic: "icons/equipements/CAPE_HERETIC.png",
+  undead: "icons/equipements/CAPE_UNDEAD.png",
+  morgana: "icons/equipements/CAPE_MORGANA.png",
 };
 
 const progressionNonWeaponVisualEntries: Array<readonly [string, CatalogItemVisualDefinition]> = [];
