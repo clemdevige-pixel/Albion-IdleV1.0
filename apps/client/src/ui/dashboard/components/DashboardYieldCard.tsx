@@ -30,9 +30,14 @@ export function DashboardYieldCard({ yieldData }: DashboardYieldCardProps): JSX.
   );
   const tracked = trackingUnlocked ? tracking.selectedResource : undefined;
   const trackedEntry = tracked?.entries[0];
-  const itemYieldPerHour = trackedEntry === undefined
+  const projectedItemYield = trackedEntry === undefined
     ? 0
     : resolveDashboardItemYieldPerHour(state)[trackedEntry.itemId] ?? 0;
+  const itemYieldPerHour = trackedEntry !== undefined
+    && isDungeonDiscoveryGatedItem(trackedEntry.itemId)
+    && !services.isDungeonSystemUnlocked()
+    ? 0
+    : projectedItemYield;
   const trackedStock = trackedEntry === undefined
     ? 0
     : services.inventoryManager.getTotalQuantity(services.heroId, trackedEntry.itemId)
@@ -65,4 +70,10 @@ export function DashboardYieldCard({ yieldData }: DashboardYieldCardProps): JSX.
       </dl>
     </DashboardCard>
   );
+}
+
+function isDungeonDiscoveryGatedItem(itemId: string): boolean {
+  return itemId.startsWith("item_resource_dungeon_key_")
+    || itemId.startsWith("item_resource_key_fragment_")
+    || itemId.startsWith("item_resource_rune_faction_");
 }
