@@ -29,12 +29,13 @@ describe("CombatFlowPolicy", () => {
     expect(WORLD_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 1 })).toBe(false);
   });
 
-  it("keeps dungeon HP continuous but resets cooldowns for every encounter", () => {
+  it("keeps dungeon HP continuous and resets cooldowns only when the dungeon starts", () => {
     expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldRestoreHeroHealthBeforeEncounter({
       locationChangedAfterVictory: true,
       enteringBoss: true,
     })).toBe(false);
     expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 0 })).toBe(true);
-    expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 4 })).toBe(true);
+    expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 1 })).toBe(false);
+    expect(CONTINUOUS_COMBAT_FLOW_POLICY.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: 4 })).toBe(false);
   });
 });
