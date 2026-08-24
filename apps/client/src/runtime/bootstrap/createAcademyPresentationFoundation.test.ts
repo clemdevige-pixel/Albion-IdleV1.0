@@ -78,5 +78,11 @@ describe("createAcademyPresentationFoundation", () => {
       expect.objectContaining({ id: "research_parallel", remainingDurationMs: 30_000 }),
     ]);
     expect(active.expeditions[0]).toMatchObject({ active: true, activeSlotIndex: 0 });
+
+    expect(active.cancelExpedition(0).ok).toBe(true);
+    expect(foundation.getModel().expeditions[0]).toMatchObject({
+      active: false,
+      startState: "available",
+    });
   });
 });
