@@ -2,10 +2,16 @@ import {
   WEAPON_FAMILIES,
   resolveWeaponPresentation,
   type WeaponFamilyId,
-  type WeaponPresentationContent,
+  type WeaponProjectilePresentation,
 } from "./weaponContentCatalog.js";
+import { resolveWeaponItemIcon } from "./weaponItemVisualCatalog.js";
 
-export type EquipmentPresentationDefinition = WeaponPresentationContent;
+export interface EquipmentPresentationDefinition {
+  readonly itemIcon: string;
+  readonly actorManifestId?: string;
+  readonly combatProfileId?: string;
+  readonly combatPresentation?: WeaponProjectilePresentation;
+}
 
 export interface WeaponFamilyCraftPresentation {
   readonly label: string;
@@ -27,14 +33,31 @@ const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
 };
 
 /**
- * Equipped weapon presentation is authored directly on the authoritative
- * weapon specialization content. No specialization-specific routing lives here.
+ * Item icon presentation is available for every authored weapon. Combat actor
+ * presentation remains optional until the corresponding combat art exists.
  */
 export function resolveEquipmentPresentation(
   itemId: string | undefined,
 ): EquipmentPresentationDefinition | undefined {
-  if (itemId === undefined) return undefined;
-  return resolveWeaponPresentation(itemId);
+  const itemIcon = resolveWeaponItemIcon(itemId);
+  if (itemIcon === undefined) return undefined;
+
+  const combatPresentation = itemId === undefined
+    ? undefined
+    : resolveWeaponPresentation(itemId);
+
+  return {
+    itemIcon,
+    ...(combatPresentation?.actorManifestId === undefined
+      ? {}
+      : { actorManifestId: combatPresentation.actorManifestId }),
+    ...(combatPresentation?.combatProfileId === undefined
+      ? {}
+      : { combatProfileId: combatPresentation.combatProfileId }),
+    ...(combatPresentation?.combatPresentation === undefined
+      ? {}
+      : { combatPresentation: combatPresentation.combatPresentation }),
+  };
 }
 
 export function resolveWeaponFamilyCraftPresentation(
