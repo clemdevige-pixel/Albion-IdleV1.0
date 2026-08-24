@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { getFactionRuneItemId } from "@game/data";
 import { getNextEnchantmentRecipe, scaleEnchantmentRecipe } from "@game/gameplay";
+import { describe, expect, it } from "vitest";
 import {
   FACTION_CAPE_CONTENT,
   FACTION_CAPE_CRAFT_RECIPES,
   resolveFactionCapeDungeonDamageReductionPercent,
 } from "./factionCapeContentCatalog.js";
-import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import {
   resolveEnchantmentItemInfo,
   resolveEquipmentInfo,
