@@ -7,6 +7,7 @@ const REPO_ROOT = resolve(import.meta.dirname, "../../../..");
 const MASTER_ROOT = join(REPO_ROOT, "apps/client/assets/items/masters");
 const LEGACY_MASTER_ROOT = join(REPO_ROOT, "apps/client/public/assets/items");
 const ICON_ROOT = join(REPO_ROOT, "apps/client/public/assets/items/icons");
+const FRAMING_CONFIG_FILE = join(REPO_ROOT, "apps/client/assets/items/item-icon-framing.json");
 const TEMP_ROOT = join(REPO_ROOT, ".tmp/item-icon-generator");
 const SHARP_CLI = "sharp-cli@6.0.0";
 const ICON_SIZE = 128;
@@ -19,14 +20,41 @@ interface AlphaMetrics {
   readonly width: number;
   readonly height: number;
   readonly density: number;
-  readonly centroidX: number;
-  readonly centroidY: number;
 }
 
 interface SourceEntry {
   readonly source: string;
   readonly outputDir: string;
   readonly outputFile: string;
+}
+
+interface ItemIconFraming {
+  readonly offsetX?: number;
+  readonly offsetY?: number;
+  readonly scale?: number;
+}
+
+type ItemIconFramingConfig = Readonly<Record<string, ItemIconFraming>>;
+
+function normalizeRelativePath(path: string): string {
+  return path.replaceAll("\\", "/");
+}
+
+function loadFramingConfig(): ItemIconFramingConfig {
+  if (!existsSync(FRAMING_CONFIG_FILE)) return {};
+  const parsed = JSON.parse(readFileSync(FRAMING_CONFIG_FILE, "utf-8")) as unknown;
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(`Invalid item icon framing config: ${FRAMING_CONFIG_FILE}`);
+  }
+  return parsed as ItemIconFramingConfig;
+}
+
+const framingConfig = loadFramingConfig();
+
+function getFraming(source: string): ItemIconFraming | undefined {
+  const sourceRelative = normalizeRelativePath(relative(MASTER_ROOT, source));
+  if (sourceRelative.startsWith("../")) return undefined;
+  return framingConfig[sourceRelative];
 }
 
 function listPngFilesRecursive(directory: string): string[] {
@@ -81,14 +109,18 @@ const only = getArgValue("--only")?.trim().toLowerCase();
 
 function matchesOnly(entry: SourceEntry): boolean {
   if (only === undefined || only.length === 0) return true;
-  const sourceRelative = relative(MASTER_ROOT, entry.source).replaceAll("\\", "/").toLowerCase();
-  const outputRelative = relative(ICON_ROOT, entry.outputFile).replaceAll("\\", "/").toLowerCase();
+  const sourceRelative = normalizeRelativePath(relative(MASTER_ROOT, entry.source)).toLowerCase();
+  const outputRelative = normalizeRelativePath(relative(ICON_ROOT, entry.outputFile)).toLowerCase();
   return sourceRelative.includes(only) || outputRelative.includes(only) || basename(entry.source).toLowerCase().includes(only);
 }
 
-function needsGeneration(source: string, outputFile: string): boolean {
-  if (force || !existsSync(outputFile)) return true;
-  return statSync(outputFile).mtimeMs < statSync(source).mtimeMs;
+function needsGeneration(entry: SourceEntry): boolean {
+  if (force || !existsSync(entry.outputFile)) return true;
+  const outputModifiedAt = statSync(entry.outputFile).mtimeMs;
+  if (outputModifiedAt < statSync(entry.source).mtimeMs) return true;
+  return getFraming(entry.source) !== undefined
+    && existsSync(FRAMING_CONFIG_FILE)
+    && outputModifiedAt < statSync(FRAMING_CONFIG_FILE).mtimeMs;
 }
 
 function runSharp(args: readonly string[], context: string): void {
@@ -151,9 +183,6 @@ function readRgbaAlphaMetrics(file: string): AlphaMetrics {
   const previous = Buffer.alloc(stride);
   let rawOffset = 0;
   let opaqueCount = 0;
-  let weightedX = 0;
-  let weightedY = 0;
-  let alphaTotal = 0;
 
   for (let y = 0; y < height; y += 1) {
     const filter = raw[rawOffset] ?? 0;
@@ -175,58 +204,63 @@ function readRgbaAlphaMetrics(file: string): AlphaMetrics {
     }
     rawOffset += stride;
     for (let px = 0; px < width; px += 1) {
-      const alpha = row[(px * bytesPerPixel) + 3] ?? 0;
-      if (alpha > 0) opaqueCount += 1;
-      alphaTotal += alpha;
-      weightedX += px * alpha;
-      weightedY += y * alpha;
+      if ((row[(px * bytesPerPixel) + 3] ?? 0) > 0) opaqueCount += 1;
     }
     row.copy(previous);
   }
 
-  if (alphaTotal <= 0) throw new Error(`No visible pixels in ${file}`);
-  return {
-    width,
-    height,
-    density: opaqueCount / (width * height),
-    centroidX: weightedX / alphaTotal,
-    centroidY: weightedY / alphaTotal,
-  };
+  if (opaqueCount <= 0) throw new Error(`No visible pixels in ${file}`);
+  return { width, height, density: opaqueCount / (width * height) };
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function generateIcon(source: string, outputDir: string): void {
-  mkdirSync(outputDir, { recursive: true });
+function generateIcon(entry: SourceEntry): void {
+  mkdirSync(entry.outputDir, { recursive: true });
   mkdirSync(TEMP_ROOT, { recursive: true });
-  const tempDir = join(TEMP_ROOT, basename(source, extname(source)));
+  const tempDir = join(TEMP_ROOT, basename(entry.source, extname(entry.source)));
   rmSync(tempDir, { recursive: true, force: true });
   mkdirSync(tempDir, { recursive: true });
 
-  runSharp(["-i", source, "-o", tempDir, "-f", "png", "trim", "0", "--", "ensureAlpha", "1"], `prepare ${basename(source)}`);
-  const trimmed = join(tempDir, basename(source));
+  runSharp(["-i", entry.source, "-o", tempDir, "-f", "png", "trim", "0", "--", "ensureAlpha", "1"], `prepare ${basename(entry.source)}`);
+  const trimmed = join(tempDir, basename(entry.source));
   const metrics = readRgbaAlphaMetrics(trimmed);
+  const framing = getFraming(entry.source);
 
   const densityScale = Math.sqrt(TARGET_ALPHA_DENSITY / Math.max(metrics.density, 0.01));
-  const targetExtent = clamp(Math.round(MAX_VISIBLE_EXTENT * Math.min(1, densityScale)), MIN_VISIBLE_EXTENT, MAX_VISIBLE_EXTENT);
+  const baseTargetExtent = clamp(Math.round(MAX_VISIBLE_EXTENT * Math.min(1, densityScale)), MIN_VISIBLE_EXTENT, MAX_VISIBLE_EXTENT);
+  const requestedScale = framing?.scale ?? 1;
+  if (!Number.isFinite(requestedScale) || requestedScale <= 0) {
+    throw new Error(`Invalid framing scale for ${relative(MASTER_ROOT, entry.source)}`);
+  }
+  const targetExtent = clamp(Math.round(baseTargetExtent * requestedScale), 1, ICON_SIZE - (MIN_EDGE_MARGIN * 2));
   const longest = Math.max(metrics.width, metrics.height);
   const scale = targetExtent / longest;
   const resizedWidth = Math.max(1, Math.round(metrics.width * scale));
   const resizedHeight = Math.max(1, Math.round(metrics.height * scale));
 
-  // Inventory icons are centered on their trimmed visible bounds. Do not use
-  // alpha-mass centroids here: asymmetric silhouettes (daggers, bows, staves)
-  // otherwise drift even though their visible bounding box is already correct.
-  const left = Math.floor((ICON_SIZE - resizedWidth) / 2);
-  const top = Math.floor((ICON_SIZE - resizedHeight) / 2);
+  const offsetX = Math.round(framing?.offsetX ?? 0);
+  const offsetY = Math.round(framing?.offsetY ?? 0);
+  const maxLeft = ICON_SIZE - MIN_EDGE_MARGIN - resizedWidth;
+  const maxTop = ICON_SIZE - MIN_EDGE_MARGIN - resizedHeight;
+  const left = clamp(
+    Math.floor((ICON_SIZE - resizedWidth) / 2) + offsetX,
+    MIN_EDGE_MARGIN,
+    Math.max(MIN_EDGE_MARGIN, maxLeft),
+  );
+  const top = clamp(
+    Math.floor((ICON_SIZE - resizedHeight) / 2) + offsetY,
+    MIN_EDGE_MARGIN,
+    Math.max(MIN_EDGE_MARGIN, maxTop),
+  );
   const right = ICON_SIZE - resizedWidth - left;
   const bottom = ICON_SIZE - resizedHeight - top;
 
   runSharp([
     "-i", trimmed,
-    "-o", outputDir,
+    "-o", entry.outputDir,
     "-f", "png",
     "resize", String(resizedWidth), String(resizedHeight),
     "--fit", "fill",
@@ -234,7 +268,7 @@ function generateIcon(source: string, outputDir: string): void {
     "--",
     "extend", String(top), String(bottom), String(left), String(right),
     "--background", "rgba(0,0,0,0)",
-  ], `frame ${basename(source)}`);
+  ], `frame ${basename(entry.source)}`);
 
   rmSync(tempDir, { recursive: true, force: true });
 }
@@ -253,15 +287,15 @@ if (sources.length === 0) {
 
 let generatedCount = 0;
 let skippedCount = 0;
-for (const { source, outputDir, outputFile } of sources) {
-  if (!needsGeneration(source, outputFile)) {
+for (const entry of sources) {
+  if (!needsGeneration(entry)) {
     skippedCount += 1;
-    console.log(`skipped ${relative(ICON_ROOT, outputFile)}`);
+    console.log(`skipped ${relative(ICON_ROOT, entry.outputFile)}`);
     continue;
   }
-  generateIcon(source, outputDir);
+  generateIcon(entry);
   generatedCount += 1;
-  console.log(`generated ${relative(ICON_ROOT, outputFile)}`);
+  console.log(`generated ${relative(ICON_ROOT, entry.outputFile)}`);
 }
 
 rmSync(TEMP_ROOT, { recursive: true, force: true });
