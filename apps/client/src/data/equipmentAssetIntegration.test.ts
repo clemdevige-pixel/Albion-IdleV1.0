@@ -4,20 +4,20 @@ import { PROGRESSION_EQUIPMENT_CONTENT } from "./nonWeaponEquipmentContentCatalo
 import { PROGRESSION_NON_WEAPON_VISUALS } from "./itemVisualContentCatalog.js";
 
 const EXPECTED_EQUIPMENT_ICONS: Readonly<Record<string, string>> = {
-  reinforced_helmet: "item-iron-helmet-pixel-v2.png",
-  leather_armor: "item-leather-armor-pixel-v2.png",
-  leather_boots: "item-leather-boots-pixel-v2.png",
+  reinforced_helmet: "icons/equipements/item-iron-helmet-pixel-v2.png",
+  leather_armor: "icons/equipements/item-leather-armor-pixel-v2.png",
+  leather_boots: "icons/equipements/item-leather-boots-pixel-v2.png",
 };
 
 const EXPECTED_CAPE_ICONS: Readonly<Record<string, string>> = {
-  keeper: "CAPE_KEEPER.png",
-  heretic: "CAPE_HERETIC.png",
-  undead: "CAPE_UNDEAD.png",
-  morgana: "CAPE_MORGANA.png",
+  keeper: "icons/equipements/CAPE_KEEPER.png",
+  heretic: "icons/equipements/CAPE_HERETIC.png",
+  undead: "icons/equipements/CAPE_UNDEAD.png",
+  morgana: "icons/equipements/CAPE_MORGANA.png",
 };
 
 describe("equipment asset integration", () => {
-  it("uses the replacement helmet, armor and boots assets across tiers", () => {
+  it("uses the normalized helmet, armor and boots UI icons across tiers", () => {
     for (const family of PROGRESSION_EQUIPMENT_CONTENT) {
       const expectedIcon = EXPECTED_EQUIPMENT_ICONS[family.familyId];
       if (expectedIcon === undefined) continue;
@@ -28,7 +28,7 @@ describe("equipment asset integration", () => {
     }
   });
 
-  it("uses one authored icon for every faction cape tier", () => {
+  it("uses one normalized UI icon for every faction cape tier", () => {
     for (const cape of FACTION_CAPE_CONTENT) {
       expect(PROGRESSION_NON_WEAPON_VISUALS[cape.itemId]).toMatchObject({
         name: cape.name,
