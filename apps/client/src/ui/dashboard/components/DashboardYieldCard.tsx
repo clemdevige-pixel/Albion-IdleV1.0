@@ -72,7 +72,18 @@ export function DashboardYieldCard({ yieldData }: DashboardYieldCardProps): JSX.
                   <small>Stock {formatCompactNumber(stock)}</small>
                 </div>
               </div>
-              <b>{formatCompactNumber(yieldPerHour)} / h</b>
+              <div className="dashboard-yield__tracked-actions">
+                <b>{formatCompactNumber(yieldPerHour)} / h</b>
+                <button
+                  type="button"
+                  className="dashboard-yield__untrack"
+                  aria-label={`Ne plus suivre ${resource.label}`}
+                  title="Ne plus suivre"
+                  onClick={() => { tracking.untrack(resource.id); }}
+                >
+                  ×
+                </button>
+              </div>
             </div>
           ))}
         </div>
