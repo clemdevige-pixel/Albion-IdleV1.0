@@ -128,8 +128,6 @@ export function AbilityBar(): JSX.Element {
         })}
       </div>
 
-      <span className="combat-action-bar__separator" aria-hidden="true" />
-
       <button
         type="button"
         className={`combat-action-bar__auto${primaryAbility?.autoCast === true ? " combat-action-bar__auto--enabled" : ""}`}
@@ -146,8 +144,6 @@ export function AbilityBar(): JSX.Element {
         />
       </button>
 
-      <span className="combat-action-bar__separator" aria-hidden="true" />
-
       <div className="combat-action-bar__potion-wrapper">
         <button
           type="button"
@@ -156,18 +152,20 @@ export function AbilityBar(): JSX.Element {
           disabled={potionCount === 0 || potionCooldown > 0}
           onClick={useHealthPotion}
         >
-          <span className="combat-action-bar__potion-visual">
-            <ItemVisual itemId={HEALTH_POTION_ID} />
+          <span className="combat-action-bar__potion-viewport" aria-hidden="true">
+            <span className="combat-action-bar__potion-visual">
+              <ItemVisual itemId={HEALTH_POTION_ID} />
+            </span>
+            <span
+              className="combat-action-bar__cooldown"
+              style={{ height: `${String(Math.round(potionCooldownRatio * 100))}%` }}
+            />
           </span>
           <span className="combat-action-bar__shortcut">1</span>
           <span className="combat-action-bar__quantity">{potionCount}</span>
           {potionCooldown > 0 && (
             <span className="combat-action-bar__cooldown-number">{potionCooldown.toFixed(1)}</span>
           )}
-          <span
-            className="combat-action-bar__cooldown"
-            style={{ height: `${String(Math.round(potionCooldownRatio * 100))}%` }}
-          />
         </button>
         <div className="ability-tooltip ability-tooltip--potion" role="tooltip">
           <div className="ability-tooltip__header">
