@@ -6,6 +6,7 @@ import {
 } from "../data/weaponContentCatalog";
 import { resolveEquipmentPresentation } from "../data/equipmentPresentation";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
+import { getFactionCapeDefinition } from "../data/factionCapeContentCatalog";
 import { getRelicDefinitionByInventoryItemId } from "../data/relicContentCatalog";
 import {
   PRODUCTION_RESOURCE_VISUALS,
@@ -245,6 +246,7 @@ export function getItemDefinition(itemId: string): ItemVisualDefinition | undefi
 
 export function getItemDisplayName(itemId: string): string {
   return getItemDefinition(itemId)?.name
+    ?? getFactionCapeDefinition(itemId)?.name
     ?? CONSUMABLE_VISUALS[itemId]?.name
     ?? PRODUCTION_RESOURCE_VISUALS[itemId]?.name
     ?? ENCHANTMENT_RESOURCE_VISUALS[itemId]?.name
