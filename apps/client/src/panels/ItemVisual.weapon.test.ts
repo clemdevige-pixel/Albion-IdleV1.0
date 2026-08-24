@@ -5,7 +5,8 @@ import {
   resolveWeaponTier,
 } from "../data/weaponContentCatalog.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
-import { getItemDefinition } from "./ItemVisual.js";
+import { getItemTier } from "../data/itemPower.js";
+import { getItemDefinition, getItemDisplayName } from "./ItemVisual.js";
 
 const WEAPON_IDS = [
   "item_weapon_sword_t3_broadsword",
@@ -39,6 +40,19 @@ describe("ItemVisual weapon derivation", () => {
     expect(visual?.stats).toEqual(resolvedEquipment?.stats);
     expect(visual?.name.endsWith(`T${String(tier)}`)).toBe(true);
     expect(visual?.icon.length).toBeGreaterThan(0);
+  });
+
+  it("keeps artifact weapon names faction-neutral while resolving their tier", () => {
+    const itemId = "item_weapon_dagger_bloodletter_t4";
+    expect(getItemTier(itemId)).toBe(4);
+    expect(getItemDisplayName(itemId)).toBe("Bloodletter T4");
+    expect(getItemDisplayName(itemId)).not.toContain("Keeper");
+  });
+
+  it("resolves faction cape display names and tiers without visual-catalog fallbacks", () => {
+    const itemId = "item_cape_t4_keeper";
+    expect(getItemTier(itemId)).toBe(4);
+    expect(getItemDisplayName(itemId)).toBe("Cape Keeper T4");
   });
 
   it("does not infer unknown weapon visuals from an item-id naming pattern", () => {
