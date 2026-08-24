@@ -120,13 +120,13 @@ export const FACTION_ACHIEVEMENT_DEFINITIONS: readonly FactionAchievementDefinit
   {
     id: "expedition_first_silver",
     group: "expedition",
-    title: "First Silver Expedition",
+    title: "First Generalist Expedition",
     condition: { type: "silver_expedition_completed_count", minimum: 1 },
   },
   {
     id: "expedition_fortune",
     group: "expedition",
-    title: "Expedition Fortune",
+    title: "Generalist Fortune",
     condition: { type: "silver_expedition_lifetime_silver", minimum: 1_000_000 },
   },
 ];
