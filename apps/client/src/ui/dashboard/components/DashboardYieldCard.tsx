@@ -28,21 +28,25 @@ export function DashboardYieldCard({ yieldData }: DashboardYieldCardProps): JSX.
   const trackingUnlocked = services.getAcademyModel().research.some(
     (research) => research.id === RESEARCH_IDS.yieldAnalysis && research.state === "completed",
   );
-  const tracked = trackingUnlocked ? tracking.selectedResource : undefined;
-  const trackedEntry = tracked?.entries[0];
-  const projectedItemYield = trackedEntry === undefined
-    ? 0
-    : resolveDashboardItemYieldPerHour(state)[trackedEntry.itemId] ?? 0;
-  const itemYieldPerHour = trackedEntry !== undefined
-    && isDungeonDiscoveryGatedItem(trackedEntry.itemId)
-    && !services.isDungeonSystemUnlocked()
-    ? 0
-    : projectedItemYield;
-  const trackedStock = trackedEntry === undefined
-    ? 0
-    : services.inventoryManager.getTotalQuantity(services.heroId, trackedEntry.itemId)
-      + services.inventoryManager.getTotalQuantity(services.bankId, trackedEntry.itemId)
-      + services.inventoryManager.getTotalQuantity(services.productionStorageId, trackedEntry.itemId);
+  const projectedItemYield = trackingUnlocked
+    ? resolveDashboardItemYieldPerHour(state)
+    : {};
+
+  const trackedRows = trackingUnlocked
+    ? tracking.resources.flatMap((resource) => {
+        const entry = resource.entries[0];
+        if (entry === undefined) return [];
+        const projectedRate = projectedItemYield[entry.itemId] ?? 0;
+        const yieldPerHour = isDungeonDiscoveryGatedItem(entry.itemId)
+          && !services.isDungeonSystemUnlocked()
+          ? 0
+          : projectedRate;
+        const stock = services.inventoryManager.getTotalQuantity(services.heroId, entry.itemId)
+          + services.inventoryManager.getTotalQuantity(services.bankId, entry.itemId)
+          + services.inventoryManager.getTotalQuantity(services.productionStorageId, entry.itemId);
+        return [{ resource, entry, yieldPerHour, stock }];
+      })
+    : [];
 
   return (
     <DashboardCard sectionId="yield">
@@ -53,21 +57,26 @@ export function DashboardYieldCard({ yieldData }: DashboardYieldCardProps): JSX.
             <dd>{formatCompactNumber(yieldData[metric.field])}</dd>
           </div>
         ))}
-        {tracked !== undefined && trackedEntry !== undefined && (
-          <div className="dashboard-yield__metric dashboard-yield__metric--tracked-resource">
-            <dt>
-              <span className="dashboard-yield__tracked-visual" aria-hidden="true">
-                <ItemVisual itemId={trackedEntry.itemId} />
-              </span>
-              {tracked.label}
-            </dt>
-            <dd>
-              <span>{formatCompactNumber(itemYieldPerHour)} / h</span>
-              <small>Stock {formatCompactNumber(trackedStock)}</small>
-            </dd>
-          </div>
-        )}
       </dl>
+
+      {trackedRows.length > 0 && (
+        <div className="dashboard-yield__tracked-list" aria-label="Ressources suivies">
+          {trackedRows.map(({ resource, entry, yieldPerHour, stock }) => (
+            <div key={resource.id} className="dashboard-yield__tracked-row">
+              <div className="dashboard-yield__tracked-resource">
+                <span className="dashboard-yield__tracked-visual" aria-hidden="true">
+                  <ItemVisual itemId={entry.itemId} />
+                </span>
+                <div className="dashboard-yield__tracked-copy">
+                  <strong>{resource.label}</strong>
+                  <small>Stock {formatCompactNumber(stock)}</small>
+                </div>
+              </div>
+              <b>{formatCompactNumber(yieldPerHour)} / h</b>
+            </div>
+          ))}
+        </div>
+      )}
     </DashboardCard>
   );
 }
