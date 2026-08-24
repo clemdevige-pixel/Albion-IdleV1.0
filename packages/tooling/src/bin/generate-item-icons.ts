@@ -1,5 +1,5 @@
 import { mkdirSync, readdirSync, existsSync } from "node:fs";
-import { basename, dirname, extname, join, resolve } from "node:path";
+import { basename, extname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const REPO_ROOT = resolve(import.meta.dirname, "../../../..");
@@ -34,10 +34,23 @@ function resolveSources(category: (typeof CATEGORIES)[number]): Array<{ source: 
     .map((source) => ({ source, outputDir }));
 }
 
+function resolvePnpmInvocation(): { command: string; prefixArgs: string[] } {
+  const npmExecPath = process.env.npm_execpath;
+  if (npmExecPath !== undefined && npmExecPath.length > 0) {
+    return { command: process.execPath, prefixArgs: [npmExecPath] };
+  }
+
+  return {
+    command: process.platform === "win32" ? "pnpm.cmd" : "pnpm",
+    prefixArgs: [],
+  };
+}
+
 function generateIcon(source: string, outputDir: string): void {
   mkdirSync(outputDir, { recursive: true });
-  const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+  const { command, prefixArgs } = resolvePnpmInvocation();
   const args = [
+    ...prefixArgs,
     "dlx",
     SHARP_CLI,
     "-i",
@@ -58,14 +71,18 @@ function generateIcon(source: string, outputDir: string): void {
     "rgba(0,0,0,0)",
   ];
 
-  const result = spawnSync(pnpm, args, {
+  const result = spawnSync(command, args, {
     cwd: REPO_ROOT,
     encoding: "utf-8",
     stdio: "pipe",
   });
 
   if (result.status !== 0) {
-    const details = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
+    const details = [
+      result.error?.message,
+      result.stdout,
+      result.stderr,
+    ].filter((value): value is string => typeof value === "string" && value.length > 0).join("\n").trim();
     throw new Error(`Failed to generate ${basename(source)}${details.length > 0 ? `\n${details}` : ""}`);
   }
 }
