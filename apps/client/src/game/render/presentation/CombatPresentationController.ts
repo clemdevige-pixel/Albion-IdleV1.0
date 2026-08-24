@@ -36,6 +36,7 @@ export class CombatPresentationController {
   public readonly enemyHomeX: number;
   public readonly entityY: number;
 
+  private readonly playerSprite: Phaser.GameObjects.Sprite;
   private readonly actorSystem: ActorSystem;
   private readonly heroSystem: HeroPresentationSystem;
   private readonly enemySystem: EnemyPresentationSystem;
@@ -76,12 +77,12 @@ export class CombatPresentationController {
     this.entityY = height * environmentManifest.layout.groundLineYRatio
       - initialHeroManifest.offset.y;
     const enemyManifest = renderManifestRegistry.requireDefaultStaticActor();
-    const playerSprite = createActorSprite(scene, initialHeroManifest);
-    this.playerBody = scene.add.container(this.playerHomeX, this.entityY, [playerSprite]).setDepth(5);
+    this.playerSprite = createActorSprite(scene, initialHeroManifest);
+    this.playerBody = scene.add.container(this.playerHomeX, this.entityY, [this.playerSprite]).setDepth(5);
     this.enemySystem = new EnemyPresentationSystem(scene, this.enemyHomeX, this.entityY, enemyManifest);
     this.enemyBody = this.enemySystem.body;
 
-    this.heroSystem = new HeroPresentationSystem(playerSprite, this.defaultHeroManifestId);
+    this.heroSystem = new HeroPresentationSystem(this.playerSprite, this.defaultHeroManifestId);
     this.actorSystem = new ActorSystem(scene);
     this.actorSystem.register(this.playerBody, this.playerHomeX, initialHeroManifest.ambientMotion);
     this.actorSystem.register(this.enemyBody, this.enemyHomeX, enemyManifest.ambientMotion);
@@ -121,6 +122,7 @@ export class CombatPresentationController {
     this.hudSystem = new WorldHudSystem(scene, renderManifestRegistry.requireDefaultWorldHud());
     this.hudSystem.createPlayer(this.playerHomeX, this.entityY, playerDisplayName);
     this.hudSystem.createEnemy(this.enemyHomeX, this.entityY);
+    this.hudSystem.layoutPlayer(this.playerHomeX, this.playerBody.y, this.playerSprite);
   }
 
   public update(bridge: GameBridge): void {
@@ -197,6 +199,11 @@ export class CombatPresentationController {
       this.playerBody,
       renderManifestRegistry.requireActor(weapon.visualManifestId ?? this.defaultHeroManifestId).ambientMotion,
     );
+    this.hudSystem.layoutPlayer(
+      this.playerHomeX,
+      this.playerBody.y,
+      this.playerSprite,
+    );
   }
 
   private updateEnemy(bridge: GameBridge): void {
@@ -271,7 +278,12 @@ export class CombatPresentationController {
       this.enemyBody,
       renderManifestRegistry.requireStaticActor(visualManifestId).ambientMotion,
     );
-    this.hudSystem.layoutEnemy(this.enemyHomeX, this.enemyBody.y, this.enemySystem.hudLayout);
+    this.hudSystem.layoutEnemy(
+      this.enemyHomeX,
+      this.enemyBody.y,
+      this.enemySystem.sprite,
+      this.enemySystem.hudLayout,
+    );
     this.hudSystem.updateEnemy(
       presented.current,
       presented.maximum,
