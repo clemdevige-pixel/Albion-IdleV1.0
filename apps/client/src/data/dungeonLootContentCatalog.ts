@@ -56,12 +56,12 @@ const T6_FACTION_ENCOUNTER_LOOT: Readonly<Record<DungeonEncounterKind, DungeonEn
 const T7_FACTION_ENCOUNTER_LOOT: Readonly<Record<DungeonEncounterKind, DungeonEncounterLootDefinition>> = {
   normal: { artifactFragmentQuantity: 7, artifactDropChance: 0, enchantmentShardQuantity: 1 },
   elite: { artifactFragmentQuantity: 16, artifactDropChance: 0, enchantmentShardQuantity: 2 },
-  boss: { artifactFragmentQuantity: 46, artifactDropChance: 0.16, enchantmentShardQuantity: 5 },
+  boss: { artifactFragmentQuantity: 46, artifactDropChance: 0.16, enchantmentShardQuantity: 6 },
 };
 const T8_FACTION_ENCOUNTER_LOOT: Readonly<Record<DungeonEncounterKind, DungeonEncounterLootDefinition>> = {
   normal: { artifactFragmentQuantity: 8, artifactDropChance: 0, enchantmentShardQuantity: 1 },
   elite: { artifactFragmentQuantity: 18, artifactDropChance: 0, enchantmentShardQuantity: 3 },
-  boss: { artifactFragmentQuantity: 52, artifactDropChance: 0.18, enchantmentShardQuantity: 6 },
+  boss: { artifactFragmentQuantity: 52, artifactDropChance: 0.18, enchantmentShardQuantity: 7 },
 };
 
 function createFactionLootDefinition(
