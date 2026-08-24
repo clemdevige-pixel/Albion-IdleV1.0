@@ -29,6 +29,7 @@ interface SourceEntry {
 }
 
 interface ItemIconFraming {
+  readonly trimThreshold?: number;
   readonly offsetX?: number;
   readonly offsetY?: number;
   readonly scale?: number;
@@ -51,10 +52,9 @@ function loadFramingConfig(): ItemIconFramingConfig {
 
 const framingConfig = loadFramingConfig();
 
-function getFraming(source: string): ItemIconFraming | undefined {
-  const sourceRelative = normalizeRelativePath(relative(MASTER_ROOT, source));
-  if (sourceRelative.startsWith("../")) return undefined;
-  return framingConfig[sourceRelative];
+function getFraming(entry: SourceEntry): ItemIconFraming | undefined {
+  const outputRelative = `icons/${normalizeRelativePath(relative(ICON_ROOT, entry.outputFile))}`;
+  return framingConfig[outputRelative];
 }
 
 function listPngFilesRecursive(directory: string): string[] {
@@ -118,7 +118,7 @@ function needsGeneration(entry: SourceEntry): boolean {
   if (force || !existsSync(entry.outputFile)) return true;
   const outputModifiedAt = statSync(entry.outputFile).mtimeMs;
   if (outputModifiedAt < statSync(entry.source).mtimeMs) return true;
-  return getFraming(entry.source) !== undefined
+  return getFraming(entry) !== undefined
     && existsSync(FRAMING_CONFIG_FILE)
     && outputModifiedAt < statSync(FRAMING_CONFIG_FILE).mtimeMs;
 }
@@ -224,39 +224,53 @@ function generateIcon(entry: SourceEntry): void {
   rmSync(tempDir, { recursive: true, force: true });
   mkdirSync(tempDir, { recursive: true });
 
-  runSharp(["-i", entry.source, "-o", tempDir, "-f", "png", "trim", "0", "--", "ensureAlpha", "1"], `prepare ${basename(entry.source)}`);
+  const framing = getFraming(entry);
+  const trimThreshold = Math.round(framing?.trimThreshold ?? 0);
+  if (!Number.isFinite(trimThreshold) || trimThreshold < 0 || trimThreshold > 255) {
+    throw new Error(`Invalid trimThreshold for ${normalizeRelativePath(relative(ICON_ROOT, entry.outputFile))}`);
+  }
+
+  runSharp([
+    "-i", entry.source,
+    "-o", tempDir,
+    "-f", "png",
+    "trim", String(trimThreshold),
+    "--",
+    "ensureAlpha", "1",
+  ], `prepare ${basename(entry.source)}`);
+
   const trimmed = join(tempDir, basename(entry.source));
   const metrics = readRgbaAlphaMetrics(trimmed);
-  const framing = getFraming(entry.source);
 
   const densityScale = Math.sqrt(TARGET_ALPHA_DENSITY / Math.max(metrics.density, 0.01));
   const baseTargetExtent = clamp(Math.round(MAX_VISIBLE_EXTENT * Math.min(1, densityScale)), MIN_VISIBLE_EXTENT, MAX_VISIBLE_EXTENT);
   const requestedScale = framing?.scale ?? 1;
   if (!Number.isFinite(requestedScale) || requestedScale <= 0) {
-    throw new Error(`Invalid framing scale for ${relative(MASTER_ROOT, entry.source)}`);
+    throw new Error(`Invalid framing scale for ${normalizeRelativePath(relative(ICON_ROOT, entry.outputFile))}`);
   }
+
   const targetExtent = clamp(Math.round(baseTargetExtent * requestedScale), 1, ICON_SIZE - (MIN_EDGE_MARGIN * 2));
   const longest = Math.max(metrics.width, metrics.height);
-  const scale = targetExtent / longest;
-  const resizedWidth = Math.max(1, Math.round(metrics.width * scale));
-  const resizedHeight = Math.max(1, Math.round(metrics.height * scale));
+  const resizeScale = targetExtent / longest;
+  const resizedWidth = Math.max(1, Math.round(metrics.width * resizeScale));
+  const resizedHeight = Math.max(1, Math.round(metrics.height * resizeScale));
 
   const offsetX = Math.round(framing?.offsetX ?? 0);
   const offsetY = Math.round(framing?.offsetY ?? 0);
   const maxLeft = ICON_SIZE - MIN_EDGE_MARGIN - resizedWidth;
   const maxTop = ICON_SIZE - MIN_EDGE_MARGIN - resizedHeight;
-  const left = clamp(
-    Math.floor((ICON_SIZE - resizedWidth) / 2) + offsetX,
-    MIN_EDGE_MARGIN,
-    Math.max(MIN_EDGE_MARGIN, maxLeft),
-  );
-  const top = clamp(
-    Math.floor((ICON_SIZE - resizedHeight) / 2) + offsetY,
-    MIN_EDGE_MARGIN,
-    Math.max(MIN_EDGE_MARGIN, maxTop),
-  );
+  const left = clamp(Math.floor((ICON_SIZE - resizedWidth) / 2) + offsetX, MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxLeft));
+  const top = clamp(Math.floor((ICON_SIZE - resizedHeight) / 2) + offsetY, MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxTop));
   const right = ICON_SIZE - resizedWidth - left;
   const bottom = ICON_SIZE - resizedHeight - top;
+
+  if (framing !== undefined) {
+    console.log(
+      `framing ${normalizeRelativePath(relative(ICON_ROOT, entry.outputFile))}: ` +
+      `trim=${trimThreshold} scale=${requestedScale} offset=(${offsetX},${offsetY}) ` +
+      `box=${resizedWidth}x${resizedHeight} pos=(${left},${top})`,
+    );
+  }
 
   runSharp([
     "-i", trimmed,
