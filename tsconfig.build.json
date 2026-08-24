@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/shared/tsconfig.build.json" },
+    { "path": "./packages/core/tsconfig.build.json" },
+    { "path": "./packages/data/tsconfig.build.json" },
+    { "path": "./packages/tooling/tsconfig.build.json" },
+    { "path": "./packages/persistence/tsconfig.build.json" },
+    { "path": "./packages/gameplay/tsconfig.build.json" },
+    { "path": "./apps/server/tsconfig.build.json" }
+  ]
+}
