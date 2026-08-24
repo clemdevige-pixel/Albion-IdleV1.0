@@ -1,6 +1,6 @@
 # 44_FACTION_RESEARCH_EXPLORATION_SYSTEM
 
-Status: VALIDATED / IMPLEMENTED CONTRACT + EXPEDITION REWARD BALANCE FOLLOW-UP REQUIRED
+Status: VALIDATED / IMPLEMENTED CONTRACT
 Authority: canonical Academy / Research / Expedition / Dungeon discovery / Faction Rune contract
 Last update: 2026-08-24
 
@@ -13,7 +13,7 @@ The Academy is the permanent functional-unlock system for secondary progression.
 V1 owns:
 
 - Research;
-- Silver Expeditions;
+- Generalist Expeditions;
 - one generic Faction Expedition track;
 - Dungeon discovery;
 - the global Dungeon Relic discovery chain;
@@ -86,17 +86,19 @@ No manual reward collection is used.
 
 # 4. EXPEDITION RESEARCH TRACKS
 
-Silver and Faction Expeditions use independent Research tracks.
+Generalist and Faction Expeditions use independent Research tracks.
 
-## 4.1 Cartography = Silver Expeditions
+## 4.1 Cartography = Generalist Expeditions
+
+Historical internal IDs retain the `silver` name for save/unlock compatibility. Player-facing naming is Generalist Expedition.
 
 | Research | Tier | Silver | Duration | Unlock |
 |---|---:|---:|---:|---|
-| Cartography I | T4 | 5,000 | 30 min | Silver Expedition T4 |
-| Cartography II | T5 | 15,000 | 1 h | Silver Expedition T5 |
-| Cartography III | T6 | 40,000 | 2 h | Silver Expedition T6 + second Expedition slot |
-| Cartography IV | T7 | 70,000 | 3 h | Silver Expedition T7 |
-| Cartography V | T8 | 110,000 | 4 h | Silver Expedition T8 |
+| Cartography I | T4 | 5,000 | 30 min | Generalist Expedition T4 |
+| Cartography II | T5 | 15,000 | 1 h | Generalist Expedition T5 |
+| Cartography III | T6 | 40,000 | 2 h | Generalist Expedition T6 + second Expedition slot |
+| Cartography IV | T7 | 70,000 | 3 h | Generalist Expedition T7 |
+| Cartography V | T8 | 110,000 | 4 h | Generalist Expedition T8 |
 
 Cartography II-V require the previous Cartography unlock plus matching Academy tier.
 
@@ -128,12 +130,12 @@ Expeditions are passive parallel activities and continue offline through Backgro
 
 V1 families:
 
-1. Generic Silver Expedition.
+1. Generic Generalist Expedition.
 2. Generic Faction Expedition.
 
 Requirements:
 
-- Silver Expedition -> matching Cartography tier unlock;
+- Generalist Expedition -> matching Cartography tier unlock;
 - Faction Expedition -> matching Archaeology tier unlock;
 - no Relic prerequisite for Faction Expeditions.
 
@@ -152,40 +154,74 @@ Durations:
 - 6 h;
 - 12 h.
 
-Reward/hour remains equivalent across durations before whole-item rounding unless explicitly authored otherwise.
+Expected reward/hour remains equivalent across durations. Hourly independent rolls make longer Expeditions statistically more stable in relative terms, not more profitable.
 
-## 5.1 Silver Expedition
+Every Expedition recap uses the actual rolled rewards and one presentation-only quality label:
 
-Silver/hour is authored independently.
+- Difficile;
+- Réussie;
+- Fructueuse;
+- Exceptionnelle.
 
-Faction Mastery does not modify Silver Expedition output.
+The quality label never adds a second reward multiplier.
+
+## 5.1 Generalist Expedition
+
+The Generalist Expedition produces Silver and matching-tier enchantment shards.
+
+Tester baseline:
+
+| Tier | Silver/h EV | Silver variance | Shards/h EV | Shard variance |
+|---|---:|---:|---:|---:|
+| T4 | 30,000 | +/-20% | 46 | +/-25% |
+| T5 | 55,000 | +/-20% | 47 | +/-25% |
+| T6 | 70,000 | +/-20% | 50 | +/-25% |
+| T7 | 80,000 | +/-20% | 43 | +/-25% |
+| T8 | 90,000 | +/-20% | 38 | +/-25% |
+
+Both channels use centered triangular hourly rolls. Quantities are integers when credited.
+
+The baseline targets roughly 60% of deepest-farmable world Silver income while keeping shard output near 50% of the equivalent world reference.
+
+T8 is provisional because the current T8.3 benchmark reference reaches Duskfall Steppe S9 but not Blackspire Mountain.
+
+Faction Mastery does not modify Generalist Expedition output.
+
+Canonical numeric data:
+
+`apps/client/src/data/generalistExpeditionRewardContentCatalog.ts`
+
+Balance record:
+
+`AI_BIBLE/05_BALANCE/2026-08-24_GENERALIST_EXPEDITION_REWARD_BASELINE.md`
 
 ## 5.2 Faction Expedition
 
-The Faction Expedition is the primary passive/predictable source of common Faction Runes.
+The Faction Expedition is a major passive source of common Faction Runes and a secondary source of Dungeon access materials.
 
-The structural migration currently preserves the temporary live baseline of 1 matching-tier Rune/hour until the dedicated multi-reward pass is implemented.
+Tester baseline:
 
-Validated target direction discussed for the next reward pass:
+| Tier | Rune/h EV | Rune variance | Key fragments/h EV | Fragment variance | Complete key/h EV |
+|---|---:|---:|---:|---:|---:|
+| T4 | 8 | +/-20% | 24 | +/-30% | 1.20 |
+| T5 | 14 | +/-20% | 22 | +/-30% | 1.10 |
+| T6 | 25 | +/-20% | 19 | +/-30% | 1.00 |
+| T7 | 40 | +/-20% | 17 | +/-30% | 0.80 |
+| T8 | 60 | +/-20% | 9 | +/-30% | 0.45 |
 
-| Tier | Target Rune/h |
-|---|---:|
-| T4 | 8 |
-| T5 | 14 |
-| T6 | 25 |
-| T7 | 40 |
-| T8 | 60 |
+Runes and fragments use centered hourly rolls.
 
-Future secondary rewards may include:
-
-- Silver;
-- enchantment shards;
-- Dungeon key fragments;
-- complete Dungeon keys.
-
-Exact quantities/probabilities for those secondary rewards remain pending and must be authored through reward tables, not ad-hoc runtime cases.
+Complete keys use integer-only RNG with the authored EV. The EV may be fractional for balance calculation, but player inventory can only ever receive whole keys: 0, 1, 2, 3, etc. Fractional keys never exist in persistence, inventory or UI.
 
 The generic Faction Expedition is not modified by an individual Faction Mastery because it carries no Keeper/Heretic/Undead/Morgana identity.
+
+Canonical numeric data:
+
+`apps/client/src/data/factionExpeditionRewardContentCatalog.ts`
+
+Balance record:
+
+`AI_BIBLE/05_BALANCE/2026-08-24_FACTION_EXPEDITION_REWARD_BASELINE.md`
 
 ---
 
@@ -422,7 +458,7 @@ For Rune world drops, mastery increases expected yield on top of the displayed b
 
 It does NOT gate Research, Expeditions, Relic progression, Dungeon discovery, recipes or world progression.
 
-Generic Silver/Faction Expeditions are unaffected by an individual Faction Mastery.
+Generic Generalist/Faction Expeditions are unaffected by an individual Faction Mastery.
 
 ---
 
@@ -431,6 +467,8 @@ Generic Silver/Faction Expeditions are unaffected by an individual Faction Maste
 Research persistence stores a collection of active Research timers.
 
 Research snapshot V1 with one `activeResearch` remains load-compatible.
+
+Historical Generalist Expedition IDs retain the `silver` namespace (`expedition_silver_tX`, type `silver`) to avoid save and unlock migrations. Player-facing naming is Generalist Expedition.
 
 Runtime save V5 migrates all legacy faction-specific Rune IDs to the matching common tiered Rune ID:
 
@@ -452,13 +490,15 @@ Required:
 - Research definitions own tier/cost/duration/prerequisites/unlock IDs;
 - ResearchService owns parallel active timers;
 - Expedition definitions consume Research unlock IDs;
+- one generic Generalist Expedition definition exists per tier;
 - one generic Faction Expedition definition exists per tier;
+- Generalist and Faction numeric rewards live in dedicated authored reward tables;
+- Expedition runtime consumes those reward tables instead of duplicating balance constants;
 - Faction Rune identity is common by tier;
 - artifact weapons and faction capes consume common tiered Runes;
 - Rune world drops consume the Research capability;
 - Rune world numeric rates live in one authored data table;
-- Bestiary reads the same Rune probability source as runtime combat;
-- future Expedition secondary rewards use authored reward tables.
+- Bestiary reads the same Rune probability source as runtime combat.
 
 Forbidden:
 
@@ -469,7 +509,8 @@ Forbidden:
 - reintroducing separate faction Rune currencies;
 - hidden Rune depth multipliers that make displayed rates differ from runtime rates;
 - world Rune drops before the Research capability;
-- manual per-monster Rune rates duplicated outside the progression table.
+- manual per-monster Rune rates duplicated outside the progression table;
+- fractional complete Dungeon keys in inventory, persistence or UI.
 
 ---
 
@@ -479,9 +520,8 @@ Research / Expeditions:
 
 `Academy tier`
 `-> parallel Researches`
-`-> Cartography I-V -> Silver Expedition T4-T8`
-`-> Archaeology I-V -> generic Faction Expedition T4-T8`
-`-> common tiered Faction Runes`
+`-> Cartography I-V -> Generalist Expedition T4-T8 -> Silver + enchantment shards`
+`-> Archaeology I-V -> generic Faction Expedition T4-T8 -> common Runes + key fragments + whole keys`
 
 Dungeon / active Rune channel:
 
@@ -501,10 +541,10 @@ Artifact craft:
 `+ common Faction Runes`
 `-> artifact weapon`
 
-Pending balance work:
+Tester follow-up:
 
-1. Implement/tune Faction Expedition Rune/hour target curve.
-2. Author Faction Expedition multi-reward tables.
-3. Revalidate Rune world rates from tester telemetry and real progression behavior.
+1. Revalidate both Expedition reward tables from tester telemetry.
+2. Revalidate Rune world rates from tester telemetry and real progression behavior.
+3. Recalibrate T8 references when Blackspire becomes reliably benchmarkable with the intended profile.
 
 DOCUMENT TERMINE
