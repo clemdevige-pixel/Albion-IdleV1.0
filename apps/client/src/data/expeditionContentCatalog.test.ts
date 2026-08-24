@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { FACTION_EXPEDITION_REWARD_PROFILES } from "./factionExpeditionRewardContentCatalog.js";
 import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
+import { GENERALIST_EXPEDITION_REWARD_PROFILES } from "./generalistExpeditionRewardContentCatalog.js";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 import {
   FACTION_EXPEDITION_DEFINITIONS,
   FACTION_EXPEDITION_TYPE_ID,
   SILVER_EXPEDITION_DEFINITIONS,
-  getSilverExpeditionReward,
 } from "./expeditionContentCatalog.js";
 
-const HOUR_MS = 60 * 60 * 1000;
 const TIERS = [4, 5, 6, 7, 8] as const;
 const SILVER_UNLOCKS = {
   4: RESEARCH_UNLOCK_IDS.silverExpeditionTier4,
@@ -27,24 +26,35 @@ const FACTION_UNLOCKS = {
 } as const;
 
 describe("expeditionContentCatalog", () => {
-  it("authors the validated T4-T8 Silver/hour curve", () => {
-    expect(SILVER_EXPEDITION_DEFINITIONS.map(({ tier, reward }) => [tier, reward.silverPerHour]))
-      .toEqual([[4, 15_000], [5, 25_000], [6, 35_000], [7, 40_000], [8, 50_000]]);
-  });
+  it("authors the validated Generalist Silver/shard curve while preserving compatibility IDs", () => {
+    expect(SILVER_EXPEDITION_DEFINITIONS.map(({ tier, displayName, reward }) => [
+      tier,
+      displayName,
+      reward.silverPerHour,
+      reward.shardsPerHour,
+    ])).toEqual([
+      [4, "Expédition généraliste T4", 30_000, 46],
+      [5, "Expédition généraliste T5", 55_000, 47],
+      [6, "Expédition généraliste T6", 70_000, 50],
+      [7, "Expédition généraliste T7", 80_000, 43],
+      [8, "Expédition généraliste T8", 90_000, 38],
+    ]);
 
-  it("gates each Silver tier through the matching Cartography unlock", () => {
     for (const definition of SILVER_EXPEDITION_DEFINITIONS) {
       expect(definition.typeId).toBe("silver");
-      expect(definition.requirements).toEqual([
-        { type: "research_unlock", unlockId: SILVER_UNLOCKS[definition.tier as keyof typeof SILVER_UNLOCKS] },
-      ]);
+      expect(definition.id).toBe(`expedition_silver_t${String(definition.tier)}`);
     }
   });
 
-  it("keeps Silver reward/hour identical across duration choices", () => {
-    expect(getSilverExpeditionReward("expedition_silver_t4", 2 * HOUR_MS)).toBe(30_000);
-    expect(getSilverExpeditionReward("expedition_silver_t4", 6 * HOUR_MS)).toBe(90_000);
-    expect(getSilverExpeditionReward("expedition_silver_t8", 12 * HOUR_MS)).toBe(600_000);
+  it("gates each Generalist tier through the existing Cartography unlock", () => {
+    for (const definition of SILVER_EXPEDITION_DEFINITIONS) {
+      expect(definition.requirements).toEqual([
+        { type: "research_unlock", unlockId: SILVER_UNLOCKS[definition.tier as keyof typeof SILVER_UNLOCKS] },
+      ]);
+      const tier = definition.tier as 4 | 5 | 6 | 7 | 8;
+      expect(definition.reward.silverPerHour).toBe(GENERALIST_EXPEDITION_REWARD_PROFILES[tier].silverPerHour);
+      expect(definition.reward.shardsPerHour).toBe(GENERALIST_EXPEDITION_REWARD_PROFILES[tier].shardsPerHour);
+    }
   });
 
   it("authors one common Faction expedition per tier behind Archaeology", () => {
