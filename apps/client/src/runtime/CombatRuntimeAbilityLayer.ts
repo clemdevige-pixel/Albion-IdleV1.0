@@ -222,12 +222,13 @@ export class CombatRuntime extends LegacyCombatRuntime {
   private handleSegmentStart(result: CombatDomainTickResult): void {
     if (result.spawnedEnemy === undefined) return;
     const location = this.runtimeDeps.ports.getLocationState();
-    if (location.encounterIndex !== 0) return;
-
     const policy = this.runtimeDeps.ports.flowPolicy ?? WORLD_COMBAT_FLOW_POLICY;
+
     if (policy.shouldResetHeroCooldownsOnEncounterStart({ encounterIndex: location.encounterIndex })) {
       this.runtimeDeps.abilityManager.resetCooldowns(this.runtimeDeps.heroId);
     }
+
+    if (location.encounterIndex !== 0) return;
     markCombatSegmentStart();
   }
 
