@@ -25,7 +25,6 @@ import { DashboardCombatCard } from "./components/DashboardCombatCard";
 import { DashboardEnchantReadyCard } from "./components/DashboardEnchantReadyCard";
 import { DashboardProductionCard } from "./components/DashboardProductionCard";
 import { DashboardResearchCard } from "./components/DashboardResearchCard";
-import { DashboardTrackedResourcesCard } from "./components/DashboardTrackedResourcesCard";
 import { DashboardYieldCard } from "./components/DashboardYieldCard";
 
 export function DashboardModule(): JSX.Element {
@@ -51,7 +50,6 @@ export function DashboardModule(): JSX.Element {
     research: <DashboardResearchCard />,
     yield: <DashboardYieldCard yieldData={yieldData} />,
     "enchant-ready": <DashboardEnchantReadyCard />,
-    "tracked-resources": <DashboardTrackedResourcesCard />,
     production: <DashboardProductionCard production={production} />,
   };
 
