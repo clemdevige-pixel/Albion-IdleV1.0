@@ -211,7 +211,13 @@ function ExpeditionTooltip({ expedition }: { readonly expedition: AcademyExpedit
   );
 }
 
-function ActiveExpeditionRow({ expedition }: { readonly expedition: AcademyExpeditionEntryModel }): JSX.Element {
+function ActiveExpeditionRow({
+  expedition,
+  onCancel,
+}: {
+  readonly expedition: AcademyExpeditionEntryModel;
+  readonly onCancel: (expedition: AcademyExpeditionEntryModel) => void;
+}): JSX.Element {
   const info = getExpeditionPresentationInfo(expedition.id);
   const progress = expedition.activeDurationMs === undefined || expedition.remainingDurationMs === undefined
     ? undefined
@@ -239,6 +245,13 @@ function ActiveExpeditionRow({ expedition }: { readonly expedition: AcademyExped
         <b className="ui-academy__status is-active">En cours</b>
         <small>Slot {String((expedition.activeSlotIndex ?? 0) + 1)} · {expeditionKindLabel(expedition)}</small>
       </div>
+      <button
+        className="ui-academy__cancel-expedition"
+        type="button"
+        onClick={() => { onCancel(expedition); }}
+      >
+        Annuler
+      </button>
 
       {progress !== undefined && expedition.remainingDurationMs !== undefined && (
         <div className="ui-academy__research-progress">
@@ -311,6 +324,16 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
     if (selectedExpedition === undefined || selectedDuration === undefined) return;
     const result = startAcademyExpedition(selectedExpedition.id, selectedDuration);
     setFeedback(result.ok ? `${selectedExpedition.displayName} lancée.` : expeditionFailureMessage(result.reason));
+  };
+
+  const handleExpeditionCancel = (entry: AcademyExpeditionEntryModel): void => {
+    if (entry.activeSlotIndex === undefined) return;
+    const result = model.cancelExpedition(entry.activeSlotIndex);
+    setFeedback(
+      result.ok
+        ? `${entry.displayName} annulée. Aucune récompense obtenue.`
+        : "Cette expédition n’est plus active.",
+    );
   };
 
   return (
@@ -407,7 +430,13 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
             <div className="ui-academy__active-research ui-academy__active-expeditions-block">
               <span className="ui-island__eyebrow">En cours</span>
               <div className="ui-academy__active-expeditions">
-                {activeExpeditions.map((entry) => <ActiveExpeditionRow key={entry.id} expedition={entry} />)}
+                {activeExpeditions.map((entry) => (
+                  <ActiveExpeditionRow
+                    key={entry.id}
+                    expedition={entry}
+                    onCancel={handleExpeditionCancel}
+                  />
+                ))}
               </div>
             </div>
           )}
