@@ -3,11 +3,11 @@ import type {
   DungeonRunState,
   DungeonRuntime,
   EquipmentManager,
-  InventoryManager,
 } from "@game/gameplay";
 import { getItemTier } from "../data/itemPower.js";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
+import type { PlayerInventoryManager } from "../runtime/PlayerInventoryManager.js";
 import { worldTravelTransition } from "../runtime/WorldTravelTransition.js";
 
 interface DungeonCombatRuntime {
@@ -23,7 +23,7 @@ interface DungeonStopController {
 
 interface DungeonNavigationActionsDependencies {
   readonly dungeonRuntime: DungeonRuntime;
-  readonly inventoryManager: InventoryManager;
+  readonly inventoryManager: PlayerInventoryManager;
   readonly equipmentManager: EquipmentManager;
   readonly heroId: EntityId;
   readonly combatRuntime: DungeonCombatRuntime;
@@ -173,8 +173,10 @@ export class DungeonNavigationActions {
       .map((entry) => getItemTier(entry.itemId))
       .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => tier !== undefined);
     const highestEquippedTier = equippedTiers.length === 0 ? undefined : Math.max(...equippedTiers);
-    const hasKey = this.deps.inventoryManager.listSlots(this.deps.heroId).some(
-      (slot) => slot.entry?.itemId === definition.keyItemId && slot.entry.quantity > 0,
+    const hasKey = this.deps.inventoryManager.hasAccessibleQuantity(
+      this.deps.heroId,
+      definition.keyItemId,
+      1,
     );
 
     return resolveDungeonAccessState({
@@ -201,6 +203,11 @@ export class DungeonNavigationActions {
       definitionId,
       this.deps.heroId,
       this.deps.inventoryManager,
+      (itemId, quantity) => this.deps.inventoryManager.removeAccessibleQuantity(
+        this.deps.heroId,
+        itemId,
+        quantity,
+      ),
     );
 
     this.pendingDefinitionId = null;
