@@ -19,8 +19,7 @@ import {
   type WorkerProfession,
   type ZoneDefinitionId,
 } from "@game/gameplay";
-import { EQUIPMENT_CRAFT_RECIPES } from "../../data/refiningRecipes.js";
-import { FACTION_CAPE_CRAFT_RECIPES } from "../../data/factionCapeContentCatalog.js";
+import { ALL_CRAFT_RECIPES } from "../../data/specialCraftRecipes.js";
 import { getItemPower } from "../../data/itemPower.js";
 import { setupResourceContentCatalog } from "../../data/resourceContentCatalog.js";
 import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog.js";
@@ -167,7 +166,7 @@ export function createProductionFoundation({
     heroId,
     productionStorageId,
     durabilityStore,
-    recipes: [...EQUIPMENT_CRAFT_RECIPES, ...FACTION_CAPE_CRAFT_RECIPES],
+    recipes: ALL_CRAFT_RECIPES,
     getItemPower,
   });
 
