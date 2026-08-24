@@ -84,7 +84,10 @@ describe("faction artifact weapon content", () => {
     const bloodletterAbilities = resolveUnlockedWeaponAbilities("item_weapon_dagger_bloodletter_t4", 30);
 
     expect(pairAbilities.at(-1)?.id).toBe("ability_dagger_pair_cross_assault");
-    expect(pairAbilities.at(-1)?.mechanics.autoRule).toBeUndefined();
+    expect(pairAbilities.at(-1)?.mechanics.autoRule).toEqual({
+      kind: "target_has_effect",
+      effectId: "effect_dagger_opening",
+    });
     expect(bloodletterAbilities.at(-1)?.id).toBe("ability_dagger_bloodletter_lunging_stabs");
     expect(bloodletterAbilities.at(-1)?.mechanics.autoRule).toEqual({ kind: "target_health_below", ratio: 0.4 });
   });
