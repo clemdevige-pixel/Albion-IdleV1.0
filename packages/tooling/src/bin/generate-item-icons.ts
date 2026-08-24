@@ -14,7 +14,6 @@ const MAX_VISIBLE_EXTENT = 120;
 const MIN_VISIBLE_EXTENT = 88;
 const TARGET_ALPHA_DENSITY = 0.28;
 const MIN_EDGE_MARGIN = 2;
-const MAX_CENTROID_CORRECTION_RATIO = 0.08;
 
 interface AlphaMetrics {
   readonly width: number;
@@ -217,25 +216,11 @@ function generateIcon(source: string, outputDir: string): void {
   const resizedWidth = Math.max(1, Math.round(metrics.width * scale));
   const resizedHeight = Math.max(1, Math.round(metrics.height * scale));
 
-  const geometricCenterX = resizedWidth / 2;
-  const geometricCenterY = resizedHeight / 2;
-  const centroidOffsetX = ((metrics.centroidX - (metrics.width / 2)) * scale);
-  const centroidOffsetY = ((metrics.centroidY - (metrics.height / 2)) * scale);
-  const correctedCenterX = geometricCenterX + clamp(
-    centroidOffsetX,
-    -resizedWidth * MAX_CENTROID_CORRECTION_RATIO,
-    resizedWidth * MAX_CENTROID_CORRECTION_RATIO,
-  );
-  const correctedCenterY = geometricCenterY + clamp(
-    centroidOffsetY,
-    -resizedHeight * MAX_CENTROID_CORRECTION_RATIO,
-    resizedHeight * MAX_CENTROID_CORRECTION_RATIO,
-  );
-
-  const maxLeft = ICON_SIZE - MIN_EDGE_MARGIN - resizedWidth;
-  const maxTop = ICON_SIZE - MIN_EDGE_MARGIN - resizedHeight;
-  const left = clamp(Math.round((ICON_SIZE / 2) - correctedCenterX), MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxLeft));
-  const top = clamp(Math.round((ICON_SIZE / 2) - correctedCenterY), MIN_EDGE_MARGIN, Math.max(MIN_EDGE_MARGIN, maxTop));
+  // Inventory icons are centered on their trimmed visible bounds. Do not use
+  // alpha-mass centroids here: asymmetric silhouettes (daggers, bows, staves)
+  // otherwise drift even though their visible bounding box is already correct.
+  const left = Math.floor((ICON_SIZE - resizedWidth) / 2);
+  const top = Math.floor((ICON_SIZE - resizedHeight) / 2);
   const right = ICON_SIZE - resizedWidth - left;
   const bottom = ICON_SIZE - resizedHeight - top;
 
