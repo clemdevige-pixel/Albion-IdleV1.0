@@ -3,8 +3,8 @@
   "id": "world_hud_default",
   "kind": "world_hud",
   "healthBar": {
-    "defaultWidth": 128,
-    "height": 10,
+    "defaultWidth": 110,
+    "height": 8,
     "offsetY": 132,
     "backgroundColor": "#0d1119",
     "borderColor": "#687386",
