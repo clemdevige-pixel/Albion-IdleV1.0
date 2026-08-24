@@ -1,3 +1,4 @@
+import { getFactionRuneItemId } from "@game/data";
 import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import {
@@ -14,7 +15,6 @@ import {
   getDungeonKeyFragmentItemId,
   getDungeonKeyItemId,
 } from "../../data/dungeonKeyContentCatalog.js";
-import { getFactionRuneItemId } from "../../data/factionRuneContentCatalog.js";
 import { resolveItemStackInfo } from "../../data/itemContentCatalog.js";
 import {
   RESEARCH_UNLOCK_IDS,
