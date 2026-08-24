@@ -28,10 +28,7 @@ describe("weapon content catalog", () => {
     expect(resolveWeaponTier("item_weapon_gloves_t8_spiked_gauntlets")).toBe(8);
     expect(resolveWeaponTier("item_weapon_dagger_t8_pair")).toBe(8);
     expect(resolveWeaponFamilyId("item_weapon_bow_t4_badon")).toBe("bow");
-    expect(resolveWeaponMastery("item_weapon_bow_t4_badon")).toEqual({
-      familyId: "mastery_bow",
-      weaponId: "mastery_badon",
-    });
+    expect(resolveWeaponMastery("item_weapon_bow_t4_badon")).toEqual({ familyId: "mastery_bow", weaponId: "mastery_badon" });
     expect(resolvePrimaryAbilityId("item_weapon_bow_t4_badon")).toBe("ability_bow_aimed_shot");
   });
 
@@ -56,13 +53,8 @@ describe("weapon content catalog", () => {
   it("shares Arc Q/W between Longbow and Badon but keeps distinct M30 signatures", () => {
     const longbow = resolveWeaponAbilityUnlocks("item_weapon_bow_t4_longbow");
     const badon = resolveWeaponAbilityUnlocks("item_weapon_bow_t4_badon");
-    expect(longbow.slice(0, 2).map(({ ability }) => ability.id)).toEqual([
-      "ability_bow_aimed_shot",
-      "ability_bow_piercing_arrow",
-    ]);
-    expect(badon.slice(0, 2).map(({ ability }) => ability.id)).toEqual(
-      longbow.slice(0, 2).map(({ ability }) => ability.id),
-    );
+    expect(longbow.slice(0, 2).map(({ ability }) => ability.id)).toEqual(["ability_bow_aimed_shot", "ability_bow_piercing_arrow"]);
+    expect(badon.slice(0, 2).map(({ ability }) => ability.id)).toEqual(longbow.slice(0, 2).map(({ ability }) => ability.id));
     expect(longbow[2]?.ability.id).toBe("ability_bow_deadeye");
     expect(badon[2]?.ability.id).toBe("ability_bow_badon_raging_storm");
   });
@@ -77,43 +69,15 @@ describe("weapon content catalog", () => {
   });
 
   it("authors conditional autocast on the authoritative ability mechanics", () => {
-    expect(CLIENT_ABILITIES["ability_sword_execution"]?.mechanics.autoRule).toEqual({
-      kind: "target_health_below",
-      ratio: 0.5,
-    });
+    expect(CLIENT_ABILITIES["ability_sword_execution"]?.mechanics.autoRule).toEqual({ kind: "target_health_below", ratio: 0.5 });
   });
 
   it("keeps current live M1 mechanics", () => {
-    expect(CLIENT_ABILITIES["ability_sword_heroic_strike"]).toMatchObject({
-      cooldown: 6,
-      mechanics: { mechanics: [{ kind: "damage", ratio: 0.9 }] },
-    });
-    expect(CLIENT_ABILITIES["ability_bow_aimed_shot"]).toMatchObject({
-      cooldown: 5,
-      mechanics: { mechanics: [{ kind: "damage", ratio: 0.534 }] },
-    });
-    expect(CLIENT_ABILITIES["ability_fire_fireball"]).toMatchObject({
-      cooldown: 5,
-      mechanics: {
-        mechanics: [
-          { kind: "damage", ratio: 0.36 },
-          { kind: "dot", effectId: "effect_fire_burn", ratio: 0.064, interval: 1, ticks: 3 },
-        ],
-      },
-    });
-    expect(CLIENT_ABILITIES["ability_gloves_shockwave"]).toMatchObject({
-      cooldown: 6,
-      mechanics: { mechanics: [{ kind: "damage", ratio: 1.18 }] },
-    });
-    expect(CLIENT_ABILITIES["ability_dagger_double_slash"]).toMatchObject({
-      cooldown: 4,
-      mechanics: {
-        mechanics: [
-          { kind: "damage", ratio: 0.45, hits: 2 },
-          { kind: "heal_from_damage", ratio: 0.12, maxHealthRatio: 0.015 },
-        ],
-      },
-    });
+    expect(CLIENT_ABILITIES["ability_sword_heroic_strike"]).toMatchObject({ cooldown: 6, mechanics: { mechanics: [{ kind: "damage", ratio: 0.9 }] } });
+    expect(CLIENT_ABILITIES["ability_bow_aimed_shot"]).toMatchObject({ cooldown: 5, mechanics: { mechanics: [{ kind: "damage", ratio: 0.534 }] } });
+    expect(CLIENT_ABILITIES["ability_fire_fireball"]).toMatchObject({ cooldown: 5, mechanics: { mechanics: [{ kind: "damage", ratio: 0.428 }, { kind: "dot", effectId: "effect_fire_burn", ratio: 0.096, interval: 1, ticks: 3 }] } });
+    expect(CLIENT_ABILITIES["ability_gloves_shockwave"]).toMatchObject({ cooldown: 6, mechanics: { mechanics: [{ kind: "damage", ratio: 1.18 }] } });
+    expect(CLIENT_ABILITIES["ability_dagger_double_slash"]).toMatchObject({ cooldown: 4, mechanics: { mechanics: [{ kind: "damage", ratio: 0.595, hits: 2 }, { kind: "heal_from_damage", ratio: 0.12, maxHealthRatio: 0.015 }] } });
   });
 
   it("does not infer unknown weapons", () => {
