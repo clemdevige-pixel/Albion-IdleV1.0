@@ -2,6 +2,7 @@ import {
   ISLAND_BUILDING_IDS,
   PLAYER_ISLAND_CONFIG,
   getIslandLevelDefinition,
+  getIslandSynchronizedBuildingLevel,
   getIslandUpgradeableLevelDefinition,
   getNextIslandLevelDefinition,
   type IslandBuildingId,
@@ -71,6 +72,9 @@ function clampBuildingLevelToIsland(
   islandLevel: number,
   maxBuildingLevel: number,
 ): number {
+  const synchronizedLevel = getIslandSynchronizedBuildingLevel(definitionId, islandLevel);
+  if (synchronizedLevel !== undefined) return synchronizedLevel;
+
   let candidateLevel = Math.min(savedLevel, maxBuildingLevel);
   while (candidateLevel > 1) {
     const definition = getIslandUpgradeableLevelDefinition(definitionId, candidateLevel);
@@ -106,7 +110,16 @@ export class PlayerIslandService implements SaveProvider {
     if (plot === undefined) return { ok: false, reason: "unknown_plot" };
     if (plot.buildingInstanceId !== null) return { ok: false, reason: "plot_occupied" };
     if (this.#state.buildings.some((building) => building.definitionId === definitionId)) return { ok: false, reason: "already_built" };
-    return { ok: true, building: { instanceId: `island_${definitionId}`, definitionId, plotId, level: 1 } };
+    const synchronizedLevel = getIslandSynchronizedBuildingLevel(definitionId, this.#state.level);
+    return {
+      ok: true,
+      building: {
+        instanceId: `island_${definitionId}`,
+        definitionId,
+        plotId,
+        level: synchronizedLevel ?? 1,
+      },
+    };
   }
 
   placeBuilding(definitionId: IslandBuildingId, plotId: string): PlaceIslandBuildingResult {
@@ -156,7 +169,14 @@ export class PlayerIslandService implements SaveProvider {
   upgradeIslandLevel(): UpgradeIslandLevelResult {
     const preview = this.canUpgradeIslandLevel();
     if (!preview.ok) return preview;
-    this.#state = { ...this.#state, level: preview.level };
+    this.#state = {
+      ...this.#state,
+      level: preview.level,
+      buildings: this.#state.buildings.map((building) => {
+        const synchronizedLevel = getIslandSynchronizedBuildingLevel(building.definitionId, preview.level);
+        return synchronizedLevel === undefined ? building : { ...building, level: synchronizedLevel };
+      }),
+    };
     return preview;
   }
 
@@ -175,8 +195,8 @@ export class PlayerIslandService implements SaveProvider {
       plots: this.#config.plots.map((plot) => ({ id: plot.id, buildingInstanceId: savedPlotById.get(plot.id)?.buildingInstanceId ?? null })),
       buildings: parsed.data.buildings.map((building) => ({
         ...building,
-        // Legacy production-building levels are intentionally collapsed to level 1.
-        // Authored special buildings (currently Academy) keep their valid progression.
+        // Island-synchronized buildings are migrated to the level already paid
+        // through global Island Level; legacy production levels still collapse.
         level: clampBuildingLevelToIsland(
           building.definitionId,
           building.level,
