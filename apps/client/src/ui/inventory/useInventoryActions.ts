@@ -87,8 +87,30 @@ export function useInventoryActions(): InventoryActions {
 
   const assembleFragments = useCallback((itemId: string): boolean => {
     const recipe = getFragmentAssemblyRecipe(itemId);
-    if (recipe === undefined) return false;
-    return services.craftEquipment(recipe.outputItemId);
+    const requirement = recipe?.requirements[0];
+    if (recipe === undefined || requirement === undefined) return false;
+
+    const currentQuantity = services.inventoryManager.getTotalQuantity(services.heroId, itemId);
+    if (currentQuantity < requirement.quantity) {
+      services.bridge.addEconomyNotification({
+        id: `notif_fragment_assembly_missing_${String(Date.now())}`,
+        type: "error",
+        message: `Fragments insuffisants : ${String(currentQuantity)} / ${String(requirement.quantity)} pour ${recipe.name}.`,
+        timestamp: Date.now(),
+      });
+      return false;
+    }
+
+    const assembled = services.craftEquipment(recipe.outputItemId);
+    if (!assembled) {
+      services.bridge.addEconomyNotification({
+        id: `notif_fragment_assembly_failed_${String(Date.now())}`,
+        type: "error",
+        message: `Impossible d’assembler ${recipe.name}. Vérifiez l’espace disponible dans l’inventaire.`,
+        timestamp: Date.now(),
+      });
+    }
+    return assembled;
   }, [services]);
 
   const move = useCallback((kind: StorageKind, from: number, to: number): boolean => {
