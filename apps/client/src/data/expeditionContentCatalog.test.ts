@@ -1,6 +1,6 @@
+import { getFactionRuneItemId } from "@game/data";
 import { describe, expect, it } from "vitest";
 import { FACTION_EXPEDITION_REWARD_PROFILES } from "./factionExpeditionRewardContentCatalog.js";
-import { getFactionRuneItemId } from "./factionRuneContentCatalog.js";
 import { GENERALIST_EXPEDITION_REWARD_PROFILES } from "./generalistExpeditionRewardContentCatalog.js";
 import { RESEARCH_UNLOCK_IDS } from "./researchContentCatalog.js";
 import {
