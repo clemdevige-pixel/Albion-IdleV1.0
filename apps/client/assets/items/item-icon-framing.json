@@ -1,5 +1,6 @@
 {
-  "armes/bloodletter.png": {
+  "icons/armes/bloodletter.png": {
+    "trimThreshold": 12,
     "offsetX": 8,
     "offsetY": -6,
     "scale": 0.9
