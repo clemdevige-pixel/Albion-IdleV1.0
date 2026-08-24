@@ -25,7 +25,6 @@ export interface TrackedResource {
 
 interface ResourceTrackingState {
   readonly resources: readonly TrackedResource[];
-  readonly selectedResource: TrackedResource | undefined;
   readonly isTracked: (id: string) => boolean;
   readonly toggleTracked: (resource: TrackedResource) => void;
   readonly untrack: (id: string) => void;
@@ -75,8 +74,7 @@ function loadPersistedResources(): readonly TrackedResource[] {
     if (raw === null) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    const first = parsed.find(isTrackedResource);
-    return first === undefined ? [] : [first];
+    return parsed.filter(isTrackedResource);
   } catch {
     return [];
   }
@@ -94,21 +92,22 @@ export function ResourceTrackingProvider({ children }: { readonly children: Reac
   }, [resources]);
 
   const isTracked = useCallback(
-    (id: string) => resources[0]?.id === id,
+    (id: string) => resources.some((resource) => resource.id === id),
     [resources],
   );
 
   const toggleTracked = useCallback((resource: TrackedResource) => {
-    setResources((current) => current[0]?.id === resource.id ? [] : [resource]);
+    setResources((current) => current.some((candidate) => candidate.id === resource.id)
+      ? current.filter((candidate) => candidate.id !== resource.id)
+      : [...current, resource]);
   }, []);
 
   const untrack = useCallback((id: string) => {
-    setResources((current) => current[0]?.id === id ? [] : current);
+    setResources((current) => current.filter((resource) => resource.id !== id));
   }, []);
 
   const value = useMemo<ResourceTrackingState>(() => ({
     resources,
-    selectedResource: resources[0],
     isTracked,
     toggleTracked,
     untrack,
