@@ -17,6 +17,13 @@ import {
   type ProductionTier,
 } from "../../data/productionFamilyCatalog";
 
+export interface RefiningToggleRequest {
+  readonly family: SupportedProductionFamily;
+  readonly cycles?: number;
+}
+
+export type RefiningToggleTarget = SupportedProductionFamily | RefiningToggleRequest;
+
 interface ProductionActionsDependencies {
   readonly bridge: GameBridge;
   readonly heroId: EntityId;
@@ -114,15 +121,16 @@ export class ProductionActions {
     return true;
   }
 
-  toggleRefining(family: SupportedProductionFamily): boolean {
-    const result = this.toggleRefiningRuntime(family);
+  toggleRefining(target: RefiningToggleTarget): boolean {
+    const request = typeof target === "string" ? { family: target } : target;
+    const result = this.toggleRefiningRuntime(request.family, request.cycles);
     syncInventoryToBridge(
       this.deps.bridge,
       this.deps.inventoryManager,
       this.deps.heroId,
     );
-    this.deps.productionBridge.syncGathering(family);
-    this.deps.productionBridge.syncRefining(family);
+    this.deps.productionBridge.syncGathering(request.family);
+    this.deps.productionBridge.syncRefining(request.family);
     return result.action === "started" || result.action === "stopped" || result.action === "completed";
   }
 
@@ -180,10 +188,14 @@ export class ProductionActions {
     );
   }
 
-  private toggleRefiningRuntime(family: SupportedProductionFamily) {
+  private toggleRefiningRuntime(
+    family: SupportedProductionFamily,
+    cycles?: number,
+  ) {
     return this.deps.refiningRuntime.toggleRefiningFamily(
       family,
       this.deps.getCurrentTick(),
+      cycles,
     );
   }
 }
