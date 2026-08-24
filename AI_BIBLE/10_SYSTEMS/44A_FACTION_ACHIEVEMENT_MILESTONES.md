@@ -87,13 +87,15 @@ Per faction:
 ### Veteran Expeditionary
 - complete 50 Expeditions total.
 
-### First Silver Expedition
-- complete one generic Silver Expedition.
+### First Generalist Expedition
+- complete one generic Generalist Expedition.
 
-### Expedition Fortune
-- earn 1,000,000 cumulative Silver actually credited by generic Silver Expeditions.
+### Generalist Fortune
+- earn 1,000,000 cumulative Silver actually credited by generic Generalist Expeditions.
 
 Shared Faction Expeditions contribute normally to the generic total Expedition milestones.
+
+Historical implementation identifiers for Generalist-specific counters retain the `silver_expedition_*` namespace for save/data compatibility. Player-facing naming is Generalist Expedition.
 
 ---
 
@@ -160,6 +162,8 @@ Current reusable conditions:
 - `expedition_completed_count`;
 - `silver_expedition_completed_count`;
 - `silver_expedition_lifetime_silver`.
+
+The `silver_expedition_*` condition names are historical internal IDs and must not drive player-facing naming.
 
 Do not create faction-specific runtime branches.
 
