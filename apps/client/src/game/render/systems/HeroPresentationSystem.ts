@@ -27,13 +27,14 @@ export class HeroPresentationSystem {
 
   public update(state: HeroPresentationState): void {
     this.currentCombatState = state.combatState;
-    const actorVisual = this.resolveActorVisual(state.visualManifestId);
+    const nextVisualManifestId =
+      state.visualManifestId ?? this.fallbackVisualManifestId;
     const defeated = state.combatState === "defeat";
 
     if (defeated) {
-      this.currentVisualManifestId =
-        state.visualManifestId ?? this.fallbackVisualManifestId;
+      this.currentVisualManifestId = nextVisualManifestId;
       this.weaponInitialized = true;
+      const actorVisual = this.resolveActorVisual(nextVisualManifestId);
       const deathTexture = this.animationSystem.getDeathTexture(actorVisual);
 
       if (
@@ -51,8 +52,6 @@ export class HeroPresentationSystem {
       this.presentIdle();
     }
 
-    const nextVisualManifestId =
-      state.visualManifestId ?? this.fallbackVisualManifestId;
     if (!this.weaponInitialized || nextVisualManifestId !== this.currentVisualManifestId) {
       this.currentVisualManifestId = nextVisualManifestId;
       this.weaponInitialized = true;
