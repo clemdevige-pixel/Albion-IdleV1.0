@@ -26,6 +26,8 @@ export class GamePresentationRuntime {
   private lastCombatState: GameBridge["combatState"] | undefined;
   private lastTravelGeneration = 0;
   private awaitingCombatAfterTravel = false;
+  private lastBridgeSnapshot: ReturnType<GameBridge["getSnapshot"]> | undefined;
+  private lastActiveGathering: ReturnType<typeof selectActiveGathering>;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -47,13 +49,26 @@ export class GamePresentationRuntime {
     this.activity = new ActivityPresentationController(this.scene, combat);
     this.travel = new WorldTravelPresentationController(this.scene, combat, world);
     this.lastTravelGeneration = worldTravelTransition.getGeneration();
+    if (bridge !== undefined) {
+      this.lastBridgeSnapshot = bridge.getSnapshot();
+      this.lastActiveGathering = selectActiveGathering(bridge);
+      this.activity.update(this.lastActiveGathering);
+      this.world.update(bridge, this.lastActiveGathering);
+    }
   }
 
   public update(): void {
     const bridge = this.getBridge();
     if (bridge === undefined) return;
 
-    const gathering = selectActiveGathering(bridge);
+    const bridgeSnapshot = bridge.getSnapshot();
+    const bridgeChanged = bridgeSnapshot !== this.lastBridgeSnapshot;
+    if (bridgeChanged) {
+      this.lastBridgeSnapshot = bridgeSnapshot;
+      this.lastActiveGathering = selectActiveGathering(bridge);
+    }
+    const gathering = this.lastActiveGathering;
+
     const travelGeneration = worldTravelTransition.getGeneration();
     const authoritativeTravelStarted = travelGeneration !== this.lastTravelGeneration
       && worldTravelTransition.isActive();
@@ -107,8 +122,10 @@ export class GamePresentationRuntime {
     }
 
     if (!travelActive && !arrivalHold) this.combat?.update(bridge);
-    this.activity?.update(gathering);
-    this.world?.update(bridge, gathering);
+    if (bridgeChanged) {
+      this.activity?.update(gathering);
+      this.world?.update(bridge, gathering);
+    }
     this.lastCombatState = bridge.combatState;
   }
 
@@ -126,6 +143,8 @@ export class GamePresentationRuntime {
     this.lastCombatState = undefined;
     this.lastTravelGeneration = worldTravelTransition.getGeneration();
     this.awaitingCombatAfterTravel = false;
+    this.lastBridgeSnapshot = undefined;
+    this.lastActiveGathering = undefined;
   }
 
   private hasAuthoritativeEnemySnapshot(bridge: GameBridge): boolean {
