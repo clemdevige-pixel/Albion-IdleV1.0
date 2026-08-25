@@ -80,12 +80,12 @@ const BUILDINGS: readonly IslandBuildingDefinition[] = [
     craftingService: { categories: ["weapons", "armors", "other"] },
     construction: {
       silver: WORKSHOP_SILVER_COST,
-      requirements: [],
-      flexibleRequirement: {
-        itemIds: [T3_PLANKS_ID, T3_BARS_ID, T3_LEATHER_ID, T3_CLOTH_ID],
-        totalQuantity: 6,
-        minimumDistinctItemIds: 2,
-      },
+      requirements: [
+        { itemId: T3_PLANKS_ID, quantity: 2 },
+        { itemId: T3_BARS_ID, quantity: 2 },
+        { itemId: T3_LEATHER_ID, quantity: 2 },
+        { itemId: T3_CLOTH_ID, quantity: 2 },
+      ],
     },
   },
   {
