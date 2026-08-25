@@ -26,6 +26,9 @@ export class GatheringPresentationSystem {
   private active = false;
   private readonly nodeBaseX: number;
   private readonly nodeBaseY: number;
+  private lastVisualManifestId: string | undefined;
+  private lastResourceLabel: string | undefined;
+  private lastProgress: number | undefined;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -87,29 +90,38 @@ export class GatheringPresentationSystem {
     if (nextActive !== this.active) this.setActive(nextActive);
     if (state === undefined) return false;
 
-    const manifest = renderManifestRegistry.requireResourceNode(
-      state.visualManifestId,
-    );
-    this.scene.textures
-      .get(manifest.textureKey)
-      .setFilter(Phaser.Textures.FilterMode.NEAREST);
-    if (this.node.texture.key !== manifest.textureKey) {
-      this.node.setTexture(manifest.textureKey);
+    if (state.visualManifestId !== this.lastVisualManifestId) {
+      const manifest = renderManifestRegistry.requireResourceNode(
+        state.visualManifestId,
+      );
+      this.scene.textures
+        .get(manifest.textureKey)
+        .setFilter(Phaser.Textures.FilterMode.NEAREST);
+      if (this.node.texture.key !== manifest.textureKey) {
+        this.node.setTexture(manifest.textureKey);
+      }
+      this.node
+        .setPosition(
+          this.nodeBaseX + manifest.offset.x,
+          this.nodeBaseY + manifest.offset.y,
+        )
+        .setOrigin(manifest.origin.x, manifest.origin.y)
+        .setDisplaySize(manifest.display.width, manifest.display.height);
+      this.lastVisualManifestId = state.visualManifestId;
     }
-    this.node
-      .setPosition(
-        this.nodeBaseX + manifest.offset.x,
-        this.nodeBaseY + manifest.offset.y,
-      )
-      .setOrigin(manifest.origin.x, manifest.origin.y)
-      .setDisplaySize(manifest.display.width, manifest.display.height);
 
-    this.progressFill.width =
-      this.progressBarWidth
-      * Math.max(0, Math.min(1, state.progress / 100));
-    this.label.setText(
-      `${state.resourceName} · T${String(state.resourceTier)}`,
-    );
+    if (state.progress !== this.lastProgress) {
+      this.progressFill.width =
+        this.progressBarWidth
+        * Math.max(0, Math.min(1, state.progress / 100));
+      this.lastProgress = state.progress;
+    }
+
+    const resourceLabel = `${state.resourceName} · T${String(state.resourceTier)}`;
+    if (resourceLabel !== this.lastResourceLabel) {
+      this.label.setText(resourceLabel);
+      this.lastResourceLabel = resourceLabel;
+    }
     return true;
   }
 
