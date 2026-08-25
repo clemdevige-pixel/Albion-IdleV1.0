@@ -69,7 +69,7 @@ export function CraftingView(): JSX.Element {
               onChange={setRequestedRecipeKey}
             />
           </div>
-          <CraftingRecipeDetails recipe={recipe} onCraft={() => { actions.craft(recipe.outputItemId); }} />
+          <CraftingRecipeDetails recipe={recipe} onCraft={() => actions.craft(recipe.outputItemId)} />
         </>
       )}
     </div>
