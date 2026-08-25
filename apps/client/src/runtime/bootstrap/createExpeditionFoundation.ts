@@ -1,5 +1,6 @@
 import type { EntityId } from "@game/core";
 import {
+  ExpeditionRewardDeferredError,
   ExpeditionService,
   type CurrencyService,
   type InventoryManager,
@@ -90,7 +91,9 @@ function creditInventoryRewards(
       throw new Error(`Expedition produced a non-integer inventory reward: ${expeditionId}`);
     }
     if (!inventoryManager.canAcceptQuantity(heroId, reward.itemId, reward.quantity)) {
-      throw new Error(`Expedition inventory capacity exceeded: ${expeditionId}`);
+      throw new ExpeditionRewardDeferredError(
+        `Expedition inventory capacity exceeded: ${expeditionId}`,
+      );
     }
   }
 
