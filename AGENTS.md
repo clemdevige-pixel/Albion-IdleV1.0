@@ -24,6 +24,19 @@ Primary detailed contract:
 - `GameProvider` is the composition function inside `apps/client/src/state/GameContext.tsx`; its size alone is not justification for another abstraction layer.
 - Do not convert TypeScript config to JSON/CSV merely for architecture theatre. Data-driven means one authoritative reusable source with clean ownership.
 
+## Enforced package boundaries
+
+`pnpm lint` also runs `pnpm validate:architecture`.
+
+The executable guard currently enforces the existing dependency direction:
+- `packages/core` must not depend on other `@game/*` packages or React/Phaser/Fastify.
+- `packages/data` must not depend on core/persistence/gameplay or React/Phaser/Fastify.
+- `packages/persistence` must not depend on data/gameplay or React/Phaser/Fastify.
+- `packages/gameplay` must remain independent from React/Phaser/Fastify and app-layer source files.
+- Low-level packages must not escape through relative imports into `apps/client` or `apps/server`.
+
+Do not disable or bypass these guards to make a feature compile. If a future architecture decision genuinely changes a boundary, update the documented contract and the guard together.
+
 ## Build / CI rules
 
 - Production builds must remain separated from tests via the dedicated build tsconfigs.
@@ -34,7 +47,7 @@ Primary detailed contract:
 ## Standard validation after architecture/data changes
 
 ```powershell
-pnpm.cmd typecheck; pnpm.cmd test; pnpm.cmd build; pnpm.cmd exec tsx scripts/runtime-blue-deterministic-check.ts
+pnpm.cmd lint; pnpm.cmd typecheck; pnpm.cmd test; pnpm.cmd build; pnpm.cmd exec tsx scripts/runtime-blue-deterministic-check.ts
 ```
 
 Run `validate:data` / `validate:assets` as well when those contracts are affected.
@@ -43,4 +56,6 @@ Run `validate:data` / `validate:assets` as well when those contracts are affecte
 
 - P0 infrastructure audit fixes: CLOSED.
 - P1 authored-data ownership cleanup: CLOSED and validated green on 2026-08-25.
-- Next architecture topic: P2 authority mapping for economy/loot/persistence/inventory/craft/workers before any server-authoritative migration.
+- P3 persistence audit: existing architecture considered mature; no immediate refactor required before a persistent cloud backend is chosen.
+- P6 architecture/quality guardrails: IN PROGRESS; executable package-boundary validation is now mandatory through `pnpm lint`.
+- P2 server-authority migration remains deferred until a robust persistent server/backend is available.
