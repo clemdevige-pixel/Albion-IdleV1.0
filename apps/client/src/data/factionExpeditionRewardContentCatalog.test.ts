@@ -7,11 +7,11 @@ import {
 describe("Faction Expedition reward content", () => {
   it("locks the validated T4-T8 EV and variance baseline", () => {
     expect(FACTION_EXPEDITION_REWARD_PROFILES).toEqual({
-      4: { tier: 4, runesPerHour: 8, runeVariance: 0.20, fragmentsPerHour: 24, fragmentVariance: 0.30, completeKeysPerHourEv: 1.2 },
-      5: { tier: 5, runesPerHour: 14, runeVariance: 0.20, fragmentsPerHour: 22, fragmentVariance: 0.30, completeKeysPerHourEv: 1.1 },
-      6: { tier: 6, runesPerHour: 25, runeVariance: 0.20, fragmentsPerHour: 19, fragmentVariance: 0.30, completeKeysPerHourEv: 1.0 },
-      7: { tier: 7, runesPerHour: 40, runeVariance: 0.20, fragmentsPerHour: 17, fragmentVariance: 0.30, completeKeysPerHourEv: 0.8 },
-      8: { tier: 8, runesPerHour: 60, runeVariance: 0.20, fragmentsPerHour: 9, fragmentVariance: 0.30, completeKeysPerHourEv: 0.45 },
+      4: { tier: 4, runesPerHour: 4, runeVariance: 0.20, fragmentsPerHour: 12, fragmentVariance: 0.30, completeKeysPerHourEv: 0.6 },
+      5: { tier: 5, runesPerHour: 7, runeVariance: 0.20, fragmentsPerHour: 11, fragmentVariance: 0.30, completeKeysPerHourEv: 0.55 },
+      6: { tier: 6, runesPerHour: 12.5, runeVariance: 0.20, fragmentsPerHour: 9.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.5 },
+      7: { tier: 7, runesPerHour: 20, runeVariance: 0.20, fragmentsPerHour: 8.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.4 },
+      8: { tier: 8, runesPerHour: 30, runeVariance: 0.20, fragmentsPerHour: 4.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.225 },
     });
   });
 
