@@ -145,10 +145,10 @@ export class CombatRuntime {
     const equippedWeaponId = this.getEquippedWeaponId();
     if (equippedWeaponId === undefined) return [];
     const masteryRoute = resolveWeaponMastery(equippedWeaponId);
-    const masteryLevel = masteryRoute === undefined
+    const familyMasteryLevel = masteryRoute === undefined
       ? 0
-      : this.masteryService?.getMasteryState(masteryRoute.weaponId)?.level ?? 1;
-    return resolveUnlockedWeaponAbilities(equippedWeaponId, masteryLevel);
+      : this.masteryService?.getMasteryState(masteryRoute.familyId)?.level ?? 1;
+    return resolveUnlockedWeaponAbilities(equippedWeaponId, familyMasteryLevel);
   }
 
   private canAutoCastAbility(definition: ClientAbilityDefinition): boolean {
