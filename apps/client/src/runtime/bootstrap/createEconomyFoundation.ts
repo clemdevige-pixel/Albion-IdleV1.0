@@ -24,7 +24,6 @@ import {
   resolveItemStackInfo,
   resolveRepairableInfo,
 } from "../../data/itemContentCatalog.js";
-import { WEAPON_VENDOR_OFFERS } from "../../data/weaponContentCatalog.js";
 import { PlayerInventoryManager } from "../PlayerInventoryManager.js";
 
 interface EconomyFoundationDependencies {
@@ -96,7 +95,7 @@ export function createEconomyFoundation({
     vendorId: "vendor_general",
     role: "buy_and_sell",
     enabled: true,
-    offers: [...GENERAL_VENDOR_FIXED_OFFERS, ...WEAPON_VENDOR_OFFERS],
+    offers: GENERAL_VENDOR_FIXED_OFFERS,
   });
 
   const vendorService = new VendorService(
