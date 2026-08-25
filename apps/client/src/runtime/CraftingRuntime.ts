@@ -1,10 +1,10 @@
 import type { EntityId } from "@game/core";
-import type { DurabilityStore, InventoryManager } from "@game/gameplay";
-import { canCraftRecipe } from "@game/gameplay";
+import type { DurabilityStore } from "@game/gameplay";
 import {
   SPECIAL_CRAFT_RECIPES,
   type ClientCraftRecipe,
 } from "../data/specialCraftRecipes.js";
+import type { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 import { isProductionMaterial } from "./ProductionStorage.js";
 
 export type CraftEquipmentResult =
@@ -19,7 +19,7 @@ export type CraftEquipmentResult =
     };
 
 export interface CraftingRuntimeDependencies {
-  readonly inventoryManager: InventoryManager;
+  readonly inventoryManager: PlayerInventoryManager;
   readonly heroId: EntityId;
   readonly productionStorageId?: EntityId;
   readonly durabilityStore: DurabilityStore;
@@ -28,7 +28,7 @@ export interface CraftingRuntimeDependencies {
 }
 
 export class CraftingRuntime {
-  private readonly inventoryManager: InventoryManager;
+  private readonly inventoryManager: PlayerInventoryManager;
   private readonly heroId: EntityId;
   private readonly productionStorageId: EntityId;
   private readonly durabilityStore: DurabilityStore;
@@ -51,59 +51,37 @@ export class CraftingRuntime {
 
   public craftEquipment(outputItemId: string): CraftEquipmentResult {
     const recipe = this.recipes.find((entry) => entry.outputItemId === outputItemId);
-    if (recipe === undefined) return { ok: false };
-    if (!canCraftRecipe(this.inventoryManager, this.heroId, recipe.requirements, {
-      itemId: recipe.outputItemId,
-      quantity: 1,
-    }, (itemId) => isProductionMaterial(itemId) ? this.productionStorageId : this.heroId)) {
-      return { ok: false };
-    }
+    if (recipe === undefined || !this.hasRequirements(recipe.requirements)) return { ok: false };
 
     const paid: { itemId: string; quantity: number }[] = [];
     for (const requirement of recipe.requirements) {
-      const ownerId = isProductionMaterial(requirement.itemId)
-        ? this.productionStorageId
-        : this.heroId;
-      const removed = this.inventoryManager.removeQuantity(
-        ownerId,
-        requirement.itemId,
-        requirement.quantity,
-      );
-      if (!removed.ok) {
-        for (const entry of paid) {
-          const refundOwnerId = isProductionMaterial(entry.itemId)
-            ? this.productionStorageId
-            : this.heroId;
-          this.inventoryManager.addQuantity(refundOwnerId, entry.itemId, entry.quantity, {
-            itemId: entry.itemId,
-            stackable: true,
-            maxStack: 999,
-          });
-        }
+      const removed = isProductionMaterial(requirement.itemId)
+        ? this.inventoryManager.removeQuantity(
+            this.productionStorageId,
+            requirement.itemId,
+            requirement.quantity,
+          ).ok
+        : this.inventoryManager.removeAccessibleQuantity(
+            this.heroId,
+            requirement.itemId,
+            requirement.quantity,
+          );
+      if (!removed) {
+        this.refundRequirements(paid);
         return { ok: false };
       }
       paid.push(requirement);
     }
 
-    const output = this.inventoryManager.addQuantity(this.heroId, recipe.outputItemId, 1);
-    if (!output.ok || output.value.remainder > 0) {
-      for (const entry of paid) {
-        const refundOwnerId = isProductionMaterial(entry.itemId)
-          ? this.productionStorageId
-          : this.heroId;
-        this.inventoryManager.addQuantity(refundOwnerId, entry.itemId, entry.quantity, {
-          itemId: entry.itemId,
-          stackable: true,
-          maxStack: 999,
-        });
-      }
+    const output = this.addOutputToAccessibleStorage(recipe.outputItemId);
+    if (output === undefined) {
+      this.refundRequirements(paid);
       return { ok: false };
     }
 
     const itemPower = this.getItemPower(recipe.outputItemId);
-    const outputPosition = output.value.affectedPositions[0];
-    if (itemPower !== undefined && outputPosition !== undefined) {
-      const outputSlot = this.inventoryManager.getSlot(this.heroId, outputPosition);
+    if (itemPower !== undefined) {
+      const outputSlot = this.inventoryManager.getSlot(output.ownerId, output.position);
       const outputEntry = outputSlot.ok ? outputSlot.value.entry : undefined;
       if (
         outputEntry !== undefined
@@ -119,5 +97,53 @@ export class CraftingRuntime {
       outputItemId: recipe.outputItemId,
       itemPower: itemPower ?? 0,
     };
+  }
+
+  private hasRequirements(requirements: readonly { itemId: string; quantity: number }[]): boolean {
+    return requirements.every((requirement) => {
+      const available = isProductionMaterial(requirement.itemId)
+        ? this.inventoryManager.getTotalQuantity(this.productionStorageId, requirement.itemId)
+        : this.inventoryManager.getAccessibleQuantity(this.heroId, requirement.itemId);
+      return available >= requirement.quantity;
+    });
+  }
+
+  private addOutputToAccessibleStorage(
+    itemId: string,
+  ): { readonly ownerId: EntityId; readonly position: number } | undefined {
+    for (const ownerId of this.inventoryManager.getAccessibleStorageOwners(this.heroId)) {
+      const added = this.inventoryManager.addQuantity(ownerId, itemId, 1);
+      if (!added.ok || added.value.added !== 1 || added.value.remainder !== 0) continue;
+      const position = added.value.affectedPositions[0];
+      if (position !== undefined) return { ownerId, position };
+    }
+    return undefined;
+  }
+
+  private refundRequirements(
+    requirements: readonly { itemId: string; quantity: number }[],
+  ): void {
+    for (const requirement of requirements) {
+      if (isProductionMaterial(requirement.itemId)) {
+        const restored = this.inventoryManager.addQuantity(
+          this.productionStorageId,
+          requirement.itemId,
+          requirement.quantity,
+          { itemId: requirement.itemId, stackable: true, maxStack: 999 },
+        );
+        if (!restored.ok || restored.value.remainder !== 0) {
+          throw new Error(`Crafting rollback failed for ${requirement.itemId}`);
+        }
+        continue;
+      }
+
+      if (!this.inventoryManager.addAccessibleQuantity(
+        this.heroId,
+        requirement.itemId,
+        requirement.quantity,
+      )) {
+        throw new Error(`Crafting rollback failed for ${requirement.itemId}`);
+      }
+    }
   }
 }
