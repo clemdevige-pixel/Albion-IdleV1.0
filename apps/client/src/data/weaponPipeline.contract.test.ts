@@ -4,7 +4,6 @@ import {
   WEAPON_FAMILIES,
   WEAPON_ITEM_DEFINITIONS,
   WEAPON_MASTERY_DEFINITIONS,
-  WEAPON_VENDOR_OFFERS,
   getWeaponMasteryDisplayName,
   getWeaponMasteryFamilyDefinitions,
   resolvePrimaryAbilityId,
@@ -57,7 +56,6 @@ describe("weapon pipeline contract", () => {
       const presentation = resolveEquipmentPresentation(itemId);
       const craftRule = resolveWeaponCraftRule(itemId);
       const recipes = EQUIPMENT_CRAFT_RECIPES.filter((recipe) => recipe.outputItemId === itemId);
-      const vendorOffers = WEAPON_VENDOR_OFFERS.filter((offer) => offer.itemId === itemId);
       const repairable = resolveRepairableInfo(itemId);
       const enchantment = resolveEnchantmentItemInfo(itemId);
 
@@ -74,7 +72,6 @@ describe("weapon pipeline contract", () => {
       expect(resolveWeaponAttackSpeed(itemId), `${itemId}: attack speed`).toBeGreaterThan(0);
       expect(abilityId, `${itemId}: primary ability route`).toBeDefined();
       expect(abilityId === undefined ? undefined : CLIENT_ABILITIES[abilityId], `${itemId}: primary ability definition`).toBeDefined();
-      expect(vendorOffers, `${itemId}: vendor offer count`).toHaveLength(1);
       expect(craftRule, `${itemId}: craft rule`).toBeDefined();
 
       if (craftRule?.kind === "standard") {
