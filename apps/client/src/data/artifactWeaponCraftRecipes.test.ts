@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  ARTIFACT_WEAPON_CRAFT_RECIPES,
-  ARTIFACT_WEAPON_RUNE_COST_BY_TIER,
-} from "./artifactWeaponCraftRecipes.js";
+import { ARTIFACT_WEAPON_RUNE_COST_BY_TIER } from "@game/data";
+import { ARTIFACT_WEAPON_CRAFT_RECIPES } from "./artifactWeaponCraftRecipes.js";
 import { STANDARD_WEAPON_CRAFT_RECIPES } from "./refiningRecipes.js";
 
 describe("faction artifact weapon crafting", () => {
