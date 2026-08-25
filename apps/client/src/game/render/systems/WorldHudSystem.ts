@@ -12,6 +12,12 @@ interface ActorHealthHud {
   readonly value: Phaser.GameObjects.Text;
   readonly label: Phaser.GameObjects.Text;
   width: number;
+  lastCurrent: number | undefined;
+  lastMaximum: number | undefined;
+  lastLabel: string | undefined;
+  lastX: number | undefined;
+  lastBarY: number | undefined;
+  lastVisible: boolean | undefined;
 }
 
 const ACTOR_HUD_HEAD_GAP = 10;
@@ -63,7 +69,10 @@ export class WorldHudSystem {
 
   public updateEnemy(current: number, maximum: number, name: string): void {
     this.updateActor(this.enemy, current, maximum);
-    this.enemy.label.setText(name);
+    if (name !== this.enemy.lastLabel) {
+      this.enemy.lastLabel = name;
+      this.enemy.label.setText(name);
+    }
   }
 
   public layoutPlayer(
@@ -110,6 +119,8 @@ export class WorldHudSystem {
   }
 
   private setActorVisible(actor: ActorHealthHud, visible: boolean): void {
+    if (actor.lastVisible === visible) return;
+    actor.lastVisible = visible;
     actor.background.setVisible(visible);
     actor.fill.setVisible(visible);
     actor.value.setVisible(visible);
@@ -190,6 +201,12 @@ export class WorldHudSystem {
       value,
       label: labelText,
       width,
+      lastCurrent: undefined,
+      lastMaximum: undefined,
+      lastLabel: label,
+      lastX: undefined,
+      lastBarY: undefined,
+      lastVisible: true,
     };
     this.layoutActorHud(hud, x, barY, width);
     return hud;
@@ -201,8 +218,12 @@ export class WorldHudSystem {
     barY: number,
     width: number,
   ): void {
+    if (hud.lastX === x && hud.lastBarY === barY && hud.width === width) return;
+
     const { healthBar, valueText, actorLabel } = this.manifest;
     hud.width = width;
+    hud.lastX = x;
+    hud.lastBarY = barY;
     hud.background
       .setPosition(x, barY)
       .setSize(width, healthBar.height);
@@ -222,6 +243,10 @@ export class WorldHudSystem {
     current: number,
     maximum: number,
   ): void {
+    if (hud.lastCurrent === current && hud.lastMaximum === maximum) return;
+    hud.lastCurrent = current;
+    hud.lastMaximum = maximum;
+
     const ratio = maximum > 0 ? current / maximum : 0;
     hud.fill.width = hud.width * Math.max(0, Math.min(1, ratio));
     hud.fill.setFillStyle(this.ratioToColor(ratio));
