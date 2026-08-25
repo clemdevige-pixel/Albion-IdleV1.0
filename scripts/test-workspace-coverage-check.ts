@@ -6,9 +6,9 @@ interface PackageJson {
   readonly scripts?: Readonly<Record<string, string>>;
 }
 
-async function directoryExists(dir: string): Promise<boolean> {
+async function fileExists(filePath: string): Promise<boolean> {
   try {
-    await access(dir);
+    await access(filePath);
     return true;
   } catch {
     return false;
@@ -24,7 +24,7 @@ async function listWorkspaceDirectories(repoRoot: string): Promise<string[]> {
     for (const entry of await readdir(absoluteRoot, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const relativeDir = `${root}/${entry.name}`;
-      if (await directoryExists(path.join(repoRoot, relativeDir, "package.json"))) {
+      if (await fileExists(path.join(repoRoot, relativeDir, "package.json"))) {
         directories.push(relativeDir);
       }
     }
@@ -79,11 +79,11 @@ async function main(): Promise<void> {
       errors.push(`${packageDir} has a Vitest test script but is missing from vitest.workspace.ts`);
     }
 
-    const hasConfig = await Promise.any([
-      directoryExists(path.join(repoRoot, packageDir, "vitest.config.ts")),
-      directoryExists(path.join(repoRoot, packageDir, "vitest.config.js")),
-    ]).catch(() => false);
-    if (!hasConfig) {
+    const configCandidates = await Promise.all([
+      fileExists(path.join(repoRoot, packageDir, "vitest.config.ts")),
+      fileExists(path.join(repoRoot, packageDir, "vitest.config.js")),
+    ]);
+    if (!configCandidates.some(Boolean)) {
       errors.push(`${packageDir} has a Vitest test script but no vitest.config.ts/js`);
     }
   }
