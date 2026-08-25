@@ -99,8 +99,6 @@ describe("live enchantment tier bridge sweep", () => {
         avgShardsPerHour: Number((rows.reduce((sum, row) => sum + row.shardsPerHour, 0) / rows.length).toFixed(1)),
       };
 
-      console.table(rows);
-      console.table([summary]);
       return { summary, rows };
     });
 
