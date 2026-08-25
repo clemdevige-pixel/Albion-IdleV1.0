@@ -1,17 +1,21 @@
 import type { ProductionTier } from "../../data/productionFamilyCatalog";
 import type { EntityId } from "@game/core";
-import { canCraftRecipe, type InventoryManager } from "@game/gameplay";
+import type { InventoryManager } from "@game/gameplay";
 import type {
   CraftingRecipeVM,
   GameBridge,
   GatheringVM,
   RefiningVM,
 } from "../../game/GameBridge";
-import { isProductionMaterial } from "../../runtime/ProductionStorage.js";
+import {
+  canCraftWithPlayerStorage,
+  getPlayerCraftRequirementQuantity,
+} from "../../runtime/CraftingRuntime.js";
+import type { PlayerInventoryManager } from "../../runtime/PlayerInventoryManager.js";
 
 export function syncCraftingToBridge(
   bridge: GameBridge,
-  inventoryManager: InventoryManager,
+  inventoryManager: PlayerInventoryManager,
   heroId: EntityId,
   productionStorageId: EntityId,
   productionTier: ProductionTier,
@@ -40,19 +44,21 @@ export function syncCraftingToBridge(
   const recipes: CraftingRecipeVM[] = craftRecipes.map((recipe) => {
     const requirements = recipe.requirements.map((requirement) => ({
       ...requirement,
-      available: inventoryManager.getTotalQuantity(
-        isProductionMaterial(requirement.itemId) ? productionStorageId : heroId,
+      available: getPlayerCraftRequirementQuantity(
+        inventoryManager,
+        heroId,
+        productionStorageId,
         requirement.itemId,
       ),
     }));
     const plankRequirement = requirements.find((entry) => entry.itemId.includes("planks"));
     const barRequirement = requirements.find((entry) => entry.itemId.includes("bar"));
-    const canCraft = canCraftRecipe(
+    const canCraft = canCraftWithPlayerStorage(
       inventoryManager,
       heroId,
+      productionStorageId,
       recipe.requirements,
-      { itemId: recipe.outputItemId, quantity: 1 },
-      (itemId) => isProductionMaterial(itemId) ? productionStorageId : heroId,
+      recipe.outputItemId,
     );
     const missingRequirement = requirements.find(
       (requirement) => requirement.available < requirement.quantity,
@@ -75,7 +81,7 @@ export function syncCraftingToBridge(
       plankItemId: plankRequirement?.itemId ?? "",
       barItemId: barRequirement?.itemId ?? "",
       requirements,
-      craftedQuantity: inventoryManager.getTotalQuantity(heroId, recipe.outputItemId),
+      craftedQuantity: inventoryManager.getAccessibleQuantity(heroId, recipe.outputItemId),
       canCraft,
       ...(canCraft ? {} : {
         blockedReason: missingRequirement === undefined
@@ -119,7 +125,7 @@ export function syncGatheringToBridge(
   },
 ): void {
   const requiredTicks = session?.getRequiredTicks() ?? defaultDurationTicks;
-  const elapsedTicks = session?.getElapsedTicks(currentTick) ?? 0;
+  const elapsedTicks = session === undefined ? 0 : session.getElapsedTicks(currentTick);
   const progress = session === undefined
     ? 0
     : Math.min(100, Math.round((elapsedTicks / requiredTicks) * 100));
