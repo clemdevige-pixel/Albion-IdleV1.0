@@ -13,8 +13,6 @@ const CASES = [
 describe("Combat runtime benchmark harness sanity", () => {
   it("runs early-game calibration probes through the exact live CombatRuntime", () => {
     const rows = CASES.map((input) => runCombatRuntimeBenchmark({ ...input, masteryLevel: 1 }));
-    console.table(rows.map(({ label, clear, seconds, hpPercent, encounterReached, maxHealth }) => ({ label, clear, seconds, hpPercent, encounterReached, maxHealth })));
-    console.log("[COMBAT_RUNTIME_SANITY]", JSON.stringify(rows, null, 2));
 
     expect(rows).toHaveLength(CASES.length);
     expect(rows.every((row) => row.maxHealth === 300)).toBe(true);
