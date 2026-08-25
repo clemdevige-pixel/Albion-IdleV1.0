@@ -34,7 +34,12 @@ export function createFactionProgressionCoordinator<TCompletion>(
     dependencies.onResearchCompletion?.(researchId);
   });
   dependencies.expeditionService.onCompleted((completed) => {
-    dependencies.onExpeditionCompletion(completed);
+    // Rewards are already authoritative when this fires. Defer presentation
+    // and projection side effects until the current runtime tick has unwound,
+    // so an expedition recap cannot re-enter an active combat tick.
+    queueMicrotask(() => {
+      dependencies.onExpeditionCompletion(completed);
+    });
   });
 
   return {
