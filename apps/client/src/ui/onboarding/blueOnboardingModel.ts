@@ -6,14 +6,17 @@ export type BlueOnboardingStepId =
   | "build_gathering"
   | "start_worker"
   | "build_workshop"
-  | "craft_t3_armor"
-  | "discover_enchantment"
+  | "craft_t3_chest"
+  | "progress_blue"
   | "unlock_enchantment"
-  | "reach_relic"
+  | "reach_frostpeak"
+  | "discover_relic"
   | "analyze_relic"
   | "locate_sanctuaries"
+  | "enter_t4_dungeon"
   | "clear_t4_dungeon"
-  | "artifact_intro";
+  | "artifact_fragments"
+  | "artifact_weapons";
 
 export interface BlueOnboardingStep {
   readonly id: BlueOnboardingStepId;
@@ -24,15 +27,23 @@ export interface BlueOnboardingStep {
   readonly informational?: boolean;
 }
 
+export type BlueOnboardingRelicState = "unobtained" | "broken" | "charged" | "examined";
+export type BlueOnboardingArtifactStage = "artifacts" | "artifact_weapons" | "done";
+
 export interface BlueOnboardingSnapshot {
   readonly buildingIds: ReadonlySet<IslandBuildingId>;
   readonly workerStarted: boolean;
-  readonly hasT3Armor: boolean;
+  readonly hasChestArmorTier3OrHigher: boolean;
+  readonly hasProgressedBeyondEarlyProduction: boolean;
   readonly academyResearch: readonly AcademyResearchEntryModel[];
+  readonly hasReachedFrostpeak: boolean;
+  readonly relicState: BlueOnboardingRelicState;
   readonly dungeonUnlocked: boolean;
+  readonly activeDungeon: boolean;
   readonly clearedDungeonTiers: readonly number[];
   readonly artifactWeaponOwned: boolean;
-  readonly artifactIntroDismissed: boolean;
+  readonly artifactStage: BlueOnboardingArtifactStage;
+  readonly beyondBlueOnboarding: boolean;
 }
 
 const GATHERING_BUILDING_IDS: ReadonlySet<IslandBuildingId> = new Set([
@@ -56,54 +67,69 @@ function hasGatheringBuilding(snapshot: BlueOnboardingSnapshot): boolean {
 export function resolveBlueOnboardingStep(
   snapshot: BlueOnboardingSnapshot,
 ): BlueOnboardingStep | null {
-  if (!hasGatheringBuilding(snapshot)) {
-    return {
-      id: "build_gathering",
-      eyebrow: "Premiers pas",
-      title: "Démarrez une filière de récolte",
-      description: "Choisissez un bâtiment de récolte lié aux matériaux dont vous aurez besoin pour votre premier équipement.",
-      hint: "Repère : Île → emplacement libre → bâtiment de récolte.",
-    };
-  }
-
-  if (!snapshot.workerStarted) {
-    return {
-      id: "start_worker",
-      eyebrow: "Production passive",
-      title: "Lancez votre premier ouvrier",
-      description: "Recrutez un ouvrier correspondant à votre filière et mettez-le au travail. Sa production passive complète la récolte active du héros.",
-      hint: "Repère : Île → Maison des ouvriers.",
-    };
-  }
-
-  if (!snapshot.buildingIds.has("workshop")) {
-    return {
-      id: "build_workshop",
-      eyebrow: "Raffinage",
-      title: "Transformez vos premières ressources",
-      description: "Raffinez votre récolte puis utilisez ces matériaux pour construire l’Atelier. Cette étape relie production et fabrication d’équipement.",
-      hint: "Repère : bâtiments de raffinage, puis Île → Atelier.",
-    };
-  }
-
-  if (!snapshot.hasT3Armor) {
-    return {
-      id: "craft_t3_armor",
-      eyebrow: "Équipement",
-      title: "Fabriquez votre première armure T3",
-      description: "L’armure est la pièce maîtresse de votre premier équipement. Consultez sa recette et préparez les matériaux nécessaires.",
-      hint: "Repère : Île → Atelier → Armures T3.",
-    };
-  }
+  if (snapshot.beyondBlueOnboarding) return null;
 
   const enchantmentState = researchState(snapshot, RESEARCH_IDS.enchantmentStudy);
+  const relicAnalysisState = researchState(snapshot, RESEARCH_IDS.dungeonRelicAnalysis);
+  const sanctuaryState = researchState(snapshot, RESEARCH_IDS.dungeonSanctuaryLocation);
+  const hasClearedT4Dungeon = snapshot.clearedDungeonTiers.includes(4);
+  const laterProgressMakesEarlyProductionObsolete =
+    snapshot.hasProgressedBeyondEarlyProduction
+    || enchantmentState !== "locked"
+    || snapshot.hasReachedFrostpeak
+    || snapshot.relicState !== "unobtained"
+    || snapshot.dungeonUnlocked
+    || hasClearedT4Dungeon;
+
+  if (!laterProgressMakesEarlyProductionObsolete) {
+    if (!hasGatheringBuilding(snapshot)) {
+      return {
+        id: "build_gathering",
+        eyebrow: "Premiers pas",
+        title: "Démarrez une filière de récolte",
+        description: "Choisissez un bâtiment de récolte lié aux matériaux dont vous aurez besoin pour votre premier équipement.",
+        hint: "Repère : Île → emplacement libre → bâtiment de récolte.",
+      };
+    }
+
+    if (!snapshot.workerStarted) {
+      return {
+        id: "start_worker",
+        eyebrow: "Production passive",
+        title: "Lancez votre premier ouvrier",
+        description: "Recrutez un ouvrier correspondant à votre filière et mettez-le au travail. Sa production passive complète la récolte active du héros.",
+        hint: "Repère : Île → Maison des ouvriers.",
+      };
+    }
+
+    if (!snapshot.buildingIds.has("workshop")) {
+      return {
+        id: "build_workshop",
+        eyebrow: "Raffinage",
+        title: "Transformez vos premières ressources",
+        description: "Raffinez votre récolte puis utilisez ces matériaux pour construire l’Atelier. Cette étape relie production et fabrication d’équipement.",
+        hint: "Repère : bâtiments de raffinage, puis Île → Atelier.",
+      };
+    }
+
+    if (!snapshot.hasChestArmorTier3OrHigher) {
+      return {
+        id: "craft_t3_chest",
+        eyebrow: "Équipement",
+        title: "Fabriquez votre armure de torse T3",
+        description: "Le torse est la pièce centrale de votre premier équipement. Consultez sa recette et préparez les matériaux nécessaires.",
+        hint: "Repère : Île → Atelier → Armures de torse T3.",
+      };
+    }
+  }
+
   if (enchantmentState === "locked") {
     return {
-      id: "discover_enchantment",
+      id: "progress_blue",
       eyebrow: "Zone Bleue",
-      title: "Poursuivez votre progression",
-      description: "Avancez dans la Zone Bleue. Certains drops vont bientôt révéler une nouvelle piste de recherche liée à l’enchantement.",
-      hint: "Repère : Monde → Progression. Le mode Farm reste disponible si vous souhaitez revenir sur un segment.",
+      title: "Progressez dans la Zone Bleue",
+      description: "Utilisez Progression pour avancer vers de nouveaux segments et Farm pour revenir exploiter un contenu déjà débloqué.",
+      hint: "Repère : Monde → Progression / Farm. Inutile de suivre chaque segment comme une checklist.",
     };
   }
 
@@ -119,19 +145,28 @@ export function resolveBlueOnboardingStep(
           ? "La découverte des éclats a ouvert une nouvelle recherche. Lancez-la pour comprendre leur usage et ouvrir le service Enchanter."
           : "La découverte des éclats a ouvert votre première piste de recherche. Construisez l’Académie, puis lancez l’Étude de l’enchantement pour ouvrir le service Enchanter.",
       hint: academyBuilt
-        ? "Repère : Île → Académie → Étude de l’enchantement."
+        ? "Repère : Île → Académie → Étude de l’enchantement. Aucun enchantement réel n’est requis."
         : "Repère : Île → emplacement libre → Académie.",
     };
   }
 
-  const relicAnalysisState = researchState(snapshot, RESEARCH_IDS.dungeonRelicAnalysis);
-  if (relicAnalysisState === "locked") {
+  if (!snapshot.hasReachedFrostpeak) {
     return {
-      id: "reach_relic",
+      id: "reach_frostpeak",
       eyebrow: "Zone Bleue",
       title: "Continuez jusqu’à Frostpeak",
-      description: "Vous connaissez maintenant les bases de la production et de l’enchantement. Continuez librement votre progression jusqu’aux profondeurs de la Zone Bleue.",
-      hint: "Repère : Monde → Progression. Une découverte à Frostpeak ouvrira la prochaine piste.",
+      description: "Vous connaissez maintenant les bases de la production et de l’enchantement. Continuez librement votre progression jusqu’à Frostpeak Mountain.",
+      hint: "Repère : Monde → Progression.",
+    };
+  }
+
+  if (snapshot.relicState === "unobtained") {
+    return {
+      id: "discover_relic",
+      eyebrow: "Frostpeak",
+      title: "Découvrez la Relique",
+      description: "Poursuivez Frostpeak jusqu’à la découverte de la Relique liée aux Donjons. Cette découverte appartient à la progression normale du monde.",
+      hint: "Repère : Frostpeak Mountain → Progression.",
     };
   }
 
@@ -139,13 +174,12 @@ export function resolveBlueOnboardingStep(
     return {
       id: "analyze_relic",
       eyebrow: "Relique",
-      title: relicAnalysisState === "active" ? "Analyse de la Relique en cours" : "Analysez la Relique chargée",
+      title: relicAnalysisState === "active" ? "Analyse de la Relique en cours" : "Analysez la Relique à l’Académie",
       description: "La Relique découverte à Frostpeak peut être étudiée à l’Académie. Son analyse révélera où poursuivre vos recherches.",
       hint: "Repère : Île → Académie → Analyse de la Relique.",
     };
   }
 
-  const sanctuaryState = researchState(snapshot, RESEARCH_IDS.dungeonSanctuaryLocation);
   if (!snapshot.dungeonUnlocked || sanctuaryState !== "completed") {
     return {
       id: "locate_sanctuaries",
@@ -156,26 +190,45 @@ export function resolveBlueOnboardingStep(
     };
   }
 
-  if (!snapshot.clearedDungeonTiers.includes(4)) {
+  if (!hasClearedT4Dungeon) {
+    if (!snapshot.activeDungeon) {
+      return {
+        id: "enter_t4_dungeon",
+        eyebrow: "Premier donjon",
+        title: "Entrez dans votre premier donjon T4",
+        description: "Les Donjons sont accessibles. Consultez les conditions d’entrée et lancez un Donjon T4 lorsque les règles de clés existantes vous le permettent.",
+        hint: "Repère : Monde → Donjons. Le guide ne contourne aucun prérequis.",
+      };
+    }
+
     return {
       id: "clear_t4_dungeon",
       eyebrow: "Premier donjon",
-      title: "Terminez un donjon T4",
-      description: "Les Donjons sont maintenant accessibles. Consultez les conditions d’entrée, utilisez une clé adaptée et tentez votre premier clear T4 quand vous le souhaitez.",
-      hint: "Repère : Monde → Donjons.",
+      title: "Terminez votre donjon T4",
+      description: "Allez au bout du Donjon. Sa complétion est suivie par la progression canonique des Donjons.",
+      hint: "Repère : poursuivez le Donjon en cours jusqu’au clear.",
     };
   }
 
-  if (!snapshot.artifactWeaponOwned && !snapshot.artifactIntroDismissed) {
+  if (snapshot.artifactWeaponOwned || snapshot.artifactStage === "done") return null;
+
+  if (snapshot.artifactStage === "artifacts") {
     return {
-      id: "artifact_intro",
-      eyebrow: "Nouvelle branche d’équipement",
-      title: "Artefacts et armes artefact",
-      description: "Les donjons introduisent des fragments et artefacts de faction. Ces composants servent à fabriquer des armes artefact, une nouvelle branche d’équipement distincte des armes conventionnelles.",
-      hint: "Consultez les fragments obtenus puis les recettes d’armes artefact à l’Atelier. Vous êtes désormais libre de choisir votre prochaine direction.",
+      id: "artifact_fragments",
+      eyebrow: "Nouvelle progression",
+      title: "Comprenez les Artifacts et fragments",
+      description: "Les Donjons introduisent des fragments et Artifacts qui servent de composants à une branche spéciale d’équipement.",
+      hint: "Cette étape est informative : aucun grind ni craft n’est requis pour continuer.",
       informational: true,
     };
   }
 
-  return null;
+  return {
+    id: "artifact_weapons",
+    eyebrow: "Nouvelle branche d’équipement",
+    title: "Découvrez les armes d’Artifact",
+    description: "Les armes d’Artifact utilisent ces composants dans des recettes spéciales, distinctes des armes conventionnelles.",
+    hint: "Repère : Île → Atelier → recettes d’armes d’Artifact. Aucun craft n’est requis pour terminer vos premiers pas.",
+    informational: true,
+  };
 }
