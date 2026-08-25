@@ -1,3 +1,5 @@
+import type { EnemyVfxStyle } from "./EnemyVfxStyle";
+
 export const ACTOR_ANIMATION_STATES = ["idle", "walk", "attack"] as const;
 export type ActorAnimationState = (typeof ACTOR_ANIMATION_STATES)[number];
 
@@ -81,6 +83,7 @@ export interface StaticActorRenderManifest {
     readonly healthBarOffsetY: number;
   };
   readonly ambientMotion: ActorAmbientMotionManifest;
+  readonly attackVfxStyle?: EnemyVfxStyle;
 }
 
 export interface ResourceNodeRenderManifest {
