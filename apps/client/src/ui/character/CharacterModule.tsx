@@ -5,7 +5,10 @@ import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { ItemSlot } from "../shared/ItemSlot";
 import { getEquippedHeroIdlePresentation } from "./characterPresentation";
 import { AwakenedWeaponPanel } from "./components/AwakenedWeaponPanel";
-import { CharacterEquipmentPicker } from "./components/CharacterEquipmentPicker";
+import {
+  CharacterEquipmentPicker,
+  type CharacterEquipmentCandidate,
+} from "./components/CharacterEquipmentPicker";
 import { useCharacterActions } from "./useCharacterActions";
 import { useCharacterData } from "./useCharacterData";
 import "./character.css";
@@ -73,10 +76,13 @@ export function CharacterModule(): JSX.Element {
   const heroIdle = getEquippedHeroIdlePresentation(equippedWeapon?.itemId);
   const hasTwoHandedWeapon = equippedWeapon?.itemId !== undefined
     && resolveEquipmentInfo(equippedWeapon.itemId)?.handling === "two_handed";
-  const candidates = pickerSlot === null
+  const candidates: readonly CharacterEquipmentCandidate[] = pickerSlot === null
     ? []
-    : character.inventory.filter((entry) => entry.itemId !== undefined
-      && resolveEquipmentInfo(entry.itemId)?.slot === pickerSlot.slot);
+    : [
+        ...character.inventory.map((entry) => ({ ...entry, source: "inventory" as const })),
+        ...character.bank.map((entry) => ({ ...entry, source: "bank" as const })),
+      ].filter((entry) => entry.itemId !== undefined
+        && resolveEquipmentInfo(entry.itemId)?.slot === pickerSlot.slot);
 
   const saveNewLoadout = (): void => {
     const ordinal = loadouts.length + 1;
@@ -257,7 +263,7 @@ export function CharacterModule(): JSX.Element {
           x={pickerSlot.x}
           y={pickerSlot.y}
           onClose={() => { setPickerSlot(null); }}
-          onEquip={(position) => { if (actions.equip(position)) setPickerSlot(null); }}
+          onEquip={(source, position) => { if (actions.equip(source, position)) setPickerSlot(null); }}
         />
       )}
     </div>
