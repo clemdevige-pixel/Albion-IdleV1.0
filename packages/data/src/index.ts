@@ -76,6 +76,9 @@ export * from "./config/economy-balance.js";
 // Canonical dungeon entry currency identifiers
 export * from "./config/dungeon-keys.js";
 
+// Authored expedition reward profiles
+export * from "./config/expedition-balance.js";
+
 // Player Island configuration
 export * from "./config/island.js";
 export * from "./config/island-progression.js";
