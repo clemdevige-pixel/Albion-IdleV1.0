@@ -27,10 +27,12 @@ interface ValidatedTransaction {
   readonly total: number;
 }
 
+type StorageOwnersResolver = (playerEntityId: EntityId) => readonly EntityId[];
+
 /**
- * Fixed-price NPC vendor transactions (36_VENDOR_SYSTEM). All operations are
- * atomic and go exclusively through CurrencyService and the public
- * InventoryManager API — on any validation failure nothing changes.
+ * Fixed-price NPC vendor transactions. The optional storage resolver lets an
+ * application expose several player-owned storages (for example Inventory +
+ * Bank) without coupling the gameplay package to a client-specific manager.
  */
 export class VendorService {
   constructor(
@@ -40,13 +42,12 @@ export class VendorService {
     private readonly equipmentManager?: EquippedItemsSourceLike,
     private readonly stackResolver?: StackInfoResolver,
     private readonly lockResolver?: ItemLockResolver,
+    private readonly storageOwnersResolver?: StorageOwnersResolver,
   ) {}
 
   validateBuy(request: VendorTransactionRequest): VendorResult<ValidatedTransaction> {
     const validated = this.validateCommon(request, "buy");
-    if (!validated.ok) {
-      return validated;
-    }
+    if (!validated.ok) return validated;
     const { total } = validated.value;
     const affordable = this.currencyService.canSpend(
       request.walletId,
@@ -54,16 +55,10 @@ export class VendorService {
       total,
     );
     if (!affordable.ok) {
-      if (affordable.reason === "wallet_not_found") {
-        return vendorFail("wallet_not_found");
-      }
-      if (affordable.reason === "insufficient_balance") {
-        return vendorFail("insufficient_silver");
-      }
+      if (affordable.reason === "wallet_not_found") return vendorFail("wallet_not_found");
+      if (affordable.reason === "insufficient_balance") return vendorFail("insufficient_silver");
       return vendorFail("transaction_failed");
     }
-    // 36_VENDOR_SYSTEM "Inventory Integration": if the purchase cannot fit
-    // entirely, the transaction fails and no Silver is consumed.
     if (this.receivableQuantity(request.playerEntityId, request.itemId) < request.quantity) {
       return vendorFail("insufficient_capacity");
     }
@@ -72,9 +67,7 @@ export class VendorService {
 
   buyFromVendor(request: VendorTransactionRequest): VendorResult<VendorBuyOutcome> {
     const validated = this.validateBuy(request);
-    if (!validated.ok) {
-      return validated;
-    }
+    if (!validated.ok) return validated;
     const { total } = validated.value;
     const debited = this.currencyService.debit(
       request.walletId,
@@ -82,26 +75,31 @@ export class VendorService {
       total,
       VENDOR_SPEND_SOURCE,
     );
-    if (!debited.ok) {
-      return vendorFail("transaction_failed");
+    if (!debited.ok) return vendorFail("transaction_failed");
+
+    let remaining = request.quantity;
+    const credited: { ownerId: EntityId; quantity: number }[] = [];
+    for (const ownerId of this.storageOwners(request.playerEntityId)) {
+      if (remaining <= 0) break;
+      const added = this.inventoryManager.addQuantity(
+        ownerId,
+        request.itemId,
+        remaining,
+        this.stackResolver?.(request.itemId),
+      );
+      if (!added.ok || added.value.added <= 0) continue;
+      credited.push({ ownerId, quantity: added.value.added });
+      remaining = added.value.remainder;
     }
-    const added = this.inventoryManager.addQuantity(
-      request.playerEntityId,
-      request.itemId,
-      request.quantity,
-      this.stackResolver?.(request.itemId),
-    );
-    if (!added.ok || added.value.remainder > 0) {
-      if (added.ok && added.value.added > 0) {
-        this.inventoryManager.removeQuantity(
-          request.playerEntityId,
-          request.itemId,
-          added.value.added,
-        );
+
+    if (remaining > 0) {
+      for (const entry of [...credited].reverse()) {
+        this.inventoryManager.removeQuantity(entry.ownerId, request.itemId, entry.quantity);
       }
       this.currencyService.credit(request.walletId, VENDOR_CURRENCY_ID, total);
       return vendorFail("insufficient_capacity");
     }
+
     return vendorOk({
       itemId: request.itemId,
       quantity: request.quantity,
@@ -112,18 +110,12 @@ export class VendorService {
 
   validateSell(request: VendorTransactionRequest): VendorResult<ValidatedTransaction> {
     const validated = this.validateCommon(request, "sell");
-    if (!validated.ok) {
-      return validated;
-    }
-    if (!this.currencyService.hasWallet(request.walletId)) {
-      return vendorFail("wallet_not_found");
-    }
-    // Equipped items live in the EquipmentComponent, outside the inventory
-    // (31_EQUIPMENT_SYSTEM), so they can never be consumed by a sale; the
-    // explicit check surfaces the spec's "item is equipped" rejection.
-    const available = this.inventoryManager.getTotalQuantity(
-      request.playerEntityId,
-      request.itemId,
+    if (!validated.ok) return validated;
+    if (!this.currencyService.hasWallet(request.walletId)) return vendorFail("wallet_not_found");
+
+    const available = this.storageOwners(request.playerEntityId).reduce(
+      (total, ownerId) => total + this.inventoryManager.getTotalQuantity(ownerId, request.itemId),
+      0,
     );
     if (available < request.quantity) {
       if (this.isItemEquipped(request.playerEntityId, request.itemId)) {
@@ -139,18 +131,29 @@ export class VendorService {
 
   sellToVendor(request: VendorTransactionRequest): VendorResult<VendorSellOutcome> {
     const validated = this.validateSell(request);
-    if (!validated.ok) {
-      return validated;
-    }
+    if (!validated.ok) return validated;
     const { total } = validated.value;
-    const removed = this.inventoryManager.removeQuantity(
-      request.playerEntityId,
-      request.itemId,
-      request.quantity,
-    );
-    if (!removed.ok) {
+
+    let remaining = request.quantity;
+    const removedEntries: { ownerId: EntityId; quantity: number }[] = [];
+    for (const ownerId of this.storageOwners(request.playerEntityId)) {
+      if (remaining <= 0) break;
+      const available = this.inventoryManager.getTotalQuantity(ownerId, request.itemId);
+      const quantity = Math.min(available, remaining);
+      if (quantity <= 0) continue;
+      const removed = this.inventoryManager.removeQuantity(ownerId, request.itemId, quantity);
+      if (!removed.ok) {
+        this.restoreSaleItems(request.itemId, removedEntries);
+        return vendorFail("transaction_failed");
+      }
+      removedEntries.push({ ownerId, quantity });
+      remaining -= quantity;
+    }
+    if (remaining > 0) {
+      this.restoreSaleItems(request.itemId, removedEntries);
       return vendorFail("transaction_failed");
     }
+
     const credited = this.currencyService.credit(
       request.walletId,
       VENDOR_CURRENCY_ID,
@@ -158,12 +161,7 @@ export class VendorService {
       VENDOR_SALE_SOURCE,
     );
     if (!credited.ok) {
-      this.inventoryManager.addQuantity(
-        request.playerEntityId,
-        request.itemId,
-        request.quantity,
-        this.stackResolver?.(request.itemId),
-      );
+      this.restoreSaleItems(request.itemId, removedEntries);
       return vendorFail("transaction_failed");
     }
     return vendorOk({
@@ -179,28 +177,17 @@ export class VendorService {
     direction: "buy" | "sell",
   ): VendorResult<ValidatedTransaction> {
     const vendor = this.registry.get(request.vendorId);
-    if (vendor === undefined) {
-      return vendorFail("vendor_not_found");
-    }
-    if (!vendor.enabled) {
-      return vendorFail("vendor_disabled");
-    }
-    const allowed =
-      direction === "buy" ? roleAllowsPlayerBuy(vendor.role) : roleAllowsPlayerSell(vendor.role);
-    if (!allowed) {
-      return vendorFail("operation_not_supported");
-    }
+    if (vendor === undefined) return vendorFail("vendor_not_found");
+    if (!vendor.enabled) return vendorFail("vendor_disabled");
+    const allowed = direction === "buy"
+      ? roleAllowsPlayerBuy(vendor.role)
+      : roleAllowsPlayerSell(vendor.role);
+    if (!allowed) return vendorFail("operation_not_supported");
     const offer = getOffer(vendor, request.itemId);
-    if (offer === undefined) {
-      return vendorFail("offer_not_found");
-    }
-    if (!offer.enabled) {
-      return vendorFail("offer_disabled");
-    }
+    if (offer === undefined) return vendorFail("offer_not_found");
+    if (!offer.enabled) return vendorFail("offer_disabled");
     const unitPrice = direction === "buy" ? offer.buyPrice : offer.sellPrice;
-    if (unitPrice === null) {
-      return vendorFail("price_not_defined");
-    }
+    if (unitPrice === null) return vendorFail("price_not_defined");
     if (!Number.isSafeInteger(request.quantity) || request.quantity < 1) {
       return vendorFail("invalid_quantity");
     }
@@ -208,35 +195,54 @@ export class VendorService {
       return vendorFail("quantity_limit_exceeded");
     }
     const total = totalPrice(unitPrice, request.quantity);
-    if (!total.ok) {
-      return total;
-    }
+    if (!total.ok) return total;
     return vendorOk({ offer, unitPrice, total: total.value });
   }
 
-  /** Quantity of an item the inventory can still absorb under its stack rules. */
+  private storageOwners(entityId: EntityId): readonly EntityId[] {
+    const resolved = this.storageOwnersResolver?.(entityId) ?? [entityId];
+    const unique = [...new Set(resolved)];
+    return unique.length > 0 ? unique : [entityId];
+  }
+
+  /** Quantity of an item all accessible player storages can still absorb. */
   private receivableQuantity(entityId: EntityId, itemId: string): number {
     const resolver = this.stackResolver ?? this.inventoryManager.stackInfoResolver;
     const maxStack = effectiveMaxStack(resolver?.(itemId));
     let receivable = 0;
-    for (const slot of this.inventoryManager.listSlots(entityId)) {
-      if (slot.entry === undefined) {
-        receivable += maxStack;
-      } else if (slot.entry.itemId === itemId && slot.entry.quantity < maxStack) {
-        receivable += maxStack - slot.entry.quantity;
+    for (const ownerId of this.storageOwners(entityId)) {
+      for (const slot of this.inventoryManager.listSlots(ownerId)) {
+        if (slot.entry === undefined) {
+          receivable += maxStack;
+        } else if (slot.entry.itemId === itemId && slot.entry.quantity < maxStack) {
+          receivable += maxStack - slot.entry.quantity;
+        }
       }
     }
     return receivable;
   }
 
-  private isItemEquipped(entityId: EntityId, itemId: string): boolean {
-    if (this.equipmentManager === undefined) {
-      return false;
-    }
-    for (const entry of this.equipmentManager.getEquipped(entityId).values()) {
-      if (entry.itemId === itemId) {
-        return true;
+  private restoreSaleItems(
+    itemId: string,
+    entries: readonly { ownerId: EntityId; quantity: number }[],
+  ): void {
+    for (const entry of entries) {
+      const restored = this.inventoryManager.addQuantity(
+        entry.ownerId,
+        itemId,
+        entry.quantity,
+        this.stackResolver?.(itemId),
+      );
+      if (!restored.ok || restored.value.remainder !== 0) {
+        throw new Error("Vendor sale rollback failed");
       }
+    }
+  }
+
+  private isItemEquipped(entityId: EntityId, itemId: string): boolean {
+    if (this.equipmentManager === undefined) return false;
+    for (const entry of this.equipmentManager.getEquipped(entityId).values()) {
+      if (entry.itemId === itemId) return true;
     }
     return false;
   }
