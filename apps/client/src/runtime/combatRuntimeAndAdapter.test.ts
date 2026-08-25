@@ -122,7 +122,7 @@ function createTestEnvironment() {
   const zoneManager = new ZoneManager();
   const worldProgressionManager = new WorldProgressionManager();
   const explorationManager = new ExplorationManager();
-  const worldCoordinator = new WorldCoordinator({ zoneManager, progressionManager: worldProgressionManager, worldCoordinator: undefined as never, explorationManager, biomeRegistry, biomeResolver, eventBus: new EventBus<WorldIntegrationEventMap>() });
+  const worldCoordinator = new WorldCoordinator({ zoneManager, progressionManager: worldProgressionManager, explorationManager, biomeRegistry, biomeResolver, eventBus: new EventBus<WorldIntegrationEventMap>() });
 
   const worldRuntime = new WorldRuntime({ zoneManager, progressionManager: worldProgressionManager, worldCoordinator });
 
