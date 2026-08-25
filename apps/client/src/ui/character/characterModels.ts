@@ -19,6 +19,7 @@ export interface CharacterModel {
   readonly stats: CharacterStatsModel;
   readonly equipment: readonly EquipmentSlotVM[];
   readonly inventory: readonly InventorySlotVM[];
+  readonly bank: readonly InventorySlotVM[];
 }
 
 function getComputedStat(state: GameBridgeState, id: string): number {
@@ -41,5 +42,6 @@ export function selectCharacter(state: GameBridgeState): CharacterModel {
     },
     equipment: state.equipment.slots,
     inventory: state.inventory.slots,
+    bank: state.bank.slots,
   };
 }
