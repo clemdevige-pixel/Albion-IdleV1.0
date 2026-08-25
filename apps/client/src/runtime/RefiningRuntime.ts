@@ -20,6 +20,7 @@ import {
   type ProductionTier,
   type SupportedProductionFamily,
 } from "../data/productionFamilyCatalog.js";
+import { DEFAULT_RUNTIME_TICK_INTERVAL_MS } from "./RuntimeLifecycle.js";
 
 type SupportedRefiningFamily = SupportedProductionFamily;
 
@@ -560,5 +561,12 @@ export class RefiningSaveProvider implements SaveProvider {
         },
       );
     }
+  }
+
+  resolveBackground(elapsedMs: number): void {
+    this.refiningRuntime.resolveBackground(
+      elapsedMs,
+      DEFAULT_RUNTIME_TICK_INTERVAL_MS,
+    );
   }
 }
