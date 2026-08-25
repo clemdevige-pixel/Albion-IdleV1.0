@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_DUNGEON_KEY_BAND_PROGRESSION } from "@game/data";
 import {
   ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
-  DEFAULT_DUNGEON_KEY_BAND_PROGRESSION,
   SEGMENT_LOOT_MULTIPLIERS,
   KEY_FRAGMENTS_PER_KEY,
   getAuthoredRepairCostTiers,
