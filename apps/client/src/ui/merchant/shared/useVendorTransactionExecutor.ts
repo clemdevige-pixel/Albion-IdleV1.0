@@ -2,7 +2,11 @@ import { useCallback } from "react";
 import { asEconomyTransactionId } from "@game/gameplay";
 import { getItemDisplayName } from "../../../panels/ItemVisual";
 import { useGameServices } from "../../../state/GameContext";
-import { syncInventoryToBridge, syncWalletToBridge } from "../../../state/bridgeSync";
+import {
+  syncBankToBridge,
+  syncInventoryToBridge,
+  syncWalletToBridge,
+} from "../../../state/bridgeSync";
 
 export type VendorTransactionDirection = "buy" | "sell";
 
@@ -60,6 +64,7 @@ export function useVendorTransactionExecutor(): (
       timestamp: Date.now(),
     });
     syncInventoryToBridge(services.bridge, services.inventoryManager, services.heroId);
+    syncBankToBridge(services.bridge, services.inventoryManager, services.bankId);
     syncWalletToBridge(
       services.bridge,
       services.currencyService,
