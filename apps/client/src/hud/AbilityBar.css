@@ -355,8 +355,8 @@
 .combat-hud-layer .combat-action-bar__slot--ability .ability-tooltip__stats {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0;
-  padding-top: 7px;
+  gap: 6px;
+  padding-top: 8px;
 }
 
 .combat-hud-layer .combat-action-bar__slot--ability .ability-tooltip__stats > span {
@@ -364,23 +364,22 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 14px;
-  min-height: 20px;
-  padding: 5px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   color: #858987;
   font-size: 9px;
   line-height: 1.35;
-}
-
-.combat-hud-layer .combat-action-bar__slot--ability .ability-tooltip__stats > span:last-child {
-  border-bottom: 0;
 }
 
 .combat-hud-layer .combat-action-bar__slot--ability .ability-tooltip__stats > span:first-child {
   display: grid;
   justify-items: start;
   gap: 2px;
-  padding: 8px 0 10px;
+  padding-bottom: 2px;
   color: #a29b8e;
   font-size: 9px;
 }
@@ -403,8 +402,8 @@
 }
 
 .combat-hud-layer .combat-action-bar__slot--ability .ability-tooltip__mode {
-  margin-top: 7px;
-  padding-top: 7px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid #29271f;
 }
 
