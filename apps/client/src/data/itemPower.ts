@@ -1,4 +1,18 @@
-import type { WorldBandId } from "@game/data";
+import {
+  BLACK_WORLD_ITEM_POWER_PROGRESSION,
+  BLUE_WORLD_ITEM_POWER_PROGRESSION,
+  ITEM_POWER_BY_TIER,
+  ORANGE_WORLD_ITEM_POWER_PROGRESSION,
+  RED_WORLD_ITEM_POWER_PROGRESSION,
+  WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL,
+  WEAPON_FAMILY_IP_PER_LEVEL,
+  WEAPON_SPECIALIZATION_IP_PER_LEVEL,
+  WORLD_ITEM_POWER_PROGRESSION,
+  YELLOW_WORLD_ITEM_POWER_PROGRESSION,
+  ZONE_RECOMMENDED_ITEM_POWER,
+  type WorldBandId,
+  type WorldItemPowerProgression,
+} from "@game/data";
 import { getBonusItemPowerStatMultiplier, getEnchantmentItemPowerBonus, type EnchantmentLevel } from "@game/gameplay";
 import {
   getWeaponMasteryFamilyDefinitions,
@@ -10,10 +24,19 @@ import {
 } from "./weaponContentCatalog.js";
 import type { ProductionTier } from "./productionFamilyCatalog.js";
 
-export const ITEM_POWER_BY_TIER = { 3: 300, 4: 400, 5: 500, 6: 600, 7: 700, 8: 800 } as const;
-export const WEAPON_FAMILY_IP_PER_LEVEL = 0.5;
-export const WEAPON_SPECIALIZATION_IP_PER_LEVEL = 1;
-export const WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL = 0.2;
+export {
+  BLACK_WORLD_ITEM_POWER_PROGRESSION,
+  BLUE_WORLD_ITEM_POWER_PROGRESSION,
+  ITEM_POWER_BY_TIER,
+  ORANGE_WORLD_ITEM_POWER_PROGRESSION,
+  RED_WORLD_ITEM_POWER_PROGRESSION,
+  WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL,
+  WEAPON_FAMILY_IP_PER_LEVEL,
+  WEAPON_SPECIALIZATION_IP_PER_LEVEL,
+  YELLOW_WORLD_ITEM_POWER_PROGRESSION,
+  ZONE_RECOMMENDED_ITEM_POWER,
+};
+export type { WorldItemPowerProgression };
 
 const LEGACY_NON_WEAPON_ITEM_TIERS: Readonly<Record<string, ProductionTier>> = {
   item_leather_armor: 3, item_wooden_shield: 3, item_iron_helmet: 3, item_leather_boots: 3, item_traveler_cape: 3,
@@ -21,34 +44,9 @@ const LEGACY_NON_WEAPON_ITEM_TIERS: Readonly<Record<string, ProductionTier>> = {
 
 export interface MasteryLevel { readonly id: string; readonly level: number; }
 export interface WeaponMasteryIds { readonly familyId: string; readonly specializationId: string; }
-export interface WorldItemPowerProgression { readonly zoneStart: readonly number[]; readonly zoneEnd: readonly number[]; }
-
-/**
- * Recommended IP is an UX progression marker, not a direct combat-power requirement.
- * Enchantment power is intentionally decoupled from IP; these envelopes are therefore
- * authored from the validated world walls/bridges and the displayed IP at their expected
- * tier/mastery/enchantment checkpoints.
- */
-export const BLUE_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [300, 305, 315, 400, 455], zoneEnd: [305, 315, 400, 455, 510] } as const satisfies WorldItemPowerProgression;
-export const YELLOW_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [510, 535, 560, 585, 610], zoneEnd: [535, 560, 585, 610, 630] } as const satisfies WorldItemPowerProgression;
-export const ORANGE_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [630, 655, 680, 705, 730], zoneEnd: [655, 680, 705, 730, 745] } as const satisfies WorldItemPowerProgression;
-export const RED_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [745, 770, 795, 820, 845], zoneEnd: [770, 795, 820, 845, 860] } as const satisfies WorldItemPowerProgression;
-export const BLACK_WORLD_ITEM_POWER_PROGRESSION = { zoneStart: [860, 885, 910, 935, 960], zoneEnd: [885, 910, 935, 960, 975] } as const satisfies WorldItemPowerProgression;
-
-export const ZONE_RECOMMENDED_ITEM_POWER = BLUE_WORLD_ITEM_POWER_PROGRESSION.zoneStart;
-
-const WORLD_ITEM_POWER_PROGRESSION: Partial<Readonly<Record<WorldBandId, WorldItemPowerProgression>>> = {
-  blue: BLUE_WORLD_ITEM_POWER_PROGRESSION,
-  yellow: YELLOW_WORLD_ITEM_POWER_PROGRESSION,
-  orange: ORANGE_WORLD_ITEM_POWER_PROGRESSION,
-  red: RED_WORLD_ITEM_POWER_PROGRESSION,
-  black: BLACK_WORLD_ITEM_POWER_PROGRESSION,
-};
 
 function getWorldItemPowerProgression(worldBandId: WorldBandId): WorldItemPowerProgression {
-  const progression = WORLD_ITEM_POWER_PROGRESSION[worldBandId];
-  if (progression === undefined) throw new Error(`Item Power progression is not authored for world band: ${worldBandId}`);
-  return progression;
+  return WORLD_ITEM_POWER_PROGRESSION[worldBandId];
 }
 
 function parseTierFromItemId(itemId: string): ProductionTier | undefined {
