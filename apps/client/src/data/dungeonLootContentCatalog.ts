@@ -1,8 +1,8 @@
-import { getEnchantmentShardItemId, type DungeonEncounterKind } from "@game/gameplay";
 import {
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
-} from "./dungeonArtifactContentCatalog.js";
+} from "@game/data";
+import { getEnchantmentShardItemId, type DungeonEncounterKind } from "@game/gameplay";
 import {
   HERETIC_T4_LOOT_TABLE_ID, HERETIC_T5_LOOT_TABLE_ID, HERETIC_T6_LOOT_TABLE_ID, HERETIC_T7_LOOT_TABLE_ID, HERETIC_T8_LOOT_TABLE_ID,
   KEEPER_T4_LOOT_TABLE_ID, KEEPER_T5_LOOT_TABLE_ID, KEEPER_T6_LOOT_TABLE_ID, KEEPER_T7_LOOT_TABLE_ID, KEEPER_T8_LOOT_TABLE_ID,
