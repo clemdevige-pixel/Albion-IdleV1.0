@@ -69,6 +69,9 @@ export * from "./config/world-progression-contract.js";
 export * from "./config/item-power-balance.js";
 export * from "./config/enchantment-balance.js";
 
+// Mastery progression balance
+export * from "./config/mastery-experience-balance.js";
+
 // Shared faction resource identifiers and world drop rules
 export * from "./config/faction-runes.js";
 export * from "./config/faction-rune-world-drops.js";
