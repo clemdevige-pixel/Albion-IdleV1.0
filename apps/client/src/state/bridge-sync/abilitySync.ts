@@ -165,15 +165,15 @@ export function syncAbilitiesToBridge(
   const masteryRoute = equippedWeaponId === undefined
     ? undefined
     : resolveWeaponMastery(equippedWeaponId);
-  const specializationMasteryLevel = masteryRoute === undefined
+  const familyMasteryLevel = masteryRoute === undefined
     ? 0
     : bridge.progression.masteries.find(
-        (mastery) => mastery.id === String(masteryRoute.weaponId),
+        (mastery) => mastery.id === String(masteryRoute.familyId),
       )?.level ?? 0;
 
   const definitions = resolveUnlockedWeaponAbilities(
     equippedWeaponId,
-    specializationMasteryLevel,
+    familyMasteryLevel,
   ).slice(0, 3);
   const tooltipStats = getAbilityTooltipStats(bridge);
 
