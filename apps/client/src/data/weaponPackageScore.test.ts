@@ -11,29 +11,23 @@ const T4_WEAPONS = [
   "item_weapon_dagger_t4_pair",
 ] as const;
 
-function shortName(itemId: string): string {
-  return itemId.replace("item_weapon_", "").replace("_t4_", " ");
-}
-
 function referenceLoadout(itemId: string) {
   return resolveEquipmentInfo(itemId)?.handling === "one_handed"
     ? { armorItemIds: T4_DEFENSIVE_LOADOUT, offHandItemId: T4_SHIELD }
     : { armorItemIds: T4_DEFENSIVE_LOADOUT };
 }
 
-function printCheckpoint(label: string, masteryLevel: number, enchantment: BenchmarkEnchantment) {
-  const weaponOnly = buildWeaponOnlyBenchmark(T4_WEAPONS, masteryLevel, enchantment);
-  const loadout = buildWeaponPackageBenchmark(T4_WEAPONS, masteryLevel, enchantment, referenceLoadout);
-
-  console.table(weaponOnly.map((row) => ({ checkpoint: label, ...row, weapon: shortName(row.itemId) })));
-  console.table(loadout.map((row) => ({ checkpoint: label, ...row, weapon: shortName(row.itemId) })));
-  return { weaponOnly, loadout };
+function buildCheckpoint(masteryLevel: number, enchantment: BenchmarkEnchantment) {
+  return {
+    weaponOnly: buildWeaponOnlyBenchmark(T4_WEAPONS, masteryLevel, enchantment),
+    loadout: buildWeaponPackageBenchmark(T4_WEAPONS, masteryLevel, enchantment, referenceLoadout),
+  };
 }
 
 describe("live weapon offensive/defensive package scoring", () => {
   it("scores the authored live weapon data after balance changes", () => {
-    const t41 = printCheckpoint("T4_1_M18", 18, 1);
-    const t42 = printCheckpoint("T4_2_M22", 22, 2);
+    const t41 = buildCheckpoint(18, 1);
+    const t42 = buildCheckpoint(22, 2);
 
     for (const result of [t41, t42]) {
       expect(result.weaponOnly).toHaveLength(5);
