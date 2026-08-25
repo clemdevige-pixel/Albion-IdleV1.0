@@ -5,11 +5,7 @@ import {
   getExpeditionPresentationInfo,
   SILVER_EXPEDITION_TYPE_ID,
 } from "../../data/expeditionContentCatalog";
-import {
-  getResearchPresentationGroup,
-  getResearchPresentationInfo,
-  type ResearchPresentationGroup,
-} from "../../data/researchContentCatalog";
+import { getResearchPresentationInfo } from "../../data/researchContentCatalog";
 import type {
   AcademyExpeditionEntryModel,
   AcademyResearchEntryModel,
@@ -274,7 +270,6 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
   } = useGameServices();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [view, setView] = useState<AcademyView>("research");
-  const [researchScope, setResearchScope] = useState<ResearchPresentationGroup>("core");
   const [showResearchHistory, setShowResearchHistory] = useState(false);
   const [requestedExpeditionTier, setRequestedExpeditionTier] = useState<number | undefined>();
   const [requestedExpeditionId, setRequestedExpeditionId] = useState<string | undefined>();
@@ -298,7 +293,6 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
       && entry.state !== "active"
       && researchTier !== undefined
       && entry.tier <= researchTier
-      && getResearchPresentationGroup(entry.id) === researchScope
       && !(entry.state === "locked" && info?.hiddenWhileLocked === true);
   });
   availableResearch.sort((left, right) => researchPriority(left) - researchPriority(right));
@@ -384,26 +378,9 @@ export function AcademyPanel({ level }: { readonly level: number }): JSX.Element
                 </div>
               )}
 
-              <nav className="ui-academy__sub-tabs" aria-label="Famille de recherche">
-                <button
-                  type="button"
-                  className={researchScope === "core" ? "is-active" : ""}
-                  onClick={() => { setResearchScope("core"); }}
-                >
-                  Général
-                </button>
-                <button
-                  type="button"
-                  className={researchScope === "faction" ? "is-active" : ""}
-                  onClick={() => { setResearchScope("faction"); }}
-                >
-                  Factions
-                </button>
-              </nav>
-
               <div className="ui-academy__research-list">
                 {availableResearch.length === 0 ? (
-                  <div className="ui-island__selection-status">Aucune recherche restante dans cette catégorie.</div>
+                  <div className="ui-island__selection-status">Aucune recherche restante.</div>
                 ) : availableResearch.map((entry) => (
                   <ResearchRow key={entry.id} research={entry} onAction={handleResearchAction} />
                 ))}
