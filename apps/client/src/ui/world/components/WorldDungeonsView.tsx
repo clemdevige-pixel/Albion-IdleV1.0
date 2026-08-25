@@ -19,7 +19,7 @@ interface DungeonPresentationModel {
 
 const DUNGEON_TIERS: readonly DungeonKeyTier[] = [4, 5, 6, 7, 8];
 const DUNGEON_VISUAL_SLUGS = { keeper: "keeper", heretic: "heretic", undead: "undead", morgana: "morgana" } as const;
-const AUTHORED_DUNGEON_VISUAL_TIERS = new Set<number>([4, 5, 6, 7]);
+const AUTHORED_DUNGEON_VISUAL_TIERS = new Set<number>(DUNGEON_TIERS);
 const INVALID_ACCESS: DungeonAccessState = { canEnter: false, reason: "invalid_definition" };
 
 function dungeonVisual(faction: string, tier: number): string | undefined {
