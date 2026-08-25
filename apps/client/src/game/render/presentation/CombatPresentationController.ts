@@ -48,6 +48,8 @@ export class CombatPresentationController {
   private readonly director: PresentationDirector;
   private readonly defaultHeroManifestId: string;
   private lastDamageEventId = 0;
+  private lastPlayerAmbientManifestId: string | undefined;
+  private lastEnemyAmbientManifestId: string | undefined;
   private displayedEnemyName: string | undefined;
   private displayedEnemyVisualManifestId: string | undefined;
   private displayedEnemyEncounterKey: string | undefined;
@@ -86,6 +88,8 @@ export class CombatPresentationController {
     this.actorSystem = new ActorSystem(scene);
     this.actorSystem.register(this.playerBody, this.playerHomeX, initialHeroManifest.ambientMotion);
     this.actorSystem.register(this.enemyBody, this.enemyHomeX, enemyManifest.ambientMotion);
+    this.lastPlayerAmbientManifestId = initialHeroManifest.id;
+    this.lastEnemyAmbientManifestId = enemyManifest.id;
 
     this.damageNumberSystem = new DamageNumberSystem(
       scene,
@@ -189,16 +193,20 @@ export class CombatPresentationController {
   private updatePlayer(bridge: GameBridge): void {
     this.hudSystem.updatePlayer(bridge.playerHealth, bridge.playerMaxHealth);
     const weapon = selectWeaponPresentation(bridge);
+    const visualManifestId = weapon.visualManifestId ?? this.defaultHeroManifestId;
     this.heroSystem.update({
       visualManifestId: weapon.visualManifestId,
       combatState: bridge.combatState,
       zoneIndex: bridge.world.zoneIndex,
       segmentIndex: bridge.world.segmentIndex,
     });
-    this.actorSystem.setAmbientMotion(
-      this.playerBody,
-      renderManifestRegistry.requireActor(weapon.visualManifestId ?? this.defaultHeroManifestId).ambientMotion,
-    );
+    if (visualManifestId !== this.lastPlayerAmbientManifestId) {
+      this.lastPlayerAmbientManifestId = visualManifestId;
+      this.actorSystem.setAmbientMotion(
+        this.playerBody,
+        renderManifestRegistry.requireActor(visualManifestId).ambientMotion,
+      );
+    }
     this.hudSystem.layoutPlayer(
       this.playerHomeX,
       this.playerBody.y,
@@ -274,10 +282,13 @@ export class CombatPresentationController {
       visualManifestId,
       isBoss: this.displayedEnemyIsBoss,
     });
-    this.actorSystem.setAmbientMotion(
-      this.enemyBody,
-      renderManifestRegistry.requireStaticActor(visualManifestId).ambientMotion,
-    );
+    if (visualManifestId !== this.lastEnemyAmbientManifestId) {
+      this.lastEnemyAmbientManifestId = visualManifestId;
+      this.actorSystem.setAmbientMotion(
+        this.enemyBody,
+        renderManifestRegistry.requireStaticActor(visualManifestId).ambientMotion,
+      );
+    }
     this.hudSystem.layoutEnemy(
       this.enemyHomeX,
       this.enemyBody.y,
@@ -332,6 +343,11 @@ export class CombatPresentationController {
   }
 
   private updateDamageEvents(bridge: GameBridge): void {
+    const latestDamageEvent = bridge.damageNumbers.at(-1);
+    if (latestDamageEvent === undefined || latestDamageEvent.id <= this.lastDamageEventId) {
+      return;
+    }
+
     for (const event of bridge.damageNumbers) {
       if (event.id <= this.lastDamageEventId) continue;
       const presentationEvent = event as PresentationDamageEvent;
