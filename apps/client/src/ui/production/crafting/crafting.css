@@ -209,6 +209,16 @@
 
 .ui-crafting-detail .ui-production__primary-action { min-height: 2.35rem; border: var(--ui-border-width) solid #8b6a27; border-radius: var(--ui-radius-sm); color: #171107; background: linear-gradient(#e4bc51, #a97918); font: inherit; font-weight: var(--ui-weight-bold); cursor: pointer; }
 .ui-crafting-detail .ui-production__primary-action:disabled { opacity: .45; cursor: not-allowed; }
+.ui-crafting-detail .ui-crafting-detail__feedback {
+  margin: calc(var(--ui-space-2) * -1) 0 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: var(--ui-radius-sm);
+  background: #0b1118;
+  font-weight: var(--ui-weight-semibold);
+}
+.ui-crafting-detail .ui-crafting-detail__feedback.is-success { border-color: #315f34; color: var(--ui-color-positive); background: #102414; }
+.ui-crafting-detail .ui-crafting-detail__feedback.is-error { border-color: #79443e; color: var(--ui-color-negative); background: #1c1110; }
 
 @media (max-width: 34rem) {
   .ui-crafting-detail__result { grid-template-columns: 64px minmax(0, 1fr); }
