@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAuthSession } from "../../auth/AuthSessionContext.js";
 import { isArtifactWeaponCraftOutput } from "../../data/artifactWeaponCraftRecipes.js";
+import { resolveProgressionEquipmentRoute } from "../../data/nonWeaponEquipmentContentCatalog.js";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { useSaveSlotSession } from "../../state/SaveSlotSessionContext.js";
 import { resolveBlueOnboardingStep } from "./blueOnboardingModel.js";
@@ -15,6 +16,11 @@ function artifactIntroStorageKey(accountId: string, slotId: string): string {
 function readArtifactIntroDismissed(storageKey: string): boolean {
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem(storageKey) === "1";
+}
+
+function isArmorProgressionItem(itemId: string): boolean {
+  const route = resolveProgressionEquipmentRoute(itemId);
+  return route !== undefined && route.family.slot === "chest" && route.item.tier >= 3;
 }
 
 export function BlueOnboardingGuide(): JSX.Element | null {
@@ -34,11 +40,6 @@ export function BlueOnboardingGuide(): JSX.Element | null {
     const workerStarted = bridge.workers.workers.some((worker) => (
       worker.state === "working" || worker.mastery > 0 || worker.masteryXp > 0
     ));
-    const t3ArmorIds = new Set(
-      bridge.crafting.recipes
-        .filter((recipe) => recipe.tier === 3 && recipe.family === "armor")
-        .map((recipe) => recipe.outputItemId),
-    );
     const ownedItemIds = [
       ...bridge.equipment.slots.map((slot) => slot.itemId),
       ...bridge.inventory.slots.map((slot) => slot.itemId),
@@ -48,7 +49,7 @@ export function BlueOnboardingGuide(): JSX.Element | null {
     return resolveBlueOnboardingStep({
       buildingIds,
       workerStarted,
-      hasT3Armor: ownedItemIds.some((itemId) => t3ArmorIds.has(itemId)),
+      hasT3Armor: ownedItemIds.some(isArmorProgressionItem),
       academyResearch: academy.research,
       dungeonUnlocked: services.isDungeonSystemUnlocked(),
       clearedDungeonTiers: dungeon.clearedTiers,
