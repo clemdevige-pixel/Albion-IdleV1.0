@@ -59,7 +59,7 @@ describe("weapon content catalog", () => {
     expect(badon[2]?.ability.id).toBe("ability_bow_badon_raging_storm");
   });
 
-  it("unlocks slots at specialization mastery 1, 10 and 30", () => {
+  it("unlocks slots at family mastery 1, 10 and 30", () => {
     for (const itemId of SPECIALIZATIONS) {
       expect(resolveUnlockedWeaponAbilities(itemId, 0)).toHaveLength(0);
       expect(resolveUnlockedWeaponAbilities(itemId, 1)).toHaveLength(1);
