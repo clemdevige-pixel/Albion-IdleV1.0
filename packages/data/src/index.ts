@@ -59,8 +59,9 @@ export * from "./localization/index.js";
 // Asset Manifest Runtime
 export * from "./assets/index.js";
 
-// Combat progression config
+// Combat progression and automation config
 export * from "./config/combat-progression.js";
+export * from "./config/combat-automation-balance.js";
 
 // World progression bands and authored progression contract
 export * from "./config/world-bands.js";
