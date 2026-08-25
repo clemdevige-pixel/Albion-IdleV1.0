@@ -16,11 +16,11 @@ describe("generalistExpeditionRewardContentCatalog", () => {
       profile.silverVariance,
       profile.shardVariance,
     ])).toEqual([
-      [4, 30_000, 46, 0.20, 0.25],
-      [5, 55_000, 47, 0.20, 0.25],
-      [6, 70_000, 50, 0.20, 0.25],
-      [7, 80_000, 43, 0.20, 0.25],
-      [8, 90_000, 38, 0.20, 0.25],
+      [4, 30_000, 23, 0.20, 0.25],
+      [5, 55_000, 23.5, 0.20, 0.25],
+      [6, 70_000, 25, 0.20, 0.25],
+      [7, 80_000, 21.5, 0.20, 0.25],
+      [8, 90_000, 19, 0.20, 0.25],
     ]);
   });
 
@@ -29,7 +29,7 @@ describe("generalistExpeditionRewardContentCatalog", () => {
     expect(reward).toEqual({
       silver: 60_000,
       shardItemId: getEnchantmentShardItemId(4),
-      shards: 92,
+      shards: 46,
       quality: "reussie",
     });
     expect(Number.isInteger(reward.silver)).toBe(true);
