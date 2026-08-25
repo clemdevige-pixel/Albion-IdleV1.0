@@ -9,8 +9,12 @@ export class SnapshotLoader {
 
   load(payload: Record<string, unknown>): void {
     for (const [id, provider] of this.providers) {
-      if (id in payload) {
+      if (!(id in payload)) continue;
+      try {
         provider.load(payload[id]);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to load save provider "${id}": ${reason}`, { cause: error });
       }
     }
   }
