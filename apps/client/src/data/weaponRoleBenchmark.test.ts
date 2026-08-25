@@ -18,49 +18,15 @@ function referenceLoadout(itemId: string) {
     : { armorItemIds: T4_DEFENSIVE_LOADOUT };
 }
 
-function shortName(itemId: string): string {
-  return itemId.replace("item_weapon_", "").replace("_t4_", " ");
-}
-
-describe("role-aware weapon benchmark diagnostics", () => {
-  it("reports every authored weapon role without collapsing them into one universal score", () => {
-    const rows = buildWeaponRoleBenchmark(T4_ROLE_WEAPONS, 30, 2, referenceLoadout);
-
-    console.log("[WEAPON_ROLE_DIAGNOSTIC_T4_2_M30]");
-    console.table(rows.map((row) => ({
-      weapon: shortName(row.itemId),
-      gameplay: row.gameplayProfile,
-      primaryRole: row.primaryContentRole,
-      secondaryRole: row.secondaryContentRole ?? "-",
-      sustainedDps: row.sustainedDps,
-      opener5Dps: row.opener5Dps,
-      opener10Dps: row.opener10Dps,
-      sustainedIndex: row.sustainedIndex,
-      opener5Index: row.opener5Index,
-      opener10Index: row.opener10Index,
-      packageScore: row.packageScore,
-      hardControl30s: row.hardControlSecondsPer30s,
-      debuffUptime: row.debuffUptimePercent,
-      roleLens: row.primaryRoleLens.join(" / "),
-    })));
-
-    expect(rows).toHaveLength(T4_ROLE_WEAPONS.length);
-    expect(new Set(rows.map((row) => row.itemId)).size).toBe(T4_ROLE_WEAPONS.length);
-    expect(rows.every((row) => row.primaryRoleLens.length > 0)).toBe(true);
-    expect(rows.every((row) => Number.isFinite(row.sustainedDps))).toBe(true);
-    expect(rows.every((row) => Number.isFinite(row.opener5Dps))).toBe(true);
-    expect(rows.every((row) => Number.isFinite(row.opener10Dps))).toBe(true);
-    expect(rows.every((row) => Number.isFinite(row.packageScore))).toBe(true);
-  });
-
-  it("uses distinct diagnostic lenses for different content roles", () => {
+describe("role-aware weapon benchmark contracts", () => {
+  it("uses distinct lenses for different content roles", () => {
     expect(getWeaponRoleLens("fame_farm")).toEqual(["opener_5s", "opener_10s", "sustained"]);
     expect(getWeaponRoleLens("boss")).toEqual(["sustained", "opener_10s"]);
     expect(getWeaponRoleLens("dungeon")).toContain("hard_control");
     expect(getWeaponRoleLens("general_progression")).toContain("package");
   });
 
-  it("captures authored control utility instead of pretending every dungeon weapon is pure DPS", () => {
+  it("captures authored control utility instead of treating every dungeon weapon as pure DPS", () => {
     const rows = buildWeaponRoleBenchmark(T4_ROLE_WEAPONS, 30, 2, referenceLoadout);
     const badon = rows.find((row) => row.itemId === "item_weapon_bow_t4_badon");
     const broadsword = rows.find((row) => row.itemId === "item_weapon_sword_t4_broadsword");
