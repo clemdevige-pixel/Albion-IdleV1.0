@@ -95,26 +95,31 @@
 }
 
 .world-dungeon-card__visual {
+  --dungeon-band-color: #39414b;
   display: block;
   width: 56px;
   height: 56px;
   overflow: hidden;
-  border: 1px solid #39414b;
+  border: 2px solid var(--dungeon-band-color);
   border-radius: 6px;
   background: #080b0f;
+  box-shadow: 0 0 5px color-mix(in srgb, var(--dungeon-band-color) 28%, transparent);
 }
+
+.world-dungeon-card__visual[data-band="blue"] { --dungeon-band-color: #557fbc; }
+.world-dungeon-card__visual[data-band="yellow"] { --dungeon-band-color: #d4aa3a; }
+.world-dungeon-card__visual[data-band="orange"] { --dungeon-band-color: #c76f29; }
+.world-dungeon-card__visual[data-band="red"] { --dungeon-band-color: #b9463f; }
+.world-dungeon-card__visual[data-band="black"] { --dungeon-band-color: #756585; }
 
 .world-dungeon-card__visual img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  image-rendering: pixelated;
-}
-
-.world-dungeon-card__visual[data-tier="4"] img {
   transform: scale(1.72);
   transform-origin: center;
+  image-rendering: pixelated;
 }
 
 .world-dungeon-card__identity {
