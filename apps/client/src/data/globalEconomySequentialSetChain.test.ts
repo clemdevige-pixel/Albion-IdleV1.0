@@ -101,10 +101,6 @@ describe("global economy sequential representative set chain", () => {
       };
     });
 
-    console.log("[GLOBAL_ECONOMY_SET_CHAIN]");
-    console.table(rows);
-    console.log("[GLOBAL_ECONOMY_SET_CHAIN_JSON]", JSON.stringify(rows, null, 2));
-
     expect(rows).toHaveLength(TIERS.length);
     expect(rows.every((row) => row.retainedSourceItems === 4 && row.producedItems === 4)).toBe(true);
     expect(inventory.size).toBe(24);
