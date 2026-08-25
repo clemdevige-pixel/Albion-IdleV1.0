@@ -37,7 +37,10 @@ export function IslandModule(): JSX.Element {
   const {
     selectedPlotId,
     selectedBuildingInstanceId,
+    movingBuildingInstanceId,
     selectBuilding,
+    startMovingBuilding,
+    cancelMovingBuilding,
     clearSelection,
   } = useIslandSelection();
 
@@ -54,6 +57,7 @@ export function IslandModule(): JSX.Element {
     : buildingByInstanceId.get(selectedBuildingInstanceId);
 
   if (selectedBuilding !== undefined) {
+    const moveActive = movingBuildingInstanceId === selectedBuilding.instanceId;
     return (
       <div className="ui-island ui-island--detail">
         <IslandOverviewButton onClick={clearSelection} />
@@ -61,6 +65,11 @@ export function IslandModule(): JSX.Element {
           definitionId={selectedBuilding.definitionId}
           level={selectedBuilding.level}
           islandLevel={islandLevel}
+          moveActive={moveActive}
+          onMove={() => {
+            if (moveActive) cancelMovingBuilding();
+            else startMovingBuilding(selectedBuilding.instanceId);
+          }}
         />
       </div>
     );
@@ -117,10 +126,14 @@ function BuildingSummary({
   definitionId,
   level,
   islandLevel,
+  moveActive,
+  onMove,
 }: {
   readonly definitionId: IslandBuildingId;
   readonly level: number;
   readonly islandLevel: number;
+  readonly moveActive: boolean;
+  readonly onMove: () => void;
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const maxProductionTier = getIslandMaxProductionTier(islandLevel);
@@ -150,6 +163,11 @@ function BuildingSummary({
         </span>
       </div>
       <p>{definition.description}</p>
+      <button type="button" className="ui-island__overview-button" onClick={onMove}>
+        <span aria-hidden="true" className="ui-island__overview-button-icon">↔</span>
+        <strong>{moveActive ? "Annuler le déplacement" : "Déplacer le bâtiment"}</strong>
+        <span aria-hidden="true" className="ui-island__overview-button-mark">◆</span>
+      </button>
       {definitionId === "worker_house" ? (
         <WorkerHousePanel level={level} />
       ) : definitionId === "storage" ? (
