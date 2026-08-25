@@ -17,16 +17,23 @@ interface DungeonPresentationModel {
   readonly combatState: string;
 }
 
+type DungeonBand = "blue" | "yellow" | "orange" | "red" | "black";
+
 const DUNGEON_TIERS: readonly DungeonKeyTier[] = [4, 5, 6, 7, 8];
 const DUNGEON_VISUAL_SLUGS = { keeper: "keeper", heretic: "heretic", undead: "undead", morgana: "morgana" } as const;
-const AUTHORED_DUNGEON_VISUAL_TIERS = new Set<number>(DUNGEON_TIERS);
+const DUNGEON_BAND_BY_TIER: Readonly<Record<DungeonKeyTier, DungeonBand>> = {
+  4: "blue",
+  5: "yellow",
+  6: "orange",
+  7: "red",
+  8: "black",
+};
 const INVALID_ACCESS: DungeonAccessState = { canEnter: false, reason: "invalid_definition" };
 
-function dungeonVisual(faction: string, tier: number): string | undefined {
-  if (!AUTHORED_DUNGEON_VISUAL_TIERS.has(tier)) return undefined;
+function dungeonVisual(faction: string): string | undefined {
   const key = faction.toLowerCase() as keyof typeof DUNGEON_VISUAL_SLUGS;
   const slug = DUNGEON_VISUAL_SLUGS[key];
-  return slug === undefined ? undefined : `/assets/world/dungeons/${slug}-dungeon-t${String(tier)}.png`;
+  return slug === undefined ? undefined : `/assets/world/dungeons/${slug}-dungeon-t4.png`;
 }
 
 function inventoryQuantities(slots: readonly { readonly itemId: string | undefined; readonly quantity: number }[]): Readonly<Record<string, number>> {
@@ -136,7 +143,8 @@ export function WorldDungeonsView(): JSX.Element {
             && presentation.pendingDefinitionId === null;
           const progressedEncounterCount = isActiveDungeon && presentation.activeEncounterIndex !== null ? presentation.activeEncounterIndex : 0;
           const routeProgress = dungeon.encounters.length <= 1 ? 100 : Math.max(0, Math.min(100, (progressedEncounterCount / (dungeon.encounters.length - 1)) * 100));
-          const visual = dungeonVisual(dungeon.faction, dungeon.tier);
+          const visual = dungeonVisual(dungeon.faction);
+          const band = DUNGEON_BAND_BY_TIER[dungeon.tier as DungeonKeyTier];
           return (
             <article
               key={dungeon.id}
@@ -145,7 +153,7 @@ export function WorldDungeonsView(): JSX.Element {
               aria-disabled={!canEnter || undefined}
             >
               <header className="world-dungeon-card__header">
-                <span className="world-dungeon-card__visual" data-tier={dungeon.tier} aria-hidden="true">{visual !== undefined ? <img src={visual} alt="" /> : null}</span>
+                <span className="world-dungeon-card__visual" data-band={band} aria-hidden="true">{visual !== undefined ? <img src={visual} alt="" /> : null}</span>
                 <div className="world-dungeon-card__identity"><small>Donjon T{dungeon.tier}</small><h3>{dungeon.faction}</h3></div>
                 <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : hardLocked ? "is-locked" : ""}>{isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : hardLocked ? "Verrouillé" : "Disponible"}</span>
               </header>
