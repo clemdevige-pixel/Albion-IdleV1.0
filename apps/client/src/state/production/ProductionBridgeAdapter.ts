@@ -1,5 +1,5 @@
 import type { EntityId } from "@game/core";
-import type { GatheringCoordinator, RefiningManager } from "@game/gameplay";
+import type { GatheringCoordinator, InventoryManager, RefiningManager } from "@game/gameplay";
 import {
   getClothRecipe,
   getLeatherRecipe,
@@ -23,7 +23,6 @@ import {
 } from "../../data/productionFamilyCatalog";
 import type { GameBridge } from "../../game/GameBridge";
 import type { GatheringRuntime } from "../../runtime/GatheringRuntime";
-import type { PlayerInventoryManager } from "../../runtime/PlayerInventoryManager";
 import type { RefiningRuntime } from "../../runtime/RefiningRuntime";
 import {
   syncCraftingToBridge,
@@ -41,7 +40,7 @@ function isGatheringContentTier(tier: ProductionTier): tier is GatheringContentT
 
 interface ProductionBridgeAdapterDependencies {
   readonly bridge: GameBridge;
-  readonly inventoryManager: PlayerInventoryManager;
+  readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
   readonly productionStorageId: EntityId;
   readonly gatheringRuntime: GatheringRuntime;
@@ -56,7 +55,7 @@ interface ProductionBridgeAdapterDependencies {
 
 export function syncCraftingProjection(
   bridge: GameBridge,
-  inventoryManager: PlayerInventoryManager,
+  inventoryManager: InventoryManager,
   heroId: EntityId,
   productionStorageId: EntityId,
   tier: ProductionTier,
