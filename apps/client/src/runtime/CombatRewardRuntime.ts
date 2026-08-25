@@ -7,7 +7,6 @@ import type {
   DurabilityStore,
   EquipmentManager,
   ExperienceService,
-  InventoryManager,
   MasteryId,
   ProgressionOrchestrator,
   WalletId,
@@ -22,6 +21,7 @@ import { isAwakeningEligibleWeapon } from "../data/enchantmentItemPolicy.js";
 import { resolveEquipmentInfo } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
 import { resolveWeaponMastery } from "../data/weaponContentCatalog.js";
+import type { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
 export type WorldCombatDrop = CombatDrop | FactionRuneWorldDrop;
 
@@ -47,7 +47,7 @@ export interface CombatRewardRuntimeDependencies {
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
   readonly equipmentManager: EquipmentManager;
-  readonly inventoryManager: InventoryManager;
+  readonly inventoryManager: PlayerInventoryManager;
   readonly durabilityStore: DurabilityStore;
   readonly progressionOrchestrator: ProgressionOrchestrator;
   readonly experienceService: ExperienceService;
@@ -65,7 +65,7 @@ export class CombatRewardRuntime {
   private readonly currencyService: CurrencyService;
   private readonly walletId: WalletId;
   private readonly equipmentManager: EquipmentManager;
-  private readonly inventoryManager: InventoryManager;
+  private readonly inventoryManager: PlayerInventoryManager;
   private readonly durabilityStore: DurabilityStore;
   private readonly progressionOrchestrator: ProgressionOrchestrator;
   private readonly experienceService: ExperienceService;
@@ -88,9 +88,6 @@ export class CombatRewardRuntime {
     this.heroId = deps.heroId;
     this.onRawFactionFame = deps.onRawFactionFame;
     this.isDungeonKeyLootUnlocked = deps.isDungeonKeyLootUnlocked ?? (() => true);
-    // Compatibility default is safe because both channels are currently unlocked
-    // by the same Research completion; composition roots can still bind the
-    // dedicated capability explicitly.
     this.isFactionRuneLootUnlocked = deps.isFactionRuneLootUnlocked
       ?? this.isDungeonKeyLootUnlocked;
     this.random = deps.random ?? Math.random;
@@ -118,7 +115,6 @@ export class CombatRewardRuntime {
     lootContext: CombatLootContext,
     factionRuneDropChance = 0,
   ): EnemyKilledRewardResult {
-    // Snapshot before this kill awards faction Fame so a kill never increases its own multiplier.
     const factionYieldBonusPercent = this.getFactionYieldBonusPercent(lootContext.faction);
     const finalSilverReward = applyPercentBonusRounded(silverReward, factionYieldBonusPercent);
     const factionAdjustedFame = applyPercentBonusRounded(fameReward, factionYieldBonusPercent);
@@ -171,7 +167,6 @@ export class CombatRewardRuntime {
       }
     }
 
-    // Faction Mastery follows the exact Fame actually earned by the kill (1 Fame = 1 faction Fame).
     if (Number.isSafeInteger(finalCombatFame) && finalCombatFame > 0) {
       this.onRawFactionFame?.(lootContext.faction, finalCombatFame);
     }
@@ -192,22 +187,9 @@ export class CombatRewardRuntime {
         && (drop.kind === "key" || drop.kind === "key_fragment")
       ) continue;
 
-      const addResult = this.inventoryManager.addQuantity(this.heroId, drop.itemId, drop.quantity);
-      if (!addResult.ok || addResult.value.added <= 0) continue;
-
-      const acceptedDrop: CombatDrop = { ...drop, quantity: addResult.value.added };
-      const eqInfo = resolveEquipmentInfo(drop.itemId);
-      if (eqInfo !== undefined) {
-        const position = addResult.value.affectedPositions[0];
-        if (position !== undefined) {
-          const slot = this.inventoryManager.getSlot(this.heroId, position);
-          if (slot.ok && slot.value.entry !== undefined) {
-            const existingDurability = this.durabilityStore.get(slot.value.entry.instanceId);
-            if (existingDurability === undefined) this.durabilityStore.attach(slot.value.entry.instanceId, 100);
-          }
-        }
-      }
-      itemDrops.push(acceptedDrop);
+      const creditedQuantity = this.creditPlayerDrop(drop.itemId, drop.quantity);
+      if (creditedQuantity <= 0) continue;
+      itemDrops.push({ ...drop, quantity: creditedQuantity });
     }
 
     if (this.isFactionRuneLootUnlocked()) {
@@ -219,13 +201,9 @@ export class CombatRewardRuntime {
         this.random,
       );
       if (runeDrop !== undefined) {
-        const addResult = this.inventoryManager.addQuantity(
-          this.heroId,
-          runeDrop.itemId,
-          runeDrop.quantity,
-        );
-        if (addResult.ok && addResult.value.added > 0) {
-          itemDrops.push({ ...runeDrop, quantity: 1 });
+        const creditedQuantity = this.creditPlayerDrop(runeDrop.itemId, runeDrop.quantity);
+        if (creditedQuantity > 0) {
+          itemDrops.push({ ...runeDrop, quantity: creditedQuantity });
         }
       }
     }
@@ -237,6 +215,40 @@ export class CombatRewardRuntime {
       attunementEarned,
       itemDrops,
     };
+  }
+
+  private creditPlayerDrop(itemId: string, quantity: number): number {
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) return 0;
+
+    const equipment = resolveEquipmentInfo(itemId);
+    if (equipment === undefined) {
+      return this.inventoryManager.addAccessibleQuantity(this.heroId, itemId, quantity)
+        ? quantity
+        : 0;
+    }
+
+    let credited = 0;
+    for (let index = 0; index < quantity; index += 1) {
+      let stored = false;
+      for (const ownerId of this.inventoryManager.getAccessibleStorageOwners(this.heroId)) {
+        const added = this.inventoryManager.addQuantity(ownerId, itemId, 1);
+        if (!added.ok || added.value.added !== 1 || added.value.remainder !== 0) continue;
+
+        const position = added.value.affectedPositions[0];
+        if (position !== undefined) {
+          const slot = this.inventoryManager.getSlot(ownerId, position);
+          const entry = slot.ok ? slot.value.entry : undefined;
+          if (entry !== undefined && this.durabilityStore.get(entry.instanceId) === undefined) {
+            this.durabilityStore.attach(entry.instanceId, 100);
+          }
+        }
+        credited += 1;
+        stored = true;
+        break;
+      }
+      if (!stored) break;
+    }
+    return credited;
   }
 }
 
