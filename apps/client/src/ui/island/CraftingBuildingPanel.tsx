@@ -114,7 +114,7 @@ export function CraftingBuildingPanel({
           </div>
           <CraftingRecipeDetails
             recipe={recipe}
-            onCraft={() => { actions.craft(recipe.outputItemId); }}
+            onCraft={() => actions.craft(recipe.outputItemId)}
           />
         </>
       )}
