@@ -2,9 +2,14 @@ import { useMemo, useState } from "react";
 import { useAuthSession } from "../../auth/AuthSessionContext.js";
 import { isArtifactWeaponCraftOutput } from "../../data/artifactWeaponCraftRecipes.js";
 import { resolveProgressionEquipmentRoute } from "../../data/nonWeaponEquipmentContentCatalog.js";
+import { DUNGEON_RELIC_ID } from "../../data/relicContentCatalog.js";
+import { WORLD_ZONE_IDS } from "../../data/worldContentCatalog.js";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { useSaveSlotSession } from "../../state/SaveSlotSessionContext.js";
-import { resolveBlueOnboardingStep } from "./blueOnboardingModel.js";
+import {
+  resolveBlueOnboardingStep,
+  type BlueOnboardingArtifactStage,
+} from "./blueOnboardingModel.js";
 import "./onboarding.css";
 
 const ARTIFACT_INTRO_STORAGE_PREFIX = "albion-idle:onboarding:artifact-intro:";
@@ -13,12 +18,15 @@ function artifactIntroStorageKey(accountId: string, slotId: string): string {
   return `${ARTIFACT_INTRO_STORAGE_PREFIX}${accountId}:${slotId}`;
 }
 
-function readArtifactIntroDismissed(storageKey: string): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(storageKey) === "1";
+function readArtifactStage(storageKey: string): BlueOnboardingArtifactStage {
+  if (typeof window === "undefined") return "artifacts";
+  const value = window.localStorage.getItem(storageKey);
+  if (value === "artifact_weapons" || value === "done") return value;
+  if (value === "1") return "done";
+  return "artifacts";
 }
 
-function isArmorProgressionItem(itemId: string): boolean {
+function isChestProgressionItem(itemId: string): boolean {
   const route = resolveProgressionEquipmentRoute(itemId);
   return route !== undefined && route.family.slot === "chest" && route.item.tier >= 3;
 }
@@ -29,13 +37,14 @@ export function BlueOnboardingGuide(): JSX.Element | null {
   const { account } = useAuthSession();
   const { activeSlotId } = useSaveSlotSession();
   const storageKey = artifactIntroStorageKey(account.id, activeSlotId);
-  const [artifactIntroDismissed, setArtifactIntroDismissed] = useState(
-    () => readArtifactIntroDismissed(storageKey),
+  const [artifactStage, setArtifactStage] = useState<BlueOnboardingArtifactStage>(
+    () => readArtifactStage(storageKey),
   );
 
   const step = useMemo(() => {
     const academy = services.getAcademyModel();
     const dungeon = services.getDungeonState();
+    const relic = services.getRelicProgress(DUNGEON_RELIC_ID);
     const buildingIds = new Set(bridge.island.buildings.map((building) => building.definitionId));
     const workerStarted = bridge.workers.workers.some((worker) => (
       worker.state === "working" || worker.mastery > 0 || worker.masteryXp > 0
@@ -45,27 +54,47 @@ export function BlueOnboardingGuide(): JSX.Element | null {
       ...bridge.inventory.slots.map((slot) => slot.itemId),
       ...bridge.bank.slots.map((slot) => slot.itemId),
     ].filter((itemId): itemId is string => itemId !== undefined);
+    const frostpeak = bridge.world.zones.find((zone) => zone.zoneDefId === WORLD_ZONE_IDS.mountain);
+    const hasReachedFrostpeak = frostpeak?.isUnlocked === true
+      || frostpeak?.isActive === true
+      || (frostpeak?.completedSegments.length ?? 0) > 0;
+    const hasProgressedBeyondEarlyProduction = bridge.world.zones.some((zone) => (
+      zone.worldBandId === "blue"
+      && zone.zoneIndexWithinBand >= 3
+      && zone.isUnlocked
+    ));
+    const beyondBlueOnboarding = bridge.world.worldBandId !== "blue"
+      || bridge.world.zones.some((zone) => zone.worldBandId !== "blue" && zone.isUnlocked)
+      || dungeon.clearedTiers.some((tier) => tier > 4);
 
     return resolveBlueOnboardingStep({
       buildingIds,
       workerStarted,
-      hasT3Armor: ownedItemIds.some(isArmorProgressionItem),
+      hasChestArmorTier3OrHigher: ownedItemIds.some(isChestProgressionItem),
+      hasProgressedBeyondEarlyProduction,
       academyResearch: academy.research,
+      hasReachedFrostpeak,
+      relicState: relic?.state ?? "unobtained",
       dungeonUnlocked: services.isDungeonSystemUnlocked(),
+      activeDungeon: dungeon.activeRun !== undefined,
       clearedDungeonTiers: dungeon.clearedTiers,
       artifactWeaponOwned: ownedItemIds.some(isArtifactWeaponCraftOutput),
-      artifactIntroDismissed,
+      artifactStage,
+      beyondBlueOnboarding,
     });
-  }, [artifactIntroDismissed, bridge, services]);
+  }, [artifactStage, bridge, services]);
 
   if (step === null) return null;
 
-  const dismissArtifactIntro = (): void => {
-    if (step.id !== "artifact_intro") return;
+  const acknowledgeInformationalStep = (): void => {
+    if (step.informational !== true) return;
+    const nextStage: BlueOnboardingArtifactStage = step.id === "artifact_fragments"
+      ? "artifact_weapons"
+      : "done";
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(storageKey, "1");
+      window.localStorage.setItem(storageKey, nextStage);
     }
-    setArtifactIntroDismissed(true);
+    setArtifactStage(nextStage);
   };
 
   return (
@@ -76,7 +105,7 @@ export function BlueOnboardingGuide(): JSX.Element | null {
           <strong>{step.title}</strong>
         </div>
         {step.informational === true && (
-          <button type="button" onClick={dismissArtifactIntro}>J’ai compris</button>
+          <button type="button" onClick={acknowledgeInformationalStep}>J’ai compris</button>
         )}
       </div>
       <p>{step.description}</p>
