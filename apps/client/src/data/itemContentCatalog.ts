@@ -117,7 +117,7 @@ export function resolveEnchantmentItemInfo(itemId: string) {
           ? "cape" as const
           : definition.slot === "head"
             ? "armor_head" as const
-            : definition.slot === "torso"
+            : definition.slot === "chest"
               ? "armor_torso" as const
               : "armor_boots" as const;
   const craftRecipe = ALL_EQUIPMENT_CRAFT_RECIPES.find(
