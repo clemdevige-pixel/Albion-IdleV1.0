@@ -73,9 +73,10 @@ export * from "./config/faction-rune-world-drops.js";
 // Authored economy and loot balance values
 export * from "./config/economy-balance.js";
 
-// Canonical dungeon entry currency and artifact identifiers
+// Canonical dungeon identifiers and authored dungeon loot balance
 export * from "./config/dungeon-keys.js";
 export * from "./config/dungeon-artifacts.js";
+export * from "./config/dungeon-loot-balance.js";
 
 // Authored expedition reward profiles
 export * from "./config/expedition-balance.js";
