@@ -38,6 +38,59 @@ describe("PlayerIslandService", () => {
     expect(service.placeBuilding("lumber_camp", "plot_03")).toEqual({ ok: false, reason: "plot_occupied" });
   });
 
+  it("moves a built building to an empty plot without changing its identity or level", () => {
+    const service = new PlayerIslandService();
+    service.placeBuilding("mine", "plot_03");
+    const before = service.getState().buildings.find((building) => building.definitionId === "mine");
+
+    expect(service.moveBuilding("island_mine", "plot_04")).toEqual({
+      ok: true,
+      building: {
+        instanceId: "island_mine",
+        definitionId: "mine",
+        plotId: "plot_04",
+        level: 1,
+      },
+    });
+
+    const after = service.getState().buildings.find((building) => building.definitionId === "mine");
+    expect(after?.instanceId).toBe(before?.instanceId);
+    expect(after?.level).toBe(before?.level);
+    expect(service.getState().plots.find((plot) => plot.id === "plot_03")?.buildingInstanceId).toBeNull();
+    expect(service.getState().plots.find((plot) => plot.id === "plot_04")?.buildingInstanceId).toBe("island_mine");
+  });
+
+  it("swaps two occupied plots atomically while preserving both buildings", () => {
+    const service = new PlayerIslandService();
+    service.placeBuilding("mine", "plot_03");
+
+    expect(service.moveBuilding("island_mine", "plot_02")).toEqual({
+      ok: true,
+      building: {
+        instanceId: "island_mine",
+        definitionId: "mine",
+        plotId: "plot_02",
+        level: 1,
+      },
+      swappedBuilding: {
+        instanceId: "island_storage",
+        definitionId: "storage",
+        plotId: "plot_03",
+        level: 1,
+      },
+    });
+
+    expect(service.getState().plots.find((plot) => plot.id === "plot_02")?.buildingInstanceId).toBe("island_mine");
+    expect(service.getState().plots.find((plot) => plot.id === "plot_03")?.buildingInstanceId).toBe("island_storage");
+    expect(service.getState().buildings.find((building) => building.instanceId === "island_storage")?.plotId).toBe("plot_03");
+  });
+
+  it("rejects relocation requests for unknown buildings or plots", () => {
+    const service = new PlayerIslandService();
+    expect(service.moveBuilding("missing", "plot_03")).toEqual({ ok: false, reason: "unknown_building" });
+    expect(service.moveBuilding("island_storage", "missing")).toEqual({ ok: false, reason: "unknown_plot" });
+  });
+
   it("keeps standard production buildings construction-only at every island level", () => {
     const service = new PlayerIslandService();
     service.placeBuilding("mine", "plot_03");
@@ -110,10 +163,12 @@ describe("PlayerIslandService", () => {
     expect(service.upgradeIslandLevel()).toEqual({ ok: false, reason: "max_level" });
   });
 
-  it("round-trips persisted island state after construction and island upgrade", () => {
+  it("round-trips persisted island state after construction, relocation and island upgrade", () => {
     const source = new PlayerIslandService();
     source.placeBuilding("lumber_camp", "plot_03");
     source.placeBuilding("mine", "plot_04");
+    source.moveBuilding("island_mine", "plot_05");
+    source.moveBuilding("island_lumber_camp", "plot_02");
     source.upgradeIslandLevel();
     const snapshot = source.save();
     const restored = new PlayerIslandService();
@@ -122,6 +177,9 @@ describe("PlayerIslandService", () => {
 
     expect(restored.getState()).toEqual(source.getState());
     expect(restored.getState().level).toBe(2);
+    expect(restored.getState().buildings.find((building) => building.instanceId === "island_mine")?.plotId).toBe("plot_05");
+    expect(restored.getState().buildings.find((building) => building.instanceId === "island_lumber_camp")?.plotId).toBe("plot_02");
+    expect(restored.getState().buildings.find((building) => building.instanceId === "island_storage")?.plotId).toBe("plot_03");
   });
 
   it("round-trips the highest authored island level", () => {
