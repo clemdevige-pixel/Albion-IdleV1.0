@@ -112,10 +112,7 @@ export function scaleEnchantmentRecipe(
         ? []
         : [{
             itemId: getEnchantmentShardItemId(itemTier),
-            quantity: scaleResourceQuantity(
-              ENCHANTMENT_SHARD_COSTS[activeLevel],
-              resourceMultiplier,
-            ),
+            quantity: ENCHANTMENT_SHARD_COSTS[category][activeLevel],
           }]),
       ...(activeLevel === undefined
         ? []
