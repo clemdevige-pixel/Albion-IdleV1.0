@@ -11,6 +11,7 @@ import type {
 import type { GameBridge, WorkerProfessionVM } from "../../game/GameBridge";
 import type { ProductionFoundation } from "../../runtime/bootstrap/createProductionFoundation";
 import type { CombatLoopState } from "../../runtime/CombatRuntime";
+import { DEFAULT_RUNTIME_TICK_INTERVAL_MS } from "../../runtime/RuntimeLifecycle";
 import {
   buildMasteryViewModels,
   getWorkerResourceLabel,
@@ -191,6 +192,13 @@ export class ProductionRuntimeController {
       save: () => this.#dependencies.foundation.workerRuntime.getSaveState(),
       load: (data: unknown): void => {
         this.#dependencies.foundation.workerRuntime.restoreSaveState(data);
+        this.syncWorkers();
+      },
+      resolveBackground: (elapsedMs: number): void => {
+        this.#dependencies.foundation.workerRuntime.resolveBackground(
+          elapsedMs,
+          DEFAULT_RUNTIME_TICK_INTERVAL_MS,
+        );
         this.syncWorkers();
       },
     };
