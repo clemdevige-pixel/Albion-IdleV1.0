@@ -30,6 +30,7 @@ export class EnemyPresentationSystem {
   public isBoss = false;
   public hudLayout: EnemyHudLayout;
   private currentProfileId = "";
+  private visible = false;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -62,6 +63,8 @@ export class EnemyPresentationSystem {
   }
 
   public setVisible(visible: boolean): void {
+    if (visible === this.visible) return;
+    this.visible = visible;
     this.body.setVisible(visible);
   }
 
