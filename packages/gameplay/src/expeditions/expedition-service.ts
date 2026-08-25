@@ -2,6 +2,7 @@ import type { SaveProvider } from "@game/persistence";
 import { z } from "zod";
 import {
   EXPEDITION_DURATION_OPTIONS_MS,
+  ExpeditionRewardDeferredError,
   type ActiveExpeditionState,
   type CancelExpeditionResult,
   type ExpeditionAdvanceResult,
@@ -211,10 +212,22 @@ export class ExpeditionService<
 
       const definition = this.#definitions.get(active.expeditionId);
       if (definition === undefined) continue;
-      const rewardSummary = this.#rewardPort.grantCompletionReward(
-        definition,
-        active.durationMs,
-      );
+
+      let rewardSummary: TRewardSummary;
+      try {
+        rewardSummary = this.#rewardPort.grantCompletionReward(
+          definition,
+          active.durationMs,
+        );
+      } catch (error) {
+        if (!(error instanceof ExpeditionRewardDeferredError)) throw error;
+        remaining.push({
+          ...active,
+          remainingDurationMs: 1,
+        });
+        continue;
+      }
+
       this.#completedByType.set(
         active.typeId,
         this.getCompletedCount(active.typeId) + 1,
