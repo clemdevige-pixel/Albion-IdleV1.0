@@ -12,7 +12,6 @@ import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
 import { GatheringBuildingPanel } from "./GatheringBuildingPanel";
 import { IslandBuildingProgressPanel } from "./IslandBuildingProgressPanel";
 import { IslandLevelPanel } from "./IslandLevelPanel";
-import { IslandOnboardingGuide } from "./IslandOnboardingGuide";
 import { IslandWorkerOverviewPanel } from "./IslandWorkerOverviewPanel";
 import { RefiningBuildingPanel } from "./RefiningBuildingPanel";
 import { StoragePanel } from "./StoragePanel";
@@ -96,7 +95,6 @@ export function IslandModule(): JSX.Element {
       <IslandLevelPanel />
       <IslandWorkerOverviewPanel />
       <IslandBuildingProgressPanel />
-      <IslandOnboardingGuide />
       <div className="ui-island__overview-hint">
         <span aria-hidden="true">◆</span>
         <span>Sélectionnez un bâtiment ou un emplacement libre sur l’île pour afficher sa gestion.</span>
