@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
+import type { EntityId } from "@game/core";
+import type { AbilityManager } from "@game/gameplay";
 import type { ClientAbilityDefinition } from "../../data/weaponContentCatalog";
-import { buildAbilityDetails, type AbilityTooltipStats } from "./abilitySync";
+import type { GameBridge } from "../../game/GameBridge";
+import {
+  buildAbilityDetails,
+  syncAbilitiesToBridge,
+  type AbilityTooltipStats,
+} from "./abilitySync";
 
 const TOOLTIP_STATS: AbilityTooltipStats = {
   physicalDamage: 100,
@@ -101,6 +108,44 @@ describe("ability tooltip mechanics", () => {
       kind: "heal_from_damage",
       ratio: 0.12,
       maxHealthRatio: 0.015,
+    });
+  });
+});
+
+describe("ability mastery routing", () => {
+  it("unlocks Q/W/E from family mastery even when specialization mastery stays at 1", () => {
+    let syncedAbilities: unknown;
+    const bridge = {
+      progression: {
+        masteries: [
+          { id: "mastery_bow", level: 30 },
+          { id: "mastery_longbow", level: 1 },
+        ],
+      },
+      stats: { stats: [] },
+      combatState: "combat",
+      updateAbilities: (abilities: unknown) => { syncedAbilities = abilities; },
+    } as unknown as GameBridge;
+    const abilityManager = {
+      getAbility: (_heroId: EntityId, abilityId: string) => ({
+        abilityId,
+        state: "ready",
+        cooldownRemaining: 0,
+      }),
+    } as unknown as AbilityManager;
+
+    syncAbilitiesToBridge(
+      bridge,
+      abilityManager,
+      1 as EntityId,
+      "item_weapon_bow_t3_longbow",
+      true,
+    );
+
+    expect(syncedAbilities).toMatchObject({
+      primary: { id: "ability_bow_aimed_shot" },
+      secondary: { id: "ability_bow_piercing_arrow" },
+      ultimate: { id: "ability_bow_deadeye" },
     });
   });
 });
