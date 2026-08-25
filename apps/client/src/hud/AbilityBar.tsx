@@ -21,8 +21,10 @@ function formatPercent(ratio: number): string {
   return `${formatNumber(ratio * 100)}%`;
 }
 
-function damageTypeLabel(damageType: "physical" | "magical"): string {
-  return damageType === "magical" ? "magiques" : "physiques";
+function damageTypeLabel(damageType: "physical" | "magical" | "true"): string {
+  if (damageType === "magical") return "magiques";
+  if (damageType === "true") return "purs";
+  return "physiques";
 }
 
 function statusLabel(detail: Extract<CombatAbilityDetailVM, { readonly kind: "status" }>): string {
