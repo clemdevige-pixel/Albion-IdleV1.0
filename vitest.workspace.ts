@@ -10,4 +10,5 @@ export default defineWorkspace([
   "packages/persistence",
   "packages/gameplay",
   "apps/server",
+  "apps/client",
 ]);
