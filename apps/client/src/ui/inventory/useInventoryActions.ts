@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { getFragmentAssemblyRecipe } from "../../data/specialCraftRecipes.js";
 import { getEquipmentTierCapViolation } from "../../data/zoneEquipmentTierCaps";
+import { PlayerInventoryManager } from "../../runtime/PlayerInventoryManager.js";
 import { StorageRuntime, type StorageKind } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
 import {
@@ -90,7 +91,9 @@ export function useInventoryActions(): InventoryActions {
     const requirement = recipe?.requirements[0];
     if (recipe === undefined || requirement === undefined) return false;
 
-    const currentQuantity = services.inventoryManager.getTotalQuantity(services.heroId, itemId);
+    const currentQuantity = services.inventoryManager instanceof PlayerInventoryManager
+      ? services.inventoryManager.getAccessibleQuantity(services.heroId, itemId)
+      : services.inventoryManager.getTotalQuantity(services.heroId, itemId);
     if (currentQuantity < requirement.quantity) {
       services.bridge.addEconomyNotification({
         id: `notif_fragment_assembly_missing_${String(Date.now())}`,
@@ -106,7 +109,7 @@ export function useInventoryActions(): InventoryActions {
       services.bridge.addEconomyNotification({
         id: `notif_fragment_assembly_failed_${String(Date.now())}`,
         type: "error",
-        message: `Impossible d’assembler ${recipe.name}. Vérifiez l’espace disponible dans l’inventaire.`,
+        message: `Impossible d’assembler ${recipe.name}. Vérifiez l’espace disponible dans l’inventaire ou la banque.`,
         timestamp: Date.now(),
       });
     }
