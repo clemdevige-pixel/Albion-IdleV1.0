@@ -14,7 +14,9 @@ monsterContentCatalog
   -> death event
   -> progression reward x monster modifier
   -> monster loot table
-  -> render manifest / Phaser
+  -> visualManifestId
+  -> render manifest / EnemyVfxPresentationCatalog
+  -> Phaser
 ```
 
 ## Source of authority
@@ -36,6 +38,16 @@ monsterContentCatalog
 
 `worldContentCatalog.ts` derives its normal monster spawn metadata from those encounter pools and must not author a second bestiary list.
 
+`apps/client/src/game/render/EnemyVfxPresentationCatalog.ts` owns the presentation-only mapping from monster visual manifest IDs to enemy attack VFX styles. Combat and presentation controllers must never infer VFX from monster names or ID substrings.
+
+## Why monsterContentCatalog currently stays in the client
+
+The live monster catalog is intentionally client-owned for the current architecture. Its consumers are all part of the playable client runtime: combat entity creation, rewards, projected rates, world presentation models, research and bestiary bootstrap.
+
+Do not migrate this catalog to `@game/data` only for package symmetry. Such a move is justified only when a real non-client consumer appears (for example an authoritative server/shared simulation) or when the migration removes an actual runtime limitation.
+
+`visualManifestId` currently remains on the live monster definition because `combatEntityFactory` returns the complete spawned-enemy identity consumed by the Bridge. Moving that field today would either introduce a runtime -> render dependency or duplicate monster-to-visual mapping in another client catalog. Revisit this boundary only if the runtime/presentation ownership model changes.
+
 ## Standard new-monster checklist
 
 ### 1. Define the monster
@@ -45,8 +57,8 @@ Add one entry to `MONSTER_IDS` and `MONSTER_DEFINITIONS` in `monsterContentCatal
 Choose:
 
 - `category`: normal / veteran / elite / boss
-- `combat`: multipliers applied on top of zone/segment combat scaling
-- `rewards`: multipliers applied on top of zone/segment reward scaling
+- `combat`: modifiers applied on top of zone/segment combat scaling
+- `rewards`: modifiers applied on top of zone/segment reward scaling
 - `lootTableId`
 - `abilityIds`
 - `visualManifestId`
@@ -101,7 +113,15 @@ Do not compensate for proportions by editing the source image. Use manifest heig
 
 Phaser must not receive monster-name conditions.
 
-### 6. Validation
+### 6. Author the attack VFX
+
+Add the monster's `visualManifestId` to `EnemyVfxPresentationCatalog.ts` with an explicit `EnemyVfxStyle`.
+
+The catalog is presentation-only. Do not add monster-name or manifest-substring branching to `CombatPresentationController` or `VfxSystem`.
+
+`EnemyVfxPresentationCatalog.test.ts` requires exact coverage of the current monster definitions, so a newly authored monster without a VFX mapping must fail validation.
+
+### 7. Validation
 
 `monsterPipelineContract.test.ts` must stay green. It verifies that:
 
@@ -113,7 +133,11 @@ Phaser must not receive monster-name conditions.
 - progression scaling remains the reward base;
 - a real authored boss can spawn with identity + abilities + rewards + renderer resolution.
 
-`aspectRatio.test.ts` additionally locks the static-actor sizing rule so future renderer changes cannot silently reintroduce sprite deformation.
+`contentEngineBoundary.contract.test.ts` additionally prevents concrete weapon/monster content IDs from leaking into GameScene and core presentation systems.
+
+`EnemyVfxPresentationCatalog.test.ts` locks exact VFX coverage for all current monster visual manifests.
+
+`aspectRatio.test.ts` locks the static-actor sizing rule so future renderer changes cannot silently reintroduce sprite deformation.
 
 Run client tests, typecheck and build before validating the monster.
 
