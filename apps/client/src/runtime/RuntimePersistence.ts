@@ -169,6 +169,18 @@ export class RuntimePersistence {
     this.onLocalSave?.(this.saveRepository.get(this.saveSlotId));
   }
 
+  /** Resolves elapsed time through passive/background-capable providers only. */
+  public resolveBackgroundElapsed(elapsedMs: number): void {
+    if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+      throw new Error("Background elapsed time must be a finite non-negative number");
+    }
+    if (elapsedMs === 0) return;
+
+    for (const provider of this.backgroundProviders) {
+      provider.resolveBackground?.(elapsedMs);
+    }
+  }
+
   public load(): void {
     this.lastLoadSource = loadSaveWithBackup(
       this.saveRepository,
@@ -191,9 +203,7 @@ export class RuntimePersistence {
     const window = resolveTrustedOfflineWindow(loadedSave);
     if (window === undefined || window.elapsedMs <= 0) return;
 
-    for (const provider of this.backgroundProviders) {
-      provider.resolveBackground?.(window.elapsedMs);
-    }
+    this.resolveBackgroundElapsed(window.elapsedMs);
 
     this.trustedOfflineResolvedThrough = Math.max(
       this.trustedOfflineResolvedThrough ?? 0,
