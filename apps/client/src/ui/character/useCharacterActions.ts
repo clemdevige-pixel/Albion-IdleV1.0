@@ -17,6 +17,11 @@ interface CharacterActions {
   readonly applyLoadout: (loadoutId: string) => boolean;
 }
 
+interface MovedInventoryEntry {
+  readonly position: number;
+  readonly entry: InventoryEntry;
+}
+
 function getActiveEquipmentTierCap(services: ReturnType<typeof useGameServices>): number | undefined {
   const zoneDefId = services.bridge.world.zoneDefId;
   if (zoneDefId.length === 0) return undefined;
@@ -33,7 +38,7 @@ function notifyEquipmentFailure(
     : reason === "two_handed_conflict"
       ? "Loadout refusé : une arme à deux mains ne peut pas être combinée avec une main gauche."
       : reason === "inventory_full"
-        ? "Changement refusé : l'inventaire n'a pas assez de place pour préparer l'équipement sélectionné depuis la banque."
+        ? "Changement refusé : l'inventaire et la banque n'ont pas assez de place pour effectuer ce changement."
         : reason === "tier_cap_exceeded"
           ? `Loadout refusé : cette zone est limitée au T${String(tierCap ?? "?")}.`
           : reason === "loadout_item_missing"
@@ -74,6 +79,30 @@ function restoreBankEntry(
   }
 }
 
+function rollbackMovedInventoryEntries(
+  services: ReturnType<typeof useGameServices>,
+  moved: readonly MovedInventoryEntry[],
+): void {
+  for (const movement of [...moved].reverse()) {
+    const bankEntry = services.inventoryManager.findEntryByInstanceId(
+      services.bankId,
+      movement.entry.instanceId,
+    );
+    if (bankEntry === undefined) throw new Error("Bank staging rollback entry missing");
+    const removed = services.inventoryManager.removeEntryByInstanceId(
+      services.bankId,
+      movement.entry.instanceId,
+    );
+    if (!removed.ok) throw new Error("Bank staging rollback removal failed");
+    const restored = services.inventoryManager.insertEntry(
+      services.heroId,
+      removed.value,
+      movement.position,
+    );
+    if (!restored.ok) throw new Error("Bank staging rollback inventory restore failed");
+  }
+}
+
 export function useCharacterActions(): CharacterActions {
   const services = useGameServices();
   const refreshCharacterState = useCallback(() => {
@@ -110,20 +139,60 @@ export function useCharacterActions(): CharacterActions {
       notifyEquipmentFailure(services, canEquip.reason, tierCap);
       return false;
     }
-    if (services.inventoryManager.findFreeSlots(services.heroId).length === 0) {
-      notifyEquipmentFailure(services, "inventory_full", tierCap);
-      return false;
-    }
+
+    const targetEquipped = services.equipmentManager.getEquippedItem(
+      services.heroId,
+      canEquip.value.slot,
+    );
+    const displacedOffHand = canEquip.value.slot === "weapon"
+      && canEquip.value.handling === "two_handed"
+      ? services.equipmentManager.getEquippedItem(services.heroId, "off_hand")
+      : undefined;
+    const returningCount = Number(targetEquipped !== undefined) + Number(displacedOffHand !== undefined);
+    const requiredFreeSlots = Math.max(1, returningCount);
 
     const extracted = services.inventoryManager.takeOneAt(services.bankId, position);
     if (!extracted.ok) {
       notifyEquipmentFailure(services, extracted.reason, tierCap);
       return false;
     }
+
+    const moved: MovedInventoryEntry[] = [];
+    while (services.inventoryManager.findFreeSlots(services.heroId).length < requiredFreeSlots) {
+      const candidate = [...services.inventoryManager.listSlots(services.heroId)]
+        .reverse()
+        .find((inventorySlot) => inventorySlot.entry !== undefined);
+      if (candidate?.entry === undefined) break;
+
+      const removed = services.inventoryManager.removeEntryAt(services.heroId, candidate.position);
+      if (!removed.ok) break;
+      const inserted = services.inventoryManager.insertEntry(services.bankId, removed.value);
+      if (!inserted.ok) {
+        const restored = services.inventoryManager.insertEntry(
+          services.heroId,
+          removed.value,
+          candidate.position,
+        );
+        if (!restored.ok) throw new Error("Bank equipment staging restore failed");
+        break;
+      }
+      moved.push({ position: candidate.position, entry: removed.value });
+    }
+
+    if (services.inventoryManager.findFreeSlots(services.heroId).length < requiredFreeSlots) {
+      rollbackMovedInventoryEntries(services, moved);
+      restoreBankEntry(services, extracted.value, position);
+      notifyEquipmentFailure(services, "inventory_full", tierCap);
+      refreshCharacterState();
+      return false;
+    }
+
     const staged = services.inventoryManager.insertEntry(services.heroId, extracted.value);
     if (!staged.ok) {
+      rollbackMovedInventoryEntries(services, moved);
       restoreBankEntry(services, extracted.value, position);
       notifyEquipmentFailure(services, staged.reason, tierCap);
+      refreshCharacterState();
       return false;
     }
 
@@ -134,6 +203,7 @@ export function useCharacterActions(): CharacterActions {
         extracted.value.instanceId,
       );
       if (stagedEntry.ok) restoreBankEntry(services, stagedEntry.value, position);
+      rollbackMovedInventoryEntries(services, moved);
       notifyEquipmentFailure(services, result.reason, tierCap);
       refreshCharacterState();
       return false;
