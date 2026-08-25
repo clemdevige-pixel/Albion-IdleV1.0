@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DeathComponent } from "@game/gameplay";
+import { DeathComponent, getEnchantmentShardItemId } from "@game/gameplay";
 import { setupCombatEntity } from "../combatEntityFactory";
 import { createCombatFoundation } from "./createCombatFoundation";
 import {
@@ -120,6 +120,31 @@ describe("createCharacterFoundation", () => {
     const deadPreview = fixture.storage.enchantmentService.preview(added.value.instanceId);
     expect(deadPreview).toBeDefined();
     expect(deadPreview?.failureReason).not.toBe("combat_active");
+
+    fixture.combat.orchestrator.dispose();
+  });
+
+  it("counts enchantment shards across inventory and bank in the live service", () => {
+    const fixture = createFixture();
+    const equipmentPosition = fixture.equipment.inventoryManager.findFreeSlots(fixture.heroId)[0];
+    expect(equipmentPosition).toBeDefined();
+    if (equipmentPosition === undefined) throw new Error("Expected a free inventory slot");
+
+    const equipment = fixture.equipment.inventoryManager.addEntry(
+      fixture.heroId,
+      "item_weapon_sword_t4_broadsword",
+      equipmentPosition,
+    );
+    expect(equipment.ok).toBe(true);
+    if (!equipment.ok) throw new Error("Expected enchantable item creation to succeed");
+
+    const shardItemId = getEnchantmentShardItemId(4);
+    fixture.equipment.inventoryManager.addQuantity(fixture.heroId, shardItemId, 3);
+    fixture.equipment.inventoryManager.addQuantity(fixture.storage.bankId, shardItemId, 7);
+
+    const preview = fixture.storage.enchantmentService.preview(equipment.value.instanceId);
+    const shards = preview?.materials.find((material) => material.itemId === shardItemId);
+    expect(shards?.owned).toBe(10);
 
     fixture.combat.orchestrator.dispose();
   });
