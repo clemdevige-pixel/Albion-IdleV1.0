@@ -112,4 +112,48 @@ describe("RefiningRuntime background progression", () => {
       ),
     ).toBe(1);
   });
+
+  it("resumes a saved session before applying offline elapsed time", () => {
+    const source = createRefiningEnvironment();
+    const sourceProvider = new RefiningSaveProvider(
+      source.runtime,
+      source.inventoryManager,
+      () => source.storageId,
+    );
+    source.inventoryManager.addQuantity(source.storageId, "item_resource_wood_t3", 4, {
+      itemId: "item_resource_wood_t3",
+      stackable: true,
+      maxStack: 999,
+    });
+
+    expect(source.runtime.toggleRefiningFamily("Wood", 0).action).toBe("started");
+    source.runtime.tick(2);
+    const saved = sourceProvider.save();
+
+    const restored = createRefiningEnvironment();
+    const restoredProvider = new RefiningSaveProvider(
+      restored.runtime,
+      restored.inventoryManager,
+      () => restored.storageId,
+    );
+    restoredProvider.load(saved);
+
+    expect(restored.runtime.isRefiningActive("Wood")).toBe(true);
+    expect(
+      restored.inventoryManager.getTotalQuantity(
+        restored.storageId,
+        "item_resource_wood_t3",
+      ),
+    ).toBe(0);
+
+    restoredProvider.resolveBackground?.(4 * 500);
+
+    expect(
+      restored.inventoryManager.getTotalQuantity(
+        restored.storageId,
+        "item_refined_planks_t3",
+      ),
+    ).toBe(1);
+    expect(restored.runtime.isRefiningActive("Wood")).toBe(false);
+  });
 });
