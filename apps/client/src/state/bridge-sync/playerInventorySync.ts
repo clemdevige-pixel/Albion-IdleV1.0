@@ -16,6 +16,7 @@ import type {
   InventoryVM,
   StatEntryVM,
 } from "../../game/GameBridge";
+import { PlayerInventoryManager } from "../../runtime/PlayerInventoryManager.js";
 
 const STAT_IDS: readonly StatId[] = [
   "stat_max_health" as StatId,
@@ -46,6 +47,15 @@ export function syncInventoryToBridge(
     occupied: inventoryManager.getOccupiedCount(entityId),
   };
   bridge.updateInventory(vm);
+
+  // In the live player runtime the Bank is part of the same accessible storage
+  // graph. Any player-inventory mutation may therefore have landed in Bank;
+  // keep both projections coherent from the same synchronization boundary.
+  if (inventoryManager instanceof PlayerInventoryManager) {
+    for (const ownerId of inventoryManager.getAccessibleStorageOwners(entityId)) {
+      if (ownerId !== entityId) syncBankToBridge(bridge, inventoryManager, ownerId);
+    }
+  }
 }
 
 export function syncBankToBridge(
@@ -83,7 +93,7 @@ export function syncEquipmentToBridge(
       enchantment: getEnchantmentLevel(entry),
       visualManifestId: presentation?.actorManifestId,
       combatPresentationProfileId: presentation?.combatProfileId,
-combatPresentation: presentation?.combatPresentation,
+      combatPresentation: presentation?.combatPresentation,
     };
   });
   bridge.updateEquipment({ slots });
