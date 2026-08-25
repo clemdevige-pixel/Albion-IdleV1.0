@@ -57,6 +57,38 @@ describe("RefiningRuntime background progression", () => {
     );
   });
 
+  it("continues on a monotonic timeline when live ticks resume after partial background time", () => {
+    const env = createRefiningEnvironment();
+    env.inventoryManager.addQuantity(env.storageId, "item_resource_wood_t3", 8, {
+      itemId: "item_resource_wood_t3",
+      stackable: true,
+      maxStack: 999,
+    });
+
+    expect(env.runtime.toggleRefiningFamily("Wood", 0).action).toBe("started");
+    env.runtime.resolveBackground(3 * 500, 500);
+
+    expect(env.runtime.isRefiningActive("Wood")).toBe(true);
+    expect(
+      env.inventoryManager.getTotalQuantity(
+        env.storageId,
+        "item_refined_planks_t3",
+      ),
+    ).toBe(0);
+
+    env.runtime.tick(1);
+    env.runtime.tick(2);
+    env.runtime.tick(3);
+
+    expect(
+      env.inventoryManager.getTotalQuantity(
+        env.storageId,
+        "item_refined_planks_t3",
+      ),
+    ).toBe(1);
+    expect(env.runtime.isRefiningActive("Wood")).toBe(true);
+  });
+
   it("exposes the same resolution through the registered save provider contract", () => {
     const env = createRefiningEnvironment();
     const provider = new RefiningSaveProvider(
