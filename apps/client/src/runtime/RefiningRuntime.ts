@@ -79,6 +79,7 @@ export interface SavedRefiningSessionV2 {
 export interface SavedRefiningPayloadV2 {
   readonly version: 2;
   readonly sessions: readonly SavedRefiningSessionV2[];
+  readonly reservedInputs: readonly ReservedRefiningRequirement[];
 }
 
 export interface SavedRefiningRecoveryPayloadV1 {
@@ -86,7 +87,7 @@ export interface SavedRefiningRecoveryPayloadV1 {
 }
 
 function isSupportedRefiningFamily(
-  family: ResourceFamily,
+  family: string,
 ): family is SupportedRefiningFamily {
   return SUPPORTED_REFINING_FAMILIES.includes(
     family as SupportedRefiningFamily,
@@ -314,7 +315,11 @@ export class RefiningRuntime {
         reservedInputs: state.reservedInputs.map((input) => ({ ...input })),
       });
     }
-    return { version: 2, sessions };
+    return {
+      version: 2,
+      sessions,
+      reservedInputs: this.getAllReservedInputs().map((input) => ({ ...input })),
+    };
   }
 
   public restorePersistenceState(data: SavedRefiningPayloadV2): void {
@@ -386,7 +391,6 @@ export class RefiningRuntime {
    * inventory.
    */
   public resetForPersistenceLoad(): void {
-    this.backgroundTickOffset = 0;
     this.backgroundCompletionEvents.clear();
     this.isResolvingBackground = false;
     for (const family of SUPPORTED_REFINING_FAMILIES) {
@@ -671,11 +675,25 @@ export class RefiningSaveProvider implements SaveProvider {
       && data.version === 2
       && "sessions" in data
       && Array.isArray(data.sessions)
+      && "reservedInputs" in data
+      && Array.isArray(data.reservedInputs)
     ) {
       const sessions = data.sessions
         .map(parseSavedRefiningSession)
         .filter((session): session is SavedRefiningSessionV2 => session !== undefined);
-      this.refiningRuntime.restorePersistenceState({ version: 2, sessions });
+      const fallbackInputs = data.reservedInputs.filter(isReservedRefiningRequirement);
+      if (
+        sessions.length === data.sessions.length
+        && fallbackInputs.length === data.reservedInputs.length
+      ) {
+        this.refiningRuntime.restorePersistenceState({
+          version: 2,
+          sessions,
+          reservedInputs: fallbackInputs,
+        });
+        return;
+      }
+      this.refundRecoveryInputs(fallbackInputs);
       return;
     }
 
@@ -690,7 +708,20 @@ export class RefiningSaveProvider implements SaveProvider {
       || !Array.isArray(data.reservedInputs)
     ) return;
 
-    const reservedInputs = data.reservedInputs.filter(isReservedRefiningRequirement);
+    this.refundRecoveryInputs(data.reservedInputs.filter(isReservedRefiningRequirement));
+  }
+
+  resolveBackground(elapsedMs: number): void {
+    this.refiningRuntime.resolveBackground(
+      elapsedMs,
+      DEFAULT_RUNTIME_TICK_INTERVAL_MS,
+    );
+  }
+
+  private refundRecoveryInputs(
+    reservedInputs: readonly ReservedRefiningRequirement[],
+  ): void {
+    this.refiningRuntime.resetForPersistenceLoad();
     const productionStorageId = this.getProductionStorageId();
     for (const input of reservedInputs) {
       this.inventoryManager.addQuantity(
@@ -704,12 +735,5 @@ export class RefiningSaveProvider implements SaveProvider {
         },
       );
     }
-  }
-
-  resolveBackground(elapsedMs: number): void {
-    this.refiningRuntime.resolveBackground(
-      elapsedMs,
-      DEFAULT_RUNTIME_TICK_INTERVAL_MS,
-    );
   }
 }
