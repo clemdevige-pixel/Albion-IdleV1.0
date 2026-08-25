@@ -27,6 +27,21 @@ export function createExpeditionRecapFoundation() {
     for (const listener of listeners) listener();
   };
 
+  const toRecapItems = (completions: readonly RecapCompletion[]): readonly ExpeditionRecapItemModel[] => (
+    completions.map((completion) => {
+      const definition = getExpeditionDefinition(completion.expeditionId);
+      if (definition === undefined) {
+        throw new Error(`Unknown Expedition recap definition: ${completion.expeditionId}`);
+      }
+      return {
+        expeditionId: completion.expeditionId,
+        displayName: definition.displayName,
+        durationMs: completion.durationMs,
+        reward: completion.rewardSummary,
+      };
+    })
+  );
+
   return {
     subscribe(this: void, listener: Listener): () => void {
       listeners.add(listener);
@@ -39,22 +54,11 @@ export function createExpeditionRecapFoundation() {
 
     present(this: void, completions: readonly RecapCompletion[]): void {
       if (completions.length === 0) return;
-      recap = {
-        id: nextId,
-        items: completions.map((completion) => {
-          const definition = getExpeditionDefinition(completion.expeditionId);
-          if (definition === undefined) {
-            throw new Error(`Unknown Expedition recap definition: ${completion.expeditionId}`);
-          }
-          return {
-            expeditionId: completion.expeditionId,
-            displayName: definition.displayName,
-            durationMs: completion.durationMs,
-            reward: completion.rewardSummary,
-          };
-        }),
-      };
-      nextId += 1;
+      const items = toRecapItems(completions);
+      recap = recap === null
+        ? { id: nextId, items }
+        : { ...recap, items: [...recap.items, ...items] };
+      if (recap.id === nextId) nextId += 1;
       notify();
     },
 
