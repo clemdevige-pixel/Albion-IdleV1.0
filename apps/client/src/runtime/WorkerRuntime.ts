@@ -20,6 +20,7 @@ import {
   WorkerScheduler,
   WorkerTaskRegistry,
   type WorkerExecutionEventMap,
+  type WorkerSession,
 } from "@game/gameplay";
 
 import {
@@ -546,7 +547,7 @@ export class WorkerRuntime {
           Math.max(0, raw.elapsedTicks),
           Math.max(0, (session?.totalTicks ?? 1) - 1),
         );
-        for (let index = 0; index < elapsed; index += 1) session?.tick();
+        session?.advanceTicks(elapsed);
         if (raw.state === "paused") {
           session?.pause();
           this.workerManager.updateState(created.worker.id, "assigned");
@@ -560,70 +561,113 @@ export class WorkerRuntime {
     this.processCompletedWorkerCycles();
   }
 
+  /** Resolves passive worker time by completed cycle, never by replaying live ticks. */
+  public resolveBackground(elapsedMs: number, tickIntervalMs: number): void {
+    if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+      throw new Error("Worker background elapsed time must be a finite non-negative number");
+    }
+    if (!Number.isFinite(tickIntervalMs) || tickIntervalMs <= 0) {
+      throw new Error("Worker tick interval must be a finite positive number");
+    }
+
+    const elapsedTicks = Math.floor(elapsedMs / tickIntervalMs);
+    if (elapsedTicks <= 0) return;
+
+    const activeWorkerIds = this.workerScheduler
+      .getActiveSessions()
+      .map((session) => session.workerId);
+
+    for (const workerId of activeWorkerIds) {
+      let remainingTicks = elapsedTicks;
+      while (remainingTicks > 0) {
+        const session = this.workerScheduler.getSession(workerId);
+        if (session === undefined || session.state !== "executing") break;
+
+        const ticksUntilCompletion = Math.max(0, session.totalTicks - session.elapsedTicks);
+        if (ticksUntilCompletion === 0) {
+          if (!this.processCompletedWorkerCycle(session)) break;
+          continue;
+        }
+
+        const advancedTicks = session.advanceTicks(
+          Math.min(remainingTicks, ticksUntilCompletion),
+        );
+        remainingTicks -= advancedTicks;
+        if (!session.isComplete()) break;
+        if (!this.processCompletedWorkerCycle(session)) break;
+      }
+    }
+  }
+
   private processCompletedWorkerCycles(): void {
     for (const session of this.workerScheduler.getAllSessions()) {
       if (!session.isComplete()) continue;
-      const result = session.produceResult();
-      const worker = this.workerManager.getWorker(session.workerId);
-      this.workerScheduler.removeSession(session.workerId);
-      if (!result.ok || worker === undefined) continue;
+      this.processCompletedWorkerCycle(session);
+    }
+  }
 
-      const assignedTier = this.workerProductionTier.get(worker.id) ?? 3;
-      if (!this.isSupportedWorkerProfession(worker.profession)) {
-        this.workerManager.updateState(worker.id, "assigned");
-        continue;
-      }
-      const profession = worker.profession;
-      const itemId = this.workerRawItemId(profession, assignedTier);
-      const added = this.inventoryManager.addQuantity(
-        this.productionStorageId,
-        itemId,
-        result.yield,
-        { itemId, stackable: true, maxStack: 999 },
-      );
+  private processCompletedWorkerCycle(session: WorkerSession): boolean {
+    const result = session.produceResult();
+    const worker = this.workerManager.getWorker(session.workerId);
+    this.workerScheduler.removeSession(session.workerId);
+    if (!result.ok || worker === undefined) return false;
 
-      if (!added.ok) {
-        this.startWorkerCycle(worker.id, assignedTier);
-        this.notifyDomainEvent({
-          type: "storage_full",
-          workerId: worker.id,
-          profession,
-          assignedTier,
-        });
-        this.notifyCycleCompleted({
-          workerId: worker.id,
-          profession,
-          assignedTier,
-          itemId,
-          yieldQuantity: result.yield,
-          addedToInventory: false,
-          workerMasteryGained: 0,
-          heroMasteryId: this.workerMasteryId(profession),
-          heroMasteryXpGained: 0,
-        });
-        continue;
-      }
+    const assignedTier = this.workerProductionTier.get(worker.id) ?? 3;
+    if (!this.isSupportedWorkerProfession(worker.profession)) {
+      this.workerManager.updateState(worker.id, "assigned");
+      return false;
+    }
+    const profession = worker.profession;
+    const itemId = this.workerRawItemId(profession, assignedTier);
+    const added = this.inventoryManager.addQuantity(
+      this.productionStorageId,
+      itemId,
+      result.yield,
+      { itemId, stackable: true, maxStack: 999 },
+    );
 
-      const workerMasteryGained = result.masteryGained * getWorkerGatheringXpForTier(assignedTier);
-      this.workerManager.addMastery(worker.id, workerMasteryGained);
-
-      const heroMasteryId = this.workerMasteryId(profession);
-      const heroMasteryXpGained = result.masteryGained * getHeroGatheringXpFromWorkerForTier(assignedTier);
-      this.experienceService.addExperience(heroMasteryId, heroMasteryXpGained, "gathering");
-
+    if (!added.ok) {
       this.startWorkerCycle(worker.id, assignedTier);
-
+      this.notifyDomainEvent({
+        type: "storage_full",
+        workerId: worker.id,
+        profession,
+        assignedTier,
+      });
       this.notifyCycleCompleted({
         workerId: worker.id,
         profession,
         assignedTier,
         itemId,
         yieldQuantity: result.yield,
-        addedToInventory: true,
-        workerMasteryGained,
-        heroMasteryId,
-        heroMasteryXpGained,
+        addedToInventory: false,
+        workerMasteryGained: 0,
+        heroMasteryId: this.workerMasteryId(profession),
+        heroMasteryXpGained: 0,
       });
+      return false;
     }
+
+    const workerMasteryGained = result.masteryGained * getWorkerGatheringXpForTier(assignedTier);
+    this.workerManager.addMastery(worker.id, workerMasteryGained);
+
+    const heroMasteryId = this.workerMasteryId(profession);
+    const heroMasteryXpGained = result.masteryGained * getHeroGatheringXpFromWorkerForTier(assignedTier);
+    this.experienceService.addExperience(heroMasteryId, heroMasteryXpGained, "gathering");
+
+    const restarted = this.startWorkerCycle(worker.id, assignedTier);
+
+    this.notifyCycleCompleted({
+      workerId: worker.id,
+      profession,
+      assignedTier,
+      itemId,
+      yieldQuantity: result.yield,
+      addedToInventory: true,
+      workerMasteryGained,
+      heroMasteryId,
+      heroMasteryXpGained,
+    });
+    return restarted;
   }
 }
