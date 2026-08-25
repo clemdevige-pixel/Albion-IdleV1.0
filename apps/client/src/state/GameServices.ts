@@ -115,6 +115,7 @@ export interface GameServices {
   readonly recruitWorker: (profession: WorkerProfessionVM) => boolean;
   readonly toggleWorker: (workerId: WorkerId, tier: ProductionTier) => boolean;
   readonly constructIslandBuilding: (definitionId: IslandBuildingId, plotId: string) => boolean;
+  readonly moveIslandBuilding: (buildingInstanceId: string, targetPlotId: string) => boolean;
   readonly upgradeIslandBuilding: (definitionId: IslandBuildingId) => boolean;
   readonly getIslandLevel: () => number;
   readonly upgradeIslandLevel: () => boolean;
