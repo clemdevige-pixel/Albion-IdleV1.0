@@ -121,7 +121,7 @@ export class GamePresentationRuntime {
       this.awaitingCombatAfterTravel = false;
     }
 
-    if (!travelActive && !arrivalHold) this.combat?.update(bridge);
+    if (!travelActive && !arrivalHold) this.combat?.update(bridge, bridgeChanged);
     if (bridgeChanged) {
       this.activity?.update(gathering);
       this.world?.update(bridge, gathering);
