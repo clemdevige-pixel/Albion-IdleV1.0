@@ -92,6 +92,11 @@ export class RefiningRuntime {
   private readonly completionListeners = new Set<
     (evt: RefiningCompletionEvent) => void
   >();
+  private readonly backgroundCompletionEvents = new Map<
+    ResourceFamily,
+    RefiningCompletionEvent
+  >();
+  private isResolvingBackground = false;
 
   public constructor(deps: RefiningRuntimeDependencies) {
     this.inventoryManager = deps.inventoryManager;
@@ -140,6 +145,10 @@ export class RefiningRuntime {
   }
 
   private notifyRefineCompleted(evt: RefiningCompletionEvent): void {
+    if (this.isResolvingBackground) {
+      this.backgroundCompletionEvents.set(evt.family, evt);
+      return;
+    }
     for (const listener of this.completionListeners) listener(evt);
   }
 
@@ -173,36 +182,44 @@ export class RefiningRuntime {
 
     const backgroundStartTick = this.currentTickCounter;
     const backgroundEndTick = backgroundStartTick + elapsedTicks;
+    this.isResolvingBackground = true;
+    this.backgroundCompletionEvents.clear();
 
-    for (const family of SUPPORTED_REFINING_FAMILIES) {
-      const definition = this.families[family];
-      const state = this.states[family];
+    try {
+      for (const family of SUPPORTED_REFINING_FAMILIES) {
+        const definition = this.families[family];
+        const state = this.states[family];
 
-      while (state.automatic) {
-        let session = definition.manager.getActiveSession();
-        if (session === undefined) {
-          this.currentTickCounter = backgroundStartTick;
-          if (!this.startRefiningCycle(family, this.getRecipe(family), backgroundStartTick)) break;
-          session = definition.manager.getActiveSession();
-          if (session === undefined) break;
+        while (state.automatic) {
+          let session = definition.manager.getActiveSession();
+          if (session === undefined) {
+            this.currentTickCounter = backgroundStartTick;
+            if (!this.startRefiningCycle(family, this.getRecipe(family), backgroundStartTick)) break;
+            session = definition.manager.getActiveSession();
+            if (session === undefined) break;
+          }
+
+          const completionTick = session.startTick + session.getRequiredTicks();
+          if (completionTick > backgroundEndTick) {
+            definition.manager.tick(backgroundEndTick);
+            break;
+          }
+
+          this.currentTickCounter = completionTick;
+          definition.manager.tick(completionTick);
+          if (!state.automatic) break;
+
+          const nextSession = definition.manager.getActiveSession();
+          if (nextSession === undefined || nextSession.startTick < completionTick) break;
         }
-
-        const completionTick = session.startTick + session.getRequiredTicks();
-        if (completionTick > backgroundEndTick) {
-          definition.manager.tick(backgroundEndTick);
-          break;
-        }
-
-        this.currentTickCounter = completionTick;
-        definition.manager.tick(completionTick);
-        if (!state.automatic) break;
-
-        const nextSession = definition.manager.getActiveSession();
-        if (nextSession === undefined || nextSession.startTick < completionTick) break;
       }
+    } finally {
+      this.currentTickCounter = backgroundEndTick;
+      this.isResolvingBackground = false;
+      const completionEvents = [...this.backgroundCompletionEvents.values()];
+      this.backgroundCompletionEvents.clear();
+      for (const event of completionEvents) this.notifyRefineCompleted(event);
     }
-
-    this.currentTickCounter = backgroundEndTick;
   }
 
   public getReservedInputs(
