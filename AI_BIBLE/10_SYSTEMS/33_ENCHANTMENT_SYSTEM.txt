@@ -1,7 +1,7 @@
 # 33. ENCHANTMENT SYSTEM
 
 Status: AUTHORITATIVE LIVE BALANCE CONTRACT
-Updated: 2026-08-23
+Updated: 2026-08-25
 
 ## Purpose
 
@@ -31,8 +31,11 @@ Mastery remains independent: mastery-derived bonus IP still uses the shared bonu
 
 A fully enchanted `.4` item displays at most +100 IP over its base Tier so it does not display above the base IP of the next Tier.
 
-Authoritative gameplay source:
-- `packages/gameplay/src/equipment/enchantment-balance.ts`
+Authoritative authored sources:
+- `packages/data/src/config/enchantment-balance.ts` for IP/stat scaling;
+- `packages/data/src/config/enchantment-recipe-balance.ts` for shard, Silver, tier/category and material-cost balance.
+
+Gameplay calculation adapters remain under `packages/gameplay/src/equipment/` and must consume these authored values rather than redefine them.
 
 ---
 
@@ -152,7 +155,7 @@ Current open-world authored economy uses:
 - depth bonus per segment: 0.015
 - elite multiplier: x1.20
 - boss multiplier: x1.35
-- authored per-band depth/zone weights in `apps/client/src/data/economyContentCatalog.ts`.
+- authored per-band depth/zone weights in `packages/data/src/config/economy-balance.ts`.
 
 A universal fixed drop chance per monster is forbidden. Shards/hour must be validated using live TTK and encounter cadence so trivial monsters do not become the universal optimum.
 
