@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAuthSession } from "../../auth/AuthSessionContext.js";
 import { isArtifactWeaponCraftOutput } from "../../data/artifactWeaponCraftRecipes.js";
+import { getItemTier } from "../../data/itemPower.js";
 import { resolveProgressionEquipmentRoute } from "../../data/nonWeaponEquipmentContentCatalog.js";
 import { DUNGEON_RELIC_ID } from "../../data/relicContentCatalog.js";
 import { WORLD_ZONE_IDS } from "../../data/worldContentCatalog.js";
@@ -29,6 +30,12 @@ function readArtifactStage(storageKey: string): BlueOnboardingArtifactStage {
 function isChestProgressionItem(itemId: string): boolean {
   const route = resolveProgressionEquipmentRoute(itemId);
   return route !== undefined && route.family.slot === "chest" && route.item.tier >= 3;
+}
+
+function isTier4OrHigher(itemId: string | undefined): boolean {
+  if (itemId === undefined) return false;
+  const tier = getItemTier(itemId);
+  return tier !== undefined && tier >= 4;
 }
 
 export function BlueOnboardingGuide(): JSX.Element | null {
@@ -71,6 +78,7 @@ export function BlueOnboardingGuide(): JSX.Element | null {
       buildingIds,
       workerStarted,
       hasChestArmorTier3OrHigher: ownedItemIds.some(isChestProgressionItem),
+      hasEquippedTier4OrHigher: bridge.equipment.slots.some((slot) => isTier4OrHigher(slot.itemId)),
       hasProgressedBeyondEarlyProduction,
       academyResearch: academy.research,
       hasReachedFrostpeak,
