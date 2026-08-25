@@ -87,6 +87,9 @@ export * from "./config/dungeon-relic.js";
 // Authored research progression and unlock graph
 export * from "./config/research-content.js";
 
+// Authored awakened weapon balance
+export * from "./config/awakening-balance.js";
+
 // Authored artifact weapon and expedition reward balance
 export * from "./config/artifact-weapon-craft-balance.js";
 export * from "./config/expedition-balance.js";
