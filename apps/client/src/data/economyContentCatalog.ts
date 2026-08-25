@@ -10,16 +10,14 @@ import {
   ENCHANTMENT_SHARD_PROGRESSION_WEIGHTS,
   REPAIR_COST_DEFINITIONS,
   SEGMENT_LOOT_MULTIPLIERS,
+  getDungeonKeyFragmentItemId,
+  getDungeonKeyItemId,
   type CombatDropKind,
   type CombatLootItemSource,
   type CombatLootRateModel,
   type RepairCostDefinitionData,
   type WorldBandId,
 } from "@game/data";
-import {
-  getDungeonKeyFragmentItemId,
-  getDungeonKeyItemId,
-} from "./dungeonKeyContentCatalog.js";
 
 export {
   ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
@@ -73,28 +71,22 @@ export interface CombatDrop {
 }
 
 export interface CombatLootContext {
-  /** Zero-based segment index (0..9). */
   readonly segmentIndex: number;
   readonly faction: string;
   readonly isElite: boolean;
   readonly isBoss: boolean;
   readonly isFinalBoss: boolean;
-  /** Equipment tier represented by the current world band: blue=T4, yellow=T5, etc. */
   readonly enchantmentTier: number;
-  /** Authored relative shard-progression weight for the active zone/segment. */
   readonly enchantmentDropWeight: number;
-  /** Authored relative dungeon-key progression weight for the active zone/segment. */
   readonly dungeonKeyDropWeight: number;
 }
 
 export interface CombatLootExpectation {
   readonly itemId: string;
   readonly kind: CombatDropKind;
-  /** Expected quantity per kill. Values below 1 are equivalent to drop chance. */
   readonly expectedQuantity: number;
 }
 
-/** Supports expected values above 1 without probability-cap distortion. */
 function rollExpectedQuantity(expected: number, random: () => number): number {
   const safeExpected = Math.max(0, expected);
   const guaranteed = Math.floor(safeExpected);
@@ -111,13 +103,9 @@ export function getSegmentLootMultiplier(segmentIndex: number): number {
 }
 
 export function getEnchantmentShardExpectedDrop(
-  context: Pick<
-    CombatLootContext,
-    "segmentIndex" | "isElite" | "isBoss" | "enchantmentDropWeight"
-  >,
+  context: Pick<CombatLootContext, "segmentIndex" | "isElite" | "isBoss" | "enchantmentDropWeight">,
 ): number {
-  const depthBonus =
-    1 + Math.max(0, context.segmentIndex) * ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT;
+  const depthBonus = 1 + Math.max(0, context.segmentIndex) * ENCHANTMENT_SHARD_DEPTH_BONUS_PER_SEGMENT;
   const categoryMultiplier = context.isBoss
     ? ENCHANTMENT_SHARD_BOSS_MULTIPLIER
     : context.isElite
@@ -129,55 +117,28 @@ export function getEnchantmentShardExpectedDrop(
     * categoryMultiplier;
 }
 
-function resolveCombatLootItemId(
-  source: CombatLootItemSource,
-  context: CombatLootContext,
-): string {
+function resolveCombatLootItemId(source: CombatLootItemSource, context: CombatLootContext): string {
   if (source.type === "fixed") return source.itemId;
-  if (source.type === "enchantment_shard") {
-    return getEnchantmentShardItemId(context.enchantmentTier);
-  }
-  if (source.type === "dungeon_key_fragment") {
-    return getDungeonKeyFragmentItemId(context.enchantmentTier);
-  }
+  if (source.type === "enchantment_shard") return getEnchantmentShardItemId(context.enchantmentTier);
+  if (source.type === "dungeon_key_fragment") return getDungeonKeyFragmentItemId(context.enchantmentTier);
   return getDungeonKeyItemId(context.enchantmentTier);
 }
 
-function resolveCombatLootExpectedQuantity(
-  rate: CombatLootRateModel,
-  context: CombatLootContext,
-): number {
+function resolveCombatLootExpectedQuantity(rate: CombatLootRateModel, context: CombatLootContext): number {
   if (rate.type === "enchantment") return getEnchantmentShardExpectedDrop(context);
-
   if (rate.type === "dungeon_key") {
-    const bossMultiplier = rate.bossMultiplier && context.isBoss
-      ? BOSS_SPECIAL_DROP_MULTIPLIER
-      : 1;
+    const bossMultiplier = rate.bossMultiplier && context.isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1;
     return rate.baseRate * Math.max(0, context.dungeonKeyDropWeight) * bossMultiplier;
   }
-
-  const bossMultiplier = rate.bossMultiplier && context.isBoss
-    ? BOSS_SPECIAL_DROP_MULTIPLIER
-    : 1;
+  const bossMultiplier = rate.bossMultiplier && context.isBoss ? BOSS_SPECIAL_DROP_MULTIPLIER : 1;
   return rate.baseRate * getSegmentLootMultiplier(context.segmentIndex) * bossMultiplier;
 }
 
-/**
- * Deterministic projection consumed by both runtime rolls and Bestiary display.
- * The active drop channels are authored in @game/data; runtime logic resolves
- * their context-dependent item ids and expected quantities here.
- */
-export function getCombatLootExpectations(
-  context: CombatLootContext,
-): readonly CombatLootExpectation[] {
+export function getCombatLootExpectations(context: CombatLootContext): readonly CombatLootExpectation[] {
   return COMBAT_LOOT_RULES.flatMap((rule) => {
     const expectedQuantity = resolveCombatLootExpectedQuantity(rule.rate, context);
     if (expectedQuantity <= 0) return [];
-    return [{
-      itemId: resolveCombatLootItemId(rule.item, context),
-      kind: rule.kind,
-      expectedQuantity,
-    }];
+    return [{ itemId: resolveCombatLootItemId(rule.item, context), kind: rule.kind, expectedQuantity }];
   });
 }
 
@@ -189,11 +150,7 @@ export function rollCombatDrops(
   for (const expectation of getCombatLootExpectations(context)) {
     const quantity = rollExpectedQuantity(expectation.expectedQuantity, random);
     if (quantity <= 0) continue;
-    drops.push({
-      itemId: expectation.itemId,
-      kind: expectation.kind,
-      quantity,
-    });
+    drops.push({ itemId: expectation.itemId, kind: expectation.kind, quantity });
   }
   return drops;
 }
