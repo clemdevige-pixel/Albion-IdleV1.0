@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { DamageNumberEvent, GameBridge } from "../../GameBridge";
+import { resolveEnemyVfxStyle } from "../EnemyVfxPresentationCatalog";
 import { createActorSprite } from "../PhaserActorRenderer";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 import { ActorSystem } from "../systems/ActorSystem";
@@ -8,7 +9,7 @@ import { DamageNumberSystem } from "../systems/DamageNumberSystem";
 import { EnemyPresentationSystem } from "../systems/EnemyPresentationSystem";
 import { HeroPresentationSystem } from "../systems/HeroPresentationSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
-import { VfxSystem, type EnemyVfxStyle } from "../systems/VfxSystem";
+import { VfxSystem } from "../systems/VfxSystem";
 import { WorldHudSystem } from "../systems/WorldHudSystem";
 import {
   applyPresentedEnemyImpact,
@@ -382,7 +383,7 @@ export class CombatPresentationController {
       if (event.target === "player") {
         const visualManifestId = this.displayedEnemyVisualManifestId ?? bridge.enemyVisualManifestId;
         if (visualManifestId.length > 0) {
-          const style = this.resolveEnemyVfxStyle(visualManifestId);
+          const style = resolveEnemyVfxStyle(visualManifestId);
           if (style !== undefined) {
             this.vfxSystem.presentEnemyAttack(style, this.enemyHomeX, this.playerHomeX, this.entityY);
           }
@@ -391,25 +392,5 @@ export class CombatPresentationController {
       this.director.enqueueCombatEvent(event);
       this.lastDamageEventId = Math.max(this.lastDamageEventId, event.id);
     }
-  }
-
-  private resolveEnemyVfxStyle(visualManifestId: string): EnemyVfxStyle | undefined {
-    if (visualManifestId.includes("undead_skeleton_archer")) return "undead_ranged";
-    if (visualManifestId.includes("undead_spectral_knight")) return "undead_spectral";
-    if (visualManifestId.includes("undead_lich")) return "undead_lich";
-    if (visualManifestId.includes("undead_skeleton_swordsman") || visualManifestId.includes("undead_warrior")) return "undead_melee";
-    if (visualManifestId.includes("morgana_witch")) return "morgana_shadow";
-    if (visualManifestId.includes("morgana_suppressor")) return "morgana_bolt";
-    if (visualManifestId.includes("morgana_dark_knight")) return "morgana_knight";
-    if (visualManifestId.includes("morgana_high_priestess")) return "morgana_priestess";
-    if (visualManifestId.includes("keeper_warrior")) return "keeper_melee";
-    if (visualManifestId.includes("keeper_shaman")) return "keeper_spirit";
-    if (visualManifestId.includes("keeper_champion")) return "keeper_champion";
-    if (visualManifestId.includes("keeper_ancient")) return "keeper_ancient";
-    if (visualManifestId.includes("heretic_thug")) return "heretic_melee";
-    if (visualManifestId.includes("heretic_firestarter")) return "heretic_fire";
-    if (visualManifestId.includes("heretic_enforcer")) return "heretic_enforcer";
-    if (visualManifestId.includes("heretic_madmen")) return "heretic_madmen";
-    return undefined;
   }
 }
