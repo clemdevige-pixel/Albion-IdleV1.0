@@ -129,10 +129,14 @@ export class CombatPresentationController {
     this.hudSystem.layoutPlayer(this.playerHomeX, this.playerBody.y, this.playerSprite);
   }
 
-  public update(bridge: GameBridge): void {
-    this.updatePlayer(bridge);
-    this.updateEnemy(bridge);
-    this.updateDamageEvents(bridge);
+  public update(bridge: GameBridge, bridgeChanged = true): void {
+    if (bridgeChanged) {
+      this.updatePlayer(bridge);
+      this.updateDamageEvents(bridge);
+    }
+    if (bridgeChanged || this.requiresEnemyFrameSync(bridge)) {
+      this.updateEnemy(bridge);
+    }
     this.director.update();
   }
 
@@ -266,6 +270,13 @@ export class CombatPresentationController {
     }
 
     this.renderDisplayedEnemy(bridge);
+  }
+
+  private requiresEnemyFrameSync(bridge: GameBridge): boolean {
+    if (this.displayedEnemyVisualManifestId === undefined) return false;
+    return bridge.enemyEncounterKey !== this.displayedEnemyEncounterKey
+      || bridge.enemyVisualManifestId !== this.displayedEnemyVisualManifestId
+      || bridge.enemyName !== this.displayedEnemyName;
   }
 
   private renderDisplayedEnemy(bridge: GameBridge): void {
