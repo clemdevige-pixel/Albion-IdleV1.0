@@ -1,4 +1,5 @@
 import {
+  AUTHORED_DESTINY_NODES,
   GATHERING_MASTERY_ID_VALUES,
   GATHERING_MASTERY_MAX_LEVEL,
   GATHERING_MASTERY_UNLOCK_BY_TIER,
@@ -86,29 +87,16 @@ export function getMasteryDisplayName(masteryId: string): string {
     ?? masteryId;
 }
 
-export const DESTINY_NODES = [
-  {
-    id: asDestinyNodeId("node_sword_1"),
-    displayName: "Initié à l'épée",
-    category: "weapon",
-    prerequisites: [] as ReturnType<typeof asDestinyNodeId>[],
-    requirements: [{
-      type: "mastery_level" as const,
-      masteryId: asMasteryId("mastery_sword"),
-      level: 1,
-    }],
-    rewards: [{ type: "equipment_tier_unlock" as const, tier: 2 }],
-  },
-  {
-    id: asDestinyNodeId("node_sword_2"),
-    displayName: "Adepte de l'épée",
-    category: "weapon",
-    prerequisites: [asDestinyNodeId("node_sword_1")],
-    requirements: [{
-      type: "mastery_level" as const,
-      masteryId: asMasteryId("mastery_sword"),
-      level: 3,
-    }],
-    rewards: [{ type: "equipment_tier_unlock" as const, tier: 3 }],
-  },
-];
+/** Gameplay-branded adapter over canonical authored Destiny content. */
+export const DESTINY_NODES = AUTHORED_DESTINY_NODES.map((node) => ({
+  id: asDestinyNodeId(node.id),
+  displayName: node.displayName,
+  category: node.category,
+  prerequisites: node.prerequisites.map(asDestinyNodeId),
+  requirements: node.requirements.map((requirement) => ({
+    type: requirement.type,
+    masteryId: asMasteryId(requirement.masteryId),
+    level: requirement.level,
+  })),
+  rewards: node.rewards.map((reward) => ({ ...reward })),
+}));
