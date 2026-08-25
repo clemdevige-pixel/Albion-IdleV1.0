@@ -32,6 +32,7 @@
   min-width: 84px;
   padding: 4px 7px;
   border: 1px solid #8a6225;
+  border-left: 3px solid #8a6225;
   border-radius: 5px;
   background: #15120d;
   color: #e7d29b;
@@ -140,4 +141,13 @@
 }
 .ui-world .ui-gathering-card .active-gathering__header { font-size: 9px; }
 .ui-world .ui-gathering-card .active-gathering__header strong { font-size: 9px; }
+.ui-world .ui-gathering-card .active-gathering__strike {
+  min-width: 90px;
+  border: 1px solid #b98524;
+  border-radius: 4px;
+  background: linear-gradient(#e3b943, #a97612);
+  color: #15100a;
+  font-weight: 700;
+  cursor: pointer;
+}
 .ui-world .ui-gathering-card .active-gathering__hint { color: #c2cad5; font-size: 9px; line-height: 1.35; }
