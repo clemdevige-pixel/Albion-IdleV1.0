@@ -2,7 +2,6 @@ import type { ProductionTier } from "../../data/productionFamilyCatalog";
 import type { EntityId } from "@game/core";
 import type {
   CurrencyService,
-  InventoryManager,
   ProgressionOrchestrator,
   ResourceFamily,
   WalletId,
@@ -11,6 +10,7 @@ import type {
 import type { GameBridge, WorkerProfessionVM } from "../../game/GameBridge";
 import type { ProductionFoundation } from "../../runtime/bootstrap/createProductionFoundation";
 import type { CombatLoopState } from "../../runtime/CombatRuntime";
+import type { PlayerInventoryManager } from "../../runtime/PlayerInventoryManager";
 import { DEFAULT_RUNTIME_TICK_INTERVAL_MS } from "../../runtime/RuntimeLifecycle";
 import {
   buildMasteryViewModels,
@@ -32,7 +32,7 @@ type ProductionFamily = "Wood" | "Ore" | "Hide" | "Fiber";
 interface ProductionRuntimeControllerDependencies {
   readonly bridge: GameBridge;
   readonly foundation: ProductionFoundation;
-  readonly inventoryManager: InventoryManager;
+  readonly inventoryManager: PlayerInventoryManager;
   readonly heroId: EntityId;
   readonly productionStorageId: EntityId;
   readonly currencyService: CurrencyService;
@@ -226,7 +226,7 @@ export class ProductionRuntimeController {
         type: event.added ? "success" : "error",
         message: event.added
           ? `+${String(event.quantityAdded)} ${event.itemLabel}`
-          : "Inventaire plein : récolte non stockée",
+          : "Stockage de production plein : récolte non stockée",
         timestamp: Date.now(),
       });
     }));
