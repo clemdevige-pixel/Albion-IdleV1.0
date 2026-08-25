@@ -6,6 +6,7 @@ import {
   getEnchantmentStatMultiplier,
 } from "../enchantment-balance.js";
 import {
+  ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER,
   ENCHANTMENT_MINIMUM_ITEM_TIER,
   getEnchantmentShardItemId,
   getNextEnchantmentRecipe,
@@ -114,7 +115,15 @@ describe("enchantment balance", () => {
     expect(total("one_handed_weapon") + total("off_hand") + total("armor_torso") + total("armor_head") + total("armor_boots") + total("cape")).toBe(500);
   });
 
-  it("charges the same 225-shard .4 Awakening cost to 1H and 2H weapons", () => {
+  it("charges the same authored .4 Silver and 225-shard cost to 1H and 2H weapons", () => {
+    expect(ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER).toEqual({
+      4: 125_000,
+      5: 225_000,
+      6: 400_000,
+      7: 550_000,
+      8: 750_000,
+    });
+
     const recipe = getNextEnchantmentRecipe(3);
     expect(recipe).toMatchObject({ fromLevel: 3, toLevel: 4, enabled: true });
     if (recipe === undefined) return;
@@ -138,7 +147,7 @@ describe("enchantment balance", () => {
       ],
     );
 
-    expect(oneHanded.silverCost).toBe(56_250);
+    expect(oneHanded.silverCost).toBe(125_000);
     expect(oneHanded.silverCost).toBe(twoHanded.silverCost);
     expect(oneHanded.materials).toEqual([
       { itemId: "item_resource_enchantment_shard_t4", quantity: 225 },
@@ -153,7 +162,7 @@ describe("enchantment balance", () => {
       "two_handed_weapon",
       [{ itemId: "item_refined_planks_t8", quantity: 6 }],
     );
-    expect(t8TwoHanded.silverCost).toBe(187_500);
+    expect(t8TwoHanded.silverCost).toBe(750_000);
     expect(t8TwoHanded.materials).toContainEqual({
       itemId: "item_resource_enchantment_shard_t8",
       quantity: 225,
