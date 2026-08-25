@@ -115,7 +115,11 @@ export function resolveEnchantmentItemInfo(itemId: string) {
         ? "off_hand" as const
         : definition.slot === "cape"
           ? "cape" as const
-          : "armor" as const;
+          : definition.slot === "head"
+            ? "armor_head" as const
+            : definition.slot === "torso"
+              ? "armor_torso" as const
+              : "armor_boots" as const;
   const craftRecipe = ALL_EQUIPMENT_CRAFT_RECIPES.find(
     (recipe) => recipe.outputItemId === itemId,
   );
