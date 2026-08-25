@@ -112,6 +112,11 @@
   image-rendering: pixelated;
 }
 
+.world-dungeon-card__visual[data-tier="4"] img {
+  transform: scale(1.72);
+  transform-origin: center;
+}
+
 .world-dungeon-card__identity {
   display: grid;
   align-content: center;
