@@ -33,6 +33,14 @@ export type PlaceIslandBuildingResult =
   | { readonly ok: true; readonly building: IslandBuildingState }
   | { readonly ok: false; readonly reason: "unknown_building" | "unknown_plot" | "plot_occupied" | "already_built" };
 
+export type MoveIslandBuildingResult =
+  | {
+      readonly ok: true;
+      readonly building: IslandBuildingState;
+      readonly swappedBuilding?: IslandBuildingState;
+    }
+  | { readonly ok: false; readonly reason: "unknown_building" | "unknown_plot" };
+
 export type UpgradeIslandBuildingResult =
   | { readonly ok: true; readonly building: IslandBuildingState }
   | { readonly ok: false; readonly reason: "not_built" | "max_level" | "unauthored_level" | "island_level_required" };
@@ -131,6 +139,47 @@ export class PlayerIslandService implements SaveProvider {
       buildings: [...this.#state.buildings, preview.building],
     };
     return preview;
+  }
+
+  moveBuilding(buildingInstanceId: string, targetPlotId: string): MoveIslandBuildingResult {
+    const building = this.#state.buildings.find((candidate) => candidate.instanceId === buildingInstanceId);
+    if (building === undefined) return { ok: false, reason: "unknown_building" };
+    const targetPlot = this.#state.plots.find((candidate) => candidate.id === targetPlotId);
+    if (targetPlot === undefined) return { ok: false, reason: "unknown_plot" };
+    if (building.plotId === targetPlotId) return { ok: true, building };
+
+    const sourcePlotId = building.plotId;
+    const swappedBuilding = targetPlot.buildingInstanceId === null
+      ? undefined
+      : this.#state.buildings.find((candidate) => candidate.instanceId === targetPlot.buildingInstanceId);
+    const movedBuilding = { ...building, plotId: targetPlotId };
+    const movedSwappedBuilding = swappedBuilding === undefined
+      ? undefined
+      : { ...swappedBuilding, plotId: sourcePlotId };
+
+    this.#state = {
+      ...this.#state,
+      plots: this.#state.plots.map((plot) => {
+        if (plot.id === sourcePlotId) {
+          return { ...plot, buildingInstanceId: movedSwappedBuilding?.instanceId ?? null };
+        }
+        if (plot.id === targetPlotId) {
+          return { ...plot, buildingInstanceId: movedBuilding.instanceId };
+        }
+        return plot;
+      }),
+      buildings: this.#state.buildings.map((candidate) => {
+        if (candidate.instanceId === movedBuilding.instanceId) return movedBuilding;
+        if (movedSwappedBuilding !== undefined && candidate.instanceId === movedSwappedBuilding.instanceId) return movedSwappedBuilding;
+        return candidate;
+      }),
+    };
+
+    return {
+      ok: true,
+      building: movedBuilding,
+      ...(movedSwappedBuilding === undefined ? {} : { swappedBuilding: movedSwappedBuilding }),
+    };
   }
 
   canUpgradeBuilding(definitionId: IslandBuildingId): UpgradeIslandBuildingResult {
