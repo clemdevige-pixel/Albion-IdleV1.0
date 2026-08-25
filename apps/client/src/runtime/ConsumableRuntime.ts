@@ -37,6 +37,8 @@ export interface ConsumableRuntimeDependencies {
   readonly damageManager: DamageManager;
   readonly deathManager: DeathManager;
   readonly heroId: EntityId;
+  /** Player composition can consume from Inventory + Bank without coupling this runtime to client storage. */
+  readonly consumeItem?: (itemId: string, quantity: number) => boolean;
   /** Optional runtime activity guard for tools/tests. Live runtime defaults to the combat stop controller. */
   readonly isCombatActive?: () => boolean;
 }
@@ -46,6 +48,7 @@ export class ConsumableRuntime {
   private readonly damageManager: DamageManager;
   private readonly deathManager: DeathManager;
   private readonly heroId: EntityId;
+  private readonly consumeItem: (itemId: string, quantity: number) => boolean;
   private readonly isCombatActive: () => boolean;
 
   private healthPotionCooldownRemaining = 0;
@@ -56,6 +59,9 @@ export class ConsumableRuntime {
     this.damageManager = deps.damageManager;
     this.deathManager = deps.deathManager;
     this.heroId = deps.heroId;
+    this.consumeItem = deps.consumeItem ?? ((itemId, quantity) => (
+      this.inventoryManager.removeQuantity(this.heroId, itemId, quantity).ok
+    ));
     this.isCombatActive = deps.isCombatActive ?? (() => !combatStopController.isPaused());
   }
 
@@ -112,8 +118,7 @@ export class ConsumableRuntime {
       return { ok: false, reason: "resource_full" };
     }
 
-    const removed = this.inventoryManager.removeQuantity(this.heroId, itemId, 1);
-    if (!removed.ok) {
+    if (!this.consumeItem(itemId, 1)) {
       return { ok: false, reason: "not_in_inventory" };
     }
 
