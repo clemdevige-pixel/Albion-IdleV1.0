@@ -80,7 +80,7 @@ const ARCHAEOLOGY_RESEARCH = [
 ] as const satisfies readonly AuthoredResearchDefinition[];
 
 const ECONOMY_RESEARCH = [
-  { id: RESEARCH_IDS.enchantmentStudy, displayName: "Étude des enchantements", tier: 4, durationMs: 30 * MINUTE_MS, cost: { silver: 5_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 4 }, { type: "enchantment_shard_discovered" }], unlockIds: [RESEARCH_UNLOCK_IDS.enchantmentService] },
+  { id: RESEARCH_IDS.enchantmentStudy, displayName: "Étude des enchantements", tier: 4, durationMs: 10 * MINUTE_MS, cost: { silver: 5_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 4 }, { type: "enchantment_shard_discovered" }], unlockIds: [RESEARCH_UNLOCK_IDS.enchantmentService] },
   { id: RESEARCH_IDS.yieldAnalysis, displayName: "Analyse des rendements", tier: 5, durationMs: HOUR_MS, cost: { silver: 15_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 5 }], unlockIds: [RESEARCH_UNLOCK_IDS.resourceYieldTracking] },
   { id: RESEARCH_IDS.workerOrganization, displayName: "Organisation avancée des ouvriers", tier: 6, durationMs: 150 * MINUTE_MS, cost: { silver: 60_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 6 }], unlockIds: [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization] },
   { id: RESEARCH_IDS.instantRefining, displayName: "Procédés de raffinage avancés", tier: 7, durationMs: 3 * HOUR_MS, cost: { silver: 80_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 7 }], unlockIds: [RESEARCH_UNLOCK_IDS.instantRefining] },
