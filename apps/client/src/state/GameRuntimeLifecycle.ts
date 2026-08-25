@@ -21,6 +21,15 @@ interface InitialSavePersistence {
   readonly setLoadFailed: (failed: boolean) => void;
 }
 
+export interface RuntimeVisibilitySessionDependencies {
+  readonly getVisibilityState: () => DocumentVisibilityState;
+  readonly now: () => number;
+  readonly stopRuntime: () => void;
+  readonly startRuntime: () => void;
+  readonly resolveBackgroundElapsed: (elapsedMs: number) => void;
+  readonly saveGame: () => void;
+}
+
 const runtimeHandles = new WeakMap<GameBridge, GameRuntimeLifecycleHandle>();
 const pendingRuntimeDisposals = new WeakMap<object, ReturnType<typeof setTimeout>>();
 
@@ -87,6 +96,38 @@ export function loadInitialRuntimeSave(
   }
 }
 
+/**
+ * Creates the hidden/visible transition handler for one live browser session.
+ * Live ticks stop while hidden so browser timer throttling cannot partially
+ * advance the runtime. On resume, passive systems receive the exact monotonic
+ * elapsed window once, then the live fixed-step runtime restarts.
+ */
+export function createRuntimeVisibilityHandler(
+  dependencies: RuntimeVisibilitySessionDependencies,
+): () => void {
+  let hiddenAt: number | undefined;
+
+  return () => {
+    if (dependencies.getVisibilityState() === "hidden") {
+      if (hiddenAt !== undefined) return;
+      hiddenAt = dependencies.now();
+      dependencies.stopRuntime();
+      return;
+    }
+
+    if (hiddenAt === undefined) return;
+    const elapsedMs = Math.max(0, dependencies.now() - hiddenAt);
+    hiddenAt = undefined;
+
+    try {
+      dependencies.resolveBackgroundElapsed(elapsedMs);
+      dependencies.saveGame();
+    } finally {
+      dependencies.startRuntime();
+    }
+  };
+}
+
 /** Owns the browser lifecycle around an already assembled game runtime. */
 export function useGameRuntimeLifecycle(services: GameServices): void {
   const loadedRuntimeRef = useRef<GameBridge | undefined>(undefined);
@@ -106,10 +147,26 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     }
 
     const lifecycle = new RuntimeLifecycle();
-    lifecycle.start(handle.tick, handle.tickIntervalMs);
+    const startRuntime = (): void => {
+      lifecycle.start(handle.tick, handle.tickIntervalMs);
+    };
+    startRuntime();
     const stopAutosave = handle.persistence.startAutosave(() => services.saveGame());
+    const handleVisibilityChange = createRuntimeVisibilityHandler({
+      getVisibilityState: () => document.visibilityState,
+      now: () => performance.now(),
+      stopRuntime: () => { lifecycle.stop(); },
+      startRuntime,
+      resolveBackgroundElapsed: (elapsedMs) => {
+        handle.persistence.resolveBackgroundElapsed(elapsedMs);
+      },
+      saveGame: () => { services.saveGame(); },
+    });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    handleVisibilityChange();
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       lifecycle.stop();
       stopAutosave();
       deferRuntimeDisposal(services.bridge, handle.dispose);
