@@ -202,8 +202,8 @@ export class CombatRewardRuntime {
       );
       if (runeDrop !== undefined) {
         const creditedQuantity = this.creditPlayerDrop(runeDrop.itemId, runeDrop.quantity);
-        if (creditedQuantity > 0) {
-          itemDrops.push({ ...runeDrop, quantity: creditedQuantity });
+        if (creditedQuantity === runeDrop.quantity) {
+          itemDrops.push(runeDrop);
         }
       }
     }
