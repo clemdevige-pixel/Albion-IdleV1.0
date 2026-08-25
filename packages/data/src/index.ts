@@ -88,6 +88,7 @@ export * from "./config/expedition-balance.js";
 // Authored production progression, cadence, gathering, and worker content
 export * from "./config/production-balance.js";
 export * from "./config/gathering-content.js";
+export * from "./config/gathering-progression.js";
 export * from "./config/worker-content.js";
 
 // Player Island configuration
