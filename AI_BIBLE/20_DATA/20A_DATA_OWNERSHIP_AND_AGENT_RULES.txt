@@ -1,0 +1,355 @@
+# 20A. DATA OWNERSHIP & CODING AGENT RULES
+
+Status: AUTHORITATIVE IMPLEMENTATION CONTRACT
+Updated: 2026-08-25
+Branch reference: `agent/albion-idle-development`
+
+---
+
+# 1. PURPOSE
+
+This document records the architecture work completed during the 2026-08-25 code audit and defines the rules that future coding agents MUST follow.
+
+It complements `20_DATA_ARCHITECTURE.txt` and the system-specific AI Bible documents.
+
+The goal is not to move every constant into one package. The goal is to keep exactly one authoritative owner for authored gameplay data while preserving clean boundaries between static data, domain logic, runtime orchestration and presentation.
+
+---
+
+# 2. CURRENT OWNERSHIP CONTRACT
+
+## `packages/data`
+
+Owns authored static gameplay truth:
+
+- numeric balance values;
+- tier tables;
+- costs;
+- reward/drop tables;
+- progression envelopes;
+- canonical IDs and authored mappings;
+- authored recipe definitions;
+- authored unlock graphs;
+- static content configuration shared by client/gameplay/server/simulators.
+
+`packages/data` MUST NOT own:
+
+- mutable runtime state;
+- React or Phaser code;
+- client orchestration;
+- domain services;
+- RNG-driven runtime decisions;
+- transaction execution;
+- gameplay algorithms merely because they consume data.
+
+## `packages/gameplay`
+
+Owns domain rules and deterministic calculations:
+
+- services;
+- validation rules;
+- transaction behavior;
+- state transitions;
+- gameplay algorithms;
+- calculation functions that interpret authored data.
+
+Gameplay SHOULD consume balance/configuration from `@game/data` rather than own duplicate numeric truth.
+
+## `apps/client`
+
+Owns client-specific integration:
+
+- React UI;
+- Phaser presentation;
+- runtime adapters;
+- bootstrapping/composition;
+- UI labels and presentation-only formatting;
+- client orchestration around domain services.
+
+The client MUST NOT become the canonical owner of economy, progression, tier, recipe or loot balance that is meaningful outside presentation.
+
+## `apps/server`
+
+Server authority is a later architecture step. Future server work SHOULD reuse `@game/data` and domain logic instead of copying client rules.
+
+---
+
+# 3. NON-NEGOTIABLE RULES FOR FUTURE AGENTS
+
+Rule 01 — Inspect before adding
+
+Before creating a new constant/table/catalog, search the existing repository. If the same truth already exists, derive from it. Do not create a second source of truth.
+
+Rule 02 — Authored values belong in shared data
+
+If a game designer can reasonably rebalance a value without changing the algorithm, that value generally belongs in `packages/data`.
+
+Examples: costs, rates, tier values, XP anchors, IP targets, recipe quantities, durations, unlock requirements, drop weights.
+
+Rule 03 — Algorithms do not move into data
+
+A calculation belongs in gameplay/runtime when it interprets authored values. Do not move functions into `packages/data` simply to make the client smaller.
+
+Rule 04 — Prefer derivation over duplication
+
+If a value can be derived from another canonical contract, derive it.
+
+Example already applied: equipment tier caps by world band are derived from `WORLD_BAND_DEFINITIONS.maximumTier` instead of maintaining another `{ blue: 4, yellow: 5, ... }` table.
+
+Rule 05 — No compatibility wrapper with new truth
+
+A temporary facade/re-export is allowed only when needed to avoid dangerous churn. It MUST contain no duplicate authored values or alternate logic. Remove it when consumers can migrate safely.
+
+Rule 06 — No big-bang migrations
+
+Migrate data by coherent low-risk domain slices. Keep each pass diagnosable and validated. Do not rewrite large consumers solely to change imports when a safe adapter is sufficient.
+
+Rule 07 — Preserve behavior during architecture moves
+
+Moving a value to `@game/data` is NOT permission to rebalance it. Preserve live behavior unless the user explicitly approves a design change.
+
+Rule 08 — Code/data authority over stale documentation
+
+For implemented live balance, the current validated canonical code/data is the technical source of truth. If documentation disagrees, do NOT silently change runtime behavior to match an old document. Confirm the intended rule, preserve the validated implementation when instructed, and update the documentation in the same pass.
+
+Current enchantment example:
+- `.0 -> .1`: 10 shards
+- `.1 -> .2`: 30 shards
+- `.2 -> .3`: 60 shards
+- `.3 -> .4`: 100 shards, Awakening transition
+
+Rule 09 — Keep type domains precise
+
+Do not widen types just to make a refactor compile. Different concepts must have different types when their domains differ.
+
+Example already applied:
+- enchantment power level: `0 | 1 | 2 | 3 | 4`;
+- enchantment transition level: `1 | 2 | 3 | 4`.
+
+Rule 10 — No order-dependent data contracts
+
+Never use array positions as implicit IDs/contracts when named keys are available. Author explicit keyed maps for stable data lookup.
+
+Rule 11 — Runtime state never belongs in authored data
+
+HP, cooldowns, active assignments, inventory contents, current progress, transaction state, etc. remain runtime/save state.
+
+Rule 12 — Rendering dependencies never enter shared gameplay data
+
+`packages/data` must remain independent from React, Phaser, DOM and visual assets/runtime rendering logic.
+
+Rule 13 — Build and tests stay separate responsibilities
+
+Production package builds must not compile test files as production artifacts. Tests remain fully typechecked by the normal typecheck/test pipeline.
+
+Rule 14 — Keep CI coverage on the active development branch
+
+The complete CI must run on pushes to both `main` and `agent/albion-idle-development` while that branch remains the active integration branch.
+
+Rule 15 — One build version source
+
+Do not hardcode save/build version metadata independently in runtime code. The client package version is the current single build-version source.
+
+Rule 16 — Do not refactor composition roots without a concrete problem
+
+`GameProvider` is the composition function inside `apps/client/src/state/GameContext.tsx`. Its role is to assemble extracted foundations/runtimes/services. Its size alone is not a reason to create managers/factories/containers or another abstraction layer.
+
+Rule 17 — Avoid architecture theatre
+
+Do not convert TypeScript authored config to JSON/CSV solely to claim the project is more data-driven. Data-driven means one authoritative, reusable source and clean ownership. Change storage format only when tooling/runtime requirements justify it.
+
+Rule 18 — Future server authority must reuse existing contracts
+
+Do not copy client economy/loot/craft rules into the server. When server-authoritative migration begins, shared authored data and domain logic must be reused or moved to the correct shared boundary.
+
+---
+
+# 4. P0 INFRASTRUCTURE WORK COMPLETED
+
+The audit identified three immediate infrastructure risks. They were corrected and validated.
+
+## P0.1 — Complete CI on active development branch
+
+The general CI now runs on pushes to:
+
+- `main`;
+- `agent/albion-idle-development`.
+
+This prevents the active branch from accumulating failures that would only appear when merging to main.
+
+## P0.2 — Production build separated from tests
+
+Previously, composite TypeScript package builds used broad `src/**/*.ts` includes and could compile `*.test.ts` files as part of package production builds.
+
+This caused an obsolete Academy test to block `@game/data build` and therefore the Blue runtime determinism check.
+
+The monorepo now uses dedicated production build configs (`tsconfig.build.json`) where appropriate.
+
+Contract:
+
+- `build` = production source only;
+- `typecheck` = source + tests;
+- `test` = executable test suite.
+
+Do not regress this separation.
+
+## P0.3 — Build version no longer duplicated in persistence
+
+`RuntimePersistence` no longer owns a separate hardcoded `buildVersion` string.
+
+`apps/client/package.json` is the current single source for the client build version.
+
+---
+
+# 5. P1 DATA OWNERSHIP WORK COMPLETED
+
+The audit progressively removed authored gameplay truth from `apps/client` and `packages/gameplay` when that truth belonged in shared data.
+
+The migration intentionally preserved runtime behavior and avoided big-bang rewrites.
+
+## Faction / dungeon / economy
+
+Canonical shared data now includes, among others:
+
+- `config/faction-runes.ts`
+- `config/faction-rune-world-drops.ts`
+- `config/faction-mastery-balance.ts`
+- `config/faction-cape-balance.ts`
+- `config/economy-balance.ts`
+- `config/dungeon-keys.ts`
+- `config/dungeon-artifacts.ts`
+- `config/dungeon-loot-balance.ts`
+- `config/dungeon-relic.ts`
+- `config/artifact-weapon-craft-balance.ts`
+- `config/expedition-balance.ts`
+
+This centralizes IDs, rates, tier mappings, drop balance, dungeon reward balance and artifact/faction costs.
+
+## Production / gathering / workers
+
+Canonical shared data now includes:
+
+- `config/production-balance.ts`
+- `config/gathering-content.ts`
+- `config/gathering-progression.ts`
+- `config/worker-content.ts`
+- `config/refining-content.ts`
+
+This centralizes production tiers/cadence, resource definitions, gathering progression, worker content/mastery balance and T3-T8 refining recipes.
+
+The client refining catalog now acts as an adapter/assembler rather than owning the refining recipe numbers.
+
+## Research / progression
+
+Canonical shared data now includes:
+
+- `config/research-content.ts`
+- `config/destiny-content.ts`
+- `config/mastery-experience-balance.ts`
+
+Research graph/costs/durations/unlocks, authored Destiny nodes and Mastery curve inputs are shared data. Gameplay retains curve-generation/calculation behavior.
+
+## Item Power / enchantment / awakening
+
+Canonical shared data now includes:
+
+- `config/item-power-balance.ts`
+- `config/enchantment-balance.ts`
+- `config/enchantment-recipe-balance.ts`
+- `config/awakening-balance.ts`
+
+This centralizes:
+
+- base IP by tier;
+- world recommended IP envelopes;
+- mastery IP coefficients;
+- enchantment display IP;
+- enchantment stat multipliers;
+- enchantment shard/Silver/material cost tables;
+- Awakening/Attunement numeric balance.
+
+Gameplay keeps the calculations, transaction behavior and scaling functions.
+
+## Combat automation
+
+`config/combat-automation-balance.ts` owns authored auto-cast balance values while the runtime keeps the decision algorithm.
+
+---
+
+# 6. IMPORTANT REFACTOR PATTERNS ESTABLISHED
+
+## Adapter pattern
+
+Preferred:
+
+`@game/data authored values -> gameplay/client typed adapter -> runtime service`
+
+Not preferred:
+
+`client constants -> duplicated gameplay constants -> future server copy`
+
+## Derived contract pattern
+
+Preferred:
+
+`canonical definition -> derive secondary value`
+
+Not preferred:
+
+`canonical table + second manually synchronized table`
+
+## Typed transition pattern
+
+When one domain includes a base state and another only includes transitions, use separate types rather than widening/casting.
+
+---
+
+# 7. VALIDATION CONTRACT
+
+After architecture/data ownership changes, the minimum complete validation used during this pass is:
+
+```powershell
+pnpm.cmd typecheck; pnpm.cmd test; pnpm.cmd build; pnpm.cmd exec tsx scripts/runtime-blue-deterministic-check.ts
+```
+
+When pulling the active branch first:
+
+```powershell
+git pull origin agent/albion-idle-development; pnpm.cmd typecheck; pnpm.cmd test; pnpm.cmd build; pnpm.cmd exec tsx scripts/runtime-blue-deterministic-check.ts
+```
+
+If a change touches data/assets validation rules, also run the relevant root validation scripts (`validate:data`, `validate:assets`).
+
+---
+
+# 8. CURRENT ARCHITECTURAL FOLLOW-UP
+
+P0: CLOSED.
+
+P1 data ownership cleanup: CLOSED after full green validation on 2026-08-25.
+
+Next audited architecture topic (P2):
+
+- map current client authority over economy, loot, persistence, inventory, craft and workers;
+- prepare a future server-authoritative migration;
+- DO NOT perform a big-bang server rewrite;
+- preserve the offline/deterministic gameplay contract;
+- reuse shared `@game/data` and domain logic rather than copying rules.
+
+Before P2 code changes, produce the authority map and migration boundaries first.
+
+---
+
+# 9. FINAL RULE OF THUMB
+
+Ask three questions before adding gameplay code:
+
+1. Is this an authored value a designer may rebalance? -> `packages/data`.
+2. Is this a domain rule/calculation/state transition? -> `packages/gameplay` (or the appropriate shared domain package).
+3. Is this presentation/client orchestration? -> `apps/client`.
+
+If the answer is ambiguous, inspect existing ownership and derive from the current architecture rather than creating a new layer.
+
+=========================
+DOCUMENT TERMINÉ
+=========================
