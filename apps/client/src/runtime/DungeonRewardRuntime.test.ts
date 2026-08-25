@@ -1,20 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
-import { DungeonRuntime, InventoryManager, getEnchantmentShardItemId } from "@game/gameplay";
+import { DungeonRuntime, getEnchantmentShardItemId } from "@game/gameplay";
 import { KEEPER_T4_DUNGEON } from "../data/dungeonContentCatalog.js";
 import { DUNGEON_COMPLETION_SILVER_BY_TIER } from "../data/dungeonLootContentCatalog.js";
 import { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
+import { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
-function setup(random = () => 1) {
+function setup(random = () => 1, heroCapacity = 20) {
   const world = new World(createRuntimeServices());
   const heroId = world.createEntity();
-  const inventory = new InventoryManager(world, (itemId) => ({ itemId, stackable: true, maxStack: 999 }));
-  inventory.createInventory(heroId, 20);
+  const bankId = world.createEntity();
+  const inventory = new PlayerInventoryManager(
+    world,
+    (itemId) => ({ itemId, stackable: true, maxStack: 999 }),
+  );
+  inventory.createInventory(heroId, heroCapacity);
+  inventory.createInventory(bankId, 20);
+  inventory.setAccessibleStorageOwners(heroId, [heroId, bankId]);
   inventory.addQuantity(heroId, KEEPER_T4_DUNGEON.keyItemId, 1);
   const dungeon = new DungeonRuntime([KEEPER_T4_DUNGEON]);
   dungeon.start(KEEPER_T4_DUNGEON.id, heroId, inventory);
   const rewards = new DungeonRewardRuntime(dungeon, inventory, heroId, random);
-  return { heroId, inventory, dungeon, rewards };
+  return { heroId, bankId, inventory, dungeon, rewards };
 }
 
 describe("DungeonRewardRuntime", () => {
@@ -31,6 +38,18 @@ describe("DungeonRewardRuntime", () => {
     expect(result?.completionSilver).toBe(0);
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_fragment_keeper")).toBe(4);
     expect(inventory.getTotalQuantity(heroId, getEnchantmentShardItemId(4))).toBe(0);
+  });
+
+  it("uses the bank when dungeon loot cannot fit in the hero inventory", () => {
+    const { heroId, bankId, inventory, rewards } = setup(() => 1, 1);
+
+    const result = rewards.processCurrentEncounterVictory();
+
+    expect(result?.drops).toEqual([
+      { itemId: "item_resource_artifact_fragment_keeper", kind: "artifact_fragment", quantity: 4 },
+    ]);
+    expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_fragment_keeper")).toBe(0);
+    expect(inventory.getTotalQuantity(bankId, "item_resource_artifact_fragment_keeper")).toBe(4);
   });
 
   it("grants the authored shard total across the full run and completion Silver only on the boss", () => {
