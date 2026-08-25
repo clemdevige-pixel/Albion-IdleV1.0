@@ -24,7 +24,7 @@ export type CombatAbilityDetailVM =
   | {
       readonly kind: "damage";
       readonly amount: number;
-      readonly damageType: "physical" | "magical";
+      readonly damageType: "physical" | "magical" | "true";
       readonly hits: number;
       readonly amountPerHit: number;
       readonly conditionalAmounts: readonly (
@@ -35,7 +35,7 @@ export type CombatAbilityDetailVM =
   | {
       readonly kind: "bonus_damage";
       readonly amount: number;
-      readonly damageType: "physical" | "magical";
+      readonly damageType: "physical" | "magical" | "true";
     }
   | {
       readonly kind: "heal_from_damage";
@@ -57,13 +57,13 @@ export type CombatAbilityDetailVM =
       readonly totalAmount: number;
       readonly interval: number;
       readonly ticks: number;
-      readonly damageType: "physical" | "magical";
+      readonly damageType: "physical" | "magical" | "true";
     }
   | {
       readonly kind: "auto_attack_bonus_window";
       readonly amountPerAttack: number;
       readonly duration: number;
-      readonly damageType: "physical" | "magical";
+      readonly damageType: "physical" | "magical" | "true";
     };
 
 export interface CombatAbilityVM {
