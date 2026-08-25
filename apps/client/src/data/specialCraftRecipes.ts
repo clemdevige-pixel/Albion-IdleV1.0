@@ -71,7 +71,7 @@ export const SPECIAL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
 
 /**
  * Fragment assembly stays authored by the existing special-craft recipes.
- * UI surfaces resolve from the fragment item id instead of duplicating
+ * Inventory surfaces resolve from the fragment item id instead of duplicating
  * key/artifact thresholds or output routes.
  */
 export function getFragmentAssemblyRecipe(itemId: string): ClientCraftRecipe | undefined {
@@ -85,9 +85,9 @@ const CONVENTIONAL_EQUIPMENT_CRAFT_RECIPES = EQUIPMENT_CRAFT_RECIPES.filter(
   (recipe) => !isArtifactWeaponCraftOutput(recipe.outputItemId),
 );
 
+/** Forge-visible recipes only. Fragment assembly is handled directly in inventory. */
 export const ALL_CRAFT_RECIPES: readonly ClientCraftRecipe[] = [
   ...CONVENTIONAL_EQUIPMENT_CRAFT_RECIPES,
   ...ARTIFACT_WEAPON_CRAFT_RECIPES,
   ...FACTION_CAPE_CRAFT_RECIPES,
-  ...SPECIAL_CRAFT_RECIPES,
 ];
