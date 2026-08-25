@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "validate:architecture": "tsx scripts/architecture-boundary-check.ts",
     "validate:data": "tsx packages/tooling/src/bin/validate-data.ts",
     "validate:assets": "tsx packages/tooling/src/bin/validate-assets.ts",
     "generate:item-icons": "tsx packages/tooling/src/bin/generate-item-icons.ts",
