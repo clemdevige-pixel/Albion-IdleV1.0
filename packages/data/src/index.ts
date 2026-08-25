@@ -67,6 +67,7 @@ export * from "./config/combat-automation-balance.js";
 export * from "./config/world-bands.js";
 export * from "./config/world-progression-contract.js";
 export * from "./config/item-power-balance.js";
+export * from "./config/enchantment-balance.js";
 
 // Shared faction resource identifiers and world drop rules
 export * from "./config/faction-runes.js";
