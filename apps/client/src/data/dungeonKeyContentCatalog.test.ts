@@ -4,7 +4,7 @@ import {
   getDungeonKeyFragmentItemId,
   getDungeonKeyItemId,
   getDungeonKeyTierForWorldBand,
-} from "./dungeonKeyContentCatalog.js";
+} from "@game/data";
 
 describe("dungeonKeyContentCatalog", () => {
   it("routes every world band to its dungeon key tier", () => {
