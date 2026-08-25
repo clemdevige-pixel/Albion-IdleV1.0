@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { resolveAbilityIconPath } from "../data/abilityIconPresentation";
+import type { CombatAbilityDetailVM } from "../game/GameBridge";
 import { ItemVisual } from "../panels/ItemVisual";
 import {
   HEALTH_POTION_ID,
@@ -11,6 +12,99 @@ import "./AbilityBar.css";
 const SHORTCUTS = ["Q", "W", "E"] as const;
 const AUTO_OFF_ICON_PATH = "/assets/ui/auto_inactive.png";
 const AUTO_ON_ICON_PATH = "/assets/ui/auto_active.png";
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(1)));
+}
+
+function formatPercent(ratio: number): string {
+  return `${formatNumber(ratio * 100)}%`;
+}
+
+function damageTypeLabel(damageType: "physical" | "magical"): string {
+  return damageType === "magical" ? "magiques" : "physiques";
+}
+
+function statusLabel(detail: Extract<CombatAbilityDetailVM, { readonly kind: "status" }>): string {
+  if (detail.effectType === "stun") return "Étourdissement";
+  if (detail.effectType === "silence") return "Silence";
+  switch (detail.statId) {
+    case "stat_armor": return "Armure";
+    case "stat_magic_resistance": return "Résistance magique";
+    case "stat_auto_attack_damage_taken_bonus": return "Dégâts auto subis";
+    case "stat_attack_speed": return "Vitesse d'attaque";
+    case "stat_damage_taken_bonus": return "Dégâts subis";
+    default: return detail.effectType === "buff" ? "Bonus" : "Malus";
+  }
+}
+
+function statusValue(detail: Extract<CombatAbilityDetailVM, { readonly kind: "status" }>): string {
+  if (detail.effectType === "stun" || detail.effectType === "silence") {
+    return `${formatNumber(detail.duration)} s`;
+  }
+  if (detail.statDelta === undefined) return `${formatNumber(detail.duration)} s`;
+  const isPercent = detail.modifierType === "percent"
+    || detail.statId === "stat_auto_attack_damage_taken_bonus"
+    || detail.statId === "stat_damage_taken_bonus";
+  const sign = detail.statDelta > 0 ? "+" : "";
+  const value = detail.modifierType === "multiplier"
+    ? `×${formatNumber(detail.statDelta)}`
+    : `${sign}${formatNumber(detail.statDelta)}${isPercent ? "%" : ""}`;
+  return `${value} · ${formatNumber(detail.duration)} s`;
+}
+
+function AbilityDetailRows({ detail }: { readonly detail: CombatAbilityDetailVM }): JSX.Element {
+  if (detail.kind === "damage") {
+    return (
+      <>
+        <span>Dégâts bruts <strong>{formatNumber(detail.amount)} {damageTypeLabel(detail.damageType)}</strong></span>
+        {detail.hits > 1 && (
+          <span>Coups <strong>{String(detail.hits)} × {formatNumber(detail.amountPerHit)}</strong></span>
+        )}
+        {detail.conditionalAmounts.map((conditional) => (
+          <span key={conditional.kind === "health_below" ? `hp-${String(conditional.thresholdRatio)}` : conditional.effectId}>
+            {conditional.kind === "health_below"
+              ? `Sous ${formatPercent(conditional.thresholdRatio)} PV cible`
+              : "Bonus conditionnel"}
+            {" "}<strong>{formatNumber(conditional.amount)} dégâts</strong>
+          </span>
+        ))}
+      </>
+    );
+  }
+
+  if (detail.kind === "bonus_damage") {
+    return <span>Dégâts bonus <strong>{formatNumber(detail.amount)} {damageTypeLabel(detail.damageType)}</strong></span>;
+  }
+
+  if (detail.kind === "dot") {
+    return (
+      <>
+        <span>Dégâts sur la durée <strong>{formatNumber(detail.totalAmount)} {damageTypeLabel(detail.damageType)}</strong></span>
+        <span>Ticks <strong>{String(detail.ticks)} × {formatNumber(detail.amountPerTick)} · {formatNumber(detail.interval)} s</strong></span>
+      </>
+    );
+  }
+
+  if (detail.kind === "heal_from_damage") {
+    return (
+      <span>Soin <strong>
+        {formatPercent(detail.ratio)} des dégâts
+        {detail.maxHealthRatio === undefined ? "" : ` · max ${formatPercent(detail.maxHealthRatio)} PV`}
+      </strong></span>
+    );
+  }
+
+  if (detail.kind === "auto_attack_bonus_window") {
+    return (
+      <span>Bonus auto-attaque <strong>
+        +{formatNumber(detail.amountPerAttack)} {damageTypeLabel(detail.damageType)} · {formatNumber(detail.duration)} s
+      </strong></span>
+    );
+  }
+
+  return <span>{statusLabel(detail)} <strong>{statusValue(detail)}</strong></span>;
+}
 
 export function AbilityBar(): JSX.Element {
   const model = useAbilityBarUiModel();
@@ -115,6 +209,9 @@ export function AbilityBar(): JSX.Element {
                 </div>
                 <p>{ability.description}</p>
                 <div className="ability-tooltip__stats">
+                  {ability.details.map((detail, detailIndex) => (
+                    <AbilityDetailRows key={`${detail.kind}-${String(detailIndex)}`} detail={detail} />
+                  ))}
                   <span>Recharge <strong>{String(ability.cooldown)} s</strong></span>
                 </div>
                 <div className={`ability-tooltip__mode${
