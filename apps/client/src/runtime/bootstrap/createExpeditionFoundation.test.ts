@@ -104,14 +104,14 @@ describe("createExpeditionFoundation", () => {
 
     const advance = expeditionService.advance(durationMs);
 
-    expect(inventoryManager.getTotalQuantity(heroId, shardItemId)).toBe(92);
+    expect(inventoryManager.getTotalQuantity(heroId, shardItemId)).toBe(46);
     expect(inventoryManager.getTotalQuantity(unrelatedStorageId, shardItemId)).toBe(0);
     expect(advance.completed).toHaveLength(1);
     expect(advance.completed[0]?.rewardSummary).toEqual({
       kind: "silver",
       silverCredited: 60_000,
       shardItemId,
-      shardsCredited: 92,
+      shardsCredited: 46,
       quality: "reussie",
     });
   });
@@ -147,7 +147,7 @@ describe("createExpeditionFoundation", () => {
     const advance = expeditionService.advance(durationMs);
 
     expect(inventoryManager.getTotalQuantity(heroId, shardItemId)).toBe(0);
-    expect(inventoryManager.getTotalQuantity(bankId, shardItemId)).toBe(92);
+    expect(inventoryManager.getTotalQuantity(bankId, shardItemId)).toBe(46);
     expect(inventoryManager.getTotalQuantity(unrelatedStorageId, shardItemId)).toBe(0);
     expect(advance.completed).toHaveLength(1);
   });
@@ -168,19 +168,19 @@ describe("createExpeditionFoundation", () => {
 
     const advance = expeditionService.advance(durationMs);
 
-    expect(inventoryManager.getTotalQuantity(heroId, runeItemId)).toBe(16);
-    expect(inventoryManager.getTotalQuantity(heroId, fragmentItemId)).toBe(48);
-    expect(inventoryManager.getTotalQuantity(heroId, keyItemId)).toBe(3);
+    expect(inventoryManager.getTotalQuantity(heroId, runeItemId)).toBe(8);
+    expect(inventoryManager.getTotalQuantity(heroId, fragmentItemId)).toBe(24);
+    expect(inventoryManager.getTotalQuantity(heroId, keyItemId)).toBe(1);
     expect(inventoryManager.getTotalQuantity(unrelatedStorageId, runeItemId)).toBe(0);
     expect(advance.completed).toHaveLength(1);
     expect(advance.completed[0]?.rewardSummary).toEqual({
       kind: "faction_rune",
       itemId: runeItemId,
-      runesCredited: 16,
+      runesCredited: 8,
       fragmentItemId,
-      fragmentsCredited: 48,
+      fragmentsCredited: 24,
       keyItemId,
-      completeKeysCredited: 3,
+      completeKeysCredited: 1,
       quality: "reussie",
     });
     expect(Number.isInteger(advance.completed[0]?.rewardSummary.kind === "faction_rune"
