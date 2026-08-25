@@ -137,7 +137,7 @@ export class ProductionBridgeAdapter {
     syncRefiningToBridge(
       config.updateRefining,
       session,
-      this.deps.getCurrentTick(),
+      refiningRuntime.getRuntimeTick(this.deps.getCurrentTick()),
       config.recipe,
       refiningRuntime.getReservedInputs(family),
       inventoryManager,
