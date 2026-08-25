@@ -1,5 +1,5 @@
 import type { EntityId } from "@game/core";
-import { InventoryManager } from "@game/gameplay";
+import { effectiveMaxStack, getEnchantmentLevel, InventoryManager } from "@game/gameplay";
 
 /**
  * Player-facing inventory manager with an explicit accessible-storage graph.
@@ -35,16 +35,44 @@ export class PlayerInventoryManager extends InventoryManager {
 
   /**
    * Atomically credits a stackable item across the owner's accessible storages.
-   * Storage order is authoritative: inventory first, then linked storages.
+   * Existing compatible stacks are filled across Inventory + Bank before a new
+   * stack is created. New stacks still follow authoritative storage order:
+   * Inventory first, then linked storages.
    * If the complete quantity cannot be stored, every partial write is rolled back.
    */
   public addAccessibleQuantity(ownerId: EntityId, itemId: string, quantity: number): boolean {
     if (!Number.isInteger(quantity) || quantity <= 0) return false;
 
+    const owners = this.getAccessibleStorageOwners(ownerId);
     let remaining = quantity;
     const credited: { ownerId: EntityId; quantity: number }[] = [];
+    const maxStack = effectiveMaxStack(this.stackInfoResolver?.(itemId));
 
-    for (const storageOwnerId of this.getAccessibleStorageOwners(ownerId)) {
+    if (maxStack > 1) {
+      for (const storageOwnerId of owners) {
+        if (remaining <= 0) break;
+        const existingHeadroom = this.findEntriesByItemId(storageOwnerId, itemId).reduce(
+          (total, slot) => {
+            const entry = slot.entry;
+            if (entry === undefined || getEnchantmentLevel(entry) !== 0) return total;
+            return total + Math.max(0, maxStack - entry.quantity);
+          },
+          0,
+        );
+        const toExistingStacks = Math.min(existingHeadroom, remaining);
+        if (toExistingStacks <= 0) continue;
+
+        const added = this.addQuantity(storageOwnerId, itemId, toExistingStacks);
+        if (!added.ok || added.value.added !== toExistingStacks || added.value.remainder !== 0) {
+          this.rollbackAccessibleCredit(itemId, credited);
+          return false;
+        }
+        credited.push({ ownerId: storageOwnerId, quantity: toExistingStacks });
+        remaining -= toExistingStacks;
+      }
+    }
+
+    for (const storageOwnerId of owners) {
       if (remaining <= 0) break;
       const added = this.addQuantity(storageOwnerId, itemId, remaining);
       if (!added.ok) continue;
@@ -56,13 +84,7 @@ export class PlayerInventoryManager extends InventoryManager {
     }
 
     if (remaining === 0) return true;
-
-    for (const entry of [...credited].reverse()) {
-      const removed = this.removeQuantity(entry.ownerId, itemId, entry.quantity);
-      if (!removed.ok) {
-        throw new Error("Accessible inventory credit rollback failed");
-      }
-    }
+    this.rollbackAccessibleCredit(itemId, credited);
     return false;
   }
 
@@ -93,5 +115,17 @@ export class PlayerInventoryManager extends InventoryManager {
     if (remaining === 0) return true;
     for (const entry of paid) this.addQuantity(entry.ownerId, itemId, entry.quantity);
     return false;
+  }
+
+  private rollbackAccessibleCredit(
+    itemId: string,
+    credited: readonly { ownerId: EntityId; quantity: number }[],
+  ): void {
+    for (const entry of [...credited].reverse()) {
+      const removed = this.removeQuantity(entry.ownerId, itemId, entry.quantity);
+      if (!removed.ok) {
+        throw new Error("Accessible inventory credit rollback failed");
+      }
+    }
   }
 }
