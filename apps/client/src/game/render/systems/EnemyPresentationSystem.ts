@@ -50,12 +50,13 @@ export class EnemyPresentationSystem {
 
   public update(state: EnemyPresentationState): void {
     this.isBoss = state.isBoss;
+    if (state.visualManifestId === this.currentProfileId) return;
+
     const manifest = renderManifestRegistry.requireStaticActor(
       state.visualManifestId,
     );
-    this.hudLayout = manifest.hud;
-    if (manifest.id === this.currentProfileId) return;
     this.currentProfileId = manifest.id;
+    this.hudLayout = manifest.hud;
     configureStaticActorTexture(this.scene, manifest);
     applyStaticActorManifest(this.sprite, manifest);
   }
