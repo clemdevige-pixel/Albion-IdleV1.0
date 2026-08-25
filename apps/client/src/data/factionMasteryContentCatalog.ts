@@ -1,27 +1,19 @@
+import {
+  FACTION_MASTERY_MAX_LEVEL,
+  FACTION_MASTERY_XP_PER_LEVEL,
+  FACTION_MASTERY_YIELD_PERCENT_PER_LEVEL,
+} from "@game/data";
 import { asMasteryId, type MasteryDefinitionLike, type MasteryId } from "@game/gameplay";
 
-export const FACTION_MASTERY_MAX_LEVEL = 100;
-export const FACTION_MASTERY_YIELD_PERCENT_PER_LEVEL = 0.5;
+export {
+  FACTION_MASTERY_MAX_LEVEL,
+  FACTION_MASTERY_XP_PER_LEVEL,
+  FACTION_MASTERY_YIELD_PERCENT_PER_LEVEL,
+} from "@game/data";
 
 const SUPPORTED_FACTIONS = ["keeper", "heretic", "undead", "morgana"] as const;
 
 type SupportedFactionId = (typeof SUPPORTED_FACTIONS)[number];
-
-/**
- * 44_FACTION_RESEARCH_EXPLORATION_SYSTEM §11.3:
- * cumulative XP at level L is 1,500 * L².
- * ExperienceTable expects the incremental cost for L-1 -> L.
- */
-export const FACTION_MASTERY_XP_PER_LEVEL = Array.from(
-  { length: FACTION_MASTERY_MAX_LEVEL },
-  (_, index) => {
-    const level = index + 1;
-    const cumulativeAtLevel = 1_500 * level * level;
-    const previousLevel = level - 1;
-    const cumulativeBefore = 1_500 * previousLevel * previousLevel;
-    return cumulativeAtLevel - cumulativeBefore;
-  },
-);
 
 export const FACTION_MASTERY_IDS: Readonly<Record<SupportedFactionId, MasteryId>> = {
   keeper: asMasteryId("mastery_faction_keeper"),
