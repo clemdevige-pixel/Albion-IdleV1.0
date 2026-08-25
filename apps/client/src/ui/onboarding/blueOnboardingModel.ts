@@ -108,14 +108,19 @@ export function resolveBlueOnboardingStep(
   }
 
   if (enchantmentState !== "completed") {
+    const academyBuilt = snapshot.buildingIds.has("academy");
     return {
       id: "unlock_enchantment",
       eyebrow: "Académie",
-      title: enchantmentState === "active" ? "Étude de l’enchantement en cours" : "Étudiez l’enchantement",
+      title: enchantmentState === "active" ? "Étude de l’enchantement en cours" : "Découvrez l’Académie et l’enchantement",
       description: enchantmentState === "active"
         ? "L’Académie analyse les éclats découverts. Une fois la recherche terminée, le service Enchanter sera disponible chez le Marchand."
-        : "La découverte des éclats a ouvert une nouvelle recherche. Lancez-la pour comprendre leur usage et ouvrir le service Enchanter.",
-      hint: "Repère : Île → Académie → Étude de l’enchantement.",
+        : academyBuilt
+          ? "La découverte des éclats a ouvert une nouvelle recherche. Lancez-la pour comprendre leur usage et ouvrir le service Enchanter."
+          : "La découverte des éclats a ouvert votre première piste de recherche. Construisez l’Académie, puis lancez l’Étude de l’enchantement pour ouvrir le service Enchanter.",
+      hint: academyBuilt
+        ? "Repère : Île → Académie → Étude de l’enchantement."
+        : "Repère : Île → emplacement libre → Académie.",
     };
   }
 
