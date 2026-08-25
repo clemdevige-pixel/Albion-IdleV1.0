@@ -37,9 +37,6 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
         dungeonDefinitionId: dungeon.id,
         enchantment: 3,
         ...ARTIFACT_BENCHMARK_MASTERY_PROFILE,
-        // Potions are intentionally disabled here. Their cooldown/threshold timing
-        // can change when a +20% damage run shortens combat, which would mix
-        // survivability cadence into what must be a strict damage-bonus A/B probe.
         useHealthPotions: false,
       } as const;
 
@@ -112,16 +109,8 @@ describe("T4 artifact dungeon faction bonus A/B benchmark", () => {
       };
     });
 
-    console.log("[FACTION_ARTIFACT_T4_DUNGEON_BONUS_AB_ROWS]");
-    console.table(rows);
-    console.log("[FACTION_ARTIFACT_T4_DUNGEON_BONUS_AB_BY_DUNGEON]");
-    console.table(byDungeon);
-
     expect(rows).toHaveLength(T4_ARTIFACT_WEAPONS.length);
     expect(rows.every((row) => row.dpsRatio !== null && row.dpsRatio >= 1)).toBe(true);
-    // Boss-only progress is diagnostic, not monotonic: faster trash clears alter
-    // cooldown state and HP at boss entry. The strict invariant is that +20%
-    // never makes the run reach an earlier encounter.
     expect(rows.every((row) => row.onEncounterReached >= row.offEncounterReached)).toBe(true);
     expect(byDungeon.every((row) => row.weapons === 5)).toBe(true);
   });
