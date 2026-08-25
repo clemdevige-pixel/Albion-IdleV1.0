@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS,
+  ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER,
   ENCHANTMENT_RECIPE_STEPS,
   ENCHANTMENT_RESOURCE_TIERS,
   ENCHANTMENT_SHARD_COSTS,
@@ -29,7 +30,7 @@ function expectStrictlyIncreasing(values: readonly number[]): void {
 }
 
 describe("canonical authored balance contracts", () => {
-  it("keeps enchantment transitions contiguous and preserves the validated shard costs", () => {
+  it("keeps enchantment transitions contiguous and preserves the validated costs", () => {
     expect(ENCHANTMENT_RESOURCE_TIERS).toEqual([4, 5, 6, 7, 8]);
     expect(ENCHANTMENT_SHARD_COSTS).toEqual({
       two_handed_weapon: { 1: 20, 2: 50, 3: 105, 4: 225 },
@@ -39,6 +40,13 @@ describe("canonical authored balance contracts", () => {
       armor_boots: { 1: 10, 2: 20, 3: 45, 4: 100 },
       off_hand: { 1: 5, 2: 20, 3: 35, 4: 50 },
       cape: { 1: 5, 2: 20, 3: 35, 4: 100 },
+    });
+    expect(ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER).toEqual({
+      4: 125_000,
+      5: 225_000,
+      6: 400_000,
+      7: 550_000,
+      8: 750_000,
     });
     expect(ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS).toEqual({ 1: 1, 2: 2, 3: 4, 4: 8 });
 
