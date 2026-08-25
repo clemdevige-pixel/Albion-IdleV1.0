@@ -24,16 +24,17 @@ export interface AbilityBarUiModel {
 }
 
 function selectAbilityBar(state: GameBridgeState): AbilityBarUiModel {
+  const countPotions = (slots: GameBridgeState["inventory"]["slots"]): number => slots.reduce(
+    (total, slot) => slot.itemId === HEALTH_POTION_ID ? total + slot.quantity : total,
+    0,
+  );
   return {
     abilities: [
       state.abilities.primary,
       state.abilities.secondary,
       state.abilities.ultimate,
     ],
-    potionCount: state.inventory.slots.reduce(
-      (total, slot) => slot.itemId === HEALTH_POTION_ID ? total + slot.quantity : total,
-      0,
-    ),
+    potionCount: countPotions(state.inventory.slots) + countPotions(state.bank.slots),
     potionCooldown: state.consumables.healthPotionCooldown,
     potionCooldownRemaining: state.consumables.healthPotionCooldownRemaining,
     potionHealPercent: state.consumables.healthPotionHealPercent,
