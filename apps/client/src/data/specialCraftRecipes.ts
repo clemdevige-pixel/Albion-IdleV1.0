@@ -1,13 +1,13 @@
 import {
-  ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
-  KEY_FRAGMENTS_PER_KEY,
-} from "./economyContentCatalog.js";
-import {
   DUNGEON_ARTIFACT_FACTIONS,
   DUNGEON_ARTIFACT_TIERS,
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
-} from "./dungeonArtifactContentCatalog.js";
+} from "@game/data";
+import {
+  ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
+  KEY_FRAGMENTS_PER_KEY,
+} from "./economyContentCatalog.js";
 import {
   getDungeonKeyFragmentItemId,
   getDungeonKeyItemId,
