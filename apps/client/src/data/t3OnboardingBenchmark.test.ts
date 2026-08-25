@@ -31,10 +31,15 @@ describe("T3 onboarding contracts", () => {
     );
   });
 
-  it("keeps the workshop flexible and data-driven", () => {
+  it("keeps the workshop fixed and data-driven", () => {
     const workshop = getIslandBuildingDefinition("workshop").construction;
-    expect(workshop?.flexibleRequirement?.totalQuantity).toBe(6);
-    expect(workshop?.flexibleRequirement?.minimumDistinctItemIds).toBe(2);
+    expect(workshop?.requirements).toEqual([
+      { itemId: "item_refined_planks_t3", quantity: 2 },
+      { itemId: "item_refined_copper_bar_t3", quantity: 2 },
+      { itemId: "item_refined_leather_t3", quantity: 2 },
+      { itemId: "item_refined_cloth_t3", quantity: 2 },
+    ]);
+    expect(workshop?.flexibleRequirement).toBeUndefined();
     expect(workshop?.prerequisiteBuildings).toBeUndefined();
     expect(PLAYER_ISLAND_CONFIG.buildings).toContain(getIslandBuildingDefinition("workshop"));
   });
