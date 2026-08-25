@@ -37,7 +37,7 @@ describe("enchantment balance", () => {
     expect(ENCHANTMENT_MINIMUM_ITEM_TIER).toBe(4);
   });
 
-  it("resolves tier shard ids and applies transition costs to scaled recipes", () => {
+  it("resolves tier shard ids and applies authored category costs to scaled recipes", () => {
     expect(getEnchantmentShardItemId(4)).toBe("item_resource_enchantment_shard_t4");
     expect(getEnchantmentShardItemId(5)).toBe("item_resource_enchantment_shard_t5");
 
@@ -53,7 +53,7 @@ describe("enchantment balance", () => {
     );
     expect(scaled.materials).toContainEqual({
       itemId: "item_resource_enchantment_shard_t5",
-      quantity: 30,
+      quantity: 50,
     });
     expect(scaled.materials).toContainEqual({
       itemId: "item_refined_planks_t5",
@@ -62,29 +62,56 @@ describe("enchantment balance", () => {
     expect(scaled.materials.some((material) => material.itemId.includes("essence"))).toBe(false);
   });
 
-  it("makes a 1H plus off-hand package equal one 2H package through .3", () => {
-    const recipe = getNextEnchantmentRecipe(2);
-    expect(recipe).toBeDefined();
-    if (recipe === undefined) return;
-
-    const material = [{ itemId: "item_refined_metal_bar_t4", quantity: 6 }];
-    const twoHanded = scaleEnchantmentRecipe(recipe, 4, "two_handed_weapon", material);
-    const oneHanded = scaleEnchantmentRecipe(recipe, 4, "one_handed_weapon", material);
-    const offHand = scaleEnchantmentRecipe(recipe, 4, "off_hand", material);
-
-    expect(oneHanded.silverCost + offHand.silverCost).toBe(twoHanded.silverCost);
+  it("keeps a 1H plus off-hand shard package equal to one 2H package through .3", () => {
+    const expectedByLevel = {
+      1: { oneHanded: 15, offHand: 5, twoHanded: 20 },
+      2: { oneHanded: 30, offHand: 20, twoHanded: 50 },
+      3: { oneHanded: 70, offHand: 35, twoHanded: 105 },
+    } as const;
 
     const shardId = "item_resource_enchantment_shard_t4";
-    const shardQty = (scaled: typeof twoHanded) =>
-      scaled.materials.find(({ itemId }) => itemId === shardId)?.quantity ?? 0;
-    expect(shardQty(oneHanded)).toBe(30);
-    expect(shardQty(offHand)).toBe(30);
-    expect(shardQty(twoHanded)).toBe(60);
-    expect(shardQty(oneHanded) + shardQty(offHand)).toBe(shardQty(twoHanded));
+    for (const currentLevel of [0, 1, 2] as const) {
+      const recipe = getNextEnchantmentRecipe(currentLevel);
+      expect(recipe).toBeDefined();
+      if (recipe === undefined) continue;
+      const level = recipe.toLevel as 1 | 2 | 3;
+      const material = [{ itemId: "item_refined_metal_bar_t4", quantity: 6 }];
+      const twoHanded = scaleEnchantmentRecipe(recipe, 4, "two_handed_weapon", material);
+      const oneHanded = scaleEnchantmentRecipe(recipe, 4, "one_handed_weapon", material);
+      const offHand = scaleEnchantmentRecipe(recipe, 4, "off_hand", material);
+      const shardQty = (scaled: typeof twoHanded) =>
+        scaled.materials.find(({ itemId }) => itemId === shardId)?.quantity ?? 0;
+      const expected = expectedByLevel[level];
 
-    const materialQty = (scaled: typeof twoHanded) =>
-      scaled.materials.find(({ itemId }) => itemId === "item_refined_metal_bar_t4")?.quantity ?? 0;
-    expect(materialQty(oneHanded) + materialQty(offHand)).toBe(materialQty(twoHanded));
+      expect(shardQty(oneHanded)).toBe(expected.oneHanded);
+      expect(shardQty(offHand)).toBe(expected.offHand);
+      expect(shardQty(twoHanded)).toBe(expected.twoHanded);
+      expect(shardQty(oneHanded) + shardQty(offHand)).toBe(shardQty(twoHanded));
+    }
+  });
+
+  it("keeps the validated 500-shard full-loadout budget through .3", () => {
+    const total = (category: Parameters<typeof scaleEnchantmentRecipe>[2]): number => {
+      let shards = 0;
+      for (const currentLevel of [0, 1, 2] as const) {
+        const recipe = getNextEnchantmentRecipe(currentLevel);
+        if (recipe === undefined) continue;
+        const scaled = scaleEnchantmentRecipe(recipe, 4, category);
+        shards += scaled.materials[0]?.quantity ?? 0;
+      }
+      return shards;
+    };
+
+    expect(total("two_handed_weapon")).toBe(175);
+    expect(total("one_handed_weapon")).toBe(115);
+    expect(total("armor_torso")).toBe(115);
+    expect(total("armor_head")).toBe(75);
+    expect(total("armor_boots")).toBe(75);
+    expect(total("off_hand")).toBe(60);
+    expect(total("cape")).toBe(60);
+
+    expect(total("two_handed_weapon") + total("armor_torso") + total("armor_head") + total("armor_boots") + total("cape")).toBe(500);
+    expect(total("one_handed_weapon") + total("off_hand") + total("armor_torso") + total("armor_head") + total("armor_boots") + total("cape")).toBe(500);
   });
 
   it("charges the same full .4 Awakening cost to 1H and 2H weapons", () => {
