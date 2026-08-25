@@ -42,6 +42,8 @@ describe("DungeonRewardRuntime", () => {
 
   it("uses the bank when dungeon loot cannot fit in the hero inventory", () => {
     const { heroId, bankId, inventory, rewards } = setup(() => 1, 1);
+    inventory.addQuantity(heroId, "item_health_potion", 1);
+    expect(inventory.isFull(heroId)).toBe(true);
 
     const result = rewards.processCurrentEncounterVictory();
 
