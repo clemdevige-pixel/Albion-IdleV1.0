@@ -221,6 +221,7 @@ export class WorldHudSystem {
     if (hud.lastX === x && hud.lastBarY === barY && hud.width === width) return;
 
     const { healthBar, valueText, actorLabel } = this.manifest;
+    const widthChanged = hud.width !== width;
     hud.width = width;
     hud.lastX = x;
     hud.lastBarY = barY;
@@ -230,6 +231,15 @@ export class WorldHudSystem {
     hud.fill.setPosition(x - width / 2, barY);
     hud.value.setPosition(x, barY - valueText.offsetY);
     hud.label.setPosition(x, barY - actorLabel.offsetY);
+
+    if (
+      widthChanged
+      && hud.lastCurrent !== undefined
+      && hud.lastMaximum !== undefined
+    ) {
+      const ratio = hud.lastMaximum > 0 ? hud.lastCurrent / hud.lastMaximum : 0;
+      hud.fill.width = width * Math.max(0, Math.min(1, ratio));
+    }
 
     worldHudAnchorStore.setAnchor(hud.actorId, {
       x,
