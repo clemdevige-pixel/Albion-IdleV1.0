@@ -10,6 +10,7 @@ import {
   KEY_FRAGMENTS_PER_KEY,
 } from "./economyContentCatalog";
 import {
+  ALL_CRAFT_RECIPES,
   getFragmentAssemblyRecipe,
   SPECIAL_CRAFT_RECIPES,
 } from "./specialCraftRecipes";
@@ -41,6 +42,14 @@ describe("special crafting conversions", () => {
       expect(recipe.requirements).toHaveLength(1);
       expect(recipe.requirements[0]?.quantity).toBe(ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE);
       expect(recipe.requirements[0]?.itemId).toContain("artifact_fragment");
+    }
+  });
+
+  it("keeps fragment assembly available to inventory but out of the Forge recipe catalog", () => {
+    expect(SPECIAL_CRAFT_RECIPES.length).toBeGreaterThan(0);
+    expect(ALL_CRAFT_RECIPES.some((recipe) => recipe.family.startsWith("other_"))).toBe(false);
+    for (const recipe of SPECIAL_CRAFT_RECIPES) {
+      expect(ALL_CRAFT_RECIPES).not.toContain(recipe);
     }
   });
 
