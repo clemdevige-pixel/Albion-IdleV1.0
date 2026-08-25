@@ -78,7 +78,8 @@ export * from "./config/dungeon-keys.js";
 export * from "./config/dungeon-artifacts.js";
 export * from "./config/dungeon-loot-balance.js";
 
-// Authored expedition reward profiles
+// Authored artifact weapon and expedition reward balance
+export * from "./config/artifact-weapon-craft-balance.js";
 export * from "./config/expedition-balance.js";
 
 // Player Island configuration
