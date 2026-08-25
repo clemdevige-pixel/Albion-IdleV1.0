@@ -1,4 +1,12 @@
 import {
+  GATHERING_MASTERY_ID_VALUES,
+  GATHERING_MASTERY_MAX_LEVEL,
+  GATHERING_MASTERY_UNLOCK_BY_TIER,
+  HERO_GATHERING_XP_BY_TIER,
+  HERO_GATHERING_XP_FROM_WORKER_BY_TIER,
+  WORKER_GATHERING_XP_BY_TIER,
+} from "@game/data";
+import {
   asMasteryId,
   asDestinyNodeId,
   WEAPON_MASTERY_XP,
@@ -13,25 +21,26 @@ import {
   getFactionMasteryDisplayName,
 } from "./factionMasteryContentCatalog.js";
 
-export const WOOD_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_wood");
-export const ORE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_ore");
-export const HIDE_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_hide");
-export const FIBER_GATHERING_MASTERY_ID = asMasteryId("mastery_gathering_fiber");
+export const WOOD_GATHERING_MASTERY_ID = asMasteryId(GATHERING_MASTERY_ID_VALUES.wood);
+export const ORE_GATHERING_MASTERY_ID = asMasteryId(GATHERING_MASTERY_ID_VALUES.ore);
+export const HIDE_GATHERING_MASTERY_ID = asMasteryId(GATHERING_MASTERY_ID_VALUES.hide);
+export const FIBER_GATHERING_MASTERY_ID = asMasteryId(GATHERING_MASTERY_ID_VALUES.fiber);
 
 export { WEAPON_MASTERY_XP, GATHERING_MASTERY_XP };
+export { GATHERING_MASTERY_UNLOCK_BY_TIER } from "@game/data";
 
 export const GATHERING_MASTERY_DEFINITIONS = [
-  { id: "mastery_gathering_wood", category: "gathering", maxLevel: 100, experiencePerLevel: GATHERING_MASTERY_XP },
-  { id: "mastery_gathering_ore", category: "gathering", maxLevel: 100, experiencePerLevel: GATHERING_MASTERY_XP },
-  { id: "mastery_gathering_hide", category: "gathering", maxLevel: 100, experiencePerLevel: GATHERING_MASTERY_XP },
-  { id: "mastery_gathering_fiber", category: "gathering", maxLevel: 100, experiencePerLevel: GATHERING_MASTERY_XP },
+  { id: GATHERING_MASTERY_ID_VALUES.wood, category: "gathering", maxLevel: GATHERING_MASTERY_MAX_LEVEL, experiencePerLevel: GATHERING_MASTERY_XP },
+  { id: GATHERING_MASTERY_ID_VALUES.ore, category: "gathering", maxLevel: GATHERING_MASTERY_MAX_LEVEL, experiencePerLevel: GATHERING_MASTERY_XP },
+  { id: GATHERING_MASTERY_ID_VALUES.hide, category: "gathering", maxLevel: GATHERING_MASTERY_MAX_LEVEL, experiencePerLevel: GATHERING_MASTERY_XP },
+  { id: GATHERING_MASTERY_ID_VALUES.fiber, category: "gathering", maxLevel: GATHERING_MASTERY_MAX_LEVEL, experiencePerLevel: GATHERING_MASTERY_XP },
 ];
 
 const GATHERING_MASTERY_NAMES: Readonly<Record<string, string>> = {
-  mastery_gathering_wood: "Récolte du bois",
-  mastery_gathering_ore: "Extraction du minerai",
-  mastery_gathering_hide: "Dépeçage",
-  mastery_gathering_fiber: "Récolte des fibres",
+  [GATHERING_MASTERY_ID_VALUES.wood]: "Récolte du bois",
+  [GATHERING_MASTERY_ID_VALUES.ore]: "Extraction du minerai",
+  [GATHERING_MASTERY_ID_VALUES.hide]: "Dépeçage",
+  [GATHERING_MASTERY_ID_VALUES.fiber]: "Récolte des fibres",
 };
 
 export function getGatheringMasteryDisplayName(masteryId: string): string | undefined {
@@ -39,25 +48,16 @@ export function getGatheringMasteryDisplayName(masteryId: string): string | unde
 }
 
 export function getHeroGatheringXpForTier(tier: number): number {
-  return Math.max(1, Math.round(5 * (1.6 ** Math.max(0, tier - 3))));
+  return HERO_GATHERING_XP_BY_TIER[tier as keyof typeof HERO_GATHERING_XP_BY_TIER] ?? 1;
 }
 
 export function getWorkerGatheringXpForTier(tier: number): number {
-  return Math.max(1, Math.round(4 * (1.5 ** Math.max(0, tier - 3))));
+  return WORKER_GATHERING_XP_BY_TIER[tier as keyof typeof WORKER_GATHERING_XP_BY_TIER] ?? 1;
 }
 
 export function getHeroGatheringXpFromWorkerForTier(tier: number): number {
-  return Math.max(1, Math.round(2 * (1.5 ** Math.max(0, tier - 3))));
+  return HERO_GATHERING_XP_FROM_WORKER_BY_TIER[tier as keyof typeof HERO_GATHERING_XP_FROM_WORKER_BY_TIER] ?? 1;
 }
-
-export const GATHERING_MASTERY_UNLOCK_BY_TIER = {
-  3: 0,
-  4: 3,
-  5: 7,
-  6: 11,
-  7: 18,
-  8: 25,
-} as const;
 
 export function getRequiredGatheringMasteryForTier(tier: number): number {
   if (import.meta.env.DEV && typeof window !== "undefined") {
