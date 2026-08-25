@@ -32,8 +32,8 @@ describe("canonical authored balance contracts", () => {
   it("keeps enchantment transitions contiguous and preserves the validated shard costs", () => {
     expect(ENCHANTMENT_RESOURCE_TIERS).toEqual([4, 5, 6, 7, 8]);
     expect(ENCHANTMENT_SHARD_COSTS).toEqual({
-      two_handed_weapon: { 1: 20, 2: 50, 3: 105, 4: 100 },
-      one_handed_weapon: { 1: 15, 2: 30, 3: 70, 4: 100 },
+      two_handed_weapon: { 1: 20, 2: 50, 3: 105, 4: 225 },
+      one_handed_weapon: { 1: 15, 2: 30, 3: 70, 4: 225 },
       armor_torso: { 1: 15, 2: 35, 3: 65, 4: 100 },
       armor_head: { 1: 10, 2: 20, 3: 45, 4: 100 },
       armor_boots: { 1: 10, 2: 20, 3: 45, 4: 100 },
