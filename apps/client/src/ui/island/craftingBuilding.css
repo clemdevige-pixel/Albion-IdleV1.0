@@ -5,10 +5,15 @@
   margin-top: 8px;
 }
 
-.ui-island-crafting-building__tiers,
-.ui-island-crafting-building__categories {
+.ui-island-crafting-building__tiers {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+
+.ui-island-crafting-building__categories {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0;
 }
 
