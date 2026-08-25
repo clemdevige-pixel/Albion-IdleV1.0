@@ -312,6 +312,10 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   });
 
   const masteryLevel = seedMasteryLevel(input, masteryService, experienceService);
+  const masteryRoute = resolveWeaponMastery(input.weaponItemId);
+  const familyMasteryLevel = masteryRoute === undefined
+    ? 0
+    : masteryService.getMasteryState(masteryRoute.familyId)?.level ?? 0;
   const enchantment = input.enchantment ?? 0;
   equipItem(inventoryManager, equipmentManager, heroId, input.weaponItemId, enchantment);
   for (const itemId of input.equipmentItemIds ?? []) equipItem(inventoryManager, equipmentManager, heroId, itemId, enchantment);
@@ -368,7 +372,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   let potionsUsed = 0;
   let segmentEndHpPercent: number | undefined;
   let activeEnemy: SpawnedEnemyResult | undefined;
-  const abilityDefinitions = resolveUnlockedWeaponAbilities(input.weaponItemId, masteryLevel);
+  const abilityDefinitions = resolveUnlockedWeaponAbilities(input.weaponItemId, familyMasteryLevel);
   const abilityIds = abilityDefinitions.map((definition) => String(definition.id));
   const abilityTelemetry = new Map<string, MutableAbilityTelemetry>();
   const encounterTelemetry: CombatRuntimeEncounterTelemetry[] = [];
