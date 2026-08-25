@@ -4,8 +4,12 @@ import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runEnchantmentShardTtkBenchmark } from "./enchantmentShardTtkBenchmark.js";
 
-const FULL_SET_EQUIVALENT_ITEM_COUNT = 5;
-const FIRST_FULL_SET_SHARD_COST = ENCHANTMENT_SHARD_COSTS[1] * FULL_SET_EQUIVALENT_ITEM_COUNT;
+const FIRST_FULL_SET_SHARD_COST =
+  ENCHANTMENT_SHARD_COSTS.two_handed_weapon[1]
+  + ENCHANTMENT_SHARD_COSTS.armor_torso[1]
+  + ENCHANTMENT_SHARD_COSTS.armor_head[1]
+  + ENCHANTMENT_SHARD_COSTS.armor_boots[1]
+  + ENCHANTMENT_SHARD_COSTS.cape[1];
 
 const BRIDGES = [
   { fromTier: 4, toTier: 5, mastery: 23, zone: "amberwood" },
@@ -44,6 +48,8 @@ function shortName(itemId: string, tier: number): string {
 
 describe("live enchantment tier bridge sweep", () => {
   it("keeps previous-tier .3 sets able to farm the entry zone of the next band", () => {
+    expect(FIRST_FULL_SET_SHARD_COST).toBe(60);
+
     const summaries = BRIDGES.map((bridge) => {
       const zoneDefId = WORLD_ZONE_IDS[bridge.zone];
       const rows = WEAPON_FAMILIES.map((family) => {
