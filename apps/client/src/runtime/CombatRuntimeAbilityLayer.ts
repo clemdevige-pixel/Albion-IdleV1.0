@@ -240,7 +240,7 @@ export class CombatRuntime extends LegacyCombatRuntime {
     const itemId = this.runtimeDeps.equipmentManager.getEquippedItem(this.runtimeDeps.heroId, "weapon")?.itemId;
     if (itemId === undefined) return undefined;
     const route = resolveWeaponMastery(itemId);
-    const level = route === undefined ? 0 : this.runtimeDeps.masteryService?.getMasteryState(route.weaponId)?.level ?? 1;
+    const level = route === undefined ? 0 : this.runtimeDeps.masteryService?.getMasteryState(route.familyId)?.level ?? 1;
     return resolveUnlockedWeaponAbilities(itemId, level)[slotIndex];
   }
 }
