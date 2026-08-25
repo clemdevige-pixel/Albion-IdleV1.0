@@ -89,6 +89,7 @@ export class RefiningRuntime {
     RefiningFamilyState
   >;
   private currentTickCounter = 0;
+  private backgroundTickOffset = 0;
   private readonly completionListeners = new Set<
     (evt: RefiningCompletionEvent) => void
   >();
@@ -152,15 +153,21 @@ export class RefiningRuntime {
     for (const listener of this.completionListeners) listener(evt);
   }
 
+  /** Maps the live client tick onto the monotonic refining timeline. */
+  public getRuntimeTick(tickCounter: number): number {
+    return tickCounter + this.backgroundTickOffset;
+  }
+
   public tick(tickCounter: number): void {
-    this.currentTickCounter = tickCounter;
+    const runtimeTick = this.getRuntimeTick(tickCounter);
+    this.currentTickCounter = runtimeTick;
     for (const family of SUPPORTED_REFINING_FAMILIES) {
       const definition = this.families[family];
-      definition.manager.tick(tickCounter);
+      definition.manager.tick(runtimeTick);
 
       const state = this.states[family];
       if (state.automatic && definition.manager.getActiveSession() === undefined) {
-        if (!this.startRefiningCycle(family, this.getRecipe(family), tickCounter)) {
+        if (!this.startRefiningCycle(family, this.getRecipe(family), runtimeTick)) {
           state.automatic = false;
           state.activeRecipe = undefined;
         }
@@ -215,6 +222,7 @@ export class RefiningRuntime {
       }
     } finally {
       this.currentTickCounter = backgroundEndTick;
+      this.backgroundTickOffset += elapsedTicks;
       this.isResolvingBackground = false;
       const completionEvents = [...this.backgroundCompletionEvents.values()];
       this.backgroundCompletionEvents.clear();
@@ -508,7 +516,8 @@ export class RefiningRuntime {
     }
 
     state.automatic = true;
-    if (!this.startRefiningCycle(family, this.getRecipe(family), tickCounter)) {
+    const runtimeTick = this.getRuntimeTick(tickCounter);
+    if (!this.startRefiningCycle(family, this.getRecipe(family), runtimeTick)) {
       state.automatic = false;
       return { action: "failed", family };
     }
