@@ -1,15 +1,11 @@
+import {
+  GENERALIST_EXPEDITION_REWARD_PROFILES,
+  type GeneralistExpeditionRewardProfile,
+  type GeneralistExpeditionTier,
+} from "@game/data";
 import { getEnchantmentShardItemId } from "@game/gameplay";
 
-export type GeneralistExpeditionTier = 4 | 5 | 6 | 7 | 8;
 export type GeneralistExpeditionResultQuality = "difficile" | "reussie" | "fructueuse" | "exceptionnelle";
-
-export interface GeneralistExpeditionRewardProfile {
-  readonly tier: GeneralistExpeditionTier;
-  readonly silverPerHour: number;
-  readonly silverVariance: number;
-  readonly shardsPerHour: number;
-  readonly shardVariance: number;
-}
 
 export interface RolledGeneralistExpeditionReward {
   readonly silver: number;
@@ -18,19 +14,11 @@ export interface RolledGeneralistExpeditionReward {
   readonly quality: GeneralistExpeditionResultQuality;
 }
 
-/**
- * Tester baseline calibrated against the deepest farmable Tn.3 world reference.
- * T8 remains provisional until Blackspire can be benchmarked reliably.
- */
-export const GENERALIST_EXPEDITION_REWARD_PROFILES: Readonly<
-  Record<GeneralistExpeditionTier, GeneralistExpeditionRewardProfile>
-> = {
-  4: { tier: 4, silverPerHour: 30_000, silverVariance: 0.20, shardsPerHour: 46, shardVariance: 0.25 },
-  5: { tier: 5, silverPerHour: 55_000, silverVariance: 0.20, shardsPerHour: 47, shardVariance: 0.25 },
-  6: { tier: 6, silverPerHour: 70_000, silverVariance: 0.20, shardsPerHour: 50, shardVariance: 0.25 },
-  7: { tier: 7, silverPerHour: 80_000, silverVariance: 0.20, shardsPerHour: 43, shardVariance: 0.25 },
-  8: { tier: 8, silverPerHour: 90_000, silverVariance: 0.20, shardsPerHour: 38, shardVariance: 0.25 },
-};
+export {
+  GENERALIST_EXPEDITION_REWARD_PROFILES,
+  type GeneralistExpeditionRewardProfile,
+  type GeneralistExpeditionTier,
+} from "@game/data";
 
 function assertTier(tier: number): GeneralistExpeditionTier {
   if (tier !== 4 && tier !== 5 && tier !== 6 && tier !== 7 && tier !== 8) {
@@ -47,16 +35,11 @@ function hoursFromDuration(durationMs: number): number {
   return hours;
 }
 
-/** Symmetric triangular draw around the authored hourly EV. */
 function rollCenteredInteger(mean: number, variance: number, random: () => number): number {
   const centered = random() + random() - 1;
   return Math.max(1, Math.round(mean * (1 + centered * variance)));
 }
 
-/**
- * Rolls each hour independently, preserving EV/hour while making longer
- * expeditions statistically more stable in relative terms.
- */
 function rollHourlyTotal(
   ratePerHour: number,
   variance: number,
