@@ -7,6 +7,7 @@ export type BlueOnboardingStepId =
   | "start_worker"
   | "build_workshop"
   | "craft_t3_chest"
+  | "equip_t4"
   | "progress_blue"
   | "unlock_enchantment"
   | "reach_frostpeak"
@@ -34,6 +35,7 @@ export interface BlueOnboardingSnapshot {
   readonly buildingIds: ReadonlySet<IslandBuildingId>;
   readonly workerStarted: boolean;
   readonly hasChestArmorTier3OrHigher: boolean;
+  readonly hasEquippedTier4OrHigher: boolean;
   readonly hasProgressedBeyondEarlyProduction: boolean;
   readonly academyResearch: readonly AcademyResearchEntryModel[];
   readonly hasReachedFrostpeak: boolean;
@@ -121,6 +123,23 @@ export function resolveBlueOnboardingStep(
         hint: "Repère : Île → Atelier → Armures de torse T3.",
       };
     }
+  }
+
+  const laterProgressMakesT4EquipmentObsolete =
+    enchantmentState === "completed"
+    || snapshot.hasReachedFrostpeak
+    || snapshot.relicState !== "unobtained"
+    || snapshot.dungeonUnlocked
+    || hasClearedT4Dungeon;
+
+  if (!laterProgressMakesT4EquipmentObsolete && !snapshot.hasEquippedTier4OrHigher) {
+    return {
+      id: "equip_t4",
+      eyebrow: "Équipement T4",
+      title: "Passez progressivement à l’équipement T4",
+      description: "La Zone Bleue vous permet maintenant d’améliorer votre équipement. Commencez à remplacer votre équipement T3 par des pièces T4 pour préparer la suite de votre progression.",
+      hint: "Repère : fabriquez puis équipez votre première pièce T4.",
+    };
   }
 
   if (enchantmentState === "locked") {
