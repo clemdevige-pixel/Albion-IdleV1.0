@@ -73,6 +73,9 @@ export * from "./config/faction-rune-world-drops.js";
 // Authored economy and loot balance values
 export * from "./config/economy-balance.js";
 
+// Canonical dungeon entry currency identifiers
+export * from "./config/dungeon-keys.js";
+
 // Player Island configuration
 export * from "./config/island.js";
 export * from "./config/island-progression.js";
