@@ -70,8 +70,9 @@ export * from "./config/world-progression-contract.js";
 export * from "./config/faction-runes.js";
 export * from "./config/faction-rune-world-drops.js";
 
-// Authored faction mastery balance
+// Authored faction mastery and cape balance
 export * from "./config/faction-mastery-balance.js";
+export * from "./config/faction-cape-balance.js";
 
 // Authored economy and loot balance values
 export * from "./config/economy-balance.js";
