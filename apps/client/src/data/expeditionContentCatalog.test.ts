@@ -33,11 +33,11 @@ describe("expeditionContentCatalog", () => {
       reward.silverPerHour,
       reward.shardsPerHour,
     ])).toEqual([
-      [4, "Expédition généraliste T4", 30_000, 46],
-      [5, "Expédition généraliste T5", 55_000, 47],
-      [6, "Expédition généraliste T6", 70_000, 50],
-      [7, "Expédition généraliste T7", 80_000, 43],
-      [8, "Expédition généraliste T8", 90_000, 38],
+      [4, "Expédition généraliste T4", 30_000, 23],
+      [5, "Expédition généraliste T5", 55_000, 23.5],
+      [6, "Expédition généraliste T6", 70_000, 25],
+      [7, "Expédition généraliste T7", 80_000, 21.5],
+      [8, "Expédition généraliste T8", 90_000, 19],
     ]);
 
     for (const definition of SILVER_EXPEDITION_DEFINITIONS) {
@@ -78,6 +78,6 @@ describe("expeditionContentCatalog", () => {
 
   it("uses the validated Faction Rune/hour baseline from the reward profile", () => {
     expect(FACTION_EXPEDITION_DEFINITIONS.map(({ tier, reward }) => [tier, reward.runesPerHour]))
-      .toEqual([[4, 8], [5, 14], [6, 25], [7, 40], [8, 60]]);
+      .toEqual([[4, 4], [5, 7], [6, 12.5], [7, 20], [8, 30]]);
   });
 });
