@@ -27,6 +27,35 @@ describe("PlayerInventoryManager accessible storage", () => {
     expect(fixture.inventory.hasAccessibleQuantity(fixture.heroId, "key", 4)).toBe(false);
   });
 
+  it("credits inventory first then spills into bank", () => {
+    const fixture = createFixture();
+    const stackInfo = { itemId: "reward", stackable: false, maxStack: 1 } as const;
+    for (let index = 0; index < 4; index += 1) {
+      fixture.inventory.addQuantity(fixture.heroId, `filler_${String(index)}`, 1, {
+        itemId: `filler_${String(index)}`,
+        stackable: false,
+        maxStack: 1,
+      });
+    }
+
+    expect(fixture.inventory.addAccessibleQuantity(fixture.heroId, "reward", 1)).toBe(true);
+    expect(fixture.inventory.getTotalQuantity(fixture.heroId, "reward")).toBe(0);
+    expect(fixture.inventory.getTotalQuantity(fixture.bankId, "reward")).toBe(1);
+    expect(stackInfo.maxStack).toBe(1);
+  });
+
+  it("rolls back partial accessible credits when inventory and bank are both full", () => {
+    const fixture = createFixture();
+    for (const ownerId of [fixture.heroId, fixture.bankId]) {
+      for (let index = 0; index < 4; index += 1) {
+        fixture.inventory.addQuantity(ownerId, `${String(ownerId)}_filler_${String(index)}`, 1);
+      }
+    }
+
+    expect(fixture.inventory.addAccessibleQuantity(fixture.heroId, "reward", 1)).toBe(false);
+    expect(fixture.inventory.getAccessibleQuantity(fixture.heroId, "reward")).toBe(0);
+  });
+
   it("consumes inventory first then bank", () => {
     const fixture = createFixture();
     fixture.inventory.addQuantity(fixture.heroId, "key", 1, { itemId: "key", stackable: true, maxStack: 99 });
