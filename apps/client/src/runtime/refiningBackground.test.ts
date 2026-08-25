@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import { InventoryManager, RefiningManager } from "@game/gameplay";
 import { RefiningRuntime, RefiningSaveProvider } from "./RefiningRuntime.js";
@@ -27,6 +27,8 @@ function createRefiningEnvironment() {
 describe("RefiningRuntime background progression", () => {
   it("consumes multiple automatic cycles at completion boundaries", () => {
     const env = createRefiningEnvironment();
+    const onCompleted = vi.fn();
+    env.runtime.subscribeRefineCompleted(onCompleted);
     env.inventoryManager.addQuantity(env.storageId, "item_resource_wood_t3", 12, {
       itemId: "item_resource_wood_t3",
       stackable: true,
@@ -49,6 +51,10 @@ describe("RefiningRuntime background progression", () => {
       ),
     ).toBe(0);
     expect(env.runtime.isRefiningActive("Wood")).toBe(false);
+    expect(onCompleted).toHaveBeenCalledTimes(1);
+    expect(onCompleted).toHaveBeenCalledWith(
+      expect.objectContaining({ family: "Wood", added: true }),
+    );
   });
 
   it("exposes the same resolution through the registered save provider contract", () => {
