@@ -10,6 +10,12 @@ import type { CombatAbilityVM, GameBridge } from "../../game/GameBridge";
 
 const SHORTCUTS = ["Q", "W", "E"] as const;
 
+export interface AbilityTooltipStats {
+  readonly physicalDamage: number;
+  readonly magicalDamage: number;
+  readonly abilityPowerPercent: number;
+}
+
 function formatNumber(value: number): string {
   return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
 }
@@ -24,6 +30,14 @@ function damageTypeLabel(damageType: DamageType): string {
 
 function sourceDamageLabel(damageType: DamageType): string {
   return damageType === "magical" ? "Dégâts magiques" : "Dégâts physiques";
+}
+
+function sourceDamage(stats: AbilityTooltipStats, damageType: DamageType): number {
+  return damageType === "magical" ? stats.magicalDamage : stats.physicalDamage;
+}
+
+function abilityPowerMultiplier(stats: AbilityTooltipStats): number {
+  return 1 + Math.max(0, stats.abilityPowerPercent) / 100;
 }
 
 function statLabel(statId: Extract<AbilityMechanic, { readonly kind: "status" }>["statId"]): string {
@@ -56,22 +70,31 @@ function statusDescription(mechanic: Extract<AbilityMechanic, { readonly kind: "
   return `${statLabel(mechanic.statId)} ${value} sur ${target} pendant ${formatNumber(mechanic.duration)} s`;
 }
 
+function scalingSuffix(outputType: DamageType, scalingType: DamageType): string {
+  return outputType === scalingType ? "" : ` (calculés depuis ${sourceDamageLabel(scalingType)})`;
+}
+
 function mechanicDescription(
   definition: ClientAbilityDefinition,
   mechanic: AbilityMechanic,
+  stats: AbilityTooltipStats,
 ): string {
   if (mechanic.kind === "damage") {
     const outputType = mechanic.damageType ?? definition.damageType;
     const scalingType = mechanic.scalingDamageType ?? outputType;
     const hits = Math.max(1, mechanic.hits ?? 1);
-    const totalRatio = 1 + mechanic.ratio;
-    let text = `Inflige ${formatPercent(totalRatio)} de ${sourceDamageLabel(scalingType)} en dégâts ${damageTypeLabel(outputType)}`;
-    if (hits > 1) text += ` au total en ${String(hits)} coups (${formatPercent(totalRatio / hits)} par coup)`;
+    const source = sourceDamage(stats, scalingType);
+    const powerMultiplier = abilityPowerMultiplier(stats);
+    const totalDamage = source * (1 + mechanic.ratio) * powerMultiplier;
+    let text = `Inflige ${formatNumber(totalDamage)} dégâts ${damageTypeLabel(outputType)}${scalingSuffix(outputType, scalingType)}`;
+    if (hits > 1) text += ` au total en ${String(hits)} coups (${formatNumber(totalDamage / hits)} par coup)`;
     if (mechanic.bonusHealthBelow !== undefined) {
-      text += ` ; sous ${formatPercent(mechanic.bonusHealthBelow.ratio)} PV cible : ${formatPercent(totalRatio + mechanic.bonusHealthBelow.bonusRatio)} au total`;
+      const conditionalDamage = source * (1 + mechanic.ratio + mechanic.bonusHealthBelow.bonusRatio) * powerMultiplier;
+      text += ` ; sous ${formatPercent(mechanic.bonusHealthBelow.ratio)} PV cible : ${formatNumber(conditionalDamage)} dégâts au total`;
     }
     if (mechanic.bonusEffect !== undefined) {
-      text += ` ; si l'effet requis est actif : ${formatPercent(totalRatio + mechanic.bonusEffect.bonusRatio)} au total`;
+      const conditionalDamage = source * (1 + mechanic.ratio + mechanic.bonusEffect.bonusRatio) * powerMultiplier;
+      text += ` ; si l'effet requis est actif : ${formatNumber(conditionalDamage)} dégâts au total`;
     }
     return text;
   }
@@ -79,7 +102,8 @@ function mechanicDescription(
   if (mechanic.kind === "bonus_damage") {
     const outputType = mechanic.damageType ?? definition.damageType;
     const scalingType = mechanic.scalingDamageType ?? outputType;
-    return `Ajoute ${formatPercent(mechanic.ratio)} de ${sourceDamageLabel(scalingType)} en dégâts ${damageTypeLabel(outputType)}`;
+    const damage = sourceDamage(stats, scalingType) * mechanic.ratio * abilityPowerMultiplier(stats);
+    return `Ajoute ${formatNumber(damage)} dégâts ${damageTypeLabel(outputType)}${scalingSuffix(outputType, scalingType)}`;
   }
 
   if (mechanic.kind === "heal_from_damage") {
@@ -92,20 +116,37 @@ function mechanicDescription(
   if (mechanic.kind === "dot") {
     const outputType = mechanic.damageType ?? definition.damageType;
     const scalingType = mechanic.scalingDamageType ?? outputType;
-    const totalRatio = mechanic.ratio * mechanic.ticks;
-    return `Inflige ensuite ${formatPercent(mechanic.ratio)} de ${sourceDamageLabel(scalingType)} en dégâts ${damageTypeLabel(outputType)} toutes les ${formatNumber(mechanic.interval)} s pendant ${String(mechanic.ticks)} ticks (${formatPercent(totalRatio)} au total)`;
+    const damagePerTick = sourceDamage(stats, scalingType) * mechanic.ratio * abilityPowerMultiplier(stats);
+    const totalDamage = damagePerTick * mechanic.ticks;
+    return `Inflige ensuite ${formatNumber(damagePerTick)} dégâts ${damageTypeLabel(outputType)}${scalingSuffix(outputType, scalingType)} toutes les ${formatNumber(mechanic.interval)} s pendant ${String(mechanic.ticks)} ticks (${formatNumber(totalDamage)} dégâts au total)`;
   }
 
   if (mechanic.kind === "auto_attack_bonus_window") {
-    return `Pendant ${formatNumber(mechanic.duration)} s, chaque auto-attaque gagne ${formatPercent(mechanic.ratio)} de ${sourceDamageLabel(mechanic.scalingDamageType)} en dégâts ${damageTypeLabel(mechanic.damageType)}`;
+    const bonusDamage = sourceDamage(stats, mechanic.scalingDamageType) * mechanic.ratio;
+    return `Pendant ${formatNumber(mechanic.duration)} s, chaque auto-attaque gagne ${formatNumber(bonusDamage)} dégâts ${damageTypeLabel(mechanic.damageType)}${scalingSuffix(mechanic.damageType, mechanic.scalingDamageType)}`;
   }
 
   return statusDescription(mechanic);
 }
 
-export function describeAbilityMechanics(definition: ClientAbilityDefinition): string {
-  const details = definition.mechanics.mechanics.map((mechanic) => mechanicDescription(definition, mechanic));
+export function describeAbilityMechanics(
+  definition: ClientAbilityDefinition,
+  stats: AbilityTooltipStats,
+): string {
+  const details = definition.mechanics.mechanics.map((mechanic) => mechanicDescription(definition, mechanic, stats));
   return details.length === 0 ? definition.description : `${details.join(". ")}.`;
+}
+
+function getComputedStat(bridge: GameBridge, statId: string): number {
+  return bridge.stats.stats.find((stat) => stat.id === statId)?.computed ?? 0;
+}
+
+function getAbilityTooltipStats(bridge: GameBridge): AbilityTooltipStats {
+  return {
+    physicalDamage: getComputedStat(bridge, "stat_physical_damage"),
+    magicalDamage: getComputedStat(bridge, "stat_magical_damage"),
+    abilityPowerPercent: getComputedStat(bridge, "stat_ability_power"),
+  };
 }
 
 export function syncAbilitiesToBridge(
@@ -128,6 +169,7 @@ export function syncAbilitiesToBridge(
     equippedWeaponId,
     specializationMasteryLevel,
   ).slice(0, 3);
+  const tooltipStats = getAbilityTooltipStats(bridge);
 
   const toViewModel = (slotIndex: number): CombatAbilityVM | null => {
     const definition = definitions[slotIndex];
@@ -138,7 +180,7 @@ export function syncAbilitiesToBridge(
     return {
       id: definition.id,
       name: definition.name,
-      description: describeAbilityMechanics(definition),
+      description: describeAbilityMechanics(definition, tooltipStats),
       icon: definition.icon,
       shortcut: SHORTCUTS[slotIndex] ?? "Q",
       cooldown: definition.cooldown,
