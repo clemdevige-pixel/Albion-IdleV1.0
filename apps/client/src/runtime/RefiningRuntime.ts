@@ -158,6 +158,52 @@ export class RefiningRuntime {
     }
   }
 
+  /** Resolves passive refining time at completion boundaries instead of replaying live ticks. */
+  public resolveBackground(elapsedMs: number, tickIntervalMs: number): void {
+    if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+      throw new Error("Refining background elapsed time must be a finite non-negative number");
+    }
+    if (!Number.isFinite(tickIntervalMs) || tickIntervalMs <= 0) {
+      throw new Error("Refining tick interval must be a finite positive number");
+    }
+
+    const elapsedTicks = Math.floor(elapsedMs / tickIntervalMs);
+    if (elapsedTicks <= 0) return;
+
+    const backgroundStartTick = this.currentTickCounter;
+    const backgroundEndTick = backgroundStartTick + elapsedTicks;
+
+    for (const family of SUPPORTED_REFINING_FAMILIES) {
+      const definition = this.families[family];
+      const state = this.states[family];
+
+      while (state.automatic) {
+        let session = definition.manager.getActiveSession();
+        if (session === undefined) {
+          this.currentTickCounter = backgroundStartTick;
+          if (!this.startRefiningCycle(family, this.getRecipe(family), backgroundStartTick)) break;
+          session = definition.manager.getActiveSession();
+          if (session === undefined) break;
+        }
+
+        const completionTick = session.startTick + session.getRequiredTicks();
+        if (completionTick > backgroundEndTick) {
+          definition.manager.tick(backgroundEndTick);
+          break;
+        }
+
+        this.currentTickCounter = completionTick;
+        definition.manager.tick(completionTick);
+        if (!state.automatic) break;
+
+        const nextSession = definition.manager.getActiveSession();
+        if (nextSession === undefined || nextSession.startTick < completionTick) break;
+      }
+    }
+
+    this.currentTickCounter = backgroundEndTick;
+  }
+
   public getReservedInputs(
     family: ResourceFamily,
   ): readonly ReservedRefiningRequirement[] {
