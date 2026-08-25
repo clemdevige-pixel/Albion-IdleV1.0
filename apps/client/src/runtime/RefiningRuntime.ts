@@ -68,12 +68,75 @@ interface RefiningFamilyState {
   activeRecipe: ProductionRefiningRecipe | undefined;
 }
 
+export interface SavedRefiningSessionV2 {
+  readonly family: SupportedRefiningFamily;
+  readonly tier: ProductionTier;
+  readonly automatic: boolean;
+  readonly elapsedTicks: number;
+  readonly reservedInputs: readonly ReservedRefiningRequirement[];
+}
+
+export interface SavedRefiningPayloadV2 {
+  readonly version: 2;
+  readonly sessions: readonly SavedRefiningSessionV2[];
+}
+
+export interface SavedRefiningRecoveryPayloadV1 {
+  readonly reservedInputs: readonly ReservedRefiningRequirement[];
+}
+
 function isSupportedRefiningFamily(
   family: ResourceFamily,
 ): family is SupportedRefiningFamily {
   return SUPPORTED_REFINING_FAMILIES.includes(
     family as SupportedRefiningFamily,
   );
+}
+
+function isProductionTier(value: unknown): value is ProductionTier {
+  return typeof value === "number"
+    && Number.isInteger(value)
+    && value >= 3
+    && value <= 8;
+}
+
+function isReservedRefiningRequirement(
+  value: unknown,
+): value is ReservedRefiningRequirement {
+  if (value === null || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.itemId === "string" &&
+    typeof candidate.quantity === "number" &&
+    Number.isInteger(candidate.quantity) &&
+    candidate.quantity > 0
+  );
+}
+
+function parseSavedRefiningSession(value: unknown): SavedRefiningSessionV2 | undefined {
+  if (value === null || typeof value !== "object") return undefined;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.family !== "string"
+    || !isSupportedRefiningFamily(candidate.family)
+    || !isProductionTier(candidate.tier)
+    || typeof candidate.automatic !== "boolean"
+    || typeof candidate.elapsedTicks !== "number"
+    || !Number.isInteger(candidate.elapsedTicks)
+    || candidate.elapsedTicks < 0
+    || !Array.isArray(candidate.reservedInputs)
+  ) return undefined;
+
+  const reservedInputs = candidate.reservedInputs.filter(isReservedRefiningRequirement);
+  if (reservedInputs.length !== candidate.reservedInputs.length) return undefined;
+
+  return {
+    family: candidate.family,
+    tier: candidate.tier,
+    automatic: candidate.automatic,
+    elapsedTicks: candidate.elapsedTicks,
+    reservedInputs,
+  };
 }
 
 export class RefiningRuntime {
@@ -230,6 +293,65 @@ export class RefiningRuntime {
     }
   }
 
+  public getPersistenceState(): SavedRefiningPayloadV2 {
+    const sessions: SavedRefiningSessionV2[] = [];
+    for (const family of SUPPORTED_REFINING_FAMILIES) {
+      const session = this.families[family].manager.getActiveSession();
+      const state = this.states[family];
+      if (session === undefined || state.activeRecipe === undefined) continue;
+      const elapsedTicks = Math.max(
+        0,
+        Math.min(
+          session.getRequiredTicks() - 1,
+          this.currentTickCounter - session.startTick,
+        ),
+      );
+      sessions.push({
+        family,
+        tier: state.activeRecipe.tier,
+        automatic: state.automatic,
+        elapsedTicks,
+        reservedInputs: state.reservedInputs.map((input) => ({ ...input })),
+      });
+    }
+    return { version: 2, sessions };
+  }
+
+  public restorePersistenceState(data: SavedRefiningPayloadV2): void {
+    this.resetForPersistenceLoad();
+
+    for (const saved of data.sessions) {
+      const recipe = this.getRecipe(saved.family, saved.tier);
+      const requiredTicks = recipe.durationTicks;
+      const elapsedTicks = Math.min(saved.elapsedTicks, Math.max(0, requiredTicks - 1));
+      const state = this.states[saved.family];
+      const definition = this.families[saved.family];
+
+      state.automatic = saved.automatic;
+      state.reservedInputs = saved.reservedInputs.map((input) => ({ ...input }));
+      state.activeRecipe = recipe;
+
+      const started = definition.manager.startRefining(
+        {
+          recipeId: asRecipeId(recipe.id),
+          stationId: asCraftStationId(recipe.stationId),
+          quantity: recipe.outputQuantity,
+        },
+        {
+          baseRefineTicks: recipe.durationTicks,
+          speedModifier: 1,
+        },
+        this.currentTickCounter - elapsedTicks,
+      );
+
+      if (!started.ok) {
+        state.automatic = false;
+        state.reservedInputs = [];
+        state.activeRecipe = undefined;
+      }
+    }
+  }
+
   public getReservedInputs(
     family: ResourceFamily,
   ): readonly ReservedRefiningRequirement[] {
@@ -261,9 +383,12 @@ export class RefiningRuntime {
    * Persistence load replaces the authoritative production-storage snapshot.
    * Any live sessions belong to the pre-load timeline and must therefore be
    * discarded without refunding their in-memory reservations into the restored
-   * inventory. The save provider will restore the saved reservations exactly once.
+   * inventory.
    */
   public resetForPersistenceLoad(): void {
+    this.backgroundTickOffset = 0;
+    this.backgroundCompletionEvents.clear();
+    this.isResolvingBackground = false;
     for (const family of SUPPORTED_REFINING_FAMILIES) {
       const state = this.states[family];
       state.automatic = false;
@@ -525,23 +650,6 @@ export class RefiningRuntime {
   }
 }
 
-export interface SavedRefiningRecoveryPayload {
-  readonly reservedInputs: readonly ReservedRefiningRequirement[];
-}
-
-function isReservedRefiningRequirement(
-  value: unknown,
-): value is ReservedRefiningRequirement {
-  if (value === null || typeof value !== "object") return false;
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.itemId === "string" &&
-    typeof candidate.quantity === "number" &&
-    Number.isInteger(candidate.quantity) &&
-    candidate.quantity > 0
-  );
-}
-
 export class RefiningSaveProvider implements SaveProvider {
   readonly providerId = "refining";
 
@@ -552,29 +660,38 @@ export class RefiningSaveProvider implements SaveProvider {
   ) {}
 
   save(): unknown {
-    return {
-      reservedInputs: this.refiningRuntime.getAllReservedInputs(),
-    } satisfies SavedRefiningRecoveryPayload;
+    return this.refiningRuntime.getPersistenceState();
   }
 
   load(data: unknown): void {
-    // Loading into an already-running GameProvider must first discard the live
-    // pre-load sessions. Do not refund them: the authoritative inventory has
-    // already been replaced by the persistence snapshot at this point.
-    this.refiningRuntime.resetForPersistenceLoad();
-
     if (
-      data === null ||
-      typeof data !== "object" ||
-      !("reservedInputs" in data)
+      data !== null
+      && typeof data === "object"
+      && "version" in data
+      && data.version === 2
+      && "sessions" in data
+      && Array.isArray(data.sessions)
+    ) {
+      const sessions = data.sessions
+        .map(parseSavedRefiningSession)
+        .filter((session): session is SavedRefiningSessionV2 => session !== undefined);
+      this.refiningRuntime.restorePersistenceState({ version: 2, sessions });
+      return;
+    }
+
+    // Legacy V1 snapshots only tracked reserved inputs. They cannot resume the
+    // original session safely, so keep the established recovery behavior and
+    // return the reservations to production storage exactly once.
+    this.refiningRuntime.resetForPersistenceLoad();
+    if (
+      data === null
+      || typeof data !== "object"
+      || !("reservedInputs" in data)
+      || !Array.isArray(data.reservedInputs)
     ) return;
 
-    const rawReservedInputs: unknown = data.reservedInputs;
-    if (!Array.isArray(rawReservedInputs) || rawReservedInputs.length === 0) return;
-
-    const reservedInputs = rawReservedInputs.filter(isReservedRefiningRequirement);
+    const reservedInputs = data.reservedInputs.filter(isReservedRefiningRequirement);
     const productionStorageId = this.getProductionStorageId();
-
     for (const input of reservedInputs) {
       this.inventoryManager.addQuantity(
         productionStorageId,
