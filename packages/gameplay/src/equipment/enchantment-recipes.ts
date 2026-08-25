@@ -9,11 +9,11 @@ import {
   ENCHANTMENT_SHARD_COSTS,
   ENCHANTMENT_TIER_COST_MULTIPLIERS,
   type AuthoredEnchantmentCostCategory,
-  type AuthoredEnchantmentLevel,
+  type AuthoredEnchantmentTransitionLevel,
 } from "@game/data";
 import type { EnchantmentLevel } from "../inventory/types.js";
 
-export type ActiveEnchantmentLevel = AuthoredEnchantmentLevel;
+export type ActiveEnchantmentLevel = AuthoredEnchantmentTransitionLevel;
 export type EnchantmentCostCategory = AuthoredEnchantmentCostCategory;
 
 export {
