@@ -16,13 +16,13 @@ export const ENCHANTMENT_RESOURCE_TIERS = [4, 5, 6, 7, 8] as const;
 /**
  * Absolute matching-tier shard cost per equipment category and transition.
  * .1-.3 preserve a 500-shard full-loadout budget for both 2H and 1H+off-hand builds.
- * .4 keeps the previous live costs pending its dedicated recalibration.
+ * Weapon .4 is a shared 225-shard Awakening gate regardless of 1H/2H handling.
  */
 export const ENCHANTMENT_SHARD_COSTS: Readonly<
   Record<AuthoredEnchantmentCostCategory, Readonly<Record<AuthoredEnchantmentTransitionLevel, number>>>
 > = {
-  two_handed_weapon: { 1: 20, 2: 50, 3: 105, 4: 100 },
-  one_handed_weapon: { 1: 15, 2: 30, 3: 70, 4: 100 },
+  two_handed_weapon: { 1: 20, 2: 50, 3: 105, 4: 225 },
+  one_handed_weapon: { 1: 15, 2: 30, 3: 70, 4: 225 },
   armor_torso: { 1: 15, 2: 35, 3: 65, 4: 100 },
   armor_head: { 1: 10, 2: 20, 3: 45, 4: 100 },
   armor_boots: { 1: 10, 2: 20, 3: 45, 4: 100 },
