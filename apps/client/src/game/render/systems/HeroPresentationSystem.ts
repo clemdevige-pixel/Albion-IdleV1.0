@@ -14,6 +14,7 @@ export interface HeroPresentationState {
 export class HeroPresentationSystem {
   private readonly animationSystem: ActorAnimationSystem;
   private currentVisualManifestId = "";
+  private currentActorVisual: ActorRenderManifest | undefined;
   private weaponInitialized = false;
   private currentCombatState = "";
   private defeatPresented = false;
@@ -32,17 +33,13 @@ export class HeroPresentationSystem {
     const defeated = state.combatState === "defeat";
 
     if (defeated) {
-      const visualChanged = !this.weaponInitialized
-        || nextVisualManifestId !== this.currentVisualManifestId;
       this.currentVisualManifestId = nextVisualManifestId;
       this.weaponInitialized = true;
-      if (this.defeatPresented && !visualChanged) return;
-
       const actorVisual = this.resolveActorVisual(nextVisualManifestId);
       const deathTexture = this.animationSystem.getDeathTexture(actorVisual);
+
       if (
         !this.defeatPresented
-        || visualChanged
         || this.animationSystem.textureKey !== deathTexture
       ) {
         this.animationSystem.presentDeath(actorVisual);
@@ -78,6 +75,7 @@ export class HeroPresentationSystem {
   }
 
   public clear(): void {
+    this.currentActorVisual = undefined;
     this.animationSystem.clear();
   }
 
@@ -88,8 +86,12 @@ export class HeroPresentationSystem {
   private resolveActorVisual(
     visualManifestId: string | undefined,
   ): ActorRenderManifest {
-    return renderManifestRegistry.requireActor(
-      visualManifestId ?? this.fallbackVisualManifestId,
-    );
+    const resolvedId = visualManifestId ?? this.fallbackVisualManifestId;
+    if (this.currentActorVisual?.id === resolvedId) {
+      return this.currentActorVisual;
+    }
+    const manifest = renderManifestRegistry.requireActor(resolvedId);
+    this.currentActorVisual = manifest;
+    return manifest;
   }
 }
