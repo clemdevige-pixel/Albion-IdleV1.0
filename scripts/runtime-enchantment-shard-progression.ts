@@ -1,5 +1,8 @@
 import { ENCHANTMENT_SHARD_COSTS } from "../packages/gameplay/src/equipment/enchantment-recipes.js";
-import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
+import {
+  resolveEnchantmentItemInfo,
+  resolveEquipmentInfo,
+} from "../apps/client/src/data/itemContentCatalog.js";
 import {
   WORLD_ZONE_IDS_BY_BAND,
   ZONE_DEFINITIONS,
@@ -9,6 +12,7 @@ import { runEnchantmentShardTtkBenchmark } from "../apps/client/src/data/enchant
 type Tier = 4 | 5 | 6 | 7 | 8;
 type BandId = "blue" | "yellow" | "orange" | "red" | "black";
 type Enchantment = 0 | 1 | 2 | 3;
+type Transition = 1 | 2 | 3 | 4;
 
 interface TierConfig {
   readonly band: BandId;
@@ -78,6 +82,12 @@ function equipmentFor(weaponItemId: string, tier: Tier): readonly string[] {
     equipment.push(`item_shield_t${String(tier)}_reinforced`);
   }
   return equipment;
+}
+
+function weaponShardCost(weaponItemId: string, level: Transition): number {
+  const info = resolveEnchantmentItemInfo(weaponItemId);
+  if (info === undefined) throw new Error(`Missing enchantment info for ${weaponItemId}`);
+  return ENCHANTMENT_SHARD_COSTS[info.costCategory][level];
 }
 
 function shortWeaponName(itemId: string): string {
@@ -173,8 +183,8 @@ function main(): void {
         const active = bestFarmCandidate(tier, zoneIndex, weaponItemId, loadout, true);
         const afkRate = afk?.shardsPerHour ?? 0;
         const activeRate = active?.shardsPerHour ?? 0;
-        const nextLevel = Math.min(4, loadout.enchantment + 1) as 1 | 2 | 3 | 4;
-        const nextCost = ENCHANTMENT_SHARD_COSTS[nextLevel];
+        const nextLevel = Math.min(4, loadout.enchantment + 1) as Transition;
+        const nextCost = weaponShardCost(weaponItemId, nextLevel);
 
         detailRows.push({
           tier,
@@ -192,10 +202,10 @@ function main(): void {
           nextCost,
           afkNextTime: fmtHours(hoursFor(nextCost, afkRate)),
           activeNextTime: fmtHours(hoursFor(nextCost, activeRate)),
-          afkTo1: fmtHours(hoursFor(ENCHANTMENT_SHARD_COSTS[1], afkRate)),
-          afkTo2: fmtHours(hoursFor(ENCHANTMENT_SHARD_COSTS[2], afkRate)),
-          afkTo3: fmtHours(hoursFor(ENCHANTMENT_SHARD_COSTS[3], afkRate)),
-          afkTo4: fmtHours(hoursFor(ENCHANTMENT_SHARD_COSTS[4], afkRate)),
+          afkTo1: fmtHours(hoursFor(weaponShardCost(weaponItemId, 1), afkRate)),
+          afkTo2: fmtHours(hoursFor(weaponShardCost(weaponItemId, 2), afkRate)),
+          afkTo3: fmtHours(hoursFor(weaponShardCost(weaponItemId, 3), afkRate)),
+          afkTo4: fmtHours(hoursFor(weaponShardCost(weaponItemId, 4), afkRate)),
         });
       }
     }
@@ -211,24 +221,28 @@ function main(): void {
       const rows = detailRows.filter((row) => row.tier === tier && row.targetZone === zone);
       const afkRates = rows.map((row) => Number(row.afkShardsH)).filter((rate) => rate > 0);
       const activeRates = rows.map((row) => Number(row.activeShardsH)).filter((rate) => rate > 0);
-      const nextLevel = Math.min(4, loadout.enchantment + 1) as 1 | 2 | 3 | 4;
-      const nextCost = ENCHANTMENT_SHARD_COSTS[nextLevel];
-      const afkMedian = median(afkRates);
-      const activeMedian = median(activeRates);
+      const costs = rows.map((row) => Number(row.nextCost));
+      const afkTimes = rows
+        .map((row) => hoursFor(Number(row.nextCost), Number(row.afkShardsH)))
+        .filter((value): value is number => value !== null);
+      const activeTimes = rows
+        .map((row) => hoursFor(Number(row.nextCost), Number(row.activeShardsH)))
+        .filter((value): value is number => value !== null);
 
       return {
         tier,
         band,
         zone,
         gear: `T${tier}.${loadout.enchantment}`,
-        nextStep: `.${loadout.enchantment}->.${nextLevel}`,
-        shardCost: nextCost,
+        nextStep: `.${loadout.enchantment}->.${Math.min(4, loadout.enchantment + 1)}`,
+        shardCostMin: Math.min(...costs),
+        shardCostMax: Math.max(...costs),
         afkFarmableWeapons: `${afkRates.length}/5`,
-        medianAfkShardsH: Number(afkMedian.toFixed(2)),
-        medianAfkTime: fmtHours(hoursFor(nextCost, afkMedian)),
+        medianAfkShardsH: Number(median(afkRates).toFixed(2)),
+        medianAfkTime: fmtHours(median(afkTimes)),
         activeFarmableWeapons: `${activeRates.length}/5`,
-        medianActiveShardsH: Number(activeMedian.toFixed(2)),
-        medianActiveTime: fmtHours(hoursFor(nextCost, activeMedian)),
+        medianActiveShardsH: Number(median(activeRates).toFixed(2)),
+        medianActiveTime: fmtHours(median(activeTimes)),
       };
     });
   });
@@ -236,7 +250,7 @@ function main(): void {
   console.log("[ENCHANTMENT_SHARD_T4_T8_REFERENCE]");
   console.log({
     costs: ENCHANTMENT_SHARD_COSTS,
-    note: "T5-T8 use the same authored shard-weight curve. Rates differ only through live runtime TTK and farmability. AFK means no potion; active allows the live potion policy.",
+    note: "Shard costs are authored by equipment category. T5-T8 use the same category table; rates differ through live runtime TTK and farmability.",
   });
 
   console.log("[ENCHANTMENT_SHARD_T4_T8_ZONE_SUMMARY]");
