@@ -34,6 +34,39 @@ export class PlayerInventoryManager extends InventoryManager {
   }
 
   /**
+   * Atomically credits a stackable item across the owner's accessible storages.
+   * Storage order is authoritative: inventory first, then linked storages.
+   * If the complete quantity cannot be stored, every partial write is rolled back.
+   */
+  public addAccessibleQuantity(ownerId: EntityId, itemId: string, quantity: number): boolean {
+    if (!Number.isInteger(quantity) || quantity <= 0) return false;
+
+    let remaining = quantity;
+    const credited: { ownerId: EntityId; quantity: number }[] = [];
+
+    for (const storageOwnerId of this.getAccessibleStorageOwners(ownerId)) {
+      if (remaining <= 0) break;
+      const added = this.addQuantity(storageOwnerId, itemId, remaining);
+      if (!added.ok) continue;
+
+      if (added.value.added > 0) {
+        credited.push({ ownerId: storageOwnerId, quantity: added.value.added });
+        remaining = added.value.remainder;
+      }
+    }
+
+    if (remaining === 0) return true;
+
+    for (const entry of [...credited].reverse()) {
+      const removed = this.removeQuantity(entry.ownerId, itemId, entry.quantity);
+      if (!removed.ok) {
+        throw new Error("Accessible inventory credit rollback failed");
+      }
+    }
+    return false;
+  }
+
+  /**
    * Atomically consumes a stackable item from the owner's accessible storages.
    * Storage order is authoritative: inventory first, then linked storages.
    */
