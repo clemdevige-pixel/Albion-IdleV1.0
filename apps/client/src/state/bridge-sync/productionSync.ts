@@ -11,11 +11,10 @@ import {
   canCraftWithPlayerStorage,
   getPlayerCraftRequirementQuantity,
 } from "../../runtime/CraftingRuntime.js";
-import type { PlayerInventoryManager } from "../../runtime/PlayerInventoryManager.js";
 
 export function syncCraftingToBridge(
   bridge: GameBridge,
-  inventoryManager: PlayerInventoryManager,
+  inventoryManager: InventoryManager,
   heroId: EntityId,
   productionStorageId: EntityId,
   productionTier: ProductionTier,
@@ -81,7 +80,12 @@ export function syncCraftingToBridge(
       plankItemId: plankRequirement?.itemId ?? "",
       barItemId: barRequirement?.itemId ?? "",
       requirements,
-      craftedQuantity: inventoryManager.getAccessibleQuantity(heroId, recipe.outputItemId),
+      craftedQuantity: getPlayerCraftRequirementQuantity(
+        inventoryManager,
+        heroId,
+        productionStorageId,
+        recipe.outputItemId,
+      ),
       canCraft,
       ...(canCraft ? {} : {
         blockedReason: missingRequirement === undefined
