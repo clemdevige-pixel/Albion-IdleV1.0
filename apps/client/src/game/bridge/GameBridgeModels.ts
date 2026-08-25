@@ -20,6 +20,52 @@ export interface ActiveEffectDisplay {
   readonly remainingDuration: number;
 }
 
+export type CombatAbilityDetailVM =
+  | {
+      readonly kind: "damage";
+      readonly amount: number;
+      readonly damageType: "physical" | "magical";
+      readonly hits: number;
+      readonly amountPerHit: number;
+      readonly conditionalAmounts: readonly (
+        | { readonly kind: "health_below"; readonly thresholdRatio: number; readonly amount: number }
+        | { readonly kind: "effect_active"; readonly effectId: string; readonly amount: number }
+      )[];
+    }
+  | {
+      readonly kind: "bonus_damage";
+      readonly amount: number;
+      readonly damageType: "physical" | "magical";
+    }
+  | {
+      readonly kind: "heal_from_damage";
+      readonly ratio: number;
+      readonly maxHealthRatio?: number;
+    }
+  | {
+      readonly kind: "status";
+      readonly target: "enemy" | "self";
+      readonly effectType: "buff" | "debuff" | "stun" | "silence";
+      readonly duration: number;
+      readonly statId?: "stat_armor" | "stat_magic_resistance" | "stat_auto_attack_damage_taken_bonus" | "stat_attack_speed" | "stat_damage_taken_bonus";
+      readonly statDelta?: number;
+      readonly modifierType?: "flat" | "percent" | "multiplier";
+    }
+  | {
+      readonly kind: "dot";
+      readonly amountPerTick: number;
+      readonly totalAmount: number;
+      readonly interval: number;
+      readonly ticks: number;
+      readonly damageType: "physical" | "magical";
+    }
+  | {
+      readonly kind: "auto_attack_bonus_window";
+      readonly amountPerAttack: number;
+      readonly duration: number;
+      readonly damageType: "physical" | "magical";
+    };
+
 export interface CombatAbilityVM {
   readonly id: string;
   readonly name: string;
@@ -30,6 +76,7 @@ export interface CombatAbilityVM {
   readonly cooldownRemaining: number;
   readonly isReady: boolean;
   readonly autoCast: boolean;
+  readonly details: readonly CombatAbilityDetailVM[];
 }
 
 export interface CombatAbilitiesVM {
