@@ -18,6 +18,76 @@ export type CraftEquipmentResult =
       readonly ok: false;
     };
 
+export interface PlayerCraftRequirement {
+  readonly itemId: string;
+  readonly quantity: number;
+}
+
+export function getPlayerCraftRequirementQuantity(
+  inventoryManager: PlayerInventoryManager,
+  heroId: EntityId,
+  productionStorageId: EntityId,
+  itemId: string,
+): number {
+  return isProductionMaterial(itemId)
+    ? inventoryManager.getTotalQuantity(productionStorageId, itemId)
+    : inventoryManager.getAccessibleQuantity(heroId, itemId);
+}
+
+/**
+ * Player crafting treats Inventory + Bank as one logical possession space while
+ * the island Production Storage remains a separate authored material store.
+ * The dry-run also accounts for player-storage slots that inputs will free.
+ */
+export function canCraftWithPlayerStorage(
+  inventoryManager: PlayerInventoryManager,
+  heroId: EntityId,
+  productionStorageId: EntityId,
+  requirements: readonly PlayerCraftRequirement[],
+  outputItemId: string,
+  outputQuantity = 1,
+): boolean {
+  if (!Number.isInteger(outputQuantity) || outputQuantity <= 0) return false;
+  for (const requirement of requirements) {
+    if (
+      getPlayerCraftRequirementQuantity(
+        inventoryManager,
+        heroId,
+        productionStorageId,
+        requirement.itemId,
+      ) < requirement.quantity
+    ) return false;
+  }
+
+  const accessibleOwners = inventoryManager.getAccessibleStorageOwners(heroId);
+  const freedByOwner = new Map<EntityId, Set<number>>();
+  for (const ownerId of accessibleOwners) freedByOwner.set(ownerId, new Set());
+
+  for (const requirement of requirements) {
+    if (isProductionMaterial(requirement.itemId)) continue;
+    let remaining = requirement.quantity;
+    for (const ownerId of accessibleOwners) {
+      if (remaining <= 0) break;
+      for (const slot of inventoryManager.findEntriesByItemId(ownerId, requirement.itemId)) {
+        if (remaining <= 0) break;
+        const entry = slot.entry;
+        if (entry === undefined) continue;
+        const consumed = Math.min(entry.quantity, remaining);
+        if (consumed === entry.quantity) freedByOwner.get(ownerId)?.add(slot.position);
+        remaining -= consumed;
+      }
+    }
+  }
+
+  return accessibleOwners.some((ownerId) => inventoryManager.canAcceptQuantity(
+    ownerId,
+    outputItemId,
+    outputQuantity,
+    0,
+    [...(freedByOwner.get(ownerId) ?? [])],
+  ));
+}
+
 export interface CraftingRuntimeDependencies {
   readonly inventoryManager: PlayerInventoryManager;
   readonly heroId: EntityId;
@@ -51,7 +121,16 @@ export class CraftingRuntime {
 
   public craftEquipment(outputItemId: string): CraftEquipmentResult {
     const recipe = this.recipes.find((entry) => entry.outputItemId === outputItemId);
-    if (recipe === undefined || !this.hasRequirements(recipe.requirements)) return { ok: false };
+    if (
+      recipe === undefined
+      || !canCraftWithPlayerStorage(
+        this.inventoryManager,
+        this.heroId,
+        this.productionStorageId,
+        recipe.requirements,
+        recipe.outputItemId,
+      )
+    ) return { ok: false };
 
     const paid: { itemId: string; quantity: number }[] = [];
     for (const requirement of recipe.requirements) {
@@ -97,15 +176,6 @@ export class CraftingRuntime {
       outputItemId: recipe.outputItemId,
       itemPower: itemPower ?? 0,
     };
-  }
-
-  private hasRequirements(requirements: readonly { itemId: string; quantity: number }[]): boolean {
-    return requirements.every((requirement) => {
-      const available = isProductionMaterial(requirement.itemId)
-        ? this.inventoryManager.getTotalQuantity(this.productionStorageId, requirement.itemId)
-        : this.inventoryManager.getAccessibleQuantity(this.heroId, requirement.itemId);
-      return available >= requirement.quantity;
-    });
   }
 
   private addOutputToAccessibleStorage(
