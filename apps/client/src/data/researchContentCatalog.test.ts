@@ -103,7 +103,7 @@ describe("Academy research content", () => {
   it("authors the discovery-driven T4 enchantment Research", () => {
     const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.enchantmentStudy);
     expect(definition?.tier).toBe(4);
-    expect(definition?.durationMs).toBe(30 * 60 * 1000);
+    expect(definition?.durationMs).toBe(10 * 60 * 1000);
     expect(definition?.cost).toEqual({ silver: 5_000, materials: [] });
     expect(definition?.requirements).toContainEqual({ type: "academy_tier", minimumTier: 4 });
     expect(definition?.requirements).toContainEqual({ type: "enchantment_shard_discovered" });
