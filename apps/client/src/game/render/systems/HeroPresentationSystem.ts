@@ -32,13 +32,17 @@ export class HeroPresentationSystem {
     const defeated = state.combatState === "defeat";
 
     if (defeated) {
+      const visualChanged = !this.weaponInitialized
+        || nextVisualManifestId !== this.currentVisualManifestId;
       this.currentVisualManifestId = nextVisualManifestId;
       this.weaponInitialized = true;
+      if (this.defeatPresented && !visualChanged) return;
+
       const actorVisual = this.resolveActorVisual(nextVisualManifestId);
       const deathTexture = this.animationSystem.getDeathTexture(actorVisual);
-
       if (
         !this.defeatPresented
+        || visualChanged
         || this.animationSystem.textureKey !== deathTexture
       ) {
         this.animationSystem.presentDeath(actorVisual);
