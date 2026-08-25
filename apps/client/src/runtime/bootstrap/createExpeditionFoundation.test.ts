@@ -125,8 +125,18 @@ describe("createExpeditionFoundation", () => {
       inventoryManager,
     } = createFoundation([RESEARCH_UNLOCK_IDS.silverExpeditionTier4]);
 
-    for (let index = 0; index < 8; index += 1) {
-      const result = inventoryManager.addQuantity(heroId, `test_filler_${String(index)}`, 1);
+    const fillerItemIds = [
+      getEnchantmentShardItemId(5),
+      getEnchantmentShardItemId(6),
+      getEnchantmentShardItemId(7),
+      getEnchantmentShardItemId(8),
+      getFactionRuneItemId(4),
+      getDungeonKeyFragmentItemId(4),
+      getDungeonKeyItemId(4),
+      getFactionRuneItemId(5),
+    ];
+    for (const itemId of fillerItemIds) {
+      const result = inventoryManager.addQuantity(heroId, itemId, 1);
       expect(result.ok).toBe(true);
     }
 
