@@ -1,53 +1,191 @@
 import {
-  WEAPON_ITEM_DEFINITIONS, getWeaponSpecializationName, resolveWeaponCraftRule, resolveWeaponFamilyId, resolveWeaponTier, type WeaponCraftMaterial,
+  ABYSSAL_LEATHER_RECIPE,
+  ASHEN_PLANK_RECIPE,
+  AUTHORED_REFINING_RECIPES,
+  BIRCH_PLANK_RECIPE,
+  BLOODOAK_PLANK_RECIPE,
+  CEDAR_PLANK_RECIPE,
+  COPPER_BAR_RECIPE,
+  EBONY_PLANK_RECIPE,
+  FINE_CLOTH_RECIPE,
+  HARDENED_LEATHER_RECIPE,
+  HEAVY_LEATHER_RECIPE,
+  IRON_BAR_RECIPE,
+  LINEN_CLOTH_RECIPE,
+  METEORITE_BAR_RECIPE,
+  OBSIDIAN_BAR_RECIPE,
+  ORNATE_CLOTH_RECIPE,
+  PINE_PLANK_RECIPE,
+  REINFORCED_LEATHER_RECIPE,
+  RUNITE_BAR_RECIPE,
+  SCARLET_CLOTH_RECIPE,
+  SOLAR_CLOTH_RECIPE,
+  STURDY_LEATHER_RECIPE,
+  THICK_LEATHER_RECIPE,
+  TITANIUM_BAR_RECIPE,
+  VOID_CLOTH_RECIPE,
+  type AuthoredRefiningRecipe,
+  type ProductionTier,
+} from "@game/data";
+import {
+  WEAPON_ITEM_DEFINITIONS,
+  getWeaponSpecializationName,
+  resolveWeaponCraftRule,
+  resolveWeaponFamilyId,
+  resolveWeaponTier,
+  type WeaponCraftMaterial,
 } from "./weaponContentCatalog.js";
-import { PROGRESSION_EQUIPMENT_CONTENT, type EquipmentCraftMaterial } from "./nonWeaponEquipmentContentCatalog.js";
-import type { ProductionFamilyId, ProductionTier } from "./productionFamilyCatalog.js";
+import {
+  PROGRESSION_EQUIPMENT_CONTENT,
+  type EquipmentCraftMaterial,
+} from "./nonWeaponEquipmentContentCatalog.js";
+import type { ProductionFamilyId } from "./productionFamilyCatalog.js";
 
-export const BIRCH_PLANK_RECIPE = { id: "recipe_refine_birch_planks_t3", name: "Planches de bouleau", tier: 3, rawItemId: "item_resource_wood_t3", requirements: [{ itemId: "item_resource_wood_t3", quantity: 4 }], outputItemId: "item_refined_planks_t3", outputQuantity: 1, durationTicks: 6, stationId: "station_lumbermill_t3" } as const;
-export const COPPER_BAR_RECIPE = { id: "recipe_refine_copper_bars_t3", name: "Lingots de cuivre", tier: 3, rawItemId: "item_resource_copper_ore_t3", requirements: [{ itemId: "item_resource_copper_ore_t3", quantity: 4 }], outputItemId: "item_refined_copper_bar_t3", outputQuantity: 1, durationTicks: 6, stationId: "station_smelter_t3" } as const;
-export const PINE_PLANK_RECIPE = { id: "recipe_refine_pine_planks_t4", name: "Planches de pin", tier: 4, rawItemId: "item_resource_wood_t4", requirements: [{ itemId: "item_resource_wood_t4", quantity: 2 }, { itemId: "item_refined_planks_t3", quantity: 1 }], outputItemId: "item_refined_planks_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_lumbermill_t4" } as const;
-export const IRON_BAR_RECIPE = { id: "recipe_refine_iron_bars_t4", name: "Lingots de fer", tier: 4, rawItemId: "item_resource_ore_t4", requirements: [{ itemId: "item_resource_ore_t4", quantity: 2 }, { itemId: "item_refined_copper_bar_t3", quantity: 1 }], outputItemId: "item_refined_metal_bar_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_smelter_t4" } as const;
-export const STURDY_LEATHER_RECIPE = { id: "recipe_refine_sturdy_leather_t3", name: "Cuir robuste", tier: 3, rawItemId: "item_resource_hide_t3", requirements: [{ itemId: "item_resource_hide_t3", quantity: 4 }], outputItemId: "item_refined_leather_t3", outputQuantity: 1, durationTicks: 6, stationId: "station_tannery_t3" } as const;
-export const LINEN_CLOTH_RECIPE = { id: "recipe_refine_linen_cloth_t3", name: "Tissu de lin", tier: 3, rawItemId: "item_resource_fiber_t3", requirements: [{ itemId: "item_resource_fiber_t3", quantity: 4 }], outputItemId: "item_refined_cloth_t3", outputQuantity: 1, durationTicks: 6, stationId: "station_loom_t3" } as const;
-export const THICK_LEATHER_RECIPE = { id: "recipe_refine_thick_leather_t4", name: "Cuir épais", tier: 4, rawItemId: "item_resource_hide_t4", requirements: [{ itemId: "item_resource_hide_t4", quantity: 2 }, { itemId: "item_refined_leather_t3", quantity: 1 }], outputItemId: "item_refined_leather_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_tannery_t4" } as const;
-export const FINE_CLOTH_RECIPE = { id: "recipe_refine_fine_cloth_t4", name: "Tissu fin", tier: 4, rawItemId: "item_resource_fiber_t4", requirements: [{ itemId: "item_resource_fiber_t4", quantity: 2 }, { itemId: "item_refined_cloth_t3", quantity: 1 }], outputItemId: "item_refined_cloth_t4", outputQuantity: 1, durationTicks: 8, stationId: "station_loom_t4" } as const;
-export const CEDAR_PLANK_RECIPE = { id: "recipe_refine_cedar_planks_t5", name: "Planches de cèdre", tier: 5, rawItemId: "item_resource_wood_t5", requirements: [{ itemId: "item_resource_wood_t5", quantity: 2 }, { itemId: "item_refined_planks_t4", quantity: 1 }], outputItemId: "item_refined_planks_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_lumbermill_t5" } as const;
-export const TITANIUM_BAR_RECIPE = { id: "recipe_refine_titanium_bars_t5", name: "Lingots de titane", tier: 5, rawItemId: "item_resource_ore_t5", requirements: [{ itemId: "item_resource_ore_t5", quantity: 2 }, { itemId: "item_refined_metal_bar_t4", quantity: 1 }], outputItemId: "item_refined_metal_bar_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_smelter_t5" } as const;
-export const HEAVY_LEATHER_RECIPE = { id: "recipe_refine_heavy_leather_t5", name: "Cuir lourd", tier: 5, rawItemId: "item_resource_hide_t5", requirements: [{ itemId: "item_resource_hide_t5", quantity: 2 }, { itemId: "item_refined_leather_t4", quantity: 1 }], outputItemId: "item_refined_leather_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_tannery_t5" } as const;
-export const ORNATE_CLOTH_RECIPE = { id: "recipe_refine_ornate_cloth_t5", name: "Tissu orné", tier: 5, rawItemId: "item_resource_fiber_t5", requirements: [{ itemId: "item_resource_fiber_t5", quantity: 2 }, { itemId: "item_refined_cloth_t4", quantity: 1 }], outputItemId: "item_refined_cloth_t5", outputQuantity: 1, durationTicks: 10, stationId: "station_loom_t5" } as const;
-export const BLOODOAK_PLANK_RECIPE = { id: "recipe_refine_bloodoak_planks_t6", name: "Planches de chêne sanglant", tier: 6, rawItemId: "item_resource_wood_t6", requirements: [{ itemId: "item_resource_wood_t6", quantity: 2 }, { itemId: "item_refined_planks_t5", quantity: 1 }], outputItemId: "item_refined_planks_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_lumbermill_t6" } as const;
-export const RUNITE_BAR_RECIPE = { id: "recipe_refine_runite_bars_t6", name: "Lingots de runite", tier: 6, rawItemId: "item_resource_ore_t6", requirements: [{ itemId: "item_resource_ore_t6", quantity: 2 }, { itemId: "item_refined_metal_bar_t5", quantity: 1 }], outputItemId: "item_refined_metal_bar_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_smelter_t6" } as const;
-export const REINFORCED_LEATHER_RECIPE = { id: "recipe_refine_reinforced_leather_t6", name: "Cuir renforcé", tier: 6, rawItemId: "item_resource_hide_t6", requirements: [{ itemId: "item_resource_hide_t6", quantity: 2 }, { itemId: "item_refined_leather_t5", quantity: 1 }], outputItemId: "item_refined_leather_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_tannery_t6" } as const;
-export const SCARLET_CLOTH_RECIPE = { id: "recipe_refine_scarlet_cloth_t6", name: "Tissu écarlate", tier: 6, rawItemId: "item_resource_fiber_t6", requirements: [{ itemId: "item_resource_fiber_t6", quantity: 2 }, { itemId: "item_refined_cloth_t5", quantity: 1 }], outputItemId: "item_refined_cloth_t6", outputQuantity: 1, durationTicks: 12, stationId: "station_loom_t6" } as const;
-export const ASHEN_PLANK_RECIPE = { id: "recipe_refine_ashen_planks_t7", name: "Planches cendrées", tier: 7, rawItemId: "item_resource_wood_t7", requirements: [{ itemId: "item_resource_wood_t7", quantity: 2 }, { itemId: "item_refined_planks_t6", quantity: 1 }], outputItemId: "item_refined_planks_t7", outputQuantity: 1, durationTicks: 14, stationId: "station_lumbermill_t7" } as const;
-export const METEORITE_BAR_RECIPE = { id: "recipe_refine_meteorite_bars_t7", name: "Lingots de météorite", tier: 7, rawItemId: "item_resource_ore_t7", requirements: [{ itemId: "item_resource_ore_t7", quantity: 2 }, { itemId: "item_refined_metal_bar_t6", quantity: 1 }], outputItemId: "item_refined_metal_bar_t7", outputQuantity: 1, durationTicks: 14, stationId: "station_smelter_t7" } as const;
-export const HARDENED_LEATHER_RECIPE = { id: "recipe_refine_hardened_leather_t7", name: "Cuir durci", tier: 7, rawItemId: "item_resource_hide_t7", requirements: [{ itemId: "item_resource_hide_t7", quantity: 2 }, { itemId: "item_refined_leather_t6", quantity: 1 }], outputItemId: "item_refined_leather_t7", outputQuantity: 1, durationTicks: 14, stationId: "station_tannery_t7" } as const;
-export const SOLAR_CLOTH_RECIPE = { id: "recipe_refine_solar_cloth_t7", name: "Tissu solaire", tier: 7, rawItemId: "item_resource_fiber_t7", requirements: [{ itemId: "item_resource_fiber_t7", quantity: 2 }, { itemId: "item_refined_cloth_t6", quantity: 1 }], outputItemId: "item_refined_cloth_t7", outputQuantity: 1, durationTicks: 14, stationId: "station_loom_t7" } as const;
-export const EBONY_PLANK_RECIPE = { id: "recipe_refine_ebony_planks_t8", name: "Planches d'ébène noir", tier: 8, rawItemId: "item_resource_wood_t8", requirements: [{ itemId: "item_resource_wood_t8", quantity: 2 }, { itemId: "item_refined_planks_t7", quantity: 1 }], outputItemId: "item_refined_planks_t8", outputQuantity: 1, durationTicks: 16, stationId: "station_lumbermill_t8" } as const;
-export const OBSIDIAN_BAR_RECIPE = { id: "recipe_refine_obsidian_bars_t8", name: "Lingots d'obsidienne", tier: 8, rawItemId: "item_resource_ore_t8", requirements: [{ itemId: "item_resource_ore_t8", quantity: 2 }, { itemId: "item_refined_metal_bar_t7", quantity: 1 }], outputItemId: "item_refined_metal_bar_t8", outputQuantity: 1, durationTicks: 16, stationId: "station_smelter_t8" } as const;
-export const ABYSSAL_LEATHER_RECIPE = { id: "recipe_refine_abyssal_leather_t8", name: "Cuir abyssal", tier: 8, rawItemId: "item_resource_hide_t8", requirements: [{ itemId: "item_resource_hide_t8", quantity: 2 }, { itemId: "item_refined_leather_t7", quantity: 1 }], outputItemId: "item_refined_leather_t8", outputQuantity: 1, durationTicks: 16, stationId: "station_tannery_t8" } as const;
-export const VOID_CLOTH_RECIPE = { id: "recipe_refine_void_cloth_t8", name: "Tissu du Néant", tier: 8, rawItemId: "item_resource_fiber_t8", requirements: [{ itemId: "item_resource_fiber_t8", quantity: 2 }, { itemId: "item_refined_cloth_t7", quantity: 1 }], outputItemId: "item_refined_cloth_t8", outputQuantity: 1, durationTicks: 16, stationId: "station_loom_t8" } as const;
+export {
+  ABYSSAL_LEATHER_RECIPE,
+  ASHEN_PLANK_RECIPE,
+  BIRCH_PLANK_RECIPE,
+  BLOODOAK_PLANK_RECIPE,
+  CEDAR_PLANK_RECIPE,
+  COPPER_BAR_RECIPE,
+  EBONY_PLANK_RECIPE,
+  FINE_CLOTH_RECIPE,
+  HARDENED_LEATHER_RECIPE,
+  HEAVY_LEATHER_RECIPE,
+  IRON_BAR_RECIPE,
+  LINEN_CLOTH_RECIPE,
+  METEORITE_BAR_RECIPE,
+  OBSIDIAN_BAR_RECIPE,
+  ORNATE_CLOTH_RECIPE,
+  PINE_PLANK_RECIPE,
+  REINFORCED_LEATHER_RECIPE,
+  RUNITE_BAR_RECIPE,
+  SCARLET_CLOTH_RECIPE,
+  SOLAR_CLOTH_RECIPE,
+  STURDY_LEATHER_RECIPE,
+  THICK_LEATHER_RECIPE,
+  TITANIUM_BAR_RECIPE,
+  VOID_CLOTH_RECIPE,
+};
 
-export interface ProductionRefiningRecipe { readonly id: string; readonly name: string; readonly tier: ProductionTier; readonly rawItemId: string; readonly requirements: readonly { readonly itemId: string; readonly quantity: number }[]; readonly outputItemId: string; readonly outputQuantity: number; readonly durationTicks: number; readonly stationId: string; }
-const PRODUCTION_REFINING_RECIPES = {
-  wood: { 3: BIRCH_PLANK_RECIPE, 4: PINE_PLANK_RECIPE, 5: CEDAR_PLANK_RECIPE, 6: BLOODOAK_PLANK_RECIPE, 7: ASHEN_PLANK_RECIPE, 8: EBONY_PLANK_RECIPE },
-  ore: { 3: COPPER_BAR_RECIPE, 4: IRON_BAR_RECIPE, 5: TITANIUM_BAR_RECIPE, 6: RUNITE_BAR_RECIPE, 7: METEORITE_BAR_RECIPE, 8: OBSIDIAN_BAR_RECIPE },
-  hide: { 3: STURDY_LEATHER_RECIPE, 4: THICK_LEATHER_RECIPE, 5: HEAVY_LEATHER_RECIPE, 6: REINFORCED_LEATHER_RECIPE, 7: HARDENED_LEATHER_RECIPE, 8: ABYSSAL_LEATHER_RECIPE },
-  fiber: { 3: LINEN_CLOTH_RECIPE, 4: FINE_CLOTH_RECIPE, 5: ORNATE_CLOTH_RECIPE, 6: SCARLET_CLOTH_RECIPE, 7: SOLAR_CLOTH_RECIPE, 8: VOID_CLOTH_RECIPE },
-} as const satisfies Record<ProductionFamilyId, Partial<Record<ProductionTier, ProductionRefiningRecipe>>>;
-export function getProductionRefiningRecipe(family: ProductionFamilyId, tier: ProductionTier): ProductionRefiningRecipe { const recipes = PRODUCTION_REFINING_RECIPES[family] as Readonly<Partial<Record<ProductionTier, ProductionRefiningRecipe>>>; const recipe = recipes[tier]; if (recipe === undefined) throw new Error(`Refining content missing for ${family} T${String(tier)}`); return recipe; }
-export function getWoodRecipe(tier: ProductionTier): ProductionRefiningRecipe { return getProductionRefiningRecipe("wood", tier); }
-export function getMetalRecipe(tier: ProductionTier): ProductionRefiningRecipe { return getProductionRefiningRecipe("ore", tier); }
-export function getLeatherRecipe(tier: ProductionTier): ProductionRefiningRecipe { return getProductionRefiningRecipe("hide", tier); }
-export function getClothRecipe(tier: ProductionTier): ProductionRefiningRecipe { return getProductionRefiningRecipe("fiber", tier); }
-const MATERIAL_ITEM_BY_KIND = { wood: (tier: ProductionTier) => getWoodRecipe(tier).outputItemId, metal: (tier: ProductionTier) => getMetalRecipe(tier).outputItemId, leather: (tier: ProductionTier) => getLeatherRecipe(tier).outputItemId, cloth: (tier: ProductionTier) => getClothRecipe(tier).outputItemId } as const;
-function materialRequirement(material: WeaponCraftMaterial | EquipmentCraftMaterial, tier: ProductionTier) { return { itemId: MATERIAL_ITEM_BY_KIND[material.kind](tier), quantity: material.quantity }; }
-function createStandardWeaponRecipe(itemId: string) { const tier = resolveWeaponTier(itemId); const craft = resolveWeaponCraftRule(itemId); const family = resolveWeaponFamilyId(itemId); const name = getWeaponSpecializationName(itemId); if (tier === undefined || craft?.kind !== "standard" || family === undefined || name === undefined) return undefined; const requirements: Array<{ itemId: string; quantity: number }> = craft.materials.map((material) => materialRequirement(material, tier)); return { id: `CRAFT_${itemId.replace("item_weapon_", "").toUpperCase()}_0`, family, name: `${name} T${String(tier)}`, tier, outputItemId: itemId, durationTicks: 0, requirements }; }
-export const STANDARD_WEAPON_CRAFT_RECIPES = Object.keys(WEAPON_ITEM_DEFINITIONS).map(createStandardWeaponRecipe).filter((recipe): recipe is NonNullable<typeof recipe> => recipe !== undefined);
-function createProgressionEquipmentRecipe(family: (typeof PROGRESSION_EQUIPMENT_CONTENT)[number], item: (typeof PROGRESSION_EQUIPMENT_CONTENT)[number]["items"][number]) { const requirements: Array<{ itemId: string; quantity: number }> = item.craftMaterials.map((material) => materialRequirement(material, item.tier)); return { id: item.recipeId, family: family.recipeFamily, name: item.name, tier: item.tier, outputItemId: item.itemId, durationTicks: 0, requirements }; }
-export const STANDARD_NON_WEAPON_CRAFT_RECIPES = PROGRESSION_EQUIPMENT_CONTENT.flatMap((family) => family.items.map((item) => createProgressionEquipmentRecipe(family, item)));
-export const REINFORCED_SHIELD_RECIPE = STANDARD_NON_WEAPON_CRAFT_RECIPES.find((recipe) => recipe.outputItemId === "item_shield_t3_reinforced");
-if (REINFORCED_SHIELD_RECIPE === undefined) throw new Error("Missing T3 reinforced shield recipe");
-export const BADON_TEMPORARY_RECIPE = { id: "CRAFT_BADON_T4_0", family: "bow", name: "Badon T4", tier: 4, outputItemId: "item_weapon_bow_t4_badon", durationTicks: 0, requirements: [{ itemId: PINE_PLANK_RECIPE.outputItemId, quantity: 8 }, { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 4 }, { itemId: FINE_CLOTH_RECIPE.outputItemId, quantity: 2 }] } as const;
-export const EQUIPMENT_CRAFT_RECIPES = [...STANDARD_NON_WEAPON_CRAFT_RECIPES, ...STANDARD_WEAPON_CRAFT_RECIPES, BADON_TEMPORARY_RECIPE];
+export type ProductionRefiningRecipe = AuthoredRefiningRecipe;
+
+export function getProductionRefiningRecipe(
+  family: ProductionFamilyId,
+  tier: ProductionTier,
+): ProductionRefiningRecipe {
+  const recipes = AUTHORED_REFINING_RECIPES[family];
+  const recipe = recipes[tier];
+  if (recipe === undefined) {
+    throw new Error(`Refining content missing for ${family} T${String(tier)}`);
+  }
+  return recipe;
+}
+
+export function getWoodRecipe(tier: ProductionTier): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("wood", tier);
+}
+
+export function getMetalRecipe(tier: ProductionTier): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("ore", tier);
+}
+
+export function getLeatherRecipe(tier: ProductionTier): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("hide", tier);
+}
+
+export function getClothRecipe(tier: ProductionTier): ProductionRefiningRecipe {
+  return getProductionRefiningRecipe("fiber", tier);
+}
+
+const MATERIAL_ITEM_BY_KIND = {
+  wood: (tier: ProductionTier) => getWoodRecipe(tier).outputItemId,
+  metal: (tier: ProductionTier) => getMetalRecipe(tier).outputItemId,
+  leather: (tier: ProductionTier) => getLeatherRecipe(tier).outputItemId,
+  cloth: (tier: ProductionTier) => getClothRecipe(tier).outputItemId,
+} as const;
+
+function materialRequirement(
+  material: WeaponCraftMaterial | EquipmentCraftMaterial,
+  tier: ProductionTier,
+) {
+  return {
+    itemId: MATERIAL_ITEM_BY_KIND[material.kind](tier),
+    quantity: material.quantity,
+  };
+}
+
+function createStandardWeaponRecipe(itemId: string) {
+  const tier = resolveWeaponTier(itemId);
+  const craft = resolveWeaponCraftRule(itemId);
+  const family = resolveWeaponFamilyId(itemId);
+  const name = getWeaponSpecializationName(itemId);
+  if (tier === undefined || craft?.kind !== "standard" || family === undefined || name === undefined) {
+    return undefined;
+  }
+  const requirements: Array<{ itemId: string; quantity: number }> = craft.materials.map(
+    (material) => materialRequirement(material, tier),
+  );
+  return {
+    id: `CRAFT_${itemId.replace("item_weapon_", "").toUpperCase()}_0`,
+    family,
+    name: `${name} T${String(tier)}`,
+    tier,
+    outputItemId: itemId,
+    durationTicks: 0,
+    requirements,
+  };
+}
+
+export const STANDARD_WEAPON_CRAFT_RECIPES = Object.keys(WEAPON_ITEM_DEFINITIONS)
+  .map(createStandardWeaponRecipe)
+  .filter((recipe): recipe is NonNullable<typeof recipe> => recipe !== undefined);
+
+function createProgressionEquipmentRecipe(
+  family: (typeof PROGRESSION_EQUIPMENT_CONTENT)[number],
+  item: (typeof PROGRESSION_EQUIPMENT_CONTENT)[number]["items"][number],
+) {
+  const requirements: Array<{ itemId: string; quantity: number }> = item.craftMaterials.map(
+    (material) => materialRequirement(material, item.tier),
+  );
+  return {
+    id: item.recipeId,
+    family: family.recipeFamily,
+    name: item.name,
+    tier: item.tier,
+    outputItemId: item.itemId,
+    durationTicks: 0,
+    requirements,
+  };
+}
+
+export const STANDARD_NON_WEAPON_CRAFT_RECIPES = PROGRESSION_EQUIPMENT_CONTENT.flatMap(
+  (family) => family.items.map((item) => createProgressionEquipmentRecipe(family, item)),
+);
+
+export const REINFORCED_SHIELD_RECIPE = STANDARD_NON_WEAPON_CRAFT_RECIPES.find(
+  (recipe) => recipe.outputItemId === "item_shield_t3_reinforced",
+);
+if (REINFORCED_SHIELD_RECIPE === undefined) {
+  throw new Error("Missing T3 reinforced shield recipe");
+}
+
+export const BADON_TEMPORARY_RECIPE = {
+  id: "CRAFT_BADON_T4_0",
+  family: "bow",
+  name: "Badon T4",
+  tier: 4,
+  outputItemId: "item_weapon_bow_t4_badon",
+  durationTicks: 0,
+  requirements: [
+    { itemId: PINE_PLANK_RECIPE.outputItemId, quantity: 8 },
+    { itemId: THICK_LEATHER_RECIPE.outputItemId, quantity: 4 },
+    { itemId: FINE_CLOTH_RECIPE.outputItemId, quantity: 2 },
+  ],
+} as const;
+
+export const EQUIPMENT_CRAFT_RECIPES = [
+  ...STANDARD_NON_WEAPON_CRAFT_RECIPES,
+  ...STANDARD_WEAPON_CRAFT_RECIPES,
+  BADON_TEMPORARY_RECIPE,
+];
