@@ -56,6 +56,7 @@ export class ProductionRuntimeController {
   readonly #bridgeAdapter: ProductionBridgeAdapter;
   readonly #actions: ProductionActions;
   readonly #unsubscribes: Array<() => void> = [];
+  #isResolvingWorkerBackground = false;
 
   constructor(dependencies: ProductionRuntimeControllerDependencies) {
     this.#dependencies = dependencies;
@@ -195,11 +196,16 @@ export class ProductionRuntimeController {
         this.syncWorkers();
       },
       resolveBackground: (elapsedMs: number): void => {
-        this.#dependencies.foundation.workerRuntime.resolveBackground(
-          elapsedMs,
-          DEFAULT_RUNTIME_TICK_INTERVAL_MS,
-        );
-        this.syncWorkers();
+        this.#isResolvingWorkerBackground = true;
+        try {
+          this.#dependencies.foundation.workerRuntime.resolveBackground(
+            elapsedMs,
+            DEFAULT_RUNTIME_TICK_INTERVAL_MS,
+          );
+        } finally {
+          this.#isResolvingWorkerBackground = false;
+          this.syncAll();
+        }
       },
     };
   }
@@ -232,6 +238,7 @@ export class ProductionRuntimeController {
     }));
 
     this.#unsubscribes.push(foundation.workerRuntime.subscribeCycleCompleted(() => {
+      if (this.#isResolvingWorkerBackground) return;
       this.#syncMasteryProgression();
       syncInventoryToBridge(bridge, this.#dependencies.inventoryManager, this.#dependencies.heroId);
       this.syncAll();
