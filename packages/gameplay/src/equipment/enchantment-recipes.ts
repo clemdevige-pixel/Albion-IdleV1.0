@@ -2,6 +2,7 @@ import {
   ENCHANTMENT_CATEGORY_COST_MULTIPLIERS,
   ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS,
   ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS,
+  ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER,
   ENCHANTMENT_MAXIMUM_ITEM_TIER,
   ENCHANTMENT_MINIMUM_ITEM_TIER,
   ENCHANTMENT_RECIPE_STEPS,
@@ -20,6 +21,7 @@ export {
   ENCHANTMENT_CATEGORY_COST_MULTIPLIERS,
   ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS,
   ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS,
+  ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER,
   ENCHANTMENT_MAXIMUM_ITEM_TIER,
   ENCHANTMENT_MINIMUM_ITEM_TIER,
   ENCHANTMENT_RESOURCE_TIERS,
@@ -85,6 +87,24 @@ function getCategoryResourceMultiplier(
   return ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS[category];
 }
 
+function getSilverCost(
+  recipe: EnchantmentRecipe,
+  itemTier: number,
+  category: EnchantmentCostCategory,
+  activeLevel: ActiveEnchantmentLevel | undefined,
+  tierMultiplier: number,
+): number {
+  if (!recipe.enabled) return recipe.silverCost;
+  if (activeLevel === 4 && (category === "one_handed_weapon" || category === "two_handed_weapon")) {
+    return ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER[itemTier]
+      ?? ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER[ENCHANTMENT_MAXIMUM_ITEM_TIER]!;
+  }
+  return Math.max(
+    1,
+    Math.round(recipe.silverCost * tierMultiplier * getCategorySilverMultiplier(category, activeLevel)),
+  );
+}
+
 export function scaleEnchantmentRecipe(
   recipe: EnchantmentRecipe,
   itemTier: number,
@@ -98,15 +118,11 @@ export function scaleEnchantmentRecipe(
     recipe.toLevel >= 1 && recipe.toLevel <= 4
       ? recipe.toLevel as ActiveEnchantmentLevel
       : undefined;
-  const silverMultiplier =
-    tierMultiplier * getCategorySilverMultiplier(category, activeLevel);
   const resourceMultiplier = getCategoryResourceMultiplier(category, activeLevel);
 
   return {
     ...recipe,
-    silverCost: recipe.enabled
-      ? Math.max(1, Math.round(recipe.silverCost * silverMultiplier))
-      : recipe.silverCost,
+    silverCost: getSilverCost(recipe, itemTier, category, activeLevel, tierMultiplier),
     materials: [
       ...(activeLevel === undefined
         ? []
