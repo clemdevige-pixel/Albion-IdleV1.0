@@ -1,4 +1,6 @@
 import {
+  BASE_COMBAT_DROP_RATES,
+  BOSS_SPECIAL_DROP_MULTIPLIER,
   ENCOUNTERS_PER_SEGMENT,
   getFactionRuneWorldDropChance,
   getFactionRuneWorldDropExpectation,
@@ -6,8 +8,6 @@ import {
 } from "@game/data";
 import { getEnemyCombatProfile, getEncounterRewards, type ZoneDefinitionId } from "@game/gameplay";
 import {
-  BASE_COMBAT_DROP_RATES,
-  BOSS_SPECIAL_DROP_MULTIPLIER,
   getCombatLootExpectations,
   getDungeonKeyProgressionWeight,
   getEnchantmentShardExpectedDrop,
