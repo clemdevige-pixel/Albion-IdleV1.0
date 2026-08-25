@@ -7,7 +7,6 @@ import {
 } from "@game/gameplay";
 import { getItemDefinition, getItemDisplayName } from "../../../panels/ItemVisual";
 import { useGameServices } from "../../../state/GameContext";
-import { PlayerInventoryManager } from "../../../runtime/PlayerInventoryManager.js";
 import { isProductionMaterial } from "../../../runtime/ProductionStorage";
 import { useMerchantData } from "../useMerchantData";
 import type { EnchantModel, EnchantableItemModel } from "./enchantModels";
@@ -87,12 +86,6 @@ export function useEnchantData(
       failureReason: rawPreview.failureReason,
     };
 
-    const playerOwnedQuantity = (itemId: string): number => (
-      inventoryManager instanceof PlayerInventoryManager
-        ? inventoryManager.getAccessibleQuantity(heroId, itemId)
-        : inventoryManager.getTotalQuantity(heroId, itemId)
-    );
-
     return {
       silver: snapshot.wallet.silver,
       incomeRate: snapshot.wallet.incomeRate,
@@ -105,7 +98,7 @@ export function useEnchantData(
         name: getItemDisplayName(itemId),
         quantity: isProductionMaterial(itemId)
           ? inventoryManager.getTotalQuantity(productionStorageId, itemId)
-          : playerOwnedQuantity(itemId),
+          : inventoryManager.getAccessibleQuantity(heroId, itemId),
       })),
     };
   }, [
