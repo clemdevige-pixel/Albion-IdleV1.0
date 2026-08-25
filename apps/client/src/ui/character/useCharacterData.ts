@@ -11,6 +11,7 @@ export function useCharacterData(): CharacterModel {
     && previous.stats.armor === next.stats.armor
     && previous.stats.magicResistance === next.stats.magicResistance
     && previous.equipment === next.equipment
-    && previous.inventory === next.inventory,
+    && previous.inventory === next.inventory
+    && previous.bank === next.bank,
   );
 }
