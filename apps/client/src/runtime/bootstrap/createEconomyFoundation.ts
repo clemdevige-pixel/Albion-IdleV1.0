@@ -25,6 +25,7 @@ import {
   resolveRepairableInfo,
 } from "../../data/itemContentCatalog.js";
 import { WEAPON_VENDOR_OFFERS } from "../../data/weaponContentCatalog.js";
+import { PlayerInventoryManager } from "../PlayerInventoryManager.js";
 
 interface EconomyFoundationDependencies {
   readonly inventoryManager: InventoryManager;
@@ -95,6 +96,10 @@ export function createEconomyFoundation({
     inventoryManager,
     equipmentManager,
     resolveItemStackInfo,
+    undefined,
+    inventoryManager instanceof PlayerInventoryManager
+      ? (entityId) => inventoryManager.getAccessibleStorageOwners(entityId)
+      : undefined,
   );
   const economyEvents = new EconomyEventEmitter();
   const transactionRegistry = new TransactionRegistry();
