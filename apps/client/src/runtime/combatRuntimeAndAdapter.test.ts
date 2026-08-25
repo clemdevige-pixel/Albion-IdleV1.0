@@ -13,7 +13,6 @@ import {
   EffectManager,
   StatsManager,
   createDefaultStatRegistry,
-  InventoryManager,
   EquipmentManager,
   CurrencyRegistry,
   CurrencyService,
@@ -50,6 +49,7 @@ import {
   DESTINY_NODES,
 } from "../data/progressionContentCatalog.js";
 import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
+import { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
 function createTestEnvironment() {
   const runtimeServices = createRuntimeServices();
@@ -81,7 +81,7 @@ function createTestEnvironment() {
   orchestrator.initialize();
 
   const equipmentStatSync = new EquipmentStatSync(statsManager, resolveEquipmentInfo, () => {});
-  const inventoryManager = new InventoryManager(world, () => undefined);
+  const inventoryManager = new PlayerInventoryManager(world, () => undefined);
   const equipmentManager = new EquipmentManager(world, inventoryManager, resolveEquipmentInfo, equipmentStatSync);
 
   const currencyRegistry = new CurrencyRegistry();
@@ -122,7 +122,7 @@ function createTestEnvironment() {
   const zoneManager = new ZoneManager();
   const worldProgressionManager = new WorldProgressionManager();
   const explorationManager = new ExplorationManager();
-  const worldCoordinator = new WorldCoordinator({ zoneManager, progressionManager: worldProgressionManager, explorationManager, biomeRegistry, biomeResolver, eventBus: new EventBus<WorldIntegrationEventMap>() });
+  const worldCoordinator = new WorldCoordinator({ zoneManager, progressionManager: worldProgressionManager, worldCoordinator: undefined as never, explorationManager, biomeRegistry, biomeResolver, eventBus: new EventBus<WorldIntegrationEventMap>() });
 
   const worldRuntime = new WorldRuntime({ zoneManager, progressionManager: worldProgressionManager, worldCoordinator });
 
@@ -196,8 +196,6 @@ describe("combatRuntimeAndAdapter regression suite", () => {
       ports: {
         onVictory: () => {
           encounterIndex = 0;
-          // WorldRuntime currently reports segment completion through this flag
-          // even when Farm keeps the player on the same segment.
           return { enteredNewSegment: true };
         },
         onDefeat: () => {},
