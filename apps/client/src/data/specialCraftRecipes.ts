@@ -1,17 +1,13 @@
 import {
+  ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
   DUNGEON_ARTIFACT_FACTIONS,
   DUNGEON_ARTIFACT_TIERS,
+  KEY_FRAGMENTS_PER_KEY,
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
-} from "@game/data";
-import {
-  ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
-  KEY_FRAGMENTS_PER_KEY,
-} from "./economyContentCatalog.js";
-import {
   getDungeonKeyFragmentItemId,
   getDungeonKeyItemId,
-} from "./dungeonKeyContentCatalog.js";
+} from "@game/data";
 import { FACTION_CAPE_CRAFT_RECIPES } from "./factionCapeContentCatalog.js";
 import { EQUIPMENT_CRAFT_RECIPES } from "./refiningRecipes.js";
 import {
