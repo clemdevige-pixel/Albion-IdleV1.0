@@ -31,7 +31,15 @@ function expectStrictlyIncreasing(values: readonly number[]): void {
 describe("canonical authored balance contracts", () => {
   it("keeps enchantment transitions contiguous and preserves the validated shard costs", () => {
     expect(ENCHANTMENT_RESOURCE_TIERS).toEqual([4, 5, 6, 7, 8]);
-    expect(ENCHANTMENT_SHARD_COSTS).toEqual({ 1: 10, 2: 30, 3: 60, 4: 100 });
+    expect(ENCHANTMENT_SHARD_COSTS).toEqual({
+      two_handed_weapon: { 1: 20, 2: 50, 3: 105, 4: 100 },
+      one_handed_weapon: { 1: 15, 2: 30, 3: 70, 4: 100 },
+      armor_torso: { 1: 15, 2: 35, 3: 65, 4: 100 },
+      armor_head: { 1: 10, 2: 20, 3: 45, 4: 100 },
+      armor_boots: { 1: 10, 2: 20, 3: 45, 4: 100 },
+      off_hand: { 1: 5, 2: 20, 3: 35, 4: 50 },
+      cape: { 1: 5, 2: 20, 3: 35, 4: 100 },
+    });
     expect(ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS).toEqual({ 1: 1, 2: 2, 3: 4, 4: 8 });
 
     for (const level of [1, 2, 3, 4] as const) {
