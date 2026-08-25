@@ -26,6 +26,9 @@ export class WorldStatusSystem {
   private readonly stateText: Phaser.GameObjects.Text;
   private readonly zoneText: Phaser.GameObjects.Text;
   private readonly segmentText: Phaser.GameObjects.Text;
+  private lastStateText = "IDLE";
+  private lastZoneText = "";
+  private lastSegmentText = "";
 
   public constructor(
     scene: Phaser.Scene,
@@ -38,11 +41,9 @@ export class WorldStatusSystem {
   }
 
   public presentGathering(status: GatheringWorldStatus): void {
-    this.stateText.setText("RÉCOLTE");
-    this.zoneText.setText(
-      `${status.resourceName} · T${String(status.resourceTier)}`,
-    );
-    this.segmentText.setText(
+    this.setStateText("RÉCOLTE");
+    this.setZoneText(`${status.resourceName} · T${String(status.resourceTier)}`);
+    this.setSegmentText(
       `${String(status.progress)}% · ${String(status.durationSeconds)} s par cycle`,
     );
   }
@@ -51,19 +52,33 @@ export class WorldStatusSystem {
     // Zone and segment progression now live in the permanent Header and
     // Dashboard. Keep only decisive feedback in the world so combat remains
     // readable without duplicating permanent information.
-    this.zoneText.setText("");
-    this.segmentText.setText("");
-    this.stateText.setText(
-      status.combatState === "victory"
-        ? "VICTOIRE"
-        : "",
-    );
+    this.setZoneText("");
+    this.setSegmentText("");
+    this.setStateText(status.combatState === "victory" ? "VICTOIRE" : "");
   }
 
   public clear(): void {
     this.stateText.destroy();
     this.zoneText.destroy();
     this.segmentText.destroy();
+  }
+
+  private setStateText(value: string): void {
+    if (value === this.lastStateText) return;
+    this.lastStateText = value;
+    this.stateText.setText(value);
+  }
+
+  private setZoneText(value: string): void {
+    if (value === this.lastZoneText) return;
+    this.lastZoneText = value;
+    this.zoneText.setText(value);
+  }
+
+  private setSegmentText(value: string): void {
+    if (value === this.lastSegmentText) return;
+    this.lastSegmentText = value;
+    this.segmentText.setText(value);
   }
 
   private createText(
