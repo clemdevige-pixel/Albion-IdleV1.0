@@ -4,19 +4,30 @@ export type AuthoredEnchantmentCostCategory =
   | "one_handed_weapon"
   | "two_handed_weapon"
   | "off_hand"
-  | "armor"
+  | "armor_head"
+  | "armor_torso"
+  | "armor_boots"
   | "cape";
 
 export const ENCHANTMENT_MINIMUM_ITEM_TIER = 4;
 export const ENCHANTMENT_MAXIMUM_ITEM_TIER = 8;
 export const ENCHANTMENT_RESOURCE_TIERS = [4, 5, 6, 7, 8] as const;
 
-/** Incremental matching-tier shard cost for each enchantment transition. */
-export const ENCHANTMENT_SHARD_COSTS: Readonly<Record<AuthoredEnchantmentTransitionLevel, number>> = {
-  1: 10,
-  2: 30,
-  3: 60,
-  4: 100,
+/**
+ * Absolute matching-tier shard cost per equipment category and transition.
+ * .1-.3 preserve a 500-shard full-loadout budget for both 2H and 1H+off-hand builds.
+ * .4 keeps the previous live costs pending its dedicated recalibration.
+ */
+export const ENCHANTMENT_SHARD_COSTS: Readonly<
+  Record<AuthoredEnchantmentCostCategory, Readonly<Record<AuthoredEnchantmentTransitionLevel, number>>>
+> = {
+  two_handed_weapon: { 1: 20, 2: 50, 3: 105, 4: 100 },
+  one_handed_weapon: { 1: 15, 2: 30, 3: 70, 4: 100 },
+  armor_torso: { 1: 15, 2: 35, 3: 65, 4: 100 },
+  armor_head: { 1: 10, 2: 20, 3: 45, 4: 100 },
+  armor_boots: { 1: 10, 2: 20, 3: 45, 4: 100 },
+  off_hand: { 1: 5, 2: 20, 3: 35, 4: 50 },
+  cape: { 1: 5, 2: 20, 3: 35, 4: 100 },
 };
 
 /** Refined base-craft material multiplier applied at each transition. */
@@ -40,7 +51,9 @@ export const ENCHANTMENT_CATEGORY_COST_MULTIPLIERS: Readonly<Record<AuthoredEnch
   one_handed_weapon: 0.75,
   two_handed_weapon: 1.5,
   off_hand: 0.75,
-  armor: 0.8,
+  armor_head: 0.8,
+  armor_torso: 0.8,
+  armor_boots: 0.8,
   cape: 0.7,
 };
 
@@ -48,7 +61,9 @@ export const ENCHANTMENT_CATEGORY_RESOURCE_MULTIPLIERS: Readonly<Record<Authored
   one_handed_weapon: 0.5,
   two_handed_weapon: 1,
   off_hand: 0.5,
-  armor: 1,
+  armor_head: 1,
+  armor_torso: 1,
+  armor_boots: 1,
   cape: 1,
 };
 
