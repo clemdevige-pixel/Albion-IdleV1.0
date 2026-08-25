@@ -66,12 +66,23 @@ export class WorkerSession {
   }
 
   tick(): boolean {
-    if (this.#state !== "executing") return false;
-    this.#elapsedTicks += 1;
+    return this.advanceTicks(1) === 1;
+  }
+
+  /** Advances an executing session without replaying each individual tick. */
+  advanceTicks(ticks: number): number {
+    if (!Number.isInteger(ticks) || ticks < 0) {
+      throw new Error("Worker ticks must be a non-negative integer");
+    }
+    if (this.#state !== "executing" || ticks === 0) return 0;
+
+    const remainingTicks = Math.max(0, this.totalTicks - this.#elapsedTicks);
+    const advancedTicks = Math.min(ticks, remainingTicks);
+    this.#elapsedTicks += advancedTicks;
     if (this.#elapsedTicks >= this.totalTicks) {
       this.#state = "completed";
     }
-    return true;
+    return advancedTicks;
   }
 
   pause(): boolean {
