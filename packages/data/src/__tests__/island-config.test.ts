@@ -67,23 +67,20 @@ describe("player island config", () => {
     ]);
   });
 
-  it("authors the workshop as a shared flexible crafting building", () => {
+  it("authors the workshop with two of each T3 refined resource", () => {
     const workshop = PLAYER_ISLAND_CONFIG.buildings.find(
       (building) => building.id === "workshop",
     );
 
     expect(workshop?.craftingService?.categories).toEqual(["weapons", "armors", "other"]);
     expect(workshop?.construction?.prerequisiteBuildings).toBeUndefined();
-    expect(workshop?.construction?.flexibleRequirement).toEqual({
-      itemIds: [
-        "item_refined_planks_t3",
-        "item_refined_copper_bar_t3",
-        "item_refined_leather_t3",
-        "item_refined_cloth_t3",
-      ],
-      totalQuantity: 6,
-      minimumDistinctItemIds: 2,
-    });
+    expect(workshop?.construction?.requirements).toEqual([
+      { itemId: "item_refined_planks_t3", quantity: 2 },
+      { itemId: "item_refined_copper_bar_t3", quantity: 2 },
+      { itemId: "item_refined_leather_t3", quantity: 2 },
+      { itemId: "item_refined_cloth_t3", quantity: 2 },
+    ]);
+    expect(workshop?.construction?.flexibleRequirement).toBeUndefined();
   });
 
   it("keeps construction costs authored and positive", () => {
