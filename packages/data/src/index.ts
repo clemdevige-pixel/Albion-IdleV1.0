@@ -70,8 +70,9 @@ export * from "./config/item-power-balance.js";
 export * from "./config/enchantment-balance.js";
 export * from "./config/enchantment-recipe-balance.js";
 
-// Mastery progression balance
+// Mastery and Destiny progression balance/content
 export * from "./config/mastery-experience-balance.js";
+export * from "./config/destiny-content.js";
 
 // Shared faction resource identifiers and world drop rules
 export * from "./config/faction-runes.js";
@@ -100,10 +101,11 @@ export * from "./config/awakening-balance.js";
 export * from "./config/artifact-weapon-craft-balance.js";
 export * from "./config/expedition-balance.js";
 
-// Authored production progression, cadence, gathering, and worker content
+// Authored production progression, cadence, gathering, refining, and worker content
 export * from "./config/production-balance.js";
 export * from "./config/gathering-content.js";
 export * from "./config/gathering-progression.js";
+export * from "./config/refining-content.js";
 export * from "./config/worker-content.js";
 
 // Player Island configuration
