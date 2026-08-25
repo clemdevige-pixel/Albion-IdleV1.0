@@ -1,4 +1,9 @@
-import { getFactionRuneItemId } from "@game/data";
+import {
+  getDungeonArtifactItemId,
+  getFactionRuneItemId,
+  type DungeonArtifactFactionId,
+  type DungeonArtifactTier,
+} from "@game/data";
 import {
   getWeaponSpecializationName,
   resolveWeaponArtifactFaction,
@@ -7,11 +12,6 @@ import {
   WEAPON_ITEM_DEFINITIONS,
   type WeaponFamilyId,
 } from "./weaponContentCatalog.js";
-import {
-  getDungeonArtifactItemId,
-  type DungeonArtifactFactionId,
-  type DungeonArtifactTier,
-} from "./dungeonArtifactContentCatalog.js";
 import { STANDARD_WEAPON_CRAFT_RECIPES } from "./refiningRecipes.js";
 
 export const ARTIFACT_WEAPON_RUNE_COST_BY_TIER = {
