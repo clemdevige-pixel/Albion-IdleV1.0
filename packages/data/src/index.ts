@@ -85,8 +85,9 @@ export * from "./config/dungeon-loot-balance.js";
 export * from "./config/artifact-weapon-craft-balance.js";
 export * from "./config/expedition-balance.js";
 
-// Authored production progression and cadence balance
+// Authored production progression, cadence, and gathering content
 export * from "./config/production-balance.js";
+export * from "./config/gathering-content.js";
 
 // Player Island configuration
 export * from "./config/island.js";
