@@ -37,6 +37,15 @@ export class IslandActions {
     this.#deps.resyncAll(); this.#notify(`notif_island_build_${definitionId}`, `${definition.label} construit`); return true;
   }
 
+  moveBuilding(buildingInstanceId: string, targetPlotId: string): boolean {
+    const result = this.#deps.islandService.moveBuilding(buildingInstanceId, targetPlotId);
+    if (!result.ok) return false;
+    this.#deps.resyncAll();
+    const definition = getIslandBuildingDefinition(result.building.definitionId);
+    this.#notify(`notif_island_move_${result.building.definitionId}`, `${definition.label} déplacé`);
+    return true;
+  }
+
   upgradeBuilding(definitionId: IslandBuildingId): boolean {
     const preview = this.#deps.islandService.canUpgradeBuilding(definitionId); if (!preview.ok) return false;
     const currentDefinition = getIslandUpgradeableLevelDefinition(definitionId, preview.building.level - 1);
