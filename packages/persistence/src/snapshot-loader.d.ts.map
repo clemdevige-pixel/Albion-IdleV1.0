@@ -1,1 +1,0 @@
-{"version":3,"file":"snapshot-loader.d.ts","sourceRoot":"","sources":["snapshot-loader.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,oBAAoB,CAAC;AAEvD,qBAAa,cAAc;IACzB,OAAO,CAAC,QAAQ,CAAC,SAAS,CAAmC;IAE7D,QAAQ,CAAC,QAAQ,EAAE,YAAY,GAAG,IAAI;IAItC,IAAI,CAAC,OAAO,EAAE,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,GAAG,IAAI;CAO7C"}
