@@ -19,8 +19,12 @@ function numericKeys(record: Readonly<Record<number, unknown>>): number[] {
 }
 
 function expectStrictlyIncreasing(values: readonly number[]): void {
-  for (let index = 1; index < values.length; index += 1) {
-    expect(values[index]).toBeGreaterThan(values[index - 1]);
+  let previous: number | undefined;
+  for (const value of values) {
+    if (previous !== undefined) {
+      expect(value).toBeGreaterThan(previous);
+    }
+    previous = value;
   }
 }
 
@@ -58,18 +62,29 @@ describe("canonical authored balance contracts", () => {
       expect(progression.zoneStart).toHaveLength(5);
       expect(progression.zoneEnd).toHaveLength(5);
 
-      if (previousBandEnd !== undefined) {
-        expect(progression.zoneStart[0]).toBe(previousBandEnd);
+      const zonePairs = progression.zoneStart.map((zoneStart, index) => ({
+        zoneStart,
+        zoneEnd: progression.zoneEnd[index],
+      }));
+
+      const firstZone = zonePairs[0];
+      if (previousBandEnd !== undefined && firstZone?.zoneEnd !== undefined) {
+        expect(firstZone.zoneStart).toBe(previousBandEnd);
       }
 
-      for (let index = 0; index < progression.zoneStart.length; index += 1) {
-        expect(progression.zoneEnd[index]).toBeGreaterThan(progression.zoneStart[index]);
-        if (index > 0) {
-          expect(progression.zoneStart[index]).toBe(progression.zoneEnd[index - 1]);
+      let previousZoneEnd: number | undefined;
+      for (const pair of zonePairs) {
+        if (pair.zoneEnd === undefined) {
+          throw new Error(`Missing zoneEnd entry for ${bandId}`);
         }
+        expect(pair.zoneEnd).toBeGreaterThan(pair.zoneStart);
+        if (previousZoneEnd !== undefined) {
+          expect(pair.zoneStart).toBe(previousZoneEnd);
+        }
+        previousZoneEnd = pair.zoneEnd;
       }
 
-      previousBandEnd = progression.zoneEnd.at(-1);
+      previousBandEnd = previousZoneEnd;
     }
   });
 });
