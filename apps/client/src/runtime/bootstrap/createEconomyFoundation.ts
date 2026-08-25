@@ -58,6 +58,12 @@ export function createEconomyFoundation({
     silverSpendSource: "Awakening",
   });
 
+  const storageOwnersResolver = inventoryManager instanceof PlayerInventoryManager
+    ? (entityId: Parameters<PlayerInventoryManager["getAccessibleStorageOwners"]>[0]) => (
+        inventoryManager.getAccessibleStorageOwners(entityId)
+      )
+    : undefined;
+
   const durabilityStore = new DurabilityStore();
   const repairStationRegistry = new RepairStationRegistry();
   repairStationRegistry.register({
@@ -80,6 +86,9 @@ export function createEconomyFoundation({
     equipmentManager,
     durabilityStore,
     resolveRepairableInfo,
+    undefined,
+    undefined,
+    storageOwnersResolver,
   );
 
   const vendorRegistry = new VendorRegistry();
@@ -97,9 +106,7 @@ export function createEconomyFoundation({
     equipmentManager,
     resolveItemStackInfo,
     undefined,
-    inventoryManager instanceof PlayerInventoryManager
-      ? (entityId) => inventoryManager.getAccessibleStorageOwners(entityId)
-      : undefined,
+    storageOwnersResolver,
   );
   const economyEvents = new EconomyEventEmitter();
   const transactionRegistry = new TransactionRegistry();
