@@ -2,6 +2,8 @@ import {
   ADVANCED_WORKER_ORGANIZATION,
   AUTHORED_WORKER_DEFINITIONS,
   AUTHORED_WORKER_TASK_DEFINITIONS,
+  WORKER_DEFINITION_ID_VALUES,
+  WORKER_TASK_ID_VALUES,
 } from "@game/data";
 import {
   asWorkerDefinitionId,
@@ -13,17 +15,17 @@ import {
 export { ADVANCED_WORKER_ORGANIZATION } from "@game/data";
 
 export const WORKER_DEFINITION_IDS = {
-  woodcutter: asWorkerDefinitionId(AUTHORED_WORKER_DEFINITIONS[0].id),
-  miner: asWorkerDefinitionId(AUTHORED_WORKER_DEFINITIONS[1].id),
-  skinner: asWorkerDefinitionId(AUTHORED_WORKER_DEFINITIONS[2].id),
-  fiberHarvester: asWorkerDefinitionId(AUTHORED_WORKER_DEFINITIONS[3].id),
+  woodcutter: asWorkerDefinitionId(WORKER_DEFINITION_ID_VALUES.woodcutter),
+  miner: asWorkerDefinitionId(WORKER_DEFINITION_ID_VALUES.miner),
+  skinner: asWorkerDefinitionId(WORKER_DEFINITION_ID_VALUES.skinner),
+  fiberHarvester: asWorkerDefinitionId(WORKER_DEFINITION_ID_VALUES.fiberHarvester),
 } as const;
 
 export const WORKER_TASK_IDS = {
-  wood: asWorkerTaskDefinitionId(AUTHORED_WORKER_TASK_DEFINITIONS[0].id),
-  ore: asWorkerTaskDefinitionId(AUTHORED_WORKER_TASK_DEFINITIONS[1].id),
-  hide: asWorkerTaskDefinitionId(AUTHORED_WORKER_TASK_DEFINITIONS[2].id),
-  fiber: asWorkerTaskDefinitionId(AUTHORED_WORKER_TASK_DEFINITIONS[3].id),
+  wood: asWorkerTaskDefinitionId(WORKER_TASK_ID_VALUES.wood),
+  ore: asWorkerTaskDefinitionId(WORKER_TASK_ID_VALUES.ore),
+  hide: asWorkerTaskDefinitionId(WORKER_TASK_ID_VALUES.hide),
+  fiber: asWorkerTaskDefinitionId(WORKER_TASK_ID_VALUES.fiber),
 } as const;
 
 export const WORKER_DEFINITIONS: readonly WorkerDefinition[] = AUTHORED_WORKER_DEFINITIONS.map(
