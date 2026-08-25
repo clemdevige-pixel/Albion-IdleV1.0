@@ -30,6 +30,15 @@ export const ENCHANTMENT_SHARD_COSTS: Readonly<
   cape: { 1: 5, 2: 20, 3: 35, 4: 100 },
 };
 
+/** Absolute Silver cost for the weapon .3 -> .4 enchantment transition. */
+export const ENCHANTMENT_LEVEL_4_SILVER_COSTS_BY_TIER: Readonly<Record<number, number>> = {
+  4: 125_000,
+  5: 225_000,
+  6: 400_000,
+  7: 550_000,
+  8: 750_000,
+};
+
 /** Refined base-craft material multiplier applied at each transition. */
 export const ENCHANTMENT_CRAFT_MATERIAL_MULTIPLIERS: Readonly<Record<AuthoredEnchantmentTransitionLevel, number>> = {
   1: 1,
@@ -74,7 +83,7 @@ export interface AuthoredEnchantmentRecipeStep {
   readonly silverCost: number;
 }
 
-/** Base Silver steps before tier/category scaling. */
+/** Base Silver steps before tier/category scaling. Level 4 is overridden by its authored tier table. */
 export const ENCHANTMENT_RECIPE_STEPS: Readonly<Record<AuthoredEnchantmentTransitionLevel, AuthoredEnchantmentRecipeStep>> = {
   1: { fromLevel: 0, toLevel: 1, enabled: true, silverCost: 250 },
   2: { fromLevel: 1, toLevel: 2, enabled: true, silverCost: 1_000 },
