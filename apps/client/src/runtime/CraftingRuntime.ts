@@ -1,10 +1,10 @@
 import type { EntityId } from "@game/core";
-import type { DurabilityStore } from "@game/gameplay";
+import type { DurabilityStore, InventoryManager } from "@game/gameplay";
 import {
   SPECIAL_CRAFT_RECIPES,
   type ClientCraftRecipe,
 } from "../data/specialCraftRecipes.js";
-import type { PlayerInventoryManager } from "./PlayerInventoryManager.js";
+import { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 import { isProductionMaterial } from "./ProductionStorage.js";
 
 export type CraftEquipmentResult =
@@ -23,24 +23,64 @@ export interface PlayerCraftRequirement {
   readonly quantity: number;
 }
 
+function accessibleOwners(inventoryManager: InventoryManager, heroId: EntityId): readonly EntityId[] {
+  return inventoryManager instanceof PlayerInventoryManager
+    ? inventoryManager.getAccessibleStorageOwners(heroId)
+    : [heroId];
+}
+
+function accessibleQuantity(
+  inventoryManager: InventoryManager,
+  heroId: EntityId,
+  itemId: string,
+): number {
+  return inventoryManager instanceof PlayerInventoryManager
+    ? inventoryManager.getAccessibleQuantity(heroId, itemId)
+    : inventoryManager.getTotalQuantity(heroId, itemId);
+}
+
+function removeAccessibleQuantity(
+  inventoryManager: InventoryManager,
+  heroId: EntityId,
+  itemId: string,
+  quantity: number,
+): boolean {
+  return inventoryManager instanceof PlayerInventoryManager
+    ? inventoryManager.removeAccessibleQuantity(heroId, itemId, quantity)
+    : inventoryManager.removeQuantity(heroId, itemId, quantity).ok;
+}
+
+function addAccessibleQuantity(
+  inventoryManager: InventoryManager,
+  heroId: EntityId,
+  itemId: string,
+  quantity: number,
+): boolean {
+  if (inventoryManager instanceof PlayerInventoryManager) {
+    return inventoryManager.addAccessibleQuantity(heroId, itemId, quantity);
+  }
+  const result = inventoryManager.addQuantity(heroId, itemId, quantity);
+  return result.ok && result.value.added === quantity && result.value.remainder === 0;
+}
+
 export function getPlayerCraftRequirementQuantity(
-  inventoryManager: PlayerInventoryManager,
+  inventoryManager: InventoryManager,
   heroId: EntityId,
   productionStorageId: EntityId,
   itemId: string,
 ): number {
   return isProductionMaterial(itemId)
     ? inventoryManager.getTotalQuantity(productionStorageId, itemId)
-    : inventoryManager.getAccessibleQuantity(heroId, itemId);
+    : accessibleQuantity(inventoryManager, heroId, itemId);
 }
 
 /**
- * Player crafting treats Inventory + Bank as one logical possession space while
- * the island Production Storage remains a separate authored material store.
- * The dry-run also accounts for player-storage slots that inputs will free.
+ * Live player crafting treats Inventory + Bank as one logical possession space.
+ * Generic InventoryManager harnesses naturally collapse that graph to hero-only.
+ * Island Production Storage remains a separate authored material store.
  */
 export function canCraftWithPlayerStorage(
-  inventoryManager: PlayerInventoryManager,
+  inventoryManager: InventoryManager,
   heroId: EntityId,
   productionStorageId: EntityId,
   requirements: readonly PlayerCraftRequirement[],
@@ -59,14 +99,14 @@ export function canCraftWithPlayerStorage(
     ) return false;
   }
 
-  const accessibleOwners = inventoryManager.getAccessibleStorageOwners(heroId);
+  const owners = accessibleOwners(inventoryManager, heroId);
   const freedByOwner = new Map<EntityId, Set<number>>();
-  for (const ownerId of accessibleOwners) freedByOwner.set(ownerId, new Set());
+  for (const ownerId of owners) freedByOwner.set(ownerId, new Set());
 
   for (const requirement of requirements) {
     if (isProductionMaterial(requirement.itemId)) continue;
     let remaining = requirement.quantity;
-    for (const ownerId of accessibleOwners) {
+    for (const ownerId of owners) {
       if (remaining <= 0) break;
       for (const slot of inventoryManager.findEntriesByItemId(ownerId, requirement.itemId)) {
         if (remaining <= 0) break;
@@ -79,7 +119,7 @@ export function canCraftWithPlayerStorage(
     }
   }
 
-  return accessibleOwners.some((ownerId) => inventoryManager.canAcceptQuantity(
+  return owners.some((ownerId) => inventoryManager.canAcceptQuantity(
     ownerId,
     outputItemId,
     outputQuantity,
@@ -89,7 +129,7 @@ export function canCraftWithPlayerStorage(
 }
 
 export interface CraftingRuntimeDependencies {
-  readonly inventoryManager: PlayerInventoryManager;
+  readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
   readonly productionStorageId?: EntityId;
   readonly durabilityStore: DurabilityStore;
@@ -98,7 +138,7 @@ export interface CraftingRuntimeDependencies {
 }
 
 export class CraftingRuntime {
-  private readonly inventoryManager: PlayerInventoryManager;
+  private readonly inventoryManager: InventoryManager;
   private readonly heroId: EntityId;
   private readonly productionStorageId: EntityId;
   private readonly durabilityStore: DurabilityStore;
@@ -140,7 +180,8 @@ export class CraftingRuntime {
             requirement.itemId,
             requirement.quantity,
           ).ok
-        : this.inventoryManager.removeAccessibleQuantity(
+        : removeAccessibleQuantity(
+            this.inventoryManager,
             this.heroId,
             requirement.itemId,
             requirement.quantity,
@@ -181,7 +222,7 @@ export class CraftingRuntime {
   private addOutputToAccessibleStorage(
     itemId: string,
   ): { readonly ownerId: EntityId; readonly position: number } | undefined {
-    for (const ownerId of this.inventoryManager.getAccessibleStorageOwners(this.heroId)) {
+    for (const ownerId of accessibleOwners(this.inventoryManager, this.heroId)) {
       const added = this.inventoryManager.addQuantity(ownerId, itemId, 1);
       if (!added.ok || added.value.added !== 1 || added.value.remainder !== 0) continue;
       const position = added.value.affectedPositions[0];
@@ -207,7 +248,8 @@ export class CraftingRuntime {
         continue;
       }
 
-      if (!this.inventoryManager.addAccessibleQuantity(
+      if (!addAccessibleQuantity(
+        this.inventoryManager,
         this.heroId,
         requirement.itemId,
         requirement.quantity,
