@@ -14,6 +14,7 @@ import {
 import { setupCombatEntity } from "./combatEntityFactory.js";
 import { ConsumableRuntime } from "./ConsumableRuntime.js";
 import { markCombatSegmentStart } from "./CombatSegmentLifecycle.js";
+import { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
 function setupTestEnvironment(isCombatActive: () => boolean = () => true) {
   const world = new World(createRuntimeServices());
@@ -136,6 +137,47 @@ describe("ConsumableRuntime regression suite", () => {
     expect(env.inventoryManager.getTotalQuantity(env.heroId, "item_health_potion")).toBe(1);
     expect(env.damageManager.getHealth(env.heroId).currentHealth).toBe(50);
     expect(env.consumableRuntime.getState().healthPotionCooldownRemaining).toBe(0);
+  });
+
+  it("consumes a health potion from Bank when Inventory has none", () => {
+    const world = new World(createRuntimeServices());
+    const statRegistry = createDefaultStatRegistry();
+    const statsManager = new StatsManager(world, statRegistry);
+    const damageManager = new DamageManager(world, statsManager);
+    const deathManager = new DeathManager(world, damageManager);
+    const targetValidator = new TargetValidator(world);
+    const targetManager = new TargetManager(world, targetValidator);
+    const autoAttackManager = new AutoAttackManager(world, targetManager, statsManager);
+    const abilityManager = new AbilityManager(world, statsManager);
+    const heroId = setupCombatEntity(
+      { world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager },
+      { maxHealth: 100, physDamage: 10, attackSpeed: 1, armor: 0, magicRes: 0 },
+      { x: 0, y: 0 },
+    );
+    const bankId = world.createEntity();
+    const inventoryManager = new PlayerInventoryManager(world, () => undefined);
+    inventoryManager.createInventory(heroId, 1);
+    inventoryManager.createInventory(bankId, 2);
+    inventoryManager.setAccessibleStorageOwners(heroId, [heroId, bankId]);
+    inventoryManager.addQuantity(bankId, "item_health_potion", 1, {
+      itemId: "item_health_potion",
+      stackable: true,
+      maxStack: 999,
+    });
+    damageManager.getHealth(heroId).currentHealth = 50;
+
+    const runtime = new ConsumableRuntime({
+      inventoryManager,
+      damageManager,
+      deathManager,
+      heroId,
+      isCombatActive: () => true,
+    });
+
+    expect(runtime.useConsumable("item_health_potion").ok).toBe(true);
+    expect(inventoryManager.getTotalQuantity(heroId, "item_health_potion")).toBe(0);
+    expect(inventoryManager.getTotalQuantity(bankId, "item_health_potion")).toBe(0);
+    expect(damageManager.getHealth(heroId).currentHealth).toBe(80);
   });
 
   it("Dead-state guard precedence: runs before combat, inventory or cooldown checks", () => {
