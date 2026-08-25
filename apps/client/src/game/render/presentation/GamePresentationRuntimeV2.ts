@@ -50,7 +50,6 @@ export class GamePresentationRuntime {
     this.travel = new WorldTravelPresentationController(this.scene, combat, world);
     this.lastTravelGeneration = worldTravelTransition.getGeneration();
     if (bridge !== undefined) {
-      this.lastBridgeSnapshot = bridge.getSnapshot();
       this.lastActiveGathering = selectActiveGathering(bridge);
       this.activity.update(this.lastActiveGathering);
       this.world.update(bridge, this.lastActiveGathering);
