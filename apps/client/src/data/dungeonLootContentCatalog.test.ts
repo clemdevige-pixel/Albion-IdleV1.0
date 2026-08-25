@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import {
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
-} from "./dungeonArtifactContentCatalog.js";
+} from "@game/data";
+import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import { getDungeonLootDefinition } from "./dungeonLootContentCatalog.js";
 
 describe("dungeonLootContentCatalog", () => {
