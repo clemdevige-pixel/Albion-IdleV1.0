@@ -13,11 +13,16 @@ import type {
 } from "../../game/GameBridge";
 
 const SHORTCUTS = ["Q", "W", "E"] as const;
+const TOOLTIP_AMOUNT_PRECISION = 100;
 
 export interface AbilityTooltipStats {
   readonly physicalDamage: number;
   readonly magicalDamage: number;
   readonly abilityPowerPercent: number;
+}
+
+function normalizeTooltipAmount(value: number): number {
+  return Math.round(value * TOOLTIP_AMOUNT_PRECISION) / TOOLTIP_AMOUNT_PRECISION;
 }
 
 function sourceDamage(stats: AbilityTooltipStats, damageType: DamageType): number {
@@ -42,7 +47,7 @@ function buildConditionalAmounts(
     values.push({
       kind: "health_below",
       thresholdRatio: mechanic.bonusHealthBelow.ratio,
-      amount: source * (1 + mechanic.ratio + mechanic.bonusHealthBelow.bonusRatio) * powerMultiplier,
+      amount: normalizeTooltipAmount(source * (1 + mechanic.ratio + mechanic.bonusHealthBelow.bonusRatio) * powerMultiplier),
     });
   }
 
@@ -50,7 +55,7 @@ function buildConditionalAmounts(
     values.push({
       kind: "effect_active",
       effectId: mechanic.bonusEffect.effectId,
-      amount: source * (1 + mechanic.ratio + mechanic.bonusEffect.bonusRatio) * powerMultiplier,
+      amount: normalizeTooltipAmount(source * (1 + mechanic.ratio + mechanic.bonusEffect.bonusRatio) * powerMultiplier),
     });
   }
 
@@ -67,14 +72,14 @@ function buildAbilityDetail(
     const scalingType = mechanic.scalingDamageType ?? outputType;
     const source = sourceDamage(stats, scalingType);
     const powerMultiplier = abilityPowerMultiplier(stats);
-    const amount = source * (1 + mechanic.ratio) * powerMultiplier;
+    const amount = normalizeTooltipAmount(source * (1 + mechanic.ratio) * powerMultiplier);
     const hits = Math.max(1, mechanic.hits ?? 1);
     return {
       kind: "damage",
       amount,
       damageType: outputType,
       hits,
-      amountPerHit: amount / hits,
+      amountPerHit: normalizeTooltipAmount(amount / hits),
       conditionalAmounts: buildConditionalAmounts(mechanic, source, powerMultiplier),
     };
   }
@@ -84,7 +89,7 @@ function buildAbilityDetail(
     const scalingType = mechanic.scalingDamageType ?? outputType;
     return {
       kind: "bonus_damage",
-      amount: sourceDamage(stats, scalingType) * mechanic.ratio * abilityPowerMultiplier(stats),
+      amount: normalizeTooltipAmount(sourceDamage(stats, scalingType) * mechanic.ratio * abilityPowerMultiplier(stats)),
       damageType: outputType,
     };
   }
@@ -100,11 +105,11 @@ function buildAbilityDetail(
   if (mechanic.kind === "dot") {
     const outputType = mechanic.damageType ?? definition.damageType;
     const scalingType = mechanic.scalingDamageType ?? outputType;
-    const amountPerTick = sourceDamage(stats, scalingType) * mechanic.ratio * abilityPowerMultiplier(stats);
+    const amountPerTick = normalizeTooltipAmount(sourceDamage(stats, scalingType) * mechanic.ratio * abilityPowerMultiplier(stats));
     return {
       kind: "dot",
       amountPerTick,
-      totalAmount: amountPerTick * mechanic.ticks,
+      totalAmount: normalizeTooltipAmount(amountPerTick * mechanic.ticks),
       interval: mechanic.interval,
       ticks: mechanic.ticks,
       damageType: outputType,
@@ -114,7 +119,7 @@ function buildAbilityDetail(
   if (mechanic.kind === "auto_attack_bonus_window") {
     return {
       kind: "auto_attack_bonus_window",
-      amountPerAttack: sourceDamage(stats, mechanic.scalingDamageType) * mechanic.ratio,
+      amountPerAttack: normalizeTooltipAmount(sourceDamage(stats, mechanic.scalingDamageType) * mechanic.ratio),
       duration: mechanic.duration,
       damageType: mechanic.damageType,
     };
