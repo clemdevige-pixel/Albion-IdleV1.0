@@ -19,7 +19,7 @@ import {
 import {
   GENERAL_VENDOR_FIXED_OFFERS,
   REPAIR_COST_DEFINITIONS,
-} from "../../data/economyContentCatalog.js";
+} from "@game/data";
 import {
   resolveItemStackInfo,
   resolveRepairableInfo,
