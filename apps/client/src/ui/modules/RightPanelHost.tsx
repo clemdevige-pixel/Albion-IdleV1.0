@@ -8,6 +8,7 @@ import { InventoryModule } from "../inventory";
 import { MasteriesModule } from "../masteries";
 import { IslandModule } from "../island";
 import { MerchantModule } from "../merchant";
+import { BlueOnboardingGuide } from "../onboarding/BlueOnboardingGuide";
 import { WorldModule } from "../world";
 
 export function RightPanelHost(): JSX.Element {
@@ -43,6 +44,7 @@ export function RightPanelHost(): JSX.Element {
       </div>
 
       <div className="ui-right-panel__content">
+        <BlueOnboardingGuide />
         {isDashboard ? (
           <DashboardModule />
         ) : isCharacter ? (
