@@ -31,96 +31,158 @@ function snapshot(overrides: Partial<BlueOnboardingSnapshot> = {}): BlueOnboardi
   return {
     buildingIds: buildings(),
     workerStarted: false,
-    hasT3Armor: false,
+    hasChestArmorTier3OrHigher: false,
+    hasProgressedBeyondEarlyProduction: false,
     academyResearch: [],
+    hasReachedFrostpeak: false,
+    relicState: "unobtained",
     dungeonUnlocked: false,
+    activeDungeon: false,
     clearedDungeonTiers: [],
     artifactWeaponOwned: false,
-    artifactIntroDismissed: false,
+    artifactStage: "artifacts",
+    beyondBlueOnboarding: false,
     ...overrides,
   };
 }
 
+const EARLY_READY = {
+  buildingIds: buildings("mine", "workshop"),
+  workerStarted: true,
+  hasChestArmorTier3OrHigher: true,
+} as const;
+
+const COMPLETED_RESEARCH = [
+  research(RESEARCH_IDS.enchantmentStudy, "completed"),
+  research(RESEARCH_IDS.dungeonRelicAnalysis, "completed"),
+  research(RESEARCH_IDS.dungeonSanctuaryLocation, "completed"),
+];
+
 describe("resolveBlueOnboardingStep", () => {
-  it("starts with a gathering building and never requires a tutorial flag", () => {
+  it("starts with the first gathering milestone", () => {
     expect(resolveBlueOnboardingStep(snapshot())?.id).toBe("build_gathering");
   });
 
-  it("skips already-satisfied early milestones", () => {
-    const step = resolveBlueOnboardingStep(snapshot({
-      buildingIds: buildings("mine", "workshop"),
-      workerStarted: true,
-      hasT3Armor: true,
-      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "locked")],
-    }));
-
-    expect(step?.id).toBe("discover_enchantment");
-  });
-
-  it("waits for enchantment research completion before pointing toward Frostpeak", () => {
-    const base = {
-      buildingIds: buildings("mine", "workshop"),
-      workerStarted: true,
-      hasT3Armor: true,
-    } as const;
+  it("moves from gathering to worker then workshop", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      buildingIds: buildings("mine"),
+    }))?.id).toBe("start_worker");
 
     expect(resolveBlueOnboardingStep(snapshot({
-      ...base,
-      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "active")],
+      buildingIds: buildings("mine"),
+      workerStarted: true,
+    }))?.id).toBe("build_workshop");
+  });
+
+  it("requires specifically a T3-or-higher chest milestone", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      buildingIds: buildings("mine", "workshop"),
+      workerStarted: true,
+    }))?.id).toBe("craft_t3_chest");
+
+    expect(resolveBlueOnboardingStep(snapshot(EARLY_READY))?.id).toBe("progress_blue");
+  });
+
+  it("skips obsolete production milestones for a player farther into Blue", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      hasProgressedBeyondEarlyProduction: true,
+    }))?.id).toBe("progress_blue");
+  });
+
+  it("guides enchantment research without requiring a real enchant action", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      ...EARLY_READY,
+      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "available")],
     }))?.id).toBe("unlock_enchantment");
 
     expect(resolveBlueOnboardingStep(snapshot({
-      ...base,
-      academyResearch: [
-        research(RESEARCH_IDS.enchantmentStudy, "completed"),
-        research(RESEARCH_IDS.dungeonRelicAnalysis, "locked"),
-      ],
-    }))?.id).toBe("reach_relic");
+      ...EARLY_READY,
+      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "completed")],
+    }))?.id).toBe("reach_frostpeak");
   });
 
-  it("guides relic analysis and sanctuary research from their canonical states", () => {
-    const baseResearch = [research(RESEARCH_IDS.enchantmentStudy, "completed")];
-    const base = {
-      buildingIds: buildings("mine", "workshop"),
-      workerStarted: true,
-      hasT3Armor: true,
-    } as const;
+  it("uses Frostpeak and relic canonical state for the discovery milestone", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      ...EARLY_READY,
+      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "completed")],
+      hasReachedFrostpeak: true,
+      relicState: "unobtained",
+    }))?.id).toBe("discover_relic");
 
     expect(resolveBlueOnboardingStep(snapshot({
-      ...base,
+      ...EARLY_READY,
       academyResearch: [
-        ...baseResearch,
+        research(RESEARCH_IDS.enchantmentStudy, "completed"),
         research(RESEARCH_IDS.dungeonRelicAnalysis, "available"),
       ],
+      hasReachedFrostpeak: true,
+      relicState: "charged",
     }))?.id).toBe("analyze_relic");
+  });
 
+  it("guides sanctuary research after relic analysis", () => {
     expect(resolveBlueOnboardingStep(snapshot({
-      ...base,
+      ...EARLY_READY,
       academyResearch: [
-        ...baseResearch,
+        research(RESEARCH_IDS.enchantmentStudy, "completed"),
         research(RESEARCH_IDS.dungeonRelicAnalysis, "completed"),
         research(RESEARCH_IDS.dungeonSanctuaryLocation, "available"),
       ],
+      hasReachedFrostpeak: true,
+      relicState: "examined",
     }))?.id).toBe("locate_sanctuaries");
   });
 
-  it("ends with a dismissible artifact introduction after the first T4 clear", () => {
-    const completedResearch = [
-      research(RESEARCH_IDS.enchantmentStudy, "completed"),
-      research(RESEARCH_IDS.dungeonRelicAnalysis, "completed"),
-      research(RESEARCH_IDS.dungeonSanctuaryLocation, "completed"),
-    ];
+  it("distinguishes entering from clearing the first T4 dungeon", () => {
+    const dungeonReady = {
+      ...EARLY_READY,
+      academyResearch: COMPLETED_RESEARCH,
+      hasReachedFrostpeak: true,
+      relicState: "examined" as const,
+      dungeonUnlocked: true,
+    };
+
+    expect(resolveBlueOnboardingStep(snapshot(dungeonReady))?.id).toBe("enter_t4_dungeon");
+    expect(resolveBlueOnboardingStep(snapshot({
+      ...dungeonReady,
+      activeDungeon: true,
+    }))?.id).toBe("clear_t4_dungeon");
+  });
+
+  it("shows Artifacts then Artifact weapons after the first T4 clear", () => {
     const ready = snapshot({
-      buildingIds: buildings("mine", "workshop"),
-      workerStarted: true,
-      hasT3Armor: true,
-      academyResearch: completedResearch,
+      ...EARLY_READY,
+      academyResearch: COMPLETED_RESEARCH,
+      hasReachedFrostpeak: true,
+      relicState: "examined",
       dungeonUnlocked: true,
       clearedDungeonTiers: [4],
     });
 
-    expect(resolveBlueOnboardingStep(ready)?.id).toBe("artifact_intro");
-    expect(resolveBlueOnboardingStep({ ...ready, artifactIntroDismissed: true })).toBeNull();
-    expect(resolveBlueOnboardingStep({ ...ready, artifactWeaponOwned: true })).toBeNull();
+    expect(resolveBlueOnboardingStep(ready)?.id).toBe("artifact_fragments");
+    expect(resolveBlueOnboardingStep({
+      ...ready,
+      artifactStage: "artifact_weapons",
+    })?.id).toBe("artifact_weapons");
+    expect(resolveBlueOnboardingStep({
+      ...ready,
+      artifactStage: "done",
+    })).toBeNull();
+  });
+
+  it("does not require crafting an Artifact weapon and skips the intro when one is already owned", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      ...EARLY_READY,
+      academyResearch: COMPLETED_RESEARCH,
+      hasReachedFrostpeak: true,
+      relicState: "examined",
+      dungeonUnlocked: true,
+      clearedDungeonTiers: [4],
+      artifactWeaponOwned: true,
+    }))).toBeNull();
+  });
+
+  it("returns null for a save already beyond the Blue onboarding scope", () => {
+    expect(resolveBlueOnboardingStep(snapshot({ beyondBlueOnboarding: true }))).toBeNull();
   });
 });
