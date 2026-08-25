@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { CraftingRecipeVM, CraftingRequirementVM } from "../../../game/GameBridge";
 import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import {
@@ -8,10 +9,17 @@ import {
 
 interface CraftingRecipeDetailsProps {
   readonly recipe: CraftingRecipeVM;
-  readonly onCraft: () => void;
+  readonly onCraft: () => boolean;
+}
+
+interface CraftFeedback {
+  readonly outputItemId: string;
+  readonly success: boolean;
+  readonly message: string;
 }
 
 export function CraftingRecipeDetails({ recipe, onCraft }: CraftingRecipeDetailsProps): JSX.Element {
+  const [feedback, setFeedback] = useState<CraftFeedback | null>(null);
   const isConversion = recipe.family.startsWith("other_");
   const predecessorRequirements = isConversion
     ? []
@@ -19,6 +27,18 @@ export function CraftingRecipeDetails({ recipe, onCraft }: CraftingRecipeDetails
   const materialRequirements = isConversion
     ? recipe.requirements
     : recipe.requirements.filter((requirement) => !isPredecessor(requirement, recipe.tier));
+  const visibleFeedback = feedback?.outputItemId === recipe.outputItemId ? feedback : null;
+
+  const handleCraft = (): void => {
+    const success = onCraft();
+    setFeedback({
+      outputItemId: recipe.outputItemId,
+      success,
+      message: success
+        ? `Fabrication réussie : ${recipe.recipeName}.`
+        : `Fabrication impossible : ${recipe.recipeName}.`,
+    });
+  };
 
   return (
     <section className="ui-crafting-detail" aria-labelledby="ui-crafting-recipe-title">
@@ -46,9 +66,18 @@ export function CraftingRecipeDetails({ recipe, onCraft }: CraftingRecipeDetails
         <RequirementGroup title="Équipement prédécesseur" requirements={predecessorRequirements} predecessor />
       )}
 
-      <button className="ui-production__primary-action" type="button" disabled={!recipe.canCraft} onClick={onCraft}>
+      <button className="ui-production__primary-action" type="button" disabled={!recipe.canCraft} onClick={handleCraft}>
         {recipe.canCraft ? (isConversion ? "Transformer" : "Fabriquer") : getBlockedLabel(recipe.blockedReason)}
       </button>
+      {visibleFeedback !== null && (
+        <p
+          className={`ui-crafting-detail__feedback ${visibleFeedback.success ? "is-success" : "is-error"}`}
+          role="status"
+          aria-live="polite"
+        >
+          {visibleFeedback.message}
+        </p>
+      )}
     </section>
   );
 }
