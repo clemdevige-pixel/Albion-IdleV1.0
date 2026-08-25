@@ -151,20 +151,24 @@ function useEffectAnchorPositions(
   ));
 
   useEffect(() => {
+    setPositions(mapAnchorSnapshotToHud(anchors));
+  }, [anchors]);
+
+  useEffect(() => {
     const updatePositions = (): void => {
       setPositions(mapAnchorSnapshotToHud(worldHudAnchorStore.getSnapshot()));
     };
 
-    updatePositions();
     window.addEventListener("resize", updatePositions);
     const observer = new ResizeObserver(updatePositions);
     const canvas = document.querySelector("canvas");
     if (canvas !== null) observer.observe(canvas);
+
     return () => {
       window.removeEventListener("resize", updatePositions);
       observer.disconnect();
     };
-  }, [anchors]);
+  }, []);
 
   return positions;
 }
