@@ -114,7 +114,7 @@ describe("enchantment balance", () => {
     expect(total("one_handed_weapon") + total("off_hand") + total("armor_torso") + total("armor_head") + total("armor_boots") + total("cape")).toBe(500);
   });
 
-  it("charges the same full .4 Awakening cost to 1H and 2H weapons", () => {
+  it("charges the same 225-shard .4 Awakening cost to 1H and 2H weapons", () => {
     const recipe = getNextEnchantmentRecipe(3);
     expect(recipe).toMatchObject({ fromLevel: 3, toLevel: 4, enabled: true });
     if (recipe === undefined) return;
@@ -141,7 +141,7 @@ describe("enchantment balance", () => {
     expect(oneHanded.silverCost).toBe(56_250);
     expect(oneHanded.silverCost).toBe(twoHanded.silverCost);
     expect(oneHanded.materials).toEqual([
-      { itemId: "item_resource_enchantment_shard_t4", quantity: 100 },
+      { itemId: "item_resource_enchantment_shard_t4", quantity: 225 },
       { itemId: "item_refined_metal_bar_t4", quantity: 48 },
       { itemId: "item_refined_leather_t4", quantity: 16 },
     ]);
@@ -156,7 +156,7 @@ describe("enchantment balance", () => {
     expect(t8TwoHanded.silverCost).toBe(187_500);
     expect(t8TwoHanded.materials).toContainEqual({
       itemId: "item_resource_enchantment_shard_t8",
-      quantity: 100,
+      quantity: 225,
     });
     expect(t8TwoHanded.materials).toContainEqual({
       itemId: "item_refined_planks_t8",
