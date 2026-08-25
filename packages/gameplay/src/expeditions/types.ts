@@ -8,6 +8,13 @@ export type ExpeditionDurationMs = (typeof EXPEDITION_DURATION_OPTIONS_MS)[numbe
 export type ExpeditionId = string;
 export type ExpeditionTypeId = string;
 
+export class ExpeditionRewardDeferredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ExpeditionRewardDeferredError";
+  }
+}
+
 export interface ExpeditionRequirementDefinition {
   readonly type: string;
 }
