@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { IslandBuildingId } from "@game/data";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { AcademyResearchEntryModel } from "../../runtime/bootstrap/createAcademyPresentationFoundation.js";
 import {
@@ -22,9 +23,13 @@ function research(
   };
 }
 
+function buildings(...ids: IslandBuildingId[]): ReadonlySet<IslandBuildingId> {
+  return new Set(ids);
+}
+
 function snapshot(overrides: Partial<BlueOnboardingSnapshot> = {}): BlueOnboardingSnapshot {
   return {
-    buildingIds: new Set(),
+    buildingIds: buildings(),
     workerStarted: false,
     hasT3Armor: false,
     academyResearch: [],
@@ -43,7 +48,7 @@ describe("resolveBlueOnboardingStep", () => {
 
   it("skips already-satisfied early milestones", () => {
     const step = resolveBlueOnboardingStep(snapshot({
-      buildingIds: new Set(["mine", "workshop"]),
+      buildingIds: buildings("mine", "workshop"),
       workerStarted: true,
       hasT3Armor: true,
       academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "locked")],
@@ -54,7 +59,7 @@ describe("resolveBlueOnboardingStep", () => {
 
   it("waits for enchantment research completion before pointing toward Frostpeak", () => {
     const base = {
-      buildingIds: new Set(["mine", "workshop"]),
+      buildingIds: buildings("mine", "workshop"),
       workerStarted: true,
       hasT3Armor: true,
     } as const;
@@ -76,7 +81,7 @@ describe("resolveBlueOnboardingStep", () => {
   it("guides relic analysis and sanctuary research from their canonical states", () => {
     const baseResearch = [research(RESEARCH_IDS.enchantmentStudy, "completed")];
     const base = {
-      buildingIds: new Set(["mine", "workshop"]),
+      buildingIds: buildings("mine", "workshop"),
       workerStarted: true,
       hasT3Armor: true,
     } as const;
@@ -106,7 +111,7 @@ describe("resolveBlueOnboardingStep", () => {
       research(RESEARCH_IDS.dungeonSanctuaryLocation, "completed"),
     ];
     const ready = snapshot({
-      buildingIds: new Set(["mine", "workshop"]),
+      buildingIds: buildings("mine", "workshop"),
       workerStarted: true,
       hasT3Armor: true,
       academyResearch: completedResearch,
