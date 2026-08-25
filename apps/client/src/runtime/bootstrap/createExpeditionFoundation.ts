@@ -3,7 +3,6 @@ import {
   ExpeditionRewardDeferredError,
   ExpeditionService,
   type CurrencyService,
-  type InventoryManager,
   type ResearchService,
   type WalletId,
 } from "@game/gameplay";
@@ -26,6 +25,7 @@ import {
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
 import { ExpeditionRewardLedger } from "../ExpeditionRewardLedger.js";
+import type { PlayerInventoryManager } from "../PlayerInventoryManager.js";
 
 export interface GeneralistExpeditionRewardSummary {
   readonly kind: "silver";
@@ -54,7 +54,7 @@ export interface ExpeditionFoundationDependencies {
   readonly researchService: ResearchService<ResearchContentRequirement>;
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
-  readonly inventoryManager: InventoryManager;
+  readonly inventoryManager: PlayerInventoryManager;
   readonly heroId: EntityId;
   readonly random?: () => number;
   /** @deprecated Ignored since Faction Expeditions no longer use faction Mastery yield. */
@@ -80,37 +80,29 @@ interface QuantityReward {
 }
 
 function creditInventoryRewards(
-  inventoryManager: InventoryManager,
+  inventoryManager: PlayerInventoryManager,
   heroId: EntityId,
   rewards: readonly QuantityReward[],
   expeditionId: string,
 ): void {
   const positiveRewards = rewards.filter(({ quantity }) => quantity > 0);
+  const credited: QuantityReward[] = [];
+
   for (const reward of positiveRewards) {
     if (!Number.isSafeInteger(reward.quantity)) {
       throw new Error(`Expedition produced a non-integer inventory reward: ${expeditionId}`);
     }
-    if (!inventoryManager.canAcceptQuantity(heroId, reward.itemId, reward.quantity)) {
+    if (!inventoryManager.addAccessibleQuantity(heroId, reward.itemId, reward.quantity)) {
+      for (const previous of [...credited].reverse()) {
+        if (!inventoryManager.removeAccessibleQuantity(heroId, previous.itemId, previous.quantity)) {
+          throw new Error(`Expedition reward rollback failed: ${expeditionId}`);
+        }
+      }
       throw new ExpeditionRewardDeferredError(
-        `Expedition inventory capacity exceeded: ${expeditionId}`,
+        `Expedition accessible storage capacity exceeded: ${expeditionId}`,
       );
     }
-  }
-
-  const credited: QuantityReward[] = [];
-  try {
-    for (const reward of positiveRewards) {
-      const added = inventoryManager.addQuantity(heroId, reward.itemId, reward.quantity);
-      if (!added.ok || added.value.added !== reward.quantity || added.value.remainder !== 0) {
-        throw new Error(`Expedition reward credit failed: ${expeditionId}`);
-      }
-      credited.push(reward);
-    }
-  } catch (error) {
-    for (const reward of [...credited].reverse()) {
-      inventoryManager.removeQuantity(heroId, reward.itemId, reward.quantity);
-    }
-    throw error;
+    credited.push(reward);
   }
 }
 
@@ -166,7 +158,7 @@ export function createExpeditionFoundation(dependencies: ExpeditionFoundationDep
             reward.silver,
           );
           if (!credited.ok) {
-            dependencies.inventoryManager.removeQuantity(
+            dependencies.inventoryManager.removeAccessibleQuantity(
               dependencies.heroId,
               reward.shardItemId,
               reward.shards,
