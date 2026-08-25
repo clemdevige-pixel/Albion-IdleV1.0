@@ -1,17 +1,13 @@
-import { getFactionRuneItemId } from "@game/data";
-import { getDungeonKeyFragmentItemId, getDungeonKeyItemId } from "./dungeonKeyContentCatalog.js";
+import {
+  FACTION_EXPEDITION_REWARD_PROFILES,
+  getDungeonKeyFragmentItemId,
+  getDungeonKeyItemId,
+  getFactionRuneItemId,
+  type FactionExpeditionRewardProfile,
+  type FactionExpeditionTier,
+} from "@game/data";
 
-export type FactionExpeditionTier = 4 | 5 | 6 | 7 | 8;
 export type FactionExpeditionResultQuality = "difficile" | "reussie" | "fructueuse" | "exceptionnelle";
-
-export interface FactionExpeditionRewardProfile {
-  readonly tier: FactionExpeditionTier;
-  readonly runesPerHour: number;
-  readonly runeVariance: number;
-  readonly fragmentsPerHour: number;
-  readonly fragmentVariance: number;
-  readonly completeKeysPerHourEv: number;
-}
 
 export interface RolledFactionExpeditionReward {
   readonly runeItemId: string;
@@ -23,13 +19,11 @@ export interface RolledFactionExpeditionReward {
   readonly quality: FactionExpeditionResultQuality;
 }
 
-export const FACTION_EXPEDITION_REWARD_PROFILES: Readonly<Record<FactionExpeditionTier, FactionExpeditionRewardProfile>> = {
-  4: { tier: 4, runesPerHour: 8, runeVariance: 0.20, fragmentsPerHour: 24, fragmentVariance: 0.30, completeKeysPerHourEv: 1.2 },
-  5: { tier: 5, runesPerHour: 14, runeVariance: 0.20, fragmentsPerHour: 22, fragmentVariance: 0.30, completeKeysPerHourEv: 1.1 },
-  6: { tier: 6, runesPerHour: 25, runeVariance: 0.20, fragmentsPerHour: 19, fragmentVariance: 0.30, completeKeysPerHourEv: 1.0 },
-  7: { tier: 7, runesPerHour: 40, runeVariance: 0.20, fragmentsPerHour: 17, fragmentVariance: 0.30, completeKeysPerHourEv: 0.8 },
-  8: { tier: 8, runesPerHour: 60, runeVariance: 0.20, fragmentsPerHour: 9, fragmentVariance: 0.30, completeKeysPerHourEv: 0.45 },
-};
+export {
+  FACTION_EXPEDITION_REWARD_PROFILES,
+  type FactionExpeditionRewardProfile,
+  type FactionExpeditionTier,
+} from "@game/data";
 
 function assertTier(tier: number): FactionExpeditionTier {
   if (tier !== 4 && tier !== 5 && tier !== 6 && tier !== 7 && tier !== 8) {
@@ -50,7 +44,6 @@ function centeredFactor(variance: number, random: () => number): number {
   return 1 + (random() + random() - 1) * variance;
 }
 
-/** Independent hourly triangular draws preserve EV/h while making longer Expeditions relatively more stable. */
 function rollCenteredDurationTotal(
   ratePerHour: number,
   hours: number,
@@ -69,7 +62,6 @@ function rollCenteredDurationTotal(
   return Math.max(1, Math.round(total));
 }
 
-/** Integer-only Poisson draw. Mean and variance both equal lambda; no fractional key can ever be credited. */
 function rollPoisson(lambda: number, random: () => number): number {
   if (lambda <= 0) return 0;
   const limit = Math.exp(-lambda);
@@ -82,7 +74,11 @@ function rollPoisson(lambda: number, random: () => number): number {
   return draws - 1;
 }
 
-function qualityFromRatios(runeRatio: number, fragmentRatio: number, keyRatio: number): FactionExpeditionResultQuality {
+function qualityFromRatios(
+  runeRatio: number,
+  fragmentRatio: number,
+  keyRatio: number,
+): FactionExpeditionResultQuality {
   const score = (runeRatio + fragmentRatio + keyRatio) / 3;
   if (score < 0.85) return "difficile";
   if (score < 1.10) return "reussie";
