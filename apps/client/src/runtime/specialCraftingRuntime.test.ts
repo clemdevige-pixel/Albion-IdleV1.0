@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
-import { DurabilityStore, InventoryManager } from "@game/gameplay";
-import { KEY_FRAGMENTS_PER_KEY, ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE } from "../data/economyContentCatalog.js";
 import {
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
-} from "../data/dungeonArtifactContentCatalog.js";
+} from "@game/data";
+import { DurabilityStore, InventoryManager } from "@game/gameplay";
+import { KEY_FRAGMENTS_PER_KEY, ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE } from "../data/economyContentCatalog.js";
 import {
   getDungeonKeyFragmentItemId,
   getDungeonKeyItemId,
