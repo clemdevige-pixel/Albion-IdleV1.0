@@ -70,6 +70,9 @@ export * from "./config/world-progression-contract.js";
 export * from "./config/faction-runes.js";
 export * from "./config/faction-rune-world-drops.js";
 
+// Authored economy and loot balance values
+export * from "./config/economy-balance.js";
+
 // Player Island configuration
 export * from "./config/island.js";
 export * from "./config/island-progression.js";
