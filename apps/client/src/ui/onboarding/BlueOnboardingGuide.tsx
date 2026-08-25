@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAuthSession } from "../../auth/AuthSessionContext.js";
 import { isArtifactWeaponCraftOutput } from "../../data/artifactWeaponCraftRecipes.js";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { useSaveSlotSession } from "../../state/SaveSlotSessionContext.js";
@@ -7,17 +8,23 @@ import "./onboarding.css";
 
 const ARTIFACT_INTRO_STORAGE_PREFIX = "albion-idle:onboarding:artifact-intro:";
 
-function readArtifactIntroDismissed(slotId: string): boolean {
+function artifactIntroStorageKey(accountId: string, slotId: string): string {
+  return `${ARTIFACT_INTRO_STORAGE_PREFIX}${accountId}:${slotId}`;
+}
+
+function readArtifactIntroDismissed(storageKey: string): boolean {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(`${ARTIFACT_INTRO_STORAGE_PREFIX}${slotId}`) === "1";
+  return window.localStorage.getItem(storageKey) === "1";
 }
 
 export function BlueOnboardingGuide(): JSX.Element | null {
   const bridge = useGameBridge();
   const services = useGameServices();
+  const { account } = useAuthSession();
   const { activeSlotId } = useSaveSlotSession();
+  const storageKey = artifactIntroStorageKey(account.id, activeSlotId);
   const [artifactIntroDismissed, setArtifactIntroDismissed] = useState(
-    () => readArtifactIntroDismissed(activeSlotId),
+    () => readArtifactIntroDismissed(storageKey),
   );
 
   const step = useMemo(() => {
@@ -55,7 +62,7 @@ export function BlueOnboardingGuide(): JSX.Element | null {
   const dismissArtifactIntro = (): void => {
     if (step.id !== "artifact_intro") return;
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(`${ARTIFACT_INTRO_STORAGE_PREFIX}${activeSlotId}`, "1");
+      window.localStorage.setItem(storageKey, "1");
     }
     setArtifactIntroDismissed(true);
   };
