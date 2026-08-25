@@ -144,7 +144,9 @@ export function createCharacterStorageFoundation({
     walletId,
     inventoryOwnerId: heroId,
     inventoryOwnerIds: [heroId, bankId],
-    resolveMaterialOwnerId: (itemId) => isProductionMaterial(itemId) ? productionStorageId : heroId,
+    resolveMaterialOwnerIds: (itemId) => isProductionMaterial(itemId)
+      ? [productionStorageId]
+      : inventoryManager.getAccessibleStorageOwners(heroId),
     resolveItemInfo: resolveAuthoredEnchantmentItemInfo,
     ...(canEnchant === undefined ? {} : { canEnchantNow: canEnchant }),
     ...(onEnchantmentCommitted === undefined ? {} : { onEnchantmentCommitted }),
