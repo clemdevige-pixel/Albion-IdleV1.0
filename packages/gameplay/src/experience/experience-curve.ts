@@ -1,3 +1,8 @@
+import {
+  GATHERING_MASTERY_EXPERIENCE_BALANCE,
+  WEAPON_MASTERY_EXPERIENCE_BALANCE,
+} from "@game/data";
+
 /**
  * Deterministic Mastery Experience Curve Generator (28_EXPERIENCE_SYSTEM).
  *
@@ -6,13 +11,8 @@
  * and strict monotonic progression checks.
  */
 
-export const WEAPON_MASTERY_BASE_XP = [
-  100, 200, 300, 450, 650, 900, 1200, 1600, 2100, 2700,
-] as const;
-
-export const GATHERING_MASTERY_BASE_XP = [
-  50, 100, 175, 275, 400, 550, 750, 1000, 1300, 1700,
-] as const;
+export const WEAPON_MASTERY_BASE_XP = WEAPON_MASTERY_EXPERIENCE_BALANCE.baseXpLevels1To10;
+export const GATHERING_MASTERY_BASE_XP = GATHERING_MASTERY_EXPERIENCE_BALANCE.baseXpLevels1To10;
 
 /**
  * Player-friendly XP requirement rounding:
@@ -66,18 +66,18 @@ export function generateMasteryExperienceCurve(
   return reqs;
 }
 
-/** Variant B Long-Term Weapon Mastery Experience Curve (100 levels). */
+/** Long-term Weapon Mastery Experience Curve. */
 export const WEAPON_MASTERY_XP: readonly number[] = generateMasteryExperienceCurve(
   WEAPON_MASTERY_BASE_XP,
-  40,
-  1.90,
-  100,
+  WEAPON_MASTERY_EXPERIENCE_BALANCE.extensionCoefficient,
+  WEAPON_MASTERY_EXPERIENCE_BALANCE.extensionExponent,
+  WEAPON_MASTERY_EXPERIENCE_BALANCE.maxLevel,
 );
 
-/** Variant B Long-Term Gathering Mastery Experience Curve (100 levels). */
+/** Long-term Gathering Mastery Experience Curve. */
 export const GATHERING_MASTERY_XP: readonly number[] = generateMasteryExperienceCurve(
   GATHERING_MASTERY_BASE_XP,
-  25,
-  1.85,
-  100,
+  GATHERING_MASTERY_EXPERIENCE_BALANCE.extensionCoefficient,
+  GATHERING_MASTERY_EXPERIENCE_BALANCE.extensionExponent,
+  GATHERING_MASTERY_EXPERIENCE_BALANCE.maxLevel,
 );
