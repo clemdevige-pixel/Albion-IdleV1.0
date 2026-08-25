@@ -1,4 +1,5 @@
 import {
+  ARTIFACT_WEAPON_RUNE_COST_BY_TIER,
   getDungeonArtifactItemId,
   getFactionRuneItemId,
   type DungeonArtifactFactionId,
@@ -13,14 +14,6 @@ import {
   type WeaponFamilyId,
 } from "./weaponContentCatalog.js";
 import { STANDARD_WEAPON_CRAFT_RECIPES } from "./refiningRecipes.js";
-
-export const ARTIFACT_WEAPON_RUNE_COST_BY_TIER = {
-  4: 5,
-  5: 10,
-  6: 20,
-  7: 35,
-  8: 55,
-} as const satisfies Readonly<Record<DungeonArtifactTier, number>>;
 
 const DUNGEON_FACTION_BY_ARTIFACT_FACTION = {
   Keeper: "keeper",
