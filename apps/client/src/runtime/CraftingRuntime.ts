@@ -104,9 +104,11 @@ export function canCraftWithPlayerStorage(
   for (const ownerId of owners) freedByOwner.set(ownerId, new Set());
 
   for (const requirement of requirements) {
-    if (isProductionMaterial(requirement.itemId)) continue;
+    const sourceOwners = isProductionMaterial(requirement.itemId)
+      ? owners.includes(productionStorageId) ? [productionStorageId] : []
+      : owners;
     let remaining = requirement.quantity;
-    for (const ownerId of owners) {
+    for (const ownerId of sourceOwners) {
       if (remaining <= 0) break;
       for (const slot of inventoryManager.findEntriesByItemId(ownerId, requirement.itemId)) {
         if (remaining <= 0) break;
