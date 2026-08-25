@@ -15,11 +15,11 @@ export interface GeneralistExpeditionRewardProfile {
 export const GENERALIST_EXPEDITION_REWARD_PROFILES: Readonly<
   Record<GeneralistExpeditionTier, GeneralistExpeditionRewardProfile>
 > = {
-  4: { tier: 4, silverPerHour: 30_000, silverVariance: 0.20, shardsPerHour: 46, shardVariance: 0.25 },
-  5: { tier: 5, silverPerHour: 55_000, silverVariance: 0.20, shardsPerHour: 47, shardVariance: 0.25 },
-  6: { tier: 6, silverPerHour: 70_000, silverVariance: 0.20, shardsPerHour: 50, shardVariance: 0.25 },
-  7: { tier: 7, silverPerHour: 80_000, silverVariance: 0.20, shardsPerHour: 43, shardVariance: 0.25 },
-  8: { tier: 8, silverPerHour: 90_000, silverVariance: 0.20, shardsPerHour: 38, shardVariance: 0.25 },
+  4: { tier: 4, silverPerHour: 30_000, silverVariance: 0.20, shardsPerHour: 23, shardVariance: 0.25 },
+  5: { tier: 5, silverPerHour: 55_000, silverVariance: 0.20, shardsPerHour: 23.5, shardVariance: 0.25 },
+  6: { tier: 6, silverPerHour: 70_000, silverVariance: 0.20, shardsPerHour: 25, shardVariance: 0.25 },
+  7: { tier: 7, silverPerHour: 80_000, silverVariance: 0.20, shardsPerHour: 21.5, shardVariance: 0.25 },
+  8: { tier: 8, silverPerHour: 90_000, silverVariance: 0.20, shardsPerHour: 19, shardVariance: 0.25 },
 };
 
 export type FactionExpeditionTier = 4 | 5 | 6 | 7 | 8;
@@ -36,9 +36,9 @@ export interface FactionExpeditionRewardProfile {
 export const FACTION_EXPEDITION_REWARD_PROFILES: Readonly<
   Record<FactionExpeditionTier, FactionExpeditionRewardProfile>
 > = {
-  4: { tier: 4, runesPerHour: 8, runeVariance: 0.20, fragmentsPerHour: 24, fragmentVariance: 0.30, completeKeysPerHourEv: 1.2 },
-  5: { tier: 5, runesPerHour: 14, runeVariance: 0.20, fragmentsPerHour: 22, fragmentVariance: 0.30, completeKeysPerHourEv: 1.1 },
-  6: { tier: 6, runesPerHour: 25, runeVariance: 0.20, fragmentsPerHour: 19, fragmentVariance: 0.30, completeKeysPerHourEv: 1.0 },
-  7: { tier: 7, runesPerHour: 40, runeVariance: 0.20, fragmentsPerHour: 17, fragmentVariance: 0.30, completeKeysPerHourEv: 0.8 },
-  8: { tier: 8, runesPerHour: 60, runeVariance: 0.20, fragmentsPerHour: 9, fragmentVariance: 0.30, completeKeysPerHourEv: 0.45 },
+  4: { tier: 4, runesPerHour: 4, runeVariance: 0.20, fragmentsPerHour: 12, fragmentVariance: 0.30, completeKeysPerHourEv: 0.6 },
+  5: { tier: 5, runesPerHour: 7, runeVariance: 0.20, fragmentsPerHour: 11, fragmentVariance: 0.30, completeKeysPerHourEv: 0.55 },
+  6: { tier: 6, runesPerHour: 12.5, runeVariance: 0.20, fragmentsPerHour: 9.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.5 },
+  7: { tier: 7, runesPerHour: 20, runeVariance: 0.20, fragmentsPerHour: 8.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.4 },
+  8: { tier: 8, runesPerHour: 30, runeVariance: 0.20, fragmentsPerHour: 4.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.225 },
 };
