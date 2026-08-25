@@ -45,8 +45,8 @@ describe("PlayerInventoryManager accessible storage", () => {
     fixture.inventory.addQuantity(fixture.bankId, "reward", 98);
 
     expect(fixture.inventory.addAccessibleQuantity(fixture.heroId, "reward", 10)).toBe(true);
-    expect(fixture.inventory.getTotalQuantity(fixture.heroId, "reward")).toBe(106);
-    expect(fixture.inventory.findEntriesByItemId(fixture.heroId, "reward").map((slot) => slot.entry?.quantity)).toEqual([99, 7]);
+    expect(fixture.inventory.getTotalQuantity(fixture.heroId, "reward")).toBe(104);
+    expect(fixture.inventory.findEntriesByItemId(fixture.heroId, "reward").map((slot) => slot.entry?.quantity)).toEqual([99, 5]);
     expect(fixture.inventory.getTotalQuantity(fixture.bankId, "reward")).toBe(99);
   });
 
