@@ -874,6 +874,9 @@ export function GameProvider({
       constructIslandBuilding: (definitionId, plotId) => (
         islandActions.constructBuilding(definitionId, plotId)
       ),
+      moveIslandBuilding: (buildingInstanceId, targetPlotId) => (
+        islandActions.moveBuilding(buildingInstanceId, targetPlotId)
+      ),
       upgradeIslandBuilding: (definitionId) => islandActions.upgradeBuilding(definitionId),
       getIslandLevel: () => islandService.getState().level,
       upgradeIslandLevel: () => islandActions.upgradeIslandLevel(),
