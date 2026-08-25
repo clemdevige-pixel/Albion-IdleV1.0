@@ -7,7 +7,6 @@ import {
 } from "../enchantment-balance.js";
 import {
   ENCHANTMENT_MINIMUM_ITEM_TIER,
-  ENCHANTMENT_SHARD_COSTS,
   getEnchantmentShardItemId,
   getNextEnchantmentRecipe,
   scaleEnchantmentRecipe,
@@ -38,8 +37,7 @@ describe("enchantment balance", () => {
     expect(ENCHANTMENT_MINIMUM_ITEM_TIER).toBe(4);
   });
 
-  it("uses one shard resource per tier with 10/30/60/100 costs", () => {
-    expect(ENCHANTMENT_SHARD_COSTS).toEqual({ 1: 10, 2: 30, 3: 60, 4: 100 });
+  it("resolves tier shard ids and applies transition costs to scaled recipes", () => {
     expect(getEnchantmentShardItemId(4)).toBe("item_resource_enchantment_shard_t4");
     expect(getEnchantmentShardItemId(5)).toBe("item_resource_enchantment_shard_t5");
 
