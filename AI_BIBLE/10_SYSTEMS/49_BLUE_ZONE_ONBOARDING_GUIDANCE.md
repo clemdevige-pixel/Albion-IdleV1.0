@@ -39,7 +39,8 @@ The displayed objective is therefore a suggestion, not an instruction to the run
    - Rationale: Workshop construction is the durable canonical proxy proving the player has crossed the initial production/refining bridge. No transient “first refine” tutorial flag is required.
 
 4. Craft the first T3 armor.
-   - Detection: a T3 armor recipe output is owned in equipment, Inventory or Bank.
+   - Detection: a conventional chest armor of T3 or above is owned in Equipment, Inventory or Bank.
+   - A higher-tier armor also satisfies the milestone so an advanced/imported save is never asked to backtrack artificially.
    - Armor is intentionally used as the equipment milestone because it is the centerpiece of the early equipment set.
 
 5. Continue Blue Zone progression until enchantment research is discovered.
@@ -47,6 +48,7 @@ The displayed objective is therefore a suggestion, not an instruction to the run
    - This phase introduces `Progression` versus optional `Farm` play without forcing either behavior.
 
 6. Introduce Academy through enchantment research.
+   - If Academy is not built yet, the guide introduces its construction first inside the same milestone.
    - Detection: `RESEARCH_IDS.enchantmentStudy` reaches completed state.
    - The player is NOT required to perform an actual enchantment. Completing the research and opening the merchant Enchanter service is sufficient.
 
@@ -96,7 +98,7 @@ Canonical state remains owned by existing systems:
 
 No tutorial flag is allowed to affect these systems.
 
-The only dedicated onboarding state is the acknowledgement of the final artifact-information card. This is UI-only and stored per local save-slot key. It has zero effect on gameplay and may safely be absent on another device; at worst the informational card is shown again.
+The only dedicated onboarding state is the acknowledgement of the final artifact-information card. This is UI-only and stored locally under an account + save-slot scoped key. It has zero effect on gameplay and may safely be absent on another device; at worst the informational card is shown again.
 
 ## Future-agent rules
 
