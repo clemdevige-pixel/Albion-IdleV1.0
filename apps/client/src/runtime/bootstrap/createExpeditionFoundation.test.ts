@@ -5,7 +5,6 @@ import {
   CurrencyRegistry,
   CurrencyService,
   EXPEDITION_DURATION_OPTIONS_MS,
-  InventoryManager,
   ResearchService,
   asPlayerId,
   asWalletId,
@@ -20,6 +19,7 @@ import {
   RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
+import { PlayerInventoryManager } from "../PlayerInventoryManager.js";
 import { createExpeditionFoundation } from "./createExpeditionFoundation.js";
 
 function createResearchService(unlocks: readonly string[]) {
@@ -48,10 +48,13 @@ function createResearchService(unlocks: readonly string[]) {
 function createFoundation(unlocks: readonly string[], random: () => number = () => 0.5) {
   const world = new World(createRuntimeServices());
   const heroId = world.createEntity();
+  const bankId = world.createEntity();
   const unrelatedStorageId = world.createEntity();
-  const inventoryManager = new InventoryManager(world, resolveItemStackInfo);
+  const inventoryManager = new PlayerInventoryManager(world, resolveItemStackInfo);
   inventoryManager.createInventory(heroId, 8);
+  inventoryManager.createInventory(bankId, 8);
   inventoryManager.createInventory(unrelatedStorageId, 8);
+  inventoryManager.setAccessibleStorageOwners(heroId, [heroId, bankId]);
 
   const registry = new CurrencyRegistry();
   expect(registry.register({
@@ -73,7 +76,7 @@ function createFoundation(unlocks: readonly string[], random: () => number = () 
     random,
   });
 
-  return { ...foundation, heroId, unrelatedStorageId, inventoryManager };
+  return { ...foundation, heroId, bankId, unrelatedStorageId, inventoryManager };
 }
 
 describe("createExpeditionFoundation", () => {
@@ -111,6 +114,32 @@ describe("createExpeditionFoundation", () => {
       shardsCredited: 92,
       quality: "reussie",
     });
+  });
+
+  it("uses the bank as overflow when the hero inventory is full", () => {
+    const {
+      expeditionService,
+      heroId,
+      bankId,
+      unrelatedStorageId,
+      inventoryManager,
+    } = createFoundation([RESEARCH_UNLOCK_IDS.silverExpeditionTier4]);
+
+    for (let index = 0; index < 8; index += 1) {
+      const result = inventoryManager.addQuantity(heroId, `test_filler_${String(index)}`, 1);
+      expect(result.ok).toBe(true);
+    }
+
+    const durationMs = EXPEDITION_DURATION_OPTIONS_MS[0];
+    const shardItemId = getEnchantmentShardItemId(4);
+    expect(expeditionService.startExpedition("expedition_silver_t4", durationMs).ok).toBe(true);
+
+    const advance = expeditionService.advance(durationMs);
+
+    expect(inventoryManager.getTotalQuantity(heroId, shardItemId)).toBe(0);
+    expect(inventoryManager.getTotalQuantity(bankId, shardItemId)).toBe(92);
+    expect(inventoryManager.getTotalQuantity(unrelatedStorageId, shardItemId)).toBe(0);
+    expect(advance.completed).toHaveLength(1);
   });
 
   it("credits integer Runes, fragments and complete keys and returns recap data", () => {
