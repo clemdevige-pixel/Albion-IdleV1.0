@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
-  KEY_FRAGMENTS_PER_KEY,
-} from "./economyContentCatalog";
-import {
   DUNGEON_ARTIFACT_FACTIONS,
   DUNGEON_ARTIFACT_TIERS,
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
-} from "./dungeonArtifactContentCatalog";
+} from "@game/data";
+import {
+  ARTIFACT_FRAGMENTS_PER_CRAFT_CHARGE,
+  KEY_FRAGMENTS_PER_KEY,
+} from "./economyContentCatalog";
 import {
   getFragmentAssemblyRecipe,
   SPECIAL_CRAFT_RECIPES,
