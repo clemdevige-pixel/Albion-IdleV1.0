@@ -32,6 +32,7 @@ function snapshot(overrides: Partial<BlueOnboardingSnapshot> = {}): BlueOnboardi
     buildingIds: buildings(),
     workerStarted: false,
     hasChestArmorTier3OrHigher: false,
+    hasEquippedTier4OrHigher: false,
     hasProgressedBeyondEarlyProduction: false,
     academyResearch: [],
     hasReachedFrostpeak: false,
@@ -50,6 +51,7 @@ const EARLY_READY = {
   buildingIds: buildings("mine", "workshop"),
   workerStarted: true,
   hasChestArmorTier3OrHigher: true,
+  hasEquippedTier4OrHigher: true,
 } as const;
 
 const COMPLETED_RESEARCH = [
@@ -79,14 +81,43 @@ describe("resolveBlueOnboardingStep", () => {
       buildingIds: buildings("mine", "workshop"),
       workerStarted: true,
     }))?.id).toBe("craft_t3_chest");
+  });
+
+  it("guides the player to equip a first T4 piece after the T3 chest milestone", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      buildingIds: buildings("mine", "workshop"),
+      workerStarted: true,
+      hasChestArmorTier3OrHigher: true,
+    }))?.id).toBe("equip_t4");
 
     expect(resolveBlueOnboardingStep(snapshot(EARLY_READY))?.id).toBe("progress_blue");
+  });
+
+  it("keeps T4 equipment guidance before available enchantment research", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      buildingIds: buildings("mine", "workshop"),
+      workerStarted: true,
+      hasChestArmorTier3OrHigher: true,
+      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "available")],
+    }))?.id).toBe("equip_t4");
+
+    expect(resolveBlueOnboardingStep(snapshot({
+      ...EARLY_READY,
+      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "available")],
+    }))?.id).toBe("unlock_enchantment");
   });
 
   it("skips obsolete production milestones for a player farther into Blue", () => {
     expect(resolveBlueOnboardingStep(snapshot({
       hasProgressedBeyondEarlyProduction: true,
+      hasEquippedTier4OrHigher: true,
     }))?.id).toBe("progress_blue");
+  });
+
+  it("does not force a T4 regression once enchantment research is already completed", () => {
+    expect(resolveBlueOnboardingStep(snapshot({
+      academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "completed")],
+    }))?.id).toBe("reach_frostpeak");
   });
 
   it("guides enchantment research without requiring a real enchant action", () => {
