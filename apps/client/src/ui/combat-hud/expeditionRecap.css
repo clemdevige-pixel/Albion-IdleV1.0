@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   background: rgb(7 10 14 / 62%);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .expedition-recap {
@@ -17,6 +17,7 @@
   background: var(--ui-panel-bg, #171b20);
   box-shadow: 0 14px 40px rgb(0 0 0 / 45%);
   padding: 16px;
+  pointer-events: auto;
 }
 
 .expedition-recap__header,
