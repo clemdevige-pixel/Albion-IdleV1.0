@@ -84,8 +84,16 @@ function assetStyle(assetId: IslandBuildingId | "constructible"): CSSProperties 
 
 export function IslandWorldRegion(): JSX.Element {
   const { island, workers } = useGameBridge();
-  const { getIslandLevel } = useGameServices();
-  const { selectedPlotId, selectedBuildingInstanceId, selectPlot, selectBuilding, clearSelection } = useIslandSelection();
+  const { getIslandLevel, moveIslandBuilding } = useGameServices();
+  const {
+    selectedPlotId,
+    selectedBuildingInstanceId,
+    movingBuildingInstanceId,
+    selectPlot,
+    selectBuilding,
+    cancelMovingBuilding,
+    clearSelection,
+  } = useIslandSelection();
   const islandLevel = getIslandLevel();
   const levelDefinition = getIslandLevelDefinition(islandLevel);
 
@@ -101,7 +109,9 @@ export function IslandWorldRegion(): JSX.Element {
           <span>DOMAINE DU JOUEUR</span>
           <strong>Île niv. {String(islandLevel)} · {levelDefinition?.label ?? "Développement"}</strong>
         </div>
-        <button type="button" onClick={clearSelection}>Vue d'ensemble</button>
+        <button type="button" onClick={movingBuildingInstanceId === null ? clearSelection : cancelMovingBuilding}>
+          {movingBuildingInstanceId === null ? "Vue d'ensemble" : "Annuler le déplacement"}
+        </button>
       </div>
 
       <div className="ui-island-world__surface">
@@ -133,6 +143,12 @@ export function IslandWorldRegion(): JSX.Element {
                 className={`ui-island-world__plot${building === undefined ? " is-empty" : " is-built"}${selected ? " is-selected" : ""}`}
                 style={{ left: `${String(position.left)}%`, top: `${String(position.top)}%`, ...assetStyle(assetId) }}
                 onClick={() => {
+                  if (movingBuildingInstanceId !== null) {
+                    if (!moveIslandBuilding(movingBuildingInstanceId, plotDefinition.id)) return;
+                    selectBuilding(plotDefinition.id, movingBuildingInstanceId);
+                    cancelMovingBuilding();
+                    return;
+                  }
                   if (building === undefined) selectPlot(plotDefinition.id);
                   else selectBuilding(plotDefinition.id, building.instanceId);
                 }}
@@ -155,7 +171,11 @@ export function IslandWorldRegion(): JSX.Element {
 
       <div className="ui-island-world__hint">
         <span>{String(island.buildings.length)} / {String(PLAYER_ISLAND_CONFIG.buildings.length)} bâtiments</span>
-        <span>Cliquez directement sur un atelier ou un emplacement pour gérer le domaine.</span>
+        <span>
+          {movingBuildingInstanceId === null
+            ? "Cliquez directement sur un atelier ou un emplacement pour gérer le domaine."
+            : "Choisissez une parcelle vide pour déplacer le bâtiment, ou une parcelle occupée pour intervertir les deux bâtiments."}
+        </span>
       </div>
     </main>
   );
