@@ -12,7 +12,6 @@ import type {
   EnchantmentService,
   EquipmentManager,
   ExpeditionDurationMs,
-  InventoryManager,
   PlayerId,
   RelicProgressView,
   StartExpeditionResult,
@@ -31,6 +30,7 @@ import type { ExpeditionRecapModel } from "../runtime/bootstrap/createExpedition
 import type { ResearchRecapModel } from "../runtime/bootstrap/createResearchRecapFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
+import type { PlayerInventoryManager } from "../runtime/PlayerInventoryManager.js";
 import type { DungeonAccessState } from "./DungeonNavigationActions.js";
 import type { RefiningToggleTarget } from "./production/ProductionActions.js";
 
@@ -50,7 +50,7 @@ export interface GameServices {
   readonly heroId: EntityId;
   readonly bankId: EntityId;
   readonly productionStorageId: EntityId;
-  readonly inventoryManager: InventoryManager;
+  readonly inventoryManager: PlayerInventoryManager;
   readonly equipmentManager: EquipmentManager;
   readonly enchantmentService: EnchantmentService;
   readonly awakenedWeaponService: AwakenedWeaponService;
