@@ -41,7 +41,7 @@ function ownsChestTier3OrHigher(itemIds: readonly (string | undefined)[]): boole
     if (itemId === undefined) return false;
     const definition = resolveEquipmentInfo(itemId);
     const tier = getItemTier(itemId);
-    return definition?.slot === "torso" && tier !== undefined && tier >= 3;
+    return definition?.slot === "chest" && tier !== undefined && tier >= 3;
   });
 }
 
