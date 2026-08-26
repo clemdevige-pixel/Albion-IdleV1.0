@@ -1,5 +1,6 @@
 import type { GameBridgeState, MasteryVM, WorkerVM } from "../../game/GameBridge";
 import { getWeaponMasteryFamilyDefinitions, type WeaponFamilyId } from "../../data/weaponContentCatalog";
+import { resolveWeaponSpecializationIcon } from "../../data/weaponItemVisualCatalog";
 import {
   WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL,
   WEAPON_FAMILY_IP_PER_LEVEL,
@@ -45,11 +46,11 @@ export interface MasteryProgressModel {
   readonly isUnlocked: boolean;
   readonly bonuses: readonly string[];
   readonly subtitle?: string;
+  readonly iconAsset?: string;
 }
 
 export interface MasteryFamilyModel extends MasteryProgressModel {
   readonly icon: string;
-  readonly iconAsset?: string;
   readonly specializations: readonly MasteryProgressModel[];
 }
 
@@ -100,6 +101,7 @@ function combatProgress(mastery: MasteryVM, family: boolean): MasteryProgressMod
       `+${formatItemPower(WEAPON_SPECIALIZATION_IP_PER_LEVEL)} / +${formatItemPower(WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP par niveau`,
     ],
     subtitle: "Bonus principal + synergie de famille",
+    iconAsset: resolveWeaponSpecializationIcon(mastery.id),
   };
 }
 
