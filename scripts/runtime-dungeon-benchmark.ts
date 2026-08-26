@@ -1,8 +1,10 @@
+import { T4_ARTIFACT_WEAPONS } from "../apps/client/src/data/artifactWeaponBenchmarkFixtures.js";
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
 import {
   DUNGEON_DEFINITIONS,
   KEEPER_T4_DUNGEON_ID,
 } from "../apps/client/src/data/dungeonContentCatalog.js";
+import { resolveArtifactDungeonDamageBonusPercent } from "../apps/client/src/data/weaponContentCatalog.js";
 import { WORLD_ZONE_IDS } from "../apps/client/src/data/worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
 
@@ -39,6 +41,7 @@ function runDungeon(input: {
   readonly weaponItemId: string;
   readonly dungeonDefinitionId: string;
   readonly faction: string;
+  readonly heroDamageMultiplier?: number;
 }) {
   return runCombatRuntimeBenchmark({
     label: input.label,
@@ -52,6 +55,7 @@ function runDungeon(input: {
     specializationMasteryLevel: MASTERY_LEVEL,
     siblingSpecializationMasteryLevel: 0,
     useHealthPotions: true,
+    ...(input.heroDamageMultiplier === undefined ? {} : { heroDamageMultiplier: input.heroDamageMultiplier }),
   });
 }
 
@@ -164,3 +168,38 @@ const clearSummary = t4Dungeons.map((dungeon) => {
 });
 console.log("[DUNGEON_T4_CLEAR_SUMMARY]");
 console.table(clearSummary);
+
+const favorableArtifactRows = t4Dungeons.flatMap((dungeon) => T4_ARTIFACT_WEAPONS
+  .filter((weapon) => resolveArtifactDungeonDamageBonusPercent(weapon.itemId, dungeon.faction) === 20)
+  .map((weapon) => ({
+    dungeon: dungeon.id,
+    faction: dungeon.faction,
+    family: weapon.family,
+    weapon: weapon.label,
+    bonusPct: 20,
+    ...summarize(runDungeon({
+      label: `${dungeon.id}_counter_${weapon.family}`,
+      weaponItemId: weapon.itemId,
+      dungeonDefinitionId: dungeon.id,
+      faction: dungeon.faction,
+      heroDamageMultiplier: 1.2,
+    })),
+  })));
+console.log("[DUNGEON_T4_COUNTER_FACTION_MATRIX]");
+console.table(favorableArtifactRows);
+
+const favorableArtifactSummary = t4Dungeons.map((dungeon) => {
+  const rows = favorableArtifactRows.filter((row) => row.dungeon === dungeon.id);
+  const clears = rows.filter((row) => row.clear && row.withinReportedTwoPotionCap);
+  return {
+    dungeon: dungeon.id,
+    faction: dungeon.faction,
+    counterWeapons: rows.length,
+    clearCount: `${String(clears.length)}/${String(rows.length)}`,
+    minClearHpPct: clears.length > 0 ? Math.min(...clears.map((row) => row.hpPct)) : null,
+    maxClearHpPct: clears.length > 0 ? Math.max(...clears.map((row) => row.hpPct)) : null,
+    maxPotionsUsed: rows.length > 0 ? Math.max(...rows.map((row) => row.potions)) : null,
+  };
+});
+console.log("[DUNGEON_T4_COUNTER_FACTION_SUMMARY]");
+console.table(favorableArtifactSummary);
