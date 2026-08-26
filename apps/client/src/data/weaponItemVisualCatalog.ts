@@ -38,9 +38,16 @@ const WEAPON_ITEM_ICON_BY_SPECIALIZATION: Readonly<Record<string, string>> = {
   mastery_claws: "icons/armes/claws.png",
 };
 
+export function resolveWeaponSpecializationIcon(
+  specializationMasteryId: string | undefined,
+): string | undefined {
+  if (specializationMasteryId === undefined) return undefined;
+  return WEAPON_ITEM_ICON_BY_SPECIALIZATION[specializationMasteryId];
+}
+
 export function resolveWeaponItemIcon(itemId: string | undefined): string | undefined {
   if (itemId === undefined) return undefined;
   const mastery = resolveWeaponMastery(itemId);
   if (mastery === undefined) return undefined;
-  return WEAPON_ITEM_ICON_BY_SPECIALIZATION[mastery.weaponId];
+  return resolveWeaponSpecializationIcon(mastery.weaponId);
 }
