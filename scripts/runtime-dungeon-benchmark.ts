@@ -5,7 +5,7 @@ import {
 } from "../apps/client/src/data/artifactWeaponBenchmarkFixtures.js";
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
 import { DUNGEON_DEFINITIONS } from "../apps/client/src/data/dungeonContentCatalog.js";
-import { FACTION_ARTIFACT_MATCHUP_DAMAGE_BONUS_PERCENT } from "../apps/client/src/data/factionArtifactWeaponContent.js";
+import { FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT } from "../apps/client/src/data/factionArtifactWeaponContent.js";
 import { resolveArtifactDungeonDamageBonusPercent } from "../apps/client/src/data/weaponContentCatalog.js";
 import { WORLD_ZONE_IDS } from "../apps/client/src/data/worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
@@ -15,7 +15,7 @@ const ENCHANTMENT = 3 as const;
 const POTION_CAP = 2;
 const ZONE_DEF_ID = WORLD_ZONE_IDS.mountain;
 const SEGMENT_INDEX = 9;
-const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_MATCHUP_DAMAGE_BONUS_PERCENT;
+const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT;
 const FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;
 
 const BASE_WEAPON_SPECS = [
