@@ -16,34 +16,43 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Final Keeper margin probes
+      - name: Final combined dungeon contract candidate
         shell: bash
         run: |
           set -e
-          cp apps/client/src/data/dungeonContentCatalog.ts /tmp/orig.ts
-          patch_hp() {
-            DID="$1" HP="$2" python - <<'PY'
+          python - <<'PY'
           from pathlib import Path
-          import os,re
-          p=Path('apps/client/src/data/dungeonContentCatalog.ts'); s=p.read_text(); did=os.environ['DID']
-          m=re.search(rf'(\[{did}\]: \[\n)(.*?)(\n  \],)',s,re.S); rows=m.group(2).split('\n')
-          rows[-1]=re.sub(r'hp: [0-9.]+',f"hp: {os.environ['HP']}",rows[-1])
-          p.write_text(s[:m.start()]+m.group(1)+'\n'.join(rows)+m.group(3)+s[m.end():])
+          import re
+
+          p = Path('apps/client/src/data/dungeonContentCatalog.ts')
+          s = p.read_text()
+
+          def patch(did, row, hp=None, damage=None):
+              global s
+              m = re.search(rf'(\[{did}\]: \[\n)(.*?)(\n  \],)', s, re.S)
+              if not m:
+                  raise SystemExit(f'missing dungeon block: {did}')
+              rows = m.group(2).split('\n')
+              if hp is not None:
+                  rows[row] = re.sub(r'hp: [0-9.]+', f'hp: {hp}', rows[row])
+              if damage is not None:
+                  rows[row] = re.sub(r'damage: [0-9.]+', f'damage: {damage}', rows[row])
+              s = s[:m.start()] + m.group(1) + '\n'.join(rows) + m.group(3) + s[m.end():]
+
+          patch('HERETIC_T5_DUNGEON_ID', 2, damage='1.21')
+          patch('HERETIC_T5_DUNGEON_ID', 3, hp='0.75', damage='1.68')
+          patch('UNDEAD_T5_DUNGEON_ID', 3, damage='1.18')
+          patch('MORGANA_T5_DUNGEON_ID', 3, hp='0.85', damage='1.30')
+          patch('KEEPER_T6_DUNGEON_ID', 3, hp='1.21')
+          patch('KEEPER_T7_DUNGEON_ID', 3, hp='1.63')
+          patch('KEEPER_T8_DUNGEON_ID', 3, hp='1.00')
+          p.write_text(s)
           PY
-          }
-          run_keeper() {
-            LABEL="$1" TIER="$2"
-            echo "===== $LABEL ====="
-            pnpm benchmark:dungeons > /tmp/out.txt
-            awk "/\\[DUNGEON_T${TIER}_BASE_MATRIX\\]/{p=1;next}/\\[DUNGEON_T${TIER}_BASE_SUMMARY\\]/{p=0} p&&/dungeon_keeper_t${TIER}/{print}" /tmp/out.txt
-          }
-          for hp in 1.21 1.22 1.23 1.24; do
-            cp /tmp/orig.ts apps/client/src/data/dungeonContentCatalog.ts
-            patch_hp KEEPER_T6_DUNGEON_ID "$hp"
-            run_keeper "T6 Keeper hp=$hp" 6
-          done
-          for hp in 1.62 1.63 1.64; do
-            cp /tmp/orig.ts apps/client/src/data/dungeonContentCatalog.ts
-            patch_hp KEEPER_T7_DUNGEON_ID "$hp"
-            run_keeper "T7 Keeper hp=$hp" 7
+          pnpm benchmark:dungeons | tee /tmp/dungeons.txt
+          echo '===== CONTRACT FOCUS ====='
+          for tier in 4 5 6 7 8; do
+            echo "--- T${tier} BASE SUMMARY ---"
+            awk "/\\[DUNGEON_T${tier}_BASE_SUMMARY\\]/{p=1;next}/\\[DUNGEON_T${tier}_COUNTER_FACTION_MATRIX\\]/{p=0} p" /tmp/dungeons.txt
+            echo "--- T${tier} FAVORABLE SUMMARY ---"
+            awk "/\\[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY\\]/{p=1;next} p" /tmp/dungeons.txt | head -n 8
           done
