@@ -16,4 +16,35 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - name: Apply candidate A in workspace only
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('apps/client/src/data/dungeonContentCatalog.ts')
+          s=p.read_text()
+          def edit(did, damage_scale=None, boss_hp=None):
+              global s
+              pat=rf'(\[{did}\]: \[\n)(.*?)(\n  \],)'
+              m=re.search(pat,s,re.S)
+              if not m: raise SystemExit(f'missing {did}')
+              body=m.group(2)
+              if damage_scale is not None:
+                  body=re.sub(r'damage: ([0-9.]+)', lambda x: f"damage: {round(float(x.group(1))*damage_scale, 5)}", body)
+              if boss_hp is not None:
+                  rows=body.split('\n')
+                  rows[-1]=re.sub(r'hp: [0-9.]+', f'hp: {boss_hp}', rows[-1])
+                  body='\n'.join(rows)
+              s=s[:m.start()]+m.group(1)+body+m.group(3)+s[m.end():]
+          edit('HERETIC_T4_DUNGEON_ID', damage_scale=1.01)
+          edit('HERETIC_T5_DUNGEON_ID', boss_hp=1.08)
+          edit('UNDEAD_T5_DUNGEON_ID', boss_hp=1.07)
+          edit('MORGANA_T5_DUNGEON_ID', boss_hp=1.06)
+          edit('KEEPER_T6_DUNGEON_ID', damage_scale=1.05)
+          edit('KEEPER_T7_DUNGEON_ID', damage_scale=1.20)
+          edit('UNDEAD_T7_DUNGEON_ID', boss_hp=1.67)
+          edit('MORGANA_T7_DUNGEON_ID', boss_hp=1.66)
+          edit('KEEPER_T8_DUNGEON_ID', damage_scale=0.95)
+          p.write_text(s)
+          PY
       - run: pnpm benchmark:dungeons
