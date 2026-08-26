@@ -4,11 +4,15 @@ on:
     branches: [agent/albion-idle-development]
     paths:
       - '.github/workflows/tmp-dungeon-contract-audit.yml'
+permissions:
+  contents: write
 jobs:
-  audit:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: agent/albion-idle-development
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -16,7 +20,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Final combined dungeon contract candidate
+      - name: Apply validated dungeon contract values
         shell: bash
         run: |
           set -e
@@ -48,11 +52,14 @@ jobs:
           patch('KEEPER_T8_DUNGEON_ID', 3, hp='1.00')
           p.write_text(s)
           PY
-          pnpm benchmark:dungeons | tee /tmp/dungeons.txt
-          echo '===== CONTRACT FOCUS ====='
-          for tier in 4 5 6 7 8; do
-            echo "--- T${tier} BASE SUMMARY ---"
-            awk "/\\[DUNGEON_T${tier}_BASE_SUMMARY\\]/{p=1;next}/\\[DUNGEON_T${tier}_COUNTER_FACTION_MATRIX\\]/{p=0} p" /tmp/dungeons.txt
-            echo "--- T${tier} FAVORABLE SUMMARY ---"
-            awk "/\\[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY\\]/{p=1;next} p" /tmp/dungeons.txt | head -n 8
-          done
+          pnpm benchmark:dungeons > /tmp/dungeons.txt
+          grep -q "'dungeon_keeper_t8'.*'5/5'" /tmp/dungeons.txt
+          grep -q "'dungeon_morgana_t8'.*'5/5'" /tmp/dungeons.txt
+      - name: Commit live calibration
+        shell: bash
+        run: |
+          git config user.name "Kowzil"
+          git config user.email "clem.devige@gmail.com"
+          git add apps/client/src/data/dungeonContentCatalog.ts
+          git commit -m "balance(dungeons): enforce T4-T8 progression contract"
+          git push origin HEAD:agent/albion-idle-development
