@@ -13,6 +13,10 @@ function BonusList({ bonuses }: { readonly bonuses: readonly string[] }): JSX.El
   return <ul className="ui-mastery-bonuses">{bonuses.map((bonus) => <li key={bonus}>{bonus}</li>)}</ul>;
 }
 
+function iconSource(iconAsset: string): string {
+  return iconAsset.startsWith("/") ? iconAsset : `/assets/items/${iconAsset}`;
+}
+
 function ChildMasteryRow({
   mastery,
   fallbackIconAsset,
@@ -29,7 +33,7 @@ function ChildMasteryRow({
           {iconAsset !== undefined && (
             <img
               className="ui-mastery-specialization__icon"
-              src={`/assets/items/${iconAsset}`}
+              src={iconSource(iconAsset)}
               alt=""
               aria-hidden="true"
             />
