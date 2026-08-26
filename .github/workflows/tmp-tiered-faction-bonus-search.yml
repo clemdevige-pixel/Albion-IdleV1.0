@@ -20,7 +20,6 @@ jobs:
         shell: bash
         run: |
           set -e
-          cp scripts/runtime-dungeon-benchmark.ts /tmp/original.ts
           python - <<'PY'
           from pathlib import Path
           p=Path('scripts/runtime-dungeon-benchmark.ts')
@@ -40,20 +39,20 @@ jobs:
           const bonus=Number(process.argv[2]);
           const text=fs.readFileSync(process.argv[3],'utf8');
           for(const tier of [4,5,6,7,8]){
-            const start=text.indexOf(`[DUNGEON_T${tier}_COUNTER_FACTION_MATRIX]`);
-            const end=text.indexOf(`[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY]`);
-            const chunk=text.slice(start,end);
+            const start=text.indexOf(`[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY]`);
+            const nextTier=text.indexOf(`[DUNGEON_T${tier+1}_REFERENCE]`, start);
+            const chunk=text.slice(start, nextTier === -1 ? text.length : nextTier);
             const rows=[];
             for(const line of chunk.split('\n')){
-              if(!line.includes('│') || !line.includes(`│ ${tier}`)) continue;
+              if(!line.includes('dungeon_') || !line.includes('│')) continue;
               const cells=line.split('│').map(x=>x.trim()).filter(Boolean);
-              if(cells.length < 18) continue;
-              const clear=cells[6] === 'true';
-              const hp=Number(cells[8]);
-              if(Number.isFinite(hp)) rows.push({clear,hp});
+              if(cells.length < 9) continue;
+              const clearCount=String(cells[4]).replaceAll("'",'');
+              const hp=Number(cells[5]);
+              rows.push({clearCount,hp});
             }
-            const allClear=rows.length===20 && rows.every(r=>r.clear);
-            const minHp=rows.length ? Math.min(...rows.filter(r=>r.clear).map(r=>r.hp)) : -1;
+            const allClear=rows.length===4 && rows.every(r=>r.clearCount==='5/5');
+            const minHp=rows.length===4 ? Math.min(...rows.map(r=>r.hp)) : -1;
             console.log(`${bonus}\t${tier}\t${minHp}\t${allClear}`);
           }
           NODE
