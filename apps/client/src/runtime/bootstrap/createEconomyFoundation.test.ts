@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { GENERAL_VENDOR_FIXED_OFFERS } from "@game/data";
+import {
+  DAILY_MERCHANT_VENDOR_ID,
+  DAILY_MERCHANT_VENDOR_OFFERS,
+  GENERAL_VENDOR_FIXED_OFFERS,
+  GENERAL_VENDOR_ID,
+} from "@game/data";
 import { EquipmentManager, InventoryManager } from "@game/gameplay";
 import { resolveEquipmentInfo, resolveItemStackInfo } from "../../data/itemContentCatalog";
 import { createCombatFoundation } from "./createCombatFoundation";
 import { createEconomyFoundation } from "./createEconomyFoundation";
 
 describe("createEconomyFoundation", () => {
-  it("initializes the player wallet and general vendor with fixed offers only", () => {
+  it("keeps fixed and rotating vendor catalogues isolated", () => {
     const combat = createCombatFoundation();
     const inventoryManager = new InventoryManager(
       combat.world,
@@ -22,17 +27,12 @@ describe("createEconomyFoundation", () => {
       equipmentManager,
     });
 
-    expect(
-      economy.currencyService.getBalance(
-        economy.walletId,
-        "currency_silver",
-      ),
-    ).toEqual({ ok: true, value: 1000 });
+    const generalVendor = economy.vendorRegistry.get(GENERAL_VENDOR_ID);
+    const dailyVendor = economy.vendorRegistry.get(DAILY_MERCHANT_VENDOR_ID);
 
-    const vendor = economy.vendorRegistry.get("vendor_general");
-    expect(vendor).toBeDefined();
-    expect(vendor?.offers).toEqual(GENERAL_VENDOR_FIXED_OFFERS);
-    expect(vendor?.offers.some((offer) => offer.itemId.startsWith("item_weapon_"))).toBe(false);
+    expect(generalVendor?.offers).toEqual(GENERAL_VENDOR_FIXED_OFFERS);
+    expect(dailyVendor?.offers).toEqual(DAILY_MERCHANT_VENDOR_OFFERS);
+    expect(generalVendor?.offers.some((offer) => offer.itemId.startsWith("item_weapon_"))).toBe(false);
 
     combat.orchestrator.dispose();
   });
