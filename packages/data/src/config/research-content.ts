@@ -19,6 +19,7 @@ export const RESEARCH_IDS = {
   workerOrganization: "research_worker_organization",
   instantRefining: "research_instant_refining",
   dungeonRelicAnalysis: "research_dungeon_relic_analysis",
+  /** Legacy save id migrated into dungeonRelicAnalysis. Not an active authored Research. */
   dungeonSanctuaryLocation: "research_dungeon_sanctuary_location",
 } as const;
 
@@ -61,6 +62,7 @@ export interface AuthoredResearchDefinition {
   };
   readonly requirements: readonly AuthoredResearchRequirement[];
   readonly unlockIds: readonly string[];
+  readonly legacyIds?: readonly string[];
 }
 
 const CARTOGRAPHY_RESEARCH = [
@@ -87,8 +89,23 @@ const ECONOMY_RESEARCH = [
 ] as const satisfies readonly AuthoredResearchDefinition[];
 
 const DUNGEON_DISCOVERY_RESEARCH = [
-  { id: RESEARCH_IDS.dungeonRelicAnalysis, displayName: "Analyse de la Relique", tier: 4, durationMs: 10 * MINUTE_MS, cost: { silver: 0, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 4 }, { type: "relic_charged", relicId: DUNGEON_RELIC_ID }], unlockIds: [RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed] },
-  { id: RESEARCH_IDS.dungeonSanctuaryLocation, displayName: "Localisation des Sanctuaires", tier: 4, durationMs: HOUR_MS, cost: { silver: 10_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 4 }, { type: "research_unlock", unlockId: RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed }], unlockIds: [RESEARCH_UNLOCK_IDS.dungeonSystem, RESEARCH_UNLOCK_IDS.factionRuneWorldDrop] },
+  {
+    id: RESEARCH_IDS.dungeonRelicAnalysis,
+    displayName: "Analyse de la Relique",
+    tier: 4,
+    durationMs: 10 * MINUTE_MS,
+    cost: { silver: 10_000, materials: [] },
+    requirements: [
+      { type: "academy_tier", minimumTier: 4 },
+      { type: "relic_charged", relicId: DUNGEON_RELIC_ID },
+    ],
+    unlockIds: [
+      RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed,
+      RESEARCH_UNLOCK_IDS.dungeonSystem,
+      RESEARCH_UNLOCK_IDS.factionRuneWorldDrop,
+    ],
+    legacyIds: [RESEARCH_IDS.dungeonSanctuaryLocation],
+  },
 ] as const satisfies readonly AuthoredResearchDefinition[];
 
 export const RESEARCH_AUTHORED_DEFINITIONS: readonly AuthoredResearchDefinition[] = [
