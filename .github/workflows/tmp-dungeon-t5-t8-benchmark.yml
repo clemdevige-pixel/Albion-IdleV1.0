@@ -1,0 +1,19 @@
+name: tmp-dungeon-t5-t8-benchmark
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-dungeon-t5-t8-benchmark.yml'
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm benchmark:dungeons
