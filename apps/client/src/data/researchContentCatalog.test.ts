@@ -128,26 +128,20 @@ describe("Academy research content", () => {
     expect(definition?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.instantRefining]);
   });
 
-  it("authors the charged Relic -> analysis -> sanctuary discovery chain", () => {
+  it("uses one charged-Relic analysis to unlock the complete Dungeon discovery loop", () => {
     const analysis = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.dungeonRelicAnalysis);
     expect(analysis?.tier).toBe(4);
     expect(analysis?.durationMs).toBe(10 * 60 * 1000);
-    expect(analysis?.cost).toEqual({ silver: 0, materials: [] });
+    expect(analysis?.cost).toEqual({ silver: 10_000, materials: [] });
+    expect(analysis?.requirements).toContainEqual({ type: "academy_tier", minimumTier: 4 });
     expect(analysis?.requirements).toContainEqual({ type: "relic_charged", relicId: DUNGEON_RELIC_ID });
-    expect(analysis?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed]);
-
-    const sanctuary = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.dungeonSanctuaryLocation);
-    expect(sanctuary?.tier).toBe(4);
-    expect(sanctuary?.durationMs).toBe(60 * 60 * 1000);
-    expect(sanctuary?.cost).toEqual({ silver: 10_000, materials: [] });
-    expect(sanctuary?.requirements).toContainEqual({
-      type: "research_unlock",
-      unlockId: RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed,
-    });
-    expect(sanctuary?.unlockIds).toEqual([
+    expect(analysis?.unlockIds).toEqual([
+      RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed,
       RESEARCH_UNLOCK_IDS.dungeonSystem,
       RESEARCH_UNLOCK_IDS.factionRuneWorldDrop,
     ]);
+    expect(analysis?.legacyIds).toEqual([RESEARCH_IDS.dungeonSanctuaryLocation]);
+    expect(RESEARCH_DEFINITIONS.some((entry) => entry.id === RESEARCH_IDS.dungeonSanctuaryLocation)).toBe(false);
   });
 
   it("keeps every authored Research gated by its Academy tier", () => {
