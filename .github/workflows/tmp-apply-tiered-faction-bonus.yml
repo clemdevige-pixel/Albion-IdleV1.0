@@ -25,12 +25,12 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          # Authoritative data table.
+          # Authoritative data table. ProductionTier includes T3, while artifact weapons start at T4.
           p=Path('apps/client/src/data/factionArtifactWeaponContent.ts')
           s=p.read_text()
           s=s.replace(
             'export const FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT = 20;',
-            'export const FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER: Readonly<Record<ProductionTier, number>> = {\n  4: 20,\n  5: 22,\n  6: 24,\n  7: 26,\n  8: 28,\n};'
+            'export const FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER: Readonly<Partial<Record<ProductionTier, number>>> = {\n  4: 20,\n  5: 22,\n  6: 24,\n  7: 26,\n  8: 28,\n};'
           )
           p.write_text(s)
 
@@ -40,7 +40,7 @@ jobs:
           s=s.replace('  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,', '  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER,')
           s=s.replace(
             'export function resolveArtifactDungeonDamageBonusPercent(itemId: string, dungeonFaction: string): number {\n  const artifactFaction = resolveWeaponArtifactFaction(itemId);\n  if (artifactFaction === undefined) return 0;\n  return FACTION_ARTIFACT_ADVANTAGE[artifactFaction] === dungeonFaction ? FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT : 0;\n}',
-            'export function resolveArtifactDungeonDamageBonusPercent(itemId: string, dungeonFaction: string): number {\n  const route = CONTENT_BY_ITEM_ID.get(itemId);\n  const artifactFaction = route?.specialization.artifactFaction;\n  if (artifactFaction === undefined || route === undefined) return 0;\n  if (FACTION_ARTIFACT_ADVANTAGE[artifactFaction] !== dungeonFaction) return 0;\n  return FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER[route.item.tier];\n}'
+            'export function resolveArtifactDungeonDamageBonusPercent(itemId: string, dungeonFaction: string): number {\n  const route = CONTENT_BY_ITEM_ID.get(itemId);\n  const artifactFaction = route?.specialization.artifactFaction;\n  if (artifactFaction === undefined || route === undefined) return 0;\n  if (FACTION_ARTIFACT_ADVANTAGE[artifactFaction] !== dungeonFaction) return 0;\n  return FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER[route.item.tier] ?? 0;\n}'
           )
           p.write_text(s)
 
@@ -56,16 +56,17 @@ jobs:
           s=s.replace('+{formatStatValue(FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT)}% dégâts infligés', '+{formatStatValue(artifactAdvantageBonusPercent ?? 0)}% dégâts infligés')
           p.write_text(s)
 
-          # Canonical benchmark reads the authored per-tier value through the resolver.
+          # Canonical benchmark consumes the same authored table/resolver.
           p=Path('scripts/runtime-dungeon-benchmark.ts')
           s=p.read_text()
-          s=s.replace('import { FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT } from "../apps/client/src/data/factionArtifactWeaponContent.js";\n', '')
-          s=s.replace('const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT;\nconst FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;\n', '')
-          s=s.replace('    favorableFactionBonusPct: FAVORABLE_FACTION_BONUS_PCT,', '    favorableFactionBonusPct: resolveArtifactDungeonDamageBonusPercent(ARTIFACT_WEAPON_BENCHMARK_SPECS[0]!.itemId(tier), FACTION_ARTIFACT_ADVANTAGE_TARGET_PLACEHOLDER),')
-          # Replace the reference line with a tier-safe lookup using the first actual favorable row candidate.
           s=s.replace(
-            '    favorableFactionBonusPct: resolveArtifactDungeonDamageBonusPercent(ARTIFACT_WEAPON_BENCHMARK_SPECS[0]!.itemId(tier), FACTION_ARTIFACT_ADVANTAGE_TARGET_PLACEHOLDER),',
-            '    favorableFactionBonusPct: 20 + (tier - 4) * 2,'
+            'import { FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT } from "../apps/client/src/data/factionArtifactWeaponContent.js";',
+            'import { FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER } from "../apps/client/src/data/factionArtifactWeaponContent.js";'
+          )
+          s=s.replace('const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT;\nconst FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;\n', '')
+          s=s.replace(
+            '    favorableFactionBonusPct: FAVORABLE_FACTION_BONUS_PCT,',
+            '    favorableFactionBonusPct: FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER[tier] ?? 0,'
           )
           old='''  const favorableRows = dungeons.flatMap((dungeon) => ARTIFACT_WEAPON_BENCHMARK_SPECS\n    .map((weapon) => ({ weapon, itemId: weapon.itemId(tier) }))\n    .filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) === FAVORABLE_FACTION_BONUS_PCT)\n    .map(({ weapon, itemId }) => ({\n      tier,\n      dungeon: dungeon.id,\n      faction: dungeon.faction,\n      family: weapon.family,\n      weapon: weapon.label,\n      bonusPct: FAVORABLE_FACTION_BONUS_PCT,\n      ...summarize(runDungeon({\n        tier,\n        label: `${dungeon.id}_counter_${weapon.family}`,\n        weaponItemId: itemId,\n        dungeonDefinitionId: dungeon.id,\n        faction: dungeon.faction,\n        heroDamageMultiplier: FAVORABLE_FACTION_DAMAGE_MULTIPLIER,\n      })),\n    })));'''
           new='''  const favorableRows = dungeons.flatMap((dungeon) => ARTIFACT_WEAPON_BENCHMARK_SPECS\n    .map((weapon) => ({\n      weapon,\n      itemId: weapon.itemId(tier),\n      bonusPct: resolveArtifactDungeonDamageBonusPercent(weapon.itemId(tier), dungeon.faction),\n    }))\n    .filter(({ bonusPct }) => bonusPct > 0)\n    .map(({ weapon, itemId, bonusPct }) => ({\n      tier,\n      dungeon: dungeon.id,\n      faction: dungeon.faction,\n      family: weapon.family,\n      weapon: weapon.label,\n      bonusPct,\n      ...summarize(runDungeon({\n        tier,\n        label: `${dungeon.id}_counter_${weapon.family}`,\n        weaponItemId: itemId,\n        dungeonDefinitionId: dungeon.id,\n        faction: dungeon.faction,\n        heroDamageMultiplier: 1 + bonusPct / 100,\n      })),\n    })));'''
