@@ -25,13 +25,13 @@ jobs:
           p = Path('apps/client/src/data/dungeonContentCatalog.ts')
           s = p.read_text()
           replacements = {
-            'hp: 1.288, damage: 1.15, defense: 1.1 },\n  ],\n  [UNDEAD_T5_DUNGEON_ID]': 'hp: 1.05, damage: 1.15, defense: 1.1 },\n  ],\n  [UNDEAD_T5_DUNGEON_ID]',
+            'hp: 1.288, damage: 1.15, defense: 1.1 },\n  ],\n  [UNDEAD_T5_DUNGEON_ID]': 'hp: 1.02, damage: 1.15, defense: 1.1 },\n  ],\n  [UNDEAD_T5_DUNGEON_ID]',
             'hp: 1.242, damage: 1.15, defense: 1.1 },\n  ],\n  [MORGANA_T5_DUNGEON_ID]': 'hp: 1.04, damage: 1.15, defense: 1.1 },\n  ],\n  [MORGANA_T5_DUNGEON_ID]',
             'hp: 1.15, damage: 1.15, defense: 1.1 },\n  ],\n  [KEEPER_T6_DUNGEON_ID]': 'hp: 1.02, damage: 1.15, defense: 1.1 },\n  ],\n  [KEEPER_T6_DUNGEON_ID]',
             'hp: 1.357, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T6_DUNGEON_ID]': 'hp: 1.45, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T6_DUNGEON_ID]',
-            'hp: 2.093, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T8_DUNGEON_ID]': 'hp: 1.6, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T8_DUNGEON_ID]',
-            'hp: 1.656, damage: 1.05, defense: 1.1 },\n  ],\n  [MORGANA_T8_DUNGEON_ID]': 'hp: 1.38, damage: 1.05, defense: 1.1 },\n  ],\n  [MORGANA_T8_DUNGEON_ID]',
-            'hp: 1.564, damage: 1.05, defense: 1.1 },\n  ],\n};': 'hp: 1.34, damage: 1.05, defense: 1.1 },\n  ],\n};',
+            'hp: 2.093, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T8_DUNGEON_ID]': 'hp: 1.53, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T8_DUNGEON_ID]',
+            'hp: 1.656, damage: 1.05, defense: 1.1 },\n  ],\n  [MORGANA_T8_DUNGEON_ID]': 'hp: 1.32, damage: 1.05, defense: 1.1 },\n  ],\n  [MORGANA_T8_DUNGEON_ID]',
+            'hp: 1.564, damage: 1.05, defense: 1.1 },\n  ],\n};': 'hp: 1.29, damage: 1.05, defense: 1.1 },\n  ],\n};',
           }
           for old, new in replacements.items():
               if old not in s:
