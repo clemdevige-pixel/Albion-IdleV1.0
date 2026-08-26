@@ -25,7 +25,6 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          # Authoritative data table. ProductionTier includes T3, while artifact weapons start at T4.
           p=Path('apps/client/src/data/factionArtifactWeaponContent.ts')
           s=p.read_text()
           s=s.replace(
@@ -34,7 +33,6 @@ jobs:
           )
           p.write_text(s)
 
-          # Resolver derives bonus from the equipped artifact weapon tier.
           p=Path('apps/client/src/data/weaponContentCatalog.ts')
           s=p.read_text()
           s=s.replace('  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,', '  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER,')
@@ -44,7 +42,6 @@ jobs:
           )
           p.write_text(s)
 
-          # Tooltip consumes the resolver instead of a flat constant.
           p=Path('apps/client/src/panels/ItemTooltip.tsx')
           s=p.read_text()
           s=s.replace('  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,\n  getArtifactAdvantageTarget,', '  getArtifactAdvantageTarget,')
@@ -56,7 +53,6 @@ jobs:
           s=s.replace('+{formatStatValue(FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT)}% dégâts infligés', '+{formatStatValue(artifactAdvantageBonusPercent ?? 0)}% dégâts infligés')
           p.write_text(s)
 
-          # Canonical benchmark consumes the same authored table/resolver.
           p=Path('scripts/runtime-dungeon-benchmark.ts')
           s=p.read_text()
           s=s.replace(
@@ -75,7 +71,6 @@ jobs:
           s=s.replace(old,new)
           p.write_text(s)
 
-          # Contract test explicitly locks the tier curve.
           p=Path('apps/client/src/data/factionArtifactWeaponContent.test.ts')
           s=p.read_text()
           marker='''    expect(resolveArtifactDungeonDamageBonusPercent(keeper, "Keeper")).toBe(0);\n    expect(resolveArtifactDungeonDamageBonusPercent("item_weapon_sword_t4_broadsword", "Morgana")).toBe(0);\n  });'''
@@ -87,6 +82,7 @@ jobs:
           PY
       - run: pnpm --filter @game/client typecheck
       - run: pnpm --filter @game/client test -- --run src/data/factionArtifactWeaponContent.test.ts src/data/factionArtifactDungeonBonusABBenchmark.test.ts
+      - run: pnpm build
       - run: pnpm benchmark:dungeons
       - name: Commit validated implementation
         shell: bash
