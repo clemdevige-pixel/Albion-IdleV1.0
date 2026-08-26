@@ -28,6 +28,7 @@
     "benchmark:boss-roles": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-role-telemetry.ts",
     "benchmark:boss-only": "tsx --tsconfig tsconfig.base.json scripts/runtime-boss-only-role-telemetry.ts",
     "benchmark:blue-contract": "tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-contract-audit.ts",
+    "benchmark:dungeons": "tsx --tsconfig tsconfig.base.json scripts/runtime-dungeon-benchmark.ts",
     "benchmark:global-enchantment-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-global-enchantment-wall-matrix.ts",
     "benchmark:enchantment-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-progression-audit.ts",
     "benchmark:final-gates": "tsx --tsconfig tsconfig.base.json scripts/runtime-final-gate-audit.ts",
