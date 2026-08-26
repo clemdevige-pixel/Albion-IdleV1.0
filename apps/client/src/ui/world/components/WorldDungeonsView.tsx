@@ -8,7 +8,7 @@ import { useGameUiSelector } from "../../state/useGameUiSelector.js";
 import "./WorldDungeonsView.css";
 
 interface DungeonPresentationModel {
-  readonly inventory: Readonly<Record<string, number>>;
+  readonly keyQuantities: Readonly<Record<string, number>>;
   readonly accessByDefinitionId: Readonly<Record<string, DungeonAccessState>>;
   readonly activeDefinitionId: string | null;
   readonly activeEncounterIndex: number | null;
@@ -36,15 +36,6 @@ function dungeonVisual(faction: string): string | undefined {
   return slug === undefined ? undefined : `/assets/world/dungeons/${slug}-dungeon-t4.png`;
 }
 
-function inventoryQuantities(slots: readonly { readonly itemId: string | undefined; readonly quantity: number }[]): Readonly<Record<string, number>> {
-  const quantities: Record<string, number> = {};
-  for (const slot of slots) {
-    if (slot.itemId === undefined || slot.quantity <= 0) continue;
-    quantities[slot.itemId] = (quantities[slot.itemId] ?? 0) + slot.quantity;
-  }
-  return quantities;
-}
-
 function sameAccess(previous: DungeonAccessState | undefined, next: DungeonAccessState | undefined): boolean {
   return previous?.canEnter === next?.canEnter
     && previous?.reason === next?.reason
@@ -60,11 +51,11 @@ function sameDungeonPresentation(previous: DungeonPresentationModel, next: Dunge
     || previous.enemyName !== next.enemyName
     || previous.combatState !== next.combatState
   ) return false;
-  const previousInventoryKeys = Object.keys(previous.inventory);
-  const nextInventoryKeys = Object.keys(next.inventory);
+  const previousKeyIds = Object.keys(previous.keyQuantities);
+  const nextKeyIds = Object.keys(next.keyQuantities);
   if (
-    previousInventoryKeys.length !== nextInventoryKeys.length
-    || !previousInventoryKeys.every((key) => previous.inventory[key] === next.inventory[key])
+    previousKeyIds.length !== nextKeyIds.length
+    || !previousKeyIds.every((key) => previous.keyQuantities[key] === next.keyQuantities[key])
   ) return false;
   const previousAccessKeys = Object.keys(previous.accessByDefinitionId);
   const nextAccessKeys = Object.keys(next.accessByDefinitionId);
@@ -104,13 +95,24 @@ function getEnterLabel(access: DungeonAccessState): string {
 }
 
 export function WorldDungeonsView(): JSX.Element {
-  const { startDungeon, abandonDungeon, getDungeonState } = useGameServices();
+  const {
+    startDungeon,
+    abandonDungeon,
+    getDungeonState,
+    inventoryManager,
+    heroId,
+  } = useGameServices();
   const [selectedTier, setSelectedTier] = useState<DungeonKeyTier>(4);
   const selectDungeonPresentation = useCallback((state: GameBridgeState): DungeonPresentationModel => {
     const dungeonState = getDungeonState();
     const activeRun = dungeonState.activeRun?.status === "active" ? dungeonState.activeRun : undefined;
     return {
-      inventory: inventoryQuantities(state.inventory.slots),
+      keyQuantities: Object.fromEntries(
+        DUNGEON_DEFINITIONS.map((dungeon) => [
+          dungeon.keyItemId,
+          inventoryManager.getAccessibleQuantity(heroId, dungeon.keyItemId),
+        ]),
+      ),
       accessByDefinitionId: Object.fromEntries(
         DUNGEON_DEFINITIONS.map((dungeon) => [dungeon.id, dungeonState.getAccess(dungeon.id)]),
       ),
@@ -120,7 +122,7 @@ export function WorldDungeonsView(): JSX.Element {
       enemyName: state.enemyName,
       combatState: state.combatState,
     };
-  }, [getDungeonState]);
+  }, [getDungeonState, heroId, inventoryManager]);
   const presentation = useGameUiSelector(selectDungeonPresentation, sameDungeonPresentation);
   const visibleDungeons = useMemo(() => DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === selectedTier), [selectedTier]);
 
@@ -132,7 +134,7 @@ export function WorldDungeonsView(): JSX.Element {
       </div>
       <div className="world-dungeons__list">
         {visibleDungeons.length === 0 ? <div className="world-dungeons__empty"><strong>Aucun donjon T{selectedTier} disponible.</strong><span>Ce palier sera ajouté à la progression des donjons.</span></div> : visibleDungeons.map((dungeon) => {
-          const keyCount = presentation.inventory[dungeon.keyItemId] ?? 0;
+          const keyCount = presentation.keyQuantities[dungeon.keyItemId] ?? 0;
           const access = presentation.accessByDefinitionId[dungeon.id] ?? INVALID_ACCESS;
           const isActiveDungeon = presentation.activeDefinitionId === dungeon.id;
           const isPendingDungeon = presentation.pendingDefinitionId === dungeon.id;
