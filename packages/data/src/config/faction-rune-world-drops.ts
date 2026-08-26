@@ -6,10 +6,16 @@ export interface FactionRuneWorldDropZoneRate {
   readonly end: number;
 }
 
+export const FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS = {
+  normal: 1,
+  elite: 2.5,
+  boss: 5,
+} as const;
+
 /**
- * Tester-baseline final per-kill Rune probabilities.
+ * Tester-baseline final per-kill Rune probabilities for normal encounters.
  * Values are authored as final rates, not runtime multipliers, so consumers can
- * display the exact probability used by combat rolls for each depth.
+ * display the exact normal-encounter probability used by combat rolls for each depth.
  */
 export const FACTION_RUNE_WORLD_DROP_RATES: Readonly<
   Record<WorldBandId, readonly FactionRuneWorldDropZoneRate[]>
@@ -22,32 +28,32 @@ export const FACTION_RUNE_WORLD_DROP_RATES: Readonly<
     { start: 0.0085, end: 0.0115 },
   ],
   yellow: [
-    { start: 0.0075, end: 0.009 },
-    { start: 0.0095, end: 0.012 },
-    { start: 0.0125, end: 0.015 },
-    { start: 0.0155, end: 0.018 },
-    { start: 0.0185, end: 0.021 },
+    { start: 0.00564, end: 0.00677 },
+    { start: 0.00715, end: 0.00903 },
+    { start: 0.0094, end: 0.01129 },
+    { start: 0.01166, end: 0.01354 },
+    { start: 0.01392, end: 0.0158 },
   ],
   orange: [
-    { start: 0.018, end: 0.022 },
-    { start: 0.023, end: 0.027 },
-    { start: 0.028, end: 0.029 },
-    { start: 0.031, end: 0.036 },
-    { start: 0.038, end: 0.043 },
+    { start: 0.00904, end: 0.01105 },
+    { start: 0.01155, end: 0.01356 },
+    { start: 0.01407, end: 0.01457 },
+    { start: 0.01557, end: 0.01808 },
+    { start: 0.01909, end: 0.0216 },
   ],
   red: [
-    { start: 0.03, end: 0.038 },
-    { start: 0.04, end: 0.048 },
-    { start: 0.05, end: 0.056 },
-    { start: 0.058, end: 0.069 },
-    { start: 0.072, end: 0.083 },
+    { start: 0.01048, end: 0.01328 },
+    { start: 0.01398, end: 0.01677 },
+    { start: 0.01747, end: 0.01957 },
+    { start: 0.02027, end: 0.02411 },
+    { start: 0.02516, end: 0.029 },
   ],
   black: [
-    { start: 0.0475, end: 0.06 },
-    { start: 0.064, end: 0.078 },
-    { start: 0.082, end: 0.098 },
-    { start: 0.102, end: 0.136 },
-    { start: 0.136, end: 0.136 },
+    { start: 0.01373, end: 0.01734 },
+    { start: 0.01849, end: 0.02254 },
+    { start: 0.0237, end: 0.02832 },
+    { start: 0.02948, end: 0.0393 },
+    { start: 0.0393, end: 0.0393 },
   ],
 } as const;
 
@@ -67,6 +73,12 @@ export function getFactionRuneWorldDropChance(
   const clampedSegment = Math.max(0, Math.min(9, Math.floor(segmentIndex)));
   const progress = clampedSegment / 9;
   return zone.start + (zone.end - zone.start) * progress;
+}
+
+export function getFactionRuneWorldEncounterMultiplier(isElite: boolean, isBoss: boolean): number {
+  if (isBoss) return FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS.boss;
+  if (isElite) return FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS.elite;
+  return FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS.normal;
 }
 
 export interface FactionRuneWorldDrop {
@@ -91,12 +103,13 @@ export function rollFactionRuneWorldDrop(
   tier: number,
   baseChance: number,
   factionYieldBonusPercent: number,
+  encounterMultiplier = 1,
   random: () => number = Math.random,
 ): FactionRuneWorldDrop | undefined {
   const expectation = getFactionRuneWorldDropExpectation(factionId, tier, baseChance);
   if (expectation === undefined) return undefined;
   const bonusMultiplier = 1 + Math.max(0, factionYieldBonusPercent) / 100;
-  const finalChance = expectation.expectedQuantity * bonusMultiplier;
+  const finalChance = expectation.expectedQuantity * Math.max(0, encounterMultiplier) * bonusMultiplier;
   if (random() >= Math.min(1, finalChance)) return undefined;
   return { itemId: expectation.itemId, kind: "faction_rune", quantity: 1 };
 }
