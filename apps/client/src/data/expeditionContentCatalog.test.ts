@@ -78,6 +78,6 @@ describe("expeditionContentCatalog", () => {
 
   it("uses the validated Faction Rune/hour baseline from the reward profile", () => {
     expect(FACTION_EXPEDITION_DEFINITIONS.map(({ tier, reward }) => [tier, reward.runesPerHour]))
-      .toEqual([[4, 4], [5, 7], [6, 12.5], [7, 20], [8, 30]]);
+      .toEqual([[4, 8], [5, 10], [6, 12], [7, 15], [8, 18]]);
   });
 });
