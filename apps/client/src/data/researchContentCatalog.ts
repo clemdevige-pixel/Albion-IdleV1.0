@@ -61,13 +61,7 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
   }],
   [RESEARCH_IDS.dungeonRelicAnalysis, {
     group: "core",
-    description: "Analyse à l’Académie la Relique chargée découverte à Frostpeak Mountain.",
-    effectSummary: "Révèle la recherche Localisation des Sanctuaires.",
-    unlockedContent: ["Recherche : Localisation des Sanctuaires"],
-  }],
-  [RESEARCH_IDS.dungeonSanctuaryLocation, {
-    group: "core",
-    description: "Localise les sanctuaires et ouvre la boucle Donjons ainsi que le canal secondaire de Runes de faction dans le monde.",
+    description: "Analyse à l’Académie la Relique chargée découverte à Frostpeak Mountain afin d’ouvrir la boucle Donjons.",
     effectSummary: "Débloque les Donjons, les drops de clés/fragments et le drop rare de Runes de faction sur les monstres de faction.",
     unlockedContent: [
       "World > Donjons",
