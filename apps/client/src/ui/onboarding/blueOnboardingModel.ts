@@ -14,7 +14,6 @@ export type BlueOnboardingStepId =
   | "discover_relic"
   | "charge_relic"
   | "analyze_relic"
-  | "locate_sanctuaries"
   | "enter_t4_dungeon"
   | "clear_t4_dungeon"
   | "artifact_fragments"
@@ -76,7 +75,6 @@ export function resolveBlueOnboardingStep(
 
   const enchantmentState = researchState(snapshot, RESEARCH_IDS.enchantmentStudy);
   const relicAnalysisState = researchState(snapshot, RESEARCH_IDS.dungeonRelicAnalysis);
-  const sanctuaryState = researchState(snapshot, RESEARCH_IDS.dungeonSanctuaryLocation);
   const hasClearedT4Dungeon = snapshot.clearedDungeonTiers.includes(4);
   const laterProgressMakesEarlyProductionObsolete =
     snapshot.hasProgressedBeyondEarlyProduction
@@ -207,20 +205,12 @@ export function resolveBlueOnboardingStep(
       id: "analyze_relic",
       eyebrow: "Relique",
       title: relicAnalysisState === "active" ? "Analyse de la Relique en cours" : "Analysez la Relique à l’Académie",
-      description: "La Relique est chargée. Lancez son analyse à l’Académie pour révéler la recherche qui permet de localiser les Donjons.",
+      description: "La Relique est chargée. Son analyse débloque directement les Donjons, les drops de clés/fragments et le drop rare de Runes de faction.",
       hint: "Repère : Île → Académie → Analyse de la Relique.",
     };
   }
 
-  if (!snapshot.dungeonUnlocked || sanctuaryState !== "completed") {
-    return {
-      id: "locate_sanctuaries",
-      eyebrow: "Donjons",
-      title: sanctuaryState === "active" ? "Localisation des Sanctuaires en cours" : "Localisez les Sanctuaires",
-      description: "Cette recherche ouvre la boucle Donjons ainsi que les clés, fragments et Runes de faction associés.",
-      hint: "Repère : Île → Académie → Localisation des Sanctuaires.",
-    };
-  }
+  if (!snapshot.dungeonUnlocked) return null;
 
   if (!hasClearedT4Dungeon) {
     if (!snapshot.activeDungeon) {
