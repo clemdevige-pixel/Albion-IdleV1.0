@@ -27,7 +27,7 @@ jobs:
           import os,re
           p=Path('apps/client/src/data/factionArtifactWeaponContent.ts')
           s=p.read_text(); b=int(os.environ['BONUS'])
-          s=re.sub(r'FACTION_ARTIFACT_MATCHUP_DAMAGE_BONUS_PERCENT = \d+;',f'FACTION_ARTIFACT_MATCHUP_DAMAGE_BONUS_PERCENT = {b};',s)
+          s=re.sub(r'FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT = \d+;',f'FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT = {b};',s)
           p.write_text(s)
           PY
             echo "===== BONUS ${bonus}% ====="
