@@ -22,6 +22,15 @@ export function isProductionMaterial(itemId: string): boolean {
   return itemId.startsWith("item_resource_") || itemId.startsWith("item_refined_");
 }
 
+/** Canonical storage owner for items granted to the player. */
+export function resolvePlayerItemStorageOwner(
+  itemId: string,
+  heroId: EntityId,
+  productionStorageId: EntityId,
+): EntityId {
+  return isProductionMaterial(itemId) ? productionStorageId : heroId;
+}
+
 /**
  * Moves materials from legacy saves out of the hero inventory.
  * Enchantment shards and faction loot deliberately remain regular inventory
