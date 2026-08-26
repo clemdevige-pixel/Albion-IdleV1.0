@@ -5,6 +5,7 @@ import {
 } from "../apps/client/src/data/artifactWeaponBenchmarkFixtures.js";
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
 import { DUNGEON_DEFINITIONS } from "../apps/client/src/data/dungeonContentCatalog.js";
+import { FACTION_ARTIFACT_MATCHUP_DAMAGE_BONUS_PERCENT } from "../apps/client/src/data/factionArtifactWeaponContent.js";
 import { resolveArtifactDungeonDamageBonusPercent } from "../apps/client/src/data/weaponContentCatalog.js";
 import { WORLD_ZONE_IDS } from "../apps/client/src/data/worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
@@ -14,6 +15,8 @@ const ENCHANTMENT = 3 as const;
 const POTION_CAP = 2;
 const ZONE_DEF_ID = WORLD_ZONE_IDS.mountain;
 const SEGMENT_INDEX = 9;
+const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_MATCHUP_DAMAGE_BONUS_PERCENT;
+const FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;
 
 const BASE_WEAPON_SPECS = [
   { family: "Sword", label: "Broadsword", itemId: (tier: ArtifactBenchmarkTier) => `item_weapon_sword_t${tier}_broadsword` },
@@ -102,7 +105,7 @@ for (const tier of TIERS) {
     siblingMastery: mastery.siblingSpecializationMasteryLevel,
     matchingCape: true,
     potionCap: POTION_CAP,
-    favorableFactionBonusPct: 20,
+    favorableFactionBonusPct: FAVORABLE_FACTION_BONUS_PCT,
   });
 
   const baseRows = dungeons.flatMap((dungeon) => BASE_WEAPON_SPECS.map((weapon) => ({
@@ -143,21 +146,21 @@ for (const tier of TIERS) {
 
   const favorableRows = dungeons.flatMap((dungeon) => ARTIFACT_WEAPON_BENCHMARK_SPECS
     .map((weapon) => ({ weapon, itemId: weapon.itemId(tier) }))
-    .filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) === 20)
+    .filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) === FAVORABLE_FACTION_BONUS_PCT)
     .map(({ weapon, itemId }) => ({
       tier,
       dungeon: dungeon.id,
       faction: dungeon.faction,
       family: weapon.family,
       weapon: weapon.label,
-      bonusPct: 20,
+      bonusPct: FAVORABLE_FACTION_BONUS_PCT,
       ...summarize(runDungeon({
         tier,
         label: `${dungeon.id}_counter_${weapon.family}`,
         weaponItemId: itemId,
         dungeonDefinitionId: dungeon.id,
         faction: dungeon.faction,
-        heroDamageMultiplier: 1.2,
+        heroDamageMultiplier: FAVORABLE_FACTION_DAMAGE_MULTIPLIER,
       })),
     })));
 
