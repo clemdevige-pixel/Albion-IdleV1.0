@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { getWorldProgressionTierContract } from "@game/data";
 import { getEncounterRewards } from "@game/gameplay";
 
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
@@ -37,6 +38,10 @@ import {
 const MASTERY_LEVEL = 30;
 const ENCHANTMENT = 2 as const;
 const USE_HEALTH_POTIONS = true;
+const TARGET_TIERS = [4, 5, 6, 7, 8] as const;
+const RUNTIME_CHECKPOINT_SEGMENTS = [1, 5, 10] as const;
+type TargetTier = (typeof TARGET_TIERS)[number];
+type WorldZoneDefId = Parameters<typeof getWorldZonePlacement>[0];
 
 const T4_WEAPONS = Object.keys(WEAPON_ITEM_DEFINITIONS)
   .filter((itemId) => resolveWeaponTier(itemId) === 4)
@@ -78,8 +83,40 @@ interface SweepRow {
   readonly damageReceived: number;
 }
 
+interface IntrinsicScalingRow {
+  readonly tier: TargetTier;
+  readonly family: string;
+  readonly weapon: string;
+  readonly specializationMasteryId: string;
+  readonly itemId: string;
+  readonly sustainedDps: number;
+  readonly opener5Dps: number;
+  readonly opener10Dps: number;
+  readonly packageScore: number;
+  readonly sustainedVsFamilyPct: number;
+  readonly packageVsFamilyPct: number;
+}
+
+interface RuntimeScalingRow {
+  readonly tier: TargetTier;
+  readonly family: string;
+  readonly weapon: string;
+  readonly specializationMasteryId: string;
+  readonly itemId: string;
+  readonly zone: string;
+  readonly zoneStep: number;
+  readonly zoneRole: string;
+  readonly mastery: number;
+  readonly segment: number;
+  readonly clear: boolean;
+  readonly seconds: number;
+  readonly hpPercent: number;
+  readonly potions: number;
+  readonly observedDps: number;
+}
+
 function shortWeaponName(itemId: string): string {
-  return getWeaponSpecializationName(itemId) ?? itemId.replace("item_weapon_", "").replace("_t4_", " ");
+  return getWeaponSpecializationName(itemId) ?? itemId.replace("item_weapon_", "").replace(/_t\d_/, " ");
 }
 
 function familyName(itemId: string): string {
@@ -87,8 +124,25 @@ function familyName(itemId: string): string {
   return familyId === undefined ? "unknown" : (getWeaponFamilyDisplayName(familyId) ?? familyId);
 }
 
-function zoneName(zoneDefId: (typeof WORLD_ZONE_IDS_BY_BAND.blue)[number]): string {
+function zoneName(zoneDefId: WorldZoneDefId): string {
   return ZONE_DEFINITIONS.find(({ id }) => id === zoneDefId)?.name ?? String(zoneDefId);
+}
+
+function armorForTier(tier: TargetTier): readonly string[] {
+  return [
+    `item_helmet_t${String(tier)}_reinforced`,
+    `item_armor_t${String(tier)}_leather`,
+    `item_boots_t${String(tier)}_leather`,
+    "item_traveler_cape",
+  ];
+}
+
+function equipmentForTier(weaponItemId: string, tier: TargetTier): readonly string[] {
+  const items = [...armorForTier(tier)];
+  if (resolveEquipmentInfo(weaponItemId)?.handling === "one_handed") {
+    items.push(`item_shield_t${String(tier)}_reinforced`);
+  }
+  return items;
 }
 
 function equipmentFor(weaponItemId: string): readonly string[] {
@@ -103,12 +157,19 @@ function benchmarkLoadout(itemId: string) {
     : { armorItemIds: T4_DEFENSIVE_LOADOUT };
 }
 
+function benchmarkLoadoutForTier(itemId: string, tier: TargetTier) {
+  const armorItemIds = armorForTier(tier);
+  return resolveEquipmentInfo(itemId)?.handling === "one_handed"
+    ? { armorItemIds, offHandItemId: `item_shield_t${String(tier)}_reinforced` }
+    : { armorItemIds };
+}
+
 function completedEncounters(clear: boolean, encountersReached: number): number {
   return clear ? 5 : Math.max(0, Math.min(4, encountersReached - 1));
 }
 
 function fameEarnedForRun(
-  zoneDefId: (typeof WORLD_ZONE_IDS_BY_BAND.blue)[number],
+  zoneDefId: WorldZoneDefId,
   segmentIndex: number,
   completed: number,
 ): number {
@@ -132,6 +193,11 @@ function median(values: readonly number[]): number {
   return sorted.length % 2 === 1
     ? (sorted[middle] ?? 0)
     : ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
+}
+
+function average(values: readonly number[]): number {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function percentDelta(value: number, reference: number): number {
@@ -171,6 +237,28 @@ function profileFor(itemId: string) {
   const mastery = resolveWeaponMastery(itemId);
   if (mastery === undefined) throw new Error(`Missing mastery route for ${itemId}`);
   return resolveWeaponBalanceProfileByMasteryId(String(mastery.weaponId));
+}
+
+function specializationMasteryId(itemId: string): string {
+  const mastery = resolveWeaponMastery(itemId);
+  if (mastery === undefined) throw new Error(`Missing mastery route for ${itemId}`);
+  return String(mastery.weaponId);
+}
+
+function weaponItemForTier(referenceItemId: string, tier: TargetTier): string {
+  const specializationId = specializationMasteryId(referenceItemId);
+  const itemId = Object.keys(WEAPON_ITEM_DEFINITIONS).find((candidate) =>
+    resolveWeaponTier(candidate) === tier
+    && specializationMasteryId(candidate) === specializationId,
+  );
+  if (itemId === undefined) {
+    throw new Error(`Missing T${String(tier)} weapon item for ${specializationId}`);
+  }
+  return itemId;
+}
+
+function weaponItemsForTier(tier: TargetTier): readonly string[] {
+  return T4_WEAPONS.map((referenceItemId) => weaponItemForTier(referenceItemId, tier));
 }
 
 function buildRows(): readonly SweepRow[] {
@@ -218,6 +306,98 @@ function buildRows(): readonly SweepRow[] {
           damageDealt: result.damageDealt,
           damageReceived: result.damageReceived,
         });
+      }
+    }
+  }
+
+  return rows;
+}
+
+function buildIntrinsicScalingRows(): readonly IntrinsicScalingRow[] {
+  const raw: Array<Omit<IntrinsicScalingRow, "sustainedVsFamilyPct" | "packageVsFamilyPct">> = [];
+
+  for (const tier of TARGET_TIERS) {
+    const itemIds = weaponItemsForTier(tier);
+    const offenseRows = buildWeaponOnlyBenchmark(itemIds, MASTERY_LEVEL, ENCHANTMENT);
+    const packageRows = buildWeaponPackageBenchmark(
+      itemIds,
+      MASTERY_LEVEL,
+      ENCHANTMENT,
+      (itemId) => benchmarkLoadoutForTier(itemId, tier),
+    );
+    const packageByItemId = new Map(packageRows.map((row) => [row.itemId, row] as const));
+
+    for (const offense of offenseRows) {
+      const packageRow = packageByItemId.get(offense.itemId);
+      if (packageRow === undefined) throw new Error(`Missing scaling package benchmark for ${offense.itemId}`);
+      raw.push({
+        tier,
+        family: familyName(offense.itemId),
+        weapon: shortWeaponName(offense.itemId),
+        specializationMasteryId: specializationMasteryId(offense.itemId),
+        itemId: offense.itemId,
+        sustainedDps: offense.sustainedDps,
+        opener5Dps: offense.opener5,
+        opener10Dps: offense.opener10,
+        packageScore: packageRow.packageScore,
+      });
+    }
+  }
+
+  return raw.map((row) => {
+    const familyTierRows = raw.filter((candidate) => candidate.tier === row.tier && candidate.family === row.family);
+    return {
+      ...row,
+      sustainedVsFamilyPct: percentDelta(row.sustainedDps, median(familyTierRows.map((candidate) => candidate.sustainedDps))),
+      packageVsFamilyPct: percentDelta(row.packageScore, median(familyTierRows.map((candidate) => candidate.packageScore))),
+    };
+  });
+}
+
+function buildRuntimeScalingRows(): readonly RuntimeScalingRow[] {
+  const rows: RuntimeScalingRow[] = [];
+
+  for (const tier of TARGET_TIERS) {
+    const tierContract = getWorldProgressionTierContract(tier);
+    const itemIds = weaponItemsForTier(tier);
+
+    for (const zoneContract of tierContract.zones) {
+      const zoneDefId = WORLD_ZONE_IDS_BY_BAND[tierContract.band][zoneContract.zoneIndex];
+      if (zoneDefId === undefined) {
+        throw new Error(`Missing zone ${String(zoneContract.zoneIndex + 1)} for T${String(tier)}`);
+      }
+
+      for (const weaponItemId of itemIds) {
+        for (const segment of RUNTIME_CHECKPOINT_SEGMENTS) {
+          const segmentIndex = segment - 1;
+          const result = runCombatRuntimeBenchmark({
+            label: `all_weapon_scaling_t${String(tier)}_${String(zoneDefId)}_s${String(segment)}`,
+            weaponItemId,
+            zoneDefId,
+            segmentIndex,
+            equipmentItemIds: equipmentForTier(weaponItemId, tier),
+            enchantment: ENCHANTMENT,
+            masteryLevel: zoneContract.expected.masteryLevel,
+            useHealthPotions: true,
+          });
+          rows.push({
+            tier,
+            family: familyName(weaponItemId),
+            weapon: shortWeaponName(weaponItemId),
+            specializationMasteryId: specializationMasteryId(weaponItemId),
+            itemId: weaponItemId,
+            zone: zoneName(zoneDefId),
+            zoneStep: zoneContract.zoneIndex + 1,
+            zoneRole: zoneContract.role,
+            mastery: zoneContract.expected.masteryLevel,
+            segment,
+            clear: result.clear,
+            seconds: result.seconds,
+            hpPercent: result.hpPercent,
+            potions: result.potionsUsed,
+            observedDps: result.observedDps,
+          });
+        }
       }
     }
   }
@@ -362,6 +542,100 @@ function main(): void {
   console.log("[ALL_WEAPONS_RELATIVE_TO_FAMILY]");
   console.table(comparative);
 
+  const intrinsicScalingRows = buildIntrinsicScalingRows();
+  const intrinsicScalingSummary = T4_WEAPONS.map((referenceItemId) => {
+    const specializationId = specializationMasteryId(referenceItemId);
+    const weaponRows = intrinsicScalingRows.filter((row) => row.specializationMasteryId === specializationId);
+    const t4 = weaponRows.find((row) => row.tier === 4);
+    const t8 = weaponRows.find((row) => row.tier === 8);
+    if (t4 === undefined || t8 === undefined) throw new Error(`Missing intrinsic endpoints for ${specializationId}`);
+    return {
+      family: t4.family,
+      weapon: t4.weapon,
+      t4Sustained: t4.sustainedDps,
+      t5Sustained: weaponRows.find((row) => row.tier === 5)?.sustainedDps ?? 0,
+      t6Sustained: weaponRows.find((row) => row.tier === 6)?.sustainedDps ?? 0,
+      t7Sustained: weaponRows.find((row) => row.tier === 7)?.sustainedDps ?? 0,
+      t8Sustained: t8.sustainedDps,
+      t8VsT4Pct: percentDelta(t8.sustainedDps, t4.sustainedDps),
+      t4VsFamilyPct: t4.sustainedVsFamilyPct,
+      t8VsFamilyPct: t8.sustainedVsFamilyPct,
+      relativeDriftPct: Number((t8.sustainedVsFamilyPct - t4.sustainedVsFamilyPct).toFixed(1)),
+      t4Package: t4.packageScore,
+      t8Package: t8.packageScore,
+      packageDriftPct: Number((t8.packageVsFamilyPct - t4.packageVsFamilyPct).toFixed(1)),
+    };
+  });
+
+  const intrinsicFamilyScaling = [...new Set(intrinsicScalingRows.map((row) => row.family))].map((family) => {
+    const t4Rows = intrinsicScalingRows.filter((row) => row.family === family && row.tier === 4);
+    const t8Rows = intrinsicScalingRows.filter((row) => row.family === family && row.tier === 8);
+    const t4Median = median(t4Rows.map((row) => row.sustainedDps));
+    const t8Median = median(t8Rows.map((row) => row.sustainedDps));
+    return {
+      family,
+      t4MedianSustained: Number(t4Median.toFixed(1)),
+      t8MedianSustained: Number(t8Median.toFixed(1)),
+      t8VsT4Pct: percentDelta(t8Median, t4Median),
+    };
+  });
+
+  console.log("[ALL_WEAPONS_INTRINSIC_T4_T8_SCALING]");
+  console.table(intrinsicScalingSummary);
+  console.log("[ALL_WEAPONS_FAMILY_T4_T8_SCALING]");
+  console.table(intrinsicFamilyScaling);
+
+  const runtimeScalingRows = buildRuntimeScalingRows();
+  const runtimeScalingSummary = TARGET_TIERS.flatMap((tier) => T4_WEAPONS.map((referenceItemId) => {
+    const specializationId = specializationMasteryId(referenceItemId);
+    const tierRows = runtimeScalingRows.filter((row) => row.tier === tier && row.specializationMasteryId === specializationId);
+    const finalStep = Math.max(...tierRows.map((row) => row.zoneStep));
+    const finalGate = tierRows.find((row) => row.zoneStep === finalStep && row.segment === 10);
+    const familyTierRows = runtimeScalingRows.filter((row) => row.tier === tier && row.family === familyName(referenceItemId));
+    const familySpecializationIds = [...new Set(familyTierRows.map((row) => row.specializationMasteryId))];
+    const familyWeaponAverages = familySpecializationIds.map((id) => average(familyTierRows.filter((row) => row.specializationMasteryId === id).map((row) => row.observedDps)));
+    const avgObservedDps = average(tierRows.map((row) => row.observedDps));
+    return {
+      tier,
+      family: familyName(referenceItemId),
+      weapon: shortWeaponName(referenceItemId),
+      checkpoints: tierRows.length,
+      clears: tierRows.filter((row) => row.clear).length,
+      clearRatePct: Number(((tierRows.filter((row) => row.clear).length / Math.max(1, tierRows.length)) * 100).toFixed(1)),
+      avgObservedDps: Number(avgObservedDps.toFixed(1)),
+      runtimeVsFamilyPct: percentDelta(avgObservedDps, median(familyWeaponAverages)),
+      finalGateClear: finalGate?.clear ?? false,
+      finalGateSeconds: finalGate?.seconds ?? null,
+      finalGateHp: finalGate?.hpPercent ?? null,
+      finalGateMastery: finalGate?.mastery ?? null,
+    };
+  }));
+
+  const runtimeDriftSummary = T4_WEAPONS.map((referenceItemId) => {
+    const weapon = shortWeaponName(referenceItemId);
+    const family = familyName(referenceItemId);
+    const t4 = runtimeScalingSummary.find((row) => row.tier === 4 && row.weapon === weapon && row.family === family);
+    const t8 = runtimeScalingSummary.find((row) => row.tier === 8 && row.weapon === weapon && row.family === family);
+    if (t4 === undefined || t8 === undefined) throw new Error(`Missing runtime scaling endpoints for ${weapon}`);
+    return {
+      family,
+      weapon,
+      t4AvgRuntimeDps: t4.avgObservedDps,
+      t8AvgRuntimeDps: t8.avgObservedDps,
+      t8VsT4Pct: percentDelta(t8.avgObservedDps, t4.avgObservedDps),
+      t4VsFamilyPct: t4.runtimeVsFamilyPct,
+      t8VsFamilyPct: t8.runtimeVsFamilyPct,
+      relativeRuntimeDriftPct: Number((t8.runtimeVsFamilyPct - t4.runtimeVsFamilyPct).toFixed(1)),
+      t4FinalGate: t4.finalGateClear,
+      t8FinalGate: t8.finalGateClear,
+    };
+  });
+
+  console.log("[ALL_WEAPONS_RUNTIME_TIER_CHECKPOINTS]");
+  console.table(runtimeScalingSummary);
+  console.log("[ALL_WEAPONS_RUNTIME_T4_T8_DRIFT]");
+  console.table(runtimeDriftSummary);
+
   const outputDir = path.resolve(process.cwd(), "runtime-artifacts");
   fs.mkdirSync(outputDir, { recursive: true });
   const outputPath = path.join(outputDir, "weapon-role-world-sweep.json");
@@ -372,13 +646,23 @@ function main(): void {
       fullT4Armor: true,
       healthPotions: USE_HEALTH_POTIONS,
       weaponCount: T4_WEAPONS.length,
-      coverage: "all authored T4 weapon specializations",
+      coverage: "all authored weapon specializations; T4 full world sweep plus T4-T8 intrinsic and progression-runtime scaling",
       roleMetadata: "explicit profiles only; missing profiles are reported as unprofiled",
+      scaling: {
+        intrinsic: "T4-T8 at fixed mastery 30 and enchantment .2",
+        runtime: "T4-T8 progression-contract zones at authored mastery, enchantment .2, potion mode, segments S1/S5/S10",
+      },
     },
     familySummary,
     comparative,
     summaries,
     rows,
+    intrinsicScalingRows,
+    intrinsicScalingSummary,
+    intrinsicFamilyScaling,
+    runtimeScalingRows,
+    runtimeScalingSummary,
+    runtimeDriftSummary,
   }, null, 2));
   console.log(`[WEAPON_ROLE_WORLD_SWEEP_JSON] ${outputPath}`);
 }
