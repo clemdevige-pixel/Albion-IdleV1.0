@@ -237,11 +237,13 @@
 .ui-mastery-specializations {
   display: grid;
   gap: 10px;
+  width: calc(100% + 40px);
+  margin-left: -40px;
 }
 
 .ui-mastery-specialization {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   gap: 10px;
   align-items: start;
   padding: 5px 0 7px;
@@ -255,14 +257,13 @@
 .ui-mastery-specialization__visual {
   display: grid;
   place-items: start center;
-  width: 42px;
-  min-height: 42px;
-  padding-top: 1px;
+  width: 48px;
+  min-height: 48px;
 }
 
 .ui-mastery-specialization__icon {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -321,4 +322,8 @@
 
 @media (max-width: 720px) {
   .ui-mastery-family__expanded { padding-left: 8px; }
+  .ui-mastery-specializations {
+    width: 100%;
+    margin-left: 0;
+  }
 }
