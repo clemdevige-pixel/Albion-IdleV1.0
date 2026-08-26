@@ -21,7 +21,7 @@ export interface DailyMerchantOffer {
   readonly purchased: boolean;
 }
 
-interface DailyMerchantSavedOffer {
+export interface DailyMerchantSavedOffer {
   readonly offerId: string;
   readonly itemId: string;
   readonly category: DailyMerchantCategory;
@@ -169,16 +169,10 @@ export function generateDailyMerchantOffers(
     offers.push(buildOffer(slotIndex, tier, category, random));
   }
 
-  // Defensive contract: proposal B always exposes at least one production resource.
-  if (!offers.some((offer) => RESOURCE_CATEGORIES.has(offer.category))) {
-    const tier = pickOne(unlockedTiers, random);
-    offers[0] = buildOffer(0, tier, pickWeightedCategory(random, ["raw_resource", "refined_resource"]), random);
-  }
-
   return offers;
 }
 
-class DailyMerchantRotationSaveProvider implements SaveProvider {
+export class DailyMerchantRotationSaveProvider implements SaveProvider {
   readonly providerId = "daily_merchant_rotation";
 
   private state: MutableDailyMerchantState | null = null;
@@ -204,6 +198,12 @@ class DailyMerchantRotationSaveProvider implements SaveProvider {
       totalPrice: offer.unitPrice * offer.quantity,
       purchased: this.state!.purchasedOfferIds.has(offer.offerId),
     }));
+  }
+
+  canPurchase(offerId: string, nowMs: number, unlockedTierValues: readonly number[]): boolean {
+    this.ensureRotation(nowMs, unlockedTierValues);
+    if (this.state === null || this.state.purchasedOfferIds.has(offerId)) return false;
+    return this.state.offers.some((offer) => offer.offerId === offerId);
   }
 
   markPurchased(offerId: string): boolean {
@@ -266,9 +266,12 @@ class DailyMerchantRotationSaveProvider implements SaveProvider {
         unitPrice: offer.unitPrice,
       }];
     });
+    const validOfferIds = new Set(offers.map((offer) => offer.offerId));
     const purchasedOfferIds = new Set(
       Array.isArray(raw.purchasedOfferIds)
-        ? raw.purchasedOfferIds.filter((value): value is string => typeof value === "string")
+        ? raw.purchasedOfferIds.filter((value): value is string => (
+            typeof value === "string" && validOfferIds.has(value)
+          ))
         : [],
     );
 
