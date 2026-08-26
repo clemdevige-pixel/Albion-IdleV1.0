@@ -118,19 +118,19 @@ const DUNGEON_ENCOUNTER_BALANCE_BY_ID: Readonly<Record<string, readonly DungeonE
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
     { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
     { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
-    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.288, damage: 1.15, defense: 1.1 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.02, damage: 1.15, defense: 1.1 },
   ],
   [UNDEAD_T5_DUNGEON_ID]: [
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
     { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
     { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
-    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.242, damage: 1.15, defense: 1.1 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.04, damage: 1.15, defense: 1.1 },
   ],
   [MORGANA_T5_DUNGEON_ID]: [
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
     { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
     { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
-    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.15, defense: 1.1 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.02, damage: 1.15, defense: 1.1 },
   ],
   [KEEPER_T6_DUNGEON_ID]: [
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
@@ -142,7 +142,7 @@ const DUNGEON_ENCOUNTER_BALANCE_BY_ID: Readonly<Record<string, readonly DungeonE
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
     { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
     { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
-    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.357, damage: 1.05, defense: 1.1 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.45, damage: 1.05, defense: 1.1 },
   ],
   [UNDEAD_T6_DUNGEON_ID]: [
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
@@ -190,19 +190,19 @@ const DUNGEON_ENCOUNTER_BALANCE_BY_ID: Readonly<Record<string, readonly DungeonE
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
     { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
     { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
-    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 2.093, damage: 1.05, defense: 1.1 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.53, damage: 1.05, defense: 1.1 },
   ],
   [UNDEAD_T8_DUNGEON_ID]: [
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
     { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
     { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
-    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.656, damage: 1.05, defense: 1.1 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.32, damage: 1.05, defense: 1.1 },
   ],
   [MORGANA_T8_DUNGEON_ID]: [
     { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
     { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
     { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
-    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.564, damage: 1.05, defense: 1.1 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.28, damage: 1.05, defense: 1.1 },
   ],
 };
 
