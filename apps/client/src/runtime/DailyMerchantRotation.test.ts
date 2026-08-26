@@ -5,12 +5,20 @@ import {
   DAILY_MERCHANT_ROTATION_RULES,
   DAILY_MERCHANT_TIERS,
   DAILY_MERCHANT_UNIT_PRICES,
+  type DailyMerchantCategory,
 } from "@game/data";
 import {
   DailyMerchantRotationSaveProvider,
   generateDailyMerchantOffers,
   getDailyMerchantRotationId,
 } from "./DailyMerchantRotation.js";
+
+function containsCategory(
+  categories: readonly DailyMerchantCategory[],
+  category: DailyMerchantCategory,
+): boolean {
+  return categories.some((candidate) => candidate === category);
+}
 
 describe("daily merchant rotation", () => {
   it("consumes a complete authored balance contract", () => {
@@ -34,17 +42,17 @@ describe("daily merchant rotation", () => {
     expect(first).toHaveLength(DAILY_MERCHANT_ROTATION_RULES.offerCount);
 
     for (const group of DAILY_MERCHANT_ROTATION_RULES.guaranteedCategoryGroups) {
-      expect(first.some((offer) => group.includes(offer.category))).toBe(true);
+      expect(first.some((offer) => containsCategory(group, offer.category))).toBe(true);
     }
     for (const group of DAILY_MERCHANT_ROTATION_RULES.limitedCategoryGroups) {
-      expect(first.filter((offer) => group.categories.includes(offer.category)).length)
+      expect(first.filter((offer) => containsCategory(group.categories, offer.category)).length)
         .toBeLessThanOrEqual(group.maximumPerRotation);
     }
     expect(first.every((offer) => DAILY_MERCHANT_TIERS.includes(offer.tier))).toBe(true);
   });
 
   it("does not structurally force the first slot to a guaranteed category group", () => {
-    const guaranteedCategories = new Set(
+    const guaranteedCategories = new Set<DailyMerchantCategory>(
       DAILY_MERCHANT_ROTATION_RULES.guaranteedCategoryGroups.flat(),
     );
     const firstCategories = new Set(
@@ -89,20 +97,19 @@ describe("daily merchant rotation", () => {
   it("creates the day's stock when the first eligible tier unlocks", () => {
     const provider = new DailyMerchantRotationSaveProvider();
     const now = Date.UTC(2026, 7, 26, 12, 0, 0);
-    const firstTier = DAILY_MERCHANT_TIERS[0];
     expect(provider.getOffers(now, [])).toEqual([]);
+    const firstTier = DAILY_MERCHANT_TIERS[0];
     const unlocked = provider.getOffers(now, [firstTier]);
     expect(unlocked).toHaveLength(DAILY_MERCHANT_ROTATION_RULES.offerCount);
     expect(unlocked.every((offer) => offer.tier === firstTier)).toBe(true);
   });
 
-  it("rotates on the next authored reset window and persists purchased offers", () => {
+  it("rotates on the next authored reset and persists purchased offers", () => {
     const provider = new DailyMerchantRotationSaveProvider();
     const dayOne = Date.UTC(2026, 7, 26, 12, 0, 0);
     const dayTwo = Date.UTC(2026, 7, 27, 12, 0, 0);
-    const unlockedTiers = DAILY_MERCHANT_TIERS.slice(0, 2);
-    const expandedTiers = DAILY_MERCHANT_TIERS.slice(0, 3);
-    const dayOneOffers = provider.getOffers(dayOne, unlockedTiers);
+    const tiers = DAILY_MERCHANT_TIERS.slice(0, 2);
+    const dayOneOffers = provider.getOffers(dayOne, tiers);
     const firstOffer = dayOneOffers[0]!;
 
     expect(provider.markPurchased(firstOffer.offerId)).toBe(true);
@@ -110,22 +117,34 @@ describe("daily merchant rotation", () => {
 
     const restored = new DailyMerchantRotationSaveProvider();
     restored.load(saved);
-    expect(restored.getOffers(dayOne, unlockedTiers)[0]?.purchased).toBe(true);
+    expect(restored.getOffers(dayOne, tiers)[0]?.purchased).toBe(true);
 
-    const dayTwoOffers = restored.getOffers(dayTwo, expandedTiers);
+    const dayTwoOffers = restored.getOffers(dayTwo, DAILY_MERCHANT_TIERS.slice(0, 3));
     expect(dayTwoOffers).toHaveLength(DAILY_MERCHANT_ROTATION_RULES.offerCount);
     expect(dayTwoOffers.every((offer) => !offer.purchased)).toBe(true);
     expect(getDailyMerchantRotationId(dayOne)).not.toBe(getDailyMerchantRotationId(dayTwo));
   });
 
-  it("rejects an offer after its rotation has expired", () => {
+  it("rejects an offer after its daily rotation has expired", () => {
     const provider = new DailyMerchantRotationSaveProvider();
     const beforeReset = Date.UTC(2026, 7, 26, 23, 59, 0);
     const afterReset = Date.UTC(2026, 7, 27, 0, 1, 0);
-    const unlockedTiers = DAILY_MERCHANT_TIERS.slice(0, 2);
-    const expiredOffer = provider.getOffers(beforeReset, unlockedTiers)[0]!;
+    const tiers = DAILY_MERCHANT_TIERS.slice(0, 2);
+    const expiredOffer = provider.getOffers(beforeReset, tiers)[0]!;
 
-    expect(provider.canPurchase(expiredOffer.offerId, beforeReset, unlockedTiers)).toBe(true);
-    expect(provider.canPurchase(expiredOffer.offerId, afterReset, unlockedTiers)).toBe(false);
+    expect(provider.canPurchase(expiredOffer.offerId, beforeReset, tiers)).toBe(true);
+    expect(provider.canPurchase(expiredOffer.offerId, afterReset, tiers)).toBe(false);
+  });
+
+  it("rejects malformed saved offers instead of trusting persisted data", () => {
+    const provider = new DailyMerchantRotationSaveProvider();
+    provider.load({
+      rotationId: "malformed",
+      unlockedTiers: [DAILY_MERCHANT_TIERS[0]],
+      offers: [{ itemId: 42 }],
+      purchasedOfferIds: [],
+    });
+
+    expect(provider.save()).toBeNull();
   });
 });
