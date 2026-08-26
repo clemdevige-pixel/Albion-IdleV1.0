@@ -8,11 +8,11 @@ describe("createResearchRecapFoundation", () => {
     const listener = vi.fn();
     const unsubscribe = foundation.subscribe(listener);
 
-    foundation.present(RESEARCH_IDS.dungeonSanctuaryLocation);
+    foundation.present(RESEARCH_IDS.dungeonRelicAnalysis);
 
     expect(foundation.getSnapshot()).toMatchObject({
-      researchId: RESEARCH_IDS.dungeonSanctuaryLocation,
-      displayName: "Localisation des Sanctuaires",
+      researchId: RESEARCH_IDS.dungeonRelicAnalysis,
+      displayName: "Analyse de la Relique",
       unlockedContent: [
         "World > Donjons",
         "Drops de fragments de clé",
