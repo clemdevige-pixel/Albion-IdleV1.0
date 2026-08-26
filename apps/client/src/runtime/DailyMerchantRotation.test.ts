@@ -42,16 +42,20 @@ describe("daily merchant rotation", () => {
     expect(first).toEqual(second);
     expect(first).toHaveLength(DAILY_MERCHANT_OFFER_COUNT);
     expect(first.some((offer) => RESOURCE_CATEGORIES.has(offer.category))).toBe(true);
-    expect(first.filter((offer) => COMPLETE_CATEGORIES.has(offer.category))).toHaveLength(
-      Math.min(1, first.filter((offer) => COMPLETE_CATEGORIES.has(offer.category)).length),
-    );
+    expect(first.filter((offer) => COMPLETE_CATEGORIES.has(offer.category)).length).toBeLessThanOrEqual(1);
     expect(first.every((offer) => [4, 5, 6, 7, 8].includes(offer.tier))).toBe(true);
+  });
+
+  it("does not structurally force the first slot to be a resource", () => {
+    const firstCategories = new Set(
+      Array.from({ length: 80 }, (_, index) => generateDailyMerchantOffers(`weights-${String(index)}`, [4, 5, 6])[0]?.category),
+    );
+    expect([...firstCategories].some((category) => category !== undefined && !RESOURCE_CATEGORIES.has(category))).toBe(true);
   });
 
   it("never rolls a locked tier and treats every unlocked tier as eligible", () => {
     for (let day = 1; day <= 120; day += 1) {
-      const rotationId = `2026-09-${String(((day - 1) % 30) + 1).padStart(2, "0")}-${String(Math.floor((day - 1) / 30))}`;
-      const offers = generateDailyMerchantOffers(rotationId, [4, 5, 6]);
+      const offers = generateDailyMerchantOffers(`locked-tier-${String(day)}`, [4, 5, 6]);
       expect(offers.every((offer) => offer.tier === 4 || offer.tier === 5 || offer.tier === 6)).toBe(true);
     }
 
@@ -62,7 +66,7 @@ describe("daily merchant rotation", () => {
     expect(observed).toEqual(new Set([4, 5, 6]));
   });
 
-  it("keeps the current day's stock stable when a new tier unlocks", () => {
+  it("keeps the current day's stock stable when an additional tier unlocks", () => {
     const provider = new DailyMerchantRotationSaveProvider();
     const now = Date.UTC(2026, 7, 26, 12, 0, 0);
     const beforeUnlock = provider.getOffers(now, [4, 5]);
@@ -70,6 +74,15 @@ describe("daily merchant rotation", () => {
 
     expect(afterUnlock).toEqual(beforeUnlock);
     expect(afterUnlock.every((offer) => offer.tier === 4 || offer.tier === 5)).toBe(true);
+  });
+
+  it("creates the day's stock when the first eligible tier unlocks", () => {
+    const provider = new DailyMerchantRotationSaveProvider();
+    const now = Date.UTC(2026, 7, 26, 12, 0, 0);
+    expect(provider.getOffers(now, [])).toEqual([]);
+    const unlocked = provider.getOffers(now, [4]);
+    expect(unlocked).toHaveLength(DAILY_MERCHANT_OFFER_COUNT);
+    expect(unlocked.every((offer) => offer.tier === 4)).toBe(true);
   });
 
   it("rotates on the next UTC day and persists purchased offers", () => {
