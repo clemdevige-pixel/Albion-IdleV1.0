@@ -7,6 +7,7 @@ import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog
 import {
   getWeaponFamilyDisplayName,
   getWeaponSpecializationName,
+  resolveUnlockedWeaponAbilities,
   resolveWeaponFamilyId,
   resolveWeaponMastery,
   resolveWeaponTier,
@@ -15,9 +16,11 @@ import {
 import {
   resolveWeaponBalanceProfileByMasteryId,
 } from "../apps/client/src/data/weaponBalanceProfileCatalog.js";
+import { getWeaponAbilityMechanics } from "../apps/client/src/data/weaponAbilityMechanics.js";
 import {
-  buildWeaponRoleBenchmark,
-} from "../apps/client/src/data/weaponRoleBenchmark.js";
+  buildWeaponOnlyBenchmark,
+  buildWeaponPackageBenchmark,
+} from "../apps/client/src/data/weaponPackageBenchmark.js";
 import {
   T4_DEFENSIVE_LOADOUT,
   T4_SHIELD,
@@ -59,6 +62,7 @@ interface SweepRow {
   readonly gameplay: string;
   readonly primaryRole: string;
   readonly secondaryRole: string;
+  readonly profileStatus: "profiled" | "unprofiled";
   readonly zone: string;
   readonly segment: number;
   readonly clear: boolean;
@@ -135,14 +139,45 @@ function percentDelta(value: number, reference: number): number {
   return Number((((value / reference) - 1) * 100).toFixed(1));
 }
 
+function castsInsideWindow(cooldown: number, windowSeconds: number): number {
+  const safeCooldown = Math.max(0.5, cooldown);
+  return 1 + Math.floor(Math.max(0, windowSeconds - 1e-9) / safeCooldown);
+}
+
+function utilityDiagnostics(itemId: string): { hardControl30s: number; debuffUptime: number } {
+  let hardControlSeconds = 0;
+  let debuffSeconds = 0;
+
+  for (const ability of resolveUnlockedWeaponAbilities(itemId, MASTERY_LEVEL)) {
+    const casts = castsInsideWindow(ability.cooldown, 30);
+    const mechanics = getWeaponAbilityMechanics(ability.id)?.mechanics ?? [];
+    for (const mechanic of mechanics) {
+      if (mechanic.kind !== "status") continue;
+      if (mechanic.effectType === "stun" || mechanic.effectType === "silence") {
+        hardControlSeconds += mechanic.duration * casts;
+      } else if (mechanic.effectType === "debuff") {
+        debuffSeconds += mechanic.duration * casts;
+      }
+    }
+  }
+
+  return {
+    hardControl30s: Number(Math.min(30, hardControlSeconds).toFixed(2)),
+    debuffUptime: Number(((Math.min(30, debuffSeconds) / 30) * 100).toFixed(1)),
+  };
+}
+
+function profileFor(itemId: string) {
+  const mastery = resolveWeaponMastery(itemId);
+  if (mastery === undefined) throw new Error(`Missing mastery route for ${itemId}`);
+  return resolveWeaponBalanceProfileByMasteryId(String(mastery.weaponId));
+}
+
 function buildRows(): readonly SweepRow[] {
   const rows: SweepRow[] = [];
 
   for (const weaponItemId of T4_WEAPONS) {
-    const mastery = resolveWeaponMastery(weaponItemId);
-    if (mastery === undefined) throw new Error(`Missing mastery route for ${weaponItemId}`);
-    const profile = resolveWeaponBalanceProfileByMasteryId(String(mastery.weaponId));
-    if (profile === undefined) throw new Error(`Missing balance profile for ${weaponItemId}`);
+    const profile = profileFor(weaponItemId);
 
     for (const zoneDefId of WORLD_ZONE_IDS_BY_BAND.blue) {
       for (let segmentIndex = 0; segmentIndex < 10; segmentIndex += 1) {
@@ -165,9 +200,10 @@ function buildRows(): readonly SweepRow[] {
           family: familyName(weaponItemId),
           specialization: shortWeaponName(weaponItemId),
           itemId: weaponItemId,
-          gameplay: profile.gameplayProfile,
-          primaryRole: profile.primaryContentRole,
-          secondaryRole: profile.secondaryContentRole ?? "-",
+          gameplay: profile?.gameplayProfile ?? "unprofiled",
+          primaryRole: profile?.primaryContentRole ?? "unprofiled",
+          secondaryRole: profile?.secondaryContentRole ?? "-",
+          profileStatus: profile === undefined ? "unprofiled" : "profiled",
           zone: zoneName(zoneDefId),
           segment: segmentIndex + 1,
           clear: result.clear,
@@ -194,8 +230,10 @@ function main(): void {
 
   const rows = buildRows();
   const representativeSegments = new Set([1, 5, 10]);
-  const diagnostics = buildWeaponRoleBenchmark(T4_WEAPONS, MASTERY_LEVEL, ENCHANTMENT, benchmarkLoadout);
-  const diagnosticByItemId = new Map(diagnostics.map((row) => [row.itemId, row] as const));
+  const offenseRows = buildWeaponOnlyBenchmark(T4_WEAPONS, MASTERY_LEVEL, ENCHANTMENT);
+  const packageRows = buildWeaponPackageBenchmark(T4_WEAPONS, MASTERY_LEVEL, ENCHANTMENT, benchmarkLoadout);
+  const offenseByItemId = new Map(offenseRows.map((row) => [row.itemId, row] as const));
+  const packageByItemId = new Map(packageRows.map((row) => [row.itemId, row] as const));
 
   console.log("[WEAPON_ROLE_WORLD_SWEEP_REFERENCE]", {
     masteryLevel: MASTERY_LEVEL,
@@ -204,6 +242,7 @@ function main(): void {
     healthPotions: USE_HEALTH_POTIONS,
     weaponCount: T4_WEAPONS.length,
     coverage: "all authored T4 weapon specializations",
+    roleMetadata: "explicit profiles only; missing profiles are reported as unprofiled",
   });
 
   console.log("[WEAPON_ROLE_WORLD_SWEEP_CHECKPOINTS]");
@@ -232,26 +271,32 @@ function main(): void {
       ? Number((bossBoundaries.reduce((sum, row) => sum + row.seconds, 0) / bossBoundaries.length).toFixed(1))
       : null;
     const sample = weaponRows[0];
-    const diagnostic = diagnosticByItemId.get(weaponItemId);
+    const offense = offenseByItemId.get(weaponItemId);
+    const packageRow = packageByItemId.get(weaponItemId);
+    const utility = utilityDiagnostics(weaponItemId);
+
+    if (offense === undefined) throw new Error(`Missing offense benchmark for ${weaponItemId}`);
+    if (packageRow === undefined) throw new Error(`Missing package benchmark for ${weaponItemId}`);
 
     return {
       family: familyName(weaponItemId),
       weapon: shortWeaponName(weaponItemId),
       itemId: weaponItemId,
-      role: sample?.primaryRole ?? "-",
-      gameplay: sample?.gameplay ?? "-",
+      role: sample?.primaryRole ?? "unprofiled",
+      gameplay: sample?.gameplay ?? "unprofiled",
+      profileStatus: sample?.profileStatus ?? "unprofiled",
       clears: cleared.length,
       deepestClear: deepest === undefined ? "none" : `${deepest.zone} S${String(deepest.segment)}`,
       firstWall: firstWall === undefined ? "none" : `${firstWall.zone} S${String(firstWall.segment)}`,
       bestFameH: bestFarm?.famePerHour ?? 0,
       bestFarmLocation: bestFarm === undefined ? "none" : `${bestFarm.zone} S${String(bestFarm.segment)}`,
       avgBossBoundarySeconds,
-      sustainedDps: diagnostic?.sustainedDps ?? 0,
-      opener5Dps: diagnostic?.opener5Dps ?? 0,
-      opener10Dps: diagnostic?.opener10Dps ?? 0,
-      packageScore: diagnostic?.packageScore ?? 0,
-      hardControl30s: diagnostic?.hardControlSecondsPer30s ?? 0,
-      debuffUptime: diagnostic?.debuffUptimePercent ?? 0,
+      sustainedDps: offense.sustainedDps,
+      opener5Dps: offense.opener5,
+      opener10Dps: offense.opener10,
+      packageScore: packageRow.packageScore,
+      hardControl30s: utility.hardControl30s,
+      debuffUptime: utility.debuffUptime,
       totalPotionsOnClears: cleared.reduce((sum, row) => sum + row.potions, 0),
     };
   });
@@ -263,6 +308,7 @@ function main(): void {
     bestFameH: number;
     packageScore: number;
   }>();
+
   for (const family of new Set(summaries.map((row) => row.family))) {
     const familyRows = summaries.filter((row) => row.family === family);
     familyMedians.set(family, {
@@ -281,6 +327,7 @@ function main(): void {
       family: row.family,
       weapon: row.weapon,
       role: row.role,
+      profileStatus: row.profileStatus,
       sustained: row.sustainedDps,
       sustainedVsFamilyPct: percentDelta(row.sustainedDps, familyMedian.sustainedDps),
       opener5: row.opener5Dps,
@@ -300,6 +347,7 @@ function main(): void {
   const familySummary = [...familyMedians.entries()].map(([family, values]) => ({
     family,
     weaponCount: summaries.filter((row) => row.family === family).length,
+    unprofiledCount: summaries.filter((row) => row.family === family && row.profileStatus === "unprofiled").length,
     medianSustained: Number(values.sustainedDps.toFixed(1)),
     medianOpener5: Number(values.opener5Dps.toFixed(1)),
     medianOpener10: Number(values.opener10Dps.toFixed(1)),
@@ -325,6 +373,7 @@ function main(): void {
       healthPotions: USE_HEALTH_POTIONS,
       weaponCount: T4_WEAPONS.length,
       coverage: "all authored T4 weapon specializations",
+      roleMetadata: "explicit profiles only; missing profiles are reported as unprofiled",
     },
     familySummary,
     comparative,
