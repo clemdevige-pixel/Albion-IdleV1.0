@@ -87,6 +87,7 @@ function combatProgress(mastery: MasteryVM, family: boolean): MasteryProgressMod
     };
   }
 
+  const iconAsset = resolveWeaponSpecializationIcon(mastery.id);
   return {
     id: mastery.id,
     name: mastery.displayName,
@@ -101,7 +102,7 @@ function combatProgress(mastery: MasteryVM, family: boolean): MasteryProgressMod
       `+${formatItemPower(WEAPON_SPECIALIZATION_IP_PER_LEVEL)} / +${formatItemPower(WEAPON_CROSS_SPECIALIZATION_IP_PER_LEVEL)} IP par niveau`,
     ],
     subtitle: "Bonus principal + synergie de famille",
-    iconAsset: resolveWeaponSpecializationIcon(mastery.id),
+    ...(iconAsset === undefined ? {} : { iconAsset }),
   };
 }
 
