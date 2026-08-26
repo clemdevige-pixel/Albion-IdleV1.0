@@ -4,6 +4,7 @@ import {
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
   getFactionRuneItemId,
+  type DungeonLootTier,
 } from "@game/data";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import { getDungeonLootDefinition } from "./dungeonLootContentCatalog.js";
@@ -13,15 +14,16 @@ describe("dungeonLootContentCatalog", () => {
     for (const dungeon of DUNGEON_DEFINITIONS) {
       const loot = getDungeonLootDefinition(dungeon.lootTableId);
       const suffix = dungeon.faction.toLowerCase();
+      const tier = dungeon.tier as DungeonLootTier;
       expect(loot.faction).toBe(dungeon.faction);
       expect(loot.artifactFragmentItemId).toBe(
-        getDungeonArtifactFragmentItemId(suffix, dungeon.tier),
+        getDungeonArtifactFragmentItemId(suffix, tier),
       );
-      expect(loot.artifactItemId).toBe(getDungeonArtifactItemId(suffix, dungeon.tier));
-      expect(loot.enchantmentShardItemId).toBe(`item_resource_enchantment_shard_t${dungeon.tier}`);
-      expect(loot.factionRuneItemId).toBe(getFactionRuneItemId(dungeon.tier));
+      expect(loot.artifactItemId).toBe(getDungeonArtifactItemId(suffix, tier));
+      expect(loot.enchantmentShardItemId).toBe(`item_resource_enchantment_shard_t${tier}`);
+      expect(loot.factionRuneItemId).toBe(getFactionRuneItemId(tier));
       expect(loot.completionFactionRuneQuantity).toBe(
-        DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER[dungeon.tier],
+        DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER[tier],
       );
     }
   });
