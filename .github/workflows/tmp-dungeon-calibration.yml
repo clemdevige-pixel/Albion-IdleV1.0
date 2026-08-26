@@ -31,7 +31,7 @@ jobs:
             'hp: 1.357, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T6_DUNGEON_ID]': 'hp: 1.45, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T6_DUNGEON_ID]',
             'hp: 2.093, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T8_DUNGEON_ID]': 'hp: 1.53, damage: 1.05, defense: 1.1 },\n  ],\n  [UNDEAD_T8_DUNGEON_ID]',
             'hp: 1.656, damage: 1.05, defense: 1.1 },\n  ],\n  [MORGANA_T8_DUNGEON_ID]': 'hp: 1.32, damage: 1.05, defense: 1.1 },\n  ],\n  [MORGANA_T8_DUNGEON_ID]',
-            'hp: 1.564, damage: 1.05, defense: 1.1 },\n  ],\n};': 'hp: 1.29, damage: 1.05, defense: 1.1 },\n  ],\n};',
+            'hp: 1.564, damage: 1.05, defense: 1.1 },\n  ],\n};': 'hp: 1.28, damage: 1.05, defense: 1.1 },\n  ],\n};',
           }
           for old, new in replacements.items():
               if old not in s:
