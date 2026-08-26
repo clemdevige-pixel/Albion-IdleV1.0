@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  DAILY_MERCHANT_ROTATION_RULES,
+  DAILY_MERCHANT_VENDOR_ID,
+} from "@game/data";
 import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import { getItemDisplayName, ItemVisual } from "../../../panels/ItemVisual";
 import { TransactionConfirmModal } from "../../../panels/TransactionConfirmModal";
@@ -45,7 +49,9 @@ export function DailyOffersView(): JSX.Element | null {
     <section className="ui-merchant-list" aria-label="Arrivage quotidien">
       <div className="ui-merchant-section-title">
         <span>Arrivage quotidien</span>
-        <small>5 offres · reset dans {formatReset(clock)}</small>
+        <small>
+          {String(DAILY_MERCHANT_ROTATION_RULES.offerCount)} offres · reset dans {formatReset(clock)}
+        </small>
       </div>
       {offers.map((offer) => (
         <button
@@ -80,6 +86,7 @@ export function DailyOffersView(): JSX.Element | null {
               return;
             }
             const succeeded = executeTransaction({
+              vendorId: DAILY_MERCHANT_VENDOR_ID,
               direction: "buy",
               itemId: pending.itemId,
               quantity: pending.quantity,
