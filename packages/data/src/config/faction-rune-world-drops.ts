@@ -103,13 +103,12 @@ export function rollFactionRuneWorldDrop(
   tier: number,
   baseChance: number,
   factionYieldBonusPercent: number,
-  encounterMultiplier = 1,
   random: () => number = Math.random,
 ): FactionRuneWorldDrop | undefined {
   const expectation = getFactionRuneWorldDropExpectation(factionId, tier, baseChance);
   if (expectation === undefined) return undefined;
   const bonusMultiplier = 1 + Math.max(0, factionYieldBonusPercent) / 100;
-  const finalChance = expectation.expectedQuantity * Math.max(0, encounterMultiplier) * bonusMultiplier;
+  const finalChance = expectation.expectedQuantity * bonusMultiplier;
   if (random() >= Math.min(1, finalChance)) return undefined;
   return { itemId: expectation.itemId, kind: "faction_rune", quantity: 1 };
 }
