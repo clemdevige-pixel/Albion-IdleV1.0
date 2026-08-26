@@ -16,34 +16,39 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Final Heretic T5 grid
+      - name: Heretic T5 full-run separation grid
         shell: bash
         run: |
           set -e
           cp apps/client/src/data/dungeonContentCatalog.ts /tmp/dungeon.orig.ts
           run_case() {
-            label="$1"; hp="$2"; dmg="$3"; def="$4"
+            label="$1"; trashDmg="$2"; trashHp="$3"
             cp /tmp/dungeon.orig.ts apps/client/src/data/dungeonContentCatalog.ts
-            HP="$hp" DMG="$dmg" DEF="$def" python - <<'PY'
+            TD="$trashDmg" TH="$trashHp" python - <<'PY'
           from pathlib import Path
           import os,re
           p=Path('apps/client/src/data/dungeonContentCatalog.ts'); s=p.read_text()
-          did='HERETIC_T5_DUNGEON_ID'; hp=os.environ['HP']; dmg=os.environ['DMG']; de=os.environ['DEF']
+          did='HERETIC_T5_DUNGEON_ID'; td=float(os.environ['TD']); th=float(os.environ['TH'])
           pat=rf'(\[{did}\]: \[\n)(.*?)(\n  \],)'; m=re.search(pat,s,re.S)
+          if not m: raise SystemExit('missing heretic t5')
           rows=m.group(2).split('\n')
-          rows[-1]=re.sub(r'hp: [0-9.]+', f'hp: {hp}', rows[-1])
-          rows[-1]=re.sub(r'damage: [0-9.]+', f'damage: {dmg}', rows[-1])
-          rows[-1]=re.sub(r'defense: [0-9.]+', f'defense: {de}', rows[-1])
+          # H6 boss: favorable 5/5 with useful safety margin.
+          rows[-1]=re.sub(r'hp: [0-9.]+', 'hp: 0.72', rows[-1])
+          rows[-1]=re.sub(r'damage: [0-9.]+', 'damage: 1.50', rows[-1])
+          rows[-1]=re.sub(r'defense: [0-9.]+', 'defense: 1.10', rows[-1])
+          for i in range(3):
+              rows[i]=re.sub(r'hp: ([0-9.]+)', lambda x: f"hp: {round(float(x.group(1))*th,5)}", rows[i])
+              rows[i]=re.sub(r'damage: ([0-9.]+)', lambda x: f"damage: {round(float(x.group(1))*td,5)}", rows[i])
           body='\n'.join(rows); p.write_text(s[:m.start()]+m.group(1)+body+m.group(3)+s[m.end():])
           PY
-            echo "===== $label hp=$hp dmg=$dmg def=$def ====="
+            echo "===== $label trashDmg=$trashDmg trashHp=$trashHp ====="
             pnpm benchmark:dungeons 2>&1 | awk '/DUNGEON_T5_BASE_SUMMARY/{b=1} /DUNGEON_T5_COUNTER_FACTION_SUMMARY/{f=1} b&&/dungeon_heretic_t5/{print "BASE " $0;b=0} f&&/dungeon_heretic_t5/{print "FAV  " $0;f=0}'
           }
-          run_case H6 0.72 1.50 1.10
-          run_case H7 0.66 1.55 1.10
-          run_case H8 0.60 1.60 1.10
-          run_case H9 0.90 1.28 1.18
-          run_case H10 0.82 1.34 1.18
-          run_case H11 0.74 1.42 1.18
-          run_case H12 0.90 1.24 1.26
-          run_case H13 0.80 1.32 1.26
+          run_case R1 1.03 1.00
+          run_case R2 1.05 1.00
+          run_case R3 1.08 1.00
+          run_case R4 1.10 1.00
+          run_case R5 1.05 1.03
+          run_case R6 1.08 1.03
+          run_case R7 1.05 1.05
+          run_case R8 1.08 1.05
