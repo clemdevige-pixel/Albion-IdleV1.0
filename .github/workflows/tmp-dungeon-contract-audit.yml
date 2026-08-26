@@ -16,13 +16,63 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Current dungeon contract telemetry
+      - name: Focused dungeon contract probes
         shell: bash
         run: |
-          pnpm benchmark:dungeons > /tmp/out.txt
-          for tier in 4 5 6 7 8; do
-            echo "===== T${tier} BASE ====="
-            awk "/\\[DUNGEON_T${tier}_BASE_MATRIX\\]/{p=1;next}/\\[DUNGEON_T${tier}_BASE_SUMMARY\\]/{p=0} p" /tmp/out.txt
-            echo "===== T${tier} FAVORABLE ====="
-            awk "/\\[DUNGEON_T${tier}_COUNTER_FACTION_MATRIX\\]/{p=1;next}/\\[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY\\]/{p=0} p" /tmp/out.txt
+          set -e
+          cp apps/client/src/data/dungeonContentCatalog.ts /tmp/orig.ts
+          patch_row() {
+            DID="$1" ROW="$2" HP="$3" DMG="$4" python - <<'PY'
+          from pathlib import Path
+          import os,re
+          p=Path('apps/client/src/data/dungeonContentCatalog.ts'); s=p.read_text(); did=os.environ['DID']; row=int(os.environ['ROW'])
+          m=re.search(rf'(\[{did}\]: \[\n)(.*?)(\n  \],)',s,re.S)
+          rows=m.group(2).split('\n')
+          if os.environ['HP']:
+              rows[row]=re.sub(r'hp: [0-9.]+',f"hp: {os.environ['HP']}",rows[row])
+          if os.environ['DMG']:
+              rows[row]=re.sub(r'damage: [0-9.]+',f"damage: {os.environ['DMG']}",rows[row])
+          p.write_text(s[:m.start()]+m.group(1)+'\n'.join(rows)+m.group(3)+s[m.end():])
+          PY
+          }
+          run_focus() {
+            LABEL="$1" TIER="$2" DUNGEON="$3"
+            echo "===== $LABEL ====="
+            pnpm benchmark:dungeons > /tmp/out.txt
+            awk "/\\[DUNGEON_T${TIER}_BASE_MATRIX\\]/{p=1;next}/\\[DUNGEON_T${TIER}_BASE_SUMMARY\\]/{p=0} p&&/${DUNGEON}/{print}" /tmp/out.txt
+            echo FAVORABLE
+            awk "/\\[DUNGEON_T${TIER}_COUNTER_FACTION_MATRIX\\]/{p=1;next}/\\[DUNGEON_T${TIER}_COUNTER_FACTION_SUMMARY\\]/{p=0} p&&/${DUNGEON}/{print}" /tmp/out.txt
+          }
+
+          # T5 Undead: tiny boss-damage increments only.
+          for dmg in 1.16 1.17 1.18; do
+            cp /tmp/orig.ts apps/client/src/data/dungeonContentCatalog.ts
+            patch_row UNDEAD_T5_DUNGEON_ID 3 '' "$dmg"
+            run_focus "T5 Undead bossDamage=$dmg" 5 dungeon_undead_t5
+          done
+
+          # T5 Morgana: trade boss HP for pressure to preserve favorable +20% route while suppressing comfortable base leak.
+          for hp in 0.80 0.85 0.90; do
+            for dmg in 1.30 1.40 1.50; do
+              cp /tmp/orig.ts apps/client/src/data/dungeonContentCatalog.ts
+              patch_row MORGANA_T5_DUNGEON_ID 3 "$hp" "$dmg"
+              run_focus "T5 Morgana bossHp=$hp bossDamage=$dmg" 5 dungeon_morgana_t5
+            done
+          done
+
+          # Keeper T6/T7/T8: target weakest base clear around ~15% HP while retaining 5/5.
+          for hp in 1.20 1.25 1.30; do
+            cp /tmp/orig.ts apps/client/src/data/dungeonContentCatalog.ts
+            patch_row KEEPER_T6_DUNGEON_ID 3 "$hp" ''
+            run_focus "T6 Keeper bossHp=$hp" 6 dungeon_keeper_t6
+          done
+          for hp in 1.35 1.50 1.65 1.80; do
+            cp /tmp/orig.ts apps/client/src/data/dungeonContentCatalog.ts
+            patch_row KEEPER_T7_DUNGEON_ID 3 "$hp" ''
+            run_focus "T7 Keeper bossHp=$hp" 7 dungeon_keeper_t7
+          done
+          for hp in 1.00 1.05 1.10; do
+            cp /tmp/orig.ts apps/client/src/data/dungeonContentCatalog.ts
+            patch_row KEEPER_T8_DUNGEON_ID 3 "$hp" ''
+            run_focus "T8 Keeper bossHp=$hp" 8 dungeon_keeper_t8
           done
