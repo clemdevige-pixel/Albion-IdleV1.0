@@ -62,6 +62,7 @@ export class SaveGameActions {
     // or paused state from the runtime that existed before the load.
     combatStopController.reset();
     this.deps.persistence.load();
+    this.deps.persistence.setLoadFailed(false);
     this.applyLoadedState();
 
     this.deps.bridge.addEconomyNotification({
@@ -76,7 +77,9 @@ export class SaveGameActions {
   }
 
   exportSave(): string {
-    this.deps.persistence.save(this.deps.getCurrentTick());
+    if (!this.deps.persistence.isLoadFailed()) {
+      this.deps.persistence.save(this.deps.getCurrentTick());
+    }
     return this.deps.persistence.exportSave();
   }
 
@@ -84,6 +87,7 @@ export class SaveGameActions {
     try {
       combatStopController.reset();
       this.deps.persistence.importSave(raw);
+      this.deps.persistence.setLoadFailed(false);
       this.applyLoadedState();
       this.deps.bridge.addEconomyNotification({
         id: `notif_import_${String(Date.now())}`,
