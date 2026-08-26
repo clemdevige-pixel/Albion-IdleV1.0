@@ -68,6 +68,7 @@ function runDungeon(input: {
     specializationMasteryLevel: mastery.specializationMasteryLevel,
     siblingSpecializationMasteryLevel: mastery.siblingSpecializationMasteryLevel,
     useHealthPotions: true,
+    healthPotionQuantity: POTION_CAP,
     ...(input.heroDamageMultiplier === undefined ? {} : { heroDamageMultiplier: input.heroDamageMultiplier }),
   });
 }

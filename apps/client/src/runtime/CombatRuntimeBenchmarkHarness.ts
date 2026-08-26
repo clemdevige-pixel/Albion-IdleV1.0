@@ -80,6 +80,8 @@ export interface CombatRuntimeBenchmarkInput {
   /** Optional level seeded on every other specialization in the equipped weapon family. */
   readonly siblingSpecializationMasteryLevel?: number;
   readonly useHealthPotions?: boolean;
+  /** Optional exact number of health potions seeded for deterministic inventory-capped benchmarks. Defaults to 99 for backward compatibility. */
+  readonly healthPotionQuantity?: number;
   /** Benchmark-only outgoing hero damage multiplier. Defaults to 1 and never changes authored weapon data. */
   readonly heroDamageMultiplier?: number;
   /** Optional benchmark-only targeted tuning. Authored weapon data and live runtime balance remain unchanged. */
@@ -359,9 +361,10 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   }
 
   const useHealthPotions = input.useHealthPotions === true;
-  if (useHealthPotions) {
-    const seeded = inventoryManager.addQuantity(heroId, POTION_ITEM_ID, 99);
-    if (!seeded.ok) throw new Error("Failed to seed benchmark health potions");
+  const healthPotionQuantity = Math.max(0, Math.floor(input.healthPotionQuantity ?? 99));
+  if (useHealthPotions && healthPotionQuantity > 0) {
+    const seeded = inventoryManager.addQuantity(heroId, POTION_ITEM_ID, healthPotionQuantity);
+    if (!seeded.ok || seeded.value.remainder !== 0) throw new Error("Failed to seed benchmark health potions");
   }
   const consumableRuntime = new ConsumableRuntime({ inventoryManager, damageManager, deathManager, heroId });
 
