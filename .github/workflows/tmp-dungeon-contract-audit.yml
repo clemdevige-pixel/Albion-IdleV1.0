@@ -16,39 +16,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: Heretic T5 full-run separation grid
+      - name: Inspect Heretic T5 candidate R2
         shell: bash
         run: |
-          set -e
-          cp apps/client/src/data/dungeonContentCatalog.ts /tmp/dungeon.orig.ts
-          run_case() {
-            label="$1"; trashDmg="$2"; trashHp="$3"
-            cp /tmp/dungeon.orig.ts apps/client/src/data/dungeonContentCatalog.ts
-            TD="$trashDmg" TH="$trashHp" python - <<'PY'
+          python - <<'PY'
           from pathlib import Path
-          import os,re
-          p=Path('apps/client/src/data/dungeonContentCatalog.ts'); s=p.read_text()
-          did='HERETIC_T5_DUNGEON_ID'; td=float(os.environ['TD']); th=float(os.environ['TH'])
+          import re
+          p=Path('apps/client/src/data/dungeonContentCatalog.ts'); s=p.read_text(); did='HERETIC_T5_DUNGEON_ID'
           pat=rf'(\[{did}\]: \[\n)(.*?)(\n  \],)'; m=re.search(pat,s,re.S)
-          if not m: raise SystemExit('missing heretic t5')
           rows=m.group(2).split('\n')
-          # H6 boss: favorable 5/5 with useful safety margin.
-          rows[-1]=re.sub(r'hp: [0-9.]+', 'hp: 0.72', rows[-1])
-          rows[-1]=re.sub(r'damage: [0-9.]+', 'damage: 1.50', rows[-1])
-          rows[-1]=re.sub(r'defense: [0-9.]+', 'defense: 1.10', rows[-1])
+          rows[-1]=re.sub(r'hp: [0-9.]+', 'hp: 0.72', rows[-1]); rows[-1]=re.sub(r'damage: [0-9.]+', 'damage: 1.50', rows[-1])
           for i in range(3):
-              rows[i]=re.sub(r'hp: ([0-9.]+)', lambda x: f"hp: {round(float(x.group(1))*th,5)}", rows[i])
-              rows[i]=re.sub(r'damage: ([0-9.]+)', lambda x: f"damage: {round(float(x.group(1))*td,5)}", rows[i])
+              rows[i]=re.sub(r'damage: ([0-9.]+)', lambda x: f"damage: {round(float(x.group(1))*1.05,5)}", rows[i])
           body='\n'.join(rows); p.write_text(s[:m.start()]+m.group(1)+body+m.group(3)+s[m.end():])
           PY
-            echo "===== $label trashDmg=$trashDmg trashHp=$trashHp ====="
-            pnpm benchmark:dungeons 2>&1 | awk '/DUNGEON_T5_BASE_SUMMARY/{b=1} /DUNGEON_T5_COUNTER_FACTION_SUMMARY/{f=1} b&&/dungeon_heretic_t5/{print "BASE " $0;b=0} f&&/dungeon_heretic_t5/{print "FAV  " $0;f=0}'
-          }
-          run_case R1 1.03 1.00
-          run_case R2 1.05 1.00
-          run_case R3 1.08 1.00
-          run_case R4 1.10 1.00
-          run_case R5 1.05 1.03
-          run_case R6 1.08 1.03
-          run_case R7 1.05 1.05
-          run_case R8 1.08 1.05
+          pnpm benchmark:dungeons > /tmp/out.txt
+          awk '/\[DUNGEON_T5_BASE_MATRIX\]/{p=1;next}/\[DUNGEON_T5_BASE_SUMMARY\]/{p=0} p&&/dungeon_heretic_t5/{print}' /tmp/out.txt
+          echo FAVORABLE
+          awk '/\[DUNGEON_T5_COUNTER_FACTION_MATRIX\]/{p=1;next}/\[DUNGEON_T5_COUNTER_FACTION_SUMMARY\]/{p=0} p&&/dungeon_heretic_t5/{print}' /tmp/out.txt
