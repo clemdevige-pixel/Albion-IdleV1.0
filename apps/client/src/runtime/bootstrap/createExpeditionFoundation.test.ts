@@ -169,8 +169,8 @@ describe("createExpeditionFoundation", () => {
     const advance = expeditionService.advance(durationMs);
 
     expect(inventoryManager.getTotalQuantity(heroId, runeItemId)).toBe(16);
-    expect(inventoryManager.getTotalQuantity(heroId, fragmentItemId)).toBe(24);
-    expect(inventoryManager.getTotalQuantity(heroId, keyItemId)).toBe(1);
+    expect(inventoryManager.getTotalQuantity(heroId, fragmentItemId)).toBe(40);
+    expect(inventoryManager.getTotalQuantity(heroId, keyItemId)).toBe(3);
     expect(inventoryManager.getTotalQuantity(unrelatedStorageId, runeItemId)).toBe(0);
     expect(advance.completed).toHaveLength(1);
     expect(advance.completed[0]?.rewardSummary).toEqual({
@@ -178,10 +178,10 @@ describe("createExpeditionFoundation", () => {
       itemId: runeItemId,
       runesCredited: 16,
       fragmentItemId,
-      fragmentsCredited: 24,
+      fragmentsCredited: 40,
       keyItemId,
-      completeKeysCredited: 1,
-      quality: "reussie",
+      completeKeysCredited: 3,
+      quality: "fructueuse",
     });
     expect(Number.isInteger(advance.completed[0]?.rewardSummary.kind === "faction_rune"
       ? advance.completed[0].rewardSummary.completeKeysCredited
