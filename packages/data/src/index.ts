@@ -84,6 +84,7 @@ export * from "./config/faction-cape-balance.js";
 
 // Authored economy and loot balance values
 export * from "./config/economy-balance.js";
+export * from "./config/merchant-daily-balance.js";
 
 // Canonical dungeon identifiers and authored dungeon loot balance
 export * from "./config/dungeon-keys.js";
