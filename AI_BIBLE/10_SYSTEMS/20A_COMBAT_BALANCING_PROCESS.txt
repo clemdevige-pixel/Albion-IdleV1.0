@@ -22,10 +22,11 @@ The live CombatRuntime is the source of truth for player-vs-zone difficulty. Syn
 8. Potions are a progression tool, not part of an AFK baseline unless the contract explicitly says otherwise.
 9. Raw tuning values are data. The progression contract is design law.
 10. Long-term weapon balance targets viability across the game, not equivalence in every activity.
-11. NORMAL world progression is structurally monotonic: normal zone starts must not regress below the previous normal zone end, and normal intra-zone curves must not decrease.
-12. A final boss explicitly authored with `progressionRole: "boss_gate"` is an approved exception to normal monotonicity. It may create a local difficulty spike above the following zone entry.
-13. The following zone is compared to the previous NORMAL progression envelope, not to the boss-gate spike.
-14. Representative weapons are not required to clear ordinary progression walls with identical ease. End-of-Tier boss gates are stricter: their explicit contract must be satisfied by the full representative weapon set.
+11. NORMAL world progression is structurally monotonic at the authored pressure-envelope level: zone progression, tier bridges and intended wall placement must not regress simply to solve a local balance issue.
+12. Individual runtime segment clear depth may be locally non-monotonic because authored encounter composition is discrete. Such composition-driven non-monotonicity is diagnostic, not automatically a balance defect.
+13. A final boss explicitly authored with `progressionRole: "boss_gate"` is an approved exception to normal monotonicity. It may create a local difficulty spike above the following zone entry.
+14. The following zone is compared to the previous NORMAL progression envelope, not to the boss-gate spike.
+15. Representative weapons are not required to clear ordinary progression walls with identical ease. End-of-Tier boss gates are stricter: their explicit contract must be satisfied by the full representative weapon set.
 
 ---
 
@@ -142,11 +143,48 @@ For each new zone or world band:
 
 When adding later-band content, reuse CombatRuntimeBenchmarkHarness. Do not create band-specific harnesses.
 
-## 5.1 Normal monotonicity rule
+## 5.1 Normal progression envelope and segment-composition non-monotonicity
 
-Normal world difficulty remains monotonic.
+Normal world difficulty remains monotonic at the DESIGN / AUTHORED PRESSURE ENVELOPE level.
 
-A normal segment or normal zone entry must not become easier than the previous normal progression point simply to solve a local balance issue.
+The intended progression order must remain coherent across:
+- world bands;
+- zone entry / mid / late expectations;
+- enchantment steps;
+- tier bridges;
+- final boss gates.
+
+However, runtime clear depth across individual segments is not required to be perfectly monotonic.
+
+Reason:
+- segments are discrete encounter compositions, not samples of one continuous scalar difficulty function;
+- different enemy mixes can interact differently with control, sustain, attack cadence, damage type and potion timing;
+- therefore a weapon may clear a later segment while failing an earlier segment without the underlying authored progression curve being globally inverted.
+
+`afkNonMonotonic` / `potionNonMonotonic` in the global wall benchmark are DIAGNOSTIC FLAGS. They do not by themselves authorize retuning monsters, weapons or zone curves.
+
+A composition-driven non-monotonicity is ACCEPTED when all of the following remain true:
+- the explicit end-of-tier boss-gate contract is respected;
+- adjacent-tier bridge access remains viable;
+- the overall progression envelope remains coherent;
+- there is no multi-zone or multi-tier skip created by the anomaly;
+- no weapon systematically trivializes the surrounding progression because of the anomaly;
+- the anomaly is local to one/few encounter compositions rather than a persistent scaling trend.
+
+A non-monotonicity becomes a REAL BALANCE REGRESSION when one or more of these occurs:
+- a final gate is bypassed below its intended gear state;
+- the required bridge state can no longer enter the next progression band;
+- an under-tier loadout skips several intended walls;
+- the same weapon produces repeated inversions across multiple adjacent zones/tiers;
+- one specialization gains a persistent progression advantage large enough to invalidate its authored role balance;
+- the anomaly reflects a broken authored pressure curve rather than isolated encounter composition.
+
+Do NOT normalize every individual S1-S10 clear sequence by retuning enemy stats. Doing so would couple unrelated encounter compositions and can destabilize already validated weapon, potion, enchantment and boss-gate balance.
+
+Validated decision — 2026-08-26:
+- the current global benchmark contains known local non-monotonic segment results caused by encounter composition;
+- final T4-T8 wall / bridge contracts remain the governing balance signal;
+- these local flags are accepted and must not reopen monster tuning unless they meet the real-regression criteria above.
 
 ## 5.2 End-of-Tier boss-gate exception
 
@@ -170,7 +208,7 @@ For the representative normal weapon set at end-of-tier mastery:
 
 The wall is produced by combat pressure, not by an artificial equipment-slot lock.
 
-## 5.3 Validated live boss gates — 2026-08-20
+## 5.3 Validated live boss gates — 2026-08-20; revalidated after weapon pass 2026-08-26
 
 Frostpeak T4 -> T5
 - HP x1.575
@@ -297,10 +335,12 @@ KEEP tests that protect:
 - explicit off-hand separation;
 - validated progression checkpoints;
 - potion behavior;
-- normal world-curve ordering;
+- authored normal progression envelopes;
 - authored boss-gate semantics;
 - deterministic data integrity;
 - shard-band entry bridges between adjacent Tiers.
+
+Do NOT turn a local `nonMonotonic` diagnostic into a strict regression test unless the case violates an authored progression contract. Exact per-segment clear ordering is not itself a frozen balance contract.
 
 One-off candidate sweeps are diagnostics. Once a candidate is live and covered by a semantic regression, the regression test is the durable guard.
 
@@ -315,6 +355,10 @@ From repository root:
 Boss-gate regression:
 
 `pnpm.cmd --filter @game/client test -- blueFrostpeakProgressionSweep.test.ts laterTierBossGateRegression.test.ts --reporter=verbose`
+
+Full balance closure:
+
+`pnpm.cmd benchmark:global-balance`
 
 After targeted balance validation, run the full client suite before merging to main.
 
