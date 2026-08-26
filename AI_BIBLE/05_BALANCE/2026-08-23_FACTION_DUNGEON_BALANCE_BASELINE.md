@@ -1,6 +1,6 @@
-# Albion Idle — Faction Dungeon Balance Baseline — 2026-08-26
+# Albion Idle — Faction Dungeon Balance Baseline — 2026-08-27
 
-Status: VALIDATED LIVE DUNGEON CURVE / SINGLE AUTHORED COMBAT LAYER
+Status: VALIDATED LIVE DUNGEON CURVE / SINGLE AUTHORED COMBAT LAYER / CLOSED PENDING PLAYTEST FEEDBACK
 Branch: `agent/albion-idle-development`
 
 ## Purpose
@@ -139,7 +139,52 @@ Ending HP is telemetry only; the hard favorable contract is `5/5`.
 
 ---
 
-# 6. POTION / DETERMINISM RULE
+# 6. PLAYTEST ALERTS / WATCHLIST
+
+This balance pass is intentionally closed without forcing extra safety margin into the deterministic harness. Re-open only if real player usage confirms a problem.
+
+## Favorable-route low-HP alerts
+
+The following favorable artifact clears are deterministic `5/5` but have little room for imperfect potion timing and should be watched first in manual playtests:
+
+- T5 Morgana / Bloodletter: `0.2%` HP remaining;
+- T5 Heretic / Whispering Bow: `1.9%`;
+- T5 Heretic / Deathgivers: `2.3%`;
+- T5 Morgana / Ursine Maulers: `2.8%`;
+- T8 Heretic / Whispering Bow: `3.1%`;
+- T5 Heretic / Galatine Pair: `4.1%`;
+- T4 Heretic / Whispering Bow: `4.9%`.
+
+Primary alert tier: **T5**. It contains the largest cluster of near-death favorable clears.
+
+Do not automatically buff these weapons from dungeon telemetry alone. If one of these profiles fails repeatedly in real play:
+1. reproduce with player-like potion timing;
+2. compare the same weapon across adjacent tiers and World benchmarks;
+3. determine whether the issue is weapon scaling, encounter composition, or deterministic potion timing before changing authored values.
+
+## Base-route leak alerts
+
+Current notable base clear rates outside Keeper:
+- T6 Heretic: `3/5`, but clears end at only `0.7%` to `2.8%` HP;
+- T7 Undead: `3/5`, clears end at `0.2%` to `6.7%` HP;
+- T4 Heretic: `1/5`, `9.7%` HP;
+- T5 Heretic: `1/5`, `4.6%` HP;
+- T5 Undead: `1/5`, `8.1%` HP;
+- T5 Morgana: `1/5`, `0.3%` HP;
+- T7 Heretic: `1/5`, `4.3%` HP;
+- T7 Morgana: `1/5`, `8.5%` HP.
+
+These are accepted under the current contract. Re-open only if player data shows that a base weapon becomes a **reliable** replacement for the intended favorable faction route.
+
+## Weapon-balance alert
+
+Bloodletter T5 is the most obvious current outlier in dungeon telemetry because its favorable Morgana clear finishes at `0.2%`, while the same weapon has much healthier margins at adjacent tiers. This is a **watch item**, not a confirmed weapon-balance defect.
+
+Do not apply a global Bloodletter or dagger-family buff unless cross-tier / World benchmarks also show underperformance.
+
+---
+
+# 7. POTION / DETERMINISM RULE
 
 The canonical dungeon benchmark seeds exactly 2 potions.
 
@@ -154,7 +199,7 @@ Do not add another balance layer or globally alter a weapon to compensate for on
 
 ---
 
-# 7. WORLD CROSS-CHECK
+# 8. WORLD CROSS-CHECK
 
 Dungeon tuning must not become a hidden weapon-balance patch.
 
@@ -164,9 +209,11 @@ If a future dungeon issue appears to require changing weapon stats, rerun the re
 
 ---
 
-# 8. CHANGE CONTROL
+# 9. CHANGE CONTROL
 
-Re-open dungeon balance when one of these changes materially:
+The current dungeon-balance chantier is **closed** pending real playtest evidence.
+
+Re-open dungeon balance when one of these changes materially or a playtest alert reproduces consistently:
 - weapon base stats or abilities;
 - enchantment combat scaling;
 - armor/defensive scaling;
