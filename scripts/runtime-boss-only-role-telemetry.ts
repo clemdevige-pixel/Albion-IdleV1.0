@@ -17,8 +17,14 @@ const T4_SHIELD = "item_shield_t4_reinforced";
 const WEAPONS = [
   "item_weapon_bow_t4_longbow",
   "item_weapon_staff_t4_infernal",
+  "item_weapon_gloves_t4_spiked_gauntlets",
   "item_weapon_dagger_t4_pair",
 ] as const;
+
+const ROTATION_SHARE_WEAPONS = new Set<string>([
+  "item_weapon_bow_t4_longbow",
+  "item_weapon_gloves_t4_spiked_gauntlets",
+]);
 
 function shortWeaponName(itemId: string): string {
   return itemId.replace("item_weapon_", "").replace("_t4_", " ");
@@ -52,6 +58,7 @@ const rows = WORLD_ZONE_IDS_BY_BAND.blue.flatMap((zoneDefId) => WEAPONS.map((wea
   });
 
   return {
+    weaponItemId,
     weapon: shortWeaponName(weaponItemId),
     zone: zoneName(zoneDefId),
     clear: result.clear,
@@ -81,7 +88,7 @@ console.log("[BOSS_ONLY_ROLE_RUNTIME_TELEMETRY_REFERENCE]", {
 });
 
 console.log("[BOSS_ONLY_ROLE_RUNTIME_TELEMETRY]");
-console.table(rows.map(({ abilities: _abilities, ...row }) => row));
+console.table(rows.map(({ weaponItemId: _weaponItemId, abilities: _abilities, ...row }) => row));
 
 console.log("[BOSS_ONLY_ROLE_RUNTIME_ABILITY_BREAKDOWN]");
 for (const row of rows) {
@@ -93,3 +100,30 @@ for (const row of rows) {
     damagePerCast: ability.casts > 0 ? Number((ability.directDamage / ability.casts).toFixed(1)) : 0,
   })));
 }
+
+console.log("[BOSS_ONLY_ROLE_RUNTIME_ROTATION_SHARE]");
+console.table(rows
+  .filter((row) => ROTATION_SHARE_WEAPONS.has(row.weaponItemId))
+  .map((row) => {
+    const [s1, s2, s3] = row.abilities;
+    const s1Damage = s1?.directDamage ?? 0;
+    const s2Damage = s2?.directDamage ?? 0;
+    const s3Damage = s3?.directDamage ?? 0;
+    return {
+      weapon: row.weapon,
+      zone: row.zone,
+      seconds: row.seconds,
+      totalDamage: row.totalDamage,
+      aaDamage: row.autoDamage,
+      aaShare: row.autoShare,
+      s1Casts: s1?.casts ?? 0,
+      s1Damage,
+      s1Share: percent(s1Damage, row.totalDamage),
+      s2Casts: s2?.casts ?? 0,
+      s2Damage,
+      s2Share: percent(s2Damage, row.totalDamage),
+      s3Casts: s3?.casts ?? 0,
+      s3Damage,
+      s3Share: percent(s3Damage, row.totalDamage),
+    };
+  }));
