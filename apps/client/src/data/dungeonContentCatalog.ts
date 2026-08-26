@@ -52,10 +52,18 @@ export const HERETIC_T8_LOOT_TABLE_ID = "dungeon_loot_heretic_t8";
 export const UNDEAD_T8_LOOT_TABLE_ID = "dungeon_loot_undead_t8";
 export const MORGANA_T8_LOOT_TABLE_ID = "dungeon_loot_morgana_t8";
 
-/** @deprecated T4 faction dungeons now share one authored combat profile. */
+/** @deprecated T4 faction dungeons share the same world-source profile. */
 export const KEEPER_T4_COMBAT_PROFILE_ID = FACTION_T4_COMBAT_PROFILE_ID;
 
-interface DungeonCombatProfileStep {
+type AuthoredDungeonTier = 4 | 5 | 6 | 7 | 8;
+
+interface DungeonCombatSourceDefinition {
+  readonly id: string;
+  readonly bandId: WorldBandId;
+  readonly sourceZoneIndexWithinBand: number;
+}
+
+interface DungeonEncounterBalanceStep {
   readonly sourceSegmentIndex: number;
   readonly sourceEncounterIndex: number;
   readonly hp: number;
@@ -63,53 +71,140 @@ interface DungeonCombatProfileStep {
   readonly defense: number;
 }
 
-interface DungeonCombatProfileDefinition {
-  readonly id: string;
-  readonly bandId: WorldBandId;
-  readonly sourceZoneIndexWithinBand: number;
-  readonly steps: readonly DungeonCombatProfileStep[];
-}
-
-interface DungeonCombatTuning {
-  readonly hp: number;
-  readonly damage: number;
-  readonly defense: number;
-}
-
-const FACTION_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
-  { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.15, defense: 1.1 },
-];
-
-const HIGH_TIER_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
-  { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.0, defense: 1.06 },
-  { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.05, defense: 1.1 },
-];
-
-const FACTION_T4_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T4_COMBAT_PROFILE_ID, bandId: "blue", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS };
-const FACTION_T5_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T5_COMBAT_PROFILE_ID, bandId: "yellow", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS };
-const FACTION_T6_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS };
-const FACTION_T7_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T7_COMBAT_PROFILE_ID, bandId: "red", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS };
-const FACTION_T8_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T8_COMBAT_PROFILE_ID, bandId: "black", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS };
-
-const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefinition>> = {
-  [FACTION_T4_COMBAT_PROFILE.id]: FACTION_T4_COMBAT_PROFILE,
-  [FACTION_T5_COMBAT_PROFILE.id]: FACTION_T5_COMBAT_PROFILE,
-  [FACTION_T6_COMBAT_PROFILE.id]: FACTION_T6_COMBAT_PROFILE,
-  [FACTION_T7_COMBAT_PROFILE.id]: FACTION_T7_COMBAT_PROFILE,
-  [FACTION_T8_COMBAT_PROFILE.id]: FACTION_T8_COMBAT_PROFILE,
+const DUNGEON_COMBAT_SOURCES: Readonly<Record<string, DungeonCombatSourceDefinition>> = {
+  [FACTION_T4_COMBAT_PROFILE_ID]: { id: FACTION_T4_COMBAT_PROFILE_ID, bandId: "blue", sourceZoneIndexWithinBand: 4 },
+  [FACTION_T5_COMBAT_PROFILE_ID]: { id: FACTION_T5_COMBAT_PROFILE_ID, bandId: "yellow", sourceZoneIndexWithinBand: 4 },
+  [FACTION_T6_COMBAT_PROFILE_ID]: { id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4 },
+  [FACTION_T7_COMBAT_PROFILE_ID]: { id: FACTION_T7_COMBAT_PROFILE_ID, bandId: "red", sourceZoneIndexWithinBand: 4 },
+  [FACTION_T8_COMBAT_PROFILE_ID]: { id: FACTION_T8_COMBAT_PROFILE_ID, bandId: "black", sourceZoneIndexWithinBand: 4 },
 };
 
-const DUNGEON_COMBAT_TUNING_BY_ID: Readonly<Record<string, DungeonCombatTuning>> = {
-  [KEEPER_T4_DUNGEON_ID]: { hp: 0.85, damage: 0.85, defense: 0.95 },
-  [HERETIC_T4_DUNGEON_ID]: { hp: 1, damage: 1.08, defense: 1 },
+/**
+ * Final authored dungeon balance. Each value is applied exactly once to the referenced world encounter.
+ * There are intentionally no later per-dungeon or boss correction multipliers.
+ */
+const DUNGEON_ENCOUNTER_BALANCE_BY_ID: Readonly<Record<string, readonly DungeonEncounterBalanceStep[]>> = {
+  [KEEPER_T4_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 0.8925, damage: 0.8925, defense: 0.969 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 0.918, damage: 0.918, defense: 0.988 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 0.935, damage: 0.935, defense: 1.007 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 0.9775, damage: 0.9775, defense: 1.045 },
+  ],
+  [HERETIC_T4_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.134, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.1664, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.188, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 0.828, damage: 1.242, defense: 1.1 },
+  ],
+  [UNDEAD_T4_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 0.7705, damage: 1.15, defense: 1.1 },
+  ],
+  [MORGANA_T4_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 0.759, damage: 1.15, defense: 1.1 },
+  ],
+  [KEEPER_T5_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.15, defense: 1.1 },
+  ],
+  [HERETIC_T5_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.288, damage: 1.15, defense: 1.1 },
+  ],
+  [UNDEAD_T5_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.242, damage: 1.15, defense: 1.1 },
+  ],
+  [MORGANA_T5_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1.1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.15, defense: 1.1 },
+  ],
+  [KEEPER_T6_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.05, defense: 1.1 },
+  ],
+  [HERETIC_T6_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.357, damage: 1.05, defense: 1.1 },
+  ],
+  [UNDEAD_T6_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.311, damage: 1.05, defense: 1.1 },
+  ],
+  [MORGANA_T6_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.288, damage: 1.05, defense: 1.1 },
+  ],
+  [KEEPER_T7_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.05, defense: 1.1 },
+  ],
+  [HERETIC_T7_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 2.093, damage: 1.05, defense: 1.1 },
+  ],
+  [UNDEAD_T7_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.633, damage: 1.05, defense: 1.1 },
+  ],
+  [MORGANA_T7_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.61, damage: 1.05, defense: 1.1 },
+  ],
+  [KEEPER_T8_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.05, defense: 1.1 },
+  ],
+  [HERETIC_T8_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 2.093, damage: 1.05, defense: 1.1 },
+  ],
+  [UNDEAD_T8_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.656, damage: 1.05, defense: 1.1 },
+  ],
+  [MORGANA_T8_DUNGEON_ID]: [
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
+    { sourceSegmentIndex: 8, sourceEncounterIndex: 4, hp: 1.1, damage: 1, defense: 1.06 },
+    { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.564, damage: 1.05, defense: 1.1 },
+  ],
 };
-
-const DEFAULT_DUNGEON_COMBAT_TUNING: DungeonCombatTuning = { hp: 1, damage: 1, defense: 1 };
 
 interface FactionDungeonRoster {
   readonly faction: string;
@@ -125,16 +220,6 @@ const FACTION_DUNGEON_ROSTERS = {
   undead: { faction: "Undead", normalA: MONSTER_IDS.undeadSkeletonSwordsman, normalB: MONSTER_IDS.undeadSkeletonArcher, elite: MONSTER_IDS.undeadSpectralKnight, boss: MONSTER_IDS.undeadLich },
   morgana: { faction: "Morgana", normalA: MONSTER_IDS.morganaWitch, normalB: MONSTER_IDS.morganaSuppressor, elite: MONSTER_IDS.morganaDarkKnight, boss: MONSTER_IDS.morganaHighPriestess },
 } as const satisfies Readonly<Record<string, FactionDungeonRoster>>;
-
-type AuthoredDungeonTier = 4 | 5 | 6 | 7 | 8;
-
-const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, Readonly<Record<string, number>>>> = {
-  4: { Keeper: 1, Heretic: 0.72, Undead: 0.67, Morgana: 0.66 },
-  5: { Keeper: 1, Heretic: 1.12, Undead: 1.08, Morgana: 1 },
-  6: { Keeper: 1, Heretic: 1.18, Undead: 1.14, Morgana: 1.12 },
-  7: { Keeper: 1, Heretic: 1.82, Undead: 1.42, Morgana: 1.4 },
-  8: { Keeper: 1, Heretic: 1.82, Undead: 1.44, Morgana: 1.36 },
-};
 
 function createFactionDungeon(input: { readonly id: string; readonly tier: AuthoredDungeonTier; readonly combatProfileId: string; readonly lootTableId: string; readonly roster: FactionDungeonRoster; readonly slug: string }): DungeonDefinition {
   const { id, tier, combatProfileId, lootTableId, roster, slug } = input;
@@ -188,21 +273,21 @@ export function getDungeonDefinition(dungeonDefinitionId: string): DungeonDefini
 
 export function resolveDungeonCombatProfile(input: { readonly dungeonDefinitionId: string; readonly encounterIndex: number; readonly monsterDefinitionId: string }): AuthoredEnemyCombatProfile {
   const dungeon = getDungeonDefinition(input.dungeonDefinitionId);
-  const profile = DUNGEON_COMBAT_PROFILES[dungeon.combatProfileId];
-  if (profile === undefined) throw new Error(`Unknown dungeon combat profile: ${dungeon.combatProfileId}`);
-  const step = profile.steps[input.encounterIndex];
+  const source = DUNGEON_COMBAT_SOURCES[dungeon.combatProfileId];
+  if (source === undefined) throw new Error(`Unknown dungeon combat source: ${dungeon.combatProfileId}`);
+  const balanceSteps = DUNGEON_ENCOUNTER_BALANCE_BY_ID[dungeon.id];
+  if (balanceSteps === undefined) throw new Error(`Missing authored dungeon balance: ${dungeon.id}`);
+  const step = balanceSteps[input.encounterIndex];
   if (step === undefined) throw new Error(`Invalid dungeon encounter index: ${String(input.encounterIndex)} for ${dungeon.id}`);
   const authoredEncounter = dungeon.encounters[input.encounterIndex];
   if (authoredEncounter?.monsterDefinitionId !== input.monsterDefinitionId) throw new Error(`Dungeon encounter monster mismatch for ${dungeon.id} at ${String(input.encounterIndex)}`);
-  const base = getEnemyCombatProfile(profile.sourceZoneIndexWithinBand, step.sourceSegmentIndex, step.sourceEncounterIndex, profile.bandId);
-  const bossHpMultiplier = authoredEncounter.kind === "boss" ? (FACTION_BOSS_HP_MULTIPLIER_BY_TIER[dungeon.tier as AuthoredDungeonTier]?.[dungeon.faction] ?? 1) : 1;
-  const dungeonTuning = DUNGEON_COMBAT_TUNING_BY_ID[dungeon.id] ?? DEFAULT_DUNGEON_COMBAT_TUNING;
+  const base = getEnemyCombatProfile(source.sourceZoneIndexWithinBand, step.sourceSegmentIndex, step.sourceEncounterIndex, source.bandId);
   return {
-    hp: Math.round(base.hp * step.hp * bossHpMultiplier * dungeonTuning.hp),
-    damage: Math.round(base.damage * step.damage * dungeonTuning.damage),
+    hp: Math.round(base.hp * step.hp),
+    damage: Math.round(base.damage * step.damage),
     attackSpeed: base.attackSpeed,
-    armor: Math.round(base.armor * step.defense * dungeonTuning.defense),
-    magicResistance: Math.round(base.magicResistance * step.defense * dungeonTuning.defense),
+    armor: Math.round(base.armor * step.defense),
+    magicResistance: Math.round(base.magicResistance * step.defense),
   };
 }
 
