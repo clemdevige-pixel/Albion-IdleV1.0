@@ -25,6 +25,8 @@ export interface ResearchDefinition<
   readonly cost: ResearchCostDefinition;
   readonly requirements: readonly TRequirement[];
   readonly unlockIds: readonly ResearchUnlockId[];
+  /** Previous authored ids that should migrate to this research when loading older saves. */
+  readonly legacyIds?: readonly ResearchId[];
 }
 
 export interface ActiveResearchState {
