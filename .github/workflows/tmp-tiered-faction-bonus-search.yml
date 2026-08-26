@@ -1,0 +1,73 @@
+name: tmp-tiered-faction-bonus-search
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-tiered-faction-bonus-search.yml'
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Search minimum favorable bonus by tier
+        shell: bash
+        run: |
+          set -e
+          cp scripts/runtime-dungeon-benchmark.ts /tmp/original.ts
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/runtime-dungeon-benchmark.ts')
+          s=p.read_text()
+          s=s.replace('const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT;\nconst FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;', 'const FAVORABLE_FACTION_BONUS_PCT = Number(process.env.DUNGEON_BONUS_PCT ?? FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT);\nconst FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;')
+          s=s.replace('.filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) === FAVORABLE_FACTION_BONUS_PCT)', '.filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) > 0)')
+          p.write_text(s)
+          PY
+
+          rm -f /tmp/results.tsv
+          printf 'bonus\ttier\tminHp\tallClear\n' > /tmp/results.tsv
+          for bonus in $(seq 20 35); do
+            echo "===== BONUS ${bonus}% ====="
+            DUNGEON_BONUS_PCT=$bonus pnpm benchmark:dungeons > /tmp/out.txt
+            node - "$bonus" /tmp/out.txt >> /tmp/results.tsv <<'NODE'
+          const fs=require('fs');
+          const bonus=Number(process.argv[2]);
+          const text=fs.readFileSync(process.argv[3],'utf8');
+          for(const tier of [4,5,6,7,8]){
+            const start=text.indexOf(`[DUNGEON_T${tier}_COUNTER_FACTION_MATRIX]`);
+            const end=text.indexOf(`[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY]`);
+            const chunk=text.slice(start,end);
+            const rows=[];
+            for(const line of chunk.split('\n')){
+              if(!line.includes('│') || !line.includes(`│ ${tier}`)) continue;
+              const cells=line.split('│').map(x=>x.trim()).filter(Boolean);
+              if(cells.length < 18) continue;
+              const clear=cells[6] === 'true';
+              const hp=Number(cells[8]);
+              if(Number.isFinite(hp)) rows.push({clear,hp});
+            }
+            const allClear=rows.length===20 && rows.every(r=>r.clear);
+            const minHp=rows.length ? Math.min(...rows.filter(r=>r.clear).map(r=>r.hp)) : -1;
+            console.log(`${bonus}\t${tier}\t${minHp}\t${allClear}`);
+          }
+          NODE
+          done
+          echo '===== SEARCH RESULTS ====='
+          cat /tmp/results.tsv
+          echo '===== FIRST >=10% / >=15% ====='
+          node <<'NODE'
+          const fs=require('fs');
+          const rows=fs.readFileSync('/tmp/results.tsv','utf8').trim().split('\n').slice(1).map(l=>{const [bonus,tier,minHp,allClear]=l.split('\t'); return {bonus:+bonus,tier:+tier,minHp:+minHp,allClear:allClear==='true'};});
+          for(const tier of [4,5,6,7,8]){
+            const rs=rows.filter(r=>r.tier===tier);
+            const ten=rs.find(r=>r.allClear&&r.minHp>=10);
+            const fifteen=rs.find(r=>r.allClear&&r.minHp>=15);
+            console.log({tier, firstAtLeast10:ten??null, firstAtLeast15:fifteen??null});
+          }
+          NODE
