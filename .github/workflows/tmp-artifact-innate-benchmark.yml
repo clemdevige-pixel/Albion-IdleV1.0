@@ -39,24 +39,32 @@ jobs:
           const base=JSON.parse(fs.readFileSync('/tmp/baseline.json','utf8'));
           const boost=JSON.parse(fs.readFileSync('/tmp/boosted.json','utf8'));
           const isArtifact=(id)=>/(clarent|carving|galatine|claymore|wailing|whispering|warbow|wildfire|blazing|brimstone|great_fire|ursine|ravenstrike|hellfire|battle_bracers|bloodletter|demonfang|deathgivers|claws)/.test(id);
-          const by=(arr)=>new Map(arr.map(r=>[r.itemId,r]));
-          const bsum=by(base.summaries||[]), asum=by(boost.summaries||[]);
-          const rows=[];
-          for(const [id,b] of bsum){
-            if(!isArtifact(id)) continue;
-            const a=asum.get(id); if(!a) continue;
-            rows.push({weapon:b.weapon||id,family:b.family,baseBestFameH:b.bestFameH,boostBestFameH:a.bestFameH,deltaFamePct:b.bestFameH?+(((a.bestFameH/b.bestFameH)-1)*100).toFixed(1):0,baseObservedDps:b.observedDps,boostObservedDps:a.observedDps});
+          const families=[...new Set(base.summaries.map(r=>r.family))];
+          const leaders=[];
+          for(const family of families){
+            const b=base.summaries.filter(r=>r.family===family);
+            const a=boost.summaries.filter(r=>r.family===family);
+            const bestClassic=[...b].filter(r=>!isArtifact(r.itemId)).sort((x,y)=>y.bestFameH-x.bestFameH)[0];
+            const bestArtifactBase=[...b].filter(r=>isArtifact(r.itemId)).sort((x,y)=>y.bestFameH-x.bestFameH)[0];
+            const bestArtifactBoost=[...a].filter(r=>isArtifact(r.itemId)).sort((x,y)=>y.bestFameH-x.bestFameH)[0];
+            if(!bestClassic||!bestArtifactBase||!bestArtifactBoost) continue;
+            leaders.push({family,classic:bestClassic.weapon,classicFameH:bestClassic.bestFameH,artifactBase:bestArtifactBase.weapon,artifactBaseFameH:bestArtifactBase.bestFameH,artifactBoost:bestArtifactBoost.weapon,artifactBoostFameH:bestArtifactBoost.bestFameH,boostVsClassicPct:+(((bestArtifactBoost.bestFameH/bestClassic.bestFameH)-1)*100).toFixed(1)});
           }
-          console.log('[ARTIFACT_PLUS5_T4_FAME_H]');
-          console.table(rows.sort((x,y)=>(y.deltaFamePct||0)-(x.deltaFamePct||0)));
-          const br=by(base.runtimeScalingSummary||[]), ar=by(boost.runtimeScalingSummary||[]);
-          const tierRows=[];
-          for(const r of base.runtimeScalingSummary||[]){
-            if(!isArtifact(r.itemId)) continue;
-            const key=r.itemId; const a=ar.get(key); if(!a) continue;
-            tierRows.push({tier:r.tier,weapon:r.weapon,family:r.family,baseMedianDps:r.medianObservedDps,boostMedianDps:a.medianObservedDps,deltaDpsPct:r.medianObservedDps?+(((a.medianObservedDps/r.medianObservedDps)-1)*100).toFixed(1):0,baseClearRate:r.clearRate,boostClearRate:a.clearRate});
+          console.log('[ARTIFACT_PLUS5_FAMILY_LEADERS_T4]'); console.table(leaders);
+
+          const key=r=>`${r.tier}|${r.itemId}|${r.zone}|${r.segment}`;
+          const boostRows=new Map(boost.runtimeScalingRows.map(r=>[key(r),r]));
+          const tiers=[];
+          for(const tier of [4,5,6,7,8]){
+            const baseRows=base.runtimeScalingRows.filter(r=>r.tier===tier&&isArtifact(r.itemId));
+            let dBase=0,dBoost=0,n=0,flipsUp=0,flipsDown=0;
+            for(const b of baseRows){ const a=boostRows.get(key(b)); if(!a) continue; dBase+=b.observedDps; dBoost+=a.observedDps; n++; if(!b.clear&&a.clear) flipsUp++; if(b.clear&&!a.clear) flipsDown++; }
+            tiers.push({tier,checkpoints:n,avgDpsBase:+(dBase/n).toFixed(1),avgDpsBoost:+(dBoost/n).toFixed(1),avgDpsDeltaPct:+(((dBoost/dBase)-1)*100).toFixed(1),newClears:flipsUp,lostClears:flipsDown});
           }
-          console.log('[ARTIFACT_PLUS5_T4_T8_RUNTIME]');
-          console.table(tierRows);
-          console.log('[JSON_KEYS]',Object.keys(base));
+          console.log('[ARTIFACT_PLUS5_RUNTIME_T4_T8]'); console.table(tiers);
+
+          const t4=[];
+          const boostedById=new Map(boost.summaries.map(r=>[r.itemId,r]));
+          for(const b of base.summaries){ if(!isArtifact(b.itemId)) continue; const a=boostedById.get(b.itemId); if(!a) continue; t4.push({family:b.family,weapon:b.weapon,baseFameH:b.bestFameH,boostFameH:a.bestFameH,deltaPct:+(((a.bestFameH/b.bestFameH)-1)*100).toFixed(1)}); }
+          console.log('[ARTIFACT_PLUS5_T4_DETAIL]'); console.table(t4.sort((x,y)=>y.deltaPct-x.deltaPct));
           NODE
