@@ -37,6 +37,8 @@ function snapshot(overrides: Partial<BlueOnboardingSnapshot> = {}): BlueOnboardi
     academyResearch: [],
     hasReachedFrostpeak: false,
     relicState: "unobtained",
+    relicChargeKills: 0,
+    relicRequiredChargeKills: 200,
     dungeonUnlocked: false,
     activeDungeon: false,
     clearedDungeonTiers: [],
@@ -132,34 +134,52 @@ describe("resolveBlueOnboardingStep", () => {
     }))?.id).toBe("reach_frostpeak");
   });
 
-  it("uses Frostpeak and relic canonical state for the discovery milestone", () => {
-    expect(resolveBlueOnboardingStep(snapshot({
+  it("continues from Frostpeak discovery into Relic charging", () => {
+    const frostpeakReady = {
       ...EARLY_READY,
       academyResearch: [research(RESEARCH_IDS.enchantmentStudy, "completed")],
       hasReachedFrostpeak: true,
+    } as const;
+
+    expect(resolveBlueOnboardingStep(snapshot({
+      ...frostpeakReady,
       relicState: "unobtained",
     }))?.id).toBe("discover_relic");
 
-    expect(resolveBlueOnboardingStep(snapshot({
+    const charging = resolveBlueOnboardingStep(snapshot({
+      ...frostpeakReady,
+      relicState: "broken",
+      relicChargeKills: 75,
+      relicRequiredChargeKills: 200,
+    }));
+    expect(charging?.id).toBe("charge_relic");
+    expect(charging?.description).toContain("75/200");
+  });
+
+  it("moves from charged Relic to analysis then sanctuary research", () => {
+    const frostpeakReady = {
       ...EARLY_READY,
+      hasReachedFrostpeak: true,
+      relicChargeKills: 200,
+      relicRequiredChargeKills: 200,
+    } as const;
+
+    expect(resolveBlueOnboardingStep(snapshot({
+      ...frostpeakReady,
       academyResearch: [
         research(RESEARCH_IDS.enchantmentStudy, "completed"),
         research(RESEARCH_IDS.dungeonRelicAnalysis, "available"),
       ],
-      hasReachedFrostpeak: true,
       relicState: "charged",
     }))?.id).toBe("analyze_relic");
-  });
 
-  it("guides sanctuary research after relic analysis", () => {
     expect(resolveBlueOnboardingStep(snapshot({
-      ...EARLY_READY,
+      ...frostpeakReady,
       academyResearch: [
         research(RESEARCH_IDS.enchantmentStudy, "completed"),
         research(RESEARCH_IDS.dungeonRelicAnalysis, "completed"),
         research(RESEARCH_IDS.dungeonSanctuaryLocation, "available"),
       ],
-      hasReachedFrostpeak: true,
       relicState: "examined",
     }))?.id).toBe("locate_sanctuaries");
   });
@@ -170,6 +190,8 @@ describe("resolveBlueOnboardingStep", () => {
       academyResearch: COMPLETED_RESEARCH,
       hasReachedFrostpeak: true,
       relicState: "examined" as const,
+      relicChargeKills: 200,
+      relicRequiredChargeKills: 200,
       dungeonUnlocked: true,
     };
 
@@ -186,6 +208,8 @@ describe("resolveBlueOnboardingStep", () => {
       academyResearch: COMPLETED_RESEARCH,
       hasReachedFrostpeak: true,
       relicState: "examined",
+      relicChargeKills: 200,
+      relicRequiredChargeKills: 200,
       dungeonUnlocked: true,
       clearedDungeonTiers: [4],
     });
@@ -207,13 +231,15 @@ describe("resolveBlueOnboardingStep", () => {
       academyResearch: COMPLETED_RESEARCH,
       hasReachedFrostpeak: true,
       relicState: "examined",
+      relicChargeKills: 200,
+      relicRequiredChargeKills: 200,
       dungeonUnlocked: true,
       clearedDungeonTiers: [4],
       artifactWeaponOwned: true,
     }))).toBeNull();
   });
 
-  it("returns null for a save already beyond the Blue onboarding scope", () => {
+  it("returns null only for a save canonically beyond the onboarding scope", () => {
     expect(resolveBlueOnboardingStep(snapshot({ beyondBlueOnboarding: true }))).toBeNull();
   });
 });
