@@ -16,4 +16,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Run shard benchmark
-        run: pnpm exec tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts
+        run: pnpm benchmark:enchantment-shards
