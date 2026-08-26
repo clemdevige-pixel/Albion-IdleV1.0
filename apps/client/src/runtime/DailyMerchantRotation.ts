@@ -160,7 +160,7 @@ function getAllowedCategories(
 ): readonly DailyMerchantCategory[] {
   return DAILY_MERCHANT_CATEGORIES.filter((category) => (
     DAILY_MERCHANT_ROTATION_RULES.limitedCategoryGroups.every((group) => (
-      !group.categories.includes(category)
+      !group.categories.some((groupCategory) => groupCategory === category)
       || countCategories(offers, group.categories) < group.maximumPerRotation
     ))
   ));
