@@ -23,6 +23,18 @@ class MockProvider implements SaveProvider {
   }
 }
 
+class RejectingProvider extends MockProvider {
+  rejectNextLoad = false;
+
+  override load(data: unknown): void {
+    if (this.rejectNextLoad) {
+      this.rejectNextLoad = false;
+      throw new Error("rejected payload");
+    }
+    super.load(data);
+  }
+}
+
 function createManager(): SaveManager {
   return new SaveManager({
     repository: new InMemorySaveRepository(),
@@ -45,6 +57,23 @@ describe("SaveManager", () => {
     manager.load("slot1");
 
     expect(provider.state).toEqual({ hp: 100, name: "hero" });
+  });
+
+  it("rolls back providers already mutated when a later provider rejects a load", () => {
+    const manager = createManager();
+    const inventory = new MockProvider("inventory", { item: "saved" });
+    const progression = new RejectingProvider("progression", { fame: 1200 });
+    manager.registerProvider(inventory);
+    manager.registerProvider(progression);
+    manager.save("slot", 0);
+
+    inventory.state = { item: "runtime" };
+    progression.state = { fame: 42 };
+    progression.rejectNextLoad = true;
+
+    expect(() => manager.load("slot")).toThrow(/progression.*rejected payload/i);
+    expect(inventory.state).toEqual({ item: "runtime" });
+    expect(progression.state).toEqual({ fame: 42 });
   });
 
   it("uses a monotonic wall-clock timestamp across runtime sessions", () => {
