@@ -1,0 +1,48 @@
+name: tmp-dungeon-human-margin-hp
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-dungeon-human-margin-hp.yml'
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Search damage-HP tradeoffs
+        shell: bash
+        run: |
+          cat > /tmp/search.py <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          P=Path('apps/client/src/data/dungeonContentCatalog.ts'); O=P.read_text()
+          targets=[('HERETIC_T4_DUNGEON_ID','dungeon_heretic_t4',4),('HERETIC_T5_DUNGEON_ID','dungeon_heretic_t5',5),('UNDEAD_T5_DUNGEON_ID','dungeon_undead_t5',5),('MORGANA_T5_DUNGEON_ID','dungeon_morgana_t5',5),('HERETIC_T6_DUNGEON_ID','dungeon_heretic_t6',6),('HERETIC_T7_DUNGEON_ID','dungeon_heretic_t7',7),('HERETIC_T8_DUNGEON_ID','dungeon_heretic_t8',8),('UNDEAD_T8_DUNGEON_ID','dungeon_undead_t8',8),('MORGANA_T8_DUNGEON_ID','dungeon_morgana_t8',8)]
+          def patch(did,dscale,hscale):
+            s=O; m=re.search(rf'(\[{did}\]: \[\n)(.*?)(\n  \],)',s,re.S); rows=m.group(2).split('\n')
+            for i in range(4):
+              d=float(re.search(r'damage: ([0-9.]+)',rows[i]).group(1)); rows[i]=re.sub(r'damage: [0-9.]+',f'damage: {d*dscale:.5g}',rows[i])
+            hp=float(re.search(r'hp: ([0-9.]+)',rows[3]).group(1)); rows[3]=re.sub(r'hp: [0-9.]+',f'hp: {hp*hscale:.5g}',rows[3])
+            return s[:m.start()]+m.group(1)+'\n'.join(rows)+m.group(3)+s[m.end():]
+          def row(out,t,d,kind):
+            tail=out[out.index(f'[DUNGEON_T{t}_{kind}_SUMMARY]'):]; line=next(x for x in tail.splitlines() if f"'{d}'" in x); c=[x.strip() for x in line.strip().strip('│').split('│')]
+            return (c[3].strip("'"),None if c[5]=='null' else float(c[5])) if kind=='BASE' else (c[4].strip("'"),None if c[5]=='null' else float(c[5]))
+          for did,d,t in targets:
+            best=[]
+            for ds in (0.70,0.80,0.90):
+              for hs in (1.10,1.20,1.30,1.40):
+                P.write_text(patch(did,ds,hs)); cp=subprocess.run(['pnpm','benchmark:dungeons'],capture_output=True,text=True)
+                if cp.returncode: continue
+                bc,bmax=row(cp.stdout,t,d,'BASE'); fc,fmin=row(cp.stdout,t,d,'COUNTER_FACTION')
+                print('TRY',d,ds,hs,bc,bmax,fc,fmin,flush=True)
+                if fc=='5/5' and fmin is not None and fmin>=10 and (bmax is None or bmax<=10): best.append((abs(fmin-15),ds,hs,bc,bmax,fmin))
+            print('BEST',d,sorted(best)[:5] if best else 'NONE',flush=True); P.write_text(O)
+          P.write_text(O)
+          PY
+          python /tmp/search.py
