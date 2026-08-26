@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { asEconomyTransactionId } from "@game/gameplay";
 import { getItemDisplayName } from "../../../panels/ItemVisual";
+import { isProductionMaterial } from "../../../runtime/ProductionStorage";
 import { useGameServices } from "../../../state/GameContext";
 import {
   syncBankToBridge,
@@ -28,11 +29,15 @@ export function useVendorTransactionExecutor(): (
     const transactionId = asEconomyTransactionId(
       `tx_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
     );
+    const isPurchase = request.direction === "buy";
+    const targetEntityId = isPurchase && isProductionMaterial(request.itemId)
+      ? services.productionStorageId
+      : services.heroId;
     const result = services.economyTransactionService.execute({
-      type: request.direction === "buy" ? "vendor_purchase" : "vendor_sale",
+      type: isPurchase ? "vendor_purchase" : "vendor_sale",
       transactionId,
       playerId: services.playerId,
-      playerEntityId: services.heroId,
+      playerEntityId: targetEntityId,
       walletId: services.walletId,
       vendorId: request.vendorId,
       itemId: request.itemId,
@@ -49,7 +54,6 @@ export function useVendorTransactionExecutor(): (
       return false;
     }
 
-    const isPurchase = request.direction === "buy";
     const total = request.unitPrice * request.quantity;
     services.bridge.addTransaction({
       id: transactionId,
