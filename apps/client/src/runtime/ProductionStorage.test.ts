@@ -6,6 +6,7 @@ import {
   isProductionMaterial,
   isVisibleInventoryResource,
   migrateLegacyProductionMaterials,
+  resolvePlayerItemStorageOwner,
 } from "./ProductionStorage.js";
 
 describe("production storage migration", () => {
@@ -36,6 +37,28 @@ describe("production storage migration", () => {
     ).toBe(false);
     expect(inventoryManager.getTotalQuantity(productionStorageId, "item_resource_wood_t3")).toBe(8);
     expect(inventoryManager.getTotalQuantity(productionStorageId, "item_refined_planks_t3")).toBe(3);
+  });
+
+  it("routes raw and refined materials to production storage", () => {
+    const world = new World(createRuntimeServices());
+    const heroId = world.createEntity();
+    const productionStorageId = world.createEntity();
+
+    expect(resolvePlayerItemStorageOwner(
+      "item_resource_wood_t4",
+      heroId,
+      productionStorageId,
+    )).toBe(productionStorageId);
+    expect(resolvePlayerItemStorageOwner(
+      "item_refined_planks_t8",
+      heroId,
+      productionStorageId,
+    )).toBe(productionStorageId);
+    expect(resolvePlayerItemStorageOwner(
+      "item_resource_enchantment_shard_t4",
+      heroId,
+      productionStorageId,
+    )).toBe(heroId);
   });
 
   it("keeps tiered enchantment shards in the visible inventory", () => {
