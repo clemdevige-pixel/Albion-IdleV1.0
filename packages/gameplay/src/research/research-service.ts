@@ -60,6 +60,7 @@ export class ResearchService<
   readonly providerId = "research";
 
   readonly #definitions = new Map<ResearchId, ResearchDefinition<TRequirement>>();
+  readonly #legacyIdTargets = new Map<ResearchId, ResearchId>();
   readonly #completedResearchIds = new Set<ResearchId>();
   readonly #activeResearches = new Map<ResearchId, ActiveResearchState>();
   readonly #requirementPort: ResearchRequirementPort<TRequirement>;
@@ -75,10 +76,18 @@ export class ResearchService<
     if (!this.#isValidDefinition(definition)) {
       return { ok: false, reason: "invalid_definition" };
     }
-    if (this.#definitions.has(definition.id)) {
+    if (this.#definitions.has(definition.id) || this.#legacyIdTargets.has(definition.id)) {
       return { ok: false, reason: "duplicate_research" };
     }
+    for (const legacyId of definition.legacyIds ?? []) {
+      if (this.#definitions.has(legacyId) || this.#legacyIdTargets.has(legacyId)) {
+        return { ok: false, reason: "duplicate_research" };
+      }
+    }
     this.#definitions.set(definition.id, definition);
+    for (const legacyId of definition.legacyIds ?? []) {
+      this.#legacyIdTargets.set(legacyId, definition.id);
+    }
     return { ok: true };
   }
 
@@ -204,8 +213,9 @@ export class ResearchService<
 
     this.#completedResearchIds.clear();
     this.#activeResearches.clear();
-    for (const researchId of new Set(parsed.data.completedResearchIds)) {
-      if (this.#definitions.has(researchId)) this.#completedResearchIds.add(researchId);
+    for (const savedResearchId of new Set(parsed.data.completedResearchIds)) {
+      const researchId = this.#resolveSavedResearchId(savedResearchId);
+      if (researchId !== undefined) this.#completedResearchIds.add(researchId);
     }
 
     const activeResearches = parsed.data.version === 1
@@ -213,13 +223,19 @@ export class ResearchService<
       : parsed.data.activeResearches;
 
     for (const active of activeResearches) {
+      const researchId = this.#resolveSavedResearchId(active.researchId);
       if (
-        !this.#definitions.has(active.researchId)
-        || this.#completedResearchIds.has(active.researchId)
-        || this.#activeResearches.has(active.researchId)
+        researchId === undefined
+        || this.#completedResearchIds.has(researchId)
+        || this.#activeResearches.has(researchId)
       ) continue;
-      this.#activeResearches.set(active.researchId, { ...active });
+      this.#activeResearches.set(researchId, { ...active, researchId });
     }
+  }
+
+  #resolveSavedResearchId(researchId: ResearchId): ResearchId | undefined {
+    if (this.#definitions.has(researchId)) return researchId;
+    return this.#legacyIdTargets.get(researchId);
   }
 
   #areRequirementsMet(definition: ResearchDefinition<TRequirement>): boolean {
@@ -243,6 +259,12 @@ export class ResearchService<
     if (definition.requirements.some((requirement) => requirement.type.trim() === "")) return false;
     if (definition.unlockIds.some((unlockId) => unlockId.trim() === "")) return false;
     if (new Set(definition.unlockIds).size !== definition.unlockIds.length) return false;
+    if (
+      definition.legacyIds?.some((legacyId) => legacyId.trim() === "" || legacyId === definition.id) === true
+    ) return false;
+    if (definition.legacyIds !== undefined && new Set(definition.legacyIds).size !== definition.legacyIds.length) {
+      return false;
+    }
     return true;
   }
 }
