@@ -10,7 +10,7 @@ const SILVER_COMPLETION = {
   durationMs: TWO_HOURS_MS,
   rewardSummary: {
     kind: "silver" as const,
-    silverCredited: 60_000,
+    silverCredited: 80_000,
     shardItemId: "item_resource_enchantment_shard_t4",
     shardsCredited: 92,
     quality: "reussie" as const,
