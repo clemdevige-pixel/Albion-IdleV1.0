@@ -154,19 +154,19 @@ export function generateDailyMerchantOffers(
 
   for (let slotIndex = 0; slotIndex < DAILY_MERCHANT_OFFER_COUNT; slotIndex += 1) {
     const tier = pickOne(unlockedTiers, random);
-    let category: DailyMerchantCategory;
-
-    if (slotIndex === 0) {
-      category = pickWeightedCategory(random, ["raw_resource", "refined_resource"]);
-    } else {
-      const allowed = hasCompleteOffer
-        ? DAILY_CATEGORIES.filter((candidate) => !COMPLETE_CATEGORIES.has(candidate))
-        : DAILY_CATEGORIES;
-      category = pickWeightedCategory(random, allowed);
-    }
-
+    const allowed = hasCompleteOffer
+      ? DAILY_CATEGORIES.filter((candidate) => !COMPLETE_CATEGORIES.has(candidate))
+      : DAILY_CATEGORIES;
+    const category = pickWeightedCategory(random, allowed);
     if (COMPLETE_CATEGORIES.has(category)) hasCompleteOffer = true;
     offers.push(buildOffer(slotIndex, tier, category, random));
+  }
+
+  if (!offers.some((offer) => RESOURCE_CATEGORIES.has(offer.category))) {
+    const replacementIndex = offers.length - 1;
+    const tier = pickOne(unlockedTiers, random);
+    const category = pickWeightedCategory(random, ["raw_resource", "refined_resource"]);
+    offers[replacementIndex] = buildOffer(replacementIndex, tier, category, random);
   }
 
   return offers;
@@ -179,9 +179,11 @@ export class DailyMerchantRotationSaveProvider implements SaveProvider {
 
   ensureRotation(nowMs: number, unlockedTierValues: readonly number[]): void {
     const rotationId = getDailyMerchantRotationId(nowMs);
-    if (this.state?.rotationId === rotationId) return;
-
     const unlockedTiers = normalizeUnlockedTiers(unlockedTierValues);
+    if (this.state?.rotationId === rotationId) {
+      if (this.state.unlockedTiers.length > 0 || unlockedTiers.length === 0) return;
+    }
+
     this.state = {
       rotationId,
       unlockedTiers,
