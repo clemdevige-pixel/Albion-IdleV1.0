@@ -15,6 +15,15 @@ export const DUNGEON_COMPLETION_SILVER_BY_TIER: Readonly<Record<DungeonLootTier,
   8: 40_000,
 } as const;
 
+/** Guaranteed matching-tier Faction Runes granted once on dungeon completion. */
+export const DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER: Readonly<Record<DungeonLootTier, number>> = {
+  4: 2,
+  5: 3,
+  6: 4,
+  7: 5,
+  8: 6,
+} as const;
+
 /**
  * Dungeon shards are intentionally a collateral reward for faction/artifact farming,
  * not a replacement for open-world shard progression. Full-run totals are:
