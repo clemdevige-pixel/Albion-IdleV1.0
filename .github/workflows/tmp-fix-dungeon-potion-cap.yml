@@ -1,0 +1,57 @@
+name: tmp-fix-dungeon-potion-cap
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-fix-dungeon-potion-cap.yml'
+permissions:
+  contents: write
+jobs:
+  patch-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/albion-idle-development
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Patch benchmark potion quantity
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          harness = Path('apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts')
+          text = harness.read_text()
+          old = '  readonly useHealthPotions?: boolean;\n  /** Benchmark-only outgoing hero damage multiplier. Defaults to 1 and never changes authored weapon data. */'
+          new = '  readonly useHealthPotions?: boolean;\n  /** Optional exact number of health potions seeded for deterministic inventory-capped benchmarks. Defaults to 99 for backward compatibility. */\n  readonly healthPotionQuantity?: number;\n  /** Benchmark-only outgoing hero damage multiplier. Defaults to 1 and never changes authored weapon data. */'
+          if old not in text:
+              raise SystemExit('interface anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '  const useHealthPotions = input.useHealthPotions === true;\n  if (useHealthPotions) {\n    const seeded = inventoryManager.addQuantity(heroId, POTION_ITEM_ID, 99);\n    if (!seeded.ok) throw new Error("Failed to seed benchmark health potions");\n  }'
+          new = '  const useHealthPotions = input.useHealthPotions === true;\n  const healthPotionQuantity = Math.max(0, Math.floor(input.healthPotionQuantity ?? 99));\n  if (useHealthPotions && healthPotionQuantity > 0) {\n    const seeded = inventoryManager.addQuantity(heroId, POTION_ITEM_ID, healthPotionQuantity);\n    if (!seeded.ok || seeded.value.remainder !== 0) throw new Error("Failed to seed benchmark health potions");\n  }'
+          if old not in text:
+              raise SystemExit('seed anchor not found')
+          harness.write_text(text.replace(old, new, 1))
+
+          bench = Path('scripts/runtime-dungeon-benchmark.ts')
+          text = bench.read_text()
+          old = '    useHealthPotions: true,\n'
+          new = '    useHealthPotions: true,\n    healthPotionQuantity: REPORTED_POTION_CAP,\n'
+          if old not in text:
+              raise SystemExit('benchmark anchor not found')
+          bench.write_text(text.replace(old, new, 1))
+          PY
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm benchmark:dungeons
+      - name: Commit patch
+        run: |
+          git config user.name "Kowzil"
+          git config user.email "clem.devige@gmail.com"
+          git add apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts scripts/runtime-dungeon-benchmark.ts
+          git commit -m "fix(benchmark): enforce dungeon potion inventory cap"
+          git push origin HEAD:agent/albion-idle-development
