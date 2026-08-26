@@ -47,17 +47,55 @@ interface MutableDailyMerchantState {
 
 const HOUR_MS = 60 * 60 * 1_000;
 
-function isDailyMerchantTier(value: number): value is DailyMerchantTier {
-  return DAILY_MERCHANT_TIERS.includes(value as DailyMerchantTier);
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
+}
+
+function isUnknownArray(value: unknown): value is unknown[] {
+  return Array.isArray(value);
+}
+
+function isDailyMerchantTier(value: unknown): value is DailyMerchantTier {
+  return typeof value === "number"
+    && DAILY_MERCHANT_TIERS.some((tier) => tier === value);
 }
 
 function isDailyMerchantCategory(value: unknown): value is DailyMerchantCategory {
   return typeof value === "string"
-    && DAILY_MERCHANT_CATEGORIES.includes(value as DailyMerchantCategory);
+    && DAILY_MERCHANT_CATEGORIES.some((category) => category === value);
 }
 
 function normalizeUnlockedTiers(values: readonly number[]): DailyMerchantTier[] {
   return [...new Set(values.filter(isDailyMerchantTier))].sort((a, b) => a - b);
+}
+
+function parseSavedOffer(value: unknown): DailyMerchantSavedOffer | undefined {
+  if (!isUnknownRecord(value)) return undefined;
+
+  const { offerId, itemId, category, tier, quantity, unitPrice } = value;
+  if (
+    typeof offerId !== "string"
+    || typeof itemId !== "string"
+    || !isDailyMerchantCategory(category)
+    || !isDailyMerchantTier(tier)
+    || typeof quantity !== "number"
+    || !Number.isSafeInteger(quantity)
+    || quantity < 1
+    || typeof unitPrice !== "number"
+    || !Number.isSafeInteger(unitPrice)
+    || unitPrice < 1
+  ) {
+    return undefined;
+  }
+
+  return {
+    offerId,
+    itemId,
+    category,
+    tier,
+    quantity,
+    unitPrice,
+  };
 }
 
 export function getDailyMerchantRotationId(nowMs: number = Date.now()): string {
@@ -152,7 +190,9 @@ function countCategories(
   offers: readonly DailyMerchantSavedOffer[],
   categories: readonly DailyMerchantCategory[],
 ): number {
-  return offers.filter((offer) => categories.includes(offer.category)).length;
+  return offers.filter((offer) => (
+    categories.some((category) => category === offer.category)
+  )).length;
 }
 
 function getAllowedCategories(
@@ -269,50 +309,33 @@ export class DailyMerchantRotationSaveProvider implements SaveProvider {
   }
 
   load(data: unknown): void {
-    if (data === null || typeof data !== "object") {
+    if (!isUnknownRecord(data)) {
       this.reset();
       return;
     }
 
-    const raw = data as Partial<DailyMerchantSavedState>;
+    const { rotationId, unlockedTiers: rawUnlockedTiers, offers: rawOffers } = data;
     if (
-      typeof raw.rotationId !== "string"
-      || !Array.isArray(raw.unlockedTiers)
-      || !Array.isArray(raw.offers)
+      typeof rotationId !== "string"
+      || !isUnknownArray(rawUnlockedTiers)
+      || !isUnknownArray(rawOffers)
     ) {
       this.reset();
       return;
     }
 
     const unlockedTiers = normalizeUnlockedTiers(
-      raw.unlockedTiers.filter((value): value is number => typeof value === "number"),
+      rawUnlockedTiers.filter((value): value is number => typeof value === "number"),
     );
-    const offers = raw.offers.flatMap((offer): DailyMerchantSavedOffer[] => {
-      if (
-        offer === null
-        || typeof offer !== "object"
-        || typeof offer.offerId !== "string"
-        || typeof offer.itemId !== "string"
-        || !isDailyMerchantCategory(offer.category)
-        || !isDailyMerchantTier(offer.tier)
-        || !Number.isSafeInteger(offer.quantity)
-        || offer.quantity < 1
-        || !Number.isSafeInteger(offer.unitPrice)
-        || offer.unitPrice < 1
-      ) return [];
-      return [{
-        offerId: offer.offerId,
-        itemId: offer.itemId,
-        category: offer.category,
-        tier: offer.tier,
-        quantity: offer.quantity,
-        unitPrice: offer.unitPrice,
-      }];
+    const offers = rawOffers.flatMap((value): DailyMerchantSavedOffer[] => {
+      const offer = parseSavedOffer(value);
+      return offer === undefined ? [] : [offer];
     });
     const validOfferIds = new Set(offers.map((offer) => offer.offerId));
+    const rawPurchasedOfferIds = data.purchasedOfferIds;
     const purchasedOfferIds = new Set(
-      Array.isArray(raw.purchasedOfferIds)
-        ? raw.purchasedOfferIds.filter((value): value is string => (
+      isUnknownArray(rawPurchasedOfferIds)
+        ? rawPurchasedOfferIds.filter((value): value is string => (
             typeof value === "string" && validOfferIds.has(value)
           ))
         : [],
@@ -324,7 +347,7 @@ export class DailyMerchantRotationSaveProvider implements SaveProvider {
     }
 
     this.state = {
-      rotationId: raw.rotationId,
+      rotationId,
       unlockedTiers,
       offers,
       purchasedOfferIds,
