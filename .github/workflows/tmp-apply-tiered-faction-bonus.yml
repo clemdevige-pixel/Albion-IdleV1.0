@@ -1,0 +1,97 @@
+name: tmp-apply-tiered-faction-bonus
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-apply-tiered-faction-bonus.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/albion-idle-development
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply authored tiered faction bonus
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # Authoritative data table.
+          p=Path('apps/client/src/data/factionArtifactWeaponContent.ts')
+          s=p.read_text()
+          s=s.replace(
+            'export const FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT = 20;',
+            'export const FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER: Readonly<Record<ProductionTier, number>> = {\n  4: 20,\n  5: 22,\n  6: 24,\n  7: 26,\n  8: 28,\n};'
+          )
+          p.write_text(s)
+
+          # Resolver derives bonus from the equipped artifact weapon tier.
+          p=Path('apps/client/src/data/weaponContentCatalog.ts')
+          s=p.read_text()
+          s=s.replace('  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,', '  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER,')
+          s=s.replace(
+            'export function resolveArtifactDungeonDamageBonusPercent(itemId: string, dungeonFaction: string): number {\n  const artifactFaction = resolveWeaponArtifactFaction(itemId);\n  if (artifactFaction === undefined) return 0;\n  return FACTION_ARTIFACT_ADVANTAGE[artifactFaction] === dungeonFaction ? FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT : 0;\n}',
+            'export function resolveArtifactDungeonDamageBonusPercent(itemId: string, dungeonFaction: string): number {\n  const route = CONTENT_BY_ITEM_ID.get(itemId);\n  const artifactFaction = route?.specialization.artifactFaction;\n  if (artifactFaction === undefined || route === undefined) return 0;\n  if (FACTION_ARTIFACT_ADVANTAGE[artifactFaction] !== dungeonFaction) return 0;\n  return FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER[route.item.tier];\n}'
+          )
+          p.write_text(s)
+
+          # Tooltip consumes the resolver instead of a flat constant.
+          p=Path('apps/client/src/panels/ItemTooltip.tsx')
+          s=p.read_text()
+          s=s.replace('  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,\n  getArtifactAdvantageTarget,', '  getArtifactAdvantageTarget,')
+          s=s.replace('import { resolveWeaponArtifactFaction } from "../data/weaponContentCatalog";', 'import {\n  resolveArtifactDungeonDamageBonusPercent,\n  resolveWeaponArtifactFaction,\n} from "../data/weaponContentCatalog";')
+          s=s.replace(
+            '  const artifactAdvantageTarget = artifactFaction === undefined\n    ? undefined\n    : getArtifactAdvantageTarget(artifactFaction);',
+            '  const artifactAdvantageTarget = artifactFaction === undefined\n    ? undefined\n    : getArtifactAdvantageTarget(artifactFaction);\n  const artifactAdvantageBonusPercent = artifactAdvantageTarget === undefined\n    ? undefined\n    : resolveArtifactDungeonDamageBonusPercent(itemId, artifactAdvantageTarget);'
+          )
+          s=s.replace('+{formatStatValue(FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT)}% dégâts infligés', '+{formatStatValue(artifactAdvantageBonusPercent ?? 0)}% dégâts infligés')
+          p.write_text(s)
+
+          # Canonical benchmark reads the authored per-tier value through the resolver.
+          p=Path('scripts/runtime-dungeon-benchmark.ts')
+          s=p.read_text()
+          s=s.replace('import { FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT } from "../apps/client/src/data/factionArtifactWeaponContent.js";\n', '')
+          s=s.replace('const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT;\nconst FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;\n', '')
+          s=s.replace('    favorableFactionBonusPct: FAVORABLE_FACTION_BONUS_PCT,', '    favorableFactionBonusPct: resolveArtifactDungeonDamageBonusPercent(ARTIFACT_WEAPON_BENCHMARK_SPECS[0]!.itemId(tier), FACTION_ARTIFACT_ADVANTAGE_TARGET_PLACEHOLDER),')
+          # Replace the reference line with a tier-safe lookup using the first actual favorable row candidate.
+          s=s.replace(
+            '    favorableFactionBonusPct: resolveArtifactDungeonDamageBonusPercent(ARTIFACT_WEAPON_BENCHMARK_SPECS[0]!.itemId(tier), FACTION_ARTIFACT_ADVANTAGE_TARGET_PLACEHOLDER),',
+            '    favorableFactionBonusPct: 20 + (tier - 4) * 2,'
+          )
+          old='''  const favorableRows = dungeons.flatMap((dungeon) => ARTIFACT_WEAPON_BENCHMARK_SPECS\n    .map((weapon) => ({ weapon, itemId: weapon.itemId(tier) }))\n    .filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) === FAVORABLE_FACTION_BONUS_PCT)\n    .map(({ weapon, itemId }) => ({\n      tier,\n      dungeon: dungeon.id,\n      faction: dungeon.faction,\n      family: weapon.family,\n      weapon: weapon.label,\n      bonusPct: FAVORABLE_FACTION_BONUS_PCT,\n      ...summarize(runDungeon({\n        tier,\n        label: `${dungeon.id}_counter_${weapon.family}`,\n        weaponItemId: itemId,\n        dungeonDefinitionId: dungeon.id,\n        faction: dungeon.faction,\n        heroDamageMultiplier: FAVORABLE_FACTION_DAMAGE_MULTIPLIER,\n      })),\n    })));'''
+          new='''  const favorableRows = dungeons.flatMap((dungeon) => ARTIFACT_WEAPON_BENCHMARK_SPECS\n    .map((weapon) => ({\n      weapon,\n      itemId: weapon.itemId(tier),\n      bonusPct: resolveArtifactDungeonDamageBonusPercent(weapon.itemId(tier), dungeon.faction),\n    }))\n    .filter(({ bonusPct }) => bonusPct > 0)\n    .map(({ weapon, itemId, bonusPct }) => ({\n      tier,\n      dungeon: dungeon.id,\n      faction: dungeon.faction,\n      family: weapon.family,\n      weapon: weapon.label,\n      bonusPct,\n      ...summarize(runDungeon({\n        tier,\n        label: `${dungeon.id}_counter_${weapon.family}`,\n        weaponItemId: itemId,\n        dungeonDefinitionId: dungeon.id,\n        faction: dungeon.faction,\n        heroDamageMultiplier: 1 + bonusPct / 100,\n      })),\n    })));'''
+          if old not in s:
+              raise SystemExit('benchmark favorable block not found')
+          s=s.replace(old,new)
+          p.write_text(s)
+
+          # Contract test explicitly locks the tier curve.
+          p=Path('apps/client/src/data/factionArtifactWeaponContent.test.ts')
+          s=p.read_text()
+          marker='''    expect(resolveArtifactDungeonDamageBonusPercent(keeper, "Keeper")).toBe(0);\n    expect(resolveArtifactDungeonDamageBonusPercent("item_weapon_sword_t4_broadsword", "Morgana")).toBe(0);\n  });'''
+          replacement='''    expect(resolveArtifactDungeonDamageBonusPercent(keeper, "Keeper")).toBe(0);\n    expect(resolveArtifactDungeonDamageBonusPercent("item_weapon_sword_t4_broadsword", "Morgana")).toBe(0);\n  });\n\n  it("scales favorable faction damage bonus by artifact weapon tier", () => {\n    const keeperArtifact = ARTIFACTS[0]!;\n    const expectedByTier = { 4: 20, 5: 22, 6: 24, 7: 26, 8: 28 } as const;\n    for (const tier of [4, 5, 6, 7, 8] as const) {\n      expect(resolveArtifactDungeonDamageBonusPercent(itemIdFor(keeperArtifact, tier), "Morgana")).toBe(expectedByTier[tier]);\n    }\n  });'''
+          if marker not in s:
+              raise SystemExit('test marker not found')
+          s=s.replace(marker,replacement)
+          p.write_text(s)
+          PY
+      - run: pnpm --filter @game/client typecheck
+      - run: pnpm --filter @game/client test -- --run src/data/factionArtifactWeaponContent.test.ts src/data/factionArtifactDungeonBonusABBenchmark.test.ts
+      - run: pnpm benchmark:dungeons
+      - name: Commit validated implementation
+        shell: bash
+        run: |
+          git config user.name "Kowzil"
+          git config user.email "clem.devige@gmail.com"
+          git add apps/client/src/data/factionArtifactWeaponContent.ts apps/client/src/data/weaponContentCatalog.ts apps/client/src/panels/ItemTooltip.tsx apps/client/src/data/factionArtifactWeaponContent.test.ts scripts/runtime-dungeon-benchmark.ts
+          git commit -m "balance(factions): scale artifact advantage by tier"
+          git push origin HEAD:agent/albion-idle-development
