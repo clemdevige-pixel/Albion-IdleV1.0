@@ -120,13 +120,10 @@ const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefin
   [FACTION_T8_COMBAT_PROFILE.id]: FACTION_T8_COMBAT_PROFILE,
 };
 
-/**
- * Per-dungeon authored exceptions stay data-driven and outside shared combat
- * logic. Keeper T4 is the progression bootstrap and restores the historically
- * validated calibration required for reliable same-tier T4.3 entry clears.
- */
+/** Per-dungeon authored exceptions stay data-driven and outside shared combat logic. */
 const DUNGEON_COMBAT_TUNING_BY_ID: Readonly<Record<string, DungeonCombatTuning>> = {
   [KEEPER_T4_DUNGEON_ID]: { hp: 0.85, damage: 0.85, defense: 0.95 },
+  [HERETIC_T4_DUNGEON_ID]: { hp: 1, damage: 1.05, defense: 1 },
 };
 
 const DEFAULT_DUNGEON_COMBAT_TUNING: DungeonCombatTuning = { hp: 1, damage: 1, defense: 1 };
@@ -148,15 +145,9 @@ const FACTION_DUNGEON_ROSTERS = {
 
 type AuthoredDungeonTier = 4 | 5 | 6 | 7 | 8;
 
-/**
- * Keeper stays the same-tier entry dungeon. Progression factions become
- * increasingly explicit DPS gates as tiers rise so the canonical +20% artifact
- * matchup remains meaningful even after branch/cross-specialization mastery IP.
- * Only boss HP is tuned here; trash, elite pressure, damage and world monsters
- * remain untouched.
- */
+/** Boss HP is the narrow progression-gate axis; trash and elite structure remain shared. */
 const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, Readonly<Record<string, number>>>> = {
-  4: { Keeper: 1, Heretic: 0.76, Undead: 0.67, Morgana: 0.66 },
+  4: { Keeper: 1, Heretic: 0.72, Undead: 0.67, Morgana: 0.66 },
   5: { Keeper: 1, Heretic: 1.12, Undead: 1.08, Morgana: 1 },
   6: { Keeper: 1, Heretic: 1.18, Undead: 1.14, Morgana: 1.12 },
   7: { Keeper: 1, Heretic: 1.82, Undead: 1.42, Morgana: 1.4 },
