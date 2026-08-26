@@ -1,0 +1,48 @@
+name: tmp-tiered-faction-curve-verify
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-tiered-faction-curve-verify.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Verify exact T4-T8 faction bonus curve
+        shell: bash
+        run: |
+          set -e
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/runtime-dungeon-benchmark.ts')
+          s=p.read_text()
+          s=s.replace(
+            'const FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT;\nconst FAVORABLE_FACTION_DAMAGE_MULTIPLIER = 1 + FAVORABLE_FACTION_BONUS_PCT / 100;',
+            'const FAVORABLE_FACTION_BONUS_BY_TIER: Readonly<Record<number, number>> = { 4: 20, 5: 22, 6: 24, 7: 26, 8: 28 };\nconst FAVORABLE_FACTION_BONUS_PCT = FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT;'
+          )
+          s=s.replace(
+            '.filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) === FAVORABLE_FACTION_BONUS_PCT)',
+            '.filter(({ itemId }) => resolveArtifactDungeonDamageBonusPercent(itemId, dungeon.faction) > 0)'
+          )
+          s=s.replace(
+            'heroDamageMultiplier: FAVORABLE_FACTION_DAMAGE_MULTIPLIER,',
+            'heroDamageMultiplier: 1 + (FAVORABLE_FACTION_BONUS_BY_TIER[tier] ?? FAVORABLE_FACTION_BONUS_PCT) / 100,'
+          )
+          p.write_text(s)
+          PY
+          pnpm benchmark:dungeons | tee /tmp/out.txt
+          echo '===== EXACT CURVE SUMMARY ====='
+          for tier in 4 5 6 7 8; do
+            echo "--- T${tier} BASE ---"
+            awk "/\\[DUNGEON_T${tier}_BASE_SUMMARY\\]/{p=1;next}/\\[DUNGEON_T${tier}_COUNTER_FACTION_MATRIX\\]/{p=0}p" /tmp/out.txt
+            echo "--- T${tier} FAVORABLE ---"
+            awk "/\\[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY\\]/{p=1;next}/\\[DUNGEON_T$((tier+1))_REFERENCE\\]/{p=0}p" /tmp/out.txt
+          done
