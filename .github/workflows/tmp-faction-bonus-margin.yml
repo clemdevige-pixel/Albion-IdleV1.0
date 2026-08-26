@@ -1,0 +1,40 @@
+name: tmp-faction-bonus-margin
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-faction-bonus-margin.yml'
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Probe faction advantage bonus
+        shell: bash
+        run: |
+          cp scripts/runtime-dungeon-benchmark.ts /tmp/bench.ts
+          for bonus in 22 25 27 30 35; do
+            cp /tmp/bench.ts scripts/runtime-dungeon-benchmark.ts
+            BONUS="$bonus" python - <<'PY'
+          from pathlib import Path
+          import os
+          p=Path('scripts/runtime-dungeon-benchmark.ts'); s=p.read_text(); b=int(os.environ['BONUS'])
+          s=s.replace('favorableFactionBonusPct: 20', f'favorableFactionBonusPct: {b}')
+          s=s.replace('=== 20)', f'=== {b})')
+          s=s.replace('bonusPct: 20', f'bonusPct: {b}')
+          s=s.replace('heroDamageMultiplier: 1.2', f'heroDamageMultiplier: {1+b/100:.2f}')
+          p.write_text(s)
+          PY
+            echo "===== BONUS ${bonus}% ====="
+            pnpm benchmark:dungeons > /tmp/out.txt
+            for tier in 4 5 6 7 8; do
+              awk "/\\[DUNGEON_T${tier}_COUNTER_FACTION_SUMMARY\\]/{p=1;next}/^$/{if(p){exit}} p" /tmp/out.txt
+            done
+          done
