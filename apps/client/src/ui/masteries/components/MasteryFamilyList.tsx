@@ -28,25 +28,26 @@ function ChildMasteryRow({
 
   return (
     <article className={`ui-mastery-specialization${mastery.isUnlocked ? "" : " is-locked"}`}>
-      <div className="ui-mastery-specialization__heading">
-        <div className="ui-mastery-specialization__identity">
-          {iconAsset !== undefined && (
-            <img
-              className="ui-mastery-specialization__icon"
-              src={iconSource(iconAsset)}
-              alt=""
-              aria-hidden="true"
-            />
-          )}
+      <div className="ui-mastery-specialization__visual" aria-hidden="true">
+        {iconAsset !== undefined && (
+          <img
+            className="ui-mastery-specialization__icon"
+            src={iconSource(iconAsset)}
+            alt=""
+          />
+        )}
+      </div>
+      <div className="ui-mastery-specialization__content">
+        <div className="ui-mastery-specialization__heading">
           <div className="ui-mastery-specialization__copy">
             <h4>{mastery.name}</h4>
             {mastery.subtitle !== undefined && <small>{mastery.subtitle}</small>}
           </div>
+          <strong>Niv. {String(mastery.level)}</strong>
         </div>
-        <strong>Niv. {String(mastery.level)}</strong>
+        <MasteryProgressBar mastery={mastery} />
+        <BonusList bonuses={mastery.bonuses} />
       </div>
-      <MasteryProgressBar mastery={mastery} />
-      <BonusList bonuses={mastery.bonuses} />
     </article>
   );
 }
