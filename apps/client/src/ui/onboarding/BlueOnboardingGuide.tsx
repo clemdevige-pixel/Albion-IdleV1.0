@@ -70,9 +70,7 @@ export function BlueOnboardingGuide(): JSX.Element | null {
       && zone.zoneIndexWithinBand >= 3
       && zone.isUnlocked
     ));
-    const beyondBlueOnboarding = bridge.world.worldBandId !== "blue"
-      || bridge.world.zones.some((zone) => zone.worldBandId !== "blue" && zone.isUnlocked)
-      || dungeon.clearedTiers.some((tier) => tier > 4);
+    const beyondBlueOnboarding = dungeon.clearedTiers.some((tier) => tier > 4);
 
     return resolveBlueOnboardingStep({
       buildingIds,
@@ -83,6 +81,8 @@ export function BlueOnboardingGuide(): JSX.Element | null {
       academyResearch: academy.research,
       hasReachedFrostpeak,
       relicState: relic?.state ?? "unobtained",
+      relicChargeKills: relic?.chargeKills ?? 0,
+      relicRequiredChargeKills: relic?.requiredChargeKills ?? 0,
       dungeonUnlocked: services.isDungeonSystemUnlocked(),
       activeDungeon: dungeon.activeRun !== undefined,
       clearedDungeonTiers: dungeon.clearedTiers,
