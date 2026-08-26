@@ -46,6 +46,7 @@ import {
   resolveTrustedOfflineWindow,
 } from "./trustedOfflineElapsed.js";
 import { dashboardLayoutSaveProvider } from "./DashboardLayoutSaveProvider";
+import { dailyMerchantRotation } from "./DailyMerchantRotation.js";
 import type { SaveFormat } from "@game/persistence";
 
 export const DEFAULT_SAVE_SLOT_ID = LEGACY_SAVE_SLOT_ID;
@@ -100,6 +101,7 @@ export class RuntimePersistence {
     });
 
     dashboardLayoutSaveProvider.reset();
+    dailyMerchantRotation.reset();
 
     const inventorySaveProvider = new InventorySaveProvider(
       deps.inventoryManager,
@@ -140,6 +142,7 @@ export class RuntimePersistence {
     this.saveManager.registerProvider(destinyBoardSaveProvider);
     this.saveManager.registerProvider(durabilitySaveProvider);
     this.saveManager.registerProvider(dashboardLayoutSaveProvider);
+    this.saveManager.registerProvider(dailyMerchantRotation);
   }
 
   public registerProvider(provider: SaveProvider): void {
