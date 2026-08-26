@@ -11,6 +11,7 @@ import {
 export type VendorTransactionDirection = "buy" | "sell";
 
 export interface VendorTransactionRequest {
+  readonly vendorId: string;
   readonly direction: VendorTransactionDirection;
   readonly itemId: string;
   readonly quantity: number;
@@ -33,7 +34,7 @@ export function useVendorTransactionExecutor(): (
       playerId: services.playerId,
       playerEntityId: services.heroId,
       walletId: services.walletId,
-      vendorId: "vendor_general",
+      vendorId: request.vendorId,
       itemId: request.itemId,
       quantity: request.quantity,
     });
