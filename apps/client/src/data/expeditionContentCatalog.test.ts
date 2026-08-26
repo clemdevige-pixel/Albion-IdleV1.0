@@ -33,11 +33,11 @@ describe("expeditionContentCatalog", () => {
       reward.silverPerHour,
       reward.shardsPerHour,
     ])).toEqual([
-      [4, "Expédition généraliste T4", 30_000, 23],
-      [5, "Expédition généraliste T5", 55_000, 23.5],
-      [6, "Expédition généraliste T6", 70_000, 25],
-      [7, "Expédition généraliste T7", 80_000, 21.5],
-      [8, "Expédition généraliste T8", 90_000, 19],
+      [4, "Expédition généraliste T4", 40_000, 23],
+      [5, "Expédition généraliste T5", 70_000, 23.5],
+      [6, "Expédition généraliste T6", 90_000, 25],
+      [7, "Expédition généraliste T7", 105_000, 21.5],
+      [8, "Expédition généraliste T8", 115_000, 19],
     ]);
 
     for (const definition of SILVER_EXPEDITION_DEFINITIONS) {
