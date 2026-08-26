@@ -13,13 +13,31 @@ function BonusList({ bonuses }: { readonly bonuses: readonly string[] }): JSX.El
   return <ul className="ui-mastery-bonuses">{bonuses.map((bonus) => <li key={bonus}>{bonus}</li>)}</ul>;
 }
 
-function ChildMasteryRow({ mastery }: { readonly mastery: MasteryProgressModel }): JSX.Element {
+function ChildMasteryRow({
+  mastery,
+  fallbackIconAsset,
+}: {
+  readonly mastery: MasteryProgressModel;
+  readonly fallbackIconAsset?: string;
+}): JSX.Element {
+  const iconAsset = mastery.iconAsset ?? fallbackIconAsset;
+
   return (
     <article className={`ui-mastery-specialization${mastery.isUnlocked ? "" : " is-locked"}`}>
       <div className="ui-mastery-specialization__heading">
-        <div>
-          <h4>{mastery.name}</h4>
-          {mastery.subtitle !== undefined && <small>{mastery.subtitle}</small>}
+        <div className="ui-mastery-specialization__identity">
+          {iconAsset !== undefined && (
+            <img
+              className="ui-mastery-specialization__icon"
+              src={`/assets/items/${iconAsset}`}
+              alt=""
+              aria-hidden="true"
+            />
+          )}
+          <div className="ui-mastery-specialization__copy">
+            <h4>{mastery.name}</h4>
+            {mastery.subtitle !== undefined && <small>{mastery.subtitle}</small>}
+          </div>
         </div>
         <strong>Niv. {String(mastery.level)}</strong>
       </div>
@@ -79,7 +97,11 @@ export function MasteryFamilyList({ category, families, selectedId, onSelect }: 
                     {family.specializations.length > 0 && (
                       <div className="ui-mastery-specializations" aria-label={childLabel}>
                         {family.specializations.map((entry) => (
-                          <ChildMasteryRow key={entry.id} mastery={entry} />
+                          <ChildMasteryRow
+                            key={entry.id}
+                            mastery={entry}
+                            fallbackIconAsset={category === "combat" ? family.iconAsset : undefined}
+                          />
                         ))}
                       </div>
                     )}
