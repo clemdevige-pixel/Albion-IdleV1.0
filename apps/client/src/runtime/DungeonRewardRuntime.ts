@@ -6,7 +6,7 @@ import type { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
 export interface DungeonRewardDrop {
   readonly itemId: string;
-  readonly kind: "artifact_fragment" | "artifact" | "enchantment_shard";
+  readonly kind: "artifact_fragment" | "artifact" | "enchantment_shard" | "faction_rune";
   readonly quantity: number;
 }
 
@@ -95,11 +95,34 @@ export class DungeonRewardRuntime {
     }
 
     const finalEncounter = dungeonDefinition.encounters[dungeonDefinition.encounters.length - 1];
+    const isCompletion = finalEncounter?.id === encounter.id;
+    if (isCompletion) {
+      const factionRuneQuantity = applyExpectedLootYield(
+        lootDefinition.completionFactionRuneQuantity,
+        factionYieldBonusPercent,
+        this.random,
+      );
+      if (
+        factionRuneQuantity > 0
+        && this.inventoryManager.addAccessibleQuantity(
+          this.heroId,
+          lootDefinition.factionRuneItemId,
+          factionRuneQuantity,
+        )
+      ) {
+        drops.push({
+          itemId: lootDefinition.factionRuneItemId,
+          kind: "faction_rune",
+          quantity: factionRuneQuantity,
+        });
+      }
+    }
+
     return {
       dungeonDefinitionId: run.definitionId,
       encounterId: encounter.id,
       drops,
-      completionSilver: finalEncounter?.id === encounter.id
+      completionSilver: isCompletion
         ? applyPercentBonusRounded(lootDefinition.completionSilver, factionYieldBonusPercent)
         : 0,
     };
