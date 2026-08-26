@@ -36,9 +36,9 @@ export interface FactionExpeditionRewardProfile {
 export const FACTION_EXPEDITION_REWARD_PROFILES: Readonly<
   Record<FactionExpeditionTier, FactionExpeditionRewardProfile>
 > = {
-  4: { tier: 4, runesPerHour: 4, runeVariance: 0.20, fragmentsPerHour: 12, fragmentVariance: 0.30, completeKeysPerHourEv: 0.6 },
-  5: { tier: 5, runesPerHour: 7, runeVariance: 0.20, fragmentsPerHour: 11, fragmentVariance: 0.30, completeKeysPerHourEv: 0.55 },
-  6: { tier: 6, runesPerHour: 12.5, runeVariance: 0.20, fragmentsPerHour: 9.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.5 },
-  7: { tier: 7, runesPerHour: 20, runeVariance: 0.20, fragmentsPerHour: 8.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.4 },
-  8: { tier: 8, runesPerHour: 30, runeVariance: 0.20, fragmentsPerHour: 4.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.225 },
+  4: { tier: 4, runesPerHour: 8, runeVariance: 0.20, fragmentsPerHour: 12, fragmentVariance: 0.30, completeKeysPerHourEv: 0.6 },
+  5: { tier: 5, runesPerHour: 10, runeVariance: 0.20, fragmentsPerHour: 11, fragmentVariance: 0.30, completeKeysPerHourEv: 0.55 },
+  6: { tier: 6, runesPerHour: 12, runeVariance: 0.20, fragmentsPerHour: 9.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.5 },
+  7: { tier: 7, runesPerHour: 15, runeVariance: 0.20, fragmentsPerHour: 8.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.4 },
+  8: { tier: 8, runesPerHour: 18, runeVariance: 0.20, fragmentsPerHour: 4.5, fragmentVariance: 0.30, completeKeysPerHourEv: 0.225 },
 };
