@@ -1,8 +1,9 @@
 import {
   DAILY_MERCHANT_ALL_CANDIDATES,
+  DAILY_MERCHANT_CATEGORIES,
   DAILY_MERCHANT_CATEGORY_WEIGHTS,
-  DAILY_MERCHANT_OFFER_COUNT,
   DAILY_MERCHANT_QUANTITIES,
+  DAILY_MERCHANT_ROTATION_RULES,
   DAILY_MERCHANT_TIERS,
   type DailyMerchantCandidate,
   type DailyMerchantCategory,
@@ -44,34 +45,37 @@ interface MutableDailyMerchantState {
   purchasedOfferIds: Set<string>;
 }
 
-const DAILY_CATEGORIES = Object.keys(DAILY_MERCHANT_CATEGORY_WEIGHTS) as DailyMerchantCategory[];
-const COMPLETE_CATEGORIES = new Set<DailyMerchantCategory>(["key", "artifact"]);
-const RESOURCE_CATEGORIES = new Set<DailyMerchantCategory>(["raw_resource", "refined_resource"]);
+const HOUR_MS = 60 * 60 * 1_000;
 
 function isDailyMerchantTier(value: number): value is DailyMerchantTier {
   return DAILY_MERCHANT_TIERS.includes(value as DailyMerchantTier);
 }
 
 function isDailyMerchantCategory(value: unknown): value is DailyMerchantCategory {
-  return typeof value === "string" && DAILY_CATEGORIES.includes(value as DailyMerchantCategory);
+  return typeof value === "string"
+    && DAILY_MERCHANT_CATEGORIES.includes(value as DailyMerchantCategory);
 }
 
 function normalizeUnlockedTiers(values: readonly number[]): DailyMerchantTier[] {
   return [...new Set(values.filter(isDailyMerchantTier))].sort((a, b) => a - b);
 }
 
-/** Daily reset is shared across clients at 00:00 UTC. */
 export function getDailyMerchantRotationId(nowMs: number = Date.now()): string {
-  const date = new Date(nowMs);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
+  const shifted = new Date(nowMs - DAILY_MERCHANT_ROTATION_RULES.resetHourUtc * HOUR_MS);
+  const year = shifted.getUTCFullYear();
+  const month = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(shifted.getUTCDate()).padStart(2, "0");
   return `${String(year)}-${month}-${day}`;
 }
 
 export function getDailyMerchantNextResetAt(nowMs: number = Date.now()): number {
-  const date = new Date(nowMs);
-  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1);
+  const shifted = new Date(nowMs - DAILY_MERCHANT_ROTATION_RULES.resetHourUtc * HOUR_MS);
+  return Date.UTC(
+    shifted.getUTCFullYear(),
+    shifted.getUTCMonth(),
+    shifted.getUTCDate() + 1,
+    DAILY_MERCHANT_ROTATION_RULES.resetHourUtc,
+  );
 }
 
 function hashString(value: string): number {
@@ -103,15 +107,18 @@ function pickOne<T>(values: readonly T[], random: () => number): T {
 
 function pickWeightedCategory(
   random: () => number,
-  allowed: readonly DailyMerchantCategory[] = DAILY_CATEGORIES,
+  allowed: readonly DailyMerchantCategory[],
 ): DailyMerchantCategory {
-  const totalWeight = allowed.reduce((sum, category) => sum + DAILY_MERCHANT_CATEGORY_WEIGHTS[category], 0);
+  const totalWeight = allowed.reduce(
+    (sum, category) => sum + DAILY_MERCHANT_CATEGORY_WEIGHTS[category],
+    0,
+  );
   let cursor = random() * totalWeight;
   for (const category of allowed) {
     cursor -= DAILY_MERCHANT_CATEGORY_WEIGHTS[category];
     if (cursor < 0) return category;
   }
-  return allowed[allowed.length - 1] ?? "raw_resource";
+  return pickOne(allowed, random);
 }
 
 function candidatesFor(
@@ -141,6 +148,39 @@ function buildOffer(
   };
 }
 
+function countCategories(
+  offers: readonly DailyMerchantSavedOffer[],
+  categories: readonly DailyMerchantCategory[],
+): number {
+  return offers.filter((offer) => categories.includes(offer.category)).length;
+}
+
+function getAllowedCategories(
+  offers: readonly DailyMerchantSavedOffer[],
+): readonly DailyMerchantCategory[] {
+  return DAILY_MERCHANT_CATEGORIES.filter((category) => (
+    DAILY_MERCHANT_ROTATION_RULES.limitedCategoryGroups.every((group) => (
+      !group.categories.includes(category)
+      || countCategories(offers, group.categories) < group.maximumPerRotation
+    ))
+  ));
+}
+
+function applyGuaranteedCategoryGroups(
+  offers: DailyMerchantSavedOffer[],
+  unlockedTiers: readonly DailyMerchantTier[],
+  random: () => number,
+): void {
+  for (const group of DAILY_MERCHANT_ROTATION_RULES.guaranteedCategoryGroups) {
+    if (countCategories(offers, group) > 0) continue;
+
+    const replacementIndex = offers.length - 1;
+    const tier = pickOne(unlockedTiers, random);
+    const category = pickWeightedCategory(random, group);
+    offers[replacementIndex] = buildOffer(replacementIndex, tier, category, random);
+  }
+}
+
 export function generateDailyMerchantOffers(
   rotationId: string,
   unlockedTierValues: readonly number[],
@@ -150,25 +190,18 @@ export function generateDailyMerchantOffers(
 
   const random = createSeededRandom(`${rotationId}|${unlockedTiers.join(",")}`);
   const offers: DailyMerchantSavedOffer[] = [];
-  let hasCompleteOffer = false;
 
-  for (let slotIndex = 0; slotIndex < DAILY_MERCHANT_OFFER_COUNT; slotIndex += 1) {
+  for (
+    let slotIndex = 0;
+    slotIndex < DAILY_MERCHANT_ROTATION_RULES.offerCount;
+    slotIndex += 1
+  ) {
     const tier = pickOne(unlockedTiers, random);
-    const allowed = hasCompleteOffer
-      ? DAILY_CATEGORIES.filter((candidate) => !COMPLETE_CATEGORIES.has(candidate))
-      : DAILY_CATEGORIES;
-    const category = pickWeightedCategory(random, allowed);
-    if (COMPLETE_CATEGORIES.has(category)) hasCompleteOffer = true;
+    const category = pickWeightedCategory(random, getAllowedCategories(offers));
     offers.push(buildOffer(slotIndex, tier, category, random));
   }
 
-  if (!offers.some((offer) => RESOURCE_CATEGORIES.has(offer.category))) {
-    const replacementIndex = offers.length - 1;
-    const tier = pickOne(unlockedTiers, random);
-    const category = pickWeightedCategory(random, ["raw_resource", "refined_resource"]);
-    offers[replacementIndex] = buildOffer(replacementIndex, tier, category, random);
-  }
-
+  applyGuaranteedCategoryGroups(offers, unlockedTiers, random);
   return offers;
 }
 
@@ -209,7 +242,9 @@ export class DailyMerchantRotationSaveProvider implements SaveProvider {
   }
 
   markPurchased(offerId: string): boolean {
-    if (this.state === null || !this.state.offers.some((offer) => offer.offerId === offerId)) return false;
+    if (this.state === null || !this.state.offers.some((offer) => offer.offerId === offerId)) {
+      return false;
+    }
     if (this.state.purchasedOfferIds.has(offerId)) return false;
     this.state.purchasedOfferIds.add(offerId);
     return true;
@@ -240,12 +275,18 @@ export class DailyMerchantRotationSaveProvider implements SaveProvider {
     }
 
     const raw = data as Partial<DailyMerchantSavedState>;
-    if (typeof raw.rotationId !== "string" || !Array.isArray(raw.unlockedTiers) || !Array.isArray(raw.offers)) {
+    if (
+      typeof raw.rotationId !== "string"
+      || !Array.isArray(raw.unlockedTiers)
+      || !Array.isArray(raw.offers)
+    ) {
       this.reset();
       return;
     }
 
-    const unlockedTiers = normalizeUnlockedTiers(raw.unlockedTiers.filter((value): value is number => typeof value === "number"));
+    const unlockedTiers = normalizeUnlockedTiers(
+      raw.unlockedTiers.filter((value): value is number => typeof value === "number"),
+    );
     const offers = raw.offers.flatMap((offer): DailyMerchantSavedOffer[] => {
       if (
         offer === null
@@ -277,7 +318,7 @@ export class DailyMerchantRotationSaveProvider implements SaveProvider {
         : [],
     );
 
-    if (offers.length !== DAILY_MERCHANT_OFFER_COUNT) {
+    if (offers.length !== DAILY_MERCHANT_ROTATION_RULES.offerCount) {
       this.reset();
       return;
     }
