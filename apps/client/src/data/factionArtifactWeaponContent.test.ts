@@ -79,6 +79,14 @@ describe("faction artifact weapon content", () => {
     expect(resolveArtifactDungeonDamageBonusPercent("item_weapon_sword_t4_broadsword", "Morgana")).toBe(0);
   });
 
+  it("scales favorable faction damage bonus by artifact weapon tier", () => {
+    const keeperArtifact = ARTIFACTS[0]!;
+    const expectedByTier = { 4: 20, 5: 22, 6: 24, 7: 26, 8: 28 } as const;
+    for (const tier of [4, 5, 6, 7, 8] as const) {
+      expect(resolveArtifactDungeonDamageBonusPercent(itemIdFor(keeperArtifact, tier), "Morgana")).toBe(expectedByTier[tier]);
+    }
+  });
+
   it("moves execute identity from Dagger Pair to Bloodletter", () => {
     const pairAbilities = resolveUnlockedWeaponAbilities("item_weapon_dagger_t4_pair", 30);
     const bloodletterAbilities = resolveUnlockedWeaponAbilities("item_weapon_dagger_bloodletter_t4", 30);

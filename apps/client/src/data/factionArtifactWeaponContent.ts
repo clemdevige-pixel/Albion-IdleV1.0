@@ -5,7 +5,13 @@ export type ArtifactFaction = "Keeper" | "Morgana" | "Undead" | "Heretic";
 export type ArtifactWeaponFamilyId = "sword" | "bow" | "fire_staff" | "gloves" | "dagger";
 export type ArtifactWeaponCombatProfile = "dagger" | "sword" | "bow" | "staff" | "gloves";
 
-export const FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT = 20;
+export const FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER: Readonly<Partial<Record<ProductionTier, number>>> = {
+  4: 20,
+  5: 22,
+  6: 24,
+  7: 26,
+  8: 28,
+};
 export const FACTION_ARTIFACT_ADVANTAGE: Readonly<Record<ArtifactFaction, ArtifactFaction>> = {
   Keeper: "Morgana",
   Morgana: "Undead",

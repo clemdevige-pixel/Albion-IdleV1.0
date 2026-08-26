@@ -22,10 +22,12 @@ import {
 import { resolveEquipmentInfo } from "../data/itemContentCatalog";
 import { getFactionCapeDefinition } from "../data/factionCapeContentCatalog";
 import {
-  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,
   getArtifactAdvantageTarget,
 } from "../data/factionArtifactWeaponContent";
-import { resolveWeaponArtifactFaction } from "../data/weaponContentCatalog";
+import {
+  resolveArtifactDungeonDamageBonusPercent,
+  resolveWeaponArtifactFaction,
+} from "../data/weaponContentCatalog";
 import { getRelicDefinitionByInventoryItemId } from "../data/relicContentCatalog";
 import { RESEARCH_IDS } from "../data/researchContentCatalog";
 
@@ -112,6 +114,9 @@ export function ItemTooltip({
   const artifactAdvantageTarget = artifactFaction === undefined
     ? undefined
     : getArtifactAdvantageTarget(artifactFaction);
+  const artifactAdvantageBonusPercent = artifactAdvantageTarget === undefined
+    ? undefined
+    : resolveArtifactDungeonDamageBonusPercent(itemId, artifactAdvantageTarget);
   const relicDefinition = getRelicDefinitionByInventoryItemId(itemId);
   const relicProgress = relicDefinition === undefined
     ? undefined
@@ -324,7 +329,7 @@ export function ItemTooltip({
           <div>
             <span>Passif de faction</span>
             <strong>
-              +{formatStatValue(FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT)}% dégâts infligés dans les donjons {formatFactionLabel(artifactAdvantageTarget)}
+              +{formatStatValue(artifactAdvantageBonusPercent ?? 0)}% dégâts infligés dans les donjons {formatFactionLabel(artifactAdvantageTarget)}
             </strong>
           </div>
         </div>

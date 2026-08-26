@@ -9,7 +9,7 @@ import type { ProductionTier } from "./productionFamilyCatalog.js";
 import {
   FACTION_ARTIFACT_ABILITIES,
   FACTION_ARTIFACT_ADVANTAGE,
-  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT,
+  FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER,
   FACTION_ARTIFACT_WEAPON_CONTENT,
   type ArtifactFaction,
   type FactionArtifactWeaponSpecializationContent,
@@ -201,9 +201,11 @@ export function resolveWeaponAttackSpeed(itemId: string): number | undefined { r
 export function resolveWeaponCraftRule(itemId: string): WeaponCraftRule | undefined { return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.craft; }
 export function resolveWeaponArtifactFaction(itemId: string): ArtifactFaction | undefined { return CONTENT_BY_ITEM_ID.get(itemId)?.specialization.artifactFaction; }
 export function resolveArtifactDungeonDamageBonusPercent(itemId: string, dungeonFaction: string): number {
-  const artifactFaction = resolveWeaponArtifactFaction(itemId);
-  if (artifactFaction === undefined) return 0;
-  return FACTION_ARTIFACT_ADVANTAGE[artifactFaction] === dungeonFaction ? FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT : 0;
+  const route = CONTENT_BY_ITEM_ID.get(itemId);
+  const artifactFaction = route?.specialization.artifactFaction;
+  if (artifactFaction === undefined || route === undefined) return 0;
+  if (FACTION_ARTIFACT_ADVANTAGE[artifactFaction] !== dungeonFaction) return 0;
+  return FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER[route.item.tier] ?? 0;
 }
 export function resolvePreviousWeaponTierItemId(itemId: string): string | undefined {
   const route = CONTENT_BY_ITEM_ID.get(itemId);
