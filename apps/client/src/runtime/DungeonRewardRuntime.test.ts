@@ -1,8 +1,12 @@
+import { getFactionRuneItemId } from "@game/data";
 import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import { DungeonRuntime, getEnchantmentShardItemId } from "@game/gameplay";
 import { KEEPER_T4_DUNGEON } from "../data/dungeonContentCatalog.js";
-import { DUNGEON_COMPLETION_SILVER_BY_TIER } from "../data/dungeonLootContentCatalog.js";
+import {
+  DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER,
+  DUNGEON_COMPLETION_SILVER_BY_TIER,
+} from "../data/dungeonLootContentCatalog.js";
 import { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
 import { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
@@ -38,6 +42,7 @@ describe("DungeonRewardRuntime", () => {
     expect(result?.completionSilver).toBe(0);
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_fragment_keeper")).toBe(4);
     expect(inventory.getTotalQuantity(heroId, getEnchantmentShardItemId(4))).toBe(0);
+    expect(inventory.getTotalQuantity(heroId, getFactionRuneItemId(4))).toBe(0);
   });
 
   it("uses the bank when dungeon loot cannot fit in the hero inventory", () => {
@@ -54,13 +59,15 @@ describe("DungeonRewardRuntime", () => {
     expect(inventory.getTotalQuantity(bankId, "item_resource_artifact_fragment_keeper")).toBe(4);
   });
 
-  it("grants the authored shard total across the full run and completion Silver only on the boss", () => {
+  it("grants the authored shard total, guaranteed completion Runes and completion Silver only on the boss", () => {
     const { heroId, inventory, dungeon, rewards } = setup(() => 0);
     const shardItemId = getEnchantmentShardItemId(4);
+    const runeItemId = getFactionRuneItemId(4);
 
     for (const encounter of KEEPER_T4_DUNGEON.encounters.slice(0, -1)) {
       const reward = rewards.processCurrentEncounterVictory();
       expect(reward?.completionSilver).toBe(0);
+      expect(reward?.drops.some((drop) => drop.kind === "faction_rune")).toBe(false);
       dungeon.completeEncounter(encounter.id);
     }
 
@@ -76,14 +83,23 @@ describe("DungeonRewardRuntime", () => {
       kind: "enchantment_shard",
       quantity: 4,
     });
+    expect(bossReward?.drops).toContainEqual({
+      itemId: runeItemId,
+      kind: "faction_rune",
+      quantity: DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER[4],
+    });
     expect(bossReward?.completionSilver).toBe(DUNGEON_COMPLETION_SILVER_BY_TIER[4]);
     expect(inventory.getTotalQuantity(heroId, "item_resource_artifact_keeper")).toBe(1);
     expect(inventory.getTotalQuantity(heroId, shardItemId)).toBe(5);
+    expect(inventory.getTotalQuantity(heroId, runeItemId)).toBe(
+      DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER[4],
+    );
   });
 
-  it("applies faction mastery to dungeon quantities, drop chance and completion Silver", () => {
+  it("applies faction mastery to dungeon quantities, completion Runes, drop chance and completion Silver", () => {
     const { heroId, inventory, dungeon, rewards } = setup(() => 0.12);
     const shardItemId = getEnchantmentShardItemId(4);
+    const runeItemId = getFactionRuneItemId(4);
     const getFactionYieldBonusPercent = () => 50;
 
     const firstReward = rewards.processCurrentEncounterVictory(getFactionYieldBonusPercent);
@@ -112,9 +128,15 @@ describe("DungeonRewardRuntime", () => {
       kind: "enchantment_shard",
       quantity: 6,
     });
+    expect(bossReward?.drops).toContainEqual({
+      itemId: runeItemId,
+      kind: "faction_rune",
+      quantity: 3,
+    });
     expect(bossReward?.completionSilver).toBe(
       DUNGEON_COMPLETION_SILVER_BY_TIER[4] * 1.5,
     );
     expect(inventory.getTotalQuantity(heroId, shardItemId)).toBe(8);
+    expect(inventory.getTotalQuantity(heroId, runeItemId)).toBe(3);
   });
 });
