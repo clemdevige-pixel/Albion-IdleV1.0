@@ -47,4 +47,14 @@ describe("weapon ability content contract", () => {
       effectId: "effect_dagger_opening",
     });
   });
+
+  it("keeps dagger opening signatures synchronized with Flurry", () => {
+    const flurry = CLIENT_ABILITIES["ability_dagger_flurry"];
+    const crossAssault = CLIENT_ABILITIES["ability_dagger_pair_cross_assault"];
+    const ghostStrike = CLIENT_ABILITIES["ability_dagger_deathgivers_ghost_strike"];
+
+    expect(flurry).toBeDefined();
+    expect(crossAssault?.cooldown).toBe((flurry?.cooldown ?? 0) * 2);
+    expect(ghostStrike?.cooldown).toBe((flurry?.cooldown ?? 0) * 2);
+  });
 });
