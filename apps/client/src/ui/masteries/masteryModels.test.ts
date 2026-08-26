@@ -30,6 +30,7 @@ describe("masteryModels", () => {
     const daggers = model.categories.combat.find((family) => family.id === "mastery_dagger");
     expect(daggers?.name).toBe("Dagues");
     expect(daggers?.specializations.map((entry) => entry.id)).toEqual(["mastery_dagger_pair"]);
+    expect(daggers?.specializations[0]?.iconAsset).toBe("icons/armes/pair dagger.png");
   });
 
   it("projects faction masteries with their current yield bonus and no specialization layer", () => {
