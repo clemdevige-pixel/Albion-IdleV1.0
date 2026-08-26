@@ -50,7 +50,6 @@ const T4_ARMOR = [
   "item_boots_t4_leather",
   "item_traveler_cape",
 ] as const;
-const T4_SHIELD = "item_shield_t4_reinforced";
 
 interface SweepRow {
   readonly weapon: string;
