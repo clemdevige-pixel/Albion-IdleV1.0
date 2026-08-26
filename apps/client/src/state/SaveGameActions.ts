@@ -35,6 +35,17 @@ export class SaveGameActions {
   }
 
   save(): void {
+    if (this.deps.persistence.isLoadFailed()) {
+      console.error("[Persistence] Save blocked because the current runtime failed to load its save");
+      this.deps.bridge.addEconomyNotification({
+        id: `notif_save_blocked_${String(Date.now())}`,
+        type: "error",
+        message: "Save blocked after a failed load. Reload or restore a valid backup first.",
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
     this.deps.persistence.save(this.deps.getCurrentTick());
     this.deps.bridge.addEconomyNotification({
       id: `notif_save_${String(Date.now())}`,
