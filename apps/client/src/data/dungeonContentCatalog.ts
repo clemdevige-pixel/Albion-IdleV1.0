@@ -156,7 +156,7 @@ type AuthoredDungeonTier = 4 | 5 | 6 | 7 | 8;
  * remain untouched.
  */
 const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, Readonly<Record<string, number>>>> = {
-  4: { Keeper: 1, Heretic: 0.72, Undead: 0.67, Morgana: 0.62 },
+  4: { Keeper: 1, Heretic: 0.76, Undead: 0.67, Morgana: 0.66 },
   5: { Keeper: 1, Heretic: 1.12, Undead: 1.08, Morgana: 1 },
   6: { Keeper: 1, Heretic: 1.18, Undead: 1.14, Morgana: 1.12 },
   7: { Keeper: 1, Heretic: 1.82, Undead: 1.42, Morgana: 1.4 },
