@@ -1,8 +1,10 @@
 import {
+  DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER,
   DUNGEON_COMPLETION_SILVER_BY_TIER,
   DUNGEON_ENCOUNTER_LOOT_BY_TIER,
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
+  getFactionRuneItemId,
   type DungeonEncounterLootBalance,
   type DungeonLootTier,
 } from "@game/data";
@@ -22,11 +24,16 @@ export interface DungeonLootDefinition {
   readonly artifactFragmentItemId: string;
   readonly artifactItemId: string;
   readonly enchantmentShardItemId: string;
+  readonly factionRuneItemId: string;
+  readonly completionFactionRuneQuantity: number;
   readonly completionSilver: number;
   readonly encounters: Readonly<Record<DungeonEncounterKind, DungeonEncounterLootDefinition>>;
 }
 
-export { DUNGEON_COMPLETION_SILVER_BY_TIER } from "@game/data";
+export {
+  DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER,
+  DUNGEON_COMPLETION_SILVER_BY_TIER,
+} from "@game/data";
 
 function createFactionLootDefinition(
   id: string,
@@ -40,6 +47,8 @@ function createFactionLootDefinition(
     artifactFragmentItemId: getDungeonArtifactFragmentItemId(itemSuffix, tier),
     artifactItemId: getDungeonArtifactItemId(itemSuffix, tier),
     enchantmentShardItemId: getEnchantmentShardItemId(tier),
+    factionRuneItemId: getFactionRuneItemId(tier),
+    completionFactionRuneQuantity: DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER[tier],
     completionSilver: DUNGEON_COMPLETION_SILVER_BY_TIER[tier],
     encounters: DUNGEON_ENCOUNTER_LOOT_BY_TIER[tier],
   };
