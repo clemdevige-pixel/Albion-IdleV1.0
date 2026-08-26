@@ -59,7 +59,6 @@ const EARLY_READY = {
 const COMPLETED_RESEARCH = [
   research(RESEARCH_IDS.enchantmentStudy, "completed"),
   research(RESEARCH_IDS.dungeonRelicAnalysis, "completed"),
-  research(RESEARCH_IDS.dungeonSanctuaryLocation, "completed"),
 ];
 
 describe("resolveBlueOnboardingStep", () => {
@@ -156,7 +155,7 @@ describe("resolveBlueOnboardingStep", () => {
     expect(charging?.description).toContain("75/200");
   });
 
-  it("moves from charged Relic to analysis then sanctuary research", () => {
+  it("moves directly from charged Relic analysis to the first Dungeon", () => {
     const frostpeakReady = {
       ...EARLY_READY,
       hasReachedFrostpeak: true,
@@ -175,13 +174,10 @@ describe("resolveBlueOnboardingStep", () => {
 
     expect(resolveBlueOnboardingStep(snapshot({
       ...frostpeakReady,
-      academyResearch: [
-        research(RESEARCH_IDS.enchantmentStudy, "completed"),
-        research(RESEARCH_IDS.dungeonRelicAnalysis, "completed"),
-        research(RESEARCH_IDS.dungeonSanctuaryLocation, "available"),
-      ],
+      academyResearch: COMPLETED_RESEARCH,
       relicState: "examined",
-    }))?.id).toBe("locate_sanctuaries");
+      dungeonUnlocked: true,
+    }))?.id).toBe("enter_t4_dungeon");
   });
 
   it("distinguishes entering from clearing the first T4 dungeon", () => {
