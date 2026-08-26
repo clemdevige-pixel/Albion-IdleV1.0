@@ -11,7 +11,7 @@ import {
   getDailyMerchantNextResetAt,
   type DailyMerchantOffer,
 } from "../../../runtime/DailyMerchantRotation";
-import { isProductionMaterial } from "../../../runtime/ProductionStorage";
+import { resolvePlayerItemStorageOwner } from "../../../runtime/ProductionStorage";
 import { useGameServices } from "../../../state/GameContext";
 import { useGameUiSelector } from "../../state/useGameUiSelector";
 import { useMerchantData } from "../useMerchantData";
@@ -47,9 +47,11 @@ export function DailyOffersView(): JSX.Element | null {
   );
 
   const getOwnedQuantity = (itemId: string): number => {
-    const ownerId = isProductionMaterial(itemId)
-      ? services.productionStorageId
-      : services.heroId;
+    const ownerId = resolvePlayerItemStorageOwner(
+      itemId,
+      services.heroId,
+      services.productionStorageId,
+    );
     return services.inventoryManager.getTotalQuantity(ownerId, itemId);
   };
 
@@ -67,8 +69,9 @@ export function DailyOffersView(): JSX.Element | null {
         <button
           type="button"
           key={offer.offerId}
-          className={`ui-merchant-item-row${offer.purchased ? " is-purchased" : ""}`}
+          className="ui-merchant-item-row"
           disabled={offer.purchased || wallet.silver < offer.totalPrice}
+          style={offer.purchased ? { filter: "grayscale(1)", opacity: 0.45 } : undefined}
           onClick={() => { setPending(offer); }}
         >
           <ItemHoverTooltip itemId={offer.itemId} quantity={offer.quantity}>
