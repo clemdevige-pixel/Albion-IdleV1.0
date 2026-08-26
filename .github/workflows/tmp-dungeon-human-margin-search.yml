@@ -1,0 +1,101 @@
+name: tmp-dungeon-human-margin-search
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-dungeon-human-margin-search.yml'
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Search human-margin windows
+        shell: bash
+        run: |
+          cat > /tmp/search.py <<'PY'
+          from pathlib import Path
+          import re, subprocess, shutil
+
+          P=Path('apps/client/src/data/dungeonContentCatalog.ts')
+          ORIGINAL=P.read_text()
+          targets=[
+            ('HERETIC_T4_DUNGEON_ID','dungeon_heretic_t4',4),
+            ('HERETIC_T5_DUNGEON_ID','dungeon_heretic_t5',5),
+            ('UNDEAD_T5_DUNGEON_ID','dungeon_undead_t5',5),
+            ('MORGANA_T5_DUNGEON_ID','dungeon_morgana_t5',5),
+            ('HERETIC_T6_DUNGEON_ID','dungeon_heretic_t6',6),
+            ('HERETIC_T7_DUNGEON_ID','dungeon_heretic_t7',7),
+            ('HERETIC_T8_DUNGEON_ID','dungeon_heretic_t8',8),
+            ('UNDEAD_T8_DUNGEON_ID','dungeon_undead_t8',8),
+            ('MORGANA_T8_DUNGEON_ID','dungeon_morgana_t8',8),
+          ]
+
+          def get_rows(src,did):
+            m=re.search(rf'(\[{did}\]: \[\n)(.*?)(\n  \],)',src,re.S)
+            if not m: raise RuntimeError(did)
+            return m, m.group(2).split('\n')
+
+          def patch(did, pre_scale, boss_damage_scale, boss_hp_scale):
+            s=ORIGINAL
+            m,rows=get_rows(s,did)
+            for i in range(3):
+              dm=float(re.search(r'damage: ([0-9.]+)',rows[i]).group(1))
+              rows[i]=re.sub(r'damage: [0-9.]+',f'damage: {dm*pre_scale:.5g}',rows[i])
+            dm=float(re.search(r'damage: ([0-9.]+)',rows[3]).group(1))
+            hp=float(re.search(r'hp: ([0-9.]+)',rows[3]).group(1))
+            rows[3]=re.sub(r'damage: [0-9.]+',f'damage: {dm*boss_damage_scale:.5g}',rows[3])
+            rows[3]=re.sub(r'hp: [0-9.]+',f'hp: {hp*boss_hp_scale:.5g}',rows[3])
+            return s[:m.start()]+m.group(1)+'\n'.join(rows)+m.group(3)+s[m.end():]
+
+          def parse_summary(out,tier,dungeon,kind):
+            start=f'[DUNGEON_T{tier}_{kind}_SUMMARY]'
+            ix=out.index(start)
+            tail=out[ix:]
+            line=next(x for x in tail.splitlines() if f"'{dungeon}'" in x)
+            cols=[x.strip() for x in line.strip().strip('│').split('│')]
+            # BASE: index,dungeon,faction,clearCount,min,max,closest,maxPotions
+            # COUNTER: index,dungeon,faction,counterWeapons,clearCount,min,max,closest,maxPotions
+            if kind=='BASE':
+              clear=cols[3].strip("'")
+              minhp=None if cols[4]=='null' else float(cols[4])
+              maxhp=None if cols[5]=='null' else float(cols[5])
+            else:
+              clear=cols[4].strip("'")
+              minhp=None if cols[5]=='null' else float(cols[5])
+              maxhp=None if cols[6]=='null' else float(cols[6])
+            return clear,minhp,maxhp
+
+          for did,dungeon,tier in targets:
+            valid=[]
+            print(f'===== SEARCH {dungeon} =====',flush=True)
+            for pre in [0.65,0.70,0.75,0.80,0.85,0.90,0.95]:
+              for bd in [1.05,1.10,1.15,1.20,1.25,1.30,1.40,1.50,1.60]:
+                for bh in [0.90,0.95,1.00,1.05,1.10]:
+                  P.write_text(patch(did,pre,bd,bh))
+                  cp=subprocess.run(['pnpm','benchmark:dungeons'],capture_output=True,text=True)
+                  if cp.returncode!=0: continue
+                  out=cp.stdout
+                  bc,bmin,bmax=parse_summary(out,tier,dungeon,'BASE')
+                  fc,fmin,fmax=parse_summary(out,tier,dungeon,'COUNTER_FACTION')
+                  # Desired: favorable 5/5 with >=10% minimum. Base survivors, if any, <=10%.
+                  if fc=='5/5' and fmin is not None and fmin>=10 and (bmax is None or bmax<=10):
+                    # Rank toward 15% favorable, minimal deviation, and fewer base clears.
+                    base_count=int(bc.split('/')[0])
+                    score=abs(fmin-15)*2 + abs(pre-1)*10 + abs(bd-1)*5 + abs(bh-1)*5 + base_count*2
+                    valid.append((score,pre,bd,bh,bc,bmax,fmin,fmax))
+            P.write_text(ORIGINAL)
+            if not valid:
+              print('NO_VALID_WINDOW',flush=True)
+            else:
+              valid.sort()
+              for row in valid[:8]: print(row,flush=True)
+          P.write_text(ORIGINAL)
+          PY
+          python /tmp/search.py
