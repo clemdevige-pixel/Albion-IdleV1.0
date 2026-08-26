@@ -1,5 +1,9 @@
 import type { EntityId } from "@game/core";
-import { rollFactionRuneWorldDrop, type FactionRuneWorldDrop } from "@game/data";
+import {
+  getFactionRuneWorldEncounterMultiplier,
+  rollFactionRuneWorldDrop,
+  type FactionRuneWorldDrop,
+} from "@game/data";
 import type {
   AwakenedWeaponService,
   AwakenedWeaponTier,
@@ -193,10 +197,14 @@ export class CombatRewardRuntime {
     }
 
     if (this.isFactionRuneLootUnlocked()) {
+      const encounterMultiplier = getFactionRuneWorldEncounterMultiplier(
+        lootContext.isElite,
+        lootContext.isBoss,
+      );
       const runeDrop = rollFactionRuneWorldDrop(
         lootContext.faction,
         lootContext.enchantmentTier,
-        factionRuneDropChance,
+        factionRuneDropChance * encounterMultiplier,
         factionYieldBonusPercent,
         this.random,
       );
