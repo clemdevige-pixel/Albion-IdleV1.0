@@ -83,11 +83,6 @@ const FACTION_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.15, defense: 1.1 },
 ];
 
-/**
- * High-tier faction dungeons keep the optimization wall while trimming raw
- * incoming damage because world-end bosses are already sustain checks and the
- * dungeon runtime persists HP/cooldowns across all four encounters.
- */
 const HIGH_TIER_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 0.96, defense: 1.02 },
   { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 0.98, defense: 1.04 },
@@ -95,22 +90,11 @@ const HIGH_TIER_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 4, hp: 1.15, damage: 1.05, defense: 1.1 },
 ];
 
-/** Faction dungeons share one pressure shape per tier; the world band owns scale. */
-const FACTION_T4_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: FACTION_T4_COMBAT_PROFILE_ID, bandId: "blue", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS,
-};
-const FACTION_T5_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: FACTION_T5_COMBAT_PROFILE_ID, bandId: "yellow", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS,
-};
-const FACTION_T6_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS,
-};
-const FACTION_T7_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: FACTION_T7_COMBAT_PROFILE_ID, bandId: "red", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS,
-};
-const FACTION_T8_COMBAT_PROFILE: DungeonCombatProfileDefinition = {
-  id: FACTION_T8_COMBAT_PROFILE_ID, bandId: "black", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS,
-};
+const FACTION_T4_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T4_COMBAT_PROFILE_ID, bandId: "blue", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS };
+const FACTION_T5_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T5_COMBAT_PROFILE_ID, bandId: "yellow", sourceZoneIndexWithinBand: 4, steps: FACTION_DUNGEON_PRESSURE_STEPS };
+const FACTION_T6_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T6_COMBAT_PROFILE_ID, bandId: "orange", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS };
+const FACTION_T7_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T7_COMBAT_PROFILE_ID, bandId: "red", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS };
+const FACTION_T8_COMBAT_PROFILE: DungeonCombatProfileDefinition = { id: FACTION_T8_COMBAT_PROFILE_ID, bandId: "black", sourceZoneIndexWithinBand: 4, steps: HIGH_TIER_DUNGEON_PRESSURE_STEPS };
 
 const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefinition>> = {
   [FACTION_T4_COMBAT_PROFILE.id]: FACTION_T4_COMBAT_PROFILE,
@@ -120,10 +104,9 @@ const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefin
   [FACTION_T8_COMBAT_PROFILE.id]: FACTION_T8_COMBAT_PROFILE,
 };
 
-/** Per-dungeon authored exceptions stay data-driven and outside shared combat logic. */
 const DUNGEON_COMBAT_TUNING_BY_ID: Readonly<Record<string, DungeonCombatTuning>> = {
   [KEEPER_T4_DUNGEON_ID]: { hp: 0.85, damage: 0.85, defense: 0.95 },
-  [HERETIC_T4_DUNGEON_ID]: { hp: 1, damage: 1.05, defense: 1 },
+  [HERETIC_T4_DUNGEON_ID]: { hp: 1, damage: 1.08, defense: 1 },
 };
 
 const DEFAULT_DUNGEON_COMBAT_TUNING: DungeonCombatTuning = { hp: 1, damage: 1, defense: 1 };
@@ -145,7 +128,6 @@ const FACTION_DUNGEON_ROSTERS = {
 
 type AuthoredDungeonTier = 4 | 5 | 6 | 7 | 8;
 
-/** Boss HP is the narrow progression-gate axis; trash and elite structure remain shared. */
 const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, Readonly<Record<string, number>>>> = {
   4: { Keeper: 1, Heretic: 0.72, Undead: 0.67, Morgana: 0.66 },
   5: { Keeper: 1, Heretic: 1.12, Undead: 1.08, Morgana: 1 },
@@ -154,14 +136,7 @@ const FACTION_BOSS_HP_MULTIPLIER_BY_TIER: Readonly<Record<AuthoredDungeonTier, R
   8: { Keeper: 1, Heretic: 1.82, Undead: 1.44, Morgana: 1.36 },
 };
 
-function createFactionDungeon(input: {
-  readonly id: string;
-  readonly tier: AuthoredDungeonTier;
-  readonly combatProfileId: string;
-  readonly lootTableId: string;
-  readonly roster: FactionDungeonRoster;
-  readonly slug: string;
-}): DungeonDefinition {
+function createFactionDungeon(input: { readonly id: string; readonly tier: AuthoredDungeonTier; readonly combatProfileId: string; readonly lootTableId: string; readonly roster: FactionDungeonRoster; readonly slug: string }): DungeonDefinition {
   const { id, tier, combatProfileId, lootTableId, roster, slug } = input;
   return {
     id, tier, faction: roster.faction, keyItemId: getDungeonKeyItemId(tier), combatProfileId, lootTableId,
@@ -220,9 +195,7 @@ export function resolveDungeonCombatProfile(input: { readonly dungeonDefinitionI
   const authoredEncounter = dungeon.encounters[input.encounterIndex];
   if (authoredEncounter?.monsterDefinitionId !== input.monsterDefinitionId) throw new Error(`Dungeon encounter monster mismatch for ${dungeon.id} at ${String(input.encounterIndex)}`);
   const base = getEnemyCombatProfile(profile.sourceZoneIndexWithinBand, step.sourceSegmentIndex, step.sourceEncounterIndex, profile.bandId);
-  const bossHpMultiplier = authoredEncounter.kind === "boss"
-    ? (FACTION_BOSS_HP_MULTIPLIER_BY_TIER[dungeon.tier as AuthoredDungeonTier]?.[dungeon.faction] ?? 1)
-    : 1;
+  const bossHpMultiplier = authoredEncounter.kind === "boss" ? (FACTION_BOSS_HP_MULTIPLIER_BY_TIER[dungeon.tier as AuthoredDungeonTier]?.[dungeon.faction] ?? 1) : 1;
   const dungeonTuning = DUNGEON_COMBAT_TUNING_BY_ID[dungeon.id] ?? DEFAULT_DUNGEON_COMBAT_TUNING;
   return {
     hp: Math.round(base.hp * step.hp * bossHpMultiplier * dungeonTuning.hp),
