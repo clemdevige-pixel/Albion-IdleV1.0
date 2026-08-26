@@ -17,8 +17,10 @@ import {
   type InventoryManager,
 } from "@game/gameplay";
 import {
+  DAILY_MERCHANT_VENDOR_ID,
   DAILY_MERCHANT_VENDOR_OFFERS,
   GENERAL_VENDOR_FIXED_OFFERS,
+  GENERAL_VENDOR_ID,
   REPAIR_COST_DEFINITIONS,
 } from "@game/data";
 import {
@@ -93,10 +95,16 @@ export function createEconomyFoundation({
 
   const vendorRegistry = new VendorRegistry();
   vendorRegistry.register({
-    vendorId: "vendor_general",
+    vendorId: GENERAL_VENDOR_ID,
     role: "buy_and_sell",
     enabled: true,
-    offers: [...GENERAL_VENDOR_FIXED_OFFERS, ...DAILY_MERCHANT_VENDOR_OFFERS],
+    offers: GENERAL_VENDOR_FIXED_OFFERS,
+  });
+  vendorRegistry.register({
+    vendorId: DAILY_MERCHANT_VENDOR_ID,
+    role: "buy_only",
+    enabled: true,
+    offers: DAILY_MERCHANT_VENDOR_OFFERS,
   });
 
   const vendorService = new VendorService(
