@@ -22,7 +22,7 @@ function ChildMasteryRow({
   fallbackIconAsset,
 }: {
   readonly mastery: MasteryProgressModel;
-  readonly fallbackIconAsset?: string;
+  readonly fallbackIconAsset: string | undefined;
 }): JSX.Element {
   const iconAsset = mastery.iconAsset ?? fallbackIconAsset;
 
