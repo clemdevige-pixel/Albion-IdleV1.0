@@ -11,6 +11,8 @@ import {
   getDailyMerchantNextResetAt,
   type DailyMerchantOffer,
 } from "../../../runtime/DailyMerchantRotation";
+import { isProductionMaterial } from "../../../runtime/ProductionStorage";
+import { useGameServices } from "../../../state/GameContext";
 import { useGameUiSelector } from "../../state/useGameUiSelector";
 import { useMerchantData } from "../useMerchantData";
 import { useVendorTransactionExecutor } from "../shared/useVendorTransactionExecutor";
@@ -25,6 +27,7 @@ function formatReset(nowMs: number): string {
 
 export function DailyOffersView(): JSX.Element | null {
   const { wallet } = useMerchantData();
+  const services = useGameServices();
   const unlockedTiers = useGameUiSelector((state) => (
     [...new Set(state.world.zones.filter((zone) => zone.isUnlocked).map((zone) => zone.tier))]
   ));
@@ -43,6 +46,13 @@ export function DailyOffersView(): JSX.Element | null {
     [clock, unlockedTiers, revision],
   );
 
+  const getOwnedQuantity = (itemId: string): number => {
+    const ownerId = isProductionMaterial(itemId)
+      ? services.productionStorageId
+      : services.heroId;
+    return services.inventoryManager.getTotalQuantity(ownerId, itemId);
+  };
+
   if (offers.length === 0) return null;
 
   return (
@@ -57,7 +67,7 @@ export function DailyOffersView(): JSX.Element | null {
         <button
           type="button"
           key={offer.offerId}
-          className="ui-merchant-item-row"
+          className={`ui-merchant-item-row${offer.purchased ? " is-purchased" : ""}`}
           disabled={offer.purchased || wallet.silver < offer.totalPrice}
           onClick={() => { setPending(offer); }}
         >
@@ -66,7 +76,9 @@ export function DailyOffersView(): JSX.Element | null {
           </ItemHoverTooltip>
           <span className="ui-merchant-item-row__identity">
             <strong>{getItemDisplayName(offer.itemId)}</strong>
-            <small>T{String(offer.tier)} · quantité {String(offer.quantity)}</small>
+            <small>
+              T{String(offer.tier)} · quantité {String(offer.quantity)} · stock {String(getOwnedQuantity(offer.itemId))}
+            </small>
           </span>
           <b>{offer.purchased ? "Vendu" : `${String(offer.totalPrice)} S`}</b>
         </button>
