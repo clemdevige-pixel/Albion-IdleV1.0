@@ -70,6 +70,12 @@ interface DungeonCombatProfileDefinition {
   readonly steps: readonly DungeonCombatProfileStep[];
 }
 
+interface DungeonCombatTuning {
+  readonly hp: number;
+  readonly damage: number;
+  readonly defense: number;
+}
+
 const FACTION_DUNGEON_PRESSURE_STEPS: readonly DungeonCombatProfileStep[] = [
   { sourceSegmentIndex: 9, sourceEncounterIndex: 0, hp: 1.05, damage: 1.05, defense: 1.02 },
   { sourceSegmentIndex: 9, sourceEncounterIndex: 1, hp: 1.08, damage: 1.08, defense: 1.04 },
@@ -113,6 +119,17 @@ const DUNGEON_COMBAT_PROFILES: Readonly<Record<string, DungeonCombatProfileDefin
   [FACTION_T7_COMBAT_PROFILE.id]: FACTION_T7_COMBAT_PROFILE,
   [FACTION_T8_COMBAT_PROFILE.id]: FACTION_T8_COMBAT_PROFILE,
 };
+
+/**
+ * Per-dungeon authored exceptions stay data-driven and outside shared combat
+ * logic. Keeper T4 is the progression bootstrap and restores the historically
+ * validated calibration required for reliable same-tier T4.3 entry clears.
+ */
+const DUNGEON_COMBAT_TUNING_BY_ID: Readonly<Record<string, DungeonCombatTuning>> = {
+  [KEEPER_T4_DUNGEON_ID]: { hp: 0.85, damage: 0.85, defense: 0.95 },
+};
+
+const DEFAULT_DUNGEON_COMBAT_TUNING: DungeonCombatTuning = { hp: 1, damage: 1, defense: 1 };
 
 interface FactionDungeonRoster {
   readonly faction: string;
@@ -215,9 +232,13 @@ export function resolveDungeonCombatProfile(input: { readonly dungeonDefinitionI
   const bossHpMultiplier = authoredEncounter.kind === "boss"
     ? (FACTION_BOSS_HP_MULTIPLIER_BY_TIER[dungeon.tier as AuthoredDungeonTier]?.[dungeon.faction] ?? 1)
     : 1;
+  const dungeonTuning = DUNGEON_COMBAT_TUNING_BY_ID[dungeon.id] ?? DEFAULT_DUNGEON_COMBAT_TUNING;
   return {
-    hp: Math.round(base.hp * step.hp * bossHpMultiplier), damage: Math.round(base.damage * step.damage), attackSpeed: base.attackSpeed,
-    armor: Math.round(base.armor * step.defense), magicResistance: Math.round(base.magicResistance * step.defense),
+    hp: Math.round(base.hp * step.hp * bossHpMultiplier * dungeonTuning.hp),
+    damage: Math.round(base.damage * step.damage * dungeonTuning.damage),
+    attackSpeed: base.attackSpeed,
+    armor: Math.round(base.armor * step.defense * dungeonTuning.defense),
+    magicResistance: Math.round(base.magicResistance * step.defense * dungeonTuning.defense),
   };
 }
 
