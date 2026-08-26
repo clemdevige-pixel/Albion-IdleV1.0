@@ -73,6 +73,12 @@ export function DailyOffersView(): JSX.Element | null {
           balance={wallet.silver}
           confirmLabel="Acheter"
           onConfirm={() => {
+            const nowMs = Date.now();
+            if (!dailyMerchantRotation.canPurchase(pending.offerId, nowMs, unlockedTiers)) {
+              setClock(nowMs);
+              setPending(null);
+              return;
+            }
             const succeeded = executeTransaction({
               direction: "buy",
               itemId: pending.itemId,
