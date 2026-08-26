@@ -42,33 +42,29 @@ export function DailyOffersView(): JSX.Element | null {
   if (offers.length === 0) return null;
 
   return (
-    <section className="ui-merchant-daily" aria-label="Arrivage quotidien">
+    <section className="ui-merchant-list" aria-label="Arrivage quotidien">
       <div className="ui-merchant-section-title">
         <span>Arrivage quotidien</span>
         <small>5 offres · reset dans {formatReset(clock)}</small>
       </div>
-      <div className="ui-merchant-daily__grid">
-        {offers.map((offer) => (
-          <button
-            type="button"
-            key={offer.offerId}
-            className={`ui-merchant-daily__offer${offer.purchased ? " is-purchased" : ""}`}
-            disabled={offer.purchased || wallet.silver < offer.totalPrice}
-            onClick={() => { setPending(offer); }}
-          >
-            <ItemHoverTooltip itemId={offer.itemId} quantity={offer.quantity}>
-              <span className="ui-merchant-daily__visual"><ItemVisual itemId={offer.itemId} /></span>
-            </ItemHoverTooltip>
-            <span className="ui-merchant-daily__identity">
-              <strong>{getItemDisplayName(offer.itemId)}</strong>
-              <small>T{String(offer.tier)} · ×{String(offer.quantity)}</small>
-            </span>
-            <span className="ui-merchant-daily__price">
-              {offer.purchased ? "Vendu" : `${String(offer.totalPrice)} S`}
-            </span>
-          </button>
-        ))}
-      </div>
+      {offers.map((offer) => (
+        <button
+          type="button"
+          key={offer.offerId}
+          className="ui-merchant-item-row"
+          disabled={offer.purchased || wallet.silver < offer.totalPrice}
+          onClick={() => { setPending(offer); }}
+        >
+          <ItemHoverTooltip itemId={offer.itemId} quantity={offer.quantity}>
+            <span className="ui-merchant-item-row__visual"><ItemVisual itemId={offer.itemId} /></span>
+          </ItemHoverTooltip>
+          <span className="ui-merchant-item-row__identity">
+            <strong>{getItemDisplayName(offer.itemId)}</strong>
+            <small>T{String(offer.tier)} · quantité {String(offer.quantity)}</small>
+          </span>
+          <b>{offer.purchased ? "Vendu" : `${String(offer.totalPrice)} S`}</b>
+        </button>
+      ))}
 
       {pending !== null && (
         <TransactionConfirmModal
