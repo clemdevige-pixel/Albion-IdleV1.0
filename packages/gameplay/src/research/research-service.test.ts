@@ -60,6 +60,16 @@ describe("ResearchService", () => {
     });
   });
 
+  it("rejects conflicting legacy ids across authored definitions", () => {
+    const { service } = createService();
+    expect(service.registerResearch(createDefinition({ legacyIds: ["research_legacy"] }))).toEqual({ ok: true });
+    expect(service.registerResearch(createDefinition({
+      id: "research_archaeology_1",
+      unlockIds: ["relic_tracking"],
+      legacyIds: ["research_legacy"],
+    }))).toEqual({ ok: false, reason: "duplicate_research" });
+  });
+
   it("uses generic authored requirements without faction-specific runtime branches", () => {
     const { service } = createService(new Set(["relic:keeper"]));
     service.registerResearch(createDefinition({
@@ -167,6 +177,39 @@ describe("ResearchService", () => {
     service.advance(60_000);
     expect(service.hasUnlock("expedition_system")).toBe(true);
     expect(service.hasUnlock("expedition_tier:4")).toBe(true);
+  });
+
+  it("migrates completed and active legacy research ids to the current authored id", () => {
+    const current = createDefinition({
+      id: "research_dungeon_relic_analysis",
+      unlockIds: ["dungeon_system:unlocked"],
+      legacyIds: ["research_dungeon_sanctuary_location"],
+    });
+
+    const completed = createService().service;
+    completed.registerResearch(current);
+    completed.load({
+      version: 2,
+      completedResearchIds: ["research_dungeon_sanctuary_location"],
+      activeResearches: [],
+    });
+    expect(completed.getCompletedResearchIds()).toEqual([current.id]);
+    expect(completed.hasUnlock("dungeon_system:unlocked")).toBe(true);
+    expect(completed.save()).toMatchObject({ completedResearchIds: [current.id] });
+
+    const active = createService().service;
+    active.registerResearch(current);
+    active.load({
+      version: 2,
+      completedResearchIds: [],
+      activeResearches: [{
+        researchId: "research_dungeon_sanctuary_location",
+        remainingDurationMs: 30_000,
+      }],
+    });
+    expect(active.getActiveResearches()).toEqual([
+      { researchId: current.id, remainingDurationMs: 30_000 },
+    ]);
   });
 
   it("persists parallel active state and migrates the legacy single-active snapshot", () => {
