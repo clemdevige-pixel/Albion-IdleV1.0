@@ -40,7 +40,7 @@ jobs:
           bench = Path('scripts/runtime-dungeon-benchmark.ts')
           text = bench.read_text()
           old = '    useHealthPotions: true,\n'
-          new = '    useHealthPotions: true,\n    healthPotionQuantity: REPORTED_POTION_CAP,\n'
+          new = '    useHealthPotions: true,\n    healthPotionQuantity: POTION_CAP,\n'
           if old not in text:
               raise SystemExit('benchmark anchor not found')
           bench.write_text(text.replace(old, new, 1))
