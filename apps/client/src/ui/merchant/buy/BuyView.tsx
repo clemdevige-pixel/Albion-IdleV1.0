@@ -3,6 +3,7 @@ import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import { getItemDisplayName, ItemVisual } from "../../../panels/ItemVisual";
 import { TransactionConfirmModal } from "../../../panels/TransactionConfirmModal";
 import { QuantityControl } from "../shared/QuantityControl";
+import { DailyOffersView } from "./DailyOffersView";
 import { useBuyActions } from "./useBuyActions";
 import { useBuyData } from "./useBuyData";
 
@@ -30,65 +31,69 @@ export function BuyView(): JSX.Element {
 
   const catalogue = useMemo(() => model.offers, [model.offers]);
 
-  if (selected === undefined) {
-    return <p className="ui-merchant__empty">Aucun article disponible.</p>;
-  }
-
   return (
     <div className="ui-merchant-service ui-merchant-buy">
-      <section className="ui-merchant-list" aria-label="Catalogue du marchand">
-        <div className="ui-merchant-section-title"><span>Catalogue</span><small>Stock illimité</small></div>
-        {catalogue.map((offer) => (
-          <button
-            type="button"
-            key={offer.itemId}
-            className={`ui-merchant-item-row${offer.itemId === selected.itemId ? " is-selected" : ""}`}
-            onClick={() => { setSelectedItemId(offer.itemId); }}
-          >
-            <ItemHoverTooltip itemId={offer.itemId} quantity={1}>
-              <span className="ui-merchant-item-row__visual"><ItemVisual itemId={offer.itemId} /></span>
-            </ItemHoverTooltip>
-            <span className="ui-merchant-item-row__identity">
-              <strong>{getItemDisplayName(offer.itemId)}</strong>
-              <small>Possédé : {String(offer.owned)}</small>
-            </span>
-            <b>{String(offer.unitPrice)} S</b>
-          </button>
-        ))}
-      </section>
+      <DailyOffersView />
 
-      <section className="ui-merchant-detail ui-merchant-buy__detail">
-        <div className="ui-merchant-detail__item">
-          <ItemHoverTooltip itemId={selected.itemId} quantity={quantity}>
-            <span className="ui-merchant-detail__visual"><ItemVisual itemId={selected.itemId} /></span>
-          </ItemHoverTooltip>
-          <div>
-            <span>Achat</span>
-            <h3>{getItemDisplayName(selected.itemId)}</h3>
-            <small>Prix unitaire · {String(selected.unitPrice)} Silver</small>
-          </div>
-        </div>
-        <div className="ui-merchant-buy__purchase-row">
-          <div className="ui-merchant-detail__quantity">
-            <span>Quantité</span>
-            <QuantityControl
-              label={`Quantité de ${getItemDisplayName(selected.itemId)}`}
-              value={quantity}
-              maximum={maximum}
-              onChange={(next) => { setQuantities((current) => ({ ...current, [selected.itemId]: next })); }}
-            />
-          </div>
-          <div className="ui-merchant-detail__total"><span>Total</span><strong>{String(total)} Silver</strong></div>
-        </div>
-        <button
-          type="button"
-          className="ui-merchant__primary"
-          disabled={model.silver < total}
-          onClick={() => { setPending({ itemId: selected.itemId, quantity, unitPrice: selected.unitPrice }); }}
-        >
-          Acheter
-        </button>
-      </section>
+      {selected === undefined ? (
+        <p className="ui-merchant__empty">Aucun article permanent disponible.</p>
+      ) : (
+        <>
+          <section className="ui-merchant-list" aria-label="Catalogue du marchand">
+            <div className="ui-merchant-section-title"><span>Catalogue</span><small>Stock illimité</small></div>
+            {catalogue.map((offer) => (
+              <button
+                type="button"
+                key={offer.itemId}
+                className={`ui-merchant-item-row${offer.itemId === selected.itemId ? " is-selected" : ""}`}
+                onClick={() => { setSelectedItemId(offer.itemId); }}
+              >
+                <ItemHoverTooltip itemId={offer.itemId} quantity={1}>
+                  <span className="ui-merchant-item-row__visual"><ItemVisual itemId={offer.itemId} /></span>
+                </ItemHoverTooltip>
+                <span className="ui-merchant-item-row__identity">
+                  <strong>{getItemDisplayName(offer.itemId)}</strong>
+                  <small>Possédé : {String(offer.owned)}</small>
+                </span>
+                <b>{String(offer.unitPrice)} S</b>
+              </button>
+            ))}
+          </section>
+
+          <section className="ui-merchant-detail ui-merchant-buy__detail">
+            <div className="ui-merchant-detail__item">
+              <ItemHoverTooltip itemId={selected.itemId} quantity={quantity}>
+                <span className="ui-merchant-detail__visual"><ItemVisual itemId={selected.itemId} /></span>
+              </ItemHoverTooltip>
+              <div>
+                <span>Achat</span>
+                <h3>{getItemDisplayName(selected.itemId)}</h3>
+                <small>Prix unitaire · {String(selected.unitPrice)} Silver</small>
+              </div>
+            </div>
+            <div className="ui-merchant-buy__purchase-row">
+              <div className="ui-merchant-detail__quantity">
+                <span>Quantité</span>
+                <QuantityControl
+                  label={`Quantité de ${getItemDisplayName(selected.itemId)}`}
+                  value={quantity}
+                  maximum={maximum}
+                  onChange={(next) => { setQuantities((current) => ({ ...current, [selected.itemId]: next })); }}
+                />
+              </div>
+              <div className="ui-merchant-detail__total"><span>Total</span><strong>{String(total)} Silver</strong></div>
+            </div>
+            <button
+              type="button"
+              className="ui-merchant__primary"
+              disabled={model.silver < total}
+              onClick={() => { setPending({ itemId: selected.itemId, quantity, unitPrice: selected.unitPrice }); }}
+            >
+              Acheter
+            </button>
+          </section>
+        </>
+      )}
 
       {pending !== null && (
         <TransactionConfirmModal
