@@ -109,7 +109,7 @@ describe("createExpeditionFoundation", () => {
     expect(advance.completed).toHaveLength(1);
     expect(advance.completed[0]?.rewardSummary).toEqual({
       kind: "silver",
-      silverCredited: 60_000,
+      silverCredited: 80_000,
       shardItemId,
       shardsCredited: 46,
       quality: "reussie",
