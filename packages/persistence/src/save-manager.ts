@@ -81,7 +81,24 @@ export class SaveManager {
 
   load(id: string): void {
     const save = this.prepareSave(this.repository.get(id));
-    this.loader.load(save.payload);
+    const previousPayload = this.builder.build();
+
+    try {
+      this.loader.load(save.payload);
+    } catch (error) {
+      try {
+        this.loader.load(previousPayload);
+      } catch (rollbackError) {
+        const rollbackReason = rollbackError instanceof Error
+          ? rollbackError.message
+          : String(rollbackError);
+        throw new Error(
+          `Save load failed and runtime rollback also failed: ${rollbackReason}`,
+          { cause: error },
+        );
+      }
+      throw error;
+    }
   }
 
   /** Returns a validated, portable representation of an existing save. */
