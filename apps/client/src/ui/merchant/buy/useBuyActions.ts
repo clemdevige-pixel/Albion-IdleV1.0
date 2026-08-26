@@ -1,3 +1,4 @@
+import { GENERAL_VENDOR_ID } from "@game/data";
 import { useVendorTransactionExecutor } from "../shared/useVendorTransactionExecutor";
 
 interface BuyRequest {
@@ -10,6 +11,6 @@ interface BuyRequest {
 export function useBuyActions(): { readonly buy: (request: BuyRequest) => boolean } {
   const execute = useVendorTransactionExecutor();
   return {
-    buy: (request) => execute({ direction: "buy", ...request }),
+    buy: (request) => execute({ vendorId: GENERAL_VENDOR_ID, direction: "buy", ...request }),
   };
 }
