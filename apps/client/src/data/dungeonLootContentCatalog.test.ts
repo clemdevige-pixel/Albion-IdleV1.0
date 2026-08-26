@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER,
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
+  getFactionRuneItemId,
 } from "@game/data";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import { getDungeonLootDefinition } from "./dungeonLootContentCatalog.js";
@@ -17,6 +19,10 @@ describe("dungeonLootContentCatalog", () => {
       );
       expect(loot.artifactItemId).toBe(getDungeonArtifactItemId(suffix, dungeon.tier));
       expect(loot.enchantmentShardItemId).toBe(`item_resource_enchantment_shard_t${dungeon.tier}`);
+      expect(loot.factionRuneItemId).toBe(getFactionRuneItemId(dungeon.tier));
+      expect(loot.completionFactionRuneQuantity).toBe(
+        DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER[dungeon.tier],
+      );
     }
   });
 
