@@ -17,4 +17,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm benchmark:dungeons
-      # candidate: heretic boss 0.72 + damage 1.05; morgana boss 0.66
+      # candidate: heretic boss 0.72 + damage 1.08; morgana boss 0.66
