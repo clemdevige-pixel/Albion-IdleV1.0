@@ -15,11 +15,11 @@ export interface GeneralistExpeditionRewardProfile {
 export const GENERALIST_EXPEDITION_REWARD_PROFILES: Readonly<
   Record<GeneralistExpeditionTier, GeneralistExpeditionRewardProfile>
 > = {
-  4: { tier: 4, silverPerHour: 30_000, silverVariance: 0.20, shardsPerHour: 23, shardVariance: 0.25 },
-  5: { tier: 5, silverPerHour: 55_000, silverVariance: 0.20, shardsPerHour: 23.5, shardVariance: 0.25 },
-  6: { tier: 6, silverPerHour: 70_000, silverVariance: 0.20, shardsPerHour: 25, shardVariance: 0.25 },
-  7: { tier: 7, silverPerHour: 80_000, silverVariance: 0.20, shardsPerHour: 21.5, shardVariance: 0.25 },
-  8: { tier: 8, silverPerHour: 90_000, silverVariance: 0.20, shardsPerHour: 19, shardVariance: 0.25 },
+  4: { tier: 4, silverPerHour: 40_000, silverVariance: 0.20, shardsPerHour: 23, shardVariance: 0.25 },
+  5: { tier: 5, silverPerHour: 70_000, silverVariance: 0.20, shardsPerHour: 23.5, shardVariance: 0.25 },
+  6: { tier: 6, silverPerHour: 90_000, silverVariance: 0.20, shardsPerHour: 25, shardVariance: 0.25 },
+  7: { tier: 7, silverPerHour: 105_000, silverVariance: 0.20, shardsPerHour: 21.5, shardVariance: 0.25 },
+  8: { tier: 8, silverPerHour: 115_000, silverVariance: 0.20, shardsPerHour: 19, shardVariance: 0.25 },
 };
 
 export type FactionExpeditionTier = 4 | 5 | 6 | 7 | 8;
