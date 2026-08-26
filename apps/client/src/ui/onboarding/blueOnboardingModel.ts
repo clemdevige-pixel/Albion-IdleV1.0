@@ -12,6 +12,7 @@ export type BlueOnboardingStepId =
   | "unlock_enchantment"
   | "reach_frostpeak"
   | "discover_relic"
+  | "charge_relic"
   | "analyze_relic"
   | "locate_sanctuaries"
   | "enter_t4_dungeon"
@@ -40,6 +41,8 @@ export interface BlueOnboardingSnapshot {
   readonly academyResearch: readonly AcademyResearchEntryModel[];
   readonly hasReachedFrostpeak: boolean;
   readonly relicState: BlueOnboardingRelicState;
+  readonly relicChargeKills: number;
+  readonly relicRequiredChargeKills: number;
   readonly dungeonUnlocked: boolean;
   readonly activeDungeon: boolean;
   readonly clearedDungeonTiers: readonly number[];
@@ -189,12 +192,22 @@ export function resolveBlueOnboardingStep(
     };
   }
 
+  if (snapshot.relicState === "broken") {
+    return {
+      id: "charge_relic",
+      eyebrow: "Relique",
+      title: "Chargez la Relique",
+      description: `La Relique doit être chargée avant de pouvoir être étudiée à l’Académie. Progression actuelle : ${snapshot.relicChargeKills}/${snapshot.relicRequiredChargeKills}.`,
+      hint: "Repère : éliminez les factions demandées par la Relique jusqu’à compléter sa charge.",
+    };
+  }
+
   if (relicAnalysisState !== "completed") {
     return {
       id: "analyze_relic",
       eyebrow: "Relique",
       title: relicAnalysisState === "active" ? "Analyse de la Relique en cours" : "Analysez la Relique à l’Académie",
-      description: "La Relique découverte à Frostpeak peut être étudiée à l’Académie. Son analyse révélera où poursuivre vos recherches.",
+      description: "La Relique est chargée. Lancez son analyse à l’Académie pour révéler la recherche qui permet de localiser les Donjons.",
       hint: "Repère : Île → Académie → Analyse de la Relique.",
     };
   }
