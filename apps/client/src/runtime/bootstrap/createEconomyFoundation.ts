@@ -102,7 +102,7 @@ export function createEconomyFoundation({
   });
   vendorRegistry.register({
     vendorId: DAILY_MERCHANT_VENDOR_ID,
-    role: "buy_only",
+    role: "sell_only",
     enabled: true,
     offers: DAILY_MERCHANT_VENDOR_OFFERS,
   });
