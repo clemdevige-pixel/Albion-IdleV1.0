@@ -11,7 +11,7 @@ import {
   getDailyMerchantNextResetAt,
   type DailyMerchantOffer,
 } from "../../../runtime/DailyMerchantRotation";
-import { resolvePlayerItemStorageOwner } from "../../../runtime/ProductionStorage";
+import { isProductionMaterial } from "../../../runtime/ProductionStorage";
 import { useGameServices } from "../../../state/GameContext";
 import { useGameUiSelector } from "../../state/useGameUiSelector";
 import { useMerchantData } from "../useMerchantData";
@@ -46,14 +46,11 @@ export function DailyOffersView(): JSX.Element | null {
     [clock, unlockedTiers, revision],
   );
 
-  const getOwnedQuantity = (itemId: string): number => {
-    const ownerId = resolvePlayerItemStorageOwner(
-      itemId,
-      services.heroId,
-      services.productionStorageId,
-    );
-    return services.inventoryManager.getTotalQuantity(ownerId, itemId);
-  };
+  const getOwnedQuantity = (itemId: string): number => (
+    isProductionMaterial(itemId)
+      ? services.inventoryManager.getTotalQuantity(services.productionStorageId, itemId)
+      : services.inventoryManager.getAccessibleQuantity(services.heroId, itemId)
+  );
 
   if (offers.length === 0) return null;
 
