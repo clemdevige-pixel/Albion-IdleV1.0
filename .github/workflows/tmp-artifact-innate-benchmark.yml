@@ -1,0 +1,62 @@
+name: tmp-artifact-innate-benchmark
+on:
+  push:
+    branches: [agent/albion-idle-development]
+    paths:
+      - '.github/workflows/tmp-artifact-innate-benchmark.yml'
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Baseline
+        run: |
+          pnpm benchmark:weapon-roles > /tmp/baseline.txt
+          cp runtime-artifacts/weapon-role-world-sweep.json /tmp/baseline.json
+      - name: Apply benchmark-only +5% artifact global damage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/runtime-weapon-role-world-sweep.ts')
+          s=p.read_text()
+          s=s.replace('  resolveWeaponFamilyId,\n', '  resolveWeaponFamilyId,\n  resolveWeaponArtifactFaction,\n')
+          s=s.replace('          weaponItemId,\n          zoneDefId,', '          weaponItemId,\n          heroDamageMultiplier: resolveWeaponArtifactFaction(weaponItemId) === undefined ? 1 : 1.05,\n          zoneDefId,')
+          p.write_text(s)
+          PY
+          pnpm benchmark:weapon-roles > /tmp/boosted.txt
+          cp runtime-artifacts/weapon-role-world-sweep.json /tmp/boosted.json
+      - name: Compare
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const base=JSON.parse(fs.readFileSync('/tmp/baseline.json','utf8'));
+          const boost=JSON.parse(fs.readFileSync('/tmp/boosted.json','utf8'));
+          const isArtifact=(id)=>/(clarent|carving|galatine|claymore|wailing|whispering|warbow|wildfire|blazing|brimstone|great_fire|ursine|ravenstrike|hellfire|battle_bracers|bloodletter|demonfang|deathgivers|claws)/.test(id);
+          const by=(arr)=>new Map(arr.map(r=>[r.itemId,r]));
+          const bsum=by(base.summaries||[]), asum=by(boost.summaries||[]);
+          const rows=[];
+          for(const [id,b] of bsum){
+            if(!isArtifact(id)) continue;
+            const a=asum.get(id); if(!a) continue;
+            rows.push({weapon:b.weapon||id,family:b.family,baseBestFameH:b.bestFameH,boostBestFameH:a.bestFameH,deltaFamePct:b.bestFameH?+(((a.bestFameH/b.bestFameH)-1)*100).toFixed(1):0,baseObservedDps:b.observedDps,boostObservedDps:a.observedDps});
+          }
+          console.log('[ARTIFACT_PLUS5_T4_FAME_H]');
+          console.table(rows.sort((x,y)=>(y.deltaFamePct||0)-(x.deltaFamePct||0)));
+          const br=by(base.runtimeScalingSummary||[]), ar=by(boost.runtimeScalingSummary||[]);
+          const tierRows=[];
+          for(const r of base.runtimeScalingSummary||[]){
+            if(!isArtifact(r.itemId)) continue;
+            const key=r.itemId; const a=ar.get(key); if(!a) continue;
+            tierRows.push({tier:r.tier,weapon:r.weapon,family:r.family,baseMedianDps:r.medianObservedDps,boostMedianDps:a.medianObservedDps,deltaDpsPct:r.medianObservedDps?+(((a.medianObservedDps/r.medianObservedDps)-1)*100).toFixed(1):0,baseClearRate:r.clearRate,boostClearRate:a.clearRate});
+          }
+          console.log('[ARTIFACT_PLUS5_T4_T8_RUNTIME]');
+          console.table(tierRows);
+          console.log('[JSON_KEYS]',Object.keys(base));
+          NODE
