@@ -27,7 +27,11 @@ import {
 } from "../data/progressionContentCatalog.js";
 import {
   applyActiveGatheringStrike,
-  getActiveGatheringRewardProgress,
+  decayActiveGatheringActivity,
+  getActiveGatheringBonuses,
+  getActiveGatheringRewardedQuantity,
+  getAverageActiveGatheringActivity,
+  type ActiveGatheringYieldMultiplier,
   type GatheringStrikeQuality,
 } from "./activeGatheringRewardRules.js";
 
@@ -52,11 +56,14 @@ interface GatheringFamilyRuntime {
 
 interface MutableGatheringState {
   automatic: boolean;
+  fractionalYieldCarry: number;
   miniGame: {
     sessionId: GatheringSessionId | null;
     strikesUsed: number;
-    streak: number;
-    yieldScore: number;
+    activity: number;
+    activityTotal: number;
+    activitySamples: number;
+    lastProcessedTick: number | null;
     tier: ProductionTier | null;
   };
 }
@@ -64,11 +71,12 @@ interface MutableGatheringState {
 export interface ActiveGatheringMiniGameState {
   readonly sessionId: GatheringSessionId | null;
   readonly strikesUsed: number;
-  readonly streak: number;
-  readonly yieldScore: number;
-  readonly yieldMultiplier: 1 | 2 | 3;
-  readonly nextYieldThreshold: number | null;
-  readonly yieldProgressToNext: number;
+  readonly activity: number;
+  readonly averageActivity: number;
+  readonly yieldMultiplier: ActiveGatheringYieldMultiplier;
+  readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
+  readonly nextActivityThreshold: number | null;
+  readonly activityProgressToNext: number;
   readonly tier: ProductionTier | null;
 }
 
@@ -82,9 +90,9 @@ export type GatheringStrikeResult =
       readonly ok: true;
       readonly family: ResourceFamily;
       readonly strikesUsed: number;
-      readonly streak: number;
-      readonly yieldScore: number;
-      readonly yieldMultiplier: 1 | 2 | 3;
+      readonly activity: number;
+      readonly yieldMultiplier: ActiveGatheringYieldMultiplier;
+      readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
     }
   | { readonly ok: false };
 
@@ -119,16 +127,13 @@ export interface GatheringRuntimeDependencies {
       }
     >
   >;
-
   readonly inventoryManager: InventoryManager;
   readonly masteryService: MasteryService;
   readonly experienceService: ExperienceService;
   readonly progressionOrchestrator: ProgressionOrchestrator;
-
   /** @deprecated Production resources should use productionStorageId. */
   readonly heroId?: EntityId;
   readonly productionStorageId?: EntityId;
-
   readonly nodesAndTools: GatheringNodesAndTools;
   readonly getProductionTier: () => ProductionTier;
 }
@@ -145,9 +150,19 @@ function createEmptyMiniGameState(): MutableGatheringState["miniGame"] {
   return {
     sessionId: null,
     strikesUsed: 0,
-    streak: 0,
-    yieldScore: 0,
+    activity: 0,
+    activityTotal: 0,
+    activitySamples: 0,
+    lastProcessedTick: null,
     tier: null,
+  };
+}
+
+function createGatheringState(): MutableGatheringState {
+  return {
+    automatic: false,
+    fractionalYieldCarry: 0,
+    miniGame: createEmptyMiniGameState(),
   };
 }
 
@@ -166,10 +181,10 @@ export class GatheringRuntime {
     SupportedGatheringFamily,
     MutableGatheringState
   > = {
-    Wood: { automatic: false, miniGame: createEmptyMiniGameState() },
-    Ore: { automatic: false, miniGame: createEmptyMiniGameState() },
-    Hide: { automatic: false, miniGame: createEmptyMiniGameState() },
-    Fiber: { automatic: false, miniGame: createEmptyMiniGameState() },
+    Wood: createGatheringState(),
+    Ore: createGatheringState(),
+    Hide: createGatheringState(),
+    Fiber: createGatheringState(),
   };
 
   private currentTickCounter = 0;
@@ -191,25 +206,21 @@ export class GatheringRuntime {
     this.productionStorageId = storageId;
 
     const nodes = deps.nodesAndTools;
-
     const requireTierContent = (
       family: SupportedGatheringFamily,
       tier: ProductionTier,
     ): GatheringTierContent => {
       const content = nodes[family][tier];
-
       if (content === undefined) {
         throw new Error(
           `Gathering content missing for ${family} T${String(tier)}`,
         );
       }
-
       return content;
     };
 
     const familyEntries = SUPPORTED_GATHERING_FAMILIES.map((family) => {
       const catalogDefinition = getProductionFamilyByGameplayFamily(family);
-
       const runtimeDefinition: GatheringFamilyRuntime = {
         ...deps.gatheringFamilies[family],
         masteryId: catalogDefinition.masteryId,
@@ -217,7 +228,6 @@ export class GatheringRuntime {
         getTool: (tier) => requireTierContent(family, tier).tool,
         getRawItemId: (tier) => requireTierContent(family, tier).rawItemId,
       };
-
       return [family, runtimeDefinition] as const;
     });
 
@@ -226,13 +236,7 @@ export class GatheringRuntime {
     ) as Record<SupportedGatheringFamily, GatheringFamilyRuntime>;
 
     this.states = Object.fromEntries(
-      SUPPORTED_GATHERING_FAMILIES.map((family) => [
-        family,
-        {
-          automatic: false,
-          miniGame: createEmptyMiniGameState(),
-        },
-      ]),
+      SUPPORTED_GATHERING_FAMILIES.map((family) => [family, createGatheringState()]),
     ) as Record<SupportedGatheringFamily, MutableGatheringState>;
     this.setupCompletedSubscriptions();
   }
@@ -247,9 +251,7 @@ export class GatheringRuntime {
   }
 
   private notifyGatherCompleted(evt: GatheringCompletionEvent): void {
-    for (const listener of this.completionListeners) {
-      listener(evt);
-    }
+    for (const listener of this.completionListeners) listener(evt);
   }
 
   public getActiveMiniGameState(
@@ -259,25 +261,30 @@ export class GatheringRuntime {
       return {
         sessionId: null,
         strikesUsed: 0,
-        streak: 0,
-        yieldScore: 0,
+        activity: 0,
+        averageActivity: 0,
         yieldMultiplier: 1,
-        nextYieldThreshold: 60,
-        yieldProgressToNext: 0,
+        speedBonusRatio: 0,
+        nextActivityThreshold: 25,
+        activityProgressToNext: 0,
         tier: null,
       };
     }
 
     const state = this.states[family].miniGame;
-    const reward = getActiveGatheringRewardProgress(state.yieldScore);
+    const bonuses = getActiveGatheringBonuses(state.activity);
     return {
       sessionId: state.sessionId,
       strikesUsed: state.strikesUsed,
-      streak: state.streak,
-      yieldScore: state.yieldScore,
-      yieldMultiplier: reward.multiplier,
-      nextYieldThreshold: reward.nextThreshold,
-      yieldProgressToNext: reward.progressToNext,
+      activity: state.activity,
+      averageActivity: getAverageActiveGatheringActivity(
+        state.activityTotal,
+        state.activitySamples,
+      ),
+      yieldMultiplier: bonuses.yieldMultiplier,
+      speedBonusRatio: bonuses.speedBonusRatio,
+      nextActivityThreshold: bonuses.nextActivityThreshold,
+      activityProgressToNext: bonuses.progressToNext,
       tier: state.tier,
     };
   }
@@ -286,7 +293,58 @@ export class GatheringRuntime {
     this.currentTickCounter = tickCounter;
 
     for (const family of SUPPORTED_GATHERING_FAMILIES) {
+      this.processActiveGatheringTicks(family, tickCounter);
       this.families[family].coordinator.tick(tickCounter);
+    }
+  }
+
+  private processActiveGatheringTicks(
+    family: SupportedGatheringFamily,
+    tickCounter: number,
+  ): void {
+    const definition = this.families[family];
+    const miniGame = this.states[family].miniGame;
+    const session = definition.coordinator.getActiveSession();
+    if (
+      session === undefined
+      || miniGame.sessionId === null
+      || String(session.id) !== String(miniGame.sessionId)
+    ) {
+      return;
+    }
+
+    const previousTick = miniGame.lastProcessedTick ?? tickCounter;
+    const elapsedTicks = Math.max(0, tickCounter - previousTick);
+    if (elapsedTicks <= 0) return;
+
+    for (let offset = 1; offset <= elapsedTicks; offset += 1) {
+      const processingTick = previousTick + offset;
+      const activeSession = definition.coordinator.getActiveSession();
+      if (
+        activeSession === undefined
+        || miniGame.sessionId === null
+        || String(activeSession.id) !== String(miniGame.sessionId)
+      ) {
+        return;
+      }
+
+      miniGame.activityTotal += miniGame.activity;
+      miniGame.activitySamples += 1;
+
+      const bonuses = getActiveGatheringBonuses(miniGame.activity);
+      miniGame.activity = decayActiveGatheringActivity(
+        miniGame.activity,
+        activeSession.getRequiredTicks(),
+        1,
+      );
+      miniGame.lastProcessedTick = processingTick;
+
+      if (bonuses.speedBonusRatio > 0) {
+        definition.coordinator.advanceActiveSession(
+          bonuses.speedBonusRatio,
+          processingTick,
+        );
+      }
     }
   }
 
@@ -294,12 +352,15 @@ export class GatheringRuntime {
     family: SupportedGatheringFamily,
     sessionId: GatheringSessionId,
     tier: ProductionTier,
+    tickCounter: number,
   ): void {
     this.states[family].miniGame = {
       sessionId,
       strikesUsed: 0,
-      streak: 0,
-      yieldScore: 0,
+      activity: 0,
+      activityTotal: 0,
+      activitySamples: 0,
+      lastProcessedTick: tickCounter,
       tier,
     };
   }
@@ -317,23 +378,19 @@ export class GatheringRuntime {
   public getHeroGatheringMasteryModifier(masteryId: MasteryId): number {
     return Math.max(
       0.5,
-      1 -
-        Math.min(100, this.getGatheringMasteryLevel(masteryId)) * 0.005,
+      1 - Math.min(100, this.getGatheringMasteryLevel(masteryId)) * 0.005,
     );
   }
 
   public getGatheringDurationTicks(masteryId: MasteryId): number {
     const tier = this.getProductionTier();
     const tierRules = getProductionTierRules(tier);
-    const baseTicks = tierRules.gatheringBaseTicks;
-    const toolModifier = tierRules.gatheringToolSpeedModifier;
-
     return Math.max(
       1,
       Math.ceil(
-        baseTicks *
-          toolModifier *
-          this.getHeroGatheringMasteryModifier(masteryId),
+        tierRules.gatheringBaseTicks
+        * tierRules.gatheringToolSpeedModifier
+        * this.getHeroGatheringMasteryModifier(masteryId),
       ),
     );
   }
@@ -355,10 +412,9 @@ export class GatheringRuntime {
     tickCounter: number = 0,
   ): boolean {
     const definition = this.families[family];
-
     if (
-      this.getGatheringMasteryLevel(definition.masteryId) <
-      getRequiredGatheringMasteryForTier(cycleTier)
+      this.getGatheringMasteryLevel(definition.masteryId)
+      < getRequiredGatheringMasteryForTier(cycleTier)
     ) {
       return false;
     }
@@ -371,8 +427,8 @@ export class GatheringRuntime {
         {
           ...baseTool,
           speedModifier:
-            baseTool.speedModifier *
-            this.getHeroGatheringMasteryModifier(definition.masteryId),
+            baseTool.speedModifier
+            * this.getHeroGatheringMasteryModifier(definition.masteryId),
         },
       ],
       tickCounter,
@@ -384,6 +440,7 @@ export class GatheringRuntime {
         family,
         asGatheringSessionId(result.sessionId),
         cycleTier,
+        tickCounter,
       );
     }
 
@@ -393,14 +450,10 @@ export class GatheringRuntime {
   private setupCompletedSubscriptions(): void {
     for (const family of SUPPORTED_GATHERING_FAMILIES) {
       const definition = this.families[family];
-
       definition.manager.events.subscribe(
         "gatherCompleted",
         ({ result }) => {
-          this.completeGatheringCycle(
-            family,
-            result.quantityGathered,
-          );
+          this.completeGatheringCycle(family, result.quantityGathered);
         },
       );
     }
@@ -412,18 +465,22 @@ export class GatheringRuntime {
   ): void {
     const state = this.states[family];
     const definition = this.families[family];
-
-    const completedTier =
-      state.miniGame.tier ?? this.getProductionTier();
-    const yieldMultiplier = getActiveGatheringRewardProgress(
-      state.miniGame.yieldScore,
-    ).multiplier;
-    const rewardedQuantity = quantityGathered * yieldMultiplier;
+    const completedTier = state.miniGame.tier ?? this.getProductionTier();
+    const averageActivity = getAverageActiveGatheringActivity(
+      state.miniGame.activityTotal,
+      state.miniGame.activitySamples,
+    );
+    const reward = getActiveGatheringRewardedQuantity(
+      quantityGathered,
+      averageActivity,
+      state.fractionalYieldCarry,
+    );
+    state.fractionalYieldCarry = reward.fractionalCarry;
+    const rewardedQuantity = reward.quantity;
 
     this.endActiveGatheringMiniGame(family);
 
     const rawItemId = definition.getRawItemId(completedTier);
-
     const added = this.inventoryManager.addQuantity(
       this.productionStorageId,
       rawItemId,
@@ -436,15 +493,12 @@ export class GatheringRuntime {
     );
 
     if (added.ok) {
-      this.awardGatheringMastery(
-        definition.masteryId,
-        completedTier,
-      );
+      this.awardGatheringMastery(definition.masteryId, completedTier);
     }
 
     if (
-      state.automatic &&
-      !this.startGatheringCycle(
+      state.automatic
+      && !this.startGatheringCycle(
         family,
         completedTier,
         this.currentTickCounter,
@@ -453,11 +507,10 @@ export class GatheringRuntime {
       state.automatic = false;
     }
 
-    const itemLabel =
-      requireProductionTierPresentation(
-        family,
-        completedTier,
-      ).resourceName;
+    const itemLabel = requireProductionTierPresentation(
+      family,
+      completedTier,
+    ).resourceName;
 
     this.notifyGatherCompleted({
       family,
@@ -472,21 +525,15 @@ export class GatheringRuntime {
     return SUPPORTED_GATHERING_FAMILIES.some((family) => {
       const state = this.states[family];
       const coordinator = this.families[family].coordinator;
-
-      return (
-        state.automatic ||
-        coordinator.getActiveSession() !== undefined
-      );
+      return state.automatic || coordinator.getActiveSession() !== undefined;
     });
   }
 
   public stopAllGathering(): boolean {
     const wasGathering = this.isHeroGathering();
-
     for (const family of SUPPORTED_GATHERING_FAMILIES) {
       this.stopGatheringFamily(family);
     }
-
     return wasGathering;
   }
 
@@ -495,14 +542,12 @@ export class GatheringRuntime {
   ): void {
     const state = this.states[family];
     const definition = this.families[family];
-
     state.automatic = false;
 
     const session = definition.coordinator.getActiveSession();
     if (session !== undefined) {
       definition.manager.interruptSession(session.id);
     }
-
     this.endActiveGatheringMiniGame(family);
   }
 
@@ -510,9 +555,7 @@ export class GatheringRuntime {
     exceptFamily?: SupportedGatheringFamily,
   ): void {
     for (const family of SUPPORTED_GATHERING_FAMILIES) {
-      if (family !== exceptFamily) {
-        this.stopGatheringFamily(family);
-      }
+      if (family !== exceptFamily) this.stopGatheringFamily(family);
     }
   }
 
@@ -521,27 +564,18 @@ export class GatheringRuntime {
     tickCounter: number = 0,
   ): ToggleGatheringResult {
     const state = this.states[family];
-
     if (state.automatic) {
       this.stopGatheringFamily(family);
       return { action: "stopped", family };
     }
 
     this.stopOtherGathering(family);
-
     state.automatic = true;
 
-    if (
-      !this.startGatheringCycle(
-        family,
-        this.getProductionTier(),
-        tickCounter,
-      )
-    ) {
+    if (!this.startGatheringCycle(family, this.getProductionTier(), tickCounter)) {
       state.automatic = false;
       return { action: "failed", family };
     }
-
     return { action: "started", family };
   }
 
@@ -560,31 +594,25 @@ export class GatheringRuntime {
     const session = definition.coordinator.getActiveSession();
 
     if (
-      !state.automatic ||
-      session === undefined ||
-      miniGame.sessionId === null ||
-      String(session.id) !== String(miniGame.sessionId)
+      !state.automatic
+      || session === undefined
+      || miniGame.sessionId === null
+      || String(session.id) !== String(miniGame.sessionId)
     ) {
       return { ok: false };
     }
 
     miniGame.strikesUsed += 1;
-    const rewardState = applyActiveGatheringStrike(
-      { streak: miniGame.streak, score: miniGame.yieldScore },
-      quality,
-    );
-    miniGame.streak = rewardState.streak;
-    miniGame.yieldScore = rewardState.score;
+    miniGame.activity = applyActiveGatheringStrike(miniGame.activity, quality);
+    const bonuses = getActiveGatheringBonuses(miniGame.activity);
 
     return {
       ok: true,
       family: resourceFamily,
       strikesUsed: miniGame.strikesUsed,
-      streak: miniGame.streak,
-      yieldScore: miniGame.yieldScore,
-      yieldMultiplier: getActiveGatheringRewardProgress(
-        miniGame.yieldScore,
-      ).multiplier,
+      activity: miniGame.activity,
+      yieldMultiplier: bonuses.yieldMultiplier,
+      speedBonusRatio: bonuses.speedBonusRatio,
     };
   }
 }
