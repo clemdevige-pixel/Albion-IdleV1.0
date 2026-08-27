@@ -12,11 +12,6 @@ export interface ActiveGatheringRewardProgress {
 }
 
 export const ACTIVE_GATHERING_REWARD_RULES = Object.freeze({
-  speedBonusRatio: Object.freeze({
-    miss: 0,
-    correct: 0.02,
-    perfect: 0.04,
-  }),
   scorePerStrike: Object.freeze({
     miss: 0,
     correct: 8,
