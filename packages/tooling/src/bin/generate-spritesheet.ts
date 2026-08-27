@@ -318,17 +318,20 @@ function measureBody(image: RgbaImage, threshold: number): BodyMetrics {
   return { coreTop, coreBottom, coreHeight, rootX, groundY: coreBottom };
 }
 
-function findOccupiedColumns(sheet: RgbaImage, threshold: number): boolean[] {
-  const occupied = new Array<boolean>(sheet.width).fill(false);
+function findColumnOccupancy(sheet: RgbaImage, threshold: number): number[] {
+  const occupancy = new Array<number>(sheet.width).fill(0);
   for (let x = 0; x < sheet.width; x += 1) {
+    let count = 0;
     for (let y = 0; y < sheet.height; y += 1) {
-      if (alphaAt(sheet, x, y) > threshold) {
-        occupied[x] = true;
-        break;
-      }
+      if (alphaAt(sheet, x, y) > threshold) count += 1;
     }
+    occupancy[x] = count;
   }
-  return occupied;
+  return occupancy;
+}
+
+function findOccupiedColumns(columnOccupancy: readonly number[]): boolean[] {
+  return columnOccupancy.map((count) => count > 0);
 }
 
 function findInternalTransparentRuns(occupiedColumns: readonly boolean[]): TransparentRun[] {
@@ -348,38 +351,74 @@ function findInternalTransparentRuns(occupiedColumns: readonly boolean[]): Trans
   return runs;
 }
 
-function chooseCountAwareSeparators(runs: readonly TransparentRun[], sheetWidth: number, frameCount: number): TransparentRun[] {
+function localBoundaryOccupancy(columnOccupancy: readonly number[], cutX: number): number {
+  let total = 0;
+  for (let x = cutX - 2; x <= cutX + 1; x += 1) {
+    if (x >= 0 && x < columnOccupancy.length) total += columnOccupancy[x] ?? 0;
+  }
+  return total;
+}
+
+function chooseCountAwareSeparators(
+  runs: readonly TransparentRun[],
+  columnOccupancy: readonly number[],
+  frameCount: number,
+): TransparentRun[] {
   const separatorCount = frameCount - 1;
   if (separatorCount <= 0) return [];
-  if (runs.length < separatorCount) {
-    throw new Error(`Only ${String(runs.length)} internal transparent gaps found; cannot split into ${String(frameCount)} frames`);
-  }
 
+  const sheetWidth = columnOccupancy.length;
+  const frameSpan = sheetWidth / frameCount;
+  const corridorHalfWidth = Math.max(2, frameSpan * 0.42);
   const chosen: TransparentRun[] = [];
-  const used = new Set<number>();
+
   for (let boundary = 1; boundary < frameCount; boundary += 1) {
-    const target = (sheetWidth * boundary) / frameCount;
-    const corridorHalfWidth = sheetWidth / (frameCount * 2);
-    let bestIndex = -1;
-    let bestScore = Number.POSITIVE_INFINITY;
-    for (let index = 0; index < runs.length; index += 1) {
-      if (used.has(index)) continue;
-      const run = runs[index];
-      if (run === undefined) continue;
-      const distance = Math.abs(run.center - target);
-      const inCorridor = distance <= corridorHalfWidth;
-      const score = distance - (run.width * (inCorridor ? 1.5 : 0.5));
-      if (score < bestScore) {
-        bestScore = score;
-        bestIndex = index;
+    const target = frameSpan * boundary;
+    const corridorStart = Math.max(1, Math.ceil(target - corridorHalfWidth));
+    const corridorEnd = Math.min(sheetWidth - 1, Math.floor(target + corridorHalfWidth));
+
+    const transparentCandidates = runs.filter(
+      (run) => run.center >= corridorStart && run.center <= corridorEnd,
+    );
+    if (transparentCandidates.length > 0) {
+      const best = [...transparentCandidates].sort((a, b) => {
+        const scoreA = Math.abs(a.center - target) - (a.width * 1.5);
+        const scoreB = Math.abs(b.center - target) - (b.width * 1.5);
+        return scoreA - scoreB;
+      })[0];
+      if (best !== undefined) {
+        chosen.push(best);
+        continue;
       }
     }
-    if (bestIndex < 0) throw new Error(`Unable to resolve separator ${String(boundary)} of ${String(separatorCount)}`);
-    used.add(bestIndex);
-    const selected = runs[bestIndex];
-    if (selected !== undefined) chosen.push(selected);
+
+    let bestCut = corridorStart;
+    let bestScore = Number.POSITIVE_INFINITY;
+    for (let cutX = corridorStart; cutX <= corridorEnd; cutX += 1) {
+      const occupancy = localBoundaryOccupancy(columnOccupancy, cutX);
+      const distancePenalty = Math.abs(cutX - target) / Math.max(1, frameSpan);
+      const score = occupancy + distancePenalty;
+      if (score < bestScore) {
+        bestScore = score;
+        bestCut = cutX;
+      }
+    }
+
+    // Synthetic zero-width separator: cut between bestCut - 1 and bestCut.
+    // This keeps every source pixel while still allowing a split when two frames
+    // are linked by a few opaque pixels (weapon, cape, antialiasing, etc.).
+    chosen.push({ start: bestCut, end: bestCut - 1, width: 0, center: bestCut - 0.5 });
   }
-  return chosen.sort((a, b) => a.center - b.center);
+
+  const sorted = chosen.sort((a, b) => a.center - b.center);
+  for (let index = 1; index < sorted.length; index += 1) {
+    const previous = sorted[index - 1];
+    const current = sorted[index];
+    if (previous !== undefined && current !== undefined && current.start <= previous.end) {
+      throw new Error(`Count-aware frame separators overlap near x=${String(current.start)}`);
+    }
+  }
+  return sorted;
 }
 
 function chooseFallbackSeparators(runs: readonly TransparentRun[], minGap: number): TransparentRun[] {
@@ -415,11 +454,12 @@ function cropFrameRanges(sheet: RgbaImage, threshold: number, occupiedColumns: r
 }
 
 function splitFrames(sheet: RgbaImage, threshold: number, options: SplitOptions): RgbaImage[] {
-  const occupiedColumns = findOccupiedColumns(sheet, threshold);
+  const columnOccupancy = findColumnOccupancy(sheet, threshold);
+  const occupiedColumns = findOccupiedColumns(columnOccupancy);
   const runs = findInternalTransparentRuns(occupiedColumns);
   const separators = options.expectedCount === undefined
     ? chooseFallbackSeparators(runs, options.fallbackMinGap)
-    : chooseCountAwareSeparators(runs, sheet.width, options.expectedCount);
+    : chooseCountAwareSeparators(runs, columnOccupancy, options.expectedCount);
   const frames = cropFrameRanges(sheet, threshold, occupiedColumns, separators);
   if (options.expectedCount !== undefined && frames.length !== options.expectedCount) {
     throw new Error(`Detected ${String(frames.length)} frames, expected ${String(options.expectedCount)}`);
