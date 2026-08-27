@@ -4,26 +4,24 @@
   z-index: 80;
   display: grid;
   place-items: center;
-  background: rgb(7 10 14 / 62%);
+  background: rgb(7 10 14 / 68%);
   pointer-events: none;
 }
 
 .expedition-recap {
-  width: min(440px, calc(100% - 32px));
-  max-height: calc(100% - 48px);
-  overflow: auto;
-  border: 1px solid var(--ui-border-strong, #6e6657);
-  border-radius: 10px;
-  background: var(--ui-panel-bg, #171b20);
-  box-shadow: 0 14px 40px rgb(0 0 0 / 45%);
+  width: min(420px, calc(100% - 32px));
+  border: 1px solid #6d5730;
+  border-radius: 8px;
+  background: #101419;
+  box-shadow: 0 16px 42px rgb(0 0 0 / 52%);
   padding: 16px;
   pointer-events: auto;
 }
 
 .expedition-recap__header,
 .expedition-recap__title-row,
-.expedition-recap__reward,
-.expedition-recap__runes > div,
+.expedition-recap__quality,
+.expedition-recap__loot-row,
 .expedition-recap__footer {
   display: flex;
   align-items: center;
@@ -31,53 +29,128 @@
   gap: 12px;
 }
 
-.expedition-recap__header span {
-  font-size: 11px;
+.expedition-recap__header > div {
+  min-width: 0;
+}
+
+.expedition-recap__header span,
+.expedition-recap__title-row small,
+.expedition-recap__quality span,
+.expedition-recap__loot-row span,
+.expedition-recap__footer small {
+  color: var(--ui-color-text-muted, #8f969f);
+}
+
+.expedition-recap__header > div > span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .07em;
   text-transform: uppercase;
-  opacity: 0.7;
 }
 
 .expedition-recap__header h2 {
   margin: 2px 0 0;
-  font-size: 18px;
+  color: var(--ui-color-text-primary, #eee7dc);
+  font: 700 17px var(--ui-font-display);
 }
 
-.expedition-recap__header button {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-}
-
-.expedition-recap__list {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
+.expedition-recap__counter {
+  flex: 0 0 auto;
+  min-width: 38px;
+  padding: 5px 7px;
+  border: 1px solid #4f4638;
+  border-radius: 5px;
+  color: #d7bf82;
+  background: #17140f;
+  font: 700 10px var(--ui-font-display);
+  text-align: center;
 }
 
 .expedition-recap__item {
   display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--ui-border, #454b52);
-  border-radius: 8px;
-  background: rgb(255 255 255 / 3%);
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid #313840;
+  border-radius: 7px;
+  background: #0b0f13;
 }
 
-.expedition-recap__title-row span,
-.expedition-recap__reward span,
-.expedition-recap__runes span {
-  font-size: 12px;
-  opacity: 0.78;
-}
-
-.expedition-recap__runes {
+.expedition-recap__title-row > div {
   display: grid;
-  gap: 6px;
+  min-width: 0;
+  gap: 2px;
 }
 
-.expedition-recap__runes .is-total {
-  padding-top: 7px;
-  border-top: 1px solid var(--ui-border, #454b52);
+.expedition-recap__title-row small {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.expedition-recap__title-row strong {
+  overflow: hidden;
+  color: #e5ddd0;
+  font: 700 13px var(--ui-font-display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expedition-recap__duration {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: #bbb2a4;
+  background: #161b20;
+  font-size: 10px;
+}
+
+.expedition-recap__quality {
+  padding: 9px 10px;
+  border: 1px solid #3a4149;
+  border-radius: 5px;
+  background: #13181d;
+}
+
+.expedition-recap__quality span {
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.expedition-recap__quality strong {
+  color: #d8c58d;
+  font: 700 12px var(--ui-font-display);
+}
+
+.expedition-recap__quality--fructueuse,
+.expedition-recap__quality--exceptionnelle {
+  border-color: #6b5528;
+  background: #18150f;
+}
+
+.expedition-recap__quality--exceptionnelle strong {
+  color: #f0cf73;
+}
+
+.expedition-recap__loot {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid #262c32;
+}
+
+.expedition-recap__loot-row {
+  min-height: 36px;
+  padding: 0 2px;
+  border-bottom: 1px solid #22282e;
+}
+
+.expedition-recap__loot-row span {
+  font-size: 10px;
+}
+
+.expedition-recap__loot-row strong {
+  color: #e5c76f;
+  font: 700 13px var(--ui-font-display);
 }
 
 .expedition-recap__footer {
@@ -85,6 +158,34 @@
 }
 
 .expedition-recap__footer small {
-  max-width: 280px;
-  opacity: 0.7;
+  font-size: 9px;
+}
+
+.expedition-recap__footer button {
+  flex: 0 0 auto;
+  min-width: 92px;
+  min-height: 30px;
+  padding: 5px 11px;
+  border: 1px solid #8a6225;
+  border-radius: 5px;
+  color: #e7cf91;
+  background: #19150e;
+  font: 700 10px var(--ui-font-display);
+  cursor: pointer;
+}
+
+.expedition-recap__footer button:hover {
+  color: #f2dda8;
+  background: #251d0f;
+}
+
+@media (max-width: 560px) {
+  .expedition-recap {
+    width: calc(100% - 20px);
+    padding: 12px;
+  }
+
+  .expedition-recap__item {
+    padding: 11px;
+  }
 }
