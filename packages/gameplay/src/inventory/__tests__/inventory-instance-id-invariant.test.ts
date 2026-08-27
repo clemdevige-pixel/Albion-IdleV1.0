@@ -33,6 +33,29 @@ describe("inventory instance id invariant", () => {
     expect(manager.validateGlobalInstanceIds()).toEqual([]);
   });
 
+  it("keeps the global allocator monotonic after an inventory is destroyed and recreated", () => {
+    const world = new World(createRuntimeServices());
+    const manager = new InventoryManager(world);
+    const firstId = world.createEntity();
+    manager.createInventory(firstId, 4);
+
+    const first = manager.addEntry(firstId, "RESOURCE_WOOD");
+    const second = manager.addEntry(firstId, "RESOURCE_ORE");
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(second.value.instanceId).toBe("item_1");
+
+    manager.destroyInventory(firstId);
+    const replacementId = world.createEntity();
+    manager.createInventory(replacementId, 4);
+    const replacement = manager.addEntry(replacementId, "RESOURCE_HIDE");
+
+    expect(replacement.ok).toBe(true);
+    if (!replacement.ok) return;
+    expect(replacement.value.instanceId).toBe("item_2");
+  });
+
   it("refuses to insert an instance id that is already stored elsewhere", () => {
     const world = new World(createRuntimeServices());
     const manager = new InventoryManager(world);
