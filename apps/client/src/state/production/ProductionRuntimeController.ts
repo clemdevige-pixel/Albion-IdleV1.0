@@ -11,7 +11,6 @@ import type { GameBridge, WorkerProfessionVM } from "../../game/GameBridge";
 import type { ProductionFoundation } from "../../runtime/bootstrap/createProductionFoundation";
 import type { CombatLoopState } from "../../runtime/CombatRuntime";
 import type { PlayerInventoryManager } from "../../runtime/PlayerInventoryManager";
-import { DEFAULT_RUNTIME_TICK_INTERVAL_MS } from "../../runtime/RuntimeLifecycle";
 import {
   buildMasteryViewModels,
   getWorkerResourceLabel,
@@ -56,7 +55,6 @@ export class ProductionRuntimeController {
   readonly #bridgeAdapter: ProductionBridgeAdapter;
   readonly #actions: ProductionActions;
   readonly #unsubscribes: Array<() => void> = [];
-  #isResolvingWorkerBackground = false;
 
   constructor(dependencies: ProductionRuntimeControllerDependencies) {
     this.#dependencies = dependencies;
@@ -195,18 +193,6 @@ export class ProductionRuntimeController {
         this.#dependencies.foundation.workerRuntime.restoreSaveState(data);
         this.syncWorkers();
       },
-      resolveBackground: (elapsedMs: number): void => {
-        this.#isResolvingWorkerBackground = true;
-        try {
-          this.#dependencies.foundation.workerRuntime.resolveBackground(
-            elapsedMs,
-            DEFAULT_RUNTIME_TICK_INTERVAL_MS,
-          );
-        } finally {
-          this.#isResolvingWorkerBackground = false;
-          this.syncAll();
-        }
-      },
     };
   }
 
@@ -238,7 +224,6 @@ export class ProductionRuntimeController {
     }));
 
     this.#unsubscribes.push(foundation.workerRuntime.subscribeCycleCompleted(() => {
-      if (this.#isResolvingWorkerBackground) return;
       this.#syncMasteryProgression();
       syncInventoryToBridge(bridge, this.#dependencies.inventoryManager, this.#dependencies.heroId);
       this.syncAll();
@@ -283,7 +268,7 @@ export class ProductionRuntimeController {
     this.#bridgeAdapter.syncRefining(family);
   }
 
-  #isSupportedFamily(family: ResourceFamily): family is ProductionFamily {
+  #isSupportedFamily(family: string): family is ProductionFamily {
     return this.#families().includes(family as ProductionFamily);
   }
 
