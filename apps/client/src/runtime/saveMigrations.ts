@@ -172,6 +172,22 @@ function collectExternalInstanceItemIds(
   }
 }
 
+function collectEquippedPhysicalInstanceIds(payload: Record<string, unknown>): Set<string> {
+  const result = new Set<string>();
+  const equipmentPayload = payload.equipment;
+  if (!isRecord(equipmentPayload) || !Array.isArray(equipmentPayload.equipments)) return result;
+
+  for (const equipment of equipmentPayload.equipments) {
+    if (!isRecord(equipment) || !Array.isArray(equipment.slots)) continue;
+    for (const slot of equipment.slots) {
+      if (isRecord(slot) && typeof slot.instanceId === "string") {
+        result.add(slot.instanceId);
+      }
+    }
+  }
+  return result;
+}
+
 function getItemInstanceHighWatermark(value: unknown): number {
   let nextCounter = 0;
   const visit = (child: unknown): void => {
@@ -320,8 +336,8 @@ interface GlobalInventoryOccurrence {
 /**
  * V9 establishes ItemInstanceId as a true runtime-global identity. It repairs
  * collisions across different inventories and moves every legacy per-inventory
- * allocator to one shared high-watermark. External item references select the
- * canonical occurrence whenever the duplicated items differ.
+ * allocator to one shared high-watermark. Equipped items are physical holders,
+ * so an equipped identity always remains canonical over an inventory collision.
  */
 function repairGlobalInventoryInstanceIds(
   payload: Record<string, unknown>,
@@ -336,6 +352,7 @@ function repairGlobalInventoryInstanceIds(
     if (key === "inventory") continue;
     collectExternalInstanceItemIds(value, externalItemIds);
   }
+  const equippedInstanceIds = collectEquippedPhysicalInstanceIds(payload);
 
   let nextCounter = getItemInstanceHighWatermark(payload);
   for (const inventory of inventories) {
@@ -351,7 +368,7 @@ function repairGlobalInventoryInstanceIds(
   }
 
   const occurrences = new Map<string, GlobalInventoryOccurrence[]>();
-  const usedIds = new Set<string>();
+  const usedIds = new Set<string>(equippedInstanceIds);
   const addOccurrence = (occurrence: GlobalInventoryOccurrence): void => {
     usedIds.add(occurrence.instanceId);
     const list = occurrences.get(occurrence.instanceId) ?? [];
@@ -385,6 +402,7 @@ function repairGlobalInventoryInstanceIds(
 
   const canonical = new Map<string, GlobalInventoryOccurrence>();
   for (const [instanceId, entries] of occurrences) {
+    if (equippedInstanceIds.has(instanceId)) continue;
     const externalItemId = externalItemIds.get(instanceId);
     const externalMatch = externalItemId === undefined
       ? undefined
@@ -423,7 +441,9 @@ function repairGlobalInventoryInstanceIds(
         instanceId: activeBag.instanceId,
         itemId: typeof activeBag.itemId === "string" ? activeBag.itemId : undefined,
       };
-      if ((occurrences.get(occurrence.instanceId)?.length ?? 0) > 1 && !isCanonical(occurrence)) {
+      const collides = equippedInstanceIds.has(occurrence.instanceId)
+        || (occurrences.get(occurrence.instanceId)?.length ?? 0) > 1;
+      if (collides && !isCanonical(occurrence)) {
         activeBag = { ...activeBag, instanceId: allocateId() };
       }
     }
@@ -438,9 +458,9 @@ function repairGlobalInventoryInstanceIds(
             instanceId: slot.instanceId,
             itemId: typeof slot.itemId === "string" ? slot.itemId : undefined,
           };
-          if ((occurrences.get(occurrence.instanceId)?.length ?? 0) <= 1 || isCanonical(occurrence)) {
-            return slot;
-          }
+          const collides = equippedInstanceIds.has(occurrence.instanceId)
+            || (occurrences.get(occurrence.instanceId)?.length ?? 0) > 1;
+          if (!collides || isCanonical(occurrence)) return slot;
           return { ...slot, instanceId: allocateId() };
         })
       : inventory.slots;
