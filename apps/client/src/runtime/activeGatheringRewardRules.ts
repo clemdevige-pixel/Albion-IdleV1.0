@@ -48,7 +48,13 @@ export function getActiveGatheringRewardProgress(
 ): ActiveGatheringRewardProgress {
   const normalizedScore = Math.max(0, score);
   const tiers = ACTIVE_GATHERING_REWARD_RULES.yieldTiers;
-  let current = tiers[0];
+  const baseTier = tiers[0];
+
+  if (baseTier === undefined) {
+    throw new Error("Active gathering reward rules require at least one yield tier");
+  }
+
+  let current = baseTier;
 
   for (const tier of tiers) {
     if (normalizedScore >= tier.minScore) current = tier;
