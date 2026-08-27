@@ -8,48 +8,95 @@ import { createProductionFoundation } from "./createProductionFoundation";
 import { createProgressionFoundation } from "./createProgressionFoundation";
 import { createWorldFoundation } from "./createWorldFoundation";
 
+function createFoundationHarness() {
+  const combat = createCombatFoundation();
+  const progression = createProgressionFoundation();
+  const world = createWorldFoundation();
+  const inventoryManager = new InventoryManager(combat.world, resolveItemStackInfo);
+  const equipmentManager = new EquipmentManager(
+    combat.world,
+    inventoryManager,
+    resolveEquipmentInfo,
+  );
+  const economy = createEconomyFoundation({ inventoryManager, equipmentManager });
+  const heroId = combat.world.createEntity();
+  const productionStorageId = combat.world.createEntity();
+  inventoryManager.createInventory(heroId, 24);
+  inventoryManager.createInventory(productionStorageId, 256);
+
+  const production = createProductionFoundation({
+    inventoryManager,
+    masteryService: progression.masteryService,
+    experienceService: progression.experienceService,
+    progressionOrchestrator: progression.progressionOrchestrator,
+    heroId,
+    productionStorageId,
+    durabilityStore: economy.durabilityStore,
+    currencyService: economy.currencyService,
+    walletId: economy.walletId,
+    forestZoneDefId: world.forestZoneDefId,
+    getGatheringTier: () => 3,
+    getRefiningTier: () => 3,
+    getWorkerTier: () => 3,
+  });
+
+  return {
+    combat,
+    progression,
+    world,
+    inventoryManager,
+    equipmentManager,
+    economy,
+    heroId,
+    productionStorageId,
+    production,
+  };
+}
+
+function disposeFoundationHarness(harness: ReturnType<typeof createFoundationHarness>): void {
+  harness.production.gatheringCoordinator.dispose();
+  harness.production.oreGatheringCoordinator.dispose();
+  harness.production.hideGatheringCoordinator.dispose();
+  harness.production.fiberGatheringCoordinator.dispose();
+  harness.combat.orchestrator.dispose();
+}
+
 describe("createProductionFoundation", () => {
   it("assembles independent gathering, refining, crafting and worker runtimes", () => {
-    const combat = createCombatFoundation();
-    const progression = createProgressionFoundation();
-    const world = createWorldFoundation();
-    const inventoryManager = new InventoryManager(combat.world, resolveItemStackInfo);
-    const equipmentManager = new EquipmentManager(
-      combat.world,
-      inventoryManager,
-      resolveEquipmentInfo,
-    );
-    const economy = createEconomyFoundation({ inventoryManager, equipmentManager });
-    const heroId = combat.world.createEntity();
-    const productionStorageId = combat.world.createEntity();
-    inventoryManager.createInventory(heroId, 24);
-    inventoryManager.createInventory(productionStorageId, 256);
+    const harness = createFoundationHarness();
 
-    const production = createProductionFoundation({
-      inventoryManager,
-      masteryService: progression.masteryService,
-      experienceService: progression.experienceService,
-      progressionOrchestrator: progression.progressionOrchestrator,
-      heroId,
-      productionStorageId,
-      durabilityStore: economy.durabilityStore,
-      currencyService: economy.currencyService,
-      walletId: economy.walletId,
-      forestZoneDefId: world.forestZoneDefId,
-      getGatheringTier: () => 3,
-      getRefiningTier: () => 3,
-      getWorkerTier: () => 3,
+    expect(harness.production.gatheringRuntime.isHeroGathering()).toBe(false);
+    expect(harness.production.workerRuntime.getAllWorkers()).toEqual([]);
+    expect(harness.production.refiningManager.getActiveSession()).toBeUndefined();
+
+    disposeFoundationHarness(harness);
+  });
+
+  it("applies the live active-gathering speed bonus to the authoritative session", () => {
+    const harness = createFoundationHarness();
+    const runtime = harness.production.gatheringRuntime;
+
+    expect(runtime.toggleGatheringFamily("Wood", 0).action).toBe("started");
+    const session = harness.production.gatheringCoordinator.getActiveSession();
+    expect(session).toBeDefined();
+    if (session === undefined) {
+      disposeFoundationHarness(harness);
+      return;
+    }
+
+    expect(runtime.performGatheringStrike("Wood", "perfect", 0)).toMatchObject({
+      ok: true,
+      activity: 50,
+      speedBonusRatio: 0.2,
     });
 
-    expect(production.gatheringRuntime.isHeroGathering()).toBe(false);
-    expect(production.workerRuntime.getAllWorkers()).toEqual([]);
-    expect(production.refiningManager.getActiveSession()).toBeUndefined();
+    runtime.tick(1);
 
-    production.gatheringCoordinator.dispose();
-    production.oreGatheringCoordinator.dispose();
-    production.hideGatheringCoordinator.dispose();
-    production.fiberGatheringCoordinator.dispose();
-    combat.orchestrator.dispose();
+    expect(session.getElapsedTicks(1)).toBeCloseTo(1.2, 8);
+    expect(runtime.getActiveMiniGameState("Wood").activity).toBeLessThan(50);
+
+    runtime.stopAllGathering();
+    disposeFoundationHarness(harness);
   });
 
   it("reads worker capacity and recruitment cost from the injected live policy", () => {
