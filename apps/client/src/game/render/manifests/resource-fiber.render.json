@@ -4,7 +4,7 @@
   "kind": "resource_node",
   "textureKey": "gathering-fiber-node",
   "assetPath": "/assets/resources/resource-fiber.png",
-  "origin": { "x": 0.5, "y": 0.5 },
-  "offset": { "x": 0, "y": -18 },
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 78 },
   "display": { "width": 150, "height": 150 }
 }
