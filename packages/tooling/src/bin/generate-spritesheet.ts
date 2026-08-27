@@ -6,7 +6,8 @@ import { deflateSync, inflateSync } from "node:zlib";
 const REPO_ROOT = resolve(import.meta.dirname, "../../../..");
 const TEMP_ROOT = resolve(REPO_ROOT, ".tmp/spritesheet-generator");
 const SHARP_CLI = "sharp-cli@6.0.0";
-const DEFAULT_MIN_GAP = 64;
+const DEFAULT_DETECTION_MIN_GAP = 64;
+const DEFAULT_OUTPUT_GAP = 64;
 const DEFAULT_ALPHA_THRESHOLD = 8;
 const DEFAULT_EDGE_PADDING = 8;
 
@@ -36,6 +37,18 @@ interface PreparedFrame {
   readonly metrics: BodyMetrics;
 }
 
+interface TransparentRun {
+  readonly start: number;
+  readonly end: number;
+  readonly width: number;
+  readonly center: number;
+}
+
+interface SplitOptions {
+  readonly fallbackMinGap: number;
+  readonly expectedCount?: number;
+}
+
 function getArgValue(name: string): string | undefined {
   const exact = process.argv.find((arg) => arg.startsWith(`${name}=`));
   if (exact !== undefined) return exact.slice(name.length + 1);
@@ -45,9 +58,7 @@ function getArgValue(name: string): string | undefined {
 
 function getRequiredPath(name: string): string {
   const raw = getArgValue(name)?.trim();
-  if (raw === undefined || raw.length === 0) {
-    throw new Error(`Missing required ${name}=<path>`);
-  }
+  if (raw === undefined || raw.length === 0) throw new Error(`Missing required ${name}=<path>`);
   const path = resolve(REPO_ROOT, raw);
   if (!existsSync(path)) throw new Error(`${name} does not exist: ${path}`);
   return path;
@@ -69,29 +80,16 @@ function runSharp(args: readonly string[], context: string): void {
   const commandArgs = npmExecPath === undefined
     ? ["dlx", SHARP_CLI, ...args]
     : [npmExecPath, "dlx", SHARP_CLI, ...args];
-  const result = spawnSync(command, commandArgs, {
-    cwd: REPO_ROOT,
-    encoding: "utf-8",
-    stdio: "pipe",
-  });
+  const result = spawnSync(command, commandArgs, { cwd: REPO_ROOT, encoding: "utf-8", stdio: "pipe" });
   if (result.status !== 0) {
-    const details = [result.error, result.stdout, result.stderr]
-      .filter(Boolean)
-      .map(String)
-      .join("\n")
-      .trim();
+    const details = [result.error, result.stdout, result.stderr].filter(Boolean).map(String).join("\n").trim();
     throw new Error(`Failed to ${context}${details.length > 0 ? `\n${details}` : ""}`);
   }
 }
 
 function normalizeToRgbaPng(source: string, output: string): void {
   mkdirSync(dirname(output), { recursive: true });
-  runSharp([
-    "-i", source,
-    "-o", dirname(output),
-    "-f", "png",
-    "ensureAlpha", "1",
-  ], `normalize ${basename(source)}`);
+  runSharp(["-i", source, "-o", dirname(output), "-f", "png", "ensureAlpha", "1"], `normalize ${basename(source)}`);
   const generated = resolve(dirname(output), `${basename(source, extname(source))}.png`);
   if (generated !== output) {
     writeFileSync(output, readFileSync(generated));
@@ -132,11 +130,8 @@ function readRgbaPng(file: string): RgbaImage {
       bitDepth = png[dataStart + 8] ?? 0;
       colorType = png[dataStart + 9] ?? 0;
       interlace = png[dataStart + 12] ?? 0;
-    } else if (type === "IDAT") {
-      idat.push(png.subarray(dataStart, dataEnd));
-    } else if (type === "IEND") {
-      break;
-    }
+    } else if (type === "IDAT") idat.push(png.subarray(dataStart, dataEnd));
+    else if (type === "IEND") break;
     offset = dataEnd + 4;
   }
   if (width <= 0 || height <= 0 || bitDepth !== 8 || colorType !== 6 || interlace !== 0) {
@@ -149,7 +144,6 @@ function readRgbaPng(file: string): RgbaImage {
   const pixels = new Uint8Array(width * height * bytesPerPixel);
   let rawOffset = 0;
   const previous = Buffer.alloc(stride);
-
   for (let y = 0; y < height; y += 1) {
     const filter = raw[rawOffset] ?? 0;
     rawOffset += 1;
@@ -179,9 +173,7 @@ function crc32(buffer: Buffer): number {
   let crc = 0xffffffff;
   for (const byte of buffer) {
     crc ^= byte;
-    for (let bit = 0; bit < 8; bit += 1) {
-      crc = (crc >>> 1) ^ ((crc & 1) === 1 ? 0xedb88320 : 0);
-    }
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ ((crc & 1) === 1 ? 0xedb88320 : 0);
   }
   return (crc ^ 0xffffffff) >>> 0;
 }
@@ -202,8 +194,7 @@ function writeRgbaPng(file: string, image: RgbaImage): void {
   for (let y = 0; y < image.height; y += 1) {
     const targetOffset = y * (stride + 1);
     raw[targetOffset] = 0;
-    Buffer.from(image.data.buffer, image.data.byteOffset + (y * stride), stride)
-      .copy(raw, targetOffset + 1);
+    Buffer.from(image.data.buffer, image.data.byteOffset + (y * stride), stride).copy(raw, targetOffset + 1);
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(image.width, 0);
@@ -251,8 +242,7 @@ function crop(image: RgbaImage, bounds: Bounds): RgbaImage {
   const data = new Uint8Array(width * height * 4);
   for (let y = 0; y < height; y += 1) {
     const sourceStart = (((bounds.top + y) * image.width) + bounds.left) * 4;
-    const sourceEnd = sourceStart + (width * 4);
-    data.set(image.data.subarray(sourceStart, sourceEnd), y * width * 4);
+    data.set(image.data.subarray(sourceStart, sourceStart + (width * 4)), y * width * 4);
   }
   return { width, height, data };
 }
@@ -299,9 +289,7 @@ function measureBody(image: RgbaImage, threshold: number): BodyMetrics {
   let maxRowCount = 0;
   for (let y = bounds.top; y <= bounds.bottom; y += 1) {
     let count = 0;
-    for (let x = bandLeft; x <= bandRight; x += 1) {
-      if (alphaAt(image, x, y) > threshold) count += 1;
-    }
+    for (let x = bandLeft; x <= bandRight; x += 1) if (alphaAt(image, x, y) > threshold) count += 1;
     rowCounts[y] = count;
     maxRowCount = Math.max(maxRowCount, count);
   }
@@ -324,37 +312,81 @@ function measureBody(image: RgbaImage, threshold: number): BodyMetrics {
   const lowerStart = Math.round(coreTop + (coreHeight * 0.65));
   const rootXs: number[] = [];
   for (let y = lowerStart; y <= coreBottom; y += 1) {
-    for (let x = bandLeft; x <= bandRight; x += 1) {
-      if (alphaAt(image, x, y) > threshold) rootXs.push(x);
-    }
+    for (let x = bandLeft; x <= bandRight; x += 1) if (alphaAt(image, x, y) > threshold) rootXs.push(x);
   }
   const rootX = rootXs.length > 0 ? weightedMedian(rootXs) : medianX;
   return { coreTop, coreBottom, coreHeight, rootX, groundY: coreBottom };
 }
 
-function splitFrames(sheet: RgbaImage, threshold: number, minGap: number): RgbaImage[] {
-  const occupiedColumns = new Array<boolean>(sheet.width).fill(false);
+function findOccupiedColumns(sheet: RgbaImage, threshold: number): boolean[] {
+  const occupied = new Array<boolean>(sheet.width).fill(false);
   for (let x = 0; x < sheet.width; x += 1) {
     for (let y = 0; y < sheet.height; y += 1) {
       if (alphaAt(sheet, x, y) > threshold) {
-        occupiedColumns[x] = true;
+        occupied[x] = true;
         break;
       }
     }
   }
+  return occupied;
+}
 
-  const separators: Array<{ start: number; end: number }> = [];
+function findInternalTransparentRuns(occupiedColumns: readonly boolean[]): TransparentRun[] {
+  const runs: TransparentRun[] = [];
   let runStart: number | undefined;
-  for (let x = 0; x <= sheet.width; x += 1) {
-    const occupied = x < sheet.width ? (occupiedColumns[x] ?? false) : true;
+  for (let x = 0; x <= occupiedColumns.length; x += 1) {
+    const occupied = x < occupiedColumns.length ? (occupiedColumns[x] ?? false) : true;
     if (!occupied && runStart === undefined) runStart = x;
     if (occupied && runStart !== undefined) {
-      const runLength = x - runStart;
-      if (runLength >= minGap) separators.push({ start: runStart, end: x - 1 });
+      const end = x - 1;
+      if (runStart > 0 && end < occupiedColumns.length - 1) {
+        runs.push({ start: runStart, end, width: end - runStart + 1, center: (runStart + end) / 2 });
+      }
       runStart = undefined;
     }
   }
+  return runs;
+}
 
+function chooseCountAwareSeparators(runs: readonly TransparentRun[], sheetWidth: number, frameCount: number): TransparentRun[] {
+  const separatorCount = frameCount - 1;
+  if (separatorCount <= 0) return [];
+  if (runs.length < separatorCount) {
+    throw new Error(`Only ${String(runs.length)} internal transparent gaps found; cannot split into ${String(frameCount)} frames`);
+  }
+
+  const chosen: TransparentRun[] = [];
+  const used = new Set<number>();
+  for (let boundary = 1; boundary < frameCount; boundary += 1) {
+    const target = (sheetWidth * boundary) / frameCount;
+    const corridorHalfWidth = sheetWidth / (frameCount * 2);
+    let bestIndex = -1;
+    let bestScore = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < runs.length; index += 1) {
+      if (used.has(index)) continue;
+      const run = runs[index];
+      if (run === undefined) continue;
+      const distance = Math.abs(run.center - target);
+      const inCorridor = distance <= corridorHalfWidth;
+      const score = distance - (run.width * (inCorridor ? 1.5 : 0.5));
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    }
+    if (bestIndex < 0) throw new Error(`Unable to resolve separator ${String(boundary)} of ${String(separatorCount)}`);
+    used.add(bestIndex);
+    const selected = runs[bestIndex];
+    if (selected !== undefined) chosen.push(selected);
+  }
+  return chosen.sort((a, b) => a.center - b.center);
+}
+
+function chooseFallbackSeparators(runs: readonly TransparentRun[], minGap: number): TransparentRun[] {
+  return runs.filter((run) => run.width >= minGap);
+}
+
+function cropFrameRanges(sheet: RgbaImage, threshold: number, occupiedColumns: readonly boolean[], separators: readonly TransparentRun[]): RgbaImage[] {
   const ranges: Array<{ left: number; right: number }> = [];
   let left = 0;
   for (const separator of separators) {
@@ -375,15 +407,23 @@ function splitFrames(sheet: RgbaImage, threshold: number, minGap: number): RgbaI
       }
     }
     if (contentRight < contentLeft) continue;
-    const horizontalCrop = crop(sheet, {
-      left: contentLeft,
-      right: contentRight,
-      top: 0,
-      bottom: sheet.height - 1,
-    });
+    const horizontalCrop = crop(sheet, { left: contentLeft, right: contentRight, top: 0, bottom: sheet.height - 1 });
     frames.push(crop(horizontalCrop, findBounds(horizontalCrop, threshold)));
   }
   if (frames.length === 0) throw new Error("No sprite frames detected");
+  return frames;
+}
+
+function splitFrames(sheet: RgbaImage, threshold: number, options: SplitOptions): RgbaImage[] {
+  const occupiedColumns = findOccupiedColumns(sheet, threshold);
+  const runs = findInternalTransparentRuns(occupiedColumns);
+  const separators = options.expectedCount === undefined
+    ? chooseFallbackSeparators(runs, options.fallbackMinGap)
+    : chooseCountAwareSeparators(runs, sheet.width, options.expectedCount);
+  const frames = cropFrameRanges(sheet, threshold, occupiedColumns, separators);
+  if (options.expectedCount !== undefined && frames.length !== options.expectedCount) {
+    throw new Error(`Detected ${String(frames.length)} frames, expected ${String(options.expectedCount)}`);
+  }
   return frames;
 }
 
@@ -412,18 +452,24 @@ const outputRaw = getArgValue("--output")?.trim();
 const output = outputRaw === undefined || outputRaw.length === 0
   ? resolve(dirname(input), `${basename(input, extname(input))}-normalized.png`)
   : resolve(REPO_ROOT, outputRaw);
-const minGap = Math.max(1, Math.round(getNumberArg("--min-gap", DEFAULT_MIN_GAP)));
+const detectionMinGap = Math.max(1, Math.round(getNumberArg("--min-gap", DEFAULT_DETECTION_MIN_GAP)));
+const outputGap = Math.max(1, Math.round(getNumberArg("--output-gap", DEFAULT_OUTPUT_GAP)));
 const alphaThreshold = Math.max(0, Math.min(254, Math.round(getNumberArg("--alpha-threshold", DEFAULT_ALPHA_THRESHOLD))));
 const edgePadding = Math.max(0, Math.round(getNumberArg("--edge-padding", DEFAULT_EDGE_PADDING)));
 const calibrationFrame = Math.max(0, Math.round(getNumberArg("--calibration-frame", 0)));
 const referenceFrame = Math.max(0, Math.round(getNumberArg("--reference-frame", 0)));
 const expectedFrameCountRaw = getArgValue("--frame-count");
 const expectedFrameCount = expectedFrameCountRaw === undefined ? undefined : Number(expectedFrameCountRaw);
+const referenceFrameCountRaw = getArgValue("--reference-frame-count");
+const referenceFrameCount = referenceFrameCountRaw === undefined ? undefined : Number(referenceFrameCountRaw);
 const requestedScaleRaw = getArgValue("--scale");
 const requestedScale = requestedScaleRaw === undefined ? undefined : Number(requestedScaleRaw);
 
 if (expectedFrameCount !== undefined && (!Number.isInteger(expectedFrameCount) || expectedFrameCount <= 0)) {
   throw new Error(`Invalid --frame-count: ${expectedFrameCountRaw}`);
+}
+if (referenceFrameCount !== undefined && (!Number.isInteger(referenceFrameCount) || referenceFrameCount <= 0)) {
+  throw new Error(`Invalid --reference-frame-count: ${referenceFrameCountRaw}`);
 }
 if (requestedScale !== undefined && (!Number.isFinite(requestedScale) || requestedScale <= 0)) {
   throw new Error(`Invalid --scale: ${requestedScaleRaw}`);
@@ -438,11 +484,15 @@ normalizeToRgbaPng(reference, normalizedReference);
 
 const sourceSheet = readRgbaPng(normalizedInput);
 const referenceSheet = readRgbaPng(normalizedReference);
-const frames = splitFrames(sourceSheet, alphaThreshold, minGap);
-const referenceFrames = splitFrames(referenceSheet, alphaThreshold, minGap);
-if (expectedFrameCount !== undefined && frames.length !== expectedFrameCount) {
-  throw new Error(`Detected ${String(frames.length)} frames, expected ${String(expectedFrameCount)}`);
-}
+const sourceSplitOptions: SplitOptions = expectedFrameCount === undefined
+  ? { fallbackMinGap: detectionMinGap }
+  : { fallbackMinGap: detectionMinGap, expectedCount: expectedFrameCount };
+const referenceSplitOptions: SplitOptions = referenceFrameCount === undefined
+  ? { fallbackMinGap: detectionMinGap }
+  : { fallbackMinGap: detectionMinGap, expectedCount: referenceFrameCount };
+const frames = splitFrames(sourceSheet, alphaThreshold, sourceSplitOptions);
+const referenceFrames = splitFrames(referenceSheet, alphaThreshold, referenceSplitOptions);
+
 if (calibrationFrame >= frames.length) {
   throw new Error(`--calibration-frame=${String(calibrationFrame)} is outside detected frame range 0..${String(frames.length - 1)}`);
 }
@@ -476,17 +526,13 @@ for (const frame of prepared) {
   maxBelowGround = Math.max(maxBelowGround, frame.image.height - 1 - frame.metrics.groundY);
 }
 
-const halfGap = Math.ceil(minGap / 2);
-const cellWidth = maxLeftExtent + maxRightExtent + 1 + minGap;
+const halfGap = Math.ceil(outputGap / 2);
+const cellWidth = maxLeftExtent + maxRightExtent + 1 + outputGap;
 const frameHeight = edgePadding + maxAboveGround + maxBelowGround + 1 + edgePadding;
 const baselineY = edgePadding + maxAboveGround;
 const anchorX = halfGap + maxLeftExtent;
 const sheetWidth = cellWidth * prepared.length;
-const outputImage: RgbaImage = {
-  width: sheetWidth,
-  height: frameHeight,
-  data: new Uint8Array(sheetWidth * frameHeight * 4),
-};
+const outputImage: RgbaImage = { width: sheetWidth, height: frameHeight, data: new Uint8Array(sheetWidth * frameHeight * 4) };
 
 prepared.forEach((frame, index) => {
   const left = (index * cellWidth) + anchorX - frame.metrics.rootX;
@@ -499,9 +545,9 @@ rmSync(TEMP_ROOT, { recursive: true, force: true });
 
 console.log(`spritesheet input=${input}`);
 console.log(`reference=${reference}`);
-console.log(`frames=${String(prepared.length)} calibration=${String(calibrationFrame)}`);
+console.log(`frames=${String(prepared.length)} calibration=${String(calibrationFrame)} detection=${expectedFrameCount === undefined ? `gap>=${String(detectionMinGap)}` : `count-aware(${String(expectedFrameCount)})`}`);
 console.log(`referenceFrames=${String(referenceFrames.length)} referenceFrame=${String(referenceFrame)}`);
 console.log(`referenceCoreHeight=${String(referenceMetrics.coreHeight)} calibrationCoreHeight=${String(calibrationMetrics.coreHeight)}`);
 console.log(`scale=${scale.toFixed(4)}${requestedScale === undefined ? " (auto)" : " (manual)"}`);
-console.log(`cell=${String(cellWidth)}x${String(frameHeight)} baselineY=${String(baselineY)} minGap=${String(minGap)}`);
+console.log(`cell=${String(cellWidth)}x${String(frameHeight)} baselineY=${String(baselineY)} outputGap=${String(outputGap)}`);
 console.log(`generated ${output}`);
