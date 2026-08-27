@@ -56,6 +56,15 @@ export class InventorySaveProvider implements SaveProvider {
     const inventories: SavedInventory[] = [];
     for (const entityId of this.manager.listInventories()) {
       const data = this.world.getComponent(entityId, InventoryComponent);
+      const errors = validateInventory(
+        data,
+        this.manager.stackInfoResolver,
+        this.manager.bagInfoResolver,
+      );
+      if (errors.length > 0) {
+        throw new Error(`Refusing to persist invalid inventory data: ${errors.join("; ")}`);
+      }
+
       const slots: SavedSlot[] = [];
       for (const [position, entry] of data.slots) {
         slots.push({
