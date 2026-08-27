@@ -23,6 +23,7 @@ import {
   WORLD_BAND_DEFINITIONS,
   getFactionRuneWorldDropChance,
   getFactionRuneWorldDropExpectation,
+  getFactionRuneWorldEncounterMultiplier,
   getWorldBandDefinition,
   type WorldBandId,
 } from "@game/data";
@@ -189,10 +190,14 @@ function aggregateLootRanges(
           maximumExpectedQuantity: expectation.expectedQuantity,
         }),
       );
+      const runeEncounterMultiplier = getFactionRuneWorldEncounterMultiplier(
+        context.lootContext.isElite,
+        context.lootContext.isBoss,
+      );
       const runeExpectation = getFactionRuneWorldDropExpectation(
         context.lootContext.faction,
         context.lootContext.enchantmentTier,
-        context.factionRuneDropChance,
+        context.factionRuneDropChance * runeEncounterMultiplier,
       );
       return runeExpectation === undefined
         ? combatLoot
