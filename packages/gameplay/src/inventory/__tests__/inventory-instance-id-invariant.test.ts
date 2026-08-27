@@ -14,6 +14,43 @@ function createInventoryFixture() {
 }
 
 describe("inventory instance id invariant", () => {
+  it("allocates instance ids globally across separate inventories", () => {
+    const world = new World(createRuntimeServices());
+    const manager = new InventoryManager(world);
+    const heroId = world.createEntity();
+    const bankId = world.createEntity();
+    manager.createInventory(heroId, 4);
+    manager.createInventory(bankId, 4);
+
+    const heroItem = manager.addEntry(heroId, "RESOURCE_WOOD");
+    const bankItem = manager.addEntry(bankId, "RESOURCE_ORE");
+
+    expect(heroItem.ok).toBe(true);
+    expect(bankItem.ok).toBe(true);
+    if (!heroItem.ok || !bankItem.ok) return;
+    expect(heroItem.value.instanceId).toBe("item_0");
+    expect(bankItem.value.instanceId).toBe("item_1");
+    expect(manager.validateGlobalInstanceIds()).toEqual([]);
+  });
+
+  it("refuses to insert an instance id that is already stored elsewhere", () => {
+    const world = new World(createRuntimeServices());
+    const manager = new InventoryManager(world);
+    const heroId = world.createEntity();
+    const bankId = world.createEntity();
+    manager.createInventory(heroId, 4);
+    manager.createInventory(bankId, 4);
+
+    const created = manager.addEntry(heroId, "RESOURCE_WOOD");
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    expect(manager.insertEntry(bankId, created.value)).toEqual({
+      ok: false,
+      reason: "duplicate_instance_id",
+    });
+  });
+
   it("advances the allocator past a reinserted existing item id", () => {
     const { manager, entityId } = createInventoryFixture();
     const returningEntry: InventoryEntry = {
@@ -32,11 +69,16 @@ describe("inventory instance id invariant", () => {
     expect(manager.validateIntegrity(entityId)).toEqual([]);
   });
 
-  it("repairs a stale saved allocator before the runtime creates another item", () => {
+  it("repairs stale saved allocators to one global high-watermark before minting", () => {
     const world = new World(createRuntimeServices());
     const manager = new InventoryManager(world);
-    const targetEntity = world.createEntity();
-    const provider = new InventorySaveProvider(manager, world, () => targetEntity);
+    const heroId = world.createEntity();
+    const bankId = world.createEntity();
+    const provider = new InventorySaveProvider(
+      manager,
+      world,
+      (index) => index === 0 ? heroId : bankId,
+    );
 
     provider.load({
       inventories: [
@@ -54,17 +96,64 @@ describe("inventory instance id invariant", () => {
           ],
           activeBag: null,
         },
+        {
+          capacity: 4,
+          nextInstanceCounter: 2,
+          slots: [],
+          activeBag: null,
+        },
       ],
     });
 
-    const restored = world.getComponent(targetEntity, InventoryComponent);
-    expect(restored.nextInstanceCounter).toBe(43);
+    expect(world.getComponent(heroId, InventoryComponent).nextInstanceCounter).toBe(43);
+    expect(world.getComponent(bankId, InventoryComponent).nextInstanceCounter).toBe(43);
 
-    const created = manager.addEntry(targetEntity, "RESOURCE_ORE");
+    const created = manager.addEntry(bankId, "RESOURCE_ORE");
     expect(created.ok).toBe(true);
     if (!created.ok) return;
     expect(created.value.instanceId).toBe("item_43");
-    expect(manager.validateIntegrity(targetEntity)).toEqual([]);
+    expect(manager.validateGlobalInstanceIds()).toEqual([]);
+  });
+
+  it("rejects a save payload that duplicates an instance id across inventories", () => {
+    const world = new World(createRuntimeServices());
+    const manager = new InventoryManager(world);
+    const heroId = world.createEntity();
+    const bankId = world.createEntity();
+    const provider = new InventorySaveProvider(
+      manager,
+      world,
+      (index) => index === 0 ? heroId : bankId,
+    );
+
+    expect(() => provider.load({
+      inventories: [
+        {
+          capacity: 4,
+          nextInstanceCounter: 2,
+          slots: [{
+            position: 0,
+            instanceId: "item_1",
+            itemId: "RESOURCE_WOOD",
+            quantity: 1,
+            enchantment: 0,
+          }],
+          activeBag: null,
+        },
+        {
+          capacity: 4,
+          nextInstanceCounter: 2,
+          slots: [{
+            position: 0,
+            instanceId: "item_1",
+            itemId: "RESOURCE_ORE",
+            quantity: 1,
+            enchantment: 0,
+          }],
+          activeBag: null,
+        },
+      ],
+    })).toThrow("Duplicate instance id across inventories: item_1");
   });
 
   it("refuses to persist a runtime inventory that already contains duplicate ids", () => {
@@ -85,8 +174,6 @@ describe("inventory instance id invariant", () => {
     });
 
     const provider = new InventorySaveProvider(manager, world);
-    expect(() => provider.save()).toThrow(
-      "Refusing to persist invalid inventory data: Duplicate instance id: item_41",
-    );
+    expect(() => provider.save()).toThrow("Duplicate instance id across inventories: item_41");
   });
 });
