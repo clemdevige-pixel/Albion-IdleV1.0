@@ -37,22 +37,7 @@ export class WorldPresentationController {
   }
 
   public update(bridge: GameBridge, gathering: GatheringVM | undefined): void {
-    if (gathering !== undefined) {
-      this.statusSystem.presentGathering(gathering);
-      return;
-    }
-
     const world = bridge.world;
-    this.statusSystem.presentCombat({
-      combatState: bridge.combatState,
-      biomeName: world.biomeName,
-      zoneName: world.zoneName,
-      encounterType: world.encounterType,
-      segmentIndex: world.segmentIndex,
-      segmentCount: world.segmentCount,
-      zoneProgress: world.zoneProgress,
-    });
-
     const environment = {
       manifestId: world.environmentVisualManifestId,
       biomeTheme: world.biomeTheme,
@@ -62,10 +47,24 @@ export class WorldPresentationController {
 
     if (this.holdEnvironment) {
       this.pendingEnvironment = environment;
+    } else {
+      this.applyEnvironment(environment);
+    }
+
+    if (gathering !== undefined) {
+      this.statusSystem.presentGathering(gathering);
       return;
     }
 
-    this.applyEnvironment(environment);
+    this.statusSystem.presentCombat({
+      combatState: bridge.combatState,
+      biomeName: world.biomeName,
+      zoneName: world.zoneName,
+      encounterType: world.encounterType,
+      segmentIndex: world.segmentIndex,
+      segmentCount: world.segmentCount,
+      zoneProgress: world.zoneProgress,
+    });
   }
 
   public beginEnvironmentHold(): void {
