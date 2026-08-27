@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 
 const REPO_ROOT = resolve(import.meta.dirname, "../../../..");
 const DEFAULT_REFERENCE = "apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png";
+const DEFAULT_SOURCE_DIR = ".tmp/spritesheet-imports";
 const DEFAULT_FRAME_COUNT = 6;
 const ANIMATIONS = ["idle", "walk", "attack", "death"] as const;
 
@@ -46,14 +47,21 @@ function toRepoRelative(path: string): string {
   return relative(REPO_ROOT, path).replaceAll("\\", "/");
 }
 
+function normalizeFileToken(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\.png$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function findAnimationSource(sourceDir: string, weaponId: string, animation: Animation): string | undefined {
   const pngs = readdirSync(sourceDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".png"))
     .map((entry) => entry.name);
-  const token = `-${animation}`;
   const candidates = pngs.filter((name) => {
-    const normalized = name.toLowerCase().replaceAll("_", "-");
-    return normalized.includes(token) && normalized.includes(weaponId);
+    const normalized = normalizeFileToken(name);
+    return normalized.includes(weaponId) && normalized.split("-").includes(animation);
   });
   if (candidates.length > 1) {
     throw new Error(`Multiple ${animation} sources found for ${weaponId}: ${candidates.join(", ")}`);
@@ -92,9 +100,7 @@ const weaponId = getRequiredSlug("--weapon");
 const sourceDirRaw = getArgValue("--source-dir")?.trim();
 const sourceDir = resolve(
   REPO_ROOT,
-  sourceDirRaw === undefined || sourceDirRaw.length === 0
-    ? `.tmp/spritesheet-imports/${weaponId}`
-    : sourceDirRaw,
+  sourceDirRaw === undefined || sourceDirRaw.length === 0 ? DEFAULT_SOURCE_DIR : sourceDirRaw,
 );
 if (!existsSync(sourceDir)) throw new Error(`Source directory does not exist: ${sourceDir}`);
 
@@ -142,13 +148,13 @@ for (const animation of ANIMATIONS) {
 
 if (generated.length === 0) {
   throw new Error(
-    `No supported spritesheets found in ${toRepoRelative(sourceDir)}. Expected names containing ${weaponId}-idle, -walk, -attack or -death.`,
+    `No supported spritesheets found in ${toRepoRelative(sourceDir)} for weapon ${weaponId}. Expected filenames containing the weapon id and one of: idle, walk, attack, death.`,
   );
 }
 
-const reportPath = resolve(sourceDir, "generation-report.json");
+const reportPath = resolve(sourceDir, `generation-report-${weaponId}.json`);
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   weaponId,
   sourceDir: toRepoRelative(sourceDir),
   reference: toRepoRelative(reference),
