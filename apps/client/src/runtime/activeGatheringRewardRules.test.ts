@@ -1,34 +1,83 @@
 import { describe, expect, it } from "vitest";
 import {
-  ACTIVE_GATHERING_REWARD_RULES,
+  ACTIVE_GATHERING_RULES,
   applyActiveGatheringStrike,
-  getActiveGatheringRewardProgress,
+  decayActiveGatheringActivity,
+  getActiveGatheringBonuses,
+  getActiveGatheringMarkerSpeed,
   getActiveGatheringRewardedQuantity,
+  getAverageActiveGatheringActivity,
 } from "./activeGatheringRewardRules";
 
-describe("active gathering reward rules", () => {
-  it("uses the validated score-only active gathering bonuses", () => {
-    expect(ACTIVE_GATHERING_REWARD_RULES.scorePerStrike).toEqual({
-      miss: 0,
-      correct: 8,
-      perfect: 20,
+describe("active gathering activity rules", () => {
+  it("uses the validated activity gains and penalties", () => {
+    expect(ACTIVE_GATHERING_RULES.activityPerStrike).toEqual({
+      miss: -50,
+      correct: 25,
+      perfect: 50,
+    });
+    expect(applyActiveGatheringStrike(0, "perfect")).toBe(50);
+    expect(applyActiveGatheringStrike(50, "correct")).toBe(75);
+    expect(applyActiveGatheringStrike(75, "miss")).toBe(25);
+    expect(applyActiveGatheringStrike(90, "perfect")).toBe(100);
+  });
+
+  it("maps one activity gauge to both yield and gathering speed", () => {
+    expect(getActiveGatheringBonuses(24)).toMatchObject({
+      yieldMultiplier: 1,
+      speedBonusRatio: 0,
+    });
+    expect(getActiveGatheringBonuses(25)).toMatchObject({
+      yieldMultiplier: 1.5,
+      speedBonusRatio: 0.1,
+    });
+    expect(getActiveGatheringBonuses(50)).toMatchObject({
+      yieldMultiplier: 2,
+      speedBonusRatio: 0.2,
+    });
+    expect(getActiveGatheringBonuses(75)).toMatchObject({
+      yieldMultiplier: 3,
+      speedBonusRatio: 0.3,
     });
   });
 
-  it("unlocks x2 at 60 and x3 at 140", () => {
-    expect(getActiveGatheringRewardProgress(59).multiplier).toBe(1);
-    expect(getActiveGatheringRewardProgress(60).multiplier).toBe(2);
-    expect(getActiveGatheringRewardProgress(139).multiplier).toBe(2);
-    expect(getActiveGatheringRewardProgress(140).multiplier).toBe(3);
-    expect(getActiveGatheringRewardedQuantity(1, 59)).toBe(1);
-    expect(getActiveGatheringRewardedQuantity(1, 60)).toBe(2);
-    expect(getActiveGatheringRewardedQuantity(1, 140)).toBe(3);
+  it("normalizes activity decay against the authored cycle duration", () => {
+    const shortAfterQuarterCycle = decayActiveGatheringActivity(100, 24, 6);
+    const longAfterQuarterCycle = decayActiveGatheringActivity(100, 100, 25);
+    expect(shortAfterQuarterCycle).toBeCloseTo(longAfterQuarterCycle, 8);
+    expect(shortAfterQuarterCycle).toBeCloseTo(68.75, 8);
   });
 
-  it("keeps the streak on correct/perfect and resets it on miss", () => {
-    const first = applyActiveGatheringStrike({ streak: 0, score: 0 }, "perfect");
-    const second = applyActiveGatheringStrike(first, "correct");
-    expect(second).toEqual({ streak: 2, score: 28 });
-    expect(applyActiveGatheringStrike(second, "miss")).toEqual({ streak: 0, score: 0 });
+  it("uses average activity for the final cycle reward", () => {
+    expect(getAverageActiveGatheringActivity(600, 10)).toBe(60);
+    expect(getActiveGatheringRewardedQuantity(1, 24)).toMatchObject({
+      quantity: 1,
+      multiplier: 1,
+    });
+    expect(getActiveGatheringRewardedQuantity(1, 50)).toMatchObject({
+      quantity: 2,
+      multiplier: 2,
+    });
+    expect(getActiveGatheringRewardedQuantity(1, 75)).toMatchObject({
+      quantity: 3,
+      multiplier: 3,
+    });
+  });
+
+  it("preserves fractional x1.5 yield across cycles instead of losing resources", () => {
+    const first = getActiveGatheringRewardedQuantity(1, 25, 0);
+    expect(first.quantity).toBe(1);
+    expect(first.fractionalCarry).toBeCloseTo(0.5, 8);
+
+    const second = getActiveGatheringRewardedQuantity(1, 25, first.fractionalCarry);
+    expect(second.quantity).toBe(2);
+    expect(second.fractionalCarry).toBeCloseTo(0, 8);
+  });
+
+  it("increases marker cadence with the live speed bonus while keeping the target opportunity count", () => {
+    const baseSpeed = getActiveGatheringMarkerSpeed(50, 0);
+    const maxSpeed = getActiveGatheringMarkerSpeed(50, 0.3);
+    expect(baseSpeed).toBeCloseTo(10, 8);
+    expect(maxSpeed).toBeCloseTo(13, 8);
   });
 });
