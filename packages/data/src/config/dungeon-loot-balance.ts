@@ -1,60 +1,64 @@
 export type DungeonLootTier = 4 | 5 | 6 | 7 | 8;
 export type DungeonLootEncounterKind = "normal" | "elite" | "boss";
 
-export interface DungeonEncounterLootBalance {
-  readonly artifactFragmentQuantity: number;
-  readonly artifactDropChance: number;
-  readonly enchantmentShardQuantity: number;
+export interface DungeonLootQuantityRange {
+  readonly min: number;
+  readonly max: number;
 }
 
+export interface DungeonEncounterLootBalance {
+  readonly artifactFragmentRange: DungeonLootQuantityRange;
+  readonly artifactDropChance: number;
+  readonly enchantmentShardRange: DungeonLootQuantityRange;
+  readonly factionRuneRange: DungeonLootQuantityRange;
+}
+
+/** Guaranteed on dungeon completion. Faction mastery may increase the deterministic amount. */
 export const DUNGEON_COMPLETION_SILVER_BY_TIER: Readonly<Record<DungeonLootTier, number>> = {
-  4: 2_500,
-  5: 5_000,
-  6: 10_000,
-  7: 20_000,
-  8: 40_000,
+  4: 10_000,
+  5: 20_000,
+  6: 35_000,
+  7: 55_000,
+  8: 80_000,
 } as const;
 
-/** Guaranteed matching-tier Faction Runes granted once on dungeon completion. */
-export const DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER: Readonly<Record<DungeonLootTier, number>> = {
-  4: 2,
-  5: 3,
-  6: 4,
-  7: 5,
-  8: 6,
+const FRAGMENT_RANGES = {
+  normal: { min: 1, max: 5 },
+  elite: { min: 5, max: 12 },
+  boss: { min: 15, max: 30 },
 } as const;
 
 /**
- * Dungeon shards are intentionally a collateral reward for faction/artifact farming,
- * not a replacement for open-world shard progression. Full-run totals are:
- * T4=5, T5=6, T6=8, T7=10, T8=12.
+ * Dungeon material rewards use authored inclusive integer ranges.
+ * Artifact fragment ranges are intentionally identical from T4 to T8 so a fixed
+ * fragment craft cost does not become easier at higher tiers.
  */
 export const DUNGEON_ENCOUNTER_LOOT_BY_TIER: Readonly<
   Record<DungeonLootTier, Readonly<Record<DungeonLootEncounterKind, DungeonEncounterLootBalance>>>
 > = {
   4: {
-    normal: { artifactFragmentQuantity: 4, artifactDropChance: 0, enchantmentShardQuantity: 0 },
-    elite: { artifactFragmentQuantity: 10, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-    boss: { artifactFragmentQuantity: 28, artifactDropChance: 0.1, enchantmentShardQuantity: 4 },
+    normal: { artifactFragmentRange: FRAGMENT_RANGES.normal, artifactDropChance: 0, enchantmentShardRange: { min: 0, max: 1 }, factionRuneRange: { min: 0, max: 0 } },
+    elite: { artifactFragmentRange: FRAGMENT_RANGES.elite, artifactDropChance: 0, enchantmentShardRange: { min: 0, max: 2 }, factionRuneRange: { min: 0, max: 1 } },
+    boss: { artifactFragmentRange: FRAGMENT_RANGES.boss, artifactDropChance: 0.10, enchantmentShardRange: { min: 2, max: 4 }, factionRuneRange: { min: 1, max: 3 } },
   },
   5: {
-    normal: { artifactFragmentQuantity: 5, artifactDropChance: 0, enchantmentShardQuantity: 0 },
-    elite: { artifactFragmentQuantity: 12, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-    boss: { artifactFragmentQuantity: 34, artifactDropChance: 0.12, enchantmentShardQuantity: 5 },
+    normal: { artifactFragmentRange: FRAGMENT_RANGES.normal, artifactDropChance: 0, enchantmentShardRange: { min: 0, max: 1 }, factionRuneRange: { min: 0, max: 0 } },
+    elite: { artifactFragmentRange: FRAGMENT_RANGES.elite, artifactDropChance: 0, enchantmentShardRange: { min: 1, max: 2 }, factionRuneRange: { min: 0, max: 1 } },
+    boss: { artifactFragmentRange: FRAGMENT_RANGES.boss, artifactDropChance: 0.12, enchantmentShardRange: { min: 2, max: 5 }, factionRuneRange: { min: 2, max: 4 } },
   },
   6: {
-    normal: { artifactFragmentQuantity: 6, artifactDropChance: 0, enchantmentShardQuantity: 0 },
-    elite: { artifactFragmentQuantity: 14, artifactDropChance: 0, enchantmentShardQuantity: 2 },
-    boss: { artifactFragmentQuantity: 40, artifactDropChance: 0.14, enchantmentShardQuantity: 6 },
+    normal: { artifactFragmentRange: FRAGMENT_RANGES.normal, artifactDropChance: 0, enchantmentShardRange: { min: 0, max: 1 }, factionRuneRange: { min: 0, max: 0 } },
+    elite: { artifactFragmentRange: FRAGMENT_RANGES.elite, artifactDropChance: 0, enchantmentShardRange: { min: 1, max: 3 }, factionRuneRange: { min: 0, max: 2 } },
+    boss: { artifactFragmentRange: FRAGMENT_RANGES.boss, artifactDropChance: 0.14, enchantmentShardRange: { min: 3, max: 6 }, factionRuneRange: { min: 2, max: 5 } },
   },
   7: {
-    normal: { artifactFragmentQuantity: 7, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-    elite: { artifactFragmentQuantity: 16, artifactDropChance: 0, enchantmentShardQuantity: 2 },
-    boss: { artifactFragmentQuantity: 46, artifactDropChance: 0.16, enchantmentShardQuantity: 6 },
+    normal: { artifactFragmentRange: FRAGMENT_RANGES.normal, artifactDropChance: 0, enchantmentShardRange: { min: 0, max: 2 }, factionRuneRange: { min: 0, max: 0 } },
+    elite: { artifactFragmentRange: FRAGMENT_RANGES.elite, artifactDropChance: 0, enchantmentShardRange: { min: 1, max: 3 }, factionRuneRange: { min: 0, max: 2 } },
+    boss: { artifactFragmentRange: FRAGMENT_RANGES.boss, artifactDropChance: 0.16, enchantmentShardRange: { min: 3, max: 7 }, factionRuneRange: { min: 3, max: 6 } },
   },
   8: {
-    normal: { artifactFragmentQuantity: 8, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-    elite: { artifactFragmentQuantity: 18, artifactDropChance: 0, enchantmentShardQuantity: 3 },
-    boss: { artifactFragmentQuantity: 52, artifactDropChance: 0.18, enchantmentShardQuantity: 7 },
+    normal: { artifactFragmentRange: FRAGMENT_RANGES.normal, artifactDropChance: 0, enchantmentShardRange: { min: 0, max: 2 }, factionRuneRange: { min: 0, max: 0 } },
+    elite: { artifactFragmentRange: FRAGMENT_RANGES.elite, artifactDropChance: 0, enchantmentShardRange: { min: 2, max: 4 }, factionRuneRange: { min: 0, max: 2 } },
+    boss: { artifactFragmentRange: FRAGMENT_RANGES.boss, artifactDropChance: 0.18, enchantmentShardRange: { min: 4, max: 8 }, factionRuneRange: { min: 4, max: 7 } },
   },
 } as const;
