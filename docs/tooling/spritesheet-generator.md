@@ -2,53 +2,47 @@
 
 ## TL;DR
 
-Le SpriteSheet Generator normalise techniquement une spritesheet d’animation pour Albion Idle à partir d’une spritesheet source et d’une référence validée du personnage.
+Le SpriteSheet Generator normalise techniquement les animations héros d’Albion Idle à partir d’une spritesheet source et d’une référence visuelle validée.
+
+Le workflow utilisateur standard n’utilise pas directement cette commande unitaire : il passe par `generate:spritesheet-import`, documenté dans `docs/tooling/asset-integration-workflow.md`.
 
 L’outil :
 
-- détecte les frames ;
+- détecte et découpe les frames ;
 - utilise une frame de référence validée ;
 - calcule un seul facteur d’échelle pour toute l’animation ;
-- conserve les variations de pose (personnage penché, baissé, death, etc.) ;
-- aligne les frames sur une baseline commune ;
+- conserve les variations de pose ;
+- aligne une baseline commune ;
 - recentre horizontalement ;
 - reconstruit une spritesheet alpha avec un spacing de sortie standardisé.
 
-Il ne corrige pas :
-
-- une mauvaise animation ;
-- une incohérence artistique ;
-- un mauvais design d’arme ;
-- une pose incorrecte.
-
-La validation artistique reste humaine.
+Il ne corrige pas une mauvaise animation, un mauvais design d’arme ou une pose artistiquement incorrecte. La validation visuelle reste humaine.
 
 ---
 
 ## Workflow standard d’intégration
 
-Pour le workflow utilisateur/agent complet, lire d’abord :
+Lire en priorité :
 
 ```text
 docs/tooling/asset-integration-workflow.md
 ```
 
-Le flux standard est désormais :
+Flux standard :
 
-1. l’utilisateur dépose les spritesheets brutes sur GitHub dans `.tmp/spritesheet-imports/<weaponId>/` ;
-2. l’agent lance `generate:spritesheet-import` ;
-3. le wrapper appelle ce générateur pour chaque animation détectée ;
-4. les sorties normalisées sont déposées directement dans `apps/client/public/assets/characters/` ;
-5. l’utilisateur valide visuellement ;
-6. l’agent câble ensuite les assets dans le jeu.
+1. l’utilisateur dépose les spritesheets brutes directement dans `.tmp/spritesheet-imports/` sur GitHub ;
+2. l’agent récupère la branche ;
+3. l’agent lance `generate:spritesheet-import -- --weapon=<weaponId>` ;
+4. le wrapper filtre les fichiers de cette arme et orchestre ce générateur ;
+5. les sorties sont déposées dans `apps/client/public/assets/characters/` ;
+6. l’utilisateur valide visuellement ;
+7. l’agent câble ensuite les assets dans le jeu.
 
-Commande recommandée pour un lot d’animations :
+Exemple :
 
 ```powershell
 pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver
 ```
-
-Le wrapper ne remplace pas ce générateur : il l’orchestre.
 
 ---
 
@@ -58,15 +52,11 @@ Le wrapper ne remplace pas ce générateur : il l’orchestre.
 pnpm.cmd generate:spritesheet -- --input="PATH_TO_SOURCE.png" --reference="PATH_TO_REFERENCE.png" --reference-frame=0 --output="PATH_TO_RESULT.png" --frame-count=6 --calibration-frame=0
 ```
 
-Exemple validé pendant le développement :
-
-```powershell
-pnpm.cmd generate:spritesheet -- --input=".tmp/spritesheet-tests/7d5bf8dd-6fe3-4bae-bf01-40dd1b11a384.png" --reference=".tmp/spritesheet-tests/hero-broadsword-attack-sheet-v1.png" --reference-frame=0 --output=".tmp/spritesheet-tests/result.png" --frame-count=6 --calibration-frame=0
-```
+Le wrapper d’import appelle cette commande automatiquement.
 
 ---
 
-## Paramètres
+## Paramètres principaux
 
 ### `--input`
 
@@ -76,93 +66,65 @@ Spritesheet source à normaliser.
 
 Image ou spritesheet contenant une frame de référence validée du personnage.
 
-Une spritesheet complète peut servir de référence.
-
 ### `--reference-frame`
 
-Index de la frame à utiliser dans la référence.
+Index de la frame de référence. Les index commencent à `0`.
 
-```text
---reference-frame=0
-```
+### `--reference-frame-count`
 
-Les index commencent à `0`.
+Nombre de frames attendu dans la spritesheet de référence lorsqu’il est connu.
 
 ### `--output`
 
-Chemin de sortie du PNG généré.
-
-Si le paramètre n’est pas fourni, l’outil crée un fichier `*-normalized.png` à côté de la source.
+Chemin du PNG généré.
 
 ### `--frame-count`
 
-Nombre de frames attendu dans la spritesheet source.
+Nombre de frames attendu dans la source. Mode recommandé.
 
 ```text
 --frame-count=6
 ```
 
-Quand cette valeur est fournie, elle pilote la détection automatique : l’outil recherche les séparateurs transparents les plus pertinents afin de produire exactement ce nombre de frames.
+Quand cette valeur est fournie, l’outil utilise une détection guidée par le nombre de frames :
 
-C’est le mode recommandé.
+1. il cherche d’abord une zone entièrement transparente autour de chaque frontière attendue ;
+2. si deux frames sont reliées par quelques pixels (arme, cape, antialiasing, etc.), il cherche la vallée de plus faible occupation autour de cette frontière ;
+3. la coupure de secours est faite entre deux colonnes afin de ne supprimer aucun pixel source.
+
+Ainsi, une source n’a plus besoin de posséder exactement `N - 1` bandes totalement transparentes pour être découpée en `N` frames.
 
 ### `--calibration-frame`
 
-Index de la frame source utilisée pour calculer le facteur d’échelle par rapport à la référence.
+Frame source utilisée pour mesurer l’échelle par rapport à la référence.
 
-En général :
-
-```text
---calibration-frame=0
-```
-
-Choisir une autre frame si la première est déjà très penchée, couchée ou dans une pose extrême.
-
-### `--reference-frame-count`
-
-Optionnel. Permet de donner explicitement le nombre de frames de la spritesheet de référence si sa détection automatique n’est pas suffisante.
-
-```text
---reference-frame-count=6
-```
+Utiliser de préférence une pose debout ou proche d’une pose neutre.
 
 ### `--min-gap`
 
-Seuil de détection de secours utilisé uniquement lorsque `--frame-count` n’est pas fourni.
+Seuil du mode de détection historique/fallback utilisé uniquement sans `--frame-count`.
 
 Valeur par défaut : `64`.
 
-Ce paramètre ne contrôle plus le spacing final de la spritesheet générée.
-
 ### `--output-gap`
 
-Spacing horizontal ajouté entre les cellules de sortie.
+Spacing ajouté entre les cellules générées.
 
-Valeur par défaut :
+Valeur par défaut : `64 px`.
 
-```text
-64 px
-```
-
-Ce paramètre est volontairement séparé de la détection des frames.
+Il est indépendant du découpage de la source.
 
 ### `--alpha-threshold`
 
-Seuil alpha utilisé pour considérer un pixel comme visible.
-
-Valeur par défaut : `8`.
+Seuil alpha de visibilité. Valeur par défaut : `8`.
 
 ### `--edge-padding`
 
-Marge verticale ajoutée autour de la spritesheet finale.
-
-Valeur par défaut : `8`.
+Marge verticale de sortie. Valeur par défaut : `8`.
 
 ### `--scale`
 
-Force manuellement le facteur d’échelle.
-
-À utiliser uniquement pour diagnostiquer ou traiter un cas exceptionnel. Le mode automatique doit rester la norme.
+Override manuel du facteur d’échelle. À réserver au diagnostic de cas exceptionnels.
 
 ---
 
@@ -170,87 +132,63 @@ Force manuellement le facteur d’échelle.
 
 ### 1. Normalisation du format
 
-La source et la référence sont converties temporairement en PNG RGBA.
+Source et référence sont temporairement normalisées en PNG RGBA.
 
-### 2. Détection des frames
+### 2. Découpage des frames
 
-L’outil analyse les colonnes contenant des pixels visibles.
+L’outil mesure l’occupation de chaque colonne.
 
-Deux modes existent.
+Avec `--frame-count`, chaque frontière de frame dispose d’un corridor de recherche autour de sa position théorique.
 
-#### Mode recommandé : `--frame-count`
+Priorité :
 
-Si le nombre de frames est connu, l’outil recherche les zones transparentes internes les plus pertinentes autour des frontières attendues et sélectionne `N - 1` séparateurs pour `N` frames.
+1. bande transparente pertinente ;
+2. sinon minimum local d’occupation.
 
-Cela évite de dépendre d’un espacement transparent fixe dans la source.
+Le second mode est important pour les animations où une arme ou un accessoire empiète légèrement sur l’espace entre deux sprites.
 
-#### Mode fallback
-
-Sans `--frame-count`, l’outil découpe sur les zones transparentes dont la largeur atteint `--min-gap`.
+Sans `--frame-count`, le fallback utilise uniquement les bandes transparentes atteignant `--min-gap`.
 
 ### 3. Mesure du gabarit
 
-L’outil ne se base pas simplement sur la taille totale du PNG.
+L’outil mesure un `body core` central plutôt que la bounding box complète afin de réduire l’influence d’éléments extrêmes :
 
-Il calcule un `body core` autour de la masse centrale du sprite afin de réduire l’impact :
-
-- d’une arme levée ;
-- d’un arc ;
-- d’une cape ;
-- d’une excroissance éloignée du corps.
+- arme levée ;
+- arc ;
+- cape ;
+- accessoires éloignés du corps.
 
 ### 4. Scale unique
 
-Le facteur d’échelle est calculé entre :
+Le scale est calculé entre :
 
 - la frame de référence ;
 - la frame de calibration source.
 
-Ce facteur est ensuite appliqué à toutes les frames.
+Ce scale est appliqué à toutes les frames. Une frame penchée ou couchée n’est jamais redimensionnée indépendamment pour retrouver la hauteur d’une idle.
 
-L’outil ne redimensionne jamais chaque frame indépendamment.
+### 5. Baseline et ancrage
 
-C’est essentiel pour préserver l’animation.
-
-### 5. Conservation des poses
-
-Une frame où le personnage :
-
-- se penche ;
-- baisse la tête ;
-- plie les genoux ;
-- recule ;
-- tombe ;
-- est couché pendant une death ;
-
-reste naturellement plus basse ou plus compacte.
-
-L’outil ne tente pas de lui redonner artificiellement la hauteur d’une idle.
-
-### 6. Baseline et ancre horizontale
-
-Chaque frame est replacée selon :
+Les frames sont repositionnées avec :
 
 - une baseline commune ;
-- une ancre horizontale calculée dans la partie basse du body core.
+- une ancre horizontale issue de la partie basse du `body core`.
 
-L’objectif est de limiter le drift du personnage entre les frames sans supprimer le mouvement réel de l’animation.
+### 6. Reconstruction
 
-### 7. Reconstruction
+La sortie conserve :
 
-La spritesheet finale est recréée avec :
-
-- fond alpha ;
-- échelle cohérente ;
-- baseline commune ;
-- spacing de sortie indépendant de la détection source ;
-- `64 px` de gap par défaut.
+- alpha réel ;
+- proportions ;
+- pose ;
+- scale unique ;
+- spacing standardisé.
 
 ---
 
-## Import automatisé de plusieurs animations
+## Import automatisé
 
-Le wrapper est :
+Wrapper :
 
 ```text
 packages/tooling/src/bin/import-hero-spritesheets.ts
@@ -262,13 +200,13 @@ Commande :
 pnpm.cmd generate:spritesheet-import -- --weapon=<weaponId>
 ```
 
-Par défaut il lit :
+Dossier source par défaut :
 
 ```text
-.tmp/spritesheet-imports/<weaponId>/
+.tmp/spritesheet-imports/
 ```
 
-Il reconnaît :
+Toutes les armes peuvent cohabiter dans ce dossier. Le wrapper filtre uniquement les PNG dont le nom contient l’identifiant demandé et une animation reconnue :
 
 ```text
 idle
@@ -277,162 +215,96 @@ attack
 death
 ```
 
-Puis dépose directement les sorties dans :
+Le nommage tolère les espaces, `_` et `-` tant que l’arme et l’animation restent reconnaissables.
+
+Exemples :
 
 ```text
-apps/client/public/assets/characters/
+deathgivers idle.png
+deathgiver-attack.png
+permafrost_walk.png
 ```
 
-avec le nommage :
+Sorties :
 
 ```text
-hero-<weaponId>-<animation>-sheet-v1.png
+apps/client/public/assets/characters/hero-<weaponId>-<animation>-sheet-v1.png
 ```
 
-Exemple :
+Report :
 
 ```text
-hero-deathgiver-idle-sheet-v1.png
-hero-deathgiver-attack-sheet-v1.png
-```
-
-La référence par défaut du wrapper est actuellement :
-
-```text
-apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png
-```
-
-avec :
-
-```text
-referenceFrame=0
-referenceFrameCount=6
-frameCount=6
-calibrationFrame=0
-```
-
-Le wrapper accepte les overrides documentés dans `asset-integration-workflow.md`.
-
-Il produit également :
-
-```text
-.tmp/spritesheet-imports/<weaponId>/generation-report.json
-```
-
-Ce report sert au contrôle technique et au câblage ultérieur par l’agent.
-
----
-
-## Workflow recommandé pour un test unitaire
-
-1. Préparer une spritesheet source déjà validée artistiquement.
-2. Choisir une frame ou spritesheet de référence déjà acceptable en jeu.
-3. Identifier le nombre de frames.
-4. Choisir une frame de calibration debout ou proche d’une pose neutre.
-5. Lancer le générateur avec `--frame-count`.
-6. Contrôler visuellement le résultat.
-
-Pour les tests temporaires, utiliser :
-
-```text
-.tmp/spritesheet-tests/
+.tmp/spritesheet-imports/generation-report-<weaponId>.json
 ```
 
 ---
 
-## Contrôle visuel après génération
+## Validation visuelle
 
-Le contrôle humain doit vérifier au minimum :
+Toujours après génération et avant câblage jeu.
 
-1. **Gabarit** — le personnage correspond bien à la référence en taille générale.
-2. **Baseline** — les poses normales ne flottent pas verticalement.
-3. **Pose** — les frames penchées ou basses restent naturellement penchées ou basses.
-4. **Arme** — l’arme ne provoque pas un scale aberrant.
-5. **Drift horizontal** — le personnage ne saute pas artificiellement de gauche à droite.
-6. **Spacing** — les sprites restent correctement séparés.
-7. **Alpha** — aucun fond parasite n’est introduit.
+Vérifier :
 
-Cette validation se fait après génération et avant câblage jeu.
+1. gabarit ;
+2. baseline / pieds ;
+3. conservation des poses ;
+4. arme/accessoires ;
+5. drift horizontal ;
+6. spacing ;
+7. alpha ;
+8. intégrité des frames découpées, surtout si une coupure low-density a été nécessaire.
 
 ---
 
 ## Cas particuliers
 
-### Personnage qui se penche ou baisse la tête
+### Personnage penché / tête baissée
 
-Ne pas chercher à égaliser sa hauteur apparente avec l’idle.
-
-La règle est :
-
-> même échelle physique, pose conservée.
+Règle : même échelle physique, pose conservée.
 
 ### Death
 
-Une death couchée ne doit pas être agrandie pour retrouver la hauteur de la référence debout.
+Une pose couchée ne doit pas être agrandie pour ressembler à une idle.
 
-Choisir une frame de calibration source suffisamment neutre si possible, puis laisser le scale unique s’appliquer à toute la death.
+### Frames reliées par une arme
 
-### Arme très grande
+Ce cas est supporté en mode `--frame-count`. L’outil cherche une frontière à faible densité et coupe entre colonnes sans jeter les pixels source.
 
-Le calcul du body core limite son influence, mais le résultat doit rester vérifié visuellement.
-
-Si l’arme traverse fortement la zone centrale du corps, elle peut encore influencer la mesure.
+La sortie doit néanmoins être vérifiée visuellement pour confirmer que la frontière choisie est cohérente.
 
 ### Référence complète
 
-Une spritesheet existante du jeu peut être utilisée directement :
-
-```text
---reference=".../hero-broadsword-attack-sheet-v1.png"
---reference-frame=0
-```
-
-Il n’est pas nécessaire d’extraire manuellement la frame.
+Une spritesheet du jeu peut être utilisée directement avec `--reference-frame` et `--reference-frame-count`.
 
 ---
 
 ## Dépannage
 
-### `Detected X frames, expected Y`
+### Mauvais découpage malgré `--frame-count`
 
-Avec la version actuelle, `--frame-count=Y` doit normalement piloter le découpage et éviter les anciens problèmes de seuil rigide.
+Vérifier :
 
-Si le problème persiste :
+1. le nombre réel de frames ;
+2. que les frames sont bien organisées horizontalement sur une seule ligne ;
+3. qu’elles occupent des zones globalement distinctes ;
+4. le résultat visuel avant intégration.
 
-1. vérifier que des zones réellement transparentes existent entre les sprites ;
-2. vérifier le nombre demandé ;
-3. regarder si une arme ou un effet relie physiquement deux frames ;
-4. ne modifier `--min-gap` que si le mode `--frame-count` n’est pas utilisé.
+Ne pas commencer par bricoler `--min-gap` : ce paramètre n’est pas utilisé par le mode count-aware.
 
-### Scale refusé comme unsafe
+### Scale unsafe
 
-L’outil bloque automatiquement les scales automatiques inférieurs à `0.4` ou supérieurs à `2.5`.
+Un scale automatique inférieur à `0.4` ou supérieur à `2.5` est bloqué.
 
-Cela indique généralement :
+Causes probables :
 
 - mauvaise référence ;
-- mauvaise frame de calibration ;
+- mauvaise calibration ;
 - mauvais découpage ;
-- body core faussé par la composition.
-
-Ne pas forcer `--scale` avant d’avoir vérifié ces points.
+- `body core` faussé.
 
 ---
 
-## Philosophie d’architecture
-
-Le SpriteSheet Generator fait partie du tooling existant Albion Idle.
-
-Un agent qui reprend ce chantier doit :
-
-- modifier/améliorer cet outil plutôt que créer un pipeline parallèle ;
-- conserver le principe de référence validée ;
-- conserver un scale unique par animation ;
-- ne jamais normaliser chaque frame indépendamment ;
-- ne pas confondre taille brute du fichier et gabarit du personnage ;
-- garder le spacing de sortie indépendant de la détection source ;
-- considérer la validation artistique comme une responsabilité humaine ;
-- utiliser le wrapper d’import pour le workflow standard au lieu de déplacer/renommer manuellement les fichiers.
+## Architecture
 
 Fichier principal :
 
@@ -440,29 +312,17 @@ Fichier principal :
 packages/tooling/src/bin/generate-spritesheet.ts
 ```
 
-Wrapper d’import :
+Wrapper :
 
 ```text
 packages/tooling/src/bin/import-hero-spritesheets.ts
 ```
 
-Commandes exposées à la racine :
+Commandes :
 
 ```text
 pnpm generate:spritesheet
 pnpm generate:spritesheet-import
 ```
 
----
-
-## État validé
-
-Premier test validé visuellement avec :
-
-- source : `7d5bf8dd-6fe3-4bae-bf01-40dd1b11a384.png` ;
-- référence : `hero-broadsword-attack-sheet-v1.png` ;
-- 6 frames ;
-- calibration frame `0` ;
-- référence frame `0`.
-
-L’ancien test nécessitait `--min-gap=16` pour détecter les 6 frames. Cette limitation a motivé la détection guidée par `--frame-count` et la séparation entre le gap de détection et le gap de sortie.
+Un agent qui reprend le chantier doit améliorer ces outils existants et ne pas créer de pipeline parallèle.
