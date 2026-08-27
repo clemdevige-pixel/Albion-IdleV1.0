@@ -78,11 +78,12 @@ export interface DashboardGatheringInteraction {
   readonly resourceFamily: string;
   readonly cycleId: string;
   readonly strikesUsed: number;
-  readonly streak: number;
-  readonly yieldScore: number;
-  readonly yieldMultiplier: 1 | 2 | 3;
-  readonly nextYieldThreshold: number | null;
-  readonly yieldProgressToNext: number;
+  readonly activity: number;
+  readonly averageActivity: number;
+  readonly yieldMultiplier: 1 | 1.5 | 2 | 3;
+  readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
+  readonly nextActivityThreshold: number | null;
+  readonly activityProgressToNext: number;
   readonly durationSeconds: number;
 }
 
@@ -278,11 +279,12 @@ export function selectDashboardProduction(
           resourceFamily: activeGathering.resourceFamily,
           cycleId: miniGame.cycleId,
           strikesUsed: miniGame.strikesUsed,
-          streak: miniGame.streak,
-          yieldScore: miniGame.yieldScore,
+          activity: miniGame.activity,
+          averageActivity: miniGame.averageActivity,
           yieldMultiplier: miniGame.yieldMultiplier,
-          nextYieldThreshold: miniGame.nextYieldThreshold,
-          yieldProgressToNext: miniGame.yieldProgressToNext,
+          speedBonusRatio: miniGame.speedBonusRatio,
+          nextActivityThreshold: miniGame.nextActivityThreshold,
+          activityProgressToNext: miniGame.activityProgressToNext,
           durationSeconds: activeGathering.durationSeconds,
         }
       : undefined,
