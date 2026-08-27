@@ -16,9 +16,5 @@ export function selectRunningGathering(
     resourceTier: cycle.resourceTier,
     progress: cycle.progress,
     durationSeconds: cycle.durationSeconds,
-    activeMiniGame: {
-      cycleId: cycle.cycleId,
-      strikesUsed: cycle.strikesUsed,
-    },
   };
 }
