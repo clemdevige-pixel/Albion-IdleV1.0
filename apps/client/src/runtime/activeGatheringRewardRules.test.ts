@@ -12,13 +12,13 @@ import {
 describe("active gathering activity rules", () => {
   it("uses the validated activity gains and penalties", () => {
     expect(ACTIVE_GATHERING_RULES.activityPerStrike).toEqual({
-      miss: -50,
-      correct: 25,
-      perfect: 50,
+      miss: -35,
+      correct: 15,
+      perfect: 30,
     });
-    expect(applyActiveGatheringStrike(0, "perfect")).toBe(50);
-    expect(applyActiveGatheringStrike(50, "correct")).toBe(75);
-    expect(applyActiveGatheringStrike(75, "miss")).toBe(25);
+    expect(applyActiveGatheringStrike(0, "perfect")).toBe(30);
+    expect(applyActiveGatheringStrike(50, "correct")).toBe(65);
+    expect(applyActiveGatheringStrike(75, "miss")).toBe(40);
     expect(applyActiveGatheringStrike(90, "perfect")).toBe(100);
   });
 
