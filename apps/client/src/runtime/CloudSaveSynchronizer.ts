@@ -6,6 +6,7 @@ import {
 } from "@game/persistence";
 import type { CloudSaveSlotId } from "@game/shared";
 import type { CloudSaveClient } from "./CloudSaveClient";
+import { CURRENT_RUNTIME_SAVE_VERSION } from "./saveMigrations";
 import { PLAYER_SAVE_SLOT_IDS, getAccountSaveSlotId, getSaveBackupSlotId } from "./saveSlots";
 
 const SERVER_SAVED_AT_KEY = "serverSavedAt";
@@ -59,7 +60,7 @@ function carryTrustedOfflineWindow(local: SaveFormat, cloud: SaveFormat): SaveFo
 
 /** Reconciles browser and server saves without deleting either side implicitly. */
 export class CloudSaveSynchronizer {
-  private readonly validator = new SaveValidator(Number.MAX_SAFE_INTEGER);
+  private readonly validator = new SaveValidator(CURRENT_RUNTIME_SAVE_VERSION);
 
   public constructor(
     private readonly accountId: string,
