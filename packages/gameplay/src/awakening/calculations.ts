@@ -64,7 +64,9 @@ export function getEffectiveLifeStealPercent(
   progression: number,
   balance: AwakenedWeaponBalance,
 ): number {
-  return Math.min(balance.lifeStealCapPercent, Math.max(0, progression));
+  const p = Math.max(0, progression);
+  if (p <= 0) return 0;
+  return balance.lifeStealAsymptotePercent * p / (p + balance.lifeStealCurveConstant);
 }
 
 export function applyCooldownReduction(
