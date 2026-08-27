@@ -39,27 +39,27 @@
   text-align: center;
 }
 
-/* Gathering is presented as one continuous activity sheet, not a stack of dashboard widgets. */
-.ui-world .ui-gathering { gap: 9px; }
+/* Gathering is one compact game activity, not a stack of independent widgets. */
+.ui-world .ui-gathering { gap: 8px; }
 .ui-world .ui-gathering__toolbar {
-  min-height: 29px;
+  min-height: 27px;
   font-size: 9px;
   color: var(--ui-color-text-secondary);
 }
 .ui-world .ui-gathering__tiers { gap: 5px; }
-.ui-world .ui-gathering__tiers button { min-width: 39px; padding: 6px 8px; font-size: 9px; }
+.ui-world .ui-gathering__tiers button { min-width: 39px; padding: 5px 8px; font-size: 9px; }
 .ui-world .ui-gathering__families { gap: 5px; }
 .ui-world .ui-gathering__families button {
-  min-height: 49px;
+  min-height: 47px;
   padding: 4px;
   font-size: 9px;
   background: #0b0f14;
   border-radius: 6px;
 }
 .ui-world .ui-gathering__families button.is-active {
-  background: linear-gradient(180deg, #1c170d, #11100d);
-  border-color: #9b7626;
-  box-shadow: inset 0 -2px 0 #c39631;
+  background: linear-gradient(180deg, #1d170d, #100f0c);
+  border-color: #a47b25;
+  box-shadow: inset 0 -2px 0 #d4a12a;
 }
 .ui-world .ui-gathering__families img { width: 24px; height: 24px; }
 
@@ -67,13 +67,13 @@
   position: relative;
   display: grid;
   gap: 0;
-  padding: 0 11px 11px;
   overflow: hidden;
-  border: 1px solid rgba(170, 128, 45, .28);
+  padding: 0 11px 10px;
+  border: 1px solid rgba(180, 133, 38, .34);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(30, 24, 14, .48) 0, rgba(11, 14, 18, .96) 96px),
-    #0a0d11;
+    radial-gradient(circle at 14% 0%, rgba(179, 128, 35, .10), transparent 34%),
+    linear-gradient(180deg, rgba(20, 18, 13, .96), rgba(8, 11, 15, .98));
 }
 
 .ui-world .ui-gathering-card::before {
@@ -81,7 +81,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(207, 160, 56, .62), transparent);
+  background: linear-gradient(90deg, transparent 4%, rgba(217, 165, 48, .72) 36%, rgba(217, 165, 48, .15) 72%, transparent);
   pointer-events: none;
 }
 
@@ -90,45 +90,42 @@
   grid-template-columns: 42px minmax(0, 1fr) auto;
   gap: 9px;
   align-items: center;
-  min-height: 66px;
-  padding: 9px 0 8px;
+  min-height: 61px;
+  padding: 8px 0 7px;
 }
-
 .ui-world .ui-gathering-card__icon {
   display: grid;
   place-items: center;
   width: 40px;
   height: 40px;
-  border: 0;
   border-radius: 7px;
-  background: rgba(4, 7, 10, .7);
+  background: rgba(3, 6, 9, .72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .035);
 }
 .ui-world .ui-gathering-card__icon img { width: 32px; height: 32px; }
-
 .ui-world .ui-gathering-card__identity {
   display: grid;
   gap: 1px;
   min-width: 0;
 }
 .ui-world .ui-gathering-card__identity > span {
-  color: #a89050;
+  color: #b08d3e;
   font-size: 8px;
-  letter-spacing: .07em;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__identity strong {
   overflow: hidden;
-  color: #eef1f5;
+  color: #f2f4f7;
   font-size: 15px;
-  line-height: 1.12;
+  line-height: 1.08;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .ui-world .ui-gathering-card__identity small {
-  color: #8795a8;
+  color: #8290a2;
   font-size: 9px;
 }
-
 .ui-world .ui-gathering-card__reserve {
   display: grid;
   justify-items: end;
@@ -136,27 +133,26 @@
   min-width: 52px;
 }
 .ui-world .ui-gathering-card__reserve small {
-  color: #7f8da0;
+  color: #778597;
   font-size: 8px;
   letter-spacing: .06em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__reserve b {
-  color: #efd15e;
-  font-size: 17px;
-  line-height: 1;
+  color: #f0d348;
+  font-size: 18px;
+  line-height: .95;
 }
 
 .ui-world .ui-gathering-card__meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
-  padding: 7px 0 8px;
-  border-top: 1px solid rgba(255, 255, 255, .055);
-  border-bottom: 1px solid rgba(255, 255, 255, .055);
+  padding: 6px 0 7px;
+  border-top: 1px solid rgba(255, 255, 255, .05);
+  color: #8996a8;
 }
-
 .ui-world .ui-gathering-card__meta > span {
   display: flex;
   align-items: baseline;
@@ -165,54 +161,52 @@
 }
 .ui-world .ui-gathering-card__meta > span:last-child { margin-left: auto; }
 .ui-world .ui-gathering-card__meta small {
-  color: #708095;
-  font-size: 8px;
+  color: #68778b;
+  font-size: 7px;
+  letter-spacing: .05em;
   text-transform: uppercase;
-  letter-spacing: .04em;
 }
 .ui-world .ui-gathering-card__meta b {
-  overflow: hidden;
-  color: #cfd7e2;
+  color: #c7d0dc;
   font-size: 9px;
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.ui-world .ui-gathering-card__meta .is-unlocked b { color: #a6c8a5; }
-.ui-world .ui-gathering-card__meta .is-locked b { color: #c98c84; }
+.ui-world .ui-gathering-card__meta .is-unlocked b { color: #9ecb9f; }
+.ui-world .ui-gathering-card__meta .is-locked b { color: #ce8d84; }
 .ui-world .ui-gathering-card__meta > i {
   width: 2px;
   height: 2px;
   flex: 0 0 2px;
   border-radius: 50%;
-  background: #556274;
+  background: #4f5b6a;
 }
 
 .ui-world .ui-gathering-card__activity {
   display: grid;
-  gap: 10px;
-  padding: 11px 0 0;
+  gap: 8px;
+  margin: 0 -3px;
+  padding: 9px 3px 0;
+  border-top: 1px solid rgba(185, 137, 38, .15);
 }
-
 .ui-world .ui-gathering-card__activity-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 .ui-world .ui-gathering-card__activity-header > div {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 .ui-world .ui-gathering-card__activity-header span {
-  color: #b58c32;
-  font-size: 8px;
-  letter-spacing: .07em;
+  color: #aa8536;
+  font-size: 7px;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__activity-header strong {
-  color: #eef1f5;
+  color: #f0f3f7;
   font-size: 12px;
   font-weight: 650;
 }
@@ -227,19 +221,15 @@
   line-height: 1;
 }
 .ui-world .ui-gathering-card__activity-header > b.is-active {
-  color: #8fe58a;
-  border-color: #315f34;
-  background: #102414;
+  color: #93e58e;
+  border-color: #326436;
+  background: #102514;
+  box-shadow: 0 0 10px rgba(57, 136, 63, .08);
 }
 
-.ui-world .ui-gathering-card__progress-block {
+.ui-world .ui-gathering-card__mastery-row {
   display: grid;
-  gap: 4px;
-}
-.ui-world .ui-gathering-card__progress-block--cycle {
-  margin-top: -1px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(255, 255, 255, .07);
+  gap: 3px;
 }
 .ui-world .ui-gathering-card__progress-label {
   display: flex;
@@ -248,14 +238,13 @@
   gap: 8px;
 }
 .ui-world .ui-gathering-card__progress-label span {
-  color: #d8dee7;
+  color: #cbd3df;
   font-size: 9px;
 }
 .ui-world .ui-gathering-card__progress-label small {
-  color: #8795a8;
-  font-size: 9px;
+  color: #7e8ca0;
+  font-size: 8px;
 }
-
 .ui-world .ui-gathering-progress {
   height: 4px;
   overflow: hidden;
@@ -267,20 +256,59 @@
   height: 100%;
 }
 
+.ui-world .ui-gathering-card__cycle-focus {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, .055);
+  border-radius: 6px;
+  background: rgba(8, 12, 17, .76);
+}
+.ui-world .ui-gathering-card__cycle-focus.is-running {
+  border-color: rgba(184, 136, 37, .32);
+  background: linear-gradient(90deg, rgba(44, 33, 13, .42), rgba(8, 12, 17, .82) 40%);
+}
+.ui-world .ui-gathering-card__cycle-copy {
+  display: grid;
+  gap: 1px;
+}
+.ui-world .ui-gathering-card__cycle-copy span {
+  color: #8c99aa;
+  font-size: 8px;
+}
+.ui-world .ui-gathering-card__cycle-copy strong {
+  color: #e8c85a;
+  font-size: 14px;
+  line-height: 1;
+}
+.ui-world .ui-gathering-card__cycle-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 27px;
+  gap: 7px;
+  align-items: center;
+}
+.ui-world .ui-gathering-card__cycle-progress small {
+  color: #8694a6;
+  font-size: 8px;
+  text-align: right;
+}
+
 .ui-world .ui-gathering-card__actions {
   display: flex;
   align-items: center;
-  min-height: 30px;
+  min-height: 27px;
 }
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action {
   width: auto;
-  min-width: 110px;
-  min-height: 28px;
-  padding: 5px 10px;
+  min-width: 92px;
+  min-height: 26px;
+  padding: 4px 9px;
   border-color: #76602d;
   border-radius: 5px;
   color: #dcc88c;
-  background: #1a160f;
+  background: #19150e;
   font-size: 9px;
 }
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action:hover:not(:disabled) {
@@ -294,12 +322,17 @@
 }
 
 .ui-world .ui-gathering-card__active-game {
-  margin: 1px -1px -1px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(190, 139, 39, .34);
+  margin-top: -1px;
+  padding: 8px 9px 7px;
+  border: 1px solid rgba(184, 136, 37, .22);
+  border-radius: 6px;
+  background: rgba(14, 13, 10, .62);
 }
-
 .ui-world .ui-gathering-card .active-gathering {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px;
+  gap: 6px 10px;
+  align-items: center;
   margin: 0;
   padding: 0;
   border: 0;
@@ -307,28 +340,38 @@
   background: transparent;
 }
 .ui-world .ui-gathering-card .active-gathering__header {
-  margin-bottom: 6px;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
   color: #b58c32;
   font-size: 8px;
   letter-spacing: .06em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card .active-gathering__header strong {
-  color: #b9c3d0;
+  color: #d0b04f;
   font-size: 8px;
 }
+.ui-world .ui-gathering-card .active-gathering__meter {
+  min-width: 0;
+  margin: 0;
+}
 .ui-world .ui-gathering-card .active-gathering__strike {
-  min-width: 90px;
-  border: 1px solid #b98524;
+  min-width: 82px;
+  height: 26px;
+  border: 1px solid #c08a1e;
   border-radius: 4px;
-  background: linear-gradient(#e3b943, #a97612);
+  background: linear-gradient(#e6bd45, #a97612);
   color: #15100a;
   font-weight: 700;
   cursor: pointer;
 }
-.ui-world .ui-gathering-card .active-gathering__hint {
-  margin-top: 6px;
-  color: #8795a8;
-  font-size: 9px;
-  line-height: 1.35;
+.ui-world .ui-gathering-card .active-gathering > small {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #8491a2;
+  font-size: 8px;
+  line-height: 1.3;
 }
