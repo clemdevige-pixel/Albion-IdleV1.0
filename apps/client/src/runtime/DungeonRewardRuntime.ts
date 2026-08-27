@@ -1,5 +1,6 @@
 import type { EntityId } from "@game/core";
 import type { DungeonRuntime } from "@game/gameplay";
+import type { DungeonLootQuantityRange } from "@game/data";
 import { getDungeonLootDefinition } from "../data/dungeonLootContentCatalog.js";
 import { applyPercentBonusRounded, rollExpectedQuantity } from "./CombatRewardRuntime.js";
 import type { PlayerInventoryManager } from "./PlayerInventoryManager.js";
@@ -45,7 +46,7 @@ export class DungeonRewardRuntime {
     const drops: DungeonRewardDrop[] = [];
 
     const artifactFragmentQuantity = applyExpectedLootYield(
-      encounterLoot.artifactFragmentQuantity,
+      rollInclusiveQuantity(encounterLoot.artifactFragmentRange, this.random),
       factionYieldBonusPercent,
       this.random,
     );
@@ -65,7 +66,7 @@ export class DungeonRewardRuntime {
     }
 
     const enchantmentShardQuantity = applyExpectedLootYield(
-      encounterLoot.enchantmentShardQuantity,
+      rollInclusiveQuantity(encounterLoot.enchantmentShardRange, this.random),
       factionYieldBonusPercent,
       this.random,
     );
@@ -84,6 +85,26 @@ export class DungeonRewardRuntime {
       });
     }
 
+    const factionRuneQuantity = applyExpectedLootYield(
+      rollInclusiveQuantity(encounterLoot.factionRuneRange, this.random),
+      factionYieldBonusPercent,
+      this.random,
+    );
+    if (
+      factionRuneQuantity > 0
+      && this.inventoryManager.addAccessibleQuantity(
+        this.heroId,
+        lootDefinition.factionRuneItemId,
+        factionRuneQuantity,
+      )
+    ) {
+      drops.push({
+        itemId: lootDefinition.factionRuneItemId,
+        kind: "faction_rune",
+        quantity: factionRuneQuantity,
+      });
+    }
+
     const artifactDropChance = encounterLoot.artifactDropChance
       * (1 + Math.max(0, factionYieldBonusPercent) / 100);
     if (
@@ -96,27 +117,6 @@ export class DungeonRewardRuntime {
 
     const finalEncounter = dungeonDefinition.encounters[dungeonDefinition.encounters.length - 1];
     const isCompletion = finalEncounter?.id === encounter.id;
-    if (isCompletion) {
-      const factionRuneQuantity = applyExpectedLootYield(
-        lootDefinition.completionFactionRuneQuantity,
-        factionYieldBonusPercent,
-        this.random,
-      );
-      if (
-        factionRuneQuantity > 0
-        && this.inventoryManager.addAccessibleQuantity(
-          this.heroId,
-          lootDefinition.factionRuneItemId,
-          factionRuneQuantity,
-        )
-      ) {
-        drops.push({
-          itemId: lootDefinition.factionRuneItemId,
-          kind: "faction_rune",
-          quantity: factionRuneQuantity,
-        });
-      }
-    }
 
     return {
       dungeonDefinitionId: run.definitionId,
@@ -127,6 +127,17 @@ export class DungeonRewardRuntime {
         : 0,
     };
   }
+}
+
+export function rollInclusiveQuantity(
+  range: DungeonLootQuantityRange,
+  random: () => number,
+): number {
+  const min = Math.max(0, Math.floor(range.min));
+  const max = Math.max(min, Math.floor(range.max));
+  if (max === min) return min;
+  const roll = Math.max(0, Math.min(0.999999999999, random()));
+  return min + Math.floor(roll * (max - min + 1));
 }
 
 function applyExpectedLootYield(
