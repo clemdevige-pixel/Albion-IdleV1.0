@@ -123,6 +123,11 @@ export function syncGatheringToBridge(
   resourceTier: GatheringVM["resourceTier"],
   storedQuantity: number,
   strikesUsed: number,
+  streak: number,
+  yieldScore: number,
+  yieldMultiplier: 1 | 2 | 3,
+  nextYieldThreshold: number | null,
+  yieldProgressToNext: number,
   activeResource?: {
     readonly resourceName: string;
     readonly resourceTier: GatheringVM["resourceTier"];
@@ -160,7 +165,15 @@ export function syncGatheringToBridge(
         },
     activeMiniGame: !isViewedTierActive
       ? undefined
-      : { cycleId: String(session.id), strikesUsed },
+      : {
+          cycleId: String(session.id),
+          strikesUsed,
+          streak,
+          yieldScore,
+          yieldMultiplier,
+          nextYieldThreshold,
+          yieldProgressToNext,
+        },
   });
 }
 
