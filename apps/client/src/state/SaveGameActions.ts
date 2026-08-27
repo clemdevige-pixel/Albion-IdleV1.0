@@ -1,5 +1,6 @@
 import type { EntityId } from "@game/core";
 import type { CurrencyService, InventoryManager, WalletId } from "@game/gameplay";
+import { SerializationFailedError } from "@game/persistence";
 import type { GameBridge } from "../game/GameBridge";
 import type { RuntimePersistence } from "../runtime/RuntimePersistence";
 import { combatStopController } from "../runtime/CombatStopController";
@@ -61,16 +62,40 @@ export class SaveGameActions {
     // A save is a new combat lifecycle boundary. Never inherit a pending stop
     // or paused state from the runtime that existed before the load.
     combatStopController.reset();
-    this.deps.persistence.load();
+
+    let writeFailedAfterLoad = false;
+    try {
+      this.deps.persistence.load();
+    } catch (error) {
+      if (!(error instanceof SerializationFailedError)) throw error;
+
+      // RuntimePersistence only writes after a primary/backup snapshot has
+      // already been loaded. A quota/write failure here must not discard that
+      // successfully restored runtime state or skip the bridge resync below.
+      writeFailedAfterLoad = true;
+      console.error(
+        "[Persistence] Save loaded but post-load persistence failed:",
+        error,
+      );
+    }
+
     this.deps.persistence.setLoadFailed(false);
     this.applyLoadedState();
 
+    const loadSource = this.deps.persistence.getLastLoadSource();
+    const backupCouldNotBeRestored = loadSource === "backup_unrestored";
+    const persistenceDegraded = writeFailedAfterLoad || backupCouldNotBeRestored;
+
     this.deps.bridge.addEconomyNotification({
       id: `notif_load_${String(Date.now())}`,
-      type: "success",
-      message: this.deps.persistence.getLastLoadSource() === "backup"
-        ? "Backup save restored"
-        : "Game loaded",
+      type: persistenceDegraded ? "error" : "success",
+      message: writeFailedAfterLoad
+        ? "Game loaded, but the local save could not be updated. Browser storage may be full."
+        : backupCouldNotBeRestored
+          ? "Backup loaded, but the primary local save could not be restored."
+          : loadSource === "backup"
+            ? "Backup save restored"
+            : "Game loaded",
       timestamp: Date.now(),
     });
     return true;
