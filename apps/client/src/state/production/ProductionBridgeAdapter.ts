@@ -113,7 +113,7 @@ export class ProductionBridgeAdapter {
       inventoryManager.getTotalQuantity(productionStorageId, config.rawItemId),
       miniGame.strikesUsed,
       miniGame.activity,
-      miniGame.averageActivity,
+      miniGame.activity,
       miniGame.yieldMultiplier,
       miniGame.speedBonusRatio,
       miniGame.nextActivityThreshold,
