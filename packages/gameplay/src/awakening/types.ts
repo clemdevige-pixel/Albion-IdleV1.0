@@ -39,12 +39,13 @@ export interface AwakenedWeaponBalance {
   readonly silverGrowthPerStrain: number;
   readonly cdrAsymptotePercent: number;
   readonly cdrCurveConstant: number;
-  readonly lifeStealCapPercent: number;
+  readonly lifeStealAsymptotePercent: number;
+  readonly lifeStealCurveConstant: number;
 }
 
 export interface AwakenedTraitState {
   readonly traitId: AwakenedTraitId;
-  /** Accumulated authored trait value. Non-linear/capped traits are resolved at consumption time. */
+  /** Accumulated authored trait value. Non-linear traits are resolved at consumption time. */
   readonly value: number;
 }
 
