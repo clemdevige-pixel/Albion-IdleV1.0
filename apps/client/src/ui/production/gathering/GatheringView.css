@@ -39,7 +39,7 @@
   text-align: center;
 }
 
-/* Gathering is one compact game activity, not a stack of independent widgets. */
+/* Gathering uses one outer sheet. Internal hierarchy comes from spacing, type and bars — not nested cards. */
 .ui-world .ui-gathering { gap: 8px; }
 .ui-world .ui-gathering__toolbar {
   min-height: 27px;
@@ -68,7 +68,7 @@
   display: grid;
   gap: 0;
   overflow: hidden;
-  padding: 0 11px 10px;
+  padding: 0 11px 11px;
   border: 1px solid rgba(180, 133, 38, .34);
   border-radius: 8px;
   background:
@@ -98,9 +98,6 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 7px;
-  background: rgba(3, 6, 9, .72);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .035);
 }
 .ui-world .ui-gathering-card__icon img { width: 32px; height: 32px; }
 .ui-world .ui-gathering-card__identity {
@@ -146,24 +143,23 @@
 
 .ui-world .ui-gathering-card__meta {
   display: flex;
-  align-items: center;
-  gap: 7px;
+  align-items: baseline;
+  gap: 6px;
   min-width: 0;
-  padding: 6px 0 7px;
-  border-top: 1px solid rgba(255, 255, 255, .05);
+  padding: 5px 0 8px;
   color: #8996a8;
 }
 .ui-world .ui-gathering-card__meta > span {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 .ui-world .ui-gathering-card__meta > span:last-child { margin-left: auto; }
 .ui-world .ui-gathering-card__meta small {
-  color: #68778b;
+  color: #66758a;
   font-size: 7px;
-  letter-spacing: .05em;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__meta b {
@@ -183,9 +179,8 @@
 
 .ui-world .ui-gathering-card__activity {
   display: grid;
-  gap: 8px;
-  margin: 0 -3px;
-  padding: 9px 3px 0;
+  gap: 9px;
+  padding-top: 8px;
   border-top: 1px solid rgba(185, 137, 38, .15);
 }
 .ui-world .ui-gathering-card__activity-header {
@@ -224,7 +219,6 @@
   color: #93e58e;
   border-color: #326436;
   background: #102514;
-  box-shadow: 0 0 10px rgba(57, 136, 63, .08);
 }
 
 .ui-world .ui-gathering-card__mastery-row {
@@ -261,14 +255,7 @@
   grid-template-columns: 88px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
-  padding: 8px 9px;
-  border: 1px solid rgba(255, 255, 255, .055);
-  border-radius: 6px;
-  background: rgba(8, 12, 17, .76);
-}
-.ui-world .ui-gathering-card__cycle-focus.is-running {
-  border-color: rgba(184, 136, 37, .32);
-  background: linear-gradient(90deg, rgba(44, 33, 13, .42), rgba(8, 12, 17, .82) 40%);
+  padding: 3px 0 1px;
 }
 .ui-world .ui-gathering-card__cycle-copy {
   display: grid;
@@ -280,7 +267,7 @@
 }
 .ui-world .ui-gathering-card__cycle-copy strong {
   color: #e8c85a;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
 }
 .ui-world .ui-gathering-card__cycle-progress {
@@ -305,33 +292,29 @@
   min-width: 92px;
   min-height: 26px;
   padding: 4px 9px;
-  border-color: #76602d;
+  border-color: #79443e;
   border-radius: 5px;
-  color: #dcc88c;
-  background: #19150e;
+  color: #e7aaa2;
+  background: transparent;
   font-size: 9px;
 }
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action:hover:not(:disabled) {
   color: #f0d593;
-  background: #252016;
+  border-color: #8a6d2c;
 }
-.ui-world .ui-gathering-card .ui-gathering-card__hero-action.is-stop {
-  border-color: #79443e;
-  color: #e7aaa2;
-  background: #1c1110;
+.ui-world .ui-gathering-card .ui-gathering-card__hero-action:not(.is-stop) {
+  border-color: #76602d;
+  color: #dcc88c;
 }
 
 .ui-world .ui-gathering-card__active-game {
-  margin-top: -1px;
-  padding: 8px 9px 7px;
-  border: 1px solid rgba(184, 136, 37, .22);
-  border-radius: 6px;
-  background: rgba(14, 13, 10, .62);
+  padding-top: 8px;
+  border-top: 1px solid rgba(190, 139, 39, .18);
 }
 .ui-world .ui-gathering-card .active-gathering {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 82px;
-  gap: 6px 10px;
+  gap: 5px 10px;
   align-items: center;
   margin: 0;
   padding: 0;
@@ -342,7 +325,7 @@
 .ui-world .ui-gathering-card .active-gathering__header {
   grid-column: 1 / -1;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   margin: 0;
   color: #b58c32;
