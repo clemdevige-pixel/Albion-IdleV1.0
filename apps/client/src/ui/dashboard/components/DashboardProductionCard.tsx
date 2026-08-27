@@ -133,11 +133,12 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
           <ActiveGatheringGame
             cycleId={interaction.cycleId}
             strikesUsed={interaction.strikesUsed}
-            streak={interaction.streak}
-            yieldScore={interaction.yieldScore}
+            activity={interaction.activity}
+            averageActivity={interaction.averageActivity}
             yieldMultiplier={interaction.yieldMultiplier}
-            nextYieldThreshold={interaction.nextYieldThreshold}
-            yieldProgressToNext={interaction.yieldProgressToNext}
+            speedBonusRatio={interaction.speedBonusRatio}
+            nextActivityThreshold={interaction.nextActivityThreshold}
+            activityProgressToNext={interaction.activityProgressToNext}
             durationSeconds={interaction.durationSeconds}
             onStrike={(quality) => actions.strike(interaction.resourceFamily, quality)}
           />
