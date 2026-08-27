@@ -12,6 +12,7 @@ import type {
 } from "./types.js";
 
 const CURRENT_AWAKENING_SAVE_VERSION = 2;
+const MIGRATION_DECIMAL_SCALE = 1_000_000;
 
 const LEGACY_V1_TRAIT_ROLLS: Readonly<Record<AwakenedTraitId, AwakenedTraitRollRange>> = {
   item_power: { min: 1, max: 3, integer: true },
@@ -79,6 +80,10 @@ function finiteNonNegative(value: number): boolean {
   return Number.isFinite(value) && value >= 0;
 }
 
+function normalizeMigratedDecimal(value: number): number {
+  return Math.round(value * MIGRATION_DECIMAL_SCALE) / MIGRATION_DECIMAL_SCALE;
+}
+
 function rangeAverage(range: AwakenedTraitRollRange): number {
   return (range.min + range.max) / 2;
 }
@@ -92,7 +97,7 @@ function migrateLegacyTraitValue(
   const currentRange = service.getTraitRollRange(traitId);
   const currentAverage = rangeAverage(currentRange);
   const migrated = legacyAverage <= 0 ? value : value * currentAverage / legacyAverage;
-  return currentRange.integer === true ? Math.round(migrated) : migrated;
+  return currentRange.integer === true ? Math.round(migrated) : normalizeMigratedDecimal(migrated);
 }
 
 function migrateLegacyRoll(
@@ -107,13 +112,15 @@ function migrateLegacyRoll(
     ? 0
     : Math.min(1, Math.max(0, (saved.baseRoll - legacyRange.min) / legacyWidth));
   const rawBase = currentRange.min + (currentRange.max - currentRange.min) * percentile;
-  const baseRoll = currentRange.integer === true ? Math.round(rawBase) : rawBase;
+  const baseRoll = currentRange.integer === true ? Math.round(rawBase) : normalizeMigratedDecimal(rawBase);
   const gainMultiplier = saved.baseRoll > 0 ? saved.finalGain / saved.baseRoll : 1;
   return {
     traitId,
     baseRoll,
     critical: saved.critical === true,
-    finalGain: baseRoll * gainMultiplier,
+    finalGain: currentRange.integer === true
+      ? Math.round(baseRoll * gainMultiplier)
+      : normalizeMigratedDecimal(baseRoll * gainMultiplier),
   };
 }
 
@@ -187,7 +194,13 @@ function restoreTraits(
     }
     if (traitId !== "defense") throw new Error("Invalid awakening save: duplicate trait");
     const existing = traits[existingIndex];
-    if (existing !== undefined) traits[existingIndex] = { ...existing, value: existing.value + restoredValue };
+    if (existing !== undefined) {
+      const combined = existing.value + restoredValue;
+      traits[existingIndex] = {
+        ...existing,
+        value: migrateLegacy ? normalizeMigratedDecimal(combined) : combined,
+      };
+    }
   }
   if (traits.length > 3) throw new Error("Invalid awakening save: invalid traits");
   return traits;
