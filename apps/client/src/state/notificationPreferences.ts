@@ -62,6 +62,22 @@ export function updateNotificationPreferences(
   }
 }
 
+const LOOT_NOTIFICATION_MARKERS = [
+  "loot",
+  "potion",
+  "item",
+  "objet",
+  "rune",
+  "fragment",
+  "artefact",
+  "artifact",
+  "enchantement",
+  "enchantment",
+  "clé",
+  "cle",
+  "key",
+] as const;
+
 export function classifyNotification(message: string): NotificationCategory {
   const normalized = message.toLocaleLowerCase();
   if (normalized.includes("fame")) {
@@ -70,12 +86,7 @@ export function classifyNotification(message: string): NotificationCategory {
   if (normalized.includes("silver") || normalized.includes("argent")) {
     return "silver";
   }
-  if (
-    normalized.includes("loot")
-    || normalized.includes("potion")
-    || normalized.includes("item")
-    || normalized.includes("objet")
-  ) {
+  if (LOOT_NOTIFICATION_MARKERS.some((marker) => normalized.includes(marker))) {
     return "loot";
   }
   return "other";
