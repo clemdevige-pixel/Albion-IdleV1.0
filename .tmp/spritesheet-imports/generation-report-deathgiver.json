@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 4,
   "weaponId": "deathgiver",
   "sourceDir": ".tmp/spritesheet-imports",
   "reference": "apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png",
@@ -12,9 +12,9 @@
       "output": "apps/client/public/assets/characters/hero-deathgiver-idle-sheet-v1.png",
       "frameCount": 6,
       "calibrationFrame": 0,
-      "cellWidth": 296,
-      "cellHeight": 388,
-      "scale": 0.731
+      "cellWidth": 294,
+      "cellHeight": 387,
+      "scale": 0.7316
     },
     {
       "animation": "attack",
@@ -23,8 +23,8 @@
       "frameCount": 6,
       "calibrationFrame": 0,
       "cellWidth": 454,
-      "cellHeight": 474,
-      "scale": 0.9393
+      "cellHeight": 413,
+      "scale": 0.9395
     }
   ]
 }
