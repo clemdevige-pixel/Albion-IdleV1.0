@@ -9,6 +9,8 @@ import { DEFAULT_AWAKENED_WEAPON_BALANCE } from "../balance.js";
 import {
   getAwakenedActionCost,
   getAwakenedAttunementCap,
+  getAwakenedTraitRollRange,
+  getEffectiveCooldownReductionPercent,
   getEffectiveLifeStealPercent,
   getUnlockedAwakenedTraitSlots,
 } from "../calculations.js";
@@ -88,7 +90,7 @@ describe("awakened weapon progression", () => {
   });
 
   it("consumes tier Attunement when the initial Awakening is confirmed", () => {
-    const { walletId: _walletId, service } = createAwakeningFixture();
+    const { service } = createAwakeningFixture();
     const instanceId = "weapon_t4" as ItemInstanceId;
 
     expect(service.registerFresh(instanceId, 4).ok).toBe(true);
@@ -103,27 +105,47 @@ describe("awakened weapon progression", () => {
     expect(service.getState(instanceId)?.lifetimeAttunementInvested).toBe(5_000);
   });
 
-  it("authors the validated trait roll ranges", () => {
-    const rolls = DEFAULT_AWAKENED_WEAPON_BALANCE.traitRolls;
-    expect(rolls.item_power).toEqual({ min: 1, max: 2, integer: true });
-    expect(rolls.auto_attack_damage).toEqual({ min: 0.3, max: 0.6 });
-    expect(rolls.ability_power).toEqual({ min: 0.3, max: 0.6 });
-    expect(rolls.cooldown_reduction).toEqual({ min: 0.5, max: 1 });
-    expect(rolls.max_health).toEqual({ min: 0.5, max: 1 });
-    expect(rolls.defense).toEqual({ min: 0.3, max: 0.6 });
-    expect(rolls.life_steal).toEqual({ min: 0.1, max: 0.2 });
-    expect(rolls.fame_bonus).toEqual({ min: 0.75, max: 1.5 });
+  it("authors direct CDR and Life Steal roll bands with 30% and 8% caps", () => {
+    const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
+
+    expect(balance.traitCaps).toEqual({ cooldown_reduction: 30, life_steal: 8 });
+    expect(getAwakenedTraitRollRange("cooldown_reduction", 0, balance)).toEqual({ below: 8, min: 0.3, max: 0.6 });
+    expect(getAwakenedTraitRollRange("cooldown_reduction", 8, balance)).toEqual({ below: 15, min: 0.18, max: 0.4 });
+    expect(getAwakenedTraitRollRange("cooldown_reduction", 15, balance)).toEqual({ below: 22, min: 0.08, max: 0.22 });
+    expect(getAwakenedTraitRollRange("cooldown_reduction", 22, balance)).toEqual({ below: 27, min: 0.03, max: 0.1 });
+    expect(getAwakenedTraitRollRange("cooldown_reduction", 27, balance)).toEqual({ below: null, min: 0.01, max: 0.04 });
+
+    expect(getAwakenedTraitRollRange("life_steal", 0, balance)).toEqual({ below: 2, min: 0.05, max: 0.12 });
+    expect(getAwakenedTraitRollRange("life_steal", 2, balance)).toEqual({ below: 4, min: 0.03, max: 0.07 });
+    expect(getAwakenedTraitRollRange("life_steal", 4, balance)).toEqual({ below: 6, min: 0.015, max: 0.04 });
+    expect(getAwakenedTraitRollRange("life_steal", 6, balance)).toEqual({ below: null, min: 0.005, max: 0.02 });
+
+    expect(getEffectiveCooldownReductionPercent(17.4, balance)).toBe(17.4);
+    expect(getEffectiveCooldownReductionPercent(99, balance)).toBe(30);
+    expect(getEffectiveLifeStealPercent(3.6, balance)).toBe(3.6);
+    expect(getEffectiveLifeStealPercent(99, balance)).toBe(8);
   });
 
-  it("uses diminishing Life Steal with an 8% asymptote", () => {
-    const balance = DEFAULT_AWAKENED_WEAPON_BALANCE;
-    expect(balance.lifeStealAsymptotePercent).toBe(8);
-    expect(balance.lifeStealCurveConstant).toBe(10);
-    expect(getEffectiveLifeStealPercent(5, balance)).toBeCloseTo(2.6666667, 5);
-    expect(getEffectiveLifeStealPercent(10, balance)).toBeCloseTo(4, 5);
-    expect(getEffectiveLifeStealPercent(20, balance)).toBeCloseTo(5.3333333, 5);
-    expect(getEffectiveLifeStealPercent(50, balance)).toBeCloseTo(6.6666667, 5);
-    expect(getEffectiveLifeStealPercent(100, balance)).toBeCloseTo(7.2727273, 5);
+  it("caps a critical direct roll at the authored trait maximum", () => {
+    const { walletId, service } = createAwakeningFixture();
+    const instanceId = "weapon_cdr_cap" as ItemInstanceId;
+    service._restore([{
+      itemInstanceId: instanceId,
+      tier: 4,
+      awakened: true,
+      storedAttunement: 15_000,
+      lifetimeAttunementInvested: 10_000,
+      strain: 1,
+      traits: [{ traitId: "cooldown_reduction", value: 29.99 }],
+    }]);
+
+    const improved = service.improveTrait(instanceId, 0, walletId, () => 0);
+    expect(improved.ok).toBe(true);
+    if (!improved.ok) return;
+    expect(improved.value.roll.critical).toBe(true);
+    expect(improved.value.roll.finalGain).toBeCloseTo(0.01, 8);
+    expect(improved.value.state.traits[0]?.value).toBeCloseTo(30, 8);
+    expect(service.improveTrait(instanceId, 0, walletId, () => 0)).toEqual({ ok: false, reason: "trait_at_cap" });
   });
 
   it("never applies Critical Attunement while choosing or rerolling a trait", () => {
@@ -134,7 +156,6 @@ describe("awakened weapon progression", () => {
     expect(service.addAttunement(instanceId, 15_000).ok).toBe(true);
     expect(service.awaken(instanceId).ok).toBe(true);
 
-    // roll01=0 would always crit under the normal 15% rule.
     const offer = service.beginTraitOffer(instanceId, 0, walletId, () => 0);
     expect(offer.ok).toBe(true);
     if (!offer.ok) return;
@@ -151,7 +172,7 @@ describe("awakened weapon progression", () => {
     expect(service.getState(instanceId)?.traits[0]?.value).toBe(chosen.baseRoll);
   });
 
-  it("migrates V1 awakened values by equivalent average investment and preserves progression", () => {
+  it("migrates V1 awakened values and writes the direct-stat V3 format", () => {
     const { service } = createAwakeningFixture();
     const provider = new AwakeningSaveProvider(service);
     provider.load({
@@ -210,9 +231,37 @@ describe("awakened weapon progression", () => {
     const second = service.getState("legacy_b" as ItemInstanceId);
     expect(second?.strain).toBe(25);
     expect(second?.traits[0]?.value).toBeCloseTo(4.5, 8);
-    expect(second?.traits[1]?.value).toBeCloseTo(1.5, 8);
+    expect(second?.traits[1]?.value).toBeCloseTo(1.043478, 6);
     expect(second?.traits[2]?.value).toBeCloseTo(11.25, 8);
 
-    expect(provider.save()).toMatchObject({ version: 2 });
+    expect(provider.save()).toMatchObject({ version: 3 });
+  });
+
+  it("migrates V2 internal CDR and Life Steal values without changing their combat effect", () => {
+    const { service } = createAwakeningFixture();
+    const provider = new AwakeningSaveProvider(service);
+    provider.load({
+      version: 2,
+      weapons: [{
+        itemInstanceId: "legacy_v2",
+        tier: 8,
+        awakened: true,
+        storedAttunement: 10_000,
+        lifetimeAttunementInvested: 100_000,
+        strain: 30,
+        traits: [
+          { traitId: "cooldown_reduction", value: 10 },
+          { traitId: "life_steal", value: 5 },
+          { traitId: "ability_power", value: 6 },
+        ],
+      }],
+    });
+
+    const migrated = service.getState("legacy_v2" as ItemInstanceId);
+    expect(migrated?.traits[0]?.value).toBeCloseTo(8.333333, 6);
+    expect(migrated?.traits[1]?.value).toBeCloseTo(2.666667, 6);
+    expect(migrated?.traits[2]?.value).toBe(6);
+    expect(service.getDisplayTraitValue("cooldown_reduction", migrated?.traits[0]?.value ?? 0)).toBeCloseTo(8.333333, 6);
+    expect(service.getDisplayTraitValue("life_steal", migrated?.traits[1]?.value ?? 0)).toBeCloseTo(2.666667, 6);
   });
 });
