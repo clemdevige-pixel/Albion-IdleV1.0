@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ACTIVE_GATHERING_RULES,
-  getActiveGatheringCycleYieldMultiplier,
   getActiveGatheringMarkerSpeed,
 } from "../runtime/activeGatheringRewardRules";
 import "./ActiveGatheringGame.css";
@@ -10,7 +9,6 @@ interface ActiveGatheringGameProps {
   readonly cycleId: string;
   readonly strikesUsed: number;
   readonly activity: number;
-  readonly averageActivity: number;
   readonly yieldMultiplier: 1 | 1.5 | 2 | 3;
   readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
   readonly nextActivityThreshold: number | null;
@@ -118,7 +116,6 @@ export function ActiveGatheringGame(
     markerDirection.current = 1;
   };
 
-  const averageYieldMultiplier = getActiveGatheringCycleYieldMultiplier(props.averageActivity);
   const speedPercent = Math.round(props.speedBonusRatio * 100);
 
   return (
@@ -144,11 +141,6 @@ export function ActiveGatheringGame(
             ? "Activité max"
             : `Palier ${String(props.nextActivityThreshold)} · ${String(Math.round(props.activityProgressToNext))}%`}
         </small>
-      </div>
-
-      <div className="active-gathering__reward-summary">
-        <strong>Moyenne {String(Math.round(props.averageActivity))}</strong>
-        <b>Récompense provisoire ×{formatMultiplier(averageYieldMultiplier)}</b>
       </div>
 
       <div className="active-gathering__meter" aria-hidden="true">
