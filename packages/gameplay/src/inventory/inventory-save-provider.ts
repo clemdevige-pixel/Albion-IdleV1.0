@@ -37,6 +37,29 @@ interface InventorySavePayload {
   inventories: SavedInventory[];
 }
 
+function getRequiredNextInstanceCounter(
+  savedCounter: number,
+  entries: readonly { readonly instanceId: string }[],
+): number {
+  let nextCounter = Number.isInteger(savedCounter) && savedCounter >= 0
+    ? savedCounter
+    : 0;
+
+  for (const entry of entries) {
+    const match = /^item_(\d+)$/.exec(entry.instanceId);
+    const numericId = match?.[1] === undefined ? undefined : Number(match[1]);
+    if (
+      numericId !== undefined
+      && Number.isSafeInteger(numericId)
+      && numericId >= nextCounter
+    ) {
+      nextCounter = numericId + 1;
+    }
+  }
+
+  return nextCounter;
+}
+
 export class InventorySaveProvider implements SaveProvider {
   readonly providerId = "inventory";
 
@@ -119,6 +142,10 @@ export class InventorySaveProvider implements SaveProvider {
           `Invalid inventory save data: invalid bag enchantment ${String(savedBagEnchantment)}`,
         );
       }
+      const existingEntries = [
+        ...saved.slots,
+        ...(savedBag === null ? [] : [savedBag]),
+      ];
       const inventoryData: InventoryData = {
         capacity: saved.capacity,
         slots,
@@ -131,7 +158,12 @@ export class InventorySaveProvider implements SaveProvider {
                 quantity: savedBag.quantity,
                 enchantment: savedBagEnchantment,
               },
-        nextInstanceCounter: saved.nextInstanceCounter,
+        // Historical saves may contain a stale allocator counter. Reconcile it
+        // against every persisted identity before the runtime can mint new ids.
+        nextInstanceCounter: getRequiredNextInstanceCounter(
+          saved.nextInstanceCounter,
+          existingEntries,
+        ),
       };
       const errors = validateInventory(
         inventoryData,
