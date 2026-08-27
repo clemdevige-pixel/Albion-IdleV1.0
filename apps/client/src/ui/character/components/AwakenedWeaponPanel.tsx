@@ -98,20 +98,13 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
   }
 
   const rollInfo = TRAIT_IDS.map((traitId) => {
-    const range = services.awakenedWeaponService.getTraitRollRange(traitId);
     const currentValue = state.traits.find((trait) => trait.traitId === traitId)?.value ?? 0;
-    if (traitId === "cooldown_reduction" || traitId === "life_steal") {
-      const currentDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue);
-      const minDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue + range.min);
-      const maxDisplayed = services.awakenedWeaponService.getDisplayTraitValue(traitId, currentValue + range.max);
-      return {
-        traitId,
-        rangeLabel: `+${formatNumber(minDisplayed - currentDisplayed)}% à +${formatNumber(maxDisplayed - currentDisplayed)}%`,
-      };
-    }
+    const range = services.awakenedWeaponService.getTraitRollRange(traitId, currentValue);
+    const cap = services.awakenedWeaponService.getTraitCap(traitId);
     return {
       traitId,
       rangeLabel: `${displayTraitValue(traitId, range.min)} à ${displayTraitValue(traitId, range.max)}`,
+      capLabel: cap === undefined ? undefined : `max ${formatNumber(cap)}%`,
     };
   });
 
@@ -223,7 +216,10 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
             {rollInfo.map((entry) => (
               <div key={entry.traitId}>
                 <dt>{TRAIT_LABELS[entry.traitId]}</dt>
-                <dd>{entry.rangeLabel}</dd>
+                <dd>
+                  {entry.rangeLabel}
+                  {entry.capLabel === undefined ? "" : ` · ${entry.capLabel}`}
+                </dd>
               </div>
             ))}
           </dl>
@@ -256,7 +252,13 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
         {[0, 1, 2].map((index) => {
           const trait = state.traits[index];
           const unlocked = index < derived.unlockedTraitSlots;
-          const unlockAt = index === 1 ? 10 : index === 2 ? 30 : 0;
+          const unlockAt = index === 1 ? 10 : index === 2 ? 25 : 0;
+          const traitCap = trait === undefined
+            ? undefined
+            : services.awakenedWeaponService.getTraitCap(trait.traitId);
+          const traitAtCap = trait !== undefined
+            && traitCap !== undefined
+            && trait.value >= traitCap;
           return (
             <article key={index} className={`character-module__awakening-trait${!unlocked ? " is-locked" : ""}`}>
               <div>
@@ -280,8 +282,12 @@ export function AwakenedWeaponPanel(): JSX.Element | null {
                     </button>
                   ) : (
                     <>
-                      <button type="button" onClick={() => { setConfirmation({ kind: "improve", traitIndex: index }); }}>
-                        Améliorer
+                      <button
+                        type="button"
+                        disabled={traitAtCap}
+                        onClick={() => { setConfirmation({ kind: "improve", traitIndex: index }); }}
+                      >
+                        {traitAtCap ? "Maximum" : "Améliorer"}
                       </button>
                       <button type="button" onClick={() => { setConfirmation({ kind: "offer", targetIndex: index }); }}>
                         Relance
