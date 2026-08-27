@@ -18,30 +18,37 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
   const remainingSeconds = heroActive
     ? Math.max(0, activity.durationSeconds * (1 - cycleProgress / 100))
     : activity.durationSeconds;
-  const cycleLabel = heroActive ? "Restant" : "Cycle";
 
   return (
     <article className={`ui-gathering-card${heroActive ? " is-active" : ""}`}>
       <header className="ui-gathering-card__header">
         <div className="ui-gathering-card__icon"><img src={`/assets/resources/${resource.icon}`} alt="" /></div>
         <div className="ui-gathering-card__identity">
-          <span>{resource.label} · Ressource T{String(tier)}</span>
+          <span>Ressource T{String(tier)}</span>
           <strong>{activity.resourceName}</strong>
           <small>{activity.isMasteryUnlocked ? "Disponible" : "Palier verrouillé"}</small>
         </div>
-        <div className="ui-gathering-card__reserve"><small>Réserve</small><b>{String(activity.storedQuantity)}</b></div>
+        <div className="ui-gathering-card__reserve">
+          <small>Réserve</small>
+          <b>{String(activity.storedQuantity)}</b>
+        </div>
       </header>
 
-      <dl className="ui-gathering-card__facts">
-        <div><dt>Maîtrise</dt><dd>{String(activity.masteryLevel)}</dd></div>
-        <div><dt>{cycleLabel}</dt><dd>{formatSeconds(remainingSeconds)}</dd></div>
-        <div><dt>Accès</dt><dd>{activity.isMasteryUnlocked ? `T${String(tier)} débloqué` : `Niveau ${String(activity.requiredMasteryLevel)} requis`}</dd></div>
-      </dl>
+      <div className="ui-gathering-card__meta" aria-label="Informations de récolte">
+        <span><small>Maîtrise</small><b>{String(activity.masteryLevel)}</b></span>
+        <i aria-hidden="true" />
+        <span><small>{heroActive ? "Restant" : "Cycle"}</small><b>{formatSeconds(remainingSeconds)}</b></span>
+        <i aria-hidden="true" />
+        <span className={activity.isMasteryUnlocked ? "is-unlocked" : "is-locked"}>
+          <small>Accès</small>
+          <b>{activity.isMasteryUnlocked ? `T${String(tier)} débloqué` : `Niv. ${String(activity.requiredMasteryLevel)} requis`}</b>
+        </span>
+      </div>
 
       <section className="ui-gathering-card__activity">
         <header className="ui-gathering-card__activity-header">
           <div>
-            <span>Héros</span>
+            <span>Activité du héros</span>
             <strong>Récolte du {resource.label.toLocaleLowerCase("fr-FR")}</strong>
           </div>
           <b className={heroActive || otherTierActive ? "is-active" : ""}>
@@ -53,38 +60,42 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
           </b>
         </header>
 
-        <div className="ui-gathering-card__mastery">
-          <div>
+        <div className="ui-gathering-card__progress-block">
+          <div className="ui-gathering-card__progress-label">
             <span>Maîtrise {String(heroMastery.level)}</span>
             <small>{String(heroMastery.currentXp)} / {String(heroMastery.xpToNextLevel)} XP</small>
           </div>
           <ProgressBar value={heroMastery.progressPercent} />
         </div>
 
-        <div className="ui-gathering-card__cycle">
-          <div>
-            <span>{heroActive ? `Cycle · ${formatSeconds(remainingSeconds)}` : `Cycle · ${formatSeconds(activity.durationSeconds)}`}</span>
+        <div className="ui-gathering-card__progress-block ui-gathering-card__progress-block--cycle">
+          <div className="ui-gathering-card__progress-label">
+            <span>{heroActive ? `Cycle en cours · ${formatSeconds(remainingSeconds)}` : `Cycle · ${formatSeconds(activity.durationSeconds)}`}</span>
             <small>{heroActive ? `${String(Math.round(cycleProgress))}%` : "Prêt"}</small>
           </div>
           <ProgressBar value={cycleProgress} />
         </div>
 
-        <button
-          className={`ui-gathering-card__hero-action${heroActive ? " is-stop" : ""}`}
-          type="button"
-          disabled={!heroActive && !activity.isMasteryUnlocked}
-          onClick={() => { actions.toggleHero(resource.id); }}
-        >
-          {heroActive ? "Arrêter la récolte" : "Récolter avec le héros"}
-        </button>
+        <div className="ui-gathering-card__actions">
+          <button
+            className={`ui-gathering-card__hero-action${heroActive ? " is-stop" : ""}`}
+            type="button"
+            disabled={!heroActive && !activity.isMasteryUnlocked}
+            onClick={() => { actions.toggleHero(resource.id); }}
+          >
+            {heroActive ? "Arrêter la récolte" : "Récolter avec le héros"}
+          </button>
+        </div>
 
         {heroActive && activity.activeMiniGame !== undefined && (
-          <ActiveGatheringGame
-            cycleId={activity.activeMiniGame.cycleId}
-            strikesUsed={activity.activeMiniGame.strikesUsed}
-            durationSeconds={activity.durationSeconds}
-            onStrike={(quality) => actions.strike(activity.resourceFamily, quality)}
-          />
+          <div className="ui-gathering-card__active-game">
+            <ActiveGatheringGame
+              cycleId={activity.activeMiniGame.cycleId}
+              strikesUsed={activity.activeMiniGame.strikesUsed}
+              durationSeconds={activity.durationSeconds}
+              onStrike={(quality) => actions.strike(activity.resourceFamily, quality)}
+            />
+          </div>
         )}
       </section>
     </article>
