@@ -110,6 +110,7 @@ export interface InventorySlot {
 export type InventoryFailureReason =
   | "inventory_full"
   | "slot_occupied"
+  | "duplicate_instance_id"
   | "invalid_position"
   | "entry_not_found"
   | "invalid_quantity"
