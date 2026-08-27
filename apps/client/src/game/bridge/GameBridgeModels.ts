@@ -265,7 +265,15 @@ export interface GatheringVM {
     readonly cycleId: string;
     readonly strikesUsed: number;
   } | undefined;
-  readonly activeMiniGame?: { readonly cycleId: string; readonly strikesUsed: number } | undefined;
+  readonly activeMiniGame?: {
+    readonly cycleId: string;
+    readonly strikesUsed: number;
+    readonly streak: number;
+    readonly yieldScore: number;
+    readonly yieldMultiplier: 1 | 2 | 3;
+    readonly nextYieldThreshold: number | null;
+    readonly yieldProgressToNext: number;
+  } | undefined;
 }
 
 export interface RefiningRequirementVM {
