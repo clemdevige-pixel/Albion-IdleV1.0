@@ -416,6 +416,7 @@ const minGap = Math.max(1, Math.round(getNumberArg("--min-gap", DEFAULT_MIN_GAP)
 const alphaThreshold = Math.max(0, Math.min(254, Math.round(getNumberArg("--alpha-threshold", DEFAULT_ALPHA_THRESHOLD))));
 const edgePadding = Math.max(0, Math.round(getNumberArg("--edge-padding", DEFAULT_EDGE_PADDING)));
 const calibrationFrame = Math.max(0, Math.round(getNumberArg("--calibration-frame", 0)));
+const referenceFrame = Math.max(0, Math.round(getNumberArg("--reference-frame", 0)));
 const expectedFrameCountRaw = getArgValue("--frame-count");
 const expectedFrameCount = expectedFrameCountRaw === undefined ? undefined : Number(expectedFrameCountRaw);
 const requestedScaleRaw = getArgValue("--scale");
@@ -436,17 +437,23 @@ normalizeToRgbaPng(input, normalizedInput);
 normalizeToRgbaPng(reference, normalizedReference);
 
 const sourceSheet = readRgbaPng(normalizedInput);
-const referenceImage = crop(readRgbaPng(normalizedReference), findBounds(readRgbaPng(normalizedReference), alphaThreshold));
+const referenceSheet = readRgbaPng(normalizedReference);
 const frames = splitFrames(sourceSheet, alphaThreshold, minGap);
+const referenceFrames = splitFrames(referenceSheet, alphaThreshold, minGap);
 if (expectedFrameCount !== undefined && frames.length !== expectedFrameCount) {
   throw new Error(`Detected ${String(frames.length)} frames, expected ${String(expectedFrameCount)}`);
 }
 if (calibrationFrame >= frames.length) {
   throw new Error(`--calibration-frame=${String(calibrationFrame)} is outside detected frame range 0..${String(frames.length - 1)}`);
 }
+if (referenceFrame >= referenceFrames.length) {
+  throw new Error(`--reference-frame=${String(referenceFrame)} is outside detected reference frame range 0..${String(referenceFrames.length - 1)}`);
+}
 
+const referenceImage = referenceFrames[referenceFrame] as RgbaImage;
+const calibrationImage = frames[calibrationFrame] as RgbaImage;
 const referenceMetrics = measureBody(referenceImage, alphaThreshold);
-const calibrationMetrics = measureBody(frames[calibrationFrame] as RgbaImage, alphaThreshold);
+const calibrationMetrics = measureBody(calibrationImage, alphaThreshold);
 const automaticScale = referenceMetrics.coreHeight / calibrationMetrics.coreHeight;
 const scale = requestedScale ?? automaticScale;
 if (!Number.isFinite(scale) || scale <= 0 || scale < 0.4 || scale > 2.5) {
@@ -493,6 +500,7 @@ rmSync(TEMP_ROOT, { recursive: true, force: true });
 console.log(`spritesheet input=${input}`);
 console.log(`reference=${reference}`);
 console.log(`frames=${String(prepared.length)} calibration=${String(calibrationFrame)}`);
+console.log(`referenceFrames=${String(referenceFrames.length)} referenceFrame=${String(referenceFrame)}`);
 console.log(`referenceCoreHeight=${String(referenceMetrics.coreHeight)} calibrationCoreHeight=${String(calibrationMetrics.coreHeight)}`);
 console.log(`scale=${scale.toFixed(4)}${requestedScale === undefined ? " (auto)" : " (manual)"}`);
 console.log(`cell=${String(cellWidth)}x${String(frameHeight)} baselineY=${String(baselineY)} minGap=${String(minGap)}`);
