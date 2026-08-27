@@ -268,11 +268,12 @@ export interface GatheringVM {
   readonly activeMiniGame?: {
     readonly cycleId: string;
     readonly strikesUsed: number;
-    readonly streak: number;
-    readonly yieldScore: number;
-    readonly yieldMultiplier: 1 | 2 | 3;
-    readonly nextYieldThreshold: number | null;
-    readonly yieldProgressToNext: number;
+    readonly activity: number;
+    readonly averageActivity: number;
+    readonly yieldMultiplier: 1 | 1.5 | 2 | 3;
+    readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
+    readonly nextActivityThreshold: number | null;
+    readonly activityProgressToNext: number;
   } | undefined;
 }
 
