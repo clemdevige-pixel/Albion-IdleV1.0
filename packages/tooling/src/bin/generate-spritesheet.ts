@@ -44,6 +44,18 @@ interface TransparentRun {
   readonly center: number;
 }
 
+interface PixelComponent {
+  readonly id: number;
+  readonly area: number;
+  readonly centerX: number;
+  readonly bounds: Bounds;
+}
+
+interface ComponentMap {
+  readonly labels: Int32Array;
+  readonly components: readonly PixelComponent[];
+}
+
 interface SplitOptions {
   readonly fallbackMinGap: number;
   readonly expectedCount?: number;
@@ -351,74 +363,182 @@ function findInternalTransparentRuns(occupiedColumns: readonly boolean[]): Trans
   return runs;
 }
 
-function localBoundaryOccupancy(columnOccupancy: readonly number[], cutX: number): number {
-  let total = 0;
-  for (let x = cutX - 2; x <= cutX + 1; x += 1) {
-    if (x >= 0 && x < columnOccupancy.length) total += columnOccupancy[x] ?? 0;
-  }
-  return total;
-}
+function findPixelComponents(sheet: RgbaImage, threshold: number): ComponentMap {
+  const pixelCount = sheet.width * sheet.height;
+  const labels = new Int32Array(pixelCount);
+  labels.fill(-1);
+  const components: PixelComponent[] = [];
+  const queue = new Int32Array(pixelCount);
+  const neighbors = [
+    [-1, -1], [0, -1], [1, -1],
+    [-1, 0],            [1, 0],
+    [-1, 1],  [0, 1],   [1, 1],
+  ] as const;
 
-function chooseCountAwareSeparators(
-  runs: readonly TransparentRun[],
-  columnOccupancy: readonly number[],
-  frameCount: number,
-): TransparentRun[] {
-  const separatorCount = frameCount - 1;
-  if (separatorCount <= 0) return [];
-
-  const sheetWidth = columnOccupancy.length;
-  const frameSpan = sheetWidth / frameCount;
-  const corridorHalfWidth = Math.max(2, frameSpan * 0.42);
-  const chosen: TransparentRun[] = [];
-
-  for (let boundary = 1; boundary < frameCount; boundary += 1) {
-    const target = frameSpan * boundary;
-    const corridorStart = Math.max(1, Math.ceil(target - corridorHalfWidth));
-    const corridorEnd = Math.min(sheetWidth - 1, Math.floor(target + corridorHalfWidth));
-
-    const transparentCandidates = runs.filter(
-      (run) => run.center >= corridorStart && run.center <= corridorEnd,
-    );
-    if (transparentCandidates.length > 0) {
-      const best = [...transparentCandidates].sort((a, b) => {
-        const scoreA = Math.abs(a.center - target) - (a.width * 1.5);
-        const scoreB = Math.abs(b.center - target) - (b.width * 1.5);
-        return scoreA - scoreB;
-      })[0];
-      if (best !== undefined) {
-        chosen.push(best);
+  for (let y = 0; y < sheet.height; y += 1) {
+    for (let x = 0; x < sheet.width; x += 1) {
+      const index = (y * sheet.width) + x;
+      if (labels[index] !== -1) continue;
+      if (alphaAt(sheet, x, y) <= threshold) {
+        labels[index] = -2;
         continue;
       }
+
+      const id = components.length;
+      let head = 0;
+      let tail = 0;
+      queue[tail] = index;
+      tail += 1;
+      labels[index] = id;
+
+      let area = 0;
+      let sumX = 0;
+      let left = x;
+      let right = x;
+      let top = y;
+      let bottom = y;
+
+      while (head < tail) {
+        const current = queue[head] ?? 0;
+        head += 1;
+        const currentX = current % sheet.width;
+        const currentY = Math.floor(current / sheet.width);
+        area += 1;
+        sumX += currentX;
+        left = Math.min(left, currentX);
+        right = Math.max(right, currentX);
+        top = Math.min(top, currentY);
+        bottom = Math.max(bottom, currentY);
+
+        for (const [dx, dy] of neighbors) {
+          const nextX = currentX + dx;
+          const nextY = currentY + dy;
+          if (nextX < 0 || nextX >= sheet.width || nextY < 0 || nextY >= sheet.height) continue;
+          const nextIndex = (nextY * sheet.width) + nextX;
+          if (labels[nextIndex] !== -1) continue;
+          if (alphaAt(sheet, nextX, nextY) <= threshold) {
+            labels[nextIndex] = -2;
+            continue;
+          }
+          labels[nextIndex] = id;
+          queue[tail] = nextIndex;
+          tail += 1;
+        }
+      }
+
+      components.push({
+        id,
+        area,
+        centerX: sumX / Math.max(1, area),
+        bounds: { left, top, right, bottom },
+      });
+    }
+  }
+
+  return { labels, components };
+}
+
+function clusterComponents(components: readonly PixelComponent[], sheetWidth: number, frameCount: number): number[] {
+  if (components.length < frameCount) {
+    throw new Error(`Only ${String(components.length)} opaque components found; cannot resolve ${String(frameCount)} frames`);
+  }
+
+  let centers = Array.from({ length: frameCount }, (_, index) => ((index + 0.5) * sheetWidth) / frameCount);
+  const assignments = new Array<number>(components.length).fill(0);
+
+  for (let iteration = 0; iteration < 16; iteration += 1) {
+    for (let componentIndex = 0; componentIndex < components.length; componentIndex += 1) {
+      const component = components[componentIndex];
+      if (component === undefined) continue;
+      let bestCluster = 0;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (let cluster = 0; cluster < centers.length; cluster += 1) {
+        const center = centers[cluster] ?? 0;
+        const distance = Math.abs(component.centerX - center);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestCluster = cluster;
+        }
+      }
+      assignments[componentIndex] = bestCluster;
     }
 
-    let bestCut = corridorStart;
-    let bestScore = Number.POSITIVE_INFINITY;
-    for (let cutX = corridorStart; cutX <= corridorEnd; cutX += 1) {
-      const occupancy = localBoundaryOccupancy(columnOccupancy, cutX);
-      const distancePenalty = Math.abs(cutX - target) / Math.max(1, frameSpan);
-      const score = occupancy + distancePenalty;
-      if (score < bestScore) {
-        bestScore = score;
-        bestCut = cutX;
+    const weightedX = new Array<number>(frameCount).fill(0);
+    const weights = new Array<number>(frameCount).fill(0);
+    for (let componentIndex = 0; componentIndex < components.length; componentIndex += 1) {
+      const component = components[componentIndex];
+      if (component === undefined) continue;
+      const cluster = assignments[componentIndex] ?? 0;
+      const weight = Math.max(1, component.area);
+      weightedX[cluster] = (weightedX[cluster] ?? 0) + (component.centerX * weight);
+      weights[cluster] = (weights[cluster] ?? 0) + weight;
+    }
+
+    centers = centers.map((previous, cluster) => {
+      const weight = weights[cluster] ?? 0;
+      return weight > 0 ? (weightedX[cluster] ?? 0) / weight : previous;
+    });
+  }
+
+  const order = centers
+    .map((center, cluster) => ({ center, cluster }))
+    .sort((a, b) => a.center - b.center);
+  const remap = new Map<number, number>();
+  order.forEach((entry, index) => remap.set(entry.cluster, index));
+  return assignments.map((cluster) => remap.get(cluster) ?? cluster);
+}
+
+function cropAssignedComponents(
+  sheet: RgbaImage,
+  threshold: number,
+  componentMap: ComponentMap,
+  assignments: readonly number[],
+  frameCount: number,
+): RgbaImage[] {
+  const clusterBounds: Array<Bounds | undefined> = new Array<Bounds | undefined>(frameCount).fill(undefined);
+
+  for (let componentIndex = 0; componentIndex < componentMap.components.length; componentIndex += 1) {
+    const component = componentMap.components[componentIndex];
+    if (component === undefined) continue;
+    const cluster = assignments[componentIndex];
+    if (cluster === undefined || cluster < 0 || cluster >= frameCount) continue;
+    const current = clusterBounds[cluster];
+    clusterBounds[cluster] = current === undefined
+      ? component.bounds
+      : {
+          left: Math.min(current.left, component.bounds.left),
+          top: Math.min(current.top, component.bounds.top),
+          right: Math.max(current.right, component.bounds.right),
+          bottom: Math.max(current.bottom, component.bounds.bottom),
+        };
+  }
+
+  const frames: RgbaImage[] = [];
+  for (let cluster = 0; cluster < frameCount; cluster += 1) {
+    const bounds = clusterBounds[cluster];
+    if (bounds === undefined) throw new Error(`No opaque component assigned to frame ${String(cluster)}`);
+    const width = bounds.right - bounds.left + 1;
+    const height = bounds.bottom - bounds.top + 1;
+    const data = new Uint8Array(width * height * 4);
+
+    for (let y = bounds.top; y <= bounds.bottom; y += 1) {
+      for (let x = bounds.left; x <= bounds.right; x += 1) {
+        const sourcePixel = (y * sheet.width) + x;
+        const componentId = componentMap.labels[sourcePixel] ?? -1;
+        if (componentId < 0 || assignments[componentId] !== cluster || alphaAt(sheet, x, y) <= threshold) continue;
+        const sourceIndex = sourcePixel * 4;
+        const targetIndex = (((y - bounds.top) * width) + (x - bounds.left)) * 4;
+        data[targetIndex] = sheet.data[sourceIndex] ?? 0;
+        data[targetIndex + 1] = sheet.data[sourceIndex + 1] ?? 0;
+        data[targetIndex + 2] = sheet.data[sourceIndex + 2] ?? 0;
+        data[targetIndex + 3] = sheet.data[sourceIndex + 3] ?? 0;
       }
     }
 
-    // Synthetic zero-width separator: cut between bestCut - 1 and bestCut.
-    // This keeps every source pixel while still allowing a split when two frames
-    // are linked by a few opaque pixels (weapon, cape, antialiasing, etc.).
-    chosen.push({ start: bestCut, end: bestCut - 1, width: 0, center: bestCut - 0.5 });
+    const frame = { width, height, data } satisfies RgbaImage;
+    frames.push(crop(frame, findBounds(frame, threshold)));
   }
-
-  const sorted = chosen.sort((a, b) => a.center - b.center);
-  for (let index = 1; index < sorted.length; index += 1) {
-    const previous = sorted[index - 1];
-    const current = sorted[index];
-    if (previous !== undefined && current !== undefined && current.start <= previous.end) {
-      throw new Error(`Count-aware frame separators overlap near x=${String(current.start)}`);
-    }
-  }
-  return sorted;
+  return frames;
 }
 
 function chooseFallbackSeparators(runs: readonly TransparentRun[], minGap: number): TransparentRun[] {
@@ -454,17 +574,21 @@ function cropFrameRanges(sheet: RgbaImage, threshold: number, occupiedColumns: r
 }
 
 function splitFrames(sheet: RgbaImage, threshold: number, options: SplitOptions): RgbaImage[] {
+  if (options.expectedCount !== undefined) {
+    const componentMap = findPixelComponents(sheet, threshold);
+    const assignments = clusterComponents(componentMap.components, sheet.width, options.expectedCount);
+    const frames = cropAssignedComponents(sheet, threshold, componentMap, assignments, options.expectedCount);
+    if (frames.length !== options.expectedCount) {
+      throw new Error(`Detected ${String(frames.length)} frames, expected ${String(options.expectedCount)}`);
+    }
+    return frames;
+  }
+
   const columnOccupancy = findColumnOccupancy(sheet, threshold);
   const occupiedColumns = findOccupiedColumns(columnOccupancy);
   const runs = findInternalTransparentRuns(occupiedColumns);
-  const separators = options.expectedCount === undefined
-    ? chooseFallbackSeparators(runs, options.fallbackMinGap)
-    : chooseCountAwareSeparators(runs, columnOccupancy, options.expectedCount);
-  const frames = cropFrameRanges(sheet, threshold, occupiedColumns, separators);
-  if (options.expectedCount !== undefined && frames.length !== options.expectedCount) {
-    throw new Error(`Detected ${String(frames.length)} frames, expected ${String(options.expectedCount)}`);
-  }
-  return frames;
+  const separators = chooseFallbackSeparators(runs, options.fallbackMinGap);
+  return cropFrameRanges(sheet, threshold, occupiedColumns, separators);
 }
 
 function blit(target: RgbaImage, source: RgbaImage, left: number, top: number): void {
@@ -585,7 +709,7 @@ rmSync(TEMP_ROOT, { recursive: true, force: true });
 
 console.log(`spritesheet input=${input}`);
 console.log(`reference=${reference}`);
-console.log(`frames=${String(prepared.length)} calibration=${String(calibrationFrame)} detection=${expectedFrameCount === undefined ? `gap>=${String(detectionMinGap)}` : `count-aware(${String(expectedFrameCount)})`}`);
+console.log(`frames=${String(prepared.length)} calibration=${String(calibrationFrame)} detection=${expectedFrameCount === undefined ? `gap>=${String(detectionMinGap)}` : `components(${String(expectedFrameCount)})`}`);
 console.log(`referenceFrames=${String(referenceFrames.length)} referenceFrame=${String(referenceFrame)}`);
 console.log(`referenceCoreHeight=${String(referenceMetrics.coreHeight)} calibrationCoreHeight=${String(calibrationMetrics.coreHeight)}`);
 console.log(`scale=${scale.toFixed(4)}${requestedScale === undefined ? " (auto)" : " (manual)"}`);
