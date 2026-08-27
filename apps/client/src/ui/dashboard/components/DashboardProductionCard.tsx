@@ -134,7 +134,6 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
             cycleId={interaction.cycleId}
             strikesUsed={interaction.strikesUsed}
             activity={interaction.activity}
-            averageActivity={interaction.averageActivity}
             yieldMultiplier={interaction.yieldMultiplier}
             speedBonusRatio={interaction.speedBonusRatio}
             nextActivityThreshold={interaction.nextActivityThreshold}
