@@ -1,20 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { ACTIVE_GATHERING_REWARD_RULES } from "../runtime/activeGatheringRewardRules";
+import {
+  ACTIVE_GATHERING_RULES,
+  getActiveGatheringCycleYieldMultiplier,
+  getActiveGatheringMarkerSpeed,
+} from "../runtime/activeGatheringRewardRules";
 import "./ActiveGatheringGame.css";
 
 interface ActiveGatheringGameProps {
   readonly cycleId: string;
   readonly strikesUsed: number;
-  readonly streak: number;
-  readonly yieldScore: number;
-  readonly yieldMultiplier: 1 | 2 | 3;
-  readonly nextYieldThreshold: number | null;
-  readonly yieldProgressToNext: number;
+  readonly activity: number;
+  readonly averageActivity: number;
+  readonly yieldMultiplier: 1 | 1.5 | 2 | 3;
+  readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
+  readonly nextActivityThreshold: number | null;
+  readonly activityProgressToNext: number;
   readonly durationSeconds: number;
   readonly onStrike: (quality: "miss" | "correct" | "perfect") => boolean;
 }
 
-const DEFAULT_FEEDBACK = "Enchaînez les frappes pour augmenter le rendement.";
+const DEFAULT_FEEDBACK = "Maintenez l'activité jusqu'à la fin du cycle.";
+
+function formatMultiplier(value: number): string {
+  return value.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+}
 
 export function ActiveGatheringGame(
   props: ActiveGatheringGameProps,
@@ -25,6 +34,9 @@ export function ActiveGatheringGame(
   const markerDirection = useRef(1);
   const lastFrameTime = useRef<number | null>(null);
   const feedbackTimeout = useRef<number | null>(null);
+  const speedBonusRef = useRef(props.speedBonusRatio);
+
+  speedBonusRef.current = props.speedBonusRatio;
 
   useEffect(() => {
     setMarkerPosition(0);
@@ -44,8 +56,12 @@ export function ActiveGatheringGame(
       const previousTime = lastFrameTime.current ?? time;
       const deltaSeconds = Math.min(0.05, (time - previousTime) / 1000);
       lastFrameTime.current = time;
+      const markerSpeed = getActiveGatheringMarkerSpeed(
+        props.durationSeconds,
+        speedBonusRef.current,
+      );
       setMarkerPosition((current) => {
-        let next = current + markerDirection.current * deltaSeconds * 72;
+        let next = current + markerDirection.current * deltaSeconds * markerSpeed;
         if (next >= 100) {
           next = 100;
           markerDirection.current = -1;
@@ -67,7 +83,7 @@ export function ActiveGatheringGame(
         feedbackTimeout.current = null;
       }
     };
-  }, [props.cycleId]);
+  }, [props.cycleId, props.durationSeconds]);
 
   const strike = (): void => {
     const distanceFromCenter = Math.abs(markerPosition - 50);
@@ -79,14 +95,14 @@ export function ActiveGatheringGame(
 
     if (!props.onStrike(quality)) return;
 
-    const scoreGain = ACTIVE_GATHERING_REWARD_RULES.scorePerStrike[quality];
+    const activityDelta = ACTIVE_GATHERING_RULES.activityPerStrike[quality];
     setFeedbackQuality(quality);
     setFeedback(
       quality === "perfect"
-        ? `PARFAIT  +${String(scoreGain)} rendement`
+        ? `PARFAIT  +${String(activityDelta)} activité`
         : quality === "correct"
-          ? `CORRECT  +${String(scoreGain)} rendement`
-          : "RATÉ  ·  streak et rendement réinitialisés",
+          ? `CORRECT  +${String(activityDelta)} activité`
+          : `${String(activityDelta)} activité · maintenez le rythme`,
     );
 
     if (feedbackTimeout.current !== null) {
@@ -102,9 +118,8 @@ export function ActiveGatheringGame(
     markerDirection.current = 1;
   };
 
-  const nextMultiplier = props.nextYieldThreshold === null
-    ? null
-    : Math.min(3, props.yieldMultiplier + 1);
+  const averageYieldMultiplier = getActiveGatheringCycleYieldMultiplier(props.averageActivity);
+  const speedPercent = Math.round(props.speedBonusRatio * 100);
 
   return (
     <div className="active-gathering" aria-label="Récolte active">
@@ -114,23 +129,26 @@ export function ActiveGatheringGame(
       </div>
 
       <div className="active-gathering__reward-summary">
-        <strong>Streak ×{String(props.streak)}</strong>
+        <strong>Activité {String(Math.round(props.activity))}/100</strong>
         <b>
-          {nextMultiplier === null
-            ? `Rendement ×${String(props.yieldMultiplier)} · MAX`
-            : `Rendement ×${String(props.yieldMultiplier)} → ×${String(nextMultiplier)}`}
+          ×{formatMultiplier(props.yieldMultiplier)} rendement · +{String(speedPercent)}% vitesse
         </b>
       </div>
 
       <div className="active-gathering__yield-wrap">
-        <div className="active-gathering__yield" aria-label={`Rendement ${String(props.yieldScore)} points`}>
-          <span style={{ width: `${String(props.yieldProgressToNext)}%` }} />
+        <div className="active-gathering__yield" aria-label={`Activité ${String(Math.round(props.activity))} sur 100`}>
+          <span style={{ width: `${String(Math.max(0, Math.min(100, props.activity)))}%` }} />
         </div>
         <small>
-          {props.nextYieldThreshold === null
-            ? "Palier maximum"
-            : `${String(props.yieldScore)} / ${String(props.nextYieldThreshold)} vers ×${String(nextMultiplier)}`}
+          {props.nextActivityThreshold === null
+            ? "Activité max"
+            : `Palier ${String(props.nextActivityThreshold)}`}
         </small>
+      </div>
+
+      <div className="active-gathering__reward-summary">
+        <strong>Moyenne {String(Math.round(props.averageActivity))}</strong>
+        <b>Récompense provisoire ×{formatMultiplier(averageYieldMultiplier)}</b>
       </div>
 
       <div className="active-gathering__meter" aria-hidden="true">
