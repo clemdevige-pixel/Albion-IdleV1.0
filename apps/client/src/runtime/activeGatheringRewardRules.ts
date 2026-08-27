@@ -12,9 +12,9 @@ export const ACTIVE_GATHERING_RULES = Object.freeze({
   minActivity: 0,
   maxActivity: 100,
   activityPerStrike: Object.freeze({
-    miss: -50,
-    correct: 25,
-    perfect: 50,
+    miss: -35,
+    correct: 15,
+    perfect: 30,
   }),
   /** A full 100 -> 0 decay takes 80% of the authored cycle duration. */
   fullDecayCycleRatio: 0.8,
