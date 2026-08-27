@@ -51,7 +51,7 @@ export class InventoryManager {
       capacity,
       slots: new Map(),
       activeBag: undefined,
-      nextInstanceCounter: 0,
+      nextInstanceCounter: this.#getGlobalNextInstanceCounter(),
     };
     this.#world.addComponent(entityId, InventoryComponent, data);
     this.#inventories.add(entityId);
@@ -142,12 +142,11 @@ export class InventoryManager {
     }
 
     const entry: InventoryEntry = {
-      instanceId: toItemInstanceId(data.nextInstanceCounter),
+      instanceId: this.#allocateInstanceId(data),
       itemId,
       quantity: 1,
       enchantment,
     };
-    data.nextInstanceCounter += 1;
     data.slots.set(targetPosition, entry);
     return inventoryOk(entry);
   }
@@ -186,12 +185,11 @@ export class InventoryManager {
     }
 
     data.slots.set(position, {
-      instanceId: toItemInstanceId(data.nextInstanceCounter),
+      instanceId: this.#allocateInstanceId(data),
       itemId: entry.itemId,
       quantity: entry.quantity - 1,
       enchantment: getEnchantmentLevel(entry),
     });
-    data.nextInstanceCounter += 1;
     return inventoryOk({ ...entry, quantity: 1 });
   }
 
@@ -239,6 +237,10 @@ export class InventoryManager {
   ): InventoryResult<InventorySlot> {
     const data = this.#getData(entityId);
 
+    if (this.#hasStoredInstanceId(entry.instanceId)) {
+      return inventoryFail("duplicate_instance_id");
+    }
+
     if (mergeCompatible) {
       const maxStack = effectiveMaxStack(this.#stackInfoFor(entry.itemId));
       if (maxStack > 1) {
@@ -256,6 +258,7 @@ export class InventoryManager {
             quantity: candidate.quantity + entry.quantity,
           };
           data.slots.set(candidatePosition, mergedEntry);
+          this.#observeInstanceId(data, entry.instanceId);
           return inventoryOk({ position: candidatePosition, entry: mergedEntry });
         }
       }
@@ -278,17 +281,7 @@ export class InventoryManager {
       targetPosition = position;
     }
 
-    const importedCounterMatch = /^item_(\d+)$/.exec(entry.instanceId);
-    if (importedCounterMatch?.[1] !== undefined) {
-      const importedCounter = Number(importedCounterMatch[1]);
-      if (
-        Number.isSafeInteger(importedCounter)
-        && importedCounter >= data.nextInstanceCounter
-      ) {
-        data.nextInstanceCounter = importedCounter + 1;
-      }
-    }
-
+    this.#observeInstanceId(data, entry.instanceId);
     data.slots.set(targetPosition, entry);
     return inventoryOk({ position: targetPosition, entry });
   }
@@ -452,12 +445,11 @@ export class InventoryManager {
       }
       const toAdd = Math.min(maxStack, remaining);
       data.slots.set(position, {
-        instanceId: toItemInstanceId(data.nextInstanceCounter),
+        instanceId: this.#allocateInstanceId(data),
         itemId,
         quantity: toAdd,
         enchantment,
       });
-      data.nextInstanceCounter += 1;
       remaining -= toAdd;
       affectedPositions.push(position);
     }
@@ -566,12 +558,11 @@ export class InventoryManager {
     }
 
     data.slots.set(position, {
-      instanceId: toItemInstanceId(data.nextInstanceCounter),
+      instanceId: this.#allocateInstanceId(data),
       itemId: entry.itemId,
       quantity: entry.quantity - 1,
       enchantment: getEnchantmentLevel(entry),
     });
-    data.nextInstanceCounter += 1;
 
     const upgraded: InventoryEntry = {
       ...entry,
@@ -654,12 +645,11 @@ export class InventoryManager {
       return inventoryFail("invalid_quantity");
     }
     const newEntry: InventoryEntry = {
-      instanceId: toItemInstanceId(data.nextInstanceCounter),
+      instanceId: this.#allocateInstanceId(data),
       itemId: from.itemId,
       quantity,
       enchantment: getEnchantmentLevel(from),
     };
-    data.nextInstanceCounter += 1;
     data.slots.set(fromPos, { ...from, quantity: from.quantity - quantity });
     data.slots.set(toPos, newEntry);
     return inventoryOk(newEntry);
@@ -757,6 +747,27 @@ export class InventoryManager {
     return validateInventory(this.#getData(entityId), this.#resolveStackInfo, this.#resolveBagInfo);
   }
 
+  /** Global invariant: one physical inventory identity may exist in only one inventory holder. */
+  validateGlobalInstanceIds(): string[] {
+    const seen = new Set<ItemInstanceId>();
+    const errors: string[] = [];
+    for (const entityId of this.#inventories) {
+      const data = this.#getData(entityId);
+      const entries = [
+        ...data.slots.values(),
+        ...(data.activeBag === undefined ? [] : [data.activeBag]),
+      ];
+      for (const entry of entries) {
+        if (seen.has(entry.instanceId)) {
+          errors.push(`Duplicate instance id across inventories: ${entry.instanceId}`);
+        } else {
+          seen.add(entry.instanceId);
+        }
+      }
+    }
+    return errors;
+  }
+
   #stackInfoFor(itemId: string, explicit?: ItemStackInfoLike): ItemStackInfoLike | undefined {
     return explicit ?? this.#resolveStackInfo?.(itemId);
   }
@@ -769,6 +780,44 @@ export class InventoryManager {
 
   #getData(entityId: EntityId): InventoryData {
     return this.#world.getComponent(entityId, InventoryComponent);
+  }
+
+  #getGlobalNextInstanceCounter(): number {
+    let nextCounter = 0;
+    for (const inventoryId of this.#inventories) {
+      const data = this.#getData(inventoryId);
+      nextCounter = Math.max(nextCounter, data.nextInstanceCounter);
+    }
+    return nextCounter;
+  }
+
+  #allocateInstanceId(targetData: InventoryData): ItemInstanceId {
+    let nextCounter = this.#getGlobalNextInstanceCounter();
+    let instanceId = toItemInstanceId(nextCounter);
+    while (this.#hasStoredInstanceId(instanceId)) {
+      nextCounter += 1;
+      instanceId = toItemInstanceId(nextCounter);
+    }
+    targetData.nextInstanceCounter = Math.max(targetData.nextInstanceCounter, nextCounter + 1);
+    return instanceId;
+  }
+
+  #observeInstanceId(targetData: InventoryData, instanceId: ItemInstanceId): void {
+    const match = /^item_(\d+)$/.exec(instanceId);
+    const numericId = match?.[1] === undefined ? undefined : Number(match[1]);
+    if (numericId === undefined || !Number.isSafeInteger(numericId)) return;
+    targetData.nextInstanceCounter = Math.max(targetData.nextInstanceCounter, numericId + 1);
+  }
+
+  #hasStoredInstanceId(instanceId: ItemInstanceId): boolean {
+    for (const inventoryId of this.#inventories) {
+      const data = this.#getData(inventoryId);
+      if (data.activeBag?.instanceId === instanceId) return true;
+      for (const entry of data.slots.values()) {
+        if (entry.instanceId === instanceId) return true;
+      }
+    }
+    return false;
   }
 
   #isValidPosition(data: InventoryData, position: number): boolean {
