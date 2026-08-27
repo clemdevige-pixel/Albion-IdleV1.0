@@ -112,11 +112,12 @@ export class ProductionBridgeAdapter {
       tier,
       inventoryManager.getTotalQuantity(productionStorageId, config.rawItemId),
       miniGame.strikesUsed,
-      miniGame.streak,
-      miniGame.yieldScore,
+      miniGame.activity,
+      miniGame.averageActivity,
       miniGame.yieldMultiplier,
-      miniGame.nextYieldThreshold,
-      miniGame.yieldProgressToNext,
+      miniGame.speedBonusRatio,
+      miniGame.nextActivityThreshold,
+      miniGame.activityProgressToNext,
       activeResource,
     );
   }
@@ -208,3 +209,5 @@ const REFINING_UPDATERS = {
   hide: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateLeatherRefining(vm),
   fiber: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateClothRefining(vm),
 } satisfies Record<ProductionFamilyId, (bridge: GameBridge) => RefiningUpdater>;
+
+const REFINING_BUILDING_BY_TASK_SUFFIX = {} as const;
