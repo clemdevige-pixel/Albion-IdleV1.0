@@ -25,7 +25,34 @@ La validation artistique reste humaine.
 
 ---
 
-## Commande
+## Workflow standard d’intégration
+
+Pour le workflow utilisateur/agent complet, lire d’abord :
+
+```text
+docs/tooling/asset-integration-workflow.md
+```
+
+Le flux standard est désormais :
+
+1. l’utilisateur dépose les spritesheets brutes sur GitHub dans `.tmp/spritesheet-imports/<weaponId>/` ;
+2. l’agent lance `generate:spritesheet-import` ;
+3. le wrapper appelle ce générateur pour chaque animation détectée ;
+4. les sorties normalisées sont déposées directement dans `apps/client/public/assets/characters/` ;
+5. l’utilisateur valide visuellement ;
+6. l’agent câble ensuite les assets dans le jeu.
+
+Commande recommandée pour un lot d’animations :
+
+```powershell
+pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver
+```
+
+Le wrapper ne remplace pas ce générateur : il l’orchestre.
+
+---
+
+## Commande unitaire
 
 ```powershell
 pnpm.cmd generate:spritesheet -- --input="PATH_TO_SOURCE.png" --reference="PATH_TO_REFERENCE.png" --reference-frame=0 --output="PATH_TO_RESULT.png" --frame-count=6 --calibration-frame=0
@@ -221,7 +248,82 @@ La spritesheet finale est recréée avec :
 
 ---
 
-## Workflow recommandé
+## Import automatisé de plusieurs animations
+
+Le wrapper est :
+
+```text
+packages/tooling/src/bin/import-hero-spritesheets.ts
+```
+
+Commande :
+
+```powershell
+pnpm.cmd generate:spritesheet-import -- --weapon=<weaponId>
+```
+
+Par défaut il lit :
+
+```text
+.tmp/spritesheet-imports/<weaponId>/
+```
+
+Il reconnaît :
+
+```text
+idle
+walk
+attack
+death
+```
+
+Puis dépose directement les sorties dans :
+
+```text
+apps/client/public/assets/characters/
+```
+
+avec le nommage :
+
+```text
+hero-<weaponId>-<animation>-sheet-v1.png
+```
+
+Exemple :
+
+```text
+hero-deathgiver-idle-sheet-v1.png
+hero-deathgiver-attack-sheet-v1.png
+```
+
+La référence par défaut du wrapper est actuellement :
+
+```text
+apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png
+```
+
+avec :
+
+```text
+referenceFrame=0
+referenceFrameCount=6
+frameCount=6
+calibrationFrame=0
+```
+
+Le wrapper accepte les overrides documentés dans `asset-integration-workflow.md`.
+
+Il produit également :
+
+```text
+.tmp/spritesheet-imports/<weaponId>/generation-report.json
+```
+
+Ce report sert au contrôle technique et au câblage ultérieur par l’agent.
+
+---
+
+## Workflow recommandé pour un test unitaire
 
 1. Préparer une spritesheet source déjà validée artistiquement.
 2. Choisir une frame ou spritesheet de référence déjà acceptable en jeu.
@@ -234,15 +336,6 @@ Pour les tests temporaires, utiliser :
 
 ```text
 .tmp/spritesheet-tests/
-```
-
-Exemple :
-
-```text
-.tmp/spritesheet-tests/
-├── source.png
-├── hero-broadsword-attack-sheet-v1.png
-└── result.png
 ```
 
 ---
@@ -258,6 +351,8 @@ Le contrôle humain doit vérifier au minimum :
 5. **Drift horizontal** — le personnage ne saute pas artificiellement de gauche à droite.
 6. **Spacing** — les sprites restent correctement séparés.
 7. **Alpha** — aucun fond parasite n’est introduit.
+
+Cette validation se fait après génération et avant câblage jeu.
 
 ---
 
@@ -336,7 +431,8 @@ Un agent qui reprend ce chantier doit :
 - ne jamais normaliser chaque frame indépendamment ;
 - ne pas confondre taille brute du fichier et gabarit du personnage ;
 - garder le spacing de sortie indépendant de la détection source ;
-- considérer la validation artistique comme une responsabilité humaine.
+- considérer la validation artistique comme une responsabilité humaine ;
+- utiliser le wrapper d’import pour le workflow standard au lieu de déplacer/renommer manuellement les fichiers.
 
 Fichier principal :
 
@@ -344,10 +440,17 @@ Fichier principal :
 packages/tooling/src/bin/generate-spritesheet.ts
 ```
 
-Commande exposée à la racine :
+Wrapper d’import :
+
+```text
+packages/tooling/src/bin/import-hero-spritesheets.ts
+```
+
+Commandes exposées à la racine :
 
 ```text
 pnpm generate:spritesheet
+pnpm generate:spritesheet-import
 ```
 
 ---
