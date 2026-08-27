@@ -96,7 +96,6 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
               cycleId={activity.activeMiniGame.cycleId}
               strikesUsed={activity.activeMiniGame.strikesUsed}
               activity={activity.activeMiniGame.activity}
-              averageActivity={activity.activeMiniGame.averageActivity}
               yieldMultiplier={activity.activeMiniGame.yieldMultiplier}
               speedBonusRatio={activity.activeMiniGame.speedBonusRatio}
               nextActivityThreshold={activity.activeMiniGame.nextActivityThreshold}
