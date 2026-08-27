@@ -293,7 +293,10 @@ function clusterComponents(components: readonly Component[], sheetWidth: number,
 function buildComponentFrames(sheet: RgbaImage, threshold: number, frameCount: number): RgbaImage[] {
   const componentMap = findPixelComponents(sheet, threshold);
   const assignments = clusterComponents(componentMap.components, sheet.width, frameCount);
-  const horizontalBounds: Array<{ left: number; right: number } | undefined> = new Array(frameCount).fill(undefined);
+  const horizontalBounds: Array<{ left: number; right: number } | undefined> = Array.from(
+    { length: frameCount },
+    () => undefined,
+  );
   for (let i = 0; i < componentMap.components.length; i += 1) {
     const component = componentMap.components[i];
     const cluster = assignments[i];
@@ -412,7 +415,7 @@ function measureBody(frame: RgbaImage, threshold: number): BodyMetrics {
   const supported: number[] = [];
   for (let y = bounds.top; y <= bounds.bottom; y += 1) if ((rowCounts[y] ?? 0) >= meaningful) supported.push(y);
   if (supported.length === 0) return { top: bounds.top, bottom: bounds.bottom, height: visibleHeight, centerX };
-  let bottom = supported[supported.length - 1] ?? bounds.bottom;
+  const bottom = supported[supported.length - 1] ?? bounds.bottom;
   let top = bottom;
   const maxGap = Math.max(4, Math.round(visibleHeight * 0.045));
   let gap = 0;
