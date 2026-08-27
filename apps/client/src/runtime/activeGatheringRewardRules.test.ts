@@ -7,16 +7,11 @@ import {
 } from "./activeGatheringRewardRules";
 
 describe("active gathering reward rules", () => {
-  it("uses the validated score and speed bonuses", () => {
+  it("uses the validated score-only active gathering bonuses", () => {
     expect(ACTIVE_GATHERING_REWARD_RULES.scorePerStrike).toEqual({
       miss: 0,
       correct: 8,
       perfect: 20,
-    });
-    expect(ACTIVE_GATHERING_REWARD_RULES.speedBonusRatio).toEqual({
-      miss: 0,
-      correct: 0.02,
-      perfect: 0.04,
     });
   });
 
