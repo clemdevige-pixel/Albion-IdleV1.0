@@ -7,10 +7,10 @@ import {
 } from "@game/persistence";
 
 /**
- * Increment only when the persisted payload shape changes incompatibly.
+ * Increment only when persisted semantics change incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 8;
+export const CURRENT_RUNTIME_SAVE_VERSION = 9;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
 const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
@@ -172,6 +172,28 @@ function collectExternalInstanceItemIds(
   }
 }
 
+function getItemInstanceHighWatermark(value: unknown): number {
+  let nextCounter = 0;
+  const visit = (child: unknown): void => {
+    if (typeof child === "string") {
+      const match = /^item_(\d+)$/.exec(child);
+      const numericId = match?.[1] === undefined ? undefined : Number(match[1]);
+      if (numericId !== undefined && Number.isSafeInteger(numericId)) {
+        nextCounter = Math.max(nextCounter, numericId + 1);
+      }
+      return;
+    }
+    if (Array.isArray(child)) {
+      for (const entry of child) visit(entry);
+      return;
+    }
+    if (!isRecord(child)) return;
+    for (const entry of Object.values(child)) visit(entry);
+  };
+  visit(value);
+  return nextCounter;
+}
+
 /**
  * Recovery for corrupted saves containing duplicate inventory instance ids.
  * No item is deleted: one occurrence remains canonical and later conflicts get
@@ -287,6 +309,160 @@ function repairDuplicateInventoryInstanceIds(
   };
 }
 
+interface GlobalInventoryOccurrence {
+  readonly inventoryIndex: number;
+  readonly kind: "bag" | "slot";
+  readonly slotIndex?: number;
+  readonly instanceId: string;
+  readonly itemId: string | undefined;
+}
+
+/**
+ * V9 establishes ItemInstanceId as a true runtime-global identity. It repairs
+ * collisions across different inventories and moves every legacy per-inventory
+ * allocator to one shared high-watermark. External item references select the
+ * canonical occurrence whenever the duplicated items differ.
+ */
+function repairGlobalInventoryInstanceIds(
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
+  const inventoryPayload = payload.inventory;
+  if (!isRecord(inventoryPayload)) return payload;
+  const inventories = inventoryPayload.inventories;
+  if (!Array.isArray(inventories)) return payload;
+
+  const externalItemIds = new Map<string, string>();
+  for (const [key, value] of Object.entries(payload)) {
+    if (key === "inventory") continue;
+    collectExternalInstanceItemIds(value, externalItemIds);
+  }
+
+  let nextCounter = getItemInstanceHighWatermark(payload);
+  for (const inventory of inventories) {
+    if (!isRecord(inventory)) continue;
+    const savedCounter = inventory.nextInstanceCounter;
+    if (
+      typeof savedCounter === "number"
+      && Number.isSafeInteger(savedCounter)
+      && savedCounter >= 0
+    ) {
+      nextCounter = Math.max(nextCounter, savedCounter);
+    }
+  }
+
+  const occurrences = new Map<string, GlobalInventoryOccurrence[]>();
+  const usedIds = new Set<string>();
+  const addOccurrence = (occurrence: GlobalInventoryOccurrence): void => {
+    usedIds.add(occurrence.instanceId);
+    const list = occurrences.get(occurrence.instanceId) ?? [];
+    list.push(occurrence);
+    occurrences.set(occurrence.instanceId, list);
+  };
+
+  inventories.forEach((inventory, inventoryIndex) => {
+    if (!isRecord(inventory)) return;
+    const activeBag = inventory.activeBag;
+    if (isRecord(activeBag) && typeof activeBag.instanceId === "string") {
+      addOccurrence({
+        inventoryIndex,
+        kind: "bag",
+        instanceId: activeBag.instanceId,
+        itemId: typeof activeBag.itemId === "string" ? activeBag.itemId : undefined,
+      });
+    }
+    if (!Array.isArray(inventory.slots)) return;
+    inventory.slots.forEach((slot, slotIndex) => {
+      if (!isRecord(slot) || typeof slot.instanceId !== "string") return;
+      addOccurrence({
+        inventoryIndex,
+        kind: "slot",
+        slotIndex,
+        instanceId: slot.instanceId,
+        itemId: typeof slot.itemId === "string" ? slot.itemId : undefined,
+      });
+    });
+  });
+
+  const canonical = new Map<string, GlobalInventoryOccurrence>();
+  for (const [instanceId, entries] of occurrences) {
+    const externalItemId = externalItemIds.get(instanceId);
+    const externalMatch = externalItemId === undefined
+      ? undefined
+      : entries.find((entry) => entry.itemId === externalItemId);
+    const preferredBag = entries.find((entry) => entry.kind === "bag");
+    const chosen = externalMatch ?? preferredBag ?? entries[0];
+    if (chosen !== undefined) canonical.set(instanceId, chosen);
+  }
+
+  const allocateId = (): string => {
+    let candidate = `item_${String(nextCounter)}`;
+    while (usedIds.has(candidate)) {
+      nextCounter += 1;
+      candidate = `item_${String(nextCounter)}`;
+    }
+    usedIds.add(candidate);
+    nextCounter += 1;
+    return candidate;
+  };
+
+  const isCanonical = (occurrence: GlobalInventoryOccurrence): boolean => {
+    const selected = canonical.get(occurrence.instanceId);
+    return selected?.inventoryIndex === occurrence.inventoryIndex
+      && selected.kind === occurrence.kind
+      && selected.slotIndex === occurrence.slotIndex;
+  };
+
+  const migratedInventories = inventories.map((inventory, inventoryIndex): unknown => {
+    if (!isRecord(inventory)) return inventory;
+
+    let activeBag = inventory.activeBag;
+    if (isRecord(activeBag) && typeof activeBag.instanceId === "string") {
+      const occurrence: GlobalInventoryOccurrence = {
+        inventoryIndex,
+        kind: "bag",
+        instanceId: activeBag.instanceId,
+        itemId: typeof activeBag.itemId === "string" ? activeBag.itemId : undefined,
+      };
+      if ((occurrences.get(occurrence.instanceId)?.length ?? 0) > 1 && !isCanonical(occurrence)) {
+        activeBag = { ...activeBag, instanceId: allocateId() };
+      }
+    }
+
+    const slots = Array.isArray(inventory.slots)
+      ? inventory.slots.map((slot, slotIndex): unknown => {
+          if (!isRecord(slot) || typeof slot.instanceId !== "string") return slot;
+          const occurrence: GlobalInventoryOccurrence = {
+            inventoryIndex,
+            kind: "slot",
+            slotIndex,
+            instanceId: slot.instanceId,
+            itemId: typeof slot.itemId === "string" ? slot.itemId : undefined,
+          };
+          if ((occurrences.get(occurrence.instanceId)?.length ?? 0) <= 1 || isCanonical(occurrence)) {
+            return slot;
+          }
+          return { ...slot, instanceId: allocateId() };
+        })
+      : inventory.slots;
+
+    return { ...inventory, activeBag, slots };
+  });
+
+  const normalizedInventories = migratedInventories.map((inventory): unknown => (
+    isRecord(inventory)
+      ? { ...inventory, nextInstanceCounter: nextCounter }
+      : inventory
+  ));
+
+  return {
+    ...payload,
+    inventory: {
+      ...inventoryPayload,
+      inventories: normalizedInventories,
+    },
+  };
+}
+
 function migrateWithDuplicateInventoryRepair(save: SaveFormat, toVersion: number): SaveFormat {
   const payload = repairDuplicateInventoryInstanceIds(save.payload);
   return {
@@ -392,6 +568,21 @@ const migrateV7ToV8: SaveMigration = {
   },
 };
 
+const migrateV8ToV9: SaveMigration = {
+  fromVersion: 8,
+  toVersion: 9,
+  migrate(save: SaveFormat): SaveFormat {
+    const payload = repairGlobalInventoryInstanceIds(save.payload);
+    return {
+      ...save,
+      version: 9,
+      metadata: { ...save.metadata, version: 9 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+  },
+};
+
 /** Ordered, explicit registry for runtime save migrations. */
 export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV1ToV2,
@@ -401,6 +592,7 @@ export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV5ToV6,
   migrateV6ToV7,
   migrateV7ToV8,
+  migrateV8ToV9,
 ];
 
 export interface RuntimeMigrationPipelineOptions {
