@@ -1,6 +1,6 @@
 import type { SaveFormat, SaveRepository } from "@game/persistence";
 
-export type SaveLoadSource = "primary" | "backup";
+export type SaveLoadSource = "primary" | "backup" | "backup_unrestored";
 
 /** Keeps the last readable primary snapshot before it is overwritten. */
 export function backupCurrentSave(
@@ -15,7 +15,7 @@ export function backupCurrentSave(
   return true;
 }
 
-/** Loads the primary slot, falling back to and restoring its backup if needed. */
+/** Loads the primary slot, falling back to its backup if needed. */
 export function loadSaveWithBackup(
   repository: SaveRepository,
   primarySlotId: string,
@@ -30,7 +30,17 @@ export function loadSaveWithBackup(
 
     loadSlot(backupSlotId);
     const backup: SaveFormat = repository.get(backupSlotId);
-    repository.save(primarySlotId, backup);
-    return "backup";
+    try {
+      repository.save(primarySlotId, backup);
+      return "backup";
+    } catch (restoreError) {
+      // The runtime has already loaded a validated backup. A storage write
+      // failure must not turn that successful recovery into a failed load.
+      console.error(
+        "[Persistence] Backup loaded but primary restore could not be persisted:",
+        restoreError,
+      );
+      return "backup_unrestored";
+    }
   }
 }
