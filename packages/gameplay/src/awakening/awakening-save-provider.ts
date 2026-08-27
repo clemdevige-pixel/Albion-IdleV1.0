@@ -4,11 +4,25 @@ import type { AwakenedWeaponService } from "./awakening-service.js";
 import type {
   AwakenedTraitId,
   AwakenedTraitOffer,
+  AwakenedTraitRollRange,
   AwakenedTraitRollResult,
   AwakenedTraitState,
   AwakenedWeaponState,
   AwakenedWeaponTier,
 } from "./types.js";
+
+const CURRENT_AWAKENING_SAVE_VERSION = 2;
+
+const LEGACY_V1_TRAIT_ROLLS: Readonly<Record<AwakenedTraitId, AwakenedTraitRollRange>> = {
+  item_power: { min: 1, max: 3, integer: true },
+  auto_attack_damage: { min: 0.2, max: 0.4 },
+  ability_power: { min: 0.2, max: 0.4 },
+  cooldown_reduction: { min: 0.5, max: 1 },
+  max_health: { min: 3, max: 6 },
+  defense: { min: 0.5, max: 1 },
+  life_steal: { min: 0.2, max: 0.4 },
+  fame_bonus: { min: 0.5, max: 1 },
+};
 
 interface SavedAwakenedRoll {
   traitId: string;
@@ -35,6 +49,7 @@ interface SavedAwakenedWeaponState {
 }
 
 interface AwakeningSavePayload {
+  version?: number;
   weapons: SavedAwakenedWeaponState[];
 }
 
@@ -64,12 +79,55 @@ function finiteNonNegative(value: number): boolean {
   return Number.isFinite(value) && value >= 0;
 }
 
-function restoreRoll(saved: SavedAwakenedRoll): AwakenedTraitRollResult {
+function rangeAverage(range: AwakenedTraitRollRange): number {
+  return (range.min + range.max) / 2;
+}
+
+function migrateLegacyTraitValue(
+  traitId: AwakenedTraitId,
+  value: number,
+  service: AwakenedWeaponService,
+): number {
+  const legacyAverage = rangeAverage(LEGACY_V1_TRAIT_ROLLS[traitId]);
+  const currentRange = service.getTraitRollRange(traitId);
+  const currentAverage = rangeAverage(currentRange);
+  const migrated = legacyAverage <= 0 ? value : value * currentAverage / legacyAverage;
+  return currentRange.integer === true ? Math.round(migrated) : migrated;
+}
+
+function migrateLegacyRoll(
+  traitId: AwakenedTraitId,
+  saved: SavedAwakenedRoll,
+  service: AwakenedWeaponService,
+): AwakenedTraitRollResult {
+  const legacyRange = LEGACY_V1_TRAIT_ROLLS[traitId];
+  const currentRange = service.getTraitRollRange(traitId);
+  const legacyWidth = legacyRange.max - legacyRange.min;
+  const percentile = legacyWidth <= 0
+    ? 0
+    : Math.min(1, Math.max(0, (saved.baseRoll - legacyRange.min) / legacyWidth));
+  const rawBase = currentRange.min + (currentRange.max - currentRange.min) * percentile;
+  const baseRoll = currentRange.integer === true ? Math.round(rawBase) : rawBase;
+  const gainMultiplier = saved.baseRoll > 0 ? saved.finalGain / saved.baseRoll : 1;
+  return {
+    traitId,
+    baseRoll,
+    critical: saved.critical === true,
+    finalGain: baseRoll * gainMultiplier,
+  };
+}
+
+function restoreRoll(
+  saved: SavedAwakenedRoll,
+  service: AwakenedWeaponService,
+  migrateLegacy: boolean,
+): AwakenedTraitRollResult {
   const traitId = normalizeTraitId(saved.traitId);
   if (traitId === undefined) throw new Error(`Invalid awakening save: trait ${saved.traitId}`);
   if (!finiteNonNegative(saved.baseRoll) || !finiteNonNegative(saved.finalGain)) {
     throw new Error("Invalid awakening save: invalid roll value");
   }
+  if (migrateLegacy) return migrateLegacyRoll(traitId, saved, service);
   return {
     traitId,
     baseRoll: saved.baseRoll,
@@ -78,7 +136,11 @@ function restoreRoll(saved: SavedAwakenedRoll): AwakenedTraitRollResult {
   };
 }
 
-function restoreOffer(saved: SavedAwakenedOffer): AwakenedTraitOffer {
+function restoreOffer(
+  saved: SavedAwakenedOffer,
+  service: AwakenedWeaponService,
+  migrateLegacy: boolean,
+): AwakenedTraitOffer {
   if (saved.kind !== "fill" && saved.kind !== "reroll") {
     throw new Error(`Invalid awakening save: offer kind ${saved.kind}`);
   }
@@ -90,7 +152,7 @@ function restoreOffer(saved: SavedAwakenedOffer): AwakenedTraitOffer {
   }
   const proposalsByTrait = new Map<AwakenedTraitId, AwakenedTraitRollResult>();
   for (const savedProposal of saved.proposals) {
-    const proposal = restoreRoll(savedProposal);
+    const proposal = restoreRoll(savedProposal, service, migrateLegacy);
     const previous = proposalsByTrait.get(proposal.traitId);
     if (previous === undefined || proposal.baseRoll > previous.baseRoll) {
       proposalsByTrait.set(proposal.traitId, proposal);
@@ -103,22 +165,29 @@ function restoreOffer(saved: SavedAwakenedOffer): AwakenedTraitOffer {
   };
 }
 
-function restoreTraits(savedTraits: Array<{ traitId: string; value: number }>): AwakenedTraitState[] {
+function restoreTraits(
+  savedTraits: Array<{ traitId: string; value: number }>,
+  service: AwakenedWeaponService,
+  migrateLegacy: boolean,
+): AwakenedTraitState[] {
   const traits: AwakenedTraitState[] = [];
   const traitIndex = new Map<AwakenedTraitId, number>();
   for (const saved of savedTraits) {
     const traitId = normalizeTraitId(saved.traitId);
     if (traitId === undefined) throw new Error(`Invalid awakening save: trait ${saved.traitId}`);
     if (!finiteNonNegative(saved.value)) throw new Error("Invalid awakening save: invalid trait value");
+    const restoredValue = migrateLegacy
+      ? migrateLegacyTraitValue(traitId, saved.value, service)
+      : saved.value;
     const existingIndex = traitIndex.get(traitId);
     if (existingIndex === undefined) {
       traitIndex.set(traitId, traits.length);
-      traits.push({ traitId, value: saved.value });
+      traits.push({ traitId, value: restoredValue });
       continue;
     }
     if (traitId !== "defense") throw new Error("Invalid awakening save: duplicate trait");
     const existing = traits[existingIndex];
-    if (existing !== undefined) traits[existingIndex] = { ...existing, value: existing.value + saved.value };
+    if (existing !== undefined) traits[existingIndex] = { ...existing, value: existing.value + restoredValue };
   }
   if (traits.length > 3) throw new Error("Invalid awakening save: invalid traits");
   return traits;
@@ -147,12 +216,17 @@ export class AwakeningSaveProvider implements SaveProvider {
         },
       }),
     }));
-    return { weapons } satisfies AwakeningSavePayload;
+    return { version: CURRENT_AWAKENING_SAVE_VERSION, weapons } satisfies AwakeningSavePayload;
   }
 
   load(data: unknown): void {
     const payload = data as Partial<AwakeningSavePayload>;
     if (!Array.isArray(payload.weapons)) throw new Error("Invalid awakening save: missing weapons");
+    const version = payload.version ?? 1;
+    if (version !== 1 && version !== CURRENT_AWAKENING_SAVE_VERSION) {
+      throw new Error(`Invalid awakening save: unsupported version ${String(version)}`);
+    }
+    const migrateLegacy = version === 1;
 
     const seen = new Set<string>();
     const states: AwakenedWeaponState[] = payload.weapons.map((saved) => {
@@ -172,7 +246,7 @@ export class AwakeningSaveProvider implements SaveProvider {
         throw new Error("Invalid awakening save: invalid Strain");
       }
       if (!Array.isArray(saved.traits)) throw new Error("Invalid awakening save: invalid traits");
-      const traits = restoreTraits(saved.traits);
+      const traits = restoreTraits(saved.traits, this.service, migrateLegacy);
       const awakened = saved.awakened === undefined
         ? traits.length > 0 || saved.strain > 0 || saved.lifetimeAttunementInvested > 0
         : saved.awakened === true;
@@ -188,7 +262,7 @@ export class AwakeningSaveProvider implements SaveProvider {
         strain: saved.strain,
         traits,
         ...(saved.pendingTraitOffer === undefined ? {} : {
-          pendingTraitOffer: restoreOffer(saved.pendingTraitOffer),
+          pendingTraitOffer: restoreOffer(saved.pendingTraitOffer, this.service, migrateLegacy),
         }),
       };
     });
