@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ACTIVE_GATHERING_REWARD_RULES } from "../runtime/activeGatheringRewardRules";
+import "./ActiveGatheringGame.css";
 
 interface ActiveGatheringGameProps {
   readonly cycleId: string;
