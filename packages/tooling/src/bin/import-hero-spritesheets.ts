@@ -133,14 +133,66 @@ const globalCalibrationFrame = getIntegerArg("--calibration-frame", 0);
 const outputDir = resolve(REPO_ROOT, "apps/client/public/assets/characters");
 mkdirSync(outputDir, { recursive: true });
 
-const generated: GeneratedAsset[] = [];
+const sources = new Map<Animation, string>();
 for (const animation of ANIMATIONS) {
   const source = findAnimationSource(sourceDir, weaponId, animation);
+  if (source !== undefined) sources.set(animation, source);
+}
+
+if (sources.size === 0) {
+  throw new Error(
+    `No supported spritesheets found in ${toRepoRelative(sourceDir)} for weapon ${weaponId}. Expected filenames containing the weapon id and one of: idle, walk, attack, death.`,
+  );
+}
+
+// Contract Albion Idle: all source animations for one weapon are authored at the
+// same physical character scale. We therefore calibrate that source scale ONCE
+// against the global reference, then reuse the exact result for every animation.
+// This prevents pose/weapon differences from inventing a different scale per sheet.
+const calibrationAnimation: Animation = sources.has("idle")
+  ? "idle"
+  : (ANIMATIONS.find((animation) => sources.has(animation)) as Animation);
+const calibrationSource = sources.get(calibrationAnimation) as string;
+const calibrationFrame = getIntegerArg(
+  `--${calibrationAnimation}-calibration-frame`,
+  globalCalibrationFrame,
+);
+const calibrationOutput = resolve(outputDir, `hero-${weaponId}-${calibrationAnimation}-sheet-v1.png`);
+
+console.log(`\n[${weaponId}] calibration=${calibrationAnimation}: ${basename(calibrationSource)} -> ${basename(calibrationOutput)}`);
+const calibrationStdout = runGenerator([
+  `--input=${toRepoRelative(calibrationSource)}`,
+  `--reference=${toRepoRelative(reference)}`,
+  `--reference-frame=${String(referenceFrame)}`,
+  `--reference-frame-count=${String(referenceFrameCount)}`,
+  `--output=${toRepoRelative(calibrationOutput)}`,
+  `--frame-count=${String(frameCount)}`,
+  `--calibration-frame=${String(calibrationFrame)}`,
+]);
+const calibrationMetrics = parseGeneratedMetrics(calibrationStdout);
+const sharedScale = calibrationMetrics.scale;
+if (sharedScale === undefined || !Number.isFinite(sharedScale) || sharedScale <= 0) {
+  throw new Error(`Unable to resolve shared scale from ${calibrationAnimation} calibration`);
+}
+console.log(`[${weaponId}] sharedScale=${sharedScale.toFixed(4)} from ${calibrationAnimation} vs global reference`);
+
+const generated: GeneratedAsset[] = [{
+  animation: calibrationAnimation,
+  source: toRepoRelative(calibrationSource),
+  output: toRepoRelative(calibrationOutput),
+  frameCount,
+  calibrationFrame,
+  ...calibrationMetrics,
+}];
+
+for (const animation of ANIMATIONS) {
+  if (animation === calibrationAnimation) continue;
+  const source = sources.get(animation);
   if (source === undefined) continue;
 
-  const calibrationFrame = getIntegerArg(`--${animation}-calibration-frame`, globalCalibrationFrame);
+  const animationCalibrationFrame = getIntegerArg(`--${animation}-calibration-frame`, globalCalibrationFrame);
   const output = resolve(outputDir, `hero-${weaponId}-${animation}-sheet-v1.png`);
-  console.log(`\n[${weaponId}] ${animation}: ${basename(source)} -> ${basename(output)}`);
+  console.log(`\n[${weaponId}] ${animation}: ${basename(source)} -> ${basename(output)} scale=${sharedScale.toFixed(4)}`);
   const stdout = runGenerator([
     `--input=${toRepoRelative(source)}`,
     `--reference=${toRepoRelative(reference)}`,
@@ -148,37 +200,35 @@ for (const animation of ANIMATIONS) {
     `--reference-frame-count=${String(referenceFrameCount)}`,
     `--output=${toRepoRelative(output)}`,
     `--frame-count=${String(frameCount)}`,
-    `--calibration-frame=${String(calibrationFrame)}`,
+    `--calibration-frame=${String(animationCalibrationFrame)}`,
+    `--scale=${String(sharedScale)}`,
   ]);
   generated.push({
     animation,
     source: toRepoRelative(source),
     output: toRepoRelative(output),
     frameCount,
-    calibrationFrame,
+    calibrationFrame: animationCalibrationFrame,
     ...parseGeneratedMetrics(stdout),
   });
 }
 
-if (generated.length === 0) {
-  throw new Error(
-    `No supported spritesheets found in ${toRepoRelative(sourceDir)} for weapon ${weaponId}. Expected filenames containing the weapon id and one of: idle, walk, attack, death.`,
-  );
-}
-
 const reportPath = resolve(sourceDir, `generation-report-${weaponId}.json`);
 const report = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   weaponId,
   sourceDir: toRepoRelative(sourceDir),
   reference: toRepoRelative(reference),
   referenceFrame,
   referenceFrameCount,
+  calibrationAnimation,
+  sharedScale,
   generated,
 };
 writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf-8");
 
 console.log(`\nGenerated ${String(generated.length)} spritesheet(s).`);
+console.log(`Shared scale: ${sharedScale.toFixed(4)} (${calibrationAnimation} -> global reference)`);
 console.log(`Assets: ${generated.map((entry) => entry.output).join(", ")}`);
 console.log(`Report: ${toRepoRelative(reportPath)}`);
 console.log("Next step: visual validation before game wiring.");
