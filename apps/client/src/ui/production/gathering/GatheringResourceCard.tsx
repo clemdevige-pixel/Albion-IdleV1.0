@@ -95,6 +95,11 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
             <ActiveGatheringGame
               cycleId={activity.activeMiniGame.cycleId}
               strikesUsed={activity.activeMiniGame.strikesUsed}
+              streak={activity.activeMiniGame.streak}
+              yieldScore={activity.activeMiniGame.yieldScore}
+              yieldMultiplier={activity.activeMiniGame.yieldMultiplier}
+              nextYieldThreshold={activity.activeMiniGame.nextYieldThreshold}
+              yieldProgressToNext={activity.activeMiniGame.yieldProgressToNext}
               durationSeconds={activity.durationSeconds}
               onStrike={(quality) => actions.strike(activity.resourceFamily, quality)}
             />
