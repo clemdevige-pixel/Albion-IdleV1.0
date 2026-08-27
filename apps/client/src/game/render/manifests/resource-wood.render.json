@@ -4,7 +4,7 @@
   "kind": "resource_node",
   "textureKey": "gathering-wood-node",
   "assetPath": "/assets/resources/resource-birch-node.png",
-  "origin": { "x": 0.5, "y": 0.5 },
-  "offset": { "x": 0, "y": -18 },
+  "origin": { "x": 0.5, "y": 1 },
+  "offset": { "x": 0, "y": 78 },
   "display": { "width": 150, "height": 150 }
 }
