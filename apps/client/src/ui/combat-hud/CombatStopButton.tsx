@@ -54,6 +54,7 @@ export function CombatStopButton({
     : state === "stop_requested"
       ? "Annuler l'arrêt"
       : "Arrêter le combat";
+  const isResumeAction = state === "paused";
 
   return (
     <button
@@ -64,24 +65,28 @@ export function CombatStopButton({
         : undefined}
       style={{
         width: fullWidth ? "100%" : undefined,
-        minWidth: compact ? 96 : 154,
-        height: compact ? 27 : 34,
-        padding: compact ? "0 8px" : "0 14px",
-        border: "1px solid rgba(220, 190, 128, 0.55)",
-        borderRadius: compact ? 4 : 6,
-        background: state === "paused"
-          ? "rgba(55, 105, 72, 0.92)"
+        minWidth: compact ? 110 : 154,
+        height: compact ? 28 : 34,
+        padding: compact ? "0 11px" : "0 14px",
+        border: isResumeAction
+          ? "1px solid #c08a1e"
           : state === "stop_requested"
-            ? "rgba(118, 82, 42, 0.92)"
-            : "rgba(80, 45, 42, 0.92)",
-        color: "#f4ead3",
+            ? "1px solid rgba(190, 139, 57, 0.72)"
+            : "1px solid rgba(155, 76, 68, 0.72)",
+        borderRadius: compact ? 4 : 6,
+        background: isResumeAction
+          ? "linear-gradient(#e3b943, #a97612)"
+          : state === "stop_requested"
+            ? "rgba(52, 39, 21, 0.94)"
+            : "rgba(44, 23, 22, 0.94)",
+        color: isResumeAction ? "#15100a" : "#ead8ce",
         fontSize: compact ? 9 : 12,
         fontWeight: 700,
-        letterSpacing: compact ? "0.02em" : "0.02em",
+        letterSpacing: "0.02em",
         cursor: "pointer",
-        boxShadow: compact
-          ? "inset 0 1px 0 rgba(255,255,255,0.035), 0 1px 3px rgba(0, 0, 0, 0.22)"
-          : "0 2px 8px rgba(0, 0, 0, 0.28)",
+        boxShadow: isResumeAction
+          ? "inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 6px rgba(0,0,0,0.26)"
+          : "inset 0 1px 0 rgba(255,255,255,0.035)",
         whiteSpace: "nowrap",
       }}
     >
