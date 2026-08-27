@@ -39,11 +39,11 @@ function makeMigration(fromVersion: number): SaveMigration {
 }
 
 describe("runtime save migration registry", () => {
-  it("keeps the current live format at version 7", () => {
-    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(7);
+  it("keeps the current live format at version 8", () => {
+    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(8);
     const pipeline = createRuntimeMigrationPipeline();
-    const save = makeSave(7);
-    expect(pipeline.migrate(save, 7)).toBe(save);
+    const save = makeSave(8);
+    expect(pipeline.migrate(save, 8)).toBe(save);
   });
 
   it("migrates legacy Fire Staff mastery and item ids from v1 to v2", () => {
@@ -309,7 +309,7 @@ describe("runtime save migration registry", () => {
       checksum: computeChecksum(payload),
     };
 
-    const migrated = createRuntimeMigrationPipeline().migrate(save, 7);
+    const migrated = createRuntimeMigrationPipeline({ currentVersion: 7 }).migrate(save, 7);
     const inventory = (migrated.payload.inventory as {
       inventories: Array<{
         nextInstanceCounter: number;
@@ -325,6 +325,44 @@ describe("runtime save migration registry", () => {
     expect(inventory?.nextInstanceCounter).toBe(4);
     expect(migrated.version).toBe(7);
     expect(migrated.metadata.version).toBe(7);
+    expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
+  });
+
+  it("recovers already-V7 duplicate slot instance ids when migrating to V8", () => {
+    const payload = {
+      inventory: {
+        inventories: [{
+          capacity: 48,
+          nextInstanceCounter: 42,
+          activeBag: null,
+          slots: [
+            { position: 0, instanceId: "item_41", itemId: "item_resource_wood_t4", quantity: 10, enchantment: 0 },
+            { position: 1, instanceId: "item_41", itemId: "item_resource_stone_t4", quantity: 12, enchantment: 0 },
+          ],
+        }],
+      },
+    };
+    const save: SaveFormat = {
+      version: 7,
+      metadata: { version: 7, createdAt: 0, updatedAt: 0, buildVersion: "test", seed: 42 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+
+    const migrated = createRuntimeMigrationPipeline().migrate(save, 8);
+    const inventory = (migrated.payload.inventory as {
+      inventories: Array<{
+        nextInstanceCounter: number;
+        slots: Array<{ position: number; instanceId: string; itemId: string; quantity: number }>;
+      }>;
+    }).inventories[0];
+
+    expect(inventory?.slots).toHaveLength(2);
+    expect(inventory?.slots[0]?.instanceId).toBe("item_41");
+    expect(inventory?.slots[1]?.instanceId).toBe("item_42");
+    expect(inventory?.nextInstanceCounter).toBe(43);
+    expect(migrated.version).toBe(8);
+    expect(migrated.metadata.version).toBe(8);
     expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
   });
 
@@ -354,7 +392,7 @@ describe("runtime save migration registry", () => {
       checksum: computeChecksum(payload),
     };
 
-    const migrated = createRuntimeMigrationPipeline().migrate(save, 7);
+    const migrated = createRuntimeMigrationPipeline({ currentVersion: 7 }).migrate(save, 7);
     const slots = (migrated.payload.inventory as {
       inventories: Array<{ slots: Array<{ instanceId: string; itemId: string }> }>;
     }).inventories[0]?.slots ?? [];
@@ -365,11 +403,19 @@ describe("runtime save migration registry", () => {
 
   it("builds a complete contiguous migration path", () => {
     const pipeline = createRuntimeMigrationPipeline({
-      currentVersion: 7,
+      currentVersion: 8,
       earliestSupportedVersion: 1,
-      migrations: [makeMigration(1), makeMigration(2), makeMigration(3), makeMigration(4), makeMigration(5), makeMigration(6)],
+      migrations: [
+        makeMigration(1),
+        makeMigration(2),
+        makeMigration(3),
+        makeMigration(4),
+        makeMigration(5),
+        makeMigration(6),
+        makeMigration(7),
+      ],
     });
-    expect(pipeline.migrate(makeSave(1), 7).version).toBe(7);
+    expect(pipeline.migrate(makeSave(1), 8).version).toBe(8);
   });
 
   it("rejects a version bump with a missing migration", () => {
