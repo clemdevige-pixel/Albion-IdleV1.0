@@ -6,7 +6,6 @@ import {
   getActiveGatheringBonuses,
   getActiveGatheringMarkerSpeed,
   getActiveGatheringRewardedQuantity,
-  getAverageActiveGatheringActivity,
 } from "./activeGatheringRewardRules";
 
 describe("active gathering activity rules", () => {
@@ -48,8 +47,7 @@ describe("active gathering activity rules", () => {
     expect(shortAfterQuarterCycle).toBeCloseTo(68.75, 8);
   });
 
-  it("uses average activity for the final cycle reward", () => {
-    expect(getAverageActiveGatheringActivity(600, 10)).toBe(60);
+  it("uses live activity at cycle completion for the final reward", () => {
     expect(getActiveGatheringRewardedQuantity(1, 24)).toMatchObject({
       quantity: 1,
       multiplier: 1,
