@@ -10,7 +10,7 @@ import {
  * Increment only when the persisted payload shape changes incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 6;
+export const CURRENT_RUNTIME_SAVE_VERSION = 7;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
 const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
@@ -152,6 +152,139 @@ function repairDuplicatedActiveBagEntries(payload: Record<string, unknown>): Rec
   };
 }
 
+function collectExternalInstanceItemIds(
+  value: unknown,
+  result: Map<string, string>,
+): void {
+  if (Array.isArray(value)) {
+    for (const entry of value) collectExternalInstanceItemIds(entry, result);
+    return;
+  }
+  if (!isRecord(value)) return;
+
+  const instanceId = value.instanceId;
+  const itemId = value.itemId;
+  if (typeof instanceId === "string" && typeof itemId === "string") {
+    result.set(instanceId, itemId);
+  }
+  for (const child of Object.values(value)) {
+    collectExternalInstanceItemIds(child, result);
+  }
+}
+
+/**
+ * V6 recovery for corrupted saves containing duplicate inventory instance ids.
+ * No item is deleted: one occurrence remains canonical and later conflicts get
+ * fresh inventory identities. External equipment records help choose the
+ * canonical occurrence when the duplicated slots contain different items.
+ */
+function repairDuplicateInventoryInstanceIds(
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
+  const inventoryPayload = payload.inventory;
+  if (!isRecord(inventoryPayload)) return payload;
+  const inventories = inventoryPayload.inventories;
+  if (!Array.isArray(inventories)) return payload;
+
+  const externalItemIds = new Map<string, string>();
+  for (const [key, value] of Object.entries(payload)) {
+    if (key === "inventory") continue;
+    collectExternalInstanceItemIds(value, externalItemIds);
+  }
+
+  const migratedInventories = inventories.map((inventory): unknown => {
+    if (!isRecord(inventory) || !Array.isArray(inventory.slots)) return inventory;
+
+    const slots = inventory.slots;
+    const activeBag = isRecord(inventory.activeBag) ? inventory.activeBag : undefined;
+    const bagInstanceId = typeof activeBag?.instanceId === "string"
+      ? activeBag.instanceId
+      : undefined;
+
+    const usedIds = new Set<string>();
+    if (bagInstanceId !== undefined) usedIds.add(bagInstanceId);
+    for (const slot of slots) {
+      if (isRecord(slot) && typeof slot.instanceId === "string") {
+        usedIds.add(slot.instanceId);
+      }
+    }
+
+    let nextCounter = Number.isSafeInteger(inventory.nextInstanceCounter)
+      && Number(inventory.nextInstanceCounter) >= 0
+      ? Number(inventory.nextInstanceCounter)
+      : 0;
+    for (const id of usedIds) {
+      const match = /^item_(\d+)$/.exec(id);
+      if (match?.[1] !== undefined) {
+        nextCounter = Math.max(nextCounter, Number(match[1]) + 1);
+      }
+    }
+
+    const allocateId = (): string => {
+      let candidate = `item_${String(nextCounter)}`;
+      while (usedIds.has(candidate)) {
+        nextCounter += 1;
+        candidate = `item_${String(nextCounter)}`;
+      }
+      usedIds.add(candidate);
+      nextCounter += 1;
+      return candidate;
+    };
+
+    const occurrences = new Map<string, number[]>();
+    slots.forEach((slot, index) => {
+      if (!isRecord(slot) || typeof slot.instanceId !== "string") return;
+      const list = occurrences.get(slot.instanceId) ?? [];
+      list.push(index);
+      occurrences.set(slot.instanceId, list);
+    });
+
+    const canonicalIndex = new Map<string, number>();
+    for (const [instanceId, indexes] of occurrences) {
+      if (bagInstanceId === instanceId) continue;
+      const externalItemId = externalItemIds.get(instanceId);
+      const matchingIndex = externalItemId === undefined
+        ? undefined
+        : indexes.find((index) => {
+            const slot = slots[index];
+            return isRecord(slot) && slot.itemId === externalItemId;
+          });
+      canonicalIndex.set(instanceId, matchingIndex ?? indexes[0] ?? -1);
+    }
+
+    let changed = false;
+    const migratedSlots = slots.map((slot, index): unknown => {
+      if (!isRecord(slot) || typeof slot.instanceId !== "string") return slot;
+      const indexes = occurrences.get(slot.instanceId);
+      const conflictsWithBag = bagInstanceId === slot.instanceId;
+      const duplicatedInSlots = (indexes?.length ?? 0) > 1;
+      if (!conflictsWithBag && !duplicatedInSlots) return slot;
+
+      if (!conflictsWithBag && canonicalIndex.get(slot.instanceId) === index) {
+        return slot;
+      }
+
+      changed = true;
+      return { ...slot, instanceId: allocateId() };
+    });
+
+    if (!changed) return inventory;
+    return {
+      ...inventory,
+      slots: migratedSlots,
+      nextInstanceCounter: nextCounter,
+    };
+  });
+
+  return {
+    ...payload,
+    inventory: {
+      ...inventoryPayload,
+      inventories: migratedInventories,
+    },
+  };
+}
+
 const migrateV1ToV2: SaveMigration = {
   fromVersion: 1,
   toVersion: 2,
@@ -230,6 +363,21 @@ const migrateV5ToV6: SaveMigration = {
   },
 };
 
+const migrateV6ToV7: SaveMigration = {
+  fromVersion: 6,
+  toVersion: 7,
+  migrate(save: SaveFormat): SaveFormat {
+    const payload = repairDuplicateInventoryInstanceIds(save.payload as Record<string, unknown>);
+    return {
+      ...save,
+      version: 7,
+      metadata: { ...save.metadata, version: 7 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+  },
+};
+
 /** Ordered, explicit registry for runtime save migrations. */
 export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV1ToV2,
@@ -237,6 +385,7 @@ export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV3ToV4,
   migrateV4ToV5,
   migrateV5ToV6,
+  migrateV6ToV7,
 ];
 
 export interface RuntimeMigrationPipelineOptions {
