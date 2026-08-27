@@ -18,6 +18,11 @@ export interface AwakenedTraitRollRange {
   readonly integer?: boolean;
 }
 
+export interface AwakenedProgressiveTraitRollRange extends AwakenedTraitRollRange {
+  /** Upper bound of the current real trait value. null means no upper bound. */
+  readonly below: number | null;
+}
+
 export interface AwakenedTierBalance {
   readonly initialAttunementCap: number;
   readonly awakeningAttunementThreshold: number;
@@ -28,6 +33,14 @@ export interface AwakenedTierBalance {
 export interface AwakenedWeaponBalance {
   readonly tiers: Readonly<Record<AwakenedWeaponTier, AwakenedTierBalance>>;
   readonly traitRolls: Readonly<Record<AwakenedTraitId, AwakenedTraitRollRange>>;
+  readonly progressiveTraitRolls: Readonly<{
+    cooldown_reduction: readonly AwakenedProgressiveTraitRollRange[];
+    life_steal: readonly AwakenedProgressiveTraitRollRange[];
+  }>;
+  readonly traitCaps: Readonly<{
+    cooldown_reduction: number;
+    life_steal: number;
+  }>;
   readonly traitProposalCount: number;
   readonly slotUnlockStrainThresholds: readonly [number, number, number];
   readonly attunementCapCostMultiplier: number;
@@ -37,15 +50,11 @@ export interface AwakenedWeaponBalance {
   readonly strainPerModification: number;
   readonly attunementGrowthPerStrain: number;
   readonly silverGrowthPerStrain: number;
-  readonly cdrAsymptotePercent: number;
-  readonly cdrCurveConstant: number;
-  readonly lifeStealAsymptotePercent: number;
-  readonly lifeStealCurveConstant: number;
 }
 
 export interface AwakenedTraitState {
   readonly traitId: AwakenedTraitId;
-  /** Accumulated authored trait value. Non-linear traits are resolved at consumption time. */
+  /** Accumulated real trait value applied directly by gameplay. */
   readonly value: number;
 }
 
@@ -106,6 +115,7 @@ export type AwakenedFailureReason =
   | "no_trait_offer_pending"
   | "invalid_trait_choice"
   | "choice_required"
+  | "trait_at_cap"
   | "insufficient_attunement"
   | "insufficient_silver";
 
