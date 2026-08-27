@@ -209,9 +209,11 @@ function repairDuplicateInventoryInstanceIds(
       }
     }
 
-    let nextCounter = Number.isSafeInteger(inventory.nextInstanceCounter)
-      && Number(inventory.nextInstanceCounter) >= 0
-      ? Number(inventory.nextInstanceCounter)
+    const savedNextCounter = inventory.nextInstanceCounter;
+    let nextCounter = typeof savedNextCounter === "number"
+      && Number.isSafeInteger(savedNextCounter)
+      && savedNextCounter >= 0
+      ? savedNextCounter
       : 0;
     for (const id of usedIds) {
       const match = /^item_(\d+)$/.exec(id);
