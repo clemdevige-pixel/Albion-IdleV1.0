@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { ACTIVE_GATHERING_REWARD_RULES } from "../runtime/activeGatheringRewardRules";
 
 interface ActiveGatheringGameProps {
   readonly cycleId: string;
   readonly strikesUsed: number;
+  readonly streak: number;
+  readonly yieldScore: number;
+  readonly yieldMultiplier: 1 | 2 | 3;
+  readonly nextYieldThreshold: number | null;
+  readonly yieldProgressToNext: number;
   readonly durationSeconds: number;
   readonly onStrike: (quality: "miss" | "correct" | "perfect") => boolean;
 }
@@ -12,14 +18,14 @@ export function ActiveGatheringGame(
 ): JSX.Element {
   const [markerPosition, setMarkerPosition] = useState(0);
   const [feedback, setFeedback] = useState(
-    "Frappez au centre pour accélérer le cycle.",
+    "Enchaînez les frappes pour augmenter le rendement.",
   );
   const markerDirection = useRef(1);
   const lastFrameTime = useRef<number | null>(null);
 
   useEffect(() => {
     setMarkerPosition(0);
-    setFeedback("Frappez au centre pour accélérer le cycle.");
+    setFeedback("Enchaînez les frappes pour augmenter le rendement.");
     markerDirection.current = 1;
     lastFrameTime.current = null;
   }, [props.cycleId]);
@@ -60,25 +66,32 @@ export function ActiveGatheringGame(
         : "miss";
 
     if (!props.onStrike(quality)) return;
-    const removedSeconds = props.durationSeconds * (
-      quality === "perfect" ? 0.1 : quality === "correct" ? 0.06 : 0
-    );
+    const removedSeconds = props.durationSeconds
+      * ACTIVE_GATHERING_REWARD_RULES.speedBonusRatio[quality];
     setFeedback(
       quality === "perfect"
-        ? `Parfait ! -${formatSeconds(removedSeconds)} s.`
+        ? `Parfait · +20 rendement · -${formatSeconds(removedSeconds)} s`
         : quality === "correct"
-          ? `Correct ! -${formatSeconds(removedSeconds)} s.`
-          : "Raté — aucun malus.",
+          ? `Correct · +8 rendement · -${formatSeconds(removedSeconds)} s`
+          : "Raté · streak et rendement réinitialisés",
     );
     setMarkerPosition(0);
     markerDirection.current = 1;
   };
 
   return (
-    <div className="active-gathering" aria-label="Récolte active du bois">
+    <div className="active-gathering" aria-label="Récolte active">
       <div className="active-gathering__header">
         <strong>Frappe active</strong>
-        <span>{props.strikesUsed} frappe{props.strikesUsed > 1 ? "s" : ""}</span>
+        <span>Streak ×{String(props.streak)} · Rendement ×{String(props.yieldMultiplier)}</span>
+      </div>
+      <div className="active-gathering__yield" aria-label={`Rendement ${String(props.yieldScore)} points`}>
+        <span style={{ width: `${String(props.yieldProgressToNext)}%` }} />
+        <small>
+          {props.nextYieldThreshold === null
+            ? "Rendement max"
+            : `${String(props.yieldScore)} / ${String(props.nextYieldThreshold)}`}
+        </small>
       </div>
       <div className="active-gathering__meter" aria-hidden="true">
         <span className="active-gathering__zone active-gathering__zone--correct" />
