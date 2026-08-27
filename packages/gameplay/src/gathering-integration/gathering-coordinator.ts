@@ -58,7 +58,6 @@ export class GatheringCoordinator {
         const nodeDef = this.#nodeRegistry.get(node.definitionId);
         if (nodeDef === undefined) return;
 
-        // We don't have the tool reference from the event, so we store it per-session
         const toolId = this.#sessionToolMap.get(event.sessionId);
         if (toolId === undefined) return;
 
@@ -72,8 +71,6 @@ export class GatheringCoordinator {
         };
 
         this.events.publish("gatheringCycleCompleted", cycleResult);
-
-        // Clean up session tracking
         this.#sessionToolMap.delete(event.sessionId);
       },
     );
@@ -85,26 +82,23 @@ export class GatheringCoordinator {
     nodeId: ResourceNodeId,
     equippedTools: readonly GatheringToolDefinition[],
     currentTick: number,
+    baseGatherTimeTicks: number,
   ): GatheringCoordinatorResult {
-    // Get node instance
     const node = this.#nodeManager.getNode(nodeId);
     if (node === undefined) {
       return { ok: false, reason: "node_not_found" };
     }
 
-    // Get node definition
     const nodeDef = this.#nodeRegistry.get(node.definitionId);
     if (nodeDef === undefined) {
       return { ok: false, reason: "node_definition_not_found" };
     }
 
-    // Get resource definition
     const resourceDef = this.#resourceRegistry.get(nodeDef.resourceDefinitionId);
     if (resourceDef === undefined) {
       return { ok: false, reason: "resource_definition_not_found" };
     }
 
-    // Find and validate tool
     const requiredToolType = getRequiredToolType(resourceDef.family);
     const matchedTool = findMatchingTool(requiredToolType, equippedTools);
     const validation = validateTool(matchedTool, resourceDef.family, nodeDef.requiredToolTier);
@@ -113,18 +107,13 @@ export class GatheringCoordinator {
       return { ok: false, reason: validation.reason };
     }
 
-    // matchedTool is guaranteed defined when validation passes
     const tool = matchedTool!;
-
-    // Calculate config
-    const baseGatherTimeTicks = Math.max(1, Math.floor(resourceDef.respawnDurationTicks / 10));
     const config = {
-      baseGatherTimeTicks,
+      baseGatherTimeTicks: Math.max(1, Math.floor(baseGatherTimeTicks)),
       toolModifier: tool.speedModifier,
       masteryModifier: 1.0,
     } as const;
 
-    // Delegate to gathering manager
     const result: GatheringStartResult = this.#gatheringManager.startGathering(
       { nodeId, currentTick },
       this.#nodeManager,
