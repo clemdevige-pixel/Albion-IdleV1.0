@@ -28,6 +28,7 @@ export class InventoryManager {
   readonly #inventories = new Set<EntityId>();
   readonly #resolveStackInfo: StackInfoResolver | undefined;
   readonly #resolveBagInfo: BagInfoResolver | undefined;
+  #nextInstanceCounter = 0;
 
   constructor(world: World, resolveStackInfo?: StackInfoResolver, resolveBagInfo?: BagInfoResolver) {
     this.#world = world;
@@ -51,7 +52,7 @@ export class InventoryManager {
       capacity,
       slots: new Map(),
       activeBag: undefined,
-      nextInstanceCounter: this.#getGlobalNextInstanceCounter(),
+      nextInstanceCounter: this.#nextInstanceCounter,
     };
     this.#world.addComponent(entityId, InventoryComponent, data);
     this.#inventories.add(entityId);
@@ -774,6 +775,12 @@ export class InventoryManager {
 
   /** Restores a loaded inventory; reserved for the save provider. */
   _restore(entityId: EntityId, data: InventoryData): void {
+    const entries = [
+      ...data.slots.values(),
+      ...(data.activeBag === undefined ? [] : [data.activeBag]),
+    ];
+    for (const entry of entries) this.#observeInstanceId(data, entry.instanceId);
+    this.#nextInstanceCounter = Math.max(this.#nextInstanceCounter, data.nextInstanceCounter);
     this.#world.setComponent(entityId, InventoryComponent, data);
     this.#inventories.add(entityId);
   }
@@ -783,7 +790,7 @@ export class InventoryManager {
   }
 
   #getGlobalNextInstanceCounter(): number {
-    let nextCounter = 0;
+    let nextCounter = this.#nextInstanceCounter;
     for (const inventoryId of this.#inventories) {
       const data = this.#getData(inventoryId);
       nextCounter = Math.max(nextCounter, data.nextInstanceCounter);
@@ -798,7 +805,11 @@ export class InventoryManager {
       nextCounter += 1;
       instanceId = toItemInstanceId(nextCounter);
     }
-    targetData.nextInstanceCounter = Math.max(targetData.nextInstanceCounter, nextCounter + 1);
+    this.#nextInstanceCounter = nextCounter + 1;
+    targetData.nextInstanceCounter = Math.max(
+      targetData.nextInstanceCounter,
+      this.#nextInstanceCounter,
+    );
     return instanceId;
   }
 
@@ -806,7 +817,9 @@ export class InventoryManager {
     const match = /^item_(\d+)$/.exec(instanceId);
     const numericId = match?.[1] === undefined ? undefined : Number(match[1]);
     if (numericId === undefined || !Number.isSafeInteger(numericId)) return;
-    targetData.nextInstanceCounter = Math.max(targetData.nextInstanceCounter, numericId + 1);
+    const nextCounter = numericId + 1;
+    this.#nextInstanceCounter = Math.max(this.#nextInstanceCounter, nextCounter);
+    targetData.nextInstanceCounter = Math.max(targetData.nextInstanceCounter, nextCounter);
   }
 
   #hasStoredInstanceId(instanceId: ItemInstanceId): boolean {
