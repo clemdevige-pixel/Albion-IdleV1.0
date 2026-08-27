@@ -39,11 +39,11 @@ function makeMigration(fromVersion: number): SaveMigration {
 }
 
 describe("runtime save migration registry", () => {
-  it("keeps the current live format at version 6", () => {
-    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(6);
+  it("keeps the current live format at version 7", () => {
+    expect(CURRENT_RUNTIME_SAVE_VERSION).toBe(7);
     const pipeline = createRuntimeMigrationPipeline();
-    const save = makeSave(6);
-    expect(pipeline.migrate(save, 6)).toBe(save);
+    const save = makeSave(7);
+    expect(pipeline.migrate(save, 7)).toBe(save);
   });
 
   it("migrates legacy Fire Staff mastery and item ids from v1 to v2", () => {
@@ -250,7 +250,7 @@ describe("runtime save migration registry", () => {
       checksum: computeChecksum(payload),
     };
 
-    const migrated = createRuntimeMigrationPipeline().migrate(save, 6);
+    const migrated = createRuntimeMigrationPipeline({ currentVersion: 6 }).migrate(save, 6);
     const inventory = (migrated.payload.inventory as {
       inventories: Array<{ activeBag: { instanceId: string }; slots: Array<{ instanceId: string }> }>;
     }).inventories[0];
@@ -262,7 +262,7 @@ describe("runtime save migration registry", () => {
     expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
   });
 
-  it("does not silently repair an ambiguous duplicate that differs from activeBag", () => {
+  it("does not silently repair an ambiguous duplicate that differs from activeBag in V6", () => {
     const payload = {
       inventory: {
         inventories: [{
@@ -280,20 +280,96 @@ describe("runtime save migration registry", () => {
       checksum: computeChecksum(payload),
     };
 
-    const migrated = createRuntimeMigrationPipeline().migrate(save, 6);
+    const migrated = createRuntimeMigrationPipeline({ currentVersion: 6 }).migrate(save, 6);
     const inventory = (migrated.payload.inventory as {
       inventories: Array<{ slots: Array<{ instanceId: string; itemId: string }> }>;
     }).inventories[0];
     expect(inventory?.slots).toEqual(payload.inventory.inventories[0]?.slots);
   });
 
+  it("recovers V6 duplicate slot instance ids without deleting either item", () => {
+    const payload = {
+      inventory: {
+        inventories: [{
+          capacity: 24,
+          nextInstanceCounter: 3,
+          activeBag: null,
+          slots: [
+            { position: 0, instanceId: "item_1", itemId: "item_resource_wood_t4", quantity: 10, enchantment: 0 },
+            { position: 1, instanceId: "item_1", itemId: "item_resource_stone_t4", quantity: 12, enchantment: 0 },
+            { position: 2, instanceId: "item_2", itemId: "item_resource_hide_t4", quantity: 8, enchantment: 0 },
+          ],
+        }],
+      },
+    };
+    const save: SaveFormat = {
+      version: 6,
+      metadata: { version: 6, createdAt: 0, updatedAt: 0, buildVersion: "test", seed: 42 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+
+    const migrated = createRuntimeMigrationPipeline().migrate(save, 7);
+    const inventory = (migrated.payload.inventory as {
+      inventories: Array<{
+        nextInstanceCounter: number;
+        slots: Array<{ position: number; instanceId: string; itemId: string; quantity: number }>;
+      }>;
+    }).inventories[0];
+
+    expect(inventory?.slots).toEqual([
+      { position: 0, instanceId: "item_1", itemId: "item_resource_wood_t4", quantity: 10, enchantment: 0 },
+      { position: 1, instanceId: "item_3", itemId: "item_resource_stone_t4", quantity: 12, enchantment: 0 },
+      { position: 2, instanceId: "item_2", itemId: "item_resource_hide_t4", quantity: 8, enchantment: 0 },
+    ]);
+    expect(inventory?.nextInstanceCounter).toBe(4);
+    expect(migrated.version).toBe(7);
+    expect(migrated.metadata.version).toBe(7);
+    expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
+  });
+
+  it("keeps the externally referenced item canonical when duplicate slots disagree", () => {
+    const payload = {
+      inventory: {
+        inventories: [{
+          capacity: 24,
+          nextInstanceCounter: 5,
+          activeBag: null,
+          slots: [
+            { position: 0, instanceId: "item_1", itemId: "item_resource_wood_t4", quantity: 1 },
+            { position: 1, instanceId: "item_1", itemId: "item_weapon_broadsword_t4", quantity: 1 },
+          ],
+        }],
+      },
+      equipment: {
+        equipments: [{
+          slots: [{ slot: "weapon", instanceId: "item_1", itemId: "item_weapon_broadsword_t4", quantity: 1 }],
+        }],
+      },
+    };
+    const save: SaveFormat = {
+      version: 6,
+      metadata: { version: 6, createdAt: 0, updatedAt: 0, buildVersion: "test", seed: 42 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+
+    const migrated = createRuntimeMigrationPipeline().migrate(save, 7);
+    const slots = (migrated.payload.inventory as {
+      inventories: Array<{ slots: Array<{ instanceId: string; itemId: string }> }>;
+    }).inventories[0]?.slots ?? [];
+
+    expect(slots.find(({ itemId }) => itemId === "item_weapon_broadsword_t4")?.instanceId).toBe("item_1");
+    expect(slots.find(({ itemId }) => itemId === "item_resource_wood_t4")?.instanceId).not.toBe("item_1");
+  });
+
   it("builds a complete contiguous migration path", () => {
     const pipeline = createRuntimeMigrationPipeline({
-      currentVersion: 6,
+      currentVersion: 7,
       earliestSupportedVersion: 1,
-      migrations: [makeMigration(1), makeMigration(2), makeMigration(3), makeMigration(4), makeMigration(5)],
+      migrations: [makeMigration(1), makeMigration(2), makeMigration(3), makeMigration(4), makeMigration(5), makeMigration(6)],
     });
-    expect(pipeline.migrate(makeSave(1), 6).version).toBe(6);
+    expect(pipeline.migrate(makeSave(1), 7).version).toBe(7);
   });
 
   it("rejects a version bump with a missing migration", () => {
