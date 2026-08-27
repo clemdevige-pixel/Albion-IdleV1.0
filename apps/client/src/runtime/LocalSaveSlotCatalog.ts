@@ -1,4 +1,9 @@
-import { LocalStorageSaveRepository, type SaveRepository } from "@game/persistence";
+import {
+  LocalStorageSaveRepository,
+  SaveValidator,
+  type SaveFormat,
+  type SaveRepository,
+} from "@game/persistence";
 import {
   LEGACY_SAVE_SLOT_ID,
   PLAYER_SAVE_SLOT_IDS,
@@ -30,7 +35,7 @@ function getBrowserStorage(): Storage | undefined {
     : undefined;
 }
 
-/** Manages local slot identity only; RuntimePersistence owns save validation. */
+/** Manages local slot identity only; RuntimePersistence owns runtime loading. */
 export class LocalSaveSlotCatalog {
   public constructor(
     private readonly accountId: string,
@@ -40,34 +45,46 @@ export class LocalSaveSlotCatalog {
 
   public migrateLocalSavesToAccount(): boolean {
     const accountMigrationMarker = `${ACCOUNT_MIGRATION_MARKER_PREFIX}${this.accountId}`;
-    if (this.markerStore?.getItem(accountMigrationMarker) === "done") return false;
+    const migrationAlreadyDone = this.markerStore?.getItem(accountMigrationMarker) === "done";
 
-    this.migrateLegacySaveToFirstUnscopedSlot();
+    if (!migrationAlreadyDone) {
+      this.migrateLegacySaveToFirstUnscopedSlot();
+    }
 
     const claimedBy = this.markerStore?.getItem(ACCOUNT_SLOT_CLAIM_MARKER);
     if (claimedBy !== null && claimedBy !== this.accountId) {
-      this.markerStore?.setItem(accountMigrationMarker, "done");
+      if (!migrationAlreadyDone) {
+        this.markerStore?.setItem(accountMigrationMarker, "done");
+      }
       return false;
     }
 
     let migrated = false;
-    for (const logicalSlotId of PLAYER_SAVE_SLOT_IDS) {
-      const accountSlotId = getAccountSaveSlotId(this.accountId, logicalSlotId);
-      const sourceBackupId = getSaveBackupSlotId(logicalSlotId);
-      const accountBackupId = getSaveBackupSlotId(accountSlotId);
-      if (!this.repository.has(accountSlotId) && this.repository.has(logicalSlotId)) {
-        this.repository.save(accountSlotId, this.repository.get(logicalSlotId));
-        migrated = true;
+    if (!migrationAlreadyDone) {
+      for (const logicalSlotId of PLAYER_SAVE_SLOT_IDS) {
+        const accountSlotId = getAccountSaveSlotId(this.accountId, logicalSlotId);
+        const sourceBackupId = getSaveBackupSlotId(logicalSlotId);
+        const accountBackupId = getSaveBackupSlotId(accountSlotId);
+        if (!this.repository.has(accountSlotId) && this.repository.has(logicalSlotId)) {
+          this.repository.save(accountSlotId, this.repository.get(logicalSlotId));
+          migrated = true;
+        }
+        if (!this.repository.has(accountBackupId) && this.repository.has(sourceBackupId)) {
+          this.repository.save(accountBackupId, this.repository.get(sourceBackupId));
+          migrated = true;
+        }
       }
-      if (!this.repository.has(accountBackupId) && this.repository.has(sourceBackupId)) {
-        this.repository.save(accountBackupId, this.repository.get(sourceBackupId));
-        migrated = true;
+      if (migrated || claimedBy === null) {
+        this.markerStore?.setItem(ACCOUNT_SLOT_CLAIM_MARKER, this.accountId);
       }
+      this.markerStore?.setItem(accountMigrationMarker, "done");
     }
-    if (migrated || claimedBy === null) {
-      this.markerStore?.setItem(ACCOUNT_SLOT_CLAIM_MARKER, this.accountId);
-    }
-    this.markerStore?.setItem(accountMigrationMarker, "done");
+
+    // Cleanup is deliberately separate from copying and also runs for players
+    // who already completed the v1 migration. A source is removed only after
+    // the account-scoped target is readable, checksum-valid and at least as
+    // recent as the source it replaces.
+    this.cleanupMigratedSources();
     return migrated;
   }
 
@@ -115,6 +132,49 @@ export class LocalSaveSlotCatalog {
 
   private hasSave(slotId: string): boolean {
     return this.repository.has(slotId) || this.repository.has(getSaveBackupSlotId(slotId));
+  }
+
+  private getValidSave(slotId: string): SaveFormat | undefined {
+    if (!this.repository.has(slotId)) return undefined;
+    try {
+      const save = this.repository.get(slotId);
+      new SaveValidator(save.version).validate(save);
+      return save;
+    } catch (error) {
+      console.error(
+        `[Persistence] Refusing to cleanup migration source because '${slotId}' is not a valid save:`,
+        error,
+      );
+      return undefined;
+    }
+  }
+
+  private cleanupSourceIfSafelyMigrated(sourceId: string, targetId: string): void {
+    const source = this.getValidSave(sourceId);
+    if (source === undefined) return;
+    const target = this.getValidSave(targetId);
+    if (target === undefined) return;
+    if (target.metadata.updatedAt < source.metadata.updatedAt) return;
+
+    this.repository.delete(sourceId);
+  }
+
+  private cleanupMigratedSources(): void {
+    for (const logicalSlotId of PLAYER_SAVE_SLOT_IDS) {
+      const accountSlotId = getAccountSaveSlotId(this.accountId, logicalSlotId);
+      this.cleanupSourceIfSafelyMigrated(logicalSlotId, accountSlotId);
+      this.cleanupSourceIfSafelyMigrated(
+        getSaveBackupSlotId(logicalSlotId),
+        getSaveBackupSlotId(accountSlotId),
+      );
+    }
+
+    const firstAccountSlotId = getAccountSaveSlotId(this.accountId, PLAYER_SAVE_SLOT_IDS[0]);
+    this.cleanupSourceIfSafelyMigrated(LEGACY_SAVE_SLOT_ID, firstAccountSlotId);
+    this.cleanupSourceIfSafelyMigrated(
+      getSaveBackupSlotId(LEGACY_SAVE_SLOT_ID),
+      getSaveBackupSlotId(firstAccountSlotId),
+    );
   }
 
   private markLegacyMigrationDone(): void {
