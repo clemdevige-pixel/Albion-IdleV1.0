@@ -76,8 +76,10 @@ export function getFactionRuneWorldDropChance(
 }
 
 export function getFactionRuneWorldEncounterMultiplier(isElite: boolean, isBoss: boolean): number {
-  if (isBoss) return FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS.boss;
+  // Authored elites are also tagged as segment bosses. Elite identity takes precedence
+  // for Rune rewards so they keep the validated x2.5 rate while true bosses use x5.
   if (isElite) return FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS.elite;
+  if (isBoss) return FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS.boss;
   return FACTION_RUNE_WORLD_ENCOUNTER_MULTIPLIERS.normal;
 }
 
