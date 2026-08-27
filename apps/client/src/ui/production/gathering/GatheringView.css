@@ -39,7 +39,7 @@
   text-align: center;
 }
 
-/* Gathering uses one outer sheet. Internal hierarchy comes from spacing, type and bars — not nested cards. */
+/* Gathering deliberately avoids nested dashboard-card language. */
 .ui-world .ui-gathering { gap: 8px; }
 .ui-world .ui-gathering__toolbar {
   min-height: 27px;
@@ -63,51 +63,42 @@
 }
 .ui-world .ui-gathering__families img { width: 24px; height: 24px; }
 
+/* No outer card: the activity is part of the module surface itself. */
 .ui-world .ui-gathering-card {
   position: relative;
   display: grid;
-  gap: 0;
-  overflow: hidden;
-  padding: 0 11px 11px;
-  border: 1px solid rgba(180, 133, 38, .34);
-  border-radius: 8px;
-  background:
-    radial-gradient(circle at 14% 0%, rgba(179, 128, 35, .10), transparent 34%),
-    linear-gradient(180deg, rgba(20, 18, 13, .96), rgba(8, 11, 15, .98));
+  gap: 10px;
+  padding: 6px 10px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
 }
-
-.ui-world .ui-gathering-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 2px;
-  background: linear-gradient(90deg, transparent 4%, rgba(217, 165, 48, .72) 36%, rgba(217, 165, 48, .15) 72%, transparent);
-  pointer-events: none;
-}
+.ui-world .ui-gathering-card::before { display: none; }
 
 .ui-world .ui-gathering-card__header {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
   gap: 9px;
   align-items: center;
-  min-height: 61px;
-  padding: 8px 0 7px;
+  min-height: 52px;
+  padding: 0;
 }
 .ui-world .ui-gathering-card__icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
 }
-.ui-world .ui-gathering-card__icon img { width: 32px; height: 32px; }
+.ui-world .ui-gathering-card__icon img { width: 31px; height: 31px; }
 .ui-world .ui-gathering-card__identity {
   display: grid;
   gap: 1px;
   min-width: 0;
 }
 .ui-world .ui-gathering-card__identity > span {
-  color: #b08d3e;
-  font-size: 8px;
+  color: #a6843a;
+  font-size: 7px;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -124,30 +115,31 @@
   font-size: 9px;
 }
 .ui-world .ui-gathering-card__reserve {
-  display: grid;
-  justify-items: end;
-  gap: 1px;
-  min-width: 52px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
 }
 .ui-world .ui-gathering-card__reserve small {
   color: #778597;
-  font-size: 8px;
-  letter-spacing: .06em;
+  font-size: 7px;
+  letter-spacing: .05em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__reserve b {
   color: #f0d348;
   font-size: 18px;
-  line-height: .95;
+  line-height: 1;
 }
 
+/* Metadata is plain secondary copy, not a pseudo table. */
 .ui-world .ui-gathering-card__meta {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 5px;
   min-width: 0;
-  padding: 5px 0 8px;
-  color: #8996a8;
+  padding: 0 0 1px 47px;
+  color: #7f8da0;
 }
 .ui-world .ui-gathering-card__meta > span {
   display: inline-flex;
@@ -155,20 +147,17 @@
   gap: 3px;
   min-width: 0;
 }
-.ui-world .ui-gathering-card__meta > span:last-child { margin-left: auto; }
-.ui-world .ui-gathering-card__meta small {
-  color: #66758a;
-  font-size: 7px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
+.ui-world .ui-gathering-card__meta > span:last-child { margin-left: 0; }
+.ui-world .ui-gathering-card__meta small,
 .ui-world .ui-gathering-card__meta b {
-  color: #c7d0dc;
-  font-size: 9px;
-  font-weight: 600;
+  color: inherit;
+  font-size: 8px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
 }
-.ui-world .ui-gathering-card__meta .is-unlocked b { color: #9ecb9f; }
-.ui-world .ui-gathering-card__meta .is-locked b { color: #ce8d84; }
+.ui-world .ui-gathering-card__meta .is-unlocked b { color: #8fb891; }
+.ui-world .ui-gathering-card__meta .is-locked b { color: #c4867d; }
 .ui-world .ui-gathering-card__meta > i {
   width: 2px;
   height: 2px;
@@ -177,11 +166,13 @@
   background: #4f5b6a;
 }
 
+/* Hero activity is a flat content flow. */
 .ui-world .ui-gathering-card__activity {
   display: grid;
   gap: 9px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(185, 137, 38, .15);
+  padding: 8px 0 0 47px;
+  border: 0;
+  background: transparent;
 }
 .ui-world .ui-gathering-card__activity-header {
   display: flex;
@@ -195,9 +186,9 @@
   min-width: 0;
 }
 .ui-world .ui-gathering-card__activity-header span {
-  color: #aa8536;
+  color: #94742f;
   font-size: 7px;
-  letter-spacing: .08em;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__activity-header strong {
@@ -207,18 +198,18 @@
 }
 .ui-world .ui-gathering-card__activity-header > b {
   flex: 0 0 auto;
-  padding: 3px 7px;
-  border: 1px solid #353b43;
-  border-radius: 999px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: #aeb7c2;
-  background: #0b0e12;
   font-size: 9px;
   line-height: 1;
 }
 .ui-world .ui-gathering-card__activity-header > b.is-active {
-  color: #93e58e;
-  border-color: #326436;
-  background: #102514;
+  color: #8fe58a;
+  border: 0;
+  background: transparent;
 }
 
 .ui-world .ui-gathering-card__mastery-row {
@@ -250,19 +241,23 @@
   height: 100%;
 }
 
+/* Cycle is one horizontal status line, not a panel. */
 .ui-world .ui-gathering-card__cycle-focus {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 82px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
-  padding: 3px 0 1px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .ui-world .ui-gathering-card__cycle-copy {
   display: grid;
   gap: 1px;
 }
 .ui-world .ui-gathering-card__cycle-copy span {
-  color: #8c99aa;
+  color: #788699;
   font-size: 8px;
 }
 .ui-world .ui-gathering-card__cycle-copy strong {
@@ -285,36 +280,39 @@
 .ui-world .ui-gathering-card__actions {
   display: flex;
   align-items: center;
-  min-height: 27px;
+  min-height: 24px;
 }
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action {
   width: auto;
-  min-width: 92px;
-  min-height: 26px;
-  padding: 4px 9px;
-  border-color: #79443e;
-  border-radius: 5px;
-  color: #e7aaa2;
+  min-width: 0;
+  min-height: 24px;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 0;
   background: transparent;
+  color: #d79a91;
   font-size: 9px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action:hover:not(:disabled) {
-  color: #f0d593;
-  border-color: #8a6d2c;
+  color: #efb0a7;
+  border: 0;
 }
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action:not(.is-stop) {
-  border-color: #76602d;
-  color: #dcc88c;
+  color: #d7c07d;
 }
 
+/* Active strike is inline with the cycle: no title box, no sub-card. */
 .ui-world .ui-gathering-card__active-game {
-  padding-top: 8px;
-  border-top: 1px solid rgba(190, 139, 39, .18);
+  padding: 1px 0 0;
+  border: 0;
+  background: transparent;
 }
 .ui-world .ui-gathering-card .active-gathering {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 82px;
-  gap: 5px 10px;
+  gap: 4px 10px;
   align-items: center;
   margin: 0;
   padding: 0;
@@ -328,14 +326,14 @@
   align-items: baseline;
   justify-content: space-between;
   margin: 0;
-  color: #b58c32;
-  font-size: 8px;
-  letter-spacing: .06em;
+  color: #95742f;
+  font-size: 7px;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card .active-gathering__header strong {
-  color: #d0b04f;
-  font-size: 8px;
+  color: #b99843;
+  font-size: 7px;
 }
 .ui-world .ui-gathering-card .active-gathering__meter {
   min-width: 0;
@@ -344,9 +342,9 @@
 .ui-world .ui-gathering-card .active-gathering__strike {
   min-width: 82px;
   height: 26px;
-  border: 1px solid #c08a1e;
+  border: 1px solid #b98524;
   border-radius: 4px;
-  background: linear-gradient(#e6bd45, #a97612);
+  background: linear-gradient(#e3b943, #a97612);
   color: #15100a;
   font-weight: 700;
   cursor: pointer;
@@ -354,7 +352,7 @@
 .ui-world .ui-gathering-card .active-gathering > small {
   grid-column: 1 / -1;
   margin: 0;
-  color: #8491a2;
+  color: #758396;
   font-size: 8px;
   line-height: 1.3;
 }
