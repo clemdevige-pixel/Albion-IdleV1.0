@@ -277,6 +277,18 @@ export class InventoryManager {
       }
       targetPosition = position;
     }
+
+    const importedCounterMatch = /^item_(\d+)$/.exec(entry.instanceId);
+    if (importedCounterMatch?.[1] !== undefined) {
+      const importedCounter = Number(importedCounterMatch[1]);
+      if (
+        Number.isSafeInteger(importedCounter)
+        && importedCounter >= data.nextInstanceCounter
+      ) {
+        data.nextInstanceCounter = importedCounter + 1;
+      }
+    }
+
     data.slots.set(targetPosition, entry);
     return inventoryOk({ position: targetPosition, entry });
   }
