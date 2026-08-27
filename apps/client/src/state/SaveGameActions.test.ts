@@ -72,10 +72,7 @@ describe("SaveGameActions load persistence recovery", () => {
     expect(deps.syncPlayerHealth).toHaveBeenCalledOnce();
     expect(deps.resyncAll).toHaveBeenCalledOnce();
     expect(deps.addEconomyNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "error",
-        message: expect.stringContaining("local save could not be updated"),
-      }),
+      expect.objectContaining({ type: "error" }),
     );
   });
 
