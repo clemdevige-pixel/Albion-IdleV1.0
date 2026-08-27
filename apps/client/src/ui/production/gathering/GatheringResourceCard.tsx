@@ -14,6 +14,11 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
   const heroActive = activity.status === "gathering"
     && activity.activeCycle?.resourceTier === tier;
   const otherTierActive = activity.activeCycle !== undefined && !heroActive;
+  const cycleProgress = heroActive ? Math.max(0, Math.min(100, activity.progress)) : 0;
+  const remainingSeconds = heroActive
+    ? Math.max(0, activity.durationSeconds * (1 - cycleProgress / 100))
+    : activity.durationSeconds;
+  const cycleLabel = heroActive ? "Restant" : "Cycle";
 
   return (
     <article className={`ui-gathering-card${heroActive ? " is-active" : ""}`}>
@@ -28,26 +33,17 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
       </header>
 
       <dl className="ui-gathering-card__facts">
-        <div><dt>Outil</dt><dd>{resource.tool}</dd></div>
         <div><dt>Maîtrise</dt><dd>{String(activity.masteryLevel)}</dd></div>
-        <div><dt>Rendement</dt><dd>1 par cycle</dd></div>
+        <div><dt>{cycleLabel}</dt><dd>{formatSeconds(remainingSeconds)}</dd></div>
         <div><dt>Accès</dt><dd>{activity.isMasteryUnlocked ? `T${String(tier)} débloqué` : `Niveau ${String(activity.requiredMasteryLevel)} requis`}</dd></div>
       </dl>
 
-      <section className="ui-gathering-card__role ui-gathering-card__role--hero">
-        <header>
-          <div><span>Héros</span><small>{resource.tool}</small></div>
-          <b>Maîtrise {String(heroMastery.level)}</b>
-        </header>
-        <div className="ui-gathering-card__mastery">
+      <section className="ui-gathering-card__activity">
+        <header className="ui-gathering-card__activity-header">
           <div>
-            <span>Récolte du {resource.label.toLocaleLowerCase("fr-FR")}</span>
-            <small>{String(heroMastery.currentXp)} / {String(heroMastery.xpToNextLevel)} XP</small>
+            <span>Héros</span>
+            <strong>Récolte du {resource.label.toLocaleLowerCase("fr-FR")}</strong>
           </div>
-          <ProgressBar value={heroMastery.progressPercent} />
-        </div>
-        <header className="ui-gathering-card__hero-status">
-          <small>Rendement : 1 / cycle</small>
           <b className={heroActive || otherTierActive ? "is-active" : ""}>
             {heroActive
               ? "En récolte"
@@ -56,7 +52,23 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
                 : activity.isMasteryUnlocked ? "Disponible" : "Bloqué"}
           </b>
         </header>
-        <ProgressBar value={heroActive ? activity.progress : 0} />
+
+        <div className="ui-gathering-card__mastery">
+          <div>
+            <span>Maîtrise {String(heroMastery.level)}</span>
+            <small>{String(heroMastery.currentXp)} / {String(heroMastery.xpToNextLevel)} XP</small>
+          </div>
+          <ProgressBar value={heroMastery.progressPercent} />
+        </div>
+
+        <div className="ui-gathering-card__cycle">
+          <div>
+            <span>{heroActive ? `Cycle · ${formatSeconds(remainingSeconds)}` : `Cycle · ${formatSeconds(activity.durationSeconds)}`}</span>
+            <small>{heroActive ? `${String(Math.round(cycleProgress))}%` : "Prêt"}</small>
+          </div>
+          <ProgressBar value={cycleProgress} />
+        </div>
+
         <button
           className={`ui-gathering-card__hero-action${heroActive ? " is-stop" : ""}`}
           type="button"
@@ -82,4 +94,10 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
 function ProgressBar({ value }: { readonly value: number }): JSX.Element {
   const progress = Math.max(0, Math.min(100, value));
   return <div className="ui-gathering-progress" aria-label={`${String(Math.round(progress))}%`}><span style={{ width: `${String(progress)}%` }} /></div>;
+}
+
+function formatSeconds(value: number): string {
+  if (!Number.isFinite(value)) return "—";
+  const clamped = Math.max(0, value);
+  return `${clamped.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} s`;
 }
