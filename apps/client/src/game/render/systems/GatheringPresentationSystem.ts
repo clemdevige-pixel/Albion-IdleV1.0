@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 
 const PROGRESS_BAR_HEIGHT = 11;
+const PROGRESS_GAP = 18;
+const LABEL_GAP = 12;
 
 export interface GatheringPresentationState {
   readonly visualManifestId: string;
@@ -22,7 +24,6 @@ export class GatheringPresentationSystem {
   private readonly label: Phaser.GameObjects.Text;
   private readonly progressBackground: Phaser.GameObjects.Rectangle;
   private readonly progressFill: Phaser.GameObjects.Rectangle;
-  private gatheringTween: Phaser.Tweens.Tween | undefined;
   private active = false;
   private readonly nodeBaseX: number;
   private readonly nodeBaseY: number;
@@ -32,8 +33,6 @@ export class GatheringPresentationSystem {
 
   public constructor(
     private readonly scene: Phaser.Scene,
-    private readonly playerBody: Phaser.GameObjects.Container,
-    private readonly playerHomeX: number,
     x: number,
     y: number,
     private readonly progressBarWidth: number,
@@ -51,7 +50,7 @@ export class GatheringPresentationSystem {
     this.progressBackground = scene.add
       .rectangle(
         x,
-        y - 132,
+        y,
         progressBarWidth,
         PROGRESS_BAR_HEIGHT,
         0x171c28,
@@ -63,7 +62,7 @@ export class GatheringPresentationSystem {
     this.progressFill = scene.add
       .rectangle(
         x - progressBarWidth / 2,
-        y - 132,
+        y,
         0,
         PROGRESS_BAR_HEIGHT,
         0x78a95f,
@@ -73,7 +72,7 @@ export class GatheringPresentationSystem {
       .setVisible(false);
 
     this.label = scene.add
-      .text(x, y + 78, "RESSOURCE", {
+      .text(x, y, "RESSOURCE", {
         fontFamily: "system-ui, sans-serif",
         fontSize: "13px",
         fontStyle: "bold",
@@ -83,6 +82,8 @@ export class GatheringPresentationSystem {
       .setOrigin(0.5)
       .setDepth(10)
       .setVisible(false);
+
+    this.applyManifestLayout(fallback);
   }
 
   public update(state: GatheringPresentationState | undefined): boolean {
@@ -101,12 +102,9 @@ export class GatheringPresentationSystem {
         this.node.setTexture(manifest.textureKey);
       }
       this.node
-        .setPosition(
-          this.nodeBaseX + manifest.offset.x,
-          this.nodeBaseY + manifest.offset.y,
-        )
         .setOrigin(manifest.origin.x, manifest.origin.y)
         .setDisplaySize(manifest.display.width, manifest.display.height);
+      this.applyManifestLayout(manifest);
       this.lastVisualManifestId = state.visualManifestId;
     }
 
@@ -126,8 +124,6 @@ export class GatheringPresentationSystem {
   }
 
   public clear(): void {
-    this.gatheringTween?.stop();
-    this.gatheringTween = undefined;
     this.node.destroy();
     this.label.destroy();
     this.progressBackground.destroy();
@@ -140,23 +136,21 @@ export class GatheringPresentationSystem {
     this.label.setVisible(active);
     this.progressBackground.setVisible(active);
     this.progressFill.setVisible(active);
+  }
 
-    this.gatheringTween?.stop();
-    this.gatheringTween = undefined;
-    this.playerBody.setAngle(0);
+  private applyManifestLayout(
+    manifest: ReturnType<typeof renderManifestRegistry.requireResourceNode>,
+  ): void {
+    const nodeX = this.nodeBaseX + manifest.offset.x;
+    const nodeY = this.nodeBaseY + manifest.offset.y;
+    const topY = nodeY - manifest.display.height * manifest.origin.y;
+    const bottomY = nodeY + manifest.display.height * (1 - manifest.origin.y);
+    const progressY = topY - PROGRESS_GAP;
+    const labelY = bottomY + LABEL_GAP;
 
-    if (active) {
-      this.gatheringTween = this.scene.tweens.add({
-        targets: this.playerBody,
-        angle: { from: -2, to: 5 },
-        x: { from: this.playerHomeX, to: this.playerHomeX + 8 },
-        duration: 420,
-        ease: "Sine.InOut",
-        yoyo: true,
-        repeat: -1,
-      });
-    } else {
-      this.playerBody.setX(this.playerHomeX);
-    }
+    this.node.setPosition(nodeX, nodeY);
+    this.progressBackground.setPosition(nodeX, progressY);
+    this.progressFill.setPosition(nodeX - this.progressBarWidth / 2, progressY);
+    this.label.setPosition(nodeX, labelY);
   }
 }
