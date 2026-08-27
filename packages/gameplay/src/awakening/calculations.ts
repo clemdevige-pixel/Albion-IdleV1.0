@@ -1,6 +1,7 @@
 import type {
   AwakenedActionCost,
   AwakenedTraitId,
+  AwakenedTraitRollRange,
   AwakenedTraitRollResult,
   AwakenedWeaponBalance,
   AwakenedWeaponDerivedState,
@@ -51,31 +52,51 @@ export function getUnlockedAwakenedTraitSlots(
   return 1;
 }
 
+export function getAwakenedTraitCap(
+  traitId: AwakenedTraitId,
+  balance: AwakenedWeaponBalance,
+): number | undefined {
+  if (traitId === "cooldown_reduction") return balance.traitCaps.cooldown_reduction;
+  if (traitId === "life_steal") return balance.traitCaps.life_steal;
+  return undefined;
+}
+
+export function getAwakenedTraitRollRange(
+  traitId: AwakenedTraitId,
+  currentValue: number,
+  balance: AwakenedWeaponBalance,
+): AwakenedTraitRollRange {
+  if (traitId !== "cooldown_reduction" && traitId !== "life_steal") {
+    return balance.traitRolls[traitId];
+  }
+
+  const value = Math.max(0, currentValue);
+  const bands = balance.progressiveTraitRolls[traitId];
+  const selected = bands.find((band) => band.below === null || value < band.below);
+  return selected ?? balance.traitRolls[traitId];
+}
+
 export function getEffectiveCooldownReductionPercent(
-  progression: number,
+  value: number,
   balance: AwakenedWeaponBalance,
 ): number {
-  const p = Math.max(0, progression);
-  if (p <= 0) return 0;
-  return balance.cdrAsymptotePercent * p / (p + balance.cdrCurveConstant);
+  return Math.min(balance.traitCaps.cooldown_reduction, Math.max(0, value));
 }
 
 export function getEffectiveLifeStealPercent(
-  progression: number,
+  value: number,
   balance: AwakenedWeaponBalance,
 ): number {
-  const p = Math.max(0, progression);
-  if (p <= 0) return 0;
-  return balance.lifeStealAsymptotePercent * p / (p + balance.lifeStealCurveConstant);
+  return Math.min(balance.traitCaps.life_steal, Math.max(0, value));
 }
 
 export function applyCooldownReduction(
   baseCooldownSeconds: number,
-  progression: number,
+  value: number,
   balance: AwakenedWeaponBalance,
 ): number {
   const base = Math.max(0, baseCooldownSeconds);
-  const effective = getEffectiveCooldownReductionPercent(progression, balance);
+  const effective = getEffectiveCooldownReductionPercent(value, balance);
   return base * (1 - effective / 100);
 }
 
@@ -94,18 +115,24 @@ export function rollAwakenedTrait(
   roll01: () => number,
   balance: AwakenedWeaponBalance,
   allowCritical = true,
+  currentValue = 0,
 ): AwakenedTraitRollResult {
-  const range = balance.traitRolls[traitId];
+  const range = getAwakenedTraitRollRange(traitId, currentValue, balance);
   const valueRoll = Math.min(1, Math.max(0, roll01()));
   const raw = range.min + (range.max - range.min) * valueRoll;
   const baseRoll = range.integer === true ? Math.round(raw) : raw;
   const critical = allowCritical
     && Math.min(1, Math.max(0, roll01())) < balance.criticalChance;
+  const uncappedGain = baseRoll * (critical ? balance.criticalMultiplier : 1);
+  const cap = getAwakenedTraitCap(traitId, balance);
+  const finalGain = cap === undefined
+    ? uncappedGain
+    : Math.max(0, Math.min(uncappedGain, cap - Math.max(0, currentValue)));
   return {
     traitId,
     baseRoll,
     critical,
-    finalGain: baseRoll * (critical ? balance.criticalMultiplier : 1),
+    finalGain,
   };
 }
 
