@@ -4,6 +4,8 @@ import type { ItemInstanceId } from "../inventory/types.js";
 import { DEFAULT_AWAKENED_WEAPON_BALANCE } from "./balance.js";
 import {
   deriveAwakenedWeaponState,
+  getAwakenedTraitCap,
+  getAwakenedTraitRollRange,
   getEffectiveCooldownReductionPercent,
   getEffectiveLifeStealPercent,
   getEligibleAwakenedTraits,
@@ -68,7 +70,14 @@ export class AwakenedWeaponService {
     return state.traits.find((trait) => trait.traitId === traitId)?.value ?? 0;
   }
 
-  getTraitRollRange(traitId: AwakenedTraitId): AwakenedTraitRollRange { return this.balance.traitRolls[traitId]; }
+  getTraitRollRange(traitId: AwakenedTraitId, currentValue = 0): AwakenedTraitRollRange {
+    return getAwakenedTraitRollRange(traitId, currentValue, this.balance);
+  }
+
+  getTraitCap(traitId: AwakenedTraitId): number | undefined {
+    return getAwakenedTraitCap(traitId, this.balance);
+  }
+
   getCriticalChance(): number { return this.balance.criticalChance; }
   getLastImprovementOutcome(itemInstanceId: ItemInstanceId): AwakenedModificationOutcome | undefined {
     return this.lastImprovementOutcomes.get(itemInstanceId);
@@ -118,9 +127,11 @@ export class AwakenedWeaponService {
     if (state.pendingTraitOffer !== undefined) return fail("trait_offer_pending");
     const existing = state.traits[traitIndex];
     if (existing === undefined) return fail("invalid_trait_index");
+    const cap = getAwakenedTraitCap(existing.traitId, this.balance);
+    if (cap !== undefined && existing.value >= cap) return fail("trait_at_cap");
     const spent = this.spendAction(state, walletId);
     if (!spent.ok) return spent;
-    const roll = rollAwakenedTrait(existing.traitId, roll01, this.balance);
+    const roll = rollAwakenedTrait(existing.traitId, roll01, this.balance, true, existing.value);
     const traits = state.traits.map((trait, index) => index === traitIndex ? { ...trait, value: trait.value + roll.finalGain } : trait);
     const next = this.afterPaidModification(state, spent.value.attunement, { traits });
     const outcome = { state: next, roll, cost: spent.value };
@@ -144,7 +155,7 @@ export class AwakenedWeaponService {
     const targetTrait = isReroll ? state.traits[targetIndex]?.traitId : undefined;
     const eligible = getEligibleAwakenedTraits(state.traits.map((trait) => trait.traitId), targetTrait, this.balance);
     const selected = this.pickDistinctTraits(eligible, this.balance.traitProposalCount, roll01);
-    const proposals = selected.map((traitId) => rollAwakenedTrait(traitId, roll01, this.balance, false));
+    const proposals = selected.map((traitId) => rollAwakenedTrait(traitId, roll01, this.balance, false, 0));
     const offer: AwakenedTraitOffer = { kind: isFill ? "fill" : "reroll", targetIndex, proposals };
     this.states.set(itemInstanceId, this.afterPaidModification(state, spent.value.attunement, { pendingTraitOffer: offer }));
     return ok(offer);
