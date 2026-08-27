@@ -19,6 +19,7 @@ const ZONE_ID = "zone-1" as ZoneDefinitionId;
 const RES_DEF_ID = asResourceDefinitionId("wood-t2");
 const RES_ID = asResourceId("res-1");
 const NODE_DEF_ID = asResourceNodeDefinitionId("node-def-1");
+const BASE_GATHER_TIME_TICKS = 3;
 
 const RESOURCE_DEF: ResourceDefinition = {
   id: RES_DEF_ID,
@@ -125,15 +126,14 @@ describe("GatheringCoordinator", () => {
 
   it("startGathering succeeds with valid tool", () => {
     const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
-    const result = coordinator.startGathering(node.id, [AXE_T2], 0);
+    const result = coordinator.startGathering(node.id, [AXE_T2], 0, BASE_GATHER_TIME_TICKS);
 
     expect(result.ok).toBe(true);
   });
 
   it("startGathering fails with no matching tool", () => {
     const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
-    // Only a pickaxe, but we need an axe for Wood
-    const result = coordinator.startGathering(node.id, [PICKAXE_T2], 0);
+    const result = coordinator.startGathering(node.id, [PICKAXE_T2], 0, BASE_GATHER_TIME_TICKS);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -143,8 +143,7 @@ describe("GatheringCoordinator", () => {
 
   it("startGathering fails with insufficient tier tool", () => {
     const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
-    // AXE_T1 is tier 1, node requires tier 2
-    const result = coordinator.startGathering(node.id, [AXE_T1], 0);
+    const result = coordinator.startGathering(node.id, [AXE_T1], 0, BASE_GATHER_TIME_TICKS);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -152,14 +151,23 @@ describe("GatheringCoordinator", () => {
     }
   });
 
+  it("uses the authored gather duration independently from resource respawn", () => {
+    const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
+    coordinator.startGathering(node.id, [AXE_T2], 0, 5);
+
+    coordinator.tick(3);
+    expect(coordinator.getActiveSession()).toBeDefined();
+
+    coordinator.tick(5);
+    expect(coordinator.getActiveSession()).toBeUndefined();
+  });
+
   it("tick completes gathering session", () => {
     const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
-    coordinator.startGathering(node.id, [AXE_T2], 0);
+    coordinator.startGathering(node.id, [AXE_T2], 0, BASE_GATHER_TIME_TICKS);
 
     expect(coordinator.getActiveSession()).toBeDefined();
 
-    // baseGatherTimeTicks = floor(30 / 10) = 3, toolModifier = 1, mastery = 1
-    // requiredTicks = ceil(3 * 1 * 1) = 3
     coordinator.tick(1);
     coordinator.tick(2);
     coordinator.tick(3);
@@ -169,14 +177,12 @@ describe("GatheringCoordinator", () => {
   });
 
   it("tick harvests resource and exhausts node when depleted", () => {
-    // Use a resource with 1 charge so it depletes immediately
     resourceRuntime.clear();
     resourceRuntime.add(makeResource(1));
 
     const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
-    coordinator.startGathering(node.id, [AXE_T2], 0);
+    coordinator.startGathering(node.id, [AXE_T2], 0, BASE_GATHER_TIME_TICKS);
 
-    // Tick to completion
     coordinator.tick(1);
     coordinator.tick(2);
     coordinator.tick(3);
@@ -185,7 +191,6 @@ describe("GatheringCoordinator", () => {
     expect(result).toBeDefined();
     expect(result!.nodeExhausted).toBe(true);
 
-    // Node should be exhausted
     const updatedNode = nodeManager.getNode(node.id);
     expect(updatedNode!.state).toBe("exhausted");
   });
@@ -197,15 +202,13 @@ describe("GatheringCoordinator", () => {
     });
 
     const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
-    const startResult = coordinator.startGathering(node.id, [AXE_T2], 0);
+    const startResult = coordinator.startGathering(node.id, [AXE_T2], 0, BASE_GATHER_TIME_TICKS);
     expect(startResult.ok).toBe(true);
 
-    // Tick to completion
     coordinator.tick(1);
     coordinator.tick(2);
     coordinator.tick(3);
 
-    // Cycle event should have fired
     expect(cycleResults).toHaveLength(1);
     const cycle = cycleResults[0]!;
     expect(cycle.nodeId).toBe(node.id);
@@ -214,7 +217,6 @@ describe("GatheringCoordinator", () => {
     expect(cycle.quantityGathered).toBeGreaterThanOrEqual(1);
     expect(cycle.toolUsed).toBe(AXE_T2.id);
 
-    // Last result also available
     const lastResult = coordinator.getLastResult();
     expect(lastResult).toBeDefined();
     expect(lastResult!.resourceFamily).toBe("Wood");
@@ -225,19 +227,16 @@ describe("GatheringCoordinator", () => {
 
     const node = nodeManager.getNodesByZone(ZONE_ID)[0]!;
 
-    // Can still start via gatheringManager directly, but coordinator events won't fire
     const cycleResults: GatheringCycleResult[] = [];
     coordinator.events.subscribe("gatheringCycleCompleted", (r) => {
       cycleResults.push(r);
     });
 
-    // Start via coordinator (it still works, just won't emit cycle events)
-    coordinator.startGathering(node.id, [AXE_T2], 0);
+    coordinator.startGathering(node.id, [AXE_T2], 0, BASE_GATHER_TIME_TICKS);
     coordinator.tick(1);
     coordinator.tick(2);
     coordinator.tick(3);
 
-    // Cycle event should NOT have fired since we disposed
     expect(cycleResults).toHaveLength(0);
   });
 });
