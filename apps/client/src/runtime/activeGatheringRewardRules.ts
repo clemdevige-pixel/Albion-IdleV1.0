@@ -96,23 +96,15 @@ export function getActiveGatheringBonuses(activity: number): ActiveGatheringBonu
   };
 }
 
-export function getAverageActiveGatheringActivity(
-  activityTotal: number,
-  sampleCount: number,
-): number {
-  if (!Number.isFinite(activityTotal) || sampleCount <= 0) return 0;
-  return clampActiveGatheringActivity(activityTotal / sampleCount);
-}
-
 export function getActiveGatheringCycleYieldMultiplier(
-  averageActivity: number,
+  activity: number,
 ): ActiveGatheringYieldMultiplier {
-  return getActiveGatheringBonuses(averageActivity).yieldMultiplier;
+  return getActiveGatheringBonuses(activity).yieldMultiplier;
 }
 
 export function getActiveGatheringRewardedQuantity(
   baseQuantity: number,
-  averageActivity: number,
+  activity: number,
   fractionalCarry = 0,
 ): {
   readonly quantity: number;
@@ -121,7 +113,7 @@ export function getActiveGatheringRewardedQuantity(
 } {
   const safeBaseQuantity = Math.max(0, Math.floor(baseQuantity));
   const safeCarry = Math.max(0, Math.min(0.999999, fractionalCarry));
-  const multiplier = getActiveGatheringCycleYieldMultiplier(averageActivity);
+  const multiplier = getActiveGatheringCycleYieldMultiplier(activity);
   const exactQuantity = safeBaseQuantity * multiplier + safeCarry;
   const quantity = Math.floor(exactQuantity + Number.EPSILON);
   return {
