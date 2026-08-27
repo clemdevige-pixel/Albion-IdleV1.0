@@ -1,9 +1,9 @@
 import Phaser from "phaser";
+import type { WorldHudRenderManifest } from "../RenderManifest";
 import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 
-const PROGRESS_BAR_HEIGHT = 11;
-const PROGRESS_GAP = 18;
-const LABEL_GAP = 12;
+const ACTOR_HUD_HEAD_GAP = 10;
+const STATUS_EFFECT_CLEARANCE = 6;
 
 export interface GatheringPresentationState {
   readonly visualManifestId: string;
@@ -24,6 +24,8 @@ export class GatheringPresentationSystem {
   private readonly label: Phaser.GameObjects.Text;
   private readonly progressBackground: Phaser.GameObjects.Rectangle;
   private readonly progressFill: Phaser.GameObjects.Rectangle;
+  private readonly progressValue: Phaser.GameObjects.Text;
+  private readonly hudManifest: WorldHudRenderManifest;
   private active = false;
   private readonly nodeBaseX: number;
   private readonly nodeBaseY: number;
@@ -35,10 +37,11 @@ export class GatheringPresentationSystem {
     private readonly scene: Phaser.Scene,
     x: number,
     y: number,
-    private readonly progressBarWidth: number,
   ) {
     this.nodeBaseX = x;
     this.nodeBaseY = y;
+    this.hudManifest = renderManifestRegistry.requireDefaultWorldHud();
+
     const fallback = renderManifestRegistry.requireResourceNode("resource_wood");
     this.node = scene.add
       .image(x + fallback.offset.x, y + fallback.offset.y, fallback.textureKey)
@@ -47,40 +50,57 @@ export class GatheringPresentationSystem {
       .setDepth(8)
       .setVisible(false);
 
+    const { healthBar, valueText, actorLabel } = this.hudManifest;
     this.progressBackground = scene.add
       .rectangle(
         x,
         y,
-        progressBarWidth,
-        PROGRESS_BAR_HEIGHT,
-        0x171c28,
+        healthBar.defaultWidth,
+        healthBar.height,
+        this.colorToNumber(healthBar.backgroundColor),
       )
-      .setStrokeStyle(2, 0x30384a)
-      .setDepth(10)
+      .setStrokeStyle(
+        healthBar.borderWidth,
+        this.colorToNumber(healthBar.borderColor),
+      )
+      .setDepth(healthBar.backgroundDepth)
       .setVisible(false);
 
     this.progressFill = scene.add
       .rectangle(
-        x - progressBarWidth / 2,
+        x - healthBar.defaultWidth / 2,
         y,
         0,
-        PROGRESS_BAR_HEIGHT,
-        0x78a95f,
+        healthBar.height,
+        this.colorToNumber(healthBar.upperGradient[1]),
       )
       .setOrigin(0, 0.5)
-      .setDepth(11)
+      .setDepth(healthBar.fillDepth)
+      .setVisible(false);
+
+    this.progressValue = scene.add
+      .text(x, y - valueText.offsetY, "0%", {
+        fontFamily: valueText.fontFamily,
+        fontSize: `${String(valueText.fontSize)}px`,
+        fontStyle: valueText.fontStyle,
+        color: valueText.color,
+        stroke: valueText.strokeColor,
+        strokeThickness: valueText.strokeThickness,
+      })
+      .setOrigin(0.5)
+      .setDepth(valueText.depth)
       .setVisible(false);
 
     this.label = scene.add
-      .text(x, y, "RESSOURCE", {
-        fontFamily: "system-ui, sans-serif",
-        fontSize: "13px",
-        fontStyle: "bold",
-        color: "#9dcc8e",
-        letterSpacing: 1,
+      .text(x, y - actorLabel.offsetY, "RESSOURCE", {
+        fontFamily: actorLabel.fontFamily,
+        fontSize: `${String(actorLabel.fontSize)}px`,
+        fontStyle: actorLabel.fontStyle,
+        color: actorLabel.playerColor,
+        letterSpacing: actorLabel.letterSpacing,
       })
       .setOrigin(0.5)
-      .setDepth(10)
+      .setDepth(actorLabel.depth)
       .setVisible(false);
 
     this.applyManifestLayout(fallback);
@@ -109,9 +129,9 @@ export class GatheringPresentationSystem {
     }
 
     if (state.progress !== this.lastProgress) {
-      this.progressFill.width =
-        this.progressBarWidth
-        * Math.max(0, Math.min(1, state.progress / 100));
+      const progress = Math.max(0, Math.min(100, state.progress));
+      this.progressFill.width = this.hudManifest.healthBar.defaultWidth * (progress / 100);
+      this.progressValue.setText(`${String(Math.round(progress))}%`);
       this.lastProgress = state.progress;
     }
 
@@ -128,6 +148,7 @@ export class GatheringPresentationSystem {
     this.label.destroy();
     this.progressBackground.destroy();
     this.progressFill.destroy();
+    this.progressValue.destroy();
   }
 
   private setActive(active: boolean): void {
@@ -136,6 +157,7 @@ export class GatheringPresentationSystem {
     this.label.setVisible(active);
     this.progressBackground.setVisible(active);
     this.progressFill.setVisible(active);
+    this.progressValue.setVisible(active);
   }
 
   private applyManifestLayout(
@@ -143,14 +165,20 @@ export class GatheringPresentationSystem {
   ): void {
     const nodeX = this.nodeBaseX + manifest.offset.x;
     const nodeY = this.nodeBaseY + manifest.offset.y;
-    const topY = nodeY - manifest.display.height * manifest.origin.y;
-    const bottomY = nodeY + manifest.display.height * (1 - manifest.origin.y);
-    const progressY = topY - PROGRESS_GAP;
-    const labelY = bottomY + LABEL_GAP;
+    const actorTopY = nodeY - manifest.display.height * manifest.origin.y;
+    const barY = actorTopY - ACTOR_HUD_HEAD_GAP - STATUS_EFFECT_CLEARANCE;
+    const { healthBar, valueText, actorLabel } = this.hudManifest;
 
     this.node.setPosition(nodeX, nodeY);
-    this.progressBackground.setPosition(nodeX, progressY);
-    this.progressFill.setPosition(nodeX - this.progressBarWidth / 2, progressY);
-    this.label.setPosition(nodeX, labelY);
+    this.progressBackground
+      .setPosition(nodeX, barY)
+      .setSize(healthBar.defaultWidth, healthBar.height);
+    this.progressFill.setPosition(nodeX - healthBar.defaultWidth / 2, barY);
+    this.progressValue.setPosition(nodeX, barY - valueText.offsetY);
+    this.label.setPosition(nodeX, barY - actorLabel.offsetY);
+  }
+
+  private colorToNumber(color: string): number {
+    return Phaser.Display.Color.HexStringToColor(color).color;
   }
 }
