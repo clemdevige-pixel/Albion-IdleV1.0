@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { InMemorySaveRepository, type SaveFormat } from "@game/persistence";
+import {
+  computeChecksum,
+  InMemorySaveRepository,
+  type SaveFormat,
+} from "@game/persistence";
 import type { CloudSaveClient } from "./CloudSaveClient.js";
 import { CloudSaveSynchronizer } from "./CloudSaveSynchronizer.js";
 import { getAccountSaveSlotId } from "./saveSlots.js";
@@ -9,6 +13,7 @@ import {
 } from "./trustedOfflineElapsed.js";
 
 function save(updatedAt: number, payloadMarker: string, extra?: Record<string, unknown>): SaveFormat {
+  const payload = { marker: payloadMarker };
   return {
     version: 1,
     metadata: {
@@ -19,8 +24,8 @@ function save(updatedAt: number, payloadMarker: string, extra?: Record<string, u
       seed: 42,
       ...(extra === undefined ? {} : { extra }),
     },
-    payload: { marker: payloadMarker },
-    checksum: "test",
+    payload,
+    checksum: computeChecksum(payload),
   };
 }
 
@@ -97,5 +102,27 @@ describe("CloudSaveSynchronizer", () => {
     await synchronizer.synchronize(slotId);
 
     expect(resolveTrustedOfflineElapsedMs(repository.get(primaryId))).toBe(0);
+  });
+
+  it("refuses a cloud snapshot with an invalid checksum without replacing local data", async () => {
+    const repository = new InMemorySaveRepository();
+    const accountId = "account_test";
+    const slotId = "player_slot_1" as const;
+    const primaryId = getAccountSaveSlotId(accountId, slotId);
+    const local = save(100, "valid-local");
+    repository.save(primaryId, local);
+
+    const corruptedCloud = {
+      ...save(200, "corrupted-cloud"),
+      checksum: "invalid",
+    };
+    const client = {
+      get: vi.fn(() => Promise.resolve(corruptedCloud)),
+      upload: vi.fn(() => Promise.resolve()),
+    } as unknown as CloudSaveClient;
+
+    const synchronizer = new CloudSaveSynchronizer(accountId, client, repository);
+    await expect(synchronizer.synchronize(slotId)).rejects.toThrow("Checksum mismatch");
+    expect(repository.get(primaryId)).toEqual(local);
   });
 });
