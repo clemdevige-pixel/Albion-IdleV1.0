@@ -56,4 +56,22 @@ describe("world UI models", () => {
     const yellowLoot = getBestiaryLoot(keeperWarrior, "yellow");
     expect(yellowLoot.some((drop) => drop.itemId === "item_resource_enchantment_shard_t5")).toBe(true);
   });
+
+  it("shows the real encounter-adjusted faction Rune rates for elites and bosses", () => {
+    const keeperChampion = WORLD_BESTIARY.find((entry) => entry.id === "monster_keeper_champion");
+    const keeperAncient = WORLD_BESTIARY.find((entry) => entry.id === "boss_keeper_ancient");
+    expect(keeperChampion).toBeDefined();
+    expect(keeperAncient).toBeDefined();
+    if (keeperChampion === undefined || keeperAncient === undefined) return;
+
+    const eliteRune = getBestiaryLoot(keeperChampion, "blue")
+      .find((drop) => drop.kind === "faction_rune");
+    const bossRune = getBestiaryLoot(keeperAncient, "blue")
+      .find((drop) => drop.kind === "faction_rune");
+
+    expect(eliteRune?.minimumExpectedQuantity).toBeCloseTo(0.0085 * 2.5);
+    expect(eliteRune?.maximumExpectedQuantity).toBeCloseTo(0.0115 * 2.5);
+    expect(bossRune?.minimumExpectedQuantity).toBeCloseTo(0.0115 * 5);
+    expect(bossRune?.maximumExpectedQuantity).toBeCloseTo(0.0115 * 5);
+  });
 });
