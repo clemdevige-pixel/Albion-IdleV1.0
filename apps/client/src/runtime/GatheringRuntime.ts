@@ -26,7 +26,6 @@ import {
   getRequiredGatheringMasteryForTier,
 } from "../data/progressionContentCatalog.js";
 import {
-  ACTIVE_GATHERING_REWARD_RULES,
   applyActiveGatheringStrike,
   getActiveGatheringRewardProgress,
   type GatheringStrikeQuality,
@@ -547,7 +546,7 @@ export class GatheringRuntime {
   public performGatheringStrike(
     resourceFamily: ResourceFamily,
     quality: GatheringStrikeQuality,
-    tickCounter: number = 0,
+    _tickCounter: number = 0,
   ): GatheringStrikeResult {
     if (!isSupportedGatheringFamily(resourceFamily)) {
       return { ok: false };
@@ -574,15 +573,6 @@ export class GatheringRuntime {
     );
     miniGame.streak = rewardState.streak;
     miniGame.yieldScore = rewardState.score;
-
-    const ratio = ACTIVE_GATHERING_REWARD_RULES.speedBonusRatio[quality];
-    if (ratio > 0) {
-      const bonusTicks = session.getRequiredTicks() * ratio;
-      definition.coordinator.advanceActiveSession(
-        bonusTicks,
-        tickCounter,
-      );
-    }
 
     return {
       ok: true,
