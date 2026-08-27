@@ -41,10 +41,11 @@ type SplitOptions = {
   readonly expectedCount?: number;
 };
 
-type BodyMetrics = {
+type CharacterMetrics = {
   readonly top: number;
   readonly bottom: number;
   readonly height: number;
+  readonly centerX: number;
 };
 
 function getArgValue(name: string): string | undefined {
@@ -279,8 +280,8 @@ function findPixelComponents(sheet: RgbaImage, threshold: number): ComponentMap 
   const queue = new Int32Array(sheet.width * sheet.height);
   const neighbors = [
     [-1, -1], [0, -1], [1, -1],
-    [-1, 0], [1, 0],
-    [-1, 1], [0, 1], [1, 1],
+    [-1, 0],            [1, 0],
+    [-1, 1],  [0, 1],   [1, 1],
   ] as const;
 
   for (let y = 0; y < sheet.height; y += 1) {
@@ -298,7 +299,6 @@ function findPixelComponents(sheet: RgbaImage, threshold: number): ComponentMap 
       queue[tail] = index;
       tail += 1;
       labels[index] = id;
-
       let area = 0;
       let sumX = 0;
       let left = x;
@@ -380,6 +380,7 @@ function clusterComponents(components: readonly Component[], sheetWidth: number,
       weightedX[cluster] = (weightedX[cluster] ?? 0) + (component.centerX * weight);
       weights[cluster] = (weights[cluster] ?? 0) + weight;
     }
+
     centers = centers.map((previous, cluster) => {
       const weight = weights[cluster] ?? 0;
       return weight > 0 ? (weightedX[cluster] ?? 0) / weight : previous;
@@ -505,18 +506,62 @@ function splitFrames(sheet: RgbaImage, threshold: number, options: SplitOptions)
   const frames = options.expectedCount === undefined
     ? buildGapFrames(sheet, threshold, options.fallbackMinGap)
     : buildComponentFrames(sheet, threshold, options.expectedCount);
+
   if (options.expectedCount !== undefined && frames.length !== options.expectedCount) {
     throw new Error(`Detected ${String(frames.length)} frames, expected ${String(options.expectedCount)}`);
   }
   return frames;
 }
 
-function measureBody(frame: RgbaImage, threshold: number): BodyMetrics {
+function median(values: readonly number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)] ?? 0;
+}
+
+function measureCharacter(frame: RgbaImage, threshold: number): CharacterMetrics {
   const bounds = findBounds(frame, threshold);
+  const visibleHeight = bounds.bottom - bounds.top + 1;
+  const lowerStart = bounds.top + Math.round(visibleHeight * 0.55);
+  const lowerBodyXs: number[] = [];
+
+  for (let y = lowerStart; y <= bounds.bottom; y += 1) {
+    for (let x = bounds.left; x <= bounds.right; x += 1) {
+      if (alphaAt(frame, x, y) > threshold) lowerBodyXs.push(x);
+    }
+  }
+
+  const centerX = lowerBodyXs.length > 0
+    ? median(lowerBodyXs)
+    : Math.round((bounds.left + bounds.right) / 2);
+
+  const bandHalfWidth = Math.max(8, Math.round(visibleHeight * 0.14));
+  const bandLeft = Math.max(bounds.left, centerX - bandHalfWidth);
+  const bandRight = Math.min(bounds.right, centerX + bandHalfWidth);
+  const bandWidth = Math.max(1, bandRight - bandLeft + 1);
+  const minimumPixels = Math.max(2, Math.ceil(bandWidth * 0.05));
+
+  let top: number | undefined;
+  let bottom: number | undefined;
+  for (let y = bounds.top; y <= bounds.bottom; y += 1) {
+    let occupied = 0;
+    for (let x = bandLeft; x <= bandRight; x += 1) {
+      if (alphaAt(frame, x, y) > threshold) occupied += 1;
+    }
+    if (occupied < minimumPixels) continue;
+    if (top === undefined) top = y;
+    bottom = y;
+  }
+
+  if (top === undefined || bottom === undefined || bottom < top) {
+    throw new Error("Unable to measure character head-to-foot height on calibration frame");
+  }
+
   return {
-    top: bounds.top,
-    bottom: bounds.bottom,
-    height: bounds.bottom - bounds.top + 1,
+    top,
+    bottom,
+    height: bottom - top + 1,
+    centerX,
   };
 }
 
@@ -599,8 +644,8 @@ if (referenceFrame >= referenceFrames.length) {
   throw new Error(`--reference-frame=${String(referenceFrame)} outside range 0..${String(referenceFrames.length - 1)}`);
 }
 
-const referenceMetrics = measureBody(referenceFrames[referenceFrame] as RgbaImage, alphaThreshold);
-const calibrationMetrics = measureBody(frames[calibrationFrame] as RgbaImage, alphaThreshold);
+const referenceMetrics = measureCharacter(referenceFrames[referenceFrame] as RgbaImage, alphaThreshold);
+const calibrationMetrics = measureCharacter(frames[calibrationFrame] as RgbaImage, alphaThreshold);
 const automaticScale = referenceMetrics.height / calibrationMetrics.height;
 const scale = manualScale ?? automaticScale;
 if (!Number.isFinite(scale) || scale <= 0 || scale < 0.4 || scale > 2.5) {
@@ -609,7 +654,14 @@ if (!Number.isFinite(scale) || scale <= 0 || scale < 0.4 || scale > 2.5) {
 
 const scaledFrames = frames.map((frame) => resizeNearest(frame, scale));
 const scaledBounds = scaledFrames.map((frame) => findBounds(frame, alphaThreshold));
-const scaledCalibrationMetrics = measureBody(scaledFrames[calibrationFrame] as RgbaImage, alphaThreshold);
+const scaledCalibrationMetrics = measureCharacter(scaledFrames[calibrationFrame] as RgbaImage, alphaThreshold);
+const calibrationError = Math.abs(scaledCalibrationMetrics.height - referenceMetrics.height);
+if (calibrationError > 2) {
+  throw new Error(
+    `Calibration failed: targetHeight=${String(referenceMetrics.height)} actualHeight=${String(scaledCalibrationMetrics.height)} error=${String(calibrationError)}px`,
+  );
+}
+
 const minVisibleY = Math.min(...scaledBounds.map((bounds) => bounds.top));
 const maxVisibleY = Math.max(...scaledBounds.map((bounds) => bounds.bottom));
 const verticalOffset = edgePadding - minVisibleY;
@@ -640,9 +692,10 @@ console.log(`spritesheet input=${input}`);
 console.log(`reference=${reference}`);
 console.log(`frames=${String(scaledFrames.length)} calibration=${String(calibrationFrame)} detection=${expectedCount === undefined ? `gap>=${String(minGap)}` : `components(${String(expectedCount)})`}`);
 console.log(`referenceFrames=${String(referenceFrames.length)} referenceFrame=${String(referenceFrame)}`);
-console.log(`referenceBodyHeight=${String(referenceMetrics.height)} calibrationBodyHeight=${String(calibrationMetrics.height)}`);
+console.log(`referenceCharacterHeight=${String(referenceMetrics.height)} referenceTop=${String(referenceMetrics.top)} referenceBottom=${String(referenceMetrics.bottom)}`);
+console.log(`sourceCharacterHeight=${String(calibrationMetrics.height)} sourceTop=${String(calibrationMetrics.top)} sourceBottom=${String(calibrationMetrics.bottom)}`);
+console.log(`scaledCharacterHeight=${String(scaledCalibrationMetrics.height)} calibrationError=${String(calibrationError)}px`);
 console.log(`scale=${scale.toFixed(4)}${manualScale === undefined ? " (auto)" : " (manual)"}`);
 console.log(`cell=${String(cellWidth)}x${String(frameHeight)} baselineY=${String(baselineY)} outputGap=${String(outputGap)}`);
-console.log("sizeMode=strict-visible-height");
 console.log("verticalMode=preserve-source-y");
 console.log(`generated ${output}`);
