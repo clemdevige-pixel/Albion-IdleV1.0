@@ -72,6 +72,8 @@ export interface RuntimePersistenceDependencies {
 export class RuntimePersistence {
   private readonly saveManager: SaveManager;
   private readonly saveRepository: SaveRepository;
+  private readonly inventoryManager: InventoryManager;
+  private readonly equipmentManager: EquipmentManager;
   private readonly saveSlotId: string;
   private readonly backupSlotId: string;
   private readonly backgroundProviders: SaveProvider[] = [];
@@ -85,6 +87,8 @@ export class RuntimePersistence {
   private readonly onLocalSave: ((save: SaveFormat) => void) | undefined;
 
   public constructor(deps: RuntimePersistenceDependencies) {
+    this.inventoryManager = deps.inventoryManager;
+    this.equipmentManager = deps.equipmentManager;
     this.saveSlotId = deps.saveSlotId ?? DEFAULT_SAVE_SLOT_ID;
     this.backupSlotId = getSaveBackupSlotId(this.saveSlotId);
     this.onLocalSave = deps.onLocalSave;
@@ -158,6 +162,7 @@ export class RuntimePersistence {
   }
 
   public save(tickCounter: number = 0): void {
+    this.assertGlobalItemIdentityIntegrity();
     backupCurrentSave(
       this.saveRepository,
       this.saveSlotId,
@@ -189,7 +194,7 @@ export class RuntimePersistence {
       this.saveRepository,
       this.saveSlotId,
       this.backupSlotId,
-      (slotId) => { this.saveManager.load(slotId); },
+      (slotId) => { this.loadAndValidateSlot(slotId); },
     );
 
     const loadedSave = this.getLastLoadedSave();
@@ -261,11 +266,11 @@ export class RuntimePersistence {
     this.saveManager.delete(importSlotId);
 
     try {
-      this.saveManager.load(this.saveSlotId);
+      this.loadAndValidateSlot(this.saveSlotId);
       this.lastLoadSource = "primary";
     } catch (error) {
       if (this.saveRepository.has(this.backupSlotId)) {
-        this.saveManager.load(this.backupSlotId);
+        this.loadAndValidateSlot(this.backupSlotId);
         this.saveRepository.save(
           this.saveSlotId,
           this.saveRepository.get(this.backupSlotId),
@@ -342,5 +347,41 @@ export class RuntimePersistence {
       this.handlePageHide = undefined;
     }
     this.isAutosaving = false;
+  }
+
+  private loadAndValidateSlot(slotId: string): void {
+    this.saveManager.load(slotId);
+    this.assertGlobalItemIdentityIntegrity();
+  }
+
+  private assertGlobalItemIdentityIntegrity(): void {
+    const owners = new Map<string, string>();
+    const claim = (instanceId: string, holder: string): void => {
+      const existing = owners.get(instanceId);
+      if (existing !== undefined) {
+        throw new Error(
+          `Duplicate item instance id across physical holders: ${instanceId} (${existing} / ${holder})`,
+        );
+      }
+      owners.set(instanceId, holder);
+    };
+
+    for (const inventoryId of this.inventoryManager.listInventories()) {
+      for (const slot of this.inventoryManager.listSlots(inventoryId)) {
+        if (slot.entry !== undefined) {
+          claim(slot.entry.instanceId, `inventory:${String(inventoryId)}`);
+        }
+      }
+      const activeBag = this.inventoryManager.getActiveBag(inventoryId);
+      if (activeBag !== undefined) {
+        claim(activeBag.instanceId, `bag:${String(inventoryId)}`);
+      }
+    }
+
+    for (const entityId of this.equipmentManager.listEquippedEntities()) {
+      for (const [slot, entry] of this.equipmentManager.getEquipped(entityId)) {
+        claim(entry.instanceId, `equipment:${String(entityId)}:${slot}`);
+      }
+    }
   }
 }
