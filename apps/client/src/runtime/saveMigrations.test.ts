@@ -401,7 +401,7 @@ describe("runtime save migration registry", () => {
     expect(slots.find(({ itemId }) => itemId === "item_resource_wood_t4")?.instanceId).not.toBe("item_1");
   });
 
-  it("repairs cross-inventory collisions and normalizes the V9 allocator globally", () => {
+  it("repairs cross-holder collisions and normalizes the V9 allocator globally", () => {
     const payload = {
       inventory: {
         inventories: [
@@ -449,10 +449,11 @@ describe("runtime save migration registry", () => {
     }).inventories;
 
     const allSlots = inventories.flatMap((inventory) => inventory.slots);
-    expect(allSlots.find(({ itemId }) => itemId === "item_weapon_broadsword_t4")?.instanceId).toBe("item_7");
     expect(allSlots.find(({ itemId }) => itemId === "item_resource_wood_t4")?.instanceId).toBe("item_43");
+    expect(allSlots.find(({ itemId }) => itemId === "item_weapon_broadsword_t4")?.instanceId).toBe("item_44");
+    expect(allSlots.some(({ instanceId }) => instanceId === "item_7")).toBe(false);
     expect(new Set(allSlots.map(({ instanceId }) => instanceId)).size).toBe(allSlots.length);
-    expect(inventories.every(({ nextInstanceCounter }) => nextInstanceCounter === 44)).toBe(true);
+    expect(inventories.every(({ nextInstanceCounter }) => nextInstanceCounter === 45)).toBe(true);
     expect(migrated.version).toBe(9);
     expect(migrated.metadata.version).toBe(9);
     expect(migrated.checksum).toBe(computeChecksum(migrated.payload));
