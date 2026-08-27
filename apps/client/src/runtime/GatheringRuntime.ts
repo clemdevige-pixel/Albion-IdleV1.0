@@ -30,7 +30,6 @@ import {
   decayActiveGatheringActivity,
   getActiveGatheringBonuses,
   getActiveGatheringRewardedQuantity,
-  getAverageActiveGatheringActivity,
   type ActiveGatheringYieldMultiplier,
   type GatheringStrikeQuality,
 } from "./activeGatheringRewardRules.js";
@@ -61,8 +60,6 @@ interface MutableGatheringState {
     sessionId: GatheringSessionId | null;
     strikesUsed: number;
     activity: number;
-    activityTotal: number;
-    activitySamples: number;
     lastProcessedTick: number | null;
     tier: ProductionTier | null;
   };
@@ -72,7 +69,6 @@ export interface ActiveGatheringMiniGameState {
   readonly sessionId: GatheringSessionId | null;
   readonly strikesUsed: number;
   readonly activity: number;
-  readonly averageActivity: number;
   readonly yieldMultiplier: ActiveGatheringYieldMultiplier;
   readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
   readonly nextActivityThreshold: number | null;
@@ -151,8 +147,6 @@ function createEmptyMiniGameState(): MutableGatheringState["miniGame"] {
     sessionId: null,
     strikesUsed: 0,
     activity: 0,
-    activityTotal: 0,
-    activitySamples: 0,
     lastProcessedTick: null,
     tier: null,
   };
@@ -262,7 +256,6 @@ export class GatheringRuntime {
         sessionId: null,
         strikesUsed: 0,
         activity: 0,
-        averageActivity: 0,
         yieldMultiplier: 1,
         speedBonusRatio: 0,
         nextActivityThreshold: 25,
@@ -277,10 +270,6 @@ export class GatheringRuntime {
       sessionId: state.sessionId,
       strikesUsed: state.strikesUsed,
       activity: state.activity,
-      averageActivity: getAverageActiveGatheringActivity(
-        state.activityTotal,
-        state.activitySamples,
-      ),
       yieldMultiplier: bonuses.yieldMultiplier,
       speedBonusRatio: bonuses.speedBonusRatio,
       nextActivityThreshold: bonuses.nextActivityThreshold,
@@ -328,9 +317,6 @@ export class GatheringRuntime {
         return;
       }
 
-      miniGame.activityTotal += miniGame.activity;
-      miniGame.activitySamples += 1;
-
       const bonuses = getActiveGatheringBonuses(miniGame.activity);
       miniGame.activity = decayActiveGatheringActivity(
         miniGame.activity,
@@ -358,8 +344,6 @@ export class GatheringRuntime {
       sessionId,
       strikesUsed: 0,
       activity: 0,
-      activityTotal: 0,
-      activitySamples: 0,
       lastProcessedTick: tickCounter,
       tier,
     };
@@ -466,13 +450,9 @@ export class GatheringRuntime {
     const state = this.states[family];
     const definition = this.families[family];
     const completedTier = state.miniGame.tier ?? this.getProductionTier();
-    const averageActivity = getAverageActiveGatheringActivity(
-      state.miniGame.activityTotal,
-      state.miniGame.activitySamples,
-    );
     const reward = getActiveGatheringRewardedQuantity(
       quantityGathered,
-      averageActivity,
+      state.miniGame.activity,
       state.fractionalYieldCarry,
     );
     state.fractionalYieldCarry = reward.fractionalCarry;
