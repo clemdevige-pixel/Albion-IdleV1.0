@@ -286,26 +286,51 @@ function weightedMedian(values: readonly number[]): number {
 
 function measureBody(image: RgbaImage, threshold: number): BodyMetrics {
   const bounds = findBounds(image, threshold);
-  const opaqueX: number[] = [];
-  for (let y = bounds.top; y <= bounds.bottom; y += 1) {
+  const visibleHeight = bounds.bottom - bounds.top + 1;
+
+  // Anchor the measurement on the lower body, where weapons/raised arms have
+  // much less influence than on the full silhouette. This makes the center
+  // stable across idle/attack/walk sheets of the same character.
+  const lowerRegionTop = Math.min(
+    bounds.bottom,
+    bounds.top + Math.round(visibleHeight * 0.52),
+  );
+  const lowerBodyXs: number[] = [];
+  for (let y = lowerRegionTop; y <= bounds.bottom; y += 1) {
     for (let x = bounds.left; x <= bounds.right; x += 1) {
-      if (alphaAt(image, x, y) > threshold) opaqueX.push(x);
+      if (alphaAt(image, x, y) > threshold) lowerBodyXs.push(x);
     }
   }
-  const medianX = weightedMedian(opaqueX);
-  const bboxWidth = bounds.right - bounds.left + 1;
-  const bandHalfWidth = Math.max(4, Math.round(bboxWidth * 0.28));
-  const bandLeft = Math.max(bounds.left, medianX - bandHalfWidth);
-  const bandRight = Math.min(bounds.right, medianX + bandHalfWidth);
+
+  const fallbackCenter = Math.round((bounds.left + bounds.right) / 2);
+  const bodyCenterX = lowerBodyXs.length > 0 ? weightedMedian(lowerBodyXs) : fallbackCenter;
+
+  // Crucially, the measurement band is derived from character HEIGHT, not
+  // total silhouette WIDTH. A horizontally extended dagger, bow, arm or cape
+  // can therefore no longer widen the body-measurement band and alter scale.
+  const bandHalfWidth = Math.max(6, Math.round(visibleHeight * 0.11));
+  const bandLeft = Math.max(bounds.left, bodyCenterX - bandHalfWidth);
+  const bandRight = Math.min(bounds.right, bodyCenterX + bandHalfWidth);
+  const bandWidth = Math.max(1, bandRight - bandLeft + 1);
+
   const rowCounts = new Array<number>(image.height).fill(0);
   let maxRowCount = 0;
   for (let y = bounds.top; y <= bounds.bottom; y += 1) {
     let count = 0;
-    for (let x = bandLeft; x <= bandRight; x += 1) if (alphaAt(image, x, y) > threshold) count += 1;
+    for (let x = bandLeft; x <= bandRight; x += 1) {
+      if (alphaAt(image, x, y) > threshold) count += 1;
+    }
     rowCounts[y] = count;
     maxRowCount = Math.max(maxRowCount, count);
   }
-  const meaningfulRowCount = Math.max(2, Math.round(maxRowCount * 0.16));
+
+  // Keep the threshold permissive enough to include head/feet while rejecting
+  // isolated weapon pixels crossing the central band.
+  const meaningfulRowCount = Math.max(
+    2,
+    Math.min(Math.round(bandWidth * 0.12), Math.round(maxRowCount * 0.14)),
+  );
+
   let coreTop = bounds.top;
   let coreBottom = bounds.bottom;
   for (let y = bounds.top; y <= bounds.bottom; y += 1) {
@@ -320,13 +345,16 @@ function measureBody(image: RgbaImage, threshold: number): BodyMetrics {
       break;
     }
   }
+
   const coreHeight = Math.max(1, coreBottom - coreTop + 1);
-  const lowerStart = Math.round(coreTop + (coreHeight * 0.65));
+  const rootRegionTop = Math.round(coreTop + (coreHeight * 0.65));
   const rootXs: number[] = [];
-  for (let y = lowerStart; y <= coreBottom; y += 1) {
-    for (let x = bandLeft; x <= bandRight; x += 1) if (alphaAt(image, x, y) > threshold) rootXs.push(x);
+  for (let y = rootRegionTop; y <= coreBottom; y += 1) {
+    for (let x = bandLeft; x <= bandRight; x += 1) {
+      if (alphaAt(image, x, y) > threshold) rootXs.push(x);
+    }
   }
-  const rootX = rootXs.length > 0 ? weightedMedian(rootXs) : medianX;
+  const rootX = rootXs.length > 0 ? weightedMedian(rootXs) : bodyCenterX;
   return { coreTop, coreBottom, coreHeight, rootX, groundY: coreBottom };
 }
 
