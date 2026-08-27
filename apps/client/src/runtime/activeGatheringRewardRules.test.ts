@@ -3,6 +3,7 @@ import {
   ACTIVE_GATHERING_REWARD_RULES,
   applyActiveGatheringStrike,
   getActiveGatheringRewardProgress,
+  getActiveGatheringRewardedQuantity,
 } from "./activeGatheringRewardRules";
 
 describe("active gathering reward rules", () => {
@@ -24,6 +25,9 @@ describe("active gathering reward rules", () => {
     expect(getActiveGatheringRewardProgress(60).multiplier).toBe(2);
     expect(getActiveGatheringRewardProgress(139).multiplier).toBe(2);
     expect(getActiveGatheringRewardProgress(140).multiplier).toBe(3);
+    expect(getActiveGatheringRewardedQuantity(1, 59)).toBe(1);
+    expect(getActiveGatheringRewardedQuantity(1, 60)).toBe(2);
+    expect(getActiveGatheringRewardedQuantity(1, 140)).toBe(3);
   });
 
   it("keeps the streak on correct/perfect and resets it on miss", () => {
