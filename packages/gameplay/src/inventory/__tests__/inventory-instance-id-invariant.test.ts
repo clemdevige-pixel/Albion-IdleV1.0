@@ -32,6 +32,41 @@ describe("inventory instance id invariant", () => {
     expect(manager.validateIntegrity(entityId)).toEqual([]);
   });
 
+  it("repairs a stale saved allocator before the runtime creates another item", () => {
+    const world = new World(createRuntimeServices());
+    const manager = new InventoryManager(world);
+    const targetEntity = world.createEntity();
+    const provider = new InventorySaveProvider(manager, world, () => targetEntity);
+
+    provider.load({
+      inventories: [
+        {
+          capacity: 4,
+          nextInstanceCounter: 12,
+          slots: [
+            {
+              position: 0,
+              instanceId: "item_42",
+              itemId: "RESOURCE_WOOD",
+              quantity: 1,
+              enchantment: 0,
+            },
+          ],
+          activeBag: null,
+        },
+      ],
+    });
+
+    const restored = world.getComponent(targetEntity, InventoryComponent);
+    expect(restored.nextInstanceCounter).toBe(43);
+
+    const created = manager.addEntry(targetEntity, "RESOURCE_ORE");
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    expect(created.value.instanceId).toBe("item_43");
+    expect(manager.validateIntegrity(targetEntity)).toEqual([]);
+  });
+
   it("refuses to persist a runtime inventory that already contains duplicate ids", () => {
     const { world, manager, entityId } = createInventoryFixture();
     const data = world.getComponent(entityId, InventoryComponent);
