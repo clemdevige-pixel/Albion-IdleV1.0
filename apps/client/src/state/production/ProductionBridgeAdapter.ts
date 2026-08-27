@@ -112,6 +112,11 @@ export class ProductionBridgeAdapter {
       tier,
       inventoryManager.getTotalQuantity(productionStorageId, config.rawItemId),
       miniGame.strikesUsed,
+      miniGame.streak,
+      miniGame.yieldScore,
+      miniGame.yieldMultiplier,
+      miniGame.nextYieldThreshold,
+      miniGame.yieldProgressToNext,
       activeResource,
     );
   }
