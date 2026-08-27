@@ -35,6 +35,15 @@ class RejectingProvider extends MockProvider {
   }
 }
 
+class SaveRejectingProvider extends MockProvider {
+  rejectSave = false;
+
+  override save(): unknown {
+    if (this.rejectSave) throw new Error("runtime is invalid");
+    return super.save();
+  }
+}
+
 function createManager(): SaveManager {
   return new SaveManager({
     repository: new InMemorySaveRepository(),
@@ -57,6 +66,19 @@ describe("SaveManager", () => {
     manager.load("slot1");
 
     expect(provider.state).toEqual({ hp: 100, name: "hero" });
+  });
+
+  it("loads a valid save even when the current runtime cannot be serialized", () => {
+    const manager = createManager();
+    const provider = new SaveRejectingProvider("inventory", { item: "valid-save" });
+    manager.registerProvider(provider);
+    manager.save("slot", 0);
+
+    provider.state = { item: "corrupted-runtime" };
+    provider.rejectSave = true;
+
+    expect(() => manager.load("slot")).not.toThrow();
+    expect(provider.state).toEqual({ item: "valid-save" });
   });
 
   it("rolls back providers already mutated when a later provider rejects a load", () => {
