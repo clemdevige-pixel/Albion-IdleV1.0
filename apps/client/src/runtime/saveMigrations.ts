@@ -195,7 +195,7 @@ function repairDuplicateInventoryInstanceIds(
   const migratedInventories = inventories.map((inventory): unknown => {
     if (!isRecord(inventory) || !Array.isArray(inventory.slots)) return inventory;
 
-    const slots = inventory.slots;
+    const slots: readonly unknown[] = inventory.slots;
     const activeBag = isRecord(inventory.activeBag) ? inventory.activeBag : undefined;
     const bagInstanceId = typeof activeBag?.instanceId === "string"
       ? activeBag.instanceId
@@ -354,7 +354,7 @@ const migrateV5ToV6: SaveMigration = {
   fromVersion: 5,
   toVersion: 6,
   migrate(save: SaveFormat): SaveFormat {
-    const payload = repairDuplicatedActiveBagEntries(save.payload as Record<string, unknown>);
+    const payload = repairDuplicatedActiveBagEntries(save.payload);
     return {
       ...save,
       version: 6,
@@ -369,7 +369,7 @@ const migrateV6ToV7: SaveMigration = {
   fromVersion: 6,
   toVersion: 7,
   migrate(save: SaveFormat): SaveFormat {
-    const payload = repairDuplicateInventoryInstanceIds(save.payload as Record<string, unknown>);
+    const payload = repairDuplicateInventoryInstanceIds(save.payload);
     return {
       ...save,
       version: 7,
