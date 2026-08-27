@@ -75,3 +75,11 @@ export function getActiveGatheringRewardProgress(
     progressToNext: Math.max(0, Math.min(100, progress)),
   };
 }
+
+export function getActiveGatheringRewardedQuantity(
+  baseQuantity: number,
+  score: number,
+): number {
+  const safeBaseQuantity = Math.max(0, Math.floor(baseQuantity));
+  return safeBaseQuantity * getActiveGatheringRewardProgress(score).multiplier;
+}
