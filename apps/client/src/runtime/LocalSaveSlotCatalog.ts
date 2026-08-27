@@ -59,6 +59,11 @@ export class LocalSaveSlotCatalog {
       return false;
     }
 
+    // Free space from copies that are already safely represented by validated
+    // account-scoped targets before attempting any remaining migration writes.
+    // This is essential when LocalStorage is already close to or at quota.
+    this.cleanupMigratedSources();
+
     let migrated = false;
     if (!migrationAlreadyDone) {
       for (const logicalSlotId of PLAYER_SAVE_SLOT_IDS) {
@@ -80,10 +85,9 @@ export class LocalSaveSlotCatalog {
       this.markerStore?.setItem(accountMigrationMarker, "done");
     }
 
-    // Cleanup is deliberately separate from copying and also runs for players
-    // who already completed the v1 migration. A source is removed only after
-    // the account-scoped target is readable, checksum-valid and at least as
-    // recent as the source it replaces.
+    // Run cleanup again for copies created by this migration pass. A source is
+    // removed only after the account target is readable, checksum-valid and at
+    // least as recent as the source it replaces.
     this.cleanupMigratedSources();
     return migrated;
   }
