@@ -135,14 +135,14 @@ export function ActiveGatheringGame(
         </b>
       </div>
 
-      <div className="active-gathering__yield-wrap">
-        <div className="active-gathering__yield" aria-label={`Activité ${String(Math.round(props.activity))} sur 100`}>
+      <div className="active-gathering__activity-wrap">
+        <div className="active-gathering__activity" aria-label={`Activité ${String(Math.round(props.activity))} sur 100`}>
           <span style={{ width: `${String(Math.max(0, Math.min(100, props.activity)))}%` }} />
         </div>
         <small>
           {props.nextActivityThreshold === null
             ? "Activité max"
-            : `Palier ${String(props.nextActivityThreshold)}`}
+            : `Palier ${String(props.nextActivityThreshold)} · ${String(Math.round(props.activityProgressToNext))}%`}
         </small>
       </div>
 
