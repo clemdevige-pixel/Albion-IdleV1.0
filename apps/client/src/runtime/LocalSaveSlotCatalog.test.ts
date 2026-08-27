@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { InMemorySaveRepository, type SaveFormat } from "@game/persistence";
+import { describe, expect, it, vi } from "vitest";
+import {
+  computeChecksum,
+  InMemorySaveRepository,
+  type SaveFormat,
+} from "@game/persistence";
 import { LocalSaveSlotCatalog } from "./LocalSaveSlotCatalog";
 import {
   LEGACY_SAVE_SLOT_ID,
@@ -23,17 +27,18 @@ class MemoryMarkerStore {
   }
 }
 
-function createSave(marker: string): SaveFormat {
+function createSave(marker: string, updatedAt: number = 2): SaveFormat {
+  const payload = { marker };
   return {
     version: 2,
-    metadata: { version: 2, createdAt: 1, updatedAt: 2, buildVersion: marker, seed: 42 },
-    payload: {},
-    checksum: "checksum",
+    metadata: { version: 2, createdAt: 1, updatedAt, buildVersion: marker, seed: 42 },
+    payload,
+    checksum: computeChecksum(payload),
   };
 }
 
 describe("LocalSaveSlotCatalog", () => {
-  it("copies the legacy primary and backup into slot 1 without deleting them", () => {
+  it("migrates legacy primary and backup then removes validated redundant copies", () => {
     const repository = new InMemorySaveRepository();
     const primary = createSave("legacy-primary");
     const backup = createSave("legacy-backup");
@@ -45,30 +50,26 @@ describe("LocalSaveSlotCatalog", () => {
     const accountSlot = getAccountSaveSlotId(ACCOUNT_A, PLAYER_SAVE_SLOT_IDS[0]);
     expect(repository.get(accountSlot)).toEqual(primary);
     expect(repository.get(getSaveBackupSlotId(accountSlot))).toEqual(backup);
-    expect(repository.get(PLAYER_SAVE_SLOT_IDS[0])).toEqual(primary);
-    expect(repository.get(getSaveBackupSlotId(PLAYER_SAVE_SLOT_IDS[0]))).toEqual(backup);
-    expect(repository.get(LEGACY_SAVE_SLOT_ID)).toEqual(primary);
-    expect(repository.get(getSaveBackupSlotId(LEGACY_SAVE_SLOT_ID))).toEqual(backup);
-
-    catalog.deleteSlot(PLAYER_SAVE_SLOT_IDS[0]);
-    expect(catalog.migrateLocalSavesToAccount()).toBe(false);
-    expect(repository.has(accountSlot)).toBe(false);
-    expect(repository.has(PLAYER_SAVE_SLOT_IDS[0])).toBe(true);
+    expect(repository.has(PLAYER_SAVE_SLOT_IDS[0])).toBe(false);
+    expect(repository.has(getSaveBackupSlotId(PLAYER_SAVE_SLOT_IDS[0]))).toBe(false);
+    expect(repository.has(LEGACY_SAVE_SLOT_ID)).toBe(false);
+    expect(repository.has(getSaveBackupSlotId(LEGACY_SAVE_SLOT_ID))).toBe(false);
   });
 
-  it("never overwrites an existing player slot", () => {
+  it("never overwrites an existing player slot before migrating it to the account", () => {
     const repository = new InMemorySaveRepository();
-    const current = createSave("current");
+    const current = createSave("current", 10);
     repository.save(PLAYER_SAVE_SLOT_IDS[0], current);
-    repository.save(LEGACY_SAVE_SLOT_ID, createSave("legacy"));
+    repository.save(LEGACY_SAVE_SLOT_ID, createSave("legacy", 2));
     const catalog = new LocalSaveSlotCatalog(ACCOUNT_A, repository, new MemoryMarkerStore());
 
     expect(catalog.migrateLocalSavesToAccount()).toBe(true);
-    expect(repository.get(PLAYER_SAVE_SLOT_IDS[0])).toEqual(current);
     expect(repository.get(getAccountSaveSlotId(ACCOUNT_A, PLAYER_SAVE_SLOT_IDS[0]))).toEqual(current);
+    expect(repository.has(PLAYER_SAVE_SLOT_IDS[0])).toBe(false);
+    expect(repository.has(LEGACY_SAVE_SLOT_ID)).toBe(false);
   });
 
-  it("deletes only the selected slot and its backup", () => {
+  it("deletes only the selected account-scoped slot and its backup", () => {
     const repository = new InMemorySaveRepository();
     repository.save(PLAYER_SAVE_SLOT_IDS[0], createSave("slot-1"));
     repository.save(getSaveBackupSlotId(PLAYER_SAVE_SLOT_IDS[0]), createSave("slot-1-backup"));
@@ -80,9 +81,9 @@ describe("LocalSaveSlotCatalog", () => {
 
     catalog.deleteSlot(PLAYER_SAVE_SLOT_IDS[0]);
 
-    expect(repository.has(PLAYER_SAVE_SLOT_IDS[0])).toBe(true);
-    expect(repository.has(getSaveBackupSlotId(PLAYER_SAVE_SLOT_IDS[0]))).toBe(true);
-    expect(repository.has(PLAYER_SAVE_SLOT_IDS[1])).toBe(true);
+    expect(repository.has(PLAYER_SAVE_SLOT_IDS[0])).toBe(false);
+    expect(repository.has(getSaveBackupSlotId(PLAYER_SAVE_SLOT_IDS[0]))).toBe(false);
+    expect(repository.has(PLAYER_SAVE_SLOT_IDS[1])).toBe(false);
     expect(repository.has(getAccountSaveSlotId(ACCOUNT_A, PLAYER_SAVE_SLOT_IDS[0]))).toBe(false);
     expect(repository.has(getAccountSaveSlotId(ACCOUNT_A, PLAYER_SAVE_SLOT_IDS[1]))).toBe(true);
   });
@@ -99,5 +100,33 @@ describe("LocalSaveSlotCatalog", () => {
     expect(secondAccount.migrateLocalSavesToAccount()).toBe(false);
     expect(firstAccount.listSlots()[0]?.hasSave).toBe(true);
     expect(secondAccount.listSlots()[0]?.hasSave).toBe(false);
+  });
+
+  it("preserves a newer unscoped save instead of deleting it behind an older account copy", () => {
+    const repository = new InMemorySaveRepository();
+    const source = createSave("newer-local", 20);
+    const target = createSave("older-account", 10);
+    const accountSlot = getAccountSaveSlotId(ACCOUNT_A, PLAYER_SAVE_SLOT_IDS[0]);
+    repository.save(PLAYER_SAVE_SLOT_IDS[0], source);
+    repository.save(accountSlot, target);
+    const catalog = new LocalSaveSlotCatalog(ACCOUNT_A, repository, new MemoryMarkerStore());
+
+    expect(catalog.migrateLocalSavesToAccount()).toBe(false);
+    expect(repository.get(PLAYER_SAVE_SLOT_IDS[0])).toEqual(source);
+    expect(repository.get(accountSlot)).toEqual(target);
+  });
+
+  it("preserves migration sources when the account target fails checksum validation", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const repository = new InMemorySaveRepository();
+    const source = createSave("valid-source", 10);
+    const invalidTarget = { ...createSave("invalid-target", 20), checksum: "bad-checksum" };
+    const accountSlot = getAccountSaveSlotId(ACCOUNT_A, PLAYER_SAVE_SLOT_IDS[0]);
+    repository.save(PLAYER_SAVE_SLOT_IDS[0], source);
+    repository.save(accountSlot, invalidTarget);
+    const catalog = new LocalSaveSlotCatalog(ACCOUNT_A, repository, new MemoryMarkerStore());
+
+    expect(catalog.migrateLocalSavesToAccount()).toBe(false);
+    expect(repository.get(PLAYER_SAVE_SLOT_IDS[0])).toEqual(source);
   });
 });
