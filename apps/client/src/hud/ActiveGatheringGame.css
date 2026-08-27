@@ -1,0 +1,106 @@
+.active-gathering__reward-summary {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.active-gathering__reward-summary strong {
+  color: #f1d36b;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.active-gathering__reward-summary b {
+  color: #d7e0ea;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
+}
+
+.active-gathering__yield-wrap {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.active-gathering__yield-wrap .active-gathering__yield {
+  position: relative;
+  height: 7px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #17212c;
+}
+
+.active-gathering__yield-wrap .active-gathering__yield > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8e6a1f, #d1a52f);
+}
+
+.active-gathering__yield-wrap > small {
+  min-width: 72px;
+  color: #9ba7b6;
+  font-size: 8px;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.active-gathering__feedback {
+  grid-column: 1 / -1;
+  min-height: 13px;
+  margin: 0;
+  color: #7f8da0;
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.active-gathering__feedback.is-perfect {
+  color: #f2d35e;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.active-gathering__feedback.is-correct {
+  color: #a9d6a3;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.active-gathering__feedback.is-miss {
+  color: #d58f86;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ui-world .ui-gathering-card .active-gathering {
+  gap: 7px 10px;
+}
+
+.ui-world .ui-gathering-card .active-gathering__header {
+  color: #8f9bab;
+  font-size: 8px;
+}
+
+.ui-world .ui-gathering-card .active-gathering__header strong {
+  color: #c7a84c;
+  font-size: 8px;
+}
+
+.ui-world .ui-gathering-card .active-gathering__reward-summary strong {
+  font-size: 12px;
+}
+
+.ui-world .ui-gathering-card .active-gathering__reward-summary b {
+  font-size: 11px;
+}
