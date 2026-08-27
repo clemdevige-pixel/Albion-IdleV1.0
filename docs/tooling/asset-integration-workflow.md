@@ -21,6 +21,23 @@ Le câblage code n’est volontairement pas automatisé.
 
 ---
 
+## Contrat de taille
+
+La référence globale est l’unique autorité de gabarit pour Albion Idle.
+
+Toutes les armes doivent converger vers ce même gabarit.
+
+Les différentes animations d’une même arme sont supposées être générées à la même échelle brute. Pour éviter qu’une pose d’attaque, une arme ou une cape ne produise un scale différent selon la spritesheet, le wrapper calcule **un seul scale par arme** :
+
+1. il privilégie `idle` comme animation de calibration si elle existe ;
+2. cette animation est mesurée contre la référence globale ;
+3. le scale obtenu devient `sharedScale` ;
+4. `walk`, `attack` et `death` réutilisent exactement ce `sharedScale`.
+
+Ainsi, la référence globale fixe toujours la taille cible, mais une même arme ne peut plus dériver en taille d’une animation à l’autre.
+
+---
+
 ## Ce que fait l’utilisateur
 
 L’utilisateur ne crée pas de sous-dossier par arme et ne manipule pas les fichiers après génération.
@@ -109,19 +126,19 @@ pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver --source-dir="mon/do
 
 ## Ce que fait automatiquement l’outil
 
-Pour chaque animation trouvée pour le `weaponId` demandé, le wrapper :
+Pour le `weaponId` demandé, le wrapper :
 
 1. filtre les sources du dossier d’import ;
 2. détecte `idle`, `walk`, `attack` ou `death` via le nom ;
-3. appelle le SpriteSheet Generator existant ;
-4. utilise la référence personnage validée ;
-5. normalise le gabarit ;
-6. conserve un scale unique pour toute l’animation ;
+3. choisit l’animation de calibration (`idle` en priorité) ;
+4. calibre cette animation contre la référence personnage globale ;
+5. récupère le `sharedScale` ainsi calculé ;
+6. applique exactement ce même `sharedScale` à toutes les autres animations de l’arme ;
 7. conserve les poses ;
 8. aligne la baseline ;
 9. détecte les frames avec le mode `--frame-count` ;
-10. renomme la sortie ;
-11. dépose directement la sortie dans le dossier d’assets du jeu.
+10. renomme les sorties ;
+11. dépose directement les sorties dans le dossier d’assets du jeu.
 
 Sorties :
 
@@ -183,7 +200,7 @@ Override par animation :
 --death-calibration-frame=0
 ```
 
-Utiliser un override seulement si la frame `0` est trop penchée, couchée ou extrême pour servir de calibration.
+Important : seul le scale de l’animation de calibration choisie par le wrapper sert à définir la taille de l’arme. Les autres frames de calibration servent encore aux métriques/ancrages internes, mais ne peuvent plus modifier la taille physique de l’animation.
 
 ---
 
@@ -195,24 +212,18 @@ Après traitement, le wrapper écrit un report par arme directement dans le doss
 .tmp/spritesheet-imports/generation-report-<weaponId>.json
 ```
 
-Exemple :
-
-```text
-.tmp/spritesheet-imports/generation-report-deathgiver.json
-```
-
-Le report contient :
+Le report contient notamment :
 
 - le `weaponId` ;
 - la référence utilisée ;
+- `calibrationAnimation` ;
+- `sharedScale` ;
 - les fichiers sources ;
 - les fichiers générés ;
 - le nombre de frames ;
-- la frame de calibration ;
-- le scale calculé si disponible ;
-- la taille de cellule générée si disponible.
+- les tailles de cellule générées.
 
-L’agent doit consulter ce report avant le câblage.
+L’agent doit vérifier que toutes les animations du report ont le même `scale` avant le câblage.
 
 ---
 
@@ -222,13 +233,14 @@ La vérification visuelle intervient **après** que l’outil a généré les fi
 
 L’utilisateur vérifie :
 
-1. gabarit du personnage ;
-2. baseline / pieds ;
-3. conservation des poses ;
-4. absence de scaling aberrant causé par l’arme ;
-5. drift horizontal ;
-6. spacing ;
-7. alpha.
+1. gabarit du personnage par rapport à la référence ;
+2. cohérence de taille entre idle / walk / attack / death ;
+3. baseline / pieds ;
+4. conservation des poses ;
+5. absence de scaling aberrant causé par l’arme ;
+6. drift horizontal ;
+7. spacing ;
+8. alpha.
 
 Si la sortie n’est pas validée, ne pas câbler l’asset dans le jeu.
 
@@ -269,6 +281,8 @@ Ne pas créer de pipeline parallèle ou de surcouche spécifique à une arme si 
 
 - filtre par arme ;
 - détecte les animations ;
+- calibre l’arme contre la référence globale ;
+- impose un scale commun à toutes les animations de l’arme ;
 - normalise ;
 - renomme ;
 - dépose les assets finaux ;
@@ -279,6 +293,7 @@ Ne pas créer de pipeline parallèle ou de surcouche spécifique à une arme si 
 - lit cette doc ;
 - identifie le `weaponId` ;
 - lance l’outil ;
+- vérifie le report ;
 - guide la validation visuelle ;
 - câble dans le jeu après validation ;
 - respecte l’architecture data-driven existante.
