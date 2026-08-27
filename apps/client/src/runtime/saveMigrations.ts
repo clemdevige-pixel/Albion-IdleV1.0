@@ -10,7 +10,7 @@ import {
  * Increment only when the persisted payload shape changes incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 5;
+export const CURRENT_RUNTIME_SAVE_VERSION = 6;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
 const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
@@ -103,6 +103,55 @@ function removeLegacyFactionRelicItems(payload: Record<string, unknown>): Record
   };
 }
 
+function repairDuplicatedActiveBagEntries(payload: Record<string, unknown>): Record<string, unknown> {
+  const inventoryPayload = payload.inventory;
+  if (!isRecord(inventoryPayload)) return payload;
+  const inventories = inventoryPayload.inventories;
+  if (!Array.isArray(inventories)) return payload;
+
+  const migratedInventories = inventories.map((inventory): unknown => {
+    if (!isRecord(inventory)) return inventory;
+    const activeBag = inventory.activeBag;
+    const slots = inventory.slots;
+    if (!isRecord(activeBag) || !Array.isArray(slots)) return inventory;
+
+    const bagInstanceId = activeBag.instanceId;
+    const bagItemId = activeBag.itemId;
+    const bagQuantity = activeBag.quantity;
+    const bagEnchantment = activeBag.enchantment ?? 0;
+    if (
+      typeof bagInstanceId !== "string"
+      || typeof bagItemId !== "string"
+      || typeof bagQuantity !== "number"
+      || typeof bagEnchantment !== "number"
+    ) {
+      return inventory;
+    }
+
+    let removedExactDuplicate = false;
+    const migratedSlots = slots.filter((slot) => {
+      if (!isRecord(slot) || slot.instanceId !== bagInstanceId) return true;
+      const slotEnchantment = slot.enchantment ?? 0;
+      const exactDuplicate = slot.itemId === bagItemId
+        && slot.quantity === bagQuantity
+        && slotEnchantment === bagEnchantment;
+      if (!exactDuplicate) return true;
+      removedExactDuplicate = true;
+      return false;
+    });
+
+    return removedExactDuplicate ? { ...inventory, slots: migratedSlots } : inventory;
+  });
+
+  return {
+    ...payload,
+    inventory: {
+      ...inventoryPayload,
+      inventories: migratedInventories,
+    },
+  };
+}
+
 const migrateV1ToV2: SaveMigration = {
   fromVersion: 1,
   toVersion: 2,
@@ -166,12 +215,28 @@ const migrateV4ToV5: SaveMigration = {
   },
 };
 
+const migrateV5ToV6: SaveMigration = {
+  fromVersion: 5,
+  toVersion: 6,
+  migrate(save: SaveFormat): SaveFormat {
+    const payload = repairDuplicatedActiveBagEntries(save.payload as Record<string, unknown>);
+    return {
+      ...save,
+      version: 6,
+      metadata: { ...save.metadata, version: 6 },
+      payload,
+      checksum: computeChecksum(payload),
+    };
+  },
+};
+
 /** Ordered, explicit registry for runtime save migrations. */
 export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV1ToV2,
   migrateV2ToV3,
   migrateV3ToV4,
   migrateV4ToV5,
+  migrateV5ToV6,
 ];
 
 export interface RuntimeMigrationPipelineOptions {
