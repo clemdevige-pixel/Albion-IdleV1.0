@@ -32,6 +32,7 @@
   min-width: 84px;
   padding: 4px 7px;
   border: 1px solid #8a6225;
+  border-left: 3px solid #8a6225;
   border-radius: 5px;
   background: #15120d;
   color: #e7d29b;
@@ -344,6 +345,28 @@
 }
 .ui-world .ui-gathering-card .active-gathering__header strong {
   color: #b99843;
+  font-size: 7px;
+}
+.ui-world .ui-gathering-card .active-gathering__yield {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 3px;
+  margin: 1px 0 2px;
+  overflow: visible;
+  border-radius: 999px;
+  background: #17212c;
+}
+.ui-world .ui-gathering-card .active-gathering__yield > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #b98524;
+}
+.ui-world .ui-gathering-card .active-gathering__yield > small {
+  position: absolute;
+  right: 0;
+  top: -10px;
+  color: #7f8da0;
   font-size: 7px;
 }
 .ui-world .ui-gathering-card .active-gathering__meter {
