@@ -40,6 +40,25 @@ function removeAwakenedModifiers(statsManager: StatsManager, entityId: EntityId)
   }
 }
 
+function addAwakenedModifier(
+  statsManager: StatsManager,
+  entityId: EntityId,
+  suffix: string,
+  statId: StatId,
+  type: "flat" | "percent",
+  value: number,
+): void {
+  if (value <= 0) return;
+  statsManager.addModifier(entityId, {
+    id: `${AWAKENED_MODIFIER_PREFIX}${suffix}` as ModifierId,
+    statId,
+    type,
+    value,
+    priority: 20,
+    source: "awakening:weapon",
+  });
+}
+
 function addAwakenedFlat(
   statsManager: StatsManager,
   entityId: EntityId,
@@ -47,15 +66,7 @@ function addAwakenedFlat(
   statId: StatId,
   value: number,
 ): void {
-  if (value <= 0) return;
-  statsManager.addModifier(entityId, {
-    id: `${AWAKENED_MODIFIER_PREFIX}${suffix}` as ModifierId,
-    statId,
-    type: "flat",
-    value,
-    priority: 20,
-    source: "awakening:weapon",
-  });
+  addAwakenedModifier(statsManager, entityId, suffix, statId, "flat", value);
 }
 
 /**
@@ -127,7 +138,14 @@ export function recalculateWeaponProgressionStats(
     STAT_AUTO_ATTACK_DAMAGE_BONUS,
     getTraitValue(traits, "auto_attack_damage"),
   );
-  addAwakenedFlat(statsManager, entityId, "max_health", STAT_MAX_HEALTH, getTraitValue(traits, "max_health"));
+  addAwakenedModifier(
+    statsManager,
+    entityId,
+    "max_health",
+    STAT_MAX_HEALTH,
+    "percent",
+    getTraitValue(traits, "max_health"),
+  );
 
   const defense = getTraitValue(traits, "defense");
   addAwakenedFlat(statsManager, entityId, "armor", STAT_ARMOR, defense);
