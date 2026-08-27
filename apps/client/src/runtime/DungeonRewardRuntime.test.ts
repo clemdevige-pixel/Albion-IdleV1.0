@@ -2,11 +2,16 @@ import { getFactionRuneItemId } from "@game/data";
 import { describe, expect, it } from "vitest";
 import { World, createRuntimeServices } from "@game/core";
 import { DungeonRuntime, getEnchantmentShardItemId } from "@game/gameplay";
-import { KEEPER_T4_DUNGEON } from "../data/dungeonContentCatalog.js";
+import {
+  KEEPER_T4_DUNGEON,
+  MORGANA_T4_DUNGEON,
+} from "../data/dungeonContentCatalog.js";
 import {
   DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER,
   DUNGEON_COMPLETION_SILVER_BY_TIER,
 } from "../data/dungeonLootContentCatalog.js";
+import { createFactionMasteryFoundation } from "./bootstrap/createFactionMasteryFoundation.js";
+import { createProgressionFoundation } from "./bootstrap/createProgressionFoundation.js";
 import { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
 import { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
@@ -138,5 +143,43 @@ describe("DungeonRewardRuntime", () => {
     );
     expect(inventory.getTotalQuantity(heroId, shardItemId)).toBe(8);
     expect(inventory.getTotalQuantity(heroId, runeItemId)).toBe(3);
+  });
+
+  it("keeps Morgana T4 completion at 2 or 3 Runes with a real +4% faction mastery", () => {
+    const world = new World(createRuntimeServices());
+    const heroId = world.createEntity();
+    const inventory = new PlayerInventoryManager(
+      world,
+      (itemId) => ({ itemId, stackable: true, maxStack: 999 }),
+    );
+    inventory.createInventory(heroId, 20);
+    inventory.setAccessibleStorageOwners(heroId, [heroId]);
+    inventory.addQuantity(heroId, MORGANA_T4_DUNGEON.keyItemId, 1);
+
+    const progression = createProgressionFoundation();
+    const factionMastery = createFactionMasteryFoundation(progression);
+    factionMastery.awardRawFactionFame("Morgana", 96_000);
+    expect(factionMastery.getYieldBonusPercent("Morgana")).toBe(4);
+
+    const dungeon = new DungeonRuntime([MORGANA_T4_DUNGEON]);
+    const started = dungeon.start(MORGANA_T4_DUNGEON.id, heroId, inventory);
+    expect(started.ok).toBe(true);
+    const rewards = new DungeonRewardRuntime(dungeon, inventory, heroId, () => 0.99);
+
+    for (const encounter of MORGANA_T4_DUNGEON.encounters.slice(0, -1)) {
+      const reward = rewards.processCurrentEncounterVictory(factionMastery.getYieldBonusPercent);
+      expect(reward?.drops.some((drop) => drop.kind === "faction_rune")).toBe(false);
+      const completed = dungeon.completeEncounter(encounter.id);
+      expect(completed.ok).toBe(true);
+    }
+
+    const bossReward = rewards.processCurrentEncounterVictory(factionMastery.getYieldBonusPercent);
+    const runeItemId = getFactionRuneItemId(4);
+    expect(bossReward?.drops).toContainEqual({
+      itemId: runeItemId,
+      kind: "faction_rune",
+      quantity: 2,
+    });
+    expect(inventory.getTotalQuantity(heroId, runeItemId)).toBe(2);
   });
 });
