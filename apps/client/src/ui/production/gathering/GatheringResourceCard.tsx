@@ -37,18 +37,18 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
       <div className="ui-gathering-card__meta" aria-label="Informations de récolte">
         <span><small>Maîtrise</small><b>{String(activity.masteryLevel)}</b></span>
         <i aria-hidden="true" />
-        <span><small>{heroActive ? "Restant" : "Cycle"}</small><b>{formatSeconds(remainingSeconds)}</b></span>
+        <span><small>Cycle</small><b>{formatSeconds(activity.durationSeconds)}</b></span>
         <i aria-hidden="true" />
         <span className={activity.isMasteryUnlocked ? "is-unlocked" : "is-locked"}>
           <small>Accès</small>
-          <b>{activity.isMasteryUnlocked ? `T${String(tier)} débloqué` : `Niv. ${String(activity.requiredMasteryLevel)} requis`}</b>
+          <b>{activity.isMasteryUnlocked ? `T${String(tier)}` : `Niv. ${String(activity.requiredMasteryLevel)}`}</b>
         </span>
       </div>
 
       <section className="ui-gathering-card__activity">
         <header className="ui-gathering-card__activity-header">
           <div>
-            <span>Activité du héros</span>
+            <span>Héros</span>
             <strong>Récolte du {resource.label.toLocaleLowerCase("fr-FR")}</strong>
           </div>
           <b className={heroActive || otherTierActive ? "is-active" : ""}>
@@ -56,11 +56,11 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
               ? "En récolte"
               : otherTierActive
                 ? `T${String(activity.activeCycle?.resourceTier)} en cours`
-                : activity.isMasteryUnlocked ? "Disponible" : "Bloqué"}
+                : activity.isMasteryUnlocked ? "Prêt" : "Bloqué"}
           </b>
         </header>
 
-        <div className="ui-gathering-card__progress-block">
+        <div className="ui-gathering-card__mastery-row">
           <div className="ui-gathering-card__progress-label">
             <span>Maîtrise {String(heroMastery.level)}</span>
             <small>{String(heroMastery.currentXp)} / {String(heroMastery.xpToNextLevel)} XP</small>
@@ -68,12 +68,15 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
           <ProgressBar value={heroMastery.progressPercent} />
         </div>
 
-        <div className="ui-gathering-card__progress-block ui-gathering-card__progress-block--cycle">
-          <div className="ui-gathering-card__progress-label">
-            <span>{heroActive ? `Cycle en cours · ${formatSeconds(remainingSeconds)}` : `Cycle · ${formatSeconds(activity.durationSeconds)}`}</span>
+        <div className={`ui-gathering-card__cycle-focus${heroActive ? " is-running" : ""}`}>
+          <div className="ui-gathering-card__cycle-copy">
+            <span>{heroActive ? "Cycle en cours" : "Prochain cycle"}</span>
+            <strong>{formatSeconds(heroActive ? remainingSeconds : activity.durationSeconds)}</strong>
+          </div>
+          <div className="ui-gathering-card__cycle-progress">
+            <ProgressBar value={cycleProgress} />
             <small>{heroActive ? `${String(Math.round(cycleProgress))}%` : "Prêt"}</small>
           </div>
-          <ProgressBar value={cycleProgress} />
         </div>
 
         <div className="ui-gathering-card__actions">
@@ -83,7 +86,7 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
             disabled={!heroActive && !activity.isMasteryUnlocked}
             onClick={() => { actions.toggleHero(resource.id); }}
           >
-            {heroActive ? "Arrêter la récolte" : "Récolter avec le héros"}
+            {heroActive ? "Arrêter" : "Commencer la récolte"}
           </button>
         </div>
 
