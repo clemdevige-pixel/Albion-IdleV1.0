@@ -1,86 +1,147 @@
 export type GatheringStrikeQuality = "miss" | "correct" | "perfect";
+export type ActiveGatheringYieldMultiplier = 1 | 1.5 | 2 | 3;
 
-export interface ActiveGatheringRewardState {
-  readonly streak: number;
-  readonly score: number;
-}
-
-export interface ActiveGatheringRewardProgress {
-  readonly multiplier: 1 | 2 | 3;
-  readonly nextThreshold: number | null;
+export interface ActiveGatheringBonuses {
+  readonly yieldMultiplier: ActiveGatheringYieldMultiplier;
+  readonly speedBonusRatio: 0 | 0.1 | 0.2 | 0.3;
+  readonly nextActivityThreshold: number | null;
   readonly progressToNext: number;
 }
 
-export const ACTIVE_GATHERING_REWARD_RULES = Object.freeze({
-  scorePerStrike: Object.freeze({
-    miss: 0,
-    correct: 8,
-    perfect: 20,
+export const ACTIVE_GATHERING_RULES = Object.freeze({
+  minActivity: 0,
+  maxActivity: 100,
+  activityPerStrike: Object.freeze({
+    miss: -50,
+    correct: 25,
+    perfect: 50,
   }),
-  yieldTiers: Object.freeze([
-    Object.freeze({ minScore: 0, multiplier: 1 as const }),
-    Object.freeze({ minScore: 60, multiplier: 2 as const }),
-    Object.freeze({ minScore: 140, multiplier: 3 as const }),
+  /** A full 100 -> 0 decay takes 80% of the authored cycle duration. */
+  fullDecayCycleRatio: 0.8,
+  /** UI cadence target; marker speed is normalized so each cycle offers ~10 useful strikes. */
+  targetOpportunitiesPerCycle: 10,
+  tiers: Object.freeze([
+    Object.freeze({ minActivity: 0, yieldMultiplier: 1 as const, speedBonusRatio: 0 as const }),
+    Object.freeze({ minActivity: 25, yieldMultiplier: 1.5 as const, speedBonusRatio: 0.1 as const }),
+    Object.freeze({ minActivity: 50, yieldMultiplier: 2 as const, speedBonusRatio: 0.2 as const }),
+    Object.freeze({ minActivity: 75, yieldMultiplier: 3 as const, speedBonusRatio: 0.3 as const }),
   ]),
 });
 
-export function applyActiveGatheringStrike(
-  state: ActiveGatheringRewardState,
-  quality: GatheringStrikeQuality,
-): ActiveGatheringRewardState {
-  if (quality === "miss") {
-    return { streak: 0, score: 0 };
-  }
-
-  return {
-    streak: state.streak + 1,
-    score: state.score + ACTIVE_GATHERING_REWARD_RULES.scorePerStrike[quality],
-  };
+export function clampActiveGatheringActivity(activity: number): number {
+  return Math.max(
+    ACTIVE_GATHERING_RULES.minActivity,
+    Math.min(ACTIVE_GATHERING_RULES.maxActivity, activity),
+  );
 }
 
-export function getActiveGatheringRewardProgress(
-  score: number,
-): ActiveGatheringRewardProgress {
-  const normalizedScore = Math.max(0, score);
-  const tiers = ACTIVE_GATHERING_REWARD_RULES.yieldTiers;
-  const baseTier = tiers[0];
+export function applyActiveGatheringStrike(
+  activity: number,
+  quality: GatheringStrikeQuality,
+): number {
+  return clampActiveGatheringActivity(
+    activity + ACTIVE_GATHERING_RULES.activityPerStrike[quality],
+  );
+}
 
+export function decayActiveGatheringActivity(
+  activity: number,
+  requiredTicks: number,
+  elapsedTicks = 1,
+): number {
+  const safeRequiredTicks = Math.max(1, requiredTicks);
+  const safeElapsedTicks = Math.max(0, elapsedTicks);
+  const fullDecayTicks = Math.max(
+    1,
+    safeRequiredTicks * ACTIVE_GATHERING_RULES.fullDecayCycleRatio,
+  );
+  const decayPerTick = ACTIVE_GATHERING_RULES.maxActivity / fullDecayTicks;
+  return clampActiveGatheringActivity(activity - decayPerTick * safeElapsedTicks);
+}
+
+export function getActiveGatheringBonuses(activity: number): ActiveGatheringBonuses {
+  const normalizedActivity = clampActiveGatheringActivity(activity);
+  const tiers = ACTIVE_GATHERING_RULES.tiers;
+  const baseTier = tiers[0];
   if (baseTier === undefined) {
-    throw new Error("Active gathering reward rules require at least one yield tier");
+    throw new Error("Active gathering rules require at least one activity tier");
   }
 
   let current = baseTier;
-
   for (const tier of tiers) {
-    if (normalizedScore >= tier.minScore) current = tier;
+    if (normalizedActivity >= tier.minActivity) current = tier;
   }
 
   const currentIndex = tiers.indexOf(current);
   const next = tiers[currentIndex + 1];
   if (next === undefined) {
     return {
-      multiplier: current.multiplier,
-      nextThreshold: null,
+      yieldMultiplier: current.yieldMultiplier,
+      speedBonusRatio: current.speedBonusRatio,
+      nextActivityThreshold: null,
       progressToNext: 100,
     };
   }
 
-  const span = next.minScore - current.minScore;
+  const span = next.minActivity - current.minActivity;
   const progress = span <= 0
     ? 100
-    : ((normalizedScore - current.minScore) / span) * 100;
+    : ((normalizedActivity - current.minActivity) / span) * 100;
 
   return {
-    multiplier: current.multiplier,
-    nextThreshold: next.minScore,
+    yieldMultiplier: current.yieldMultiplier,
+    speedBonusRatio: current.speedBonusRatio,
+    nextActivityThreshold: next.minActivity,
     progressToNext: Math.max(0, Math.min(100, progress)),
   };
 }
 
+export function getAverageActiveGatheringActivity(
+  activityTotal: number,
+  sampleCount: number,
+): number {
+  if (!Number.isFinite(activityTotal) || sampleCount <= 0) return 0;
+  return clampActiveGatheringActivity(activityTotal / sampleCount);
+}
+
+export function getActiveGatheringCycleYieldMultiplier(
+  averageActivity: number,
+): ActiveGatheringYieldMultiplier {
+  return getActiveGatheringBonuses(averageActivity).yieldMultiplier;
+}
+
 export function getActiveGatheringRewardedQuantity(
   baseQuantity: number,
-  score: number,
-): number {
+  averageActivity: number,
+  fractionalCarry = 0,
+): {
+  readonly quantity: number;
+  readonly fractionalCarry: number;
+  readonly multiplier: ActiveGatheringYieldMultiplier;
+} {
   const safeBaseQuantity = Math.max(0, Math.floor(baseQuantity));
-  return safeBaseQuantity * getActiveGatheringRewardProgress(score).multiplier;
+  const safeCarry = Math.max(0, Math.min(0.999999, fractionalCarry));
+  const multiplier = getActiveGatheringCycleYieldMultiplier(averageActivity);
+  const exactQuantity = safeBaseQuantity * multiplier + safeCarry;
+  const quantity = Math.floor(exactQuantity + Number.EPSILON);
+  return {
+    quantity,
+    fractionalCarry: exactQuantity - quantity,
+    multiplier,
+  };
+}
+
+/**
+ * Marker speed is normalized against the current speed bonus so the player gets
+ * roughly the same number of useful strike opportunities on short and long cycles.
+ */
+export function getActiveGatheringMarkerSpeed(
+  baseDurationSeconds: number,
+  speedBonusRatio: number,
+): number {
+  const safeDuration = Math.max(0.1, baseDurationSeconds);
+  const safeSpeedBonus = Math.max(0, speedBonusRatio);
+  const effectiveDuration = safeDuration / (1 + safeSpeedBonus);
+  const secondsToCenter = effectiveDuration / ACTIVE_GATHERING_RULES.targetOpportunitiesPerCycle;
+  return 50 / Math.max(0.05, secondsToCenter);
 }
