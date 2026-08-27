@@ -39,9 +39,13 @@
   text-align: center;
 }
 
-/* World gathering: one activity sheet, minimal nesting, clear visual priority. */
-.ui-world .ui-gathering { gap: 8px; }
-.ui-world .ui-gathering__toolbar { min-height: 29px; font-size: 9px; color: var(--ui-color-text-secondary); }
+/* Gathering is presented as one continuous activity sheet, not a stack of dashboard widgets. */
+.ui-world .ui-gathering { gap: 9px; }
+.ui-world .ui-gathering__toolbar {
+  min-height: 29px;
+  font-size: 9px;
+  color: var(--ui-color-text-secondary);
+}
 .ui-world .ui-gathering__tiers { gap: 5px; }
 .ui-world .ui-gathering__tiers button { min-width: 39px; padding: 6px 8px; font-size: 9px; }
 .ui-world .ui-gathering__families { gap: 5px; }
@@ -53,103 +57,148 @@
   border-radius: 6px;
 }
 .ui-world .ui-gathering__families button.is-active {
-  background: #18140d;
+  background: linear-gradient(180deg, #1c170d, #11100d);
   border-color: #9b7626;
+  box-shadow: inset 0 -2px 0 #c39631;
 }
 .ui-world .ui-gathering__families img { width: 24px; height: 24px; }
 
 .ui-world .ui-gathering-card {
-  gap: 9px;
-  padding: 9px 10px 10px;
-  border: 1px solid rgba(171, 126, 40, .18);
-  border-radius: 7px;
-  background: linear-gradient(145deg, rgba(35, 26, 18, .18), rgba(8, 11, 15, .94));
+  position: relative;
+  display: grid;
+  gap: 0;
+  padding: 0 11px 11px;
+  overflow: hidden;
+  border: 1px solid rgba(170, 128, 45, .28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(30, 24, 14, .48) 0, rgba(11, 14, 18, .96) 96px),
+    #0a0d11;
+}
+
+.ui-world .ui-gathering-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(207, 160, 56, .62), transparent);
+  pointer-events: none;
 }
 
 .ui-world .ui-gathering-card__header {
-  grid-template-columns: 40px minmax(0, 1fr) auto;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 9px;
   align-items: center;
+  min-height: 66px;
+  padding: 9px 0 8px;
 }
+
 .ui-world .ui-gathering-card__icon {
-  width: 38px;
-  border-radius: 6px;
-  background: #080b0f;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(4, 7, 10, .7);
 }
-.ui-world .ui-gathering-card__icon img { width: 31px; height: 31px; }
+.ui-world .ui-gathering-card__icon img { width: 32px; height: 32px; }
+
+.ui-world .ui-gathering-card__identity {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
 .ui-world .ui-gathering-card__identity > span {
-  color: #c5a650;
+  color: #a89050;
   font-size: 8px;
-  letter-spacing: .04em;
+  letter-spacing: .07em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__identity strong {
-  color: #e7ebf0;
-  font-size: 14px;
-  line-height: 1.1;
+  overflow: hidden;
+  color: #eef1f5;
+  font-size: 15px;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ui-world .ui-gathering-card__identity small {
-  color: var(--ui-color-text-secondary);
+  color: #8795a8;
   font-size: 9px;
 }
+
 .ui-world .ui-gathering-card__reserve {
   display: grid;
   justify-items: end;
   gap: 1px;
-  min-width: 46px;
+  min-width: 52px;
 }
 .ui-world .ui-gathering-card__reserve small {
-  color: #8fa0b5;
+  color: #7f8da0;
   font-size: 8px;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 .ui-world .ui-gathering-card__reserve b {
-  color: #e9c85d;
-  font-size: 15px;
+  color: #efd15e;
+  font-size: 17px;
   line-height: 1;
 }
 
-.ui-world .ui-gathering-card__facts {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
+.ui-world .ui-gathering-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 0 8px;
   border-top: 1px solid rgba(255, 255, 255, .055);
   border-bottom: 1px solid rgba(255, 255, 255, .055);
-  border-radius: 0;
-  background: transparent;
 }
-.ui-world .ui-gathering-card__facts > div {
-  gap: 2px;
-  padding: 7px 6px 8px;
-  border: 0;
-  border-right: 1px solid rgba(255, 255, 255, .05);
-  text-align: center;
+
+.ui-world .ui-gathering-card__meta > span {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
 }
-.ui-world .ui-gathering-card__facts > div:last-child { border-right: 0; }
-.ui-world .ui-gathering-card__facts dt {
-  color: #7f8da0;
+.ui-world .ui-gathering-card__meta > span:last-child { margin-left: auto; }
+.ui-world .ui-gathering-card__meta small {
+  color: #708095;
   font-size: 8px;
   text-transform: uppercase;
   letter-spacing: .04em;
 }
-.ui-world .ui-gathering-card__facts dd {
-  color: #d9e0e8;
-  font-size: 10px;
+.ui-world .ui-gathering-card__meta b {
+  overflow: hidden;
+  color: #cfd7e2;
+  font-size: 9px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ui-world .ui-gathering-card__meta .is-unlocked b { color: #a6c8a5; }
+.ui-world .ui-gathering-card__meta .is-locked b { color: #c98c84; }
+.ui-world .ui-gathering-card__meta > i {
+  width: 2px;
+  height: 2px;
+  flex: 0 0 2px;
+  border-radius: 50%;
+  background: #556274;
 }
 
 .ui-world .ui-gathering-card__activity {
   display: grid;
-  gap: 9px;
-  padding-top: 2px;
+  gap: 10px;
+  padding: 11px 0 0;
 }
 
 .ui-world .ui-gathering-card__activity-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 .ui-world .ui-gathering-card__activity-header > div {
   display: grid;
@@ -157,19 +206,19 @@
   min-width: 0;
 }
 .ui-world .ui-gathering-card__activity-header span {
-  color: #8fa0b5;
+  color: #b58c32;
   font-size: 8px;
+  letter-spacing: .07em;
   text-transform: uppercase;
-  letter-spacing: .05em;
 }
 .ui-world .ui-gathering-card__activity-header strong {
-  color: #e1e6ed;
-  font-size: 11px;
-  font-weight: 600;
+  color: #eef1f5;
+  font-size: 12px;
+  font-weight: 650;
 }
 .ui-world .ui-gathering-card__activity-header > b {
   flex: 0 0 auto;
-  padding: 3px 6px;
+  padding: 3px 7px;
   border: 1px solid #353b43;
   border-radius: 999px;
   color: #aeb7c2;
@@ -183,38 +232,47 @@
   background: #102414;
 }
 
-.ui-world .ui-gathering-card__mastery,
-.ui-world .ui-gathering-card__cycle {
+.ui-world .ui-gathering-card__progress-block {
   display: grid;
   gap: 4px;
 }
-.ui-world .ui-gathering-card__mastery > div,
-.ui-world .ui-gathering-card__cycle > div {
+.ui-world .ui-gathering-card__progress-block--cycle {
+  margin-top: -1px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, .07);
+}
+.ui-world .ui-gathering-card__progress-label {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
 }
-.ui-world .ui-gathering-card__mastery span,
-.ui-world .ui-gathering-card__cycle span {
-  color: #d4dbe5;
+.ui-world .ui-gathering-card__progress-label span {
+  color: #d8dee7;
   font-size: 9px;
 }
-.ui-world .ui-gathering-card__mastery small,
-.ui-world .ui-gathering-card__cycle small {
-  color: #8fa0b5;
+.ui-world .ui-gathering-card__progress-label small {
+  color: #8795a8;
   font-size: 9px;
 }
+
 .ui-world .ui-gathering-progress {
   height: 4px;
-  border-radius: 999px;
   overflow: hidden;
-  background: #1a2430;
+  border-radius: 999px;
+  background: #17212c;
 }
-.ui-world .ui-gathering-progress > span { display: block; height: 100%; }
+.ui-world .ui-gathering-progress > span {
+  display: block;
+  height: 100%;
+}
 
+.ui-world .ui-gathering-card__actions {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+}
 .ui-world .ui-gathering-card .ui-gathering-card__hero-action {
-  justify-self: start;
   width: auto;
   min-width: 110px;
   min-height: 28px;
@@ -235,16 +293,30 @@
   background: #1c1110;
 }
 
+.ui-world .ui-gathering-card__active-game {
+  margin: 1px -1px -1px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(190, 139, 39, .34);
+}
+
 .ui-world .ui-gathering-card .active-gathering {
-  margin-top: 2px;
-  padding: 8px 0 0;
+  margin: 0;
+  padding: 0;
   border: 0;
-  border-top: 1px solid rgba(185, 133, 36, .32);
   border-radius: 0;
   background: transparent;
 }
-.ui-world .ui-gathering-card .active-gathering__header { font-size: 9px; }
-.ui-world .ui-gathering-card .active-gathering__header strong { font-size: 9px; }
+.ui-world .ui-gathering-card .active-gathering__header {
+  margin-bottom: 6px;
+  color: #b58c32;
+  font-size: 8px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.ui-world .ui-gathering-card .active-gathering__header strong {
+  color: #b9c3d0;
+  font-size: 8px;
+}
 .ui-world .ui-gathering-card .active-gathering__strike {
   min-width: 90px;
   border: 1px solid #b98524;
@@ -255,7 +327,8 @@
   cursor: pointer;
 }
 .ui-world .ui-gathering-card .active-gathering__hint {
-  color: #9ea9b7;
+  margin-top: 6px;
+  color: #8795a8;
   font-size: 9px;
   line-height: 1.35;
 }
