@@ -12,9 +12,9 @@
       "output": "apps/client/public/assets/characters/hero-deathgiver-idle-sheet-v1.png",
       "frameCount": 6,
       "calibrationFrame": 0,
-      "cellWidth": 299,
-      "cellHeight": 391,
-      "scale": 0.7295
+      "cellWidth": 296,
+      "cellHeight": 388,
+      "scale": 0.731
     },
     {
       "animation": "attack",
@@ -22,9 +22,9 @@
       "output": "apps/client/public/assets/characters/hero-deathgiver-attack-sheet-v1.png",
       "frameCount": 6,
       "calibrationFrame": 0,
-      "cellWidth": 453,
-      "cellHeight": 414,
-      "scale": 0.9368
+      "cellWidth": 454,
+      "cellHeight": 474,
+      "scale": 0.9393
     }
   ]
 }
