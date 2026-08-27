@@ -10,7 +10,7 @@ import {
  * Increment only when the persisted payload shape changes incompatibly.
  * A contiguous migration must be registered at the same time.
  */
-export const CURRENT_RUNTIME_SAVE_VERSION = 7;
+export const CURRENT_RUNTIME_SAVE_VERSION = 8;
 export const EARLIEST_SUPPORTED_RUNTIME_SAVE_VERSION = 1;
 
 const LEGACY_ID_RENAMES: Readonly<Record<string, string>> = {
@@ -173,7 +173,7 @@ function collectExternalInstanceItemIds(
 }
 
 /**
- * V6 recovery for corrupted saves containing duplicate inventory instance ids.
+ * Recovery for corrupted saves containing duplicate inventory instance ids.
  * No item is deleted: one occurrence remains canonical and later conflicts get
  * fresh inventory identities. External equipment records help choose the
  * canonical occurrence when the duplicated slots contain different items.
@@ -287,6 +287,17 @@ function repairDuplicateInventoryInstanceIds(
   };
 }
 
+function migrateWithDuplicateInventoryRepair(save: SaveFormat, toVersion: number): SaveFormat {
+  const payload = repairDuplicateInventoryInstanceIds(save.payload);
+  return {
+    ...save,
+    version: toVersion,
+    metadata: { ...save.metadata, version: toVersion },
+    payload,
+    checksum: computeChecksum(payload),
+  };
+}
+
 const migrateV1ToV2: SaveMigration = {
   fromVersion: 1,
   toVersion: 2,
@@ -369,14 +380,15 @@ const migrateV6ToV7: SaveMigration = {
   fromVersion: 6,
   toVersion: 7,
   migrate(save: SaveFormat): SaveFormat {
-    const payload = repairDuplicateInventoryInstanceIds(save.payload);
-    return {
-      ...save,
-      version: 7,
-      metadata: { ...save.metadata, version: 7 },
-      payload,
-      checksum: computeChecksum(payload),
-    };
+    return migrateWithDuplicateInventoryRepair(save, 7);
+  },
+};
+
+const migrateV7ToV8: SaveMigration = {
+  fromVersion: 7,
+  toVersion: 8,
+  migrate(save: SaveFormat): SaveFormat {
+    return migrateWithDuplicateInventoryRepair(save, 8);
   },
 };
 
@@ -388,6 +400,7 @@ export const RUNTIME_SAVE_MIGRATIONS: readonly SaveMigration[] = [
   migrateV4ToV5,
   migrateV5ToV6,
   migrateV6ToV7,
+  migrateV7ToV8,
 ];
 
 export interface RuntimeMigrationPipelineOptions {
