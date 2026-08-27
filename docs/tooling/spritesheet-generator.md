@@ -4,11 +4,12 @@
 
 Le SpriteSheet Generator normalise techniquement les animations héros d’Albion Idle à partir d’une spritesheet source et d’une référence visuelle validée.
 
-Le workflow utilisateur standard n’utilise pas directement cette commande unitaire : il passe par `generate:spritesheet-import`, documenté dans `docs/tooling/asset-integration-workflow.md`.
+Le workflow utilisateur standard passe par `generate:spritesheet-import`, documenté dans `docs/tooling/asset-integration-workflow.md`.
 
 L’outil :
 
 - détecte et découpe les frames ;
+- préserve les composants opaques d’une frame même lorsqu’ils débordent horizontalement ;
 - utilise une frame de référence validée ;
 - calcule un seul facteur d’échelle pour toute l’animation ;
 - conserve les variations de pose ;
@@ -86,13 +87,16 @@ Nombre de frames attendu dans la source. Mode recommandé.
 --frame-count=6
 ```
 
-Quand cette valeur est fournie, l’outil utilise une détection guidée par le nombre de frames :
+Quand cette valeur est fournie, le générateur utilise le mode **component-aware** :
 
-1. il cherche d’abord une zone entièrement transparente autour de chaque frontière attendue ;
-2. si deux frames sont reliées par quelques pixels (arme, cape, antialiasing, etc.), il cherche la vallée de plus faible occupation autour de cette frontière ;
-3. la coupure de secours est faite entre deux colonnes afin de ne supprimer aucun pixel source.
+1. il détecte les composants opaques connectés dans toute la spritesheet ;
+2. il regroupe ces composants horizontalement en exactement `N` frames ;
+3. chaque composant est affecté entièrement à une frame ;
+4. les frames sont reconstruites à partir des composants affectés, au lieu de couper l’image par une simple ligne verticale.
 
-Ainsi, une source n’a plus besoin de posséder exactement `N - 1` bandes totalement transparentes pour être découpée en `N` frames.
+Conséquence importante : une main, une arme ou une cape qui déborde horizontalement dans la zone de la frame voisine n’est plus automatiquement coupée en deux.
+
+Ce mode remplace l’ancien découpage count-aware basé sur les vallées de densité.
 
 ### `--calibration-frame`
 
@@ -102,7 +106,7 @@ Utiliser de préférence une pose debout ou proche d’une pose neutre.
 
 ### `--min-gap`
 
-Seuil du mode de détection historique/fallback utilisé uniquement sans `--frame-count`.
+Seuil du mode historique/fallback utilisé uniquement sans `--frame-count`.
 
 Valeur par défaut : `64`.
 
@@ -134,20 +138,25 @@ Override manuel du facteur d’échelle. À réserver au diagnostic de cas excep
 
 Source et référence sont temporairement normalisées en PNG RGBA.
 
-### 2. Découpage des frames
+### 2. Découpage component-aware
 
-L’outil mesure l’occupation de chaque colonne.
+Avec `--frame-count`, l’outil ne cherche plus une colonne de coupure entre les sprites.
 
-Avec `--frame-count`, chaque frontière de frame dispose d’un corridor de recherche autour de sa position théorique.
+Il réalise un flood-fill sur les pixels visibles afin de construire les composants opaques connectés.
 
-Priorité :
+Chaque composant possède notamment :
 
-1. bande transparente pertinente ;
-2. sinon minimum local d’occupation.
+- une aire ;
+- une bounding box ;
+- un centre horizontal.
 
-Le second mode est important pour les animations où une arme ou un accessoire empiète légèrement sur l’espace entre deux sprites.
+Les composants sont ensuite regroupés horizontalement en `N` clusters correspondant aux `N` frames attendues. Le poids d’un composant dépend de son aire : les corps principaux pilotent donc naturellement le centre des frames, tandis que les petits éléments détachés sont rattachés au groupe le plus cohérent.
 
-Sans `--frame-count`, le fallback utilise uniquement les bandes transparentes atteignant `--min-gap`.
+La frame finale est reconstruite uniquement avec les composants de son groupe.
+
+Cela permet à deux frames de se chevaucher en X dans la source sans qu’un membre soit nécessairement découpé.
+
+Sans `--frame-count`, le fallback historique continue d’utiliser les bandes transparentes atteignant `--min-gap`.
 
 ### 3. Mesure du gabarit
 
@@ -252,55 +261,15 @@ Vérifier :
 5. drift horizontal ;
 6. spacing ;
 7. alpha ;
-8. intégrité des frames découpées, surtout si une coupure low-density a été nécessaire.
+8. qu’aucun membre ou objet n’a été affecté à la mauvaise frame.
 
 ---
 
-## Cas particuliers
+## Limite connue
 
-### Personnage penché / tête baissée
+Le mode component-aware suppose que les sprites d’une même frame restent séparables en composants opaques distincts de ceux des autres frames.
 
-Règle : même échelle physique, pose conservée.
-
-### Death
-
-Une pose couchée ne doit pas être agrandie pour ressembler à une idle.
-
-### Frames reliées par une arme
-
-Ce cas est supporté en mode `--frame-count`. L’outil cherche une frontière à faible densité et coupe entre colonnes sans jeter les pixels source.
-
-La sortie doit néanmoins être vérifiée visuellement pour confirmer que la frontière choisie est cohérente.
-
-### Référence complète
-
-Une spritesheet du jeu peut être utilisée directement avec `--reference-frame` et `--reference-frame-count`.
-
----
-
-## Dépannage
-
-### Mauvais découpage malgré `--frame-count`
-
-Vérifier :
-
-1. le nombre réel de frames ;
-2. que les frames sont bien organisées horizontalement sur une seule ligne ;
-3. qu’elles occupent des zones globalement distinctes ;
-4. le résultat visuel avant intégration.
-
-Ne pas commencer par bricoler `--min-gap` : ce paramètre n’est pas utilisé par le mode count-aware.
-
-### Scale unsafe
-
-Un scale automatique inférieur à `0.4` ou supérieur à `2.5` est bloqué.
-
-Causes probables :
-
-- mauvaise référence ;
-- mauvaise calibration ;
-- mauvais découpage ;
-- `body core` faussé.
+Si deux frames se touchent réellement pixel contre pixel dans la source, elles peuvent devenir un seul composant connecté. Dans ce cas, aucun découpage purement algorithmique ne peut savoir où séparer sans information supplémentaire : la source doit être corrigée ou un mode d’override explicite devra être ajouté.
 
 ---
 
