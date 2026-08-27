@@ -1,6 +1,5 @@
 import type Phaser from "phaser";
 import type { GatheringVM } from "../../GameBridge";
-import { renderManifestRegistry } from "../defaultRenderManifestRegistry";
 import { GatheringPresentationSystem } from "../systems/GatheringPresentationSystem";
 import type { CombatPresentationController } from "./CombatPresentationController";
 
@@ -17,7 +16,6 @@ export class ActivityPresentationController {
       scene,
       combat.enemyHomeX,
       combat.entityY,
-      renderManifestRegistry.requireDefaultWorldHud().healthBar.defaultWidth,
     );
   }
 
