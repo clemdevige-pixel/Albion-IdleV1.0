@@ -123,11 +123,12 @@ export function syncGatheringToBridge(
   resourceTier: GatheringVM["resourceTier"],
   storedQuantity: number,
   strikesUsed: number,
-  streak: number,
-  yieldScore: number,
-  yieldMultiplier: 1 | 2 | 3,
-  nextYieldThreshold: number | null,
-  yieldProgressToNext: number,
+  activity: number,
+  averageActivity: number,
+  yieldMultiplier: 1 | 1.5 | 2 | 3,
+  speedBonusRatio: 0 | 0.1 | 0.2 | 0.3,
+  nextActivityThreshold: number | null,
+  activityProgressToNext: number,
   activeResource?: {
     readonly resourceName: string;
     readonly resourceTier: GatheringVM["resourceTier"];
@@ -168,11 +169,12 @@ export function syncGatheringToBridge(
       : {
           cycleId: String(session.id),
           strikesUsed,
-          streak,
-          yieldScore,
+          activity,
+          averageActivity,
           yieldMultiplier,
-          nextYieldThreshold,
-          yieldProgressToNext,
+          speedBonusRatio,
+          nextActivityThreshold,
+          activityProgressToNext,
         },
   });
 }
