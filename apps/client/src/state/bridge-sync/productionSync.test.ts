@@ -24,6 +24,11 @@ describe("gathering bridge projection", () => {
       4,
       12,
       2,
+      4,
+      60,
+      2,
+      140,
+      0,
       { resourceName: "Bois T3", resourceTier: 3 },
     );
 
@@ -51,11 +56,10 @@ describe("gathering bridge projection", () => {
       resourceTier: 3,
       progress: 25,
       durationSeconds: 12,
-      activeMiniGame: { cycleId: "wood-cycle-t3", strikesUsed: 2 },
     });
   });
 
-  it("projects progress normally when the browsed tier is the active tier", () => {
+  it("projects progress and active yield state when the browsed tier is active", () => {
     let projected: GatheringVM | undefined;
 
     syncGatheringToBridge(
@@ -74,7 +78,12 @@ describe("gathering bridge projection", () => {
       "resource_wood",
       5,
       7,
-      1,
+      6,
+      6,
+      120,
+      2,
+      140,
+      75,
       { resourceName: "Ressource future", resourceTier: 5 },
     );
 
@@ -82,7 +91,15 @@ describe("gathering bridge projection", () => {
       status: "gathering",
       resourceTier: 5,
       progress: 25,
-      activeMiniGame: { cycleId: "future-tier-cycle", strikesUsed: 1 },
+      activeMiniGame: {
+        cycleId: "future-tier-cycle",
+        strikesUsed: 6,
+        streak: 6,
+        yieldScore: 120,
+        yieldMultiplier: 2,
+        nextYieldThreshold: 140,
+        yieldProgressToNext: 75,
+      },
     });
   });
 });
