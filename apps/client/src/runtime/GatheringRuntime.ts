@@ -364,6 +364,7 @@ export class GatheringRuntime {
     }
 
     const baseTool = definition.getTool(cycleTier);
+    const tierRules = getProductionTierRules(cycleTier);
     const result = definition.coordinator.startGathering(
       definition.getNodeId(cycleTier),
       [
@@ -375,6 +376,7 @@ export class GatheringRuntime {
         },
       ],
       tickCounter,
+      tierRules.gatheringBaseTicks,
     );
 
     if (result.ok) {
