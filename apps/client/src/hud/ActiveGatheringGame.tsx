@@ -14,7 +14,7 @@ interface ActiveGatheringGameProps {
   readonly onStrike: (quality: "miss" | "correct" | "perfect") => boolean;
 }
 
-const DEFAULT_FEEDBACK = "Frappez au centre pour accélérer le cycle.";
+const DEFAULT_FEEDBACK = "Enchaînez les frappes pour augmenter le rendement.";
 
 export function ActiveGatheringGame(
   props: ActiveGatheringGameProps,
@@ -79,15 +79,13 @@ export function ActiveGatheringGame(
 
     if (!props.onStrike(quality)) return;
 
-    const removedSeconds = props.durationSeconds
-      * ACTIVE_GATHERING_REWARD_RULES.speedBonusRatio[quality];
     const scoreGain = ACTIVE_GATHERING_REWARD_RULES.scorePerStrike[quality];
     setFeedbackQuality(quality);
     setFeedback(
       quality === "perfect"
-        ? `PARFAIT  +${String(scoreGain)} rendement  ·  -${formatSeconds(removedSeconds)} s`
+        ? `PARFAIT  +${String(scoreGain)} rendement`
         : quality === "correct"
-          ? `CORRECT  +${String(scoreGain)} rendement  ·  -${formatSeconds(removedSeconds)} s`
+          ? `CORRECT  +${String(scoreGain)} rendement`
           : "RATÉ  ·  streak et rendement réinitialisés",
     );
 
@@ -152,8 +150,4 @@ export function ActiveGatheringGame(
       </small>
     </div>
   );
-}
-
-function formatSeconds(value: number): string {
-  return String(Math.round(value * 10) / 10).replace(".", ",");
 }
