@@ -10,10 +10,10 @@ l’agent doit suivre ce document puis `docs/tooling/spritesheet-generator.md`.
 
 Workflow standard :
 
-1. l’utilisateur dépose les spritesheets brutes sur GitHub dans `.tmp/spritesheet-imports/<weaponId>/` ;
+1. l’utilisateur dépose les spritesheets brutes directement dans `.tmp/spritesheet-imports/` ;
 2. l’agent récupère la branche localement ;
-3. l’agent lance l’import automatisé ;
-4. l’outil normalise, renomme et dépose les sorties dans `apps/client/public/assets/characters/` ;
+3. l’agent lance l’import automatisé avec `--weapon=<weaponId>` ;
+4. l’outil filtre les fichiers correspondant à cette arme, normalise, renomme et dépose les sorties dans `apps/client/public/assets/characters/` ;
 5. l’utilisateur vérifie visuellement les sorties générées ;
 6. seulement après validation visuelle, l’agent câble les assets dans le jeu.
 
@@ -23,37 +23,40 @@ Le câblage code n’est volontairement pas automatisé.
 
 ## Ce que fait l’utilisateur
 
-L’utilisateur ne manipule pas les fichiers après génération.
+L’utilisateur ne crée pas de sous-dossier par arme et ne manipule pas les fichiers après génération.
 
 Il fait uniquement :
 
-1. créer ou utiliser un dossier d’import GitHub :
+1. déposer les spritesheets brutes dans :
 
 ```text
-.tmp/spritesheet-imports/<weaponId>/
+.tmp/spritesheet-imports/
 ```
 
-2. déposer les spritesheets brutes ;
-3. indiquer à l’agent l’arme et les animations déposées ;
-4. vérifier visuellement les fichiers générés après traitement.
+2. indiquer à l’agent l’arme et les animations déposées ;
+3. vérifier visuellement les fichiers générés après traitement.
 
 Exemple :
 
 ```text
-.tmp/spritesheet-imports/deathgiver/
-├── deathgiver-idle.png
-└── deathgiver-attack.png
+.tmp/spritesheet-imports/
+├── deathgivers idle.png
+├── deathgiver-attack.png
+├── permafrost-idle.png
+└── permafrost-death.png
 ```
 
 Puis :
 
-> j’ai déposé deathgiver idle et deathgiver attack
+> j’ai déposé deathgiver idle et attack
+
+L’outil appelé avec `--weapon=deathgiver` ignore les fichiers Permafrost.
 
 ---
 
 ## Convention de nommage des sources
 
-Les fichiers doivent contenir :
+Les fichiers doivent contenir clairement :
 
 - le `weaponId` ;
 - le nom de l’animation.
@@ -67,54 +70,58 @@ attack
 death
 ```
 
+Le nommage est volontairement tolérant : espaces, underscores et tirets sont normalisés pour la détection.
+
 Exemples acceptés :
 
 ```text
 deathgiver-idle.png
-deathgiver-attack.png
+deathgivers idle.png
+deathgiver_attack.png
 hero-deathgiver-death-source.png
 ```
 
-Le wrapper traite uniquement les animations présentes dans le dossier.
+Le wrapper traite uniquement les animations présentes et correspondant à l’arme demandée.
+
+Si plusieurs fichiers correspondent à la même arme + animation, l’outil bloque au lieu de choisir arbitrairement.
 
 ---
 
 ## Commande standard
 
-Par défaut, le dossier source est déduit du `weaponId` :
-
 ```powershell
 pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver
 ```
 
-Cela lit :
+Par défaut, cela lit directement :
 
 ```text
-.tmp/spritesheet-imports/deathgiver/
+.tmp/spritesheet-imports/
 ```
 
-Un dossier différent peut être fourni :
+Un autre dossier peut être fourni exceptionnellement :
 
 ```powershell
-pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver --source-dir=".tmp/spritesheet-imports/deathgiver"
+pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver --source-dir="mon/dossier"
 ```
 
 ---
 
 ## Ce que fait automatiquement l’outil
 
-Pour chaque animation trouvée, le wrapper :
+Pour chaque animation trouvée pour le `weaponId` demandé, le wrapper :
 
-1. détecte le fichier source ;
-2. appelle le SpriteSheet Generator existant ;
-3. utilise la référence personnage validée ;
-4. normalise le gabarit ;
-5. conserve un scale unique pour toute l’animation ;
-6. conserve les poses ;
-7. aligne la baseline ;
-8. détecte les frames avec le mode `--frame-count` ;
-9. renomme la sortie ;
-10. dépose directement la sortie dans le dossier d’assets du jeu.
+1. filtre les sources du dossier d’import ;
+2. détecte `idle`, `walk`, `attack` ou `death` via le nom ;
+3. appelle le SpriteSheet Generator existant ;
+4. utilise la référence personnage validée ;
+5. normalise le gabarit ;
+6. conserve un scale unique pour toute l’animation ;
+7. conserve les poses ;
+8. aligne la baseline ;
+9. détecte les frames avec le mode `--frame-count` ;
+10. renomme la sortie ;
+11. dépose directement la sortie dans le dossier d’assets du jeu.
 
 Sorties :
 
@@ -137,17 +144,9 @@ Référence actuelle par défaut :
 apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png
 ```
 
-Frame de référence par défaut :
+Frame de référence par défaut : `0`.
 
-```text
-0
-```
-
-Nombre de frames de référence par défaut :
-
-```text
-6
-```
+Nombre de frames de référence par défaut : `6`.
 
 Override possible :
 
@@ -159,11 +158,7 @@ pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver --reference="apps/cl
 
 ## Frames et calibration
 
-Nombre de frames source par défaut :
-
-```text
-6
-```
+Nombre de frames source par défaut : `6`.
 
 Override global :
 
@@ -171,11 +166,7 @@ Override global :
 --frame-count=5
 ```
 
-Frame de calibration globale par défaut :
-
-```text
-0
-```
+Frame de calibration globale par défaut : `0`.
 
 Override global :
 
@@ -198,10 +189,16 @@ Utiliser un override seulement si la frame `0` est trop penchée, couchée ou ex
 
 ## Report de génération
 
-Après traitement, le wrapper écrit :
+Après traitement, le wrapper écrit un report par arme directement dans le dossier d’import :
 
 ```text
-.tmp/spritesheet-imports/<weaponId>/generation-report.json
+.tmp/spritesheet-imports/generation-report-<weaponId>.json
+```
+
+Exemple :
+
+```text
+.tmp/spritesheet-imports/generation-report-deathgiver.json
 ```
 
 Le report contient :
@@ -264,21 +261,23 @@ Ne pas créer de pipeline parallèle ou de surcouche spécifique à une arme si 
 
 ### Utilisateur
 
-- dépose les sources sur GitHub ;
+- dépose toutes les sources directement dans `.tmp/spritesheet-imports/` ;
 - déclenche le chantier avec l’agent ;
 - valide visuellement les sorties.
 
 ### Outil
 
-- détecte ;
+- filtre par arme ;
+- détecte les animations ;
 - normalise ;
 - renomme ;
 - dépose les assets finaux ;
-- produit le report.
+- produit un report par arme.
 
 ### Agent
 
 - lit cette doc ;
+- identifie le `weaponId` ;
 - lance l’outil ;
 - guide la validation visuelle ;
 - câble dans le jeu après validation ;
@@ -296,5 +295,6 @@ l’agent doit immédiatement :
 
 1. lire `docs/tooling/asset-integration-workflow.md` ;
 2. lire `docs/tooling/spritesheet-generator.md` ;
-3. identifier le dossier `.tmp/spritesheet-imports/<weaponId>/` concerné ;
-4. guider l’utilisateur selon ce workflow sans lui faire refaire des manipulations manuelles déjà automatisées.
+3. regarder les fichiers présents dans `.tmp/spritesheet-imports/` ;
+4. identifier avec l’utilisateur l’arme concernée ;
+5. guider l’utilisateur selon ce workflow sans lui imposer de sous-dossier ou de manipulation manuelle déjà automatisée.
