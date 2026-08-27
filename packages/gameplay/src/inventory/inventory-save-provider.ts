@@ -60,6 +60,38 @@ function getRequiredNextInstanceCounter(
   return nextCounter;
 }
 
+function getSavedEntries(saved: SavedInventory): readonly SavedEntry[] {
+  return [
+    ...saved.slots,
+    ...(saved.activeBag === undefined || saved.activeBag === null ? [] : [saved.activeBag]),
+  ];
+}
+
+function validateGlobalSavedInstanceIds(payload: InventorySavePayload): void {
+  const seen = new Set<string>();
+  for (const saved of payload.inventories) {
+    for (const entry of getSavedEntries(saved)) {
+      if (seen.has(entry.instanceId)) {
+        throw new Error(
+          `Invalid inventory save data: Duplicate instance id across inventories: ${entry.instanceId}`,
+        );
+      }
+      seen.add(entry.instanceId);
+    }
+  }
+}
+
+function getGlobalRequiredNextInstanceCounter(payload: InventorySavePayload): number {
+  let nextCounter = 0;
+  for (const saved of payload.inventories) {
+    nextCounter = Math.max(
+      nextCounter,
+      getRequiredNextInstanceCounter(saved.nextInstanceCounter, getSavedEntries(saved)),
+    );
+  }
+  return nextCounter;
+}
+
 export class InventorySaveProvider implements SaveProvider {
   readonly providerId = "inventory";
 
@@ -76,6 +108,11 @@ export class InventorySaveProvider implements SaveProvider {
   ) {}
 
   save(): unknown {
+    const globalErrors = this.manager.validateGlobalInstanceIds();
+    if (globalErrors.length > 0) {
+      throw new Error(`Refusing to persist invalid inventory data: ${globalErrors.join("; ")}`);
+    }
+
     const inventories: SavedInventory[] = [];
     for (const entityId of this.manager.listInventories()) {
       const data = this.world.getComponent(entityId, InventoryComponent);
@@ -118,8 +155,21 @@ export class InventorySaveProvider implements SaveProvider {
   }
 
   load(data: unknown): void {
+    if (data === null || typeof data !== "object" || !("inventories" in data)) {
+      throw new Error("Invalid inventory save data: missing inventories");
+    }
     const payload = data as InventorySavePayload;
+    if (!Array.isArray(payload.inventories)) {
+      throw new Error("Invalid inventory save data: inventories must be an array");
+    }
+
+    validateGlobalSavedInstanceIds(payload);
+    const globalNextInstanceCounter = getGlobalRequiredNextInstanceCounter(payload);
+
     for (const [index, saved] of payload.inventories.entries()) {
+      if (!Array.isArray(saved.slots)) {
+        throw new Error("Invalid inventory save data: slots must be an array");
+      }
       const slots = new Map<number, InventoryEntry>();
       for (const slot of saved.slots) {
         const enchantment = slot.enchantment ?? 0;
@@ -142,10 +192,6 @@ export class InventorySaveProvider implements SaveProvider {
           `Invalid inventory save data: invalid bag enchantment ${String(savedBagEnchantment)}`,
         );
       }
-      const existingEntries = [
-        ...saved.slots,
-        ...(savedBag === null ? [] : [savedBag]),
-      ];
       const inventoryData: InventoryData = {
         capacity: saved.capacity,
         slots,
@@ -158,12 +204,9 @@ export class InventorySaveProvider implements SaveProvider {
                 quantity: savedBag.quantity,
                 enchantment: savedBagEnchantment,
               },
-        // Historical saves may contain a stale allocator counter. Reconcile it
-        // against every persisted identity before the runtime can mint new ids.
-        nextInstanceCounter: getRequiredNextInstanceCounter(
-          saved.nextInstanceCounter,
-          existingEntries,
-        ),
+        // Every loaded inventory shares one global allocator high-watermark.
+        // This also repairs historical per-inventory counters before gameplay resumes.
+        nextInstanceCounter: globalNextInstanceCounter,
       };
       const errors = validateInventory(
         inventoryData,
