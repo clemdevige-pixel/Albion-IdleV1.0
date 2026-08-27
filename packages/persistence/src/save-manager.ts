@@ -81,11 +81,23 @@ export class SaveManager {
 
   load(id: string): void {
     const save = this.prepareSave(this.repository.get(id));
-    const previousPayload = this.builder.build();
+
+    // A corrupted live runtime must not block loading a known-good snapshot.
+    // Capture rollback state only when the current runtime can be serialized.
+    // If it cannot, loading the validated target is still the safest recovery.
+    let previousPayload: Record<string, unknown> | undefined;
+    try {
+      previousPayload = this.builder.build();
+    } catch {
+      previousPayload = undefined;
+    }
 
     try {
       this.loader.load(save.payload);
     } catch (error) {
+      if (previousPayload === undefined) {
+        throw error;
+      }
       try {
         this.loader.load(previousPayload);
       } catch (rollbackError) {
