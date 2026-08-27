@@ -86,14 +86,14 @@ describe("createProductionFoundation", () => {
 
     expect(runtime.performGatheringStrike("Wood", "perfect", 0)).toMatchObject({
       ok: true,
-      activity: 50,
-      speedBonusRatio: 0.2,
+      activity: 30,
+      speedBonusRatio: 0.1,
     });
 
     runtime.tick(1);
 
-    expect(session.getElapsedTicks(1)).toBeCloseTo(1.2, 8);
-    expect(runtime.getActiveMiniGameState("Wood").activity).toBeLessThan(50);
+    expect(session.getElapsedTicks(1)).toBeCloseTo(1.1, 8);
+    expect(runtime.getActiveMiniGameState("Wood").activity).toBeLessThan(30);
 
     runtime.stopAllGathering();
     disposeFoundationHarness(harness);
