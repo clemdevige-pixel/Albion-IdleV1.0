@@ -21,7 +21,7 @@
   text-align: right;
 }
 
-.active-gathering__yield-wrap {
+.active-gathering__activity-wrap {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -30,7 +30,7 @@
   min-width: 0;
 }
 
-.active-gathering__yield-wrap .active-gathering__yield {
+.active-gathering__activity-wrap .active-gathering__activity {
   position: relative;
   height: 7px;
   margin: 0;
@@ -39,14 +39,15 @@
   background: #17212c;
 }
 
-.active-gathering__yield-wrap .active-gathering__yield > span {
+.active-gathering__activity-wrap .active-gathering__activity > span {
   display: block;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #8e6a1f, #d1a52f);
+  transition: width 120ms linear;
 }
 
-.active-gathering__yield-wrap > small {
+.active-gathering__activity-wrap > small {
   min-width: 72px;
   color: #9ba7b6;
   font-size: 8px;
