@@ -1,4 +1,9 @@
-import { LocalStorageSaveRepository, type SaveFormat, type SaveRepository } from "@game/persistence";
+import {
+  LocalStorageSaveRepository,
+  SaveValidator,
+  type SaveFormat,
+  type SaveRepository,
+} from "@game/persistence";
 import type { CloudSaveSlotId } from "@game/shared";
 import type { CloudSaveClient } from "./CloudSaveClient";
 import { PLAYER_SAVE_SLOT_IDS, getAccountSaveSlotId, getSaveBackupSlotId } from "./saveSlots";
@@ -6,11 +11,23 @@ import { PLAYER_SAVE_SLOT_IDS, getAccountSaveSlotId, getSaveBackupSlotId } from 
 const SERVER_SAVED_AT_KEY = "serverSavedAt";
 const SERVER_NOW_KEY = "serverNow";
 
-function latestLocal(repository: SaveRepository, primaryId: string): SaveFormat | undefined {
-  return [primaryId, getSaveBackupSlotId(primaryId)]
-    .filter((id) => repository.has(id))
-    .map((id) => repository.get(id))
-    .sort((left, right) => right.metadata.updatedAt - left.metadata.updatedAt)[0];
+function latestValidLocal(
+  repository: SaveRepository,
+  primaryId: string,
+  validator: SaveValidator,
+): SaveFormat | undefined {
+  const candidates: SaveFormat[] = [];
+  for (const id of [primaryId, getSaveBackupSlotId(primaryId)]) {
+    if (!repository.has(id)) continue;
+    try {
+      const candidate = repository.get(id);
+      validator.validate(candidate);
+      candidates.push(candidate);
+    } catch (error) {
+      console.error(`[Persistence] Ignoring invalid local save candidate "${id}":`, error);
+    }
+  }
+  return candidates.sort((left, right) => right.metadata.updatedAt - left.metadata.updatedAt)[0];
 }
 
 function carryTrustedOfflineWindow(local: SaveFormat, cloud: SaveFormat): SaveFormat {
@@ -42,6 +59,8 @@ function carryTrustedOfflineWindow(local: SaveFormat, cloud: SaveFormat): SaveFo
 
 /** Reconciles browser and server saves without deleting either side implicitly. */
 export class CloudSaveSynchronizer {
+  private readonly validator = new SaveValidator(Number.MAX_SAFE_INTEGER);
+
   public constructor(
     private readonly accountId: string,
     private readonly client: CloudSaveClient,
@@ -54,7 +73,7 @@ export class CloudSaveSynchronizer {
 
   public async synchronize(slotId: CloudSaveSlotId): Promise<void> {
     const primaryId = getAccountSaveSlotId(this.accountId, slotId);
-    const local = latestLocal(this.repository, primaryId);
+    const local = latestValidLocal(this.repository, primaryId, this.validator);
     const cloud = await this.client.get(slotId);
     if (cloud === undefined) {
       if (local !== undefined) {
@@ -62,6 +81,11 @@ export class CloudSaveSynchronizer {
       }
       return;
     }
+
+    // Reconciliation only compares structurally intact snapshots. Version
+    // compatibility and gameplay-provider validation remain RuntimePersistence's
+    // responsibility when the selected slot is actually loaded.
+    this.validator.validate(cloud);
 
     // Equal revisions deliberately prefer the cloud copy because it carries
     // server-authoritative timing metadata used by Background Progression.
@@ -91,6 +115,7 @@ export class CloudSaveSynchronizer {
     await this.client.upload(slotId, local);
     const authoritative = await this.client.get(slotId);
     if (authoritative !== undefined) {
+      this.validator.validate(authoritative);
       this.repository.save(primaryId, authoritative);
     }
   }
