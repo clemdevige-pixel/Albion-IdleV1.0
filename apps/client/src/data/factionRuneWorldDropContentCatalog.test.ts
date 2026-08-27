@@ -30,7 +30,7 @@ describe("Faction Rune world drop content", () => {
     expect(getFactionRuneWorldEncounterMultiplier(false, false)).toBe(1);
     expect(getFactionRuneWorldEncounterMultiplier(true, false)).toBe(2.5);
     expect(getFactionRuneWorldEncounterMultiplier(false, true)).toBe(5);
-    expect(getFactionRuneWorldEncounterMultiplier(true, true)).toBe(5);
+    expect(getFactionRuneWorldEncounterMultiplier(true, true)).toBe(2.5);
   });
 
   it("does not create a T4 rune channel in the T3 blue zones", () => {
