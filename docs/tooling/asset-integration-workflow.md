@@ -11,47 +11,61 @@ l’agent doit suivre ce document puis `docs/tooling/spritesheet-generator.md`.
 Workflow standard :
 
 1. l’utilisateur dépose les spritesheets brutes directement dans `.tmp/spritesheet-imports/` ;
-2. l’agent récupère la branche localement ;
-3. l’agent lance l’import automatisé avec `--weapon=<weaponId>` ;
-4. l’outil filtre les fichiers correspondant à cette arme, normalise, renomme et dépose les sorties dans `apps/client/public/assets/characters/` ;
-5. l’utilisateur vérifie visuellement les sorties générées ;
-6. seulement après validation visuelle, l’agent câble les assets dans le jeu.
-
-Le câblage code n’est volontairement pas automatisé.
+2. l’agent récupère la branche ;
+3. l’agent lance `generate:spritesheet-import -- --weapon=<weaponId>` ;
+4. l’outil filtre, découpe, calibre chaque spritesheet directement contre la référence globale, normalise, renomme et dépose les sorties ;
+5. l’utilisateur vérifie visuellement les sorties ;
+6. seulement après validation, l’agent câble les assets dans le jeu.
 
 ---
 
-## Contrat de taille
+## Contrat de taille — règle absolue
 
-La référence globale est l’unique autorité de gabarit pour Albion Idle.
+La frame `0` de la référence globale est l’unique autorité de taille pour Albion Idle.
 
-Toutes les armes doivent converger vers ce même gabarit.
+Par défaut :
 
-Les différentes animations d’une même arme sont supposées être générées à la même échelle brute. Pour éviter qu’une pose d’attaque, une arme ou une cape ne produise un scale différent selon la spritesheet, le wrapper calcule **un seul scale par arme** :
+```text
+apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png
+reference-frame = 0
+```
 
-1. il privilégie `idle` comme animation de calibration si elle existe ;
-2. cette animation est mesurée contre la référence globale ;
-3. le scale obtenu devient `sharedScale` ;
-4. `walk`, `attack` et `death` réutilisent exactement ce `sharedScale`.
+Pour **chaque spritesheet source indépendamment** :
 
-Ainsi, la référence globale fixe toujours la taille cible, mais une même arme ne peut plus dériver en taille d’une animation à l’autre.
+```text
+scale = hauteur personnage de la frame de référence / hauteur personnage de la frame de calibration source
+```
+
+Puis ce scale unique est appliqué à toutes les frames de cette spritesheet.
+
+Il n’existe plus de `sharedScale` par arme et aucune animation ne prend une autre animation comme référence.
+
+La référence globale reste donc la seule cible de gabarit, quelle que soit l’arme ou l’animation.
+
+### Mesure utilisée pour le scale
+
+Pour éviter qu’un petit élément détaché (dague, cape, accessoire) pilote la taille :
+
+1. l’outil détecte les composants opaques connectés ;
+2. il conserve les `N` composants dominants correspondant aux `N` corps des frames ;
+3. il les trie horizontalement ;
+4. il mesure la hauteur du composant principal de la frame choisie.
+
+La frame source de calibration vaut `0` par défaut.
+
+Si la source ne permet pas de résoudre proprement les `N` corps attendus, l’outil doit échouer au lieu d’inventer un scale.
 
 ---
 
-## Ce que fait l’utilisateur
+## Dépôt utilisateur
 
-L’utilisateur ne crée pas de sous-dossier par arme et ne manipule pas les fichiers après génération.
+L’utilisateur ne crée pas de sous-dossier par arme.
 
-Il fait uniquement :
-
-1. déposer les spritesheets brutes dans :
+Toutes les sources vont directement dans :
 
 ```text
 .tmp/spritesheet-imports/
 ```
-
-2. indiquer à l’agent l’arme et les animations déposées ;
-3. vérifier visuellement les fichiers générés après traitement.
 
 Exemple :
 
@@ -63,21 +77,6 @@ Exemple :
 └── permafrost-death.png
 ```
 
-Puis :
-
-> j’ai déposé deathgiver idle et attack
-
-L’outil appelé avec `--weapon=deathgiver` ignore les fichiers Permafrost.
-
----
-
-## Convention de nommage des sources
-
-Les fichiers doivent contenir clairement :
-
-- le `weaponId` ;
-- le nom de l’animation.
-
 Animations reconnues :
 
 ```text
@@ -87,20 +86,7 @@ attack
 death
 ```
 
-Le nommage est volontairement tolérant : espaces, underscores et tirets sont normalisés pour la détection.
-
-Exemples acceptés :
-
-```text
-deathgiver-idle.png
-deathgivers idle.png
-deathgiver_attack.png
-hero-deathgiver-death-source.png
-```
-
-Le wrapper traite uniquement les animations présentes et correspondant à l’arme demandée.
-
-Si plusieurs fichiers correspondent à la même arme + animation, l’outil bloque au lieu de choisir arbitrairement.
+Le nommage tolère espaces, `_` et `-`.
 
 ---
 
@@ -110,88 +96,43 @@ Si plusieurs fichiers correspondent à la même arme + animation, l’outil bloq
 pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver
 ```
 
-Par défaut, cela lit directement :
+Le wrapper :
+
+1. filtre les fichiers Deathgiver ;
+2. détecte les animations présentes ;
+3. mesure la frame `0` de la référence globale ;
+4. mesure la frame de calibration de **chaque source** ;
+5. calcule le scale source → référence ;
+6. appelle le générateur avec ce scale explicite ;
+7. conserve les poses ;
+8. applique le découpage component-aware ;
+9. aligne/reconstruit la spritesheet ;
+10. renomme et dépose les sorties dans :
 
 ```text
-.tmp/spritesheet-imports/
+apps/client/public/assets/characters/
 ```
-
-Un autre dossier peut être fourni exceptionnellement :
-
-```powershell
-pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver --source-dir="mon/dossier"
-```
-
----
-
-## Ce que fait automatiquement l’outil
-
-Pour le `weaponId` demandé, le wrapper :
-
-1. filtre les sources du dossier d’import ;
-2. détecte `idle`, `walk`, `attack` ou `death` via le nom ;
-3. choisit l’animation de calibration (`idle` en priorité) ;
-4. calibre cette animation contre la référence personnage globale ;
-5. récupère le `sharedScale` ainsi calculé ;
-6. applique exactement ce même `sharedScale` à toutes les autres animations de l’arme ;
-7. conserve les poses ;
-8. aligne la baseline ;
-9. détecte les frames avec le mode `--frame-count` ;
-10. renomme les sorties ;
-11. dépose directement les sorties dans le dossier d’assets du jeu.
 
 Sorties :
 
 ```text
-apps/client/public/assets/characters/hero-<weaponId>-idle-sheet-v1.png
-apps/client/public/assets/characters/hero-<weaponId>-walk-sheet-v1.png
-apps/client/public/assets/characters/hero-<weaponId>-attack-sheet-v1.png
-apps/client/public/assets/characters/hero-<weaponId>-death-sheet-v1.png
-```
-
-Seules les animations réellement présentes sont générées.
-
----
-
-## Référence par défaut
-
-Référence actuelle par défaut :
-
-```text
-apps/client/public/assets/characters/hero-broadsword-attack-sheet-v1.png
-```
-
-Frame de référence par défaut : `0`.
-
-Nombre de frames de référence par défaut : `6`.
-
-Override possible :
-
-```powershell
-pnpm.cmd generate:spritesheet-import -- --weapon=deathgiver --reference="apps/client/public/assets/characters/mon-autre-reference.png" --reference-frame=0 --reference-frame-count=6
+hero-<weaponId>-idle-sheet-v1.png
+hero-<weaponId>-walk-sheet-v1.png
+hero-<weaponId>-attack-sheet-v1.png
+hero-<weaponId>-death-sheet-v1.png
 ```
 
 ---
 
-## Frames et calibration
+## Calibration
 
-Nombre de frames source par défaut : `6`.
-
-Override global :
+Frame source de calibration par défaut :
 
 ```text
---frame-count=5
+0
 ```
 
-Frame de calibration globale par défaut : `0`.
-
-Override global :
-
-```text
---calibration-frame=1
-```
-
-Override par animation :
+Overrides possibles :
 
 ```text
 --idle-calibration-frame=0
@@ -200,13 +141,19 @@ Override par animation :
 --death-calibration-frame=0
 ```
 
-Important : seul le scale de l’animation de calibration choisie par le wrapper sert à définir la taille de l’arme. Les autres frames de calibration servent encore aux métriques/ancrages internes, mais ne peuvent plus modifier la taille physique de l’animation.
+La frame de référence reste indépendante :
+
+```text
+--reference-frame=0
+```
+
+Changer une frame de calibration source ne change jamais la référence globale.
 
 ---
 
-## Report de génération
+## Report
 
-Après traitement, le wrapper écrit un report par arme directement dans le dossier d’import :
+Le wrapper écrit :
 
 ```text
 .tmp/spritesheet-imports/generation-report-<weaponId>.json
@@ -214,102 +161,68 @@ Après traitement, le wrapper écrit un report par arme directement dans le doss
 
 Le report contient notamment :
 
-- le `weaponId` ;
-- la référence utilisée ;
-- `calibrationAnimation` ;
-- `sharedScale` ;
-- les fichiers sources ;
-- les fichiers générés ;
-- le nombre de frames ;
-- les tailles de cellule générées.
+- `referenceHeight` ;
+- `sourceHeight` par animation ;
+- `scale` par animation ;
+- source ;
+- output ;
+- dimensions de cellule générées.
 
-L’agent doit vérifier que toutes les animations du report ont le même `scale` avant le câblage.
+Important : les scales des animations peuvent être différents si leurs sources brutes n’ont pas la même taille. Ce n’est pas un problème : **leurs tailles finales doivent converger vers la même hauteur cible de référence**.
 
 ---
 
 ## Vérification visuelle
 
-La vérification visuelle intervient **après** que l’outil a généré les fichiers finaux.
+Toujours après génération et avant câblage.
 
-L’utilisateur vérifie :
+Vérifier :
 
-1. gabarit du personnage par rapport à la référence ;
-2. cohérence de taille entre idle / walk / attack / death ;
-3. baseline / pieds ;
-4. conservation des poses ;
-5. absence de scaling aberrant causé par l’arme ;
-6. drift horizontal ;
-7. spacing ;
-8. alpha.
+1. même gabarit physique que la référence ;
+2. cohérence de taille idle / walk / attack / death ;
+3. aucun membre transféré dans une autre frame ;
+4. baseline / pieds ;
+5. conservation des poses ;
+6. spacing ;
+7. alpha.
 
-Si la sortie n’est pas validée, ne pas câbler l’asset dans le jeu.
+Si ce n’est pas validé, ne pas câbler.
 
 ---
 
 ## Câblage jeu
 
-Après validation visuelle, l’agent câble les fichiers générés dans l’architecture existante.
-
-Pour les héros actuels, commencer par :
+Après validation, l’agent repart de l’architecture existante, notamment :
 
 ```text
 apps/client/src/game/render/HeroRenderCatalog.ts
 ```
 
-Vérifier notamment :
+Vérifier :
 
 - `textureKey` ;
 - `assetPath` ;
 - `frameRate` ;
-- dimensions de frame attendues ;
-- `offset` si nécessaire ;
-- `visualProfile` et paramètres de rendu existants.
+- dimensions attendues ;
+- offset si nécessaire ;
+- visual profile existant.
 
-Ne pas créer de pipeline parallèle ou de surcouche spécifique à une arme si l’architecture existante peut être étendue proprement.
-
----
-
-## Responsabilités
-
-### Utilisateur
-
-- dépose toutes les sources directement dans `.tmp/spritesheet-imports/` ;
-- déclenche le chantier avec l’agent ;
-- valide visuellement les sorties.
-
-### Outil
-
-- filtre par arme ;
-- détecte les animations ;
-- calibre l’arme contre la référence globale ;
-- impose un scale commun à toutes les animations de l’arme ;
-- normalise ;
-- renomme ;
-- dépose les assets finaux ;
-- produit un report par arme.
-
-### Agent
-
-- lit cette doc ;
-- identifie le `weaponId` ;
-- lance l’outil ;
-- vérifie le report ;
-- guide la validation visuelle ;
-- câble dans le jeu après validation ;
-- respecte l’architecture data-driven existante.
+Ne pas créer de pipeline parallèle.
 
 ---
 
 ## Point d’entrée pour un nouvel agent
 
-Si l’utilisateur dit simplement :
+Si l’utilisateur dit :
 
 > je veux travailler sur l’intégration des assets
 
-l’agent doit immédiatement :
+l’agent doit :
 
-1. lire `docs/tooling/asset-integration-workflow.md` ;
+1. lire ce document ;
 2. lire `docs/tooling/spritesheet-generator.md` ;
-3. regarder les fichiers présents dans `.tmp/spritesheet-imports/` ;
-4. identifier avec l’utilisateur l’arme concernée ;
-5. guider l’utilisateur selon ce workflow sans lui imposer de sous-dossier ou de manipulation manuelle déjà automatisée.
+3. regarder `.tmp/spritesheet-imports/` ;
+4. identifier le `weaponId` ;
+5. lancer l’import ;
+6. faire valider visuellement ;
+7. câbler seulement après validation.
