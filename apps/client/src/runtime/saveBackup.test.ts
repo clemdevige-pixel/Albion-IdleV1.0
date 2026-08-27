@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { InMemorySaveRepository, type SaveFormat } from "@game/persistence";
+import {
+  InMemorySaveRepository,
+  SerializationFailedError,
+  type SaveFormat,
+} from "@game/persistence";
 import { backupCurrentSave, loadSaveWithBackup } from "./saveBackup";
 
 function makeSave(updatedAt: number): SaveFormat {
@@ -15,6 +19,17 @@ function makeSave(updatedAt: number): SaveFormat {
     payload: { updatedAt },
     checksum: `checksum-${String(updatedAt)}`,
   };
+}
+
+class RestoreFailingRepository extends InMemorySaveRepository {
+  public failPrimaryWrites = false;
+
+  override save(id: string, data: SaveFormat): void {
+    if (this.failPrimaryWrites && id === "primary") {
+      throw new SerializationFailedError("quota exceeded");
+    }
+    super.save(id, data);
+  }
 }
 
 describe("save backup", () => {
@@ -55,6 +70,23 @@ describe("save backup", () => {
     expect(loadSlot).toHaveBeenNthCalledWith(1, "primary");
     expect(loadSlot).toHaveBeenNthCalledWith(2, "backup");
     expect(repository.get("primary")).toEqual(backup);
+  });
+
+  it("keeps a successfully loaded backup active when restoring the primary hits storage quota", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const repository = new RestoreFailingRepository();
+    const backup = makeSave(5);
+    repository.save("backup", backup);
+    repository.failPrimaryWrites = true;
+    const loadSlot = vi.fn((slotId: string) => {
+      if (slotId === "primary") throw new Error("corrupt primary");
+    });
+
+    expect(loadSaveWithBackup(repository, "primary", "backup", loadSlot)).toBe("backup_unrestored");
+    expect(loadSlot).toHaveBeenNthCalledWith(1, "primary");
+    expect(loadSlot).toHaveBeenNthCalledWith(2, "backup");
+    expect(repository.has("primary")).toBe(false);
+    expect(repository.get("backup")).toEqual(backup);
   });
 
   it("preserves the primary error when no backup exists", () => {
