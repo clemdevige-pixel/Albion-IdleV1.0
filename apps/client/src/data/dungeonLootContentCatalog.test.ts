@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER,
+  DUNGEON_COMPLETION_SILVER_BY_TIER,
+  DUNGEON_ENCOUNTER_LOOT_BY_TIER,
   getDungeonArtifactFragmentItemId,
   getDungeonArtifactItemId,
   getFactionRuneItemId,
@@ -16,61 +17,37 @@ describe("dungeonLootContentCatalog", () => {
       const suffix = dungeon.faction.toLowerCase();
       const tier = dungeon.tier as DungeonLootTier;
       expect(loot.faction).toBe(dungeon.faction);
-      expect(loot.artifactFragmentItemId).toBe(
-        getDungeonArtifactFragmentItemId(suffix, tier),
-      );
+      expect(loot.tier).toBe(tier);
+      expect(loot.artifactFragmentItemId).toBe(getDungeonArtifactFragmentItemId(suffix, tier));
       expect(loot.artifactItemId).toBe(getDungeonArtifactItemId(suffix, tier));
       expect(loot.enchantmentShardItemId).toBe(`item_resource_enchantment_shard_t${tier}`);
       expect(loot.factionRuneItemId).toBe(getFactionRuneItemId(tier));
-      expect(loot.completionFactionRuneQuantity).toBe(
-        DUNGEON_COMPLETION_FACTION_RUNES_BY_TIER[tier],
-      );
+      expect(loot.completionSilver).toBe(DUNGEON_COMPLETION_SILVER_BY_TIER[tier]);
+      expect(loot.encounters).toBe(DUNGEON_ENCOUNTER_LOOT_BY_TIER[tier]);
     }
   });
 
-  it("shares one reward profile per dungeon tier, including secondary shard bonuses", () => {
-    const expected = {
-      4: {
-        normal: { artifactFragmentQuantity: 4, artifactDropChance: 0, enchantmentShardQuantity: 0 },
-        elite: { artifactFragmentQuantity: 10, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-        boss: { artifactFragmentQuantity: 28, artifactDropChance: 0.1, enchantmentShardQuantity: 4 },
-      },
-      5: {
-        normal: { artifactFragmentQuantity: 5, artifactDropChance: 0, enchantmentShardQuantity: 0 },
-        elite: { artifactFragmentQuantity: 12, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-        boss: { artifactFragmentQuantity: 34, artifactDropChance: 0.12, enchantmentShardQuantity: 5 },
-      },
-      6: {
-        normal: { artifactFragmentQuantity: 6, artifactDropChance: 0, enchantmentShardQuantity: 0 },
-        elite: { artifactFragmentQuantity: 14, artifactDropChance: 0, enchantmentShardQuantity: 2 },
-        boss: { artifactFragmentQuantity: 40, artifactDropChance: 0.14, enchantmentShardQuantity: 6 },
-      },
-      7: {
-        normal: { artifactFragmentQuantity: 7, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-        elite: { artifactFragmentQuantity: 16, artifactDropChance: 0, enchantmentShardQuantity: 2 },
-        boss: { artifactFragmentQuantity: 46, artifactDropChance: 0.16, enchantmentShardQuantity: 6 },
-      },
-      8: {
-        normal: { artifactFragmentQuantity: 8, artifactDropChance: 0, enchantmentShardQuantity: 1 },
-        elite: { artifactFragmentQuantity: 18, artifactDropChance: 0, enchantmentShardQuantity: 3 },
-        boss: { artifactFragmentQuantity: 52, artifactDropChance: 0.18, enchantmentShardQuantity: 7 },
-      },
-    } as const;
-    const expectedFullRunShards = { 4: 5, 5: 6, 6: 8, 7: 10, 8: 12 } as const;
-
-    for (const dungeon of DUNGEON_DEFINITIONS) {
-      const tier = dungeon.tier as keyof typeof expected;
-      const profile = expected[tier];
-      if (profile === undefined) throw new Error(`Unexpected authored dungeon tier: ${String(dungeon.tier)}`);
-      const loot = getDungeonLootDefinition(dungeon.lootTableId);
-      expect(loot.encounters).toEqual(profile);
-
-      const shardTotal = dungeon.encounters.reduce(
-        (sum, encounter) => sum + loot.encounters[encounter.kind].enchantmentShardQuantity,
-        0,
-      );
-      expect(shardTotal).toBe(expectedFullRunShards[tier]);
+  it("keeps artifact-fragment ranges identical across T4-T8", () => {
+    const reference = DUNGEON_ENCOUNTER_LOOT_BY_TIER[4];
+    for (const tier of [5, 6, 7, 8] as const) {
+      expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[tier].normal.artifactFragmentRange).toEqual(reference.normal.artifactFragmentRange);
+      expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[tier].elite.artifactFragmentRange).toEqual(reference.elite.artifactFragmentRange);
+      expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[tier].boss.artifactFragmentRange).toEqual(reference.boss.artifactFragmentRange);
     }
+    expect(reference.normal.artifactFragmentRange).toEqual({ min: 1, max: 5 });
+    expect(reference.elite.artifactFragmentRange).toEqual({ min: 5, max: 12 });
+    expect(reference.boss.artifactFragmentRange).toEqual({ min: 15, max: 30 });
+  });
+
+  it("locks the validated Silver, shard, Rune and artifact curves", () => {
+    expect(DUNGEON_COMPLETION_SILVER_BY_TIER).toEqual({ 4: 10_000, 5: 20_000, 6: 35_000, 7: 55_000, 8: 80_000 });
+    expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[4].elite.factionRuneRange).toEqual({ min: 0, max: 1 });
+    expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[4].boss.factionRuneRange).toEqual({ min: 1, max: 3 });
+    expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[8].elite.factionRuneRange).toEqual({ min: 0, max: 2 });
+    expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[8].boss.factionRuneRange).toEqual({ min: 4, max: 7 });
+    expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[4].boss.enchantmentShardRange).toEqual({ min: 2, max: 4 });
+    expect(DUNGEON_ENCOUNTER_LOOT_BY_TIER[8].boss.enchantmentShardRange).toEqual({ min: 4, max: 8 });
+    expect([4, 5, 6, 7, 8].map((tier) => DUNGEON_ENCOUNTER_LOOT_BY_TIER[tier as DungeonLootTier].boss.artifactDropChance)).toEqual([0.10, 0.12, 0.14, 0.16, 0.18]);
   });
 
   it("rejects unknown loot table ids", () => {
