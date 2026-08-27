@@ -71,17 +71,31 @@ function findAnimationSource(sourceDir: string, weaponId: string, animation: Ani
 }
 
 function runGenerator(args: readonly string[]): string {
-  const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-  const result = spawnSync(command, ["generate:spritesheet", "--", ...args], {
+  const npmExecPath = process.env.npm_execpath;
+  const command = npmExecPath === undefined
+    ? (process.platform === "win32" ? "pnpm.cmd" : "pnpm")
+    : process.execPath;
+  const commandArgs = npmExecPath === undefined
+    ? ["generate:spritesheet", "--", ...args]
+    : [npmExecPath, "generate:spritesheet", "--", ...args];
+
+  const result = spawnSync(command, commandArgs, {
     cwd: REPO_ROOT,
     encoding: "utf-8",
     stdio: "pipe",
   });
+
   const stdout = result.stdout ?? "";
   const stderr = result.stderr ?? "";
-  if (result.status !== 0) {
-    throw new Error(`Spritesheet generation failed.\n${stdout}${stderr}`.trim());
+  if (result.status !== 0 || result.error !== undefined) {
+    const details = [result.error, stdout, stderr]
+      .filter(Boolean)
+      .map(String)
+      .join("\n")
+      .trim();
+    throw new Error(`Spritesheet generation failed.${details.length > 0 ? `\n${details}` : ""}`);
   }
+
   process.stdout.write(stdout);
   if (stderr.length > 0) process.stderr.write(stderr);
   return stdout;
