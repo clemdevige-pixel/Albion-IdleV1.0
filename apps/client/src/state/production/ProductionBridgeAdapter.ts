@@ -209,5 +209,3 @@ const REFINING_UPDATERS = {
   hide: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateLeatherRefining(vm),
   fiber: (bridge: GameBridge): RefiningUpdater => (vm) => bridge.updateClothRefining(vm),
 } satisfies Record<ProductionFamilyId, (bridge: GameBridge) => RefiningUpdater>;
-
-const REFINING_BUILDING_BY_TASK_SUFFIX = {} as const;
