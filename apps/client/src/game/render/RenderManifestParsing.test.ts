@@ -72,31 +72,24 @@ describe("Hero state-specific presentation parsing", () => {
       }
 
       expect(parsed.offset).toEqual(testCase.offset);
-      for (const state of ["idle", "attack"] as const) {
+      for (const state of ["idle", "walk", "attack"] as const) {
         expect(parsed.animations[state]).toMatchObject({
           frameWidth: testCase.manifest.animations[state].frameWidth,
           frameHeight: testCase.manifest.animations[state].frameHeight,
           startFrame: testCase.manifest.animations[state].startFrame,
           endFrame: testCase.manifest.animations[state].endFrame,
           display: testCase.manifest.animations[state].display,
+          offset: testCase.manifest.animations[state].offset,
         });
       }
 
-      expect(parsed.animations.walk).toMatchObject({
-        frameWidth: 512,
-        frameHeight: 640,
-        startFrame: 0,
-        endFrame: 5,
-        display: { width: 160, height: 200 },
-        offset: { x: 0, y: 74 },
-      });
       expect(parsed.poses.death).toMatchObject({
-        frameWidth: 512,
-        frameHeight: 640,
-        startFrame: 0,
-        endFrame: 5,
-        frameRate: 8,
-        repeat: 0,
+        frameWidth: testCase.manifest.poses.death.frameWidth,
+        frameHeight: testCase.manifest.poses.death.frameHeight,
+        startFrame: testCase.manifest.poses.death.startFrame,
+        endFrame: testCase.manifest.poses.death.endFrame,
+        frameRate: testCase.manifest.poses.death.frameRate,
+        repeat: testCase.manifest.poses.death.repeat,
         display: testCase.manifest.poses.death.display,
         offset: testCase.manifest.poses.death.offset,
       });
