@@ -19,6 +19,14 @@ describe("weapon equipment presentation", () => {
       .toEqual(resolveEquipmentPresentation("item_weapon_staff_t4_infernal"));
     expect(resolveEquipmentPresentation("item_weapon_gloves_t3_spiked_gauntlets"))
       .toEqual(resolveEquipmentPresentation("item_weapon_gloves_t4_spiked_gauntlets"));
+    expect(resolveEquipmentPresentation("item_weapon_gloves_ursine_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_gloves_ursine_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_gloves_ravenstrike_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_gloves_ravenstrike_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_gloves_hellfire_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_gloves_hellfire_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_gloves_battle_bracers_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_gloves_battle_bracers_t8"));
     expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4"))
       .toEqual(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t8"));
     expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t4"))
@@ -85,6 +93,20 @@ describe("weapon equipment presentation", () => {
     });
 
     for (const [itemId, itemIcon, actorManifestId] of [
+      ["item_weapon_gloves_t4_spiked_gauntlets", "icons/armes/spiked gauntlets.png", "hero_spiked_gauntlets"],
+      ["item_weapon_gloves_ursine_t4", "icons/armes/ursine maulers.png", "hero_ursine_maulers"],
+      ["item_weapon_gloves_ravenstrike_t4", "icons/armes/ravenstrike cestus.png", "hero_ravenstrike_cestus"],
+      ["item_weapon_gloves_hellfire_t4", "icons/armes/hellfire hands.png", "hero_hellfire_hands"],
+      ["item_weapon_gloves_battle_bracers_t4", "icons/armes/battle bracers.png", "hero_battle_bracers"],
+    ] as const) {
+      expect(resolveEquipmentPresentation(itemId)).toEqual({
+        itemIcon,
+        actorManifestId,
+        combatProfileId: "melee",
+      });
+    }
+
+    for (const [itemId, itemIcon, actorManifestId] of [
       ["item_weapon_dagger_bloodletter_t4", "icons/armes/bloodletter.png", "hero_bloodletter"],
       ["item_weapon_dagger_demonfang_t4", "icons/armes/demonfang.png", "hero_demonfang"],
       ["item_weapon_dagger_deathgivers_t4", "icons/armes/deathgivers.png", "hero_deathgivers"],
@@ -115,18 +137,16 @@ describe("weapon equipment presentation", () => {
         releaseDelayMs: 355,
       },
     });
-
-    expect(resolveEquipmentPresentation("item_weapon_gloves_ursine_t4")).toEqual({
-      itemIcon: "icons/armes/ursine maulers.png",
-      actorManifestId: "hero_spiked_gauntlets",
-      combatProfileId: "melee",
-    });
   });
 
   it("does not add projectile presentation to melee weapons", () => {
     for (const itemId of [
       "item_weapon_sword_t4_broadsword",
       "item_weapon_gloves_t4_spiked_gauntlets",
+      "item_weapon_gloves_ursine_t4",
+      "item_weapon_gloves_ravenstrike_t4",
+      "item_weapon_gloves_hellfire_t4",
+      "item_weapon_gloves_battle_bracers_t4",
       "item_weapon_dagger_t4_pair",
       "item_weapon_dagger_demonfang_t4",
       "item_weapon_dagger_deathgivers_t4",
