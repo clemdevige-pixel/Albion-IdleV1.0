@@ -6,7 +6,7 @@ import { requireHeroRenderManifest } from "./HeroRenderCatalog";
 import { parseRenderManifest } from "./RenderManifestParsing";
 
 const heroManifest = requireHeroRenderManifest("hero_broadsword");
-const fireStaffManifest = requireHeroRenderManifest("hero_fire_staff");
+const fireStaffManifest = requireHeroRenderManifest("hero_infernal");
 const longbowManifest = requireHeroRenderManifest("hero_longbow");
 const spikedGauntletsManifest = requireHeroRenderManifest("hero_spiked_gauntlets");
 const daggerPairManifest = requireHeroRenderManifest("hero_dagger_pair");
@@ -39,7 +39,7 @@ describe("Hero state-specific presentation parsing", () => {
     {
       label: "fire staff",
       manifest: fireStaffManifest,
-      offset: { x: 30, y: 58 },
+      offset: { x: 0, y: 58 },
     },
     {
       label: "longbow",
