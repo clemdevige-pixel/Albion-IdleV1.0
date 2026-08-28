@@ -57,14 +57,14 @@ const STANDARD_SIX_FRAME_SHEET = {
   display: { width: 228.5714285714, height: 228.5714285714 },
 } as const satisfies HeroSheetProfile;
 
-const DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX = 397;
+const DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX = 258;
 const DUAL_DAGGER_SHEET = {
-  frameWidth: 512,
-  frameHeight: 640,
+  frameWidth: 320,
+  frameHeight: 480,
   startFrame: 0,
   endFrame: 5,
-  display: buildNormalizedHeroDisplay(512, 640, DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX),
-  offset: buildNormalizedHeroOffset(DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX, 64),
+  display: buildNormalizedHeroDisplay(320, 480, DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX),
+  offset: buildNormalizedHeroOffset(DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX, 42),
 } as const satisfies HeroSheetProfile;
 
 function buildAnimation(
@@ -254,15 +254,15 @@ const HERO_RENDER_DEFINITIONS = [
     sheet: DUAL_DAGGER_SHEET,
     animations: {
       idle: {
-        textureKey: "hero-dual-dagger-idle-from-attack-sheet-v2",
-        assetPath: "/assets/characters/hero-dual-dagger-attack-sheet-v2.png",
+        textureKey: "hero-dual-dagger-idle-from-attack-sheet-v3",
+        assetPath: "/assets/characters/hero-dual-dagger-attack-sheet-v3.png",
         frameRate: 6,
         startFrame: 0,
         endFrame: 0,
       },
       attack: {
-        textureKey: "hero-dual-dagger-attack-sheet-v2",
-        assetPath: "/assets/characters/hero-dual-dagger-attack-sheet-v2.png",
+        textureKey: "hero-dual-dagger-attack-sheet-v3",
+        assetPath: "/assets/characters/hero-dual-dagger-attack-sheet-v3.png",
         frameRate: 16,
       },
     },

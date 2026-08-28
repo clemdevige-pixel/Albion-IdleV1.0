@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { resolveWeaponPresentation } from "../../data/weaponContentCatalog.js";
+import { COMBAT_ACTOR_PRESENTATION_SCALE } from "./actorPresentationScale.js";
 import { renderManifestRegistry } from "./defaultRenderManifestRegistry.js";
+import { HERO_TARGET_HEIGHT_PX } from "./HeroVisualArchetypeCatalog.js";
 
 const DUAL_DAGGER_ITEM_IDS = [
   "item_weapon_dagger_t3_pair",
@@ -12,9 +14,9 @@ const DUAL_DAGGER_ITEM_IDS = [
 ] as const;
 
 const EXPECTED_TEXTURE_KEYS = {
-  idle: "hero-dual-dagger-idle-from-attack-sheet-v2",
+  idle: "hero-dual-dagger-idle-from-attack-sheet-v3",
   walk: "hero-archetype-leather-walk-sheet-v1",
-  attack: "hero-dual-dagger-attack-sheet-v2",
+  attack: "hero-dual-dagger-attack-sheet-v3",
   death: "hero-archetype-leather-death-sheet-v1",
 } as const;
 
@@ -31,8 +33,8 @@ describe("dual dagger render contract", () => {
     for (const state of ["idle", "attack"] as const) {
       const animation = manifest.animations[state];
       expect(animation.textureKey).toBe(EXPECTED_TEXTURE_KEYS[state]);
-      expect(animation.frameWidth).toBe(512);
-      expect(animation.frameHeight).toBe(640);
+      expect(animation.frameWidth).toBe(320);
+      expect(animation.frameHeight).toBe(480);
       expect(animation.startFrame).toBe(0);
     }
     expect(manifest.animations.idle.endFrame).toBe(0);
@@ -40,6 +42,12 @@ describe("dual dagger render contract", () => {
     expect(manifest.animations.idle.assetPath).toBe(manifest.animations.attack.assetPath);
     expect(manifest.animations.idle.display).toEqual(manifest.animations.attack.display);
     expect(manifest.animations.idle.offset).toEqual(manifest.animations.attack.offset);
+    expect(manifest.animations.attack.frameWidth * 6).toBeLessThanOrEqual(2048);
+    expect(
+      manifest.animations.attack.display.height
+        * COMBAT_ACTOR_PRESENTATION_SCALE
+        * (258 / manifest.animations.attack.frameHeight),
+    ).toBeCloseTo(HERO_TARGET_HEIGHT_PX);
 
     expect(manifest.animations.walk).toMatchObject({
       textureKey: EXPECTED_TEXTURE_KEYS.walk,
