@@ -58,20 +58,25 @@ const STANDARD_SIX_FRAME_SHEET = {
   display: { width: 228.5714285714, height: 228.5714285714 },
 } as const satisfies HeroSheetProfile;
 
-function buildNormalizedSixFrameHeroSheet(sourceCharacterHeight: number): HeroSheetProfile {
+function buildNormalizedHeroSheet(
+  sourceCharacterHeight: number,
+  endFrame = 5,
+): HeroSheetProfile {
   return {
     frameWidth: 512,
     frameHeight: 640,
     startFrame: 0,
-    endFrame: 5,
+    endFrame,
     display: buildNormalizedHeroDisplay(512, 640, sourceCharacterHeight),
     offset: buildNormalizedHeroOffset(sourceCharacterHeight, HERO_ARCHETYPE_FEET_MARGIN_PX),
   };
 }
 
-const DUAL_DAGGER_SHEET = buildNormalizedSixFrameHeroSheet(397);
-const BLOODLETTER_SHEET = buildNormalizedSixFrameHeroSheet(388);
-const DEMONFANG_SHEET = buildNormalizedSixFrameHeroSheet(398);
+const DUAL_DAGGER_SHEET = buildNormalizedHeroSheet(397);
+const BLOODLETTER_SHEET = buildNormalizedHeroSheet(388);
+const DEMONFANG_SHEET = buildNormalizedHeroSheet(398);
+const DEATHGIVERS_SHEET = buildNormalizedHeroSheet(414);
+const CLAWS_SHEET = buildNormalizedHeroSheet(525, 4);
 
 function buildAnimation(
   source: HeroAnimationSource,
@@ -323,6 +328,60 @@ const HERO_RENDER_DEFINITIONS = [
       attack: {
         textureKey: "hero-demonfang-attack-normalized-v1",
         assetPath: "/assets/characters/hero-demonfang-attack-normalized-v1.png",
+        frameRate: 16,
+      },
+    },
+    visualProfile: "melee",
+    visualParameters: {
+      approachDistance: 48,
+      motionDurationMs: 140,
+      impactDelayMs: 150,
+    },
+    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
+  },
+  {
+    id: "hero_deathgivers",
+    familyId: "dagger",
+    offset: { x: 0, y: 58 },
+    sheet: DEATHGIVERS_SHEET,
+    animations: {
+      idle: {
+        textureKey: "hero-deathgiver-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-deathgiver-attack-normalized-v1.png",
+        frameRate: 6,
+        startFrame: 5,
+        endFrame: 5,
+      },
+      attack: {
+        textureKey: "hero-deathgiver-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-deathgiver-attack-normalized-v1.png",
+        frameRate: 16,
+      },
+    },
+    visualProfile: "melee",
+    visualParameters: {
+      approachDistance: 48,
+      motionDurationMs: 140,
+      impactDelayMs: 150,
+    },
+    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
+  },
+  {
+    id: "hero_claws",
+    familyId: "dagger",
+    offset: { x: 0, y: 58 },
+    sheet: CLAWS_SHEET,
+    animations: {
+      idle: {
+        textureKey: "hero-claw-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-claw-attack-normalized-v1.png",
+        frameRate: 6,
+        startFrame: 0,
+        endFrame: 0,
+      },
+      attack: {
+        textureKey: "hero-claw-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-claw-attack-normalized-v1.png",
         frameRate: 16,
       },
     },
