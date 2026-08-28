@@ -12,7 +12,7 @@ const DUAL_DAGGER_ITEM_IDS = [
 ] as const;
 
 const EXPECTED_TEXTURE_KEYS = {
-  idle: "hero-dual-dagger-attack-sheet-v2",
+  idle: "hero-dual-dagger-idle-from-attack-sheet-v2",
   walk: "hero-archetype-leather-walk-sheet-v1",
   attack: "hero-dual-dagger-attack-sheet-v2",
   death: "hero-archetype-leather-death-sheet-v1",
