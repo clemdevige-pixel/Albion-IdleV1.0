@@ -90,7 +90,7 @@ function decodeRgbaPng(path: URL): { width: number; height: number; rgba: Uint8A
 }
 
 describe("dual dagger sprite asset", () => {
-  it("contains visible alpha pixels in every authored frame", () => {
+  it("keeps meaningful visible pixels inside every authored frame", () => {
     const assetUrl = new URL(
       "../../../public/assets/characters/hero-dual-dagger-attack-sheet-v3.png",
       import.meta.url,
@@ -100,21 +100,37 @@ describe("dual dagger sprite asset", () => {
     expect(image.width).toBe(FRAME_WIDTH * FRAME_COUNT);
     expect(image.height).toBe(FRAME_HEIGHT);
 
-    const visiblePixelsPerFrame = Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
+    const metrics = Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
       let visiblePixels = 0;
+      let minX = FRAME_WIDTH;
+      let maxX = -1;
+      let minY = FRAME_HEIGHT;
+      let maxY = -1;
       const startX = frameIndex * FRAME_WIDTH;
       const endX = startX + FRAME_WIDTH;
+
       for (let y = 0; y < image.height; y += 1) {
         for (let x = startX; x < endX; x += 1) {
           const alphaIndex = (y * image.width + x) * 4 + 3;
-          if ((image.rgba[alphaIndex] ?? 0) > 0) visiblePixels += 1;
+          if ((image.rgba[alphaIndex] ?? 0) === 0) continue;
+          visiblePixels += 1;
+          const localX = x - startX;
+          minX = Math.min(minX, localX);
+          maxX = Math.max(maxX, localX);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
         }
       }
-      return visiblePixels;
+
+      return { frameIndex, visiblePixels, minX, maxX, minY, maxY };
     });
 
-    for (const [frameIndex, visiblePixels] of visiblePixelsPerFrame.entries()) {
-      expect(visiblePixels, `frame ${String(frameIndex)} alpha pixels`).toBeGreaterThan(0);
+    console.info("[DUAL_DAGGER_ALPHA_BOUNDS]", JSON.stringify(metrics));
+
+    for (const metric of metrics) {
+      expect(metric.visiblePixels, `frame ${String(metric.frameIndex)} alpha pixels`).toBeGreaterThan(1_000);
+      expect(metric.maxY, `frame ${String(metric.frameIndex)} bottom alpha bound`).toBeGreaterThan(300);
+      expect(metric.minY, `frame ${String(metric.frameIndex)} top alpha bound`).toBeLessThan(300);
     }
   });
 });
