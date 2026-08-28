@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { HERO_RENDER_MANIFESTS } from "./HeroRenderCatalog";
 import {
+  HERO_ARCHETYPE_FEET_MARGIN_PX,
+  HERO_ARCHETYPE_SOURCE_CHARACTER_HEIGHT_PX,
   HERO_DEATH_SOURCE_CHARACTER_HEIGHT_PX,
   HERO_TARGET_HEIGHT_PX,
   HERO_VISUAL_ARCHETYPE_BY_WEAPON_FAMILY,
+  buildNormalizedHeroDisplay,
+  buildNormalizedHeroOffset,
 } from "./HeroVisualArchetypeCatalog";
 import { COMBAT_ACTOR_PRESENTATION_SCALE } from "./actorPresentationScale";
 
@@ -15,6 +19,8 @@ const EXPECTED_ARCHETYPE_BY_MANIFEST = {
   hero_fire_staff: "cloth",
   hero_spiked_gauntlets: "plate",
   hero_dagger_pair: "leather",
+  hero_bloodletter: "leather",
+  hero_demonfang: "leather",
 } as const;
 
 function readPngDimensions(assetPath: string): {
@@ -51,6 +57,7 @@ describe("hero walk render contract", () => {
     for (const manifest of HERO_RENDER_MANIFESTS) {
       const archetype =
         EXPECTED_ARCHETYPE_BY_MANIFEST[manifest.id as keyof typeof EXPECTED_ARCHETYPE_BY_MANIFEST];
+      expect(archetype, manifest.id).toBeDefined();
       expect(manifest.animations.walk.textureKey).toContain(`-${archetype}-walk-`);
       expect(manifest.poses.death.textureKey).toContain(`-${archetype}-death-`);
     }
@@ -65,8 +72,18 @@ describe("hero walk render contract", () => {
     ).toBe(3);
   });
 
-  it("keeps the visible character target centralized at 130 logical pixels", () => {
-    expect(HERO_TARGET_HEIGHT_PX).toBe(130);
+  it("keeps the visible character target centralized at 140 logical pixels", () => {
+    expect(HERO_TARGET_HEIGHT_PX).toBe(140);
+
+    const expectedWalkDisplay = buildNormalizedHeroDisplay(
+      512,
+      640,
+      HERO_ARCHETYPE_SOURCE_CHARACTER_HEIGHT_PX,
+    );
+    const expectedWalkOffset = buildNormalizedHeroOffset(
+      HERO_ARCHETYPE_SOURCE_CHARACTER_HEIGHT_PX,
+      HERO_ARCHETYPE_FEET_MARGIN_PX,
+    );
 
     for (const manifest of HERO_RENDER_MANIFESTS) {
       expect(manifest.animations.walk).toMatchObject({
@@ -74,11 +91,12 @@ describe("hero walk render contract", () => {
         frameHeight: 640,
         startFrame: 0,
         endFrame: 5,
-        display: { width: 160, height: 200 },
-        offset: { x: 0, y: 74 },
+        display: expectedWalkDisplay,
+        offset: expectedWalkOffset,
       });
       const archetype =
         EXPECTED_ARCHETYPE_BY_MANIFEST[manifest.id as keyof typeof EXPECTED_ARCHETYPE_BY_MANIFEST];
+      expect(archetype, manifest.id).toBeDefined();
       const deathSourceHeight = HERO_DEATH_SOURCE_CHARACTER_HEIGHT_PX[archetype];
       expect(manifest.poses.death).toMatchObject({
         frameWidth: 512,
