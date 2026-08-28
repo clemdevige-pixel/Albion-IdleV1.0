@@ -3,9 +3,10 @@ import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 
 const PNG_SIGNATURE_SIZE = 8;
-const FRAME_WIDTH = 320;
-const FRAME_HEIGHT = 480;
+const FRAME_WIDTH = 512;
+const FRAME_HEIGHT = 640;
 const FRAME_COUNT = 6;
+const EXPECTED_FEET_Y = 575;
 
 function paethPredictor(a: number, b: number, c: number): number {
   const p = a + b - c;
@@ -90,9 +91,9 @@ function decodeRgbaPng(path: URL): { width: number; height: number; rgba: Uint8A
 }
 
 describe("dual dagger sprite asset", () => {
-  it("keeps meaningful visible pixels inside every authored frame", () => {
+  it("keeps six opaque normalized frames on the shared hero baseline", () => {
     const assetUrl = new URL(
-      "../../../public/assets/characters/hero-dual-dagger-attack-sheet-v3.png",
+      "../../../public/assets/characters/hero-dual-dagger-attack-normalized-v2.png",
       import.meta.url,
     );
     const image = decodeRgbaPng(assetUrl);
@@ -104,10 +105,7 @@ describe("dual dagger sprite asset", () => {
       let visiblePixels = 0;
       let opaquePixels = 0;
       let alphaSum = 0;
-      let minAlpha = 255;
       let maxAlpha = 0;
-      let minX = FRAME_WIDTH;
-      let maxX = -1;
       let minY = FRAME_HEIGHT;
       let maxY = -1;
       const startX = frameIndex * FRAME_WIDTH;
@@ -120,12 +118,8 @@ describe("dual dagger sprite asset", () => {
           if (alpha === 0) continue;
           visiblePixels += 1;
           alphaSum += alpha;
-          minAlpha = Math.min(minAlpha, alpha);
           maxAlpha = Math.max(maxAlpha, alpha);
           if (alpha >= 250) opaquePixels += 1;
-          const localX = x - startX;
-          minX = Math.min(minX, localX);
-          maxX = Math.max(maxX, localX);
           minY = Math.min(minY, y);
           maxY = Math.max(maxY, y);
         }
@@ -135,25 +129,20 @@ describe("dual dagger sprite asset", () => {
         frameIndex,
         visiblePixels,
         opaquePixels,
-        minAlpha: visiblePixels === 0 ? 0 : minAlpha,
         maxAlpha,
         averageAlpha: visiblePixels === 0 ? 0 : alphaSum / visiblePixels,
-        minX,
-        maxX,
         minY,
         maxY,
       };
     });
 
-    console.info("[DUAL_DAGGER_ALPHA_METRICS]", JSON.stringify(metrics));
-
     for (const metric of metrics) {
-      expect(metric.visiblePixels, `frame ${String(metric.frameIndex)} alpha pixels`).toBeGreaterThan(1_000);
-      expect(metric.opaquePixels, `frame ${String(metric.frameIndex)} opaque pixels`).toBeGreaterThan(1_000);
+      expect(metric.visiblePixels, `frame ${String(metric.frameIndex)} alpha pixels`).toBeGreaterThan(10_000);
+      expect(metric.opaquePixels, `frame ${String(metric.frameIndex)} opaque pixels`).toBeGreaterThan(10_000);
       expect(metric.maxAlpha, `frame ${String(metric.frameIndex)} max alpha`).toBeGreaterThanOrEqual(250);
-      expect(metric.averageAlpha, `frame ${String(metric.frameIndex)} average alpha`).toBeGreaterThan(100);
-      expect(metric.maxY, `frame ${String(metric.frameIndex)} bottom alpha bound`).toBeGreaterThan(300);
-      expect(metric.minY, `frame ${String(metric.frameIndex)} top alpha bound`).toBeLessThan(300);
+      expect(metric.averageAlpha, `frame ${String(metric.frameIndex)} average alpha`).toBeGreaterThan(150);
+      expect(metric.minY, `frame ${String(metric.frameIndex)} top alpha bound`).toBeLessThan(320);
+      expect(metric.maxY, `frame ${String(metric.frameIndex)} feet baseline`).toBe(EXPECTED_FEET_Y);
     }
   });
 });
