@@ -20,25 +20,33 @@ export interface WeaponFamilyCraftPresentation {
   readonly symbol: string;
 }
 
-/** Dedicated combat presentation overrides for authored specialization sheets. */
+/** Dedicated combat actor overrides for authored specialization sheets. */
 const SPECIALIZATION_COMBAT_PRESENTATION: Readonly<
   Record<string, Omit<EquipmentPresentationDefinition, "itemIcon">>
 > = {
+  mastery_badon: {
+    actorManifestId: "hero_badon",
+  },
+  mastery_wailing_bow: {
+    actorManifestId: "hero_wailing",
+  },
+  mastery_whispering_bow: {
+    actorManifestId: "hero_whispering",
+  },
+  mastery_warbow: {
+    actorManifestId: "hero_warbow",
+  },
   mastery_bloodletter: {
     actorManifestId: "hero_bloodletter",
-    combatProfileId: "melee",
   },
   mastery_demonfang: {
     actorManifestId: "hero_demonfang",
-    combatProfileId: "melee",
   },
   mastery_deathgivers: {
     actorManifestId: "hero_deathgivers",
-    combatProfileId: "melee",
   },
   mastery_claws: {
     actorManifestId: "hero_claws",
-    combatProfileId: "melee",
   },
 };
 
@@ -70,17 +78,21 @@ const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
 
 function resolveCombatPresentation(itemId: string) {
   const specializationMasteryId = resolveWeaponMastery(itemId)?.weaponId;
-  if (specializationMasteryId !== undefined) {
-    const override = SPECIALIZATION_COMBAT_PRESENTATION[specializationMasteryId];
-    if (override !== undefined) return override;
-  }
-
   const specializationPresentation = resolveWeaponPresentation(itemId);
-  if (specializationPresentation !== undefined) return specializationPresentation;
-
   const familyId = resolveWeaponFamilyId(itemId);
-  if (familyId === undefined) return undefined;
-  return resolveWeaponPresentation(FALLBACK_PRESENTATION_ITEM_BY_WEAPON_FAMILY[familyId]);
+  const inheritedPresentation = specializationPresentation
+    ?? (familyId === undefined
+      ? undefined
+      : resolveWeaponPresentation(FALLBACK_PRESENTATION_ITEM_BY_WEAPON_FAMILY[familyId]));
+
+  if (specializationMasteryId === undefined) return inheritedPresentation;
+  const override = SPECIALIZATION_COMBAT_PRESENTATION[specializationMasteryId];
+  if (override === undefined) return inheritedPresentation;
+
+  return {
+    ...inheritedPresentation,
+    ...override,
+  };
 }
 
 /**
