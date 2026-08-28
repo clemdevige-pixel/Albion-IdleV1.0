@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { resolveEquipmentPresentation } from "../../data/equipmentPresentation";
 import {
   WEAPON_ITEM_DEFINITIONS,
   resolveWeaponArtifactFaction,
@@ -22,13 +23,26 @@ function readEngineSources(): readonly { readonly path: string; readonly source:
 describe("content / engine architectural boundary", () => {
   it("keeps every available weapon render route resolvable and marks asset-pending artifact weapons explicitly", () => {
     for (const itemId of Object.keys(WEAPON_ITEM_DEFINITIONS)) {
-      const presentation = resolveWeaponPresentation(itemId);
-      if (presentation === undefined) {
-        expect(resolveWeaponArtifactFaction(itemId), `${itemId}: missing presentation must be artifact content awaiting assets`).toBeDefined();
-        continue;
+      const authoredPresentation = resolveWeaponPresentation(itemId);
+      if (authoredPresentation === undefined) {
+        expect(
+          resolveWeaponArtifactFaction(itemId),
+          `${itemId}: missing authored presentation must be artifact content awaiting dedicated assets`,
+        ).toBeDefined();
       }
 
-      expect(renderManifestRegistry.getActor(presentation.actorManifestId), `${itemId}: actor manifest ${presentation.actorManifestId}`).toBeDefined();
+      const presentation = resolveEquipmentPresentation(itemId);
+      expect(presentation, `${itemId}: missing effective equipment presentation`).toBeDefined();
+      expect(
+        presentation?.actorManifestId,
+        `${itemId}: missing effective actor manifest id`,
+      ).toBeDefined();
+      if (presentation?.actorManifestId === undefined) continue;
+
+      expect(
+        renderManifestRegistry.getActor(presentation.actorManifestId),
+        `${itemId}: actor manifest ${presentation.actorManifestId}`,
+      ).toBeDefined();
 
       if (presentation.combatPresentation?.kind === "projectile") {
         expect(
@@ -51,10 +65,11 @@ describe("content / engine architectural boundary", () => {
 
     for (const itemId of Object.keys(WEAPON_ITEM_DEFINITIONS)) {
       forbiddenIds.add(itemId);
-      const presentation = resolveWeaponPresentation(itemId);
-      if (presentation === undefined) continue;
-      forbiddenIds.add(presentation.actorManifestId);
-      if (presentation.combatPresentation?.kind === "projectile") forbiddenIds.add(presentation.combatPresentation.projectileId);
+      const presentation = resolveEquipmentPresentation(itemId);
+      if (presentation?.actorManifestId !== undefined) forbiddenIds.add(presentation.actorManifestId);
+      if (presentation?.combatPresentation?.kind === "projectile") {
+        forbiddenIds.add(presentation.combatPresentation.projectileId);
+      }
     }
 
     for (const monster of Object.values(MONSTER_DEFINITIONS)) {
