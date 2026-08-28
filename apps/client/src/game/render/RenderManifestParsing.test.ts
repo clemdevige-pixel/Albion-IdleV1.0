@@ -74,11 +74,11 @@ describe("Hero state-specific presentation parsing", () => {
       expect(parsed.offset).toEqual(testCase.offset);
       for (const state of ["idle", "attack"] as const) {
         expect(parsed.animations[state]).toMatchObject({
-          frameWidth: 512,
-          frameHeight: 512,
-          startFrame: 0,
-          endFrame: 5,
-          display: testCase.combatDisplay,
+          frameWidth: testCase.manifest.animations[state].frameWidth,
+          frameHeight: testCase.manifest.animations[state].frameHeight,
+          startFrame: testCase.manifest.animations[state].startFrame,
+          endFrame: testCase.manifest.animations[state].endFrame,
+          display: testCase.manifest.animations[state].display,
         });
       }
 

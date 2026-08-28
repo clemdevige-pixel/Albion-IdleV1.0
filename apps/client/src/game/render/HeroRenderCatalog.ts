@@ -5,6 +5,8 @@ import type {
   ActorRenderManifest,
 } from "./RenderManifest";
 import {
+  buildNormalizedHeroDisplay,
+  buildNormalizedHeroOffset,
   buildSharedHeroDeathPose,
   buildSharedHeroWalkAnimation,
 } from "./HeroVisualArchetypeCatalog";
@@ -13,6 +15,8 @@ type HeroAnimationSource = {
   readonly textureKey: string;
   readonly assetPath: string;
   readonly frameRate: number;
+  readonly startFrame?: number;
+  readonly endFrame?: number;
 };
 
 type HeroSheetProfile = {
@@ -21,6 +25,7 @@ type HeroSheetProfile = {
   readonly startFrame: number;
   readonly endFrame: number;
   readonly display: ActorDisplayManifest;
+  readonly offset?: ActorOffsetManifest;
 };
 
 type HeroRenderDefinition = {
@@ -52,21 +57,32 @@ const STANDARD_SIX_FRAME_SHEET = {
   display: { width: 228.5714285714, height: 228.5714285714 },
 } as const satisfies HeroSheetProfile;
 
+const DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX = 397;
+const DUAL_DAGGER_SHEET = {
+  frameWidth: 512,
+  frameHeight: 640,
+  startFrame: 0,
+  endFrame: 5,
+  display: buildNormalizedHeroDisplay(512, 640, DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX),
+  offset: buildNormalizedHeroOffset(DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX, 64),
+} as const satisfies HeroSheetProfile;
+
 function buildAnimation(
   source: HeroAnimationSource,
   sheet: HeroSheetProfile,
   repeat: number,
   offset?: ActorOffsetManifest,
 ): ActorRenderManifest["animations"]["idle"] {
+  const animationOffset = offset ?? sheet.offset;
   return {
     ...source,
     frameWidth: sheet.frameWidth,
     frameHeight: sheet.frameHeight,
-    startFrame: sheet.startFrame,
-    endFrame: sheet.endFrame,
+    startFrame: source.startFrame ?? sheet.startFrame,
+    endFrame: source.endFrame ?? sheet.endFrame,
     repeat,
     display: sheet.display,
-    ...(offset === undefined ? {} : { offset }),
+    ...(animationOffset === undefined ? {} : { offset: animationOffset }),
   };
 }
 
@@ -235,22 +251,18 @@ const HERO_RENDER_DEFINITIONS = [
     id: "hero_dagger_pair",
     familyId: "dagger",
     offset: { x: 0, y: 58 },
-    sheet: {
-      frameWidth: 512,
-      frameHeight: 512,
-      startFrame: 0,
-      endFrame: 5,
-      display: { width: 182, height: 182 },
-    },
+    sheet: DUAL_DAGGER_SHEET,
     animations: {
       idle: {
-        textureKey: "hero-dagger-pair-idle",
-        assetPath: "/assets/characters/hero_dual_dagger_idle.png",
+        textureKey: "hero-dual-dagger-attack-sheet-v2",
+        assetPath: "/assets/characters/hero-dual-dagger-attack-sheet-v2.png",
         frameRate: 6,
+        startFrame: 0,
+        endFrame: 0,
       },
       attack: {
-        textureKey: "hero-dagger-pair-attack",
-        assetPath: "/assets/characters/hero_dual_dagger_attack.png",
+        textureKey: "hero-dual-dagger-attack-sheet-v2",
+        assetPath: "/assets/characters/hero-dual-dagger-attack-sheet-v2.png",
         frameRate: 16,
       },
     },

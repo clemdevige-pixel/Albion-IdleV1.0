@@ -58,20 +58,25 @@ const SHARED_SHEET = {
   endFrame: 5,
 } as const;
 
-function buildNormalizedDisplay(sourceCharacterHeight: number): ActorDisplayManifest {
+export function buildNormalizedHeroDisplay(
+  frameWidth: number,
+  frameHeight: number,
+  sourceCharacterHeight: number,
+): ActorDisplayManifest {
   const scale = HERO_TARGET_HEIGHT_PX / sourceCharacterHeight / COMBAT_ACTOR_PRESENTATION_SCALE;
   return {
-    width: HERO_ARCHETYPE_FRAME_WIDTH_PX * scale,
-    height: HERO_ARCHETYPE_FRAME_HEIGHT_PX * scale,
+    width: frameWidth * scale,
+    height: frameHeight * scale,
   };
 }
 
-function buildNormalizedOffset(sourceCharacterHeight: number): ActorOffsetManifest {
+export function buildNormalizedHeroOffset(
+  sourceCharacterHeight: number,
+  feetMargin: number,
+): ActorOffsetManifest {
   return {
     x: 0,
-    y:
-      HERO_BASE_OFFSET_Y +
-      HERO_ARCHETYPE_FEET_MARGIN_PX * (HERO_TARGET_HEIGHT_PX / sourceCharacterHeight),
+    y: HERO_BASE_OFFSET_Y + feetMargin * (HERO_TARGET_HEIGHT_PX / sourceCharacterHeight),
   };
 }
 
@@ -147,9 +152,13 @@ export function buildSharedHeroWalkAnimation(familyId: WeaponFamilyId): ActorAni
   return {
     ...walk,
     ...archetype.sheet,
-    display: buildNormalizedDisplay(sourceCharacterHeight),
+    display: buildNormalizedHeroDisplay(
+      archetype.sheet.frameWidth,
+      archetype.sheet.frameHeight,
+      sourceCharacterHeight,
+    ),
     repeat: -1,
-    offset: buildNormalizedOffset(sourceCharacterHeight),
+    offset: buildNormalizedHeroOffset(sourceCharacterHeight, HERO_ARCHETYPE_FEET_MARGIN_PX),
   };
 }
 
@@ -159,8 +168,12 @@ export function buildSharedHeroDeathPose(familyId: WeaponFamilyId): ActorPoseMan
   return {
     ...death,
     ...archetype.sheet,
-    display: buildNormalizedDisplay(sourceCharacterHeight),
+    display: buildNormalizedHeroDisplay(
+      archetype.sheet.frameWidth,
+      archetype.sheet.frameHeight,
+      sourceCharacterHeight,
+    ),
     repeat: 0,
-    offset: buildNormalizedOffset(sourceCharacterHeight),
+    offset: buildNormalizedHeroOffset(sourceCharacterHeight, HERO_ARCHETYPE_FEET_MARGIN_PX),
   };
 }
