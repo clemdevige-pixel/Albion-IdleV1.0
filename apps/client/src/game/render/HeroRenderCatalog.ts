@@ -169,12 +169,18 @@ const MELEE_VISUAL_PARAMETERS = {
   motionDurationMs: 140,
   impactDelayMs: 150,
 } as const;
+const GLOVE_VISUAL_PARAMETERS = {
+  approachDistance: 48,
+  motionDurationMs: 150,
+  impactDelayMs: 235,
+} as const;
 const PROJECTILE_VISUAL_PARAMETERS = {
   approachDistance: 0,
   motionDurationMs: 0,
   impactDelayMs: 355,
 } as const;
 const DAGGER_AMBIENT_MOTION = { distance: 4, durationMs: 800, delayMs: 0 } as const;
+const GLOVE_AMBIENT_MOTION = { distance: 4, durationMs: 850, delayMs: 0 } as const;
 const BOW_AMBIENT_MOTION = { distance: 4, durationMs: 900, delayMs: 0 } as const;
 
 const HERO_RENDER_DEFINITIONS = [
@@ -284,31 +290,66 @@ const HERO_RENDER_DEFINITIONS = [
     visualParameters: PROJECTILE_VISUAL_PARAMETERS,
     ambientMotion: { distance: 4, durationMs: 900, delayMs: 0 },
   },
-  {
+  createNormalizedHeroDefinition({
     id: "hero_spiked_gauntlets",
     familyId: "gloves",
-    offset: HERO_BASE_OFFSET,
-    sheet: STANDARD_SIX_FRAME_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-spiked-gauntlets-idle-sheet-v2",
-        assetPath: "/assets/characters/hero-spiked-gauntlets-idle-sheet-v1.png",
-        frameRate: 6,
-      },
-      attack: {
-        textureKey: "hero-spiked-gauntlets-attack-sheet-v2",
-        assetPath: "/assets/characters/hero-spiked-gauntlets-attack-sheet-v1.png",
-        frameRate: 16,
-      },
-    },
+    textureKey: "hero-spiked-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-spiked-attack-normalized-v1.png",
+    sourceCharacterHeight: 470,
+    idleFrame: 0,
+    attackFrameRate: 16,
     visualProfile: "melee",
-    visualParameters: {
-      approachDistance: 48,
-      motionDurationMs: 150,
-      impactDelayMs: 235,
-    },
-    ambientMotion: { distance: 4, durationMs: 850, delayMs: 0 },
-  },
+    visualParameters: GLOVE_VISUAL_PARAMETERS,
+    ambientMotion: GLOVE_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_ursine_maulers",
+    familyId: "gloves",
+    textureKey: "hero-ursine-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-ursine-attack-normalized-v1.png",
+    sourceCharacterHeight: 487,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: GLOVE_VISUAL_PARAMETERS,
+    ambientMotion: GLOVE_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_battle_bracers",
+    familyId: "gloves",
+    textureKey: "hero-battle-bracers-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-battle-bracers-attack-normalized-v1.png",
+    sourceCharacterHeight: 478,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: GLOVE_VISUAL_PARAMETERS,
+    ambientMotion: GLOVE_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_hellfire_hands",
+    familyId: "gloves",
+    textureKey: "hero-hellfire-hands-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-hellfire-hands-attack-normalized-v1.png",
+    sourceCharacterHeight: 415,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: GLOVE_VISUAL_PARAMETERS,
+    ambientMotion: GLOVE_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_ravenstrike_cestus",
+    familyId: "gloves",
+    textureKey: "hero-ravenstrike-cestus-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-ravenstrike-cestus-attack-normalized-v1.png",
+    sourceCharacterHeight: 475,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: GLOVE_VISUAL_PARAMETERS,
+    ambientMotion: GLOVE_AMBIENT_MOTION,
+  }),
   createNormalizedHeroDefinition({
     id: "hero_dagger_pair",
     familyId: "dagger",
