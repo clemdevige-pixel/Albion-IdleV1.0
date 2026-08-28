@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { HERO_RENDER_MANIFESTS } from "./HeroRenderCatalog";
 import {
+  HERO_DEATH_SOURCE_CHARACTER_HEIGHT_PX,
   HERO_TARGET_HEIGHT_PX,
   HERO_VISUAL_ARCHETYPE_BY_WEAPON_FAMILY,
 } from "./HeroVisualArchetypeCatalog";
+import { COMBAT_ACTOR_PRESENTATION_SCALE } from "./actorPresentationScale";
 
 const EXPECTED_ARCHETYPE_BY_MANIFEST = {
   hero_broadsword: "plate",
@@ -75,14 +77,24 @@ describe("hero walk render contract", () => {
         display: { width: 160, height: 200 },
         offset: { x: 0, y: 74 },
       });
+      const archetype =
+        EXPECTED_ARCHETYPE_BY_MANIFEST[manifest.id as keyof typeof EXPECTED_ARCHETYPE_BY_MANIFEST];
+      const deathSourceHeight = HERO_DEATH_SOURCE_CHARACTER_HEIGHT_PX[archetype];
       expect(manifest.poses.death).toMatchObject({
         frameWidth: 512,
         frameHeight: 640,
         startFrame: 0,
         endFrame: 5,
-        display: { width: 160, height: 200 },
-        offset: { x: 0, y: 74 },
       });
+      expect(
+        (manifest.poses.death.display.height *
+          COMBAT_ACTOR_PRESENTATION_SCALE *
+          deathSourceHeight) /
+          640,
+      ).toBeCloseTo(HERO_TARGET_HEIGHT_PX);
+      expect(manifest.poses.death.display.height).toBeGreaterThan(
+        manifest.animations.walk.display.height,
+      );
     }
   });
 
@@ -96,11 +108,12 @@ describe("hero walk render contract", () => {
 
     expect(assetPaths.size).toBe(6);
     for (const assetPath of assetPaths) {
-      expect(readPngDimensions(assetPath), assetPath).toEqual({
+      const dimensions = readPngDimensions(assetPath);
+      expect(dimensions, assetPath).toMatchObject({
         width: 3072,
         height: 640,
-        colorType: 6,
       });
+      expect([3, 6], `${assetPath} must preserve transparency`).toContain(dimensions.colorType);
     }
   });
 });

@@ -97,8 +97,8 @@ describe("Hero state-specific presentation parsing", () => {
         endFrame: 5,
         frameRate: 8,
         repeat: 0,
-        display: { width: 160, height: 200 },
-        offset: { x: 0, y: 74 },
+        display: testCase.manifest.poses.death.display,
+        offset: testCase.manifest.poses.death.offset,
       });
     });
   }

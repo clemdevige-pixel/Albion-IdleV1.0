@@ -4,7 +4,10 @@ import type {
   ActorOffsetManifest,
   ActorRenderManifest,
 } from "./RenderManifest";
-import { buildSharedHeroDeathPose, requireHeroVisualArchetype } from "./HeroVisualArchetypeCatalog";
+import {
+  buildSharedHeroDeathPose,
+  buildSharedHeroWalkAnimation,
+} from "./HeroVisualArchetypeCatalog";
 
 type HeroAnimationSource = {
   readonly textureKey: string;
@@ -68,8 +71,6 @@ function buildAnimation(
 }
 
 export function createHeroRenderManifest(definition: HeroRenderDefinition): ActorRenderManifest {
-  const archetype = requireHeroVisualArchetype(definition.familyId);
-
   return {
     schemaVersion: 1,
     id: definition.id,
@@ -82,12 +83,7 @@ export function createHeroRenderManifest(definition: HeroRenderDefinition): Acto
         definition.sheet,
         HERO_ANIMATION_REPEAT.idle,
       ),
-      walk: buildAnimation(
-        archetype.walk,
-        archetype.sheet,
-        HERO_ANIMATION_REPEAT.walk,
-        archetype.offset,
-      ),
+      walk: buildSharedHeroWalkAnimation(definition.familyId),
       attack: buildAnimation(
         definition.animations.attack,
         definition.sheet,

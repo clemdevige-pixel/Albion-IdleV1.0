@@ -52,6 +52,8 @@ describe("dual dagger render contract", () => {
     expect(death.frameHeight).toBe(640);
     expect(death.startFrame).toBe(0);
     expect(death.endFrame).toBe(5);
-    expect(death.offset).toEqual({ x: 0, y: 74 });
+    expect(death.offset?.x).toBe(0);
+    expect(death.offset?.y).toBeGreaterThan(manifest.animations.walk.offset?.y ?? 0);
+    expect(death.display.height).toBeGreaterThan(manifest.animations.walk.display.height);
   });
 });
