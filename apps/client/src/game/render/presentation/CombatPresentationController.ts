@@ -152,6 +152,7 @@ export class CombatPresentationController {
     this.lastDamageEventId = Math.max(this.lastDamageEventId, latestDamageEventId);
     this.invalidateEncounterPresentation();
     this.scene.tweens.killTweensOf(this.playerBody);
+    this.actorSystem.suspendAmbientMotion(this.playerBody);
     this.playerBody.setVisible(true);
     this.hudSystem.setPlayerVisible(false);
     this.heroSystem.play("walk");
@@ -159,6 +160,7 @@ export class CombatPresentationController {
 
   public placePlayerAtTravelEntry(x: number): void {
     this.scene.tweens.killTweensOf(this.playerBody);
+    this.actorSystem.suspendAmbientMotion(this.playerBody);
     this.playerBody.x = x;
     this.playerBody.setVisible(true);
     this.heroSystem.play("walk");
@@ -169,6 +171,7 @@ export class CombatPresentationController {
     this.playerBody.x = this.playerHomeX;
     this.playerBody.setVisible(true);
     this.heroSystem.play("idle");
+    this.actorSystem.resumeAmbientMotion(this.playerBody);
     this.hudSystem.setPlayerVisible(true);
   }
 
