@@ -102,6 +102,10 @@ describe("dual dagger sprite asset", () => {
 
     const metrics = Array.from({ length: FRAME_COUNT }, (_, frameIndex) => {
       let visiblePixels = 0;
+      let opaquePixels = 0;
+      let alphaSum = 0;
+      let minAlpha = 255;
+      let maxAlpha = 0;
       let minX = FRAME_WIDTH;
       let maxX = -1;
       let minY = FRAME_HEIGHT;
@@ -112,8 +116,13 @@ describe("dual dagger sprite asset", () => {
       for (let y = 0; y < image.height; y += 1) {
         for (let x = startX; x < endX; x += 1) {
           const alphaIndex = (y * image.width + x) * 4 + 3;
-          if ((image.rgba[alphaIndex] ?? 0) === 0) continue;
+          const alpha = image.rgba[alphaIndex] ?? 0;
+          if (alpha === 0) continue;
           visiblePixels += 1;
+          alphaSum += alpha;
+          minAlpha = Math.min(minAlpha, alpha);
+          maxAlpha = Math.max(maxAlpha, alpha);
+          if (alpha >= 250) opaquePixels += 1;
           const localX = x - startX;
           minX = Math.min(minX, localX);
           maxX = Math.max(maxX, localX);
@@ -122,13 +131,27 @@ describe("dual dagger sprite asset", () => {
         }
       }
 
-      return { frameIndex, visiblePixels, minX, maxX, minY, maxY };
+      return {
+        frameIndex,
+        visiblePixels,
+        opaquePixels,
+        minAlpha: visiblePixels === 0 ? 0 : minAlpha,
+        maxAlpha,
+        averageAlpha: visiblePixels === 0 ? 0 : alphaSum / visiblePixels,
+        minX,
+        maxX,
+        minY,
+        maxY,
+      };
     });
 
-    console.info("[DUAL_DAGGER_ALPHA_BOUNDS]", JSON.stringify(metrics));
+    console.info("[DUAL_DAGGER_ALPHA_METRICS]", JSON.stringify(metrics));
 
     for (const metric of metrics) {
       expect(metric.visiblePixels, `frame ${String(metric.frameIndex)} alpha pixels`).toBeGreaterThan(1_000);
+      expect(metric.opaquePixels, `frame ${String(metric.frameIndex)} opaque pixels`).toBeGreaterThan(1_000);
+      expect(metric.maxAlpha, `frame ${String(metric.frameIndex)} max alpha`).toBeGreaterThanOrEqual(250);
+      expect(metric.averageAlpha, `frame ${String(metric.frameIndex)} average alpha`).toBeGreaterThan(100);
       expect(metric.maxY, `frame ${String(metric.frameIndex)} bottom alpha bound`).toBeGreaterThan(300);
       expect(metric.minY, `frame ${String(metric.frameIndex)} top alpha bound`).toBeLessThan(300);
     }
