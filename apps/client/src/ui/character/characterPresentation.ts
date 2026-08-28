@@ -34,6 +34,14 @@ function buildIdlePresentation(manifest: ActorRenderManifest): HeroIdlePresentat
   };
 }
 
+export function getHeroIdleBackgroundPosition(
+  presentation: HeroIdlePresentation,
+): string | undefined {
+  if (!presentation.spriteSheet) return undefined;
+  if (presentation.frameCount <= 1) return "0% bottom";
+  return `${String((presentation.frameIndex / (presentation.frameCount - 1)) * 100)}% bottom`;
+}
+
 export function getEquippedHeroIdlePresentation(
   weaponId: string | undefined,
 ): HeroIdlePresentation {
