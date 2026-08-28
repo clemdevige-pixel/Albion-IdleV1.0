@@ -36,6 +36,18 @@ const SPECIALIZATION_COMBAT_PRESENTATION: Readonly<
   mastery_warbow: {
     actorManifestId: "hero_warbow",
   },
+  mastery_ursine_maulers: {
+    actorManifestId: "hero_ursine_maulers",
+  },
+  mastery_ravenstrike_cestus: {
+    actorManifestId: "hero_ravenstrike_cestus",
+  },
+  mastery_hellfire_hands: {
+    actorManifestId: "hero_hellfire_hands",
+  },
+  mastery_battle_bracers: {
+    actorManifestId: "hero_battle_bracers",
+  },
   mastery_bloodletter: {
     actorManifestId: "hero_bloodletter",
   },
