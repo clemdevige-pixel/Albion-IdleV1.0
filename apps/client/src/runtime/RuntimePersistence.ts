@@ -167,6 +167,7 @@ export class RuntimePersistence {
       this.saveRepository,
       this.saveSlotId,
       this.backupSlotId,
+      { continueWithoutBackupOnStorageFailure: true },
     );
     const extra = this.trustedOfflineResolvedThrough === undefined
       ? undefined

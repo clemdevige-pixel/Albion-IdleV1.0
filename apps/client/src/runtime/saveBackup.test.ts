@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   InMemorySaveRepository,
+  LocalStorageSaveRepository,
   SerializationFailedError,
   type SaveFormat,
 } from "@game/persistence";
 import { backupCurrentSave, loadSaveWithBackup } from "./saveBackup";
 
-function makeSave(updatedAt: number): SaveFormat {
+function makeSave(updatedAt: number, padding = ""): SaveFormat {
   return {
     version: 1,
     metadata: {
@@ -16,9 +17,54 @@ function makeSave(updatedAt: number): SaveFormat {
       buildVersion: "test",
       seed: 42,
     },
-    payload: { updatedAt },
+    payload: { updatedAt, padding },
     checksum: `checksum-${String(updatedAt)}`,
   };
+}
+
+class QuotaStorage implements Storage {
+  private readonly values = new Map<string, string>();
+  public quota = Number.POSITIVE_INFINITY;
+
+  get length(): number {
+    return this.values.size;
+  }
+
+  clear(): void {
+    this.values.clear();
+  }
+
+  getItem(key: string): string | null {
+    return this.values.get(key) ?? null;
+  }
+
+  key(index: number): string | null {
+    return [...this.values.keys()][index] ?? null;
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key);
+  }
+
+  setItem(key: string, value: string): void {
+    const next = new Map(this.values);
+    next.set(key, value);
+    const size = [...next.entries()].reduce(
+      (total, [storedKey, storedValue]) => total + storedKey.length + storedValue.length,
+      0,
+    );
+    if (size > this.quota) {
+      throw new DOMException("The quota has been exceeded.", "QuotaExceededError");
+    }
+    this.values.set(key, value);
+  }
+
+  get used(): number {
+    return [...this.values.entries()].reduce(
+      (total, [key, value]) => total + key.length + value.length,
+      0,
+    );
+  }
 }
 
 class RestoreFailingRepository extends InMemorySaveRepository {
@@ -47,6 +93,40 @@ describe("save backup", () => {
 
     expect(backupCurrentSave(repository, "primary", "backup")).toBe(false);
     expect(repository.has("backup")).toBe(false);
+  });
+
+  it("frees a stale backup and lets the primary advance when LocalStorage is full", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const storage = new QuotaStorage();
+    const repository = new LocalStorageSaveRepository({ storage, keyPrefix: "test_" });
+    const primary = makeSave(10, "x".repeat(200));
+    repository.save("primary", primary);
+    repository.save("backup", makeSave(5));
+    storage.quota = storage.used;
+
+    expect(backupCurrentSave(
+      repository,
+      "primary",
+      "backup",
+      { continueWithoutBackupOnStorageFailure: true },
+    )).toBe(false);
+    expect(repository.has("backup")).toBe(false);
+
+    const advanced = makeSave(11, "x".repeat(220));
+    repository.save("primary", advanced);
+    expect(repository.get("primary")).toEqual(advanced);
+  });
+
+  it("keeps backup creation strict for destructive persistence flows", () => {
+    const storage = new QuotaStorage();
+    const repository = new LocalStorageSaveRepository({ storage, keyPrefix: "test_" });
+    repository.save("primary", makeSave(10, "x".repeat(200)));
+    repository.save("backup", makeSave(5));
+    storage.quota = storage.used;
+
+    expect(() => backupCurrentSave(repository, "primary", "backup"))
+      .toThrow(SerializationFailedError);
+    expect(repository.has("backup")).toBe(true);
   });
 
   it("loads the primary save when it is valid", () => {
