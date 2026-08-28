@@ -95,17 +95,20 @@ export function preloadActorManifest(scene: Phaser.Scene, manifest: ActorRenderM
     );
   }
 
-  const death = manifest.poses.death;
   if (hasAnimatedDeath(manifest)) {
+    const death = manifest.poses.death;
     queueSpritesheet(
       death.textureKey,
       death.assetPath,
       death.frameWidth,
       death.frameHeight,
     );
-  } else if (!queuedTextureKeys.has(death.textureKey)) {
-    queuedTextureKeys.add(death.textureKey);
-    scene.load.image(death.textureKey, death.assetPath);
+  } else {
+    const death = manifest.poses.death;
+    if (!queuedTextureKeys.has(death.textureKey)) {
+      queuedTextureKeys.add(death.textureKey);
+      scene.load.image(death.textureKey, death.assetPath);
+    }
   }
 }
 
