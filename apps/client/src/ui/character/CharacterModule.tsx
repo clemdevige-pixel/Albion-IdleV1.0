@@ -3,6 +3,7 @@ import type { EquipmentLoadout, EquipmentSlot } from "@game/gameplay";
 import { getItemTier } from "../../data/itemPower";
 import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { ItemSlot } from "../shared/ItemSlot";
+import { getCroppedHeroIdleFrame, type CroppedHeroIdleFrame } from "./characterIdleFrameCrop";
 import {
   getEquippedHeroIdlePresentation,
   getHeroIdleBackgroundPosition,
@@ -52,6 +53,7 @@ export function CharacterModule(): JSX.Element {
   const [editingLoadoutId, setEditingLoadoutId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [pickerSlot, setPickerSlot] = useState<{ slot: EquipmentSlot; x: number; y: number } | null>(null);
+  const [croppedHeroIdle, setCroppedHeroIdle] = useState<CroppedHeroIdleFrame | undefined>(undefined);
 
   const equipmentBySlot = useMemo(
     () => new Map(character.equipment.map((entry) => [entry.slot, entry])),
@@ -79,6 +81,36 @@ export function CharacterModule(): JSX.Element {
   const equippedWeapon = equipmentBySlot.get("weapon");
   const heroIdle = getEquippedHeroIdlePresentation(equippedWeapon?.itemId);
   const heroIdlePreviewSize = getHeroIdlePreviewSize(heroIdle);
+  const heroIdleFrameIndex = heroIdle.spriteSheet ? heroIdle.frameIndex : -1;
+  const heroIdleFrameWidth = heroIdle.spriteSheet ? heroIdle.frameWidth : 0;
+  const heroIdleFrameHeight = heroIdle.spriteSheet ? heroIdle.frameHeight : 0;
+
+  useEffect(() => {
+    setCroppedHeroIdle(undefined);
+    const request = getCroppedHeroIdleFrame(heroIdle);
+    if (request === undefined) return;
+
+    let active = true;
+    void request.then((frame) => {
+      if (active) setCroppedHeroIdle(frame);
+    }).catch(() => {
+      if (active) setCroppedHeroIdle(undefined);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [heroIdle.image, heroIdle.spriteSheet, heroIdleFrameIndex, heroIdleFrameWidth, heroIdleFrameHeight]);
+
+  const croppedHeroIdlePreviewSize = heroIdle.spriteSheet
+    && heroIdlePreviewSize !== undefined
+    && croppedHeroIdle !== undefined
+    ? {
+        width: heroIdlePreviewSize.width * (croppedHeroIdle.width / heroIdle.frameWidth),
+        height: heroIdlePreviewSize.height * (croppedHeroIdle.height / heroIdle.frameHeight),
+      }
+    : undefined;
+
   const hasTwoHandedWeapon = equippedWeapon?.itemId !== undefined
     && resolveEquipmentInfo(equippedWeapon.itemId)?.handling === "two_handed";
   const candidates: readonly CharacterEquipmentCandidate[] = pickerSlot === null
@@ -222,24 +254,35 @@ export function CharacterModule(): JSX.Element {
           <div className="character-module__slots character-module__slots--left">{LEFT_SLOTS.map(renderSlot)}</div>
           <div className="character-module__hero">
             <div className="character-module__hero-halo" />
-            <div
-              className={`character-module__hero-idle${heroIdle.spriteSheet ? " character-module__hero-idle--sheet" : ""}`}
-              style={{
-                backgroundImage: `url("${heroIdle.image}")`,
-                ...(heroIdle.spriteSheet && heroIdlePreviewSize !== undefined
-                  ? {
-                      width: `${String(heroIdlePreviewSize.width)}px`,
-                      aspectRatio: `${String(heroIdlePreviewSize.width)} / ${String(heroIdlePreviewSize.height)}`,
-                      maxWidth: "100%",
-                      maxHeight: "100%",
-                      backgroundSize: `${String(heroIdle.frameCount * 100)}% 100%`,
-                      backgroundPosition: getHeroIdleBackgroundPosition(heroIdle),
-                    }
-                  : {}),
-              }}
-              role="img"
-              aria-label="Aperçu du héros équipé"
-            />
+            {croppedHeroIdle !== undefined && croppedHeroIdlePreviewSize !== undefined ? (
+              <img
+                className="character-module__hero-idle character-module__hero-idle--cropped"
+                src={croppedHeroIdle.image}
+                width={croppedHeroIdlePreviewSize.width}
+                height={croppedHeroIdlePreviewSize.height}
+                alt="Aperçu du héros équipé"
+                draggable={false}
+              />
+            ) : (
+              <div
+                className={`character-module__hero-idle${heroIdle.spriteSheet ? " character-module__hero-idle--sheet" : ""}`}
+                style={{
+                  backgroundImage: `url("${heroIdle.image}")`,
+                  ...(heroIdle.spriteSheet && heroIdlePreviewSize !== undefined
+                    ? {
+                        width: `${String(heroIdlePreviewSize.width)}px`,
+                        aspectRatio: `${String(heroIdlePreviewSize.width)} / ${String(heroIdlePreviewSize.height)}`,
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        backgroundSize: `${String(heroIdle.frameCount * 100)}% 100%`,
+                        backgroundPosition: getHeroIdleBackgroundPosition(heroIdle),
+                      }
+                    : {}),
+                }}
+                role="img"
+                aria-label="Aperçu du héros équipé"
+              />
+            )}
           </div>
           <div className="character-module__slots character-module__slots--right">{RIGHT_SLOTS.map(renderSlot)}</div>
         </div>
