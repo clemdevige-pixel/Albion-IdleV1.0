@@ -113,8 +113,8 @@ describe("dual dagger sprite asset", () => {
       return visiblePixels;
     });
 
-    expect(visiblePixelsPerFrame).toEqual(
-      visiblePixelsPerFrame.map((visiblePixels) => expect.toBeGreaterThan(0)),
-    );
+    for (const [frameIndex, visiblePixels] of visiblePixelsPerFrame.entries()) {
+      expect(visiblePixels, `frame ${String(frameIndex)} alpha pixels`).toBeGreaterThan(0);
+    }
   });
 });
