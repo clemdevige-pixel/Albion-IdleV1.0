@@ -36,6 +36,21 @@ const SPECIALIZATION_COMBAT_PRESENTATION: Readonly<
   mastery_warbow: {
     actorManifestId: "hero_warbow",
   },
+  mastery_infernal_staff: {
+    actorManifestId: "hero_infernal",
+  },
+  mastery_wildfire_staff: {
+    actorManifestId: "hero_wildfire",
+  },
+  mastery_blazing_staff: {
+    actorManifestId: "hero_blazing",
+  },
+  mastery_brimstone_staff: {
+    actorManifestId: "hero_brimstone",
+  },
+  mastery_great_fire_staff: {
+    actorManifestId: "hero_great_fire",
+  },
   mastery_ursine_maulers: {
     actorManifestId: "hero_ursine_maulers",
   },
