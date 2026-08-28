@@ -73,26 +73,34 @@ describe("Hero state-specific presentation parsing", () => {
 
       expect(parsed.offset).toEqual(testCase.offset);
       for (const state of ["idle", "walk", "attack"] as const) {
+        const expectedAnimation = testCase.manifest.animations[state];
         expect(parsed.animations[state]).toMatchObject({
-          frameWidth: testCase.manifest.animations[state].frameWidth,
-          frameHeight: testCase.manifest.animations[state].frameHeight,
-          startFrame: testCase.manifest.animations[state].startFrame,
-          endFrame: testCase.manifest.animations[state].endFrame,
-          display: testCase.manifest.animations[state].display,
-          offset: testCase.manifest.animations[state].offset,
+          frameWidth: expectedAnimation.frameWidth,
+          frameHeight: expectedAnimation.frameHeight,
+          startFrame: expectedAnimation.startFrame,
+          endFrame: expectedAnimation.endFrame,
+          display: expectedAnimation.display,
+          ...(expectedAnimation.offset === undefined ? {} : { offset: expectedAnimation.offset }),
         });
+        if (expectedAnimation.offset === undefined) {
+          expect(parsed.animations[state].offset).toBeUndefined();
+        }
       }
 
+      const expectedDeath = testCase.manifest.poses.death;
       expect(parsed.poses.death).toMatchObject({
-        frameWidth: testCase.manifest.poses.death.frameWidth,
-        frameHeight: testCase.manifest.poses.death.frameHeight,
-        startFrame: testCase.manifest.poses.death.startFrame,
-        endFrame: testCase.manifest.poses.death.endFrame,
-        frameRate: testCase.manifest.poses.death.frameRate,
-        repeat: testCase.manifest.poses.death.repeat,
-        display: testCase.manifest.poses.death.display,
-        offset: testCase.manifest.poses.death.offset,
+        frameWidth: expectedDeath.frameWidth,
+        frameHeight: expectedDeath.frameHeight,
+        startFrame: expectedDeath.startFrame,
+        endFrame: expectedDeath.endFrame,
+        frameRate: expectedDeath.frameRate,
+        repeat: expectedDeath.repeat,
+        display: expectedDeath.display,
+        ...(expectedDeath.offset === undefined ? {} : { offset: expectedDeath.offset }),
       });
+      if (expectedDeath.offset === undefined) {
+        expect(parsed.poses.death.offset).toBeUndefined();
+      }
     });
   }
 });
