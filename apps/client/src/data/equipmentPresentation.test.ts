@@ -93,7 +93,7 @@ describe("weapon equipment presentation", () => {
     });
 
     for (const [itemId, itemIcon, actorManifestId] of [
-      ["item_weapon_gloves_t4_spiked_gauntlets", "icons/armes/spiked gauntlets.png", "hero_spiked_gauntlets"],
+      ["item_weapon_gloves_t4_spiked_gauntlets", "icons/armes/spike.png", "hero_spiked_gauntlets"],
       ["item_weapon_gloves_ursine_t4", "icons/armes/ursine maulers.png", "hero_ursine_maulers"],
       ["item_weapon_gloves_ravenstrike_t4", "icons/armes/ravenstrike cestus.png", "hero_ravenstrike_cestus"],
       ["item_weapon_gloves_hellfire_t4", "icons/armes/hellfire hands.png", "hero_hellfire_hands"],
