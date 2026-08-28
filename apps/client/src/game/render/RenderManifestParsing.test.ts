@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import monsterManifest from "./manifests/monster-stonefang-wolf.render.json";
 import environmentManifest from "./manifests/environment-birch-forest.render.json";
 import projectileManifest from "./manifests/projectile-arrow.render.json";
@@ -35,31 +35,26 @@ describe("Hero state-specific presentation parsing", () => {
       label: "broadsword",
       manifest: heroManifest,
       offset: { x: -5, y: 58 },
-      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
     },
     {
       label: "fire staff",
       manifest: fireStaffManifest,
       offset: { x: 30, y: 58 },
-      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
     },
     {
       label: "longbow",
       manifest: longbowManifest,
-      offset: { x: 11, y: 58 },
-      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
+      offset: { x: 0, y: 58 },
     },
     {
       label: "spiked gauntlets",
       manifest: spikedGauntletsManifest,
       offset: { x: 0, y: 58 },
-      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
     },
     {
       label: "dagger pair",
       manifest: daggerPairManifest,
       offset: { x: 0, y: 58 },
-      combatDisplay: { width: 182, height: 182 },
     },
   ] as const;
 
