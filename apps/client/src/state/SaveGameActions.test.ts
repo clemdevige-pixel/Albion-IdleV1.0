@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { EntityId } from "@game/core";
 import type { CurrencyService, InventoryManager, WalletId } from "@game/gameplay";
 import { SerializationFailedError } from "@game/persistence";
-import type { GameBridge } from "../game/GameBridge";
+import type { EconomyNotificationVM, GameBridge } from "../game/GameBridge";
 import type { RuntimePersistence } from "../runtime/RuntimePersistence";
 import { SaveGameActions } from "./SaveGameActions";
 
@@ -14,7 +14,7 @@ function createActions(
   load: () => void,
   loadSource: "primary" | "backup" | "backup_unrestored" = "primary",
 ) {
-  const addEconomyNotification = vi.fn();
+  const addEconomyNotification = vi.fn<(notification: EconomyNotificationVM) => void>();
   const setLoadFailed = vi.fn();
   const resetSilverBalance = vi.fn();
   const syncPlayerHealth = vi.fn();
@@ -74,9 +74,10 @@ describe("SaveGameActions load persistence recovery", () => {
     expect(deps.resetSilverBalance).toHaveBeenCalledWith(123);
     expect(deps.syncPlayerHealth).toHaveBeenCalledOnce();
     expect(deps.resyncAll).toHaveBeenCalledOnce();
-    expect(deps.addEconomyNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "error", message: expect.stringContaining("Auto-save is disabled") }),
-    );
+    expect(deps.addEconomyNotification).toHaveBeenCalledOnce();
+    const notification = deps.addEconomyNotification.mock.calls[0]?.[0];
+    expect(notification?.type).toBe("error");
+    expect(notification?.message).toContain("Auto-save is disabled");
   });
 
   it("locks saving when a valid backup loads but cannot be restored to primary", () => {
@@ -86,9 +87,10 @@ describe("SaveGameActions load persistence recovery", () => {
     expect(deps.setLoadFailed).toHaveBeenCalledWith(true);
     expect(deps.resetSilverBalance).toHaveBeenCalledWith(123);
     expect(deps.resyncAll).toHaveBeenCalledOnce();
-    expect(deps.addEconomyNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "error", message: expect.stringContaining("Auto-save is disabled") }),
-    );
+    expect(deps.addEconomyNotification).toHaveBeenCalledOnce();
+    const notification = deps.addEconomyNotification.mock.calls[0]?.[0];
+    expect(notification?.type).toBe("error");
+    expect(notification?.message).toContain("Auto-save is disabled");
   });
 
   it("keeps saving enabled after a healthy primary load", () => {
