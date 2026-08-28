@@ -6,6 +6,7 @@ import { ItemSlot } from "../shared/ItemSlot";
 import {
   getEquippedHeroIdlePresentation,
   getHeroIdleBackgroundPosition,
+  getHeroIdlePreviewSize,
 } from "./characterPresentation";
 import { AwakenedWeaponPanel } from "./components/AwakenedWeaponPanel";
 import {
@@ -77,6 +78,7 @@ export function CharacterModule(): JSX.Element {
 
   const equippedWeapon = equipmentBySlot.get("weapon");
   const heroIdle = getEquippedHeroIdlePresentation(equippedWeapon?.itemId);
+  const heroIdlePreviewSize = getHeroIdlePreviewSize(heroIdle);
   const hasTwoHandedWeapon = equippedWeapon?.itemId !== undefined
     && resolveEquipmentInfo(equippedWeapon.itemId)?.handling === "two_handed";
   const candidates: readonly CharacterEquipmentCandidate[] = pickerSlot === null
@@ -224,10 +226,11 @@ export function CharacterModule(): JSX.Element {
               className={`character-module__hero-idle${heroIdle.spriteSheet ? " character-module__hero-idle--sheet" : ""}`}
               style={{
                 backgroundImage: `url("${heroIdle.image}")`,
-                ...(heroIdle.spriteSheet
+                ...(heroIdle.spriteSheet && heroIdlePreviewSize !== undefined
                   ? {
-                      aspectRatio: `${heroIdle.frameWidth} / ${heroIdle.frameHeight}`,
-                      backgroundSize: `${heroIdle.frameCount * 100}% 100%`,
+                      width: `${String(heroIdlePreviewSize.width)}px`,
+                      height: `${String(heroIdlePreviewSize.height)}px`,
+                      backgroundSize: `${String(heroIdle.frameCount * 100)}% 100%`,
                       backgroundPosition: getHeroIdleBackgroundPosition(heroIdle),
                     }
                   : {}),
