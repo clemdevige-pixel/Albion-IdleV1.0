@@ -32,6 +32,14 @@ const SPECIALIZATION_COMBAT_PRESENTATION: Readonly<
     actorManifestId: "hero_demonfang",
     combatProfileId: "melee",
   },
+  mastery_deathgivers: {
+    actorManifestId: "hero_deathgivers",
+    combatProfileId: "melee",
+  },
+  mastery_claws: {
+    actorManifestId: "hero_claws",
+    combatProfileId: "melee",
+  },
 };
 
 /**
