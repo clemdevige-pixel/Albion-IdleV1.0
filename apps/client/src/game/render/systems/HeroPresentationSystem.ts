@@ -10,9 +10,6 @@ export interface HeroPresentationState {
   readonly segmentIndex: number;
 }
 
-const DUAL_DAGGER_MANIFEST_ID = "hero_dagger_pair";
-const LONG_BOW_MANIFEST_ID = "hero_longbow";
-
 /** Owns weapon-dependent hero animation selection and transitions. */
 export class HeroPresentationSystem {
   private readonly animationSystem: ActorAnimationSystem;
@@ -21,11 +18,9 @@ export class HeroPresentationSystem {
   private weaponInitialized = false;
   private currentCombatState = "";
   private defeatPresented = false;
-  private dualDaggerProbe: Phaser.GameObjects.Sprite | undefined;
-  private longBowProbe: Phaser.GameObjects.Sprite | undefined;
 
   public constructor(
-    private readonly sprite: Phaser.GameObjects.Sprite,
+    sprite: Phaser.GameObjects.Sprite,
     private readonly fallbackVisualManifestId: string,
   ) {
     this.animationSystem = new ActorAnimationSystem(sprite);
@@ -36,8 +31,6 @@ export class HeroPresentationSystem {
     const nextVisualManifestId =
       state.visualManifestId ?? this.fallbackVisualManifestId;
     const defeated = state.combatState === "defeat";
-
-    this.syncTextureProbes(nextVisualManifestId);
 
     if (defeated) {
       this.currentVisualManifestId = nextVisualManifestId;
@@ -84,47 +77,10 @@ export class HeroPresentationSystem {
   public clear(): void {
     this.currentActorVisual = undefined;
     this.animationSystem.clear();
-    this.clearTextureProbes();
   }
 
   private presentIdle(): void {
     this.play("idle");
-  }
-
-  private syncTextureProbes(visualManifestId: string): void {
-    if (visualManifestId !== DUAL_DAGGER_MANIFEST_ID) {
-      this.clearTextureProbes();
-      return;
-    }
-    if (this.dualDaggerProbe !== undefined || this.longBowProbe !== undefined) return;
-
-    const daggerIdle = renderManifestRegistry
-      .requireActor(DUAL_DAGGER_MANIFEST_ID)
-      .animations.idle;
-    const longBowIdle = renderManifestRegistry
-      .requireActor(LONG_BOW_MANIFEST_ID)
-      .animations.idle;
-    const { width, height } = this.sprite.scene.scale;
-
-    this.longBowProbe = this.sprite.scene.add
-      .sprite(width * 0.4, height * 0.5, longBowIdle.textureKey, longBowIdle.startFrame)
-      .setOrigin(0.5)
-      .setDisplaySize(160, 240)
-      .setDepth(2000)
-      .setVisible(true);
-    this.dualDaggerProbe = this.sprite.scene.add
-      .sprite(width * 0.6, height * 0.5, daggerIdle.textureKey, daggerIdle.startFrame)
-      .setOrigin(0.5)
-      .setDisplaySize(160, 240)
-      .setDepth(2000)
-      .setVisible(true);
-  }
-
-  private clearTextureProbes(): void {
-    this.dualDaggerProbe?.destroy();
-    this.longBowProbe?.destroy();
-    this.dualDaggerProbe = undefined;
-    this.longBowProbe = undefined;
   }
 
   private resolveActorVisual(
