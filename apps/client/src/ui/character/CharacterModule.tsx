@@ -229,7 +229,9 @@ export function CharacterModule(): JSX.Element {
                 ...(heroIdle.spriteSheet && heroIdlePreviewSize !== undefined
                   ? {
                       width: `${String(heroIdlePreviewSize.width)}px`,
-                      height: `${String(heroIdlePreviewSize.height)}px`,
+                      aspectRatio: `${String(heroIdlePreviewSize.width)} / ${String(heroIdlePreviewSize.height)}`,
+                      maxWidth: "100%",
+                      maxHeight: "100%",
                       backgroundSize: `${String(heroIdle.frameCount * 100)}% 100%`,
                       backgroundPosition: getHeroIdleBackgroundPosition(heroIdle),
                     }
