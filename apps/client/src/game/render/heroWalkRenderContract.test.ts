@@ -14,6 +14,10 @@ import { COMBAT_ACTOR_PRESENTATION_SCALE } from "./actorPresentationScale";
 
 const EXPECTED_ARCHETYPE_BY_MANIFEST = {
   hero_broadsword: "plate",
+  hero_clarent: "plate",
+  hero_carving: "plate",
+  hero_galatine: "plate",
+  hero_claymore: "plate",
   hero_longbow: "leather",
   hero_badon: "leather",
   hero_wailing: "leather",
