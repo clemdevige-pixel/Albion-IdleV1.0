@@ -136,10 +136,10 @@ describe("weapon equipment presentation", () => {
     }
   });
 
-  it("falls back to family combat art until specialization sheets exist", () => {
+  it("uses dedicated sword art once a specialization sheet exists", () => {
     expect(resolveEquipmentPresentation("item_weapon_sword_clarent_t4")).toEqual({
       itemIcon: "icons/armes/clarent blade.png",
-      actorManifestId: "hero_broadsword",
+      actorManifestId: "hero_clarent",
       combatProfileId: "melee",
     });
   });
@@ -147,6 +147,7 @@ describe("weapon equipment presentation", () => {
   it("does not add projectile presentation to melee weapons", () => {
     for (const itemId of [
       "item_weapon_sword_t4_broadsword",
+      "item_weapon_sword_clarent_t4",
       "item_weapon_gloves_t4_spiked_gauntlets",
       "item_weapon_gloves_ursine_t4",
       "item_weapon_gloves_ravenstrike_t4",
