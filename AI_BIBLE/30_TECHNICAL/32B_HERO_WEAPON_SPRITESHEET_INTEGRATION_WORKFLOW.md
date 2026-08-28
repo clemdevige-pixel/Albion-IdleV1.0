@@ -17,7 +17,7 @@ ONE authored attack spritesheet
 ↓
 pixel-perfect frame isolation
 ↓
-normalized 6 x 512x640 runtime sheet
+normalized N x 512x640 runtime sheet
 ↓
 HeroRenderCatalog manifest
 ├─ idle = one fixed authored frame from that attack sheet
@@ -25,6 +25,8 @@ HeroRenderCatalog manifest
 ├─ walk = shared archetype walk sheet
 └─ death = shared archetype death sheet
 ```
+
+`N` is the real authored frame count. Most current sheets use 6 frames, but the runtime contract must not invent a missing frame merely to reach 6 (for example, Claws uses 5 authored attack frames).
 
 Do not create a separate idle spritesheet when the specialization contract declares a fixed attack frame as idle.
 
@@ -70,13 +72,13 @@ If connected-component separation is not sufficient for a future source, perform
 
 # 4. Normalized Runtime Cell Contract
 
-Current canonical hero weapon attack sheet layout:
+Current canonical hero weapon attack cell layout:
 
 ```text
 frameWidth  = 512 px
 frameHeight = 640 px
-frameCount  = 6
-sheetWidth  = 3072 px
+frameCount  = authored frame count
+sheetWidth  = frameCount * 512 px
 sheetHeight = 640 px
 ```
 
@@ -100,13 +102,13 @@ Do not normalize by total source canvas dimensions. Normalize from the measured 
 The canonical rendered hero target is:
 
 ```text
-130 px from head to feet in the logical Phaser viewport
+140 px from head to feet in the logical Phaser viewport
 ```
 
 The authoritative constant is:
 
 ```text
-HERO_TARGET_HEIGHT_PX = 130
+HERO_TARGET_HEIGHT_PX = 140
 ```
 
 in:
@@ -184,7 +186,7 @@ leather
 cloth
 ```
 
-For example, dagger uses the leather archetype.
+For example, dagger and bow use the leather archetype.
 
 Do not create another Walk or Death sheet for a specialization unless the project contract explicitly changes.
 
@@ -234,7 +236,7 @@ Important rule for shared idle/attack sheets:
 - it does NOT mean the physical PNG contains only one frame
 - when idle and attack share the same asset, preview framing must derive the physical sheet frame count from the shared attack sheet
 
-Do not hardcode Dagger Pair or any weapon ID inside `CharacterModule.tsx` or CSS to fix preview framing.
+Do not hardcode a weapon ID inside `CharacterModule.tsx` or CSS to fix preview framing.
 
 Keep the React component generic.
 
@@ -257,7 +259,7 @@ At minimum validate:
 
 Tests must point to the current runtime asset, not a superseded version.
 
-The Dagger Pair incident showed that a PNG can load successfully in Phaser while still being visually unusable. Asset tests must therefore validate real pixel content, not only manifest metadata.
+The Dagger Pair incident showed that a PNG can load successfully in Phaser while still be visually unusable. Asset tests must therefore validate real pixel content, not only manifest metadata.
 
 Do not weaken the test to make a malformed asset pass. Fix the source or normalized asset.
 
@@ -272,7 +274,7 @@ At minimum verify:
 - all intended item tiers route to the canonical actor manifest
 - idle and attack use the intended texture/path
 - idle uses the intended single frame
-- attack covers the intended sequence
+- attack covers the intended authored sequence
 - frame width/height match the physical normalized sheet
 - shared walk resolves to the expected archetype
 - shared death resolves to the expected archetype
@@ -315,7 +317,7 @@ Before declaring a specialization integrated, verify all of the following in gam
 - ambient motion resumes after world travel
 - walk uses the correct shared archetype
 - attack plays every intended frame in order
-- character remains approximately 130 px head-to-feet
+- character remains approximately 140 px head-to-feet
 - feet remain on the expected ground baseline
 - death uses the correct shared archetype
 - Character module shows one correct idle pose, not the full sheet
@@ -332,17 +334,18 @@ For each new specialization asset:
 ```text
 1. Start from the developer-validated clean source.
 2. Isolate all authored attack poses pixel-perfect.
-3. Normalize to 6 x 512x640 cells with the 64 px foot baseline margin.
-4. Measure the standing/reference source character height.
-5. Deposit the normalized PNG under apps/client/public/assets/characters/.
-6. Add/update the specialization definition in HeroRenderCatalog.ts.
-7. Select the explicit idle frame (first or last as authored).
-8. Reuse shared Walk/Death by weapon family.
-9. Update Character preview presentation if the physical-sheet contract requires it.
-10. Add/update physical asset + render contract tests.
-11. Run validation.
-12. Manually verify combat idle/walk/attack/death + Character module.
-13. Remove obsolete asset references and temporary diagnostics.
+3. Normalize each pose into a 512x640 cell with the 64 px foot baseline margin.
+4. Keep the real authored frame count; do not invent duplicate frames.
+5. Measure the standing/reference source character height.
+6. Deposit the normalized PNG under apps/client/public/assets/characters/.
+7. Add/update the specialization definition in HeroRenderCatalog.ts.
+8. Select the explicit idle frame (first or last as authored).
+9. Reuse shared Walk/Death by weapon family.
+10. Update Character preview presentation only if the generic physical-sheet contract requires it.
+11. Add/update physical asset + render contract tests.
+12. Run validation.
+13. Manually verify combat idle/walk/attack/death + Character module.
+14. Remove obsolete asset references and temporary diagnostics.
 ```
 
 Minimum Windows validation from repository root:
@@ -376,9 +379,9 @@ If a binary PNG exists only on the developer's machine, the agent must say so ex
 
 ---
 
-# 16. Validated Reference Integration
+# 16. Validated Reference Integrations
 
-The first validated implementation of this workflow is Dagger Pair.
+The first validated implementation of this workflow was Dagger Pair. The same contract is now used by the normalized specialization pipeline, including authored frame-count exceptions such as Claws.
 
 Its important lessons are part of the contract, not Dagger-specific exceptions:
 
@@ -386,15 +389,15 @@ Its important lessons are part of the contract, not Dagger-specific exceptions:
 - overlapping authored X ranges require pixel-perfect component isolation
 - 512x640 normalized cells
 - 64 px foot baseline margin
-- 130 px rendered target
+- 140 px rendered target
 - one attack sheet reused for idle + attack
-- static idle frame
-- leather shared Walk/Death
+- static authored idle frame
+- shared Walk/Death by family archetype
 - generic ActorSystem ambient motion
 - Character preview must understand the physical shared sheet
 - physical PNG alpha/content must be tested
 
-Do not copy Dagger Pair constants such as its measured source character height into another weapon. Measure each new source.
+Do not copy another weapon's measured source character height into a new specialization. Measure each new source.
 
 ---
 
@@ -405,14 +408,14 @@ Validated clean source
 ↓
 Pixel-perfect pose isolation
 ↓
-6 x 512x640 normalized sheet, feet at y=575
+N x 512x640 normalized sheet, feet at y=575
 ↓
 Measure source standing height
 ↓
-Manifest scales to HERO_TARGET_HEIGHT_PX = 130
+Manifest scales to HERO_TARGET_HEIGHT_PX = 140
 ↓
 Idle = explicit fixed frame
-Attack = full attack sheet
+Attack = full authored attack sheet
 Walk/Death = shared archetype
 ↓
 ActorSystem ambient idle
