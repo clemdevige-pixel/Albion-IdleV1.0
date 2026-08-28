@@ -13,6 +13,10 @@ describe("weapon equipment presentation", () => {
       .toEqual(resolveEquipmentPresentation("item_weapon_gloves_t4_spiked_gauntlets"));
     expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4"))
       .toEqual(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_dagger_claws_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_dagger_claws_t8"));
   });
 
   it("keeps specialization-specific actor/profile/icon choices explicit", () => {
@@ -66,6 +70,18 @@ describe("weapon equipment presentation", () => {
       actorManifestId: "hero_demonfang",
       combatProfileId: "melee",
     });
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t4")).toEqual({
+      itemIcon: "icons/armes/deathgivers.png",
+      actorManifestId: "hero_deathgivers",
+      combatProfileId: "melee",
+    });
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_claws_t4")).toEqual({
+      itemIcon: "icons/armes/claws.png",
+      actorManifestId: "hero_claws",
+      combatProfileId: "melee",
+    });
   });
 
   it("falls back to family combat art until specialization sheets exist", () => {
@@ -102,12 +118,6 @@ describe("weapon equipment presentation", () => {
       actorManifestId: "hero_spiked_gauntlets",
       combatProfileId: "melee",
     });
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t8")).toEqual({
-      itemIcon: "icons/armes/deathgivers.png",
-      actorManifestId: "hero_dagger_pair",
-      combatProfileId: "melee",
-    });
   });
 
   it("does not add projectile presentation to melee weapons", () => {
@@ -121,6 +131,12 @@ describe("weapon equipment presentation", () => {
       .toBeUndefined();
 
     expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4")?.combatPresentation)
+      .toBeUndefined();
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t4")?.combatPresentation)
+      .toBeUndefined();
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_claws_t4")?.combatPresentation)
       .toBeUndefined();
   });
 
