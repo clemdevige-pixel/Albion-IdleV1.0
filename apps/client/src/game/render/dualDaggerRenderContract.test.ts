@@ -57,7 +57,6 @@ describe("dual dagger render contract", () => {
       frameHeight: 640,
       startFrame: 0,
       endFrame: 5,
-      offset: { x: 0, y: 74 },
     });
 
     const death = manifest.poses.death;
