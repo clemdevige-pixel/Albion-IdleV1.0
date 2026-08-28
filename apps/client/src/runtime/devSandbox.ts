@@ -16,6 +16,7 @@ import {
   getProductionRefiningRecipe,
 } from "../data/refiningRecipes.js";
 import { FACTION_CAPE_CRAFT_RECIPES } from "../data/factionCapeContentCatalog.js";
+import { FACTION_ARTIFACT_WEAPON_CONTENT } from "../data/factionArtifactWeaponContent.js";
 import {
   getDungeonKeyFragmentItemId,
   getDungeonKeyItemId,
@@ -24,6 +25,12 @@ import {
 export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v1";
 const DEV_SANDBOX_SILVER = 10_000_000;
 const DEV_SANDBOX_RESOURCE_STACK = 500;
+
+const ARTIFACT_WEAPON_ITEM_IDS = new Set(
+  FACTION_ARTIFACT_WEAPON_CONTENT.flatMap((specialization) =>
+    specialization.items.map((item) => item.itemId),
+  ),
+);
 
 export function isDevSandboxMode(): boolean {
   return import.meta.env.DEV
@@ -104,6 +111,21 @@ function seedAuthoredCraftingMaterials(
   }
 }
 
+function seedArtifactTestWeapons(
+  inventoryManager: InventoryManager,
+  bankId: EntityId,
+): void {
+  for (const specialization of FACTION_ARTIFACT_WEAPON_CONTENT) {
+    const tier4 = specialization.items.find((item) => item.tier === 4);
+    if (tier4 === undefined) {
+      throw new Error(
+        `Dev sandbox artifact specialization ${specialization.specializationMasteryId} has no T4 item`,
+      );
+    }
+    ensureEquipmentVariant(inventoryManager, bankId, tier4.itemId, 0);
+  }
+}
+
 export function seedDevSandboxEconomy(dependencies: {
   readonly inventoryManager: InventoryManager;
   readonly heroId: EntityId;
@@ -169,6 +191,7 @@ export function seedDevSandboxEconomy(dependencies: {
   }
 
   for (const itemId of Object.keys(ITEM_DEFINITIONS)) {
+    if (ARTIFACT_WEAPON_ITEM_IDS.has(itemId)) continue;
     const tier = getItemTier(itemId);
     if (tier === undefined || tier < 3 || tier > 8) continue;
     ensureEquipmentVariant(dependencies.inventoryManager, dependencies.bankId, itemId, 0);
@@ -176,4 +199,6 @@ export function seedDevSandboxEconomy(dependencies: {
       ensureEquipmentVariant(dependencies.inventoryManager, dependencies.bankId, itemId, 3);
     }
   }
+
+  seedArtifactTestWeapons(dependencies.inventoryManager, dependencies.bankId);
 }
