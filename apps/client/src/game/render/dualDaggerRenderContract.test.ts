@@ -13,10 +13,11 @@ const DUAL_DAGGER_ITEM_IDS = [
   "item_weapon_dagger_t8_pair",
 ] as const;
 
+const DUAL_DAGGER_COMBAT_TEXTURE_KEY = "hero-dual-dagger-attack-sheet-v3";
 const EXPECTED_TEXTURE_KEYS = {
-  idle: "hero-dual-dagger-idle-from-attack-sheet-v3",
+  idle: DUAL_DAGGER_COMBAT_TEXTURE_KEY,
   walk: "hero-archetype-leather-walk-sheet-v1",
-  attack: "hero-dual-dagger-attack-sheet-v3",
+  attack: DUAL_DAGGER_COMBAT_TEXTURE_KEY,
   death: "hero-archetype-leather-death-sheet-v1",
 } as const;
 
@@ -27,7 +28,7 @@ describe("dual dagger render contract", () => {
     }
   });
 
-  it("keeps weapon combat sheets and reuses the leather movement sheets", () => {
+  it("reuses one specialization attack sheet for idle and attack", () => {
     const manifest = renderManifestRegistry.requireActor("hero_dagger_pair");
 
     for (const state of ["idle", "attack"] as const) {
@@ -39,6 +40,7 @@ describe("dual dagger render contract", () => {
     }
     expect(manifest.animations.idle.endFrame).toBe(0);
     expect(manifest.animations.attack.endFrame).toBe(5);
+    expect(manifest.animations.idle.textureKey).toBe(manifest.animations.attack.textureKey);
     expect(manifest.animations.idle.assetPath).toBe(manifest.animations.attack.assetPath);
     expect(manifest.animations.idle.display).toEqual(manifest.animations.attack.display);
     expect(manifest.animations.idle.offset).toEqual(manifest.animations.attack.offset);
