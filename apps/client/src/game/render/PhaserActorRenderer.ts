@@ -73,22 +73,38 @@ function registerAnimation(
 }
 
 export function preloadActorManifest(scene: Phaser.Scene, manifest: ActorRenderManifest): void {
+  const queuedTextureKeys = new Set<string>();
+  const queueSpritesheet = (
+    textureKey: string,
+    assetPath: string,
+    frameWidth: number,
+    frameHeight: number,
+  ): void => {
+    if (queuedTextureKeys.has(textureKey)) return;
+    queuedTextureKeys.add(textureKey);
+    scene.load.spritesheet(textureKey, assetPath, { frameWidth, frameHeight });
+  };
+
   for (const state of ACTOR_ANIMATION_STATES) {
     const animation = manifest.animations[state];
-    scene.load.spritesheet(animation.textureKey, animation.assetPath, {
-      frameWidth: animation.frameWidth,
-      frameHeight: animation.frameHeight,
-    });
+    queueSpritesheet(
+      animation.textureKey,
+      animation.assetPath,
+      animation.frameWidth,
+      animation.frameHeight,
+    );
   }
 
+  const death = manifest.poses.death;
   if (hasAnimatedDeath(manifest)) {
-    const death = manifest.poses.death;
-    scene.load.spritesheet(death.textureKey, death.assetPath, {
-      frameWidth: death.frameWidth,
-      frameHeight: death.frameHeight,
-    });
-  } else {
-    const death = manifest.poses.death;
+    queueSpritesheet(
+      death.textureKey,
+      death.assetPath,
+      death.frameWidth,
+      death.frameHeight,
+    );
+  } else if (!queuedTextureKeys.has(death.textureKey)) {
+    queuedTextureKeys.add(death.textureKey);
     scene.load.image(death.textureKey, death.assetPath);
   }
 }
