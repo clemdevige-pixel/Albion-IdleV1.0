@@ -10,8 +10,6 @@ export interface HeroPresentationState {
   readonly segmentIndex: number;
 }
 
-const DUAL_DAGGER_MANIFEST_ID = "hero_dagger_pair";
-
 /** Owns weapon-dependent hero animation selection and transitions. */
 export class HeroPresentationSystem {
   private readonly animationSystem: ActorAnimationSystem;
@@ -20,10 +18,9 @@ export class HeroPresentationSystem {
   private weaponInitialized = false;
   private currentCombatState = "";
   private defeatPresented = false;
-  private dualDaggerRuntimeStateLogged = false;
 
   public constructor(
-    private readonly sprite: Phaser.GameObjects.Sprite,
+    sprite: Phaser.GameObjects.Sprite,
     private readonly fallbackVisualManifestId: string,
   ) {
     this.animationSystem = new ActorAnimationSystem(sprite);
@@ -34,10 +31,6 @@ export class HeroPresentationSystem {
     const nextVisualManifestId =
       state.visualManifestId ?? this.fallbackVisualManifestId;
     const defeated = state.combatState === "defeat";
-
-    if (nextVisualManifestId !== DUAL_DAGGER_MANIFEST_ID) {
-      this.dualDaggerRuntimeStateLogged = false;
-    }
 
     if (defeated) {
       this.currentVisualManifestId = nextVisualManifestId;
@@ -66,14 +59,6 @@ export class HeroPresentationSystem {
       this.animationSystem.stop();
       this.presentIdle();
     }
-
-    if (
-      nextVisualManifestId === DUAL_DAGGER_MANIFEST_ID
-      && !this.dualDaggerRuntimeStateLogged
-    ) {
-      this.logDualDaggerRuntimeState(state);
-      this.dualDaggerRuntimeStateLogged = true;
-    }
   }
 
   public play(
@@ -96,45 +81,6 @@ export class HeroPresentationSystem {
 
   private presentIdle(): void {
     this.play("idle");
-  }
-
-  private logDualDaggerRuntimeState(state: HeroPresentationState): void {
-    const parent = this.sprite.parentContainer;
-    console.info("[Render] Dual dagger runtime state", {
-      requestedVisualManifestId: state.visualManifestId,
-      activeVisualManifestId: this.currentVisualManifestId,
-      combatState: state.combatState,
-      zoneIndex: state.zoneIndex,
-      segmentIndex: state.segmentIndex,
-      textureKey: this.sprite.texture.key,
-      frameName: this.sprite.frame.name,
-      animationKey: this.sprite.anims.currentAnim?.key ?? "",
-      spriteVisible: this.sprite.visible,
-      spriteAlpha: this.sprite.alpha,
-      spriteX: this.sprite.x,
-      spriteY: this.sprite.y,
-      spriteScaleX: this.sprite.scaleX,
-      spriteScaleY: this.sprite.scaleY,
-      displayWidth: this.sprite.displayWidth,
-      displayHeight: this.sprite.displayHeight,
-      spriteDepth: this.sprite.depth,
-      spriteRenderFlags: this.sprite.renderFlags,
-      spriteCameraFilter: this.sprite.cameraFilter,
-      spriteBlendMode: this.sprite.blendMode,
-      spriteTintTopLeft: this.sprite.tintTopLeft,
-      spriteTintTopRight: this.sprite.tintTopRight,
-      spriteTintBottomLeft: this.sprite.tintBottomLeft,
-      spriteTintBottomRight: this.sprite.tintBottomRight,
-      parentVisible: parent?.visible,
-      parentAlpha: parent?.alpha,
-      parentX: parent?.x,
-      parentY: parent?.y,
-      parentScaleX: parent?.scaleX,
-      parentScaleY: parent?.scaleY,
-      parentDepth: parent?.depth,
-      parentRenderFlags: parent?.renderFlags,
-      parentCameraFilter: parent?.cameraFilter,
-    });
   }
 
   private resolveActorVisual(
