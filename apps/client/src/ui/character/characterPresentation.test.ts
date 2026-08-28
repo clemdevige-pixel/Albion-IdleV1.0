@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { FACTION_ARTIFACT_WEAPON_CONTENT } from "../../data/factionArtifactWeaponContent.js";
+import { renderManifestRegistry } from "../../game/render/defaultRenderManifestRegistry";
+import { COMBAT_ACTOR_PRESENTATION_SCALE } from "../../game/render/actorPresentationScale";
+import { HERO_TARGET_HEIGHT_PX } from "../../game/render/HeroVisualArchetypeCatalog";
 import {
+  CHARACTER_PREVIEW_TARGET_HEIGHT_PX,
   getEquippedHeroIdlePresentation,
   getHeroIdleBackgroundPosition,
+  getHeroIdlePreviewSize,
 } from "./characterPresentation";
 
 describe("character hero idle presentation", () => {
@@ -20,6 +25,41 @@ describe("character hero idle presentation", () => {
     expect(presentation.frameCount).toBe(6);
     expect(presentation.frameIndex).toBe(0);
     expect(getHeroIdleBackgroundPosition(presentation)).toBe("0% bottom");
+  });
+
+  it("uses the same normalized display source as Phaser for preview sizing", () => {
+    expect(CHARACTER_PREVIEW_TARGET_HEIGHT_PX).toBe(200);
+
+    for (const [itemId, actorManifestId] of [
+      ["item_weapon_dagger_t4_pair", "hero_dagger_pair"],
+      ["item_weapon_bow_t4_longbow", "hero_longbow"],
+      ["item_weapon_sword_t4_broadsword", "hero_broadsword"],
+      ["item_weapon_staff_t3_infernal", "hero_infernal"],
+      ["item_weapon_gloves_t4_spiked_gauntlets", "hero_spiked_gauntlets"],
+    ] as const) {
+      const presentation = getEquippedHeroIdlePresentation(itemId);
+      expect(presentation.spriteSheet, itemId).toBe(true);
+      if (!presentation.spriteSheet) continue;
+
+      const manifest = renderManifestRegistry.getActor(actorManifestId);
+      expect(manifest, actorManifestId).toBeDefined();
+      if (manifest === undefined) continue;
+
+      expect(presentation.displayWidth).toBe(manifest.animations.idle.display.width);
+      expect(presentation.displayHeight).toBe(manifest.animations.idle.display.height);
+
+      const previewSize = getHeroIdlePreviewSize(presentation);
+      expect(previewSize, itemId).toBeDefined();
+      if (previewSize === undefined) continue;
+
+      const uiScale = CHARACTER_PREVIEW_TARGET_HEIGHT_PX / HERO_TARGET_HEIGHT_PX;
+      expect(previewSize.width).toBeCloseTo(
+        manifest.animations.idle.display.width * COMBAT_ACTOR_PRESENTATION_SCALE * uiScale,
+      );
+      expect(previewSize.height).toBeCloseTo(
+        manifest.animations.idle.display.height * COMBAT_ACTOR_PRESENTATION_SCALE * uiScale,
+      );
+    }
   });
 
   it("uses the authored Demonfang idle frame in the character preview", () => {
