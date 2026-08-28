@@ -24,6 +24,7 @@ import {
 import {
   LocalStorageSaveRepository,
   SaveManager,
+  SerializationFailedError,
   VersionManager,
   type SaveRepository,
   type SaveProvider,
@@ -32,6 +33,7 @@ import type { EntityId, World } from "@game/core";
 import {
   backupCurrentSave,
   loadSaveWithBackup,
+  restoreLoadedBackupToPrimary,
   type SaveLoadSource,
 } from "./saveBackup";
 import {
@@ -39,6 +41,7 @@ import {
   createRuntimeMigrationPipeline,
 } from "./saveMigrations";
 import { LEGACY_SAVE_SLOT_ID, getSaveBackupSlotId } from "./saveSlots";
+import { reclaimRedundantSaveBackups } from "./storageQuotaRecovery";
 import {
   TRUSTED_OFFLINE_RESOLVED_THROUGH_KEY,
   resolveTrustedOfflineElapsedMs,
@@ -80,6 +83,7 @@ export class RuntimePersistence {
   private lastLoadSource: SaveLoadSource | undefined = undefined;
   private trustedOfflineResolvedThrough: number | undefined = undefined;
   private loadFailed: boolean = false;
+  private protectBackupUntilPrimarySave: boolean = false;
   private isAutosaving: boolean = false;
   private autoSaveIntervalId: number | undefined = undefined;
   private handleVisibilityChange: (() => void) | undefined = undefined;
@@ -163,18 +167,45 @@ export class RuntimePersistence {
 
   public save(tickCounter: number = 0): void {
     this.assertGlobalItemIdentityIntegrity();
-    backupCurrentSave(
-      this.saveRepository,
-      this.saveSlotId,
-      this.backupSlotId,
-      { continueWithoutBackupOnStorageFailure: true },
-    );
+    if (!this.protectBackupUntilPrimarySave) {
+      backupCurrentSave(
+        this.saveRepository,
+        this.saveSlotId,
+        this.backupSlotId,
+        { continueWithoutBackupOnStorageFailure: true },
+      );
+    }
+
     const extra = this.trustedOfflineResolvedThrough === undefined
       ? undefined
       : {
           [TRUSTED_OFFLINE_RESOLVED_THROUGH_KEY]: this.trustedOfflineResolvedThrough,
         };
-    this.saveManager.save(this.saveSlotId, tickCounter, extra);
+    const persistPrimary = (): void => {
+      this.saveManager.save(this.saveSlotId, tickCounter, extra);
+    };
+
+    try {
+      persistPrimary();
+    } catch (error) {
+      if (!(error instanceof SerializationFailedError)) throw error;
+
+      const reclaimed = reclaimRedundantSaveBackups(
+        this.saveRepository,
+        this.backupSlotId,
+      );
+      if (reclaimed.length === 0) throw error;
+
+      console.error(
+        "[Persistence] Primary save hit browser storage quota; reclaimed redundant backups and retrying:",
+        reclaimed,
+      );
+      persistPrimary();
+    }
+
+    // A successful primary write makes later backup rotation safe again even
+    // when this session originally recovered from a backup-only state.
+    this.protectBackupUntilPrimarySave = false;
     this.onLocalSave?.(this.saveRepository.get(this.saveSlotId));
   }
 
@@ -197,6 +228,7 @@ export class RuntimePersistence {
       this.backupSlotId,
       (slotId) => { this.loadAndValidateSlot(slotId); },
     );
+    this.protectBackupUntilPrimarySave = this.lastLoadSource === "backup_unrestored";
 
     const loadedSave = this.getLastLoadedSave();
     if (loadedSave === undefined) return;
@@ -249,17 +281,13 @@ export class RuntimePersistence {
 
   /**
    * Validates an imported save before touching the primary slot, then loads it.
-   * If a provider rejects it, the previous primary snapshot is restored.
+   * If a provider rejects it, the previous validated snapshot is restored.
    */
   public importSave(raw: string): void {
     const importSlotId = `${this.saveSlotId}_import`;
     this.saveManager.importSave(importSlotId, raw);
 
-    backupCurrentSave(
-      this.saveRepository,
-      this.saveSlotId,
-      this.backupSlotId,
-    );
+    this.backupValidatedPrimaryForDestructiveWrite();
     this.saveRepository.save(
       this.saveSlotId,
       this.saveRepository.get(importSlotId),
@@ -269,14 +297,16 @@ export class RuntimePersistence {
     try {
       this.loadAndValidateSlot(this.saveSlotId);
       this.lastLoadSource = "primary";
+      this.protectBackupUntilPrimarySave = false;
     } catch (error) {
       if (this.saveRepository.has(this.backupSlotId)) {
         this.loadAndValidateSlot(this.backupSlotId);
-        this.saveRepository.save(
+        this.lastLoadSource = restoreLoadedBackupToPrimary(
+          this.saveRepository,
           this.saveSlotId,
-          this.saveRepository.get(this.backupSlotId),
+          this.backupSlotId,
         );
-        this.lastLoadSource = "backup";
+        this.protectBackupUntilPrimarySave = this.lastLoadSource === "backup_unrestored";
       }
       throw error;
     }
@@ -348,6 +378,36 @@ export class RuntimePersistence {
       this.handlePageHide = undefined;
     }
     this.isAutosaving = false;
+  }
+
+  private backupValidatedPrimaryForDestructiveWrite(): void {
+    if (!this.saveRepository.has(this.saveSlotId)) return;
+
+    try {
+      this.saveManager.exportSave(this.saveSlotId);
+    } catch (primaryError) {
+      if (!this.saveRepository.has(this.backupSlotId)) throw primaryError;
+
+      try {
+        this.saveManager.exportSave(this.backupSlotId);
+      } catch {
+        throw primaryError;
+      }
+
+      // Never overwrite the only validated recovery point with a primary that
+      // already failed structural/checksum/version validation.
+      console.error(
+        "[Persistence] Preserving existing validated backup because the current primary is invalid before import:",
+        primaryError,
+      );
+      return;
+    }
+
+    backupCurrentSave(
+      this.saveRepository,
+      this.saveSlotId,
+      this.backupSlotId,
+    );
   }
 
   private loadAndValidateSlot(slotId: string): void {

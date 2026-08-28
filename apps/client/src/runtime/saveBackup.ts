@@ -50,6 +50,41 @@ export function backupCurrentSave(
   }
 }
 
+/**
+ * Restores an already validated/loaded backup into the primary slot.
+ * If replacement fails (typically quota), remove the known-bad primary and
+ * retry once. The validated backup itself is never deleted here.
+ */
+export function restoreLoadedBackupToPrimary(
+  repository: SaveRepository,
+  primarySlotId: string,
+  backupSlotId: string,
+): SaveLoadSource {
+  const backup: SaveFormat = repository.get(backupSlotId);
+  try {
+    repository.save(primarySlotId, backup);
+    return "backup";
+  } catch (restoreError) {
+    try {
+      if (repository.has(primarySlotId)) {
+        repository.delete(primarySlotId);
+      }
+      repository.save(primarySlotId, backup);
+      return "backup";
+    } catch (retryError) {
+      // The runtime has already loaded a validated backup. Keep that backup as
+      // the only recovery point instead of risking it during later rotation.
+      console.error(
+        "[Persistence] Backup loaded but primary restore could not be persisted after reclaiming the invalid primary:",
+        retryError,
+        "Initial restore error:",
+        restoreError,
+      );
+      return "backup_unrestored";
+    }
+  }
+}
+
 /** Loads the primary slot, falling back to its backup if needed. */
 export function loadSaveWithBackup(
   repository: SaveRepository,
@@ -64,18 +99,10 @@ export function loadSaveWithBackup(
     if (!repository.has(backupSlotId)) throw primaryError;
 
     loadSlot(backupSlotId);
-    const backup: SaveFormat = repository.get(backupSlotId);
-    try {
-      repository.save(primarySlotId, backup);
-      return "backup";
-    } catch (restoreError) {
-      // The runtime has already loaded a validated backup. A storage write
-      // failure must not turn that successful recovery into a failed load.
-      console.error(
-        "[Persistence] Backup loaded but primary restore could not be persisted:",
-        restoreError,
-      );
-      return "backup_unrestored";
-    }
+    return restoreLoadedBackupToPrimary(
+      repository,
+      primarySlotId,
+      backupSlotId,
+    );
   }
 }

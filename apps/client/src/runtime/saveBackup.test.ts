@@ -78,6 +78,18 @@ class RestoreFailingRepository extends InMemorySaveRepository {
   }
 }
 
+class FirstRestoreFailingRepository extends InMemorySaveRepository {
+  public failNextPrimaryWrite = false;
+
+  override save(id: string, data: SaveFormat): void {
+    if (this.failNextPrimaryWrite && id === "primary") {
+      this.failNextPrimaryWrite = false;
+      throw new SerializationFailedError("quota exceeded");
+    }
+    super.save(id, data);
+  }
+}
+
 describe("save backup", () => {
   it("copies the current primary snapshot before overwrite", () => {
     const repository = new InMemorySaveRepository();
@@ -152,7 +164,23 @@ describe("save backup", () => {
     expect(repository.get("primary")).toEqual(backup);
   });
 
-  it("keeps a successfully loaded backup active when restoring the primary hits storage quota", () => {
+  it("reclaims the invalid primary and retries backup restoration once", () => {
+    const repository = new FirstRestoreFailingRepository();
+    const invalidPrimary = makeSave(10);
+    const backup = makeSave(5);
+    repository.save("primary", invalidPrimary);
+    repository.save("backup", backup);
+    repository.failNextPrimaryWrite = true;
+    const loadSlot = vi.fn((slotId: string) => {
+      if (slotId === "primary") throw new Error("corrupt primary");
+    });
+
+    expect(loadSaveWithBackup(repository, "primary", "backup", loadSlot)).toBe("backup");
+    expect(repository.get("primary")).toEqual(backup);
+    expect(repository.get("backup")).toEqual(backup);
+  });
+
+  it("keeps a successfully loaded backup as the only recovery point when primary restoration still cannot fit", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const repository = new RestoreFailingRepository();
     const backup = makeSave(5);
