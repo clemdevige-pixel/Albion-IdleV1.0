@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveEquipmentPresentation } from "./equipmentPresentation.js";
 
 describe("weapon equipment presentation", () => {
@@ -11,6 +11,8 @@ describe("weapon equipment presentation", () => {
       .toEqual(resolveEquipmentPresentation("item_weapon_staff_t4_infernal"));
     expect(resolveEquipmentPresentation("item_weapon_gloves_t3_spiked_gauntlets"))
       .toEqual(resolveEquipmentPresentation("item_weapon_gloves_t4_spiked_gauntlets"));
+    expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t8"));
   });
 
   it("keeps specialization-specific actor/profile/icon choices explicit", () => {
@@ -51,6 +53,18 @@ describe("weapon equipment presentation", () => {
         projectileId: "fireball",
         releaseDelayMs: 355,
       },
+    });
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_bloodletter_t4")).toEqual({
+      itemIcon: "icons/armes/bloodletter.png",
+      actorManifestId: "hero_bloodletter",
+      combatProfileId: "melee",
+    });
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4")).toEqual({
+      itemIcon: "icons/armes/demonfang.png",
+      actorManifestId: "hero_demonfang",
+      combatProfileId: "melee",
     });
   });
 
@@ -104,6 +118,9 @@ describe("weapon equipment presentation", () => {
       .toBeUndefined();
 
     expect(resolveEquipmentPresentation("item_weapon_dagger_t4_pair")?.combatPresentation)
+      .toBeUndefined();
+
+    expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4")?.combatPresentation)
       .toBeUndefined();
   });
 
