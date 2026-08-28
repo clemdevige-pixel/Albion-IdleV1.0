@@ -24,16 +24,14 @@ export function createGame(
     }
   }
 
-  const devTest = new URLSearchParams(window.location.search).get("devTest") === "1";
-
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
     width: 960,
     height: 400,
     backgroundColor: "#161b26",
-    pixelArt: !devTest,
-    roundPixels: !devTest,
+    pixelArt: true,
+    roundPixels: true,
     scale: {
       mode: Phaser.Scale.ENVELOP,
       autoCenter: Phaser.Scale.CENTER_BOTH,
