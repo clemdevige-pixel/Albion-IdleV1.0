@@ -1,6 +1,10 @@
 import { resolveEquipmentPresentation } from "../../data/equipmentPresentation";
 import { renderManifestRegistry } from "../../game/render/defaultRenderManifestRegistry";
 import type { ActorRenderManifest } from "../../game/render/RenderManifest";
+import { COMBAT_ACTOR_PRESENTATION_SCALE } from "../../game/render/actorPresentationScale";
+import { HERO_TARGET_HEIGHT_PX } from "../../game/render/HeroVisualArchetypeCatalog";
+
+export const CHARACTER_PREVIEW_TARGET_HEIGHT_PX = 200;
 
 export type HeroIdlePresentation = {
   readonly image: string;
@@ -12,6 +16,8 @@ export type HeroIdlePresentation = {
   readonly frameHeight: number;
   readonly frameCount: number;
   readonly frameIndex: number;
+  readonly displayWidth: number;
+  readonly displayHeight: number;
 };
 
 function buildIdlePresentation(manifest: ActorRenderManifest): HeroIdlePresentation {
@@ -31,6 +37,8 @@ function buildIdlePresentation(manifest: ActorRenderManifest): HeroIdlePresentat
     frameHeight: idle.frameHeight,
     frameCount: lastPhysicalFrame + 1,
     frameIndex: idle.startFrame,
+    displayWidth: idle.display.width,
+    displayHeight: idle.display.height,
   };
 }
 
@@ -40,6 +48,18 @@ export function getHeroIdleBackgroundPosition(
   if (!presentation.spriteSheet) return undefined;
   if (presentation.frameCount <= 1) return "0% bottom";
   return `${String((presentation.frameIndex / (presentation.frameCount - 1)) * 100)}% bottom`;
+}
+
+export function getHeroIdlePreviewSize(
+  presentation: HeroIdlePresentation,
+): { readonly width: number; readonly height: number } | undefined {
+  if (!presentation.spriteSheet) return undefined;
+
+  const uiScale = CHARACTER_PREVIEW_TARGET_HEIGHT_PX / HERO_TARGET_HEIGHT_PX;
+  return {
+    width: presentation.displayWidth * COMBAT_ACTOR_PRESENTATION_SCALE * uiScale,
+    height: presentation.displayHeight * COMBAT_ACTOR_PRESENTATION_SCALE * uiScale,
+  };
 }
 
 export function getEquippedHeroIdlePresentation(
