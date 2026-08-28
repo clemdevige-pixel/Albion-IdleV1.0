@@ -66,14 +66,6 @@ const HERO_ANIMATION_REPEAT = {
   attack: 0,
 } as const;
 
-const STANDARD_SIX_FRAME_SHEET = {
-  frameWidth: 512,
-  frameHeight: 512,
-  startFrame: 0,
-  endFrame: 5,
-  display: { width: 228.5714285714, height: 228.5714285714 },
-} as const satisfies HeroSheetProfile;
-
 function buildNormalizedHeroSheet(
   sourceCharacterHeight: number,
   endFrame = 5,
@@ -180,37 +172,73 @@ const PROJECTILE_VISUAL_PARAMETERS = {
   motionDurationMs: 0,
   impactDelayMs: 355,
 } as const;
+const SWORD_AMBIENT_MOTION = { distance: 4, durationMs: 900, delayMs: 0 } as const;
 const DAGGER_AMBIENT_MOTION = { distance: 4, durationMs: 800, delayMs: 0 } as const;
 const GLOVE_AMBIENT_MOTION = { distance: 4, durationMs: 850, delayMs: 0 } as const;
 const BOW_AMBIENT_MOTION = { distance: 4, durationMs: 900, delayMs: 0 } as const;
 const FIRE_STAFF_AMBIENT_MOTION = { distance: 4, durationMs: 900, delayMs: 0 } as const;
 
 const HERO_RENDER_DEFINITIONS = [
-  {
+  createNormalizedHeroDefinition({
     id: "hero_broadsword",
     familyId: "sword",
-    offset: { x: -5, y: 58 },
-    sheet: STANDARD_SIX_FRAME_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-broadsword-idle-sheet-v2",
-        assetPath: "/assets/characters/hero-broadsword-idle-sheet-v1.png",
-        frameRate: 6,
-      },
-      attack: {
-        textureKey: "hero-broadsword-attack-sheet-v2",
-        assetPath: "/assets/characters/hero-broadsword-attack-sheet-v1.png",
-        frameRate: 16,
-      },
-    },
+    textureKey: "hero-broadsword-attack-normalized-v2",
+    assetPath: "/assets/characters/hero-broadsword-attack-normalized-v2.png",
+    sourceCharacterHeight: 388,
+    idleFrame: 0,
+    attackFrameRate: 16,
     visualProfile: "melee",
-    visualParameters: {
-      approachDistance: 48,
-      motionDurationMs: 180,
-      impactDelayMs: 220,
-    },
-    ambientMotion: { distance: 4, durationMs: 900, delayMs: 0 },
-  },
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: SWORD_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_clarent",
+    familyId: "sword",
+    textureKey: "hero-clarent-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-clarent-attack-normalized-v1.png",
+    sourceCharacterHeight: 383,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: SWORD_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_carving",
+    familyId: "sword",
+    textureKey: "hero-carving-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-carving-attack-normalized-v1.png",
+    sourceCharacterHeight: 382,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: SWORD_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_galatine",
+    familyId: "sword",
+    textureKey: "hero-galatine-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-galatine-attack-normalized-v1.png",
+    sourceCharacterHeight: 351,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: SWORD_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_claymore",
+    familyId: "sword",
+    textureKey: "hero-claymore-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-claymore-attack-normalized-v1.png",
+    sourceCharacterHeight: 353,
+    idleFrame: 0,
+    attackFrameRate: 16,
+    visualProfile: "melee",
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: SWORD_AMBIENT_MOTION,
+  }),
   createNormalizedHeroDefinition({
     id: "hero_longbow",
     familyId: "bow",
