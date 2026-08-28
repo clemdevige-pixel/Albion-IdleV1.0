@@ -43,7 +43,22 @@ type HeroRenderDefinition = {
   readonly ambientMotion: ActorRenderManifest["ambientMotion"];
 };
 
+type NormalizedHeroDefinitionOptions = {
+  readonly id: string;
+  readonly familyId: WeaponFamilyId;
+  readonly textureKey: string;
+  readonly assetPath: string;
+  readonly sourceCharacterHeight: number;
+  readonly idleFrame: number;
+  readonly attackEndFrame?: number;
+  readonly attackFrameRate: number;
+  readonly visualProfile: string;
+  readonly visualParameters: ActorRenderManifest["visualParameters"];
+  readonly ambientMotion: ActorRenderManifest["ambientMotion"];
+};
+
 const HERO_ORIGIN = { x: 0.5, y: 1 } as const;
+const HERO_BASE_OFFSET = { x: 0, y: 58 } as const;
 const HERO_ANIMATION_REPEAT = {
   idle: -1,
   walk: -1,
@@ -71,12 +86,6 @@ function buildNormalizedHeroSheet(
     offset: buildNormalizedHeroOffset(sourceCharacterHeight, HERO_ARCHETYPE_FEET_MARGIN_PX),
   };
 }
-
-const DUAL_DAGGER_SHEET = buildNormalizedHeroSheet(397);
-const BLOODLETTER_SHEET = buildNormalizedHeroSheet(388);
-const DEMONFANG_SHEET = buildNormalizedHeroSheet(398);
-const DEATHGIVERS_SHEET = buildNormalizedHeroSheet(414);
-const CLAWS_SHEET = buildNormalizedHeroSheet(525, 4);
 
 function buildAnimation(
   source: HeroAnimationSource,
@@ -126,6 +135,48 @@ export function createHeroRenderManifest(definition: HeroRenderDefinition): Acto
   };
 }
 
+function createNormalizedHeroDefinition(
+  options: NormalizedHeroDefinitionOptions,
+): HeroRenderDefinition {
+  const attackEndFrame = options.attackEndFrame ?? 5;
+  return {
+    id: options.id,
+    familyId: options.familyId,
+    offset: HERO_BASE_OFFSET,
+    sheet: buildNormalizedHeroSheet(options.sourceCharacterHeight, attackEndFrame),
+    animations: {
+      idle: {
+        textureKey: options.textureKey,
+        assetPath: options.assetPath,
+        frameRate: 6,
+        startFrame: options.idleFrame,
+        endFrame: options.idleFrame,
+      },
+      attack: {
+        textureKey: options.textureKey,
+        assetPath: options.assetPath,
+        frameRate: options.attackFrameRate,
+      },
+    },
+    visualProfile: options.visualProfile,
+    visualParameters: options.visualParameters,
+    ambientMotion: options.ambientMotion,
+  };
+}
+
+const MELEE_VISUAL_PARAMETERS = {
+  approachDistance: 48,
+  motionDurationMs: 140,
+  impactDelayMs: 150,
+} as const;
+const PROJECTILE_VISUAL_PARAMETERS = {
+  approachDistance: 0,
+  motionDurationMs: 0,
+  impactDelayMs: 355,
+} as const;
+const DAGGER_AMBIENT_MOTION = { distance: 4, durationMs: 800, delayMs: 0 } as const;
+const BOW_AMBIENT_MOTION = { distance: 4, durationMs: 900, delayMs: 0 } as const;
+
 const HERO_RENDER_DEFINITIONS = [
   {
     id: "hero_broadsword",
@@ -152,62 +203,66 @@ const HERO_RENDER_DEFINITIONS = [
     },
     ambientMotion: { distance: 4, durationMs: 900, delayMs: 0 },
   },
-  {
+  createNormalizedHeroDefinition({
     id: "hero_longbow",
     familyId: "bow",
-    offset: { x: 11, y: 58 },
-    sheet: STANDARD_SIX_FRAME_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-longbow-idle-sheet-v1",
-        assetPath: "/assets/characters/hero-longbow-idle-sheet-v1.png",
-        frameRate: 6,
-      },
-      attack: {
-        textureKey: "hero-longbow-attack-sheet-v1",
-        assetPath: "/assets/characters/hero-longbow-attack-sheet-v1.png",
-        frameRate: 13,
-      },
-    },
+    textureKey: "hero-longbow-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-longbow-attack-normalized-v1.png",
+    sourceCharacterHeight: 451,
+    idleFrame: 0,
+    attackFrameRate: 13,
     visualProfile: "projectile",
-    visualParameters: {
-      approachDistance: 0,
-      motionDurationMs: 0,
-      impactDelayMs: 355,
-    },
-    ambientMotion: { distance: 4, durationMs: 900, delayMs: 0 },
-  },
-  {
-    id: "hero_bow",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: BOW_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_badon",
     familyId: "bow",
-    offset: { x: 0, y: 58 },
-    sheet: {
-      frameWidth: 420,
-      frameHeight: 330,
-      startFrame: 0,
-      endFrame: 6,
-      display: { width: 220, height: 200 },
-    },
-    animations: {
-      idle: {
-        textureKey: "hero-badon-idle-sheet",
-        assetPath: "/assets/characters/hero-badon-idle-sheet-v1.png",
-        frameRate: 6,
-      },
-      attack: {
-        textureKey: "hero-badon-attack-sheet",
-        assetPath: "/assets/characters/hero-badon-attack-sheet-v1.png",
-        frameRate: 13,
-      },
-    },
+    textureKey: "hero-badon-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-badon-attack-normalized-v1.png",
+    sourceCharacterHeight: 478,
+    idleFrame: 0,
+    attackFrameRate: 13,
     visualProfile: "projectile",
-    visualParameters: {
-      approachDistance: 0,
-      motionDurationMs: 0,
-      impactDelayMs: 355,
-    },
-    ambientMotion: { distance: 4, durationMs: 900, delayMs: 0 },
-  },
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: BOW_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_wailing",
+    familyId: "bow",
+    textureKey: "hero-wailing-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-wailing-attack-normalized-v1.png",
+    sourceCharacterHeight: 451,
+    idleFrame: 0,
+    attackFrameRate: 13,
+    visualProfile: "projectile",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: BOW_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_whispering",
+    familyId: "bow",
+    textureKey: "hero-whispering-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-whispering-attack-normalized-v1.png",
+    sourceCharacterHeight: 482,
+    idleFrame: 5,
+    attackFrameRate: 13,
+    visualProfile: "projectile",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: BOW_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_warbow",
+    familyId: "bow",
+    textureKey: "hero-warbow-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-warbow-attack-normalized-v1.png",
+    sourceCharacterHeight: 467,
+    idleFrame: 0,
+    attackFrameRate: 13,
+    visualProfile: "projectile",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: BOW_AMBIENT_MOTION,
+  }),
   {
     id: "hero_fire_staff",
     familyId: "fire_staff",
@@ -226,17 +281,13 @@ const HERO_RENDER_DEFINITIONS = [
       },
     },
     visualProfile: "projectile",
-    visualParameters: {
-      approachDistance: 0,
-      motionDurationMs: 0,
-      impactDelayMs: 355,
-    },
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
     ambientMotion: { distance: 4, durationMs: 900, delayMs: 0 },
   },
   {
     id: "hero_spiked_gauntlets",
     familyId: "gloves",
-    offset: { x: 0, y: 58 },
+    offset: HERO_BASE_OFFSET,
     sheet: STANDARD_SIX_FRAME_SHEET,
     animations: {
       idle: {
@@ -258,141 +309,67 @@ const HERO_RENDER_DEFINITIONS = [
     },
     ambientMotion: { distance: 4, durationMs: 850, delayMs: 0 },
   },
-  {
+  createNormalizedHeroDefinition({
     id: "hero_dagger_pair",
     familyId: "dagger",
-    offset: { x: 0, y: 58 },
-    sheet: DUAL_DAGGER_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-dual-dagger-attack-normalized-v2",
-        assetPath: "/assets/characters/hero-dual-dagger-attack-normalized-v2.png",
-        frameRate: 6,
-        startFrame: 0,
-        endFrame: 0,
-      },
-      attack: {
-        textureKey: "hero-dual-dagger-attack-normalized-v2",
-        assetPath: "/assets/characters/hero-dual-dagger-attack-normalized-v2.png",
-        frameRate: 16,
-      },
-    },
+    textureKey: "hero-dual-dagger-attack-normalized-v2",
+    assetPath: "/assets/characters/hero-dual-dagger-attack-normalized-v2.png",
+    sourceCharacterHeight: 397,
+    idleFrame: 0,
+    attackFrameRate: 16,
     visualProfile: "melee",
-    visualParameters: {
-      approachDistance: 48,
-      motionDurationMs: 140,
-      impactDelayMs: 150,
-    },
-    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
-  },
-  {
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: DAGGER_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
     id: "hero_bloodletter",
     familyId: "dagger",
-    offset: { x: 0, y: 58 },
-    sheet: BLOODLETTER_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-bloodletter-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-bloodletter-attack-normalized-v1.png",
-        frameRate: 6,
-        startFrame: 0,
-        endFrame: 0,
-      },
-      attack: {
-        textureKey: "hero-bloodletter-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-bloodletter-attack-normalized-v1.png",
-        frameRate: 16,
-      },
-    },
+    textureKey: "hero-bloodletter-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-bloodletter-attack-normalized-v1.png",
+    sourceCharacterHeight: 388,
+    idleFrame: 0,
+    attackFrameRate: 16,
     visualProfile: "melee",
-    visualParameters: {
-      approachDistance: 48,
-      motionDurationMs: 140,
-      impactDelayMs: 150,
-    },
-    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
-  },
-  {
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: DAGGER_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
     id: "hero_demonfang",
     familyId: "dagger",
-    offset: { x: 0, y: 58 },
-    sheet: DEMONFANG_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-demonfang-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-demonfang-attack-normalized-v1.png",
-        frameRate: 6,
-        startFrame: 5,
-        endFrame: 5,
-      },
-      attack: {
-        textureKey: "hero-demonfang-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-demonfang-attack-normalized-v1.png",
-        frameRate: 16,
-      },
-    },
+    textureKey: "hero-demonfang-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-demonfang-attack-normalized-v1.png",
+    sourceCharacterHeight: 398,
+    idleFrame: 5,
+    attackFrameRate: 16,
     visualProfile: "melee",
-    visualParameters: {
-      approachDistance: 48,
-      motionDurationMs: 140,
-      impactDelayMs: 150,
-    },
-    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
-  },
-  {
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: DAGGER_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
     id: "hero_deathgivers",
     familyId: "dagger",
-    offset: { x: 0, y: 58 },
-    sheet: DEATHGIVERS_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-deathgiver-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-deathgiver-attack-normalized-v1.png",
-        frameRate: 6,
-        startFrame: 5,
-        endFrame: 5,
-      },
-      attack: {
-        textureKey: "hero-deathgiver-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-deathgiver-attack-normalized-v1.png",
-        frameRate: 16,
-      },
-    },
+    textureKey: "hero-deathgiver-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-deathgiver-attack-normalized-v1.png",
+    sourceCharacterHeight: 414,
+    idleFrame: 5,
+    attackFrameRate: 16,
     visualProfile: "melee",
-    visualParameters: {
-      approachDistance: 48,
-      motionDurationMs: 140,
-      impactDelayMs: 150,
-    },
-    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
-  },
-  {
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: DAGGER_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
     id: "hero_claws",
     familyId: "dagger",
-    offset: { x: 0, y: 58 },
-    sheet: CLAWS_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-claw-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-claw-attack-normalized-v1.png",
-        frameRate: 6,
-        startFrame: 0,
-        endFrame: 0,
-      },
-      attack: {
-        textureKey: "hero-claw-attack-normalized-v1",
-        assetPath: "/assets/characters/hero-claw-attack-normalized-v1.png",
-        frameRate: 16,
-      },
-    },
+    textureKey: "hero-claw-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-claw-attack-normalized-v1.png",
+    sourceCharacterHeight: 525,
+    idleFrame: 0,
+    attackEndFrame: 4,
+    attackFrameRate: 16,
     visualProfile: "melee",
-    visualParameters: {
-      approachDistance: 48,
-      motionDurationMs: 140,
-      impactDelayMs: 150,
-    },
-    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
-  },
+    visualParameters: MELEE_VISUAL_PARAMETERS,
+    ambientMotion: DAGGER_AMBIENT_MOTION,
+  }),
 ] as const satisfies readonly HeroRenderDefinition[];
 
 export const HERO_RENDER_MANIFESTS: readonly ActorRenderManifest[] =
