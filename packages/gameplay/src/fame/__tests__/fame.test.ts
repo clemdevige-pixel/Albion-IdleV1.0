@@ -118,13 +118,19 @@ describe("FameService.history", () => {
 
 // ── Save/restore round-trip ─────────────────────────────────────────
 describe("FameSaveProvider", () => {
-  it("round-trips fame state", () => {
+  it("round-trips totals without persisting unbounded history", () => {
     const { fame } = makeServices();
     fame.awardFame({ targetMasteryId: SWORD, amount: 50, category: "combat" });
     fame.awardFame({ targetMasteryId: BOW, amount: 30, category: "gathering" });
 
     const provider = new FameSaveProvider(fame);
     const saved = provider.save();
+    expect(saved).toEqual({
+      totals: [
+        { masteryId: BOW, total: 30 },
+        { masteryId: SWORD, total: 50 },
+      ],
+    });
 
     // Create fresh services and restore
     const { fame: fame2 } = makeServices();
@@ -133,7 +139,26 @@ describe("FameSaveProvider", () => {
 
     expect(fame2.getTotalFameEarned(SWORD)).toBe(50);
     expect(fame2.getTotalFameEarned(BOW)).toBe(30);
-    expect(fame2.getFameHistory()).toHaveLength(2);
+    expect(fame2.getFameHistory()).toHaveLength(0);
+  });
+
+  it("compacts legacy persisted history while preserving totals", () => {
+    const { fame } = makeServices();
+    const provider = new FameSaveProvider(fame);
+
+    provider.load({
+      totals: [{ masteryId: SWORD, total: 80 }],
+      history: [
+        { masteryId: SWORD, fameEarned: 50, category: "combat", timestamp: 0 },
+        { masteryId: SWORD, fameEarned: 30, category: "combat", timestamp: 0 },
+      ],
+    });
+
+    expect(fame.getTotalFameEarned(SWORD)).toBe(80);
+    expect(fame.getFameHistory()).toHaveLength(0);
+    expect(provider.save()).toEqual({
+      totals: [{ masteryId: SWORD, total: 80 }],
+    });
   });
 });
 

@@ -2,7 +2,6 @@ import type { SaveProvider } from "@game/persistence";
 import { z } from "zod";
 import { asMasteryId, type MasteryId } from "../experience/types.js";
 import type { FameService } from "./fame-service.js";
-import type { FameRecord } from "./types.js";
 
 const fameCategorySchema = z.enum(["combat", "gathering", "crafting", "exploration"]);
 
@@ -20,7 +19,9 @@ const fameTotalSchema = z.object({
 
 const fameSaveSchema = z.object({
   totals: z.array(fameTotalSchema),
-  history: z.array(fameRecordSchema),
+  // Accepted only to compact existing saves. Fame history is session-only and
+  // must not make persistent snapshots grow once per gameplay reward.
+  history: z.array(fameRecordSchema).optional(),
 });
 
 export class FameSaveProvider implements SaveProvider {
@@ -37,14 +38,7 @@ export class FameSaveProvider implements SaveProvider {
     }
     totals.sort((a, b) => a.masteryId.localeCompare(b.masteryId));
 
-    const history = snapshot.history.map((r) => ({
-      masteryId: r.masteryId,
-      fameEarned: r.fameEarned,
-      category: r.category,
-      timestamp: r.timestamp,
-    }));
-
-    return { totals, history };
+    return { totals };
   }
 
   load(data: unknown): void {
@@ -55,13 +49,8 @@ export class FameSaveProvider implements SaveProvider {
       totals.set(asMasteryId(entry.masteryId), entry.total);
     }
 
-    const history: FameRecord[] = parsed.history.map((r) => ({
-      masteryId: asMasteryId(r.masteryId),
-      fameEarned: r.fameEarned,
-      category: r.category,
-      timestamp: r.timestamp,
-    }));
-
-    this.service._restore(totals, history);
+    // Old snapshots may contain an unbounded history. Intentionally discard it
+    // while preserving the authoritative per-mastery totals.
+    this.service._restore(totals, []);
   }
 }

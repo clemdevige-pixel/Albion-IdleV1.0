@@ -214,8 +214,8 @@ describe("Bloc 8.5 — Progression Integration", () => {
     expect(stateAfter.overflowPool).toBe(stateBefore.overflowPool);
   });
 
-  // 4. Fame history persists across save/load
-  it("fame history persists across save/load", () => {
+  // 4. Fame totals persist while session history is compacted
+  it("fame totals persist without retaining session history", () => {
     const h = createHarness();
 
     h.orchestrator.onFameEarned(SWORD_ID, 50, "combat");
@@ -229,12 +229,8 @@ describe("Bloc 8.5 — Progression Integration", () => {
     const h2 = createHarness();
     h2.coordinator.loadAll(savedData);
 
-    const historyAfter = h2.fameService.getFameHistory();
-    expect(historyAfter).toHaveLength(2);
-    expect(historyAfter[0]?.fameEarned).toBe(50);
-    expect(historyAfter[0]?.category).toBe("combat");
-    expect(historyAfter[1]?.fameEarned).toBe(30);
-    expect(historyAfter[1]?.category).toBe("gathering");
+    expect(h2.fameService.getTotalFameEarned(SWORD_ID)).toBe(80);
+    expect(h2.fameService.getFameHistory()).toHaveLength(0);
   });
 
   // 5. Overflow XP at max level
