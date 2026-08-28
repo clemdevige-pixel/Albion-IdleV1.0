@@ -9,6 +9,7 @@ import {
   buildNormalizedHeroOffset,
   buildSharedHeroDeathPose,
   buildSharedHeroWalkAnimation,
+  HERO_ARCHETYPE_FEET_MARGIN_PX,
 } from "./HeroVisualArchetypeCatalog";
 
 type HeroAnimationSource = {
@@ -57,15 +58,20 @@ const STANDARD_SIX_FRAME_SHEET = {
   display: { width: 228.5714285714, height: 228.5714285714 },
 } as const satisfies HeroSheetProfile;
 
-const DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX = 397;
-const DUAL_DAGGER_SHEET = {
-  frameWidth: 512,
-  frameHeight: 640,
-  startFrame: 0,
-  endFrame: 5,
-  display: buildNormalizedHeroDisplay(512, 640, DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX),
-  offset: buildNormalizedHeroOffset(DUAL_DAGGER_SOURCE_CHARACTER_HEIGHT_PX, 64),
-} as const satisfies HeroSheetProfile;
+function buildNormalizedSixFrameHeroSheet(sourceCharacterHeight: number): HeroSheetProfile {
+  return {
+    frameWidth: 512,
+    frameHeight: 640,
+    startFrame: 0,
+    endFrame: 5,
+    display: buildNormalizedHeroDisplay(512, 640, sourceCharacterHeight),
+    offset: buildNormalizedHeroOffset(sourceCharacterHeight, HERO_ARCHETYPE_FEET_MARGIN_PX),
+  };
+}
+
+const DUAL_DAGGER_SHEET = buildNormalizedSixFrameHeroSheet(397);
+const BLOODLETTER_SHEET = buildNormalizedSixFrameHeroSheet(388);
+const DEMONFANG_SHEET = buildNormalizedSixFrameHeroSheet(398);
 
 function buildAnimation(
   source: HeroAnimationSource,
@@ -263,6 +269,60 @@ const HERO_RENDER_DEFINITIONS = [
       attack: {
         textureKey: "hero-dual-dagger-attack-normalized-v2",
         assetPath: "/assets/characters/hero-dual-dagger-attack-normalized-v2.png",
+        frameRate: 16,
+      },
+    },
+    visualProfile: "melee",
+    visualParameters: {
+      approachDistance: 48,
+      motionDurationMs: 140,
+      impactDelayMs: 150,
+    },
+    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
+  },
+  {
+    id: "hero_bloodletter",
+    familyId: "dagger",
+    offset: { x: 0, y: 58 },
+    sheet: BLOODLETTER_SHEET,
+    animations: {
+      idle: {
+        textureKey: "hero-bloodletter-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-bloodletter-attack-normalized-v1.png",
+        frameRate: 6,
+        startFrame: 0,
+        endFrame: 0,
+      },
+      attack: {
+        textureKey: "hero-bloodletter-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-bloodletter-attack-normalized-v1.png",
+        frameRate: 16,
+      },
+    },
+    visualProfile: "melee",
+    visualParameters: {
+      approachDistance: 48,
+      motionDurationMs: 140,
+      impactDelayMs: 150,
+    },
+    ambientMotion: { distance: 4, durationMs: 800, delayMs: 0 },
+  },
+  {
+    id: "hero_demonfang",
+    familyId: "dagger",
+    offset: { x: 0, y: 58 },
+    sheet: DEMONFANG_SHEET,
+    animations: {
+      idle: {
+        textureKey: "hero-demonfang-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-demonfang-attack-normalized-v1.png",
+        frameRate: 6,
+        startFrame: 5,
+        endFrame: 5,
+      },
+      attack: {
+        textureKey: "hero-demonfang-attack-normalized-v1",
+        assetPath: "/assets/characters/hero-demonfang-attack-normalized-v1.png",
         frameRate: 16,
       },
     },
