@@ -22,7 +22,7 @@ import {
   getDungeonKeyItemId,
 } from "../data/dungeonKeyContentCatalog.js";
 
-export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v1";
+export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v2";
 const DEV_SANDBOX_SILVER = 10_000_000;
 const DEV_SANDBOX_RESOURCE_STACK = 500;
 
