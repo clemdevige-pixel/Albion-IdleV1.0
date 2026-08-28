@@ -1,6 +1,7 @@
 import {
   WEAPON_FAMILIES,
   resolveWeaponFamilyId,
+  resolveWeaponMastery,
   resolveWeaponPresentation,
   type WeaponFamilyId,
   type WeaponProjectilePresentation,
@@ -18,6 +19,16 @@ export interface WeaponFamilyCraftPresentation {
   readonly label: string;
   readonly symbol: string;
 }
+
+/** Dedicated combat presentation overrides for authored specialization sheets. */
+const SPECIALIZATION_COMBAT_PRESENTATION: Readonly<
+  Record<string, Omit<EquipmentPresentationDefinition, "itemIcon">>
+> = {
+  mastery_bloodletter: {
+    actorManifestId: "hero_bloodletter",
+    combatProfileId: "melee",
+  },
+};
 
 /**
  * Family fallbacks reference the already-authored canonical weapon presentation
@@ -46,6 +57,12 @@ const CRAFT_PRESENTATION_BY_WEAPON_FAMILY: Readonly<
 };
 
 function resolveCombatPresentation(itemId: string) {
+  const specializationMasteryId = resolveWeaponMastery(itemId)?.weaponId;
+  if (specializationMasteryId !== undefined) {
+    const override = SPECIALIZATION_COMBAT_PRESENTATION[specializationMasteryId];
+    if (override !== undefined) return override;
+  }
+
   const specializationPresentation = resolveWeaponPresentation(itemId);
   if (specializationPresentation !== undefined) return specializationPresentation;
 
