@@ -13,9 +13,9 @@ const DUAL_DAGGER_ITEM_IDS = [
 
 const EXPECTED_TEXTURE_KEYS = {
   idle: "hero-dagger-pair-idle",
-  walk: "hero-dagger-pair-walk",
+  walk: "hero-archetype-leather-walk-sheet-v1",
   attack: "hero-dagger-pair-attack",
-  death: "hero-dagger-pair-death",
+  death: "hero-archetype-leather-death-sheet-v1",
 } as const;
 
 describe("dual dagger render contract", () => {
@@ -25,10 +25,10 @@ describe("dual dagger render contract", () => {
     }
   });
 
-  it("registers one canonical six-frame 512x512 sheet per actor state", () => {
+  it("keeps weapon combat sheets and reuses the leather movement sheets", () => {
     const manifest = renderManifestRegistry.requireActor("hero_dagger_pair");
 
-    for (const state of ["idle", "walk", "attack"] as const) {
+    for (const state of ["idle", "attack"] as const) {
       const animation = manifest.animations[state];
       expect(animation.textureKey).toBe(EXPECTED_TEXTURE_KEYS[state]);
       expect(animation.frameWidth).toBe(512);
@@ -37,11 +37,21 @@ describe("dual dagger render contract", () => {
       expect(animation.endFrame).toBe(5);
     }
 
+    expect(manifest.animations.walk).toMatchObject({
+      textureKey: EXPECTED_TEXTURE_KEYS.walk,
+      frameWidth: 512,
+      frameHeight: 640,
+      startFrame: 0,
+      endFrame: 5,
+      offset: { x: 0, y: 74 },
+    });
+
     const death = manifest.poses.death;
     expect(death.textureKey).toBe(EXPECTED_TEXTURE_KEYS.death);
     expect(death.frameWidth).toBe(512);
-    expect(death.frameHeight).toBe(512);
+    expect(death.frameHeight).toBe(640);
     expect(death.startFrame).toBe(0);
     expect(death.endFrame).toBe(5);
+    expect(death.offset).toEqual({ x: 0, y: 74 });
   });
 });

@@ -6,6 +6,11 @@ export interface ActorDisplayManifest {
   readonly height: number;
 }
 
+export interface ActorOffsetManifest {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface ActorAmbientMotionManifest {
   readonly distance: number;
   readonly durationMs: number;
@@ -22,6 +27,7 @@ export interface ActorAnimationManifest {
   readonly frameRate: number;
   readonly repeat: number;
   readonly display: ActorDisplayManifest;
+  readonly offset?: ActorOffsetManifest;
 }
 
 export interface ActorPoseManifest {
@@ -34,6 +40,7 @@ export interface ActorPoseManifest {
   readonly endFrame?: number;
   readonly frameRate?: number;
   readonly repeat?: number;
+  readonly offset?: ActorOffsetManifest;
 }
 
 export interface ActorRenderManifest {
@@ -44,10 +51,7 @@ export interface ActorRenderManifest {
     readonly x: number;
     readonly y: number;
   };
-  readonly offset: {
-    readonly x: number;
-    readonly y: number;
-  };
+  readonly offset: ActorOffsetManifest;
   readonly animations: Readonly<Record<ActorAnimationState, ActorAnimationManifest>>;
   readonly poses: {
     readonly death: ActorPoseManifest;

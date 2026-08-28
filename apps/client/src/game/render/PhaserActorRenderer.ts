@@ -8,27 +8,27 @@ import {
 } from "./RenderManifest";
 import { scaleCombatActorDisplay } from "./actorPresentationScale";
 
-type AnimatedActorPoseManifest = ActorPoseManifest & Required<Pick<
-  ActorPoseManifest,
-  "frameWidth" | "frameHeight" | "startFrame" | "endFrame" | "frameRate"
->>;
+type AnimatedActorPoseManifest = ActorPoseManifest &
+  Required<
+    Pick<ActorPoseManifest, "frameWidth" | "frameHeight" | "startFrame" | "endFrame" | "frameRate">
+  >;
 
 type AnimationSource = Pick<
   ActorAnimationManifest,
   "textureKey" | "startFrame" | "endFrame" | "frameRate" | "repeat"
 >;
 
-function hasAnimatedDeath(
-  manifest: ActorRenderManifest,
-): manifest is ActorRenderManifest & {
+function hasAnimatedDeath(manifest: ActorRenderManifest): manifest is ActorRenderManifest & {
   readonly poses: { readonly death: AnimatedActorPoseManifest };
 } {
   const death = manifest.poses.death;
-  return death.frameWidth !== undefined
-    && death.frameHeight !== undefined
-    && death.startFrame !== undefined
-    && death.endFrame !== undefined
-    && death.frameRate !== undefined;
+  return (
+    death.frameWidth !== undefined &&
+    death.frameHeight !== undefined &&
+    death.startFrame !== undefined &&
+    death.endFrame !== undefined &&
+    death.frameRate !== undefined
+  );
 }
 
 function hasTexture(scene: Phaser.Scene, textureKey: string): boolean {
@@ -72,10 +72,7 @@ function registerAnimation(
   });
 }
 
-export function preloadActorManifest(
-  scene: Phaser.Scene,
-  manifest: ActorRenderManifest,
-): void {
+export function preloadActorManifest(scene: Phaser.Scene, manifest: ActorRenderManifest): void {
   for (const state of ACTOR_ANIMATION_STATES) {
     const animation = manifest.animations[state];
     scene.load.spritesheet(animation.textureKey, animation.assetPath, {
@@ -96,51 +93,33 @@ export function preloadActorManifest(
   }
 }
 
-export function registerActorAnimations(
-  scene: Phaser.Scene,
-  manifest: ActorRenderManifest,
-): void {
+export function registerActorAnimations(scene: Phaser.Scene, manifest: ActorRenderManifest): void {
   for (const state of ACTOR_ANIMATION_STATES) {
-    registerAnimation(
-      scene,
-      getActorAnimationKey(manifest, state),
-      manifest.animations[state],
-    );
+    registerAnimation(scene, getActorAnimationKey(manifest, state), manifest.animations[state]);
   }
 
   if (hasAnimatedDeath(manifest)) {
     const death = manifest.poses.death;
-    registerAnimation(
-      scene,
-      getActorDeathAnimationKey(manifest),
-      {
-        textureKey: death.textureKey,
-        startFrame: death.startFrame,
-        endFrame: death.endFrame,
-        frameRate: death.frameRate,
-        repeat: death.repeat ?? 0,
-      },
-    );
+    registerAnimation(scene, getActorDeathAnimationKey(manifest), {
+      textureKey: death.textureKey,
+      startFrame: death.startFrame,
+      endFrame: death.endFrame,
+      frameRate: death.frameRate,
+      repeat: death.repeat ?? 0,
+    });
   }
 }
 
-export function configureActorTextures(
-  scene: Phaser.Scene,
-  manifest: ActorRenderManifest,
-): void {
+export function configureActorTextures(scene: Phaser.Scene, manifest: ActorRenderManifest): void {
   for (const state of ACTOR_ANIMATION_STATES) {
     const textureKey = manifest.animations[state].textureKey;
     if (!hasTexture(scene, textureKey)) continue;
-    scene.textures
-      .get(textureKey)
-      .setFilter(Phaser.Textures.FilterMode.NEAREST);
+    scene.textures.get(textureKey).setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
 
   const deathTextureKey = manifest.poses.death.textureKey;
   if (hasTexture(scene, deathTextureKey)) {
-    scene.textures
-      .get(deathTextureKey)
-      .setFilter(Phaser.Textures.FilterMode.NEAREST);
+    scene.textures.get(deathTextureKey).setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
 }
 
@@ -149,14 +128,10 @@ export function createActorSprite(
   manifest: ActorRenderManifest,
 ): Phaser.GameObjects.Sprite {
   const idle = manifest.animations.idle;
+  const offset = idle.offset ?? manifest.offset;
   const display = scaleCombatActorDisplay(idle.display.width, idle.display.height);
   return scene.add
-    .sprite(
-      manifest.offset.x,
-      manifest.offset.y,
-      idle.textureKey,
-      idle.startFrame,
-    )
+    .sprite(offset.x, offset.y, idle.textureKey, idle.startFrame)
     .setOrigin(manifest.origin.x, manifest.origin.y)
     .setDisplaySize(display.width, display.height);
 }
@@ -178,6 +153,7 @@ export function applyActorAnimation(
   state: ActorAnimationState,
 ): void {
   const animation = manifest.animations[state];
+  const offset = animation.offset ?? manifest.offset;
   const animationKey = getActorAnimationKey(manifest, state);
 
   if (!hasTexture(sprite.scene, animation.textureKey)) {
@@ -188,21 +164,16 @@ export function applyActorAnimation(
   }
 
   if (!sprite.scene.anims.exists(animationKey)) {
-    console.error(
-      `[Render] Cannot play animation "${animationKey}": animation is not registered.`,
-    );
+    console.error(`[Render] Cannot play animation "${animationKey}": animation is not registered.`);
     return;
   }
 
-  const display = scaleCombatActorDisplay(
-    animation.display.width,
-    animation.display.height,
-  );
+  const display = scaleCombatActorDisplay(animation.display.width, animation.display.height);
   sprite
     .stop()
     .setTexture(animation.textureKey, animation.startFrame)
     .setOrigin(manifest.origin.x, manifest.origin.y)
-    .setPosition(manifest.offset.x, manifest.offset.y)
+    .setPosition(offset.x, offset.y)
     .setDisplaySize(display.width, display.height)
     .setVisible(true)
     .play(animationKey);
@@ -213,6 +184,7 @@ export function applyActorDeathPose(
   manifest: ActorRenderManifest,
 ): void {
   const death = manifest.poses.death;
+  const offset = death.offset ?? manifest.offset;
   if (!hasTexture(sprite.scene, death.textureKey)) {
     console.error(
       `[Render] Cannot apply death pose for "${manifest.id}": texture "${death.textureKey}" is missing.`,
@@ -225,7 +197,7 @@ export function applyActorDeathPose(
     .stop()
     .setTexture(death.textureKey, death.startFrame ?? 0)
     .setOrigin(manifest.origin.x, manifest.origin.y)
-    .setPosition(manifest.offset.x, manifest.offset.y)
+    .setPosition(offset.x, offset.y)
     .setDisplaySize(display.width, display.height)
     .setVisible(true);
 

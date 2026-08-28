@@ -29,142 +29,79 @@ describe("parseRenderManifest", () => {
   });
 });
 
-describe("Dagger Pair death pose parsing", () => {
-  it("preserves animated death metadata from the manifest", () => {
-    const parsed = parseRenderManifest(daggerPairManifest);
+describe("Hero state-specific presentation parsing", () => {
+  const cases = [
+    {
+      label: "broadsword",
+      manifest: heroManifest,
+      offset: { x: -5, y: 58 },
+      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
+    },
+    {
+      label: "fire staff",
+      manifest: fireStaffManifest,
+      offset: { x: 30, y: 58 },
+      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
+    },
+    {
+      label: "longbow",
+      manifest: longbowManifest,
+      offset: { x: 11, y: 58 },
+      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
+    },
+    {
+      label: "spiked gauntlets",
+      manifest: spikedGauntletsManifest,
+      offset: { x: 0, y: 58 },
+      combatDisplay: { width: 228.5714285714, height: 228.5714285714 },
+    },
+    {
+      label: "dagger pair",
+      manifest: daggerPairManifest,
+      offset: { x: 0, y: 58 },
+      combatDisplay: { width: 182, height: 182 },
+    },
+  ] as const;
 
-    if (parsed.kind !== "actor") {
-      throw new Error("Expected actor manifest");
-    }
+  for (const testCase of cases) {
+    it(`keeps ${testCase.label} combat framing and parses shared states`, () => {
+      const parsed = parseRenderManifest(testCase.manifest);
 
-    expect(parsed.poses.death.frameWidth).toBe(512);
-    expect(parsed.poses.death.frameHeight).toBe(512);
-    expect(parsed.poses.death.startFrame).toBe(0);
-    expect(parsed.poses.death.endFrame).toBe(5);
-    expect(parsed.poses.death.frameRate).toBe(8);
-    expect(parsed.poses.death.repeat).toBe(0);
-  });
-});
+      if (parsed.kind !== "actor") {
+        throw new Error("Expected actor manifest");
+      }
 
-describe("Broadsword normalized animation parsing", () => {
-  it("uses the canonical frame and display reference for every animation", () => {
-    const parsed = parseRenderManifest(heroManifest);
+      expect(parsed.offset).toEqual(testCase.offset);
+      for (const state of ["idle", "attack"] as const) {
+        expect(parsed.animations[state]).toMatchObject({
+          frameWidth: 512,
+          frameHeight: 512,
+          startFrame: 0,
+          endFrame: 5,
+          display: testCase.combatDisplay,
+        });
+      }
 
-    if (parsed.kind !== "actor") {
-      throw new Error("Expected actor manifest");
-    }
-
-    expect(parsed.offset).toEqual({ x: -5, y: 58 });
-
-    for (const animation of Object.values(parsed.animations)) {
-      expect(animation.frameWidth).toBe(512);
-      expect(animation.frameHeight).toBe(512);
-      expect(animation.startFrame).toBe(0);
-      expect(animation.endFrame).toBe(5);
-      expect(animation.display).toEqual({
-        width: 228.5714285714,
-        height: 228.5714285714,
+      expect(parsed.animations.walk).toMatchObject({
+        frameWidth: 512,
+        frameHeight: 640,
+        startFrame: 0,
+        endFrame: 5,
+        display: { width: 160, height: 200 },
+        offset: { x: 0, y: 74 },
       });
-    }
-
-    expect(parsed.poses.death).toMatchObject({
-      frameWidth: 512,
-      frameHeight: 512,
-      startFrame: 0,
-      endFrame: 5,
-      frameRate: 8,
-      repeat: 0,
+      expect(parsed.poses.death).toMatchObject({
+        frameWidth: 512,
+        frameHeight: 640,
+        startFrame: 0,
+        endFrame: 5,
+        frameRate: 8,
+        repeat: 0,
+        display: { width: 160, height: 200 },
+        offset: { x: 0, y: 74 },
+      });
     });
-  });
-});
-
-describe("Fire Staff normalized animation parsing", () => {
-  it("uses the canonical frame and display reference for every animation", () => {
-    const parsed = parseRenderManifest(fireStaffManifest);
-
-    if (parsed.kind !== "actor") {
-      throw new Error("Expected actor manifest");
-    }
-
-    expect(parsed.offset).toEqual({ x: 30, y: 58 });
-
-    for (const animation of Object.values(parsed.animations)) {
-      expect(animation.frameWidth).toBe(512);
-      expect(animation.frameHeight).toBe(512);
-      expect(animation.startFrame).toBe(0);
-      expect(animation.endFrame).toBe(5);
-      expect(animation.display).toEqual({
-        width: 228.5714285714,
-        height: 228.5714285714,
-      });
-    }
-  });
-});
-
-describe("Longbow normalized animation parsing", () => {
-  it("uses the canonical frame and display reference for every animation", () => {
-    const parsed = parseRenderManifest(longbowManifest);
-
-    if (parsed.kind !== "actor") {
-      throw new Error("Expected actor manifest");
-    }
-
-    expect(parsed.offset).toEqual({ x: 11, y: 58 });
-
-    for (const animation of Object.values(parsed.animations)) {
-      expect(animation.frameWidth).toBe(512);
-      expect(animation.frameHeight).toBe(512);
-      expect(animation.startFrame).toBe(0);
-      expect(animation.endFrame).toBe(5);
-      expect(animation.display).toEqual({
-        width: 228.5714285714,
-        height: 228.5714285714,
-      });
-    }
-  });
-});
-
-describe("Spiked Gauntlets normalized animation parsing", () => {
-  it("uses the canonical frame and display reference for every animation", () => {
-    const parsed = parseRenderManifest(spikedGauntletsManifest);
-
-    if (parsed.kind !== "actor") {
-      throw new Error("Expected actor manifest");
-    }
-
-    expect(parsed.offset).toEqual({ x: 0, y: 58 });
-
-    for (const animation of Object.values(parsed.animations)) {
-      expect(animation.frameWidth).toBe(512);
-      expect(animation.frameHeight).toBe(512);
-      expect(animation.startFrame).toBe(0);
-      expect(animation.endFrame).toBe(5);
-      expect(animation.display).toEqual({
-        width: 228.5714285714,
-        height: 228.5714285714,
-      });
-    }
-  });
-});
-
-describe("Dagger Pair normalized animation parsing", () => {
-  it("uses the authored display reference for every animation", () => {
-    const parsed = parseRenderManifest(daggerPairManifest);
-
-    if (parsed.kind !== "actor") {
-      throw new Error("Expected actor manifest");
-    }
-
-    expect(parsed.offset).toEqual({ x: 0, y: 58 });
-
-    for (const animation of Object.values(parsed.animations)) {
-      expect(animation.frameWidth).toBe(512);
-      expect(animation.frameHeight).toBe(512);
-      expect(animation.startFrame).toBe(0);
-      expect(animation.endFrame).toBe(5);
-      expect(animation.display).toEqual({ width: 182, height: 182 });
-    }
-  });
+  }
 });
 
 describe("Static actor manifest parsing", () => {
@@ -190,11 +127,7 @@ describe("Static environment manifest parsing", () => {
       throw new Error("Expected environment manifest");
     }
 
-    expect(parsed.layers.map((layer) => layer.depth)).toEqual([
-      -30,
-      -20,
-      -10,
-    ]);
+    expect(parsed.layers.map((layer) => layer.depth)).toEqual([-30, -20, -10]);
   });
 
   it("anchors actor shadows to the authored combat ground line", () => {

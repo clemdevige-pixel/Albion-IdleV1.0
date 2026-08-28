@@ -1,7 +1,10 @@
+import type { WeaponFamilyId } from "../../data/weaponContentCatalog.js";
 import type {
   ActorDisplayManifest,
+  ActorOffsetManifest,
   ActorRenderManifest,
 } from "./RenderManifest";
+import { buildSharedHeroDeathPose, requireHeroVisualArchetype } from "./HeroVisualArchetypeCatalog";
 
 type HeroAnimationSource = {
   readonly textureKey: string;
@@ -17,22 +20,15 @@ type HeroSheetProfile = {
   readonly display: ActorDisplayManifest;
 };
 
-type HeroDeathSource = {
-  readonly textureKey: string;
-  readonly assetPath: string;
-  readonly frameRate?: number;
-};
-
 type HeroRenderDefinition = {
   readonly id: string;
+  readonly familyId: WeaponFamilyId;
   readonly offset: { readonly x: number; readonly y: number };
   readonly sheet: HeroSheetProfile;
   readonly animations: {
     readonly idle: HeroAnimationSource;
-    readonly walk: HeroAnimationSource;
     readonly attack: HeroAnimationSource;
   };
-  readonly death: HeroDeathSource;
   readonly visualProfile: string;
   readonly visualParameters: ActorRenderManifest["visualParameters"];
   readonly ambientMotion: ActorRenderManifest["ambientMotion"];
@@ -44,7 +40,6 @@ const HERO_ANIMATION_REPEAT = {
   walk: -1,
   attack: 0,
 } as const;
-const HERO_DEATH_REPEAT = 0;
 
 const STANDARD_SIX_FRAME_SHEET = {
   frameWidth: 512,
@@ -58,6 +53,7 @@ function buildAnimation(
   source: HeroAnimationSource,
   sheet: HeroSheetProfile,
   repeat: number,
+  offset?: ActorOffsetManifest,
 ): ActorRenderManifest["animations"]["idle"] {
   return {
     ...source,
@@ -67,12 +63,13 @@ function buildAnimation(
     endFrame: sheet.endFrame,
     repeat,
     display: sheet.display,
+    ...(offset === undefined ? {} : { offset }),
   };
 }
 
-export function createHeroRenderManifest(
-  definition: HeroRenderDefinition,
-): ActorRenderManifest {
+export function createHeroRenderManifest(definition: HeroRenderDefinition): ActorRenderManifest {
+  const archetype = requireHeroVisualArchetype(definition.familyId);
+
   return {
     schemaVersion: 1,
     id: definition.id,
@@ -86,9 +83,10 @@ export function createHeroRenderManifest(
         HERO_ANIMATION_REPEAT.idle,
       ),
       walk: buildAnimation(
-        definition.animations.walk,
-        definition.sheet,
+        archetype.walk,
+        archetype.sheet,
         HERO_ANIMATION_REPEAT.walk,
+        archetype.offset,
       ),
       attack: buildAnimation(
         definition.animations.attack,
@@ -97,21 +95,7 @@ export function createHeroRenderManifest(
       ),
     },
     poses: {
-      death: {
-        textureKey: definition.death.textureKey,
-        assetPath: definition.death.assetPath,
-        display: definition.sheet.display,
-        ...(definition.death.frameRate === undefined
-          ? {}
-          : {
-              frameWidth: definition.sheet.frameWidth,
-              frameHeight: definition.sheet.frameHeight,
-              startFrame: definition.sheet.startFrame,
-              endFrame: definition.sheet.endFrame,
-              frameRate: definition.death.frameRate,
-              repeat: HERO_DEATH_REPEAT,
-            }),
-      },
+      death: buildSharedHeroDeathPose(definition.familyId),
     },
     visualProfile: definition.visualProfile,
     visualParameters: definition.visualParameters,
@@ -122,6 +106,7 @@ export function createHeroRenderManifest(
 const HERO_RENDER_DEFINITIONS = [
   {
     id: "hero_broadsword",
+    familyId: "sword",
     offset: { x: -5, y: 58 },
     sheet: STANDARD_SIX_FRAME_SHEET,
     animations: {
@@ -130,21 +115,11 @@ const HERO_RENDER_DEFINITIONS = [
         assetPath: "/assets/characters/hero-broadsword-idle-sheet-v1.png",
         frameRate: 6,
       },
-      walk: {
-        textureKey: "hero-broadsword-walk-sheet-v2",
-        assetPath: "/assets/characters/hero-broadsword-walk-sheet-v1.png",
-        frameRate: 10,
-      },
       attack: {
         textureKey: "hero-broadsword-attack-sheet-v2",
         assetPath: "/assets/characters/hero-broadsword-attack-sheet-v1.png",
         frameRate: 16,
       },
-    },
-    death: {
-      textureKey: "hero-broadsword-death-sheet-v2",
-      assetPath: "/assets/characters/hero-broadsword-death-v2.png",
-      frameRate: 8,
     },
     visualProfile: "melee",
     visualParameters: {
@@ -156,6 +131,7 @@ const HERO_RENDER_DEFINITIONS = [
   },
   {
     id: "hero_longbow",
+    familyId: "bow",
     offset: { x: 11, y: 58 },
     sheet: STANDARD_SIX_FRAME_SHEET,
     animations: {
@@ -164,21 +140,11 @@ const HERO_RENDER_DEFINITIONS = [
         assetPath: "/assets/characters/hero-longbow-idle-sheet-v1.png",
         frameRate: 6,
       },
-      walk: {
-        textureKey: "hero-longbow-walk-sheet-v1",
-        assetPath: "/assets/characters/hero-longbow-walk-sheet-v1.png",
-        frameRate: 10,
-      },
       attack: {
         textureKey: "hero-longbow-attack-sheet-v1",
         assetPath: "/assets/characters/hero-longbow-attack-sheet-v1.png",
         frameRate: 13,
       },
-    },
-    death: {
-      textureKey: "hero-longbow-death-sheet-v1",
-      assetPath: "/assets/characters/hero-longbow-death-sheet-v1.png",
-      frameRate: 8,
     },
     visualProfile: "projectile",
     visualParameters: {
@@ -190,6 +156,7 @@ const HERO_RENDER_DEFINITIONS = [
   },
   {
     id: "hero_bow",
+    familyId: "bow",
     offset: { x: 0, y: 58 },
     sheet: {
       frameWidth: 420,
@@ -204,20 +171,11 @@ const HERO_RENDER_DEFINITIONS = [
         assetPath: "/assets/characters/hero-badon-idle-sheet-v1.png",
         frameRate: 6,
       },
-      walk: {
-        textureKey: "hero-badon-walk-sheet",
-        assetPath: "/assets/characters/hero-badon-walk-sheet-v1.png",
-        frameRate: 10,
-      },
       attack: {
         textureKey: "hero-badon-attack-sheet",
         assetPath: "/assets/characters/hero-badon-attack-sheet-v1.png",
         frameRate: 13,
       },
-    },
-    death: {
-      textureKey: "hero-badon-death",
-      assetPath: "/assets/characters/hero-badon-death-v2.png",
     },
     visualProfile: "projectile",
     visualParameters: {
@@ -229,6 +187,7 @@ const HERO_RENDER_DEFINITIONS = [
   },
   {
     id: "hero_fire_staff",
+    familyId: "fire_staff",
     offset: { x: 30, y: 58 },
     sheet: STANDARD_SIX_FRAME_SHEET,
     animations: {
@@ -237,21 +196,11 @@ const HERO_RENDER_DEFINITIONS = [
         assetPath: "/assets/characters/hero-fire-staff-idle-sheet-v1.png",
         frameRate: 6,
       },
-      walk: {
-        textureKey: "hero-fire-staff-walk-sheet-v4",
-        assetPath: "/assets/characters/hero-fire-staff-walk-sheet-v1.png",
-        frameRate: 10,
-      },
       attack: {
         textureKey: "hero-fire-staff-attack-sheet-v4",
         assetPath: "/assets/characters/hero-fire-staff-attack-sheet-v1.png",
         frameRate: 13,
       },
-    },
-    death: {
-      textureKey: "hero-fire-staff-death-sheet-v4",
-      assetPath: "/assets/characters/hero-fire-staff-death-v2.png",
-      frameRate: 8,
     },
     visualProfile: "projectile",
     visualParameters: {
@@ -263,6 +212,7 @@ const HERO_RENDER_DEFINITIONS = [
   },
   {
     id: "hero_spiked_gauntlets",
+    familyId: "gloves",
     offset: { x: 0, y: 58 },
     sheet: STANDARD_SIX_FRAME_SHEET,
     animations: {
@@ -271,21 +221,11 @@ const HERO_RENDER_DEFINITIONS = [
         assetPath: "/assets/characters/hero-spiked-gauntlets-idle-sheet-v1.png",
         frameRate: 6,
       },
-      walk: {
-        textureKey: "hero-spiked-gauntlets-walk-sheet-v2",
-        assetPath: "/assets/characters/hero-spiked-gauntlets-walk-sheet-v1.png",
-        frameRate: 10,
-      },
       attack: {
         textureKey: "hero-spiked-gauntlets-attack-sheet-v2",
         assetPath: "/assets/characters/hero-spiked-gauntlets-attack-sheet-v1.png",
         frameRate: 16,
       },
-    },
-    death: {
-      textureKey: "hero-spiked-gauntlets-death-sheet-v2",
-      assetPath: "/assets/characters/hero-spiked-gauntlets-death-v1.png",
-      frameRate: 8,
     },
     visualProfile: "melee",
     visualParameters: {
@@ -297,6 +237,7 @@ const HERO_RENDER_DEFINITIONS = [
   },
   {
     id: "hero_dagger_pair",
+    familyId: "dagger",
     offset: { x: 0, y: 58 },
     sheet: {
       frameWidth: 512,
@@ -311,21 +252,11 @@ const HERO_RENDER_DEFINITIONS = [
         assetPath: "/assets/characters/hero_dual_dagger_idle.png",
         frameRate: 6,
       },
-      walk: {
-        textureKey: "hero-dagger-pair-walk",
-        assetPath: "/assets/characters/dual_daggers_walk.png",
-        frameRate: 10,
-      },
       attack: {
         textureKey: "hero-dagger-pair-attack",
         assetPath: "/assets/characters/hero_dual_dagger_attack.png",
         frameRate: 16,
       },
-    },
-    death: {
-      textureKey: "hero-dagger-pair-death",
-      assetPath: "/assets/characters/dual_daggers_death.png",
-      frameRate: 8,
     },
     visualProfile: "melee",
     visualParameters: {
