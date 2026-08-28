@@ -10,6 +10,8 @@ export interface HeroPresentationState {
   readonly segmentIndex: number;
 }
 
+const DUAL_DAGGER_MANIFEST_ID = "hero_dagger_pair";
+
 /** Owns weapon-dependent hero animation selection and transitions. */
 export class HeroPresentationSystem {
   private readonly animationSystem: ActorAnimationSystem;
@@ -18,9 +20,10 @@ export class HeroPresentationSystem {
   private weaponInitialized = false;
   private currentCombatState = "";
   private defeatPresented = false;
+  private dualDaggerProbe: Phaser.GameObjects.Sprite | undefined;
 
   public constructor(
-    sprite: Phaser.GameObjects.Sprite,
+    private readonly sprite: Phaser.GameObjects.Sprite,
     private readonly fallbackVisualManifestId: string,
   ) {
     this.animationSystem = new ActorAnimationSystem(sprite);
@@ -31,6 +34,8 @@ export class HeroPresentationSystem {
     const nextVisualManifestId =
       state.visualManifestId ?? this.fallbackVisualManifestId;
     const defeated = state.combatState === "defeat";
+
+    this.syncDualDaggerProbe(nextVisualManifestId);
 
     if (defeated) {
       this.currentVisualManifestId = nextVisualManifestId;
@@ -77,10 +82,35 @@ export class HeroPresentationSystem {
   public clear(): void {
     this.currentActorVisual = undefined;
     this.animationSystem.clear();
+    this.dualDaggerProbe?.destroy();
+    this.dualDaggerProbe = undefined;
   }
 
   private presentIdle(): void {
     this.play("idle");
+  }
+
+  private syncDualDaggerProbe(visualManifestId: string): void {
+    if (visualManifestId !== DUAL_DAGGER_MANIFEST_ID) {
+      this.dualDaggerProbe?.destroy();
+      this.dualDaggerProbe = undefined;
+      return;
+    }
+    if (this.dualDaggerProbe !== undefined) return;
+
+    const manifest = renderManifestRegistry.requireActor(DUAL_DAGGER_MANIFEST_ID);
+    const idle = manifest.animations.idle;
+    this.dualDaggerProbe = this.sprite.scene.add
+      .sprite(
+        this.sprite.scene.scale.width * 0.5,
+        this.sprite.scene.scale.height * 0.5,
+        idle.textureKey,
+        idle.startFrame,
+      )
+      .setOrigin(0.5)
+      .setDisplaySize(160, 240)
+      .setDepth(2000)
+      .setVisible(true);
   }
 
   private resolveActorVisual(
