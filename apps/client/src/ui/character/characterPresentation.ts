@@ -1,5 +1,6 @@
 import { resolveEquipmentPresentation } from "../../data/equipmentPresentation";
 import { renderManifestRegistry } from "../../game/render/defaultRenderManifestRegistry";
+import type { ActorRenderManifest } from "../../game/render/RenderManifest";
 
 export type HeroIdlePresentation = {
   readonly image: string;
@@ -10,7 +11,28 @@ export type HeroIdlePresentation = {
   readonly frameWidth: number;
   readonly frameHeight: number;
   readonly frameCount: number;
+  readonly frameIndex: number;
 };
+
+function buildIdlePresentation(manifest: ActorRenderManifest): HeroIdlePresentation {
+  const idle = manifest.animations.idle;
+  const attack = manifest.animations.attack;
+  const sharesAttackSheet = idle.assetPath === attack.assetPath
+    && idle.frameWidth === attack.frameWidth
+    && idle.frameHeight === attack.frameHeight;
+  const lastPhysicalFrame = sharesAttackSheet
+    ? Math.max(idle.endFrame, attack.endFrame)
+    : idle.endFrame;
+
+  return {
+    image: idle.assetPath,
+    spriteSheet: true,
+    frameWidth: idle.frameWidth,
+    frameHeight: idle.frameHeight,
+    frameCount: lastPhysicalFrame + 1,
+    frameIndex: idle.startFrame,
+  };
+}
 
 export function getEquippedHeroIdlePresentation(
   weaponId: string | undefined,
@@ -19,26 +41,12 @@ export function getEquippedHeroIdlePresentation(
   if (presentation?.actorManifestId !== undefined) {
     const actorManifest = renderManifestRegistry.getActor(presentation.actorManifestId);
     if (actorManifest !== undefined) {
-      const idle = actorManifest.animations.idle;
-      return {
-        image: idle.assetPath,
-        spriteSheet: true,
-        frameWidth: idle.frameWidth,
-        frameHeight: idle.frameHeight,
-        frameCount: idle.endFrame - idle.startFrame + 1,
-      };
+      return buildIdlePresentation(actorManifest);
     }
   }
 
   if (weaponId !== undefined) {
-    const idle = renderManifestRegistry.requireDefaultActor().animations.idle;
-    return {
-      image: idle.assetPath,
-      spriteSheet: true,
-      frameWidth: idle.frameWidth,
-      frameHeight: idle.frameHeight,
-      frameCount: idle.endFrame - idle.startFrame + 1,
-    };
+    return buildIdlePresentation(renderManifestRegistry.requireDefaultActor());
   }
 
   return {
