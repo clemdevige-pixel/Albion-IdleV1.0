@@ -7,6 +7,7 @@ interface RegisteredActor {
   motionTween: Phaser.Tweens.Tween | undefined;
   ambientTween: Phaser.Tweens.Tween | undefined;
   ambientMotionKey: string;
+  ambientMotion: ActorAmbientMotionPresentation | undefined;
 }
 
 export interface ActorAmbientMotionPresentation {
@@ -52,6 +53,7 @@ export class ActorSystem {
       motionTween: undefined,
       ambientTween: undefined,
       ambientMotionKey: "",
+      ambientMotion,
     };
     this.actors.set(body, actor);
     if (ambientMotion !== undefined) {
@@ -69,7 +71,8 @@ export class ActorSystem {
       presentation.durationMs,
       presentation.delayMs ?? 0,
     ].join(":");
-    if (motionKey === actor.ambientMotionKey) return;
+    actor.ambientMotion = presentation;
+    if (motionKey === actor.ambientMotionKey && actor.ambientTween !== undefined) return;
 
     actor.ambientTween?.stop();
     actor.body.y = actor.homeY;
@@ -83,6 +86,19 @@ export class ActorSystem {
       yoyo: true,
       repeat: -1,
     });
+  }
+
+  public suspendAmbientMotion(body: Phaser.GameObjects.Container): void {
+    const actor = this.requireActor(body);
+    actor.ambientTween?.stop();
+    actor.ambientTween = undefined;
+    actor.body.y = actor.homeY;
+  }
+
+  public resumeAmbientMotion(body: Phaser.GameObjects.Container): void {
+    const actor = this.requireActor(body);
+    if (actor.ambientMotion === undefined) return;
+    this.setAmbientMotion(body, actor.ambientMotion);
   }
 
   public presentApproach(presentation: ActorApproachPresentation): void {
