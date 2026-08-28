@@ -17,6 +17,14 @@ describe("weapon equipment presentation", () => {
       .toEqual(resolveEquipmentPresentation("item_weapon_bow_warbow_t8"));
     expect(resolveEquipmentPresentation("item_weapon_staff_t3_infernal"))
       .toEqual(resolveEquipmentPresentation("item_weapon_staff_t4_infernal"));
+    expect(resolveEquipmentPresentation("item_weapon_staff_wildfire_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_staff_wildfire_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_staff_blazing_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_staff_blazing_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_staff_brimstone_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_staff_brimstone_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_staff_great_fire_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_staff_great_fire_t8"));
     expect(resolveEquipmentPresentation("item_weapon_gloves_t3_spiked_gauntlets"))
       .toEqual(resolveEquipmentPresentation("item_weapon_gloves_t4_spiked_gauntlets"));
     expect(resolveEquipmentPresentation("item_weapon_gloves_ursine_t4"))
@@ -81,16 +89,24 @@ describe("weapon equipment presentation", () => {
       });
     }
 
-    expect(resolveEquipmentPresentation("item_weapon_staff_t4_infernal")).toEqual({
-      itemIcon: "icons/armes/infernal staff.png",
-      actorManifestId: "hero_fire_staff",
-      combatProfileId: "projectile",
-      combatPresentation: {
-        kind: "projectile",
-        projectileId: "fireball",
-        releaseDelayMs: 355,
-      },
-    });
+    for (const [itemId, itemIcon, actorManifestId] of [
+      ["item_weapon_staff_t4_infernal", "icons/armes/infernal staff.png", "hero_infernal"],
+      ["item_weapon_staff_wildfire_t4", "icons/armes/wildfire staff.png", "hero_wildfire"],
+      ["item_weapon_staff_blazing_t4", "icons/armes/blazing staff.png", "hero_blazing"],
+      ["item_weapon_staff_brimstone_t4", "icons/armes/brimestone staff.png", "hero_brimstone"],
+      ["item_weapon_staff_great_fire_t4", "icons/armes/great fire staff.png", "hero_great_fire"],
+    ] as const) {
+      expect(resolveEquipmentPresentation(itemId)).toEqual({
+        itemIcon,
+        actorManifestId,
+        combatProfileId: "projectile",
+        combatPresentation: {
+          kind: "projectile",
+          projectileId: "fireball",
+          releaseDelayMs: 355,
+        },
+      });
+    }
 
     for (const [itemId, itemIcon, actorManifestId] of [
       ["item_weapon_gloves_t4_spiked_gauntlets", "icons/armes/spike.png", "hero_spiked_gauntlets"],
@@ -125,17 +141,6 @@ describe("weapon equipment presentation", () => {
       itemIcon: "icons/armes/clarent blade.png",
       actorManifestId: "hero_broadsword",
       combatProfileId: "melee",
-    });
-
-    expect(resolveEquipmentPresentation("item_weapon_staff_wildfire_t4")).toEqual({
-      itemIcon: "icons/armes/wildfire staff.png",
-      actorManifestId: "hero_fire_staff",
-      combatProfileId: "projectile",
-      combatPresentation: {
-        kind: "projectile",
-        projectileId: "fireball",
-        releaseDelayMs: 355,
-      },
     });
   });
 
