@@ -24,6 +24,21 @@ export interface WeaponFamilyCraftPresentation {
 const SPECIALIZATION_COMBAT_PRESENTATION: Readonly<
   Record<string, Omit<EquipmentPresentationDefinition, "itemIcon">>
 > = {
+  mastery_broadsword: {
+    actorManifestId: "hero_broadsword",
+  },
+  mastery_clarent_blade: {
+    actorManifestId: "hero_clarent",
+  },
+  mastery_carving_sword: {
+    actorManifestId: "hero_carving",
+  },
+  mastery_galatine_pair: {
+    actorManifestId: "hero_galatine",
+  },
+  mastery_claymore: {
+    actorManifestId: "hero_claymore",
+  },
   mastery_badon: {
     actorManifestId: "hero_badon",
   },
