@@ -30,7 +30,7 @@ export interface HeroVisualArchetypeDefinition {
  * Visible head-to-feet height in the logical Phaser viewport. This is the
  * single tuning value to adjust after evaluating the first assets in game.
  */
-export const HERO_TARGET_HEIGHT_PX = 130;
+export const HERO_TARGET_HEIGHT_PX = 140;
 
 /**
  * Walk sheets are normalized to 520 opaque source pixels from head to feet.
