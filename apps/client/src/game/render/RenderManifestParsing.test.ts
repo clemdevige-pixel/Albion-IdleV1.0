@@ -34,7 +34,7 @@ describe("Hero state-specific presentation parsing", () => {
     {
       label: "broadsword",
       manifest: heroManifest,
-      offset: { x: -5, y: 58 },
+      offset: { x: 0, y: 58 },
     },
     {
       label: "fire staff",
