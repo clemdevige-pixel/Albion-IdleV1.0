@@ -48,6 +48,7 @@ type NormalizedHeroDefinitionOptions = {
   readonly familyId: WeaponFamilyId;
   readonly textureKey: string;
   readonly assetPath: string;
+  /** Visible character height from top of head to bottom of feet; weapon/effects excluded. */
   readonly sourceCharacterHeight: number;
   readonly idleFrame: number;
   readonly attackEndFrame?: number;
@@ -182,6 +183,7 @@ const PROJECTILE_VISUAL_PARAMETERS = {
 const DAGGER_AMBIENT_MOTION = { distance: 4, durationMs: 800, delayMs: 0 } as const;
 const GLOVE_AMBIENT_MOTION = { distance: 4, durationMs: 850, delayMs: 0 } as const;
 const BOW_AMBIENT_MOTION = { distance: 4, durationMs: 900, delayMs: 0 } as const;
+const FIRE_STAFF_AMBIENT_MOTION = { distance: 4, durationMs: 900, delayMs: 0 } as const;
 
 const HERO_RENDER_DEFINITIONS = [
   {
@@ -269,27 +271,66 @@ const HERO_RENDER_DEFINITIONS = [
     visualParameters: PROJECTILE_VISUAL_PARAMETERS,
     ambientMotion: BOW_AMBIENT_MOTION,
   }),
-  {
-    id: "hero_fire_staff",
+  createNormalizedHeroDefinition({
+    id: "hero_infernal",
     familyId: "fire_staff",
-    offset: { x: 30, y: 58 },
-    sheet: STANDARD_SIX_FRAME_SHEET,
-    animations: {
-      idle: {
-        textureKey: "hero-fire-staff-idle-sheet-v5",
-        assetPath: "/assets/characters/hero-fire-staff-idle-sheet-v1.png",
-        frameRate: 6,
-      },
-      attack: {
-        textureKey: "hero-fire-staff-attack-sheet-v4",
-        assetPath: "/assets/characters/hero-fire-staff-attack-sheet-v1.png",
-        frameRate: 13,
-      },
-    },
+    textureKey: "hero-infernal-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-infernal-attack-normalized-v1.png",
+    sourceCharacterHeight: 375,
+    idleFrame: 0,
+    attackFrameRate: 13,
     visualProfile: "projectile",
     visualParameters: PROJECTILE_VISUAL_PARAMETERS,
-    ambientMotion: { distance: 4, durationMs: 900, delayMs: 0 },
-  },
+    ambientMotion: FIRE_STAFF_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_wildfire",
+    familyId: "fire_staff",
+    textureKey: "hero-wildfire-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-wildfire-attack-normalized-v1.png",
+    sourceCharacterHeight: 297,
+    idleFrame: 0,
+    attackFrameRate: 13,
+    visualProfile: "projectile",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: FIRE_STAFF_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_blazing",
+    familyId: "fire_staff",
+    textureKey: "hero-blazing-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-blazing-attack-normalized-v1.png",
+    sourceCharacterHeight: 372,
+    idleFrame: 0,
+    attackFrameRate: 13,
+    visualProfile: "projectile",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: FIRE_STAFF_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_brimstone",
+    familyId: "fire_staff",
+    textureKey: "hero-brimstone-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-brimstone-attack-normalized-v1.png",
+    sourceCharacterHeight: 378,
+    idleFrame: 0,
+    attackFrameRate: 13,
+    visualProfile: "projectile",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: FIRE_STAFF_AMBIENT_MOTION,
+  }),
+  createNormalizedHeroDefinition({
+    id: "hero_great_fire",
+    familyId: "fire_staff",
+    textureKey: "hero-great-fire-attack-normalized-v1",
+    assetPath: "/assets/characters/hero-great-fire-attack-normalized-v1.png",
+    sourceCharacterHeight: 324,
+    idleFrame: 0,
+    attackFrameRate: 13,
+    visualProfile: "projectile",
+    visualParameters: PROJECTILE_VISUAL_PARAMETERS,
+    ambientMotion: FIRE_STAFF_AMBIENT_MOTION,
+  }),
   createNormalizedHeroDefinition({
     id: "hero_spiked_gauntlets",
     familyId: "gloves",
