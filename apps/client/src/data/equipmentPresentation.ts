@@ -28,6 +28,10 @@ const SPECIALIZATION_COMBAT_PRESENTATION: Readonly<
     actorManifestId: "hero_bloodletter",
     combatProfileId: "melee",
   },
+  mastery_demonfang: {
+    actorManifestId: "hero_demonfang",
+    combatProfileId: "melee",
+  },
 };
 
 /**
