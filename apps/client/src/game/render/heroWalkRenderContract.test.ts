@@ -21,6 +21,8 @@ const EXPECTED_ARCHETYPE_BY_MANIFEST = {
   hero_dagger_pair: "leather",
   hero_bloodletter: "leather",
   hero_demonfang: "leather",
+  hero_deathgivers: "leather",
+  hero_claws: "leather",
 } as const;
 
 function readPngDimensions(assetPath: string): {
