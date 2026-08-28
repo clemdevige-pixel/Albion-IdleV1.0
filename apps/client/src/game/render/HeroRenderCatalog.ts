@@ -254,7 +254,7 @@ const HERO_RENDER_DEFINITIONS = [
     sheet: DUAL_DAGGER_SHEET,
     animations: {
       idle: {
-        textureKey: "hero-dual-dagger-idle-from-attack-sheet-v3",
+        textureKey: "hero-dual-dagger-attack-sheet-v3",
         assetPath: "/assets/characters/hero-dual-dagger-attack-sheet-v3.png",
         frameRate: 6,
         startFrame: 0,
