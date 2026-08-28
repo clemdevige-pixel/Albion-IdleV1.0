@@ -3,7 +3,10 @@ import type { EquipmentLoadout, EquipmentSlot } from "@game/gameplay";
 import { getItemTier } from "../../data/itemPower";
 import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { ItemSlot } from "../shared/ItemSlot";
-import { getEquippedHeroIdlePresentation } from "./characterPresentation";
+import {
+  getEquippedHeroIdlePresentation,
+  getHeroIdleBackgroundPosition,
+} from "./characterPresentation";
 import { AwakenedWeaponPanel } from "./components/AwakenedWeaponPanel";
 import {
   CharacterEquipmentPicker,
@@ -225,6 +228,7 @@ export function CharacterModule(): JSX.Element {
                   ? {
                       aspectRatio: `${heroIdle.frameWidth} / ${heroIdle.frameHeight}`,
                       backgroundSize: `${heroIdle.frameCount * 100}% 100%`,
+                      backgroundPosition: getHeroIdleBackgroundPosition(heroIdle),
                     }
                   : {}),
               }}
