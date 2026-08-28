@@ -41,7 +41,7 @@ export class SaveGameActions {
       this.deps.bridge.addEconomyNotification({
         id: `notif_save_blocked_${String(Date.now())}`,
         type: "error",
-        message: "Save blocked after a failed load. Reload or restore a valid backup first.",
+        message: "Save blocked after a failed or degraded load. Reload or restore a valid backup first.",
         timestamp: Date.now(),
       });
       return;
@@ -70,8 +70,8 @@ export class SaveGameActions {
       if (!(error instanceof SerializationFailedError)) throw error;
 
       // RuntimePersistence only writes after a primary/backup snapshot has
-      // already been loaded. A quota/write failure here must not discard that
-      // successfully restored runtime state or skip the bridge resync below.
+      // already been loaded. Keep that runtime state, but mark persistence as
+      // degraded so autosave cannot repeatedly risk the last recovery point.
       writeFailedAfterLoad = true;
       console.error(
         "[Persistence] Save loaded but post-load persistence failed:",
@@ -79,20 +79,19 @@ export class SaveGameActions {
       );
     }
 
-    this.deps.persistence.setLoadFailed(false);
-    this.applyLoadedState();
-
     const loadSource = this.deps.persistence.getLastLoadSource();
     const backupCouldNotBeRestored = loadSource === "backup_unrestored";
     const persistenceDegraded = writeFailedAfterLoad || backupCouldNotBeRestored;
+    this.deps.persistence.setLoadFailed(persistenceDegraded);
+    this.applyLoadedState();
 
     this.deps.bridge.addEconomyNotification({
       id: `notif_load_${String(Date.now())}`,
       type: persistenceDegraded ? "error" : "success",
       message: writeFailedAfterLoad
-        ? "Game loaded, but the local save could not be updated. Browser storage may be full."
+        ? "Game loaded, but local persistence is full or unavailable. Auto-save is disabled until reload."
         : backupCouldNotBeRestored
-          ? "Backup loaded, but the primary local save could not be restored."
+          ? "Backup loaded, but the primary local save could not be restored. Auto-save is disabled until reload."
           : loadSource === "backup"
             ? "Backup save restored"
             : "Game loaded",

@@ -10,7 +10,10 @@ vi.mock("../runtime/ProductionStorage", () => ({
   migrateLegacyProductionMaterials: vi.fn(),
 }));
 
-function createActions(load: () => void) {
+function createActions(
+  load: () => void,
+  loadSource: "primary" | "backup" | "backup_unrestored" = "primary",
+) {
   const addEconomyNotification = vi.fn();
   const setLoadFailed = vi.fn();
   const resetSilverBalance = vi.fn();
@@ -21,7 +24,7 @@ function createActions(load: () => void) {
     hasSave: () => true,
     load,
     setLoadFailed,
-    getLastLoadSource: () => "primary" as const,
+    getLastLoadSource: () => loadSource,
     isLoadFailed: () => false,
   } as unknown as RuntimePersistence;
   const inventoryManager = {
@@ -60,20 +63,39 @@ function createActions(load: () => void) {
 }
 
 describe("SaveGameActions load persistence recovery", () => {
-  it("keeps and resyncs loaded runtime state when the post-load LocalStorage write fails", () => {
+  it("keeps loaded runtime state but locks saving when the post-load LocalStorage write fails", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const deps = createActions(() => {
       throw new SerializationFailedError("quota exceeded");
     });
 
     expect(deps.actions.load()).toBe(true);
-    expect(deps.setLoadFailed).toHaveBeenCalledWith(false);
+    expect(deps.setLoadFailed).toHaveBeenCalledWith(true);
     expect(deps.resetSilverBalance).toHaveBeenCalledWith(123);
     expect(deps.syncPlayerHealth).toHaveBeenCalledOnce();
     expect(deps.resyncAll).toHaveBeenCalledOnce();
     expect(deps.addEconomyNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "error" }),
+      expect.objectContaining({ type: "error", message: expect.stringContaining("Auto-save is disabled") }),
     );
+  });
+
+  it("locks saving when a valid backup loads but cannot be restored to primary", () => {
+    const deps = createActions(() => undefined, "backup_unrestored");
+
+    expect(deps.actions.load()).toBe(true);
+    expect(deps.setLoadFailed).toHaveBeenCalledWith(true);
+    expect(deps.resetSilverBalance).toHaveBeenCalledWith(123);
+    expect(deps.resyncAll).toHaveBeenCalledOnce();
+    expect(deps.addEconomyNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "error", message: expect.stringContaining("Auto-save is disabled") }),
+    );
+  });
+
+  it("keeps saving enabled after a healthy primary load", () => {
+    const deps = createActions(() => undefined, "primary");
+
+    expect(deps.actions.load()).toBe(true);
+    expect(deps.setLoadFailed).toHaveBeenCalledWith(false);
   });
 
   it("still propagates genuine load failures before applying loaded state", () => {

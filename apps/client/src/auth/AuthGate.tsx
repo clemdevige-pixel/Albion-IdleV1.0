@@ -7,6 +7,25 @@ import { LoginScreen } from "./LoginScreen";
 const TOKEN_STORAGE_KEY = "albion_idle_auth_token_v1";
 interface ActiveAuth { readonly account: Account; readonly token: string; }
 
+function persistAuthToken(token: string): void {
+  try {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } catch (error) {
+    // Authentication for the current session remains valid even if browser
+    // storage is full/unavailable. Do not turn a persistence quota issue into
+    // a login failure; the user may need to authenticate again after reload.
+    console.error("[Auth] Failed to persist authentication token:", error);
+  }
+}
+
+function clearPersistedAuthToken(): void {
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch (error) {
+    console.error("[Auth] Failed to clear persisted authentication token:", error);
+  }
+}
+
 // React StrictMode intentionally mounts effects twice in development. Keep the
 // one-time Discord exchange shared between both passes so the OAuth return code
 // is never consumed by an effect that has already been cancelled.
@@ -41,7 +60,7 @@ export function AuthGate({ children }: { readonly children: ReactNode }): JSX.El
         if (!cancelled) setProviders(available);
         if (discordExchange !== undefined) {
           const session = await discordExchange;
-          localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
+          persistAuthToken(session.token);
           if (!cancelled) setActive(session);
           return;
         }
@@ -50,7 +69,7 @@ export function AuthGate({ children }: { readonly children: ReactNode }): JSX.El
           try {
             const account = await client.restore(token);
             if (!cancelled) setActive({ account, token });
-          } catch { localStorage.removeItem(TOKEN_STORAGE_KEY); }
+          } catch { clearPersistedAuthToken(); }
         }
       } catch (error) {
         if (!cancelled) setStartupError(error instanceof Error ? error.message : "Connexion au serveur impossible.");
@@ -63,7 +82,7 @@ export function AuthGate({ children }: { readonly children: ReactNode }): JSX.El
   if (loading) return <LoginScreen mode="loading" providers={providers} onAuthenticated={setActive} />;
   if (active === null) {
     return <LoginScreen mode="ready" providers={providers} {...(startupError === undefined ? {} : { startupError })} client={client} onAuthenticated={(session) => {
-      localStorage.setItem(TOKEN_STORAGE_KEY, session.token);
+      persistAuthToken(session.token);
       setActive(session);
     }} />;
   }
@@ -71,7 +90,7 @@ export function AuthGate({ children }: { readonly children: ReactNode }): JSX.El
   return (
     <AuthSessionProvider session={{ account: active.account, token: active.token, logout: async () => {
       try { await client.logout(active.token); } finally {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        clearPersistedAuthToken();
         setActive(null);
       }
     } }}>
