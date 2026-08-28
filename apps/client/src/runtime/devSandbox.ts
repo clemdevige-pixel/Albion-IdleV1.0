@@ -32,6 +32,18 @@ const ARTIFACT_WEAPON_ITEM_IDS = new Set(
   ),
 );
 
+export const DEV_SANDBOX_ARTIFACT_WEAPON_T4_ITEM_IDS = FACTION_ARTIFACT_WEAPON_CONTENT.map(
+  (specialization) => {
+    const tier4 = specialization.items.find((item) => item.tier === 4);
+    if (tier4 === undefined) {
+      throw new Error(
+        `Dev sandbox artifact specialization ${specialization.specializationMasteryId} has no T4 item`,
+      );
+    }
+    return tier4.itemId;
+  },
+);
+
 export function isDevSandboxMode(): boolean {
   return import.meta.env.DEV
     && typeof window !== "undefined"
@@ -115,14 +127,8 @@ function seedArtifactTestWeapons(
   inventoryManager: InventoryManager,
   bankId: EntityId,
 ): void {
-  for (const specialization of FACTION_ARTIFACT_WEAPON_CONTENT) {
-    const tier4 = specialization.items.find((item) => item.tier === 4);
-    if (tier4 === undefined) {
-      throw new Error(
-        `Dev sandbox artifact specialization ${specialization.specializationMasteryId} has no T4 item`,
-      );
-    }
-    ensureEquipmentVariant(inventoryManager, bankId, tier4.itemId, 0);
+  for (const itemId of DEV_SANDBOX_ARTIFACT_WEAPON_T4_ITEM_IDS) {
+    ensureEquipmentVariant(inventoryManager, bankId, itemId, 0);
   }
 }
 
