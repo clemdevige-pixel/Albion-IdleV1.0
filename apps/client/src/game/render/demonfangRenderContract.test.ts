@@ -60,7 +60,6 @@ describe("demonfang render contract", () => {
       frameHeight: FRAME_HEIGHT,
       startFrame: 0,
       endFrame: 5,
-      offset: { x: 0, y: 74 },
     });
     expect(manifest.poses.death.textureKey).toBe("hero-archetype-leather-death-sheet-v1");
     expect(manifest.ambientMotion).toEqual({ distance: 4, durationMs: 800, delayMs: 0 });
