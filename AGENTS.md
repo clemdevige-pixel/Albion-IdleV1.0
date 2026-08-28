@@ -5,6 +5,9 @@ Read before modifying gameplay architecture.
 Primary detailed contract:
 `AI_BIBLE/20_DATA/20A_DATA_OWNERSHIP_AND_AGENT_RULES.txt`
 
+Hero weapon spritesheet integration contract:
+`AI_BIBLE/30_TECHNICAL/32B_HERO_WEAPON_SPRITESHEET_INTEGRATION_WORKFLOW.md`
+
 ## Mandatory ownership rules
 
 - `packages/data` owns authored static gameplay truth: balance, costs, rates, tier tables, canonical IDs/mappings, authored recipes and unlock graphs.
