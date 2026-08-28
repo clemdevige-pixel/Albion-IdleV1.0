@@ -182,11 +182,6 @@ export function applyActorAnimation(
     return;
   }
 
-  if (!sprite.scene.anims.exists(animationKey)) {
-    console.error(`[Render] Cannot play animation "${animationKey}": animation is not registered.`);
-    return;
-  }
-
   const display = scaleCombatActorDisplay(animation.display.width, animation.display.height);
   sprite
     .stop()
@@ -194,8 +189,20 @@ export function applyActorAnimation(
     .setOrigin(manifest.origin.x, manifest.origin.y)
     .setPosition(offset.x, offset.y)
     .setDisplaySize(display.width, display.height)
-    .setVisible(true)
-    .play(animationKey);
+    .setVisible(true);
+
+  // A one-frame state is a pose, not an animation. This is the authored
+  // contract used by attack-only weapon sheets whose first/last frame is
+  // reused as idle. Keeping it static also avoids coupling pose rendering to
+  // Phaser's animation lifecycle while multi-frame states remain unchanged.
+  if (animation.startFrame === animation.endFrame) return;
+
+  if (!sprite.scene.anims.exists(animationKey)) {
+    console.error(`[Render] Cannot play animation "${animationKey}": animation is not registered.`);
+    return;
+  }
+
+  sprite.play(animationKey);
 }
 
 export function applyActorDeathPose(
