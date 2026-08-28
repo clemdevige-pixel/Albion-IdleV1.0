@@ -7,6 +7,14 @@ describe("weapon equipment presentation", () => {
       .toEqual(resolveEquipmentPresentation("item_weapon_sword_t4_broadsword"));
     expect(resolveEquipmentPresentation("item_weapon_bow_t3_longbow"))
       .toEqual(resolveEquipmentPresentation("item_weapon_bow_t4_longbow"));
+    expect(resolveEquipmentPresentation("item_weapon_bow_t4_badon"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_bow_t8_badon"));
+    expect(resolveEquipmentPresentation("item_weapon_bow_wailing_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_bow_wailing_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_bow_whispering_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_bow_whispering_t8"));
+    expect(resolveEquipmentPresentation("item_weapon_bow_warbow_t4"))
+      .toEqual(resolveEquipmentPresentation("item_weapon_bow_warbow_t8"));
     expect(resolveEquipmentPresentation("item_weapon_staff_t3_infernal"))
       .toEqual(resolveEquipmentPresentation("item_weapon_staff_t4_infernal"));
     expect(resolveEquipmentPresentation("item_weapon_gloves_t3_spiked_gauntlets"))
@@ -39,7 +47,7 @@ describe("weapon equipment presentation", () => {
 
     expect(resolveEquipmentPresentation("item_weapon_bow_t4_badon")).toEqual({
       itemIcon: "icons/armes/badon bow.png",
-      actorManifestId: "hero_bow",
+      actorManifestId: "hero_badon",
       combatProfileId: "projectile",
       combatPresentation: {
         kind: "projectile",
@@ -47,6 +55,23 @@ describe("weapon equipment presentation", () => {
         releaseDelayMs: 355,
       },
     });
+
+    for (const [itemId, itemIcon, actorManifestId] of [
+      ["item_weapon_bow_wailing_t4", "icons/armes/wailing bow.png", "hero_wailing"],
+      ["item_weapon_bow_whispering_t4", "icons/armes/whispering bow.png", "hero_whispering"],
+      ["item_weapon_bow_warbow_t4", "icons/armes/warbow.png", "hero_warbow"],
+    ] as const) {
+      expect(resolveEquipmentPresentation(itemId)).toEqual({
+        itemIcon,
+        actorManifestId,
+        combatProfileId: "projectile",
+        combatPresentation: {
+          kind: "projectile",
+          projectileId: "arrow",
+          releaseDelayMs: 355,
+        },
+      });
+    }
 
     expect(resolveEquipmentPresentation("item_weapon_staff_t4_infernal")).toEqual({
       itemIcon: "icons/armes/infernal staff.png",
@@ -59,29 +84,18 @@ describe("weapon equipment presentation", () => {
       },
     });
 
-    expect(resolveEquipmentPresentation("item_weapon_dagger_bloodletter_t4")).toEqual({
-      itemIcon: "icons/armes/bloodletter.png",
-      actorManifestId: "hero_bloodletter",
-      combatProfileId: "melee",
-    });
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4")).toEqual({
-      itemIcon: "icons/armes/demonfang.png",
-      actorManifestId: "hero_demonfang",
-      combatProfileId: "melee",
-    });
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t4")).toEqual({
-      itemIcon: "icons/armes/deathgivers.png",
-      actorManifestId: "hero_deathgivers",
-      combatProfileId: "melee",
-    });
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_claws_t4")).toEqual({
-      itemIcon: "icons/armes/claws.png",
-      actorManifestId: "hero_claws",
-      combatProfileId: "melee",
-    });
+    for (const [itemId, itemIcon, actorManifestId] of [
+      ["item_weapon_dagger_bloodletter_t4", "icons/armes/bloodletter.png", "hero_bloodletter"],
+      ["item_weapon_dagger_demonfang_t4", "icons/armes/demonfang.png", "hero_demonfang"],
+      ["item_weapon_dagger_deathgivers_t4", "icons/armes/deathgivers.png", "hero_deathgivers"],
+      ["item_weapon_dagger_claws_t4", "icons/armes/claws.png", "hero_claws"],
+    ] as const) {
+      expect(resolveEquipmentPresentation(itemId)).toEqual({
+        itemIcon,
+        actorManifestId,
+        combatProfileId: "melee",
+      });
+    }
   });
 
   it("falls back to family combat art until specialization sheets exist", () => {
@@ -89,17 +103,6 @@ describe("weapon equipment presentation", () => {
       itemIcon: "icons/armes/clarent blade.png",
       actorManifestId: "hero_broadsword",
       combatProfileId: "melee",
-    });
-
-    expect(resolveEquipmentPresentation("item_weapon_bow_wailing_t4")).toEqual({
-      itemIcon: "icons/armes/wailing bow.png",
-      actorManifestId: "hero_longbow",
-      combatProfileId: "projectile",
-      combatPresentation: {
-        kind: "projectile",
-        projectileId: "arrow",
-        releaseDelayMs: 355,
-      },
     });
 
     expect(resolveEquipmentPresentation("item_weapon_staff_wildfire_t4")).toEqual({
@@ -121,23 +124,16 @@ describe("weapon equipment presentation", () => {
   });
 
   it("does not add projectile presentation to melee weapons", () => {
-    expect(resolveEquipmentPresentation("item_weapon_sword_t4_broadsword")?.combatPresentation)
-      .toBeUndefined();
-
-    expect(resolveEquipmentPresentation("item_weapon_gloves_t4_spiked_gauntlets")?.combatPresentation)
-      .toBeUndefined();
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_t4_pair")?.combatPresentation)
-      .toBeUndefined();
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_demonfang_t4")?.combatPresentation)
-      .toBeUndefined();
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_deathgivers_t4")?.combatPresentation)
-      .toBeUndefined();
-
-    expect(resolveEquipmentPresentation("item_weapon_dagger_claws_t4")?.combatPresentation)
-      .toBeUndefined();
+    for (const itemId of [
+      "item_weapon_sword_t4_broadsword",
+      "item_weapon_gloves_t4_spiked_gauntlets",
+      "item_weapon_dagger_t4_pair",
+      "item_weapon_dagger_demonfang_t4",
+      "item_weapon_dagger_deathgivers_t4",
+      "item_weapon_dagger_claws_t4",
+    ]) {
+      expect(resolveEquipmentPresentation(itemId)?.combatPresentation).toBeUndefined();
+    }
   });
 
   it("does not infer presentation for unknown weapon ids", () => {
