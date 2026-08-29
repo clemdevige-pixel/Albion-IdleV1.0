@@ -50,6 +50,7 @@ import {
 } from "./trustedOfflineElapsed.js";
 import { dashboardLayoutSaveProvider } from "./DashboardLayoutSaveProvider";
 import { dailyMerchantRotation } from "./DailyMerchantRotation.js";
+import { blackMarketRuntime } from "./BlackMarketRuntime.js";
 import type { SaveFormat } from "@game/persistence";
 
 export const DEFAULT_SAVE_SLOT_ID = LEGACY_SAVE_SLOT_ID;
@@ -110,6 +111,7 @@ export class RuntimePersistence {
 
     dashboardLayoutSaveProvider.reset();
     dailyMerchantRotation.reset();
+    blackMarketRuntime.reset();
 
     const inventorySaveProvider = new InventorySaveProvider(
       deps.inventoryManager,
@@ -151,6 +153,7 @@ export class RuntimePersistence {
     this.saveManager.registerProvider(durabilitySaveProvider);
     this.saveManager.registerProvider(dashboardLayoutSaveProvider);
     this.saveManager.registerProvider(dailyMerchantRotation);
+    this.saveManager.registerProvider(blackMarketRuntime.saveProvider);
   }
 
   public registerProvider(provider: SaveProvider): void {
@@ -203,13 +206,10 @@ export class RuntimePersistence {
       persistPrimary();
     }
 
-    // A successful primary write makes later backup rotation safe again even
-    // when this session originally recovered from a backup-only state.
     this.protectBackupUntilPrimarySave = false;
     this.onLocalSave?.(this.saveRepository.get(this.saveSlotId));
   }
 
-  /** Resolves elapsed time through passive/background-capable providers only. */
   public resolveBackgroundElapsed(elapsedMs: number): void {
     if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
       throw new Error("Background elapsed time must be a finite non-negative number");
@@ -251,9 +251,6 @@ export class RuntimePersistence {
       window.serverNow,
     );
 
-    // Persist both the resolved gameplay state and the trusted server cursor.
-    // Cloud reconciliation may attach the same server window again on reload;
-    // the cursor makes only the previously unseen suffix eligible next time.
     this.save();
   }
 
@@ -271,7 +268,6 @@ export class RuntimePersistence {
     return this.saveRepository.get(slotId);
   }
 
-  /** Creates a validated portable backup of the latest primary save. */
   public exportSave(): string {
     const sourceSlotId = this.saveManager.has(this.saveSlotId)
       ? this.saveSlotId
@@ -279,10 +275,6 @@ export class RuntimePersistence {
     return this.saveManager.exportSave(sourceSlotId);
   }
 
-  /**
-   * Validates an imported save before touching the primary slot, then loads it.
-   * If a provider rejects it, the previous validated snapshot is restored.
-   */
   public importSave(raw: string): void {
     const importSlotId = `${this.saveSlotId}_import`;
     this.saveManager.importSave(importSlotId, raw);
@@ -394,8 +386,6 @@ export class RuntimePersistence {
         throw primaryError;
       }
 
-      // Never overwrite the only validated recovery point with a primary that
-      // already failed structural/checksum/version validation.
       console.error(
         "[Persistence] Preserving existing validated backup because the current primary is invalid before import:",
         primaryError,
