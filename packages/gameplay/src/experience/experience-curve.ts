@@ -7,8 +7,8 @@ import {
  * Deterministic Mastery Experience Curve Generator (28_EXPERIENCE_SYSTEM).
  *
  * Preserves authored early-game progression (Levels 1..10) exactly, and extends
- * Levels 11..100 using a power curve with player-friendly readability rounding
- * and strict monotonic progression checks.
+ * subsequent generated levels using a power curve with player-friendly
+ * readability rounding and strict monotonic progression checks.
  */
 
 export const WEAPON_MASTERY_BASE_XP = WEAPON_MASTERY_EXPERIENCE_BALANCE.baseXpLevels1To10;
@@ -39,8 +39,8 @@ export function getRoundingIncrement(xp: number): number {
 /**
  * Generates a deterministic mastery experience curve.
  * Levels 1..10 are preserved from baseArray.
- * Levels 11..maxLevel use raw(L) = XP_10 + round(A * (L - 10)^p) with readability rounding
- * and strict monotonic progression enforcement (XP(L+1) > XP(L)).
+ * Later generated levels use raw(L) = XP_10 + round(A * (L - 10)^p) with
+ * readability rounding and strict monotonic progression enforcement.
  */
 export function generateMasteryExperienceCurve(
   base1to10: readonly number[],
@@ -66,13 +66,30 @@ export function generateMasteryExperienceCurve(
   return reqs;
 }
 
-/** Long-term Weapon Mastery Experience Curve. */
-export const WEAPON_MASTERY_XP: readonly number[] = generateMasteryExperienceCurve(
+const GENERATED_WEAPON_MASTERY_XP = generateMasteryExperienceCurve(
   WEAPON_MASTERY_BASE_XP,
   WEAPON_MASTERY_EXPERIENCE_BALANCE.extensionCoefficient,
   WEAPON_MASTERY_EXPERIENCE_BALANCE.extensionExponent,
-  WEAPON_MASTERY_EXPERIENCE_BALANCE.maxLevel,
+  WEAPON_MASTERY_EXPERIENCE_BALANCE.generatedThroughLevel,
 );
+
+/**
+ * Long-term Weapon Mastery Experience Curve.
+ *
+ * Levels 1..65 retain the validated generated curve. Levels 66..100 are
+ * authored canonically in data so late-game mastery pacing can evolve with
+ * T7/T8 Fame throughput without perturbing early and mid-game progression.
+ */
+export const WEAPON_MASTERY_XP: readonly number[] = [
+  ...GENERATED_WEAPON_MASTERY_XP,
+  ...WEAPON_MASTERY_EXPERIENCE_BALANCE.authoredXpLevels66To100,
+];
+
+if (WEAPON_MASTERY_XP.length !== WEAPON_MASTERY_EXPERIENCE_BALANCE.maxLevel) {
+  throw new Error(
+    `Weapon mastery XP curve has ${String(WEAPON_MASTERY_XP.length)} levels; expected ${String(WEAPON_MASTERY_EXPERIENCE_BALANCE.maxLevel)}`,
+  );
+}
 
 /** Long-term Gathering Mastery Experience Curve. */
 export const GATHERING_MASTERY_XP: readonly number[] = generateMasteryExperienceCurve(
