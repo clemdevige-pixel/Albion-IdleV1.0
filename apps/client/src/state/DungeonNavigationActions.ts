@@ -7,6 +7,7 @@ import type {
 import { getItemTier } from "../data/itemPower.js";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
+import { dungeonCompletionFlow } from "../runtime/DungeonCompletionFlow.js";
 import type { PlayerInventoryManager } from "../runtime/PlayerInventoryManager.js";
 import { worldTravelTransition } from "../runtime/WorldTravelTransition.js";
 
@@ -150,6 +151,7 @@ export class DungeonNavigationActions {
   public abandon(): boolean {
     if (this.deps.dungeonRuntime.activeRun?.status !== "active") return false;
     this.deps.dungeonRuntime.abandon();
+    dungeonCompletionFlow.cancel();
     this.deps.combatRuntime.interruptEncounter();
     this.deps.stopController.reset();
     worldTravelTransition.start();
@@ -212,7 +214,10 @@ export class DungeonNavigationActions {
 
     this.pendingDefinitionId = null;
     this.deps.stopController.reset();
-    if (started.ok) worldTravelTransition.start();
+    if (started.ok) {
+      dungeonCompletionFlow.begin(definitionId);
+      worldTravelTransition.start();
+    }
     this.deps.onStateChanged();
     return started.ok;
   }
