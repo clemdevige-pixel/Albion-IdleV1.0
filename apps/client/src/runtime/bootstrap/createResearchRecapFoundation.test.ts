@@ -27,4 +27,25 @@ describe("createResearchRecapFoundation", () => {
     expect(listener).toHaveBeenCalledTimes(2);
     unsubscribe();
   });
+
+  it("queues multiple Research completions FIFO without losing a recap", () => {
+    const foundation = createResearchRecapFoundation();
+
+    foundation.present(RESEARCH_IDS.enchantmentStudy);
+    const first = foundation.getSnapshot();
+    foundation.present(RESEARCH_IDS.yieldAnalysis);
+
+    expect(foundation.getSnapshot()).toMatchObject({
+      id: first?.id,
+      researchId: RESEARCH_IDS.enchantmentStudy,
+    });
+
+    foundation.dismiss();
+    expect(foundation.getSnapshot()).toMatchObject({
+      researchId: RESEARCH_IDS.yieldAnalysis,
+    });
+
+    foundation.dismiss();
+    expect(foundation.getSnapshot()).toBeNull();
+  });
 });
