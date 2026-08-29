@@ -108,6 +108,7 @@ export function BlackMarketView(): JSX.Element {
   const [stockEnchant, setStockEnchant] = useState<number | "all">("all");
   const [demandOnly, setDemandOnly] = useState(false);
   const [stockSort, setStockSort] = useState<StockSort>("value");
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [, forceRevision] = useState(0);
 
   const blackMarketUnlocked = services.getAcademyModel().research.some((entry) => (
@@ -170,8 +171,9 @@ export function BlackMarketView(): JSX.Element {
     ? undefined
     : blackMarketRuntime.quoteSelection(selectedEntries, nowMs);
   const route = BLACK_MARKET_ROUTES.find((entry) => entry.id === routeId) ?? BLACK_MARKET_ROUTES[0];
-  const selectedBmValue = quote === undefined ? 0 : Math.round(quote.cargoBmValue * route.payoutMultiplier);
-  const selectedEv = Math.round(selectedBmValue * route.successChance);
+  const cargoBmValue = quote?.cargoBmValue ?? 0;
+  const selectedPayout = Math.round(cargoBmValue * route.payoutMultiplier);
+  const selectedEv = Math.round(selectedPayout * route.successChance);
 
   const visibleCandidates = useMemo(() => {
     if (snapshot === null) return [];
@@ -205,12 +207,14 @@ export function BlackMarketView(): JSX.Element {
       setActiveSlotIndex(duplicateIndex);
       return;
     }
+    const wasEmpty = cargoSlots[activeSlotIndex] === null;
     updateSlot(activeSlotIndex, {
       source: candidate.source,
       itemId: candidate.itemId,
       enchantment: candidate.enchantment,
       quantity: 1,
     });
+    if (wasEmpty) setActiveSlotIndex(null);
   };
 
   const changeActiveQuantity = (delta: number): void => {
@@ -280,8 +284,8 @@ export function BlackMarketView(): JSX.Element {
         {snapshot.demands.map((demand) => (
           <article key={demand.id}>
             <strong>{demandLabel(demand.targetType, demand.targetId)} T{String(demand.tier)}</strong>
-            <span>{String(demand.requiredQuantity - demand.fulfilledQuantity)} / {String(demand.requiredQuantity)} restants</span>
             <b>+{String(Math.round(demand.bonus * 100))}%</b>
+            <span>{String(demand.requiredQuantity - demand.fulfilledQuantity)} / {String(demand.requiredQuantity)} restants</span>
           </article>
         ))}
       </div>
@@ -291,10 +295,14 @@ export function BlackMarketView(): JSX.Element {
         {cargoSlots.map((slot, index) => {
           const candidate = slot === null ? undefined : candidates.find((entry) => selectionKey(entry) === selectionKey(slot));
           const isDemand = candidate !== undefined && matchesDemand(candidate, snapshot);
+          const tier = slot === null ? undefined : getItemTier(slot.itemId);
+          const displayName = slot === null ? "" : getItemDisplayName(slot.itemId);
           return (
             <button
               type="button"
               key={index}
+              title={slot === null ? `Ajouter au slot ${String(index + 1)}` : displayName}
+              aria-label={slot === null ? `Ajouter au slot ${String(index + 1)}` : `${displayName}, T${String(tier ?? "?")}.${String(slot.enchantment)}, quantité ${String(slot.quantity)}`}
               className={`ui-black-market__cargo-slot${slot === null ? " is-empty" : ""}${isDemand ? " is-demand" : ""}`}
               onClick={() => { setActiveSlotIndex(index); setConfirmingDeparture(false); }}
             >
@@ -303,8 +311,8 @@ export function BlackMarketView(): JSX.Element {
               ) : (
                 <>
                   <ItemVisual itemId={slot.itemId} />
-                  <strong title={getItemDisplayName(slot.itemId)}>{getItemDisplayName(slot.itemId)}</strong>
-                  <span>{slot.enchantment > 0 ? `.${String(slot.enchantment)} · ` : ""}x{String(slot.quantity)}</span>
+                  <strong>T{String(tier ?? "?")}.{String(slot.enchantment)}</strong>
+                  <span>x{String(slot.quantity)}</span>
                   {isDemand && <b>Demandé</b>}
                 </>
               )}
@@ -314,20 +322,25 @@ export function BlackMarketView(): JSX.Element {
       </div>
 
       <div className="ui-black-market__cargo-total">
-        <span>Valeur BM</span><strong>{formatCompactNumber(selectedBmValue, "0")}</strong>
+        <span>Valeur BM du cargo</span><strong>{formatCompactNumber(cargoBmValue, "0")}</strong>
       </div>
 
       <div className="ui-merchant-section-title"><span>Routes</span><small>Échec = perte totale</small></div>
       <div className="ui-black-market__routes">
         {BLACK_MARKET_ROUTES.map((candidateRoute) => {
-          const bmValue = quote === undefined ? 0 : Math.round(quote.cargoBmValue * candidateRoute.payoutMultiplier);
-          const ev = Math.round(bmValue * candidateRoute.successChance);
+          const payout = Math.round(cargoBmValue * candidateRoute.payoutMultiplier);
+          const ev = Math.round(payout * candidateRoute.successChance);
           return (
             <button type="button" key={candidateRoute.id} className={routeId === candidateRoute.id ? "is-selected" : ""} onClick={() => { setRouteId(candidateRoute.id); setConfirmingDeparture(false); }}>
               <strong>{candidateRoute.displayName}</strong>
-              <span>{String(Math.round(candidateRoute.successChance * 100))}% · x{String(candidateRoute.payoutMultiplier)}</span>
-              <small>{formatDuration(candidateRoute.durationMs)}</small>
-              <b>{formatCompactNumber(bmValue, "0")}</b>
+              <div className="ui-black-market__route-meta">
+                <span>{String(Math.round(candidateRoute.successChance * 100))}% succès</span>
+                <small>{formatDuration(candidateRoute.durationMs)}</small>
+              </div>
+              <div className="ui-black-market__route-payout">
+                <small>Gain si succès</small>
+                <b>{formatCompactNumber(payout, "0")}</b>
+              </div>
               <em>EV {formatCompactNumber(ev, "0")}</em>
             </button>
           );
@@ -337,13 +350,13 @@ export function BlackMarketView(): JSX.Element {
       {confirmingDeparture && quote !== undefined ? (
         <div className="ui-black-market__confirmation" role="alertdialog" aria-label="Confirmer le départ du convoi">
           <strong>Confirmer — {route.displayName}</strong>
-          <span>{String(Math.round(route.successChance * 100))}% de succès · {formatDuration(route.durationMs)} · {formatCompactNumber(selectedBmValue, "0")} Silver</span>
+          <span>{String(Math.round(route.successChance * 100))}% de succès · {formatDuration(route.durationMs)} · {formatCompactNumber(selectedPayout, "0")} Silver</span>
           <small>Le cargo et les demandes sont engagés immédiatement. Échec = perte totale. Aucune annulation.</small>
           <div><button type="button" onClick={() => { setConfirmingDeparture(false); }}>Retour</button><button type="button" className="ui-merchant__primary" onClick={sendConvoy}>Confirmer le départ</button></div>
         </div>
       ) : (
         <div className="ui-black-market__departure">
-          <div><span>Valeur BM sélectionnée</span><strong>{formatCompactNumber(selectedBmValue, "0")} Silver</strong><small>EV : {formatCompactNumber(selectedEv, "0")}</small></div>
+          <div><span>{route.displayName}</span><small>EV : {formatCompactNumber(selectedEv, "0")} Silver</small></div>
           <button type="button" className="ui-merchant__primary" disabled={quote === undefined || selectedUnitCount === 0} onClick={() => { setConfirmingDeparture(true); }}>Envoyer le convoi</button>
         </div>
       )}
@@ -365,14 +378,21 @@ export function BlackMarketView(): JSX.Element {
               </div>
             )}
 
-            <div className="ui-black-market__stock-tools">
+            <div className="ui-black-market__picker-filters">
               <input type="search" value={stockSearch} placeholder="Rechercher…" onChange={(event) => { setStockSearch(event.target.value); }} />
-              <select value={stockSource} onChange={(event) => { setStockSource(event.target.value as StockSourceFilter); }}><option value="all">Tout stockage</option><option value="inventory">Inventaire</option><option value="bank">Banque</option></select>
-              <select value={String(stockTier)} onChange={(event) => { setStockTier(event.target.value === "all" ? "all" : Number(event.target.value)); }}><option value="all">Tous tiers</option>{[4, 5, 6, 7, 8].map((tier) => <option key={tier} value={tier}>T{String(tier)}</option>)}</select>
+              <select value={String(stockTier)} onChange={(event) => { setStockTier(event.target.value === "all" ? "all" : Number(event.target.value)); }}><option value="all">Tous tiers</option>{[4, 5, 6, 7, 8].map((tierOption) => <option key={tierOption} value={tierOption}>T{String(tierOption)}</option>)}</select>
               <select value={stockType} onChange={(event) => { setStockType(event.target.value as StockTypeFilter); }}><option value="all">Tous types</option><option value="weapon">Armes</option><option value="head">Têtes</option><option value="chest">Plastrons</option><option value="boots">Bottes</option></select>
-              <select value={String(stockEnchant)} onChange={(event) => { setStockEnchant(event.target.value === "all" ? "all" : Number(event.target.value)); }}><option value="all">Tous enchant.</option>{[0, 1, 2, 3, 4].map((level) => <option key={level} value={level}>.{String(level)}</option>)}</select>
-              <select value={stockSort} onChange={(event) => { setStockSort(event.target.value as StockSort); }}><option value="value">Valeur BM</option><option value="tier">Tier</option><option value="quantity">Quantité</option><option value="name">Nom</option></select>
               <label className="ui-black-market__demand-filter"><input type="checkbox" checked={demandOnly} onChange={(event) => { setDemandOnly(event.target.checked); }} />Demandes uniquement</label>
+              <button type="button" className="ui-black-market__advanced-toggle" aria-expanded={advancedFiltersOpen} onClick={() => { setAdvancedFiltersOpen((value) => !value); }}>
+                {advancedFiltersOpen ? "Masquer les filtres avancés" : "Filtres avancés"}
+              </button>
+              {advancedFiltersOpen && (
+                <div className="ui-black-market__advanced-filters">
+                  <select value={stockSource} onChange={(event) => { setStockSource(event.target.value as StockSourceFilter); }}><option value="all">Tout stockage</option><option value="inventory">Inventaire</option><option value="bank">Banque</option></select>
+                  <select value={String(stockEnchant)} onChange={(event) => { setStockEnchant(event.target.value === "all" ? "all" : Number(event.target.value)); }}><option value="all">Tous enchant.</option>{[0, 1, 2, 3, 4].map((level) => <option key={level} value={level}>.{String(level)}</option>)}</select>
+                  <select value={stockSort} onChange={(event) => { setStockSort(event.target.value as StockSort); }}><option value="value">Valeur BM</option><option value="tier">Tier</option><option value="quantity">Quantité</option><option value="name">Nom</option></select>
+                </div>
+              )}
             </div>
 
             <div className="ui-black-market__picker-list">
@@ -380,11 +400,12 @@ export function BlackMarketView(): JSX.Element {
               {visibleCandidates.map((candidate) => {
                 const key = selectionKey(candidate);
                 const selectedElsewhere = cargoSlots.some((slot, index) => index !== activeSlotIndex && slot !== null && selectionKey(slot) === key);
+                const isDemand = matchesDemand(candidate, snapshot);
                 return (
                   <button type="button" key={key} disabled={selectedElsewhere} onClick={() => { selectCandidate(candidate); }}>
                     <ItemVisual itemId={candidate.itemId} />
                     <span><strong>{getItemDisplayName(candidate.itemId)}{candidate.enchantment > 0 ? ` .${String(candidate.enchantment)}` : ""}</strong><small>{candidate.source === "inventory" ? "Inventaire" : "Banque"} · x{String(candidate.availableQuantity)}</small></span>
-                    <b>{formatCompactNumber(candidate.normalBmValue, "0")}</b>
+                    <span className="ui-black-market__picker-value"><b>{formatCompactNumber(candidate.normalBmValue, "0")}</b>{isDemand && <small>Demandé</small>}</span>
                   </button>
                 );
               })}
