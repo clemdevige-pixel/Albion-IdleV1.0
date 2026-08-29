@@ -124,7 +124,7 @@ export function InventoryModule(): JSX.Element {
         <BankModule
           onMove={(from, to) => { actions.move("bank", from, to); }}
           onTransferToInventory={(position) => { actions.transfer("bank", position, "inventory"); }}
-          onSort={() => { actions.sort("bank"); }}
+          onSort={(start, length) => { actions.sort("bank", start, length); }}
         />
       ) : (
         <>
