@@ -25,9 +25,10 @@ export type BankExpansionPurchaseResult =
     };
 
 type BankExpansionCurrencyPort = Pick<CurrencyService, "getBalance" | "debit" | "credit">;
+type BankExpansionStoragePort = Pick<PlayerInventoryManager, "getBaseCapacity" | "setStorageBaseCapacity">;
 
 interface BankExpansionFoundationDependencies {
-  readonly inventoryManager: PlayerInventoryManager;
+  readonly inventoryManager: BankExpansionStoragePort;
   readonly bankId: EntityId;
   readonly bankTabCapacity: number;
   readonly currencyService: BankExpansionCurrencyPort;
