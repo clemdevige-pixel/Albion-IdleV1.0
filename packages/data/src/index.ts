@@ -62,6 +62,7 @@ export * from "./assets/index.js";
 // Combat progression and automation config
 export * from "./config/combat-progression.js";
 export * from "./config/combat-automation-balance.js";
+export * from "./config/world-combat-reward-balance.js";
 
 // World progression bands and authored progression contract
 export * from "./config/world-bands.js";
