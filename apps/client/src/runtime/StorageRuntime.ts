@@ -9,6 +9,11 @@ export interface StorageMutationResult {
   readonly reason?: string;
 }
 
+export interface StorageRange {
+  readonly start: number;
+  readonly length: number;
+}
+
 export class StorageRuntime {
   public constructor(
     private readonly inventoryManager: InventoryManager,
@@ -100,9 +105,25 @@ export class StorageRuntime {
     return { ok: false, reason: inserted.reason };
   }
 
-  public sort(storage: StorageKind): StorageMutationResult {
+  public sort(storage: StorageKind, range?: StorageRange): StorageMutationResult {
     const ownerId = this.owner(storage);
-    const entries = this.inventoryManager.listSlots(ownerId)
+    const capacity = this.inventoryManager.getCapacity(ownerId);
+    const start = range?.start ?? 0;
+    const length = range?.length ?? capacity;
+    const end = Math.min(capacity, start + length);
+    if (
+      !Number.isInteger(start)
+      || !Number.isInteger(length)
+      || start < 0
+      || length <= 0
+      || start >= capacity
+    ) {
+      return { ok: false, reason: "invalid_position" };
+    }
+
+    const slots = this.inventoryManager.listSlots(ownerId)
+      .filter((slot) => slot.position >= start && slot.position < end);
+    const entries = slots
       .flatMap((slot) => slot.entry === undefined ? [] : [slot.entry])
       .sort((left, right) => (
         left.itemId.localeCompare(right.itemId)
@@ -110,13 +131,13 @@ export class StorageRuntime {
         || right.quantity - left.quantity
       ));
 
-    for (const slot of this.inventoryManager.listSlots(ownerId)) {
+    for (const slot of slots) {
       if (slot.entry !== undefined) {
         this.inventoryManager.removeEntryAt(ownerId, slot.position);
       }
     }
-    entries.forEach((entry, position) => {
-      this.inventoryManager.insertEntry(ownerId, entry, position);
+    entries.forEach((entry, index) => {
+      this.inventoryManager.insertEntry(ownerId, entry, start + index);
     });
     return { ok: true };
   }
