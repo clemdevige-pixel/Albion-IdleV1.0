@@ -117,7 +117,8 @@ export function createCharacterStorageFoundation({
   const devSandbox = isDevSandboxMode();
   inventoryManager.createInventory(heroId, devSandbox ? 96 : 24);
   const bankId = world.createEntity();
-  inventoryManager.createInventory(bankId, devSandbox ? 512 : 64);
+  const bankTabCapacity = devSandbox ? 512 : 64;
+  inventoryManager.createInventory(bankId, bankTabCapacity);
   inventoryManager.setAccessibleStorageOwners(heroId, [heroId, bankId]);
   const productionStorageId = world.createEntity();
   inventoryManager.createInventory(
@@ -158,7 +159,7 @@ export function createCharacterStorageFoundation({
       equipmentManager.changeEquippedEnchantment(heroId, instanceId, enchantment)
     ),
   });
-  return { bankId, productionStorageId, enchantmentService };
+  return { bankId, bankTabCapacity, productionStorageId, enchantmentService };
 }
 
 interface StarterLoadoutDependencies {
