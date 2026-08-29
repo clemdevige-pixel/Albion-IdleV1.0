@@ -7,7 +7,7 @@ import type {
   WalletVM,
 } from "../../game/GameBridge";
 
-export type MerchantServiceId = "buy" | "sell" | "enchant" | "repair" | "bank";
+export type MerchantServiceId = "buy" | "sell" | "enchant" | "repair";
 
 export interface MerchantSnapshot {
   readonly wallet: WalletVM;
