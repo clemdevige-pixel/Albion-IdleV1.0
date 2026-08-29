@@ -1,279 +1,301 @@
 # 46 — BLACK MARKET SYSTEM
 
-Status: DESIGN VALIDATED — IMPLEMENTATION DEFERRED
+Status: IMPLEMENTATION IN PROGRESS — VALIDATED DESIGN CONTRACT
 
-The Black Market is an endgame equipment sink designed to absorb long-term overproduction from gathering, refining and crafting while converting that production into Silver through a deliberate risk/reward loop.
+The Black Market is the endgame equipment-to-Silver sink for Albion Idle. It absorbs long-term production surplus through a persistent risk/reward convoy loop rather than a direct equipment vendor sale.
 
-This document defines the validated gameplay contract. It does not authorize implementation shortcuts or duplicated balance tables. Authored static balance belongs in `packages/data`; gameplay calculations, validation and state transitions belong in `packages/gameplay`; client presentation/orchestration belongs in `apps/client`.
+Ownership remains mandatory:
+- authored static truth -> `packages/data`;
+- calculations, validation and state transitions -> `packages/gameplay`;
+- presentation/adapters -> `apps/client`.
 
 ---
 
 ## 1. DESIGN GOAL
 
-Primary problem solved:
-
-> Late-game gathering/refining/crafting can generate more materials and equipment than the player can meaningfully consume.
-
-The Black Market converts that surplus into a meaningful endgame loop:
+Core loop:
 
 `surplus resources -> refining -> equipment craft -> Black Market cargo -> route risk -> total loss OR Silver payout`
 
-The Black Market must:
+The Black Market is intentionally a strong endgame Silver generator. Special-demand combinations may produce expected value above 100% of the submitted item's economic production cost. This is validated behavior, not automatically an imbalance.
 
-- create a durable sink for crafted equipment;
-- preserve gathering/refining/crafting as the source of the submitted value;
-- create a high-stakes decision instead of a simple vendor sale;
-- provide a repeatable Silver source whose expected value remains controlled;
-- periodically create targeted production opportunities through special demands;
-- preserve the usefulness/replayability of previously unlocked tiers.
-
-The Black Market is NOT the normal Merchant and must be presented as a separate endgame system/module.
+Direct equipment selling is not part of the player-facing Merchant flow. The former `Vendre` tab is removed even before Black Market discovery. Once unlocked, `Marché Noir` occupies that second Merchant service position.
 
 ---
 
-## 2. ACCESS / WORLD REPRESENTATION
+## 2. UNLOCK / MERCHANT INTEGRATION
 
-The Black Market is represented as its own dedicated access point/building on the Player Island or equivalent dedicated hub module.
+The Black Market is unlocked by a dedicated Academy T8 research:
 
-It must NOT be hidden as another tab of the normal Merchant.
+- Name: `Marché Noir`
+- Tier: T8
+- Academy requirement: T8-capable Academy
+- Cost: **110,000 Silver**
+- Duration: **4 hours**
+- Additional materials: **none**
+- Unlock id: `black_market:unlocked`
 
-Exact unlock condition: **TBD — deliberately not yet decided.**
+Before completion:
+- Merchant exposes no `Vendre` tab;
+- Black Market tab is hidden.
 
-Implementation must not invent an unlock requirement until this design decision is explicitly validated.
+After completion:
+- `Marché Noir` appears in the Merchant at the former `Vendre` position;
+- it remains a distinct system/flow, not a normal vendor transaction list.
+
+Canonical research source:
+`packages/data/src/config/research-content.ts`
+
+Client research presentation:
+`apps/client/src/data/researchContentCatalog.ts`
 
 ---
 
-## 3. ACTIVE CONVOY LIMIT
+## 3. DAILY RESET CONTRACT
 
-Only **1 Black Market convoy may be active at a time** in V1.
+Black Market Special Demands and the Daily Merchant share the same canonical logical day boundary:
 
-No second slot, reputation progression, route upgrades or convoy-capacity progression are part of V1.
+- reset: **00:00 UTC**;
+- one shared daily reset authority;
+- independent deterministic namespaces/seeds are allowed and required where appropriate.
 
-Once a convoy is confirmed:
+Canonical authored reset:
+`packages/data/src/config/daily-reset.ts`
 
-- cargo is removed immediately from player-owned storage;
-- the convoy cannot be cancelled;
-- route/result/payout state is persisted;
-- offline progression applies;
-- the player learns success/failure only when the route duration completes.
+Canonical gameplay day/reset helpers:
+`packages/gameplay/src/time/daily-reset.ts`
+
+Do not duplicate another `00:00 UTC` constant inside Black Market or Daily Merchant code.
 
 ---
 
-## 4. CARGO CONTRACT
+## 4. ACTIVE CONVOY LIMIT
 
-A cargo contains equipment only.
+Only **1 convoy may be active at a time** in V1.
 
-### Capacity
+At departure:
+- cargo is removed immediately;
+- applicable demand quantities are consumed immediately;
+- route, cargo values, payout-on-success and success/failure outcome are frozen;
+- the outcome is persisted but hidden;
+- convoy cannot be cancelled or recalled.
 
-- **8 cargo slots**.
-- Identical item references may stack in one cargo slot.
-- **Maximum 5 units per cargo slot**.
-- Maximum theoretical cargo size: **40 equipment units**.
+Offline elapsed time counts normally because completion is timestamp-based.
 
-Examples:
+---
 
-- `5 x Bow T7` = 1 cargo slot.
-- `3 x Boots T7` = 1 cargo slot.
-- `1 x Sword T6` = 1 cargo slot.
-- A sixth identical unit requires no new slot: it is simply not allowed because the stack cap is 5.
+## 5. CARGO CONTRACT
 
-Mixed tiers and mixed equipment families are allowed in the same cargo.
+Cargo accepts equipment only.
 
-The 5-unit cap exists to prevent a single convoy from liquidating extremely large accumulated production stocks at once.
-
-### Eligible equipment in V1
+Capacity:
+- **8 stacks** maximum;
+- **5 identical units per stack** maximum;
+- maximum theoretical cargo: **40 equipment units**.
 
 Accepted:
-
 - standard crafted equipment;
 - artifact equipment/weapons;
-- enchanted equipment `.1`, `.2`, `.3`, `.4`.
+- enchantments `.0` through `.4`.
 
-Rejected in V1:
-
+Rejected:
 - Awakened equipment;
 - currently equipped items.
 
-Awakened items are intentionally excluded because their economic value includes trait/reroll investment that requires a separate valuation model.
+Sources:
+- player Inventory;
+- Bank.
+
+Mixed tiers and equipment families are allowed.
 
 ---
 
-## 5. ECONOMIC VALUE OF EQUIPMENT
+## 6. CANONICAL ECONOMIC VALUE
 
-The Black Market must NOT use a manually duplicated `item -> Silver price` table.
+Black Market does **not** own an `item -> price` table.
 
-Equipment economic value is derived from the authoritative craft/enchantment contracts already used by the game.
+Equipment economic value is calculated from the real inputs consumed by the current craft/enchantment runtime.
 
-### Base craft value
+### 6.1 Production input values
 
-The economic value of an equipment item is the real economic value of everything consumed to produce it.
+Generic economic values used by both systems that need them live in:
 
-For sequential tier crafting, valuation is recursive:
+`packages/data/src/config/economic-item-values.ts`
 
-`EquipmentValue(Tn) = CurrentTierMaterialValue + ConsumedPredecessorValue`
+Current canonical unit values:
 
-If the craft requires a T(n-1) predecessor, the predecessor's full economic value is included.
+| Tier | Raw | Refined | Enchantment shard |
+|---|---:|---:|---:|
+| T4 | 400 | 2,000 | 1,000 |
+| T5 | 1,000 | 5,500 | 1,500 |
+| T6 | 2,250 | 14,000 | 2,000 |
+| T7 | 3,000 | 22,000 | 2,500 |
+| T8 | 3,750 | 30,500 | 3,500 |
 
-This means high-tier equipment naturally contains the accumulated value of the prior craft chain.
+The Daily Merchant consumes the same raw/refined/shard values, but its shop price is not automatically economic truth for every item category.
 
-### Material values
+### 6.2 Base equipment craft
 
-Material economic values must derive from the canonical economy/balance contracts.
+`EquipmentEconomicValue(.0) = value of the recipe inputs actually consumed`
 
-The validated pricing philosophy for raw production materials is based on opportunity cost:
+Important live contract:
+- standard higher-tier weapon recipes currently require predecessor topology/ownership where relevant to progression logic, but **do not consume the T(n-1) weapon in the recipe**;
+- therefore Black Market valuation must **not** add a predecessor value that was not destroyed by the craft.
 
-`RawResourceValue = GatheringTimePerUnit x RelevantSilverPerHour`
+The resolver consumes the current authored recipe requirements, not a stale recursive predecessor formula.
 
-Refined material value derives from the real authored refining chain and consumed inputs.
+### 6.3 Artifact intrinsic value
 
-The Black Market must consume these canonical values/derivations rather than maintain its own synchronized material price table.
+Daily Merchant artifacts are intentionally scarcity/convenience-priced and must not be reused as intrinsic Black Market economic value.
 
-### Enchanted equipment
+Validated intrinsic artifact values:
 
-For `.1/.2/.3/.4`, equipment economic value includes the complete cumulative enchantment investment:
+| Tier | Artifact economic value |
+|---|---:|
+| T4 | 35,000 |
+| T5 | 60,000 |
+| T6 | 100,000 |
+| T7 | 150,000 |
+| T8 | 220,000 |
 
-`EnchantedEquipmentValue = BaseCraftValue + ConsumedEnchantResourcesValue + ConsumedEnchantSilver`
+### 6.4 Faction Rune intrinsic value
 
-This includes:
+Artifact weapon recipes consume the existing authored Rune quantities:
 
-- all shards/resources consumed across every enchantment transition;
-- all Silver consumed across every enchantment transition;
-- any future authored resource added to the enchantment cost.
+- T4: 5
+- T5: 6
+- T6: 7
+- T7: 8
+- T8: 10
 
-Example principle:
+Validated Rune economic value per unit:
 
-A `.3` item includes the complete `.0 -> .1 -> .2 -> .3` investment, not only the final transition.
+| Tier | Value / Rune |
+|---|---:|
+| T4 | 1,000 |
+| T5 | 1,250 |
+| T6 | 1,500 |
+| T7 | 1,750 |
+| T8 | 2,000 |
 
-No arbitrary `.1 = xN`, `.2 = xN`, etc. Black Market price multiplier is allowed.
+Rune quantity provides most of the tier scaling; unit value intentionally remains restrained to avoid double-scaling artifact weapon values.
+
+### 6.5 Enchantment investment
+
+For `.1/.2/.3/.4`, the value is cumulative:
+
+`EnchantedEquipmentValue = BaseCraftValue + every consumed enchant resource + every consumed enchant Silver`
+
+The resolver uses the actual gameplay enchantment recipe scaler. No arbitrary `.1/.2/.3` Black Market multiplier is allowed.
+
+For artifact weapons, faction Runes that are part of the authored craft-material set continue to participate in the live enchantment material scaling where the existing enchantment runtime does so.
+
+Canonical gameplay resolver:
+`packages/gameplay/src/black-market/economic-value.ts`
 
 ---
 
-## 6. NORMAL BLACK MARKET VALUE
-
-Normal Black Market value is:
+## 7. NORMAL BLACK MARKET VALUE
 
 `NormalBMValue = EquipmentEconomicValue x 0.55`
 
-The **55% base conversion rate** is intentional.
+The **55%** base rate is authored Black Market balance.
 
-The Black Market is not supposed to reimburse the complete opportunity cost of production under normal conditions. Its baseline purpose is to provide a useful sink with controlled value destruction.
+Representative validated standard examples:
 
-Special demands and route risk can then improve the payout.
+| Item profile | Economic value | Normal BM |
+|---|---:|---:|
+| T4.0 two-handed reference | 20,000 | 11,000 |
+| T6.0 two-handed reference | 140,000 | 77,000 |
+| T6.2 two-handed reference | 705,156 | 387,836 |
+| T8.0 two-handed reference | 305,000 | 167,750 |
+| T8.3 two-handed reference | 3,099,375 | 1,704,656 |
+
+Representative T8.0 artifact reference:
+- standard craft: 305,000;
+- artifact: 220,000;
+- 10 T8 Runes: 20,000;
+- economic value: **545,000**;
+- normal BM value: **299,750**.
 
 ---
 
-## 7. ROUTES
+## 8. ROUTES
 
-The player chooses exactly one route when confirming a convoy.
-
-| Route | Success chance | Success payout multiplier | Duration |
+| Route | Success | Success multiplier | Duration |
 |---|---:|---:|---:|
 | Route surveillée | 90% | x1.20 | 15 min |
 | Route contestée | 70% | x1.75 | 30 min |
 | Route interdite | 45% | x3.00 | 60 min |
 
-### Failure
+Failure:
+- cargo lost completely;
+- payout = 0;
+- no partial recovery.
 
-Failure means:
+Ignoring Special Demands, expected return relative to full economic value remains:
+- surveillée: 59.4%;
+- contestée: 67.375%;
+- interdite: 74.25%.
 
-- **100% of the cargo is destroyed/lost**;
-- payout = **0 Silver**;
-- no item is returned.
-
-There is no partial recovery in V1.
-
-### Expected-value intent
-
-Ignoring special demands, route expected values relative to the full economic value of the craft are approximately:
-
-- Route surveillée: `0.55 x 1.20 x 0.90 = 59.4%`
-- Route contestée: `0.55 x 1.75 x 0.70 = 67.375%`
-- Route interdite: `0.55 x 3.00 x 0.45 = 74.25%`
-
-Higher risk therefore has a higher expected return while preserving significant value destruction overall.
+Higher risk intentionally has higher EV.
 
 ---
 
-## 8. RESULT TIMING / ANTI-REROLL CONTRACT
+## 9. OUTCOME / ANTI-REROLL / PAYOUT
 
-The player must NOT know immediately whether the convoy succeeded.
+At departure:
+- outcome is deterministically fixed;
+- cargo and payout inputs are frozen;
+- frozen state is persisted;
+- UI does not reveal success/failure.
 
-At convoy confirmation:
+At/after completion timestamp:
+- result is revealed on authoritative Black Market resolution/access;
+- success credits the frozen Silver payout;
+- failure credits 0;
+- active convoy is consumed into a persisted result state;
+- payout must happen at most once.
 
-- the success/failure outcome is resolved deterministically or otherwise fixed by the authoritative runtime;
-- the result is persisted immediately;
-- all payout inputs are persisted/frozen as required;
-- the result is hidden from presentation until the route completes.
+Reload/import must not reroll an existing convoy.
 
-This prevents reload/reroll abuse while preserving suspense.
-
-At route completion, the result is revealed and applied exactly once.
-
----
-
-## 9. SPECIAL DEMANDS
-
-Special demands coexist with the normal Black Market. They do not create a second sale/expedition system.
-
-They are temporary modifiers applied to compatible cargo units submitted through the same convoy flow.
-
-### Active demand count
-
-- **3 active demands**.
-- Global refresh every **24 hours at a fixed reset time**.
-- All three refresh together.
-
-### Demand target types
-
-V1 supports:
-
-- `weapon family + tier`
-- `armor slot + tier`
-
-Examples:
-
-- Bows T7
-- Daggers T6
-- Boots T5
-- Chest armor T8
-
-No exact-item requirement is necessary in V1.
-
-### Eligible tiers
-
-All world tiers already unlocked by the player are eligible.
-
-Eligible unlocked tiers are weighted **equally**.
-
-Previously unlocked lower tiers remain fully relevant because tier replayability is an intentional part of Albion Idle.
-
-No demand may target an unreached/unlocked future tier.
-
-### Duplicate rules
-
-- Exact duplicate `target + tier` demands are forbidden within the same rotation.
-- Partial overlaps are allowed.
-
-Examples:
-
-Allowed:
-
-- Bows T6
-- Bows T7
-- Boots T6
-
-Forbidden:
-
-- Bows T6
-- Bows T6
+Canonical domain service:
+`packages/gameplay/src/black-market/black-market-service.ts`
 
 ---
 
-## 10. SPECIAL DEMAND QUANTITIES
+## 10. SPECIAL DEMANDS
 
-Demand quantity is tier-sensitive:
+There are **3 active demands** per daily rotation.
 
-| Tier | Requested quantity range |
+Targets:
+- `weapon family + tier`;
+- `armor slot + tier`.
+
+Weapon families V1:
+- sword;
+- bow;
+- fire staff;
+- gloves;
+- dagger.
+
+Armor slots V1:
+- head;
+- torso;
+- boots.
+
+Tier selection:
+- every already-unlocked World tier T4-T8 remains eligible;
+- eligible tiers have equal weight;
+- lower unlocked tiers stay relevant even when T8 is reached.
+
+Duplicates:
+- exact `target + tier` duplicate forbidden;
+- cross-tier or different-target overlaps allowed.
+
+Demand quantities:
+
+| Tier | Quantity |
 |---|---:|
 | T4 | 5-8 |
 | T5 | 4-7 |
@@ -281,226 +303,153 @@ Demand quantity is tier-sensitive:
 | T7 | 2-5 |
 | T8 | 1-4 |
 
-Higher tiers request fewer items because each item represents substantially more accumulated production value.
+Bonus distribution:
 
----
-
-## 11. SPECIAL DEMAND BONUS LEVELS
-
-Demand bonus level is selected from the following authored distribution:
-
-| Demand level | Black Market value bonus | Weight |
+| Level | Bonus | Weight |
 |---|---:|---:|
-| Demand | +40% | 60% |
-| Strong demand | +70% | 30% |
-| Shortage | +100% | 10% |
+| Demand | +40% | 60 |
+| Strong demand | +70% | 30 |
+| Shortage | +100% | 10 |
 
-The bonus applies only to compatible units still required by the demand.
+Bonus applies only to still-requested compatible units.
 
-Example:
-
-Demand: `Bows T7 — 2 units remaining — +70%`.
-
-Cargo contains `5 x Bow T7`.
-
-- 2 units receive the +70% demand bonus;
-- 3 units use normal Black Market value;
-- the demand becomes complete at convoy departure.
+Demand quantity is consumed at **departure**, regardless of later convoy success/failure.
 
 ---
 
-## 12. WHEN DEMAND QUANTITY IS CONSUMED
+## 11. PAYOUT FORMULA
 
-Special-demand quantity is consumed **when the convoy departs**, not when it succeeds.
+Per submitted unit:
 
-If a demand needs 5 units and the player submits 3 compatible units:
+`EquipmentEconomicValue`
+`-> x0.55 normal BM rate`
+`-> + applicable Special Demand bonus on BM value`
+`-> x route success multiplier`
 
-`0/5 -> 3/5 fulfilled`
+Aggregate all units into the frozen payout-on-success.
 
-This progress remains consumed even if the convoy later fails and all cargo is destroyed.
-
-Rationale:
-
-- the opportunity was committed when the cargo was mobilized;
-- failed routes must not allow infinite retries against the same premium demand;
-- this keeps special demands economically bounded.
-
----
-
-## 13. FINAL PAYOUT FORMULA
-
-Conceptually, payout is calculated per submitted unit and aggregated:
-
-`CraftEconomicValue`
-`-> x 0.55 Normal Black Market rate`
-`-> x SpecialDemandModifier if applicable`
-`-> x RouteSuccessPayoutMultiplier`
-
-Only if the convoy succeeds is the resulting total paid in Silver.
-
-If the convoy fails:
+If route fails:
 
 `FinalPayout = 0`
 
-Special-demand bonuses apply only to the number of still-requested matching units. Additional matching units use normal BM value.
+Special Demand EV above 100% of production economic value is permitted by design in sufficiently strong demand/route combinations.
 
 ---
 
-## 14. PLAYER FLOW
+## 12. PLAYER FLOW / UI
 
-1. Player opens the dedicated Black Market module.
-2. Player sees the 3 current special demands and their remaining quantities/timers.
-3. Player selects eligible equipment from accessible player storage.
-4. Player builds a cargo of up to 8 stacks / 5 units per stack.
-5. UI displays for each cargo line:
-   - equipment identity;
-   - quantity;
-   - economic/base BM value;
-   - special-demand match/bonus where applicable.
-6. UI displays total cargo value and predicted success payout for each route.
-7. Player selects Route surveillée, Route contestée or Route interdite.
-8. Confirmation clearly states:
-   - cargo committed;
-   - success chance;
-   - route duration;
-   - Silver payout on success;
-   - complete cargo loss on failure;
-   - no cancellation.
-9. Player confirms.
-10. Cargo is removed immediately.
-11. Applicable special-demand quantities are consumed immediately.
-12. Outcome is fixed and persisted but hidden.
-13. Convoy progresses online/offline.
-14. At completion, result is revealed.
-15. Success credits Silver exactly once; failure credits 0 and confirms cargo loss.
-16. A detailed recap is presented.
+Merchant service order after Black Market unlock:
 
----
+`Acheter | Marché Noir | Enchanter | Réparer`
 
-## 15. RESULT RECAP
+Before unlock:
 
-The completion recap must make the economic result understandable.
+`Acheter | [no sell/BM tab] | Enchanter if unlocked | Réparer`
 
-### Success recap
+Black Market page composition:
+1. three Special Demand cards + daily reset timer;
+2. eligible Inventory/Bank equipment and cargo quantities;
+3. cargo economic value + BM value including demand allocation;
+4. three route cards showing success chance, multiplier, duration, payout-on-success and EV;
+5. clear total-loss warning and departure action.
 
-Display:
+During active convoy:
+- route;
+- remaining time;
+- item count;
+- BM value at risk;
+- potential payout;
+- result shown as hidden until completion.
 
-- route used;
-- cargo contents;
-- cargo economic/BM value;
-- special-demand bonuses applied;
-- route multiplier;
-- final Silver received.
+Completion recap:
+- success/failure;
+- route;
+- value committed;
+- Silver received or 0;
+- cargo-loss state on failure.
 
-### Failure recap
-
-Display:
-
-- route used;
-- cargo contents;
-- value that was at risk;
-- special-demand context if relevant;
-- `Cargo lost` / equivalent clear failure state;
-- final Silver received: `0`.
-
-The UI should make the risk legible before departure and the result auditable afterward.
+Client implementation:
+`apps/client/src/ui/merchant/black-market/BlackMarketView.tsx`
+`apps/client/src/runtime/BlackMarketRuntime.ts`
 
 ---
 
-## 16. PERSISTENCE / OFFLINE REQUIREMENTS
+## 13. PERSISTENCE
 
-The convoy is persistent game state.
+Black Market uses the existing runtime SaveProvider/SaveManager architecture.
 
-Save data must preserve enough authoritative information to prevent:
+Provider id:
+`black_market`
 
-- rerolling success/failure through reload;
-- changing cargo after departure;
-- changing demand bonuses after departure;
-- receiving the payout more than once;
-- recovering lost cargo through load/import edge cases.
+Persisted state includes enough frozen information to preserve:
+- daily demand progress;
+- active cargo recap;
+- departure/completion timestamps;
+- route;
+- fixed success/failure;
+- frozen payout-on-success;
+- last completed result.
 
-Offline time advances convoy completion normally.
+Runtime registration:
+`apps/client/src/runtime/RuntimePersistence.ts`
 
-Special-demand daily rotation must also be deterministic/persisted enough to prevent reload rerolls.
-
----
-
-## 17. DATA-DRIVEN / OWNERSHIP REQUIREMENTS
-
-Per `AGENTS.md` and the project data-ownership contract:
-
-`packages/data` owns authored static truth such as:
-
-- route definitions;
-- route success chances;
-- route durations;
-- route payout multipliers;
-- BM base conversion rate;
-- cargo slot/stack limits;
-- demand count/reset rules;
-- demand quantity ranges;
-- demand bonus values/weights;
-- eligible target contracts and canonical IDs/mappings;
-- eventual Black Market unlock contract once validated.
-
-`packages/gameplay` owns:
-
-- equipment value calculation/derivation;
-- cargo validation;
-- special-demand matching;
-- demand allocation across quantities;
-- route outcome resolution;
-- payout calculation;
-- state transitions;
-- destruction/consumption semantics;
-- exactly-once completion/payout behavior.
-
-`apps/client` owns:
-
-- Black Market presentation;
-- cargo composition UI;
-- route selection UI;
-- timers/status;
-- confirmation/recap presentation;
-- orchestration/adapters only.
-
-Do not duplicate craft/material/enchantment values inside Black Market authored data.
-
-Black Market must derive from the same canonical contracts used by crafting/refining/enchantment/economy.
+No parallel persistence system is allowed.
 
 ---
 
-## 18. EXPLICITLY OUT OF SCOPE FOR V1
+## 14. DATA / GAMEPLAY / CLIENT AUTHORITIES
 
-Not included unless separately designed/validated:
+`packages/data`:
+- `black-market-balance.ts`: BM-only authored rates/routes/capacities/demand rules;
+- `economic-item-values.ts`: generic production/artifact/Rune economic inputs;
+- `research-content.ts`: T8 Black Market research;
+- `daily-reset.ts`: shared daily boundary.
 
-- exact Black Market unlock condition;
-- multiple simultaneous convoys;
+`packages/gameplay`:
+- `black-market/economic-value.ts`: economic resolver;
+- `black-market/black-market-service.ts`: demand generation/matching, cargo quote/validation, outcome, payout state, persistence payload semantics.
+
+`apps/client`:
+- existing recipe catalogs are adapted into the gameplay resolver without copying their values;
+- Inventory/Bank transaction adapter;
+- Merchant Black Market UI;
+- save registration/orchestration.
+
+Do not move Black Market algorithms into `packages/data` and do not create synchronized BM copies of craft/enchantment values.
+
+---
+
+## 15. OUT OF SCOPE V1
+
+- multiple active convoys;
 - Black Market reputation/levels;
 - route upgrades;
 - cargo-capacity progression;
-- cancel/recall after departure;
-- partial cargo recovery after failure;
-- Awakened item valuation/submission;
-- exact-item special demands;
-- player-controlled reroll of special demands;
-- Black Market-exclusive equipment/rewards.
+- cancel/recall;
+- partial recovery;
+- Awakened item submission/valuation;
+- exact-item demand targets;
+- player reroll of daily demands;
+- Black Market-exclusive equipment/rewards;
+- restoration of direct equipment selling as a competing player-facing flow.
 
 ---
 
-## 19. DESIGN SUMMARY
+## 16. VALIDATION CONTRACT
 
-Black Market V1 is a controlled endgame conversion loop:
+Required coverage includes:
+- deterministic demands and duplicate guard;
+- all unlocked tiers eligible;
+- cargo 8-stack / 5-unit limits;
+- standard and artifact economic examples;
+- cumulative enchant valuation;
+- demand consumption at departure;
+- fixed outcome across save/load;
+- payout exactly once;
+- shared daily reset boundary;
+- Merchant tab unlock/replacement behavior;
+- full project lint/typecheck/test/build and Blue runtime determinism.
 
-`production surplus`
-`-> crafted equipment`
-`-> up to 8 stacks / 5 units each`
-`-> optional temporary demand premium`
-`-> choose one of 3 risk routes`
-`-> wait 15/30/60 min`
-`-> SUCCESS: Silver payout`
-`-> FAILURE: total cargo destruction`
-
-Normal Black Market conversion intentionally destroys economic value on average, while special demands create temporary opportunities where targeted production can become especially attractive.
-
-The system's core purpose is not to maximize Silver generation. Its purpose is to make excess production useful, create a durable equipment sink, and add a meaningful endgame risk/reward decision.
+=========================
+DOCUMENT TERMINÉ
+=========================
