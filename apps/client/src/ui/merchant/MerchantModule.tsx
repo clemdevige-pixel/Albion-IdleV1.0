@@ -3,7 +3,6 @@ import { RESEARCH_IDS } from "../../data/researchContentCatalog";
 import { useGameServices } from "../../state/GameContext";
 import { formatCompactNumber } from "../shared";
 import { useNavigation } from "../navigation";
-import { BankExpansionView } from "./bank/BankExpansionView";
 import { BuyView } from "./buy/BuyView";
 import { EnchantView } from "./enchant/EnchantView";
 import type { MerchantServiceId } from "./merchantModels";
@@ -17,7 +16,6 @@ const SERVICES: readonly { readonly id: MerchantServiceId; readonly label: strin
   { id: "sell", label: "Vendre" },
   { id: "enchant", label: "Enchanter" },
   { id: "repair", label: "Réparer" },
-  { id: "bank", label: "Banque" },
 ];
 
 function parseMerchantView(view: string | null): {
@@ -39,16 +37,8 @@ export function MerchantModule(): JSX.Element {
   const enchantmentUnlocked = services.getAcademyModel().research.some((entry) => (
     entry.id === RESEARCH_IDS.enchantmentStudy && entry.state === "completed"
   ));
-  const bankExtensionUnlocked = services.getBankExpansionModel().serviceUnlocked;
-  const availableServices = SERVICES.filter((entry) => (
-    (entry.id !== "enchant" || enchantmentUnlocked)
-    && (entry.id !== "bank" || bankExtensionUnlocked)
-  ));
   const target = useMemo(() => parseMerchantView(activeView), [activeView]);
-  const targetService = (
-    (target?.service === "enchant" && !enchantmentUnlocked)
-    || (target?.service === "bank" && !bankExtensionUnlocked)
-  )
+  const targetService = target?.service === "enchant" && !enchantmentUnlocked
     ? "buy"
     : target?.service;
   const [service, setService] = useState<MerchantServiceId>(targetService ?? "buy");
@@ -59,11 +49,8 @@ export function MerchantModule(): JSX.Element {
   }, [targetService]);
 
   useEffect(() => {
-    if (
-      (service === "enchant" && !enchantmentUnlocked)
-      || (service === "bank" && !bankExtensionUnlocked)
-    ) setService("buy");
-  }, [bankExtensionUnlocked, enchantmentUnlocked, service]);
+    if (service === "enchant" && !enchantmentUnlocked) setService("buy");
+  }, [enchantmentUnlocked, service]);
 
   const targetedEnchantInstanceId = target?.service === "enchant" && enchantmentUnlocked
     ? target.instanceId
@@ -76,7 +63,7 @@ export function MerchantModule(): JSX.Element {
         <div><span>Solde</span><strong>{formatCompactNumber(wallet.silver, "0")} Silver</strong></div>
       </header>
       <nav className="ui-merchant__tabs" aria-label="Services du marchand">
-        {availableServices.map((entry) => (
+        {SERVICES.filter((entry) => entry.id !== "enchant" || enchantmentUnlocked).map((entry) => (
           <button
             type="button"
             key={entry.id}
@@ -96,7 +83,6 @@ export function MerchantModule(): JSX.Element {
           : <EnchantView initialInstanceId={targetedEnchantInstanceId} />
       )}
       {service === "repair" && <RepairView />}
-      {service === "bank" && bankExtensionUnlocked && <BankExpansionView />}
     </div>
   );
 }
