@@ -45,16 +45,19 @@ export interface BlackMarketCargoLine {
   readonly demandBonusValue: number;
 }
 
-export interface BlackMarketConvoy {
+export interface BlackMarketCargoQuote {
+  readonly cargoEconomicValue: number;
+  readonly cargoBmValue: number;
+  readonly cargo: readonly BlackMarketCargoLine[];
+}
+
+export interface BlackMarketConvoy extends BlackMarketCargoQuote {
   readonly id: string;
   readonly routeId: BlackMarketRouteId;
   readonly departedAt: number;
   readonly completesAt: number;
   readonly success: boolean;
   readonly payoutOnSuccess: number;
-  readonly cargoEconomicValue: number;
-  readonly cargoBmValue: number;
-  readonly cargo: readonly BlackMarketCargoLine[];
 }
 
 export interface BlackMarketResult extends BlackMarketConvoy {
@@ -80,6 +83,10 @@ interface SavedState {
   demands: BlackMarketDemand[];
   activeConvoy: BlackMarketConvoy | null;
   lastResult: BlackMarketResult | null;
+}
+
+interface BuiltCargoQuote extends BlackMarketCargoQuote {
+  readonly demandProgress: BlackMarketDemand[];
 }
 
 function hashString(value: string): number {
@@ -162,15 +169,81 @@ function demandMatches(demand: BlackMarketDemand, unit: BlackMarketCargoUnit): b
     : unit.armorSlot === demand.targetId;
 }
 
+function validateCargoShape(units: readonly BlackMarketCargoUnit[]): boolean {
+  if (units.length === 0) return false;
+  const groups = new Map<string, number>();
+  for (const unit of units) {
+    if (!Number.isSafeInteger(unit.economicValue) || unit.economicValue <= 0) return false;
+    const key = `${unit.itemId}|${String(unit.enchantment)}`;
+    groups.set(key, (groups.get(key) ?? 0) + 1);
+  }
+  return groups.size <= BLACK_MARKET_CARGO_SLOT_LIMIT
+    && [...groups.values()].every((quantity) => quantity <= BLACK_MARKET_STACK_LIMIT);
+}
+
+function buildCargoQuote(
+  units: readonly BlackMarketCargoUnit[],
+  demands: readonly BlackMarketDemand[],
+): BuiltCargoQuote | undefined {
+  if (!validateCargoShape(units)) return undefined;
+  const demandProgress = demands.map((entry) => ({ ...entry }));
+  let cargoEconomicValue = 0;
+  let cargoBmValue = 0;
+  const lineMap = new Map<string, {
+    itemId: string;
+    enchantment: EnchantmentLevel;
+    quantity: number;
+    economicValue: number;
+    normalBmValue: number;
+    demandBonusValue: number;
+  }>();
+
+  for (const unit of units) {
+    cargoEconomicValue += unit.economicValue;
+    const normalBmValue = unit.economicValue * BLACK_MARKET_BASE_RATE;
+    let demandBonusValue = 0;
+    const demand = demandProgress.find((entry) => (
+      entry.fulfilledQuantity < entry.requiredQuantity && demandMatches(entry, unit)
+    ));
+    if (demand !== undefined) {
+      demandBonusValue = normalBmValue * demand.bonus;
+      demand.fulfilledQuantity += 1;
+    }
+    cargoBmValue += normalBmValue + demandBonusValue;
+    const key = `${unit.itemId}|${String(unit.enchantment)}`;
+    const line = lineMap.get(key) ?? {
+      itemId: unit.itemId,
+      enchantment: unit.enchantment,
+      quantity: 0,
+      economicValue: 0,
+      normalBmValue: 0,
+      demandBonusValue: 0,
+    };
+    line.quantity += 1;
+    line.economicValue += unit.economicValue;
+    line.normalBmValue += normalBmValue;
+    line.demandBonusValue += demandBonusValue;
+    lineMap.set(key, line);
+  }
+
+  return {
+    cargoEconomicValue: Math.round(cargoEconomicValue),
+    cargoBmValue: Math.round(cargoBmValue),
+    cargo: [...lineMap.values()].map((entry) => ({
+      ...entry,
+      economicValue: Math.round(entry.economicValue),
+      normalBmValue: Math.round(entry.normalBmValue),
+      demandBonusValue: Math.round(entry.demandBonusValue),
+    })),
+    demandProgress,
+  };
+}
+
 export class BlackMarketService {
   readonly providerId = "black_market";
   private state: SavedState = { rotationId: "", demands: [], activeConvoy: null, lastResult: null };
 
   constructor(private readonly ports: BlackMarketServicePorts) {}
-
-  isUnlocked(hasUnlock: (unlockId: string) => boolean): boolean {
-    return hasUnlock("black_market:unlocked");
-  }
 
   getSnapshot(nowMs: number, unlockedTiers: readonly number[]): BlackMarketSnapshot {
     this.ensureRotation(nowMs, unlockedTiers);
@@ -184,6 +257,21 @@ export class BlackMarketService {
     };
   }
 
+  quoteCargo(
+    units: readonly BlackMarketCargoUnit[],
+    nowMs: number,
+    unlockedTiers: readonly number[],
+  ): BlackMarketCargoQuote | undefined {
+    this.ensureRotation(nowMs, unlockedTiers);
+    const quote = buildCargoQuote(units, this.state.demands);
+    if (quote === undefined) return undefined;
+    return {
+      cargoEconomicValue: quote.cargoEconomicValue,
+      cargoBmValue: quote.cargoBmValue,
+      cargo: quote.cargo,
+    };
+  }
+
   startConvoy(
     units: readonly BlackMarketCargoUnit[],
     routeId: BlackMarketRouteId,
@@ -192,74 +280,26 @@ export class BlackMarketService {
   ): boolean {
     this.ensureRotation(nowMs, unlockedTiers);
     this.settleIfComplete(nowMs);
-    if (this.state.activeConvoy !== null || units.length === 0) return false;
+    if (this.state.activeConvoy !== null) return false;
     const route = BLACK_MARKET_ROUTES.find((entry) => entry.id === routeId);
     if (route === undefined) return false;
-
-    const groups = new Map<string, BlackMarketCargoUnit[]>();
-    for (const unit of units) {
-      if (!Number.isSafeInteger(unit.economicValue) || unit.economicValue <= 0) return false;
-      const key = `${unit.itemId}|${String(unit.enchantment)}`;
-      const group = groups.get(key) ?? [];
-      group.push(unit);
-      groups.set(key, group);
-    }
-    if (groups.size > BLACK_MARKET_CARGO_SLOT_LIMIT) return false;
-    if ([...groups.values()].some((group) => group.length > BLACK_MARKET_STACK_LIMIT)) return false;
-
-    const demandProgress = this.state.demands.map((entry) => ({ ...entry }));
-    let cargoEconomicValue = 0;
-    let cargoBmValue = 0;
-    const lineMap = new Map<string, { itemId: string; enchantment: EnchantmentLevel; quantity: number; economicValue: number; normalBmValue: number; demandBonusValue: number }>();
-
-    for (const unit of units) {
-      cargoEconomicValue += unit.economicValue;
-      const normalBmValue = unit.economicValue * BLACK_MARKET_BASE_RATE;
-      let demandBonusValue = 0;
-      const demand = demandProgress.find((entry) => (
-        entry.fulfilledQuantity < entry.requiredQuantity && demandMatches(entry, unit)
-      ));
-      if (demand !== undefined) {
-        demandBonusValue = normalBmValue * demand.bonus;
-        demand.fulfilledQuantity += 1;
-      }
-      cargoBmValue += normalBmValue + demandBonusValue;
-      const key = `${unit.itemId}|${String(unit.enchantment)}`;
-      const line = lineMap.get(key) ?? {
-        itemId: unit.itemId,
-        enchantment: unit.enchantment,
-        quantity: 0,
-        economicValue: 0,
-        normalBmValue: 0,
-        demandBonusValue: 0,
-      };
-      line.quantity += 1;
-      line.economicValue += unit.economicValue;
-      line.normalBmValue += normalBmValue;
-      line.demandBonusValue += demandBonusValue;
-      lineMap.set(key, line);
-    }
-
+    const quote = buildCargoQuote(units, this.state.demands);
+    if (quote === undefined) return false;
     if (!this.ports.commitCargo(units)) return false;
 
     const seed = `${this.state.rotationId}|${String(nowMs)}|${routeId}|${units.map((unit) => unit.instanceId).sort().join(",")}`;
     const success = randomFromSeed(seed)() < route.successChance;
-    this.state.demands = demandProgress;
+    this.state.demands = quote.demandProgress;
     this.state.activeConvoy = {
       id: `convoy_${hashString(seed).toString(16)}`,
       routeId,
       departedAt: nowMs,
       completesAt: nowMs + route.durationMs,
       success,
-      payoutOnSuccess: Math.round(cargoBmValue * route.payoutMultiplier),
-      cargoEconomicValue: Math.round(cargoEconomicValue),
-      cargoBmValue: Math.round(cargoBmValue),
-      cargo: [...lineMap.values()].map((entry) => ({
-        ...entry,
-        economicValue: Math.round(entry.economicValue),
-        normalBmValue: Math.round(entry.normalBmValue),
-        demandBonusValue: Math.round(entry.demandBonusValue),
-      })),
+      payoutOnSuccess: Math.round(quote.cargoBmValue * route.payoutMultiplier),
+      cargoEconomicValue: quote.cargoEconomicValue,
+      cargoBmValue: quote.cargoBmValue,
+      cargo: quote.cargo,
     };
     this.state.lastResult = null;
     return true;
@@ -289,8 +329,14 @@ export class BlackMarketService {
     return {
       rotationId: this.state.rotationId,
       demands: this.state.demands.map((entry) => ({ ...entry })),
-      activeConvoy: this.state.activeConvoy === null ? null : { ...this.state.activeConvoy, cargo: this.state.activeConvoy.cargo.map((entry) => ({ ...entry })) },
-      lastResult: this.state.lastResult === null ? null : { ...this.state.lastResult, cargo: this.state.lastResult.cargo.map((entry) => ({ ...entry })) },
+      activeConvoy: this.state.activeConvoy === null ? null : {
+        ...this.state.activeConvoy,
+        cargo: this.state.activeConvoy.cargo.map((entry) => ({ ...entry })),
+      },
+      lastResult: this.state.lastResult === null ? null : {
+        ...this.state.lastResult,
+        cargo: this.state.lastResult.cargo.map((entry) => ({ ...entry })),
+      },
     } satisfies SavedState;
   }
 
