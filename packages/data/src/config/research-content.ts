@@ -19,6 +19,7 @@ export const RESEARCH_IDS = {
   workerOrganization: "research_worker_organization",
   bankManagement: "research_bank_management",
   instantRefining: "research_instant_refining",
+  blackMarket: "research_black_market",
   dungeonRelicAnalysis: "research_dungeon_relic_analysis",
   /** Legacy save id migrated into dungeonRelicAnalysis. Not an active authored Research. */
   dungeonSanctuaryLocation: "research_dungeon_sanctuary_location",
@@ -41,6 +42,7 @@ export const RESEARCH_UNLOCK_IDS = {
   advancedWorkerOrganization: "workers:advanced_organization",
   advancedBankManagement: "bank:advanced_management",
   instantRefining: "refining:instant_batch",
+  blackMarket: "black_market:unlocked",
   dungeonRelicAnalyzed: "dungeon_relic:analyzed",
   dungeonSystem: "dungeon_system:unlocked",
   factionRuneWorldDrop: "faction_rune:world_drop",
@@ -89,6 +91,7 @@ const ECONOMY_RESEARCH = [
   { id: RESEARCH_IDS.workerOrganization, displayName: "Organisation avancée des ouvriers", tier: 6, durationMs: 150 * MINUTE_MS, cost: { silver: 60_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 6 }], unlockIds: [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization] },
   { id: RESEARCH_IDS.bankManagement, displayName: "Gestion avancée de la banque", tier: 6, durationMs: 150 * MINUTE_MS, cost: { silver: 60_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 6 }], unlockIds: [RESEARCH_UNLOCK_IDS.advancedBankManagement] },
   { id: RESEARCH_IDS.instantRefining, displayName: "Procédés de raffinage avancés", tier: 7, durationMs: 3 * HOUR_MS, cost: { silver: 80_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 7 }], unlockIds: [RESEARCH_UNLOCK_IDS.instantRefining] },
+  { id: RESEARCH_IDS.blackMarket, displayName: "Marché Noir", tier: 8, durationMs: 4 * HOUR_MS, cost: { silver: 110_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 8 }], unlockIds: [RESEARCH_UNLOCK_IDS.blackMarket] },
 ] as const satisfies readonly AuthoredResearchDefinition[];
 
 const DUNGEON_DISCOVERY_RESEARCH = [
