@@ -6,26 +6,43 @@ import { EconomyNotifications } from "../../panels/EconomyNotifications";
 import { useGameServices } from "../../state/GameContext";
 import { EnemyStatusVfxOverlay } from "./EnemyStatusVfxOverlay";
 import { ExpeditionRecapPopup } from "./ExpeditionRecapPopup";
+import { ResearchRecapPopup } from "./ResearchRecapPopup";
 import "./combatHud.css";
 import "./combatState.css";
 import "./combatDock.css";
 
-function ExpeditionRecapOverlay(): JSX.Element | null {
+function AcademyRecapOverlay(): JSX.Element | null {
   const services = useGameServices();
-  const recap = useSyncExternalStore(
+  const researchRecap = useSyncExternalStore(
+    (listener) => services.subscribeResearchRecap(listener),
+    () => services.getResearchRecap(),
+    () => null,
+  );
+  const expeditionRecap = useSyncExternalStore(
     (listener) => services.subscribeExpeditionRecap(listener),
     () => services.getExpeditionRecap(),
     () => null,
   );
 
-  if (recap === null) return null;
+  if (researchRecap !== null) {
+    return (
+      <ResearchRecapPopup
+        recap={researchRecap}
+        onDismiss={() => { services.dismissResearchRecap(); }}
+      />
+    );
+  }
 
-  return (
-    <ExpeditionRecapPopup
-      recap={recap}
-      onDismiss={() => { services.dismissExpeditionRecap(); }}
-    />
-  );
+  if (expeditionRecap !== null) {
+    return (
+      <ExpeditionRecapPopup
+        recap={expeditionRecap}
+        onDismiss={() => { services.dismissExpeditionRecap(); }}
+      />
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -44,7 +61,7 @@ export function CombatHudLayer(): JSX.Element {
         <AbilityBar />
       </div>
       <EconomyNotifications />
-      <ExpeditionRecapOverlay />
+      <AcademyRecapOverlay />
     </div>
   );
 }
