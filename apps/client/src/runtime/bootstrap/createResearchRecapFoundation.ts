@@ -14,9 +14,9 @@ export interface ResearchRecapModel {
 
 type Listener = () => void;
 
-/** Presentation-only store. Research unlocks are already committed before this runs. */
+/** Presentation-only FIFO store. Research unlocks are already committed before this runs. */
 export function createResearchRecapFoundation() {
-  let recap: ResearchRecapModel | null = null;
+  const queue: ResearchRecapModel[] = [];
   let nextId = 1;
   const listeners = new Set<Listener>();
 
@@ -31,7 +31,7 @@ export function createResearchRecapFoundation() {
     },
 
     getSnapshot(this: void): ResearchRecapModel | null {
-      return recap;
+      return queue[0] ?? null;
     },
 
     present(this: void, researchId: string): void {
@@ -40,20 +40,20 @@ export function createResearchRecapFoundation() {
         throw new Error(`Unknown Research recap definition: ${researchId}`);
       }
       const presentation = getResearchPresentationInfo(researchId);
-      recap = {
+      queue.push({
         id: nextId,
         researchId,
         displayName: definition.displayName,
         effectSummary: presentation?.effectSummary ?? "Recherche terminée.",
         unlockedContent: getResearchUnlockedContent(researchId),
-      };
+      });
       nextId += 1;
       notify();
     },
 
     dismiss(this: void): void {
-      if (recap === null) return;
-      recap = null;
+      if (queue.length === 0) return;
+      queue.shift();
       notify();
     },
   };
