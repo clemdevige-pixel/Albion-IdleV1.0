@@ -24,11 +24,13 @@ export type BankExpansionPurchaseResult =
       readonly reason: "research_locked" | "max_tabs" | "insufficient_silver" | "capacity_update_failed";
     };
 
+type BankExpansionCurrencyPort = Pick<CurrencyService, "getBalance" | "debit" | "credit">;
+
 interface BankExpansionFoundationDependencies {
   readonly inventoryManager: PlayerInventoryManager;
   readonly bankId: EntityId;
   readonly bankTabCapacity: number;
-  readonly currencyService: CurrencyService;
+  readonly currencyService: BankExpansionCurrencyPort;
   readonly walletId: WalletId;
   readonly isResearchUnlocked: () => boolean;
 }
