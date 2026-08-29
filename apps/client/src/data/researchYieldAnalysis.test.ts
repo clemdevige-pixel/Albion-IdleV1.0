@@ -30,12 +30,14 @@ describe("Analyse des rendements research", () => {
       effectSummary: "Débloque le suivi d’une ressource favorite et son rendement dans le Dashboard.",
     });
     expect(getResearchUnlockedContent(RESEARCH_IDS.yieldAnalysis)).toEqual([
-      "Suivi d’une ressource favorite",
-      "Stock actuel et rendement / h",
+      "Une étoile apparaît sur les ressources dans l’Inventaire",
+      "Cliquez sur l’étoile pour choisir la ressource à suivre",
+      "Le stock actuel et le rendement / h de cette ressource sont ensuite affichés",
     ]);
     expect(getResearchUnlockGuidance(RESEARCH_IDS.yieldAnalysis)).toEqual([
-      { label: "Suivi d’une ressource favorite", destination: "Tableau de bord" },
-      { label: "Stock actuel et rendement / h", destination: "Tableau de bord" },
+      { label: "Une étoile apparaît sur les ressources dans l’Inventaire", destination: "Inventaire > Ressources" },
+      { label: "Cliquez sur l’étoile pour choisir la ressource à suivre", destination: "Inventaire > Ressources" },
+      { label: "Le stock actuel et le rendement / h de cette ressource sont ensuite affichés", destination: "Tableau de bord" },
     ]);
   });
 });
