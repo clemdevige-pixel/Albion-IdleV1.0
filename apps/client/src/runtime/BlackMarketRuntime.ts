@@ -10,6 +10,7 @@ import {
   type BlackMarketSnapshot,
   type CurrencyService,
   type EnchantmentLevel,
+  type InventoryEntry,
   type WalletId,
 } from "@game/gameplay";
 import { ARTIFACT_WEAPON_CRAFT_RECIPES } from "../data/artifactWeaponCraftRecipes.js";
@@ -140,6 +141,9 @@ class BlackMarketRuntimeAdapter {
         const entry = slot.entry;
         if (entry === undefined || resolveEquipmentInfo(entry.itemId) === undefined) continue;
         if (bindings.awakenedWeaponService.has(entry.instanceId)) continue;
+        // Equipment is identity-bearing cargo. Refuse malformed stacked equipment
+        // rather than losing the physical instance contract during BM selection.
+        if (entry.quantity !== 1) continue;
         const enchantment = getEnchantmentLevel(entry);
         const economicValue = economicValueFor(entry.itemId, enchantment);
         if (economicValue === undefined) continue;
@@ -149,7 +153,7 @@ class BlackMarketRuntimeAdapter {
           source,
           itemId: entry.itemId,
           enchantment,
-          availableQuantity: (previous?.availableQuantity ?? 0) + entry.quantity,
+          availableQuantity: (previous?.availableQuantity ?? 0) + 1,
           economicValue,
           normalBmValue: Math.round(economicValue * BLACK_MARKET_BASE_RATE),
         });
@@ -163,7 +167,7 @@ class BlackMarketRuntimeAdapter {
     nowMs: number = Date.now(),
   ): BlackMarketCargoQuote | undefined {
     const bindings = this.requireBindings();
-    const units = this.buildUnits(selection, nowMs);
+    const units = this.buildUnits(selection);
     if (units === undefined) return undefined;
     return this.saveProvider.quoteCargo(units, nowMs, bindings.getUnlockedTiers());
   }
@@ -175,7 +179,7 @@ class BlackMarketRuntimeAdapter {
   ): boolean {
     const bindings = this.requireBindings();
     if (!bindings.isUnlocked()) return false;
-    const units = this.buildUnits(selection, nowMs);
+    const units = this.buildUnits(selection);
     if (units === undefined) return false;
     const started = this.saveProvider.startConvoy(
       units,
@@ -207,29 +211,40 @@ class BlackMarketRuntimeAdapter {
 
   private buildUnits(
     selection: readonly BlackMarketSelection[],
-    nowMs: number,
   ): readonly BlackMarketCargoUnit[] | undefined {
-    const candidates = this.getCandidates();
+    const bindings = this.requireBindings();
     const units: BlackMarketCargoUnit[] = [];
+    const claimedInstanceIds = new Set<string>();
+
     for (const selected of selection) {
       if (!Number.isInteger(selected.quantity) || selected.quantity <= 0) return undefined;
-      const candidate = candidates.find((entry) => (
-        entry.source === selected.source
-        && entry.itemId === selected.itemId
-        && entry.enchantment === selected.enchantment
-      ));
-      if (candidate === undefined || selected.quantity > candidate.availableQuantity) return undefined;
+      const ownerId = this.ownerFor(selected.source);
       const tier = getItemTier(selected.itemId);
       if (!isBlackMarketTier(tier)) return undefined;
+      const economicValue = economicValueFor(selected.itemId, selected.enchantment);
+      if (economicValue === undefined) return undefined;
       const weaponFamily = resolveWeaponFamilyId(selected.itemId);
       const armorSlot = armorSlotFor(selected.itemId);
-      for (let index = 0; index < selected.quantity; index += 1) {
+
+      const matchingEntries = bindings.inventoryManager.listSlots(ownerId)
+        .flatMap((slot) => slot.entry === undefined ? [] : [slot.entry])
+        .filter((entry) => (
+          entry.itemId === selected.itemId
+          && getEnchantmentLevel(entry) === selected.enchantment
+          && entry.quantity === 1
+          && !bindings.awakenedWeaponService.has(entry.instanceId)
+          && !claimedInstanceIds.has(entry.instanceId)
+        ));
+      if (matchingEntries.length < selected.quantity) return undefined;
+
+      for (const entry of matchingEntries.slice(0, selected.quantity)) {
+        claimedInstanceIds.add(entry.instanceId);
         units.push({
-          instanceId: `${selected.source}|${selected.itemId}|${String(selected.enchantment)}|${String(index)}|${String(nowMs)}`,
+          instanceId: entry.instanceId,
           itemId: selected.itemId,
           enchantment: selected.enchantment,
           tier,
-          economicValue: candidate.economicValue,
+          economicValue,
           ...(weaponFamily === undefined ? {} : { weaponFamily }),
           ...(armorSlot === undefined ? {} : { armorSlot }),
         });
@@ -241,46 +256,56 @@ class BlackMarketRuntimeAdapter {
   private commitCargo(units: readonly BlackMarketCargoUnit[]): boolean {
     const bindings = this.bindings;
     if (bindings === undefined) return false;
-    const grouped = new Map<string, {
-      source: BlackMarketStorageSource;
-      itemId: string;
-      enchantment: EnchantmentLevel;
-      quantity: number;
-    }>();
+
+    const planned: Array<{
+      ownerId: EntityId;
+      position: number;
+      entry: InventoryEntry;
+    }> = [];
+    const seenInstanceIds = new Set<string>();
+
+    // Preflight the complete transaction before mutating either Inventory or Bank.
+    // The exact physical instance selected by the BM must still exist, must still
+    // match the quoted item/enchantment, and must not have become Awakened.
     for (const unit of units) {
-      const source = unit.instanceId.startsWith("bank|") ? "bank" : "inventory";
-      const key = `${source}|${unit.itemId}|${String(unit.enchantment)}`;
-      const current = grouped.get(key);
-      grouped.set(key, {
-        source,
-        itemId: unit.itemId,
-        enchantment: unit.enchantment,
-        quantity: (current?.quantity ?? 0) + 1,
-      });
+      if (seenInstanceIds.has(unit.instanceId)) return false;
+      seenInstanceIds.add(unit.instanceId);
+
+      let located:
+        | { ownerId: EntityId; position: number; entry: InventoryEntry }
+        | undefined;
+      for (const ownerId of [bindings.heroId, bindings.bankId]) {
+        const slot = bindings.inventoryManager.findEntryByInstanceId(ownerId, unit.instanceId);
+        if (slot?.entry === undefined) continue;
+        located = { ownerId, position: slot.position, entry: slot.entry };
+        break;
+      }
+      if (located === undefined) return false;
+      if (
+        located.entry.quantity !== 1
+        || located.entry.itemId !== unit.itemId
+        || getEnchantmentLevel(located.entry) !== unit.enchantment
+        || bindings.awakenedWeaponService.has(located.entry.instanceId)
+      ) return false;
+      planned.push(located);
     }
 
-    const removed: Array<{
-      source: BlackMarketStorageSource;
-      itemId: string;
-      enchantment: EnchantmentLevel;
-      quantity: number;
-    }> = [];
-    for (const entry of grouped.values()) {
-      const result = bindings.inventoryManager.removeQuantity(
-        this.ownerFor(entry.source),
-        entry.itemId,
-        entry.quantity,
-        entry.enchantment,
+    const removed: typeof planned = [];
+    for (const entry of planned) {
+      const result = bindings.inventoryManager.removeEntryByInstanceId(
+        entry.ownerId,
+        entry.entry.instanceId,
       );
       if (!result.ok) {
-        for (const rollback of removed.reverse()) {
-          bindings.inventoryManager.addQuantity(
-            this.ownerFor(rollback.source),
-            rollback.itemId,
-            rollback.quantity,
-            undefined,
-            rollback.enchantment,
+        for (const rollback of [...removed].reverse()) {
+          const restored = bindings.inventoryManager.insertEntry(
+            rollback.ownerId,
+            rollback.entry,
+            rollback.position,
           );
+          if (!restored.ok) {
+            throw new Error("Black Market cargo rollback failed to restore exact item identity");
+          }
         }
         return false;
       }
