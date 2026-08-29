@@ -183,28 +183,157 @@
   pointer-events: auto;
 }
 
-.dungeon-recap__footer {
-  align-items: flex-end;
+.dungeon-recap {
+  padding: 18px;
 }
 
-.dungeon-recap__actions {
+.dungeon-recap__header {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.expedition-recap__footer .dungeon-recap__actions button:disabled {
+.dungeon-recap__header h2 {
+  margin: 0;
+  color: var(--ui-color-text-primary, #eee7dc);
+  font: 700 19px var(--ui-font-display);
+}
+
+.dungeon-recap__summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0 0;
+  color: var(--ui-color-text-muted, #8f969f);
+  font-size: 10px;
+}
+
+.dungeon-recap__summary strong {
+  color: #d7c8ae;
+  font-weight: 700;
+}
+
+.dungeon-recap__rewards {
+  margin-top: 20px;
+}
+
+.dungeon-recap__rewards h3 {
+  margin: 0 0 10px;
+  color: #d9b85e;
+  font: 700 11px var(--ui-font-display);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.dungeon-recap__reward-list {
+  display: grid;
+  gap: 5px;
+}
+
+.dungeon-recap__reward-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 4px 2px;
+}
+
+.dungeon-recap__reward-identity {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  color: #b8b2a8;
+  font-size: 10px;
+}
+
+.dungeon-recap__reward-icon {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+}
+
+.dungeon-recap__reward-icon .item-visual__image,
+.dungeon-recap__reward-icon .item-visual__fallback {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.dungeon-recap__silver-icon {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 2px solid #c6c9cc;
+  border-radius: 50%;
+  color: #23272b;
+  background: linear-gradient(145deg, #f0f1ed, #8d969e);
+  box-shadow: inset 0 0 0 2px #646b70;
+  font: 800 11px var(--ui-font-display);
+}
+
+.dungeon-recap__reward-row > strong {
+  flex: 0 0 auto;
+  color: #e7c967;
+  font: 700 14px var(--ui-font-display);
+}
+
+.dungeon-recap__empty {
+  margin: 0;
+  color: var(--ui-color-text-muted, #8f969f);
+  font-size: 10px;
+}
+
+.dungeon-recap__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.dungeon-recap__action {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font: 700 10px var(--ui-font-display);
+  cursor: pointer;
+}
+
+.dungeon-recap__action--secondary {
+  border: 1px solid #5d4d34;
+  color: #c9b98f;
+  background: #15130f;
+}
+
+.dungeon-recap__action--secondary:hover:not(:disabled) {
+  border-color: #80683d;
+  color: #e0cfa0;
+  background: #1b1710;
+}
+
+.dungeon-recap__action--primary {
+  border: 1px solid #a97827;
+  color: #f0d99c;
+  background: #21190d;
+}
+
+.dungeon-recap__action--primary:hover {
+  border-color: #c48b2b;
+  color: #f8e4af;
+  background: #2b200e;
+}
+
+.dungeon-recap__action:disabled {
   border-color: #45413a;
   color: #6f6d68;
   background: #141414;
   cursor: not-allowed;
-}
-
-.expedition-recap__footer .dungeon-recap__actions button.is-primary {
-  border-color: #a97827;
-  color: #f0d99c;
-  background: #21190d;
 }
 
 @media (max-width: 560px) {
@@ -218,12 +347,10 @@
   }
 
   .dungeon-recap__footer {
-    align-items: stretch;
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 
-  .dungeon-recap__actions {
-    display: grid;
-    grid-template-columns: 1fr;
+  .dungeon-recap__action--primary {
+    grid-row: 1;
   }
 }
