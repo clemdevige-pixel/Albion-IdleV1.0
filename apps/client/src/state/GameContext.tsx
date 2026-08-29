@@ -57,6 +57,7 @@ import { createFactionAchievementFoundation } from "../runtime/bootstrap/createF
 import { createFactionBestiaryFoundation } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 import { createAcademyRuntimeFoundation } from "../runtime/bootstrap/createAcademyRuntimeFoundation.js";
 import { createAcademyPresentationFoundation } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
+import { createBankExpansionFoundation } from "../runtime/bootstrap/createBankExpansionFoundation.js";
 import { createResearchFoundation } from "../runtime/bootstrap/createResearchFoundation.js";
 import { createExpeditionFoundation } from "../runtime/bootstrap/createExpeditionFoundation.js";
 import { createExpeditionRecapFoundation } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
@@ -242,6 +243,7 @@ export function GameProvider({
 
     const {
       bankId,
+      bankTabCapacity,
       productionStorageId,
       enchantmentService,
     } = createCharacterStorageFoundation({
@@ -272,6 +274,15 @@ export function GameProvider({
       getAcademyTier: academyRuntimeFoundation.getResearchTier,
     });
     const { researchService } = researchFoundation;
+    const bankExpansionFoundation = createBankExpansionFoundation({
+      inventoryManager,
+      bankId,
+      bankTabCapacity,
+      currencyService,
+      walletId,
+      isResearchUnlocked: () => researchService.hasUnlock(RESEARCH_UNLOCK_IDS.advancedBankManagement),
+    });
+    bankExpansionFoundation.reconcileResearchUnlock();
     const hasAdvancedWorkerOrganization = (): boolean => (
       researchService.hasUnlock(RESEARCH_UNLOCK_IDS.advancedWorkerOrganization)
     );
@@ -409,6 +420,7 @@ export function GameProvider({
       expeditionService,
       reconcileResearchEffects: researchFoundation.reconcileResearchEffects,
       onResearchCompletion: (researchId) => {
+        bankExpansionFoundation.reconcileResearchUnlock();
         researchRecapFoundation.present(researchId);
         resyncAll();
       },
@@ -502,17 +514,48 @@ export function GameProvider({
       resyncAll,
     });
     const saveGame = (): void => { saveGameActions.save(); };
+    const reconcileLoadedBankExpansion = (): void => {
+      const changed = bankExpansionFoundation.reconcileResearchUnlock();
+      if (changed) resyncAll();
+    };
     const loadGame = (): boolean => {
       const loaded = saveGameActions.load();
-      if (loaded) factionProgressionCoordinator.reconcile();
+      if (loaded) {
+        factionProgressionCoordinator.reconcile();
+        reconcileLoadedBankExpansion();
+      }
       return loaded;
     };
     const hasSave = (): boolean => saveGameActions.hasSave();
     const exportSave = (): string => saveGameActions.exportSave();
     const importSave = (raw: string): boolean => {
       const imported = saveGameActions.importSave(raw);
-      if (imported) factionProgressionCoordinator.reconcile();
+      if (imported) {
+        factionProgressionCoordinator.reconcile();
+        reconcileLoadedBankExpansion();
+      }
       return imported;
+    };
+    const purchaseNextBankTab: GameServices["purchaseNextBankTab"] = () => {
+      const result = bankExpansionFoundation.purchaseNextTab();
+      if (result.ok) {
+        resyncAll();
+        saveGame();
+        bridge.addEconomyNotification({
+          id: `notif_bank_extension_${String(result.tabNumber)}_${String(Date.now())}`,
+          type: "success",
+          message: `Banque ${String(result.tabNumber)} débloquée`,
+          timestamp: Date.now(),
+        });
+      } else if (result.reason === "insufficient_silver") {
+        bridge.addEconomyNotification({
+          id: `notif_bank_extension_failed_${String(Date.now())}`,
+          type: "error",
+          message: "Silver insuffisant pour cette extension de banque.",
+          timestamp: Date.now(),
+        });
+      }
+      return result;
     };
 
     const notifyAwakeningFailure = (reason: string): void => {
@@ -835,6 +878,8 @@ export function GameProvider({
       getAcademyModel: academyPresentationFoundation.getModel,
       startAcademyResearch: academyPresentationFoundation.startResearch,
       startAcademyExpedition: academyPresentationFoundation.startExpedition,
+      getBankExpansionModel: bankExpansionFoundation.getModel,
+      purchaseNextBankTab,
       subscribeResearchRecap: researchRecapFoundation.subscribe,
       getResearchRecap: researchRecapFoundation.getSnapshot,
       dismissResearchRecap: researchRecapFoundation.dismiss,
