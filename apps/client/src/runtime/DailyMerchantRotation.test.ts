@@ -5,6 +5,7 @@ import {
   DAILY_MERCHANT_ROTATION_RULES,
   DAILY_MERCHANT_TIERS,
   DAILY_MERCHANT_UNIT_PRICES,
+  DAILY_RESET_RULES,
   type DailyMerchantCategory,
 } from "@game/data";
 import {
@@ -30,8 +31,8 @@ describe("daily merchant rotation", () => {
       DAILY_MERCHANT_TIERS.every((tier) => pricesByTier[tier] > 0)
     ))).toBe(true);
     expect(DAILY_MERCHANT_ROTATION_RULES.offerCount).toBeGreaterThan(0);
-    expect(DAILY_MERCHANT_ROTATION_RULES.resetHourUtc).toBeGreaterThanOrEqual(0);
-    expect(DAILY_MERCHANT_ROTATION_RULES.resetHourUtc).toBeLessThan(24);
+    expect(DAILY_RESET_RULES.resetHourUtc).toBeGreaterThanOrEqual(0);
+    expect(DAILY_RESET_RULES.resetHourUtc).toBeLessThan(24);
   });
 
   it("is deterministic and respects authored guardrails", () => {
