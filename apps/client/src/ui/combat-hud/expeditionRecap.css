@@ -179,6 +179,34 @@
   background: #251d0f;
 }
 
+.dungeon-recap-backdrop {
+  pointer-events: auto;
+}
+
+.dungeon-recap__footer {
+  align-items: flex-end;
+}
+
+.dungeon-recap__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.expedition-recap__footer .dungeon-recap__actions button:disabled {
+  border-color: #45413a;
+  color: #6f6d68;
+  background: #141414;
+  cursor: not-allowed;
+}
+
+.expedition-recap__footer .dungeon-recap__actions button.is-primary {
+  border-color: #a97827;
+  color: #f0d99c;
+  background: #21190d;
+}
+
 @media (max-width: 560px) {
   .expedition-recap {
     width: calc(100% - 20px);
@@ -187,5 +215,15 @@
 
   .expedition-recap__item {
     padding: 11px;
+  }
+
+  .dungeon-recap__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dungeon-recap__actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
