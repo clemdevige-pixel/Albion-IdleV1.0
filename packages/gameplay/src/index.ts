@@ -51,3 +51,4 @@ export * from "./faction-knowledge/index.js";
 export * from "./relics/index.js";
 export * from "./expeditions/index.js";
 export * from "./awakening/index.js";
+export * from "./time/index.js";
