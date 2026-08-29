@@ -795,6 +795,7 @@ export function GameProvider({
       tick: () => { runtimeTickController.tick(); },
       tickIntervalMs: TICK_INTERVAL,
       persistence,
+      syncPresentation: resyncAll,
       dispose: () => {
         unsubscribeDamageEvents();
         factionCapeFoundation.dispose();
