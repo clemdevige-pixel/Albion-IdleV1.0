@@ -4,6 +4,7 @@ import {
   RESEARCH_IDS,
   RESEARCH_UNLOCK_IDS,
   getResearchPresentationInfo,
+  getResearchUnlockGuidance,
   getResearchUnlockedContent,
 } from "./researchContentCatalog.js";
 
@@ -23,15 +24,18 @@ describe("Analyse des rendements research", () => {
     });
   });
 
-  it("presents resource tracking as information, not a yield bonus", () => {
+  it("presents resource tracking as information with an actionable destination", () => {
     expect(getResearchPresentationInfo(RESEARCH_IDS.yieldAnalysis)).toMatchObject({
       group: "core",
       effectSummary: "Débloque le suivi d’une ressource favorite et son rendement dans le Dashboard.",
     });
     expect(getResearchUnlockedContent(RESEARCH_IDS.yieldAnalysis)).toEqual([
       "Suivi d’une ressource favorite",
-      "Stock actuel",
-      "Rendement de la ressource / h",
+      "Stock actuel et rendement / h",
+    ]);
+    expect(getResearchUnlockGuidance(RESEARCH_IDS.yieldAnalysis)).toEqual([
+      { label: "Suivi d’une ressource favorite", destination: "Tableau de bord" },
+      { label: "Stock actuel et rendement / h", destination: "Tableau de bord" },
     ]);
   });
 });
