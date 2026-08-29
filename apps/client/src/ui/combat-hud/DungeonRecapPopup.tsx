@@ -49,8 +49,13 @@ export function DungeonRecapPopup({
     ? undefined
     : getDungeonLootDefinition(dungeonDefinition.lootTableId);
 
-  const rewardRows: readonly RewardRow[] = [
-    { key: "silver", label: "Silver", value: recap.rewards.silver, currency: "silver" },
+  const rewardRows: readonly RewardRow[] = ([
+    {
+      key: "silver",
+      label: "Silver",
+      value: recap.rewards.silver,
+      currency: "silver" as const,
+    },
     {
       key: "artifact-fragments",
       label: "Fragments d’artefact",
@@ -75,7 +80,7 @@ export function DungeonRecapPopup({
       value: recap.rewards.artifacts,
       ...(lootDefinition === undefined ? {} : { itemId: lootDefinition.artifactItemId }),
     },
-  ].filter((entry) => entry.value > 0);
+  ] satisfies readonly RewardRow[]).filter((entry) => entry.value > 0);
 
   return (
     <div className="expedition-recap-backdrop dungeon-recap-backdrop" role="presentation">
