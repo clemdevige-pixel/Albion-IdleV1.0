@@ -125,6 +125,10 @@ class BlackMarketRuntimeAdapter {
 
   bind(bindings: BlackMarketRuntimeBindings): void {
     this.bindings = bindings;
+    if (isDevSandboxMode()) {
+      (window as Window & { __albionIdleBlackMarket?: BlackMarketRuntimeAdapter })
+        .__albionIdleBlackMarket = this;
+    }
   }
 
   reset(): void {
