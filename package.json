@@ -34,15 +34,14 @@
     "benchmark:final-gates": "tsx --tsconfig tsconfig.base.json scripts/runtime-final-gate-audit.ts",
     "benchmark:tier-transitions": "tsx --tsconfig tsconfig.base.json scripts/runtime-tier-plateau-audit.ts",
     "benchmark:enchantment-shards": "tsc -b && tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-shard-progression.ts",
+    "benchmark:cross-tier-world-farm": "tsx --tsconfig tsconfig.base.json scripts/runtime-cross-tier-world-farm-audit.ts",
     "benchmark:global-balance": "node scripts/run-global-balance.mjs",
     "clean": "tsc -b --clean && tsc -b tsconfig.build.json --clean"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.5",
-    "eslint": "^9.17.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.4.2",
+    "pnpm": "9.15.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.19.1",
