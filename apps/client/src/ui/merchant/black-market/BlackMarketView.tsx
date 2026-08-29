@@ -17,6 +17,7 @@ import { syncInventoryToBridge } from "../../../state/bridge-sync/playerInventor
 import { syncWalletToBridge } from "../../../state/bridge-sync/economySync.js";
 import { formatCompactNumber } from "../../shared/index.js";
 import { useMerchantData } from "../useMerchantData.js";
+import "./black-market.css";
 
 function selectionKey(selection: Pick<BlackMarketSelection, "source" | "itemId" | "enchantment">): string {
   return `${selection.source}|${selection.itemId}|${String(selection.enchantment)}`;
@@ -74,11 +75,11 @@ export function BlackMarketView(): JSX.Element {
       services.bridge,
       services.currencyService,
       services.walletId,
-      services.bridge.wallet.incomeRate,
+      wallet.incomeRate,
     );
     services.saveGame();
     forceRevision((value) => value + 1);
-  }, [services]);
+  }, [services, wallet.incomeRate]);
 
   blackMarketRuntime.bind({
     inventoryManager: services.inventoryManager,
@@ -106,7 +107,10 @@ export function BlackMarketView(): JSX.Element {
     return () => { window.clearInterval(intervalId); };
   }, [refreshSnapshot]);
 
-  const candidates = blackMarketUnlocked ? blackMarketRuntime.getCandidates() : [];
+  const candidates = useMemo(
+    () => blackMarketUnlocked ? blackMarketRuntime.getCandidates() : [],
+    [blackMarketUnlocked, nowMs, snapshot],
+  );
   const selectedEntries = [...selection.values()];
   const selectedUnitCount = selectedEntries.reduce((sum, entry) => sum + entry.quantity, 0);
   const quote = selectedEntries.length === 0
