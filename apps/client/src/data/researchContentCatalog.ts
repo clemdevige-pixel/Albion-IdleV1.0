@@ -92,8 +92,9 @@ const RESEARCH_UNLOCK_PRESENTATION = new Map<string, readonly ResearchUnlockPres
     { label: "Utilisation des éclats d’enchantement", destination: "Marchand > Enchantement" },
   ]],
   [RESEARCH_UNLOCK_IDS.resourceYieldTracking, [
-    { label: "Suivi d’une ressource favorite", destination: "Tableau de bord" },
-    { label: "Stock actuel et rendement / h", destination: "Tableau de bord" },
+    { label: "Une étoile apparaît sur les ressources dans l’Inventaire", destination: "Inventaire > Ressources" },
+    { label: "Cliquez sur l’étoile pour choisir la ressource à suivre", destination: "Inventaire > Ressources" },
+    { label: "Le stock actuel et le rendement / h de cette ressource sont ensuite affichés", destination: "Tableau de bord" },
   ]],
   [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization, [
     { label: "8 ouvriers maximum", destination: "Île > Ouvriers" },
