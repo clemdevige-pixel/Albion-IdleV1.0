@@ -9,7 +9,7 @@ import {
   type CombatFlowPolicy,
 } from "./CombatFlowPolicy.js";
 import type { DungeonCombatEncounterSource } from "./DungeonCombatEncounterSource.js";
-import { worldTravelTransition } from "./WorldTravelTransition.js";
+import { dungeonCompletionFlow } from "./DungeonCompletionFlow.js";
 
 export interface CombatVictoryResult {
   readonly enteredNewSegment: boolean;
@@ -72,11 +72,13 @@ export class DungeonCombatRuntimeRouter {
       return result;
     }
     this.restoreHealthOnNextWorldEncounter = true;
+    const run = this.dungeonRuntime.activeRun;
     const encounter = this.dungeonRuntime.getActiveEncounter();
-    if (encounter === undefined) return { enteredNewSegment: false };
+    if (run === undefined || encounter === undefined) return { enteredNewSegment: false };
+    const definitionId = run.definitionId;
     const result = this.dungeonRuntime.completeEncounter(encounter.id);
     if (result.ok && result.state.status === "cleared") {
-      worldTravelTransition.start();
+      dungeonCompletionFlow.complete(definitionId);
     }
     return { enteredNewSegment: false };
   }
@@ -88,5 +90,6 @@ export class DungeonCombatRuntimeRouter {
     }
     this.restoreHealthOnNextWorldEncounter = true;
     this.dungeonRuntime.fail();
+    dungeonCompletionFlow.cancel();
   }
 }
