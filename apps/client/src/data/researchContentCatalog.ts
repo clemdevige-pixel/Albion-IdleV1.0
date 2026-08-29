@@ -19,6 +19,11 @@ export interface ResearchPresentationInfo {
   readonly hiddenWhileLocked?: boolean;
 }
 
+export interface ResearchUnlockPresentation {
+  readonly label: string;
+  readonly destination?: string;
+}
+
 export const RESEARCH_DEFINITIONS: readonly ResearchDefinition<ResearchContentRequirement>[] =
   RESEARCH_AUTHORED_DEFINITIONS;
 
@@ -67,29 +72,50 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
 ]);
 
 /**
- * Presentation labels for canonical authored unlock IDs.
+ * Presentation metadata for canonical authored unlock IDs.
  * Research membership is never authored here: it is derived from each definition.unlockIds.
  */
-const RESEARCH_UNLOCK_PRESENTATION = new Map<string, readonly string[]>([
-  [RESEARCH_UNLOCK_IDS.silverExpeditionTier4, ["Expéditions généralistes T4"]],
-  [RESEARCH_UNLOCK_IDS.silverExpeditionTier5, ["Expéditions généralistes T5"]],
-  [RESEARCH_UNLOCK_IDS.silverExpeditionTier6, ["Expéditions généralistes T6"]],
-  [RESEARCH_UNLOCK_IDS.silverExpeditionTier7, ["Expéditions généralistes T7"]],
-  [RESEARCH_UNLOCK_IDS.silverExpeditionTier8, ["Expéditions généralistes T8"]],
-  [RESEARCH_UNLOCK_IDS.factionExpeditionTier4, ["Expédition Faction T4"]],
-  [RESEARCH_UNLOCK_IDS.factionExpeditionTier5, ["Expédition Faction T5"]],
-  [RESEARCH_UNLOCK_IDS.factionExpeditionTier6, ["Expédition Faction T6"]],
-  [RESEARCH_UNLOCK_IDS.factionExpeditionTier7, ["Expédition Faction T7"]],
-  [RESEARCH_UNLOCK_IDS.factionExpeditionTier8, ["Expédition Faction T8"]],
-  [RESEARCH_UNLOCK_IDS.secondExpeditionSlot, ["Second slot d’expédition"]],
-  [RESEARCH_UNLOCK_IDS.enchantmentService, ["Service marchand : Enchanter", "Utilisation des éclats d’enchantement"]],
-  [RESEARCH_UNLOCK_IDS.resourceYieldTracking, ["Suivi d’une ressource favorite", "Stock actuel", "Rendement de la ressource / h"]],
-  [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization, ["8 ouvriers maximum", "2 ouvriers par profession", "Recrutement avancé à 5 000 Silver"]],
-  [RESEARCH_UNLOCK_IDS.advancedBankManagement, ["Banque II", "Service marchand : Extensions de banque"]],
-  [RESEARCH_UNLOCK_IDS.instantRefining, ["Raffinage instantané par lot", "Recettes et rendements inchangés"]],
+const RESEARCH_UNLOCK_PRESENTATION = new Map<string, readonly ResearchUnlockPresentation[]>([
+  [RESEARCH_UNLOCK_IDS.silverExpeditionTier4, [{ label: "Expéditions généralistes T4", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.silverExpeditionTier5, [{ label: "Expéditions généralistes T5", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.silverExpeditionTier6, [{ label: "Expéditions généralistes T6", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.silverExpeditionTier7, [{ label: "Expéditions généralistes T7", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.silverExpeditionTier8, [{ label: "Expéditions généralistes T8", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.factionExpeditionTier4, [{ label: "Expédition Faction T4", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.factionExpeditionTier5, [{ label: "Expédition Faction T5", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.factionExpeditionTier6, [{ label: "Expédition Faction T6", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.factionExpeditionTier7, [{ label: "Expédition Faction T7", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.factionExpeditionTier8, [{ label: "Expédition Faction T8", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.secondExpeditionSlot, [{ label: "Second slot d’expédition", destination: "Académie > Expéditions" }]],
+  [RESEARCH_UNLOCK_IDS.enchantmentService, [
+    { label: "Service Enchanter", destination: "Marchand > Enchantement" },
+    { label: "Utilisation des éclats d’enchantement", destination: "Marchand > Enchantement" },
+  ]],
+  [RESEARCH_UNLOCK_IDS.resourceYieldTracking, [
+    { label: "Suivi d’une ressource favorite", destination: "Tableau de bord" },
+    { label: "Stock actuel et rendement / h", destination: "Tableau de bord" },
+  ]],
+  [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization, [
+    { label: "8 ouvriers maximum", destination: "Île > Ouvriers" },
+    { label: "2 ouvriers par profession", destination: "Île > Ouvriers" },
+    { label: "Recrutement avancé à 5 000 Silver", destination: "Île > Ouvriers" },
+  ]],
+  [RESEARCH_UNLOCK_IDS.advancedBankManagement, [
+    { label: "Banque II", destination: "Inventaire > Banque" },
+    { label: "Extensions de banque", destination: "Marchand > Banque" },
+  ]],
+  [RESEARCH_UNLOCK_IDS.instantRefining, [
+    { label: "Raffinage instantané par lot", destination: "Île > bâtiments de raffinage" },
+    { label: "Recettes et rendements inchangés" },
+  ]],
   [RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed, []],
-  [RESEARCH_UNLOCK_IDS.dungeonSystem, ["World > Donjons", "Drops de fragments de clé", "Drops de clés complètes"]],
-  [RESEARCH_UNLOCK_IDS.factionRuneWorldDrop, ["Drop rare de Runes de faction dans le monde"]],
+  [RESEARCH_UNLOCK_IDS.dungeonSystem, [
+    { label: "Donjons", destination: "Monde > Donjons" },
+    { label: "Drops de fragments et clés de donjon", destination: "Combat contre les monstres éligibles" },
+  ]],
+  [RESEARCH_UNLOCK_IDS.factionRuneWorldDrop, [
+    { label: "Drop rare de Runes de faction", destination: "Monstres de faction dans le monde" },
+  ]],
 ]);
 
 export function getResearchPresentationGroup(
@@ -104,8 +130,14 @@ export function getResearchPresentationInfo(
   return RESEARCH_PRESENTATION.get(researchId);
 }
 
-export function getResearchUnlockedContent(researchId: string): readonly string[] {
+export function getResearchUnlockGuidance(
+  researchId: string,
+): readonly ResearchUnlockPresentation[] {
   const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === researchId);
   if (definition === undefined) return [];
   return definition.unlockIds.flatMap((unlockId) => RESEARCH_UNLOCK_PRESENTATION.get(unlockId) ?? []);
+}
+
+export function getResearchUnlockedContent(researchId: string): readonly string[] {
+  return getResearchUnlockGuidance(researchId).map((entry) => entry.label);
 }
