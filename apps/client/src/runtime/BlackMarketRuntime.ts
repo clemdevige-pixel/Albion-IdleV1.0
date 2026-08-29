@@ -96,7 +96,12 @@ class BlackMarketRuntimeAdapter {
       creditSilver: (amount) => {
         const bindings = this.bindings;
         return bindings !== undefined
-          && bindings.currencyService.credit(bindings.walletId, "silver", amount).ok;
+          && bindings.currencyService.credit(
+            bindings.walletId,
+            "currency_silver",
+            amount,
+            "VendorSale",
+          ).ok;
       },
     });
   }
