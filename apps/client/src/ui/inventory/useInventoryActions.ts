@@ -17,7 +17,7 @@ interface InventoryActions {
   readonly assembleFragments: (itemId: string) => boolean;
   readonly move: (storage: StorageKind, from: number, to: number) => boolean;
   readonly transfer: (fromStorage: StorageKind, from: number, toStorage: StorageKind, to?: number) => boolean;
-  readonly sort: (storage: StorageKind) => boolean;
+  readonly sort: (storage: StorageKind, start?: number, length?: number) => boolean;
 }
 
 function equipmentFailureMessage(reason: string): string {
@@ -131,8 +131,9 @@ export function useInventoryActions(): InventoryActions {
     return result.ok;
   }, [services, storage, syncStorage]);
 
-  const sort = useCallback((kind: StorageKind): boolean => {
-    const result = storage.sort(kind);
+  const sort = useCallback((kind: StorageKind, start?: number, length?: number): boolean => {
+    const range = start === undefined || length === undefined ? undefined : { start, length };
+    const result = storage.sort(kind, range);
     if (result.ok) syncStorage();
     return result.ok;
   }, [storage, syncStorage]);
