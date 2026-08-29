@@ -3,7 +3,6 @@ import {
   getResearchUnlockGuidance,
   getResearchUnlockedContent,
   RESEARCH_DEFINITIONS,
-  RESEARCH_IDS,
   type ResearchUnlockPresentation,
 } from "../../data/researchContentCatalog.js";
 import { isDevSandboxMode } from "../devSandbox.js";
@@ -48,8 +47,9 @@ export function createResearchRecapFoundation() {
   };
 
   if (isDevSandboxMode()) {
-    present(RESEARCH_IDS.yieldAnalysis);
-    present(RESEARCH_IDS.bankManagement);
+    for (const definition of RESEARCH_DEFINITIONS) {
+      present(definition.id);
+    }
   }
 
   return {
