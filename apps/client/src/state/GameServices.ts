@@ -1,10 +1,11 @@
 import type { SupportedProductionFamily } from "../data/productionFamilyCatalog";
 import type { ProductionTier } from "../data/productionFamilyCatalog";
-import type { IslandBuildingId, IslandWorldRequirement } from "@game/data";
+import type { BlackMarketRouteId, IslandBuildingId, IslandWorldRequirement } from "@game/data";
 import type { EventBus, EntityId } from "@game/core";
 import type {
   AwakenedTraitId,
   AwakenedWeaponService,
+  BlackMarketSnapshot,
   CombatOrchestrator,
   CurrencyService,
   DungeonRunState,
@@ -34,6 +35,10 @@ import type { ExpeditionRecapModel } from "../runtime/bootstrap/createExpedition
 import type { ResearchRecapModel } from "../runtime/bootstrap/createResearchRecapFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
+import type {
+  BlackMarketCandidate,
+  BlackMarketSelection,
+} from "../runtime/BlackMarketRuntime.js";
 import type { PlayerInventoryManager } from "../runtime/PlayerInventoryManager.js";
 import type { DungeonAccessState } from "./DungeonNavigationActions.js";
 import type { RefiningToggleTarget } from "./production/ProductionActions.js";
@@ -93,6 +98,15 @@ export interface GameServices {
   ) => BestiaryKnowledgeModel;
   readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
   readonly isDungeonSystemUnlocked: () => boolean;
+  readonly isBlackMarketUnlocked: () => boolean;
+  readonly getBlackMarketSnapshot: (nowMs?: number) => BlackMarketSnapshot;
+  readonly getBlackMarketCandidates: () => readonly BlackMarketCandidate[];
+  readonly startBlackMarketConvoy: (
+    selection: readonly BlackMarketSelection[],
+    routeId: BlackMarketRouteId,
+    nowMs?: number,
+  ) => boolean;
+  readonly dismissBlackMarketResult: () => void;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
