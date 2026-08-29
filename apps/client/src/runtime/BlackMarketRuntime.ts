@@ -238,11 +238,9 @@ class BlackMarketRuntimeAdapter {
       );
       if (!added.ok || added.value.added !== 1 || added.value.remainder !== 0) return undefined;
       const position = added.value.affectedPositions[0];
-      return position === undefined
-        ? undefined
-        : bindings.inventoryManager.getSlot(ownerId, position).ok
-          ? bindings.inventoryManager.getSlot(ownerId, position).value.entry
-          : undefined;
+      if (position === undefined) return undefined;
+      const slot = bindings.inventoryManager.getSlot(ownerId, position);
+      return slot.ok ? slot.value.entry : undefined;
     };
 
     if (!bindings.inventoryManager.findEntriesByItemId(bindings.heroId, itemId).some(
