@@ -224,7 +224,7 @@ export function BlackMarketView(): JSX.Element {
   const changeActiveQuantity = (delta: number): void => {
     if (activeSlotIndex === null) return;
     const slot = cargoSlots[activeSlotIndex];
-    if (slot === null) return;
+    if (slot === null || slot === undefined) return;
     const candidate = candidates.find((entry) => selectionKey(entry) === selectionKey(slot));
     if (candidate === undefined) return;
     const nextQuantity = Math.max(1, Math.min(
@@ -331,7 +331,7 @@ export function BlackMarketView(): JSX.Element {
     );
   }
 
-  const activeSlot = activeSlotIndex === null ? null : cargoSlots[activeSlotIndex];
+  const activeSlot = activeSlotIndex === null ? null : (cargoSlots[activeSlotIndex] ?? null);
 
   return (
     <section className="ui-black-market">
