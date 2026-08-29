@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { resolveAbilityIconPath } from "../../../data/abilityIconPresentation";
 import type { WeaponAbilityUnlock } from "../../../data/weaponContentCatalog";
 import type { MasteryCategoryId, MasteryFamilyModel, MasteryProgressModel } from "../masteryModels";
@@ -11,6 +12,11 @@ interface MasteryFamilyListProps {
   readonly families: readonly MasteryFamilyModel[];
   readonly selectedId: string | undefined;
   readonly onSelect: (id: string) => void;
+}
+
+interface AbilityTooltipPosition {
+  readonly left: number;
+  readonly top: number;
 }
 
 function BonusList({ bonuses }: { readonly bonuses: readonly string[] }): JSX.Element {
@@ -30,22 +36,54 @@ function AbilityIcon({
 }): JSX.Element {
   const locked = masteryLevel < unlock.unlockMasteryLevel;
   const sourceLabel = unlock.source === "specialization" ? "Spécialisation" : "Famille";
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<AbilityTooltipPosition | null>(null);
+
+  const showTooltip = (): void => {
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect === undefined) return;
+    const halfTooltipWidth = 120;
+    const viewportPadding = 8;
+    const left = Math.max(
+      halfTooltipWidth + viewportPadding,
+      Math.min(window.innerWidth - halfTooltipWidth - viewportPadding, rect.left + rect.width / 2),
+    );
+    setTooltipPosition({ left, top: rect.top - 8 });
+  };
+
+  const hideTooltip = (): void => {
+    setTooltipPosition(null);
+  };
 
   return (
-    <div
-      className={`ui-mastery-ability${locked ? " is-locked" : ""}`}
-      tabIndex={0}
-      aria-label={`${unlock.ability.name}, niveau ${String(unlock.unlockMasteryLevel)}`}
-    >
-      <img src={resolveAbilityIconPath(unlock.ability.id)} alt="" />
-      <span className="ui-mastery-ability__level">{String(unlock.unlockMasteryLevel)}</span>
-      <div className="ui-mastery-ability__tooltip" role="tooltip">
-        <strong>{unlock.ability.name}</strong>
-        <small>{sourceLabel} · Niv. {String(unlock.unlockMasteryLevel)}</small>
-        <p>{unlock.ability.description}</p>
-        <span>Recharge : {String(unlock.ability.cooldown)} s</span>
+    <>
+      <div
+        ref={anchorRef}
+        className={`ui-mastery-ability${locked ? " is-locked" : ""}`}
+        tabIndex={0}
+        aria-label={`${unlock.ability.name}, niveau ${String(unlock.unlockMasteryLevel)}`}
+        onMouseEnter={showTooltip}
+        onMouseLeave={hideTooltip}
+        onFocus={showTooltip}
+        onBlur={hideTooltip}
+      >
+        <img src={resolveAbilityIconPath(unlock.ability.id)} alt="" />
+        <span className="ui-mastery-ability__level">{String(unlock.unlockMasteryLevel)}</span>
       </div>
-    </div>
+      {tooltipPosition !== null && createPortal(
+        <div
+          className="ui-mastery-ability__tooltip"
+          role="tooltip"
+          style={{ left: tooltipPosition.left, top: tooltipPosition.top }}
+        >
+          <strong>{unlock.ability.name}</strong>
+          <small>{sourceLabel} · Niv. {String(unlock.unlockMasteryLevel)}</small>
+          <p>{unlock.ability.description}</p>
+          <span>Recharge : {String(unlock.ability.cooldown)} s</span>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 
