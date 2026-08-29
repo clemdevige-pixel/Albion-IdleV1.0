@@ -141,7 +141,7 @@
 }
 
 .ui-mastery-family__heading b,
-.ui-mastery-specialization__heading > strong {
+.ui-mastery-specialization__actions > strong {
   flex: none;
   color: var(--ui-color-accent);
 }
@@ -289,29 +289,156 @@
   font-size: var(--ui-text-sm);
 }
 
-.ui-mastery-specialization__heading > strong { font-size: var(--ui-text-sm); }
-
-.ui-mastery-tree-entry {
-  display: grid;
-  grid-template-columns: 20px 1fr auto;
+.ui-mastery-specialization__actions {
+  display: flex;
+  flex: none;
   gap: 6px;
   align-items: center;
-  width: 100%;
-  padding: 5px 2px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--ui-color-text-muted);
-  text-align: left;
-  opacity: 0.48;
 }
 
-.ui-mastery-tree-entry > span:nth-child(2) {
+.ui-mastery-specialization__actions > strong { font-size: var(--ui-text-sm); }
+
+.ui-mastery-specialization__info {
   display: grid;
-  gap: 0;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid #465268;
+  border-radius: 50%;
+  background: rgba(8, 13, 20, 0.92);
+  color: #aab5c7;
+  font-family: Georgia, serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
 }
 
-.ui-mastery-tree-entry small { font-size: 8px; }
+.ui-mastery-specialization__info:hover,
+.ui-mastery-specialization__info:focus-visible,
+.ui-mastery-specialization__info.is-active {
+  border-color: var(--ui-color-accent);
+  color: var(--ui-color-accent);
+  outline: none;
+  box-shadow: 0 0 8px rgba(208, 157, 52, 0.18);
+}
+
+.ui-mastery-ability-menu {
+  display: grid;
+  gap: 6px;
+  padding: 7px 8px 8px;
+  border: 1px solid rgba(208, 157, 52, 0.22);
+  background: rgba(6, 10, 16, 0.78);
+}
+
+.ui-mastery-ability-menu__title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.ui-mastery-ability-menu__title > span {
+  color: var(--ui-color-accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ui-mastery-ability-menu__title small {
+  font-size: 8px;
+}
+
+.ui-mastery-ability-menu__icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.ui-mastery-ability {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #556178;
+  border-radius: 4px;
+  background: #0a1019;
+  cursor: help;
+  outline: none;
+}
+
+.ui-mastery-ability > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.ui-mastery-ability.is-locked > img {
+  filter: grayscale(1) brightness(0.48);
+}
+
+.ui-mastery-ability__level {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border: 1px solid #72561e;
+  border-radius: 8px;
+  background: #111722;
+  color: #e3bd58;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.ui-mastery-ability__tooltip {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  display: none;
+  width: min(240px, 72vw);
+  padding: 8px 9px;
+  border: 1px solid #665327;
+  border-radius: 4px;
+  background: #080d14;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.48);
+  color: var(--ui-color-text-secondary);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.ui-mastery-ability:hover .ui-mastery-ability__tooltip,
+.ui-mastery-ability:focus-visible .ui-mastery-ability__tooltip {
+  display: grid;
+  gap: 4px;
+}
+
+.ui-mastery-ability__tooltip strong {
+  color: var(--ui-color-accent);
+  font-size: 11px;
+}
+
+.ui-mastery-ability__tooltip small,
+.ui-mastery-ability__tooltip span {
+  color: #9aa7ba;
+  font-size: 8px;
+}
+
+.ui-mastery-ability__tooltip p {
+  margin: 1px 0;
+  color: var(--ui-color-text-primary);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
 .ui-masteries__empty {
   margin: 0;
   padding: 10px 0;
@@ -325,5 +452,10 @@
   .ui-mastery-specializations {
     width: 100%;
     margin-left: 0;
+  }
+
+  .ui-mastery-ability__tooltip {
+    left: 0;
+    transform: none;
   }
 }
