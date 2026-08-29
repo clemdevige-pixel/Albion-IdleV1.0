@@ -26,6 +26,10 @@ import type {
   AcademyPresentationModel,
   AcademyResearchActionResult,
 } from "../runtime/bootstrap/createAcademyPresentationFoundation.js";
+import type {
+  BankExpansionModel,
+  BankExpansionPurchaseResult,
+} from "../runtime/bootstrap/createBankExpansionFoundation.js";
 import type { ExpeditionRecapModel } from "../runtime/bootstrap/createExpeditionRecapFoundation.js";
 import type { ResearchRecapModel } from "../runtime/bootstrap/createResearchRecapFoundation.js";
 import type { FactionAchievementProgress } from "../runtime/bootstrap/createFactionAchievementFoundation.js";
@@ -74,6 +78,8 @@ export interface GameServices {
     expeditionId: string,
     durationMs: ExpeditionDurationMs,
   ) => StartExpeditionResult;
+  readonly getBankExpansionModel: () => BankExpansionModel;
+  readonly purchaseNextBankTab: () => BankExpansionPurchaseResult;
   readonly subscribeResearchRecap: (listener: () => void) => () => void;
   readonly getResearchRecap: () => ResearchRecapModel | null;
   readonly dismissResearchRecap: () => void;
