@@ -1,4 +1,8 @@
+import { useState } from "react";
+import { resolveAbilityIconPath } from "../../../data/abilityIconPresentation";
+import type { WeaponAbilityUnlock } from "../../../data/weaponContentCatalog";
 import type { MasteryCategoryId, MasteryFamilyModel, MasteryProgressModel } from "../masteryModels";
+import { getWeaponAbilityUnlocksForMastery } from "../weaponAbilityModels";
 import { MasteryFamilyIcon } from "./MasteryFamilyIcon";
 import { MasteryProgressBar } from "./MasteryProgressBar";
 
@@ -17,14 +21,66 @@ function iconSource(iconAsset: string): string {
   return iconAsset.startsWith("/") ? iconAsset : `/assets/items/${iconAsset}`;
 }
 
+function AbilityIcon({
+  unlock,
+  masteryLevel,
+}: {
+  readonly unlock: WeaponAbilityUnlock;
+  readonly masteryLevel: number;
+}): JSX.Element {
+  const locked = masteryLevel < unlock.unlockMasteryLevel;
+  const sourceLabel = unlock.source === "specialization" ? "Spécialisation" : "Famille";
+
+  return (
+    <div
+      className={`ui-mastery-ability${locked ? " is-locked" : ""}`}
+      tabIndex={0}
+      aria-label={`${unlock.ability.name}, niveau ${String(unlock.unlockMasteryLevel)}`}
+    >
+      <img src={resolveAbilityIconPath(unlock.ability.id)} alt="" />
+      <span className="ui-mastery-ability__level">{String(unlock.unlockMasteryLevel)}</span>
+      <div className="ui-mastery-ability__tooltip" role="tooltip">
+        <strong>{unlock.ability.name}</strong>
+        <small>{sourceLabel} · Niv. {String(unlock.unlockMasteryLevel)}</small>
+        <p>{unlock.ability.description}</p>
+        <span>Recharge : {String(unlock.ability.cooldown)} s</span>
+      </div>
+    </div>
+  );
+}
+
+function WeaponAbilityMenu({ mastery }: { readonly mastery: MasteryProgressModel }): JSX.Element | null {
+  const unlocks = getWeaponAbilityUnlocksForMastery(mastery.id);
+  if (unlocks.length === 0) return null;
+
+  return (
+    <div className="ui-mastery-ability-menu">
+      <div className="ui-mastery-ability-menu__title">
+        <span>Compétences</span>
+        <small>Survoler pour les détails</small>
+      </div>
+      <div className="ui-mastery-ability-menu__icons">
+        {unlocks.map((unlock) => (
+          <AbilityIcon key={unlock.ability.id} unlock={unlock} masteryLevel={mastery.level} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ChildMasteryRow({
   mastery,
   fallbackIconAsset,
+  showAbilityInfo,
 }: {
   readonly mastery: MasteryProgressModel;
   readonly fallbackIconAsset: string | undefined;
+  readonly showAbilityInfo: boolean;
 }): JSX.Element {
   const iconAsset = mastery.iconAsset ?? fallbackIconAsset;
+  const [abilitiesOpen, setAbilitiesOpen] = useState(false);
+  const abilityUnlocks = showAbilityInfo ? getWeaponAbilityUnlocksForMastery(mastery.id) : [];
+  const canShowAbilities = abilityUnlocks.length > 0;
 
   return (
     <article className={`ui-mastery-specialization${mastery.isUnlocked ? "" : " is-locked"}`}>
@@ -43,9 +99,23 @@ function ChildMasteryRow({
             <h4>{mastery.name}</h4>
             {mastery.subtitle !== undefined && <small>{mastery.subtitle}</small>}
           </div>
-          <strong>Niv. {String(mastery.level)}</strong>
+          <div className="ui-mastery-specialization__actions">
+            {canShowAbilities && (
+              <button
+                type="button"
+                className={`ui-mastery-specialization__info${abilitiesOpen ? " is-active" : ""}`}
+                aria-label={`Voir les compétences de ${mastery.name}`}
+                aria-expanded={abilitiesOpen}
+                onClick={() => { setAbilitiesOpen((current) => !current); }}
+              >
+                i
+              </button>
+            )}
+            <strong>Niv. {String(mastery.level)}</strong>
+          </div>
         </div>
         <MasteryProgressBar mastery={mastery} />
+        {abilitiesOpen && <WeaponAbilityMenu mastery={mastery} />}
         <BonusList bonuses={mastery.bonuses} />
       </div>
     </article>
@@ -106,6 +176,7 @@ export function MasteryFamilyList({ category, families, selectedId, onSelect }: 
                             key={entry.id}
                             mastery={entry}
                             fallbackIconAsset={category === "combat" ? family.iconAsset : undefined}
+                            showAbilityInfo={category === "combat"}
                           />
                         ))}
                       </div>
