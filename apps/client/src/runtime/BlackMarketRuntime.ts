@@ -275,7 +275,9 @@ class BlackMarketRuntimeAdapter {
         | { ownerId: EntityId; position: number; entry: InventoryEntry }
         | undefined;
       for (const ownerId of [bindings.heroId, bindings.bankId]) {
-        const slot = bindings.inventoryManager.findEntryByInstanceId(ownerId, unit.instanceId);
+        const slot = bindings.inventoryManager.listSlots(ownerId).find(
+          (candidate) => candidate.entry?.instanceId === unit.instanceId,
+        );
         if (slot?.entry === undefined) continue;
         located = { ownerId, position: slot.position, entry: slot.entry };
         break;
