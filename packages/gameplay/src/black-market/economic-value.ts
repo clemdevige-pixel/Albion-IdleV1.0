@@ -1,11 +1,11 @@
 import {
-  BLACK_MARKET_ARTIFACT_ECONOMIC_VALUE_BY_TIER,
-  BLACK_MARKET_RUNE_ECONOMIC_VALUE_BY_TIER,
-  DAILY_MERCHANT_UNIT_PRICES,
+  ARTIFACT_ECONOMIC_VALUE_BY_TIER,
   DUNGEON_ARTIFACT_FACTIONS,
+  FACTION_RUNE_ECONOMIC_VALUE_BY_TIER,
+  PRODUCTION_INPUT_ECONOMIC_VALUE_BY_TIER,
   getDungeonArtifactItemId,
   getFactionRuneItemId,
-  type DailyMerchantTier,
+  type EconomicValueTier,
 } from "@game/data";
 import {
   getNextEnchantmentRecipe,
@@ -26,22 +26,22 @@ export interface EconomicEquipmentRecipe {
 
 export interface EquipmentEconomicValueInput {
   readonly recipe: EconomicEquipmentRecipe;
-  readonly itemTier: DailyMerchantTier;
+  readonly itemTier: EconomicValueTier;
   readonly enchantment: EnchantmentLevel;
   readonly enchantmentCategory: EnchantmentCostCategory;
 }
 
-function isTier(value: number): value is DailyMerchantTier {
+function isTier(value: number): value is EconomicValueTier {
   return value === 4 || value === 5 || value === 6 || value === 7 || value === 8;
 }
 
-function itemTierFromId(itemId: string): DailyMerchantTier | undefined {
+function itemTierFromId(itemId: string): EconomicValueTier | undefined {
   const match = itemId.match(/_t([4-8])(?:_|$)/);
   const tier = match?.[1] === undefined ? undefined : Number(match[1]);
   return tier !== undefined && isTier(tier) ? tier : undefined;
 }
 
-function isArtifactItemId(itemId: string, tier: DailyMerchantTier): boolean {
+function isArtifactItemId(itemId: string, tier: EconomicValueTier): boolean {
   return DUNGEON_ARTIFACT_FACTIONS.some(
     (faction) => getDungeonArtifactItemId(faction, tier) === itemId,
   );
@@ -52,16 +52,16 @@ export function getCanonicalEconomicUnitValue(itemId: string): number | undefine
   if (!isTier(tier)) return undefined;
 
   if (itemId.startsWith("item_refined_")) {
-    return DAILY_MERCHANT_UNIT_PRICES.refined_resource[tier];
+    return PRODUCTION_INPUT_ECONOMIC_VALUE_BY_TIER.refined_resource[tier];
   }
   if (itemId === getFactionRuneItemId(tier)) {
-    return BLACK_MARKET_RUNE_ECONOMIC_VALUE_BY_TIER[tier];
+    return FACTION_RUNE_ECONOMIC_VALUE_BY_TIER[tier];
   }
   if (itemId === `item_resource_enchantment_shard_t${String(tier)}`) {
-    return DAILY_MERCHANT_UNIT_PRICES.enchantment_shard[tier];
+    return PRODUCTION_INPUT_ECONOMIC_VALUE_BY_TIER.enchantment_shard[tier];
   }
   if (isArtifactItemId(itemId, tier)) {
-    return BLACK_MARKET_ARTIFACT_ECONOMIC_VALUE_BY_TIER[tier];
+    return ARTIFACT_ECONOMIC_VALUE_BY_TIER[tier];
   }
   return undefined;
 }
