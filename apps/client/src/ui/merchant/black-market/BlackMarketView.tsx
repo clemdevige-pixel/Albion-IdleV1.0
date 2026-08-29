@@ -250,7 +250,6 @@ export function BlackMarketView(): JSX.Element {
         <div className="ui-black-market__result-card">
           <strong>{result.success ? `${formatCompactNumber(result.silverReceived, "0")} Silver` : "0 Silver"}</strong>
           <span>{result.success ? "Paiement reçu" : "Cargo intégralement perdu"}</span>
-          <small>Valeur brute engagée : {formatCompactNumber(result.cargoEconomicValue, "0")}</small>
         </div>
         <button type="button" className="ui-merchant__primary" onClick={() => { blackMarketRuntime.dismissResult(); refreshSnapshot(Date.now()); }}>Fermer le récapitulatif</button>
       </section>
@@ -265,7 +264,6 @@ export function BlackMarketView(): JSX.Element {
         <div className="ui-black-market__active-card">
           <div><span>Temps restant</span><strong>{formatDuration(activeConvoy.completesAt - nowMs)}</strong></div>
           <div><span>Cargo</span><strong>{activeConvoy.cargo.reduce((sum, line) => sum + line.quantity, 0)} items</strong></div>
-          <div><span>Valeur brute</span><strong>{formatCompactNumber(activeConvoy.cargoEconomicValue, "0")}</strong></div>
           <div><span>Valeur BM</span><strong>{formatCompactNumber(activeConvoy.payoutOnSuccess, "0")}</strong></div>
         </div>
         <p className="ui-black-market__hidden-result">Résultat : ????? — révélé à l’arrivée.</p>
@@ -316,7 +314,6 @@ export function BlackMarketView(): JSX.Element {
       </div>
 
       <div className="ui-black-market__cargo-total">
-        <span>Valeur brute du cargo</span><strong>{formatCompactNumber(quote?.cargoEconomicValue ?? 0, "0")}</strong>
         <span>Valeur BM</span><strong>{formatCompactNumber(selectedBmValue, "0")}</strong>
       </div>
 
