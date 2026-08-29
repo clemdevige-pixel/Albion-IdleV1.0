@@ -4,6 +4,7 @@ import {
   RESEARCH_IDS,
   RESEARCH_UNLOCK_IDS,
   getResearchPresentationInfo,
+  getResearchUnlockedContent,
 } from "./researchContentCatalog.js";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -26,11 +27,11 @@ describe("Analyse des rendements research", () => {
     expect(getResearchPresentationInfo(RESEARCH_IDS.yieldAnalysis)).toMatchObject({
       group: "core",
       effectSummary: "Débloque le suivi d’une ressource favorite et son rendement dans le Dashboard.",
-      unlockedContent: [
-        "Suivi d’une ressource favorite",
-        "Stock actuel",
-        "Rendement de la ressource / h",
-      ],
     });
+    expect(getResearchUnlockedContent(RESEARCH_IDS.yieldAnalysis)).toEqual([
+      "Suivi d’une ressource favorite",
+      "Stock actuel",
+      "Rendement de la ressource / h",
+    ]);
   });
 });
