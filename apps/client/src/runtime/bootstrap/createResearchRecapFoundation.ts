@@ -1,8 +1,10 @@
 import {
   getResearchPresentationInfo,
+  getResearchUnlockGuidance,
   getResearchUnlockedContent,
   RESEARCH_DEFINITIONS,
   RESEARCH_IDS,
+  type ResearchUnlockPresentation,
 } from "../../data/researchContentCatalog.js";
 import { isDevSandboxMode } from "../devSandbox.js";
 
@@ -12,6 +14,7 @@ export interface ResearchRecapModel {
   readonly displayName: string;
   readonly effectSummary: string;
   readonly unlockedContent: readonly string[];
+  readonly unlockGuidance: readonly ResearchUnlockPresentation[];
 }
 
 type Listener = () => void;
@@ -38,6 +41,7 @@ export function createResearchRecapFoundation() {
       displayName: definition.displayName,
       effectSummary: presentation?.effectSummary ?? "Recherche terminée.",
       unlockedContent: getResearchUnlockedContent(researchId),
+      unlockGuidance: getResearchUnlockGuidance(researchId),
     });
     nextId += 1;
     notify();
