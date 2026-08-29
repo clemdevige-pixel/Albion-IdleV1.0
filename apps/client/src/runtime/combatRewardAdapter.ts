@@ -4,6 +4,7 @@ import type { CombatService, RelicKillEvent, StatsManager } from "@game/gameplay
 import { getEncounterRewards } from "@game/gameplay";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
+import { dungeonCompletionFlow } from "./DungeonCompletionFlow.js";
 import type { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
@@ -121,6 +122,7 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
       }
       clearActiveMonsterIdentity(event.entityId);
       if (reward !== undefined) {
+        dungeonCompletionFlow.recordReward(reward);
         publishDungeonDrops(options, reward.drops);
         if (reward.completionSilver > 0) {
           const previousBalance = lastSilver;
