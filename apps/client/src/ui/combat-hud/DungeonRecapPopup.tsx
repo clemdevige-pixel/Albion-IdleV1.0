@@ -1,6 +1,9 @@
 import type { DungeonAccessState } from "../../state/DungeonNavigationActions.js";
 import type { DungeonCompletionRecapModel } from "../../runtime/DungeonCompletionFlow.js";
 import { dungeonCompletionFlow } from "../../runtime/DungeonCompletionFlow.js";
+import { DUNGEON_DEFINITIONS } from "../../data/dungeonContentCatalog.js";
+import { getDungeonLootDefinition } from "../../data/dungeonLootContentCatalog.js";
+import { ItemVisual } from "../../panels/ItemVisual.js";
 import { useGameServices } from "../../state/GameContext.js";
 import "./expeditionRecap.css";
 
@@ -23,6 +26,14 @@ function replayUnavailableLabel(access: DungeonAccessState): string | undefined 
   return "Relance indisponible";
 }
 
+interface RewardRow {
+  readonly key: string;
+  readonly label: string;
+  readonly value: number;
+  readonly itemId?: string;
+  readonly currency?: "silver";
+}
+
 export function DungeonRecapPopup({
   recap,
 }: {
@@ -31,82 +42,106 @@ export function DungeonRecapPopup({
   const services = useGameServices();
   const replayAccess = services.getDungeonState().getAccess(recap.dungeonDefinitionId);
   const replayUnavailable = replayUnavailableLabel(replayAccess);
-  const rewardRows = [
-    { label: "Silver", value: recap.rewards.silver },
-    { label: "Fragments d’artefact", value: recap.rewards.artifactFragments },
-    { label: "Éclats d’enchantement", value: recap.rewards.enchantmentShards },
-    { label: "Runes de faction", value: recap.rewards.factionRunes },
-    { label: "Artefacts", value: recap.rewards.artifacts },
+  const dungeonDefinition = DUNGEON_DEFINITIONS.find(
+    (definition) => definition.id === recap.dungeonDefinitionId,
+  );
+  const lootDefinition = dungeonDefinition === undefined
+    ? undefined
+    : getDungeonLootDefinition(dungeonDefinition.lootTableId);
+
+  const rewardRows: readonly RewardRow[] = [
+    { key: "silver", label: "Silver", value: recap.rewards.silver, currency: "silver" },
+    {
+      key: "artifact-fragments",
+      label: "Fragments d’artefact",
+      value: recap.rewards.artifactFragments,
+      ...(lootDefinition === undefined ? {} : { itemId: lootDefinition.artifactFragmentItemId }),
+    },
+    {
+      key: "enchantment-shards",
+      label: "Éclats d’enchantement",
+      value: recap.rewards.enchantmentShards,
+      ...(lootDefinition === undefined ? {} : { itemId: lootDefinition.enchantmentShardItemId }),
+    },
+    {
+      key: "faction-runes",
+      label: "Runes de faction",
+      value: recap.rewards.factionRunes,
+      ...(lootDefinition === undefined ? {} : { itemId: lootDefinition.factionRuneItemId }),
+    },
+    {
+      key: "artifacts",
+      label: "Artefacts",
+      value: recap.rewards.artifacts,
+      ...(lootDefinition === undefined ? {} : { itemId: lootDefinition.artifactItemId }),
+    },
   ].filter((entry) => entry.value > 0);
 
   return (
     <div className="expedition-recap-backdrop dungeon-recap-backdrop" role="presentation">
       <section
-        className="expedition-recap"
+        className="expedition-recap dungeon-recap"
         role="dialog"
         aria-modal="true"
         aria-labelledby="dungeon-recap-title"
       >
-        <header className="expedition-recap__header">
-          <div>
-            <span>Donjon · Fin d’expédition</span>
-            <h2 id="dungeon-recap-title">Donjon terminé</h2>
-          </div>
+        <header className="dungeon-recap__header">
+          <h2 id="dungeon-recap-title">Donjon terminé</h2>
           <span className="expedition-recap__counter">T{String(recap.tier)}</span>
         </header>
 
-        <article className="expedition-recap__item">
-          <div className="expedition-recap__title-row">
-            <div>
-              <small>Boss vaincu</small>
-              <strong>{recap.faction}</strong>
+        <p className="dungeon-recap__summary">
+          <strong>{recap.faction}</strong> vaincu
+          <span aria-hidden="true">•</span>
+          <span>{formatDuration(recap.durationMs)}</span>
+        </p>
+
+        <div className="dungeon-recap__rewards" aria-label="Récompenses obtenues">
+          <h3>Récompenses obtenues</h3>
+          {rewardRows.length > 0 ? (
+            <div className="dungeon-recap__reward-list">
+              {rewardRows.map((reward) => (
+                <div key={reward.key} className="dungeon-recap__reward-row">
+                  <div className="dungeon-recap__reward-identity">
+                    <span className="dungeon-recap__reward-icon" aria-hidden="true">
+                      {reward.currency === "silver" ? (
+                        <span className="dungeon-recap__silver-icon">S</span>
+                      ) : reward.itemId !== undefined ? (
+                        <ItemVisual itemId={reward.itemId} />
+                      ) : null}
+                    </span>
+                    <span>{reward.label}</span>
+                  </div>
+                  <strong>+{formatNumber(reward.value)}</strong>
+                </div>
+              ))}
             </div>
-            <span className="expedition-recap__duration">{formatDuration(recap.durationMs)}</span>
-          </div>
+          ) : (
+            <p className="dungeon-recap__empty">Aucune récompense obtenue.</p>
+          )}
+        </div>
 
-          <div className="expedition-recap__quality expedition-recap__quality--exceptionnelle">
-            <span>Résultat</span>
-            <strong>Donjon nettoyé</strong>
-          </div>
-
-          <div className="expedition-recap__loot" aria-label="Récompenses obtenues">
-            {rewardRows.length > 0 ? rewardRows.map((reward) => (
-              <div key={reward.label} className="expedition-recap__loot-row">
-                <span>{reward.label}</span>
-                <strong>+ {formatNumber(reward.value)}</strong>
-              </div>
-            )) : (
-              <div className="expedition-recap__loot-row">
-                <span>Récompenses</span>
-                <strong>Aucun loot</strong>
-              </div>
-            )}
-          </div>
-        </article>
-
-        <footer className="expedition-recap__footer dungeon-recap__footer">
-          <small>Récompenses déjà créditées.</small>
-          <div className="dungeon-recap__actions">
-            <button
-              type="button"
-              disabled={!replayAccess.canEnter}
-              title={replayUnavailable}
-              onClick={() => {
-                if (services.startDungeon(recap.dungeonDefinitionId)) {
-                  dungeonCompletionFlow.dismissForReplay();
-                }
-              }}
-            >
-              Relancer le donjon
-            </button>
-            <button
-              type="button"
-              className="is-primary"
-              onClick={() => { dungeonCompletionFlow.resumeExploration(); }}
-            >
-              Reprendre l’exploration
-            </button>
-          </div>
+        <footer className="dungeon-recap__footer">
+          <button
+            type="button"
+            className="dungeon-recap__action dungeon-recap__action--secondary"
+            disabled={!replayAccess.canEnter}
+            title={replayUnavailable}
+            onClick={() => {
+              if (services.startDungeon(recap.dungeonDefinitionId)) {
+                dungeonCompletionFlow.dismissForReplay();
+              }
+            }}
+          >
+            Relancer le donjon
+          </button>
+          <button
+            type="button"
+            className="dungeon-recap__action dungeon-recap__action--primary"
+            onClick={() => { dungeonCompletionFlow.resumeExploration(); }}
+          >
+            Reprendre l’exploration
+          </button>
         </footer>
       </section>
     </div>
