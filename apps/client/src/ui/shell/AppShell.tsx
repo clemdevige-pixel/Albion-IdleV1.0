@@ -4,7 +4,6 @@ import { UI_MODULE_IDS } from "../navigation/moduleIds";
 import { ResourceTrackingProvider } from "../dashboard/ResourceTrackingContext";
 import { IslandSelectionProvider } from "../island/IslandSelectionContext";
 import { IslandWorldRegion } from "../island/IslandWorldRegion";
-import { ResearchRecapOverlay } from "../shared/ResearchRecapOverlay";
 import { BottomBarRegion } from "./BottomBarRegion";
 import { GameWorldRegion } from "./GameWorldRegion";
 import { HeaderRegion } from "./HeaderRegion";
@@ -22,7 +21,6 @@ export function AppShell(): JSX.Element {
           {isIsland && <IslandWorldRegion />}
           <RightPanelHost />
           <BottomBarRegion />
-          <ResearchRecapOverlay />
         </div>
       </IslandSelectionProvider>
     </ResourceTrackingProvider>
