@@ -9,46 +9,53 @@ export function ResearchRecapPopup({
   readonly onDismiss: () => void;
 }): JSX.Element {
   return (
-    <div className="expedition-recap-backdrop" role="presentation">
+    <div className="expedition-recap-backdrop dungeon-recap-backdrop" role="presentation">
       <section
-        className="expedition-recap"
+        className="expedition-recap dungeon-recap research-recap"
         role="dialog"
         aria-modal="true"
         aria-labelledby="research-recap-title"
       >
-        <header className="expedition-recap__header">
+        <header className="dungeon-recap__header">
           <div>
-            <span>Académie · Retour de recherche</span>
+            <span className="expedition-recap__eyebrow">Académie · Retour de recherche</span>
             <h2 id="research-recap-title">Recherche terminée</h2>
           </div>
           <span className="expedition-recap__counter" aria-label="Recherche terminée">1/1</span>
         </header>
 
-        <article className="expedition-recap__item">
-          <div className="expedition-recap__title-row">
-            <div>
-              <small>Étude achevée</small>
-              <strong>{recap.displayName}</strong>
-            </div>
-            <span className="expedition-recap__duration">Acquise</span>
-          </div>
+        <p className="dungeon-recap__summary">
+          <strong>{recap.displayName}</strong>
+          <span aria-hidden="true">•</span>
+          <span>Étude achevée</span>
+        </p>
 
-          <div className="expedition-recap__quality expedition-recap__quality--fructueuse">
-            <span>Effet</span>
-            <strong>{recap.effectSummary}</strong>
-          </div>
+        <div className="research-recap__effect">
+          <span>Ce que vous venez de débloquer</span>
+          <strong>{recap.effectSummary}</strong>
+        </div>
 
-          {recap.unlockedContent.length > 0 && (
-            <div className="expedition-recap__loot" aria-label="Contenu débloqué">
-              {recap.unlockedContent.map((content) => (
-                <div key={content} className="expedition-recap__loot-row">
-                  <span>Débloqué</span>
-                  <strong>{content}</strong>
+        {recap.unlockGuidance.length > 0 && (
+          <div className="research-recap__unlocks" aria-label="Contenu débloqué et accès">
+            <h3>Où en profiter</h3>
+            <div className="research-recap__unlock-list">
+              {recap.unlockGuidance.map((entry, index) => (
+                <div key={`${entry.label}-${String(index)}`} className="research-recap__unlock-row">
+                  <div>
+                    <small>Débloqué</small>
+                    <strong>{entry.label}</strong>
+                  </div>
+                  {entry.destination !== undefined && (
+                    <div className="research-recap__destination">
+                      <small>Accès</small>
+                      <strong>{entry.destination}</strong>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          )}
-        </article>
+          </div>
+        )}
 
         <footer className="expedition-recap__footer">
           <small>Effets déjà appliqués.</small>
