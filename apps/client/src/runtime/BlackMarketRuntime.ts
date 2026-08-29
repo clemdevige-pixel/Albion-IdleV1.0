@@ -1,10 +1,11 @@
-import { BLACK_MARKET_BASE_RATE, RESEARCH_UNLOCK_IDS, type BlackMarketRouteId } from "@game/data";
+import { BLACK_MARKET_BASE_RATE, type BlackMarketRouteId } from "@game/data";
 import type { EntityId } from "@game/core";
 import {
   BlackMarketService,
   resolveEquipmentEconomicValue,
   getEnchantmentLevel,
   type AwakenedWeaponService,
+  type BlackMarketCargoQuote,
   type BlackMarketCargoUnit,
   type BlackMarketSnapshot,
   type CurrencyService,
@@ -37,21 +38,16 @@ export interface BlackMarketSelection {
   readonly quantity: number;
 }
 
-interface ResearchUnlockReader {
-  hasUnlock(unlockId: string): boolean;
-}
-
-export interface BlackMarketRuntimeFoundation {
+export interface BlackMarketRuntimeBindings {
+  readonly inventoryManager: PlayerInventoryManager;
+  readonly heroId: EntityId;
+  readonly bankId: EntityId;
+  readonly currencyService: CurrencyService;
+  readonly walletId: WalletId;
+  readonly awakenedWeaponService: AwakenedWeaponService;
   readonly isUnlocked: () => boolean;
-  readonly getSnapshot: (nowMs?: number) => BlackMarketSnapshot;
-  readonly getCandidates: () => readonly BlackMarketCandidate[];
-  readonly startConvoy: (
-    selection: readonly BlackMarketSelection[],
-    routeId: BlackMarketRouteId,
-    nowMs?: number,
-  ) => boolean;
-  readonly dismissResult: () => void;
-  readonly saveProvider: BlackMarketService;
+  readonly getUnlockedTiers: () => readonly number[];
+  readonly onMutation: () => void;
 }
 
 const ALL_BLACK_MARKET_RECIPES = [
@@ -89,72 +85,56 @@ function armorSlotFor(itemId: string): string | undefined {
   return undefined;
 }
 
-export function createBlackMarketRuntimeFoundation(input: {
-  readonly researchService: ResearchUnlockReader;
-  readonly inventoryManager: PlayerInventoryManager;
-  readonly heroId: EntityId;
-  readonly bankId: EntityId;
-  readonly currencyService: CurrencyService;
-  readonly walletId: WalletId;
-  readonly awakenedWeaponService: AwakenedWeaponService;
-  readonly getUnlockedTiers: () => readonly number[];
-  readonly onMutation: () => void;
-}): BlackMarketRuntimeFoundation {
-  const ownerFor = (source: BlackMarketStorageSource): EntityId => (
-    source === "inventory" ? input.heroId : input.bankId
-  );
+class BlackMarketRuntimeAdapter {
+  private bindings: BlackMarketRuntimeBindings | undefined;
+  private lastObservedResultId: string | null = null;
+  readonly saveProvider: BlackMarketService;
 
-  const service = new BlackMarketService({
-    commitCargo: (units) => {
-      const grouped = new Map<string, { source: BlackMarketStorageSource; itemId: string; enchantment: EnchantmentLevel; quantity: number }>();
-      for (const unit of units) {
-        const source = unit.instanceId.startsWith("bank|") ? "bank" : "inventory";
-        const key = `${source}|${unit.itemId}|${String(unit.enchantment)}`;
-        const current = grouped.get(key);
-        grouped.set(key, {
-          source,
-          itemId: unit.itemId,
-          enchantment: unit.enchantment,
-          quantity: (current?.quantity ?? 0) + 1,
-        });
-      }
-      const removed: Array<{ source: BlackMarketStorageSource; itemId: string; enchantment: EnchantmentLevel; quantity: number }> = [];
-      for (const entry of grouped.values()) {
-        const result = input.inventoryManager.removeQuantity(
-          ownerFor(entry.source),
-          entry.itemId,
-          entry.quantity,
-          entry.enchantment,
-        );
-        if (!result.ok) {
-          for (const rollback of removed.reverse()) {
-            input.inventoryManager.addQuantity(
-              ownerFor(rollback.source),
-              rollback.itemId,
-              rollback.quantity,
-              undefined,
-              rollback.enchantment,
-            );
-          }
-          return false;
-        }
-        removed.push(entry);
-      }
-      return true;
-    },
-    creditSilver: (amount) => input.currencyService.credit(input.walletId, "silver", amount).ok,
-  });
+  constructor() {
+    this.saveProvider = new BlackMarketService({
+      commitCargo: (units) => this.commitCargo(units),
+      creditSilver: (amount) => {
+        const bindings = this.bindings;
+        return bindings !== undefined
+          && bindings.currencyService.credit(bindings.walletId, "silver", amount).ok;
+      },
+    });
+  }
 
-  const isUnlocked = () => input.researchService.hasUnlock(RESEARCH_UNLOCK_IDS.blackMarket);
+  bind(bindings: BlackMarketRuntimeBindings): void {
+    this.bindings = bindings;
+  }
 
-  const getCandidates = (): readonly BlackMarketCandidate[] => {
+  reset(): void {
+    this.bindings = undefined;
+    this.lastObservedResultId = null;
+    this.saveProvider.load(null);
+  }
+
+  isUnlocked(): boolean {
+    return this.bindings?.isUnlocked() ?? false;
+  }
+
+  getSnapshot(nowMs: number = Date.now()): BlackMarketSnapshot {
+    const bindings = this.requireBindings();
+    const snapshot = this.saveProvider.getSnapshot(nowMs, bindings.getUnlockedTiers());
+    const resultId = snapshot.lastResult?.id ?? null;
+    if (resultId !== null && resultId !== this.lastObservedResultId) {
+      this.lastObservedResultId = resultId;
+      bindings.onMutation();
+    }
+    return snapshot;
+  }
+
+  getCandidates(): readonly BlackMarketCandidate[] {
+    const bindings = this.requireBindings();
     const result = new Map<string, BlackMarketCandidate>();
     for (const source of ["inventory", "bank"] as const) {
-      const ownerId = ownerFor(source);
-      for (const slot of input.inventoryManager.listSlots(ownerId)) {
+      const ownerId = this.ownerFor(source);
+      for (const slot of bindings.inventoryManager.listSlots(ownerId)) {
         const entry = slot.entry;
         if (entry === undefined || resolveEquipmentInfo(entry.itemId) === undefined) continue;
-        if (input.awakenedWeaponService.has(entry.instanceId)) continue;
+        if (bindings.awakenedWeaponService.has(entry.instanceId)) continue;
         const enchantment = getEnchantmentLevel(entry);
         const economicValue = economicValueFor(entry.itemId, enchantment);
         if (economicValue === undefined) continue;
@@ -171,26 +151,71 @@ export function createBlackMarketRuntimeFoundation(input: {
       }
     }
     return [...result.values()];
-  };
+  }
 
-  const startConvoy = (
+  quoteSelection(
+    selection: readonly BlackMarketSelection[],
+    nowMs: number = Date.now(),
+  ): BlackMarketCargoQuote | undefined {
+    const bindings = this.requireBindings();
+    const units = this.buildUnits(selection, nowMs);
+    if (units === undefined) return undefined;
+    return this.saveProvider.quoteCargo(units, nowMs, bindings.getUnlockedTiers());
+  }
+
+  startConvoy(
     selection: readonly BlackMarketSelection[],
     routeId: BlackMarketRouteId,
     nowMs: number = Date.now(),
-  ): boolean => {
-    if (!isUnlocked()) return false;
-    const candidates = getCandidates();
+  ): boolean {
+    const bindings = this.requireBindings();
+    if (!bindings.isUnlocked()) return false;
+    const units = this.buildUnits(selection, nowMs);
+    if (units === undefined) return false;
+    const started = this.saveProvider.startConvoy(
+      units,
+      routeId,
+      nowMs,
+      bindings.getUnlockedTiers(),
+    );
+    if (started) bindings.onMutation();
+    return started;
+  }
+
+  dismissResult(): void {
+    this.saveProvider.dismissResult();
+    this.lastObservedResultId = null;
+    this.bindings?.onMutation();
+  }
+
+  private requireBindings(): BlackMarketRuntimeBindings {
+    if (this.bindings === undefined) {
+      throw new Error("Black Market runtime is not bound to the active game session");
+    }
+    return this.bindings;
+  }
+
+  private ownerFor(source: BlackMarketStorageSource): EntityId {
+    const bindings = this.requireBindings();
+    return source === "inventory" ? bindings.heroId : bindings.bankId;
+  }
+
+  private buildUnits(
+    selection: readonly BlackMarketSelection[],
+    nowMs: number,
+  ): readonly BlackMarketCargoUnit[] | undefined {
+    const candidates = this.getCandidates();
     const units: BlackMarketCargoUnit[] = [];
     for (const selected of selection) {
-      if (!Number.isInteger(selected.quantity) || selected.quantity <= 0) return false;
+      if (!Number.isInteger(selected.quantity) || selected.quantity <= 0) return undefined;
       const candidate = candidates.find((entry) => (
         entry.source === selected.source
         && entry.itemId === selected.itemId
         && entry.enchantment === selected.enchantment
       ));
-      if (candidate === undefined || selected.quantity > candidate.availableQuantity) return false;
+      if (candidate === undefined || selected.quantity > candidate.availableQuantity) return undefined;
       const tier = getItemTier(selected.itemId);
-      if (!isBlackMarketTier(tier)) return false;
+      if (!isBlackMarketTier(tier)) return undefined;
       const weaponFamily = resolveWeaponFamilyId(selected.itemId);
       const armorSlot = armorSlotFor(selected.itemId);
       for (let index = 0; index < selected.quantity; index += 1) {
@@ -205,20 +230,59 @@ export function createBlackMarketRuntimeFoundation(input: {
         });
       }
     }
-    const started = service.startConvoy(units, routeId, nowMs, input.getUnlockedTiers());
-    if (started) input.onMutation();
-    return started;
-  };
+    return units;
+  }
 
-  return {
-    isUnlocked,
-    getSnapshot: (nowMs = Date.now()) => service.getSnapshot(nowMs, input.getUnlockedTiers()),
-    getCandidates,
-    startConvoy,
-    dismissResult: () => {
-      service.dismissResult();
-      input.onMutation();
-    },
-    saveProvider: service,
-  };
+  private commitCargo(units: readonly BlackMarketCargoUnit[]): boolean {
+    const bindings = this.bindings;
+    if (bindings === undefined) return false;
+    const grouped = new Map<string, {
+      source: BlackMarketStorageSource;
+      itemId: string;
+      enchantment: EnchantmentLevel;
+      quantity: number;
+    }>();
+    for (const unit of units) {
+      const source = unit.instanceId.startsWith("bank|") ? "bank" : "inventory";
+      const key = `${source}|${unit.itemId}|${String(unit.enchantment)}`;
+      const current = grouped.get(key);
+      grouped.set(key, {
+        source,
+        itemId: unit.itemId,
+        enchantment: unit.enchantment,
+        quantity: (current?.quantity ?? 0) + 1,
+      });
+    }
+
+    const removed: Array<{
+      source: BlackMarketStorageSource;
+      itemId: string;
+      enchantment: EnchantmentLevel;
+      quantity: number;
+    }> = [];
+    for (const entry of grouped.values()) {
+      const result = bindings.inventoryManager.removeQuantity(
+        this.ownerFor(entry.source),
+        entry.itemId,
+        entry.quantity,
+        entry.enchantment,
+      );
+      if (!result.ok) {
+        for (const rollback of removed.reverse()) {
+          bindings.inventoryManager.addQuantity(
+            this.ownerFor(rollback.source),
+            rollback.itemId,
+            rollback.quantity,
+            undefined,
+            rollback.enchantment,
+          );
+        }
+        return false;
+      }
+      removed.push(entry);
+    }
+    return true;
+  }
 }
+
+export const blackMarketRuntime = new BlackMarketRuntimeAdapter();
