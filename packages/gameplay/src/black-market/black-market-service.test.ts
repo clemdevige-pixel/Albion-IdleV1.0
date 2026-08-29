@@ -89,8 +89,8 @@ describe("BlackMarketService", () => {
       tier: matching.tier,
       itemId: `item_${matching.targetId}_${String(matching.tier)}`,
       instanceId: "matching_1",
-      weaponFamily: matching.targetType === "weapon_family" ? matching.targetId : undefined,
-      armorSlot: matching.targetType === "armor_slot" ? matching.targetId : undefined,
+      ...(matching.targetType === "weapon_family" ? { weaponFamily: matching.targetId } : {}),
+      ...(matching.targetType === "armor_slot" ? { armorSlot: matching.targetId } : {}),
     });
     const quote = service.quoteCargo([matchingUnit], now, [4]);
     expect(quote).toBeDefined();
