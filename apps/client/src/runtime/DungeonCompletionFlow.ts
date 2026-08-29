@@ -38,6 +38,50 @@ function emptyRewards(): DungeonCompletionRewards {
   };
 }
 
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function parseSavedRecap(data: unknown): DungeonCompletionRecapModel | null {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) return null;
+  const candidate = data as Partial<DungeonCompletionRecapModel> & { rewards?: unknown };
+  if (
+    typeof candidate.id !== "number"
+    || !Number.isSafeInteger(candidate.id)
+    || candidate.id <= 0
+    || typeof candidate.dungeonDefinitionId !== "string"
+    || !isNonNegativeNumber(candidate.durationMs)
+  ) return null;
+
+  const definition = DUNGEON_DEFINITIONS.find((entry) => entry.id === candidate.dungeonDefinitionId);
+  if (definition === undefined) return null;
+  const rewards = candidate.rewards;
+  if (rewards === null || typeof rewards !== "object" || Array.isArray(rewards)) return null;
+  const rewardData = rewards as Partial<DungeonCompletionRewards>;
+  if (
+    !isNonNegativeNumber(rewardData.silver)
+    || !isNonNegativeNumber(rewardData.artifactFragments)
+    || !isNonNegativeNumber(rewardData.enchantmentShards)
+    || !isNonNegativeNumber(rewardData.factionRunes)
+    || !isNonNegativeNumber(rewardData.artifacts)
+  ) return null;
+
+  return {
+    id: candidate.id,
+    dungeonDefinitionId: definition.id,
+    faction: definition.faction,
+    tier: definition.tier,
+    durationMs: candidate.durationMs,
+    rewards: {
+      silver: rewardData.silver,
+      artifactFragments: rewardData.artifactFragments,
+      enchantmentShards: rewardData.enchantmentShards,
+      factionRunes: rewardData.factionRunes,
+      artifacts: rewardData.artifacts,
+    },
+  };
+}
+
 /**
  * Owns the post-dungeon lifecycle gate and recap aggregation.
  * Gameplay grants rewards before this flow records them; this module only
@@ -56,6 +100,20 @@ class DungeonCompletionFlow {
   };
 
   readonly getSnapshot = (): DungeonCompletionRecapModel | null => this.#recap;
+
+  getSaveState(): DungeonCompletionRecapModel | null {
+    return this.#recap;
+  }
+
+  restoreSaveState(data: unknown): void {
+    this.#active = null;
+    this.#recap = parseSavedRecap(data);
+    if (this.#recap !== null) {
+      this.#nextId = Math.max(this.#nextId, this.#recap.id + 1);
+      combatStopController.restorePaused();
+    }
+    this.#notify();
+  }
 
   begin(definitionId: string): void {
     this.#active = {
