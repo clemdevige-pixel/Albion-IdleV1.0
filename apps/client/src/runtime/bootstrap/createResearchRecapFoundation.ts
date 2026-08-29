@@ -1,5 +1,6 @@
 import {
   getResearchPresentationInfo,
+  getResearchUnlockedContent,
   RESEARCH_DEFINITIONS,
 } from "../../data/researchContentCatalog.js";
 
@@ -44,7 +45,7 @@ export function createResearchRecapFoundation() {
         researchId,
         displayName: definition.displayName,
         effectSummary: presentation?.effectSummary ?? "Recherche terminée.",
-        unlockedContent: presentation?.unlockedContent ?? [],
+        unlockedContent: getResearchUnlockedContent(researchId),
       };
       nextId += 1;
       notify();
