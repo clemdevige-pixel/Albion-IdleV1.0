@@ -41,7 +41,11 @@
   color: var(--ui-color-text-muted, #8f969f);
 }
 
-.expedition-recap__header > div > span {
+.expedition-recap__header > div > span,
+.expedition-recap__eyebrow {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--ui-color-text-muted, #8f969f);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: .07em;
@@ -336,6 +340,78 @@
   cursor: not-allowed;
 }
 
+.research-recap {
+  width: min(500px, calc(100% - 32px));
+}
+
+.research-recap__effect {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid #665127;
+  border-radius: 6px;
+  background: #18150f;
+}
+
+.research-recap__effect > span,
+.research-recap__unlocks h3,
+.research-recap__unlock-row small {
+  color: var(--ui-color-text-muted, #8f969f);
+  font-size: 9px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.research-recap__effect > strong {
+  color: #e5c76f;
+  font: 700 12px var(--ui-font-display);
+  line-height: 1.35;
+}
+
+.research-recap__unlocks {
+  margin-top: 18px;
+}
+
+.research-recap__unlocks h3 {
+  margin: 0 0 9px;
+  color: #d9b85e;
+  font: 700 11px var(--ui-font-display);
+}
+
+.research-recap__unlock-list {
+  display: grid;
+  gap: 5px;
+}
+
+.research-recap__unlock-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, .8fr);
+  gap: 14px;
+  padding: 10px 2px;
+  border-bottom: 1px solid #252c32;
+}
+
+.research-recap__unlock-row > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.research-recap__unlock-row strong {
+  color: #ddd4c6;
+  font: 700 11px var(--ui-font-display);
+  line-height: 1.3;
+}
+
+.research-recap__destination {
+  text-align: right;
+}
+
+.research-recap__destination strong {
+  color: #e5c76f;
+}
+
 @media (max-width: 560px) {
   .expedition-recap {
     width: calc(100% - 20px);
@@ -352,5 +428,14 @@
 
   .dungeon-recap__action--primary {
     grid-row: 1;
+  }
+
+  .research-recap__unlock-row {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .research-recap__destination {
+    text-align: left;
   }
 }
