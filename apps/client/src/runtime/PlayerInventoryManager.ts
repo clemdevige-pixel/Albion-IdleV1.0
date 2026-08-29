@@ -1,5 +1,11 @@
-import type { EntityId } from "@game/core";
-import { effectiveMaxStack, getEnchantmentLevel, InventoryManager } from "@game/gameplay";
+import type { EntityId, World } from "@game/core";
+import {
+  effectiveMaxStack,
+  getEnchantmentLevel,
+  InventoryComponent,
+  InventoryManager,
+  type StackInfoResolver,
+} from "@game/gameplay";
 
 /**
  * Player-facing inventory manager with an explicit accessible-storage graph.
@@ -9,6 +15,12 @@ import { effectiveMaxStack, getEnchantmentLevel, InventoryManager } from "@game/
  */
 export class PlayerInventoryManager extends InventoryManager {
   readonly #accessibleOwners = new Map<EntityId, readonly EntityId[]>();
+  readonly #world: World;
+
+  public constructor(world: World, resolveStackInfo?: StackInfoResolver) {
+    super(world, resolveStackInfo);
+    this.#world = world;
+  }
 
   public setAccessibleStorageOwners(ownerId: EntityId, ownerIds: readonly EntityId[]): void {
     const uniqueOwners = [...new Set(ownerIds)];
@@ -18,6 +30,30 @@ export class PlayerInventoryManager extends InventoryManager {
 
   public getAccessibleStorageOwners(ownerId: EntityId): readonly EntityId[] {
     return this.#accessibleOwners.get(ownerId) ?? [ownerId];
+  }
+
+  /**
+   * Changes the authored base capacity of one player storage without recreating
+   * the inventory or touching any stored entry identity. Shrinking is rejected
+   * when it would strand an occupied slot outside the resulting capacity.
+   */
+  public setStorageBaseCapacity(ownerId: EntityId, capacity: number): boolean {
+    if (!Number.isInteger(capacity) || capacity <= 0 || !this.hasInventory(ownerId)) return false;
+    const currentBaseCapacity = this.getBaseCapacity(ownerId);
+    if (currentBaseCapacity === capacity) return true;
+
+    const currentEffectiveCapacity = this.getCapacity(ownerId);
+    const capacityBonus = currentEffectiveCapacity - currentBaseCapacity;
+    const nextEffectiveCapacity = capacity + capacityBonus;
+    if (
+      this.listSlots(ownerId).some((slot) => (
+        slot.position >= nextEffectiveCapacity && slot.entry !== undefined
+      ))
+    ) return false;
+
+    const data = this.#world.getComponent(ownerId, InventoryComponent);
+    data.capacity = capacity;
+    return true;
   }
 
   public getAccessibleQuantity(ownerId: EntityId, itemId: string): number {
