@@ -1,0 +1,143 @@
+.ui-black-market {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ui-black-market__demands,
+.ui-black-market__routes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ui-black-market__demands article {
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 6px;
+  background: rgba(10, 14, 18, 0.48);
+}
+.ui-black-market__demands strong { color: var(--ui-color-text-primary); font-size: 10px; }
+.ui-black-market__demands span { color: var(--ui-color-text-muted); font-size: 9px; }
+.ui-black-market__demands b { color: var(--ui-color-accent); font-size: 12px; }
+
+.ui-black-market__candidates {
+  display: grid;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.ui-black-market__candidates article {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 3px;
+  border-left: 2px solid transparent;
+}
+.ui-black-market__candidates article.is-selected {
+  border-left-color: var(--ui-color-accent);
+  background: rgba(208, 157, 52, 0.045);
+}
+.ui-black-market__item-visual {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 6px;
+  background: rgba(8, 11, 14, 0.72);
+}
+.ui-black-market__item-visual .item-visual__image { max-width: 88%; max-height: 88%; object-fit: contain; image-rendering: pixelated; }
+.ui-black-market__item-copy { display: grid; gap: 2px; min-width: 0; }
+.ui-black-market__item-copy strong { overflow: hidden; color: var(--ui-color-text-primary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.ui-black-market__item-copy small { color: var(--ui-color-text-muted); font-size: 8px; }
+.ui-black-market__item-copy span { color: var(--ui-color-accent); font-size: 9px; }
+.ui-black-market__quantity { display: grid; grid-template-columns: 28px 24px 28px; align-items: center; gap: 2px; }
+.ui-black-market__quantity button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(118, 90, 47, .48);
+  border-radius: 5px;
+  color: var(--ui-color-text-primary);
+  background: rgba(12, 16, 21, 0.58);
+  cursor: pointer;
+}
+.ui-black-market__quantity b { text-align: center; color: var(--ui-color-accent); font-size: 10px; }
+
+.ui-black-market__cargo-total {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  padding: 7px 2px;
+  border-top: 1px solid var(--ui-color-border-subtle);
+  border-bottom: 1px solid var(--ui-color-border-subtle);
+}
+.ui-black-market__cargo-total span { color: var(--ui-color-text-secondary); font-size: 9px; }
+.ui-black-market__cargo-total strong { color: var(--ui-color-accent); font-size: 10px; text-align: right; }
+
+.ui-black-market__routes button {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 6px;
+  color: var(--ui-color-text-secondary);
+  background: rgba(10, 14, 18, 0.48);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ui-black-market__routes button.is-selected {
+  border-color: var(--ui-color-accent);
+  background: rgba(208, 157, 52, 0.07);
+}
+.ui-black-market__routes strong { color: var(--ui-color-text-primary); font-size: 10px; }
+.ui-black-market__routes span,
+.ui-black-market__routes small,
+.ui-black-market__routes em { font-size: 8px; font-style: normal; }
+.ui-black-market__routes b { color: var(--ui-color-accent); font-size: 11px; }
+
+.ui-black-market__departure {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 5px;
+}
+.ui-black-market__departure > div { display: grid; gap: 2px; }
+.ui-black-market__departure span,
+.ui-black-market__departure small { color: var(--ui-color-text-muted); font-size: 8px; }
+.ui-black-market__departure strong { color: var(--ui-color-accent); font-size: 13px; }
+
+.ui-black-market__active-card {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.ui-black-market__active-card > div,
+.ui-black-market__result-card {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 6px;
+  background: rgba(10, 14, 18, 0.48);
+}
+.ui-black-market__active-card span,
+.ui-black-market__result-card span,
+.ui-black-market__result-card small { color: var(--ui-color-text-muted); font-size: 8px; }
+.ui-black-market__active-card strong,
+.ui-black-market__result-card strong { color: var(--ui-color-accent); font-size: 12px; }
+.ui-black-market__hidden-result { margin: 0; padding: 8px 0; color: var(--ui-color-text-muted); font-size: 9px; text-align: center; }
+
+@media (max-width: 48rem) {
+  .ui-black-market__demands,
+  .ui-black-market__routes { grid-template-columns: 1fr; }
+  .ui-black-market__active-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ui-black-market__departure { align-items: stretch; flex-direction: column; }
+}
