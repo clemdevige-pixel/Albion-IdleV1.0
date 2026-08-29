@@ -5,6 +5,7 @@ import {
   type DungeonArtifactFactionId,
 } from "./dungeon-artifacts.js";
 import { getDungeonKeyFragmentItemId, getDungeonKeyItemId } from "./dungeon-keys.js";
+import { PRODUCTION_INPUT_ECONOMIC_VALUE_BY_TIER } from "./economic-item-values.js";
 import {
   GATHERING_RESOURCE_FAMILY_IDS,
   GATHERING_RESOURCE_TIER_CONTENT,
@@ -72,9 +73,9 @@ export const DAILY_MERCHANT_QUANTITIES = {
 } as const satisfies Readonly<Record<DailyMerchantCategory, readonly number[]>>;
 
 export const DAILY_MERCHANT_UNIT_PRICES = {
-  raw_resource: { 4: 400, 5: 1_000, 6: 2_250, 7: 3_000, 8: 3_750 },
-  refined_resource: { 4: 2_000, 5: 5_500, 6: 14_000, 7: 22_000, 8: 30_500 },
-  enchantment_shard: { 4: 1_000, 5: 1_500, 6: 2_000, 7: 2_500, 8: 3_500 },
+  raw_resource: PRODUCTION_INPUT_ECONOMIC_VALUE_BY_TIER.raw_resource,
+  refined_resource: PRODUCTION_INPUT_ECONOMIC_VALUE_BY_TIER.refined_resource,
+  enchantment_shard: PRODUCTION_INPUT_ECONOMIC_VALUE_BY_TIER.enchantment_shard,
   key_fragment: { 4: 650, 5: 1_350, 6: 2_750, 7: 3_700, 8: 7_300 },
   key: { 4: 32_500, 5: 67_500, 6: 137_500, 7: 185_000, 8: 365_000 },
   artifact_fragment: { 4: 550, 5: 900, 6: 1_575, 7: 1_950, 8: 3_400 },
