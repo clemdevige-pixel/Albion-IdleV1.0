@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { getFragmentAssemblyRecipe } from "../../data/specialCraftRecipes.js";
-import { getEquipmentTierCapViolation } from "../../data/zoneEquipmentTierCaps";
 import { StorageRuntime, type StorageKind } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
 import {
@@ -48,22 +47,6 @@ export function useInventoryActions(): InventoryActions {
   }, [services]);
 
   const equip = useCallback((position: number): boolean => {
-    const slot = services.inventoryManager.getSlot(services.heroId, position);
-    const itemId = slot.ok ? slot.value.entry?.itemId : undefined;
-    const zoneDefId = services.bridge.world.zoneDefId;
-    if (itemId !== undefined && zoneDefId.length > 0) {
-      const violation = getEquipmentTierCapViolation(zoneDefId, itemId);
-      if (violation !== undefined) {
-        services.bridge.addEconomyNotification({
-          id: `notif_equip_tier_cap_${String(Date.now())}`,
-          type: "error",
-          message: `Impossible d'équiper du T${String(violation.itemTier)} : cette zone est limitée au T${String(violation.maxTier)}.`,
-          timestamp: Date.now(),
-        });
-        return false;
-      }
-    }
-
     const result = services.equipmentManager.equipFromInventory(services.heroId, position);
     if (result.ok) {
       syncStorage();
