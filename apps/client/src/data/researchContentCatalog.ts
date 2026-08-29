@@ -53,6 +53,12 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
     effectSummary: "Porte la capacité à 8 ouvriers, avec 2 ouvriers maximum par profession.",
     unlockedContent: ["8 ouvriers maximum", "2 ouvriers par profession", "Recrutement avancé à 5 000 Silver"],
   }],
+  [RESEARCH_IDS.bankManagement, {
+    group: "core",
+    description: "Structure le stockage bancaire en plusieurs coffres spécialisés et autorise l’achat d’extensions auprès du Marchand.",
+    effectSummary: "Débloque Banque II et le service marchand Extensions de banque.",
+    unlockedContent: ["Banque II", "Service marchand : Extensions de banque"],
+  }],
   [RESEARCH_IDS.instantRefining, {
     group: "core",
     description: "Automatise la transformation des stocks raffinables sans modifier les recettes ni les rendements.",
