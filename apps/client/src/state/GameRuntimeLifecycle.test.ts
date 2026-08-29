@@ -117,15 +117,23 @@ describe("runtime visibility reconciliation", () => {
     expect(syncPresentation).toHaveBeenCalledOnce();
     expect(saveGame).toHaveBeenCalledOnce();
     expect(startRuntime).toHaveBeenCalledOnce();
-    expect(resolveBackgroundElapsed.mock.invocationCallOrder[0]).toBeLessThan(
-      syncPresentation.mock.invocationCallOrder[0],
-    );
-    expect(syncPresentation.mock.invocationCallOrder[0]).toBeLessThan(
-      saveGame.mock.invocationCallOrder[0],
-    );
-    expect(saveGame.mock.invocationCallOrder[0]).toBeLessThan(
-      startRuntime.mock.invocationCallOrder[0],
-    );
+
+    const [resolveOrder] = resolveBackgroundElapsed.mock.invocationCallOrder;
+    const [syncOrder] = syncPresentation.mock.invocationCallOrder;
+    const [saveOrder] = saveGame.mock.invocationCallOrder;
+    const [startOrder] = startRuntime.mock.invocationCallOrder;
+    if (
+      resolveOrder === undefined
+      || syncOrder === undefined
+      || saveOrder === undefined
+      || startOrder === undefined
+    ) {
+      throw new Error("Expected visibility reconciliation calls to be recorded");
+    }
+
+    expect(resolveOrder).toBeLessThan(syncOrder);
+    expect(syncOrder).toBeLessThan(saveOrder);
+    expect(saveOrder).toBeLessThan(startOrder);
   });
 
   it("restarts the live runtime even when passive resolution throws", () => {
