@@ -3,7 +3,6 @@ import { formatCompactNumber } from "../shared/formatters";
 import type { MasteryCategoryId } from "./masteryModels";
 import { useMasteriesData } from "./useMasteriesData";
 import { MasteryFamilyList } from "./components/MasteryFamilyList";
-import { MasteryTreeEntry } from "./components/MasteryTreeEntry";
 import "./masteries.css";
 
 const CATEGORY_LABELS: Readonly<Record<MasteryCategoryId, string>> = {
@@ -60,8 +59,6 @@ export function MasteriesModule(): JSX.Element {
           }}
         />
       )}
-
-      <MasteryTreeEntry />
     </div>
   );
 }
