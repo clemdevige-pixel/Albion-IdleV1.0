@@ -262,15 +262,46 @@ export function BlackMarketView(): JSX.Element {
 
   if (activeConvoy !== null) {
     const activeRoute = BLACK_MARKET_ROUTES.find((entry) => entry.id === activeConvoy.routeId);
+    const routeDuration = activeRoute?.durationMs ?? Math.max(1, activeConvoy.completesAt - nowMs);
+    const routeStartedAt = activeConvoy.completesAt - routeDuration;
+    const routeProgress = Math.max(0, Math.min(1, (nowMs - routeStartedAt) / routeDuration));
+    const activeItemCount = activeConvoy.cargo.reduce((sum, line) => sum + line.quantity, 0);
     return (
       <section className="ui-black-market ui-black-market--active">
-        <div className="ui-merchant-section-title"><span>Convoi en cours</span><small>{activeRoute?.displayName ?? activeConvoy.routeId}</small></div>
-        <div className="ui-black-market__active-card">
-          <div><span>Temps restant</span><strong>{formatDuration(activeConvoy.completesAt - nowMs)}</strong></div>
-          <div><span>Cargo</span><strong>{activeConvoy.cargo.reduce((sum, line) => sum + line.quantity, 0)} items</strong></div>
-          <div><span>Valeur BM</span><strong>{formatCompactNumber(activeConvoy.payoutOnSuccess, "0")}</strong></div>
+        <div className="ui-black-market__convoy-hero">
+          <div className="ui-black-market__convoy-route">
+            <span>Convoi en cours</span>
+            <strong>{activeRoute?.displayName ?? activeConvoy.routeId}</strong>
+            <small>{String(Math.round((activeRoute?.successChance ?? 0) * 100))}% de succès · échec = perte totale</small>
+          </div>
+          <div className="ui-black-market__convoy-timer">
+            <span>Temps restant</span>
+            <strong>{formatDuration(activeConvoy.completesAt - nowMs)}</strong>
+          </div>
+          <div className="ui-black-market__convoy-progress" role="progressbar" aria-label="Progression du convoi" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(routeProgress * 100)}>
+            <span style={{ width: `${String(routeProgress * 100)}%` }} />
+          </div>
         </div>
-        <p className="ui-black-market__hidden-result">Résultat : ????? — révélé à l’arrivée.</p>
+
+        <div className="ui-merchant-section-title"><span>Cargo engagé</span><small>{String(activeItemCount)} items</small></div>
+        <div className="ui-black-market__active-cargo">
+          {activeConvoy.cargo.map((line, index) => (
+            <div key={`${line.itemId}|${String(line.enchantment)}|${String(index)}`} className="ui-black-market__active-cargo-slot" title={getItemDisplayName(line.itemId)}>
+              <ItemVisual itemId={line.itemId} />
+              <strong>x{String(line.quantity)}</strong>
+            </div>
+          ))}
+        </div>
+
+        <div className="ui-black-market__convoy-summary">
+          <span>Valeur BM</span>
+          <strong>{formatCompactNumber(activeConvoy.payoutOnSuccess, "0")} Silver</strong>
+        </div>
+
+        <div className="ui-black-market__sealed-result">
+          <strong>Résultat scellé</strong>
+          <span>Le résultat du convoi sera révélé à l’arrivée.</span>
+        </div>
       </section>
     );
   }
