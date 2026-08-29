@@ -140,7 +140,7 @@ class BlackMarketRuntimeAdapter {
       for (const slot of bindings.inventoryManager.listSlots(ownerId)) {
         const entry = slot.entry;
         if (entry === undefined || resolveEquipmentInfo(entry.itemId) === undefined) continue;
-        if (bindings.awakenedWeaponService.has(entry.instanceId)) continue;
+        if (bindings.awakenedWeaponService.getState(entry.instanceId)?.awakened === true) continue;
         // Equipment is identity-bearing cargo. Refuse malformed stacked equipment
         // rather than losing the physical instance contract during BM selection.
         if (entry.quantity !== 1) continue;
@@ -232,7 +232,7 @@ class BlackMarketRuntimeAdapter {
           entry.itemId === selected.itemId
           && getEnchantmentLevel(entry) === selected.enchantment
           && entry.quantity === 1
-          && !bindings.awakenedWeaponService.has(entry.instanceId)
+          && bindings.awakenedWeaponService.getState(entry.instanceId)?.awakened !== true
           && !claimedInstanceIds.has(entry.instanceId)
         ));
       if (matchingEntries.length < selected.quantity) return undefined;
@@ -287,7 +287,7 @@ class BlackMarketRuntimeAdapter {
         located.entry.quantity !== 1
         || located.entry.itemId !== unit.itemId
         || getEnchantmentLevel(located.entry) !== unit.enchantment
-        || bindings.awakenedWeaponService.has(located.entry.instanceId)
+        || bindings.awakenedWeaponService.getState(located.entry.instanceId)?.awakened === true
       ) return false;
       planned.push(located);
     }
