@@ -31,7 +31,6 @@ export type DailyMerchantCategory = (typeof DAILY_MERCHANT_CATEGORIES)[number];
 
 export const DAILY_MERCHANT_ROTATION_RULES = {
   offerCount: 5,
-  resetHourUtc: 0,
   tierSelection: "uniform_unlocked",
   guaranteedCategoryGroups: [
     ["raw_resource", "refined_resource"],
@@ -44,7 +43,6 @@ export const DAILY_MERCHANT_ROTATION_RULES = {
   ],
 } as const satisfies {
   readonly offerCount: number;
-  readonly resetHourUtc: number;
   readonly tierSelection: "uniform_unlocked";
   readonly guaranteedCategoryGroups: readonly (readonly DailyMerchantCategory[])[];
   readonly limitedCategoryGroups: readonly {
