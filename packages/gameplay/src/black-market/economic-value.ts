@@ -80,7 +80,10 @@ export function resolveEquipmentEconomicValue(input: EquipmentEconomicValueInput
   const baseValue = requirementsValue(input.recipe.requirements);
   if (input.enchantment === 0) return baseValue;
 
-  const craftMaterials = input.recipe.requirements.filter((entry) => entry.itemId.startsWith("item_refined_"));
+  const craftMaterials = input.recipe.requirements.filter((entry) => (
+    entry.itemId.startsWith("item_refined_")
+    || entry.itemId.startsWith("item_resource_rune_")
+  ));
   let total = baseValue;
   for (let fromLevel = 0; fromLevel < input.enchantment; fromLevel += 1) {
     const recipe = getNextEnchantmentRecipe(fromLevel as EnchantmentLevel);
