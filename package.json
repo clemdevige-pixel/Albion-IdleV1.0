@@ -14,7 +14,7 @@
     "typecheck": "tsc -b && pnpm --filter @game/client typecheck",
     "lint": "eslint . && pnpm validate:architecture && pnpm validate:test-workspace && pnpm validate:source-artifacts",
     "lint:fix": "eslint . --fix && pnpm validate:architecture && pnpm validate:test-workspace && pnpm validate:source-artifacts",
-    "test": "vitest run",
+    "test": "tsc -b tsconfig.build.json && vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
