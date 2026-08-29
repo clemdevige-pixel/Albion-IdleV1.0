@@ -64,6 +64,11 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
     description: "Automatise la transformation des stocks raffinables sans modifier les recettes ni les rendements.",
     effectSummary: "Débloque le raffinage instantané par lot dans les bâtiments de raffinage.",
   }],
+  [RESEARCH_IDS.blackMarket, {
+    group: "core",
+    description: "Établit un réseau clandestin capable d’absorber les surplus d’équipements contre du Silver, au prix d’un risque de perte totale du cargo.",
+    effectSummary: "Débloque le Marché Noir chez le Marchand.",
+  }],
   [RESEARCH_IDS.dungeonRelicAnalysis, {
     group: "core",
     description: "Analyse à l’Académie la Relique chargée découverte à Frostpeak Mountain afin d’ouvrir la boucle Donjons.",
@@ -71,10 +76,6 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
   }],
 ]);
 
-/**
- * Presentation metadata for canonical authored unlock IDs.
- * Research membership is never authored here: it is derived from each definition.unlockIds.
- */
 const RESEARCH_UNLOCK_PRESENTATION = new Map<string, readonly ResearchUnlockPresentation[]>([
   [RESEARCH_UNLOCK_IDS.silverExpeditionTier4, [{ label: "Expéditions généralistes T4", destination: "Académie > Expéditions" }]],
   [RESEARCH_UNLOCK_IDS.silverExpeditionTier5, [{ label: "Expéditions généralistes T5", destination: "Académie > Expéditions" }]],
@@ -108,6 +109,10 @@ const RESEARCH_UNLOCK_PRESENTATION = new Map<string, readonly ResearchUnlockPres
   [RESEARCH_UNLOCK_IDS.instantRefining, [
     { label: "Raffinage instantané par lot", destination: "Île > bâtiments de raffinage" },
     { label: "Recettes et rendements inchangés" },
+  ]],
+  [RESEARCH_UNLOCK_IDS.blackMarket, [
+    { label: "Marché Noir", destination: "Marchand > Marché Noir" },
+    { label: "Conversion des équipements excédentaires en Silver via convois" },
   ]],
   [RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed, []],
   [RESEARCH_UNLOCK_IDS.dungeonSystem, [
