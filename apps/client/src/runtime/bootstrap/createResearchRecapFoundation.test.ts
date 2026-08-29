@@ -3,7 +3,7 @@ import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import { createResearchRecapFoundation } from "./createResearchRecapFoundation.js";
 
 describe("createResearchRecapFoundation", () => {
-  it("derives recap content from authored Research presentation data", () => {
+  it("derives recap content and destinations from canonical Research unlocks", () => {
     const foundation = createResearchRecapFoundation();
     const listener = vi.fn();
     const unsubscribe = foundation.subscribe(listener);
@@ -14,10 +14,20 @@ describe("createResearchRecapFoundation", () => {
       researchId: RESEARCH_IDS.dungeonRelicAnalysis,
       displayName: "Analyse de la Relique",
       unlockedContent: [
-        "World > Donjons",
-        "Drops de fragments de clé",
-        "Drops de clés complètes",
-        "Drop rare de Runes de faction dans le monde",
+        "Donjons",
+        "Drops de fragments et clés de donjon",
+        "Drop rare de Runes de faction",
+      ],
+      unlockGuidance: [
+        { label: "Donjons", destination: "Monde > Donjons" },
+        {
+          label: "Drops de fragments et clés de donjon",
+          destination: "Combat contre les monstres éligibles",
+        },
+        {
+          label: "Drop rare de Runes de faction",
+          destination: "Monstres de faction dans le monde",
+        },
       ],
     });
     expect(listener).toHaveBeenCalledTimes(1);
