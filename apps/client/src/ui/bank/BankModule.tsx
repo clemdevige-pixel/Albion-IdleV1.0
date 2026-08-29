@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
@@ -15,7 +15,7 @@ import "../shared/storageModule.css";
 interface BankModuleProps {
   readonly onMove?: (from: number, to: number) => void;
   readonly onTransferToInventory?: (position: number) => void;
-  readonly onSort?: () => void;
+  readonly onSort?: (start: number, length: number) => void;
 }
 
 type BankFilter = "all" | "equipment" | "resources" | "special";
@@ -26,6 +26,8 @@ const BANK_FILTERS: readonly { readonly id: BankFilter; readonly label: string }
   { id: "resources", label: "Ressources" },
   { id: "special", label: "Spéciaux" },
 ];
+
+const ROMAN_TAB_LABELS = ["I", "II", "III", "IV", "V"] as const;
 
 function isSpecialBankItem(itemId: string): boolean {
   return itemId.startsWith("item_resource_dungeon_key_")
@@ -46,24 +48,58 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
   const bank = useBankData();
   const services = useGameServices();
   const tracking = useResourceTracking();
+  const expansion = services.getBankExpansionModel();
   const yieldTrackingUnlocked = services.getAcademyModel().research.some(
     (research) => research.id === RESEARCH_IDS.yieldAnalysis && research.state === "completed",
   );
   const [activeFilter, setActiveFilter] = useState<BankFilter>("all");
-  const capacityRatio = bank.capacity === 0
+  const [activeBankTab, setActiveBankTab] = useState(1);
+
+  useEffect(() => {
+    if (activeBankTab > expansion.unlockedTabCount) {
+      setActiveBankTab(expansion.unlockedTabCount);
+    }
+  }, [activeBankTab, expansion.unlockedTabCount]);
+
+  const tabStart = (activeBankTab - 1) * expansion.tabCapacity;
+  const tabEnd = tabStart + expansion.tabCapacity;
+  const activeTabSlots = bank.slots.filter((slot) => slot.position >= tabStart && slot.position < tabEnd);
+  const activeTabOccupied = activeTabSlots.reduce(
+    (count, slot) => count + (slot.itemId === undefined ? 0 : 1),
+    0,
+  );
+  const capacityRatio = expansion.tabCapacity === 0
     ? 0
-    : Math.min(100, (bank.occupied / bank.capacity) * 100);
-  const filteredSlots = bank.slots.filter((slot) => matchesBankFilter(slot, activeFilter));
+    : Math.min(100, (activeTabOccupied / expansion.tabCapacity) * 100);
+  const filteredSlots = activeTabSlots.filter((slot) => matchesBankFilter(slot, activeFilter));
+  const activeLabel = ROMAN_TAB_LABELS[activeBankTab - 1] ?? String(activeBankTab);
 
   return (
     <div className="storage-module">
-      <section className="storage-module__summary" aria-label="Capacité de la banque">
+      {expansion.unlockedTabCount > 1 && (
+        <div className="storage-module__bank-tabs" role="tablist" aria-label="Onglets de banque">
+          {Array.from({ length: expansion.unlockedTabCount }, (_, index) => index + 1).map((tabNumber) => (
+            <button
+              key={tabNumber}
+              type="button"
+              role="tab"
+              aria-selected={activeBankTab === tabNumber}
+              className={activeBankTab === tabNumber ? "is-active" : ""}
+              onClick={() => { setActiveBankTab(tabNumber); }}
+            >
+              Banque {ROMAN_TAB_LABELS[tabNumber - 1] ?? String(tabNumber)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <section className="storage-module__summary" aria-label={`Capacité de la banque ${activeLabel}`}>
         <div className="storage-module__summary-row">
           <div>
             <small>Stockage sécurisé</small>
-            <span>Coffre de banque</span>
+            <span>Banque {activeLabel}</span>
           </div>
-          <strong>{String(bank.occupied)} <small>/ {String(bank.capacity)}</small></strong>
+          <strong>{String(activeTabOccupied)} <small>/ {String(expansion.tabCapacity)}</small></strong>
         </div>
         <div className="storage-module__capacity-track" aria-hidden="true">
           <span className="storage-module__capacity-fill" style={{ width: `${String(capacityRatio)}%` }} />
@@ -71,7 +107,13 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
       </section>
 
       <div className="storage-module__toolbar">
-        <button type="button" className="storage-module__sort-button" onClick={onSort} aria-label="Trier la banque" title="Trier la banque">
+        <button
+          type="button"
+          className="storage-module__sort-button"
+          onClick={() => { onSort?.(tabStart, expansion.tabCapacity); }}
+          aria-label={`Trier la banque ${activeLabel}`}
+          title={`Trier la banque ${activeLabel}`}
+        >
           <img src="/assets/ui/action-sort.png" alt="" aria-hidden="true" draggable={false} />
         </button>
         <div className="storage-module__filters" role="group" aria-label="Filtrer la banque">
@@ -94,7 +136,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
         {filteredSlots.length > 0 ? (
           <ItemGrid
             slots={filteredSlots}
-            label={`Objets dans la banque · filtre ${BANK_FILTERS.find((filter) => filter.id === activeFilter)?.label ?? "Tous"}`}
+            label={`Objets dans la banque ${activeLabel} · filtre ${BANK_FILTERS.find((filter) => filter.id === activeFilter)?.label ?? "Tous"}`}
             interactive
             draggable
             {...(onMove === undefined ? {} : { onItemDrop: onMove })}
