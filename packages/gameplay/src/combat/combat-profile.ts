@@ -4,6 +4,7 @@ import {
   ENCOUNTER_DIFFICULTY_GROWTH,
   REWARD_RANKS_PER_ZONE,
   getWorldCombatProgression,
+  getWorldCombatRewardCurve,
   type WorldBandId,
 } from "@game/data";
 
@@ -90,6 +91,7 @@ export function getEncounterRewards(
   worldBandId: WorldBandId = "blue",
 ): EncounterRewards {
   const worldProgression = getWorldCombatProgression(worldBandId);
+  const rewardCurve = getWorldCombatRewardCurve(worldBandId);
   const progressionRank =
     worldProgression.rewardRankOffset
     + zoneIndex * REWARD_RANKS_PER_ZONE +
@@ -99,7 +101,11 @@ export function getEncounterRewards(
   const encounterMultiplier = isBossEncounter ? 2 : 1;
 
   return {
-    silver: Math.round(10 + progressionRank * 3) * encounterMultiplier,
-    fame: Math.round(15 + progressionRank * 4) * encounterMultiplier,
+    silver: Math.round(
+      rewardCurve.silverBase + progressionRank * rewardCurve.silverPerProgressionRank,
+    ) * encounterMultiplier,
+    fame: Math.round(
+      rewardCurve.fameBase + progressionRank * rewardCurve.famePerProgressionRank,
+    ) * encounterMultiplier,
   };
 }
