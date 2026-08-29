@@ -374,12 +374,131 @@
 .ui-black-market__picker-value > b { color: var(--ui-color-accent); font-size: 9px; }
 .ui-black-market__picker-value > small { color: #d9b45c; font-size: 6px; text-transform: uppercase; }
 
-.ui-black-market__active-card {
+.ui-black-market__convoy-hero {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(208, 157, 52, 0.42);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(208, 157, 52, 0.075), rgba(10, 14, 18, 0.5));
 }
-.ui-black-market__active-card > div,
+.ui-black-market__convoy-route {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+.ui-black-market__convoy-route > span {
+  color: var(--ui-color-text-muted);
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.ui-black-market__convoy-route > strong {
+  color: var(--ui-color-text-primary);
+  font-size: 13px;
+}
+.ui-black-market__convoy-route > small {
+  color: var(--ui-color-text-secondary);
+  font-size: 8px;
+}
+.ui-black-market__convoy-timer {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.ui-black-market__convoy-timer > span {
+  color: var(--ui-color-text-muted);
+  font-size: 8px;
+}
+.ui-black-market__convoy-timer > strong {
+  color: var(--ui-color-accent);
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+.ui-black-market__convoy-progress {
+  height: 6px;
+  overflow: hidden;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 999px;
+  background: rgba(4, 7, 10, 0.8);
+}
+.ui-black-market__convoy-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ui-color-accent);
+  transition: width 500ms linear;
+}
+.ui-black-market__active-cargo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.ui-black-market__active-cargo-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  height: 58px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 6px;
+  background: rgba(8, 11, 14, 0.58);
+  overflow: hidden;
+}
+.ui-black-market__active-cargo-slot > .item-visual,
+.ui-black-market__active-cargo-slot > [class*="item-visual"] {
+  width: 36px;
+  height: 36px;
+}
+.ui-black-market__active-cargo-slot .item-visual__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.ui-black-market__active-cargo-slot > strong {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  color: var(--ui-color-accent);
+  font-size: 8px;
+}
+.ui-black-market__convoy-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--ui-color-border-subtle);
+  border-bottom: 1px solid var(--ui-color-border-subtle);
+}
+.ui-black-market__convoy-summary > span {
+  color: var(--ui-color-text-secondary);
+  font-size: 9px;
+}
+.ui-black-market__convoy-summary > strong {
+  color: var(--ui-color-accent);
+  font-size: 12px;
+}
+.ui-black-market__sealed-result {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 12px;
+  border: 1px dashed rgba(208, 157, 52, 0.28);
+  border-radius: 7px;
+  background: rgba(8, 11, 14, 0.34);
+  text-align: center;
+}
+.ui-black-market__sealed-result > strong {
+  color: var(--ui-color-text-primary);
+  font-size: 10px;
+}
+.ui-black-market__sealed-result > span {
+  color: var(--ui-color-text-muted);
+  font-size: 8px;
+}
+
 .ui-black-market__result-card {
   display: grid;
   gap: 4px;
@@ -389,12 +508,9 @@
   border-radius: 6px;
   background: rgba(10, 14, 18, 0.48);
 }
-.ui-black-market__active-card span,
 .ui-black-market__result-card span,
 .ui-black-market__result-card small { color: var(--ui-color-text-muted); font-size: 8px; }
-.ui-black-market__active-card strong,
 .ui-black-market__result-card strong { color: var(--ui-color-accent); font-size: 12px; }
-.ui-black-market__hidden-result { margin: 0; padding: 8px 0; color: var(--ui-color-text-muted); font-size: 9px; text-align: center; }
 
 @media (max-width: 28rem) {
   .ui-black-market__cargo-slots { gap: 4px; }
@@ -413,4 +529,6 @@
   .ui-black-market__picker-current .ui-black-market__remove { grid-column: 1 / -1; justify-self: end; }
   .ui-black-market__departure { align-items: stretch; flex-direction: column; }
   .ui-black-market__confirmation > div { flex-direction: column; }
+  .ui-black-market__convoy-timer > strong { font-size: 21px; }
+  .ui-black-market__active-cargo { gap: 4px; }
 }
