@@ -70,19 +70,23 @@ function armorDemandSlot(itemId: string): string | undefined {
   return undefined;
 }
 
-function matchesDemand(candidate: BlackMarketCandidate, snapshot: BlackMarketSnapshot): boolean {
+function matchingDemandBonus(candidate: BlackMarketCandidate, snapshot: BlackMarketSnapshot): number | undefined {
   const tier = getItemTier(candidate.itemId);
-  if (tier === undefined) return false;
+  if (tier === undefined) return undefined;
   const weaponFamily = resolveWeaponFamilyId(candidate.itemId);
   const armorSlot = armorDemandSlot(candidate.itemId);
-  return snapshot.demands.some((demand) => (
+  return snapshot.demands.find((demand) => (
     demand.fulfilledQuantity < demand.requiredQuantity
     && demand.tier === tier
     && (
       (demand.targetType === "weapon_family" && demand.targetId === weaponFamily)
       || (demand.targetType === "armor_slot" && demand.targetId === armorSlot)
     )
-  ));
+  ))?.bonus;
+}
+
+function matchesDemand(candidate: BlackMarketCandidate, snapshot: BlackMarketSnapshot): boolean {
+  return matchingDemandBonus(candidate, snapshot) !== undefined;
 }
 
 function matchesType(candidate: BlackMarketCandidate, type: StockTypeFilter): boolean {
@@ -248,14 +252,35 @@ export function BlackMarketView(): JSX.Element {
   const result = snapshot.lastResult;
   if (result !== null) {
     const resultRoute = BLACK_MARKET_ROUTES.find((entry) => entry.id === result.routeId);
+    const resultItemCount = result.cargo.reduce((sum, line) => sum + line.quantity, 0);
     return (
       <section className="ui-black-market ui-black-market--result">
-        <div className="ui-merchant-section-title"><span>{result.success ? "Convoi livré" : "Convoi perdu"}</span><small>{resultRoute?.displayName ?? result.routeId}</small></div>
+        <div className="ui-merchant-section-title">
+          <span>{result.success ? "Convoi livré" : "Convoi perdu"}</span>
+          <small>{resultRoute?.displayName ?? result.routeId}</small>
+        </div>
         <div className="ui-black-market__result-card">
           <strong>{result.success ? `${formatCompactNumber(result.silverReceived, "0")} Silver` : "0 Silver"}</strong>
           <span>{result.success ? "Paiement reçu" : "Cargo intégralement perdu"}</span>
+          <small>{String(Math.round((resultRoute?.successChance ?? 0) * 100))}% de succès · {String(resultItemCount)} items engagés</small>
         </div>
-        <button type="button" className="ui-merchant__primary" onClick={() => { blackMarketRuntime.dismissResult(); refreshSnapshot(Date.now()); }}>Fermer le récapitulatif</button>
+
+        <div className="ui-merchant-section-title"><span>Cargo résolu</span><small>{String(resultItemCount)} items</small></div>
+        <div className="ui-black-market__active-cargo">
+          {result.cargo.map((line, index) => (
+            <div key={`${line.itemId}|${String(line.enchantment)}|${String(index)}`} className="ui-black-market__active-cargo-slot" title={getItemDisplayName(line.itemId)}>
+              <ItemVisual itemId={line.itemId} />
+              <strong>x{String(line.quantity)}</strong>
+            </div>
+          ))}
+        </div>
+
+        <button type="button" className="ui-merchant__primary" onClick={() => {
+          blackMarketRuntime.dismissResult();
+          refreshSnapshot(Date.now());
+        }}>
+          Continuer
+        </button>
       </section>
     );
   }
@@ -405,6 +430,7 @@ export function BlackMarketView(): JSX.Element {
                 <ItemVisual itemId={activeSlot.itemId} />
                 <div><strong>{getItemDisplayName(activeSlot.itemId)}{activeSlot.enchantment > 0 ? ` .${String(activeSlot.enchantment)}` : ""}</strong><small>{activeSlot.source === "inventory" ? "Inventaire" : "Banque"}</small></div>
                 <div className="ui-black-market__quantity"><button type="button" onClick={() => { changeActiveQuantity(-1); }}>−</button><b>{String(activeSlot.quantity)}</b><button type="button" onClick={() => { changeActiveQuantity(1); }}>+</button></div>
+                <button type="button" className="ui-black-market__remove" onClick={() => { changeActiveQuantity(BLACK_MARKET_STACK_LIMIT); }}>Max</button>
                 <button type="button" className="ui-black-market__remove" onClick={() => { updateSlot(activeSlotIndex, null); }}>Retirer</button>
               </div>
             )}
@@ -431,12 +457,12 @@ export function BlackMarketView(): JSX.Element {
               {visibleCandidates.map((candidate) => {
                 const key = selectionKey(candidate);
                 const selectedElsewhere = cargoSlots.some((slot, index) => index !== activeSlotIndex && slot !== null && selectionKey(slot) === key);
-                const isDemand = matchesDemand(candidate, snapshot);
+                const demandBonus = matchingDemandBonus(candidate, snapshot);
                 return (
                   <button type="button" key={key} disabled={selectedElsewhere} onClick={() => { selectCandidate(candidate); }}>
                     <ItemVisual itemId={candidate.itemId} />
                     <span><strong>{getItemDisplayName(candidate.itemId)}{candidate.enchantment > 0 ? ` .${String(candidate.enchantment)}` : ""}</strong><small>{candidate.source === "inventory" ? "Inventaire" : "Banque"} · x{String(candidate.availableQuantity)}</small></span>
-                    <span className="ui-black-market__picker-value"><b>{formatCompactNumber(candidate.normalBmValue, "0")}</b>{isDemand && <small>Demandé</small>}</span>
+                    <span className="ui-black-market__picker-value"><b>{formatCompactNumber(candidate.normalBmValue, "0")}</b>{demandBonus !== undefined && <small>+{String(Math.round(demandBonus * 100))}% demande</small>}</span>
                   </button>
                 );
               })}
