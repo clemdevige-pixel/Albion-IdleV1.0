@@ -9,6 +9,7 @@ import {
   type DailyMerchantCategory,
   type DailyMerchantTier,
 } from "@game/data";
+import { getDailyRotationId, getNextDailyResetAt } from "@game/gameplay";
 import type { SaveProvider } from "@game/persistence";
 
 export interface DailyMerchantOffer {
@@ -44,8 +45,6 @@ interface MutableDailyMerchantState {
   offers: DailyMerchantSavedOffer[];
   purchasedOfferIds: Set<string>;
 }
-
-const HOUR_MS = 60 * 60 * 1_000;
 
 function isUnknownRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object";
@@ -99,21 +98,11 @@ function parseSavedOffer(value: unknown): DailyMerchantSavedOffer | undefined {
 }
 
 export function getDailyMerchantRotationId(nowMs: number = Date.now()): string {
-  const shifted = new Date(nowMs - DAILY_MERCHANT_ROTATION_RULES.resetHourUtc * HOUR_MS);
-  const year = shifted.getUTCFullYear();
-  const month = String(shifted.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(shifted.getUTCDate()).padStart(2, "0");
-  return `${String(year)}-${month}-${day}`;
+  return getDailyRotationId(nowMs);
 }
 
 export function getDailyMerchantNextResetAt(nowMs: number = Date.now()): number {
-  const shifted = new Date(nowMs - DAILY_MERCHANT_ROTATION_RULES.resetHourUtc * HOUR_MS);
-  return Date.UTC(
-    shifted.getUTCFullYear(),
-    shifted.getUTCMonth(),
-    shifted.getUTCDate() + 1,
-    DAILY_MERCHANT_ROTATION_RULES.resetHourUtc,
-  );
+  return getNextDailyResetAt(nowMs);
 }
 
 function hashString(value: string): number {
