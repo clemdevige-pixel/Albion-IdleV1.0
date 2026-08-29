@@ -12,7 +12,7 @@
 .ui-black-market__demands,
 .ui-black-market__routes,
 .ui-black-market__cargo-slots,
-.ui-black-market__stock-tools,
+.ui-black-market__picker-filters,
 .ui-black-market__picker-list {
   min-width: 0;
   max-width: 100%;
@@ -28,22 +28,28 @@
 
 .ui-black-market__demands article {
   display: grid;
-  gap: 4px;
+  grid-template-rows: auto 1fr auto;
+  gap: 3px;
   min-width: 0;
   padding: 9px;
-  border: 1px solid var(--ui-color-border-subtle);
+  border: 1px solid rgba(208, 157, 52, 0.24);
   border-radius: 6px;
-  background: rgba(10, 14, 18, 0.48);
+  background: linear-gradient(180deg, rgba(208, 157, 52, 0.055), rgba(10, 14, 18, 0.5));
 }
 .ui-black-market__demands strong {
   overflow: hidden;
   color: var(--ui-color-text-primary);
-  font-size: 10px;
+  font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ui-black-market__demands span { color: var(--ui-color-text-muted); font-size: 9px; }
-.ui-black-market__demands b { color: var(--ui-color-accent); font-size: 12px; }
+.ui-black-market__demands b {
+  align-self: center;
+  color: var(--ui-color-accent);
+  font-size: 16px;
+  line-height: 1;
+}
+.ui-black-market__demands span { color: var(--ui-color-text-muted); font-size: 8px; }
 
 .ui-black-market__cargo-slots {
   display: grid;
@@ -54,63 +60,63 @@
 .ui-black-market__cargo-slot {
   position: relative;
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-items: center;
-  gap: 3px 6px;
+  place-items: center;
   min-width: 0;
-  height: 76px;
+  height: 82px;
   padding: 7px;
   border: 1px solid var(--ui-color-border-subtle);
   border-radius: 7px;
   color: var(--ui-color-text-secondary);
-  background: rgba(8, 11, 14, 0.56);
+  background: rgba(8, 11, 14, 0.58);
   font: inherit;
-  text-align: left;
   cursor: pointer;
   overflow: hidden;
 }
 .ui-black-market__cargo-slot:hover { border-color: rgba(208, 157, 52, 0.58); }
-.ui-black-market__cargo-slot.is-demand { border-color: rgba(208, 157, 52, 0.7); background: rgba(208, 157, 52, 0.055); }
+.ui-black-market__cargo-slot:focus-visible { outline: 1px solid var(--ui-color-accent); outline-offset: 1px; }
+.ui-black-market__cargo-slot.is-demand {
+  border-color: rgba(208, 157, 52, 0.78);
+  background: linear-gradient(180deg, rgba(208, 157, 52, 0.1), rgba(8, 11, 14, 0.58));
+}
 .ui-black-market__cargo-slot.is-empty {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto auto;
-  place-items: center;
   align-content: center;
   gap: 2px;
   border-style: dashed;
   color: var(--ui-color-text-muted);
   text-align: center;
 }
-.ui-black-market__slot-plus { color: var(--ui-color-accent); font-size: 22px; line-height: 1; }
+.ui-black-market__slot-plus { color: var(--ui-color-accent); font-size: 24px; line-height: 1; }
 .ui-black-market__cargo-slot > .item-visual,
 .ui-black-market__cargo-slot > [class*="item-visual"] {
-  grid-row: 1 / 3;
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   min-width: 0;
 }
 .ui-black-market__cargo-slot .item-visual__image { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
-.ui-black-market__cargo-slot strong,
-.ui-black-market__cargo-slot span,
-.ui-black-market__cargo-slot small {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.ui-black-market__cargo-slot strong {
+  position: absolute;
+  left: 5px;
+  bottom: 4px;
+  color: var(--ui-color-text-primary);
+  font-size: 8px;
 }
-.ui-black-market__cargo-slot strong { color: var(--ui-color-text-primary); font-size: 8px; }
-.ui-black-market__cargo-slot span { color: var(--ui-color-accent); font-size: 8px; }
+.ui-black-market__cargo-slot > span:not(.ui-black-market__slot-plus) {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  color: var(--ui-color-accent);
+  font-size: 9px;
+  font-weight: 700;
+}
 .ui-black-market__cargo-slot small { font-size: 8px; }
 .ui-black-market__cargo-slot > b {
   position: absolute;
+  top: 4px;
   right: 4px;
-  bottom: 3px;
-  padding: 1px 3px;
+  padding: 2px 4px;
   border-radius: 3px;
-  color: var(--ui-color-accent);
-  background: rgba(8, 11, 14, 0.88);
+  color: #f2c86a;
+  background: rgba(25, 17, 6, 0.92);
   font-size: 6px;
   font-weight: 700;
   text-transform: uppercase;
@@ -126,23 +132,30 @@
   border-bottom: 1px solid var(--ui-color-border-subtle);
 }
 .ui-black-market__cargo-total span { min-width: 0; color: var(--ui-color-text-secondary); font-size: 9px; }
-.ui-black-market__cargo-total strong { color: var(--ui-color-accent); font-size: 11px; text-align: right; }
+.ui-black-market__cargo-total strong { color: var(--ui-color-accent); font-size: 12px; text-align: right; }
 
 .ui-black-market__routes button {
   display: grid;
-  gap: 3px;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 5px;
   min-width: 0;
   max-width: 100%;
-  padding: 8px;
+  padding: 9px;
   border: 1px solid var(--ui-color-border-subtle);
-  border-radius: 6px;
+  border-radius: 7px;
   color: var(--ui-color-text-secondary);
   background: rgba(10, 14, 18, 0.48);
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }
-.ui-black-market__routes button.is-selected { border-color: var(--ui-color-accent); background: rgba(208, 157, 52, 0.07); }
+.ui-black-market__routes button:hover { border-color: rgba(208, 157, 52, 0.42); }
+.ui-black-market__routes button.is-selected {
+  border-color: var(--ui-color-accent);
+  background: linear-gradient(180deg, rgba(208, 157, 52, 0.11), rgba(10, 14, 18, 0.55));
+  box-shadow: inset 0 0 0 1px rgba(208, 157, 52, 0.16);
+}
 .ui-black-market__routes strong,
 .ui-black-market__routes span,
 .ui-black-market__routes small,
@@ -153,10 +166,22 @@
   white-space: nowrap;
 }
 .ui-black-market__routes strong { color: var(--ui-color-text-primary); font-size: 10px; }
-.ui-black-market__routes span,
-.ui-black-market__routes small,
-.ui-black-market__routes em { font-size: 8px; font-style: normal; }
-.ui-black-market__routes b { color: var(--ui-color-accent); font-size: 11px; }
+.ui-black-market__route-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  color: var(--ui-color-text-muted);
+  font-size: 8px;
+}
+.ui-black-market__route-payout {
+  display: grid;
+  align-content: end;
+  gap: 1px;
+  min-height: 28px;
+}
+.ui-black-market__route-payout small { color: var(--ui-color-text-muted); font-size: 7px; }
+.ui-black-market__route-payout b { color: var(--ui-color-accent); font-size: 12px; }
+.ui-black-market__routes em { color: var(--ui-color-text-muted); font-size: 7px; font-style: normal; }
 
 .ui-black-market__departure {
   display: flex;
@@ -167,9 +192,8 @@
   padding-top: 5px;
 }
 .ui-black-market__departure > div { display: grid; gap: 2px; min-width: 0; }
-.ui-black-market__departure span,
+.ui-black-market__departure span { color: var(--ui-color-text-secondary); font-size: 9px; }
 .ui-black-market__departure small { color: var(--ui-color-text-muted); font-size: 8px; }
-.ui-black-market__departure strong { color: var(--ui-color-accent); font-size: 13px; }
 
 .ui-black-market__confirmation {
   display: grid;
@@ -267,15 +291,15 @@
 }
 .ui-black-market__quantity b { text-align: center; color: var(--ui-color-accent); font-size: 10px; }
 
-.ui-black-market__stock-tools {
+.ui-black-market__picker-filters {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   width: 100%;
 }
-.ui-black-market__stock-tools input[type="search"] { grid-column: 1 / -1; }
-.ui-black-market__stock-tools input[type="search"],
-.ui-black-market__stock-tools select {
+.ui-black-market__picker-filters input[type="search"] { grid-column: 1 / -1; }
+.ui-black-market__picker-filters input[type="search"],
+.ui-black-market__picker-filters select {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -288,16 +312,32 @@
   font: inherit;
   font-size: 8px;
 }
-.ui-black-market__stock-tools input[type="search"]::placeholder { color: var(--ui-color-text-muted); }
+.ui-black-market__picker-filters input[type="search"]::placeholder { color: var(--ui-color-text-muted); }
 .ui-black-market__demand-filter {
-  grid-column: 1 / -1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  width: fit-content;
+  min-width: 0;
   color: var(--ui-color-text-secondary);
   font-size: 8px;
   cursor: pointer;
+}
+.ui-black-market__advanced-toggle {
+  justify-self: end;
+  padding: 5px 8px;
+  border: 0;
+  color: var(--ui-color-accent);
+  background: transparent;
+  font: inherit;
+  font-size: 8px;
+  cursor: pointer;
+}
+.ui-black-market__advanced-filters {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding-top: 2px;
 }
 
 .ui-black-market__picker-list {
@@ -330,7 +370,9 @@
 .ui-black-market__picker-list > button > span { display: grid; gap: 2px; min-width: 0; }
 .ui-black-market__picker-list strong { overflow: hidden; color: var(--ui-color-text-primary); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .ui-black-market__picker-list small { color: var(--ui-color-text-muted); font-size: 8px; }
-.ui-black-market__picker-list > button > b { color: var(--ui-color-accent); font-size: 9px; }
+.ui-black-market__picker-value { justify-items: end; }
+.ui-black-market__picker-value > b { color: var(--ui-color-accent); font-size: 9px; }
+.ui-black-market__picker-value > small { color: #d9b45c; font-size: 6px; text-transform: uppercase; }
 
 .ui-black-market__active-card {
   display: grid;
@@ -356,12 +398,16 @@
 
 @media (max-width: 28rem) {
   .ui-black-market__cargo-slots { gap: 4px; }
-  .ui-black-market__cargo-slot { height: 68px; padding: 5px; grid-template-columns: 34px minmax(0, 1fr); gap: 2px 4px; }
+  .ui-black-market__cargo-slot { height: 72px; padding: 5px; }
   .ui-black-market__cargo-slot > .item-visual,
-  .ui-black-market__cargo-slot > [class*="item-visual"] { width: 34px; height: 34px; }
+  .ui-black-market__cargo-slot > [class*="item-visual"] { width: 38px; height: 38px; }
   .ui-black-market__demands,
   .ui-black-market__routes { grid-template-columns: 1fr; }
-  .ui-black-market__stock-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ui-black-market__picker-filters { grid-template-columns: 1fr; }
+  .ui-black-market__picker-filters input[type="search"],
+  .ui-black-market__advanced-filters { grid-column: 1; }
+  .ui-black-market__advanced-filters { grid-template-columns: 1fr; }
+  .ui-black-market__advanced-toggle { justify-self: start; }
   .ui-black-market__picker-current { grid-template-columns: 34px minmax(0, 1fr); }
   .ui-black-market__picker-current .ui-black-market__quantity,
   .ui-black-market__picker-current .ui-black-market__remove { grid-column: 1 / -1; justify-self: end; }
