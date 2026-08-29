@@ -1,7 +1,5 @@
 import { useCallback } from "react";
 import type { EquipmentLoadout, EquipmentSlot, InventoryEntry } from "@game/gameplay";
-import { getItemTier } from "../../data/itemPower";
-import { getZoneEquipmentTierCap } from "../../data/zoneEquipmentTierCaps";
 import { useGameServices } from "../../state/GameContext";
 import { syncBankToBridge, syncEquipmentToBridge, syncInventoryToBridge, syncStatsToBridge } from "../../state/bridgeSync";
 import { syncCraftingProjection } from "../../state/production/ProductionBridgeAdapter";
@@ -22,16 +20,9 @@ interface MovedInventoryEntry {
   readonly entry: InventoryEntry;
 }
 
-function getActiveEquipmentTierCap(services: ReturnType<typeof useGameServices>): number | undefined {
-  const zoneDefId = services.bridge.world.zoneDefId;
-  if (zoneDefId.length === 0) return undefined;
-  try { return getZoneEquipmentTierCap(zoneDefId); } catch { return undefined; }
-}
-
 function notifyEquipmentFailure(
   services: ReturnType<typeof useGameServices>,
   reason: string,
-  tierCap?: number,
 ): void {
   const message = reason === "equipment_locked"
     ? "Impossible de changer d'équipement pendant le combat. Utilisez « Arrêter le combat » : l'arrêt aura lieu à la fin du segment en cours."
@@ -39,15 +30,13 @@ function notifyEquipmentFailure(
       ? "Loadout refusé : une arme à deux mains ne peut pas être combinée avec une main gauche."
       : reason === "inventory_full"
         ? "Changement refusé : l'inventaire et la banque n'ont pas assez de place pour effectuer ce changement."
-        : reason === "tier_cap_exceeded"
-          ? `Loadout refusé : cette zone est limitée au T${String(tierCap ?? "?")}.`
-          : reason === "loadout_item_missing"
-            ? "Loadout refusé : au moins une pièce enregistrée n'est plus disponible dans l'inventaire ou la banque."
-            : reason === "loadout_not_found"
-              ? "Ce loadout n'existe plus."
-              : reason === "loadout_invalid"
-                ? "Loadout refusé : son équipement ne correspond plus aux pièces enregistrées."
-                : "Impossible de modifier cet équipement dans l'état actuel.";
+        : reason === "loadout_item_missing"
+          ? "Loadout refusé : au moins une pièce enregistrée n'est plus disponible dans l'inventaire ou la banque."
+          : reason === "loadout_not_found"
+            ? "Ce loadout n'existe plus."
+            : reason === "loadout_invalid"
+              ? "Loadout refusé : son équipement ne correspond plus aux pièces enregistrées."
+              : "Impossible de modifier cet équipement dans l'état actuel.";
   services.bridge.addEconomyNotification({
     id: `notif_equipment_failed_${String(Date.now())}`,
     type: "error",
@@ -120,23 +109,16 @@ export function useCharacterActions(): CharacterActions {
     const itemId = slot.ok ? slot.value.entry?.itemId : undefined;
     if (itemId === undefined) return false;
 
-    const tierCap = getActiveEquipmentTierCap(services);
-    const itemTier = getItemTier(itemId);
-    if (tierCap !== undefined && itemTier !== undefined && itemTier > tierCap) {
-      notifyEquipmentFailure(services, "tier_cap_exceeded", tierCap);
-      return false;
-    }
-
     if (source === "inventory") {
       const result = services.equipmentManager.equipFromInventory(services.heroId, position);
       if (result.ok) refreshCharacterState();
-      else notifyEquipmentFailure(services, result.reason, tierCap);
+      else notifyEquipmentFailure(services, result.reason);
       return result.ok;
     }
 
     const canEquip = services.equipmentManager.canEquip(services.heroId, itemId);
     if (!canEquip.ok) {
-      notifyEquipmentFailure(services, canEquip.reason, tierCap);
+      notifyEquipmentFailure(services, canEquip.reason);
       return false;
     }
 
@@ -153,7 +135,7 @@ export function useCharacterActions(): CharacterActions {
 
     const extracted = services.inventoryManager.takeOneAt(services.bankId, position);
     if (!extracted.ok) {
-      notifyEquipmentFailure(services, extracted.reason, tierCap);
+      notifyEquipmentFailure(services, extracted.reason);
       return false;
     }
 
@@ -182,7 +164,7 @@ export function useCharacterActions(): CharacterActions {
     if (services.inventoryManager.findFreeSlots(services.heroId).length < requiredFreeSlots) {
       rollbackMovedInventoryEntries(services, moved);
       restoreBankEntry(services, extracted.value, position);
-      notifyEquipmentFailure(services, "inventory_full", tierCap);
+      notifyEquipmentFailure(services, "inventory_full");
       refreshCharacterState();
       return false;
     }
@@ -191,7 +173,7 @@ export function useCharacterActions(): CharacterActions {
     if (!staged.ok) {
       rollbackMovedInventoryEntries(services, moved);
       restoreBankEntry(services, extracted.value, position);
-      notifyEquipmentFailure(services, staged.reason, tierCap);
+      notifyEquipmentFailure(services, staged.reason);
       refreshCharacterState();
       return false;
     }
@@ -204,7 +186,7 @@ export function useCharacterActions(): CharacterActions {
       );
       if (stagedEntry.ok) restoreBankEntry(services, stagedEntry.value, position);
       rollbackMovedInventoryEntries(services, moved);
-      notifyEquipmentFailure(services, result.reason, tierCap);
+      notifyEquipmentFailure(services, result.reason);
       refreshCharacterState();
       return false;
     }
@@ -216,7 +198,7 @@ export function useCharacterActions(): CharacterActions {
   const unequip = useCallback((slot: EquipmentSlot): boolean => {
     const result = services.equipmentManager.unequipToInventory(services.heroId, slot);
     if (result.ok) refreshCharacterState();
-    else notifyEquipmentFailure(services, result.reason, getActiveEquipmentTierCap(services));
+    else notifyEquipmentFailure(services, result.reason);
     return result.ok;
   }, [refreshCharacterState, services]);
 
@@ -245,22 +227,14 @@ export function useCharacterActions(): CharacterActions {
       notifyEquipmentFailure(services, "loadout_not_found");
       return false;
     }
-    const tierCap = getActiveEquipmentTierCap(services);
-    if (tierCap !== undefined && loadout.slots.some((slot) => {
-      const tier = getItemTier(slot.itemId);
-      return tier !== undefined && tier > tierCap;
-    })) {
-      notifyEquipmentFailure(services, "tier_cap_exceeded", tierCap);
-      return false;
-    }
     const result = services.equipmentManager.applyLoadout(
       services.heroId,
       loadoutId,
-      tierCap,
+      undefined,
       services.bankId,
     );
     if (!result.ok) {
-      notifyEquipmentFailure(services, result.reason, tierCap);
+      notifyEquipmentFailure(services, result.reason);
       return false;
     }
     refreshCharacterState();
