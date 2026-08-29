@@ -22,14 +22,28 @@ describe("Mastery Experience Curve (Variant B)", () => {
     expect(GATHERING_MASTERY_XP[9]).toBe(1700);
   });
 
-  it("generates exact player-friendly rounded values for post-10 weapon curve", () => {
+  it("preserves the generated weapon curve through level 65 and consumes the authored endgame", () => {
     expect(WEAPON_MASTERY_XP[10]).toBe(2740);   // Level 11 -> 12
     expect(WEAPON_MASTERY_XP[19]).toBe(5880);   // Level 20 -> 21
     expect(WEAPON_MASTERY_XP[29]).toBe(14600);  // Level 30 -> 31
     expect(WEAPON_MASTERY_XP[49]).toBe(47000);  // Level 50 -> 51
-    expect(WEAPON_MASTERY_XP[69]).toBe(98300);  // Level 70 -> 71
-    expect(WEAPON_MASTERY_XP[89]).toBe(168000); // Level 90 -> 91
-    expect(WEAPON_MASTERY_XP[98]).toBe(205000); // Level 99 -> 100
+    expect(WEAPON_MASTERY_XP[65]).toBe(104000); // Level 66 -> 67
+    expect(WEAPON_MASTERY_XP[69]).toBe(118000); // Level 70 -> 71
+    expect(WEAPON_MASTERY_XP[80]).toBe(198000); // Level 81 -> 82
+    expect(WEAPON_MASTERY_XP[89]).toBe(249000); // Level 90 -> 91
+    expect(WEAPON_MASTERY_XP[98]).toBe(303000); // Level 99 -> 100
+  });
+
+  it("locks the validated weapon mastery endgame checkpoints", () => {
+    const cumulativeXp = (level: number): number =>
+      WEAPON_MASTERY_XP.slice(0, level).reduce((sum, xp) => sum + xp, 0);
+
+    expect(cumulativeXp(50)).toBe(751110);
+    expect(cumulativeXp(65)).toBe(1736810);
+    expect(cumulativeXp(80)).toBe(3679810);
+    expect(cumulativeXp(100)).toBe(8726810);
+    expect(cumulativeXp(80) - cumulativeXp(65)).toBe(1943000);
+    expect(cumulativeXp(100) - cumulativeXp(80)).toBe(5047000);
   });
 
   it("generates exact player-friendly rounded values for post-10 gathering curve", () => {
