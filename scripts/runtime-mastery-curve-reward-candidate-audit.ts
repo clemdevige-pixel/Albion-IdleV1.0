@@ -3,7 +3,6 @@ import { getEncounterRewards, WEAPON_MASTERY_XP } from "@game/gameplay";
 import { getWorldZonePlacement } from "../apps/client/src/data/worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
 import {
-  WEAPON_FAMILIES,
   equipmentFor,
   shortWeaponName,
   weaponItemIds,
