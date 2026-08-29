@@ -34,21 +34,3 @@ export const BLACK_MARKET_WEAPON_FAMILY_TARGETS = [
 ] as const;
 
 export const BLACK_MARKET_ARMOR_SLOT_TARGETS = ["head", "torso", "boots"] as const;
-
-/** Intrinsic economic value used by equipment valuation; intentionally excludes merchant rarity markup. */
-export const BLACK_MARKET_ARTIFACT_ECONOMIC_VALUE_BY_TIER = {
-  4: 35_000,
-  5: 60_000,
-  6: 100_000,
-  7: 150_000,
-  8: 220_000,
-} as const;
-
-/** Economic value per consumed faction Rune. Quantity scaling remains authored by ARTIFACT_WEAPON_RUNE_COST_BY_TIER. */
-export const BLACK_MARKET_RUNE_ECONOMIC_VALUE_BY_TIER = {
-  4: 1_000,
-  5: 1_250,
-  6: 1_500,
-  7: 1_750,
-  8: 2_000,
-} as const;
