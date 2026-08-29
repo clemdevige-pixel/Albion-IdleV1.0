@@ -327,9 +327,9 @@
 .ui-mastery-ability-menu {
   display: grid;
   gap: 6px;
-  padding: 7px 8px 8px;
-  border: 1px solid rgba(208, 157, 52, 0.22);
-  background: rgba(6, 10, 16, 0.78);
+  padding: 5px 0 2px;
+  border: 0;
+  background: transparent;
 }
 
 .ui-mastery-ability-menu__title {
@@ -399,26 +399,19 @@
 }
 
 .ui-mastery-ability__tooltip {
-  position: absolute;
-  z-index: 40;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  display: none;
-  width: min(240px, 72vw);
+  position: fixed;
+  z-index: 10000;
+  display: grid;
+  gap: 4px;
+  width: min(240px, calc(100vw - 16px));
   padding: 8px 9px;
   border: 1px solid #665327;
   border-radius: 4px;
   background: #080d14;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.48);
   color: var(--ui-color-text-secondary);
-  transform: translateX(-50%);
+  transform: translate(-50%, -100%);
   pointer-events: none;
-}
-
-.ui-mastery-ability:hover .ui-mastery-ability__tooltip,
-.ui-mastery-ability:focus-visible .ui-mastery-ability__tooltip {
-  display: grid;
-  gap: 4px;
 }
 
 .ui-mastery-ability__tooltip strong {
@@ -452,10 +445,5 @@
   .ui-mastery-specializations {
     width: 100%;
     margin-left: 0;
-  }
-
-  .ui-mastery-ability__tooltip {
-    left: 0;
-    transform: none;
   }
 }
