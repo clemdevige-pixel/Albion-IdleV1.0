@@ -8,6 +8,7 @@ interface GameRuntimeLifecycleHandle {
   readonly tick: () => void;
   readonly tickIntervalMs: number;
   readonly persistence: RuntimePersistence;
+  readonly syncPresentation: () => void;
   readonly dispose: () => void;
 }
 
@@ -27,6 +28,7 @@ export interface RuntimeVisibilitySessionDependencies {
   readonly stopRuntime: () => void;
   readonly startRuntime: () => void;
   readonly resolveBackgroundElapsed: (elapsedMs: number) => void;
+  readonly syncPresentation: () => void;
   readonly saveGame: () => void;
 }
 
@@ -100,7 +102,8 @@ export function loadInitialRuntimeSave(
  * Creates the hidden/visible transition handler for one live browser session.
  * Live ticks stop while hidden so browser timer throttling cannot partially
  * advance the runtime. On resume, passive systems receive the exact monotonic
- * elapsed window once, then the live fixed-step runtime restarts.
+ * elapsed window once, presentation is resynchronized from authoritative state,
+ * then the reconciled state is saved before the live fixed-step runtime restarts.
  */
 export function createRuntimeVisibilityHandler(
   dependencies: RuntimeVisibilitySessionDependencies,
@@ -121,6 +124,7 @@ export function createRuntimeVisibilityHandler(
 
     try {
       dependencies.resolveBackgroundElapsed(elapsedMs);
+      dependencies.syncPresentation();
       dependencies.saveGame();
     } finally {
       dependencies.startRuntime();
@@ -160,6 +164,7 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
       resolveBackgroundElapsed: (elapsedMs) => {
         handle.persistence.resolveBackgroundElapsed(elapsedMs);
       },
+      syncPresentation: handle.syncPresentation,
       saveGame: () => { services.saveGame(); },
     });
     document.addEventListener("visibilitychange", handleVisibilityChange);
