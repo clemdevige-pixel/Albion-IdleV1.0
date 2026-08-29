@@ -70,6 +70,7 @@ export * from "./config/faction-mastery-balance.js";
 export * from "./config/faction-cape-balance.js";
 export * from "./config/daily-reset.js";
 export * from "./config/economy-balance.js";
+export * from "./config/economic-item-values.js";
 export * from "./config/merchant-daily-balance.js";
 export * from "./config/black-market-balance.js";
 export * from "./config/bank-expansion-balance.js";
