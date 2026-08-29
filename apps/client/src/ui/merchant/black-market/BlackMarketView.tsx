@@ -55,6 +55,7 @@ export function BlackMarketView(): JSX.Element {
   const [snapshot, setSnapshot] = useState<BlackMarketSnapshot | null>(null);
   const [selection, setSelection] = useState<ReadonlyMap<string, BlackMarketSelection>>(new Map());
   const [routeId, setRouteId] = useState<BlackMarketRouteId>("watched");
+  const [confirmingDeparture, setConfirmingDeparture] = useState(false);
   const [, forceRevision] = useState(0);
 
   const blackMarketUnlocked = services.getAcademyModel().research.some((entry) => (
@@ -122,6 +123,7 @@ export function BlackMarketView(): JSX.Element {
   const selectedEv = Math.round(selectedPayout * route.successChance);
 
   const setQuantity = (candidateKey: string, nextQuantity: number): void => {
+    setConfirmingDeparture(false);
     const candidate = candidates.find((entry) => selectionKey(entry) === candidateKey);
     if (candidate === undefined) return;
     const clamped = Math.max(0, Math.min(
@@ -148,6 +150,7 @@ export function BlackMarketView(): JSX.Element {
     if (selectedEntries.length === 0) return;
     if (blackMarketRuntime.startConvoy(selectedEntries, routeId, nowMs)) {
       setSelection(new Map());
+      setConfirmingDeparture(false);
       refreshSnapshot(nowMs);
     }
   };
@@ -261,7 +264,10 @@ export function BlackMarketView(): JSX.Element {
               type="button"
               key={candidateRoute.id}
               className={routeId === candidateRoute.id ? "is-selected" : ""}
-              onClick={() => { setRouteId(candidateRoute.id); }}
+              onClick={() => {
+                setRouteId(candidateRoute.id);
+                setConfirmingDeparture(false);
+              }}
             >
               <strong>{candidateRoute.displayName}</strong>
               <span>{String(Math.round(candidateRoute.successChance * 100))}% succès · x{String(candidateRoute.payoutMultiplier)}</span>
@@ -273,21 +279,33 @@ export function BlackMarketView(): JSX.Element {
         })}
       </div>
 
-      <div className="ui-black-market__departure">
-        <div>
-          <span>Gain si succès</span>
-          <strong>{formatCompactNumber(selectedPayout, "0")} Silver</strong>
-          <small>EV : {formatCompactNumber(selectedEv, "0")} · cargo et demandes engagés au départ</small>
+      {confirmingDeparture && quote !== undefined ? (
+        <div className="ui-black-market__confirmation" role="alertdialog" aria-label="Confirmer le départ du convoi">
+          <strong>Confirmer le convoi — {route.displayName}</strong>
+          <span>{String(Math.round(route.successChance * 100))}% de succès · {formatDuration(route.durationMs)} · {formatCompactNumber(selectedPayout, "0")} Silver en cas de succès</span>
+          <small>Le cargo et les demandes sont engagés immédiatement. Échec = perte totale. Aucune annulation ni récupération après le départ.</small>
+          <div>
+            <button type="button" onClick={() => { setConfirmingDeparture(false); }}>Retour</button>
+            <button type="button" className="ui-merchant__primary" onClick={sendConvoy}>Confirmer le départ</button>
+          </div>
         </div>
-        <button
-          type="button"
-          className="ui-merchant__primary"
-          disabled={quote === undefined || selectedUnitCount === 0}
-          onClick={sendConvoy}
-        >
-          Envoyer le convoi
-        </button>
-      </div>
+      ) : (
+        <div className="ui-black-market__departure">
+          <div>
+            <span>Gain si succès</span>
+            <strong>{formatCompactNumber(selectedPayout, "0")} Silver</strong>
+            <small>EV : {formatCompactNumber(selectedEv, "0")} · cargo et demandes engagés au départ</small>
+          </div>
+          <button
+            type="button"
+            className="ui-merchant__primary"
+            disabled={quote === undefined || selectedUnitCount === 0}
+            onClick={() => { setConfirmingDeparture(true); }}
+          >
+            Envoyer le convoi
+          </button>
+        </div>
+      )}
     </section>
   );
 }
