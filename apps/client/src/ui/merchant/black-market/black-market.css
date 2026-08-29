@@ -23,23 +23,67 @@
 .ui-black-market__demands span { color: var(--ui-color-text-muted); font-size: 9px; }
 .ui-black-market__demands b { color: var(--ui-color-accent); font-size: 12px; }
 
-.ui-black-market__candidates {
+.ui-black-market__stock-tools {
+  display: grid;
+  grid-template-columns: minmax(160px, 2fr) repeat(5, minmax(90px, 1fr));
+  gap: 6px;
+  align-items: center;
+}
+.ui-black-market__stock-tools input[type="search"],
+.ui-black-market__stock-tools select {
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 5px;
+  color: var(--ui-color-text-secondary);
+  background: rgba(8, 11, 14, 0.72);
+  font: inherit;
+  font-size: 8px;
+}
+.ui-black-market__stock-tools input[type="search"]::placeholder { color: var(--ui-color-text-muted); }
+.ui-black-market__demand-filter {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  color: var(--ui-color-text-secondary);
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.ui-black-market__stock-list,
+.ui-black-market__cargo-list {
   display: grid;
   gap: 2px;
-  max-height: 280px;
   overflow-y: auto;
 }
-.ui-black-market__candidates article {
+.ui-black-market__stock-list { max-height: 250px; }
+.ui-black-market__cargo-list {
+  max-height: 210px;
+  min-height: 38px;
+  padding: 4px;
+  border: 1px solid var(--ui-color-border-subtle);
+  border-radius: 6px;
+  background: rgba(8, 11, 14, 0.32);
+}
+.ui-black-market__stock-list article,
+.ui-black-market__cargo-list article {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  padding: 6px 3px;
+  padding: 6px 4px;
   border-left: 2px solid transparent;
 }
-.ui-black-market__candidates article.is-selected {
+.ui-black-market__stock-list article.is-selected {
   border-left-color: var(--ui-color-accent);
   background: rgba(208, 157, 52, 0.045);
+}
+.ui-black-market__cargo-list article {
+  border-left-color: rgba(208, 157, 52, 0.52);
+  background: rgba(208, 157, 52, 0.035);
 }
 .ui-black-market__item-visual {
   display: grid;
@@ -56,6 +100,19 @@
 .ui-black-market__item-copy strong { overflow: hidden; color: var(--ui-color-text-primary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .ui-black-market__item-copy small { color: var(--ui-color-text-muted); font-size: 8px; }
 .ui-black-market__item-copy span { color: var(--ui-color-accent); font-size: 9px; }
+.ui-black-market__add {
+  min-width: 76px;
+  padding: 6px 9px;
+  border: 1px solid rgba(118, 90, 47, .48);
+  border-radius: 5px;
+  color: var(--ui-color-text-primary);
+  background: rgba(12, 16, 21, 0.58);
+  font: inherit;
+  font-size: 8px;
+  cursor: pointer;
+}
+.ui-black-market__add:hover:not(:disabled) { border-color: var(--ui-color-accent); }
+.ui-black-market__add:disabled { opacity: .45; cursor: default; }
 .ui-black-market__quantity { display: grid; grid-template-columns: 28px 24px 28px; align-items: center; gap: 2px; }
 .ui-black-market__quantity button {
   width: 28px;
@@ -157,9 +214,15 @@
 .ui-black-market__result-card strong { color: var(--ui-color-accent); font-size: 12px; }
 .ui-black-market__hidden-result { margin: 0; padding: 8px 0; color: var(--ui-color-text-muted); font-size: 9px; text-align: center; }
 
+@media (max-width: 64rem) {
+  .ui-black-market__stock-tools { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ui-black-market__stock-tools input[type="search"] { grid-column: 1 / -1; }
+}
+
 @media (max-width: 48rem) {
   .ui-black-market__demands,
   .ui-black-market__routes { grid-template-columns: 1fr; }
+  .ui-black-market__stock-tools { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ui-black-market__active-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ui-black-market__departure { align-items: stretch; flex-direction: column; }
   .ui-black-market__confirmation > div { flex-direction: column; }
