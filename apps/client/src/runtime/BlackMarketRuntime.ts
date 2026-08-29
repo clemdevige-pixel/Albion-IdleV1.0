@@ -16,7 +16,11 @@ import {
 import { ARTIFACT_WEAPON_CRAFT_RECIPES } from "../data/artifactWeaponCraftRecipes.js";
 import { FACTION_CAPE_CRAFT_RECIPES } from "../data/factionCapeContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
-import { resolveEnchantmentItemInfo, resolveEquipmentInfo } from "../data/itemContentCatalog.js";
+import {
+  resolveEnchantmentItemInfo,
+  resolveEquipmentInfo,
+  resolveItemStackInfo,
+} from "../data/itemContentCatalog.js";
 import { EQUIPMENT_CRAFT_RECIPES } from "../data/refiningRecipes.js";
 import { resolveWeaponFamilyId } from "../data/weaponContentCatalog.js";
 import type { PlayerInventoryManager } from "./PlayerInventoryManager.js";
@@ -49,6 +53,12 @@ export interface BlackMarketRuntimeBindings {
   readonly isUnlocked: () => boolean;
   readonly getUnlockedTiers: () => readonly number[];
   readonly onMutation: () => void;
+}
+
+export interface BlackMarketDevFixture {
+  readonly itemId: string;
+  readonly normalInstanceId: string;
+  readonly awakenedInstanceId: string;
 }
 
 const ALL_BLACK_MARKET_RECIPES = [
@@ -84,6 +94,12 @@ function armorSlotFor(itemId: string): string | undefined {
   if (slot === "chest") return "torso";
   if (slot === "boots") return "boots";
   return undefined;
+}
+
+function isDevSandboxMode(): boolean {
+  return import.meta.env.DEV
+    && typeof window !== "undefined"
+    && new URLSearchParams(window.location.search).get("devTest") === "1";
 }
 
 class BlackMarketRuntimeAdapter {
@@ -141,8 +157,6 @@ class BlackMarketRuntimeAdapter {
         const entry = slot.entry;
         if (entry === undefined || resolveEquipmentInfo(entry.itemId) === undefined) continue;
         if (bindings.awakenedWeaponService.getState(entry.instanceId)?.awakened === true) continue;
-        // Equipment is identity-bearing cargo. Refuse malformed stacked equipment
-        // rather than losing the physical instance contract during BM selection.
         if (entry.quantity !== 1) continue;
         const enchantment = getEnchantmentLevel(entry);
         const economicValue = economicValueFor(entry.itemId, enchantment);
@@ -195,6 +209,103 @@ class BlackMarketRuntimeAdapter {
     this.saveProvider.dismissResult();
     this.lastObservedResultId = null;
     this.bindings?.onMutation();
+  }
+
+  prepareDevManualTestFixture(): BlackMarketDevFixture | undefined {
+    if (!isDevSandboxMode()) return undefined;
+    const bindings = this.requireBindings();
+    const itemId = ALL_BLACK_MARKET_RECIPES
+      .map((recipe) => recipe.outputItemId)
+      .find((candidateItemId) => {
+        const tier = getItemTier(candidateItemId);
+        return isBlackMarketTier(tier)
+          && resolveEquipmentInfo(candidateItemId)?.slot === "weapon"
+          && resolveEnchantmentItemInfo(candidateItemId)?.enchantable === true;
+      });
+    if (itemId === undefined) return undefined;
+    const tier = getItemTier(itemId);
+    if (!isBlackMarketTier(tier)) return undefined;
+    const stackInfo = resolveItemStackInfo(itemId);
+    if (stackInfo === undefined) return undefined;
+
+    const addVariant = (ownerId: EntityId, enchantment: EnchantmentLevel): InventoryEntry | undefined => {
+      const added = bindings.inventoryManager.addQuantity(
+        ownerId,
+        itemId,
+        1,
+        stackInfo,
+        enchantment,
+      );
+      if (!added.ok || added.value.added !== 1 || added.value.remainder !== 0) return undefined;
+      const position = added.value.affectedPositions[0];
+      return position === undefined
+        ? undefined
+        : bindings.inventoryManager.getSlot(ownerId, position).ok
+          ? bindings.inventoryManager.getSlot(ownerId, position).value.entry
+          : undefined;
+    };
+
+    if (!bindings.inventoryManager.findEntriesByItemId(bindings.heroId, itemId).some(
+      (slot) => slot.entry !== undefined && getEnchantmentLevel(slot.entry) === 0,
+    )) {
+      if (addVariant(bindings.heroId, 0) === undefined) return undefined;
+    }
+
+    let tierFourEntries = bindings.inventoryManager.findEntriesByItemId(bindings.bankId, itemId)
+      .flatMap((slot) => slot.entry === undefined || getEnchantmentLevel(slot.entry) !== 4 ? [] : [slot.entry]);
+    while (tierFourEntries.length < 2) {
+      if (addVariant(bindings.bankId, 4) === undefined) return undefined;
+      tierFourEntries = bindings.inventoryManager.findEntriesByItemId(bindings.bankId, itemId)
+        .flatMap((slot) => slot.entry === undefined || getEnchantmentLevel(slot.entry) !== 4 ? [] : [slot.entry]);
+    }
+
+    let awakenedEntry = tierFourEntries.find(
+      (entry) => bindings.awakenedWeaponService.getState(entry.instanceId)?.awakened === true,
+    );
+    if (awakenedEntry === undefined) {
+      awakenedEntry = tierFourEntries[0];
+      if (awakenedEntry === undefined) return undefined;
+      if (bindings.awakenedWeaponService.getState(awakenedEntry.instanceId) === undefined) {
+        const registered = bindings.awakenedWeaponService.registerFresh(awakenedEntry.instanceId, tier);
+        if (!registered.ok) return undefined;
+      }
+      const attunement = bindings.awakenedWeaponService.addAttunement(
+        awakenedEntry.instanceId,
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (!attunement.ok) return undefined;
+      const awakened = bindings.awakenedWeaponService.awaken(awakenedEntry.instanceId);
+      if (!awakened.ok) return undefined;
+    }
+
+    let normalEntry = tierFourEntries.find(
+      (entry) => entry.instanceId !== awakenedEntry?.instanceId
+        && bindings.awakenedWeaponService.getState(entry.instanceId)?.awakened !== true,
+    );
+    if (normalEntry === undefined) {
+      normalEntry = addVariant(bindings.bankId, 4);
+      if (normalEntry === undefined) return undefined;
+    }
+    if (bindings.awakenedWeaponService.getState(normalEntry.instanceId) === undefined) {
+      const registered = bindings.awakenedWeaponService.registerFresh(normalEntry.instanceId, tier);
+      if (!registered.ok) return undefined;
+    }
+
+    bindings.onMutation();
+    return {
+      itemId,
+      normalInstanceId: String(normalEntry.instanceId),
+      awakenedInstanceId: String(awakenedEntry.instanceId),
+    };
+  }
+
+  completeActiveConvoyForDev(): boolean {
+    if (!isDevSandboxMode()) return false;
+    const bindings = this.requireBindings();
+    const current = this.saveProvider.getSnapshot(Date.now(), bindings.getUnlockedTiers());
+    if (current.activeConvoy === null) return false;
+    this.getSnapshot(current.activeConvoy.completesAt);
+    return true;
   }
 
   private requireBindings(): BlackMarketRuntimeBindings {
@@ -264,9 +375,6 @@ class BlackMarketRuntimeAdapter {
     }> = [];
     const seenInstanceIds = new Set<string>();
 
-    // Preflight the complete transaction before mutating either Inventory or Bank.
-    // The exact physical instance selected by the BM must still exist, must still
-    // match the quoted item/enchantment, and must not have become Awakened.
     for (const unit of units) {
       if (seenInstanceIds.has(unit.instanceId)) return false;
       seenInstanceIds.add(unit.instanceId);
