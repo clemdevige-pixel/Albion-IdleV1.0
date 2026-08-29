@@ -2,7 +2,9 @@ import {
   getResearchPresentationInfo,
   getResearchUnlockedContent,
   RESEARCH_DEFINITIONS,
+  RESEARCH_IDS,
 } from "../../data/researchContentCatalog.js";
+import { isDevSandboxMode } from "../devSandbox.js";
 
 export interface ResearchRecapModel {
   readonly id: number;
@@ -24,6 +26,28 @@ export function createResearchRecapFoundation() {
     for (const listener of listeners) listener();
   };
 
+  const present = (researchId: string): void => {
+    const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === researchId);
+    if (definition === undefined) {
+      throw new Error(`Unknown Research recap definition: ${researchId}`);
+    }
+    const presentation = getResearchPresentationInfo(researchId);
+    queue.push({
+      id: nextId,
+      researchId,
+      displayName: definition.displayName,
+      effectSummary: presentation?.effectSummary ?? "Recherche terminée.",
+      unlockedContent: getResearchUnlockedContent(researchId),
+    });
+    nextId += 1;
+    notify();
+  };
+
+  if (isDevSandboxMode()) {
+    present(RESEARCH_IDS.yieldAnalysis);
+    present(RESEARCH_IDS.bankManagement);
+  }
+
   return {
     subscribe(this: void, listener: Listener): () => void {
       listeners.add(listener);
@@ -35,20 +59,7 @@ export function createResearchRecapFoundation() {
     },
 
     present(this: void, researchId: string): void {
-      const definition = RESEARCH_DEFINITIONS.find((entry) => entry.id === researchId);
-      if (definition === undefined) {
-        throw new Error(`Unknown Research recap definition: ${researchId}`);
-      }
-      const presentation = getResearchPresentationInfo(researchId);
-      queue.push({
-        id: nextId,
-        researchId,
-        displayName: definition.displayName,
-        effectSummary: presentation?.effectSummary ?? "Recherche terminée.",
-        unlockedContent: getResearchUnlockedContent(researchId),
-      });
-      nextId += 1;
-      notify();
+      present(researchId);
     },
 
     dismiss(this: void): void {
