@@ -81,12 +81,13 @@ describe("initial runtime save loading", () => {
 });
 
 describe("runtime visibility reconciliation", () => {
-  it("stops live ticks while hidden and resolves the exact elapsed window once on resume", () => {
+  it("resolves the exact hidden window and refreshes presentation before save", () => {
     let visibilityState: DocumentVisibilityState = "visible";
     let now = 1_000;
     const stopRuntime = vi.fn();
     const startRuntime = vi.fn();
     const resolveBackgroundElapsed = vi.fn();
+    const syncPresentation = vi.fn();
     const saveGame = vi.fn();
     const handleVisibilityChange = createRuntimeVisibilityHandler({
       getVisibilityState: () => visibilityState,
@@ -94,6 +95,7 @@ describe("runtime visibility reconciliation", () => {
       stopRuntime,
       startRuntime,
       resolveBackgroundElapsed,
+      syncPresentation,
       saveGame,
     });
 
@@ -104,6 +106,7 @@ describe("runtime visibility reconciliation", () => {
 
     expect(stopRuntime).toHaveBeenCalledOnce();
     expect(resolveBackgroundElapsed).not.toHaveBeenCalled();
+    expect(syncPresentation).not.toHaveBeenCalled();
 
     now = 6_000;
     visibilityState = "visible";
@@ -111,20 +114,32 @@ describe("runtime visibility reconciliation", () => {
 
     expect(resolveBackgroundElapsed).toHaveBeenCalledOnce();
     expect(resolveBackgroundElapsed).toHaveBeenCalledWith(5_000);
+    expect(syncPresentation).toHaveBeenCalledOnce();
     expect(saveGame).toHaveBeenCalledOnce();
     expect(startRuntime).toHaveBeenCalledOnce();
+    expect(resolveBackgroundElapsed.mock.invocationCallOrder[0]).toBeLessThan(
+      syncPresentation.mock.invocationCallOrder[0],
+    );
+    expect(syncPresentation.mock.invocationCallOrder[0]).toBeLessThan(
+      saveGame.mock.invocationCallOrder[0],
+    );
+    expect(saveGame.mock.invocationCallOrder[0]).toBeLessThan(
+      startRuntime.mock.invocationCallOrder[0],
+    );
   });
 
   it("restarts the live runtime even when passive resolution throws", () => {
     let visibilityState: DocumentVisibilityState = "hidden";
     let now = 100;
     const startRuntime = vi.fn();
+    const syncPresentation = vi.fn();
     const handleVisibilityChange = createRuntimeVisibilityHandler({
       getVisibilityState: () => visibilityState,
       now: () => now,
       stopRuntime: vi.fn(),
       startRuntime,
       resolveBackgroundElapsed: () => { throw new Error("background failed"); },
+      syncPresentation,
       saveGame: vi.fn(),
     });
 
@@ -133,6 +148,7 @@ describe("runtime visibility reconciliation", () => {
     visibilityState = "visible";
 
     expect(() => handleVisibilityChange()).toThrow("background failed");
+    expect(syncPresentation).not.toHaveBeenCalled();
     expect(startRuntime).toHaveBeenCalledOnce();
   });
 });
