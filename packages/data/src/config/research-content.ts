@@ -17,6 +17,7 @@ export const RESEARCH_IDS = {
   enchantmentStudy: "research_enchantment_study",
   yieldAnalysis: "research_yield_analysis",
   workerOrganization: "research_worker_organization",
+  bankManagement: "research_bank_management",
   instantRefining: "research_instant_refining",
   dungeonRelicAnalysis: "research_dungeon_relic_analysis",
   /** Legacy save id migrated into dungeonRelicAnalysis. Not an active authored Research. */
@@ -38,6 +39,7 @@ export const RESEARCH_UNLOCK_IDS = {
   enchantmentService: "enchantment:service",
   resourceYieldTracking: "dashboard:resource_yield_tracking",
   advancedWorkerOrganization: "workers:advanced_organization",
+  advancedBankManagement: "bank:advanced_management",
   instantRefining: "refining:instant_batch",
   dungeonRelicAnalyzed: "dungeon_relic:analyzed",
   dungeonSystem: "dungeon_system:unlocked",
@@ -85,6 +87,7 @@ const ECONOMY_RESEARCH = [
   { id: RESEARCH_IDS.enchantmentStudy, displayName: "Étude des enchantements", tier: 4, durationMs: 10 * MINUTE_MS, cost: { silver: 5_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 4 }, { type: "enchantment_shard_discovered" }], unlockIds: [RESEARCH_UNLOCK_IDS.enchantmentService] },
   { id: RESEARCH_IDS.yieldAnalysis, displayName: "Analyse des rendements", tier: 5, durationMs: HOUR_MS, cost: { silver: 15_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 5 }], unlockIds: [RESEARCH_UNLOCK_IDS.resourceYieldTracking] },
   { id: RESEARCH_IDS.workerOrganization, displayName: "Organisation avancée des ouvriers", tier: 6, durationMs: 150 * MINUTE_MS, cost: { silver: 60_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 6 }], unlockIds: [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization] },
+  { id: RESEARCH_IDS.bankManagement, displayName: "Gestion avancée de la banque", tier: 6, durationMs: 150 * MINUTE_MS, cost: { silver: 60_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 6 }], unlockIds: [RESEARCH_UNLOCK_IDS.advancedBankManagement] },
   { id: RESEARCH_IDS.instantRefining, displayName: "Procédés de raffinage avancés", tier: 7, durationMs: 3 * HOUR_MS, cost: { silver: 80_000, materials: [] }, requirements: [{ type: "academy_tier", minimumTier: 7 }], unlockIds: [RESEARCH_UNLOCK_IDS.instantRefining] },
 ] as const satisfies readonly AuthoredResearchDefinition[];
 
