@@ -1,6 +1,4 @@
 import type { WorldLocationSaveState } from "@game/gameplay";
-import { getItemTier } from "../data/itemPower.js";
-import { getZoneEquipmentTierCapByNumber } from "../data/zoneEquipmentTierCaps.js";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
 import { worldTravelTransition } from "../runtime/WorldTravelTransition.js";
@@ -27,7 +25,6 @@ interface CombatNavigationRuntime {
   isAwaitingResumeAfterDefeat(): boolean;
   restoreAwaitingResumeAfterDefeat(): void;
   getLoopState(): CombatLoopState;
-  getEquippedItemIds(): readonly string[];
 }
 
 interface WorldNavigationActionsDependencies {
@@ -87,12 +84,9 @@ export class WorldNavigationActions {
     const currentZoneNumber = this.deps.worldRuntime.currentZoneIndex + 1;
     const loopState = this.deps.combatRuntime.getLoopState();
 
-    if (zoneNumber !== currentZoneNumber && !this.canEnterZoneWithCurrentEquipment(zoneNumber)) {
-      return false;
-    }
-
     // WorldRuntime remains the single validation authority for zone unlocks and
-    // segment bounds. During active combat it also owns the queued destination.
+    // segment bounds. World zones intentionally do not cap equipped item tier:
+    // once progression has unlocked a zone, higher-tier equipment may revisit it.
     if (!this.deps.worldRuntime.selectZone(zoneNumber, targetSegment)) return false;
 
     if (this.canTravelImmediately(loopState)) {
@@ -155,27 +149,6 @@ export class WorldNavigationActions {
 
     this.deps.updateWorldBridge();
     this.deps.bridge.setCombatState("walking");
-  }
-
-  private canEnterZoneWithCurrentEquipment(zoneNumber: number): boolean {
-    const cap = getZoneEquipmentTierCapByNumber(zoneNumber);
-    if (cap === undefined) return true;
-
-    const violatingTiers = this.deps.combatRuntime.getEquippedItemIds()
-      .map((itemId) => getItemTier(itemId))
-      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => (
-        tier !== undefined && tier > cap
-      ));
-    if (violatingTiers.length === 0) return true;
-
-    const highestTier = Math.max(...violatingTiers);
-    this.deps.bridge.addEconomyNotification({
-      id: `notif_zone_tier_cap_${String(Date.now())}`,
-      type: "error",
-      message: `Accès refusé : cette zone est limitée au T${String(cap)} (équipement T${String(highestTier)} détecté).`,
-      timestamp: Date.now(),
-    });
-    return false;
   }
 
   private canTravelImmediately(loopState: CombatLoopState): boolean {
