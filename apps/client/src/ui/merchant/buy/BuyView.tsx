@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { ItemHoverTooltip } from "../../../panels/ItemHoverTooltip";
 import { getItemDisplayName, ItemVisual } from "../../../panels/ItemVisual";
 import { TransactionConfirmModal } from "../../../panels/TransactionConfirmModal";
+import { useGameServices } from "../../../state/GameContext";
+import { BankExpansionView } from "../bank/BankExpansionView";
 import { QuantityControl } from "../shared/QuantityControl";
 import { DailyOffersView } from "./DailyOffersView";
 import { useBuyActions } from "./useBuyActions";
@@ -14,6 +16,7 @@ interface PendingPurchase {
 }
 
 export function BuyView(): JSX.Element {
+  const services = useGameServices();
   const model = useBuyData();
   const actions = useBuyActions();
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
@@ -28,6 +31,7 @@ export function BuyView(): JSX.Element {
     ));
   const quantity = selected === undefined ? 1 : Math.min(quantities[selected.itemId] ?? 1, maximum);
   const total = selected === undefined ? 0 : selected.unitPrice * quantity;
+  const bankExtensionUnlocked = services.getBankExpansionModel().serviceUnlocked;
 
   const catalogue = useMemo(() => model.offers, [model.offers]);
 
@@ -94,6 +98,8 @@ export function BuyView(): JSX.Element {
           </section>
         </>
       )}
+
+      {bankExtensionUnlocked && <BankExpansionView />}
 
       {pending !== null && (
         <TransactionConfirmModal
