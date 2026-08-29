@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ItemVisual } from "../../panels/ItemVisual.js";
 import type { ExpeditionRecapModel } from "../../runtime/bootstrap/createExpeditionRecapFoundation.js";
 import "./expeditionRecap.css";
 
@@ -17,6 +18,14 @@ const QUALITY_LABELS = {
   fructueuse: "Fructueuse",
   exceptionnelle: "Exceptionnelle",
 } as const;
+
+interface ExpeditionRewardRow {
+  readonly key: string;
+  readonly label: string;
+  readonly value: number;
+  readonly itemId?: string;
+  readonly currency?: "silver";
+}
 
 export function ExpeditionRecapPopup({
   recap,
@@ -37,19 +46,39 @@ export function ExpeditionRecapPopup({
   const hasNext = safeIndex < total - 1;
   const positionLabel = `${String(safeIndex + 1)}/${String(total)}`;
 
-  const rewards = useMemo(() => {
+  const rewards = useMemo<readonly ExpeditionRewardRow[]>(() => {
     if (item === undefined) return [];
     if (item.reward.kind === "silver") {
       return [
-        { label: "Silver", value: item.reward.silverCredited },
-        { label: "Éclats d’enchantement", value: item.reward.shardsCredited },
+        { key: "silver", label: "Silver", value: item.reward.silverCredited, currency: "silver" },
+        {
+          key: "enchantment-shards",
+          label: "Éclats d’enchantement",
+          value: item.reward.shardsCredited,
+          itemId: item.reward.shardItemId,
+        },
       ];
     }
     return [
-      { label: "Runes de faction", value: item.reward.runesCredited },
-      { label: "Fragments de clé", value: item.reward.fragmentsCredited },
-      { label: "Clés complètes", value: item.reward.completeKeysCredited },
-    ];
+      {
+        key: "faction-runes",
+        label: "Runes de faction",
+        value: item.reward.runesCredited,
+        itemId: item.reward.itemId,
+      },
+      {
+        key: "key-fragments",
+        label: "Fragments de clé",
+        value: item.reward.fragmentsCredited,
+        itemId: item.reward.fragmentItemId,
+      },
+      {
+        key: "complete-keys",
+        label: "Clés complètes",
+        value: item.reward.completeKeysCredited,
+        itemId: item.reward.keyItemId,
+      },
+    ].filter((reward) => reward.value > 0);
   }, [item]);
 
   if (item === undefined) {
@@ -57,44 +86,53 @@ export function ExpeditionRecapPopup({
   }
 
   return (
-    <div className="expedition-recap-backdrop" role="presentation">
+    <div className="expedition-recap-backdrop dungeon-recap-backdrop" role="presentation">
       <section
-        className="expedition-recap"
+        className="expedition-recap dungeon-recap"
         role="dialog"
         aria-modal="true"
         aria-labelledby="expedition-recap-title"
       >
-        <header className="expedition-recap__header">
+        <header className="dungeon-recap__header">
           <div>
-            <span>Académie · Retour d’expédition</span>
+            <span className="expedition-recap__eyebrow">Académie · Retour d’expédition</span>
             <h2 id="expedition-recap-title">Expédition terminée</h2>
           </div>
           <span className="expedition-recap__counter" aria-label={`Expédition ${positionLabel}`}>{positionLabel}</span>
         </header>
 
-        <article className="expedition-recap__item">
-          <div className="expedition-recap__title-row">
-            <div>
-              <small>Mission accomplie</small>
-              <strong>{item.displayName}</strong>
+        <p className="dungeon-recap__summary">
+          <strong>{item.displayName}</strong>
+          <span aria-hidden="true">•</span>
+          <span>{formatDuration(item.durationMs)}</span>
+          <span aria-hidden="true">•</span>
+          <strong>{QUALITY_LABELS[item.reward.quality]}</strong>
+        </p>
+
+        <div className="dungeon-recap__rewards" aria-label="Récompenses obtenues">
+          <h3>Récompenses obtenues</h3>
+          {rewards.length > 0 ? (
+            <div className="dungeon-recap__reward-list">
+              {rewards.map((reward) => (
+                <div key={reward.key} className="dungeon-recap__reward-row">
+                  <div className="dungeon-recap__reward-identity">
+                    <span className="dungeon-recap__reward-icon" aria-hidden="true">
+                      {reward.currency === "silver" ? (
+                        <span className="dungeon-recap__silver-icon">S</span>
+                      ) : reward.itemId !== undefined ? (
+                        <ItemVisual itemId={reward.itemId} />
+                      ) : null}
+                    </span>
+                    <span>{reward.label}</span>
+                  </div>
+                  <strong>+{formatNumber(reward.value)}</strong>
+                </div>
+              ))}
             </div>
-            <span className="expedition-recap__duration">{formatDuration(item.durationMs)}</span>
-          </div>
-
-          <div className={`expedition-recap__quality expedition-recap__quality--${item.reward.quality}`}>
-            <span>Résultat</span>
-            <strong>{QUALITY_LABELS[item.reward.quality]}</strong>
-          </div>
-
-          <div className="expedition-recap__loot" aria-label="Récompenses obtenues">
-            {rewards.map((reward) => (
-              <div key={reward.label} className="expedition-recap__loot-row">
-                <span>{reward.label}</span>
-                <strong>+ {formatNumber(reward.value)}</strong>
-              </div>
-            ))}
-          </div>
-        </article>
+          ) : (
+            <p className="dungeon-recap__empty">Aucune récompense obtenue.</p>
+          )}
+        </div>
 
         <footer className="expedition-recap__footer">
           <small>Récompenses déjà créditées.</small>
