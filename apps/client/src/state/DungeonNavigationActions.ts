@@ -31,6 +31,7 @@ interface DungeonNavigationActionsDependencies {
   readonly stopController: DungeonStopController;
   readonly bridge: GameBridge;
   readonly isCombatSuspended: () => boolean;
+  readonly canStartDungeon: () => boolean;
   readonly canAccessDungeonContent: (definitionId: string) => boolean;
   readonly onStateChanged: () => void;
 }
@@ -38,6 +39,7 @@ interface DungeonNavigationActionsDependencies {
 export type DungeonAccessReason =
   | "available"
   | "invalid_definition"
+  | "activity_busy"
   | "research_locked"
   | "progression_locked"
   | "equipment_tier_locked"
@@ -58,10 +60,12 @@ export interface DungeonAccessFacts {
   readonly hasWeapon: boolean;
   readonly highestEquippedTier?: number;
   readonly hasKey: boolean;
+  readonly activityAvailable?: boolean;
 }
 
 export function resolveDungeonAccessState(facts: DungeonAccessFacts): DungeonAccessState {
   if (facts.definitionTier === undefined) return { canEnter: false, reason: "invalid_definition" };
+  if (facts.activityAvailable === false) return { canEnter: false, reason: "activity_busy" };
   if (!facts.researchUnlocked) return { canEnter: false, reason: "research_locked" };
   if (!facts.progressionUnlocked) {
     return {
@@ -96,7 +100,8 @@ export interface DungeonNavigationState {
  * Application-level dungeon navigation and access authority.
  *
  * All entry requirements are resolved once here so callers and UI cannot drift:
- * authored Research access, tier progression, equipment cap, weapon requirement and key.
+ * activity availability, authored Research access, tier progression, equipment
+ * cap, weapon requirement and key.
  */
 export class DungeonNavigationActions {
   private pendingDefinitionId: string | null = null;
@@ -179,12 +184,11 @@ export class DungeonNavigationActions {
 
     return resolveDungeonAccessState({
       definitionTier: definition.tier,
+      activityAvailable: this.deps.canStartDungeon(),
       researchUnlocked: this.deps.canAccessDungeonContent(definitionId),
       progressionUnlocked: this.deps.dungeonRuntime.canAccessDefinition(definitionId),
       hasWeapon: equipment.hasWeapon,
-      ...(equipment.highestEquippedTier === undefined
-        ? {}
-        : { highestEquippedTier: equipment.highestEquippedTier }),
+      ...(equipment.highestEquippedTier === undefined ? {} : { highestEquippedTier: equipment.highestEquippedTier }),
       hasKey,
     });
   }
@@ -225,7 +229,9 @@ export class DungeonNavigationActions {
     if (definition === undefined) return;
 
     let message: string | undefined;
-    if (access.reason === "research_locked") {
+    if (access.reason === "activity_busy") {
+      message = "Accès refusé : terminez ou quittez l'activité de combat en cours.";
+    } else if (access.reason === "research_locked") {
       message = "Accès refusé : recherche de cette famille de donjons requise.";
     } else if (access.reason === "progression_locked") {
       message = `Accès refusé : validez d'abord un donjon T${String(access.previousTier ?? definition.tier - 1)}.`;
