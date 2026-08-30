@@ -22,25 +22,39 @@ const towerProfileOverride = vi.hoisted(() => ({
   profiles: undefined as readonly AuthoredEnemyCombatProfile[] | undefined,
 }));
 
+const SYNCED_SIGNATURE_IDS = new Set([
+  "ability_dagger_pair_cross_assault",
+  "ability_dagger_deathgivers_ghost_strike",
+]);
+
 vi.mock("./weaponContentCatalog.js", async (importOriginal) => {
   const actual = await importOriginal<WeaponContentSurface>();
   return {
     ...actual,
     resolveUnlockedWeaponAbilities: (weaponItemId: string, specializationMasteryLevel: number) => {
       const abilities = actual.resolveUnlockedWeaponAbilities(weaponItemId, specializationMasteryLevel);
-      if (!legacySustainOverride.enabled || !weaponItemId.includes("item_weapon_dagger_")) return abilities;
       return abilities.map((ability: any) => {
-        if (String(ability.id) !== "ability_dagger_double_slash") return ability;
-        return {
-          ...ability,
-          mechanics: {
-            ...ability.mechanics,
-            mechanics: [
-              ...ability.mechanics.mechanics,
-              { kind: "heal_from_damage", ratio: 0.12, maxHealthRatio: 0.015 },
-            ],
-          },
-        };
+        const abilityId = String(ability.id);
+        if (SYNCED_SIGNATURE_IDS.has(abilityId)) {
+          return { ...ability, cooldown: 8 };
+        }
+        if (
+          legacySustainOverride.enabled
+          && weaponItemId.includes("item_weapon_dagger_")
+          && abilityId === "ability_dagger_double_slash"
+        ) {
+          return {
+            ...ability,
+            mechanics: {
+              ...ability.mechanics,
+              mechanics: [
+                ...ability.mechanics.mechanics,
+                { kind: "heal_from_damage", ratio: 0.12, maxHealthRatio: 0.015 },
+              ],
+            },
+          };
+        }
+        return ability;
       });
     },
   };
