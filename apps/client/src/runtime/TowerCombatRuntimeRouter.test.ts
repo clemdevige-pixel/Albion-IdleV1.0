@@ -21,8 +21,15 @@ describe("TowerCombatRuntimeRouter", () => {
   it("falls through while Tower is inactive", () => {
     const { router } = createRouter();
     expect(router.isTowerActive()).toBe(false);
+    expect(router.getFactionCombatContext()).toBeUndefined();
     expect(router.getEncounterIndex(3)).toBe(3);
     expect(router.onVictory(() => ({ enteredNewSegment: true }))).toEqual({ enteredNewSegment: true });
+  });
+
+  it("exposes the current authored Tower faction context while active", () => {
+    const { router } = createRouter();
+    router.start();
+    expect(router.getFactionCombatContext()).toEqual({ factionId: "keeper", tier: 8 });
   });
 
   it("advances the authoritative Tower floor on victory", () => {
@@ -51,6 +58,7 @@ describe("TowerCombatRuntimeRouter", () => {
 
     expect(fallbackCalled).toBe(false);
     expect(router.isTowerActive()).toBe(false);
+    expect(router.getFactionCombatContext()).toBeUndefined();
     expect(progression.getSnapshot()).toMatchObject({ currentFloor: 6, checkpointFloor: 6 });
   });
 
