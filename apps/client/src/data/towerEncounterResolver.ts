@@ -1,4 +1,7 @@
-import { TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX } from "@game/data";
+import {
+  TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX,
+  TOWER_REINFORCED_COMBAT_MULTIPLIERS,
+} from "@game/data";
 import { getTowerFloorDefinition, type TowerFloorDefinition } from "@game/gameplay";
 import {
   DUNGEON_DEFINITIONS,
@@ -17,37 +20,40 @@ export interface ResolvedTowerEncounter {
   readonly combatProfile: AuthoredEnemyCombatProfile;
 }
 
-export interface UnresolvedTowerEncounter {
-  readonly status: "unresolved";
-  readonly floorDefinition: TowerFloorDefinition;
-  readonly reason: "reinforced_encounter_not_authored";
-}
+function applyTowerRoleCombatTuning(
+  floorDefinition: TowerFloorDefinition,
+  profile: AuthoredEnemyCombatProfile,
+): AuthoredEnemyCombatProfile {
+  if (floorDefinition.role !== "reinforced") return profile;
 
-export type TowerEncounterResolution = ResolvedTowerEncounter | UnresolvedTowerEncounter;
+  return {
+    hp: Math.round(profile.hp * TOWER_REINFORCED_COMBAT_MULTIPLIERS.hp),
+    damage: Math.round(profile.damage * TOWER_REINFORCED_COMBAT_MULTIPLIERS.damage),
+    attackSpeed: profile.attackSpeed,
+    armor: Math.round(profile.armor * TOWER_REINFORCED_COMBAT_MULTIPLIERS.defense),
+    magicResistance: Math.round(
+      profile.magicResistance * TOWER_REINFORCED_COMBAT_MULTIPLIERS.defense,
+    ),
+  };
+}
 
 /**
  * Resolves a Tower floor from existing faction Dungeon content.
  *
- * Tower owns sequencing only. Faction rosters and combat stats stay authored
- * by the Dungeon catalog so the Tower cannot drift into a parallel balance
- * surface. Reinforced floors remain explicitly unresolved until their authored
- * source is defined in Tower data.
+ * Tower owns sequencing and Tower-only role tuning. Faction rosters and base
+ * combat stats stay authored by the Dungeon catalog so the Tower cannot drift
+ * into a parallel monster/balance surface.
  */
 export function resolveTowerEncounter(
   floor: number,
   towerSeed: string,
-): TowerEncounterResolution {
+): ResolvedTowerEncounter {
   const floorDefinition = getTowerFloorDefinition(floor, towerSeed);
   const dungeonEncounterIndex = TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX[
     floorDefinition.indexInBlock
   ];
-
-  if (dungeonEncounterIndex === null || dungeonEncounterIndex === undefined) {
-    return {
-      status: "unresolved",
-      floorDefinition,
-      reason: "reinforced_encounter_not_authored",
-    };
+  if (dungeonEncounterIndex === undefined) {
+    throw new Error(`Missing Tower encounter mapping for floor index ${String(floorDefinition.indexInBlock)}`);
   }
 
   const dungeon = DUNGEON_DEFINITIONS.find((definition) => (
@@ -67,6 +73,12 @@ export function resolveTowerEncounter(
     );
   }
 
+  const baseCombatProfile = resolveDungeonCombatProfile({
+    dungeonDefinitionId: dungeon.id,
+    encounterIndex: dungeonEncounterIndex,
+    monsterDefinitionId: encounter.monsterDefinitionId,
+  });
+
   return {
     status: "resolved",
     floorDefinition,
@@ -75,10 +87,6 @@ export function resolveTowerEncounter(
     encounterId: encounter.id,
     encounterKind: encounter.kind,
     monsterDefinitionId: encounter.monsterDefinitionId,
-    combatProfile: resolveDungeonCombatProfile({
-      dungeonDefinitionId: dungeon.id,
-      encounterIndex: dungeonEncounterIndex,
-      monsterDefinitionId: encounter.monsterDefinitionId,
-    }),
+    combatProfile: applyTowerRoleCombatTuning(floorDefinition, baseCombatProfile),
   };
 }
