@@ -74,6 +74,12 @@ const RESEARCH_PRESENTATION = new Map<string, ResearchPresentationInfo>([
     description: "Analyse à l’Académie la Relique chargée découverte à Frostpeak Mountain afin d’ouvrir la boucle Donjons.",
     effectSummary: "Débloque les Donjons, les drops de clés/fragments et le drop rare de Runes de faction sur les monstres de faction.",
   }],
+  [RESEARCH_IDS.towerStudy, {
+    group: "core",
+    description: "Étudie la Tour révélée au terme de la progression du Monde afin d’en comprendre l’accès et les épreuves.",
+    effectSummary: "Débloque la Tour sans fin dans le Monde.",
+    hiddenWhileLocked: true,
+  }],
 ]);
 
 const RESEARCH_UNLOCK_PRESENTATION = new Map<string, readonly ResearchUnlockPresentation[]>([
@@ -121,6 +127,9 @@ const RESEARCH_UNLOCK_PRESENTATION = new Map<string, readonly ResearchUnlockPres
   ]],
   [RESEARCH_UNLOCK_IDS.factionRuneWorldDrop, [
     { label: "Drop rare de Runes de faction", destination: "Monstres de faction dans le monde" },
+  ]],
+  [RESEARCH_UNLOCK_IDS.towerSystem, [
+    { label: "Tour sans fin", destination: "Monde > Tour" },
   ]],
 ]);
 
