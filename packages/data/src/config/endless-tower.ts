@@ -44,17 +44,18 @@ export const TOWER_REINFORCED_COMBAT_MULTIPLIERS = {
 
 /**
  * Tower-only normalization applied after resolving the canonical Dungeon enemy
- * profile. Dungeon data remains the source of truth; these values only reduce
- * the excessive faction/tier spread measured by the neutral Tower benchmark.
+ * profile. Dungeon data remains the source of truth; these values never mutate
+ * Dungeon balance. Values intentionally retain a small faction difficulty
+ * variance while calibrating favorable Tower matchups around the endgame target.
  *
- * Keeper is the reference surface. Other factions intentionally retain a small
- * difficulty identity instead of being flattened to identical encounters.
+ * T8 values include the final +5% T8 Tower calibration directly in this matrix
+ * so there is one authored source of truth and no runtime tuning layer.
  */
 export const TOWER_FACTION_TIER_COMBAT_MULTIPLIER = {
-  keeper: { 4: 1.00, 5: 1.00, 6: 1.00, 7: 1.00, 8: 1.00 },
-  heretic: { 4: 0.90, 5: 0.89, 6: 0.92, 7: 0.91, 8: 0.92 },
-  undead: { 4: 0.90, 5: 0.90, 6: 0.90, 7: 0.92, 8: 0.91 },
-  morgana: { 4: 0.89, 5: 0.89, 6: 0.90, 7: 0.93, 8: 0.90 },
+  keeper: { 4: 1.50, 5: 1.40, 6: 1.48, 7: 1.50, 8: 1.1865 },
+  heretic: { 4: 1.45, 5: 1.47, 6: 1.47, 7: 1.58, 8: 1.2075 },
+  undead: { 4: 1.50, 5: 1.47, 6: 1.55, 7: 1.58, 8: 1.2075 },
+  morgana: { 4: 1.50, 5: 1.43, 6: 1.48, 7: 1.65, 8: 1.2075 },
 } as const satisfies Record<TowerFactionId, Record<TowerTier, number>>;
 
 export interface TowerAuthoredBlockDefinition {
