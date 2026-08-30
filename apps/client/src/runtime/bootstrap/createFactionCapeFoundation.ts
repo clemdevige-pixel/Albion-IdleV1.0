@@ -1,24 +1,25 @@
 import type { EntityId } from "@game/core";
 import type {
   DamageManager,
-  DungeonRuntime,
   EquipmentManager,
   PostMitigationDamageResolver,
 } from "@game/gameplay";
-import { resolveFactionCapeDungeonDamageReductionPercent } from "../../data/factionCapeContentCatalog.js";
-import { resolveArtifactDungeonDamageBonusPercent } from "../../data/weaponContentCatalog.js";
+import {
+  resolveFactionCombatModifiers,
+  type FactionCombatContext,
+} from "../../data/factionCombatResolver.js";
 
 export interface FactionCapeFoundationDependencies {
   readonly damageManager: DamageManager;
-  readonly dungeonRuntime: DungeonRuntime;
   readonly equipmentManager: EquipmentManager;
   readonly heroId: EntityId;
+  readonly getActiveFactionCombatContext: () => FactionCombatContext | undefined;
 }
 
 /**
- * Single faction-dungeon damage resolver. It composes all authored faction
- * modifiers that operate after mitigation so no feature can overwrite another
- * DamageManager resolver.
+ * Single faction-combat damage resolver shared by all authored faction combat
+ * activities. Activity routing owns which faction/tier context is active;
+ * equipment catalogs remain authoritative for weapon and cape modifiers.
  */
 export function createFactionCapeFoundation(
   dependencies: FactionCapeFoundationDependencies,
@@ -27,10 +28,8 @@ export function createFactionCapeFoundation(
     request,
     mitigatedDamage,
   ) => {
-    const run = dependencies.dungeonRuntime.activeRun;
-    if (run?.status !== "active") return mitigatedDamage;
-    const dungeon = dependencies.dungeonRuntime.getDefinition(run.definitionId);
-    if (dungeon === undefined) return mitigatedDamage;
+    const context = dependencies.getActiveFactionCombatContext();
+    if (context === undefined) return mitigatedDamage;
 
     let resolvedDamage = mitigatedDamage;
 
@@ -39,12 +38,12 @@ export function createFactionCapeFoundation(
         dependencies.heroId,
         "weapon",
       );
-      if (equippedWeapon !== undefined) {
-        const bonusPercent = resolveArtifactDungeonDamageBonusPercent(
-          equippedWeapon.itemId,
-          dungeon.faction,
-        );
-        if (bonusPercent > 0) resolvedDamage *= 1 + bonusPercent / 100;
+      const modifiers = resolveFactionCombatModifiers(
+        equippedWeapon === undefined ? {} : { weaponItemId: equippedWeapon.itemId },
+        context,
+      );
+      if (modifiers.outgoingDamageBonusPercent > 0) {
+        resolvedDamage *= 1 + modifiers.outgoingDamageBonusPercent / 100;
       }
     }
 
@@ -53,12 +52,12 @@ export function createFactionCapeFoundation(
         dependencies.heroId,
         "cape",
       );
-      if (equippedCape !== undefined) {
-        const reductionPercent = resolveFactionCapeDungeonDamageReductionPercent(
-          equippedCape.itemId,
-          { factionId: dungeon.faction, tier: dungeon.tier },
-        );
-        if (reductionPercent > 0) resolvedDamage *= 1 - reductionPercent / 100;
+      const modifiers = resolveFactionCombatModifiers(
+        equippedCape === undefined ? {} : { capeItemId: equippedCape.itemId },
+        context,
+      );
+      if (modifiers.incomingDamageReductionPercent > 0) {
+        resolvedDamage *= 1 - modifiers.incomingDamageReductionPercent / 100;
       }
     }
 
