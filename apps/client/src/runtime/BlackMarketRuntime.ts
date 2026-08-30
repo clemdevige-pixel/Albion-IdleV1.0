@@ -22,9 +22,10 @@ import { resolveWeaponFamilyId } from "../data/weaponContentCatalog.js";
 import type { PlayerInventoryManager } from "./PlayerInventoryManager.js";
 
 export type BlackMarketStorageSource = "inventory" | "bank";
+export type BlackMarketCandidateSource = BlackMarketStorageSource | "all";
 
 export interface BlackMarketCandidate {
-  readonly source: BlackMarketStorageSource;
+  readonly source: BlackMarketCandidateSource;
   readonly itemId: string;
   readonly enchantment: EnchantmentLevel;
   readonly availableQuantity: number;
@@ -33,7 +34,7 @@ export interface BlackMarketCandidate {
 }
 
 export interface BlackMarketSelection {
-  readonly source: BlackMarketStorageSource;
+  readonly source: BlackMarketCandidateSource;
   readonly itemId: string;
   readonly enchantment: EnchantmentLevel;
   readonly quantity: number;
@@ -132,11 +133,15 @@ class BlackMarketRuntimeAdapter {
     return snapshot;
   }
 
-  getCandidates(): readonly BlackMarketCandidate[] {
+  getCandidates(source: BlackMarketCandidateSource = "all"): readonly BlackMarketCandidate[] {
     const bindings = this.requireBindings();
     const result = new Map<string, BlackMarketCandidate>();
-    for (const source of ["inventory", "bank"] as const) {
-      const ownerId = this.ownerFor(source);
+    const sources: readonly BlackMarketStorageSource[] = source === "all"
+      ? ["inventory", "bank"]
+      : [source];
+
+    for (const storageSource of sources) {
+      const ownerId = this.ownerFor(storageSource);
       for (const slot of bindings.inventoryManager.listSlots(ownerId)) {
         const entry = slot.entry;
         if (entry === undefined || resolveEquipmentInfo(entry.itemId) === undefined) continue;
@@ -144,7 +149,7 @@ class BlackMarketRuntimeAdapter {
         const enchantment = getEnchantmentLevel(entry);
         const economicValue = economicValueFor(entry.itemId, enchantment);
         if (economicValue === undefined) continue;
-        const key = `${source}|${entry.itemId}|${String(enchantment)}`;
+        const key = `${entry.itemId}|${String(enchantment)}`;
         const previous = result.get(key);
         result.set(key, {
           source,
@@ -215,21 +220,25 @@ class BlackMarketRuntimeAdapter {
 
     for (const selected of selection) {
       if (!Number.isInteger(selected.quantity) || selected.quantity <= 0) return undefined;
-      const ownerId = this.ownerFor(selected.source);
       const tier = getItemTier(selected.itemId);
       if (!isBlackMarketTier(tier)) return undefined;
       const economicValue = economicValueFor(selected.itemId, selected.enchantment);
       if (economicValue === undefined) return undefined;
       const weaponFamily = resolveWeaponFamilyId(selected.itemId);
       const armorSlot = armorSlotFor(selected.itemId);
+      const sources: readonly BlackMarketStorageSource[] = selected.source === "all"
+        ? ["inventory", "bank"]
+        : [selected.source];
 
-      const matchingEntries = bindings.inventoryManager.listSlots(ownerId)
-        .flatMap((slot) => slot.entry === undefined ? [] : [slot.entry])
-        .filter((entry) => (
-          entry.itemId === selected.itemId
-          && getEnchantmentLevel(entry) === selected.enchantment
-          && bindings.awakenedWeaponService.getState(entry.instanceId)?.awakened !== true
-        ));
+      const matchingEntries = sources.flatMap((source) => (
+        bindings.inventoryManager.listSlots(this.ownerFor(source))
+          .flatMap((slot) => slot.entry === undefined ? [] : [slot.entry])
+          .filter((entry) => (
+            entry.itemId === selected.itemId
+            && getEnchantmentLevel(entry) === selected.enchantment
+            && bindings.awakenedWeaponService.getState(entry.instanceId)?.awakened !== true
+          ))
+      ));
 
       let remaining = selected.quantity;
       for (const entry of matchingEntries) {
