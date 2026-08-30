@@ -16,6 +16,7 @@ import type {
   RelicProgressView,
   StartExpeditionResult,
   StatsManager,
+  TowerProgressionSnapshot,
   VendorRegistry,
   WalletId,
   WorkerId,
@@ -36,6 +37,7 @@ import type { FactionAchievementProgress } from "../runtime/bootstrap/createFact
 import type { BestiaryKnowledgeModel } from "../runtime/bootstrap/createFactionBestiaryFoundation.js";
 import type { PlayerInventoryManager } from "../runtime/PlayerInventoryManager.js";
 import type { DungeonAccessState } from "./DungeonNavigationActions.js";
+import type { TowerAccessState } from "./TowerNavigationActions.js";
 import type { RefiningToggleTarget } from "./production/ProductionActions.js";
 
 export type UIEventMap = Record<string, unknown>;
@@ -45,6 +47,13 @@ export interface DungeonNavigationVM {
   readonly pendingDefinitionId: string | null;
   readonly clearedTiers: readonly number[];
   readonly getAccess: (definitionId: string) => DungeonAccessState;
+}
+
+export interface TowerNavigationVM {
+  readonly active: boolean;
+  readonly pendingStart: boolean;
+  readonly progression: TowerProgressionSnapshot;
+  readonly access: TowerAccessState;
 }
 
 export interface GameServices {
@@ -93,6 +102,11 @@ export interface GameServices {
   ) => BestiaryKnowledgeModel;
   readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
   readonly isDungeonSystemUnlocked: () => boolean;
+  readonly isTowerSystemUnlocked: () => boolean;
+  readonly startTower: () => boolean;
+  readonly abandonTower: () => boolean;
+  readonly isTowerActive: () => boolean;
+  readonly getTowerState: () => TowerNavigationVM;
   readonly useConsumable: (itemId: string) => boolean;
   readonly useWeaponAbility?: (slotIndex: number) => boolean;
   /** @deprecated Compatibility alias for slot 0 (Q). */
