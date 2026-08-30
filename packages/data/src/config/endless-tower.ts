@@ -21,19 +21,23 @@ export type TowerFloorRole = (typeof TOWER_FLOOR_ROLES)[number];
 
 /**
  * Dungeon encounter indexes reused by each position in a Tower block.
- *
- * The two normal floors, elite and block boss map directly to the existing
- * faction Dungeon roster. Reinforced deliberately remains unresolved until an
- * authored source is defined; consumers must not silently substitute another
- * encounter or invent a scaling multiplier.
+ * Reinforced reuses the second normal encounter and applies authored Tower
+ * multipliers below; no separate monster roster or runtime special case exists.
  */
 export const TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX = [
   0,
   1,
-  null,
+  1,
   2,
   3,
-] as const satisfies readonly (number | null)[];
+] as const satisfies readonly number[];
+
+/** Temporary V1 tuning for reinforced floors; subject to later content design. */
+export const TOWER_REINFORCED_COMBAT_MULTIPLIERS = {
+  hp: 1.35,
+  damage: 1.15,
+  defense: 1.10,
+} as const;
 
 export interface TowerAuthoredBlockDefinition {
   readonly id: string;
