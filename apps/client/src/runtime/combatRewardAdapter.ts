@@ -32,6 +32,7 @@ export interface CombatRewardAdapterOptions {
   readonly recalculateWeaponMasteryStats: () => void;
   readonly resyncAll: () => void;
   readonly isDungeonActive?: () => boolean;
+  readonly isTowerActive?: () => boolean;
   readonly onMonsterKilled?: (kill: RelicKillEvent) => void;
 }
 
@@ -112,6 +113,16 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
   const unsubscribe = options.combatService.events.subscribe("enemyKilled", (event) => {
     options.bridge.incrementEnemiesKilled();
     const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
+
+    if (options.isTowerActive?.() === true) {
+      if (monsterDefinitionId !== undefined) {
+        options.onMonsterKilled?.({ monsterId: monsterDefinitionId, contextId: "tower" });
+      }
+      clearActiveMonsterIdentity(event.entityId);
+      incomeRate = 0;
+      options.resyncAll();
+      return;
+    }
 
     if (options.isDungeonActive?.() === true) {
       const reward = options.dungeonRewardRuntime?.processCurrentEncounterVictory(
