@@ -1,14 +1,30 @@
 import { describe, expect, it, vi } from "vitest";
+import type { AuthoredEnemyCombatProfile } from "../runtime/combatEntityFactory.js";
+
+interface DungeonCombatProfileInput {
+  readonly dungeonDefinitionId: string;
+  readonly encounterIndex: number;
+  readonly monsterDefinitionId: string;
+}
+
+interface DungeonContentMockSurface {
+  readonly getDungeonDefinition: (dungeonDefinitionId: string) => {
+    readonly faction: string;
+    readonly tier: number;
+  };
+  readonly resolveDungeonCombatProfile: (
+    input: DungeonCombatProfileInput,
+  ) => AuthoredEnemyCombatProfile;
+  readonly [key: string]: unknown;
+}
 
 vi.mock("./dungeonContentCatalog.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./dungeonContentCatalog.js")>();
+  const actual = await importOriginal<DungeonContentMockSurface>();
   const { applyTowerFactionCombatNormalization } = await import("./towerCombatNormalization.js");
 
   return {
     ...actual,
-    resolveDungeonCombatProfile: (
-      input: Parameters<typeof actual.resolveDungeonCombatProfile>[0],
-    ) => {
+    resolveDungeonCombatProfile: (input: DungeonCombatProfileInput) => {
       const profile = actual.resolveDungeonCombatProfile(input);
       const dungeon = actual.getDungeonDefinition(input.dungeonDefinitionId);
       const factionId = dungeon.faction.toLowerCase();
