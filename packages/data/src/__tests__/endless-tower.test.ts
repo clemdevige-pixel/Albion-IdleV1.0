@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   TOWER_BLOCK_SIZE,
+  TOWER_FACTIONS,
+  TOWER_FACTION_TIER_COMBAT_MULTIPLIER,
   TOWER_FLOOR_ROLES,
   TOWER_MAJOR_BOSS_CADENCE,
   TOWER_TIERS,
@@ -34,6 +36,19 @@ describe("Endless Tower authored contract", () => {
   it("never repeats the same faction on adjacent trial blocks", () => {
     for (let index = 1; index < TOWER_TRIAL_BLOCKS.length; index += 1) {
       expect(TOWER_TRIAL_BLOCKS[index]?.factionId).not.toBe(TOWER_TRIAL_BLOCKS[index - 1]?.factionId);
+    }
+  });
+
+  it("keeps Tower faction normalization complete and Keeper as the untouched reference", () => {
+    expect(Object.keys(TOWER_FACTION_TIER_COMBAT_MULTIPLIER).sort()).toEqual([...TOWER_FACTIONS].sort());
+
+    for (const tier of TOWER_TIERS) {
+      expect(TOWER_FACTION_TIER_COMBAT_MULTIPLIER.keeper[tier]).toBe(1);
+      for (const faction of TOWER_FACTIONS) {
+        const multiplier = TOWER_FACTION_TIER_COMBAT_MULTIPLIER[faction][tier];
+        expect(multiplier).toBeGreaterThan(0);
+        expect(multiplier).toBeLessThanOrEqual(1);
+      }
     }
   });
 
