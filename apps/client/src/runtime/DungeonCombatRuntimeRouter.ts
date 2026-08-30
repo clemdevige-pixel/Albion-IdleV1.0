@@ -1,4 +1,5 @@
 import type { DungeonRuntime } from "@game/gameplay";
+import type { FactionCombatContext } from "../data/factionCombatResolver.js";
 import type {
   CombatEntityFactoryDependencies,
   SpawnedEnemyResult,
@@ -50,6 +51,14 @@ export class DungeonCombatRuntimeRouter {
 
   isDungeonActive(): boolean {
     return this.dungeonRuntime.activeRun?.status === "active";
+  }
+
+  getFactionCombatContext(): FactionCombatContext | undefined {
+    const run = this.dungeonRuntime.activeRun;
+    if (run?.status !== "active") return undefined;
+    const dungeon = this.dungeonRuntime.getDefinition(run.definitionId);
+    if (dungeon === undefined) return undefined;
+    return { factionId: dungeon.faction, tier: dungeon.tier };
   }
 
   spawnEnemyOverride(
