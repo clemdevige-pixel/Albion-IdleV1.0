@@ -25,7 +25,7 @@ function resolveDungeonFallbackContext(
   if (run?.status !== "active") return undefined;
   const dungeon = dungeonRuntime?.getDefinition(run.definitionId);
   if (dungeon === undefined) return undefined;
-  return { factionId: dungeon.faction, tier: dungeon.tier };
+  return { factionId: dungeon.faction, tier: dungeon.tier, activity: "dungeon" };
 }
 
 /**
@@ -58,6 +58,7 @@ export function createFactionCapeFoundation(
         equippedWeapon === undefined ? {} : { weaponItemId: equippedWeapon.itemId },
         context,
       );
+      resolvedDamage *= modifiers.factionResilienceDamageMultiplier;
       if (modifiers.outgoingDamageBonusPercent > 0) {
         resolvedDamage *= 1 + modifiers.outgoingDamageBonusPercent / 100;
       }
