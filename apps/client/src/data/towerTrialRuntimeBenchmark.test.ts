@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { TOWER_TRIAL_BLOCKS } from "@game/data";
 import {
   ARTIFACT_WEAPON_BENCHMARK_SPECS,
-  artifactBenchmarkMasteryProfile,
   artifactDungeonEquipment,
 } from "./artifactWeaponBenchmarkFixtures.js";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
@@ -12,6 +11,9 @@ import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
 
 const POTION_CAP = 2;
+const ENDGAME_FAMILY_MASTERY = 75;
+const ENDGAME_WEAPON_MASTERY = 45;
+const ENDGAME_SIBLING_MASTERY = 45;
 
 function runBlock(block: (typeof TOWER_TRIAL_BLOCKS)[number]) {
   const tier = block.tier;
@@ -30,12 +32,13 @@ function runBlock(block: (typeof TOWER_TRIAL_BLOCKS)[number]) {
     { weaponItemId: weapon.itemId, capeItemId },
     { factionId: block.factionId, tier, activity: "tower" },
   );
-  const mastery = artifactBenchmarkMasteryProfile(tier);
   const heroDamageMultiplier = (
     (1 + modifiers.outgoingDamageBonusPercent / 100)
     * modifiers.factionResilienceDamageMultiplier
   );
 
+  // .3 and .4 share the same authored raw combat-stat multiplier (1.42x).
+  // This therefore models a .4 weapon before requiring any Awakening combat trait.
   const result = runCombatRuntimeBenchmark({
     label: `tower_trial_block_${String(block.blockIndex + 1)}`,
     weaponItemId: weapon.itemId,
@@ -44,9 +47,9 @@ function runBlock(block: (typeof TOWER_TRIAL_BLOCKS)[number]) {
     segmentIndex: 9,
     dungeonDefinitionId: dungeon.id,
     enchantment: 3,
-    familyMasteryLevel: mastery.familyMasteryLevel,
-    specializationMasteryLevel: mastery.specializationMasteryLevel,
-    siblingSpecializationMasteryLevel: mastery.siblingSpecializationMasteryLevel,
+    familyMasteryLevel: ENDGAME_FAMILY_MASTERY,
+    specializationMasteryLevel: ENDGAME_WEAPON_MASTERY,
+    siblingSpecializationMasteryLevel: ENDGAME_SIBLING_MASTERY,
     heroDamageMultiplier,
     useHealthPotions: true,
     healthPotionQuantity: POTION_CAP,
@@ -59,6 +62,9 @@ function runBlock(block: (typeof TOWER_TRIAL_BLOCKS)[number]) {
     faction: block.factionId,
     weapon: weapon.entry.label,
     weaponItemId: weapon.itemId,
+    familyMastery: ENDGAME_FAMILY_MASTERY,
+    weaponMastery: ENDGAME_WEAPON_MASTERY,
+    siblingMastery: ENDGAME_SIBLING_MASTERY,
     outgoingBonusPct: modifiers.outgoingDamageBonusPercent,
     resilienceMultiplier: modifiers.factionResilienceDamageMultiplier,
     incomingReductionPct: modifiers.incomingDamageReductionPercent,
@@ -74,11 +80,11 @@ function runBlock(block: (typeof TOWER_TRIAL_BLOCKS)[number]) {
 }
 
 describe("Tower trial runtime benchmark", () => {
-  it("prints the five authored trial blocks using the live Dungeon roster and Tower faction modifiers", () => {
+  it("prints the endgame-entry baseline without requiring favorable Awakening traits", () => {
     const rows = TOWER_TRIAL_BLOCKS.map(runBlock);
-    console.log("[TOWER_TRIAL_RUNTIME_BENCHMARK]");
+    console.log("[TOWER_TRIAL_ENDGAME_BASELINE]");
     console.table(rows);
-    console.log("[TOWER_TRIAL_RUNTIME_BENCHMARK_NOTE] floor 3 reinforced tuning (+35% HP, +15% damage, +10% defense) is not represented by the current generic benchmark harness; rows therefore validate the source roster and Tower faction matchup, not the exact five-floor block clear.");
+    console.log("[TOWER_TRIAL_ENDGAME_BASELINE_NOTE] raw .4 combat scaling equals .3 (1.42x), so this models weapon .4 + armor/cape .3 before requiring Awakening combat traits. Floor 3 reinforced tuning (+35% HP, +15% damage, +10% defense) is still not represented by the generic Dungeon-roster harness.");
 
     expect(rows).toHaveLength(5);
     expect(rows.every((row) => row.outgoingBonusPct > 0)).toBe(true);
