@@ -10,7 +10,7 @@ import type {
 import type { TowerCombatEncounterSource } from "./TowerCombatEncounterSource.js";
 
 export interface TowerVictoryResult {
-  readonly enteredNewSegment: false;
+  readonly enteredNewSegment: boolean;
 }
 
 /**
