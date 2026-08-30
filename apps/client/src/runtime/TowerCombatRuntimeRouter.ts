@@ -14,11 +14,18 @@ export interface TowerVictoryResult {
   readonly enteredNewSegment: boolean;
 }
 
+export interface TowerBlockTransitionPort {
+  readonly requestPauseAfterEncounter: () => boolean;
+}
+
 /**
  * Runtime-only Tower activity router.
  *
  * Active/inactive attempt state is intentionally transient. Persistent floor,
  * checkpoint and Endless unlock state remain owned by TowerProgressionService.
+ * A completed five-floor block closes the transient attempt and requests the
+ * shared combat pause so the next block's authored equipment-tier gate can be
+ * resolved before combat resumes.
  */
 export class TowerCombatRuntimeRouter {
   readonly flowPolicy: CombatFlowPolicy = CONTINUOUS_COMBAT_FLOW_POLICY;
@@ -27,6 +34,7 @@ export class TowerCombatRuntimeRouter {
   public constructor(
     private readonly progression: TowerProgressionService,
     private readonly encounterSource: TowerCombatEncounterSource,
+    private readonly blockTransitionPort?: TowerBlockTransitionPort,
   ) {}
 
   public isTowerActive(): boolean {
@@ -70,8 +78,12 @@ export class TowerCombatRuntimeRouter {
   public onVictory(fallback: () => TowerVictoryResult): TowerVictoryResult {
     if (!this.active) return fallback();
     const floor = this.progression.getSnapshot().currentFloor;
-    this.progression.clearCurrentFloor(floor);
-    return { enteredNewSegment: false };
+    const result = this.progression.clearCurrentFloor(floor);
+    if (result.checkpointAdvanced) {
+      this.active = false;
+      this.blockTransitionPort?.requestPauseAfterEncounter();
+    }
+    return { enteredNewSegment: result.checkpointAdvanced };
   }
 
   public onDefeat(fallback: () => void): void {
