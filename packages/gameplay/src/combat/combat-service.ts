@@ -72,14 +72,16 @@ export class CombatService {
 
     const heroIsDead = this.deathManager.isDead(hero);
     const allEnemiesDead = enemies.every((enemy) => this.deathManager.isDead(enemy));
-    if (heroIsDead) {
-      transitionCombatState(session, "defeat");
-      const endedEvent = { sessionId: session.sessionId, result: "defeat" as const, elapsedTime: session.getElapsedTime() };
-      tickEvents.push({ type: "combatEnded", data: endedEvent });
-      this.events.publish("combatEnded", endedEvent);
-    } else if (allEnemiesDead) {
+    // If both sides die on the same combat tick, the encounter objective was completed.
+    // Resolve victory first so deterministic simultaneous kills do not become false progression walls.
+    if (allEnemiesDead) {
       transitionCombatState(session, "victory");
       const endedEvent = { sessionId: session.sessionId, result: "victory" as const, elapsedTime: session.getElapsedTime() };
+      tickEvents.push({ type: "combatEnded", data: endedEvent });
+      this.events.publish("combatEnded", endedEvent);
+    } else if (heroIsDead) {
+      transitionCombatState(session, "defeat");
+      const endedEvent = { sessionId: session.sessionId, result: "defeat" as const, elapsedTime: session.getElapsedTime() };
       tickEvents.push({ type: "combatEnded", data: endedEvent });
       this.events.publish("combatEnded", endedEvent);
     }
