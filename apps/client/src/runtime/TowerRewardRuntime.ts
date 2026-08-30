@@ -11,6 +11,7 @@ import {
   getEncounterRewards,
   getTowerFloorDefinition,
   type TowerProgressionService,
+  type TowerProgressionSnapshot,
 } from "@game/gameplay";
 import type { CombatRewardRuntime, EnemyKilledRewardResult } from "./CombatRewardRuntime.js";
 
@@ -40,6 +41,43 @@ function scaleReward(value: number): number {
   return Math.max(0, Math.round(value * TOWER_FLOOR_WORLD_REWARD_PERCENT / 100));
 }
 
+export function resolveTowerRewardBreakdown(
+  snapshot: TowerProgressionSnapshot,
+): TowerRewardBreakdown {
+  const floor = getTowerFloorDefinition(snapshot.currentFloor, snapshot.seed);
+  const tier = floor.block.tier;
+  const bandId = resolveWorldBandForTowerTier(tier);
+  const progression = getWorldCombatProgression(bandId);
+  const finalZoneIndex = progression.curve.length - 1;
+  const worldReference = getEncounterRewards(
+    finalZoneIndex,
+    SEGMENTS_PER_ZONE - 1,
+    0,
+    bandId,
+  );
+  const baseSilver = scaleReward(worldReference.silver);
+  const baseFame = scaleReward(worldReference.fame);
+  const firstClear = snapshot.currentFloor > snapshot.highestClearedFloor;
+  const blockReward = getTowerBlockSilverReward(tier);
+  const blockCompleted = floor.indexInBlock === 4;
+
+  return {
+    floor: floor.floor,
+    tier,
+    factionId: floor.block.factionId,
+    baseSilver,
+    baseFame,
+    repeatableBlockChestSilver: blockCompleted ? blockReward.repeatableChestSilver : 0,
+    firstClearBlockBonusSilver: blockCompleted && firstClear
+      ? blockReward.firstClearBonusSilver
+      : 0,
+    majorBossFirstClearBonusSilver: floor.majorBoss && firstClear
+      ? blockReward.majorBossFirstClearBonusSilver
+      : 0,
+    firstClear,
+  };
+}
+
 /**
  * Tower reward adapter over the shared combat reward authority.
  *
@@ -56,45 +94,23 @@ export class TowerRewardRuntime {
   ) {}
 
   public processCurrentFloorVictory(): TowerRewardResult {
-    const snapshot = this.progression.getSnapshot();
-    const floor = getTowerFloorDefinition(snapshot.currentFloor, snapshot.seed);
-    const tier = floor.block.tier;
-    const bandId = resolveWorldBandForTowerTier(tier);
-    const progression = getWorldCombatProgression(bandId);
-    const finalZoneIndex = progression.curve.length - 1;
-    const worldReference = getEncounterRewards(
-      finalZoneIndex,
-      SEGMENTS_PER_ZONE - 1,
-      0,
-      bandId,
-    );
-    const baseSilver = scaleReward(worldReference.silver);
-    const baseFame = scaleReward(worldReference.fame);
-    const firstClear = snapshot.currentFloor > snapshot.highestClearedFloor;
-    const blockReward = getTowerBlockSilverReward(tier);
-    const blockCompleted = floor.indexInBlock === 4;
-    const repeatableBlockChestSilver = blockCompleted ? blockReward.repeatableChestSilver : 0;
-    const firstClearBlockBonusSilver = blockCompleted && firstClear
-      ? blockReward.firstClearBonusSilver
-      : 0;
-    const majorBossFirstClearBonusSilver = floor.majorBoss && firstClear
-      ? blockReward.majorBossFirstClearBonusSilver
-      : 0;
-    const silverReward = baseSilver
-      + repeatableBlockChestSilver
-      + firstClearBlockBonusSilver
-      + majorBossFirstClearBonusSilver;
+    const breakdown = resolveTowerRewardBreakdown(this.progression.getSnapshot());
+    const silverReward = breakdown.baseSilver
+      + breakdown.repeatableBlockChestSilver
+      + breakdown.firstClearBlockBonusSilver
+      + breakdown.majorBossFirstClearBonusSilver;
+    const floor = getTowerFloorDefinition(breakdown.floor, this.progression.getSnapshot().seed);
 
     const reward = this.combatRewards.processEnemyKilledReward(
       silverReward,
-      baseFame,
+      breakdown.baseFame,
       {
         segmentIndex: floor.indexInBlock,
         faction: floor.block.factionId,
         isElite: floor.role === "elite" || floor.role === "reinforced",
         isBoss: floor.role === "block_boss",
         isFinalBoss: floor.majorBoss,
-        enchantmentTier: tier,
+        enchantmentTier: breakdown.tier,
         enchantmentDropWeight: 0,
         dungeonKeyDropWeight: 0,
       },
@@ -102,17 +118,6 @@ export class TowerRewardRuntime {
       { itemDropsEnabled: false },
     );
 
-    return {
-      floor: floor.floor,
-      tier,
-      factionId: floor.block.factionId,
-      baseSilver,
-      baseFame,
-      repeatableBlockChestSilver,
-      firstClearBlockBonusSilver,
-      majorBossFirstClearBonusSilver,
-      firstClear,
-      reward,
-    };
+    return { ...breakdown, reward };
   }
 }
