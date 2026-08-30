@@ -9,6 +9,7 @@ import { RefiningSaveProvider } from "../runtime/RefiningRuntime";
 import { ConsumableRuntime } from "../runtime/ConsumableRuntime.js";
 import { CombatRewardRuntime } from "../runtime/CombatRewardRuntime.js";
 import { DungeonRewardRuntime } from "../runtime/DungeonRewardRuntime.js";
+import { TowerRewardRuntime } from "../runtime/TowerRewardRuntime.js";
 import { DungeonProgressionSaveProvider } from "../runtime/DungeonProgressionSaveProvider.js";
 import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
@@ -383,6 +384,10 @@ export function GameProvider({
       inventoryManager,
       heroId,
     );
+    const towerRewardRuntime = new TowerRewardRuntime(
+      towerFoundation.progressionService,
+      combatRewardRuntime,
+    );
 
     const bridgeSyncCoordinator = new GameBridgeSyncCoordinator({
       bridge,
@@ -447,6 +452,7 @@ export function GameProvider({
       combatService,
       combatRewardRuntime,
       dungeonRewardRuntime,
+      towerRewardRuntime,
       worldRuntime,
       bridge,
       statsManager,
