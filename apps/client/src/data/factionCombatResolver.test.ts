@@ -9,6 +9,7 @@ describe("factionCombatResolver", () => {
     )).toEqual({
       outgoingDamageBonusPercent: 20,
       incomingDamageReductionPercent: 0,
+      factionResilienceDamageMultiplier: 1,
     });
   });
 
@@ -19,6 +20,7 @@ describe("factionCombatResolver", () => {
     )).toEqual({
       outgoingDamageBonusPercent: 0,
       incomingDamageReductionPercent: 6,
+      factionResilienceDamageMultiplier: 1,
     });
   });
 
@@ -32,6 +34,23 @@ describe("factionCombatResolver", () => {
     )).toEqual({
       outgoingDamageBonusPercent: 0,
       incomingDamageReductionPercent: 0,
+      factionResilienceDamageMultiplier: 1,
     });
+  });
+
+  it("applies full Tower resilience to a generic or mismatched weapon", () => {
+    expect(resolveFactionCombatModifiers(
+      { weaponItemId: "item_weapon_sword_broadsword_t4" },
+      { factionId: "morgana", tier: 4, activity: "tower" },
+    ).factionResilienceDamageMultiplier).toBeCloseTo(0.6);
+  });
+
+  it("lets a correctly matched faction weapon ignore 75 percent of Tower resilience", () => {
+    const modifiers = resolveFactionCombatModifiers(
+      { weaponItemId: "item_weapon_sword_clarent_t4" },
+      { factionId: "morgana", tier: 4, activity: "tower" },
+    );
+    expect(modifiers.outgoingDamageBonusPercent).toBe(20);
+    expect(modifiers.factionResilienceDamageMultiplier).toBeCloseTo(0.9);
   });
 });
