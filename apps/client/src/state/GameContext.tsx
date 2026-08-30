@@ -12,6 +12,7 @@ import { DungeonRewardRuntime } from "../runtime/DungeonRewardRuntime.js";
 import { DungeonProgressionSaveProvider } from "../runtime/DungeonProgressionSaveProvider.js";
 import { setupCombatRewardAdapter } from "../runtime/combatRewardAdapter.js";
 import { CombatRuntime } from "../runtime/CombatRuntime.js";
+import { CombatActivityRuntimeRouter } from "../runtime/CombatActivityRuntimeRouter.js";
 import { combatStopController } from "../runtime/CombatStopController.js";
 import { recalculateWeaponProgressionStats } from "../runtime/weaponMasteryStatSync.js";
 import { DungeonCombatEncounterSource } from "../runtime/DungeonCombatEncounterSource.js";
@@ -39,6 +40,7 @@ import {
 import { SaveGameActions } from "./SaveGameActions.js";
 import { WorldNavigationActions } from "./WorldNavigationActions.js";
 import { DungeonNavigationActions } from "./DungeonNavigationActions.js";
+import { TowerNavigationActions } from "./TowerNavigationActions.js";
 import { ConsumableActions } from "./ConsumableActions.js";
 import { RepairActions } from "./RepairActions.js";
 import { IslandActions } from "./IslandActions.js";
@@ -64,6 +66,7 @@ import { createExpeditionRecapFoundation } from "../runtime/bootstrap/createExpe
 import { createResearchRecapFoundation } from "../runtime/bootstrap/createResearchRecapFoundation.js";
 import { createFactionProgressionCoordinator } from "../runtime/bootstrap/createFactionProgressionCoordinator.js";
 import { createDungeonResearchAccessFoundation } from "../runtime/bootstrap/createDungeonResearchAccessFoundation.js";
+import { createTowerFoundation } from "../runtime/bootstrap/createTowerFoundation.js";
 import {
   createCharacterEquipmentFoundation,
   createCharacterStorageFoundation,
@@ -100,6 +103,7 @@ export function GameProvider({
     const islandService = new PlayerIslandService();
     const academyRuntimeFoundation = createAcademyRuntimeFoundation({ islandService });
     const dungeonRuntime = new DungeonRuntime(DUNGEON_DEFINITIONS);
+    const towerFoundation = createTowerFoundation(saveSlotId);
     const syncIslandToBridge = (): void => {
       const island = islandService.getState();
       bridge.updateIsland({
@@ -161,6 +165,7 @@ export function GameProvider({
         starterSelectionPending
         || (
           dungeonRuntime.activeRun?.status !== "active"
+          && !towerFoundation.combatRouter.isTowerActive()
           && (combatStopController.isPaused() || !combatService.isInCombat())
         )
       ),
@@ -222,6 +227,10 @@ export function GameProvider({
       dungeonRuntime,
       dungeonEncounterSource,
     );
+    const combatActivityRouter = new CombatActivityRuntimeRouter(
+      dungeonCombatRouter,
+      towerFoundation.combatRouter,
+    );
 
     const heroId = setupCombatEntity(
       combatEntityFactoryDeps,
@@ -253,7 +262,7 @@ export function GameProvider({
       equipmentManager,
       currencyService,
       walletId,
-      canEnchantNow: () => combatStopController.isPaused() && !dungeonCombatRouter.isDungeonActive(),
+      canEnchantNow: () => combatStopController.isPaused() && !combatActivityRouter.isActivityActive(),
       onEnchantmentCommitted: (result) => {
         if (result.toLevel !== 4) return;
         const definition = resolveEquipmentInfo(result.itemId);
@@ -274,6 +283,9 @@ export function GameProvider({
       getAcademyTier: academyRuntimeFoundation.getResearchTier,
     });
     const { researchService } = researchFoundation;
+    const isTowerSystemUnlocked = (): boolean => (
+      researchService.hasUnlock(RESEARCH_UNLOCK_IDS.towerSystem)
+    );
     const bankExpansionFoundation = createBankExpansionFoundation({
       inventoryManager,
       bankId,
@@ -447,6 +459,7 @@ export function GameProvider({
       ),
       resyncAll: () => resyncAll(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
+      isTowerActive: () => towerFoundation.combatRouter.isTowerActive(),
       onMonsterKilled: factionProgressionCoordinator.recordMonsterKill,
     });
     bridgeSyncCoordinator.syncInitialState();
@@ -487,6 +500,7 @@ export function GameProvider({
     persistence.registerProvider(expeditionService);
     persistence.registerProvider(rewardLedger);
     persistence.registerProvider(new DungeonProgressionSaveProvider(dungeonRuntime));
+    persistence.registerProvider(towerFoundation.saveProvider);
 
     const refiningSaveProvider = new RefiningSaveProvider(
       refiningRuntime,
@@ -637,7 +651,6 @@ export function GameProvider({
       afterAwakeningMutation();
       return true;
     };
-
     const combatRuntime = new CombatRuntime({
       world,
       heroId,
@@ -653,15 +666,15 @@ export function GameProvider({
       equipmentManager,
       masteryService,
       biomeResolver,
-      spawnEnemyOverride: () => dungeonCombatRouter.spawnEnemyOverride(combatEntityFactoryDeps),
+      spawnEnemyOverride: () => combatActivityRouter.spawnEnemyOverride(combatEntityFactoryDeps),
       ports: {
-        onVictory: () => dungeonCombatRouter.onVictory(() => {
+        onVictory: () => combatActivityRouter.onVictory(() => {
           const res = worldRuntime.advanceVictory();
           factionProgressionCoordinator.onWorldProgress();
           updateWorldBridge();
           return res;
         }),
-        onDefeat: () => dungeonCombatRouter.onDefeat(() => {
+        onDefeat: () => combatActivityRouter.onDefeat(() => {
           worldRuntime.advanceDefeat();
           updateWorldBridge();
           bridge.setCombatState("defeat");
@@ -671,7 +684,7 @@ export function GameProvider({
           return {
             zoneIndex: worldRuntime.currentZoneIndex,
             segmentIndex: worldRuntime.currentSegment,
-            encounterIndex: dungeonCombatRouter.getEncounterIndex(worldRuntime.currentEncounter),
+            encounterIndex: combatActivityRouter.getEncounterIndex(worldRuntime.currentEncounter),
             zoneDefId: zone.defId,
             zoneName: zone.name,
             highestUnlockedSegment: worldRuntime.highestUnlockedSegment,
@@ -679,7 +692,7 @@ export function GameProvider({
           };
         },
         isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
-        flowPolicy: dungeonCombatRouter.flowPolicy,
+        flowPolicy: combatActivityRouter.flowPolicy,
       },
     });
 
@@ -699,7 +712,22 @@ export function GameProvider({
       stopController: combatStopController,
       bridge,
       isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
+      canStartDungeon: () => !towerFoundation.combatRouter.isTowerActive(),
       canAccessDungeonContent: dungeonResearchAccessFoundation.canAccessDefinition,
+      onStateChanged: resyncAll,
+    });
+
+    const towerNavigationActions = new TowerNavigationActions({
+      progression: towerFoundation.progressionService,
+      towerRouter: towerFoundation.combatRouter,
+      activityRouter: combatActivityRouter,
+      equipmentManager,
+      heroId,
+      combatRuntime,
+      stopController: combatStopController,
+      bridge,
+      isCombatSuspended: () => starterSelectionPending || gatheringRuntime.isHeroGathering(),
+      isTowerUnlocked: isTowerSystemUnlocked,
       onStateChanged: resyncAll,
     });
 
@@ -832,6 +860,7 @@ export function GameProvider({
       tickCombat: (deltaSeconds, tick) => {
         combatBridgeAdapter.presentTick(combatRuntime.tick(deltaSeconds, tick));
         dungeonNavigationActions.flushPendingStart();
+        towerNavigationActions.flushPendingStart();
       },
     });
     registerGameRuntimeLifecycle(bridge, {
@@ -890,6 +919,11 @@ export function GameProvider({
       getBestiaryKnowledge: factionBestiaryFoundation.getKnowledge,
       getRelicProgress: (relicId) => factionResearchFoundation.relicService.getProgress(relicId),
       isDungeonSystemUnlocked: dungeonResearchAccessFoundation.isDungeonSystemUnlocked,
+      isTowerSystemUnlocked,
+      startTower: () => towerNavigationActions.requestStart(),
+      abandonTower: () => towerNavigationActions.abandon(),
+      isTowerActive: () => towerFoundation.combatRouter.isTowerActive(),
+      getTowerState: () => towerNavigationActions.getState(),
       startDungeon: (definitionId) => dungeonNavigationActions.requestStart(definitionId),
       abandonDungeon: () => dungeonNavigationActions.abandon(),
       isDungeonActive: () => dungeonCombatRouter.isDungeonActive(),
