@@ -15,6 +15,25 @@ describe("TowerProgressionSaveProvider", () => {
     expect(restored.getSnapshot()).toEqual(source.getSnapshot());
   });
 
+  it("round-trips Endless unlock and a selected Endless checkpoint", () => {
+    const source = new TowerProgressionService("endless-seed");
+    for (let floor = 1; floor <= 32; floor += 1) source.clearCurrentFloor(floor);
+    source.selectCheckpoint(26);
+    const provider = new TowerProgressionSaveProvider(source, "fallback-seed");
+
+    const restored = new TowerProgressionService("fresh-seed");
+    new TowerProgressionSaveProvider(restored, "fallback-seed").load(provider.save());
+
+    expect(restored.getSnapshot()).toEqual({
+      seed: "endless-seed",
+      currentFloor: 26,
+      highestClearedFloor: 32,
+      checkpointFloor: 26,
+      endlessUnlocked: true,
+    });
+    expect(restored.getUnlockedCheckpointFloors()).toContain(31);
+  });
+
   it("resets to a stable fallback for missing legacy provider data", () => {
     const service = new TowerProgressionService("temporary-seed");
     service.clearCurrentFloor(1);
