@@ -47,6 +47,11 @@ export interface EnemyKilledRewardResult {
   readonly itemDrops: readonly WorldCombatDrop[];
 }
 
+export interface CombatRewardPolicy {
+  /** World keeps item rolls enabled; activities such as Tower may opt out. */
+  readonly itemDropsEnabled?: boolean;
+}
+
 export interface CombatRewardRuntimeDependencies {
   readonly currencyService: CurrencyService;
   readonly walletId: WalletId;
@@ -118,6 +123,7 @@ export class CombatRewardRuntime {
     fameReward: number,
     lootContext: CombatLootContext,
     factionRuneDropChance = 0,
+    policy: CombatRewardPolicy = {},
   ): EnemyKilledRewardResult {
     const factionYieldBonusPercent = this.getFactionYieldBonusPercent(lootContext.faction);
     const finalSilverReward = applyPercentBonusRounded(silverReward, factionYieldBonusPercent);
@@ -176,42 +182,44 @@ export class CombatRewardRuntime {
     }
 
     const itemDrops: WorldCombatDrop[] = [];
-    const dungeonKeyLootUnlocked = this.isDungeonKeyLootUnlocked();
-    const rolledDrops = mergeCombatDrops([
-      ...rollCombatDrops(lootContext, this.random),
-      ...rollFactionYieldBonusDrops(
-        lootContext,
-        factionYieldBonusPercent,
-        this.random,
-      ),
-    ]);
-    for (const drop of rolledDrops) {
-      if (
-        !dungeonKeyLootUnlocked
-        && (drop.kind === "key" || drop.kind === "key_fragment")
-      ) continue;
+    if (policy.itemDropsEnabled !== false) {
+      const dungeonKeyLootUnlocked = this.isDungeonKeyLootUnlocked();
+      const rolledDrops = mergeCombatDrops([
+        ...rollCombatDrops(lootContext, this.random),
+        ...rollFactionYieldBonusDrops(
+          lootContext,
+          factionYieldBonusPercent,
+          this.random,
+        ),
+      ]);
+      for (const drop of rolledDrops) {
+        if (
+          !dungeonKeyLootUnlocked
+          && (drop.kind === "key" || drop.kind === "key_fragment")
+        ) continue;
 
-      const creditedQuantity = this.creditPlayerDrop(drop.itemId, drop.quantity);
-      if (creditedQuantity <= 0) continue;
-      itemDrops.push({ ...drop, quantity: creditedQuantity });
-    }
+        const creditedQuantity = this.creditPlayerDrop(drop.itemId, drop.quantity);
+        if (creditedQuantity <= 0) continue;
+        itemDrops.push({ ...drop, quantity: creditedQuantity });
+      }
 
-    if (this.isFactionRuneLootUnlocked()) {
-      const encounterMultiplier = getFactionRuneWorldEncounterMultiplier(
-        lootContext.isElite,
-        lootContext.isBoss,
-      );
-      const runeDrop = rollFactionRuneWorldDrop(
-        lootContext.faction,
-        lootContext.enchantmentTier,
-        factionRuneDropChance * encounterMultiplier,
-        factionYieldBonusPercent,
-        this.random,
-      );
-      if (runeDrop !== undefined) {
-        const creditedQuantity = this.creditPlayerDrop(runeDrop.itemId, runeDrop.quantity);
-        if (creditedQuantity === runeDrop.quantity) {
-          itemDrops.push(runeDrop);
+      if (this.isFactionRuneLootUnlocked()) {
+        const encounterMultiplier = getFactionRuneWorldEncounterMultiplier(
+          lootContext.isElite,
+          lootContext.isBoss,
+        );
+        const runeDrop = rollFactionRuneWorldDrop(
+          lootContext.faction,
+          lootContext.enchantmentTier,
+          factionRuneDropChance * encounterMultiplier,
+          factionYieldBonusPercent,
+          this.random,
+        );
+        if (runeDrop !== undefined) {
+          const creditedQuantity = this.creditPlayerDrop(runeDrop.itemId, runeDrop.quantity);
+          if (creditedQuantity === runeDrop.quantity) {
+            itemDrops.push(runeDrop);
+          }
         }
       }
     }
