@@ -16,6 +16,7 @@ function createActions(
 ) {
   const addEconomyNotification = vi.fn<(notification: EconomyNotificationVM) => void>();
   const setLoadFailed = vi.fn();
+  const prepareRuntimeForLoad = vi.fn();
   const resetSilverBalance = vi.fn();
   const syncPlayerHealth = vi.fn();
   const resyncAll = vi.fn();
@@ -47,6 +48,7 @@ function createActions(
     bankId: 2 as EntityId,
     productionStorageId: 3 as EntityId,
     getCurrentTick: () => 0,
+    prepareRuntimeForLoad,
     resetSilverBalance,
     syncPlayerHealth,
     resyncAll,
@@ -56,6 +58,7 @@ function createActions(
     actions,
     addEconomyNotification,
     setLoadFailed,
+    prepareRuntimeForLoad,
     resetSilverBalance,
     syncPlayerHealth,
     resyncAll,
@@ -63,6 +66,18 @@ function createActions(
 }
 
 describe("SaveGameActions load persistence recovery", () => {
+  it("clears transient runtime state before loading persisted providers", () => {
+    const load = vi.fn();
+    const deps = createActions(load);
+
+    expect(deps.actions.load()).toBe(true);
+    expect(deps.prepareRuntimeForLoad).toHaveBeenCalledOnce();
+    expect(load).toHaveBeenCalledOnce();
+    expect(deps.prepareRuntimeForLoad.mock.invocationCallOrder[0]).toBeLessThan(
+      load.mock.invocationCallOrder[0] ?? Number.MAX_SAFE_INTEGER,
+    );
+  });
+
   it("keeps loaded runtime state but locks saving when the post-load LocalStorage write fails", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const deps = createActions(() => {
@@ -70,6 +85,7 @@ describe("SaveGameActions load persistence recovery", () => {
     });
 
     expect(deps.actions.load()).toBe(true);
+    expect(deps.prepareRuntimeForLoad).toHaveBeenCalledOnce();
     expect(deps.setLoadFailed).toHaveBeenCalledWith(true);
     expect(deps.resetSilverBalance).toHaveBeenCalledWith(123);
     expect(deps.syncPlayerHealth).toHaveBeenCalledOnce();
@@ -106,6 +122,7 @@ describe("SaveGameActions load persistence recovery", () => {
     });
 
     expect(() => deps.actions.load()).toThrow("invalid save");
+    expect(deps.prepareRuntimeForLoad).toHaveBeenCalledOnce();
     expect(deps.setLoadFailed).not.toHaveBeenCalled();
     expect(deps.resetSilverBalance).not.toHaveBeenCalled();
     expect(deps.syncPlayerHealth).not.toHaveBeenCalled();
