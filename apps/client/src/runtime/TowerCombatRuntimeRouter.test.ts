@@ -1,9 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { TowerProgressionService } from "@game/gameplay";
 import { TowerCombatEncounterSource } from "./TowerCombatEncounterSource.js";
-import { TowerCombatRuntimeRouter } from "./TowerCombatRuntimeRouter.js";
+import {
+  TowerCombatRuntimeRouter,
+  type TowerBlockTransitionPort,
+} from "./TowerCombatRuntimeRouter.js";
 
-function createRouter(): {
+function createRouter(blockTransitionPort?: TowerBlockTransitionPort): {
   readonly progression: TowerProgressionService;
   readonly router: TowerCombatRuntimeRouter;
 } {
@@ -13,6 +16,7 @@ function createRouter(): {
     router: new TowerCombatRuntimeRouter(
       progression,
       new TowerCombatEncounterSource(progression),
+      blockTransitionPort,
     ),
   };
 }
@@ -45,6 +49,32 @@ describe("TowerCombatRuntimeRouter", () => {
     });
     expect(router.isTowerActive()).toBe(true);
     expect(router.getEncounterIndex(4)).toBe(1);
+  });
+
+  it("closes the attempt and requests a pause after a completed block", () => {
+    const requestPauseAfterEncounter = vi.fn(() => true);
+    const { progression, router } = createRouter({ requestPauseAfterEncounter });
+    expect(router.start()).toBe(true);
+
+    for (let floor = 1; floor < 5; floor += 1) {
+      expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({
+        enteredNewSegment: false,
+      });
+      expect(router.isTowerActive()).toBe(true);
+      expect(progression.getSnapshot().currentFloor).toBe(floor + 1);
+      expect(requestPauseAfterEncounter).not.toHaveBeenCalled();
+    }
+
+    expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({
+      enteredNewSegment: true,
+    });
+    expect(router.isTowerActive()).toBe(false);
+    expect(progression.getSnapshot()).toMatchObject({
+      currentFloor: 6,
+      highestClearedFloor: 5,
+      checkpointFloor: 6,
+    });
+    expect(requestPauseAfterEncounter).toHaveBeenCalledTimes(1);
   });
 
   it("returns to the block checkpoint and exits Tower on defeat", () => {
