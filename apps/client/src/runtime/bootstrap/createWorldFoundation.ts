@@ -90,6 +90,15 @@ export function createWorldFoundation() {
     });
   }
 
+  const isWorldProgressionComplete = (): boolean => {
+    const finalZoneDefId = WORLD_ZONE_ORDER[WORLD_ZONE_ORDER.length - 1];
+    if (finalZoneDefId === undefined) return false;
+    const finalZoneMemory = worldRuntime
+      .getWorldLocationSaveState()
+      .zoneMemories.find((memory) => memory.zoneDefId === finalZoneDefId);
+    return finalZoneMemory?.completedSegments.includes(SEGMENTS_PER_ZONE - 1) ?? false;
+  };
+
   return {
     biomeRegistry,
     biomeResolver,
@@ -101,6 +110,7 @@ export function createWorldFoundation() {
     worldRuntime,
     zoneOrder: WORLD_ZONE_ORDER as readonly ZoneDefinitionId[],
     forestZoneDefId: WORLD_ZONE_IDS.forest,
+    isWorldProgressionComplete,
   };
 }
 
