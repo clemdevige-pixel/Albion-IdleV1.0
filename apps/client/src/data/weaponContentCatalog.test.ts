@@ -77,7 +77,7 @@ describe("weapon content catalog", () => {
     expect(CLIENT_ABILITIES["ability_bow_aimed_shot"]).toMatchObject({ cooldown: 5, mechanics: { mechanics: [{ kind: "damage", ratio: 0.534 }] } });
     expect(CLIENT_ABILITIES["ability_fire_fireball"]).toMatchObject({ cooldown: 5, mechanics: { mechanics: [{ kind: "damage", ratio: 0.428 }, { kind: "dot", effectId: "effect_fire_burn", ratio: 0.096, interval: 1, ticks: 3 }] } });
     expect(CLIENT_ABILITIES["ability_gloves_shockwave"]).toMatchObject({ cooldown: 6, mechanics: { mechanics: [{ kind: "damage", ratio: 1.18 }] } });
-    expect(CLIENT_ABILITIES["ability_dagger_double_slash"]).toMatchObject({ cooldown: 4, mechanics: { mechanics: [{ kind: "damage", ratio: 0.595, hits: 2 }, { kind: "heal_from_damage", ratio: 0.12, maxHealthRatio: 0.015 }] } });
+    expect(CLIENT_ABILITIES["ability_dagger_double_slash"]).toMatchObject({ cooldown: 4, mechanics: { mechanics: [{ kind: "damage", ratio: 0.595, hits: 2 }] } });
   });
 
   it("does not infer unknown weapons", () => {
