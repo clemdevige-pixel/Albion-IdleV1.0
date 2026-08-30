@@ -144,6 +144,18 @@ describe("Academy research content", () => {
     expect(RESEARCH_DEFINITIONS.some((entry) => entry.id === RESEARCH_IDS.dungeonSanctuaryLocation)).toBe(false);
   });
 
+  it("authors the T8 Tower discovery after World completion", () => {
+    const towerStudy = RESEARCH_DEFINITIONS.find((entry) => entry.id === RESEARCH_IDS.towerStudy);
+    expect(towerStudy?.tier).toBe(8);
+    expect(towerStudy?.durationMs).toBe(4 * 60 * 60 * 1000);
+    expect(towerStudy?.cost).toEqual({ silver: 110_000, materials: [] });
+    expect(towerStudy?.requirements).toEqual([
+      { type: "academy_tier", minimumTier: 8 },
+      { type: "world_progression_complete" },
+    ]);
+    expect(towerStudy?.unlockIds).toEqual([RESEARCH_UNLOCK_IDS.towerSystem]);
+  });
+
   it("keeps every authored Research gated by its Academy tier", () => {
     for (const definition of RESEARCH_DEFINITIONS) {
       expect(hasAcademyTierRequirement(definition)).toBe(true);
