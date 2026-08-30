@@ -1,6 +1,6 @@
 # Tower Endless — final balance candidate (2026-08-30)
 
-Status: **candidate locked for final benchmark, not yet live-authored**.
+Status: **final micro-pass candidate locked for benchmark, not yet live-authored**.
 
 This file exists to prevent loss of decisions made during the Tower Endless balance pass. Do not partially apply it: after the final benchmark is accepted, the live implementation must reproduce the full set below.
 
@@ -43,24 +43,24 @@ Values below are the intended authored/live targets after final validation.
 - **Bow of Badon / Raging Storm**: direct ratio `1.35 -> 1.05`
 - **Whispering Bow / Undead Arrows**:
   - remove the `+15% damage taken` self-vulnerability
-  - final-pass candidate: auto-attack bonus-window ratio `0.50 -> 0.55`
+  - auto-attack bonus-window ratio `0.50 -> 0.60`
 
 ### Fire Staff
 
-- **Wildfire Staff / Magma Sphere**: final-pass candidate direct ratio `1.30 -> 1.40`; DoT remains `0.20 x4`
+- **Wildfire Staff / Magma Sphere**: direct ratio `1.30 -> 1.45`; DoT remains `0.20 x4`
 - **Blazing Staff / Flame Tornado**: per-hit ratio `1.50 -> 1.35` (`3 hits`)
-- **Great Fire Staff / Pyroblast**: direct ratio `2.00 -> 3.40`; silence unchanged
+- **Great Fire Staff / Pyroblast**: direct ratio `2.00 -> 3.55`; silence unchanged
 
 ### Gloves
 
 - **Ursine Maulers / Hundred Striking Fists**:
   - six-hit opener remains `0.30 x6`
-  - magical finisher `1.65 -> 2.35`
-- **Battle Bracers / Falcon Smash**: direct ratio `2.60 -> 3.60`
+  - magical finisher `1.65 -> 2.50`
+- **Battle Bracers / Falcon Smash**: direct ratio `2.60 -> 3.75`
 
 ### Sword
 
-- **Galatine Pair / Soulless Stream**: final-pass candidate direct ratio `2.60 -> 2.75`
+- **Galatine Pair / Soulless Stream**: direct ratio `2.60 -> 2.90`
 
 ### Daggers
 
@@ -68,11 +68,11 @@ Values below are the intended authored/live targets after final validation.
 - **Demonfang / Blood Ritual**: per-hit ratio `2.00 -> 1.15` (`3 hits`)
 - **Deathgivers / Ghost Strike**:
   - base ratio remains `1.80`
-  - `Opening` bonus ratio `0.90 -> 2.20`
-  - prepared total becomes `4.00x`
+  - `Opening` bonus ratio `0.90 -> 2.50`
+  - prepared total becomes `4.30x`
   - identity: setup with shared dagger `Opening`, then heavy prepared burst; no cooldown-reset exception
 - **Claws / Disembowel**:
-  - per-hit ratio `1.40 -> 1.00` (`4 hits`)
+  - per-hit ratio `1.40 -> 1.03` (`4 hits`)
   - bleed ratio `0.15 -> 0.10` (`3 ticks`)
 
 ## Explicit non-decisions / guards
@@ -81,7 +81,8 @@ Values below are the intended authored/live targets after final validation.
 - Do **not** change dungeon combat profiles to balance Tower.
 - Do **not** nerf Bloodletter execution based on the old leak result; its neutral leaks disappeared after family sustain removal.
 - Do **not** add specialization-only dagger sustain.
-- Do **not** change Ravenstrike / Carving / other high-T8 performers individually before validating T8 x1.05 with the final weak-weapon micro-buffs.
+- Do **not** change Ravenstrike / Carving / other high-T8 performers individually in this final micro-pass.
+- Do **not** reduce the chosen T8 extra multiplier below or above `x1.05` in this gate.
 
 ## Final benchmark gate
 
