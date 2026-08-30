@@ -35,7 +35,6 @@ import {
 } from "./artifactWeaponBenchmarkFixtures.js";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import { resolveFactionCombatModifiers } from "./factionCombatResolver.js";
-import { applyTowerFactionCombatNormalization } from "./towerCombatNormalization.js";
 import { resolveTowerEncounter } from "./towerEncounterResolver.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarness.js";
@@ -92,10 +91,10 @@ function runWeaponBlock(block: BenchmarkBlock, weapon: BenchmarkSpec, seed: stri
 
   const floors = Array.from({ length: block.floorEnd - block.floorStart + 1 }, (_, i) => block.floorStart + i);
   const resolved = floors.map((floor) => resolveTowerEncounter(floor, seed));
-  towerProfileOverride.profiles = resolved.map((entry) => applyTowerFactionCombatNormalization(
-    { factionId: faction, tier },
-    entry.combatProfile,
-  ));
+  // resolveTowerEncounter already applies Tower faction/tier normalization,
+  // reinforced-floor tuning and depth scaling. Inject those authored profiles
+  // directly into the generic combat harness; do not normalize a second time.
+  towerProfileOverride.profiles = resolved.map((entry) => entry.combatProfile);
 
   try {
     const result = runCombatRuntimeBenchmark({
@@ -201,7 +200,7 @@ describe("Tower Endless live-authored balance validation", () => {
     console.table(t8);
     console.log("[TOWER_LIVE_VALIDATION_DAGGERS]");
     console.table(daggers);
-    console.log("[TOWER_LIVE_VALIDATION_NOTE] Uses authored live Tower normalization and authored live weapon abilities. No benchmark-only damage tuning or weapon mocks are applied.");
+    console.log("[TOWER_LIVE_VALIDATION_NOTE] Uses resolveTowerEncounter-authored combat profiles directly. No benchmark-only damage tuning, weapon mocks, or duplicate Tower normalization are applied.");
 
     expect(rows.length).toBeGreaterThan(0);
     expect(favorable.length).toBeGreaterThan(0);
