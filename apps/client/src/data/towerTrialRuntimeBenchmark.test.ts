@@ -26,6 +26,14 @@ const ENDLESS_SEEDS = [
   "tower-benchmark-delta",
 ] as const;
 const WEAPON_FAMILIES = ["sword", "bow", "fire_staff", "gloves", "dagger"] as const satisfies readonly ArtifactWeaponFamily[];
+const FACTIONS = ["keeper", "heretic", "undead", "morgana"] as const;
+
+const NEUTRAL_CAPE_FACTION_BY_ENEMY = {
+  keeper: "heretic",
+  heretic: "undead",
+  undead: "morgana",
+  morgana: "keeper",
+} as const;
 
 type BenchmarkSpec = (typeof ARTIFACT_WEAPON_BENCHMARK_SPECS)[number];
 type BenchmarkBlock = Pick<
@@ -179,6 +187,82 @@ function runBlockRows(block: BenchmarkBlock, sampleId: string): BenchmarkRow[] {
   return getFavorableWeapons(block).map((weapon) => runSpecializationBlock(block, weapon, sampleId));
 }
 
+function runFactionNeutralMatrix() {
+  return DUNGEON_DEFINITIONS
+    .filter((dungeon) => FACTIONS.includes(dungeon.faction.toLowerCase() as (typeof FACTIONS)[number]))
+    .flatMap((dungeon) => {
+      const faction = dungeon.faction.toLowerCase() as (typeof FACTIONS)[number];
+      const neutralCapeFaction = NEUTRAL_CAPE_FACTION_BY_ENEMY[faction];
+      return ARTIFACT_WEAPON_BENCHMARK_SPECS.map((weapon) => {
+        const weaponItemId = weapon.itemId(dungeon.tier);
+        const result = runCombatRuntimeBenchmark({
+          label: `neutral_${faction}_t${String(dungeon.tier)}_${weapon.family}_${weapon.label.replaceAll(" ", "_").toLowerCase()}`,
+          weaponItemId,
+          equipmentItemIds: artifactDungeonEquipment(weaponItemId, dungeon.tier, neutralCapeFaction),
+          zoneDefId: WORLD_ZONE_IDS.mountain,
+          segmentIndex: 9,
+          dungeonDefinitionId: dungeon.id,
+          enchantment: 3,
+          familyMasteryLevel: ENDGAME_FAMILY_MASTERY,
+          specializationMasteryLevel: ENDGAME_WEAPON_MASTERY,
+          siblingSpecializationMasteryLevel: ENDGAME_SIBLING_MASTERY,
+          heroDamageMultiplier: 1,
+          useHealthPotions: true,
+          healthPotionQuantity: POTION_CAP,
+        });
+        return {
+          faction,
+          tier: dungeon.tier,
+          family: weapon.family,
+          weapon: weapon.label,
+          clear: result.clear,
+          seconds: result.seconds,
+          hpPct: result.hpPercent,
+          potions: result.potionsUsed,
+          bossProgressPct: result.bossProgressPercent,
+          dps: result.observedDps,
+          incomingDps: result.incomingDps,
+          capeReductionPct: result.dungeonDamageReductionPercent,
+        };
+      });
+    });
+}
+
+function summarizeNeutralByWeapon(rows: ReturnType<typeof runFactionNeutralMatrix>) {
+  return ARTIFACT_WEAPON_BENCHMARK_SPECS.map((weapon) => {
+    const weaponRows = rows.filter((row) => row.family === weapon.family && row.weapon === weapon.label);
+    const clears = weaponRows.filter((row) => row.clear).length;
+    return {
+      family: weapon.family,
+      weapon: weapon.label,
+      runs: weaponRows.length,
+      clears,
+      failures: weaponRows.length - clears,
+      avgHpPct: Number((weaponRows.reduce((sum, row) => sum + row.hpPct, 0) / weaponRows.length).toFixed(1)),
+      worstHpPct: Number(Math.min(...weaponRows.map((row) => row.hpPct)).toFixed(1)),
+      avgDps: Number((weaponRows.reduce((sum, row) => sum + row.dps, 0) / weaponRows.length).toFixed(1)),
+      avgSeconds: Number((weaponRows.reduce((sum, row) => sum + row.seconds, 0) / weaponRows.length).toFixed(1)),
+    };
+  });
+}
+
+function summarizeNeutralByFaction(rows: ReturnType<typeof runFactionNeutralMatrix>) {
+  return FACTIONS.flatMap((faction) => [4, 5, 6, 7, 8].map((tier) => {
+    const contextRows = rows.filter((row) => row.faction === faction && row.tier === tier);
+    const clears = contextRows.filter((row) => row.clear).length;
+    return {
+      faction,
+      tier,
+      runs: contextRows.length,
+      clears,
+      failures: contextRows.length - clears,
+      avgHpPct: Number((contextRows.reduce((sum, row) => sum + row.hpPct, 0) / contextRows.length).toFixed(1)),
+      worstHpPct: Number(Math.min(...contextRows.map((row) => row.hpPct)).toFixed(1)),
+      avgIncomingDps: Number((contextRows.reduce((sum, row) => sum + row.incomingDps, 0) / contextRows.length).toFixed(1)),
+    };
+  }));
+}
+
 describe("Tower runtime specialization benchmark", () => {
   it("benchmarks every favorable artifact specialization across Trial and repeated Endless contexts", () => {
     const trialRows = TOWER_TRIAL_BLOCKS.flatMap((block) => (
@@ -217,5 +301,24 @@ describe("Tower runtime specialization benchmark", () => {
       expect(familyWeapons.length).toBeGreaterThan(1);
       expect(familyWeapons.every((row) => row.runs >= ENDLESS_SEEDS.length)).toBe(true);
     }
+  });
+
+  it("compares every artifact specialization on a faction-neutral T4-T8 matrix", () => {
+    const rows = runFactionNeutralMatrix();
+    const weaponSummary = summarizeNeutralByWeapon(rows);
+    const factionSummary = summarizeNeutralByFaction(rows);
+
+    console.log("[FACTION_NEUTRAL_ALL_WEAPONS]");
+    console.table(rows);
+    console.log("[FACTION_NEUTRAL_WEAPON_SUMMARY]");
+    console.table(weaponSummary);
+    console.log("[FACTION_NEUTRAL_CONTEXT_SUMMARY]");
+    console.table(factionSummary);
+    console.log("[FACTION_NEUTRAL_NOTE] no anti-faction weapon bonus, no Tower resilience multiplier, and a deliberately non-matching faction cape so Dungeon faction damage reduction remains 0. This isolates weapon specialization performance from faction combat modifiers while preserving each authored faction/tier enemy roster.");
+
+    expect(rows).toHaveLength(FACTIONS.length * 5 * ARTIFACT_WEAPON_BENCHMARK_SPECS.length);
+    expect(rows.every((row) => row.capeReductionPct === 0)).toBe(true);
+    expect(weaponSummary.every((row) => row.runs === FACTIONS.length * 5)).toBe(true);
+    expect(factionSummary.every((row) => row.runs === ARTIFACT_WEAPON_BENCHMARK_SPECS.length)).toBe(true);
   });
 });
