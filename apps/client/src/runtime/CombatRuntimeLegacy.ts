@@ -110,6 +110,7 @@ export class CombatRuntime {
   private awaitingResumeAfterDefeat = false;
   private primaryAbilityAutoCast = true;
   private currentTick = 0;
+  private enemyKilledNotificationKey: string | null = null;
 
   constructor(deps: CombatRuntimeDependencies) {
     this.world = deps.world;
@@ -220,6 +221,7 @@ export class CombatRuntime {
   private cleanupActiveEnemy(): void {
     this.destroyEnemyEntity(this.activeEnemyId);
     this.activeEnemyId = NO_ENEMY_ID;
+    this.enemyKilledNotificationKey = null;
   }
 
   public spawnEnemy(): SpawnedEnemyResult {
@@ -230,6 +232,7 @@ export class CombatRuntime {
   public initialize(): CombatDomainTickResult {
     const firstEnemy = this.spawnEnemy();
     this.activeEnemyId = firstEnemy.id;
+    this.enemyKilledNotificationKey = null;
     for (const definition of Object.values(CLIENT_ABILITIES)) this.abilityManager.learnAbility(this.heroId, definition);
     const encounterResult = this.combatService.startEncounter({ id: asEncounterId(`encounter_${String(this.encounterCounter)}`), enemies: [{ entityId: firstEnemy.id }] }, this.heroId);
     const enemyHealth = this.damageManager.getHealth(firstEnemy.id);
@@ -295,10 +298,17 @@ export class CombatRuntime {
 
   public finalizeActiveEnemyDeath(tickCounter: number): boolean {
     if (this.damageManager.isAlive(this.activeEnemyId)) return false;
-    const death = this.deathManager.checkDeath(this.activeEnemyId, this.heroId, tickCounter);
-    if (death === null) return true;
+    this.deathManager.checkDeath(this.activeEnemyId, this.heroId, tickCounter);
     const session = this.combatService.getActiveSession();
-    if (session !== undefined) this.combatService.events.publish("enemyKilled", { sessionId: session.sessionId, entityId: this.activeEnemyId });
+    if (session === undefined || session.state !== "combat") return true;
+    if (!session.participants.enemies.includes(this.activeEnemyId)) return true;
+    const notificationKey = `${String(session.sessionId)}|${String(this.activeEnemyId)}`;
+    if (this.enemyKilledNotificationKey === notificationKey) return true;
+    this.enemyKilledNotificationKey = notificationKey;
+    this.combatService.events.publish("enemyKilled", {
+      sessionId: session.sessionId,
+      entityId: this.activeEnemyId,
+    });
     return true;
   }
 
@@ -358,6 +368,7 @@ export class CombatRuntime {
       this.encounterCounter += 1;
       const enemy = this.spawnEnemy();
       this.activeEnemyId = enemy.id;
+      this.enemyKilledNotificationKey = null;
       if (this.flowPolicy.shouldRestoreHeroHealthBeforeEncounter({ locationChangedAfterVictory, enteringBoss })) {
         this.restoreHeroHealth();
       }
