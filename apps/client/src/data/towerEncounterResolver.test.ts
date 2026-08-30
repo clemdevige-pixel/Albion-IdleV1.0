@@ -4,6 +4,7 @@ import {
   getTowerDepthDifficultyMultiplier,
 } from "@game/data";
 import { resolveDungeonCombatProfile } from "./dungeonContentCatalog.js";
+import { applyTowerFactionCombatNormalization } from "./towerCombatNormalization.js";
 import { resolveTowerEncounter } from "./towerEncounterResolver.js";
 
 describe("towerEncounterResolver", () => {
@@ -26,6 +27,32 @@ describe("towerEncounterResolver", () => {
     });
     expect(first.combatProfile.hp).toBeGreaterThan(0);
     expect(first.combatProfile.damage).toBeGreaterThan(0);
+  });
+
+  it("normalizes non-Keeper combat profiles only inside Tower resolution", () => {
+    const tower = resolveTowerEncounter(6, "tower-encounter-seed");
+    const baseProfile = resolveDungeonCombatProfile({
+      dungeonDefinitionId: tower.dungeonDefinitionId,
+      encounterIndex: tower.dungeonEncounterIndex,
+      monsterDefinitionId: tower.monsterDefinitionId,
+    });
+    const expectedTowerProfile = applyTowerFactionCombatNormalization(
+      { factionId: tower.floorDefinition.block.factionId, tier: tower.floorDefinition.block.tier },
+      baseProfile,
+    );
+
+    expect(tower.floorDefinition).toMatchObject({
+      floor: 6,
+      role: "normal",
+      block: { tier: 6, factionId: "heretic" },
+    });
+    expect(tower.combatProfile).toEqual(expectedTowerProfile);
+    expect(tower.combatProfile).not.toEqual(baseProfile);
+    expect(resolveDungeonCombatProfile({
+      dungeonDefinitionId: tower.dungeonDefinitionId,
+      encounterIndex: tower.dungeonEncounterIndex,
+      monsterDefinitionId: tower.monsterDefinitionId,
+    })).toEqual(baseProfile);
   });
 
   it("reuses normal 2 for reinforced floors and applies Tower-only authored multipliers", () => {
@@ -84,13 +111,17 @@ describe("towerEncounterResolver", () => {
     expect(getTowerDepthDifficultyMultiplier(100)).toBeCloseTo(1.15);
   });
 
-  it("applies the endless depth multiplier to HP, damage and both defenses", () => {
+  it("applies faction normalization before the endless depth multiplier", () => {
     const result = resolveTowerEncounter(26, "tower-encounter-seed");
     const baseProfile = resolveDungeonCombatProfile({
       dungeonDefinitionId: result.dungeonDefinitionId,
       encounterIndex: result.dungeonEncounterIndex,
       monsterDefinitionId: result.monsterDefinitionId,
     });
+    const normalizedProfile = applyTowerFactionCombatNormalization(
+      { factionId: result.floorDefinition.block.factionId, tier: result.floorDefinition.block.tier },
+      baseProfile,
+    );
     const multiplier = getTowerDepthDifficultyMultiplier(26);
 
     expect(result.dungeonDefinitionId).toBe(
@@ -99,11 +130,11 @@ describe("towerEncounterResolver", () => {
     expect(result.dungeonEncounterIndex).toBe(0);
     expect(result.encounterKind).toBe("normal");
     expect(result.combatProfile).toEqual({
-      hp: Math.round(baseProfile.hp * multiplier),
-      damage: Math.round(baseProfile.damage * multiplier),
-      attackSpeed: baseProfile.attackSpeed,
-      armor: Math.round(baseProfile.armor * multiplier),
-      magicResistance: Math.round(baseProfile.magicResistance * multiplier),
+      hp: Math.round(normalizedProfile.hp * multiplier),
+      damage: Math.round(normalizedProfile.damage * multiplier),
+      attackSpeed: normalizedProfile.attackSpeed,
+      armor: Math.round(normalizedProfile.armor * multiplier),
+      magicResistance: Math.round(normalizedProfile.magicResistance * multiplier),
     });
   });
 });
