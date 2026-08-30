@@ -4,6 +4,8 @@ export const TOWER_BLOCK_SIZE = 5;
 export const TOWER_MAJOR_BOSS_CADENCE = 25;
 export const TOWER_TRIAL_FLOOR_COUNT = 25;
 export const TOWER_POST_25_DIFFICULTY_STEP = 0.01;
+export const TOWER_FACTION_RESILIENCE_PERCENT = 40;
+export const TOWER_MATCHED_WEAPON_RESILIENCE_IGNORE_PERCENT = 75;
 
 export const TOWER_TIERS = [4, 5, 6, 7, 8] as const;
 export type TowerTier = (typeof TOWER_TIERS)[number];
