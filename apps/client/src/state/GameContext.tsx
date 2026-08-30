@@ -920,6 +920,7 @@ export function GameProvider({
       getRelicProgress: (relicId) => factionResearchFoundation.relicService.getProgress(relicId),
       isDungeonSystemUnlocked: dungeonResearchAccessFoundation.isDungeonSystemUnlocked,
       isTowerSystemUnlocked,
+      selectTowerCheckpoint: (floor) => towerNavigationActions.selectCheckpoint(floor),
       startTower: () => towerNavigationActions.requestStart(),
       abandonTower: () => towerNavigationActions.abandon(),
       isTowerActive: () => towerFoundation.combatRouter.isTowerActive(),
