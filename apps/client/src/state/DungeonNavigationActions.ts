@@ -117,6 +117,15 @@ export class DungeonNavigationActions {
     };
   }
 
+  /** Clears only transient attempt/request state before a different save snapshot is loaded. */
+  public resetTransientState(): void {
+    this.pendingDefinitionId = null;
+    if (this.deps.dungeonRuntime.activeRun?.status === "active") {
+      this.deps.dungeonRuntime.abandon();
+      dungeonCompletionFlow.cancel();
+    }
+  }
+
   public requestStart(definitionId: string): boolean {
     if (
       this.deps.isCombatSuspended()
