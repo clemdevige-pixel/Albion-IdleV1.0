@@ -46,6 +46,42 @@ export interface TowerAccessState {
   readonly highestEquippedTier?: number;
 }
 
+export interface TowerAccessFacts {
+  readonly requiredTier: number;
+  readonly researchUnlocked: boolean;
+  readonly activityAvailable: boolean;
+  readonly hasWeapon: boolean;
+  readonly highestEquippedTier?: number;
+}
+
+export function resolveTowerAccessState(facts: TowerAccessFacts): TowerAccessState {
+  if (!facts.researchUnlocked) {
+    return { canEnter: false, reason: "research_locked", requiredTier: facts.requiredTier };
+  }
+  if (!facts.activityAvailable) {
+    return { canEnter: false, reason: "activity_busy", requiredTier: facts.requiredTier };
+  }
+  if (!facts.hasWeapon) {
+    return { canEnter: false, reason: "weapon_required", requiredTier: facts.requiredTier };
+  }
+  if (facts.highestEquippedTier !== undefined && facts.highestEquippedTier > facts.requiredTier) {
+    return {
+      canEnter: false,
+      reason: "equipment_tier_locked",
+      requiredTier: facts.requiredTier,
+      highestEquippedTier: facts.highestEquippedTier,
+    };
+  }
+  return {
+    canEnter: true,
+    reason: "available",
+    requiredTier: facts.requiredTier,
+    ...(facts.highestEquippedTier === undefined
+      ? {}
+      : { highestEquippedTier: facts.highestEquippedTier }),
+  };
+}
+
 export interface TowerNavigationState {
   readonly active: boolean;
   readonly pendingStart: boolean;
@@ -122,34 +158,16 @@ export class TowerNavigationActions {
   private getAccess(): TowerAccessState {
     const snapshot = this.deps.progression.getSnapshot();
     const floor = getTowerFloorDefinition(snapshot.currentFloor, snapshot.seed);
-    const requiredTier = floor.block.tier;
     const equipment = getEquippedTierAccessFacts(this.deps.equipmentManager, this.deps.heroId);
-
-    if (!this.deps.isTowerUnlocked()) {
-      return { canEnter: false, reason: "research_locked", requiredTier };
-    }
-    if (!this.deps.activityRouter.canStartTower()) {
-      return { canEnter: false, reason: "activity_busy", requiredTier };
-    }
-    if (!equipment.hasWeapon) {
-      return { canEnter: false, reason: "weapon_required", requiredTier };
-    }
-    if (equipment.highestEquippedTier !== undefined && equipment.highestEquippedTier > requiredTier) {
-      return {
-        canEnter: false,
-        reason: "equipment_tier_locked",
-        requiredTier,
-        highestEquippedTier: equipment.highestEquippedTier,
-      };
-    }
-    return {
-      canEnter: true,
-      reason: "available",
-      requiredTier,
+    return resolveTowerAccessState({
+      requiredTier: floor.block.tier,
+      researchUnlocked: this.deps.isTowerUnlocked(),
+      activityAvailable: this.deps.activityRouter.canStartTower(),
+      hasWeapon: equipment.hasWeapon,
       ...(equipment.highestEquippedTier === undefined
         ? {}
         : { highestEquippedTier: equipment.highestEquippedTier }),
-    };
+    });
   }
 
   private startNow(): boolean {
