@@ -3,13 +3,13 @@ import {
   TOWER_FLOOR_WORLD_REWARD_PERCENT,
   WORLD_BAND_DEFINITIONS,
   getTowerBlockSilverReward,
+  getWorldCombatProgression,
   type TowerTier,
   type WorldBandId,
 } from "@game/data";
 import {
   getEncounterRewards,
   getTowerFloorDefinition,
-  getWorldCombatProgression,
   type TowerProgressionService,
 } from "@game/gameplay";
 import type { CombatRewardRuntime, EnemyKilledRewardResult } from "./CombatRewardRuntime.js";
