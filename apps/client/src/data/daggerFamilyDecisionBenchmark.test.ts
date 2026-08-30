@@ -38,15 +38,6 @@ vi.mock("./dungeonContentCatalog.js", async (importOriginal) => {
   };
 });
 
-const DOUBLE_SLASH_ID = "ability_dagger_double_slash";
-const FLURRY_ID = "ability_dagger_flurry";
-const CROSS_ASSAULT_ID = "ability_dagger_pair_cross_assault";
-const FAMILY_REVERT = {
-  [DOUBLE_SLASH_ID]: 0.595 / 0.79,
-  [FLURRY_ID]: 0.782 / 1.04,
-} as const;
-const CROSS_CANDIDATES = [1.35, 1.5, 1.65] as const;
-
 const DAGGER_PAIR_BY_TIER = {
   4: "item_weapon_dagger_t4_pair",
   5: "item_weapon_dagger_t5_pair",
@@ -67,10 +58,10 @@ const ARMOR_BY_TIER = {
 } as const;
 type WorldTier = keyof typeof DAGGER_PAIR_BY_TIER;
 
-function runPair(tier: WorldTier, enchantment: 2 | 3, useHealthPotions: boolean, crossMultiplier: number) {
+function runPair(tier: WorldTier, enchantment: 2 | 3, useHealthPotions: boolean) {
   const contract = getWorldTierTransitionContract(tier);
   return runCombatRuntimeBenchmark({
-    label: `dagger_pair_decision_t${String(tier)}_${String(enchantment)}_${String(crossMultiplier)}`,
+    label: `dagger_pair_live_validation_t${String(tier)}_${String(enchantment)}_${useHealthPotions ? "potion" : "no_potion"}`,
     weaponItemId: DAGGER_PAIR_BY_TIER[tier],
     zoneDefId: WALL_ZONE_BY_TIER[tier],
     segmentIndex: 9,
@@ -78,12 +69,6 @@ function runPair(tier: WorldTier, enchantment: 2 | 3, useHealthPotions: boolean,
     masteryLevel: contract.masteryLevel,
     enchantment,
     useHealthPotions,
-    damageTuning: {
-      directAbilityMultiplierById: {
-        ...FAMILY_REVERT,
-        [CROSS_ASSAULT_ID]: crossMultiplier,
-      },
-    },
   });
 }
 
@@ -93,7 +78,7 @@ const ENDLESS_SEEDS = [
   "tower-benchmark-gamma",
   "tower-benchmark-delta",
 ] as const;
-const TRIAL_SEED = "dagger-family-decision-trial";
+const TRIAL_SEED = "dagger-family-live-validation-trial";
 const DAGGER_SPECS = ARTIFACT_WEAPON_BENCHMARK_SPECS.filter((spec) => spec.family === "dagger");
 type BenchmarkSpec = (typeof ARTIFACT_WEAPON_BENCHMARK_SPECS)[number];
 type BenchmarkBlock = Pick<TowerBlockDefinition, "id" | "blockIndex" | "floorStart" | "floorEnd" | "tier" | "factionId" | "source">;
@@ -132,7 +117,7 @@ function runArtifactBlock(block: BenchmarkBlock, weapon: BenchmarkSpec, seed: st
   );
   try {
     const result = runCombatRuntimeBenchmark({
-      label: `dagger_family_revert_${weapon.label.replaceAll(" ", "_").toLowerCase()}_t${String(tier)}`,
+      label: `dagger_live_${weapon.label.replaceAll(" ", "_").toLowerCase()}_t${String(tier)}`,
       weaponItemId,
       equipmentItemIds: artifactDungeonEquipment(weaponItemId, tier, dungeon.faction),
       zoneDefId: WORLD_ZONE_IDS.mountain,
@@ -145,7 +130,6 @@ function runArtifactBlock(block: BenchmarkBlock, weapon: BenchmarkSpec, seed: st
       heroDamageMultiplier: (1 + modifiers.outgoingDamageBonusPercent / 100) * modifiers.factionResilienceDamageMultiplier,
       useHealthPotions: true,
       healthPotionQuantity: 2,
-      damageTuning: { directAbilityMultiplierById: FAMILY_REVERT },
     });
     return { weapon: weapon.label, tier, clear: result.clear, hpPct: result.hpPercent };
   } finally {
@@ -153,9 +137,9 @@ function runArtifactBlock(block: BenchmarkBlock, weapon: BenchmarkSpec, seed: st
   }
 }
 
-describe("Dagger family decision benchmark", () => {
-  it("finds a Dagger Pair signature candidate with the old family baseline", () => {
-    const rows = CROSS_CANDIDATES.flatMap((crossMultiplier) => ([4, 5, 6, 7] as const).flatMap((tier) => {
+describe("Dagger family live validation", () => {
+  it("validates Dagger Pair across canonical World walls", () => {
+    const rows = ([4, 5, 6, 7] as const).flatMap((tier) => {
       const contract = getWorldTierTransitionContract(tier);
       const scenarios = [
         { scenario: ".2+potion", enchantment: contract.blockedEnchantment, useHealthPotions: true },
@@ -163,23 +147,24 @@ describe("Dagger family decision benchmark", () => {
         { scenario: ".3+potion", enchantment: contract.requiredEnchantment, useHealthPotions: true },
       ] as const;
       return scenarios.map((scenario) => {
-        const result = runPair(tier, scenario.enchantment, scenario.useHealthPotions, crossMultiplier);
+        const result = runPair(tier, scenario.enchantment, scenario.useHealthPotions);
         return {
-          crossMultiplier,
           tier,
           scenario: scenario.scenario,
           clear: result.clear,
           hpPct: result.hpPercent,
           observedDps: result.observedDps,
+          damageDealt: Math.round(result.damageDealt),
+          damageReceived: Math.round(result.damageReceived),
         };
       });
-    }));
-    console.log("[DAGGER_PAIR_SIGNATURE_CANDIDATES]");
+    });
+    console.log("[DAGGER_PAIR_LIVE_WORLD]");
     console.table(rows);
     expect(rows.length).toBeGreaterThan(0);
   });
 
-  it("checks artifact daggers after reverting only the shared family damage buff", () => {
+  it("validates artifact daggers on favorable Tower matchups with live authored values", () => {
     const rows = allBlocks().flatMap(({ block, seed }) => DAGGER_SPECS.map((weapon) => runArtifactBlock(block, weapon, seed)).filter((row) => row !== undefined));
     const summary = DAGGER_SPECS.flatMap((weapon) => ([4, 5, 6, 7, 8] as const).map((tier) => {
       const scoped = rows.filter((row) => row.weapon === weapon.label && row.tier === tier);
@@ -194,7 +179,7 @@ describe("Dagger family decision benchmark", () => {
         worstHpPct: clears.length === 0 ? 0 : Number(Math.min(...clears.map((row) => row.hpPct)).toFixed(1)),
       };
     })).filter((row) => row !== undefined);
-    console.log("[DAGGER_ARTIFACT_FAMILY_REVERT_SUMMARY]");
+    console.log("[DAGGER_ARTIFACT_LIVE_SUMMARY]");
     console.table(summary);
     expect(rows.length).toBeGreaterThan(0);
   }, 300_000);
