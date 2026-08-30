@@ -2,9 +2,11 @@ import {
   TOWER_BLOCK_SIZE,
   TOWER_ENDLESS_FACTION_BAG,
   TOWER_ENDLESS_TIER_BAG,
+  TOWER_FLOOR_ROLES,
   TOWER_TRIAL_BLOCKS,
   isTowerMajorBossFloor,
   type TowerFactionId,
+  type TowerFloorRole,
   type TowerTier,
 } from "@game/data";
 import { createDeterministicRandom, shuffleDeterministic } from "../random/deterministic-random.js";
@@ -18,6 +20,14 @@ export interface TowerBlockDefinition {
   readonly factionId: TowerFactionId;
   readonly majorBoss: boolean;
   readonly source: "trial" | "endless";
+}
+
+export interface TowerFloorDefinition {
+  readonly floor: number;
+  readonly indexInBlock: number;
+  readonly role: TowerFloorRole;
+  readonly majorBoss: boolean;
+  readonly block: TowerBlockDefinition;
 }
 
 interface GeneratorState {
@@ -113,4 +123,24 @@ export function getTowerBlocks(
   return Array.from({ length: count }, (_, offset) => (
     getTowerBlockDefinition(startBlockIndex + offset, towerSeed)
   ));
+}
+
+/** Resolves the authored role and deterministic block identity for one floor. */
+export function getTowerFloorDefinition(floor: number, towerSeed: string): TowerFloorDefinition {
+  if (!Number.isSafeInteger(floor) || floor <= 0) {
+    throw new Error("Tower floor must be a positive safe integer");
+  }
+
+  const blockIndex = Math.floor((floor - 1) / TOWER_BLOCK_SIZE);
+  const indexInBlock = (floor - 1) % TOWER_BLOCK_SIZE;
+  const role = TOWER_FLOOR_ROLES[indexInBlock];
+  if (role === undefined) throw new Error("Tower floor role could not be resolved");
+
+  return {
+    floor,
+    indexInBlock,
+    role,
+    majorBoss: isTowerMajorBossFloor(floor),
+    block: getTowerBlockDefinition(blockIndex, towerSeed),
+  };
 }
