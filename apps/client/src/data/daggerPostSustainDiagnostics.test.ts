@@ -108,12 +108,14 @@ vi.mock("../runtime/CombatRuntime.js", async (importOriginal) => {
         const damageManager = this.diagnosticDeps.damageManager;
         const heroId = this.diagnosticDeps.heroId;
         const heroBefore = damageManager.getHealth(heroId).currentHealth;
-        const enemyBefore = damageManager.isAlive(enemyId) ? damageManager.getHealth(enemyId).currentHealth : 0;
+        const enemyAliveBefore = enemyId !== 0 && damageManager.isAlive(enemyId);
+        const enemyBefore = enemyAliveBefore ? damageManager.getHealth(enemyId).currentHealth : 0;
         const result = super.tick(dt, tickCounter);
         const heroAliveAfter = damageManager.isAlive(heroId);
-        const enemyAliveAfter = damageManager.isAlive(enemyId);
+        const currentEnemyId = this.getActiveEnemyId();
+        const enemyAliveAfter = currentEnemyId !== 0 && damageManager.isAlive(currentEnemyId);
         const heroAfter = damageManager.getHealth(heroId).currentHealth;
-        const enemyAfter = enemyAliveAfter ? damageManager.getHealth(enemyId).currentHealth : 0;
+        const enemyAfter = enemyAliveAfter ? damageManager.getHealth(currentEnemyId).currentHealth : 0;
         terminalTraceOverride.rows.push({
           tick: tickCounter,
           state: String(result.combatState),
