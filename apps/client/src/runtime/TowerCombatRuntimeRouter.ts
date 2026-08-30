@@ -1,4 +1,5 @@
-import type { TowerProgressionService } from "@game/gameplay";
+import { getTowerFloorDefinition, type TowerProgressionService } from "@game/gameplay";
+import type { FactionCombatContext } from "../data/factionCombatResolver.js";
 import {
   CONTINUOUS_COMBAT_FLOW_POLICY,
   type CombatFlowPolicy,
@@ -30,6 +31,16 @@ export class TowerCombatRuntimeRouter {
 
   public isTowerActive(): boolean {
     return this.active;
+  }
+
+  public getFactionCombatContext(): FactionCombatContext | undefined {
+    if (!this.active) return undefined;
+    const snapshot = this.progression.getSnapshot();
+    const floor = getTowerFloorDefinition(snapshot.currentFloor, snapshot.seed);
+    return {
+      factionId: floor.block.factionId,
+      tier: floor.block.tier,
+    };
   }
 
   public start(): boolean {
