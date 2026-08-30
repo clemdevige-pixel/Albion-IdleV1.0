@@ -1,8 +1,18 @@
 import type { EntityId } from "@game/core";
-import type { CurrencyService, InventoryManager, WalletId } from "@game/gameplay";
+import { TOWER_TRIAL_BLOCKS } from "@game/data";
+import type {
+  CurrencyService,
+  EquipmentLoadout,
+  EquipmentLoadoutSlot,
+  EquipmentManager,
+  EquipmentSlot,
+  InventoryManager,
+  WalletId,
+} from "@game/gameplay";
 import {
   ITEM_DEFINITIONS,
   resolveEnchantmentItemInfo,
+  resolveEquipmentInfo,
   resolveItemStackInfo,
 } from "../data/itemContentCatalog.js";
 import { getItemTier } from "../data/itemPower.js";
@@ -15,16 +25,24 @@ import {
   EQUIPMENT_CRAFT_RECIPES,
   getProductionRefiningRecipe,
 } from "../data/refiningRecipes.js";
-import { FACTION_CAPE_CRAFT_RECIPES } from "../data/factionCapeContentCatalog.js";
-import { FACTION_ARTIFACT_WEAPON_CONTENT } from "../data/factionArtifactWeaponContent.js";
+import {
+  FACTION_CAPE_CONTENT,
+  FACTION_CAPE_CRAFT_RECIPES,
+} from "../data/factionCapeContentCatalog.js";
+import {
+  FACTION_ARTIFACT_ADVANTAGE,
+  FACTION_ARTIFACT_WEAPON_CONTENT,
+  type ArtifactFaction,
+} from "../data/factionArtifactWeaponContent.js";
 import {
   getDungeonKeyFragmentItemId,
   getDungeonKeyItemId,
 } from "../data/dungeonKeyContentCatalog.js";
 
-export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v4";
+export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v5";
 const DEV_SANDBOX_SILVER = 10_000_000;
 const DEV_SANDBOX_RESOURCE_STACK = 500;
+const DEV_TOWER_LOADOUT_PREFIX = "dev_tower_block_";
 
 const ARTIFACT_WEAPON_ITEM_IDS = new Set(
   FACTION_ARTIFACT_WEAPON_CONTENT.flatMap((specialization) =>
@@ -127,13 +145,107 @@ function seedArtifactTestWeapons(
   inventoryManager: InventoryManager,
   bankId: EntityId,
 ): void {
-  for (const itemId of DEV_SANDBOX_ARTIFACT_WEAPON_T4_ITEM_IDS) {
-    ensureEquipmentVariant(inventoryManager, bankId, itemId, 0);
+  for (const specialization of FACTION_ARTIFACT_WEAPON_CONTENT) {
+    for (const item of specialization.items) {
+      ensureEquipmentVariant(inventoryManager, bankId, item.itemId, 0);
+    }
   }
+}
+
+function resolveGenericArmorItemId(slot: EquipmentSlot, tier: ProductionTier): string {
+  const itemId = Object.keys(ITEM_DEFINITIONS).find((candidate) => {
+    if (ARTIFACT_WEAPON_ITEM_IDS.has(candidate)) return false;
+    if (getItemTier(candidate) !== tier) return false;
+    return resolveEquipmentInfo(candidate)?.slot === slot;
+  });
+  if (itemId === undefined) {
+    throw new Error(`Dev sandbox has no T${String(tier)} ${slot} item for Tower loadout`);
+  }
+  return itemId;
+}
+
+function resolveCounterWeaponItemId(targetFactionId: string, tier: ProductionTier): string {
+  const counterFaction = (Object.entries(FACTION_ARTIFACT_ADVANTAGE) as readonly [ArtifactFaction, ArtifactFaction][])
+    .find(([, targetFaction]) => targetFaction.toLowerCase() === targetFactionId)?.[0];
+  if (counterFaction === undefined) {
+    throw new Error(`Dev sandbox has no artifact counter faction for ${targetFactionId}`);
+  }
+
+  const specialization = FACTION_ARTIFACT_WEAPON_CONTENT.find(
+    (entry) => entry.artifactFaction === counterFaction,
+  );
+  const item = specialization?.items.find((entry) => entry.tier === tier);
+  if (item === undefined) {
+    throw new Error(
+      `Dev sandbox has no T${String(tier)} ${counterFaction} artifact weapon for Tower loadout`,
+    );
+  }
+  return item.itemId;
+}
+
+function resolveFactionCapeItemId(targetFactionId: string, tier: ProductionTier): string {
+  const cape = FACTION_CAPE_CONTENT.find(
+    (entry) => entry.factionId === targetFactionId && entry.tier === tier,
+  );
+  if (cape === undefined) {
+    throw new Error(`Dev sandbox has no T${String(tier)} ${targetFactionId} cape for Tower loadout`);
+  }
+  return cape.itemId;
+}
+
+function resolveBankLoadoutSlot(
+  inventoryManager: InventoryManager,
+  bankId: EntityId,
+  itemId: string,
+): EquipmentLoadoutSlot {
+  const inventorySlot = inventoryManager
+    .findEntriesByItemId(bankId, itemId)
+    .find((entry) => entry.entry?.enchantment === 0);
+  const entry = inventorySlot?.entry;
+  const equipment = resolveEquipmentInfo(itemId);
+  if (entry === undefined || equipment === undefined) {
+    throw new Error(`Dev sandbox Tower loadout item missing from bank: ${itemId}`);
+  }
+  return {
+    slot: equipment.slot,
+    instanceId: entry.instanceId,
+    itemId,
+    enchantment: 0,
+  };
+}
+
+function seedTowerTestLoadouts(
+  inventoryManager: InventoryManager,
+  equipmentManager: EquipmentManager,
+  heroId: EntityId,
+  bankId: EntityId,
+): void {
+  const existing = equipmentManager
+    .getLoadouts(heroId)
+    .filter((loadout) => !loadout.id.startsWith(DEV_TOWER_LOADOUT_PREFIX));
+
+  const towerLoadouts: EquipmentLoadout[] = TOWER_TRIAL_BLOCKS.map((block) => {
+    const tier = block.tier as ProductionTier;
+    const itemIds = [
+      resolveGenericArmorItemId("head", tier),
+      resolveGenericArmorItemId("chest", tier),
+      resolveGenericArmorItemId("boots", tier),
+      resolveCounterWeaponItemId(block.factionId, tier),
+      resolveFactionCapeItemId(block.factionId, tier),
+    ];
+    return {
+      id: `${DEV_TOWER_LOADOUT_PREFIX}${String(block.blockIndex + 1)}`,
+      name: `Tour B${String(block.blockIndex + 1)} · T${String(block.tier)} ${block.factionId}`,
+      slots: itemIds.map((itemId) => resolveBankLoadoutSlot(inventoryManager, bankId, itemId)),
+    };
+  });
+
+  equipmentManager._restoreLoadouts(heroId, [...existing, ...towerLoadouts]);
 }
 
 export function seedDevSandboxEconomy(dependencies: {
   readonly inventoryManager: InventoryManager;
+  readonly equipmentManager: EquipmentManager;
   readonly heroId: EntityId;
   readonly bankId: EntityId;
   readonly productionStorageId: EntityId;
@@ -207,4 +319,10 @@ export function seedDevSandboxEconomy(dependencies: {
   }
 
   seedArtifactTestWeapons(dependencies.inventoryManager, dependencies.bankId);
+  seedTowerTestLoadouts(
+    dependencies.inventoryManager,
+    dependencies.equipmentManager,
+    dependencies.heroId,
+    dependencies.bankId,
+  );
 }
