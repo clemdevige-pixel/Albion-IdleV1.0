@@ -150,7 +150,16 @@ export class CombatBridgeAdapter {
   }
 
   presentTick(result: CombatDomainTickResult): void {
-    if (result.spawnedEnemy !== undefined) {
+    const encounterEnded = result.combatState === "victory"
+      || result.combatState === "defeat"
+      || result.combatState === "walking";
+
+    if (encounterEnded) {
+      // Encounter boundaries are authoritative over any transient enemy snapshot.
+      // The ability layer may retain the defeated target at 0 HP for one result
+      // frame, but that entity has already been destroyed by the combat runtime.
+      this.#bridge.clearEnemyPresentation();
+    } else if (result.spawnedEnemy !== undefined) {
       const health = this.#damageManager.getHealth(result.spawnedEnemy.id);
       this.#bridge.setEnemySnapshot({
         encounterKey: this.#getCurrentEncounterKey(),
@@ -162,16 +171,6 @@ export class CombatBridgeAdapter {
       this.#updateWorldBridge();
     } else if (result.activeEnemy !== undefined && result.activeEnemy.id !== 0) {
       this.#bridge.updateEnemyHealth(result.activeEnemy.currentHealth, result.activeEnemy.maxHealth);
-    } else if (
-      result.combatState === "victory"
-      || result.combatState === "defeat"
-      || result.combatState === "walking"
-    ) {
-      // Victory, defeat and explicit travel are authoritative encounter boundaries.
-      // The runtime has already destroyed the previous enemy entity, so keeping
-      // its bridge snapshot would display a stale 0 HP target during the next
-      // room/encounter transition.
-      this.#bridge.clearEnemyPresentation();
     }
 
     if (result.playerHealth !== undefined) {
