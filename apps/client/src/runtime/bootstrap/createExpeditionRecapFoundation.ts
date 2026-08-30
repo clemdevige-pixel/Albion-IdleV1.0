@@ -33,22 +33,6 @@ const DEV_RECAP_COMPLETIONS: readonly RecapCompletion[] = [
       quality: "reussie",
     },
   },
-  {
-    slotIndex: 1,
-    expeditionId: "expedition_faction_t4",
-    typeId: "faction",
-    durationMs: DEV_RECAP_DURATION_MS,
-    rewardSummary: {
-      kind: "faction_rune",
-      itemId: "item_resource_rune_faction_t4",
-      runesCredited: 16,
-      fragmentItemId: "item_resource_dungeon_key_fragment_t4",
-      fragmentsCredited: 48,
-      keyItemId: "item_resource_dungeon_key_t4",
-      completeKeysCredited: 2,
-      quality: "reussie",
-    },
-  },
 ];
 
 /** Presentation-only store. Gameplay already granted every reward before this runs. */
