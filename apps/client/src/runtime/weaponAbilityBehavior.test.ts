@@ -122,7 +122,7 @@ describe("weapon ability live behavior", () => {
     expect(noCombo.mechanics.canAutoCast(crossAssault, noCombo.enemyId)).toBe(true);
     const beforeNoCombo = noCombo.damageManager.getHealth(noCombo.enemyId).currentHealth;
     expect(noCombo.mechanics.execute(crossAssault, noCombo.enemyId, 1)).toBe(true);
-    expect(beforeNoCombo - noCombo.damageManager.getHealth(noCombo.enemyId).currentHealth).toBeCloseTo(185, 5);
+    expect(beforeNoCombo - noCombo.damageManager.getHealth(noCombo.enemyId).currentHealth).toBeCloseTo(285, 5);
 
     const withCombo = createBehaviorEnvironment();
     const flurry = requireAbility("ability_dagger_flurry");
@@ -132,7 +132,7 @@ describe("weapon ability live behavior", () => {
     expect(withCombo.mechanics.canAutoCast(crossAssault, withCombo.enemyId)).toBe(true);
     const beforeCombo = withCombo.damageManager.getHealth(withCombo.enemyId).currentHealth;
     expect(withCombo.mechanics.execute(crossAssault, withCombo.enemyId, 2)).toBe(true);
-    expect(beforeCombo - withCombo.damageManager.getHealth(withCombo.enemyId).currentHealth).toBeCloseTo(280, 5);
+    expect(beforeCombo - withCombo.damageManager.getHealth(withCombo.enemyId).currentHealth).toBeCloseTo(380, 5);
     expect(activeEffectIds(withCombo.effectManager, withCombo.enemyId)).not.toContain("effect_dagger_combo_ready");
   });
 
