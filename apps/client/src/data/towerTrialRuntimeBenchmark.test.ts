@@ -4,7 +4,6 @@ import {
   ARTIFACT_WEAPON_BENCHMARK_SPECS,
   artifactBenchmarkMasteryProfile,
   artifactDungeonEquipment,
-  type ArtifactBenchmarkTier,
 } from "./artifactWeaponBenchmarkFixtures.js";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
 import { resolveFactionCombatModifiers } from "./factionCombatResolver.js";
@@ -15,7 +14,7 @@ import { runCombatRuntimeBenchmark } from "../runtime/CombatRuntimeBenchmarkHarn
 const POTION_CAP = 2;
 
 function runBlock(block: (typeof TOWER_TRIAL_BLOCKS)[number]) {
-  const tier = block.tier as ArtifactBenchmarkTier;
+  const tier = block.tier;
   const dungeon = DUNGEON_DEFINITIONS.find((entry) => (
     entry.tier === tier && entry.faction.toLowerCase() === block.factionId
   ));
