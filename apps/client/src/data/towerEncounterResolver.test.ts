@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { TOWER_REINFORCED_COMBAT_MULTIPLIERS } from "@game/data";
+import {
+  TOWER_REINFORCED_COMBAT_MULTIPLIERS,
+  getTowerDepthDifficultyMultiplier,
+} from "@game/data";
+import { resolveDungeonCombatProfile } from "./dungeonContentCatalog.js";
 import { resolveTowerEncounter } from "./towerEncounterResolver.js";
 
 describe("towerEncounterResolver", () => {
@@ -71,12 +75,35 @@ describe("towerEncounterResolver", () => {
     });
   });
 
-  it("resolves endless floors through the same Dungeon catalog", () => {
+  it("uses the validated +1% per five-floor block depth curve after floor 25", () => {
+    expect(getTowerDepthDifficultyMultiplier(25)).toBe(1);
+    expect(getTowerDepthDifficultyMultiplier(26)).toBeCloseTo(1.01);
+    expect(getTowerDepthDifficultyMultiplier(30)).toBeCloseTo(1.01);
+    expect(getTowerDepthDifficultyMultiplier(31)).toBeCloseTo(1.02);
+    expect(getTowerDepthDifficultyMultiplier(50)).toBeCloseTo(1.05);
+    expect(getTowerDepthDifficultyMultiplier(100)).toBeCloseTo(1.15);
+  });
+
+  it("applies the endless depth multiplier to HP, damage and both defenses", () => {
     const result = resolveTowerEncounter(26, "tower-encounter-seed");
+    const baseProfile = resolveDungeonCombatProfile({
+      dungeonDefinitionId: result.dungeonDefinitionId,
+      encounterIndex: result.dungeonEncounterIndex,
+      monsterDefinitionId: result.monsterDefinitionId,
+    });
+    const multiplier = getTowerDepthDifficultyMultiplier(26);
+
     expect(result.dungeonDefinitionId).toBe(
       `dungeon_${result.floorDefinition.block.factionId}_t${String(result.floorDefinition.block.tier)}`,
     );
     expect(result.dungeonEncounterIndex).toBe(0);
     expect(result.encounterKind).toBe("normal");
+    expect(result.combatProfile).toEqual({
+      hp: Math.round(baseProfile.hp * multiplier),
+      damage: Math.round(baseProfile.damage * multiplier),
+      attackSpeed: baseProfile.attackSpeed,
+      armor: Math.round(baseProfile.armor * multiplier),
+      magicResistance: Math.round(baseProfile.magicResistance * multiplier),
+    });
   });
 });
