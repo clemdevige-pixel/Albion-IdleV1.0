@@ -52,8 +52,12 @@ export class CombatActivityRuntimeRouter {
   }
 
   public getFactionCombatContext(): FactionCombatContext | undefined {
-    return this.tower.getFactionCombatContext()
-      ?? this.dungeon.getFactionCombatContext();
+    const towerContext = this.tower.getFactionCombatContext();
+    if (towerContext !== undefined) return { ...towerContext, activity: "tower" };
+    const dungeonContext = this.dungeon.getFactionCombatContext();
+    return dungeonContext === undefined
+      ? undefined
+      : { ...dungeonContext, activity: "dungeon" };
   }
 
   public spawnEnemyOverride(
