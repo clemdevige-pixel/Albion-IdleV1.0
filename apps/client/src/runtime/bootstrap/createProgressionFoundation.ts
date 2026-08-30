@@ -17,6 +17,7 @@ import {
 } from "../../data/progressionContentCatalog.js";
 import { resolveWeaponMastery } from "../../data/weaponContentCatalog.js";
 import { isDevSandboxMode } from "../devSandbox.js";
+import { registerDevSandboxPostLoadAdjustment } from "../devSandboxPostLoad.js";
 
 const DEV_WEAPON_SPECIALIZATION_LEVEL = 40;
 
@@ -100,7 +101,11 @@ export function createProgressionFoundation() {
     masteryService.discoverMastery(masteryId);
   }
 
-  applyDevSandboxWeaponMasteries(experienceService, masteryService);
+  const applyDevMasteryPreset = (): void => {
+    applyDevSandboxWeaponMasteries(experienceService, masteryService);
+  };
+  applyDevMasteryPreset();
+  registerDevSandboxPostLoadAdjustment(applyDevMasteryPreset);
 
   return {
     experienceService,
