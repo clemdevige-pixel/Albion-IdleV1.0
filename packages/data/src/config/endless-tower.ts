@@ -3,6 +3,7 @@ import { FACTION_CAPE_FACTIONS } from "./faction-cape-balance.js";
 export const TOWER_BLOCK_SIZE = 5;
 export const TOWER_MAJOR_BOSS_CADENCE = 25;
 export const TOWER_TRIAL_FLOOR_COUNT = 25;
+export const TOWER_POST_25_DIFFICULTY_STEP = 0.01;
 
 export const TOWER_TIERS = [4, 5, 6, 7, 8] as const;
 export type TowerTier = (typeof TOWER_TIERS)[number];
@@ -73,6 +74,21 @@ export const TOWER_ENDLESS_TIER_BAG = TOWER_TIERS;
  * enforce the no-immediate-repeat rule against the previous committed block.
  */
 export const TOWER_ENDLESS_FACTION_BAG = TOWER_FACTIONS;
+
+/**
+ * Canonical V1 depth multiplier.
+ * Floors 1-25 use their authored Dungeon-derived baseline. Each complete
+ * five-floor band entered after floor 25 adds +1% to HP, damage and defense.
+ */
+export function getTowerDepthDifficultyMultiplier(floor: number): number {
+  if (!Number.isSafeInteger(floor) || floor <= 0) {
+    throw new Error("Tower floor must be a positive safe integer");
+  }
+  if (floor <= TOWER_TRIAL_FLOOR_COUNT) return 1;
+
+  const postTrialBlock = Math.ceil((floor - TOWER_TRIAL_FLOOR_COUNT) / TOWER_BLOCK_SIZE);
+  return 1 + postTrialBlock * TOWER_POST_25_DIFFICULTY_STEP;
+}
 
 export function isTowerMajorBossFloor(floor: number): boolean {
   return Number.isSafeInteger(floor) && floor > 0 && floor % TOWER_MAJOR_BOSS_CADENCE === 0;
