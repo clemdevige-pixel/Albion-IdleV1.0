@@ -1,6 +1,7 @@
 import {
   TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX,
   TOWER_REINFORCED_COMBAT_MULTIPLIERS,
+  getTowerDepthDifficultyMultiplier,
 } from "@game/data";
 import { getTowerFloorDefinition, type TowerFloorDefinition } from "@game/gameplay";
 import {
@@ -37,12 +38,28 @@ function applyTowerRoleCombatTuning(
   };
 }
 
+function applyTowerDepthCombatScaling(
+  floorDefinition: TowerFloorDefinition,
+  profile: AuthoredEnemyCombatProfile,
+): AuthoredEnemyCombatProfile {
+  const multiplier = getTowerDepthDifficultyMultiplier(floorDefinition.floor);
+  if (multiplier === 1) return profile;
+
+  return {
+    hp: Math.round(profile.hp * multiplier),
+    damage: Math.round(profile.damage * multiplier),
+    attackSpeed: profile.attackSpeed,
+    armor: Math.round(profile.armor * multiplier),
+    magicResistance: Math.round(profile.magicResistance * multiplier),
+  };
+}
+
 /**
  * Resolves a Tower floor from existing faction Dungeon content.
  *
- * Tower owns sequencing and Tower-only role tuning. Faction rosters and base
- * combat stats stay authored by the Dungeon catalog so the Tower cannot drift
- * into a parallel monster/balance surface.
+ * Tower owns sequencing and Tower-only role/depth tuning. Faction rosters and
+ * base combat stats stay authored by the Dungeon catalog so the Tower cannot
+ * drift into a parallel monster/balance surface.
  */
 export function resolveTowerEncounter(
   floor: number,
@@ -78,6 +95,7 @@ export function resolveTowerEncounter(
     encounterIndex: dungeonEncounterIndex,
     monsterDefinitionId: encounter.monsterDefinitionId,
   });
+  const roleTunedProfile = applyTowerRoleCombatTuning(floorDefinition, baseCombatProfile);
 
   return {
     status: "resolved",
@@ -87,6 +105,6 @@ export function resolveTowerEncounter(
     encounterId: encounter.id,
     encounterKind: encounter.kind,
     monsterDefinitionId: encounter.monsterDefinitionId,
-    combatProfile: applyTowerRoleCombatTuning(floorDefinition, baseCombatProfile),
+    combatProfile: applyTowerDepthCombatScaling(floorDefinition, roleTunedProfile),
   };
 }
