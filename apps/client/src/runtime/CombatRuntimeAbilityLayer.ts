@@ -187,8 +187,16 @@ export class CombatRuntime extends LegacyCombatRuntime {
       return initial;
     }
 
-    if (this.runtimeDeps.combatService.getActiveSession() === undefined) this.mechanics.clear();
-    this.mechanics.tick(dt, tickCounter);
+    const activeSessionBeforeMechanics = this.runtimeDeps.combatService.getActiveSession();
+    if (
+      activeSessionBeforeMechanics === undefined
+      || activeSessionBeforeMechanics.state !== "combat"
+      || !this.runtimeDeps.damageManager.isAlive(this.runtimeDeps.heroId)
+    ) {
+      this.mechanics.clear();
+    } else {
+      this.mechanics.tick(dt, tickCounter);
+    }
     const targets = [this.runtimeDeps.heroId, this.getActiveEnemyId()] as const;
     this.effects.capture(targets);
     this.inTick = true;
