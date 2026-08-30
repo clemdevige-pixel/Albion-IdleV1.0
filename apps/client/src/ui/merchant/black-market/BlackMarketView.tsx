@@ -37,6 +37,10 @@ function selectionKey(selection: Pick<BlackMarketSelection, "source" | "itemId" 
   return `${selection.source}|${selection.itemId}|${String(selection.enchantment)}`;
 }
 
+function sourceLabel(source: BlackMarketSelection["source"]): string {
+  return source === "all" ? "Inventaire + Banque" : source === "inventory" ? "Inventaire" : "Banque";
+}
+
 function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
   const hours = Math.floor(totalSeconds / 3600);
@@ -166,8 +170,8 @@ export function BlackMarketView(): JSX.Element {
   }, [refreshSnapshot]);
 
   const candidates = useMemo(
-    () => blackMarketUnlocked ? blackMarketRuntime.getCandidates() : [],
-    [blackMarketUnlocked, nowMs, snapshot],
+    () => blackMarketUnlocked ? blackMarketRuntime.getCandidates(stockSource) : [],
+    [blackMarketUnlocked, nowMs, snapshot, stockSource],
   );
   const selectedEntries = cargoSlots.filter((slot): slot is BlackMarketSelection => slot !== null);
   const selectedUnitCount = selectedEntries.reduce((sum, entry) => sum + entry.quantity, 0);
@@ -183,7 +187,6 @@ export function BlackMarketView(): JSX.Element {
     if (snapshot === null) return [];
     const query = stockSearch.trim().toLocaleLowerCase("fr");
     return candidates
-      .filter((candidate) => stockSource === "all" || candidate.source === stockSource)
       .filter((candidate) => stockTier === "all" || getItemTier(candidate.itemId) === stockTier)
       .filter((candidate) => stockEnchant === "all" || candidate.enchantment === stockEnchant)
       .filter((candidate) => matchesType(candidate, stockType))
@@ -195,7 +198,7 @@ export function BlackMarketView(): JSX.Element {
         if (stockSort === "name") return getItemDisplayName(a.itemId).localeCompare(getItemDisplayName(b.itemId), "fr");
         return b.normalBmValue - a.normalBmValue;
       });
-  }, [candidates, demandOnly, snapshot, stockEnchant, stockSearch, stockSort, stockSource, stockTier, stockType]);
+  }, [candidates, demandOnly, snapshot, stockEnchant, stockSearch, stockSort, stockTier, stockType]);
 
   const updateSlot = (index: number, nextSlot: CargoSlot): void => {
     setConfirmingDeparture(false);
@@ -225,7 +228,9 @@ export function BlackMarketView(): JSX.Element {
     if (activeSlotIndex === null) return;
     const slot = cargoSlots[activeSlotIndex];
     if (slot === null || slot === undefined) return;
-    const candidate = candidates.find((entry) => selectionKey(entry) === selectionKey(slot));
+    const candidate = blackMarketRuntime.getCandidates(slot.source).find(
+      (entry) => selectionKey(entry) === selectionKey(slot),
+    );
     if (candidate === undefined) return;
     const nextQuantity = Math.max(1, Math.min(
       BLACK_MARKET_STACK_LIMIT,
@@ -349,7 +354,9 @@ export function BlackMarketView(): JSX.Element {
       <div className="ui-merchant-section-title"><span>Cargo</span><small>{String(selectedEntries.length)} / {String(BLACK_MARKET_CARGO_SLOT_LIMIT)} slots · {String(selectedUnitCount)} / 40 items</small></div>
       <div className="ui-black-market__cargo-slots">
         {cargoSlots.map((slot, index) => {
-          const candidate = slot === null ? undefined : candidates.find((entry) => selectionKey(entry) === selectionKey(slot));
+          const candidate = slot === null ? undefined : blackMarketRuntime.getCandidates(slot.source).find(
+            (entry) => selectionKey(entry) === selectionKey(slot),
+          );
           const isDemand = candidate !== undefined && matchesDemand(candidate, snapshot);
           const tier = slot === null ? undefined : getItemTier(slot.itemId);
           const displayName = slot === null ? "" : getItemDisplayName(slot.itemId);
@@ -428,7 +435,7 @@ export function BlackMarketView(): JSX.Element {
             {activeSlot !== null && (
               <div className="ui-black-market__picker-current">
                 <ItemVisual itemId={activeSlot.itemId} />
-                <div><strong>{getItemDisplayName(activeSlot.itemId)}{activeSlot.enchantment > 0 ? ` .${String(activeSlot.enchantment)}` : ""}</strong><small>{activeSlot.source === "inventory" ? "Inventaire" : "Banque"}</small></div>
+                <div><strong>{getItemDisplayName(activeSlot.itemId)}{activeSlot.enchantment > 0 ? ` .${String(activeSlot.enchantment)}` : ""}</strong><small>{sourceLabel(activeSlot.source)}</small></div>
                 <div className="ui-black-market__quantity"><button type="button" onClick={() => { changeActiveQuantity(-1); }}>−</button><b>{String(activeSlot.quantity)}</b><button type="button" onClick={() => { changeActiveQuantity(1); }}>+</button></div>
                 <button type="button" className="ui-black-market__remove" onClick={() => { changeActiveQuantity(BLACK_MARKET_STACK_LIMIT); }}>Max</button>
                 <button type="button" className="ui-black-market__remove" onClick={() => { updateSlot(activeSlotIndex, null); }}>Retirer</button>
@@ -461,7 +468,7 @@ export function BlackMarketView(): JSX.Element {
                 return (
                   <button type="button" key={key} disabled={selectedElsewhere} onClick={() => { selectCandidate(candidate); }}>
                     <ItemVisual itemId={candidate.itemId} />
-                    <span><strong>{getItemDisplayName(candidate.itemId)}{candidate.enchantment > 0 ? ` .${String(candidate.enchantment)}` : ""}</strong><small>{candidate.source === "inventory" ? "Inventaire" : "Banque"} · x{String(candidate.availableQuantity)}</small></span>
+                    <span><strong>{getItemDisplayName(candidate.itemId)}{candidate.enchantment > 0 ? ` .${String(candidate.enchantment)}` : ""}</strong><small>{sourceLabel(candidate.source)} · x{String(candidate.availableQuantity)}</small></span>
                     <span className="ui-black-market__picker-value"><b>{formatCompactNumber(candidate.normalBmValue, "0")}</b>{demandBonus !== undefined && <small>+{String(Math.round(demandBonus * 100))}% demande</small>}</span>
                   </button>
                 );
