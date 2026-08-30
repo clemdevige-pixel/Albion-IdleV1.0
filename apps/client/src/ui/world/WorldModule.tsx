@@ -7,6 +7,7 @@ import { WorldTowerView } from "./components/WorldTowerView";
 import { WorldZonesView } from "./components/WorldZonesView";
 import { useWorldActions, useWorldZones } from "./useWorldData";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import { isDevSandboxMode } from "../../runtime/devSandbox";
 import "./world.css";
 
 type WorldModuleTabId = "zones" | "dungeons" | "tower" | "gathering" | "bestiary" | "achievements";
@@ -29,7 +30,7 @@ export function WorldModule(): JSX.Element {
   const zone = useWorldZones();
   const actions = useWorldActions();
   const dungeonsUnlocked = isDungeonSystemUnlocked();
-  const towerUnlocked = isTowerSystemUnlocked();
+  const towerUnlocked = isTowerSystemUnlocked() || isDevSandboxMode();
   const tabs = BASE_TABS.flatMap((tab) => {
     if (tab.id !== "zones") return [tab];
     return [
