@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TOWER_TRIAL_BLOCKS } from "@game/data";
+import { getTowerBlocks, type TowerBlockDefinition } from "@game/gameplay";
 import {
   ARTIFACT_WEAPON_BENCHMARK_SPECS,
   artifactDungeonEquipment,
@@ -17,12 +18,22 @@ const ENDGAME_WEAPON_MASTERY = 45;
 const ENDGAME_SIBLING_MASTERY = 45;
 const CRITICAL_HP_THRESHOLD = 5;
 const WARNING_HP_THRESHOLD = 10;
+const ENDLESS_BLOCKS_PER_SEED = 20;
+const ENDLESS_SEEDS = [
+  "tower-benchmark-alpha",
+  "tower-benchmark-beta",
+  "tower-benchmark-gamma",
+  "tower-benchmark-delta",
+] as const;
 const WEAPON_FAMILIES = ["sword", "bow", "fire_staff", "gloves", "dagger"] as const satisfies readonly ArtifactWeaponFamily[];
 
 type BenchmarkSpec = (typeof ARTIFACT_WEAPON_BENCHMARK_SPECS)[number];
-type TowerBlock = (typeof TOWER_TRIAL_BLOCKS)[number];
+type BenchmarkBlock = Pick<
+  TowerBlockDefinition,
+  "id" | "blockIndex" | "floorStart" | "floorEnd" | "tier" | "factionId" | "source"
+>;
 
-function getDungeonSource(block: TowerBlock) {
+function getDungeonSource(block: BenchmarkBlock) {
   const dungeon = DUNGEON_DEFINITIONS.find((entry) => (
     entry.tier === block.tier && entry.faction.toLowerCase() === block.factionId
   ));
@@ -30,14 +41,18 @@ function getDungeonSource(block: TowerBlock) {
   return dungeon;
 }
 
-function getFavorableWeapons(block: TowerBlock): readonly BenchmarkSpec[] {
+function getFavorableWeapons(block: BenchmarkBlock): readonly BenchmarkSpec[] {
   const dungeon = getDungeonSource(block);
   return ARTIFACT_WEAPON_BENCHMARK_SPECS.filter((weapon) => (
     resolveArtifactDungeonDamageBonusPercent(weapon.itemId(block.tier), dungeon.faction) > 0
   ));
 }
 
-function runSpecializationBlock(block: TowerBlock, weapon: BenchmarkSpec) {
+function runSpecializationBlock(
+  block: BenchmarkBlock,
+  weapon: BenchmarkSpec,
+  sampleId: string,
+) {
   const tier = block.tier;
   const dungeon = getDungeonSource(block);
   const weaponItemId = weapon.itemId(tier);
@@ -59,7 +74,7 @@ function runSpecializationBlock(block: TowerBlock, weapon: BenchmarkSpec) {
   // .3 and .4 share the same authored raw combat-stat multiplier (1.42x).
   // This therefore models a .4 weapon before requiring any Awakening combat trait.
   const result = runCombatRuntimeBenchmark({
-    label: `tower_trial_block_${String(block.blockIndex + 1)}_${weapon.family}_${weapon.label.replaceAll(" ", "_").toLowerCase()}`,
+    label: `${sampleId}_${weapon.family}_${weapon.label.replaceAll(" ", "_").toLowerCase()}`,
     weaponItemId,
     equipmentItemIds: artifactDungeonEquipment(weaponItemId, tier, dungeon.faction),
     zoneDefId: WORLD_ZONE_IDS.mountain,
@@ -75,6 +90,8 @@ function runSpecializationBlock(block: TowerBlock, weapon: BenchmarkSpec) {
   });
 
   return {
+    sampleId,
+    source: block.source,
     block: block.blockIndex + 1,
     floors: `${String(block.floorStart)}-${String(block.floorEnd)}`,
     tier,
@@ -99,7 +116,9 @@ function runSpecializationBlock(block: TowerBlock, weapon: BenchmarkSpec) {
   };
 }
 
-function summarizeByWeapon(rows: readonly ReturnType<typeof runSpecializationBlock>[]) {
+type BenchmarkRow = ReturnType<typeof runSpecializationBlock>;
+
+function summarizeByWeapon(rows: readonly BenchmarkRow[]) {
   return ARTIFACT_WEAPON_BENCHMARK_SPECS.map((weapon) => {
     const weaponRows = rows.filter((row) => row.weapon === weapon.label && row.family === weapon.family);
     if (weaponRows.length === 0) {
@@ -111,12 +130,14 @@ function summarizeByWeapon(rows: readonly ReturnType<typeof runSpecializationBlo
         failures: 0,
         criticalRuns: 0,
         warningRuns: 0,
+        criticalRatePct: 0,
         avgHpPct: 0,
         worstHpPct: 0,
         avgSeconds: 0,
       };
     }
     const clears = weaponRows.filter((row) => row.clearSourceRoster).length;
+    const criticalRuns = weaponRows.filter((row) => row.hpPct < CRITICAL_HP_THRESHOLD).length;
     const hpTotal = weaponRows.reduce((sum, row) => sum + row.hpPct, 0);
     const secondsTotal = weaponRows.reduce((sum, row) => sum + row.seconds, 0);
     return {
@@ -125,8 +146,9 @@ function summarizeByWeapon(rows: readonly ReturnType<typeof runSpecializationBlo
       runs: weaponRows.length,
       clears,
       failures: weaponRows.length - clears,
-      criticalRuns: weaponRows.filter((row) => row.hpPct < CRITICAL_HP_THRESHOLD).length,
+      criticalRuns,
       warningRuns: weaponRows.filter((row) => row.hpPct >= CRITICAL_HP_THRESHOLD && row.hpPct < WARNING_HP_THRESHOLD).length,
+      criticalRatePct: Number(((criticalRuns / weaponRows.length) * 100).toFixed(1)),
       avgHpPct: Number((hpTotal / weaponRows.length).toFixed(1)),
       worstHpPct: Number(Math.min(...weaponRows.map((row) => row.hpPct)).toFixed(1)),
       avgSeconds: Number((secondsTotal / weaponRows.length).toFixed(1)),
@@ -134,31 +156,66 @@ function summarizeByWeapon(rows: readonly ReturnType<typeof runSpecializationBlo
   }).filter((row) => row.runs > 0);
 }
 
-describe("Tower trial runtime benchmark", () => {
-  it("benchmarks every favorable artifact specialization instead of one representative per family", () => {
-    const rows = TOWER_TRIAL_BLOCKS.flatMap((block) => (
-      getFavorableWeapons(block).map((weapon) => runSpecializationBlock(block, weapon))
+function summarizeByFamily(rows: readonly BenchmarkRow[]) {
+  return WEAPON_FAMILIES.map((family) => {
+    const familyRows = rows.filter((row) => row.family === family);
+    const clears = familyRows.filter((row) => row.clearSourceRoster).length;
+    const criticalRuns = familyRows.filter((row) => row.hpPct < CRITICAL_HP_THRESHOLD).length;
+    return {
+      family,
+      runs: familyRows.length,
+      clears,
+      failures: familyRows.length - clears,
+      criticalRuns,
+      warningRuns: familyRows.filter((row) => row.hpPct >= CRITICAL_HP_THRESHOLD && row.hpPct < WARNING_HP_THRESHOLD).length,
+      criticalRatePct: Number(((criticalRuns / familyRows.length) * 100).toFixed(1)),
+      avgHpPct: Number((familyRows.reduce((sum, row) => sum + row.hpPct, 0) / familyRows.length).toFixed(1)),
+      worstHpPct: Number(Math.min(...familyRows.map((row) => row.hpPct)).toFixed(1)),
+    };
+  });
+}
+
+function runBlockRows(block: BenchmarkBlock, sampleId: string): BenchmarkRow[] {
+  return getFavorableWeapons(block).map((weapon) => runSpecializationBlock(block, weapon, sampleId));
+}
+
+describe("Tower runtime specialization benchmark", () => {
+  it("benchmarks every favorable artifact specialization across Trial and repeated Endless contexts", () => {
+    const trialRows = TOWER_TRIAL_BLOCKS.flatMap((block) => (
+      runBlockRows({ ...block, source: "trial" }, `tower_trial_block_${String(block.blockIndex + 1)}`)
     ));
-    const summary = summarizeByWeapon(rows);
+
+    const endlessRows = ENDLESS_SEEDS.flatMap((seed) => {
+      const blocks = getTowerBlocks(TOWER_TRIAL_BLOCKS.length, ENDLESS_BLOCKS_PER_SEED, seed);
+      return blocks.flatMap((block) => runBlockRows(
+        block,
+        `tower_endless_${seed}_block_${String(block.blockIndex + 1)}`,
+      ));
+    });
+
+    const allRows = [...trialRows, ...endlessRows];
+    const specializationSummary = summarizeByWeapon(allRows);
+    const familySummary = summarizeByFamily(allRows);
 
     console.log("[TOWER_TRIAL_ENDGAME_ALL_SPECIALIZATIONS]");
-    console.table(rows);
-    console.log("[TOWER_TRIAL_ENDGAME_SPECIALIZATION_SUMMARY]");
-    console.table(summary);
-    console.log("[TOWER_TRIAL_ENDGAME_ALL_SPECIALIZATIONS_NOTE] every artifact specialization with a favorable faction matchup is tested at 75 family / 45 equipped specialization / 45 siblings, raw .4 weapon scaling + .3 armor/cape, before requiring Awakening combat traits. Critical means <5% ending HP; warning means 5-10%. Floor 3 reinforced Tower tuning is still not represented by this generic Dungeon-roster harness.");
+    console.table(trialRows);
+    console.log("[TOWER_ENDLESS_ENDGAME_ALL_SPECIALIZATIONS]");
+    console.table(endlessRows);
+    console.log("[TOWER_ENDGAME_SPECIALIZATION_SUMMARY]");
+    console.table(specializationSummary);
+    console.log("[TOWER_ENDGAME_FAMILY_SUMMARY]");
+    console.table(familySummary);
+    console.log("[TOWER_ENDGAME_SPECIALIZATION_NOTE] favorable artifact specializations are repeated across authored Trial plus four deterministic Endless seeds (20 blocks each) at 75 family / 45 equipped specialization / 45 siblings, raw .4 weapon scaling + .3 armor/cape, before requiring Awakening combat traits. Critical means <5% ending HP; warning means 5-10%. The generic Dungeon-roster harness still does not inject Tower reinforced role tuning.");
 
-    expect(rows.length).toBeGreaterThan(TOWER_TRIAL_BLOCKS.length * WEAPON_FAMILIES.length);
-    expect(rows.every((row) => row.outgoingBonusPct > 0)).toBe(true);
-    expect(rows.every((row) => row.resilienceMultiplier === 0.9)).toBe(true);
-
-    for (const block of TOWER_TRIAL_BLOCKS) {
-      const blockRows = rows.filter((row) => row.block === block.blockIndex + 1);
-      expect(new Set(blockRows.map((row) => row.family))).toEqual(new Set(WEAPON_FAMILIES));
-    }
+    expect(trialRows).toHaveLength(TOWER_TRIAL_BLOCKS.length * WEAPON_FAMILIES.length);
+    expect(endlessRows).toHaveLength(ENDLESS_SEEDS.length * ENDLESS_BLOCKS_PER_SEED * WEAPON_FAMILIES.length);
+    expect(allRows.every((row) => row.outgoingBonusPct > 0)).toBe(true);
+    expect(allRows.every((row) => row.resilienceMultiplier === 0.9)).toBe(true);
 
     for (const family of WEAPON_FAMILIES) {
-      const familyWeapons = summary.filter((row) => row.family === family);
+      const familyWeapons = specializationSummary.filter((row) => row.family === family);
       expect(familyWeapons.length).toBeGreaterThan(1);
+      expect(familyWeapons.every((row) => row.runs >= ENDLESS_SEEDS.length)).toBe(true);
     }
   });
 });
