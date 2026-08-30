@@ -116,23 +116,24 @@ describe("weapon ability live behavior", () => {
     expect(env.getKills()).toBe(1);
   });
 
-  it("Dagger Cross Assault autocasts only after Opening and consumes its authored bonus window", () => {
+  it("Dagger Cross Assault always autocasts and consumes its Flurry combo bonus", () => {
     const crossAssault = requireAbility("ability_dagger_pair_cross_assault");
-    const noOpening = createBehaviorEnvironment();
-    expect(noOpening.mechanics.canAutoCast(crossAssault, noOpening.enemyId)).toBe(false);
-    const beforeNoOpening = noOpening.damageManager.getHealth(noOpening.enemyId).currentHealth;
-    expect(noOpening.mechanics.execute(crossAssault, noOpening.enemyId, 1)).toBe(true);
-    expect(beforeNoOpening - noOpening.damageManager.getHealth(noOpening.enemyId).currentHealth).toBeCloseTo(285, 5);
+    const noCombo = createBehaviorEnvironment();
+    expect(noCombo.mechanics.canAutoCast(crossAssault, noCombo.enemyId)).toBe(true);
+    const beforeNoCombo = noCombo.damageManager.getHealth(noCombo.enemyId).currentHealth;
+    expect(noCombo.mechanics.execute(crossAssault, noCombo.enemyId, 1)).toBe(true);
+    expect(beforeNoCombo - noCombo.damageManager.getHealth(noCombo.enemyId).currentHealth).toBeCloseTo(185, 5);
 
-    const withOpening = createBehaviorEnvironment();
+    const withCombo = createBehaviorEnvironment();
     const flurry = requireAbility("ability_dagger_flurry");
-    expect(withOpening.mechanics.execute(flurry, withOpening.enemyId, 1)).toBe(true);
-    expect(activeEffectIds(withOpening.effectManager, withOpening.enemyId)).toContain("effect_dagger_opening");
-    withOpening.damageManager.getHealth(withOpening.enemyId).currentHealth = 1000;
-    expect(withOpening.mechanics.canAutoCast(crossAssault, withOpening.enemyId)).toBe(true);
-    const beforeOpening = withOpening.damageManager.getHealth(withOpening.enemyId).currentHealth;
-    expect(withOpening.mechanics.execute(crossAssault, withOpening.enemyId, 2)).toBe(true);
-    expect(beforeOpening - withOpening.damageManager.getHealth(withOpening.enemyId).currentHealth).toBeCloseTo(380, 5);
+    expect(withCombo.mechanics.execute(flurry, withCombo.enemyId, 1)).toBe(true);
+    expect(activeEffectIds(withCombo.effectManager, withCombo.enemyId)).toContain("effect_dagger_combo_ready");
+    withCombo.damageManager.getHealth(withCombo.enemyId).currentHealth = 1000;
+    expect(withCombo.mechanics.canAutoCast(crossAssault, withCombo.enemyId)).toBe(true);
+    const beforeCombo = withCombo.damageManager.getHealth(withCombo.enemyId).currentHealth;
+    expect(withCombo.mechanics.execute(crossAssault, withCombo.enemyId, 2)).toBe(true);
+    expect(beforeCombo - withCombo.damageManager.getHealth(withCombo.enemyId).currentHealth).toBeCloseTo(280, 5);
+    expect(activeEffectIds(withCombo.effectManager, withCombo.enemyId)).not.toContain("effect_dagger_combo_ready");
   });
 
   it("Spiked multi-hit stops cleanly when the target dies during the combo", () => {
