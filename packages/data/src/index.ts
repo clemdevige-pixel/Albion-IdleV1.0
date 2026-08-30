@@ -68,6 +68,7 @@ export * from "./config/faction-runes.js";
 export * from "./config/faction-rune-world-drops.js";
 export * from "./config/faction-mastery-balance.js";
 export * from "./config/faction-cape-balance.js";
+export * from "./config/endless-tower.js";
 export * from "./config/daily-reset.js";
 export * from "./config/economy-balance.js";
 export * from "./config/economic-item-values.js";
