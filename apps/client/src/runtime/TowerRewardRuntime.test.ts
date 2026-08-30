@@ -22,7 +22,7 @@ describe("TowerRewardRuntime", () => {
     });
   });
 
-  it("adds a repeatable block chest and a first-clear bonus on floor 5", () => {
+  it("adds a conservative repeatable block chest and a first-clear bonus on floor 5", () => {
     expect(resolveTowerRewardBreakdown({
       seed: "tower-reward-seed",
       currentFloor: 5,
@@ -33,7 +33,7 @@ describe("TowerRewardRuntime", () => {
       tier: 8,
       baseSilver: 339,
       baseFame: 454,
-      repeatableBlockChestSilver: 4_000,
+      repeatableBlockChestSilver: 800,
       firstClearBlockBonusSilver: 8_000,
       majorBossFirstClearBonusSilver: 0,
       firstClear: true,
@@ -48,7 +48,7 @@ describe("TowerRewardRuntime", () => {
       checkpointFloor: 1,
       endlessUnlocked: false,
     })).toMatchObject({
-      repeatableBlockChestSilver: 4_000,
+      repeatableBlockChestSilver: 800,
       firstClearBlockBonusSilver: 0,
       majorBossFirstClearBonusSilver: 0,
       firstClear: false,
@@ -68,7 +68,7 @@ describe("TowerRewardRuntime", () => {
       factionId: "morgana",
       baseSilver: 94,
       baseFame: 127,
-      repeatableBlockChestSilver: 1_000,
+      repeatableBlockChestSilver: 200,
       firstClearBlockBonusSilver: 2_000,
       majorBossFirstClearBonusSilver: 4_000,
       firstClear: true,
