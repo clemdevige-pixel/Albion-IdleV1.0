@@ -1,0 +1,237 @@
+.world-tower {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.world-tower__intro {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 2px;
+}
+
+.world-tower__intro div {
+  min-width: 0;
+}
+
+.world-tower__intro small,
+.world-tower__checkpoints header small {
+  color: #9e8150;
+  font-size: 8px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.world-tower__intro h2 {
+  margin: 3px 0 0;
+  color: #e3c477;
+  font: 20px var(--ui-font-display);
+}
+
+.world-tower__intro p {
+  max-width: 270px;
+  margin: 2px 0 0;
+  color: #89847b;
+  font-size: 9px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.world-tower__status,
+.world-tower__rules {
+  display: grid;
+  gap: 12px;
+}
+
+.world-tower__status {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 4px 2px 8px;
+  border-bottom: 1px solid #24272c;
+}
+
+.world-tower__rules {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.world-tower__status > div,
+.world-tower__rules span {
+  display: grid;
+  gap: 2px;
+}
+
+.world-tower__status small,
+.world-tower__rules small {
+  color: #89929d;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.world-tower__status strong,
+.world-tower__rules strong {
+  color: var(--ui-color-accent);
+  font-size: 12px;
+}
+
+.world-tower__block {
+  display: grid;
+  gap: 12px;
+  padding: 10px 2px 2px;
+  border-top: 1px solid #393127;
+}
+
+.world-tower__block > header,
+.world-tower__block > footer,
+.world-tower__checkpoints > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.world-tower__block > header div {
+  min-width: 0;
+}
+
+.world-tower__block > header small {
+  color: #8b8376;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.world-tower__block > header h3 {
+  margin: 2px 0 0;
+  color: #eee4ce;
+  font: 16px var(--ui-font-display);
+}
+
+.world-tower__block > header > span {
+  color: #8ec37b;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.world-tower__block.is-pending > header > span {
+  color: #d1aa58;
+}
+
+.world-tower__rooms {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.world-tower__rooms > span {
+  display: grid;
+  min-height: 54px;
+  place-content: center;
+  gap: 3px;
+  color: #767d86;
+  text-align: center;
+  background: #0d1116;
+  border: 1px solid #2e343c;
+}
+
+.world-tower__rooms b {
+  color: #a7aeb6;
+  font: 12px var(--ui-font-display);
+}
+
+.world-tower__rooms small {
+  color: #6f7680;
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+.world-tower__rooms > span.is-complete {
+  border-color: #6f5a2f;
+}
+
+.world-tower__rooms > span.is-complete b {
+  color: #cfa856;
+}
+
+.world-tower__rooms > span.is-current {
+  background: rgba(208, 157, 52, .06);
+  border-color: #9a7130;
+  box-shadow: inset 0 -2px #9a7130;
+}
+
+.world-tower__rooms > span.is-current b {
+  color: #f0d593;
+}
+
+.world-tower__block > footer {
+  align-items: end;
+  padding-top: 3px;
+}
+
+.world-tower__block > footer p {
+  max-width: 330px;
+  margin: 0;
+  color: #838a93;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.world-tower__block button,
+.world-tower__checkpoints button {
+  border: 1px solid #51452f;
+  background: #11151a;
+  color: #d8bd7d;
+  cursor: pointer;
+}
+
+.world-tower__block > footer button {
+  min-width: 92px;
+  padding: 7px 12px;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.world-tower__block button:hover:not(:disabled),
+.world-tower__checkpoints button:hover:not(:disabled) {
+  border-color: #8d692e;
+  color: #f0d593;
+}
+
+.world-tower__block button:disabled,
+.world-tower__checkpoints button:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+.world-tower__block > footer button.is-danger {
+  border-color: #633d39;
+  color: #c98379;
+}
+
+.world-tower__checkpoints {
+  display: grid;
+  gap: 7px;
+  padding: 10px 2px 2px;
+  border-top: 1px solid #24272c;
+}
+
+.world-tower__checkpoints header span {
+  color: #767d86;
+  font-size: 8px;
+}
+
+.world-tower__checkpoints > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.world-tower__checkpoints button {
+  padding: 5px 8px;
+  font-size: 8px;
+}
+
+.world-tower__checkpoints button.is-active {
+  border-color: #9a7130;
+  color: #f0d593;
+  background: rgba(208, 157, 52, .06);
+}
