@@ -52,9 +52,9 @@ export const TOWER_REINFORCED_COMBAT_MULTIPLIERS = {
  */
 export const TOWER_FACTION_TIER_COMBAT_MULTIPLIER = {
   keeper: { 4: 1.00, 5: 1.00, 6: 1.00, 7: 1.00, 8: 1.00 },
-  heretic: { 4: 0.86, 5: 0.90, 6: 0.92, 7: 0.91, 8: 0.92 },
-  undead: { 4: 0.86, 5: 0.91, 6: 0.90, 7: 0.92, 8: 0.91 },
-  morgana: { 4: 0.84, 5: 0.90, 6: 0.90, 7: 0.93, 8: 0.90 },
+  heretic: { 4: 0.90, 5: 0.89, 6: 0.92, 7: 0.91, 8: 0.92 },
+  undead: { 4: 0.90, 5: 0.90, 6: 0.90, 7: 0.92, 8: 0.91 },
+  morgana: { 4: 0.89, 5: 0.89, 6: 0.90, 7: 0.93, 8: 0.90 },
 } as const satisfies Record<TowerFactionId, Record<TowerTier, number>>;
 
 export interface TowerAuthoredBlockDefinition {
