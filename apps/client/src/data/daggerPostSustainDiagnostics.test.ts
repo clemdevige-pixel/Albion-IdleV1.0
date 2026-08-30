@@ -16,10 +16,28 @@ interface DungeonContentMockSurface {
   readonly resolveDungeonCombatProfile: (input: DungeonCombatProfileInput) => AuthoredEnemyCombatProfile;
   readonly [key: string]: unknown;
 }
+interface RuntimeModuleSurface {
+  readonly CombatRuntime: new (...args: any[]) => any;
+  readonly [key: string]: unknown;
+}
+interface TerminalTraceRow {
+  readonly tick: number;
+  readonly state: string;
+  readonly heroBefore: number;
+  readonly heroAfter: number;
+  readonly enemyBefore: number;
+  readonly enemyAfter: number;
+  readonly heroAliveAfter: boolean;
+  readonly enemyAliveAfter: boolean;
+}
 
 const legacySustainOverride = vi.hoisted(() => ({ enabled: false }));
 const towerProfileOverride = vi.hoisted(() => ({
   profiles: undefined as readonly AuthoredEnemyCombatProfile[] | undefined,
+}));
+const terminalTraceOverride = vi.hoisted(() => ({
+  enabled: false,
+  rows: [] as TerminalTraceRow[],
 }));
 
 const SYNCED_SIGNATURE_IDS = new Set([
@@ -68,6 +86,48 @@ vi.mock("./dungeonContentCatalog.js", async (importOriginal) => {
       towerProfileOverride.profiles?.[input.encounterIndex]
       ?? actual.resolveDungeonCombatProfile(input)
     ),
+  };
+});
+
+vi.mock("../runtime/CombatRuntime.js", async (importOriginal) => {
+  const actual = await importOriginal<RuntimeModuleSurface>();
+  const BaseCombatRuntime = actual.CombatRuntime;
+  return {
+    ...actual,
+    CombatRuntime: class DiagnosticCombatRuntime extends BaseCombatRuntime {
+      private readonly diagnosticDeps: any;
+
+      constructor(...args: any[]) {
+        super(...args);
+        this.diagnosticDeps = args[0];
+      }
+
+      override tick(dt: number, tickCounter: number): any {
+        if (!terminalTraceOverride.enabled) return super.tick(dt, tickCounter);
+        const enemyId = this.getActiveEnemyId();
+        const damageManager = this.diagnosticDeps.damageManager;
+        const heroId = this.diagnosticDeps.heroId;
+        const heroBefore = damageManager.getHealth(heroId).currentHealth;
+        const enemyBefore = damageManager.isAlive(enemyId) ? damageManager.getHealth(enemyId).currentHealth : 0;
+        const result = super.tick(dt, tickCounter);
+        const heroAliveAfter = damageManager.isAlive(heroId);
+        const enemyAliveAfter = damageManager.isAlive(enemyId);
+        const heroAfter = damageManager.getHealth(heroId).currentHealth;
+        const enemyAfter = enemyAliveAfter ? damageManager.getHealth(enemyId).currentHealth : 0;
+        terminalTraceOverride.rows.push({
+          tick: tickCounter,
+          state: String(result.combatState),
+          heroBefore,
+          heroAfter,
+          enemyBefore,
+          enemyAfter,
+          heroAliveAfter,
+          enemyAliveAfter,
+        });
+        if (terminalTraceOverride.rows.length > 60) terminalTraceOverride.rows.shift();
+        return result;
+      }
+    },
   };
 });
 
@@ -197,6 +257,29 @@ describe("Dagger post-sustain diagnostics", () => {
 
     const liveRequiredPotion = rows.filter((row) => row.sustain === "live-none" && row.scenario === ".3+potion");
     expect(liveRequiredPotion.every((row) => row.clear)).toBe(true);
+  });
+
+  it("traces the terminal T5 Dagger Pair wall resolution", () => {
+    terminalTraceOverride.rows.length = 0;
+    terminalTraceOverride.enabled = true;
+    try {
+      const result = runDaggerPairWall(5, false, 3, true);
+      console.log("[DAGGER_PAIR_T5_TERMINAL_RESULT]");
+      console.table([{
+        clear: result.clear,
+        hpPct: result.hpPercent,
+        bossProgressPct: result.bossProgressPercent,
+        encounterProgressPct: result.encounterProgressPercent,
+        damageDealt: result.damageDealt,
+        damageReceived: result.damageReceived,
+        potionsUsed: result.potionsUsed,
+      }]);
+      console.log("[DAGGER_PAIR_T5_TERMINAL_TRACE]");
+      console.table(terminalTraceOverride.rows.slice(-30));
+    } finally {
+      terminalTraceOverride.enabled = false;
+    }
+    expect(terminalTraceOverride.rows.length).toBeGreaterThan(0);
   });
 
   it("diagnoses Deathgivers Flurry to Ghost Strike cadence on favorable T8 Heretic blocks", () => {
