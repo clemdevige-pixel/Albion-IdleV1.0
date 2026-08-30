@@ -1,0 +1,164 @@
+import { useCallback } from "react";
+import { FACTION_CAPE_FACTIONS } from "@game/data";
+import { getTowerFloorDefinition } from "@game/gameplay";
+import type { GameBridgeState } from "../../../game/GameBridge.js";
+import type { TowerAccessState } from "../../../state/TowerNavigationActions.js";
+import { useGameServices } from "../../../state/GameContext.js";
+import { useGameUiSelector } from "../../state/useGameUiSelector.js";
+import "./WorldTowerView.css";
+
+interface TowerPresentationModel {
+  readonly active: boolean;
+  readonly pendingStart: boolean;
+  readonly currentFloor: number;
+  readonly highestClearedFloor: number;
+  readonly checkpointFloor: number;
+  readonly endlessUnlocked: boolean;
+  readonly unlockedCheckpointFloors: readonly number[];
+  readonly access: TowerAccessState;
+  readonly combatState: string;
+}
+
+function sameTowerPresentation(previous: TowerPresentationModel, next: TowerPresentationModel): boolean {
+  return previous.active === next.active
+    && previous.pendingStart === next.pendingStart
+    && previous.currentFloor === next.currentFloor
+    && previous.highestClearedFloor === next.highestClearedFloor
+    && previous.checkpointFloor === next.checkpointFloor
+    && previous.endlessUnlocked === next.endlessUnlocked
+    && previous.access.canEnter === next.access.canEnter
+    && previous.access.reason === next.access.reason
+    && previous.access.requiredTier === next.access.requiredTier
+    && previous.access.highestEquippedTier === next.access.highestEquippedTier
+    && previous.combatState === next.combatState
+    && previous.unlockedCheckpointFloors.length === next.unlockedCheckpointFloors.length
+    && previous.unlockedCheckpointFloors.every((floor, index) => floor === next.unlockedCheckpointFloors[index]);
+}
+
+function resolveFactionDisplayName(factionId: string): string {
+  return FACTION_CAPE_FACTIONS.find((entry) => entry.factionId === factionId)?.displayName ?? factionId;
+}
+
+function getAccessMessage(access: TowerAccessState): string | undefined {
+  if (access.reason === "activity_busy") return "Terminez ou quittez l’activité de combat en cours.";
+  if (access.reason === "weapon_required") return "Une arme doit être équipée.";
+  if (access.reason === "equipment_tier_locked") {
+    return `Ce bloc T${String(access.requiredTier)} n’accepte pas d’équipement supérieur au T${String(access.requiredTier)}.`;
+  }
+  if (access.reason === "research_locked") return "Recherche de la Tour requise.";
+  return undefined;
+}
+
+export function WorldTowerView(): JSX.Element {
+  const {
+    getTowerState,
+    selectTowerCheckpoint,
+    startTower,
+    abandonTower,
+  } = useGameServices();
+
+  const selectPresentation = useCallback((state: GameBridgeState): TowerPresentationModel => {
+    const tower = getTowerState();
+    return {
+      active: tower.active,
+      pendingStart: tower.pendingStart,
+      currentFloor: tower.progression.currentFloor,
+      highestClearedFloor: tower.progression.highestClearedFloor,
+      checkpointFloor: tower.progression.checkpointFloor,
+      endlessUnlocked: tower.progression.endlessUnlocked,
+      unlockedCheckpointFloors: tower.unlockedCheckpointFloors,
+      access: tower.access,
+      combatState: state.combatState,
+    };
+  }, [getTowerState]);
+
+  const presentation = useGameUiSelector(selectPresentation, sameTowerPresentation);
+  const towerState = getTowerState();
+  const floor = getTowerFloorDefinition(
+    presentation.currentFloor,
+    towerState.progression.seed,
+  );
+  const block = floor.block;
+  const factionName = resolveFactionDisplayName(block.factionId);
+  const accessMessage = getAccessMessage(presentation.access);
+  const canStart = presentation.access.canEnter && !presentation.active && !presentation.pendingStart;
+
+  return (
+    <div className="world-tower">
+      <header className="world-tower__intro">
+        <div>
+          <small>ACTIVITÉ ENDGAME</small>
+          <h2>Tour sans fin</h2>
+        </div>
+        <p>Blocs de 5 étages · Tier et faction fixes par bloc · checkpoints permanents.</p>
+      </header>
+
+      <section className="world-tower__status" aria-label="Progression de la Tour">
+        <div><small>Étage actuel</small><strong>{presentation.currentFloor}</strong></div>
+        <div><small>Record</small><strong>{presentation.highestClearedFloor}</strong></div>
+        <div><small>Checkpoint</small><strong>{presentation.checkpointFloor}</strong></div>
+        <div><small>Mode Endless</small><strong>{presentation.endlessUnlocked ? "Débloqué" : "Étage 25"}</strong></div>
+      </section>
+
+      <article className={`world-tower__block${presentation.active ? " is-active" : ""}${presentation.pendingStart ? " is-pending" : ""}`}>
+        <header>
+          <div>
+            <small>Bloc {block.blockIndex + 1} · Étages {block.floorStart}–{block.floorEnd}</small>
+            <h3>T{block.tier} · {factionName}</h3>
+          </div>
+          <span>{presentation.active ? "En cours" : presentation.pendingStart ? "Après ce combat" : "Prêt"}</span>
+        </header>
+
+        <div className="world-tower__rooms" aria-label="Étages du bloc">
+          {Array.from({ length: 5 }, (_, index) => {
+            const roomFloor = block.floorStart + index;
+            const completed = roomFloor <= presentation.highestClearedFloor;
+            const current = roomFloor === presentation.currentFloor;
+            return (
+              <span key={roomFloor} className={`${completed ? "is-complete" : ""}${current ? " is-current" : ""}`}>
+                <b>{completed ? "✓" : roomFloor}</b>
+                <small>{index === 4 ? (block.majorBoss ? "Boss majeur" : "Boss") : `Salle ${String(index + 1)}`}</small>
+              </span>
+            );
+          })}
+        </div>
+
+        <div className="world-tower__rules">
+          <span><small>Tier requis</small><strong>T{block.tier}</strong></span>
+          <span><small>Faction</small><strong>{factionName}</strong></span>
+          <span><small>Étage du bloc</small><strong>{floor.indexInBlock + 1}/5</strong></span>
+        </div>
+
+        <footer>
+          <p>{presentation.active
+            ? "Abandonner quitte la tentative et conserve la progression validée."
+            : presentation.pendingStart
+              ? "La Tour démarrera à la fin de l’ennemi actuel."
+              : accessMessage ?? "L’entrée peut attendre la fin du combat World en cours."}</p>
+          {presentation.active ? (
+            <button type="button" className="is-danger" onClick={() => { abandonTower(); }}>Abandonner</button>
+          ) : presentation.pendingStart ? null : (
+            <button type="button" disabled={!canStart} onClick={() => { startTower(); }}>Entrer</button>
+          )}
+        </footer>
+      </article>
+
+      <section className="world-tower__checkpoints" aria-label="Checkpoints débloqués">
+        <header><small>CHECKPOINTS</small><span>Repartir depuis un bloc déjà validé</span></header>
+        <div>
+          {presentation.unlockedCheckpointFloors.map((checkpoint) => (
+            <button
+              key={checkpoint}
+              type="button"
+              className={checkpoint === presentation.checkpointFloor ? "is-active" : ""}
+              disabled={presentation.active || presentation.pendingStart}
+              onClick={() => { selectTowerCheckpoint(checkpoint); }}
+            >
+              Étage {checkpoint}
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
