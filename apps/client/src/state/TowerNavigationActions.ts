@@ -4,6 +4,7 @@ import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
 import type { CombatActivityRuntimeRouter } from "../runtime/CombatActivityRuntimeRouter.js";
 import type { TowerCombatRuntimeRouter } from "../runtime/TowerCombatRuntimeRouter.js";
+import { isDevSandboxMode } from "../runtime/devSandbox.js";
 import { worldTravelTransition } from "../runtime/WorldTravelTransition.js";
 import { getEquippedTierAccessFacts } from "./EquipmentTierAccess.js";
 
@@ -167,7 +168,7 @@ export class TowerNavigationActions {
     const equipment = getEquippedTierAccessFacts(this.deps.equipmentManager, this.deps.heroId);
     return resolveTowerAccessState({
       requiredTier: floor.block.tier,
-      researchUnlocked: this.deps.isTowerUnlocked(),
+      researchUnlocked: this.deps.isTowerUnlocked() || isDevSandboxMode(),
       activityAvailable: this.deps.activityRouter.canStartTower(),
       hasWeapon: equipment.hasWeapon,
       ...(equipment.highestEquippedTier === undefined
