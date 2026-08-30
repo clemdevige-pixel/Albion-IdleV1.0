@@ -180,6 +180,12 @@ export class WeaponAbilityMechanicsRuntime {
         continue;
       }
 
+      if (mechanic.kind === "consume_effect") {
+        const effectTarget = mechanic.target === "self" ? this.deps.heroId : target;
+        this.consumeEffect(effectTarget, mechanic.effectId);
+        continue;
+      }
+
       if (mechanic.kind === "dot") {
         const outputDamageType = mechanic.damageType ?? definition.damageType;
         const scalingDamageType = mechanic.scalingDamageType ?? outputDamageType;
@@ -265,6 +271,23 @@ export class WeaponAbilityMechanicsRuntime {
     this.dots.splice(0, this.dots.length);
     for (const tracked of this.modifiers.values()) this.removeTrackedModifier(tracked);
     this.modifiers.clear();
+  }
+
+  private consumeEffect(target: EntityId, effectId: string): void {
+    const effect = this.deps.effectManager.getActiveEffects(target).find(
+      (active) => active.source === this.deps.heroId && active.definition.id === effectId,
+    );
+    if (effect === undefined) return;
+
+    const tracked = this.modifiers.get(String(effect.id));
+    if (tracked !== undefined) {
+      this.removeTrackedModifier(tracked);
+      this.modifiers.delete(String(effect.id));
+    }
+    this.deps.effectManager.removeEffect(target, effect.id);
+    if (effect.effectType === "stun" && this.deps.damageManager.isAlive(target)) {
+      this.deps.autoAttackManager.startAutoAttack(target);
+    }
   }
 
   private removeTrackedModifier(tracked: TrackedModifier): void {
