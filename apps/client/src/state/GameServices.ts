@@ -53,6 +53,7 @@ export interface TowerNavigationVM {
   readonly active: boolean;
   readonly pendingStart: boolean;
   readonly progression: TowerProgressionSnapshot;
+  readonly unlockedCheckpointFloors: readonly number[];
   readonly access: TowerAccessState;
 }
 
@@ -103,6 +104,7 @@ export interface GameServices {
   readonly getRelicProgress: (relicId: string) => RelicProgressView | undefined;
   readonly isDungeonSystemUnlocked: () => boolean;
   readonly isTowerSystemUnlocked: () => boolean;
+  readonly selectTowerCheckpoint: (floor: number) => boolean;
   readonly startTower: () => boolean;
   readonly abandonTower: () => boolean;
   readonly isTowerActive: () => boolean;
