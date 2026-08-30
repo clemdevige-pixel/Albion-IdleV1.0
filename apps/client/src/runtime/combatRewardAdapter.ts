@@ -6,6 +6,7 @@ import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatRewardRuntime } from "./CombatRewardRuntime.js";
 import { dungeonCompletionFlow } from "./DungeonCompletionFlow.js";
 import type { DungeonRewardRuntime } from "./DungeonRewardRuntime.js";
+import type { TowerRewardRuntime } from "./TowerRewardRuntime.js";
 import type { WorldRuntime } from "./WorldRuntime.js";
 import { getMasteryDisplayName } from "../data/progressionContentCatalog.js";
 import {
@@ -25,6 +26,7 @@ export interface CombatRewardAdapterOptions {
   readonly combatService: CombatService;
   readonly combatRewardRuntime: CombatRewardRuntime;
   readonly dungeonRewardRuntime?: DungeonRewardRuntime;
+  readonly towerRewardRuntime?: TowerRewardRuntime;
   readonly worldRuntime: WorldRuntime;
   readonly bridge: GameBridge;
   readonly statsManager: StatsManager;
@@ -115,11 +117,42 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
     const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
 
     if (options.isTowerActive?.() === true) {
+      const towerReward = options.towerRewardRuntime?.processCurrentFloorVictory();
       if (monsterDefinitionId !== undefined) {
         options.onMonsterKilled?.({ monsterId: monsterDefinitionId, contextId: "tower" });
       }
       clearActiveMonsterIdentity(event.entityId);
-      incomeRate = 0;
+      if (towerReward !== undefined) {
+        incomeRate = towerReward.reward.newBalance - lastSilver;
+        lastSilver = towerReward.reward.newBalance;
+        const timestamp = Date.now();
+        options.bridge.addTransaction({
+          id: `tower_silver_${String(timestamp)}_${String(towerReward.floor)}`,
+          type: "credit",
+          description: `Tour · étage ${String(towerReward.floor)} : +${String(towerReward.reward.silverEarned)} Silver`,
+          amount: towerReward.reward.silverEarned,
+          timestamp,
+        });
+        options.bridge.addEconomyNotification({
+          id: `notif_tower_silver_${String(timestamp)}_${String(towerReward.floor)}`,
+          type: "success",
+          message: `Tour · étage ${String(towerReward.floor)} · +${String(towerReward.reward.silverEarned)} Silver`,
+          timestamp,
+        });
+        if (towerReward.reward.fameEarned !== undefined) {
+          options.recalculateWeaponMasteryStats();
+          syncStatsToBridge(options.bridge, options.statsManager, options.heroId);
+          const masteryName = getMasteryDisplayName(towerReward.reward.fameEarned.weaponId);
+          options.bridge.addEconomyNotification({
+            id: `notif_tower_fame_${String(timestamp)}_${String(towerReward.floor)}`,
+            type: "success",
+            message: `+${String(towerReward.reward.fameEarned.amount)} Fame · ${masteryName}`,
+            timestamp,
+          });
+        }
+      } else {
+        incomeRate = 0;
+      }
       options.resyncAll();
       return;
     }
