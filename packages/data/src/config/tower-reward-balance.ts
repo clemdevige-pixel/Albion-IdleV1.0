@@ -11,7 +11,7 @@ import { DUNGEON_COMPLETION_SILVER_BY_TIER } from "./dungeon-loot-balance.js";
  * outside this contract so Dungeon retains its dedicated loot identity.
  */
 export const TOWER_FLOOR_WORLD_REWARD_PERCENT = 60;
-export const TOWER_BLOCK_CHEST_DUNGEON_SILVER_PERCENT = 5;
+export const TOWER_BLOCK_CHEST_DUNGEON_SILVER_PERCENT = 1;
 export const TOWER_FIRST_CLEAR_BLOCK_DUNGEON_SILVER_PERCENT = 10;
 export const TOWER_MAJOR_BOSS_FIRST_CLEAR_DUNGEON_SILVER_PERCENT = 20;
 
