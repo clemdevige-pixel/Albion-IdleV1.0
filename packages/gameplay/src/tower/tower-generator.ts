@@ -40,8 +40,10 @@ function refillFactionBag(
   const replacementIndex = bag.findIndex((entry) => entry !== previousFaction);
   if (replacementIndex <= 0) return bag;
   const first = bag[0];
-  bag[0] = bag[replacementIndex] as TowerFactionId;
-  bag[replacementIndex] = first as TowerFactionId;
+  const replacement = bag[replacementIndex];
+  if (first === undefined || replacement === undefined) return bag;
+  bag[0] = replacement;
+  bag[replacementIndex] = first;
   return bag;
 }
 
@@ -89,7 +91,7 @@ export function getTowerBlockDefinition(blockIndex: number, towerSeed: string): 
   const trialBlock = TOWER_TRIAL_BLOCKS[blockIndex];
   if (trialBlock !== undefined) return { ...trialBlock, source: "trial" };
 
-  const lastTrialFaction = TOWER_TRIAL_BLOCKS.at(-1)?.factionId;
+  const lastTrialFaction = TOWER_TRIAL_BLOCKS[TOWER_TRIAL_BLOCKS.length - 1]?.factionId;
   const random = createDeterministicRandom(`endless_tower|${towerSeed}`);
   const state: GeneratorState = { tierBag: [], factionBag: [], lastFaction: lastTrialFaction };
   let generated: TowerBlockDefinition | undefined;
