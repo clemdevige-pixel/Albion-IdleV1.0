@@ -95,6 +95,8 @@ export class TowerRewardRuntime {
         isBoss: floor.role === "block_boss",
         isFinalBoss: floor.majorBoss,
         enchantmentTier: tier,
+        enchantmentDropWeight: 0,
+        dungeonKeyDropWeight: 0,
       },
       0,
       { itemDropsEnabled: false },
