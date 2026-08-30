@@ -50,10 +50,11 @@ export interface TowerNavigationState {
   readonly active: boolean;
   readonly pendingStart: boolean;
   readonly progression: ReturnType<TowerProgressionService["getSnapshot"]>;
+  readonly unlockedCheckpointFloors: readonly number[];
   readonly access: TowerAccessState;
 }
 
-/** Owns Tower entry/exit and the hard authored equipment-tier gate. */
+/** Owns Tower entry/exit, checkpoint selection and the hard authored equipment-tier gate. */
 export class TowerNavigationActions {
   private pendingStart = false;
 
@@ -64,8 +65,20 @@ export class TowerNavigationActions {
       active: this.deps.towerRouter.isTowerActive(),
       pendingStart: this.pendingStart,
       progression: this.deps.progression.getSnapshot(),
+      unlockedCheckpointFloors: this.deps.progression.getUnlockedCheckpointFloors(),
       access: this.getAccess(),
     };
+  }
+
+  public selectCheckpoint(floor: number): boolean {
+    if (this.pendingStart || this.deps.towerRouter.isTowerActive()) return false;
+    try {
+      this.deps.progression.selectCheckpoint(floor);
+    } catch {
+      return false;
+    }
+    this.deps.onStateChanged();
+    return true;
   }
 
   public requestStart(): boolean {
