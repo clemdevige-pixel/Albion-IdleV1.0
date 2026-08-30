@@ -9,6 +9,7 @@ interface GameRuntimeLifecycleHandle {
   readonly tickIntervalMs: number;
   readonly persistence: RuntimePersistence;
   readonly syncPresentation: () => void;
+  readonly afterInitialLoad?: () => void;
   readonly dispose: () => void;
 }
 
@@ -144,10 +145,13 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     cancelDeferredRuntimeDisposal(services.bridge);
 
     // Save load (and any background resolution delegated by loadGame) must
-    // finish before the first gameplay tick starts.
+    // finish before the first gameplay tick starts. Dev/test adjustments that
+    // intentionally override restored state run only after that authority has
+    // finished restoring.
     if (loadedRuntimeRef.current !== services.bridge) {
       loadedRuntimeRef.current = services.bridge;
       loadInitialRuntimeSave(services, handle.persistence);
+      handle.afterInitialLoad?.();
     }
 
     const lifecycle = new RuntimeLifecycle();
