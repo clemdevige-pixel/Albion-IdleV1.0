@@ -4,12 +4,12 @@ import type {
   DungeonRuntime,
   EquipmentManager,
 } from "@game/gameplay";
-import { getItemTier } from "../data/itemPower.js";
 import type { GameBridge } from "../game/GameBridge.js";
 import type { CombatLoopState } from "../runtime/CombatRuntime.js";
 import { dungeonCompletionFlow } from "../runtime/DungeonCompletionFlow.js";
 import type { PlayerInventoryManager } from "../runtime/PlayerInventoryManager.js";
 import { worldTravelTransition } from "../runtime/WorldTravelTransition.js";
+import { getEquippedTierAccessFacts } from "./EquipmentTierAccess.js";
 
 interface DungeonCombatRuntime {
   getLoopState(): CombatLoopState;
@@ -170,11 +170,7 @@ export class DungeonNavigationActions {
       });
     }
 
-    const equipped = [...this.deps.equipmentManager.getEquipped(this.deps.heroId).values()];
-    const equippedTiers = equipped
-      .map((entry) => getItemTier(entry.itemId))
-      .filter((tier): tier is NonNullable<ReturnType<typeof getItemTier>> => tier !== undefined);
-    const highestEquippedTier = equippedTiers.length === 0 ? undefined : Math.max(...equippedTiers);
+    const equipment = getEquippedTierAccessFacts(this.deps.equipmentManager, this.deps.heroId);
     const hasKey = this.deps.inventoryManager.hasAccessibleQuantity(
       this.deps.heroId,
       definition.keyItemId,
@@ -185,8 +181,10 @@ export class DungeonNavigationActions {
       definitionTier: definition.tier,
       researchUnlocked: this.deps.canAccessDungeonContent(definitionId),
       progressionUnlocked: this.deps.dungeonRuntime.canAccessDefinition(definitionId),
-      hasWeapon: this.deps.equipmentManager.getEquippedItem(this.deps.heroId, "weapon") !== undefined,
-      ...(highestEquippedTier === undefined ? {} : { highestEquippedTier }),
+      hasWeapon: equipment.hasWeapon,
+      ...(equipment.highestEquippedTier === undefined
+        ? {}
+        : { highestEquippedTier: equipment.highestEquippedTier }),
       hasKey,
     });
   }
