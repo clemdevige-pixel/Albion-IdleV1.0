@@ -281,6 +281,7 @@ export function GameProvider({
       inventoryManager,
       productionStorageId,
       getAcademyTier: academyRuntimeFoundation.getResearchTier,
+      isWorldProgressionComplete: worldFoundation.isWorldProgressionComplete,
     });
     const { researchService } = researchFoundation;
     const isTowerSystemUnlocked = (): boolean => (
