@@ -1,6 +1,7 @@
 import type { EntityId } from "@game/core";
 import type {
   DamageManager,
+  DungeonRuntime,
   EquipmentManager,
   PostMitigationDamageResolver,
 } from "@game/gameplay";
@@ -13,13 +14,27 @@ export interface FactionCapeFoundationDependencies {
   readonly damageManager: DamageManager;
   readonly equipmentManager: EquipmentManager;
   readonly heroId: EntityId;
-  readonly getActiveFactionCombatContext: () => FactionCombatContext | undefined;
+  readonly getActiveFactionCombatContext?: () => FactionCombatContext | undefined;
+  readonly dungeonRuntime?: DungeonRuntime;
+}
+
+function resolveDungeonFallbackContext(
+  dungeonRuntime: DungeonRuntime | undefined,
+): FactionCombatContext | undefined {
+  const run = dungeonRuntime?.activeRun;
+  if (run?.status !== "active") return undefined;
+  const dungeon = dungeonRuntime?.getDefinition(run.definitionId);
+  if (dungeon === undefined) return undefined;
+  return { factionId: dungeon.faction, tier: dungeon.tier };
 }
 
 /**
  * Single faction-combat damage resolver shared by all authored faction combat
  * activities. Activity routing owns which faction/tier context is active;
  * equipment catalogs remain authoritative for weapon and cape modifiers.
+ *
+ * The Dungeon fallback preserves compatibility while consumers migrate to the
+ * activity-neutral context resolver.
  */
 export function createFactionCapeFoundation(
   dependencies: FactionCapeFoundationDependencies,
@@ -28,7 +43,8 @@ export function createFactionCapeFoundation(
     request,
     mitigatedDamage,
   ) => {
-    const context = dependencies.getActiveFactionCombatContext();
+    const context = dependencies.getActiveFactionCombatContext?.()
+      ?? resolveDungeonFallbackContext(dependencies.dungeonRuntime);
     if (context === undefined) return mitigatedDamage;
 
     let resolvedDamage = mitigatedDamage;
