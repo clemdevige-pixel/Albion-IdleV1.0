@@ -25,6 +25,7 @@ export interface ResearchFoundationDependencies {
   readonly inventoryManager: InventoryManager;
   readonly productionStorageId: EntityId;
   readonly getAcademyTier: () => number;
+  readonly isWorldProgressionComplete: () => boolean;
 }
 
 function hasDiscoveredEnchantmentShard(inventoryManager: InventoryManager): boolean {
@@ -56,6 +57,8 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
           return researchServiceRef.current?.hasUnlock(requirement.unlockId) ?? false;
         case "enchantment_shard_discovered":
           return hasDiscoveredEnchantmentShard(dependencies.inventoryManager);
+        case "world_progression_complete":
+          return dependencies.isWorldProgressionComplete();
       }
     },
   };
