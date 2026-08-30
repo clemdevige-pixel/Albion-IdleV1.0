@@ -1,6 +1,6 @@
 # 45 — ENDLESS TOWER SYSTEM
 
-Status: GAME DESIGN BASELINE VALIDATED — NOT IMPLEMENTED
+Status: PARTIAL IMPLEMENTATION — BALANCE VALIDATION IN PROGRESS
 Authority: canonical design contract for Albion Idle first endgame activity
 Last update: 2026-08-30
 
@@ -581,6 +581,44 @@ Forbidden architecture:
 
 ---
 
+# 16A. CURRENT BALANCE VALIDATION TOOLING
+
+The Tower now has deterministic benchmark coverage used to measure faction, tier and specialization behavior before numerical tuning is promoted into gameplay data.
+
+Current validated tooling coverage includes:
+
+- a neutral faction matrix across T4, T5, T6, T7 and T8;
+- specialization benchmark coverage for matching/non-matching faction relationships;
+- the four current Endless generation seeds exercised across 20 blocks each;
+- explicit T4-T8 typing/guard coverage so benchmark inputs cannot silently escape the supported equipment-tier band.
+
+These benchmarks are validation infrastructure, not gameplay configuration.
+
+Therefore:
+
+- benchmark constants/results must not become a second source of truth for Tower balance;
+- final numerical tuning must remain in the authoritative gameplay data/config consumed by runtime;
+- benchmark fixtures must measure the same shared faction/Tier authorities used by gameplay rather than reproduce parallel Tower-only formulas;
+- a benchmark discrepancy is evidence to investigate/tune the authoritative data, not permission to add faction-specific runtime branches.
+
+Current interpretation of the benchmark work:
+
+- neutral cross-faction/Tier behavior is now measurable on one repeatable matrix;
+- Endless generation can be checked over 80 deterministic blocks (4 seeds × 20 blocks) instead of a single favorable sequence;
+- specialization behavior is measurable independently from the neutral baseline;
+- the benchmark harness is ready to support faction/Tier curve correction without changing weapon balance first.
+
+Not yet validated/shipped by this benchmark work:
+
+- no final Tower faction/Tier rebalance is implied;
+- no Tower-only normalization layer is considered implemented solely because the benchmark detects a faction/Tier gap;
+- no change to shared Dungeon source profiles should be made just to fix Tower unless the impact on existing Dungeon balance is deliberately accepted and validated;
+- final Faction Resilience values and the final deep-Tower difficulty curve remain open balance items.
+
+Any future Tower-specific normalization must stay data-driven and must not duplicate or fork the shared faction encounter architecture.
+
+---
+
 # 17. VALIDATED V1 LOOP SUMMARY
 
 `finish main T4-T8 progression`
@@ -638,9 +676,3 @@ The following are deliberately NOT invented/locked yet:
 - exact reward tables;
 - any Tower-exclusive reward/currency;
 - final numerical difficulty balance.
-
-These points require a dedicated implementation/balance pass and must not be silently filled with arbitrary constants.
-
----
-
-DOCUMENT END
