@@ -21,10 +21,14 @@ function assertPositiveSafeInteger(value: number, label: string): void {
   }
 }
 
-function resolveCheckpointFloor(highestClearedFloor: number): number {
+function resolveHighestUnlockedCheckpointFloor(highestClearedFloor: number): number {
   if (highestClearedFloor <= 0) return 1;
   const completedBlocks = Math.floor(highestClearedFloor / TOWER_BLOCK_SIZE);
   return completedBlocks * TOWER_BLOCK_SIZE + 1;
+}
+
+function isTowerCheckpointFloor(floor: number): boolean {
+  return (floor - 1) % TOWER_BLOCK_SIZE === 0;
 }
 
 /**
@@ -53,6 +57,22 @@ export class TowerProgressionService {
       checkpointFloor: this.checkpointFloor,
       endlessUnlocked: this.endlessUnlocked,
     };
+  }
+
+  public getUnlockedCheckpointFloors(): readonly number[] {
+    const highest = resolveHighestUnlockedCheckpointFloor(this.highestClearedFloor);
+    const count = Math.floor((highest - 1) / TOWER_BLOCK_SIZE) + 1;
+    return Array.from({ length: count }, (_, index) => index * TOWER_BLOCK_SIZE + 1);
+  }
+
+  public selectCheckpoint(floor: number): void {
+    assertPositiveSafeInteger(floor, "Tower checkpoint floor");
+    const highestUnlocked = resolveHighestUnlockedCheckpointFloor(this.highestClearedFloor);
+    if (!isTowerCheckpointFloor(floor) || floor > highestUnlocked) {
+      throw new Error(`Tower checkpoint floor ${String(floor)} is not unlocked`);
+    }
+    this.checkpointFloor = floor;
+    this.currentFloor = floor;
   }
 
   public clearCurrentFloor(floor: number): TowerFloorClearResult {
@@ -95,14 +115,15 @@ export class TowerProgressionService {
       throw new Error("Tower highest cleared floor must be a non-negative safe integer");
     }
 
-    const expectedCheckpointFloor = resolveCheckpointFloor(snapshot.highestClearedFloor);
+    const highestUnlockedCheckpointFloor = resolveHighestUnlockedCheckpointFloor(snapshot.highestClearedFloor);
     const expectedCurrentCeiling = snapshot.highestClearedFloor + 1;
     const expectedEndlessUnlocked = snapshot.highestClearedFloor >= TOWER_TRIAL_FLOOR_COUNT;
 
-    if (snapshot.checkpointFloor !== expectedCheckpointFloor) {
-      throw new Error(
-        `Tower checkpoint is inconsistent with highest cleared floor: expected ${String(expectedCheckpointFloor)}`,
-      );
+    if (
+      !isTowerCheckpointFloor(snapshot.checkpointFloor)
+      || snapshot.checkpointFloor > highestUnlockedCheckpointFloor
+    ) {
+      throw new Error("Tower checkpoint is not an unlocked block checkpoint");
     }
     if (snapshot.currentFloor < snapshot.checkpointFloor || snapshot.currentFloor > expectedCurrentCeiling) {
       throw new Error("Tower current floor is outside the persisted checkpoint/progression range");
