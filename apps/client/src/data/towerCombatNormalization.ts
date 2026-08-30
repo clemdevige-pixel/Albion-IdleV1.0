@@ -15,7 +15,6 @@ export function applyTowerFactionCombatNormalization(
   profile: AuthoredEnemyCombatProfile,
 ): AuthoredEnemyCombatProfile {
   const multiplier = TOWER_FACTION_TIER_COMBAT_MULTIPLIER[context.factionId][context.tier];
-  if (multiplier === 1) return profile;
 
   return {
     hp: Math.round(profile.hp * multiplier),
