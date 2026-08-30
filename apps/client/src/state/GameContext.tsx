@@ -245,9 +245,9 @@ export function GameProvider({
     });
     const factionCapeFoundation = createFactionCapeFoundation({
       damageManager,
-      dungeonRuntime,
       equipmentManager,
       heroId,
+      getActiveFactionCombatContext: () => combatActivityRouter.getFactionCombatContext(),
     });
 
     const {
