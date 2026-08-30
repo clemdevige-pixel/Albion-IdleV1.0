@@ -214,14 +214,12 @@ export function BlackMarketView(): JSX.Element {
       setActiveSlotIndex(duplicateIndex);
       return;
     }
-    const wasEmpty = cargoSlots[activeSlotIndex] === null;
     updateSlot(activeSlotIndex, {
       source: candidate.source,
       itemId: candidate.itemId,
       enchantment: candidate.enchantment,
       quantity: 1,
     });
-    if (wasEmpty) setActiveSlotIndex(null);
   };
 
   const changeActiveQuantity = (delta: number): void => {
@@ -429,17 +427,19 @@ export function BlackMarketView(): JSX.Element {
           <section className="ui-black-market__picker" role="dialog" aria-modal="true" aria-label={`Remplir le slot ${String(activeSlotIndex + 1)}`}>
             <header>
               <div><strong>Slot {String(activeSlotIndex + 1)}</strong><small>{activeSlot === null ? "Choisir un équipement" : "Modifier ou remplacer"}</small></div>
-              <button type="button" onClick={() => { setActiveSlotIndex(null); }}>×</button>
             </header>
 
             {activeSlot !== null && (
-              <div className="ui-black-market__picker-current">
-                <ItemVisual itemId={activeSlot.itemId} />
-                <div><strong>{getItemDisplayName(activeSlot.itemId)}{activeSlot.enchantment > 0 ? ` .${String(activeSlot.enchantment)}` : ""}</strong><small>{sourceLabel(activeSlot.source)}</small></div>
-                <div className="ui-black-market__quantity"><button type="button" onClick={() => { changeActiveQuantity(-1); }}>−</button><b>{String(activeSlot.quantity)}</b><button type="button" onClick={() => { changeActiveQuantity(1); }}>+</button></div>
-                <button type="button" className="ui-black-market__remove" onClick={() => { changeActiveQuantity(BLACK_MARKET_STACK_LIMIT); }}>Max</button>
-                <button type="button" className="ui-black-market__remove" onClick={() => { updateSlot(activeSlotIndex, null); }}>Retirer</button>
-              </div>
+              <>
+                <div className="ui-black-market__picker-current">
+                  <ItemVisual itemId={activeSlot.itemId} />
+                  <div><strong>{getItemDisplayName(activeSlot.itemId)}{activeSlot.enchantment > 0 ? ` .${String(activeSlot.enchantment)}` : ""}</strong><small>{sourceLabel(activeSlot.source)}</small></div>
+                  <div className="ui-black-market__quantity"><button type="button" onClick={() => { changeActiveQuantity(-1); }}>−</button><b>{String(activeSlot.quantity)}</b><button type="button" onClick={() => { changeActiveQuantity(1); }}>+</button></div>
+                  <button type="button" className="ui-black-market__remove" onClick={() => { changeActiveQuantity(BLACK_MARKET_STACK_LIMIT); }}>Max</button>
+                  <button type="button" className="ui-black-market__remove" onClick={() => { updateSlot(activeSlotIndex, null); }}>Retirer</button>
+                </div>
+                <button type="button" className="ui-merchant__primary" onClick={() => { setActiveSlotIndex(null); }}>Ajouter au cargo</button>
+              </>
             )}
 
             <div className="ui-black-market__picker-filters">
