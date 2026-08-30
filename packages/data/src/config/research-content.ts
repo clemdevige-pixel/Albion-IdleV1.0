@@ -21,6 +21,7 @@ export const RESEARCH_IDS = {
   instantRefining: "research_instant_refining",
   blackMarket: "research_black_market",
   dungeonRelicAnalysis: "research_dungeon_relic_analysis",
+  towerStudy: "research_tower_study",
   /** Legacy save id migrated into dungeonRelicAnalysis. Not an active authored Research. */
   dungeonSanctuaryLocation: "research_dungeon_sanctuary_location",
 } as const;
@@ -54,7 +55,8 @@ export type AuthoredResearchRequirement =
   | { readonly type: "relic_charged"; readonly relicId: string }
   | { readonly type: "academy_tier"; readonly minimumTier: number }
   | { readonly type: "research_unlock"; readonly unlockId: string }
-  | { readonly type: "enchantment_shard_discovered" };
+  | { readonly type: "enchantment_shard_discovered" }
+  | { readonly type: "world_progression_complete" };
 
 export interface AuthoredResearchDefinition {
   readonly id: string;
@@ -115,9 +117,25 @@ const DUNGEON_DISCOVERY_RESEARCH = [
   },
 ] as const satisfies readonly AuthoredResearchDefinition[];
 
+const TOWER_DISCOVERY_RESEARCH = [
+  {
+    id: RESEARCH_IDS.towerStudy,
+    displayName: "Étude de la Tour",
+    tier: 8,
+    durationMs: 4 * HOUR_MS,
+    cost: { silver: 110_000, materials: [] },
+    requirements: [
+      { type: "academy_tier", minimumTier: 8 },
+      { type: "world_progression_complete" },
+    ],
+    unlockIds: [RESEARCH_UNLOCK_IDS.towerSystem],
+  },
+] as const satisfies readonly AuthoredResearchDefinition[];
+
 export const RESEARCH_AUTHORED_DEFINITIONS: readonly AuthoredResearchDefinition[] = [
   ...CARTOGRAPHY_RESEARCH,
   ...ARCHAEOLOGY_RESEARCH,
   ...ECONOMY_RESEARCH,
   ...DUNGEON_DISCOVERY_RESEARCH,
+  ...TOWER_DISCOVERY_RESEARCH,
 ];
