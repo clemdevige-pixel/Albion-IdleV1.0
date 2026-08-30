@@ -106,6 +106,12 @@ export class TowerNavigationActions {
     };
   }
 
+  /** Clears only transient attempt/request state before a different save snapshot is loaded. */
+  public resetTransientState(): void {
+    this.pendingStart = false;
+    this.deps.towerRouter.abandon();
+  }
+
   public selectCheckpoint(floor: number): boolean {
     if (this.pendingStart || this.deps.towerRouter.isTowerActive()) return false;
     try {
