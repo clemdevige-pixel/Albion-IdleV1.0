@@ -57,22 +57,35 @@ describe("TowerCombatRuntimeRouter", () => {
     expect(router.start()).toBe(true);
 
     for (let floor = 1; floor < 5; floor += 1) {
-      expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({
-        enteredNewSegment: false,
-      });
+      expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({ enteredNewSegment: false });
       expect(router.isTowerActive()).toBe(true);
       expect(progression.getSnapshot().currentFloor).toBe(floor + 1);
       expect(requestPauseAfterEncounter).not.toHaveBeenCalled();
     }
 
-    expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({
-      enteredNewSegment: true,
-    });
+    expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({ enteredNewSegment: true });
     expect(router.isTowerActive()).toBe(false);
     expect(progression.getSnapshot()).toMatchObject({
       currentFloor: 6,
       highestClearedFloor: 5,
       checkpointFloor: 6,
+    });
+    expect(requestPauseAfterEncounter).toHaveBeenCalledTimes(1);
+  });
+
+  it("unlocks Endless and closes the trial attempt after floor 25", () => {
+    const requestPauseAfterEncounter = vi.fn(() => true);
+    const { progression, router } = createRouter({ requestPauseAfterEncounter });
+    for (let floor = 1; floor <= 24; floor += 1) progression.clearCurrentFloor(floor);
+
+    expect(router.start()).toBe(true);
+    expect(router.onVictory(() => ({ enteredNewSegment: false }))).toEqual({ enteredNewSegment: true });
+    expect(router.isTowerActive()).toBe(false);
+    expect(progression.getSnapshot()).toMatchObject({
+      currentFloor: 26,
+      highestClearedFloor: 25,
+      checkpointFloor: 26,
+      endlessUnlocked: true,
     });
     expect(requestPauseAfterEncounter).toHaveBeenCalledTimes(1);
   });
