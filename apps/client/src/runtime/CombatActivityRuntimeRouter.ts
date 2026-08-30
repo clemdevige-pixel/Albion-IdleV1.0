@@ -1,3 +1,4 @@
+import type { FactionCombatContext } from "../data/factionCombatResolver.js";
 import type {
   CombatEntityFactoryDependencies,
   SpawnedEnemyResult,
@@ -48,6 +49,11 @@ export class CombatActivityRuntimeRouter {
 
   public canStartTower(): boolean {
     return !this.isDungeonActive() && !this.isTowerActive();
+  }
+
+  public getFactionCombatContext(): FactionCombatContext | undefined {
+    return this.tower.getFactionCombatContext()
+      ?? this.dungeon.getFactionCombatContext();
   }
 
   public spawnEnemyOverride(
