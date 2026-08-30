@@ -2,6 +2,7 @@ import type { EntityId } from "@game/core";
 import { TOWER_TRIAL_BLOCKS } from "@game/data";
 import type {
   CurrencyService,
+  EnchantmentLevel,
   EquipmentLoadout,
   EquipmentLoadoutSlot,
   EquipmentManager,
@@ -39,10 +40,12 @@ import {
   getDungeonKeyItemId,
 } from "../data/dungeonKeyContentCatalog.js";
 
-export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v5";
+export const DEV_SANDBOX_SAVE_SLOT_ID = "albion_idle_dev_sandbox_v6";
 const DEV_SANDBOX_SILVER = 10_000_000;
 const DEV_SANDBOX_RESOURCE_STACK = 500;
 const DEV_TOWER_LOADOUT_PREFIX = "dev_tower_block_";
+const DEV_TOWER_WEAPON_ENCHANTMENT: EnchantmentLevel = 4;
+const DEV_TOWER_ARMOR_ENCHANTMENT: EnchantmentLevel = 3;
 
 const ARTIFACT_WEAPON_ITEM_IDS = new Set(
   FACTION_ARTIFACT_WEAPON_CONTENT.flatMap((specialization) =>
@@ -93,7 +96,7 @@ function hasEquipmentVariant(
   inventoryManager: InventoryManager,
   ownerId: EntityId,
   itemId: string,
-  enchantment: 0 | 3,
+  enchantment: EnchantmentLevel,
 ): boolean {
   return inventoryManager
     .findEntriesByItemId(ownerId, itemId)
@@ -104,7 +107,7 @@ function ensureEquipmentVariant(
   inventoryManager: InventoryManager,
   ownerId: EntityId,
   itemId: string,
-  enchantment: 0 | 3,
+  enchantment: EnchantmentLevel,
 ): void {
   if (hasEquipmentVariant(inventoryManager, ownerId, itemId, enchantment)) return;
   const stackInfo = resolveItemStackInfo(itemId);
@@ -148,6 +151,7 @@ function seedArtifactTestWeapons(
   for (const specialization of FACTION_ARTIFACT_WEAPON_CONTENT) {
     for (const item of specialization.items) {
       ensureEquipmentVariant(inventoryManager, bankId, item.itemId, 0);
+      ensureEquipmentVariant(inventoryManager, bankId, item.itemId, DEV_TOWER_WEAPON_ENCHANTMENT);
     }
   }
 }
@@ -197,20 +201,23 @@ function resolveBankLoadoutSlot(
   inventoryManager: InventoryManager,
   bankId: EntityId,
   itemId: string,
+  enchantment: EnchantmentLevel,
 ): EquipmentLoadoutSlot {
   const inventorySlot = inventoryManager
     .findEntriesByItemId(bankId, itemId)
-    .find((entry) => entry.entry?.enchantment === 0);
+    .find((entry) => entry.entry?.enchantment === enchantment);
   const entry = inventorySlot?.entry;
   const equipment = resolveEquipmentInfo(itemId);
   if (entry === undefined || equipment === undefined) {
-    throw new Error(`Dev sandbox Tower loadout item missing from bank: ${itemId}`);
+    throw new Error(
+      `Dev sandbox Tower loadout item missing from bank: ${itemId}.${String(enchantment)}`,
+    );
   }
   return {
     slot: equipment.slot,
     instanceId: entry.instanceId,
     itemId,
-    enchantment: 0,
+    enchantment,
   };
 }
 
@@ -226,17 +233,46 @@ function seedTowerTestLoadouts(
 
   const towerLoadouts: EquipmentLoadout[] = TOWER_TRIAL_BLOCKS.map((block) => {
     const tier = block.tier as ProductionTier;
-    const itemIds = [
+    const armorItemIds = [
       resolveGenericArmorItemId("head", tier),
       resolveGenericArmorItemId("chest", tier),
       resolveGenericArmorItemId("boots", tier),
-      resolveCounterWeaponItemId(block.factionId, tier),
       resolveFactionCapeItemId(block.factionId, tier),
     ];
+    const weaponItemId = resolveCounterWeaponItemId(block.factionId, tier);
+
+    for (const itemId of armorItemIds) {
+      ensureEquipmentVariant(
+        inventoryManager,
+        bankId,
+        itemId,
+        DEV_TOWER_ARMOR_ENCHANTMENT,
+      );
+    }
+    ensureEquipmentVariant(
+      inventoryManager,
+      bankId,
+      weaponItemId,
+      DEV_TOWER_WEAPON_ENCHANTMENT,
+    );
+
     return {
       id: `${DEV_TOWER_LOADOUT_PREFIX}${String(block.blockIndex + 1)}`,
-      name: `Tour B${String(block.blockIndex + 1)} · T${String(block.tier)} ${block.factionId}`,
-      slots: itemIds.map((itemId) => resolveBankLoadoutSlot(inventoryManager, bankId, itemId)),
+      name: `Tour B${String(block.blockIndex + 1)} · T${String(block.tier)} ${block.factionId} · .4/.3`,
+      slots: [
+        ...armorItemIds.map((itemId) => resolveBankLoadoutSlot(
+          inventoryManager,
+          bankId,
+          itemId,
+          DEV_TOWER_ARMOR_ENCHANTMENT,
+        )),
+        resolveBankLoadoutSlot(
+          inventoryManager,
+          bankId,
+          weaponItemId,
+          DEV_TOWER_WEAPON_ENCHANTMENT,
+        ),
+      ],
     };
   });
 
