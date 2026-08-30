@@ -5,12 +5,13 @@ import { resolveEquipmentInfo } from "./itemContentCatalog.js";
 import { WORLD_ZONE_IDS } from "./worldContentCatalog.js";
 
 const TIER = 5 as const;
+const DAGGER_PAIR_ID = "item_weapon_dagger_t5_pair";
 const WEAPONS = [
   "item_weapon_sword_t5_broadsword",
   "item_weapon_bow_t5_longbow",
   "item_weapon_staff_t5_infernal",
   "item_weapon_gloves_t5_spiked_gauntlets",
-  "item_weapon_dagger_t5_pair",
+  DAGGER_PAIR_ID,
 ] as const;
 
 const ARMOR = [
@@ -77,6 +78,36 @@ describe("T5 world wall cross-weapon benchmark", () => {
     const required = rows.filter((row) => row.scenario === ".3+potion");
     console.log("[T5_WORLD_WALL_REQUIRED_ONLY]");
     console.table(required);
+
+    const daggerRequiredResult = runCombatRuntimeBenchmark({
+      label: "t5_wall_dagger_pair_required_breakdown",
+      weaponItemId: DAGGER_PAIR_ID,
+      zoneDefId: WORLD_ZONE_IDS.ironveil,
+      segmentIndex: 9,
+      equipmentItemIds: equipmentFor(DAGGER_PAIR_ID),
+      masteryLevel: contract.masteryLevel,
+      enchantment: contract.requiredEnchantment,
+      useHealthPotions: true,
+    });
+
+    console.log("[T5_DAGGER_PAIR_DAMAGE_SOURCES]");
+    console.table([{
+      totalDamage: Math.round(daggerRequiredResult.damageDealt),
+      autoAttack: Math.round(daggerRequiredResult.damageBySource.autoAttack),
+      ability: Math.round(daggerRequiredResult.damageBySource.ability),
+      effect: Math.round(daggerRequiredResult.damageBySource.effect),
+      other: Math.round(daggerRequiredResult.damageBySource.other),
+      observedDps: daggerRequiredResult.observedDps,
+    }]);
+
+    console.log("[T5_DAGGER_PAIR_ABILITY_BREAKDOWN]");
+    console.table(daggerRequiredResult.abilities.map((ability) => ({
+      abilityId: ability.abilityId,
+      casts: ability.casts,
+      directDamage: Math.round(ability.directDamage),
+      dotDamage: Math.round(ability.dotDamage),
+      totalDamage: Math.round(ability.totalDamage),
+    })));
 
     const blocked = rows.filter((row) => row.scenario !== ".3+potion");
     expect(blocked.filter((row) => row.clear), "T5 blocked scenarios must remain blocked").toHaveLength(0);
