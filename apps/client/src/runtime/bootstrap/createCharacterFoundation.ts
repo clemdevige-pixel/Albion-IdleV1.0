@@ -129,6 +129,7 @@ export function createCharacterStorageFoundation({
 
   seedDevSandboxEconomy({
     inventoryManager,
+    equipmentManager,
     heroId,
     bankId,
     productionStorageId,
