@@ -144,13 +144,13 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     }
     cancelDeferredRuntimeDisposal(services.bridge);
 
-    // Save restore remains authoritative first. Dev sandbox presets may then
-    // intentionally override only their authored test fields before ticks start.
+    // Save restore remains authoritative first. Dev sandbox presets then adjust
+    // only their authored state. Do not trigger a global presentation resync
+    // here: restored combat presentation is reconciled by the normal runtime tick.
     if (loadedRuntimeRef.current !== services.bridge) {
       loadedRuntimeRef.current = services.bridge;
       loadInitialRuntimeSave(services, handle.persistence);
       runDevSandboxPostLoadAdjustment();
-      handle.syncPresentation();
     }
 
     const lifecycle = new RuntimeLifecycle();
