@@ -19,6 +19,22 @@ export const TOWER_FLOOR_ROLES = [
 ] as const;
 export type TowerFloorRole = (typeof TOWER_FLOOR_ROLES)[number];
 
+/**
+ * Dungeon encounter indexes reused by each position in a Tower block.
+ *
+ * The two normal floors, elite and block boss map directly to the existing
+ * faction Dungeon roster. Reinforced deliberately remains unresolved until an
+ * authored source is defined; consumers must not silently substitute another
+ * encounter or invent a scaling multiplier.
+ */
+export const TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX = [
+  0,
+  1,
+  null,
+  2,
+  3,
+] as const satisfies readonly (number | null)[];
+
 export interface TowerAuthoredBlockDefinition {
   readonly id: string;
   readonly blockIndex: number;
