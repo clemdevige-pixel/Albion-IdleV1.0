@@ -42,6 +42,21 @@ export const TOWER_REINFORCED_COMBAT_MULTIPLIERS = {
   defense: 1.10,
 } as const;
 
+/**
+ * Tower-only normalization applied after resolving the canonical Dungeon enemy
+ * profile. Dungeon data remains the source of truth; these values only reduce
+ * the excessive faction/tier spread measured by the neutral Tower benchmark.
+ *
+ * Keeper is the reference surface. Other factions intentionally retain a small
+ * difficulty identity instead of being flattened to identical encounters.
+ */
+export const TOWER_FACTION_TIER_COMBAT_MULTIPLIER = {
+  keeper: { 4: 1.00, 5: 1.00, 6: 1.00, 7: 1.00, 8: 1.00 },
+  heretic: { 4: 0.86, 5: 0.90, 6: 0.92, 7: 0.94, 8: 0.96 },
+  undead: { 4: 0.86, 5: 0.93, 6: 0.92, 7: 0.92, 8: 0.94 },
+  morgana: { 4: 0.84, 5: 0.90, 6: 0.90, 7: 0.90, 8: 0.92 },
+} as const satisfies Record<TowerFactionId, Record<TowerTier, number>>;
+
 export interface TowerAuthoredBlockDefinition {
   readonly id: string;
   readonly blockIndex: number;
