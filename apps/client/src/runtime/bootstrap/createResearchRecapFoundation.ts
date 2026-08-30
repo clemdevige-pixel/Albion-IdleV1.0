@@ -47,9 +47,8 @@ export function createResearchRecapFoundation() {
   };
 
   if (isDevSandboxMode()) {
-    for (const definition of RESEARCH_DEFINITIONS) {
-      present(definition.id);
-    }
+    const representativeResearch = RESEARCH_DEFINITIONS[0];
+    if (representativeResearch !== undefined) present(representativeResearch.id);
   }
 
   return {
