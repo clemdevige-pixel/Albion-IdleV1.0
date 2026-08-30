@@ -105,6 +105,33 @@ describe("TowerCombatRuntimeRouter", () => {
     expect(progression.getSnapshot()).toMatchObject({ currentFloor: 6, checkpointFloor: 6 });
   });
 
+  it("returns to the selected Endless checkpoint after defeat", () => {
+    const { progression, router } = createRouter();
+    for (let floor = 1; floor <= 32; floor += 1) progression.clearCurrentFloor(floor);
+    progression.selectCheckpoint(31);
+    progression.clearCurrentFloor(31);
+    progression.clearCurrentFloor(32);
+    expect(progression.getSnapshot()).toMatchObject({
+      currentFloor: 33,
+      highestClearedFloor: 32,
+      checkpointFloor: 31,
+      endlessUnlocked: true,
+    });
+
+    expect(router.start()).toBe(true);
+    let fallbackCalled = false;
+    router.onDefeat(() => { fallbackCalled = true; });
+
+    expect(fallbackCalled).toBe(false);
+    expect(router.isTowerActive()).toBe(false);
+    expect(progression.getSnapshot()).toMatchObject({
+      currentFloor: 31,
+      highestClearedFloor: 32,
+      checkpointFloor: 31,
+      endlessUnlocked: true,
+    });
+  });
+
   it("supports explicit abandon without mutating progression", () => {
     const { progression, router } = createRouter();
     router.start();
