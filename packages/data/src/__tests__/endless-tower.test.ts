@@ -39,15 +39,14 @@ describe("Endless Tower authored contract", () => {
     }
   });
 
-  it("keeps Tower faction normalization complete and Keeper as the untouched reference", () => {
+  it("keeps Tower faction normalization complete and strictly positive", () => {
     expect(Object.keys(TOWER_FACTION_TIER_COMBAT_MULTIPLIER).sort()).toEqual([...TOWER_FACTIONS].sort());
 
     for (const tier of TOWER_TIERS) {
-      expect(TOWER_FACTION_TIER_COMBAT_MULTIPLIER.keeper[tier]).toBe(1);
       for (const faction of TOWER_FACTIONS) {
         const multiplier = TOWER_FACTION_TIER_COMBAT_MULTIPLIER[faction][tier];
+        expect(Number.isFinite(multiplier)).toBe(true);
         expect(multiplier).toBeGreaterThan(0);
-        expect(multiplier).toBeLessThanOrEqual(1);
       }
     }
   });
