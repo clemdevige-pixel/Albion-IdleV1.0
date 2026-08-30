@@ -2,7 +2,7 @@
 
 Status: GAME DESIGN BASELINE VALIDATED — NOT IMPLEMENTED
 Authority: canonical design contract for Albion Idle first endgame activity
-Last update: 2026-08-23
+Last update: 2026-08-30
 
 ---
 
@@ -109,9 +109,13 @@ Albion Idle is intended to increasingly ask the player to make equipment decisio
 
 - required equipment Tier;
 - faction-resistant capes;
-- weapons that may later perform differently against specific factions;
+- faction weapons with authored anti-faction bonuses;
 - weapon Awakening investment;
 - general build optimization.
+
+The faction axis is a real endgame specialization requirement, not presentation-only encounter identity.
+
+Faction equipment bonuses that currently apply in authored faction Dungeons are intended to apply to matching Tower faction blocks as well. The Tower therefore extends the long-term relevance of faction weapons and faction capes instead of creating a separate Tower-only family of anti-faction equipment.
 
 Changing Tier and Faction every individual room would create excessive equipment-management friction.
 
@@ -177,6 +181,91 @@ The exact entry validation should reuse the existing tier restriction/equipment 
 
 ---
 
+# 6A. TOWER FACTION RESILIENCE
+
+## Purpose
+
+The Tower must not allow one extremely invested generic `.4` weapon to invalidate the faction axis through raw Awakening power.
+
+Without a structural faction matchup rule, sufficiently high Awakening investment could eventually allow one generic weapon to brute-force Keeper, Heretic, Undead and Morgana blocks indefinitely. That outcome would directly contradict the Tower's purpose as a multi-tier / multi-faction endgame arsenal test.
+
+Therefore every faction Tower block applies an authored **Faction Resilience** profile.
+
+Faction Resilience is not a new player stat and does not create a new permanent progression layer.
+
+It is an encounter-side specialization rule whose purpose is to preserve the value of matching faction equipment at every Tower depth.
+
+## Offensive contract
+
+Enemies inside a faction Tower block receive a strong defensive resilience against attacks that do not benefit from the authored matching anti-faction relationship.
+
+Conceptually:
+
+`generic / wrong-matchup weapon -> reduced effective damage against Faction Resilience`
+
+`matching anti-faction weapon -> bypasses or strongly mitigates that resilience`
+
+The exact resilience value and exact bypass/mitigation amount are NOT validated yet and must be benchmarked.
+
+The offensive role of the faction weapon is the stronger of the two faction-equipment levers.
+
+A non-matching weapon is not forbidden from entering or attacking the block. The system remains preparation-driven rather than loadout-hardlocked.
+
+However a generic weapon should not be able to systematically ignore the faction layer merely because its Awakening investment is far above normal progression.
+
+Exceptional overinvestment may still allow occasional off-matchup clears. This is acceptable and can reward extreme account investment. What must be prevented is a stable endgame strategy where one universal weapon trivially replaces the complete faction arsenal.
+
+## Defensive contract
+
+The matching faction cape remains the primary defensive faction lever.
+
+Inside a matching Tower faction block, its authored faction damage-reduction behavior must apply in addition to its normal stats.
+
+The cape advantage should be meaningful but softer than the offensive faction-weapon requirement.
+
+The design goal is:
+
+- matching weapon = major offensive efficiency lever;
+- matching cape = major defensive/survivability lever;
+- neither item is technically mandatory for entry;
+- ignoring both should become increasingly inefficient as Tower depth rises.
+
+## Relationship with Awakening
+
+Awakening increases the raw power available to a weapon.
+
+Faction Resilience determines how efficiently that raw power converts into damage against the current faction matchup.
+
+Therefore the intended relationship is:
+
+> Tier determines which equipment band is required.
+>
+> Faction determines how efficiently that equipment performs.
+>
+> Awakening determines how far the matching build can push.
+
+Awakening must deepen the player's faction arsenal, not erase the need for it.
+
+Faction Resilience must therefore remain relevant throughout Tower depth. Its final numerical interaction with Tower difficulty scaling must be validated through combat benchmarks so that normal progression does not eventually overpower the specialization requirement by default.
+
+## Reuse of existing faction equipment authority
+
+The Tower must extend existing authored faction relationships rather than invent parallel Tower-only weapons or capes.
+
+Faction weapons and faction capes that own matching-Dungeon bonuses are intended to recognize the corresponding Tower faction context as another eligible activity context.
+
+This should be expressed through shared authored matchup/activity data where architecture permits.
+
+Forbidden direction:
+
+- hardcoding faction names into Tower combat runtime;
+- creating duplicate Tower-only copies of faction weapons/capes;
+- implementing Faction Resilience as an arbitrary global HP multiplier that affects matching and non-matching weapons equally;
+- making wrong-matchup equipment impossible to equip or use;
+- allowing generic Awakening power to become the intended replacement for faction specialization.
+
+---
+
 # 7. FAILURE / RETRY / CHECKPOINTS
 
 Failure must create friction without deleting long-term Tower progress.
@@ -198,6 +287,8 @@ The purpose of failure is to communicate an equipment/progression wall, not to e
 
 The block's Tier determines equipment compatibility and content identity.
 
+The block's Faction determines the specialization matchup and Faction Resilience context.
+
 Tower depth determines challenge difficulty.
 
 Therefore:
@@ -213,6 +304,8 @@ Primary scaling channels:
 - enemy Max HP;
 - enemy damage;
 - enemy defense.
+
+Faction Resilience is a separate matchup-efficiency layer and must not be replaced by ordinary depth stat scaling.
 
 No mandatory affix/modifier system is included in the first implementation baseline.
 
@@ -235,6 +328,8 @@ Floor 25 target experience:
 
 - `.3` = very difficult / near-wall under ordinary conditions;
 - fresh `.4` = clearly more realistic route forward.
+
+Floor 25 and later Tower balance must assume the faction matchup system remains active. A fresh/mature `.4` baseline must not be calibrated only with generic weapons while ignoring Faction Resilience.
 
 The floor-25 wall is intended as a gameplay lesson:
 
@@ -278,6 +373,7 @@ Awakened power varies significantly with:
 - weapon profile;
 - mastery;
 - faction matchup;
+- Faction Resilience;
 - cape choice;
 - defensive/sustain investment.
 
@@ -308,7 +404,10 @@ Instead, the Tower gives the existing Awake system a gameplay purpose:
 - maintain a strong T5 weapon for T5 blocks;
 - maintain a strong T6 weapon for T6 blocks;
 - maintain a strong T7 weapon for T7 blocks;
-- maintain a strong T8 weapon for T8 blocks.
+- maintain a strong T8 weapon for T8 blocks;
+- maintain meaningful faction coverage instead of concentrating all Awakening investment into one universal generic weapon.
+
+Faction Resilience protects this relationship at high investment levels: Awakening should increase how far a matching faction build can push, not eliminate the need for matching faction builds.
 
 This is the current answer to the pre-endgame replayability gap where a player reaching T8 otherwise has limited reason to invest deeply into lower-tier `.4` weapons.
 
@@ -316,6 +415,7 @@ Reference:
 
 - `AI_BIBLE/10_SYSTEMS/20_AWAKENED_WEAPON_SYSTEM.txt`
 - `AI_BIBLE/10_SYSTEMS/33_ENCHANTMENT_SYSTEM.txt`
+- `AI_BIBLE/10_SYSTEMS/44C_FACTION_DUNGEON_BALANCE.md`
 
 ---
 
@@ -333,7 +433,7 @@ Dedicated Tower-only monsters/bosses are NOT required for the first implementati
 
 They may be added later if the system proves valuable and needs stronger identity.
 
-The Tower must not create parallel copies of monsters solely to apply Tower scaling. Scaling should be composition/runtime data applied to existing authored encounter definitions wherever architecture permits.
+The Tower must not create parallel copies of monsters solely to apply Tower scaling or Faction Resilience. Scaling and matchup context should be applied to existing authored encounter definitions wherever architecture permits.
 
 ---
 
@@ -418,10 +518,16 @@ Before entering a block, the player must be able to see at minimum:
 - block floor range;
 - required Tier;
 - enemy Faction;
+- whether the currently equipped weapon benefits from the matching anti-faction relationship;
+- whether the currently equipped cape benefits from the matching faction protection;
 - whether the block contains a major boss;
 - current checkpoint / highest progression context.
 
 The player must be allowed to prepare equipment between blocks.
+
+Wrong-matchup equipment must not be blocked from entry purely because it lacks the faction bonus.
+
+The UI should communicate inactive faction synergy clearly enough that an unsuccessful player can understand that raw power and faction efficiency are separate axes.
 
 The Tower must not create a forced equipment-swap interaction every individual room because Tier/Faction remain stable for all 5 rooms.
 
@@ -441,6 +547,8 @@ Expected authored data responsibilities include:
 - eligible factions;
 - block generation/anti-repeat rules;
 - difficulty baseline and per-block growth;
+- Faction Resilience balance/profile;
+- authored anti-faction relationship/activity eligibility;
 - encounter-selection pools;
 - reward tables;
 - discovery Research unlock ID;
@@ -450,8 +558,10 @@ Runtime should own generic mechanics only:
 
 - generate/commit next block;
 - validate entry/loadout through shared authorities;
+- resolve the block's faction matchup context;
 - route combat encounters;
 - apply depth scaling;
+- apply authored Faction Resilience through shared combat/matchup authority;
 - advance room/block state;
 - process failure;
 - unlock checkpoints;
@@ -464,6 +574,8 @@ Forbidden architecture:
 - duplicated combat-stat formulas;
 - duplicated tier-validation rules where existing gameplay authority can be reused;
 - faction-specific Tower branches for shared mechanics;
+- duplicated Tower-only faction weapon/cape definitions;
+- implementing Faction Resilience as ordinary global Tower HP scaling;
 - UI-owned Tower progression authority;
 - save/reload reroll exploitation of committed block identities.
 
@@ -482,8 +594,9 @@ Then:
 
 `preview next 5-floor block`
 `-> fixed Tier + Faction`
+`-> inspect matching faction weapon/cape efficiency`
 `-> prepare matching loadout`
-`-> rooms 1-4 combat`
+`-> rooms 1-4 combat with Faction Resilience active`
 `-> room 5 elite/boss`
 `-> checkpoint + block reward`
 `-> next semi-random Tier/Faction block`
@@ -495,7 +608,15 @@ Difficulty intent:
 `-> increasing pressure`
 `-> floor 25 major boss = first .4 wall`
 `-> after floor 25: +1% difficulty per 5-floor block provisional baseline`
-`-> deeper Tower increasingly rewards real Awake investment across every Tier`
+`-> deeper Tower increasingly rewards real Awake investment across every Tier and meaningful faction coverage`
+
+Core endgame relationship:
+
+> Tier determines which equipment band is required.
+>
+> Faction determines how efficiently that equipment performs.
+>
+> Awakening determines how far the matching build can push.
 
 ---
 
@@ -508,6 +629,9 @@ The following are deliberately NOT invented/locked yet:
 - Research cost/duration;
 - exact final Black-zone source IDs until implementation audit;
 - exact Tier/Faction anti-repeat algorithm;
+- exact Faction Resilience numerical value;
+- exact anti-faction resilience bypass/mitigation amount;
+- exact interaction curve between Faction Resilience and deep-Tower scaling;
 - exact normal-room encounter counts/composition;
 - exact block-boss selection rule;
 - exact major-boss roster;
