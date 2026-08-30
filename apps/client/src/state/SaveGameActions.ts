@@ -5,6 +5,7 @@ import type { GameBridge } from "../game/GameBridge";
 import type { RuntimePersistence } from "../runtime/RuntimePersistence";
 import { combatStopController } from "../runtime/CombatStopController";
 import { migrateLegacyProductionMaterials } from "../runtime/ProductionStorage";
+import { worldTravelTransition } from "../runtime/WorldTravelTransition";
 
 const REMOVED_ENCHANTMENT_RESOURCE_IDS = [
   "item_resource_enchantment_essence",
@@ -22,6 +23,7 @@ interface SaveGameActionsDependencies {
   readonly bankId: EntityId;
   readonly productionStorageId: EntityId;
   readonly getCurrentTick: () => number;
+  readonly prepareRuntimeForLoad: () => void;
   readonly resetSilverBalance: (balance: number) => void;
   readonly syncPlayerHealth: () => void;
   readonly resyncAll: () => void;
@@ -59,9 +61,7 @@ export class SaveGameActions {
   load(): boolean {
     if (!this.deps.persistence.hasSave()) return false;
 
-    // A save is a new combat lifecycle boundary. Never inherit a pending stop
-    // or paused state from the runtime that existed before the load.
-    combatStopController.reset();
+    this.prepareLoadBoundary();
 
     let writeFailedAfterLoad = false;
     try {
@@ -109,7 +109,7 @@ export class SaveGameActions {
 
   importSave(raw: string): boolean {
     try {
-      combatStopController.reset();
+      this.prepareLoadBoundary();
       this.deps.persistence.importSave(raw);
       this.deps.persistence.setLoadFailed(false);
       this.applyLoadedState();
@@ -130,6 +130,12 @@ export class SaveGameActions {
       });
       return false;
     }
+  }
+
+  private prepareLoadBoundary(): void {
+    this.deps.prepareRuntimeForLoad();
+    combatStopController.reset();
+    worldTravelTransition.reset();
   }
 
   private applyLoadedState(): void {
