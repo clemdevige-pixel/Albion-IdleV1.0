@@ -66,7 +66,7 @@ function buildAbilityDetail(
   definition: ClientAbilityDefinition,
   mechanic: AbilityMechanic,
   stats: AbilityTooltipStats,
-): CombatAbilityDetailVM {
+): CombatAbilityDetailVM | undefined {
   if (mechanic.kind === "damage") {
     const outputType = mechanic.damageType ?? definition.damageType;
     const scalingType = mechanic.scalingDamageType ?? outputType;
@@ -125,6 +125,8 @@ function buildAbilityDetail(
     };
   }
 
+  if (mechanic.kind === "consume_effect") return undefined;
+
   return {
     kind: "status",
     target: mechanic.target ?? "enemy",
@@ -140,7 +142,10 @@ export function buildAbilityDetails(
   definition: ClientAbilityDefinition,
   stats: AbilityTooltipStats,
 ): readonly CombatAbilityDetailVM[] {
-  return definition.mechanics.mechanics.map((mechanic) => buildAbilityDetail(definition, mechanic, stats));
+  return definition.mechanics.mechanics.flatMap((mechanic) => {
+    const detail = buildAbilityDetail(definition, mechanic, stats);
+    return detail === undefined ? [] : [detail];
+  });
 }
 
 function getComputedStat(bridge: GameBridge, statId: string): number {
