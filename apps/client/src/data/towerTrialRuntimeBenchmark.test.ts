@@ -4,6 +4,7 @@ import { getTowerBlocks, type TowerBlockDefinition } from "@game/gameplay";
 import {
   ARTIFACT_WEAPON_BENCHMARK_SPECS,
   artifactDungeonEquipment,
+  type ArtifactBenchmarkTier,
   type ArtifactWeaponFamily,
 } from "./artifactWeaponBenchmarkFixtures.js";
 import { DUNGEON_DEFINITIONS } from "./dungeonContentCatalog.js";
@@ -27,6 +28,7 @@ const ENDLESS_SEEDS = [
 ] as const;
 const WEAPON_FAMILIES = ["sword", "bow", "fire_staff", "gloves", "dagger"] as const satisfies readonly ArtifactWeaponFamily[];
 const FACTIONS = ["keeper", "heretic", "undead", "morgana"] as const;
+const BENCHMARK_TIERS = [4, 5, 6, 7, 8] as const satisfies readonly ArtifactBenchmarkTier[];
 
 const NEUTRAL_CAPE_FACTION_BY_ENEMY = {
   keeper: "heretic",
@@ -40,6 +42,10 @@ type BenchmarkBlock = Pick<
   TowerBlockDefinition,
   "id" | "blockIndex" | "floorStart" | "floorEnd" | "tier" | "factionId" | "source"
 >;
+
+function isArtifactBenchmarkTier(tier: number): tier is ArtifactBenchmarkTier {
+  return tier === 4 || tier === 5 || tier === 6 || tier === 7 || tier === 8;
+}
 
 function getDungeonSource(block: BenchmarkBlock) {
   const dungeon = DUNGEON_DEFINITIONS.find((entry) => (
@@ -191,14 +197,16 @@ function runFactionNeutralMatrix() {
   return DUNGEON_DEFINITIONS
     .filter((dungeon) => FACTIONS.includes(dungeon.faction.toLowerCase() as (typeof FACTIONS)[number]))
     .flatMap((dungeon) => {
+      const tier = dungeon.tier;
+      if (!isArtifactBenchmarkTier(tier)) return [];
       const faction = dungeon.faction.toLowerCase() as (typeof FACTIONS)[number];
       const neutralCapeFaction = NEUTRAL_CAPE_FACTION_BY_ENEMY[faction];
       return ARTIFACT_WEAPON_BENCHMARK_SPECS.map((weapon) => {
-        const weaponItemId = weapon.itemId(dungeon.tier);
+        const weaponItemId = weapon.itemId(tier);
         const result = runCombatRuntimeBenchmark({
-          label: `neutral_${faction}_t${String(dungeon.tier)}_${weapon.family}_${weapon.label.replaceAll(" ", "_").toLowerCase()}`,
+          label: `neutral_${faction}_t${String(tier)}_${weapon.family}_${weapon.label.replaceAll(" ", "_").toLowerCase()}`,
           weaponItemId,
-          equipmentItemIds: artifactDungeonEquipment(weaponItemId, dungeon.tier, neutralCapeFaction),
+          equipmentItemIds: artifactDungeonEquipment(weaponItemId, tier, neutralCapeFaction),
           zoneDefId: WORLD_ZONE_IDS.mountain,
           segmentIndex: 9,
           dungeonDefinitionId: dungeon.id,
@@ -212,7 +220,7 @@ function runFactionNeutralMatrix() {
         });
         return {
           faction,
-          tier: dungeon.tier,
+          tier,
           family: weapon.family,
           weapon: weapon.label,
           clear: result.clear,
@@ -247,7 +255,7 @@ function summarizeNeutralByWeapon(rows: ReturnType<typeof runFactionNeutralMatri
 }
 
 function summarizeNeutralByFaction(rows: ReturnType<typeof runFactionNeutralMatrix>) {
-  return FACTIONS.flatMap((faction) => [4, 5, 6, 7, 8].map((tier) => {
+  return FACTIONS.flatMap((faction) => BENCHMARK_TIERS.map((tier) => {
     const contextRows = rows.filter((row) => row.faction === faction && row.tier === tier);
     const clears = contextRows.filter((row) => row.clear).length;
     return {
@@ -316,9 +324,9 @@ describe("Tower runtime specialization benchmark", () => {
     console.table(factionSummary);
     console.log("[FACTION_NEUTRAL_NOTE] no anti-faction weapon bonus, no Tower resilience multiplier, and a deliberately non-matching faction cape so Dungeon faction damage reduction remains 0. This isolates weapon specialization performance from faction combat modifiers while preserving each authored faction/tier enemy roster.");
 
-    expect(rows).toHaveLength(FACTIONS.length * 5 * ARTIFACT_WEAPON_BENCHMARK_SPECS.length);
+    expect(rows).toHaveLength(FACTIONS.length * BENCHMARK_TIERS.length * ARTIFACT_WEAPON_BENCHMARK_SPECS.length);
     expect(rows.every((row) => row.capeReductionPct === 0)).toBe(true);
-    expect(weaponSummary.every((row) => row.runs === FACTIONS.length * 5)).toBe(true);
+    expect(weaponSummary.every((row) => row.runs === FACTIONS.length * BENCHMARK_TIERS.length)).toBe(true);
     expect(factionSummary.every((row) => row.runs === ARTIFACT_WEAPON_BENCHMARK_SPECS.length)).toBe(true);
   });
 });
