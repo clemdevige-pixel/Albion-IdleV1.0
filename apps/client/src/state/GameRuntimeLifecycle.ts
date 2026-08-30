@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { RuntimeLifecycle } from "../runtime/RuntimeLifecycle";
 import type { RuntimePersistence } from "../runtime/RuntimePersistence";
+import { runDevSandboxPostLoadAdjustment } from "../runtime/devSandboxPostLoad.js";
 import type { GameBridge } from "../game/GameBridge";
 import type { GameServices } from "./GameServices";
 
@@ -9,7 +10,6 @@ interface GameRuntimeLifecycleHandle {
   readonly tickIntervalMs: number;
   readonly persistence: RuntimePersistence;
   readonly syncPresentation: () => void;
-  readonly afterInitialLoad?: () => void;
   readonly dispose: () => void;
 }
 
@@ -144,14 +144,13 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     }
     cancelDeferredRuntimeDisposal(services.bridge);
 
-    // Save load (and any background resolution delegated by loadGame) must
-    // finish before the first gameplay tick starts. Dev/test adjustments that
-    // intentionally override restored state run only after that authority has
-    // finished restoring.
+    // Save restore remains authoritative first. Dev sandbox presets may then
+    // intentionally override only their authored test fields before ticks start.
     if (loadedRuntimeRef.current !== services.bridge) {
       loadedRuntimeRef.current = services.bridge;
       loadInitialRuntimeSave(services, handle.persistence);
-      handle.afterInitialLoad?.();
+      runDevSandboxPostLoadAdjustment();
+      handle.syncPresentation();
     }
 
     const lifecycle = new RuntimeLifecycle();
