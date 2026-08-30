@@ -46,6 +46,7 @@ export const RESEARCH_UNLOCK_IDS = {
   dungeonRelicAnalyzed: "dungeon_relic:analyzed",
   dungeonSystem: "dungeon_system:unlocked",
   factionRuneWorldDrop: "faction_rune:world_drop",
+  towerSystem: "tower_system:unlocked",
   equipmentPresets: "equipment_presets",
 } as const;
 
