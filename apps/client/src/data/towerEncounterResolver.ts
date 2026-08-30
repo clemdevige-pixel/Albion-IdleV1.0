@@ -8,6 +8,7 @@ import {
   DUNGEON_DEFINITIONS,
   resolveDungeonCombatProfile,
 } from "./dungeonContentCatalog.js";
+import { applyTowerFactionCombatNormalization } from "./towerCombatNormalization.js";
 import type { AuthoredEnemyCombatProfile } from "../runtime/combatEntityFactory.js";
 
 export interface ResolvedTowerEncounter {
@@ -57,9 +58,9 @@ function applyTowerDepthCombatScaling(
 /**
  * Resolves a Tower floor from existing faction Dungeon content.
  *
- * Tower owns sequencing and Tower-only role/depth tuning. Faction rosters and
- * base combat stats stay authored by the Dungeon catalog so the Tower cannot
- * drift into a parallel monster/balance surface.
+ * Dungeon rosters and base combat stats remain canonical. Tower then applies
+ * its own faction/tier normalization, floor-role tuning and depth scaling in
+ * that order, without mutating or forking Dungeon balance.
  */
 export function resolveTowerEncounter(
   floor: number,
@@ -95,7 +96,11 @@ export function resolveTowerEncounter(
     encounterIndex: dungeonEncounterIndex,
     monsterDefinitionId: encounter.monsterDefinitionId,
   });
-  const roleTunedProfile = applyTowerRoleCombatTuning(floorDefinition, baseCombatProfile);
+  const normalizedProfile = applyTowerFactionCombatNormalization(
+    { factionId: floorDefinition.block.factionId, tier: floorDefinition.block.tier },
+    baseCombatProfile,
+  );
+  const roleTunedProfile = applyTowerRoleCombatTuning(floorDefinition, normalizedProfile);
 
   return {
     status: "resolved",
