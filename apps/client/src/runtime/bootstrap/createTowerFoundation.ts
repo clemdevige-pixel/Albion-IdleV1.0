@@ -2,6 +2,7 @@ import { TowerProgressionService } from "@game/gameplay";
 import { TowerProgressionSaveProvider } from "../TowerProgressionSaveProvider.js";
 import { TowerCombatEncounterSource } from "../TowerCombatEncounterSource.js";
 import { TowerCombatRuntimeRouter } from "../TowerCombatRuntimeRouter.js";
+import { combatStopController } from "../CombatStopController.js";
 
 export interface TowerFoundation {
   readonly progressionService: TowerProgressionService;
@@ -25,6 +26,8 @@ export function createTowerFoundation(saveSlotId: string): TowerFoundation {
     progressionService,
     saveProvider: new TowerProgressionSaveProvider(progressionService, fallbackSeed),
     encounterSource,
-    combatRouter: new TowerCombatRuntimeRouter(progressionService, encounterSource),
+    combatRouter: new TowerCombatRuntimeRouter(progressionService, encounterSource, {
+      requestPauseAfterEncounter: () => combatStopController.requestStopAfterEncounter(),
+    }),
   };
 }
