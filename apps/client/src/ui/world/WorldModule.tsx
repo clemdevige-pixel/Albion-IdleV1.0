@@ -3,12 +3,13 @@ import { GatheringView } from "../production/gathering/GatheringView";
 import { WorldAchievementsView } from "./components/WorldAchievementsView";
 import { WorldBestiaryView } from "./components/WorldBestiaryView";
 import { WorldDungeonsView } from "./components/WorldDungeonsView";
+import { WorldTowerView } from "./components/WorldTowerView";
 import { WorldZonesView } from "./components/WorldZonesView";
 import { useWorldActions, useWorldZones } from "./useWorldData";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import "./world.css";
 
-type WorldModuleTabId = "zones" | "dungeons" | "gathering" | "bestiary" | "achievements";
+type WorldModuleTabId = "zones" | "dungeons" | "tower" | "gathering" | "bestiary" | "achievements";
 type WorldModuleTab = { readonly id: WorldModuleTabId; readonly label: string };
 
 const BASE_TABS: readonly WorldModuleTab[] = [
@@ -19,22 +20,35 @@ const BASE_TABS: readonly WorldModuleTab[] = [
 ];
 
 const DUNGEON_TAB: WorldModuleTab = { id: "dungeons", label: "Donjons" };
+const TOWER_TAB: WorldModuleTab = { id: "tower", label: "Tour" };
 
 export function WorldModule(): JSX.Element {
   useGameBridge();
-  const { isDungeonSystemUnlocked } = useGameServices();
+  const { isDungeonSystemUnlocked, isTowerSystemUnlocked } = useGameServices();
   const [activeTab, setActiveTab] = useState<WorldModuleTabId>("zones");
   const zone = useWorldZones();
   const actions = useWorldActions();
   const dungeonsUnlocked = isDungeonSystemUnlocked();
-  const tabs = dungeonsUnlocked
-    ? BASE_TABS.flatMap((tab) => tab.id === "zones" ? [tab, DUNGEON_TAB] : [tab])
-    : BASE_TABS;
-  const effectiveTab = activeTab === "dungeons" && !dungeonsUnlocked ? "zones" : activeTab;
+  const towerUnlocked = isTowerSystemUnlocked();
+  const tabs = BASE_TABS.flatMap((tab) => {
+    if (tab.id !== "zones") return [tab];
+    return [
+      tab,
+      ...(dungeonsUnlocked ? [DUNGEON_TAB] : []),
+      ...(towerUnlocked ? [TOWER_TAB] : []),
+    ];
+  });
+  const activeTabLocked = (activeTab === "dungeons" && !dungeonsUnlocked)
+    || (activeTab === "tower" && !towerUnlocked);
+  const effectiveTab = activeTabLocked ? "zones" : activeTab;
 
   return (
     <section className="ui-world">
-      <nav className="ui-world__tabs" aria-label="Sections du monde">
+      <nav
+        className="ui-world__tabs"
+        aria-label="Sections du monde"
+        style={{ gridTemplateColumns: `repeat(${String(tabs.length)}, minmax(0, 1fr))` }}
+      >
         {tabs.map((tab) => (
           <button key={tab.id} type="button" className={effectiveTab === tab.id ? "is-active" : ""} aria-pressed={effectiveTab === tab.id} onClick={() => { setActiveTab(tab.id); }}>
             {tab.label}
@@ -46,6 +60,8 @@ export function WorldModule(): JSX.Element {
         <WorldZonesView zone={zone} onTravel={actions.travelToSegment} onSetFarmMode={actions.setFarmMode} />
       ) : effectiveTab === "dungeons" ? (
         <WorldDungeonsView />
+      ) : effectiveTab === "tower" ? (
+        <WorldTowerView />
       ) : effectiveTab === "gathering" ? (
         <GatheringView />
       ) : effectiveTab === "bestiary" ? (
