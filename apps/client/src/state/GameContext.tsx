@@ -516,6 +516,7 @@ export function GameProvider({
     );
     persistence.registerProvider(refiningSaveProvider);
     starterSelectionPending = !persistence.hasSave();
+    let prepareRuntimeForLoad = (): void => {};
 
     const saveGameActions = new SaveGameActions({
       bridge,
@@ -527,6 +528,7 @@ export function GameProvider({
       bankId,
       productionStorageId,
       getCurrentTick: () => tickCounter,
+      prepareRuntimeForLoad: () => { prepareRuntimeForLoad(); },
       resetSilverBalance: (balance) => { combatRewardAdapter.resetSilverBalance(balance); },
       syncPlayerHealth: () => {
         const health = damageManager.getHealth(heroId);
@@ -737,6 +739,11 @@ export function GameProvider({
       isTowerUnlocked: isTowerSystemUnlocked,
       onStateChanged: resyncAll,
     });
+    prepareRuntimeForLoad = () => {
+      towerNavigationActions.resetTransientState();
+      dungeonNavigationActions.resetTransientState();
+      combatRuntime.interruptEncounter();
+    };
 
     const productionController = new ProductionRuntimeController({
       bridge,
