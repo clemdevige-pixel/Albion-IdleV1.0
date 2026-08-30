@@ -150,14 +150,14 @@ export class CombatBridgeAdapter {
   }
 
   presentTick(result: CombatDomainTickResult): void {
-    const encounterEnded = result.combatState === "victory"
-      || result.combatState === "defeat"
-      || result.combatState === "walking";
+    const combatStoppedAtBoundary = result.combatState === "defeat"
+      || result.combatState === "walking"
+      || (result.combatState === "victory" && this.#combatRuntime.getLoopState() === "paused");
 
-    if (encounterEnded) {
-      // Encounter boundaries are authoritative over any transient enemy snapshot.
-      // The ability layer may retain the defeated target at 0 HP for one result
-      // frame, but that entity has already been destroyed by the combat runtime.
+    if (combatStoppedAtBoundary) {
+      // Only clear presentation when the encounter boundary is also a real stop.
+      // A normal victory is an in-combat handoff to the next encounter: keeping
+      // the defeated snapshot avoids exposing the renderer fallback between mobs.
       this.#bridge.clearEnemyPresentation();
     } else if (result.spawnedEnemy !== undefined) {
       const health = this.#damageManager.getHealth(result.spawnedEnemy.id);
