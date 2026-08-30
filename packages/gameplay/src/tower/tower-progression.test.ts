@@ -39,6 +39,31 @@ describe("TowerProgressionService", () => {
     expect(service.getSnapshot()).toMatchObject({ currentFloor: 6, highestClearedFloor: 7, checkpointFloor: 6 });
   });
 
+  it("can restart from any previously unlocked block checkpoint", () => {
+    const service = new TowerProgressionService("seed");
+    for (let floor = 1; floor <= 17; floor += 1) service.clearCurrentFloor(floor);
+
+    expect(service.getUnlockedCheckpointFloors()).toEqual([1, 6, 11, 16]);
+    service.selectCheckpoint(6);
+    expect(service.getSnapshot()).toMatchObject({
+      currentFloor: 6,
+      highestClearedFloor: 17,
+      checkpointFloor: 6,
+    });
+
+    service.clearCurrentFloor(6);
+    service.clearCurrentFloor(7);
+    expect(service.failCurrentFloor()).toBe(6);
+  });
+
+  it("rejects checkpoint floors that are invalid or not yet unlocked", () => {
+    const service = new TowerProgressionService("seed");
+    for (let floor = 1; floor <= 7; floor += 1) service.clearCurrentFloor(floor);
+
+    expect(() => service.selectCheckpoint(5)).toThrow(/not unlocked/);
+    expect(() => service.selectCheckpoint(11)).toThrow(/not unlocked/);
+  });
+
   it("unlocks Endless exactly when floor 25 is cleared", () => {
     const service = new TowerProgressionService("seed");
     for (let floor = 1; floor <= 24; floor += 1) service.clearCurrentFloor(floor);
@@ -80,15 +105,31 @@ describe("TowerProgressionService", () => {
     });
   });
 
+  it("restores a previously selected unlocked checkpoint", () => {
+    const service = new TowerProgressionService("fresh");
+    service.restore({
+      seed: "persisted",
+      currentFloor: 6,
+      highestClearedFloor: 17,
+      checkpointFloor: 6,
+      endlessUnlocked: false,
+    });
+    expect(service.getSnapshot()).toMatchObject({
+      currentFloor: 6,
+      highestClearedFloor: 17,
+      checkpointFloor: 6,
+    });
+  });
+
   it("rejects corrupted persisted checkpoint and unlock combinations", () => {
     const service = new TowerProgressionService("seed");
     expect(() => service.restore({
       seed: "persisted",
       currentFloor: 8,
       highestClearedFloor: 7,
-      checkpointFloor: 1,
+      checkpointFloor: 2,
       endlessUnlocked: false,
-    })).toThrow(/checkpoint is inconsistent/);
+    })).toThrow(/checkpoint is not an unlocked/);
 
     expect(() => service.restore({
       seed: "persisted",
