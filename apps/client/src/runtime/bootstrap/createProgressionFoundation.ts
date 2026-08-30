@@ -34,7 +34,7 @@ function getCumulativeXpForLevel(
   return totalXp;
 }
 
-function seedDevSandboxWeaponMasteries(
+export function applyDevSandboxWeaponMasteries(
   experienceService: ExperienceService,
   masteryService: MasteryService,
 ): void {
@@ -100,7 +100,7 @@ export function createProgressionFoundation() {
     masteryService.discoverMastery(masteryId);
   }
 
-  seedDevSandboxWeaponMasteries(experienceService, masteryService);
+  applyDevSandboxWeaponMasteries(experienceService, masteryService);
 
   return {
     experienceService,
