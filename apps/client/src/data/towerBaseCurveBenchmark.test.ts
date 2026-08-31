@@ -112,6 +112,30 @@ describe("Tower live Difficulty 0 benchmark", () => {
       };
     }));
 
+    const weaponNames = [...new Set(rows.map((row) => row.weapon))].sort((a, b) => a.localeCompare(b));
+    const weaponSummary = weaponNames.map((weapon) => {
+      const group = rows
+        .filter((row) => row.weapon === weapon)
+        .sort((a, b) => a.tier - b.tier);
+      const min = group.reduce((current, row) => row.hpPct < current.hpPct ? row : current);
+      const max = group.reduce((current, row) => row.hpPct > current.hpPct ? row : current);
+      return {
+        weapon,
+        family: group[0]!.family,
+        positiveFaction: group[0]!.faction,
+        tiers: group.length,
+        clears: `${String(group.filter((row) => row.clear).length)}/${String(group.length)}`,
+        avgHpPct: round1(group.reduce((sum, row) => sum + row.hpPct, 0) / group.length),
+        minHpPct: min.hpPct,
+        minHpTier: min.tier,
+        maxHpPct: max.hpPct,
+        maxHpTier: max.tier,
+        hpRange: round1(max.hpPct - min.hpPct),
+        avgSeconds: round1(group.reduce((sum, row) => sum + row.seconds, 0) / group.length),
+        maxPotionsUsed: Math.max(...group.map((row) => row.potions)),
+      };
+    });
+
     const anomalyRows = summary.filter((row) => (
       row.strongestHpPct >= 30 || row.hpSpread >= 20
     ));
@@ -127,11 +151,19 @@ describe("Tower live Difficulty 0 benchmark", () => {
     });
     console.log("[TOWER_LIVE_DIFFICULTY_ZERO_SUMMARY]");
     console.table(summary);
+    console.log("[TOWER_LIVE_WEAPON_TIER_MATRIX]");
+    console.table([...rows].sort((a, b) => (
+      a.weapon.localeCompare(b.weapon) || a.tier - b.tier
+    )));
+    console.log("[TOWER_LIVE_WEAPON_SUMMARY]");
+    console.table([...weaponSummary].sort((a, b) => b.avgHpPct - a.avgHpPct));
     console.log("[TOWER_LIVE_DIFFICULTY_ZERO_ANOMALIES]");
     console.table(anomalyRows);
 
     expect(rows).toHaveLength(100);
     expect(summary).toHaveLength(20);
+    expect(weaponSummary).toHaveLength(20);
+    expect(weaponSummary.every((entry) => entry.tiers === 5)).toBe(true);
     expect(rows.every((row) => row.clear)).toBe(true);
   });
 });
