@@ -1,15 +1,23 @@
 import { useEffect, useRef } from "react";
 
+export interface ItemContextMenuBankDestination {
+  readonly tabNumber: number;
+  readonly label: string;
+  readonly disabled?: boolean;
+}
+
 export interface ItemContextMenuProps {
   readonly position: number;
   readonly x: number;
   readonly y: number;
   readonly onClose: () => void;
   readonly onEquip?: ((position: number) => void) | undefined;
+  readonly bankDestinations?: readonly ItemContextMenuBankDestination[] | undefined;
+  readonly onMoveToBank?: ((position: number, tabNumber: number) => void) | undefined;
 }
 
 /**
- * Right-click context menu for storage equipment actions.
+ * Right-click context menu for storage item actions.
  */
 export function ItemContextMenu({
   position,
@@ -17,17 +25,24 @@ export function ItemContextMenu({
   y,
   onClose,
   onEquip,
+  bankDestinations = [],
+  onMoveToBank,
 }: ItemContextMenuProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      if (ref.current !== null && !ref.current.contains(e.target as Node)) {
-        onClose();
-      }
+    const handlePointerDown = (event: Event) => {
+      if (ref.current !== null && !ref.current.contains(event.target as Node)) onClose();
     };
-    document.addEventListener("mousedown", handler);
-    return () => { document.removeEventListener("mousedown", handler); };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [onClose]);
 
   return (
@@ -45,6 +60,17 @@ export function ItemContextMenu({
           Equiper
         </button>
       )}
+      {onMoveToBank !== undefined && bankDestinations.map((destination) => (
+        <button
+          key={destination.tabNumber}
+          type="button"
+          className="context-menu__item"
+          disabled={destination.disabled === true}
+          onClick={() => { onMoveToBank(position, destination.tabNumber); }}
+        >
+          Déplacer vers {destination.label}{destination.disabled === true ? " · pleine" : ""}
+        </button>
+      ))}
       <button
         type="button"
         className="context-menu__item"
