@@ -43,47 +43,31 @@ export const TOWER_REINFORCED_COMBAT_MULTIPLIERS = {
 } as const;
 
 /**
- * Tower Difficulty 0 normalization applied after resolving the canonical
- * Dungeon enemy profile. Dungeon data remains the source of truth; these values
- * never mutate Dungeon balance.
- *
- * The authored values below compose the previous Tower faction/tier
- * normalization with the accepted fine-sweep Difficulty 0 multiplier. The
- * resulting profile is the live Tower baseline before Endless depth scaling.
- *
- * Calibration target: favorable .4 weapon / .3 equipment, early awakening
- * around strain 10, with the weakest favorable weapon clearing the five-floor
- * block at roughly 8-10% HP where runtime breakpoints allow it.
+ * Tower-only normalization applied after resolving the canonical Dungeon enemy
+ * profile. Dungeon data remains the source of truth; these values never mutate
+ * Dungeon balance.
  */
 export const TOWER_FACTION_TIER_COMBAT_MULTIPLIER = {
-  keeper: {
-    4: 1.2165,
-    5: 1.1172,
-    6: 1.07744,
-    7: 1.1595,
-    8: 1.1781945,
-  },
-  heretic: {
-    4: 1.02573,
-    5: 0.8961855,
-    6: 0.9994236,
-    7: 1.0869768,
-    8: 1.1053455,
-  },
-  undead: {
-    4: 1.01385,
-    5: 0.990927,
-    6: 1.019745,
-    7: 1.0494992,
-    8: 1.08882675,
-  },
-  morgana: {
-    4: 1.023945,
-    5: 1.0105238,
-    6: 1.017648,
-    7: 1.0204425,
-    8: 1.08675,
-  },
+  keeper: { 4: 1.50, 5: 1.40, 6: 1.48, 7: 1.50, 8: 1.1865 },
+  heretic: { 4: 1.305, 5: 1.3083, 6: 1.3524, 7: 1.4378, 8: 1.1109 },
+  undead: { 4: 1.35, 5: 1.323, 6: 1.395, 7: 1.4536, 8: 1.099825 },
+  morgana: { 4: 1.335, 5: 1.2727, 6: 1.332, 7: 1.5345, 8: 1.08675 },
+} as const satisfies Record<TowerFactionId, Record<TowerTier, number>>;
+
+/**
+ * Calibrated Tower Difficulty 0 multiplier.
+ *
+ * Applied after faction/tier normalization and floor-role tuning so live combat
+ * reproduces the fine-sweep benchmark exactly. The calibration target is a
+ * favorable .4 weapon / .3 equipment setup around strain 10, with the weakest
+ * favorable weapon clearing the five-floor block near 8-10% HP where runtime
+ * breakpoints allow it.
+ */
+export const TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER = {
+  keeper: { 4: 0.811, 5: 0.798, 6: 0.728, 7: 0.773, 8: 0.993 },
+  heretic: { 4: 0.786, 5: 0.685, 6: 0.739, 7: 0.756, 8: 0.995 },
+  undead: { 4: 0.751, 5: 0.749, 6: 0.731, 7: 0.722, 8: 0.99 },
+  morgana: { 4: 0.767, 5: 0.794, 6: 0.764, 7: 0.665, 8: 1.0 },
 } as const satisfies Record<TowerFactionId, Record<TowerTier, number>>;
 
 export interface TowerAuthoredBlockDefinition {
@@ -117,10 +101,7 @@ export interface TowerTrialBlockCombatMultipliers {
   readonly damage: number;
 }
 
-/**
- * Trial blocks now consume the same calibrated Difficulty 0 baseline as every
- * later Tower block. No trial-specific combat calibration is layered on top.
- */
+/** Trial blocks use the same Difficulty 0 baseline as every later Tower block. */
 export const TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS: Readonly<
   Record<string, TowerTrialBlockCombatMultipliers | undefined>
 > = {};
