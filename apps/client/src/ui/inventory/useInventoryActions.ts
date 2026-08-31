@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { getFragmentAssemblyRecipe } from "../../data/specialCraftRecipes.js";
-import { StorageRuntime, type StorageKind } from "../../runtime/StorageRuntime";
+import {
+  StorageRuntime,
+  type StorageKind,
+  type StorageRange,
+} from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
 import {
   syncBankToBridge,
@@ -15,7 +19,21 @@ interface InventoryActions {
   readonly useConsumable: (itemId: string) => boolean;
   readonly assembleFragments: (itemId: string) => boolean;
   readonly move: (storage: StorageKind, from: number, to: number) => boolean;
+  readonly canMoveToRange: (storage: StorageKind, from: number, range: StorageRange) => boolean;
+  readonly moveToRange: (storage: StorageKind, from: number, range: StorageRange) => boolean;
   readonly transfer: (fromStorage: StorageKind, from: number, toStorage: StorageKind, to?: number) => boolean;
+  readonly canTransferToRange: (
+    fromStorage: StorageKind,
+    from: number,
+    toStorage: StorageKind,
+    range: StorageRange,
+  ) => boolean;
+  readonly transferToRange: (
+    fromStorage: StorageKind,
+    from: number,
+    toStorage: StorageKind,
+    range: StorageRange,
+  ) => boolean;
   readonly sort: (storage: StorageKind, start?: number, length?: number) => boolean;
 }
 
@@ -44,6 +62,13 @@ export function useInventoryActions(): InventoryActions {
   const syncStorage = useCallback((): void => {
     syncInventoryToBridge(services.bridge, services.inventoryManager, services.heroId);
     syncBankToBridge(services.bridge, services.inventoryManager, services.bankId);
+  }, [services]);
+
+  const canTransferInventoryItemToBank = useCallback((position: number): boolean => {
+    const slot = services.inventoryManager.getSlot(services.heroId, position);
+    return slot.ok
+      && slot.value.entry !== undefined
+      && !isRelicInventoryItem(slot.value.entry.itemId);
   }, [services]);
 
   const equip = useCallback((position: number): boolean => {
@@ -102,17 +127,56 @@ export function useInventoryActions(): InventoryActions {
     return result.ok;
   }, [storage, syncStorage]);
 
+  const canMoveToRange = useCallback((
+    kind: StorageKind,
+    from: number,
+    range: StorageRange,
+  ): boolean => storage.canMoveWithinRange(kind, from, range), [storage]);
+
+  const moveToRange = useCallback((
+    kind: StorageKind,
+    from: number,
+    range: StorageRange,
+  ): boolean => {
+    const result = storage.moveWithinRange(kind, from, range);
+    if (result.ok) syncStorage();
+    return result.ok;
+  }, [storage, syncStorage]);
+
   const transfer = useCallback((fromKind: StorageKind, from: number, toKind: StorageKind, to?: number): boolean => {
-    if (fromKind === "inventory" && toKind === "bank") {
-      const slot = services.inventoryManager.getSlot(services.heroId, from);
-      if (slot.ok && slot.value.entry !== undefined && isRelicInventoryItem(slot.value.entry.itemId)) {
-        return false;
-      }
+    if (fromKind === "inventory" && toKind === "bank" && !canTransferInventoryItemToBank(from)) {
+      return false;
     }
     const result = storage.transfer(fromKind, from, toKind, to);
     if (result.ok) syncStorage();
     return result.ok;
-  }, [services, storage, syncStorage]);
+  }, [canTransferInventoryItemToBank, storage, syncStorage]);
+
+  const canTransferToRange = useCallback((
+    fromKind: StorageKind,
+    from: number,
+    toKind: StorageKind,
+    range: StorageRange,
+  ): boolean => {
+    if (fromKind === "inventory" && toKind === "bank" && !canTransferInventoryItemToBank(from)) {
+      return false;
+    }
+    return storage.canTransferToRange(fromKind, from, toKind, range);
+  }, [canTransferInventoryItemToBank, storage]);
+
+  const transferToRange = useCallback((
+    fromKind: StorageKind,
+    from: number,
+    toKind: StorageKind,
+    range: StorageRange,
+  ): boolean => {
+    if (fromKind === "inventory" && toKind === "bank" && !canTransferInventoryItemToBank(from)) {
+      return false;
+    }
+    const result = storage.transferToRange(fromKind, from, toKind, range);
+    if (result.ok) syncStorage();
+    return result.ok;
+  }, [canTransferInventoryItemToBank, storage, syncStorage]);
 
   const sort = useCallback((kind: StorageKind, start?: number, length?: number): boolean => {
     const range = start === undefined || length === undefined ? undefined : { start, length };
@@ -121,5 +185,16 @@ export function useInventoryActions(): InventoryActions {
     return result.ok;
   }, [storage, syncStorage]);
 
-  return { equip, useConsumable, assembleFragments, move, transfer, sort };
+  return {
+    equip,
+    useConsumable,
+    assembleFragments,
+    move,
+    canMoveToRange,
+    moveToRange,
+    transfer,
+    canTransferToRange,
+    transferToRange,
+    sort,
+  };
 }
