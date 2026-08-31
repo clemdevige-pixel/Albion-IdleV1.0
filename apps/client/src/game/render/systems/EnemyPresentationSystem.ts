@@ -43,9 +43,11 @@ export class EnemyPresentationSystem {
     this.sprite = scene.add
       .image(fallback.offset.x, fallback.offset.y, fallback.textureKey)
       .setOrigin(fallback.origin.x, fallback.origin.y)
-      .setDisplaySize(fallback.display.width, fallback.display.height);
-    // The fallback only satisfies renderer construction. Visibility is locked
-    // until update() explicitly adopts an authoritative enemy presentation.
+      .setDisplaySize(fallback.display.width, fallback.display.height)
+      .setVisible(false);
+    // The fallback only satisfies renderer construction. Both the sprite and
+    // its container stay non-presentable until update() adopts an authoritative
+    // enemy and setVisible(true) explicitly publishes it.
     this.body = scene.add.container(x, y, [this.sprite]).setDepth(5).setVisible(false);
   }
 
@@ -64,19 +66,27 @@ export class EnemyPresentationSystem {
 
   public setVisible(visible: boolean): void {
     if (!visible) {
-      // Hiding marks an encounter boundary: drop presentation authority so a
-      // later visibility toggle cannot expose the constructor fallback or a
-      // stale previous enemy without a fresh authoritative update().
+      // Hiding is deliberately idempotent. Never trust the cached visibility:
+      // Phaser systems/tweens may have touched the container independently.
+      // Force both layers hidden so the constructor fallback or a stale enemy
+      // cannot leak through an out-of-sync container state.
       this.hasAuthoritativeProfile = false;
       this.currentProfileId = "";
-      if (!this.visible) return;
       this.visible = false;
+      this.sprite.setVisible(false);
       this.body.setVisible(false);
       return;
     }
 
-    if (!this.hasAuthoritativeProfile || this.visible) return;
+    if (!this.hasAuthoritativeProfile) {
+      this.visible = false;
+      this.sprite.setVisible(false);
+      this.body.setVisible(false);
+      return;
+    }
+
     this.visible = true;
+    this.sprite.setVisible(true);
     this.body.setVisible(true);
   }
 
@@ -84,6 +94,8 @@ export class EnemyPresentationSystem {
     this.hasAuthoritativeProfile = false;
     this.currentProfileId = "";
     this.visible = false;
+    this.sprite.setVisible(false);
+    this.body.setVisible(false);
     this.body.destroy(true);
   }
 }
