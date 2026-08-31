@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  TOWER_BASELINE_COMBAT_MULTIPLIER,
   TOWER_BLOCK_SIZE,
   TOWER_FACTIONS,
-  TOWER_FACTION_TIER_COMBAT_MULTIPLIER,
   TOWER_FLOOR_ROLES,
   TOWER_MAJOR_BOSS_CADENCE,
   TOWER_TIERS,
@@ -39,12 +39,12 @@ describe("Endless Tower authored contract", () => {
     }
   });
 
-  it("keeps Tower faction normalization complete and strictly positive", () => {
-    expect(Object.keys(TOWER_FACTION_TIER_COMBAT_MULTIPLIER).sort()).toEqual([...TOWER_FACTIONS].sort());
+  it("keeps the Tower baseline matrix complete and strictly positive", () => {
+    expect(Object.keys(TOWER_BASELINE_COMBAT_MULTIPLIER).sort()).toEqual([...TOWER_FACTIONS].sort());
 
     for (const tier of TOWER_TIERS) {
       for (const faction of TOWER_FACTIONS) {
-        const multiplier = TOWER_FACTION_TIER_COMBAT_MULTIPLIER[faction][tier];
+        const multiplier = TOWER_BASELINE_COMBAT_MULTIPLIER[faction][tier];
         expect(Number.isFinite(multiplier)).toBe(true);
         expect(multiplier).toBeGreaterThan(0);
       }
