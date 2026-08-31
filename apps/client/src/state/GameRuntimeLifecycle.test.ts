@@ -144,6 +144,38 @@ describe("runtime visibility reconciliation", () => {
     expect(saveOrder).toBeLessThan(startOrder);
   });
 
+  it("does not grant active catch-up unless the same page becomes visible again", () => {
+    let visibilityState: DocumentVisibilityState = "visible";
+    let now = 5_000;
+    const tickRuntime = vi.fn();
+    const stopRuntime = vi.fn();
+    const startRuntime = vi.fn();
+    const syncPresentation = vi.fn();
+    const saveGame = vi.fn();
+    const handleVisibilityChange = createRuntimeVisibilityHandler({
+      getVisibilityState: () => visibilityState,
+      now: () => now,
+      tickIntervalMs: 500,
+      tickRuntime,
+      stopRuntime,
+      startRuntime,
+      syncPresentation,
+      saveGame,
+    });
+
+    visibilityState = "hidden";
+    handleVisibilityChange();
+    now = 65_000;
+
+    // A page close/reload/discard has no visible transition. Teardown simply
+    // abandons this handler; the next boot owns offline/passive reconciliation.
+    expect(stopRuntime).toHaveBeenCalledOnce();
+    expect(tickRuntime).not.toHaveBeenCalled();
+    expect(syncPresentation).not.toHaveBeenCalled();
+    expect(saveGame).not.toHaveBeenCalled();
+    expect(startRuntime).not.toHaveBeenCalled();
+  });
+
   it("carries sub-tick hidden time across visibility sessions", () => {
     let visibilityState: DocumentVisibilityState = "visible";
     let now = 0;
