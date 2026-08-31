@@ -2,10 +2,13 @@ import { EventBus, World, createRuntimeServices } from "@game/core";
 import {
   AbilityManager,
   AutoAttackManager,
+  AwakenedWeaponService,
   BiomeRegistry,
   BiomeResolver,
   CombatOrchestrator,
   CombatService,
+  CurrencyRegistry,
+  CurrencyService,
   DamageManager,
   DeathManager,
   EffectManager,
@@ -16,7 +19,10 @@ import {
   TargetManager,
   TargetValidator,
   asMasteryId,
+  asPlayerId,
+  asWalletId,
   createDefaultStatRegistry,
+  type AwakenedTraitState,
   type DamageEventMap,
   type MasteryId,
   type StatId,
@@ -27,6 +33,7 @@ import {
   resolveEquipmentInfo,
   resolveItemStackInfo,
 } from "../data/itemContentCatalog.js";
+import { getItemTier } from "../data/itemPower.js";
 import {
   getWeaponMasteryFamilyDefinitions,
   resolveUnlockedWeaponAbilities,
@@ -45,7 +52,10 @@ import {
   type SpawnedEnemyResult,
 } from "./combatEntityFactory.js";
 import { createProgressionFoundation } from "./bootstrap/createProgressionFoundation.js";
-import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
+import {
+  recalculateWeaponMasteryStats,
+  recalculateWeaponProgressionStats,
+} from "./weaponMasteryStatSync.js";
 import { RUNTIME_DELTA_SECONDS } from "./runtimeTiming.js";
 
 const DT = RUNTIME_DELTA_SECONDS;
@@ -55,7 +65,7 @@ const STAT_MAX_HEALTH = "stat_max_health" as StatId;
 const STAT_ARMOR = "stat_armor" as StatId;
 const STAT_MAGIC_RESISTANCE = "stat_magic_resistance" as StatId;
 
-export type BenchmarkEnchantment = 0 | 1 | 2 | 3;
+export type BenchmarkEnchantment = 0 | 1 | 2 | 3 | 4;
 
 export interface CombatRuntimeBenchmarkDamageTuning {
   /** Benchmark-only multiplier applied to hero auto-attacks after mitigation. */
@@ -71,6 +81,11 @@ export interface CombatRuntimeBenchmarkEncounter {
   readonly profile: AuthoredEnemyCombatProfile;
 }
 
+export interface CombatRuntimeBenchmarkAwakenedWeapon {
+  readonly strain: number;
+  readonly traits: readonly AwakenedTraitState[];
+}
+
 export interface CombatRuntimeBenchmarkInput {
   readonly label: string;
   readonly weaponItemId: string;
@@ -81,6 +96,8 @@ export interface CombatRuntimeBenchmarkInput {
   readonly startingEncounterIndex?: number;
   readonly equipmentItemIds?: readonly string[];
   readonly enchantment?: BenchmarkEnchantment;
+  /** Optional real .4 awakened state injected on the equipped weapon instance. */
+  readonly awakenedWeapon?: CombatRuntimeBenchmarkAwakenedWeapon;
   /** Legacy shorthand: seeds both family and equipped specialization to the same level. */
   readonly masteryLevel?: number;
   /** Explicit family mastery level. Falls back to masteryLevel. */
@@ -276,6 +293,24 @@ function seedMasteryLevel(
   return seedOneMasteryLevel(route.weaponId, specializationTargetLevel, masteryService, experienceService);
 }
 
+function createBenchmarkAwakenedWeaponService(): AwakenedWeaponService {
+  const currencyRegistry = new CurrencyRegistry();
+  currencyRegistry.register({
+    id: "currency_silver",
+    enabled: true,
+    minValue: 0,
+    maxValue: null,
+    acquisitionSources: ["Loot"],
+    spendingSources: ["Awakening"],
+  });
+  const currencyService = new CurrencyService(currencyRegistry);
+  currencyService.createWallet(asWalletId("benchmark_wallet"), asPlayerId("benchmark_player"));
+  return new AwakenedWeaponService(currencyService, {
+    silverCurrencyId: "currency_silver",
+    silverSpendSource: "Awakening",
+  });
+}
+
 function round1(value: number): number {
   return Number(value.toFixed(1));
 }
@@ -342,7 +377,38 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   const enchantment = input.enchantment ?? 0;
   equipItem(inventoryManager, equipmentManager, heroId, input.weaponItemId, enchantment);
   for (const itemId of input.equipmentItemIds ?? []) equipItem(inventoryManager, equipmentManager, heroId, itemId, enchantment);
-  recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
+
+  if (input.awakenedWeapon === undefined) {
+    recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
+  } else {
+    if (enchantment !== 4) {
+      throw new Error("Benchmark awakenedWeapon requires enchantment .4");
+    }
+    const equippedWeapon = equipmentManager.getEquippedItem(heroId, "weapon");
+    if (equippedWeapon === undefined) throw new Error("Benchmark awakened weapon is not equipped");
+    const tier = getItemTier(input.weaponItemId);
+    if (tier !== 4 && tier !== 5 && tier !== 6 && tier !== 7 && tier !== 8) {
+      throw new Error(`Benchmark awakened weapon has unsupported tier: ${String(tier)}`);
+    }
+    const awakenedWeaponService = createBenchmarkAwakenedWeaponService();
+    awakenedWeaponService._restore([{
+      itemInstanceId: equippedWeapon.instanceId,
+      tier,
+      awakened: true,
+      storedAttunement: 0,
+      lifetimeAttunementInvested: 0,
+      strain: Math.max(0, Math.floor(input.awakenedWeapon.strain)),
+      traits: input.awakenedWeapon.traits,
+    }]);
+    recalculateWeaponProgressionStats(
+      statsManager,
+      equipmentManager,
+      masteryService,
+      heroId,
+      awakenedWeaponService,
+    );
+    damageManager.syncMaxHealth(heroId);
+  }
 
   const equippedCape = equipmentManager.getEquippedItem(heroId, "cape");
   const derivedDungeonDamageReductionPercent = dungeon === undefined || equippedCape === undefined
