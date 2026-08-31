@@ -27,7 +27,8 @@ const TARGET_MAX_HP = 15;
 const MIN_SCALE = 0.5;
 const COARSE_STEP = 0.02;
 const FINE_STEP = 0.005;
-const FINE_RADIUS = 0.02;
+const FINE_RADIUS = 0.03;
+const BADON_LABEL = "Bow of Badon";
 const TOWER_SEED = "tower-benchmark-21-25";
 const ZONE_DEF_ID = WORLD_ZONE_IDS.mountain;
 const SEGMENT_INDEX = 9;
@@ -105,17 +106,17 @@ function scaleProfile(value: number, scale: number): number {
 }
 
 function buildScaledEncounters(
-  offensiveScale: number,
-  durabilityScale: number,
+  damageScale: number,
+  hpScale: number,
 ): readonly CombatRuntimeBenchmarkEncounter[] {
   return resolvedFloors.map((encounter) => ({
     monsterDefinitionId: encounter.monsterDefinitionId,
     profile: {
-      hp: scaleProfile(encounter.combatProfile.hp, durabilityScale),
-      damage: scaleProfile(encounter.combatProfile.damage, offensiveScale),
+      hp: scaleProfile(encounter.combatProfile.hp, hpScale),
+      damage: scaleProfile(encounter.combatProfile.damage, damageScale),
       attackSpeed: encounter.combatProfile.attackSpeed,
-      armor: scaleProfile(encounter.combatProfile.armor, durabilityScale),
-      magicResistance: scaleProfile(encounter.combatProfile.magicResistance, durabilityScale),
+      armor: encounter.combatProfile.armor,
+      magicResistance: encounter.combatProfile.magicResistance,
     },
   }));
 }
@@ -174,15 +175,17 @@ type BestRun = {
 };
 
 type SweepCandidate = {
-  readonly offensiveScale: number;
-  readonly durabilityScale: number;
-  readonly offensiveNerfPct: number;
-  readonly durabilityNerfPct: number;
+  readonly damageScale: number;
+  readonly hpScale: number;
+  readonly damageNerfPct: number;
+  readonly hpNerfPct: number;
   readonly totalNerfPct: number;
   readonly maxAxisNerfPct: number;
   readonly bestRuns: readonly BestRun[];
-  readonly allClear: boolean;
-  readonly allInTarget: boolean;
+  readonly calibrationRuns: readonly BestRun[];
+  readonly badonRun: BestRun | undefined;
+  readonly allCalibrationClear: boolean;
+  readonly allCalibrationInTarget: boolean;
   readonly targetMiss: number;
   readonly hpSpread: number;
 };
@@ -194,14 +197,14 @@ function hpTargetDistance(hp: number, clear: boolean): number {
   return 0;
 }
 
-function evaluateScales(offensiveScale: number, durabilityScale: number): SweepCandidate {
-  const encounters = buildScaledEncounters(offensiveScale, durabilityScale);
+function evaluateScales(damageScale: number, hpScale: number): SweepCandidate {
+  const encounters = buildScaledEncounters(damageScale, hpScale);
   const bestRuns = counterWeapons.map(({ weapon, weaponItemId, modifiers, heroDamageMultiplier }) => {
     const candidates = COMBAT_TRAITS.map((traitId) => {
       const traitValue = getOptimizedTraitValueAtStrain(traitId, STRAIN);
       const result = runTowerCase(
         weaponItemId,
-        `tower_21_25_t5_4_s10_o${offensiveScale.toFixed(3)}_d${durabilityScale.toFixed(3)}_${weapon.family}_${traitId}`,
+        `tower_21_25_t5_4_s10_damage${damageScale.toFixed(3)}_hp${hpScale.toFixed(3)}_${weapon.family}_${traitId}`,
         heroDamageMultiplier,
         modifiers.incomingDamageReductionPercent,
         traitId,
@@ -215,37 +218,45 @@ function evaluateScales(offensiveScale: number, durabilityScale: number): SweepC
     return best;
   });
 
-  const allClear = bestRuns.every(({ result }) => result.clear);
-  const allInTarget = bestRuns.every(({ result }) => (
+  const calibrationRuns = bestRuns.filter(({ weapon }) => weapon.label !== BADON_LABEL);
+  const badonRun = bestRuns.find(({ weapon }) => weapon.label === BADON_LABEL);
+  const allCalibrationClear = calibrationRuns.every(({ result }) => result.clear);
+  const allCalibrationInTarget = calibrationRuns.every(({ result }) => (
     result.clear && result.hpPercent >= TARGET_MIN_HP && result.hpPercent <= TARGET_MAX_HP
   ));
-  const targetMiss = bestRuns.reduce(
+  const targetMiss = calibrationRuns.reduce(
     (total, { result }) => total + hpTargetDistance(result.hpPercent, result.clear),
     0,
   );
-  const hpValues = bestRuns.filter(({ result }) => result.clear).map(({ result }) => result.hpPercent);
+  const hpValues = calibrationRuns
+    .filter(({ result }) => result.clear)
+    .map(({ result }) => result.hpPercent);
   const hpSpread = hpValues.length === 0 ? 100 : Math.max(...hpValues) - Math.min(...hpValues);
-  const offensiveNerfPct = (1 - offensiveScale) * 100;
-  const durabilityNerfPct = (1 - durabilityScale) * 100;
+  const damageNerfPct = (1 - damageScale) * 100;
+  const hpNerfPct = (1 - hpScale) * 100;
 
   return {
-    offensiveScale,
-    durabilityScale,
-    offensiveNerfPct: Number(offensiveNerfPct.toFixed(1)),
-    durabilityNerfPct: Number(durabilityNerfPct.toFixed(1)),
-    totalNerfPct: Number((offensiveNerfPct + durabilityNerfPct).toFixed(1)),
-    maxAxisNerfPct: Number(Math.max(offensiveNerfPct, durabilityNerfPct).toFixed(1)),
+    damageScale,
+    hpScale,
+    damageNerfPct: Number(damageNerfPct.toFixed(1)),
+    hpNerfPct: Number(hpNerfPct.toFixed(1)),
+    totalNerfPct: Number((damageNerfPct + hpNerfPct).toFixed(1)),
+    maxAxisNerfPct: Number(Math.max(damageNerfPct, hpNerfPct).toFixed(1)),
     bestRuns,
-    allClear,
-    allInTarget,
+    calibrationRuns,
+    badonRun,
+    allCalibrationClear,
+    allCalibrationInTarget,
     targetMiss: Number(targetMiss.toFixed(1)),
     hpSpread: Number(hpSpread.toFixed(1)),
   };
 }
 
 function candidateOrder(a: SweepCandidate, b: SweepCandidate): number {
-  if (a.allInTarget !== b.allInTarget) return a.allInTarget ? -1 : 1;
-  if (a.allClear !== b.allClear) return a.allClear ? -1 : 1;
+  if (a.allCalibrationInTarget !== b.allCalibrationInTarget) {
+    return a.allCalibrationInTarget ? -1 : 1;
+  }
+  if (a.allCalibrationClear !== b.allCalibrationClear) return a.allCalibrationClear ? -1 : 1;
   if (a.totalNerfPct !== b.totalNerfPct) return a.totalNerfPct - b.totalNerfPct;
   if (a.maxAxisNerfPct !== b.maxAxisNerfPct) return a.maxAxisNerfPct - b.maxAxisNerfPct;
   if (a.targetMiss !== b.targetMiss) return a.targetMiss - b.targetMiss;
@@ -260,7 +271,7 @@ function makeScaleRange(min: number, max: number, step: number): number[] {
   return values;
 }
 
-console.log("[TOWER_T5_2D_NERF_SWEEP_REFERENCE]", {
+console.log("[TOWER_T5_DAMAGE_HP_SWEEP_REFERENCE]", {
   floors: `${String(FLOOR_START)}-${String(FLOOR_END)}`,
   tier: TIER,
   faction: FACTION,
@@ -268,8 +279,13 @@ console.log("[TOWER_T5_2D_NERF_SWEEP_REFERENCE]", {
   equipmentEnchantment: EQUIPMENT_ENCHANTMENT,
   strain: STRAIN,
   targetHpPct: `${String(TARGET_MIN_HP)}-${String(TARGET_MAX_HP)}`,
-  offensiveAxis: "enemy damage",
-  durabilityAxis: "enemy hp + armor + magicResistance",
+  calibrationWeapons: counterWeapons
+    .filter(({ weapon }) => weapon.label !== BADON_LABEL)
+    .map(({ weapon }) => weapon.label),
+  excludedFromTarget: BADON_LABEL,
+  damageAxis: "enemy damage",
+  hpAxis: "enemy hp",
+  unchangedStats: "enemy armor + magicResistance + attackSpeed",
   coarseScaleRange: `${MIN_SCALE.toFixed(2)}-1.00`,
   coarseStep: COARSE_STEP,
   fineStep: FINE_STEP,
@@ -277,66 +293,63 @@ console.log("[TOWER_T5_2D_NERF_SWEEP_REFERENCE]", {
 
 const coarseCandidates: SweepCandidate[] = [];
 const coarseScales = makeScaleRange(MIN_SCALE, 1, COARSE_STEP);
-for (const offensiveScale of coarseScales) {
-  for (const durabilityScale of coarseScales) {
-    coarseCandidates.push(evaluateScales(offensiveScale, durabilityScale));
+for (const damageScale of coarseScales) {
+  for (const hpScale of coarseScales) {
+    coarseCandidates.push(evaluateScales(damageScale, hpScale));
   }
 }
 coarseCandidates.sort(candidateOrder);
 const coarseBest = coarseCandidates[0];
-if (coarseBest === undefined) throw new Error("Tower T5 2D coarse sweep produced no candidates");
+if (coarseBest === undefined) throw new Error("Tower T5 damage/HP coarse sweep produced no candidates");
 
-console.log("[TOWER_T5_2D_COARSE_BEST]", {
-  exactTargetFound: coarseBest.allInTarget,
-  offensiveScale: coarseBest.offensiveScale,
-  durabilityScale: coarseBest.durabilityScale,
-  offensiveNerfPct: coarseBest.offensiveNerfPct,
-  durabilityNerfPct: coarseBest.durabilityNerfPct,
+console.log("[TOWER_T5_DAMAGE_HP_COARSE_BEST]", {
+  exactTargetFound: coarseBest.allCalibrationInTarget,
+  damageScale: coarseBest.damageScale,
+  hpScale: coarseBest.hpScale,
+  damageNerfPct: coarseBest.damageNerfPct,
+  hpNerfPct: coarseBest.hpNerfPct,
   totalNerfPct: coarseBest.totalNerfPct,
-  allClear: coarseBest.allClear,
+  allCalibrationClear: coarseBest.allCalibrationClear,
   targetMiss: coarseBest.targetMiss,
   hpSpread: coarseBest.hpSpread,
+  badonHpPct: coarseBest.badonRun?.result.clear ? coarseBest.badonRun.result.hpPercent : null,
 });
 
-const fineMinOffensive = Math.max(MIN_SCALE, coarseBest.offensiveScale - FINE_RADIUS);
-const fineMaxOffensive = Math.min(1, coarseBest.offensiveScale + FINE_RADIUS);
-const fineMinDurability = Math.max(MIN_SCALE, coarseBest.durabilityScale - FINE_RADIUS);
-const fineMaxDurability = Math.min(1, coarseBest.durabilityScale + FINE_RADIUS);
-const fineOffensiveScales = makeScaleRange(fineMinOffensive, fineMaxOffensive, FINE_STEP);
-const fineDurabilityScales = makeScaleRange(fineMinDurability, fineMaxDurability, FINE_STEP);
+const fineMinDamage = Math.max(MIN_SCALE, coarseBest.damageScale - FINE_RADIUS);
+const fineMaxDamage = Math.min(1, coarseBest.damageScale + FINE_RADIUS);
+const fineMinHp = Math.max(MIN_SCALE, coarseBest.hpScale - FINE_RADIUS);
+const fineMaxHp = Math.min(1, coarseBest.hpScale + FINE_RADIUS);
+const fineDamageScales = makeScaleRange(fineMinDamage, fineMaxDamage, FINE_STEP);
+const fineHpScales = makeScaleRange(fineMinHp, fineMaxHp, FINE_STEP);
 const fineCandidates: SweepCandidate[] = [];
 
-for (const offensiveScale of fineOffensiveScales) {
-  for (const durabilityScale of fineDurabilityScales) {
-    fineCandidates.push(evaluateScales(offensiveScale, durabilityScale));
+for (const damageScale of fineDamageScales) {
+  for (const hpScale of fineHpScales) {
+    fineCandidates.push(evaluateScales(damageScale, hpScale));
   }
 }
 
 const allCandidates = [...coarseCandidates, ...fineCandidates].sort(candidateOrder);
 const selected = allCandidates[0];
-if (selected === undefined) throw new Error("Tower T5 2D nerf sweep produced no candidates");
+if (selected === undefined) throw new Error("Tower T5 damage/HP sweep produced no candidates");
+const exactCandidate = allCandidates.find((candidate) => candidate.allCalibrationInTarget);
 
-const exactCandidates = allCandidates
-  .filter((candidate) => candidate.allInTarget)
-  .sort(candidateOrder);
-const exactCandidate = exactCandidates[0];
-
-console.log("[TOWER_T5_2D_MINIMAL_NERF_RESULT]", {
+console.log("[TOWER_T5_DAMAGE_HP_MINIMAL_NERF_RESULT]", {
   exactTargetFound: exactCandidate !== undefined,
-  offensiveScale: selected.offensiveScale,
-  durabilityScale: selected.durabilityScale,
-  offensiveNerfPct: selected.offensiveNerfPct,
-  durabilityNerfPct: selected.durabilityNerfPct,
+  damageScale: selected.damageScale,
+  hpScale: selected.hpScale,
+  damageNerfPct: selected.damageNerfPct,
+  hpNerfPct: selected.hpNerfPct,
   totalNerfPct: selected.totalNerfPct,
   maxAxisNerfPct: selected.maxAxisNerfPct,
-  allClear: selected.allClear,
-  allInTarget: selected.allInTarget,
+  allCalibrationClear: selected.allCalibrationClear,
+  allCalibrationInTarget: selected.allCalibrationInTarget,
   targetMiss: selected.targetMiss,
   hpSpread: selected.hpSpread,
 });
 
-console.log("[TOWER_T5_2D_MINIMAL_NERF_WEAPON_MATRIX]");
-console.table(selected.bestRuns.map(({ weapon, traitId, traitValue, result }) => ({
+console.log("[TOWER_T5_DAMAGE_HP_CALIBRATION_MATRIX]");
+console.table(selected.calibrationRuns.map(({ weapon, traitId, traitValue, result }) => ({
   family: weapon.family,
   weapon: weapon.label,
   bestTrait: traitId,
@@ -350,28 +363,42 @@ console.table(selected.bestRuns.map(({ weapon, traitId, traitValue, result }) =>
   incomingDps: result.incomingDps,
 })));
 
-console.log("[TOWER_T5_2D_FRONTIER]" );
+console.log("[TOWER_T5_DAMAGE_HP_BADON_CHECK]", selected.badonRun === undefined ? null : {
+  weapon: selected.badonRun.weapon.label,
+  bestTrait: selected.badonRun.traitId,
+  traitValue: selected.badonRun.traitValue,
+  clear: selected.badonRun.result.clear,
+  hpPct: selected.badonRun.result.hpPercent,
+  seconds: selected.badonRun.result.seconds,
+  potions: selected.badonRun.result.potionsUsed,
+  finalProgressPct: selected.badonRun.result.bossProgressPercent,
+  dps: selected.badonRun.result.observedDps,
+  incomingDps: selected.badonRun.result.incomingDps,
+});
+
+console.log("[TOWER_T5_DAMAGE_HP_FRONTIER]");
 console.table(
   allCandidates
-    .filter((candidate) => candidate.allClear)
+    .filter((candidate) => candidate.allCalibrationClear)
     .slice(0, 12)
     .map((candidate) => ({
-      offensiveNerfPct: candidate.offensiveNerfPct,
-      durabilityNerfPct: candidate.durabilityNerfPct,
+      damageNerfPct: candidate.damageNerfPct,
+      hpNerfPct: candidate.hpNerfPct,
       totalNerfPct: candidate.totalNerfPct,
-      allInTarget: candidate.allInTarget,
+      allInTarget: candidate.allCalibrationInTarget,
       targetMiss: candidate.targetMiss,
       hpSpread: candidate.hpSpread,
-      minHp: Math.min(...candidate.bestRuns.map(({ result }) => result.hpPercent)),
-      maxHp: Math.max(...candidate.bestRuns.map(({ result }) => result.hpPercent)),
+      minHp: Math.min(...candidate.calibrationRuns.map(({ result }) => result.hpPercent)),
+      maxHp: Math.max(...candidate.calibrationRuns.map(({ result }) => result.hpPercent)),
+      badonHp: candidate.badonRun?.result.clear ? candidate.badonRun.result.hpPercent : "FAIL",
     })),
 );
 
 if (exactCandidate === undefined) {
-  console.log("[TOWER_T5_2D_NO_EXACT_TARGET]", {
-    message: "No offensive/durability pair put all five optimized weapons inside the 8-15% HP target window.",
-    closestOffensiveNerfPct: selected.offensiveNerfPct,
-    closestDurabilityNerfPct: selected.durabilityNerfPct,
-    note: "If the spread remains structural, inspect weapon outliers before adding encounter-specific tuning.",
+  console.log("[TOWER_T5_DAMAGE_HP_NO_EXACT_TARGET]", {
+    message: "No damage/HP pair put Clarent, Wildfire, Ursine and Bloodletter all inside the 8-15% HP target window.",
+    closestDamageNerfPct: selected.damageNerfPct,
+    closestHpNerfPct: selected.hpNerfPct,
+    badonIsNotPartOfTarget: true,
   });
 }
