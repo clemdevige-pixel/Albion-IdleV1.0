@@ -52,7 +52,7 @@ export const TOWER_REINFORCED_COMBAT_MULTIPLIERS = {
 export const TOWER_BASELINE_COMBAT_MULTIPLIER = {
   keeper: { 4: 1.2165, 5: 1.1172, 6: 1.07744, 7: 1.1595, 8: 1.1781945 },
   heretic: { 4: 1.02573, 5: 0.8961855, 6: 0.9994236, 7: 1.0869768, 8: 1.1053455 },
-  undead: { 4: 1.01385, 5: 0.990927, 6: 1.019745, 7: 1.0494992, 8: 1.08882675 },
+  undead: { 4: 1.01385, 5: 0.990927, 6: 1.019745, 7: 1.04845, 8: 1.08882675 },
   morgana: { 4: 1.023945, 5: 1.0105238, 6: 1.017648, 7: 1.0204425, 8: 1.08675 },
 } as const satisfies Record<TowerFactionId, Record<TowerTier, number>>;
 
