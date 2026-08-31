@@ -2,6 +2,7 @@ import { useEffect, useState, type DragEvent, type MouseEvent } from "react";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
+import type { StorageRange } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
 import {
   createTrackedItemResource,
@@ -9,12 +10,13 @@ import {
   useResourceTracking,
 } from "../dashboard/ResourceTrackingContext";
 import { ItemGrid } from "../shared";
-import { findFirstEmptyBankTabPosition } from "./bankTabTransfer.js";
 import { useBankData } from "./useBankData";
 import "../shared/storageModule.css";
 
 interface BankModuleProps {
   readonly onMove?: (from: number, to: number) => void;
+  readonly canMoveToRange?: (from: number, range: StorageRange) => boolean;
+  readonly onMoveToRange?: (from: number, range: StorageRange) => boolean;
   readonly onTransferToInventory?: (position: number) => void;
   readonly onSort?: (start: number, length: number) => void;
 }
@@ -56,7 +58,17 @@ function readDraggedBankPosition(event: DragEvent<HTMLElement>): number | undefi
   return Number.isInteger(parsed) ? parsed : undefined;
 }
 
-export function BankModule({ onMove, onTransferToInventory, onSort }: BankModuleProps): JSX.Element {
+function getTabRange(tabNumber: number, tabCapacity: number): StorageRange {
+  return { start: (tabNumber - 1) * tabCapacity, length: tabCapacity };
+}
+
+export function BankModule({
+  onMove,
+  canMoveToRange,
+  onMoveToRange,
+  onTransferToInventory,
+  onSort,
+}: BankModuleProps): JSX.Element {
   const bank = useBankData();
   const services = useGameServices();
   const tracking = useResourceTracking();
@@ -105,12 +117,9 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
   const activeLabel = ROMAN_TAB_LABELS[activeBankTab - 1] ?? String(activeBankTab);
 
   const moveItemToTab = (from: number, tabNumber: number): boolean => {
-    if (onMove === undefined || tabNumber === activeBankTab) return false;
+    if (onMoveToRange === undefined || tabNumber === activeBankTab) return false;
     if (bank.slots.find((slot) => slot.position === from)?.itemId === undefined) return false;
-    const to = findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity);
-    if (to === undefined) return false;
-    onMove(from, to);
-    return true;
+    return onMoveToRange(from, getTabRange(tabNumber, expansion.tabCapacity));
   };
 
   const moveDraggedItemToTab = (event: DragEvent<HTMLButtonElement>, tabNumber: number): void => {
@@ -122,7 +131,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
 
   const openMoveContextMenu = (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM): void => {
     event.preventDefault();
-    if (onMove === undefined || expansion.unlockedTabCount <= 1 || slot.itemId === undefined) return;
+    if (onMoveToRange === undefined || expansion.unlockedTabCount <= 1 || slot.itemId === undefined) return;
     setContextMenu({ position: slot.position, x: event.clientX, y: event.clientY });
   };
 
@@ -132,8 +141,6 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
         <div className="storage-module__bank-tabs" role="tablist" aria-label="Onglets de banque">
           {Array.from({ length: expansion.unlockedTabCount }, (_, index) => index + 1).map((tabNumber) => {
             const label = ROMAN_TAB_LABELS[tabNumber - 1] ?? String(tabNumber);
-            const canReceiveDrop = tabNumber !== activeBankTab
-              && findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity) !== undefined;
             return (
               <button
                 key={tabNumber}
@@ -143,7 +150,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
                 className={activeBankTab === tabNumber || dragTargetTab === tabNumber ? "is-active" : ""}
                 onClick={() => { setActiveBankTab(tabNumber); }}
                 onDragOver={(event) => {
-                  if (!canReceiveDrop || onMove === undefined) return;
+                  if (tabNumber === activeBankTab || onMoveToRange === undefined) return;
                   event.preventDefault();
                   event.dataTransfer.dropEffect = "move";
                   setDragTargetTab(tabNumber);
@@ -152,7 +159,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
                   if (dragTargetTab === tabNumber) setDragTargetTab(undefined);
                 }}
                 onDrop={(event) => { moveDraggedItemToTab(event, tabNumber); }}
-                title={canReceiveDrop ? `Déposer ici pour déplacer vers Banque ${label}` : undefined}
+                title={tabNumber === activeBankTab ? undefined : `Déposer ici pour déplacer vers Banque ${label}`}
               >
                 Banque {label}
               </button>
@@ -239,19 +246,20 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
             .filter((tabNumber) => tabNumber !== activeBankTab)
             .map((tabNumber) => {
               const label = ROMAN_TAB_LABELS[tabNumber - 1] ?? String(tabNumber);
-              const target = findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity);
+              const range = getTabRange(tabNumber, expansion.tabCapacity);
+              const canMove = canMoveToRange?.(contextMenu.position, range) ?? false;
               return (
                 <button
                   key={tabNumber}
                   type="button"
                   role="menuitem"
-                  disabled={target === undefined}
+                  disabled={!canMove}
                   onClick={() => {
                     moveItemToTab(contextMenu.position, tabNumber);
                     setContextMenu(undefined);
                   }}
                 >
-                  Banque {label}{target === undefined ? " · pleine" : ""}
+                  Banque {label}{canMove ? "" : " · pleine"}
                 </button>
               );
             })}
