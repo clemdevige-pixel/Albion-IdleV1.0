@@ -212,12 +212,13 @@ export class CombatBridgeAdapter {
     return abilityId;
   }
 
+  /**
+   * Runtime enemy identity is the encounter identity for presentation.
+   * World location is not sufficient because Tower/Dungeon encounters can
+   * advance while the underlying WorldRuntime location remains unchanged.
+   */
   #getCurrentEncounterKey(): string {
-    return [
-      this.#worldRuntime.getActiveZoneDef().defId,
-      this.#worldRuntime.currentSegment + 1,
-      this.#worldRuntime.currentEncounter + 1,
-    ].join(":");
+    return `enemy:${String(this.#combatRuntime.getActiveEnemyId())}`;
   }
 
   #getEquippedWeaponId(): string | undefined {
