@@ -284,6 +284,18 @@ export class CombatPresentationController {
   }
 
   private renderDisplayedEnemy(bridge: GameBridge): void {
+    // Rendering requires an encounter identity that this controller explicitly
+    // adopted. Never fall back to bridge defaults from asynchronous callbacks:
+    // after an encounter boundary those defaults are not enemy authority.
+    if (
+      this.displayedEnemyEncounterKey === undefined
+      || this.displayedEnemyName === undefined
+      || this.displayedEnemyVisualManifestId === undefined
+    ) {
+      this.setEnemyVisible(false);
+      return;
+    }
+
     const presented = getPresentedEnemyHealth(bridge.enemyHealth, bridge.enemyMaxHealth);
     const showEnemy = !(bridge.combatState === "idle" && presented.current <= 0);
     if (!showEnemy) {
@@ -291,8 +303,8 @@ export class CombatPresentationController {
       return;
     }
 
-    const visualManifestId = this.displayedEnemyVisualManifestId ?? bridge.enemyVisualManifestId;
-    const displayedName = this.displayedEnemyName ?? bridge.enemyName;
+    const visualManifestId = this.displayedEnemyVisualManifestId;
+    const displayedName = this.displayedEnemyName;
     this.enemySystem.update({
       visualManifestId,
       isBoss: this.displayedEnemyIsBoss,
@@ -343,9 +355,9 @@ export class CombatPresentationController {
 
   private handlePresentedImpact(event: PresentationDamageEvent): void {
     if (event.target !== "enemy" || event.targetHealthAfter === undefined) return;
+    if (this.displayedEnemyEncounterKey === undefined) return;
     if (
       event.encounterKey !== undefined
-      && this.displayedEnemyEncounterKey !== undefined
       && event.encounterKey !== this.displayedEnemyEncounterKey
     ) return;
     applyPresentedEnemyImpact(event.targetHealthAfter);
