@@ -23,14 +23,21 @@ export function preloadEnemyPresentationAssets(scene: Phaser.Scene): void {
   }
 }
 
-/** Owns enemy asset selection, sizing and the Phaser actor container. */
+/**
+ * Owns enemy asset selection, sizing and the Phaser actor container.
+ *
+ * The container intentionally starts empty. A renderable enemy sprite is only
+ * created after update() receives an authoritative manifest. The default
+ * static-actor manifest is metadata-only here; it must never become a visible
+ * placeholder for an absent enemy.
+ */
 export class EnemyPresentationSystem {
-  public readonly sprite: Phaser.GameObjects.Image;
   public readonly body: Phaser.GameObjects.Container;
   public isBoss = false;
   public hudLayout: EnemyHudLayout;
   private currentProfileId = "";
   private hasAuthoritativeProfile = false;
+  private enemySprite: Phaser.GameObjects.Image | undefined;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -39,15 +46,15 @@ export class EnemyPresentationSystem {
     fallback: StaticActorRenderManifest,
   ) {
     this.hudLayout = fallback.hud;
-    this.sprite = scene.add
-      .image(fallback.offset.x, fallback.offset.y, fallback.textureKey)
-      .setOrigin(fallback.origin.x, fallback.origin.y)
-      .setDisplaySize(fallback.display.width, fallback.display.height)
-      .setVisible(false);
-    // The fallback only satisfies renderer construction. Both the sprite and
-    // its container stay non-presentable until update() adopts an authoritative
-    // enemy and setVisible(true) explicitly publishes it.
-    this.body = scene.add.container(x, y, [this.sprite]).setDepth(5).setVisible(false);
+    this.body = scene.add.container(x, y).setDepth(5).setVisible(false);
+  }
+
+  /** Only valid after update() has adopted an authoritative enemy manifest. */
+  public get sprite(): Phaser.GameObjects.Image {
+    if (this.enemySprite === undefined) {
+      throw new Error("Enemy sprite requested before authoritative presentation");
+    }
+    return this.enemySprite;
   }
 
   public update(state: EnemyPresentationState): void {
@@ -55,42 +62,51 @@ export class EnemyPresentationSystem {
     const manifest = renderManifestRegistry.requireStaticActor(state.visualManifestId);
     this.hasAuthoritativeProfile = true;
 
+    if (this.enemySprite === undefined) {
+      configureStaticActorTexture(this.scene, manifest);
+      this.enemySprite = this.scene.add
+        .image(manifest.offset.x, manifest.offset.y, manifest.textureKey)
+        .setVisible(false);
+      this.body.add(this.enemySprite);
+      applyStaticActorManifest(this.enemySprite, manifest);
+      this.currentProfileId = manifest.id;
+      this.hudLayout = manifest.hud;
+      return;
+    }
+
     if (manifest.id === this.currentProfileId) return;
 
     this.currentProfileId = manifest.id;
     this.hudLayout = manifest.hud;
     configureStaticActorTexture(this.scene, manifest);
-    applyStaticActorManifest(this.sprite, manifest);
+    applyStaticActorManifest(this.enemySprite, manifest);
   }
 
   public setVisible(visible: boolean): void {
     if (!visible) {
-      // Hiding is deliberately idempotent. Never trust cached visibility:
-      // Phaser systems/tweens may have touched the container independently.
-      // Force both layers hidden so the constructor fallback or a stale enemy
-      // cannot leak through an out-of-sync container state.
       this.hasAuthoritativeProfile = false;
       this.currentProfileId = "";
-      this.sprite.setVisible(false);
+      this.enemySprite?.setVisible(false);
       this.body.setVisible(false);
       return;
     }
 
-    if (!this.hasAuthoritativeProfile) {
-      this.sprite.setVisible(false);
+    if (!this.hasAuthoritativeProfile || this.enemySprite === undefined) {
+      this.enemySprite?.setVisible(false);
       this.body.setVisible(false);
       return;
     }
 
-    this.sprite.setVisible(true);
+    this.enemySprite.setVisible(true);
     this.body.setVisible(true);
   }
 
   public clear(): void {
     this.hasAuthoritativeProfile = false;
     this.currentProfileId = "";
-    this.sprite.setVisible(false);
+    this.enemySprite?.setVisible(false);
     this.body.setVisible(false);
     this.body.destroy(true);
+    this.enemySprite = undefined;
   }
 }
