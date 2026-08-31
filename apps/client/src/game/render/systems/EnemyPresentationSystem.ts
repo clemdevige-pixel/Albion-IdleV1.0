@@ -31,6 +31,7 @@ export class EnemyPresentationSystem {
   public hudLayout: EnemyHudLayout;
   private currentProfileId = "";
   private visible = false;
+  private hasAuthoritativeProfile = false;
 
   public constructor(
     private readonly scene: Phaser.Scene,
@@ -43,19 +44,18 @@ export class EnemyPresentationSystem {
       .image(fallback.offset.x, fallback.offset.y, fallback.textureKey)
       .setOrigin(fallback.origin.x, fallback.origin.y)
       .setDisplaySize(fallback.display.width, fallback.display.height);
-    // The fallback exists only so renderer dependencies always have a valid
-    // manifest. It must never be presented as a real enemy before the combat
-    // bridge publishes an authoritative spawn.
+    // The fallback only satisfies renderer construction. Visibility is locked
+    // until update() explicitly adopts an authoritative enemy presentation.
     this.body = scene.add.container(x, y, [this.sprite]).setDepth(5).setVisible(false);
   }
 
   public update(state: EnemyPresentationState): void {
     this.isBoss = state.isBoss;
-    if (state.visualManifestId === this.currentProfileId) return;
+    const manifest = renderManifestRegistry.requireStaticActor(state.visualManifestId);
+    this.hasAuthoritativeProfile = true;
 
-    const manifest = renderManifestRegistry.requireStaticActor(
-      state.visualManifestId,
-    );
+    if (manifest.id === this.currentProfileId) return;
+
     this.currentProfileId = manifest.id;
     this.hudLayout = manifest.hud;
     configureStaticActorTexture(this.scene, manifest);
@@ -63,12 +63,27 @@ export class EnemyPresentationSystem {
   }
 
   public setVisible(visible: boolean): void {
-    if (visible === this.visible) return;
-    this.visible = visible;
-    this.body.setVisible(visible);
+    if (!visible) {
+      // Hiding marks an encounter boundary: drop presentation authority so a
+      // later visibility toggle cannot expose the constructor fallback or a
+      // stale previous enemy without a fresh authoritative update().
+      this.hasAuthoritativeProfile = false;
+      this.currentProfileId = "";
+      if (!this.visible) return;
+      this.visible = false;
+      this.body.setVisible(false);
+      return;
+    }
+
+    if (!this.hasAuthoritativeProfile || this.visible) return;
+    this.visible = true;
+    this.body.setVisible(true);
   }
 
   public clear(): void {
+    this.hasAuthoritativeProfile = false;
+    this.currentProfileId = "";
+    this.visible = false;
     this.body.destroy(true);
   }
 }
