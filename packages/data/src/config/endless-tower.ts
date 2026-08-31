@@ -43,23 +43,47 @@ export const TOWER_REINFORCED_COMBAT_MULTIPLIERS = {
 } as const;
 
 /**
- * Tower-only normalization applied after resolving the canonical Dungeon enemy
- * profile. Dungeon data remains the source of truth; these values never mutate
- * Dungeon balance.
+ * Tower Difficulty 0 normalization applied after resolving the canonical
+ * Dungeon enemy profile. Dungeon data remains the source of truth; these values
+ * never mutate Dungeon balance.
  *
- * IMPORTANT: the final calibration sweep was measured on top of the previous
- * Tower normalization surface. The authored values below therefore compose the
- * previous normalization with the accepted candidate multiplier so live runtime
- * reproduces the actually benchmarked effective combat profiles.
+ * The authored values below compose the previous Tower faction/tier
+ * normalization with the accepted fine-sweep Difficulty 0 multiplier. The
+ * resulting profile is the live Tower baseline before Endless depth scaling.
  *
- * T8 values also include the accepted +5% T8 calibration directly in this
- * matrix, keeping one authored source of truth and no extra runtime layer.
+ * Calibration target: favorable .4 weapon / .3 equipment, early awakening
+ * around strain 10, with the weakest favorable weapon clearing the five-floor
+ * block at roughly 8-10% HP where runtime breakpoints allow it.
  */
 export const TOWER_FACTION_TIER_COMBAT_MULTIPLIER = {
-  keeper: { 4: 1.50, 5: 1.40, 6: 1.48, 7: 1.50, 8: 1.1865 },
-  heretic: { 4: 1.305, 5: 1.3083, 6: 1.3524, 7: 1.4378, 8: 1.1109 },
-  undead: { 4: 1.35, 5: 1.323, 6: 1.395, 7: 1.4536, 8: 1.099825 },
-  morgana: { 4: 1.335, 5: 1.2727, 6: 1.332, 7: 1.5345, 8: 1.08675 },
+  keeper: {
+    4: 1.2165,
+    5: 1.1172,
+    6: 1.07744,
+    7: 1.1595,
+    8: 1.1781945,
+  },
+  heretic: {
+    4: 1.02573,
+    5: 0.8961855,
+    6: 0.9994236,
+    7: 1.0869768,
+    8: 1.1053455,
+  },
+  undead: {
+    4: 1.01385,
+    5: 0.990927,
+    6: 1.019745,
+    7: 1.0494992,
+    8: 1.08882675,
+  },
+  morgana: {
+    4: 1.023945,
+    5: 1.0105238,
+    6: 1.017648,
+    7: 1.0204425,
+    8: 1.08675,
+  },
 } as const satisfies Record<TowerFactionId, Record<TowerTier, number>>;
 
 export interface TowerAuthoredBlockDefinition {
@@ -94,18 +118,12 @@ export interface TowerTrialBlockCombatMultipliers {
 }
 
 /**
- * Trial-block-only calibration layered on the resolved Tower profile.
- * This is keyed by explicit authored block id so the T5 Morgana trial tuning
- * does not leak into later Endless blocks that happen to share faction/tier.
+ * Trial blocks now consume the same calibrated Difficulty 0 baseline as every
+ * later Tower block. No trial-specific combat calibration is layered on top.
  */
 export const TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS: Readonly<
   Record<string, TowerTrialBlockCombatMultipliers | undefined>
-> = {
-  tower_trial_05: {
-    hp: 0.77,
-    damage: 0.91,
-  },
-};
+> = {};
 
 /** Endless generation consumes one complete tier bag per five blocks. */
 export const TOWER_ENDLESS_TIER_BAG = TOWER_TIERS;
@@ -118,8 +136,8 @@ export const TOWER_ENDLESS_FACTION_BAG = TOWER_FACTIONS;
 
 /**
  * Canonical V1 depth multiplier.
- * Floors 1-25 use their authored Dungeon-derived baseline. Each complete
- * five-floor band entered after floor 25 adds +1% to HP, damage and defense.
+ * Floors 1-25 use Difficulty 0. Each complete five-floor band entered after
+ * floor 25 adds +1% to HP, damage and defense.
  */
 export function getTowerDepthDifficultyMultiplier(floor: number): number {
   if (!Number.isSafeInteger(floor) || floor <= 0) {
