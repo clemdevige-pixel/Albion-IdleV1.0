@@ -11,6 +11,7 @@ import type {
   CombatRuntime,
 } from "../../runtime/CombatRuntime";
 import { resolveProjectedSegmentRates } from "../../runtime/projectedRateResolver";
+import { isRuntimePresentationSuppressed } from "../../runtime/RuntimePresentationSuppression.js";
 import type { WorldRuntime } from "../../runtime/WorldRuntime";
 import { syncAbilitiesToBridge } from "../bridgeSync";
 import {
@@ -53,9 +54,15 @@ export class CombatBridgeAdapter {
 
   bindDamageEvents(eventBus: EventBus<DamageEventMap>): () => void {
     const unsubscribeAbility = this.#abilityManager.subscribeAbilityExecuted((event) => {
-      if (event.entityId === this.#heroId) this.#pendingHeroAbilityId = String(event.abilityId);
+      if (event.entityId !== this.#heroId) return;
+      if (isRuntimePresentationSuppressed()) {
+        this.#pendingHeroAbilityId = undefined;
+        return;
+      }
+      this.#pendingHeroAbilityId = String(event.abilityId);
     });
     const unsubscribeHealth = eventBus.subscribe("HealthChanged", (event) => {
+      if (isRuntimePresentationSuppressed()) return;
       if (event.entityId === this.#heroId) {
         this.#bridge.updatePlayerHealth(event.newHealth, event.maxHealth);
       } else {
@@ -63,6 +70,7 @@ export class CombatBridgeAdapter {
       }
     });
     const unsubscribeDamage = eventBus.subscribe("DamageDealt", (event) => {
+      if (isRuntimePresentationSuppressed()) return;
       const target = event.target === this.#heroId ? "player" : "enemy";
       const abilityId = event.source === this.#heroId
         && target === "enemy"
@@ -80,6 +88,7 @@ export class CombatBridgeAdapter {
       );
     });
     const unsubscribeHeal = eventBus.subscribe("HealApplied", (event) => {
+      if (isRuntimePresentationSuppressed()) return;
       if (event.entityId !== this.#heroId || event.amount <= 0) return;
       this.#bridge.addDamageNumber(
         event.amount,
@@ -150,6 +159,8 @@ export class CombatBridgeAdapter {
   }
 
   presentTick(result: CombatDomainTickResult): void {
+    if (isRuntimePresentationSuppressed()) return;
+
     const combatStoppedAtBoundary = result.combatState === "defeat"
       || result.combatState === "walking"
       || (result.combatState === "victory" && this.#combatRuntime.getLoopState() === "paused");
