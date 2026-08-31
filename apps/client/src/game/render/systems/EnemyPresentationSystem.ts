@@ -30,7 +30,6 @@ export class EnemyPresentationSystem {
   public isBoss = false;
   public hudLayout: EnemyHudLayout;
   private currentProfileId = "";
-  private visible = false;
   private hasAuthoritativeProfile = false;
 
   public constructor(
@@ -66,26 +65,23 @@ export class EnemyPresentationSystem {
 
   public setVisible(visible: boolean): void {
     if (!visible) {
-      // Hiding is deliberately idempotent. Never trust the cached visibility:
+      // Hiding is deliberately idempotent. Never trust cached visibility:
       // Phaser systems/tweens may have touched the container independently.
       // Force both layers hidden so the constructor fallback or a stale enemy
       // cannot leak through an out-of-sync container state.
       this.hasAuthoritativeProfile = false;
       this.currentProfileId = "";
-      this.visible = false;
       this.sprite.setVisible(false);
       this.body.setVisible(false);
       return;
     }
 
     if (!this.hasAuthoritativeProfile) {
-      this.visible = false;
       this.sprite.setVisible(false);
       this.body.setVisible(false);
       return;
     }
 
-    this.visible = true;
     this.sprite.setVisible(true);
     this.body.setVisible(true);
   }
@@ -93,7 +89,6 @@ export class EnemyPresentationSystem {
   public clear(): void {
     this.hasAuthoritativeProfile = false;
     this.currentProfileId = "";
-    this.visible = false;
     this.sprite.setVisible(false);
     this.body.setVisible(false);
     this.body.destroy(true);
