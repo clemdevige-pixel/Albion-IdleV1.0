@@ -88,6 +88,25 @@ export const TOWER_TRIAL_BLOCKS = [
   { id: "tower_trial_05", blockIndex: 4, floorStart: 21, floorEnd: 25, tier: 5, factionId: "morgana", majorBoss: true },
 ] as const satisfies readonly TowerAuthoredBlockDefinition[];
 
+export interface TowerTrialBlockCombatMultipliers {
+  readonly hp: number;
+  readonly damage: number;
+}
+
+/**
+ * Trial-block-only calibration layered on the resolved Tower profile.
+ * This is keyed by explicit authored block id so the T5 Morgana trial tuning
+ * does not leak into later Endless blocks that happen to share faction/tier.
+ */
+export const TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS: Readonly<
+  Record<string, TowerTrialBlockCombatMultipliers | undefined>
+> = {
+  tower_trial_05: {
+    hp: 0.77,
+    damage: 0.91,
+  },
+};
+
 /** Endless generation consumes one complete tier bag per five blocks. */
 export const TOWER_ENDLESS_TIER_BAG = TOWER_TIERS;
 
