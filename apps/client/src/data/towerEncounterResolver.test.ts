@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   TOWER_REINFORCED_COMBAT_MULTIPLIERS,
+  TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS,
   getTowerDepthDifficultyMultiplier,
 } from "@game/data";
 import { resolveDungeonCombatProfile } from "./dungeonContentCatalog.js";
@@ -93,12 +94,37 @@ describe("towerEncounterResolver", () => {
     });
   });
 
-  it("uses the authored faction and tier of later trial blocks", () => {
-    expect(resolveTowerEncounter(21, "tower-encounter-seed")).toMatchObject({
+  it("applies the authored T5 Morgana trial calibration without changing defenses", () => {
+    const tower = resolveTowerEncounter(21, "tower-encounter-seed");
+    const baseProfile = resolveDungeonCombatProfile({
+      dungeonDefinitionId: tower.dungeonDefinitionId,
+      encounterIndex: tower.dungeonEncounterIndex,
+      monsterDefinitionId: tower.monsterDefinitionId,
+    });
+    const normalizedProfile = applyTowerFactionCombatNormalization(
+      { factionId: tower.floorDefinition.block.factionId, tier: tower.floorDefinition.block.tier },
+      baseProfile,
+    );
+    const multipliers = TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS[tower.floorDefinition.block.id];
+
+    expect(tower).toMatchObject({
       status: "resolved",
       dungeonDefinitionId: "dungeon_morgana_t5",
       dungeonEncounterIndex: 0,
-      floorDefinition: { block: { tier: 5, factionId: "morgana" } },
+      floorDefinition: {
+        floor: 21,
+        block: { id: "tower_trial_05", tier: 5, factionId: "morgana" },
+      },
+    });
+    expect(multipliers).toEqual({ hp: 0.77, damage: 0.91 });
+    expect(multipliers).toBeDefined();
+    if (multipliers === undefined) return;
+    expect(tower.combatProfile).toEqual({
+      hp: Math.round(normalizedProfile.hp * multipliers.hp),
+      damage: Math.round(normalizedProfile.damage * multipliers.damage),
+      attackSpeed: normalizedProfile.attackSpeed,
+      armor: normalizedProfile.armor,
+      magicResistance: normalizedProfile.magicResistance,
     });
   });
 
