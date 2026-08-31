@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
@@ -44,6 +44,28 @@ function matchesBankFilter(slot: InventorySlotVM, filter: BankFilter): boolean {
   return getItemDefinition(itemId) === undefined && !isSpecialBankItem(itemId);
 }
 
+export function findFirstEmptyBankTabPosition(
+  slots: readonly InventorySlotVM[],
+  tabNumber: number,
+  tabCapacity: number,
+): number | undefined {
+  if (!Number.isInteger(tabNumber) || tabNumber < 1 || !Number.isInteger(tabCapacity) || tabCapacity <= 0) {
+    return undefined;
+  }
+  const start = (tabNumber - 1) * tabCapacity;
+  const end = start + tabCapacity;
+  return slots.find((slot) => (
+    slot.position >= start
+    && slot.position < end
+    && slot.itemId === undefined
+  ))?.position;
+}
+
+function readDraggedBankPosition(event: DragEvent<HTMLElement>): number | undefined {
+  const parsed = Number(event.dataTransfer.getData("text/plain"));
+  return Number.isInteger(parsed) ? parsed : undefined;
+}
+
 export function BankModule({ onMove, onTransferToInventory, onSort }: BankModuleProps): JSX.Element {
   const bank = useBankData();
   const services = useGameServices();
@@ -54,6 +76,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
   );
   const [activeFilter, setActiveFilter] = useState<BankFilter>("all");
   const [activeBankTab, setActiveBankTab] = useState(1);
+  const [dragTargetTab, setDragTargetTab] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (activeBankTab > expansion.unlockedTabCount) {
@@ -74,22 +97,53 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
   const filteredSlots = activeTabSlots.filter((slot) => matchesBankFilter(slot, activeFilter));
   const activeLabel = ROMAN_TAB_LABELS[activeBankTab - 1] ?? String(activeBankTab);
 
+  const moveDraggedItemToTab = (event: DragEvent<HTMLButtonElement>, tabNumber: number): void => {
+    event.preventDefault();
+    setDragTargetTab(undefined);
+    if (onMove === undefined || tabNumber === activeBankTab) return;
+
+    const from = readDraggedBankPosition(event);
+    if (from === undefined || bank.slots.find((slot) => slot.position === from)?.itemId === undefined) return;
+
+    const to = findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity);
+    if (to === undefined) return;
+
+    onMove(from, to);
+    setActiveBankTab(tabNumber);
+  };
+
   return (
     <div className="storage-module">
       {expansion.unlockedTabCount > 1 && (
         <div className="storage-module__bank-tabs" role="tablist" aria-label="Onglets de banque">
-          {Array.from({ length: expansion.unlockedTabCount }, (_, index) => index + 1).map((tabNumber) => (
-            <button
-              key={tabNumber}
-              type="button"
-              role="tab"
-              aria-selected={activeBankTab === tabNumber}
-              className={activeBankTab === tabNumber ? "is-active" : ""}
-              onClick={() => { setActiveBankTab(tabNumber); }}
-            >
-              Banque {ROMAN_TAB_LABELS[tabNumber - 1] ?? String(tabNumber)}
-            </button>
-          ))}
+          {Array.from({ length: expansion.unlockedTabCount }, (_, index) => index + 1).map((tabNumber) => {
+            const label = ROMAN_TAB_LABELS[tabNumber - 1] ?? String(tabNumber);
+            const canReceiveDrop = tabNumber !== activeBankTab
+              && findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity) !== undefined;
+            return (
+              <button
+                key={tabNumber}
+                type="button"
+                role="tab"
+                aria-selected={activeBankTab === tabNumber}
+                className={`${activeBankTab === tabNumber ? "is-active" : ""}${dragTargetTab === tabNumber ? " is-drop-target" : ""}`}
+                onClick={() => { setActiveBankTab(tabNumber); }}
+                onDragOver={(event) => {
+                  if (!canReceiveDrop || onMove === undefined) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                  setDragTargetTab(tabNumber);
+                }}
+                onDragLeave={() => {
+                  if (dragTargetTab === tabNumber) setDragTargetTab(undefined);
+                }}
+                onDrop={(event) => { moveDraggedItemToTab(event, tabNumber); }}
+                title={canReceiveDrop ? `Déposer ici pour déplacer vers Banque ${label}` : undefined}
+              >
+                Banque {label}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -158,7 +212,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
       </section>
 
       <p className="storage-module__hint">
-        Double-clic : vers inventaire · glissez-déposez pour organiser
+        Double-clic : vers inventaire · glissez-déposez pour organiser · déposez sur un onglet pour déplacer
         {yieldTrackingUnlocked ? " · étoile : suivre une ressource." : "."}
       </p>
     </div>
