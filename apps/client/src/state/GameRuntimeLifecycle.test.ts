@@ -81,20 +81,21 @@ describe("initial runtime save loading", () => {
 });
 
 describe("runtime visibility reconciliation", () => {
-  it("resolves the exact hidden window and refreshes presentation before save", () => {
+  it("replays missed fixed-step ticks before presentation sync and save", () => {
     let visibilityState: DocumentVisibilityState = "visible";
     let now = 1_000;
+    const tickRuntime = vi.fn();
     const stopRuntime = vi.fn();
     const startRuntime = vi.fn();
-    const resolveBackgroundElapsed = vi.fn();
     const syncPresentation = vi.fn();
     const saveGame = vi.fn();
     const handleVisibilityChange = createRuntimeVisibilityHandler({
       getVisibilityState: () => visibilityState,
       now: () => now,
+      tickIntervalMs: 500,
+      tickRuntime,
       stopRuntime,
       startRuntime,
-      resolveBackgroundElapsed,
       syncPresentation,
       saveGame,
     });
@@ -105,25 +106,25 @@ describe("runtime visibility reconciliation", () => {
     handleVisibilityChange();
 
     expect(stopRuntime).toHaveBeenCalledOnce();
-    expect(resolveBackgroundElapsed).not.toHaveBeenCalled();
+    expect(tickRuntime).not.toHaveBeenCalled();
     expect(syncPresentation).not.toHaveBeenCalled();
 
     now = 6_000;
     visibilityState = "visible";
     handleVisibilityChange();
 
-    expect(resolveBackgroundElapsed).toHaveBeenCalledOnce();
-    expect(resolveBackgroundElapsed).toHaveBeenCalledWith(5_000);
+    expect(tickRuntime).toHaveBeenCalledTimes(10);
     expect(syncPresentation).toHaveBeenCalledOnce();
     expect(saveGame).toHaveBeenCalledOnce();
     expect(startRuntime).toHaveBeenCalledOnce();
 
-    const [resolveOrder] = resolveBackgroundElapsed.mock.invocationCallOrder;
+    const tickOrders = tickRuntime.mock.invocationCallOrder;
     const [syncOrder] = syncPresentation.mock.invocationCallOrder;
     const [saveOrder] = saveGame.mock.invocationCallOrder;
     const [startOrder] = startRuntime.mock.invocationCallOrder;
+    const lastTickOrder = tickOrders.at(-1);
     if (
-      resolveOrder === undefined
+      lastTickOrder === undefined
       || syncOrder === undefined
       || saveOrder === undefined
       || startOrder === undefined
@@ -131,12 +132,44 @@ describe("runtime visibility reconciliation", () => {
       throw new Error("Expected visibility reconciliation calls to be recorded");
     }
 
-    expect(resolveOrder).toBeLessThan(syncOrder);
+    expect(lastTickOrder).toBeLessThan(syncOrder);
     expect(syncOrder).toBeLessThan(saveOrder);
     expect(saveOrder).toBeLessThan(startOrder);
   });
 
-  it("restarts the live runtime even when passive resolution throws", () => {
+  it("carries sub-tick hidden time across visibility sessions", () => {
+    let visibilityState: DocumentVisibilityState = "visible";
+    let now = 0;
+    const tickRuntime = vi.fn();
+    const handleVisibilityChange = createRuntimeVisibilityHandler({
+      getVisibilityState: () => visibilityState,
+      now: () => now,
+      tickIntervalMs: 500,
+      tickRuntime,
+      stopRuntime: vi.fn(),
+      startRuntime: vi.fn(),
+      syncPresentation: vi.fn(),
+      saveGame: vi.fn(),
+    });
+
+    visibilityState = "hidden";
+    handleVisibilityChange();
+    now = 300;
+    visibilityState = "visible";
+    handleVisibilityChange();
+    expect(tickRuntime).not.toHaveBeenCalled();
+
+    now = 1_000;
+    visibilityState = "hidden";
+    handleVisibilityChange();
+    now = 1_250;
+    visibilityState = "visible";
+    handleVisibilityChange();
+
+    expect(tickRuntime).toHaveBeenCalledOnce();
+  });
+
+  it("restarts the live runtime even when catch-up throws", () => {
     let visibilityState: DocumentVisibilityState = "hidden";
     let now = 100;
     const startRuntime = vi.fn();
@@ -144,9 +177,10 @@ describe("runtime visibility reconciliation", () => {
     const handleVisibilityChange = createRuntimeVisibilityHandler({
       getVisibilityState: () => visibilityState,
       now: () => now,
+      tickIntervalMs: 500,
+      tickRuntime: () => { throw new Error("catch-up failed"); },
       stopRuntime: vi.fn(),
       startRuntime,
-      resolveBackgroundElapsed: () => { throw new Error("background failed"); },
       syncPresentation,
       saveGame: vi.fn(),
     });
@@ -155,9 +189,22 @@ describe("runtime visibility reconciliation", () => {
     now = 1_100;
     visibilityState = "visible";
 
-    expect(() => handleVisibilityChange()).toThrow("background failed");
+    expect(() => handleVisibilityChange()).toThrow("catch-up failed");
     expect(syncPresentation).not.toHaveBeenCalled();
     expect(startRuntime).toHaveBeenCalledOnce();
+  });
+
+  it("rejects invalid fixed-step intervals", () => {
+    expect(() => createRuntimeVisibilityHandler({
+      getVisibilityState: () => "visible",
+      now: () => 0,
+      tickIntervalMs: 0,
+      tickRuntime: vi.fn(),
+      stopRuntime: vi.fn(),
+      startRuntime: vi.fn(),
+      syncPresentation: vi.fn(),
+      saveGame: vi.fn(),
+    })).toThrow("Runtime tick interval must be a positive finite number");
   });
 });
 
