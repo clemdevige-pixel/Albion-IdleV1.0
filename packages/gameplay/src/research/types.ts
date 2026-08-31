@@ -68,5 +68,8 @@ export interface ResearchRequirementPort<
 
 export interface ResearchPaymentPort {
   /** Must validate and consume the complete cost atomically. */
-  tryConsumeResearchCost(cost: ResearchCostDefinition): boolean;
+  tryConsumeResearchCost(
+    cost: ResearchCostDefinition,
+    definition: ResearchDefinition,
+  ): boolean;
 }
