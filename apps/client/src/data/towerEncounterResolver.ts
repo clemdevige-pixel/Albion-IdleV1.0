@@ -1,5 +1,5 @@
 import {
-  TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER,
+  TOWER_BASELINE_COMBAT_MULTIPLIER,
   TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX,
   TOWER_REINFORCED_COMBAT_MULTIPLIERS,
   TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS,
@@ -12,7 +12,6 @@ import {
   DUNGEON_DEFINITIONS,
   resolveDungeonCombatProfile,
 } from "./dungeonContentCatalog.js";
-import { applyTowerFactionCombatNormalization } from "./towerCombatNormalization.js";
 import type { AuthoredEnemyCombatProfile } from "../runtime/combatEntityFactory.js";
 
 export interface ResolvedTowerEncounter {
@@ -55,13 +54,12 @@ function applyTowerRoleCombatTuning(
   };
 }
 
-function applyTowerDifficultyZeroCalibration(
+function applyTowerBaselineCombatTuning(
   tier: TowerTier,
   factionId: TowerFactionId,
   profile: AuthoredEnemyCombatProfile,
 ): AuthoredEnemyCombatProfile {
-  const multiplier = TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER[factionId][tier];
-  if (multiplier === 1) return profile;
+  const multiplier = TOWER_BASELINE_COMBAT_MULTIPLIER[factionId][tier];
 
   return {
     hp: Math.max(1, Math.round(profile.hp * multiplier)),
@@ -107,9 +105,9 @@ function applyTowerDepthCombatScaling(
 /**
  * Canonical Tower Difficulty 0 encounter.
  *
- * Dungeon content stays canonical. Tower applies faction/tier normalization,
- * floor-role tuning, then the accepted Difficulty 0 calibration measured by the
- * fine sweep. Trial-specific and Endless depth tuning are intentionally absent.
+ * Dungeon content stays canonical. Tower applies floor-role tuning, then one
+ * authored faction x tier baseline multiplier. Trial-specific and Endless depth
+ * tuning are intentionally absent.
  */
 export function resolveTowerDifficultyZeroEncounter(
   tier: TowerTier,
@@ -140,11 +138,7 @@ export function resolveTowerDifficultyZeroEncounter(
     encounterIndex: dungeonEncounterIndex,
     monsterDefinitionId: encounter.monsterDefinitionId,
   });
-  const normalizedProfile = applyTowerFactionCombatNormalization(
-    { factionId, tier },
-    baseCombatProfile,
-  );
-  const roleTunedProfile = applyTowerRoleCombatTuning(indexInBlock === 2, normalizedProfile);
+  const roleTunedProfile = applyTowerRoleCombatTuning(indexInBlock === 2, baseCombatProfile);
 
   return {
     tier,
@@ -155,7 +149,7 @@ export function resolveTowerDifficultyZeroEncounter(
     encounterId: encounter.id,
     encounterKind: encounter.kind,
     monsterDefinitionId: encounter.monsterDefinitionId,
-    combatProfile: applyTowerDifficultyZeroCalibration(tier, factionId, roleTunedProfile),
+    combatProfile: applyTowerBaselineCombatTuning(tier, factionId, roleTunedProfile),
   };
 }
 
