@@ -1,6 +1,10 @@
 import type { EntityId } from "@game/core";
-import type { InventoryManager } from "@game/gameplay";
-import { getEnchantmentLevel } from "@game/gameplay";
+import type { InventoryEntry, InventoryManager } from "@game/gameplay";
+import {
+  areEntriesStackCompatible,
+  effectiveMaxStack,
+  getEnchantmentLevel,
+} from "@game/gameplay";
 
 export type StorageKind = "inventory" | "bank";
 
@@ -13,6 +17,10 @@ export interface StorageRange {
   readonly start: number;
   readonly length: number;
 }
+
+type RangeDestination =
+  | { readonly kind: "merge"; readonly position: number }
+  | { readonly kind: "empty"; readonly position: number };
 
 export class StorageRuntime {
   public constructor(
@@ -60,6 +68,35 @@ export class StorageRuntime {
     return { ok: false, reason: "swap_failed" };
   }
 
+  public canMoveWithinRange(storage: StorageKind, from: number, range: StorageRange): boolean {
+    const ownerId = this.owner(storage);
+    const source = this.inventoryManager.getSlot(ownerId, from);
+    if (!source.ok || source.value.entry === undefined) return false;
+    return this.#findRangeDestination(ownerId, source.value.entry, range, from) !== undefined;
+  }
+
+  public moveWithinRange(
+    storage: StorageKind,
+    from: number,
+    range: StorageRange,
+  ): StorageMutationResult {
+    const ownerId = this.owner(storage);
+    const source = this.inventoryManager.getSlot(ownerId, from);
+    if (!source.ok) return { ok: false, reason: source.reason };
+    const entry = source.value.entry;
+    if (entry === undefined) return { ok: false, reason: "entry_not_found" };
+
+    const destination = this.#findRangeDestination(ownerId, entry, range, from);
+    if (destination === undefined) return { ok: false, reason: "inventory_full" };
+    if (destination.kind === "empty") {
+      const moved = this.inventoryManager.moveEntry(ownerId, from, destination.position);
+      return moved.ok ? { ok: true } : { ok: false, reason: moved.reason };
+    }
+
+    const merged = this.inventoryManager.mergeStacks(ownerId, from, destination.position);
+    return merged.ok ? { ok: true } : { ok: false, reason: merged.reason };
+  }
+
   public transfer(
     fromStorage: StorageKind,
     from: number,
@@ -105,6 +142,70 @@ export class StorageRuntime {
     return { ok: false, reason: inserted.reason };
   }
 
+  public canTransferToRange(
+    fromStorage: StorageKind,
+    from: number,
+    toStorage: StorageKind,
+    range: StorageRange,
+  ): boolean {
+    if (fromStorage === toStorage) return this.canMoveWithinRange(fromStorage, from, range);
+    const source = this.inventoryManager.getSlot(this.owner(fromStorage), from);
+    if (!source.ok || source.value.entry === undefined) return false;
+    return this.#findRangeDestination(
+      this.owner(toStorage),
+      source.value.entry,
+      range,
+    ) !== undefined;
+  }
+
+  public transferToRange(
+    fromStorage: StorageKind,
+    from: number,
+    toStorage: StorageKind,
+    range: StorageRange,
+  ): StorageMutationResult {
+    if (fromStorage === toStorage) return this.moveWithinRange(fromStorage, from, range);
+
+    const sourceId = this.owner(fromStorage);
+    const targetId = this.owner(toStorage);
+    const source = this.inventoryManager.getSlot(sourceId, from);
+    if (!source.ok) return { ok: false, reason: source.reason };
+    const entry = source.value.entry;
+    if (entry === undefined) return { ok: false, reason: "entry_not_found" };
+
+    const destination = this.#findRangeDestination(targetId, entry, range);
+    if (destination === undefined) return { ok: false, reason: "inventory_full" };
+    if (destination.kind === "empty") {
+      return this.transfer(fromStorage, from, toStorage, destination.position);
+    }
+
+    const removedSource = this.inventoryManager.removeEntryAt(sourceId, from);
+    if (!removedSource.ok) return { ok: false, reason: removedSource.reason };
+    const removedTarget = this.inventoryManager.removeEntryAt(targetId, destination.position);
+    if (!removedTarget.ok) {
+      this.inventoryManager.insertEntry(sourceId, removedSource.value, from);
+      return { ok: false, reason: removedTarget.reason };
+    }
+
+    const mergedEntry: InventoryEntry = {
+      ...removedTarget.value,
+      quantity: removedTarget.value.quantity + removedSource.value.quantity,
+    };
+    const inserted = this.inventoryManager.insertEntry(targetId, mergedEntry, destination.position);
+    if (inserted.ok) return { ok: true };
+
+    const targetRollback = this.inventoryManager.insertEntry(
+      targetId,
+      removedTarget.value,
+      destination.position,
+    );
+    const sourceRollback = this.inventoryManager.insertEntry(sourceId, removedSource.value, from);
+    if (!targetRollback.ok || !sourceRollback.ok) {
+      throw new Error("Storage range transfer rollback failed");
+    }
+    return { ok: false, reason: inserted.reason };
+  }
+
   public sort(storage: StorageKind, range?: StorageRange): StorageMutationResult {
     const ownerId = this.owner(storage);
     const capacity = this.inventoryManager.getCapacity(ownerId);
@@ -140,6 +241,48 @@ export class StorageRuntime {
       this.inventoryManager.insertEntry(ownerId, entry, start + index);
     });
     return { ok: true };
+  }
+
+  #findRangeDestination(
+    ownerId: EntityId,
+    entry: InventoryEntry,
+    range: StorageRange,
+    skipPosition?: number,
+  ): RangeDestination | undefined {
+    const capacity = this.inventoryManager.getCapacity(ownerId);
+    if (
+      !Number.isInteger(range.start)
+      || !Number.isInteger(range.length)
+      || range.start < 0
+      || range.length <= 0
+      || range.start >= capacity
+    ) return undefined;
+
+    const end = Math.min(capacity, range.start + range.length);
+    const maxStack = effectiveMaxStack(this.inventoryManager.stackInfoResolver?.(entry.itemId));
+    if (maxStack > 1) {
+      for (let position = range.start; position < end; position += 1) {
+        if (position === skipPosition) continue;
+        const target = this.inventoryManager.getSlot(ownerId, position);
+        const targetEntry = target.ok ? target.value.entry : undefined;
+        if (
+          targetEntry !== undefined
+          && areEntriesStackCompatible(targetEntry, entry)
+          && targetEntry.quantity + entry.quantity <= maxStack
+        ) {
+          return { kind: "merge", position };
+        }
+      }
+    }
+
+    for (let position = range.start; position < end; position += 1) {
+      if (position === skipPosition) continue;
+      const target = this.inventoryManager.getSlot(ownerId, position);
+      if (target.ok && target.value.entry === undefined) {
+        return { kind: "empty", position };
+      }
+    }
+    return undefined;
   }
 
   private owner(storage: StorageKind): EntityId {
