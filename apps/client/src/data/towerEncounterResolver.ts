@@ -3,6 +3,8 @@ import {
   TOWER_REINFORCED_COMBAT_MULTIPLIERS,
   TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS,
   getTowerDepthDifficultyMultiplier,
+  type TowerFactionId,
+  type TowerTier,
 } from "@game/data";
 import { getTowerFloorDefinition, type TowerFloorDefinition } from "@game/gameplay";
 import {
@@ -23,11 +25,23 @@ export interface ResolvedTowerEncounter {
   readonly combatProfile: AuthoredEnemyCombatProfile;
 }
 
+export interface ResolvedTowerDifficultyZeroEncounter {
+  readonly tier: TowerTier;
+  readonly factionId: TowerFactionId;
+  readonly indexInBlock: number;
+  readonly dungeonDefinitionId: string;
+  readonly dungeonEncounterIndex: number;
+  readonly encounterId: string;
+  readonly encounterKind: "normal" | "elite" | "boss";
+  readonly monsterDefinitionId: string;
+  readonly combatProfile: AuthoredEnemyCombatProfile;
+}
+
 function applyTowerRoleCombatTuning(
-  floorDefinition: TowerFloorDefinition,
+  reinforced: boolean,
   profile: AuthoredEnemyCombatProfile,
 ): AuthoredEnemyCombatProfile {
-  if (floorDefinition.role !== "reinforced") return profile;
+  if (!reinforced) return profile;
 
   return {
     hp: Math.round(profile.hp * TOWER_REINFORCED_COMBAT_MULTIPLIERS.hp),
@@ -73,32 +87,28 @@ function applyTowerDepthCombatScaling(
 }
 
 /**
- * Resolves a Tower floor from existing faction Dungeon content.
+ * Canonical Tower difficulty-zero encounter.
  *
- * Dungeon rosters and base combat stats remain canonical. Tower then applies
- * faction/tier normalization, floor-role tuning, optional authored trial-block
- * tuning and depth scaling in that order, without mutating Dungeon balance.
+ * This is the shared base curve before any authored trial-block calibration and
+ * before Endless depth scaling. It keeps Dungeon content canonical, applies the
+ * live Tower faction/tier normalization, and preserves the five-floor Tower role
+ * structure (normal, normal, reinforced, elite, boss).
  */
-export function resolveTowerEncounter(
-  floor: number,
-  towerSeed: string,
-): ResolvedTowerEncounter {
-  const floorDefinition = getTowerFloorDefinition(floor, towerSeed);
-  const dungeonEncounterIndex = TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX[
-    floorDefinition.indexInBlock
-  ];
+export function resolveTowerDifficultyZeroEncounter(
+  tier: TowerTier,
+  factionId: TowerFactionId,
+  indexInBlock: number,
+): ResolvedTowerDifficultyZeroEncounter {
+  const dungeonEncounterIndex = TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX[indexInBlock];
   if (dungeonEncounterIndex === undefined) {
-    throw new Error(`Missing Tower encounter mapping for floor index ${String(floorDefinition.indexInBlock)}`);
+    throw new Error(`Missing Tower encounter mapping for floor index ${String(indexInBlock)}`);
   }
 
   const dungeon = DUNGEON_DEFINITIONS.find((definition) => (
-    definition.tier === floorDefinition.block.tier
-    && definition.faction.toLowerCase() === floorDefinition.block.factionId
+    definition.tier === tier && definition.faction.toLowerCase() === factionId
   ));
   if (dungeon === undefined) {
-    throw new Error(
-      `Missing faction Dungeon for Tower ${floorDefinition.block.factionId} T${String(floorDefinition.block.tier)}`,
-    );
+    throw new Error(`Missing faction Dungeon for Tower ${factionId} T${String(tier)}`);
   }
 
   const encounter = dungeon.encounters[dungeonEncounterIndex];
@@ -114,23 +124,53 @@ export function resolveTowerEncounter(
     monsterDefinitionId: encounter.monsterDefinitionId,
   });
   const normalizedProfile = applyTowerFactionCombatNormalization(
-    { factionId: floorDefinition.block.factionId, tier: floorDefinition.block.tier },
+    { factionId, tier },
     baseCombatProfile,
-  );
-  const roleTunedProfile = applyTowerRoleCombatTuning(floorDefinition, normalizedProfile);
-  const trialBlockTunedProfile = applyTowerTrialBlockCombatTuning(
-    floorDefinition,
-    roleTunedProfile,
   );
 
   return {
-    status: "resolved",
-    floorDefinition,
+    tier,
+    factionId,
+    indexInBlock,
     dungeonDefinitionId: dungeon.id,
     dungeonEncounterIndex,
     encounterId: encounter.id,
     encounterKind: encounter.kind,
     monsterDefinitionId: encounter.monsterDefinitionId,
+    combatProfile: applyTowerRoleCombatTuning(indexInBlock === 2, normalizedProfile),
+  };
+}
+
+/**
+ * Resolves a Tower floor from existing faction Dungeon content.
+ *
+ * Dungeon rosters and base combat stats remain canonical. Tower then applies
+ * faction/tier normalization, floor-role tuning, optional authored trial-block
+ * tuning and depth scaling in that order, without mutating Dungeon balance.
+ */
+export function resolveTowerEncounter(
+  floor: number,
+  towerSeed: string,
+): ResolvedTowerEncounter {
+  const floorDefinition = getTowerFloorDefinition(floor, towerSeed);
+  const baseEncounter = resolveTowerDifficultyZeroEncounter(
+    floorDefinition.block.tier,
+    floorDefinition.block.factionId,
+    floorDefinition.indexInBlock,
+  );
+  const trialBlockTunedProfile = applyTowerTrialBlockCombatTuning(
+    floorDefinition,
+    baseEncounter.combatProfile,
+  );
+
+  return {
+    status: "resolved",
+    floorDefinition,
+    dungeonDefinitionId: baseEncounter.dungeonDefinitionId,
+    dungeonEncounterIndex: baseEncounter.dungeonEncounterIndex,
+    encounterId: baseEncounter.encounterId,
+    encounterKind: baseEncounter.encounterKind,
+    monsterDefinitionId: baseEncounter.monsterDefinitionId,
     combatProfile: applyTowerDepthCombatScaling(floorDefinition, trialBlockTunedProfile),
   };
 }
