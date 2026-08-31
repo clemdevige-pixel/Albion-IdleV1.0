@@ -1,3 +1,5 @@
+import { isRuntimePresentationSuppressed } from "./RuntimePresentationSuppression.js";
+
 export interface GameRuntimeTickControllerDependencies {
   readonly tickIntervalMs: number;
   readonly deltaSeconds: number;
@@ -24,22 +26,32 @@ export class GameRuntimeTickController {
   }
 
   tick(): void {
+    const presentationSuppressed = isRuntimePresentationSuppressed();
     const tick = this.#dependencies.advanceTick();
-    if (this.#dependencies.tickConsumables(this.#dependencies.deltaSeconds)) {
+    const consumableChanged = this.#dependencies.tickConsumables(this.#dependencies.deltaSeconds);
+    if (consumableChanged && !presentationSuppressed) {
       this.#dependencies.syncConsumables();
     }
     this.#dependencies.tickProduction(tick);
-    this.#dependencies.syncActiveProduction();
+    if (!presentationSuppressed) {
+      this.#dependencies.syncActiveProduction();
+    }
     this.#dependencies.tickParallelProgression(this.#dependencies.tickIntervalMs);
 
     if (this.#dependencies.isHeroGathering()) {
-      this.#dependencies.presentGatheringState();
+      if (!presentationSuppressed) {
+        this.#dependencies.presentGatheringState();
+      }
       return;
     }
 
-    this.#dependencies.syncProjectedSegmentRates();
+    if (!presentationSuppressed) {
+      this.#dependencies.syncProjectedSegmentRates();
+    }
     this.#elapsedMilliseconds += this.#dependencies.tickIntervalMs;
-    this.#dependencies.updateZoneElapsed(this.#elapsedMilliseconds / 1000);
+    if (!presentationSuppressed) {
+      this.#dependencies.updateZoneElapsed(this.#elapsedMilliseconds / 1000);
+    }
     this.#dependencies.tickCombat(this.#dependencies.deltaSeconds, tick);
   }
 }
