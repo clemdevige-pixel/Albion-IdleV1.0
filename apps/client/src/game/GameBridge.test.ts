@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { GameBridge } from "./GameBridge";
+import {
+  GameBridge,
+  TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
+} from "./GameBridge";
 
 describe("GameBridge enemy presentation snapshot", () => {
   it("publishes encounter identity and enemy health as one snapshot", () => {
@@ -52,6 +55,36 @@ describe("GameBridge enemy presentation snapshot", () => {
     });
 
     bridge.clearEnemyPresentation();
+
+    expect(bridge.enemyEncounterKey).toBe("");
+    expect(bridge.enemyName).toBe("");
+    expect(bridge.enemyHealth).toBe(0);
+    expect(bridge.enemyMaxHealth).toBe(0);
+  });
+
+  it("never promotes the technical fallback to an authoritative enemy", () => {
+    const bridge = new GameBridge();
+
+    bridge.setEnemySnapshot({
+      encounterKey: "encounter:transition",
+      name: "Transient enemy",
+      visualManifestId: TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
+      currentHealth: 100,
+      maxHealth: 100,
+    });
+
+    expect(bridge.enemyEncounterKey).toBe("");
+    expect(bridge.enemyName).toBe("");
+    expect(bridge.enemyHealth).toBe(0);
+    expect(bridge.enemyMaxHealth).toBe(0);
+    expect(bridge.enemyVisualManifestId).toBe(TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID);
+  });
+
+  it("rejects the technical fallback through the legacy split presentation path", () => {
+    const bridge = new GameBridge();
+
+    bridge.updateEnemyHealth(100, 100);
+    bridge.setEnemyPresentation("Transient enemy", TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID);
 
     expect(bridge.enemyEncounterKey).toBe("");
     expect(bridge.enemyName).toBe("");
