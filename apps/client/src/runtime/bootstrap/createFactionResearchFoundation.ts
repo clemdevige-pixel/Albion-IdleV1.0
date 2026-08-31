@@ -56,7 +56,10 @@ export function createFactionResearchFoundation(
   const ensureInventoryMirror = (): void => {
     for (const definition of relicService.getDefinitions()) {
       const state = relicService.getProgress(definition.id)?.state;
-      if (state === undefined || state === "unobtained") continue;
+      // Acquisition creates the physical item while the Relic is broken. Once
+      // charged, a missing item may be intentional because its analysis
+      // Research consumed it; never rematerialize that spent object.
+      if (state !== "broken") continue;
       if (!relicInventoryPort.hasItem(definition)) relicInventoryPort.grantItem(definition);
     }
   };
