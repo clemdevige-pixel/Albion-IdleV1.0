@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { RuntimeLifecycle } from "../runtime/RuntimeLifecycle";
 import type { RuntimePersistence } from "../runtime/RuntimePersistence";
 import { runDevSandboxPostLoadAdjustment } from "../runtime/devSandboxPostLoad.js";
+import { runWithRuntimePresentationSuppressed } from "../runtime/RuntimePresentationSuppression.js";
 import type { GameBridge } from "../game/GameBridge";
 import type { GameServices } from "./GameServices";
 
@@ -106,10 +107,10 @@ export function loadInitialRuntimeSave(
  * Browser timers are intentionally stopped while hidden because browsers may
  * throttle them unpredictably. A hidden tab is still an active game session,
  * though: when it becomes visible again we replay the exact number of missed
- * authoritative fixed-step runtime ticks. This advances combat and passive
- * systems through the same runtime path they use while visible, without a
- * second background simulation model or browser-timer dependence.
+ * authoritative fixed-step runtime ticks.
  *
+ * Catch-up runs through the normal domain runtime with transient presentation
+ * suppressed, then performs one authoritative presentation resync and save.
  * Offline SaveProvider resolution remains reserved for real reloads and
  * closed-page sessions during save loading.
  */
@@ -140,9 +141,11 @@ export function createRuntimeVisibilityHandler(
       const missedTicks = Math.floor(carryElapsedMs / dependencies.tickIntervalMs);
       carryElapsedMs -= missedTicks * dependencies.tickIntervalMs;
 
-      for (let index = 0; index < missedTicks; index += 1) {
-        dependencies.tickRuntime();
-      }
+      runWithRuntimePresentationSuppressed(() => {
+        for (let index = 0; index < missedTicks; index += 1) {
+          dependencies.tickRuntime();
+        }
+      });
 
       dependencies.syncPresentation();
       dependencies.saveGame();
