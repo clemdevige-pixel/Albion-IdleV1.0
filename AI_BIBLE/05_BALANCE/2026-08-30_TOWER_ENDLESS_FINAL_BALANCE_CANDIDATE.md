@@ -1,6 +1,6 @@
 # Tower Endless — final balance baseline (2026-08-30)
 
-Status: **authored live on `agent/albion-idle-development`; final live validation pending**.
+Status: **authored live on `agent/albion-idle-development`; single-baseline refactor pending final benchmark confirmation**.
 
 This file is the source of truth for the Tower Endless balance pass. The implementation must match this document; do not reintroduce benchmark-only tuning layers.
 
@@ -13,18 +13,28 @@ This file is the source of truth for the Tower Endless balance pass. The impleme
 - Keep small faction difficulty variance without faction walls.
 - No per-tier weapon exceptions. Weapon kits remain tier-agnostic and data-driven.
 
-## Tower faction × tier normalization — authored live
+## Canonical Tower pipeline
 
-The final T8 +5% calibration is baked directly into the T8 values below. There is no second runtime multiplier.
+`Dungeon profile -> floor-role tuning -> Tower baseline -> Endless depth scaling`
+
+There is exactly one authored faction × tier baseline matrix. The former separate normalization and Difficulty 0 calibration layers are retired.
+
+## Tower baseline — authored live
 
 | Faction | T4 | T5 | T6 | T7 | T8 |
 |---|---:|---:|---:|---:|---:|
-| Keeper | 1.50 | 1.40 | 1.48 | 1.50 | 1.1865 |
-| Heretic | 1.45 | 1.47 | 1.47 | 1.58 | 1.2075 |
-| Undead | 1.50 | 1.47 | 1.55 | 1.58 | 1.2075 |
-| Morgana | 1.50 | 1.43 | 1.48 | 1.65 | 1.2075 |
+| Keeper | 1.2165 | 1.1172 | 1.07744 | 1.1595 | 1.1781945 |
+| Heretic | 1.02573 | 0.8961855 | 0.9994236 | 1.0869768 | 1.1053455 |
+| Undead | 1.01385 | 0.990927 | 1.019745 | 1.0494992 | 1.08882675 |
+| Morgana | 1.023945 | 1.0105238 | 1.017648 | 1.0204425 | 1.08675 |
 
-These multipliers apply only to Dungeon-derived profiles inside Tower.
+These values are the collapsed starting point from the previously validated live normalization × Difficulty 0 calibration. Final runtime acceptance remains the 100 favorable-matchup benchmark after the one-stage refactor because integer rounding happens at a different point.
+
+## Endless depth scaling
+
+- Floors 1–25 use the Tower baseline unchanged.
+- After floor 25, each entered five-floor block adds `+1%` to HP, damage, armor and magic resistance.
+- No special potion rule or alternate HP/damage scaling model is authored.
 
 ## Family policy
 
@@ -80,13 +90,14 @@ These multipliers apply only to Dungeon-derived profiles inside Tower.
 
 ## Explicit guards
 
+- Do **not** reintroduce separate Tower normalization + Difficulty 0 calibration layers.
 - Do **not** introduce Demonfang tier-specific ratios.
 - Do **not** change Dungeon combat profiles to balance Tower.
 - Do **not** add specialization-only dagger sustain.
 - Do **not** re-add Whispering self-vulnerability.
-- Do **not** add a second T8 runtime multiplier; T8 is already baked into the Tower matrix.
-- Do **not** keep benchmark-only ability multipliers once the live values above are authored.
+- Do **not** add a second T8 runtime multiplier.
+- Do **not** keep benchmark-only ability multipliers once live values are authored.
 
 ## Closure policy
 
-The balance pass is no longer tuned by repeated 5% micro-iterations. Final validation uses the authored live values above. A very small number of favorable failures near the end of a block may be accepted as deterministic encounter variance if global targets remain healthy. Material systematic failures or neutral leakage are defects; isolated ~95–100% progression failures are not automatically grounds for another tuning cycle.
+After the single-baseline runtime passes the 100 favorable-matchup Difficulty 0 benchmark and resolver tests, this Tower balance pass is closed. Future changes require a new observed gameplay defect or a deliberate design revision, not micro-tuning against benchmark noise.
