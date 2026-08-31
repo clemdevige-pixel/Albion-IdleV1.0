@@ -66,7 +66,8 @@ export const DEV_SANDBOX_ARTIFACT_WEAPON_T4_ITEM_IDS = FACTION_ARTIFACT_WEAPON_C
 );
 
 export function isDevSandboxMode(): boolean {
-  return import.meta.env.DEV
+  const viteEnv = (import.meta as ImportMeta & { readonly env?: { readonly DEV?: boolean } }).env;
+  return viteEnv?.DEV === true
     && typeof window !== "undefined"
     && new URLSearchParams(window.location.search).get("devTest") === "1";
 }
