@@ -30,6 +30,7 @@
     "benchmark:blue-contract": "tsx --tsconfig tsconfig.base.json scripts/runtime-blue-progression-contract-audit.ts",
     "benchmark:dungeons": "tsx --tsconfig tsconfig.base.json scripts/runtime-dungeon-benchmark.ts",
     "benchmark:tower": "tsx --tsconfig tsconfig.base.json scripts/runtime-tower-benchmark.ts",
+    "benchmark:tower-t5-endless": "tsx --tsconfig tsconfig.base.json scripts/runtime-tower-t5-endless-benchmark.ts",
     "benchmark:global-enchantment-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-global-enchantment-wall-matrix.ts",
     "benchmark:enchantment-walls": "tsx --tsconfig tsconfig.base.json scripts/runtime-enchantment-progression-audit.ts",
     "benchmark:final-gates": "tsx --tsconfig tsconfig.base.json scripts/runtime-final-gate-audit.ts",
