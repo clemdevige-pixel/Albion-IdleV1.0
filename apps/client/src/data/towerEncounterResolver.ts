@@ -1,4 +1,5 @@
 import {
+  TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER,
   TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX,
   TOWER_REINFORCED_COMBAT_MULTIPLIERS,
   TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS,
@@ -54,6 +55,23 @@ function applyTowerRoleCombatTuning(
   };
 }
 
+function applyTowerDifficultyZeroCalibration(
+  tier: TowerTier,
+  factionId: TowerFactionId,
+  profile: AuthoredEnemyCombatProfile,
+): AuthoredEnemyCombatProfile {
+  const multiplier = TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER[factionId][tier];
+  if (multiplier === 1) return profile;
+
+  return {
+    hp: Math.max(1, Math.round(profile.hp * multiplier)),
+    damage: Math.max(1, Math.round(profile.damage * multiplier)),
+    attackSpeed: profile.attackSpeed,
+    armor: Math.max(0, Math.round(profile.armor * multiplier)),
+    magicResistance: Math.max(0, Math.round(profile.magicResistance * multiplier)),
+  };
+}
+
 function applyTowerTrialBlockCombatTuning(
   floorDefinition: TowerFloorDefinition,
   profile: AuthoredEnemyCombatProfile,
@@ -87,12 +105,11 @@ function applyTowerDepthCombatScaling(
 }
 
 /**
- * Canonical Tower difficulty-zero encounter.
+ * Canonical Tower Difficulty 0 encounter.
  *
- * This is the shared base curve before any authored trial-block calibration and
- * before Endless depth scaling. It keeps Dungeon content canonical, applies the
- * live Tower faction/tier normalization, and preserves the five-floor Tower role
- * structure (normal, normal, reinforced, elite, boss).
+ * Dungeon content stays canonical. Tower applies faction/tier normalization,
+ * floor-role tuning, then the accepted Difficulty 0 calibration measured by the
+ * fine sweep. Trial-specific and Endless depth tuning are intentionally absent.
  */
 export function resolveTowerDifficultyZeroEncounter(
   tier: TowerTier,
@@ -127,6 +144,7 @@ export function resolveTowerDifficultyZeroEncounter(
     { factionId, tier },
     baseCombatProfile,
   );
+  const roleTunedProfile = applyTowerRoleCombatTuning(indexInBlock === 2, normalizedProfile);
 
   return {
     tier,
@@ -137,16 +155,13 @@ export function resolveTowerDifficultyZeroEncounter(
     encounterId: encounter.id,
     encounterKind: encounter.kind,
     monsterDefinitionId: encounter.monsterDefinitionId,
-    combatProfile: applyTowerRoleCombatTuning(indexInBlock === 2, normalizedProfile),
+    combatProfile: applyTowerDifficultyZeroCalibration(tier, factionId, roleTunedProfile),
   };
 }
 
 /**
- * Resolves a Tower floor from existing faction Dungeon content.
- *
- * Dungeon rosters and base combat stats remain canonical. Tower then applies
- * faction/tier normalization, floor-role tuning, optional authored trial-block
- * tuning and depth scaling in that order, without mutating Dungeon balance.
+ * Resolves a live Tower floor from Difficulty 0, then applies any authored trial
+ * tuning and finally the canonical Endless depth scaling.
  */
 export function resolveTowerEncounter(
   floor: number,
