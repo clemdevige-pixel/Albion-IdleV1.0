@@ -32,7 +32,7 @@ describe("faction combat yield", () => {
     ]);
   });
 
-  it("uses final earned Fame 1:1 for faction mastery and Awake attunement", () => {
+  it("uses faction-adjusted earned Fame 1:1 for faction mastery and Awake attunement", () => {
     const onRawFactionFame = vi.fn((_: string, fame: number) => fame === 0 ? 50 : 0);
     const addAttunement = vi.fn(() => ({
       ok: true,
@@ -86,5 +86,59 @@ describe("faction combat yield", () => {
     expect(onRawFactionFame).toHaveBeenNthCalledWith(1, "Keeper", 0);
     expect(onRawFactionFame).toHaveBeenNthCalledWith(2, "Keeper", 150);
     expect(addAttunement).toHaveBeenCalledWith("awake-weapon", 150);
+  });
+
+  it("grants Attunement across content tiers without letting Fame Bonus increase it", () => {
+    const onRawFactionFame = vi.fn((_: string, fame: number) => fame === 0 ? 50 : 0);
+    const addAttunement = vi.fn(() => ({
+      ok: true,
+      value: { requested: 150, stored: 150, discardedAtCap: 0, balance: 150, cap: 40_000 },
+    }));
+    const runtime = new CombatRewardRuntime({
+      currencyService: {
+        credit: vi.fn(() => ({ ok: true, value: 150 })),
+        getBalance: vi.fn(() => ({ ok: true, value: 150 })),
+      } as never,
+      walletId: "wallet" as never,
+      equipmentManager: {
+        getEquippedItem: vi.fn(() => ({
+          itemId: "item_weapon_sword_t8_broadsword",
+          instanceId: "awake-weapon-t8",
+          enchantment: 4,
+        })),
+      } as never,
+      inventoryManager: {
+        addQuantity: vi.fn(() => ({ ok: false })),
+      } as never,
+      durabilityStore: {} as never,
+      progressionOrchestrator: {
+        onEquipmentAcquired: vi.fn(),
+        onFameEarned: vi.fn(),
+      } as never,
+      experienceService: { addExperience: vi.fn() } as never,
+      awakenedWeaponService: {
+        getTraitValue: vi.fn(() => 25),
+        has: vi.fn(() => true),
+        addAttunement,
+      } as never,
+      heroId: 1 as never,
+      onRawFactionFame,
+      random: () => 1,
+    });
+
+    const result = runtime.processEnemyKilledReward(100, 100, {
+      segmentIndex: 0,
+      faction: "Keeper",
+      isElite: false,
+      isBoss: false,
+      isFinalBoss: false,
+      enchantmentTier: 4,
+      enchantmentDropWeight: 0,
+      dungeonKeyDropWeight: 0,
+    });
+
+    expect(result.fameEarned?.amount).toBe(175);
+    expect(addAttunement).toHaveBeenCalledWith("awake-weapon-t8", 150);
+    expect(result.attunementEarned?.requested).toBe(150);
   });
 });
