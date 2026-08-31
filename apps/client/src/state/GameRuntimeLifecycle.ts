@@ -111,8 +111,14 @@ export function loadInitialRuntimeSave(
  *
  * All but the final catch-up tick run with transient presentation suppressed.
  * The final missed tick runs normally so combat presentation is current before
- * one global resync and save. Offline SaveProvider resolution remains reserved
- * for real reloads and closed-page sessions during save loading.
+ * one global resync and save.
+ *
+ * Important session boundary: catch-up exists only for a page that becomes
+ * visible again. If a hidden page is destroyed, closed, reloaded, or discarded,
+ * we do not attempt active-combat catch-up during teardown. The next boot uses
+ * the normal offline/passive save-loading path instead. This avoids relying on
+ * unreliable pagehide/unload execution and avoids accidentally granting offline
+ * combat from an elapsed hidden timestamp.
  */
 export function createRuntimeVisibilityHandler(
   dependencies: RuntimeVisibilitySessionDependencies,
@@ -200,6 +206,9 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      // Deliberately do not reconcile a pending hidden window here. Teardown is
+      // the active-session boundary; reload/closed-page progression is resolved
+      // by the normal offline/passive load path on the next boot.
       lifecycle.stop();
       stopAutosave();
       deferRuntimeDisposal(services.bridge, handle.dispose);
