@@ -20,6 +20,7 @@ import {
   clearActiveMonsterIdentity,
   getMonsterDefinitionIdForEntity,
 } from "./activeMonsterIdentity.js";
+import { isRuntimePresentationSuppressed } from "./RuntimePresentationSuppression.js";
 import { syncStatsToBridge } from "../state/bridgeSync.js";
 
 export interface CombatRewardAdapterOptions {
@@ -87,6 +88,7 @@ function publishDungeonDrops(
   options: CombatRewardAdapterOptions,
   drops: readonly { readonly itemId: string; readonly kind: string; readonly quantity: number }[],
 ): void {
+  if (isRuntimePresentationSuppressed()) return;
   for (const drop of drops) {
     const dropName = formatDropName(drop.itemId);
     const category = formatDropCategory(drop.kind);
@@ -113,6 +115,7 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
   let incomeRate = 0;
 
   const unsubscribe = options.combatService.events.subscribe("enemyKilled", (event) => {
+    const presentationSuppressed = isRuntimePresentationSuppressed();
     options.bridge.incrementEnemiesKilled();
     const monsterDefinitionId = getMonsterDefinitionIdForEntity(event.entityId);
 
@@ -126,34 +129,38 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
         incomeRate = towerReward.reward.newBalance - lastSilver;
         lastSilver = towerReward.reward.newBalance;
         const timestamp = Date.now();
-        options.bridge.addTransaction({
-          id: `tower_silver_${String(timestamp)}_${String(towerReward.floor)}`,
-          type: "credit",
-          description: `Tour · étage ${String(towerReward.floor)} : +${String(towerReward.reward.silverEarned)} Silver`,
-          amount: towerReward.reward.silverEarned,
-          timestamp,
-        });
-        options.bridge.addEconomyNotification({
-          id: `notif_tower_silver_${String(timestamp)}_${String(towerReward.floor)}`,
-          type: "success",
-          message: `Tour · étage ${String(towerReward.floor)} · +${String(towerReward.reward.silverEarned)} Silver`,
-          timestamp,
-        });
-        if (towerReward.reward.fameEarned !== undefined) {
-          options.recalculateWeaponMasteryStats();
-          syncStatsToBridge(options.bridge, options.statsManager, options.heroId);
-          const masteryName = getMasteryDisplayName(towerReward.reward.fameEarned.weaponId);
-          options.bridge.addEconomyNotification({
-            id: `notif_tower_fame_${String(timestamp)}_${String(towerReward.floor)}`,
-            type: "success",
-            message: `+${String(towerReward.reward.fameEarned.amount)} Fame · ${masteryName}`,
+        if (!presentationSuppressed) {
+          options.bridge.addTransaction({
+            id: `tower_silver_${String(timestamp)}_${String(towerReward.floor)}`,
+            type: "credit",
+            description: `Tour · étage ${String(towerReward.floor)} : +${String(towerReward.reward.silverEarned)} Silver`,
+            amount: towerReward.reward.silverEarned,
             timestamp,
           });
+          options.bridge.addEconomyNotification({
+            id: `notif_tower_silver_${String(timestamp)}_${String(towerReward.floor)}`,
+            type: "success",
+            message: `Tour · étage ${String(towerReward.floor)} · +${String(towerReward.reward.silverEarned)} Silver`,
+            timestamp,
+          });
+        }
+        if (towerReward.reward.fameEarned !== undefined) {
+          options.recalculateWeaponMasteryStats();
+          if (!presentationSuppressed) {
+            syncStatsToBridge(options.bridge, options.statsManager, options.heroId);
+            const masteryName = getMasteryDisplayName(towerReward.reward.fameEarned.weaponId);
+            options.bridge.addEconomyNotification({
+              id: `notif_tower_fame_${String(timestamp)}_${String(towerReward.floor)}`,
+              type: "success",
+              message: `+${String(towerReward.reward.fameEarned.amount)} Fame · ${masteryName}`,
+              timestamp,
+            });
+          }
         }
       } else {
         incomeRate = 0;
       }
-      options.resyncAll();
+      if (!presentationSuppressed) options.resyncAll();
       return;
     }
 
@@ -173,23 +180,25 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
           const newBalance = options.combatRewardRuntime.creditSilverReward(reward.completionSilver);
           lastSilver = newBalance;
           incomeRate = newBalance - previousBalance;
-          const timestamp = Date.now();
-          options.bridge.addTransaction({
-            id: `dungeon_silver_${String(timestamp)}`,
-            type: "credit",
-            description: `Donjon terminé : +${String(reward.completionSilver)} Silver`,
-            amount: reward.completionSilver,
-            timestamp,
-          });
-          options.bridge.addEconomyNotification({
-            id: `notif_dungeon_silver_${String(timestamp)}`,
-            type: "success",
-            message: `Donjon terminé · +${String(reward.completionSilver)} Silver`,
-            timestamp,
-          });
+          if (!presentationSuppressed) {
+            const timestamp = Date.now();
+            options.bridge.addTransaction({
+              id: `dungeon_silver_${String(timestamp)}`,
+              type: "credit",
+              description: `Donjon terminé : +${String(reward.completionSilver)} Silver`,
+              amount: reward.completionSilver,
+              timestamp,
+            });
+            options.bridge.addEconomyNotification({
+              id: `notif_dungeon_silver_${String(timestamp)}`,
+              type: "success",
+              message: `Donjon terminé · +${String(reward.completionSilver)} Silver`,
+              timestamp,
+            });
+          }
         }
       }
-      options.resyncAll();
+      if (!presentationSuppressed) options.resyncAll();
       return;
     }
 
@@ -242,52 +251,58 @@ export function setupCombatRewardAdapter(options: CombatRewardAdapterOptions): C
 
     incomeRate = rewardResult.newBalance - lastSilver;
     lastSilver = rewardResult.newBalance;
-    options.bridge.addTransaction({
-      id: `loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-      type: "credit",
-      description: `Loot: +${String(rewardResult.silverEarned)} Silver`,
-      amount: rewardResult.silverEarned,
-      timestamp: Date.now(),
-    });
-    options.bridge.addEconomyNotification({
-      id: `notif_silver_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
-      type: "success",
-      message: `+${String(rewardResult.silverEarned)} Silver from loot`,
-      timestamp: Date.now(),
-    });
-
-    if (rewardResult.fameEarned !== undefined) {
-      options.recalculateWeaponMasteryStats();
-      syncStatsToBridge(options.bridge, options.statsManager, options.heroId);
-      const masteryName = getMasteryDisplayName(rewardResult.fameEarned.weaponId);
+    if (!presentationSuppressed) {
+      options.bridge.addTransaction({
+        id: `loot_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
+        type: "credit",
+        description: `Loot: +${String(rewardResult.silverEarned)} Silver`,
+        amount: rewardResult.silverEarned,
+        timestamp: Date.now(),
+      });
       options.bridge.addEconomyNotification({
-        id: `notif_fame_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
+        id: `notif_silver_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
         type: "success",
-        message: `+${String(rewardResult.fameEarned.amount)} Fame · ${masteryName}`,
+        message: `+${String(rewardResult.silverEarned)} Silver from loot`,
         timestamp: Date.now(),
       });
     }
 
-    for (const drop of rewardResult.itemDrops) {
-      const dropName = formatDropName(drop.itemId);
-      const category = formatDropCategory(drop.kind);
-      const quantitySuffix = drop.quantity > 1 ? ` ×${String(drop.quantity)}` : "";
-      const timestamp = Date.now();
-      options.bridge.addTransaction({
-        id: `loot_item_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
-        type: "credit",
-        description: `${category} : ${dropName}${quantitySuffix}`,
-        amount: drop.quantity,
-        timestamp,
-      });
-      options.bridge.addEconomyNotification({
-        id: `notif_drop_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
-        type: "success",
-        message: `${category} : ${dropName}${quantitySuffix}`,
-        timestamp,
-      });
+    if (rewardResult.fameEarned !== undefined) {
+      options.recalculateWeaponMasteryStats();
+      if (!presentationSuppressed) {
+        syncStatsToBridge(options.bridge, options.statsManager, options.heroId);
+        const masteryName = getMasteryDisplayName(rewardResult.fameEarned.weaponId);
+        options.bridge.addEconomyNotification({
+          id: `notif_fame_${String(Date.now())}_${String(Math.random()).slice(2, 8)}`,
+          type: "success",
+          message: `+${String(rewardResult.fameEarned.amount)} Fame · ${masteryName}`,
+          timestamp: Date.now(),
+        });
+      }
     }
-    options.resyncAll();
+
+    if (!presentationSuppressed) {
+      for (const drop of rewardResult.itemDrops) {
+        const dropName = formatDropName(drop.itemId);
+        const category = formatDropCategory(drop.kind);
+        const quantitySuffix = drop.quantity > 1 ? ` ×${String(drop.quantity)}` : "";
+        const timestamp = Date.now();
+        options.bridge.addTransaction({
+          id: `loot_item_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
+          type: "credit",
+          description: `${category} : ${dropName}${quantitySuffix}`,
+          amount: drop.quantity,
+          timestamp,
+        });
+        options.bridge.addEconomyNotification({
+          id: `notif_drop_${String(timestamp)}_${String(Math.random()).slice(2, 8)}`,
+          type: "success",
+          message: `${category} : ${dropName}${quantitySuffix}`,
+          timestamp,
+        });
+      }
+      options.resyncAll();
+    }
   });
 
   return {
