@@ -38,7 +38,12 @@ import { resolveFactionCapeDungeonDamageReductionPercent } from "../data/faction
 import { CombatRuntime } from "./CombatRuntime.js";
 import { CONTINUOUS_COMBAT_FLOW_POLICY } from "./CombatFlowPolicy.js";
 import { ConsumableRuntime } from "./ConsumableRuntime.js";
-import { setupCombatEntity, spawnAuthoredEnemy, type SpawnedEnemyResult } from "./combatEntityFactory.js";
+import {
+  setupCombatEntity,
+  spawnAuthoredEnemy,
+  type AuthoredEnemyCombatProfile,
+  type SpawnedEnemyResult,
+} from "./combatEntityFactory.js";
 import { createProgressionFoundation } from "./bootstrap/createProgressionFoundation.js";
 import { recalculateWeaponMasteryStats } from "./weaponMasteryStatSync.js";
 import { RUNTIME_DELTA_SECONDS } from "./runtimeTiming.js";
@@ -59,6 +64,11 @@ export interface CombatRuntimeBenchmarkDamageTuning {
   readonly directAbilityMultiplierById?: Readonly<Record<string, number>>;
   /** Benchmark-only multiplier applied to hero effect damage (weapon DoTs in the current roster). */
   readonly effectDamageMultiplier?: number;
+}
+
+export interface CombatRuntimeBenchmarkEncounter {
+  readonly monsterDefinitionId: string;
+  readonly profile: AuthoredEnemyCombatProfile;
 }
 
 export interface CombatRuntimeBenchmarkInput {
@@ -84,10 +94,14 @@ export interface CombatRuntimeBenchmarkInput {
   readonly healthPotionQuantity?: number;
   /** Benchmark-only outgoing hero damage multiplier. Defaults to 1 and never changes authored weapon data. */
   readonly heroDamageMultiplier?: number;
+  /** Optional benchmark-only incoming damage reduction percentage for non-Dungeon authored sequences. */
+  readonly incomingDamageReductionPercent?: number;
   /** Optional benchmark-only targeted tuning. Authored weapon data and live runtime balance remain unchanged. */
   readonly damageTuning?: CombatRuntimeBenchmarkDamageTuning;
   /** Optional authored dungeon. When present, the live runtime uses its continuous authored encounters instead of the world segment. */
   readonly dungeonDefinitionId?: string;
+  /** Optional explicit continuous authored encounter sequence. Mutually exclusive with dungeonDefinitionId. */
+  readonly authoredEncounters?: readonly CombatRuntimeBenchmarkEncounter[];
 }
 
 export interface CombatRuntimeAbilityTelemetry {
@@ -269,6 +283,13 @@ function round1(value: number): number {
 export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): CombatRuntimeBenchmarkResult {
   const placement = getWorldZonePlacement(input.zoneDefId);
   const dungeon = input.dungeonDefinitionId === undefined ? undefined : getDungeonDefinition(input.dungeonDefinitionId);
+  const authoredEncounters = input.authoredEncounters;
+  if (dungeon !== undefined && authoredEncounters !== undefined) {
+    throw new Error("Benchmark dungeonDefinitionId and authoredEncounters are mutually exclusive");
+  }
+  if (authoredEncounters !== undefined && authoredEncounters.length === 0) {
+    throw new Error("Benchmark authoredEncounters must not be empty");
+  }
 
   const world = new World(createRuntimeServices());
   const statsManager = new StatsManager(world, createDefaultStatRegistry());
@@ -324,12 +345,14 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
 
   const equippedCape = equipmentManager.getEquippedItem(heroId, "cape");
-  const dungeonDamageReductionPercent = dungeon === undefined || equippedCape === undefined
+  const derivedDungeonDamageReductionPercent = dungeon === undefined || equippedCape === undefined
     ? 0
     : resolveFactionCapeDungeonDamageReductionPercent(
         equippedCape.itemId,
         { factionId: dungeon.faction, tier: dungeon.tier },
       );
+  const dungeonDamageReductionPercent = input.incomingDamageReductionPercent
+    ?? derivedDungeonDamageReductionPercent;
   const heroDamageMultiplier = input.heroDamageMultiplier ?? 1;
   const autoAttackMultiplier = input.damageTuning?.autoAttackMultiplier ?? 1;
   const effectDamageMultiplier = input.damageTuning?.effectDamageMultiplier ?? 1;
@@ -368,7 +391,8 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
   }
   const consumableRuntime = new ConsumableRuntime({ inventoryManager, damageManager, deathManager, heroId });
 
-  const lastEncounterIndex = dungeon?.encounters.length !== undefined ? dungeon.encounters.length - 1 : 4;
+  const encounterCount = authoredEncounters?.length ?? dungeon?.encounters.length ?? 5;
+  const lastEncounterIndex = encounterCount - 1;
   let encounterIndex = Math.max(0, Math.min(lastEncounterIndex, Math.floor(input.startingEncounterIndex ?? 0)));
   let finishedSegment = false;
   let defeated = false;
@@ -455,6 +479,7 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     });
   };
 
+  const hasContinuousEncounterSource = dungeon !== undefined || authoredEncounters !== undefined;
   const runtime = new TelemetryCombatRuntime({
     world,
     heroId,
@@ -476,8 +501,17 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
       else telemetry.dotDamage += event.finalDamage;
       abilityTelemetry.set(event.abilityId, telemetry);
     },
-    ...(dungeon === undefined ? {} : {
+    ...(hasContinuousEncounterSource ? {
       spawnEnemyOverride: () => {
+        const authoredEncounter = authoredEncounters?.[encounterIndex];
+        if (authoredEncounter !== undefined) {
+          activeEnemy = spawnAuthoredEnemy(
+            { world, statsManager, damageManager, deathManager, targetManager, autoAttackManager, abilityManager },
+            authoredEncounter,
+          );
+          return activeEnemy;
+        }
+        if (dungeon === undefined) return undefined;
         const encounter = dungeon.encounters[encounterIndex];
         if (encounter === undefined) return undefined;
         activeEnemy = spawnAuthoredEnemy(
@@ -493,10 +527,10 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
         );
         return activeEnemy;
       },
-    }),
+    } : {}),
     ports: {
       isCombatSuspended: () => false,
-      ...(dungeon === undefined ? {} : { flowPolicy: CONTINUOUS_COMBAT_FLOW_POLICY }),
+      ...(hasContinuousEncounterSource ? { flowPolicy: CONTINUOUS_COMBAT_FLOW_POLICY } : {}),
       onDefeat: () => {
         if (!defeated) recordEncounter(false);
         defeated = true;
