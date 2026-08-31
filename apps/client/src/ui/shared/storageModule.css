@@ -290,6 +290,51 @@
 .storage-module__selection-action { color: #8994a6; font-size: 8px; }
 .storage-module__selection-action { max-width: 90px; text-align: right; }
 
+.storage-module__context-menu {
+  position: fixed;
+  z-index: 1200;
+  display: grid;
+  min-width: 132px;
+  padding: 5px;
+  border: 1px solid #4b3d28;
+  border-radius: 4px;
+  background: #0e1217;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+.storage-module__context-menu > strong {
+  padding: 4px 7px 5px;
+  color: #8f98a6;
+  font: 700 8px var(--ui-font-display);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.storage-module__context-menu > button {
+  min-height: 27px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 2px;
+  color: #d8c7a7;
+  background: transparent;
+  font: 600 9px var(--ui-font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.storage-module__context-menu > button:hover,
+.storage-module__context-menu > button:focus-visible {
+  color: #f0d99c;
+  background: #211a10;
+  outline: none;
+}
+
+.storage-module__context-menu > button:disabled {
+  color: #59616d;
+  background: transparent;
+  cursor: default;
+}
+
 .storage-module__hint,
 .storage-module__notice {
   margin: 0;
