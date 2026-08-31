@@ -55,14 +55,12 @@ describe("StorageRuntime", () => {
     manager.addQuantity(bankId, "stack", 10);
     manager.addEntry(bankId, "sword", 1);
     manager.addEntry(bankId, "bow", 2);
-    manager.addQuantity(bankId, "stack", 5, undefined, 0);
-    const source = manager.findEntriesByItemId(bankId, "stack").find((slot) => slot.position >= 3);
-    if (source === undefined) throw new Error("setup failed");
+    manager.addEntry(bankId, "stack", 3);
 
-    expect(storage.canMoveWithinRange("bank", source.position, { start: 0, length: 3 })).toBe(true);
-    expect(storage.moveWithinRange("bank", source.position, { start: 0, length: 3 }).ok).toBe(true);
-    expect(itemAt(manager, bankId, 0)?.quantity).toBe(15);
-    expect(itemAt(manager, bankId, source.position)).toBeUndefined();
+    expect(storage.canMoveWithinRange("bank", 3, { start: 0, length: 3 })).toBe(true);
+    expect(storage.moveWithinRange("bank", 3, { start: 0, length: 3 }).ok).toBe(true);
+    expect(itemAt(manager, bankId, 0)?.quantity).toBe(11);
+    expect(itemAt(manager, bankId, 3)).toBeUndefined();
   });
 
   it("transfers into a full bank tab by merging a compatible stack", () => {
