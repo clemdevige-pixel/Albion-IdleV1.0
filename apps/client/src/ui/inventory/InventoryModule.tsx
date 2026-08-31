@@ -8,6 +8,8 @@ import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDisplayName } from "../../panels/ItemVisual";
 import { useGameServices } from "../../state/GameContext";
 import { BankModule } from "../bank";
+import { findFirstEmptyBankTabPosition } from "../bank/bankTabTransfer.js";
+import { useBankData } from "../bank/useBankData";
 import {
   createTrackedItemResource,
   isTrackableResourceItem,
@@ -34,6 +36,8 @@ const INVENTORY_FILTERS: readonly { readonly id: InventoryFilter; readonly label
   { id: "special", label: "Spéciaux" },
 ];
 
+const ROMAN_TAB_LABELS = ["I", "II", "III", "IV", "V"] as const;
+
 function isSpecialInventoryItem(itemId: string): boolean {
   return isRelicInventoryItem(itemId)
     || itemId.startsWith("item_resource_dungeon_key_")
@@ -56,9 +60,11 @@ function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter):
 
 export function InventoryModule(): JSX.Element {
   const inventory = useInventoryData();
+  const bank = useBankData();
   const actions = useInventoryActions();
   const services = useGameServices();
   const tracking = useResourceTracking();
+  const bankExpansion = services.getBankExpansionModel();
   const yieldTrackingUnlocked = services.getAcademyModel().research.some(
     (research) => research.id === RESEARCH_IDS.yieldAnalysis && research.state === "completed",
   );
@@ -92,7 +98,7 @@ export function InventoryModule(): JSX.Element {
     slot: InventorySlotVM,
   ) => {
     event.preventDefault();
-    if (slot.itemId === undefined || !isEquipmentInventoryItem(slot.itemId)) {
+    if (slot.itemId === undefined || isRelicInventoryItem(slot.itemId)) {
       setContextMenu(null);
       return;
     }
@@ -108,14 +114,29 @@ export function InventoryModule(): JSX.Element {
     ? undefined
     : inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId;
   const contextIsEquipment = contextItemId !== undefined && isEquipmentInventoryItem(contextItemId);
+  const bankDestinations = Array.from({ length: bankExpansion.unlockedTabCount }, (_, index) => {
+    const tabNumber = index + 1;
+    const targetPosition = findFirstEmptyBankTabPosition(bank.slots, tabNumber, bankExpansion.tabCapacity);
+    return {
+      tabNumber,
+      label: `Banque ${ROMAN_TAB_LABELS[index] ?? String(tabNumber)}`,
+      disabled: targetPosition === undefined,
+    };
+  });
+
+  const handleMoveToBankTab = useCallback((position: number, tabNumber: number) => {
+    const to = findFirstEmptyBankTabPosition(bank.slots, tabNumber, bankExpansion.tabCapacity);
+    if (to !== undefined) actions.transfer("inventory", position, "bank", to);
+    setContextMenu(null);
+  }, [actions, bank.slots, bankExpansion.tabCapacity]);
 
   return (
     <div className="storage-module">
       <div className="storage-module__tabs" role="tablist" aria-label="Stockage">
-        <button type="button" role="tab" aria-selected={activeTab === "inventory"} className={activeTab === "inventory" ? "is-active" : ""} onClick={() => { setActiveTab("inventory"); }}>
+        <button type="button" role="tab" aria-selected={activeTab === "inventory"} className={activeTab === "inventory" ? "is-active" : ""} onClick={() => { setActiveTab("inventory"); setContextMenu(null); }}>
           Inventaire
         </button>
-        <button type="button" role="tab" aria-selected={activeTab === "bank"} className={activeTab === "bank" ? "is-active" : ""} onClick={() => { setActiveTab("bank"); }}>
+        <button type="button" role="tab" aria-selected={activeTab === "bank"} className={activeTab === "bank" ? "is-active" : ""} onClick={() => { setActiveTab("bank"); setContextMenu(null); }}>
           Banque
         </button>
       </div>
@@ -182,17 +203,21 @@ export function InventoryModule(): JSX.Element {
           </section>
 
           <p className="storage-module__hint">
-            Double-clic : utiliser / équiper / assembler les fragments · glissez-déposez pour organiser
+            Double-clic : utiliser / équiper / assembler les fragments · glissez-déposez pour organiser · clic droit : déplacer vers une banque
             {yieldTrackingUnlocked ? " · étoile : suivre une ressource." : "."}
           </p>
 
-          {contextMenu !== null && contextItemId !== undefined && contextIsEquipment && (
+          {contextMenu !== null && contextItemId !== undefined && (
             <ItemContextMenu
               position={contextMenu.position}
               x={contextMenu.x}
               y={contextMenu.y}
               onClose={() => { setContextMenu(null); }}
-              onEquip={(position: number) => { actions.equip(position); setContextMenu(null); }}
+              {...(contextIsEquipment ? {
+                onEquip: (position: number) => { actions.equip(position); setContextMenu(null); },
+              } : {})}
+              bankDestinations={bankDestinations}
+              onMoveToBank={handleMoveToBankTab}
             />
           )}
         </>
