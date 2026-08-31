@@ -47,8 +47,8 @@ function runBlockWeapon(
   block: ReturnType<typeof resolveLiveBlock>,
   weapon: (typeof ARTIFACT_WEAPON_BENCHMARK_SPECS)[number],
 ) {
-  const tier = block.tier as TowerTier;
-  const faction = block.faction as TowerFactionId;
+  const tier: TowerTier = block.tier;
+  const faction: TowerFactionId = block.faction;
   const dungeon = DUNGEON_DEFINITIONS.find((definition) => (
     definition.tier === tier && definition.faction.toLowerCase() === faction
   ));
@@ -122,75 +122,61 @@ describe("Tower live block progression monotonicity benchmark", () => {
       })
     ));
 
-    const blockSummary = blocks.map((block) => {
-      const group = rows.filter((row) => row.blockStartFloor === block.blockStartFloor);
-      const clearRows = group.filter((row) => row.clear);
-      return {
-        floors: `${String(block.blockStartFloor)}-${String(block.blockEndFloor)}`,
-        tier: block.tier,
-        faction: block.faction,
-        depthMultiplier: round1(block.depthMultiplier),
-        clears: `${String(clearRows.length)}/${String(group.length)}`,
-        minClearHpPct: clearRows.length === 0 ? null : round1(Math.min(...clearRows.map((row) => row.hpPct))),
-        maxClearHpPct: clearRows.length === 0 ? null : round1(Math.max(...clearRows.map((row) => row.hpPct))),
-        maxPotions: group.length === 0 ? 0 : Math.max(...group.map((row) => row.totalPotions)),
-      };
-    });
+    const comparableByKey = new Map<string, typeof rows>();
+    for (const row of rows) {
+      const key = `${row.weapon}|${String(row.tier)}|${row.faction}`;
+      const existing = comparableByKey.get(key) ?? [];
+      existing.push(row);
+      comparableByKey.set(key, existing);
+    }
 
-    const keys = [...new Set(rows.map((row) => `${row.weapon}|${String(row.tier)}|${row.faction}`))];
-    const recurrenceTransitions = keys.flatMap((key) => {
-      const series = rows
-        .filter((row) => `${row.weapon}|${String(row.tier)}|${row.faction}` === key)
-        .sort((a, b) => a.blockStartFloor - b.blockStartFloor);
-      return series.slice(1).flatMap((current, index) => {
-        const previous = series[index]!;
-        if (!previous.clear || !current.clear) return [];
+    const comparisons = [...comparableByKey.values()].flatMap((group) => {
+      const sorted = [...group].sort((a, b) => a.blockStartFloor - b.blockStartFloor);
+      return sorted.slice(1).flatMap((current, index) => {
+        const previous = sorted[index];
+        if (previous === undefined || !previous.clear || !current.clear) return [];
         const hpGainPct = round1(current.hpPct - previous.hpPct);
-        if (hpGainPct < SIGNIFICANT_HP_GAIN) return [];
+        const potionGain = current.totalPotions - previous.totalPotions;
+        const bossPotionGain = current.bossPotions - previous.bossPotions;
         return [{
+          weapon: current.weapon,
+          family: current.family,
           tier: current.tier,
           faction: current.faction,
-          weapon: current.weapon,
-          previousFloors: `${String(previous.blockStartFloor)}-${String(previous.blockEndFloor)}`,
-          currentFloors: `${String(current.blockStartFloor)}-${String(current.blockEndFloor)}`,
-          previousDepthPct: previous.depthPct,
-          currentDepthPct: current.depthPct,
-          hpBeforePct: previous.hpPct,
-          hpAfterPct: current.hpPct,
+          fromFloors: `${String(previous.blockStartFloor)}-${String(previous.blockEndFloor)}`,
+          toFloors: `${String(current.blockStartFloor)}-${String(current.blockEndFloor)}`,
+          fromDepthPct: previous.depthPct,
+          toDepthPct: current.depthPct,
+          fromHpPct: previous.hpPct,
+          toHpPct: current.hpPct,
           hpGainPct,
-          potionsBefore: previous.totalPotions,
-          potionsAfter: current.totalPotions,
-          potionDelta: current.totalPotions - previous.totalPotions,
-          bossPotionsBefore: previous.bossPotions,
-          bossPotionsAfter: current.bossPotions,
-          bossPotionDelta: current.bossPotions - previous.bossPotions,
-          bossCastsBefore: previous.bossAbilityCasts,
-          bossCastsAfter: current.bossAbilityCasts,
-          bossCastDelta: current.bossAbilityCasts - previous.bossAbilityCasts,
+          potionGain,
+          bossPotionGain,
+          fromTotalPotions: previous.totalPotions,
+          toTotalPotions: current.totalPotions,
+          fromBossPotions: previous.bossPotions,
+          toBossPotions: current.bossPotions,
         }];
       });
     });
 
-    const potionLinked = recurrenceTransitions.filter((row) => (
-      row.potionDelta > 0 || row.bossPotionDelta > 0
-    ));
+    const significantInversions = comparisons.filter((row) => row.hpGainPct >= SIGNIFICANT_HP_GAIN);
+    const potionLinked = significantInversions.filter((row) => row.potionGain > 0 || row.bossPotionGain > 0);
 
-    const transitionSummary = {
-      liveBlocks: blocks.length,
-      favorableRuns: rows.length,
-      recurrenceComparisons: keys.reduce((sum, key) => {
-        const count = rows.filter((row) => `${row.weapon}|${String(row.tier)}|${row.faction}` === key).length;
-        return sum + Math.max(0, count - 1);
-      }, 0),
-      significantRecurrenceInversions: recurrenceTransitions.length,
-      potionLinkedRecurrenceInversions: potionLinked.length,
-      largestRecurrenceHpGainPct: recurrenceTransitions.length === 0
-        ? 0
-        : round1(Math.max(...recurrenceTransitions.map((row) => row.hpGainPct))),
-      largestPotionLinkedHpGainPct: potionLinked.length === 0
-        ? 0
-        : round1(Math.max(...potionLinked.map((row) => row.hpGainPct))),
-    };
+    const blockSummary = blocks.map((block) => {
+      const blockRows = rows.filter((row) => row.blockStartFloor === block.blockStartFloor);
+      const clears = blockRows.filter((row) => row.clear);
+      return {
+        floors: `${String(block.blockStartFloor)}-${String(block.blockEndFloor)}`,
+        tier: block.tier,
+        faction: block.faction,
+        depthMultiplier: block.depthMultiplier,
+        clears: `${String(clears.length)}/${String(blockRows.length)}`,
+        minClearHpPct: clears.length === 0 ? null : Math.min(...clears.map((row) => row.hpPct)),
+        maxClearHpPct: clears.length === 0 ? null : Math.max(...clears.map((row) => row.hpPct)),
+        maxPotions: blockRows.length === 0 ? 0 : Math.max(...blockRows.map((row) => row.totalPotions)),
+      };
+    });
 
     console.log("[TOWER_LIVE_PROGRESSION_MONOTONICITY_REFERENCE]", {
       seed: TOWER_SEED,
@@ -203,13 +189,25 @@ describe("Tower live block progression monotonicity benchmark", () => {
     console.log("[TOWER_LIVE_PROGRESSION_BLOCKS]");
     console.table(blockSummary);
     console.log("[TOWER_LIVE_PROGRESSION_MONOTONICITY_SUMMARY]");
-    console.table([transitionSummary]);
+    console.table([{
+      liveBlocks: blocks.length,
+      favorableRuns: rows.length,
+      recurrenceComparisons: comparisons.length,
+      significantRecurrenceInversions: significantInversions.length,
+      potionLinkedRecurrenceInversions: potionLinked.length,
+      largestRecurrenceHpGainPct: significantInversions.length === 0
+        ? 0
+        : Math.max(...significantInversions.map((row) => row.hpGainPct)),
+      largestPotionLinkedHpGainPct: potionLinked.length === 0
+        ? 0
+        : Math.max(...potionLinked.map((row) => row.hpGainPct)),
+    }]);
     console.log("[TOWER_LIVE_PROGRESSION_INVERSIONS]");
-    console.table([...recurrenceTransitions].sort((a, b) => b.hpGainPct - a.hpGainPct));
+    console.table(significantInversions);
     console.log("[TOWER_LIVE_PROGRESSION_POTION_LINKED]");
-    console.table([...potionLinked].sort((a, b) => b.hpGainPct - a.hpGainPct));
+    console.table(potionLinked);
 
     expect(blocks).toHaveLength(20);
-    expect(rows.length).toBeGreaterThan(0);
+    expect(rows).toHaveLength(100);
   });
 });
