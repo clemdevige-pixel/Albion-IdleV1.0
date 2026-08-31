@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { InventorySlotVM } from "../../game/GameBridge";
-import { findFirstEmptyBankTabPosition } from "./BankModule.js";
+import { findFirstEmptyBankTabPosition } from "./bankTabTransfer.js";
 
 function slot(position: number, itemId?: string): InventorySlotVM {
   return {
