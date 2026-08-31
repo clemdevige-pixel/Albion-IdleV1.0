@@ -126,7 +126,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
                 type="button"
                 role="tab"
                 aria-selected={activeBankTab === tabNumber}
-                className={`${activeBankTab === tabNumber ? "is-active" : ""}${dragTargetTab === tabNumber ? " is-drop-target" : ""}`}
+                className={activeBankTab === tabNumber || dragTargetTab === tabNumber ? "is-active" : ""}
                 onClick={() => { setActiveBankTab(tabNumber); }}
                 onDragOver={(event) => {
                   if (!canReceiveDrop || onMove === undefined) return;
