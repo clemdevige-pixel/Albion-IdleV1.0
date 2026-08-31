@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { isRuntimePresentationSuppressed } from "../runtime/RuntimePresentationSuppression";
 import {
   cancelDeferredRuntimeDisposal,
   createRuntimeVisibilityHandler,
@@ -81,10 +82,13 @@ describe("initial runtime save loading", () => {
 });
 
 describe("runtime visibility reconciliation", () => {
-  it("replays missed fixed-step ticks before presentation sync and save", () => {
+  it("replays missed ticks with only the final tick presented before sync and save", () => {
     let visibilityState: DocumentVisibilityState = "visible";
     let now = 1_000;
-    const tickRuntime = vi.fn();
+    const suppressionStates: boolean[] = [];
+    const tickRuntime = vi.fn(() => {
+      suppressionStates.push(isRuntimePresentationSuppressed());
+    });
     const stopRuntime = vi.fn();
     const startRuntime = vi.fn();
     const syncPresentation = vi.fn();
@@ -114,6 +118,9 @@ describe("runtime visibility reconciliation", () => {
     handleVisibilityChange();
 
     expect(tickRuntime).toHaveBeenCalledTimes(10);
+    expect(suppressionStates).toEqual([
+      true, true, true, true, true, true, true, true, true, false,
+    ]);
     expect(syncPresentation).toHaveBeenCalledOnce();
     expect(saveGame).toHaveBeenCalledOnce();
     expect(startRuntime).toHaveBeenCalledOnce();
