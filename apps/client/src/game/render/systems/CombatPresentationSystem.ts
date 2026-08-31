@@ -69,6 +69,7 @@ export class CombatPresentationSystem {
     visualManifestId: string | undefined,
     abilityVfx: AbilityVfxDefinition | undefined,
   ): void {
+    const generation = getCombatPresentationGeneration();
     const victim = event.target === "player"
       ? this.actors.player
       : this.actors.enemy;
@@ -98,6 +99,10 @@ export class CombatPresentationSystem {
     });
 
     this.scene.time.delayedCall(presentation?.impactDelayMs ?? 75, () => {
+      // Melee impacts are asynchronous presentation work just like projectiles.
+      // Once the encounter presentation is invalidated, an old callback must
+      // never mutate health, VFX or actor visibility for the next/empty state.
+      if (generation !== getCombatPresentationGeneration()) return;
       if (abilityVfx !== undefined && event.target === "enemy") {
         this.presentAbilityVfx(victim, abilityVfx);
       }
