@@ -40,7 +40,7 @@ export interface ResearchServiceDependencies<
   TRequirement extends ResearchRequirementDefinition,
 > {
   readonly requirementPort: ResearchRequirementPort<TRequirement>;
-  readonly paymentPort: ResearchPaymentPort;
+  readonly paymentPort: ResearchPaymentPort<TRequirement>;
 }
 
 /**
@@ -64,7 +64,7 @@ export class ResearchService<
   readonly #completedResearchIds = new Set<ResearchId>();
   readonly #activeResearches = new Map<ResearchId, ActiveResearchState>();
   readonly #requirementPort: ResearchRequirementPort<TRequirement>;
-  readonly #paymentPort: ResearchPaymentPort;
+  readonly #paymentPort: ResearchPaymentPort<TRequirement>;
   readonly #completionListeners = new Set<ResearchCompletionListener>();
 
   constructor(dependencies: ResearchServiceDependencies<TRequirement>) {
