@@ -95,7 +95,10 @@ export interface CombatRuntimeBenchmarkInput {
   /** Optional zero-based encounter to start from. Useful for isolated world boss diagnostics. */
   readonly startingEncounterIndex?: number;
   readonly equipmentItemIds?: readonly string[];
+  /** Weapon enchantment. */
   readonly enchantment?: BenchmarkEnchantment;
+  /** Optional separate enchantment for armor/cape. Defaults to weapon enchantment. */
+  readonly equipmentEnchantment?: BenchmarkEnchantment;
   /** Optional real .4 awakened state injected on the equipped weapon instance. */
   readonly awakenedWeapon?: CombatRuntimeBenchmarkAwakenedWeapon;
   /** Legacy shorthand: seeds both family and equipped specialization to the same level. */
@@ -375,8 +378,11 @@ export function runCombatRuntimeBenchmark(input: CombatRuntimeBenchmarkInput): C
     ? 0
     : masteryService.getMasteryState(masteryRoute.familyId)?.level ?? 0;
   const enchantment = input.enchantment ?? 0;
+  const equipmentEnchantment = input.equipmentEnchantment ?? enchantment;
   equipItem(inventoryManager, equipmentManager, heroId, input.weaponItemId, enchantment);
-  for (const itemId of input.equipmentItemIds ?? []) equipItem(inventoryManager, equipmentManager, heroId, itemId, enchantment);
+  for (const itemId of input.equipmentItemIds ?? []) {
+    equipItem(inventoryManager, equipmentManager, heroId, itemId, equipmentEnchantment);
+  }
 
   if (input.awakenedWeapon === undefined) {
     recalculateWeaponMasteryStats(statsManager, equipmentManager, masteryService, heroId);
