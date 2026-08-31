@@ -52,7 +52,11 @@ export const RESEARCH_UNLOCK_IDS = {
 } as const;
 
 export type AuthoredResearchRequirement =
-  | { readonly type: "relic_charged"; readonly relicId: string }
+  | {
+      readonly type: "relic_charged";
+      readonly relicId: string;
+      readonly consumeOnStart?: boolean;
+    }
   | { readonly type: "academy_tier"; readonly minimumTier: number }
   | { readonly type: "research_unlock"; readonly unlockId: string }
   | { readonly type: "enchantment_shard_discovered" }
@@ -106,7 +110,7 @@ const DUNGEON_DISCOVERY_RESEARCH = [
     cost: { silver: 10_000, materials: [] },
     requirements: [
       { type: "academy_tier", minimumTier: 4 },
-      { type: "relic_charged", relicId: DUNGEON_RELIC_ID },
+      { type: "relic_charged", relicId: DUNGEON_RELIC_ID, consumeOnStart: true },
     ],
     unlockIds: [
       RESEARCH_UNLOCK_IDS.dungeonRelicAnalyzed,
