@@ -150,7 +150,7 @@ export class ResearchService<
     if (!this.#areRequirementsMet(definition)) {
       return { ok: false, reason: "requirements_not_met" };
     }
-    if (!this.#paymentPort.tryConsumeResearchCost(definition.cost)) {
+    if (!this.#paymentPort.tryConsumeResearchCost(definition.cost, definition)) {
       return { ok: false, reason: "payment_failed" };
     }
 
