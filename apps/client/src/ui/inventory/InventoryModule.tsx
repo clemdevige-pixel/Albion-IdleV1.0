@@ -6,10 +6,9 @@ import { getFragmentAssemblyRecipe } from "../../data/specialCraftRecipes.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemContextMenu } from "../../panels/ItemContextMenu";
 import { getItemDisplayName } from "../../panels/ItemVisual";
+import type { StorageRange } from "../../runtime/StorageRuntime";
 import { useGameServices } from "../../state/GameContext";
 import { BankModule } from "../bank";
-import { findFirstEmptyBankTabPosition } from "../bank/bankTabTransfer.js";
-import { useBankData } from "../bank/useBankData";
 import {
   createTrackedItemResource,
   isTrackableResourceItem,
@@ -58,9 +57,12 @@ function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter):
   return !isEquipmentInventoryItem(itemId) && !isSpecialInventoryItem(itemId);
 }
 
+function getBankTabRange(tabNumber: number, tabCapacity: number): StorageRange {
+  return { start: (tabNumber - 1) * tabCapacity, length: tabCapacity };
+}
+
 export function InventoryModule(): JSX.Element {
   const inventory = useInventoryData();
-  const bank = useBankData();
   const actions = useInventoryActions();
   const services = useGameServices();
   const tracking = useResourceTracking();
@@ -116,19 +118,24 @@ export function InventoryModule(): JSX.Element {
   const contextIsEquipment = contextItemId !== undefined && isEquipmentInventoryItem(contextItemId);
   const bankDestinations = Array.from({ length: bankExpansion.unlockedTabCount }, (_, index) => {
     const tabNumber = index + 1;
-    const targetPosition = findFirstEmptyBankTabPosition(bank.slots, tabNumber, bankExpansion.tabCapacity);
+    const range = getBankTabRange(tabNumber, bankExpansion.tabCapacity);
     return {
       tabNumber,
       label: `Banque ${ROMAN_TAB_LABELS[index] ?? String(tabNumber)}`,
-      disabled: targetPosition === undefined,
+      disabled: contextMenu === null
+        || !actions.canTransferToRange("inventory", contextMenu.position, "bank", range),
     };
   });
 
   const handleMoveToBankTab = useCallback((position: number, tabNumber: number) => {
-    const to = findFirstEmptyBankTabPosition(bank.slots, tabNumber, bankExpansion.tabCapacity);
-    if (to !== undefined) actions.transfer("inventory", position, "bank", to);
+    actions.transferToRange(
+      "inventory",
+      position,
+      "bank",
+      getBankTabRange(tabNumber, bankExpansion.tabCapacity),
+    );
     setContextMenu(null);
-  }, [actions, bank.slots, bankExpansion.tabCapacity]);
+  }, [actions, bankExpansion.tabCapacity]);
 
   return (
     <div className="storage-module">
@@ -144,6 +151,8 @@ export function InventoryModule(): JSX.Element {
       {activeTab === "bank" ? (
         <BankModule
           onMove={(from, to) => { actions.move("bank", from, to); }}
+          canMoveToRange={(from, range) => actions.canMoveToRange("bank", from, range)}
+          onMoveToRange={(from, range) => actions.moveToRange("bank", from, range)}
           onTransferToInventory={(position) => { actions.transfer("bank", position, "inventory"); }}
           onSort={(start, length) => { actions.sort("bank", start, length); }}
         />
