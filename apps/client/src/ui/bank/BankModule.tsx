@@ -1,4 +1,4 @@
-import { useEffect, useState, type DragEvent } from "react";
+import { useEffect, useState, type DragEvent, type MouseEvent } from "react";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { getItemDefinition, getItemDisplayName } from "../../panels/ItemVisual";
@@ -20,6 +20,12 @@ interface BankModuleProps {
 }
 
 type BankFilter = "all" | "equipment" | "resources" | "special";
+
+interface BankContextMenuState {
+  readonly position: number;
+  readonly x: number;
+  readonly y: number;
+}
 
 const BANK_FILTERS: readonly { readonly id: BankFilter; readonly label: string }[] = [
   { id: "all", label: "Tous" },
@@ -61,12 +67,29 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
   const [activeFilter, setActiveFilter] = useState<BankFilter>("all");
   const [activeBankTab, setActiveBankTab] = useState(1);
   const [dragTargetTab, setDragTargetTab] = useState<number | undefined>(undefined);
+  const [contextMenu, setContextMenu] = useState<BankContextMenuState | undefined>(undefined);
 
   useEffect(() => {
     if (activeBankTab > expansion.unlockedTabCount) {
       setActiveBankTab(expansion.unlockedTabCount);
     }
   }, [activeBankTab, expansion.unlockedTabCount]);
+
+  useEffect(() => {
+    if (contextMenu === undefined) return;
+    const close = (): void => { setContextMenu(undefined); };
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("click", close);
+    window.addEventListener("blur", close);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("blur", close);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [contextMenu]);
 
   const tabStart = (activeBankTab - 1) * expansion.tabCapacity;
   const tabEnd = tabStart + expansion.tabCapacity;
@@ -81,19 +104,26 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
   const filteredSlots = activeTabSlots.filter((slot) => matchesBankFilter(slot, activeFilter));
   const activeLabel = ROMAN_TAB_LABELS[activeBankTab - 1] ?? String(activeBankTab);
 
+  const moveItemToTab = (from: number, tabNumber: number): boolean => {
+    if (onMove === undefined || tabNumber === activeBankTab) return false;
+    if (bank.slots.find((slot) => slot.position === from)?.itemId === undefined) return false;
+    const to = findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity);
+    if (to === undefined) return false;
+    onMove(from, to);
+    return true;
+  };
+
   const moveDraggedItemToTab = (event: DragEvent<HTMLButtonElement>, tabNumber: number): void => {
     event.preventDefault();
     setDragTargetTab(undefined);
-    if (onMove === undefined || tabNumber === activeBankTab) return;
-
     const from = readDraggedBankPosition(event);
-    if (from === undefined || bank.slots.find((slot) => slot.position === from)?.itemId === undefined) return;
+    if (from !== undefined && moveItemToTab(from, tabNumber)) setActiveBankTab(tabNumber);
+  };
 
-    const to = findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity);
-    if (to === undefined) return;
-
-    onMove(from, to);
-    setActiveBankTab(tabNumber);
+  const openMoveContextMenu = (event: MouseEvent<HTMLButtonElement>, slot: InventorySlotVM): void => {
+    event.preventDefault();
+    if (onMove === undefined || expansion.unlockedTabCount <= 1 || slot.itemId === undefined) return;
+    setContextMenu({ position: slot.position, x: event.clientX, y: event.clientY });
   };
 
   return (
@@ -181,7 +211,7 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
             onItemDoubleClick={(_event, slot) => {
               if (slot.itemId !== undefined) onTransferToInventory?.(slot.position);
             }}
-            onItemContextMenu={(event) => { event.preventDefault(); }}
+            onItemContextMenu={openMoveContextMenu}
             {...(yieldTrackingUnlocked ? {
               canFavoriteItem: isTrackableResourceItem,
               isItemFavorite: tracking.isTracked,
@@ -195,8 +225,41 @@ export function BankModule({ onMove, onTransferToInventory, onSort }: BankModule
         )}
       </section>
 
+      {contextMenu !== undefined && (
+        <div
+          className="storage-module__context-menu"
+          role="menu"
+          aria-label="Déplacer vers une autre banque"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(event) => { event.stopPropagation(); }}
+          onContextMenu={(event) => { event.preventDefault(); }}
+        >
+          <strong>Déplacer vers</strong>
+          {Array.from({ length: expansion.unlockedTabCount }, (_, index) => index + 1)
+            .filter((tabNumber) => tabNumber !== activeBankTab)
+            .map((tabNumber) => {
+              const label = ROMAN_TAB_LABELS[tabNumber - 1] ?? String(tabNumber);
+              const target = findFirstEmptyBankTabPosition(bank.slots, tabNumber, expansion.tabCapacity);
+              return (
+                <button
+                  key={tabNumber}
+                  type="button"
+                  role="menuitem"
+                  disabled={target === undefined}
+                  onClick={() => {
+                    moveItemToTab(contextMenu.position, tabNumber);
+                    setContextMenu(undefined);
+                  }}
+                >
+                  Banque {label}{target === undefined ? " · pleine" : ""}
+                </button>
+              );
+            })}
+        </div>
+      )}
+
       <p className="storage-module__hint">
-        Double-clic : vers inventaire · glissez-déposez pour organiser · déposez sur un onglet pour déplacer
+        Double-clic : vers inventaire · clic droit : déplacer vers · glissez-déposez pour organiser · déposez sur un onglet pour déplacer
         {yieldTrackingUnlocked ? " · étoile : suivre une ressource." : "."}
       </p>
     </div>
