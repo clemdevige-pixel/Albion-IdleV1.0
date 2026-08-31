@@ -166,13 +166,11 @@ export class CombatRewardRuntime {
           if (!this.awakenedWeaponService.has(equippedWeapon.instanceId)) {
             this.awakenedWeaponService.registerFresh(equippedWeapon.instanceId, itemTier);
           }
-          if (lootContext.enchantmentTier >= itemTier) {
-            const attunement = this.awakenedWeaponService.addAttunement(
-              equippedWeapon.instanceId,
-              finalCombatFame,
-            );
-            if (attunement.ok) attunementEarned = attunement.value;
-          }
+          const attunement = this.awakenedWeaponService.addAttunement(
+            equippedWeapon.instanceId,
+            factionAdjustedFame,
+          );
+          if (attunement.ok) attunementEarned = attunement.value;
         }
       }
     }
