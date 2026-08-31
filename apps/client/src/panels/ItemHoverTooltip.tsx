@@ -20,6 +20,7 @@ export function ItemHoverTooltip({
   children,
 }: ItemHoverTooltipProps): JSX.Element {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [suppressedUntilLeave, setSuppressedUntilLeave] = useState(false);
   const assemblyRecipe = getFragmentAssemblyRecipe(itemId);
   const requiredFragments = assemblyRecipe?.requirements[0]?.quantity;
 
@@ -27,12 +28,19 @@ export function ItemHoverTooltip({
     <span
       className="item-hover-target"
       onMouseEnter={(event) => {
-        setPosition({ x: event.clientX, y: event.clientY });
+        if (!suppressedUntilLeave) setPosition({ x: event.clientX, y: event.clientY });
       }}
       onMouseMove={(event) => {
-        setPosition({ x: event.clientX, y: event.clientY });
+        if (!suppressedUntilLeave) setPosition({ x: event.clientX, y: event.clientY });
       }}
-      onMouseLeave={() => { setPosition(null); }}
+      onMouseLeave={() => {
+        setPosition(null);
+        setSuppressedUntilLeave(false);
+      }}
+      onContextMenu={() => {
+        setPosition(null);
+        setSuppressedUntilLeave(true);
+      }}
     >
       {children}
       {position !== null && createPortal(
