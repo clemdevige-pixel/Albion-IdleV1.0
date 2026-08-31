@@ -66,10 +66,12 @@ export interface ResearchRequirementPort<
   ): boolean;
 }
 
-export interface ResearchPaymentPort {
+export interface ResearchPaymentPort<
+  TRequirement extends ResearchRequirementDefinition = ResearchRequirementDefinition,
+> {
   /** Must validate and consume the complete cost atomically. */
   tryConsumeResearchCost(
     cost: ResearchCostDefinition,
-    definition: ResearchDefinition,
+    definition: ResearchDefinition<TRequirement>,
   ): boolean;
 }
