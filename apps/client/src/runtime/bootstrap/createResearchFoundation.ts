@@ -2,9 +2,11 @@ import type { EntityId } from "@game/core";
 import {
   ResearchService,
   type CurrencyService,
+  type InventoryEntry,
   type InventoryManager,
   type RelicService,
   type ResearchCostDefinition,
+  type ResearchDefinition,
   type ResearchPaymentPort,
   type ResearchRequirementPort,
   type WalletId,
@@ -15,7 +17,10 @@ import {
   RESEARCH_UNLOCK_IDS,
   type ResearchContentRequirement,
 } from "../../data/researchContentCatalog.js";
-import { DUNGEON_RELIC_ID } from "../../data/relicContentCatalog.js";
+import {
+  DUNGEON_RELIC_ID,
+  RELIC_DEFINITIONS,
+} from "../../data/relicContentCatalog.js";
 import { isDevSandboxMode } from "../devSandbox.js";
 
 export interface ResearchFoundationDependencies {
@@ -26,6 +31,12 @@ export interface ResearchFoundationDependencies {
   readonly productionStorageId: EntityId;
   readonly getAcademyTier: () => number;
   readonly isWorldProgressionComplete: () => boolean;
+}
+
+interface RemovedResearchItem {
+  readonly ownerId: EntityId;
+  readonly position: number;
+  readonly entry: InventoryEntry;
 }
 
 function hasDiscoveredEnchantmentShard(inventoryManager: InventoryManager): boolean {
@@ -62,9 +73,9 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
       }
     },
   };
-  const paymentPort: ResearchPaymentPort = {
-    tryConsumeResearchCost(cost) {
-      return tryConsumeResearchCost(dependencies, cost);
+  const paymentPort: ResearchPaymentPort<ResearchContentRequirement> = {
+    tryConsumeResearchCost(cost, definition) {
+      return tryConsumeResearchCost(dependencies, cost, definition);
     },
   };
   const researchService = new ResearchService<ResearchContentRequirement>({
@@ -109,6 +120,7 @@ export function createResearchFoundation(dependencies: ResearchFoundationDepende
 function tryConsumeResearchCost(
   dependencies: ResearchFoundationDependencies,
   cost: ResearchCostDefinition,
+  definition: ResearchDefinition<ResearchContentRequirement>,
 ): boolean {
   const balance = dependencies.currencyService.getBalance(
     dependencies.walletId,
@@ -125,13 +137,29 @@ function tryConsumeResearchCost(
     ) return false;
   }
 
+  const consumableRelics = resolveConsumableRelics(dependencies, definition);
+  if (consumableRelics === undefined) return false;
+
+  const removedRelics: RemovedResearchItem[] = [];
+  for (const relic of consumableRelics) {
+    const removed = dependencies.inventoryManager.removeEntryAt(relic.ownerId, relic.position);
+    if (!removed.ok || removed.value.instanceId !== relic.entry.instanceId) {
+      rollbackRemovedResearchItems(dependencies.inventoryManager, removedRelics);
+      return false;
+    }
+    removedRelics.push({ ...relic, entry: removed.value });
+  }
+
   if (cost.silver > 0) {
     const debit = dependencies.currencyService.debit(
       dependencies.walletId,
       "currency_silver",
       cost.silver,
     );
-    if (!debit.ok) return false;
+    if (!debit.ok) {
+      rollbackRemovedResearchItems(dependencies.inventoryManager, removedRelics);
+      return false;
+    }
   }
 
   const paidMaterials: ResearchCostDefinition["materials"][number][] = [];
@@ -142,7 +170,7 @@ function tryConsumeResearchCost(
       material.quantity,
     );
     if (!removed.ok) {
-      rollbackResearchCost(dependencies, cost.silver, paidMaterials);
+      rollbackResearchCost(dependencies, cost.silver, paidMaterials, removedRelics);
       return false;
     }
     paidMaterials.push(material);
@@ -151,10 +179,43 @@ function tryConsumeResearchCost(
   return true;
 }
 
+function resolveConsumableRelics(
+  dependencies: ResearchFoundationDependencies,
+  definition: ResearchDefinition<ResearchContentRequirement>,
+): readonly RemovedResearchItem[] | undefined {
+  const relicIds = [...new Set(definition.requirements.flatMap((requirement) => (
+    requirement.type === "relic_charged" && requirement.consumeOnStart === true
+      ? [requirement.relicId]
+      : []
+  )))];
+  const resolved: RemovedResearchItem[] = [];
+
+  for (const relicId of relicIds) {
+    const relicDefinition = RELIC_DEFINITIONS.find((candidate) => candidate.id === relicId);
+    if (relicDefinition === undefined) return undefined;
+
+    let match: RemovedResearchItem | undefined;
+    for (const ownerId of dependencies.inventoryManager.listInventories()) {
+      const slot = dependencies.inventoryManager.findEntriesByItemId(
+        ownerId,
+        relicDefinition.inventoryItemId,
+      )[0];
+      if (slot?.entry === undefined) continue;
+      match = { ownerId, position: slot.position, entry: slot.entry };
+      break;
+    }
+    if (match === undefined) return undefined;
+    resolved.push(match);
+  }
+
+  return resolved;
+}
+
 function rollbackResearchCost(
   dependencies: ResearchFoundationDependencies,
   silver: number,
   paidMaterials: readonly ResearchCostDefinition["materials"][number][],
+  removedItems: readonly RemovedResearchItem[] = [],
 ): void {
   if (silver > 0) {
     const refund = dependencies.currencyService.credit(
@@ -174,6 +235,23 @@ function rollbackResearchCost(
     );
     if (!restored.ok || restored.value.remainder !== 0) {
       throw new Error(`Research material rollback failed for ${material.itemId}`);
+    }
+  }
+
+  rollbackRemovedResearchItems(dependencies.inventoryManager, removedItems);
+}
+
+function rollbackRemovedResearchItems(
+  inventoryManager: InventoryManager,
+  removedItems: readonly RemovedResearchItem[],
+): void {
+  for (const removed of [...removedItems].reverse()) {
+    const preferred = inventoryManager.getSlot(removed.ownerId, removed.position);
+    const restored = preferred.ok && preferred.value.entry === undefined
+      ? inventoryManager.insertEntry(removed.ownerId, removed.entry, removed.position)
+      : inventoryManager.insertEntry(removed.ownerId, removed.entry);
+    if (!restored.ok) {
+      throw new Error(`Research item rollback failed for ${removed.entry.itemId}`);
     }
   }
 }
