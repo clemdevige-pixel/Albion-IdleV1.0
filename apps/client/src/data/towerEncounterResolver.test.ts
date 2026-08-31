@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER,
+  TOWER_BASELINE_COMBAT_MULTIPLIER,
   TOWER_REINFORCED_COMBAT_MULTIPLIERS,
   getTowerDepthDifficultyMultiplier,
 } from "@game/data";
 import { resolveDungeonCombatProfile } from "./dungeonContentCatalog.js";
-import { applyTowerFactionCombatNormalization } from "./towerCombatNormalization.js";
 import {
   resolveTowerDifficultyZeroEncounter,
   resolveTowerEncounter,
@@ -46,24 +45,20 @@ describe("towerEncounterResolver", () => {
     expect(tower.combatProfile).toEqual(zero.combatProfile);
   });
 
-  it("keeps Dungeon balance immutable while applying Tower Difficulty 0 calibration", () => {
+  it("keeps Dungeon balance immutable while applying the single Tower baseline", () => {
     const zero = resolveTowerDifficultyZeroEncounter(6, "heretic", 0);
     const baseProfile = resolveDungeonCombatProfile({
       dungeonDefinitionId: zero.dungeonDefinitionId,
       encounterIndex: zero.dungeonEncounterIndex,
       monsterDefinitionId: zero.monsterDefinitionId,
     });
-    const normalized = applyTowerFactionCombatNormalization(
-      { factionId: "heretic", tier: 6 },
-      baseProfile,
-    );
-    const multiplier = TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER.heretic[6];
+    const multiplier = TOWER_BASELINE_COMBAT_MULTIPLIER.heretic[6];
     const expected = {
-      hp: Math.max(1, Math.round(normalized.hp * multiplier)),
-      damage: Math.max(1, Math.round(normalized.damage * multiplier)),
-      attackSpeed: normalized.attackSpeed,
-      armor: Math.max(0, Math.round(normalized.armor * multiplier)),
-      magicResistance: Math.max(0, Math.round(normalized.magicResistance * multiplier)),
+      hp: Math.max(1, Math.round(baseProfile.hp * multiplier)),
+      damage: Math.max(1, Math.round(baseProfile.damage * multiplier)),
+      attackSpeed: baseProfile.attackSpeed,
+      armor: Math.max(0, Math.round(baseProfile.armor * multiplier)),
+      magicResistance: Math.max(0, Math.round(baseProfile.magicResistance * multiplier)),
     };
 
     expect(zero.combatProfile).toEqual(expected);
@@ -74,27 +69,23 @@ describe("towerEncounterResolver", () => {
     })).toEqual(baseProfile);
   });
 
-  it("applies reinforced role tuning before Difficulty 0 calibration", () => {
+  it("applies reinforced role tuning before the single Tower baseline", () => {
     const reinforced = resolveTowerDifficultyZeroEncounter(8, "keeper", 2);
     const baseProfile = resolveDungeonCombatProfile({
       dungeonDefinitionId: reinforced.dungeonDefinitionId,
       encounterIndex: reinforced.dungeonEncounterIndex,
       monsterDefinitionId: reinforced.monsterDefinitionId,
     });
-    const normalized = applyTowerFactionCombatNormalization(
-      { factionId: "keeper", tier: 8 },
-      baseProfile,
-    );
     const roleTuned = {
-      hp: Math.round(normalized.hp * TOWER_REINFORCED_COMBAT_MULTIPLIERS.hp),
-      damage: Math.round(normalized.damage * TOWER_REINFORCED_COMBAT_MULTIPLIERS.damage),
-      attackSpeed: normalized.attackSpeed,
-      armor: Math.round(normalized.armor * TOWER_REINFORCED_COMBAT_MULTIPLIERS.defense),
+      hp: Math.round(baseProfile.hp * TOWER_REINFORCED_COMBAT_MULTIPLIERS.hp),
+      damage: Math.round(baseProfile.damage * TOWER_REINFORCED_COMBAT_MULTIPLIERS.damage),
+      attackSpeed: baseProfile.attackSpeed,
+      armor: Math.round(baseProfile.armor * TOWER_REINFORCED_COMBAT_MULTIPLIERS.defense),
       magicResistance: Math.round(
-        normalized.magicResistance * TOWER_REINFORCED_COMBAT_MULTIPLIERS.defense,
+        baseProfile.magicResistance * TOWER_REINFORCED_COMBAT_MULTIPLIERS.defense,
       ),
     };
-    const multiplier = TOWER_DIFFICULTY_ZERO_COMBAT_MULTIPLIER.keeper[8];
+    const multiplier = TOWER_BASELINE_COMBAT_MULTIPLIER.keeper[8];
 
     expect(reinforced.combatProfile).toEqual({
       hp: Math.max(1, Math.round(roleTuned.hp * multiplier)),
