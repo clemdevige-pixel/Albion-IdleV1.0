@@ -29,10 +29,10 @@ import {
   type ZoneDefinitionId,
 } from "@game/gameplay";
 import {
-  resolveEnchantmentItemInfo,
   resolveEquipmentInfo,
   resolveItemStackInfo,
 } from "../data/itemContentCatalog.js";
+import { resolveAuthoredEnchantmentItemInfo } from "../data/enchantmentItemPolicy.js";
 import { getItemTier } from "../data/itemPower.js";
 import {
   getWeaponMasteryFamilyDefinitions,
@@ -236,7 +236,7 @@ function equipItem(
   if (!equipped.ok) throw new Error(`Failed to equip ${itemId}: ${equipped.reason}`);
   if (enchantment <= 0) return;
 
-  const enchantmentInfo = resolveEnchantmentItemInfo(itemId);
+  const enchantmentInfo = resolveAuthoredEnchantmentItemInfo(itemId);
   if (
     enchantmentInfo === undefined
     || !enchantmentInfo.enchantable
