@@ -189,13 +189,15 @@ const validationRows = counterWeapons.map(({ weapon, weaponItemId, modifiers }) 
     modifiers.incomingDamageReductionPercent,
     BASELINE_ENCHANTMENT,
   );
+  // A plain .4 is not an awakened weapon yet. Keep this validation on the exact
+  // same runtime/mastery path as .3; only the strain sweep below injects
+  // AwakenedWeaponService state.
   const t54NoTrait = runTowerCase(
     weaponItemId,
     `tower_21_25_t5_4_no_trait_${weapon.family}_${weapon.label}`,
     heroDamageMultiplier,
     modifiers.incomingDamageReductionPercent,
     WEAPON_ENCHANTMENT,
-    { strain: 0, traits: [] },
   );
 
   if (resultScore(t54NoTrait) < resultScore(t53)) {
