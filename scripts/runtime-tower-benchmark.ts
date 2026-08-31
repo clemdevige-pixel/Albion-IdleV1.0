@@ -18,6 +18,7 @@ const FLOOR_START = 21;
 const FLOOR_END = 25;
 const TIER = 5 as const;
 const FACTION = "morgana" as const;
+const BASELINE_ENCHANTMENT = 3 as const;
 const WEAPON_ENCHANTMENT = 4 as const;
 const EQUIPMENT_ENCHANTMENT = 3 as const;
 const STRAIN = 10;
@@ -42,7 +43,6 @@ const floors = Array.from(
   (_, index) => FLOOR_START + index,
 );
 const resolvedFloors = floors.map((floor) => resolveTowerEncounter(floor, TOWER_SEED));
-
 for (const encounter of resolvedFloors) {
   if (
     encounter.floorDefinition.block.tier !== TIER
@@ -71,19 +71,11 @@ function getTraitRollMax(traitId: AwakenedTraitId, currentValue: number): number
 }
 
 function getTraitCap(traitId: AwakenedTraitId): number | undefined {
-  if (traitId === "cooldown_reduction") {
-    return AUTHORED_AWAKENED_WEAPON_BALANCE.traitCaps.cooldown_reduction;
-  }
-  if (traitId === "life_steal") {
-    return AUTHORED_AWAKENED_WEAPON_BALANCE.traitCaps.life_steal;
-  }
+  if (traitId === "cooldown_reduction") return AUTHORED_AWAKENED_WEAPON_BALANCE.traitCaps.cooldown_reduction;
+  if (traitId === "life_steal") return AUTHORED_AWAKENED_WEAPON_BALANCE.traitCaps.life_steal;
   return undefined;
 }
 
-/**
- * Exact strain-10 upper deterministic roll without relying on critical RNG:
- * one fill action + nine improvements on the same trait.
- */
 function getOptimizedTraitValueAtStrain(traitId: AwakenedTraitId, strain: number): number {
   let value = 0;
   for (let modification = 0; modification < strain; modification += 1) {
@@ -108,11 +100,45 @@ function compareResults(a: CombatRuntimeBenchmarkResult, b: CombatRuntimeBenchma
   return a.seconds - b.seconds;
 }
 
-console.log("[TOWER_21_25_AWAKENED_REFERENCE]", {
+function runTowerCase(
+  weaponItemId: string,
+  label: string,
+  heroDamageMultiplier: number,
+  incomingDamageReductionPercent: number,
+  enchantment: 3 | 4,
+  awakenedWeapon?: { readonly strain: number; readonly traits: readonly { readonly traitId: AwakenedTraitId; readonly value: number }[] },
+): CombatRuntimeBenchmarkResult {
+  return runCombatRuntimeBenchmark({
+    label,
+    weaponItemId,
+    equipmentItemIds: artifactDungeonEquipment(weaponItemId, TIER, FACTION),
+    zoneDefId: ZONE_DEF_ID,
+    segmentIndex: SEGMENT_INDEX,
+    enchantment,
+    equipmentEnchantment: EQUIPMENT_ENCHANTMENT,
+    ...(awakenedWeapon === undefined ? {} : { awakenedWeapon }),
+    familyMasteryLevel: mastery.familyMasteryLevel,
+    specializationMasteryLevel: mastery.specializationMasteryLevel,
+    siblingSpecializationMasteryLevel: mastery.siblingSpecializationMasteryLevel,
+    useHealthPotions: true,
+    healthPotionQuantity: POTION_CAP,
+    heroDamageMultiplier,
+    incomingDamageReductionPercent,
+    authoredEncounters,
+  });
+}
+
+function resultScore(result: CombatRuntimeBenchmarkResult): number {
+  if (result.clear) return 1_000_000 + result.hpPercent * 100 - result.seconds;
+  return result.encounterReached * 10_000 + result.encounterProgressPercent * 100 + result.hpPercent;
+}
+
+console.log("[TOWER_21_25_REFERENCE]", {
   floors: `${String(FLOOR_START)}-${String(FLOOR_END)}`,
   tier: TIER,
   faction: FACTION,
-  weaponEnchantment: WEAPON_ENCHANTMENT,
+  baselineWeaponEnchantment: BASELINE_ENCHANTMENT,
+  awakenedWeaponEnchantment: WEAPON_ENCHANTMENT,
   equipmentEnchantment: EQUIPMENT_ENCHANTMENT,
   strain: STRAIN,
   traitPolicy: "single trait, max legal non-critical value after 10 modifications",
@@ -124,12 +150,6 @@ console.log("[TOWER_21_25_AWAKENED_REFERENCE]", {
   seed: TOWER_SEED,
 });
 
-console.log("[TOWER_21_25_AWAKENED_TRAIT_VALUES]");
-console.table(COMBAT_TRAITS.map((traitId) => ({
-  trait: traitId,
-  valueAtStrain10: getOptimizedTraitValueAtStrain(traitId, STRAIN),
-})));
-
 console.log("[TOWER_21_25_ENCOUNTERS]");
 console.table(resolvedFloors.map((encounter) => ({
   floor: encounter.floorDefinition.floor,
@@ -139,6 +159,12 @@ console.table(resolvedFloors.map((encounter) => ({
   damage: encounter.combatProfile.damage,
   armor: encounter.combatProfile.armor,
   magicResistance: encounter.combatProfile.magicResistance,
+})));
+
+console.log("[TOWER_21_25_AWAKENED_TRAIT_VALUES]");
+console.table(COMBAT_TRAITS.map((traitId) => ({
+  trait: traitId,
+  valueAtStrain10: getOptimizedTraitValueAtStrain(traitId, STRAIN),
 })));
 
 const counterWeapons = ARTIFACT_WEAPON_BENCHMARK_SPECS
@@ -152,46 +178,62 @@ const counterWeapons = ARTIFACT_WEAPON_BENCHMARK_SPECS
   })
   .filter(({ modifiers }) => modifiers.outgoingDamageBonusPercent > 0);
 
-const traitRuns = counterWeapons.flatMap(({ weapon, weaponItemId, modifiers }) => {
+const validationRows = counterWeapons.map(({ weapon, weaponItemId, modifiers }) => {
   const heroDamageMultiplier = (
     1 + modifiers.outgoingDamageBonusPercent / 100
   ) * modifiers.factionResilienceDamageMultiplier;
+  const t53 = runTowerCase(
+    weaponItemId,
+    `tower_21_25_t5_3_${weapon.family}_${weapon.label}`,
+    heroDamageMultiplier,
+    modifiers.incomingDamageReductionPercent,
+    BASELINE_ENCHANTMENT,
+  );
+  const t54NoTrait = runTowerCase(
+    weaponItemId,
+    `tower_21_25_t5_4_no_trait_${weapon.family}_${weapon.label}`,
+    heroDamageMultiplier,
+    modifiers.incomingDamageReductionPercent,
+    WEAPON_ENCHANTMENT,
+    { strain: 0, traits: [] },
+  );
 
-  return COMBAT_TRAITS.map((traitId) => {
-    const traitValue = getOptimizedTraitValueAtStrain(traitId, STRAIN);
-    const result = runCombatRuntimeBenchmark({
-      label: `tower_21_25_t5_4_s10_${weapon.family}_${weapon.label}_${traitId}`,
-      weaponItemId,
-      equipmentItemIds: artifactDungeonEquipment(weaponItemId, TIER, FACTION),
-      zoneDefId: ZONE_DEF_ID,
-      segmentIndex: SEGMENT_INDEX,
-      enchantment: WEAPON_ENCHANTMENT,
-      equipmentEnchantment: EQUIPMENT_ENCHANTMENT,
-      awakenedWeapon: {
-        strain: STRAIN,
-        traits: [{ traitId, value: traitValue }],
-      },
-      familyMasteryLevel: mastery.familyMasteryLevel,
-      specializationMasteryLevel: mastery.specializationMasteryLevel,
-      siblingSpecializationMasteryLevel: mastery.siblingSpecializationMasteryLevel,
-      useHealthPotions: true,
-      healthPotionQuantity: POTION_CAP,
-      heroDamageMultiplier,
-      incomingDamageReductionPercent: modifiers.incomingDamageReductionPercent,
-      authoredEncounters,
-    });
+  if (resultScore(t54NoTrait) < resultScore(t53)) {
+    throw new Error(
+      `[TOWER_BENCHMARK_INVALID] ${weapon.label}: T5.4 no-trait regressed below T5.3 `
+      + `(T5.3 clear=${String(t53.clear)} reached=${String(t53.encounterReached)} progress=${String(t53.encounterProgressPercent)} dps=${String(t53.observedDps)}; `
+      + `T5.4 clear=${String(t54NoTrait.clear)} reached=${String(t54NoTrait.encounterReached)} progress=${String(t54NoTrait.encounterProgressPercent)} dps=${String(t54NoTrait.observedDps)})`,
+    );
+  }
 
-    return {
-      weapon,
-      weaponItemId,
-      modifiers,
-      heroDamageMultiplier,
-      traitId,
-      traitValue,
-      result,
-    };
-  });
+  return { weapon, weaponItemId, modifiers, heroDamageMultiplier, t53, t54NoTrait };
 });
+
+console.log("[TOWER_21_25_ENCHANTMENT_VALIDATION]");
+console.table(validationRows.map(({ weapon, t53, t54NoTrait }) => ({
+  weapon: weapon.label,
+  t53Clear: t53.clear,
+  t53ProgressPct: t53.encounterProgressPercent,
+  t53Dps: t53.observedDps,
+  t54NoTraitClear: t54NoTrait.clear,
+  t54NoTraitProgressPct: t54NoTrait.encounterProgressPercent,
+  t54NoTraitDps: t54NoTrait.observedDps,
+})));
+
+const traitRuns = validationRows.flatMap(({ weapon, weaponItemId, modifiers, heroDamageMultiplier }) => (
+  COMBAT_TRAITS.map((traitId) => {
+    const traitValue = getOptimizedTraitValueAtStrain(traitId, STRAIN);
+    const result = runTowerCase(
+      weaponItemId,
+      `tower_21_25_t5_4_s10_${weapon.family}_${weapon.label}_${traitId}`,
+      heroDamageMultiplier,
+      modifiers.incomingDamageReductionPercent,
+      WEAPON_ENCHANTMENT,
+      { strain: STRAIN, traits: [{ traitId, value: traitValue }] },
+    );
+    return { weapon, traitId, traitValue, result };
+  })
+));
 
 console.log("[TOWER_21_25_AWAKENED_TRAIT_SWEEP]");
 console.table(traitRuns.map(({ weapon, traitId, traitValue, result }) => ({
