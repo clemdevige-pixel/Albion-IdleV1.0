@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { GameRuntimeTickController } from "./GameRuntimeTickController";
+import { runWithRuntimePresentationSuppressed } from "./RuntimePresentationSuppression";
 
 function createDependencies(overrides: {
   readonly gathering?: boolean;
@@ -57,5 +58,27 @@ describe("GameRuntimeTickController", () => {
     expect(dependencies.updateZoneElapsed).toHaveBeenNthCalledWith(2, 1);
     expect(dependencies.tickCombat).toHaveBeenNthCalledWith(1, 0.5, 1);
     expect(dependencies.tickCombat).toHaveBeenNthCalledWith(2, 0.5, 2);
+  });
+
+  it("keeps authoritative clocks running while suppressing transient presentation work", () => {
+    const dependencies = createDependencies({ consumableChanged: true });
+    const controller = new GameRuntimeTickController(dependencies);
+
+    runWithRuntimePresentationSuppressed(() => {
+      controller.tick();
+      controller.tick();
+    });
+
+    expect(dependencies.advanceTick).toHaveBeenCalledTimes(2);
+    expect(dependencies.tickConsumables).toHaveBeenCalledTimes(2);
+    expect(dependencies.tickProduction).toHaveBeenCalledTimes(2);
+    expect(dependencies.tickParallelProgression).toHaveBeenCalledTimes(2);
+    expect(dependencies.tickCombat).toHaveBeenCalledTimes(2);
+
+    expect(dependencies.syncConsumables).not.toHaveBeenCalled();
+    expect(dependencies.syncActiveProduction).not.toHaveBeenCalled();
+    expect(dependencies.presentGatheringState).not.toHaveBeenCalled();
+    expect(dependencies.syncProjectedSegmentRates).not.toHaveBeenCalled();
+    expect(dependencies.updateZoneElapsed).not.toHaveBeenCalled();
   });
 });
