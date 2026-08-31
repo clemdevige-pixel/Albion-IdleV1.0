@@ -8,6 +8,16 @@ import { resolveDungeonCombatProfile } from "./dungeonContentCatalog.js";
 import { applyTowerFactionCombatNormalization } from "./towerCombatNormalization.js";
 import { resolveTowerEncounter } from "./towerEncounterResolver.js";
 
+const TOWER_TRIAL_FLOOR_BY_TIER = {
+  8: 1,
+  7: 6,
+  6: 11,
+  4: 16,
+  5: 21,
+} as const;
+
+type TowerTrialTier = keyof typeof TOWER_TRIAL_FLOOR_BY_TIER;
+
 describe("towerEncounterResolver", () => {
   it("reuses the matching T8 Keeper Dungeon normals for Tower floors 1 and 2", () => {
     const first = resolveTowerEncounter(1, "tower-encounter-seed");
@@ -126,6 +136,46 @@ describe("towerEncounterResolver", () => {
       armor: normalizedProfile.armor,
       magicResistance: normalizedProfile.magicResistance,
     });
+  });
+
+  it("benchmarks base-depth trial normals consistently across T4-T8", () => {
+    const rows = ([4, 5, 6, 7, 8] as const).map((tier: TowerTrialTier) => {
+      const floor = TOWER_TRIAL_FLOOR_BY_TIER[tier];
+      const encounter = resolveTowerEncounter(floor, "tower-tier-parity-benchmark");
+
+      expect(encounter.status).toBe("resolved");
+      if (encounter.status !== "resolved") {
+        throw new Error(`Tower encounter did not resolve for T${String(tier)} floor ${String(floor)}`);
+      }
+
+      const block = encounter.floorDefinition.block;
+      const calibration = TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS[block.id];
+
+      return {
+        tier,
+        floor,
+        faction: block.factionId,
+        hp: encounter.combatProfile.hp,
+        damage: encounter.combatProfile.damage,
+        attackSpeed: encounter.combatProfile.attackSpeed,
+        armor: encounter.combatProfile.armor,
+        magicResistance: encounter.combatProfile.magicResistance,
+        trialHpMultiplier: calibration?.hp ?? 1,
+        trialDamageMultiplier: calibration?.damage ?? 1,
+      };
+    });
+
+    console.table(rows);
+
+    expect(rows).toHaveLength(5);
+    expect(rows.map((row) => row.tier)).toEqual([4, 5, 6, 7, 8]);
+    for (const row of rows) {
+      expect(row.hp).toBeGreaterThan(0);
+      expect(row.damage).toBeGreaterThan(0);
+      expect(row.attackSpeed).toBeGreaterThan(0);
+      expect(row.armor).toBeGreaterThanOrEqual(0);
+      expect(row.magicResistance).toBeGreaterThanOrEqual(0);
+    }
   });
 
   it("uses the validated +1% per five-floor block depth curve after floor 25", () => {
