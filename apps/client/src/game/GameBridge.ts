@@ -104,6 +104,16 @@ export class GameBridge {
   }
 
   setEnemySnapshot(snapshot: EnemyPresentationSnapshot): void {
+    const isAuthoritativeEnemy = snapshot.encounterKey.length > 0
+      && snapshot.name.length > 0
+      && snapshot.maxHealth > 0
+      && snapshot.visualManifestId.length > 0
+      && snapshot.visualManifestId !== TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID;
+    if (!isAuthoritativeEnemy) {
+      this.clearEnemyPresentation();
+      return;
+    }
+
     this.#enemyEncounterKey = snapshot.encounterKey;
     this.#update({
       enemyHealth: snapshot.currentHealth,
@@ -120,7 +130,7 @@ export class GameBridge {
       enemyMaxHealth: 0,
       enemyName: "",
       // Keep a valid technical manifest while the authoritative enemy is absent.
-      // Presentation visibility is driven by enemyMaxHealth/name, not this fallback.
+      // It must never be promoted to a real enemy snapshot.
       enemyVisualManifestId: TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID,
       activeEffects: [],
     });
@@ -154,6 +164,13 @@ export class GameBridge {
   }
 
   setEnemyPresentation(enemyName: string, enemyVisualManifestId: string): void {
+    if (
+      enemyName.length > 0
+      && enemyVisualManifestId === TECHNICAL_ENEMY_RENDER_FALLBACK_MANIFEST_ID
+    ) {
+      this.clearEnemyPresentation();
+      return;
+    }
     this.#update({ enemyName, enemyVisualManifestId });
   }
 
