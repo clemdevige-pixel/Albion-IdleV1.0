@@ -109,10 +109,10 @@ export function loadInitialRuntimeSave(
  * though: when it becomes visible again we replay the exact number of missed
  * authoritative fixed-step runtime ticks.
  *
- * Catch-up runs through the normal domain runtime with transient presentation
- * suppressed, then performs one authoritative presentation resync and save.
- * Offline SaveProvider resolution remains reserved for real reloads and
- * closed-page sessions during save loading.
+ * All but the final catch-up tick run with transient presentation suppressed.
+ * The final missed tick runs normally so combat presentation is current before
+ * one global resync and save. Offline SaveProvider resolution remains reserved
+ * for real reloads and closed-page sessions during save loading.
  */
 export function createRuntimeVisibilityHandler(
   dependencies: RuntimeVisibilitySessionDependencies,
@@ -141,11 +141,15 @@ export function createRuntimeVisibilityHandler(
       const missedTicks = Math.floor(carryElapsedMs / dependencies.tickIntervalMs);
       carryElapsedMs -= missedTicks * dependencies.tickIntervalMs;
 
+      const suppressedTicks = Math.max(0, missedTicks - 1);
       runWithRuntimePresentationSuppressed(() => {
-        for (let index = 0; index < missedTicks; index += 1) {
+        for (let index = 0; index < suppressedTicks; index += 1) {
           dependencies.tickRuntime();
         }
       });
+      if (missedTicks > 0) {
+        dependencies.tickRuntime();
+      }
 
       dependencies.syncPresentation();
       dependencies.saveGame();
