@@ -18,17 +18,15 @@ const TOWER_WEAPON_ENCHANTMENT = 4 as const;
 const TOWER_EQUIPMENT_ENCHANTMENT = 3 as const;
 const TOWER_POTION_STOCK = 99;
 const TOWER_EARLY_AWAKENING_STRAIN = 10;
-// At strain 10, slot 2 has just unlocked. A player can realistically have one
-// trait filled + nine improvements. Item Power rolls 1-2 per modification, so
-// 15 IP is the midpoint of the non-critical 10-modification reachable range 10-20.
 const TOWER_EARLY_AWAKENING_ITEM_POWER = 15;
 const TOWER_SWEEP_TARGET_MIN_HP_PERCENT = 8;
 const TOWER_SWEEP_TARGET_MAX_HP_PERCENT = 10;
 const TOWER_SWEEP_MIN_MULTIPLIER = 0.2;
-const TOWER_SWEEP_STEP = 0.01;
+const TOWER_COARSE_SWEEP_STEP = 0.01;
+const TOWER_FINE_SWEEP_STEP = 0.001;
 
 const round1 = (value: number): number => Number(value.toFixed(1));
-const round2 = (value: number): number => Number(value.toFixed(2));
+const round3 = (value: number): number => Number(value.toFixed(3));
 
 function resolveDifficultyZeroBlock(tier: TowerTier, factionId: TowerFactionId) {
   return Array.from({ length: 5 }, (_, indexInBlock) => {
@@ -80,7 +78,7 @@ function runFavorableWeaponsAtMultiplier(
     if (bonusPct <= 0) return [];
 
     const result = runCombatRuntimeBenchmark({
-      label: `tower_difficulty_zero_t${String(tier)}_${factionId}_${weapon.family}_${weapon.label}_x${multiplier.toFixed(2)}`,
+      label: `tower_difficulty_zero_t${String(tier)}_${factionId}_${weapon.family}_${weapon.label}_x${multiplier.toFixed(3)}`,
       weaponItemId,
       equipmentItemIds: artifactDungeonEquipment(weaponItemId, tier, factionId),
       zoneDefId: WORLD_ZONE_IDS.mountain,
@@ -116,37 +114,51 @@ function runFavorableWeaponsAtMultiplier(
   });
 }
 
+function isViableSweepResult(rows: ReturnType<typeof runFavorableWeaponsAtMultiplier>): boolean {
+  return rows.length === 5
+    && rows.every((row) => row.clear)
+    && Math.min(...rows.map((row) => row.hpPct)) >= TOWER_SWEEP_TARGET_MIN_HP_PERCENT;
+}
+
+function findFineSweepResult(tier: TowerTier, faction: TowerFactionId) {
+  let coarseMultiplier: number | undefined;
+  const totalCoarseSteps = Math.round((1 - TOWER_SWEEP_MIN_MULTIPLIER) / TOWER_COARSE_SWEEP_STEP);
+  for (let step = 0; step <= totalCoarseSteps; step += 1) {
+    const multiplier = round3(1 - step * TOWER_COARSE_SWEEP_STEP);
+    if (isViableSweepResult(runFavorableWeaponsAtMultiplier(tier, faction, multiplier))) {
+      coarseMultiplier = multiplier;
+      break;
+    }
+  }
+  if (coarseMultiplier === undefined) {
+    throw new Error(`No viable coarse difficulty-zero multiplier found for T${String(tier)} ${faction}`);
+  }
+
+  const fineStart = Math.min(1, round3(coarseMultiplier + TOWER_COARSE_SWEEP_STEP - TOWER_FINE_SWEEP_STEP));
+  for (
+    let multiplier = fineStart;
+    multiplier >= coarseMultiplier - 0.0005;
+    multiplier = round3(multiplier - TOWER_FINE_SWEEP_STEP)
+  ) {
+    const rows = runFavorableWeaponsAtMultiplier(tier, faction, multiplier);
+    if (isViableSweepResult(rows)) return { multiplier, rows };
+  }
+
+  throw new Error(`No viable fine difficulty-zero multiplier found for T${String(tier)} ${faction}`);
+}
+
 describe("Tower difficulty-zero base curve benchmark", () => {
-  it("sweeps the minimum common nerf needed for the weakest favorable weapon to clear at 8-10% HP", () => {
+  it("fine-sweeps the minimum common nerf needed for the weakest favorable weapon to clear at 8-10% HP", () => {
     const sweepRows = TOWER_TIERS.flatMap((tier) => TOWER_FACTIONS.map((faction) => {
-      let selectedMultiplier: number | undefined;
-      let selectedRows: ReturnType<typeof runFavorableWeaponsAtMultiplier> | undefined;
-
-      const totalSteps = Math.round((1 - TOWER_SWEEP_MIN_MULTIPLIER) / TOWER_SWEEP_STEP);
-      for (let step = 0; step <= totalSteps; step += 1) {
-        const multiplier = round2(1 - step * TOWER_SWEEP_STEP);
-        const rows = runFavorableWeaponsAtMultiplier(tier, faction, multiplier);
-        const allClear = rows.length === 5 && rows.every((row) => row.clear);
-        const minHpPct = allClear ? Math.min(...rows.map((row) => row.hpPct)) : 0;
-        if (allClear && minHpPct >= TOWER_SWEEP_TARGET_MIN_HP_PERCENT) {
-          selectedMultiplier = multiplier;
-          selectedRows = rows;
-          break;
-        }
-      }
-
-      if (selectedMultiplier === undefined || selectedRows === undefined) {
-        throw new Error(`No viable difficulty-zero multiplier found for T${String(tier)} ${faction}`);
-      }
-
-      const sortedByHp = [...selectedRows].sort((a, b) => a.hpPct - b.hpPct);
+      const selected = findFineSweepResult(tier, faction);
+      const sortedByHp = [...selected.rows].sort((a, b) => a.hpPct - b.hpPct);
       const weakest = sortedByHp[0]!;
       const strongest = sortedByHp[sortedByHp.length - 1]!;
       return {
         tier,
         faction,
-        multiplier: selectedMultiplier,
-        nerfPct: round1((1 - selectedMultiplier) * 100),
+        multiplier: selected.multiplier,
+        nerfPct: round1((1 - selected.multiplier) * 100),
         weakestWeapon: weakest.weapon,
         weakestHpPct: weakest.hpPct,
         weakestInTargetBand: weakest.hpPct >= TOWER_SWEEP_TARGET_MIN_HP_PERCENT
@@ -154,7 +166,7 @@ describe("Tower difficulty-zero base curve benchmark", () => {
         strongestWeapon: strongest.weapon,
         strongestHpPct: strongest.hpPct,
         hpSpread: round1(strongest.hpPct - weakest.hpPct),
-        maxPotionsUsed: Math.max(...selectedRows.map((row) => row.potions)),
+        maxPotionsUsed: Math.max(...selected.rows.map((row) => row.potions)),
       };
     }));
 
@@ -162,10 +174,11 @@ describe("Tower difficulty-zero base curve benchmark", () => {
       row.strongestHpPct >= 30 || row.hpSpread >= 20 || !row.weakestInTargetBand
     ));
 
-    console.log("[TOWER_DIFFICULTY_ZERO_SWEEP_REFERENCE]", {
+    console.log("[TOWER_DIFFICULTY_ZERO_FINE_SWEEP_REFERENCE]", {
       targetWeakestHpBand: `${String(TOWER_SWEEP_TARGET_MIN_HP_PERCENT)}-${String(TOWER_SWEEP_TARGET_MAX_HP_PERCENT)}%`,
       selectionRule: "highest common multiplier where all 5 favorable weapons clear and weakest has >=8% HP",
-      step: TOWER_SWEEP_STEP,
+      coarseStep: TOWER_COARSE_SWEEP_STEP,
+      fineStep: TOWER_FINE_SWEEP_STEP,
       minimumMultiplier: TOWER_SWEEP_MIN_MULTIPLIER,
       scaling: "HP + damage + armor + magicResistance; attackSpeed unchanged",
       weaponEnchantment: TOWER_WEAPON_ENCHANTMENT,
@@ -173,9 +186,9 @@ describe("Tower difficulty-zero base curve benchmark", () => {
       awakenedStrain: TOWER_EARLY_AWAKENING_STRAIN,
       awakenedTraits: [{ traitId: "item_power", value: TOWER_EARLY_AWAKENING_ITEM_POWER }],
     });
-    console.log("[TOWER_DIFFICULTY_ZERO_SWEEP_SUMMARY]");
+    console.log("[TOWER_DIFFICULTY_ZERO_FINE_SWEEP_SUMMARY]");
     console.table(sweepRows);
-    console.log("[TOWER_DIFFICULTY_ZERO_SWEEP_ANOMALIES]");
+    console.log("[TOWER_DIFFICULTY_ZERO_FINE_SWEEP_ANOMALIES]");
     console.table(anomalyRows);
 
     expect(sweepRows).toHaveLength(20);
