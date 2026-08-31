@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { EquipmentLoadout, EquipmentSlot, InventoryEntry } from "@game/gameplay";
+import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { useGameServices } from "../../state/GameContext";
 import { syncBankToBridge, syncEquipmentToBridge, syncInventoryToBridge, syncStatsToBridge } from "../../state/bridgeSync";
 import { syncCraftingProjection } from "../../state/production/ProductionBridgeAdapter";
@@ -143,7 +144,10 @@ export function useCharacterActions(): CharacterActions {
     while (services.inventoryManager.findFreeSlots(services.heroId).length < requiredFreeSlots) {
       const candidate = [...services.inventoryManager.listSlots(services.heroId)]
         .reverse()
-        .find((inventorySlot) => inventorySlot.entry !== undefined);
+        .find((inventorySlot) => (
+          inventorySlot.entry !== undefined
+          && !isRelicInventoryItem(inventorySlot.entry.itemId)
+        ));
       if (candidate?.entry === undefined) break;
 
       const removed = services.inventoryManager.removeEntryAt(services.heroId, candidate.position);
