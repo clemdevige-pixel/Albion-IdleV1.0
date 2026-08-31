@@ -9,6 +9,7 @@ import {
   useResourceTracking,
 } from "../dashboard/ResourceTrackingContext";
 import { ItemGrid } from "../shared";
+import { findFirstEmptyBankTabPosition } from "./bankTabTransfer.js";
 import { useBankData } from "./useBankData";
 import "../shared/storageModule.css";
 
@@ -42,23 +43,6 @@ function matchesBankFilter(slot: InventorySlotVM, filter: BankFilter): boolean {
   if (filter === "equipment") return getItemDefinition(itemId) !== undefined;
   if (filter === "special") return isSpecialBankItem(itemId);
   return getItemDefinition(itemId) === undefined && !isSpecialBankItem(itemId);
-}
-
-export function findFirstEmptyBankTabPosition(
-  slots: readonly InventorySlotVM[],
-  tabNumber: number,
-  tabCapacity: number,
-): number | undefined {
-  if (!Number.isInteger(tabNumber) || tabNumber < 1 || !Number.isInteger(tabCapacity) || tabCapacity <= 0) {
-    return undefined;
-  }
-  const start = (tabNumber - 1) * tabCapacity;
-  const end = start + tabCapacity;
-  return slots.find((slot) => (
-    slot.position >= start
-    && slot.position < end
-    && slot.itemId === undefined
-  ))?.position;
 }
 
 function readDraggedBankPosition(event: DragEvent<HTMLElement>): number | undefined {
