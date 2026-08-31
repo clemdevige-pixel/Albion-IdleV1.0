@@ -25,7 +25,9 @@ const POTION_CAP = 2;
 const TARGET_MIN_HP = 8;
 const TARGET_MAX_HP = 15;
 const MIN_SCALE = 0.5;
-const SCALE_STEP = 0.01;
+const COARSE_STEP = 0.02;
+const FINE_STEP = 0.005;
+const FINE_RADIUS = 0.02;
 const TOWER_SEED = "tower-benchmark-21-25";
 const ZONE_DEF_ID = WORLD_ZONE_IDS.mountain;
 const SEGMENT_INDEX = 9;
@@ -102,15 +104,18 @@ function scaleProfile(value: number, scale: number): number {
   return Math.max(1, Math.round(value * scale));
 }
 
-function buildScaledEncounters(scale: number): readonly CombatRuntimeBenchmarkEncounter[] {
+function buildScaledEncounters(
+  offensiveScale: number,
+  durabilityScale: number,
+): readonly CombatRuntimeBenchmarkEncounter[] {
   return resolvedFloors.map((encounter) => ({
     monsterDefinitionId: encounter.monsterDefinitionId,
     profile: {
-      hp: scaleProfile(encounter.combatProfile.hp, scale),
-      damage: scaleProfile(encounter.combatProfile.damage, scale),
+      hp: scaleProfile(encounter.combatProfile.hp, durabilityScale),
+      damage: scaleProfile(encounter.combatProfile.damage, offensiveScale),
       attackSpeed: encounter.combatProfile.attackSpeed,
-      armor: scaleProfile(encounter.combatProfile.armor, scale),
-      magicResistance: scaleProfile(encounter.combatProfile.magicResistance, scale),
+      armor: scaleProfile(encounter.combatProfile.armor, durabilityScale),
+      magicResistance: scaleProfile(encounter.combatProfile.magicResistance, durabilityScale),
     },
   }));
 }
@@ -169,8 +174,12 @@ type BestRun = {
 };
 
 type SweepCandidate = {
-  readonly scale: number;
-  readonly nerfPct: number;
+  readonly offensiveScale: number;
+  readonly durabilityScale: number;
+  readonly offensiveNerfPct: number;
+  readonly durabilityNerfPct: number;
+  readonly totalNerfPct: number;
+  readonly maxAxisNerfPct: number;
   readonly bestRuns: readonly BestRun[];
   readonly allClear: boolean;
   readonly allInTarget: boolean;
@@ -185,14 +194,14 @@ function hpTargetDistance(hp: number, clear: boolean): number {
   return 0;
 }
 
-function evaluateScale(scale: number): SweepCandidate {
-  const encounters = buildScaledEncounters(scale);
+function evaluateScales(offensiveScale: number, durabilityScale: number): SweepCandidate {
+  const encounters = buildScaledEncounters(offensiveScale, durabilityScale);
   const bestRuns = counterWeapons.map(({ weapon, weaponItemId, modifiers, heroDamageMultiplier }) => {
     const candidates = COMBAT_TRAITS.map((traitId) => {
       const traitValue = getOptimizedTraitValueAtStrain(traitId, STRAIN);
       const result = runTowerCase(
         weaponItemId,
-        `tower_21_25_t5_4_s10_scale_${scale.toFixed(2)}_${weapon.family}_${traitId}`,
+        `tower_21_25_t5_4_s10_o${offensiveScale.toFixed(3)}_d${durabilityScale.toFixed(3)}_${weapon.family}_${traitId}`,
         heroDamageMultiplier,
         modifiers.incomingDamageReductionPercent,
         traitId,
@@ -216,10 +225,16 @@ function evaluateScale(scale: number): SweepCandidate {
   );
   const hpValues = bestRuns.filter(({ result }) => result.clear).map(({ result }) => result.hpPercent);
   const hpSpread = hpValues.length === 0 ? 100 : Math.max(...hpValues) - Math.min(...hpValues);
+  const offensiveNerfPct = (1 - offensiveScale) * 100;
+  const durabilityNerfPct = (1 - durabilityScale) * 100;
 
   return {
-    scale,
-    nerfPct: Number(((1 - scale) * 100).toFixed(1)),
+    offensiveScale,
+    durabilityScale,
+    offensiveNerfPct: Number(offensiveNerfPct.toFixed(1)),
+    durabilityNerfPct: Number(durabilityNerfPct.toFixed(1)),
+    totalNerfPct: Number((offensiveNerfPct + durabilityNerfPct).toFixed(1)),
+    maxAxisNerfPct: Number(Math.max(offensiveNerfPct, durabilityNerfPct).toFixed(1)),
     bestRuns,
     allClear,
     allInTarget,
@@ -228,7 +243,24 @@ function evaluateScale(scale: number): SweepCandidate {
   };
 }
 
-console.log("[TOWER_T5_MINIMAL_NERF_SWEEP_REFERENCE]", {
+function candidateOrder(a: SweepCandidate, b: SweepCandidate): number {
+  if (a.allInTarget !== b.allInTarget) return a.allInTarget ? -1 : 1;
+  if (a.allClear !== b.allClear) return a.allClear ? -1 : 1;
+  if (a.totalNerfPct !== b.totalNerfPct) return a.totalNerfPct - b.totalNerfPct;
+  if (a.maxAxisNerfPct !== b.maxAxisNerfPct) return a.maxAxisNerfPct - b.maxAxisNerfPct;
+  if (a.targetMiss !== b.targetMiss) return a.targetMiss - b.targetMiss;
+  return a.hpSpread - b.hpSpread;
+}
+
+function makeScaleRange(min: number, max: number, step: number): number[] {
+  const values: number[] = [];
+  for (let value = max; value >= min - 0.000001; value -= step) {
+    values.push(Number(value.toFixed(3)));
+  }
+  return values;
+}
+
+console.log("[TOWER_T5_2D_NERF_SWEEP_REFERENCE]", {
   floors: `${String(FLOOR_START)}-${String(FLOOR_END)}`,
   tier: TIER,
   faction: FACTION,
@@ -236,50 +268,74 @@ console.log("[TOWER_T5_MINIMAL_NERF_SWEEP_REFERENCE]", {
   equipmentEnchantment: EQUIPMENT_ENCHANTMENT,
   strain: STRAIN,
   targetHpPct: `${String(TARGET_MIN_HP)}-${String(TARGET_MAX_HP)}`,
-  scalingPolicy: "single global multiplier applied to enemy hp/damage/armor/magicResistance for all 5 floors",
-  scaleRange: `${MIN_SCALE.toFixed(2)}-1.00`,
-  step: SCALE_STEP,
+  offensiveAxis: "enemy damage",
+  durabilityAxis: "enemy hp + armor + magicResistance",
+  coarseScaleRange: `${MIN_SCALE.toFixed(2)}-1.00`,
+  coarseStep: COARSE_STEP,
+  fineStep: FINE_STEP,
 });
 
-const candidates: SweepCandidate[] = [];
-for (let raw = 1; raw >= MIN_SCALE - 0.0001; raw -= SCALE_STEP) {
-  const scale = Number(raw.toFixed(2));
-  const candidate = evaluateScale(scale);
-  candidates.push(candidate);
-  console.log("[TOWER_T5_NERF_SWEEP_STEP]", {
-    scale,
-    nerfPct: candidate.nerfPct,
-    allClear: candidate.allClear,
-    allInTarget: candidate.allInTarget,
-    hp: Object.fromEntries(candidate.bestRuns.map(({ weapon, result }) => [
-      weapon.label,
-      result.clear ? result.hpPercent : `FAIL:${String(result.encounterProgressPercent)}%`,
-    ])),
-  });
-  if (candidate.allInTarget) break;
+const coarseCandidates: SweepCandidate[] = [];
+const coarseScales = makeScaleRange(MIN_SCALE, 1, COARSE_STEP);
+for (const offensiveScale of coarseScales) {
+  for (const durabilityScale of coarseScales) {
+    coarseCandidates.push(evaluateScales(offensiveScale, durabilityScale));
+  }
+}
+coarseCandidates.sort(candidateOrder);
+const coarseBest = coarseCandidates[0];
+if (coarseBest === undefined) throw new Error("Tower T5 2D coarse sweep produced no candidates");
+
+console.log("[TOWER_T5_2D_COARSE_BEST]", {
+  exactTargetFound: coarseBest.allInTarget,
+  offensiveScale: coarseBest.offensiveScale,
+  durabilityScale: coarseBest.durabilityScale,
+  offensiveNerfPct: coarseBest.offensiveNerfPct,
+  durabilityNerfPct: coarseBest.durabilityNerfPct,
+  totalNerfPct: coarseBest.totalNerfPct,
+  allClear: coarseBest.allClear,
+  targetMiss: coarseBest.targetMiss,
+  hpSpread: coarseBest.hpSpread,
+});
+
+const fineMinOffensive = Math.max(MIN_SCALE, coarseBest.offensiveScale - FINE_RADIUS);
+const fineMaxOffensive = Math.min(1, coarseBest.offensiveScale + FINE_RADIUS);
+const fineMinDurability = Math.max(MIN_SCALE, coarseBest.durabilityScale - FINE_RADIUS);
+const fineMaxDurability = Math.min(1, coarseBest.durabilityScale + FINE_RADIUS);
+const fineOffensiveScales = makeScaleRange(fineMinOffensive, fineMaxOffensive, FINE_STEP);
+const fineDurabilityScales = makeScaleRange(fineMinDurability, fineMaxDurability, FINE_STEP);
+const fineCandidates: SweepCandidate[] = [];
+
+for (const offensiveScale of fineOffensiveScales) {
+  for (const durabilityScale of fineDurabilityScales) {
+    fineCandidates.push(evaluateScales(offensiveScale, durabilityScale));
+  }
 }
 
-const exactCandidate = candidates.find((candidate) => candidate.allInTarget);
-const closestCandidate = [...candidates].sort((a, b) => {
-  if (a.allClear !== b.allClear) return a.allClear ? -1 : 1;
-  if (a.targetMiss !== b.targetMiss) return a.targetMiss - b.targetMiss;
-  if (a.hpSpread !== b.hpSpread) return a.hpSpread - b.hpSpread;
-  return b.scale - a.scale;
-})[0];
-const selected = exactCandidate ?? closestCandidate;
-if (selected === undefined) throw new Error("Tower T5 nerf sweep produced no candidates");
+const allCandidates = [...coarseCandidates, ...fineCandidates].sort(candidateOrder);
+const selected = allCandidates[0];
+if (selected === undefined) throw new Error("Tower T5 2D nerf sweep produced no candidates");
 
-console.log("[TOWER_T5_MINIMAL_NERF_RESULT]", {
+const exactCandidates = allCandidates
+  .filter((candidate) => candidate.allInTarget)
+  .sort(candidateOrder);
+const exactCandidate = exactCandidates[0];
+
+console.log("[TOWER_T5_2D_MINIMAL_NERF_RESULT]", {
   exactTargetFound: exactCandidate !== undefined,
-  scale: selected.scale,
-  nerfPct: selected.nerfPct,
+  offensiveScale: selected.offensiveScale,
+  durabilityScale: selected.durabilityScale,
+  offensiveNerfPct: selected.offensiveNerfPct,
+  durabilityNerfPct: selected.durabilityNerfPct,
+  totalNerfPct: selected.totalNerfPct,
+  maxAxisNerfPct: selected.maxAxisNerfPct,
   allClear: selected.allClear,
   allInTarget: selected.allInTarget,
   targetMiss: selected.targetMiss,
   hpSpread: selected.hpSpread,
 });
 
-console.log("[TOWER_T5_MINIMAL_NERF_WEAPON_MATRIX]");
+console.log("[TOWER_T5_2D_MINIMAL_NERF_WEAPON_MATRIX]");
 console.table(selected.bestRuns.map(({ weapon, traitId, traitValue, result }) => ({
   family: weapon.family,
   weapon: weapon.label,
@@ -294,11 +350,28 @@ console.table(selected.bestRuns.map(({ weapon, traitId, traitValue, result }) =>
   incomingDps: result.incomingDps,
 })));
 
+console.log("[TOWER_T5_2D_FRONTIER]" );
+console.table(
+  allCandidates
+    .filter((candidate) => candidate.allClear)
+    .slice(0, 12)
+    .map((candidate) => ({
+      offensiveNerfPct: candidate.offensiveNerfPct,
+      durabilityNerfPct: candidate.durabilityNerfPct,
+      totalNerfPct: candidate.totalNerfPct,
+      allInTarget: candidate.allInTarget,
+      targetMiss: candidate.targetMiss,
+      hpSpread: candidate.hpSpread,
+      minHp: Math.min(...candidate.bestRuns.map(({ result }) => result.hpPercent)),
+      maxHp: Math.max(...candidate.bestRuns.map(({ result }) => result.hpPercent)),
+    })),
+);
+
 if (exactCandidate === undefined) {
-  console.log("[TOWER_T5_MINIMAL_NERF_NO_EXACT_SINGLE_SCALE]", {
-    message: "No single global block multiplier put all five optimized weapons inside the 8-15% HP target window.",
-    closestScale: selected.scale,
-    closestNerfPct: selected.nerfPct,
-    note: "Inspect Badon separately before introducing any weapon-specific or encounter-specific tuning.",
+  console.log("[TOWER_T5_2D_NO_EXACT_TARGET]", {
+    message: "No offensive/durability pair put all five optimized weapons inside the 8-15% HP target window.",
+    closestOffensiveNerfPct: selected.offensiveNerfPct,
+    closestDurabilityNerfPct: selected.durabilityNerfPct,
+    note: "If the spread remains structural, inspect weapon outliers before adding encounter-specific tuning.",
   });
 }
