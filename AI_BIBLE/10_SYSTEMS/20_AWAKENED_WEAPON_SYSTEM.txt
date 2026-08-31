@@ -41,8 +41,8 @@ Baseline conversion:
 - 1 eligible PvE Fame = 1 Attunement.
 - Fame continues to feed its normal systems independently.
 - Attunement earned while the weapon storage is full is not banked beyond the cap.
-- A weapon of tier Tn only gains Attunement from eligible PvE content of tier >= n.
-- Fame Bonus increases progression/mastery Fame only. It NEVER increases Attunement gain; Attunement always uses raw eligible PvE Fame.
+- Any eligible PvE Fame can generate Attunement for the equipped .4 weapon regardless of the content tier.
+- Fame Bonus increases progression/mastery Fame only. It NEVER increases Attunement gain; Attunement uses the eligible Fame before the weapon's Fame Bonus is applied.
 
 The weapon tracks separately:
 - Awakened / unawakened state;
@@ -246,7 +246,6 @@ If a different trait is accepted:
 ## 13. FULL AWAKENING RESET
 
 The player may fully reset a .4 weapon's Awakening progression.
-
 Baseline reset cost: free.
 The lost investment is the economic cost.
 
@@ -365,7 +364,8 @@ The implementation must preserve these invariants:
 - Full reset returns the weapon to the unawakened .4 state.
 - Stored Attunement and lifetime invested Attunement are distinct values.
 - Slot unlocks are controlled by Strain thresholds 0 / 10 / 30.
-- Fame Bonus modifies progression/mastery Fame only; raw eligible Fame remains the sole source for Attunement.
+- eligible PvE Fame can generate Attunement regardless of the equipped .4 weapon tier or content tier.
+- Fame Bonus modifies progression/mastery Fame only; eligible Fame before the weapon Fame Bonus remains the source for Attunement.
 - CDR UI must display effective reduction, never its hidden progression variable.
 - Balance values are authored data, not branching gameplay logic.
 
@@ -394,7 +394,7 @@ Recommended separation of concerns:
 - explicit domain actions for initial Awakening, trait improvement, reroll and reset;
 - persistence of every instance-specific field;
 - UI consumes resolved state and previews from the domain layer; UI must not reproduce formulas;
-- Fame Bonus is applied in the reward/progression pipeline after raw Fame is captured for Attunement.
+- Fame Bonus is applied in the reward/progression pipeline after eligible Fame is captured for Attunement.
 
 Do not create parallel combat-stat formulas for awakened weapons. Trait outputs must feed the existing stat/equipment/combat pipelines.
 
