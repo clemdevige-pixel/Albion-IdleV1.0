@@ -50,6 +50,49 @@ describe("StorageRuntime", () => {
     expect(itemAt(manager, heroId, 2)?.instanceId).toBe(created.value.instanceId);
   });
 
+  it("moves into a full bank tab by merging a compatible stack", () => {
+    const { manager, bankId, storage } = setup();
+    manager.addQuantity(bankId, "stack", 10);
+    manager.addEntry(bankId, "sword", 1);
+    manager.addEntry(bankId, "bow", 2);
+    manager.addQuantity(bankId, "stack", 5, undefined, 0);
+    const source = manager.findEntriesByItemId(bankId, "stack").find((slot) => slot.position >= 3);
+    if (source === undefined) throw new Error("setup failed");
+
+    expect(storage.canMoveWithinRange("bank", source.position, { start: 0, length: 3 })).toBe(true);
+    expect(storage.moveWithinRange("bank", source.position, { start: 0, length: 3 }).ok).toBe(true);
+    expect(itemAt(manager, bankId, 0)?.quantity).toBe(15);
+    expect(itemAt(manager, bankId, source.position)).toBeUndefined();
+  });
+
+  it("transfers into a full bank tab by merging a compatible stack", () => {
+    const { manager, heroId, bankId, storage } = setup();
+    manager.addQuantity(bankId, "stack", 10);
+    manager.addEntry(bankId, "sword", 1);
+    manager.addEntry(bankId, "bow", 2);
+    manager.addQuantity(heroId, "stack", 5);
+
+    expect(storage.canTransferToRange("inventory", 0, "bank", { start: 0, length: 3 })).toBe(true);
+    expect(storage.transferToRange("inventory", 0, "bank", { start: 0, length: 3 }).ok).toBe(true);
+    expect(itemAt(manager, heroId, 0)).toBeUndefined();
+    expect(itemAt(manager, bankId, 0)?.quantity).toBe(15);
+  });
+
+  it("rejects a full range without an empty or compatible destination", () => {
+    const { manager, heroId, bankId, storage } = setup();
+    manager.addEntry(bankId, "sword", 0);
+    manager.addEntry(bankId, "bow", 1);
+    manager.addEntry(bankId, "shield", 2);
+    manager.addEntry(heroId, "helmet", 0);
+
+    expect(storage.canTransferToRange("inventory", 0, "bank", { start: 0, length: 3 })).toBe(false);
+    expect(storage.transferToRange("inventory", 0, "bank", { start: 0, length: 3 })).toEqual({
+      ok: false,
+      reason: "inventory_full",
+    });
+    expect(itemAt(manager, heroId, 0)?.itemId).toBe("helmet");
+  });
+
   it("sorts occupied slots deterministically and compacts them", () => {
     const { manager, bankId, storage } = setup();
     manager.addEntry(bankId, "z_item", 5);
