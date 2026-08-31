@@ -26,9 +26,10 @@ interface InitialSavePersistence {
 export interface RuntimeVisibilitySessionDependencies {
   readonly getVisibilityState: () => DocumentVisibilityState;
   readonly now: () => number;
+  readonly tickIntervalMs: number;
+  readonly tickRuntime: () => void;
   readonly stopRuntime: () => void;
   readonly startRuntime: () => void;
-  readonly resolveBackgroundElapsed: (elapsedMs: number) => void;
   readonly syncPresentation: () => void;
   readonly saveGame: () => void;
 }
@@ -101,15 +102,26 @@ export function loadInitialRuntimeSave(
 
 /**
  * Creates the hidden/visible transition handler for one live browser session.
- * Live ticks stop while hidden so browser timer throttling cannot partially
- * advance the runtime. On resume, passive systems receive the exact monotonic
- * elapsed window once, presentation is resynchronized from authoritative state,
- * then the reconciled state is saved before the live fixed-step runtime restarts.
+ *
+ * Browser timers are intentionally stopped while hidden because browsers may
+ * throttle them unpredictably. A hidden tab is still an active game session,
+ * though: when it becomes visible again we replay the exact number of missed
+ * authoritative fixed-step runtime ticks. This advances combat and passive
+ * systems through the same runtime path they use while visible, without a
+ * second background simulation model or browser-timer dependence.
+ *
+ * Offline SaveProvider resolution remains reserved for real reloads and
+ * closed-page sessions during save loading.
  */
 export function createRuntimeVisibilityHandler(
   dependencies: RuntimeVisibilitySessionDependencies,
 ): () => void {
+  if (!Number.isFinite(dependencies.tickIntervalMs) || dependencies.tickIntervalMs <= 0) {
+    throw new Error("Runtime tick interval must be a positive finite number");
+  }
+
   let hiddenAt: number | undefined;
+  let carryElapsedMs = 0;
 
   return () => {
     if (dependencies.getVisibilityState() === "hidden") {
@@ -124,7 +136,14 @@ export function createRuntimeVisibilityHandler(
     hiddenAt = undefined;
 
     try {
-      dependencies.resolveBackgroundElapsed(elapsedMs);
+      carryElapsedMs += elapsedMs;
+      const missedTicks = Math.floor(carryElapsedMs / dependencies.tickIntervalMs);
+      carryElapsedMs -= missedTicks * dependencies.tickIntervalMs;
+
+      for (let index = 0; index < missedTicks; index += 1) {
+        dependencies.tickRuntime();
+      }
+
       dependencies.syncPresentation();
       dependencies.saveGame();
     } finally {
@@ -162,11 +181,10 @@ export function useGameRuntimeLifecycle(services: GameServices): void {
     const handleVisibilityChange = createRuntimeVisibilityHandler({
       getVisibilityState: () => document.visibilityState,
       now: () => performance.now(),
+      tickIntervalMs: handle.tickIntervalMs,
+      tickRuntime: handle.tick,
       stopRuntime: () => { lifecycle.stop(); },
       startRuntime,
-      resolveBackgroundElapsed: (elapsedMs) => {
-        handle.persistence.resolveBackgroundElapsed(elapsedMs);
-      },
       syncPresentation: handle.syncPresentation,
       saveGame: () => { services.saveGame(); },
     });
