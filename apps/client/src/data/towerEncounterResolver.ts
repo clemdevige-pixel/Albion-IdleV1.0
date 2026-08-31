@@ -1,6 +1,7 @@
 import {
   TOWER_DUNGEON_ENCOUNTER_INDEX_BY_FLOOR_INDEX,
   TOWER_REINFORCED_COMBAT_MULTIPLIERS,
+  TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS,
   getTowerDepthDifficultyMultiplier,
 } from "@game/data";
 import { getTowerFloorDefinition, type TowerFloorDefinition } from "@game/gameplay";
@@ -39,6 +40,22 @@ function applyTowerRoleCombatTuning(
   };
 }
 
+function applyTowerTrialBlockCombatTuning(
+  floorDefinition: TowerFloorDefinition,
+  profile: AuthoredEnemyCombatProfile,
+): AuthoredEnemyCombatProfile {
+  const multipliers = TOWER_TRIAL_BLOCK_COMBAT_MULTIPLIERS[floorDefinition.block.id];
+  if (multipliers === undefined) return profile;
+
+  return {
+    hp: Math.round(profile.hp * multipliers.hp),
+    damage: Math.round(profile.damage * multipliers.damage),
+    attackSpeed: profile.attackSpeed,
+    armor: profile.armor,
+    magicResistance: profile.magicResistance,
+  };
+}
+
 function applyTowerDepthCombatScaling(
   floorDefinition: TowerFloorDefinition,
   profile: AuthoredEnemyCombatProfile,
@@ -59,8 +76,8 @@ function applyTowerDepthCombatScaling(
  * Resolves a Tower floor from existing faction Dungeon content.
  *
  * Dungeon rosters and base combat stats remain canonical. Tower then applies
- * its own faction/tier normalization, floor-role tuning and depth scaling in
- * that order, without mutating or forking Dungeon balance.
+ * faction/tier normalization, floor-role tuning, optional authored trial-block
+ * tuning and depth scaling in that order, without mutating Dungeon balance.
  */
 export function resolveTowerEncounter(
   floor: number,
@@ -101,6 +118,10 @@ export function resolveTowerEncounter(
     baseCombatProfile,
   );
   const roleTunedProfile = applyTowerRoleCombatTuning(floorDefinition, normalizedProfile);
+  const trialBlockTunedProfile = applyTowerTrialBlockCombatTuning(
+    floorDefinition,
+    roleTunedProfile,
+  );
 
   return {
     status: "resolved",
@@ -110,6 +131,6 @@ export function resolveTowerEncounter(
     encounterId: encounter.id,
     encounterKind: encounter.kind,
     monsterDefinitionId: encounter.monsterDefinitionId,
-    combatProfile: applyTowerDepthCombatScaling(floorDefinition, roleTunedProfile),
+    combatProfile: applyTowerDepthCombatScaling(floorDefinition, trialBlockTunedProfile),
   };
 }
