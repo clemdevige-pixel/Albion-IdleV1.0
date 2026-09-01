@@ -35,10 +35,6 @@ export function GatheringResourceCard({ resource, tier, actions }: GatheringReso
       </header>
 
       <div className="ui-gathering-card__meta" aria-label="Informations de récolte">
-        <span><small>Maîtrise</small><b>{String(activity.masteryLevel)}</b></span>
-        <i aria-hidden="true" />
-        <span><small>Cycle</small><b>{formatSeconds(activity.durationSeconds)}</b></span>
-        <i aria-hidden="true" />
         <span className={activity.isMasteryUnlocked ? "is-unlocked" : "is-locked"}>
           <small>Accès</small>
           <b>{activity.isMasteryUnlocked ? `T${String(tier)}` : `Niv. ${String(activity.requiredMasteryLevel)}`}</b>
