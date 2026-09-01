@@ -2,6 +2,7 @@ import type { DragEvent, MouseEvent } from "react";
 import type { InventorySlotVM } from "../../game/GameBridge";
 import { ItemHoverTooltip } from "../../panels/ItemHoverTooltip";
 import { getEnchantmentTextClass, getEquipmentTierFrameClass, getItemDefinition, ItemVisual } from "../../panels/ItemVisual";
+import { EnchantmentDiamonds } from "./EnchantmentDiamonds";
 import "./itemGrid.css";
 
 interface ItemGridProps {
@@ -43,6 +44,7 @@ export function ItemGrid({
       {slots.map((slot) => {
         const itemId = slot.itemId;
         const definition = itemId === undefined ? undefined : getItemDefinition(itemId);
+        const isEquipment = definition?.slot !== undefined;
         const isSelected = itemId !== undefined && selectedPosition === slot.position;
         const favorite = itemId !== undefined && isItemFavorite?.(itemId) === true;
         const canFavorite = itemId !== undefined
@@ -67,6 +69,11 @@ export function ItemGrid({
             {itemId !== undefined && (
               <>
                 <span className="ui-item-grid__visual"><ItemVisual itemId={itemId} /></span>
+                {isEquipment && (
+                  <span className="ui-item-grid__enchantment">
+                    <EnchantmentDiamonds level={slot.enchantment} />
+                  </span>
+                )}
                 {definition !== undefined && (
                   <span className={`ui-item-grid__tier${getEnchantmentTextClass(slot.enchantment)}`}>
                     T{String(definition.tier)}.{String(slot.enchantment)}
@@ -81,7 +88,14 @@ export function ItemGrid({
         if (itemId === undefined) return <span key={slot.position} className="ui-item-grid__entry">{slotButton}</span>;
 
         return (
-          <ItemHoverTooltip key={slot.position} itemId={itemId} quantity={slot.quantity} instanceId={slot.instanceId}>
+          <ItemHoverTooltip
+            key={slot.position}
+            itemId={itemId}
+            quantity={slot.quantity}
+            instanceId={slot.instanceId}
+            enchantmentOverride={isEquipment ? slot.enchantment : undefined}
+            showEnchantmentLevel={isEquipment}
+          >
             <span className="ui-item-grid__entry">
               {slotButton}
               {canFavorite && (
