@@ -88,7 +88,7 @@ export function MerchantModule(): JSX.Element {
         <div><span>Comptoir général</span><strong>Services du marchand</strong></div>
         <div><span>Solde</span><strong>{formatCompactNumber(wallet.silver, "0")} Silver</strong></div>
       </header>
-      <nav className="ui-merchant__tabs" aria-label="Services du marchand">
+      <nav className="ui-merchant__tabs" role="tablist" aria-label="Services du marchand">
         {SERVICES.filter((entry) => (
           (entry.id !== "enchant" || enchantmentUnlocked)
           && (entry.id !== "black_market" || blackMarketUnlocked)
@@ -101,9 +101,10 @@ export function MerchantModule(): JSX.Element {
           return (
             <button
               type="button"
+              role="tab"
               key={entry.id}
               className={service === entry.id ? "is-active" : ""}
-              aria-current={service === entry.id ? "page" : undefined}
+              aria-selected={service === entry.id}
               onClick={() => { setService(entry.id); }}
             >
               {entry.label}
