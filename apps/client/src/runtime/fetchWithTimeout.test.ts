@@ -23,7 +23,7 @@ describe("fetchWithTimeout", () => {
   });
 
   it("returns successful responses before the timeout", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(null, { status: 204 }))));
 
     const response = await fetchWithTimeout("/cloud-save", {}, 50);
 
