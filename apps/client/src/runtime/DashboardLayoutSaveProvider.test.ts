@@ -10,6 +10,7 @@ describe("DashboardLayoutSaveProvider", () => {
       "research",
       "yield",
       "enchant-ready",
+      "black-market-convoy",
     ]);
     source.ignoreEnchantInstance("item_instance_42");
     source.acknowledgeFeatureUnlock("dungeon:system");
@@ -23,6 +24,7 @@ describe("DashboardLayoutSaveProvider", () => {
       "research",
       "yield",
       "enchant-ready",
+      "black-market-convoy",
     ]);
     expect([...restored.getIgnoredEnchantInstanceIds()]).toEqual(["item_instance_42"]);
     expect([...restored.getAcknowledgedFeatureUnlockIds()]).toEqual(["dungeon:system"]);
@@ -38,6 +40,14 @@ describe("DashboardLayoutSaveProvider", () => {
       order: ["combat", "research", "yield", "enchant-ready", "production"],
     });
 
+    expect(provider.getOrder()).toEqual([
+      "combat",
+      "research",
+      "yield",
+      "enchant-ready",
+      "production",
+      "black-market-convoy",
+    ]);
     expect(provider.getIgnoredEnchantInstanceIds().size).toBe(0);
     expect(provider.getAcknowledgedFeatureUnlockIds().size).toBe(0);
   });
@@ -52,6 +62,14 @@ describe("DashboardLayoutSaveProvider", () => {
       ignoredEnchantInstanceIds: ["item_instance_42"],
     });
 
+    expect(provider.getOrder()).toEqual([
+      "combat",
+      "research",
+      "yield",
+      "enchant-ready",
+      "production",
+      "black-market-convoy",
+    ]);
     expect([...provider.getIgnoredEnchantInstanceIds()]).toEqual(["item_instance_42"]);
     expect(provider.getAcknowledgedFeatureUnlockIds().size).toBe(0);
   });
@@ -64,6 +82,7 @@ describe("DashboardLayoutSaveProvider", () => {
       "research",
       "yield",
       "enchant-ready",
+      "black-market-convoy",
     ]);
     provider.ignoreEnchantInstance("item_instance_42");
     provider.acknowledgeFeatureUnlock("dungeon:system");
@@ -76,6 +95,7 @@ describe("DashboardLayoutSaveProvider", () => {
       "yield",
       "enchant-ready",
       "production",
+      "black-market-convoy",
     ]);
     expect(provider.getIgnoredEnchantInstanceIds().size).toBe(0);
     expect(provider.getAcknowledgedFeatureUnlockIds().size).toBe(0);
