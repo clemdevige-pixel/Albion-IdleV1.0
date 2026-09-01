@@ -102,6 +102,57 @@ describe("LocalSaveSlotCatalog", () => {
     expect(secondAccount.listSlots()[0]?.hasSave).toBe(false);
   });
 
+  it("detects previously claimed account saves only when current account is empty", () => {
+    const repository = new InMemorySaveRepository();
+    const markerStore = new MemoryMarkerStore();
+    repository.save(PLAYER_SAVE_SLOT_IDS[0], createSave("existing-local-save"));
+
+    const firstAccount = new LocalSaveSlotCatalog(ACCOUNT_A, repository, markerStore);
+    expect(firstAccount.migrateLocalSavesToAccount()).toBe(true);
+
+    const secondAccount = new LocalSaveSlotCatalog(ACCOUNT_B, repository, markerStore);
+    expect(secondAccount.getRecoverablePreviousAccountId()).toBe(ACCOUNT_A);
+
+    repository.save(getAccountSaveSlotId(ACCOUNT_B, PLAYER_SAVE_SLOT_IDS[1]), createSave("new-account"));
+    expect(secondAccount.getRecoverablePreviousAccountId()).toBeUndefined();
+  });
+
+  it("recovers validated previous-account saves without deleting rollback copies", () => {
+    const repository = new InMemorySaveRepository();
+    const markerStore = new MemoryMarkerStore();
+    const primary = createSave("old-primary", 20);
+    const backup = createSave("old-backup", 19);
+    repository.save(PLAYER_SAVE_SLOT_IDS[0], primary);
+    repository.save(getSaveBackupSlotId(PLAYER_SAVE_SLOT_IDS[0]), backup);
+
+    const firstAccount = new LocalSaveSlotCatalog(ACCOUNT_A, repository, markerStore);
+    expect(firstAccount.migrateLocalSavesToAccount()).toBe(true);
+
+    const secondAccount = new LocalSaveSlotCatalog(ACCOUNT_B, repository, markerStore);
+    expect(secondAccount.recoverPreviousAccountSaves(ACCOUNT_A)).toBe(true);
+
+    const oldSlot = getAccountSaveSlotId(ACCOUNT_A, PLAYER_SAVE_SLOT_IDS[0]);
+    const newSlot = getAccountSaveSlotId(ACCOUNT_B, PLAYER_SAVE_SLOT_IDS[0]);
+    expect(repository.get(newSlot)).toEqual(primary);
+    expect(repository.get(getSaveBackupSlotId(newSlot))).toEqual(backup);
+    expect(repository.get(oldSlot)).toEqual(primary);
+    expect(repository.get(getSaveBackupSlotId(oldSlot))).toEqual(backup);
+    expect(secondAccount.listSlots()[0]?.hasSave).toBe(true);
+    expect(secondAccount.getRecoverablePreviousAccountId()).toBeUndefined();
+  });
+
+  it("refuses recovery when the current account already owns a save", () => {
+    const repository = new InMemorySaveRepository();
+    const markerStore = new MemoryMarkerStore();
+    repository.save(PLAYER_SAVE_SLOT_IDS[0], createSave("old"));
+    const firstAccount = new LocalSaveSlotCatalog(ACCOUNT_A, repository, markerStore);
+    expect(firstAccount.migrateLocalSavesToAccount()).toBe(true);
+
+    repository.save(getAccountSaveSlotId(ACCOUNT_B, PLAYER_SAVE_SLOT_IDS[0]), createSave("current"));
+    const secondAccount = new LocalSaveSlotCatalog(ACCOUNT_B, repository, markerStore);
+    expect(secondAccount.recoverPreviousAccountSaves(ACCOUNT_A)).toBe(false);
+  });
+
   it("preserves a newer unscoped save instead of deleting it behind an older account copy", () => {
     const repository = new InMemorySaveRepository();
     const source = createSave("newer-local", 20);
