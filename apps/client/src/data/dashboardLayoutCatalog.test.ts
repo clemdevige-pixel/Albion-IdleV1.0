@@ -13,6 +13,7 @@ describe("dashboard layout catalog", () => {
       "research",
       "enchant-ready",
       "production",
+      "black-market-convoy",
     ]);
   });
 
@@ -29,6 +30,7 @@ describe("dashboard layout catalog", () => {
       "research",
       "yield",
       "enchant-ready",
+      "black-market-convoy",
     ]);
   });
 });
