@@ -16,10 +16,9 @@ describe("fetchWithTimeout", () => {
       }, { once: true });
     })));
 
-    const request = fetchWithTimeout("/cloud-save", {}, 50);
+    const assertion = expect(fetchWithTimeout("/cloud-save", {}, 50)).rejects.toThrow("Remote request timed out");
     await vi.advanceTimersByTimeAsync(50);
-
-    await expect(request).rejects.toThrow("Remote request timed out");
+    await assertion;
   });
 
   it("returns successful responses before the timeout", async () => {
