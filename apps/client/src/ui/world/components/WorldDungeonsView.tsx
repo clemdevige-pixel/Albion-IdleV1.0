@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { GameBridgeState } from "../../../game/GameBridge.js";
 import { DUNGEON_DEFINITIONS } from "../../../data/dungeonContentCatalog.js";
 import { getDungeonLootDefinition } from "../../../data/dungeonLootContentCatalog.js";
@@ -99,6 +99,7 @@ export function WorldDungeonsView(): JSX.Element {
   const navigation = useNavigation();
   const [selectedTier, setSelectedTier] = useState<DungeonKeyTier>(4);
   const [infoDungeonId, setInfoDungeonId] = useState<string | null>(null);
+  const [returnRequested, setReturnRequested] = useState(false);
   const selectDungeonPresentation = useCallback((state: GameBridgeState): DungeonPresentationModel => {
     const dungeonState = getDungeonState();
     const activeRun = dungeonState.activeRun?.status === "active" ? dungeonState.activeRun : undefined;
@@ -113,6 +114,13 @@ export function WorldDungeonsView(): JSX.Element {
     };
   }, [getDungeonState, heroId, inventoryManager]);
   const presentation = useGameUiSelector(selectDungeonPresentation, sameDungeonPresentation);
+
+  useEffect(() => {
+    if (!returnRequested || presentation.activeDefinitionId !== null) return;
+    setReturnRequested(false);
+    navigation.returnToDashboard();
+  }, [navigation, presentation.activeDefinitionId, returnRequested]);
+
   const visibleDungeons = useMemo(() => DUNGEON_DEFINITIONS.filter((dungeon) => dungeon.tier === selectedTier), [selectedTier]);
 
   return (
@@ -145,7 +153,7 @@ export function WorldDungeonsView(): JSX.Element {
                 <div className="world-dungeon-card__identity"><small>Donjon T{dungeon.tier}</small><h3>{dungeon.faction}</h3></div>
                 <div className="world-dungeon-card__header-actions">
                   <button type="button" className="world-dungeon-card__info-button" aria-label={`Récompenses du donjon ${dungeon.faction} T${String(dungeon.tier)}`} aria-expanded={isInfoOpen} aria-controls={infoId} onClick={() => { setInfoDungeonId(isInfoOpen ? null : dungeon.id); }}>i</button>
-                  <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : hardLocked ? "is-locked" : ""}>{isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : hardLocked ? "Verrouillé" : "Disponible"}</span>
+                  <span className={isActiveDungeon ? "is-running" : isPendingDungeon ? "is-pending" : hardLocked ? "is-locked" : ""}>{returnRequested && isActiveDungeon ? "Sortie après ce combat" : isActiveDungeon ? "En cours" : isPendingDungeon ? "Après ce combat" : hardLocked ? "Verrouillé" : "Disponible"}</span>
                 </div>
               </header>
               {isInfoOpen ? (
@@ -169,8 +177,8 @@ export function WorldDungeonsView(): JSX.Element {
               </div>
               {isActiveDungeon ? <div className="world-dungeon-card__current"><small>Combat actuel · Rencontre {(presentation.activeEncounterIndex ?? 0) + 1}/{dungeon.encounters.length}</small><strong>{presentation.enemyName || "Préparation de la rencontre…"}</strong></div> : isPendingDungeon ? <div className="world-dungeon-card__current is-pending"><small>Entrée en attente</small><strong>Le donjon commencera dès que l’ennemi actuel sera vaincu.</strong></div> : null}
               <footer className="world-dungeon-card__footer">
-                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{isActiveDungeon ? "Retourner à l’exploration termine définitivement cette tentative." : lockMessage ?? "En combat, l’entrée attendra la fin de l’ennemi actuel."}</p>}
-                {isActiveDungeon ? <button type="button" className="is-danger" onClick={() => { if (abandonDungeon()) navigation.returnToDashboard(); }}>Retour à l’exploration</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} aria-describedby={lockMessage === undefined ? undefined : tooltipId} onClick={() => { startDungeon(dungeon.id); }}>{getEnterLabel(access)}</button> : null}
+                {!isPendingDungeon && <p className={!canEnter ? "is-status" : ""}>{returnRequested && isActiveDungeon ? "Sortie demandée : l’ennemi courant sera terminé avant le retour à l’exploration." : isActiveDungeon ? "Retourner à l’exploration termine définitivement cette tentative." : lockMessage ?? "En combat, l’entrée attendra la fin de l’ennemi actuel."}</p>}
+                {isActiveDungeon ? <button type="button" className="is-danger" disabled={returnRequested} onClick={() => { if (!returnRequested && abandonDungeon()) setReturnRequested(true); }}>{returnRequested ? "Sortie après ce combat…" : "Retour à l’exploration"}</button> : !isPendingDungeon ? <button type="button" disabled={!canEnter} aria-describedby={lockMessage === undefined ? undefined : tooltipId} onClick={() => { startDungeon(dungeon.id); }}>{getEnterLabel(access)}</button> : null}
               </footer>
               {lockMessage === undefined ? null : <span id={tooltipId} className="world-dungeon-card__tooltip" role="tooltip">{lockMessage}</span>}
             </article>
