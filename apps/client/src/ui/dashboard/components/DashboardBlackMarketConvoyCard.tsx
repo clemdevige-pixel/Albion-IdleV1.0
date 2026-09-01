@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { BLACK_MARKET_ROUTES, RESEARCH_IDS } from "@game/data";
-import type { BlackMarketConvoy, BlackMarketSnapshot } from "@game/gameplay";
+import type { BlackMarketSnapshot } from "@game/gameplay";
 import { blackMarketRuntime } from "../../../runtime/BlackMarketRuntime.js";
 import { useGameServices } from "../../../state/GameContext.js";
 import { syncInventoryToBridge } from "../../../state/bridge-sync/playerInventorySync.js";
@@ -12,8 +12,10 @@ import { useMerchantData } from "../../merchant/useMerchantData.js";
 import { DashboardCard } from "./DashboardCard";
 import "./DashboardBlackMarketConvoyCard.css";
 
+type ActiveBlackMarketConvoy = NonNullable<BlackMarketSnapshot["activeConvoy"]>;
+
 export interface DashboardBlackMarketConvoyModel {
-  readonly convoy: BlackMarketConvoy;
+  readonly convoy: ActiveBlackMarketConvoy;
   readonly nowMs: number;
 }
 
