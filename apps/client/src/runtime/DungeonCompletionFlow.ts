@@ -1,5 +1,6 @@
 import { DUNGEON_DEFINITIONS } from "../data/dungeonContentCatalog.js";
 import type { DungeonEncounterRewardResult } from "./DungeonRewardRuntime.js";
+import { activityFailureFlow } from "./ActivityFailureFlow.js";
 import { combatStopController } from "./CombatStopController.js";
 import { worldTravelTransition } from "./WorldTravelTransition.js";
 
@@ -170,6 +171,25 @@ class DungeonCompletionFlow {
     this.#active = null;
     combatStopController.restorePaused();
     this.#notify();
+    return true;
+  }
+
+  fail(definitionId: string, encounterIndex: number): boolean {
+    const active = this.#active;
+    if (active === null || active.dungeonDefinitionId !== definitionId) return false;
+    const definition = DUNGEON_DEFINITIONS.find((entry) => entry.id === definitionId);
+    if (definition === undefined) return false;
+
+    activityFailureFlow.showDungeon({
+      dungeonDefinitionId: definition.id,
+      faction: definition.faction,
+      tier: definition.tier,
+      encounterNumber: Math.min(definition.encounters.length, Math.max(1, encounterIndex + 1)),
+      encounterCount: definition.encounters.length,
+      durationMs: Math.max(0, Date.now() - active.startedAt),
+      rewards: active.rewards,
+    });
+    this.#active = null;
     return true;
   }
 
