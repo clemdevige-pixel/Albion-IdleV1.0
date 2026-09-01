@@ -24,15 +24,15 @@ export interface TowerBlockTransitionPort {
 /**
  * Runtime-only Tower activity router.
  *
- * Active/inactive attempt state is intentionally transient. Persistent floor,
- * checkpoint and Endless unlock state remain owned by TowerProgressionService.
- * A completed five-floor block closes the transient attempt and requests the
- * shared combat pause so the next block's authored equipment-tier gate can be
- * resolved before combat resumes.
+ * Combat-active and between-block preparation are distinct transient states.
+ * Persistent floor, checkpoint and Endless progression remain owned by
+ * TowerProgressionService. Intermission keeps the player in the Tower context
+ * while shared combat stays inactive so equipment can be changed safely.
  */
 export class TowerCombatRuntimeRouter {
   readonly flowPolicy: CombatFlowPolicy = CONTINUOUS_COMBAT_FLOW_POLICY;
   private active = false;
+  private intermission = false;
 
   public constructor(
     private readonly progression: TowerProgressionService,
@@ -42,6 +42,14 @@ export class TowerCombatRuntimeRouter {
 
   public isTowerActive(): boolean {
     return this.active;
+  }
+
+  public isTowerIntermission(): boolean {
+    return this.intermission;
+  }
+
+  public isTowerEngaged(): boolean {
+    return this.active || this.intermission;
   }
 
   public getFactionCombatContext(): FactionCombatContext | undefined {
@@ -56,13 +64,15 @@ export class TowerCombatRuntimeRouter {
 
   public start(): boolean {
     if (this.active) return false;
+    this.intermission = false;
     this.active = true;
     return true;
   }
 
   public abandon(): boolean {
-    if (!this.active) return false;
+    if (!this.active && !this.intermission) return false;
     this.active = false;
+    this.intermission = false;
     return true;
   }
 
@@ -88,6 +98,7 @@ export class TowerCombatRuntimeRouter {
       const after = this.progression.getSnapshot();
       const nextFloor = getTowerFloorDefinition(after.currentFloor, after.seed);
       this.active = false;
+      this.intermission = true;
       towerBlockCompletionFlow.show({
         blockIndex: completedFloor.block.blockIndex,
         floorStart: completedFloor.block.floorStart,
@@ -119,6 +130,7 @@ export class TowerCombatRuntimeRouter {
     const failedFloor = getTowerFloorDefinition(snapshot.currentFloor, snapshot.seed);
     this.progression.failCurrentFloor();
     this.active = false;
+    this.intermission = false;
     activityFailureFlow.showTower({
       floor: failedFloor.floor,
       tier: failedFloor.block.tier,
