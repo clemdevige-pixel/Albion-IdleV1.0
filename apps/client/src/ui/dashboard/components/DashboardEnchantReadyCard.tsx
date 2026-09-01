@@ -39,10 +39,10 @@ export function DashboardEnchantReadyCard(): JSX.Element | null {
               </button>
               <button
                 type="button"
-                aria-label={`Masquer ${getItemDisplayName(item.itemId)}`}
-                title="Ignorer cet enchantement pour cette session"
+                aria-label={`Ne plus signaler ${getItemDisplayName(item.itemId)}`}
+                title="Ne plus signaler cet objet"
                 onClick={() => {
-                  dismissEnchantReady(item.instanceId, item.nextLevel);
+                  dismissEnchantReady(item.instanceId);
                 }}
               >
                 ×
