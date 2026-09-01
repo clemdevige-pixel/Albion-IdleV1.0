@@ -5,6 +5,7 @@ import type { GameBridgeState } from "../../../game/GameBridge.js";
 import { resolveTowerRewardBreakdown } from "../../../runtime/TowerRewardRuntime.js";
 import type { TowerAccessState } from "../../../state/TowerNavigationActions.js";
 import { useGameServices } from "../../../state/GameContext.js";
+import { useNavigation } from "../../navigation/useNavigation.js";
 import { useGameUiSelector } from "../../state/useGameUiSelector.js";
 import "./WorldTowerView.css";
 
@@ -69,7 +70,13 @@ export function WorldTowerView(): JSX.Element {
     startTower,
     abandonTower,
   } = useGameServices();
+  const navigation = useNavigation();
   const [rewardsOpen, setRewardsOpen] = useState(false);
+
+  const returnToExploration = (): void => {
+    if (!abandonTower()) return;
+    navigation.returnToDashboard();
+  };
 
   const selectPresentation = useCallback((state: GameBridgeState): TowerPresentationModel => {
     const tower = getTowerState();
@@ -186,17 +193,17 @@ export function WorldTowerView(): JSX.Element {
 
         <footer>
           <p>{presentation.active
-            ? "Abandonner quitte la tentative et conserve la progression validée."
+            ? "Retourner à l’exploration quitte la tentative et conserve la progression validée."
             : presentation.intermission
               ? accessMessage ?? "Préparez votre équipement avant de lancer le prochain bloc."
               : presentation.pendingStart
                 ? "La Tour démarrera à la fin de l’ennemi actuel."
                 : accessMessage ?? "L’entrée peut attendre la fin du combat World en cours."}</p>
           {presentation.active ? (
-            <button type="button" className="is-danger" onClick={() => { abandonTower(); }}>Abandonner</button>
+            <button type="button" className="is-danger" onClick={returnToExploration}>Retour à l’exploration</button>
           ) : presentation.pendingStart ? null : presentation.intermission ? (
             <div className="world-tower__intermission-actions">
-              <button type="button" className="is-danger" onClick={() => { abandonTower(); }}>Quitter la Tour</button>
+              <button type="button" className="is-danger" onClick={returnToExploration}>Retour à l’exploration</button>
               <button type="button" disabled={!canStart} onClick={() => { startTower(); }}>Lancer le bloc</button>
             </div>
           ) : (
