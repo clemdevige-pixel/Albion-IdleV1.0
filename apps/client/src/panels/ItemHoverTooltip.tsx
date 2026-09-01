@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { EnchantmentLevel } from "@game/gameplay";
 import { getFragmentAssemblyRecipe } from "../data/specialCraftRecipes.js";
+import { EnchantmentDiamonds } from "../ui/shared/EnchantmentDiamonds";
 import { ItemTooltip } from "./ItemTooltip";
 
 interface ItemHoverTooltipProps {
@@ -9,6 +10,7 @@ interface ItemHoverTooltipProps {
   readonly quantity?: number;
   readonly instanceId?: string | undefined;
   readonly enchantmentOverride?: EnchantmentLevel | undefined;
+  readonly showEnchantmentLevel?: boolean;
   readonly children: ReactNode;
 }
 
@@ -17,6 +19,7 @@ export function ItemHoverTooltip({
   quantity = 1,
   instanceId,
   enchantmentOverride,
+  showEnchantmentLevel = false,
   children,
 }: ItemHoverTooltipProps): JSX.Element {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -52,6 +55,11 @@ export function ItemHoverTooltip({
           }}
           role="tooltip"
         >
+          {showEnchantmentLevel && enchantmentOverride !== undefined && (
+            <div className="item-hover-tooltip__enchantment">
+              <EnchantmentDiamonds level={enchantmentOverride} variant="tooltip" showLabel />
+            </div>
+          )}
           <ItemTooltip
             itemId={itemId}
             quantity={quantity}
