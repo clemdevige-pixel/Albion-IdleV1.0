@@ -9,7 +9,7 @@ Canonical T4-T8 faction-dungeon balance contract after exact-two-potion runtime 
 
 Runtime authority remains in:
 - `apps/client/src/data/dungeonContentCatalog.ts` for authored dungeon combat values;
-- `apps/client/src/data/factionArtifactWeaponContent.ts` for the authored faction matchup curve;
+- `packages/data/src/config/faction-artifact-weapon-content.ts` for the authored faction matchup curve and artifact weapon content;
 - `scripts/runtime-dungeon-benchmark.ts` for the canonical T4-T8 sweep;
 - `apps/client/src/runtime/CombatRuntimeBenchmarkHarness.ts` for deterministic runtime execution.
 
