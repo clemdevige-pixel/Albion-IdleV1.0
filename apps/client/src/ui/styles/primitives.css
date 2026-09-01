@@ -87,16 +87,16 @@
   width: 7px;
   height: 7px;
   box-sizing: border-box;
-  border: 1px solid #725079;
+  border: 1px solid color-mix(in srgb, currentColor 48%, #333946);
   background: #22232d;
   box-shadow: inset 0 0 2px rgb(0 0 0 / 70%);
   transform: rotate(45deg);
 }
 
 .enchantment-diamonds__diamond--filled {
-  border-color: #dc8df6;
-  background: linear-gradient(135deg, #d86cf4, #8b37ba);
-  box-shadow: 0 0 4px rgb(190 82 231 / 45%), inset 0 0 2px rgb(255 255 255 / 35%);
+  border-color: color-mix(in srgb, currentColor 80%, white 20%);
+  background: currentColor;
+  box-shadow: 0 0 4px color-mix(in srgb, currentColor 45%, transparent), inset 0 0 2px rgb(255 255 255 / 35%);
 }
 
 .enchantment-diamonds--slot .enchantment-diamonds__row {
