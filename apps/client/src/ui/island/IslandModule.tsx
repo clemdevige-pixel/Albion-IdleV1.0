@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   getIslandBuildingDefinition,
   getIslandLevelDefinition,
@@ -7,6 +7,8 @@ import {
 } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
+import { useNavigation } from "../navigation";
+import { findWorkerGatheringBuilding } from "../shared/findWorkerGatheringBuilding";
 import { AcademyPanel } from "./AcademyPanel";
 import { ConstructionPanel } from "./ConstructionPanel";
 import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
@@ -31,7 +33,9 @@ const CATEGORY_LABELS = {
 } as const;
 
 export function IslandModule(): JSX.Element {
-  const { island } = useGameBridge();
+  const bridge = useGameBridge();
+  const { island } = bridge;
+  const { activeView } = useNavigation();
   const { getIslandLevel } = useGameServices();
   const islandLevel = getIslandLevel();
   const islandLevelDefinition = getIslandLevelDefinition(islandLevel);
@@ -60,14 +64,42 @@ export function IslandModule(): JSX.Element {
     ? undefined
     : getIslandBuildingDefinition(selectedBuilding.definitionId);
 
+  useEffect(() => {
+    let target = activeView === "academy_expeditions"
+      ? island.buildings.find((building) => building.definitionId === "academy")
+      : activeView === "worker_house"
+        ? island.buildings.find((building) => building.definitionId === "worker_house")
+        : activeView === "refining"
+          ? island.buildings.find((building) => (
+              getIslandBuildingDefinition(building.definitionId).refiningService !== undefined
+            ))
+          : undefined;
+
+    if (activeView === "worker_attention") {
+      const worker = bridge.workers.workers.find((candidate) => (
+        candidate.state === "idle" || candidate.state === "paused"
+      ));
+      if (worker !== undefined) {
+        target = findWorkerGatheringBuilding(island.buildings, worker.profession);
+      }
+    }
+
+    if (target === undefined || selectedBuildingInstanceId === target.instanceId) return;
+    selectBuilding(target.plotId, target.instanceId);
+  }, [
+    activeView,
+    bridge.workers.workers,
+    island.buildings,
+    selectBuilding,
+    selectedBuildingInstanceId,
+  ]);
+
   useFeatureUnlockVisit(
-    selectedBuilding?.definitionId === "academy"
-      ? FEATURE_UNLOCK_VISITS.expeditions
-      : selectedBuilding?.definitionId === "worker_house"
-        ? FEATURE_UNLOCK_VISITS.workerOrganization
-        : selectedBuildingDefinition?.refiningService !== undefined
-          ? FEATURE_UNLOCK_VISITS.instantRefining
-          : [],
+    selectedBuilding?.definitionId === "worker_house"
+      ? FEATURE_UNLOCK_VISITS.workerOrganization
+      : selectedBuildingDefinition?.refiningService !== undefined
+        ? FEATURE_UNLOCK_VISITS.instantRefining
+        : [],
   );
 
   if (selectedBuilding !== undefined) {
@@ -84,6 +116,7 @@ export function IslandModule(): JSX.Element {
             if (moveActive) cancelMovingBuilding();
             else startMovingBuilding(selectedBuilding.instanceId);
           }}
+          academyInitialView={activeView === "academy_expeditions" ? "expeditions" : undefined}
         />
       </div>
     );
@@ -142,12 +175,14 @@ function BuildingSummary({
   islandLevel,
   moveActive,
   onMove,
+  academyInitialView,
 }: {
   readonly definitionId: IslandBuildingId;
   readonly level: number;
   readonly islandLevel: number;
   readonly moveActive: boolean;
   readonly onMove: () => void;
+  readonly academyInitialView?: "research" | "expeditions";
 }): JSX.Element {
   const definition = getIslandBuildingDefinition(definitionId);
   const maxProductionTier = getIslandMaxProductionTier(islandLevel);
@@ -187,7 +222,7 @@ function BuildingSummary({
       ) : definitionId === "storage" ? (
         <StoragePanel />
       ) : definitionId === "academy" ? (
-        <AcademyPanel level={level} />
+        <AcademyPanel level={level} initialView={academyInitialView} />
       ) : definition.gatheringService !== undefined ? (
         <GatheringBuildingPanel definitionId={definitionId} islandLevel={islandLevel} />
       ) : definition.refiningService !== undefined ? (
