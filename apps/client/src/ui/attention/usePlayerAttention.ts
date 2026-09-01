@@ -99,12 +99,11 @@ export function useFeatureUnlockVisit(unlockIds: readonly string[]): void {
   useGameBridge();
   const { getAcademyModel } = useGameServices();
   const completedUnlockIds = getCompletedResearchUnlockIds(getAcademyModel().research);
-  const unlockedVisitedIds = unlockIds.filter((unlockId) => completedUnlockIds.has(unlockId));
-  const visitKey = unlockedVisitedIds.join("|");
+  const visitKey = unlockIds.filter((unlockId) => completedUnlockIds.has(unlockId)).join("|");
 
   useEffect(() => {
-    if (unlockedVisitedIds.length > 0) {
-      dashboardLayoutSaveProvider.acknowledgeFeatureUnlocks(unlockedVisitedIds);
+    if (visitKey.length > 0) {
+      dashboardLayoutSaveProvider.acknowledgeFeatureUnlocks(visitKey.split("|"));
     }
   }, [visitKey]);
 }
