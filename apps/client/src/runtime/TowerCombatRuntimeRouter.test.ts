@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TowerProgressionService } from "@game/gameplay";
+import { activityFailureFlow } from "./ActivityFailureFlow.js";
 import { TowerCombatEncounterSource } from "./TowerCombatEncounterSource.js";
 import {
   TowerCombatRuntimeRouter,
@@ -20,6 +21,8 @@ function createRouter(blockTransitionPort?: TowerBlockTransitionPort): {
     ),
   };
 }
+
+afterEach(() => { activityFailureFlow.dismiss(); });
 
 describe("TowerCombatRuntimeRouter", () => {
   it("falls through while Tower is inactive", () => {
