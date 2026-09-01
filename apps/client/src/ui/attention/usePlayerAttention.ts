@@ -6,6 +6,7 @@ import { dashboardLayoutSaveProvider } from "../../runtime/DashboardLayoutSavePr
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import type { UiModuleId } from "../navigation/moduleIds";
 import { UI_MODULE_IDS } from "../navigation/moduleIds";
+import { getStorageCapacitySnapshot } from "../shared/storageCapacity";
 
 export type PlayerAttentionKind =
   | "enchant_ready"
@@ -51,8 +52,6 @@ export interface PlayerAttentionState {
   readonly dismissEnchantReady: (instanceId: string) => void;
   readonly getModuleSignals: (moduleId: UiModuleId) => readonly PlayerAttentionSignal[];
 }
-
-const INVENTORY_NEAR_FULL_FREE_SLOTS = 2;
 
 export const FEATURE_UNLOCK_VISITS = {
   expeditions: [
@@ -171,11 +170,10 @@ export function usePlayerAttention(): PlayerAttentionState {
       });
     }
 
-    const inventoryFreeSlots = Math.max(0, bridge.inventory.capacity - bridge.inventory.occupied);
-    const inventoryIsFull = bridge.inventory.capacity > 0 && inventoryFreeSlots === 0;
-    const inventoryIsNearlyFull = bridge.inventory.capacity > 0
-      && !inventoryIsFull
-      && inventoryFreeSlots <= INVENTORY_NEAR_FULL_FREE_SLOTS;
+    const inventoryCapacity = getStorageCapacitySnapshot(bridge.inventory.occupied, bridge.inventory.capacity);
+    const inventoryFreeSlots = inventoryCapacity.freeSlots;
+    const inventoryIsFull = inventoryCapacity.state === "full";
+    const inventoryIsNearlyFull = inventoryCapacity.state === "warning";
     const idleWorkerCount = bridge.workers.workers.filter((worker) => worker.state === "idle").length;
     const pausedWorkerCount = bridge.workers.workers.filter((worker) => worker.state === "paused").length;
     const nonProducingWorkerCount = idleWorkerCount + pausedWorkerCount;
