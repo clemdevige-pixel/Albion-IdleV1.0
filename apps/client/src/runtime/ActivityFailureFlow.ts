@@ -1,4 +1,10 @@
-import type { DungeonCompletionRewards } from "./DungeonCompletionFlow.js";
+export interface ActivityDungeonRewards {
+  readonly silver: number;
+  readonly artifactFragments: number;
+  readonly enchantmentShards: number;
+  readonly factionRunes: number;
+  readonly artifacts: number;
+}
 
 export interface DungeonFailureRecapModel {
   readonly kind: "dungeon";
@@ -9,7 +15,7 @@ export interface DungeonFailureRecapModel {
   readonly encounterNumber: number;
   readonly encounterCount: number;
   readonly durationMs: number;
-  readonly rewards: DungeonCompletionRewards;
+  readonly rewards: ActivityDungeonRewards;
 }
 
 export interface TowerFailureRecapModel {
