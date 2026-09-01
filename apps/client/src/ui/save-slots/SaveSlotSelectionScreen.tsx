@@ -91,7 +91,11 @@ export function SaveSlotSelectionScreen({
           ))}
         </div>
         <footer className="save-slot-screen__footer">
-          <p>{syncing ? "Synchronisation des parties…" : "Sauvegardes protégées localement et synchronisées avec votre compte."}</p>
+          <p>{syncing
+            ? "Synchronisation des parties…"
+            : syncError === undefined
+              ? "Sauvegardes protégées localement et synchronisées avec votre compte."
+              : "Mode local actif · la synchronisation cloud sera retentée à la prochaine ouverture."}</p>
           {syncError === undefined ? null : <p role="alert">{syncError}</p>}
         </footer>
       </section>
