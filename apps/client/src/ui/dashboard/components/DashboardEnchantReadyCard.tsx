@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { getItemDisplayName, ItemVisual } from "../../../panels/ItemVisual";
 import { usePlayerAttention } from "../../attention/usePlayerAttention";
 import { useNavigation } from "../../navigation";
@@ -7,22 +6,20 @@ import { DashboardCard } from "./DashboardCard";
 
 export function DashboardEnchantReadyCard(): JSX.Element | null {
   const navigation = useNavigation();
-  const { enchantReadyItems } = usePlayerAttention();
-  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
+  const { enchantReadyItems, dismissEnchantReady } = usePlayerAttention();
 
-  const visible = enchantReadyItems.filter((item) => !hidden.has(`${item.instanceId}:${String(item.nextLevel)}`));
-  if (visible.length === 0) return null;
+  if (enchantReadyItems.length === 0) return null;
 
   return (
     <DashboardCard
       sectionId="enchant-ready"
-      meta={visible.length > 1 ? `${String(visible.length)} objets` : undefined}
+      meta={enchantReadyItems.length > 1 ? `${String(enchantReadyItems.length)} objets` : undefined}
     >
       <div className="dashboard-production__list">
-        {visible.map((item) => {
-          const hideKey = `${item.instanceId}:${String(item.nextLevel)}`;
+        {enchantReadyItems.map((item) => {
+          const attentionKey = `${item.instanceId}:${String(item.nextLevel)}`;
           return (
-            <div key={hideKey} className="dashboard-production__task">
+            <div key={attentionKey} className="dashboard-production__task">
               <button
                 type="button"
                 className="dashboard-production__task-main"
@@ -43,9 +40,9 @@ export function DashboardEnchantReadyCard(): JSX.Element | null {
               <button
                 type="button"
                 aria-label={`Masquer ${getItemDisplayName(item.itemId)}`}
-                title="Masquer cette alerte"
+                title="Ignorer cet enchantement pour cette session"
                 onClick={() => {
-                  setHidden((current) => new Set([...current, hideKey]));
+                  dismissEnchantReady(item.instanceId, item.nextLevel);
                 }}
               >
                 ×
