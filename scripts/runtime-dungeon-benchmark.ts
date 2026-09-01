@@ -1,3 +1,4 @@
+import { FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER } from "@game/data";
 import {
   ARTIFACT_WEAPON_BENCHMARK_SPECS,
   artifactBenchmarkMasteryProfile,
@@ -5,7 +6,6 @@ import {
 } from "../apps/client/src/data/artifactWeaponBenchmarkFixtures.js";
 import { resolveEquipmentInfo } from "../apps/client/src/data/itemContentCatalog.js";
 import { DUNGEON_DEFINITIONS } from "../apps/client/src/data/dungeonContentCatalog.js";
-import { FACTION_ARTIFACT_DAMAGE_BONUS_PERCENT_BY_TIER } from "../apps/client/src/data/factionArtifactWeaponContent.js";
 import { resolveArtifactDungeonDamageBonusPercent } from "../apps/client/src/data/weaponContentCatalog.js";
 import { WORLD_ZONE_IDS } from "../apps/client/src/data/worldContentCatalog.js";
 import { runCombatRuntimeBenchmark } from "../apps/client/src/runtime/CombatRuntimeBenchmarkHarness.js";
