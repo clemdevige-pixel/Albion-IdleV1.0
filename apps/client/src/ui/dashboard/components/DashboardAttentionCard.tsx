@@ -83,13 +83,6 @@ export function DashboardAttentionCard(): JSX.Element | null {
 
   return (
     <PanelSurface className="dashboard-attention-card">
-      <header className="dashboard-attention-card__header">
-        <div>
-          <span>Priorité</span>
-          <strong>À faire maintenant</strong>
-        </div>
-        <small>{String(actions.length)} action{actions.length > 1 ? "s" : ""}</small>
-      </header>
       <div className="dashboard-attention-card__list">
         {actions.map((action) => (
           <button
