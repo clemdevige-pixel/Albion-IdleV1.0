@@ -4,10 +4,10 @@
   "kind": "world_hud",
   "healthBar": {
     "defaultWidth": 110,
-    "height": 8,
+    "height": 9,
     "offsetY": 96,
-    "backgroundColor": "#0d1119",
-    "borderColor": "#687386",
+    "backgroundColor": "#090d14",
+    "borderColor": "#8793a8",
     "borderWidth": 1,
     "backgroundDepth": 10,
     "fillDepth": 11,
@@ -15,22 +15,22 @@
     "upperGradient": ["#e0a03f", "#4fa35b"]
   },
   "valueText": {
-    "offsetY": 15,
-    "fontFamily": "system-ui, sans-serif",
-    "fontSize": 11,
-    "fontStyle": "bold",
-    "color": "#f5f7fb",
-    "strokeColor": "#090c12",
-    "strokeThickness": 2,
-    "depth": 12
-  },
-  "actorLabel": {
-    "offsetY": 32,
+    "offsetY": 16,
     "fontFamily": "system-ui, sans-serif",
     "fontSize": 12,
     "fontStyle": "bold",
-    "playerColor": "#d3dfef",
-    "enemyColor": "#efb1b6",
+    "color": "#ffffff",
+    "strokeColor": "#05070b",
+    "strokeThickness": 3,
+    "depth": 12
+  },
+  "actorLabel": {
+    "offsetY": 34,
+    "fontFamily": "system-ui, sans-serif",
+    "fontSize": 13,
+    "fontStyle": "bold",
+    "playerColor": "#e1e9f4",
+    "enemyColor": "#f2b8bd",
     "letterSpacing": 1,
     "depth": 10
   }
