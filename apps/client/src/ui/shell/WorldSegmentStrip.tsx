@@ -22,10 +22,7 @@ function activityNodeClass(node: CombatTimelineNodeModel): string {
   const bossClass = node.kind === "boss" || node.kind === "major-boss"
     ? " world-segment-strip__segment--boss"
     : "";
-  const kindClass = node.kind === "normal" || node.kind === "boss"
-    ? ""
-    : ` world-segment-strip__segment--${node.kind}`;
-  return `world-segment-strip__segment world-segment-strip__segment--${stateClass}${bossClass}${kindClass}`;
+  return `world-segment-strip__segment world-segment-strip__segment--${stateClass}${bossClass}`;
 }
 
 function ActivityCombatTimeline({ model }: { readonly model: CombatTimelineModel }): JSX.Element {
@@ -48,17 +45,20 @@ function ActivityCombatTimeline({ model }: { readonly model: CombatTimelineModel
             style={{ width: `${String(model.railProgress)}%` }}
           />
         </span>
-        {model.nodes.map((node) => (
-          <span
-            key={node.id}
-            className={activityNodeClass(node)}
-            role="img"
-            aria-label={node.ariaLabel}
-            aria-current={node.state === "current" ? "step" : undefined}
-          >
-            <span>{node.label}</span>
-          </span>
-        ))}
+        {model.nodes.map((node) => {
+          const isBoss = node.kind === "boss" || node.kind === "major-boss";
+          return (
+            <span
+              key={node.id}
+              className={activityNodeClass(node)}
+              role="img"
+              aria-label={node.ariaLabel}
+              aria-current={node.state === "current" ? "step" : undefined}
+            >
+              <span>{isBoss ? "" : node.label}</span>
+            </span>
+          );
+        })}
       </div>
     </div>
   );
