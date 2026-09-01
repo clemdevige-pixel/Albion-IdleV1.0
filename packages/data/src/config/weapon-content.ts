@@ -1,5 +1,5 @@
 import type { ProductionTier } from "./production-balance.js";
-import { STANDARD_WEAPON_ABILITIES } from "./weapon-ability-content.js";
+import type { STANDARD_WEAPON_ABILITIES } from "./weapon-ability-content.js";
 
 export type AuthoredWeaponFamilyId = "sword" | "bow" | "fire_staff" | "gloves" | "dagger";
 export type AuthoredWeaponCombatProfile = "dagger" | "sword" | "bow" | "staff" | "hammer" | "gloves";
