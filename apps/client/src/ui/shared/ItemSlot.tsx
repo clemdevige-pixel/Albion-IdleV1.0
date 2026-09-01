@@ -18,9 +18,21 @@ interface ItemSlotProps {
   readonly disabledContent?: ReactNode;
   readonly onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   readonly onDoubleClick?: () => void;
+  readonly onContextMenu?: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
-export function ItemSlot({ label, itemId, instanceId, enchantment, selected = false, disabled = false, disabledContent, onClick, onDoubleClick }: ItemSlotProps): JSX.Element {
+export function ItemSlot({
+  label,
+  itemId,
+  instanceId,
+  enchantment,
+  selected = false,
+  disabled = false,
+  disabledContent,
+  onClick,
+  onDoubleClick,
+  onContextMenu,
+}: ItemSlotProps): JSX.Element {
   const tier = itemId === undefined ? undefined : getItemTier(itemId);
   const content = (
     <button
@@ -29,6 +41,7 @@ export function ItemSlot({ label, itemId, instanceId, enchantment, selected = fa
       disabled={disabled}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={onContextMenu}
       aria-label={`${label}${itemId === undefined ? " vide" : " équipé"}`}
     >
       <span className="ui-item-slot__label">{label}</span>
