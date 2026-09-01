@@ -6,6 +6,7 @@ import {
   type IslandBuildingId,
 } from "@game/data";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
+import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
 import { AcademyPanel } from "./AcademyPanel";
 import { ConstructionPanel } from "./ConstructionPanel";
 import { CraftingBuildingPanel } from "./CraftingBuildingPanel";
@@ -55,6 +56,17 @@ export function IslandModule(): JSX.Element {
   const selectedBuilding = selectedBuildingInstanceId === null
     ? undefined
     : buildingByInstanceId.get(selectedBuildingInstanceId);
+  const selectedBuildingDefinition = selectedBuilding === undefined
+    ? undefined
+    : getIslandBuildingDefinition(selectedBuilding.definitionId);
+
+  useFeatureUnlockVisit(
+    selectedBuilding?.definitionId === "worker_house"
+      ? FEATURE_UNLOCK_VISITS.workerOrganization
+      : selectedBuildingDefinition?.refiningService !== undefined
+        ? FEATURE_UNLOCK_VISITS.instantRefining
+        : [],
+  );
 
   if (selectedBuilding !== undefined) {
     const moveActive = movingBuildingInstanceId === selectedBuilding.instanceId;
