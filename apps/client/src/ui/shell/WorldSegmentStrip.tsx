@@ -1,21 +1,77 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { DUNGEON_DEFINITIONS } from "../../data/dungeonContentCatalog.js";
 import { getSegmentRecommendedItemPower } from "../../data/itemPower";
 import { resolveProjectedSegmentRates } from "../../runtime/projectedRateResolver";
-import { useGameBridge } from "../../state/GameContext";
+import { useGameBridge, useGameServices } from "../../state/GameContext";
 import { useDashboardZone, useDashboardZoneActions } from "../dashboard/useDashboardData";
+import {
+  buildDungeonCombatTimeline,
+  buildTowerCombatTimeline,
+  type CombatTimelineModel,
+  type CombatTimelineNodeModel,
+} from "./combatTimelineModel.js";
 import "./WorldSegmentStrip.css";
 
 function formatRate(value: number): string {
   return Math.round(value).toLocaleString("fr-FR");
 }
 
+function activityNodeClass(node: CombatTimelineNodeModel): string {
+  const stateClass = node.state === "upcoming" ? "locked" : node.state;
+  const bossClass = node.kind === "boss" || node.kind === "major-boss"
+    ? " world-segment-strip__segment--boss"
+    : "";
+  const kindClass = node.kind === "normal" || node.kind === "boss"
+    ? ""
+    : ` world-segment-strip__segment--${node.kind}`;
+  return `world-segment-strip__segment world-segment-strip__segment--${stateClass}${bossClass}${kindClass}`;
+}
+
+function ActivityCombatTimeline({ model }: { readonly model: CombatTimelineModel }): JSX.Element {
+  return (
+    <div
+      className={`world-segment-strip world-segment-strip--activity world-segment-strip--${model.mode}`}
+      aria-label={model.mode === "dungeon" ? "Progression du donjon" : "Progression de la Tour"}
+    >
+      <div className="world-segment-strip__zone-browser world-segment-strip__zone-browser--activity">
+        <div className="world-segment-strip__zone-heading">
+          <strong>{model.title}</strong>
+          <span>{model.subtitle}</span>
+        </div>
+      </div>
+
+      <div className="world-segment-strip__timeline">
+        <span className="world-segment-strip__rail" aria-hidden="true">
+          <span
+            className="world-segment-strip__rail-progress"
+            style={{ width: `${String(model.railProgress)}%` }}
+          />
+        </span>
+        {model.nodes.map((node) => (
+          <span
+            key={node.id}
+            className={activityNodeClass(node)}
+            role="img"
+            aria-label={node.ariaLabel}
+            aria-current={node.state === "current" ? "step" : undefined}
+          >
+            <span>{node.label}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /**
- * Single permanent world browser for zones and segments.
- * Reuses the dashboard zone model and the shared projected-rate authority.
+ * Single permanent combat timeline.
+ * World segments remain the default mode; active instanced combat projects its
+ * own authoritative progression into the same visual contract.
  */
 export function WorldSegmentStrip(): JSX.Element {
   const bridge = useGameBridge();
+  const { getDungeonState, getTowerState } = useGameServices();
   const zone = useDashboardZone();
   const { selectZoneSegment } = useDashboardZoneActions();
   const [viewedZoneIndex, setViewedZoneIndex] = useState(zone.zoneIndex);
@@ -25,6 +81,21 @@ export function WorldSegmentStrip(): JSX.Element {
   useEffect(() => {
     setViewedZoneIndex(zone.zoneIndex);
   }, [zone.zoneIndex]);
+
+  const dungeonState = getDungeonState();
+  const activeDungeonRun = dungeonState.activeRun?.status === "active" ? dungeonState.activeRun : undefined;
+  const activeDungeonDefinition = activeDungeonRun === undefined
+    ? undefined
+    : DUNGEON_DEFINITIONS.find((definition) => definition.id === activeDungeonRun.definitionId);
+  const towerState = getTowerState();
+
+  if (activeDungeonRun !== undefined && activeDungeonDefinition !== undefined) {
+    return <ActivityCombatTimeline model={buildDungeonCombatTimeline(activeDungeonRun, activeDungeonDefinition)} />;
+  }
+
+  if (towerState.active) {
+    return <ActivityCombatTimeline model={buildTowerCombatTimeline(towerState.progression)} />;
+  }
 
   const viewedZone = zone.zones.find((candidate) => candidate.zoneIndex === viewedZoneIndex)
     ?? zone.zones.find((candidate) => candidate.isActive)
