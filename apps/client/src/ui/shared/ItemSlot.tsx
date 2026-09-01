@@ -6,6 +6,7 @@ import {
   getEquipmentTierFrameClass,
   ItemVisual,
 } from "../../panels/ItemVisual";
+import { EnchantmentDiamonds } from "./EnchantmentDiamonds";
 
 interface ItemSlotProps {
   readonly label: string;
@@ -36,6 +37,7 @@ export function ItemSlot({ label, itemId, instanceId, enchantment, selected = fa
       ) : itemId !== undefined ? (
         <>
           <span className="ui-item-slot__visual"><ItemVisual itemId={itemId} /></span>
+          <span className="ui-item-slot__enchantment"><EnchantmentDiamonds level={enchantment} /></span>
           {tier !== undefined && (
             <span className={`ui-item-slot__meta${getEnchantmentTextClass(enchantment)}`}>
               T{String(tier)}.{String(enchantment)}
@@ -46,5 +48,15 @@ export function ItemSlot({ label, itemId, instanceId, enchantment, selected = fa
     </button>
   );
   if (itemId === undefined || disabled) return content;
-  return <ItemHoverTooltip itemId={itemId} quantity={1} instanceId={instanceId}>{content}</ItemHoverTooltip>;
+  return (
+    <ItemHoverTooltip
+      itemId={itemId}
+      quantity={1}
+      instanceId={instanceId}
+      enchantmentOverride={enchantment}
+      showEnchantmentLevel
+    >
+      {content}
+    </ItemHoverTooltip>
+  );
 }
