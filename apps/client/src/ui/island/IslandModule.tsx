@@ -61,11 +61,13 @@ export function IslandModule(): JSX.Element {
     : getIslandBuildingDefinition(selectedBuilding.definitionId);
 
   useFeatureUnlockVisit(
-    selectedBuilding?.definitionId === "worker_house"
-      ? FEATURE_UNLOCK_VISITS.workerOrganization
-      : selectedBuildingDefinition?.refiningService !== undefined
-        ? FEATURE_UNLOCK_VISITS.instantRefining
-        : [],
+    selectedBuilding?.definitionId === "academy"
+      ? FEATURE_UNLOCK_VISITS.expeditions
+      : selectedBuilding?.definitionId === "worker_house"
+        ? FEATURE_UNLOCK_VISITS.workerOrganization
+        : selectedBuildingDefinition?.refiningService !== undefined
+          ? FEATURE_UNLOCK_VISITS.instantRefining
+          : [],
   );
 
   if (selectedBuilding !== undefined) {
