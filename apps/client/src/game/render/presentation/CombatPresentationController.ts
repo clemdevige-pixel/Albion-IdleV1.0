@@ -27,6 +27,8 @@ type PresentationDamageEvent = DamageNumberEvent & {
   readonly encounterKey?: string;
 };
 
+type PresentedEncounterType = GameBridge["world"]["encounterType"];
+
 const DEFEATED_ENEMY_HOLD_MS = 120;
 
 /** Coordinates actors, combat events and in-world combat HUD. */
@@ -54,6 +56,7 @@ export class CombatPresentationController {
   private displayedEnemyName: string | undefined;
   private displayedEnemyVisualManifestId: string | undefined;
   private displayedEnemyEncounterKey: string | undefined;
+  private displayedEnemyEncounterType: PresentedEncounterType = "normal";
   private displayedEnemyIsBoss = false;
   private defeatedEnemyPresentedAtMs: number | undefined;
 
@@ -182,6 +185,7 @@ export class CombatPresentationController {
     this.displayedEnemyName = undefined;
     this.displayedEnemyVisualManifestId = undefined;
     this.displayedEnemyEncounterKey = undefined;
+    this.displayedEnemyEncounterType = "normal";
     this.displayedEnemyIsBoss = false;
     this.defeatedEnemyPresentedAtMs = undefined;
     clearPresentedEnemyHealth();
@@ -235,6 +239,7 @@ export class CombatPresentationController {
       this.displayedEnemyName = undefined;
       this.displayedEnemyVisualManifestId = undefined;
       this.displayedEnemyEncounterKey = undefined;
+      this.displayedEnemyEncounterType = "normal";
       this.displayedEnemyIsBoss = false;
       this.defeatedEnemyPresentedAtMs = undefined;
       clearPresentedEnemyHealth();
@@ -242,13 +247,15 @@ export class CombatPresentationController {
       return;
     }
 
-    const incomingIsBoss = bridge.world.encounterType === "boss";
+    const incomingEncounterType = bridge.world.encounterType;
+    const incomingIsBoss = incomingEncounterType === "boss";
 
     if (this.displayedEnemyVisualManifestId === undefined) {
       this.adoptEnemyPresentation(
         incomingName,
         incomingVisualManifestId,
         incomingEncounterKey,
+        incomingEncounterType,
         incomingIsBoss,
         bridge.enemyHealth,
         bridge.enemyMaxHealth,
@@ -266,6 +273,7 @@ export class CombatPresentationController {
           incomingName,
           incomingVisualManifestId,
           incomingEncounterKey,
+          incomingEncounterType,
           incomingIsBoss,
           bridge.enemyHealth,
           bridge.enemyMaxHealth,
@@ -326,6 +334,7 @@ export class CombatPresentationController {
       presented.current,
       presented.maximum,
       displayedName,
+      this.displayedEnemyEncounterType,
     );
 
     this.setEnemyVisible(true);
@@ -335,6 +344,7 @@ export class CombatPresentationController {
     name: string,
     visualManifestId: string,
     encounterKey: string,
+    encounterType: PresentedEncounterType,
     isBoss: boolean,
     currentHealth: number,
     maxHealth: number,
@@ -342,6 +352,7 @@ export class CombatPresentationController {
     this.displayedEnemyName = name;
     this.displayedEnemyVisualManifestId = visualManifestId;
     this.displayedEnemyEncounterKey = encounterKey;
+    this.displayedEnemyEncounterType = encounterType;
     this.displayedEnemyIsBoss = isBoss;
     this.defeatedEnemyPresentedAtMs = undefined;
     resetPresentedEnemyHealth(currentHealth, maxHealth);
