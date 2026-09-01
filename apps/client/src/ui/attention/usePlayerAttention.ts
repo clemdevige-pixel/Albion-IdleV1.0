@@ -66,7 +66,7 @@ export const FEATURE_UNLOCK_VISITS = {
   bank: [RESEARCH_UNLOCK_IDS.advancedBankManagement],
   instantRefining: [RESEARCH_UNLOCK_IDS.instantRefining],
   blackMarket: [RESEARCH_UNLOCK_IDS.blackMarket],
-  dungeons: [RESEARCH_UNLOCK_IDS.dungeonSystem],
+  dungeons: [RESEARCH_UNLOCK_IDS.dungeonSystem, RESEARCH_UNLOCK_IDS.factionRuneWorldDrop],
   tower: [RESEARCH_UNLOCK_IDS.towerSystem],
 } as const;
 
@@ -81,6 +81,7 @@ const FEATURE_UNLOCK_ATTENTION: readonly FeatureUnlockAttentionItem[] = [
   { unlockId: RESEARCH_UNLOCK_IDS.instantRefining, moduleId: UI_MODULE_IDS.island, label: "Raffinage instantané débloqué" },
   { unlockId: RESEARCH_UNLOCK_IDS.blackMarket, moduleId: UI_MODULE_IDS.merchant, label: "Marché Noir débloqué" },
   { unlockId: RESEARCH_UNLOCK_IDS.dungeonSystem, moduleId: UI_MODULE_IDS.world, label: "Donjons débloqués" },
+  { unlockId: RESEARCH_UNLOCK_IDS.factionRuneWorldDrop, moduleId: UI_MODULE_IDS.world, label: "Runes de faction débloquées" },
   { unlockId: RESEARCH_UNLOCK_IDS.towerSystem, moduleId: UI_MODULE_IDS.world, label: "Tour sans fin débloquée" },
 ];
 
