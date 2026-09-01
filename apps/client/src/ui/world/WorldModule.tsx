@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FEATURE_UNLOCK_VISITS, useFeatureUnlockVisit } from "../attention/usePlayerAttention";
 import { GatheringView } from "../production/gathering/GatheringView";
 import { WorldAchievementsView } from "./components/WorldAchievementsView";
 import { WorldBestiaryView } from "./components/WorldBestiaryView";
@@ -42,6 +43,14 @@ export function WorldModule(): JSX.Element {
   const activeTabLocked = (activeTab === "dungeons" && !dungeonsUnlocked)
     || (activeTab === "tower" && !towerUnlocked);
   const effectiveTab = activeTabLocked ? "zones" : activeTab;
+
+  useFeatureUnlockVisit(
+    effectiveTab === "dungeons"
+      ? FEATURE_UNLOCK_VISITS.dungeons
+      : effectiveTab === "tower"
+        ? FEATURE_UNLOCK_VISITS.tower
+        : [],
+  );
 
   return (
     <section className="ui-world">
