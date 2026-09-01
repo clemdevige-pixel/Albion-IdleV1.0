@@ -72,28 +72,44 @@ function destinationLabel(moduleId: UiModuleId, view?: string): string {
   return "Voir";
 }
 
+function createAttentionAction(
+  key: string,
+  label: string,
+  severity: PlayerAttentionSeverity,
+  moduleId: UiModuleId,
+  view: string | undefined,
+): DashboardAttentionAction {
+  return {
+    key,
+    label,
+    severity,
+    moduleId,
+    ...(view === undefined ? {} : { view }),
+  };
+}
+
 export function DashboardAttentionCard(): JSX.Element | null {
   const navigation = useNavigation();
   const attention = usePlayerAttention();
 
   const actions: DashboardAttentionAction[] = attention.signals
     .filter((signal) => signal.id !== "enchant_ready" && signal.id !== "feature_unlocked")
-    .map((signal) => ({
-      key: signal.id,
-      label: signal.label,
-      severity: signal.severity,
-      moduleId: signal.moduleId,
-      view: resolveSignalView(signal.id),
-    }));
+    .map((signal) => createAttentionAction(
+      signal.id,
+      signal.label,
+      signal.severity,
+      signal.moduleId,
+      resolveSignalView(signal.id),
+    ));
 
   for (const unlock of attention.pendingFeatureUnlocks) {
-    actions.push({
-      key: `feature:${unlock.unlockId}`,
-      label: unlock.label,
-      severity: "action",
-      moduleId: unlock.moduleId,
-      view: resolveFeatureView(unlock.unlockId),
-    });
+    actions.push(createAttentionAction(
+      `feature:${unlock.unlockId}`,
+      unlock.label,
+      "action",
+      unlock.moduleId,
+      resolveFeatureView(unlock.unlockId),
+    ));
   }
 
   actions.sort((left, right) => SEVERITY_RANK[left.severity] - SEVERITY_RANK[right.severity]);
