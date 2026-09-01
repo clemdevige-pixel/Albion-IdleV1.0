@@ -3,8 +3,10 @@ import { ActivityJournal } from "../../hud/ActivityJournal";
 import { AbilityBar } from "../../hud/AbilityBar";
 import { HudRoot } from "../../hud/HudRoot";
 import { EconomyNotifications } from "../../panels/EconomyNotifications";
+import { activityFailureFlow } from "../../runtime/ActivityFailureFlow";
 import { dungeonCompletionFlow } from "../../runtime/DungeonCompletionFlow";
 import { useGameServices } from "../../state/GameContext";
+import { ActivityFailurePopup } from "./ActivityFailurePopup";
 import { DungeonRecapPopup } from "./DungeonRecapPopup";
 import { EnemyStatusVfxOverlay } from "./EnemyStatusVfxOverlay";
 import { ExpeditionRecapPopup } from "./ExpeditionRecapPopup";
@@ -15,6 +17,11 @@ import "./combatDock.css";
 
 function RecapOverlay(): JSX.Element | null {
   const services = useGameServices();
+  const activityFailure = useSyncExternalStore(
+    activityFailureFlow.subscribe,
+    activityFailureFlow.getSnapshot,
+    () => null,
+  );
   const dungeonRecap = useSyncExternalStore(
     dungeonCompletionFlow.subscribe,
     dungeonCompletionFlow.getSnapshot,
@@ -30,6 +37,10 @@ function RecapOverlay(): JSX.Element | null {
     () => services.getExpeditionRecap(),
     () => null,
   );
+
+  if (activityFailure !== null) {
+    return <ActivityFailurePopup recap={activityFailure} />;
+  }
 
   if (dungeonRecap !== null) {
     return <DungeonRecapPopup recap={dungeonRecap} />;
