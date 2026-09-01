@@ -95,6 +95,9 @@ export function WorldTowerView(): JSX.Element {
   const rewardBreakdown = resolveTowerRewardBreakdown(towerState.progression);
   const blockRewards = getTowerBlockSilverReward(block.tier);
   const rewardsId = "world-tower-rewards";
+  const timelineProgress = block.floorEnd === block.floorStart
+    ? 100
+    : Math.max(0, Math.min(100, ((presentation.currentFloor - block.floorStart) / (block.floorEnd - block.floorStart)) * 100));
 
   return (
     <div className="world-tower">
@@ -142,21 +145,28 @@ export function WorldTowerView(): JSX.Element {
           </section>
         ) : null}
 
-        <div className="world-tower__timeline" aria-label="Étages du bloc">
-          <span className="world-tower__timeline-rail" aria-hidden="true" />
+        <div className="world-tower__timeline world-segment-strip--activity" aria-label="Étages du bloc">
+          <span className="world-segment-strip__rail" aria-hidden="true">
+            <span className="world-segment-strip__rail-progress" style={{ width: `${String(timelineProgress)}%` }} />
+          </span>
           {Array.from({ length: 5 }, (_, index) => {
             const roomFloor = block.floorStart + index;
             const room = getTowerFloorDefinition(roomFloor, towerState.progression.seed);
             const completed = roomFloor <= presentation.highestClearedFloor;
             const current = roomFloor === presentation.currentFloor;
+            const boss = room.role === "block_boss" || room.majorBoss;
             const roleLabel = getFloorRoleLabel(room.role, room.majorBoss);
+            const stateClass = current ? "current" : completed ? "complete" : "locked";
             return (
-              <span
-                key={roomFloor}
-                className={`world-tower-step world-tower-step--${room.majorBoss ? "major-boss" : room.role}${completed ? " is-complete" : ""}${current ? " is-current" : ""}`}
-                title={`Étage ${String(roomFloor)} · ${roleLabel}`}
-              >
-                <b>{completed ? "✓" : roomFloor}</b>
+              <span key={roomFloor} className="world-tower-step" title={`Étage ${String(roomFloor)} · ${roleLabel}`}>
+                <span
+                  className={`world-segment-strip__segment world-segment-strip__segment--${stateClass}${boss ? " world-segment-strip__segment--boss" : ""}`}
+                  role="img"
+                  aria-label={`Étage ${String(roomFloor)} · ${roleLabel}`}
+                  aria-current={current ? "step" : undefined}
+                >
+                  <span>{boss ? "" : roomFloor}</span>
+                </span>
                 <small>{roleLabel}</small>
               </span>
             );
