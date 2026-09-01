@@ -5,18 +5,25 @@ import { HudRoot } from "../../hud/HudRoot";
 import { EconomyNotifications } from "../../panels/EconomyNotifications";
 import { activityFailureFlow } from "../../runtime/ActivityFailureFlow";
 import { dungeonCompletionFlow } from "../../runtime/DungeonCompletionFlow";
+import { towerBlockCompletionFlow } from "../../runtime/TowerBlockCompletionFlow";
 import { useGameServices } from "../../state/GameContext";
 import { ActivityFailurePopup } from "./ActivityFailurePopup";
 import { DungeonRecapPopup } from "./DungeonRecapPopup";
 import { EnemyStatusVfxOverlay } from "./EnemyStatusVfxOverlay";
 import { ExpeditionRecapPopup } from "./ExpeditionRecapPopup";
 import { ResearchRecapPopup } from "./ResearchRecapPopup";
+import { TowerBlockRecapPopup } from "./TowerBlockRecapPopup";
 import "./combatHud.css";
 import "./combatState.css";
 import "./combatDock.css";
 
 function RecapOverlay(): JSX.Element | null {
   const services = useGameServices();
+  const towerBlockRecap = useSyncExternalStore(
+    towerBlockCompletionFlow.subscribe,
+    towerBlockCompletionFlow.getSnapshot,
+    () => null,
+  );
   const activityFailure = useSyncExternalStore(
     activityFailureFlow.subscribe,
     activityFailureFlow.getSnapshot,
@@ -37,6 +44,10 @@ function RecapOverlay(): JSX.Element | null {
     () => services.getExpeditionRecap(),
     () => null,
   );
+
+  if (towerBlockRecap !== null) {
+    return <TowerBlockRecapPopup recap={towerBlockRecap} />;
+  }
 
   if (activityFailure !== null) {
     return <ActivityFailurePopup recap={activityFailure} />;
