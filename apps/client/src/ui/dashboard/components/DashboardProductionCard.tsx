@@ -2,6 +2,7 @@ import type { IslandBuildingId } from "@game/data";
 import { ActiveGatheringGame } from "../../../hud/ActiveGatheringGame";
 import {
   PRODUCTION_FAMILY_CATALOG,
+  PRODUCTION_FAMILY_IDS,
   PRODUCTION_TIERS,
   getProductionTierPresentation,
 } from "../../../data/productionFamilyCatalog";
@@ -22,7 +23,6 @@ interface DashboardProductionCardProps {
 const KIND_LABELS = {
   gathering: "Récolte",
   refining: "Raffinage",
-  worker: "Worker",
 } as const;
 
 const RESOURCE_ICONS = Object.values(PRODUCTION_FAMILY_CATALOG).map((family) => ({
@@ -64,18 +64,17 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
   const navigation = useNavigation();
   const islandSelection = useIslandSelection();
   const interaction = production.gatheringInteraction;
+  const activeWorkers = bridge.workers.workers.filter((worker) => worker.state === "working");
+  const secondaryTasks = production.tasks.filter((task) => task.kind !== "worker");
+  const workerGroups = PRODUCTION_FAMILY_IDS.flatMap((familyId) => {
+    const family = PRODUCTION_FAMILY_CATALOG[familyId];
+    const workers = activeWorkers.filter((worker) => worker.profession === family.profession);
+    return workers.length === 0 ? [] : [{ familyId, family, workers }];
+  });
 
-  if (production.tasks.length === 0 && interaction === undefined) return null;
+  if (activeWorkers.length === 0 && secondaryTasks.length === 0 && interaction === undefined) return null;
 
   const getTaskBuilding = (task: DashboardProductionTask) => {
-    if (task.kind === "worker") {
-      const workerId = task.id.startsWith("worker-") ? task.id.slice("worker-".length) : task.id;
-      const worker = bridge.workers.workers.find((candidate) => candidate.id === workerId);
-      return worker === undefined
-        ? undefined
-        : findWorkerGatheringBuilding(bridge.island.buildings, worker.profession);
-    }
-
     const suffix = task.id.slice(task.id.indexOf("-") + 1).toLowerCase();
     const definitionId = task.kind === "gathering"
       ? GATHERING_BUILDING_BY_FAMILY[suffix]
@@ -93,41 +92,90 @@ export function DashboardProductionCard({ production }: DashboardProductionCardP
     navigation.openModule(UI_MODULE_IDS.island);
   };
 
+  const openWorkerBuilding = (profession: string): void => {
+    const building = findWorkerGatheringBuilding(bridge.island.buildings, profession);
+    if (building === undefined) return;
+    islandSelection.selectBuilding(building.plotId, building.instanceId);
+    navigation.openModule(UI_MODULE_IDS.island);
+  };
+
   return (
     <DashboardCard
       sectionId="production"
-      meta={production.hiddenTaskCount > 0 ? `+${String(production.hiddenTaskCount)} autre${production.hiddenTaskCount > 1 ? "s" : ""}` : undefined}
+      meta={`${String(activeWorkers.length)} travailleur${activeWorkers.length > 1 ? "s" : ""} actif${activeWorkers.length > 1 ? "s" : ""}`}
     >
-      {production.tasks.length > 0 && (
-        <div className="dashboard-production__list">
-          {production.tasks.map((task) => {
-            const targetBuilding = getTaskBuilding(task);
-            return (
-              <button
-                type="button"
-                key={task.id}
-                className="dashboard-production__task"
-                disabled={targetBuilding === undefined}
-                onClick={() => { openTaskBuilding(task); }}
-                title={targetBuilding === undefined ? undefined : "Ouvrir le bâtiment concerné"}
-              >
-                <span className="dashboard-production__visual" aria-hidden="true">
-                  <img src={getTaskIcon(task)} alt="" />
-                </span>
-                <div>
-                  <span>{KIND_LABELS[task.kind]}</span>
-                  <strong>{task.label}</strong>
-                  <small>{task.detail}</small>
-                </div>
-                <b><span>{String(Math.round(task.progress))}</span>%</b>
-                <div className="dashboard-progress">
-                  <span style={{ width: `${String(Math.max(0, Math.min(100, task.progress)))}%` }} />
-                </div>
-              </button>
-            );
-          })}
+      {workerGroups.length > 0 && (
+        <div className="dashboard-production-workers">
+          {workerGroups.map(({ familyId, family, workers }) => (
+            <section key={familyId} className="dashboard-production-workers__family">
+              <header className="dashboard-production-workers__family-header">
+                <img src={family.professionIcon} alt="" aria-hidden="true" />
+                <strong>{family.label}</strong>
+              </header>
+              <div className="dashboard-production-workers__grid">
+                {workers.map((worker) => {
+                  const targetBuilding = findWorkerGatheringBuilding(bridge.island.buildings, worker.profession);
+                  const progress = Math.max(0, Math.min(100, worker.progress));
+                  return (
+                    <button
+                      key={worker.id}
+                      type="button"
+                      className="dashboard-production-worker"
+                      disabled={targetBuilding === undefined}
+                      onClick={() => { openWorkerBuilding(worker.profession); }}
+                      title={targetBuilding === undefined ? undefined : "Ouvrir le bâtiment concerné"}
+                    >
+                      <div className="dashboard-production-worker__summary">
+                        <strong>{worker.displayName}</strong>
+                        <span>{worker.resourceName} · T{String(worker.productionTier)}</span>
+                        <b>{String(Math.round(progress))}%</b>
+                      </div>
+                      <div className="dashboard-progress">
+                        <span style={{ width: `${String(progress)}%` }} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
+
+      {secondaryTasks.length > 0 && (
+        <div className="dashboard-production-secondary">
+          <span className="dashboard-production-secondary__label">Autres activités</span>
+          <div className="dashboard-production__list">
+            {secondaryTasks.map((task) => {
+              const targetBuilding = getTaskBuilding(task);
+              return (
+                <button
+                  type="button"
+                  key={task.id}
+                  className="dashboard-production__task"
+                  disabled={targetBuilding === undefined}
+                  onClick={() => { openTaskBuilding(task); }}
+                  title={targetBuilding === undefined ? undefined : "Ouvrir le bâtiment concerné"}
+                >
+                  <span className="dashboard-production__visual" aria-hidden="true">
+                    <img src={getTaskIcon(task)} alt="" />
+                  </span>
+                  <div>
+                    <span>{KIND_LABELS[task.kind]}</span>
+                    <strong>{task.label}</strong>
+                    <small>{task.detail}</small>
+                  </div>
+                  <b><span>{String(Math.round(task.progress))}</span>%</b>
+                  <div className="dashboard-progress">
+                    <span style={{ width: `${String(Math.max(0, Math.min(100, task.progress)))}%` }} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {interaction !== undefined && (
         <div className="dashboard-production__gathering-controls">
           <ActiveGatheringGame
