@@ -5,17 +5,6 @@ import {
   type DashboardSectionId,
 } from "../data/dashboardLayoutCatalog";
 
-interface DashboardLayoutSnapshotV1 {
-  readonly version: 1;
-  readonly order: readonly string[];
-}
-
-interface DashboardLayoutSnapshotV2 {
-  readonly version: 2;
-  readonly order: readonly string[];
-  readonly ignoredEnchantInstanceIds: readonly string[];
-}
-
 interface DashboardLayoutSnapshotV3 {
   readonly version: 3;
   readonly order: readonly string[];
