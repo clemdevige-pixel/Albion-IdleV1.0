@@ -2,7 +2,7 @@ import { FACTION_CAPE_FACTIONS } from "@game/data";
 import type { TowerBlockCompletionRecapModel } from "../../runtime/TowerBlockCompletionFlow.js";
 import { towerBlockCompletionFlow } from "../../runtime/TowerBlockCompletionFlow.js";
 import type { TowerAccessState } from "../../state/TowerNavigationActions.js";
-import { useGameServices } from "../../state/GameContext.js";
+import { useGameBridge, useGameServices } from "../../state/GameContext.js";
 import { CharacterEquipmentPanel } from "../character/components/CharacterEquipmentPanel.js";
 import { ActivityResultPopup } from "./ActivityResultPopup.js";
 import "./towerBlockRecap.css";
@@ -31,6 +31,7 @@ export function TowerBlockRecapPopup({
 }: {
   readonly recap: TowerBlockCompletionRecapModel;
 }): JSX.Element {
+  useGameBridge();
   const services = useGameServices();
   const access = services.getTowerState().access;
   const completedFaction = factionName(recap.factionId);
