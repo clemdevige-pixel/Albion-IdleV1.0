@@ -1,11 +1,18 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { RESEARCH_UNLOCK_IDS } from "@game/data";
 import type { ItemInstanceId } from "@game/gameplay";
+import { RESEARCH_DEFINITIONS } from "../../data/researchContentCatalog";
 import { dashboardLayoutSaveProvider } from "../../runtime/DashboardLayoutSaveProvider";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import type { UiModuleId } from "../navigation/moduleIds";
 import { UI_MODULE_IDS } from "../navigation/moduleIds";
 
-export type PlayerAttentionKind = "enchant_ready" | "inventory_pressure" | "worker_idle";
+export type PlayerAttentionKind =
+  | "enchant_ready"
+  | "inventory_pressure"
+  | "worker_idle"
+  | "expedition_idle"
+  | "feature_unlocked";
 export type PlayerAttentionSeverity = "action" | "warning" | "critical";
 
 export interface EnchantReadyAttentionItem {
@@ -13,6 +20,12 @@ export interface EnchantReadyAttentionItem {
   readonly itemId: string;
   readonly currentLevel: number;
   readonly nextLevel: number;
+}
+
+export interface FeatureUnlockAttentionItem {
+  readonly unlockId: string;
+  readonly moduleId: UiModuleId;
+  readonly label: string;
 }
 
 export interface PlayerAttentionSignal {
@@ -26,9 +39,12 @@ export interface PlayerAttentionSignal {
 export interface PlayerAttentionState {
   readonly signals: readonly PlayerAttentionSignal[];
   readonly enchantReadyItems: readonly EnchantReadyAttentionItem[];
+  readonly pendingFeatureUnlocks: readonly FeatureUnlockAttentionItem[];
   readonly idleWorkerCount: number;
   readonly pausedWorkerCount: number;
   readonly nonProducingWorkerCount: number;
+  readonly activeExpeditionCount: number;
+  readonly expeditionIdle: boolean;
   readonly inventoryFreeSlots: number;
   readonly inventoryIsFull: boolean;
   readonly inventoryIsNearlyFull: boolean;
@@ -38,14 +54,75 @@ export interface PlayerAttentionState {
 
 const INVENTORY_NEAR_FULL_FREE_SLOTS = 2;
 
+export const FEATURE_UNLOCK_VISITS = {
+  expeditions: [
+    RESEARCH_UNLOCK_IDS.silverExpeditionTier4,
+    RESEARCH_UNLOCK_IDS.factionExpeditionTier4,
+    RESEARCH_UNLOCK_IDS.secondExpeditionSlot,
+  ],
+  enchantment: [RESEARCH_UNLOCK_IDS.enchantmentService],
+  resourceYieldTracking: [RESEARCH_UNLOCK_IDS.resourceYieldTracking],
+  workerOrganization: [RESEARCH_UNLOCK_IDS.advancedWorkerOrganization],
+  bank: [RESEARCH_UNLOCK_IDS.advancedBankManagement],
+  instantRefining: [RESEARCH_UNLOCK_IDS.instantRefining],
+  blackMarket: [RESEARCH_UNLOCK_IDS.blackMarket],
+  dungeons: [RESEARCH_UNLOCK_IDS.dungeonSystem],
+  tower: [RESEARCH_UNLOCK_IDS.towerSystem],
+} as const;
+
+const FEATURE_UNLOCK_ATTENTION: readonly FeatureUnlockAttentionItem[] = [
+  { unlockId: RESEARCH_UNLOCK_IDS.silverExpeditionTier4, moduleId: UI_MODULE_IDS.island, label: "Expéditions débloquées" },
+  { unlockId: RESEARCH_UNLOCK_IDS.factionExpeditionTier4, moduleId: UI_MODULE_IDS.island, label: "Expédition Faction débloquée" },
+  { unlockId: RESEARCH_UNLOCK_IDS.secondExpeditionSlot, moduleId: UI_MODULE_IDS.island, label: "Second slot d’expédition débloqué" },
+  { unlockId: RESEARCH_UNLOCK_IDS.enchantmentService, moduleId: UI_MODULE_IDS.merchant, label: "Enchantement débloqué" },
+  { unlockId: RESEARCH_UNLOCK_IDS.resourceYieldTracking, moduleId: UI_MODULE_IDS.inventory, label: "Suivi de rendement débloqué" },
+  { unlockId: RESEARCH_UNLOCK_IDS.advancedWorkerOrganization, moduleId: UI_MODULE_IDS.island, label: "Organisation avancée des ouvriers débloquée" },
+  { unlockId: RESEARCH_UNLOCK_IDS.advancedBankManagement, moduleId: UI_MODULE_IDS.inventory, label: "Gestion avancée de la banque débloquée" },
+  { unlockId: RESEARCH_UNLOCK_IDS.instantRefining, moduleId: UI_MODULE_IDS.island, label: "Raffinage instantané débloqué" },
+  { unlockId: RESEARCH_UNLOCK_IDS.blackMarket, moduleId: UI_MODULE_IDS.merchant, label: "Marché Noir débloqué" },
+  { unlockId: RESEARCH_UNLOCK_IDS.dungeonSystem, moduleId: UI_MODULE_IDS.world, label: "Donjons débloqués" },
+  { unlockId: RESEARCH_UNLOCK_IDS.towerSystem, moduleId: UI_MODULE_IDS.world, label: "Tour sans fin débloquée" },
+];
+
+function getCompletedResearchUnlockIds(research: readonly { readonly id: string; readonly state: string }[]): Set<string> {
+  const completedResearchIds = new Set(
+    research.filter((entry) => entry.state === "completed").map((entry) => entry.id),
+  );
+  return new Set(
+    RESEARCH_DEFINITIONS
+      .filter((definition) => completedResearchIds.has(definition.id))
+      .flatMap((definition) => definition.unlockIds),
+  );
+}
+
+export function useFeatureUnlockVisit(unlockIds: readonly string[]): void {
+  useGameBridge();
+  const { getAcademyModel } = useGameServices();
+  const completedUnlockIds = getCompletedResearchUnlockIds(getAcademyModel().research);
+  const unlockedVisitedIds = unlockIds.filter((unlockId) => completedUnlockIds.has(unlockId));
+  const visitKey = unlockedVisitedIds.join("|");
+
+  useEffect(() => {
+    if (unlockedVisitedIds.length > 0) {
+      dashboardLayoutSaveProvider.acknowledgeFeatureUnlocks(unlockedVisitedIds);
+    }
+  }, [visitKey]);
+}
+
 export function usePlayerAttention(): PlayerAttentionState {
   const bridge = useGameBridge();
-  const { enchantmentService } = useGameServices();
+  const { enchantmentService, getAcademyModel } = useGameServices();
   const ignoredEnchantInstanceIds = useSyncExternalStore(
     dashboardLayoutSaveProvider.subscribe,
     dashboardLayoutSaveProvider.getIgnoredEnchantInstanceIds,
     dashboardLayoutSaveProvider.getIgnoredEnchantInstanceIds,
   );
+  const acknowledgedFeatureUnlockIds = useSyncExternalStore(
+    dashboardLayoutSaveProvider.subscribe,
+    dashboardLayoutSaveProvider.getAcknowledgedFeatureUnlockIds,
+    dashboardLayoutSaveProvider.getAcknowledgedFeatureUnlockIds,
+  );
+  const academyModel = getAcademyModel();
 
   return useMemo(() => {
     const instances = [
@@ -82,6 +159,14 @@ export function usePlayerAttention(): PlayerAttentionState {
     const idleWorkerCount = bridge.workers.workers.filter((worker) => worker.state === "idle").length;
     const pausedWorkerCount = bridge.workers.workers.filter((worker) => worker.state === "paused").length;
     const nonProducingWorkerCount = idleWorkerCount + pausedWorkerCount;
+    const activeExpeditionCount = academyModel.expeditions.filter((entry) => entry.active).length;
+    const expeditionUnlocked = academyModel.expeditions.some((entry) => entry.active || entry.startState === "available");
+    const expeditionIdle = expeditionUnlocked && activeExpeditionCount === 0;
+
+    const completedUnlockIds = getCompletedResearchUnlockIds(academyModel.research);
+    const pendingFeatureUnlocks = FEATURE_UNLOCK_ATTENTION.filter((entry) => (
+      completedUnlockIds.has(entry.unlockId) && !acknowledgedFeatureUnlockIds.has(entry.unlockId)
+    ));
 
     const signals: PlayerAttentionSignal[] = [];
     if (enchantReadyItems.length > 0) {
@@ -119,18 +204,42 @@ export function usePlayerAttention(): PlayerAttentionState {
         label,
       });
     }
+    if (expeditionIdle) {
+      signals.push({
+        id: "expedition_idle",
+        moduleId: UI_MODULE_IDS.island,
+        severity: "warning",
+        count: 1,
+        label: "Aucune expédition en cours",
+      });
+    }
+
+    for (const moduleId of Object.values(UI_MODULE_IDS)) {
+      const moduleUnlocks = pendingFeatureUnlocks.filter((entry) => entry.moduleId === moduleId);
+      if (moduleUnlocks.length === 0) continue;
+      signals.push({
+        id: "feature_unlocked",
+        moduleId,
+        severity: "action",
+        count: moduleUnlocks.length,
+        label: moduleUnlocks.map((entry) => entry.label).join(" · "),
+      });
+    }
 
     return {
       signals,
       enchantReadyItems,
+      pendingFeatureUnlocks,
       idleWorkerCount,
       pausedWorkerCount,
       nonProducingWorkerCount,
+      activeExpeditionCount,
+      expeditionIdle,
       inventoryFreeSlots,
       inventoryIsFull,
       inventoryIsNearlyFull,
       dismissEnchantReady: dashboardLayoutSaveProvider.ignoreEnchantInstance,
       getModuleSignals: (moduleId: UiModuleId) => signals.filter((signal) => signal.moduleId === moduleId),
     };
-  }, [bridge, enchantmentService, ignoredEnchantInstanceIds]);
+  }, [academyModel, acknowledgedFeatureUnlockIds, bridge, enchantmentService, ignoredEnchantInstanceIds]);
 }
