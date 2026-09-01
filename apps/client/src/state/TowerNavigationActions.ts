@@ -85,6 +85,8 @@ export function resolveTowerAccessState(facts: TowerAccessFacts): TowerAccessSta
 
 export interface TowerNavigationState {
   readonly active: boolean;
+  readonly intermission: boolean;
+  readonly engaged: boolean;
   readonly pendingStart: boolean;
   readonly progression: ReturnType<TowerProgressionService["getSnapshot"]>;
   readonly unlockedCheckpointFloors: readonly number[];
@@ -100,6 +102,8 @@ export class TowerNavigationActions {
   public getState(): TowerNavigationState {
     return {
       active: this.deps.towerRouter.isTowerActive(),
+      intermission: this.deps.towerRouter.isTowerIntermission(),
+      engaged: this.deps.towerRouter.isTowerEngaged(),
       pendingStart: this.pendingStart,
       progression: this.deps.progression.getSnapshot(),
       unlockedCheckpointFloors: this.deps.progression.getUnlockedCheckpointFloors(),
@@ -114,7 +118,7 @@ export class TowerNavigationActions {
   }
 
   public selectCheckpoint(floor: number): boolean {
-    if (this.pendingStart || this.deps.towerRouter.isTowerActive()) return false;
+    if (this.pendingStart || this.deps.towerRouter.isTowerEngaged()) return false;
     try {
       this.deps.progression.selectCheckpoint(floor);
     } catch {
