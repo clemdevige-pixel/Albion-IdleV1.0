@@ -33,6 +33,14 @@ import { DashboardYieldCard } from "./components/DashboardYieldCard";
 const ACTIVITY_SECTION_IDS = new Set<DashboardSectionId>(["combat", "research", "production"]);
 const YIELD_SECTION_IDS = new Set<DashboardSectionId>(["yield"]);
 
+type DashboardGroupId = "activity" | "yield";
+
+function getDashboardGroup(sectionId: DashboardSectionId): DashboardGroupId | undefined {
+  if (ACTIVITY_SECTION_IDS.has(sectionId)) return "activity";
+  if (YIELD_SECTION_IDS.has(sectionId)) return "yield";
+  return undefined;
+}
+
 export function DashboardModule(): JSX.Element {
   const { saveGame, getAcademyModel } = useGameServices();
   const attention = usePlayerAttention();
@@ -78,7 +86,7 @@ export function DashboardModule(): JSX.Element {
   };
 
   const moveSection = (sourceId: DashboardSectionId, targetId: DashboardSectionId): void => {
-    if (sourceId === targetId) return;
+    if (sourceId === targetId || getDashboardGroup(sourceId) !== getDashboardGroup(targetId)) return;
     persistOrder(moveDashboardSection(sectionOrder, sourceId, targetId));
   };
 
@@ -106,10 +114,12 @@ export function DashboardModule(): JSX.Element {
     sectionId: DashboardSectionId,
   ): void => {
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
-    const visibleIndex = visibleOrder.indexOf(sectionId);
+    const groupId = getDashboardGroup(sectionId);
+    const groupOrder = groupId === "activity" ? activityOrder : groupId === "yield" ? yieldOrder : [];
+    const visibleIndex = groupOrder.indexOf(sectionId);
     if (visibleIndex < 0) return;
     const targetIndex = event.key === "ArrowUp" ? visibleIndex - 1 : visibleIndex + 1;
-    const targetId = visibleOrder[targetIndex];
+    const targetId = groupOrder[targetIndex];
     if (targetId === undefined) return;
     event.preventDefault();
     moveSection(sectionId, targetId);
