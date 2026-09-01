@@ -8,7 +8,7 @@ import {
   useFeatureUnlockVisit,
 } from "../attention/usePlayerAttention";
 import { formatCompactNumber } from "../shared";
-import { useNavigation } from "../navigation";
+import { UI_MODULE_IDS, useNavigation } from "../navigation";
 import { BlackMarketView } from "./black-market/BlackMarketView";
 import { BuyView } from "./buy/BuyView";
 import { EnchantView } from "./enchant/EnchantView";
@@ -38,7 +38,7 @@ function parseMerchantView(view: string | null): {
 }
 
 export function MerchantModule(): JSX.Element {
-  const { activeView } = useNavigation();
+  const { activeView, openModule } = useNavigation();
   const services = useGameServices();
   const academyResearch = services.getAcademyModel().research;
   const enchantmentUnlocked = academyResearch.some((entry) => (
@@ -75,12 +75,18 @@ export function MerchantModule(): JSX.Element {
       || (service === "black_market" && !blackMarketUnlocked)
     ) {
       setService("buy");
+      openModule(UI_MODULE_IDS.merchant, "buy");
     }
-  }, [blackMarketUnlocked, enchantmentUnlocked, service]);
+  }, [blackMarketUnlocked, enchantmentUnlocked, openModule, service]);
 
   const targetedEnchantInstanceId = target?.service === "enchant" && enchantmentUnlocked
     ? target.instanceId
     : undefined;
+
+  const selectService = (nextService: MerchantServiceId): void => {
+    setService(nextService);
+    openModule(UI_MODULE_IDS.merchant, nextService);
+  };
 
   return (
     <div className="ui-merchant">
@@ -105,7 +111,7 @@ export function MerchantModule(): JSX.Element {
               key={entry.id}
               className={service === entry.id ? "is-active" : ""}
               aria-selected={service === entry.id}
-              onClick={() => { setService(entry.id); }}
+              onClick={() => { selectService(entry.id); }}
             >
               {entry.label}
               <FeatureAttentionBadge count={attentionCount} />
