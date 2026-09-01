@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import type { ItemInstanceId } from "@game/gameplay";
+import { dashboardLayoutSaveProvider } from "../../runtime/DashboardLayoutSaveProvider";
 import { useGameBridge, useGameServices } from "../../state/GameContext";
 import type { UiModuleId } from "../navigation/moduleIds";
 import { UI_MODULE_IDS } from "../navigation/moduleIds";
@@ -31,79 +32,41 @@ export interface PlayerAttentionState {
   readonly inventoryFreeSlots: number;
   readonly inventoryIsFull: boolean;
   readonly inventoryIsNearlyFull: boolean;
-  readonly dismissEnchantReady: (instanceId: string, nextLevel: number) => void;
+  readonly dismissEnchantReady: (instanceId: string) => void;
   readonly getModuleSignals: (moduleId: UiModuleId) => readonly PlayerAttentionSignal[];
 }
 
 const INVENTORY_NEAR_FULL_FREE_SLOTS = 2;
 
-const dismissedEnchantKeys = new Set<string>();
-const dismissalListeners = new Set<() => void>();
-let dismissalVersion = 0;
-
-function getEnchantAttentionKey(instanceId: string, nextLevel: number): string {
-  return `${instanceId}:${String(nextLevel)}`;
-}
-
-function emitDismissalChange(): void {
-  dismissalVersion += 1;
-  for (const listener of dismissalListeners) listener();
-}
-
-function subscribeDismissals(listener: () => void): () => void {
-  dismissalListeners.add(listener);
-  return () => { dismissalListeners.delete(listener); };
-}
-
-function getDismissalSnapshot(): number {
-  return dismissalVersion;
-}
-
-function dismissEnchantReady(instanceId: string, nextLevel: number): void {
-  const key = getEnchantAttentionKey(instanceId, nextLevel);
-  if (dismissedEnchantKeys.has(key)) return;
-  dismissedEnchantKeys.add(key);
-  emitDismissalChange();
-}
-
-function forgetResolvedEnchantDismissals(activeKeys: ReadonlySet<string>): void {
-  let changed = false;
-  for (const key of dismissedEnchantKeys) {
-    if (activeKeys.has(key)) continue;
-    dismissedEnchantKeys.delete(key);
-    changed = true;
-  }
-  if (changed) emitDismissalChange();
-}
-
 export function usePlayerAttention(): PlayerAttentionState {
   const bridge = useGameBridge();
   const { enchantmentService } = useGameServices();
-  const dismissalSnapshot = useSyncExternalStore(
-    subscribeDismissals,
-    getDismissalSnapshot,
-    getDismissalSnapshot,
+  const ignoredEnchantInstanceIds = useSyncExternalStore(
+    dashboardLayoutSaveProvider.subscribe,
+    dashboardLayoutSaveProvider.getIgnoredEnchantInstanceIds,
+    dashboardLayoutSaveProvider.getIgnoredEnchantInstanceIds,
   );
 
-  const rawEnchantReadyItems = useMemo<readonly EnchantReadyAttentionItem[]>(() => {
+  return useMemo(() => {
     const instances = [
       ...bridge.equipment.slots,
       ...bridge.inventory.slots,
       ...bridge.bank.slots,
     ];
     const seen = new Set<string>();
-    const ready: EnchantReadyAttentionItem[] = [];
+    const enchantReadyItems: EnchantReadyAttentionItem[] = [];
 
     for (const slot of instances) {
       if (slot.itemId === undefined || slot.instanceId === undefined || seen.has(slot.instanceId)) continue;
       seen.add(slot.instanceId);
+      if (ignoredEnchantInstanceIds.has(slot.instanceId)) continue;
       const preview = enchantmentService.preview(slot.instanceId as ItemInstanceId);
       if (preview?.nextLevel === undefined) continue;
       const economicallyReady = preview.materials.every((material) => material.missing === 0)
         && bridge.wallet.silver >= preview.silverCost;
       const onlyBlockedByCombat = preview.failureReason === undefined || preview.failureReason === "combat_active";
       if (!economicallyReady || !onlyBlockedByCombat) continue;
-      ready.push({
+      enchantReadyItems.push({
         instanceId: slot.instanceId,
         itemId: slot.itemId,
         currentLevel: preview.currentLevel,
@@ -111,22 +74,6 @@ export function usePlayerAttention(): PlayerAttentionState {
       });
     }
 
-    return ready;
-  }, [bridge, enchantmentService]);
-
-  const activeEnchantKeys = useMemo(
-    () => new Set(rawEnchantReadyItems.map((item) => getEnchantAttentionKey(item.instanceId, item.nextLevel))),
-    [rawEnchantReadyItems],
-  );
-
-  useEffect(() => {
-    forgetResolvedEnchantDismissals(activeEnchantKeys);
-  }, [activeEnchantKeys]);
-
-  return useMemo(() => {
-    const enchantReadyItems = rawEnchantReadyItems.filter(
-      (item) => !dismissedEnchantKeys.has(getEnchantAttentionKey(item.instanceId, item.nextLevel)),
-    );
     const inventoryFreeSlots = Math.max(0, bridge.inventory.capacity - bridge.inventory.occupied);
     const inventoryIsFull = bridge.inventory.capacity > 0 && inventoryFreeSlots === 0;
     const inventoryIsNearlyFull = bridge.inventory.capacity > 0
@@ -182,8 +129,8 @@ export function usePlayerAttention(): PlayerAttentionState {
       inventoryFreeSlots,
       inventoryIsFull,
       inventoryIsNearlyFull,
-      dismissEnchantReady,
+      dismissEnchantReady: dashboardLayoutSaveProvider.ignoreEnchantInstance,
       getModuleSignals: (moduleId: UiModuleId) => signals.filter((signal) => signal.moduleId === moduleId),
     };
-  }, [bridge, dismissalSnapshot, rawEnchantReadyItems]);
+  }, [bridge, enchantmentService, ignoredEnchantInstanceIds]);
 }
