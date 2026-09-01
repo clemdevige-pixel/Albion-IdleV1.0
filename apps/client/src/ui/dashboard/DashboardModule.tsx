@@ -34,12 +34,16 @@ const ACTIVITY_SECTION_IDS = new Set<DashboardSectionId>(["combat", "research", 
 const YIELD_SECTION_IDS = new Set<DashboardSectionId>(["yield"]);
 
 export function DashboardModule(): JSX.Element {
-  const { saveGame } = useGameServices();
+  const { saveGame, getAcademyModel } = useGameServices();
   const attention = usePlayerAttention();
   const zone = useDashboardZone();
   const zoneActions = useDashboardZoneActions();
   const production = useDashboardProduction();
   const yieldData = useDashboardYield();
+  const academyModel = getAcademyModel();
+  const hasResearchActivity = academyModel.research.some((entry) => entry.state === "active")
+    || academyModel.expeditions.some((entry) => entry.active);
+  const hasProductionActivity = production.tasks.length > 0 || production.gatheringInteraction !== undefined;
   const sectionOrder = useSyncExternalStore(
     dashboardLayoutSaveProvider.subscribe,
     dashboardLayoutSaveProvider.getOrder,
@@ -54,9 +58,9 @@ export function DashboardModule(): JSX.Element {
         onSetFarmMode={zoneActions.setFarmMode}
       />
     ),
-    research: <DashboardResearchCard />,
+    research: hasResearchActivity ? <DashboardResearchCard /> : null,
     yield: <DashboardYieldCard yieldData={yieldData} />,
-    production: <DashboardProductionCard production={production} />,
+    production: hasProductionActivity ? <DashboardProductionCard production={production} /> : null,
   };
 
   const visibleOrder = sectionOrder.filter((sectionId) => {
