@@ -1,0 +1,18 @@
+.feature-attention-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 6px;
+  border: 1px solid rgba(255, 213, 107, 0.7);
+  border-radius: 999px;
+  background: rgba(114, 73, 17, 0.9);
+  color: #ffe29a;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
