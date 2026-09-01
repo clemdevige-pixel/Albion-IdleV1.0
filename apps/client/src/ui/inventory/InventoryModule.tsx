@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
-import { resolveEquipmentInfo } from "../../data/itemContentCatalog";
 import { isRelicInventoryItem } from "../../data/relicContentCatalog";
 import { RESEARCH_IDS } from "../../data/researchContentCatalog.js";
 import { getFragmentAssemblyRecipe } from "../../data/specialCraftRecipes.js";
@@ -23,6 +22,7 @@ import {
 } from "../dashboard/ResourceTrackingContext";
 import { useNavigation } from "../navigation";
 import { ItemGrid } from "../shared";
+import { getStorageItemCategory } from "../shared/storageItemCategory";
 import { useInventoryActions } from "./useInventoryActions";
 import { useInventoryData } from "./useInventoryData";
 import "../shared/storageModule.css";
@@ -44,25 +44,12 @@ const INVENTORY_FILTERS: readonly { readonly id: InventoryFilter; readonly label
 ];
 
 const ROMAN_TAB_LABELS = ["I", "II", "III", "IV", "V"] as const;
-
-function isSpecialInventoryItem(itemId: string): boolean {
-  return isRelicInventoryItem(itemId)
-    || itemId.startsWith("item_resource_dungeon_key_")
-    || itemId.startsWith("item_resource_artifact_")
-    || itemId.startsWith("item_resource_key_fragment_");
-}
-
-function isEquipmentInventoryItem(itemId: string): boolean {
-  return resolveEquipmentInfo(itemId) !== undefined;
-}
+const CAPACITY_WARNING_RATIO = 0.85;
 
 function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter): boolean {
   if (filter === "all") return true;
   const itemId = slot.itemId;
-  if (itemId === undefined) return false;
-  if (filter === "equipment") return isEquipmentInventoryItem(itemId);
-  if (filter === "special") return isSpecialInventoryItem(itemId);
-  return !isEquipmentInventoryItem(itemId) && !isSpecialInventoryItem(itemId);
+  return itemId !== undefined && getStorageItemCategory(itemId) === filter;
 }
 
 function getBankTabRange(tabNumber: number, tabCapacity: number): StorageRange {
@@ -98,9 +85,9 @@ export function InventoryModule(): JSX.Element {
 
   useFeatureUnlockVisit(activeTab === "bank" ? FEATURE_UNLOCK_VISITS.bank : []);
 
-  const capacityRatio = inventory.capacity === 0
-    ? 0
-    : Math.min(100, (inventory.occupied / inventory.capacity) * 100);
+  const capacityRatio = inventory.capacity === 0 ? 0 : inventory.occupied / inventory.capacity;
+  const capacityPercent = Math.min(100, capacityRatio * 100);
+  const capacityState = capacityRatio >= 1 ? "full" : capacityRatio >= CAPACITY_WARNING_RATIO ? "warning" : "normal";
   const filteredSlots = inventory.slots.filter((slot) => matchesInventoryFilter(slot, activeFilter));
 
   const handleDoubleClick = useCallback((
@@ -116,7 +103,7 @@ export function InventoryModule(): JSX.Element {
       actions.assembleFragments(slot.itemId);
       return;
     }
-    if (isEquipmentInventoryItem(slot.itemId)) actions.equip(slot.position);
+    if (getStorageItemCategory(slot.itemId) === "equipment") actions.equip(slot.position);
     else actions.useConsumable(slot.itemId);
   }, [actions]);
 
@@ -140,7 +127,7 @@ export function InventoryModule(): JSX.Element {
   const contextItemId = contextMenu === null
     ? undefined
     : inventory.slots.find((slot) => slot.position === contextMenu.position)?.itemId;
-  const contextIsEquipment = contextItemId !== undefined && isEquipmentInventoryItem(contextItemId);
+  const contextIsEquipment = contextItemId !== undefined && getStorageItemCategory(contextItemId) === "equipment";
   const bankDestinations = Array.from({ length: bankExpansion.unlockedTabCount }, (_, index) => {
     const tabNumber = index + 1;
     const range = getBankTabRange(tabNumber, bankExpansion.tabCapacity);
@@ -184,14 +171,19 @@ export function InventoryModule(): JSX.Element {
         />
       ) : (
         <>
-          <section className="storage-module__summary" aria-label="Capacité de l’inventaire">
+          <section className={`storage-module__summary storage-module__summary--${capacityState}`} aria-label="Capacité de l’inventaire">
             <div className="storage-module__summary-row">
               <div><small>Stockage personnel</small><span>Sac du héros</span></div>
               <strong>{String(inventory.occupied)} <small>/ {String(inventory.capacity)}</small></strong>
             </div>
             <div className="storage-module__capacity-track" aria-hidden="true">
-              <span className="storage-module__capacity-fill" style={{ width: `${String(capacityRatio)}%` }} />
+              <span className="storage-module__capacity-fill" style={{ width: `${String(capacityPercent)}%` }} />
             </div>
+            {capacityState !== "normal" && (
+              <small className="storage-module__capacity-state">
+                {capacityState === "full" ? "Inventaire plein" : "Inventaire presque plein"}
+              </small>
+            )}
           </section>
 
           <div className="storage-module__toolbar">
@@ -221,6 +213,7 @@ export function InventoryModule(): JSX.Element {
                 slots={filteredSlots}
                 label={`Objets dans l’inventaire · filtre ${INVENTORY_FILTERS.find((filter) => filter.id === activeFilter)?.label ?? "Tous"}`}
                 interactive
+                interactionHint="Double-cliquez pour utiliser, équiper ou assembler. Glissez-déposez pour organiser."
                 draggable
                 onItemDrop={(from, to) => { actions.move("inventory", from, to); }}
                 onItemDoubleClick={handleDoubleClick}
