@@ -7,9 +7,12 @@ import {
   WEAPON_SPECIALIZATION_IP_PER_LEVEL,
 } from "../../data/itemPower";
 import {
+  GATHERING_CONTENT_TIERS,
   PRODUCTION_FAMILY_IDS,
+  getProductionFamilyByProfession,
   getProductionFamilyDefinition,
 } from "../../data/productionFamilyCatalog";
+import { getRequiredGatheringMasteryForTier } from "../../data/progressionContentCatalog";
 import {
   FACTION_MASTERY_IDS,
   getFactionMasteryDisplayName,
@@ -34,6 +37,15 @@ const ITEM_POWER_FORMATTER = new Intl.NumberFormat("fr-FR", {
 
 function formatItemPower(value: number): string {
   return ITEM_POWER_FORMATTER.format(value);
+}
+
+function getNextGatheringUnlock(level: number, profession: WorkerVM["profession"]): string {
+  const family = getProductionFamilyByProfession(profession);
+  if (family === undefined) return "Tous les paliers de ressource débloqués";
+  const nextTier = GATHERING_CONTENT_TIERS.find((tier) => getRequiredGatheringMasteryForTier(tier) > level);
+  if (nextTier === undefined) return "Tous les paliers de ressource débloqués";
+  const resourceName = family.tiers[nextTier]?.resourceName ?? `Ressource T${String(nextTier)}`;
+  return `Prochaine ressource : ${resourceName} (T${String(nextTier)}) au niv. ${String(getRequiredGatheringMasteryForTier(nextTier))}`;
 }
 
 export interface MasteryProgressModel {
@@ -118,10 +130,7 @@ function workerProgress(worker: WorkerVM): MasteryProgressModel {
     xpToNextLevel: worker.masteryXpToNext,
     progressPercent: percent,
     isUnlocked: true,
-    bonuses: [
-      `${String(worker.durationSeconds)} s par cycle`,
-      `${String(worker.yieldPerCycle)} ressource par cycle`,
-    ],
+    bonuses: [getNextGatheringUnlock(worker.mastery, worker.profession)],
     subtitle: `${worker.professionName} · T${String(worker.productionTier)}`,
   };
 }
@@ -177,7 +186,10 @@ export function buildMasteriesModel(source: MasteriesSource): MasteriesModel {
       xpToNextLevel: family.xpToNextLevel,
       progressPercent: masteryProgressPercent(family),
       isUnlocked: family.isUnlocked,
-      bonuses: [`+${String(speedBonus)}% vitesse de récolte`, "1 ressource par cycle"],
+      bonuses: [
+        `+${String(speedBonus)}% vitesse de récolte`,
+        getNextGatheringUnlock(family.level, definition.profession),
+      ],
       subtitle: "Maîtrise du héros",
       icon: definition.masterySymbol,
       iconAsset: definition.professionIcon,
