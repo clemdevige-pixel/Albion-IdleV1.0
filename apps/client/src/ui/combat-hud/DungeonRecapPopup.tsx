@@ -5,6 +5,7 @@ import { DUNGEON_DEFINITIONS } from "../../data/dungeonContentCatalog.js";
 import { getDungeonLootDefinition } from "../../data/dungeonLootContentCatalog.js";
 import { ItemVisual } from "../../panels/ItemVisual.js";
 import { useGameServices } from "../../state/GameContext.js";
+import { useNavigation } from "../navigation/useNavigation.js";
 import { ActivityResultPopup } from "./ActivityResultPopup.js";
 import "./expeditionRecap.css";
 
@@ -41,6 +42,7 @@ export function DungeonRecapPopup({
   readonly recap: DungeonCompletionRecapModel;
 }): JSX.Element {
   const services = useGameServices();
+  const navigation = useNavigation();
   const replayAccess = services.getDungeonState().getAccess(recap.dungeonDefinitionId);
   const replayUnavailable = replayUnavailableLabel(replayAccess);
   const dungeonDefinition = DUNGEON_DEFINITIONS.find(
@@ -113,7 +115,10 @@ export function DungeonRecapPopup({
           <button
             type="button"
             className="dungeon-recap__action dungeon-recap__action--primary"
-            onClick={() => { dungeonCompletionFlow.resumeExploration(); }}
+            onClick={() => {
+              if (!dungeonCompletionFlow.resumeExploration()) return;
+              navigation.returnToDashboard();
+            }}
           >
             Reprendre l’exploration
           </button>
