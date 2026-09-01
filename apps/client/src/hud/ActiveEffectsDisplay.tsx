@@ -104,6 +104,27 @@ function EffectGroup({
   );
 }
 
+function EncounterBadge({
+  encounterType,
+  position,
+}: {
+  readonly encounterType: string;
+  readonly position: EffectAnchorPosition;
+}): JSX.Element | null {
+  if (!position.visible || (encounterType !== "elite" && encounterType !== "boss")) return null;
+
+  const style: CSSProperties = { left: position.left, top: position.top };
+  return (
+    <div
+      className={`combat-encounter-badge combat-encounter-badge--${encounterType}`}
+      style={style}
+      aria-label={encounterType === "boss" ? "Rencontre de boss" : "Rencontre élite"}
+    >
+      {encounterType === "boss" ? "BOSS" : "ÉLITE"}
+    </div>
+  );
+}
+
 function mapAnchorSnapshotToHud(
   anchors: WorldHudAnchorSnapshot,
 ): EffectAnchorPositions {
@@ -177,6 +198,7 @@ function useEffectAnchorPositions(
 export function ActiveEffectsDisplay(): JSX.Element {
   const effects = useActiveEffectsUiModel();
   const stats = useGameUiSelector((state) => state.stats);
+  const encounterType = useGameUiSelector((state) => state.world.encounterType);
   const anchors = useSyncExternalStore(
     (onStoreChange) => worldHudAnchorStore.subscribe(onStoreChange),
     () => worldHudAnchorStore.getSnapshot(),
@@ -186,6 +208,7 @@ export function ActiveEffectsDisplay(): JSX.Element {
 
   return (
     <>
+      <EncounterBadge encounterType={encounterType} position={positions.enemy} />
       <EffectGroup anchor="player" effects={effects} position={positions.player} stats={stats} />
       <EffectGroup anchor="enemy" effects={effects} position={positions.enemy} stats={stats} />
     </>
