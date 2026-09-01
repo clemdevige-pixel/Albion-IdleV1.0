@@ -96,3 +96,4 @@ export * from "./config/academy-progression.js";
 export * from "./config/island-building-progression.js";
 export * from "./config/weapon-ability-content.js";
 export * from "./config/weapon-content.js";
+export * from "./config/faction-artifact-weapon-content.js";
