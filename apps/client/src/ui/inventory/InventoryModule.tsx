@@ -22,6 +22,7 @@ import {
 } from "../dashboard/ResourceTrackingContext";
 import { useNavigation } from "../navigation";
 import { ItemGrid } from "../shared";
+import { getStorageCapacitySnapshot } from "../shared/storageCapacity";
 import { getStorageItemCategory } from "../shared/storageItemCategory";
 import { useInventoryActions } from "./useInventoryActions";
 import { useInventoryData } from "./useInventoryData";
@@ -44,7 +45,6 @@ const INVENTORY_FILTERS: readonly { readonly id: InventoryFilter; readonly label
 ];
 
 const ROMAN_TAB_LABELS = ["I", "II", "III", "IV", "V"] as const;
-const CAPACITY_WARNING_RATIO = 0.85;
 
 function matchesInventoryFilter(slot: InventorySlotVM, filter: InventoryFilter): boolean {
   if (filter === "all") return true;
@@ -85,9 +85,7 @@ export function InventoryModule(): JSX.Element {
 
   useFeatureUnlockVisit(activeTab === "bank" ? FEATURE_UNLOCK_VISITS.bank : []);
 
-  const capacityRatio = inventory.capacity === 0 ? 0 : inventory.occupied / inventory.capacity;
-  const capacityPercent = Math.min(100, capacityRatio * 100);
-  const capacityState = capacityRatio >= 1 ? "full" : capacityRatio >= CAPACITY_WARNING_RATIO ? "warning" : "normal";
+  const capacity = getStorageCapacitySnapshot(inventory.occupied, inventory.capacity);
   const filteredSlots = inventory.slots.filter((slot) => matchesInventoryFilter(slot, activeFilter));
 
   const handleDoubleClick = useCallback((
@@ -171,19 +169,14 @@ export function InventoryModule(): JSX.Element {
         />
       ) : (
         <>
-          <section className={`storage-module__summary storage-module__summary--${capacityState}`} aria-label="Capacité de l’inventaire">
+          <section className={`storage-module__summary storage-module__summary--${capacity.state}`} aria-label={`Capacité de l’inventaire${capacity.state === "full" ? " · plein" : capacity.state === "warning" ? ` · presque plein · ${String(capacity.freeSlots)} places restantes` : ""}`}>
             <div className="storage-module__summary-row">
               <div><small>Stockage personnel</small><span>Sac du héros</span></div>
               <strong>{String(inventory.occupied)} <small>/ {String(inventory.capacity)}</small></strong>
             </div>
             <div className="storage-module__capacity-track" aria-hidden="true">
-              <span className="storage-module__capacity-fill" style={{ width: `${String(capacityPercent)}%` }} />
+              <span className="storage-module__capacity-fill" style={{ width: `${String(capacity.percent)}%` }} />
             </div>
-            {capacityState !== "normal" && (
-              <small className="storage-module__capacity-state">
-                {capacityState === "full" ? "Inventaire plein" : "Inventaire presque plein"}
-              </small>
-            )}
           </section>
 
           <div className="storage-module__toolbar">
@@ -192,13 +185,7 @@ export function InventoryModule(): JSX.Element {
             </button>
             <div className="storage-module__filters" role="group" aria-label="Filtrer l’inventaire">
               {INVENTORY_FILTERS.map((filter) => (
-                <button
-                  key={filter.id}
-                  type="button"
-                  className={activeFilter === filter.id ? "is-active" : ""}
-                  aria-pressed={activeFilter === filter.id}
-                  onClick={() => { handleFilterChange(filter.id); }}
-                >
+                <button key={filter.id} type="button" className={activeFilter === filter.id ? "is-active" : ""} aria-pressed={activeFilter === filter.id} onClick={() => { handleFilterChange(filter.id); }}>
                   {filter.label}
                   {filter.id === "resources" && <FeatureAttentionBadge count={yieldTrackingUnlockCount} />}
                 </button>
@@ -227,9 +214,7 @@ export function InventoryModule(): JSX.Element {
                   },
                 } : {})}
               />
-            ) : (
-              <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>
-            )}
+            ) : <p className="storage-module__empty-filter">Aucun objet dans cette catégorie.</p>}
           </section>
 
           <p className="storage-module__hint">
@@ -243,9 +228,7 @@ export function InventoryModule(): JSX.Element {
               x={contextMenu.x}
               y={contextMenu.y}
               onClose={() => { setContextMenu(null); }}
-              {...(contextIsEquipment ? {
-                onEquip: (position: number) => { actions.equip(position); setContextMenu(null); },
-              } : {})}
+              {...(contextIsEquipment ? { onEquip: (position: number) => { actions.equip(position); setContextMenu(null); } } : {})}
               bankDestinations={bankDestinations}
               onMoveToBank={handleMoveToBankTab}
             />
