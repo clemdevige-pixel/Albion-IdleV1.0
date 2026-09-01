@@ -87,8 +87,22 @@
 }
 
 @media (max-width: 1100px) {
+  .dashboard-module {
+    gap: 5px;
+    padding: 5px;
+  }
+
   .dashboard-group {
     gap: 5px;
+  }
+
+  .dashboard-group__header {
+    min-height: 21px;
+  }
+
+  .dashboard-group__header h2 {
+    margin-bottom: 3px;
+    font-size: 11px;
   }
 
   .dashboard-group__content {
